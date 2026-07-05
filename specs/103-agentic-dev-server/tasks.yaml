@@ -20,7 +20,7 @@ tasks:
   - id: task-1
     title: TypeSpec models — DevServerRunPlan, RunPlanSource, DeploymentState additions
     description: Add tsp/deployment/dev-server-run-plan.tsp defining the DevServerRunPlan model (repoPath, source, command, cwd, packageManager?, expectedPort?, language?, framework?, setupCommands[], configHash, installStampHash?, timestamps) and RunPlanSource enum (Deterministic, Agent). Add Analyzing and Installing to DeploymentState in tsp/common/enums/deployment.tsp (additive). Run pnpm tsp:compile and fix every downstream consumer of DeploymentState (exhaustive switches, fixtures, status-pill/provider types) surfaced by pnpm typecheck.
-    state: Todo
+    state: Done
     dependencies: []
     acceptanceCriteria:
       - pnpm tsp:compile regenerates output.ts with DevServerRunPlan, RunPlanSource, and the extended DeploymentState
@@ -39,7 +39,7 @@ tasks:
   - id: task-2
     title: Additive migration for dev_server_run_plans table
     description: Create the next-numbered migration adding the dev_server_run_plans table (repo_path TEXT PRIMARY KEY, plan_source, command, cwd, package_manager NULL, expected_port NULL, language NULL, framework NULL, setup_commands TEXT JSON, config_hash, install_stamp_hash NULL, created_at, updated_at). Additive-only, idempotent guard, safe defaults — following 040-create-dev-servers-table conventions.
-    state: Todo
+    state: Done
     dependencies:
       - task-1
     acceptanceCriteria:
@@ -58,7 +58,7 @@ tasks:
   - id: task-3
     title: Run-plan repository — port, mapper, SQLite implementation
     description: Define IDevServerRunPlanRepository (findByRepoPath, upsert, deleteByRepoPath, stampInstallHash) in application/ports/output/repositories/. Implement dev-server-run-plan.mapper.ts (toDatabase/fromDatabase incl. JSON setup_commands) and sqlite-dev-server-run-plan.repository.ts with full-column INSERT/UPDATE.
-    state: Todo
+    state: Done
     dependencies:
       - task-2
     acceptanceCriteria:
@@ -78,7 +78,7 @@ tasks:
   - id: task-4
     title: DeploymentService.start() run-plan override + remove embedded blocking install
     description: Extend IDeploymentService.start(targetId, targetPath, targetType, options?) with an optional runPlan override ({ command, cwd, env? }). When present, spawn uses it verbatim (shell true, detached, buildDevServerEnv) instead of detectDevScript(). Delete the embedded execFileSync install block — installation becomes the graph's job. Permit graph-driven state transitions (Analyzing/Installing) via a setState-style internal API so polling/SSE surface them. Stop, kill, recoverAll, port parsing, and DB persistence semantics stay byte-identical.
-    state: Todo
+    state: Done
     dependencies:
       - task-1
     acceptanceCriteria:
@@ -99,7 +99,7 @@ tasks:
   - id: task-5
     title: DependencyInstaller — async, log-streamed, hash-stamped package install
     description: New infrastructure/services/deployment/dependency-installer.ts. install(repoDir, packageManager, onLogLine) uses async spawn (never execFileSync), streams stdout/stderr lines to the callback, applies buildDevServerEnv() scrubbing, appends non-interactive flags per package manager, resolves with success/failure + captured tail. Also config-hash.ts — deterministic sha256 over the sorted CONFIG_FILES contents (package.json, lockfiles, Cargo.toml, go.mod, pyproject.toml, requirements.txt, Gemfile, ...) used for cache invalidation and install staleness.
-    state: Todo
+    state: Done
     dependencies:
       - task-3
     acceptanceCriteria:
@@ -121,7 +121,7 @@ tasks:
   - id: task-6
     title: Graph skeleton — state annotation, wiring, structure tests
     description: Create dev-server-agent/state.ts (Annotation.Root — targetId, targetType, repoPath, runPlan, planSource, infraReady, depsFresh, startAttempts/remediationAttempts counters, capturedLogs accumulator with append reducer, resultUrl, failureReason) and dev-server-agent-graph.ts wiring START → analyze → ensure_infra → install_deps → start_server → verify → END with conditional edges verify→remediate→ensure_infra (bounded, max 2) and terminal failure routing. Single fluent .addNode/.addEdge/.addConditionalEdges chain (LESSONS — node-name types). compile({ checkpointer? }) accepted, optional.
-    state: Todo
+    state: Done
     dependencies:
       - task-1
     acceptanceCriteria:
@@ -141,7 +141,7 @@ tasks:
   - id: task-7
     title: analyze node — cache, deterministic detection, structured agent fallback
     description: Node factory createAnalyzeNode(deps). Order — (1) IDevServerRunPlanRepository.findByRepoPath with matching configHash → reuse plan; (2) detectDevScript() unambiguous → build Deterministic plan; (3) IStructuredAgentCaller.call with the run-plan-analysis schema (migrated from DevEnvironmentAgentService — deployable, reason, command, cwd, expectedPort, language, framework, setupCommands) → Agent plan; persist plan via upsert. If no structured caller available (degradation) and detection failed, route to failure with an actionable reason. Sets state Analyzing via injected deployment-state setter.
-    state: Todo
+    state: Done
     dependencies:
       - task-5
       - task-6
@@ -162,7 +162,7 @@ tasks:
   - id: task-8
     title: ensure_infra node — binary probes and user-space remediation
     description: Node factory createEnsureInfraNode(deps). Derives required binaries from the run plan (runtime + package manager + any setupCommands executables), probes availability cross-platform (command -v / where, short execFile timeout, non-interactive). On miss — one agent-executor remediation attempt restricted to user-space non-interactive installs (e.g. corepack enable pnpm), then re-probe. Still missing → failure with the exact suggested install command in the reason.
-    state: Todo
+    state: Done
     dependencies:
       - task-7
     acceptanceCriteria:
@@ -182,7 +182,7 @@ tasks:
   - id: task-9
     title: install_deps node — staleness-aware streamed installation
     description: Node factory createInstallDepsNode(deps). Skip when the plan has no package manager (non-package stacks) or node_modules exists AND lockfile hash equals installStampHash. Otherwise set state Installing, run DependencyInstaller with log lines bridged to the deployment logger (SSE-visible), run plan setupCommands (non-interactive, cwd-pinned) when present, and stamp the hash on success. Install failure routes to remediate with the captured tail.
-    state: Todo
+    state: Done
     dependencies:
       - task-7
     acceptanceCriteria:
@@ -202,7 +202,7 @@ tasks:
   - id: task-10
     title: start_server, verify, and remediate nodes
     description: start_server calls DeploymentService.start(targetId, path, targetType, { runPlan }) — the override from task-4 — transitioning to Booting. verify waits bounded for Ready (existing parse-port flow) with a TCP fallback probe on plan.expectedPort; success writes resultUrl and ends. remediate (on start/verify failure) invalidates the cached plan when the plan was the cause, builds a remediation prompt from the failed command + captured stdout/stderr tail + probe results (CI-fix-loop shape), executes via IAgentExecutor, increments remediationAttempts, and loops back to ensure_infra. Exhaustion (2 attempts) → terminal failure with the last error tail; the dev server is stopped/cleaned up.
-    state: Todo
+    state: Done
     dependencies:
       - task-6
       - task-9
@@ -224,7 +224,7 @@ tasks:
   - id: task-11
     title: DevServerAgentService — port implementation orchestrating the graph
     description: Define IDevServerAgentService (startDevServer(targetId, targetPath, targetType) → { state }) in application/ports/output/services/. Implement DevServerAgentService in dev-server-agent/ — resolves executor/structured-caller lazily (degrades gracefully when unavailable), enforces single-flight per targetId, builds graph deps (deployment service, run-plan repo, installer, logger bridge), invokes the compiled graph with thread_id dev-server:<targetId>, returns immediately after the graph is launched (fire-and-track like today's Booting contract), and routes graph failures into deployment logs + Stopped state. tsyringe-safe constructor (class types / @inject tokens only — no interface-typed params).
-    state: Todo
+    state: Done
     dependencies:
       - task-10
     acceptanceCriteria:
@@ -244,7 +244,7 @@ tasks:
   - id: task-12
     title: Use-case delegation and DI wiring
     description: Start{Application,Feature,Repository}DeploymentUseCase keep their validation (not-found, path-exists, self-instance guard) and public API but delegate the start to IDevServerAgentService instead of IDeploymentService.start. Register in register-deployment.ts — run-plan repository, installer, DevServerAgentService — each under class AND string tokens; remove spec-068 registrations. Extend container-bootstrap.test.ts (CRITICAL_INFRA_TOKENS + module list) and the DI module registration in both container.ts and the bootstrap test (LESSONS — two places).
-    state: Todo
+    state: Done
     dependencies:
       - task-11
     acceptanceCriteria:
@@ -265,7 +265,7 @@ tasks:
   - id: task-13
     title: Remove the dormant spec-068 agentic path
     description: Delete agent-deployment.service.ts, dev-environment-agent.service.ts, their interfaces (IAgentDeploymentService, IDevEnvironmentAgent), DI registrations, and tests — after confirming the analyze node (task-7) has absorbed the analysis schema, prompt, and CONFIG_FILES inventory. Grep-verify zero remaining references.
-    state: Todo
+    state: Done
     dependencies:
       - task-12
     acceptanceCriteria:
@@ -278,7 +278,7 @@ tasks:
   - id: task-14
     title: Web surface — Analyzing/Installing states end to end
     description: Extend the deployment status rendering — status-pill.tsx and web-preview-tab.tsx get real Analyzing ("Analyzing project…") and Installing ("Installing dependencies…") states replacing the faked combined copy; deployment-status-provider.tsx polls while state ∈ {Analyzing, Installing, Booting, Ready} (shared constant from task-1 refactor); derive-app-status and any DeploymentState switches updated. Translation keys added to ALL nine locales (en, ar, de, es, fr, he, pt, ru, uk) in the same commit. Colocated stories updated for the new states.
-    state: Todo
+    state: Done
     dependencies:
       - task-12
     acceptanceCriteria:
@@ -298,7 +298,7 @@ tasks:
   - id: task-15
     title: End-to-end integration hardening
     description: Integration suite running the real graph against fixture repos on real SQLite with mocked executor/structured-caller — (1) deterministic fast path asserts ZERO agent calls and Ready; (2) agent path applies a mocked analysis command via the override; (3) missing node_modules triggers installer then Ready; (4) first start fails → remediation → success; (5) remediation exhaustion → Stopped with actionable reason; (6) no-executor degradation; (7) recoverAll interplay — a graph-started server is recoverable after process restart. Windows-safe timeouts/retries per LESSONS (hookTimeout, rmSync retries).
-    state: Todo
+    state: Done
     dependencies:
       - task-13
       - task-14
@@ -318,7 +318,7 @@ tasks:
   - id: task-16
     title: Documentation
     description: Document the dev-server agent graph in docs/architecture/agent-system.md (graph diagram, state channels, ports used, degradation and remediation semantics, run-plan cache) and update any dev-server references in docs/ui and docs/development/setup.md that describe the old blocking-install behaviour.
-    state: Todo
+    state: Done
     dependencies:
       - task-15
     acceptanceCriteria:
