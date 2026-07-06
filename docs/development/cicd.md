@@ -6,12 +6,12 @@ Automated build, test, and release pipeline using GitHub Actions.
 
 ```
 Push/PR to main or develop:
-┌──────────┬───────────┬────────────┬───────────┬───────────┬───────────┬────────┐
-│   Lint   │ Typecheck │ Unit Tests │  E2E CLI  │  E2E TUI  │  E2E Web  │ Docker │
-└──────────┴───────────┴────────────┴───────────┴───────────┴───────────┴────────┘
-┌───────────────┬──────────────────────┬──────────┬─────────┬──────────┐
-│ Trivy (deps)  │ Trivy (container)    │ Gitleaks │ Semgrep │ Hadolint │
-└───────────────┴──────────────────────┴──────────┴─────────┴──────────┘
+┌──────────┬───────────┬────────────┬───────────┬───────────┬───────────┬───────────┐
+│   Lint   │ Typecheck │ Unit Tests │  E2E CLI  │  E2E TUI  │  E2E Web  │ Storybook │
+└──────────┴───────────┴────────────┴───────────┴───────────┴───────────┴───────────┘
+┌──────────┬─────────┬──────────────────┐
+│ Gitleaks │ Semgrep │ Security Enforce │
+└──────────┴─────────┴──────────────────┘
                             (all run in parallel)
 
 On PR only:
@@ -21,8 +21,13 @@ On PR only:
 
 On push to main only (after ALL jobs pass, including security):
 ┌───────────┐
-│  Release  │  → npm publish + Docker push + GitHub release
+│  Release  │  → npm publish + GitHub release + `v<version>` tag
 └───────────┘
+
+On `v*` tag push (created by Release) or manual dispatch:
+┌────────────────┐
+│ Docker Publish │  → build image + push to ghcr.io
+└────────────────┘
 ```
 
 ## Jobs
@@ -33,16 +38,16 @@ On push to main only (after ALL jobs pass, including security):
 | --------------------- | ----------------------------------------------------------- | -------- |
 | **Lint & Format**     | ESLint + Prettier + TypeSpec compile (`pnpm tsp:compile`)   | ~30s     |
 | **Type Check**        | TypeScript strict mode validation (requires TypeSpec types) | ~20s     |
-| **Unit Tests**        | Vitest unit + integration tests                             | ~20s     |
-| **E2E (CLI)**         | CLI command execution tests                                 | ~30s     |
+| **Unit Tests**        | Vitest unit + integration tests (Linux + Windows)           | ~20s     |
+| **E2E (CLI)**         | CLI command execution tests (Linux + Windows)               | ~30s     |
 | **E2E (TUI)**         | Terminal UI interaction tests                               | ~20s     |
 | **E2E (Web)**         | Playwright browser tests                                    | ~25s     |
-| **Docker**            | Build and push SHA-tagged image (non-main only)             | ~50s     |
-| **Trivy (deps)**      | Dependency vulnerability scan (HIGH/CRITICAL)               | ~30s     |
-| **Trivy (container)** | Docker image vulnerability scan                             | ~60s     |
-| **Gitleaks**          | Secret detection in git history                             | ~15s     |
-| **Semgrep**           | SAST for TypeScript/JavaScript patterns                     | ~30s     |
-| **Hadolint**          | Dockerfile best practices linting                           | ~5s      |
+| **Storybook Build**   | Builds all stories (catches missing mocks/broken imports)   | ~40s     |
+| **Electron**          | Desktop installers for macOS/Windows/Linux                  | ~5m      |
+
+> **Note:** Docker images are not built in the CI matrix. They are published by
+> the separate [`docker-publish.yml`](../../.github/workflows/docker-publish.yml)
+> workflow, triggered by the `v*` release tag (see [Docker Images](#docker-images)).
 
 ### Security Jobs (All Branches)
 
@@ -50,13 +55,9 @@ Security scanners run in parallel and **block releases on main**:
 
 | Scanner               | Tool                                                            | Severity Filter |
 | --------------------- | --------------------------------------------------------------- | --------------- |
-| **Trivy (deps)**      | Filesystem scan for dependency CVEs                             | HIGH, CRITICAL  |
-| **Trivy (container)** | Docker image scan for OS/package vulnerabilities                | HIGH, CRITICAL  |
 | **Gitleaks**          | Secret detection (API keys, passwords, tokens)                  | All findings    |
 | **Semgrep**           | SAST rules (`p/typescript`, `p/javascript`, `p/security-audit`) | All findings    |
-| **Hadolint**          | Dockerfile linting                                              | Warning+        |
-
-Results are uploaded to GitHub Security tab (SARIF format) and displayed in job summaries.
+| **Security Enforce**  | `shep security enforce` — supply-chain/governance posture       | Gates release   |
 
 > **Note:** Gitleaks uses the CLI directly (not gitleaks-action) because the GitHub Action requires a paid license for organizations.
 
@@ -86,9 +87,14 @@ Runs after **all parallel jobs pass, including security scanners**. Uses [semant
 2. **Generate changelog** - Create release notes from commits
 3. **Update CHANGELOG.md** - Append new release section
 4. **Publish to npm** - `@shepai/cli` package
-5. **Build & push Docker** - Tags: `latest`, `v<version>`, `sha-<commit>`
-6. **Create GitHub release** - With changelog as release notes
-7. **Commit changes** - `chore(release): <version> [skip ci]`
+5. **Create GitHub release** - With changelog as release notes
+6. **Commit changes** - `chore(release): <version> [skip ci]`
+7. **Push `v<version>` tag** - triggers the `Docker Publish` workflow
+
+Docker images are built and pushed by the separate
+[`docker-publish.yml`](../../.github/workflows/docker-publish.yml) workflow,
+which fires on the `v*` tag that semantic-release pushes (and can be run
+manually via workflow dispatch).
 
 ## Docker Images
 
@@ -102,10 +108,10 @@ ghcr.io/shep-ai/shep
 
 ### Tagging Strategy
 
-| Branch       | Trigger          | Tags                               |
-| ------------ | ---------------- | ---------------------------------- |
-| PR / develop | Docker job       | `sha-<full-commit-sha>`            |
-| main         | semantic-release | `latest`, `v1.2.3`, `sha-<commit>` |
+| Trigger                    | Tags                                                        |
+| -------------------------- | ----------------------------------------------------------- |
+| `v*` tag (from release)    | `latest`, `1.2.3`, `1.2`, `1`, `sha-<full-commit-sha>`      |
+| Manual dispatch (main)     | `latest`, `sha-<full-commit-sha>`                           |
 
 ### Pull & Run
 
@@ -126,7 +132,7 @@ docker pull ghcr.io/shep-ai/shep:sha-abc123...
 - **Base**: `node:22-alpine` (~180MB)
 - **Final size**: ~185MB
 - **User**: Non-root `shep` (UID 1001)
-- **Entrypoint**: `node dist/presentation/cli/index.js`
+- **Entrypoint**: `node dist/src/presentation/cli/index.js`
 
 ## Release Process
 
@@ -166,6 +172,7 @@ NPM_TOKEN=xxx GITHUB_TOKEN=xxx npx semantic-release
 | File                                  | Purpose                                              |
 | ------------------------------------- | ---------------------------------------------------- |
 | `.github/workflows/ci.yml`            | Main CI/CD workflow (build, test, security, release) |
+| `.github/workflows/docker-publish.yml`| Build & push the image to ghcr.io on `v*` tags       |
 | `.github/workflows/pr-check.yml`      | PR-specific checks (commitlint, PR title)            |
 | `.github/workflows/claude-review.yml` | Claude Code automated review                         |
 | `release.config.mjs`                  | semantic-release plugins and settings                |
