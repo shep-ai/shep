@@ -127,7 +127,7 @@ describe('AgentModelPicker', () => {
 
     await waitFor(() => {
       expect(screen.getByRole('combobox')).toHaveTextContent('Codex CLI');
-      expect(screen.getByRole('combobox')).toHaveTextContent('GPT 5.4');
+      expect(screen.getByRole('combobox')).toHaveTextContent('GPT-5.4');
     });
   });
 
@@ -163,7 +163,7 @@ describe('AgentModelPicker', () => {
 
     await waitFor(() => {
       expect(screen.getByRole('combobox')).toHaveTextContent('Codex CLI');
-      expect(screen.getByRole('combobox')).toHaveTextContent('GPT 5.4');
+      expect(screen.getByRole('combobox')).toHaveTextContent('GPT-5.4');
     });
 
     deferred.resolve({ ok: false, error: 'Could not save pinned config' });
@@ -245,7 +245,7 @@ describe('AgentModelPicker', () => {
 
     await waitFor(() => {
       expect(screen.getByRole('combobox')).toHaveTextContent('Codex CLI');
-      expect(screen.getByRole('combobox')).toHaveTextContent('GPT 5.4');
+      expect(screen.getByRole('combobox')).toHaveTextContent('GPT-5.4');
     });
 
     expect(onAgentModelChange).toHaveBeenCalledWith('codex-cli', 'gpt-5.4');
