@@ -1,4 +1,5 @@
 import { openShepDb, setCollaborationFlag } from './helpers/collaboration-flag';
+import { seedOptimisticClickFeature } from './helpers/feature-fixtures';
 
 /**
  * Playwright global setup: flips the `collaboration` feature flag on in the
@@ -17,12 +18,8 @@ export default async function globalSetup(): Promise<void> {
   let db: ReturnType<typeof openShepDb> | null = null;
   try {
     db = openShepDb();
+    await seedOptimisticClickFeature(db);
     setCollaborationFlag(db, true);
-  } catch (err) {
-    // If the DB does not yet exist (very fresh CI env), the dev server will
-    // create it on boot with defaults. The supervisor / question tests will
-    // skip themselves in that case via the `flagPrecondition` check.
-    console.warn('[e2e global-setup] failed to enable collaboration flag:', err);
   } finally {
     db?.close();
   }

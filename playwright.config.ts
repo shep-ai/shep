@@ -1,4 +1,9 @@
 import { defineConfig, devices } from '@playwright/test';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
+const e2eShepHome = join(tmpdir(), `shep-e2e-web-${process.pid}`);
+process.env.SHEP_HOME = e2eShepHome;
 
 /**
  * Playwright configuration for Shep AI Web UI E2E tests.
@@ -7,6 +12,7 @@ import { defineConfig, devices } from '@playwright/test';
 export default defineConfig({
   testDir: './tests/e2e/web',
   globalSetup: './tests/e2e/web/global-setup.ts',
+  globalTeardown: './tests/e2e/web/global-teardown.ts',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
@@ -45,9 +51,16 @@ export default defineConfig({
   /* Run your local dev server before starting the tests */
   webServer: {
     command: 'pnpm dev:web',
-    env: { PORT: '3001', SHEP_COLLABORATION_FLAG: '1', SHEP_MOCK_GATEWAY: '1' },
+    env: {
+      PORT: '3001',
+      SHEP_COLLABORATION_FLAG: '1',
+      SHEP_MOCK_GATEWAY: '1',
+      SHEP_HOME: e2eShepHome,
+    },
     url: 'http://localhost:3001',
-    reuseExistingServer: !process.env.CI,
+    // The fixture database and web server must share the isolated SHEP_HOME.
+    // Reusing an arbitrary local server would make this suite data-dependent.
+    reuseExistingServer: false,
     timeout: 120 * 1000,
   },
 });
