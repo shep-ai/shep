@@ -1,6 +1,7 @@
 import Database from 'better-sqlite3';
+import { mkdirSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 
 /**
  * Resolves the path to the singleton Shep SQLite database the dev server uses.
@@ -14,7 +15,9 @@ export function getShepDbPath(): string {
 }
 
 export function openShepDb(): Database.Database {
-  return new Database(getShepDbPath());
+  const dbPath = getShepDbPath();
+  mkdirSync(dirname(dbPath), { recursive: true });
+  return new Database(dbPath);
 }
 
 /**
