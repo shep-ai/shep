@@ -1,0 +1,208 @@
+# Implementation Plan (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: "claude-model-registry"
+summary: >
+  Implement API-driven Claude model discovery with in-process caching and fallback, ensuring
+  all Claude models (Fable 5, Opus 4.8, Sonnet 5) are consistently available across all agent
+  executors. Update TypeSpec documentation, defaults, and test coverage to maintain the
+  authoritative model catalog as the source of truth.
+
+# Relationships
+relatedFeatures: []
+
+technologies:
+  - "TypeScript"
+  - "TypeSpec (tsp)"
+  - "Claude SDK / Anthropic REST API"
+  - "Node.js fetch API"
+  - "Vitest"
+  - "React / Next.js"
+
+relatedLinks:
+  - title: "Agent model catalog (source of truth)"
+    url: "file:///packages/core/src/infrastructure/services/agents/common/agent-model-catalog.ts"
+  - title: "OpenRouter model catalog pattern (reference)"
+    url: "file:///packages/core/src/infrastructure/services/agents/common/model-catalogs/openrouter-model-catalog.service.ts"
+  - title: "Together AI model catalog pattern (reference)"
+    url: "file:///packages/core/src/infrastructure/services/agents/common/model-catalogs/together-ai-model-catalog.service.ts"
+  - title: "Agent executor factory (integration point)"
+    url: "file:///packages/core/src/infrastructure/services/agents/common/agent-executor-factory.service.ts"
+  - title: "Settings TypeSpec model"
+    url: "file:///tsp/domain/entities/settings.tsp"
+  - title: "Settings defaults factory"
+    url: "file:///packages/core/src/domain/factories/settings-defaults.factory.ts"
+  - title: "Anthropic Models API documentation"
+    url: "https://docs.anthropic.com/en/api/models"
+
+# Structured implementation phases
+phases:
+  - id: "phase-1"
+    name: "Foundation & Research"
+    description: "Verify Anthropic API availability, determine which models are currently supported by each executor, establish baseline for catalog updates."
+    parallel: false
+
+  - id: "phase-2"
+    name: "Core Catalog Service"
+    description: "Implement AnthropicModelCatalogService with fetch, caching (TTL-based in-process), fallback logic, and error handling following the OpenRouter pattern."
+    parallel: false
+
+  - id: "phase-3"
+    name: "Integration & Wiring"
+    description: "Wire AnthropicModelCatalogService into AgentExecutorFactory, update listAvailableModels() dispatch logic for all Claude-based executors."
+    parallel: false
+
+  - id: "phase-4"
+    name: "Static Catalog & Defaults"
+    description: "Update CLAUDE_CODE_MODELS and other executor model lists with new Claude variants. Update DEFAULT_MODEL to claude-sonnet-5."
+    parallel: false
+
+  - id: "phase-5"
+    name: "TypeSpec & Documentation"
+    description: "Update TypeSpec comments in settings.tsp to reflect current model catalog, add inline documentation for catalog service."
+    parallel: false
+
+  - id: "phase-6"
+    name: "Testing & Validation"
+    description: "Add unit tests for AnthropicModelCatalogService, integration tests for model validation across all models (old and new)."
+    parallel: false
+
+  - id: "phase-7"
+    name: "UI/CLI Verification & Polish"
+    description: "Verify CLI model selection prompts show all catalog models, web UI model picker displays dynamic catalog, update Storybook stories, run full integration suite."
+    parallel: false
+
+# File change tracking
+filesToCreate:
+  - "packages/core/src/infrastructure/services/agents/common/model-catalogs/anthropic-model-catalog.service.ts"
+
+filesToModify:
+  - "packages/core/src/infrastructure/services/agents/common/agent-model-catalog.ts"
+  - "packages/core/src/infrastructure/services/agents/common/agent-executor-factory.service.ts"
+  - "packages/core/src/domain/factories/settings-defaults.factory.ts"
+  - "tsp/domain/entities/settings.tsp"
+  - "tests/unit/application/use-cases/update-settings.use-case.test.ts"
+  - "tests/unit/application/use-cases/initialize-settings.use-case.test.ts"
+  - "tests/unit/infrastructure/services/agents/agent-executor-factory.service.test.ts"
+
+# Open questions (should all be resolved before implementation)
+openQuestions: []
+
+# Markdown content (the full plan document)
+content: |
+  ## Architecture Overview
+
+  This feature extends the existing agent executor model-discovery pattern to Claude models,
+  ensuring the codebase maintains a **single, authoritative source of truth** for all supported
+  models across all executors. The architecture follows the proven pattern already implemented
+  for OpenRouter and Together AI dynamic catalogs.
+
+  ### Current State
+
+  The codebase defines executor-specific model lists statically in `agent-model-catalog.ts`.
+  These lists are manually maintained and do not automatically reflect new Anthropic releases.
+  Additionally:
+  - TypeSpec comments in `settings.tsp` are outdated (lines 62-66)
+  - Default model is `claude-sonnet-4-6` (stable but not latest)
+  - Tests validate only old model variants (opus-4.6, sonnet-4.6)
+  - Presentation layers (CLI, web UI) may not reflect the full catalog
+
+  ### Future State
+
+  After implementation:
+  1. **Dynamic Discovery** — `AnthropicModelCatalogService` fetches current Claude models
+     from Anthropic's API when available, with a 1-hour cache TTL
+  2. **Resilient Fallback** — If the API is unavailable, the service falls back to the static
+     `CLAUDE_CODE_MODELS` list
+  3. **Consistent Catalog** — All executors have updated, verified model lists including
+     Fable 5, Opus 4.8, Sonnet 5
+  4. **Updated Defaults** — Default model changes to `claude-sonnet-5` for new installations
+  5. **Accurate Documentation** — TypeSpec comments reflect the current supported models
+  6. **Comprehensive Testing** — All Claude models (old and new) are validated
+
+  ## Key Design Decisions
+
+  ### 1. API-Driven with Static Fallback
+
+  **Chosen:** Create `AnthropicModelCatalogService` that fetches Claude models from Anthropic's API,
+  caches results in-process with 1-hour TTL, and falls back to `CLAUDE_CODE_MODELS` if API unavailable.
+
+  **Why:** Provides resilience (users always see a model list), freshness (latest models within 1 hour),
+  and pattern consistency (mirrors OpenRouter and Together AI implementations already in the codebase).
+
+  ### 2. Extending AgentExecutorFactory
+
+  **Chosen:** Add `AnthropicModelCatalogService` to the executor factory alongside existing
+  `OpenRouterModelCatalogService`. Update `listAvailableModels()` to dispatch to the Anthropic
+  service for claude-code and other Claude-based executors.
+
+  **Why:** The factory is already the integration hub for dynamic model discovery. No new interfaces needed.
+
+  ### 3. Default Model Update to Sonnet 5
+
+  **Chosen:** Update `DEFAULT_MODEL` from `claude-sonnet-4-6` to `claude-sonnet-5`. Existing user
+  settings are NOT retroactively changed.
+
+  **Why:** Claude Sonnet 5 is the recommended stable model as of February 2025. New users benefit
+  from better performance and cost. Existing settings preserve user choices.
+
+  ### 4. Cache Strategy: In-Process TTL
+
+  **Chosen:** Simple in-process `Map` with 1-hour TTL, configurable via `SHEP_MODEL_CATALOG_CACHE_TTL_MS`
+  environment variable.
+
+  **Why:** No external dependencies, <100ms response time (cache hits <5ms), 1-hour TTL balances
+  freshness and performance. Claude releases are infrequent, so 1 hour is sufficient.
+
+  ### 5. Multi-Executor Consistency
+
+  **Chosen:** Update all executor model lists (claude-code, cursor, copilot-cli, cline, openrouter)
+  to include new Claude variants. Keep all old models for backward compatibility.
+
+  **Why:** The catalog is the single source of truth. Partial updates create fragmentation.
+
+  ### 6. Comprehensive Test Coverage
+
+  **Chosen:** Test all Claude models (old and new) in unit and integration suites. Add tests for
+  AnthropicModelCatalogService fetch, cache, fallback, error handling, and model validation.
+
+  **Why:** Per spec decision, uniform handling across all models is critical. Ensures no regressions.
+
+  ## Implementation Strategy
+
+  ### Phase Ordering Rationale
+
+  1. **Phase 1: Foundation & Research** — Verify API availability and current model lists before
+     implementing. Establishes facts on which later phases depend.
+
+  2. **Phase 2: Core Catalog Service** — Implement the new service in isolation. Allows testing
+     independently before wiring into factory.
+
+  3. **Phase 3: Integration & Wiring** — Connect service to factory. This is the critical integration point.
+
+  4. **Phase 4: Static Catalog & Defaults** — Update fallback lists and default model. Data changes;
+     can proceed once service is wired.
+
+  5. **Phase 5: TypeSpec & Documentation** — Update domain model documentation. Should be done after
+     model lists are finalized so docs don't drift.
+
+  6. **Phase 6: Testing & Validation** — Add comprehensive tests. Tests depend on service existing
+     and being integrated.
+
+  7. **Phase 7: UI/CLI Verification & Polish** — Verify CLI and web UI use the dynamic catalog.
+     Should be last to ensure all plumbing is in place.
+
+  ## Risk Mitigation
+
+  | Risk | Mitigation |
+  | ---- | ---------- |
+  | **Anthropic API not publicly available** | Research phase confirms API availability. If no API exposed, implementation falls back to static catalog. Hybrid approach is resilient either way. |
+  | **API authentication failures** | Service supports optional API key. Unauthenticated requests fall back to public models or static list. |
+  | **Network timeouts or API errors** | 5-second timeout on fetch. On timeout/error, fall back to static list immediately. No cascading failures. |
+  | **Cache expiry causing stale data** | 1-hour TTL acceptable for Claude models (releases every few months). Operators can adjust via `SHEP_MODEL_CATALOG_CACHE_TTL_MS`. |
+  | **Existing user settings with old models break** | Old model IDs remain in fallback catalog indefinitely. No migration needed. Backward compatibility preserved. |
+  | **Test failures from new models** | Tests validate all models uniformly. If a model fails, test error surfaces the root cause. |
+  | **Performance regression on model listing** | Cache design ensures <100ms response time. Cache hits <5ms. Tested locally before commit. |
+  | **Documentation drift** | TypeSpec comments updated in phase 5. Inline documentation in service and factory explains the pattern. |
+  | **Deployment complexity** | No external dependencies, no infrastructure changes. Service is a thin wrapper around fetch + Map. |
+  | **Multi-executor inconsistency** | All executors updated in phase 4. Cross-executor tests pass. Manual verification per executor is part of phase 1. |

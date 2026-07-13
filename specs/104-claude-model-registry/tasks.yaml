@@ -1,0 +1,460 @@
+# Task Breakdown (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: "claude-model-registry"
+summary: >
+  16 tasks across 7 phases to implement API-driven Claude model discovery, update all executor
+  model catalogs, change default model to Sonnet 5, update TypeSpec documentation, add comprehensive
+  tests for all models (old and new), and verify UI/CLI integration.
+
+# Relationships
+relatedFeatures: []
+
+technologies:
+  - "TypeScript"
+  - "TypeSpec (tsp)"
+  - "Anthropic REST API"
+  - "Node.js fetch API"
+  - "Vitest"
+
+relatedLinks:
+  - title: "OpenRouter model catalog pattern (reference)"
+    url: "file:///packages/core/src/infrastructure/services/agents/common/model-catalogs/openrouter-model-catalog.service.ts"
+  - title: "Together AI model catalog pattern (reference)"
+    url: "file:///packages/core/src/infrastructure/services/agents/common/model-catalogs/together-ai-model-catalog.service.ts"
+  - title: "Agent model catalog"
+    url: "file:///packages/core/src/infrastructure/services/agents/common/agent-model-catalog.ts"
+  - title: "Settings defaults factory"
+    url: "file:///packages/core/src/domain/factories/settings-defaults.factory.ts"
+
+# Structured task list
+tasks:
+  # Phase 1: Foundation & Research
+  - id: "task-1-1"
+    phaseId: "phase-1"
+    title: "Research Anthropic API Availability"
+    description: "Verify whether Anthropic publishes a public models endpoint or exposes model listing via SDK. Document API format, authentication requirements, response schema, and rate limits. Confirm which models are available to each executor (claude-code, cursor, copilot-cli, cline, openrouter)."
+    state: "Todo"
+    dependencies: []
+    acceptanceCriteria:
+      - "Document: Anthropic API endpoint URL (if available) or SDK method to list models"
+      - "Document: Authentication requirements (API key, bearer token, etc.)"
+      - "Document: Response schema (JSON structure, model ID format, metadata fields)"
+      - "Document: Rate limits and recommended cache TTL"
+      - "Verify: Current supported Claude models per executor (Fable 5, Opus 4.8, Sonnet 5 availability)"
+      - "Identify: Which executors support which Claude models based on executor documentation"
+    tdd: null
+    estimatedEffort: "1.5h"
+
+  - id: "task-1-2"
+    phaseId: "phase-1"
+    title: "Audit Existing Static Catalog"
+    description: "Document all locations where Claude models are currently defined: CLAUDE_CODE_MODELS, CURSOR_MODELS, COPILOT_CLI_MODELS, CLINE_MODELS, OPENROUTER_MODELS, TypeSpec comments, defaults factory, existing tests, CLI commands, web UI components. Identify gaps and inconsistencies."
+    state: "Todo"
+    dependencies: []
+    acceptanceCriteria:
+      - "Document: Current CLAUDE_CODE_MODELS list (which models are included)"
+      - "Document: Current CURSOR_MODELS, COPILOT_CLI_MODELS, CLINE_MODELS, OPENROUTER_MODELS lists"
+      - "Document: Which models are missing (Fable 5, Opus 4.8, Sonnet 5 per executor)"
+      - "Document: TypeSpec comments in settings.tsp (lines 62-66) and their accuracy"
+      - "Document: Current DEFAULT_MODEL value and whether it matches spec decision (Sonnet 5)"
+      - "Document: Test coverage status (which model variants are tested, which are missing)"
+      - "Identify: CLI commands and web UI components that render model lists"
+    tdd: null
+    estimatedEffort: "1h"
+
+  # Phase 2: Core Catalog Service
+  - id: "task-2-1"
+    phaseId: "phase-2"
+    title: "Create AnthropicModelCatalogService Skeleton"
+    description: "Create the service file with basic structure, placeholder methods, and interface definition. Define cache structure, TTL logic, error handling types. Do not implement fetch logic yet."
+    state: "Todo"
+    dependencies: ["task-1-1"]
+    acceptanceCriteria:
+      - "File created: anthropic-model-catalog.service.ts"
+      - "Class defined: AnthropicModelCatalogService"
+      - "Cache Map structure defined with expiresAt + data"
+      - "Methods stubbed: constructor(timeout, ttl), listModels(token), refreshCache()"
+      - "Types defined: AgentModelListing, CacheEntry, error handling"
+      - "JSDoc comments explain cache strategy, fallback behavior, TTL configuration"
+    tdd:
+      red:
+        - "Write test: AnthropicModelCatalogService exists and is instantiable"
+        - "Write test: listModels() method exists and has correct signature"
+      green:
+        - "Create service class with empty methods returning undefined"
+      refactor:
+        - "Add JSDoc comments explaining cache and fallback strategy"
+    estimatedEffort: "1h"
+
+  - id: "task-2-2"
+    phaseId: "phase-2"
+    title: "Implement Fetch + Parse Logic"
+    description: "Implement fetching Claude models from Anthropic API. Handle response parsing, validation, error cases (network timeout, invalid JSON, missing fields). No caching yet; focus on correctness and resilience."
+    state: "Todo"
+    dependencies: ["task-2-1", "task-1-1"]
+    acceptanceCriteria:
+      - "Fetch request to Anthropic API endpoint with optional API key (Authorization header)"
+      - "5-second timeout on fetch request"
+      - "Response parsing: validate JSON structure, extract model IDs"
+      - "Error handling: catch network errors, JSON parse errors, invalid responses"
+      - "Return type: AgentModelListing[] (id, name, description if available)"
+      - "No exceptions thrown on API error; error logged, returns empty array or undefined (for fallback logic)"
+      - "HTTP requests use node:fetch (Node.js 18+)"
+    tdd:
+      red:
+        - "Write test: fetchModelsFromApi(token) returns AgentModelListing[] on success"
+        - "Write test: fetchModelsFromApi() handles network timeout (fetch AbortError)"
+        - "Write test: fetchModelsFromApi() handles JSON parse error gracefully"
+        - "Write test: fetchModelsFromApi() with invalid response (missing required fields) returns []"
+      green:
+        - "Implement fetch with basic error handling, return hardcoded test data first"
+        - "Add try-catch around JSON.parse(), return []"
+      refactor:
+        - "Extract validation logic into helper function"
+        - "Add structured error logging (warn level)"
+    estimatedEffort: "2h"
+
+  - id: "task-2-3"
+    phaseId: "phase-2"
+    title: "Implement Cache with TTL"
+    description: "Implement in-process caching with configurable TTL. Cache key is agent executor type (e.g., 'claude-code'). Cache hit returns cached data; cache miss triggers fetch. Expired cache entries are refreshed."
+    state: "Todo"
+    dependencies: ["task-2-2"]
+    acceptanceCriteria:
+      - "Cache key: executor type string (e.g., 'claude-code')"
+      - "Cache entry: { expiresAt: number, data: AgentModelListing[] }"
+      - "Cache TTL: configurable, default 1 hour (3600000ms), read from environment variable SHEP_MODEL_CATALOG_CACHE_TTL_MS"
+      - "Cache hit: check expiry, return cached data if not expired (<5ms)"
+      - "Cache miss: fetch from API, store result with expiry timestamp, return fetched data"
+      - "Cache refresh: on expiry, fetch again, update cache entry"
+      - "Environment variable parsing: handle invalid values, use default on parse error"
+    tdd:
+      red:
+        - "Write test: cache hit before expiry returns cached data without API call"
+        - "Write test: cache miss triggers fetch and caches result"
+        - "Write test: expired cache entry triggers refresh fetch"
+        - "Write test: environment variable SHEP_MODEL_CATALOG_CACHE_TTL_MS overrides default TTL"
+        - "Write test: invalid environment variable value falls back to default"
+      green:
+        - "Implement basic cache Map with expiry check"
+        - "Add fetch call on cache miss"
+      refactor:
+        - "Extract cache key generation into helper function"
+        - "Extract expiry check into helper function"
+        - "Add clear() method for testing (reset cache)"
+    estimatedEffort: "1.5h"
+
+  - id: "task-2-4"
+    phaseId: "phase-2"
+    title: "Implement Fallback Logic"
+    description: "Implement fallback to static CLAUDE_CODE_MODELS when API is unavailable, returns empty array, or times out. Fallback returns the static list as AgentModelListing[] format. Log warning when fallback is used."
+    state: "Todo"
+    dependencies: ["task-2-3"]
+    acceptanceCriteria:
+      - "Fallback triggered: API fetch fails, times out, or returns empty/invalid data"
+      - "Fallback returns: static model list imported from agent-model-catalog.ts"
+      - "Format conversion: CLAUDE_CODE_MODELS string[] → AgentModelListing[] (id, optional name)"
+      - "Logging: warn level message when fallback is used (includes reason: 'API unavailable', 'timeout', 'invalid response')"
+      - "No exception thrown; fallback is always available to caller"
+    tdd:
+      red:
+        - "Write test: listModels() returns fallback on API error"
+        - "Write test: listModels() returns fallback on fetch timeout"
+        - "Write test: listModels() returns static catalog (CLAUDE_CODE_MODELS) in fallback"
+        - "Write test: warning is logged when fallback is used"
+      green:
+        - "Import static CLAUDE_CODE_MODELS, convert to AgentModelListing[] in catch block"
+        - "Add console.warn() for fallback"
+      refactor:
+        - "Extract fallback conversion logic into helper function"
+        - "Use structured logging instead of console.warn (log.warn or Logger service)"
+    estimatedEffort: "1h"
+
+  - id: "task-2-5"
+    phaseId: "phase-2"
+    title: "Write Unit Tests for AnthropicModelCatalogService"
+    description: "Comprehensive test coverage for all service methods: fetch, cache hits/misses, cache expiry, TTL configuration, error handling, fallback behavior, logging. Mock Anthropic API responses."
+    state: "Todo"
+    dependencies: ["task-2-4"]
+    acceptanceCriteria:
+      - "Test file created: anthropic-model-catalog.service.test.ts"
+      - "Tests cover: successful fetch, cache hit, cache miss, cache expiry, TTL refresh"
+      - "Tests cover: network timeout (AbortError), JSON parse error, invalid response"
+      - "Tests cover: fallback when API unavailable, fallback logging"
+      - "Tests cover: environment variable TTL override, invalid TTL value"
+      - "Tests cover: optional API key handling (with/without token)"
+      - "Mock strategy: mock fetch, mock Logger service, use real cache Map"
+      - "All tests passing"
+    tdd: null
+    estimatedEffort: "2h"
+
+  # Phase 3: Integration & Wiring
+  - id: "task-3-1"
+    phaseId: "phase-3"
+    title: "Integrate AnthropicModelCatalogService into AgentExecutorFactory"
+    description: "Add AnthropicModelCatalogService instance to the factory. Update listAvailableModels() to dispatch to Anthropic service for 'claude-code' executor and any other Claude-based executors. Maintain compatibility with existing OpenRouter and Together AI services."
+    state: "Todo"
+    dependencies: ["task-2-5"]
+    acceptanceCriteria:
+      - "AnthropicModelCatalogService instantiated in AgentExecutorFactory constructor"
+      - "Service injected with Logger dependency (or created without if standalone)"
+      - "listAvailableModels(executor, token) checks executor type"
+      - "For 'claude-code': call anthropicCatalog.listModels(token), return result"
+      - "For 'claude-code-interactive' (if exists): same behavior"
+      - "Fallback: if Anthropic service unavailable, return static CLAUDE_CODE_MODELS"
+      - "Existing OpenRouter and Together AI dispatch logic unchanged"
+      - "All executor types still supported and dispatched correctly"
+    tdd:
+      red:
+        - "Write test: listAvailableModels('claude-code') calls AnthropicModelCatalogService"
+        - "Write test: listAvailableModels() returns result from Anthropic service"
+        - "Write test: listAvailableModels('openrouter') still calls OpenRouter service (no regression)"
+      green:
+        - "Add anthropicCatalog property to factory"
+        - "Add if condition for 'claude-code' executor dispatch"
+      refactor:
+        - "Extract dispatch logic into separate method if too long"
+        - "Ensure type safety: executor parameter validation"
+    estimatedEffort: "1.5h"
+
+  - id: "task-3-2"
+    phaseId: "phase-3"
+    title: "Update All Executor Model Lists in agent-model-catalog.ts"
+    description: "Add new Claude model variants (Fable 5, Opus 4.8, Sonnet 5) to CLAUDE_CODE_MODELS, CURSOR_MODELS, COPILOT_CLI_MODELS, CLINE_MODELS, OPENROUTER_MODELS. Verify each executor's supported models based on executor documentation. Keep all old models for backward compatibility."
+    state: "Todo"
+    dependencies: ["task-1-1", "task-1-2"]
+    acceptanceCriteria:
+      - "CLAUDE_CODE_MODELS updated: includes Fable 5 (claude-fable-5), Opus 4.8 (claude-opus-4-8), Sonnet 5 (claude-sonnet-5), plus existing models"
+      - "CURSOR_MODELS updated: includes new Claude variants if supported by Cursor"
+      - "COPILOT_CLI_MODELS updated: includes new Claude variants if supported by Copilot"
+      - "CLINE_MODELS updated: includes new Claude variants if supported by Cline"
+      - "OPENROUTER_MODELS updated: includes new Claude variants if available on OpenRouter"
+      - "All old models retained (claude-opus-4-6, claude-sonnet-4-6, claude-haiku-4-5, etc.)"
+      - "No model IDs removed (backward compatibility preserved)"
+      - "Each model string is a valid Anthropic SDK model ID or executor-specific name"
+    tdd:
+      red:
+        - "Write test: CLAUDE_CODE_MODELS includes 'claude-fable-5'"
+        - "Write test: CLAUDE_CODE_MODELS includes 'claude-opus-4-8'"
+        - "Write test: CLAUDE_CODE_MODELS includes 'claude-sonnet-5'"
+        - "Write test: Old models still in CLAUDE_CODE_MODELS (backward compat)"
+      green:
+        - "Add new model strings to CLAUDE_CODE_MODELS array"
+      refactor: []
+    estimatedEffort: "45min"
+
+  # Phase 4: Static Catalog & Defaults
+  - id: "task-4-1"
+    phaseId: "phase-4"
+    title: "Update Default Model to claude-sonnet-5"
+    description: "Update DEFAULT_MODEL constant in settings-defaults.factory.ts from 'claude-sonnet-4-6' to 'claude-sonnet-5'. Verify the new default is in CLAUDE_CODE_MODELS (backward compat check)."
+    state: "Todo"
+    dependencies: ["task-3-2"]
+    acceptanceCriteria:
+      - "DEFAULT_MODEL in settings-defaults.factory.ts changed from 'claude-sonnet-4-6' to 'claude-sonnet-5'"
+      - "Verify: 'claude-sonnet-5' is in CLAUDE_CODE_MODELS (must be true)"
+      - "Existing user settings NOT modified (no migration logic needed)"
+      - "Only new Settings instances created after this change use the new default"
+      - "Settings tests updated to expect new default (see phase-6)"
+    tdd: null
+    estimatedEffort: "20min"
+
+  # Phase 5: TypeSpec & Documentation
+  - id: "task-5-1"
+    phaseId: "phase-5"
+    title: "Update TypeSpec Documentation in settings.tsp"
+    description: "Update JSDoc comments in settings.tsp (lines 60-66) to list all currently supported Claude models per executor. Ensure comments match the latest CLAUDE_CODE_MODELS and other executor lists from agent-model-catalog.ts."
+    state: "Todo"
+    dependencies: ["task-4-1"]
+    acceptanceCriteria:
+      - "TypeSpec comments updated: ModelConfiguration field modelId documentation"
+      - "Comments list all currently supported Claude models per executor"
+      - "Comments distinguish between different executors (claude-code, cursor, copilot-cli, cline, openrouter)"
+      - "Comments match CLAUDE_CODE_MODELS contents exactly (no drift)"
+      - "Default model documentation mentions claude-sonnet-5"
+      - "TypeSpec compiles without errors: pnpm tsp:compile succeeds"
+      - "Generated types are unchanged or improved (no regressions)"
+    tdd: null
+    estimatedEffort: "1h"
+
+  - id: "task-5-2"
+    phaseId: "phase-5"
+    title: "Add JSDoc to AnthropicModelCatalogService"
+    description: "Add comprehensive JSDoc comments to the service explaining cache strategy, fallback behavior, TTL configuration, error handling, authentication, and performance characteristics."
+    state: "Todo"
+    dependencies: ["task-2-5"]
+    acceptanceCriteria:
+      - "Class JSDoc: purpose, cache behavior, fallback strategy, TTL configuration"
+      - "Constructor JSDoc: parameters (timeout, ttl), initialization behavior"
+      - "listModels() JSDoc: parameter (token), return type, error handling, cache behavior"
+      - "Cache-related comments: TTL explanation, expiry check logic"
+      - "Fallback explanation: when fallback is triggered, what it returns, logging"
+      - "Example usage comment: show typical call pattern"
+      - "Performance note: response time expectations, cache hit latency"
+    tdd: null
+    estimatedEffort: "30min"
+
+  # Phase 6: Testing & Validation
+  - id: "task-6-1"
+    phaseId: "phase-6"
+    title: "Update Model Validation Tests in Settings Use-Cases"
+    description: "Add test cases for all newly added Claude models (Fable 5, Opus 4.8, Sonnet 5) to update-settings.use-case.test.ts. Ensure model validation works correctly for all models, old and new. Test that invalid models are rejected."
+    state: "Todo"
+    dependencies: ["task-3-2"]
+    acceptanceCriteria:
+      - "Test added: updating settings with 'claude-fable-5' succeeds"
+      - "Test added: updating settings with 'claude-opus-4-8' succeeds"
+      - "Test added: updating settings with 'claude-sonnet-5' succeeds"
+      - "Tests for backward compat: old models (opus-4-6, sonnet-4-6, haiku-4-5) still work"
+      - "Test added: invalid model ID is rejected with clear error message"
+      - "Test added: error message lists valid model alternatives from executor"
+      - "All tests passing"
+    tdd:
+      red:
+        - "Write test: updateSettings() with claude-fable-5 succeeds and persists model choice"
+        - "Write test: updateSettings() with claude-opus-4-8 succeeds"
+        - "Write test: updateSettings() with claude-sonnet-5 succeeds"
+        - "Write test: updateSettings() with old model (sonnet-4-6) still works"
+        - "Write test: updateSettings() with invalid model is rejected"
+      green:
+        - "Test passes with existing validation logic (use-case calls factory.getSupportedModels())"
+      refactor:
+        - "Extract model validation into shared test helper if needed"
+    estimatedEffort: "1.5h"
+
+  - id: "task-6-2"
+    phaseId: "phase-6"
+    title: "Update Default Model Tests in initialize-settings.use-case.test.ts"
+    description: "Update test expectations in initialize-settings.use-case.test.ts to expect DEFAULT_MODEL as 'claude-sonnet-5' instead of 'claude-sonnet-4-6'. Verify new default is used for fresh Settings initialization."
+    state: "Todo"
+    dependencies: ["task-4-1"]
+    acceptanceCriteria:
+      - "Test updated: initializeSettings() returns default model 'claude-sonnet-5'"
+      - "Test assertion changed: expect(settings.modelId).toBe('claude-sonnet-5')"
+      - "No other test logic changes required (just assertion update)"
+      - "Test passes with new default"
+      - "All tests passing"
+    tdd: null
+    estimatedEffort: "20min"
+
+  - id: "task-6-3"
+    phaseId: "phase-6"
+    title: "Write Integration Tests for Model Selection"
+    description: "Add integration tests validating end-to-end model selection: fetch from API → cache → selection → validation. Test both successful paths and error/fallback paths. Use real AgentExecutorFactory and AnthropicModelCatalogService."
+    state: "Todo"
+    dependencies: ["task-3-1", "task-6-1"]
+    acceptanceCriteria:
+      - "Test file created: agent-executor-factory.service.test.ts (new or updated)"
+      - "Test: listAvailableModels('claude-code') returns all Claude models from service"
+      - "Test: returned models include new models (Fable 5, Opus 4.8, Sonnet 5)"
+      - "Test: returned models include old models (backward compat)"
+      - "Test: model selection validation uses returned model list"
+      - "Test: invalid model is rejected as not in supported list"
+      - "Test: API failure triggers fallback, returns static list"
+      - "Test: cache is used on repeated calls within TTL"
+      - "All tests passing, no regressions in existing factory tests"
+    tdd:
+      red:
+        - "Write test: listAvailableModels('claude-code') includes all new Claude models"
+        - "Write test: model validation passes for all models in listAvailableModels()"
+        - "Write test: model validation fails for model not in listAvailableModels()"
+      green:
+        - "Existing implementation should pass these tests if integration is correct"
+      refactor:
+        - "Extract test helpers for model list setup"
+    estimatedEffort: "2h"
+
+  # Phase 7: UI/CLI Verification & Polish
+  - id: "task-7-1"
+    phaseId: "phase-7"
+    title: "Verify CLI Model Selection Prompts"
+    description: "Test CLI commands (shep settings model, shep feat new --model) to ensure they display all available models from the catalog, accept new model IDs, and validate correctly. Run interactive tests locally."
+    state: "Todo"
+    dependencies: ["task-6-3"]
+    acceptanceCriteria:
+      - "CLI command: shep settings model shows interactive prompt with all Claude models"
+      - "Prompt includes new models: claude-fable-5, claude-opus-4-8, claude-sonnet-5"
+      - "Prompt includes old models for backward compat"
+      - "User can select any model from the list"
+      - "CLI command: shep feat new --model claude-sonnet-5 works without error"
+      - "CLI command: shep feat new --model invalid-model is rejected with helpful error"
+      - "Error message suggests valid alternatives from catalog"
+    tdd: null
+    estimatedEffort: "1.5h"
+
+  - id: "task-7-2"
+    phaseId: "phase-7"
+    title: "Verify Web UI Model Picker"
+    description: "Test web UI components that render model picker (if exists). Verify model list is fetched from API or uses catalog data. Check that UI displays new and old Claude models. Update Storybook stories if present."
+    state: "Todo"
+    dependencies: ["task-6-3"]
+    acceptanceCriteria:
+      - "Web UI component renders all available models from catalog/API"
+      - "New models (Fable 5, Opus 4.8, Sonnet 5) displayed in picker"
+      - "Old models displayed for backward compat"
+      - "User can select any model without errors"
+      - "Model selection is validated and persisted"
+      - "Storybook story updated or created with all model variants (Default, Loading, Error states)"
+    tdd: null
+    estimatedEffort: "1.5h"
+
+  - id: "task-7-3"
+    phaseId: "phase-7"
+    title: "Run Full Local Test Suite"
+    description: "Run all local tests (unit, integration, E2E if applicable) to ensure no regressions. Verify linting, typecheck, and build pass. Run tests with both old and new default model."
+    state: "Todo"
+    dependencies: ["task-7-1", "task-7-2"]
+    acceptanceCriteria:
+      - "pnpm test:unit passes (no failures)"
+      - "pnpm test:int passes (no failures)"
+      - "pnpm typecheck passes (no type errors)"
+      - "pnpm lint passes (no linting errors)"
+      - "pnpm build passes (no compilation errors)"
+      - "pnpm build:storybook passes (if applicable)"
+      - "All new tests passing, all old tests passing (no regressions)"
+    tdd: null
+    estimatedEffort: "1h"
+
+  - id: "task-7-4"
+    phaseId: "phase-7"
+    title: "Document Catalog Service in JSDoc and README"
+    description: "Add inline documentation explaining how the model catalog works, when APIs are called, when fallback is used, cache TTL behavior. Update any README or CONTRIBUTING sections related to agent/model configuration."
+    state: "Todo"
+    dependencies: ["task-5-2", "task-7-3"]
+    acceptanceCriteria:
+      - "JSDoc comments complete in AnthropicModelCatalogService"
+      - "AgentExecutorFactory.listAvailableModels() documented with dispatch logic"
+      - "README or docs updated with model availability/cache behavior"
+      - "Example: environment variable SHEP_MODEL_CATALOG_CACHE_TTL_MS documented"
+      - "Example: how to add new models in future documented"
+    tdd: null
+    estimatedEffort: "45min"
+
+# Total effort estimate
+totalEstimate: "22h"
+
+# Open questions
+openQuestions: []
+
+# Markdown content (the full tasks document)
+content: |
+  ## Summary
+
+  This feature requires 16 tasks across 7 phases to deliver API-driven Claude model discovery
+  with fallback, comprehensive catalog updates across all executors, and validation testing.
+
+  **Phase 1** establishes facts about Anthropic API and current catalog state.
+  **Phase 2** builds the core AnthropicModelCatalogService with fetch, cache, and fallback.
+  **Phase 3** wires the service into the factory, making it the source of truth.
+  **Phase 4** updates static lists to include new models and changes the default to Sonnet 5.
+  **Phase 5** synchronizes TypeSpec documentation with the catalog.
+  **Phase 6** adds comprehensive tests covering all models (old and new) and validation flows.
+  **Phase 7** verifies CLI and web UI integration, runs full test suite, and documents the pattern.
+
+  Key design: hybrid API-driven discovery with in-process 1-hour TTL cache + static fallback ensures
+  users always see a model list (offline resilience), new models appear within 1 hour (freshness),
+  and there are no external dependencies (simplicity). Pattern matches existing OpenRouter and Together AI
+  implementations. No breaking changes for existing user settings; old models remain supported.
+
+  Total estimated effort: **22 hours** across 2-3 days of focused work.
