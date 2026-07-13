@@ -249,6 +249,29 @@ describe('getSkills', () => {
     expect(skills[1].source).toBe('project');
   });
 
+  it('deduplicates two global skills that declare the same name', async () => {
+    // Two distinct directories can advertise the same frontmatter `name`.
+    // The list must expose it once so React keys (keyed on name) stay unique.
+    const first = join(homeDir, '.claude', 'skills', 'connect-chrome');
+    await mkdir(first, { recursive: true });
+    await writeFile(
+      join(first, 'SKILL.md'),
+      makeSkillMd({ name: 'open-gstack-browser', description: 'Launch GStack Browser' })
+    );
+
+    const second = join(homeDir, '.claude', 'skills', 'open-gstack-browser');
+    await mkdir(second, { recursive: true });
+    await writeFile(
+      join(second, 'SKILL.md'),
+      makeSkillMd({ name: 'open-gstack-browser', description: 'Launch GStack Browser (alt)' })
+    );
+
+    const skills = await getSkills(projectRoot, homeDir);
+    const matches = skills.filter((s) => s.name === 'open-gstack-browser');
+    expect(matches).toHaveLength(1);
+    expect(new Set(skills.map((s) => s.name)).size).toBe(skills.length);
+  });
+
   it('sorts results alphabetically by name', async () => {
     const names = ['zebra-skill', 'alpha-skill', 'middle-skill'];
     for (const name of names) {
