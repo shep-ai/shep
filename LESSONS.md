@@ -1142,3 +1142,12 @@ A value import forces the bundler to actually include the module, dragging Node 
 1. From a client component (or anything Storybook bundles), import **only `type`** from an fs-backed / Node-built-in-importing lib module. Never import a runtime value (function, `const`, class) from it.
 2. When a client component needs a **pure** helper that logically belongs "next to" server-only code, put the helper in its own **browser-safe module** (no `node:*` / `fs` / `js-yaml` imports) and import it from both sides. Here: `lib/skill-package.ts` holds `derivePackage` + `UNGROUPED_PACKAGE_LABEL`, imported by both the client component and (potentially) the server module.
 3. `pnpm typecheck` + `pnpm build` (CLI/`tsc`) will **not** catch this — only the browser bundle does. For any web-UI change, run `pnpm build:storybook` locally before pushing (already required by `.claude/rules/cicd.md`). Treat a value-import from a server-only lib as the first suspect when the preview build fails with `"X" is not exported by "__vite-browser-external"`.
+
+## Deduplicate a Merged List Across the WHOLE Set, Not Just One Source vs Another
+
+`getSkills` merges project + global skills and used them as React keys (`key={skill.name}`). It deduped **project-vs-global** only (`seen = new Set(projectSkills.map(...))`, then `globalSkills.filter((s) => !seen.has(s.name))`) but never added accepted global names back to `seen`. Two global skill directories (`connect-chrome` and `open-gstack-browser`) both declared `name: open-gstack-browser`, so both survived → duplicate React keys → runtime "Encountered two children with the same key" error (only visible in the browser console / Next.js dev overlay, not in tests or `tsc`).
+
+**Rules:**
+1. When deduping a **merged** collection, dedupe across the entire combined set — add every accepted item's key back into the `seen` set as you go, not just the keys from the first source.
+2. Two distinct on-disk entries can advertise the **same logical id** (frontmatter `name`). Never assume directory names guarantee uniqueness of the id you key on.
+3. Duplicate-key bugs don't fail `tsc`/vitest — surface them by loading the real page and watching the **browser console** (Playwright `page.on('console')`) during evidence capture.
