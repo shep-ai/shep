@@ -2,25 +2,16 @@ name: "claude-model-registry"
 number: 104
 branch: "feat/104-claude-model-registry"
 oneLiner: "Register all currently supported Claude models across all agent executors"
-summary: >
-  Audit the codebase to identify all locations where Claude models are defined,
-  documented, and validated, then systematically ensure all released Claude
-  models (Fable 5, Opus 4.8, Sonnet 5, and variants) are present and consistent
-  across claude-code, cursor, and other agent executor contexts. Update TypeSpec
-  documentation, default model selection, test coverage, and presentation layers
-  to match the authoritative agent-model-catalog source of truth.
+summary: "Audit the codebase to identify all locations where Claude models are defined, documented, and validated, then systematically ensure all released Claude models (Fable 5, Opus 4.8, Sonnet 5, and variants) are present and consistent across claude-code, cursor, and other agent executor contexts. Update TypeSpec documentation, default model selection, test coverage, and presentation layers to match the authoritative agent-model-catalog source of truth.\n"
 phase: "Requirements"
 sizeEstimate: "M"
-
 relatedFeatures: []
-
 technologies:
   - "TypeScript"
   - "TypeSpec (tsp)"
   - "Claude SDK models (Anthropic)"
   - "Vitest"
   - "React / Next.js"
-
 relatedLinks:
   - title: "Agent model catalog (source of truth)"
     url: "file:///packages/core/src/infrastructure/services/agents/common/agent-model-catalog.ts"
@@ -28,337 +19,54 @@ relatedLinks:
     url: "file:///tsp/domain/entities/settings.tsp"
   - title: "Agent system architecture"
     url: "file:///docs/architecture/agent-system.md"
-
 openQuestions:
   - question: "Should claude-sonnet-5 become the new default model?"
     resolved: true
     options:
       - option: "Keep claude-sonnet-4-6 as default"
-        description: >
-          Retains backward compatibility with existing user configurations and
-          persisted settings. Avoids forcing existing users to re-evaluate their
-          model choice. Safer for established workflows where users have tuned
-          settings to current default. Downside: users must manually opt-in to
-          newer models; new installs don't benefit from latest improvements.
+        description: "Retains backward compatibility with existing user configurations and persisted settings. Avoids forcing existing users to re-evaluate their model choice. Safer for established workflows where users have tuned settings to current default. Downside: users must manually opt-in to newer models; new installs don't benefit from latest improvements.\n"
         selected: false
       - option: "Update to claude-sonnet-5"
-        description: >
-          Adopts latest stable Claude model for all new installations. Provides
-          better performance, cost, and quality for new users. Existing settings
-          preserve their explicit model choice (only new defaults change). Aligns
-          CLI/web UI behavior with latest Anthropic releases. Claude Sonnet 5
-          is proven stable and production-ready as of Feb 2025.
+        description: "Adopts latest stable Claude model for all new installations. Provides better performance, cost, and quality for new users. Existing settings preserve their explicit model choice (only new defaults change). Aligns CLI/web UI behavior with latest Anthropic releases. Claude Sonnet 5 is proven stable and production-ready as of Feb 2025.\n"
         selected: true
-    selectionRationale: >
-      Claude Sonnet 5 is the recommended stable model as of February 2025. It
-      offers better performance and quality than Sonnet 4.6 while maintaining
-      cost competitiveness. New users should benefit from these improvements on
-      first install. Existing user settings are not retroactively changed,
-      preserving their explicit choices. This is a low-risk upgrade that improves
-      UX without breaking existing installations.
+    selectionRationale: "Claude Sonnet 5 is the recommended stable model as of February 2025. It offers better performance and quality than Sonnet 4.6 while maintaining cost competitiveness. New users should benefit from these improvements on first install. Existing user settings are not retroactively changed, preserving their explicit choices. This is a low-risk upgrade that improves UX without breaking existing installations.\n"
     answer: "Update to claude-sonnet-5"
-
   - question: "Should all models be tested or only the new additions?"
     resolved: true
     options:
       - option: "Test only new models (Fable 5, Opus 4.8, Sonnet 5)"
-        description: >
-          Faster execution; focuses test effort on unknown/untested code paths.
-          Assumes existing model tests are already passing and don't need
-          re-validation. Downside: misses regressions in existing models or
-          inconsistent handling across old and new variants.
+        description: "Faster execution; focuses test effort on unknown/untested code paths. Assumes existing model tests are already passing and don't need re-validation. Downside: misses regressions in existing models or inconsistent handling across old and new variants.\n"
         selected: false
       - option: "Test all Claude models in catalog"
-        description: >
-          Comprehensive coverage of all models in CLAUDE_CODE_MODELS list.
-          Catches inconsistencies between old and new model handling. Verifies
-          model selection, validation, and fallback logic work uniformly across
-          entire catalog. Ensures regression-free updates. Slightly longer test
-          runtime, but necessary for production reliability.
+        description: "Comprehensive coverage of all models in CLAUDE_CODE_MODELS list. Catches inconsistencies between old and new model handling. Verifies model selection, validation, and fallback logic work uniformly across entire catalog. Ensures regression-free updates. Slightly longer test runtime, but necessary for production reliability.\n"
         selected: true
-    selectionRationale: >
-      This feature is about catalog consistency and completeness. Testing all
-      models ensures no model is treated differently or fails validation.
-      Regression testing (old models still work) is as important as validating
-      new additions. Given the catalog has multiple models per executor, uniform
-      handling is critical to prevent user-facing bugs. Test time is acceptable
-      for a M-sized feature.
+    selectionRationale: "This feature is about catalog consistency and completeness. Testing all models ensures no model is treated differently or fails validation. Regression testing (old models still work) is as important as validating new additions. Given the catalog has multiple models per executor, uniform handling is critical to prevent user-facing bugs. Test time is acceptable for a M-sized feature.\n"
     answer: "Test all Claude models in catalog"
-
   - question: "Should we update documentation comments in TypeSpec inline or separately?"
     resolved: true
     options:
       - option: "Update inline in spec.tsp as part of this feature"
-        description: >
-          Single change set; all model lists and documentation stay in sync in
-          one commit. Easier code review (reviewer sees all changes together).
-          Risk: if TypeSpec edits require regenerating generated code, that
-          coupling could cause merge conflicts in parallel work.
+        description: "Single change set; all model lists and documentation stay in sync in one commit. Easier code review (reviewer sees all changes together). Risk: if TypeSpec edits require regenerating generated code, that coupling could cause merge conflicts in parallel work.\n"
         selected: true
       - option: "Create a separate documentation task to follow"
-        description: >
-          Decouples model catalog updates from documentation. Allows feature to
-          merge faster without waiting for doc reviews. Downside: documentation
-          becomes stale immediately; risk of merge conflicts if both catalog and
-          doc changes target the same line ranges.
+        description: "Decouples model catalog updates from documentation. Allows feature to merge faster without waiting for doc reviews. Downside: documentation becomes stale immediately; risk of merge conflicts if both catalog and doc changes target the same line ranges.\n"
         selected: false
-    selectionRationale: >
-      TypeSpec comments are part of the domain contract. They must be accurate
-      and up-to-date to guide developers and external consumers. Updating them
-      inline keeps the catalog and its documentation synchronized and is part of
-      the core feature scope. No reason to defer.
+    selectionRationale: "TypeSpec comments are part of the domain contract. They must be accurate and up-to-date to guide developers and external consumers. Updating them inline keeps the catalog and its documentation synchronized and is part of the core feature scope. No reason to defer.\n"
     answer: "Update inline in spec.tsp as part of this feature"
-
   - question: "Which executors require Claude model updates?"
     resolved: true
     options:
       - option: "Only claude-code executor (primary use case)"
-        description: >
-          Focuses effort on the main SDLC workflow. Other executors (cursor,
-          copilot, cline, openrouter) already have their models defined. Lowest
-          scope, fastest delivery. Downside: incomplete registry for multi-
-          executor setups; some executors remain outdated.
+        description: "Focuses effort on the main SDLC workflow. Other executors (cursor, copilot, cline, openrouter) already have their models defined. Lowest scope, fastest delivery. Downside: incomplete registry for multi- executor setups; some executors remain outdated.\n"
         selected: false
       - option: "All executors that include Claude models (code, cursor, copilot, cline, openrouter)"
-        description: >
-          Ensures every executor in the catalog offering Claude models has the
-          latest releases. Prevents fragmentation (cursor might have Sonnet 5
-          but code doesn't). Higher effort but comprehensive and consistent.
-          Users of any executor benefit from latest models.
+        description: "Ensures every executor in the catalog offering Claude models has the latest releases. Prevents fragmentation (cursor might have Sonnet 5 but code doesn't). Higher effort but comprehensive and consistent. Users of any executor benefit from latest models.\n"
         selected: true
-    selectionRationale: >
-      The catalog is a shared source of truth used by all executors. If Fable 5
-      and Sonnet 5 are released and supported by multiple executors (cursor,
-      copilot, cline, openrouter), they should all include them. Partial updates
-      create confusion and inconsistent UX. The catalog already has placeholder
-      entries for these; we just need to ensure each executor's list reflects
-      what's actually available to it. Proportional effort for consistency.
+    selectionRationale: "The catalog is a shared source of truth used by all executors. If Fable 5 and Sonnet 5 are released and supported by multiple executors (cursor, copilot, cline, openrouter), they should all include them. Partial updates create confusion and inconsistent UX. The catalog already has placeholder entries for these; we just need to ensure each executor's list reflects what's actually available to it. Proportional effort for consistency.\n"
     answer: "All executors that include Claude models (code, cursor, copilot, cline, openrouter)"
-
-content: |
-  ## Problem Statement
-
-  The Shep AI CLI maintains a static model catalog in `agent-model-catalog.ts`
-  as the authoritative source of truth for all AI models available to each
-  agent executor type (claude-code, cursor, gemini, copilot, cline, openrouter,
-  together-ai, ollama).
-
-  While the catalog has been **partially updated** with new Claude models (Fable
-  5, Opus 4.8, Sonnet 5), inconsistencies exist across the codebase:
-
-  1. **TypeSpec documentation is outdated** — `settings.tsp` line 62-65 lists only
-     three old Claude models per executor, not the full catalog
-  2. **Default model may be obsolete** — `claude-sonnet-4-6` default in factory and
-     TypeSpec may not reflect latest stable recommendation
-  3. **Test coverage is incomplete** — existing tests validate only old models
-     (opus-4.6, sonnet-4.6, haiku-4.5), not newly added variants
-  4. **Presentation layers may be outdated** — web UI model pickers, CLI prompts,
-     and Storybook stories may not reflect latest catalog without explicit updates
-  5. **Cross-executor inconsistency risk** — some executors (cursor, copilot,
-     cline, openrouter) may have complete lists while others (code) don't
-
-  This affects user experience: users cannot select newer, faster, or cheaper
-  models that should be available; default model selection misses improvements
-  in latest releases; feature gates may reject valid models submitted via API or
-  CLI.
-
-  ## Success Criteria
-
-  - [ ] **Catalog audit complete**: All locations where models are defined
-    (catalog, TypeSpec comments, defaults factory, tests, CLI/web UI components)
-    are identified and documented
-  - [ ] **Claude Code executor updated**: CLAUDE_CODE_MODELS includes Fable 5,
-    Opus 4.8, Sonnet 5, and all current Anthropic Claude variants (no removals,
-    only additions for backward compatibility)
-  - [ ] **Multi-executor consistency**: All executors offering Claude models
-    (cursor, copilot, cline, openrouter) are reviewed and updated to include
-    latest Claude releases
-  - [ ] **TypeSpec documentation synchronized**: Comments in `settings.tsp`
-    ModelConfiguration JSDoc (lines 60-66) accurately list all supported models
-    per executor from the current catalog
-  - [ ] **Default model verified or updated**: Default model in
-    `settings-defaults.factory.ts` and `settings.tsp` is a currently supported,
-    recommended model (Claude Sonnet 5 recommended)
-  - [ ] **All tests passing**: Unit and integration tests covering settings
-    initialization, model selection, validation, and defaults all pass with
-    both old and new models
-  - [ ] **Test coverage expanded**: New test cases validate all newly added
-    Claude models can be selected and validated correctly
-  - [ ] **UI/CLI components reflect catalog**: Web UI model picker, CLI model
-    selection prompts, and Storybook stories all render the complete list from
-    the authoritative catalog (via server actions or direct imports)
-  - [ ] **No breaking changes**: Existing user settings with old model IDs
-    (claude-opus-4-6, claude-sonnet-4-6, claude-haiku-4-5) continue to work;
-    only new installations or explicit model changes adopt new defaults
-  - [ ] **Zero ambiguity**: Every model string in the codebase that represents
-    a Claude model is either (a) defined as a constant in the catalog, or (b)
-    derived from catalog data; no hardcoded model names in presentation layers
-
-  ## Functional Requirements
-
-  - **FR-1**: Maintain authoritative model catalog
-    - The static `CLAUDE_CODE_MODELS`, `CURSOR_MODELS`, `COPILOT_CLI_MODELS`,
-      `CLINE_MODELS`, and `OPENROUTER_MODELS` arrays in `agent-model-catalog.ts`
-      must be the single source of truth for all supported models per executor
-    - Each model ID must be a valid Anthropic SDK model identifier or executor-
-      specific model name
-    - Models are added/removed only when Anthropic or the executor publishes
-      official support; catalog must not include speculative future models
-
-  - **FR-2**: Ensure model validation is consistent
-    - `IAgentExecutorProvider.getSupportedModels()` must return the exact list
-      from the catalog for that executor
-    - Settings use-cases must validate selected models against the executor's
-      supported list before persisting
-    - Invalid model selections must be rejected with a clear error message
-      indicating valid alternatives from the catalog
-
-  - **FR-3**: Keep TypeSpec documentation accurate
-    - JSDoc comments in `tsp/domain/entities/settings.tsp` ModelConfiguration
-      (lines 60-66) must list all supported models per executor, matching the
-      current catalog exactly
-    - Comments must be updated whenever the catalog is updated to avoid
-      documentation drift
-
-  - **FR-4**: Support model selection via multiple interfaces
-    - CLI: `shep settings model` command must present all catalog models for
-      the configured executor in an interactive prompt
-    - CLI: `shep feat new --model <model>` must validate the model ID against
-      the executor's supported list
-    - Web UI: model picker component must render all available models from the
-      catalog via the models API endpoint
-    - API: `/api/settings/models` endpoint must return the full catalog list
-      for the configured executor
-
-  - **FR-5**: Provide sensible model defaults
-    - First-time initialization must set the default model to a current,
-      recommended, stable Claude model (claude-sonnet-5 recommended)
-    - Default must be in the supported list for the configured executor
-    - Existing settings preserve their explicitly set model; only new defaults
-      change with releases
-
-  - **FR-6**: Validate models at use-case invocation time
-    - Before executing any SDLC workflow (feature creation, settings update,
-      etc.), the use case must verify the selected model is in the executor's
-      supported list
-    - If invalid, the use case must throw a descriptive error with the full
-      list of valid models
-
-  ## Non-Functional Requirements
-
-  - **NFR-1**: No breaking changes for existing users
-    - Users with settings containing old model IDs must not experience errors
-    - Old models (claude-opus-4-6, claude-sonnet-4-6, claude-haiku-4-5) must
-      remain in the catalog indefinitely for backward compatibility
-    - Settings migration is not required; users can continue using old models
-      if they prefer
-
-  - **NFR-2**: Model lists must be maintainable
-    - Catalog entries are data (string arrays), not code, making future updates
-      low-friction
-    - Adding a new model requires changes only to the catalog constant and
-      TypeSpec comments, not scattered across the codebase
-    - Build-time validation (e.g., TypeSpec codegen) should not be necessary
-      to add a model; catalog changes are runtime updates
-
-  - **NFR-3**: Performance and response time
-    - Model listing API (`/api/settings/models`) must return within <100ms
-    - Model validation during settings update must complete in <50ms
-    - CLI interactive prompts must render model lists instantly (no loading)
-
-  - **NFR-4**: Type safety and correctness
-    - All model ID strings must be typed as known constants or union types, not
-      generic `string`; IDE autocomplete should suggest valid models
-    - Settings entity and use-cases must be type-safe: TypeScript compiler must
-      prevent invalid model IDs at compile time where feasible
-
-  - **NFR-5**: Testing and validation
-    - Unit tests must cover all newly added Claude models
-    - Integration tests must validate model selection, validation, and defaults
-      with both old and new models
-    - Test suite must pass on all platforms (Windows, macOS, Linux)
-
-  - **NFR-6**: Documentation clarity
-    - Model list comments in TypeSpec must be clear and up-to-date
-    - CLI help text must reference the supported models for the executor
-    - Error messages must list valid alternatives when model selection fails
-
-  ## Product Decisions & AI Recommendations
-
-  | # | Question | AI Recommendation | Rationale |
-  | - | -------- | ----------------- | --------- |
-  | 1 | Should claude-sonnet-5 become the new default model? | Update to claude-sonnet-5 | Claude Sonnet 5 is the latest stable model as of Feb 2025, offering better performance and cost. New users benefit immediately; existing settings preserve explicit user choices. Low-risk upgrade. |
-  | 2 | Should all models be tested or only new additions? | Test all Claude models in catalog | Ensures no regressions in existing models and uniform handling across variants. Catalog consistency is the core feature. Acceptable test-time increase for M-sized feature. |
-  | 3 | Should documentation in TypeSpec be updated inline? | Update inline as part of feature | TypeSpec comments are part of domain contract; must stay accurate and in sync with catalog in one change set. Prevents documentation drift. |
-  | 4 | Which executors need Claude model updates? | All executors with Claude models | Ensures consistent, complete registry across claude-code, cursor, copilot, cline, openrouter. Prevents fragmentation and user confusion. Proportional effort for comprehensive fix. |
-
-  ## Affected Areas
-
-  | Area | Impact | Reasoning |
-  | ---- | ------ | --------- |
-  | `packages/core/src/infrastructure/services/agents/common/agent-model-catalog.ts` | **High** | Static catalog — source of truth for all model lists. Every executor's constant list (CLAUDE_CODE_MODELS, CURSOR_MODELS, etc.) is validated and updated here. |
-  | `tsp/domain/entities/settings.tsp` | **High** | JSDoc comments (lines 60-66) document supported models per executor. Must be updated to match current catalog. Default model value (line 74) may change. |
-  | `packages/core/src/domain/factories/settings-defaults.factory.ts` | **Medium** | Creates default Settings with DEFAULT_MODEL constant. If default changes to claude-sonnet-5, this factory must be updated. |
-  | `packages/core/src/infrastructure/services/settings.service.ts` | **Low** | Loads/stores settings; no changes needed unless Settings schema evolves. Validation happens in use-cases. |
-  | `tests/unit/application/use-cases/update-settings.use-case.test.ts` | **Medium** | Tests model validation logic with hardcoded model names. Must be updated to test old and new models, new default. |
-  | `tests/unit/application/use-cases/initialize-settings.use-case.test.ts` | **Medium** | Asserts default model equals "claude-sonnet-4-6". If default changes to claude-sonnet-5, test expectations must change. |
-  | `src/presentation/web/app/api/settings/models.ts` or similar | **Medium** | API endpoint listing available models. Must consume the catalog or return dynamically from executor. |
-  | `src/presentation/web/components/*ModelPicker*` | **Low** | React components rendering model dropdowns. Should import from catalog or consume models API. |
-  | `src/presentation/web/components/*/\*.stories.tsx` | **Low** | Storybook stories for model-picker UI. Should mock using actual catalog data, not hardcoded strings. |
-  | CLI commands (`shep settings model`, `shep feat new --model`) | **Medium** | Interactive prompts must present all catalog models. Validation must reject invalid models with helpful error. |
-  | `packages/core/src/infrastructure/services/agents/common/executors/cursor-executor.service.ts` | **High** | Cursor supports Claude models; CURSOR_MODELS constant must include all Claude variants applicable to Cursor executor. |
-  | Other executor implementations (copilot, cline, openrouter) | **High** | Each executor offering Claude models must have complete list including Fable 5, Opus 4.8, Sonnet 5. |
-
-  ## Dependencies
-
-  ### Code Dependencies
-  - **IAgentExecutorProvider** port — all model validation flows through this
-    interface; `getSupportedModels()` must return data from the catalog
-  - **Settings domain model and use-cases** — model defaults and validation
-    logic depend on Settings entity (ModelConfiguration) and related use-cases
-  - **TypeSpec codegen** — changes to `tsp/domain/entities/settings.tsp` must
-    be compiled via `pnpm tsp:compile` to regenerate type definitions
-
-  ### External Dependencies
-  - **Anthropic Claude model releases** — feature depends on which models
-    Anthropic has publicly released and stabilized. As of Feb 2025: Fable 5,
-    Opus 4.8, Sonnet 5, Haiku 4.5 (and variants like Opus 4.7)
-  - **Executor API documentation** — cursor, copilot, cline, openrouter model
-    availability must be verified from each executor's official docs
-
-  ## Size Estimate
-
-  **M (Medium — 2-3 days of focused work)**
-
-  ### Justification
-
-  1. **Inventory & Analysis** (2-4 hours):
-     - Audit all locations where models are defined/documented/tested
-     - Cross-reference each executor's supported Claude models against catalog
-     - Document gaps and inconsistencies
-
-  2. **Catalog & Documentation Updates** (4-6 hours):
-     - Update TypeSpec comments in settings.tsp to match current catalog
-     - Update default model constant if needed (sonnet-4-6 → sonnet-5)
-     - Update settings-defaults.factory.ts if default changes
-     - Update multi-executor model lists (cursor, copilot, cline, openrouter)
-
-  3. **Test Updates** (3-4 hours):
-     - Add test cases for newly added Claude models (Fable 5, Opus 4.8, Sonnet 5)
-     - Update existing tests to validate against new default (if changed)
-     - Ensure backward compatibility tests pass for old models
-
-  4. **UI/CLI Verification** (2-3 hours):
-     - Verify web UI model picker reflects full catalog
-     - Test CLI model selection prompts show all models
-     - Update Storybook stories to use catalog data
-
-  5. **Integration Testing & CI** (1-2 hours):
-     - Run full test suite locally
-     - Verify no regressions in model validation, selection, defaults
-     - Ensure CI passes before push
-
-  **Total: 12-19 hours → 2-3 days**
-
-  Low complexity (data updates and test coverage), high impact (users immediately
-  benefit from newer models, consistent catalog across all executors).
+content: "## Problem Statement\n\nThe Shep AI CLI maintains a static model catalog in `agent-model-catalog.ts`\nas the authoritative source of truth for all AI models available to each\nagent executor type (claude-code, cursor, gemini, copilot, cline, openrouter,\ntogether-ai, ollama).\n\nWhile the catalog has been **partially updated** with new Claude models (Fable\n5, Opus 4.8, Sonnet 5), inconsistencies exist across the codebase:\n\n1. **TypeSpec documentation is outdated** — `settings.tsp` line 62-65 lists only\n   three old Claude models per executor, not the full catalog\n2. **Default model may be obsolete** — `claude-sonnet-4-6` default in factory and\n   TypeSpec may not reflect latest stable recommendation\n3. **Test coverage is incomplete** — existing tests validate only old models\n   (opus-4.6, sonnet-4.6, haiku-4.5), not newly added variants\n4. **Presentation layers may be outdated** — web UI model pickers, CLI prompts,\n   and Storybook stories may not reflect latest catalog without explicit updates\n5. **Cross-executor inconsistency risk** — some executors (cursor, copilot,\n   cline, openrouter) may have complete lists while others (code) don't\n\nThis affects user experience: users cannot select newer, faster, or cheaper\nmodels that should be available; default model selection misses improvements\nin latest releases; feature gates may reject valid models submitted via API or\nCLI.\n\n## Success Criteria\n\n- [ ] **Catalog audit complete**: All locations where models are defined\n  (catalog, TypeSpec comments, defaults factory, tests, CLI/web UI components)\n  are identified and documented\n- [ ] **Claude Code executor updated**: CLAUDE_CODE_MODELS includes Fable 5,\n  Opus 4.8, Sonnet 5, and all current Anthropic Claude variants (no removals,\n  only additions for backward compatibility)\n- [ ] **Multi-executor consistency**: All executors offering Claude models\n  (cursor, copilot, cline, openrouter) are reviewed and updated to include\n  latest Claude releases\n- [ ] **TypeSpec documentation synchronized**: Comments in `settings.tsp`\n  ModelConfiguration JSDoc (lines 60-66) accurately list all supported models\n  per executor from the current catalog\n- [ ] **Default model verified or updated**: Default model in\n  `settings-defaults.factory.ts` and `settings.tsp` is a currently supported,\n  recommended model (Claude Sonnet 5 recommended)\n- [ ] **All tests passing**: Unit and integration tests covering settings\n  initialization, model selection, validation, and defaults all pass with\n  both old and new models\n- [ ] **Test coverage expanded**: New test cases validate all newly added\n  Claude models can be selected and validated correctly\n- [ ] **UI/CLI components reflect catalog**: Web UI model picker, CLI model\n  selection prompts, and Storybook stories all render the complete list from\n  the authoritative catalog (via server actions or direct imports)\n- [ ] **No breaking changes**: Existing user settings with old model IDs\n  (claude-opus-4-6, claude-sonnet-4-6, claude-haiku-4-5) continue to work;\n  only new installations or explicit model changes adopt new defaults\n- [ ] **Zero ambiguity**: Every model string in the codebase that represents\n  a Claude model is either (a) defined as a constant in the catalog, or (b)\n  derived from catalog data; no hardcoded model names in presentation layers\n\n## Functional Requirements\n\n- **FR-1**: Maintain authoritative model catalog\n  - The static `CLAUDE_CODE_MODELS`, `CURSOR_MODELS`, `COPILOT_CLI_MODELS`,\n    `CLINE_MODELS`, and `OPENROUTER_MODELS` arrays in `agent-model-catalog.ts`\n    must be the single source of truth for all supported models per executor\n  - Each model ID must be a valid Anthropic SDK model identifier or executor-\n    specific model name\n  - Models are added/removed only when Anthropic or the executor publishes\n    official support; catalog must not include speculative future models\n\n- **FR-2**: Ensure model validation is consistent\n  - `IAgentExecutorProvider.getSupportedModels()` must return the exact list\n    from the catalog for that executor\n  - Settings use-cases must validate selected models against the executor's\n    supported list before persisting\n  - Invalid model selections must be rejected with a clear error message\n    indicating valid alternatives from the catalog\n\n- **FR-3**: Keep TypeSpec documentation accurate\n  - JSDoc comments in `tsp/domain/entities/settings.tsp` ModelConfiguration\n    (lines 60-66) must list all supported models per executor, matching the\n    current catalog exactly\n  - Comments must be updated whenever the catalog is updated to avoid\n    documentation drift\n\n- **FR-4**: Support model selection via multiple interfaces\n  - CLI: `shep settings model` command must present all catalog models for\n    the configured executor in an interactive prompt\n  - CLI: `shep feat new --model <model>` must validate the model ID against\n    the executor's supported list\n  - Web UI: model picker component must render all available models from the\n    catalog via the models API endpoint\n  - API: `/api/settings/models` endpoint must return the full catalog list\n    for the configured executor\n\n- **FR-5**: Provide sensible model defaults\n  - First-time initialization must set the default model to a current,\n    recommended, stable Claude model (claude-sonnet-5 recommended)\n  - Default must be in the supported list for the configured executor\n  - Existing settings preserve their explicitly set model; only new defaults\n    change with releases\n\n- **FR-6**: Validate models at use-case invocation time\n  - Before executing any SDLC workflow (feature creation, settings update,\n    etc.), the use case must verify the selected model is in the executor's\n    supported list\n  - If invalid, the use case must throw a descriptive error with the full\n    list of valid models\n\n## Non-Functional Requirements\n\n- **NFR-1**: No breaking changes for existing users\n  - Users with settings containing old model IDs must not experience errors\n  - Old models (claude-opus-4-6, claude-sonnet-4-6, claude-haiku-4-5) must\n    remain in the catalog indefinitely for backward compatibility\n  - Settings migration is not required; users can continue using old models\n    if they prefer\n\n- **NFR-2**: Model lists must be maintainable\n  - Catalog entries are data (string arrays), not code, making future updates\n    low-friction\n  - Adding a new model requires changes only to the catalog constant and\n    TypeSpec comments, not scattered across the codebase\n  - Build-time validation (e.g., TypeSpec codegen) should not be necessary\n    to add a model; catalog changes are runtime updates\n\n- **NFR-3**: Performance and response time\n  - Model listing API (`/api/settings/models`) must return within <100ms\n  - Model validation during settings update must complete in <50ms\n  - CLI interactive prompts must render model lists instantly (no loading)\n\n- **NFR-4**: Type safety and correctness\n  - All model ID strings must be typed as known constants or union types, not\n    generic `string`; IDE autocomplete should suggest valid models\n  - Settings entity and use-cases must be type-safe: TypeScript compiler must\n    prevent invalid model IDs at compile time where feasible\n\n- **NFR-5**: Testing and validation\n  - Unit tests must cover all newly added Claude models\n  - Integration tests must validate model selection, validation, and defaults\n    with both old and new models\n  - Test suite must pass on all platforms (Windows, macOS, Linux)\n\n- **NFR-6**: Documentation clarity\n  - Model list comments in TypeSpec must be clear and up-to-date\n  - CLI help text must reference the supported models for the executor\n  - Error messages must list valid alternatives when model selection fails\n\n## Product Decisions & AI Recommendations\n\n| # | Question | AI Recommendation | Rationale |\n| - | -------- | ----------------- | --------- |\n| 1 | Should claude-sonnet-5 become the new default model? | Update to claude-sonnet-5 | Claude Sonnet 5 is the latest stable model as of Feb 2025, offering better performance and cost. New users benefit immediately; existing settings preserve explicit user choices. Low-risk upgrade. |\n| 2 | Should all models be tested or only new additions? | Test all Claude models in catalog | Ensures no regressions in existing models and uniform handling across variants. Catalog consistency is the core feature. Acceptable test-time increase for M-sized feature. |\n| 3 | Should documentation in TypeSpec be updated inline? | Update inline as part of feature | TypeSpec comments are part of domain contract; must stay accurate and in sync with catalog in one change set. Prevents documentation drift. |\n| 4 | Which executors need Claude model updates? | All executors with Claude models | Ensures consistent, complete registry across claude-code, cursor, copilot, cline, openrouter. Prevents fragmentation and user confusion. Proportional effort for comprehensive fix. |\n\n## Affected Areas\n\n| Area | Impact | Reasoning |\n| ---- | ------ | --------- |\n| `packages/core/src/infrastructure/services/agents/common/agent-model-catalog.ts` | **High** | Static catalog — source of truth for all model lists. Every executor's constant list (CLAUDE_CODE_MODELS, CURSOR_MODELS, etc.) is validated and updated here. |\n| `tsp/domain/entities/settings.tsp` | **High** | JSDoc comments (lines 60-66) document supported models per executor. Must be updated to match current catalog. Default model value (line 74) may change. |\n| `packages/core/src/domain/factories/settings-defaults.factory.ts` | **Medium** | Creates default Settings with DEFAULT_MODEL constant. If default changes to claude-sonnet-5, this factory must be updated. |\n| `packages/core/src/infrastructure/services/settings.service.ts` | **Low** | Loads/stores settings; no changes needed unless Settings schema evolves. Validation happens in use-cases. |\n| `tests/unit/application/use-cases/update-settings.use-case.test.ts` | **Medium** | Tests model validation logic with hardcoded model names. Must be updated to test old and new models, new default. |\n| `tests/unit/application/use-cases/initialize-settings.use-case.test.ts` | **Medium** | Asserts default model equals \"claude-sonnet-4-6\". If default changes to claude-sonnet-5, test expectations must change. |\n| `src/presentation/web/app/api/settings/models.ts` or similar | **Medium** | API endpoint listing available models. Must consume the catalog or return dynamically from executor. |\n| `src/presentation/web/components/*ModelPicker*` | **Low** | React components rendering model dropdowns. Should import from catalog or consume models API. |\n| `src/presentation/web/components/*/\\*.stories.tsx` | **Low** | Storybook stories for model-picker UI. Should mock using actual catalog data, not hardcoded strings. |\n| CLI commands (`shep settings model`, `shep feat new --model`) | **Medium** | Interactive prompts must present all catalog models. Validation must reject invalid models with helpful error. |\n| `packages/core/src/infrastructure/services/agents/common/executors/cursor-executor.service.ts` | **High** | Cursor supports Claude models; CURSOR_MODELS constant must include all Claude variants applicable to Cursor executor. |\n| Other executor implementations (copilot, cline, openrouter) | **High** | Each executor offering Claude models must have complete list including Fable 5, Opus 4.8, Sonnet 5. |\n\n## Dependencies\n\n### Code Dependencies\n- **IAgentExecutorProvider** port — all model validation flows through this\n  interface; `getSupportedModels()` must return data from the catalog\n- **Settings domain model and use-cases** — model defaults and validation\n  logic depend on Settings entity (ModelConfiguration) and related use-cases\n- **TypeSpec codegen** — changes to `tsp/domain/entities/settings.tsp` must\n  be compiled via `pnpm tsp:compile` to regenerate type definitions\n\n### External Dependencies\n- **Anthropic Claude model releases** — feature depends on which models\n  Anthropic has publicly released and stabilized. As of Feb 2025: Fable 5,\n  Opus 4.8, Sonnet 5, Haiku 4.5 (and variants like Opus 4.7)\n- **Executor API documentation** — cursor, copilot, cline, openrouter model\n  availability must be verified from each executor's official docs\n\n## Size Estimate\n\n**M (Medium — 2-3 days of focused work)**\n\n### Justification\n\n1. **Inventory & Analysis** (2-4 hours):\n   - Audit all locations where models are defined/documented/tested\n   - Cross-reference each executor's supported Claude models against catalog\n   - Document gaps and inconsistencies\n\n2. **Catalog & Documentation Updates** (4-6 hours):\n   - Update TypeSpec comments in settings.tsp to match current catalog\n   - Update default model constant if needed (sonnet-4-6 → sonnet-5)\n   - Update settings-defaults.factory.ts if default changes\n   - Update multi-executor model lists (cursor, copilot, cline, openrouter)\n\n3. **Test Updates** (3-4 hours):\n   - Add test cases for newly added Claude models (Fable 5, Opus 4.8, Sonnet 5)\n   - Update existing tests to validate against new default (if changed)\n   - Ensure backward compatibility tests pass for old models\n\n4. **UI/CLI Verification** (2-3 hours):\n   - Verify web UI model picker reflects full catalog\n   - Test CLI model selection prompts show all models\n   - Update Storybook stories to use catalog data\n\n5. **Integration Testing & CI** (1-2 hours):\n   - Run full test suite locally\n   - Verify no regressions in model validation, selection, defaults\n   - Ensure CI passes before push\n\n**Total: 12-19 hours → 2-3 days**\n\nLow complexity (data updates and test coverage), high impact (users immediately\nbenefit from newer models, consistent catalog across all executors).\n"
+rejectionFeedback:
+  - iteration: 1
+    message: "lets refine,\nthe goal is that we won't have anymore missing new models and keep up to date with the anrothipic models,\nhow can we do that? api+cache?\nresearch and propose"
+    phase: "requirements"
+    timestamp: "2026-07-13T08:59:33.306Z"

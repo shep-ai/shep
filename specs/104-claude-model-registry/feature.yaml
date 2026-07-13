@@ -1,0 +1,37 @@
+feature:
+  id: "104-claude-model-registry"
+  name: "claude-model-registry"
+  number: 104
+  branch: "feat/104-claude-model-registry"
+  lifecycle: "research"
+  createdAt: "2026-07-13T08:32:37Z"
+status:
+  phase: "implementing-phase-2"
+  progress:
+    completed: 2
+    total: 19
+    percentage: 11
+  currentTask: "task-2-1"
+  lastUpdated: "2026-07-13T11:47:53.850Z"
+  lastUpdatedBy: "feature-agent:implement"
+  completedPhases:
+    - "analyze"
+    - "requirements"
+    - "research"
+    - "plan"
+    - "phase-1"
+validation:
+  lastRun: null
+  gatesPassed: []
+  autoFixesApplied: []
+tasks:
+  current: null
+  blocked: []
+  failed: []
+checkpoints:
+  - phase: "feature-created"
+    completedAt: "2026-07-13T08:32:37Z"
+    completedBy: "feature-agent"
+errors:
+  current: null
+  history: []
