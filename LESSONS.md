@@ -1125,3 +1125,20 @@ Rules:
 - Anything permanent (release notes, changelog) must reference an **immutable ref** (tag or commit SHA), never a branch — branches get deleted.
 - When an LLM writes user-facing copy from structured data, **validate the output against that same data** before publishing. Don't trust the prompt alone; add a deterministic guard that falls back on contradiction.
 - `.mjs` scripts under ESLint need browser/Node globals declared: `/* global fetch, URL */`.
+
+## Client Components May Only TYPE-Import From Server-Only lib Modules (fs-backed)
+
+`src/presentation/web/lib/skills.ts` reads the filesystem (`node:fs/promises`, `node:path`, `node:os`, `js-yaml`) and is therefore **server-only**. `skill-list.tsx` (a client component) originally imported **only types** from it (`import type { SkillData }`) — types are erased at compile time, so nothing from the module reaches the browser bundle.
+
+I added a runtime helper (`derivePackage`) + a constant to `lib/skills.ts` and imported them as **values** into `skill-list.tsx`. `tsc`, vitest, and `pnpm build` all passed. But `pnpm build:storybook` (a Vite/Rollup **browser** bundle) failed:
+
+```
+"readdir" is not exported by "__vite-browser-external", imported by "src/presentation/web/lib/skills.ts"
+```
+
+A value import forces the bundler to actually include the module, dragging Node built-ins into a browser build that has no polyfills for them.
+
+**Rules:**
+1. From a client component (or anything Storybook bundles), import **only `type`** from an fs-backed / Node-built-in-importing lib module. Never import a runtime value (function, `const`, class) from it.
+2. When a client component needs a **pure** helper that logically belongs "next to" server-only code, put the helper in its own **browser-safe module** (no `node:*` / `fs` / `js-yaml` imports) and import it from both sides. Here: `lib/skill-package.ts` holds `derivePackage` + `UNGROUPED_PACKAGE_LABEL`, imported by both the client component and (potentially) the server module.
+3. `pnpm typecheck` + `pnpm build` (CLI/`tsc`) will **not** catch this — only the browser bundle does. For any web-UI change, run `pnpm build:storybook` locally before pushing (already required by `.claude/rules/cicd.md`). Treat a value-import from a server-only lib as the first suspect when the preview build fails with `"X" is not exported by "__vite-browser-external"`.
