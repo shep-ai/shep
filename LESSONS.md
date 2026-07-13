@@ -1125,3 +1125,17 @@ Rules:
 - Anything permanent (release notes, changelog) must reference an **immutable ref** (tag or commit SHA), never a branch — branches get deleted.
 - When an LLM writes user-facing copy from structured data, **validate the output against that same data** before publishing. Don't trust the prompt alone; add a deterministic guard that falls back on contradiction.
 - `.mjs` scripts under ESLint need browser/Node globals declared: `/* global fetch, URL */`.
+
+## Tag-triggered CI is defeated by `[skip ci]`; org ghcr first-push needs a PAT
+
+The `docker-publish.yml` workflow (issue #822 / PR #824) was written to trigger on `push: tags: v*`, then never ran on any release. Two independent bugs:
+
+1. **`[skip ci]` on the tagged commit skips the tag-push event.** semantic-release's `@semantic-release/git` commits `chore(release): x.y.z [skip ci]`, then tags THAT commit. GitHub Actions inspects the head commit of a pushed ref (including tag pushes) and skips ALL workflows when it contains `[skip ci]`. So a `push: tags: v*` trigger for a semantic-release tag can NEVER fire.
+2. **`GITHUB_TOKEN` 403s on the first org package publish.** Pushing to `ghcr.io/<org>/<repo>` returns `403 Forbidden` until the package exists and is linked to the repo. First creation needs a PAT with `write:packages` (we already have `RELEASE_TOKEN`), or a one-time manual publish + repo-link.
+
+Rules:
+
+- To run CI **after a semantic-release release**, trigger on `on: release: types: [published]` — the `release` event is immune to `[skip ci]` and cascades because the release is created with a PAT (`RELEASE_TOKEN`), not the default `GITHUB_TOKEN`. Do NOT rely on `push: tags: v*`.
+- For **org-owned ghcr packages**, authenticate the first publish with a PAT that has `write:packages`; the built-in `GITHUB_TOKEN` cannot create the package. After it exists and is repo-linked, `GITHUB_TOKEN` works.
+- A merged PR whose mechanism was never exercised end-to-end is not "done." Verify a workflow actually RAN (`gh run list --workflow=…`) and produced the artifact — a green syntax check proves nothing about triggers.
+- Install `git` in the Docker **builder** stage if the build invokes it (prebuild/generate) — `git: not found` silently drops version metadata even when the build "succeeds".

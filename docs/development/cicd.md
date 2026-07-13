@@ -24,7 +24,7 @@ On push to main only (after ALL jobs pass, including security):
 │  Release  │  → npm publish + GitHub release + `v<version>` tag
 └───────────┘
 
-On `v*` tag push (created by Release) or manual dispatch:
+On published GitHub Release (created by Release) or manual dispatch:
 ┌────────────────┐
 │ Docker Publish │  → build image + push to ghcr.io
 └────────────────┘
@@ -87,14 +87,17 @@ Runs after **all parallel jobs pass, including security scanners**. Uses [semant
 2. **Generate changelog** - Create release notes from commits
 3. **Update CHANGELOG.md** - Append new release section
 4. **Publish to npm** - `@shepai/cli` package
-5. **Create GitHub release** - With changelog as release notes
+5. **Create GitHub release** - With changelog as release notes (triggers `Docker Publish`)
 6. **Commit changes** - `chore(release): <version> [skip ci]`
-7. **Push `v<version>` tag** - triggers the `Docker Publish` workflow
+7. **Push `v<version>` tag** - versioned tag pointing at the release commit
 
 Docker images are built and pushed by the separate
 [`docker-publish.yml`](../../.github/workflows/docker-publish.yml) workflow,
-which fires on the `v*` tag that semantic-release pushes (and can be run
-manually via workflow dispatch).
+which fires on the **published GitHub Release** (and can be run manually via
+workflow dispatch). It is deliberately NOT triggered by the `v*` tag push:
+semantic-release tags the `chore(release): … [skip ci]` commit, and GitHub
+Actions skips workflows for tags pointing at a `[skip ci]` commit. The
+`release` event is immune to `[skip ci]`, so it fires reliably.
 
 ## Docker Images
 
@@ -108,10 +111,10 @@ ghcr.io/shep-ai/shep
 
 ### Tagging Strategy
 
-| Trigger                    | Tags                                                        |
-| -------------------------- | ----------------------------------------------------------- |
-| `v*` tag (from release)    | `latest`, `1.2.3`, `1.2`, `1`, `sha-<full-commit-sha>`      |
-| Manual dispatch (main)     | `latest`, `sha-<full-commit-sha>`                           |
+| Trigger                     | Tags                                                        |
+| --------------------------- | ----------------------------------------------------------- |
+| Published Release (`v*` tag) | `latest`, `1.2.3`, `1.2`, `1`, `sha-<full-commit-sha>`     |
+| Manual dispatch (main)      | `latest`, `sha-<full-commit-sha>`                           |
 
 ### Pull & Run
 

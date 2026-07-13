@@ -5,21 +5,25 @@
 # to the GitHub Container Registry (GitHub Packages) at ghcr.io/shep-ai/shep.
 #
 # Triggers:
-#   - push of a release tag `v*` (semantic-release creates these on main using
-#     the RELEASE_TOKEN PAT, so tag-triggered workflows fire). Publishes the
-#     versioned tags plus `latest`.
+#   - a published GitHub Release. semantic-release creates the release (and its
+#     `v*` tag) via the RELEASE_TOKEN PAT, so the `release` event cascades and
+#     fires this workflow. We deliberately do NOT trigger on `push: tags: v*`:
+#     semantic-release tags the `chore(release): x.y.z [skip ci]` commit, and a
+#     tag pointing at a `[skip ci]` commit is skipped by GitHub Actions — so a
+#     tag-push trigger would never run. The `release` event is immune to that.
 #   - manual dispatch, for one-off/backfill publishes.
 #
-# Auth: uses the built-in GITHUB_TOKEN with `packages: write` — no extra
-# secrets required. The image inherits the repository's visibility.
+# Auth: logs in with the RELEASE_TOKEN PAT (which carries `write:packages`).
+# The built-in GITHUB_TOKEN cannot create the org-owned package on first push
+# (ghcr.io returns 403 Forbidden until the package exists and is linked to the
+# repo), so we use the same PAT semantic-release already uses.
 # =============================================================================
 
 name: Docker Publish
 
 on:
-  push:
-    tags:
-      - 'v*'
+  release:
+    types: [published]
   workflow_dispatch:
 
 concurrency:
@@ -50,7 +54,9 @@ jobs:
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          # RELEASE_TOKEN (PAT with write:packages) — GITHUB_TOKEN 403s on the
+          # first org package publish until the package is created + repo-linked.
+          password: ${{ secrets.RELEASE_TOKEN }}
 
       - name: Extract image metadata (tags, labels)
         id: meta

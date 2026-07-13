@@ -45,8 +45,10 @@ COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.json tsconfig.buil
 COPY src/presentation/web/package.json ./src/presentation/web/package.json
 COPY packages/core/package.json ./packages/core/package.json
 
-# Install native build tooling for modules like better-sqlite3
-RUN apk add --no-cache python3 make g++
+# Install native build tooling for modules like better-sqlite3.
+# git is required by the build (prebuild/generate steps invoke it); without it
+# the build logs `git: not found` and silently drops version/git metadata.
+RUN apk add --no-cache python3 make g++ git
 
 # Install all dependencies (including devDependencies for TypeScript compiler)
 RUN pnpm install --frozen-lockfile
