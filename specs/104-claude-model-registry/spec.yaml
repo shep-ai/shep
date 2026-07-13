@@ -1,0 +1,152 @@
+name: claude-model-registry
+number: 104
+branch: feat/104-claude-model-registry
+oneLiner: "Register all currently supported Claude models across all agent executors"
+summary: >
+  Audit the codebase to identify all locations where Claude models are defined, documented, and validated, then systematically update the model registry to include all currently released Claude models (Fable 5, Opus 4.8, Sonnet 5, and newer variants) across claude-code, cursor, and other agent executor contexts.
+phase: Analysis
+sizeEstimate: M
+
+relatedFeatures: []
+
+technologies:
+  - "TypeScript"
+  - "TypeSpec (tsp)"
+  - "Claude SDK models (Anthropic)"
+
+relatedLinks:
+  - title: "Agent model catalog (source of truth)"
+    url: "file:///packages/core/src/infrastructure/services/agents/common/agent-model-catalog.ts"
+  - title: "Settings domain model (ModelConfiguration)"
+    url: "file:///tsp/domain/entities/settings.tsp"
+  - title: "Agent system architecture"
+    url: "file:///docs/architecture/agent-system.md"
+
+openQuestions: []
+
+content: |
+  ## Problem Statement
+
+  The codebase maintains a static model catalog in `agent-model-catalog.ts` that defines which AI models are available for each agent executor type (claude-code, cursor, gemini, copilot, cline, openrouter, together-ai, ollama). Currently, the CLAUDE_CODE_MODELS list includes only three Claude models:
+
+  - claude-opus-4-6
+  - claude-sonnet-4-6
+  - claude-haiku-4-5
+
+  This list is outdated as of February 2025. According to the system context, the latest Claude models available are:
+
+  - **Claude 5 (Fable)**: `claude-fable-5` (new, not yet in catalog)
+  - **Claude Opus 4.8**: `claude-opus-4-8` (newer variant, partially included)
+  - **Claude Sonnet 5**: `claude-sonnet-5` (new, partially included)
+  - Additional variants: claude-opus-4-7, claude-opus-4-8 patches, and other minor versions
+
+  The incomplete model registry affects:
+
+  1. **User experience** — users cannot select newer, faster, or cheaper models that should be available
+  2. **Default model selection** — system defaults to claude-sonnet-4-6, missing newer options
+  3. **Feature gates** — model validation may reject valid newer models submitted via API or CLI
+  4. **Documentation accuracy** — comments in settings.tsp reference outdated model lists
+  5. **Multi-executor consistency** — different executors (cursor, copilot) may have different completeness
+
+  ## Codebase Analysis
+
+  ### Project Structure
+
+  The Shep AI CLI is a monorepo using pnpm workspaces with clean architecture (domain → application → infrastructure → presentation). Key directories:
+
+  - `packages/core/src/` — Core domain logic and use cases
+  - `packages/core/src/infrastructure/services/agents/` — Agent executor implementations and catalogs
+  - `tsp/domain/entities/` — TypeSpec domain models (sources of generated code)
+  - `src/presentation/` — CLI and Web UI presentation layers
+  - `tests/unit/application/use-cases/` — Settings and feature use-case tests
+
+  ### Architecture Patterns
+
+  **Model Registry Location**: The agent model catalog is a static TypeScript constant map in `agent-model-catalog.ts`. This is the single source of truth for all model lists referenced throughout the codebase.
+
+  **Model Usage Flow**:
+  1. Agent executors (claude-code, cursor, gemini, etc.) define their supported models in `CLAUDE_CODE_MODELS`, `CURSOR_MODELS`, etc.
+  2. `AgentExecutorFactory.getSupportedModels()` uses these lists to validate model selections
+  3. Web UI model-picker dropdowns (Storybook mocks + server actions) consume these lists
+  4. Settings entity (`tsp/domain/entities/settings.tsp`) documents valid models in JSDoc comments
+  5. Settings use-cases (`UpdateSettingsUseCase`, `InitializeSettingsUseCase`) validate model IDs against the executor's supported list
+
+  **Default Model**: Currently hardcoded as `"claude-sonnet-4-6"` in:
+  - `tsp/domain/entities/settings.tsp` line 74 (ModelConfiguration default)
+  - `packages/core/src/domain/factories/settings-defaults.factory.ts`
+  - Multiple test files mock this default
+
+  **Model Validation**: The `IAgentExecutorProvider` port validates that a selected model is in the executor's supported list before executing. Invalid models are rejected at use-case invocation time.
+
+  ### Relevant Technologies
+
+  - **TypeScript** — entire codebase is TS/TSX
+  - **TypeSpec (tsp)** — domain models are defined in TypeSpec; running `pnpm tsp:compile` generates TypeScript type definitions from tsp files
+  - **Anthropic Claude SDK** — agents call Claude models; model IDs are sourced from Anthropic's public releases
+  - **Vitest** — test framework; unit tests for settings and feature creation mock model selections
+  - **Next.js / React** — web UI components render model dropdowns and selection UI
+
+  ## Affected Areas
+
+  | Area | Impact | Reasoning |
+  | ---- | ------ | --------- |
+  | `packages/core/src/infrastructure/services/agents/common/agent-model-catalog.ts` | **High** | Static catalog — this is THE source of truth for all model lists. Every agent executor's CLAUDE_CODE_MODELS, CURSOR_MODELS, etc. must be updated with new releases. |
+  | `tsp/domain/entities/settings.tsp` | **High** | Documentation comments (lines 62-66) list supported models per executor. These must be updated to match the catalog. Default model (line 74) may need to change to a newer stable version. |
+  | `packages/core/src/domain/factories/settings-defaults.factory.ts` | **Medium** | Creates default Settings with the default model ID. If default changes, this factory must change. |
+  | `packages/core/src/infrastructure/services/settings.service.ts` | **Low** | Loads/stores settings. No changes needed unless Settings schema evolves. |
+  | `packages/core/src/application/use-cases/update-settings.use-case.ts` | **Low** | Validates model selection via IAgentExecutorProvider. No changes needed if provider already validates against the catalog. |
+  | `tests/unit/application/use-cases/update-settings.use-case.test.ts` | **Medium** | Tests use hardcoded model names (claude-sonnet-4-6, claude-opus-4-6, claude-haiku-4-5). These should be updated to test both old and new models. |
+  | `tests/unit/application/use-cases/initialize-settings.use-case.test.ts` | **Medium** | Asserts default model is claude-sonnet-4-6. If default changes, test expectation must change. |
+  | `src/presentation/web/app/api/agent/models.ts` or similar model-listing API routes | **Medium** | If a web API endpoint lists available models, it should consume the catalog or a derived registry. |
+  | `src/presentation/web/components/SettingsPanel/ModelPicker.stories.tsx` or similar Storybook stories | **Low** | Stories mock model lists for UI testing. Should be updated to use the actual catalog. |
+  | CLI commands for model selection (e.g., `shep settings model`) | **Medium** | Interactive CLI prompts must present up-to-date model lists from the catalog. |
+  | Cursor executor (`packages/core/src/infrastructure/services/agents/common/executors/cursor-executor.service.ts`) | **High** | Cursor supports Claude models; CURSOR_MODELS list must include all Claude variants applicable to Cursor. |
+  | Web API types and JSON schema files (`apis/json-schema/ModelConfiguration.yaml`) | **Medium** | OpenAPI schema or JSON schema may reference model IDs. Should be regenerated from TypeSpec or manually updated. |
+
+  ## Dependencies
+
+  ### Code Dependencies
+  - **IAgentExecutorProvider** port — all model validation flows through this interface. Executors implement `getSupportedModels()` and return the appropriate constant from the catalog.
+  - **Settings domain model and use-cases** — any change to model defaults or validation logic depends on the Settings entity and its related use-cases.
+  - **TypeSpec codegen** — changes to `tsp/domain/entities/settings.tsp` require running `pnpm tsp:compile` to regenerate type definitions.
+
+  ### External Dependencies
+  - **Anthropic Claude model releases** — the feature is inherently dependent on which models Anthropic has publicly released and stabilized. As of the system context (Feb 2025), the latest releases are: Fable 5, Opus 4.8, Sonnet 5, Haiku 4.5.
+
+  ## Size Estimate
+
+  **M (Medium — 2-3 days of work)**
+
+  ### Justification
+
+  1. **Inventory & Analysis** (2-4 hours):
+     - Audit all 8+ locations where models are defined/documented/tested
+     - Verify which Claude models are actually supported by each executor (claude-code, cursor, copilot, openrouter, etc.)
+     - Cross-reference with Anthropic's public model list and SDK documentation
+
+  2. **Catalog Updates** (4-6 hours):
+     - Update `CLAUDE_CODE_MODELS` in agent-model-catalog.ts with all new Claude releases (Fable, Opus 4.8, Sonnet 5, variants)
+     - Update `CURSOR_MODELS` to include all Claude variants Cursor supports
+     - Update other executor model lists if they include Claude models (copilot, openrouter)
+     - Ensure backward compatibility (keep old models, just add new ones)
+
+  3. **Documentation Updates** (2-3 hours):
+     - Update TypeSpec JSDoc comments in settings.tsp to list all newly added models
+     - Update CLI help text and web UI documentation
+     - Update any JSON schema or OpenAPI definitions
+
+  4. **Testing & Validation** (3-4 hours):
+     - Update unit tests to validate new models can be selected
+     - Add test cases for each newly added Claude model
+     - Verify settings initialization still works with old and new defaults
+     - Ensure model dropdown UI tests reflect the expanded catalog
+
+  5. **Integration Verification** (1-2 hours):
+     - Run full test suite to ensure no regressions
+     - Verify web UI model picker renders all new models
+     - Test CLI model selection prompts show new models
+     - Smoke-test feature creation with each new model to ensure validation passes
+
+  **Total: 12-19 hours → 2-3 days of focused work**
+
+  Low complexity (mostly data entry and test updates), high impact (users immediately benefit from newer models).
