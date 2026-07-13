@@ -17,6 +17,7 @@ const internals = __test__ as unknown as {
   hasAuthCredentials: (env: Record<string, string | undefined>) => boolean;
   hasUserFacingChanges: (commits: unknown[]) => boolean;
   isMaintenanceOnlyFraming: (tagline: string) => boolean;
+  isOverusedOpener: (tagline: string) => boolean;
   buildPrompt: (args: { commits: unknown[]; version: string }) => string;
 };
 const {
@@ -25,6 +26,7 @@ const {
   hasAuthCredentials,
   hasUserFacingChanges,
   isMaintenanceOnlyFraming,
+  isOverusedOpener,
   buildPrompt,
 } = internals;
 
@@ -135,6 +137,23 @@ describe('isMaintenanceOnlyFraming', () => {
   });
 });
 
+describe('isOverusedOpener', () => {
+  it('flags "Keeping the lights on" regardless of what follows', () => {
+    expect(isOverusedOpener('Keeping the lights on — a quiet release.')).toBe(true);
+    expect(isOverusedOpener('keeping the lights on with a few small fixes.')).toBe(true);
+  });
+
+  it('flags a bare "Housekeeping" opener', () => {
+    expect(isOverusedOpener('Housekeeping only — no user-facing changes.')).toBe(true);
+    expect(isOverusedOpener('Housekeeping under the hood this release.')).toBe(true);
+  });
+
+  it('does not flag a fresh, specific tagline', () => {
+    expect(isOverusedOpener('Tabs galore — every spec now has a story.')).toBe(false);
+    expect(isOverusedOpener('Small fixes, steady hands this time around.')).toBe(false);
+  });
+});
+
 describe('buildPrompt', () => {
   it('forbids maintenance framing when the release is user-facing', () => {
     const prompt = buildPrompt({
@@ -151,6 +170,19 @@ describe('buildPrompt', () => {
       version: '1.0.0',
     });
     expect(prompt).toContain('chore-only release');
+  });
+
+  it('warns against the overused "Keeping the lights on" opener for every release', () => {
+    const featPrompt = buildPrompt({
+      commits: [{ type: 'feat', subject: 'add aspm' }],
+      version: '1.210.0',
+    });
+    const chorePrompt = buildPrompt({
+      commits: [{ type: 'chore', subject: 'bump deps' }],
+      version: '1.0.0',
+    });
+    expect(featPrompt).toContain('Keeping the lights on');
+    expect(chorePrompt).toContain('Keeping the lights on');
   });
 });
 
@@ -245,6 +277,59 @@ describe('generateTagline', () => {
     const tagline = await generateTagline({ commits: [], claudeQuery, env: TEST_ENV } as never);
     expect(tagline).toBeNull();
     expect(claudeQuery).not.toHaveBeenCalled();
+  });
+
+  it('retries once with fresh guidance when the first attempt uses an overused opener', async () => {
+    const claudeQuery = vi
+      .fn()
+      .mockReturnValueOnce({
+        [Symbol.asyncIterator]: async function* () {
+          yield {
+            type: 'result',
+            subtype: 'success',
+            result: 'Keeping the lights on — a quiet release.',
+          };
+        },
+      })
+      .mockReturnValueOnce({
+        [Symbol.asyncIterator]: async function* () {
+          yield { type: 'result', subtype: 'success', result: 'Small fixes, steady hands.' };
+        },
+      });
+
+    const tagline = await generateTagline({
+      commits: [{ type: 'chore', subject: 'bump deps' }],
+      version: '1.0.0',
+      claudeQuery,
+      env: TEST_ENV,
+      logger: { info: () => undefined, warn: () => undefined },
+    });
+
+    expect(tagline).toBe('Small fixes, steady hands.');
+    expect(claudeQuery).toHaveBeenCalledTimes(2);
+  });
+
+  it('falls back to null when both attempts use an overused opener', async () => {
+    const claudeQuery = vi.fn().mockReturnValue({
+      [Symbol.asyncIterator]: async function* () {
+        yield {
+          type: 'result',
+          subtype: 'success',
+          result: 'Keeping the lights on — a quiet release.',
+        };
+      },
+    });
+
+    const tagline = await generateTagline({
+      commits: [{ type: 'chore', subject: 'bump deps' }],
+      version: '1.0.0',
+      claudeQuery,
+      env: TEST_ENV,
+      logger: { info: () => undefined, warn: () => undefined },
+    });
+
+    expect(tagline).toBeNull();
+    expect(claudeQuery).toHaveBeenCalledTimes(2);
   });
 });
 
