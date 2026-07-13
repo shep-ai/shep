@@ -519,6 +519,136 @@ describe('AgentExecutorFactory', () => {
     });
   });
 
+  describe('listAvailableModels', () => {
+    it('calls AnthropicModelCatalogService for claude-code executor', async () => {
+      const mockAnthropicCatalog = {
+        listModels: vi.fn().mockResolvedValue([
+          { id: 'claude-opus-4-8', displayName: 'Claude Opus 4.8' },
+          { id: 'claude-sonnet-5', displayName: 'Claude Sonnet 5' },
+        ]),
+      };
+
+      const factoryWithMock = new AgentExecutorFactory(
+        mockSpawn,
+        undefined,
+        undefined,
+        mockAnthropicCatalog as never
+      );
+
+      const result = await factoryWithMock.listAvailableModels(AgentType.ClaudeCode, {
+        type: AgentType.ClaudeCode,
+        authMethod: AgentAuthMethod.Session,
+      });
+
+      expect(mockAnthropicCatalog.listModels).toHaveBeenCalled();
+      expect(result).toEqual([
+        { id: 'claude-opus-4-8', displayName: 'Claude Opus 4.8' },
+        { id: 'claude-sonnet-5', displayName: 'Claude Sonnet 5' },
+      ]);
+    });
+
+    it('returns static list when AnthropicModelCatalogService returns empty', async () => {
+      const mockAnthropicCatalog = {
+        listModels: vi.fn().mockResolvedValue([]),
+      };
+
+      const factoryWithMock = new AgentExecutorFactory(
+        mockSpawn,
+        undefined,
+        undefined,
+        mockAnthropicCatalog as never
+      );
+
+      const result = await factoryWithMock.listAvailableModels(AgentType.ClaudeCode, {
+        type: AgentType.ClaudeCode,
+        authMethod: AgentAuthMethod.Session,
+      });
+
+      expect(result.length).toBeGreaterThan(0);
+      expect(result.every((m) => typeof m.id === 'string')).toBe(true);
+    });
+
+    it('still calls OpenRouterModelCatalogService for openrouter executor', async () => {
+      const mockOpenRouterCatalog = {
+        listModels: vi
+          .fn()
+          .mockResolvedValue([
+            { id: 'anthropic/claude-sonnet-4.5', displayName: 'Claude Sonnet on OpenRouter' },
+          ]),
+      };
+
+      const factoryWithMock = new AgentExecutorFactory(
+        mockSpawn,
+        mockOpenRouterCatalog as never,
+        undefined,
+        undefined
+      );
+
+      const result = await factoryWithMock.listAvailableModels(AgentType.OpenRouter, {
+        type: AgentType.OpenRouter,
+        authMethod: AgentAuthMethod.Token,
+        token: 'key',
+      });
+
+      expect(mockOpenRouterCatalog.listModels).toHaveBeenCalled();
+      expect(result).toEqual([
+        { id: 'anthropic/claude-sonnet-4.5', displayName: 'Claude Sonnet on OpenRouter' },
+      ]);
+    });
+
+    it('passes token to AnthropicModelCatalogService when available', async () => {
+      const mockAnthropicCatalog = {
+        listModels: vi.fn().mockResolvedValue([]),
+      };
+
+      const factoryWithMock = new AgentExecutorFactory(
+        mockSpawn,
+        undefined,
+        undefined,
+        mockAnthropicCatalog as never
+      );
+
+      await factoryWithMock.listAvailableModels(AgentType.ClaudeCode, {
+        type: AgentType.ClaudeCode,
+        authMethod: AgentAuthMethod.Token,
+        token: 'test-key',
+      });
+
+      expect(mockAnthropicCatalog.listModels).toHaveBeenCalledWith('test-key');
+    });
+
+    it('handles empty token by passing undefined to service', async () => {
+      const mockAnthropicCatalog = {
+        listModels: vi.fn().mockResolvedValue([]),
+      };
+
+      const factoryWithMock = new AgentExecutorFactory(
+        mockSpawn,
+        undefined,
+        undefined,
+        mockAnthropicCatalog as never
+      );
+
+      await factoryWithMock.listAvailableModels(AgentType.ClaudeCode, {
+        type: AgentType.ClaudeCode,
+        authMethod: AgentAuthMethod.Session,
+        token: '  ', // whitespace-only token
+      });
+
+      expect(mockAnthropicCatalog.listModels).toHaveBeenCalledWith(undefined);
+    });
+
+    it('returns static fallback for non-dynamic executors', async () => {
+      const result = await factory.listAvailableModels(AgentType.GeminiCli, {
+        type: AgentType.GeminiCli,
+        authMethod: AgentAuthMethod.Session,
+      });
+
+      expect(result.length).toBeGreaterThan(0);
+      expect(result.every((m) => typeof m.id === 'string')).toBe(true);
+    });
+  });
+
   describe('supportsInteractive', () => {
     it('should return false for openrouter', () => {
       expect(factory.supportsInteractive(AgentType.OpenRouter)).toBe(false);
