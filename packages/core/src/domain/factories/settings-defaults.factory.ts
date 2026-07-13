@@ -5,7 +5,7 @@
  * matching the TypeSpec model specification.
  *
  * This factory ensures:
- * - Default model: claude-sonnet-4-6
+ * - Default model: claude-sonnet-5 (latest stable as of Feb 2025)
  * - User profile fields are optional (empty object)
  * - Editor defaults to vscode, shell to bash
  * - Auto-update enabled, log level set to info
@@ -40,9 +40,10 @@ import {
 
 /**
  * Default AI model for all SDLC agents.
- * Provides balanced performance and cost for all workflow stages.
+ * Claude Sonnet 5 — latest stable model as of Feb 2025.
+ * Provides optimal performance, cost, and quality for all workflow stages.
  */
-const DEFAULT_MODEL = 'claude-sonnet-4-6' as const;
+const DEFAULT_MODEL = 'claude-sonnet-5' as const;
 
 /**
  * Default code editor preference.
@@ -84,7 +85,7 @@ const DEFAULT_AUTH_METHOD = AgentAuthMethod.Session;
  * Creates a Settings entity with sensible defaults.
  *
  * Default values match the TypeSpec model specification:
- * - Default AI model: claude-sonnet-4-6
+ * - Default AI model: claude-sonnet-5 (latest stable)
  * - Editor: vscode
  * - Shell: bash
  * - Auto-update: enabled
@@ -97,7 +98,7 @@ const DEFAULT_AUTH_METHOD = AgentAuthMethod.Session;
  * @example
  * ```typescript
  * const settings = createDefaultSettings();
- * console.log(settings.models.default); // "claude-sonnet-4-6"
+ * console.log(settings.models.default); // "claude-sonnet-5"
  * console.log(settings.environment.defaultEditor); // "vscode"
  * ```
  */

@@ -33,7 +33,7 @@ describe('InitializeSettingsUseCase', () => {
 
       // Assert
       expect(result).toBeDefined();
-      expect(result.models.default).toBe('claude-sonnet-4-6');
+      expect(result.models.default).toBe('claude-sonnet-5');
       expect(result.environment.defaultEditor).toBe('vscode');
       expect(result.system.autoUpdate).toBe(true);
     });

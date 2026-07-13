@@ -32,14 +32,14 @@ describe('TableFormatter', () => {
     it('should include model values', () => {
       const result = TableFormatter.createSettingsTable(sampleSettings);
 
-      expect(result).toContain('claude-sonnet-4-6');
+      expect(result).toContain('claude-sonnet-5');
     });
 
     it('should show model under Agent section', () => {
       const result = TableFormatter.createSettingsTable(sampleSettings);
 
       expect(result).toContain('Model');
-      expect(result).toContain('claude-sonnet-4-6');
+      expect(result).toContain('claude-sonnet-5');
     });
 
     it('should include agent configuration', () => {
