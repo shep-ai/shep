@@ -109,10 +109,34 @@ const referenceSkills: SkillData[] = [
   },
 ];
 
+// gstack skills advertise their package via a trailing "(gstack)" tag in the
+// description rather than a namespace prefix on the name.
+const gstackSkills: SkillData[] = [
+  {
+    name: 'browse',
+    displayName: 'browse',
+    description: 'Fast headless browser for QA testing and site dogfooding. (gstack)',
+    category: 'Reference',
+    source: 'global',
+    body: '',
+    resources: [],
+  },
+  {
+    name: 'qa',
+    displayName: 'qa',
+    description: 'Systematically QA test a web application and fix bugs found. (gstack)',
+    category: 'Reference',
+    source: 'global',
+    body: '',
+    resources: [],
+  },
+];
+
 const allSkills: SkillData[] = [
   ...workflowSkills,
   ...codeGenSkills,
   ...analysisSkills,
+  ...gstackSkills,
   ...referenceSkills,
 ];
 
@@ -120,15 +144,27 @@ const allSkills: SkillData[] = [
  * Stories
  * ------------------------------------------------------------------------- */
 
-export const Default: Story = {
+/** Grouped by package (default) — one heading per package, ungrouped skills last. */
+export const GroupedByPackage: Story = {
   args: {
     skills: allSkills,
+    groupByPackage: true,
   },
 };
 
-export const SingleCategory: Story = {
+/** Same skills, grouping turned off — a single flat grid with no headings. */
+export const Flat: Story = {
+  args: {
+    skills: allSkills,
+    groupByPackage: false,
+  },
+};
+
+/** A single package (shep-kit) grouped on its own. */
+export const SinglePackage: Story = {
   args: {
     skills: workflowSkills,
+    groupByPackage: true,
   },
 };
 

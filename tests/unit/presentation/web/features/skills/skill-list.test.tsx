@@ -18,44 +18,61 @@ function makeSkill(overrides: Partial<SkillData> = {}): SkillData {
 }
 
 describe('SkillList', () => {
-  it('renders category headings for groups with skills', () => {
+  it('groups skills under package headings derived from the name prefix', () => {
     const skills = [
-      makeSkill({ name: 'shep-kit:plan', displayName: 'plan', category: 'Workflow' }),
-      makeSkill({ name: 'shadcn-ui', displayName: 'shadcn-ui', category: 'Reference' }),
+      makeSkill({ name: 'shep-kit:plan', displayName: 'plan' }),
+      makeSkill({ name: 'shep-kit:implement', displayName: 'implement' }),
+      makeSkill({ name: 'shep:ui-component', displayName: 'ui-component' }),
     ];
     render(<SkillList skills={skills} onSkillSelect={vi.fn()} />);
 
-    expect(screen.getByRole('heading', { name: /Workflow/ })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: /Reference/ })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'shep-kit (2)' })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'shep (1)' })).toBeInTheDocument();
   });
 
-  it('does not render heading for empty categories', () => {
+  it('derives the package from a trailing (pkg) tag in the description', () => {
     const skills = [
-      makeSkill({ name: 'shep-kit:plan', displayName: 'plan', category: 'Workflow' }),
+      makeSkill({
+        name: 'browse',
+        displayName: 'browse',
+        description: 'Headless browser. (gstack)',
+      }),
+      makeSkill({ name: 'qa', displayName: 'qa', description: 'QA a web app. (gstack)' }),
     ];
     render(<SkillList skills={skills} onSkillSelect={vi.fn()} />);
 
-    expect(screen.getByRole('heading', { name: /Workflow/ })).toBeInTheDocument();
-    expect(screen.queryByRole('heading', { name: /Analysis/ })).not.toBeInTheDocument();
-    expect(screen.queryByRole('heading', { name: /Reference/ })).not.toBeInTheDocument();
-    expect(screen.queryByRole('heading', { name: /Code Generation/ })).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'gstack (2)' })).toBeInTheDocument();
   });
 
-  it('shows skill count in category heading', () => {
+  it('places standalone skills under an "Ungrouped" heading, ordered last', () => {
     const skills = [
-      makeSkill({ name: 'shep-kit:plan', displayName: 'plan', category: 'Workflow' }),
-      makeSkill({ name: 'shep-kit:implement', displayName: 'implement', category: 'Workflow' }),
+      makeSkill({ name: 'shadcn-ui', displayName: 'shadcn-ui', description: 'UI patterns' }),
+      makeSkill({ name: 'shep-kit:plan', displayName: 'plan' }),
     ];
     render(<SkillList skills={skills} onSkillSelect={vi.fn()} />);
 
-    expect(screen.getByText('(2)')).toBeInTheDocument();
+    const headings = screen.getAllByRole('heading', { level: 2 });
+    expect(headings[0]).toHaveTextContent('shep-kit');
+    expect(headings[headings.length - 1]).toHaveTextContent('Ungrouped');
   });
 
-  it('renders correct number of SkillCard components', () => {
+  it('renders a flat grid with no headings when groupByPackage is false', () => {
     const skills = [
-      makeSkill({ name: 'shep-kit:plan', displayName: 'plan', category: 'Workflow' }),
-      makeSkill({ name: 'shep-kit:implement', displayName: 'implement', category: 'Workflow' }),
-      makeSkill({ name: 'shadcn-ui', displayName: 'shadcn-ui', category: 'Reference' }),
+      makeSkill({ name: 'shep-kit:plan', displayName: 'plan' }),
+      makeSkill({ name: 'shep:ui-component', displayName: 'ui-component' }),
+    ];
+    render(<SkillList skills={skills} groupByPackage={false} onSkillSelect={vi.fn()} />);
+
+    expect(screen.queryByRole('heading', { level: 2 })).not.toBeInTheDocument();
+    expect(screen.getByTestId('skill-card-shep-kit:plan')).toBeInTheDocument();
+    expect(screen.getByTestId('skill-card-shep:ui-component')).toBeInTheDocument();
+  });
+
+  it('renders the correct SkillCard components', () => {
+    const skills = [
+      makeSkill({ name: 'shep-kit:plan', displayName: 'plan' }),
+      makeSkill({ name: 'shep-kit:implement', displayName: 'implement' }),
+      makeSkill({ name: 'shadcn-ui', displayName: 'shadcn-ui', description: 'UI patterns' }),
     ];
     render(<SkillList skills={skills} onSkillSelect={vi.fn()} />);
 
@@ -75,23 +92,7 @@ describe('SkillList', () => {
     expect(onSkillSelect).toHaveBeenCalledWith(skill);
   });
 
-  it('renders categories in the correct order: Workflow, Code Generation, Analysis, Reference', () => {
-    const skills = [
-      makeSkill({ name: 'ref-skill', displayName: 'ref-skill', category: 'Reference' }),
-      makeSkill({ name: 'reviewer', displayName: 'reviewer', category: 'Analysis' }),
-      makeSkill({ name: 'shep:ui', displayName: 'ui', category: 'Code Generation' }),
-      makeSkill({ name: 'shep-kit:plan', displayName: 'plan', category: 'Workflow' }),
-    ];
-    render(<SkillList skills={skills} onSkillSelect={vi.fn()} />);
-
-    const headings = screen.getAllByRole('heading', { level: 2 });
-    expect(headings[0]).toHaveTextContent('Workflow');
-    expect(headings[1]).toHaveTextContent('Code Generation');
-    expect(headings[2]).toHaveTextContent('Analysis');
-    expect(headings[3]).toHaveTextContent('Reference');
-  });
-
-  it('renders nothing when skills array is empty', () => {
+  it('renders nothing when the skills array is empty', () => {
     const { container } = render(<SkillList skills={[]} onSkillSelect={vi.fn()} />);
     expect(container.querySelectorAll('section')).toHaveLength(0);
   });

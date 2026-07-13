@@ -221,4 +221,34 @@ describe('SkillsPageClient', () => {
     expect(within(filterGroup).getByText('(2)')).toBeInTheDocument();
     expect(within(filterGroup).getAllByText('(1)')).toHaveLength(3);
   });
+
+  it('renders a "Group by package" toggle that is on by default', () => {
+    render(<SkillsPageClient skills={sampleSkills} injectionConfig={emptyInjectionConfig} />);
+
+    const toggle = screen.getByRole('switch', { name: /group by package/i });
+    expect(toggle).toBeInTheDocument();
+    expect(toggle).toBeChecked();
+  });
+
+  it('groups skills under package headings while the toggle is on', () => {
+    render(<SkillsPageClient skills={sampleSkills} injectionConfig={emptyInjectionConfig} />);
+
+    // shep-kit:plan + shep-kit:implement group under a single "shep-kit" heading
+    expect(screen.getByRole('heading', { name: /shep-kit/ })).toBeInTheDocument();
+  });
+
+  it('switches to a flat list when the grouping toggle is turned off', async () => {
+    const user = userEvent.setup();
+    render(<SkillsPageClient skills={sampleSkills} injectionConfig={emptyInjectionConfig} />);
+
+    expect(screen.getByRole('heading', { name: /shep-kit/ })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('switch', { name: /group by package/i }));
+
+    // Package headings are gone, but every skill card is still rendered
+    expect(screen.queryByRole('heading', { name: /shep-kit/ })).not.toBeInTheDocument();
+    expect(screen.getByTestId('skill-card-shep-kit:plan')).toBeInTheDocument();
+    expect(screen.getByTestId('skill-card-shep:ui-component')).toBeInTheDocument();
+    expect(screen.getByTestId('skill-card-shadcn-ui')).toBeInTheDocument();
+  });
 });
