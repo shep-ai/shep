@@ -4,14 +4,15 @@
 name: skills-grouping-toggle
 number: 104
 branch: feat/104-skills-grouping-toggle
-oneLiner: In the skills pages, add a toggle (by default toggled on)
-that toggle the grouping to of skills, for example gstack is a skill package.
-userQuery: >
+oneLiner: >-
   In the skills pages, add a toggle (by default toggled on)
-that toggle the grouping to of skills, for example gstack is a skill package.
-summary: >
+  that toggle the grouping to of skills, for example gstack is a skill package.
+userQuery: >-
   In the skills pages, add a toggle (by default toggled on)
-that toggle the grouping to of skills, for example gstack is a skill package.
+  that toggle the grouping to of skills, for example gstack is a skill package.
+summary: >-
+  In the skills pages, add a toggle (by default toggled on)
+  that toggle the grouping to of skills, for example gstack is a skill package.
 phase: Analysis
 sizeEstimate: M
 
@@ -34,7 +35,7 @@ content: |
   ## Problem Statement
 
   In the skills pages, add a toggle (by default toggled on)
-that toggle the grouping to of skills, for example gstack is a skill package.
+  that toggle the grouping to of skills, for example gstack is a skill package.
 
   ## Success Criteria
 
