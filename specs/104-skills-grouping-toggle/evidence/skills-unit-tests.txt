@@ -1,0 +1,93 @@
+
+ RUN  v4.0.18 /Users/arielshadkhan/.shep/repos/fbfd7efb528913ed/wt/feat-skills-grouping-toggle
+
+ ✓ |web| tests/unit/presentation/web/lib/skill-package.test.ts > derivePackage > derives the package from a namespace prefix in the name 1ms
+ ✓ |web| tests/unit/presentation/web/lib/skill-package.test.ts > derivePackage > derives the package from a trailing (pkg) tag in the description 0ms
+ ✓ |web| tests/unit/presentation/web/lib/skill-package.test.ts > derivePackage > prefers the namespace prefix over the description tag 0ms
+ ✓ |web| tests/unit/presentation/web/lib/skill-package.test.ts > derivePackage > returns null for a standalone skill with no package signal 0ms
+ ✓ |web| tests/unit/presentation/web/lib/skill-package.test.ts > derivePackage > ignores multi-word trailing parentheticals that are not package slugs 0ms
+ ✓ |web| tests/unit/presentation/web/lib/skill-package.test.ts > derivePackage > only matches a package tag at the very end of the description 0ms
+ ✓ |web| tests/unit/presentation/web/lib/skill-package.test.ts > UNGROUPED_PACKAGE_LABEL > is the label used for skills with no package 0ms
+stderr | tests/unit/presentation/web/lib/skills.test.ts > getSkills > skips skills with malformed frontmatter
+Skipping skill "bad-skill": invalid or missing frontmatter in SKILL.md
+
+ ✓ |web| tests/unit/presentation/web/lib/skills.test.ts > deriveCategory > returns Workflow for shep-kit:implement 1ms
+ ✓ |web| tests/unit/presentation/web/lib/skills.test.ts > deriveCategory > returns Workflow for shep-kit:commit-pr 0ms
+ ✓ |web| tests/unit/presentation/web/lib/skills.test.ts > deriveCategory > returns Workflow for shep-kit:merged 0ms
+ ✓ |web| tests/unit/presentation/web/lib/skills.test.ts > deriveCategory > returns Workflow for shep-kit:new-feature 0ms
+ ✓ |web| tests/unit/presentation/web/lib/skills.test.ts > deriveCategory > returns Workflow for shep-kit:new-feature-fast 0ms
+ ✓ |web| tests/unit/presentation/web/lib/skills.test.ts > deriveCategory > returns Workflow for shep-kit:parallel-task 0ms
+ ✓ |web| tests/unit/presentation/web/lib/skills.test.ts > deriveCategory > returns Workflow for shep-kit:plan 0ms
+ ✓ |web| tests/unit/presentation/web/lib/skills.test.ts > deriveCategory > returns Workflow for shep-kit:research 0ms
+ ✓ |web| tests/unit/presentation/web/lib/skills.test.ts > deriveCategory > returns Code Generation for shep:ui-component 0ms
+ ✓ |web| tests/unit/presentation/web/lib/skills.test.ts > deriveCategory > returns Analysis for architecture-reviewer 0ms
+ ✓ |web| tests/unit/presentation/web/lib/skills.test.ts > deriveCategory > returns Analysis for cross-validate-artifacts 0ms
+ ✓ |web| tests/unit/presentation/web/lib/skills.test.ts > deriveCategory > returns Reference for shadcn-ui 0ms
+ ✓ |web| tests/unit/presentation/web/lib/skills.test.ts > deriveCategory > returns Reference for mermaid-diagrams 0ms
+ ✓ |web| tests/unit/presentation/web/lib/skills.test.ts > deriveCategory > returns Reference for react-flow 0ms
+ ✓ |web| tests/unit/presentation/web/lib/skills.test.ts > deriveCategory > returns Reference for tsp-model 0ms
+ ✓ |web| tests/unit/presentation/web/lib/skills.test.ts > deriveCategory > returns Reference for vercel-react-best-practices 0ms
+ ✓ |web| tests/unit/presentation/web/lib/skills.test.ts > deriveCategory > returns Reference for find-skills 0ms
+ ✓ |web| tests/unit/presentation/web/lib/skills.test.ts > deriveCategory > returns Reference for lsp-code-analysis 0ms
+ ✓ |web| tests/unit/presentation/web/lib/skills.test.ts > deriveCategory > returns Reference for remotion-best-practices 0ms
+ ✓ |web| tests/unit/presentation/web/lib/skills.test.ts > deriveCategory > returns Workflow for shep-kit: with no suffix 0ms
+ ✓ |web| tests/unit/presentation/web/lib/skills.test.ts > deriveCategory > returns Code Generation for shep: with no suffix 0ms
+ ✓ |web| tests/unit/presentation/web/lib/skills.test.ts > deriveCategory > returns Analysis for a name containing validate 0ms
+ ✓ |web| tests/unit/presentation/web/lib/skills.test.ts > deriveCategory > returns Reference for an unknown skill name 0ms
+ ✓ |web| tests/unit/presentation/web/lib/skills.test.ts > getDisplayName > strips shep-kit: prefix 0ms
+ ✓ |web| tests/unit/presentation/web/lib/skills.test.ts > getDisplayName > strips shep: prefix 0ms
+ ✓ |web| tests/unit/presentation/web/lib/skills.test.ts > getDisplayName > returns original name when no known prefix 0ms
+ ✓ |web| tests/unit/presentation/web/lib/skills.test.ts > getDisplayName > returns original name for architecture-reviewer 0ms
+ ✓ |web| tests/unit/presentation/web/lib/skills.test.ts > getDisplayName > strips shep-kit: prefix from new-feature-fast 0ms
+ ✓ |web| tests/unit/presentation/web/lib/skills.test.ts > parseFrontmatter > extracts all fields from valid frontmatter 2ms
+ ✓ |web| tests/unit/presentation/web/lib/skills.test.ts > parseFrontmatter > returns undefined for optional fields when absent 0ms
+ ✓ |web| tests/unit/presentation/web/lib/skills.test.ts > parseFrontmatter > ignores extra frontmatter fields like license and metadata 0ms
+ ✓ |web| tests/unit/presentation/web/lib/skills.test.ts > parseFrontmatter > returns null for content without --- delimiters 0ms
+ ✓ |web| tests/unit/presentation/web/lib/skills.test.ts > parseFrontmatter > returns null for content with only one --- delimiter 0ms
+ ✓ |web| tests/unit/presentation/web/lib/skills.test.ts > parseFrontmatter > returns null for invalid YAML between delimiters 0ms
+ ✓ |web| tests/unit/presentation/web/lib/skills.test.ts > parseFrontmatter > returns null when name is missing from frontmatter 0ms
+ ✓ |web| tests/unit/presentation/web/lib/skills.test.ts > parseFrontmatter > returns null when description is missing from frontmatter 0ms
+ ✓ |web| tests/unit/presentation/web/lib/skills.test.ts > parseFrontmatter > handles empty body after frontmatter 0ms
+ ✓ |web| tests/unit/presentation/web/lib/skills.test.ts > getSkills > reads valid skills from a directory 4ms
+ ✓ |web| tests/unit/presentation/web/lib/skills.test.ts > getSkills > reads skills from both project and global directories 8ms
+ ✓ |web| tests/unit/presentation/web/lib/skills.test.ts > getSkills > deduplicates two global skills that declare the same name 2ms
+ ✓ |web| tests/unit/presentation/web/lib/skills.test.ts > getSkills > sorts results alphabetically by name 3ms
+ ✓ |web| tests/unit/presentation/web/lib/skills.test.ts > getSkills > skips skill directories without SKILL.md 2ms
+ ✓ |web| tests/unit/presentation/web/lib/skills.test.ts > getSkills > skips skills with malformed frontmatter 2ms
+ ✓ |web| tests/unit/presentation/web/lib/skills.test.ts > getSkills > returns empty array for non-existent directory 1ms
+ ✓ |web| tests/unit/presentation/web/lib/skills.test.ts > getSkills > returns empty array for empty skills directory 1ms
+ ✓ |web| tests/unit/presentation/web/lib/skills.test.ts > getSkills > detects resource subdirectories with file counts 3ms
+ ✓ |web| tests/unit/presentation/web/lib/skills.test.ts > getSkills > returns empty resources array when no known resource dirs exist 2ms
+ ✓ |web| tests/unit/presentation/web/lib/skills.test.ts > getSkills > derives displayName and category correctly 2ms
+ ✓ |web| tests/unit/presentation/web/lib/skills.test.ts > getSkills > extracts context and allowedTools from frontmatter 2ms
+ ✓ |web| tests/unit/presentation/web/features/skills/skill-list.test.tsx > SkillList > groups skills under package headings derived from the name prefix 96ms
+ ✓ |web| tests/unit/presentation/web/features/skills/skill-list.test.tsx > SkillList > derives the package from a trailing (pkg) tag in the description 6ms
+ ✓ |web| tests/unit/presentation/web/features/skills/skill-list.test.tsx > SkillList > places standalone skills under an "Ungrouped" heading, ordered last 8ms
+ ✓ |web| tests/unit/presentation/web/features/skills/skill-list.test.tsx > SkillList > renders a flat grid with no headings when groupByPackage is false 2ms
+ ✓ |web| tests/unit/presentation/web/features/skills/skill-list.test.tsx > SkillList > renders the correct SkillCard components 3ms
+ ✓ |web| tests/unit/presentation/web/features/skills/skill-list.test.tsx > SkillList > passes onSkillSelect to cards 14ms
+ ✓ |web| tests/unit/presentation/web/features/skills/skill-list.test.tsx > SkillList > renders nothing when the skills array is empty 1ms
+ ✓ |web| tests/unit/presentation/web/features/skills/skills-page-client.test.tsx > SkillsPageClient > renders page header with "Skills" title 86ms
+ ✓ |web| tests/unit/presentation/web/features/skills/skills-page-client.test.tsx > SkillsPageClient > renders all skills when no filters applied 14ms
+ ✓ |web| tests/unit/presentation/web/features/skills/skills-page-client.test.tsx > SkillsPageClient > renders search input 9ms
+ ✓ |web| tests/unit/presentation/web/features/skills/skills-page-client.test.tsx > SkillsPageClient > search input filters skills by name 53ms
+ ✓ |web| tests/unit/presentation/web/features/skills/skills-page-client.test.tsx > SkillsPageClient > search input filters skills by description 55ms
+ ✓ |web| tests/unit/presentation/web/features/skills/skills-page-client.test.tsx > SkillsPageClient > search is case-insensitive 26ms
+ ✓ |web| tests/unit/presentation/web/features/skills/skills-page-client.test.tsx > SkillsPageClient > category filter shows only skills in selected category 57ms
+ ✓ |web| tests/unit/presentation/web/features/skills/skills-page-client.test.tsx > SkillsPageClient > search and category filter combine 65ms
+ ✓ |web| tests/unit/presentation/web/features/skills/skills-page-client.test.tsx > SkillsPageClient > clicking "All" category button shows all categories 67ms
+ ✓ |web| tests/unit/presentation/web/features/skills/skills-page-client.test.tsx > SkillsPageClient > shows "No skills found" empty state when skills prop is empty 2ms
+ ✓ |web| tests/unit/presentation/web/features/skills/skills-page-client.test.tsx > SkillsPageClient > shows "No matching skills" when filters yield no results 50ms
+ ✓ |web| tests/unit/presentation/web/features/skills/skills-page-client.test.tsx > SkillsPageClient > clears filters when "Clear filters" action is clicked 56ms
+ ✓ |web| tests/unit/presentation/web/features/skills/skills-page-client.test.tsx > SkillsPageClient > opens drawer when a skill card is clicked 40ms
+ ✓ |web| tests/unit/presentation/web/features/skills/skills-page-client.test.tsx > SkillsPageClient > closes drawer when dismissed 73ms
+ ✓ |web| tests/unit/presentation/web/features/skills/skills-page-client.test.tsx > SkillsPageClient > renders category filter with skill counts from full unfiltered list 7ms
+ ✓ |web| tests/unit/presentation/web/features/skills/skills-page-client.test.tsx > SkillsPageClient > renders a "Group by package" toggle that is on by default 6ms
+ ✓ |web| tests/unit/presentation/web/features/skills/skills-page-client.test.tsx > SkillsPageClient > groups skills under package headings while the toggle is on 11ms
+ ✓ |web| tests/unit/presentation/web/features/skills/skills-page-client.test.tsx > SkillsPageClient > switches to a flat list when the grouping toggle is turned off 24ms
+
+ Test Files  4 passed (4)
+      Tests  81 passed (81)
+   Start at  12:02:04
+   Duration  2.05s (transform 524ms, setup 1.04s, import 619ms, tests 873ms, environment 2.25s)
+
