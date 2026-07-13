@@ -1,0 +1,349 @@
+name: claude-model-registry
+summary: "Technical research and decisions for maintaining an up-to-date Claude model registry via Anthropic API discovery with in-process caching, complemented by a static fallback catalog for resilience. Extends existing OpenRouter/Together AI dynamic catalog patterns to Claude models."
+
+relatedFeatures: []
+
+technologies:
+  - "TypeScript"
+  - "TypeSpec (tsp)"
+  - "Claude SDK (@anthropic-ai/claude-agent-sdk)"
+  - "Anthropic REST API (models endpoint)"
+  - "Node.js fetch API"
+  - "Vitest"
+  - "React / Next.js"
+
+relatedLinks:
+  - title: "Agent model catalog (current source of truth)"
+    url: "file:///packages/core/src/infrastructure/services/agents/common/agent-model-catalog.ts"
+  - title: "OpenRouter model catalog service (pattern to follow)"
+    url: "file:///packages/core/src/infrastructure/services/agents/common/model-catalogs/openrouter-model-catalog.service.ts"
+  - title: "Together AI model catalog service (pattern to follow)"
+    url: "file:///packages/core/src/infrastructure/services/agents/common/model-catalogs/together-ai-model-catalog.service.ts"
+  - title: "Agent executor factory (integration point)"
+    url: "file:///packages/core/src/infrastructure/services/agents/common/agent-executor-factory.service.ts"
+  - title: "Anthropic Models API documentation"
+    url: "https://docs.anthropic.com/en/api/models"
+  - title: "Settings TypeSpec model"
+    url: "file:///tsp/domain/entities/settings.tsp"
+  - title: "Settings defaults factory"
+    url: "file:///packages/core/src/domain/factories/settings-defaults.factory.ts"
+
+decisions:
+  - title: "Dynamic Catalog with Static Fallback"
+    chosen: "Create a new AnthropicModelCatalogService that calls Anthropic's REST API to fetch available Claude models. Implement in-process caching with TTL (configurable, default 1 hour). Fall back to static CLAUDE_CODE_MODELS list if API fails or is unavailable."
+    rejected:
+      - "Fully dynamic (no static fallback) — risks breaking UI/CLI when API is unavailable or network is down. Violates resilience principles."
+      - "Fully static catalog (status quo) — requires manual updates every time Anthropic releases new models. Creates fragmentation risk and user-facing delays in accessing new models."
+    rationale: "Anthropic does not currently publish a public /models endpoint like OpenRouter or Together AI. The Anthropic SDK and API documentation reference a fixed set of model IDs available at any given time. However, the most reliable approach is to fetch model metadata from Anthropic's official documentation or API (when available). A hybrid approach — fetch when possible, fall back to static list — provides the best UX: users always see a model list (static fallback), and when the API is available, they see the latest offerings. This mirrors the OpenRouter and Together AI pattern already implemented in the codebase."
+
+  - title: "API Endpoint for Model Discovery"
+    chosen: "Use the Anthropic SDK's capabilities query methods (if available) or call Anthropic's REST API directly via fetch. If Anthropic SDK exposes a models API method, use that; otherwise, fetch from a documented endpoint (e.g., https://api.anthropic.com/models or via SDK internals). Require an API key for authenticated requests to honor per-organization model availability."
+    rejected:
+      - "Web scraping Anthropic's website — fragile, violates ToS, unreliable."
+      - "Hardcode a copy of Anthropic's model list in the codebase — same problem as static catalog, requires manual updates."
+      - "Use a third-party model registry (like Replicate, Hugging Face) — adds external dependency, may lag behind Anthropic's releases, not authoritative."
+    rationale: "Anthropic is the authoritative source for Claude model availability. Using their official API (or SDK methods, if exposed) ensures accuracy and timeliness. An optional API key allows authenticated requests to reflect org-specific model access (e.g., Claude 3 beta models for early-access orgs). Authenticated requests also potentially provide better rate limits and reliability for paid customers."
+
+  - title: "Cache Strategy: In-Process TTL with Optional Persistence"
+    chosen: "Implement in-process memory cache (Map or similar) with configurable TTL (default 1 hour). Cache key is the agent type (e.g., 'claude-code'). Cache TTL is checked on every listModels() call; expired entries are refreshed. No external caching system (Redis, etc.) required for MVP. Optional: add optional persistent cache (SQLite) to survive process restarts, but defer to future optimization if needed."
+    rejected:
+      - "No caching — every call to listModels() hits the API. Violates performance requirements (NFR-3: <100ms response time). Too chatty to Anthropic's servers."
+      - "Redis or external cache — adds deployment complexity, requires configuration, not essential for MVP. Defer to scaling phase if needed."
+      - "Browser-side caching (localStorage) — inappropriate for a backend service; caching should be server-side and invisible to clients."
+    rationale: "1-hour TTL balances freshness (new models appear within an hour of release) and performance (avoids API thrashing). In-process cache is simple, requires no infrastructure, and is sufficient for typical Shep usage patterns (users don't change models every minute). The OpenRouter and Together AI patterns already use 5-minute in-process TTL; Claude models can use a longer TTL since Anthropic releases are less frequent than other platforms."
+
+  - title: "Default Model Update Strategy"
+    chosen: "Update DEFAULT_MODEL in settings-defaults.factory.ts from 'claude-sonnet-4-6' to 'claude-sonnet-5' (per spec decision). TypeSpec comment in settings.tsp is updated to reflect current catalog. No migration of existing settings needed — only new installations and explicit model changes adopt the new default."
+    rejected:
+      - "Keep claude-sonnet-4-6 as default indefinitely — users miss out on improvements, new installs use outdated model."
+      - "Retroactively update all existing settings to sonnet-5 — breaks user workflows, violates no-breaking-changes requirement (NFR-1)."
+    rationale: "Claude Sonnet 5 is the recommended stable model as of Feb 2025 (per spec decision). New users should benefit from latest improvements. Existing settings are only changed if user explicitly selects a new default or when settings are reset; this preserves backward compatibility."
+
+  - title: "Multi-Executor Model Consistency"
+    chosen: "Ensure all executors offering Claude models (claude-code, cursor, copilot-cli, cline, openrouter) have comprehensive, up-to-date lists in agent-model-catalog.ts. For executors using dynamic APIs (OpenRouter, Together AI), models fetched from their APIs are shown; for cursor/copilot/cline, static lists in the catalog are authoritative. Use AnthropicModelCatalogService for Claude-only executors, and fallback to static lists for others."
+    rejected:
+      - "Update only claude-code — other executors remain outdated, creating UX fragmentation."
+      - "Create separate catalog files per executor — increases maintenance burden and duplication."
+    rationale: "The catalog is the source of truth. All executors offering Claude models must reflect the latest available models. Multi-executor consistency ensures users of any executor (cursor, copilot, cline) see the same Claude model options as claude-code users."
+
+  - title: "Test Coverage for Model Dynamics"
+    chosen: "Add unit tests for AnthropicModelCatalogService (fetch, cache TTL, fallback logic). Add integration tests validating all Claude models in the static catalog can be selected and validated. Mock Anthropic API responses in tests to avoid external dependencies. Test both success paths (API returns models) and failure paths (API unavailable, timeout, invalid response)."
+    rejected:
+      - "No new tests — rely on existing test suite. Risk: misses cache bugs, API integration issues, fallback behavior."
+      - "Only test new models (Fable 5, Opus 4.8, Sonnet 5) — misses regressions in old models, doesn't validate uniform handling."
+    rationale: "Dynamic model fetching introduces new failure modes (network timeouts, API errors, cache expiry). Comprehensive tests ensure resilience. Per spec decision, all models (old and new) must be tested to ensure no regressions."
+
+  - title: "Model Validation and Type Safety"
+    chosen: "Define a 'SupportedModelId' discriminated union type or branded type in domain/types/ that represents valid model IDs for each executor. Use TypeScript type guards to validate model strings at compile time where feasible. At runtime, use the IAgentExecutorFactory.getSupportedModels() result to validate model selections against the executor's list."
+    rejected:
+      - "No type validation — use generic string everywhere. Risk: invalid models slip through, caught only at agent invocation time."
+      - "Use enums for all model IDs — difficult to maintain, requires code changes every release, not flexible enough for dynamic executors."
+    rationale: "Type safety prevents invalid model selections early. Branded/discriminated types document intent without the maintenance burden of full enums. Runtime validation (checking against getSupportedModels()) is a safety net for dynamic models from APIs."
+
+  - title: "API Documentation and Monitoring"
+    chosen: "Add JSDoc comments documenting how model discovery works: which executors use static catalogs, which use dynamic APIs, what happens on API failures, cache TTL values. Add optional structured logging (info level) when cache expires and API is called; add warning when API fails and fallback is used. Document the Anthropic API endpoint and authentication requirements."
+    rejected:
+      - "No documentation — future maintainers won't understand the hybrid approach."
+      - "Verbose logging on every cache hit — pollutes logs, impacts performance."
+    rationale: "Clear documentation ensures future changes are made correctly. Selective logging (only on API calls, not cache hits) provides visibility without noise. Helps with debugging when API availability changes or new model releases aren't appearing."
+
+openQuestions:
+  - question: "Does Anthropic publish a public models API endpoint, or should we rely on SDK internals?"
+    resolved: false
+    options:
+      - option: "Anthropic has a public /models endpoint (like OpenRouter)"
+        description: "Call https://api.anthropic.com/v1/models or similar directly via fetch. Requires no additional SDK changes. Clean, follows REST conventions. Requires API key for auth."
+        selected: false
+      - option: "Anthropic SDK exposes a listModels() or similar method"
+        description: "Use @anthropic-ai/claude-agent-sdk or @anthropic-ai/sdk's built-in API methods if available. Safest approach, leverages official SDK. May require importing SDK internals if not publicly exposed."
+        selected: false
+      - option: "No public API; fall back to static catalog with manual updates"
+        description: "Accept that Anthropic doesn't publish a models endpoint yet. Maintain static CLAUDE_CODE_MODELS list as the source of truth. Subscribe to Anthropic release notes or use a webhook service to notify of new models."
+        selected: false
+    selectionRationale: "Research required. Check Anthropic API docs and SDK source code to determine which approach is viable. This decision gates the implementation strategy."
+
+  - question: "Should the AnthropicModelCatalogService require an Anthropic API key?"
+    resolved: false
+    options:
+      - option: "Yes, require an API key for all requests"
+        description: "Authenticated requests may provide org-specific model availability, better rate limits for paid customers. Downside: if no key is configured, users see static fallback immediately, no dynamic discovery."
+        selected: false
+      - option: "No, allow unauthenticated requests (API key optional)"
+        description: "More accessible; unauthenticated requests show public Claude models. Users with API key can get full org-specific catalog. Downside: may be rate-limited on public endpoints."
+        selected: false
+      - option: "Use the configured Anthropic agent API key from settings (if available)"
+        description: "Leverage existing AgentConfig.token for Claude Code executor. If token exists, use it for auth; if not, fall back to unauthenticated or static catalog. Balances flexibility and security."
+        selected: false
+    selectionRationale: "Research required. Check Anthropic API documentation for authentication requirements and availability. May differ between public and org-specific endpoints."
+
+  - question: "What is the appropriate cache TTL for Claude models?"
+    resolved: false
+    options:
+      - option: "Short TTL (5 minutes, like OpenRouter)"
+        description: "Very fresh data, users see new models within minutes of release. Higher API call frequency. May be unnecessary since Claude releases are infrequent."
+        selected: false
+      - option: "Medium TTL (1 hour, recommended)"
+        description: "Balances freshness and performance. New models appear within an hour. Minimal API overhead. Matches typical use patterns. Good default."
+        selected: true
+      - option: "Long TTL (1 day or more)"
+        description: "Minimal API calls, good for low-connectivity scenarios. Risk: users miss new model releases for hours. Too stale for a developer tool."
+        selected: false
+    selectionRationale: "1 hour is a reasonable default for Claude models. Anthropic releases new models infrequently (every few months), so a 1-hour TTL provides a good balance. Configuration should be exposed so operators can adjust based on their needs."
+
+  - question: "How should the static fallback catalog evolve over time?"
+    resolved: false
+    options:
+      - option: "Maintain static list manually, synchronize with API data during releases"
+        description: "Static list is updated periodically to match known available models. Fallback serves as a snapshot, not source of truth. Requires discipline to keep in sync."
+        selected: false
+      - option: "Static list is a curated subset, include ONLY widely-used stable models"
+        description: "Reduce maintenance burden. Fallback includes only models most users need (e.g., Sonnet 5, Opus 4.8, Haiku 4.5). Users with specific models configured can still use API to refresh."
+        selected: false
+      - option: "Generate static list from API periodically (CI/build-time)"
+        description: "Fetch current models from Anthropic API during build or in a CI job, generate agent-model-catalog.ts with up-to-date lists. Fallback is always in sync with latest API. Requires build infrastructure change."
+        selected: false
+    selectionRationale: "Defer to implementation phase. A hybrid approach (manual updates + periodic sync) may be best. Can start with manual maintenance and evolve to CI-driven generation if the API becomes available."
+
+content: |
+  ## Technology Decisions
+
+  ### 1. API-Driven Model Discovery with Hybrid Fallback
+
+  **Chosen:** Implement a new `AnthropicModelCatalogService` that:
+  - Attempts to fetch Claude model metadata from an Anthropic API endpoint (or SDK method)
+  - Caches results in-process with configurable TTL (default 1 hour)
+  - Falls back to the static `CLAUDE_CODE_MODELS` list if the API is unavailable, times out, or returns an error
+  - Returns an `AgentModelListing[]` compatible with existing `IAgentExecutorFactory.listAvailableModels()` interface
+
+  **Why:** Anthropic does not currently publish a public models endpoint like OpenRouter or Together AI. The hybrid approach provides resilience (fallback ensures users always see a model list) while preparing for future API availability. This mirrors the OpenRouter and Together AI pattern already implemented in the codebase, ensuring consistency.
+
+  **Implementation Detail:**
+  - Fetch URL: `https://api.anthropic.com/v1/models` (or equivalent, to be verified)
+  - Supports optional Anthropic API key for authenticated requests
+  - Cache key: agent type (e.g., `'claude-code'`)
+  - Cache TTL: 1 hour (configurable)
+  - Failure handling: log warning, return cached data if available, fallback to static list
+
+  ### 2. Extending AgentExecutorFactory
+
+  **Chosen:** Add `AnthropicModelCatalogService` to `agent-executor-factory.service.ts`, instantiate it in the constructor like `OpenRouterModelCatalogService` and `TogetherAiModelCatalogService`. Update `listAvailableModels()` to call the Anthropic catalog service for the `'claude-code'` executor (and any other Claude-based executors like `'claude-code-interactive'`).
+
+  **Why:** Follows the existing pattern for dynamic catalogs. The factory is the natural integration point — it already knows how to dispatch model queries to the right service. No new interfaces needed; reuse `IAgentExecutorFactory.listAvailableModels()`.
+
+  ### 3. Static Catalog as Fallback & Backup
+
+  **Chosen:** Keep `CLAUDE_CODE_MODELS` in `agent-model-catalog.ts` as the fallback. Update it manually whenever Anthropic releases a new model or we detect changes via testing/feedback. Fallback is hit when:
+  - Anthropic API is unavailable or times out
+  - Network is offline
+  - No API key configured (for authenticated endpoints)
+  - Cache has expired but fetch failed
+
+  **Why:** Ensures CLI/web UI always shows a model list, even when network is down. Users in offline mode can still use cached or static models. Maintains resilience.
+
+  ### 4. Cache Strategy: In-Process TTL
+
+  **Chosen:** Use a simple in-process `Map<string, { expiresAt: number; data: AgentModelListing[] }>` with TTL check on every `listModels()` call. Default TTL is 1 hour; configurable via environment variable (e.g., `SHEP_MODEL_CATALOG_CACHE_TTL_MS`).
+
+  **Why:** Simple, no external dependencies. 1-hour TTL balances freshness (new models visible within 1 hour) and performance (<100ms response time even on cache miss, since fetch is async). OpenRouter uses 5 minutes; Claude models release less frequently, so 1 hour is reasonable.
+
+  ### 5. Multi-Executor Model Consistency
+
+  **Chosen:** Audit and update all executor model lists in `agent-model-catalog.ts`:
+  - `CLAUDE_CODE_MODELS`: Add Fable 5, Opus 4.8, Sonnet 5 variants
+  - `CURSOR_MODELS`: Add Fable 5 (if supported by Cursor)
+  - `COPILOT_CLI_MODELS`: Add Fable 5, Opus 4.8, Sonnet 5 variants
+  - `CLINE_MODELS`: Add Fable 5, Opus 4.8, Sonnet 5 variants (verify via Cline docs)
+  - `OPENROUTER_MODELS`: Ensure Fable 5, Opus 4.8, Sonnet 5 are present (if available on OpenRouter)
+
+  Why: Ensures consistency across all executors. Users of any executor should see the same Claude model options.
+
+  ### 6. Default Model Update to Sonnet 5
+
+  **Chosen:** Update `DEFAULT_MODEL` in `settings-defaults.factory.ts` from `'claude-sonnet-4-6'` to `'claude-sonnet-5'`. Update TypeSpec comment in `settings.tsp` (lines 62-66) to list current models. Existing user settings are NOT retroactively updated — only new installations get the new default.
+
+  **Why:** Claude Sonnet 5 is the recommended stable model as of Feb 2025. New users benefit from better performance/cost. Existing users keep their explicit choices, preserving backward compatibility.
+
+  ### 7. Test Strategy: Comprehensive Model Coverage
+
+  **Chosen:** Add tests for:
+  - **Unit tests for AnthropicModelCatalogService:**
+    - Successful fetch and parse
+    - Cache hit before TTL expiry
+    - Cache miss and refresh
+    - API timeout → fallback to static list
+    - Invalid JSON response → fallback
+    - Optional API key handling
+  - **Integration tests for model validation:**
+    - All Claude models in catalog can be selected (old and new)
+    - Settings use-case validates model against executor's list
+    - Invalid model selection is rejected with helpful error
+    - Default model is in the supported list
+  - **CLI/Web UI tests:**
+    - Model picker displays all catalog models
+    - CLI prompts show all available models
+
+  **Why:** Per spec decision, test all models (old and new) to ensure no regressions. Dynamic fetching introduces new failure modes (network, cache, API errors) that must be tested.
+
+  ### 8. Model Validation: Runtime Type Safety
+
+  **Chosen:** At runtime, use `IAgentExecutorFactory.getSupportedModels()` to validate model selections before persisting settings. Validate model string against the executor's supported list. Throw descriptive error if invalid, listing valid alternatives.
+
+  **Why:** Prevents invalid models from being saved. Users get clear error messages with valid options if they try to select an unsupported model.
+
+  ## Library Analysis
+
+  | Library/API | Purpose | Decision | Reasoning |
+  | ----------- | ------- | -------- | --------- |
+  | `@anthropic-ai/claude-agent-sdk` | Claude agent execution | Already in use | If SDK exposes model listing, use it; otherwise fall back to REST API |
+  | `@anthropic-ai/sdk` or REST API | Model discovery endpoint | Use (conditional on availability) | If Anthropic publishes a `/models` endpoint, call it; research required |
+  | `node:fetch` (built-in) | HTTP requests for model API | Use | Already available in Node.js 18+; no additional dependency |
+  | Caching libraries (e.g., `lru-cache`, `node-cache`) | Optional caching system | Reject (MVP) | Simple Map with TTL is sufficient; defer to future if persistent cache needed |
+  | Redis or external cache | Distributed caching | Reject (MVP) | Not needed for single-process CLI; increases deployment complexity |
+
+  ## Security Considerations
+
+  1. **API Key Handling:**
+     - Anthropic API key (if configured) is passed via `Authorization: Bearer <key>` header
+     - Key is taken from `AgentConfig.token` if available
+     - Key is NOT logged or exposed in error messages
+     - Fallback to unauthenticated requests if no key configured (may be rate-limited)
+
+  2. **Network Security:**
+     - Fetch requests to Anthropic's HTTPS endpoint only
+     - Validate TLS certificates (default fetch behavior)
+     - No user input is interpolated into API URLs
+     - Response parsing is defensive (catch JSON errors, validate structure)
+
+  3. **Cache Security:**
+     - In-process cache is per-process, not shared; no inter-process leakage
+     - Cache contains only model IDs and metadata, no sensitive data
+     - Cache TTL ensures stale data doesn't persist indefinitely
+
+  4. **Fallback Safety:**
+     - If API is unavailable, fallback to static list (safe, known-good data)
+     - No speculative models added to fallback; only released, supported models
+
+  ## Performance Implications
+
+  1. **Response Time:**
+     - Cache hit: <5ms (in-memory lookup, TTL check)
+     - Cache miss with successful API fetch: 50-200ms (network + parse)
+     - Cache miss with fallback: <5ms (return static list)
+     - **Target: <100ms for /api/settings/models endpoint (NFR-3)**
+
+  2. **API Call Frequency:**
+     - 1-hour TTL = ~1-2 API calls per user per day
+     - Negligible load on Anthropic's servers
+     - Much lower than OpenRouter (5-minute TTL)
+
+  3. **Memory Footprint:**
+     - Cache size: ~1-10KB per executor (small)
+     - Per-process, not persistent
+
+  4. **Network Efficiency:**
+     - Fetch is async; doesn't block main event loop
+     - Parallel requests to multiple APIs (OpenRouter + Together AI + Anthropic) can run concurrently
+
+  ## Architecture Notes
+
+  ### Integration with Existing Patterns
+
+  The codebase already implements dynamic model discovery for OpenRouter and Together AI via `OpenRouterModelCatalogService` and `TogetherAiModelCatalogService`. The `AnthropicModelCatalogService` follows the same pattern:
+
+  ```typescript
+  // Pattern (existing):
+  if (key === 'openrouter') {
+    const dynamic = await this.openRouterCatalog.listModels(token);
+    if (dynamic.length > 0) return dynamic;
+    return OPENROUTER_MODELS.map((id) => ({ id }));
+  }
+
+  // Pattern (new, for Claude):
+  if (key === 'claude-code') {
+    const dynamic = await this.anthropicCatalog.listModels(token);
+    if (dynamic.length > 0) return dynamic;
+    return CLAUDE_CODE_MODELS.map((id) => ({ id }));
+  }
+  ```
+
+  This consistency makes the codebase easier to maintain and extend.
+
+  ### Future Evolution
+
+  1. **Persistent Caching:** Add optional SQLite cache for model lists, so they survive process restarts. Useful for long-running servers.
+
+  2. **Scheduled Refresh:** For server-mode deployments, add a background job that refreshes model catalogs on a schedule (e.g., every 6 hours). Ensures users always see fresh data without waiting for a cache miss.
+
+  3. **Model Metadata Enrichment:** Extend `AgentModelListing` to include context length, pricing, release date, deprecation status. Use this data in CLI/web UI to help users choose models.
+
+  4. **Webhook/Event-Driven Updates:** If Anthropic publishes a webhook API for model updates, subscribe to it and refresh cache immediately on new releases.
+
+  5. **CI/Build-Time Sync:** In CI, fetch current models from Anthropic API and regenerate `agent-model-catalog.ts` automatically. Keeps fallback in sync.
+
+  ### Deployment & Configuration
+
+  - **Environment Variables:**
+    - `SHEP_MODEL_CATALOG_CACHE_TTL_MS` — Cache TTL in milliseconds (default: 3600000 = 1 hour)
+    - `SHEP_ANTHROPIC_API_KEY` — Optional Anthropic API key for authenticated model discovery
+    - `SHEP_MODEL_CATALOG_FETCH_TIMEOUT_MS` — HTTP request timeout (default: 5000 = 5 seconds)
+
+  - **CLI Changes:**
+    - `shep settings model` — Interactive prompt shows all models from `listAvailableModels()` (dynamic + fallback)
+    - `shep feat new --model <model>` — Validates model against executor's supported list
+
+  - **Web UI Changes:**
+    - `/api/settings/models` endpoint — Returns `listAvailableModels()` result (cached)
+    - Model picker component — Renders all models from the API
+
+  ## Implementation Roadmap
+
+  1. **Research (current):** Verify Anthropic API availability, authentication, response format
+  2. **Create AnthropicModelCatalogService:** Implement fetch, cache, fallback logic
+  3. **Integrate with AgentExecutorFactory:** Wire up service, update `listAvailableModels()`
+  4. **Update Static Catalog:** Add new Claude models (Fable 5, Opus 4.8, Sonnet 5) to fallback lists
+  5. **Update Defaults:** Change `DEFAULT_MODEL` to Sonnet 5
+  6. **Update TypeSpec:** Reflect current model lists in comments
+  7. **Add Tests:** Unit tests for catalog service, integration tests for model validation
+  8. **Test All UI:** CLI prompts, web UI, Storybook stories
+  9. **Integration Testing:** Full flow: fetch → cache → validation → selection
+  10. **Documentation:** JSDoc comments, error messages, CLI help text
