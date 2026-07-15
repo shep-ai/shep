@@ -180,9 +180,17 @@ export async function getSkills(projectRoot?: string, homeDir?: string): Promise
     getSkillsFromDirectory(globalDir, 'global'),
   ]);
 
-  // Deduplicate by name — project skills take precedence over global skills
+  // Deduplicate by name — project skills take precedence over global skills,
+  // and the first of any colliding global skills wins. Two distinct directories
+  // can advertise the same frontmatter `name`; the list must expose each name
+  // once so name-keyed React renders stay unique.
   const seen = new Set(projectSkills.map((s) => s.name));
-  const uniqueGlobalSkills = globalSkills.filter((s) => !seen.has(s.name));
+  const uniqueGlobalSkills: SkillData[] = [];
+  for (const skill of globalSkills) {
+    if (seen.has(skill.name)) continue;
+    seen.add(skill.name);
+    uniqueGlobalSkills.push(skill);
+  }
 
   return [...projectSkills, ...uniqueGlobalSkills].sort((a, b) => a.name.localeCompare(b.name));
 }

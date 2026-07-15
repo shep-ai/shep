@@ -4,6 +4,8 @@ import { useState, useMemo } from 'react';
 import { Search, Puzzle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { PageHeader } from '@/components/common/page-header';
 import { EmptyState } from '@/components/common/empty-state';
 import { SkillList } from './skill-list';
@@ -36,6 +38,7 @@ export function SkillsPageClient({ skills, injectionConfig }: SkillsPageClientPr
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState<SkillCategory | null>(null);
   const [selectedSkill, setSelectedSkill] = useState<SkillData | null>(null);
+  const [groupByPackage, setGroupByPackage] = useState(true);
 
   const categoryCounts = useMemo(() => computeCategoryCounts(skills), [skills]);
 
@@ -92,16 +95,32 @@ export function SkillsPageClient({ skills, injectionConfig }: SkillsPageClientPr
         />
       </div>
 
-      {/* Category Filter */}
-      <CategoryFilter
-        activeCategory={activeCategory}
-        onCategoryChange={setActiveCategory}
-        counts={categoryCounts}
-      />
+      {/* Category Filter + Grouping Toggle */}
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <CategoryFilter
+          activeCategory={activeCategory}
+          onCategoryChange={setActiveCategory}
+          counts={categoryCounts}
+        />
+        <div className="flex items-center gap-2">
+          <Switch
+            id="group-by-package"
+            checked={groupByPackage}
+            onCheckedChange={setGroupByPackage}
+          />
+          <Label htmlFor="group-by-package" className="cursor-pointer text-sm font-normal">
+            Group by package
+          </Label>
+        </div>
+      </div>
 
       {/* Skill List or Empty Filter State */}
       {filteredSkills.length > 0 ? (
-        <SkillList skills={filteredSkills} onSkillSelect={setSelectedSkill} />
+        <SkillList
+          skills={filteredSkills}
+          onSkillSelect={setSelectedSkill}
+          groupByPackage={groupByPackage}
+        />
       ) : (
         <EmptyState
           icon={<Search className="size-10" />}

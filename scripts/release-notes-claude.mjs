@@ -63,6 +63,16 @@ function isMaintenanceOnlyFraming(tagline) {
   return MAINTENANCE_ONLY_PATTERNS.some((re) => re.test(tagline));
 }
 
+// Openers Claude keeps reaching for on quiet releases, to the point they've
+// become boilerplate in their own right (e.g. "Keeping the lights on" opened
+// 7 of the last 9 releases). Reject and retry rather than let a tagline meant
+// to fight staleness become exactly as repetitive as the text it replaced.
+const OVERUSED_OPENER_PATTERNS = [/^keeping the lights on\b/i, /^housekeeping\b/i];
+
+function isOverusedOpener(tagline) {
+  return OVERUSED_OPENER_PATTERNS.some((re) => re.test(String(tagline).trim()));
+}
+
 function buildPrompt({ commits, version }) {
   const summary = summarizeCommits(commits) || '- (chore-only release)';
   const userFacing = hasUserFacingChanges(commits);
@@ -76,7 +86,10 @@ function buildPrompt({ commits, version }) {
       ]
     : [
         'This is a chore-only release with no feature/fix/perf commits. Keep the',
-        'tagline modest and honest — do not invent user-facing features.',
+        'tagline modest and honest — do not invent user-facing features. Ground it',
+        'in something concrete from the commits/scope below (which area of the',
+        'codebase, what kind of chore) instead of a vague label, so it reads',
+        "differently release over release — don't just reach for a generic label.",
       ];
   return [
     `You are writing the one-line tagline for the v${version} release of Shep — an autonomous AI-native SDLC platform that runs parallel AI agents in isolated git worktrees to automate the dev cycle from idea to deploy.`,
@@ -96,6 +109,9 @@ function buildPrompt({ commits, version }) {
     '- Do NOT include the leading ">" markdown blockquote character.',
     '- Do NOT prefix with "We\'re excited" / "Introducing" / "In this release".',
     '- Do NOT wrap in quotes.',
+    '- NEVER open with "Keeping the lights on" or "Housekeeping..." — these',
+    '  exact openers have been overused across past releases; find fresh,',
+    '  specific phrasing every time, even for a quiet release.',
     '',
     'Output ONLY the tagline text, nothing else.',
   ].join('\n');
@@ -209,15 +225,29 @@ export async function generateTagline({
 
   try {
     const prompt = buildPrompt({ commits, version });
-    const raw = await runQuery(queryFn, prompt, queryOptions);
-    const tagline = postProcessTagline(raw);
+    let tagline = postProcessTagline(await runQuery(queryFn, prompt, queryOptions));
+
+    if (tagline && shouldRejectTagline(tagline, commits)) {
+      logger.info?.(
+        `[release-notes] Claude tagline was overused/contradictory ("${tagline}"); retrying with stronger guidance.`
+      );
+      const retryPrompt = [
+        prompt,
+        '',
+        `Your previous attempt was: "${tagline}"`,
+        'That repeats an overused opener or contradicts the shipped changes. Write a',
+        'completely different tagline this time — different opening words, different structure.',
+      ].join('\n');
+      tagline = postProcessTagline(await runQuery(queryFn, retryPrompt, queryOptions));
+    }
+
     if (!tagline) {
       logger.warn?.('[release-notes] Claude returned empty tagline; using static tagline.');
       return null;
     }
-    if (hasUserFacingChanges(commits) && isMaintenanceOnlyFraming(tagline)) {
+    if (shouldRejectTagline(tagline, commits)) {
       logger.warn?.(
-        `[release-notes] Claude tagline framed a user-facing release as maintenance ("${tagline}"); using static tagline.`
+        `[release-notes] Claude tagline still overused/contradictory after retry ("${tagline}"); using static tagline.`
       );
       return null;
     }
@@ -229,6 +259,11 @@ export async function generateTagline({
   }
 }
 
+function shouldRejectTagline(tagline, commits) {
+  if (isOverusedOpener(tagline)) return true;
+  return hasUserFacingChanges(commits) && isMaintenanceOnlyFraming(tagline);
+}
+
 export const __test__ = {
   buildPrompt,
   postProcessTagline,
@@ -236,5 +271,6 @@ export const __test__ = {
   hasAuthCredentials,
   hasUserFacingChanges,
   isMaintenanceOnlyFraming,
+  isOverusedOpener,
   STATIC_TAGLINE,
 };

@@ -1,0 +1,34 @@
+feature:
+  id: "104-skills-grouping-toggle"
+  name: "skills-grouping-toggle"
+  number: 104
+  branch: "feat/104-skills-grouping-toggle"
+  lifecycle: "research"
+  createdAt: "2026-07-13T08:33:34Z"
+status:
+  phase: "research"
+  progress:
+    completed: 0
+    total: 0
+    percentage: 0
+  currentTask: null
+  lastUpdated: "2026-07-13T08:33:34Z"
+  lastUpdatedBy: "feature-agent"
+  completedPhases:
+    - "evidence"
+    - "fast-implement"
+validation:
+  lastRun: null
+  gatesPassed: []
+  autoFixesApplied: []
+tasks:
+  current: null
+  blocked: []
+  failed: []
+checkpoints:
+  - phase: "feature-created"
+    completedAt: "2026-07-13T08:33:34Z"
+    completedBy: "feature-agent"
+errors:
+  current: null
+  history: []

@@ -1,48 +1,74 @@
 import { SkillCard } from './skill-card';
-import type { SkillCategory, SkillData } from '@/lib/skills';
-
-const CATEGORY_ORDER: SkillCategory[] = ['Workflow', 'Code Generation', 'Analysis', 'Reference'];
+import { derivePackage, UNGROUPED_PACKAGE_LABEL } from '@/lib/skill-package';
+import type { SkillData } from '@/lib/skills';
 
 export interface SkillListProps {
   skills: SkillData[];
   onSkillSelect: (skill: SkillData) => void;
+  /** Group skills under their package heading. Defaults to true. */
+  groupByPackage?: boolean;
 }
 
-function groupByCategory(skills: SkillData[]): Map<SkillCategory, SkillData[]> {
-  const groups = new Map<SkillCategory, SkillData[]>();
+interface SkillGroup {
+  label: string;
+  skills: SkillData[];
+}
+
+function groupSkillsByPackage(skills: SkillData[]): SkillGroup[] {
+  const groups = new Map<string, SkillData[]>();
   for (const skill of skills) {
-    const group = groups.get(skill.category) ?? [];
+    const label = derivePackage(skill.name, skill.description) ?? UNGROUPED_PACKAGE_LABEL;
+    const group = groups.get(label) ?? [];
     group.push(skill);
-    groups.set(skill.category, group);
+    groups.set(label, group);
   }
-  return groups;
+
+  // Named packages first (alphabetical), the ungrouped bucket last.
+  return [...groups.entries()]
+    .sort(([a], [b]) => {
+      if (a === UNGROUPED_PACKAGE_LABEL) return 1;
+      if (b === UNGROUPED_PACKAGE_LABEL) return -1;
+      return a.localeCompare(b);
+    })
+    .map(([label, groupSkills]) => ({ label, skills: groupSkills }));
 }
 
-export function SkillList({ skills, onSkillSelect }: SkillListProps) {
-  const groups = groupByCategory(skills);
+function SkillGrid({
+  skills,
+  onSelect,
+}: {
+  skills: SkillData[];
+  onSelect: SkillListProps['onSkillSelect'];
+}) {
+  return (
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+      {skills.map((skill) => (
+        <SkillCard key={skill.name} skill={skill} onSelect={onSelect} />
+      ))}
+    </div>
+  );
+}
+
+export function SkillList({ skills, onSkillSelect, groupByPackage = true }: SkillListProps) {
+  if (skills.length === 0) return null;
+
+  if (!groupByPackage) {
+    return <SkillGrid skills={skills} onSelect={onSkillSelect} />;
+  }
 
   return (
     <div className="space-y-8">
-      {CATEGORY_ORDER.map((category) => {
-        const categorySkills = groups.get(category);
-        if (!categorySkills || categorySkills.length === 0) return null;
-
-        return (
-          <section key={category}>
-            <h2 className="mb-4 text-lg font-semibold">
-              {category}{' '}
-              <span className="text-muted-foreground text-sm font-normal">
-                ({categorySkills.length})
-              </span>
-            </h2>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {categorySkills.map((skill) => (
-                <SkillCard key={skill.name} skill={skill} onSelect={onSkillSelect} />
-              ))}
-            </div>
-          </section>
-        );
-      })}
+      {groupSkillsByPackage(skills).map((group) => (
+        <section key={group.label}>
+          <h2 className="mb-4 text-lg font-semibold">
+            {group.label}{' '}
+            <span className="text-muted-foreground text-sm font-normal">
+              ({group.skills.length})
+            </span>
+          </h2>
+          <SkillGrid skills={group.skills} onSelect={onSkillSelect} />
+        </section>
+      ))}
     </div>
   );
 }
