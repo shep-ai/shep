@@ -1,9 +1,13 @@
 import { defineConfig, devices } from '@playwright/test';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import {
+  cleanupE2eShepHomeOnExit,
+  hasAssignedE2eShepHome,
+  resolveE2eShepHome,
+} from './tests/e2e/web/helpers/e2e-shep-home';
 
-const e2eShepHome = join(tmpdir(), `shep-e2e-web-${process.pid}`);
-process.env.SHEP_HOME = e2eShepHome;
+const ownsE2eShepHome = !hasAssignedE2eShepHome();
+const e2eShepHome = resolveE2eShepHome();
+if (ownsE2eShepHome) cleanupE2eShepHomeOnExit();
 
 /**
  * Playwright configuration for Shep AI Web UI E2E tests.
