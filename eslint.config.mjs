@@ -231,17 +231,10 @@ export default tseslint.config(
   },
 
   // =============================================================================
-  // Dev tooling scripts - console output is their user interface, and plain
-  // .mjs/.cjs helpers run in Node with its globals available.
+  // Dev tooling scripts - console output is their user interface
   // =============================================================================
   {
-    files: ['scripts/**/*.ts', 'scripts/**/*.mjs', 'scripts/**/*.cjs', 'scripts/**/*.js'],
-    languageOptions: {
-      globals: {
-        process: 'readonly',
-        console: 'readonly',
-      },
-    },
+    files: ['scripts/**/*.ts'],
     rules: {
       'no-console': 'off',
     },
