@@ -1,5 +1,16 @@
 # Lessons Learned
 
+## Native modules (better-sqlite3) break global installs — surface a fix, don't crash
+
+A user's `npm i -g @shepai/cli` crashed at startup with `Could not locate the bindings file` from `better-sqlite3`. `better-sqlite3` is a native addon: its compiled `.node` binary must match the running Node ABI, and a global install can end up with no binary at all (install scripts skipped via `ignore-scripts`, no prebuilt for a brand-new Node like v24/ABI 137, or a stale binary after a Node upgrade). The raw error is a meaningless multi-line stack to an end user.
+
+Rules:
+
+1. **Any `new Database()` (or other native-addon load) at bootstrap MUST be wrapped** so the raw failure becomes a typed, actionable error. See `infrastructure/errors/sqlite-native-binding-error.ts` (`isSqliteNativeBindingError`/`toSqliteNativeBindingError`) + the try/catch in `sqlite/connection.ts`. The CLI bootstrap prints `err.remediation`, not a stack.
+2. **`bootstrap()` opens the DB before ANY command (including `doctor`) is parsed.** So a `shep doctor` diagnostic that probes the binding is UNREACHABLE in the exact failure it targets — the process dies at DB init first. Don't add a doctor check for a bootstrap-fatal dependency; fix it on the failure path (runtime error) + install path (postinstall guard) instead.
+3. **Migrating shep's own persistence to `node:sqlite` would NOT remove `better-sqlite3`** — `@langchain/langgraph-checkpoint-sqlite`'s `SqliteSaver` depends on it directly (confirmed in `pnpm-lock.yaml`). Before scoping a "drop the native dep" migration, grep the lockfile for transitive dependents; the dep often survives the migration via a library you don't control.
+4. **A `files`-allowlisted `postinstall` guard must never fail the install.** `scripts/verify-native-bindings.mjs` probes the addon, attempts ONE `npm rebuild`, prints guidance, and always `exit(0)`. A throwing postinstall bricks `npm i`. Remember to add the script path to `package.json` `files` or it won't ship in the tarball.
+
 ## Adding Enum Members — Grep String Literals, Not Just `Enum.Member`
 
 Adding `Analyzing`/`Installing` to `DeploymentState` (spec 103, task-14) required updating every place that treats a deployment as "active". Grepping for `DeploymentState\.` found the touchpoints written as `deploy.status === DeploymentState.Booting`, but missed FIVE more call sites that compared against raw **string literals** instead: `deployAction.status === 'Booting' || deployAction.status === 'Ready'` in `base-drawer.tsx`, `repository-node.tsx`, `feature-node.tsx`, `repository-drawer-client.tsx`, and `feature-drawer-client.tsx`. All five happened to reuse the exact variable name `isDeploymentActive`/`isDeployActive` — a strong signal it should have been one shared helper from the start.

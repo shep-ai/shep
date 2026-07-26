@@ -10,6 +10,10 @@ import {
   ensureShepDirectory,
   getShepDbPath,
 } from '../../services/filesystem/shep-directory.service.js';
+import {
+  isSqliteNativeBindingError,
+  toSqliteNativeBindingError,
+} from '../../errors/sqlite-native-binding-error.js';
 
 /**
  * Singleton database instance.
@@ -45,11 +49,21 @@ export async function getSQLiteConnection(): Promise<Database.Database> {
   // Get database path
   const dbPath = getShepDbPath();
 
-  // Create database connection
-  dbInstance = new Database(dbPath, {
-    // eslint-disable-next-line no-console
-    verbose: process.env.DEBUG_SQL ? console.log : undefined,
-  });
+  // Create database connection. better-sqlite3 is a native addon; if its
+  // compiled binary is missing or built for a different Node ABI, construction
+  // throws a raw "Could not locate the bindings file" error. Translate that
+  // into a typed, actionable error so the CLI can print a fix, not a stack.
+  try {
+    dbInstance = new Database(dbPath, {
+      // eslint-disable-next-line no-console
+      verbose: process.env.DEBUG_SQL ? console.log : undefined,
+    });
+  } catch (err) {
+    if (isSqliteNativeBindingError(err)) {
+      throw toSqliteNativeBindingError(err);
+    }
+    throw err;
+  }
 
   // Configure pragmas for production use
   // WAL mode: Better concurrency, write performance

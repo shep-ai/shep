@@ -33,6 +33,7 @@
     "apis",
     "dist",
     "web",
+    "scripts/verify-native-bindings.mjs",
     "README.md",
     "LICENSE"
   ],
@@ -88,6 +89,7 @@
     "spec:validate": "tsx scripts/spec-validate.ts",
     "cli": "tsx src/presentation/cli/index.ts",
     "prepare": "husky",
+    "postinstall": "node scripts/verify-native-bindings.mjs",
     "validate": "pnpm run lint:fix && pnpm run format && pnpm run typecheck && pnpm run tsp:compile",
     "electron:dev": "pnpm --filter @shepai/electron dev",
     "apps:dev": "cross-env ELECTRON_RUN_AS_NODE= SHEP_SHELL_VARIANT=apps-only pnpm --filter @shepai/electron dev",

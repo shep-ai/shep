@@ -78,6 +78,7 @@ import { startDaemon } from './commands/daemon/start-daemon.js';
 
 // DI container and settings
 import { initializeContainer, container } from '@/infrastructure/di/container.js';
+import { SqliteNativeBindingError } from '@/infrastructure/errors/sqlite-native-binding-error.js';
 import { InitializeSettingsUseCase } from '@/application/use-cases/settings/initialize-settings.use-case.js';
 import { initializeSettings } from '@/infrastructure/services/settings.service.js';
 import { initI18n as initCliI18n } from './i18n.js';
@@ -95,8 +96,15 @@ async function bootstrap() {
       // Expose the DI container on globalThis for the web UI's server-side code
       (globalThis as Record<string, unknown>).__shepContainer = container;
     } catch (error) {
-      const err = error instanceof Error ? error : new Error(String(error));
-      messages.error('Failed to initialize database', err);
+      if (error instanceof SqliteNativeBindingError) {
+        // Native addon couldn't load — print the fix, not a stack trace.
+        messages.error(error.message);
+        messages.newline();
+        messages.log(error.remediation);
+      } else {
+        const err = error instanceof Error ? error : new Error(String(error));
+        messages.error('Failed to initialize database', err);
+      }
       throw error; // Re-throw to trigger outer catch
     }
 
