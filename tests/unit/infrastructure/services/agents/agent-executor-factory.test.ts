@@ -350,6 +350,7 @@ describe('AgentExecutorFactory', () => {
 
       expect(models).toEqual([
         'claude-fable-5',
+        'claude-opus-5',
         'claude-opus-4-8',
         'claude-opus-4-7',
         'claude-opus-4-6',
@@ -377,6 +378,7 @@ describe('AgentExecutorFactory', () => {
       const models = factory.getSupportedModels(AgentType.Cursor);
 
       expect(models).toEqual([
+        'claude-opus-5',
         'claude-opus-4-8',
         'claude-opus-4-7',
         'claude-opus-4-6',

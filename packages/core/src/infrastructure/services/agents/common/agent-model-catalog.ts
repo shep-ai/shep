@@ -9,6 +9,7 @@
 
 export const CLAUDE_CODE_MODELS: string[] = [
   'claude-fable-5',
+  'claude-opus-5',
   'claude-opus-4-8',
   'claude-opus-4-7',
   'claude-opus-4-6',
@@ -28,6 +29,7 @@ export const GEMINI_CLI_MODELS: string[] = [
 ];
 
 export const CURSOR_MODELS: string[] = [
+  'claude-opus-5',
   'claude-opus-4-8',
   'claude-opus-4-7',
   'claude-opus-4-6',

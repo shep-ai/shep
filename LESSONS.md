@@ -1175,3 +1175,29 @@ A value import forces the bundler to actually include the module, dragging Node 
 1. When deduping a **merged** collection, dedupe across the entire combined set — add every accepted item's key back into the `seen` set as you go, not just the keys from the first source.
 2. Two distinct on-disk entries can advertise the **same logical id** (frontmatter `name`). Never assume directory names guarantee uniqueness of the id you key on.
 3. Duplicate-key bugs don't fail `tsc`/vitest — surface them by loading the real page and watching the **browser console** (Playwright `page.on('console')`) during evidence capture.
+
+## Adding a Model to the Catalog Is a Four-Touch Change, Not One
+
+`claude-sonnet-5` was added to `CLAUDE_CODE_MODELS` and `CURSOR_MODELS` in
+`agent-model-catalog.ts` plus `model-metadata.ts` — but **not** to
+`CURSOR_MODEL_MAP` in `cursor-executor.service.ts`. `toCursorModelName()` falls
+back to pass-through, so the Cursor CLI silently received `claude-sonnet-5`
+instead of the short `sonnet-5` name it expects. A pass-through fallback means
+a missing mapping never throws; it just sends the wrong flag value at runtime.
+The Storybook mocks had drifted too (`get-supported-models.ts` /
+`get-all-agent-models.ts` still listed the pre-Fable-5 set).
+
+**When adding or retiring a model ID, touch all four:**
+
+1. `packages/core/src/infrastructure/services/agents/common/agent-model-catalog.ts` — every agent list that actually supports it (ordered most-capable first).
+2. Per-agent **name translation maps** — `CURSOR_MODEL_MAP` (cursor-executor) and `LEGACY_MODEL_ALIASES` (copilot-cli-executor). Each agent CLI has its own naming convention; a pass-through fallback hides the omission.
+3. `src/presentation/web/lib/model-metadata.ts` — display name + description. Without it the picker shows a prettified raw ID and an empty description. Re-check the *neighbouring* descriptions too: a new flagship makes the old "Most capable" line a lie.
+4. `.storybook/mocks/app/actions/get-supported-models.ts` and `get-all-agent-models.ts` — static mocks that don't import the catalog, so they drift silently and stories render a stale list.
+
+**Do NOT** add a Claude model to `COPILOT_CLI_MODELS` / `OPENROUTER_MODELS` just
+because Anthropic shipped it — those lists are gated by what the third party
+actually serves. Verify against that provider before extending them.
+
+**Regression lock:** `tests/unit/infrastructure/services/agents/agent-executor-factory.test.ts`
+asserts the exact list per agent, and `cursor-executor.test.ts` asserts the
+`--model` flag value per canonical ID. Extend both in the same diff.

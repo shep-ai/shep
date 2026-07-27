@@ -376,6 +376,30 @@ describe('CursorExecutorService', () => {
       );
     });
 
+    it.each([
+      ['claude-opus-5', 'opus-5'],
+      ['claude-sonnet-5', 'sonnet-5'],
+    ])('should map %s to the cursor model name %s', async (canonical, cursorName) => {
+      const mockProc = createMockChildProcess();
+      vi.mocked(mockSpawn).mockReturnValue(mockProc as any);
+
+      const assistantLine = buildCursorAssistantEvent('Done');
+      const resultLine = buildCursorResultEvent('sess-1', 100);
+      const executePromise = executor.execute('Test', {
+        model: canonical,
+        silent: true,
+      });
+      emitStreamData(mockProc, [assistantLine, resultLine], null, 0);
+
+      await executePromise;
+
+      expect(mockSpawn).toHaveBeenCalledWith(
+        'cursor-agent',
+        expect.arrayContaining(['--model', cursorName]),
+        expect.any(Object)
+      );
+    });
+
     it('should pass --yolo flag', async () => {
       const mockProc = createMockChildProcess();
       vi.mocked(mockSpawn).mockReturnValue(mockProc as any);
