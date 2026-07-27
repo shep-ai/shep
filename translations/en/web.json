@@ -9,6 +9,7 @@
       "agent": "Agent",
       "environment": "Environment",
       "workflow": "Workflow",
+      "worktree": "Worktree",
       "ci": "CI",
       "timeouts": "Timeouts",
       "notifications": "Notifications",
@@ -115,6 +116,23 @@
       "links": {
         "approvalGates": "Approval gates",
         "pushAndPrFlags": "Push & PR flags"
+      }
+    },
+    "worktree": {
+      "title": "Worktree provisioning",
+      "description": "Replace or extend how Shep creates each feature worktree",
+      "createCommand": "Custom create command",
+      "createCommandDescription": "Runs instead of `git worktree add`, from the main repository. Leave empty to use the built-in git worktree.",
+      "createCommandPlaceholder": "my-tool worktree add \"$SHEP_WORKTREE_PATH\" \"$SHEP_BRANCH\"",
+      "postCreateCommand": "Post-create command",
+      "postCreateCommandDescription": "Runs inside the new worktree once it exists — symlink node_modules, copy untracked config, warm caches.",
+      "postCreateCommandPlaceholder": "ln -s \"$SHEP_REPO_PATH/node_modules\" node_modules",
+      "commandTimeout": "Command timeout (ms)",
+      "commandTimeoutDescription": "Applied to each command. Raise it when the hook runs an install step.",
+      "envVarsHint": "Available variables: SHEP_REPO_PATH, SHEP_WORKTREE_PATH, SHEP_BRANCH, SHEP_START_POINT (empty when the branch already exists). A failing command fails feature creation.",
+      "hint": "Use these when a plain git worktree is not enough — monorepos that need symlinked node_modules, or projects that only build from a prepared directory.",
+      "links": {
+        "worktreeGuide": "Custom worktree provisioning"
       }
     },
     "ci": {

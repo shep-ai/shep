@@ -1,0 +1,16 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: WorktreeConfig.yaml
+type: object
+properties:
+  createCommand:
+    type: string
+    description: Command replacing `git worktree add` (empty = built-in git worktree)
+  postCreateCommand:
+    type: string
+    description: Command run inside the worktree after it is provisioned
+  commandTimeoutMs:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: "Timeout in milliseconds for each worktree command (default: 300000)"
+description: Custom worktree provisioning commands

@@ -9,6 +9,7 @@
       "agent": "Agente",
       "environment": "Entorno",
       "workflow": "Flujo de trabajo",
+      "worktree": "Worktree",
       "ci": "CI",
       "timeouts": "Tiempos límite",
       "notifications": "Notificaciones",
@@ -115,6 +116,23 @@
       "links": {
         "approvalGates": "Puertas de aprobación",
         "pushAndPrFlags": "Opciones de push y PR"
+      }
+    },
+    "worktree": {
+      "title": "Aprovisionamiento de worktree",
+      "description": "Reemplaza o amplía cómo Shep crea el worktree de cada funcionalidad",
+      "createCommand": "Comando de creación personalizado",
+      "createCommandDescription": "Se ejecuta en lugar de `git worktree add`, desde el repositorio principal. Déjalo vacío para usar el worktree de git integrado.",
+      "createCommandPlaceholder": "my-tool worktree add \"$SHEP_WORKTREE_PATH\" \"$SHEP_BRANCH\"",
+      "postCreateCommand": "Comando posterior a la creación",
+      "postCreateCommandDescription": "Se ejecuta dentro del nuevo worktree una vez que existe: enlazar node_modules, copiar configuración no versionada, precalentar cachés.",
+      "postCreateCommandPlaceholder": "ln -s \"$SHEP_REPO_PATH/node_modules\" node_modules",
+      "commandTimeout": "Tiempo de espera del comando (ms)",
+      "commandTimeoutDescription": "Se aplica a cada comando. Auméntalo si el hook ejecuta una instalación.",
+      "envVarsHint": "Variables disponibles: SHEP_REPO_PATH, SHEP_WORKTREE_PATH, SHEP_BRANCH, SHEP_START_POINT (vacío si la rama ya existe). Un comando fallido hace fallar la creación de la funcionalidad.",
+      "hint": "Úsalo cuando un worktree de git simple no basta: monorepos que necesitan node_modules enlazado, o proyectos que solo compilan desde un directorio preparado.",
+      "links": {
+        "worktreeGuide": "Aprovisionamiento de worktree personalizado"
       }
     },
     "ci": {

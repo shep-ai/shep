@@ -31,6 +31,8 @@ export type {
   IWebServerService,
   IWorktreeService,
   WorktreeInfo,
+  IWorktreeHookRunner,
+  WorktreeHookContext,
 } from './ports/output/index.js';
 
 export {

@@ -943,6 +943,24 @@ export type SecurityConfig = {
    */
   policySource?: string;
 };
+
+/**
+ * Custom worktree provisioning commands
+ */
+export type WorktreeConfig = {
+  /**
+   * Command replacing `git worktree add` (empty = built-in git worktree)
+   */
+  createCommand?: string;
+  /**
+   * Command run inside the worktree after it is provisioned
+   */
+  postCreateCommand?: string;
+  /**
+   * Timeout in milliseconds for each worktree command (default: 300000)
+   */
+  commandTimeoutMs?: number;
+};
 export enum DefaultHomePage {
   ControlCenter = 'control-center',
   Applications = 'applications',
@@ -1017,6 +1035,10 @@ export type Settings = BaseEntity & {
    * Messaging remote control configuration (optional, defaults applied at runtime)
    */
   messaging?: MessagingConfig;
+  /**
+   * Custom worktree provisioning commands (optional, built-in git worktree by default)
+   */
+  worktree?: WorktreeConfig;
 };
 export enum SupervisorScopeType {
   global = 'global',

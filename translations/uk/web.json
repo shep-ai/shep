@@ -9,6 +9,7 @@
       "agent": "Агент",
       "environment": "Середовище",
       "workflow": "Робочий процес",
+      "worktree": "Робоче дерево",
       "ci": "CI",
       "timeouts": "Тайм-аути",
       "notifications": "Сповіщення",
@@ -116,6 +117,23 @@
       "modeExploration": "Exploration",
       "modeFast": "Fast",
       "modeRegular": "Regular"
+    },
+    "worktree": {
+      "title": "Підготовка робочого дерева",
+      "description": "Замініть або доповніть те, як Shep створює робоче дерево для кожної функції",
+      "createCommand": "Власна команда створення",
+      "createCommandDescription": "Виконується замість `git worktree add` з основного репозиторію. Залиште порожнім, щоб використати вбудований git worktree.",
+      "createCommandPlaceholder": "my-tool worktree add \"$SHEP_WORKTREE_PATH\" \"$SHEP_BRANCH\"",
+      "postCreateCommand": "Команда після створення",
+      "postCreateCommandDescription": "Виконується всередині нового робочого дерева — створити симлінк на node_modules, скопіювати невідстежувані налаштування, прогріти кеші.",
+      "postCreateCommandPlaceholder": "ln -s \"$SHEP_REPO_PATH/node_modules\" node_modules",
+      "commandTimeout": "Тайм-аут команди (мс)",
+      "commandTimeoutDescription": "Застосовується до кожної команди. Збільште, якщо команда виконує встановлення залежностей.",
+      "envVarsHint": "Доступні змінні: SHEP_REPO_PATH, SHEP_WORKTREE_PATH, SHEP_BRANCH, SHEP_START_POINT (порожньо, якщо гілка вже існує). Помилка команди перериває створення функції.",
+      "hint": "Використовуйте, коли звичайного git worktree замало — монорепозиторії із симлінком на node_modules або проєкти, що збираються лише з підготовленого каталогу.",
+      "links": {
+        "worktreeGuide": "Власна підготовка робочого дерева"
+      }
     },
     "ci": {
       "title": "Безперервна інтеграція",

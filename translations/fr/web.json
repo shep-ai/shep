@@ -9,6 +9,7 @@
       "agent": "Agent",
       "environment": "Environnement",
       "workflow": "Workflow",
+      "worktree": "Worktree",
       "ci": "CI",
       "timeouts": "Délais d'attente",
       "notifications": "Notifications",
@@ -115,6 +116,23 @@
       "links": {
         "approvalGates": "Portes d'approbation",
         "pushAndPrFlags": "Drapeaux push et PR"
+      }
+    },
+    "worktree": {
+      "title": "Provisionnement du worktree",
+      "description": "Remplacez ou complétez la façon dont Shep crée le worktree de chaque fonctionnalité",
+      "createCommand": "Commande de création personnalisée",
+      "createCommandDescription": "S'exécute à la place de `git worktree add`, depuis le dépôt principal. Laissez vide pour utiliser le worktree git intégré.",
+      "createCommandPlaceholder": "my-tool worktree add \"$SHEP_WORKTREE_PATH\" \"$SHEP_BRANCH\"",
+      "postCreateCommand": "Commande après création",
+      "postCreateCommandDescription": "S'exécute dans le nouveau worktree une fois créé : lier node_modules, copier la configuration non suivie, préchauffer les caches.",
+      "postCreateCommandPlaceholder": "ln -s \"$SHEP_REPO_PATH/node_modules\" node_modules",
+      "commandTimeout": "Délai d'expiration de la commande (ms)",
+      "commandTimeoutDescription": "Appliqué à chaque commande. Augmentez-le si le hook lance une installation.",
+      "envVarsHint": "Variables disponibles : SHEP_REPO_PATH, SHEP_WORKTREE_PATH, SHEP_BRANCH, SHEP_START_POINT (vide si la branche existe déjà). Une commande en échec fait échouer la création de la fonctionnalité.",
+      "hint": "À utiliser quand un simple worktree git ne suffit pas : monorepos nécessitant un node_modules lié, ou projets qui ne compilent que depuis un répertoire préparé.",
+      "links": {
+        "worktreeGuide": "Provisionnement de worktree personnalisé"
       }
     },
     "ci": {

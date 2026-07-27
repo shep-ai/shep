@@ -9,6 +9,7 @@
       "agent": "סוכן",
       "environment": "סביבה",
       "workflow": "תהליך עבודה",
+      "worktree": "עץ עבודה",
       "ci": "CI",
       "timeouts": "תפוגות זמן",
       "notifications": "התראות",
@@ -115,6 +116,23 @@
       "links": {
         "approvalGates": "שערי אישור",
         "pushAndPrFlags": "דגלי דחיפה ו-PR"
+      }
+    },
+    "worktree": {
+      "title": "הקמת עץ עבודה",
+      "description": "החליפו או הרחיבו את האופן שבו Shep יוצר עץ עבודה לכל פיצ׳ר",
+      "createCommand": "פקודת יצירה מותאמת",
+      "createCommandDescription": "רצה במקום `git worktree add`, מתוך המאגר הראשי. השאירו ריק כדי להשתמש בעץ העבודה המובנה של git.",
+      "createCommandPlaceholder": "my-tool worktree add \"$SHEP_WORKTREE_PATH\" \"$SHEP_BRANCH\"",
+      "postCreateCommand": "פקודה לאחר היצירה",
+      "postCreateCommandDescription": "רצה בתוך עץ העבודה החדש לאחר שנוצר — יצירת קישור ל-node_modules, העתקת הגדרות, חימום מטמונים.",
+      "postCreateCommandPlaceholder": "ln -s \"$SHEP_REPO_PATH/node_modules\" node_modules",
+      "commandTimeout": "פסק זמן לפקודה (מילישניות)",
+      "commandTimeoutDescription": "חל על כל פקודה. הגדילו אותו אם הפקודה מריצה שלב התקנה.",
+      "envVarsHint": "משתנים זמינים: SHEP_REPO_PATH, SHEP_WORKTREE_PATH, SHEP_BRANCH, SHEP_START_POINT (ריק כשהענף כבר קיים). כישלון בפקודה מכשיל את יצירת הפיצ׳ר.",
+      "hint": "השתמשו בזה כשעץ עבודה רגיל של git אינו מספיק — מונו-ריפו שדורש קישור ל-node_modules, או פרויקטים שנבנים רק מתיקייה מוכנה מראש.",
+      "links": {
+        "worktreeGuide": "הקמת עץ עבודה מותאמת"
       }
     },
     "ci": {

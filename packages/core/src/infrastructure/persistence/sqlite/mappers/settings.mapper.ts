@@ -17,8 +17,10 @@ import type {
   SkillSource,
   MessagingConfig,
   MessagingPlatformConfig,
+  WorktreeConfig,
 } from '../../../../domain/generated/output.js';
 import { createDefaultSettings } from '../../../../domain/factories/settings-defaults.factory.js';
+import { normalizeWorktreeConfig } from '../../../../domain/shared/worktree-config.js';
 import {
   type AgentType,
   type AgentAuthMethod,
@@ -175,6 +177,11 @@ export interface SettingsRow {
   security_mode: string;
   security_last_evaluation_at: string | null;
   security_policy_source: string | null;
+
+  // WorktreeConfig (added in migration 139) — NULL means built-in `git worktree add`
+  worktree_create_command: string | null;
+  worktree_post_create_command: string | null;
+  worktree_command_timeout_ms: number | null;
 
   // Messaging remote control config (added in migration 056)
   messaging_enabled: number;
@@ -363,6 +370,10 @@ export function toDatabase(settings: Settings): SettingsRow {
     security_last_evaluation_at: settings.security?.lastEvaluationAt ?? null,
     security_policy_source: settings.security?.policySource ?? null,
 
+    // WorktreeConfig (migration 139) — normalized first so blank commands
+    // persist as NULL and a cleared Settings input restores `git worktree add`.
+    ...worktreeToRow(settings.worktree),
+
     // Messaging remote control (migration 056)
     ...messagingToRow(settings.messaging),
   };
@@ -402,6 +413,48 @@ function buildWhatsAppFromRow(row: SettingsRow): WhatsAppConfig {
       cloudApiAppSecret: row.whatsapp_cloud_api_app_secret,
     }),
   };
+}
+
+/**
+ * Serialize WorktreeConfig into the snake_case DB row columns (migration 139).
+ * Unset fields — including ones normalized away — are written as NULL.
+ */
+function worktreeToRow(
+  worktree: WorktreeConfig | undefined
+): Pick<
+  SettingsRow,
+  'worktree_create_command' | 'worktree_post_create_command' | 'worktree_command_timeout_ms'
+> {
+  const normalized = normalizeWorktreeConfig(worktree);
+  return {
+    worktree_create_command: normalized?.createCommand ?? null,
+    worktree_post_create_command: normalized?.postCreateCommand ?? null,
+    worktree_command_timeout_ms: normalized?.commandTimeoutMs ?? null,
+  };
+}
+
+/**
+ * Deserialize WorktreeConfig from the DB row (migration 139).
+ *
+ * Returns undefined when nothing is configured so `settings.worktree` stays
+ * absent for the default built-in `git worktree add` flow — including for rows
+ * written before the migration, where every column reads back as NULL.
+ */
+function worktreeFromRow(row: SettingsRow): WorktreeConfig | undefined {
+  return normalizeWorktreeConfig({
+    ...(row.worktree_create_command !== null &&
+      row.worktree_create_command !== undefined && {
+        createCommand: row.worktree_create_command,
+      }),
+    ...(row.worktree_post_create_command !== null &&
+      row.worktree_post_create_command !== undefined && {
+        postCreateCommand: row.worktree_post_create_command,
+      }),
+    ...(row.worktree_command_timeout_ms !== null &&
+      row.worktree_command_timeout_ms !== undefined && {
+        commandTimeoutMs: row.worktree_command_timeout_ms,
+      }),
+  });
 }
 
 /**
@@ -552,6 +605,8 @@ function buildSkillInjectionFromRow(
  * @returns Settings domain object with camelCase properties
  */
 export function fromDatabase(row: SettingsRow): Settings {
+  const worktree = worktreeFromRow(row);
+
   return {
     // Base entity
     id: row.id,
@@ -693,6 +748,11 @@ export function fromDatabase(row: SettingsRow): Settings {
     // decode to { enabled: false, debounceMs: 5000, chatBufferMs: 3000 } so
     // consumers always see a valid MessagingConfig shape.
     messaging: messagingFromRow(row),
+
+    // WorktreeConfig (migration 139) — omitted entirely when nothing is
+    // configured, so `settings.worktree` stays undefined for the default
+    // built-in `git worktree add` flow.
+    ...(worktree !== undefined && { worktree }),
 
     // Onboarding (INTEGER → boolean)
     onboardingComplete: row.onboarding_complete === 1,

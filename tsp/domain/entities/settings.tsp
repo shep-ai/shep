@@ -949,6 +949,56 @@ model SecurityConfig {
 }
 
 /**
+ * Worktree Provisioning Configuration
+ *
+ * Lets users replace or extend how Shep provisions the isolated worktree
+ * each feature runs in. Both commands are plain shell command lines executed
+ * through the platform shell (`cmd.exe` on Windows, `$SHELL`/`sh` elsewhere)
+ * with these environment variables injected:
+ *
+ * | Variable             | Meaning                                                    |
+ * |----------------------|------------------------------------------------------------|
+ * | SHEP_REPO_PATH       | Absolute path of the main repository clone                  |
+ * | SHEP_WORKTREE_PATH   | Absolute path the worktree must exist at when the hook ends |
+ * | SHEP_BRANCH          | Branch that must be checked out in the worktree             |
+ * | SHEP_START_POINT     | Start ref for a NEW branch; empty when the branch exists    |
+ *
+ * `createCommand` REPLACES the built-in `git worktree add`. Use it when a
+ * wrapper tool must provision the tree (monorepo bootstrappers, bind mounts,
+ * shared-object clones). `postCreateCommand` runs AFTER the worktree exists —
+ * with the worktree as its working directory — which is the right place to
+ * symlink `node_modules`, copy `.env` files, or run an install step.
+ *
+ * Both are empty by default, which keeps the built-in `git worktree add`
+ * behaviour unchanged.
+ */
+@doc("Custom worktree provisioning commands")
+model WorktreeConfig {
+  /**
+   * Shell command that provisions the worktree INSTEAD of `git worktree add`.
+   * Must leave a usable checkout at SHEP_WORKTREE_PATH. Runs with the main
+   * repository as its working directory. Empty/unset uses the built-in git flow.
+   */
+  @doc("Command replacing `git worktree add` (empty = built-in git worktree)")
+  createCommand?: string;
+
+  /**
+   * Shell command run after the worktree exists, with the worktree as its
+   * working directory. Runs for both custom and built-in provisioning.
+   * Typical use: symlink node_modules, copy untracked config, warm caches.
+   */
+  @doc("Command run inside the worktree after it is provisioned")
+  postCreateCommand?: string;
+
+  /**
+   * Timeout in milliseconds applied to each worktree command.
+   * Defaults to 300000 (5 minutes) so install-style hooks have room to finish.
+   */
+  @doc("Timeout in milliseconds for each worktree command (default: 300000)")
+  commandTimeoutMs?: int32;
+}
+
+/**
  * Settings Entity
  *
  * Global Shep platform settings stored as a singleton. This entity contains
@@ -1137,4 +1187,12 @@ model Settings extends BaseEntity {
    */
   @doc("Messaging remote control configuration (optional, defaults applied at runtime)")
   messaging?: MessagingConfig;
+
+  /**
+   * Custom worktree provisioning commands.
+   * Replaces or extends the built-in `git worktree add` used to isolate each
+   * feature. Optional — unset keeps the built-in behaviour.
+   */
+  @doc("Custom worktree provisioning commands (optional, built-in git worktree by default)")
+  worktree?: WorktreeConfig;
 }

@@ -28,6 +28,8 @@ export enum WorktreeErrorCode {
   NOT_FOUND = 'NOT_FOUND',
   DIRTY_WORKTREE = 'DIRTY_WORKTREE',
   GIT_ERROR = 'GIT_ERROR',
+  /** A user-configured worktree provisioning command failed or timed out. */
+  HOOK_FAILED = 'HOOK_FAILED',
 }
 
 /**

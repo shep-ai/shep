@@ -11,6 +11,8 @@ import { VersionService } from '../../services/version.service.js';
 import type { IWebServerService } from '../../../application/ports/output/services/web-server-service.interface.js';
 import type { IWorktreeService } from '../../../application/ports/output/services/worktree-service.interface.js';
 import { WorktreeService } from '../../services/git/worktree.service.js';
+import type { IWorktreeHookRunner } from '../../../application/ports/output/services/worktree-hook-runner.interface.js';
+import { WorktreeHookRunner } from '../../services/git/worktree-hook-runner.js';
 import type { IGitCommitService } from '../../../application/ports/output/services/git-commit.service.interface.js';
 import { GitCommitService } from '../../services/git/git-commit.service.js';
 import type { IFileSystemService } from '../../../application/ports/output/services/file-system-service.interface.js';
@@ -185,6 +187,9 @@ export function registerServices(container: DependencyContainer): void {
     },
   });
 
+  // Custom worktree provisioning hooks (settings.worktree). Registered before
+  // the worktree service since the service injects it by token.
+  container.registerSingleton<IWorktreeHookRunner>('IWorktreeHookRunner', WorktreeHookRunner);
   container.registerSingleton<IWorktreeService>('IWorktreeService', WorktreeService);
   container.registerSingleton<IGitCommitService>('IGitCommitService', GitCommitService);
   container.registerSingleton<IFileSystemService>('IFileSystemService', FileSystemService);

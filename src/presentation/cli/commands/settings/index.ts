@@ -13,6 +13,7 @@
  *   shep settings workflow  # Configure workflow defaults
  *   shep settings model     # Configure default LLM model
  *   shep settings language  # Configure display language
+ *   shep settings worktree  # Configure custom worktree provisioning commands
  */
 
 import { Command } from 'commander';
@@ -24,6 +25,7 @@ import { createWorkflowCommand } from './workflow.command.js';
 import { createModelCommand } from './model.command.js';
 import { createLanguageCommand } from './language.command.js';
 import { createMessagingCommand } from './messaging.command.js';
+import { createWorktreeCommand } from './worktree.command.js';
 import { onboardingWizard } from '../../../tui/wizards/onboarding/onboarding.wizard.js';
 import { messages } from '../../ui/index.js';
 import { getCliI18n } from '../../i18n.js';
@@ -41,7 +43,8 @@ export function createSettingsCommand(): Command {
     .addCommand(createWorkflowCommand())
     .addCommand(createModelCommand())
     .addCommand(createLanguageCommand())
-    .addCommand(createMessagingCommand());
+    .addCommand(createMessagingCommand())
+    .addCommand(createWorktreeCommand());
 
   // Default action: launch the full setup wizard when no subcommand is given
   cmd.action(async () => {

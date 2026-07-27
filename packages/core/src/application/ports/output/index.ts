@@ -43,6 +43,8 @@ export type {
   IWebServerService,
   IWorktreeService,
   WorktreeInfo,
+  IWorktreeHookRunner,
+  WorktreeHookContext,
 } from './services/index.js';
 export {
   IssueFetcherError,

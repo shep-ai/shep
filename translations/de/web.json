@@ -9,6 +9,7 @@
       "agent": "Agent",
       "environment": "Umgebung",
       "workflow": "Workflow",
+      "worktree": "Worktree",
       "ci": "CI",
       "timeouts": "Zeitlimits",
       "notifications": "Benachrichtigungen",
@@ -115,6 +116,23 @@
       "links": {
         "approvalGates": "Genehmigungsstufen",
         "pushAndPrFlags": "Push- & PR-Flags"
+      }
+    },
+    "worktree": {
+      "title": "Worktree-Bereitstellung",
+      "description": "Ersetze oder erweitere, wie Shep den Worktree jedes Features anlegt",
+      "createCommand": "Eigener Erstellungsbefehl",
+      "createCommandDescription": "Läuft statt `git worktree add` im Haupt-Repository. Leer lassen, um den eingebauten git-Worktree zu verwenden.",
+      "createCommandPlaceholder": "my-tool worktree add \"$SHEP_WORKTREE_PATH\" \"$SHEP_BRANCH\"",
+      "postCreateCommand": "Befehl nach der Erstellung",
+      "postCreateCommandDescription": "Läuft im neuen Worktree, sobald er existiert — node_modules verlinken, ungetrackte Konfiguration kopieren, Caches vorwärmen.",
+      "postCreateCommandPlaceholder": "ln -s \"$SHEP_REPO_PATH/node_modules\" node_modules",
+      "commandTimeout": "Befehls-Timeout (ms)",
+      "commandTimeoutDescription": "Gilt pro Befehl. Erhöhen, wenn der Hook einen Installationsschritt ausführt.",
+      "envVarsHint": "Verfügbare Variablen: SHEP_REPO_PATH, SHEP_WORKTREE_PATH, SHEP_BRANCH, SHEP_START_POINT (leer, wenn der Branch bereits existiert). Ein fehlgeschlagener Befehl lässt die Feature-Erstellung fehlschlagen.",
+      "hint": "Nutze das, wenn ein einfacher git-Worktree nicht reicht — Monorepos mit verlinkten node_modules oder Projekte, die nur aus einem vorbereiteten Verzeichnis bauen.",
+      "links": {
+        "worktreeGuide": "Eigene Worktree-Bereitstellung"
       }
     },
     "ci": {

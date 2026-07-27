@@ -9,6 +9,7 @@
       "agent": "الوكيل",
       "environment": "البيئة",
       "workflow": "سير العمل",
+      "worktree": "شجرة العمل",
       "ci": "CI",
       "timeouts": "المهل الزمنية",
       "notifications": "الإشعارات",
@@ -115,6 +116,23 @@
       "links": {
         "approvalGates": "بوابات الموافقة",
         "pushAndPrFlags": "علامات الدفع وPR"
+      }
+    },
+    "worktree": {
+      "title": "تهيئة شجرة العمل",
+      "description": "استبدل أو وسّع طريقة إنشاء Shep لشجرة عمل كل ميزة",
+      "createCommand": "أمر الإنشاء المخصص",
+      "createCommandDescription": "يعمل بدلاً من `git worktree add` من المستودع الرئيسي. اتركه فارغاً لاستخدام شجرة عمل git المدمجة.",
+      "createCommandPlaceholder": "my-tool worktree add \"$SHEP_WORKTREE_PATH\" \"$SHEP_BRANCH\"",
+      "postCreateCommand": "أمر ما بعد الإنشاء",
+      "postCreateCommandDescription": "يعمل داخل شجرة العمل الجديدة بعد إنشائها — لإنشاء روابط node_modules أو نسخ الإعدادات أو تسخين الذاكرة المؤقتة.",
+      "postCreateCommandPlaceholder": "ln -s \"$SHEP_REPO_PATH/node_modules\" node_modules",
+      "commandTimeout": "مهلة الأمر (بالمللي ثانية)",
+      "commandTimeoutDescription": "تُطبَّق على كل أمر. ارفعها إذا كان الأمر ينفّذ خطوة تثبيت.",
+      "envVarsHint": "المتغيرات المتاحة: SHEP_REPO_PATH و SHEP_WORKTREE_PATH و SHEP_BRANCH و SHEP_START_POINT (فارغ عندما يكون الفرع موجوداً). فشل الأمر يعني فشل إنشاء الميزة.",
+      "hint": "استخدم هذه الإعدادات عندما لا تكفي شجرة عمل git العادية — مستودعات monorepo التي تحتاج روابط node_modules، أو مشاريع تُبنى فقط من دليل مُهيَّأ.",
+      "links": {
+        "worktreeGuide": "تهيئة شجرة العمل المخصصة"
       }
     },
     "ci": {

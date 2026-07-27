@@ -196,6 +196,10 @@ function createTestRow(overrides: Partial<SettingsRow> = {}): SettingsRow {
     security_mode: 'Advisory',
     security_last_evaluation_at: null,
     security_policy_source: null,
+    // Worktree provisioning columns (migration 139) — NULL = built-in git worktree.
+    worktree_create_command: null,
+    worktree_post_create_command: null,
+    worktree_command_timeout_ms: null,
     // Messaging columns (migration 056) — all default to "unconfigured".
     messaging_enabled: 0,
     messaging_gateway_url: null,

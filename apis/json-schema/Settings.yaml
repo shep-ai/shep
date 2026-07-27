@@ -51,6 +51,9 @@ properties:
   messaging:
     $ref: MessagingConfig.yaml
     description: Messaging remote control configuration (optional, defaults applied at runtime)
+  worktree:
+    $ref: WorktreeConfig.yaml
+    description: Custom worktree provisioning commands (optional, built-in git worktree by default)
 required:
   - models
   - user

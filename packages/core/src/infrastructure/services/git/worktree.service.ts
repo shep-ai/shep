@@ -4,10 +4,15 @@
  * Manages git worktrees using native execFile for process execution.
  * Uses constructor dependency injection for the command executor
  * to enable testability without mocking node:child_process directly.
+ *
+ * Provisioning is customisable: when the user configures
+ * `settings.worktree.createCommand`, that command replaces `git worktree add`
+ * entirely, and `settings.worktree.postCreateCommand` always runs afterwards.
+ * Both are delegated to IWorktreeHookRunner.
  */
 
 import { createHash } from 'node:crypto';
-import { mkdirSync, realpathSync } from 'node:fs';
+import { existsSync, mkdirSync } from 'node:fs';
 import path from 'node:path';
 import { injectable, inject } from 'tsyringe';
 
@@ -21,8 +26,16 @@ import {
   WorktreeError,
   WorktreeErrorCode,
 } from '../../../application/ports/output/services/worktree-service.interface.js';
+import type {
+  IWorktreeHookRunner,
+  WorktreeHookContext,
+} from '../../../application/ports/output/services/worktree-hook-runner.interface.js';
 import { getShepHomeDir } from '../filesystem/shep-directory.service.js';
-import { IS_WINDOWS } from '../../platform.js';
+import {
+  arePathsEquivalent,
+  parseGitError,
+  parseWorktreeOutput,
+} from './worktree-output.parser.js';
 
 /**
  * Type for the command executor dependency.
@@ -36,7 +49,10 @@ export type ExecFunction = (
 
 @injectable()
 export class WorktreeService implements IWorktreeService {
-  constructor(@inject('ExecFunction') private readonly execFile: ExecFunction) {}
+  constructor(
+    @inject('ExecFunction') private readonly execFile: ExecFunction,
+    @inject('IWorktreeHookRunner') private readonly hookRunner: IWorktreeHookRunner
+  ) {}
 
   async create(
     repoPath: string,
@@ -44,45 +60,46 @@ export class WorktreeService implements IWorktreeService {
     worktreePath: string,
     startPoint?: string
   ): Promise<WorktreeInfo> {
-    try {
-      const args = ['worktree', 'add', worktreePath, '-b', branch];
-      if (startPoint) args.push(startPoint);
-      await this.execFile('git', args, { cwd: repoPath });
-    } catch (error) {
-      throw this.parseGitError(error);
+    const context: WorktreeHookContext = {
+      repoPath,
+      worktreePath,
+      branch,
+      ...(startPoint !== undefined && { startPoint }),
+    };
+
+    if (this.hookRunner.hasCreateHook()) {
+      await this.hookRunner.runCreateHook(context);
+    } else {
+      try {
+        const args = ['worktree', 'add', worktreePath, '-b', branch];
+        if (startPoint) args.push(startPoint);
+        await this.execFile('git', args, { cwd: repoPath });
+      } catch (error) {
+        throw parseGitError(error);
+      }
     }
 
-    // Get info about the created worktree — match by branch (reliable) then path
-    const worktrees = await this.list(repoPath);
-    const created =
-      worktrees.find((w) => w.branch === branch) ??
-      worktrees.find((w) => this.arePathsEquivalent(w.path, worktreePath));
-    if (!created) {
-      throw new WorktreeError(
-        'Worktree created but not found in list',
-        WorktreeErrorCode.GIT_ERROR
-      );
-    }
+    const created = await this.resolveCreated(repoPath, branch, worktreePath);
+    await this.hookRunner.runPostCreateHook(context);
     return created;
   }
 
   async addExisting(repoPath: string, branch: string, worktreePath: string): Promise<WorktreeInfo> {
-    try {
-      await this.execFile('git', ['worktree', 'add', worktreePath, branch], { cwd: repoPath });
-    } catch (error) {
-      throw this.parseGitError(error);
+    // No start point: the branch already exists and is only checked out here.
+    const context: WorktreeHookContext = { repoPath, worktreePath, branch };
+
+    if (this.hookRunner.hasCreateHook()) {
+      await this.hookRunner.runCreateHook(context);
+    } else {
+      try {
+        await this.execFile('git', ['worktree', 'add', worktreePath, branch], { cwd: repoPath });
+      } catch (error) {
+        throw parseGitError(error);
+      }
     }
 
-    const worktrees = await this.list(repoPath);
-    const created =
-      worktrees.find((w) => w.branch === branch) ??
-      worktrees.find((w) => this.arePathsEquivalent(w.path, worktreePath));
-    if (!created) {
-      throw new WorktreeError(
-        'Worktree created but not found in list',
-        WorktreeErrorCode.GIT_ERROR
-      );
-    }
+    const created = await this.resolveCreated(repoPath, branch, worktreePath);
+    await this.hookRunner.runPostCreateHook(context);
     return created;
   }
 
@@ -93,7 +110,7 @@ export class WorktreeService implements IWorktreeService {
       args.push(worktreePath);
       await this.execFile('git', args, { cwd: repoPath });
     } catch (error) {
-      throw this.parseGitError(error);
+      throw parseGitError(error);
     }
   }
 
@@ -101,7 +118,7 @@ export class WorktreeService implements IWorktreeService {
     try {
       await this.execFile('git', ['worktree', 'prune'], { cwd: repoPath });
     } catch (error) {
-      throw this.parseGitError(error);
+      throw parseGitError(error);
     }
   }
 
@@ -109,7 +126,7 @@ export class WorktreeService implements IWorktreeService {
     const { stdout } = await this.execFile('git', ['worktree', 'list', '--porcelain'], {
       cwd: repoPath,
     });
-    return this.parseWorktreeOutput(stdout);
+    return parseWorktreeOutput(stdout);
   }
 
   async exists(repoPath: string, branch: string): Promise<boolean> {
@@ -198,7 +215,7 @@ export class WorktreeService implements IWorktreeService {
         { cwd: repoPath }
       );
     } catch (error) {
-      throw this.parseGitError(error);
+      throw parseGitError(error);
     }
   }
 
@@ -210,89 +227,40 @@ export class WorktreeService implements IWorktreeService {
     return path.join(getShepHomeDir(), 'repos', repoHash, 'wt', slug).replace(/\\/g, '/');
   }
 
-  private parseWorktreeOutput(output: string): WorktreeInfo[] {
-    if (!output.trim()) return [];
+  /**
+   * Resolve the WorktreeInfo for a freshly provisioned tree — match by branch
+   * (reliable) then path.
+   *
+   * A custom create command may lay down something git does not register as a
+   * worktree of `repoPath` (a shared clone, a bind mount). Rather than failing
+   * a tree the user deliberately provisioned, fall back to inspecting the
+   * directory itself; only a missing directory is an error.
+   */
+  private async resolveCreated(
+    repoPath: string,
+    branch: string,
+    worktreePath: string
+  ): Promise<WorktreeInfo> {
+    const worktrees = await this.list(repoPath);
+    const registered =
+      worktrees.find((w) => w.branch === branch) ??
+      worktrees.find((w) => arePathsEquivalent(w.path, worktreePath));
+    if (registered) return registered;
 
-    const worktrees: WorktreeInfo[] = [];
-    const blocks = output.split('\n\n').filter((b) => b.trim());
-
-    for (const block of blocks) {
-      const lines = block.split('\n');
-      const wtPath = lines.find((l) => l.startsWith('worktree '))?.slice('worktree '.length) ?? '';
-      const head = lines.find((l) => l.startsWith('HEAD '))?.slice('HEAD '.length) ?? '';
-      const branchLine = lines.find((l) => l.startsWith('branch '));
-      const fullBranch = branchLine?.slice('branch '.length) ?? '';
-      const branch = fullBranch.replace('refs/heads/', '');
-
-      if (wtPath) {
-        worktrees.push({
-          path: wtPath,
-          head,
-          branch,
-          isMain: worktrees.length === 0, // First entry is always main
-        });
-      }
-    }
-
-    return worktrees;
-  }
-
-  private parseGitError(error: unknown): WorktreeError {
-    const message = error instanceof Error ? error.message : String(error);
-
-    if (message.includes('already exists')) {
-      return new WorktreeError(
-        message,
-        WorktreeErrorCode.ALREADY_EXISTS,
-        error instanceof Error ? error : undefined
-      );
-    }
-    if (message.includes('already checked out') || message.includes('is already checked out')) {
-      return new WorktreeError(
-        message,
-        WorktreeErrorCode.BRANCH_IN_USE,
-        error instanceof Error ? error : undefined
-      );
-    }
-    if (message.includes('not a valid directory') || message.includes('is not a working tree')) {
-      return new WorktreeError(
-        message,
-        WorktreeErrorCode.NOT_FOUND,
-        error instanceof Error ? error : undefined
+    if (!existsSync(worktreePath)) {
+      throw new WorktreeError(
+        `Worktree created but not found in list: ${worktreePath}`,
+        WorktreeErrorCode.GIT_ERROR
       );
     }
 
-    return new WorktreeError(
-      message,
-      WorktreeErrorCode.GIT_ERROR,
-      error instanceof Error ? error : undefined
-    );
-  }
-
-  private arePathsEquivalent(a: string, b: string): boolean {
-    return this.normalizeWorktreePath(a) === this.normalizeWorktreePath(b);
-  }
-
-  private normalizeWorktreePath(input: string): string {
-    // On Windows, git outputs forward slashes but path.normalize uses backslashes.
-    // Normalize to forward slashes before comparing, case-insensitive.
-    if (IS_WINDOWS) {
-      let normalized = path.normalize(input).replace(/\\/g, '/').replace(/\/+$/, '');
-      try {
-        normalized = realpathSync(normalized).replace(/\\/g, '/');
-      } catch {
-        // Path may not exist yet — use as-is
-      }
-      return normalized.toLowerCase();
+    let head = '';
+    try {
+      const { stdout } = await this.execFile('git', ['rev-parse', 'HEAD'], { cwd: worktreePath });
+      head = stdout.trim();
+    } catch {
+      // Unborn branch or non-git directory — HEAD stays empty.
     }
-
-    const normalized = path.normalize(input).replace(/\/+$/, '');
-
-    // On macOS, git can report /private/var/... while callers use /var/...
-    if (process.platform === 'darwin' && normalized.startsWith('/private/var/')) {
-      return normalized.slice('/private'.length);
-    }
-
-    return normalized;
+    return { path: worktreePath, head, branch, isMain: false };
   }
 }

@@ -13,6 +13,7 @@ import { join } from 'node:path';
 import { execFile as execFileCb } from 'node:child_process';
 import { promisify } from 'node:util';
 import { WorktreeService } from '../../../../../packages/core/src/infrastructure/services/git/worktree.service.js';
+import { noopWorktreeHookRunner } from '../../../../helpers/worktree-hook-runner.stub.js';
 
 const execFile = promisify(execFileCb);
 
@@ -24,7 +25,8 @@ describe('WorktreeService.ensureGitRepository (integration)', () => {
     tempDir = mkdtempSync(join(tmpdir(), 'shep-git-init-test-'));
     service = new WorktreeService(
       (file, args, options) =>
-        execFile(file, args, options ?? {}) as Promise<{ stdout: string; stderr: string }>
+        execFile(file, args, options ?? {}) as Promise<{ stdout: string; stderr: string }>,
+      noopWorktreeHookRunner()
     );
   });
 

@@ -1012,4 +1012,61 @@ describe('SQLiteSettingsRepository', () => {
       expect(loaded?.featureFlags?.whatsappDispatch).toBe(false);
     });
   });
+
+  describe('worktree provisioning config (migration 139)', () => {
+    it('is undefined when the user has configured nothing', async () => {
+      await repository.initialize(createTestSettings());
+
+      const loaded = await repository.load();
+
+      expect(loaded?.worktree).toBeUndefined();
+    });
+
+    it('round-trips a fully-populated WorktreeConfig', async () => {
+      const settings = createTestSettings();
+      settings.worktree = {
+        createCommand: 'my-monorepo-tool worktree "$SHEP_BRANCH"',
+        postCreateCommand: 'ln -s "$SHEP_REPO_PATH/node_modules" node_modules',
+        commandTimeoutMs: 60000,
+      };
+
+      await repository.initialize(settings);
+      const loaded = await repository.load();
+
+      expect(loaded?.worktree).toEqual({
+        createCommand: 'my-monorepo-tool worktree "$SHEP_BRANCH"',
+        postCreateCommand: 'ln -s "$SHEP_REPO_PATH/node_modules" node_modules',
+        commandTimeoutMs: 60000,
+      });
+    });
+
+    it('persists worktree changes via update() (write path, not DB default)', async () => {
+      const settings = createTestSettings();
+      await repository.initialize(settings);
+
+      settings.worktree = { postCreateCommand: 'pnpm install --offline' };
+      settings.updatedAt = new Date('2025-02-03T00:00:00Z');
+      await repository.update(settings);
+
+      const loaded = await repository.load();
+      expect(loaded?.worktree?.postCreateCommand).toBe('pnpm install --offline');
+      // Fields left unset stay undefined rather than becoming empty strings
+      expect(loaded?.worktree?.createCommand).toBeUndefined();
+      expect(loaded?.worktree?.commandTimeoutMs).toBeUndefined();
+    });
+
+    it('clearing a command restores the built-in git worktree flow', async () => {
+      const settings = createTestSettings();
+      settings.worktree = { createCommand: 'my-tool create' };
+      await repository.initialize(settings);
+      expect((await repository.load())?.worktree?.createCommand).toBe('my-tool create');
+
+      settings.worktree = { createCommand: '   ' };
+      settings.updatedAt = new Date('2025-02-04T00:00:00Z');
+      await repository.update(settings);
+
+      const loaded = await repository.load();
+      expect(loaded?.worktree).toBeUndefined();
+    });
+  });
 });

@@ -10,6 +10,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 import { WorktreeService } from '@/infrastructure/services/git/worktree.service.js';
 import {
+  stubWorktreeHookRunner,
+  type StubWorktreeHookRunner,
+} from '@tests/helpers/worktree-hook-runner.stub.js';
+import {
   WorktreeError,
   WorktreeErrorCode,
 } from '@/application/ports/output/services/worktree-service.interface.js';
@@ -23,10 +27,12 @@ type ExecFileFn = (
 describe('WorktreeService.addExisting', () => {
   let service: WorktreeService;
   let mockExecFile: ReturnType<typeof vi.fn<ExecFileFn>>;
+  let hookRunner: StubWorktreeHookRunner;
 
   beforeEach(() => {
     mockExecFile = vi.fn<ExecFileFn>();
-    service = new WorktreeService(mockExecFile);
+    hookRunner = stubWorktreeHookRunner();
+    service = new WorktreeService(mockExecFile, hookRunner);
   });
 
   it('should call execFile with correct git args (no -b flag)', async () => {

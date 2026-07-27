@@ -9,6 +9,7 @@
       "agent": "Агент",
       "environment": "Окружение",
       "workflow": "Рабочий процесс",
+      "worktree": "Рабочее дерево",
       "ci": "CI",
       "timeouts": "Таймауты",
       "notifications": "Уведомления",
@@ -115,6 +116,23 @@
       "links": {
         "approvalGates": "Этапы одобрения",
         "pushAndPrFlags": "Флаги отправки и PR"
+      }
+    },
+    "worktree": {
+      "title": "Подготовка рабочего дерева",
+      "description": "Замените или дополните то, как Shep создаёт рабочее дерево для каждой функции",
+      "createCommand": "Своя команда создания",
+      "createCommandDescription": "Выполняется вместо `git worktree add` из основного репозитория. Оставьте пустым, чтобы использовать встроенный git worktree.",
+      "createCommandPlaceholder": "my-tool worktree add \"$SHEP_WORKTREE_PATH\" \"$SHEP_BRANCH\"",
+      "postCreateCommand": "Команда после создания",
+      "postCreateCommandDescription": "Выполняется внутри нового рабочего дерева — создать симлинк на node_modules, скопировать неотслеживаемые настройки, прогреть кеши.",
+      "postCreateCommandPlaceholder": "ln -s \"$SHEP_REPO_PATH/node_modules\" node_modules",
+      "commandTimeout": "Таймаут команды (мс)",
+      "commandTimeoutDescription": "Применяется к каждой команде. Увеличьте, если команда выполняет установку зависимостей.",
+      "envVarsHint": "Доступные переменные: SHEP_REPO_PATH, SHEP_WORKTREE_PATH, SHEP_BRANCH, SHEP_START_POINT (пусто, если ветка уже существует). Ошибка команды прерывает создание функции.",
+      "hint": "Используйте, когда обычного git worktree недостаточно — монорепозитории с симлинком на node_modules или проекты, которые собираются только из подготовленного каталога.",
+      "links": {
+        "worktreeGuide": "Своя подготовка рабочего дерева"
       }
     },
     "ci": {
