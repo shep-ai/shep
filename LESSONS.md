@@ -1,5 +1,40 @@
 # Lessons Learned
 
+## New files under `domain/` must NOT use `.js` extensions in relative imports
+
+Adding `domain/shared/worktree-config.ts` (spec-less feature for issue #833), I wrote
+`import type { WorktreeConfig } from '../generated/output.js'` — the extension convention every
+`infrastructure/` file uses. `tests/unit/presentation/web/smoke-imports.test.ts` failed: the web
+package consumes `packages/core/src/domain/` as **raw .ts source**, and Turbopack cannot resolve a
+`.js` specifier pointing at a `.ts` file. Nothing else caught it — typecheck, lint, `pnpm build`,
+and the CLI all pass, because tsc + `tsc-alias --resolve-full-paths` rewrite extensions for the
+Node build. The break only appears in the web bundler.
+
+Rules:
+
+1. Inside `packages/core/src/domain/`, relative imports carry **no extension**
+   (`from '../generated/output'`). Everywhere else in core keeps `.js`. Copy the convention from a
+   sibling in the same directory, not from the layer you were last editing.
+2. Importers **outside** `domain/` still use `.js` when importing a domain file
+   (`from '../../../domain/shared/worktree-config.js'`) — the asymmetry is correct, not a typo.
+3. When adding a helper meant to be shared by core *and* the web package, run
+   `npx vitest run tests/unit/presentation/web/smoke-imports.test.ts` before pushing. It is the only
+   check that catches this, and it lives under web tests where you would not think to look.
+
+## Shared config semantics belong in `domain/`, not duplicated per surface
+
+`settings.worktree` is read by four places: the SQLite mapper, the hook runner, the CLI
+`settings worktree` command, and the web Settings section. My first pass had "trim the command,
+treat blank as unset" and the `300000` default timeout re-implemented in each — three copies of a
+magic number and four chances to disagree about what an empty string means. Collapsed into
+`domain/shared/worktree-config.ts` (`normalizeWorktreeConfig`, `resolveWorktreeCommandTimeoutMs`,
+`DEFAULT_WORKTREE_COMMAND_TIMEOUT_MS`), which every surface now calls.
+
+**Rule:** the moment a settings field has non-trivial semantics (normalization, a default, a
+validity rule), put those semantics in a domain helper *before* wiring the second consumer.
+Persistence mappers and presentation layers are consumers of the rule, never co-owners of it —
+otherwise "blank means unset" silently means four different things.
+
 ## Native modules (better-sqlite3) break global installs — surface a fix, don't crash
 
 A user's `npm i -g @shepai/cli` crashed at startup with `Could not locate the bindings file` from `better-sqlite3`. `better-sqlite3` is a native addon: its compiled `.node` binary must match the running Node ABI, and a global install can end up with no binary at all (install scripts skipped via `ignore-scripts`, no prebuilt for a brand-new Node like v24/ABI 137, or a stale binary after a Node upgrade). The raw error is a meaningless multi-line stack to an end user.
