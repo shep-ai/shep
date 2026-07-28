@@ -18,6 +18,11 @@ That is fine for most repositories and wrong for some:
 Two settings cover these cases. Both live under **Settings → Worktree** in the
 web UI and are persisted in `settings.worktree`.
 
+![Settings → Worktree provisioning](../screenshots/settings-worktree-light.png)
+
+They are also configurable from the CLI with `shep settings worktree` — see
+[Configuring from the CLI](#configuring-from-the-cli) below.
+
 ## The two hooks
 
 | Setting             | Replaces `git worktree add`? | Working directory | Typical use                                       |
@@ -91,6 +96,20 @@ to inspecting the directory directly rather than failing.
 Prefer wrapping `git worktree add` inside your tool where you can — `shep`
 removes worktrees with `git worktree remove`, which only works for real
 worktrees.
+
+## Configuring from the CLI
+
+Everything the Settings page does is available headless:
+
+```sh
+shep settings worktree                                  # show current config
+shep settings worktree --post-create-command '<cmd>'    # run <cmd> in each new worktree
+shep settings worktree --create-command '<cmd>'         # replace `git worktree add`
+shep settings worktree --timeout 900000                 # per-command timeout
+shep settings worktree --clear                          # back to the built-in flow
+```
+
+Passing an empty string to either command flag clears just that command.
 
 ## Timeout and failure behaviour
 
