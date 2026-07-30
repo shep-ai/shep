@@ -20,7 +20,8 @@
       "database": "Banco de Dados",
       "integrations": "Integrações",
       "security": "Security",
-      "messaging": "Messaging"
+      "messaging": "Messaging",
+      "mcp": "MCP"
     },
     "language": {
       "title": "Idioma",

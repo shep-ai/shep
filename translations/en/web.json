@@ -20,7 +20,8 @@
       "database": "Database",
       "integrations": "Integrations",
       "security": "Security",
-      "messaging": "Messaging"
+      "messaging": "Messaging",
+      "mcp": "MCP"
     },
     "language": {
       "title": "Language",

@@ -25,6 +25,7 @@ import {
   EyeOff,
   Github,
   FolderGit2,
+  Plug,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
@@ -54,6 +55,7 @@ import { AgentModelPicker } from '@/components/features/settings/AgentModelPicke
 import { GithubIntegrationSection } from '@/components/features/settings/github-integration-section';
 import { WhatsAppSettings } from '@/components/features/settings/whatsapp/whatsapp-settings';
 import { MessagingSettingsSection } from '@/components/features/settings/messaging-settings-section';
+import { McpIntegrationSection } from '@/components/features/settings/mcp-integration-section';
 const LANGUAGE_OPTIONS = [
   { value: Language.English, nativeName: 'English' },
   { value: Language.Ukrainian, nativeName: 'Українська' },
@@ -114,6 +116,7 @@ const SECTIONS = [
   { id: 'stage-timeouts', labelKey: 'settings.sections.timeouts', icon: Timer },
   { id: 'notifications', labelKey: 'settings.sections.notifications', icon: Bell },
   { id: 'messaging', labelKey: 'settings.sections.messaging', icon: MessageCircle },
+  { id: 'mcp', labelKey: 'settings.sections.mcp', icon: Plug },
   { id: 'feature-flags', labelKey: 'settings.sections.flags', icon: Flag },
   { id: 'interactive-agent', labelKey: 'settings.sections.chat', icon: MessageSquare },
   { id: 'home-page', labelKey: 'settings.sections.homePage', icon: Home },
@@ -1833,6 +1836,26 @@ export function SettingsPageClient({
           >
             Drive Shep remotely from Telegram or WhatsApp. Pair a chat to send commands and receive
             notifications through the Commands.com Gateway.
+          </SectionHint>
+        </div>
+
+        {/* ── MCP Integration ── */}
+        <div
+          id="section-mcp"
+          className="grid scroll-mt-18 grid-cols-1 gap-x-5 rounded-lg lg:grid-cols-[1fr_280px]"
+        >
+          <McpIntegrationSection />
+          <SectionHint
+            links={[
+              {
+                label: 'Model Context Protocol',
+                href: 'https://modelcontextprotocol.io',
+              },
+            ]}
+          >
+            Connect MCP-capable AI agents to shep over stdio. Configure your client to spawn{' '}
+            <code className="font-mono">shep mcp</code> to expose features, agent runs, and task
+            management as tools.
           </SectionHint>
         </div>
 

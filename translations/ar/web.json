@@ -20,7 +20,8 @@
       "database": "قاعدة البيانات",
       "integrations": "التكاملات",
       "security": "Security",
-      "messaging": "Messaging"
+      "messaging": "Messaging",
+      "mcp": "MCP"
     },
     "language": {
       "title": "اللغة",

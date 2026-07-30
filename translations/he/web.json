@@ -20,7 +20,8 @@
       "database": "מסד נתונים",
       "integrations": "אינטגרציות",
       "security": "Security",
-      "messaging": "Messaging"
+      "messaging": "Messaging",
+      "mcp": "MCP"
     },
     "language": {
       "title": "שפה",

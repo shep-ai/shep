@@ -20,7 +20,8 @@
       "database": "База даних",
       "integrations": "Інтеграції",
       "security": "Security",
-      "messaging": "Повідомлення"
+      "messaging": "Повідомлення",
+      "mcp": "MCP"
     },
     "language": {
       "title": "Мова",
