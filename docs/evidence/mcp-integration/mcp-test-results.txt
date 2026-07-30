@@ -1,0 +1,10 @@
+ ✓  node  tests/unit/infrastructure/services/mcp/tools/work-item-tools.test.ts (13 tests) 94ms
+ ✓  node  tests/unit/infrastructure/services/mcp/tools/feature-tools.test.ts (19 tests) 107ms
+ ✓  node  tests/integration/infrastructure/services/mcp/mcp-round-trip.test.ts (27 tests) 215ms
+ ✓  node  tests/unit/infrastructure/services/mcp/tools/agent-tools.test.ts (13 tests) 83ms
+ ✓  node  tests/unit/infrastructure/services/mcp/mcp-server.service.test.ts (9 tests) 44ms
+ ✓  node  tests/unit/infrastructure/services/mcp/tools/settings-tools.test.ts (7 tests) 50ms
+ ✓  node  tests/unit/infrastructure/services/mcp/mcp-server-di.test.ts (3 tests) 6ms
+ ✓  node  tests/unit/infrastructure/services/mcp/tools/repo-tools.test.ts (4 tests) 34ms
+ Test Files  8 passed (8)
+      Tests  95 passed (95)
