@@ -12,23 +12,7 @@ import { RunAgentUseCase } from '../../../../application/use-cases/agents/run-ag
 import { GetAgentRunUseCase } from '../../../../application/use-cases/agents/get-agent-run.use-case.js';
 import { ListAgentRunsUseCase } from '../../../../application/use-cases/agents/list-agent-runs.use-case.js';
 import { StopAgentRunUseCase } from '../../../../application/use-cases/agents/stop-agent-run.use-case.js';
-
-/**
- * Wraps an async handler in try/catch, returning MCP error responses on failure.
- */
-async function withErrorHandling(
-  fn: () => Promise<{ content: { type: 'text'; text: string }[]; isError?: boolean }>
-): Promise<{ content: { type: 'text'; text: string }[]; isError?: boolean }> {
-  try {
-    return await fn();
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    return {
-      content: [{ type: 'text', text: message }],
-      isError: true,
-    };
-  }
-}
+import { withErrorHandling } from './with-error-handling.js';
 
 /**
  * Register agent-related MCP tools on the server.

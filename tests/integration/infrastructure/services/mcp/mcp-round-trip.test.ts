@@ -90,6 +90,31 @@ function createMockContainer(
         agent: { type: 'claude-code' },
       }),
     },
+    ListPmProjectsUseCase: {
+      execute: vi
+        .fn()
+        .mockResolvedValue([{ id: 'proj-1', name: 'Alpha', identifierPrefix: 'ALPHA' }]),
+    },
+    ListWorkItemsUseCase: {
+      execute: vi.fn().mockResolvedValue([
+        { id: 'wi-1', title: 'Task one', priority: 'High' },
+        { id: 'wi-2', title: 'Task two', priority: 'Low' },
+      ]),
+    },
+    GetWorkItemUseCase: {
+      execute: vi.fn().mockResolvedValue({ ok: true, workItem: { id: 'wi-1', title: 'Task one' } }),
+    },
+    CreateWorkItemUseCase: {
+      execute: vi
+        .fn()
+        .mockResolvedValue({ ok: true, workItem: { id: 'wi-new', title: 'New task' } }),
+    },
+    UpdateWorkItemUseCase: {
+      execute: vi.fn().mockResolvedValue({ ok: true }),
+    },
+    DeleteWorkItemUseCase: {
+      execute: vi.fn().mockResolvedValue({ ok: true }),
+    },
   };
 
   const useCases = { ...defaults, ...overrides };
@@ -152,11 +177,17 @@ describe('MCP Protocol Round-Trip (integration)', () => {
       'list_repositories',
       'get_settings',
       'update_settings',
+      'list_projects',
+      'list_work_items',
+      'get_work_item',
+      'create_work_item',
+      'update_work_item',
+      'delete_work_item',
     ];
 
-    it('returns all 11 registered tools', async () => {
+    it('returns all 17 registered tools', async () => {
       const { tools } = await client.listTools();
-      expect(tools).toHaveLength(11);
+      expect(tools).toHaveLength(17);
     });
 
     it('includes all expected tool names', async () => {
@@ -286,6 +317,59 @@ describe('MCP Protocol Round-Trip (integration)', () => {
       const textContent = result.content as { type: string; text: string }[];
       const parsed = JSON.parse(textContent[0].text);
       expect(parsed.models.planning).toBe('claude-opus-4-20250115');
+    });
+
+    it('list_projects returns project list', async () => {
+      const result = await client.callTool({ name: 'list_projects', arguments: {} });
+
+      expect(result.isError).toBeFalsy();
+      const textContent = result.content as { type: string; text: string }[];
+      const parsed = JSON.parse(textContent[0].text);
+      expect(Array.isArray(parsed)).toBe(true);
+      expect(parsed[0]).toHaveProperty('identifierPrefix', 'ALPHA');
+    });
+
+    it('list_work_items passes projectId and filters to the use case', async () => {
+      const result = await client.callTool({
+        name: 'list_work_items',
+        arguments: { projectId: 'proj-1', priorities: ['High'] },
+      });
+
+      expect(result.isError).toBeFalsy();
+      expect(mockContainer._useCases.ListWorkItemsUseCase.execute).toHaveBeenCalledWith('proj-1', {
+        priorities: ['High'],
+      });
+      const textContent = result.content as { type: string; text: string }[];
+      const parsed = JSON.parse(textContent[0].text);
+      expect(parsed).toHaveLength(2);
+    });
+
+    it('create_work_item returns the created work item', async () => {
+      const result = await client.callTool({
+        name: 'create_work_item',
+        arguments: { projectId: 'proj-1', title: 'New task' },
+      });
+
+      expect(result.isError).toBeFalsy();
+      const textContent = result.content as { type: string; text: string }[];
+      const parsed = JSON.parse(textContent[0].text);
+      expect(parsed).toHaveProperty('id', 'wi-new');
+    });
+
+    it('get_work_item surfaces a not-found result as an error', async () => {
+      mockContainer._useCases.GetWorkItemUseCase.execute.mockResolvedValueOnce({
+        ok: false,
+        error: 'Work item not found: "ZZZ-9"',
+      });
+
+      const result = await client.callTool({
+        name: 'get_work_item',
+        arguments: { identifier: 'ZZZ-9' },
+      });
+
+      expect(result.isError).toBe(true);
+      const textContent = result.content as { type: string; text: string }[];
+      expect(textContent[0].text).toContain('Work item not found');
     });
   });
 

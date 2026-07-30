@@ -94,6 +94,12 @@ describe('McpServerService', () => {
       'list_repositories',
       'get_settings',
       'update_settings',
+      'list_projects',
+      'list_work_items',
+      'get_work_item',
+      'create_work_item',
+      'update_work_item',
+      'delete_work_item',
     ];
 
     let containerService: McpServerService;
@@ -116,11 +122,11 @@ describe('McpServerService', () => {
       await containerService.server.close();
     });
 
-    it('registers all 11 tools when container is provided', async () => {
+    it('registers all 17 tools when container is provided', async () => {
       const { tools } = await client.listTools();
       const toolNames = tools.map((t) => t.name);
 
-      expect(tools).toHaveLength(11);
+      expect(tools).toHaveLength(17);
       for (const name of expectedTools) {
         expect(toolNames).toContain(name);
       }

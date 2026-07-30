@@ -14,23 +14,7 @@ import { CreateFeatureUseCase } from '../../../../application/use-cases/features
 import { StartFeatureUseCase } from '../../../../application/use-cases/features/start-feature.use-case.js';
 import { SdlcLifecycle } from '../../../../domain/generated/output.js';
 import type { FeatureListFilters } from '../../../../application/ports/output/repositories/feature-repository.interface.js';
-
-/**
- * Wraps an async handler in try/catch, returning MCP error responses on failure.
- */
-async function withErrorHandling(
-  fn: () => Promise<{ content: { type: 'text'; text: string }[]; isError?: boolean }>
-): Promise<{ content: { type: 'text'; text: string }[]; isError?: boolean }> {
-  try {
-    return await fn();
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    return {
-      content: [{ type: 'text', text: message }],
-      isError: true,
-    };
-  }
-}
+import { withErrorHandling } from './with-error-handling.js';
 
 /**
  * Register feature-related MCP tools on the server.

@@ -10,23 +10,7 @@ import type DependencyContainer from 'tsyringe/dist/typings/types/dependency-con
 import { z } from 'zod';
 import { LoadSettingsUseCase } from '../../../../application/use-cases/settings/load-settings.use-case.js';
 import { UpdateSettingsUseCase } from '../../../../application/use-cases/settings/update-settings.use-case.js';
-
-/**
- * Wraps an async handler in try/catch, returning MCP error responses on failure.
- */
-async function withErrorHandling(
-  fn: () => Promise<{ content: { type: 'text'; text: string }[]; isError?: boolean }>
-): Promise<{ content: { type: 'text'; text: string }[]; isError?: boolean }> {
-  try {
-    return await fn();
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    return {
-      content: [{ type: 'text', text: message }],
-      isError: true,
-    };
-  }
-}
+import { withErrorHandling } from './with-error-handling.js';
 
 /**
  * Register settings-related MCP tools on the server.

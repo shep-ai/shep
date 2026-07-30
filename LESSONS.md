@@ -1236,3 +1236,53 @@ actually serves. Verify against that provider before extending them.
 **Regression lock:** `tests/unit/infrastructure/services/agents/agent-executor-factory.test.ts`
 asserts the exact list per agent, and `cursor-executor.test.ts` asserts the
 `--model` flag value per canonical ID. Extend both in the same diff.
+
+## MCP tool handler return types must be `type`, not `interface`
+
+Extracting the shared `withErrorHandling` helper for MCP tools, I typed its
+return as `interface McpToolResult { ... }`. The four existing tool files had
+used an inline anonymous object literal. `packages/core` typecheck then failed
+on every `server.registerTool(...)` call: `Index signature for type 'string'
+is missing in type 'McpToolResult'`. The SDK's handler return type is
+`{ [x: string]: unknown; content: ...; ... }`, and a **named `interface` does
+NOT get an implicit index signature** (it can be augmented via declaration
+merging), whereas a **`type` alias / inline object literal does**. So an
+interface is not assignable to a type that has an index signature, but the
+equivalent `type` is.
+
+**Rules:**
+1. Any object shape that must satisfy a third-party "bag of unknown props"
+   contract (an index signature like `{ [x: string]: unknown }`) MUST be a
+   `type` alias, never an `interface`.
+2. This repo's eslint enforces `@typescript-eslint/consistent-type-definitions`
+   (prefer `interface`). When a `type` is required for the index-signature
+   reason above, add a one-line `// eslint-disable-next-line` with a comment
+   explaining why — don't silently fight the linter.
+3. Refactoring an inline type into a named one can introduce this failure even
+   when the values are identical; run `tsc` on the touched package after the
+   extraction, not just the unit tests (vitest transpiles per-file and won't
+   catch a cross-call assignability error).
+
+## Capturing Storybook evidence screenshots in a sandboxed session
+
+Needed screenshots of a new web component for PR evidence. Two traps:
+
+1. **The Playwright MCP defaults to system Chrome** (`/opt/google/chrome/chrome`),
+   which isn't installed — it errors with "Chromium distribution 'chrome' is
+   not found". The sandbox ships Playwright's own Chromium at
+   `/opt/pw-browsers/chromium-<rev>/chrome-linux/chrome`
+   (`PLAYWRIGHT_BROWSERS_PATH=/opt/pw-browsers`). Don't run
+   `playwright install`. Instead drive it with the project's `@playwright/test`
+   via a script: `chromium.launch({ executablePath: '/opt/pw-browsers/chromium-<rev>/chrome-linux/chrome' })`.
+2. **A `.mjs` script placed in the scratchpad (`/tmp/...`) can't resolve repo
+   `node_modules`** — `import ... from '@playwright/test'` throws
+   ERR_MODULE_NOT_FOUND. Write the throwaway script at the repo root (then
+   `rm` it) so Node resolves modules from the project.
+
+Workflow that works: `storybook dev -p 6006 --no-open --quiet` in the
+background → poll `curl -sf localhost:6006/index.json` → find story ids in
+`index.json` → screenshot each `iframe.html?id=<story-id>&viewMode=story`,
+toggling `colorScheme` / `document.documentElement.classList.add('dark')` for
+dark mode. Commit PNGs under an `evidence/` dir and embed in the PR comment
+via `https://github.com/<owner>/<repo>/blob/<branch>/<path>.png?raw=true`
+(renders inline for authorized viewers, private repos included).
