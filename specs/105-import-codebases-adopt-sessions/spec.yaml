@@ -23,14 +23,14 @@ summary: >
   link, and its "Create feature from session" path is a presentation stopgap:
   repository-node.tsx builds the agent prompt inside a React component, pushes
   a URL, and never reads the transcript — it just instructs the agent to go
-  read the JSONL itself. This feature adds recursive local repo discovery plus
-  bulk import behind one presentation-agnostic use case (web and CLI), and
+  read the JSONL itself. This feature adds non-recursive local folder discovery
+  plus bulk import behind one presentation-agnostic use case (web and CLI), and
   makes session adoption real by reading the transcript in core, deriving a
   feature from it, and recording the originating session so work continues
   under shep orchestration. Secondary resume paths — shep's embedded PTY
   terminal, VS Code, an external terminal — reuse the same core resume
   descriptor.
-phase: Requirements
+phase: research
 sizeEstimate: L
 
 # Relationships
@@ -70,10 +70,12 @@ openQuestions:
   - question: 'When adopting a session, should the derived feature name/description come from an LLM summarisation pass over the transcript, or from deterministic extraction (first user message + file/tool mentions)?'
     resolved: true
     answer: >
-      LLM summarisation, run in core through IAgentExecutorProvider, producing
-      name, description, and a remaining-work summary. A deterministic
-      extraction path (first user message + files/tools touched) is required as
-      a fallback for when the model call fails, so adoption never hard-fails.
+      LLM summarisation producing name, description, and a remaining-work
+      summary. A deterministic extraction path (first user message + files/tools
+      touched) is required as a fallback for when the model call fails, so
+      adoption never hard-fails. Research refined the mechanism: the call goes
+      through IStructuredAgentCaller (schema-validated, the MetadataGenerator
+      pattern), not IAgentExecutorProvider directly — see research.yaml.
   - question: 'Should adopting a session create the feature branch and start an agent run immediately, or land the feature in Requirements for the user to drive?'
     resolved: true
     answer: >
@@ -99,7 +101,7 @@ content: |
   (normalisation, dedupe by path, soft-delete restore), but the only caller is
   a web folder picker invoked once per repo, and the CLI's `shep repo add` is
   GitHub-clone-only — the path-based use case has no CLI surface. Nothing in
-  the codebase walks a parent directory looking for git repositories.
+  the codebase enumerates a parent directory's children as import candidates.
 
   **In-flight sessions are visible but inert.** Discovery is already solid:
   `claude-code-session.repository.ts` and `codex-cli-session.repository.ts`

@@ -7,7 +7,7 @@ to bring them in as a set. `AddRepositoryUseCase` handles a single path well
 (normalisation, dedupe by path, soft-delete restore), but the only caller is
 a web folder picker invoked once per repo, and the CLI's `shep repo add` is
 GitHub-clone-only — the path-based use case has no CLI surface. Nothing in
-the codebase walks a parent directory looking for git repositories.
+the codebase enumerates a parent directory's children as import candidates.
 
 **In-flight sessions are visible but inert.** Discovery is already solid:
 `claude-code-session.repository.ts` and `codex-cli-session.repository.ts`

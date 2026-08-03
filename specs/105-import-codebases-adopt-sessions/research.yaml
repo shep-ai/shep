@@ -2,28 +2,170 @@
 # This is the source of truth. Markdown is auto-generated from this file.
 
 name: import-codebases-adopt-sessions
-summary: Technical analysis for 105-import-codebases-adopt-sessions
+summary: >
+  Technical analysis for 105-import-codebases-adopt-sessions. The headline
+  finding is that almost nothing here needs new machinery — it needs existing
+  machinery connected correctly. Adoption should reuse the
+  IStructuredAgentCaller + MetadataGenerator pattern rather than calling
+  IAgentExecutorProvider directly, and should call
+  CreateFeatureUseCase.createRecord() rather than execute() to satisfy the
+  "no branch, no agent run" decision. Both agent executors already implement
+  --resume via options.resumeSession, so the resume descriptor is a
+  domain-level mapping, not new integration work. The one genuinely
+  underestimated item is deleting session-scanner.ts: the web scanner and the
+  core session repositories are not equivalent, and core is missing three
+  capabilities the canvas currently depends on.
+phase: research
+updatedAt: '2026-08-03'
 
 # Relationships
-relatedFeatures: []
-technologies: []
-relatedLinks: []
+relatedFeatures:
+  - '088-cli-application-management'
+  - '093-agent-collaboration-supervision'
+  - '094-control-center-sdd-mode'
+
+technologies:
+  - TypeScript
+  - TypeSpec
+  - tsyringe
+  - umzug (SQLite migrations)
+  - better-sqlite3
+  - Next.js
+  - Commander
+
+relatedLinks:
+  - title: Clean Architecture
+    url: ./docs/architecture/clean-architecture.md
+  - title: Agent System
+    url: ./docs/architecture/agent-system.md
+  - title: TypeSpec Guide
+    url: ./docs/development/typespec-guide.md
 
 # Structured technology decisions
 decisions:
-  - title: { { DECISION_TITLE } }
-    chosen: { { CHOSEN_OPTION } }
+  - title: Where subfolder listing and git detection live
+    chosen: New IRepositoryDiscoveryService output port with a node:fs adapter in infrastructure
     rejected:
-      - { { OPTION_1 } }
-      - { { OPTION_2 } }
-    rationale: { { RATIONALE } }
+      - Extend IFileSystemService with listSubdirectories() + isGitRepository()
+      - Call node:fs directly from the use case
+      - Reuse the web /api/directory/list route from core
+    rationale: >
+      IFileSystemService is a deliberately tiny mutation-oriented port
+      (removeDirectory, pathExists) consumed by eight use cases across
+      clusters, deployments, cloud-deploy, doctor, and repositories. Adding
+      read/enumerate semantics to it would widen a port that every one of
+      those consumers would then over-depend on. A separate discovery port
+      keeps the boundary honest and gives the bulk-import use case a single
+      mockable seam for TDD. Calling node:fs from the use case is a direct
+      dependency-rule violation. The web route is presentation and cannot be
+      imported by core.
+  - title: How adopted-session summarisation reaches the model
+    chosen: IStructuredAgentCaller.call() with a JSON schema, following the MetadataGenerator pattern
+    rejected:
+      - Inject IAgentExecutorProvider and parse free-form output
+      - Spawn a full feature agent run to do the summarisation
+    rationale: >
+      The spec said "via IAgentExecutorProvider", but research found the
+      correct existing abstraction one level up: IStructuredAgentCaller
+      already wraps the difference between agents with native structured
+      output (Claude Code --json-schema) and those needing prompt-based JSON
+      extraction, and throws StructuredCallError on unparseable responses.
+      MetadataGenerator is a working precedent doing exactly this shape
+      (userInput -> {slug, name, description}) with a METADATA_SCHEMA const
+      and input truncation. Adoption is the same shape plus a remainingWork
+      field, so it should be a sibling collaborator, not a new integration.
+      Parsing free-form output would re-implement StructuredCallError
+      handling; a full agent run contradicts the no-agent-run decision.
+  - title: How an adopted feature is created without a branch or agent run
+    chosen: Call CreateFeatureUseCase.createRecord() with pre-supplied name/description
+    rejected:
+      - CreateFeatureUseCase.execute()
+      - CreateFeatureUseCase.execute() with pending true
+      - Write the Feature entity directly via IFeatureRepository
+    rationale: >
+      execute() is createRecord() + initializeAndSpawn(), and phase 2
+      unconditionally calls worktreeService.create() — so any path through
+      execute() creates a branch, violating the resolved decision. The
+      pending flag looked like the answer but sets lifecycle to
+      SdlcLifecycle.Pending, not Requirements, so it fails the decision on a
+      different axis. createRecord() is public, documented as the fast
+      DB-only phase ("No AI calls, no git operations"), already used in
+      exactly this split fashion by create-feature.ts (web action) and
+      CreateFeatureFromRemoteUseCase, and defaults to
+      SdlcLifecycle.Requirements for BuildMode.Application. It also accepts
+      pre-supplied name/description, which lets the summariser output feed
+      straight in and skips the redundant second AI metadata call. Writing
+      the entity directly would bypass slug resolution, the agent-run record,
+      and parent-gate logic.
+  - title: Shape of the resume descriptor
+    chosen: Agent-type-keyed descriptor built by a domain helper, consumed by all three resume surfaces
+    rejected:
+      - Keep building a command string in the React component
+      - Hardcode the claude binary in a use case
+    rationale: >
+      Both executors already support resume — claude-code-executor pushes
+      ['--resume', options.resumeSession] and declares a 'session-resume'
+      capability; cursor-executor pushes the same flag but its binary is
+      cursor-agent, not cursor. So a single hardcoded `claude --resume` string
+      is wrong for Cursor sessions the moment Cursor parity lands. The
+      correct form is always the binary for the session's agentType plus
+      --resume <id>, executed with cwd set to the project path — there is no
+      --project flag on any of them, which is precisely the shipped bug. A
+      domain helper mapping AgentType to binary keeps the terminal, IDE, and
+      clipboard paths agreeing, and matches the LESSONS.md rule that shared
+      semantics belong in domain before the second consumer exists.
+  - title: Whether core can absorb the web session scanner as-is
+    chosen: 'No — core needs three new capabilities first; scanner deletion is gated on them'
+    rejected:
+      - Point the API routes at existing core use cases and delete the scanner immediately
+      - Leave the scanner in place indefinitely
+    rationale: >
+      Direct comparison shows the two implementations are not equivalent, and
+      the web one is ahead in ways the canvas depends on. Core is missing:
+      (1) Cursor discovery entirely — stub-session.repository.ts returns
+      nothing, while the scanner reads
+      ~/.cursor/projects/<encoded>/agent-transcripts and handles both flat
+      .jsonl files and the directory-per-transcript layout;
+      (2) worktree-aware collection — the scanner's includeWorktrees matches
+      sibling project dirs by prefix AND derives the shep worktree dir from
+      sha256(normalizedRepoPath).slice(0,16) under ~/.shep/repos, which
+      ClaudeCodeSessionRepository.collectSessionFilesForPath does not do, so
+      repo nodes would silently lose all worktree sessions;
+      (3) filePath on the session model — AgentSession has no filePath field,
+      but SessionSummary.filePath is what gates the adopt action in the
+      dropdown. Deleting the scanner before these three land is a visible
+      regression, so the plan must sequence them first.
+  - title: Batch session lookup for the canvas
+    chosen: New list-sessions-for-paths use case returning a path-keyed map
+    rejected:
+      - Loop the existing single-path use case in the API route
+      - Keep /api/sessions-batch assembling results itself
+    rationale: >
+      SessionsProvider polls /api/sessions-batch every 30s for every repo on
+      the canvas and consumes a sessionsByPath record. Looping a single-path
+      use case inside the route would put fan-out and merge logic back in
+      presentation, which is the violation this feature exists to remove.
+      A core use case that takes paths and returns the map keeps the route a
+      thin adapter and gives the CLI the same capability for free.
+  - title: Persisting session provenance on Feature
+    chosen: Two optional TypeSpec fields plus an additive umzug migration
+    rejected:
+      - Store provenance in the existing messages/metadata JSON blob
+      - Add a separate adopted_sessions join table
+    rationale: >
+      sourceAgentSessionId and sourceAgentType are single-valued, always
+      known at adoption time, and wanted for display and traceability — two
+      nullable columns model that exactly. Migration 135
+      (add-active-plugins-to-features) is the pattern to copy: pragma
+      table_info guard, ALTER TABLE ADD COLUMN, no-op down. Migrations are
+      auto-discovered from the migrations/ directory by filename order, so no
+      registry edit is needed. A join table would be premature for a 1:1
+      relationship; burying provenance in a JSON blob makes it unqueryable
+      and repeats the mistake the enum-literal lesson in LESSONS.md warns
+      about.
 
 # Open questions (should be resolved by end of research)
-openQuestions:
-  []
-  # - question: "Which library should we use?"
-  #   resolved: true
-  #   answer: "Library X because of Y"
+openQuestions: []
 
 # Markdown content (the full research document)
 content: |
@@ -32,37 +174,169 @@ content: |
   - **Phase:** Research
   - **Updated:** 2026-08-03
 
+  ## Summary
+
+  Most of this feature is wiring, not invention. Three findings changed the
+  plan relative to the spec:
+
+  1. **Adoption should not call `IAgentExecutorProvider` directly.** The spec
+     named it, but `IStructuredAgentCaller` is the correct abstraction and
+     `MetadataGenerator` is a working precedent for the exact same
+     input-to-schema shape. Using the lower-level port would mean
+     re-implementing JSON extraction and error handling that already exists.
+
+  2. **`CreateFeatureUseCase.execute()` cannot satisfy the "no branch" rule.**
+     Phase 2 (`initializeAndSpawn`) always calls `worktreeService.create()`.
+     The `pending` flag does not help either — it sets lifecycle to `Pending`,
+     not `Requirements`. The answer is `createRecord()`, which is public,
+     DB-only, defaults to `Requirements`, and is already used in this split
+     fashion by the web create-feature action.
+
+  3. **Deleting `session-scanner.ts` is bigger than it looks.** The web
+     scanner is *ahead* of core in three ways the canvas actively depends on.
+     Sequencing matters: core has to catch up before the delete.
+
   ## Technology Decisions
 
-  ### {{DECISION_TITLE}}
+  ### Where subfolder listing and git detection live
 
   **Options considered:**
 
-  1. {{OPTION_1}}
-  2. {{OPTION_2}}
-  3. {{OPTION_3}}
+  1. Extend `IFileSystemService` with `listSubdirectories()` + `isGitRepository()`
+  2. New `IRepositoryDiscoveryService` port with a `node:fs` adapter
+  3. Call `node:fs` directly from the use case
 
-  **Decision:** {{CHOSEN_OPTION}}
+  **Decision:** New `IRepositoryDiscoveryService` output port.
 
-  **Rationale:** {{RATIONALE}}
+  **Rationale:** `IFileSystemService` is intentionally minimal —
+  `removeDirectory` and `pathExists` — and is injected into eight use cases
+  across clusters, deployments, cloud-deploy, doctor, and repositories. Adding
+  enumerate semantics widens a port all of them would then over-depend on. A
+  dedicated port gives bulk import one mockable seam. Option 3 violates the
+  dependency rule outright.
+
+  ### How adopted-session summarisation reaches the model
+
+  **Options considered:**
+
+  1. `IAgentExecutorProvider` + free-form output parsing (as the spec suggested)
+  2. `IStructuredAgentCaller.call()` with a JSON schema
+  3. Spawn a full feature agent run
+
+  **Decision:** `IStructuredAgentCaller.call()`, mirroring `MetadataGenerator`.
+
+  **Rationale:** `IStructuredAgentCaller` already abstracts native structured
+  output (Claude Code `--json-schema`) from prompt-based JSON extraction and
+  throws `StructuredCallError` on failure — which is exactly the trigger for
+  our deterministic fallback. `MetadataGenerator` shows the house pattern: a
+  module-level schema const, input truncation before the call, typed result
+  interface. Adoption adds one field (`remainingWork`) to that shape.
+
+  ### How an adopted feature is created without a branch or agent run
+
+  **Options considered:**
+
+  1. `execute()`
+  2. `execute()` with `pending: true`
+  3. `createRecord()` with pre-supplied `name`/`description`
+  4. Direct `IFeatureRepository.create()`
+
+  **Decision:** `createRecord()`.
+
+  **Rationale:** Option 1 always creates a worktree. Option 2 lands in
+  `SdlcLifecycle.Pending` rather than `Requirements`. Option 4 skips slug
+  resolution, the agent-run record, and parent-gate logic. Option 3 is
+  documented as "No AI calls, no git operations — just DB writes", defaults to
+  `Requirements` for `BuildMode.Application`, and accepts pre-supplied
+  name/description so the summariser output feeds straight in without a second
+  redundant AI call.
+
+  ### Shape of the resume descriptor
+
+  **Decision:** A domain helper maps `AgentType` to its binary and builds a
+  descriptor (binary, args, cwd) consumed by the terminal, IDE, and clipboard
+  paths alike.
+
+  **Rationale:** `claude-code-executor.service.ts:373` and
+  `cursor-executor.service.ts:329` both already push `['--resume', id]`, but
+  Cursor's binary is `cursor-agent`. A hardcoded `claude --resume` breaks for
+  Cursor sessions as soon as parity lands. None of them take a `--project`
+  flag — cwd carries the project — which is exactly the shipped bug.
+
+  ### Whether core can absorb the web session scanner as-is
+
+  **Decision:** No. Core must gain three capabilities before the scanner can
+  be deleted.
+
+  | Capability | core repositories | web `session-scanner.ts` |
+  | ---------- | ----------------- | ------------------------ |
+  | Claude Code sessions | yes | yes |
+  | `projectPath` filter | yes | yes |
+  | Cursor sessions | **no** (stub returns nothing) | yes |
+  | Worktree sessions (prefix + `~/.shep/repos/<sha256[0:16]>`) | **no** | yes (`includeWorktrees`) |
+  | `filePath` on the result | **no** (not on the TSP model) | yes |
+  | Batch by many paths | **no** | yes (`/api/sessions-batch`) |
+
+  Deleting the scanner before closing those gaps would silently drop Cursor
+  sessions and every worktree session from the canvas, and would remove the
+  `filePath` that gates the adopt action.
 
   ## Library Analysis
 
-  | Library     | Version     | Purpose     | Pros     | Cons     |
-  | ----------- | ----------- | ----------- | -------- | -------- |
-  | {{LIBRARY}} | {{VERSION}} | {{PURPOSE}} | {{PROS}} | {{CONS}} |
+  No new dependencies. Everything needed is already in the stack.
+
+  | Library | Version | Purpose | Pros | Cons |
+  | ------- | ------- | ------- | ---- | ---- |
+  | umzug | existing | Auto-discovered SQLite migrations for the two new Feature columns | Already the house pattern; migrations/ dir is globbed, no registry edit | None |
+  | better-sqlite3 | existing | Persistence | Already used | Native addon (see LESSONS.md) |
+  | node:fs | builtin | Subfolder enumeration behind the new port | No dependency added | Must stay in infrastructure |
 
   ## Security Considerations
 
-  No security implications identified.
+  - **Arbitrary path enumeration.** Discovery takes a caller-supplied absolute
+    path and lists its children. The web route must keep the existing
+    `path.isAbsolute` + `path.resolve` guards used by `/api/directory/list` so
+    relative or traversal-style inputs cannot walk outside the intended root.
+  - **Transcript content reaches the model.** Adoption sends conversation text
+    to an agent for summarisation. Transcripts routinely contain secrets,
+    tokens, and customer data. The summarisation prompt must be truncated (as
+    `MetadataGenerator` does with `MAX_INPUT_FOR_AI`) and the feature should
+    not copy raw transcript content into the persisted feature description.
+  - **No new command interpolation.** The resume descriptor must be passed as
+    argv (binary + args array), never assembled into a shell string — session
+    ids come from filenames on disk. The existing PTY service already spawns
+    with an args array.
+  - **Bulk import surface.** Importing many repos at once means many
+    `AddRepositoryUseCase` calls; it performs no code execution, so the blast
+    radius is DB rows only. No git operations run at import time.
 
   ## Performance Implications
 
-  No performance implications identified.
+  - **Discovery is one readdir plus one stat per child.** Non-recursive by
+    decision, so cost is bounded by the folder's fan-out. `withFileTypes`
+    avoids a stat for the directory check itself.
+  - **Session scanning is the hot path.** `SessionsProvider` polls every 30s
+    for every repo on the canvas. The core Claude repository already uses the
+    right strategy (stat-all-in-parallel, then fully parse only the top-N by
+    mtime) and the batch use case must preserve it — a naive implementation
+    that parses every file for every repo on every poll would be markedly
+    worse than what ships today. The scanner's 8KB `PREVIEW_READ_BYTES`
+    head-read trick is worth carrying over for preview extraction.
+  - **Adoption costs one model call.** Bounded by prompt truncation, and only
+    on explicit user action, not on poll. The deterministic fallback means a
+    slow or failing model degrades quality, not availability.
+  - **Bulk import is N sequential DB writes.** Each `AddRepositoryUseCase`
+    call does up to two lookups plus one insert. For a realistic folder
+    (tens of repos) this is negligible; the per-path result array matters more
+    than throughput.
 
   ## Open Questions
 
-  All questions resolved.
+  All questions resolved. The four from `spec.yaml` were answered before
+  research; research added no new blockers, but it did move one spec
+  assumption (`IAgentExecutorProvider` -> `IStructuredAgentCaller`) and
+  invalidate one implied approach (`CreateFeatureUseCase.execute()` with
+  `pending`).
 
   ---
 
