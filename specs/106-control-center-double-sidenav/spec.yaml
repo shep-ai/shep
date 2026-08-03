@@ -1,0 +1,205 @@
+# Feature Specification (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: control-center-double-sidenav
+number: 106
+branch: feat/106-control-center-double-sidenav
+oneLiner: Add a second Control Center sidenav rendering a repository → feature → session tree, distinguishing adopted from unadopted sessions, with archive and delete.
+userQuery: |
+  We need to have dobule sidenav in the control center page, you can take
+  inspartion from here https://21st.dev/@jshguo/components/sidebar-component.
+  the second sidenav should show a view of repository/code folder as a "Tree"
+  (open by default) we can differniate between regular session to those we
+  already converted to a feature to be able to browser for maximum capability,
+  we should be able to delete/archive sessions like claude code
+summary: >
+  Spec 105 made in-flight agent sessions actionable, but only from a dropdown
+  hanging off a single repository node on the canvas. There is no way to see
+  every session across every repository at once, no way to tell at a glance
+  which sessions have already been adopted into a feature, and no way to get
+  rid of the ones that are finished or irrelevant — the list only grows. This
+  feature adds a second sidenav to the Control Center: the existing AppSidebar
+  collapses to a narrow icon rail, and a tree panel sits beside it, open by
+  default. The tree is Repository → features → sessions, so an adopted session
+  nests under the feature it became while unadopted sessions sit in their own
+  per-repository bucket — the SDLC hierarchy is the browsing structure. The
+  link already exists: spec 105 persists Feature.sourceAgentSessionId, so
+  "converted to a feature" is a query rather than a new model. Sessions also
+  become manageable. Archive is the default one-click action: shep-side only,
+  reversible, and it never touches the provider's files. Delete is separate and
+  gated behind an explicit confirmation, because it unlinks a transcript from
+  ~/.claude or ~/.cursor — data shep reads but does not own.
+phase: Requirements
+sizeEstimate: L
+
+# Relationships
+relatedFeatures:
+  - '105-import-codebases-adopt-sessions'
+  - '091-apps-only-surface'
+  - '094-control-center-sdd-mode'
+
+technologies:
+  - TypeScript
+  - TypeSpec
+  - tsyringe
+  - SQLite (better-sqlite3)
+  - Next.js
+  - React
+  - shadcn/ui sidebar
+  - Radix Accordion
+
+relatedLinks:
+  - title: Sidebar design inspiration (21st.dev)
+    url: https://21st.dev/@jshguo/components/sidebar-component
+  - title: Clean Architecture
+    url: ./docs/architecture/clean-architecture.md
+  - title: Web UI architecture
+    url: ./docs/ui/architecture.md
+  - title: TypeSpec guide
+    url: ./docs/development/typespec-guide.md
+
+# Open questions (must be resolved before implementation)
+openQuestions:
+  - question: 'Should the second sidenav be scoped to the Control Center only, or appear across all app-shell routes?'
+    resolved: true
+    answer: >
+      Control Center only. The user asked for it on "the control center page",
+      and the tree is canvas-oriented. app-shell renders the sidebar chrome
+      globally, so the tree panel must be gated to the Control Center route
+      rather than added unconditionally to the shell.
+  - question: 'What should "delete a session" do, given transcripts live in provider directories shep does not own?'
+    resolved: true
+    answer: >
+      Both actions ship. Archive is the default one-click action: shep-side
+      state only, hides the session from the tree, fully reversible, provider
+      files untouched. Delete is a separate action behind an explicit confirm
+      dialog and removes the provider transcript file. The destructive path is
+      gated, never the default.
+  - question: 'What is the tree a tree of — filesystem, or session hierarchy?'
+    resolved: true
+    answer: >
+      Repository → features → sessions. Adopted sessions nest under the feature
+      they became; unadopted sessions sit in a separate per-repository bucket.
+      Not a filesystem tree — that would largely duplicate the existing IDE
+      tab file tree and would not serve the adopted/unadopted distinction.
+  - question: 'How does the second sidenav coexist with the existing AppSidebar?'
+    resolved: true
+    answer: >
+      Icon rail plus expanded panel. The existing AppSidebar collapses to a
+      narrow icon rail (shadcn sidebar already supports collapsible="icon")
+      and the tree panel sits beside it, open by default.
+  - question: 'Where does session archive state live, since AgentSession is not a shep database row?'
+    resolved: true
+    answer: >
+      A sparse marker table keyed by (agent_type, session_id) — archived
+      sessions are the exception, not the rule, so storing one row per archived
+      session avoids materialising every discovered session into the database
+      and preserves the "sessions are read from provider storage" invariant.
+      Provider files stay untouched, which is what makes archive reversible.
+      Research to confirm the table shape and whether unarchive is a row delete
+      or a nullable timestamp.
+
+# Markdown content (the actual spec)
+content: |
+  ## Problem Statement
+
+  Spec 105 made in-flight Claude Code / Cursor sessions actionable — they can
+  be adopted into features, resumed in a terminal, or opened in an IDE. But it
+  left three gaps.
+
+  **Sessions are only reachable one repository at a time.** The only entry
+  point is `FeatureSessionsDropdown`, which hangs off a single repository node
+  on the canvas and shows that node's sessions. A user with 22 imported
+  repositories has no way to survey their in-flight work as a whole, which is
+  precisely what "browse for maximum capability" asks for.
+
+  **Adopted and unadopted sessions look identical.** `Feature.sourceAgentSessionId`
+  is persisted at adoption time, so the data exists — but nothing queries it.
+  The dropdown renders every session the same way, so a user cannot tell which
+  conversations they have already converted and which are still loose. That
+  makes the list actively misleading over time: adopting a session does not
+  visibly change anything about it.
+
+  **Sessions accumulate forever.** `IAgentSessionRepository` is read-only
+  (`list`, `findById`, `isSupported`). There is no archive and no delete. Every
+  transcript the user has ever created stays in the list at equal weight, and
+  the only remedy is to leave shep and delete JSONL files by hand.
+
+  The Control Center also has a single sidebar today. `app-shell.tsx` renders
+  `SidebarProvider` + `AppSidebar` + `SidebarInset`, and `AppSidebar` is a
+  513-line navigation menu. There is no second panel to put a tree in.
+
+  ## Success Criteria
+
+  - [ ] The Control Center renders two sidenavs: the existing AppSidebar
+        collapsed to a narrow icon rail, and a tree panel beside it that is
+        open by default.
+  - [ ] The tree panel is scoped to the Control Center — other app-shell routes
+        are visually unchanged.
+  - [ ] The tree renders Repository → features → sessions, with adopted
+        sessions nested under the feature they became and unadopted sessions in
+        a separate per-repository bucket.
+  - [ ] Adopted and unadopted sessions are visually distinguishable without
+        hovering or opening anything.
+  - [ ] The adopted/unadopted determination comes from
+        `Feature.sourceAgentSessionId` via a use case — never from a
+        presentation-layer guess.
+  - [ ] A session can be archived in one click. Archiving hides it from the
+        tree, is reversible, and never modifies any provider file.
+  - [ ] Archived sessions can be revealed and un-archived.
+  - [ ] A session can be deleted, but only through an explicit confirmation
+        that states the transcript file will be removed from disk.
+  - [ ] Delete works for Claude Code, Codex CLI, and Cursor transcripts,
+        including Cursor's directory-per-transcript layout.
+  - [ ] Deleting or archiving a session that has been adopted does not delete
+        or damage the feature derived from it.
+  - [ ] The tree consumes the existing `ListSessionsForPathsUseCase` rather
+        than re-scanning provider directories.
+  - [ ] New and changed web components have colocated Storybook stories, and
+        every new i18n key exists in all nine locales.
+
+  ## Affected Areas
+
+  | Area | Impact | Reasoning |
+  | ---- | ------ | --------- |
+  | `presentation/web/components/layouts/app-shell/` | High | Must host a second sidebar and collapse the first to an icon rail, without changing non-Control-Center routes. |
+  | `presentation/web/components/layouts/app-sidebar/` | Medium | Needs to render correctly as an icon rail; currently 513 lines, so it is a refactor-before-extending candidate. |
+  | New `presentation/web/components/features/session-tree/` | High | The tree panel, its nodes, badges, and action menus, plus stories. |
+  | `application/ports/output/agents/agent-session-repository.interface.ts` | High | Read-only today; gains a delete capability that every provider must implement. |
+  | `infrastructure/services/agents/sessions/` | High | Per-provider transcript deletion — Claude Code and Codex JSONL files, Cursor's flat and nested layouts. |
+  | New archive persistence | High | `AgentSession` is explicitly not a shep DB row, so archive state needs its own storage plus a migration. |
+  | `application/ports/output/repositories/feature-repository.interface.ts` | Medium | No lookup by source session exists; the tree needs adopted-session ids in bulk. |
+  | New `application/use-cases/agents/` use cases | High | Build the tree, archive/unarchive, delete — all behind use cases. |
+  | `tsp/` | Medium | Archive state and any tree view-model shapes are TypeSpec-first. |
+  | `translations/*/web.json` | Low | Nine locales, or the completeness test fails. |
+
+  ## Dependencies
+
+  **Hard dependency on `105-import-codebases-adopt-sessions`**, which is not
+  yet merged. This feature branches from `feat/105-import-codebases-adopt-sessions`
+  rather than `main` because it builds directly on:
+
+  - `Feature.sourceAgentSessionId` / `sourceAgentType` — the adopted/unadopted
+    distinction is impossible without them.
+  - `ListSessionsForPathsUseCase` — the tree's data source.
+  - `CursorSessionRepository` — Cursor sessions must be deletable, which
+    requires them to be discoverable first.
+  - `AgentSession.filePath` — deletion needs to know which file to unlink.
+
+  Spec 105 must merge before this one.
+
+  ## Size Estimate
+
+  **L** — The UI is the visible half but the smaller one: a second sidebar, a
+  tree, and badges over an existing data source. The larger half is that
+  sessions become mutable for the first time. That means a new port capability
+  with three provider implementations, new persistence for archive state on
+  entities that deliberately have no database rows, a TypeSpec model plus
+  migration, and a destructive path that has to be safe — deleting a
+  transcript must never damage the feature adopted from it. Not XL because no
+  agent orchestration, no new external integration, and the tree's data already
+  arrives shaped by spec 105.
+
+  ---
+
+  _Generated by `/shep-kit:new-feature` — proceed with `/shep-kit:research`_

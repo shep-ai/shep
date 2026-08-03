@@ -1,0 +1,36 @@
+feature:
+  id: '106-control-center-double-sidenav'
+  name: 'control-center-double-sidenav'
+  number: 106
+  branch: 'feat/106-control-center-double-sidenav'
+  lifecycle: 'research'
+  createdAt: '2026-08-03T15:24:06Z'
+
+status:
+  phase: 'research'
+  progress:
+    completed: 0
+    total: 0
+    percentage: 0
+  currentTask: null
+  lastUpdated: '2026-08-03T15:24:06Z'
+  lastUpdatedBy: 'shep-kit:new-feature'
+
+validation:
+  lastRun: null
+  gatesPassed: []
+  autoFixesApplied: []
+
+tasks:
+  current: null
+  blocked: []
+  failed: []
+
+checkpoints:
+  - phase: 'feature-created'
+    completedAt: '2026-08-03T15:24:06Z'
+    completedBy: 'shep-kit:new-feature'
+
+errors:
+  current: null
+  history: []
