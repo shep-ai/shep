@@ -2,47 +2,581 @@
 # This is the source of truth. Markdown is auto-generated from this file.
 
 name: import-codebases-adopt-sessions
-summary: Task breakdown for 105-import-codebases-adopt-sessions
+summary: >
+  18 tasks across 6 phases. Phase 1 is the TypeSpec + persistence foundation.
+  Phases 2 (bulk import) and 3 (session discovery parity) are independent and
+  parallelizable. Phase 4 builds adoption on Phase 3. Phase 5 rewires
+  presentation and deletes the duplicated scanner. Phase 6 validates.
+status:
+  phase: implementation
+  updatedAt: '2026-08-03'
 
 # Relationships
-relatedFeatures: []
-technologies: []
-relatedLinks: []
+relatedFeatures:
+  - '088-cli-application-management'
+  - '093-agent-collaboration-supervision'
+  - '094-control-center-sdd-mode'
+
+technologies:
+  - TypeScript
+  - TypeSpec
+  - tsyringe
+  - umzug (SQLite migrations)
+  - Next.js
+  - Commander
+
+relatedLinks:
+  - title: Clean Architecture
+    url: ./docs/architecture/clean-architecture.md
+  - title: TDD Guide
+    url: ./docs/development/tdd-guide.md
 
 # Structured task list — this is the single source of truth for tasks.
 # The content field below is a summary only; it does NOT duplicate task details.
 tasks:
+  # ── Phase 1 — Foundation ────────────────────────────────────────────
   - id: task-1
-    title: { { TASK_1_TITLE } }
-    description: { { TASK_1_DESCRIPTION } }
+    title: Add TypeSpec fields for session provenance and session filePath
+    description: >
+      TypeSpec-first, per the project mandate. Add `filePath?: string` to
+      AgentSession in tsp/agents/agent-session.tsp (the web SessionSummary
+      already carries filePath and it gates the adopt action, but the domain
+      model has no such field). Add `sourceAgentSessionId?: string` and
+      `sourceAgentType?: AgentType` to Feature in
+      tsp/domain/entities/feature.tsp. Run `pnpm tsp:codegen` to regenerate
+      packages/core/src/domain/generated/output.ts. Never hand-edit the
+      generated file.
     state: Todo
     dependencies: []
     acceptanceCriteria:
-      - { { CRITERION_1 } }
-      - { { CRITERION_2 } }
-    tdd:
-      red:
-        - Write tests for {{FEATURE_1}}
-      green:
-        - Implement {{FEATURE_1}} to pass tests
-      refactor:
-        - Extract helpers, improve naming
-    estimatedEffort: { { EFFORT_1 } }
+      - AgentSession has an optional filePath with an @doc annotation
+      - Feature has optional sourceAgentSessionId and sourceAgentType with @doc annotations
+      - '`pnpm tsp:compile` passes and generated/output.ts contains the three new fields'
+      - No manual edits to generated/output.ts
+    tdd: null # Foundational — codegen only, no executable logic
+    estimatedEffort: S
 
   - id: task-2
-    title: { { TASK_2_TITLE } }
-    description: { { TASK_2_DESCRIPTION } }
+    title: Migration and mapper for the new Feature columns
+    description: >
+      Add migrations/140-add-source-session-to-features.ts copying the
+      established pattern from 135-add-active-plugins-to-features.ts: read
+      `pragma table_info(features)`, guard each ALTER TABLE ADD COLUMN behind a
+      name check, and leave `down()` a no-op. Migrations are auto-discovered
+      from the directory by filename order, so no registry edit is needed. Then
+      extend feature.mapper.ts — the FeatureRow type, toRow, and toDomain — to
+      round-trip source_agent_session_id and source_agent_type. The mapper is
+      277 lines; if the additions push it past ~300, split the row-type
+      declaration into a sibling module first.
     state: Todo
     dependencies:
       - task-1
     acceptanceCriteria:
-      - { { CRITERION_1 } }
-      - { { CRITERION_2 } }
-    tdd: null # No TDD for foundational/doc tasks
-    estimatedEffort: { { EFFORT_2 } }
+      - Migration adds both columns and is idempotent when re-run
+      - down() is a safe no-op, matching house convention
+      - Mapper round-trips a Feature with and without provenance set
+      - Existing feature persistence tests still pass
+    tdd:
+      red:
+        - Integration test asserting both columns exist after migration and that re-running is a no-op
+        - Mapper round-trip test for a Feature with provenance set, and one with it absent
+      green:
+        - Write the migration with pragma guards; extend row type, toRow, toDomain
+      refactor:
+        - Extract the row type if the mapper exceeds ~300 lines
+    estimatedEffort: S
+
+  # ── Phase 2 — Part A: discovery and bulk import ─────────────────────
+  - id: task-3
+    title: '[P] IRepositoryDiscoveryService port and node:fs adapter'
+    description: >
+      Create the output port in
+      application/ports/output/services/repository-discovery-service.interface.ts
+      exposing subfolder enumeration with per-entry git detection. Deliberately
+      a NEW port rather than an extension of IFileSystemService, which is a
+      minimal mutation-oriented port (removeDirectory, pathExists) injected
+      into eight use cases that would all then over-depend on read semantics.
+      Implement FsRepositoryDiscoveryService in
+      infrastructure/services/repositories/ using node:fs with `withFileTypes`
+      to avoid a redundant stat, and register it in the DI container.
+      Non-recursive by resolved decision.
+    state: Todo
+    dependencies:
+      - task-1
+    acceptanceCriteria:
+      - Port is documented with JSDoc and lives in application/ports/output/services/
+      - Adapter enumerates immediate children only — no recursion
+      - Each entry reports whether it contains .git
+      - Missing or unreadable directory yields a typed failure, not an unhandled throw
+      - Registered in the DI container and passes the di-graph-validation diagnostic
+    tdd:
+      red:
+        - 'Adapter tests over a temp dir tree: git child, non-git child, file (not dir), missing dir, unreadable dir'
+      green:
+        - Implement the node:fs adapter to satisfy the port
+      refactor:
+        - Extract entry-mapping helper; confirm no node:fs import leaked outside infrastructure
+    estimatedEffort: M
+
+  - id: task-4
+    title: '[P] DiscoverImportCandidatesUseCase'
+    description: >
+      Use case that takes an absolute directory path and returns every
+      immediate subfolder as an import candidate, each annotated with
+      isGitRepository (from the discovery port) and alreadyTracked (from
+      IRepositoryRepository.findByPath, matching AddRepositoryUseCase's
+      normalisation so annotations cannot disagree with what import will
+      actually do). Filters nothing — the resolved decision is that the user
+      decides and shep only annotates.
+    state: Todo
+    dependencies:
+      - task-3
+    acceptanceCriteria:
+      - Returns all immediate subfolders, none filtered out
+      - Each candidate annotated with isGitRepository and alreadyTracked
+      - Path normalisation matches AddRepositoryUseCase so annotations are accurate
+      - Soft-deleted repositories are reported distinctly from never-tracked ones
+      - Rejects relative paths with a clear domain error
+    tdd:
+      red:
+        - 'Use-case tests with mocked discovery port and repository: mixed children, all tracked, none tracked, soft-deleted path, relative input, empty folder'
+      green:
+        - Implement the use case against the two injected ports
+      refactor:
+        - Extract candidate-annotation mapping if the use case exceeds ~150 lines
+    estimatedEffort: M
+
+  - id: task-5
+    title: '[P] ImportLocalRepositoriesUseCase'
+    description: >
+      Bulk import that accepts selected absolute paths and delegates each to
+      the existing AddRepositoryUseCase — reusing its normalisation, dedupe,
+      and soft-delete restore rather than reimplementing them. Returns a
+      per-path result so partial failures are visible instead of silent, which
+      is an explicit success criterion. One failing path must not abort the
+      remaining imports.
+    state: Todo
+    dependencies:
+      - task-3
+    acceptanceCriteria:
+      - Delegates every path to AddRepositoryUseCase — no duplicated normalisation logic
+      - Returns one result entry per input path with outcome and error message where applicable
+      - A throwing path does not prevent the others from importing
+      - Duplicate paths in one request collapse to a single import
+      - Empty selection returns an empty result without error
+    tdd:
+      red:
+        - 'Tests with a mocked AddRepositoryUseCase: all succeed, one throws mid-list, duplicates, empty input'
+      green:
+        - Implement sequential delegation collecting per-path outcomes
+      refactor:
+        - Extract the result-shape builder; ensure no logic duplicated from AddRepositoryUseCase
+    estimatedEffort: M
+
+  - id: task-6
+    title: '[P] CLI command for bulk import'
+    description: >
+      Add src/presentation/cli/commands/repo/import.command.ts exposing
+      `shep repo import <dir>` and wire it into repo/index.ts. Fills the gap
+      where `repo add` is GitHub-clone-only and the path-based flow had no CLI
+      surface at all. Resolves both new use cases from the container, prints the
+      annotated candidate list, and supports non-interactive selection (e.g.
+      --all / --yes) so it is scriptable. Presentation stays thin — rendering
+      and input only, no filtering or annotation logic.
+    state: Todo
+    dependencies:
+      - task-4
+      - task-5
+    acceptanceCriteria:
+      - '`shep repo import <dir>` lists annotated candidates and imports the selection'
+      - A non-interactive flag imports without prompting, for scripting
+      - Already-tracked candidates are visibly marked and not re-imported
+      - Per-path failures are reported individually; exit code reflects overall outcome
+      - Uses the shared ui/messages module and i18n keys, matching sibling commands
+    tdd:
+      red:
+        - Command tests with mocked use cases asserting output and exit codes for success, partial failure, empty dir
+      green:
+        - Implement the command and register it in repo/index.ts
+      refactor:
+        - Extract candidate rendering into a helper if the command exceeds ~150 lines
+    estimatedEffort: M
+
+  - id: task-7
+    title: '[P] Web bulk import entry point and dialog'
+    description: >
+      Add a third option to AddRepositoryButton's popover beside the existing
+      local-folder and GitHub entries, opening a BulkImportDialog that lists
+      annotated candidates with checkboxes and imports the selection via a new
+      server action. Reuses the existing folder-picking stack
+      (ReactFileManagerDialog / pickFolder) to choose the parent directory.
+      Colocated Storybook stories are mandatory and must cover Default,
+      Loading, and Error states plus the all-already-tracked case.
+    state: Todo
+    dependencies:
+      - task-4
+      - task-5
+    acceptanceCriteria:
+      - Third popover entry opens the bulk import dialog
+      - Candidates render with git and already-tracked annotations, selectable individually and all at once
+      - Already-tracked candidates are disabled or clearly marked
+      - Per-path failures surface in the UI rather than failing silently
+      - Colocated .stories.tsx covers Default, Loading, Error, and all-tracked
+      - Component contains no filtering or annotation logic — it renders use-case output
+    tdd:
+      red:
+        - Component tests for candidate rendering, selection behaviour, and error surfacing
+      green:
+        - Implement the dialog, server action, and popover entry
+      refactor:
+        - Split the candidate row into its own component to keep files under ~300 lines
+    estimatedEffort: M
+
+  # ── Phase 3 — Part B core: session discovery parity ─────────────────
+  - id: task-8
+    title: Expose filePath on session results
+    description: >
+      Populate the new AgentSession.filePath field in
+      ClaudeCodeSessionRepository and CodexCliSessionRepository. The web
+      SessionSummary already carries filePath and it is what gates the adopt
+      action in the dropdown today; without it on the domain model, deleting the
+      web scanner would remove the ability to adopt.
+    state: Todo
+    dependencies:
+      - task-1
+    acceptanceCriteria:
+      - Both repositories populate filePath with the absolute JSONL path
+      - filePath is present in both list() and findById() results
+      - Existing session repository tests still pass
+    tdd:
+      red:
+        - Tests asserting filePath is the absolute path for list() and findById() in both repositories
+      green:
+        - Populate the field in each parse path
+      refactor:
+        - Deduplicate the field assembly if both repositories build it identically
+    estimatedEffort: S
+
+  - id: task-9
+    title: Worktree-aware session collection plus domain path helper
+    description: >
+      Extract the provider on-disk path conventions into
+      domain/shared/agent-session-paths.ts — Claude Code's [/\\.] to '-'
+      encoding, Cursor's strip-leading-slash-and-remove-dots encoding, and the
+      shep worktree directory derived from
+      sha256(normalizedPath).hex.slice(0,16) under ~/.shep/repos. Then teach
+      ClaudeCodeSessionRepository.collectSessionFilesForPath to include worktree
+      sessions: sibling project directories matched by prefix plus the derived
+      shep worktree directories. This capability exists only in the web scanner
+      today, so without it Phase 5 would drop every worktree session from the
+      canvas. Add includeWorktrees to ListSessionsOptions. IMPORTANT: relative
+      imports inside domain/ carry NO file extension (LESSONS.md); importers
+      outside domain/ still use .js.
+    state: Todo
+    dependencies:
+      - task-8
+    acceptanceCriteria:
+      - Path encodings live in domain/shared and are used by the session repositories, not redefined locally
+      - domain/ relative imports use no file extension
+      - includeWorktrees option added to ListSessionsOptions and honoured
+      - Prefix-matched sibling dirs and derived shep worktree dirs are both discovered
+      - Sessions are deduplicated when a directory matches both rules
+      - Default behaviour (option absent) is unchanged
+    tdd:
+      red:
+        - Pure unit tests for each encoding and for the worktree dir derived from a known sha256 prefix
+        - Repository tests over temp fixtures asserting worktree sessions appear only when includeWorktrees is set
+      green:
+        - Add the domain helper; rewire collectSessionFilesForPath to use it and to collect worktree dirs
+      refactor:
+        - Remove the now-duplicated inline encoding from the repository; keep the file under ~300 lines
+    estimatedEffort: M
+
+  - id: task-10
+    title: Real Cursor session repository replacing the stub
+    description: >
+      Implement CursorSessionRepository reading
+      ~/.cursor/projects/<cursorEncodePath>/agent-transcripts, handling BOTH
+      on-disk layouts the web scanner supports: flat <id>.jsonl files and
+      directory-per-transcript (<dir>/<dir>.jsonl). Cursor transcript entries
+      put role at the top level rather than under message.role, so parsing
+      differs from Claude Code. Swap the DI registration in register-agents.ts
+      from StubSessionRepository(AgentType.Cursor) to the real repository, and
+      return true from isSupported(). This is the prerequisite for deleting the
+      web scanner without losing Cursor coverage.
+    state: Todo
+    dependencies:
+      - task-9
+    acceptanceCriteria:
+      - Both flat and directory-per-transcript layouts are discovered
+      - Top-level role entries parse correctly into messages and preview
+      - Malformed JSONL lines are skipped, never thrown
+      - Results sorted by mtime descending and respect the limit
+      - isSupported() returns true; DI registration swapped off the stub
+      - ListAgentSessionsUseCase no longer emits the unsupported-provider warning for Cursor
+    tdd:
+      red:
+        - 'Repository tests over temp fixtures: flat layout, nested layout, both mixed, malformed lines, missing dir, empty transcripts'
+      green:
+        - Implement the repository and swap the DI registration
+      refactor:
+        - Share JSONL head-reading and preview extraction with the Claude repository rather than copying it
+    estimatedEffort: M
+
+  - id: task-11
+    title: ListSessionsForPathsUseCase (batch, path-keyed)
+    description: >
+      New use case taking path specs and returning a path-keyed session map,
+      absorbing the fan-out currently implemented inside the /api/sessions-batch
+      route (resolve repos and features, build unique path specs with worktree
+      inclusion for repos but not feature paths, scan in parallel, merge
+      providers by recency, apply a per-path limit, cache for 30s). That
+      orchestration is business logic and belongs in a use case. Must query all
+      supported providers via IAgentSessionRepositoryRegistry so Claude Code,
+      Codex, and Cursor sessions merge. Performance matters: this is polled
+      every 30s for every repo on the canvas, so preserve the
+      stat-then-parse-top-N strategy and the bounded head-read.
+    state: Todo
+    dependencies:
+      - task-10
+    acceptanceCriteria:
+      - Returns a path-keyed map with a per-path limit applied
+      - Queries every supported provider and merges results by recency
+      - Repo paths include worktrees; explicit feature/worktree paths do not
+      - Duplicate paths collapse to one entry
+      - Unsupported providers contribute nothing and log no warning per path
+      - Caching semantics preserved so canvas polling does not regress
+    tdd:
+      red:
+        - 'Tests with mocked registry: multi-provider merge, per-path limit, duplicate paths, unsupported provider, empty input'
+        - Test asserting repo paths request worktree inclusion and feature paths do not
+      green:
+        - Implement the use case and register it in the DI container
+      refactor:
+        - Extract the merge-and-limit helper; verify no per-path parse of every file
+    estimatedEffort: M
+
+  # ── Phase 4 — Part B: adoption and resume ───────────────────────────
+  - id: task-12
+    title: Resume descriptor domain helper
+    description: >
+      Add domain/shared/agent-resume-descriptor.ts mapping AgentType to its
+      resume invocation: claude-code to `claude`, cursor to `cursor-agent`,
+      codex-cli to `codex`, each with ['--resume', sessionId] and cwd set to the
+      project path. This is where the shipped bug gets fixed — no agent accepts
+      a --project flag; the working directory carries the project. Returns argv
+      (binary plus args array), never a shell string, so nothing downstream can
+      interpolate a session id into a shell. Per LESSONS.md, exhaustive
+      per-enum-member coverage so a future AgentType member fails the suite
+      rather than silently producing a wrong binary.
+    state: Todo
+    dependencies:
+      - task-1
+    acceptanceCriteria:
+      - Correct binary and argv for every supported AgentType
+      - No descriptor ever contains a --project argument
+      - Output is argv, not a shell string
+      - Unsupported agent types return a typed not-supported result rather than a wrong command
+      - Test enumerates every AgentType member so new members fail loudly
+      - domain/ relative imports carry no extension
+    tdd:
+      red:
+        - Table-driven test over every AgentType member asserting binary and args
+        - Explicit negative test that no output contains --project
+      green:
+        - Implement the mapping helper in domain/shared
+      refactor:
+        - Co-locate with the session path helper if they share normalisation
+    estimatedEffort: S
+
+  - id: task-13
+    title: SessionAdoptionSummarizer with deterministic fallback
+    description: >
+      Derive feature metadata from a transcript, following the MetadataGenerator
+      precedent exactly: a module-level JSON schema const, a typed result
+      interface, input truncation before the call, and
+      IStructuredAgentCaller.call() as the model boundary. Schema is
+      {slug, name, description, remainingWork}. When the structured call throws
+      StructuredCallError (or any error), fall back to deterministic extraction
+      — first user message for the description, slugified for the name, files
+      and tools touched for remaining work — so adoption degrades in quality but
+      never in availability. Security: truncate the prompt and do not carry raw
+      transcript content into persisted output.
+    state: Todo
+    dependencies:
+      - task-8
+    acceptanceCriteria:
+      - Uses IStructuredAgentCaller, not IAgentExecutorProvider
+      - Module-level schema const requiring all four fields with additionalProperties false
+      - Prompt is truncated to a bounded length before the call
+      - StructuredCallError triggers deterministic extraction rather than propagating
+      - Deterministic path produces a usable name/description from a transcript alone
+      - No raw transcript content is copied into the persisted description
+    tdd:
+      red:
+        - 'Tests with mocked caller: happy path maps all fields; throwing caller falls back; long transcript is truncated; empty transcript still yields a name'
+      green:
+        - Implement the summarizer with both paths
+      refactor:
+        - Extract the deterministic extractor into its own module for independent testing
+    estimatedEffort: M
+
+  - id: task-14
+    title: AdoptAgentSessionUseCase
+    description: >
+      The priority path. Reads the full transcript via
+      IAgentSessionRepositoryRegistry.findById(id, {messageLimit: 0}), delegates
+      derivation to SessionAdoptionSummarizer, then creates the feature via
+      CreateFeatureUseCase.createRecord() with pre-supplied name/description —
+      NOT execute(), whose phase 2 always calls worktreeService.create(), and
+      NOT pending:true, which lands in SdlcLifecycle.Pending instead of
+      Requirements. Persists sourceAgentSessionId and sourceAgentType for
+      traceability. This replaces the presentation-layer stopgap that built a
+      prompt string in a React component and never read the transcript at all.
+    state: Todo
+    dependencies:
+      - task-13
+      - task-2
+    acceptanceCriteria:
+      - Reads the transcript through the existing port — never touches the filesystem directly
+      - Calls createRecord and never execute; no worktree service interaction occurs
+      - Resulting feature lifecycle is Requirements
+      - sourceAgentSessionId and sourceAgentType are persisted
+      - Missing or unreadable session yields a typed domain error
+      - Registered in the DI container
+    tdd:
+      red:
+        - Test asserting createRecord called with summarizer output and that no worktree port is invoked
+        - Test asserting resulting lifecycle is Requirements
+        - Test asserting provenance fields persisted
+        - Test for unknown session id producing a typed error
+      green:
+        - Implement the use case wiring registry, summarizer, and createRecord
+      refactor:
+        - Extract input-to-createRecord mapping; keep the use case focused
+    estimatedEffort: M
+
+  - id: task-15
+    title: ResumeAgentSessionUseCase
+    description: >
+      Turn a session into a live terminal. Builds the resume descriptor from the
+      domain helper and starts a PTY through the existing
+      CreateTerminalSessionUseCase / ITerminalSessionService at the session's
+      project path, inheriting its GH_TOKEN injection. Also exposes the
+      descriptor itself so the clipboard and IDE surfaces render the same
+      correct invocation rather than composing their own.
+    state: Todo
+    dependencies:
+      - task-12
+    acceptanceCriteria:
+      - Spawns the PTY with argv from the descriptor and cwd set to the project path
+      - Returns the descriptor so presentation can display or copy it without rebuilding it
+      - Unsupported agent type fails with a typed error before spawning anything
+      - Never assembles a shell command string
+      - Registered in the DI container
+    tdd:
+      red:
+        - Tests with a mocked terminal service asserting argv and cwd, and that unsupported types never spawn
+      green:
+        - Implement the use case over the descriptor helper and terminal service
+      refactor:
+        - Share the descriptor-to-display formatting with the copy path
+    estimatedEffort: M
+
+  # ── Phase 5 — Presentation rewire + scanner deletion ────────────────
+  - id: task-16
+    title: Re-point session API routes at core and delete session-scanner.ts
+    description: >
+      Rewrite /api/sessions and /api/sessions-batch as thin adapters over
+      ListSessionsForPathsUseCase, moving the repo/feature resolution,
+      path-spec construction, parallel fan-out, and 30s caching out of the
+      route. Then delete src/presentation/web/lib/session-scanner.ts. Safe only
+      after Phase 3: the scanner is currently the sole source of Cursor
+      sessions, worktree sessions, and filePath. Verify the canvas still shows
+      all three before considering this done.
+    state: Todo
+    dependencies:
+      - task-11
+    acceptanceCriteria:
+      - Both routes delegate to the use case and contain no scanning or fan-out logic
+      - session-scanner.ts is deleted with no remaining importers
+      - Response shape is unchanged so SessionsProvider needs no client change
+      - Cursor sessions, worktree sessions, and filePath all still appear
+      - No measurable regression in canvas session polling
+    tdd:
+      red:
+        - Route tests asserting delegation and unchanged response shape
+        - Grep-based assertion that no importer of session-scanner remains
+      green:
+        - Rewrite both routes; delete the scanner
+      refactor:
+        - Remove now-dead types and helpers that existed only for the scanner
+    estimatedEffort: M
+
+  - id: task-17
+    title: Rewire repo node and sessions dropdown onto the use cases
+    description: >
+      Remove the prompt-building block from repository-node.tsx (lines ~94-121)
+      and call the adoption server action instead. Replace the dropdown's
+      clipboard-only actions with real ones: adopt as feature, resume in shep's
+      embedded terminal, open in VS Code, and a copy action that emits the
+      corrected command from the resume descriptor — fixing the shipped
+      --project bug. Refactor before extending: the dropdown is already 309
+      lines and repository-node.tsx is 575, both at or past the ~300 line rule,
+      so extract SessionRow and its action list into siblings first. Storybook
+      stories mandatory for new and changed components.
+    state: Todo
+    dependencies:
+      - task-14
+      - task-15
+      - task-16
+    acceptanceCriteria:
+      - No prompt or command string is assembled in any React component
+      - Adopt, resume-in-terminal, and open-in-IDE all invoke server actions backed by use cases
+      - The copyable command comes from the resume descriptor and contains no --project flag
+      - Adopt action works for Cursor sessions too, not just Claude Code
+      - Dropdown and repository-node split so no touched file exceeds ~300 lines
+      - Colocated stories cover Default, Loading, and Error for new/changed components
+    tdd:
+      red:
+        - Component tests asserting actions call the server actions and that no component composes a command string
+        - Test asserting the copied command has no --project flag
+      green:
+        - Extract subcomponents, then rewire the actions
+      refactor:
+        - Delete now-unused local helpers and duplicated relative-time/preview utilities
+    estimatedEffort: L
+
+  # ── Phase 6 — Validation ────────────────────────────────────────────
+  - id: task-18
+    title: Full validation sweep
+    description: >
+      Run the complete local CI-mirroring sequence before any push, per the
+      project's pre-push rule: lint, format:check, typecheck, unit + int tests,
+      build, tsp compile, spec:validate, and build:storybook for the UI changes.
+      Explicitly run tests/unit/presentation/web/smoke-imports.test.ts — the two
+      new domain/shared helpers are consumed by both core and the web package,
+      and per LESSONS.md that test is the only check that catches a `.js`
+      specifier inside domain/. Every failure is owned and fixed, not deferred.
+    state: Todo
+    dependencies:
+      - task-6
+      - task-7
+      - task-17
+    acceptanceCriteria:
+      - '`pnpm lint` and `pnpm format:check` clean'
+      - '`pnpm typecheck` clean'
+      - '`pnpm test:unit` and `pnpm test:int` fully green — zero failures'
+      - '`pnpm build` succeeds'
+      - '`pnpm tsp:compile` clean with no generated-file drift'
+      - smoke-imports.test.ts passes
+      - '`pnpm build:storybook` succeeds'
+      - spec:validate passes all gates with no warnings left unexplained
+    tdd: null # Validation task — runs existing suites
+    estimatedEffort: S
 
 # Total effort estimate
-totalEstimate: { { TOTAL_EFFORT } }
+totalEstimate: L — 18 tasks; phases 2 and 3 parallelizable, phase 5 gated on phase 3
 
 # Open questions
 openQuestions: []
@@ -52,17 +586,38 @@ openQuestions: []
 content: |
   ## Summary
 
-  {{BRIEF_DESCRIPTION_OF_SCOPE}} — {{TASK_COUNT}} tasks across {{PHASE_COUNT}} phases.
+  Bulk local repo import plus real adoption of in-flight Claude Code / Cursor
+  sessions — 18 tasks across 6 phases.
+
+  Phase 1 lands the TypeSpec and persistence foundation. Phases 2 and 3 are
+  independent and may run in parallel. Phase 4 delivers the priority adoption
+  path on top of Phase 3. Phase 5 is the only presentation phase and the only
+  destructive one — it deletes the duplicated web scanner, which is safe solely
+  because Phase 3 closes the Cursor, worktree, and filePath gaps first. Phase 6
+  validates.
+
+  Tasks marked `[P]` within a phase are parallelizable.
+
+  ## Sequencing Constraint
+
+  Do not start Phase 5 before Phase 3 is green. `session-scanner.ts` is
+  currently the only source of Cursor sessions, worktree sessions, and
+  `filePath` for the canvas; deleting it early is a silent UI regression rather
+  than a test failure.
 
   ## Acceptance Checklist
 
   Before marking feature complete:
 
-  - [ ] All tasks completed
+  - [ ] All 18 tasks completed
   - [ ] Tests passing (`pnpm test`)
   - [ ] Linting clean (`pnpm lint`)
   - [ ] Types valid (`pnpm typecheck`)
   - [ ] TypeSpec compiles (`pnpm tsp:compile`)
+  - [ ] `smoke-imports.test.ts` passing (domain/ helpers shared with web)
+  - [ ] `pnpm build:storybook` passing (new/changed components have stories)
+  - [ ] Cursor + worktree sessions still visible on the canvas after scanner deletion
+  - [ ] No copied resume command contains `--project`
   - [ ] PR created and reviewed
 
   ---

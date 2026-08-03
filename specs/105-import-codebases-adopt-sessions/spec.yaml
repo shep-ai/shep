@@ -30,7 +30,7 @@ summary: >
   under shep orchestration. Secondary resume paths — shep's embedded PTY
   terminal, VS Code, an external terminal — reuse the same core resume
   descriptor.
-phase: research
+phase: planning
 sizeEstimate: L
 
 # Relationships

@@ -15,7 +15,7 @@ summary: >
   underestimated item is deleting session-scanner.ts: the web scanner and the
   core session repositories are not equivalent, and core is missing three
   capabilities the canvas currently depends on.
-phase: research
+phase: planning
 updatedAt: '2026-08-03'
 
 # Relationships

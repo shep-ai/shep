@@ -3,18 +3,18 @@ feature:
   name: 'import-codebases-adopt-sessions'
   number: 105
   branch: 'feat/105-import-codebases-adopt-sessions'
-  lifecycle: 'planning'
+  lifecycle: 'implementation'
   createdAt: '2026-08-03T13:17:19Z'
 
 status:
-  phase: 'planning'
+  phase: 'ready-to-implement'
   progress:
     completed: 0
-    total: 0
+    total: 18
     percentage: 0
   currentTask: null
-  lastUpdated: '2026-08-03T13:35:00Z'
-  lastUpdatedBy: 'shep-kit:research'
+  lastUpdated: '2026-08-03T13:50:00Z'
+  lastUpdatedBy: 'shep-kit:plan'
 
 validation:
   lastRun: null
@@ -33,6 +33,9 @@ checkpoints:
   - phase: 'research-complete'
     completedAt: '2026-08-03T13:35:00Z'
     completedBy: 'shep-kit:research'
+  - phase: 'plan-complete'
+    completedAt: '2026-08-03T13:50:00Z'
+    completedBy: 'shep-kit:plan'
 
 errors:
   current: null
