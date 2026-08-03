@@ -329,9 +329,10 @@ export function RepositoryNode({
                     <TooltipContent>{t('repositoryNode.chatWithAgent')}</TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
+                {/* Worktree inclusion is decided by the batch sessions use
+                    case per path — repo paths already include them. */}
                 <FeatureSessionsDropdown
                   repositoryPath={data.repositoryPath}
-                  includeWorktrees
                   onAdopted={handleSessionAdopted}
                 />
               </>

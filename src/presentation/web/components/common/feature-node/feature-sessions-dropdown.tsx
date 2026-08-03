@@ -21,8 +21,6 @@ export type { SessionSummary } from './session-summary';
 interface FeatureSessionsDropdownProps {
   repositoryPath: string;
   className?: string;
-  /** When true, also scan worktree session directories (used by repo nodes). */
-  includeWorktrees?: boolean;
   /** Called after a session is adopted into a feature. */
   onAdopted?: (featureId: string) => void;
   /** Called after a session is resumed in the embedded terminal. */

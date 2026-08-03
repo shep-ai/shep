@@ -1,5 +1,54 @@
 # Lessons Learned
 
+## A new Feature column needs FOUR edits, and the mapper test won't catch the missing one
+
+Adding `sourceAgentSessionId`/`sourceAgentType` (spec 105) needed: the TypeSpec model, the
+migration, `feature.mapper.ts`, **and** the explicit column lists in
+`sqlite-feature.repository.ts`. I did the first three, and the mapper unit test passed happily —
+because `toDatabase()` produced the fields correctly. But `INSERT` and `UPDATE` in the repository
+enumerate every column by name (`active_plugins, ...` / `active_plugins = @active_plugins`), so the
+new fields were silently dropped on the way to SQLite. Only a repository-level round-trip test
+(`create` → `findById`) exposed it.
+
+**Rule:** when adding a persisted field, write the assertion at the **repository** level, not the
+mapper level. A mapper test proves the object was shaped right; it proves nothing about whether the
+SQL carries it. Grep the repository for a neighbouring column name (e.g. `active_plugins`) and
+confirm you've added yours to every list that mentions it — there are three: INSERT columns, INSERT
+`@params`, and the UPDATE `SET` clause.
+
+## `startsWith('/')` is not an absolute-path check — CI runs windows-latest
+
+I guarded two use cases with `if (!path.startsWith('/'))`. `normalizePath` converts backslashes to
+forward slashes, so a valid Windows path arrives as `C:/Users/dev/project` — which fails that check,
+meaning bulk import would have rejected every path on Windows. Local tests all passed because they
+used POSIX fixtures.
+
+**Rule:** use `domain/shared/absolute-path.ts` (`isAbsolutePath`) for absolute-path validation, never
+a `startsWith('/')` literal. When adding any path predicate, add a Windows drive-letter case to the
+test in the same commit — `src/CLAUDE.md` and `packages/CLAUDE.md` both mandate cross-platform
+behaviour, and macOS-only test runs will not tell you.
+
+## Adding one key to `translations/en/*.json` breaks eight other locales
+
+Adding the `commands.repo.import.*` keys to `en/cli.json` turned
+`tests/unit/translations/translation-completeness.test.ts` red with 8 failures — it asserts key
+parity between English and each of de, fr, es, pt, ru, uk, ar, he.
+
+**Rule:** i18n keys are added to all nine locale files in the same change, never English-only. Read
+the key order from the English file and write the same ordered keys into each locale so the diff
+stays reviewable.
+
+## `pnpm tsp:compile` leaves the generated file unformatted — use `pnpm tsp:codegen`
+
+Running `tsp:compile` as a validation step rewrote
+`packages/core/src/domain/generated/output.ts` with double quotes, producing a 500-line phantom diff
+that looks like codegen drift. `tsp:codegen` is `tsp compile` **plus** `prettier --write` on the
+generated directory.
+
+**Rule:** always regenerate with `pnpm tsp:codegen`. If `tsp:compile` has already dirtied the
+generated file, run `pnpm tsp:codegen` to restore it rather than reverting — and don't mistake the
+quote-style churn for a real model change.
+
 ## New files under `domain/` must NOT use `.js` extensions in relative imports
 
 Adding `domain/shared/worktree-config.ts` (spec-less feature for issue #833), I wrote
