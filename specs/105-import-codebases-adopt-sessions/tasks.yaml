@@ -369,7 +369,7 @@ tasks:
       interpolate a session id into a shell. Per LESSONS.md, exhaustive
       per-enum-member coverage so a future AgentType member fails the suite
       rather than silently producing a wrong binary.
-    state: Todo
+    state: Done
     dependencies:
       - task-1
     acceptanceCriteria:
@@ -402,7 +402,7 @@ tasks:
       and tools touched for remaining work — so adoption degrades in quality but
       never in availability. Security: truncate the prompt and do not carry raw
       transcript content into persisted output.
-    state: Todo
+    state: Done
     dependencies:
       - task-8
     acceptanceCriteria:
@@ -433,7 +433,7 @@ tasks:
       Requirements. Persists sourceAgentSessionId and sourceAgentType for
       traceability. This replaces the presentation-layer stopgap that built a
       prompt string in a React component and never read the transcript at all.
-    state: Todo
+    state: Done
     dependencies:
       - task-13
       - task-2
@@ -465,7 +465,7 @@ tasks:
       project path, inheriting its GH_TOKEN injection. Also exposes the
       descriptor itself so the clipboard and IDE surfaces render the same
       correct invocation rather than composing their own.
-    state: Todo
+    state: Done
     dependencies:
       - task-12
     acceptanceCriteria:
