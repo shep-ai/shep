@@ -90,18 +90,33 @@ describe('session DI registrations', () => {
     expect(repo).toBeInstanceOf(ClaudeCodeSessionRepository);
   });
 
-  it('resolves IAgentSessionRepository:cursor as StubSessionRepository', async () => {
+  // Spec 105 replaced the Cursor stub with a real repository so the duplicated
+  // web session scanner could be deleted without losing Cursor coverage.
+  it('resolves IAgentSessionRepository:cursor as CursorSessionRepository', async () => {
     const { initializeContainer } = await import(
       '../../../../packages/core/src/infrastructure/di/container.js'
     );
-    const { StubSessionRepository } = await import(
-      '../../../../packages/core/src/infrastructure/services/agents/sessions/stub-session.repository.js'
+    const { CursorSessionRepository } = await import(
+      '../../../../packages/core/src/infrastructure/services/agents/sessions/cursor-session.repository.js'
     );
     const { AgentType } = await import('../../../../packages/core/src/domain/generated/output.js');
 
     const container = await initializeContainer();
     const repo = container.resolve(`IAgentSessionRepository:${AgentType.Cursor}`);
-    expect(repo).toBeInstanceOf(StubSessionRepository);
+    expect(repo).toBeInstanceOf(CursorSessionRepository);
+  });
+
+  it('reports cursor sessions as supported', async () => {
+    const { initializeContainer } = await import(
+      '../../../../packages/core/src/infrastructure/di/container.js'
+    );
+    const { AgentType } = await import('../../../../packages/core/src/domain/generated/output.js');
+
+    const container = await initializeContainer();
+    const repo = container.resolve<{ isSupported(): boolean }>(
+      `IAgentSessionRepository:${AgentType.Cursor}`
+    );
+    expect(repo.isSupported()).toBe(true);
   });
 
   it('resolves IAgentSessionRepository:gemini-cli as StubSessionRepository', async () => {

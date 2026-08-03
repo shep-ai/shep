@@ -521,6 +521,28 @@
       "resolve": {
         "multipleMatch": "Plusieurs dépôts correspondent au préfixe \"{{id}}\" : {{matches}}",
         "notFound": "Dépôt introuvable : {{id}}"
+      },
+      "import": {
+        "description": "Importer des dossiers locaux comme dépôts suivis (en masse)",
+        "dirArgument": "Répertoire parent dont les sous-dossiers deviennent des candidats à l'import",
+        "allOption": "Importer tous les candidats sans confirmation",
+        "gitOnlyOption": "N'importer que les candidats qui sont des dépôts git",
+        "title": "Candidats à l'import",
+        "nameColumn": "Nom",
+        "gitColumn": "Git",
+        "statusColumn": "Statut",
+        "pathColumn": "Chemin",
+        "noCandidates": "Aucun sous-dossier trouvé dans {{path}}",
+        "statusTracked": "déjà suivi",
+        "statusRestorable": "précédemment supprimé",
+        "statusNew": "nouveau",
+        "selectPrompt": "Sélectionner les dossiers à importer",
+        "nothingSelected": "Rien de sélectionné — aucun dépôt importé",
+        "imported": "{{count}} dépôts importés",
+        "importedOne": "Importé : {{name}}",
+        "failedEntry": "Échec : {{path}} — {{error}}",
+        "summary": "{{imported}} importés, {{failed}} en échec",
+        "failedToImport": "Échec de l'import des dépôts"
       }
     },
     "app": {

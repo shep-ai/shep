@@ -184,6 +184,7 @@ import { ReadApplicationFileRawUseCase } from '../../../application/use-cases/ap
 import { WriteApplicationFileUseCase } from '../../../application/use-cases/applications/write-application-file.use-case.js';
 import { WatchApplicationFilesUseCase } from '../../../application/use-cases/applications/watch-application-files.use-case.js';
 import { ListAgentSessionsUseCase } from '../../../application/use-cases/agents/list-agent-sessions.use-case.js';
+import { ListSessionsForPathsUseCase } from '../../../application/use-cases/agents/list-sessions-for-paths.use-case.js';
 import { GetAgentSessionUseCase } from '../../../application/use-cases/agents/get-agent-session.use-case.js';
 import { StreamAgentEventsUseCase } from '../../../application/use-cases/agents/stream-agent-events.use-case.js';
 
@@ -338,6 +339,7 @@ export function registerUseCases(container: DependencyContainer): void {
   container.registerSingleton(ResumeApplicationWorkflowUseCase);
   container.registerSingleton(UpdateApplicationUseCase);
   container.registerSingleton(ListAgentSessionsUseCase);
+  container.registerSingleton(ListSessionsForPathsUseCase);
   container.registerSingleton(GetAgentSessionUseCase);
   container.registerSingleton(StreamAgentEventsUseCase);
 
@@ -443,6 +445,9 @@ export function registerUseCases(container: DependencyContainer): void {
   });
   container.register('AddRepositoryUseCase', {
     useFactory: (c) => c.resolve(AddRepositoryUseCase),
+  });
+  container.register('ListSessionsForPathsUseCase', {
+    useFactory: (c) => c.resolve(ListSessionsForPathsUseCase),
   });
   container.register('DiscoverImportCandidatesUseCase', {
     useFactory: (c) => c.resolve(DiscoverImportCandidatesUseCase),

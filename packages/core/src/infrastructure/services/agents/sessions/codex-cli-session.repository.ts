@@ -398,6 +398,8 @@ export class CodexCliSessionRepository implements IAgentSessionRepository {
       id: fileInfo.id,
       agentType: 'codex-cli' as AgentType,
       projectPath: this.abbreviatePath(cwd),
+      // Absolute transcript path — see AgentSession.filePath.
+      filePath: fileInfo.filePath,
       messageCount,
       createdAt: firstMessageAt ?? fileInfo.mtime,
       updatedAt: lastMessageAt ?? fileInfo.mtime,

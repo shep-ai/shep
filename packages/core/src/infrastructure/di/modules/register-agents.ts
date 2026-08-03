@@ -29,6 +29,7 @@ import { SpecYamlParserService } from '../../services/spec/spec-yaml-parser.serv
 import { ClaudeCodeSessionRepository } from '../../services/agents/sessions/claude-code-session.repository.js';
 import { CodexCliSessionRepository } from '../../services/agents/sessions/codex-cli-session.repository.js';
 import { StubSessionRepository } from '../../services/agents/sessions/stub-session.repository.js';
+import { CursorSessionRepository } from '../../services/agents/sessions/cursor-session.repository.js';
 import { AgentSessionRepositoryRegistry } from '../../services/agents/agent-session-repository.registry.js';
 import { AgentType } from '../../../domain/generated/output.js';
 import { FeatureAgentLifecyclePublisher } from '../../services/agents/feature-agent/feature-agent-lifecycle-publisher.js';
@@ -119,7 +120,7 @@ export function registerAgents(container: DependencyContainer): void {
     useFactory: () => new ClaudeCodeSessionRepository(),
   });
   container.register(`IAgentSessionRepository:${AgentType.Cursor}`, {
-    useFactory: () => new StubSessionRepository(AgentType.Cursor),
+    useFactory: () => new CursorSessionRepository(),
   });
   container.register(`IAgentSessionRepository:${AgentType.GeminiCli}`, {
     useFactory: () => new StubSessionRepository(AgentType.GeminiCli),

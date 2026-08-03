@@ -20,6 +20,15 @@ export interface ListSessionsOptions {
   limit?: number;
   /** Filter sessions by project path (absolute path, matched against session cwd) */
   projectPath?: string;
+  /**
+   * When true, also collect sessions recorded inside worktrees of the given
+   * `projectPath` — both sibling provider directories sharing the project's
+   * encoded prefix and shep's own `~/.shep/repos/<hash>` worktree directories.
+   *
+   * Only meaningful alongside `projectPath`. Defaults to false so existing
+   * callers keep their current behaviour.
+   */
+  includeWorktrees?: boolean;
 }
 
 /**

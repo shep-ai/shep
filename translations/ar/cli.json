@@ -521,6 +521,28 @@
       "resolve": {
         "multipleMatch": "عدة مستودعات تطابق البادئة \"{{id}}\": {{matches}}",
         "notFound": "المستودع غير موجود: {{id}}"
+      },
+      "import": {
+        "description": "استيراد المجلدات المحلية كمستودعات متتبعة (بالجملة)",
+        "dirArgument": "المجلد الأصل الذي تصبح مجلداته الفرعية مرشحة للاستيراد",
+        "allOption": "استيراد جميع المرشحين دون سؤال",
+        "gitOnlyOption": "استيراد المرشحين الذين هم مستودعات git فقط",
+        "title": "المرشحون للاستيراد",
+        "nameColumn": "الاسم",
+        "gitColumn": "Git",
+        "statusColumn": "الحالة",
+        "pathColumn": "المسار",
+        "noCandidates": "لم يتم العثور على مجلدات فرعية في {{path}}",
+        "statusTracked": "متتبع بالفعل",
+        "statusRestorable": "تم إزالته سابقًا",
+        "statusNew": "جديد",
+        "selectPrompt": "اختر المجلدات للاستيراد",
+        "nothingSelected": "لم يتم تحديد شيء — لم يتم استيراد أي مستودع",
+        "imported": "تم استيراد {{count}} مستودعًا",
+        "importedOne": "تم الاستيراد: {{name}}",
+        "failedEntry": "فشل: {{path}} — {{error}}",
+        "summary": "{{imported}} تم استيرادها، {{failed}} فشلت",
+        "failedToImport": "فشل استيراد المستودعات"
       }
     },
     "app": {

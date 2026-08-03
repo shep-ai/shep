@@ -241,7 +241,7 @@ tasks:
       SessionSummary already carries filePath and it is what gates the adopt
       action in the dropdown today; without it on the domain model, deleting the
       web scanner would remove the ability to adopt.
-    state: Todo
+    state: Done
     dependencies:
       - task-1
     acceptanceCriteria:
@@ -272,7 +272,7 @@ tasks:
       canvas. Add includeWorktrees to ListSessionsOptions. IMPORTANT: relative
       imports inside domain/ carry NO file extension (LESSONS.md); importers
       outside domain/ still use .js.
-    state: Todo
+    state: Done
     dependencies:
       - task-8
     acceptanceCriteria:
@@ -304,7 +304,7 @@ tasks:
       from StubSessionRepository(AgentType.Cursor) to the real repository, and
       return true from isSupported(). This is the prerequisite for deleting the
       web scanner without losing Cursor coverage.
-    state: Todo
+    state: Done
     dependencies:
       - task-9
     acceptanceCriteria:
@@ -336,7 +336,7 @@ tasks:
       Codex, and Cursor sessions merge. Performance matters: this is polled
       every 30s for every repo on the canvas, so preserve the
       stat-then-parse-top-N strategy and the bounded head-read.
-    state: Todo
+    state: Done
     dependencies:
       - task-10
     acceptanceCriteria:

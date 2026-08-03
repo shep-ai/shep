@@ -19,6 +19,11 @@ import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import * as url from 'node:url';
 import { ClaudeCodeSessionRepository } from '@/infrastructure/services/agents/sessions/claude-code-session.repository.js';
+import {
+  encodeClaudeProjectDir,
+  shepWorktreeRepoHash,
+} from '@/domain/shared/agent-session-paths.js';
+import * as os from 'node:os';
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 const FIXTURES_PATH = path.resolve(__dirname, '../../../../../fixtures/claude-sessions');
@@ -205,6 +210,93 @@ describe('ClaudeCodeSessionRepository (integration)', () => {
       const session = await repo.findById('session-001', { messageLimit: 20 });
       expect(session?.firstMessageAt).toBeDefined();
       expect(session?.lastMessageAt).toBeDefined();
+    });
+  });
+
+  describe('filePath (spec 105)', () => {
+    it('should expose the absolute transcript path in list results', async () => {
+      const sessions = await repo.list({ limit: 10 });
+      const session = sessions.find((sess) => sess.id === 'session-001');
+
+      expect(session?.filePath).toBe(
+        path.join(FIXTURES_PATH, '-home-user-projects-foo', 'session-001.jsonl')
+      );
+    });
+
+    it('should expose the absolute transcript path from findById', async () => {
+      const session = await repo.findById('session-001', { messageLimit: 5 });
+
+      expect(session?.filePath).toBe(
+        path.join(FIXTURES_PATH, '-home-user-projects-foo', 'session-001.jsonl')
+      );
+    });
+  });
+
+  describe('includeWorktrees (spec 105)', () => {
+    let tempRoot: string;
+    let repoPath: string;
+    let worktreeRepo: ClaudeCodeSessionRepository;
+
+    /** One JSONL line that parses into a usable session (needs a cwd). */
+    function transcript(cwd: string): string {
+      return `${JSON.stringify({
+        type: 'user',
+        cwd,
+        timestamp: '2026-01-01T10:00:00Z',
+        message: { role: 'user', content: 'work in a worktree' },
+      })}\n`;
+    }
+
+    beforeAll(async () => {
+      tempRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'shep-wt-sessions-'));
+      repoPath = '/Users/dev/myproject';
+
+      const mainDir = encodeClaudeProjectDir(repoPath);
+      // Convention 1: a sibling directory sharing the repo's encoded prefix.
+      const nestedWorktreeDir = encodeClaudeProjectDir(`${repoPath}/.worktrees/feat-x`);
+      // Convention 2: shep's own worktree under ~/.shep/repos/<hash>/wt/<slug>.
+      const shepWorktreeDir = encodeClaudeProjectDir(
+        path.join(os.homedir(), '.shep', 'repos', shepWorktreeRepoHash(repoPath), 'wt', 'feat-y')
+      );
+
+      for (const [dir, cwd] of [
+        [mainDir, repoPath],
+        [nestedWorktreeDir, `${repoPath}/.worktrees/feat-x`],
+        [shepWorktreeDir, `${repoPath}/wt/feat-y`],
+      ] as const) {
+        await fs.mkdir(path.join(tempRoot, dir), { recursive: true });
+        await fs.writeFile(path.join(tempRoot, dir, `${dir}-session.jsonl`), transcript(cwd));
+      }
+
+      worktreeRepo = new ClaudeCodeSessionRepository(tempRoot);
+    });
+
+    it('returns only the repo directory sessions by default', async () => {
+      const sessions = await worktreeRepo.list({ projectPath: repoPath, limit: 50 });
+
+      expect(sessions).toHaveLength(1);
+    });
+
+    it('includes prefix-matched and shep worktree sessions when requested', async () => {
+      const sessions = await worktreeRepo.list({
+        projectPath: repoPath,
+        limit: 50,
+        includeWorktrees: true,
+      });
+
+      // main + nested worktree + shep worktree
+      expect(sessions).toHaveLength(3);
+    });
+
+    it('does not return duplicate sessions when directories match both rules', async () => {
+      const sessions = await worktreeRepo.list({
+        projectPath: repoPath,
+        limit: 50,
+        includeWorktrees: true,
+      });
+
+      const uniquePaths = new Set(sessions.map((sess) => sess.filePath));
+      expect(uniquePaths.size).toBe(sessions.length);
     });
   });
 });

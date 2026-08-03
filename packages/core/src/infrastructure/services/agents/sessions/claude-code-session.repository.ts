@@ -14,7 +14,6 @@
  */
 
 import * as fs from 'node:fs/promises';
-import type { Dirent } from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
 import { injectable } from 'tsyringe';
@@ -23,17 +22,15 @@ import type {
   AgentSessionMessage,
   AgentType,
 } from '../../../../domain/generated/output.js';
+import {
+  ClaudeCodeSessionFileCollector,
+  type SessionFileInfo,
+} from './claude-code-session-file-collector.js';
 import type {
   IAgentSessionRepository,
   ListSessionsOptions,
   GetSessionOptions,
 } from '../../../../application/ports/output/agents/agent-session-repository.interface.js';
-
-interface SessionFileInfo {
-  id: string;
-  filePath: string;
-  mtime: Date;
-}
 
 /**
  * A parsed line entry from a Claude Code JSONL session file.
@@ -69,7 +66,11 @@ export interface SessionMetadata {
 
 @injectable()
 export class ClaudeCodeSessionRepository implements IAgentSessionRepository {
-  constructor(private readonly basePath: string = path.join(os.homedir(), '.claude', 'projects')) {}
+  private readonly files: ClaudeCodeSessionFileCollector;
+
+  constructor(private readonly basePath: string = path.join(os.homedir(), '.claude', 'projects')) {
+    this.files = new ClaudeCodeSessionFileCollector(basePath);
+  }
 
   isSupported(): boolean {
     return true;
@@ -83,8 +84,8 @@ export class ClaudeCodeSessionRepository implements IAgentSessionRepository {
     // matching project directory instead of all 100+ directories. Claude Code encodes
     // project paths as directory names by replacing '/' with '-'.
     const fileInfos = filterPath
-      ? await this.collectSessionFilesForPath(filterPath)
-      : await this.collectSessionFiles();
+      ? await this.files.collectSessionFilesForPath(filterPath, options?.includeWorktrees ?? false)
+      : await this.files.collectSessionFiles();
     fileInfos.sort((a, b) => b.mtime.getTime() - a.mtime.getTime());
 
     // Apply limit before full parsing
@@ -107,7 +108,7 @@ export class ClaudeCodeSessionRepository implements IAgentSessionRepository {
   async findById(id: string, options?: GetSessionOptions): Promise<AgentSession | null> {
     const messageLimit = options?.messageLimit ?? 20;
 
-    const match = await this.findSessionFile(id);
+    const match = await this.files.findSessionFile(id);
     if (match === null) return null;
 
     try {
@@ -121,133 +122,6 @@ export class ClaudeCodeSessionRepository implements IAgentSessionRepository {
     } catch {
       return null;
     }
-  }
-
-  /**
-   * Collect session files only from the directory matching the given project path.
-   * Claude Code encodes project paths as directory names by replacing '/', '\', and '.'
-   * with '-'. e.g. /home/user/.shep/repos/abc/wt/feat-x → -home-user--shep-repos-abc-wt-feat-x
-   * This avoids scanning all 100+ project directories.
-   */
-  private async collectSessionFilesForPath(projectPath: string): Promise<SessionFileInfo[]> {
-    // Normalize: resolve ~ and convert path separators
-    const normalizedPath = projectPath.startsWith('~')
-      ? path.join(os.homedir(), projectPath.slice(1))
-      : projectPath;
-    // Claude Code replaces '/', '\', and '.' with '-' in directory names
-    const dirName = normalizedPath.replace(/[/\\.]/g, '-');
-    const projectDir = path.join(this.basePath, dirName);
-
-    try {
-      return await this.collectDepthOneJsonlFiles(projectDir);
-    } catch {
-      // Directory doesn't exist — no sessions for this path
-      return [];
-    }
-  }
-
-  /** Collect all depth-1 .jsonl session files with mtime from all project directories */
-  private async collectSessionFiles(): Promise<SessionFileInfo[]> {
-    let entries: Dirent[];
-    try {
-      entries = await fs.readdir(this.basePath, { withFileTypes: true, encoding: 'utf-8' });
-    } catch {
-      return [];
-    }
-
-    const projectDirs = entries
-      .filter((e) => e.isDirectory())
-      .map((e) => path.join(this.basePath, e.name));
-
-    const results = await Promise.allSettled(
-      projectDirs.map((dir) => this.collectDepthOneJsonlFiles(dir))
-    );
-
-    const fileInfos: SessionFileInfo[] = [];
-    for (const result of results) {
-      if (result.status === 'fulfilled') {
-        fileInfos.push(...result.value);
-      }
-    }
-    return fileInfos;
-  }
-
-  /** Collect depth-1 .jsonl files from a single project directory with stat for mtime */
-  private async collectDepthOneJsonlFiles(projectDir: string): Promise<SessionFileInfo[]> {
-    const entries = await fs.readdir(projectDir, { withFileTypes: true, encoding: 'utf-8' });
-    const jsonlFiles = entries.filter((e) => e.isFile() && e.name.endsWith('.jsonl'));
-
-    const statResults = await Promise.allSettled(
-      jsonlFiles.map(async (e) => {
-        const filePath = path.join(projectDir, e.name);
-        const stat = await fs.stat(filePath);
-        const id = e.name.slice(0, -'.jsonl'.length);
-        return { id, filePath, mtime: stat.mtime } satisfies SessionFileInfo;
-      })
-    );
-
-    const fileInfos: SessionFileInfo[] = [];
-    for (const result of statResults) {
-      if (result.status === 'fulfilled') {
-        fileInfos.push(result.value);
-      }
-    }
-    return fileInfos;
-  }
-
-  /**
-   * Find a session file by exact or prefix ID match, scanning all project directories.
-   * Supports prefix matching so users can pass truncated IDs (e.g. first 8 chars).
-   * Returns the match info or null if not found / ambiguous.
-   */
-  private async findSessionFile(
-    id: string
-  ): Promise<{ filePath: string; resolvedId: string } | null> {
-    let entries: Dirent[];
-    try {
-      entries = await fs.readdir(this.basePath, { withFileTypes: true, encoding: 'utf-8' });
-    } catch {
-      return null;
-    }
-
-    const projectDirs = entries
-      .filter((e) => e.isDirectory())
-      .map((e) => path.join(this.basePath, e.name));
-
-    // Try exact match first (fast path)
-    for (const dir of projectDirs) {
-      const filePath = path.join(dir, `${id}.jsonl`);
-      try {
-        await fs.access(filePath);
-        return { filePath, resolvedId: id };
-      } catch {
-        // Not in this directory
-      }
-    }
-
-    // Fall back to prefix match
-    const matches: { filePath: string; resolvedId: string }[] = [];
-    for (const dir of projectDirs) {
-      let dirEntries: Dirent[];
-      try {
-        dirEntries = await fs.readdir(dir, { withFileTypes: true, encoding: 'utf-8' });
-      } catch {
-        continue;
-      }
-      for (const e of dirEntries) {
-        if (e.isFile() && e.name.endsWith('.jsonl') && e.name.startsWith(id)) {
-          const resolvedId = e.name.slice(0, -'.jsonl'.length);
-          matches.push({ filePath: path.join(dir, e.name), resolvedId });
-        }
-      }
-    }
-
-    if (matches.length === 1) {
-      return matches[0];
-    }
-
-    // No match or ambiguous (multiple matches)
-    return null;
   }
 
   /**
@@ -350,6 +224,9 @@ export class ClaudeCodeSessionRepository implements IAgentSessionRepository {
       id: fileInfo.id,
       agentType: 'claude-code' as AgentType,
       projectPath: this.abbreviatePath(cwd),
+      // Absolute transcript path, so callers can adopt a session without
+      // re-deriving the provider's on-disk path encoding themselves.
+      filePath: fileInfo.filePath,
       messageCount,
       createdAt: firstMessageAt ?? fileInfo.mtime,
       updatedAt: lastMessageAt ?? fileInfo.mtime,

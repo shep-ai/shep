@@ -521,6 +521,28 @@
       "resolve": {
         "multipleMatch": "Múltiplos repositórios correspondem ao prefixo \"{{id}}\": {{matches}}",
         "notFound": "Repositório não encontrado: {{id}}"
+      },
+      "import": {
+        "description": "Importar pastas locais como repositórios rastreados (em lote)",
+        "dirArgument": "Diretório pai cujas subpastas se tornam candidatas à importação",
+        "allOption": "Importar todos os candidatos sem perguntar",
+        "gitOnlyOption": "Importar apenas candidatos que são repositórios git",
+        "title": "Candidatos à importação",
+        "nameColumn": "Nome",
+        "gitColumn": "Git",
+        "statusColumn": "Status",
+        "pathColumn": "Caminho",
+        "noCandidates": "Nenhuma subpasta encontrada em {{path}}",
+        "statusTracked": "já rastreado",
+        "statusRestorable": "removido anteriormente",
+        "statusNew": "novo",
+        "selectPrompt": "Selecione as pastas para importar",
+        "nothingSelected": "Nada selecionado — nenhum repositório importado",
+        "imported": "{{count}} repositórios importados",
+        "importedOne": "Importado: {{name}}",
+        "failedEntry": "Falhou: {{path}} — {{error}}",
+        "summary": "{{imported}} importados, {{failed}} com falha",
+        "failedToImport": "Falha ao importar repositórios"
       }
     },
     "app": {

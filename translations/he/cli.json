@@ -521,6 +521,28 @@
       "resolve": {
         "multipleMatch": "מספר מאגרים תואמים לקידומת \"{{id}}\": {{matches}}",
         "notFound": "מאגר לא נמצא: {{id}}"
+      },
+      "import": {
+        "description": "ייבוא תיקיות מקומיות כמאגרים במעקב (בכמות)",
+        "dirArgument": "תיקיית האב שתיקיות המשנה שלה הופכות למועמדות לייבוא",
+        "allOption": "ייבוא כל המועמדים בלי לשאול",
+        "gitOnlyOption": "ייבוא רק מועמדים שהם מאגרי git",
+        "title": "מועמדים לייבוא",
+        "nameColumn": "שם",
+        "gitColumn": "Git",
+        "statusColumn": "מצב",
+        "pathColumn": "נתיב",
+        "noCandidates": "לא נמצאו תיקיות משנה ב-{{path}}",
+        "statusTracked": "כבר במעקב",
+        "statusRestorable": "הוסר בעבר",
+        "statusNew": "חדש",
+        "selectPrompt": "בחר תיקיות לייבוא",
+        "nothingSelected": "לא נבחר דבר — לא יובאו מאגרים",
+        "imported": "יובאו {{count}} מאגרים",
+        "importedOne": "יובא: {{name}}",
+        "failedEntry": "נכשל: {{path}} — {{error}}",
+        "summary": "{{imported}} יובאו, {{failed}} נכשלו",
+        "failedToImport": "ייבוא המאגרים נכשל"
       }
     },
     "app": {

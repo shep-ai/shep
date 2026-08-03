@@ -521,6 +521,28 @@
       "resolve": {
         "multipleMatch": "Mehrere Repositories stimmen mit Präfix \"{{id}}\" überein: {{matches}}",
         "notFound": "Repository nicht gefunden: {{id}}"
+      },
+      "import": {
+        "description": "Lokale Ordner als verfolgte Repositories importieren (Massenimport)",
+        "dirArgument": "Übergeordnetes Verzeichnis, dessen Unterordner zu Importkandidaten werden",
+        "allOption": "Alle Kandidaten ohne Rückfrage importieren",
+        "gitOnlyOption": "Nur Kandidaten importieren, die Git-Repositories sind",
+        "title": "Importkandidaten",
+        "nameColumn": "Name",
+        "gitColumn": "Git",
+        "statusColumn": "Status",
+        "pathColumn": "Pfad",
+        "noCandidates": "Keine Unterordner in {{path}} gefunden",
+        "statusTracked": "bereits verfolgt",
+        "statusRestorable": "früher entfernt",
+        "statusNew": "neu",
+        "selectPrompt": "Ordner zum Importieren auswählen",
+        "nothingSelected": "Nichts ausgewählt — keine Repositories importiert",
+        "imported": "{{count}} Repositories importiert",
+        "importedOne": "Importiert: {{name}}",
+        "failedEntry": "Fehlgeschlagen: {{path}} — {{error}}",
+        "summary": "{{imported}} importiert, {{failed}} fehlgeschlagen",
+        "failedToImport": "Repositories konnten nicht importiert werden"
       }
     },
     "app": {
