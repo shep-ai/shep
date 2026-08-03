@@ -46,7 +46,7 @@ tasks:
       tsp/domain/entities/feature.tsp. Run `pnpm tsp:codegen` to regenerate
       packages/core/src/domain/generated/output.ts. Never hand-edit the
       generated file.
-    state: Todo
+    state: Done
     dependencies: []
     acceptanceCriteria:
       - AgentSession has an optional filePath with an @doc annotation
@@ -68,7 +68,7 @@ tasks:
       round-trip source_agent_session_id and source_agent_type. The mapper is
       277 lines; if the additions push it past ~300, split the row-type
       declaration into a sibling module first.
-    state: Todo
+    state: Done
     dependencies:
       - task-1
     acceptanceCriteria:

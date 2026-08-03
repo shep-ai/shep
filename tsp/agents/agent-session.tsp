@@ -25,6 +25,19 @@ model AgentSession extends BaseEntity {
   @doc("Truncated first user message text used as a session summary preview (optional)")
   preview?: string;
 
+  /**
+   * Absolute path to the conversation file backing this session.
+   *
+   * For Claude Code and Codex CLI this is the JSONL transcript under the
+   * provider's project directory; for Cursor it is the agent-transcript file.
+   * Exposed so callers can adopt a session into a feature without
+   * re-deriving the provider's on-disk path encoding themselves.
+   *
+   * @example "~/.claude/projects/-Users-dev-my-project/3f1a9c40.jsonl"
+   */
+  @doc("Absolute path to the conversation file backing this session (optional)")
+  filePath?: string;
+
   @doc("Conversation messages — populated only in the detail view (shep session show)")
   messages?: AgentSessionMessage[];
 

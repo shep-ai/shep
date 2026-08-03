@@ -124,6 +124,12 @@ properties:
   bedrockEnabled:
     type: boolean
     description: Whether project-bedrock memory integration is enabled for this feature worktree (defaults to false in persistence)
+  sourceAgentSessionId:
+    type: string
+    description: Provider-native agent session id this feature was adopted from (optional)
+  sourceAgentType:
+    $ref: AgentType.yaml
+    description: Agent type that owned the adopted session (optional)
 required:
   - name
   - userQuery

@@ -95,6 +95,9 @@ export interface FeatureRow {
   bedrock_enabled: number;
   // Plugin activation overrides (JSON object: {pluginName: boolean})
   active_plugins: string | null;
+  // Adopted session provenance (spec 105)
+  source_agent_session_id: string | null;
+  source_agent_type: string | null;
   // Exploration mode tracking
   iteration_count: number | null;
   max_iterations: number | null;
@@ -176,6 +179,9 @@ export function toDatabase(feature: Feature): FeatureRow {
       feature.activePlugins && Object.keys(feature.activePlugins).length > 0
         ? JSON.stringify(feature.activePlugins)
         : null,
+    // Adopted session provenance
+    source_agent_session_id: feature.sourceAgentSessionId ?? null,
+    source_agent_type: feature.sourceAgentType ?? null,
     // Exploration mode tracking
     iteration_count: feature.iterationCount ?? 0,
     max_iterations: feature.maxIterations ?? null,
@@ -267,6 +273,13 @@ export function fromDatabase(row: FeatureRow): Feature {
     // Plugin activation overrides
     ...(row.active_plugins != null && {
       activePlugins: JSON.parse(row.active_plugins) as Record<string, boolean>,
+    }),
+    // Adopted session provenance
+    ...(row.source_agent_session_id != null && {
+      sourceAgentSessionId: row.source_agent_session_id,
+    }),
+    ...(row.source_agent_type != null && {
+      sourceAgentType: row.source_agent_type as Feature['sourceAgentType'],
     }),
     // Exploration mode tracking
     iterationCount: row.iteration_count ?? 0,

@@ -1530,6 +1530,14 @@ export type Feature = SoftDeletableEntity & {
    * Whether project-bedrock memory integration is enabled for this feature worktree (defaults to false in persistence)
    */
   bedrockEnabled?: boolean;
+  /**
+   * Provider-native agent session id this feature was adopted from (optional)
+   */
+  sourceAgentSessionId?: string;
+  /**
+   * Agent type that owned the adopted session (optional)
+   */
+  sourceAgentType?: AgentType;
 };
 
 /**
@@ -5667,6 +5675,10 @@ export type AgentSession = BaseEntity & {
    * Truncated first user message text used as a session summary preview (optional)
    */
   preview?: string;
+  /**
+   * Absolute path to the conversation file backing this session (optional)
+   */
+  filePath?: string;
   /**
    * Conversation messages — populated only in the detail view (shep session show)
    */

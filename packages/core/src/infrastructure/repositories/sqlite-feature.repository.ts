@@ -46,6 +46,7 @@ export class SQLiteFeatureRepository implements IFeatureRepository {
         parent_id, previous_lifecycle, attachments,
         inject_skills, injected_skills, bedrock_enabled,
         active_plugins,
+        source_agent_session_id, source_agent_type,
         iteration_count, max_iterations,
         deleted_at, created_at, updated_at
       ) VALUES (
@@ -63,6 +64,7 @@ export class SQLiteFeatureRepository implements IFeatureRepository {
         @parent_id, @previous_lifecycle, @attachments,
         @inject_skills, @injected_skills, @bedrock_enabled,
         @active_plugins,
+        @source_agent_session_id, @source_agent_type,
         @iteration_count, @max_iterations,
         @deleted_at, @created_at, @updated_at
       )
@@ -211,6 +213,8 @@ export class SQLiteFeatureRepository implements IFeatureRepository {
         injected_skills = @injected_skills,
         bedrock_enabled = @bedrock_enabled,
         active_plugins = @active_plugins,
+        source_agent_session_id = @source_agent_session_id,
+        source_agent_type = @source_agent_type,
         iteration_count = @iteration_count,
         max_iterations = @max_iterations,
         deleted_at = @deleted_at,

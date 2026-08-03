@@ -769,4 +769,45 @@ describe('SQLiteFeatureRepository', () => {
       expect(found?.activePlugins).toBeUndefined();
     });
   });
+
+  describe('adopted session provenance (spec 105)', () => {
+    it('should persist sourceAgentSessionId and sourceAgentType on create', async () => {
+      await repository.create(
+        createTestFeature({
+          sourceAgentSessionId: '3f1a9c40-1d2b-4e77-9c11-2a5b6d8e0f34',
+          sourceAgentType: 'claude-code' as Feature['sourceAgentType'],
+        })
+      );
+
+      const found = await repository.findById('feat-1');
+
+      expect(found?.sourceAgentSessionId).toBe('3f1a9c40-1d2b-4e77-9c11-2a5b6d8e0f34');
+      expect(found?.sourceAgentType).toBe('claude-code');
+    });
+
+    it('should leave provenance undefined for features created normally', async () => {
+      await repository.create(createTestFeature());
+
+      const found = await repository.findById('feat-1');
+
+      expect(found?.sourceAgentSessionId).toBeUndefined();
+      expect(found?.sourceAgentType).toBeUndefined();
+    });
+
+    it('should persist provenance via update', async () => {
+      await repository.create(createTestFeature());
+
+      await repository.update(
+        createTestFeature({
+          sourceAgentSessionId: 'adopted-later',
+          sourceAgentType: 'cursor' as Feature['sourceAgentType'],
+          updatedAt: new Date(),
+        })
+      );
+      const found = await repository.findById('feat-1');
+
+      expect(found?.sourceAgentSessionId).toBe('adopted-later');
+      expect(found?.sourceAgentType).toBe('cursor');
+    });
+  });
 });

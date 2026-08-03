@@ -99,6 +99,8 @@ function createTestRow(overrides: Partial<FeatureRow> = {}): FeatureRow {
     inject_skills: 0,
     bedrock_enabled: 0,
     active_plugins: null,
+    source_agent_session_id: null,
+    source_agent_type: null,
     iteration_count: null,
     max_iterations: null,
     deleted_at: null,
@@ -460,6 +462,64 @@ describe('Feature Mapper — activePlugins', () => {
       const row = createTestRow({ active_plugins: null });
       const feature = fromDatabase(row);
       expect(feature.activePlugins).toBeUndefined();
+    });
+  });
+
+  describe('adopted session provenance (spec 105)', () => {
+    it('serializes sourceAgentSessionId and sourceAgentType to the row', () => {
+      const feature = createTestFeature({
+        sourceAgentSessionId: '3f1a9c40-1d2b-4e77-9c11-2a5b6d8e0f34',
+        sourceAgentType: 'claude-code' as Feature['sourceAgentType'],
+      });
+      const row = toDatabase(feature);
+
+      expect(row.source_agent_session_id).toBe('3f1a9c40-1d2b-4e77-9c11-2a5b6d8e0f34');
+      expect(row.source_agent_type).toBe('claude-code');
+    });
+
+    it('serializes null when the feature was not adopted from a session', () => {
+      const feature = createTestFeature({
+        sourceAgentSessionId: undefined,
+        sourceAgentType: undefined,
+      });
+      const row = toDatabase(feature);
+
+      expect(row.source_agent_session_id).toBeNull();
+      expect(row.source_agent_type).toBeNull();
+    });
+
+    it('deserializes provenance columns back onto the domain object', () => {
+      const row = createTestRow({
+        source_agent_session_id: '3f1a9c40-1d2b-4e77-9c11-2a5b6d8e0f34',
+        source_agent_type: 'cursor',
+      });
+      const feature = fromDatabase(row);
+
+      expect(feature.sourceAgentSessionId).toBe('3f1a9c40-1d2b-4e77-9c11-2a5b6d8e0f34');
+      expect(feature.sourceAgentType).toBe('cursor');
+    });
+
+    it('omits provenance fields when the columns are null', () => {
+      const row = createTestRow({
+        source_agent_session_id: null,
+        source_agent_type: null,
+      });
+      const feature = fromDatabase(row);
+
+      expect(feature.sourceAgentSessionId).toBeUndefined();
+      expect(feature.sourceAgentType).toBeUndefined();
+    });
+
+    it('round-trips provenance through toDatabase and fromDatabase', () => {
+      const feature = createTestFeature({
+        sourceAgentSessionId: 'session-round-trip',
+        sourceAgentType: 'codex-cli' as Feature['sourceAgentType'],
+      });
+
+      const restored = fromDatabase(toDatabase(feature));
+
+      expect(restored.sourceAgentSessionId).toBe('session-round-trip');
+      expect(restored.sourceAgentType).toBe('codex-cli');
     });
   });
 });

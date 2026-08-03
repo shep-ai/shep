@@ -115,6 +115,7 @@ import "../../common/scalars.tsp";
 import "../../common/enums/lifecycle.tsp";
 import "../../common/enums/workflow.tsp";
 import "../../common/enums/build-mode.tsp";
+import "../../common/enums/agent-config.tsp";
 import "./message.tsp";
 import "./plan.tsp";
 import "./artifact.tsp";
@@ -484,4 +485,32 @@ model Feature extends SoftDeletableEntity {
 
   @doc("Whether project-bedrock memory integration is enabled for this feature worktree (defaults to false in persistence)")
   bedrockEnabled?: boolean;
+
+  // ── Adopted Session Provenance ────────────────────────────
+
+  /**
+   * Provider-native session id this feature was adopted from.
+   *
+   * Set when the feature was created by adopting an existing agent CLI
+   * conversation (e.g. a Claude Code or Cursor session that predates shep
+   * tracking the work). Keeps the feature traceable back to the transcript
+   * its name, description, and remaining-work summary were derived from.
+   *
+   * Nullable — features created through the normal flow have no originating
+   * session.
+   *
+   * @example "3f1a9c40-1d2b-4e77-9c11-2a5b6d8e0f34"
+   */
+  @doc("Provider-native agent session id this feature was adopted from (optional)")
+  sourceAgentSessionId?: string;
+
+  /**
+   * Agent provider that owned the adopted session.
+   *
+   * Recorded alongside `sourceAgentSessionId` because session ids are only
+   * unique within a provider, and resuming the conversation requires knowing
+   * which agent CLI to invoke.
+   */
+  @doc("Agent type that owned the adopted session (optional)")
+  sourceAgentType?: AgentType;
 }

@@ -16,6 +16,9 @@ properties:
   preview:
     type: string
     description: Truncated first user message text used as a session summary preview (optional)
+  filePath:
+    type: string
+    description: Absolute path to the conversation file backing this session (optional)
   messages:
     type: array
     items:
