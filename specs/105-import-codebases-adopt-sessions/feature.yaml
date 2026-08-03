@@ -7,12 +7,12 @@ feature:
   createdAt: '2026-08-03T13:17:19Z'
 
 status:
-  phase: 'implementing'
+  phase: 'ready-for-review'
   progress:
-    completed: 15
+    completed: 18
     total: 18
-    percentage: 83
-  currentTask: 'task-16'
+    percentage: 100
+  currentTask: null
   lastUpdated: '2026-08-03T14:05:00Z'
   lastUpdatedBy: 'shep-kit:implement'
 
@@ -36,6 +36,9 @@ checkpoints:
   - phase: 'plan-complete'
     completedAt: '2026-08-03T13:50:00Z'
     completedBy: 'shep-kit:plan'
+  - phase: 'implementation-complete'
+    completedAt: '2026-08-03T14:45:00Z'
+    completedBy: 'shep-kit:implement'
 
 errors:
   current: null

@@ -494,7 +494,7 @@ tasks:
       after Phase 3: the scanner is currently the sole source of Cursor
       sessions, worktree sessions, and filePath. Verify the canvas still shows
       all three before considering this done.
-    state: Todo
+    state: Done
     dependencies:
       - task-11
     acceptanceCriteria:
@@ -525,7 +525,7 @@ tasks:
       lines and repository-node.tsx is 575, both at or past the ~300 line rule,
       so extract SessionRow and its action list into siblings first. Storybook
       stories mandatory for new and changed components.
-    state: Todo
+    state: Done
     dependencies:
       - task-14
       - task-15
@@ -558,7 +558,7 @@ tasks:
       new domain/shared helpers are consumed by both core and the web package,
       and per LESSONS.md that test is the only check that catches a `.js`
       specifier inside domain/. Every failure is owned and fixed, not deferred.
-    state: Todo
+    state: Done
     dependencies:
       - task-6
       - task-7

@@ -22,7 +22,6 @@ import {
 } from 'lucide-react';
 import { Trans, useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
-import { buildCreateUrl } from '@/lib/url-params';
 import { ActionButton } from '@/components/common/action-button';
 import {
   Dialog,
@@ -45,10 +44,7 @@ import type { RepositoryNodeData } from './repository-node-config';
 import { useRepositoryActions } from './use-repository-actions';
 import { ChatDotIndicator } from '@/components/features/chat/ChatDotIndicator';
 import { useTurnStatus } from '@/hooks/turn-statuses-provider';
-import {
-  FeatureSessionsDropdown,
-  type SessionSummary,
-} from '@/components/common/feature-node/feature-sessions-dropdown';
+import { FeatureSessionsDropdown } from '@/components/common/feature-node/feature-sessions-dropdown';
 
 export function RepositoryNode({
   data,
@@ -92,34 +88,13 @@ export function RepositoryNode({
       ? 'Disable webhook'
       : 'Enable webhook';
 
-  const handleCreateFromSession = useCallback(
-    (session: SessionSummary, sessionFilePath: string) => {
-      if (!data.repositoryPath) return;
-      const preview = session.preview ? session.preview.slice(0, 200) : 'Unknown conversation';
-      const prompt = [
-        `Continue work from a previous agent session.`,
-        ``,
-        `## Session Context`,
-        `- Session ID: ${session.id}`,
-        `- Messages: ${session.messageCount}`,
-        session.lastMessageAt ? `- Last active: ${session.lastMessageAt}` : '',
-        `- Conversation file: ${sessionFilePath}`,
-        ``,
-        `## Session Preview`,
-        `> ${preview}`,
-        ``,
-        `## Instructions`,
-        `1. Read the full conversation history from the file above`,
-        `2. Analyze the current state of the repository — what was done, what remains`,
-        `3. Create or update spec files to accurately reflect the current state and remaining work`,
-        `4. Continue implementing any unfinished work from the conversation`,
-      ]
-        .filter(Boolean)
-        .join('\n');
-
-      router.push(buildCreateUrl({ repo: data.repositoryPath, prompt }));
+  // Adoption itself happens in AdoptAgentSessionUseCase — this only navigates
+  // to the feature it produced. No prompt is assembled here.
+  const handleSessionAdopted = useCallback(
+    (featureId: string) => {
+      router.push(`/features/${featureId}`);
     },
-    [data.repositoryPath, router]
+    [router]
   );
 
   return (
@@ -357,7 +332,7 @@ export function RepositoryNode({
                 <FeatureSessionsDropdown
                   repositoryPath={data.repositoryPath}
                   includeWorktrees
-                  onCreateFromSession={handleCreateFromSession}
+                  onAdopted={handleSessionAdopted}
                 />
               </>
             ) : null}
