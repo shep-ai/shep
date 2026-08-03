@@ -1,8 +1,8 @@
 # Implementation Plan (YAML)
 # This is the source of truth. Markdown is auto-generated from this file.
 
-name: { { FEATURE_NAME } }
-summary: Implementation plan for {{NNN}}-{{FEATURE_NAME}}
+name: import-codebases-adopt-sessions
+summary: Implementation plan for 105-import-codebases-adopt-sessions
 
 # Relationships
 relatedFeatures: []
@@ -43,7 +43,7 @@ content: |
   ## Status
 
   - **Phase:** Planning
-  - **Updated:** {{DATE}}
+  - **Updated:** 2026-08-03
 
   ## Architecture Overview
 
