@@ -534,6 +534,7 @@
     "createNew": "Create new",
     "newFeature": "New Feature",
     "localFolder": "Local Folder",
+    "folderOfRepos": "Folder of repos",
     "adoptBranch": "Adopt Branch",
     "fromGithub": "From GitHub",
     "newApplication": "New Application",

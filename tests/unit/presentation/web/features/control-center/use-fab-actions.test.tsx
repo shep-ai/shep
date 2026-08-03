@@ -97,4 +97,43 @@ describe('useFabActions', () => {
       buildCreateUrl({ applicationId: 'app-42', mode: BuildMode.Spec })
     );
   });
+
+  // Spec 105: bulk import must be reachable from the (+) FAB. It was initially
+  // wired only into AddRepositoryButton, which is not the menu users open.
+  describe('folder of repos (bulk import)', () => {
+    it('includes the add-folder-of-repos action', () => {
+      const { result } = renderHook(() => useFabActions(buildParams()));
+
+      expect(result.current.map((a) => a.id)).toContain('add-folder-of-repos');
+    });
+
+    it('places it directly after the single local-folder action', () => {
+      const { result } = renderHook(() => useFabActions(buildParams()));
+
+      const ids = result.current.map((a) => a.id);
+      expect(ids.indexOf('add-folder-of-repos')).toBe(ids.indexOf('add-local-repo') + 1);
+    });
+
+    it('dispatches shep:open-bulk-import when clicked', () => {
+      const dispatch = vi.spyOn(window, 'dispatchEvent');
+      const { result } = renderHook(() => useFabActions(buildParams()));
+
+      result.current.find((a) => a.id === 'add-folder-of-repos')?.onClick();
+
+      expect(dispatch).toHaveBeenCalledWith(
+        expect.objectContaining({ type: 'shep:open-bulk-import' })
+      );
+      dispatch.mockRestore();
+    });
+
+    it('is distinct from the single-folder action', () => {
+      const params = buildParams();
+      const { result } = renderHook(() => useFabActions(params));
+
+      result.current.find((a) => a.id === 'add-folder-of-repos')?.onClick();
+
+      // Bulk import must not reuse the single-folder pick handler.
+      expect(params.handlePickFolder).not.toHaveBeenCalled();
+    });
+  });
 });

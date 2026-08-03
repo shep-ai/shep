@@ -534,6 +534,7 @@
     "createNew": "Neu erstellen",
     "newFeature": "Neues Feature",
     "localFolder": "Lokaler Ordner",
+    "folderOfRepos": "Ordner mit Repos",
     "adoptBranch": "Branch übernehmen",
     "fromGithub": "Von GitHub",
     "newApplication": "Neue Anwendung",

@@ -28,6 +28,10 @@ const GitHubImportDialog = dynamic(
   () => import('@/components/common/github-import-dialog').then((m) => m.GitHubImportDialog),
   { ssr: false }
 );
+const BulkImportDialog = dynamic(
+  () => import('@/components/common/bulk-import-dialog').then((m) => m.BulkImportDialog),
+  { ssr: false }
+);
 const ReactFileManagerDialog = dynamic(
   () =>
     import('@/components/common/react-file-manager-dialog').then((m) => m.ReactFileManagerDialog),
@@ -100,6 +104,9 @@ function AppShellInner({ children, sidebarOpen, variant = 'full' }: AppShellProp
   const [addingRepo, setAddingRepo] = useState(false);
   const [githubDialogOpen, setGithubDialogOpen] = useState(false);
   const [showReactPicker, setShowReactPicker] = useState(false);
+  // Bulk import: first pick a PARENT folder, then choose among its subfolders.
+  const [showBulkPicker, setShowBulkPicker] = useState(false);
+  const [bulkDirectory, setBulkDirectory] = useState('');
 
   const handleAddRepository = useCallback(async () => {
     if (addingRepo) return;
@@ -138,6 +145,27 @@ function AppShellInner({ children, sidebarOpen, variant = 'full' }: AppShellProp
     window.addEventListener('shep:open-github-import', handler);
     return () => window.removeEventListener('shep:open-github-import', handler);
   }, []);
+
+  // Listen for bulk "folder of repos" import from the (+) FAB
+  useEffect(() => {
+    const handler = () => setShowBulkPicker(true);
+    window.addEventListener('shep:open-bulk-import', handler);
+    return () => window.removeEventListener('shep:open-bulk-import', handler);
+  }, []);
+
+  const handleBulkDirectorySelect = useCallback((path: string | null) => {
+    setShowBulkPicker(false);
+    if (path) setBulkDirectory(path);
+  }, []);
+
+  // Refresh the canvas so newly imported repositories appear.
+  const handleBulkImportComplete = useCallback(
+    (importedCount: number) => {
+      setBulkDirectory('');
+      if (importedCount > 0) router.refresh();
+    },
+    [router]
+  );
 
   const handleReactPickerSelect = useCallback((path: string | null) => {
     if (path) {
@@ -194,6 +222,21 @@ function AppShellInner({ children, sidebarOpen, variant = 'full' }: AppShellProp
           if (!open) setShowReactPicker(false);
         }}
         onSelect={handleReactPickerSelect}
+      />
+      <ReactFileManagerDialog
+        open={showBulkPicker}
+        onOpenChange={(open) => {
+          if (!open) setShowBulkPicker(false);
+        }}
+        onSelect={handleBulkDirectorySelect}
+      />
+      <BulkImportDialog
+        open={bulkDirectory !== ''}
+        onOpenChange={(open) => {
+          if (!open) setBulkDirectory('');
+        }}
+        directoryPath={bulkDirectory}
+        onImportComplete={handleBulkImportComplete}
       />
     </SidebarProvider>
   );

@@ -9,6 +9,7 @@ import {
   ClipboardList,
   FolderOpen,
   FolderPlus,
+  FolderTree,
   GitBranch,
   Github,
   LayoutGrid,
@@ -76,6 +77,14 @@ export function useFabActions({
         label: t('fab.localFolder'),
         icon: <FolderOpen className="h-4 w-4" />,
         onClick: handlePickFolder,
+      },
+      {
+        id: 'add-folder-of-repos',
+        label: t('fab.folderOfRepos'),
+        icon: <FolderTree className="h-4 w-4" />,
+        onClick: () => {
+          window.dispatchEvent(new CustomEvent('shep:open-bulk-import'));
+        },
       },
       {
         id: 'new-application',
