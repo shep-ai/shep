@@ -100,7 +100,7 @@ tasks:
       infrastructure/services/repositories/ using node:fs with `withFileTypes`
       to avoid a redundant stat, and register it in the DI container.
       Non-recursive by resolved decision.
-    state: Todo
+    state: Done
     dependencies:
       - task-1
     acceptanceCriteria:
@@ -128,7 +128,7 @@ tasks:
       normalisation so annotations cannot disagree with what import will
       actually do). Filters nothing — the resolved decision is that the user
       decides and shep only annotates.
-    state: Todo
+    state: Done
     dependencies:
       - task-3
     acceptanceCriteria:
@@ -155,7 +155,7 @@ tasks:
       per-path result so partial failures are visible instead of silent, which
       is an explicit success criterion. One failing path must not abort the
       remaining imports.
-    state: Todo
+    state: Done
     dependencies:
       - task-3
     acceptanceCriteria:

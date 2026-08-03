@@ -148,6 +148,8 @@ import { ListToolsUseCase } from '../../../application/use-cases/tools/list-tool
 import { LaunchToolUseCase } from '../../../application/use-cases/tools/launch-tool.use-case.js';
 import { LaunchIdeUseCase } from '../../../application/use-cases/ide/launch-ide.use-case.js';
 import { AddRepositoryUseCase } from '../../../application/use-cases/repositories/add-repository.use-case.js';
+import { DiscoverImportCandidatesUseCase } from '../../../application/use-cases/repositories/discover-import-candidates.use-case.js';
+import { ImportLocalRepositoriesUseCase } from '../../../application/use-cases/repositories/import-local-repositories.use-case.js';
 import { CreateProjectUseCase } from '../../../application/use-cases/projects/create-project.use-case.js';
 import { CheckAgentAuthUseCase } from '../../../application/use-cases/agents/check-agent-auth.use-case.js';
 import { ListRepositoriesUseCase } from '../../../application/use-cases/repositories/list-repositories.use-case.js';
@@ -304,6 +306,8 @@ export function registerUseCases(container: DependencyContainer): void {
   container.registerSingleton(WriteApplicationFileUseCase);
   container.registerSingleton(WatchApplicationFilesUseCase);
   container.registerSingleton(AddRepositoryUseCase);
+  container.registerSingleton(DiscoverImportCandidatesUseCase);
+  container.registerSingleton(ImportLocalRepositoriesUseCase);
   container.registerSingleton(CreateProjectUseCase);
   container.registerSingleton(CheckAgentAuthUseCase);
   container.registerSingleton(ListRepositoriesUseCase);
@@ -439,6 +443,12 @@ export function registerUseCases(container: DependencyContainer): void {
   });
   container.register('AddRepositoryUseCase', {
     useFactory: (c) => c.resolve(AddRepositoryUseCase),
+  });
+  container.register('DiscoverImportCandidatesUseCase', {
+    useFactory: (c) => c.resolve(DiscoverImportCandidatesUseCase),
+  });
+  container.register('ImportLocalRepositoriesUseCase', {
+    useFactory: (c) => c.resolve(ImportLocalRepositoriesUseCase),
   });
   container.register('CreateProjectUseCase', {
     useFactory: (c) => c.resolve(CreateProjectUseCase),

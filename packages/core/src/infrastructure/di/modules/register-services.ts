@@ -17,6 +17,8 @@ import type { IGitCommitService } from '../../../application/ports/output/servic
 import { GitCommitService } from '../../services/git/git-commit.service.js';
 import type { IFileSystemService } from '../../../application/ports/output/services/file-system-service.interface.js';
 import { FileSystemService } from '../../services/file-system.service.js';
+import type { IRepositoryDiscoveryService } from '../../../application/ports/output/services/repository-discovery-service.interface.js';
+import { FsRepositoryDiscoveryService } from '../../services/repositories/fs-repository-discovery.service.js';
 import type { IMemoryRelevanceScorer } from '../../../application/ports/output/services/memory-relevance-scorer.interface.js';
 import { LexicalMemoryRelevanceScorer } from '../../services/project-memory/lexical-memory-relevance-scorer.js';
 import { EmbeddingMemoryRelevanceScorer } from '../../services/project-memory/embedding-memory-relevance-scorer.js';
@@ -193,6 +195,10 @@ export function registerServices(container: DependencyContainer): void {
   container.registerSingleton<IWorktreeService>('IWorktreeService', WorktreeService);
   container.registerSingleton<IGitCommitService>('IGitCommitService', GitCommitService);
   container.registerSingleton<IFileSystemService>('IFileSystemService', FileSystemService);
+  container.registerSingleton<IRepositoryDiscoveryService>(
+    'IRepositoryDiscoveryService',
+    FsRepositoryDiscoveryService
+  );
   // Embedding provider (config-gated; offline/CI default → unavailable).
   container.registerSingleton<IEmbeddingProvider>(
     'IEmbeddingProvider',
