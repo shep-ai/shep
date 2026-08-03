@@ -2,28 +2,38 @@
 
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { FolderPlus, Github, Loader2, Plus } from 'lucide-react';
+import { FolderPlus, FolderTree, Github, Loader2, Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { GitHubImportDialog } from '@/components/common/github-import-dialog';
 import { useFeatureFlags } from '@/hooks/feature-flags-context';
 import { ReactFileManagerDialog } from '@/components/common/react-file-manager-dialog';
+import { BulkImportDialog } from '@/components/common/bulk-import-dialog';
 import { pickFolder } from './pick-folder';
 import type { Repository } from '@shepai/core/domain/generated/output';
 
 export interface AddRepositoryButtonProps {
   onSelect?: (path: string) => void;
   onGitHubImport?: (repository: Repository) => void;
+  /** Called after a bulk import completes, with the number of repositories imported. */
+  onBulkImportComplete?: (importedCount: number) => void;
 }
 
-export function AddRepositoryButton({ onSelect, onGitHubImport }: AddRepositoryButtonProps) {
+export function AddRepositoryButton({
+  onSelect,
+  onGitHubImport,
+  onBulkImportComplete,
+}: AddRepositoryButtonProps) {
   const { t } = useTranslation('web');
   const featureFlags = useFeatureFlags();
   const [loading, setLoading] = useState(false);
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [githubDialogOpen, setGithubDialogOpen] = useState(false);
   const [showReactPicker, setShowReactPicker] = useState(false);
+  // Bulk import: pick a PARENT folder, then choose among its subfolders.
+  const [bulkPickerOpen, setBulkPickerOpen] = useState(false);
+  const [bulkDirectory, setBulkDirectory] = useState('');
   const { reactFileManager: useReactFileManager } = featureFlags;
 
   async function handleLocalFolder() {
@@ -47,6 +57,16 @@ export function AddRepositoryButton({ onSelect, onGitHubImport }: AddRepositoryB
     } finally {
       setLoading(false);
     }
+  }
+
+  function handleFolderOfRepos() {
+    setPopoverOpen(false);
+    setBulkPickerOpen(true);
+  }
+
+  function handleBulkDirectorySelect(path: string | null) {
+    setBulkPickerOpen(false);
+    if (path) setBulkDirectory(path);
   }
 
   function handleFromGitHub() {
@@ -107,6 +127,15 @@ export function AddRepositoryButton({ onSelect, onGitHubImport }: AddRepositoryB
           <button
             type="button"
             className="hover:bg-accent flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm"
+            onClick={handleFolderOfRepos}
+            data-testid="add-repo-folder-of-repos"
+          >
+            <FolderTree className="h-4 w-4" />
+            Folder of repos
+          </button>
+          <button
+            type="button"
+            className="hover:bg-accent flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-sm"
             onClick={handleFromGitHub}
             data-testid="add-repo-from-github"
           >
@@ -129,6 +158,24 @@ export function AddRepositoryButton({ onSelect, onGitHubImport }: AddRepositoryB
           }
         }}
         onSelect={handleReactPickerSelect}
+      />
+      <ReactFileManagerDialog
+        open={bulkPickerOpen}
+        onOpenChange={(open) => {
+          if (!open) setBulkPickerOpen(false);
+        }}
+        onSelect={handleBulkDirectorySelect}
+      />
+      <BulkImportDialog
+        open={bulkDirectory !== ''}
+        onOpenChange={(open) => {
+          if (!open) setBulkDirectory('');
+        }}
+        directoryPath={bulkDirectory}
+        onImportComplete={(count) => {
+          setBulkDirectory('');
+          onBulkImportComplete?.(count);
+        }}
       />
     </>
   );

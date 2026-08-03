@@ -116,6 +116,17 @@ describe('DiscoverImportCandidatesUseCase', () => {
     expect(discovery.listSubdirectories).not.toHaveBeenCalled();
   });
 
+  it('accepts a Windows drive-letter path', async () => {
+    // CI runs on windows-latest; normalizePath yields "C:/Users/..." which is
+    // absolute but does not start with "/".
+    vi.mocked(discovery.listSubdirectories).mockResolvedValue([]);
+
+    await expect(useCase.execute({ directoryPath: 'C:\\Users\\dev\\Code' })).resolves.toMatchObject(
+      { directoryPath: 'C:/Users/dev/Code' }
+    );
+    expect(discovery.listSubdirectories).toHaveBeenCalledWith('C:/Users/dev/Code');
+  });
+
   it('returns an empty candidate list for an empty directory', async () => {
     vi.mocked(discovery.listSubdirectories).mockResolvedValue([]);
 

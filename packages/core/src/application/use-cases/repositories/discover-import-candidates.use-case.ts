@@ -17,6 +17,7 @@
 
 import { injectable, inject } from 'tsyringe';
 import { normalizePath } from '../../../domain/shared/normalize-path.js';
+import { isAbsolutePath } from '../../../domain/shared/absolute-path.js';
 import type { IRepositoryDiscoveryService } from '../../ports/output/services/repository-discovery-service.interface.js';
 import type { IRepositoryRepository } from '../../ports/output/repositories/repository-repository.interface.js';
 
@@ -59,7 +60,7 @@ export class DiscoverImportCandidatesUseCase {
   async execute(input: DiscoverImportCandidatesInput): Promise<DiscoverImportCandidatesResult> {
     const directoryPath = normalizePath(input.directoryPath);
 
-    if (!directoryPath.startsWith('/')) {
+    if (!isAbsolutePath(directoryPath)) {
       throw new Error(
         `Directory path must be absolute, received "${input.directoryPath}". ` +
           'Resolve the path before calling this use case.'

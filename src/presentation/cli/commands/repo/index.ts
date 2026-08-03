@@ -10,6 +10,7 @@
  *   shep repo ls                      List tracked repositories
  *   shep repo show <id>               Display details of a tracked repository
  *   shep repo add                     Import a GitHub repository
+ *   shep repo import <dir>            Bulk-import local folders as repositories
  *   shep repo init-remote [name]      Create a GitHub repo and configure the remote
  */
 
@@ -17,6 +18,7 @@ import { Command } from 'commander';
 import { createShowCommand } from './show.command.js';
 import { createLsCommand } from './ls.command.js';
 import { createAddCommand } from './add.command.js';
+import { createImportCommand } from './import.command.js';
 import { createInitRemoteCommand } from './init-remote.command.js';
 import { getCliI18n } from '../../i18n.js';
 
@@ -30,6 +32,7 @@ export function createRepoCommand(): Command {
     .addCommand(createLsCommand())
     .addCommand(createShowCommand())
     .addCommand(createAddCommand())
+    .addCommand(createImportCommand())
     .addCommand(createInitRemoteCommand());
 
   return repo;

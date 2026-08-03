@@ -521,6 +521,28 @@
       "resolve": {
         "multipleMatch": "Multiple repositories match prefix \"{{id}}\": {{matches}}",
         "notFound": "Repository not found: {{id}}"
+      },
+      "import": {
+        "description": "Import local folders as tracked repositories (bulk)",
+        "dirArgument": "Parent directory whose subfolders become import candidates",
+        "allOption": "Import every candidate without prompting",
+        "gitOnlyOption": "Only import candidates that are git repositories",
+        "title": "Import candidates",
+        "nameColumn": "Name",
+        "gitColumn": "Git",
+        "statusColumn": "Status",
+        "pathColumn": "Path",
+        "noCandidates": "No subfolders found in {{path}}",
+        "statusTracked": "already tracked",
+        "statusRestorable": "previously removed",
+        "statusNew": "new",
+        "selectPrompt": "Select folders to import",
+        "nothingSelected": "Nothing selected — no repositories imported",
+        "imported": "Imported {{count}} repositor(y|ies)",
+        "importedOne": "Imported: {{name}}",
+        "failedEntry": "Failed: {{path}} — {{error}}",
+        "summary": "{{imported}} imported, {{failed}} failed",
+        "failedToImport": "Failed to import repositories"
       }
     },
     "app": {

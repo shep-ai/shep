@@ -110,6 +110,14 @@ describe('ImportLocalRepositoriesUseCase', () => {
     expect(result.results[0].repository?.path).toBe('/code/a');
   });
 
+  it('imports Windows drive-letter paths', async () => {
+    // CI runs on windows-latest; these are absolute but do not start with "/".
+    const result = await useCase.execute({ paths: ['C:\\Users\\dev\\Code\\proj'] });
+
+    expect(result.results[0].imported).toBe(true);
+    expect(addRepository.execute).toHaveBeenCalledWith({ path: 'C:/Users/dev/Code/proj' });
+  });
+
   it('rejects relative paths without attempting an import', async () => {
     const result = await useCase.execute({ paths: ['relative/dir'] });
 

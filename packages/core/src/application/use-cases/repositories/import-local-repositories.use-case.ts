@@ -16,6 +16,7 @@
 import { injectable, inject } from 'tsyringe';
 import type { Repository } from '../../../domain/generated/output.js';
 import { normalizePath } from '../../../domain/shared/normalize-path.js';
+import { isAbsolutePath } from '../../../domain/shared/absolute-path.js';
 import { AddRepositoryUseCase } from './add-repository.use-case.js';
 
 export interface ImportLocalRepositoriesInput {
@@ -78,7 +79,7 @@ export class ImportLocalRepositoriesUseCase {
   }
 
   private async importOne(path: string): Promise<ImportLocalRepositoryResult> {
-    if (!path.startsWith('/')) {
+    if (!isAbsolutePath(path)) {
       return {
         path,
         imported: false,

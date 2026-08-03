@@ -183,7 +183,7 @@ tasks:
       annotated candidate list, and supports non-interactive selection (e.g.
       --all / --yes) so it is scriptable. Presentation stays thin — rendering
       and input only, no filtering or annotation logic.
-    state: Todo
+    state: Done
     dependencies:
       - task-4
       - task-5
@@ -212,7 +212,7 @@ tasks:
       (ReactFileManagerDialog / pickFolder) to choose the parent directory.
       Colocated Storybook stories are mandatory and must cover Default,
       Loading, and Error states plus the all-already-tracked case.
-    state: Todo
+    state: Done
     dependencies:
       - task-4
       - task-5
