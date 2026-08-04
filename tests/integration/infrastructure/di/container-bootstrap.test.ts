@@ -22,6 +22,12 @@
  * The list of route tokens is generated from the real route handlers under
  * src/presentation/web/app/api. When you add a new web route or CLI command
  * that calls `resolve<X>('X')`, add the token here too.
+ *
+ * `WORKER_CRITICAL_USE_CASE_CLASSES` covers a different call shape: use-case
+ * and service classes that a worker (e.g. feature-agent-worker.ts) eagerly
+ * resolves by class reference (`container.resolve(ClassRef)`) at boot rather
+ * than by string token. When you add a new use case or service that a worker
+ * eagerly resolves this way, add the class here too.
  */
 
 import 'reflect-metadata';
@@ -58,6 +64,14 @@ import { AgentConfigResolver } from '@/infrastructure/services/interactive/lifec
 import { AgentStreamConsumer } from '@/infrastructure/services/interactive/runtime/agent-stream.consumer.js';
 import { BootPromptResolver } from '@/infrastructure/services/interactive/lifecycle/boot-prompt.resolver.js';
 import { SelectProjectMemoryUseCase } from '@/application/use-cases/project-memory/select-project-memory.use-case.js';
+import { InitializeSettingsUseCase } from '@/application/use-cases/settings/initialize-settings.use-case.js';
+import { CleanupFeatureWorktreeUseCase } from '@/application/use-cases/features/cleanup-feature-worktree.use-case.js';
+import { RecordProjectMemoryUseCase } from '@/application/use-cases/project-memory/record-project-memory.use-case.js';
+import { UpdateFeatureLifecycleUseCase } from '@/application/use-cases/features/update/update-feature-lifecycle.use-case.js';
+import { CheckAndUnblockFeaturesUseCase } from '@/application/use-cases/features/check-and-unblock-features.use-case.js';
+import { FeatureAgentLifecyclePublisher } from '@/infrastructure/services/agents/feature-agent/feature-agent-lifecycle-publisher.js';
+import { FeatureAgentGateQuestionPublisher } from '@/infrastructure/services/agents/feature-agent/feature-agent-gate-question-publisher.js';
+import { FeatureAgentSupervisorGateEvaluator } from '@/infrastructure/services/agents/feature-agent/feature-agent-supervisor-gate-evaluator.js';
 import { SessionBootstrapper } from '@/infrastructure/services/interactive/lifecycle/session-bootstrapper.js';
 import { SessionTerminator } from '@/infrastructure/services/interactive/lifecycle/session-terminator.js';
 import { TurnExecutor } from '@/infrastructure/services/interactive/runtime/turn.executor.js';
@@ -189,6 +203,29 @@ const CRITICAL_INFRA_TOKENS: readonly string[] = [
   'IDevServerAgentService',
 ] as const;
 
+/**
+ * Use-case/service classes that the feature-agent worker eagerly resolves by
+ * class reference (`container.resolve(ClassRef)`) at boot. Unlike the string
+ * tokens above, these classes have no explicit `container.register()` call —
+ * tsyringe resolves them structurally from their own `@injectable()`
+ * decorators — so a mis-typed `@inject(...)` token deep in their constructor
+ * chain (see the ConflictResolutionService incident) only ever surfaced as a
+ * live worker crash. When you add a new use case or service that a worker
+ * eagerly resolves via `container.resolve(ClassRef)` at boot, add the class
+ * here too.
+ */
+const WORKER_CRITICAL_USE_CASE_CLASSES: readonly (new (...args: any[]) => object)[] = [
+  InitializeSettingsUseCase,
+  CleanupFeatureWorktreeUseCase,
+  SelectProjectMemoryUseCase,
+  RecordProjectMemoryUseCase,
+  UpdateFeatureLifecycleUseCase,
+  CheckAndUnblockFeaturesUseCase,
+  FeatureAgentLifecyclePublisher,
+  FeatureAgentGateQuestionPublisher,
+  FeatureAgentSupervisorGateEvaluator,
+];
+
 describe('DI container bootstrap (integration)', () => {
   let scopedContainer: DependencyContainer;
   let db: Database.Database;
@@ -258,6 +295,7 @@ describe('DI container bootstrap (integration)', () => {
       streamEventDispatcher
     );
     const settingsProvider = new SettingsProviderAdapter();
+    scopedContainer.registerInstance('ISettingsProvider', settingsProvider);
     const agentConfigResolver = new AgentConfigResolver(settingsProvider);
     const noop = (_msg: string, _meta?: Record<string, unknown>) => undefined;
     const logger: ILogger = { debug: noop, info: noop, warn: noop, error: noop };
@@ -377,6 +415,19 @@ describe('DI container bootstrap (integration)', () => {
         let instance: unknown;
         expect(() => {
           instance = scopedContainer.resolve(token);
+        }).not.toThrow();
+        expect(instance).toBeDefined();
+        expect(instance).not.toBeNull();
+      });
+    }
+  });
+
+  describe('every worker-critical use case resolves', () => {
+    for (const UseCaseClass of WORKER_CRITICAL_USE_CASE_CLASSES) {
+      it(`resolves '${UseCaseClass.name}' without throwing`, () => {
+        let instance: unknown;
+        expect(() => {
+          instance = scopedContainer.resolve(UseCaseClass);
         }).not.toThrow();
         expect(instance).toBeDefined();
         expect(instance).not.toBeNull();
