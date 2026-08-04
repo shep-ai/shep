@@ -907,6 +907,8 @@
     "refresh": "Refresh",
     "collapseAll": "Collapse all",
     "expandAll": "Expand all",
+    "collapsePanel": "Collapse panel",
+    "expandPanel": "Expand panel",
     "sessionActions": "Session actions",
     "archive": "Archive",
     "unarchive": "Restore",

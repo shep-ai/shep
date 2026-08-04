@@ -907,6 +907,8 @@
     "refresh": "تحديث",
     "collapseAll": "طي الكل",
     "expandAll": "توسيع الكل",
+    "collapsePanel": "طي اللوحة",
+    "expandPanel": "توسيع اللوحة",
     "sessionActions": "إجراءات الجلسة",
     "archive": "أرشفة",
     "unarchive": "استعادة",

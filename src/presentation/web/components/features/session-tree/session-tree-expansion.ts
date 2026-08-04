@@ -18,9 +18,11 @@ export interface SessionTreeExpansion {
   repositories: string[];
   /** Expanded feature ids */
   features: string[];
+  /** Whether the whole panel is collapsed to its rail */
+  panelCollapsed: boolean;
 }
 
-const EMPTY: SessionTreeExpansion = { repositories: [], features: [] };
+const EMPTY: SessionTreeExpansion = { repositories: [], features: [], panelCollapsed: false };
 
 /** Parse persisted expansion state, tolerating anything malformed. */
 export function parseExpansion(raw: string | null): SessionTreeExpansion {
@@ -34,6 +36,7 @@ export function parseExpansion(raw: string | null): SessionTreeExpansion {
     return {
       repositories: toStringArray(record.repositories),
       features: toStringArray(record.features),
+      panelCollapsed: record.panelCollapsed === true,
     };
   } catch {
     // Corrupt value — treat as "nothing remembered" rather than throwing.

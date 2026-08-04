@@ -10,6 +10,8 @@ import {
   ListTree,
   ChevronsDownUp,
   ChevronsUpDown,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
@@ -46,6 +48,8 @@ export function SessionTreePanel({ className }: { className?: string }) {
   const [expandedRepos, setExpandedRepos] = useState<Set<string>>(new Set());
   const [expandedFeatures, setExpandedFeatures] = useState<Set<string>>(new Set());
   const [expansionLoaded, setExpansionLoaded] = useState(false);
+  // Whether the whole sub-nav is collapsed to a narrow rail.
+  const [panelCollapsed, setPanelCollapsed] = useState(false);
 
   const load = useCallback(async (includeArchived: boolean) => {
     setLoading(true);
@@ -71,6 +75,7 @@ export function SessionTreePanel({ className }: { className?: string }) {
     const stored = loadExpansion();
     setExpandedRepos(new Set(stored.repositories));
     setExpandedFeatures(new Set(stored.features));
+    setPanelCollapsed(stored.panelCollapsed);
     setExpansionLoaded(true);
   }, []);
 
@@ -81,8 +86,9 @@ export function SessionTreePanel({ className }: { className?: string }) {
     saveExpansion({
       repositories: [...expandedRepos],
       features: [...expandedFeatures],
+      panelCollapsed,
     });
-  }, [expansionLoaded, expandedRepos, expandedFeatures]);
+  }, [expansionLoaded, expandedRepos, expandedFeatures, panelCollapsed]);
 
   function toggleRepo(path: string) {
     setExpandedRepos((prev) => toggleInSet(prev, path));
@@ -111,9 +117,32 @@ export function SessionTreePanel({ className }: { className?: string }) {
     ? t('sessionTree.collapseAll')
     : t('sessionTree.expandAll');
 
+  // Collapsed: a narrow rail with a single control to bring the panel back.
+  if (panelCollapsed) {
+    return (
+      <div
+        className={cn('bg-sidebar flex h-full w-10 flex-col items-center border-e py-2', className)}
+        data-testid="session-tree-panel-rail"
+      >
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7"
+          aria-label={t('sessionTree.expandPanel')}
+          title={t('sessionTree.expandPanel')}
+          onClick={() => setPanelCollapsed(false)}
+          data-testid="session-tree-expand-panel"
+        >
+          <PanelLeftOpen className="h-4 w-4" />
+        </Button>
+        <ListTree className="text-muted-foreground mt-2 h-4 w-4" aria-hidden />
+      </div>
+    );
+  }
+
   return (
     <div
-      className={cn('bg-sidebar flex h-full min-h-0 flex-col border-e', className)}
+      className={cn('bg-sidebar flex h-full min-h-0 w-72 flex-col border-e', className)}
       data-testid="session-tree-panel"
     >
       <div className="flex items-center gap-1.5 border-b px-3 py-2">
@@ -163,6 +192,18 @@ export function SessionTreePanel({ className }: { className?: string }) {
           data-testid="session-tree-refresh"
         >
           <RefreshCw className="h-3.5 w-3.5" />
+        </Button>
+
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-6 w-6"
+          aria-label={t('sessionTree.collapsePanel')}
+          title={t('sessionTree.collapsePanel')}
+          onClick={() => setPanelCollapsed(true)}
+          data-testid="session-tree-collapse-panel"
+        >
+          <PanelLeftClose className="h-3.5 w-3.5" />
         </Button>
       </div>
 

@@ -56,6 +56,11 @@ export interface SessionTreeRepository {
   unadoptedSessions: SessionTreeSession[];
   /** Total sessions shown for this repository, adopted and unadopted */
   sessionCount: number;
+  /**
+   * ISO timestamp of the most recent session activity in this repository, or
+   * undefined when it has no sessions. Drives tree ordering.
+   */
+  lastActivityAt?: string;
 }
 
 export interface BuildSessionTreeInput {
@@ -142,18 +147,60 @@ export class BuildSessionTreeUseCase {
       }
 
       const featureList = [...featureNodes.values()];
+      const allSessions = [...unadoptedSessions, ...featureList.flatMap((f) => f.sessions)];
+      const lastActivityAt = this.newestActivity(allSessions);
+
       treeRepositories.push({
         ...(repo.id !== undefined && { id: repo.id }),
         name: repo.name,
         path: repo.path,
         features: featureList,
         unadoptedSessions,
-        sessionCount:
-          unadoptedSessions.length + featureList.reduce((sum, f) => sum + f.sessions.length, 0),
+        sessionCount: allSessions.length,
+        ...(lastActivityAt !== undefined && { lastActivityAt }),
       });
     }
 
-    return { repositories: treeRepositories, archivedCount };
+    return {
+      repositories: this.sortByRecency(treeRepositories),
+      archivedCount,
+    };
+  }
+
+  /**
+   * The most recent session timestamp in a repository, or undefined when it has
+   * none. Sessions without a timestamp do not contribute.
+   */
+  private newestActivity(sessions: SessionTreeSession[]): string | undefined {
+    let newest: string | undefined;
+    for (const session of sessions) {
+      if (session.lastMessageAt === undefined) continue;
+      if (newest === undefined || session.lastMessageAt > newest) {
+        newest = session.lastMessageAt;
+      }
+    }
+    return newest;
+  }
+
+  /**
+   * Repositories with the newest session activity first.
+   *
+   * Repositories with no sessions have nothing to sort by, so they sink to the
+   * bottom and tie-break by name to keep the order stable across reloads.
+   */
+  private sortByRecency(repositories: SessionTreeRepository[]): SessionTreeRepository[] {
+    return [...repositories].sort((a, b) => {
+      if (a.lastActivityAt !== undefined && b.lastActivityAt !== undefined) {
+        // ISO-8601 strings compare lexicographically in chronological order.
+        if (a.lastActivityAt !== b.lastActivityAt) {
+          return a.lastActivityAt > b.lastActivityAt ? -1 : 1;
+        }
+        return a.name.localeCompare(b.name);
+      }
+      if (a.lastActivityAt !== undefined) return -1;
+      if (b.lastActivityAt !== undefined) return 1;
+      return a.name.localeCompare(b.name);
+    });
   }
 
   /** sessionId → featureId, from the features already loaded. */

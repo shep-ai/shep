@@ -907,6 +907,8 @@
     "refresh": "רענן",
     "collapseAll": "כווץ הכול",
     "expandAll": "הרחב הכול",
+    "collapsePanel": "כווץ פאנל",
+    "expandPanel": "הרחב פאנל",
     "sessionActions": "פעולות שיחה",
     "archive": "ארכיון",
     "unarchive": "שחזור",

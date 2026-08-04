@@ -907,6 +907,8 @@
     "refresh": "Aktualisieren",
     "collapseAll": "Alle einklappen",
     "expandAll": "Alle ausklappen",
+    "collapsePanel": "Bereich einklappen",
+    "expandPanel": "Bereich ausklappen",
     "sessionActions": "Sitzungsaktionen",
     "archive": "Archivieren",
     "unarchive": "Wiederherstellen",

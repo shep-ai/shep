@@ -262,4 +262,107 @@ describe('BuildSessionTreeUseCase', () => {
     // One features query total, regardless of session count.
     expect(listFeatures.execute).toHaveBeenCalledTimes(1);
   });
+
+  describe('ordering by recency', () => {
+    function repoAt(name: string, path: string) {
+      return repo({ id: `repo-${name}`, name, path });
+    }
+
+    it('puts the repository with the newest session first', async () => {
+      vi.mocked(listRepositories.execute).mockResolvedValue([
+        repoAt('stale', '/code/stale'),
+        repoAt('fresh', '/code/fresh'),
+      ]);
+      vi.mocked(listSessions.execute).mockResolvedValue({
+        sessionsByPath: {
+          '/code/stale': [
+            session('old', {
+              lastMessageAt: new Date('2026-01-01T00:00:00Z'),
+              projectPath: '/code/stale',
+            }),
+          ],
+          '/code/fresh': [
+            session('new', {
+              lastMessageAt: new Date('2026-08-01T00:00:00Z'),
+              projectPath: '/code/fresh',
+            }),
+          ],
+        },
+      });
+
+      const result = await useCase.execute();
+
+      expect(result.repositories.map((r) => r.name)).toEqual(['fresh', 'stale']);
+    });
+
+    it('exposes the newest activity timestamp per repository', async () => {
+      vi.mocked(listSessions.execute).mockResolvedValue({
+        sessionsByPath: {
+          [REPO_PATH]: [
+            session('a', { lastMessageAt: new Date('2026-03-01T00:00:00Z') }),
+            session('b', { lastMessageAt: new Date('2026-07-01T00:00:00Z') }),
+          ],
+        },
+      });
+
+      const result = await useCase.execute();
+
+      expect(result.repositories[0].lastActivityAt).toBe('2026-07-01T00:00:00.000Z');
+    });
+
+    it('considers adopted sessions when computing recency', async () => {
+      vi.mocked(listRepositories.execute).mockResolvedValue([
+        repoAt('adoptedRepo', '/code/adopted'),
+        repoAt('looseRepo', '/code/loose'),
+      ]);
+      vi.mocked(listFeatures.execute).mockResolvedValue([
+        feature({ id: 'feat-x', repositoryPath: '/code/adopted', sourceAgentSessionId: 'newest' }),
+      ]);
+      vi.mocked(listSessions.execute).mockResolvedValue({
+        sessionsByPath: {
+          '/code/adopted': [session('newest', { lastMessageAt: new Date('2026-09-01T00:00:00Z') })],
+          '/code/loose': [session('older', { lastMessageAt: new Date('2026-05-01T00:00:00Z') })],
+        },
+      });
+
+      const result = await useCase.execute();
+
+      // The newest session is nested under a feature, so it must still count.
+      expect(result.repositories.map((r) => r.name)).toEqual(['adoptedRepo', 'looseRepo']);
+    });
+
+    it('sinks repositories with no sessions to the bottom', async () => {
+      vi.mocked(listRepositories.execute).mockResolvedValue([
+        repoAt('empty', '/code/empty'),
+        repoAt('active', '/code/active'),
+      ]);
+      vi.mocked(listSessions.execute).mockResolvedValue({
+        sessionsByPath: {
+          '/code/active': [session('s', { lastMessageAt: new Date('2026-04-01T00:00:00Z') })],
+        },
+      });
+
+      const result = await useCase.execute();
+
+      expect(result.repositories.map((r) => r.name)).toEqual(['active', 'empty']);
+    });
+
+    it('orders session-less repositories by name for a stable list', async () => {
+      vi.mocked(listRepositories.execute).mockResolvedValue([
+        repoAt('zulu', '/code/zulu'),
+        repoAt('alpha', '/code/alpha'),
+      ]);
+      vi.mocked(listSessions.execute).mockResolvedValue({ sessionsByPath: {} });
+
+      const result = await useCase.execute();
+
+      expect(result.repositories.map((r) => r.name)).toEqual(['alpha', 'zulu']);
+    });
+
+    it('leaves lastActivityAt undefined for a repository with no sessions', async () => {
+      const result = await useCase.execute();
+
+      expect(result.repositories[0].lastActivityAt).toBeUndefined();
+    });
+  });
 });

@@ -907,6 +907,8 @@
     "refresh": "Rafraîchir",
     "collapseAll": "Tout replier",
     "expandAll": "Tout déplier",
+    "collapsePanel": "Replier le panneau",
+    "expandPanel": "Déplier le panneau",
     "sessionActions": "Actions de session",
     "archive": "Archiver",
     "unarchive": "Restaurer",

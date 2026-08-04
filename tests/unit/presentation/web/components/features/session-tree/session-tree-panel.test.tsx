@@ -229,4 +229,86 @@ describe('SessionTreePanel', () => {
       expect(mockDelete).toHaveBeenCalledWith({ sessionId: 'loose', agentType: 'claude-code' })
     );
   });
+
+  describe('panel collapse', () => {
+    it('collapses the whole sub-nav to a rail', async () => {
+      mockLoad.mockResolvedValue(tree);
+      render(<SessionTreePanel />);
+      await waitFor(() =>
+        expect(screen.getByTestId('session-tree-collapse-panel')).toBeInTheDocument()
+      );
+
+      await userEvent.click(screen.getByTestId('session-tree-collapse-panel'));
+
+      expect(await screen.findByTestId('session-tree-panel-rail')).toBeInTheDocument();
+      expect(screen.queryByTestId('session-tree-panel')).not.toBeInTheDocument();
+    });
+
+    it('restores the panel from the rail', async () => {
+      mockLoad.mockResolvedValue(tree);
+      render(<SessionTreePanel />);
+      await waitFor(() =>
+        expect(screen.getByTestId('session-tree-collapse-panel')).toBeInTheDocument()
+      );
+      await userEvent.click(screen.getByTestId('session-tree-collapse-panel'));
+      await screen.findByTestId('session-tree-panel-rail');
+
+      await userEvent.click(screen.getByTestId('session-tree-expand-panel'));
+
+      expect(await screen.findByTestId('session-tree-panel')).toBeInTheDocument();
+    });
+
+    it('remembers the collapsed panel across a remount', async () => {
+      mockLoad.mockResolvedValue(tree);
+      const first = render(<SessionTreePanel />);
+      await waitFor(() =>
+        expect(screen.getByTestId('session-tree-collapse-panel')).toBeInTheDocument()
+      );
+      await userEvent.click(screen.getByTestId('session-tree-collapse-panel'));
+      await screen.findByTestId('session-tree-panel-rail');
+
+      first.unmount();
+      render(<SessionTreePanel />);
+
+      expect(await screen.findByTestId('session-tree-panel-rail')).toBeInTheDocument();
+    });
+  });
+
+  describe('ordering', () => {
+    it('renders repositories in the order the use case returned', async () => {
+      // Ordering is a use-case concern; the panel must not re-sort.
+      mockLoad.mockResolvedValue({
+        repositories: [
+          {
+            id: 'r1',
+            name: 'fresh',
+            path: '/code/fresh',
+            features: [],
+            unadoptedSessions: [],
+            sessionCount: 0,
+          },
+          {
+            id: 'r2',
+            name: 'stale',
+            path: '/code/stale',
+            features: [],
+            unadoptedSessions: [],
+            sessionCount: 0,
+          },
+        ],
+        archivedCount: 0,
+      });
+      render(<SessionTreePanel />);
+
+      await waitFor(() =>
+        expect(screen.getByTestId('session-tree-repo-fresh')).toBeInTheDocument()
+      );
+
+      const rows = screen.getAllByTestId(/^session-tree-repo-/);
+      expect(rows.map((r) => r.getAttribute('data-testid'))).toEqual([
+        'session-tree-repo-fresh',
+        'session-tree-repo-stale',
+      ]);
+    });
+  });
 });

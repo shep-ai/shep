@@ -907,6 +907,8 @@
     "refresh": "Обновить",
     "collapseAll": "Свернуть все",
     "expandAll": "Развернуть все",
+    "collapsePanel": "Свернуть панель",
+    "expandPanel": "Развернуть панель",
     "sessionActions": "Действия сессии",
     "archive": "В архив",
     "unarchive": "Восстановить",

@@ -206,7 +206,7 @@ function AppShellInner({ children, sidebarOpen, variant = 'full' }: AppShellProp
       />
       {isControlCenter ? (
         <aside
-          className="hidden h-dvh w-72 shrink-0 md:block"
+          className="hidden h-dvh shrink-0 md:block"
           aria-label="Session tree"
           data-testid="session-tree-sidenav"
         >

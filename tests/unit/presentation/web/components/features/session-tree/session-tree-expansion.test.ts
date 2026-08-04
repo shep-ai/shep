@@ -9,31 +9,55 @@ import {
 
 describe('parseExpansion', () => {
   it('returns empty state for null', () => {
-    expect(parseExpansion(null)).toEqual({ repositories: [], features: [] });
+    expect(parseExpansion(null)).toEqual({ repositories: [], features: [], panelCollapsed: false });
   });
 
   it('returns empty state for an empty string', () => {
-    expect(parseExpansion('')).toEqual({ repositories: [], features: [] });
+    expect(parseExpansion('')).toEqual({ repositories: [], features: [], panelCollapsed: false });
   });
 
   it('returns empty state for malformed JSON rather than throwing', () => {
-    expect(parseExpansion('{not json')).toEqual({ repositories: [], features: [] });
+    expect(parseExpansion('{not json')).toEqual({
+      repositories: [],
+      features: [],
+      panelCollapsed: false,
+    });
   });
 
   it('returns empty state for a JSON primitive', () => {
-    expect(parseExpansion('42')).toEqual({ repositories: [], features: [] });
+    expect(parseExpansion('42')).toEqual({ repositories: [], features: [], panelCollapsed: false });
+  });
+
+  it('defaults panelCollapsed to false when absent', () => {
+    const raw = JSON.stringify({ repositories: [], features: [] });
+
+    expect(parseExpansion(raw).panelCollapsed).toBe(false);
+  });
+
+  it('parses a persisted collapsed panel', () => {
+    const raw = JSON.stringify({ repositories: [], features: [], panelCollapsed: true });
+
+    expect(parseExpansion(raw).panelCollapsed).toBe(true);
   });
 
   it('parses stored repositories and features', () => {
     const raw = JSON.stringify({ repositories: ['/code/a'], features: ['feat-1'] });
 
-    expect(parseExpansion(raw)).toEqual({ repositories: ['/code/a'], features: ['feat-1'] });
+    expect(parseExpansion(raw)).toEqual({
+      repositories: ['/code/a'],
+      features: ['feat-1'],
+      panelCollapsed: false,
+    });
   });
 
   it('drops non-string entries', () => {
     const raw = JSON.stringify({ repositories: ['/code/a', 7, null], features: 'nope' });
 
-    expect(parseExpansion(raw)).toEqual({ repositories: ['/code/a'], features: [] });
+    expect(parseExpansion(raw)).toEqual({
+      repositories: ['/code/a'],
+      features: [],
+      panelCollapsed: false,
+    });
   });
 });
 
@@ -55,17 +79,21 @@ describe('loadExpansion / saveExpansion', () => {
   });
 
   it('round-trips expansion state', () => {
-    saveExpansion({ repositories: ['/code/a'], features: ['feat-1'] });
+    saveExpansion({ repositories: ['/code/a'], features: ['feat-1'], panelCollapsed: true });
 
-    expect(loadExpansion()).toEqual({ repositories: ['/code/a'], features: ['feat-1'] });
+    expect(loadExpansion()).toEqual({
+      repositories: ['/code/a'],
+      features: ['feat-1'],
+      panelCollapsed: true,
+    });
   });
 
   it('defaults to collapsed when nothing is stored', () => {
-    expect(loadExpansion()).toEqual({ repositories: [], features: [] });
+    expect(loadExpansion()).toEqual({ repositories: [], features: [], panelCollapsed: false });
   });
 
   it('writes under the documented storage key', () => {
-    saveExpansion({ repositories: ['/x'], features: [] });
+    saveExpansion({ repositories: ['/x'], features: [], panelCollapsed: false });
 
     expect(window.localStorage.getItem(SESSION_TREE_STORAGE_KEY)).toContain('/x');
   });
@@ -75,7 +103,9 @@ describe('loadExpansion / saveExpansion', () => {
       throw new Error('QuotaExceededError');
     });
 
-    expect(() => saveExpansion({ repositories: ['/x'], features: [] })).not.toThrow();
+    expect(() =>
+      saveExpansion({ repositories: ['/x'], features: [], panelCollapsed: false })
+    ).not.toThrow();
     spy.mockRestore();
   });
 
@@ -84,7 +114,7 @@ describe('loadExpansion / saveExpansion', () => {
       throw new Error('SecurityError');
     });
 
-    expect(loadExpansion()).toEqual({ repositories: [], features: [] });
+    expect(loadExpansion()).toEqual({ repositories: [], features: [], panelCollapsed: false });
     spy.mockRestore();
   });
 });
