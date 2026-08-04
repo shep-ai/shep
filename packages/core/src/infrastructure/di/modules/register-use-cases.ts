@@ -185,6 +185,7 @@ import { WriteApplicationFileUseCase } from '../../../application/use-cases/appl
 import { WatchApplicationFilesUseCase } from '../../../application/use-cases/applications/watch-application-files.use-case.js';
 import { ListAgentSessionsUseCase } from '../../../application/use-cases/agents/list-agent-sessions.use-case.js';
 import { ListSessionsForPathsUseCase } from '../../../application/use-cases/agents/list-sessions-for-paths.use-case.js';
+import { BuildSessionTreeUseCase } from '../../../application/use-cases/agents/build-session-tree.use-case.js';
 import { SessionAdoptionSummarizer } from '../../../application/use-cases/agents/session-adoption-summarizer.js';
 import { AdoptAgentSessionUseCase } from '../../../application/use-cases/agents/adopt-agent-session.use-case.js';
 import { ResumeAgentSessionUseCase } from '../../../application/use-cases/agents/resume-agent-session.use-case.js';
@@ -343,6 +344,7 @@ export function registerUseCases(container: DependencyContainer): void {
   container.registerSingleton(UpdateApplicationUseCase);
   container.registerSingleton(ListAgentSessionsUseCase);
   container.registerSingleton(ListSessionsForPathsUseCase);
+  container.registerSingleton(BuildSessionTreeUseCase);
   container.registerSingleton(SessionAdoptionSummarizer);
   container.registerSingleton(AdoptAgentSessionUseCase);
   container.registerSingleton(ResumeAgentSessionUseCase);
@@ -454,6 +456,9 @@ export function registerUseCases(container: DependencyContainer): void {
   });
   container.register('ListSessionsForPathsUseCase', {
     useFactory: (c) => c.resolve(ListSessionsForPathsUseCase),
+  });
+  container.register('BuildSessionTreeUseCase', {
+    useFactory: (c) => c.resolve(BuildSessionTreeUseCase),
   });
   container.register('AdoptAgentSessionUseCase', {
     useFactory: (c) => c.resolve(AdoptAgentSessionUseCase),
