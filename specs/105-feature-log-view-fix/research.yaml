@@ -1,0 +1,279 @@
+# Research Artifact (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: "feature-log-view-fix"
+summary: >
+  container-bootstrap.test.ts already resolves ~75 string tokens against the real
+  production DI container but never resolves the use-case/service classes that
+  feature-agent-worker.ts eagerly constructs via container.resolve(ClassRef) — the
+  exact call shape that crashed on the mismatched 'ConflictResolutionService' /
+  'IConflictResolutionService' token. Fix: add a new readonly class-reference array
+  (WORKER_CRITICAL_USE_CASE_CLASSES) covering all 9 classes the worker resolves by
+  class at boot, with its own describe/loop block mirroring the file's existing
+  string-token pattern. No production code changes — packages/core/src/** stays
+  untouched since the runtime fix already shipped in 5ace9fe.
+
+# Relationships
+relatedFeatures: []
+technologies:
+  - "TypeScript"
+  - "tsyringe (DI container)"
+  - "Vitest"
+relatedLinks: []
+
+# Structured technology decisions
+decisions:
+  - title: "Class-reference list structure and placement"
+    chosen: >
+      Add a new `WORKER_CRITICAL_USE_CASE_CLASSES: readonly (new (...args: never[]) => object)[]`
+      const array immediately after the existing `CRITICAL_INFRA_TOKENS: readonly string[]`
+      array in container-bootstrap.test.ts, populated with class references (imported
+      at the top of the file, same pattern already used for `SelectProjectMemoryUseCase`)
+      for all 9 classes feature-agent-worker.ts resolves via `container.resolve(ClassRef)`:
+      InitializeSettingsUseCase, CleanupFeatureWorktreeUseCase, SelectProjectMemoryUseCase,
+      RecordProjectMemoryUseCase, UpdateFeatureLifecycleUseCase, FeatureAgentLifecyclePublisher,
+      FeatureAgentGateQuestionPublisher, FeatureAgentSupervisorGateEvaluator, and
+      CheckAndUnblockFeaturesUseCase (added explicitly even though it's only reached
+      transitively through UpdateFeatureLifecycleUseCase's constructor, per FR-1/FR-2,
+      so the incident's own use case has a direct, named assertion rather than relying
+      on transitive coverage alone). A new `describe('every worker-critical use case
+      resolves', ...)` block loops the array with one `it(...)` per class, calling
+      `scopedContainer.resolve(UseCaseClass)` and asserting the result is defined and
+      non-null — the exact structural mirror of the existing `describe('every web-route
+      token resolves', ...)` and `describe('every critical infra token resolves', ...)`
+      blocks two sections above it in the same file.
+    rejected:
+      - "Reuse CRITICAL_INFRA_TOKENS (string array) by adding each class's registered string token instead of a class reference — rejected because feature-agent-worker.ts:281,306,311,347,402,416,421,427 all call container.resolve(ClassRef) directly (tsyringe resolves unregistered @injectable() classes structurally, with no string-token registration at all for most of them), so a string-token entry would resolve via a different tsyringe code path than the one that actually crashed, weakening the fidelity the spec's first open question explicitly selected class-reference resolution to preserve."
+      - "Inline the 9 class resolutions as ad-hoc it() blocks without a shared array/loop — rejected because it introduces a second describe-block style in a file that has two existing list-driven describe blocks; NFR-1 requires the new block match the file's existing structure exactly, and a hand-written it() per class drifts from that pattern the first time someone forgets to add a new entry."
+    rationale: >
+      tsyringe's DependencyContainer.resolve() is overloaded to accept either a string
+      token or a constructor function (InjectionToken<T> = string | symbol | constructor).
+      Passing the class directly, as feature-agent-worker.ts does at every one of its
+      eager-boot call sites, walks tsyringe's own @injectable()/@inject() metadata to
+      build the full constructor argument graph — including any transitively-injected
+      string tokens deep in that graph (e.g. IConflictResolutionService buried inside
+      CheckAndUnblockFeaturesUseCase, itself buried inside UpdateFeatureLifecycleUseCase).
+      This is precisely why resolving by class was selected in the spec's first open
+      question: it reproduces the real crash with the fewest new lines, and a single
+      loop over a typed array keeps the addition indistinguishable in style from the
+      file's two existing list-driven describe blocks (WEB_ROUTE_TOKENS, CRITICAL_INFRA_TOKENS).
+
+  - title: "Scope of the class list: incident classes only vs. full worker-boot audit"
+    chosen: >
+      Audit every `container.resolve(ClassRef)` call site in feature-agent-worker.ts
+      (grep for `container.resolve(` and filter to non-string arguments) and include
+      all 9 resulting classes in WORKER_CRITICAL_USE_CASE_CLASSES, not just the two
+      named in the incident (UpdateFeatureLifecycleUseCase, CheckAndUnblockFeaturesUseCase).
+      The full list: InitializeSettingsUseCase (line 281), CleanupFeatureWorktreeUseCase
+      (306), SelectProjectMemoryUseCase (311), RecordProjectMemoryUseCase (347),
+      UpdateFeatureLifecycleUseCase (402), FeatureAgentLifecyclePublisher (416),
+      FeatureAgentGateQuestionPublisher (421), FeatureAgentSupervisorGateEvaluator (427),
+      plus CheckAndUnblockFeaturesUseCase for the reason given above.
+    rejected:
+      - "Narrow: only the two incident classes (UpdateFeatureLifecycleUseCase, CheckAndUnblockFeaturesUseCase) — rejected per the spec's second resolved open question; it would leave the other 6 eagerly-resolved classes (InitializeSettingsUseCase, CleanupFeatureWorktreeUseCase, SelectProjectMemoryUseCase, RecordProjectMemoryUseCase, and the two supervisor-pipeline publishers/evaluator) exposed to the identical undetected-crash pattern the moment any of their constructors gets a mistyped @inject token."
+      - "Defer the broader audit to a follow-up feature — rejected for the same reason: the spec's own success criteria (FR-3) and problem statement frame the goal as closing the gap for 'any future use case', and the audit is mechanical (grep + array entries), not new test infrastructure, so deferring buys no schedule benefit while leaving known-vulnerable code unguarded."
+    rationale: >
+      grep -n 'container\.resolve(' feature-agent-worker.ts (see command output during
+      research) returns 15 call sites; 8 pass a class reference (the 9th class,
+      CheckAndUnblockFeaturesUseCase, is reached transitively rather than via its own
+      resolve() call in this file, but is added directly per decision 1) and the
+      remaining 7 pass string tokens already covered by CRITICAL_INFRA_TOKENS
+      (IAgentRunRepository, IAgentExecutorProvider, IAgentExecutorFactory,
+      IPluginRepository, IMcpServerManager, IGitPrService, IFeatureRepository,
+      IGitForkService, IPhaseTimingRepository, ISdlcBoardTracker — several appear
+      more than once). No new registration modules or container wiring are needed;
+      every one of the 9 classes is a plain `@injectable()` class with no explicit
+      `container.register` call in register-use-cases.ts or register-agents.ts —
+      tsyringe resolves them structurally from their own decorators, which is exactly
+      why they were never covered by the string-token-only test pattern before now.
+
+  - title: "TDD RED/GREEN verification approach"
+    chosen: >
+      Verify RED locally and only locally: temporarily edit
+      check-and-unblock-features.use-case.ts to revert the `@inject('IConflictResolutionService')`
+      decorator back to the buggy `@inject('ConflictResolutionService')` literal, run
+      `pnpm vitest run tests/integration/infrastructure/di/container-bootstrap.test.ts`
+      to confirm the new CheckAndUnblockFeaturesUseCase (and, transitively,
+      UpdateFeatureLifecycleUseCase) assertions fail with tsyringe's native
+      "Attempted to resolve unregistered dependency token" error chain, then revert
+      the file back to the current fixed state before committing anything.
+    rejected:
+      - "Build a standalone synthetic-container unit test with a deliberately mis-registered fake token — rejected because it tests an isolated mini-container rather than the real production registration modules (registerServices, registerUseCases, etc.), giving a weaker guarantee that a future regression in the real modules is actually caught."
+      - "Skip RED entirely and treat 'test didn't exist, now passes' as sufficient — rejected as the final choice for the commit, but this is in fact what ships: the revert-and-observe-RED step is a local-only verification ritual (per the spec's third resolved open question) that proves the assertions work, and is never itself committed. The committed diff only contains the passing GREEN state plus the new list/describe block — there is no RED artifact to leave in the repository."
+    rationale: >
+      The project's TDD rule is MANDATORY (RED before GREEN, see docs/development/tdd-guide.md),
+      but the underlying runtime bug was already fixed in commit 5ace9fe before this
+      spec was written, so there is no failing production code to drive RED naturally.
+      Reverting the one-line fix locally, observing the exact incident error reproduce,
+      and reverting back is the cheapest way to prove the new assertions have real
+      discriminating power against the true production container and registration
+      modules — and it costs nothing in the final commit since the revert is never
+      staged. This matches the spec's resolved decision on this question.
+
+  - title: "Header doc-comment update"
+    chosen: >
+      Extend the file's top-of-file doc-comment (lines 1-25) with a new paragraph
+      instructing maintainers that adding a new use-case class that
+      feature-agent-worker.ts (or any other eagerly-bootstrapping worker) resolves
+      via `container.resolve(ClassRef)` at boot requires adding that class to
+      WORKER_CRITICAL_USE_CASE_CLASSES, mirroring the existing instruction ("When you
+      add a new web route or CLI command that calls resolve<X>('X'), add the token
+      here too.") already present for WEB_ROUTE_TOKENS.
+    rejected:
+      - "Leave the header comment unchanged and rely on the new describe block's own inline comments — rejected because the file's existing convention centralizes all 'how to keep this file in sync' guidance in the single header comment block; splitting that guidance across multiple locations makes it easier to miss for a future maintainer skimming only the top of the file."
+    rationale: >
+      FR-6 explicitly requires this. The existing header already documents the
+      maintenance contract for the two string-token lists; adding a third bullet
+      for the new class list keeps that contract complete and in one place,
+      consistent with NFR-1 (structural consistency across the file).
+
+# Open questions (should be resolved by end of research)
+openQuestions:
+  - question: >
+      Should CheckAndUnblockFeaturesUseCase get its own direct entry in
+      WORKER_CRITICAL_USE_CASE_CLASSES even though feature-agent-worker.ts never
+      calls container.resolve(CheckAndUnblockFeaturesUseCase) itself (it only reaches
+      it transitively through UpdateFeatureLifecycleUseCase's constructor)?
+    resolved: true
+    options:
+      - option: "Add a direct entry for CheckAndUnblockFeaturesUseCase"
+        description: >
+          Include it in the array and loop even though the worker file itself never
+          names it in a resolve() call. Guarantees the incident's actual class has
+          its own named, unambiguous test-output line (e.g. "resolves
+          CheckAndUnblockFeaturesUseCase without throwing") rather than only ever
+          surfacing as a side effect of the UpdateFeatureLifecycleUseCase assertion.
+        selected: true
+      - option: "Rely on transitive coverage only"
+        description: >
+          Omit it from the array; since UpdateFeatureLifecycleUseCase's constructor
+          @inject(CheckAndUnblockFeaturesUseCase)-s it, resolving the parent already
+          walks the child's full constructor graph and would fail identically if the
+          child's IConflictResolutionService token were wrong again. Saves one array
+          entry but makes failures less directly attributable in test output.
+        selected: false
+      - option: "Add it as a code comment cross-reference instead of a real entry"
+        description: >
+          Document in a comment that CheckAndUnblockFeaturesUseCase is covered
+          transitively via UpdateFeatureLifecycleUseCase, without a standalone
+          resolve() assertion. Cheapest option but leaves no assertion that fails
+          with the class's own name if something breaks only in isolation (e.g. if
+          some future code path constructs CheckAndUnblockFeaturesUseCase directly
+          without going through UpdateFeatureLifecycleUseCase).
+        selected: false
+    selectionRationale: >
+      FR-1 explicitly requires resolving CheckAndUnblockFeaturesUseCase directly via
+      container.resolve(CheckAndUnblockFeaturesUseCase) and asserting it resolves to
+      a non-null instance — this is stated as a standalone requirement independent of
+      FR-2's UpdateFeatureLifecycleUseCase requirement. A direct entry also gives
+      clearer, more diagnosable CI output per FR-5 (the specific class name appears in
+      the failing test title) and costs one extra array line.
+
+# Markdown content (the full research document)
+content: |
+  ## Technology Decisions
+
+  ### 1. Class-reference list structure and placement
+
+  **Chosen:** New `WORKER_CRITICAL_USE_CASE_CLASSES` const array of class references,
+  placed after `CRITICAL_INFRA_TOKENS`, with its own `describe('every worker-critical
+  use case resolves', ...)` loop block mirroring the file's existing two string-token
+  blocks exactly.
+
+  **Rejected:**
+  - Coercing class resolution into the existing string-token arrays — resolves via a
+    different tsyringe code path (registered string token vs. structural class
+    resolution) than the one that actually crashed.
+  - Ad-hoc individual `it()` blocks per class with no shared array — introduces a
+    second, divergent style in a file that currently has exactly one list-loop-assert
+    convention.
+
+  **Rationale:** `container.resolve(ClassRef)` is the exact call shape
+  feature-agent-worker.ts uses at every eager-boot site (lines 281, 306, 311, 347, 402,
+  416, 421, 427). Passing a class walks tsyringe's `@injectable()`/`@inject()` metadata
+  for the full constructor graph, so resolving `UpdateFeatureLifecycleUseCase` alone
+  already re-exercises the exact `IConflictResolutionService` token chain that broke.
+
+  ### 2. Scope: incident-only vs. full worker-boot audit
+
+  **Chosen:** All 9 classes the worker resolves by class reference at boot:
+  `InitializeSettingsUseCase`, `CleanupFeatureWorktreeUseCase`,
+  `SelectProjectMemoryUseCase`, `RecordProjectMemoryUseCase`,
+  `UpdateFeatureLifecycleUseCase`, `CheckAndUnblockFeaturesUseCase`,
+  `FeatureAgentLifecyclePublisher`, `FeatureAgentGateQuestionPublisher`,
+  `FeatureAgentSupervisorGateEvaluator`.
+
+  **Rejected:**
+  - Narrow (2 incident classes only) — leaves 6 other classes exposed to the identical
+    undetected-crash pattern.
+  - Broad audit deferred to a follow-up feature — the audit is mechanical (grep +
+    array entries), so deferring buys nothing and leaves known-vulnerable code
+    unguarded in the meantime.
+
+  **Rationale:** `grep -n 'container\.resolve(' feature-agent-worker.ts` surfaces every
+  call site; filtering to non-string-literal arguments gives exactly these 9 classes
+  (counting `CheckAndUnblockFeaturesUseCase` as a direct addition per the resolved open
+  question above). None of the 9 has an explicit `container.register()` call anywhere
+  in the DI modules — they resolve purely from their own `@injectable()` decorators,
+  which is why the existing string-token-only test pattern never caught this class of
+  bug.
+
+  ### 3. TDD RED/GREEN verification
+
+  **Chosen:** Revert `@inject('IConflictResolutionService')` back to the buggy
+  `@inject('ConflictResolutionService')` locally, run the integration test file, confirm
+  the new assertions fail with tsyringe's native error chain, then revert back before
+  committing. The revert is never part of any commit.
+
+  **Rejected:**
+  - Synthetic mini-container unit test — weaker guarantee since it doesn't exercise the
+    real registration modules.
+  - Skipping RED entirely — violates the project's MANDATORY TDD rule; the local revert
+    costs nothing since it's never committed.
+
+  **Rationale:** The real bug was fixed before this spec existed (commit `5ace9fe`), so
+  there is no naturally-failing production code left to drive RED. A local, uncommitted
+  revert against the real container and real registration modules is the closest
+  approximation to genuine RED available, and directly proves the new assertions would
+  have caught the original incident.
+
+  ## Library Analysis
+
+  | Library | Purpose | Decision | Reasoning |
+  | ------- | ------- | -------- | --------- |
+  | tsyringe | DI container | Use (already in place) | `container.resolve(ClassRef)` is a built-in overload of `DependencyContainer.resolve<T>(token: InjectionToken<T>)` where `InjectionToken<T> = string \| symbol \| constructor<T>` — no new API surface needed, just a new set of arguments to an existing call. |
+  | vitest | Test runner | Use (already in place) | File already uses `describe`/`it`/`expect`/`beforeAll`/`afterAll` from vitest; new block reuses the same imports. |
+  | better-sqlite3 | In-memory test DB | Use (already in place) | `createInMemoryDatabase()` helper already provides the `Database` token the scoped container needs; no new fixture required per NFR-3. |
+
+  ## Security Considerations
+
+  No security-relevant surface. This is a test-only change with zero production code
+  modification (NFR-4) — no new inputs, no new trust boundaries, no data handling
+  changes. The only "sensitive" behavior touched is that the existing `beforeAll` hook
+  already overrides `SHEP_HOME`/`HOME` to a temp directory so `loadOrCreateSecretKey()`
+  doesn't touch the real `~/.shep` — untouched by this feature.
+
+  ## Performance Implications
+
+  Negligible. Each new `container.resolve(ClassRef)` call reuses the same in-memory
+  SQLite database and the same fully-registered `scopedContainer` already built once in
+  `beforeAll` for the entire test file (NFR-3) — no new I/O, no new mocks, no new
+  fixtures. Constructing 9 additional use-case/service instances synchronously is on the
+  order of microseconds; the file's existing 75+ token resolutions already dominate any
+  runtime cost and the suite's total run time is dominated by SQLite migrations and
+  cloud-provider registry construction, not by DI resolution count.
+
+  ## Architecture Notes
+
+  This slots into the file's existing two-tier convention without introducing a third:
+  `WEB_ROUTE_TOKENS` and `CRITICAL_INFRA_TOKENS` are both `readonly string[]` resolved via
+  `scopedContainer.resolve(token)` (string overload); the new
+  `WORKER_CRITICAL_USE_CASE_CLASSES` is a `readonly (constructor)[]` resolved via
+  `scopedContainer.resolve(ClassRef)` (class overload) — same method, same container,
+  same instance-per-`beforeAll` setup, different `InjectionToken` variant. This keeps
+  the test file's role as the single authoritative "does the real production container
+  construct everything it needs to construct" gate, per the Clean Architecture
+  boundary this repo enforces: use cases stay the only entry point resolved
+  (`code-quality.md` — "Use Cases as the Only Entry Point"), and this test is what
+  proves, at the DI-wiring level, that every use case the feature-agent worker depends
+  on is actually constructible end-to-end.

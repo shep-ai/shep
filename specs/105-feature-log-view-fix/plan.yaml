@@ -1,0 +1,158 @@
+# Implementation Plan (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: "feature-log-view-fix"
+summary: >
+  Extend tests/integration/infrastructure/di/container-bootstrap.test.ts with a new
+  class-reference resolution list (WORKER_CRITICAL_USE_CASE_CLASSES) covering the 9
+  use-case/service classes that feature-agent-worker.ts eagerly resolves via
+  container.resolve(ClassRef) at boot. This mirrors the file's existing two
+  string-token list-loop-assert blocks (WEB_ROUTE_TOKENS, CRITICAL_INFRA_TOKENS)
+  exactly, but resolves by class reference instead of string token, reproducing the
+  exact call shape that crashed in production (container.resolve(ClassRef) walking
+  tsyringe's @injectable()/@inject() constructor graph). No production code changes:
+  the runtime fix already shipped in commit 5ace9fe; this is test-only hardening.
+
+relatedFeatures: []
+technologies:
+  - "TypeScript"
+  - "tsyringe (DI container)"
+  - "Vitest"
+relatedLinks: []
+
+phases:
+  - id: phase-1
+    name: "Extend Test File with Worker-Critical Class List"
+    description: >
+      Add the WORKER_CRITICAL_USE_CASE_CLASSES const array, its class imports, a new
+      describe('every worker-critical use case resolves', ...) block that loops the
+      array and resolves each class against the real production scopedContainer, and
+      the header doc-comment paragraph documenting the new maintenance contract. This
+      is the entire feature — one file, one new list, one new describe block.
+    parallel: false
+  - id: phase-2
+    name: "TDD Verification (RED then GREEN)"
+    description: >
+      Prove the new assertions have real discriminating power by locally (never
+      committed) reverting check-and-unblock-features.use-case.ts's
+      @inject('IConflictResolutionService') back to the buggy
+      @inject('ConflictResolutionService') literal, running the test file to confirm
+      it fails with tsyringe's native "Attempted to resolve unregistered dependency
+      token" error chain, then reverting the file back to its current fixed state and
+      confirming the full suite (including the new block) passes.
+    parallel: false
+  - id: phase-3
+    name: "Full Verification Gate"
+    description: >
+      Run the complete local pre-push sequence (lint, format:check, typecheck,
+      test:unit, test:int, build) required by this repo's CI/CD rules before this
+      change is considered done.
+    parallel: false
+
+filesToCreate: []
+
+filesToModify:
+  - "tests/integration/infrastructure/di/container-bootstrap.test.ts"
+
+openQuestions: []
+
+content: |
+  ## Architecture Overview
+
+  This feature touches exactly one file: `tests/integration/infrastructure/di/container-bootstrap.test.ts`.
+  That file already establishes the pattern this feature extends — a `describe('DI
+  container bootstrap (integration)', ...)` suite with a single `beforeAll` that builds
+  a real, fully-registered tsyringe child container (`scopedContainer`) backed by an
+  in-memory SQLite database, then two nested `describe` blocks that each loop a
+  `readonly string[]` constant (`WEB_ROUTE_TOKENS`, `CRITICAL_INFRA_TOKENS`) and assert
+  `scopedContainer.resolve(token)` does not throw and returns a non-null instance.
+
+  `tsyringe`'s `DependencyContainer.resolve<T>(token: InjectionToken<T>)` overload
+  accepts `InjectionToken<T> = string | symbol | constructor<T>` — the same method
+  already used in the file works unchanged if passed a class reference instead of a
+  string. This feature adds a third list, `WORKER_CRITICAL_USE_CASE_CLASSES: readonly
+  (new (...args: never[]) => object)[]`, populated with the 9 classes
+  `feature-agent-worker.ts` calls `container.resolve(ClassRef)` on at boot (confirmed by
+  grep against the file's 8 call sites at lines 281, 306, 311, 347, 402, 416, 421, 427,
+  plus `CheckAndUnblockFeaturesUseCase` added directly per FR-1 even though it's only
+  reached transitively through `UpdateFeatureLifecycleUseCase`'s constructor). A third
+  `describe('every worker-critical use case resolves', ...)` block loops this array with
+  the identical `it(...)`/`expect(...).not.toThrow()`/`expect(instance).toBeDefined()`
+  shape already used for the two string-token blocks (see
+  container-bootstrap.test.ts:361-385).
+
+  Resolving `UpdateFeatureLifecycleUseCase` by class walks tsyringe's full constructor
+  graph, including `CheckAndUnblockFeaturesUseCase` nested inside it, which in turn
+  depends on the string-registered `'IConflictResolutionService'` token — exactly the
+  dependency chain that broke in production. This is why class-reference resolution
+  (not string-token resolution) is required for this test to actually catch the bug
+  class described in the spec.
+
+  ## Key Design Decisions
+
+  1. **Class-reference list, not string-token list** (research decision 1): A new
+     `WORKER_CRITICAL_USE_CASE_CLASSES` array resolved via `scopedContainer.resolve(ClassRef)`,
+     kept structurally separate from the two `readonly string[]` lists because it is a
+     different `InjectionToken` variant and a different tsyringe code path. None of the
+     9 classes has an explicit `container.register()` call anywhere in the DI modules —
+     they resolve purely from their own `@injectable()` decorators — so a string-token
+     entry would not exercise the same path the worker actually uses.
+
+  2. **Broad audit, not narrow incident-only list** (research decision 2): All 9 classes
+     the worker resolves eagerly at boot are included, not just the 2 named in the
+     incident (`UpdateFeatureLifecycleUseCase`, `CheckAndUnblockFeaturesUseCase`). The
+     other 6 (`InitializeSettingsUseCase`, `CleanupFeatureWorktreeUseCase`,
+     `SelectProjectMemoryUseCase`, `RecordProjectMemoryUseCase`,
+     `FeatureAgentLifecyclePublisher`, `FeatureAgentGateQuestionPublisher`,
+     `FeatureAgentSupervisorGateEvaluator`) are exposed to the identical
+     undetected-crash pattern and are mechanical, not architectural, additions.
+
+  3. **Local-only RED/GREEN verification, no committed revert** (research decision 3):
+     Since the real bug was already fixed in commit `5ace9fe` before this spec existed,
+     RED is demonstrated by temporarily reverting the fix locally, observing the new
+     test fail with the exact incident error chain, then reverting back before any
+     commit. This satisfies the project's MANDATORY TDD rule using the real production
+     container and registration modules rather than a synthetic stand-in.
+
+  4. **Header doc-comment update** (research decision 4, FR-6): The existing header
+     comment (lines 1-25) already documents the maintenance contract for
+     `WEB_ROUTE_TOKENS`. A new paragraph is added instructing maintainers that any new
+     use-case/service class a worker eagerly resolves via `container.resolve(ClassRef)`
+     at boot must be added to `WORKER_CRITICAL_USE_CASE_CLASSES` too.
+
+  5. **No new test infrastructure**: The existing `beforeAll`/`afterAll` and
+     `scopedContainer` are reused as-is (NFR-3) — no new fixtures, mocks, or I/O. Every
+     added assertion is one more loop iteration against a container that's already
+     built once per test file run.
+
+  ## Implementation Strategy
+
+  Phase 1 is the only code-writing phase and is intentionally a single, small diff to a
+  single file: import the 9 classes (mirroring the existing `SelectProjectMemoryUseCase`
+  import pattern already present in the file at line 60), declare the new array after
+  `CRITICAL_INFRA_TOKENS`, add the new `describe` block after `'every critical infra
+  token resolves'` (mirroring it structurally), and extend the header comment. This
+  ordering — imports, then list, then describe block, then header comment — matches how
+  the two existing lists are laid out top-to-bottom in the file, so a diff reviewer sees
+  a third instance of an already-familiar pattern rather than a new one.
+
+  Phase 2 (RED/GREEN) comes after the code is written because you need the finished
+  assertions in place before you can revert the production fix and watch them fail —
+  this phase is pure verification, no code changes to the test file itself, and any
+  edit to `check-and-unblock-features.use-case.ts` made during this phase is reverted
+  before phase 3.
+
+  Phase 3 (full verification gate) runs last because it's the repo's standard
+  pre-push sequence (lint, format:check, typecheck, test:unit, test:int, build) and
+  should only run once the target file's own logic is confirmed correct via phase 2 —
+  running the full gate before RED/GREEN would waste time on a file that isn't
+  finished yet.
+
+  ## Risk Mitigation
+
+  | Risk | Mitigation |
+  | ---- | ---------- |
+  | A class in the new list turns out to require registration setup not already present in `beforeAll` (e.g. a missing mock/override), causing an unrelated resolve failure that isn't the bug class this feature targets | Run the new describe block in isolation first (`pnpm vitest run tests/integration/infrastructure/di/container-bootstrap.test.ts -t "worker-critical"`) before running the full file, so any setup gap is diagnosed against a small, isolated failure surface rather than the full 75+ assertion suite |
+  | The local revert-for-RED step accidentally gets staged or committed | Explicitly `git diff` and `git status` on `check-and-unblock-features.use-case.ts` immediately before the phase-3 commit gate to confirm zero uncommitted changes to any file under `packages/core/src/**`, matching NFR-4 |
+  | Future maintainers add a new worker-eagerly-resolved class but forget to update the new list, silently reopening the gap this feature closes | The header doc-comment update (FR-6) makes this an explicit, discoverable instruction co-located with the two existing list-maintenance instructions already in the file |
+  | `WORKER_CRITICAL_USE_CASE_CLASSES`'s TypeScript type (`readonly (new (...args: never[]) => object)[]`) doesn't typecheck cleanly against tsyringe's actual constructor signatures for these 9 classes | Verify with `pnpm typecheck` in phase 3; if the type is too strict for classes with non-empty constructor parameter lists, fall back to the looser `readonly (abstract new (...args: any[]) => object)[]` shape already implied by tsyringe's own `InjectionToken<T>` definition |

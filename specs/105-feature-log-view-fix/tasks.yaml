@@ -1,0 +1,197 @@
+# Task Breakdown (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: "feature-log-view-fix"
+summary: >
+  7 tasks across 3 phases. Phase 1 adds the WORKER_CRITICAL_USE_CASE_CLASSES list and
+  its describe block to container-bootstrap.test.ts (imports, the array, the loop
+  block, the header doc-comment). Phase 2 proves the new assertions actually catch the
+  incident's bug class via a local, never-committed RED/GREEN revert cycle. Phase 3
+  runs the repo's full pre-push verification gate.
+
+relatedFeatures: []
+technologies: []
+relatedLinks: []
+
+tasks:
+  - id: task-1
+    phaseId: phase-1
+    title: "Import the 9 worker-critical use-case/service classes"
+    description: >
+      Add import statements for the 9 classes feature-agent-worker.ts resolves via
+      container.resolve(ClassRef) at boot: InitializeSettingsUseCase,
+      CleanupFeatureWorktreeUseCase, RecordProjectMemoryUseCase,
+      UpdateFeatureLifecycleUseCase, CheckAndUnblockFeaturesUseCase,
+      FeatureAgentLifecyclePublisher, FeatureAgentGateQuestionPublisher, and
+      FeatureAgentSupervisorGateEvaluator. SelectProjectMemoryUseCase is already
+      imported at line 60 and is reused as-is. Follow the exact import path style
+      already used in the file (e.g. '@/application/use-cases/...').
+    state: Todo
+    dependencies: []
+    acceptanceCriteria:
+      - "All 8 new classes are imported using the same '@/...' path alias style as existing imports in the file."
+      - "pnpm typecheck reports no unresolved-import errors for the new statements."
+      - "No existing import in the file is modified or removed."
+    tdd: null
+    estimatedEffort: "15min"
+
+  - id: task-2
+    phaseId: phase-1
+    title: "Add WORKER_CRITICAL_USE_CASE_CLASSES const array"
+    description: >
+      Declare a new readonly array of class references immediately after
+      CRITICAL_INFRA_TOKENS (after line 191), containing all 9 classes from task-1 plus
+      SelectProjectMemoryUseCase. Type it consistently with tsyringe's InjectionToken
+      constructor-overload shape (a class-reference array, not a string array), matching
+      NFR-1's requirement that the new list mirror the file's existing const-array
+      structure.
+    state: Todo
+    dependencies:
+      - task-1
+    acceptanceCriteria:
+      - "WORKER_CRITICAL_USE_CASE_CLASSES contains exactly 9 entries: InitializeSettingsUseCase, CleanupFeatureWorktreeUseCase, SelectProjectMemoryUseCase, RecordProjectMemoryUseCase, UpdateFeatureLifecycleUseCase, CheckAndUnblockFeaturesUseCase, FeatureAgentLifecyclePublisher, FeatureAgentGateQuestionPublisher, FeatureAgentSupervisorGateEvaluator."
+      - "The array is declared as `const ... : readonly (...)[]` matching the file's existing declaration style for WEB_ROUTE_TOKENS and CRITICAL_INFRA_TOKENS."
+      - "pnpm typecheck passes with the new declaration in place."
+    tdd: null
+    estimatedEffort: "15min"
+
+  - id: task-3
+    phaseId: phase-1
+    title: "Add 'every worker-critical use case resolves' describe block"
+    description: >
+      Add a new describe('every worker-critical use case resolves', ...) block
+      immediately after the existing 'every critical infra token resolves' block
+      (after line 385), looping WORKER_CRITICAL_USE_CASE_CLASSES with a for...of and
+      one it(...) per class, calling scopedContainer.resolve(UseCaseClass) and asserting
+      the result is defined and non-null, with no try/catch wrapping (NFR-2) so
+      tsyringe's native error chain propagates unmodified into the test failure output.
+    state: Todo
+    dependencies:
+      - task-2
+    acceptanceCriteria:
+      - "The new describe block uses the identical it(`resolves '${ClassName}' without throwing`, ...) / expect(...).not.toThrow() / expect(instance).toBeDefined() / expect(instance).not.toBeNull() shape as the two existing string-token blocks."
+      - "Running `pnpm vitest run tests/integration/infrastructure/di/container-bootstrap.test.ts -t \"worker-critical\"` produces exactly 9 passing tests, one per class."
+      - "No try/catch is added around any scopedContainer.resolve(...) call in the new block."
+    tdd:
+      red:
+        - "Before writing the describe block, run the test file and confirm no test titled 'resolves ... without throwing' exists yet for any of the 9 worker-critical classes — the coverage gap is the RED state for this task."
+      green:
+        - "Add the describe('every worker-critical use case resolves', ...) block with a for...of loop over WORKER_CRITICAL_USE_CASE_CLASSES, one it(...) per class, mirroring the existing CRITICAL_INFRA_TOKENS block exactly."
+        - "Run `pnpm vitest run tests/integration/infrastructure/di/container-bootstrap.test.ts -t \"worker-critical\"` and confirm all 9 new tests pass against the current (already-fixed) production code."
+      refactor:
+        - "Confirm the new block's formatting, spacing, and variable naming (e.g. `instance`) are indistinguishable in style from the two existing describe blocks it sits between."
+    estimatedEffort: "30min"
+
+  - id: task-4
+    phaseId: phase-1
+    title: "Update header doc-comment with new maintenance instruction"
+    description: >
+      Extend the file's top-of-file doc-comment (lines 1-25) with a sentence
+      instructing maintainers that any new use-case/service class a worker eagerly
+      resolves via container.resolve(ClassRef) at boot must be added to
+      WORKER_CRITICAL_USE_CASE_CLASSES, mirroring the existing instruction for
+      WEB_ROUTE_TOKENS at line 22-24 ("The list of route tokens is generated from the
+      real route handlers... When you add a new web route or CLI command that calls
+      resolve<X>('X'), add the token here too.").
+    state: Todo
+    dependencies:
+      - task-3
+    acceptanceCriteria:
+      - "The header comment mentions WORKER_CRITICAL_USE_CASE_CLASSES and instructs maintainers to add new worker-eagerly-resolved classes to it."
+      - "The added sentence follows the same tone and placement convention as the existing WEB_ROUTE_TOKENS instruction in the same comment block."
+      - "No existing sentence in the header comment is removed or altered."
+    tdd: null
+    estimatedEffort: "10min"
+
+  - id: task-5
+    phaseId: phase-2
+    title: "Verify RED: locally revert the fixed @inject token and confirm the new tests fail"
+    description: >
+      Temporarily (uncommitted) edit
+      packages/core/src/application/use-cases/features/check-and-unblock-features.use-case.ts
+      to change @inject('IConflictResolutionService') back to the buggy
+      @inject('ConflictResolutionService') literal. Run the container-bootstrap test
+      file and confirm the CheckAndUnblockFeaturesUseCase and (transitively)
+      UpdateFeatureLifecycleUseCase assertions from task-3 fail with tsyringe's native
+      "Attempted to resolve unregistered dependency token" error chain, matching the
+      original incident log. This proves the new assertions have real discriminating
+      power against the exact bug class described in the spec.
+    state: Todo
+    dependencies:
+      - task-4
+    acceptanceCriteria:
+      - "With the decorator reverted to @inject('ConflictResolutionService'), the tests for 'CheckAndUnblockFeaturesUseCase' and 'UpdateFeatureLifecycleUseCase' in the new describe block fail."
+      - "The failure's error message includes the exact tsyringe error chain from the incident log: 'Cannot inject the dependency ... Reason: ... Attempted to resolve unregistered dependency token'."
+      - "No other test in container-bootstrap.test.ts is affected by the revert (only the two classes that depend on IConflictResolutionService, directly or transitively, fail)."
+    tdd:
+      red:
+        - "Locally revert check-and-unblock-features.use-case.ts's @inject('IConflictResolutionService') to @inject('ConflictResolutionService') and run the full container-bootstrap.test.ts file, confirming the RED failure reproduces the incident's exact tsyringe error chain."
+      green: null
+      refactor: null
+    estimatedEffort: "15min"
+
+  - id: task-6
+    phaseId: phase-2
+    title: "Verify GREEN: revert the local change and confirm full suite passes"
+    description: >
+      Revert check-and-unblock-features.use-case.ts back to its current committed
+      state (@inject('IConflictResolutionService')) and re-run the full
+      container-bootstrap.test.ts file, confirming every assertion — the existing 75+
+      string-token resolutions and the new 9 class-reference resolutions — passes with
+      zero failures. Confirm via git diff/git status that no file under
+      packages/core/src/** has any uncommitted change (NFR-4).
+    state: Todo
+    dependencies:
+      - task-5
+    acceptanceCriteria:
+      - "check-and-unblock-features.use-case.ts is byte-identical to its current committed (5ace9fe) state."
+      - "`pnpm vitest run tests/integration/infrastructure/di/container-bootstrap.test.ts` passes with zero failures."
+      - "`git status` and `git diff` show zero changes under packages/core/src/**."
+    tdd:
+      red: null
+      green:
+        - "Revert the local decorator edit from task-5 and re-run the full container-bootstrap.test.ts file, confirming GREEN across all existing and new assertions."
+      refactor:
+        - "Run `git status`/`git diff` scoped to packages/core/src/** to confirm the revert left no trace, satisfying NFR-4 before this change is considered committable."
+    estimatedEffort: "10min"
+
+  - id: task-7
+    phaseId: phase-3
+    title: "Run full local pre-push verification gate"
+    description: >
+      Run the repo's mandatory pre-push sequence in order: pnpm lint, pnpm
+      format:check, pnpm typecheck, pnpm test:unit, pnpm test:int, pnpm build. Fix any
+      failure before proceeding — per this repo's integrity rules, every failure is
+      this feature's responsibility to resolve, regardless of whether it appears
+      related to the container-bootstrap.test.ts change.
+    state: Todo
+    dependencies:
+      - task-6
+    acceptanceCriteria:
+      - "pnpm lint exits 0."
+      - "pnpm format:check exits 0."
+      - "pnpm typecheck exits 0."
+      - "pnpm test:unit exits 0 with zero failures."
+      - "pnpm test:int exits 0 with zero failures, including the new worker-critical describe block."
+      - "pnpm build exits 0."
+    tdd: null
+    estimatedEffort: "20min"
+
+totalEstimate: "1h55min"
+openQuestions: []
+
+content: |
+  ## Summary
+
+  This is a single-file, test-only change. Phase 1 (tasks 1-4) builds the new
+  WORKER_CRITICAL_USE_CASE_CLASSES list end-to-end inside
+  container-bootstrap.test.ts: import the 9 classes, declare the array, add the
+  mirrored describe/loop/assert block, and extend the header doc-comment so future
+  maintainers know to keep the list in sync. Phase 2 (tasks 5-6) is pure verification —
+  no new code — proving via a local, never-committed revert of the already-fixed
+  @inject decorator that the new assertions genuinely reproduce the original incident's
+  tsyringe error chain (RED), then confirming the real fix passes cleanly (GREEN) with
+  zero residual changes under packages/core/src/**. Phase 3 (task 7) runs the standard
+  pre-push gate (lint, format, typecheck, unit + integration tests, build) required by
+  this repo's CI/CD rules before the change is considered done. No production code is
+  touched at any point — the runtime fix already shipped in commit 5ace9fe.
