@@ -22,6 +22,7 @@ import type {
   AgentSessionMessage,
   AgentType,
 } from '../../../../domain/generated/output.js';
+import { deleteTranscriptPath } from './transcript-deletion.js';
 import {
   ClaudeCodeSessionFileCollector,
   type SessionFileInfo,
@@ -103,6 +104,19 @@ export class ClaudeCodeSessionRepository implements IAgentSessionRepository {
     }
 
     return sessions;
+  }
+
+  /**
+   * Delete a session transcript from ~/.claude/projects.
+   *
+   * Resolves the file through the same collector used for reads, so a session
+   * id can only ever map to a file this repository already owns.
+   */
+  async delete(id: string): Promise<boolean> {
+    const match = await this.files.findSessionFile(id);
+    if (match === null) return false;
+
+    return deleteTranscriptPath(match.filePath, this.basePath);
   }
 
   async findById(id: string, options?: GetSessionOptions): Promise<AgentSession | null> {

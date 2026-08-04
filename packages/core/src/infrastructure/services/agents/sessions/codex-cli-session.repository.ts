@@ -20,6 +20,7 @@ import * as fs from 'node:fs/promises';
 import * as os from 'node:os';
 import * as path from 'node:path';
 import { injectable } from 'tsyringe';
+import { deleteTranscriptPath } from './transcript-deletion.js';
 import type {
   AgentSession,
   AgentSessionMessage,
@@ -131,6 +132,19 @@ export class CodexCliSessionRepository implements IAgentSessionRepository {
     }
 
     return sessions;
+  }
+
+  /**
+   * Delete a session transcript from the Codex home directory.
+   *
+   * Resolves the file through the same lookup used for reads, so a session id
+   * can only map to a file this repository already owns.
+   */
+  async delete(id: string): Promise<boolean> {
+    const match = await this.findSessionFile(id);
+    if (match === null) return false;
+
+    return deleteTranscriptPath(match.filePath, this.basePath);
   }
 
   async findById(id: string, options?: GetSessionOptions): Promise<AgentSession | null> {

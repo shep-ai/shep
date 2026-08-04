@@ -28,6 +28,7 @@ import type {
   AgentType,
 } from '../../../../domain/generated/output.js';
 import { encodeCursorProjectDir } from '../../../../domain/shared/agent-session-paths.js';
+import { deleteTranscriptPath } from './transcript-deletion.js';
 import type {
   IAgentSessionRepository,
   ListSessionsOptions,
@@ -79,6 +80,25 @@ export class CursorSessionRepository implements IAgentSessionRepository {
       if (result.status === 'fulfilled' && result.value !== null) sessions.push(result.value);
     }
     return sessions;
+  }
+
+  /**
+   * Delete a Cursor transcript.
+   *
+   * Cursor uses two layouts: a flat `<id>.jsonl`, or a directory per transcript
+   * containing `<id>/<id>.jsonl`. In the nested case the whole directory is
+   * removed, since it exists solely to hold that transcript.
+   */
+  async delete(id: string): Promise<boolean> {
+    const match = (await this.collectAll()).find((f) => f.id === id);
+    if (!match) return false;
+
+    // Nested layout: the transcript's parent directory is named after the id,
+    // so removing the directory removes the transcript.
+    const parent = path.dirname(match.filePath);
+    const target = path.basename(parent) === id ? parent : match.filePath;
+
+    return deleteTranscriptPath(target, this.basePath);
   }
 
   async findById(id: string, options?: GetSessionOptions): Promise<AgentSession | null> {

@@ -67,6 +67,26 @@ export interface IAgentSessionRepository {
   findById(id: string, options?: GetSessionOptions): Promise<AgentSession | null>;
 
   /**
+   * Permanently remove a session's transcript from provider storage.
+   *
+   * OPTIONAL by design. Deletion is destructive and provider-specific — Claude
+   * Code and Codex unlink a single `.jsonl`, while Cursor may need to remove a
+   * whole directory-per-transcript folder. Requiring it would force the stub
+   * and every future provider to implement a destructive operation they may not
+   * support, so callers must probe for its presence (as they already do with
+   * `isSupported()`) before offering deletion.
+   *
+   * Implementations MUST verify the resolved path lies inside their own
+   * provider root before unlinking, so a malformed session id cannot escape
+   * into arbitrary filesystem locations.
+   *
+   * @param id - The provider-native session id
+   * @returns true when a transcript was removed, false when none was found
+   * @throws When the resolved path escapes the provider root
+   */
+  delete?(id: string): Promise<boolean>;
+
+  /**
    * Whether this repository has a real implementation for its provider.
    * Returns false for stub implementations (Cursor, Gemini).
    * Used by use cases to emit a warning and return empty results.
