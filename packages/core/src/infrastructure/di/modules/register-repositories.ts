@@ -3,6 +3,8 @@ import type Database from 'better-sqlite3';
 
 import type { ISettingsRepository } from '../../../application/ports/output/repositories/settings.repository.interface.js';
 import { SQLiteSettingsRepository } from '../../repositories/sqlite-settings.repository.js';
+import type { IArchivedSessionRepository } from '../../../application/ports/output/repositories/archived-session.repository.interface.js';
+import { SQLiteArchivedSessionRepository } from '../../repositories/sqlite-archived-session.repository.js';
 import type { IFeatureRepository } from '../../../application/ports/output/repositories/feature-repository.interface.js';
 import { SQLiteFeatureRepository } from '../../repositories/sqlite-feature.repository.js';
 import type { IRepositoryRepository } from '../../../application/ports/output/repositories/repository-repository.interface.js';
@@ -123,6 +125,13 @@ export function registerRepositories(container: DependencyContainer): void {
     useFactory: (c) => {
       const database = c.resolve<Database.Database>('Database');
       return new SQLiteFeatureRepository(database);
+    },
+  });
+
+  container.register<IArchivedSessionRepository>('IArchivedSessionRepository', {
+    useFactory: (c) => {
+      const database = c.resolve<Database.Database>('Database');
+      return new SQLiteArchivedSessionRepository(database);
     },
   });
 
