@@ -29,7 +29,7 @@ summary: >
   reversible, and it never touches the provider's files. Delete is separate and
   gated behind an explicit confirmation, because it unlinks a transcript from
   ~/.claude or ~/.cursor — data shep reads but does not own.
-phase: Requirements
+phase: planning
 sizeEstimate: L
 
 # Relationships

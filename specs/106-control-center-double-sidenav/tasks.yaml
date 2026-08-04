@@ -2,68 +2,309 @@
 # This is the source of truth. Markdown is auto-generated from this file.
 
 name: control-center-double-sidenav
-summary: Task breakdown for 106-control-center-double-sidenav
+summary: >
+  10 tasks across 4 phases, ordered so the double sidenav becomes visible at the
+  end of phase 2, before the archive/delete work in phase 3.
+status:
+  phase: implementation
+  updatedAt: '2026-08-04'
 
-# Relationships
-relatedFeatures: []
-technologies: []
-relatedLinks: []
+relatedFeatures:
+  - '105-import-codebases-adopt-sessions'
+technologies:
+  - TypeScript
+  - TypeSpec
+  - tsyringe
+  - Next.js
+relatedLinks:
+  - title: Clean Architecture
+    url: ./docs/architecture/clean-architecture.md
 
-# Structured task list — this is the single source of truth for tasks.
-# The content field below is a summary only; it does NOT duplicate task details.
 tasks:
   - id: task-1
-    title: { { TASK_1_TITLE } }
-    description: { { TASK_1_DESCRIPTION } }
+    title: Archived session marker table, port and repository
+    description: >
+      Add the archived_agent_sessions marker table (migration 141, copying the
+      create-table pattern from 138), an IArchivedSessionRepository port, and the
+      SQLite adapter. Keyed by (agent_type, session_id); archive inserts a row,
+      unarchive deletes it, so reversibility is structural. Sessions are not shep
+      rows, so only archived ones are stored.
     state: Todo
     dependencies: []
     acceptanceCriteria:
-      - { { CRITERION_1 } }
-      - { { CRITERION_2 } }
+      - Migration creates the table and is idempotent on re-run
+      - down() is a safe no-op per house convention
+      - Port exposes archive, unarchive, and a bulk archived-id set query
+      - Composite key prevents duplicate rows for the same session
+      - Registered in the DI container
     tdd:
       red:
-        - Write tests for {{FEATURE_1}}
+        - Integration test for table creation and idempotency
+        - Repository round-trip test - insert, query set, delete, re-query
       green:
-        - Implement {{FEATURE_1}} to pass tests
+        - Write the migration, port and SQLite adapter
       refactor:
-        - Extract helpers, improve naming
-    estimatedEffort: { { EFFORT_1 } }
+        - Extract row mapping if the adapter grows past one concern
+    estimatedEffort: M
 
   - id: task-2
-    title: { { TASK_2_TITLE } }
-    description: { { TASK_2_DESCRIPTION } }
+    title: BuildSessionTreeUseCase
+    description: >
+      Compose ListRepositoriesUseCase, ListFeaturesUseCase and spec 105's
+      ListSessionsForPathsUseCase into a ready-to-render tree view model of
+      Repository -> features -> sessions. A session is adopted iff some
+      feature's sourceAgentSessionId equals its id; build that map while walking
+      the feature list rather than querying per session. Archived sessions are
+      excluded unless explicitly requested.
     state: Todo
     dependencies:
       - task-1
     acceptanceCriteria:
-      - { { CRITERION_1 } }
-      - { { CRITERION_2 } }
-    tdd: null # No TDD for foundational/doc tasks
-    estimatedEffort: { { EFFORT_2 } }
+      - Returns repositories, each with features and an unadopted-session bucket
+      - Adopted sessions nest under the feature that adopted them
+      - Archived sessions excluded by default, included on request
+      - No per-session repository query - the adopted map comes from the feature list
+      - Presentation receives data needing no further joining
+      - Registered in the DI container
+    tdd:
+      red:
+        - Tests for adopted nesting, unadopted bucketing, archived exclusion, empty repos, feature with no adopted session
+      green:
+        - Implement the use case over the three composed use cases
+      refactor:
+        - Extract the adopted-map builder; keep the file under ~300 lines
+    estimatedEffort: M
 
-# Total effort estimate
-totalEstimate: { { TOTAL_EFFORT } }
+  - id: task-3
+    title: Session tree node components
+    description: >
+      Purpose-built node components for repository, feature and session levels
+      using the Radix accordion pattern (NOT ui/file-tree.tsx, whose
+      TreeViewElement is a filesystem shape that cannot carry agent type,
+      adopted state or per-node actions). Adopted sessions are visually distinct
+      from unadopted ones without hover. Colocated stories mandatory.
+    state: Todo
+    dependencies:
+      - task-2
+    acceptanceCriteria:
+      - Repository, feature and session levels render with distinct affordances
+      - Adopted and unadopted sessions are distinguishable at a glance
+      - Agent type icon, message count and relative time shown per session
+      - Colocated .stories.tsx covers Default, Adopted, Unadopted, Archived, Empty
+      - No file exceeds ~300 lines
+    tdd:
+      red:
+        - Component tests for adopted badge presence and level rendering
+      green:
+        - Implement the node components
+      refactor:
+        - Share relative-time formatting with the existing session-summary helper
+    estimatedEffort: M
 
-# Open questions
+  - id: task-4
+    title: SessionTreePanel and server action
+    description: >
+      The panel itself - a second Sidebar consuming BuildSessionTreeUseCase via
+      a server action, open by default, with loading, empty and error states.
+    state: Todo
+    dependencies:
+      - task-3
+    acceptanceCriteria:
+      - Panel fetches the tree through a server action, never assembling it client-side
+      - Open by default as requested
+      - Loading, empty and error states all render
+      - Expanding a repository reveals its features and sessions
+      - Colocated stories for each state
+    tdd:
+      red:
+        - Component tests for the three states and for expand behaviour
+      green:
+        - Implement the panel and server action
+      refactor:
+        - Split state rendering if the panel exceeds ~300 lines
+    estimatedEffort: M
+
+  - id: task-5
+    title: Mount the double sidenav in app-shell, gated to the Control Center
+    description: >
+      Render the panel as a SIBLING inside the existing SidebarProvider - never a
+      nested provider, which would contend over one open state and one cookie.
+      The existing AppSidebar collapses to an icon rail. Gate on pathname so
+      only the Control Center changes. THIS is the task after which the feature
+      is visible in the UI.
+    state: Todo
+    dependencies:
+      - task-4
+    acceptanceCriteria:
+      - Control Center shows two sidenavs - icon rail plus the tree panel
+      - Tree panel is open by default
+      - Other app-shell routes are visually unchanged
+      - No nested SidebarProvider is introduced
+      - Existing app-shell and control-center tests stay green
+    tdd:
+      red:
+        - Test asserting the panel renders on the Control Center route and not on others
+      green:
+        - Wire the second sidebar into app-shell
+      refactor:
+        - Extract the shell layout branch if app-shell grows unwieldy
+    estimatedEffort: M
+
+  - id: task-6
+    title: ArchiveAgentSessionUseCase
+    description: >
+      Archive and unarchive a session via the marker repository. Safe by
+      construction - the use case is given no filesystem collaborator, so it
+      cannot touch provider data. Idempotent in both directions.
+    state: Todo
+    dependencies:
+      - task-1
+    acceptanceCriteria:
+      - Archive inserts a marker; unarchive removes it
+      - Both operations are idempotent
+      - No filesystem dependency is injected, so provider files cannot be touched
+      - Archiving an adopted session leaves its feature untouched
+      - Registered in the DI container
+    tdd:
+      red:
+        - Tests for archive, unarchive, double-archive, double-unarchive
+        - Test asserting the use case has no filesystem collaborator
+      green:
+        - Implement over the marker repository
+      refactor:
+        - None expected; keep it minimal
+    estimatedEffort: S
+
+  - id: task-7
+    title: Optional delete on the session port, implemented per provider
+    description: >
+      Add delete?(id) to IAgentSessionRepository - optional so
+      StubSessionRepository and unsupported providers are not forced to
+      implement a destructive operation. Implement for Claude Code and Codex
+      (unlink the JSONL) and Cursor (flat file OR the whole
+      directory-per-transcript folder). Each implementation must verify the
+      resolved path is inside its own provider root before unlinking.
+    state: Todo
+    dependencies:
+      - task-2
+    acceptanceCriteria:
+      - delete is optional on the port and documented as such
+      - Claude Code, Codex and Cursor all implement it
+      - Cursor handles both flat and directory-per-transcript layouts
+      - A path resolving outside the provider root is refused
+      - Deleting an already-missing transcript is reported, not thrown
+      - StubSessionRepository does not implement delete
+    tdd:
+      red:
+        - Temp-dir tests per provider, including Cursor both layouts and a containment-escape attempt
+      green:
+        - Implement delete in each real provider repository
+      refactor:
+        - Share the containment check if all three express it identically
+    estimatedEffort: M
+
+  - id: task-8
+    title: DeleteAgentSessionUseCase
+    description: >
+      Delete a provider transcript through the port, refusing when the provider
+      has no delete capability. Must never cascade into the feature adopted from
+      the session - a dangling sourceAgentSessionId is accepted by design.
+    state: Todo
+    dependencies:
+      - task-7
+    acceptanceCriteria:
+      - Refuses with a typed error when the provider lacks delete
+      - Never touches or deletes the feature adopted from the session
+      - Reports a typed result when the transcript is already gone
+      - Registered in the DI container
+    tdd:
+      red:
+        - Tests for missing capability, already-gone transcript, and feature survival
+      green:
+        - Implement over the registry and port
+      refactor:
+        - Share the provider-capability probe with the tree use case if duplicated
+    estimatedEffort: M
+
+  - id: task-9
+    title: Archive and delete actions in the tree UI
+    description: >
+      Wire the node action menu - archive as a one-click default, delete behind
+      an explicit confirm dialog naming the file to be removed. Show archived
+      sessions on demand with an unarchive action. i18n keys in all nine
+      locales.
+    state: Todo
+    dependencies:
+      - task-5
+      - task-6
+      - task-8
+    acceptanceCriteria:
+      - Archive is one click and reversible from the UI
+      - Delete requires explicit confirmation that names the transcript file
+      - Delete is never the default or accidental action
+      - Archived sessions can be revealed and un-archived
+      - All new i18n keys exist in all nine locales
+      - Stories cover the confirm dialog
+    tdd:
+      red:
+        - Tests asserting archive calls its action directly and delete only after confirmation
+      green:
+        - Implement the action menu and confirm dialog
+      refactor:
+        - Reuse the existing delete-confirmation dialog pattern if one fits
+    estimatedEffort: M
+
+  - id: task-10
+    title: Full validation sweep
+    description: >
+      Run the CI-mirroring sequence locally - lint, format:check, typecheck, unit
+      and integration tests, build, tsp:compile, build:storybook, spec:validate,
+      and the web smoke-imports test. Every failure is owned and fixed.
+    state: Todo
+    dependencies:
+      - task-9
+    acceptanceCriteria:
+      - lint and format:check clean
+      - typecheck clean
+      - test:unit and test:int fully green
+      - build and build:storybook succeed
+      - tsp:compile clean with no generated-file drift
+      - translation completeness test green
+      - spec:validate passes all gates
+    tdd: null
+    estimatedEffort: S
+
+totalEstimate: L - 10 tasks; feature visible after task-5, mutation work in phase 3
+
 openQuestions: []
 
-# Markdown content — summary and acceptance checklist only.
-# Individual task details live in the tasks[] array above (no duplication).
 content: |
   ## Summary
 
-  {{BRIEF_DESCRIPTION_OF_SCOPE}} — {{TASK_COUNT}} tasks across {{PHASE_COUNT}} phases.
+  Second Control Center sidenav with a repository -> feature -> session tree,
+  plus session archive and delete - 10 tasks across 4 phases.
+
+  Phase 1 builds the tree data in core. **Phase 2 is when the feature becomes
+  visible in the UI** (task-5 mounts it). Phase 3 makes sessions mutable:
+  archive first because it is safe by construction, then delete behind a
+  confirmation. Phase 4 validates.
+
+  ## Ordering Rationale
+
+  The user asked twice where the sidebar was. Phase 2 is deliberately scheduled
+  before the archive/delete work so the double sidenav appears on screen at the
+  earliest point at which it has real data to show.
 
   ## Acceptance Checklist
 
-  Before marking feature complete:
-
-  - [ ] All tasks completed
-  - [ ] Tests passing (`pnpm test`)
-  - [ ] Linting clean (`pnpm lint`)
-  - [ ] Types valid (`pnpm typecheck`)
-  - [ ] TypeSpec compiles (`pnpm tsp:compile`)
-  - [ ] PR created and reviewed
+  - [ ] All 10 tasks completed
+  - [ ] Two sidenavs visible on the Control Center, tree open by default
+  - [ ] Adopted vs unadopted sessions distinguishable at a glance
+  - [ ] Archive reversible and never touching provider files
+  - [ ] Delete confirmation-gated, never cascading into the adopted feature
+  - [ ] Other routes visually unchanged
+  - [ ] Tests, lint, typecheck, builds, storybook all green
+  - [ ] i18n keys in all nine locales
 
   ---
 

@@ -3,14 +3,14 @@ feature:
   name: 'control-center-double-sidenav'
   number: 106
   branch: 'feat/106-control-center-double-sidenav'
-  lifecycle: 'research'
+  lifecycle: 'implementation'
   createdAt: '2026-08-03T15:24:06Z'
 
 status:
-  phase: 'research'
+  phase: 'ready-to-implement'
   progress:
     completed: 0
-    total: 0
+    total: 10
     percentage: 0
   currentTask: null
   lastUpdated: '2026-08-03T15:24:06Z'

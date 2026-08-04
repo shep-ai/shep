@@ -2,67 +2,261 @@
 # This is the source of truth. Markdown is auto-generated from this file.
 
 name: control-center-double-sidenav
-summary: Technical analysis for 106-control-center-double-sidenav
+summary: >
+  The UI half is assembly over parts that already exist: shadcn's sidebar
+  supports collapsible="icon", ui/file-tree.tsx is a working Radix TreeView,
+  and app-shell already has `pathname` for route gating. The real work is that
+  sessions become mutable for the first time — a delete capability on a
+  read-only port with three provider implementations, and archive state for
+  entities that deliberately have no database row. Tree assembly must live in a
+  use case, because it joins three separate data sources and the
+  adopted/unadopted determination is a domain rule, not a rendering concern.
+phase: planning
+updatedAt: '2026-08-04'
 
 # Relationships
-relatedFeatures: []
-technologies: []
-relatedLinks: []
+relatedFeatures:
+  - '105-import-codebases-adopt-sessions'
+
+technologies:
+  - TypeScript
+  - TypeSpec
+  - tsyringe
+  - SQLite (better-sqlite3)
+  - Next.js
+  - shadcn/ui sidebar
+  - Radix Accordion
+
+relatedLinks:
+  - title: Clean Architecture
+    url: ./docs/architecture/clean-architecture.md
+  - title: Web UI architecture
+    url: ./docs/ui/architecture.md
 
 # Structured technology decisions
 decisions:
-  - title: { { DECISION_TITLE } }
-    chosen: { { CHOSEN_OPTION } }
+  - title: Where the tree is assembled
+    chosen: New BuildSessionTreeUseCase returning a ready-to-render view model
     rejected:
-      - { { OPTION_1 } }
-      - { { OPTION_2 } }
-    rationale: { { RATIONALE } }
+      - Assemble in the React component from three separate fetches
+      - Extend ListSessionsForPathsUseCase to also return features
+    rationale: >
+      The tree joins repositories, features, and sessions, and decides which
+      sessions are adopted by matching Feature.sourceAgentSessionId. That join
+      and that rule are business logic — the project's code-quality rules put
+      them in a use case and require presentation to receive data ready-to-use.
+      Extending ListSessionsForPathsUseCase would overload a focused, cached,
+      hot-path use case with an unrelated concern; composing it instead keeps
+      its 30s cache intact.
+  - title: How adopted sessions are identified
+    chosen: Bulk map of sourceAgentSessionId built from the already-listed features
+    rejected:
+      - New IFeatureRepository.findBySourceAgentSessionId per session
+      - New SQL index and a dedicated query per tree build
+    rationale: >
+      The tree already lists every feature to build its middle level, so the
+      adopted-session mapping is free — build a Map from sourceAgentSessionId to
+      feature while walking that list. A per-session repository lookup would be
+      N queries for data already in memory. No new repository method is needed
+      after all, which removes a change the spec had planned.
+  - title: Where session archive state lives
+    chosen: New archived_agent_sessions marker table, one row per archived session
+    rejected:
+      - Materialise every discovered session into a sessions table
+      - Store an archived-ids array in settings JSON
+      - Rename or move the provider transcript file
+    rationale: >
+      AgentSession is documented as read from provider storage and deliberately
+      not a shep row; materialising all of them would invert that and require
+      sync. Archived sessions are the sparse exception, so a marker table keyed
+      by (agent_type, session_id) stores only what is true. Unarchive is a row
+      delete, which makes the reversibility guarantee trivial to honour. A
+      settings array would grow unbounded and be unqueryable; touching provider
+      files would break the "archive never modifies provider data" promise.
+  - title: How transcript deletion reaches the providers
+    chosen: Optional delete(id) on IAgentSessionRepository plus a capability probe
+    rejected:
+      - Required delete(id) on the port
+      - A separate ITranscriptDeleter port
+      - Delete the file directly from the use case
+    rationale: >
+      Making delete required would force StubSessionRepository and every future
+      provider to implement a destructive operation they may not support.
+      Declaring it optional, with the use case checking for it before offering
+      deletion, matches how isSupported() already gates listing. A separate port
+      would split one provider's knowledge of its own storage layout across two
+      interfaces — Cursor's directory-per-transcript layout means deletion is
+      provider-specific knowledge, so it belongs with the repository that
+      already encodes that layout. Deleting from the use case would be a
+      dependency-rule violation.
+  - title: Double sidenav composition
+    chosen: Second Sidebar rendered as a sibling in the existing SidebarProvider, gated on pathname
+    rejected:
+      - Nested SidebarProvider around a second Sidebar
+      - A hand-rolled fixed-position panel
+      - Tree as a tab inside the existing AppSidebar
+    rationale: >
+      shadcn's SidebarProvider owns a single open/closed state and writes one
+      cookie; nesting a second provider would make the two panels share and
+      fight over that state. Rendering a second panel as a sibling inside the
+      existing provider keeps one source of truth for the rail while letting the
+      tree own its own open state (defaulting to open, as requested). A
+      hand-rolled panel would miss the existing mobile, RTL, and keyboard
+      behaviour the sidebar primitive already handles. app-shell already reads
+      `pathname`, so gating to the Control Center costs nothing.
+  - title: Reusing ui/file-tree.tsx
+    chosen: Purpose-built tree node components, borrowing the accordion pattern only
+    rejected:
+      - Render the session tree through the existing TreeView component
+    rationale: >
+      ui/file-tree.tsx models TreeViewElement as {id, name, type: file|folder,
+      children} — a filesystem shape. Session tree nodes carry an agent type, an
+      adopted/unadopted state, message counts, relative timestamps, and per-node
+      actions (adopt, resume, archive, delete). Forcing that through a
+      file/folder element type would mean stuffing domain state into a name
+      string or a parallel lookup. Small purpose-built node components stay
+      under the file-size limit and leave the file tree unchanged for its
+      existing IDE-tab consumer.
 
 # Open questions (should be resolved by end of research)
-openQuestions:
-  []
-  # - question: "Which library should we use?"
-  #   resolved: true
-  #   answer: "Library X because of Y"
+openQuestions: []
 
 # Markdown content (the full research document)
 content: |
   ## Status
 
   - **Phase:** Research
-  - **Updated:** 2026-08-03
+  - **Updated:** 2026-08-04
+
+  ## Summary
+
+  Three findings shaped the plan.
+
+  1. **No new repository method is needed.** The spec assumed a
+     `findBySourceAgentSessionId` lookup. But the tree already lists every
+     feature to build its middle level, so the adopted-session map can be built
+     from that same list in memory. This removes a planned port change.
+
+  2. **`delete` must be optional on the session port.** Making it required
+     would force `StubSessionRepository` — and every future provider — to
+     implement a destructive operation. An optional method plus a capability
+     check mirrors how `isSupported()` already gates listing.
+
+  3. **A second `SidebarProvider` cannot be nested.** It owns a single
+     open/closed state and one cookie; two providers would fight over it. The
+     second panel renders as a sibling inside the existing provider with its own
+     local open state.
 
   ## Technology Decisions
 
-  ### {{DECISION_TITLE}}
+  ### Where the tree is assembled
 
-  **Options considered:**
+  **Decision:** a new `BuildSessionTreeUseCase` returning a ready-to-render
+  view model.
 
-  1. {{OPTION_1}}
-  2. {{OPTION_2}}
-  3. {{OPTION_3}}
+  **Rationale:** the tree joins repositories, features, and sessions, and
+  applies a domain rule (a session is adopted iff some feature's
+  `sourceAgentSessionId` equals its id). Both belong in the application layer
+  per the project's "logic lives in core, not presentation" rule. Composing
+  `ListSessionsForPathsUseCase` rather than extending it preserves that use
+  case's 30-second cache on the canvas polling path.
 
-  **Decision:** {{CHOSEN_OPTION}}
+  ### How adopted sessions are identified
 
-  **Rationale:** {{RATIONALE}}
+  **Decision:** build a `Map<sessionId, {featureId, featureName}>` while walking
+  the feature list the tree already needs.
+
+  **Rationale:** the data is already in memory. A per-session repository lookup
+  would issue N queries for it. This also means the spec's planned
+  `IFeatureRepository.findBySourceAgentSessionId` is unnecessary.
+
+  ### Where session archive state lives
+
+  **Decision:** an `archived_agent_sessions` marker table, one row per archived
+  session, keyed by `(agent_type, session_id)`. Unarchive deletes the row.
+
+  **Rationale:** `AgentSession` is explicitly not a shep database row.
+  Materialising every discovered session to support an archive flag would
+  invert that invariant and introduce a sync problem. Archived sessions are
+  sparse, so storing only them is both smaller and truthful. Row-delete
+  unarchive makes reversibility trivial. Provider files are never touched, which
+  is the guarantee that distinguishes archive from delete.
+
+  ### How transcript deletion reaches the providers
+
+  **Decision:** `delete?(id): Promise<boolean>` on `IAgentSessionRepository`,
+  with the use case probing for its presence.
+
+  **Rationale:** deletion is provider-specific — Claude Code and Codex unlink a
+  single `.jsonl`, while Cursor may need to remove a whole
+  directory-per-transcript folder. That layout knowledge already lives in each
+  repository, so deletion belongs there rather than in a separate port. Keeping
+  the method optional avoids forcing a destructive implementation onto the stub
+  and unsupported providers.
+
+  ### Double sidenav composition
+
+  **Decision:** a second `Sidebar` rendered as a sibling within the existing
+  `SidebarProvider`, gated on `pathname`, with the tree panel defaulting to
+  open.
+
+  **Rationale:** one provider, one rail state, no cookie contention. Reusing the
+  sidebar primitive inherits its mobile sheet, RTL, and keyboard handling.
+  `app-shell` already reads `pathname`, so scoping the panel to the Control
+  Center is a conditional render.
+
+  ### Reusing ui/file-tree.tsx
+
+  **Decision:** borrow the Radix accordion pattern, not the component.
+
+  **Rationale:** `TreeViewElement` is `{id, name, type: 'file' | 'folder',
+  children}` — a filesystem model. Session nodes need agent type, adopted state,
+  message count, relative time, and per-node actions. Adapting them into a
+  file/folder element would mean encoding domain state in strings.
 
   ## Library Analysis
 
-  | Library     | Version     | Purpose     | Pros     | Cons     |
-  | ----------- | ----------- | ----------- | -------- | -------- |
-  | {{LIBRARY}} | {{VERSION}} | {{PURPOSE}} | {{PROS}} | {{CONS}} |
+  No new dependencies. The 21st.dev reference depends on `@carbon/icons-react`;
+  this project uses `lucide-react` and will not add a second icon set.
+
+  | Library | Version | Purpose | Pros | Cons |
+  | ------- | ------- | ------- | ---- | ---- |
+  | shadcn/ui sidebar | existing | Second panel + icon rail | Already supports `collapsible="icon"`, mobile, RTL | Single provider state — cannot nest |
+  | Radix Accordion | existing | Expand/collapse tree levels | Already used by `ui/file-tree.tsx`; accessible | — |
+  | lucide-react | existing | Icons | Already the project's icon set | — |
+  | umzug | existing | Migration for the marker table | House pattern, auto-discovered | — |
 
   ## Security Considerations
 
-  No security implications identified.
+  - **Deletion is irreversible and touches files shep does not own.** It must be
+    gated behind explicit confirmation naming the file, must never be the
+    default action, and must never run implicitly as part of archiving.
+  - **Path containment.** A session id resolves to a transcript path derived from
+    provider encodings. Deletion must verify the resolved path sits inside the
+    expected provider root before unlinking, so a malformed or crafted id cannot
+    escape into arbitrary filesystem locations.
+  - **Deleting a transcript must not cascade.** An adopted session's feature is
+    independent data; removing the transcript may leave
+    `Feature.sourceAgentSessionId` dangling, which is acceptable and must not
+    delete or block the feature.
+  - **Archive is safe by construction** — it only inserts a shep-side row.
 
   ## Performance Implications
 
-  No performance implications identified.
+  - **The tree composes a cached source.** `ListSessionsForPathsUseCase` already
+    caches for 30s and parses only the top-N transcripts per path, so tree
+    builds stay cheap. The archived-id set is one indexed table read.
+  - **Tree size is bounded by repo count.** With 20+ repositories the panel
+    should render session children per expanded node rather than eagerly
+    rendering every session for every repo.
+  - **Archive/unarchive are single-row writes**, and deletion is one filesystem
+    unlink — neither is on a polling path.
 
   ## Open Questions
 
-  All questions resolved.
+  All resolved. Research removed one planned change (no new `IFeatureRepository`
+  method) and hardened two decisions (optional `delete` on the port; no nested
+  `SidebarProvider`).
 
   ---
 
