@@ -895,5 +895,25 @@
     "scope": {
       "organization": "Organization"
     }
+  },
+  "sessionTree": {
+    "title": "Сесії",
+    "loading": "Завантаження сесій…",
+    "empty": "Ще немає відстежуваних репозиторіїв",
+    "noSessions": "Немає сесій",
+    "notConverted": "Не перетворені",
+    "showArchived": "Показати архів",
+    "hideArchived": "Сховати архів",
+    "refresh": "Оновити",
+    "sessionActions": "Дії сесії",
+    "archive": "В архів",
+    "unarchive": "Відновити",
+    "delete": "Видалити транскрипт…",
+    "deleteConfirmTitle": "Видалити цей транскрипт?",
+    "deleteConfirmDescription": "Файл розмови буде безповоротно видалено з диска. Скасувати неможливо, і shep не володіє цим файлом.",
+    "deleteConfirm": "Видалити безповоротно",
+    "deleteAdoptedNote": "Функцію, створену з цієї сесії, не буде видалено.",
+    "cancel": "Скасувати",
+    "archivedHidden": "Сховано в архіві: {{count}}"
   }
 }

@@ -895,5 +895,25 @@
     "scope": {
       "organization": "Organization"
     }
+  },
+  "sessionTree": {
+    "title": "Sesiones",
+    "loading": "Cargando sesiones…",
+    "empty": "Aún no hay repositorios rastreados",
+    "noSessions": "Sin sesiones",
+    "notConverted": "Sin convertir",
+    "showArchived": "Mostrar archivadas",
+    "hideArchived": "Ocultar archivadas",
+    "refresh": "Actualizar",
+    "sessionActions": "Acciones de sesión",
+    "archive": "Archivar",
+    "unarchive": "Restaurar",
+    "delete": "Eliminar transcripción…",
+    "deleteConfirmTitle": "¿Eliminar esta transcripción?",
+    "deleteConfirmDescription": "Esto elimina permanentemente el archivo de conversación del disco. No se puede deshacer, y shep no es propietario de este archivo.",
+    "deleteConfirm": "Eliminar permanentemente",
+    "deleteAdoptedNote": "La funcionalidad adoptada de esta sesión no se eliminará.",
+    "cancel": "Cancelar",
+    "archivedHidden": "{{count}} archivadas ocultas"
   }
 }

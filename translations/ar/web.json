@@ -895,5 +895,25 @@
     "scope": {
       "organization": "Organization"
     }
+  },
+  "sessionTree": {
+    "title": "الجلسات",
+    "loading": "جارٍ تحميل الجلسات…",
+    "empty": "لا توجد مستودعات متتبعة بعد",
+    "noSessions": "لا جلسات",
+    "notConverted": "غير محوّلة",
+    "showArchived": "إظهار المؤرشفة",
+    "hideArchived": "إخفاء المؤرشفة",
+    "refresh": "تحديث",
+    "sessionActions": "إجراءات الجلسة",
+    "archive": "أرشفة",
+    "unarchive": "استعادة",
+    "delete": "حذف النص…",
+    "deleteConfirmTitle": "حذف هذا النص؟",
+    "deleteConfirmDescription": "سيؤدي هذا إلى إزالة ملف المحادثة نهائيًا من القرص. لا يمكن التراجع، وshep لا يملك هذا الملف.",
+    "deleteConfirm": "حذف نهائي",
+    "deleteAdoptedNote": "لن يتم حذف الميزة المستمدة من هذه الجلسة.",
+    "cancel": "إلغاء",
+    "archivedHidden": "{{count}} مؤرشفة مخفية"
   }
 }

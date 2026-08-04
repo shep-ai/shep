@@ -895,5 +895,25 @@
     "scope": {
       "organization": "Organization"
     }
+  },
+  "sessionTree": {
+    "title": "שיחות",
+    "loading": "טוען שיחות…",
+    "empty": "אין עדיין מאגרים במעקב",
+    "noSessions": "אין שיחות",
+    "notConverted": "לא הומרו",
+    "showArchived": "הצג בארכיון",
+    "hideArchived": "הסתר ארכיון",
+    "refresh": "רענן",
+    "sessionActions": "פעולות שיחה",
+    "archive": "ארכיון",
+    "unarchive": "שחזור",
+    "delete": "מחיקת תמליל…",
+    "deleteConfirmTitle": "למחוק את התמליל הזה?",
+    "deleteConfirmDescription": "הפעולה מוחקת לצמיתות את קובץ השיחה מהדיסק. לא ניתן לבטל, ו-shep אינו הבעלים של הקובץ.",
+    "deleteConfirm": "מחק לצמיתות",
+    "deleteAdoptedNote": "הפיצ׳ר שנוצר מהשיחה הזו לא יימחק.",
+    "cancel": "ביטול",
+    "archivedHidden": "{{count}} בארכיון מוסתרים"
   }
 }

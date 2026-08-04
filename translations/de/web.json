@@ -895,5 +895,25 @@
     "scope": {
       "organization": "Organization"
     }
+  },
+  "sessionTree": {
+    "title": "Sitzungen",
+    "loading": "Sitzungen werden geladen…",
+    "empty": "Noch keine Repositories verfolgt",
+    "noSessions": "Keine Sitzungen",
+    "notConverted": "Nicht konvertiert",
+    "showArchived": "Archivierte anzeigen",
+    "hideArchived": "Archivierte ausblenden",
+    "refresh": "Aktualisieren",
+    "sessionActions": "Sitzungsaktionen",
+    "archive": "Archivieren",
+    "unarchive": "Wiederherstellen",
+    "delete": "Transkript löschen…",
+    "deleteConfirmTitle": "Dieses Transkript löschen?",
+    "deleteConfirmDescription": "Dies entfernt die Konversationsdatei endgültig von der Festplatte. Das kann nicht rückgängig gemacht werden, und shep besitzt diese Datei nicht.",
+    "deleteConfirm": "Endgültig löschen",
+    "deleteAdoptedNote": "Das aus dieser Sitzung übernommene Feature wird nicht gelöscht.",
+    "cancel": "Abbrechen",
+    "archivedHidden": "{{count}} archiviert ausgeblendet"
   }
 }

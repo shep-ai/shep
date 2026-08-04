@@ -895,5 +895,25 @@
     "scope": {
       "organization": "Organization"
     }
+  },
+  "sessionTree": {
+    "title": "Sessions",
+    "loading": "Loading sessions…",
+    "empty": "No repositories tracked yet",
+    "noSessions": "No sessions",
+    "notConverted": "Not converted",
+    "showArchived": "Show archived",
+    "hideArchived": "Hide archived",
+    "refresh": "Refresh",
+    "sessionActions": "Session actions",
+    "archive": "Archive",
+    "unarchive": "Restore",
+    "delete": "Delete transcript…",
+    "deleteConfirmTitle": "Delete this transcript?",
+    "deleteConfirmDescription": "This permanently removes the conversation file from disk. It cannot be undone, and shep does not own this file.",
+    "deleteConfirm": "Delete permanently",
+    "deleteAdoptedNote": "The feature adopted from this session will not be deleted.",
+    "cancel": "Cancel",
+    "archivedHidden": "{{count}} archived hidden"
   }
 }

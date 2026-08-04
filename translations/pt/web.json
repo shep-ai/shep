@@ -895,5 +895,25 @@
     "scope": {
       "organization": "Organization"
     }
+  },
+  "sessionTree": {
+    "title": "Sessões",
+    "loading": "Carregando sessões…",
+    "empty": "Nenhum repositório rastreado ainda",
+    "noSessions": "Sem sessões",
+    "notConverted": "Não convertidas",
+    "showArchived": "Mostrar arquivadas",
+    "hideArchived": "Ocultar arquivadas",
+    "refresh": "Atualizar",
+    "sessionActions": "Ações da sessão",
+    "archive": "Arquivar",
+    "unarchive": "Restaurar",
+    "delete": "Excluir transcrição…",
+    "deleteConfirmTitle": "Excluir esta transcrição?",
+    "deleteConfirmDescription": "Isso remove permanentemente o arquivo de conversa do disco. Não pode ser desfeito, e o shep não é proprietário deste arquivo.",
+    "deleteConfirm": "Excluir permanentemente",
+    "deleteAdoptedNote": "A funcionalidade adotada desta sessão não será excluída.",
+    "cancel": "Cancelar",
+    "archivedHidden": "{{count}} arquivadas ocultas"
   }
 }

@@ -895,5 +895,25 @@
     "scope": {
       "organization": "Organization"
     }
+  },
+  "sessionTree": {
+    "title": "Сессии",
+    "loading": "Загрузка сессий…",
+    "empty": "Пока нет отслеживаемых репозиториев",
+    "noSessions": "Нет сессий",
+    "notConverted": "Не преобразованы",
+    "showArchived": "Показать архив",
+    "hideArchived": "Скрыть архив",
+    "refresh": "Обновить",
+    "sessionActions": "Действия сессии",
+    "archive": "В архив",
+    "unarchive": "Восстановить",
+    "delete": "Удалить расшифровку…",
+    "deleteConfirmTitle": "Удалить эту расшифровку?",
+    "deleteConfirmDescription": "Файл беседы будет безвозвратно удалён с диска. Отменить нельзя, и shep не владеет этим файлом.",
+    "deleteConfirm": "Удалить безвозвратно",
+    "deleteAdoptedNote": "Функция, созданная из этой сессии, не будет удалена.",
+    "cancel": "Отмена",
+    "archivedHidden": "Скрыто в архиве: {{count}}"
   }
 }

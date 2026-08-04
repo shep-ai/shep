@@ -32,6 +32,10 @@ const BulkImportDialog = dynamic(
   () => import('@/components/common/bulk-import-dialog').then((m) => m.BulkImportDialog),
   { ssr: false }
 );
+const SessionTreePanel = dynamic(
+  () => import('@/components/features/session-tree').then((m) => m.SessionTreePanel),
+  { ssr: false }
+);
 const ReactFileManagerDialog = dynamic(
   () =>
     import('@/components/common/react-file-manager-dialog').then((m) => m.ReactFileManagerDialog),
@@ -104,6 +108,9 @@ function AppShellInner({ children, sidebarOpen, variant = 'full' }: AppShellProp
   const [addingRepo, setAddingRepo] = useState(false);
   const [githubDialogOpen, setGithubDialogOpen] = useState(false);
   const [showReactPicker, setShowReactPicker] = useState(false);
+  // The session tree is the Control Center's second sidenav. Scoped to that
+  // route only — every other app-shell page keeps a single sidebar.
+  const isControlCenter = pathname === '/';
   // Bulk import: first pick a PARENT folder, then choose among its subfolders.
   const [showBulkPicker, setShowBulkPicker] = useState(false);
   const [bulkDirectory, setBulkDirectory] = useState('');
@@ -194,6 +201,15 @@ function AppShellInner({ children, sidebarOpen, variant = 'full' }: AppShellProp
         onFeatureClick={handleFeatureClick}
         onAddFeature={handleAddFeature}
       />
+      {isControlCenter ? (
+        <aside
+          className="hidden h-dvh w-72 shrink-0 md:block"
+          aria-label="Session tree"
+          data-testid="session-tree-sidenav"
+        >
+          <SessionTreePanel />
+        </aside>
+      ) : null}
       <SidebarInset>
         {/* `h-dvh` (not `h-full`) so the full-shell page area has an
             explicit viewport-bound height regardless of child content.

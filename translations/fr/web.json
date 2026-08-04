@@ -895,5 +895,25 @@
     "scope": {
       "organization": "Organization"
     }
+  },
+  "sessionTree": {
+    "title": "Sessions",
+    "loading": "Chargement des sessions…",
+    "empty": "Aucun dépôt suivi pour le moment",
+    "noSessions": "Aucune session",
+    "notConverted": "Non converties",
+    "showArchived": "Afficher les archivées",
+    "hideArchived": "Masquer les archivées",
+    "refresh": "Rafraîchir",
+    "sessionActions": "Actions de session",
+    "archive": "Archiver",
+    "unarchive": "Restaurer",
+    "delete": "Supprimer la transcription…",
+    "deleteConfirmTitle": "Supprimer cette transcription ?",
+    "deleteConfirmDescription": "Cela supprime définitivement le fichier de conversation du disque. Action irréversible, et shep ne possède pas ce fichier.",
+    "deleteConfirm": "Supprimer définitivement",
+    "deleteAdoptedNote": "La fonctionnalité issue de cette session ne sera pas supprimée.",
+    "cancel": "Annuler",
+    "archivedHidden": "{{count}} archivée(s) masquée(s)"
   }
 }
