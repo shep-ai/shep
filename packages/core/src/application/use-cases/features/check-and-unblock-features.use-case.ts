@@ -57,7 +57,7 @@ export class CheckAndUnblockFeaturesUseCase {
     private readonly gitPrService: IGitPrService,
     @inject('IWorktreeService')
     private readonly worktreeService: IWorktreeService,
-    @inject('ConflictResolutionService')
+    @inject('IConflictResolutionService')
     private readonly conflictResolutionService: IConflictResolutionService,
     @inject('IAgentRunRepository')
     private readonly agentRunRepo: IAgentRunRepository,
