@@ -7,8 +7,10 @@ const mockArchive = vi.fn();
 const mockUnarchive = vi.fn();
 const mockDelete = vi.fn();
 
+const mockPush = vi.fn();
+
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn(), prefetch: vi.fn() }),
+  useRouter: () => ({ push: mockPush, replace: vi.fn(), refresh: vi.fn(), prefetch: vi.fn() }),
   usePathname: () => '/control-center',
 }));
 
@@ -309,6 +311,20 @@ describe('SessionTreePanel', () => {
         'session-tree-repo-fresh',
         'session-tree-repo-stale',
       ]);
+    });
+  });
+
+  describe('feature navigation', () => {
+    it('navigates to the singular /feature/<id> route', async () => {
+      mockLoad.mockResolvedValue(tree);
+      render(<SessionTreePanel />);
+      await expandRepo();
+
+      await userEvent.click(screen.getByRole('button', { name: 'Billing' }));
+
+      // '/features/<id>' is the Inventory list page, not a feature detail page.
+      expect(mockPush).toHaveBeenCalledWith('/feature/feat-1');
+      expect(mockPush).not.toHaveBeenCalledWith('/features/feat-1');
     });
   });
 });

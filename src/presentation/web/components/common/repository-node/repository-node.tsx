@@ -92,7 +92,7 @@ export function RepositoryNode({
   // to the feature it produced. No prompt is assembled here.
   const handleSessionAdopted = useCallback(
     (featureId: string) => {
-      router.push(`/features/${featureId}`);
+      router.push(`/feature/${featureId}`);
     },
     [router]
   );

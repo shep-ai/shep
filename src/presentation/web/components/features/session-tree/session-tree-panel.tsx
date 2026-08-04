@@ -252,7 +252,7 @@ export function SessionTreePanel({ className }: { className?: string }) {
                             level={1}
                             open={expandedFeatures.has(feature.id)}
                             onToggle={() => toggleFeature(feature.id)}
-                            onSelect={(id) => router.push(`/features/${id}`)}
+                            onSelect={(id) => router.push(`/feature/${id}`)}
                           />
                           {expandedFeatures.has(feature.id)
                             ? feature.sessions.map((session) => (
