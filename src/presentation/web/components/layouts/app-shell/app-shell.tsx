@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { Direction } from 'radix-ui';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/layouts/app-sidebar';
+import { shouldShowSessionTree } from './session-tree-visibility';
 import { pickFolder } from '@/components/common/add-repository-button/pick-folder';
 import { buildCreateUrl } from '@/lib/url-params';
 
@@ -110,7 +111,9 @@ function AppShellInner({ children, sidebarOpen, variant = 'full' }: AppShellProp
   const [showReactPicker, setShowReactPicker] = useState(false);
   // The session tree is the Control Center's second sidenav. Scoped to that
   // route only — every other app-shell page keeps a single sidebar.
-  const isControlCenter = pathname === '/';
+  // Route gate lives in a tested module — a wrong path here previously meant
+  // the tree never mounted, with nothing failing to reveal it.
+  const isControlCenter = shouldShowSessionTree(pathname);
   // Bulk import: first pick a PARENT folder, then choose among its subfolders.
   const [showBulkPicker, setShowBulkPicker] = useState(false);
   const [bulkDirectory, setBulkDirectory] = useState('');
