@@ -905,6 +905,8 @@
     "showArchived": "הצג בארכיון",
     "hideArchived": "הסתר ארכיון",
     "refresh": "רענן",
+    "collapseAll": "כווץ הכול",
+    "expandAll": "הרחב הכול",
     "sessionActions": "פעולות שיחה",
     "archive": "ארכיון",
     "unarchive": "שחזור",

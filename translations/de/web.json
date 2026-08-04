@@ -905,6 +905,8 @@
     "showArchived": "Archivierte anzeigen",
     "hideArchived": "Archivierte ausblenden",
     "refresh": "Aktualisieren",
+    "collapseAll": "Alle einklappen",
+    "expandAll": "Alle ausklappen",
     "sessionActions": "Sitzungsaktionen",
     "archive": "Archivieren",
     "unarchive": "Wiederherstellen",

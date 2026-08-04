@@ -2,7 +2,15 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, RefreshCw, Archive, ArchiveX, ListTree } from 'lucide-react';
+import {
+  Loader2,
+  RefreshCw,
+  Archive,
+  ArchiveX,
+  ListTree,
+  ChevronsDownUp,
+  ChevronsUpDown,
+} from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -15,6 +23,7 @@ import {
   SessionTreeSessionRow,
 } from './session-tree-node';
 import { SessionTreeActions } from './session-tree-actions';
+import { loadExpansion, saveExpansion, toggleInSet } from './session-tree-expansion';
 
 /**
  * The Control Center's second sidenav: a Repository → feature → session tree.
@@ -32,9 +41,11 @@ export function SessionTreePanel({ className }: { className?: string }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showArchived, setShowArchived] = useState(false);
-  // Repositories start expanded — the tree is open by default.
-  const [collapsedRepos, setCollapsedRepos] = useState<Set<string>>(new Set());
-  const [openFeatures, setOpenFeatures] = useState<Set<string>>(new Set());
+  // Everything starts COLLAPSED. Expansion is tracked as the set of opened ids
+  // and restored from localStorage, so the tree reopens where the user left it.
+  const [expandedRepos, setExpandedRepos] = useState<Set<string>>(new Set());
+  const [expandedFeatures, setExpandedFeatures] = useState<Set<string>>(new Set());
+  const [expansionLoaded, setExpansionLoaded] = useState(false);
 
   const load = useCallback(async (includeArchived: boolean) => {
     setLoading(true);
@@ -47,42 +58,58 @@ export function SessionTreePanel({ className }: { className?: string }) {
       setRepositories([]);
       return;
     }
-    const repos = result.repositories ?? [];
-    setRepositories(repos);
+    setRepositories(result.repositories ?? []);
     setArchivedCount(result.archivedCount ?? 0);
-    // Features with adopted sessions start expanded so the nesting is visible.
-    setOpenFeatures(
-      new Set(
-        repos.flatMap((repo) => repo.features.filter((f) => f.sessions.length > 0).map((f) => f.id))
-      )
-    );
   }, []);
 
   useEffect(() => {
     void load(showArchived);
   }, [load, showArchived]);
 
-  function toggleRepo(path: string) {
-    setCollapsedRepos((prev) => {
-      const next = new Set(prev);
-      if (next.has(path)) next.delete(path);
-      else next.add(path);
-      return next;
+  // Restore persisted expansion once, on mount.
+  useEffect(() => {
+    const stored = loadExpansion();
+    setExpandedRepos(new Set(stored.repositories));
+    setExpandedFeatures(new Set(stored.features));
+    setExpansionLoaded(true);
+  }, []);
+
+  // Persist on change, but not before the restore has run — otherwise the
+  // initial empty state would immediately overwrite what was saved.
+  useEffect(() => {
+    if (!expansionLoaded) return;
+    saveExpansion({
+      repositories: [...expandedRepos],
+      features: [...expandedFeatures],
     });
+  }, [expansionLoaded, expandedRepos, expandedFeatures]);
+
+  function toggleRepo(path: string) {
+    setExpandedRepos((prev) => toggleInSet(prev, path));
   }
 
   function toggleFeature(id: string) {
-    setOpenFeatures((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
+    setExpandedFeatures((prev) => toggleInSet(prev, id));
+  }
+
+  const anythingExpanded = expandedRepos.size > 0 || expandedFeatures.size > 0;
+
+  /** Collapse everything, or expand every repository when already collapsed. */
+  function toggleCollapseAll() {
+    if (anythingExpanded) {
+      setExpandedRepos(new Set());
+      setExpandedFeatures(new Set());
+      return;
+    }
+    setExpandedRepos(new Set(repositories.map((r) => r.path)));
   }
 
   const archivedLabel = showArchived
     ? t('sessionTree.hideArchived')
     : t('sessionTree.showArchived');
+  const collapseLabel = anythingExpanded
+    ? t('sessionTree.collapseAll')
+    : t('sessionTree.expandAll');
 
   return (
     <div
@@ -92,6 +119,23 @@ export function SessionTreePanel({ className }: { className?: string }) {
       <div className="flex items-center gap-1.5 border-b px-3 py-2">
         <ListTree className="h-4 w-4 shrink-0" aria-hidden />
         <span className="flex-1 text-sm font-semibold">{t('sessionTree.title')}</span>
+
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-6 w-6"
+          aria-label={collapseLabel}
+          title={collapseLabel}
+          onClick={toggleCollapseAll}
+          disabled={repositories.length === 0}
+          data-testid="session-tree-collapse-all"
+        >
+          {anythingExpanded ? (
+            <ChevronsDownUp className="h-3.5 w-3.5" />
+          ) : (
+            <ChevronsUpDown className="h-3.5 w-3.5" />
+          )}
+        </Button>
 
         <Button
           variant="ghost"
@@ -148,7 +192,7 @@ export function SessionTreePanel({ className }: { className?: string }) {
         <ScrollArea className="min-h-0 flex-1">
           <div className="flex flex-col gap-0.5 p-2">
             {repositories.map((repo) => {
-              const open = !collapsedRepos.has(repo.path);
+              const open = expandedRepos.has(repo.path);
 
               return (
                 <div key={repo.path} className="flex flex-col">
@@ -165,11 +209,11 @@ export function SessionTreePanel({ className }: { className?: string }) {
                           <SessionTreeFeatureRow
                             feature={feature}
                             level={1}
-                            open={openFeatures.has(feature.id)}
+                            open={expandedFeatures.has(feature.id)}
                             onToggle={() => toggleFeature(feature.id)}
                             onSelect={(id) => router.push(`/features/${id}`)}
                           />
-                          {openFeatures.has(feature.id)
+                          {expandedFeatures.has(feature.id)
                             ? feature.sessions.map((session) => (
                                 <SessionTreeSessionRow
                                   key={session.id}

@@ -905,6 +905,8 @@
     "showArchived": "Afficher les archivées",
     "hideArchived": "Masquer les archivées",
     "refresh": "Rafraîchir",
+    "collapseAll": "Tout replier",
+    "expandAll": "Tout déplier",
     "sessionActions": "Actions de session",
     "archive": "Archiver",
     "unarchive": "Restaurer",

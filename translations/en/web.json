@@ -905,6 +905,8 @@
     "showArchived": "Show archived",
     "hideArchived": "Hide archived",
     "refresh": "Refresh",
+    "collapseAll": "Collapse all",
+    "expandAll": "Expand all",
     "sessionActions": "Session actions",
     "archive": "Archive",
     "unarchive": "Restore",

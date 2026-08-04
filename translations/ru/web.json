@@ -905,6 +905,8 @@
     "showArchived": "Показать архив",
     "hideArchived": "Скрыть архив",
     "refresh": "Обновить",
+    "collapseAll": "Свернуть все",
+    "expandAll": "Развернуть все",
     "sessionActions": "Действия сессии",
     "archive": "В архив",
     "unarchive": "Восстановить",

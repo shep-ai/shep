@@ -905,6 +905,8 @@
     "showArchived": "إظهار المؤرشفة",
     "hideArchived": "إخفاء المؤرشفة",
     "refresh": "تحديث",
+    "collapseAll": "طي الكل",
+    "expandAll": "توسيع الكل",
     "sessionActions": "إجراءات الجلسة",
     "archive": "أرشفة",
     "unarchive": "استعادة",

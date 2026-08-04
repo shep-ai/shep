@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
@@ -9,7 +9,7 @@ const mockDelete = vi.fn();
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn(), prefetch: vi.fn() }),
-  usePathname: () => '/',
+  usePathname: () => '/control-center',
 }));
 
 vi.mock('@/app/actions/session-tree', () => ({
@@ -34,7 +34,7 @@ function session(id: string, adopted = false, archived = false) {
   };
 }
 
-const treeWithAdopted = {
+const tree = {
   repositories: [
     {
       id: 'repo-1',
@@ -55,13 +55,34 @@ const treeWithAdopted = {
   archivedCount: 0,
 };
 
+/** Expand the "proj" repository and wait for its children. */
+async function expandRepo() {
+  await waitFor(() => expect(screen.getByTestId('session-tree-repo-proj')).toBeInTheDocument());
+  await userEvent.click(screen.getByTestId('session-tree-repo-proj'));
+  return screen.findByTestId('session-tree-session-loose');
+}
+
 describe('SessionTreePanel', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // The shared web setup stubs localStorage with non-storing mocks; the panel
+    // persists expansion, so give each test a real in-memory store.
+    const store = new Map<string, string>();
+    vi.spyOn(window.localStorage, 'getItem').mockImplementation(
+      (k: string) => store.get(k) ?? null
+    );
+    vi.spyOn(window.localStorage, 'setItem').mockImplementation((k: string, v: string) => {
+      store.set(k, v);
+    });
+
     mockLoad.mockResolvedValue({ repositories: [], archivedCount: 0 });
     mockArchive.mockResolvedValue({ ok: true });
     mockUnarchive.mockResolvedValue({ ok: true });
     mockDelete.mockResolvedValue({ ok: true, deleted: true });
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
   it('loads the tree on mount, excluding archived by default', async () => {
@@ -70,30 +91,86 @@ describe('SessionTreePanel', () => {
     await waitFor(() => expect(mockLoad).toHaveBeenCalledWith({ includeArchived: false }));
   });
 
-  it('renders repositories expanded by default', async () => {
-    mockLoad.mockResolvedValue(treeWithAdopted);
+  it('renders repositories COLLAPSED by default', async () => {
+    mockLoad.mockResolvedValue(tree);
     render(<SessionTreePanel />);
 
-    await waitFor(() => {
-      expect(screen.getByTestId('session-tree-repo-proj')).toBeInTheDocument();
-      // Expanded, so children are visible without interaction.
-      expect(screen.getByTestId('session-tree-feature-feat-1')).toBeInTheDocument();
-      expect(screen.getByTestId('session-tree-session-loose')).toBeInTheDocument();
-    });
+    await waitFor(() => expect(screen.getByTestId('session-tree-repo-proj')).toBeInTheDocument());
+    expect(screen.queryByTestId('session-tree-feature-feat-1')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('session-tree-session-loose')).not.toBeInTheDocument();
   });
 
-  it('nests an adopted session under its feature and marks it adopted', async () => {
-    mockLoad.mockResolvedValue(treeWithAdopted);
+  it('reveals children when a repository is expanded', async () => {
+    mockLoad.mockResolvedValue(tree);
     render(<SessionTreePanel />);
 
-    await waitFor(() => {
-      const adopted = screen.getByTestId('session-tree-session-a1');
-      expect(adopted).toHaveAttribute('data-adopted', 'true');
-    });
+    await expandRepo();
+
+    expect(screen.getByTestId('session-tree-feature-feat-1')).toBeInTheDocument();
+  });
+
+  it('collapses an expanded repository when clicked again', async () => {
+    mockLoad.mockResolvedValue(tree);
+    render(<SessionTreePanel />);
+    await expandRepo();
+
+    await userEvent.click(screen.getByTestId('session-tree-repo-proj'));
+
+    await waitFor(() =>
+      expect(screen.queryByTestId('session-tree-session-loose')).not.toBeInTheDocument()
+    );
+  });
+
+  it('marks an adopted session as adopted and a loose one as not', async () => {
+    mockLoad.mockResolvedValue(tree);
+    render(<SessionTreePanel />);
+    await expandRepo();
+
+    // The disclosure control is a nested button inside the feature row.
+    await userEvent.click(screen.getByRole('button', { name: /expand feature/i }));
+
+    expect(await screen.findByTestId('session-tree-session-a1')).toHaveAttribute(
+      'data-adopted',
+      'true'
+    );
     expect(screen.getByTestId('session-tree-session-loose')).toHaveAttribute(
       'data-adopted',
       'false'
     );
+  });
+
+  it('collapses everything via the collapse-all control', async () => {
+    mockLoad.mockResolvedValue(tree);
+    render(<SessionTreePanel />);
+    await expandRepo();
+
+    await userEvent.click(screen.getByTestId('session-tree-collapse-all'));
+
+    await waitFor(() =>
+      expect(screen.queryByTestId('session-tree-session-loose')).not.toBeInTheDocument()
+    );
+  });
+
+  it('expands every repository when nothing is expanded', async () => {
+    mockLoad.mockResolvedValue(tree);
+    render(<SessionTreePanel />);
+    await waitFor(() => expect(screen.getByTestId('session-tree-repo-proj')).toBeInTheDocument());
+
+    await userEvent.click(screen.getByTestId('session-tree-collapse-all'));
+
+    expect(await screen.findByTestId('session-tree-session-loose')).toBeInTheDocument();
+  });
+
+  it('persists expansion so it survives a remount', async () => {
+    mockLoad.mockResolvedValue(tree);
+    const first = render(<SessionTreePanel />);
+    await expandRepo();
+
+    first.unmount();
+    render(<SessionTreePanel />);
+
+    // Restored from storage — expanded with no interaction this time.
+    expect(await screen.findByTestId('session-tree-session-loose')).toBeInTheDocument();
   });
 
   it('shows an empty state when nothing is tracked', async () => {
@@ -110,36 +187,20 @@ describe('SessionTreePanel', () => {
   });
 
   it('reloads with archived included when toggled', async () => {
-    mockLoad.mockResolvedValue(treeWithAdopted);
+    mockLoad.mockResolvedValue(tree);
     render(<SessionTreePanel />);
-
     await waitFor(() => expect(screen.getByTestId('session-tree-toggle-archived')).toBeEnabled());
+
     await userEvent.click(screen.getByTestId('session-tree-toggle-archived'));
 
     await waitFor(() => expect(mockLoad).toHaveBeenCalledWith({ includeArchived: true }));
   });
 
-  it('collapses a repository when its row is clicked', async () => {
-    mockLoad.mockResolvedValue(treeWithAdopted);
-    render(<SessionTreePanel />);
-
-    await waitFor(() =>
-      expect(screen.getByTestId('session-tree-session-loose')).toBeInTheDocument()
-    );
-    await userEvent.click(screen.getByTestId('session-tree-repo-proj'));
-
-    await waitFor(() =>
-      expect(screen.queryByTestId('session-tree-session-loose')).not.toBeInTheDocument()
-    );
-  });
-
   it('archives a session in one click', async () => {
-    mockLoad.mockResolvedValue(treeWithAdopted);
+    mockLoad.mockResolvedValue(tree);
     render(<SessionTreePanel />);
+    await expandRepo();
 
-    await waitFor(() =>
-      expect(screen.getByTestId('session-tree-actions-loose')).toBeInTheDocument()
-    );
     await userEvent.click(screen.getByTestId('session-tree-actions-loose'));
     await userEvent.click(await screen.findByTestId('session-tree-archive-loose'));
 
@@ -149,22 +210,21 @@ describe('SessionTreePanel', () => {
   });
 
   it('does not delete until the confirmation is accepted', async () => {
-    mockLoad.mockResolvedValue(treeWithAdopted);
+    mockLoad.mockResolvedValue(tree);
     render(<SessionTreePanel />);
+    await expandRepo();
 
-    await waitFor(() =>
-      expect(screen.getByTestId('session-tree-actions-loose')).toBeInTheDocument()
-    );
     await userEvent.click(screen.getByTestId('session-tree-actions-loose'));
     await userEvent.click(await screen.findByTestId('session-tree-delete-loose'));
 
-    // Dialog is open, but nothing deleted yet.
+    // Dialog open, nothing deleted yet.
     expect(mockDelete).not.toHaveBeenCalled();
     expect(await screen.findByTestId('session-tree-delete-path')).toHaveTextContent(
       '/transcripts/loose.jsonl'
     );
 
     await userEvent.click(screen.getByTestId('session-tree-delete-confirm'));
+
     await waitFor(() =>
       expect(mockDelete).toHaveBeenCalledWith({ sessionId: 'loose', agentType: 'claude-code' })
     );
