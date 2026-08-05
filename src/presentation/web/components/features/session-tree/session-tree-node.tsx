@@ -174,29 +174,46 @@ export interface SessionTreeRepositoryRowProps {
   repository: SessionTreeRepository;
   open: boolean;
   onToggle: () => void;
+  /** Rendered at the row's trailing edge — the repository action menu */
+  actions?: React.ReactNode;
 }
 
+/**
+ * One repository. The disclosure control is a button inside the row rather than
+ * the row itself, so the action menu can sit beside it without nesting
+ * interactive elements.
+ */
 export function SessionTreeRepositoryRow({
   repository,
   open,
   onToggle,
+  actions,
 }: SessionTreeRepositoryRowProps) {
   return (
-    <button
-      type="button"
-      onClick={onToggle}
-      aria-expanded={open}
-      className="hover:bg-sidebar-accent flex w-full items-center gap-1.5 rounded px-1 py-1 text-xs font-semibold"
-      data-testid={`session-tree-repo-${repository.name}`}
-    >
-      <Chevron open={open} />
-      <FolderGit2 className="h-3.5 w-3.5 shrink-0" aria-hidden />
-      <span className="min-w-0 flex-1 truncate text-start" title={repository.path}>
-        {repository.name}
-      </span>
+    <div className="group/row hover:bg-sidebar-accent flex items-center gap-1.5 rounded px-1 py-1 text-xs font-semibold">
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={open}
+        className="flex min-w-0 flex-1 items-center gap-1.5"
+        data-testid={`session-tree-repo-${repository.name}`}
+      >
+        <Chevron open={open} />
+        <FolderGit2 className="h-3.5 w-3.5 shrink-0" aria-hidden />
+        <span className="min-w-0 flex-1 truncate text-start" title={repository.path}>
+          {repository.name}
+        </span>
+      </button>
+
       <span className="text-muted-foreground shrink-0 text-[10px] font-normal">
         {repository.sessionCount}
       </span>
-    </button>
+
+      {actions ? (
+        <span className="shrink-0 opacity-0 transition-opacity group-hover/row:opacity-100 focus-within:opacity-100">
+          {actions}
+        </span>
+      ) : null}
+    </div>
   );
 }

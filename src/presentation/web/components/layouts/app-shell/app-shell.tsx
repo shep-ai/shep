@@ -7,7 +7,6 @@ import { useTranslation } from 'react-i18next';
 import { Direction } from 'radix-ui';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/layouts/app-sidebar';
-import { shouldShowSessionTree } from './session-tree-visibility';
 import { pickFolder } from '@/components/common/add-repository-button/pick-folder';
 import { buildCreateUrl } from '@/lib/url-params';
 
@@ -31,10 +30,6 @@ const GitHubImportDialog = dynamic(
 );
 const BulkImportDialog = dynamic(
   () => import('@/components/common/bulk-import-dialog').then((m) => m.BulkImportDialog),
-  { ssr: false }
-);
-const SessionTreePanel = dynamic(
-  () => import('@/components/features/session-tree').then((m) => m.SessionTreePanel),
   { ssr: false }
 );
 const ReactFileManagerDialog = dynamic(
@@ -109,11 +104,6 @@ function AppShellInner({ children, sidebarOpen, variant = 'full' }: AppShellProp
   const [addingRepo, setAddingRepo] = useState(false);
   const [githubDialogOpen, setGithubDialogOpen] = useState(false);
   const [showReactPicker, setShowReactPicker] = useState(false);
-  // The session tree is the Control Center's second sidenav. Scoped to that
-  // route only — every other app-shell page keeps a single sidebar.
-  // Route gate lives in a tested module — a wrong path here previously meant
-  // the tree never mounted, with nothing failing to reveal it.
-  const isControlCenter = shouldShowSessionTree(pathname);
   // Bulk import: first pick a PARENT folder, then choose among its subfolders.
   const [showBulkPicker, setShowBulkPicker] = useState(false);
   const [bulkDirectory, setBulkDirectory] = useState('');
@@ -204,15 +194,9 @@ function AppShellInner({ children, sidebarOpen, variant = 'full' }: AppShellProp
         onFeatureClick={handleFeatureClick}
         onAddFeature={handleAddFeature}
       />
-      {isControlCenter ? (
-        <aside
-          className="hidden h-dvh shrink-0 md:block"
-          aria-label="Session tree"
-          data-testid="session-tree-sidenav"
-        >
-          <SessionTreePanel />
-        </aside>
-      ) : null}
+      {/* The Control Center's session-tree sub-nav is rendered by the
+          (dashboard) layout, which owns the providers it shares with the
+          canvas. */}
       <SidebarInset>
         {/* `h-dvh` (not `h-full`) so the full-shell page area has an
             explicit viewport-bound height regardless of child content.

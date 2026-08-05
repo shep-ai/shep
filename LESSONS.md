@@ -1,5 +1,47 @@
 # Lessons Learned
 
+## A second surface for an entity must offer the same actions — parity is part of the feature
+
+Spec 106 added the session-tree sub-nav as a second way to browse repositories, but the rows were
+read-only: every action (IDE, shell, folder, webhook, chat, new feature, dev server, remove) still
+required going back to the canvas card. The user's report was one sentence: "we should be able to do
+the same actions we can do on the canvas on a repo."
+
+Rules:
+
+1. **When you add a second surface onto an existing entity, the action set is part of the scope, not
+   a follow-up.** Ask "what can the user do to this thing on the surface that already exists?" and
+   answer all of it, or say explicitly which parts you left out and why.
+2. **Two surfaces means the action list gets extracted, not copied.** `repository-actions.ts` is a
+   pure builder (labels, tones, loading/disabled rules) that both the canvas toolbar and the tree
+   dropdown consume via `useRepositoryCardActions`. The payoff is the invariant: an action added
+   there appears on both surfaces, and it is unit-testable without React, routers, or providers.
+3. **Anything the new surface renders per row must be lazy.** The tree renders one action menu per
+   repository. Mounting the hooks eagerly fired a webhook probe and a deployment hydration for all
+   22 rows on every tree load. Putting the hook-bearing component *inside* `DropdownMenuContent`
+   fixes it for free — Radix unmounts closed content — and a test asserting `fetch` is untouched
+   before the menu opens keeps it that way.
+
+## Provider access is a layout decision — check the React tree before promising a shared action
+
+The session tree lived in `app-shell` (root layout) while `DeploymentStatusProvider` and
+`SessionsProvider` lived under the `(dashboard)` layout and inside `ControlCenter`. `useDeployAction`
+falls back to a **silent no-op store** when its provider is absent, so a Start Dev Server button in
+the tree would have rendered, clicked, and done nothing — no error, no log. Moving the panel into the
+`(dashboard)` layout put it inside both providers and let the route-gate module
+(`session-tree-visibility.ts`) be deleted outright: the layout boundary already answers "which routes
+show the tree", and it cannot be wrong.
+
+Rules:
+
+1. **Before wiring a shared action into a new surface, verify the provider is an ancestor of that
+   surface** — not merely "somewhere in the app". Optional-context hooks with no-op fallbacks
+   (`useDeploymentStatusContextOptional`, `useSessionsContext`) fail silently by design.
+2. **Prefer moving the consumer into the provider's subtree over mounting a second provider.** Two
+   stores for the same data means the same Run button shows different state on two surfaces.
+3. **A route-group layout is a better route gate than a path list.** If chrome belongs to every route
+   in a group, render it in that group's `layout.tsx` and delete the predicate.
+
 ## A new Feature column needs FOUR edits, and the mapper test won't catch the missing one
 
 Adding `sourceAgentSessionId`/`sourceAgentType` (spec 105) needed: the TypeSpec model, the

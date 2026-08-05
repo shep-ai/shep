@@ -1,50 +1,45 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { Handle, Position } from '@xyflow/react';
 import { useRouter } from 'next/navigation';
 import {
   Github,
   Plus,
-  Code2,
-  Terminal,
   FolderOpen,
   Trash2,
-  Play,
-  Square,
   GitBranch,
   GitCommitHorizontal,
   ArrowDown,
   User,
-  RotateCcw,
-  MessageSquare,
-  Radio,
 } from 'lucide-react';
-import { Trans, useTranslation } from 'react-i18next';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { ActionButton } from '@/components/common/action-button';
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Label } from '@/components/ui/label';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { useDeployAction } from '@/hooks/use-deploy-action';
-import { isDeploymentActive as computeIsDeploymentActive } from '@/hooks/deployment-status-store';
-import { useWebhookAction } from '@/hooks/use-webhook-action';
-import { useFeatureFlags } from '@/hooks/feature-flags-context';
 import type { RepositoryNodeData } from './repository-node-config';
-import { useRepositoryActions } from './use-repository-actions';
+import {
+  RepositoryActionKey,
+  RepositoryActionTone,
+  REPOSITORY_TOOLBAR_ACTION_KEYS,
+  type RepositoryAction,
+} from './repository-actions';
+import { useRepositoryCardActions } from './use-repository-card-actions';
+import { RepositoryDeleteDialog } from './repository-delete-dialog';
 import { ChatDotIndicator } from '@/components/features/chat/ChatDotIndicator';
-import { useTurnStatus } from '@/hooks/turn-statuses-provider';
 import { FeatureSessionsDropdown } from '@/components/common/feature-node/feature-sessions-dropdown';
+
+/** Vertical offset of the edge handles, aligned with the card's first row. */
+const HANDLE_TOP_PX = 70;
+
+/** Icon-button tint per action tone. */
+const TONE_CLASS: Partial<Record<RepositoryActionTone, string>> = {
+  [RepositoryActionTone.Positive]:
+    'text-green-600 hover:text-green-700 dark:text-green-400 dark:hover:text-green-300',
+  [RepositoryActionTone.Accent]:
+    'text-violet-500 hover:text-violet-600 dark:text-violet-400 dark:hover:text-violet-300',
+};
 
 export function RepositoryNode({
   data,
@@ -59,34 +54,20 @@ export function RepositoryNode({
   const isRtl = i18n.dir() === 'rtl';
   const targetHandlePos = isRtl ? Position.Right : Position.Left;
   const sourceHandlePos = isRtl ? Position.Left : Position.Right;
-  const featureFlags = useFeatureFlags();
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [deleteFromDisk, setDeleteFromDisk] = useState(false);
-  useEffect(() => {
-    if (confirmOpen) setDeleteFromDisk(false);
-  }, [confirmOpen]);
-  const repoScopeId = data.id ? `repo-${data.id}` : `repo-${data.name}`;
-  const chatTurnStatus = useTurnStatus(repoScopeId);
-  const actions = useRepositoryActions(
-    data.repositoryPath ? { repositoryId: data.id, repositoryPath: data.repositoryPath } : null
-  );
-  const deployAction = useDeployAction(
-    data.repositoryPath
-      ? {
-          targetId: data.repositoryPath,
-          targetType: 'repository',
-          repositoryPath: data.repositoryPath,
-        }
-      : null
-  );
-  const isDeploymentActive = computeIsDeploymentActive(deployAction.status);
-  const webhookAction = useWebhookAction(data.repositoryPath ?? null);
 
-  const webhookTooltip = !webhookAction.tunnelConnected
-    ? 'Webhook unavailable \u2014 tunnel not running'
-    : webhookAction.enabled
-      ? 'Disable webhook'
-      : 'Enable webhook';
+  const canDelete = Boolean(data.onDelete && data.id);
+
+  const { byKey, deployment, chatTurnStatus } = useRepositoryCardActions({
+    ...(data.id !== undefined && { repositoryId: data.id }),
+    repositoryName: data.name,
+    ...(data.repositoryPath !== undefined && { repositoryPath: data.repositoryPath }),
+    // The card renders "+ New" as its own primary button, and delete as a
+    // hover affordance outside the card, so both are placed by hand below.
+    withoutNewFeature: true,
+  });
+
+  const devServer = byKey(RepositoryActionKey.DevServer);
 
   // Adoption itself happens in AdoptAgentSessionUseCase — this only navigates
   // to the feature it produced. No prompt is assembled here.
@@ -99,7 +80,7 @@ export function RepositoryNode({
 
   return (
     <div
-      className={cn('group relative', data.onDelete && data.id && 'ps-10')}
+      className={cn('group relative', canDelete && 'ps-10')}
       style={{ direction: isRtl ? 'rtl' : 'ltr' }}
     >
       {data.showHandles ? (
@@ -108,12 +89,12 @@ export function RepositoryNode({
           position={targetHandlePos}
           isConnectable={false}
           className="opacity-0!"
-          style={{ top: 70 }}
+          style={{ top: HANDLE_TOP_PX }}
         />
       ) : null}
 
       {/* Delete button — visible on hover, positioned to the left */}
-      {data.onDelete && data.id ? (
+      {canDelete ? (
         <>
           <div className="absolute -start-3 top-1/2 -translate-y-1/2 opacity-0 transition-opacity group-hover:opacity-100">
             <TooltipProvider>
@@ -136,54 +117,15 @@ export function RepositoryNode({
             </TooltipProvider>
           </div>
 
-          <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-            <DialogContent className="max-w-sm">
-              <DialogHeader>
-                <DialogTitle>{t('repositoryNode.removeConfirmTitle')}</DialogTitle>
-                <DialogDescription>
-                  <Trans
-                    t={t}
-                    i18nKey="repositoryNode.removeConfirmDescription"
-                    values={{ name: data.name }}
-                    components={{ strong: <strong /> }}
-                  />{' '}
-                  {deleteFromDisk
-                    ? t('repositoryNode.removeConfirmDescriptionDeleteFiles')
-                    : t('repositoryNode.removeConfirmDescriptionKeepFiles')}
-                </DialogDescription>
-              </DialogHeader>
-              <div className="flex items-center gap-2">
-                <Checkbox
-                  id="repository-delete-from-disk"
-                  checked={deleteFromDisk}
-                  onCheckedChange={(checked) => setDeleteFromDisk(checked === true)}
-                  data-testid="repository-node-delete-from-disk-checkbox"
-                  aria-label={t('repositoryNode.deleteFromDiskLabel')}
-                />
-                <Label
-                  htmlFor="repository-delete-from-disk"
-                  className="cursor-pointer text-sm font-normal"
-                >
-                  {t('repositoryNode.deleteFromDiskLabel')}
-                </Label>
-              </div>
-              <DialogFooter className="grid grid-cols-2 gap-2 sm:flex-none">
-                <DialogClose asChild>
-                  <Button variant="outline">{t('repositoryNode.cancel')}</Button>
-                </DialogClose>
-                <Button
-                  variant="destructive"
-                  data-testid="repository-node-delete-confirm-button"
-                  onClick={() => {
-                    setConfirmOpen(false);
-                    data.onDelete?.(data.id!, { deleteFromDisk });
-                  }}
-                >
-                  {t('repositoryNode.remove')}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+          <RepositoryDeleteDialog
+            open={confirmOpen}
+            onOpenChange={setConfirmOpen}
+            repositoryName={data.name}
+            onConfirm={({ deleteFromDisk }) => {
+              setConfirmOpen(false);
+              data.onDelete?.(data.id!, { deleteFromDisk });
+            }}
+          />
         </>
       ) : null}
 
@@ -224,111 +166,15 @@ export function RepositoryNode({
           >
             {data.repositoryPath ? (
               <>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <span className="flex items-center">
-                        <ActionButton
-                          label={t('repositoryNode.openInIde')}
-                          onClick={actions.openInIde}
-                          loading={actions.ideLoading}
-                          error={!!actions.ideError}
-                          icon={Code2}
-                          iconOnly
-                          variant="ghost"
-                          size="icon-xs"
-                        />
-                      </span>
-                    </TooltipTrigger>
-                    <TooltipContent>{t('repositoryNode.openInIde')}</TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <span className="flex items-center">
-                        <ActionButton
-                          label={t('repositoryNode.openInShell')}
-                          onClick={actions.openInShell}
-                          loading={actions.shellLoading}
-                          error={!!actions.shellError}
-                          icon={Terminal}
-                          iconOnly
-                          variant="ghost"
-                          size="icon-xs"
-                        />
-                      </span>
-                    </TooltipTrigger>
-                    <TooltipContent>{t('repositoryNode.openInShell')}</TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <span className="flex items-center">
-                        <ActionButton
-                          label={t('repositoryNode.openFolder')}
-                          onClick={actions.openFolder}
-                          loading={actions.folderLoading}
-                          error={!!actions.folderError}
-                          icon={FolderOpen}
-                          iconOnly
-                          variant="ghost"
-                          size="icon-xs"
-                        />
-                      </span>
-                    </TooltipTrigger>
-                    <TooltipContent>{t('repositoryNode.openFolder')}</TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <span className="flex items-center">
-                        <ActionButton
-                          label={webhookTooltip}
-                          onClick={webhookAction.toggle}
-                          loading={webhookAction.loading}
-                          error={!!webhookAction.error}
-                          icon={Radio}
-                          iconOnly
-                          variant="ghost"
-                          size="icon-xs"
-                          disabled={!webhookAction.tunnelConnected}
-                          className={
-                            webhookAction.enabled && !webhookAction.error
-                              ? 'text-green-500 hover:text-green-600'
-                              : undefined
-                          }
-                        />
-                      </span>
-                    </TooltipTrigger>
-                    <TooltipContent>{webhookTooltip}</TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon-xs"
-                        aria-label={t('repositoryNode.chatWithAgent')}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (data.id)
-                            router.push(
-                              `/repository/${data.id}/chat` as Parameters<typeof router.push>[0]
-                            );
-                        }}
-                        className="nodrag relative cursor-pointer text-violet-500 hover:text-violet-600 dark:text-violet-400 dark:hover:text-violet-300"
-                      >
-                        <MessageSquare className="h-3 w-3" />
-                        <ChatDotIndicator status={chatTurnStatus} />
-                      </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>{t('repositoryNode.chatWithAgent')}</TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+                {REPOSITORY_TOOLBAR_ACTION_KEYS.map((key) => {
+                  const action = byKey(key);
+                  if (!action) return null;
+                  return key === RepositoryActionKey.Chat ? (
+                    <ChatActionButton key={key} action={action} turnStatus={chatTurnStatus} />
+                  ) : (
+                    <ToolbarActionButton key={key} action={action} />
+                  );
+                })}
                 {/* Worktree inclusion is decided by the batch sessions use
                     case per path — repo paths already include them. */}
                 <FeatureSessionsDropdown
@@ -459,27 +305,27 @@ export function RepositoryNode({
           </>
         ) : null}
 
-        {/* Row 4: Local dev server — always visible when envDeploy flag is on */}
-        {featureFlags.envDeploy && data.repositoryPath ? (
+        {/* Row 4: Local dev server — present whenever the action is offered */}
+        {devServer ? (
           <div
             data-testid="repository-node-dev-preview"
             className="border-border/50 border-t px-4 py-2"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center gap-2 text-xs">
-              {deployAction.deployError ? (
-                <span className="truncate text-xs text-red-500">{deployAction.deployError}</span>
-              ) : isDeploymentActive ? (
+              {deployment.error ? (
+                <span className="truncate text-xs text-red-500">{deployment.error}</span>
+              ) : deployment.active ? (
                 <>
                   <span className="me-0.5 inline-block h-2 w-2 shrink-0 rounded-full bg-green-500" />
-                  {deployAction.url ? (
+                  {deployment.url ? (
                     <a
-                      href={deployAction.url}
+                      href={deployment.url}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="truncate text-green-700 hover:underline dark:text-green-400"
                     >
-                      {deployAction.url}
+                      {deployment.url}
                     </a>
                   ) : (
                     <span className="text-muted-foreground">{t('repositoryNode.starting')}</span>
@@ -493,44 +339,9 @@ export function RepositoryNode({
                   </span>
                 </span>
               )}
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <span
-                      className={cn(
-                        'ms-auto flex items-center',
-                        !isDeploymentActive &&
-                          !deployAction.deployError &&
-                          '[&_button]:text-green-600 [&_button]:hover:text-green-700 dark:[&_button]:text-green-400 dark:[&_button]:hover:text-green-300'
-                      )}
-                    >
-                      <ActionButton
-                        label={
-                          deployAction.deployError
-                            ? t('repositoryNode.retry')
-                            : isDeploymentActive
-                              ? t('repositoryNode.stopDevServer')
-                              : t('repositoryNode.startDevServer')
-                        }
-                        onClick={isDeploymentActive ? deployAction.stop : deployAction.deploy}
-                        loading={deployAction.deployLoading || deployAction.stopLoading}
-                        error={false}
-                        icon={
-                          deployAction.deployError ? RotateCcw : isDeploymentActive ? Square : Play
-                        }
-                        iconOnly
-                        variant="ghost"
-                        size="icon-xs"
-                      />
-                    </span>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    {isDeploymentActive
-                      ? t('repositoryNode.stopDevServer')
-                      : t('repositoryNode.startDevServer')}
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <span className="ms-auto flex items-center">
+                <ToolbarActionButton action={devServer} />
+              </span>
             </div>
           </div>
         ) : null}
@@ -543,9 +354,76 @@ export function RepositoryNode({
           position={sourceHandlePos}
           isConnectable={!data.showHandles}
           className="opacity-0!"
-          style={{ top: 70 }}
+          style={{ top: HANDLE_TOP_PX }}
         />
       ) : null}
     </div>
+  );
+}
+
+/** One shared action rendered as a tooltipped icon button. */
+function ToolbarActionButton({ action }: { action: RepositoryAction }) {
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span className="flex items-center">
+            <ActionButton
+              label={action.label}
+              onClick={action.run}
+              loading={action.loading}
+              error={action.error}
+              icon={action.icon}
+              iconOnly
+              variant="ghost"
+              size="icon-xs"
+              disabled={action.disabled}
+              {...(!action.error && { className: TONE_CLASS[action.tone] })}
+            />
+          </span>
+        </TooltipTrigger>
+        <TooltipContent>{action.label}</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  );
+}
+
+/**
+ * Chat gets its own button because it carries the agent turn indicator — a
+ * decoration no other action has.
+ */
+function ChatActionButton({
+  action,
+  turnStatus,
+}: {
+  action: RepositoryAction;
+  turnStatus: Parameters<typeof ChatDotIndicator>[0]['status'];
+}) {
+  const Icon = action.icon;
+
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon-xs"
+            aria-label={action.label}
+            onClick={(e) => {
+              e.stopPropagation();
+              action.run();
+            }}
+            className={cn(
+              'nodrag relative cursor-pointer',
+              TONE_CLASS[RepositoryActionTone.Accent]
+            )}
+          >
+            <Icon className="h-3 w-3" />
+            <ChatDotIndicator status={turnStatus} />
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>{action.label}</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 }

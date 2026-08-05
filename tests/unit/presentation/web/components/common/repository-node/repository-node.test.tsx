@@ -380,7 +380,7 @@ describe('RepositoryNode', () => {
       renderNode({ ...dataWithRepoPath, id: 'repo-abc', onDelete });
 
       fireEvent.click(screen.getByTestId('repository-node-delete-button'));
-      fireEvent.click(screen.getByTestId('repository-node-delete-from-disk-checkbox'));
+      fireEvent.click(screen.getByTestId('repository-delete-from-disk-checkbox'));
       fireEvent.click(screen.getByRole('button', { name: 'Remove' }));
 
       expect(onDelete).toHaveBeenCalledWith('repo-abc', { deleteFromDisk: true });
@@ -392,7 +392,7 @@ describe('RepositoryNode', () => {
 
       // Open, check, cancel
       fireEvent.click(screen.getByTestId('repository-node-delete-button'));
-      fireEvent.click(screen.getByTestId('repository-node-delete-from-disk-checkbox'));
+      fireEvent.click(screen.getByTestId('repository-delete-from-disk-checkbox'));
       fireEvent.click(screen.getByRole('button', { name: 'Cancel' }));
 
       // Reopen, confirm — should be false again

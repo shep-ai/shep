@@ -3,8 +3,10 @@
 
 name: control-center-double-sidenav
 summary: >
-  10 tasks across 4 phases, ordered so the double sidenav becomes visible at the
-  end of phase 2, before the archive/delete work in phase 3.
+  11 tasks across 4 phases, ordered so the double sidenav becomes visible at the
+  end of phase 2, before the archive/delete work in phase 3. Task-11 closes the
+  gap the first pass left: the tree could browse repositories but not act on
+  them.
 status:
   phase: implementation
   updatedAt: '2026-08-04'
@@ -254,6 +256,43 @@ tasks:
         - Reuse the existing delete-confirmation dialog pattern if one fits
     estimatedEffort: M
 
+  - id: task-11
+    title: Repository action parity between the tree and the canvas
+    description: >
+      The tree row exposed no repository actions, so anything a user could do to
+      a repository still required going to the canvas card. Extract the action
+      matrix into one shared module (buildRepositoryActions +
+      useRepositoryCardActions) so both surfaces read the same list, then render
+      it as a dropdown on the tree row and as the existing icon toolbar on the
+      card. Move the tree from app-shell into the (dashboard) layout so it sits
+      inside the same DeploymentStatusProvider and SessionsProvider as the
+      canvas - without that, a dev-server action taken in the tree would hit a
+      no-op fallback store. The route-gate module is deleted: the layout
+      boundary now answers "which routes show the tree".
+    state: Done
+    dependencies:
+      - task-5
+      - task-9
+    acceptanceCriteria:
+      - Tree row offers open, new feature, chat, IDE, shell, folder, webhook, dev server and remove
+      - Both surfaces build their actions from the same module - an added action appears on both
+      - Delete is confirmation-gated on both surfaces via one shared dialog
+      - The tree and the canvas share a single deployment store and sessions batch-fetch
+      - Action state is lazy - no webhook or deployment probe until a row's menu is opened
+      - Webhook tooltips are translated, not inline English literals
+      - New i18n keys exist in all nine locales
+      - Stories cover the menu and the shared delete dialog
+    tdd:
+      red:
+        - Pure unit tests for the action matrix - labels, tones, loading, disabled, omission rules
+        - Component tests for the menu - navigation, IDE handoff, confirm-gated delete, error surfacing
+        - Test asserting no probe fires until the menu opens
+      green:
+        - Extract repository-actions + use-repository-card-actions, add the tree menu, move the panel
+      refactor:
+        - Collapse the card's five repeated tooltip/action blocks into one map over the shared keys
+    estimatedEffort: M
+
   - id: task-10
     title: Full validation sweep
     description: >
@@ -274,7 +313,7 @@ tasks:
     tdd: null
     estimatedEffort: S
 
-totalEstimate: L - 10 tasks; feature visible after task-5, mutation work in phase 3
+totalEstimate: L - 11 tasks; feature visible after task-5, mutation work in phase 3
 
 openQuestions: []
 
@@ -282,7 +321,7 @@ content: |
   ## Summary
 
   Second Control Center sidenav with a repository -> feature -> session tree,
-  plus session archive and delete - 10 tasks across 4 phases.
+  plus session archive and delete - 11 tasks across 4 phases.
 
   Phase 1 builds the tree data in core. **Phase 2 is when the feature becomes
   visible in the UI** (task-5 mounts it). Phase 3 makes sessions mutable:
@@ -297,11 +336,12 @@ content: |
 
   ## Acceptance Checklist
 
-  - [ ] All 10 tasks completed
+  - [ ] All 11 tasks completed
   - [ ] Two sidenavs visible on the Control Center, tree open by default
   - [ ] Adopted vs unadopted sessions distinguishable at a glance
   - [ ] Archive reversible and never touching provider files
   - [ ] Delete confirmation-gated, never cascading into the adopted feature
+  - [ ] Every canvas repository action also reachable from the tree row
   - [ ] Other routes visually unchanged
   - [ ] Tests, lint, typecheck, builds, storybook all green
   - [ ] i18n keys in all nine locales

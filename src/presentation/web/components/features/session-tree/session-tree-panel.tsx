@@ -25,6 +25,7 @@ import {
   SessionTreeSessionRow,
 } from './session-tree-node';
 import { SessionTreeActions } from './session-tree-actions';
+import { SessionTreeRepositoryActions } from './session-tree-repository-actions';
 import { loadExpansion, saveExpansion, toggleInSet } from './session-tree-expansion';
 
 /**
@@ -241,6 +242,12 @@ export function SessionTreePanel({ className }: { className?: string }) {
                     repository={repo}
                     open={open}
                     onToggle={() => toggleRepo(repo.path)}
+                    actions={
+                      <SessionTreeRepositoryActions
+                        repository={repo}
+                        onChanged={() => void load(showArchived)}
+                      />
+                    }
                   />
 
                   {open ? (
