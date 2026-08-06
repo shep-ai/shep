@@ -7,15 +7,15 @@
  * - Lifecycle guards (cannot reparent completed/archived/deleting features)
  * - Lifecycle state adjustment based on new parent's lifecycle
  *
- * After reparenting, if the new parent is post-implementation, calls
- * CheckAndUnblockFeaturesUseCase to trigger the unblock+rebase flow
- * for any Blocked children of the reparented feature.
+ * After reparenting, both ends of the new edge are handed to
+ * CheckAndUnblockFeaturesUseCase, which owns the gate and the
+ * Blocked -> Started + rebase + spawn flow.
  */
 
 import { injectable, inject } from 'tsyringe';
 import { SdlcLifecycle } from '../../../domain/generated/output.js';
 import type { IFeatureRepository } from '../../ports/output/repositories/feature-repository.interface.js';
-import { POST_IMPLEMENTATION } from '../../../domain/lifecycle-gates.js';
+import { satisfiesDependencyGate } from '../../../domain/lifecycle-gates.js';
 import { CheckAndUnblockFeaturesUseCase } from './check-and-unblock-features.use-case.js';
 
 /** Lifecycle states that cannot be reparented. */
@@ -90,7 +90,7 @@ export class ReparentFeatureUseCase {
 
     // Determine lifecycle adjustment based on new parent's lifecycle
     let newLifecycle = child.lifecycle;
-    if (parent.lifecycle === SdlcLifecycle.Blocked || !POST_IMPLEMENTATION.has(parent.lifecycle)) {
+    if (!satisfiesDependencyGate(parent)) {
       // Parent is pre-implementation or Blocked — child should be Blocked
       if (child.lifecycle !== SdlcLifecycle.Blocked && child.lifecycle !== SdlcLifecycle.Pending) {
         newLifecycle = SdlcLifecycle.Blocked;
@@ -105,12 +105,19 @@ export class ReparentFeatureUseCase {
       updatedAt: new Date(),
     });
 
-    // If new parent is post-implementation, trigger unblock flow for the
-    // reparented feature's own children (the feature itself may now be a parent
-    // of Blocked children that should be unblocked)
-    if (POST_IMPLEMENTATION.has(parent.lifecycle)) {
-      await this.checkAndUnblock.execute(featureId);
-    }
+    // Re-evaluate the gate at BOTH ends of the new edge. Both calls are
+    // gate-checked and idempotent inside CheckAndUnblockFeaturesUseCase, so the
+    // gate is deliberately NOT re-derived here — duplicating it is what let the
+    // two drift apart.
+    //
+    // New parent: it may already be past the Implementation gate (even finished),
+    // in which case the feature just attached — and any Blocked siblings — must be
+    // released NOW. A finished parent has no future transition left to do it.
+    await this.checkAndUnblock.execute(parentId);
+
+    // Reparented feature: it may itself be the parent of Blocked children whose
+    // gate is satisfied by its own lifecycle.
+    await this.checkAndUnblock.execute(featureId);
   }
 
   /**

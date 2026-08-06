@@ -99,6 +99,7 @@ vi.mock('@/infrastructure/services/agents/feature-agent/phase-timing-context.js'
 
 vi.mock('@/infrastructure/services/agents/feature-agent/lifecycle-context.js', () => ({
   updateNodeLifecycle: vi.fn().mockResolvedValue(undefined),
+  setFeatureLifecycle: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock('@/infrastructure/services/agents/feature-agent/nodes/prompts/merge-prompts.js', () => ({

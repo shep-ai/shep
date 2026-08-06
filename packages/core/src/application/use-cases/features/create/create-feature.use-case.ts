@@ -37,7 +37,7 @@ import type { ISkillInjectorService } from '../../../ports/output/services/skill
 import type { ISettingsRepository } from '../../../ports/output/repositories/settings.repository.interface.js';
 import type { ILogger } from '../../../ports/output/services/logger.interface.js';
 import { createDefaultSettings } from '../../../../domain/factories/settings-defaults.factory.js';
-import { POST_IMPLEMENTATION } from '../../../../domain/lifecycle-gates.js';
+import { satisfiesDependencyGate } from '../../../../domain/lifecycle-gates.js';
 import type { IAttachmentStorageService } from '../../../ports/output/services/feature-attachment-storage.interface.js';
 import { MetadataGenerator } from './metadata-generator.js';
 import { SlugResolver } from './slug-resolver.js';
@@ -160,10 +160,7 @@ export class CreateFeatureUseCase {
 
       // Skip gate logic when pending — parent gate is deferred to start time
       if (!input.pending) {
-        if (
-          parent.lifecycle === SdlcLifecycle.Blocked ||
-          !POST_IMPLEMENTATION.has(parent.lifecycle)
-        ) {
+        if (!satisfiesDependencyGate(parent)) {
           initialLifecycle = SdlcLifecycle.Blocked;
           shouldSpawn = false;
         } else {

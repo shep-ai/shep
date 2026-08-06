@@ -8,8 +8,13 @@
  * Business Rules:
  * - Only direct children of parentFeatureId are evaluated (no recursive traversal).
  *   Grandchildren stay Blocked until their own direct parent progresses.
- * - Gate: parent lifecycle must be in POST_IMPLEMENTATION (Implementation, Review, Maintain).
+ * - Gate: satisfiesDependencyGate(parent) — Implementation, Review, Maintain, or
+ *   Archived-after-completion.
+ *   This is the ONLY place the dependency gate is evaluated for a Blocked -> Started
+ *   transition — callers delegate here instead of re-deriving it.
  * - Idempotent: already-Started children are not touched; calling execute() twice is safe.
+ * - Soft-deleted children are never resurrected (findByParentId includes them so it
+ *   can serve cascade deletes).
  * - spawn() is skipped for children missing agentRunId or specPath (defensive guard).
  * - Auto-rebase: each blocked child's branch is rebased onto the parent branch
  *   before spawning the agent. Rebase failures are isolated per-child and recorded
@@ -40,7 +45,7 @@ import type { IWorktreeService } from '../../ports/output/services/worktree-serv
 import type { IConflictResolutionService } from '../../ports/output/services/conflict-resolution.interface.js';
 import type { IAgentRunRepository } from '../../ports/output/agents/agent-run-repository.interface.js';
 import type { IPhaseTimingRepository } from '../../ports/output/agents/phase-timing-repository.interface.js';
-import { POST_IMPLEMENTATION } from '../../../domain/lifecycle-gates.js';
+import { satisfiesDependencyGate } from '../../../domain/lifecycle-gates.js';
 
 /** Maximum time (ms) to wait for a single child rebase before aborting. */
 const REBASE_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
@@ -69,20 +74,22 @@ export class CheckAndUnblockFeaturesUseCase {
    * Check and unblock direct children of the given parent feature.
    *
    * @param parentFeatureId - ID of the feature whose children should be evaluated.
+   * @returns IDs of the children that were unblocked (empty when the gate is closed).
    */
-  async execute(parentFeatureId: string): Promise<void> {
+  async execute(parentFeatureId: string): Promise<string[]> {
     // Load parent and verify gate
     const parent = await this.featureRepo.findById(parentFeatureId);
-    if (!parent || !POST_IMPLEMENTATION.has(parent.lifecycle)) {
-      return;
+    if (!parent || !satisfiesDependencyGate(parent)) {
+      return [];
     }
 
     // Load direct children
     const children = await this.featureRepo.findByParentId(parentFeatureId);
+    const unblockedIds: string[] = [];
 
     // Unblock each blocked child
     for (const child of children) {
-      if (child.lifecycle !== SdlcLifecycle.Blocked) {
+      if (child.lifecycle !== SdlcLifecycle.Blocked || child.deletedAt) {
         continue;
       }
 
@@ -90,18 +97,28 @@ export class CheckAndUnblockFeaturesUseCase {
       child.lifecycle = SdlcLifecycle.Started;
       child.updatedAt = new Date();
       await this.featureRepo.update(child);
+      unblockedIds.push(child.id);
 
       // Rebase child branch onto parent branch (isolated per-child)
       await this.rebaseChildOntoParent(child, parent);
 
       // Spawn agent using fields set at feature creation time
       if (child.agentRunId && child.specPath) {
+        // A feature created as Blocked never went through worktree setup, so the
+        // stored path is often empty — derive it rather than letting the child
+        // agent run in the repository root.
+        const storedWorktreePath = child.worktreePath ?? '';
+        const worktreePath =
+          storedWorktreePath.length > 0
+            ? storedWorktreePath
+            : this.worktreeService.getWorktreePath(child.repositoryPath, child.branch);
+
         this.agentProcess.spawn(
           child.id,
           child.agentRunId,
           child.repositoryPath,
           child.specPath,
-          child.worktreePath,
+          worktreePath,
           {
             approvalGates: child.approvalGates,
             push: child.push,
@@ -118,6 +135,8 @@ export class CheckAndUnblockFeaturesUseCase {
         );
       }
     }
+
+    return unblockedIds;
   }
 
   /**

@@ -8,6 +8,7 @@
  */
 
 import { SdlcLifecycle } from './generated/output';
+import type { Feature } from './generated/output';
 
 /**
  * Lifecycle values at or beyond the Implementation gate.
@@ -24,6 +25,35 @@ export const POST_IMPLEMENTATION = new Set<SdlcLifecycle>([
   SdlcLifecycle.Review,
   SdlcLifecycle.Maintain,
 ]);
+
+/**
+ * Does a parent feature's progress satisfy the dependency gate for its children?
+ *
+ * This is the single predicate every dependency decision must use — creating a
+ * child, starting a Pending child, reparenting, and auto-unblocking. Comparing
+ * against POST_IMPLEMENTATION directly misses the Archived case below.
+ *
+ * Archived is treated as a filing concern, not a rollback of progress: features
+ * are auto-archived a configurable delay after reaching Maintain, so a parent
+ * that completed and was then archived MUST still release its children —
+ * `previousLifecycle` carries the progress it had when it was archived. A parent
+ * archived *before* reaching the gate keeps its children blocked, because its
+ * work never landed.
+ *
+ * @param parent - The parent feature (only its lifecycle fields are read).
+ * @returns True when direct children may leave Blocked.
+ */
+export function satisfiesDependencyGate(
+  parent: Pick<Feature, 'lifecycle'> & Partial<Pick<Feature, 'previousLifecycle'>>
+): boolean {
+  if (parent.lifecycle === SdlcLifecycle.Archived) {
+    return (
+      parent.previousLifecycle !== undefined && POST_IMPLEMENTATION.has(parent.previousLifecycle)
+    );
+  }
+
+  return POST_IMPLEMENTATION.has(parent.lifecycle);
+}
 
 /**
  * Valid lifecycle transitions FROM the Exploring state.

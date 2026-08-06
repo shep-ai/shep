@@ -32,7 +32,22 @@ import { createCliRunner } from '../../helpers/cli/runner.js';
 const isWindows = process.platform === 'win32';
 
 // These tests involve process spawning and signal delivery — use a generous timeout
-const TEST_TIMEOUT = 30_000;
+const TEST_TIMEOUT = isWindows ? 90_000 : 30_000;
+
+/**
+ * Per-command budget for restart/upgrade.
+ *
+ * These are the most expensive commands in the suite: each runs two daemon
+ * operations (stop, polling up to 5s, then start with a settle delay) plus a
+ * process spawn, on top of CLI startup. The budget MUST exceed the runner's own
+ * per-platform default (15s posix / 30s win32) — a flat 20s silently SHORTENED
+ * it on the slowest platform, and an execSync timeout surfaces as exitCode 1,
+ * indistinguishable from a genuine command failure.
+ *
+ * Must also stay below TEST_TIMEOUT so the exec timeout wins the race and
+ * reports a diagnosable error instead of vitest killing the test first.
+ */
+const MULTI_STEP_CLI_TIMEOUT_MS = isWindows ? 60_000 : 20_000;
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -346,7 +361,7 @@ describe('CLI: daemon lifecycle', { timeout: TEST_TIMEOUT }, () => {
         // restart = stop (up to 5s poll) + start (0.5s settle) — needs longer timeout on Windows
         runCli = createCliRunner({
           env: { SHEP_HOME: shepHome, SHEP_SKIP_READINESS_CHECK: '1' },
-          timeout: 20_000,
+          timeout: MULTI_STEP_CLI_TIMEOUT_MS,
         }).run;
 
         fakeProcess = isWindows
@@ -399,7 +414,7 @@ describe('CLI: daemon lifecycle', { timeout: TEST_TIMEOUT }, () => {
         // restart involves startDaemon which may take longer on Windows
         runCli = createCliRunner({
           env: { SHEP_HOME: shepHome, SHEP_SKIP_READINESS_CHECK: '1' },
-          timeout: 20_000,
+          timeout: MULTI_STEP_CLI_TIMEOUT_MS,
         }).run;
       });
 
@@ -463,7 +478,7 @@ describe('CLI: daemon lifecycle', { timeout: TEST_TIMEOUT }, () => {
             SHEP_SKIP_READINESS_CHECK: '1',
             PATH: `${binDir}${isWindows ? ';' : ':'}${process.env.PATH ?? '/usr/local/bin:/usr/bin:/bin'}`,
           },
-          timeout: 20_000,
+          timeout: MULTI_STEP_CLI_TIMEOUT_MS,
         }).run;
 
         fakeProcess = isWindows
@@ -527,7 +542,7 @@ describe('CLI: daemon lifecycle', { timeout: TEST_TIMEOUT }, () => {
             SHEP_SKIP_READINESS_CHECK: '1',
             PATH: `${binDir}${isWindows ? ';' : ':'}${process.env.PATH ?? '/usr/local/bin:/usr/bin:/bin'}`,
           },
-          timeout: 20_000,
+          timeout: MULTI_STEP_CLI_TIMEOUT_MS,
         }).run;
 
         fakeProcess = isWindows
@@ -589,7 +604,7 @@ describe('CLI: daemon lifecycle', { timeout: TEST_TIMEOUT }, () => {
             SHEP_SKIP_READINESS_CHECK: '1',
             PATH: `${binDir}${isWindows ? ';' : ':'}${process.env.PATH ?? '/usr/local/bin:/usr/bin:/bin'}`,
           },
-          timeout: 20_000,
+          timeout: MULTI_STEP_CLI_TIMEOUT_MS,
         }).run;
         // No daemon.json written — daemon is not running
       });

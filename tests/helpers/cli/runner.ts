@@ -49,6 +49,13 @@ export interface CliResult {
   exitCode: number;
   /** Whether the command succeeded */
   success: boolean;
+  /**
+   * Whether the command was killed for exceeding its timeout rather than
+   * exiting on its own. A killed process has no exit status, so `exitCode`
+   * falls back to 1 — identical to a real failure. Assert on this flag (or read
+   * the note appended to `stderr`) to tell the two apart.
+   */
+  timedOut: boolean;
 }
 
 /**
@@ -174,19 +181,28 @@ function executeCommand(
       stderr: '',
       exitCode: 0,
       success: true,
+      timedOut: false,
     };
   } catch (error) {
     const execError = error as {
       stdout?: Buffer | string;
       stderr?: Buffer | string;
-      status?: number;
+      status?: number | null;
+      signal?: string | null;
     };
+
+    // A process that exits on its own always yields a numeric status. A null
+    // status means it was killed — for execSync that is the timeout.
+    const timedOut = execError.status == null;
+    const stderr = String(execError.stderr ?? '').trim();
+    const timeoutNote = `[cli-runner] "shep ${args}" timed out after ${options.timeout}ms and was killed (signal=${execError.signal ?? 'unknown'}). exitCode below is a placeholder, not the command's own status.`;
 
     return {
       stdout: String(execError.stdout ?? '').trim(),
-      stderr: String(execError.stderr ?? '').trim(),
+      stderr: timedOut ? [stderr, timeoutNote].filter(Boolean).join('\n') : stderr,
       exitCode: execError.status ?? 1,
       success: false,
+      timedOut,
     };
   }
 }
@@ -317,18 +333,29 @@ export async function runCliAsync(args: string): Promise<CliResult> {
       stderr: stderr.trim(),
       exitCode: 0,
       success: true,
+      timedOut: false,
     };
   } catch (error) {
     const execError = error as {
       stdout?: string;
       stderr?: string;
-      code?: number;
+      code?: number | null;
+      signal?: string | null;
+      killed?: boolean;
     };
+
+    // Same reasoning as executeCommand(): no numeric code means the process was
+    // killed rather than exited, which for exec means the timeout elapsed.
+    const timedOut = execError.code == null;
+    const stderr = String(execError.stderr ?? '').trim();
+    const timeoutNote = `[cli-runner] "shep ${args}" timed out after ${DEFAULT_OPTIONS.timeout}ms and was killed (signal=${execError.signal ?? 'unknown'}). exitCode below is a placeholder, not the command's own status.`;
+
     return {
       stdout: String(execError.stdout ?? '').trim(),
-      stderr: String(execError.stderr ?? '').trim(),
+      stderr: timedOut ? [stderr, timeoutNote].filter(Boolean).join('\n') : stderr,
       exitCode: execError.code ?? 1,
       success: false,
+      timedOut,
     };
   }
 }

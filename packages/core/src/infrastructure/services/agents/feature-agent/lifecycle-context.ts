@@ -67,10 +67,26 @@ export function clearLifecycleContext(): void {
  * No-op if context is not set or the node name has no lifecycle mapping.
  */
 export async function updateNodeLifecycle(nodeName: string): Promise<void> {
-  if (!contextFeatureId || !contextUpdater) return;
-
   const lifecycle = NODE_TO_LIFECYCLE[nodeName];
   if (!lifecycle) return;
+
+  await setFeatureLifecycle(lifecycle);
+}
+
+/**
+ * Announce an explicit lifecycle value for the current feature.
+ *
+ * Terminal transitions (Maintain, AwaitingUpstream) have no graph node of their
+ * own, so they cannot go through updateNodeLifecycle() — but they are still real
+ * transitions that dependent features react to. Routing them here keeps
+ * CheckAndUnblockFeaturesUseCase firing on the LAST transition a feature makes,
+ * not just the intermediate ones.
+ *
+ * No-op if context is not set. Errors are swallowed — a lifecycle announcement
+ * must never break graph execution.
+ */
+export async function setFeatureLifecycle(lifecycle: SdlcLifecycle): Promise<void> {
+  if (!contextFeatureId || !contextUpdater) return;
 
   try {
     await contextUpdater.execute({ featureId: contextFeatureId, lifecycle });

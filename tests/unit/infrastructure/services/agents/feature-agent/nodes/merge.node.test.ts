@@ -34,6 +34,7 @@ const {
   mockParseCommitHash,
   mockParsePrUrl,
   mockCleanupExecute,
+  mockSetFeatureLifecycle,
 } = vi.hoisted(() => ({
   mockInterrupt: vi.fn(),
   mockShouldInterrupt: vi.fn().mockReturnValue(false),
@@ -50,6 +51,7 @@ const {
     .fn()
     .mockReturnValue({ url: 'https://github.com/test/repo/pull/42', number: 42 }),
   mockCleanupExecute: vi.fn().mockResolvedValue(undefined),
+  mockSetFeatureLifecycle: vi.fn().mockResolvedValue(undefined),
 }));
 
 // Mock LangGraph interrupt
@@ -97,6 +99,7 @@ vi.mock('@/infrastructure/services/agents/feature-agent/phase-timing-context.js'
 // Mock lifecycle context
 vi.mock('@/infrastructure/services/agents/feature-agent/lifecycle-context.js', () => ({
   updateNodeLifecycle: vi.fn().mockResolvedValue(undefined),
+  setFeatureLifecycle: mockSetFeatureLifecycle,
 }));
 
 // Mock prompt builders
@@ -620,6 +623,27 @@ describe('createMergeNode (agent-driven)', () => {
       expect(deps.featureRepository.update).toHaveBeenCalledWith(
         expect.objectContaining({ lifecycle: 'Maintain' })
       );
+    });
+
+    it('should announce the Maintain transition so blocked children are released', async () => {
+      // Regression: Maintain was written straight to the repository, bypassing
+      // UpdateFeatureLifecycleUseCase — so the LAST transition a parent ever makes
+      // was the one transition that never fired CheckAndUnblockFeaturesUseCase.
+      const node = createMergeNode(deps);
+      const state = baseState({
+        approvalGates: { allowPrd: false, allowPlan: false, allowMerge: true },
+      });
+      await node(state);
+
+      expect(mockSetFeatureLifecycle).toHaveBeenCalledWith('Maintain');
+    });
+
+    it('should announce the Review transition when the merge did not happen', async () => {
+      const node = createMergeNode(deps);
+      const state = baseState();
+      await node(state);
+
+      expect(mockSetFeatureLifecycle).toHaveBeenCalledWith('Review');
     });
 
     it('should return messages about merge node completion', async () => {

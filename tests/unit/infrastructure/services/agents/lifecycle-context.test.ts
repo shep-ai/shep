@@ -10,6 +10,7 @@ import {
   setLifecycleContext,
   clearLifecycleContext,
   updateNodeLifecycle,
+  setFeatureLifecycle,
 } from '@/infrastructure/services/agents/feature-agent/lifecycle-context.js';
 import { SdlcLifecycle } from '@/domain/generated/output.js';
 
@@ -126,6 +127,35 @@ describe('LifecycleContext', () => {
 
       // Should not throw
       await updateNodeLifecycle('analyze');
+    });
+  });
+
+  describe('setFeatureLifecycle', () => {
+    it('should route an explicit terminal lifecycle through the updater', async () => {
+      // Terminal transitions (Maintain / AwaitingUpstream) have no graph node of
+      // their own, so they cannot go through updateNodeLifecycle — yet they must
+      // still fire CheckAndUnblockFeaturesUseCase for dependent children.
+      const updater = createMockUpdater();
+      setLifecycleContext('feat-1', updater);
+
+      await setFeatureLifecycle(SdlcLifecycle.Maintain);
+
+      expect(updater.execute).toHaveBeenCalledWith({
+        featureId: 'feat-1',
+        lifecycle: SdlcLifecycle.Maintain,
+      });
+    });
+
+    it('should be a no-op when context is not set', async () => {
+      await setFeatureLifecycle(SdlcLifecycle.Maintain);
+    });
+
+    it('should not throw when updater execute fails', async () => {
+      const updater = createMockUpdater();
+      updater.execute.mockRejectedValue(new Error('DB error'));
+      setLifecycleContext('feat-1', updater);
+
+      await setFeatureLifecycle(SdlcLifecycle.Maintain);
     });
   });
 });

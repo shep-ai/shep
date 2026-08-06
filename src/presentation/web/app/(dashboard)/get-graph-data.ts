@@ -9,6 +9,7 @@ import type {
   ApplicationWithStatus,
 } from '@shepai/core/application/use-cases/applications/list-applications.use-case';
 import type { AutoResolveMergedBranchesUseCase } from '@shepai/core/application/use-cases/features/auto-resolve-merged-branches.use-case';
+import type { ReconcileBlockedFeaturesUseCase } from '@shepai/core/application/use-cases/features/reconcile-blocked-features.use-case';
 import type { IAgentRunRepository } from '@shepai/core/application/ports/output/agents/agent-run-repository.interface';
 import type { DeploymentStatusEntry } from '@shepai/core/application/ports/output/services/deployment-service.interface';
 import type { ListDeploymentsUseCase } from '@shepai/core/application/use-cases/deployments/list-deployments.use-case';
@@ -199,6 +200,19 @@ export async function getGraphData(): Promise<{
       'AutoResolveMergedBranchesUseCase'
     );
     void autoResolve.execute(features);
+  } catch {
+    // Use case not registered — skip silently (e.g. test environments)
+  }
+
+  // Fire-and-forget: release features left Blocked under a parent that has
+  // already passed the Implementation gate. A finished parent has no further
+  // lifecycle transition to fire the unblock hook, so the invariant is restored
+  // from the state side here. Released features surface on the next SSE poll.
+  try {
+    const reconcileBlocked = resolve<ReconcileBlockedFeaturesUseCase>(
+      'ReconcileBlockedFeaturesUseCase'
+    );
+    void reconcileBlocked.execute();
   } catch {
     // Use case not registered — skip silently (e.g. test environments)
   }

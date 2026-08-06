@@ -1456,3 +1456,127 @@ test (the project-memory block) never needed a subprocess.
   a 60s budget leaves no headroom once workers compete for CPU.
 - Machine-dependent branches (`try { spawn } catch { fallback }`) make a test
   assert different things on CI than on a dev box. Pin the branch explicitly.
+
+
+## An event-only invariant strands state the moment nobody is listening
+
+A feature sat `Blocked` under a parent that had merged, completed, and been
+archived. Nothing was ever going to release it, for three compounding reasons:
+
+1. **Wrong argument to a fan-out.** `ReparentFeatureUseCase` called
+   `checkAndUnblock.execute(featureId)` — the *reparented child's* id, which
+   evaluates that child's own children. The feature just attached was never
+   evaluated against its NEW parent. Its `newLifecycle` branch also only ever
+   *added* `Blocked`; there was no branch that cleared it.
+2. **A gate duplicated in four places.** `POST_IMPLEMENTATION.has(parent.lifecycle)`
+   was inlined in create / start / reparent / check-and-unblock. Copies drift.
+3. **`Archived` slammed the gate shut.** Auto-archive moves *every* completed
+   feature to `Archived` on a delay, and `Archived ∉ POST_IMPLEMENTATION` — so
+   waiting long enough was itself enough to strand a child forever.
+
+**Rules:**
+- An invariant enforced only as a side effect of a *transition* is dead the
+  moment nothing transitions again. Terminal states have no next event. For any
+  "when X advances, release Y" rule, also provide a **state-side reconciler**
+  that restores it from the data (`ReconcileBlockedFeaturesUseCase`, swept
+  fire-and-forget on dashboard load next to `AutoResolveMergedBranchesUseCase`).
+- A gate belongs in ONE domain predicate (`satisfiesDependencyGate()`), not as
+  `SET.has(entity.field)` at each call site. Callers delegate; they do not
+  re-derive. Make the owning use case *return what it did* so callers never need
+  to re-check the condition themselves.
+- Ask of every terminal/bookkeeping state: does it still satisfy the predicates
+  the pre-terminal state satisfied? `Archived` must answer via
+  `previousLifecycle` — archiving is filing, not a rollback of progress.
+- Every writer of a lifecycle field must route through the use case that owns the
+  transition's side effects. `merge.node.ts` wrote `Maintain` straight to the
+  repository, so the LAST transition a feature ever made was the one that never
+  fired its hook. Use `setFeatureLifecycle()` to announce transitions with no
+  graph node of their own.
+- When a status tree looks self-contradictory, check whether the two columns come
+  from two sources: `feat ls` derives "Completed" from the **agent run** and
+  "Blocked" from the **feature lifecycle**. Confirm against the DB
+  (`sqlite3 ~/.shep/data`) before theorising — and read `phase_timings.phase` to
+  tell which code path actually ran (`rebase` = manual, `rebase-on-parent` = auto).
+- `findByParentId` deliberately includes soft-deleted rows for cascade deletes.
+  Any other caller must filter `deletedAt` or it will resurrect deleted work.
+
+## A timeout override that shortens the budget on the slowest platform
+
+`E2E CLI (windows-latest)` failed with `expected 1 to be +0` on
+`shep restart` — no stack, no CLI output, nothing to diagnose. Two defects:
+
+1. **The override went the wrong way.** `createCliRunner`'s default timeout is
+   platform-aware (15s posix / **30s win32**), but five call sites in
+   `daemon-lifecycle.test.ts` hardcoded `timeout: 20_000` with the comment
+   "needs longer timeout on Windows". A flat 20s is *longer* than the posix
+   default and *shorter* than the Windows one — so the most expensive commands
+   in the suite (restart/upgrade: stop with a 5s poll + start + spawn) got the
+   tightest budget on the slowest platform.
+2. **A killed process is indistinguishable from a failed one.** `execSync` sets
+   `status: null` when it kills on timeout, and the helper did
+   `exitCode: execError.status ?? 1`. Every timeout therefore reported as
+   "exited 1", which is why the CI log said nothing useful.
+
+**Rules:**
+- Never hardcode a timeout that overrides a platform-aware default. Derive it
+  (`isWindows ? … : …`) and assert the relationship you intend — an override
+  meant to *raise* a budget must be checked against the value it replaces.
+- Keep the layered timeouts ordered: per-command exec timeout < vitest per-test
+  timeout, so the inner one wins and produces the diagnosable error. Raising one
+  without the other just changes which layer kills you.
+- Any `?? 1` fallback for an exit code erases the difference between "killed" and
+  "failed". Detect the kill (`status == null`) and say so in `stderr` — the CI log
+  is the only forensic artifact you get from a platform you cannot reproduce on.
+- Before blaming your diff for a platform-only CI failure, check the last main
+  run (`gh run list --branch main --workflow CI/CD`), then read the *mechanism*.
+  Latent flakes surface when a budget is already at its edge.
+- `tests/e2e/cli/script-runner.test.ts` skips Docker scripts when Docker is
+  absent, but if Docker is present-but-cold the base-image pull happens *inside*
+  the build deadline and fails as `DeadlineExceeded`. `docker pull node:22-slim`
+  first, then re-run.
+
+## A self-healing sweep on one presentation surface is not an escape hatch
+
+`ReconcileBlockedFeaturesUseCase` fixes the stranded-Blocked invariant, but it is
+wired into exactly one caller: the web dashboard's `get-graph-data`. A CLI-only
+user hitting `shep feat start` on a stranded feature gets
+`not in Pending state (current: Blocked)` and has **no command** to recover —
+there is no `shep feat unblock`, and `feat start` has no `--force`. The only route
+was a raw `UPDATE features SET lifecycle='Pending'` plus temporarily
+unarchiving the parent so the gate would pass on the older installed build.
+
+**Rules:**
+- When you fix a stuck-state bug, ship the manual override alongside the automatic
+  repair. The automatic path only helps users already on the new version; the
+  override is what rescues the DBs that are *already* wrong.
+- A reconcile/repair use case must be reachable from every presentation layer
+  (per `.claude/rules/code-quality.md` — "every feature MUST be implementable in
+  ALL presentation layers"). Registering it in the DI container and calling it
+  from one Next.js loader is half a feature.
+- Any lifecycle precondition that rejects a state the system can enter *by itself*
+  needs a documented recovery command in the error message — "Only pending
+  features can be started" tells the user what is wrong and nothing about what to do.
+
+## A test that kills processes must not share state with one that expects success
+
+The timeout test above then failed on `ubuntu-latest` only: two tests killed the
+CLI 1ms into first-run SQLite initialisation, and a third asserted
+`shep --version` exits 0 — all three sharing the runner's module-level
+`SHEP_HOME` (one temp dir per test *file*, not per test). A dying process can
+still hold the DB lock, so the third test inherited the wreckage. It passed on
+macOS, where 1ms barely clears `exec` and nothing had touched the DB yet.
+
+**Rules:**
+- A test that deliberately kills a process must own its `SHEP_HOME`
+  (`createIsolatedCliRunner()`), never the file-level shared one. Auto-isolation
+  is per *file* — that is not isolation between tests that corrupt state.
+- Don't assert on a *success* path to prove a *failure*-classification flag.
+  Asserting "a real non-zero exit is not flagged as a timeout" via an unknown
+  command needs no database and tests the distinction directly; asserting it via
+  `--version` exit 0 imports every first-run initialisation risk for nothing.
+- Every assertion on a spawned process must carry stdout/stderr in its message.
+  `expect(result.exitCode).toBe(0)` on a remote platform yields
+  `expected 1 to be +0` and nothing else — the second CI round-trip is the price.
+- Confirm the mechanism locally before pushing a theory: scripting the exact
+  sequence (kill, kill, run) disproved the first guess in 30s, which is what
+  redirected the fix from "harden the assertion" to "stop sharing the home".
