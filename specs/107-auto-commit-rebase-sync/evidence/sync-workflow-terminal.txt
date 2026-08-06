@@ -5,10 +5,10 @@ $ git status --porcelain   # dirty worktree before sync
 ?? wip-untracked.txt
 
 $ git log --oneline --graph --all   # feature branch is behind origin/main
-* 5f9a923 feat: feature work
-| * 31e2950 feat: upstream work
+* 2b91eda feat: feature work
+| * a67ba99 feat: upstream work
 |/  
-* 97f7c5a chore: seed
+* 35dce7f chore: seed
 
 
 === BEFORE: the reported failure — rebase alone on a dirty worktree ===
@@ -17,10 +17,10 @@ $ git log --oneline --graph --all   # feature branch is behind origin/main
 
 === AFTER: SyncFeatureBranchUseCase — commit, fetch, rebase ===
 ✓ sync result: {
-  "cwd": "<temp repo>",
+  "cwd": "<temp repo>/work",
   "baseBranch": "main",
   "committed": true,
-  "commitSha": "3bafbb78f764bc7e925338351906ac538cc9b821",
+  "commitSha": "19e4ce3f267d459ec157dd2d1c0e0a11ec23eaa1",
   "conflictsResolved": false
 }
 
@@ -31,10 +31,10 @@ $ git stash list   # no stash entries — nothing stranded
 (empty)
 
 $ git log --oneline --graph --all   # feature commits replayed on top of origin/main
-* b3d7742 chore: auto-commit work in progress before sync
-* f001b04 feat: feature work
-* 31e2950 feat: upstream work
-* 97f7c5a chore: seed
+* 9639e1f chore: auto-commit work in progress before sync
+* 6f63f1f feat: feature work
+* a67ba99 feat: upstream work
+* 35dce7f chore: seed
 
 $ git log -1 --format=%B   # auto-commit message
 chore: auto-commit work in progress before sync

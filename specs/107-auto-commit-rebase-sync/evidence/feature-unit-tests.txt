@@ -1,10 +1,14 @@
-npm warn Unknown env config "npm-globalconfig". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
-npm warn Unknown env config "verify-deps-before-run". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
-npm warn Unknown env config "_jsr-registry". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+$ npx vitest run --project node --reporter=verbose \
+    tests/unit/application/use-cases/features/sync-feature-branch.use-case.test.ts \
+    tests/unit/application/use-cases/features/start-feature.use-case.test.ts \
+    tests/unit/application/use-cases/features/rebase-feature-on-main.use-case.test.ts \
+    tests/unit/infrastructure/services/git/git-pr.service.test.ts \
+    tests/unit/infrastructure/di/sync-feature-branch-resolve.test.ts
+
 
  RUN  v4.0.18 /Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-auto-commit-rebase-sync
 
- ✓  node  tests/unit/application/use-cases/features/sync-feature-branch.use-case.test.ts > SyncFeatureBranchUseCase > should commit uncommitted changes before rebasing 2ms
+ ✓  node  tests/unit/application/use-cases/features/sync-feature-branch.use-case.test.ts > SyncFeatureBranchUseCase > should commit uncommitted changes before rebasing 1ms
  ✓  node  tests/unit/application/use-cases/features/sync-feature-branch.use-case.test.ts > SyncFeatureBranchUseCase > should commit before syncing and rebasing, never after 0ms
  ✓  node  tests/unit/application/use-cases/features/sync-feature-branch.use-case.test.ts > SyncFeatureBranchUseCase > should skip the commit when the worktree is clean 0ms
  ✓  node  tests/unit/application/use-cases/features/sync-feature-branch.use-case.test.ts > SyncFeatureBranchUseCase > should never stash — work in progress becomes a commit 0ms
@@ -13,26 +17,26 @@ npm warn Unknown env config "_jsr-registry". This will stop working in the next 
  ✓  node  tests/unit/application/use-cases/features/sync-feature-branch.use-case.test.ts > SyncFeatureBranchUseCase > should fall back to the repository root when no worktree exists 0ms
  ✓  node  tests/unit/application/use-cases/features/sync-feature-branch.use-case.test.ts > SyncFeatureBranchUseCase > should resolve the base branch from the repository 0ms
  ✓  node  tests/unit/application/use-cases/features/sync-feature-branch.use-case.test.ts > SyncFeatureBranchUseCase > should delegate to conflict resolution on REBASE_CONFLICT 0ms
- ✓  node  tests/unit/application/use-cases/features/sync-feature-branch.use-case.test.ts > SyncFeatureBranchUseCase > should propagate conflict resolution failure 1ms
+ ✓  node  tests/unit/application/use-cases/features/sync-feature-branch.use-case.test.ts > SyncFeatureBranchUseCase > should propagate conflict resolution failure 0ms
  ✓  node  tests/unit/application/use-cases/features/sync-feature-branch.use-case.test.ts > SyncFeatureBranchUseCase > should propagate non-conflict rebase errors without invoking the agent 0ms
  ✓  node  tests/unit/application/use-cases/features/sync-feature-branch.use-case.test.ts > SyncFeatureBranchUseCase > should propagate SYNC_FAILED without attempting the rebase 0ms
  ✓  node  tests/unit/application/use-cases/features/sync-feature-branch.use-case.test.ts > SyncFeatureBranchUseCase > should propagate a failing auto-commit without rebasing over the work 0ms
  ✓  node  tests/unit/application/use-cases/features/rebase-feature-on-main.use-case.test.ts > RebaseFeatureOnMainUseCase > should sync main and rebase cleanly on happy path 3ms
  ✓  node  tests/unit/application/use-cases/features/rebase-feature-on-main.use-case.test.ts > RebaseFeatureOnMainUseCase > should throw when feature not found 1ms
- ✓  node  tests/unit/application/use-cases/features/rebase-feature-on-main.use-case.test.ts > RebaseFeatureOnMainUseCase > should resolve feature by prefix when exact ID not found 1ms
- ✓  node  tests/unit/application/use-cases/features/rebase-feature-on-main.use-case.test.ts > RebaseFeatureOnMainUseCase > should use worktree path as cwd when worktree exists 1ms
- ✓  node  tests/unit/application/use-cases/features/rebase-feature-on-main.use-case.test.ts > RebaseFeatureOnMainUseCase > should use repo root as cwd when no worktree exists 1ms
- ✓  node  tests/unit/application/use-cases/features/rebase-feature-on-main.use-case.test.ts > RebaseFeatureOnMainUseCase > should delegate to conflict resolution service on REBASE_CONFLICT 1ms
- ✓  node  tests/unit/application/use-cases/features/rebase-feature-on-main.use-case.test.ts > RebaseFeatureOnMainUseCase > should propagate conflict resolution failure 1ms
+ ✓  node  tests/unit/application/use-cases/features/rebase-feature-on-main.use-case.test.ts > RebaseFeatureOnMainUseCase > should resolve feature by prefix when exact ID not found 0ms
+ ✓  node  tests/unit/application/use-cases/features/rebase-feature-on-main.use-case.test.ts > RebaseFeatureOnMainUseCase > should use worktree path as cwd when worktree exists 0ms
+ ✓  node  tests/unit/application/use-cases/features/rebase-feature-on-main.use-case.test.ts > RebaseFeatureOnMainUseCase > should use repo root as cwd when no worktree exists 0ms
+ ✓  node  tests/unit/application/use-cases/features/rebase-feature-on-main.use-case.test.ts > RebaseFeatureOnMainUseCase > should delegate to conflict resolution service on REBASE_CONFLICT 0ms
+ ✓  node  tests/unit/application/use-cases/features/rebase-feature-on-main.use-case.test.ts > RebaseFeatureOnMainUseCase > should propagate conflict resolution failure 0ms
  ✓  node  tests/unit/application/use-cases/features/rebase-feature-on-main.use-case.test.ts > RebaseFeatureOnMainUseCase > should propagate SYNC_FAILED error without attempting rebase 0ms
- ✓  node  tests/unit/application/use-cases/features/rebase-feature-on-main.use-case.test.ts > RebaseFeatureOnMainUseCase > should propagate non-rebase git errors directly 1ms
- ✓  node  tests/unit/application/use-cases/features/rebase-feature-on-main.use-case.test.ts > RebaseFeatureOnMainUseCase > should commit uncommitted changes instead of failing the rebase 1ms
+ ✓  node  tests/unit/application/use-cases/features/rebase-feature-on-main.use-case.test.ts > RebaseFeatureOnMainUseCase > should propagate non-rebase git errors directly 0ms
+ ✓  node  tests/unit/application/use-cases/features/rebase-feature-on-main.use-case.test.ts > RebaseFeatureOnMainUseCase > should commit uncommitted changes instead of failing the rebase 0ms
  ✓  node  tests/unit/application/use-cases/features/rebase-feature-on-main.use-case.test.ts > RebaseFeatureOnMainUseCase > should commit in the worktree when one exists 0ms
  ✓  node  tests/unit/application/use-cases/features/rebase-feature-on-main.use-case.test.ts > RebaseFeatureOnMainUseCase > should not commit when the worktree is clean 0ms
- ✓  node  tests/unit/application/use-cases/features/rebase-feature-on-main.use-case.test.ts > RebaseFeatureOnMainUseCase > should not stash — work in progress is committed 1ms
- ✓  node  tests/unit/application/use-cases/features/rebase-feature-on-main.use-case.test.ts > RebaseFeatureOnMainUseCase > should record a completed agent run on success 3ms
+ ✓  node  tests/unit/application/use-cases/features/rebase-feature-on-main.use-case.test.ts > RebaseFeatureOnMainUseCase > should not stash — work in progress is committed 0ms
+ ✓  node  tests/unit/application/use-cases/features/rebase-feature-on-main.use-case.test.ts > RebaseFeatureOnMainUseCase > should record a completed agent run on success 1ms
  ✓  node  tests/unit/application/use-cases/features/rebase-feature-on-main.use-case.test.ts > RebaseFeatureOnMainUseCase > should record a failed agent run when the rebase fails 1ms
- ✓  node  tests/unit/application/use-cases/features/start-feature.use-case.test.ts > StartFeatureUseCase > should throw when feature is not found 2ms
+ ✓  node  tests/unit/application/use-cases/features/start-feature.use-case.test.ts > StartFeatureUseCase > should throw when feature is not found 1ms
  ✓  node  tests/unit/application/use-cases/features/start-feature.use-case.test.ts > StartFeatureUseCase > should resolve feature by ID prefix 1ms
  ✓  node  tests/unit/application/use-cases/features/start-feature.use-case.test.ts > StartFeatureUseCase > should throw when feature lifecycle is not Pending 0ms
  ✓  node  tests/unit/application/use-cases/features/start-feature.use-case.test.ts > StartFeatureUseCase > should throw descriptive error for non-Pending lifecycle 0ms
@@ -44,16 +48,16 @@ npm warn Unknown env config "_jsr-registry". This will stop working in the next 
  ✓  node  tests/unit/application/use-cases/features/start-feature.use-case.test.ts > StartFeatureUseCase > should transition fast feature with satisfied parent to Implementation 1ms
  ✓  node  tests/unit/application/use-cases/features/start-feature.use-case.test.ts > StartFeatureUseCase > should throw when feature has no agentRunId 0ms
  ✓  node  tests/unit/application/use-cases/features/start-feature.use-case.test.ts > StartFeatureUseCase > should throw when agentRun record not found in repository 0ms
- ✓  node  tests/unit/application/use-cases/features/start-feature.use-case.test.ts > StartFeatureUseCase > should throw when feature is missing specPath after retries 3ms
- ✓  node  tests/unit/application/use-cases/features/start-feature.use-case.test.ts > StartFeatureUseCase > should wait and succeed when specPath becomes available after initialization 1ms
+ ✓  node  tests/unit/application/use-cases/features/start-feature.use-case.test.ts > StartFeatureUseCase > should throw when feature is missing specPath after retries 2ms
+ ✓  node  tests/unit/application/use-cases/features/start-feature.use-case.test.ts > StartFeatureUseCase > should wait and succeed when specPath becomes available after initialization 0ms
  ✓  node  tests/unit/application/use-cases/features/start-feature.use-case.test.ts > StartFeatureUseCase > should spawn agent with correct arguments 0ms
- ✓  node  tests/unit/application/use-cases/features/start-feature.use-case.test.ts > StartFeatureUseCase > should pass fast flag to spawn when feature is fast 1ms
+ ✓  node  tests/unit/application/use-cases/features/start-feature.use-case.test.ts > StartFeatureUseCase > should pass fast flag to spawn when feature is fast 0ms
  ✓  node  tests/unit/application/use-cases/features/start-feature.use-case.test.ts > StartFeatureUseCase > should spawn using the current run agentType and modelId after a config switch 0ms
  ✓  node  tests/unit/application/use-cases/features/start-feature.use-case.test.ts > StartFeatureUseCase > should pass model from agentRun to spawn 0ms
- ✓  node  tests/unit/application/use-cases/features/start-feature.use-case.test.ts > StartFeatureUseCase > should pass agentType from agentRun to spawn 1ms
+ ✓  node  tests/unit/application/use-cases/features/start-feature.use-case.test.ts > StartFeatureUseCase > should pass agentType from agentRun to spawn 0ms
  ✓  node  tests/unit/application/use-cases/features/start-feature.use-case.test.ts > StartFeatureUseCase > should pass securityMode from settings to spawn 0ms
- ✓  node  tests/unit/application/use-cases/features/start-feature.use-case.test.ts > StartFeatureUseCase > should commit and rebase the branch before spawning the agent 1ms
- ✓  node  tests/unit/application/use-cases/features/start-feature.use-case.test.ts > StartFeatureUseCase > should still spawn the agent when the branch sync fails 1ms
+ ✓  node  tests/unit/application/use-cases/features/start-feature.use-case.test.ts > StartFeatureUseCase > should commit and rebase the branch before spawning the agent 0ms
+ ✓  node  tests/unit/application/use-cases/features/start-feature.use-case.test.ts > StartFeatureUseCase > should still spawn the agent when the branch sync fails 0ms
  ✓  node  tests/unit/application/use-cases/features/start-feature.use-case.test.ts > StartFeatureUseCase > should not sync the branch when the feature is blocked by its parent 0ms
  ✓  node  tests/unit/application/use-cases/features/start-feature.use-case.test.ts > StartFeatureUseCase > should return updated feature and agentRun 0ms
  ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > getDefaultBranch > should return branch from remote HEAD when available 1ms
@@ -148,11 +152,11 @@ npm warn Unknown env config "_jsr-registry". This will stop working in the next 
  ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > addRemote > should throw GitPrError when both add and set-url fail 0ms
  ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > pull > should run git pull in the given directory 0ms
  ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > pull > should throw GitPrError when git pull fails 0ms
- ✓  node  tests/unit/infrastructure/di/sync-feature-branch-resolve.test.ts > commit-then-rebase DI wiring > resolves SyncFeatureBranchUseCase and both of its consumers 3577ms
+ ✓  node  tests/unit/infrastructure/di/sync-feature-branch-resolve.test.ts > commit-then-rebase DI wiring > resolves SyncFeatureBranchUseCase and both of its consumers 2305ms
  ✓  node  tests/unit/infrastructure/di/sync-feature-branch-resolve.test.ts > commit-then-rebase DI wiring > resolves the string-token aliases the web actions use 0ms
 
  Test Files  5 passed (5)
       Tests  146 passed (146)
-   Start at  17:29:25
-   Duration  3.76s (transform 3.10s, setup 155ms, import 533ms, tests 3.63s, environment 1ms)
+   Start at  17:39:47
+   Duration  2.44s (transform 2.06s, setup 120ms, import 395ms, tests 2.34s, environment 0ms)
 
