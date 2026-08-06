@@ -1,0 +1,54 @@
+=== SETUP: remote + clone, feature branch behind main, dirty worktree ===
+
+$ git status --porcelain   # dirty worktree before sync
+ M feature.txt
+?? wip-untracked.txt
+
+$ git log --oneline --graph --all   # feature branch is behind origin/main
+* 5f9a923 feat: feature work
+| * 31e2950 feat: upstream work
+|/  
+* 97f7c5a chore: seed
+
+
+=== BEFORE: the reported failure — rebase alone on a dirty worktree ===
+✗ Cannot rebase: working directory has uncommitted changes. Please commit or stash your changes before rebasing.
+
+
+=== AFTER: SyncFeatureBranchUseCase — commit, fetch, rebase ===
+✓ sync result: {
+  "cwd": "<temp repo>",
+  "baseBranch": "main",
+  "committed": true,
+  "commitSha": "3bafbb78f764bc7e925338351906ac538cc9b821",
+  "conflictsResolved": false
+}
+
+$ git status --porcelain   # clean — nothing left uncommitted
+(empty)
+
+$ git stash list   # no stash entries — nothing stranded
+(empty)
+
+$ git log --oneline --graph --all   # feature commits replayed on top of origin/main
+* b3d7742 chore: auto-commit work in progress before sync
+* f001b04 feat: feature work
+* 31e2950 feat: upstream work
+* 97f7c5a chore: seed
+
+$ git log -1 --format=%B   # auto-commit message
+chore: auto-commit work in progress before sync
+
+Shep committed the working tree of 'feat/107-auto-commit-rebase-sync-demo' before rebasing it onto 'main' so that no work is lost.
+Undo with `git reset --soft HEAD~1`.
+
+$ cat wip-untracked.txt   # untracked work survived
+precious untracked work
+
+$ cat feature.txt   # worktree edit survived
+feature work, edited in the worktree
+
+$ cat upstream.txt   # upstream commit is now present
+upstream work
+
+✓ origin/main is an ancestor of HEAD — branch is in sync with the remote base

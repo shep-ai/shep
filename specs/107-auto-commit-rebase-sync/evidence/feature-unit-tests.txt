@@ -1,0 +1,158 @@
+npm warn Unknown env config "npm-globalconfig". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "verify-deps-before-run". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "_jsr-registry". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+ RUN  v4.0.18 /Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-auto-commit-rebase-sync
+
+ ✓  node  tests/unit/application/use-cases/features/sync-feature-branch.use-case.test.ts > SyncFeatureBranchUseCase > should commit uncommitted changes before rebasing 2ms
+ ✓  node  tests/unit/application/use-cases/features/sync-feature-branch.use-case.test.ts > SyncFeatureBranchUseCase > should commit before syncing and rebasing, never after 0ms
+ ✓  node  tests/unit/application/use-cases/features/sync-feature-branch.use-case.test.ts > SyncFeatureBranchUseCase > should skip the commit when the worktree is clean 0ms
+ ✓  node  tests/unit/application/use-cases/features/sync-feature-branch.use-case.test.ts > SyncFeatureBranchUseCase > should never stash — work in progress becomes a commit 0ms
+ ✓  node  tests/unit/application/use-cases/features/sync-feature-branch.use-case.test.ts > SyncFeatureBranchUseCase > should build an auto-commit message that names the branches and the undo command 0ms
+ ✓  node  tests/unit/application/use-cases/features/sync-feature-branch.use-case.test.ts > SyncFeatureBranchUseCase > should operate in the worktree when one exists 0ms
+ ✓  node  tests/unit/application/use-cases/features/sync-feature-branch.use-case.test.ts > SyncFeatureBranchUseCase > should fall back to the repository root when no worktree exists 0ms
+ ✓  node  tests/unit/application/use-cases/features/sync-feature-branch.use-case.test.ts > SyncFeatureBranchUseCase > should resolve the base branch from the repository 0ms
+ ✓  node  tests/unit/application/use-cases/features/sync-feature-branch.use-case.test.ts > SyncFeatureBranchUseCase > should delegate to conflict resolution on REBASE_CONFLICT 0ms
+ ✓  node  tests/unit/application/use-cases/features/sync-feature-branch.use-case.test.ts > SyncFeatureBranchUseCase > should propagate conflict resolution failure 1ms
+ ✓  node  tests/unit/application/use-cases/features/sync-feature-branch.use-case.test.ts > SyncFeatureBranchUseCase > should propagate non-conflict rebase errors without invoking the agent 0ms
+ ✓  node  tests/unit/application/use-cases/features/sync-feature-branch.use-case.test.ts > SyncFeatureBranchUseCase > should propagate SYNC_FAILED without attempting the rebase 0ms
+ ✓  node  tests/unit/application/use-cases/features/sync-feature-branch.use-case.test.ts > SyncFeatureBranchUseCase > should propagate a failing auto-commit without rebasing over the work 0ms
+ ✓  node  tests/unit/application/use-cases/features/rebase-feature-on-main.use-case.test.ts > RebaseFeatureOnMainUseCase > should sync main and rebase cleanly on happy path 3ms
+ ✓  node  tests/unit/application/use-cases/features/rebase-feature-on-main.use-case.test.ts > RebaseFeatureOnMainUseCase > should throw when feature not found 1ms
+ ✓  node  tests/unit/application/use-cases/features/rebase-feature-on-main.use-case.test.ts > RebaseFeatureOnMainUseCase > should resolve feature by prefix when exact ID not found 1ms
+ ✓  node  tests/unit/application/use-cases/features/rebase-feature-on-main.use-case.test.ts > RebaseFeatureOnMainUseCase > should use worktree path as cwd when worktree exists 1ms
+ ✓  node  tests/unit/application/use-cases/features/rebase-feature-on-main.use-case.test.ts > RebaseFeatureOnMainUseCase > should use repo root as cwd when no worktree exists 1ms
+ ✓  node  tests/unit/application/use-cases/features/rebase-feature-on-main.use-case.test.ts > RebaseFeatureOnMainUseCase > should delegate to conflict resolution service on REBASE_CONFLICT 1ms
+ ✓  node  tests/unit/application/use-cases/features/rebase-feature-on-main.use-case.test.ts > RebaseFeatureOnMainUseCase > should propagate conflict resolution failure 1ms
+ ✓  node  tests/unit/application/use-cases/features/rebase-feature-on-main.use-case.test.ts > RebaseFeatureOnMainUseCase > should propagate SYNC_FAILED error without attempting rebase 0ms
+ ✓  node  tests/unit/application/use-cases/features/rebase-feature-on-main.use-case.test.ts > RebaseFeatureOnMainUseCase > should propagate non-rebase git errors directly 1ms
+ ✓  node  tests/unit/application/use-cases/features/rebase-feature-on-main.use-case.test.ts > RebaseFeatureOnMainUseCase > should commit uncommitted changes instead of failing the rebase 1ms
+ ✓  node  tests/unit/application/use-cases/features/rebase-feature-on-main.use-case.test.ts > RebaseFeatureOnMainUseCase > should commit in the worktree when one exists 0ms
+ ✓  node  tests/unit/application/use-cases/features/rebase-feature-on-main.use-case.test.ts > RebaseFeatureOnMainUseCase > should not commit when the worktree is clean 0ms
+ ✓  node  tests/unit/application/use-cases/features/rebase-feature-on-main.use-case.test.ts > RebaseFeatureOnMainUseCase > should not stash — work in progress is committed 1ms
+ ✓  node  tests/unit/application/use-cases/features/rebase-feature-on-main.use-case.test.ts > RebaseFeatureOnMainUseCase > should record a completed agent run on success 3ms
+ ✓  node  tests/unit/application/use-cases/features/rebase-feature-on-main.use-case.test.ts > RebaseFeatureOnMainUseCase > should record a failed agent run when the rebase fails 1ms
+ ✓  node  tests/unit/application/use-cases/features/start-feature.use-case.test.ts > StartFeatureUseCase > should throw when feature is not found 2ms
+ ✓  node  tests/unit/application/use-cases/features/start-feature.use-case.test.ts > StartFeatureUseCase > should resolve feature by ID prefix 1ms
+ ✓  node  tests/unit/application/use-cases/features/start-feature.use-case.test.ts > StartFeatureUseCase > should throw when feature lifecycle is not Pending 0ms
+ ✓  node  tests/unit/application/use-cases/features/start-feature.use-case.test.ts > StartFeatureUseCase > should throw descriptive error for non-Pending lifecycle 0ms
+ ✓  node  tests/unit/application/use-cases/features/start-feature.use-case.test.ts > StartFeatureUseCase > should transition Pending feature to Requirements and spawn agent 1ms
+ ✓  node  tests/unit/application/use-cases/features/start-feature.use-case.test.ts > StartFeatureUseCase > should transition fast Pending feature to Implementation 0ms
+ ✓  node  tests/unit/application/use-cases/features/start-feature.use-case.test.ts > StartFeatureUseCase > should transition to Blocked when parent not in POST_IMPLEMENTATION 0ms
+ ✓  node  tests/unit/application/use-cases/features/start-feature.use-case.test.ts > StartFeatureUseCase > should transition to Blocked when parent is Blocked 0ms
+ ✓  node  tests/unit/application/use-cases/features/start-feature.use-case.test.ts > StartFeatureUseCase > should transition to Requirements when parent is in POST_IMPLEMENTATION 0ms
+ ✓  node  tests/unit/application/use-cases/features/start-feature.use-case.test.ts > StartFeatureUseCase > should transition fast feature with satisfied parent to Implementation 1ms
+ ✓  node  tests/unit/application/use-cases/features/start-feature.use-case.test.ts > StartFeatureUseCase > should throw when feature has no agentRunId 0ms
+ ✓  node  tests/unit/application/use-cases/features/start-feature.use-case.test.ts > StartFeatureUseCase > should throw when agentRun record not found in repository 0ms
+ ✓  node  tests/unit/application/use-cases/features/start-feature.use-case.test.ts > StartFeatureUseCase > should throw when feature is missing specPath after retries 3ms
+ ✓  node  tests/unit/application/use-cases/features/start-feature.use-case.test.ts > StartFeatureUseCase > should wait and succeed when specPath becomes available after initialization 1ms
+ ✓  node  tests/unit/application/use-cases/features/start-feature.use-case.test.ts > StartFeatureUseCase > should spawn agent with correct arguments 0ms
+ ✓  node  tests/unit/application/use-cases/features/start-feature.use-case.test.ts > StartFeatureUseCase > should pass fast flag to spawn when feature is fast 1ms
+ ✓  node  tests/unit/application/use-cases/features/start-feature.use-case.test.ts > StartFeatureUseCase > should spawn using the current run agentType and modelId after a config switch 0ms
+ ✓  node  tests/unit/application/use-cases/features/start-feature.use-case.test.ts > StartFeatureUseCase > should pass model from agentRun to spawn 0ms
+ ✓  node  tests/unit/application/use-cases/features/start-feature.use-case.test.ts > StartFeatureUseCase > should pass agentType from agentRun to spawn 1ms
+ ✓  node  tests/unit/application/use-cases/features/start-feature.use-case.test.ts > StartFeatureUseCase > should pass securityMode from settings to spawn 0ms
+ ✓  node  tests/unit/application/use-cases/features/start-feature.use-case.test.ts > StartFeatureUseCase > should commit and rebase the branch before spawning the agent 1ms
+ ✓  node  tests/unit/application/use-cases/features/start-feature.use-case.test.ts > StartFeatureUseCase > should still spawn the agent when the branch sync fails 1ms
+ ✓  node  tests/unit/application/use-cases/features/start-feature.use-case.test.ts > StartFeatureUseCase > should not sync the branch when the feature is blocked by its parent 0ms
+ ✓  node  tests/unit/application/use-cases/features/start-feature.use-case.test.ts > StartFeatureUseCase > should return updated feature and agentRun 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > getDefaultBranch > should return branch from remote HEAD when available 1ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > getDefaultBranch > should fall back to local main branch when remote HEAD fails 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > getDefaultBranch > should fall back to local master branch when main does not exist 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > getDefaultBranch > should pick most recently committed branch when both main and master exist 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > getDefaultBranch > should fall back to git config init.defaultBranch 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > getDefaultBranch > should NOT use current branch when in a feature worktree 1ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > getDefaultBranch > should use current branch in main worktree as last resort 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > getDefaultBranch > should throw when all fallbacks fail 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > hasUncommittedChanges > should return true when git status has output 1ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > hasUncommittedChanges > should return false when git status is empty 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > hasUncommittedChanges > should return false when git status is whitespace only 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > commitAll > should stage all changes, commit, and return SHA 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > commitAll > should pass --no-verify when hooks are skipped 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > commitAll > should not pass --no-verify by default 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > commitAll > should throw GitPrError with GIT_ERROR on failure 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > push > should call git push origin branch 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > push > should add --set-upstream flag when setUpstream is true 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > push > should throw GitPrError with MERGE_CONFLICT when stderr contains rejected 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > push > should throw GitPrError with AUTH_FAILURE on auth errors 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > createPr > should parse pr.yaml and pass title/body to gh pr create 2ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > createPr > should apply Shep branding to the PR body 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > createPr > should strip Claude Code branding from PR body 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > createPr > should throw GitPrError with GH_NOT_FOUND when gh is not found 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > mergePr > should call gh pr merge without --delete-branch and attempt remote branch cleanup 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > mergePr > should call gh pr merge with specified strategy 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > mergePr > should not throw when remote branch deletion fails 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > mergePr > should throw GitPrError with MERGE_FAILED on merge failure 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > mergeBranch > should checkout target, merge source, and push 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > mergeBranch > should throw GitPrError with MERGE_CONFLICT on conflict 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > deleteBranch > should delete local branch 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > deleteBranch > should also delete remote when deleteRemote is true 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > getCiStatus > should parse gh run list JSON output 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > getCiStatus > should return pending when no runs found 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > getCiStatus > should throw GitPrError when gh command fails 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > getCiStatus > should throw GitPrError with GH_NOT_FOUND when gh is not installed 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > getCiStatus > should return pending when conclusion is null 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > getCiStatus > should return failure when workflow runs pass but PR checks fail 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > getCiStatus > should return success when workflow runs and PR checks both pass 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > getCiStatus > should return pending when PR checks are still pending 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > getCiStatus > should return failure when workflow runs fail even if PR checks pass 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > getCiStatus > should treat empty PR checks output as no checks 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > getCiStatus > should ignore missing PR when checking PR checks 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > watchCi > should resolve run ID via gh run list then watch it 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > watchCi > should return pending when no runs exist for the branch 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > watchCi > should return failure when gh run watch exits non-zero (exit code message) 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > watchCi > should return failure when gh run watch exits non-zero with real execFile error format 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > watchCi > should include stdout in logExcerpt when CI fails with real execFile error 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > watchCi > should throw GIT_ERROR for genuine errors (not CI failure) 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > watchCi > should throw GitPrError with CI_TIMEOUT on timeout 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > watchCi > should return success when gh run watch exits 0 even if stdout lacks "success" keyword 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > watchCi > should return success when gh run watch exits 0 with empty stdout 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > watchCi > should pass timeout option to exec 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > getPrDiffSummary > should parse git diff --stat and log correctly 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > getFileDiffs > should parse a unified diff with modified, added, and deleted files 1ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > getFileDiffs > should return empty array for empty diff output 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > getFileDiffs > should parse renamed files 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > getFileDiffs > should parse diff line numbers correctly 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > getFileDiffs > should throw GitPrError when git command fails 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > listPrStatuses > should call gh pr list with correct arguments including headRefName 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > listPrStatuses > should normalize state from UPPERCASE to PrStatus enum values 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > listPrStatuses > should return empty array when no PRs exist 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > listPrStatuses > should throw GitPrError on gh CLI failure 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > listPrStatuses > should throw GitPrError with AUTH_FAILURE on auth errors 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > verifyMerge > should return true when feature branch is ancestor of base branch (true merge) 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > verifyMerge > should return true for squash merge (not ancestor but no diff) 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > verifyMerge > should return false when neither true merge nor squash merge 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > verifyMerge > should fall back to remote tracking branch when local ref is deleted 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > verifyMerge > should return false when both local and remote refs are gone 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > verifyMerge > should return true when tree differs but base branch advanced from premergeBaseSha 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > verifyMerge > should return false when tree differs and base branch has not advanced 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > verifyMerge > should not check premergeBaseSha when not provided 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > localMergeSquash > should perform squash merge successfully 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > localMergeSquash > should detect conflict from stdout and throw MERGE_CONFLICT 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > localMergeSquash > should abort merge on failure to leave repo clean 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > localMergeSquash > should fall back to reset --merge if merge --abort fails 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > localMergeSquash > should reset tracked files before checkout 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > localMergeSquash > should clean stale merge state before checkout to prevent index errors 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > localMergeSquash > should fetch and pull when hasRemote=true 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > localMergeSquash > should apply Shep Bot co-author branding to squash merge commit message 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > localMergeSquash > should strip Claude co-author trailer from squash merge commit message 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > createGitHubRepo > should extract the repo URL from gh repo create stdout 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > createGitHubRepo > should extract the repo URL from gh repo create stderr when stdout is empty 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > createGitHubRepo > should strip trailing .git and punctuation from parsed URL 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > createGitHubRepo > should fall back to gh repo view when stdout has no URL 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > createGitHubRepo > should include org prefix when org option is provided 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > createGitHubRepo > should use --public when isPrivate is false 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > createGitHubRepo > should throw GitPrError with REPO_CREATE_FAILED when gh repo create fails 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > addRemote > should run git remote add with the given name and URL 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > addRemote > should fall back to set-url when remote already exists 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > addRemote > should throw GitPrError when both add and set-url fail 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > pull > should run git pull in the given directory 0ms
+ ✓  node  tests/unit/infrastructure/services/git/git-pr.service.test.ts > GitPrService > pull > should throw GitPrError when git pull fails 0ms
+ ✓  node  tests/unit/infrastructure/di/sync-feature-branch-resolve.test.ts > commit-then-rebase DI wiring > resolves SyncFeatureBranchUseCase and both of its consumers 3577ms
+ ✓  node  tests/unit/infrastructure/di/sync-feature-branch-resolve.test.ts > commit-then-rebase DI wiring > resolves the string-token aliases the web actions use 0ms
+
+ Test Files  5 passed (5)
+      Tests  146 passed (146)
+   Start at  17:29:25
+   Duration  3.76s (transform 3.10s, setup 155ms, import 533ms, tests 3.63s, environment 1ms)
+

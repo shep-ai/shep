@@ -1,0 +1,60 @@
+ ✓  web  tests/unit/presentation/web/features/aspm/aspm-inventory-tree/build-aspm-inventory-rows.test.ts (9 tests) 5ms
+ ✓  web  tests/unit/presentation/web/components/features/feature-tree-table/build-tree-data.test.ts (8 tests) 4ms
+ ✓  web  tests/unit/presentation/web/hooks/deployment-status-store.test.ts (21 tests) 25ms
+ ✓  web  tests/unit/presentation/web/app/actions/get-feature-plan.test.ts (8 tests) 3ms
+ ✓  web  tests/unit/presentation/web/actions/get-workflow-defaults.test.ts (6 tests) 4ms
+ ✓  web  tests/unit/presentation/web/actions/get-viewer-permission.test.ts (8 tests) 3ms
+ ✓  web  tests/unit/presentation/web/features/aspm/aspm-scan-dialog/compute-bulk-targets.test.ts (9 tests) 4ms
+ ✓  web  tests/unit/presentation/web/actions/get-deployment-status.test.ts (2 tests) 8ms
+ ✓  web  tests/unit/presentation/web/actions/reject-feature.test.ts (12 tests) 4ms
+ ✓  web  tests/unit/presentation/web/features/aspm/build-asset-graph-nodes.test.ts (5 tests) 3ms
+ ✓  web  tests/unit/presentation/web/lib/language.test.ts (11 tests) 3ms
+ ✓  web  tests/unit/presentation/web/features/control-center/derive-state.test.ts (6 tests) 2ms
+ ✓  web  tests/unit/presentation/web/lib/url-params.test.ts (7 tests) 3ms
+ ✓  web  tests/unit/presentation/web/lib/skill-package.test.ts (7 tests) 3ms
+ ✓  web  tests/unit/presentation/web/components/common/control-center-drawer/drawer-view.test.ts (11 tests) 2ms
+ ✓  web  tests/unit/presentation/web/app/actions/list-github-organizations.test.ts (4 tests) 2ms
+ ✓  web  tests/unit/presentation/web/actions/pick-folder.test.ts (4 tests) 3ms
+ ✓  web  tests/unit/presentation/web/features/aspm/aspm-inventory-tree/aspm-inventory-columns.test.ts (5 tests) 3ms
+ ✓  web  tests/unit/presentation/web/components/common/merge-review/merge-review-config.test.ts (11 tests) 2ms
+ ✓  web  tests/unit/presentation/web/lib/model-metadata.test.ts (3 tests) 2ms
+ ✓  web  tests/unit/presentation/web/actions/compose-user-input.test.ts (7 tests) 2ms
+ ✓  web  tests/unit/presentation/web/lib/compare-versions.test.ts (7 tests) 2ms
+ ✓  web  tests/unit/presentation/web/components/features/chat/is-workflow-in-flight.test.ts (6 tests) 2ms
+ ✓  web  tests/unit/presentation/web/components/common/feature-create-drawer/feature-create-drawer.test.tsx (104 tests) 24716ms
+       ✓ renders the drawer header when open  305ms
+       ✓ accepts text in the description field  737ms
+       ✓ enables submit button when description has content  486ms
+       ✓ calls onSubmit with payload containing description (no name field)  466ms
+       ✓ includes attachments array with file objects  883ms
+       ✓ sends approvalGates with only PRD checked  763ms
+       ✓ sends all-true approvalGates when all checkboxes are checked  675ms
+       ✓ sends all-false approvalGates when no checkboxes are checked  658ms
+       ✓ submits correct approvalGates after All toggle  793ms
+       ✓ clears all form fields after submit without unmounting  1444ms
+       ✓ clears form data on submit so next open starts fresh  525ms
+       ✓ supports multiple file selections across multiple picks  318ms
+       ✓ removes attachment when remove button is clicked  368ms
+       ✓ does not add duplicate files when the same file is picked again  409ms
+       ✓ plays create sound on form submit  566ms
+       ✓ submits the selected buildMode alongside the legacy fast flag  646ms
+       ✓ submits buildMode=fast after the user picks fast  558ms
+       ✓ mode=fast submits with fast: true  507ms
+       ✓ mode=spec submits with fast: false  702ms
+       ✓ mode resets to default after submit  336ms
+       ✓ submits the form when Ctrl+Enter is pressed in the textarea  457ms
+       ✓ submits the form when Meta+Enter is pressed in the textarea  500ms
+       ✓ does not submit on plain Enter (without modifier)  773ms
+       ✓ shows attachment chip after pasting an image from clipboard  343ms
+       ✓ includes sessionId in submitted payload  785ms
+       ✓ submit button is disabled when no repo selected and repositoryPath is empty  375ms
+       ✓ resets forkAndPr state to false when canPushDirectly changes from false to true  306ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/prompts/project-memory-section.test.ts (18 tests) 49978ms
+     ✓ includes the memory section when a blob is passed  49377ms
+     ✓ omits it when no blob is passed  594ms
+
+ Test Files  905 passed (905)
+      Tests  10472 passed (10472)
+   Start at  17:27:38
+   Duration  50.74s (transform 57.49s, setup 84.24s, import 151.42s, tests 233.56s, environment 127.61s)
+

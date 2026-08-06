@@ -1,0 +1,26 @@
+npm warn Unknown env config "npm-globalconfig". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "verify-deps-before-run". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+npm warn Unknown env config "_jsr-registry". This will stop working in the next major version of npm. See `npm help npmrc` for supported config options.
+
+ RUN  v4.0.18 /Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-auto-commit-rebase-sync
+
+ ✓  node  tests/integration/application/use-cases/features/sync-feature-branch.use-case.test.ts > SyncFeatureBranchUseCase (real git) > should commit untracked work and rebase onto the remote base branch 468ms
+ ✓  node  tests/integration/application/use-cases/features/start-feature.use-case.test.ts > StartFeatureUseCase (integration) > should persist a Pending feature with no agent spawn 400ms
+ ✓  node  tests/integration/application/use-cases/features/start-feature.use-case.test.ts > StartFeatureUseCase (integration) > should transition Pending feature to Requirements and spawn agent 94ms
+ ✓  node  tests/integration/application/use-cases/features/start-feature.use-case.test.ts > StartFeatureUseCase (integration) > should transition fast Pending feature to Implementation 80ms
+ ✓  node  tests/integration/application/use-cases/features/start-feature.use-case.test.ts > StartFeatureUseCase (integration) > should transition to Blocked when parent is not in POST_IMPLEMENTATION 82ms
+ ✓  node  tests/integration/application/use-cases/features/start-feature.use-case.test.ts > StartFeatureUseCase (integration) > should transition to Requirements when parent IS in POST_IMPLEMENTATION 73ms
+ ✓  node  tests/integration/application/use-cases/features/sync-feature-branch.use-case.test.ts > SyncFeatureBranchUseCase (real git) > should commit modified tracked files before rebasing 436ms
+ ✓  node  tests/integration/application/use-cases/features/start-feature.use-case.test.ts > StartFeatureUseCase (integration) > should throw when trying to start a feature in Requirements state 75ms
+ ✓  node  tests/integration/application/use-cases/features/start-feature.use-case.test.ts > StartFeatureUseCase (integration) > should throw when trying to start a feature in Blocked state 82ms
+ ✓  node  tests/integration/application/use-cases/features/start-feature.use-case.test.ts > StartFeatureUseCase (integration) > should throw when trying to start a feature in Implementation state 79ms
+ ✓  node  tests/integration/application/use-cases/features/start-feature.use-case.test.ts > StartFeatureUseCase (integration) > should throw when feature ID does not exist 78ms
+ ✓  node  tests/integration/application/use-cases/features/start-feature.use-case.test.ts > StartFeatureUseCase (integration) > should complete the full pending-to-running flow 75ms
+ ✓  node  tests/integration/application/use-cases/features/sync-feature-branch.use-case.test.ts > SyncFeatureBranchUseCase (real git) > should rebase without creating a commit when the worktree is clean 401ms
+ ✓  node  tests/integration/application/use-cases/features/sync-feature-branch.use-case.test.ts > SyncFeatureBranchUseCase (real git) > should skip the repository commit hooks 412ms
+
+ Test Files  2 passed (2)
+      Tests  14 passed (14)
+   Start at  17:29:12
+   Duration  1.87s (transform 457ms, setup 50ms, import 263ms, tests 2.84s, environment 0ms)
+

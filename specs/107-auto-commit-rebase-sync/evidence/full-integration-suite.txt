@@ -1,0 +1,60 @@
+     ✓ should throw REBASE_CONFLICT when rebase encounters conflicting changes  1085ms
+     ✓ should throw GIT_ERROR when worktree has uncommitted changes  413ms
+     ✓ should throw BRANCH_NOT_FOUND when feature branch does not exist  424ms
+     ✓ should leave worktree clean after aborting a conflicted rebase  936ms
+     ✓ should produce linear history after successful rebase  1050ms
+     ✓ should succeed when feature branch is already up-to-date with main (no-op rebase)  696ms
+     ✓ getConflictedFiles should return conflicted file paths during a rebase conflict  900ms
+     ✓ stageFiles + rebaseContinue should complete rebase after manual conflict resolution  969ms
+     ✓ rebaseAbort should restore branch to pre-rebase state  972ms
+     ✓ should stash uncommitted changes and return true  695ms
+     ✓ should return false when working directory is clean  571ms
+     ✓ should include the stash message in git stash list output  517ms
+     ✓ should stash pop and restore uncommitted changes  518ms
+     ✓ should stash drop and discard the stash entry  710ms
+     ✓ should preserve uncommitted changes across a clean rebase (stash → sync → rebase → pop)  1192ms
+     ✓ should skip stash when working directory is clean and rebase normally  929ms
+     ✓ should preserve uncommitted changes even when rebase has conflicts that are manually resolved  1160ms
+     ✓ should restore uncommitted changes even after a failed rebase that is aborted  1579ms
+     ✓ should handle unstaged modifications in stash-rebase-pop flow  1636ms
+ ✓  node  tests/integration/infrastructure/services/agents/graph-state-transitions/resume-after-error-merge.test.ts (6 tests) 769ms
+ ✓  node  tests/integration/infrastructure/services/agents/graph-state-transitions/approve-flow.test.ts (3 tests) 299ms
+ ✓  node  tests/integration/features/adopt-flow.integration.test.ts (7 tests) 37ms
+ ✓  node  tests/integration/infrastructure/services/agents/graph-state-transitions/evidence-flow.test.ts (13 tests) 857ms
+ ✓  node  tests/integration/infrastructure/services/aspm/exploit-intel-adapter.int.test.ts (6 tests) 29ms
+ ✓  node  tests/integration/infrastructure/persistence/sqlite/sqlite-migration-storage.test.ts (22 tests) 17ms
+ ✓  node  tests/integration/infrastructure/services/aspm/ownership-yaml-reader.int.test.ts (6 tests) 11ms
+ ✓  node  tests/integration/infrastructure/services/agents/graph-state-transitions/reject-feedback-propagation.test.ts (4 tests) 953ms
+       ✓ should handle 30 total rejections across all 3 phases with correct phase isolation  434ms
+ ✓  node  tests/integration/services/git/git-pr.service.getFailureLogs.test.ts (11 tests) 5ms
+ ✓  node  tests/integration/services/claude-settings-reconciler.fixtures.test.ts (4 tests) 16ms
+ ✓  node  tests/integration/infrastructure/services/git/git-pr-ci-watch.test.ts (5 tests) 3ms
+ ✓  node  tests/integration/infrastructure/services/tool-installer/project-bedrock-descriptor.test.ts (5 tests) 4ms
+ ✓  node  tests/integration/infrastructure/services/aspm/cyclonedx-sbom-adapter.int.test.ts (6 tests) 5ms
+ ✓  node  tests/integration/application/use-cases/contributors/contributor-onboarding-agent.test.ts (3 tests) 19ms
+ ✓  node  tests/integration/infrastructure/services/aspm/sarif-ingest-adapter.int.test.ts (6 tests) 6ms
+ ✓  node  tests/integration/infrastructure/services/mcp/mcp-round-trip.test.ts (27 tests) 103ms
+ ✓  node  tests/integration/infrastructure/services/agents/factory-sdk-executors.test.ts (19 tests) 6ms
+ ✓  node  tests/integration/infrastructure/services/agents/graph-state-transitions/feedback-and-timing.test.ts (2 tests) 73ms
+[2026-08-06T14:28:59.084Z] [repair:spec.yaml] Repairing spec.yaml (attempt 1)
+[2026-08-06T14:28:59.085Z] [repair:spec.yaml] Repair complete (5 chars)
+[2026-08-06T14:28:59.087Z] [validate:spec.yaml] Validating spec.yaml
+[2026-08-06T14:28:59.089Z] [validate:spec.yaml] ERROR: YAML parse error in spec.yaml: unexpected end of the stream within a flow collection (15:1)
+
+ 12 |   - React
+ 13 |   - broken item with : colon ca ...
+ 14 | openQuestions: [
+ 15 | 
+------^
+[2026-08-06T14:28:59.089Z] [validate:spec.yaml] Validating spec.yaml
+[2026-08-06T14:28:59.089Z] [validate:spec.yaml] Validation passed
+ ✓  node  tests/integration/infrastructure/services/agents/graph-state-transitions/yaml-repair-cycle.test.ts (3 tests) 9ms
+ ✓  node  tests/integration/prd-approval-iterations.test.ts (7 tests) 25ms
+ ✓  node  tests/integration/infrastructure/di/bedrock-services.test.ts (5 tests) 3ms
+ ✓  node  tests/integration/infrastructure/di/container-bootstrap.test.ts (101 tests) 196ms
+
+ Test Files  132 passed (132)
+      Tests  1563 passed (1563)
+   Start at  17:28:35
+   Duration  24.94s (transform 28.21s, setup 2.86s, import 45.35s, tests 325.41s, environment 37ms)
+
