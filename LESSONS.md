@@ -1452,3 +1452,38 @@ archived. Nothing was ever going to release it, for three compounding reasons:
   tell which code path actually ran (`rebase` = manual, `rebase-on-parent` = auto).
 - `findByParentId` deliberately includes soft-deleted rows for cascade deletes.
   Any other caller must filter `deletedAt` or it will resurrect deleted work.
+
+## A timeout override that shortens the budget on the slowest platform
+
+`E2E CLI (windows-latest)` failed with `expected 1 to be +0` on
+`shep restart` — no stack, no CLI output, nothing to diagnose. Two defects:
+
+1. **The override went the wrong way.** `createCliRunner`'s default timeout is
+   platform-aware (15s posix / **30s win32**), but five call sites in
+   `daemon-lifecycle.test.ts` hardcoded `timeout: 20_000` with the comment
+   "needs longer timeout on Windows". A flat 20s is *longer* than the posix
+   default and *shorter* than the Windows one — so the most expensive commands
+   in the suite (restart/upgrade: stop with a 5s poll + start + spawn) got the
+   tightest budget on the slowest platform.
+2. **A killed process is indistinguishable from a failed one.** `execSync` sets
+   `status: null` when it kills on timeout, and the helper did
+   `exitCode: execError.status ?? 1`. Every timeout therefore reported as
+   "exited 1", which is why the CI log said nothing useful.
+
+**Rules:**
+- Never hardcode a timeout that overrides a platform-aware default. Derive it
+  (`isWindows ? … : …`) and assert the relationship you intend — an override
+  meant to *raise* a budget must be checked against the value it replaces.
+- Keep the layered timeouts ordered: per-command exec timeout < vitest per-test
+  timeout, so the inner one wins and produces the diagnosable error. Raising one
+  without the other just changes which layer kills you.
+- Any `?? 1` fallback for an exit code erases the difference between "killed" and
+  "failed". Detect the kill (`status == null`) and say so in `stderr` — the CI log
+  is the only forensic artifact you get from a platform you cannot reproduce on.
+- Before blaming your diff for a platform-only CI failure, check the last main
+  run (`gh run list --branch main --workflow CI/CD`), then read the *mechanism*.
+  Latent flakes surface when a budget is already at its edge.
+- `tests/e2e/cli/script-runner.test.ts` skips Docker scripts when Docker is
+  absent, but if Docker is present-but-cold the base-image pull happens *inside*
+  the build deadline and fails as `DeadlineExceeded`. `docker pull node:22-slim`
+  first, then re-run.
