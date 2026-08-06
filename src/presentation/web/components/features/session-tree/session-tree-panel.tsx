@@ -18,6 +18,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { loadSessionTree } from '@/app/actions/session-tree';
+import { requestRepositoryFocus } from '@/lib/canvas-focus';
 import type { SessionTreeRepository } from '@shepai/core/application/use-cases/agents/build-session-tree.use-case';
 import {
   SessionTreeFeatureRow,
@@ -91,8 +92,19 @@ export function SessionTreePanel({ className }: { className?: string }) {
     });
   }, [expansionLoaded, expandedRepos, expandedFeatures, panelCollapsed]);
 
-  function toggleRepo(path: string) {
-    setExpandedRepos((prev) => toggleInSet(prev, path));
+  /**
+   * Clicking a repository row does two things: it toggles the accordion, and
+   * it brings the matching repository node into view on the canvas — so the
+   * tree and the canvas always agree on what the user is looking at. Focus
+   * fires on collapse too; the click is a "show me this repo" gesture either
+   * way.
+   */
+  function selectRepo(repo: SessionTreeRepository) {
+    setExpandedRepos((prev) => toggleInSet(prev, repo.path));
+    requestRepositoryFocus({
+      ...(repo.id !== undefined && { repositoryId: repo.id }),
+      repositoryPath: repo.path,
+    });
   }
 
   function toggleFeature(id: string) {
@@ -241,7 +253,7 @@ export function SessionTreePanel({ className }: { className?: string }) {
                   <SessionTreeRepositoryRow
                     repository={repo}
                     open={open}
-                    onToggle={() => toggleRepo(repo.path)}
+                    onToggle={() => selectRepo(repo)}
                     actions={
                       <SessionTreeRepositoryActions
                         repository={repo}

@@ -311,13 +311,14 @@ export function ControlCenterInner({ initialNodes, initialEdges }: ControlCenter
     [handleAddRepository, focusAndOpenDrawer, focusOnNode]
   );
 
-  // All five window-level CustomEvent listeners (add-repository, feature-
-  // created, delete/archive/unarchive requests) live in this hook so the
-  // parent component stays focused on graph state + rendering.
+  // All window-level CustomEvent listeners (add-repository, feature-created,
+  // delete/archive/unarchive requests, focus-repository) live in this hook so
+  // the parent component stays focused on graph state + rendering.
   useCanvasEventListeners({
     addRepoAndFocus,
     createFeatureNode,
     nodes,
+    focusOnNode,
     handleDeleteFeature,
     handleArchiveFeature,
     handleUnarchiveFeature,

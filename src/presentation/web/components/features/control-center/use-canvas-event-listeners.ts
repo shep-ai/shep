@@ -8,6 +8,7 @@
  *   - shep:feature-delete-requested → handleDeleteFeature(...)
  *   - shep:feature-archive-requested → handleArchiveFeature(...)
  *   - shep:feature-unarchive-requested → handleUnarchiveFeature(...)
+ *   - shep:focus-repository          → focusOnNode(repositoryNodeId)
  *
  * Extracted from control-center-inner.tsx so the parent component stays
  * focused on graph state + rendering, not event-bus plumbing.
@@ -17,6 +18,11 @@ import { useEffect } from 'react';
 
 import type { CanvasNodeType } from '@/components/features/features-canvas';
 import type { FeatureNodeData } from '@/components/common/feature-node';
+import {
+  FOCUS_REPOSITORY_EVENT,
+  findRepositoryNodeId,
+  type FocusRepositoryDetail,
+} from '@/lib/canvas-focus';
 
 export type CreateFeatureNodeFn = (
   sourceNodeId: string | null,
@@ -28,6 +34,8 @@ export interface CanvasEventListenerHandlers {
   addRepoAndFocus: (path: string) => void;
   createFeatureNode: CreateFeatureNodeFn;
   nodes: CanvasNodeType[];
+  /** Pan/zoom the viewport onto a node that is already on the canvas. */
+  focusOnNode: (nodeId: string) => void;
   handleDeleteFeature: (
     featureId: string,
     cleanup?: boolean,
@@ -43,6 +51,7 @@ export function useCanvasEventListeners(handlers: CanvasEventListenerHandlers): 
     addRepoAndFocus,
     createFeatureNode,
     nodes,
+    focusOnNode,
     handleDeleteFeature,
     handleArchiveFeature,
     handleUnarchiveFeature,
@@ -169,4 +178,17 @@ export function useCanvasEventListeners(handlers: CanvasEventListenerHandlers): 
     window.addEventListener('shep:feature-unarchive-requested', handler);
     return () => window.removeEventListener('shep:feature-unarchive-requested', handler);
   }, [handleUnarchiveFeature]);
+
+  // shep:focus-repository — fired from the session-tree sub-nav when a
+  // repository row is clicked. Silently ignored when the repository has no
+  // node on the canvas (e.g. filtered out by the active workspace).
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<FocusRepositoryDetail>).detail;
+      const nodeId = findRepositoryNodeId(nodes, detail);
+      if (nodeId) focusOnNode(nodeId);
+    };
+    window.addEventListener(FOCUS_REPOSITORY_EVENT, handler);
+    return () => window.removeEventListener(FOCUS_REPOSITORY_EVENT, handler);
+  }, [nodes, focusOnNode]);
 }

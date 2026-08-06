@@ -22,6 +22,7 @@ vi.mock('@/app/actions/session-tree', () => ({
 }));
 
 import { SessionTreePanel } from '@/components/features/session-tree/session-tree-panel';
+import { FOCUS_REPOSITORY_EVENT } from '@/lib/canvas-focus';
 
 function session(id: string, adopted = false, archived = false) {
   return {
@@ -311,6 +312,41 @@ describe('SessionTreePanel', () => {
         'session-tree-repo-fresh',
         'session-tree-repo-stale',
       ]);
+    });
+  });
+
+  describe('canvas focus', () => {
+    it('asks the canvas to focus the repository node when the row is expanded', async () => {
+      mockLoad.mockResolvedValue(tree);
+      const dispatch = vi.spyOn(window, 'dispatchEvent');
+      render(<SessionTreePanel />);
+      await waitFor(() => expect(screen.getByTestId('session-tree-repo-proj')).toBeInTheDocument());
+
+      await userEvent.click(screen.getByTestId('session-tree-repo-proj'));
+
+      const focusEvents = dispatch.mock.calls
+        .map(([e]) => e as CustomEvent)
+        .filter((e) => e.type === FOCUS_REPOSITORY_EVENT);
+      expect(focusEvents).toHaveLength(1);
+      expect(focusEvents[0].detail).toEqual({
+        repositoryId: 'repo-1',
+        repositoryPath: '/code/proj',
+      });
+    });
+
+    it('focuses again when the row is collapsed, so the click always centres the node', async () => {
+      mockLoad.mockResolvedValue(tree);
+      render(<SessionTreePanel />);
+      await expandRepo();
+      const dispatch = vi.spyOn(window, 'dispatchEvent');
+
+      await userEvent.click(screen.getByTestId('session-tree-repo-proj'));
+
+      expect(
+        dispatch.mock.calls
+          .map(([e]) => (e as CustomEvent).type)
+          .filter((t) => t === FOCUS_REPOSITORY_EVENT)
+      ).toHaveLength(1);
     });
   });
 
