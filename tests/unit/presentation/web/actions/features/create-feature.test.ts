@@ -211,37 +211,53 @@ describe('createFeature server action', () => {
     });
   });
 
-  // --- fast flag forwarding ---
+  // --- build mode forwarding ---
+  // The use case reads `buildMode` / `fast` — anything else the action
+  // forwards is silently dropped and the run falls back to the spec workflow.
 
-  describe('fast flag forwarding', () => {
-    it('passes fast=true to createRecord when input has fast=true', async () => {
+  describe('build mode forwarding', () => {
+    it('forwards buildMode to createRecord under the name the use case reads', async () => {
       mockCreateRecord.mockResolvedValue({ feature: { id: '1' }, shouldSpawn: true });
 
       await createFeature({
         description: 'Fix the typo',
         repositoryPath: '/repo',
-        mode: BuildMode.Fast,
+        buildMode: BuildMode.Fast,
       });
 
       expect(mockCreateRecord).toHaveBeenCalledWith(
-        expect.objectContaining({ mode: BuildMode.Fast })
+        expect.objectContaining({ buildMode: BuildMode.Fast })
       );
     });
 
-    it('omits fast when input has fast=false', async () => {
+    it('derives buildMode from the drawer payload fast flag', async () => {
       mockCreateRecord.mockResolvedValue({ feature: { id: '1' }, shouldSpawn: true });
 
       await createFeature({
         description: 'Fix the typo',
         repositoryPath: '/repo',
-        mode: BuildMode.Application,
+        fast: true,
       });
 
-      const callArg = mockCreateRecord.mock.calls[0][0];
-      expect(callArg).not.toHaveProperty('fast');
+      expect(mockCreateRecord).toHaveBeenCalledWith(expect.objectContaining({ fast: true }));
     });
 
-    it('omits fast when input does not include fast', async () => {
+    it('forwards fast=false so the spec workflow is selected explicitly', async () => {
+      mockCreateRecord.mockResolvedValue({ feature: { id: '1' }, shouldSpawn: true });
+
+      await createFeature({
+        description: 'Fix the typo',
+        repositoryPath: '/repo',
+        buildMode: BuildMode.Spec,
+        fast: false,
+      });
+
+      expect(mockCreateRecord).toHaveBeenCalledWith(
+        expect.objectContaining({ buildMode: BuildMode.Spec, fast: false })
+      );
+    });
+
+    it('omits buildMode and fast when the input specifies neither', async () => {
       mockCreateRecord.mockResolvedValue({ feature: { id: '1' }, shouldSpawn: true });
 
       await createFeature({
@@ -250,22 +266,23 @@ describe('createFeature server action', () => {
       });
 
       const callArg = mockCreateRecord.mock.calls[0][0];
+      expect(callArg).not.toHaveProperty('buildMode');
       expect(callArg).not.toHaveProperty('fast');
     });
 
-    it('passes fast=true to initializeAndSpawn when input has fast=true', async () => {
+    it('forwards buildMode to initializeAndSpawn as well', async () => {
       const feature = { id: '1', name: 'Test', slug: 'test' };
       mockCreateRecord.mockResolvedValue({ feature, shouldSpawn: true });
 
       await createFeature({
         description: 'Fix the typo',
         repositoryPath: '/repo',
-        mode: BuildMode.Fast,
+        buildMode: BuildMode.Fast,
       });
 
       expect(mockInitializeAndSpawn).toHaveBeenCalledWith(
         feature,
-        expect.objectContaining({ mode: BuildMode.Fast }),
+        expect.objectContaining({ buildMode: BuildMode.Fast }),
         true
       );
     });

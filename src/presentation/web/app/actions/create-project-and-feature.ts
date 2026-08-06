@@ -91,7 +91,7 @@ export async function createProjectAndFeature(input: QuickFeatureInput): Promise
       attachments,
       agentType,
       model,
-      mode: input.fast === false ? undefined : BuildMode.Fast,
+      buildMode: input.fast === false ? undefined : BuildMode.Fast,
     });
 
     if (featureResult.error) {

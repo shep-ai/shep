@@ -42,6 +42,7 @@ import { ReactFileManagerDialog } from '@/components/common/react-file-manager-d
 import { useFeatureFlags } from '@/hooks/feature-flags-context';
 import { addRepository } from '@/app/actions/add-repository';
 import { BuildMode as BuildModeEnum } from '@shepai/core/domain/generated/output';
+import { normalizeBuildMode } from '@shepai/core/domain/shared/build-mode';
 import { GitHubImportDialog } from '@/components/common/github-import-dialog';
 import type { Repository } from '@shepai/core/domain/generated/output';
 import { pickFiles } from './pick-files';
@@ -117,6 +118,8 @@ export interface FeatureCreatePayload {
   enableEvidence: boolean;
   commitEvidence: boolean;
   parentId?: string;
+  /** The mode the user picked. Drives which workflow the agent runs. */
+  buildMode: BuildModeEnum;
   /** When true, skip SDLC phases and implement directly from the prompt. */
   fast: boolean;
   /** When true, create the feature in pending state (no agent spawned). */
@@ -266,13 +269,25 @@ export interface FeatureCreateDrawerProps {
   installedPlugins?: { name: string; displayName: string; enabled: boolean }[];
 }
 
+/**
+ * Collapse any build mode onto one the picker can actually render.
+ *
+ * The picker offers Fast | Spec only, but the incoming value may be a legacy
+ * settings label ('Fast', 'Regular'), or a mode the picker never shows
+ * (`application`, `exploration`). `normalizeBuildMode` fixes the vocabulary;
+ * this fixes the range, so exactly one button is always pressed. Every
+ * non-fast mode submits `fast: false`, so collapsing them onto Spec does not
+ * change what the agent runs.
+ */
+function toPickerMode(mode: string | undefined): BuildMode {
+  return normalizeBuildMode(mode) === BuildModeEnum.Fast ? BuildModeEnum.Fast : BuildModeEnum.Spec;
+}
+
 function resolveInitialMode(
   initialMode: BuildMode | undefined,
   workflowDefaults: WorkflowDefaults | undefined
 ): BuildMode {
-  if (initialMode) return initialMode;
-  if (workflowDefaults?.defaultMode) return workflowDefaults.defaultMode as BuildMode;
-  return BuildModeEnum.Fast;
+  return toPickerMode(initialMode ?? workflowDefaults?.defaultMode);
 }
 
 export function FeatureCreateDrawer({
@@ -383,7 +398,7 @@ export function FeatureCreateDrawer({
       setEnableEvidence(workflowDefaults.enableEvidence);
       setCommitEvidence(workflowDefaults.commitEvidence);
       if (!effectiveInitialMode) {
-        setMode((workflowDefaults.defaultMode as BuildMode | undefined) ?? BuildModeEnum.Fast);
+        setMode(toPickerMode(workflowDefaults.defaultMode));
       }
       setInjectSkills(workflowDefaults.injectSkills ?? false);
     }
@@ -618,6 +633,7 @@ export function FeatureCreateDrawer({
         ciWatchEnabled,
         enableEvidence,
         commitEvidence,
+        buildMode: mode as BuildModeEnum,
         fast,
         forkAndPr,
         commitSpecs,
@@ -645,6 +661,7 @@ export function FeatureCreateDrawer({
       enableEvidence,
       ciWatchEnabled,
       commitEvidence,
+      mode,
       fast,
       forkAndPr,
       commitSpecs,

@@ -815,6 +815,65 @@ describe('FeatureCreateDrawer', () => {
       expect(screen.getByTestId('build-mode-spec')).toHaveAttribute('aria-pressed', 'true');
     });
 
+    it('keeps a mode pressed when workflowDefaults carries the legacy capitalized label', () => {
+      const defaults: WorkflowDefaults = {
+        approvalGates: { allowPrd: false, allowPlan: false, allowMerge: false },
+        push: false,
+        openPr: false,
+        ciWatchEnabled: true,
+        enableEvidence: false,
+        commitEvidence: false,
+        // Settings persist 'Fast'/'Regular', not the lowercase enum values.
+        defaultMode: 'Fast' as unknown as BuildMode,
+        injectSkills: false,
+      };
+      renderDrawer({ workflowDefaults: defaults });
+      expect(screen.getByTestId('build-mode-fast')).toHaveAttribute('aria-pressed', 'true');
+    });
+
+    it('collapses non-selectable modes onto spec so one button is always pressed', () => {
+      const defaults: WorkflowDefaults = {
+        approvalGates: { allowPrd: false, allowPlan: false, allowMerge: false },
+        push: false,
+        openPr: false,
+        ciWatchEnabled: true,
+        enableEvidence: false,
+        commitEvidence: false,
+        defaultMode: BuildMode.Application,
+        injectSkills: false,
+      };
+      renderDrawer({ workflowDefaults: defaults });
+      expect(screen.getByTestId('build-mode-spec')).toHaveAttribute('aria-pressed', 'true');
+      expect(screen.getByTestId('build-mode-fast')).toHaveAttribute('aria-pressed', 'false');
+    });
+
+    it('submits the selected buildMode alongside the legacy fast flag', async () => {
+      const onSubmit = vi.fn();
+      const user = userEvent.setup();
+      renderDrawer({ onSubmit, initialMode: 'spec' });
+
+      await user.type(screen.getByLabelText(/describe your feature/i), 'Add a thing');
+      await user.click(screen.getByRole('button', { name: '+ Create Feature' }));
+
+      expect(onSubmit.mock.calls[0][0]).toEqual(
+        expect.objectContaining({ buildMode: BuildMode.Spec, fast: false })
+      );
+    });
+
+    it('submits buildMode=fast after the user picks fast', async () => {
+      const onSubmit = vi.fn();
+      const user = userEvent.setup();
+      renderDrawer({ onSubmit, initialMode: 'spec' });
+
+      await user.click(screen.getByTestId('build-mode-fast'));
+      await user.type(screen.getByLabelText(/describe your feature/i), 'Add a thing');
+      await user.click(screen.getByRole('button', { name: '+ Create Feature' }));
+
+      expect(onSubmit.mock.calls[0][0]).toEqual(
+        expect.objectContaining({ buildMode: BuildMode.Fast, fast: true })
+      );
+    });
+
     it('clicking a mode button selects it', async () => {
       const user = userEvent.setup();
       renderDrawer();

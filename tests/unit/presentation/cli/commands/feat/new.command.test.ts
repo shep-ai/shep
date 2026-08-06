@@ -416,6 +416,37 @@ describe('createNewCommand', () => {
       expect(fastOption).toBeDefined();
       expect(fastOption?.description).toBeTruthy();
     });
+
+    it('should honour the legacy capitalized settings labels', async () => {
+      const withDefaultMode = (defaultMode: string) => ({
+        workflow: { ...makeSettings().workflow, defaultMode },
+      });
+
+      mockGetSettings.mockReturnValue(withDefaultMode('Regular'));
+      await createNewCommand().parseAsync(['Add feature'], { from: 'user' });
+      expect(mockCreateExecute.mock.calls[0][0].buildMode).toBe(BuildMode.Application);
+
+      mockCreateExecute.mockClear();
+      mockGetSettings.mockReturnValue(withDefaultMode('Fast'));
+      await createNewCommand().parseAsync(['Add feature'], { from: 'user' });
+      expect(mockCreateExecute.mock.calls[0][0].buildMode).toBe(BuildMode.Fast);
+    });
+
+    it('should let --fast and --no-fast override the settings default', async () => {
+      mockGetSettings.mockReturnValue({
+        workflow: { ...makeSettings().workflow, defaultMode: 'Regular' },
+      });
+
+      await createNewCommand().parseAsync(['Add feature', '--fast'], { from: 'user' });
+      expect(mockCreateExecute.mock.calls[0][0].buildMode).toBe(BuildMode.Fast);
+
+      mockCreateExecute.mockClear();
+      mockGetSettings.mockReturnValue({
+        workflow: { ...makeSettings().workflow, defaultMode: 'Fast' },
+      });
+      await createNewCommand().parseAsync(['Add feature', '--no-fast'], { from: 'user' });
+      expect(mockCreateExecute.mock.calls[0][0].buildMode).toBe(BuildMode.Application);
+    });
   });
 
   describe('--explore flag', () => {

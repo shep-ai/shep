@@ -47,12 +47,12 @@ describe('getWorkflowDefaults server action', () => {
       ciWatchEnabled: true,
       enableEvidence: true,
       commitEvidence: true,
-      defaultMode: 'Fast',
+      defaultMode: 'fast',
       injectSkills: true,
     });
   });
 
-  it('returns Regular mode when defaultMode is Regular', async () => {
+  it('normalizes the legacy Regular label onto the spec BuildMode', async () => {
     mockGetSettings.mockReturnValue({
       workflow: {
         openPrOnImplementationComplete: false,
@@ -83,9 +83,50 @@ describe('getWorkflowDefaults server action', () => {
       ciWatchEnabled: false,
       enableEvidence: false,
       commitEvidence: false,
-      defaultMode: 'Regular',
+      defaultMode: 'spec',
       injectSkills: false,
     });
+  });
+
+  it('falls back to the fast BuildMode when defaultMode is missing or unknown', async () => {
+    const workflow = {
+      openPrOnImplementationComplete: false,
+      ciWatchEnabled: false,
+      enableEvidence: false,
+      commitEvidence: false,
+      approvalGateDefaults: {
+        allowPrd: false,
+        allowPlan: false,
+        allowMerge: false,
+        pushOnImplementationComplete: false,
+      },
+    };
+
+    mockGetSettings.mockReturnValue({ workflow });
+    expect((await getWorkflowDefaults()).defaultMode).toBe('fast');
+
+    mockGetSettings.mockReturnValue({ workflow: { ...workflow, defaultMode: 'Nonsense' } });
+    expect((await getWorkflowDefaults()).defaultMode).toBe('fast');
+  });
+
+  it('passes canonical BuildMode values through untouched', async () => {
+    mockGetSettings.mockReturnValue({
+      workflow: {
+        openPrOnImplementationComplete: false,
+        defaultMode: 'exploration',
+        ciWatchEnabled: false,
+        enableEvidence: false,
+        commitEvidence: false,
+        approvalGateDefaults: {
+          allowPrd: false,
+          allowPlan: false,
+          allowMerge: false,
+          pushOnImplementationComplete: false,
+        },
+      },
+    });
+
+    expect((await getWorkflowDefaults()).defaultMode).toBe('exploration');
   });
 
   it('maps pushOnImplementationComplete to push field', async () => {

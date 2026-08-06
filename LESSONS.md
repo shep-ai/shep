@@ -1377,3 +1377,36 @@ toggling `colorScheme` / `document.documentElement.classList.add('dark')` for
 dark mode. Commit PNGs under an `evidence/` dir and embed in the PR comment
 via `https://github.com/<owner>/<repo>/blob/<branch>/<path>.png?raw=true`
 (renders inline for authorized viewers, private repos included).
+
+## Two vocabularies for the same concept = a silently wrong default
+
+The create drawer's Fast/Spec picker showed **nothing** selected and every
+web-created feature ran the spec workflow even when Fast was clicked. Two
+independent causes, both invisible to the type system:
+
+1. **Casing drift between a persisted label and a domain enum.**
+   `settings.workflow.defaultMode` predates `BuildMode` and stores
+   `'Regular' | 'Fast' | 'Exploration'`; the enum is lowercase
+   (`'fast' | 'spec' | ...`). Consumers wrote `defaultMode as BuildMode` and
+   `defaultMode !== 'spec'` — both compile, both are always wrong. Fix:
+   `normalizeBuildMode()` in `domain/shared/build-mode.ts` is the ONE bridge;
+   every reader funnels through it.
+2. **A field renamed at a layer boundary and dropped by an object spread.**
+   The web action forwarded `...(mode ? { mode } : {})` while
+   `CreateFeatureUseCase` reads `buildMode`. Excess-property checking does NOT
+   apply to spread properties, so TS never flagged it and the mode vanished.
+
+**Rules:**
+- Never write `someString as SomeEnum`. If a stored value must become an enum,
+  route it through a normalizer that handles legacy spellings and has a
+  documented fallback — and unit-test the legacy spellings, not just the
+  canonical ones.
+- A UI picker whose "selected" state is `value === option` MUST render exactly
+  one pressed option for ANY input. Collapse out-of-range/legacy values onto a
+  renderable option instead of letting the group render all-unpressed.
+- When wiring a payload across a layer boundary, grep the *receiving* type for
+  the field name. `...(x ? { x } : {})` into a typed parameter is an
+  unchecked hole — a typo or rename there fails silently at runtime.
+- Component tests that only feed canonical enum values prove nothing about
+  production data. Add a case using the value the DB actually holds
+  (`sqlite3 ~/.shep/data "select default_mode from settings"` — check it).

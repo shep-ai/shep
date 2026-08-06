@@ -31,8 +31,19 @@ interface CreateFeatureInput {
   push?: boolean;
   openPr?: boolean;
   parentId?: string;
-  /** Execution mode: Regular (full SDLC), Fast (direct implementation), or Exploration (iterative prototyping). */
-  mode?: BuildMode;
+  /**
+   * Execution mode: Spec/Application (full SDLC), Fast (direct
+   * implementation), or Exploration (iterative prototyping). MUST be
+   * forwarded to the use case as `buildMode` — that is the field
+   * `CreateFeatureUseCase` reads. Anything else is silently ignored and the
+   * run falls back to the full SDLC workflow.
+   */
+  buildMode?: BuildMode;
+  /**
+   * Legacy boolean the create drawer still submits. Forwarded as-is; the use
+   * case derives a build mode from it when `buildMode` is absent.
+   */
+  fast?: boolean;
   /** When true, create the feature in pending state (no agent spawned). */
   pending?: boolean;
   /** Fork repo and create PR to upstream at merge time. */
@@ -73,7 +84,8 @@ export async function createFeature(
     push,
     openPr,
     parentId,
-    mode,
+    buildMode,
+    fast,
     pending,
     forkAndPr,
     commitSpecs,
@@ -115,7 +127,8 @@ export async function createFeature(
       openPr: openPr ?? false,
       ...(parentId ? { parentId } : {}),
       description,
-      ...(mode ? { mode } : {}),
+      ...(buildMode ? { buildMode } : {}),
+      ...(fast != null ? { fast } : {}),
       ...(pending ? { pending } : {}),
       ...(forkAndPr != null ? { forkAndPr } : {}),
       ...(commitSpecs != null ? { commitSpecs } : {}),
@@ -142,7 +155,8 @@ export async function createFeature(
           push: push ?? false,
           openPr: openPr ?? false,
           ...(parentId ? { parentId } : {}),
-          ...(mode ? { mode } : {}),
+          ...(buildMode ? { buildMode } : {}),
+          ...(fast != null ? { fast } : {}),
           ...(pending ? { pending } : {}),
           ...(forkAndPr != null ? { forkAndPr } : {}),
           ...(commitSpecs != null ? { commitSpecs } : {}),

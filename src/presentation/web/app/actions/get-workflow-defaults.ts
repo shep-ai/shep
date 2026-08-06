@@ -2,6 +2,7 @@
 
 import { getSettings } from '@shepai/core/infrastructure/services/settings.service';
 import { BuildMode } from '@shepai/core/domain/generated/output';
+import { normalizeBuildMode } from '@shepai/core/domain/shared/build-mode';
 
 export interface WorkflowDefaults {
   approvalGates: {
@@ -33,7 +34,10 @@ export async function getWorkflowDefaults(): Promise<WorkflowDefaults> {
     ciWatchEnabled: workflow.ciWatchEnabled,
     enableEvidence: workflow.enableEvidence,
     commitEvidence: workflow.commitEvidence,
-    defaultMode: (workflow.defaultMode as BuildMode) ?? BuildMode.Fast,
+    // Settings persist the legacy capitalized labels ('Regular' | 'Fast' |
+    // 'Exploration'); the UI compares against BuildMode. Normalize here so no
+    // consumer ever compares 'Fast' against BuildMode.Fast and loses.
+    defaultMode: normalizeBuildMode(workflow.defaultMode, BuildMode.Fast),
     injectSkills: workflow.skillInjection?.enabled ?? false,
   };
 }
