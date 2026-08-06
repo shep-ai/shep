@@ -772,6 +772,34 @@ The Windows runner failed `pnpm test:int` with two error patterns: `Hook timed o
 2. **`rmSync(dir, { recursive: true, force: true })` is not enough on Windows.** Always pass `maxRetries: 5, retryDelay: 100` so a transient file lock turns into a single retry instead of a whole-test failure. This applies to every cleanup helper (`destroyHarness`, `destroyDirs`, ad-hoc `finally` blocks).
 3. **`testTimeout` for the `node` project is 60s in `vitest.config.ts`.** That covers heavy real-git tests like the merge-step suite. Tests that take longer than that on Linux are bugs, not slow-machine excuses — fix the test, do not bump the timeout further.
 
+## Never Hardcode a Timeout a Helper Already Chooses Per-Platform
+
+`tests/helpers/cli/runner.ts` sets `timeout: process.platform === 'win32' ? 30000 : 15000` on purpose — a
+Windows CLI spawn pays tsx/SQLite startup that Linux does not. `settings-initialization.test.ts` then passed
+`timeout: 15000` into every `createCliRunner({...})` call, which **silently overrode that default and forced
+Windows onto the Linux budget**. The test died at 15024ms on windows-latest while sibling tests running the
+exact same `version` command took 12.7s and 14.9s — it had been sitting one scheduling hiccup from red the
+whole time, and Ubuntu was green on the same commit.
+
+The EBUSY that followed in `afterEach` was a *cascade*, not a second bug: the timed-out CLI child still held
+the SQLite handle, so `rmSync` threw and reported as a second failure that masked the real assertion.
+
+**Rules:**
+
+1. **Passing an option that a helper already defaults is a decision — justify it or omit it.** Before writing
+   `timeout:`/`retries:`/`cwd:` into a helper call, read the helper's defaults. If it already branches on
+   `process.platform`, hardcoding a scalar there is always a regression on the slow platform. Omit the option
+   and inherit.
+2. **Size a test's vitest timeout from the number of sequential spawns it makes**, not from a round number.
+   `timeoutForRuns(n) = n * CLI_SPAWN_BUDGET_MS + slack` — two `run()` calls under a 30s-per-spawn budget
+   cannot live inside a 30s test timeout, and a bare `30_000` hides that arithmetic.
+3. **Cleanup in `afterEach` must be best-effort (`try/catch`) whenever the test spawns a child that touches
+   SQLite or the filesystem.** A cleanup throw outranks nothing — it only ever *masks* the assertion you
+   actually needed to read. `createIsolatedCliRunner().cleanup()` already models this.
+4. **A test that passes at 15024ms/15000ms was never passing.** When a CI failure's duration matches its
+   timeout to within a few ms, the diagnosis is "the budget is wrong," not "the runner was slow." Compare
+   against sibling tests doing identical work before touching the assertion.
+
 ## Static Repo Polish Ships LAST — Not First — In a Multi-Phase Feature
 
 Spec 097 (ai-native-contributor-onboarding) was tempting to slice "M1: static repo files" first because they're pure markdown and ship value to real contributors immediately. We didn't. The implementation order put TypeSpec → ports → use cases → agent → workflows → web → static docs, in that sequence, inside one PR.
