@@ -1487,3 +1487,49 @@ archived. Nothing was ever going to release it, for three compounding reasons:
   absent, but if Docker is present-but-cold the base-image pull happens *inside*
   the build deadline and fails as `DeadlineExceeded`. `docker pull node:22-slim`
   first, then re-run.
+
+## A self-healing sweep on one presentation surface is not an escape hatch
+
+`ReconcileBlockedFeaturesUseCase` fixes the stranded-Blocked invariant, but it is
+wired into exactly one caller: the web dashboard's `get-graph-data`. A CLI-only
+user hitting `shep feat start` on a stranded feature gets
+`not in Pending state (current: Blocked)` and has **no command** to recover —
+there is no `shep feat unblock`, and `feat start` has no `--force`. The only route
+was a raw `UPDATE features SET lifecycle='Pending'` plus temporarily
+unarchiving the parent so the gate would pass on the older installed build.
+
+**Rules:**
+- When you fix a stuck-state bug, ship the manual override alongside the automatic
+  repair. The automatic path only helps users already on the new version; the
+  override is what rescues the DBs that are *already* wrong.
+- A reconcile/repair use case must be reachable from every presentation layer
+  (per `.claude/rules/code-quality.md` — "every feature MUST be implementable in
+  ALL presentation layers"). Registering it in the DI container and calling it
+  from one Next.js loader is half a feature.
+- Any lifecycle precondition that rejects a state the system can enter *by itself*
+  needs a documented recovery command in the error message — "Only pending
+  features can be started" tells the user what is wrong and nothing about what to do.
+
+## A test that kills processes must not share state with one that expects success
+
+The timeout test above then failed on `ubuntu-latest` only: two tests killed the
+CLI 1ms into first-run SQLite initialisation, and a third asserted
+`shep --version` exits 0 — all three sharing the runner's module-level
+`SHEP_HOME` (one temp dir per test *file*, not per test). A dying process can
+still hold the DB lock, so the third test inherited the wreckage. It passed on
+macOS, where 1ms barely clears `exec` and nothing had touched the DB yet.
+
+**Rules:**
+- A test that deliberately kills a process must own its `SHEP_HOME`
+  (`createIsolatedCliRunner()`), never the file-level shared one. Auto-isolation
+  is per *file* — that is not isolation between tests that corrupt state.
+- Don't assert on a *success* path to prove a *failure*-classification flag.
+  Asserting "a real non-zero exit is not flagged as a timeout" via an unknown
+  command needs no database and tests the distinction directly; asserting it via
+  `--version` exit 0 imports every first-run initialisation risk for nothing.
+- Every assertion on a spawned process must carry stdout/stderr in its message.
+  `expect(result.exitCode).toBe(0)` on a remote platform yields
+  `expected 1 to be +0` and nothing else — the second CI round-trip is the price.
+- Confirm the mechanism locally before pushing a theory: scripting the exact
+  sequence (kill, kill, run) disproved the first guess in 30s, which is what
+  redirected the fix from "harden the assertion" to "stop sharing the home".
