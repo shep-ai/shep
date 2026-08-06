@@ -168,6 +168,7 @@ import { UnarchiveFeatureUseCase } from '../../../application/use-cases/features
 import { UpgradeCliUseCase } from '../../../application/use-cases/upgrade/upgrade-cli.use-case.js';
 import { SyncRepositoryMainUseCase } from '../../../application/use-cases/repositories/sync-repository-main.use-case.js';
 import { RebaseFeatureOnMainUseCase } from '../../../application/use-cases/features/rebase-feature-on-main.use-case.js';
+import { SyncFeatureBranchUseCase } from '../../../application/use-cases/features/sync-feature-branch.use-case.js';
 import { GetBranchSyncStatusUseCase } from '../../../application/use-cases/features/get-branch-sync-status.use-case.js';
 import { AutoResolveMergedBranchesUseCase } from '../../../application/use-cases/features/auto-resolve-merged-branches.use-case.js';
 import { ReparentFeatureUseCase } from '../../../application/use-cases/features/reparent-feature.use-case.js';
@@ -334,6 +335,7 @@ export function registerUseCases(container: DependencyContainer): void {
   container.registerSingleton(UnarchiveFeatureUseCase);
   container.registerSingleton(UpgradeCliUseCase);
   container.registerSingleton(SyncRepositoryMainUseCase);
+  container.registerSingleton(SyncFeatureBranchUseCase);
   container.registerSingleton(RebaseFeatureOnMainUseCase);
   container.registerSingleton(GetBranchSyncStatusUseCase);
   container.registerSingleton(AutoResolveMergedBranchesUseCase);

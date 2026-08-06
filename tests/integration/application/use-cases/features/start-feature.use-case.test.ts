@@ -112,7 +112,8 @@ describe('StartFeatureUseCase (integration)', () => {
       runRepo,
       processService as any,
       worktreeService as any,
-      { load: vi.fn().mockResolvedValue(null) } as any
+      { load: vi.fn().mockResolvedValue(null) } as any,
+      { execute: vi.fn().mockResolvedValue(undefined) } as any
     );
     createdFeatureIds = [];
     createdRunIds = [];

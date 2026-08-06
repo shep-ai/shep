@@ -1,0 +1,36 @@
+feature:
+  id: '107-auto-commit-rebase-sync'
+  name: 'auto-commit-rebase-sync'
+  number: 107
+  branch: 'feat/107-auto-commit-rebase-sync'
+  lifecycle: 'research'
+  createdAt: '2026-08-06T13:03:30Z'
+
+status:
+  phase: 'research'
+  progress:
+    completed: 0
+    total: 0
+    percentage: 0
+  currentTask: null
+  lastUpdated: '2026-08-06T13:03:30Z'
+  lastUpdatedBy: 'feature-agent'
+
+validation:
+  lastRun: null
+  gatesPassed: []
+  autoFixesApplied: []
+
+tasks:
+  current: null
+  blocked: []
+  failed: []
+
+checkpoints:
+  - phase: 'feature-created'
+    completedAt: '2026-08-06T13:03:30Z'
+    completedBy: 'feature-agent'
+
+errors:
+  current: null
+  history: []

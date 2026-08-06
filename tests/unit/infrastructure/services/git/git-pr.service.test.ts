@@ -179,6 +179,35 @@ describe('GitPrService', () => {
       expect(mockExec).toHaveBeenNthCalledWith(3, 'git', ['rev-parse', 'HEAD'], { cwd: '/repo' });
     });
 
+    it('should pass --no-verify when hooks are skipped', async () => {
+      vi.mocked(mockExec)
+        .mockResolvedValueOnce({ stdout: '', stderr: '' }) // git add -A
+        .mockResolvedValueOnce({ stdout: '', stderr: '' }) // git commit
+        .mockResolvedValueOnce({ stdout: 'abc123def456\n', stderr: '' }); // git rev-parse HEAD
+
+      await service.commitAll('/repo', 'chore: wip', { noVerify: true });
+
+      expect(mockExec).toHaveBeenNthCalledWith(
+        2,
+        'git',
+        ['commit', '-m', 'chore: wip', '--no-verify'],
+        { cwd: '/repo' }
+      );
+    });
+
+    it('should not pass --no-verify by default', async () => {
+      vi.mocked(mockExec)
+        .mockResolvedValueOnce({ stdout: '', stderr: '' })
+        .mockResolvedValueOnce({ stdout: '', stderr: '' })
+        .mockResolvedValueOnce({ stdout: 'abc123def456\n', stderr: '' });
+
+      await service.commitAll('/repo', 'chore: wip', { noVerify: false });
+
+      expect(mockExec).toHaveBeenNthCalledWith(2, 'git', ['commit', '-m', 'chore: wip'], {
+        cwd: '/repo',
+      });
+    });
+
     it('should throw GitPrError with GIT_ERROR on failure', async () => {
       vi.mocked(mockExec).mockRejectedValue(new Error('fatal: not a git repository'));
 

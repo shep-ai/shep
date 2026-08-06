@@ -144,10 +144,14 @@ export class GitPrService implements IGitPrService {
     return stdout.trim().length > 0;
   }
 
-  async commitAll(cwd: string, message: string): Promise<string> {
+  async commitAll(cwd: string, message: string, options?: { noVerify?: boolean }): Promise<string> {
     try {
       await this.execFile('git', ['add', '-A'], { cwd });
-      await this.execFile('git', ['commit', '-m', message], { cwd });
+      const commitArgs = ['commit', '-m', message];
+      if (options?.noVerify) {
+        commitArgs.push('--no-verify');
+      }
+      await this.execFile('git', commitArgs, { cwd });
       const { stdout } = await this.execFile('git', ['rev-parse', 'HEAD'], { cwd });
       return stdout.trim();
     } catch (error) {

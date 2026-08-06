@@ -4,6 +4,11 @@
  * Transitions a Pending feature to its active lifecycle and spawns
  * the agent. Validates lifecycle state, checks parent dependency
  * gates, and reuses the existing AgentRun record.
+ *
+ * Before the agent is spawned the branch is brought in sync: everything
+ * already in the worktree is committed and the branch is rebased onto the
+ * latest base branch, so the agent starts from up-to-date code and no
+ * pre-existing work is lost.
  */
 
 import { injectable, inject } from 'tsyringe';
@@ -15,6 +20,7 @@ import type { IFeatureAgentProcessService } from '../../ports/output/agents/feat
 import type { IWorktreeService } from '../../ports/output/services/worktree-service.interface.js';
 import type { ISettingsRepository } from '../../ports/output/repositories/settings.repository.interface.js';
 import { POST_IMPLEMENTATION } from '../../../domain/lifecycle-gates.js';
+import { SyncFeatureBranchUseCase } from './sync-feature-branch.use-case.js';
 
 export interface StartFeatureResult {
   feature: Feature;
@@ -33,7 +39,8 @@ export class StartFeatureUseCase {
     @inject('IWorktreeService')
     private readonly worktreeService: IWorktreeService,
     @inject('ISettingsRepository')
-    private readonly settingsRepository: ISettingsRepository
+    private readonly settingsRepository: ISettingsRepository,
+    private readonly syncFeatureBranch: SyncFeatureBranchUseCase
   ) {}
 
   async execute(featureId: string): Promise<StartFeatureResult> {
@@ -114,6 +121,19 @@ export class StartFeatureUseCase {
 
     // Spawn agent if not blocked
     if (shouldSpawn) {
+      // Commit whatever is already in the worktree and rebase onto the latest
+      // base branch so the agent starts in sync. Best-effort: a repo without a
+      // remote, or a rebase that needs a human, must not block the agent.
+      try {
+        await this.syncFeatureBranch.execute({
+          repositoryPath: resolved.repositoryPath,
+          branch: resolved.branch,
+        });
+      } catch {
+        // Sync failure is non-fatal — the agent starts from the current tree.
+        // Any work in progress was either committed or left untouched.
+      }
+
       const worktreePath = this.worktreeService.getWorktreePath(
         resolved.repositoryPath,
         resolved.branch

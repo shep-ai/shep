@@ -114,24 +114,38 @@ function createTestRun(overrides?: Partial<AgentRun>): AgentRun {
   };
 }
 
+function createMockSyncFeatureBranch() {
+  return {
+    execute: vi.fn().mockResolvedValue({
+      cwd: '/wt/feat-test',
+      baseBranch: 'main',
+      committed: false,
+      conflictsResolved: false,
+    }),
+  };
+}
+
 describe('StartFeatureUseCase', () => {
   let useCase: StartFeatureUseCase;
   let featureRepo: ReturnType<typeof createMockFeatureRepo>;
   let runRepo: ReturnType<typeof createMockRunRepo>;
   let processService: ReturnType<typeof createMockProcessService>;
   let worktreeService: ReturnType<typeof createMockWorktreeService>;
+  let syncFeatureBranch: ReturnType<typeof createMockSyncFeatureBranch>;
 
   beforeEach(() => {
     featureRepo = createMockFeatureRepo();
     runRepo = createMockRunRepo();
     processService = createMockProcessService();
     worktreeService = createMockWorktreeService();
+    syncFeatureBranch = createMockSyncFeatureBranch();
     useCase = new StartFeatureUseCase(
       featureRepo as any,
       runRepo as any,
       processService as any,
       worktreeService as any,
-      { load: vi.fn().mockResolvedValue({ security: { mode: 'Advisory' } }) } as any
+      { load: vi.fn().mockResolvedValue({ security: { mode: 'Advisory' } }) } as any,
+      syncFeatureBranch as any
     );
   });
 
@@ -456,6 +470,49 @@ describe('StartFeatureUseCase', () => {
       expect.any(String),
       expect.objectContaining({ securityMode: 'Advisory' })
     );
+  });
+
+  // -------------------------------------------------------------------------
+  // Branch sync before spawn — commit work in progress, rebase onto base
+  // -------------------------------------------------------------------------
+
+  it('should commit and rebase the branch before spawning the agent', async () => {
+    featureRepo.findById.mockResolvedValue(createTestFeature());
+    runRepo.findById.mockResolvedValue(createTestRun());
+
+    await useCase.execute('feat-001');
+
+    expect(syncFeatureBranch.execute).toHaveBeenCalledWith({
+      repositoryPath: '/test/repo',
+      branch: 'feat/test-feature',
+    });
+    expect(syncFeatureBranch.execute.mock.invocationCallOrder[0]).toBeLessThan(
+      processService.spawn.mock.invocationCallOrder[0]
+    );
+  });
+
+  it('should still spawn the agent when the branch sync fails', async () => {
+    featureRepo.findById.mockResolvedValue(createTestFeature());
+    runRepo.findById.mockResolvedValue(createTestRun());
+    syncFeatureBranch.execute.mockRejectedValue(new Error('no remote configured'));
+
+    await expect(useCase.execute('feat-001')).resolves.toBeDefined();
+
+    expect(processService.spawn).toHaveBeenCalled();
+  });
+
+  it('should not sync the branch when the feature is blocked by its parent', async () => {
+    featureRepo.findById
+      .mockResolvedValueOnce(createTestFeature({ parentId: 'parent-1' }))
+      .mockResolvedValueOnce(
+        createTestFeature({ id: 'parent-1', lifecycle: SdlcLifecycle.Blocked })
+      );
+    runRepo.findById.mockResolvedValue(createTestRun());
+
+    await useCase.execute('feat-001');
+
+    expect(syncFeatureBranch.execute).not.toHaveBeenCalled();
+    expect(processService.spawn).not.toHaveBeenCalled();
   });
 
   // -------------------------------------------------------------------------

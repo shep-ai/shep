@@ -233,14 +233,17 @@ export interface IGitPrService {
   hasUncommittedChanges(cwd: string): Promise<boolean>;
 
   /**
-   * Stage all changes and create a commit.
+   * Stage all changes (including untracked files) and create a commit.
    *
    * @param cwd - Working directory path
    * @param message - Commit message
+   * @param options.noVerify - Skip git hooks. Use for automatic checkpoint
+   *   commits, where a repository's pre-commit linter or commitlint rules
+   *   must not be able to block the workflow.
    * @returns The commit SHA
    * @throws GitPrError with GIT_ERROR code on failure
    */
-  commitAll(cwd: string, message: string): Promise<string>;
+  commitAll(cwd: string, message: string, options?: { noVerify?: boolean }): Promise<string>;
 
   /**
    * Push the current branch to the remote.
