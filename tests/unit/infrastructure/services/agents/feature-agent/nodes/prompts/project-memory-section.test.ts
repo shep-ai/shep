@@ -7,6 +7,19 @@
 
 import { describe, it, expect, vi } from 'vitest';
 
+// FeatureContextBuilder builds its CLI-reference section by shelling out to the
+// real `shep` binary — `shep --help` plus `shep <cmd> --help` for every
+// subcommand. On a machine where shep is installed that is dozens of real
+// process spawns, which made this unit test take ~22s on its own and time out
+// past the 60s ceiling once the full suite put the CPU under contention; on a
+// machine without shep in PATH it silently took a different branch. Neither the
+// spawns nor PATH have anything to do with the project-memory assertions below,
+// so stub the spawn out and keep this a real unit test.
+vi.mock('node:child_process', async (importOriginal) => {
+  const actual = (await importOriginal()) as Record<string, unknown>;
+  return { ...actual, execFileSync: vi.fn().mockReturnValue('shep 0.0.0-test') };
+});
+
 vi.mock(
   '@/infrastructure/services/agents/feature-agent/nodes/node-helpers.js',
   async (importOriginal) => {

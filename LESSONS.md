@@ -1433,3 +1433,26 @@ independent causes, both invisible to the type system:
 - Component tests that only feed canonical enum values prove nothing about
   production data. Add a case using the value the DB actually holds
   (`sqlite3 ~/.shep/data "select default_mode from settings"` — check it).
+
+## A unit test that spawns a real binary is a timeout waiting for CPU contention
+
+`project-memory-section.test.ts` passed alone in 22s and failed in the full
+suite with `Test timed out in 60000ms` — on a *synchronous* test body. The cause
+was not the test but what it reached: `FeatureContextBuilder.buildContext()`
+builds its CLI-reference section with `execFileSync('shep', ['--help'])` plus
+one `execFileSync('shep', [cmd, '--help'])` per subcommand. With shep installed
+in PATH that is dozens of real CLI boots inside a "unit" test; with shep absent
+it silently takes the `catch` branch instead. Either way the assertions under
+test (the project-memory block) never needed a subprocess.
+
+**Rules:**
+- A test under `tests/unit/` must not spawn a process, touch the network, or
+  depend on what is installed in PATH. If the code under test does, mock the
+  boundary (`vi.mock('node:child_process', ...)`) — do not raise the timeout.
+- Diagnose a timeout on a synchronous test body as hidden I/O, never as
+  flakiness. Sync code cannot time out on its own; something under it blocked.
+- A test that passes in isolation and fails in the full suite is a resource
+  problem, not a fluke. Compare its solo duration against the timeout: 22s of
+  a 60s budget leaves no headroom once workers compete for CPU.
+- Machine-dependent branches (`try { spawn } catch { fallback }`) make a test
+  assert different things on CI than on a dev box. Pin the branch explicitly.
