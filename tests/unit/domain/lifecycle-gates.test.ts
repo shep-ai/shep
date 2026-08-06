@@ -6,7 +6,11 @@
 
 import { describe, it, expect } from 'vitest';
 import { SdlcLifecycle } from '@/domain/generated/output.js';
-import { POST_IMPLEMENTATION, EXPLORING_TRANSITIONS } from '@/domain/lifecycle-gates.js';
+import {
+  POST_IMPLEMENTATION,
+  EXPLORING_TRANSITIONS,
+  satisfiesDependencyGate,
+} from '@/domain/lifecycle-gates.js';
 
 describe('SdlcLifecycle', () => {
   it('should include a Pending value', () => {
@@ -31,6 +35,60 @@ describe('POST_IMPLEMENTATION', () => {
     expect(POST_IMPLEMENTATION.has(SdlcLifecycle.Implementation)).toBe(true);
     expect(POST_IMPLEMENTATION.has(SdlcLifecycle.Review)).toBe(true);
     expect(POST_IMPLEMENTATION.has(SdlcLifecycle.Maintain)).toBe(true);
+  });
+});
+
+describe('satisfiesDependencyGate', () => {
+  it('should open the gate for Implementation, Review, and Maintain', () => {
+    for (const lifecycle of [
+      SdlcLifecycle.Implementation,
+      SdlcLifecycle.Review,
+      SdlcLifecycle.Maintain,
+    ]) {
+      expect(satisfiesDependencyGate({ lifecycle })).toBe(true);
+    }
+  });
+
+  it('should keep the gate closed for pre-implementation states', () => {
+    for (const lifecycle of [
+      SdlcLifecycle.Started,
+      SdlcLifecycle.Analyze,
+      SdlcLifecycle.Requirements,
+      SdlcLifecycle.Research,
+      SdlcLifecycle.Planning,
+      SdlcLifecycle.Pending,
+      SdlcLifecycle.Exploring,
+      SdlcLifecycle.Blocked,
+      SdlcLifecycle.AwaitingUpstream,
+      SdlcLifecycle.Deleting,
+    ]) {
+      expect(satisfiesDependencyGate({ lifecycle })).toBe(false);
+    }
+  });
+
+  it('should keep the gate OPEN for a feature archived after it completed', () => {
+    // Auto-archive moves every completed feature to Archived on a delay.
+    // Archiving is a filing concern, not a rollback of progress — children
+    // waiting on a completed-then-archived parent must still be released.
+    expect(
+      satisfiesDependencyGate({
+        lifecycle: SdlcLifecycle.Archived,
+        previousLifecycle: SdlcLifecycle.Maintain,
+      })
+    ).toBe(true);
+  });
+
+  it('should keep the gate CLOSED for a feature archived before it reached implementation', () => {
+    expect(
+      satisfiesDependencyGate({
+        lifecycle: SdlcLifecycle.Archived,
+        previousLifecycle: SdlcLifecycle.Planning,
+      })
+    ).toBe(false);
+  });
+
+  it('should keep the gate CLOSED for an archived feature with no recorded previous lifecycle', () => {
+    expect(satisfiesDependencyGate({ lifecycle: SdlcLifecycle.Archived })).toBe(false);
   });
 });
 

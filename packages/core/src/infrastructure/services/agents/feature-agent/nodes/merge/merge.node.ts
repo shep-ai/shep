@@ -37,7 +37,7 @@ import {
   recordApprovalWaitStart,
   updatePhasePrompt,
 } from '../../phase-timing-context.js';
-import { updateNodeLifecycle } from '../../lifecycle-context.js';
+import { updateNodeLifecycle, setFeatureLifecycle } from '../../lifecycle-context.js';
 import { buildCommitPushPrPrompt, buildLocalSquashMergePrompt } from '../prompts/merge-prompts.js';
 import {
   GitPrError,
@@ -358,6 +358,9 @@ export function createMergeNode(deps: MergeNodeDeps) {
               },
               updatedAt: new Date(),
             });
+            // Announce the transition so dependency side effects fire (the row
+            // write above alone would bypass UpdateFeatureLifecycleUseCase).
+            await setFeatureLifecycle(SdlcLifecycle.AwaitingUpstream);
             messages.push(`[merge] Feature lifecycle → AwaitingUpstream`);
           }
         } catch {
@@ -372,6 +375,7 @@ export function createMergeNode(deps: MergeNodeDeps) {
               lifecycle: SdlcLifecycle.Maintain,
               updatedAt: new Date(),
             });
+            await setFeatureLifecycle(SdlcLifecycle.Maintain);
             messages.push(`[merge] Feature lifecycle → Maintain`);
           }
         }
@@ -493,6 +497,10 @@ export function createMergeNode(deps: MergeNodeDeps) {
             : {}),
           updatedAt: new Date(),
         });
+        // Maintain is the LAST transition a feature makes — announce it so
+        // features blocked on this one are released. Writing the row directly
+        // (needed here to persist PR data atomically) skips that hook.
+        await setFeatureLifecycle(newLifecycle);
         messages.push(`[merge] Feature lifecycle → ${newLifecycle}`);
 
         if (merged) {

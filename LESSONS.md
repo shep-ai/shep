@@ -1410,3 +1410,45 @@ independent causes, both invisible to the type system:
 - Component tests that only feed canonical enum values prove nothing about
   production data. Add a case using the value the DB actually holds
   (`sqlite3 ~/.shep/data "select default_mode from settings"` — check it).
+
+## An event-only invariant strands state the moment nobody is listening
+
+A feature sat `Blocked` under a parent that had merged, completed, and been
+archived. Nothing was ever going to release it, for three compounding reasons:
+
+1. **Wrong argument to a fan-out.** `ReparentFeatureUseCase` called
+   `checkAndUnblock.execute(featureId)` — the *reparented child's* id, which
+   evaluates that child's own children. The feature just attached was never
+   evaluated against its NEW parent. Its `newLifecycle` branch also only ever
+   *added* `Blocked`; there was no branch that cleared it.
+2. **A gate duplicated in four places.** `POST_IMPLEMENTATION.has(parent.lifecycle)`
+   was inlined in create / start / reparent / check-and-unblock. Copies drift.
+3. **`Archived` slammed the gate shut.** Auto-archive moves *every* completed
+   feature to `Archived` on a delay, and `Archived ∉ POST_IMPLEMENTATION` — so
+   waiting long enough was itself enough to strand a child forever.
+
+**Rules:**
+- An invariant enforced only as a side effect of a *transition* is dead the
+  moment nothing transitions again. Terminal states have no next event. For any
+  "when X advances, release Y" rule, also provide a **state-side reconciler**
+  that restores it from the data (`ReconcileBlockedFeaturesUseCase`, swept
+  fire-and-forget on dashboard load next to `AutoResolveMergedBranchesUseCase`).
+- A gate belongs in ONE domain predicate (`satisfiesDependencyGate()`), not as
+  `SET.has(entity.field)` at each call site. Callers delegate; they do not
+  re-derive. Make the owning use case *return what it did* so callers never need
+  to re-check the condition themselves.
+- Ask of every terminal/bookkeeping state: does it still satisfy the predicates
+  the pre-terminal state satisfied? `Archived` must answer via
+  `previousLifecycle` — archiving is filing, not a rollback of progress.
+- Every writer of a lifecycle field must route through the use case that owns the
+  transition's side effects. `merge.node.ts` wrote `Maintain` straight to the
+  repository, so the LAST transition a feature ever made was the one that never
+  fired its hook. Use `setFeatureLifecycle()` to announce transitions with no
+  graph node of their own.
+- When a status tree looks self-contradictory, check whether the two columns come
+  from two sources: `feat ls` derives "Completed" from the **agent run** and
+  "Blocked" from the **feature lifecycle**. Confirm against the DB
+  (`sqlite3 ~/.shep/data`) before theorising — and read `phase_timings.phase` to
+  tell which code path actually ran (`rebase` = manual, `rebase-on-parent` = auto).
+- `findByParentId` deliberately includes soft-deleted rows for cascade deletes.
+  Any other caller must filter `deletedAt` or it will resurrect deleted work.

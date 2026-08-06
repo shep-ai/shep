@@ -274,8 +274,21 @@ describe('ReparentFeatureUseCase', () => {
     );
   });
 
-  it('should call CheckAndUnblockFeaturesUseCase when reparented under post-implementation parent', async () => {
+  it('should release the reparented feature itself by evaluating the NEW PARENT gate', async () => {
+    // Regression: attaching a Blocked feature to an already-finished parent left
+    // it Blocked forever — the parent has no future lifecycle transition left to
+    // fire CheckAndUnblock, and reparent only evaluated the child's own children.
     const child = makeFeature({ id: 'child-1', lifecycle: SdlcLifecycle.Blocked });
+    const parent = makeFeature({ id: 'parent-1', lifecycle: SdlcLifecycle.Maintain });
+    vi.mocked(mockFeatureRepo.findById).mockResolvedValueOnce(child).mockResolvedValueOnce(parent);
+
+    await useCase.execute({ featureId: 'child-1', parentId: 'parent-1' });
+
+    expect(mockCheckAndUnblock.execute).toHaveBeenCalledWith('parent-1');
+  });
+
+  it('should also evaluate the reparented feature as a parent of its own blocked children', async () => {
+    const child = makeFeature({ id: 'child-1', lifecycle: SdlcLifecycle.Implementation });
     const parent = makeFeature({ id: 'parent-1', lifecycle: SdlcLifecycle.Implementation });
     vi.mocked(mockFeatureRepo.findById).mockResolvedValueOnce(child).mockResolvedValueOnce(parent);
 
@@ -284,14 +297,32 @@ describe('ReparentFeatureUseCase', () => {
     expect(mockCheckAndUnblock.execute).toHaveBeenCalledWith('child-1');
   });
 
-  it('should NOT call CheckAndUnblockFeaturesUseCase when reparented under pre-implementation parent', async () => {
+  it('should delegate to CheckAndUnblockFeaturesUseCase even under a pre-implementation parent', async () => {
+    // The gate lives in CheckAndUnblockFeaturesUseCase (single source of truth) —
+    // duplicating it here is what allowed the two to drift apart.
     const child = makeFeature({ id: 'child-1', lifecycle: SdlcLifecycle.Started });
     const parent = makeFeature({ id: 'parent-1', lifecycle: SdlcLifecycle.Requirements });
     vi.mocked(mockFeatureRepo.findById).mockResolvedValueOnce(child).mockResolvedValueOnce(parent);
 
     await useCase.execute({ featureId: 'child-1', parentId: 'parent-1' });
 
-    expect(mockCheckAndUnblock.execute).not.toHaveBeenCalled();
+    expect(mockCheckAndUnblock.execute).toHaveBeenCalledWith('parent-1');
+    expect(mockFeatureRepo.update).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'child-1', lifecycle: SdlcLifecycle.Blocked })
+    );
+  });
+
+  it('should leave a Pending child Pending when attached to a finished parent', async () => {
+    // Pending is a user-deferred state — a finished parent must not auto-start it.
+    const child = makeFeature({ id: 'child-1', lifecycle: SdlcLifecycle.Pending });
+    const parent = makeFeature({ id: 'parent-1', lifecycle: SdlcLifecycle.Maintain });
+    vi.mocked(mockFeatureRepo.findById).mockResolvedValueOnce(child).mockResolvedValueOnce(parent);
+
+    await useCase.execute({ featureId: 'child-1', parentId: 'parent-1' });
+
+    expect(mockFeatureRepo.update).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'child-1', lifecycle: SdlcLifecycle.Pending })
+    );
   });
 
   it('should transition active child to Blocked when reparented under Blocked parent', async () => {

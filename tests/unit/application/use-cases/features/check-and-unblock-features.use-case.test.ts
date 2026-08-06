@@ -353,6 +353,37 @@ describe('CheckAndUnblockFeaturesUseCase', () => {
     expect(mockAgentProcess.spawn).toHaveBeenCalledOnce();
   });
 
+  it('should work when the parent was archived after completing', async () => {
+    // Auto-archive moves completed features to Archived on a delay — that must
+    // not permanently strand children that were waiting on them.
+    const parent = makeFeature({
+      id: parentId,
+      lifecycle: SdlcLifecycle.Archived,
+      previousLifecycle: SdlcLifecycle.Maintain,
+    });
+    const blockedChild = makeFeature({ id: 'child-001', lifecycle: SdlcLifecycle.Blocked });
+    mockFeatureRepo.findById = vi.fn().mockResolvedValue(parent);
+    mockFeatureRepo.findByParentId = vi.fn().mockResolvedValue([blockedChild]);
+
+    await useCase.execute(parentId);
+
+    expect(mockAgentProcess.spawn).toHaveBeenCalledOnce();
+  });
+
+  it('should be a no-op when the parent was archived before reaching implementation', async () => {
+    const parent = makeFeature({
+      id: parentId,
+      lifecycle: SdlcLifecycle.Archived,
+      previousLifecycle: SdlcLifecycle.Planning,
+    });
+    mockFeatureRepo.findById = vi.fn().mockResolvedValue(parent);
+
+    await useCase.execute(parentId);
+
+    expect(mockFeatureRepo.findByParentId).not.toHaveBeenCalled();
+    expect(mockAgentProcess.spawn).not.toHaveBeenCalled();
+  });
+
   // -------------------------------------------------------------------------
   // Idempotency
   // -------------------------------------------------------------------------
@@ -414,6 +445,73 @@ describe('CheckAndUnblockFeaturesUseCase', () => {
         securityMode: 'Advisory',
       }
     );
+  });
+
+  it('should derive the worktree path when the blocked child has none stored', async () => {
+    // Features created as Blocked never ran worktree setup, so worktree_path is
+    // empty in the DB. Spawning with '' makes the child agent run in the repo
+    // root instead of its own worktree.
+    const parent = makeFeature({ id: parentId, lifecycle: SdlcLifecycle.Maintain });
+    const blockedChild = makeFeature({
+      id: 'child-no-wt',
+      lifecycle: SdlcLifecycle.Blocked,
+      branch: 'feat/v6-foundation',
+      repositoryPath: '/my-repo',
+      worktreePath: '',
+    });
+    mockFeatureRepo.findById = vi.fn().mockResolvedValue(parent);
+    mockFeatureRepo.findByParentId = vi.fn().mockResolvedValue([blockedChild]);
+    vi.mocked(mockWorktreeService.getWorktreePath).mockReturnValue('/wt/feat-v6-foundation');
+
+    await useCase.execute(parentId);
+
+    expect(mockWorktreeService.getWorktreePath).toHaveBeenCalledWith(
+      '/my-repo',
+      'feat/v6-foundation'
+    );
+    expect(mockAgentProcess.spawn).toHaveBeenCalledWith(
+      'child-no-wt',
+      expect.any(String),
+      '/my-repo',
+      expect.any(String),
+      '/wt/feat-v6-foundation',
+      expect.any(Object)
+    );
+  });
+
+  it('should not resurrect a soft-deleted blocked child', async () => {
+    // findByParentId intentionally includes soft-deleted rows (it serves cascade
+    // deletes) — unblocking one would spawn an agent for a deleted feature.
+    const parent = makeFeature({ id: parentId, lifecycle: SdlcLifecycle.Maintain });
+    const deletedChild = makeFeature({
+      id: 'child-deleted',
+      lifecycle: SdlcLifecycle.Blocked,
+      deletedAt: new Date(),
+    });
+    mockFeatureRepo.findById = vi.fn().mockResolvedValue(parent);
+    mockFeatureRepo.findByParentId = vi.fn().mockResolvedValue([deletedChild]);
+
+    await useCase.execute(parentId);
+
+    expect(mockFeatureRepo.update).not.toHaveBeenCalled();
+    expect(mockAgentProcess.spawn).not.toHaveBeenCalled();
+  });
+
+  it('should return the ids of the children it unblocked', async () => {
+    const parent = makeFeature({ id: parentId, lifecycle: SdlcLifecycle.Maintain });
+    const blocked = makeFeature({ id: 'child-blocked', lifecycle: SdlcLifecycle.Blocked });
+    const started = makeFeature({ id: 'child-started', lifecycle: SdlcLifecycle.Started });
+    mockFeatureRepo.findById = vi.fn().mockResolvedValue(parent);
+    mockFeatureRepo.findByParentId = vi.fn().mockResolvedValue([blocked, started]);
+
+    await expect(useCase.execute(parentId)).resolves.toEqual(['child-blocked']);
+  });
+
+  it('should return an empty array when the parent gate is not satisfied', async () => {
+    const parent = makeFeature({ id: parentId, lifecycle: SdlcLifecycle.Planning });
+    mockFeatureRepo.findById = vi.fn().mockResolvedValue(parent);
+
+    await expect(useCase.execute(parentId)).resolves.toEqual([]);
   });
 
   it('should skip spawn() for a blocked child that has no agentRunId or specPath', async () => {

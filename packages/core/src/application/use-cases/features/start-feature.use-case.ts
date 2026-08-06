@@ -14,7 +14,7 @@ import type { IAgentRunRepository } from '../../ports/output/agents/agent-run-re
 import type { IFeatureAgentProcessService } from '../../ports/output/agents/feature-agent-process.interface.js';
 import type { IWorktreeService } from '../../ports/output/services/worktree-service.interface.js';
 import type { ISettingsRepository } from '../../ports/output/repositories/settings.repository.interface.js';
-import { POST_IMPLEMENTATION } from '../../../domain/lifecycle-gates.js';
+import { satisfiesDependencyGate } from '../../../domain/lifecycle-gates.js';
 
 export interface StartFeatureResult {
   feature: Feature;
@@ -94,11 +94,7 @@ export class StartFeatureUseCase {
 
     if (resolved.parentId) {
       const parent = await this.featureRepo.findById(resolved.parentId);
-      if (
-        !parent ||
-        parent.lifecycle === SdlcLifecycle.Blocked ||
-        !POST_IMPLEMENTATION.has(parent.lifecycle)
-      ) {
+      if (!parent || !satisfiesDependencyGate(parent)) {
         targetLifecycle = SdlcLifecycle.Blocked;
         shouldSpawn = false;
       }

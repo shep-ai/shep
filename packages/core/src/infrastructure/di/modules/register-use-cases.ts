@@ -162,6 +162,7 @@ import { ListOperationLogEntriesUseCase } from '../../../application/use-cases/o
 import { CreateFeatureFromRemoteUseCase } from '../../../application/use-cases/features/create/create-feature-from-remote.use-case.js';
 import { CheckAndUnblockFeaturesUseCase } from '../../../application/use-cases/features/check-and-unblock-features.use-case.js';
 import { UpdateFeatureLifecycleUseCase } from '../../../application/use-cases/features/update/update-feature-lifecycle.use-case.js';
+import { ReconcileBlockedFeaturesUseCase } from '../../../application/use-cases/features/reconcile-blocked-features.use-case.js';
 import { CleanupFeatureWorktreeUseCase } from '../../../application/use-cases/features/cleanup-feature-worktree.use-case.js';
 import { ArchiveFeatureUseCase } from '../../../application/use-cases/features/archive-feature.use-case.js';
 import { UnarchiveFeatureUseCase } from '../../../application/use-cases/features/unarchive-feature.use-case.js';
@@ -329,6 +330,7 @@ export function registerUseCases(container: DependencyContainer): void {
   // because the latter injects the former via class token.
   container.registerSingleton(CheckAndUnblockFeaturesUseCase);
   container.registerSingleton(UpdateFeatureLifecycleUseCase);
+  container.registerSingleton(ReconcileBlockedFeaturesUseCase);
   container.registerSingleton(CleanupFeatureWorktreeUseCase);
   container.registerSingleton(ArchiveFeatureUseCase);
   container.registerSingleton(UnarchiveFeatureUseCase);
@@ -553,6 +555,9 @@ export function registerUseCases(container: DependencyContainer): void {
   });
   container.register('ReparentFeatureUseCase', {
     useFactory: (c) => c.resolve(ReparentFeatureUseCase),
+  });
+  container.register('ReconcileBlockedFeaturesUseCase', {
+    useFactory: (c) => c.resolve(ReconcileBlockedFeaturesUseCase),
   });
   container.register('CreateApplicationUseCase', {
     useFactory: (c) => c.resolve(CreateApplicationUseCase),
