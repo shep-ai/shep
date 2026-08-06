@@ -7,6 +7,7 @@
  */
 
 import 'reflect-metadata';
+import { resolve as resolvePath } from 'node:path';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const { mockDiscoverExecute, mockImportExecute, mockCheckbox } = vi.hoisted(() => ({
@@ -69,7 +70,7 @@ describe('repo import command', () => {
     const command = createImportCommand();
     await command.parseAsync(['node', 'import', '/code']);
 
-    expect(mockDiscoverExecute).toHaveBeenCalledWith({ directoryPath: '/code' });
+    expect(mockDiscoverExecute).toHaveBeenCalledWith({ directoryPath: resolvePath('/code') });
   });
 
   it('imports every selectable candidate when --all is passed', async () => {
