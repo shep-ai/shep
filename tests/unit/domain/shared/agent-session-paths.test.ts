@@ -26,8 +26,8 @@ describe('encodeClaudeProjectDir', () => {
     expect(encodeClaudeProjectDir('/home/user/.shep/repos/abc')).toBe('-home-user--shep-repos-abc');
   });
 
-  it('replaces backslashes with hyphens so Windows paths encode identically', () => {
-    expect(encodeClaudeProjectDir('C:\\Users\\dev\\project')).toBe('C:-Users-dev-project');
+  it('replaces backslashes and the drive-letter colon so Windows paths encode identically', () => {
+    expect(encodeClaudeProjectDir('C:\\Users\\dev\\project')).toBe('C--Users-dev-project');
   });
 
   it('handles a worktree path with all three replaced characters', () => {

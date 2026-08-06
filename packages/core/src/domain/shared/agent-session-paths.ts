@@ -20,12 +20,17 @@ const WORKTREE_HASH_LENGTH = 16;
 
 /**
  * Encode a project path the way Claude Code names its project directories:
- * every `/`, `\`, and `.` becomes `-`.
+ * every `/`, `\`, `.`, and `:` becomes `-`.
+ *
+ * The `:` case matters on Windows — a Windows drive letter (`C:\...`) would
+ * otherwise land in the encoded name, and `:` is not a legal character in an
+ * NTFS path component.
  *
  * @example "/home/user/.shep/repos/abc" -> "-home-user--shep-repos-abc"
+ * @example "C:\\Users\\dev\\project" -> "C--Users-dev-project"
  */
 export function encodeClaudeProjectDir(projectPath: string): string {
-  return projectPath.replace(/[/\\.]/g, '-');
+  return projectPath.replace(/[/\\.:]/g, '-');
 }
 
 /**
