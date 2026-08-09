@@ -10,7 +10,9 @@
  *
  * Columns:
  *  - repo_path          TEXT PRIMARY KEY — absolute repo/worktree path (forward slashes)
- *  - plan_source        TEXT NOT NULL    — RunPlanSource enum value ('Deterministic' | 'Agent')
+ *  - plan_source        TEXT NOT NULL    — RunPlanSource enum value ('Deterministic' | 'Agent' | 'Manual').
+ *                                         Deliberately unconstrained TEXT: new RunPlanSource
+ *                                         members (e.g. 'Manual', spec 108) need no migration.
  *  - command            TEXT NOT NULL    — exact dev-server spawn command
  *  - cwd                TEXT NOT NULL    — spawn working directory (may be a monorepo subdir)
  *  - package_manager    TEXT             — npm/pnpm/yarn/bun; NULL for non-package stacks

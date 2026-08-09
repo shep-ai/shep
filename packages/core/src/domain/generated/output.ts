@@ -5290,6 +5290,7 @@ export type Deployment = {
 export enum RunPlanSource {
   Deterministic = 'Deterministic',
   Agent = 'Agent',
+  Manual = 'Manual',
 }
 
 /**
