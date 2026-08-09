@@ -1,0 +1,559 @@
+# Implementation Plan (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: dev-server-auto-start
+
+summary: |
+  Breadth-and-surface work on the already-proven spec-103 dev-server spine. Three
+  workstreams land in dependency order behind one structural change: the Node-only
+  `detect-dev-script.ts` becomes an ordered detector registry of small pure modules,
+  exposed through TWO projections over ONE registry walk — `detectRunPlan()` (rich,
+  carries detector provenance, consumed by `analyze.node.ts`) and `detectDevScript()`
+  (byte-identical legacy shape, consumed by `deployment-spawner.spawnFromDetection`).
+  That split is what lets the pinned 492-line `detect-dev-script.test.ts` suite pass
+  unmodified, which is this feature's single strongest regression guard (NFR-5).
+
+  Research settled three questions that shrink the plan: no TOML parser is needed
+  (sibling-lockfile presence + line-anchored header/key scans cover every signal we
+  actually consume; `js-yaml` is already a direct dependency for Compose), no SQLite
+  migration is needed for `RunPlanSource.Manual` (migration 138 declares
+  `plan_source TEXT NOT NULL` with no CHECK constraint and the mapper casts unchecked),
+  and `.shep/dev.json` must sit at tier ZERO — before the run-plan cache in
+  `analyze.node.ts`, re-read every start and persisted only as a projection so
+  `stampInstallHash` has a row to update.
+
+  Two hazards drive task ordering. `spawnFromDetection` destructures `packageManager`
+  and `scriptName` off the detection result and passes them to `spawn` as argv, so
+  widening the detector without a `shell: true` fallback there spawns `undefined`.
+  And `computeInstallHash` returns `''` for any repo without a Node lockfile, which
+  makes `isFresh` permanently false — every non-Node start would silently re-run its
+  setup commands. Both are fixed in the foundation and detector phases, before any
+  ecosystem detector can reach production paths.
+
+relatedFeatures:
+  - "103-agentic-dev-server"
+  - "079-fix-dev-server"
+  - "055-deployment-status-indicator"
+  - "061-default-env-deployment"
+
+technologies:
+  - "TypeScript 5.3+ (ESM, NodeNext) — Node >=22 engine floor"
+  - "LangGraph (@langchain/langgraph ^1.1.4) — StateGraph nodes, Annotation channels"
+  - "tsyringe ^4.10 — DI by string token, safeResolve degradation"
+  - "TypeSpec (@typespec/compiler) — domain source of truth, pnpm tsp:codegen"
+  - "better-sqlite3 ^12.6 — dev_server_run_plans (no migration required)"
+  - "js-yaml ^4.1.1 — existing direct dependency; docker-compose.yml parsing"
+  - "node:fs (sync) — detector I/O, stat-before-read everywhere"
+  - "node:child_process execFile — probeBinaryDefault binary probing"
+  - "Commander ^14 — shep dev CLI command group"
+  - "Next.js 16 App Router — server actions"
+  - "React 19 + Zustand — deployment status surfaces (store untouched)"
+  - "Vitest ^4 — unit + integration suites, real temp-dir fixtures"
+  - "Storybook 8.6 — mandatory colocated .stories.tsx"
+  - "i18next — translations/{ar,de,en,es,fr,he,pt,ru,uk}/{cli,web}.json"
+
+relatedLinks:
+  - title: "LangGraph JS — StateGraph and conditional edges"
+    url: "https://langchain-ai.github.io/langgraphjs/concepts/low_level/"
+  - title: "Docker Compose file reference — services and ports"
+    url: "https://docs.docker.com/reference/compose-file/services/"
+  - title: "PEP 621 — pyproject.toml project metadata"
+    url: "https://peps.python.org/pep-0621/"
+  - title: "uv — running commands in a project environment"
+    url: "https://docs.astral.sh/uv/concepts/projects/run/"
+  - title: "Cargo manifest reference"
+    url: "https://doc.rust-lang.org/cargo/reference/manifest.html"
+  - title: "Deno — deno.json tasks"
+    url: "https://docs.deno.com/runtime/reference/cli/task/"
+  - title: "Phoenix — mix phx.server and the default 4000 port"
+    url: "https://hexdocs.pm/phoenix/up_and_running.html"
+  - title: "Django — manage.py runserver and the default 8000 port"
+    url: "https://docs.djangoproject.com/en/stable/ref/django-admin/#runserver"
+  - title: "GNU Make — rule syntax and .PHONY targets"
+    url: "https://www.gnu.org/software/make/manual/html_node/Rule-Syntax.html"
+  - title: "Vitest — expect.toEqual ignores undefined properties"
+    url: "https://vitest.dev/api/expect.html#toequal"
+  - title: "TypeSpec language basics"
+    url: "https://typespec.io/docs/language-basics/overview"
+
+phases:
+  - id: phase-1
+    name: "Foundation — domain contracts, detector scaffolding, hashing"
+    description: |
+      Everything the rest of the feature type-depends on, landed before any behaviour
+      changes. Adds RunPlanSource.Manual and a DeploymentTargetType enum in TypeSpec
+      (codegen only — research verified no SQLite migration is required), establishes
+      the shared detector contracts (result type, Ecosystem constants, SKIP_DIRS, read
+      caps, bounded stat-before-read manifest helper, explicit-port extraction), and
+      closes the two upstream hashing gaps: CONFIG_FILES coverage (including
+      .shep/dev.json) and per-ecosystem install-hash inputs. Comes first because a
+      non-Node plan that ships before computeInstallHash knows its lockfile reinstalls
+      dependencies on every single start, and would be diagnosed as "the detectors are
+      slow" rather than as a caching bug.
+    parallel: false
+
+  - id: phase-2
+    name: "Detector registry — ten pure modules and one ordered walk"
+    description: |
+      One focused module per ecosystem, each a pure `(dirPath) => DetectorResult` with
+      no dependency on any other detector, fixture-tested against real temp directories.
+      Starts by extracting today's Node logic verbatim so the pinned suite stays green,
+      then adds Deno, Make, Python, Go, Rust, Ruby, Elixir and Compose, then the
+      .shep/dev.json reader. Closes with the composition layer — the ordered
+      DETECTOR_REGISTRY, the one-level subdirectory fallback shared by all ecosystems,
+      the two public projections, and the spawnFromDetection shell fallback that
+      prevents `spawn(undefined, ...)` on the legacy path.
+    parallel: false
+
+  - id: phase-3
+    name: "Graph integration — tier zero, pinning, infra and install widening"
+    description: |
+      Wires the registry into the LangGraph pipeline without disturbing its failure
+      semantics. analyze.node consumes detectRunPlan, persists the richer fields on
+      Deterministic plans, logs the winning tier to the deployment stream (NFR-11), and
+      gains a tier-zero .shep/dev.json branch ahead of the cache lookup plus a Manual
+      pinning guard that survives configHash drift. remediate stops deleting Manual
+      plans. ensure_infra gains ecosystem install hints (data change only — derivation
+      is already command-driven). install_deps is proven to work with no packageManager.
+      Degraded mode becomes genuinely useful: the "no AI agent configured" terminal
+      failure now fires only when every detector falls through.
+    parallel: false
+
+  - id: phase-4
+    name: "Application layer — target resolver, staleness port, three use cases"
+    description: |
+      The presentation-agnostic core API. One injectable DeploymentTargetResolver maps
+      {targetType, targetId} — and a bare cwd, which only the CLI ever asks about — to a
+      repoPath. A small IRunPlanStalenessProbe output port keeps computeConfigHash from
+      being imported into application/. Get/Override/Invalidate use cases carry all
+      policy: isStale derivation, cwd-subtree confinement, port range, non-empty command,
+      and the repo-config conflict outcome that prevents silently accepting a DB override
+      that tier zero would shadow. Registered in register-deployment.ts with both class
+      registration and the string-token alias the web routes rely on.
+    parallel: false
+
+  - id: phase-5
+    name: "Web surface — run-plan disclosure in the preview tab"
+    description: |
+      Three thin server actions mirroring the existing deploy-application.ts shape, and a
+      new run-plan component family (disclosure / summary / editor) rendered collapsed by
+      default inside web-preview-tab. Split three ways so the mandatory Storybook state
+      matrix — default, stale, Manual, repo-config-controlled, editing, validation error
+      — is expressible on small components. The Zustand deployment-status-store and the
+      shared deployment-status-badge contract are deliberately untouched.
+    parallel: false
+
+  - id: phase-6
+    name: "CLI parity — the shep dev command group"
+    description: |
+      `shep dev start|stop|status|logs|plan show|set|clear` over the exact same use cases
+      the web actions call — the honest test of the presentation-agnostic rule, since a
+      complete surface exercises every use case and exposes any web-shaped assumption.
+      The `dev` namespace was verified free against the 34 registered top-level commands.
+      Streaming goes through use cases rather than the SSE route, so the CLI never
+      depends on the web daemon.
+    parallel: false
+
+  - id: phase-7
+    name: "Documentation, hygiene and full local verification"
+    description: |
+      Document the .shep/dev.json schema and the detector precedence order so neither
+      requires reading code. Correct spec 103's stale phase field. Run the full local CI
+      sequence (lint, format:check, typecheck, test:unit, test:int, build,
+      build:storybook) and the clean-arch grep for direct repository/infrastructure
+      imports in presentation.
+    parallel: false
+
+filesToCreate:
+  - packages/core/src/infrastructure/services/deployment/detectors/types.ts
+  - packages/core/src/infrastructure/services/deployment/detectors/registry.ts
+  - packages/core/src/infrastructure/services/deployment/detectors/shared/manifest-read.ts
+  - packages/core/src/infrastructure/services/deployment/detectors/shared/command-port.ts
+  - packages/core/src/infrastructure/services/deployment/detectors/node.detector.ts
+  - packages/core/src/infrastructure/services/deployment/detectors/deno.detector.ts
+  - packages/core/src/infrastructure/services/deployment/detectors/make.detector.ts
+  - packages/core/src/infrastructure/services/deployment/detectors/python.detector.ts
+  - packages/core/src/infrastructure/services/deployment/detectors/go.detector.ts
+  - packages/core/src/infrastructure/services/deployment/detectors/rust.detector.ts
+  - packages/core/src/infrastructure/services/deployment/detectors/ruby.detector.ts
+  - packages/core/src/infrastructure/services/deployment/detectors/elixir.detector.ts
+  - packages/core/src/infrastructure/services/deployment/detectors/compose.detector.ts
+  - packages/core/src/infrastructure/services/deployment/detectors/repo-config.detector.ts
+  - packages/core/src/infrastructure/services/deployment/repo-dev-config-reader.ts
+  - packages/core/src/infrastructure/services/deployment/run-plan-staleness-probe.ts
+  - packages/core/src/application/ports/output/services/run-plan-staleness-probe.interface.ts
+  - packages/core/src/application/services/deployment-target-resolver.ts
+  - packages/core/src/application/use-cases/deployments/get-dev-server-run-plan.use-case.ts
+  - packages/core/src/application/use-cases/deployments/override-dev-server-run-plan.use-case.ts
+  - packages/core/src/application/use-cases/deployments/invalidate-dev-server-run-plan.use-case.ts
+  - src/presentation/web/app/actions/get-dev-server-run-plan.ts
+  - src/presentation/web/app/actions/override-dev-server-run-plan.ts
+  - src/presentation/web/app/actions/invalidate-dev-server-run-plan.ts
+  - src/presentation/web/components/features/application-page/run-plan/run-plan-disclosure.tsx
+  - src/presentation/web/components/features/application-page/run-plan/run-plan-disclosure.stories.tsx
+  - src/presentation/web/components/features/application-page/run-plan/run-plan-summary.tsx
+  - src/presentation/web/components/features/application-page/run-plan/run-plan-summary.stories.tsx
+  - src/presentation/web/components/features/application-page/run-plan/run-plan-editor.tsx
+  - src/presentation/web/components/features/application-page/run-plan/run-plan-editor.stories.tsx
+  - src/presentation/cli/commands/dev/index.ts
+  - src/presentation/cli/commands/dev/start.command.ts
+  - src/presentation/cli/commands/dev/stop.command.ts
+  - src/presentation/cli/commands/dev/status.command.ts
+  - src/presentation/cli/commands/dev/logs.command.ts
+  - src/presentation/cli/commands/dev/plan.command.ts
+  - docs/development/dev-server-run-plan.md
+  - tests/unit/infrastructure/services/deployment/detectors/node.detector.test.ts
+  - tests/unit/infrastructure/services/deployment/detectors/deno.detector.test.ts
+  - tests/unit/infrastructure/services/deployment/detectors/make.detector.test.ts
+  - tests/unit/infrastructure/services/deployment/detectors/python.detector.test.ts
+  - tests/unit/infrastructure/services/deployment/detectors/go.detector.test.ts
+  - tests/unit/infrastructure/services/deployment/detectors/rust.detector.test.ts
+  - tests/unit/infrastructure/services/deployment/detectors/ruby.detector.test.ts
+  - tests/unit/infrastructure/services/deployment/detectors/elixir.detector.test.ts
+  - tests/unit/infrastructure/services/deployment/detectors/compose.detector.test.ts
+  - tests/unit/infrastructure/services/deployment/detectors/repo-config.detector.test.ts
+  - tests/unit/infrastructure/services/deployment/detectors/registry.test.ts
+  - tests/unit/infrastructure/services/deployment/detectors/command-port.test.ts
+  - tests/unit/application/use-cases/deployments/get-dev-server-run-plan.use-case.test.ts
+  - tests/unit/application/use-cases/deployments/override-dev-server-run-plan.use-case.test.ts
+  - tests/unit/application/use-cases/deployments/invalidate-dev-server-run-plan.use-case.test.ts
+  - tests/unit/application/services/deployment-target-resolver.test.ts
+  - tests/unit/presentation/cli/commands/dev/dev-command.test.ts
+  - tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent-multistack.int.test.ts
+  - tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent-repo-config.int.test.ts
+
+filesToModify:
+  - tsp/deployment/dev-server-run-plan.tsp
+  - tsp/deployment/deployment.tsp
+  - packages/core/src/domain/generated/output.ts
+  - packages/core/src/infrastructure/services/deployment/detect-dev-script.ts
+  - packages/core/src/infrastructure/services/deployment/config-hash.ts
+  - packages/core/src/infrastructure/services/deployment/deployment-spawner.ts
+  - packages/core/src/infrastructure/services/deployment/deployment-service-deps.ts
+  - packages/core/src/infrastructure/services/agents/dev-server-agent/nodes/analyze.node.ts
+  - packages/core/src/infrastructure/services/agents/dev-server-agent/nodes/ensure-infra.node.ts
+  - packages/core/src/infrastructure/services/agents/dev-server-agent/nodes/install-deps.node.ts
+  - packages/core/src/infrastructure/services/agents/dev-server-agent/nodes/remediate.node.ts
+  - packages/core/src/infrastructure/services/agents/dev-server-agent/dev-server-agent.service.ts
+  - packages/core/src/infrastructure/di/modules/register-deployment.ts
+  - packages/core/src/application/ports/output/index.ts
+  - src/presentation/web/components/features/application-page/web-preview-tab.tsx
+  - src/presentation/web/components/features/application-page/web-preview-tab.stories.tsx
+  - src/presentation/cli/index.ts
+  - translations/en/web.json
+  - translations/en/cli.json
+  - translations/ar/web.json
+  - translations/ar/cli.json
+  - translations/de/web.json
+  - translations/de/cli.json
+  - translations/es/web.json
+  - translations/es/cli.json
+  - translations/fr/web.json
+  - translations/fr/cli.json
+  - translations/he/web.json
+  - translations/he/cli.json
+  - translations/pt/web.json
+  - translations/pt/cli.json
+  - translations/ru/web.json
+  - translations/ru/cli.json
+  - translations/uk/web.json
+  - translations/uk/cli.json
+  - tests/unit/infrastructure/services/deployment/config-hash.test.ts
+  - tests/unit/infrastructure/services/agents/dev-server-agent/dev-server-agent-graph.test.ts
+  - specs/103-agentic-dev-server/spec.yaml
+
+openQuestions: []
+
+content: |
+  ## Status
+
+  - **Phase:** Planning
+  - **Updated:** 2026-08-09
+
+  ## Architecture Overview
+
+  Nothing about the existing shape changes. The LangGraph pipeline
+  (`START → analyze → ensure_infra → install_deps → start_server → verify → END`
+  with a bounded `remediate` loop) stays exactly as spec 103 built it; this feature
+  widens what `analyze` can resolve deterministically, adds two guards to protect
+  user intent, and puts application-layer surfaces on top of persistence that already
+  exists.
+
+  **Infrastructure layer.** `detect-dev-script.ts` stops being an implementation and
+  becomes a composition layer over a new `detectors/` directory. Each ecosystem is one
+  pure, synchronous `(dirPath: string) => DetectorResult` module with no dependency on
+  any other detector, so NFR-3's "adding a ninth ecosystem = one new module plus one
+  registry entry" is literally true. `registry.ts` owns the ordered `DETECTOR_REGISTRY`
+  array, the shared `SKIP_DIRS` set, `MAX_MANIFEST_BYTES` / `MAX_SCANNED_SUBDIRS` caps
+  and the `Ecosystem` constants — mirroring how the repo already expresses priority with
+  module-level ordered `const` arrays (`SCRIPT_PRIORITY`, `LOCKFILE_MANAGERS`,
+  `CONFIG_FILES`, `LOCKFILES`), so precedence stays greppable in one place per NFR-7.
+
+  The composition layer exports **two projections over one registry walk**:
+
+  ```
+  detectRunPlan(dirPath): { ecosystem, result }   → analyze.node.ts   (provenance + rich fields)
+  detectDevScript(dirPath): DetectDevScriptResult → deployment-spawner (legacy shape, verbatim)
+  ```
+
+  This is not duplication — it is the minimum needed by two consumers that both already
+  exist. `analyze.node.ts` needs to know *which* detector won so it can log the tier
+  decision to the SSE deployment stream (NFR-11) and persist `language` / `framework` /
+  `expectedPort` / `setupCommands` (FR-5, FR-6). `spawnFromDetection` needs the historical
+  object. Returning provenance *beside* the result rather than *inside* it is precisely
+  what lets the pinned 492-line `detect-dev-script.test.ts` suite pass byte-for-byte, and
+  that suite is the strongest available guard against the spec's highest-risk item —
+  precedence regression for existing Node repositories.
+
+  **Application layer.** Three use cases (`GetDevServerRunPlanUseCase`,
+  `OverrideDevServerRunPlanUseCase`, `InvalidateDevServerRunPlanUseCase`) take
+  `{ targetType: DeploymentTargetType, targetId: string }` and resolve it through ONE
+  injectable `DeploymentTargetResolver` in `application/services/`. Run plans are keyed
+  by `repoPath` and deliberately shared across all three target types (`repo_path` is the
+  primary key), so a single resolver plus one implementation per operation matches the
+  domain exactly — nine target-specific classes would be eight-ninths boilerplate.
+  `isStale` is derived once, inside `GetDevServerRunPlanUseCase`, so the CLI and the web
+  disclosure agree by construction; `computeConfigHash` reaches it through a small
+  `IRunPlanStalenessProbe` output port rather than a direct `infrastructure/` import.
+
+  **Presentation.** The web gets a collapsed disclosure inside the existing preview tab
+  (no new route, no change to the shared badge contract) fed by three thin server actions
+  in the established `deploy-application.ts` shape. The CLI gets a `shep dev` group —
+  verified free against all 34 registered top-level commands — that streams through use
+  cases rather than the `app/api/deployment-logs` SSE route, because a CLI consuming a web
+  adapter would make the web daemon a hard dependency of the CLI, the inverse of FR-23.
+
+  ## Key Design Decisions
+
+  ### 1. Two projections over one registry walk (research decision 1)
+
+  **Chosen:** `detectRunPlan()` returns `{ ecosystem, result }`; `detectDevScript()`
+  returns `outcome.result` verbatim.
+
+  **Rejected:** adding an `ecosystem` field to the success result — the existing suite
+  pins whole objects with `toEqual({ success, packageManager, scriptName, command,
+  needsInstall, resolvedDir })`, and Vitest's `toEqual` ignores only `undefined`-valued
+  properties, so a populated `ecosystem: 'node'` breaks about a dozen assertions in the
+  one suite NFR-5 names as the regression guard. Also rejected: two independent detector
+  functions (two precedence implementations that will drift), and growing
+  `detect-dev-script.ts` in place (163 lines today, ~1000 with ten ecosystems inline).
+
+  ### 2. Precedence — Node first, Compose last, first-success-wins
+
+  ```
+  tier 0   .shep/dev.json                    (before the cache — see decision 5)
+  ── run-plan cache lookup ──
+  1  node       package.json dev|start|serve     unchanged, byte-for-byte
+  2  deno       deno.json tasks.dev|start|serve
+  3  make       ^(dev|start|serve|run): in Makefile
+  4  python     manage.py | [tool.*.scripts] dev/start/serve | runner + entry point
+  5  go         go.mod + main package
+  6  rust       Cargo.toml
+  7  ruby       bin/rails | Gemfile
+  8  elixir     mix.exs (:phoenix → mix phx.server)
+  9  compose    docker-compose.yml|yaml          last: slowest, most side-effectful
+  ```
+
+  A detector that cannot produce a command falls through rather than terminating the
+  chain. When every detector falls through in the root *and* in every scanned
+  subdirectory, the **node detector's error is returned verbatim** so the pinned
+  error-message assertions still hold. Backward compatibility outranks theoretical
+  correctness here: every repository shep runs today is resolved by the Node detector,
+  and reordering would silently change what runs for some of them. Polyglot repos where
+  the default is wrong are exactly what the override workstream exists for.
+
+  ### 3. No TOML dependency, no hand-rolled TOML parser (research decision 2)
+
+  JSON via `JSON.parse`; Compose via `js-yaml` (already a direct dependency, used this
+  exact way in `aspm/ownership-yaml-reader.ts`); TOML via sibling-lockfile presence
+  (`poetry.lock`, `uv.lock`, `Pipfile.lock`, `Cargo.lock`) plus a line-anchored
+  table-header/simple-key scanner; `Makefile` / `Gemfile` / `mix.exs` via line-anchored
+  regex only. The cost asymmetry decides it: a missed signal costs one agent call — today's
+  behaviour — while a new runtime dependency in a *published* npm CLI is permanent
+  supply-chain surface for the repo's Trivy/Semgrep/Gitleaks gates. Nothing we consume
+  needs a parser: `cargo run` is correct independent of `Cargo.toml`'s contents, and the
+  Python facts that matter are a table header and a one-line key. The scanner's worst
+  failure is `poetry run` instead of `uv run`, which `ensure_infra` then reports as a
+  missing `poetry` binary with an install hint — not a silent wrong start.
+
+  ### 4. `RunPlanSource.Manual` with no migration (research finding 2)
+
+  Verified in source, not assumed: migration `138-create-dev-server-run-plans-table.ts`
+  declares `plan_source TEXT NOT NULL` with no CHECK constraint and no lookup FK; the
+  mapper writes `plan.source` and reads `row.plan_source as RunPlanSource` — an unchecked
+  cast both directions; the repository's INSERT/ON CONFLICT has no whitelist. A `'Manual'`
+  string round-trips through today's schema, so FR-17's conditional resolves in the
+  negative. TypeSpec member + `pnpm tsp:codegen` is the entire domain change. Writing a
+  defensive migration anyway would mean a table rebuild (SQLite cannot alter a CHECK in
+  place) risking real data for zero benefit.
+
+  ### 5. `.shep/dev.json` is tier ZERO, projected not cached (research decision 6)
+
+  Read **before** the cache lookup in `analyze.node.ts`, on every start. On a valid file,
+  analyze builds a `RunPlanSource.Manual` plan from it, carries the existing row's
+  `installStampHash` forward (analyze already holds that row), upserts, and returns.
+
+  Placing it merely first inside the detector registry would lose to any fresh cached plan
+  and — decisively — to a DB `Manual` plan that by design never invalidates, so a committed
+  team-wide file could be permanently shadowed by one teammate's stale local override with
+  nothing on screen explaining why. Persisting it as an ordinary cached `Manual` plan is
+  worse: `Manual` plans never invalidate on drift (FR-15), so the first read would freeze
+  the file's contents forever. Not persisting at all breaks `stampInstallHash`, whose
+  `UPDATE … WHERE repo_path = ?` would silently no-op and re-run `setupCommands` on every
+  start. The projection model satisfies all three at once.
+
+  `.shep/dev.json` is still added to `CONFIG_FILES` — for the opposite direction, so
+  *deleting* the file invalidates the Deterministic plan that replaces it. Reader shape,
+  validation and never-throw behaviour are copied from `OwnershipYamlReader`, which already
+  reads `<repo>/.shep/ownership.yaml` and is explicitly tolerant of missing and malformed
+  input — a reviewed precedent for NFR-4 rather than an invention.
+
+  The one cost is non-negotiable: with the file winning, a DB override saved through the
+  Edit action would do nothing. So `OverrideDevServerRunPlanUseCase` must detect a valid
+  repo-config file and return an explicit "a committed `.shep/dev.json` controls this
+  repository — edit that file" outcome. Silently accepting input that has no effect is
+  exactly the failure mode requirements question 4 was decided to avoid.
+
+  ### 6. Manual pinning — one predicate, two call sites (research decision 5)
+
+  `plan.source === RunPlanSource.Manual` short-circuits (a) the analyze cache tier
+  *before* the `configHash` comparison and (b) the remediate node's
+  `deleteByRepoPath`. Both guards are genuinely missing today: `analyze.node.ts:96`
+  unconditionally emits "stale — re-analyzing" and falls through to the deterministic
+  tier, which upserts a `Deterministic` plan straight over the Manual row, and
+  `remediate.node.ts:52` deletes the row unconditionally on the first failure with an
+  executor present. Without both, a typed override survives exactly until the next
+  `package.json` edit or the next failed start.
+
+  Enforcing this inside the repository was rejected: it hides policy in the persistence
+  adapter and would silently break `InvalidateDevServerRunPlanUseCase`, which FR-16 says
+  must clear a plan *regardless* of source. `remediate.node.ts` currently injects only
+  `Pick<…, 'deleteByRepoPath'>`; that widens to include `findByRepoPath`.
+
+  ### 7. `spawnFromDetection` needs a shell fallback (research finding 1)
+
+  `deployment-service-deps.ts` injects `detectDevScript` into `DeploymentService`, and
+  `deployment.service.ts:133` calls `spawnFromDetection(this.deps, targetPath)` for every
+  `start()` arriving without a run plan. That function destructures `packageManager` and
+  `scriptName` and passes them to `spawn` as executable and argv — so a Make or Compose
+  result spawns `undefined`. Fix: make both fields optional on the success type (they were
+  always Node-specific facts leaking into a general contract) and branch — both present
+  keeps today's exact argv spawn, otherwise spawn `detection.command` through
+  `buildSpawnOptions` with `shell: true`, structurally identical to the existing
+  `spawnFromRunPlan`. This adds no execution capability (NFR-6), and TypeScript flags the
+  site the instant the type changes so the fix cannot be silently skipped.
+
+  Synthesising fake `packageManager`/`scriptName` values was rejected: `spawn('make',
+  ['dev'])` would work by accident while `docker` + `['compose']` silently drops `up`.
+
+  ### 8. Non-Node install staleness (research finding 5)
+
+  `computeInstallHash` returns `''` when no Node lockfile and no `package.json` exist, and
+  `isFresh` short-circuits `currentHash === ''` to false — so every Go/Rust/Python/Elixir
+  start would re-run its full `setupCommands` list forever, stamping a hash that never
+  matches. Extend the lockfile list with Node lockfiles still **first, in the same order**
+  (preserving existing `config-hash.test.ts` expectations and NFR-5), then `uv.lock`,
+  `poetry.lock`, `Pipfile.lock`, `requirements.txt`, `Cargo.lock`, `go.sum`,
+  `Gemfile.lock`, `mix.lock`, `deno.lock`. Reusing `computeConfigHash` as the install hash
+  was rejected as badly over-invalidating — editing a `Makefile` would force a full
+  dependency reinstall.
+
+  ### 9. `expectedPort` — three explicit sources only (research decision 7)
+
+  An explicit `--port <n>` / `--port=<n>` / `-p <n>` token in the detected command; a
+  Compose `ports:` mapping resolving to exactly one host port (short `"8080:80"` and long
+  `{ published, target }` forms); or a positively-identified framework default (Rails 3000,
+  Phoenix 4000, Django 8000). Unset otherwise; never scan source files or `.env`. The
+  asymmetry at `verify.node.ts:119` settles it — an unset port degrades gracefully to log
+  parsing, while a wrong port manufactures a readiness failure on a healthy server and can
+  escalate into a remediation agent editing working code.
+
+  ### 10. `ensure_infra` is a data change, not a logic change (research decision 8)
+
+  `deriveBinaryFromCommand` is already command-driven and yields `make`, `docker`, `go`,
+  `cargo`, `deno`, `mix`, `bundle`, `uv`, `poetry` for free from the command and each
+  `setupCommands` entry. Only `SUGGESTED_INSTALL` needs new entries. A parallel
+  ecosystem-keyed required-binary table was rejected as a second source of truth that could
+  disagree with the command actually spawned. `VALID_BINARY_NAME` (`/^[A-Za-z0-9._+-]+$/`)
+  must NOT be relaxed for path-like commands such as `bin/rails` — it is the only thing
+  between a manifest-derived token and `sh -c`, and path tokens are already deliberately
+  dropped, which is the correct outcome since the file's existence was the detector's own
+  precondition.
+
+  ## Implementation Strategy
+
+  Phase order is driven by hazard, not by feature area.
+
+  **Phase 1 first** because two upstream gaps would poison every later measurement. If
+  `computeInstallHash` ships unaware of non-Node lockfiles, every non-Node start silently
+  reinstalls and the symptom presents as slow detectors. If the shared detector contracts
+  and the explicit-port helper are not settled before ten modules are written against them,
+  every detector needs reworking. TypeSpec codegen also lands here so `RunPlanSource.Manual`
+  and `DeploymentTargetType` are available to phases 3 and 4 without churn.
+
+  **Phase 2 before phase 3** because the registry must be complete and provably
+  non-regressive before it is wired into a production path. The Node extraction is
+  deliberately the first detector task and is behaviour-preserving by construction: the
+  pinned suite is the acceptance criterion. Every non-Node detector gates on
+  `existsSync(join(dir, manifest))` before reading — required for correctness in
+  production (one stat beats one failed open) and required for the pinned suite, whose
+  `node:fs` mock returns one canned value for *every* path, so an ungated read would
+  receive `package.json`'s bytes as the contents of `Makefile`. The registry composition
+  task closes the phase together with the `spawnFromDetection` fallback, so the legacy
+  spawn path can never observe a non-Node result before it can handle one.
+
+  **Phase 3** touches the graph, where the "expected failures never throw" contract lives.
+  Each node change is a separate task with its own RED test so a regression is attributable
+  to one node. The degraded-mode integration sweep (zero agent calls per ecosystem, NFR-2)
+  is the phase's exit criterion — it is the behavioural heart of the feature.
+
+  **Phase 4** is pure application code with no UI dependency, and both presentation phases
+  depend on it. Building the resolver first is what forces the API to be
+  presentation-agnostic: `shep dev plan show` will usually run with no arguments inside a
+  repository, so "which target is this cwd?" must be answerable from core rather than from
+  a CLI helper.
+
+  **Phases 5 and 6** consume the same use cases and are internally independent; phase 6 is
+  sequenced after phase 5 only because the CLI is where a web-shaped assumption in the port
+  design would surface, and finding it with the web surface already built makes the fix
+  concrete. Each may be reordered without changing dependencies.
+
+  **Phase 7** documents and verifies. `pnpm validate` plus the full local CI sequence must
+  pass before push; CI confirms, it does not discover.
+
+  ### Accepted limitation (recorded, not fixed here)
+
+  `computeConfigHash` is computed on `state.targetPath` (the repo root) while
+  `computeInstallHash` uses `plan.cwd` (possibly a subdirectory), so a plan resolved from a
+  subdirectory will not invalidate when only that subdirectory's manifest changes. This
+  exists today; FR-7 makes it more reachable by extending the subdir scan to all eight
+  ecosystems. Widening `computeConfigHash` to hash every subdirectory's manifests would
+  multiply hash cost on the hot path, so it is deliberately left as a documented follow-up
+  rather than absorbed into this feature.
+
+  ### De-scope levers if the feature exceeds M
+
+  Two clean cuts, in preference order: drop the repo-config tier (phase 2 repo-config
+  tasks, the tier-zero branch in phase 3, and the conflict outcome in phase 4) back to
+  DB-only overrides; or narrow the ecosystem set from the broad eight to the core four
+  (Make, Compose, Python, Go), leaving Rust/Ruby/Deno/Elixir on the agent tier. Neither cut
+  changes any other task.
+
+  ## Risk Mitigation
+
+  | Risk | Mitigation |
+  | ---- | ---------- |
+  | Precedence regression for existing Node repos — the spec's highest-risk item | Node detector is extracted verbatim as the first detector task; the pinned 492-line `detect-dev-script.test.ts` must pass **unmodified** and is the task's acceptance criterion. Provenance is returned beside the result, never inside it, so `toEqual` assertions stay byte-identical. Node stays first in the registry. |
+  | `spawnFromDetection` spawning `undefined` on a non-Node result | Fixed in the same phase-2 task that completes the registry, before any production path can see a non-Node result. Making `packageManager`/`scriptName` optional makes `pnpm typecheck` fail at the call site until it is handled. |
+  | Non-Node repos silently reinstalling on every start | `computeInstallHash` is extended in phase 1, before any non-Node plan exists. Node lockfiles stay first in the same order so existing `config-hash.test.ts` expectations hold. Integration test asserts a second start skips setup commands. |
+  | Detector reading the wrong file under the pinned suite's global `node:fs` mock | Every non-Node detector MUST gate on `existsSync(join(dir, manifest))` before reading — an explicit acceptance criterion on every detector task, plus a registry test that asserts fall-through under a mock returning `package.json` bytes for all paths. |
+  | A user's typed override silently disappearing | Two guards, one predicate, each with its own RED test: the analyze cache tier before the `configHash` comparison, and the remediate delete. Plus a dedicated test that mutates `package.json` and asserts the next start still uses the Manual command and reports staleness rather than replacing it. |
+  | A DB override written while `.shep/dev.json` shadows it (silent no-op on typed input) | `OverrideDevServerRunPlanUseCase` returns an explicit conflict outcome; the editor renders it as a blocking explanation with the Edit action disabled, covered by a dedicated Storybook state. |
+  | Malformed manifest / `.shep/dev.json` crashing the graph (NFR-4) | Every detector returns a fall-through on any doubt; the reader mirrors `OwnershipYamlReader`'s validate-then-degrade shape. Dedicated tests per detector for unparseable content, `EACCES`, and empty files, plus a graph test asserting `capturedLogs` keeps accumulating through the tier-zero branch. |
+  | Subdirectory scan turning detection into a filesystem sweep (NFR-1) | `MAX_SCANNED_SUBDIRS` (50) and `MAX_MANIFEST_BYTES` (256 KB) constants in `registry.ts`, stat-before-read everywhere, no recursion beyond one level, short-circuit on first success. Truncation is logged, never silent. A perf test asserts <200 ms on a wide fixture. |
+  | Wrong `expectedPort` manufacturing a false readiness failure | Explicit sources only; ambiguous Compose port sets and any inference from source or `.env` are out of scope by design. Detector tests assert `expectedPort` is left **unset** for every ambiguous fixture. |
+  | Clean-architecture violation via `computeConfigHash` in a use case | `IRunPlanStalenessProbe` output port with an infrastructure adapter, registered in `register-deployment.ts`. Phase 7 runs the clean-arch grep and auditor over `application/` and `src/presentation/`. |
+  | `cwd` prefix-escape (`/repo` vs `/repo-evil`) | Confinement compares `resolve(repoPath, cwd)` against `repoPath` or `repoPath + sep` on normalised forward-slash paths, case-insensitively on win32. A bare `startsWith` is explicitly banned; a negative test uses the sibling-prefix path. |
+  | Windows behaviour (NFR-8) | CRLF normalisation before every line-anchored scan (or `^…:` Make matches fail on Windows checkouts); `Makefile`/`makefile`/`GNUmakefile` all checked; `join()`-built paths only; assertions normalise separators. Missing `make`/`docker` resolves through the existing probe-miss path with a specific install hint, not a platform special-case. |
+  | Storybook build failing CI on new components (NFR-10) | The disclosure is split into three small components so the required state matrix is expressible; `pnpm build:storybook` runs locally in phase 7 before push. |
+  | Missing translations breaking non-English locales | One dedicated task per surface (web, CLI) adding every new key to all nine locales; phase 7 verifies key parity across `translations/*/`. |
