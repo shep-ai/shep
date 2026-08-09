@@ -33,9 +33,9 @@
 import { existsSync, realpathSync, statSync } from 'node:fs';
 import { isAbsolute, resolve } from 'node:path';
 import { isPathInside, toComparablePath } from '@/domain/shared/path-confinement.js';
+import { isValidPort } from '@/domain/shared/port-range.js';
 import { createDeploymentLogger } from './deployment-logger.js';
 import { readJsonManifest } from './detectors/shared/json-manifest.js';
-import { PORT_MAX, PORT_MIN } from './detectors/shared/command-port.js';
 
 /** Repository-relative location of the committed dev config. */
 export const REPO_DEV_CONFIG_PATH = '.shep/dev.json';
@@ -127,12 +127,7 @@ function stringList(value: unknown): string[] {
 function port(value: unknown, filePath: string): number | undefined {
   if (value === undefined || value === null) return undefined;
 
-  if (
-    typeof value !== 'number' ||
-    !Number.isInteger(value) ||
-    value < PORT_MIN ||
-    value > PORT_MAX
-  ) {
+  if (!isValidPort(value)) {
     log.warn(`${filePath} declares an invalid "expectedPort" — ignoring that field`);
     return undefined;
   }
