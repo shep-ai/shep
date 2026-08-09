@@ -17,7 +17,7 @@ tasks:
   - id: 2
     title: "Add LLMProxy Models to Catalog"
     description: "Define popular models in agent-model-catalog.ts"
-    status: "pending"
+    status: "completed"
     effort: "S"
     dependencies: [1]
     acceptance:
