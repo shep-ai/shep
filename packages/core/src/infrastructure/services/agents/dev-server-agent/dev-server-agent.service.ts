@@ -37,7 +37,8 @@ import type { IAgentExecutor } from '@/application/ports/output/agents/agent-exe
 import type { IAgentExecutorProvider } from '@/application/ports/output/agents/agent-executor-provider.interface.js';
 import type { IStructuredAgentCaller } from '@/application/ports/output/agents/structured-agent-caller.interface.js';
 import { DependencyInstaller } from '@/infrastructure/services/deployment/dependency-installer.js';
-import { detectDevScript } from '@/infrastructure/services/deployment/detect-dev-script.js';
+import { detectRunPlan } from '@/infrastructure/services/deployment/detect-dev-script.js';
+import { readRepoDevConfig } from '@/infrastructure/services/deployment/repo-dev-config-reader.js';
 import {
   computeConfigHash,
   computeInstallHash,
@@ -203,7 +204,8 @@ export class DevServerAgentService implements IDevServerAgentService {
     return {
       analyze: createAnalyzeNode({
         runPlanRepository,
-        detect: detectDevScript,
+        detect: detectRunPlan,
+        readRepoConfig: readRepoDevConfig,
         structuredCaller,
         computeConfigHash,
         reportAnalyzing: () => reportState(DeploymentState.Analyzing),
