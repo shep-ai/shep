@@ -1,70 +1,62 @@
-# Task Breakdown (YAML)
-# This is the source of truth. Markdown is auto-generated from this file.
-
 name: llmproxy-support
 summary: Task breakdown for 109-llmproxy-support
+phase: implementation
+updatedAt: "2026-08-09"
 
-# Relationships
-relatedFeatures: []
-technologies: []
-relatedLinks: []
-
-# Structured task list — this is the single source of truth for tasks.
-# The content field below is a summary only; it does NOT duplicate task details.
 tasks:
-  - id: task-1
-    title: { { TASK_1_TITLE } }
-    description: { { TASK_1_DESCRIPTION } }
-    state: Todo
+  - id: 1
+    title: "Update TypeSpec and Generate Types"
+    description: "Add LlmProxy to AgentType enum and run type generation."
+    status: "pending"
+    effort: "S"
     dependencies: []
-    acceptanceCriteria:
-      - { { CRITERION_1 } }
-      - { { CRITERION_2 } }
+    acceptance:
+      - "LlmProxy added to tsp/common/enums/agent-config.tsp"
+      - "Generated types include LlmProxy"
+
+  - id: 2
+    title: "Add LLMProxy Models to Catalog"
+    description: "Define popular models in agent-model-catalog.ts"
+    status: "pending"
+    effort: "S"
+    dependencies: [1]
+    acceptance:
+      - "LLMPROXY_MODELS defined and exported"
+
+  - id: 3
+    title: "Implement LlmProxyExecutorService"
+    description: "Create the executor service extending AiSdkBaseExecutorService."
+    status: "pending"
+    effort: "M"
+    dependencies: [1]
     tdd:
-      red:
-        - Write tests for {{FEATURE_1}}
-      green:
-        - Implement {{FEATURE_1}} to pass tests
-      refactor:
-        - Extract helpers, improve naming
-    estimatedEffort: { { EFFORT_1 } }
+      - "RED: Write unit test asserting class existence and agentType"
+      - "GREEN: Implement basic class structure"
+      - "REFACTOR: Clean up imports and base URL logic"
+    acceptance:
+      - "Executor defaults to localhost:4000/v1"
+      - "Unit tests pass"
 
-  - id: task-2
-    title: { { TASK_2_TITLE } }
-    description: { { TASK_2_DESCRIPTION } }
-    state: Todo
-    dependencies:
-      - task-1
-    acceptanceCriteria:
-      - { { CRITERION_1 } }
-      - { { CRITERION_2 } }
-    tdd: null # No TDD for foundational/doc tasks
-    estimatedEffort: { { EFFORT_2 } }
+  - id: 4
+    title: "Update AgentExecutorFactory"
+    description: "Integrate the new executor into the factory."
+    status: "pending"
+    effort: "S"
+    dependencies: [2, 3]
+    tdd:
+      - "RED: Test that createExecutor('llmproxy') returns LlmProxyExecutorService"
+      - "GREEN: Add switch case"
+      - "REFACTOR: Ensure all lists (supported agents, models) are updated"
+    acceptance:
+      - "Factory supports creating LlmProxyExecutorService"
+      - "Factory tests pass"
 
-# Total effort estimate
-totalEstimate: { { TOTAL_EFFORT } }
-
-# Open questions
-openQuestions: []
-
-# Markdown content — summary and acceptance checklist only.
-# Individual task details live in the tasks[] array above (no duplication).
 content: |
-  ## Summary
-
-  {{BRIEF_DESCRIPTION_OF_SCOPE}} — {{TASK_COUNT}} tasks across {{PHASE_COUNT}} phases.
+  ## Overview
+  This document tracks the tasks required to implement llmproxy support (total 4 tasks).
 
   ## Acceptance Checklist
-
-  Before marking feature complete:
-
-  - [ ] All tasks completed
-  - [ ] Tests passing (`pnpm test`)
-  - [ ] Linting clean (`pnpm lint`)
-  - [ ] Types valid (`pnpm typecheck`)
-  - [ ] TypeSpec compiles (`pnpm tsp:compile`)
-  - [ ] PR created and reviewed
-
-  ---
-
-  _Task details are in the tasks[] array of tasks.yaml_
+  - [ ] TypeSpec updated
+  - [ ] Model catalog updated
+  - [ ] Executor implemented and tested
+  - [ ] Factory updated and tested

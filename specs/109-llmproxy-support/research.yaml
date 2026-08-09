@@ -3,7 +3,7 @@
 
 name: llmproxy-support
 summary: Technical analysis for adding llmproxy support to the agent system
-phase: planning
+phase: implementation
 updatedAt: "2026-08-09"
 
 decisions:

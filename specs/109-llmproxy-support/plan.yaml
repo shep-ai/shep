@@ -1,97 +1,46 @@
-# Implementation Plan (YAML)
-# This is the source of truth. Markdown is auto-generated from this file.
-
 name: llmproxy-support
-summary: Implementation plan for 109-llmproxy-support
+summary: Implementation plan for adding llmproxy support
+phase: implementation
+updatedAt: "2026-08-09"
 
-# Relationships
-relatedFeatures: []
-technologies: []
-relatedLinks: []
-
-# Structured implementation phases
-phases:
-  - id: phase-1
-    name: 'Foundation'
-    parallel: false
-    taskIds:
-      - task-1
-      - task-2
-  # Additional phases are added by `/shep-kit:plan` alongside their tasks in
-  # tasks.yaml. Do not reference task ids here before they exist — spec:validate
-  # fails the consistency gate on dangling taskIds.
-  - id: phase-2
-    name: 'Core Implementation'
-    parallel: false
-    taskIds: []
-
-# File change tracking
-filesToCreate:
-  - src/domain/entities/{{ENTITY_NAME}}.ts
-  - tests/unit/domain/entities/{{ENTITY_NAME}}.test.ts
-
-filesToModify:
-  - src/infrastructure/di/container.ts
-  - package.json
-
-# Open questions (should all be resolved before implementation)
-openQuestions: []
-
-# Markdown content — architecture, strategy, and risks only.
-# Task-level detail lives in tasks.yaml (no duplication).
 content: |
-  ## Status
-
-  - **Phase:** Planning
-  - **Updated:** 2026-08-09
-
   ## Architecture Overview
 
-  ```
-  {{ARCHITECTURE_DIAGRAM}}
+  We will integrate `llmproxy` as a new supported `AgentType` in the `shep` ecosystem. The integration follows the established pattern for `AiSdkBaseExecutorService` subclasses.
+
+  ```mermaid
+  graph TD
+      Settings[Settings Config] -->|type: 'llmproxy'| Factory[AgentExecutorFactory]
+      Factory --> LlmProxy[LlmProxyExecutorService]
+      LlmProxy --> AiSdk[Vercel AI SDK]
+      AiSdk -->|HTTP POST| LlmProxyService[localhost:4000/v1]
   ```
 
   ## Implementation Strategy
 
-  **MANDATORY TDD**: All phases with executable code follow RED-GREEN-REFACTOR cycles.
+  1.  **TypeSpec Updates:** Add the `LlmProxy` enum member to `AgentType` in `tsp/common/enums/agent-config.tsp`. Regenerate types.
+  2.  **Model Catalog Update:** Add a static list of models to `packages/core/src/infrastructure/services/agents/common/agent-model-catalog.ts` for `llmproxy`.
+  3.  **LlmProxyExecutorService:** Create `packages/core/src/infrastructure/services/agents/common/executors/llmproxy-executor.service.ts` extending `AiSdkBaseExecutorService`.
+  4.  **AgentExecutorFactory Integration:** Update `AgentExecutorFactory` to construct and return the `LlmProxyExecutorService` when the type is `llmproxy`. Update `getSupportedAgents`, `getCliInfo` (if applicable), and `getSupportedModels`.
 
-  High-level walkthrough of how the phases connect and why they are ordered
-  this way. Focus on architectural decisions and data flow — not individual
-  task descriptions (see tasks.yaml for the detailed breakdown).
+  ## Files to Modify/Create
 
-  ## Files to Create/Modify
+  | File Path | Action | Description |
+  | :--- | :--- | :--- |
+  | `tsp/common/enums/agent-config.tsp` | Modify | Add `LlmProxy` to `AgentType`. |
+  | `packages/core/src/infrastructure/services/agents/common/agent-model-catalog.ts` | Modify | Define `LLMPROXY_MODELS` and export it. |
+  | `packages/core/src/infrastructure/services/agents/common/executors/llmproxy-executor.service.ts` | Create | New executor class. |
+  | `packages/core/src/infrastructure/services/agents/common/agent-executor-factory.service.ts` | Modify | Add case for `llmproxy` and import model catalog arrays. |
 
-  ### New Files
+  ## Testing Strategy
 
-  | File | Purpose |
-  | ---- | ------- |
-  | {{FILE_PATH}} | {{PURPOSE}} |
+  - **TypeSpec Compilation:** Ensure `pnpm tsp:compile` runs without errors.
+  - **Unit Tests:**
+    - `llmproxy-executor.service.test.ts`: TDD verify instantiation and `agentType` property.
+    - `agent-executor-factory.service.test.ts`: Verify factory returns correct instance for `llmproxy`.
 
-  ### Modified Files
+  ## Risks and Rollback
 
-  | File | Changes |
-  | ---- | ------- |
-  | {{FILE_PATH}} | {{CHANGES}} |
-
-  ## Testing Strategy (TDD: Tests FIRST)
-
-  **CRITICAL:** Tests are written FIRST in each TDD cycle.
-
-  ### Unit Tests (RED -> GREEN -> REFACTOR)
-
-  - {{TEST_AREA_1}}
-  - {{TEST_AREA_2}}
-
-  ### Integration Tests
-
-  - {{INTEGRATION_TEST_1}}
-
-  ## Risk Mitigation
-
-  | Risk | Mitigation |
-  | ---- | ---------- |
-  | {{RISK}} | {{MITIGATION}} |
-
-  ---
-
-  _Updated by `/shep-kit:plan` — see tasks.yaml for detailed task breakdown_
+  - **Risk:** Type mismatch if `llmproxy` breaks `AgentType` usage in other parts of the application.
+  - **Mitigation:** Comprehensive type checking (`pnpm typecheck`) and integration tests will catch usage issues.
+  - **Rollback:** Revert the commits related to `feat/109-llmproxy-support`.
