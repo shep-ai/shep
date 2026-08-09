@@ -20,7 +20,7 @@ summary: >
   install-deps → start → verify, a bounded agent-driven remediation loop, a
   persisted per-repo run plan cache, and a deterministic fast path so zero-LLM
   startups stay instant when detection is unambiguous.
-phase: Requirements
+phase: Complete
 sizeEstimate: L
 
 # Relationships
