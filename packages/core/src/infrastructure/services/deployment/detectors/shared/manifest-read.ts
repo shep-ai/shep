@@ -21,7 +21,7 @@
 
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
-import { MAX_MANIFEST_BYTES } from '../registry.js';
+import { MAX_MANIFEST_BYTES } from '../limits.js';
 
 export { MAX_MANIFEST_BYTES };
 
