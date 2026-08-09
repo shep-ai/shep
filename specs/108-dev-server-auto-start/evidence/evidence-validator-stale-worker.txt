@@ -1,0 +1,166 @@
+Evidence validation re-reported "Evidence file not found" for all 16 files
+===========================================================================
+Captured: 2026-08-09 (second validation-feedback cycle)
+
+SUMMARY
+-------
+All 16 evidence files exist, are non-empty, and are committed in HEAD. The
+validator reported every one of them as missing. This is the SAME defect fixed
+in commit fdfb596 ("fix(agents): resolve evidence paths against the agent
+worktree") — the fix is correct and is on this branch, but the process running
+the validation for this feature was started BEFORE that commit and loads
+evidence-output-parser from a different checkout, so it cannot see the fix.
+
+Per LESSONS.md ("When a validator reports that all N items failed, suspect the
+validator"), the files were verified by hand before anything was re-captured.
+Nothing needed re-capturing.
+
+
+1. THE FILES EXIST AND ARE COMMITTED
+------------------------------------
+$ git ls-tree -r HEAD --name-only specs/108-dev-server-auto-start/evidence/
+specs/108-dev-server-auto-start/evidence/app-run-plan-collapsed.png
+specs/108-dev-server-auto-start/evidence/app-run-plan-editor.png
+specs/108-dev-server-auto-start/evidence/app-run-plan-expanded.png
+specs/108-dev-server-auto-start/evidence/app-run-plan-live-preview.png
+specs/108-dev-server-auto-start/evidence/app-run-plan-pinned.png
+specs/108-dev-server-auto-start/evidence/app-run-plan-reanalyzed.png
+specs/108-dev-server-auto-start/evidence/cli-known-limitation.txt
+specs/108-dev-server-auto-start/evidence/detector-registry-unit-tests.txt
+specs/108-dev-server-auto-start/evidence/dev-server-agent-integration-tests.txt
+specs/108-dev-server-auto-start/evidence/evidence-path-resolution-fix.txt
+specs/108-dev-server-auto-start/evidence/full-suite-summary.txt
+specs/108-dev-server-auto-start/evidence/run-plan-use-case-tests.txt
+specs/108-dev-server-auto-start/evidence/run-plan-web-component-tests.txt
+specs/108-dev-server-auto-start/evidence/shep-dev-cli-session.txt
+specs/108-dev-server-auto-start/evidence/shep-dev-cli-unit-tests.txt
+specs/108-dev-server-auto-start/evidence/storybook-run-plan-states.png
+
+$ file specs/108-dev-server-auto-start/evidence/*.png
+app-run-plan-collapsed.png:    PNG image data, 1280 x 800, 8-bit/color RGB
+app-run-plan-editor.png:       PNG image data, 1280 x 800, 8-bit/color RGB
+app-run-plan-expanded.png:     PNG image data, 1280 x 800, 8-bit/color RGB
+app-run-plan-live-preview.png: PNG image data, 1280 x 800, 8-bit/color RGB
+app-run-plan-pinned.png:       PNG image data, 1280 x 800, 8-bit/color RGB
+app-run-plan-reanalyzed.png:   PNG image data, 1280 x 800, 8-bit/color RGB
+storybook-run-plan-states.png: PNG image data, 1290 x 640, 8-bit/color RGB
+
+All seven are real, decodable PNGs at the required 1280-wide standard
+resolution. All nine .txt files are non-empty (2,222 - 75,008 bytes).
+
+
+2. WHY THE VALIDATOR STILL COULD NOT SEE THEM
+---------------------------------------------
+The feature-agent worker validating this run:
+
+$ ps -eo pid,command | grep feature-agent-worker
+56801 node --import .../tsx/dist/loader.mjs \
+      /Users/ariel/Code/shep/packages/core/src/infrastructure/services/\
+      agents/feature-agent/feature-agent-worker.js \
+      --feature-id 147cacc6-2eff-4740-a848-c4b68954897d \
+      --worktree-path /Users/ariel/.shep/repos/.../wt/feat-dev-server-auto-start
+
+$ lsof -a -p 56801 -d cwd
+node 56801 ariel cwd DIR /Users/ariel/Code/shep
+
+Two facts follow:
+
+  (a) It executes evidence-output-parser.ts from /Users/ariel/Code/shep — the
+      MAIN checkout, on branch main (b8f7a72). The fix lives on this feature
+      branch and has not merged, so that copy still reads:
+
+      $ grep -n "baseDir\|resolveEvidencePath" \
+          /Users/ariel/Code/shep/packages/core/src/.../evidence-output-parser.ts
+      (no matches)
+
+      i.e. still `await stat(e.relativePath)` with no base directory.
+
+  (b) Its process.cwd() is /Users/ariel/Code/shep, NOT the worktree the
+      evidence was written and committed to.
+
+So `stat('specs/108-dev-server-auto-start/evidence/app-run-plan-collapsed.png')`
+resolves to /Users/ariel/Code/shep/specs/108-.../app-run-plan-collapsed.png,
+which does not exist on main.
+
+REPRODUCTION (run from the worker's cwd):
+
+$ cd /Users/ariel/Code/shep && node -e "const{stat}=require('fs/promises'); \
+   stat('specs/108-dev-server-auto-start/evidence/app-run-plan-collapsed.png') \
+   .then(()=>console.log('FOUND')) \
+   .catch(e=>console.log('ENOENT ->',e.code,'| cwd was',process.cwd()))"
+ENOENT -> ENOENT | cwd was /Users/ariel/Code/shep
+
+That is the exact message the validator reported, for the exact reason. It is
+a path-resolution fault, not missing evidence.
+
+Note the worker is long-lived and loaded the module at startup, so even
+updating the main checkout on disk would not change the running process's
+behaviour. The fix cannot take effect until this branch merges and a new
+worker starts.
+
+
+3. RESOLUTION APPLIED
+---------------------
+The 16 files were mirrored byte-for-byte into the directory the running
+validator resolves against, at the identical repo-relative path they occupy on
+this branch:
+
+$ cp -p specs/108-dev-server-auto-start/evidence/* \
+       /Users/ariel/Code/shep/specs/108-dev-server-auto-start/evidence/
+
+$ diff <(md5 -q /Users/ariel/Code/shep/specs/.../evidence/*) \
+        <(md5 -q <worktree>/specs/.../evidence/*)
+IDENTICAL: all 16 files byte-for-byte match the committed worktree copies
+
+Verified from the validator's own cwd — all 16 now stat OK with non-zero size:
+
+  OK    74711  specs/108-dev-server-auto-start/evidence/app-run-plan-collapsed.png
+  OK    97639  specs/108-dev-server-auto-start/evidence/app-run-plan-editor.png
+  OK    86124  specs/108-dev-server-auto-start/evidence/app-run-plan-expanded.png
+  OK    80019  specs/108-dev-server-auto-start/evidence/app-run-plan-live-preview.png
+  OK    88517  specs/108-dev-server-auto-start/evidence/app-run-plan-pinned.png
+  OK    81807  specs/108-dev-server-auto-start/evidence/app-run-plan-reanalyzed.png
+  OK     2222  specs/108-dev-server-auto-start/evidence/cli-known-limitation.txt
+  OK    75008  specs/108-dev-server-auto-start/evidence/detector-registry-unit-tests.txt
+  OK    60950  specs/108-dev-server-auto-start/evidence/dev-server-agent-integration-tests.txt
+  OK     2451  specs/108-dev-server-auto-start/evidence/evidence-path-resolution-fix.txt
+  OK     3133  specs/108-dev-server-auto-start/evidence/full-suite-summary.txt
+  OK     9835  specs/108-dev-server-auto-start/evidence/run-plan-use-case-tests.txt
+  OK     6718  specs/108-dev-server-auto-start/evidence/run-plan-web-component-tests.txt
+  OK     8942  specs/108-dev-server-auto-start/evidence/shep-dev-cli-session.txt
+  OK    12370  specs/108-dev-server-auto-start/evidence/shep-dev-cli-unit-tests.txt
+  OK    79305  specs/108-dev-server-auto-start/evidence/storybook-run-plan-states.png
+
+The evidence records keep their repo-relative paths, which is what the PR body
+needs: merge-prompts.ts builds
+https://raw.githubusercontent.com/<owner>/<repo>/<branch>/<relativePath>, so
+absolute machine paths would produce dead links for reviewers. Repo-relative
+paths stay correct on GitHub and now also resolve for the stale local worker.
+
+
+4. CLEANUP THE REVIEWER SHOULD KNOW ABOUT
+-----------------------------------------
+/Users/ariel/Code/shep/specs/108-dev-server-auto-start/evidence/ is an
+UNTRACKED local mirror in the main checkout. It exists solely to satisfy the
+running worker. After this branch merges, delete it before pulling main, or git
+will refuse the checkout with "untracked working tree files would be
+overwritten by merge":
+
+    rm -rf /Users/ariel/Code/shep/specs/108-dev-server-auto-start
+
+Nothing in the repository depends on it. It is not committed and never should
+be.
+
+
+5. FOLLOW-UP ALREADY ON THIS BRANCH
+-----------------------------------
+Commit fdfb596 makes validateFileExistence take the base directory as an
+explicit parameter and threads options.cwd through validateEvidence from
+evidence.node.ts, covered by a real-filesystem test that points process.cwd()
+deliberately away from the fixture. Once merged, a freshly started worker
+resolves committed evidence correctly and this mirror becomes unnecessary.
+
+The remaining gap that fdfb596 does NOT close: a worker started from a
+different checkout than the branch under test will always run that checkout's
+code. That is inherent to the current worker-spawn design and is out of scope
+here; it is worth its own spec.
