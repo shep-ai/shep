@@ -1722,3 +1722,10 @@ macOS, where 1ms barely clears `exec` and nothing had touched the DB yet.
 2. **Memoize Heavy Components:** Wrapped `EditorPane` with `React.memo` to ensure the heavy Monaco editor only re-renders when its specific props (`activePath`, `openFiles`, etc.) actually change, shielding it from unrelated parent updates.
 3. **Audit Polling Intervals:** Increased `refetchInterval` from 3,000ms/5,000ms to 10,000ms. If real-time updates are critical, use SSE or WebSockets instead of frequent short-interval polling, especially when the backend performs synchronous I/O or system calls.
 
+
+## AgentType Additions
+- When adding a new `AgentType` (like `LlmProxy`), you must update `tests/unit/domain/shared/agent-resume-descriptor.test.ts` to include the new enum value in the exhaustive enum sweep check, otherwise it will fail to compile (TS2741).
+- In `tests/unit/infrastructure/services/agents/agent-executor-factory.test.ts`, the test `should list supported agents` has a strict `.toHaveLength(N)` assertion which must be incremented manually when adding a new supported agent type.
+
+## YAML Specifications
+- The tests parsing existing specs (`spec-yaml-backward-compatibility.test.ts`) require valid YAML formatting for block scalars (`content: |`). Empty lines must be completely empty (no trailing spaces), and lines starting with special characters like `@` without spaces at the column start break the indentation.
