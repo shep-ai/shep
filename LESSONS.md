@@ -1,5 +1,21 @@
 # Lessons Learned
 
+## A copied "resume" command must carry its working directory
+
+Agent CLI sessions (`claude`/`codex`/`cursor-agent --resume <id>`) are
+**project-scoped** — the binary resolves the session from the current working
+directory. The "Copy resume command" action copied a bare `claude --resume <id>`,
+which the `cwd` was captured for but never included, so pasting it anywhere but
+the project directory failed to find the session. "Resume in terminal" worked
+only because the PTY was spawned already `cwd`'d into the project.
+
+**Rule:** when a command depends on `cwd` and leaves the process that carries it
+(copy-to-clipboard, "open in…", a docs snippet), make it self-contained:
+`cd '<quoted-cwd>' && <command>`. A form that only works because *this* shell
+happens to be in the right directory is a latent bug the moment it's copied
+elsewhere. Keep the bare form for the in-place terminal write, add a distinct
+`clipboardCommand` for anything that travels.
+
 ## A dependency gate must open on "the work landed", not on "the work started"
 
 The dependency gate released a child as soon as its parent reached

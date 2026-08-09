@@ -61,7 +61,9 @@ describe('SessionRow', () => {
     vi.clearAllMocks();
     mockAdopt.mockResolvedValue({ featureId: 'feat-1', featureName: 'Adopted' });
     mockResume.mockResolvedValue({ terminalId: 'term-1', command: 'claude --resume sess-abc' });
-    mockDescribe.mockResolvedValue({ command: 'claude --resume sess-abc' });
+    mockDescribe.mockResolvedValue({
+      command: `cd '${REPO_PATH}' && claude --resume sess-abc`,
+    });
     Object.assign(navigator, { clipboard: { writeText: vi.fn().mockResolvedValue(undefined) } });
   });
 
@@ -131,7 +133,9 @@ describe('SessionRow', () => {
 
     await waitFor(() => expect(mockDescribe).toHaveBeenCalled());
     await waitFor(() =>
-      expect(navigator.clipboard.writeText).toHaveBeenCalledWith('claude --resume sess-abc')
+      expect(navigator.clipboard.writeText).toHaveBeenCalledWith(
+        `cd '${REPO_PATH}' && claude --resume sess-abc`
+      )
     );
   });
 

@@ -97,7 +97,9 @@ export async function describeResumeCommand(input: {
       cwd: input.cwd,
     });
 
-    return { command: descriptor.displayCommand };
+    // Clipboard form cds into the project first — a bare `--resume <id>` finds
+    // no session when pasted outside the project directory.
+    return { command: descriptor.clipboardCommand };
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Cannot resume this session';
     return { error: message };
