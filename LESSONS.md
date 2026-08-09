@@ -1729,3 +1729,9 @@ macOS, where 1ms barely clears `exec` and nothing had touched the DB yet.
 
 ## YAML Specifications
 - The tests parsing existing specs (`spec-yaml-backward-compatibility.test.ts`) require valid YAML formatting for block scalars (`content: |`). Empty lines must be completely empty (no trailing spaces), and lines starting with special characters like `@` without spaces at the column start break the indentation.
+
+## Vitest mock exports must match actual module exports
+
+When modifying a module's exports (e.g. changing `useAllTurnStatuses` to `useTurnStatusSync`), vitest mocks using `vi.mock()` that return an object missing the expected exports will fail at runtime with `TypeError: (0, ...useTurnStatus) is not a function` or `Error: [vitest] No "useTurnStatusSync" export is defined...`. Vitest strictly verifies that if a module is mocked, any named import actually exists on the mocked object. 
+
+**Rule:** Always search the codebase for `vi.mock('path/to/module')` whenever you rename, add, or remove an exported function from a module, and ensure all test files update their mock returns to match the new signature.
