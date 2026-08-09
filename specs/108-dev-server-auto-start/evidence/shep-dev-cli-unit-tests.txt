@@ -1,0 +1,81 @@
+
+ RUN  v4.0.18 /Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start
+
+ ✓  node  tests/unit/presentation/cli/commands/dev/dev-cli-translations.test.ts > commands.dev translations > declares the keys the CLI actually asks for 3ms
+ ✓  node  tests/unit/presentation/cli/commands/dev/dev-cli-translations.test.ts > commands.dev translations > ar > has exactly the same key set as English 1ms
+ ✓  node  tests/unit/presentation/cli/commands/dev/dev-cli-translations.test.ts > commands.dev translations > ar > keeps every interpolation placeholder 18ms
+ ✓  node  tests/unit/presentation/cli/commands/dev/dev-cli-translations.test.ts > commands.dev translations > ar > translates the strings rather than copying English 12ms
+ ✓  node  tests/unit/presentation/cli/commands/dev/dev-cli-translations.test.ts > commands.dev translations > de > has exactly the same key set as English 0ms
+ ✓  node  tests/unit/presentation/cli/commands/dev/dev-cli-translations.test.ts > commands.dev translations > de > keeps every interpolation placeholder 13ms
+ ✓  node  tests/unit/presentation/cli/commands/dev/dev-cli-translations.test.ts > commands.dev translations > de > translates the strings rather than copying English 9ms
+ ✓  node  tests/unit/presentation/cli/commands/dev/dev-cli-translations.test.ts > commands.dev translations > es > has exactly the same key set as English 0ms
+ ✓  node  tests/unit/presentation/cli/commands/dev/dev-cli-translations.test.ts > commands.dev translations > es > keeps every interpolation placeholder 9ms
+ ✓  node  tests/unit/presentation/cli/commands/dev/dev-cli-translations.test.ts > commands.dev translations > es > translates the strings rather than copying English 10ms
+ ✓  node  tests/unit/presentation/cli/commands/dev/dev-cli-translations.test.ts > commands.dev translations > fr > has exactly the same key set as English 0ms
+ ✓  node  tests/unit/presentation/cli/commands/dev/dev-cli-translations.test.ts > commands.dev translations > fr > keeps every interpolation placeholder 12ms
+ ✓  node  tests/unit/presentation/cli/commands/dev/dev-cli-translations.test.ts > commands.dev translations > fr > translates the strings rather than copying English 10ms
+ ✓  node  tests/unit/presentation/cli/commands/dev/dev-cli-translations.test.ts > commands.dev translations > he > has exactly the same key set as English 0ms
+ ✓  node  tests/unit/presentation/cli/commands/dev/dev-cli-translations.test.ts > commands.dev translations > he > keeps every interpolation placeholder 12ms
+ ✓  node  tests/unit/presentation/cli/commands/dev/dev-cli-translations.test.ts > commands.dev translations > he > translates the strings rather than copying English 11ms
+ ✓  node  tests/unit/presentation/cli/commands/dev/dev-cli-translations.test.ts > commands.dev translations > pt > has exactly the same key set as English 0ms
+ ✓  node  tests/unit/presentation/cli/commands/dev/dev-cli-translations.test.ts > commands.dev translations > pt > keeps every interpolation placeholder 11ms
+ ✓  node  tests/unit/presentation/cli/commands/dev/dev-cli-translations.test.ts > commands.dev translations > pt > translates the strings rather than copying English 11ms
+ ✓  node  tests/unit/presentation/cli/commands/dev/dev-cli-translations.test.ts > commands.dev translations > ru > has exactly the same key set as English 0ms
+ ✓  node  tests/unit/presentation/cli/commands/dev/dev-cli-translations.test.ts > commands.dev translations > ru > keeps every interpolation placeholder 12ms
+ ✓  node  tests/unit/presentation/cli/commands/dev/dev-cli-translations.test.ts > commands.dev translations > ru > translates the strings rather than copying English 11ms
+ ✓  node  tests/unit/presentation/cli/commands/dev/dev-cli-translations.test.ts > commands.dev translations > uk > has exactly the same key set as English 0ms
+ ✓  node  tests/unit/presentation/cli/commands/dev/dev-cli-translations.test.ts > commands.dev translations > uk > keeps every interpolation placeholder 13ms
+ ✓  node  tests/unit/presentation/cli/commands/dev/dev-cli-translations.test.ts > commands.dev translations > uk > translates the strings rather than copying English 11ms
+ ✓  node  tests/unit/presentation/cli/commands/dev/dev-plan.command.test.ts > shep dev plan > plan show > prints every field of a resolved plan 4ms
+ ✓  node  tests/unit/presentation/cli/commands/dev/dev-plan.command.test.ts > shep dev plan > plan show > prints the staleness hint from the flag the use case derived 1ms
+ ✓  node  tests/unit/presentation/cli/commands/dev/dev-plan.command.test.ts > shep dev plan > plan show > reports "no plan" cleanly rather than as an error 1ms
+ ✓  node  tests/unit/presentation/cli/commands/dev/dev-plan.command.test.ts > shep dev plan > plan show > explains that a committed .shep/dev.json is in charge 0ms
+ ✓  node  tests/unit/presentation/cli/commands/dev/dev-plan.command.test.ts > shep dev plan > plan show > emits the use-case result verbatim with --json 1ms
+ ✓  node  tests/unit/presentation/cli/commands/dev/dev-plan.command.test.ts > shep dev plan > plan show > exits non-zero when the target cannot be resolved 0ms
+ ✓  node  tests/unit/presentation/cli/commands/dev/dev-plan.command.test.ts > shep dev plan > plan set > sends only the fields that were supplied 1ms
+ ✓  node  tests/unit/presentation/cli/commands/dev/dev-plan.command.test.ts > shep dev plan > plan set > passes every supplied field through, including setup commands 0ms
+ ✓  node  tests/unit/presentation/cli/commands/dev/dev-plan.command.test.ts > shep dev plan > plan set > clears an optional field with `none` 1ms
+ ✓  node  tests/unit/presentation/cli/commands/dev/dev-plan.command.test.ts > shep dev plan > plan set > renders per-field validation errors and exits non-zero 0ms
+ ✓  node  tests/unit/presentation/cli/commands/dev/dev-plan.command.test.ts > shep dev plan > plan set > reports the .shep/dev.json conflict and exits non-zero 0ms
+ ✓  node  tests/unit/presentation/cli/commands/dev/dev-plan.command.test.ts > shep dev plan > plan set > does not validate anything itself — a blank command still reaches the use case 0ms
+ ✓  node  tests/unit/presentation/cli/commands/dev/dev-plan.command.test.ts > shep dev plan > plan clear > clears a plan of any source and names what it discarded 0ms
+ ✓  node  tests/unit/presentation/cli/commands/dev/dev-plan.command.test.ts > shep dev plan > plan clear > reports when nothing was cached 0ms
+ ✓  node  tests/unit/presentation/cli/commands/dev/dev-plan.command.test.ts > shep dev plan > plan clear > warns that a committed file still controls the repository 1ms
+ ✓  node  tests/unit/presentation/cli/commands/dev/dev-command.test.ts > shep dev command group > is named "dev" and carries a translated description 3ms
+ ✓  node  tests/unit/presentation/cli/commands/dev/dev-command.test.ts > shep dev command group > exposes start, stop, status, logs and plan 1ms
+ ✓  node  tests/unit/presentation/cli/commands/dev/dev-command.test.ts > shep dev command group > lists every subcommand in its help output 3ms
+ ✓  node  tests/unit/presentation/cli/commands/dev/dev-command.test.ts > shep dev command group > exposes plan show, set and clear 1ms
+ ✓  node  tests/unit/presentation/cli/commands/dev/dev-command.test.ts > shep dev command group > gives every subcommand the shared target flags 1ms
+ ✓  node  tests/unit/presentation/cli/commands/dev/dev-command.test.ts > shep dev command group > registration in index.ts > registers the dev command exactly once 0ms
+ ✓  node  tests/unit/presentation/cli/commands/dev/dev-command.test.ts > shep dev command group > registration in index.ts > imports the factory from the dev command group 0ms
+ ✓  node  tests/unit/presentation/cli/commands/dev/dev-command.test.ts > shep dev command group > registration in index.ts > does not rename any existing top-level command onto the dev namespace 0ms
+ ✓  node  tests/unit/presentation/cli/commands/dev/dev-command.test.ts > shep dev command group > target selection > resolves an explicit application id through the resolver 1ms
+ ✓  node  tests/unit/presentation/cli/commands/dev/dev-command.test.ts > shep dev command group > target selection > resolves a bare invocation from the working directory 0ms
+ ✓  node  tests/unit/presentation/cli/commands/dev/dev-command.test.ts > shep dev command group > target selection > refuses more than one explicit target 0ms
+ ✓  node  tests/unit/presentation/cli/commands/dev/dev-command.test.ts > shep dev command group > target selection > adds a flag hint when no target owns the working directory 0ms
+ ✓  node  tests/unit/presentation/cli/commands/dev/dev-command.test.ts > shep dev command group > target selection > surfaces the resolver message for a missing target 0ms
+ ✓  node  tests/unit/presentation/cli/commands/dev/dev-command.test.ts > shep dev command group > target selection > reports ambiguity with its candidates instead of guessing 0ms
+ ✓  node  tests/unit/presentation/cli/commands/dev/dev-lifecycle.command.test.ts > shep dev lifecycle commands > dev start > accepts the run through the application start use case 4ms
+ ✓  node  tests/unit/presentation/cli/commands/dev/dev-lifecycle.command.test.ts > shep dev lifecycle commands > dev start > starts a repository target from its path, not its id 1ms
+ ✓  node  tests/unit/presentation/cli/commands/dev/dev-lifecycle.command.test.ts > shep dev lifecycle commands > dev start > streams state transitions and captured output 402ms
+ ✓  node  tests/unit/presentation/cli/commands/dev/dev-lifecycle.command.test.ts > shep dev lifecycle commands > dev start > exits non-zero with the reason when the run never becomes ready 1ms
+ ✓  node  tests/unit/presentation/cli/commands/dev/dev-lifecycle.command.test.ts > shep dev lifecycle commands > dev start > detaches on SIGINT without stopping the dev server 402ms
+ ✓  node  tests/unit/presentation/cli/commands/dev/dev-lifecycle.command.test.ts > shep dev lifecycle commands > dev start > reports a rejected start and exits non-zero 1ms
+ ✓  node  tests/unit/presentation/cli/commands/dev/dev-lifecycle.command.test.ts > shep dev lifecycle commands > dev start > reports an unresolvable target without starting anything 0ms
+ ✓  node  tests/unit/presentation/cli/commands/dev/dev-lifecycle.command.test.ts > shep dev lifecycle commands > dev start > does not fire the root default action when invoked as a subcommand 1ms
+ ✓  node  tests/unit/presentation/cli/commands/dev/dev-lifecycle.command.test.ts > shep dev lifecycle commands > dev stop > stops a running deployment by its target id 0ms
+ ✓  node  tests/unit/presentation/cli/commands/dev/dev-lifecycle.command.test.ts > shep dev lifecycle commands > dev stop > reports "not running" instead of calling stop 0ms
+ ✓  node  tests/unit/presentation/cli/commands/dev/dev-lifecycle.command.test.ts > shep dev lifecycle commands > dev status > prints state, url, command and expected port 0ms
+ ✓  node  tests/unit/presentation/cli/commands/dev/dev-lifecycle.command.test.ts > shep dev lifecycle commands > dev status > reports "not running" with no plan cached 0ms
+ ✓  node  tests/unit/presentation/cli/commands/dev/dev-lifecycle.command.test.ts > shep dev lifecycle commands > dev status > emits machine-readable output with --json 0ms
+ ✓  node  tests/unit/presentation/cli/commands/dev/dev-lifecycle.command.test.ts > shep dev lifecycle commands > dev logs > prints the captured trail without following 0ms
+ ✓  node  tests/unit/presentation/cli/commands/dev/dev-lifecycle.command.test.ts > shep dev lifecycle commands > dev logs > limits output with --lines 0ms
+ ✓  node  tests/unit/presentation/cli/commands/dev/dev-lifecycle.command.test.ts > shep dev lifecycle commands > dev logs > reports an untracked target 0ms
+ ✓  node  tests/unit/presentation/cli/commands/dev/dev-lifecycle.command.test.ts > shep dev lifecycle commands > dev logs > follows until the deployment ends, exiting zero 0ms
+ ✓  node  tests/unit/presentation/cli/commands/dev/dev-lifecycle.command.test.ts > shep dev lifecycle commands > dev logs > keeps following after the server is ready 401ms
+
+ Test Files  4 passed (4)
+      Tests  72 passed (72)
+   Start at  16:26:05
+   Duration  1.70s (transform 502ms, setup 116ms, import 1.17s, tests 1.43s, environment 0ms)
+

@@ -1,0 +1,46 @@
+Known limitation found during evidence collection
+================================================
+
+Captured 2026-08-09T13:45:35Z
+
+WHAT WORKS
+  `shep dev start` detects, spawns, streams and reports Ready correctly for every
+  ecosystem (sections 4 and 5 of shep-dev-cli-session.txt). The web surface is
+  unaffected: the Next.js server is long-lived, so it keeps owning the child.
+
+WHAT DOES NOT
+  A dev server started by `shep dev start` dies once it writes enough output after
+  the CLI process exits. deployment-spawner.ts:46 spawns with
+  stdio: ['ignore','pipe','pipe']; the read ends of those pipes belong to the CLI
+  process, so when the command returns the child's next stdout write gets EPIPE.
+
+REPRODUCTION
+  $ cat /tmp/shep-ev-node/package.json
+{"name":"evnode","scripts":{"dev":"node server.js"}}
+  $ cat /tmp/shep-ev-node/server.js   # logs one line per request
+const http=require("http");
+http.createServer((q,s)=>{console.log("request "+q.url);s.end("ok");}).listen(8098,()=>console.log("Local: http://localhost:8098"));
+  $ shep dev start -r /tmp/shep-ev-node
+  ✓ Dev server ready: http://localhost:8098
+
+  $ for i in 1 2 3; do curl -s -o /dev/null -w "req$i HTTP %{http_code}
+" http://localhost:8098/hello; done
+  req1 HTTP 200
+  req2 HTTP 200
+  req3 HTTP 000      <-- server gone
+
+  The same failure reproduces with 'make dev' running python3 -m http.server.
+
+SAME ROOT CAUSE
+  `shep dev logs` prints nothing for a server started by an earlier CLI invocation.
+  The log ring buffer is a field on the DeploymentService instance in the process
+  that spawned the child, so it is gone with that process too.
+
+WHY IT IS NOT FIXED IN THIS BRANCH
+  Both symptoms are one root cause: process-local ownership of the dev server. The
+  fix is a design change — either route CLI starts through the daemon, or redirect
+  child stdio to a durable log file and stream by tailing it. tasks.yaml task-38
+  explicitly requires that the CLI NOT depend on the web daemon, so the second
+  option is the likely direction, and it changes how DeploymentService captures
+  logs for the web SSE stream and recovery paths too. That belongs in its own spec
+  with its own TDD cycle rather than in an evidence-collection pass.
