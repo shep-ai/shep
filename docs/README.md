@@ -50,6 +50,7 @@ Central navigation for all Shep AI CLI documentation.
 - [Testing Strategy](./development/testing.md)
 - [Building](./development/building.md)
 - [Adding Agents](./development/adding-agents.md)
+- [Dev Server Run Plans](./development/dev-server-run-plan.md)
 - [Web Component Library](./development/web-component-library.md)
 - [Shep-Kit Reference](./development/shep-kit-reference.md)
 - [feature.yaml Protocol](./development/feature-yaml-protocol.md)
