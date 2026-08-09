@@ -11,7 +11,7 @@
  */
 
 import type Database from 'better-sqlite3';
-import type { DeploymentState } from '@/domain/generated/output.js';
+import type { DeploymentState, DeploymentTargetType } from '@/domain/generated/output.js';
 
 /** A single log line captured from a deployment's stdout or stderr. */
 export interface LogEntry {
@@ -101,11 +101,16 @@ export interface IDeploymentService {
    *
    * @param targetId - Unique identifier for the deployment target (featureId or repositoryId)
    * @param targetPath - Absolute filesystem path to the directory to run the dev server in
-   * @param targetType - Type of target ('feature' or 'repository')
+   * @param targetType - Kind of entity being deployed (defaults to Repository)
    * @param options - Optional overrides (e.g. an explicit run plan)
    * @throws Error if no dev script is found in package.json or the process fails to spawn
    */
-  start(targetId: string, targetPath: string, targetType?: string, options?: StartOptions): void;
+  start(
+    targetId: string,
+    targetPath: string,
+    targetType?: DeploymentTargetType,
+    options?: StartOptions
+  ): void;
 
   /**
    * Surface an externally-driven pre-spawn state (Analyzing / Installing)
@@ -123,13 +128,13 @@ export interface IDeploymentService {
    *
    * @param targetId - Unique identifier for the deployment target
    * @param targetPath - Absolute filesystem path of the target
-   * @param targetType - Type of target ('feature' or 'repository')
+   * @param targetType - Kind of entity being deployed
    * @param state - The pre-spawn lifecycle state to surface
    */
   setTransientState(
     targetId: string,
     targetPath: string,
-    targetType: string,
+    targetType: DeploymentTargetType,
     state: DeploymentState.Analyzing | DeploymentState.Installing
   ): void;
 

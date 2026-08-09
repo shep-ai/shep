@@ -12,7 +12,7 @@
  * - Infrastructure layer provides the concrete DevServerAgentService
  */
 
-import type { DeploymentState } from '../../../../domain/generated/output.js';
+import type { DeploymentState, DeploymentTargetType } from '../../../../domain/generated/output.js';
 
 /** Result of accepting a dev-server run. */
 export interface DevServerStartResult {
@@ -39,13 +39,13 @@ export interface IDevServerAgentService {
    *
    * @param targetId - Unique identifier for the deployment target
    * @param targetPath - Absolute filesystem path of the repository/worktree
-   * @param targetType - Type of target ('application' | 'feature' | 'repository')
+   * @param targetType - Kind of entity being deployed
    * @returns The deployment state after acceptance (never rejects for graph
    *          failures — those surface via deployment logs and Stopped state)
    */
   startDevServer(
     targetId: string,
     targetPath: string,
-    targetType: string
+    targetType: DeploymentTargetType
   ): Promise<DevServerStartResult>;
 }

@@ -25,7 +25,7 @@ import {
   DeploymentService,
   type DeploymentServiceDeps,
 } from '@/infrastructure/services/deployment/deployment.service.js';
-import { DeploymentState } from '@/domain/generated/output.js';
+import { DeploymentState, DeploymentTargetType } from '@/domain/generated/output.js';
 
 function createMockChild() {
   const child = new EventEmitter() as EventEmitter & {
@@ -86,7 +86,12 @@ describe('DeploymentService — transient states (Analyzing / Installing)', () =
 
   describe('visibility', () => {
     it('surfaces an Analyzing entry via getStatus', () => {
-      service.setTransientState('feature-1', '/project/path', 'feature', DeploymentState.Analyzing);
+      service.setTransientState(
+        'feature-1',
+        '/project/path',
+        DeploymentTargetType.Feature,
+        DeploymentState.Analyzing
+      );
 
       expect(service.getStatus('feature-1')).toEqual({
         state: DeploymentState.Analyzing,
@@ -95,7 +100,12 @@ describe('DeploymentService — transient states (Analyzing / Installing)', () =
     });
 
     it('surfaces an Installing entry via listAll with targetId and targetType', () => {
-      service.setTransientState('repo-1', '/repos/one', 'repository', DeploymentState.Installing);
+      service.setTransientState(
+        'repo-1',
+        '/repos/one',
+        DeploymentTargetType.Repository,
+        DeploymentState.Installing
+      );
 
       expect(service.listAll()).toEqual([
         {
@@ -108,11 +118,16 @@ describe('DeploymentService — transient states (Analyzing / Installing)', () =
     });
 
     it('transitions Analyzing → Installing on a subsequent call for the same target', () => {
-      service.setTransientState('feature-1', '/project/path', 'feature', DeploymentState.Analyzing);
       service.setTransientState(
         'feature-1',
         '/project/path',
-        'feature',
+        DeploymentTargetType.Feature,
+        DeploymentState.Analyzing
+      );
+      service.setTransientState(
+        'feature-1',
+        '/project/path',
+        DeploymentTargetType.Feature,
         DeploymentState.Installing
       );
 
@@ -129,7 +144,12 @@ describe('DeploymentService — transient states (Analyzing / Installing)', () =
       const { db, prepare } = createMockDb();
       service.setDatabase(db);
 
-      service.setTransientState('feature-1', '/project/path', 'feature', DeploymentState.Analyzing);
+      service.setTransientState(
+        'feature-1',
+        '/project/path',
+        DeploymentTargetType.Feature,
+        DeploymentState.Analyzing
+      );
       service.getStatus('feature-1');
       service.listAll();
 
@@ -142,7 +162,12 @@ describe('DeploymentService — transient states (Analyzing / Installing)', () =
     it('does not treat a transient entry as dead in getStatus (no pid to probe)', () => {
       (deps.isAlive as ReturnType<typeof vi.fn>).mockReturnValue(false);
 
-      service.setTransientState('feature-1', '/project/path', 'feature', DeploymentState.Analyzing);
+      service.setTransientState(
+        'feature-1',
+        '/project/path',
+        DeploymentTargetType.Feature,
+        DeploymentState.Analyzing
+      );
 
       expect(service.getStatus('feature-1')).toEqual({
         state: DeploymentState.Analyzing,
@@ -153,7 +178,12 @@ describe('DeploymentService — transient states (Analyzing / Installing)', () =
     it('does not clean up a transient entry in listAll', () => {
       (deps.isAlive as ReturnType<typeof vi.fn>).mockReturnValue(false);
 
-      service.setTransientState('repo-1', '/repos/one', 'repository', DeploymentState.Installing);
+      service.setTransientState(
+        'repo-1',
+        '/repos/one',
+        DeploymentTargetType.Repository,
+        DeploymentState.Installing
+      );
 
       expect(service.listAll()).toEqual([
         {
@@ -170,9 +200,14 @@ describe('DeploymentService — transient states (Analyzing / Installing)', () =
 
   describe('clearing rules', () => {
     it('is replaced by a subsequent start() for the same targetId without killing anything', () => {
-      service.setTransientState('feature-1', '/project/path', 'feature', DeploymentState.Analyzing);
+      service.setTransientState(
+        'feature-1',
+        '/project/path',
+        DeploymentTargetType.Feature,
+        DeploymentState.Analyzing
+      );
 
-      service.start('feature-1', '/project/path', 'feature');
+      service.start('feature-1', '/project/path', DeploymentTargetType.Feature);
 
       expect(deps.kill).not.toHaveBeenCalled();
       expect(service.getStatus('feature-1')).toEqual({
@@ -186,7 +221,7 @@ describe('DeploymentService — transient states (Analyzing / Installing)', () =
       service.setTransientState(
         'feature-1',
         '/project/path',
-        'feature',
+        DeploymentTargetType.Feature,
         DeploymentState.Installing
       );
 
@@ -197,7 +232,12 @@ describe('DeploymentService — transient states (Analyzing / Installing)', () =
     });
 
     it('stopAll() removes transient entries without killing pid 0', () => {
-      service.setTransientState('feature-1', '/project/path', 'feature', DeploymentState.Analyzing);
+      service.setTransientState(
+        'feature-1',
+        '/project/path',
+        DeploymentTargetType.Feature,
+        DeploymentState.Analyzing
+      );
 
       service.stopAll();
 
@@ -206,9 +246,14 @@ describe('DeploymentService — transient states (Analyzing / Installing)', () =
     });
 
     it('setTransientState over a live deployment stops the old process first', () => {
-      service.start('feature-1', '/project/path', 'feature');
+      service.start('feature-1', '/project/path', DeploymentTargetType.Feature);
 
-      service.setTransientState('feature-1', '/project/path', 'feature', DeploymentState.Analyzing);
+      service.setTransientState(
+        'feature-1',
+        '/project/path',
+        DeploymentTargetType.Feature,
+        DeploymentState.Analyzing
+      );
 
       expect(deps.kill).toHaveBeenCalledWith(12345, 'SIGKILL');
       expect(service.getStatus('feature-1')).toEqual({

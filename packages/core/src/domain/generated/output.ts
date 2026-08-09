@@ -6237,6 +6237,11 @@ export enum AssetType {
   ApiAsset = 'ApiAsset',
   CloudEnvironment = 'CloudEnvironment',
 }
+export enum DeploymentTargetType {
+  Application = 'application',
+  Feature = 'feature',
+  Repository = 'repository',
+}
 export enum AgentFeature {
   sessionResume = 'session-resume',
   streaming = 'streaming',

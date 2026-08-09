@@ -21,7 +21,7 @@ import {
   DeploymentService,
   type DeploymentServiceDeps,
 } from '@/infrastructure/services/deployment/deployment.service.js';
-import { DeploymentState } from '@/domain/generated/output.js';
+import { DeploymentState, DeploymentTargetType } from '@/domain/generated/output.js';
 
 // Partial-mock child_process so we can prove start() never shells out to a
 // blocking install (execFileSync) — spawn injection alone can't see that.
@@ -82,7 +82,7 @@ describe('DeploymentService — runPlan override', () => {
   });
 
   it('spawns exactly the runPlan command in the runPlan cwd (shell, platform opts)', () => {
-    service.start('feature-1', '/project/path', 'repository', {
+    service.start('feature-1', '/project/path', DeploymentTargetType.Repository, {
       runPlan: { command: 'cargo run --bin api', cwd: '/project/path/api' },
     });
 
@@ -100,7 +100,7 @@ describe('DeploymentService — runPlan override', () => {
   });
 
   it('never calls detectDevScript when a runPlan is provided', () => {
-    service.start('feature-1', '/project/path', 'repository', {
+    service.start('feature-1', '/project/path', DeploymentTargetType.Repository, {
       runPlan: { command: 'python manage.py runserver', cwd: '/project/path' },
     });
 
@@ -108,7 +108,7 @@ describe('DeploymentService — runPlan override', () => {
   });
 
   it('tracks the runPlan deployment as Booting and still detects the port from output', () => {
-    service.start('feature-1', '/project/path', 'repository', {
+    service.start('feature-1', '/project/path', DeploymentTargetType.Repository, {
       runPlan: { command: 'bun run dev', cwd: '/project/path' },
     });
 
@@ -133,7 +133,7 @@ describe('DeploymentService — runPlan override', () => {
     process.env.CLAUDE_CODE_OAUTH_TOKEN = 'secret-token';
     process.env.NEXT_ASSET_PREFIX = '/cli';
     try {
-      service.start('feature-1', '/project/path', 'repository', {
+      service.start('feature-1', '/project/path', DeploymentTargetType.Repository, {
         runPlan: {
           command: 'npm run dev',
           cwd: '/project/path',
@@ -166,7 +166,7 @@ describe('DeploymentService — runPlan override', () => {
     (deps.spawn as ReturnType<typeof vi.fn>).mockReturnValue(noPidChild);
 
     expect(() =>
-      service.start('feature-1', '/project/path', 'repository', {
+      service.start('feature-1', '/project/path', DeploymentTargetType.Repository, {
         runPlan: { command: 'npm run dev', cwd: '/project/path' },
       })
     ).toThrow('Failed to spawn dev server: no PID returned');
@@ -179,7 +179,7 @@ describe('DeploymentService — runPlan override', () => {
     secondChild.pid = 54321;
     (deps.spawn as ReturnType<typeof vi.fn>).mockReturnValue(secondChild);
 
-    service.start('feature-1', '/project/path', 'repository', {
+    service.start('feature-1', '/project/path', DeploymentTargetType.Repository, {
       runPlan: { command: 'npm run dev', cwd: '/project/path' },
     });
 
@@ -210,7 +210,7 @@ describe('DeploymentService — runPlan override', () => {
     });
 
     it('does not run any install on the runPlan path either', () => {
-      service.start('feature-1', '/project/path', 'repository', {
+      service.start('feature-1', '/project/path', DeploymentTargetType.Repository, {
         runPlan: { command: 'pnpm dev', cwd: '/project/path' },
       });
 

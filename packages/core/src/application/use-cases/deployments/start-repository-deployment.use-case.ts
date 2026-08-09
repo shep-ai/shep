@@ -15,6 +15,7 @@
 
 import { isAbsolute } from 'node:path';
 import { injectable, inject } from 'tsyringe';
+import { DeploymentTargetType } from '../../../domain/generated/output.js';
 import type { DeploymentStatus } from '../../ports/output/services/deployment-service.interface.js';
 import type { IDevServerAgentService } from '../../ports/output/services/dev-server-agent-service.interface.js';
 import type { IFileSystemService } from '../../ports/output/services/file-system-service.interface.js';
@@ -44,7 +45,7 @@ export class StartRepositoryDeploymentUseCase {
     const result = await this.devServerAgent.startDevServer(
       repositoryPath,
       repositoryPath,
-      'repository'
+      DeploymentTargetType.Repository
     );
 
     return { state: result.state, url: null };

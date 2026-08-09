@@ -29,11 +29,11 @@ import type { DevServerAgentGraphDeps } from '@/infrastructure/services/agents/d
 import type { IDeploymentService } from '@/application/ports/output/services/deployment-service.interface.js';
 import type { IDevServerRunPlanRepository } from '@/application/ports/output/repositories/dev-server-run-plan-repository.interface.js';
 import type { IAgentExecutor } from '@/application/ports/output/agents/agent-executor.interface.js';
-import { DeploymentState, RunPlanSource } from '@/domain/generated/output.js';
+import { DeploymentState, RunPlanSource, DeploymentTargetType } from '@/domain/generated/output.js';
 
 const TARGET_ID = 'feat-1';
 const TARGET_PATH = '/repos/acme';
-const TARGET_TYPE = 'feature';
+const TARGET_TYPE = DeploymentTargetType.Feature;
 
 const SUCCESS_OUTCOME: DevServerAgentGraphOutcome = {
   resultUrl: 'http://localhost:3000',

@@ -16,6 +16,7 @@
  */
 
 import { injectable, inject } from 'tsyringe';
+import { DeploymentTargetType } from '../../../domain/generated/output.js';
 import type { IFeatureRepository } from '../../ports/output/repositories/feature-repository.interface.js';
 import type { DeploymentStatus } from '../../ports/output/services/deployment-service.interface.js';
 import type { IDevServerAgentService } from '../../ports/output/services/dev-server-agent-service.interface.js';
@@ -57,7 +58,11 @@ export class StartFeatureDeploymentUseCase {
       throw new Error(`Worktree path does not exist: ${worktreePath}`);
     }
 
-    const result = await this.devServerAgent.startDevServer(featureId, worktreePath, 'feature');
+    const result = await this.devServerAgent.startDevServer(
+      featureId,
+      worktreePath,
+      DeploymentTargetType.Feature
+    );
 
     return { state: result.state, url: null };
   }

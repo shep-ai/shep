@@ -26,6 +26,7 @@
 
 import { inject, injectable } from 'tsyringe';
 
+import { DeploymentTargetType } from '../../../domain/generated/output.js';
 import type { IApplicationRepository } from '../../ports/output/repositories/application-repository.interface.js';
 import type { IDevServerAgentService } from '../../ports/output/services/dev-server-agent-service.interface.js';
 import type { IFileSystemService } from '../../ports/output/services/file-system-service.interface.js';
@@ -113,7 +114,7 @@ export class StartApplicationDeploymentUseCase {
     const result = await this.devServerAgent.startDevServer(
       applicationId,
       repositoryPath,
-      'application'
+      DeploymentTargetType.Application
     );
 
     this.logger.info('[StartApplicationDeploymentUseCase] dev-server agent run accepted', {

@@ -10,7 +10,11 @@
 
 import 'reflect-metadata';
 import { describe, it, expect, vi } from 'vitest';
-import { RunPlanSource, type DevServerRunPlan } from '@/domain/generated/output.js';
+import {
+  RunPlanSource,
+  type DevServerRunPlan,
+  DeploymentTargetType,
+} from '@/domain/generated/output.js';
 import type { IAgentExecutor } from '@/application/ports/output/agents/agent-executor.interface.js';
 import type { DevServerAgentState } from '@/infrastructure/services/agents/dev-server-agent/state.js';
 import {
@@ -38,7 +42,7 @@ function makePlan(overrides: Partial<DevServerRunPlan> = {}): DevServerRunPlan {
 function makeState(overrides: Partial<DevServerAgentState> = {}): DevServerAgentState {
   return {
     targetId: 'app-1',
-    targetType: 'application',
+    targetType: DeploymentTargetType.Application,
     targetPath: '/repo',
     runPlan: makePlan(),
     infraReady: true,
