@@ -90,6 +90,7 @@ export type OverrideDevServerRunPlanResult =
 @injectable()
 export class OverrideDevServerRunPlanUseCase {
   constructor(
+    @inject('DeploymentTargetResolver')
     private readonly targetResolver: DeploymentTargetResolver,
     @inject('IDevServerRunPlanRepository')
     private readonly runPlanRepository: IDevServerRunPlanRepository,

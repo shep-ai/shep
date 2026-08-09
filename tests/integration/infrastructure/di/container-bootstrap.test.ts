@@ -80,6 +80,11 @@ import { MessageDispatcher } from '@/infrastructure/services/interactive/api/mes
 import { ChatStateAssembler } from '@/infrastructure/services/interactive/api/chat-state.assembler.js';
 import { WorkflowHooks } from '@/infrastructure/services/interactive/api/workflow-hooks.js';
 import type { ILogger } from '@/application/ports/output/services/logger.interface.js';
+import { DeploymentTargetResolver } from '@/application/services/deployment-target-resolver.js';
+import { GetDevServerRunPlanUseCase } from '@/application/use-cases/deployments/get-dev-server-run-plan.use-case.js';
+import { OverrideDevServerRunPlanUseCase } from '@/application/use-cases/deployments/override-dev-server-run-plan.use-case.js';
+import { InvalidateDevServerRunPlanUseCase } from '@/application/use-cases/deployments/invalidate-dev-server-run-plan.use-case.js';
+import type { IRunPlanStalenessProbe } from '@/application/ports/output/services/run-plan-staleness-probe.interface.js';
 
 /**
  * String tokens resolved by web API routes. To regenerate, grep
@@ -201,7 +206,27 @@ const CRITICAL_INFRA_TOKENS: readonly string[] = [
   // repository — both must resolve or every dev-server start breaks.
   'IDevServerRunPlanRepository',
   'IDevServerAgentService',
+  // Run-plan visibility/override (spec 108): the probe is the only boundary
+  // through which the application layer can reach computeConfigHash and the
+  // `.shep/dev.json` reader, so its absence breaks every run-plan use case.
+  'IRunPlanStalenessProbe',
 ] as const;
+
+/**
+ * Run-plan bindings (spec 108), each registered twice — as a class for CLI and
+ * worker `resolve(ClassRef)` calls, and under a string token because Turbopack
+ * cannot resolve `.js`→`.ts` imports inside `@shepai/core`, so web routes and
+ * server actions can only address them by name.
+ */
+const RUN_PLAN_BINDINGS: readonly {
+  token: string;
+  ClassRef: new (...args: any[]) => object;
+}[] = [
+  { token: 'DeploymentTargetResolver', ClassRef: DeploymentTargetResolver },
+  { token: 'GetDevServerRunPlanUseCase', ClassRef: GetDevServerRunPlanUseCase },
+  { token: 'OverrideDevServerRunPlanUseCase', ClassRef: OverrideDevServerRunPlanUseCase },
+  { token: 'InvalidateDevServerRunPlanUseCase', ClassRef: InvalidateDevServerRunPlanUseCase },
+];
 
 /**
  * Use-case/service classes that the feature-agent worker eagerly resolves by
@@ -433,6 +458,43 @@ describe('DI container bootstrap (integration)', () => {
         expect(instance).not.toBeNull();
       });
     }
+  });
+
+  describe('dev-server run-plan bindings resolve by class AND by token', () => {
+    for (const { token, ClassRef } of RUN_PLAN_BINDINGS) {
+      it(`resolves '${token}' both ways`, () => {
+        const byClass = scopedContainer.resolve(ClassRef);
+        const byToken = scopedContainer.resolve(token);
+
+        expect(byClass).toBeInstanceOf(ClassRef);
+        expect(byToken).toBeInstanceOf(ClassRef);
+      });
+    }
+
+    it('resolves the staleness probe port to a working implementation', () => {
+      const probe = scopedContainer.resolve<IRunPlanStalenessProbe>('IRunPlanStalenessProbe');
+
+      expect(typeof probe.currentConfigHash(process.cwd())).toBe('string');
+      expect(typeof probe.hasRepoDevConfig(process.cwd())).toBe('boolean');
+    });
+
+    it('constructs without an agent configured — no structured caller registered', () => {
+      // A container holding only persistence, services, tools and the
+      // deployment module — notably NOT registerAgents, so nothing here
+      // registers IStructuredAgentCaller. That is the degraded-mode shape the
+      // run-plan surfaces must survive.
+      const degraded = rootContainer.createChildContainer();
+      degraded.registerInstance<Database.Database>('Database', db);
+      registerRepositories(degraded);
+      registerServices(degraded);
+      registerTools(degraded);
+      registerDeployment(degraded);
+
+      expect(() => degraded.resolve('IStructuredAgentCaller')).toThrow();
+      for (const { ClassRef } of RUN_PLAN_BINDINGS) {
+        expect(degraded.resolve(ClassRef)).toBeInstanceOf(ClassRef);
+      }
+    });
   });
 
   interface RegistryShape {

@@ -59,6 +59,7 @@ export type InvalidateDevServerRunPlanResult =
 @injectable()
 export class InvalidateDevServerRunPlanUseCase {
   constructor(
+    @inject('DeploymentTargetResolver')
     private readonly targetResolver: DeploymentTargetResolver,
     @inject('IDevServerRunPlanRepository')
     private readonly runPlanRepository: IDevServerRunPlanRepository,
