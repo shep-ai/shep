@@ -6,7 +6,10 @@
  * this suite never touches the filesystem or spawns a process except the two
  * real-spawn smoke tests for `execSetupCommandDefault`.
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
 import {
   RunPlanSource,
   type DevServerRunPlan,
@@ -18,6 +21,7 @@ import {
   execSetupCommandDefault,
   type InstallDepsNodeDeps,
 } from '@/infrastructure/services/agents/dev-server-agent/nodes/install-deps.node.js';
+import { computeInstallHash } from '@/infrastructure/services/deployment/config-hash.js';
 
 function makePlan(overrides: Partial<DevServerRunPlan> = {}): DevServerRunPlan {
   const now = new Date();
@@ -342,6 +346,124 @@ describe('createInstallDepsNode', () => {
       expect(result.capturedLogs!.length).toBeGreaterThan(0);
     });
   });
+});
+
+/**
+ * Non-Node plans against the REAL `computeInstallHash` and REAL fixture
+ * directories — the mocked-hash suite above cannot catch the failure mode
+ * that actually matters here: `computeInstallHash` used to return '' for any
+ * repo without a Node lockfile, and `isFresh` short-circuits an empty hash to
+ * false, so a Go/Rust/Python plan stamped a hash that could never match and
+ * re-ran its full setupCommands list on EVERY start (FR-9).
+ */
+describe('createInstallDepsNode — non-Node plans (no packageManager)', () => {
+  const ECOSYSTEMS = [
+    { name: 'Go', lockfile: 'go.sum', setup: 'go mod download' },
+    { name: 'Rust', lockfile: 'Cargo.lock', setup: 'cargo fetch' },
+    { name: 'Python', lockfile: 'poetry.lock', setup: 'poetry install' },
+  ] as const;
+
+  const fixtures: string[] = [];
+
+  afterEach(() => {
+    while (fixtures.length > 0) {
+      rmSync(fixtures.pop()!, { recursive: true, force: true });
+    }
+  });
+
+  /** A fixture dir holding just the ecosystem's lockfile. */
+  function makeFixture(lockfile: string, contents: string): string {
+    const dir = mkdtempSync(join(tmpdir(), 'shep-install-deps-'));
+    fixtures.push(dir);
+    writeFileSync(join(dir, lockfile), contents);
+    return dir;
+  }
+
+  /** install_deps wired to the real hash function and a recording stamp. */
+  function makeRealHashDeps(setupCommand: string) {
+    const execSetupCommand = vi.fn().mockResolvedValue({ success: true, tail: [] });
+    const stampInstallHash = vi.fn().mockResolvedValue(undefined);
+    const deps = makeDeps({
+      computeInstallHash,
+      // No node_modules is ever created — a non-Node plan must not be gated
+      // on one, and pathExists would report false for it.
+      pathExists: () => false,
+      execSetupCommand,
+      runPlanRepository: { stampInstallHash },
+    });
+    return { deps, execSetupCommand, stampInstallHash, setupCommand };
+  }
+
+  it.each(ECOSYSTEMS)(
+    '$name: runs every setup command and stamps a real hash with no packageManager',
+    async ({ lockfile, setup }) => {
+      const dir = makeFixture(lockfile, 'lock-v1');
+      const { deps, execSetupCommand, stampInstallHash } = makeRealHashDeps(setup);
+      const plan = makePlan({
+        repoPath: dir,
+        cwd: dir,
+        packageManager: undefined,
+        setupCommands: [setup, 'echo done'],
+      });
+
+      const result = await createInstallDepsNode(deps)(
+        makeState({ targetPath: dir, runPlan: plan })
+      );
+
+      expect(result.depsInstalled).toBe(true);
+      expect(deps.installer.install).not.toHaveBeenCalled();
+      expect(execSetupCommand).toHaveBeenCalledTimes(2);
+      expect(stampInstallHash).toHaveBeenCalledWith(dir, computeInstallHash(dir));
+      expect(computeInstallHash(dir)).not.toBe('');
+    }
+  );
+
+  it.each(ECOSYSTEMS)(
+    '$name: a second start with an unchanged lockfile skips the setup commands',
+    async ({ lockfile, setup }) => {
+      const dir = makeFixture(lockfile, 'lock-v1');
+      const { deps, execSetupCommand } = makeRealHashDeps(setup);
+      const plan = makePlan({
+        repoPath: dir,
+        cwd: dir,
+        packageManager: undefined,
+        setupCommands: [setup],
+        installStampHash: computeInstallHash(dir),
+      });
+
+      const result = await createInstallDepsNode(deps)(
+        makeState({ targetPath: dir, runPlan: plan })
+      );
+
+      expect(result.depsInstalled).toBe(true);
+      expect(execSetupCommand).not.toHaveBeenCalled();
+      expect(deps.reportInstalling).not.toHaveBeenCalled();
+    }
+  );
+
+  it.each(ECOSYSTEMS)(
+    '$name: changing the lockfile re-runs the setup commands',
+    async ({ lockfile, setup }) => {
+      const dir = makeFixture(lockfile, 'lock-v1');
+      const stampedBefore = computeInstallHash(dir);
+      writeFileSync(join(dir, lockfile), 'lock-v2');
+
+      const { deps, execSetupCommand, stampInstallHash } = makeRealHashDeps(setup);
+      const plan = makePlan({
+        repoPath: dir,
+        cwd: dir,
+        packageManager: undefined,
+        setupCommands: [setup],
+        installStampHash: stampedBefore,
+      });
+
+      await createInstallDepsNode(deps)(makeState({ targetPath: dir, runPlan: plan }));
+
+      expect(execSetupCommand).toHaveBeenCalledTimes(1);
+      expect(stampInstallHash).toHaveBeenCalledWith(dir, computeInstallHash(dir));
+      expect(computeInstallHash(dir)).not.toBe(stampedBefore);
+    }
+  );
 });
 
 describe('execSetupCommandDefault', () => {
