@@ -925,5 +925,53 @@
     "deleteAdoptedNote": "The feature adopted from this session will not be deleted.",
     "cancel": "Cancel",
     "archivedHidden": "{{count}} archived hidden"
+  },
+  "runPlan": {
+    "title": "Run plan",
+    "description": "What runs when you start the dev server",
+    "show": "Show run plan",
+    "hide": "Hide run plan",
+    "loading": "Loading run plan…",
+    "empty": "No run plan yet — start the dev server once and the resolved plan will appear here.",
+    "fields": {
+      "command": "Command",
+      "cwd": "Working directory",
+      "language": "Language",
+      "framework": "Framework",
+      "expectedPort": "Expected port",
+      "packageManager": "Package manager",
+      "setupCommands": "Setup commands"
+    },
+    "source": {
+      "label": "Source",
+      "deterministic": "Detected",
+      "agent": "AI-analyzed",
+      "manual": "Pinned"
+    },
+    "staleHint": "The repository's config files have changed since this plan was produced. Re-analyze to pick up the change, or keep it as is.",
+    "repoConfigControlled": "A committed .shep/dev.json controls this repository. It is re-read on every start and outranks any stored plan — edit that file to change what runs.",
+    "actions": {
+      "edit": "Edit",
+      "reanalyze": "Re-analyze",
+      "reanalyzing": "Re-analyzing…",
+      "save": "Save",
+      "saving": "Saving…",
+      "cancel": "Cancel"
+    },
+    "editor": {
+      "title": "Edit run plan",
+      "executionNotice": "This command will be executed on your machine.",
+      "commandPlaceholder": "pnpm dev",
+      "cwdPlaceholder": "Repository root",
+      "cwdHelp": "Absolute, or relative to the repository root.",
+      "expectedPortPlaceholder": "Detected automatically",
+      "setupCommandsLabel": "Setup commands",
+      "setupCommandsHelp": "One command per line, run before the dev server starts."
+    },
+    "errors": {
+      "loadFailed": "Could not load the run plan.",
+      "saveFailed": "Could not save the run plan.",
+      "reanalyzeFailed": "Could not clear the run plan."
+    }
   }
 }
