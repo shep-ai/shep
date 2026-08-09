@@ -19,10 +19,37 @@
  * (NFR-8).
  */
 
-import { readFileSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
+import { join } from 'node:path';
 import { MAX_MANIFEST_BYTES } from '../registry.js';
 
 export { MAX_MANIFEST_BYTES };
+
+/**
+ * Find the first of several candidate manifest names that exists in a
+ * directory.
+ *
+ * This is the explicit `existsSync` gate every non-Node detector opens with.
+ * It matters for correctness as well as cost: a detector that reads without
+ * confirming its OWN manifest is present can be handed some other file's
+ * bytes and mistake them for its own.
+ *
+ * @param dirPath - Directory to look in.
+ * @param names - Candidate filenames, in preference order. Segments may use
+ *                `/` (e.g. `bin/rails`); they are joined per-platform.
+ * @returns Absolute path to the first candidate present, or `null`.
+ */
+export function findManifest(dirPath: string, names: readonly string[]): string | null {
+  for (const name of names) {
+    const candidate = join(dirPath, ...name.split('/'));
+    try {
+      if (existsSync(candidate)) return candidate;
+    } catch {
+      // An unreadable parent directory is a fall-through, never a throw.
+    }
+  }
+  return null;
+}
 
 /**
  * Read a manifest file as UTF-8, or return `null` for any reason it cannot
