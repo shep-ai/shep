@@ -1,5 +1,5 @@
 /**
- * Shared result vocabulary for the three dev-server run-plan use cases.
+ * Shared result mapping for the three dev-server run-plan use cases.
  *
  * Reading, overriding and invalidating a run plan all start the same way —
  * resolve a `{ targetType, targetId }` to a repository path — and all fail the
@@ -7,56 +7,35 @@
  * keeps the three use cases from drifting and gives every presentation layer
  * ONE status vocabulary to branch on.
  *
+ * The vocabulary itself lives in `dev-server-run-plan-vocabulary.ts` — a leaf
+ * module with no tsyringe in its import graph, so client components can import
+ * the enums as values. Everything there is re-exported here, so importers of
+ * this module see no difference.
+ *
  * `DevServerRunPlanView` is the ready-to-render projection of a persisted plan.
  * Note `isStale` lives on it: staleness is derived here, in the application
  * layer, so the CLI and the web disclosure agree by construction and neither
  * has to know what a `configHash` is (FR-13).
  */
 
-import type { DevServerRunPlan, RunPlanSource } from '../../../domain/generated/output.js';
+import type { DevServerRunPlan } from '../../../domain/generated/output.js';
 import {
   DeploymentTargetResolutionStatus,
   type DeploymentTargetResolution,
   type ResolvedDeploymentTarget,
 } from '../../services/deployment-target-resolver.js';
+import {
+  DevServerRunPlanStatus,
+  type DevServerRunPlanView,
+} from './dev-server-run-plan-vocabulary.js';
 
-/** Outcome vocabulary shared by all three run-plan use cases. */
-export enum DevServerRunPlanStatus {
-  /** The operation completed. */
-  Ok = 'ok',
-  /** The target resolved, but no plan is cached for it. */
-  NoPlan = 'no-plan',
-  /** A committed `.shep/dev.json` outranks anything that could be written. */
-  RepoConfigControlled = 'repo-config-controlled',
-  /** The supplied override failed validation; nothing was written. */
-  ValidationFailed = 'validation-failed',
-  /** No such deployment target. */
-  TargetNotFound = 'target-not-found',
-  /** The target exists but its directory is gone from disk. */
-  TargetPathMissing = 'target-path-missing',
-  /** Several equally-specific targets matched. */
-  TargetAmbiguous = 'target-ambiguous',
-}
-
-/** A persisted run plan in ready-to-render form. */
-export interface DevServerRunPlanView {
-  /** Directory the plan is keyed by and spawns relative to. */
-  repoPath: string;
-  command: string;
-  cwd: string;
-  source: RunPlanSource;
-  packageManager?: string;
-  expectedPort?: number;
-  language?: string;
-  framework?: string;
-  setupCommands: string[];
-  /**
-   * The repository's config files have changed since the plan was produced.
-   * Reported, never acted on: a pinned plan that could be overruled by a
-   * heuristic would not be a pin (FR-15).
-   */
-  isStale: boolean;
-}
+export {
+  DevServerRunPlanStatus,
+  RunPlanOverrideField,
+  REPO_CONFIG_CONTROLLED_NOTICE,
+  type DevServerRunPlanView,
+  type RunPlanOverrideValidationError,
+} from './dev-server-run-plan-vocabulary.js';
 
 /** Failure shapes every run-plan use case can return. */
 export type DevServerRunPlanTargetFailure =
@@ -111,12 +90,3 @@ export function toRunPlanView(plan: DevServerRunPlan, isStale: boolean): DevServ
     ...(plan.framework === undefined ? {} : { framework: plan.framework }),
   };
 }
-
-/**
- * Explanation attached to any successful operation on a repository whose
- * `.shep/dev.json` is in charge — so a surface can say why a database plan is
- * not the last word without re-deriving the rule.
- */
-export const REPO_CONFIG_CONTROLLED_NOTICE =
-  'A committed .shep/dev.json controls this repository — it is re-read on every ' +
-  'start and outranks any stored plan. Edit that file to change what runs.';

@@ -45,23 +45,18 @@ import {
 import {
   DevServerRunPlanStatus,
   REPO_CONFIG_CONTROLLED_NOTICE,
+  RunPlanOverrideField,
   toRunPlanView,
   toTargetFailure,
   type DevServerRunPlanTargetFailure,
   type DevServerRunPlanView,
+  type RunPlanOverrideValidationError,
 } from './dev-server-run-plan-results.js';
 
-/** Fields an override can be rejected on. */
-export enum RunPlanOverrideField {
-  Command = 'command',
-  Cwd = 'cwd',
-  ExpectedPort = 'expectedPort',
-}
-
-export interface RunPlanOverrideValidationError {
-  field: RunPlanOverrideField;
-  message: string;
-}
+export {
+  RunPlanOverrideField,
+  type RunPlanOverrideValidationError,
+} from './dev-server-run-plan-vocabulary.js';
 
 /**
  * Every optional field follows the same three-way convention:
