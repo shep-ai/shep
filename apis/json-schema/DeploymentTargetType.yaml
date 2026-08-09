@@ -1,0 +1,8 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: DeploymentTargetType.yaml
+type: string
+enum:
+  - application
+  - feature
+  - repository
+description: Kinds of entity a local dev-server deployment can target

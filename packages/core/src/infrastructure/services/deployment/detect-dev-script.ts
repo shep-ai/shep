@@ -9,6 +9,7 @@
 import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { createDeploymentLogger } from './deployment-logger.js';
+import { isSkippedDir } from './detectors/registry.js';
 
 /** Script names to search for, in priority order */
 const SCRIPT_PRIORITY = ['dev', 'start', 'serve'] as const;
@@ -121,8 +122,6 @@ function detectDevScriptInDir(dirPath: string): DetectDevScriptResult {
  * Skips hidden dirs, node_modules, and common non-project directories.
  */
 function scanSubdirectories(dirPath: string): DetectDevScriptSuccess | null {
-  const SKIP_DIRS = new Set(['node_modules', '.git', '.next', 'dist', 'build', 'out', '.cache']);
-
   let entries: string[];
   try {
     entries = readdirSync(dirPath);
@@ -131,7 +130,7 @@ function scanSubdirectories(dirPath: string): DetectDevScriptSuccess | null {
   }
 
   for (const entry of entries) {
-    if (entry.startsWith('.') || SKIP_DIRS.has(entry)) continue;
+    if (isSkippedDir(entry)) continue;
 
     const subPath = join(dirPath, entry);
     try {
