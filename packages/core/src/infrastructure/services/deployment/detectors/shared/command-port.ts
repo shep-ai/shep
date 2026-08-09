@@ -19,11 +19,12 @@
  * `ports:` mapping. Never a scan of source files or `.env`.
  */
 
-/** Lowest port a server can be asked to listen on. */
-export const PORT_MIN = 1;
+import { PORT_MAX, PORT_MIN } from '@/domain/shared/port-range.js';
 
-/** Highest port a server can be asked to listen on. */
-export const PORT_MAX = 65535;
+// Re-exported so the detectors keep importing their port bounds from one
+// neighbouring module; the values themselves live in domain/shared because
+// the application layer needs them too and cannot import infrastructure.
+export { PORT_MAX, PORT_MIN };
 
 /**
  * Flags that introduce a port value, matched as WHOLE tokens.
