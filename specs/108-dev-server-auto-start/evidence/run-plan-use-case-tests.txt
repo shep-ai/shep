@@ -1,0 +1,57 @@
+
+ RUN  v4.0.18 /Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start
+
+ ✓  node  tests/unit/application/use-cases/deployments/invalidate-dev-server-run-plan.use-case.test.ts > InvalidateDevServerRunPlanUseCase > clears a Deterministic plan 2ms
+ ✓  node  tests/unit/application/use-cases/deployments/invalidate-dev-server-run-plan.use-case.test.ts > InvalidateDevServerRunPlanUseCase > clears a Agent plan 0ms
+ ✓  node  tests/unit/application/use-cases/deployments/invalidate-dev-server-run-plan.use-case.test.ts > InvalidateDevServerRunPlanUseCase > clears a Manual plan 0ms
+ ✓  node  tests/unit/application/use-cases/deployments/invalidate-dev-server-run-plan.use-case.test.ts > InvalidateDevServerRunPlanUseCase > returns a typed no-op result when no plan exists rather than throwing 0ms
+ ✓  node  tests/unit/application/use-cases/deployments/invalidate-dev-server-run-plan.use-case.test.ts > InvalidateDevServerRunPlanUseCase > never depends on an agent being configured — nothing but the repository is touched 0ms
+ ✓  node  tests/unit/application/use-cases/deployments/invalidate-dev-server-run-plan.use-case.test.ts > InvalidateDevServerRunPlanUseCase > leaves a committed .shep/dev.json in place and explains that it still controls the repo 0ms
+ ✓  node  tests/unit/application/use-cases/deployments/invalidate-dev-server-run-plan.use-case.test.ts > InvalidateDevServerRunPlanUseCase > returns a typed target-not-found result without deleting anything 0ms
+ ✓  node  tests/unit/application/use-cases/deployments/get-dev-server-run-plan.use-case.test.ts > GetDevServerRunPlanUseCase > returns the fully populated plan for an application target 2ms
+ ✓  node  tests/unit/application/use-cases/deployments/get-dev-server-run-plan.use-case.test.ts > GetDevServerRunPlanUseCase > resolves a feature target through the shared resolver 0ms
+ ✓  node  tests/unit/application/use-cases/deployments/get-dev-server-run-plan.use-case.test.ts > GetDevServerRunPlanUseCase > resolves a repository target through the shared resolver 0ms
+ ✓  node  tests/unit/application/use-cases/deployments/get-dev-server-run-plan.use-case.test.ts > GetDevServerRunPlanUseCase > returns an explicit no-plan result rather than throwing when nothing is cached 0ms
+ ✓  node  tests/unit/application/use-cases/deployments/get-dev-server-run-plan.use-case.test.ts > GetDevServerRunPlanUseCase > marks the plan stale when the stored configHash differs from the current one 0ms
+ ✓  node  tests/unit/application/use-cases/deployments/get-dev-server-run-plan.use-case.test.ts > GetDevServerRunPlanUseCase > keeps a pinned Manual plan and reports its staleness rather than replacing it 0ms
+ ✓  node  tests/unit/application/use-cases/deployments/get-dev-server-run-plan.use-case.test.ts > GetDevServerRunPlanUseCase > reports repoConfigControlled when a valid .shep/dev.json exists for the target 0ms
+ ✓  node  tests/unit/application/use-cases/deployments/get-dev-server-run-plan.use-case.test.ts > GetDevServerRunPlanUseCase > omits optional fields the plan does not carry 0ms
+ ✓  node  tests/unit/application/use-cases/deployments/get-dev-server-run-plan.use-case.test.ts > GetDevServerRunPlanUseCase > returns a typed target-not-found result for an unknown target 0ms
+ ✓  node  tests/unit/application/use-cases/deployments/get-dev-server-run-plan.use-case.test.ts > GetDevServerRunPlanUseCase > returns a typed path-missing result when the target directory is gone 0ms
+ ✓  node  tests/unit/application/use-cases/deployments/override-dev-server-run-plan.use-case.test.ts > OverrideDevServerRunPlanUseCase > persists the override as a Manual plan with the exact command and cwd 2ms
+ ✓  node  tests/unit/application/use-cases/deployments/override-dev-server-run-plan.use-case.test.ts > OverrideDevServerRunPlanUseCase > resolves a repo-relative cwd against the repository root 0ms
+ ✓  node  tests/unit/application/use-cases/deployments/override-dev-server-run-plan.use-case.test.ts > OverrideDevServerRunPlanUseCase > seeds unspecified fields from the currently resolved plan 0ms
+ ✓  node  tests/unit/application/use-cases/deployments/override-dev-server-run-plan.use-case.test.ts > OverrideDevServerRunPlanUseCase > clears a seeded field when null is supplied explicitly 0ms
+ ✓  node  tests/unit/application/use-cases/deployments/override-dev-server-run-plan.use-case.test.ts > OverrideDevServerRunPlanUseCase > defaults cwd to the repository root when no plan exists to seed from 0ms
+ ✓  node  tests/unit/application/use-cases/deployments/override-dev-server-run-plan.use-case.test.ts > OverrideDevServerRunPlanUseCase > validation > rejects an empty command 1ms
+ ✓  node  tests/unit/application/use-cases/deployments/override-dev-server-run-plan.use-case.test.ts > OverrideDevServerRunPlanUseCase > validation > rejects a whitespace-only command 0ms
+ ✓  node  tests/unit/application/use-cases/deployments/override-dev-server-run-plan.use-case.test.ts > OverrideDevServerRunPlanUseCase > validation > trims the persisted command 0ms
+ ✓  node  tests/unit/application/use-cases/deployments/override-dev-server-run-plan.use-case.test.ts > OverrideDevServerRunPlanUseCase > validation > rejects a cwd outside the repository subtree 1ms
+ ✓  node  tests/unit/application/use-cases/deployments/override-dev-server-run-plan.use-case.test.ts > OverrideDevServerRunPlanUseCase > validation > rejects a sibling directory that merely shares the repository prefix 0ms
+ ✓  node  tests/unit/application/use-cases/deployments/override-dev-server-run-plan.use-case.test.ts > OverrideDevServerRunPlanUseCase > validation > rejects a cwd that escapes the repository via .. 0ms
+ ✓  node  tests/unit/application/use-cases/deployments/override-dev-server-run-plan.use-case.test.ts > OverrideDevServerRunPlanUseCase > validation > rejects a cwd that does not exist 0ms
+ ✓  node  tests/unit/application/use-cases/deployments/override-dev-server-run-plan.use-case.test.ts > OverrideDevServerRunPlanUseCase > validation > rejects expectedPort 0 0ms
+ ✓  node  tests/unit/application/use-cases/deployments/override-dev-server-run-plan.use-case.test.ts > OverrideDevServerRunPlanUseCase > validation > rejects expectedPort 65536 0ms
+ ✓  node  tests/unit/application/use-cases/deployments/override-dev-server-run-plan.use-case.test.ts > OverrideDevServerRunPlanUseCase > validation > rejects expectedPort -1 0ms
+ ✓  node  tests/unit/application/use-cases/deployments/override-dev-server-run-plan.use-case.test.ts > OverrideDevServerRunPlanUseCase > validation > rejects expectedPort 3000.5 0ms
+ ✓  node  tests/unit/application/use-cases/deployments/override-dev-server-run-plan.use-case.test.ts > OverrideDevServerRunPlanUseCase > validation > rejects expectedPort NaN 0ms
+ ✓  node  tests/unit/application/use-cases/deployments/override-dev-server-run-plan.use-case.test.ts > OverrideDevServerRunPlanUseCase > validation > accepts an omitted expectedPort 0ms
+ ✓  node  tests/unit/application/use-cases/deployments/override-dev-server-run-plan.use-case.test.ts > OverrideDevServerRunPlanUseCase > validation > accepts expectedPort 1 0ms
+ ✓  node  tests/unit/application/use-cases/deployments/override-dev-server-run-plan.use-case.test.ts > OverrideDevServerRunPlanUseCase > validation > accepts expectedPort 65535 0ms
+ ✓  node  tests/unit/application/use-cases/deployments/override-dev-server-run-plan.use-case.test.ts > OverrideDevServerRunPlanUseCase > validation > accepts expectedPort 8080 0ms
+ ✓  node  tests/unit/application/use-cases/deployments/override-dev-server-run-plan.use-case.test.ts > OverrideDevServerRunPlanUseCase > refuses to write when a committed .shep/dev.json controls the repository 0ms
+ ✓  node  tests/unit/application/use-cases/deployments/override-dev-server-run-plan.use-case.test.ts > OverrideDevServerRunPlanUseCase > returns a typed target-not-found result without writing anything 0ms
+ ✓  web  tests/unit/presentation/web/actions/dev-server-run-plan-actions.test.ts > dev-server run-plan server actions > getDevServerRunPlan > resolves the use case by token and passes the target ref through 1ms
+ ✓  web  tests/unit/presentation/web/actions/dev-server-run-plan-actions.test.ts > dev-server run-plan server actions > getDevServerRunPlan > returns the resolved plan unchanged in shape 0ms
+ ✓  web  tests/unit/presentation/web/actions/dev-server-run-plan-actions.test.ts > dev-server run-plan server actions > getDevServerRunPlan > passes a target failure through as a typed result rather than throwing 0ms
+ ✓  web  tests/unit/presentation/web/actions/dev-server-run-plan-actions.test.ts > dev-server run-plan server actions > overrideDevServerRunPlan > resolves the use case by token and passes the whole input through 0ms
+ ✓  web  tests/unit/presentation/web/actions/dev-server-run-plan-actions.test.ts > dev-server run-plan server actions > overrideDevServerRunPlan > surfaces validation errors as a typed result, not an exception 0ms
+ ✓  web  tests/unit/presentation/web/actions/dev-server-run-plan-actions.test.ts > dev-server run-plan server actions > overrideDevServerRunPlan > surfaces the repo-config conflict as a typed result, not an exception 0ms
+ ✓  web  tests/unit/presentation/web/actions/dev-server-run-plan-actions.test.ts > dev-server run-plan server actions > invalidateDevServerRunPlan > resolves the use case by token and passes the target ref through 0ms
+ ✓  web  tests/unit/presentation/web/actions/dev-server-run-plan-actions.test.ts > dev-server run-plan server actions > invalidateDevServerRunPlan > passes the "nothing was cached" result through unchanged 0ms
+
+ Test Files  4 passed (4)
+      Tests  48 passed (48)
+   Start at  16:25:59
+   Duration  301ms (transform 269ms, setup 285ms, import 237ms, tests 20ms, environment 0ms)
+

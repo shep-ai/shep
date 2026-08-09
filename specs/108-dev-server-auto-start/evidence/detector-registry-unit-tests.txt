@@ -1,0 +1,500 @@
+
+ RUN  v4.0.18 /Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start
+
+ ✓  node  tests/unit/infrastructure/services/deployment/config-hash.test.ts > CONFIG_FILES > contains exactly the expected filenames, in the documented order 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/config-hash.test.ts > CONFIG_FILES > covers every manifest the detector registry can key off 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/config-hash.test.ts > LOCKFILES > lists Node lockfiles FIRST, then the per-ecosystem install signals 0ms
+ ✓  node  tests/unit/infrastructure/services/deployment/config-hash.test.ts > LOCKFILES > keeps the Node lockfiles at the head, in their original order 0ms
+ ✓  node  tests/unit/infrastructure/services/deployment/config-hash.test.ts > computeConfigHash > returns the sha256 of empty input for a directory with no config files 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/config-hash.test.ts > computeConfigHash > is deterministic across repeated calls for the same content 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/config-hash.test.ts > computeConfigHash > changes when any tracked config file content changes 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/config-hash.test.ts > computeConfigHash > skips missing files without throwing and without affecting the hash 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/config-hash.test.ts > computeConfigHash > is independent of the order the files were created on disk (sorted filename order) 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/config-hash.test.ts > computeConfigHash > changes when a committed .shep/dev.json is added, edited, or deleted 2ms
+ ✓  node  tests/unit/infrastructure/services/deployment/config-hash.test.ts > computeConfigHash > hashes a Makefile exactly once regardless of filesystem case-sensitivity 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/config-hash.test.ts > computeConfigHash > is sensitive to which set of tracked files exists (not just their contents) 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/config-hash.test.ts > computeInstallHash > returns "" when neither a lockfile nor package.json exists 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/config-hash.test.ts > computeInstallHash > falls back to hashing package.json when no lockfile is present 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/config-hash.test.ts > computeInstallHash > prefers a lockfile over package.json when both exist 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/config-hash.test.ts > computeInstallHash > honors lockfile priority order (bun.lock before pnpm/yarn/npm) 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/config-hash.test.ts > computeInstallHash > changes when the winning lockfile content changes 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/config-hash.test.ts > computeInstallHash > non-Node ecosystems > returns a stable, non-empty hash for a repo with only uv.lock 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/config-hash.test.ts > computeInstallHash > non-Node ecosystems > returns a stable, non-empty hash for a repo with only poetry.lock 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/config-hash.test.ts > computeInstallHash > non-Node ecosystems > returns a stable, non-empty hash for a repo with only Pipfile.lock 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/config-hash.test.ts > computeInstallHash > non-Node ecosystems > returns a stable, non-empty hash for a repo with only requirements.txt 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/config-hash.test.ts > computeInstallHash > non-Node ecosystems > returns a stable, non-empty hash for a repo with only Cargo.lock 0ms
+ ✓  node  tests/unit/infrastructure/services/deployment/config-hash.test.ts > computeInstallHash > non-Node ecosystems > returns a stable, non-empty hash for a repo with only go.sum 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/config-hash.test.ts > computeInstallHash > non-Node ecosystems > returns a stable, non-empty hash for a repo with only Gemfile.lock 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/config-hash.test.ts > computeInstallHash > non-Node ecosystems > returns a stable, non-empty hash for a repo with only mix.lock 0ms
+ ✓  node  tests/unit/infrastructure/services/deployment/config-hash.test.ts > computeInstallHash > non-Node ecosystems > returns a stable, non-empty hash for a repo with only deno.lock 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/config-hash.test.ts > computeInstallHash > non-Node ecosystems > changes when uv.lock content changes 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/config-hash.test.ts > computeInstallHash > non-Node ecosystems > changes when poetry.lock content changes 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/config-hash.test.ts > computeInstallHash > non-Node ecosystems > changes when Pipfile.lock content changes 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/config-hash.test.ts > computeInstallHash > non-Node ecosystems > changes when requirements.txt content changes 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/config-hash.test.ts > computeInstallHash > non-Node ecosystems > changes when Cargo.lock content changes 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/config-hash.test.ts > computeInstallHash > non-Node ecosystems > changes when go.sum content changes 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/config-hash.test.ts > computeInstallHash > non-Node ecosystems > changes when Gemfile.lock content changes 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/config-hash.test.ts > computeInstallHash > non-Node ecosystems > changes when mix.lock content changes 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/config-hash.test.ts > computeInstallHash > non-Node ecosystems > changes when deno.lock content changes 2ms
+ ✓  node  tests/unit/infrastructure/services/deployment/config-hash.test.ts > computeInstallHash > non-Node ecosystems > still prefers a Node lockfile when both are present (no behaviour change for Node repos) 2ms
+ ✓  node  tests/unit/infrastructure/services/deployment/config-hash.test.ts > computeInstallHash > non-Node ecosystems > prefers a non-Node lockfile over the package.json fallback 2ms
+ ✓  node  tests/unit/infrastructure/services/deployment/dependency-installer.test.ts > DependencyInstaller > non-interactive arg matrix per package manager > uses npm-appropriate non-interactive args 3ms
+ ✓  node  tests/unit/infrastructure/services/deployment/dependency-installer.test.ts > DependencyInstaller > non-interactive arg matrix per package manager > uses pnpm-appropriate non-interactive args 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/dependency-installer.test.ts > DependencyInstaller > non-interactive arg matrix per package manager > uses yarn-appropriate non-interactive args 0ms
+ ✓  node  tests/unit/infrastructure/services/deployment/dependency-installer.test.ts > DependencyInstaller > non-interactive arg matrix per package manager > uses bun-appropriate non-interactive args 0ms
+ ✓  node  tests/unit/infrastructure/services/deployment/dependency-installer.test.ts > DependencyInstaller > non-interactive arg matrix per package manager > uses some-unknown-pm-appropriate non-interactive args 0ms
+ ✓  node  tests/unit/infrastructure/services/deployment/dependency-installer.test.ts > DependencyInstaller > applies windowsHide only on win32 0ms
+ ✓  node  tests/unit/infrastructure/services/deployment/dependency-installer.test.ts > DependencyInstaller > scrubs ANTHROPIC/PORT/NEXT_ASSET_PREFIX creds and sets CI=1 0ms
+ ✓  node  tests/unit/infrastructure/services/deployment/dependency-installer.test.ts > DependencyInstaller > streams stdout/stderr lines to onLogLine as they complete 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/dependency-installer.test.ts > DependencyInstaller > flushes a trailing partial line (no newline) on close 0ms
+ ✓  node  tests/unit/infrastructure/services/deployment/dependency-installer.test.ts > DependencyInstaller > resolves success:true with exitCode 0 on a clean close 0ms
+ ✓  node  tests/unit/infrastructure/services/deployment/dependency-installer.test.ts > DependencyInstaller > resolves success:false with the exit code on a non-zero close 0ms
+ ✓  node  tests/unit/infrastructure/services/deployment/dependency-installer.test.ts > DependencyInstaller > never rejects — a spawn "error" event resolves with failure instead 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/dependency-installer.test.ts > DependencyInstaller > caps the captured tail at the last 50 lines 0ms
+ ✓  node  tests/unit/infrastructure/services/deployment/dependency-installer.test.ts > DependencyInstaller > kills the child with SIGKILL and resolves failure on timeout 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/dependency-installer.test.ts > DependencyInstaller > does not fire the timeout after the process already closed 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/dependency-installer.test.ts > DependencyInstaller > defaults the timeout to 10 minutes when not provided 2ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/go.detector.test.ts > detectGo > resolves "go run ." for a root main package 2ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/go.detector.test.ts > detectGo > resolves the cmd/ layout to its package path 4ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/go.detector.test.ts > detectGo > leaves expectedPort unset — nothing explicit declares one 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/go.detector.test.ts > detectGo — fall-through > falls through when go.mod is absent 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/go.detector.test.ts > detectGo — fall-through > falls through for a library-only module rather than emitting an unrunnable command 2ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/go.detector.test.ts > detectGo — fall-through > ignores _test.go files when looking for a main package 2ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/go.detector.test.ts > detectGo — fall-through > never reads another ecosystem manifest when go.mod is absent 1ms
+stderr | tests/unit/infrastructure/services/deployment/detectors/node.detector.test.ts > detectNode — fall-through > reports the missing package.json path when there is none
+[detectNode] No package.json found in /var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-node-missing-MMczIV Error: ENOENT: no such file or directory, open '/var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-node-missing-MMczIV/package.json'
+    at readFileSync (node:fs:441:20)
+    at detectNode (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detectors/node.detector.ts:52:17)
+    at /Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/tests/unit/infrastructure/services/deployment/detectors/node.detector.test.ts:135:12
+    at file:///Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:145:11
+    at file:///Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:915:26
+    at file:///Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:1243:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:1209:10)
+    at file:///Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:1653:37
+    at Traces.$ (file:///Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/vitest@4.0.18_@opentelemetry+api@1.9.0_@types+node@25.2.0_jiti@2.6.1_jsdom@28.0.0_light_8f3982b4fe9dcf3a5594ea1a223af5d0/node_modules/vitest/dist/chunks/traces.CCmnQaNT.js:142:27) {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-node-missing-MMczIV/package.json'
+}
+
+stderr | tests/unit/infrastructure/services/deployment/detectors/node.detector.test.ts > detectNode — fall-through > reports the missing package.json path when the file is unparseable
+[detectNode] No package.json found in /var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-node-broken-sTHd8p SyntaxError: Expected property name or '}' in JSON at position 2 (line 1 column 3)
+    at JSON.parse (<anonymous>)
+    at detectNode (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detectors/node.detector.ts:53:24)
+    at /Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/tests/unit/infrastructure/services/deployment/detectors/node.detector.test.ts:144:12
+    at file:///Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:145:11
+    at file:///Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:915:26
+    at file:///Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:1243:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:1209:10)
+    at file:///Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:1653:37
+    at Traces.$ (file:///Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/vitest@4.0.18_@opentelemetry+api@1.9.0_@types+node@25.2.0_jiti@2.6.1_jsdom@28.0.0_light_8f3982b4fe9dcf3a5594ea1a223af5d0/node_modules/vitest/dist/chunks/traces.CCmnQaNT.js:142:27)
+
+stderr | tests/unit/infrastructure/services/deployment/detectors/node.detector.test.ts > detectNode — fall-through > reports the script list when no matching script exists
+[detectNode] No dev script found in package.json. Expected one of: dev, start, serve
+
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/rust.detector.test.ts > detectRust > resolves "cargo run" for a package manifest 2ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/rust.detector.test.ts > detectRust > resolves regardless of Cargo.toml contents beyond the [package] header 2ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/rust.detector.test.ts > detectRust — fall-through > falls through for a virtual workspace manifest 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/rust.detector.test.ts > detectRust — fall-through > falls through when Cargo.toml is absent 0ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/rust.detector.test.ts > detectRust — fall-through > falls through on malformed content without throwing 2ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/rust.detector.test.ts > detectRust — fall-through > does not treat a bracketed word inside a value as a table header 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/rust.detector.test.ts > detectRust — fall-through > never reads another ecosystem manifest when Cargo.toml is absent 4ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/make.detector.test.ts > detectMake — targets > resolves "make dev" for a dev target 2ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/make.detector.test.ts > detectMake — targets > honours the dev → start → serve → run priority 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/make.detector.test.ts > detectMake — targets > falls back through start, serve and run 3ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/make.detector.test.ts > detectMake — targets > matches a target declared with prerequisites 2ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/make.detector.test.ts > detectMake — targets > matches a target on a CRLF-terminated file 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/make.detector.test.ts > detectMake — targets > matches a .PHONY-declared target by its own rule, not the .PHONY line 2ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/make.detector.test.ts > detectMake — targets > finds makefile and GNUmakefile as well as Makefile 2ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/make.detector.test.ts > detectMake — fall-through > falls through when no Makefile exists 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/make.detector.test.ts > detectMake — fall-through > falls through when no matching target exists 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/make.detector.test.ts > detectMake — fall-through > does not match a target name appearing inside a recipe body 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/make.detector.test.ts > detectMake — fall-through > does not match a target name appearing mid-line 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/make.detector.test.ts > detectMake — fall-through > does not match a variable assignment 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/make.detector.test.ts > detectMake — fall-through > falls through on binary garbage without throwing 3ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/make.detector.test.ts > detectMake — fall-through > never reads another ecosystem manifest when no Makefile exists 1ms
+stderr | tests/unit/infrastructure/services/deployment/detectors/node.detector.test.ts > detectNode — fall-through > reports the script list when package.json has no scripts field
+[detectNode] No dev script found in package.json. Expected one of: dev, start, serve
+
+stderr | tests/unit/infrastructure/services/deployment/run-plan-staleness-probe.test.ts > RunPlanStalenessProbe > hasRepoDevConfig > is false for a malformed .shep/dev.json rather than throwing
+[repoDevConfig] /var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-staleness-iO0Xj0/.shep/dev.json is not a JSON object — ignoring it
+
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/elixir.detector.test.ts > detectElixir > resolves "mix phx.server" with the Phoenix default port 3ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/elixir.detector.test.ts > detectElixir > resolves the plain mix command with no port for a non-Phoenix project 2ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/elixir.detector.test.ts > detectElixir > does not treat a commented mention of phoenix as a dependency 2ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/elixir.detector.test.ts > detectElixir > sets needsInstall from the deps directory 4ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/elixir.detector.test.ts > detectElixir — fall-through > falls through when mix.exs is absent 0ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/elixir.detector.test.ts > detectElixir — fall-through > never reads another ecosystem manifest when mix.exs is absent 1ms
+stderr | tests/unit/infrastructure/services/deployment/detectors/repo-config.detector.test.ts > readRepoDevConfig — invalid documents fall through > returns null for an empty file without throwing
+[repoDevConfig] /var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-cfg-invalid-Fx93ED/.shep/dev.json is not a JSON object — ignoring it
+[repoDevConfig] /var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-cfg-invalid-Fx93ED/.shep/dev.json is not a JSON object — ignoring it
+
+stderr | tests/unit/infrastructure/services/deployment/detectors/deno.detector.test.ts > detectDeno — fall-through > falls through on unparseable JSON without throwing
+[detectDeno] could not parse /var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-deno-broken-n0q9xF/deno.json — falling through
+[detectDeno] could not parse /var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-deno-broken-n0q9xF/deno.json — falling through
+
+stderr | tests/unit/infrastructure/services/deployment/detectors/deno.detector.test.ts > detectDeno — fall-through > falls through on an empty file
+[detectDeno] could not parse /var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-deno-empty-HiivHL/deno.json — falling through
+
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/node.detector.test.ts > detectNode — script priority > picks dev over start and serve 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/node.detector.test.ts > detectNode — script priority > falls back to start when dev is absent 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/node.detector.test.ts > detectNode — script priority > falls back to serve when dev and start are absent 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/node.detector.test.ts > detectNode — package manager from lockfiles > detects bun from bun.lock and builds "bun run dev" 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/node.detector.test.ts > detectNode — package manager from lockfiles > detects bun from bun.lockb and builds "bun run dev" 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/node.detector.test.ts > detectNode — package manager from lockfiles > detects pnpm from pnpm-lock.yaml and builds "pnpm dev" 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/node.detector.test.ts > detectNode — package manager from lockfiles > detects yarn from yarn.lock and builds "yarn dev" 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/node.detector.test.ts > detectNode — package manager from lockfiles > detects npm from package-lock.json and builds "npm run dev" 2ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/node.detector.test.ts > detectNode — package manager from lockfiles > defaults to npm when no lockfile exists 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/node.detector.test.ts > detectNode — package manager from lockfiles > prioritises bun over every other manager when lockfiles collide 2ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/node.detector.test.ts > detectNode — package manager from lockfiles > prioritises pnpm over yarn when bun is absent 2ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/node.detector.test.ts > detectNode — needsInstall and resolvedDir > is true when node_modules is missing 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/node.detector.test.ts > detectNode — needsInstall and resolvedDir > is false when node_modules exists 2ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/node.detector.test.ts > detectNode — needsInstall and resolvedDir > resolves to the directory it was given 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/node.detector.test.ts > detectNode — fall-through > reports the missing package.json path when there is none 4ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/node.detector.test.ts > detectNode — fall-through > reports the missing package.json path when the file is unparseable 3ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/node.detector.test.ts > detectNode — fall-through > reports the script list when no matching script exists 2ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/node.detector.test.ts > detectNode — fall-through > reports the script list when package.json has no scripts field 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/node.detector.test.ts > detectNode — result shape > populates exactly the six historical fields (no ecosystem field) 1ms
+stderr | tests/unit/infrastructure/services/deployment/detectors/repo-config.detector.test.ts > readRepoDevConfig — invalid documents fall through > returns null for a non-JSON file without throwing
+[repoDevConfig] /var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-cfg-invalid-OxgSln/.shep/dev.json is not a JSON object — ignoring it
+[repoDevConfig] /var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-cfg-invalid-OxgSln/.shep/dev.json is not a JSON object — ignoring it
+
+stderr | tests/unit/infrastructure/services/deployment/detectors/repo-config.detector.test.ts > readRepoDevConfig — invalid documents fall through > returns null for a JSON array without throwing
+[repoDevConfig] /var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-cfg-invalid-3GDM3G/.shep/dev.json is not a JSON object — ignoring it
+[repoDevConfig] /var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-cfg-invalid-3GDM3G/.shep/dev.json is not a JSON object — ignoring it
+
+stderr | tests/unit/infrastructure/services/deployment/detectors/repo-config.detector.test.ts > readRepoDevConfig — invalid documents fall through > returns null for a JSON scalar without throwing
+[repoDevConfig] /var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-cfg-invalid-adecWa/.shep/dev.json is not a JSON object — ignoring it
+[repoDevConfig] /var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-cfg-invalid-adecWa/.shep/dev.json is not a JSON object — ignoring it
+
+stderr | tests/unit/infrastructure/services/deployment/detectors/compose.detector.test.ts > detectCompose — fall-through > falls through on unparseable YAML without throwing
+[detectCompose] could not parse /var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-compose-broken-LI9oU7/compose.yaml — falling through
+[detectCompose] could not parse /var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-compose-broken-LI9oU7/compose.yaml — falling through
+
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/deno.detector.test.ts > detectDeno > resolves "deno task dev" for a declared dev task 2ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/deno.detector.test.ts > detectDeno > honours the dev → start → serve priority 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/deno.detector.test.ts > detectDeno > falls back to start when dev is absent 2ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/deno.detector.test.ts > detectDeno > falls back to serve when dev and start are absent 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/deno.detector.test.ts > detectDeno > reads a deno.jsonc with comments and trailing commas 2ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/deno.detector.test.ts > detectDeno — expectedPort > takes an explicit --port from the task definition 2ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/deno.detector.test.ts > detectDeno — expectedPort > leaves expectedPort unset when the task declares no port 2ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/deno.detector.test.ts > detectDeno — fall-through > falls through when no deno manifest exists 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/deno.detector.test.ts > detectDeno — fall-through > falls through when the manifest declares no tasks 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/deno.detector.test.ts > detectDeno — fall-through > falls through when the manifest declares no matching task 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/deno.detector.test.ts > detectDeno — fall-through > falls through on unparseable JSON without throwing 2ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/deno.detector.test.ts > detectDeno — fall-through > falls through on an empty file 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/deno.detector.test.ts > detectDeno — fall-through > never reads another ecosystem manifest when deno.json is absent 1ms
+stderr | tests/unit/infrastructure/services/deployment/detectors/repo-config.detector.test.ts > readRepoDevConfig — invalid documents fall through > returns null for a non-string command without throwing
+[repoDevConfig] /var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-cfg-invalid-7b346p/.shep/dev.json declares no non-empty "command" — ignoring it
+[repoDevConfig] /var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-cfg-invalid-7b346p/.shep/dev.json declares no non-empty "command" — ignoring it
+
+stderr | tests/unit/infrastructure/services/deployment/detectors/repo-config.detector.test.ts > readRepoDevConfig — invalid documents fall through > returns null for an empty command without throwing
+[repoDevConfig] /var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-cfg-invalid-q9tHfv/.shep/dev.json declares no non-empty "command" — ignoring it
+[repoDevConfig] /var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-cfg-invalid-q9tHfv/.shep/dev.json declares no non-empty "command" — ignoring it
+
+stderr | tests/unit/infrastructure/services/deployment/detectors/repo-config.detector.test.ts > readRepoDevConfig — invalid documents fall through > returns null for a whitespace-only command without throwing
+[repoDevConfig] /var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-cfg-invalid-On6SIJ/.shep/dev.json declares no non-empty "command" — ignoring it
+[repoDevConfig] /var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-cfg-invalid-On6SIJ/.shep/dev.json declares no non-empty "command" — ignoring it
+
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/compose.detector.test.ts > detectCompose — command > resolves "docker compose up" for a single-service stack 4ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/compose.detector.test.ts > detectCompose — command > recognises every supported compose filename 8ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/compose.detector.test.ts > detectCompose — expectedPort > reads the host port from long-form syntax 2ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/compose.detector.test.ts > detectCompose — expectedPort > reads the host port from an interface-qualified short mapping 2ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/compose.detector.test.ts > detectCompose — expectedPort > ignores a protocol suffix 2ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/compose.detector.test.ts > detectCompose — expectedPort > leaves expectedPort unset when several host ports are published 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/compose.detector.test.ts > detectCompose — expectedPort > leaves expectedPort unset when no ports are published 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/compose.detector.test.ts > detectCompose — expectedPort > leaves expectedPort unset for a bare container port 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/compose.detector.test.ts > detectCompose — expectedPort > leaves expectedPort unset for a port range 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/compose.detector.test.ts > detectCompose — fall-through > falls through when no compose file exists 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/compose.detector.test.ts > detectCompose — fall-through > falls through on unparseable YAML without throwing 3ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/compose.detector.test.ts > detectCompose — fall-through > falls through when the document declares no services 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/compose.detector.test.ts > detectCompose — fall-through > never reads another ecosystem manifest when no compose file exists 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/python.detector.test.ts > detectPython — Django > resolves a uv-run Django command with the framework default port 4ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/python.detector.test.ts > detectPython — Django > resolves a poetry-run Django command from poetry.lock 2ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/python.detector.test.ts > detectPython — Django > resolves a bare python Django command when no runner is declared 2ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/python.detector.test.ts > detectPython — Django > resolves pipenv from Pipfile.lock 3ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/python.detector.test.ts > detectPython — author-declared scripts > resolves "poetry run dev" from [tool.poetry.scripts] 2ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/python.detector.test.ts > detectPython — author-declared scripts > resolves the runner from a [tool.poetry] header when no lockfile exists 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/python.detector.test.ts > detectPython — author-declared scripts > resolves a [project.scripts] entry point 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/python.detector.test.ts > detectPython — author-declared scripts > does not treat a key from another table as a script 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/python.detector.test.ts > detectPython — author-declared scripts > takes an explicit --port from the declared script definition 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/python.detector.test.ts > detectPython — requirements.txt entry point > resolves a conventional entry point and the pip install step 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/python.detector.test.ts > detectPython — requirements.txt entry point > falls through when requirements.txt has no conventional entry point 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/python.detector.test.ts > detectPython — needsInstall > is false when a .venv exists 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/python.detector.test.ts > detectPython — needsInstall > is true when no virtualenv directory exists 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/python.detector.test.ts > detectPython — fall-through > falls through for an empty directory 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/python.detector.test.ts > detectPython — fall-through > falls through for a pyproject.toml with no recognised header or key 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/python.detector.test.ts > detectPython — fall-through > falls through on malformed TOML without throwing 2ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/python.detector.test.ts > detectPython — fall-through > never reads another ecosystem manifest when no Python manifest exists 1ms
+stderr | tests/unit/infrastructure/services/deployment/detectors/repo-config.detector.test.ts > readRepoDevConfig — invalid documents fall through > returns null for a missing command without throwing
+[repoDevConfig] /var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-cfg-invalid-9qR1V5/.shep/dev.json declares no non-empty "command" — ignoring it
+[repoDevConfig] /var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-cfg-invalid-9qR1V5/.shep/dev.json declares no non-empty "command" — ignoring it
+
+stderr | tests/unit/infrastructure/services/deployment/detectors/repo-config.detector.test.ts > readRepoDevConfig — expectedPort validation > drops expectedPort 0 but keeps the rest of the file
+[repoDevConfig] /var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-cfg-port-Ny3dWL/.shep/dev.json declares an invalid "expectedPort" — ignoring that field
+
+stderr | tests/unit/infrastructure/services/deployment/detectors/repo-config.detector.test.ts > readRepoDevConfig — expectedPort validation > drops expectedPort 65536 but keeps the rest of the file
+[repoDevConfig] /var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-cfg-port-WNR3pS/.shep/dev.json declares an invalid "expectedPort" — ignoring that field
+
+stderr | tests/unit/infrastructure/services/deployment/detectors/repo-config.detector.test.ts > readRepoDevConfig — expectedPort validation > drops expectedPort -1 but keeps the rest of the file
+[repoDevConfig] /var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-cfg-port-4RyFvH/.shep/dev.json declares an invalid "expectedPort" — ignoring that field
+
+stderr | tests/unit/infrastructure/services/deployment/detectors/repo-config.detector.test.ts > readRepoDevConfig — expectedPort validation > drops expectedPort 3000.5 but keeps the rest of the file
+[repoDevConfig] /var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-cfg-port-dJyZlO/.shep/dev.json declares an invalid "expectedPort" — ignoring that field
+
+stderr | tests/unit/infrastructure/services/deployment/detectors/repo-config.detector.test.ts > readRepoDevConfig — expectedPort validation > drops expectedPort "3000" but keeps the rest of the file
+[repoDevConfig] /var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-cfg-port-JD4gB8/.shep/dev.json declares an invalid "expectedPort" — ignoring that field
+
+stderr | tests/unit/infrastructure/services/deployment/detect-dev-script.test.ts > detectDevScript > should return error when no matching scripts exist
+[detectNode] No dev script found in package.json. Expected one of: dev, start, serve
+
+stderr | tests/unit/infrastructure/services/deployment/detect-dev-script.test.ts > detectDevScript > should return error when package.json has no scripts field
+[detectNode] No dev script found in package.json. Expected one of: dev, start, serve
+
+stderr | tests/unit/infrastructure/services/deployment/detect-dev-script.test.ts > detectDevScript > should return error when package.json is missing
+[detectNode] No package.json found in /project Error: ENOENT: no such file or directory
+    at /Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/tests/unit/infrastructure/services/deployment/detect-dev-script.test.ts:218:13
+    at Mock (file:///Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/@vitest+spy@4.0.18/node_modules/@vitest/spy/dist/index.js:285:34)
+    at detectNode (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detectors/node.detector.ts:52:17)
+    at detectInDir (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:99:20)
+    at detectRunPlan (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:58:18)
+    at Module.detectDevScript (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:82:10)
+    at /Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/tests/unit/infrastructure/services/deployment/detect-dev-script.test.ts:223:20
+    at file:///Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:145:11
+    at file:///Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:915:26
+    at file:///Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:1243:20
+
+stderr | tests/unit/infrastructure/services/deployment/detectors/repo-config.detector.test.ts > readRepoDevConfig — cwd confinement > rejects a cwd that escapes via ..
+[repoDevConfig] /var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-cfg-escape-V7hOuw/.shep/dev.json declares a "cwd" that is not an existing directory — ignoring it
+
+stderr | tests/unit/infrastructure/services/deployment/detectors/repo-config.detector.test.ts > readRepoDevConfig — cwd confinement > rejects a sibling directory that merely shares the repo path prefix
+[repoDevConfig] /var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-cfg-prefix-QfNHJ4/.shep/dev.json declares a "cwd" outside the repository — ignoring it
+
+stderr | tests/unit/infrastructure/services/deployment/detect-dev-script.test.ts > detectDevScript > subdirectory scanning fallback > should find dev script in a subdirectory when root has no package.json
+[detectNode] No package.json found in /worktree Error: ENOENT
+    at /Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/tests/unit/infrastructure/services/deployment/detect-dev-script.test.ts:342:17
+    at Mock (file:///Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/@vitest+spy@4.0.18/node_modules/@vitest/spy/dist/index.js:285:34)
+    at detectNode (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detectors/node.detector.ts:52:17)
+    at detectInDir (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:99:20)
+    at detectRunPlan (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:58:18)
+    at Module.detectDevScript (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:82:10)
+    at /Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/tests/unit/infrastructure/services/deployment/detect-dev-script.test.ts:361:22
+    at file:///Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:145:11
+    at file:///Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:915:26
+    at file:///Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:1243:20
+
+stderr | tests/unit/infrastructure/services/deployment/detectors/repo-config.detector.test.ts > readRepoDevConfig — cwd confinement > rejects a symlinked cwd pointing outside the repository
+[repoDevConfig] /var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-cfg-symlink-kzd9wZ/.shep/dev.json declares a "cwd" outside the repository — ignoring it
+
+stderr | tests/unit/infrastructure/services/deployment/detect-dev-script.test.ts > detectDevScript > subdirectory scanning fallback > should skip hidden directories and node_modules during scan
+[detectNode] No package.json found in /worktree Error: ENOENT
+    at /Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/tests/unit/infrastructure/services/deployment/detect-dev-script.test.ts:377:17
+    at Mock (file:///Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/@vitest+spy@4.0.18/node_modules/@vitest/spy/dist/index.js:285:34)
+    at detectNode (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detectors/node.detector.ts:52:17)
+    at detectInDir (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:99:20)
+    at detectRunPlan (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:58:18)
+    at Module.detectDevScript (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:82:10)
+    at /Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/tests/unit/infrastructure/services/deployment/detect-dev-script.test.ts:396:22
+    at file:///Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:145:11
+    at file:///Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:915:26
+    at file:///Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:1243:20
+
+stderr | tests/unit/infrastructure/services/deployment/detect-dev-script.test.ts > detectDevScript > subdirectory scanning fallback > should skip non-directory entries during subdirectory scan
+[detectNode] No package.json found in /worktree Error: ENOENT
+    at /Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/tests/unit/infrastructure/services/deployment/detect-dev-script.test.ts:408:17
+    at Mock (file:///Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/@vitest+spy@4.0.18/node_modules/@vitest/spy/dist/index.js:285:34)
+    at detectNode (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detectors/node.detector.ts:52:17)
+    at detectInDir (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:99:20)
+    at detectRunPlan (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:58:18)
+    at Module.detectDevScript (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:82:10)
+    at /Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/tests/unit/infrastructure/services/deployment/detect-dev-script.test.ts:430:22
+    at file:///Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:145:11
+    at file:///Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:915:26
+    at file:///Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:1243:20
+
+stderr | tests/unit/infrastructure/services/deployment/detectors/repo-config.detector.test.ts > readRepoDevConfig — cwd confinement > rejects a cwd that does not exist
+[repoDevConfig] /var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-cfg-nodir-MT602a/.shep/dev.json declares a "cwd" that is not an existing directory — ignoring it
+
+stderr | tests/unit/infrastructure/services/deployment/detect-dev-script.test.ts > detectDevScript > subdirectory scanning fallback > should return error when no subdirectory has a dev script either
+[detectNode] No package.json found in /worktree Error: ENOENT
+    at /Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/tests/unit/infrastructure/services/deployment/detect-dev-script.test.ts:440:15
+    at Mock (file:///Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/@vitest+spy@4.0.18/node_modules/@vitest/spy/dist/index.js:285:34)
+    at detectNode (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detectors/node.detector.ts:52:17)
+    at detectInDir (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:99:20)
+    at detectRunPlan (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:58:18)
+    at Module.detectDevScript (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:82:10)
+    at /Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/tests/unit/infrastructure/services/deployment/detect-dev-script.test.ts:451:22
+    at file:///Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:145:11
+    at file:///Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:915:26
+    at file:///Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:1243:20
+[detectNode] No package.json found in /worktree/docs Error: ENOENT
+    at /Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/tests/unit/infrastructure/services/deployment/detect-dev-script.test.ts:440:15
+    at Mock (file:///Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/@vitest+spy@4.0.18/node_modules/@vitest/spy/dist/index.js:285:34)
+    at detectNode (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detectors/node.detector.ts:52:17)
+    at detectInDir (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:99:20)
+    at scanSubdirectories (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:138:21)
+    at detectRunPlan (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:69:18)
+    at Module.detectDevScript (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:82:10)
+    at /Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/tests/unit/infrastructure/services/deployment/detect-dev-script.test.ts:451:22
+    at file:///Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:145:11
+    at file:///Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:915:26
+[detectNode] No package.json found in /worktree/specs Error: ENOENT
+    at /Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/tests/unit/infrastructure/services/deployment/detect-dev-script.test.ts:440:15
+    at Mock (file:///Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/@vitest+spy@4.0.18/node_modules/@vitest/spy/dist/index.js:285:34)
+    at detectNode (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detectors/node.detector.ts:52:17)
+    at detectInDir (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:99:20)
+    at scanSubdirectories (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:138:21)
+    at detectRunPlan (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:69:18)
+    at Module.detectDevScript (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:82:10)
+    at /Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/tests/unit/infrastructure/services/deployment/detect-dev-script.test.ts:451:22
+    at file:///Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:145:11
+    at file:///Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:915:26
+
+stderr | tests/unit/infrastructure/services/deployment/detect-dev-script.test.ts > detectDevScript > subdirectory scanning fallback > should detect package manager in the subdirectory context
+[detectNode] No package.json found in /worktree Error: ENOENT
+    at /Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/tests/unit/infrastructure/services/deployment/detect-dev-script.test.ts:460:17
+    at Mock (file:///Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/@vitest+spy@4.0.18/node_modules/@vitest/spy/dist/index.js:285:34)
+    at detectNode (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detectors/node.detector.ts:52:17)
+    at detectInDir (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:99:20)
+    at detectRunPlan (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:58:18)
+    at Module.detectDevScript (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:82:10)
+    at /Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/tests/unit/infrastructure/services/deployment/detect-dev-script.test.ts:480:22
+    at file:///Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:145:11
+    at file:///Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:915:26
+    at file:///Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:1243:20
+
+ ✓  node  tests/unit/infrastructure/services/deployment/detect-dev-script.test.ts > detectDevScript > should return correct result for directory with package.json containing dev script 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detect-dev-script.test.ts > detectDevScript > should detect pnpm from pnpm-lock.yaml presence 0ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detect-dev-script.test.ts > detectDevScript > should detect bun from bun.lock presence and use `bun run <script>` 0ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detect-dev-script.test.ts > detectDevScript > should detect bun from legacy bun.lockb presence 0ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detect-dev-script.test.ts > detectDevScript > should detect yarn from yarn.lock presence 0ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detect-dev-script.test.ts > detectDevScript > should fall back to start when dev is absent 0ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detect-dev-script.test.ts > detectDevScript > should fall back to serve when dev and start are absent 0ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detect-dev-script.test.ts > detectDevScript > should return error when no matching scripts exist 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detect-dev-script.test.ts > detectDevScript > should return error when package.json has no scripts field 0ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detect-dev-script.test.ts > detectDevScript > should return error when package.json is missing 3ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detect-dev-script.test.ts > detectDevScript > should enforce script priority order: dev > start > serve 0ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detect-dev-script.test.ts > detectDevScript > should use pnpm scriptName directly (not pnpm run scriptName) for dev 0ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detect-dev-script.test.ts > detectDevScript > should use yarn scriptName directly (not yarn run scriptName) for dev 0ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detect-dev-script.test.ts > detectDevScript > should set needsInstall true when node_modules is missing 0ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detect-dev-script.test.ts > detectDevScript > should prioritize bun over every other manager when lockfiles collide 0ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detect-dev-script.test.ts > detectDevScript > should prioritize pnpm-lock.yaml over yarn.lock when bun is not present 0ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detect-dev-script.test.ts > detectDevScript > subdirectory scanning fallback > should find dev script in a subdirectory when root has no package.json 2ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detect-dev-script.test.ts > detectDevScript > subdirectory scanning fallback > should skip hidden directories and node_modules during scan 0ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detect-dev-script.test.ts > detectDevScript > subdirectory scanning fallback > should skip non-directory entries during subdirectory scan 0ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detect-dev-script.test.ts > detectDevScript > subdirectory scanning fallback > should return error when no subdirectory has a dev script either 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detect-dev-script.test.ts > detectDevScript > subdirectory scanning fallback > should detect package manager in the subdirectory context 1ms
+stderr | tests/unit/infrastructure/services/deployment/detectors/registry.test.ts > detectRunPlan — polyglot precedence > promotes Make when package.json is removed
+[detectNode] No package.json found in /var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-polyglot-GAHQjq Error: ENOENT: no such file or directory, open '/var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-polyglot-GAHQjq/package.json'
+    at readFileSync (node:fs:441:20)
+    at detectNode (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detectors/node.detector.ts:52:17)
+    at detectInDir (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:99:20)
+    at detectRunPlan (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:58:18)
+    at /Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/tests/unit/infrastructure/services/deployment/detectors/registry.test.ts:83:21
+    at file:///Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:145:11
+    at file:///Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:915:26
+    at file:///Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:1243:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:1209:10) {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-polyglot-GAHQjq/package.json'
+}
+
+stderr | tests/unit/infrastructure/services/deployment/detectors/registry.test.ts > detectRunPlan — polyglot precedence > promotes Python when package.json and the Makefile are removed
+[detectNode] No package.json found in /var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-polyglot-RxXVov Error: ENOENT: no such file or directory, open '/var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-polyglot-RxXVov/package.json'
+    at readFileSync (node:fs:441:20)
+    at detectNode (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detectors/node.detector.ts:52:17)
+    at detectInDir (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:99:20)
+    at detectRunPlan (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:58:18)
+    at /Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/tests/unit/infrastructure/services/deployment/detectors/registry.test.ts:90:21
+    at file:///Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:145:11
+    at file:///Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:915:26
+    at file:///Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:1243:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:1209:10) {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-polyglot-RxXVov/package.json'
+}
+
+stderr | tests/unit/infrastructure/services/deployment/detectors/repo-config.detector.test.ts > detectRepoConfig > falls through when the file is malformed
+[repoDevConfig] /var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-cfg-detect-bad-7ibbBW/.shep/dev.json is not a JSON object — ignoring it
+
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/repo-config.detector.test.ts > readRepoDevConfig — valid documents > reads every supported field 4ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/repo-config.detector.test.ts > readRepoDevConfig — valid documents > defaults cwd to the repository root 3ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/repo-config.detector.test.ts > readRepoDevConfig — valid documents > ignores unknown keys 2ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/repo-config.detector.test.ts > readRepoDevConfig — valid documents > trims the command 2ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/repo-config.detector.test.ts > readRepoDevConfig — valid documents > accepts a comment-carrying JSONC document 2ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/repo-config.detector.test.ts > readRepoDevConfig — invalid documents fall through > returns null for a missing file without throwing 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/repo-config.detector.test.ts > readRepoDevConfig — invalid documents fall through > returns null for an empty file without throwing 2ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/repo-config.detector.test.ts > readRepoDevConfig — invalid documents fall through > returns null for a non-JSON file without throwing 2ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/repo-config.detector.test.ts > readRepoDevConfig — invalid documents fall through > returns null for a JSON array without throwing 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/repo-config.detector.test.ts > readRepoDevConfig — invalid documents fall through > returns null for a JSON scalar without throwing 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/repo-config.detector.test.ts > readRepoDevConfig — invalid documents fall through > returns null for a non-string command without throwing 2ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/repo-config.detector.test.ts > readRepoDevConfig — invalid documents fall through > returns null for an empty command without throwing 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/repo-config.detector.test.ts > readRepoDevConfig — invalid documents fall through > returns null for a whitespace-only command without throwing 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/repo-config.detector.test.ts > readRepoDevConfig — invalid documents fall through > returns null for a missing command without throwing 2ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/repo-config.detector.test.ts > readRepoDevConfig — expectedPort validation > drops expectedPort 0 but keeps the rest of the file 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/repo-config.detector.test.ts > readRepoDevConfig — expectedPort validation > drops expectedPort 65536 but keeps the rest of the file 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/repo-config.detector.test.ts > readRepoDevConfig — expectedPort validation > drops expectedPort -1 but keeps the rest of the file 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/repo-config.detector.test.ts > readRepoDevConfig — expectedPort validation > drops expectedPort 3000.5 but keeps the rest of the file 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/repo-config.detector.test.ts > readRepoDevConfig — expectedPort validation > drops expectedPort "3000" but keeps the rest of the file 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/repo-config.detector.test.ts > readRepoDevConfig — expectedPort validation > drops expectedPort null but keeps the rest of the file 2ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/repo-config.detector.test.ts > readRepoDevConfig — expectedPort validation > accepts the boundary ports 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/repo-config.detector.test.ts > readRepoDevConfig — setupCommands validation > drops entries that are not non-empty strings 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/repo-config.detector.test.ts > readRepoDevConfig — setupCommands validation > defaults to an empty list when setupCommands is not an array 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/repo-config.detector.test.ts > readRepoDevConfig — cwd confinement > rejects a cwd that escapes via .. 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/repo-config.detector.test.ts > readRepoDevConfig — cwd confinement > rejects a sibling directory that merely shares the repo path prefix 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/repo-config.detector.test.ts > readRepoDevConfig — cwd confinement > rejects a symlinked cwd pointing outside the repository 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/repo-config.detector.test.ts > readRepoDevConfig — cwd confinement > rejects a cwd that does not exist 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/repo-config.detector.test.ts > readRepoDevConfig — cwd confinement > accepts an absolute cwd inside the repository 1ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/repo-config.detector.test.ts > detectRepoConfig > projects a valid config into a detector success 2ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/repo-config.detector.test.ts > detectRepoConfig > falls through when the file is absent 0ms
+ ✓  node  tests/unit/infrastructure/services/deployment/detectors/repo-config.detector.test.ts > detectRepoConfig > falls through when the file is malformed 1ms
+stderr | tests/unit/infrastructure/services/deployment/detectors/registry.test.ts > detectRunPlan — polyglot precedence > promotes Compose when only the compose file remains
+[detectNode] No package.json found in /var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-polyglot-w1Dkmf Error: ENOENT: no such file or directory, open '/var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-polyglot-w1Dkmf/package.json'
+    at readFileSync (node:fs:441:20)
+    at detectNode (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detectors/node.detector.ts:52:17)
+    at detectInDir (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:99:20)
+    at detectRunPlan (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:58:18)
+    at /Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/tests/unit/infrastructure/services/deployment/detectors/registry.test.ts:97:21
+    at file:///Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:145:11
+    at file:///Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:915:26
+    at file:///Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:1243:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:1209:10) {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-polyglot-w1Dkmf/package.json'
+}
+
+stderr | tests/unit/infrastructure/services/deployment/detectors/registry.test.ts > detectRunPlan — subdirectory fallback > finds a node project one level down
+[detectNode] No package.json found in /var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-nested-node-NHOCY7 Error: ENOENT: no such file or directory, open '/var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-nested-node-NHOCY7/package.json'
+    at readFileSync (node:fs:441:20)
+    at detectNode (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detectors/node.detector.ts:52:17)
+    at detectInDir (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:99:20)
+    at detectRunPlan (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:58:18)
+    at /Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/tests/unit/infrastructure/services/deployment/detectors/registry.test.ts:125:23
+    at file:///Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:145:11
+    at file:///Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:915:26
+    at file:///Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:1243:20
+    at new Promise (<anonymous>)
+    at runWithTimeout (file:///Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:1209:10) {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-nested-node-NHOCY7/package.json'
+}
+
+stderr | tests/unit/infrastructure/services/deployment/detectors/registry.test.ts > detectRunPlan — subdirectory fallback > finds a deno project one level down
+[detectNode] No package.json found in /var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-nested-deno-XJ6dwc Error: ENOENT: no such file or directory, open '/var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-nested-deno-XJ6dwc/package.json'
+    at readFileSync (node:fs:441:20)
+    at detectNode (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detectors/node.detector.ts:52:17)
+    at detectInDir (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:99:20)
