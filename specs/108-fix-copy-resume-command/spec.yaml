@@ -6,15 +6,12 @@ number: 108
 branch: feat/108-fix-copy-resume-command
 oneLiner: Copy resume command doesn't work
 
-@/Users/ariel/.shep/attachments/pending-0445e7d0-3f1d-4798-86ff-28cbfd245953/image-3367d944.png
 userQuery: >
   Copy resume command doesn't work
 
-@/Users/ariel/.shep/attachments/pending-0445e7d0-3f1d-4798-86ff-28cbfd245953/image-3367d944.png
 summary: >
   Copy resume command doesn't work
 
-@/Users/ariel/.shep/attachments/pending-0445e7d0-3f1d-4798-86ff-28cbfd245953/image-3367d944.png
 phase: Analysis
 sizeEstimate: M
 
@@ -38,7 +35,6 @@ content: |
 
   Copy resume command doesn't work
 
-@/Users/ariel/.shep/attachments/pending-0445e7d0-3f1d-4798-86ff-28cbfd245953/image-3367d944.png
 
   ## Success Criteria
 

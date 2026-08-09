@@ -40,7 +40,7 @@ tasks:
   - id: 4
     title: "Update AgentExecutorFactory"
     description: "Integrate the new executor into the factory."
-    status: "pending"
+    status: "completed"
     effort: "S"
     dependencies: [2, 3]
     tdd:
