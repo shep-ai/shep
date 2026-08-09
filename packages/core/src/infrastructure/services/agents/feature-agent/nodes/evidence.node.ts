@@ -173,7 +173,9 @@ export function createEvidenceNode(executor: IAgentExecutor) {
         }
 
         // --- Validate evidence completeness + file existence ---
-        const validationResult = await validateEvidence(allEvidence, tasks);
+        // Resolve repo-relative evidence paths against the SAME directory the
+        // agent ran in — the daemon's process.cwd() is an unrelated directory.
+        const validationResult = await validateEvidence(allEvidence, tasks, options.cwd);
         await recordPhaseEnd(timingId, Date.now() - attemptStart, {
           inputTokens: result.usage?.inputTokens,
           outputTokens: result.usage?.outputTokens,

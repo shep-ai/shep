@@ -11,6 +11,7 @@
  */
 
 import { stat } from 'node:fs/promises';
+import { isAbsolute, resolve } from 'node:path';
 import type { Evidence } from '../../../../../domain/generated/output.js';
 import { EvidenceType } from '../../../../../domain/generated/output.js';
 
@@ -270,17 +271,39 @@ export function validateEvidenceCompleteness(
 }
 
 /**
+ * Resolve an Evidence record's path to something `stat` can trust.
+ *
+ * Records carry either a repo-relative path (`specs/<slug>/evidence/x.png`,
+ * used when evidence is committed) or an absolute shep-home path (used when it
+ * is not). Relative paths MUST be resolved against the directory the agent
+ * actually ran in — the worktree — because the host daemon's `process.cwd()` is
+ * an unrelated directory, and resolving there reports every committed file as
+ * missing.
+ */
+function resolveEvidencePath(relativePath: string, baseDir?: string): string {
+  if (isAbsolute(relativePath)) return relativePath;
+  return baseDir ? resolve(baseDir, relativePath) : relativePath;
+}
+
+/**
  * Verify that each Evidence record's file exists on disk with non-zero size.
  * Returns an array of error messages for missing or empty files.
  * Never throws — all errors are caught and returned as strings (NFR-10).
+ *
+ * @param baseDir Directory that repo-relative paths resolve against (the
+ *   agent's worktree). Omitted only by legacy callers, which keep the previous
+ *   `process.cwd()` behaviour.
  */
-export async function validateFileExistence(evidence: Evidence[]): Promise<string[]> {
+export async function validateFileExistence(
+  evidence: Evidence[],
+  baseDir?: string
+): Promise<string[]> {
   if (evidence.length === 0) return [];
 
   const results = await Promise.all(
     evidence.map(async (e) => {
       try {
-        const stats = await stat(e.relativePath);
+        const stats = await stat(resolveEvidencePath(e.relativePath, baseDir));
         if (stats.size === 0) {
           return `Evidence file has zero size: ${e.relativePath} (${e.description})`;
         }
@@ -307,10 +330,11 @@ export async function validateFileExistence(evidence: Evidence[]): Promise<strin
  */
 export async function validateEvidence(
   evidence: Evidence[],
-  tasks: TaskForValidation[]
+  tasks: TaskForValidation[],
+  baseDir?: string
 ): Promise<ValidationResult> {
   const completenessResult = validateEvidenceCompleteness(evidence, tasks);
-  const fileErrors = await validateFileExistence(evidence);
+  const fileErrors = await validateFileExistence(evidence, baseDir);
 
   const fileValidationErrors: ValidationError[] = fileErrors.map((msg) => ({
     type: 'fileExistence' as const,
