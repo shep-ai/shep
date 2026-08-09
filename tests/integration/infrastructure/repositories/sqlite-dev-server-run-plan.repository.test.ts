@@ -105,6 +105,35 @@ describe('SQLiteDevServerRunPlanRepository', () => {
       expect(found!.setupCommands).toEqual([]);
     });
 
+    it('roundtrips a Manual (user-authored override) plan without any migration', async () => {
+      await repo.upsert(
+        makePlan({
+          repoPath: '/home/user/manual',
+          source: RunPlanSource.Manual,
+          command: 'make dev',
+          cwd: '/home/user/manual',
+          packageManager: undefined,
+          expectedPort: 8080,
+          language: 'Go',
+          framework: 'Echo',
+          setupCommands: ['go mod download'],
+        })
+      );
+
+      const found = await repo.findByRepoPath('/home/user/manual');
+      expect(found).not.toBeNull();
+      expect(found!.source).toBe(RunPlanSource.Manual);
+      expect(found!.command).toBe('make dev');
+      expect(found!.expectedPort).toBe(8080);
+      expect(found!.setupCommands).toEqual(['go mod download']);
+
+      // The raw column carries the exact enum string value.
+      const row = db
+        .prepare('SELECT plan_source FROM dev_server_run_plans WHERE repo_path = ?')
+        .get('/home/user/manual') as { plan_source: string };
+      expect(row.plan_source).toBe('Manual');
+    });
+
     it('returns null for an unknown repo path', async () => {
       expect(await repo.findByRepoPath('/nope')).toBeNull();
     });

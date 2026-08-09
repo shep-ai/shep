@@ -155,6 +155,46 @@ describe('Migration 138 — dev_server_run_plans table', () => {
     expect(row.install_stamp_hash).toBeNull();
   });
 
+  /**
+   * Spec 108 adds RunPlanSource.Manual. Research verified plan_source is a bare
+   * TEXT NOT NULL column with no CHECK constraint and no lookup-table FK, so the
+   * new enum member needs NO migration. These two tests pin that: if anyone ever
+   * adds a value constraint, the Manual member silently stops persisting.
+   */
+  it('should declare plan_source with no value constraint (no migration needed for new sources)', () => {
+    const { sql } = db
+      .prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='dev_server_run_plans'")
+      .get() as { sql: string };
+
+    expect(sql).toContain('plan_source        TEXT NOT NULL');
+    expect(sql.toUpperCase()).not.toContain('CHECK');
+    expect(sql.toUpperCase()).not.toContain('REFERENCES');
+  });
+
+  it('should accept a Manual plan_source value on the unchanged schema', () => {
+    db.prepare(
+      `INSERT INTO dev_server_run_plans (
+        repo_path, plan_source, command, cwd, setup_commands,
+        config_hash, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+    ).run(
+      '/home/user/manual',
+      'Manual',
+      'make dev',
+      '/home/user/manual',
+      '[]',
+      'cfg-hash-3',
+      '2026-08-09T10:00:00.000Z',
+      '2026-08-09T10:00:00.000Z'
+    );
+
+    const row = db
+      .prepare('SELECT plan_source FROM dev_server_run_plans WHERE repo_path = ?')
+      .get('/home/user/manual') as { plan_source: string };
+
+    expect(row.plan_source).toBe('Manual');
+  });
+
   it('should enforce repo_path uniqueness (primary key)', () => {
     const insert = db.prepare(
       `INSERT INTO dev_server_run_plans (

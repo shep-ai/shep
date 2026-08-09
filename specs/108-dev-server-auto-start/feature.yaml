@@ -1,0 +1,36 @@
+feature:
+  id: "108-dev-server-auto-start"
+  name: "dev-server-auto-start"
+  number: 108
+  branch: "feat/108-dev-server-auto-start"
+  lifecycle: "research"
+  createdAt: "2026-08-09T08:16:26Z"
+status:
+  phase: "implementing-phase-1"
+  progress:
+    completed: 0
+    total: 43
+    percentage: 0
+  currentTask: "task-1"
+  lastUpdated: "2026-08-09T11:07:50.917Z"
+  lastUpdatedBy: "feature-agent:implement"
+  completedPhases:
+    - "analyze"
+    - "requirements"
+    - "research"
+    - "plan"
+validation:
+  lastRun: null
+  gatesPassed: []
+  autoFixesApplied: []
+tasks:
+  current: null
+  blocked: []
+  failed: []
+checkpoints:
+  - phase: "feature-created"
+    completedAt: "2026-08-09T08:16:26Z"
+    completedBy: "feature-agent"
+errors:
+  current: null
+  history: []

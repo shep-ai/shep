@@ -38,9 +38,10 @@ import "../common/scalars.tsp";
 /**
  * How a DevServerRunPlan was produced.
  *
- * Determines whether the plan came from zero-LLM deterministic detection
- * or from structured agent analysis. Deterministic plans are preferred
- * (faster, free); agent plans handle ambiguous or non-standard repos.
+ * Determines whether the plan came from zero-LLM deterministic detection,
+ * from structured agent analysis, or from an explicit user override.
+ * Deterministic plans are preferred (faster, free); agent plans handle
+ * ambiguous or non-standard repos; Manual plans overrule both.
  */
 @doc("Sources for dev-server run plan production")
 enum RunPlanSource {
@@ -57,6 +58,18 @@ enum RunPlanSource {
    */
   @doc("Plan produced by structured agent analysis")
   Agent,
+
+  /**
+   * Plan authored by the user — either typed into the run-plan override
+   * surface or committed to the repository as `.shep/dev.json`.
+   *
+   * `source === Manual` is the single pinning predicate: a Manual plan is
+   * used regardless of `configHash` drift (staleness is reported, never
+   * acted on) and is never overwritten or deleted by failure remediation.
+   * Only an explicit invalidate/clear removes it.
+   */
+  @doc("Plan authored by the user (override or committed .shep/dev.json)")
+  Manual,
 }
 
 /**
