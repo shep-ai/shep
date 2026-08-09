@@ -709,6 +709,110 @@
         "notFound": "Cluster nicht gefunden: {{id}}"
       }
     },
+    "dev": {
+      "description": "Lokalen Dev-Server starten und untersuchen",
+      "noUrl": "keine URL erkannt",
+      "options": {
+        "app": "Die Anwendung mit dieser ID verwenden",
+        "feature": "Das Feature mit dieser ID verwenden",
+        "repo": "Das Repository mit diesem Pfad oder dieser ID verwenden",
+        "json": "Ausgabe als JSON"
+      },
+      "target": {
+        "conflict": "Bitte nur eines von --app, --feature oder --repo angeben",
+        "unmatchedHint": "Führe dies in einem erfassten Repository aus oder gib --app, --feature oder --repo an."
+      },
+      "state": {
+        "analyzing": "analysiert",
+        "installing": "installiert",
+        "booting": "startet",
+        "ready": "bereit",
+        "stopped": "gestoppt"
+      },
+      "start": {
+        "description": "Dev-Server starten und Ausgabe verfolgen, bis er bereit ist",
+        "streaming": "Dev-Server für {{targetType}} in {{path}} wird gestartet",
+        "ready": "Dev-Server bereit: {{url}}",
+        "detached": "Abgekoppelt — der Dev-Server läuft weiter. Beenden mit `shep dev stop`.",
+        "notReady": "Der Dev-Server wurde nicht bereit: {{reason}}",
+        "noReason": "kein Grund gemeldet",
+        "failedToStart": "Dev-Server konnte nicht gestartet werden"
+      },
+      "stop": {
+        "description": "Dev-Server beenden",
+        "notRunning": "Für {{path}} läuft kein Dev-Server",
+        "stopped": "Dev-Server für {{path}} beendet",
+        "failed": "Dev-Server konnte nicht beendet werden"
+      },
+      "status": {
+        "description": "Status des Dev-Servers und den ausgeführten Befehl anzeigen",
+        "title": "Dev-Server",
+        "targetLabel": "Ziel",
+        "pathLabel": "Pfad",
+        "stateLabel": "Status",
+        "notRunning": "läuft nicht",
+        "urlLabel": "URL",
+        "commandLabel": "Befehl",
+        "portLabel": "Port",
+        "planSourceLabel": "Plan",
+        "failed": "Status des Dev-Servers konnte nicht gelesen werden"
+      },
+      "logs": {
+        "description": "Ausgabe des Dev-Servers anzeigen",
+        "followOption": "Neue Ausgabe laufend anzeigen",
+        "linesOption": "Nur die letzten <count> Zeilen anzeigen",
+        "noLogs": "Keine Dev-Server-Ausgabe für {{path}} vorhanden",
+        "detached": "Abgekoppelt — der Dev-Server läuft weiter.",
+        "ended": "Der Dev-Server läuft nicht mehr."
+      },
+      "plan": {
+        "description": "Aufgelösten Ausführungsplan anzeigen, festsetzen oder verwerfen",
+        "staleHint": "Die Konfigurationsdateien des Repositorys haben sich seit der Erstellung dieses Plans geändert. Verwirf ihn zur Neuanalyse oder behalte ihn.",
+        "repoConfigControlled": "Eine eingecheckte .shep/dev.json steuert dieses Repository — sie wird bei jedem Start neu gelesen und hat Vorrang vor jedem gespeicherten Plan. Ändere diese Datei, um das Ausgeführte anzupassen.",
+        "source": {
+          "deterministic": "erkannt",
+          "agent": "KI-analysiert",
+          "manual": "festgesetzt"
+        },
+        "fields": {
+          "command": "Befehl",
+          "cwd": "Arbeitsverz.",
+          "source": "Quelle",
+          "language": "Sprache",
+          "framework": "Framework",
+          "expectedPort": "erwart. Port",
+          "packageManager": "Paketmanager",
+          "setupCommands": "Setup-Befehle"
+        },
+        "show": {
+          "description": "Aufgelösten Ausführungsplan anzeigen",
+          "title": "Ausführungsplan",
+          "empty": "Für {{path}} ist kein Ausführungsplan gespeichert — starte den Dev-Server einmal, dann erscheint er hier.",
+          "failed": "Ausführungsplan konnte nicht gelesen werden"
+        },
+        "set": {
+          "description": "Eigenen Ausführungsplan festsetzen",
+          "commandOption": "Befehl, mit dem der Dev-Server läuft",
+          "cwdOption": "Arbeitsverzeichnis, absolut oder relativ zum Repository-Wurzelverzeichnis",
+          "portOption": "Erwarteter Port oder `none` zum Entfernen",
+          "languageOption": "Sprachbezeichnung oder `none` zum Entfernen",
+          "frameworkOption": "Framework-Bezeichnung oder `none` zum Entfernen",
+          "packageManagerOption": "Paketmanager oder `none` zum Entfernen",
+          "setupOption": "Setup-Befehle vor dem Start des Dev-Servers",
+          "clearSetupOption": "Alle Setup-Befehle entfernen",
+          "saved": "Ausführungsplan festgesetzt",
+          "invalid": "Der Ausführungsplan wurde nicht gespeichert",
+          "executionNotice": "Als {{source}} gespeichert — dieser Befehl wird beim nächsten Start auf deinem Rechner ausgeführt.",
+          "failed": "Ausführungsplan konnte nicht gespeichert werden"
+        },
+        "clear": {
+          "description": "Gespeicherten Ausführungsplan verwerfen, damit der nächste Start neu analysiert",
+          "cleared": "Ausführungsplan ({{source}}) verworfen — der nächste Start analysiert das Repository neu.",
+          "empty": "Für {{path}} war kein Ausführungsplan gespeichert",
+          "failed": "Ausführungsplan konnte nicht verworfen werden"
+        }
+      }
+    },
     "agent": {
       "description": "Agentläufe verwalten und anzeigen",
       "show": {

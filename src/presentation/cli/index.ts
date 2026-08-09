@@ -20,6 +20,7 @@
  *   shep run          Run an AI agent workflow
  *   shep agent        Manage and view agent runs
  *   shep feat         Manage features through the SDLC lifecycle
+ *   shep dev          Run and inspect a local dev server
  *   shep repo         Manage tracked repositories
  *   shep settings     Configure Shep settings
  *   shep upgrade      Upgrade Shep CLI to the latest version
@@ -45,6 +46,7 @@ import { createFeatCommand } from './commands/feat/index.js';
 import { createRepoCommand } from './commands/repo/index.js';
 import { createAppCommand } from './commands/app/index.js';
 import { createClusterCommand } from './commands/cluster/index.js';
+import { createDevCommand } from './commands/dev/index.js';
 import { createSessionCommand } from './commands/session/index.js';
 import { createIdeOpenCommand } from './commands/ide-open.command.js';
 import { createInstallCommand } from './commands/install.command.js';
@@ -156,6 +158,7 @@ async function bootstrap() {
     program.addCommand(createRepoCommand());
     program.addCommand(createAppCommand());
     program.addCommand(createClusterCommand());
+    program.addCommand(createDevCommand());
     program.addCommand(createSessionCommand());
     program.addCommand(createIdeOpenCommand());
     program.addCommand(createInstallCommand());

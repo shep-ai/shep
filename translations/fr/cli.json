@@ -709,6 +709,110 @@
         "notFound": "Cluster introuvable : {{id}}"
       }
     },
+    "dev": {
+      "description": "Lancer et inspecter un serveur de développement local",
+      "noUrl": "aucune URL détectée",
+      "options": {
+        "app": "Cibler l'application portant cet identifiant",
+        "feature": "Cibler la fonctionnalité portant cet identifiant",
+        "repo": "Cibler le dépôt correspondant à ce chemin ou identifiant",
+        "json": "Sortie au format JSON"
+      },
+      "target": {
+        "conflict": "N'indiquez qu'une seule option parmi --app, --feature ou --repo",
+        "unmatchedHint": "Lancez la commande depuis un dépôt suivi, ou passez --app, --feature ou --repo."
+      },
+      "state": {
+        "analyzing": "analyse",
+        "installing": "installation",
+        "booting": "démarrage",
+        "ready": "prêt",
+        "stopped": "arrêté"
+      },
+      "start": {
+        "description": "Démarrer le serveur de développement et suivre sa sortie jusqu'à ce qu'il soit prêt",
+        "streaming": "Démarrage du serveur de développement pour {{targetType}} dans {{path}}",
+        "ready": "Serveur de développement prêt : {{url}}",
+        "detached": "Détaché — le serveur de développement continue de tourner. Arrêtez-le avec `shep dev stop`.",
+        "notReady": "Le serveur de développement n'est pas devenu prêt : {{reason}}",
+        "noReason": "aucune raison signalée",
+        "failedToStart": "Échec du démarrage du serveur de développement"
+      },
+      "stop": {
+        "description": "Arrêter le serveur de développement",
+        "notRunning": "Aucun serveur de développement en cours pour {{path}}",
+        "stopped": "Serveur de développement arrêté pour {{path}}",
+        "failed": "Échec de l'arrêt du serveur de développement"
+      },
+      "status": {
+        "description": "Afficher l'état du serveur de développement et la commande exécutée",
+        "title": "Serveur de développement",
+        "targetLabel": "cible",
+        "pathLabel": "chemin",
+        "stateLabel": "état",
+        "notRunning": "arrêté",
+        "urlLabel": "url",
+        "commandLabel": "commande",
+        "portLabel": "port",
+        "planSourceLabel": "plan",
+        "failed": "Impossible de lire l'état du serveur de développement"
+      },
+      "logs": {
+        "description": "Afficher la sortie du serveur de développement",
+        "followOption": "Continuer d'afficher la nouvelle sortie au fil de l'eau",
+        "linesOption": "N'afficher que les <count> dernières lignes",
+        "noLogs": "Aucune sortie de serveur de développement enregistrée pour {{path}}",
+        "detached": "Détaché — le serveur de développement continue de tourner.",
+        "ended": "Le serveur de développement ne tourne plus."
+      },
+      "plan": {
+        "description": "Inspecter, épingler ou effacer le plan d'exécution résolu",
+        "staleHint": "Les fichiers de configuration du dépôt ont changé depuis la création de ce plan. Effacez-le pour relancer l'analyse, ou conservez-le tel quel.",
+        "repoConfigControlled": "Un fichier .shep/dev.json versionné contrôle ce dépôt : il est relu à chaque démarrage et prime sur tout plan enregistré. Modifiez ce fichier pour changer ce qui est exécuté.",
+        "source": {
+          "deterministic": "détecté",
+          "agent": "analysé par IA",
+          "manual": "épinglé"
+        },
+        "fields": {
+          "command": "commande",
+          "cwd": "répertoire",
+          "source": "origine",
+          "language": "langage",
+          "framework": "framework",
+          "expectedPort": "port attendu",
+          "packageManager": "gest. paquets",
+          "setupCommands": "cmd. de setup"
+        },
+        "show": {
+          "description": "Afficher le plan d'exécution résolu",
+          "title": "Plan d'exécution",
+          "empty": "Aucun plan d'exécution en cache pour {{path}} — démarrez le serveur de développement une fois et il apparaîtra ici.",
+          "failed": "Impossible de lire le plan d'exécution"
+        },
+        "set": {
+          "description": "Épingler votre propre plan d'exécution",
+          "commandOption": "Commande utilisée pour lancer le serveur de développement",
+          "cwdOption": "Répertoire de travail, absolu ou relatif à la racine du dépôt",
+          "portOption": "Port attendu, ou `none` pour l'effacer",
+          "languageOption": "Libellé du langage, ou `none` pour l'effacer",
+          "frameworkOption": "Libellé du framework, ou `none` pour l'effacer",
+          "packageManagerOption": "Gestionnaire de paquets, ou `none` pour l'effacer",
+          "setupOption": "Commandes de préparation exécutées avant le démarrage",
+          "clearSetupOption": "Supprimer toutes les commandes de préparation",
+          "saved": "Plan d'exécution épinglé",
+          "invalid": "Le plan d'exécution n'a pas été enregistré",
+          "executionNotice": "Enregistré comme {{source}} — cette commande sera exécutée sur votre machine au prochain démarrage.",
+          "failed": "Impossible d'enregistrer le plan d'exécution"
+        },
+        "clear": {
+          "description": "Effacer le plan d'exécution en cache pour que le prochain démarrage relance l'analyse",
+          "cleared": "Plan d'exécution ({{source}}) effacé — le prochain démarrage réanalysera le dépôt.",
+          "empty": "Aucun plan d'exécution n'était en cache pour {{path}}",
+          "failed": "Impossible d'effacer le plan d'exécution"
+        }
+      }
+    },
     "agent": {
       "description": "Gérer et voir les exécutions d'agent",
       "show": {
