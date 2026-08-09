@@ -22,10 +22,11 @@
 
 import { useCallback } from 'react';
 import { ExternalLink, Globe, Hammer, Loader2, Play, Square, TriangleAlert } from 'lucide-react';
-import { DeploymentState } from '@shepai/core/domain/generated/output';
+import { DeploymentState, type DeploymentTargetType } from '@shepai/core/domain/generated/output';
 import { isDeploymentStarting } from '@/hooks/deployment-status-store';
 import { getDeploymentStartingCopy } from '@/lib/deployment-state-copy';
 import type { DeployActionState } from '@/hooks/use-deploy-action';
+import { RunPlanDisclosure } from '@/components/features/application-page/run-plan/run-plan-disclosure';
 
 export interface WebPreviewTabProps {
   deploy: DeployActionState;
@@ -36,9 +37,29 @@ export interface WebPreviewTabProps {
    * even before a single file has been written.
    */
   isBuilding?: boolean;
+  /**
+   * Deployment target the "Run plan" disclosure inspects. Omitted (as in
+   * pure-presentation stories) the disclosure is not rendered at all — it
+   * has nothing to resolve a plan against.
+   */
+  target?: { targetType: DeploymentTargetType; targetId: string };
 }
 
-export function WebPreviewTab({ deploy, isBuilding = false }: WebPreviewTabProps) {
+export function WebPreviewTab({ deploy, isBuilding = false, target }: WebPreviewTabProps) {
+  return (
+    <div className="flex min-h-0 flex-1 flex-col">
+      <PreviewBody deploy={deploy} isBuilding={isBuilding} />
+      {/* Rendered underneath every state, including the live iframe: the
+          plan is most useful exactly when what's above it is running the
+          wrong thing. Collapsed, it costs one row of chrome. */}
+      {target ? (
+        <RunPlanDisclosure targetType={target.targetType} targetId={target.targetId} />
+      ) : null}
+    </div>
+  );
+}
+
+function PreviewBody({ deploy, isBuilding }: { deploy: DeployActionState; isBuilding: boolean }) {
   const openInNewTab = useCallback(() => {
     if (deploy.url) window.open(deploy.url, '_blank', 'noopener,noreferrer');
   }, [deploy.url]);

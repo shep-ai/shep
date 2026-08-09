@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { DeploymentState } from '@shepai/core/domain/generated/output';
+import { DeploymentState, DeploymentTargetType } from '@shepai/core/domain/generated/output';
 import { WebPreviewTab } from './web-preview-tab';
 import type { DeployActionState } from '@/hooks/use-deploy-action';
 
@@ -70,5 +70,25 @@ export const ErrorState: Story = {
     deploy: makeDeploy({
       deployError: 'Failed to install dependencies: ENOSPC',
     }),
+  },
+};
+
+/**
+ * **With run plan** — the collapsed "Run plan" disclosure rendered underneath
+ * the pane. It is present in every state, including the live iframe, because
+ * a wrong plan is most obvious exactly when something wrong is running.
+ */
+export const WithRunPlan: Story = {
+  args: {
+    deploy: makeDeploy(),
+    target: { targetType: DeploymentTargetType.Application, targetId: 'story-default' },
+  },
+};
+
+/** **Ready with run plan** — the plan sits below the live preview. */
+export const ReadyWithRunPlan: Story = {
+  args: {
+    deploy: makeDeploy({ status: DeploymentState.Ready, url: 'about:blank' }),
+    target: { targetType: DeploymentTargetType.Application, targetId: 'story-default' },
   },
 };
