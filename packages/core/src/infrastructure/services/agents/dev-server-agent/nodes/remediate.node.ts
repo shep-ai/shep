@@ -6,7 +6,8 @@
  * degrades: `failureReason` is deliberately left untouched so the route
  * after ensure_infra terminates the run. With an executor it first
  * invalidates the cached run plan (the plan may be the cause — the next
- * start re-analyzes), then runs the remediation agent; on success it
+ * start re-analyzes) UNLESS the plan is pinned, then runs the remediation
+ * agent; on success it
  * EXPLICITLY writes `failureReason: null` (the reducer lets an explicit
  * null overwrite) so the graph loops back and retries, and clears
  * `lastErrorTail`. An executor throw keeps the failure set — terminal.
@@ -14,18 +15,29 @@
 
 import type { IAgentExecutor } from '@/application/ports/output/agents/agent-executor.interface.js';
 import type { IDevServerRunPlanRepository } from '@/application/ports/output/repositories/dev-server-run-plan-repository.interface.js';
+import type { DevServerAgentState } from '../state.js';
 import type { DevServerAgentNodeFn } from '../types.js';
+import { isManualPlan } from '../manual-plan.js';
 import { buildRemediationPrompt } from './prompts/remediation.prompt.js';
 
 /** Default bound for a single remediation agent run. */
 export const DEFAULT_REMEDIATION_TIMEOUT_MS = 300_000;
 
+/** Logged in place of the delete when the cached plan is the user's own. */
+const PINNED_PLAN_SKIP_LOG =
+  'cached run plan is pinned by you — leaving it in place instead of re-analyzing';
+
 /** Dependencies for the remediate node. */
 export interface RemediateNodeDeps {
   /** Remediation agent, or null when no agent is configured (degraded). */
   executor: IAgentExecutor | null;
-  /** Run-plan cache — invalidated so the next start re-analyzes. */
-  runPlanRepository: Pick<IDevServerRunPlanRepository, 'deleteByRepoPath'>;
+  /**
+   * Run-plan cache — invalidated so the next start re-analyzes, except for a
+   * pinned plan. `findByRepoPath` is here (rather than the guard living in
+   * the repository) because the policy belongs to this node: the invalidate
+   * use case must still be able to clear a Manual plan on request (FR-16).
+   */
+  runPlanRepository: Pick<IDevServerRunPlanRepository, 'deleteByRepoPath' | 'findByRepoPath'>;
   /** Agent run bound; defaults to {@link DEFAULT_REMEDIATION_TIMEOUT_MS}. */
   timeoutMs?: number;
   /** Live log sink (SSE trail). */
@@ -47,12 +59,17 @@ export const createRemediateNode =
 
     // Invalidate the cached plan — it may be the cause of the failure, so
     // the next start must re-analyze. Best-effort: a cache miss must never
-    // block remediation itself.
-    try {
-      await deps.runPlanRepository.deleteByRepoPath(state.targetPath);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      deps.log(`failed to invalidate cached run plan: ${message}`);
+    // block remediation itself. A pinned plan is exempt: the user said what
+    // to run, and a failure is not licence to discard that (FR-15).
+    if (await isPinned(deps, state)) {
+      deps.log(PINNED_PLAN_SKIP_LOG);
+    } else {
+      try {
+        await deps.runPlanRepository.deleteByRepoPath(state.targetPath);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        deps.log(`failed to invalidate cached run plan: ${message}`);
+      }
     }
 
     const prompt = buildRemediationPrompt({
@@ -82,3 +99,22 @@ export const createRemediateNode =
     // the graph loops back through ensure_infra and retries the start.
     return { remediationAttempts, failureReason: null, lastErrorTail: [] };
   };
+
+/**
+ * True when the persisted plan for this repo is the user's own.
+ *
+ * The stored row is authoritative; when it cannot be read, the plan this run
+ * actually used is the next best evidence — a transient lookup failure must
+ * not become a reason to delete a pinned plan.
+ */
+async function isPinned(deps: RemediateNodeDeps, state: DevServerAgentState): Promise<boolean> {
+  try {
+    const stored = await deps.runPlanRepository.findByRepoPath(state.targetPath);
+    if (stored) return isManualPlan(stored);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    deps.log(`could not read the cached run plan: ${message}`);
+  }
+
+  return state.runPlan !== null && isManualPlan(state.runPlan);
+}
