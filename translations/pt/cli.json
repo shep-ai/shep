@@ -709,6 +709,110 @@
         "notFound": "Cluster não encontrado: {{id}}"
       }
     },
+    "dev": {
+      "description": "Executar e inspecionar um servidor de desenvolvimento local",
+      "noUrl": "nenhuma URL detectada",
+      "options": {
+        "app": "Usar a aplicação com este id",
+        "feature": "Usar a funcionalidade com este id",
+        "repo": "Usar o repositório com este caminho ou id",
+        "json": "Saída em JSON"
+      },
+      "target": {
+        "conflict": "Informe apenas uma das opções --app, --feature ou --repo",
+        "unmatchedHint": "Execute isto dentro de um repositório monitorado ou informe --app, --feature ou --repo."
+      },
+      "state": {
+        "analyzing": "analisando",
+        "installing": "instalando",
+        "booting": "iniciando",
+        "ready": "pronto",
+        "stopped": "parado"
+      },
+      "start": {
+        "description": "Iniciar o servidor de desenvolvimento e acompanhá-lo até estar pronto",
+        "streaming": "Iniciando o servidor de desenvolvimento para {{targetType}} em {{path}}",
+        "ready": "Servidor de desenvolvimento pronto: {{url}}",
+        "detached": "Desanexado — o servidor de desenvolvimento continua em execução. Pare-o com `shep dev stop`.",
+        "notReady": "O servidor de desenvolvimento não ficou pronto: {{reason}}",
+        "noReason": "nenhum motivo informado",
+        "failedToStart": "Falha ao iniciar o servidor de desenvolvimento"
+      },
+      "stop": {
+        "description": "Parar o servidor de desenvolvimento",
+        "notRunning": "Nenhum servidor de desenvolvimento em execução para {{path}}",
+        "stopped": "Servidor de desenvolvimento parado para {{path}}",
+        "failed": "Falha ao parar o servidor de desenvolvimento"
+      },
+      "status": {
+        "description": "Mostrar o estado do servidor de desenvolvimento e o comando que ele executa",
+        "title": "Servidor de desenvolvimento",
+        "targetLabel": "alvo",
+        "pathLabel": "caminho",
+        "stateLabel": "estado",
+        "notRunning": "não está em execução",
+        "urlLabel": "url",
+        "commandLabel": "comando",
+        "portLabel": "porta",
+        "planSourceLabel": "plano",
+        "failed": "Falha ao ler o estado do servidor de desenvolvimento"
+      },
+      "logs": {
+        "description": "Mostrar a saída do servidor de desenvolvimento",
+        "followOption": "Continuar exibindo a nova saída conforme ela chega",
+        "linesOption": "Mostrar apenas as últimas <count> linhas",
+        "noLogs": "Nenhuma saída do servidor de desenvolvimento registrada para {{path}}",
+        "detached": "Desanexado — o servidor de desenvolvimento continua em execução.",
+        "ended": "O servidor de desenvolvimento não está mais em execução."
+      },
+      "plan": {
+        "description": "Inspecionar, fixar ou limpar o plano de execução resolvido",
+        "staleHint": "Os arquivos de configuração do repositório mudaram desde que este plano foi produzido. Limpe-o para reanalisar ou mantenha-o como está.",
+        "repoConfigControlled": "Um .shep/dev.json versionado controla este repositório — ele é relido a cada início e tem prioridade sobre qualquer plano armazenado. Edite esse arquivo para mudar o que é executado.",
+        "source": {
+          "deterministic": "detectado",
+          "agent": "analisado por IA",
+          "manual": "fixado"
+        },
+        "fields": {
+          "command": "comando",
+          "cwd": "diretório",
+          "source": "origem",
+          "language": "linguagem",
+          "framework": "framework",
+          "expectedPort": "porta esperada",
+          "packageManager": "gerenc. pacotes",
+          "setupCommands": "comandos setup"
+        },
+        "show": {
+          "description": "Mostrar o plano de execução resolvido",
+          "title": "Plano de execução",
+          "empty": "Nenhum plano de execução em cache para {{path}} — inicie o servidor de desenvolvimento uma vez e ele aparecerá aqui.",
+          "failed": "Falha ao ler o plano de execução"
+        },
+        "set": {
+          "description": "Fixar o seu próprio plano de execução",
+          "commandOption": "Comando para executar o servidor de desenvolvimento",
+          "cwdOption": "Diretório de trabalho, absoluto ou relativo à raiz do repositório",
+          "portOption": "Porta esperada, ou `none` para limpar",
+          "languageOption": "Rótulo da linguagem, ou `none` para limpar",
+          "frameworkOption": "Rótulo do framework, ou `none` para limpar",
+          "packageManagerOption": "Gerenciador de pacotes, ou `none` para limpar",
+          "setupOption": "Comandos de preparação executados antes do início",
+          "clearSetupOption": "Remover todos os comandos de preparação",
+          "saved": "Plano de execução fixado",
+          "invalid": "O plano de execução não foi salvo",
+          "executionNotice": "Salvo como {{source}} — este comando será executado na sua máquina no próximo início.",
+          "failed": "Falha ao salvar o plano de execução"
+        },
+        "clear": {
+          "description": "Limpar o plano de execução em cache para que o próximo início reanalise",
+          "cleared": "Plano de execução ({{source}}) limpo — o próximo início reanalisará o repositório.",
+          "empty": "Nenhum plano de execução estava em cache para {{path}}",
+          "failed": "Falha ao limpar o plano de execução"
+        }
+      }
+    },
     "agent": {
       "description": "Gerenciar e visualizar execuções de agentes",
       "show": {

@@ -709,6 +709,110 @@
         "notFound": "Cluster not found: {{id}}"
       }
     },
+    "dev": {
+      "description": "Run and inspect a local dev server",
+      "noUrl": "no URL detected",
+      "options": {
+        "app": "Target the application with this id",
+        "feature": "Target the feature with this id",
+        "repo": "Target the repository with this path or id",
+        "json": "Output as JSON"
+      },
+      "target": {
+        "conflict": "Pass only one of --app, --feature or --repo",
+        "unmatchedHint": "Run this from inside a tracked repository, or pass --app, --feature or --repo."
+      },
+      "state": {
+        "analyzing": "analyzing",
+        "installing": "installing",
+        "booting": "booting",
+        "ready": "ready",
+        "stopped": "stopped"
+      },
+      "start": {
+        "description": "Start the dev server and stream it until it is ready",
+        "streaming": "Starting the dev server for {{targetType}} at {{path}}",
+        "ready": "Dev server ready: {{url}}",
+        "detached": "Detached — the dev server keeps running. Stop it with `shep dev stop`.",
+        "notReady": "The dev server did not become ready: {{reason}}",
+        "noReason": "no reason was reported",
+        "failedToStart": "Failed to start the dev server"
+      },
+      "stop": {
+        "description": "Stop the dev server",
+        "notRunning": "No dev server is running for {{path}}",
+        "stopped": "Dev server stopped for {{path}}",
+        "failed": "Failed to stop the dev server"
+      },
+      "status": {
+        "description": "Show the dev server state and the command it runs",
+        "title": "Dev server",
+        "targetLabel": "target",
+        "pathLabel": "path",
+        "stateLabel": "state",
+        "notRunning": "not running",
+        "urlLabel": "url",
+        "commandLabel": "command",
+        "portLabel": "port",
+        "planSourceLabel": "plan",
+        "failed": "Failed to read the dev server status"
+      },
+      "logs": {
+        "description": "Show the dev server output",
+        "followOption": "Keep printing new output as it arrives",
+        "linesOption": "Show only the last <count> lines",
+        "noLogs": "No dev server output recorded for {{path}}",
+        "detached": "Detached — the dev server keeps running.",
+        "ended": "The dev server is no longer running."
+      },
+      "plan": {
+        "description": "Inspect, pin or clear the resolved run plan",
+        "staleHint": "The repository's config files have changed since this plan was produced. Clear it to re-analyze, or keep it as is.",
+        "repoConfigControlled": "A committed .shep/dev.json controls this repository — it is re-read on every start and outranks any stored plan. Edit that file to change what runs.",
+        "source": {
+          "deterministic": "detected",
+          "agent": "AI-analyzed",
+          "manual": "pinned"
+        },
+        "fields": {
+          "command": "command",
+          "cwd": "working dir",
+          "source": "source",
+          "language": "language",
+          "framework": "framework",
+          "expectedPort": "expected port",
+          "packageManager": "package manager",
+          "setupCommands": "setup commands"
+        },
+        "show": {
+          "description": "Show the resolved run plan",
+          "title": "Run plan",
+          "empty": "No run plan is cached for {{path}} — start the dev server once and it will appear here.",
+          "failed": "Failed to read the run plan"
+        },
+        "set": {
+          "description": "Pin a run plan of your own",
+          "commandOption": "Command to run the dev server with",
+          "cwdOption": "Working directory, absolute or relative to the repository root",
+          "portOption": "Expected port, or `none` to clear it",
+          "languageOption": "Language label, or `none` to clear it",
+          "frameworkOption": "Framework label, or `none` to clear it",
+          "packageManagerOption": "Package manager, or `none` to clear it",
+          "setupOption": "Setup commands to run before the dev server starts",
+          "clearSetupOption": "Remove all setup commands",
+          "saved": "Run plan pinned",
+          "invalid": "The run plan was not saved",
+          "executionNotice": "Saved as {{source}} — this command will be executed on your machine on the next start.",
+          "failed": "Failed to save the run plan"
+        },
+        "clear": {
+          "description": "Clear the cached run plan so the next start re-analyzes",
+          "cleared": "Cleared the {{source}} run plan — the next start re-analyzes the repository.",
+          "empty": "No run plan was cached for {{path}}",
+          "failed": "Failed to clear the run plan"
+        }
+      }
+    },
     "agent": {
       "description": "Manage and view agent runs",
       "show": {

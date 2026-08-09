@@ -709,6 +709,110 @@
         "notFound": "Clúster no encontrado: {{id}}"
       }
     },
+    "dev": {
+      "description": "Ejecutar e inspeccionar un servidor de desarrollo local",
+      "noUrl": "no se detectó ninguna URL",
+      "options": {
+        "app": "Usar la aplicación con este id",
+        "feature": "Usar la funcionalidad con este id",
+        "repo": "Usar el repositorio con esta ruta o id",
+        "json": "Salida en JSON"
+      },
+      "target": {
+        "conflict": "Indica solo uno de --app, --feature o --repo",
+        "unmatchedHint": "Ejecútalo dentro de un repositorio registrado o indica --app, --feature o --repo."
+      },
+      "state": {
+        "analyzing": "analizando",
+        "installing": "instalando",
+        "booting": "arrancando",
+        "ready": "listo",
+        "stopped": "detenido"
+      },
+      "start": {
+        "description": "Iniciar el servidor de desarrollo y seguirlo hasta que esté listo",
+        "streaming": "Iniciando el servidor de desarrollo para {{targetType}} en {{path}}",
+        "ready": "Servidor de desarrollo listo: {{url}}",
+        "detached": "Desconectado — el servidor de desarrollo sigue en marcha. Deténlo con `shep dev stop`.",
+        "notReady": "El servidor de desarrollo no llegó a estar listo: {{reason}}",
+        "noReason": "no se informó ningún motivo",
+        "failedToStart": "No se pudo iniciar el servidor de desarrollo"
+      },
+      "stop": {
+        "description": "Detener el servidor de desarrollo",
+        "notRunning": "No hay ningún servidor de desarrollo en marcha para {{path}}",
+        "stopped": "Servidor de desarrollo detenido para {{path}}",
+        "failed": "No se pudo detener el servidor de desarrollo"
+      },
+      "status": {
+        "description": "Mostrar el estado del servidor de desarrollo y el comando que ejecuta",
+        "title": "Servidor de desarrollo",
+        "targetLabel": "objetivo",
+        "pathLabel": "ruta",
+        "stateLabel": "estado",
+        "notRunning": "no está en marcha",
+        "urlLabel": "url",
+        "commandLabel": "comando",
+        "portLabel": "puerto",
+        "planSourceLabel": "plan",
+        "failed": "No se pudo leer el estado del servidor de desarrollo"
+      },
+      "logs": {
+        "description": "Mostrar la salida del servidor de desarrollo",
+        "followOption": "Seguir mostrando la salida nueva a medida que llega",
+        "linesOption": "Mostrar solo las últimas <count> líneas",
+        "noLogs": "No hay salida registrada del servidor de desarrollo para {{path}}",
+        "detached": "Desconectado — el servidor de desarrollo sigue en marcha.",
+        "ended": "El servidor de desarrollo ya no está en marcha."
+      },
+      "plan": {
+        "description": "Inspeccionar, fijar o borrar el plan de ejecución resuelto",
+        "staleHint": "Los archivos de configuración del repositorio han cambiado desde que se creó este plan. Bórralo para volver a analizar, o mantenlo tal cual.",
+        "repoConfigControlled": "Un archivo .shep/dev.json versionado controla este repositorio: se vuelve a leer en cada arranque y tiene prioridad sobre cualquier plan guardado. Edita ese archivo para cambiar lo que se ejecuta.",
+        "source": {
+          "deterministic": "detectado",
+          "agent": "analizado por IA",
+          "manual": "fijado"
+        },
+        "fields": {
+          "command": "comando",
+          "cwd": "directorio",
+          "source": "origen",
+          "language": "lenguaje",
+          "framework": "framework",
+          "expectedPort": "puerto esperado",
+          "packageManager": "gestor paquetes",
+          "setupCommands": "comandos setup"
+        },
+        "show": {
+          "description": "Mostrar el plan de ejecución resuelto",
+          "title": "Plan de ejecución",
+          "empty": "No hay plan de ejecución guardado para {{path}}: inicia el servidor de desarrollo una vez y aparecerá aquí.",
+          "failed": "No se pudo leer el plan de ejecución"
+        },
+        "set": {
+          "description": "Fijar tu propio plan de ejecución",
+          "commandOption": "Comando con el que ejecutar el servidor de desarrollo",
+          "cwdOption": "Directorio de trabajo, absoluto o relativo a la raíz del repositorio",
+          "portOption": "Puerto esperado, o `none` para borrarlo",
+          "languageOption": "Etiqueta de lenguaje, o `none` para borrarla",
+          "frameworkOption": "Etiqueta de framework, o `none` para borrarla",
+          "packageManagerOption": "Gestor de paquetes, o `none` para borrarlo",
+          "setupOption": "Comandos de preparación previos al arranque",
+          "clearSetupOption": "Eliminar todos los comandos de preparación",
+          "saved": "Plan de ejecución fijado",
+          "invalid": "El plan de ejecución no se guardó",
+          "executionNotice": "Guardado como {{source}}: este comando se ejecutará en tu máquina en el próximo arranque.",
+          "failed": "No se pudo guardar el plan de ejecución"
+        },
+        "clear": {
+          "description": "Borrar el plan de ejecución guardado para que el próximo arranque vuelva a analizar",
+          "cleared": "Plan de ejecución ({{source}}) borrado: el próximo arranque volverá a analizar el repositorio.",
+          "empty": "No había plan de ejecución guardado para {{path}}",
+          "failed": "No se pudo borrar el plan de ejecución"
+        }
+      }
+    },
     "agent": {
       "description": "Administrar y ver ejecuciones de agentes",
       "show": {
