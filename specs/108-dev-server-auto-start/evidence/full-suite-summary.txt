@@ -1,0 +1,23 @@
+Full test suite — dev-server-auto-start (spec 108)
+Captured 2026-08-09T13:45:51Z
+
+$ pnpm test:unit
+ Test Files  941 passed (941)
+      Tests  11001 passed (11001)
+   Start at  16:24:19
+   Duration  30.94s (transform 40.96s, setup 69.97s, import 109.70s, tests 130.17s, environment 93.51s)
+
+$ pnpm test:int
+ Test Files  135 passed (135)
+      Tests  1605 passed (1605)
+   Start at  16:24:58
+   Duration  21.02s (transform 23.87s, setup 2.01s, import 35.05s, tests 272.92s, environment 12ms)
+
+$ pnpm build:storybook   (NFR-10)
+✓ built in 14.72s
+info => Preview built (18 s)
+info => Output directory: /Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/storybook-static
+
+Zero failures in either suite.
+The pinned detect-dev-script.test.ts suite (492 lines) passes UNMODIFIED — the
+backward-compatibility guard for every existing Node repository (NFR-5).

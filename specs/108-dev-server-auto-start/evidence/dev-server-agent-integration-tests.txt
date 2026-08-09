@@ -1,0 +1,500 @@
+
+ RUN  v4.0.18 /Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start
+
+stderr | tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent-multistack.int.test.ts > dev-server agent integration — multi-stack deterministic resolution > with an agent configured > 'make' resolves a Deterministic plan with ZERO agent calls
+[detectNode] No package.json found in /var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-multistack-LNHhVb Error: ENOENT: no such file or directory, open '/var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-multistack-LNHhVb/package.json'
+    at readFileSync (node:fs:441:20)
+    at detectNode (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detectors/node.detector.ts:52:17)
+    at detectInDir (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:99:20)
+    at Object.detectRunPlan [as detect] (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:58:18)
+    at detectSafely (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/agents/dev-server-agent/nodes/analyze.node.ts:192:17)
+    at /Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/agents/dev-server-agent/nodes/analyze.node.ts:118:21
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at /Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent-multistack.int.test.ts:225:24
+    at file:///Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:915:20 {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-multistack-LNHhVb/package.json'
+}
+
+stderr | tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent-remediation.int.test.ts > dev-server agent integration — install and remediation > install path: stale deps run the plan setupCommands through Installing, stamp the hash, then Ready
+[detectNode] No dev script found in package.json. Expected one of: dev, start, serve
+
+(node:36836) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to security vulnerabilities, as the arguments are not escaped, only concatenated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+(node:36840) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to security vulnerabilities, as the arguments are not escaped, only concatenated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓  node  tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent-multistack.int.test.ts > dev-server agent integration — multi-stack deterministic resolution > with an agent configured > 'make' resolves a Deterministic plan with ZERO agent calls 420ms
+stderr | tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent-multistack.int.test.ts > dev-server agent integration — multi-stack deterministic resolution > with an agent configured > 'deno' resolves a Deterministic plan with ZERO agent calls
+[detectNode] No package.json found in /var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-multistack-FQcD9N Error: ENOENT: no such file or directory, open '/var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-multistack-FQcD9N/package.json'
+    at readFileSync (node:fs:441:20)
+    at detectNode (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detectors/node.detector.ts:52:17)
+    at detectInDir (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:99:20)
+    at Object.detectRunPlan [as detect] (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:58:18)
+    at detectSafely (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/agents/dev-server-agent/nodes/analyze.node.ts:192:17)
+    at /Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/agents/dev-server-agent/nodes/analyze.node.ts:118:21
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at /Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent-multistack.int.test.ts:225:24
+    at file:///Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:915:20 {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-multistack-FQcD9N/package.json'
+}
+
+stderr | tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent-multistack.int.test.ts > dev-server agent integration — multi-stack deterministic resolution > with an agent configured > 'python' resolves a Deterministic plan with ZERO agent calls
+[detectNode] No package.json found in /var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-multistack-VXzOws Error: ENOENT: no such file or directory, open '/var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-multistack-VXzOws/package.json'
+    at readFileSync (node:fs:441:20)
+    at detectNode (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detectors/node.detector.ts:52:17)
+    at detectInDir (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:99:20)
+    at Object.detectRunPlan [as detect] (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:58:18)
+    at detectSafely (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/agents/dev-server-agent/nodes/analyze.node.ts:192:17)
+    at /Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/agents/dev-server-agent/nodes/analyze.node.ts:118:21
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at /Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent-multistack.int.test.ts:225:24
+    at file:///Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:915:20 {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-multistack-VXzOws/package.json'
+}
+
+ ✓  node  tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent-multistack.int.test.ts > dev-server agent integration — multi-stack deterministic resolution > with an agent configured > 'deno' resolves a Deterministic plan with ZERO agent calls 119ms
+ ✓  node  tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent-multistack.int.test.ts > dev-server agent integration — multi-stack deterministic resolution > with an agent configured > 'python' resolves a Deterministic plan with ZERO agent calls 90ms
+stderr | tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent-multistack.int.test.ts > dev-server agent integration — multi-stack deterministic resolution > with an agent configured > 'go' resolves a Deterministic plan with ZERO agent calls
+[detectNode] No package.json found in /var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-multistack-MumT6u Error: ENOENT: no such file or directory, open '/var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-multistack-MumT6u/package.json'
+    at readFileSync (node:fs:441:20)
+    at detectNode (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detectors/node.detector.ts:52:17)
+    at detectInDir (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:99:20)
+    at Object.detectRunPlan [as detect] (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:58:18)
+    at detectSafely (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/agents/dev-server-agent/nodes/analyze.node.ts:192:17)
+    at /Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/agents/dev-server-agent/nodes/analyze.node.ts:118:21
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at /Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent-multistack.int.test.ts:225:24
+    at file:///Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:915:20 {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-multistack-MumT6u/package.json'
+}
+
+ ✓  node  tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent-multistack.int.test.ts > dev-server agent integration — multi-stack deterministic resolution > with an agent configured > 'go' resolves a Deterministic plan with ZERO agent calls 91ms
+stderr | tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent-multistack.int.test.ts > dev-server agent integration — multi-stack deterministic resolution > with an agent configured > 'rust' resolves a Deterministic plan with ZERO agent calls
+[detectNode] No package.json found in /var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-multistack-vKTWRr Error: ENOENT: no such file or directory, open '/var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-multistack-vKTWRr/package.json'
+    at readFileSync (node:fs:441:20)
+    at detectNode (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detectors/node.detector.ts:52:17)
+    at detectInDir (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:99:20)
+    at Object.detectRunPlan [as detect] (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:58:18)
+    at detectSafely (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/agents/dev-server-agent/nodes/analyze.node.ts:192:17)
+    at /Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/agents/dev-server-agent/nodes/analyze.node.ts:118:21
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at /Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent-multistack.int.test.ts:225:24
+    at file:///Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:915:20 {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-multistack-vKTWRr/package.json'
+}
+
+stderr | tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent-multistack.int.test.ts > dev-server agent integration — multi-stack deterministic resolution > with an agent configured > 'ruby' resolves a Deterministic plan with ZERO agent calls
+[detectNode] No package.json found in /var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-multistack-FWavI9 Error: ENOENT: no such file or directory, open '/var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-multistack-FWavI9/package.json'
+    at readFileSync (node:fs:441:20)
+    at detectNode (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detectors/node.detector.ts:52:17)
+    at detectInDir (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:99:20)
+    at Object.detectRunPlan [as detect] (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:58:18)
+    at detectSafely (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/agents/dev-server-agent/nodes/analyze.node.ts:192:17)
+    at /Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/agents/dev-server-agent/nodes/analyze.node.ts:118:21
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at /Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent-multistack.int.test.ts:225:24
+    at file:///Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:915:20 {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-multistack-FWavI9/package.json'
+}
+
+ ✓  node  tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent-multistack.int.test.ts > dev-server agent integration — multi-stack deterministic resolution > with an agent configured > 'rust' resolves a Deterministic plan with ZERO agent calls 87ms
+ ✓  node  tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent-multistack.int.test.ts > dev-server agent integration — multi-stack deterministic resolution > with an agent configured > 'ruby' resolves a Deterministic plan with ZERO agent calls 72ms
+stderr | tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent-multistack.int.test.ts > dev-server agent integration — multi-stack deterministic resolution > with an agent configured > 'elixir' resolves a Deterministic plan with ZERO agent calls
+[detectNode] No package.json found in /var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-multistack-aJYaaM Error: ENOENT: no such file or directory, open '/var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-multistack-aJYaaM/package.json'
+    at readFileSync (node:fs:441:20)
+    at detectNode (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detectors/node.detector.ts:52:17)
+    at detectInDir (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:99:20)
+    at Object.detectRunPlan [as detect] (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:58:18)
+    at detectSafely (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/agents/dev-server-agent/nodes/analyze.node.ts:192:17)
+    at /Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/agents/dev-server-agent/nodes/analyze.node.ts:118:21
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at /Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent-multistack.int.test.ts:225:24
+    at file:///Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:915:20 {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-multistack-aJYaaM/package.json'
+}
+
+stderr | tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent-multistack.int.test.ts > dev-server agent integration — multi-stack deterministic resolution > with an agent configured > 'compose' resolves a Deterministic plan with ZERO agent calls
+[detectNode] No package.json found in /var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-multistack-G4qd1V Error: ENOENT: no such file or directory, open '/var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-multistack-G4qd1V/package.json'
+    at readFileSync (node:fs:441:20)
+    at detectNode (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detectors/node.detector.ts:52:17)
+    at detectInDir (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:99:20)
+    at Object.detectRunPlan [as detect] (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:58:18)
+    at detectSafely (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/agents/dev-server-agent/nodes/analyze.node.ts:192:17)
+    at /Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/agents/dev-server-agent/nodes/analyze.node.ts:118:21
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at /Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent-multistack.int.test.ts:225:24
+    at file:///Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:915:20 {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-multistack-G4qd1V/package.json'
+}
+
+ ✓  node  tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent-multistack.int.test.ts > dev-server agent integration — multi-stack deterministic resolution > with an agent configured > 'elixir' resolves a Deterministic plan with ZERO agent calls 75ms
+ ✓  node  tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent-multistack.int.test.ts > dev-server agent integration — multi-stack deterministic resolution > with an agent configured > 'compose' resolves a Deterministic plan with ZERO agent calls 80ms
+stderr | tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent-multistack.int.test.ts > dev-server agent integration — multi-stack deterministic resolution > degraded — no structured caller resolvable at all > 'make' still resolves a Deterministic plan
+[detectNode] No package.json found in /var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-multistack-LNVw7Z Error: ENOENT: no such file or directory, open '/var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-multistack-LNVw7Z/package.json'
+    at readFileSync (node:fs:441:20)
+    at detectNode (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detectors/node.detector.ts:52:17)
+    at detectInDir (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:99:20)
+    at Object.detectRunPlan [as detect] (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:58:18)
+    at detectSafely (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/agents/dev-server-agent/nodes/analyze.node.ts:192:17)
+    at /Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/agents/dev-server-agent/nodes/analyze.node.ts:118:21
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at /Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent-multistack.int.test.ts:251:22
+    at file:///Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:915:20 {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-multistack-LNVw7Z/package.json'
+}
+
+stderr | tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent-multistack.int.test.ts > dev-server agent integration — multi-stack deterministic resolution > degraded — no structured caller resolvable at all > 'deno' still resolves a Deterministic plan
+[detectNode] No package.json found in /var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-multistack-5WfTyO Error: ENOENT: no such file or directory, open '/var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-multistack-5WfTyO/package.json'
+    at readFileSync (node:fs:441:20)
+    at detectNode (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detectors/node.detector.ts:52:17)
+    at detectInDir (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:99:20)
+    at Object.detectRunPlan [as detect] (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:58:18)
+    at detectSafely (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/agents/dev-server-agent/nodes/analyze.node.ts:192:17)
+    at /Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/agents/dev-server-agent/nodes/analyze.node.ts:118:21
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at /Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent-multistack.int.test.ts:251:22
+    at file:///Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:915:20 {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-multistack-5WfTyO/package.json'
+}
+
+ ✓  node  tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent-repo-config.int.test.ts > dev-server agent integration — committed .shep/dev.json (tier zero) > outranks a FRESH cached plan and reaches Ready with zero agent calls 1136ms
+ ✓  node  tests/integration/application/use-cases/deployments/dev-server-run-plan.use-cases.int.test.ts > dev-server run-plan use cases (integration) > spawns the overridden command in the overridden cwd on the very next start 1100ms
+ ✓  node  tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent-multistack.int.test.ts > dev-server agent integration — multi-stack deterministic resolution > degraded — no structured caller resolvable at all > 'make' still resolves a Deterministic plan 72ms
+ ✓  node  tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent-multistack.int.test.ts > dev-server agent integration — multi-stack deterministic resolution > degraded — no structured caller resolvable at all > 'deno' still resolves a Deterministic plan 88ms
+stderr | tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent-multistack.int.test.ts > dev-server agent integration — multi-stack deterministic resolution > degraded — no structured caller resolvable at all > 'python' still resolves a Deterministic plan
+[detectNode] No package.json found in /var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-multistack-PHzW1U Error: ENOENT: no such file or directory, open '/var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-multistack-PHzW1U/package.json'
+    at readFileSync (node:fs:441:20)
+    at detectNode (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detectors/node.detector.ts:52:17)
+    at detectInDir (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:99:20)
+    at Object.detectRunPlan [as detect] (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:58:18)
+    at detectSafely (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/agents/dev-server-agent/nodes/analyze.node.ts:192:17)
+    at /Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/agents/dev-server-agent/nodes/analyze.node.ts:118:21
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at /Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent-multistack.int.test.ts:251:22
+    at file:///Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:915:20 {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-multistack-PHzW1U/package.json'
+}
+
+stderr | tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent-multistack.int.test.ts > dev-server agent integration — multi-stack deterministic resolution > degraded — no structured caller resolvable at all > 'go' still resolves a Deterministic plan
+[detectNode] No package.json found in /var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-multistack-4HBuxe Error: ENOENT: no such file or directory, open '/var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-multistack-4HBuxe/package.json'
+    at readFileSync (node:fs:441:20)
+    at detectNode (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detectors/node.detector.ts:52:17)
+    at detectInDir (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:99:20)
+    at Object.detectRunPlan [as detect] (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:58:18)
+    at detectSafely (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/agents/dev-server-agent/nodes/analyze.node.ts:192:17)
+    at /Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/agents/dev-server-agent/nodes/analyze.node.ts:118:21
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at /Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent-multistack.int.test.ts:251:22
+    at file:///Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:915:20 {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-multistack-4HBuxe/package.json'
+}
+
+stderr | tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent-degradation-recovery.int.test.ts > dev-server agent integration — degradation and recovery > degradation: with no agent and no detectable dev script, the run stops with an actionable reason
+[detectNode] No dev script found in package.json. Expected one of: dev, start, serve
+
+ ✓  node  tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent-degradation-recovery.int.test.ts > dev-server agent integration — degradation and recovery > degradation: with no agent configured, a detectable repo still reaches Ready deterministically 1272ms
+ ✓  node  tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent-multistack.int.test.ts > dev-server agent integration — multi-stack deterministic resolution > degraded — no structured caller resolvable at all > 'python' still resolves a Deterministic plan 77ms
+ ✓  node  tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent-multistack.int.test.ts > dev-server agent integration — multi-stack deterministic resolution > degraded — no structured caller resolvable at all > 'go' still resolves a Deterministic plan 74ms
+stderr | tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent-multistack.int.test.ts > dev-server agent integration — multi-stack deterministic resolution > degraded — no structured caller resolvable at all > 'rust' still resolves a Deterministic plan
+[detectNode] No package.json found in /var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-multistack-tWgXLq Error: ENOENT: no such file or directory, open '/var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-multistack-tWgXLq/package.json'
+    at readFileSync (node:fs:441:20)
+    at detectNode (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detectors/node.detector.ts:52:17)
+    at detectInDir (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:99:20)
+    at Object.detectRunPlan [as detect] (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:58:18)
+    at detectSafely (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/agents/dev-server-agent/nodes/analyze.node.ts:192:17)
+    at /Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/agents/dev-server-agent/nodes/analyze.node.ts:118:21
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at /Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent-multistack.int.test.ts:251:22
+    at file:///Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:915:20 {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-multistack-tWgXLq/package.json'
+}
+
+(node:36839) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to security vulnerabilities, as the arguments are not escaped, only concatenated.
+(Use `node --trace-deprecation ...` to show where the warning was created)
+ ✓  node  tests/integration/application/use-cases/deployments/dev-server-run-plan.use-cases.int.test.ts > dev-server run-plan use cases (integration) > keeps the override after the repo config files change, and reports it as stale 238ms
+stderr | tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent-multistack.int.test.ts > dev-server agent integration — multi-stack deterministic resolution > degraded — no structured caller resolvable at all > 'ruby' still resolves a Deterministic plan
+[detectNode] No package.json found in /var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-multistack-75P1iQ Error: ENOENT: no such file or directory, open '/var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-multistack-75P1iQ/package.json'
+    at readFileSync (node:fs:441:20)
+    at detectNode (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detectors/node.detector.ts:52:17)
+    at detectInDir (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:99:20)
+    at Object.detectRunPlan [as detect] (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:58:18)
+    at detectSafely (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/agents/dev-server-agent/nodes/analyze.node.ts:192:17)
+    at /Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/agents/dev-server-agent/nodes/analyze.node.ts:118:21
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at /Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent-multistack.int.test.ts:251:22
+    at file:///Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:915:20 {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-multistack-75P1iQ/package.json'
+}
+
+ ✓  node  tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent-multistack.int.test.ts > dev-server agent integration — multi-stack deterministic resolution > degraded — no structured caller resolvable at all > 'rust' still resolves a Deterministic plan 85ms
+ ✓  node  tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent-multistack.int.test.ts > dev-server agent integration — multi-stack deterministic resolution > degraded — no structured caller resolvable at all > 'ruby' still resolves a Deterministic plan 80ms
+stderr | tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent-multistack.int.test.ts > dev-server agent integration — multi-stack deterministic resolution > degraded — no structured caller resolvable at all > 'elixir' still resolves a Deterministic plan
+[detectNode] No package.json found in /var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-multistack-4y4Ajm Error: ENOENT: no such file or directory, open '/var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-multistack-4y4Ajm/package.json'
+    at readFileSync (node:fs:441:20)
+    at detectNode (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detectors/node.detector.ts:52:17)
+    at detectInDir (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:99:20)
+    at Object.detectRunPlan [as detect] (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:58:18)
+    at detectSafely (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/agents/dev-server-agent/nodes/analyze.node.ts:192:17)
+    at /Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/agents/dev-server-agent/nodes/analyze.node.ts:118:21
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at /Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent-multistack.int.test.ts:251:22
+    at file:///Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:915:20 {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-multistack-4y4Ajm/package.json'
+}
+
+stderr | tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent-remediation.int.test.ts > dev-server agent integration — install and remediation > remediation path: failed start → executor fixes the repo → retry reaches Ready
+[detectNode] No package.json found in /var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-dsa-Kx3Xfo Error: ENOENT: no such file or directory, open '/var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-dsa-Kx3Xfo/package.json'
+    at readFileSync (node:fs:441:20)
+    at detectNode (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detectors/node.detector.ts:52:17)
+    at detectInDir (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:99:20)
+    at Object.detectRunPlan [as detect] (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:58:18)
+    at detectSafely (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/agents/dev-server-agent/nodes/analyze.node.ts:192:17)
+    at RunnableCallable.func (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/agents/dev-server-agent/nodes/analyze.node.ts:118:21)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5) {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-dsa-Kx3Xfo/package.json'
+}
+
+ ✓  node  tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent-remediation.int.test.ts > dev-server agent integration — install and remediation > install path: stale deps run the plan setupCommands through Installing, stamp the hash, then Ready 1585ms
+stderr | tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent-remediation.int.test.ts > dev-server agent integration — install and remediation > remediation path: failed start → executor fixes the repo → retry reaches Ready
+[DeploymentService] Process exited while still in Booting state — dev server likely crashed on startup (code=1, signal=null).
+[DeploymentService] [dsa-727422ba] stderr:
+node:internal/modules/cjs/loader:1520
+  throw err;
+  ^
+Error: Cannot find module '/private/var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-dsa-Kx3Xfo/missing-server.js'
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1517:15)
+    at wrapResolveFilename (node:internal/modules/cjs/loader:1071:27)
+    at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1095:10)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1122:12)
+    at Module._load (node:internal/modules/cjs/loader:1294:5)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+    at node:internal/main/run_main_module:33:47 {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: []
+}
+Node.js v24.18.0
+
+ ✓  node  tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent-degradation-recovery.int.test.ts > dev-server agent integration — degradation and recovery > degradation: with no agent and no detectable dev script, the run stops with an actionable reason 263ms
+ ✓  node  tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent-multistack.int.test.ts > dev-server agent integration — multi-stack deterministic resolution > degraded — no structured caller resolvable at all > 'elixir' still resolves a Deterministic plan 88ms
+stderr | tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent-multistack.int.test.ts > dev-server agent integration — multi-stack deterministic resolution > degraded — no structured caller resolvable at all > 'compose' still resolves a Deterministic plan
+[detectNode] No package.json found in /var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-multistack-b9c9pX Error: ENOENT: no such file or directory, open '/var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-multistack-b9c9pX/package.json'
+    at readFileSync (node:fs:441:20)
+    at detectNode (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detectors/node.detector.ts:52:17)
+    at detectInDir (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:99:20)
+    at Object.detectRunPlan [as detect] (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:58:18)
+    at detectSafely (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/agents/dev-server-agent/nodes/analyze.node.ts:192:17)
+    at /Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/agents/dev-server-agent/nodes/analyze.node.ts:118:21
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at /Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent-multistack.int.test.ts:251:22
+    at file:///Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:915:20 {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-multistack-b9c9pX/package.json'
+}
+
+stderr | tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent-multistack.int.test.ts > dev-server agent integration — multi-stack deterministic resolution > degraded — no structured caller resolvable at all > still reports the terminal failure for a repository no detector covers
+[detectNode] No package.json found in /var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-multistack-E4QN3W Error: ENOENT: no such file or directory, open '/var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-multistack-E4QN3W/package.json'
+    at readFileSync (node:fs:441:20)
+    at detectNode (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detectors/node.detector.ts:52:17)
+    at detectInDir (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:99:20)
+    at Object.detectRunPlan [as detect] (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:58:18)
+    at detectSafely (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/agents/dev-server-agent/nodes/analyze.node.ts:192:17)
+    at /Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/agents/dev-server-agent/nodes/analyze.node.ts:118:21
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at /Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent-multistack.int.test.ts:265:22
+    at file:///Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:915:20 {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-multistack-E4QN3W/package.json'
+}
+
+ ✓  node  tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent-multistack.int.test.ts > dev-server agent integration — multi-stack deterministic resolution > degraded — no structured caller resolvable at all > 'compose' still resolves a Deterministic plan 101ms
+ ✓  node  tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent-multistack.int.test.ts > dev-server agent integration — multi-stack deterministic resolution > degraded — no structured caller resolvable at all > still reports the terminal failure for a repository no detector covers 87ms
+stderr | tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent-multistack.int.test.ts > dev-server agent integration — multi-stack deterministic resolution > reaches the agent tier for an uncovered repository when one IS configured
+[detectNode] No package.json found in /var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-multistack-qMaeBX Error: ENOENT: no such file or directory, open '/var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-multistack-qMaeBX/package.json'
+    at readFileSync (node:fs:441:20)
+    at detectNode (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detectors/node.detector.ts:52:17)
+    at detectInDir (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:99:20)
+    at Object.detectRunPlan [as detect] (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:58:18)
+    at detectSafely (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/agents/dev-server-agent/nodes/analyze.node.ts:192:17)
+    at /Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/agents/dev-server-agent/nodes/analyze.node.ts:118:21
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at /Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent-multistack.int.test.ts:277:20
+    at file:///Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/@vitest+runner@4.0.18/node_modules/@vitest/runner/dist/index.js:915:20 {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-multistack-qMaeBX/package.json'
+}
+
+ ✓  node  tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent.int.test.ts > dev-server agent integration — deterministic and agent paths > deterministic fast path: first run reaches Ready with zero agent calls and persists a Deterministic plan 1353ms
+stderr | tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent-multistack.int.test.ts > dev-server agent integration — a Make plan end to end > a Makefile-only repository reaches Ready with zero agent calls
+[detectNode] No package.json found in /var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-make-e2e-RzrMBa Error: ENOENT: no such file or directory, open '/var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-make-e2e-RzrMBa/package.json'
+    at readFileSync (node:fs:441:20)
+    at detectNode (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detectors/node.detector.ts:52:17)
+    at detectInDir (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:99:20)
+    at Object.detectRunPlan [as detect] (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:58:18)
+    at detectSafely (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/agents/dev-server-agent/nodes/analyze.node.ts:192:17)
+    at RunnableCallable.func (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/agents/dev-server-agent/nodes/analyze.node.ts:118:21)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5) {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-make-e2e-RzrMBa/package.json'
+}
+
+ ✓  node  tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent-multistack.int.test.ts > dev-server agent integration — multi-stack deterministic resolution > reaches the agent tier for an uncovered repository when one IS configured 72ms
+stderr | tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent.int.test.ts > dev-server agent integration — deterministic and agent paths > agent path: failed detection falls back to the structured analysis and reaches Ready via the override spawn
+[detectNode] No package.json found in /var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-dsa-8kzQz3 Error: ENOENT: no such file or directory, open '/var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-dsa-8kzQz3/package.json'
+    at readFileSync (node:fs:441:20)
+    at detectNode (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detectors/node.detector.ts:52:17)
+    at detectInDir (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:99:20)
+    at Object.detectRunPlan [as detect] (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:58:18)
+    at detectSafely (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/agents/dev-server-agent/nodes/analyze.node.ts:192:17)
+    at RunnableCallable.func (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/agents/dev-server-agent/nodes/analyze.node.ts:118:21)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5) {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-dsa-8kzQz3/package.json'
+}
+
+ ✓  node  tests/integration/application/use-cases/deployments/dev-server-run-plan.use-cases.int.test.ts > dev-server run-plan use cases (integration) > re-runs the detector chain after invalidation, with no agent configured 961ms
+ ✓  node  tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent-multistack.int.test.ts > dev-server agent integration — a Make plan end to end > a Makefile-only repository reaches Ready with zero agent calls 771ms
+ ✓  node  tests/integration/application/use-cases/deployments/dev-server-run-plan.use-cases.int.test.ts > dev-server run-plan use cases (integration) > returns an explicit no-plan result for a repository that has never been analyzed 228ms
+ ✓  node  tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent.int.test.ts > dev-server agent integration — deterministic and agent paths > cached fast path: a fresh persisted plan reaches Ready with zero agent calls and zero installs 753ms
+ ✓  node  tests/integration/application/use-cases/deployments/dev-server-run-plan.use-cases.int.test.ts > dev-server run-plan use cases (integration) > refuses a database override when a committed .shep/dev.json controls the repository 224ms
+ ✓  node  tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent.int.test.ts > dev-server agent integration — deterministic and agent paths > agent path: failed detection falls back to the structured analysis and reaches Ready via the override spawn 744ms
+stderr | tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent-remediation.int.test.ts > dev-server agent integration — install and remediation > remediation exhaustion: unfixable failure terminates Stopped with the reason in the log trail and no zombie process
+[detectNode] No package.json found in /var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-dsa-RnSgXv Error: ENOENT: no such file or directory, open '/var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-dsa-RnSgXv/package.json'
+    at readFileSync (node:fs:441:20)
+    at detectNode (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detectors/node.detector.ts:52:17)
+    at detectInDir (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:99:20)
+    at Object.detectRunPlan [as detect] (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/deployment/detect-dev-script.ts:58:18)
+    at detectSafely (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/agents/dev-server-agent/nodes/analyze.node.ts:192:17)
+    at RunnableCallable.func (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/packages/core/src/infrastructure/services/agents/dev-server-agent/nodes/analyze.node.ts:118:21)
+    at processTicksAndRejections (node:internal/process/task_queues:104:5) {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'open',
+  path: '/var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-dsa-RnSgXv/package.json'
+}
+
+ ✓  node  tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent-remediation.int.test.ts > dev-server agent integration — install and remediation > remediation path: failed start → executor fixes the repo → retry reaches Ready 1288ms
+stderr | tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent-remediation.int.test.ts > dev-server agent integration — install and remediation > remediation exhaustion: unfixable failure terminates Stopped with the reason in the log trail and no zombie process
+[DeploymentService] Process exited while still in Booting state — dev server likely crashed on startup (code=1, signal=null).
+[DeploymentService] [dsa-369a5ff2] stderr:
+node:internal/modules/cjs/loader:1520
+  throw err;
+  ^
+Error: Cannot find module '/private/var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-dsa-RnSgXv/missing-server.js'
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1517:15)
+    at wrapResolveFilename (node:internal/modules/cjs/loader:1071:27)
+    at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1095:10)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1122:12)
+    at Module._load (node:internal/modules/cjs/loader:1294:5)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+    at node:internal/main/run_main_module:33:47 {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: []
+}
+Node.js v24.18.0
+
+stderr | tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent-remediation.int.test.ts > dev-server agent integration — install and remediation > remediation exhaustion: unfixable failure terminates Stopped with the reason in the log trail and no zombie process
+[DeploymentService] Process exited while still in Booting state — dev server likely crashed on startup (code=1, signal=null).
+[DeploymentService] [dsa-369a5ff2] stderr:
+node:internal/modules/cjs/loader:1520
+  throw err;
+  ^
+Error: Cannot find module '/private/var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-dsa-RnSgXv/missing-server.js'
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1517:15)
+    at wrapResolveFilename (node:internal/modules/cjs/loader:1071:27)
+    at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1095:10)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1122:12)
+    at Module._load (node:internal/modules/cjs/loader:1294:5)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+    at node:internal/main/run_main_module:33:47 {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: []
+}
+Node.js v24.18.0
+
+stderr | tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent-remediation.int.test.ts > dev-server agent integration — install and remediation > remediation exhaustion: unfixable failure terminates Stopped with the reason in the log trail and no zombie process
+[DeploymentService] Process exited while still in Booting state — dev server likely crashed on startup (code=1, signal=null).
+[DeploymentService] [dsa-369a5ff2] stderr:
+node:internal/modules/cjs/loader:1520
+  throw err;
+  ^
+Error: Cannot find module '/private/var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-dsa-RnSgXv/missing-server.js'
+    at Module._resolveFilename (node:internal/modules/cjs/loader:1517:15)
+    at wrapResolveFilename (node:internal/modules/cjs/loader:1071:27)
+    at defaultResolveImplForCJSLoading (node:internal/modules/cjs/loader:1095:10)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1122:12)
+    at Module._load (node:internal/modules/cjs/loader:1294:5)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+    at Module.executeUserEntryPoint [as runMain] (node:internal/modules/run_main:154:5)
+    at node:internal/main/run_main_module:33:47 {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: []
+}
+Node.js v24.18.0
+
+ ✓  node  tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent-remediation.int.test.ts > dev-server agent integration — install and remediation > remediation exhaustion: unfixable failure terminates Stopped with the reason in the log trail and no zombie process 1790ms
+ ✓  node  tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent-degradation-recovery.int.test.ts > dev-server agent integration — degradation and recovery > recoverAll interplay: a graph-started Ready server is re-adopted by a fresh service instance after a simulated restart 3283ms
+ ✓  node  tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent-repo-config.int.test.ts > dev-server agent integration — committed .shep/dev.json (tier zero) > an edit to the file changes the next start with no invalidation step 2475ms
+stderr | tests/integration/infrastructure/services/agents/dev-server-agent/dev-server-agent-repo-config.int.test.ts > dev-server agent integration — committed .shep/dev.json (tier zero) > a malformed file falls through to detection instead of crashing the graph
+[repoDevConfig] /var/folders/9t/ry67r_b96j9dk9h_km1b2klr0000gn/T/shep-dsa-IvswbB/.shep/dev.json is not a JSON object — ignoring it
+
+(node:36835) [DEP0190] DeprecationWarning: Passing args to a child process with shell option true can lead to security vulnerabilities, as the arguments are not escaped, only concatenated.

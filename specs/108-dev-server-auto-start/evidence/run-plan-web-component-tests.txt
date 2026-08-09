@@ -1,0 +1,44 @@
+
+ RUN  v4.0.18 /Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start
+
+ ✓  web  tests/unit/presentation/web/components/features/application-page/run-plan-summary.test.tsx > RunPlanSummary > renders the command and working directory of the resolved plan 19ms
+ ✓  web  tests/unit/presentation/web/components/features/application-page/run-plan-summary.test.tsx > RunPlanSummary > renders every optional field when the plan carries it 5ms
+ ✓  web  tests/unit/presentation/web/components/features/application-page/run-plan-summary.test.tsx > RunPlanSummary > omits rows for absent optional values rather than rendering blanks 2ms
+ ✓  web  tests/unit/presentation/web/components/features/application-page/run-plan-summary.test.tsx > RunPlanSummary > renders a port of zero rather than treating it as absent 1ms
+ ✓  web  tests/unit/presentation/web/components/features/application-page/run-plan-summary.test.tsx > RunPlanSummary > badges a Deterministic plan distinctly 2ms
+ ✓  web  tests/unit/presentation/web/components/features/application-page/run-plan-summary.test.tsx > RunPlanSummary > badges a Agent plan distinctly 1ms
+ ✓  web  tests/unit/presentation/web/components/features/application-page/run-plan-summary.test.tsx > RunPlanSummary > badges a Manual plan distinctly 1ms
+ ✓  web  tests/unit/presentation/web/components/features/application-page/run-plan-summary.test.tsx > RunPlanSummary > renders the staleness hint only when the plan is stale 3ms
+ ✓  web  tests/unit/presentation/web/components/features/application-page/run-plan-summary.test.tsx > RunPlanSummary > explains that a committed .shep/dev.json is in charge when it is 2ms
+ ✓  web  tests/unit/presentation/web/components/features/application-page/run-plan-summary.test.tsx > RunPlanSummary > renders an empty state instead of a table when no plan is cached 0ms
+ ✓  web  tests/unit/presentation/web/components/features/application-page/run-plan-summary.test.tsx > RunPlanSummary > uses translated labels rather than hardcoded English 3ms
+ ✓  web  tests/unit/presentation/web/components/features/application-page/run-plan-editor.test.tsx > RunPlanEditor > seeds every field from the currently resolved plan 22ms
+ ✓  web  tests/unit/presentation/web/components/features/application-page/run-plan-editor.test.tsx > RunPlanEditor > starts from empty fields when nothing has been resolved yet 4ms
+ ✓  web  tests/unit/presentation/web/components/features/application-page/run-plan-editor.test.tsx > RunPlanEditor > always shows the execution notice while editing 3ms
+ ✓  web  tests/unit/presentation/web/components/features/application-page/run-plan-editor.test.tsx > RunPlanEditor > submits the edited values, splitting setup commands per line 11ms
+ ✓  web  tests/unit/presentation/web/components/features/application-page/run-plan-editor.test.tsx > RunPlanEditor > submits a null port when the field is cleared, so the override clears it 5ms
+ ✓  web  tests/unit/presentation/web/components/features/application-page/run-plan-editor.test.tsx > RunPlanEditor > performs no validation of its own — a blank command still reaches the use case 5ms
+ ✓  web  tests/unit/presentation/web/components/features/application-page/run-plan-editor.test.tsx > RunPlanEditor > renders server-side validation errors inline against their field 2ms
+ ✓  web  tests/unit/presentation/web/components/features/application-page/run-plan-editor.test.tsx > RunPlanEditor > renders a general failure message when the save could not be attempted 2ms
+ ✓  web  tests/unit/presentation/web/components/features/application-page/run-plan-editor.test.tsx > RunPlanEditor > disables the form and explains why when a committed .shep/dev.json is in charge 6ms
+ ✓  web  tests/unit/presentation/web/components/features/application-page/run-plan-editor.test.tsx > RunPlanEditor > disables saving while a submission is in flight 4ms
+ ✓  web  tests/unit/presentation/web/components/features/application-page/run-plan-editor.test.tsx > RunPlanEditor > cancels without submitting 3ms
+ ✓  web  tests/unit/presentation/web/components/features/application-page/run-plan-disclosure.test.tsx > RunPlanDisclosure > is collapsed by default and does not query the plan 17ms
+ ✓  web  tests/unit/presentation/web/components/features/application-page/run-plan-disclosure.test.tsx > RunPlanDisclosure > loads and shows the plan on first expand 16ms
+ ✓  web  tests/unit/presentation/web/components/features/application-page/run-plan-disclosure.test.tsx > RunPlanDisclosure > does not re-query when collapsed and expanded again 12ms
+ ✓  web  tests/unit/presentation/web/components/features/application-page/run-plan-disclosure.test.tsx > RunPlanDisclosure > resolves the plan for a application target 9ms
+ ✓  web  tests/unit/presentation/web/components/features/application-page/run-plan-disclosure.test.tsx > RunPlanDisclosure > resolves the plan for a feature target 4ms
+ ✓  web  tests/unit/presentation/web/components/features/application-page/run-plan-disclosure.test.tsx > RunPlanDisclosure > resolves the plan for a repository target 6ms
+ ✓  web  tests/unit/presentation/web/components/features/application-page/run-plan-disclosure.test.tsx > RunPlanDisclosure > saves an edit through the override action and returns to the summary 21ms
+ ✓  web  tests/unit/presentation/web/components/features/application-page/run-plan-disclosure.test.tsx > RunPlanDisclosure > keeps the editor open and shows per-field errors when the override is rejected 12ms
+ ✓  web  tests/unit/presentation/web/components/features/application-page/run-plan-disclosure.test.tsx > RunPlanDisclosure > makes the editor inert when the override is refused by a committed .shep/dev.json 11ms
+ ✓  web  tests/unit/presentation/web/components/features/application-page/run-plan-disclosure.test.tsx > RunPlanDisclosure > disables Edit outright when a committed .shep/dev.json is already in charge 6ms
+ ✓  web  tests/unit/presentation/web/components/features/application-page/run-plan-disclosure.test.tsx > RunPlanDisclosure > clears the plan through the invalidate action on Re-analyze 10ms
+ ✓  web  tests/unit/presentation/web/components/features/application-page/run-plan-disclosure.test.tsx > RunPlanDisclosure > reports a target failure instead of showing a plan it could not read 4ms
+ ✓  web  tests/unit/presentation/web/components/features/application-page/run-plan-disclosure.test.tsx > RunPlanDisclosure > falls back to a translated message when the action itself throws 3ms
+
+ Test Files  3 passed (3)
+      Tests  35 passed (35)
+   Start at  16:26:07
+   Duration  1.02s (transform 360ms, setup 521ms, import 601ms, tests 239ms, environment 1.17s)
+

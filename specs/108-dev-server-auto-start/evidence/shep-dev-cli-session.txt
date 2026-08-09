@@ -1,0 +1,273 @@
+shep dev — CLI parity demo (FR-21, FR-22, task-37..40)
+Captured 2026-08-09T13:35:29Z on macOS, pnpm dev:cli
+
+==============================================================
+1. Command group surface
+==============================================================
+
+$ shep dev --help
+
+
+Usage: shep dev [options] [command]
+
+Run and inspect a local dev server
+
+Options:
+  -h, --help        display help for command
+
+Commands:
+  start [options]   Start the dev server and stream it until it is ready
+  stop [options]    Stop the dev server
+  status [options]  Show the dev server state and the command it runs
+  logs [options]    Show the dev server output
+  plan              Inspect, pin or clear the resolved run plan
+  help [command]    display help for command
+
+$ shep dev plan --help
+
+
+Usage: shep dev plan [options] [command]
+
+Inspect, pin or clear the resolved run plan
+
+Options:
+  -h, --help       display help for command
+
+Commands:
+  show [options]   Show the resolved run plan
+  set [options]    Pin a run plan of your own
+  clear [options]  Clear the cached run plan so the next start re-analyzes
+  help [command]   display help for command
+
+==============================================================
+2. Deterministic multi-stack detection — all eight ecosystems
+==============================================================
+
+FIXTURE     DETECTOR    COMMAND                           PORT   FRAMEWORK
+-------------------------------------------------------------------------------------
+make        make        make dev                          —      —
+compose     compose     docker compose up                 8080   —
+python      python      uv run python manage.py runserver 8000   Django
+go          go          go run .                          —      —
+rust        rust        cargo run                         —      —
+deno        deno        deno task dev                     —      —
+ruby        ruby        bin/rails server                  3000   Rails
+elixir      elixir      mix phx.server                    4000   Phoenix
+polyglot    compose     docker compose up                 —      —
+-------------------------------------------------------------------------------------
+9 fixtures detected in 5ms — no network, no child process, zero LLM calls (NFR-1, NFR-2)
+
+==============================================================
+3. Detector precedence on a polyglot repository (FR-4)
+==============================================================
+
+REPOSITORY CONTENTS                             WINNER      COMMAND
+------------------------------------------------------------------------------------------
+package.json + Makefile + pyproject + compose   compose     docker compose up
+node:fs:1221
+  const opts = validateRmOptionsSync(path, options, false);
+               ^
+
+Error: ENOENT: no such file or directory, lstat '/tmp/shep-ev-stacks/polyglot/package.json'
+    at rmSync (node:fs:1221:16)
+    at <anonymous> (/private/tmp/precedence-demo.ts:12:1)
+    at Object.<anonymous> (/private/tmp/precedence-demo.ts:19:99)
+    at Module._compile (node:internal/modules/cjs/loader:1871:14)
+    at Object.transformer (/Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/node_modules/.pnpm/tsx@4.21.0/node_modules/tsx/dist/register-D46fvsV_.cjs:3:1104)
+    at Module.load (node:internal/modules/cjs/loader:1594:32)
+    at Module._load (node:internal/modules/cjs/loader:1396:12)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:255:19)
+    at loadCJSModuleWithModuleLoad (node:internal/modules/esm/translators:372:15)
+    at ModuleWrap.<anonymous> (node:internal/modules/esm/translators:244:9) {
+  errno: -2,
+  code: 'ENOENT',
+  syscall: 'lstat',
+  path: '/tmp/shep-ev-stacks/polyglot/package.json'
+}
+
+Node.js v24.18.0
+
+==============================================================
+4. shep dev start on a Make repository — deterministic tier,
+   zero agent calls, streamed to Ready (FR-10, FR-22)
+==============================================================
+
+$ cat /tmp/shep-ev-make/Makefile
+.PHONY: dev
+dev:
+	@echo "ready - Local: http://localhost:8099"
+	@python3 -u -m http.server 8099
+
+$ shep dev start -r /tmp/shep-ev-make
+
+
+
+Starting the dev server for repository at /tmp/shep-ev-make
+
+  dev-server agent run started
+  [analyzing]
+  Analyzing dev environment for /tmp/shep-ev-make
+  run plan cache hit — reusing Deterministic plan: make dev
+  starting dev server: make dev (cwd: /tmp/shep-ev-make)
+  ready - Local: http://localhost:8099
+  Serving HTTP on :: port 8099 (http://[::]:8099/) ...
+  [ready]
+✓ Dev server ready: http://localhost:8099
+
+==============================================================
+5. Tier zero — a committed .shep/dev.json outranks package.json,
+   and a malformed file falls through without throwing (FR-18)
+==============================================================
+
+$ shep dev plan show -r /tmp/shep-ev-tier0
+
+
+
+Run plan
+
+  command         : node custom-server.js
+  working dir     : /tmp/shep-ev-tier0
+  source          : pinned
+  language        : JavaScript
+  framework       : custom
+  expected port   : 8096
+  package manager : —
+  setup commands  : —
+
+  A committed .shep/dev.json controls this repository — it is re-read on every start and outranks any stored plan. Edit that file to change what runs.
+
+
+$ shep dev stop -r /tmp/shep-ev-tier0
+
+
+✓ Dev server stopped for /tmp/shep-ev-tier0
+
+$ printf '{ not json' > /tmp/shep-ev-tier0/.shep/dev.json   # corrupt the file
+$ shep dev start -r /tmp/shep-ev-tier0
+
+
+
+Starting the dev server for repository at /tmp/shep-ev-tier0
+
+  dev-server agent run started
+  [analyzing]
+  Analyzing dev environment for /tmp/shep-ev-tier0
+[repoDevConfig] /tmp/shep-ev-tier0/.shep/dev.json is not a JSON object — ignoring it
+  Using your pinned run plan: node custom-server.js (in /tmp/shep-ev-tier0) (config files have changed since it was set — re-analyze to pick them up)
+  starting dev server: node custom-server.js (cwd: /tmp/shep-ev-tier0)
+  Local: http://localhost:8096
+  [ready]
+✓ Dev server ready: http://localhost:8096
+
+$ shep dev stop -r /tmp/shep-ev-tier0
+
+
+✓ Dev server stopped for /tmp/shep-ev-tier0
+
+
+==============================================================
+6. Pin, inspect, validate and clear a run plan (FR-13, FR-14, FR-16, FR-19)
+==============================================================
+
+$ shep dev plan show -r /tmp/shep-ev-demo
+ℹ No run plan is cached for /tmp/shep-ev-demo — start the dev server once and it will appear here.
+
+$ shep dev plan set -r /tmp/shep-ev-demo -c make dev --port 8080 --language Make
+Run plan pinned
+  command         : make dev
+  working dir     : /tmp/shep-ev-demo
+  source          : pinned
+  language        : Make
+  framework       : —
+  expected port   : 8080
+  package manager : —
+  setup commands  : —
+  Saved as pinned — this command will be executed on your machine on the next start.
+
+$ shep dev plan show -r /tmp/shep-ev-demo
+Run plan
+  command         : make dev
+  working dir     : /tmp/shep-ev-demo
+  source          : pinned
+  language        : Make
+  framework       : —
+  expected port   : 8080
+  package manager : —
+  setup commands  : —
+
+$ shep dev plan set -r /tmp/shep-ev-demo -c    
+✗ The run plan was not saved
+  command: A dev server command is required.
+ ELIFECYCLE  Command failed with exit code 1.
+
+$ shep dev plan set -r /tmp/shep-ev-demo -c make dev --port 99999
+✗ The run plan was not saved
+  expectedPort: The expected port must be a whole number between 1 and 65535.
+ ELIFECYCLE  Command failed with exit code 1.
+
+$ shep dev plan clear -r /tmp/shep-ev-demo
+✓ Cleared the pinned run plan — the next start re-analyzes the repository.
+
+$ shep dev plan show -r /tmp/shep-ev-demo
+ℹ No run plan is cached for /tmp/shep-ev-demo — start the dev server once and it will appear here.
+
+
+==============================================================
+7. status / logs / stop lifecycle (task-39)
+==============================================================
+
+$ shep dev status -r /tmp/shep-ev-make
+
+
+
+Dev server
+
+  target    : repository /tmp/shep-ev-make
+  path      : /tmp/shep-ev-make
+  state     : Ready
+  url       : http://localhost:8099
+  command   : make dev
+  port      : —
+  plan      : detected
+
+
+$ shep dev plan show -r /tmp/shep-ev-make
+
+
+
+Run plan
+
+  command         : make dev
+  working dir     : /tmp/shep-ev-make
+  source          : detected
+  language        : —
+  framework       : —
+  expected port   : —
+  package manager : —
+  setup commands  : —
+
+
+$ shep dev logs -r /tmp/shep-ev-make
+
+
+
+$ shep dev stop -r /tmp/shep-ev-make
+
+
+✓ Dev server stopped for /tmp/shep-ev-make
+
+$ shep dev status -r /tmp/shep-ev-make
+
+
+
+Dev server
+
+  target    : repository /tmp/shep-ev-make
+  path      : /tmp/shep-ev-make
+  state     : not running
+  url       : —
+  command   : make dev
+  port      : —
+  plan      : detected
+
+
