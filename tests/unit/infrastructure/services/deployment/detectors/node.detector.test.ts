@@ -11,7 +11,7 @@
  * TDD Phase: RED → GREEN
  */
 
-import { describe, it, expect, afterEach } from 'vitest';
+import { describe, it, expect, afterEach, vi } from 'vitest';
 import { detectNode } from '@/infrastructure/services/deployment/detectors/node.detector.js';
 import {
   cleanupFixtures,
@@ -136,6 +136,19 @@ describe('detectNode — fall-through', () => {
       success: false,
       error: `No package.json found in ${dir}`,
     });
+  });
+
+  it('does not log an error when there is simply no package.json', () => {
+    // A missing package.json is the EXPECTED fall-through for the eight
+    // non-Node ecosystems, so it must not surface as an error with a stack
+    // trace on the deployment log stream (NFR-11).
+    const dir = makeFixture('node-missing-quiet');
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    detectNode(dir);
+
+    expect(spy).not.toHaveBeenCalled();
+    spy.mockRestore();
   });
 
   it('reports the missing package.json path when the file is unparseable', () => {

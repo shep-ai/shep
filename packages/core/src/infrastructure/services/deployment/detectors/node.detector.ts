@@ -53,7 +53,11 @@ export const detectNode: Detector = (dirPath: string): DetectorResult => {
     packageJson = JSON.parse(raw);
   } catch (err) {
     const msg = `No package.json found in ${dirPath}`;
-    log.error(msg, err);
+    // Debug, not error: since the registry runs Node first for every
+    // repository, a missing package.json is the expected fall-through for all
+    // eight non-Node ecosystems. The winning tier is reported by the one
+    // tier-decision line analyze.node emits (NFR-11).
+    log.debug(msg, err);
     return { success: false, error: msg };
   }
 
