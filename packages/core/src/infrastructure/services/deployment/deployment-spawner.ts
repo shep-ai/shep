@@ -55,7 +55,18 @@ export function spawnFromRunPlan(deps: SpawnDeps, runPlan: RunPlanOverride): Chi
 }
 
 /**
- * Detect the dev script from package.json and spawn it.
+ * Detect the dev command for a directory and spawn it.
+ *
+ * Two branches, because `packageManager` and `scriptName` are Node-specific
+ * facts that most ecosystems simply do not have — `make dev` has no package
+ * manager and `docker compose up` has no package.json script:
+ *
+ * - **Both present** — the historical argv spawn, unchanged.
+ * - **Otherwise** — spawn the detected command string through the shell,
+ *   structurally identical to {@link spawnFromRunPlan}. Synthesising fake
+ *   values instead would work by accident for `make dev` and silently drop
+ *   `up` from `docker compose up`.
+ *
  * @throws Error when detection fails.
  */
 export function spawnFromDetection(deps: SpawnDeps, targetPath: string): ChildProcess {
@@ -66,6 +77,13 @@ export function spawnFromDetection(deps: SpawnDeps, targetPath: string): ChildPr
   }
 
   const { packageManager, scriptName, command, resolvedDir } = detection;
+  const options = buildSpawnOptions(resolvedDir, {});
+
+  if (packageManager === undefined || scriptName === undefined) {
+    log.info(`Spawning dev server: command="${command}", cwd="${resolvedDir}"`);
+    return deps.spawn(command, options);
+  }
+
   // `bun <script>` resolves to the binary `<script>` on PATH; to run
   // the package.json script we need `bun run <script>` — same shape
   // as npm. pnpm/yarn accept the script name directly.
@@ -76,5 +94,5 @@ export function spawnFromDetection(deps: SpawnDeps, targetPath: string): ChildPr
     `Spawning dev server: command="${command}", packageManager="${packageManager}", scriptName="${scriptName}", cwd="${resolvedDir}"`
   );
 
-  return deps.spawn(packageManager, args, buildSpawnOptions(resolvedDir, {}));
+  return deps.spawn(packageManager, args, options);
 }
