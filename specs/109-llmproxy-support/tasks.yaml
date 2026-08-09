@@ -7,7 +7,7 @@ tasks:
   - id: 1
     title: "Update TypeSpec and Generate Types"
     description: "Add LlmProxy to AgentType enum and run type generation."
-    status: "pending"
+    status: "completed"
     effort: "S"
     dependencies: []
     acceptance:

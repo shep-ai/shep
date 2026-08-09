@@ -524,6 +524,7 @@ export enum AgentType {
   OpenRouter = 'openrouter',
   TogetherAi = 'together-ai',
   Ollama = 'ollama',
+  LlmProxy = 'llmproxy',
   Dev = 'dev',
 }
 export enum AgentAuthMethod {
