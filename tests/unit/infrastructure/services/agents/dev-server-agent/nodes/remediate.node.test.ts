@@ -67,10 +67,16 @@ function makeExecutor(overrides: Partial<IAgentExecutor> = {}): IAgentExecutor {
   } as unknown as IAgentExecutor;
 }
 
-function makeDeps(overrides: Partial<RemediateNodeDeps> = {}): RemediateNodeDeps {
+function makeDeps(
+  overrides: Partial<RemediateNodeDeps> = {},
+  stored: DevServerRunPlan | null = makePlan()
+): RemediateNodeDeps {
   return {
     executor: makeExecutor(),
-    runPlanRepository: { deleteByRepoPath: vi.fn(() => Promise.resolve()) },
+    runPlanRepository: {
+      deleteByRepoPath: vi.fn(() => Promise.resolve()),
+      findByRepoPath: vi.fn(() => Promise.resolve(stored)),
+    },
     log: vi.fn(),
     ...overrides,
   };
@@ -99,6 +105,59 @@ describe('createRemediateNode', () => {
       await node(makeState());
 
       expect(deps.runPlanRepository.deleteByRepoPath).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('pinned (Manual) plan', () => {
+    const manual = (): DevServerRunPlan =>
+      makePlan({ source: RunPlanSource.Manual, command: 'node custom-server.js' });
+
+    it('leaves the cached plan in place and says why', async () => {
+      const deps = makeDeps({}, manual());
+      const node = createRemediateNode(deps);
+
+      await node(makeState({ runPlan: manual() }));
+
+      expect(deps.runPlanRepository.deleteByRepoPath).not.toHaveBeenCalled();
+      expect(deps.log).toHaveBeenCalledWith(expect.stringContaining('pinned by you'));
+    });
+
+    it('still runs the remediation agent', async () => {
+      const deps = makeDeps({}, manual());
+      const node = createRemediateNode(deps);
+
+      const result = await node(makeState({ runPlan: manual() }));
+
+      expect(deps.executor!.execute).toHaveBeenCalledTimes(1);
+      expect(result).toHaveProperty('failureReason', null);
+    });
+
+    it('falls back to the run plan in state when the lookup fails', async () => {
+      const deps = makeDeps({
+        runPlanRepository: {
+          deleteByRepoPath: vi.fn(() => Promise.resolve()),
+          findByRepoPath: vi.fn(() => Promise.reject(new Error('db locked'))),
+        },
+      });
+      const node = createRemediateNode(deps);
+
+      await node(makeState({ runPlan: manual() }));
+
+      expect(deps.runPlanRepository.deleteByRepoPath).not.toHaveBeenCalled();
+    });
+
+    it('still invalidates a Deterministic plan when the lookup fails', async () => {
+      const deps = makeDeps({
+        runPlanRepository: {
+          deleteByRepoPath: vi.fn(() => Promise.resolve()),
+          findByRepoPath: vi.fn(() => Promise.reject(new Error('db locked'))),
+        },
+      });
+      const node = createRemediateNode(deps);
+
+      await node(makeState({ runPlan: makePlan({ source: RunPlanSource.Deterministic }) }));
+
+      expect(deps.runPlanRepository.deleteByRepoPath).toHaveBeenCalledWith('/repo');
     });
   });
 
@@ -183,6 +242,7 @@ describe('createRemediateNode', () => {
       const deps = makeDeps({
         runPlanRepository: {
           deleteByRepoPath: vi.fn(() => Promise.reject(new Error('db locked'))),
+          findByRepoPath: vi.fn(() => Promise.resolve(makePlan())),
         },
       });
       const node = createRemediateNode(deps);
