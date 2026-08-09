@@ -1,0 +1,44 @@
+Evidence path resolution fix — verification
+Commit: fdfb596 fix(agents): resolve evidence paths against the agent worktree
+Captured: 2026-08-09T13:57:44Z
+
+SYMPTOM: validation reported all 15 committed evidence files as
+'Evidence file not found', because validateFileExistence passed the
+repo-relative relativePath straight to stat() — resolving it against the
+daemon's process.cwd() rather than the agent's worktree.
+
+PROOF THE FILES WERE PRESENT ALL ALONG (tracked in the parent commit):
+  specs/108-dev-server-auto-start/evidence/app-run-plan-collapsed.png
+  specs/108-dev-server-auto-start/evidence/app-run-plan-editor.png
+  specs/108-dev-server-auto-start/evidence/app-run-plan-expanded.png
+  specs/108-dev-server-auto-start/evidence/app-run-plan-live-preview.png
+  specs/108-dev-server-auto-start/evidence/app-run-plan-pinned.png
+  specs/108-dev-server-auto-start/evidence/app-run-plan-reanalyzed.png
+  specs/108-dev-server-auto-start/evidence/cli-known-limitation.txt
+  specs/108-dev-server-auto-start/evidence/detector-registry-unit-tests.txt
+  specs/108-dev-server-auto-start/evidence/dev-server-agent-integration-tests.txt
+  specs/108-dev-server-auto-start/evidence/full-suite-summary.txt
+  specs/108-dev-server-auto-start/evidence/run-plan-use-case-tests.txt
+  specs/108-dev-server-auto-start/evidence/run-plan-web-component-tests.txt
+  specs/108-dev-server-auto-start/evidence/shep-dev-cli-session.txt
+  specs/108-dev-server-auto-start/evidence/shep-dev-cli-unit-tests.txt
+  specs/108-dev-server-auto-start/evidence/storybook-run-plan-states.png
+
+=== RED (before the fix) ===
+  3 failed | 4 passed (7) — e.g.
+  AssertionError: expected [ { type: 'fileExistence', ... } ] to deeply equal []
+  + "message": "Evidence file not found: specs/108-dev-server-auto-start/evidence/shot.png (proof)"
+
+=== GREEN (after the fix) ===
+
+ RUN  v4.0.18 /Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start
+
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/evidence-output-parser.test.ts (65 tests) 5ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/evidence-file-resolution.test.ts (7 tests) 16ms
+ ✓  node  tests/unit/infrastructure/services/agents/feature-agent/nodes/evidence.node.test.ts (38 tests) 8ms
+
+ Test Files  3 passed (3)
+      Tests  110 passed (110)
+   Start at  16:57:45
+   Duration  172ms (transform 210ms, setup 73ms, import 196ms, tests 29ms, environment 0ms)
+
