@@ -32,6 +32,7 @@
 
 import { existsSync, realpathSync, statSync } from 'node:fs';
 import { isAbsolute, resolve } from 'node:path';
+import { isPathInside, toComparablePath } from '@/domain/shared/path-confinement.js';
 import { createDeploymentLogger } from './deployment-logger.js';
 import { readJsonManifest } from './detectors/shared/json-manifest.js';
 import { PORT_MAX, PORT_MIN } from './detectors/shared/command-port.js';
@@ -143,8 +144,9 @@ function port(value: unknown, filePath: string): number | undefined {
  * Resolve `cwd` against the repository root and confine it to that subtree.
  *
  * Confinement compares canonical paths, so a symlink pointing outside the
- * repository is caught. The separator in the prefix check is load-bearing: a
- * bare `startsWith` would accept `/repo-evil` for a root of `/repo` (NFR-6).
+ * repository is caught. The comparison itself is `isPathInside` — shared with
+ * `OverrideDevServerRunPlanUseCase`, because a committed file and a typed
+ * override must be confined by the same rule (NFR-6).
  *
  * @returns The absolute cwd, or `null` when it escapes, is missing, or is not
  *          a directory — all of which fall the whole document through.
@@ -158,7 +160,7 @@ function resolveConfinedCwd(repoPath: string, value: unknown, filePath: string):
     return null;
   }
 
-  if (!isInside(canonical(repoPath), canonical(absolute))) {
+  if (!isPathInside(canonical(repoPath), canonical(absolute))) {
     log.warn(`${filePath} declares a "cwd" outside the repository — ignoring it`);
     return null;
   }
@@ -180,15 +182,7 @@ function canonical(path: string): string {
     // Not resolvable — compare the lexical form rather than giving up.
   }
 
-  const normalized = resolve(real).replace(/\\/g, '/');
-  // Windows paths are case-insensitive; comparing raw would let `C:/Repo`
-  // read as an escape from `C:/repo`.
-  return process.platform === 'win32' ? normalized.toLowerCase() : normalized;
-}
-
-/** True when `child` is the root itself or sits beneath it. */
-function isInside(root: string, child: string): boolean {
-  return child === root || child.startsWith(`${root}/`);
+  return toComparablePath(resolve(real));
 }
 
 /** Existence check that degrades to false rather than throwing. */
