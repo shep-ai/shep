@@ -270,6 +270,78 @@ describe('createEnsureInfraNode', () => {
       expect(SUGGESTED_INSTALL.bun).toBe('npm install -g bun');
       expect(SUGGESTED_INSTALL.node).toBe('install Node.js from https://nodejs.org');
     });
+
+    it('never suggests sudo or a system package manager', () => {
+      for (const hint of Object.values(SUGGESTED_INSTALL)) {
+        expect(hint).not.toMatch(/\bsudo\b/);
+        expect(hint).not.toMatch(/\b(apt-get|apt|yum|dnf|pacman)\b/);
+      }
+    });
+  });
+
+  describe('non-Node runtime install hints (FR-8)', () => {
+    /** Every runtime the detector registry can emit a command for. */
+    const RUNTIMES = [
+      { binary: 'make', command: 'make dev' },
+      { binary: 'docker', command: 'docker compose up' },
+      { binary: 'go', command: 'go run .' },
+      { binary: 'cargo', command: 'cargo run' },
+      { binary: 'deno', command: 'deno task dev' },
+      { binary: 'mix', command: 'mix phx.server' },
+      { binary: 'bundle', command: 'bundle exec rails server' },
+      { binary: 'uv', command: 'uv run dev' },
+      { binary: 'poetry', command: 'poetry run dev' },
+      { binary: 'python', command: 'python manage.py runserver' },
+    ] as const;
+
+    it.each(RUNTIMES)(
+      'reports a $binary-specific hint rather than the generic PATH fallback',
+      async ({ binary, command }) => {
+        const probeBinary = vi.fn().mockResolvedValue(false);
+        const node = createEnsureInfraNode(makeDeps({ probeBinary, executor: null }));
+
+        const result = await node(
+          makeState({ runPlan: makePlan({ command, packageManager: undefined }) })
+        );
+
+        expect(probeBinary).toHaveBeenCalledWith(binary);
+        expect(result.failureReason).toContain(`'${binary}' is missing`);
+        expect(result.failureReason).toContain(SUGGESTED_INSTALL[binary]);
+        expect(result.failureReason).not.toContain('and ensure it is on PATH');
+      }
+    );
+
+    it('reports the missing docker for a Compose plan, never node', async () => {
+      const probeBinary = vi.fn().mockResolvedValue(false);
+      const node = createEnsureInfraNode(makeDeps({ probeBinary, executor: null }));
+
+      const result = await node(
+        makeState({
+          runPlan: makePlan({ command: 'docker compose up', packageManager: undefined }),
+        })
+      );
+
+      expect(result.failureReason).toContain('docker');
+      expect(result.failureReason).not.toContain('node');
+    });
+
+    it('skips probing a path-like command such as bin/rails', async () => {
+      const probeBinary = vi.fn().mockResolvedValue(false);
+      const node = createEnsureInfraNode(makeDeps({ probeBinary, executor: null }));
+
+      const result = await node(
+        makeState({
+          runPlan: makePlan({
+            command: 'bin/rails server',
+            packageManager: undefined,
+            setupCommands: [],
+          }),
+        })
+      );
+
+      expect(probeBinary).not.toHaveBeenCalled();
+      expect(result.infraReady).toBe(true);
+    });
   });
 
   describe('buildInfraRemediationPrompt', () => {
