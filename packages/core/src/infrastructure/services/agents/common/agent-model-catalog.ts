@@ -130,6 +130,11 @@ export const LLMPROXY_MODELS: string[] = [
   'o1-mini',
   'deepseek-chat',
   'gemini-1.5-pro',
+  'gemini-1.5-flash',
+  'gemini-2.5-pro',
+  'gemini-2.5-flash',
+  'gemini-3.1-pro-preview',
+  'gemini-3-flash-preview',
 ];
 
 /** Demo/fun models shown for the `dev` agent type in the UI. */
