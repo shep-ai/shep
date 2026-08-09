@@ -22,7 +22,7 @@
 
 import { EventEmitter } from 'node:events';
 import type Database from 'better-sqlite3';
-import { DeploymentState } from '@/domain/generated/output.js';
+import { DeploymentState, DeploymentTargetType } from '@/domain/generated/output.js';
 import type {
   IDeploymentService,
   DeploymentStatus,
@@ -52,7 +52,7 @@ import { stopDeployment } from './deployment-stop.js';
 export type { DeploymentServiceDeps } from './deployment-service-deps.js';
 
 const log = createDeploymentLogger('[DeploymentService]');
-const DEFAULT_TARGET_TYPE = 'repository';
+const DEFAULT_TARGET_TYPE = DeploymentTargetType.Repository;
 
 export class DeploymentService implements IDeploymentService {
   private readonly deployments = new Map<string, DeploymentEntry>();
@@ -190,7 +190,7 @@ export class DeploymentService implements IDeploymentService {
   setTransientState(
     targetId: string,
     targetPath: string,
-    targetType: string,
+    targetType: DeploymentTargetType,
     state: DeploymentState.Analyzing | DeploymentState.Installing
   ): void {
     const existing = this.deployments.get(targetId);

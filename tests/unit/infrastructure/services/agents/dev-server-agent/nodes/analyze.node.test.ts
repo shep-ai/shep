@@ -24,7 +24,11 @@ import {
 import { RUN_PLAN_ANALYSIS_SCHEMA } from '@/infrastructure/services/agents/dev-server-agent/schemas/run-plan-analysis.schema.js';
 import type { DevServerAnalysis } from '@/infrastructure/services/agents/dev-server-agent/schemas/run-plan-analysis.schema.js';
 import type { DevServerAgentState } from '@/infrastructure/services/agents/dev-server-agent/state.js';
-import { RunPlanSource, type DevServerRunPlan } from '@/domain/generated/output.js';
+import {
+  RunPlanSource,
+  type DevServerRunPlan,
+  DeploymentTargetType,
+} from '@/domain/generated/output.js';
 import type { DetectDevScriptResult } from '@/infrastructure/services/deployment/detect-dev-script.js';
 
 const TARGET_PATH = '/repos/my-app';
@@ -33,7 +37,7 @@ const CONFIG_HASH = 'hash-current';
 function makeState(overrides: Partial<DevServerAgentState> = {}): DevServerAgentState {
   return {
     targetId: 'app-1',
-    targetType: 'application',
+    targetType: DeploymentTargetType.Application,
     targetPath: TARGET_PATH,
     runPlan: null,
     infraReady: false,

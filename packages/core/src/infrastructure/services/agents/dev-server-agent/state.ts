@@ -1,5 +1,5 @@
 import { Annotation } from '@langchain/langgraph';
-import type { DevServerRunPlan } from '@/domain/generated/output.js';
+import type { DevServerRunPlan, DeploymentTargetType } from '@/domain/generated/output.js';
 
 /**
  * State annotation for the dev-server agent graph.
@@ -16,8 +16,8 @@ import type { DevServerRunPlan } from '@/domain/generated/output.js';
 export const DevServerAgentAnnotation = Annotation.Root({
   /** Deployment target id (application/feature/repository id). */
   targetId: Annotation<string>,
-  /** Deployment target type (application | feature | repository). */
-  targetType: Annotation<string>,
+  /** Deployment target type (Application | Feature | Repository). */
+  targetType: Annotation<DeploymentTargetType>,
   /** Absolute path of the repository/worktree to start the server in. */
   targetPath: Annotation<string>,
   /** Resolved run plan (cache hit, deterministic detection, or agent analysis). */

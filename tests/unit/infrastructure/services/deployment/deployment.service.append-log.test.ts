@@ -25,7 +25,7 @@ import {
   type DeploymentServiceDeps,
 } from '@/infrastructure/services/deployment/deployment.service.js';
 import type { LogEntry } from '@/application/ports/output/services/deployment-service.interface.js';
-import { DeploymentState } from '@/domain/generated/output.js';
+import { DeploymentState, DeploymentTargetType } from '@/domain/generated/output.js';
 
 function createMockChild() {
   const child = new EventEmitter() as EventEmitter & {
@@ -71,7 +71,12 @@ describe('DeploymentService — appendLog', () => {
   });
 
   it('pushes a synthetic stdout entry into a transient entry buffer', () => {
-    service.setTransientState('feat-1', '/project', 'feature', DeploymentState.Analyzing);
+    service.setTransientState(
+      'feat-1',
+      '/project',
+      DeploymentTargetType.Feature,
+      DeploymentState.Analyzing
+    );
 
     service.appendLog('feat-1', 'dev-server agent run started');
 
@@ -100,7 +105,12 @@ describe('DeploymentService — appendLog', () => {
   it("emits the 'log' event so SSE consumers stream the synthetic line", () => {
     const handler = vi.fn();
     service.on('log', handler);
-    service.setTransientState('feat-1', '/project', 'feature', DeploymentState.Installing);
+    service.setTransientState(
+      'feat-1',
+      '/project',
+      DeploymentTargetType.Feature,
+      DeploymentState.Installing
+    );
 
     service.appendLog('feat-1', 'installing dependencies');
 
@@ -124,10 +134,20 @@ describe('DeploymentService — appendLog', () => {
   });
 
   it('survives a transient state transition (buffer is adopted, not reset)', () => {
-    service.setTransientState('feat-1', '/project', 'feature', DeploymentState.Analyzing);
+    service.setTransientState(
+      'feat-1',
+      '/project',
+      DeploymentTargetType.Feature,
+      DeploymentState.Analyzing
+    );
     service.appendLog('feat-1', 'analyzing project');
 
-    service.setTransientState('feat-1', '/project', 'feature', DeploymentState.Installing);
+    service.setTransientState(
+      'feat-1',
+      '/project',
+      DeploymentTargetType.Feature,
+      DeploymentState.Installing
+    );
     service.appendLog('feat-1', 'installing dependencies');
 
     const logs = service.getLogs('feat-1')!;

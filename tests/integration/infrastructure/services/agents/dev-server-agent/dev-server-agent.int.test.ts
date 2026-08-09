@@ -21,7 +21,7 @@
 
 import 'reflect-metadata';
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { DeploymentState, RunPlanSource } from '@/domain/generated/output.js';
+import { DeploymentState, RunPlanSource, DeploymentTargetType } from '@/domain/generated/output.js';
 import { computeInstallHash } from '@/infrastructure/services/deployment/config-hash.js';
 import {
   createHarness,
@@ -36,7 +36,7 @@ import {
 } from './harness.js';
 
 const TEST_TIMEOUT_MS = 60_000;
-const TARGET_TYPE = 'repository';
+const TARGET_TYPE = DeploymentTargetType.Repository;
 
 describe('dev-server agent integration — deterministic and agent paths', () => {
   let harness: DevServerAgentHarness;

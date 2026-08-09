@@ -4,4 +4,5 @@ type: string
 enum:
   - Deterministic
   - Agent
+  - Manual
 description: Sources for dev-server run plan production

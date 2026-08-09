@@ -26,7 +26,7 @@
  */
 
 import { existsSync } from 'node:fs';
-import { DeploymentState } from '@/domain/generated/output.js';
+import { DeploymentState, type DeploymentTargetType } from '@/domain/generated/output.js';
 import type { IDeploymentService } from '@/application/ports/output/services/deployment-service.interface.js';
 import type {
   IDevServerAgentService,
@@ -67,7 +67,7 @@ export interface DevServerAgentGraphOutcome {
 export interface DevServerAgentGraphRunner {
   invoke(input: {
     targetId: string;
-    targetType: string;
+    targetType: DeploymentTargetType;
     targetPath: string;
   }): Promise<DevServerAgentGraphOutcome>;
 }
@@ -95,7 +95,7 @@ export class DevServerAgentService implements IDevServerAgentService {
   async startDevServer(
     targetId: string,
     targetPath: string,
-    targetType: string
+    targetType: DeploymentTargetType
   ): Promise<DevServerStartResult> {
     if (this.inFlight.has(targetId)) {
       // Coalesce: the running graph owns the lifecycle — just report where
@@ -126,7 +126,11 @@ export class DevServerAgentService implements IDevServerAgentService {
   }
 
   /** Execute one full graph run for a target. Never rejects. */
-  private async runGraph(targetId: string, targetPath: string, targetType: string): Promise<void> {
+  private async runGraph(
+    targetId: string,
+    targetPath: string,
+    targetType: DeploymentTargetType
+  ): Promise<void> {
     const log = (line: string): void => this.deps.deploymentService.appendLog(targetId, line);
 
     try {
@@ -187,7 +191,7 @@ export class DevServerAgentService implements IDevServerAgentService {
   private composeNodes(
     targetId: string,
     targetPath: string,
-    targetType: string,
+    targetType: DeploymentTargetType,
     executor: IAgentExecutor | null,
     log: (line: string) => void
   ): DevServerAgentGraphNodes {

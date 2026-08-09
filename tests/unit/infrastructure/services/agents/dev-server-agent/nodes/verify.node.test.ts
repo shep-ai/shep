@@ -21,6 +21,7 @@ import {
   probePortDefault,
   type VerifyNodeDeps,
 } from '@/infrastructure/services/agents/dev-server-agent/nodes/verify.node.js';
+import { DeploymentTargetType } from '@/domain/generated/output.js';
 
 const READY_URL = 'http://localhost:3000';
 
@@ -42,7 +43,7 @@ function makePlan(overrides: Partial<DevServerRunPlan> = {}): DevServerRunPlan {
 function makeState(overrides: Partial<DevServerAgentState> = {}): DevServerAgentState {
   return {
     targetId: 'app-1',
-    targetType: 'application',
+    targetType: DeploymentTargetType.Application,
     targetPath: '/repo',
     runPlan: makePlan(),
     infraReady: true,

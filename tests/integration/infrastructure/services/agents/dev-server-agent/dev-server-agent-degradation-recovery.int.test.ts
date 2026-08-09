@@ -23,7 +23,7 @@ import 'reflect-metadata';
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { DeploymentState } from '@/domain/generated/output.js';
+import { DeploymentState, DeploymentTargetType } from '@/domain/generated/output.js';
 import { DeploymentService } from '@/infrastructure/services/deployment/deployment.service.js';
 import {
   createHarness,
@@ -39,7 +39,7 @@ import {
 } from './harness.js';
 
 const TEST_TIMEOUT_MS = 60_000;
-const TARGET_TYPE = 'repository';
+const TARGET_TYPE = DeploymentTargetType.Repository;
 /** DeploymentRecovery probes the recovered URL with a 2s TCP timeout. */
 const RECOVERY_PROBE_SETTLE_MS = 2_300;
 

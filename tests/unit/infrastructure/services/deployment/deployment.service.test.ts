@@ -17,7 +17,7 @@ import {
   DeploymentService,
   type DeploymentServiceDeps,
 } from '@/infrastructure/services/deployment/deployment.service.js';
-import { DeploymentState } from '@/domain/generated/output.js';
+import { DeploymentState, DeploymentTargetType } from '@/domain/generated/output.js';
 
 vi.mock('node:fs', async (importOriginal) => {
   const actual = await importOriginal<typeof fs>();
@@ -286,8 +286,8 @@ describe('DeploymentService', () => {
         .mockReturnValueOnce(mockChild)
         .mockReturnValueOnce(secondChild);
 
-      service.start('feature-1', '/project/one', 'feature');
-      service.start('/repos/two', '/repos/two', 'repository');
+      service.start('feature-1', '/project/one', DeploymentTargetType.Feature);
+      service.start('/repos/two', '/repos/two', DeploymentTargetType.Repository);
 
       const all = service.listAll();
 
@@ -311,7 +311,7 @@ describe('DeploymentService', () => {
     });
 
     it('should omit and clean up deployments whose process is dead', () => {
-      service.start('feature-1', '/project/path', 'feature');
+      service.start('feature-1', '/project/path', DeploymentTargetType.Feature);
 
       // Process died externally
       (deps.isAlive as ReturnType<typeof vi.fn>).mockReturnValue(false);
