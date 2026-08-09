@@ -7,6 +7,7 @@ import { StartRepositoryDeploymentUseCase } from '../../../application/use-cases
 import { StopDeploymentUseCase } from '../../../application/use-cases/deployments/stop-deployment.use-case.js';
 import { GetDeploymentStatusUseCase } from '../../../application/use-cases/deployments/get-deployment-status.use-case.js';
 import { ListDeploymentsUseCase } from '../../../application/use-cases/deployments/list-deployments.use-case.js';
+import { StreamDeploymentLogsUseCase } from '../../../application/use-cases/deployments/stream-deployment-logs.use-case.js';
 import { GetDevServerRunPlanUseCase } from '../../../application/use-cases/deployments/get-dev-server-run-plan.use-case.js';
 import { OverrideDevServerRunPlanUseCase } from '../../../application/use-cases/deployments/override-dev-server-run-plan.use-case.js';
 import { InvalidateDevServerRunPlanUseCase } from '../../../application/use-cases/deployments/invalidate-dev-server-run-plan.use-case.js';
@@ -79,6 +80,7 @@ export function registerDeployment(container: DependencyContainer): void {
   container.registerSingleton(StopDeploymentUseCase);
   container.registerSingleton(GetDeploymentStatusUseCase);
   container.registerSingleton(ListDeploymentsUseCase);
+  container.registerSingleton(StreamDeploymentLogsUseCase);
 
   // String-token aliases for web routes (Turbopack can't resolve .js→.ts
   // imports inside @shepai/core, so routes use string tokens instead of class refs)
@@ -99,6 +101,9 @@ export function registerDeployment(container: DependencyContainer): void {
   });
   container.register('ListDeploymentsUseCase', {
     useFactory: (c) => c.resolve(ListDeploymentsUseCase),
+  });
+  container.register('StreamDeploymentLogsUseCase', {
+    useFactory: (c) => c.resolve(StreamDeploymentLogsUseCase),
   });
   container.register('DeploymentTargetResolver', {
     useFactory: (c) => c.resolve(DeploymentTargetResolver),
