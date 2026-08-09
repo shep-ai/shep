@@ -54,6 +54,7 @@ export type GetDevServerRunPlanResult =
 @injectable()
 export class GetDevServerRunPlanUseCase {
   constructor(
+    @inject('DeploymentTargetResolver')
     private readonly targetResolver: DeploymentTargetResolver,
     @inject('IDevServerRunPlanRepository')
     private readonly runPlanRepository: IDevServerRunPlanRepository,
