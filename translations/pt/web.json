@@ -925,5 +925,53 @@
     "deleteAdoptedNote": "A funcionalidade adotada desta sessão não será excluída.",
     "cancel": "Cancelar",
     "archivedHidden": "{{count}} arquivadas ocultas"
+  },
+  "runPlan": {
+    "title": "Plano de execução",
+    "description": "O que roda quando você inicia o servidor de desenvolvimento",
+    "show": "Mostrar plano de execução",
+    "hide": "Ocultar plano de execução",
+    "loading": "Carregando plano de execução…",
+    "empty": "Ainda não há plano de execução — inicie o servidor de desenvolvimento uma vez e o plano resolvido aparecerá aqui.",
+    "fields": {
+      "command": "Comando",
+      "cwd": "Diretório de trabalho",
+      "language": "Linguagem",
+      "framework": "Framework",
+      "expectedPort": "Porta esperada",
+      "packageManager": "Gerenciador de pacotes",
+      "setupCommands": "Comandos de preparação"
+    },
+    "source": {
+      "label": "Origem",
+      "deterministic": "Detectado",
+      "agent": "Analisado por IA",
+      "manual": "Fixado"
+    },
+    "staleHint": "Os arquivos de configuração do repositório mudaram desde que este plano foi criado. Reanalise para incorporar a mudança, ou mantenha como está.",
+    "repoConfigControlled": "Um arquivo .shep/dev.json versionado controla este repositório. Ele é relido a cada início e tem prioridade sobre qualquer plano salvo — edite esse arquivo para mudar o que roda.",
+    "actions": {
+      "edit": "Editar",
+      "reanalyze": "Reanalisar",
+      "reanalyzing": "Reanalisando…",
+      "save": "Salvar",
+      "saving": "Salvando…",
+      "cancel": "Cancelar"
+    },
+    "editor": {
+      "title": "Editar plano de execução",
+      "executionNotice": "Este comando será executado na sua máquina.",
+      "commandPlaceholder": "pnpm dev",
+      "cwdPlaceholder": "Raiz do repositório",
+      "cwdHelp": "Absoluto, ou relativo à raiz do repositório.",
+      "expectedPortPlaceholder": "Detectado automaticamente",
+      "setupCommandsLabel": "Comandos de preparação",
+      "setupCommandsHelp": "Um comando por linha, executados antes de o servidor de desenvolvimento iniciar."
+    },
+    "errors": {
+      "loadFailed": "Não foi possível carregar o plano de execução.",
+      "saveFailed": "Não foi possível salvar o plano de execução.",
+      "reanalyzeFailed": "Não foi possível redefinir o plano de execução."
+    }
   }
 }

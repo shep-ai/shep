@@ -925,5 +925,53 @@
     "deleteAdoptedNote": "La fonctionnalité issue de cette session ne sera pas supprimée.",
     "cancel": "Annuler",
     "archivedHidden": "{{count}} archivée(s) masquée(s)"
+  },
+  "runPlan": {
+    "title": "Plan d'exécution",
+    "description": "Ce qui est lancé quand vous démarrez le serveur de dév",
+    "show": "Afficher le plan d'exécution",
+    "hide": "Masquer le plan d'exécution",
+    "loading": "Chargement du plan d'exécution…",
+    "empty": "Pas encore de plan d'exécution — démarrez le serveur de dév une fois et le plan résolu apparaîtra ici.",
+    "fields": {
+      "command": "Commande",
+      "cwd": "Répertoire de travail",
+      "language": "Langage",
+      "framework": "Framework",
+      "expectedPort": "Port attendu",
+      "packageManager": "Gestionnaire de paquets",
+      "setupCommands": "Commandes d'installation"
+    },
+    "source": {
+      "label": "Source",
+      "deterministic": "Détecté",
+      "agent": "Analysé par IA",
+      "manual": "Épinglé"
+    },
+    "staleHint": "Les fichiers de configuration du dépôt ont changé depuis la création de ce plan. Relancez l'analyse pour prendre en compte le changement, ou conservez-le tel quel.",
+    "repoConfigControlled": "Un fichier .shep/dev.json versionné contrôle ce dépôt. Il est relu à chaque démarrage et prime sur tout plan enregistré — modifiez ce fichier pour changer ce qui est lancé.",
+    "actions": {
+      "edit": "Modifier",
+      "reanalyze": "Relancer l'analyse",
+      "reanalyzing": "Analyse en cours…",
+      "save": "Enregistrer",
+      "saving": "Enregistrement…",
+      "cancel": "Annuler"
+    },
+    "editor": {
+      "title": "Modifier le plan d'exécution",
+      "executionNotice": "Cette commande sera exécutée sur votre machine.",
+      "commandPlaceholder": "pnpm dev",
+      "cwdPlaceholder": "Racine du dépôt",
+      "cwdHelp": "Absolu, ou relatif à la racine du dépôt.",
+      "expectedPortPlaceholder": "Détecté automatiquement",
+      "setupCommandsLabel": "Commandes d'installation",
+      "setupCommandsHelp": "Une commande par ligne, exécutée avant le démarrage du serveur de dév."
+    },
+    "errors": {
+      "loadFailed": "Impossible de charger le plan d'exécution.",
+      "saveFailed": "Impossible d'enregistrer le plan d'exécution.",
+      "reanalyzeFailed": "Impossible de réinitialiser le plan d'exécution."
+    }
   }
 }
