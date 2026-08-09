@@ -1,0 +1,238 @@
+# Feature Specification (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: dev-server-auto-start
+number: 108
+branch: feat/108-dev-server-auto-start
+oneLiner: "Close the remaining gaps in \"Start dev\" auto-start: widen deterministic multi-stack detection, expose the resolved run plan for inspection/override, and reach parity across presentation layers"
+summary: >
+  The requested behaviour — "Start dev" analyzes the project with a deterministic script
+  and falls back to an agent that starts the dev server — is ALREADY implemented end-to-end
+  by spec 103 (agentic-dev-server): a LangGraph pipeline resolves a run plan via cache →
+  deterministic detection → structured agent analysis, then ensures infra, installs deps,
+  spawns, verifies readiness, and remediates failures. This feature therefore scopes to the
+  residual gaps rather than a greenfield build: the deterministic tier only understands Node
+  (package.json + lockfiles), so every non-Node stack burns an agent call and fails outright
+  when no agent is configured; the persisted run plan is invisible and un-overridable from
+  the UI; and the whole capability is reachable only from the web presentation layer.
+phase: Analysis
+sizeEstimate: M
+
+# Relationships
+relatedFeatures:
+  - "103-agentic-dev-server"
+  - "079-fix-dev-server"
+  - "055-deployment-status-indicator"
+  - "061-default-env-deployment"
+
+technologies:
+  - "TypeScript (ESM, NodeNext)"
+  - "LangGraph (@langchain/langgraph) — StateGraph, Annotation channels, checkpointer"
+  - "tsyringe — dependency injection by string token"
+  - "TypeSpec — domain model source of truth (tsp/), codegen to domain/generated/output.ts"
+  - "SQLite (better-sqlite3) — dev_servers + dev_server_run_plans tables, numbered migrations"
+  - "Next.js (App Router) — server actions, API routes, SSE deployment log streaming"
+  - "React + Zustand — deployment status store, dev-server coordinator hook"
+  - "Commander — CLI command tree (src/presentation/cli/commands/)"
+  - "Vitest — unit + integration suites"
+  - "Storybook — mandatory colocated stories for web components"
+  - "node:child_process / node-pty — dev server process spawning"
+
+relatedLinks:
+  - title: "LangGraph JS — StateGraph and conditional edges"
+    url: "https://langchain-ai.github.io/langgraphjs/concepts/low_level/"
+  - title: "Next.js App Router — Server Actions"
+    url: "https://nextjs.org/docs/app/building-your-application/data-fetching/server-actions-and-mutations"
+  - title: "TypeSpec language basics"
+    url: "https://typespec.io/docs/language-basics/overview"
+  - title: "tsyringe — dependency injection for TypeScript"
+    url: "https://github.com/microsoft/tsyringe"
+
+openQuestions: []
+
+content: |
+  ## Problem Statement
+
+  The literal request — clicking "Start dev" should analyze the project with a script,
+  and fall back to a prompt/agent that starts the dev server — **is already implemented**.
+  Spec 103 (`agentic-dev-server`) landed a complete LangGraph pipeline, it is DI-wired,
+  unit- and integration-tested, and all three start use cases delegate to it.
+
+  Verified current behaviour (`packages/core/src/infrastructure/services/agents/dev-server-agent/`):
+
+  ```
+  START → analyze → ensure_infra → install_deps → start_server → verify → END
+               ▲          │                            │
+               └ remediate ◄────────────────────────────┘   (bounded: 2 attempts)
+  ```
+
+  `analyze.node.ts` already implements exactly the requested three-tier strategy:
+
+  1. **Cache** — a persisted `DevServerRunPlan` whose `configHash` still matches is reused.
+  2. **Script** — `detectDevScript()` deterministically reads `package.json`, picks
+     `dev`/`start`/`serve` by priority, infers the package manager from lockfiles, and
+     even scans immediate subdirectories for monorepo/nested layouts.
+  3. **Agent** — a structured agent call (`IStructuredAgentCaller` + `RUN_PLAN_ANALYSIS_SCHEMA`)
+     analyzes any language/stack and persists an `Agent`-sourced plan.
+
+  All three entry use cases (`StartApplicationDeploymentUseCase`,
+  `StartFeatureDeploymentUseCase`, `StartRepositoryDeploymentUseCase`) inject
+  `IDevServerAgentService`. The web UI renders the resulting `Analyzing → Installing →
+  Booting → Ready` states with badges, spinners and SSE log streaming.
+
+  **What is actually missing** — the real scope of this feature:
+
+  1. **The "script" tier is Node-only.** `detectDevScript` reads only `package.json` and
+     JS lockfiles. Yet `config-hash.ts` already fingerprints `Makefile`, `docker-compose.yml`,
+     `Cargo.toml`, `go.mod`, `pyproject.toml`, `Gemfile`, `pom.xml`, `mix.exs`, `deno.json`
+     and more — the system *knows* about these stacks for cache invalidation but cannot
+     detect a dev command for any of them. Consequences: every Python/Go/Rust/Ruby/Make/
+     Compose project pays a slow, non-deterministic, token-costing agent call for what is a
+     trivially scriptable lookup; and in **degraded mode (no agent configured) those projects
+     fail outright** with "Could not detect a dev server … and no AI agent is configured",
+     even when a `Makefile` has a `dev` target or a `docker-compose.yml` exists.
+
+  2. **The resolved run plan is invisible and un-overridable.** `dev_server_run_plans` rows
+     persist `command`, `cwd`, `packageManager`, `expectedPort`, `language`, `framework`,
+     `setupCommands`, `source`. Nothing in any presentation layer reads them. When the agent
+     infers a wrong command the user has no way to see what will run, correct it, or force a
+     re-analysis — the only recovery path is the remediate node's cache invalidation, which
+     only triggers *after* a failure and only when an agent is configured.
+
+  3. **No presentation parity.** `IDevServerAgentService` is reachable only through three
+     Next.js server actions (`deploy-application.ts`, `deploy-feature.ts`,
+     `deploy-repository.ts`). There is no CLI or TUI surface for starting a local dev
+     server — `src/presentation/cli/commands/app/deploy/` covers *cloud* deploy only
+     (`initiate`, `status`). This violates the repo's "Presentation-Agnostic Core API" rule,
+     which requires every feature be implementable in ALL presentation layers.
+
+  ## Codebase Analysis
+
+  ### Project Structure
+
+  A pnpm workspace. Core logic lives in `packages/core/src/` under strict Clean Architecture;
+  presentation lives in the root `src/presentation/`.
+
+  | Directory | Purpose |
+  | --------- | ------- |
+  | `tsp/` | TypeSpec domain source of truth. `tsp/common/enums/deployment.tsp` defines `DeploymentState` (Analyzing, Installing, Booting, Ready, Stopped) — Analyzing/Installing were added by spec 103. |
+  | `packages/core/src/domain/` | Entities, errors, value objects. `domain/generated/output.ts` is codegen — never hand-edited. Holds `DevServerRunPlan`, `RunPlanSource`, `DeploymentState`. |
+  | `packages/core/src/application/` | Use cases + output port interfaces. `ports/output/services/dev-server-agent-service.interface.ts`, `ports/output/repositories/dev-server-run-plan-repository.interface.ts`. |
+  | `packages/core/src/infrastructure/` | Agents, deployment services, SQLite repos/mappers/migrations, DI modules. |
+  | `src/presentation/web/` | Next.js App Router — server actions, API routes, React components, Zustand stores. |
+  | `src/presentation/cli/` | Commander command tree. |
+  | `tests/` | `unit/`, `integration/`, `e2e/` mirroring source paths. |
+
+  Dev-server subsystem specifically:
+
+  - `infrastructure/services/agents/dev-server-agent/` — `dev-server-agent.service.ts` (226 L,
+    single-flight registry + fire-and-track contract), `dev-server-agent-graph.ts` (128 L,
+    one fluent StateGraph chain), `state.ts` (channel reducers), `types.ts`, `schemas/`,
+    `nodes/` (analyze, ensure-infra, install-deps, start-server, verify, remediate) and
+    `nodes/prompts/` (analysis, remediation).
+  - `infrastructure/services/deployment/` — 19 focused modules: `detect-dev-script.ts`,
+    `config-hash.ts`, `deployment.service.ts`, `deployment-spawner.ts`, `parse-port.ts`,
+    `dependency-installer.ts`, `deployment-recovery.ts`, `log-ring-buffer.ts`, etc.
+
+  ### Architecture Patterns
+
+  - **Clean Architecture, dependencies point inward.** Presentation → use cases → ports;
+    infrastructure implements ports. Application code must never import from `infrastructure/`.
+  - **Ports & adapters with string-token DI.** `@inject('IDevServerAgentService')`. The
+    dev-server subsystem deliberately avoids tsyringe decorators — deps are hand-injected via
+    a `useFactory` in `di/modules/register-deployment.ts`.
+  - **Graceful degradation by design.** `safeResolve<IStructuredAgentCaller>` yields `null`
+    when no agent is configured; nodes branch on `structuredCaller === null` / `executor === null`
+    and set `degraded`, rather than throwing. This is exactly where gap #1 bites hardest.
+  - **Node factories + injected seams.** Every node is a `create*Node(deps)` factory with
+    injectable `sleep`, `probePort`, `exec`, `detect` seams so tests never touch real timers,
+    sockets or processes.
+  - **LangGraph channel semantics.** `capturedLogs` is an append-only accumulator; every other
+    channel is last-write-wins, with `failureReason` explicitly settable back to `null` by
+    `remediate` to re-enter the loop. All `addNode`/`addEdge` calls stay in ONE fluent chain
+    (a documented LESSONS.md constraint for node-name typing).
+  - **Fire-and-track contract.** `startDevServer()` resolves once the run is *accepted*
+    (transient `Analyzing` set, graph launched) — not when the server is ready. Progress is
+    observed via `getStatus()`/`getLogs()` and the SSE `log` event.
+  - **Single-flight per targetId.** A second start while a run is in flight is coalesced.
+  - **Agent-agnostic.** No provider SDK outside `infrastructure/`; all agent work flows
+    through `IAgentExecutorProvider` / `IStructuredAgentCaller`.
+  - **TypeSpec-first + numbered SQLite migrations.** `138-create-dev-server-run-plans-table.ts`
+    is the most recent dev-server migration; `040-create-dev-servers-table.ts` the original.
+
+  ### Relevant Technologies
+
+  LangGraph drives the pipeline; tsyringe wires it; TypeSpec defines `DevServerRunPlan` and
+  `DeploymentState`; better-sqlite3 persists plans and live dev-server rows (with
+  `recoverAll()` reconciling PIDs on restart); Next.js server actions + SSE surface it;
+  Zustand's `deployment-status-store.ts` tracks which states count as "starting"; Vitest
+  covers unit + integration; Storybook stories already exist for the Analyzing/Booting states.
+
+  ## Affected Areas
+
+  | Area | Impact | Reasoning |
+  | ---- | ------ | --------- |
+  | `packages/core/src/infrastructure/services/deployment/detect-dev-script.ts` | High | Core of the work — must grow from Node-only to a multi-stack deterministic detector (Makefile targets, docker-compose, Cargo, go.mod, pyproject/Poetry/uv, Gemfile, deno.json, mix.exs). At 163 lines it is near the ~300-line guidance, so widening should split per-ecosystem detectors into focused modules rather than growing one file. |
+  | `packages/core/src/infrastructure/services/agents/dev-server-agent/nodes/analyze.node.ts` | High | Tier-2 call site. Must consume the widened detector and keep the "expected failures never throw" contract; the `RunPlanSource.Deterministic` plan gains `language`/`framework`/`expectedPort` where the detector can infer them. |
+  | `packages/core/src/infrastructure/services/agents/dev-server-agent/nodes/ensure-infra.node.ts` + `install-deps.node.ts` | Medium | Non-Node plans need their runtime binaries probed (`python`, `go`, `cargo`, `make`, `docker compose`) and their setup commands run. `packageManager` is currently only populated for npm/pnpm/yarn/bun, which gates the install/staleness pipeline. |
+  | `packages/core/src/application/use-cases/deployments/` | Medium | New use cases for run-plan read/override/invalidate (e.g. `GetDevServerRunPlanUseCase`, `OverrideDevServerRunPlanUseCase`, `InvalidateDevServerRunPlanUseCase`) — presentation must never touch the repository directly. |
+  | `packages/core/src/application/ports/output/repositories/dev-server-run-plan-repository.interface.ts` | Low | May need a `findByRepoPath` exposure/marking for user-pinned plans so an override survives cache-hash invalidation. |
+  | `tsp/deployment/` + `domain/generated/output.ts` | Low–Medium | If plans gain a "user-pinned / manual" `RunPlanSource` member or an override flag, TypeSpec changes + `pnpm tsp:codegen` + a new numbered migration are mandatory. |
+  | `packages/core/src/infrastructure/persistence/sqlite/migrations/` | Low–Medium | Any new run-plan column needs an idempotent migration after `138-*`. |
+  | `packages/core/src/infrastructure/di/modules/register-deployment.ts` | Low | Wire new use cases / detector composition. |
+  | `src/presentation/web/components/features/application-page/` + `common/deployment-status-badge/` | Medium | Surface the resolved run plan (command, cwd, source) and offer "edit command" / "re-analyze". Every new/changed component needs a colocated `.stories.tsx` — mandatory. |
+  | `src/presentation/web/app/actions/deploy-*.ts` + `app/api/` | Low–Medium | Thin server actions / routes for the new run-plan use cases. |
+  | `src/presentation/cli/commands/` | Medium | New local dev-server commands (start/stop/status/plan) for presentation parity. Note `app/deploy/` is cloud deploy — the local surface is a separate command group. |
+  | `tests/unit/…/dev-server-agent/`, `tests/integration/…/dev-server-agent/`, `tests/unit/…/deployment/` | High | TDD is mandatory: RED tests first for every new detector ecosystem, use case, and CLI command. Existing suites (`dev-server-agent.service.test.ts`, `dev-server-agent-graph.test.ts`, the three `.int.test.ts` files) must stay green. |
+  | `translations/` | Low | New UI strings must be added across the locale files used by `t('repositoryNode.*')` / `t('featureNode.*')`. |
+  | `specs/103-agentic-dev-server/spec.yaml` | Low | Its `phase:` still reads `Requirements` despite the code having landed — spec hygiene worth correcting so 103/108 don't read as contradictory. |
+
+  ## Dependencies
+
+  Everything this feature builds on already exists and is wired:
+
+  - **`IDevServerAgentService`** + `DevServerAgentService` — accepted-run contract,
+    single-flight, degradation, failure routing. Registered in `register-deployment.ts`.
+  - **`IDevServerRunPlanRepository`** + `SQLiteDevServerRunPlanRepository` — `findByRepoPath`,
+    `upsert`, `deleteByRepoPath`; table from migration `138`.
+  - **`IStructuredAgentCaller`** + `RUN_PLAN_ANALYSIS_SCHEMA` — the agent fallback tier,
+    resolved via `safeResolve` so absence degrades instead of failing.
+  - **`IAgentExecutorProvider`** — remediation executor, agent-agnostic per AGENTS.md.
+  - **`IDeploymentService`** — spawn (`start()` accepts a verbatim `runPlan` override),
+    `setTransientState`, `appendLog`, `getStatus`, `getLogs`, `recoverAll`.
+  - **`computeConfigHash` / `computeInstallHash`** — `CONFIG_FILES` already enumerates the
+    multi-stack manifests the widened detector will target, so cache invalidation for
+    non-Node stacks works the moment detection does.
+  - **`DeploymentState`** — `Analyzing`/`Installing` already modelled in TypeSpec and rendered
+    by `deployment-status-badge`, `web-preview-tab`, `app-view-tabs`, `deployment-status-store`.
+  - **SSE log streaming** — `app/api/deployment-logs/route.ts` + `notification-bus.ts`.
+
+  No new third-party libraries are required.
+
+  ## Size Estimate
+
+  **M** — days, not weeks, precisely *because* the hard part is already built. The graph,
+  persistence, DI wiring, degradation semantics, state machine, and UI state rendering all
+  exist and are tested; this feature adds breadth and surfaces on top of a proven spine.
+
+  Justification by workstream:
+
+  - **Multi-stack deterministic detection (largest slice, ~half the effort).** Each ecosystem
+    is an independent, purely functional, trivially testable detector — but there are ~8 of
+    them, each needing RED-first tests, a priority/precedence policy when several manifests
+    coexist (e.g. a repo with both `package.json` and `docker-compose.yml`), and honest
+    `expectedPort` inference where possible. Mechanical, not risky.
+  - **Run-plan visibility/override (~quarter).** New use cases + thin server actions + UI,
+    plus mandatory Storybook stories and translations. Possibly a TypeSpec field + migration
+    if overrides must be pinned, which is the main thing that could push this toward L.
+  - **CLI parity (~quarter).** Straightforward Commander commands over existing use cases,
+    following the established command conventions.
+
+  Risk is low and well-contained: the failure semantics are the delicate part (expected
+  failures must surface as `failureReason`, never throw; `capturedLogs` must keep accumulating;
+  degraded mode must stay non-fatal), and those contracts are already pinned by existing unit
+  and integration tests that will catch regressions.
+
+  Scope note: if the intent is only to *verify* that "Start dev" already auto-starts correctly,
+  this collapses to **S** (an E2E pass over the click → Analyzing → Ready path). The **M**
+  estimate assumes the three gaps above are in scope.
