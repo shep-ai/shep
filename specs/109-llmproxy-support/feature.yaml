@@ -3,18 +3,18 @@ feature:
   name: 'llmproxy-support'
   number: 109
   branch: 'feat/109-llmproxy-support'
-  lifecycle: 'research'
+  lifecycle: 'planning'
   createdAt: '2026-08-09T16:33:09Z'
 
 status:
-  phase: 'research'
+  phase: 'planning'
   progress:
     completed: 0
     total: 0
     percentage: 0
   currentTask: null
-  lastUpdated: '2026-08-09T16:33:09Z'
-  lastUpdatedBy: 'shep-kit:new-feature'
+  lastUpdated: '2026-08-09T16:40:00Z'
+  lastUpdatedBy: 'shep-kit:research'
 
 validation:
   lastRun: null
@@ -30,6 +30,9 @@ checkpoints:
   - phase: 'feature-created'
     completedAt: '2026-08-09T16:33:09Z'
     completedBy: 'shep-kit:new-feature'
+  - phase: 'research-complete'
+    completedAt: '2026-08-09T16:40:00Z'
+    completedBy: 'shep-kit:research'
 
 errors:
   current: null

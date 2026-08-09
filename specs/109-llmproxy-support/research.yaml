@@ -1,69 +1,51 @@
-# Research Artifact (YAML)
+# Research (YAML)
 # This is the source of truth. Markdown is auto-generated from this file.
 
 name: llmproxy-support
-summary: Technical analysis for 109-llmproxy-support
+summary: Technical analysis for adding llmproxy support to the agent system
+phase: planning
+updatedAt: "2026-08-09"
 
-# Relationships
-relatedFeatures: []
-technologies: []
-relatedLinks: []
-
-# Structured technology decisions
 decisions:
-  - title: { { DECISION_TITLE } }
-    chosen: { { CHOSEN_OPTION } }
-    rejected:
-      - { { OPTION_1 } }
-      - { { OPTION_2 } }
-    rationale: { { RATIONALE } }
+  - id: agent-type
+    name: "Agent Type Enum Addition"
+    options:
+      - option: "Add LlmProxy to AgentType"
+        pros: "Explicit support in settings and factory. Follows existing pattern."
+        cons: "Requires TSP update."
+      - option: "Reuse OpenRouter or generic OpenAI compatible type"
+        pros: "No TSP change."
+        cons: "Loss of semantic clarity. The UI would say OpenRouter when users are using llmproxy locally."
+    selected: "Add LlmProxy to AgentType"
+    rationale: "Following the existing pattern of explicitly defining agent providers (like Ollama, TogetherAi) provides the best user experience and clarity in configuration."
 
-# Open questions (should be resolved by end of research)
-openQuestions:
-  []
-  # - question: "Which library should we use?"
-  #   resolved: true
-  #   answer: "Library X because of Y"
+  - id: executor-implementation
+    name: "LlmProxyExecutorService Implementation"
+    options:
+      - option: "Extend AiSdkBaseExecutorService with @ai-sdk/openai-compatible"
+        pros: "llmproxy natively exposes an OpenAI-compatible API. This allows immediate reuse of all the tool and message parsing logic already built into AiSdkBaseExecutorService."
+        cons: "None, it's the perfect fit."
+    selected: "Extend AiSdkBaseExecutorService with @ai-sdk/openai-compatible"
+    rationale: "This is the same approach used by OllamaExecutorService. We'll set the default baseURL to 'http://localhost:4000/v1' and provide a dummy API key if required by the SDK."
 
-# Markdown content (the full research document)
-content: |
-  ## Status
+  - id: model-catalog
+    name: "Model Catalog / Selection"
+    options:
+      - option: "Static list of common models in LLMProxy"
+        pros: "Simple, matches our other static catalogs for CLI agents."
+        cons: "Proxy models can be dynamic."
+      - option: "Dynamic fetch from /v1/models"
+        pros: "Accurate to what the proxy has configured."
+        cons: "Requires implementing an LlmProxyModelCatalogService."
+    selected: "Static list of common models"
+    rationale: "To maintain scope 'S' and match Ollama's current behavior, we'll use a static array of popular models (gpt-4o, claude-3-5-sonnet, etc.) in `agent-model-catalog.ts`."
 
-  - **Phase:** Research
-  - **Updated:** 2026-08-09
+security:
+  - "Local network access: Since the proxy is local (localhost:4000), it does not introduce new external credential leaks directly, though the proxy itself must secure its outbound credentials."
+  - "The executor will communicate over HTTP locally, which is typical for these setups."
 
-  ## Technology Decisions
+performance:
+  - "No meaningful overhead introduced by the executor itself; latency depends on the LLMProxy routing."
 
-  ### {{DECISION_TITLE}}
-
-  **Options considered:**
-
-  1. {{OPTION_1}}
-  2. {{OPTION_2}}
-  3. {{OPTION_3}}
-
-  **Decision:** {{CHOSEN_OPTION}}
-
-  **Rationale:** {{RATIONALE}}
-
-  ## Library Analysis
-
-  | Library     | Version     | Purpose     | Pros     | Cons     |
-  | ----------- | ----------- | ----------- | -------- | -------- |
-  | {{LIBRARY}} | {{VERSION}} | {{PURPOSE}} | {{PROS}} | {{CONS}} |
-
-  ## Security Considerations
-
-  No security implications identified.
-
-  ## Performance Implications
-
-  No performance implications identified.
-
-  ## Open Questions
-
-  All questions resolved.
-
-  ---
-
-  _Updated by `/shep-kit:research` — proceed with `/shep-kit:plan`_
+resolvedQuestions:
+  - "How should the executor connect to the proxy? -> via @ai-sdk/openai-compatible provider to http://localhost:4000/v1"

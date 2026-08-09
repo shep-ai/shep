@@ -8,7 +8,7 @@ oneLiner: Add support for using llmproxy locally running on localhost:4000 as an
 summary: >
   Integrate llmproxy (a local OpenAI-compatible proxy) as an available AgentType in the system,
   allowing users to configure shep to route LLM calls through a local llmproxy instance running on localhost:4000.
-phase: Requirements
+phase: research
 sizeEstimate: S
 
 # Relationships
