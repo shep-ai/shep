@@ -1,26 +1,50 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
+import { create } from 'zustand';
 
 export type TurnStatus = 'idle' | 'processing' | 'unread' | 'awaiting_input';
 
+interface TurnStatusStore {
+  statuses: Record<string, TurnStatus>;
+  setStatuses: (statuses: Record<string, TurnStatus>) => void;
+  updateStatus: (featureId: string, status: TurnStatus) => void;
+}
+
+const useTurnStatusStore = create<TurnStatusStore>((set) => ({
+  statuses: {},
+  setStatuses: (statuses) => set({ statuses }),
+  updateStatus: (featureId, turnStatus) =>
+    set((state) => {
+      const prev = state.statuses;
+      // Drop idle entries to match the GET endpoint's "non-idle only"
+      // contract — keeps the map lean.
+      if (turnStatus === 'idle') {
+        if (!(featureId in prev)) return state;
+        const next = { ...prev };
+        delete next[featureId];
+        return { statuses: next };
+      }
+      if (prev[featureId] === turnStatus) return state;
+      return { statuses: { ...prev, [featureId]: turnStatus } };
+    }),
+}));
+
 /**
- * Event-driven global turn-status map.
+ * Event-driven global turn-status listener.
+ * Should be mounted once globally (e.g. in TurnStatusesProvider).
  *
  * - On mount: ONE-SHOT GET /api/interactive/chat/turn-statuses to seed
- *   the initial snapshot. Replaces the old 2-second polling loop.
+ *   the initial snapshot.
  * - After that: live updates via EventSource on
  *   /api/interactive/chat/turn-statuses/stream, which emits a
  *   `turn_status` event for every active session's turn transition.
  * - Robustness: the browser auto-reconnects EventSource on drops; on
  *   every successful (re)connect we re-run the snapshot fetch to catch
  *   any events missed during the downtime.
- *
- * No periodic polling. One request per page load plus one SSE
- * connection per tab.
  */
-export function useAllTurnStatuses(): Record<string, TurnStatus> {
-  const [statuses, setStatuses] = useState<Record<string, TurnStatus>>({});
+export function useTurnStatusSync(): void {
+  const { setStatuses, updateStatus } = useTurnStatusStore();
   const mountedRef = useRef(true);
 
   const fetchSnapshot = useCallback(async () => {
@@ -33,7 +57,7 @@ export function useAllTurnStatuses(): Record<string, TurnStatus> {
       // Transient network blip — ignore; the SSE open handler will
       // retry the snapshot on reconnect.
     }
-  }, []);
+  }, [setStatuses]);
 
   useEffect(() => {
     mountedRef.current = true;
@@ -51,19 +75,7 @@ export function useAllTurnStatuses(): Record<string, TurnStatus> {
           turnStatus: TurnStatus;
         };
         if (!featureId || !turnStatus) return;
-        setStatuses((prev) => {
-          // Drop idle entries to match the GET endpoint's "non-idle only"
-          // contract — keeps the map lean and the equality check in
-          // TurnStatusesProvider cheap.
-          if (turnStatus === 'idle') {
-            if (!(featureId in prev)) return prev;
-            const next = { ...prev };
-            delete next[featureId];
-            return next;
-          }
-          if (prev[featureId] === turnStatus) return prev;
-          return { ...prev, [featureId]: turnStatus };
-        });
+        updateStatus(featureId, turnStatus);
       } catch {
         // Ignore malformed events
       }
@@ -83,9 +95,15 @@ export function useAllTurnStatuses(): Record<string, TurnStatus> {
       mountedRef.current = false;
       es.close();
     };
-  }, [fetchSnapshot]);
+  }, [fetchSnapshot, updateStatus]);
+}
 
-  return statuses;
+/**
+ * Get the turn status for a specific scope ID.
+ * Subscribes to only this scope ID's changes.
+ */
+export function useTurnStatus(scopeId: string): TurnStatus {
+  return useTurnStatusStore((state) => state.statuses[scopeId] ?? 'idle');
 }
 
 /**

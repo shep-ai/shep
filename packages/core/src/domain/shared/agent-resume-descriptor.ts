@@ -50,8 +50,26 @@ export interface AgentResumeDescriptor {
   args: string[];
   /** Working directory the agent resolves the session from */
   cwd: string;
-  /** Display form, safe to show or copy into a terminal */
+  /**
+   * Bare invocation, safe to write into a shell that is ALREADY in `cwd`
+   * (e.g. shep's embedded terminal, which spawns at `cwd`).
+   */
   displayCommand: string;
+  /**
+   * Self-contained invocation for copy-to-clipboard: cds into `cwd` before
+   * resuming. Sessions are project-scoped, so a bare `--resume <id>` finds
+   * nothing when pasted anywhere other than the project directory.
+   */
+  clipboardCommand: string;
+}
+
+/**
+ * POSIX single-quote a value so it survives being pasted into a shell.
+ * Closes the quote, emits an escaped literal quote, reopens — the standard
+ * `'\''` idiom — so paths with spaces or apostrophes stay intact.
+ */
+function singleQuote(value: string): string {
+  return `'${value.replace(/'/g, `'\\''`)}'`;
 }
 
 /**
@@ -72,12 +90,14 @@ export function buildAgentResumeDescriptor(
   if (!SAFE_SESSION_ID.test(sessionId)) return null;
 
   const args = [RESUME_FLAG, sessionId];
+  const displayCommand = `${binary} ${args.join(' ')}`;
 
   return {
     binary,
     args,
     cwd,
-    displayCommand: `${binary} ${args.join(' ')}`,
+    displayCommand,
+    clipboardCommand: `cd ${singleQuote(cwd)} && ${displayCommand}`,
   };
 }
 

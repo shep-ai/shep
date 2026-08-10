@@ -29,5 +29,5 @@ export async function describeResumeCommand(input: {
   cwd: string;
 }): Promise<{ command?: string; error?: string }> {
   const binary = input.agentType === 'cursor' ? 'cursor-agent' : 'claude';
-  return { command: `${binary} --resume ${input.sessionId}` };
+  return { command: `cd '${input.cwd}' && ${binary} --resume ${input.sessionId}` };
 }

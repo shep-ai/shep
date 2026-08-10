@@ -129,4 +129,39 @@ describe('buildAgentResumeDescriptor', () => {
 
     expect(descriptor?.displayCommand).toBe(`cursor-agent --resume ${SESSION_ID}`);
   });
+
+  it('exposes a self-contained clipboard command that cds into the project first', () => {
+    // Sessions are project-scoped: `claude --resume <id>` only finds the
+    // conversation when run from the project directory. A copied command must
+    // therefore carry the cwd, or it fails wherever the user pastes it.
+    const descriptor = buildAgentResumeDescriptor(AgentType.ClaudeCode, SESSION_ID, CWD);
+
+    expect(descriptor?.clipboardCommand).toBe(`cd '${CWD}' && claude --resume ${SESSION_ID}`);
+  });
+
+  it('single-quotes a cwd that contains spaces so paste survives the shell', () => {
+    const spaced = '/Users/dev/My Projects/app';
+    const descriptor = buildAgentResumeDescriptor(AgentType.ClaudeCode, SESSION_ID, spaced);
+
+    expect(descriptor?.clipboardCommand).toBe(`cd '${spaced}' && claude --resume ${SESSION_ID}`);
+  });
+
+  it('escapes an embedded single quote in the cwd', () => {
+    const quoted = "/Users/dev/o'brien/app";
+    const descriptor = buildAgentResumeDescriptor(AgentType.ClaudeCode, SESSION_ID, quoted);
+
+    // POSIX single-quote escaping: close, escaped literal quote, reopen.
+    expect(descriptor?.clipboardCommand).toBe(
+      `cd '/Users/dev/o'\\''brien/app' && claude --resume ${SESSION_ID}`
+    );
+  });
+
+  it('never emits a --project argument in the clipboard command either', () => {
+    for (const agentType of Object.values(AgentType)) {
+      const descriptor = buildAgentResumeDescriptor(agentType, SESSION_ID, CWD);
+      if (descriptor === null) continue;
+
+      expect(descriptor.clipboardCommand).not.toContain('--project');
+    }
+  });
 });
