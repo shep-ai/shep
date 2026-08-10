@@ -62,7 +62,10 @@
         "push": "Push",
         "pr": "PR",
         "cancelled": "Configuration cancelled.",
-        "failed": "Failed to configure workflow defaults"
+        "failed": "Failed to configure workflow defaults",
+        "maxParallelOption": "Maximum features running an agent at once (0 = unlimited)",
+        "maxParallelUnlimited": "No limit on parallel features",
+        "maxParallelSet": "Running at most {{limit}} features in parallel"
       },
       "language": {
         "description": "Configure display language",
@@ -332,7 +335,8 @@
         "statusLabel": "Status:",
         "agentLabel": "Agent:",
         "spawnedStatus": "spawned",
-        "failedToStart": "Failed to start feature"
+        "failedToStart": "Failed to start feature",
+        "forceOption": "Start even when the parallel-feature limit is reached"
       },
       "approve": {
         "description": "Approve a feature waiting for review",
@@ -990,5 +994,10 @@
     "failedSettings": "Failed to initialize settings",
     "unexpectedError": "An unexpected error occurred",
     "unhandledRejection": "Unhandled promise rejection"
+  },
+  "features": {
+    "queued": "Queued",
+    "queuedWithPosition": "Queued · {{position}} ahead",
+    "queuedTooltip": "Waiting for a free slot ({{position}} in queue)"
   }
 }

@@ -31,7 +31,7 @@ tasks:
       comments stating that 0 means unlimited and that queuedAt is set only for capacity-queued
       features. Regenerate with `pnpm tsp:codegen` (NOT tsp:compile — it leaves the generated file
       unformatted and produces a phantom 500-line diff).
-    state: Todo
+    state: Done
     dependencies: []
     acceptanceCriteria:
       - Both fields are optional so existing Partial<Feature>/Settings fixtures still compile
@@ -48,7 +48,7 @@ tasks:
       Migration 143 adds `queued_at TEXT` to features plus `idx_features_queued_at` for the FIFO
       scan and, if absent, an index on `features(lifecycle)` for the count query. Both guarded by a
       `pragma table_info` existence check, following migration 046 as the template.
-    state: Todo
+    state: Done
     dependencies:
       - task-1
     acceptanceCriteria:
@@ -67,7 +67,7 @@ tasks:
       resolveMaxParallelFeatures(settings). This is the ONLY definition of these semantics.
       Relative imports inside domain/ carry no .js extension (the web bundler consumes domain/ as
       raw .ts source).
-    state: Todo
+    state: Done
     dependencies:
       - task-1
     acceptanceCriteria:
@@ -91,7 +91,7 @@ tasks:
       toDatabase(), fromDatabase(), and the INSERT column list, INSERT @params list and UPDATE SET
       clause in sqlite-settings.repository.ts. Add the default (0) to settings-defaults.factory.ts
       and update its exact-shape toEqual test.
-    state: Todo
+    state: Done
     dependencies:
       - task-2
       - task-3
@@ -115,7 +115,7 @@ tasks:
       sqlite-feature.repository.ts. Add countByLifecycles(lifecycles) and listQueued() to
       IFeatureRepository and implement them in SQL — COUNT with an IN clause excluding soft-deleted
       rows, and a FIFO SELECT ordered by queued_at ASC.
-    state: Todo
+    state: Done
     dependencies:
       - task-2
       - task-3
@@ -142,7 +142,7 @@ tasks:
       CheckAndUnblockFeaturesUseCase onto it. This fixes the divergence found in research — the
       auto-unblock path currently omits agentType and modelId, so an unblocked child starts under
       the wrong agent.
-    state: Todo
+    state: Done
     dependencies:
       - task-3
     acceptanceCriteria:
@@ -167,7 +167,7 @@ tasks:
       through countByLifecycles, and returns a snapshot of limit, running, available and the
       ordered queue with positions. GetParallelCapacityUseCase is the presentation-facing wrapper —
       no HTTP, terminal or React concepts in its result.
-    state: Todo
+    state: Done
     dependencies:
       - task-4
       - task-5
@@ -193,7 +193,7 @@ tasks:
       skip the spawn — the worktree, spec and agent-run record are still fully created.
       StartFeatureResult gains queued and queuePosition alongside the existing blocked/blockedBy so
       no presentation layer re-derives the state.
-    state: Todo
+    state: Done
     dependencies:
       - task-6
       - task-7
@@ -223,7 +223,7 @@ tasks:
       raised or set to 0), the get-graph-data sweep next to ReconcileBlockedFeaturesUseCase, and
       the feature delete path. Also make CheckAndUnblockFeaturesUseCase queue a released child when
       no slot is free instead of starting it.
-    state: Todo
+    state: Done
     dependencies:
       - task-8
     acceptanceCriteria:
@@ -249,7 +249,7 @@ tasks:
       Register SpawnFeatureAgentUseCase, FeatureCapacityService, GetParallelCapacityUseCase and
       AdmitQueuedFeaturesUseCase in register-use-cases.ts, including the string-token factories the
       web layer resolves by name. Registration order matters — collaborators before their consumers.
-    state: Todo
+    state: Done
     dependencies:
       - task-9
     acceptanceCriteria:
@@ -273,7 +273,7 @@ tasks:
       exactly, including the fallback object at the top of the component. Clamp through the domain
       helper, never in the component. Add settings.workflow.maxParallelFeatures and its Description
       key, plus the queued status strings, to all nine locales.
-    state: Todo
+    state: Done
     dependencies:
       - task-7
     acceptanceCriteria:
@@ -299,7 +299,7 @@ tasks:
       flag — the failure looks like "wired but renders nothing"). Add a Queued badge with position
       to the feature node and drawer, plus a "start anyway" action that bypasses the queue for one
       feature. Colocated .stories.tsx is mandatory.
-    state: Todo
+    state: Done
     dependencies:
       - task-7
     acceptanceCriteria:
@@ -322,7 +322,7 @@ tasks:
       Read and write the limit from the settings command, and report queued state from feat
       new/start/list instead of claiming the feature started. All output strings come from
       translations/<lang>/cli.json.
-    state: Todo
+    state: Done
     dependencies:
       - task-8
     acceptanceCriteria:
@@ -340,11 +340,15 @@ tasks:
     estimatedEffort: M
 
   - id: task-14
-    title: 'TUI parity for queued features'
+    title: 'TUI parity for queued features (not applicable)'
+    notActionable: >-
+      No target surface exists. src/presentation/tui/ contains only prompts and
+      wizards — there is no feature list or status view in the TUI to render a
+      queued badge on. Revisit if a TUI feature list is ever added.
     description: >
       Show the same queued state and position in the TUI feature list, sourced from the same use
       case as the web and CLI. A second surface for an entity must offer the same information.
-    state: Todo
+    state: Done
     dependencies:
       - task-8
     acceptanceCriteria:
@@ -366,7 +370,7 @@ tasks:
       Run the complete pre-push sequence — pnpm lint, pnpm format:check, pnpm typecheck,
       pnpm test:unit, pnpm test:int, pnpm build, pnpm build:storybook — and fix everything that
       fails. Add the lesson from this feature to LESSONS.md.
-    state: Todo
+    state: Done
     dependencies:
       - task-10
       - task-11

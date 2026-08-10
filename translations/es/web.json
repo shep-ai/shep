@@ -76,6 +76,8 @@
       "sectionDescription": "Comportamiento de automatización después de la implementación",
       "defaultMode": "Modo predeterminado de funcionalidad",
       "defaultModeDescription": "Modo predeterminado para nuevas funcionalidades creadas vía CLI o interfaz web",
+      "maxParallelFeatures": "Máximo de funcionalidades paralelas",
+      "maxParallelFeaturesDescription": "Número máximo de funcionalidades que ejecutan un agente a la vez. 0 significa sin límite. Las funcionalidades adicionales se ponen en cola y comienzan automáticamente cuando se libera un espacio.",
       "modeRegular": "Regular",
       "modeFast": "Rápido",
       "modeExploration": "Exploración",
@@ -925,5 +927,11 @@
     "deleteAdoptedNote": "La funcionalidad adoptada de esta sesión no se eliminará.",
     "cancel": "Cancelar",
     "archivedHidden": "{{count}} archivadas ocultas"
+  },
+  "features": {
+    "queued": "En cola",
+    "queuedWithPosition": "En cola · {{position}} por delante",
+    "queuedTooltip": "Esperando un espacio libre ({{position}} en la cola)",
+    "startAnyway": "Iniciar de todos modos"
   }
 }

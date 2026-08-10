@@ -1,5 +1,80 @@
 # Lessons Learned
 
+## Two independent gates need two independent markers — never overload a lifecycle
+
+Spec 110 added a parallel-feature cap. A capacity-queued feature and a
+user-deferred (`--pending`) feature sit in the **same** `Pending` lifecycle, and
+exactly one of them may be started automatically. Encoding "queued" as a
+lifecycle value (or as bare `Pending`) would either auto-start work the user
+deliberately deferred, or require a new `SdlcLifecycle` member rippling through
+36 files — where, per the enum lesson below, raw string comparisons compile
+silently and are missed by an `SdlcLifecycle.` grep.
+
+The marker is `Feature.queuedAt`: it is simultaneously the flag
+(`isQueuedForCapacity`), the FIFO ordering key, and an honest record of *when
+the user asked for the feature to run*.
+
+Rules:
+
+1. **When a second gate can hold an entity back, give it its own field.** Ask
+   "can both conditions be true at once, and do they release on different
+   events?" If yes, one lifecycle cannot represent both.
+2. **Evaluate gates in dependency order and stop at the first closed one.** The
+   capacity check runs only *after* the parent gate opens, so a feature that
+   cannot run anyway never takes a queue place ahead of one that can.
+3. **A capacity count must be derived, never decremented.** `countByLifecycles`
+   recomputes from lifecycle on every call; a maintained counter leaks a slot
+   forever the first time a worker crashes or a feature is force-deleted, and
+   the only symptom is a queue that silently never drains.
+4. **Wire the drain to every event that frees a slot, not just the obvious one.**
+   Lifecycle transition, settings change (raising the limit), feature deletion,
+   and a state-side sweep on dashboard load. Two of those are not lifecycle
+   transitions at all, so an event-side-only hook strands features.
+
+## Extract the spawn path before adding a gate to it
+
+Three call sites built the feature-agent spawn options bag by hand
+(`CreateFeatureUseCase`, `StartFeatureUseCase`, `CheckAndUnblockFeaturesUseCase`)
+and had already drifted: the auto-unblock path omitted `agentType` and `modelId`,
+so a feature created against `gemini-cli` silently restarted under the default
+agent when its parent landed. Nothing failed — it just ran the wrong agent.
+
+**Rule:** when a fourth concern (here, admission control) is about to be added to
+N duplicated code paths, collapse them first. `SpawnFeatureAgentUseCase` is now
+the only place that builds the bag, so the gate was written once and the drift
+was fixed as a side effect. A unit test asserting the spawned options carry the
+`AgentRun`'s `agentType`/`modelId` is the regression lock — assert on
+`spawn.mock.calls[0][5]`, because an options-bag omission is invisible to
+typecheck (every field is optional).
+
+## `ci_watch_enabled` was written by the mapper and dropped by the SQL
+
+Found while adding `workflow_max_parallel_features`: `settings.mapper.ts` wrote
+`ci_watch_enabled` in both directions, but `sqlite-settings.repository.ts` never
+listed the column in its INSERT or UPDATE. Toggling CI watch in the UI appeared
+to save and silently reverted, masked by the column DEFAULT.
+
+**Rule:** when adding a settings or feature column, grep the repository for a
+*neighbouring* column name and confirm your field appears in all three lists
+(INSERT columns, INSERT `@params`, UPDATE `SET`) — then check the neighbour is in
+all three too. This defect class has now shipped four times; each new field is a
+chance to catch an older one.
+
+**Rule:** the round-trip test must write a **non-default** value and then a
+*second, different* non-default value. Only the second write exercises UPDATE;
+asserting the default alone passes even when the write path does not exist.
+
+## A port method addition should be a one-line change, not fifteen
+
+Adding `countByLifecycles`/`listQueued` to `IFeatureRepository` broke 22 test
+files, each carrying its own `{ create: vi.fn(), findById: vi.fn(), ... }` copy
+of the mock.
+
+**Rule:** test doubles for a port live in one place
+(`tests/helpers/feature-repository.mock.ts`), typed as
+`{ [K in keyof IPort]: Mock }` so the compiler still enforces the shape. Before
+hand-patching the same mock in more than two files, extract it.
+
 ## A copied "resume" command must carry its working directory
 
 Agent CLI sessions (`claude`/`codex`/`cursor-agent --resume <id>`) are

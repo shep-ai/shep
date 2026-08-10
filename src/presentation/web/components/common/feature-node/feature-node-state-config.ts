@@ -222,6 +222,16 @@ export interface FeatureNodeData {
   runtime?: string;
   /** Feature name this node is blocked by */
   blockedBy?: string;
+  /**
+   * Whether the parallel-feature limit is holding this feature back.
+   *
+   * Distinct from the `pending` state, which also covers features the user
+   * deferred deliberately: a queued feature starts on its own when a slot
+   * frees, a deferred one never does.
+   */
+  queued?: boolean;
+  /** 1-based place in the capacity queue, when queued. */
+  queuePosition?: number;
   /** Short error message for error state */
   errorMessage?: string;
   /** Whether the feature was created in fast mode (skip SDLC phases). */

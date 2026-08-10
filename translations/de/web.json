@@ -76,6 +76,8 @@
       "sectionDescription": "Automatisierungsverhalten nach der Implementierung",
       "defaultMode": "Standard-Feature-Modus",
       "defaultModeDescription": "Standardmodus für neue Features, die über CLI oder Web-UI erstellt werden",
+      "maxParallelFeatures": "Maximal parallele Features",
+      "maxParallelFeaturesDescription": "Maximale Anzahl Features, die gleichzeitig einen Agenten ausführen. 0 bedeutet unbegrenzt. Weitere Features werden eingereiht und starten automatisch, sobald ein Platz frei wird.",
       "modeRegular": "Standard",
       "modeFast": "Schnell",
       "modeExploration": "Erkundung",
@@ -925,5 +927,11 @@
     "deleteAdoptedNote": "Das aus dieser Sitzung übernommene Feature wird nicht gelöscht.",
     "cancel": "Abbrechen",
     "archivedHidden": "{{count}} archiviert ausgeblendet"
+  },
+  "features": {
+    "queued": "In Warteschlange",
+    "queuedWithPosition": "In Warteschlange · {{position}} davor",
+    "queuedTooltip": "Wartet auf einen freien Platz ({{position}} in der Warteschlange)",
+    "startAnyway": "Trotzdem starten"
   }
 }

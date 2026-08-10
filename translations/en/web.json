@@ -76,6 +76,8 @@
       "sectionDescription": "Automation behavior after implementation",
       "defaultMode": "Default feature mode",
       "defaultModeDescription": "Default mode for new features created via CLI or Web UI",
+      "maxParallelFeatures": "Max parallel features",
+      "maxParallelFeaturesDescription": "Maximum features running an agent at the same time. 0 means unlimited. Extra features are queued and start automatically as slots free up.",
       "modeRegular": "Regular",
       "modeFast": "Fast",
       "modeExploration": "Exploration",
@@ -925,5 +927,11 @@
     "deleteAdoptedNote": "The feature adopted from this session will not be deleted.",
     "cancel": "Cancel",
     "archivedHidden": "{{count}} archived hidden"
+  },
+  "features": {
+    "queued": "Queued",
+    "queuedWithPosition": "Queued · {{position}} ahead",
+    "queuedTooltip": "Waiting for a free slot ({{position}} in queue)",
+    "startAnyway": "Start anyway"
   }
 }

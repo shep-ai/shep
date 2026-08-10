@@ -76,6 +76,8 @@
       "sectionDescription": "Comportamento de automação após a implementação",
       "defaultMode": "Modo padrão de recurso",
       "defaultModeDescription": "Modo padrão para novos recursos criados via CLI ou interface web",
+      "maxParallelFeatures": "Máximo de recursos paralelos",
+      "maxParallelFeaturesDescription": "Número máximo de recursos executando um agente ao mesmo tempo. 0 significa ilimitado. Recursos extras entram na fila e iniciam automaticamente quando uma vaga é liberada.",
       "modeRegular": "Regular",
       "modeFast": "Rápido",
       "modeExploration": "Exploração",
@@ -925,5 +927,11 @@
     "deleteAdoptedNote": "A funcionalidade adotada desta sessão não será excluída.",
     "cancel": "Cancelar",
     "archivedHidden": "{{count}} arquivadas ocultas"
+  },
+  "features": {
+    "queued": "Na fila",
+    "queuedWithPosition": "Na fila · {{position}} à frente",
+    "queuedTooltip": "Aguardando uma vaga livre ({{position}} na fila)",
+    "startAnyway": "Iniciar mesmo assim"
   }
 }

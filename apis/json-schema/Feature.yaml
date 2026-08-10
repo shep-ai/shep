@@ -130,6 +130,10 @@ properties:
   sourceAgentType:
     $ref: AgentType.yaml
     description: Agent type that owned the adopted session (optional)
+  queuedAt:
+    type: string
+    format: date-time
+    description: When this feature was queued by the parallel-feature limit (optional, cleared on admission)
 required:
   - name
   - userQuery

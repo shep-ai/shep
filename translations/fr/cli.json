@@ -62,7 +62,10 @@
         "push": "Pousser",
         "pr": "PR",
         "cancelled": "Configuration annulée.",
-        "failed": "Échec de la configuration des valeurs par défaut du workflow"
+        "failed": "Échec de la configuration des valeurs par défaut du workflow",
+        "maxParallelOption": "Nombre maximum de fonctionnalités exécutant un agent à la fois (0 = illimité)",
+        "maxParallelUnlimited": "Aucune limite de fonctionnalités parallèles",
+        "maxParallelSet": "Au plus {{limit}} fonctionnalités en parallèle"
       },
       "language": {
         "description": "Configurer la langue d'affichage",
@@ -332,7 +335,8 @@
         "statusLabel": "Statut :",
         "agentLabel": "Agent :",
         "spawnedStatus": "lancé",
-        "failedToStart": "Échec du démarrage de la fonctionnalité"
+        "failedToStart": "Échec du démarrage de la fonctionnalité",
+        "forceOption": "Démarrer même lorsque la limite de fonctionnalités parallèles est atteinte"
       },
       "approve": {
         "description": "Approuver une fonctionnalité en attente de revue",
@@ -990,5 +994,10 @@
     "failedSettings": "Échec de l'initialisation des paramètres",
     "unexpectedError": "Une erreur inattendue s'est produite",
     "unhandledRejection": "Rejet de promesse non géré"
+  },
+  "features": {
+    "queued": "En file d'attente",
+    "queuedWithPosition": "En file · {{position}} devant",
+    "queuedTooltip": "En attente d'une place libre ({{position}} dans la file)"
   }
 }

@@ -461,4 +461,69 @@ describe('buildGraphNodes', () => {
       expect((featureNode!.data as { securityMode?: SecurityMode }).securityMode).toBeUndefined();
     });
   });
+
+  describe('capacity queue propagation to feature nodes', () => {
+    interface QueueData {
+      queued?: boolean;
+      queuePosition?: number;
+    }
+    const dataOf = (nodes: ReturnType<typeof buildGraphNodes>['nodes']) =>
+      nodes.find((n) => n.id === 'feat-feat-1')!.data as QueueData;
+
+    it('marks a feature carrying queuedAt as queued', () => {
+      const repo = makeRepo({ path: '/my/repo' });
+      const feature = makeFeature({
+        repositoryPath: '/my/repo',
+        lifecycle: SdlcLifecycle.Pending,
+        queuedAt: new Date('2026-03-01T10:00:00Z'),
+      });
+
+      const { nodes } = buildGraphNodes([repo], [{ feature, run: null }]);
+
+      expect(dataOf(nodes).queued).toBe(true);
+    });
+
+    it('does NOT mark a user-deferred pending feature as queued', () => {
+      // Both sit in Pending. Only the capacity-queued one starts on its own, so
+      // conflating them would promise the user something that never happens.
+      const repo = makeRepo({ path: '/my/repo' });
+      const feature = makeFeature({
+        repositoryPath: '/my/repo',
+        lifecycle: SdlcLifecycle.Pending,
+      });
+
+      const { nodes } = buildGraphNodes([repo], [{ feature, run: null }]);
+
+      expect(dataOf(nodes).queued).toBeUndefined();
+    });
+
+    it('threads the queue position supplied by the caller onto the node', () => {
+      const repo = makeRepo({ path: '/my/repo' });
+      const feature = makeFeature({
+        repositoryPath: '/my/repo',
+        lifecycle: SdlcLifecycle.Pending,
+        queuedAt: new Date('2026-03-01T10:00:00Z'),
+      });
+
+      const { nodes } = buildGraphNodes([repo], [{ feature, run: null }], {
+        queuePositions: new Map([['feat-1', 3]]),
+      });
+
+      expect(dataOf(nodes)).toMatchObject({ queued: true, queuePosition: 3 });
+    });
+
+    it('still marks the feature queued when no positions map is supplied', () => {
+      const repo = makeRepo({ path: '/my/repo' });
+      const feature = makeFeature({
+        repositoryPath: '/my/repo',
+        lifecycle: SdlcLifecycle.Pending,
+        queuedAt: new Date('2026-03-01T10:00:00Z'),
+      });
+
+      const { nodes } = buildGraphNodes([repo], [{ feature, run: null }]);
+
+      expect(dataOf(nodes)).toMatchObject({ queued: true });
+      expect(dataOf(nodes).queuePosition).toBeUndefined();
+    });
+  });
 });

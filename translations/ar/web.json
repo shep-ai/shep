@@ -76,6 +76,8 @@
       "sectionDescription": "سلوك الأتمتة بعد التنفيذ",
       "defaultMode": "وضع الميزة الافتراضي",
       "defaultModeDescription": "الوضع الافتراضي للميزات الجديدة المنشأة عبر CLI أو واجهة الويب",
+      "maxParallelFeatures": "الحد الأقصى للميزات المتوازية",
+      "maxParallelFeaturesDescription": "أقصى عدد من الميزات التي تشغّل وكيلاً في الوقت نفسه. القيمة 0 تعني بلا حد. تُوضع الميزات الإضافية في قائمة انتظار وتبدأ تلقائياً عند توفر مكان.",
       "modeRegular": "عادي",
       "modeFast": "سريع",
       "modeExploration": "استكشاف",
@@ -925,5 +927,11 @@
     "deleteAdoptedNote": "لن يتم حذف الميزة المستمدة من هذه الجلسة.",
     "cancel": "إلغاء",
     "archivedHidden": "{{count}} مؤرشفة مخفية"
+  },
+  "features": {
+    "queued": "في قائمة الانتظار",
+    "queuedWithPosition": "في الانتظار · {{position}} قبلها",
+    "queuedTooltip": "بانتظار مكان شاغر ({{position}} في الطابور)",
+    "startAnyway": "ابدأ على أي حال"
   }
 }
