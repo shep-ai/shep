@@ -293,7 +293,8 @@ describe('AgentExecutorFactory', () => {
       expect(supported).toContain('together-ai');
       expect(supported).toContain('ollama');
       expect(supported).toContain('cline');
-      expect(supported).toHaveLength(10);
+      expect(supported).toContain('llmproxy');
+      expect(supported).toHaveLength(11);
     });
 
     it('should not include unsupported agents', () => {
@@ -533,5 +534,31 @@ describe('AgentExecutorFactory', () => {
     it('should return false for ollama', () => {
       expect(factory.supportsInteractive(AgentType.Ollama)).toBe(false);
     });
+  });
+});
+
+describe('AgentExecutorFactory - LlmProxy', () => {
+  it('should create LlmProxyExecutorService for llmproxy agent type', () => {
+    const mockSpawn = vi.fn();
+    const factory = new AgentExecutorFactory(mockSpawn);
+    const executor = factory.createExecutor(AgentType.LlmProxy, {
+      type: AgentType.LlmProxy,
+      authMethod: 'session' as any,
+    });
+    expect(executor.constructor.name).toBe('LlmProxyExecutorService');
+  });
+
+  it('should include llmproxy in supported agents', () => {
+    const mockSpawn = vi.fn();
+    const factory = new AgentExecutorFactory(mockSpawn);
+    expect(factory.getSupportedAgents()).toContain(AgentType.LlmProxy);
+  });
+
+  it('should return LLMPROXY_MODELS for llmproxy', () => {
+    const mockSpawn = vi.fn();
+    const factory = new AgentExecutorFactory(mockSpawn);
+    const models = factory.getSupportedModels(AgentType.LlmProxy);
+    expect(models.length).toBeGreaterThan(0);
+    expect(models).toContain('gpt-4o');
   });
 });

@@ -169,16 +169,29 @@ export function AgentModelPicker({
         updateAgentAndModel(nextAgentType, nextModel || null));
 
     setInternalSaving(true);
+
+    // Optimistic update to prevent the UI from feeling stuck
+    const prevAgentType = agentType;
+    const prevModel = model;
+    setAgentType(newAgentType);
+    setModel(newModel);
+    onAgentModelChange?.(newAgentType, newModel);
+
     try {
       const result = await persistSelection(newAgentType, newModel);
       if (result && 'ok' in result && !result.ok) {
+        // Rollback
+        setAgentType(prevAgentType);
+        setModel(prevModel);
+        onAgentModelChange?.(prevAgentType, prevModel ?? '');
         setInternalError(result.error ?? 'Failed to save');
         return;
       }
-      setAgentType(newAgentType);
-      setModel(newModel);
-      onAgentModelChange?.(newAgentType, newModel);
     } catch {
+      // Rollback
+      setAgentType(prevAgentType);
+      setModel(prevModel);
+      onAgentModelChange?.(prevAgentType, prevModel ?? '');
       setInternalError('Failed to save');
     } finally {
       setInternalSaving(false);

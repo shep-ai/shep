@@ -1,39 +1,17 @@
 'use client';
 
-import { createContext, useContext, useMemo, type ReactNode } from 'react';
-import { useAllTurnStatuses, type TurnStatus } from './use-turn-statuses';
-
-interface TurnStatusesContextValue {
-  /** Get turn status for a scope key (featureId / "repo-<id>" / "global") */
-  getStatus: (scopeId: string) => TurnStatus;
-}
-
-const TurnStatusesContext = createContext<TurnStatusesContextValue>({
-  getStatus: () => 'idle',
-});
+import { type ReactNode } from 'react';
+import { useTurnStatusSync } from './use-turn-statuses';
+// We re-export useTurnStatus from the provider file to not break existing imports
+export { useTurnStatus } from './use-turn-statuses';
 
 /**
- * Polls ALL active turn statuses in a single API call (no IDs needed).
- * Children use `useTurnStatus(scopeId)` to read individual statuses.
+ * Initializes the global turn-statuses stream.
+ * Components use `useTurnStatus(scopeId)` to read individual statuses.
  */
 export function TurnStatusesProvider({ children }: { children: ReactNode }) {
-  const statuses = useAllTurnStatuses();
+  // Sets up the SSE listener and updates the Zustand store.
+  useTurnStatusSync();
 
-  const value = useMemo<TurnStatusesContextValue>(
-    () => ({
-      getStatus: (scopeId: string) => (statuses[scopeId] as TurnStatus) ?? 'idle',
-    }),
-    [statuses]
-  );
-
-  return <TurnStatusesContext.Provider value={value}>{children}</TurnStatusesContext.Provider>;
-}
-
-/**
- * Get the turn status for a specific scope ID.
- * Must be used within a TurnStatusesProvider.
- */
-export function useTurnStatus(scopeId: string): TurnStatus {
-  const ctx = useContext(TurnStatusesContext);
-  return ctx.getStatus(scopeId);
+  return children;
 }

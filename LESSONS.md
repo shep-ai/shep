@@ -1705,3 +1705,33 @@ macOS, where 1ms barely clears `exec` and nothing had touched the DB yet.
 - Confirm the mechanism locally before pushing a theory: scripting the exact
   sequence (kill, kill, run) disproved the first guess in 30s, which is what
   redirected the fix from "harden the assertion" to "stop sharing the home".
+
+## React Context Over-Rendering and Aggressive Polling Cause UI Lag
+
+**Symptom:** The `shep` web application became extremely laggy, with click interactions taking a long time to react. The application felt unresponsive.
+
+**Root Causes:**
+
+1. **Context Over-Rendering:** `TurnStatusesProvider` managed a large `Record<string, TurnStatus>` object representing all active session statuses. It passed this entire object down via `TurnStatusesContext`. Because `useAllTurnStatuses` updated this object with a new reference on *any* status change (via a single SSE stream), `TurnStatusesProvider` re-rendered. This caused *every* component calling `useTurnStatus(id)` to re-render, even if their specific `id` hadn't changed, because the context value identity changed. This is a classic React context anti-pattern.
+2. **Aggressive Database Polling:** Several components (`applications-page-client.tsx`, `clusters-page-client.tsx`, `git-status-cluster.tsx`) were using `refetchInterval` of 3,000ms or 5,000ms. The `listDeployments` action polled the database synchronously via `better-sqlite3` and checked `process.kill(pid, 0)` every 3 seconds per open browser tab. While individually fast, this frequent synchronous activity caused noticeable background noise and event-loop pressure.
+3. **Heavy Component Re-renders:** Heavy components like `@monaco-editor/react` (used in `EditorPane`) were subject to these frequent parent re-renders. Even if Monaco is dynamically loaded, frequent React reconciliation around it contributes significantly to UI jank.
+
+**Rules and Fixes:**
+
+1. **Use Zustand for Fine-Grained Subscriptions:** Global, frequently updating state (like event streams) should NOT be passed through React Context as a single large object. Replaced `TurnStatusesContext` with a Zustand store (`useTurnStatusStore`). Components now subscribe only to the specific slice they need (`useTurnStatusStore(state => state.statuses[scopeId])`), preventing widespread re-renders.
+2. **Memoize Heavy Components:** Wrapped `EditorPane` with `React.memo` to ensure the heavy Monaco editor only re-renders when its specific props (`activePath`, `openFiles`, etc.) actually change, shielding it from unrelated parent updates.
+3. **Audit Polling Intervals:** Increased `refetchInterval` from 3,000ms/5,000ms to 10,000ms. If real-time updates are critical, use SSE or WebSockets instead of frequent short-interval polling, especially when the backend performs synchronous I/O or system calls.
+
+
+## AgentType Additions
+- When adding a new `AgentType` (like `LlmProxy`), you must update `tests/unit/domain/shared/agent-resume-descriptor.test.ts` to include the new enum value in the exhaustive enum sweep check, otherwise it will fail to compile (TS2741).
+- In `tests/unit/infrastructure/services/agents/agent-executor-factory.test.ts`, the test `should list supported agents` has a strict `.toHaveLength(N)` assertion which must be incremented manually when adding a new supported agent type.
+
+## YAML Specifications
+- The tests parsing existing specs (`spec-yaml-backward-compatibility.test.ts`) require valid YAML formatting for block scalars (`content: |`). Empty lines must be completely empty (no trailing spaces), and lines starting with special characters like `@` without spaces at the column start break the indentation.
+
+## Vitest mock exports must match actual module exports
+
+When modifying a module's exports (e.g. changing `useAllTurnStatuses` to `useTurnStatusSync`), vitest mocks using `vi.mock()` that return an object missing the expected exports will fail at runtime with `TypeError: (0, ...useTurnStatus) is not a function` or `Error: [vitest] No "useTurnStatusSync" export is defined...`. Vitest strictly verifies that if a module is mocked, any named import actually exists on the mocked object. 
+
+**Rule:** Always search the codebase for `vi.mock('path/to/module')` whenever you rename, add, or remove an exported function from a module, and ensure all test files update their mock returns to match the new signature.

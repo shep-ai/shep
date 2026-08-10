@@ -45,7 +45,7 @@ export function ApplicationsPageClient({ className }: ApplicationsPageClientProp
     queryKey: ['deployments', 'all'],
     queryFn: () => listDeployments(),
     staleTime: 0,
-    refetchInterval: 3_000,
+    refetchInterval: 10_000,
   });
 
   const sorted = useMemo(

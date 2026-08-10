@@ -40,7 +40,7 @@ export function ClustersPageClient({ initialClusters, className }: ClustersPageC
       return res.json();
     },
     initialData: initialClusters,
-    refetchInterval: 5000,
+    refetchInterval: 10_000,
     staleTime: 2000,
   });
 

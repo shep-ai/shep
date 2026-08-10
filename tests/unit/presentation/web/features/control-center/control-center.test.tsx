@@ -111,7 +111,8 @@ vi.mock('@/app/actions/check-all-agents-status', () => ({
 }));
 
 vi.mock('@/hooks/use-turn-statuses', () => ({
-  useAllTurnStatuses: () => ({}),
+  useTurnStatus: () => 'idle',
+  useTurnStatusSync: vi.fn(),
 }));
 
 import { ControlCenter } from '@/components/features/control-center';

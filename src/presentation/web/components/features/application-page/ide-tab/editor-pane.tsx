@@ -9,7 +9,7 @@
 
 'use client';
 
-import { useCallback, useEffect, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import type { Monaco } from '@monaco-editor/react';
 import ReactMarkdown, { type Components } from 'react-markdown';
@@ -87,7 +87,7 @@ export interface EditorPaneProps {
   onShowSidebar: () => void;
 }
 
-export function EditorPane({
+export const EditorPane = React.memo(function EditorPane({
   applicationId,
   openFiles,
   activePath,
@@ -294,7 +294,7 @@ export function EditorPane({
       </div>
     </div>
   );
-}
+});
 
 function EmptyMessage({ children }: { children: React.ReactNode }) {
   return (

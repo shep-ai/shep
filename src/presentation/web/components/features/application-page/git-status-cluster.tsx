@@ -30,7 +30,7 @@ export function GitStatusCluster({
     queryKey: ['git-repo-info', repositoryPath],
     queryFn: () => getGitRepoInfo(repositoryPath, 1),
     enabled: Boolean(repositoryPath),
-    refetchInterval: 5000,
+    refetchInterval: 10_000,
     refetchOnWindowFocus: true,
     staleTime: 2000,
   });
