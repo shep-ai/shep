@@ -2,7 +2,7 @@
 # This is the source of truth. Markdown is auto-generated from this file.
 
 name: max-parallel-features
-phase: research
+phase: planning
 updatedAt: '2026-08-10'
 summary: >
   Technical analysis for 110-max-parallel-features. Settles how a capacity-queued feature is
