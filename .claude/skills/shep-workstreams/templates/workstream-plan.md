@@ -91,7 +91,7 @@ E is independent and merges whenever it is ready — ideally first.
 
 | Wave | Workstreams | Launch | Gate to next wave |
 | --- | --- | --- | --- |
-| 0 | A, E | `shep feat new` immediately | A reaches `Implementation` |
+| 0 | A, E | `shep feat new` immediately | A merges (`Maintain`) |
 | 1 | B, C | auto-start via `--parent A` | reviewer capacity |
 | 2 | D | staged `--pending`, released with `shep feat start` | — |
 

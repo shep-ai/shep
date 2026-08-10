@@ -126,4 +126,100 @@ describe('UpdateFeatureLifecycleUseCase', () => {
     expect(mockFeatureRepo.update).toHaveBeenCalledOnce();
     expect(mockCheckAndUnblock.execute).toHaveBeenCalledOnce();
   });
+
+  // --- Dependency gate: a Blocked feature must not be advanced ---
+
+  /** Wire findById to answer for the child first, then for its parent. */
+  function withParent(child: Feature, parent: Feature | null): void {
+    mockFeatureRepo.findById = vi
+      .fn()
+      .mockResolvedValueOnce(child)
+      .mockResolvedValueOnce(parent ?? null);
+  }
+
+  it('should refuse to advance a Blocked feature whose parent has not completed', async () => {
+    const child = makeFeature({
+      id: 'feat-child',
+      lifecycle: SdlcLifecycle.Blocked,
+      parentId: 'feat-parent',
+    });
+    withParent(child, makeFeature({ id: 'feat-parent', lifecycle: SdlcLifecycle.Implementation }));
+
+    await useCase.execute({ featureId: 'feat-child', lifecycle: SdlcLifecycle.Research });
+
+    expect(mockFeatureRepo.update).not.toHaveBeenCalled();
+    expect(mockCheckAndUnblock.execute).not.toHaveBeenCalled();
+  });
+
+  it('should refuse to advance a Blocked feature whose parent is only in Review', async () => {
+    const child = makeFeature({
+      id: 'feat-child',
+      lifecycle: SdlcLifecycle.Blocked,
+      parentId: 'feat-parent',
+    });
+    withParent(child, makeFeature({ id: 'feat-parent', lifecycle: SdlcLifecycle.Review }));
+
+    await useCase.execute({ featureId: 'feat-child', lifecycle: SdlcLifecycle.Implementation });
+
+    expect(mockFeatureRepo.update).not.toHaveBeenCalled();
+  });
+
+  it('should allow advancing a Blocked feature once its parent reached Maintain', async () => {
+    const child = makeFeature({
+      id: 'feat-child',
+      lifecycle: SdlcLifecycle.Blocked,
+      parentId: 'feat-parent',
+    });
+    withParent(child, makeFeature({ id: 'feat-parent', lifecycle: SdlcLifecycle.Maintain }));
+
+    await useCase.execute({ featureId: 'feat-child', lifecycle: SdlcLifecycle.Requirements });
+
+    const updated = (mockFeatureRepo.update as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as Feature;
+    expect(updated.lifecycle).toBe(SdlcLifecycle.Requirements);
+  });
+
+  it('should allow Deleting a Blocked feature even while the gate is closed', async () => {
+    const child = makeFeature({
+      id: 'feat-child',
+      lifecycle: SdlcLifecycle.Blocked,
+      parentId: 'feat-parent',
+    });
+    withParent(child, makeFeature({ id: 'feat-parent', lifecycle: SdlcLifecycle.Planning }));
+
+    await useCase.execute({ featureId: 'feat-child', lifecycle: SdlcLifecycle.Deleting });
+
+    const updated = (mockFeatureRepo.update as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as Feature;
+    expect(updated.lifecycle).toBe(SdlcLifecycle.Deleting);
+  });
+
+  it('should not strand a Blocked feature whose parent no longer exists', async () => {
+    const child = makeFeature({
+      id: 'feat-child',
+      lifecycle: SdlcLifecycle.Blocked,
+      parentId: 'feat-deleted-parent',
+    });
+    withParent(child, null);
+
+    await useCase.execute({ featureId: 'feat-child', lifecycle: SdlcLifecycle.Requirements });
+
+    const updated = (mockFeatureRepo.update as ReturnType<typeof vi.fn>).mock
+      .calls[0][0] as Feature;
+    expect(updated.lifecycle).toBe(SdlcLifecycle.Requirements);
+  });
+
+  it('should not load a parent for a feature that is not Blocked', async () => {
+    const feature = makeFeature({
+      id: 'feat-001',
+      lifecycle: SdlcLifecycle.Implementation,
+      parentId: 'feat-parent',
+    });
+    mockFeatureRepo.findById = vi.fn().mockResolvedValue(feature);
+
+    await useCase.execute({ featureId: 'feat-001', lifecycle: SdlcLifecycle.Review });
+
+    expect(mockFeatureRepo.findById).toHaveBeenCalledTimes(1);
+    expect(mockFeatureRepo.update).toHaveBeenCalledOnce();
+  });
 });

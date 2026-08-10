@@ -1,5 +1,36 @@
 # Lessons Learned
 
+## Writing `Blocked` is not enforcing a gate — the running agent has to be stopped too
+
+The dependency gate was checked in all four *entry* paths (create, start, reparent,
+auto-unblock) and still did not hold, because none of them owned the case where the feature
+was **already running** when the dependency appeared. Dragging a dependency edge onto a
+running feature set its lifecycle to `Blocked` and returned. The worker kept building on a
+base its parent had not produced, and its next phase report went through
+`UpdateFeatureLifecycleUseCase`, which wrote `Research` straight over `Blocked`. The edge was
+drawn, the node said "blocked", and nothing was blocked.
+
+**Rules:**
+
+- A gate that is only evaluated at the entry points guards *starting*, not *running*. Ask the
+  second question every time: what if the thing is already in flight when the constraint
+  arrives? Here the answer is `StopAgentRunUseCase` — it marks the run `interrupted`
+  (resumable) and `CheckAndUnblockFeaturesUseCase` restarts it, rebased, when the parent lands.
+- **Enforce the invariant at the write, not only at the callers.** Every lifecycle change funnels
+  through `UpdateFeatureLifecycleUseCase`; that is where `allowsLifecycleWrite` now refuses to
+  advance a `Blocked` feature whose parent has not landed. Callers can be forgotten, a choke
+  point cannot. Keep `Deleting`/`Archived`/`Blocked` exempt — filing and teardown are not
+  progress, and refusing them turns the gate into a trap.
+- A guard that can strand a record needs its escape hatch designed in the same commit. A
+  `Blocked` feature whose parent was deleted has a dangling `parentId`; `allowsLifecycleWrite`
+  deliberately returns true when the parent cannot be loaded, because there is no transition
+  left to release it. "Deny by default" is wrong when the deny path has no exit.
+- **Skills and docs encode gates too, and they drift silently.** `shep-workstreams` still told
+  agents the gate opens at `Implementation`, a rule the code stopped using in 52f2e41 — so every
+  wave plan it produced was staged against the wrong milestone. When a gate constant changes,
+  grep `.claude/skills/`, `docs/`, and `tsp/` doc comments for the old lifecycle names in the
+  same change.
+
 ## A copied "resume" command must carry its working directory
 
 Agent CLI sessions (`claude`/`codex`/`cursor-agent --resume <id>`) are
