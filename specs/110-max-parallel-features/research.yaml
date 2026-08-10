@@ -2,28 +2,122 @@
 # This is the source of truth. Markdown is auto-generated from this file.
 
 name: max-parallel-features
-summary: Technical analysis for 110-max-parallel-features
+phase: research
+updatedAt: '2026-08-10'
+summary: >
+  Technical analysis for 110-max-parallel-features. Settles how a capacity-queued feature is
+  represented, where slot accounting lives, which component owns admission, and how the queue is
+  drained. Every decision reuses an existing mechanism (Pending lifecycle, reconciler sweep,
+  domain shared helper) rather than adding a parallel one.
 
 # Relationships
-relatedFeatures: []
-technologies: []
-relatedLinks: []
+relatedFeatures:
+  - '107-auto-commit-rebase-sync'
+technologies:
+  - TypeSpec
+  - TypeScript
+  - SQLite
+  - tsyringe
+  - Next.js
+  - React
+relatedLinks:
+  - title: Prior art — interactiveAgent.maxConcurrentSessions
+    url: ./../../tsp/domain/entities/settings.tsp
+  - title: Prior art — dependency gate reconciler
+    url: ./../../packages/core/src/application/use-cases/features/reconcile-blocked-features.use-case.ts
 
 # Structured technology decisions
 decisions:
-  - title: { { DECISION_TITLE } }
-    chosen: { { CHOSEN_OPTION } }
+  - title: How a capacity-queued feature is represented
+    chosen: Existing `Pending` lifecycle + a new `queuedAt?: utcDateTime` marker on `Feature`
     rejected:
-      - { { OPTION_1 } }
-      - { { OPTION_2 } }
-    rationale: { { RATIONALE } }
+      - New `SdlcLifecycle.Queued` enum member
+      - Reuse `Blocked` for capacity as well as dependencies
+      - Untagged `Pending` (no marker)
+    rationale: >
+      `Pending` already means exactly "fully initialized, no agent spawned, waiting to start" — the
+      queue needs no new state, only a record of *who* is holding the feature back. A `Queued` enum
+      member would ripple through 36 files that reference `SdlcLifecycle`, and LESSONS.md documents
+      that raw string-literal comparisons (`status === 'Pending'`) compile silently and are missed
+      by an `SdlcLifecycle.` grep — a high-risk, low-value change. Reusing `Blocked` conflates two
+      independent gates: a capacity-queued feature must start the moment a slot frees, while a
+      dependency-blocked one must not start until its parent lands. Untagged `Pending` is worse
+      still — it would auto-start features the user explicitly deferred with `--pending`. A
+      timestamp rather than a boolean because it is simultaneously the flag (`queuedAt != null`),
+      the FIFO ordering key, and an honest record of *when the user asked to run* — a feature
+      queued later by pressing Start correctly falls in behind features queued earlier, which
+      ordering by `createdAt` would get wrong.
+
+  - title: What counts as occupying a slot, and where that predicate lives
+    chosen: >
+      A `RUNNING_LIFECYCLES` set in a new `domain/shared/parallel-feature-limit.ts`, consumed by
+      every surface; counted in SQL via a new `countByLifecycles()` repository method
+    rejected:
+      - Count `AgentRun` rows with `status = running`
+      - Derive the count in each consumer by filtering `list()` in memory
+      - A decrementing in-memory counter or semaphore
+    rationale: >
+      Lifecycle is the durable, single-writer source of truth for "an agent is working on this";
+      `AgentRun` rows go stale when a detached worker is killed, and short-lived rebase runs would
+      count as feature work. Counting in SQL keeps the check O(1) on an indexed column instead of
+      loading every feature into the process on each admission. A counter or semaphore is the one
+      genuinely dangerous option: any crashed, force-deleted or externally-mutated feature leaks a
+      slot permanently, whereas a derived count is self-healing by construction. LESSONS.md
+      ("Shared config semantics belong in domain/") requires the set and the `0 = unlimited` rule
+      to be defined once, before the second consumer exists — this feature has at least six.
+
+  - title: Where admission control is enforced
+    chosen: >
+      An application-layer `FeatureCapacityService` (@injectable collaborator) consulted by
+      `CreateFeatureUseCase` and `StartFeatureUseCase`, plus a shared `SpawnFeatureAgentUseCase`
+      extracted from the duplicated spawn paths
+    rejected:
+      - Inline the capacity check in each of the three spawn call sites
+      - Enforce inside `IFeatureAgentProcessService.spawn()` (infrastructure)
+    rationale: >
+      Three call sites already spawn a feature agent — `CreateFeatureUseCase.initializeAndSpawn`,
+      `StartFeatureUseCase`, and `CheckAndUnblockFeaturesUseCase` — and the code-quality rule
+      "three is a pattern that MUST be extracted" applies before a fourth concern (admission) is
+      layered onto each. Extraction also fixes a defect found during this research: the
+      `CheckAndUnblockFeaturesUseCase` spawn omits `agentType` and `model` from its options bag, so
+      an auto-unblocked child silently starts under the default agent instead of the one its
+      `AgentRun` recorded — exactly the "two paths to the same transition disagree" failure
+      LESSONS.md warns about. Enforcing inside the process service was rejected because a spawn
+      port that silently declines to spawn cannot report a queue position, and it would put a
+      business rule in infrastructure.
+
+  - title: How the queue is drained
+    chosen: >
+      `AdmitQueuedFeaturesUseCase`, invoked from `UpdateFeatureLifecycleUseCase` (event side) and
+      from a `get-graph-data` sweep + settings update (state side)
+    rejected:
+      - Background polling timer / daemon tick
+      - Drain only on feature completion
+    rationale: >
+      This mirrors the dependency gate exactly: `CheckAndUnblockFeaturesUseCase` fires on every
+      lifecycle transition and `ReconcileBlockedFeaturesUseCase` sweeps from the state side on
+      dashboard load, because — as its own doc comment records — any write that bypasses the
+      transition use case would otherwise strand a feature forever. The queue has the same failure
+      mode plus two more triggers that are not lifecycle transitions at all: raising the limit and
+      deleting a running feature. A polling timer was rejected as a second scheduling mechanism
+      with its own liveness bugs; the sweep is one indexed query and is already proven cheap enough
+      to run on every dashboard load.
+
+  - title: Default value for `workflow.maxParallelFeatures`
+    chosen: '0, meaning unlimited'
+    rejected:
+      - Default to 3 (matching interactiveAgent.maxConcurrentSessions)
+      - Default derived from CPU core count
+    rationale: >
+      A non-zero default silently changes behaviour for every existing installation on upgrade:
+      features that used to start immediately would start queueing, which reads as "Shep is broken"
+      with no error message to explain it. A core-count default is worse — the binding constraint
+      is usually the agent provider's rate limit, not local CPU, so the number would be confidently
+      wrong. `0 = unlimited` is opt-in, and it makes "turn the feature off" expressible without a
+      second boolean field.
 
 # Open questions (should be resolved by end of research)
-openQuestions:
-  []
-  # - question: "Which library should we use?"
-  #   resolved: true
-  #   answer: "Library X because of Y"
+openQuestions: []
 
 # Markdown content (the full research document)
 content: |
@@ -32,33 +126,119 @@ content: |
   - **Phase:** Research
   - **Updated:** 2026-08-10
 
+  ## Existing Mechanisms This Feature Must Reuse
+
+  | Mechanism                            | Where                                                        | Why it matters here                                                     |
+  | ------------------------------------ | ------------------------------------------------------------ | ----------------------------------------------------------------------- |
+  | Numeric cap in settings              | `interactiveAgent.maxConcurrentSessions` (tsp → mapper → UI)  | Exact shape to copy for the new field, including the web number input    |
+  | Deferred-but-initialized state       | `SdlcLifecycle.Pending`                                       | The queue needs no new lifecycle state                                   |
+  | Gate + reconciler                    | `CheckAndUnblockFeaturesUseCase` / `ReconcileBlockedFeaturesUseCase` | The admission/drain pattern, event side and state side            |
+  | Single transition owner              | `UpdateFeatureLifecycleUseCase`                               | The one hook that fires on every lifecycle change                        |
+  | Shared config semantics in domain    | `domain/shared/worktree-config.ts`                            | Precedent for owning `0 = unlimited` + the running set in one place      |
+  | Branch sync before spawn             | `SyncFeatureBranchUseCase` (feature 107)                      | Must run at admission time, not queue time                               |
+
   ## Technology Decisions
 
-  ### {{DECISION_TITLE}}
+  See the structured `decisions` list above. In summary:
 
-  **Options considered:**
+  1. **Representation** — `Pending` + `queuedAt?: utcDateTime`, not a new lifecycle member.
+  2. **Slot accounting** — `RUNNING_LIFECYCLES` in `domain/shared/parallel-feature-limit.ts`,
+     counted with a new indexed `countByLifecycles()` query.
+  3. **Admission** — `FeatureCapacityService` + an extracted `SpawnFeatureAgentUseCase` shared by
+     every spawn path.
+  4. **Drain** — `AdmitQueuedFeaturesUseCase` on the event side and the state side.
+  5. **Default** — `0` (unlimited), so upgrades are behaviour-preserving.
 
-  1. {{OPTION_1}}
-  2. {{OPTION_2}}
-  3. {{OPTION_3}}
+  ## Defect Found During Research (in scope)
 
-  **Decision:** {{CHOSEN_OPTION}}
+  `CheckAndUnblockFeaturesUseCase` spawns an auto-unblocked child without `agentType` or `model`,
+  while `StartFeatureUseCase` passes both from the child's `AgentRun`. A feature created against
+  `gemini-cli` therefore resumes under the default agent when it is unblocked automatically. The
+  spawn-path extraction that this feature requires anyway removes the divergence; a regression test
+  asserting the spawned options carry the recorded `agentType` locks it.
 
-  **Rationale:** {{RATIONALE}}
+  ## Interaction Matrix — Two Independent Gates
 
-  ## Library Analysis
+  A feature may start only when **both** gates are open. This table is the specification the
+  admission tests are written from:
 
-  | Library     | Version     | Purpose     | Pros     | Cons     |
-  | ----------- | ----------- | ----------- | -------- | -------- |
-  | {{LIBRARY}} | {{VERSION}} | {{PURPOSE}} | {{PROS}} | {{CONS}} |
+  | Parent dependency gate | Capacity slot | Resulting state                                     |
+  | ---------------------- | ------------- | --------------------------------------------------- |
+  | Open (or no parent)    | Available     | Started/Requirements/Implementation — agent spawns   |
+  | Open (or no parent)    | Full          | `Pending` + `queuedAt` set — no agent                |
+  | Closed                 | Available     | `Blocked` — unchanged, no `queuedAt`                 |
+  | Closed                 | Full          | `Blocked` — capacity is not evaluated at all         |
+
+  The last row matters: a `Blocked` feature must not take a queue slot it cannot use, so capacity is
+  evaluated **after** the dependency gate, never before. When `CheckAndUnblockFeaturesUseCase`
+  releases a child and no slot is free, the child moves `Blocked → Pending + queuedAt` rather than
+  starting.
+
+  ## Data Model Changes
+
+  ```
+  Settings.workflow.maxParallelFeatures : int32 = 0      -- 0 = unlimited
+  Feature.queuedAt                      : utcDateTime?   -- set when capacity-queued, cleared on admission
+  ```
+
+  Two migrations:
+
+  - `settings.workflow_max_parallel_features INTEGER NOT NULL DEFAULT 0`
+  - `features.queued_at TEXT` + index `idx_features_queued_at` for the FIFO scan,
+    and an index on `features(lifecycle)` if one does not already exist for the count query.
+
+  Both must be added to the mapper **and** to the INSERT column list, the INSERT `@params` list, and
+  the UPDATE `SET` clause of their repository — the defect documented three times in LESSONS.md.
+
+  ## New Application Surface
+
+  ```
+  domain/shared/parallel-feature-limit.ts
+    UNLIMITED_PARALLEL_FEATURES = 0
+    RUNNING_LIFECYCLES: Set<SdlcLifecycle>
+    isRunningLifecycle(l): boolean
+    hasCapacity(running, limit): boolean
+    resolveMaxParallelFeatures(settings): number
+
+  application/use-cases/features/capacity/
+    feature-capacity.service.ts        -- snapshot() + hasCapacity(), reads settings + repo count
+    admit-queued-features.use-case.ts  -- drains FIFO while slots remain (both gates re-checked)
+    get-parallel-capacity.use-case.ts  -- presentation-facing snapshot: limit, running, queue positions
+
+  application/use-cases/features/spawn-feature-agent.use-case.ts
+    -- the single spawn path: sync branch, build options from the persisted Feature + AgentRun, spawn
+  ```
+
+  `IFeatureRepository` gains `countByLifecycles(lifecycles)` and `listQueued()`.
+
+  ## Presentation-Agnostic Check
+
+  `GetParallelCapacityUseCase` returns `{ limit, running, available, queue: [{ featureId, position }] }`
+  — no HTTP, terminal or React concepts. The web canvas merges it into node data, `shep feat list`
+  renders a `Queued (2/5)` column, and the TUI shows the same string. `StartFeatureUseCase` returns
+  `queued` and `queuePosition` alongside its existing `blocked`/`blockedBy`, so no surface re-derives
+  the state from the entity — the same rule feature 107 established for `blocked`.
 
   ## Security Considerations
 
-  No security implications identified.
+  No new trust boundary, network surface, or credential handling. Two notes:
+
+  - The limit is a **local resource control**, not an authorization boundary; anything that can
+    write the settings row can raise it. That is correct for a single-user CLI.
+  - Input validation still matters: the number input must clamp to a sane range (`0..64`) and
+    reject `NaN`, or a bad parse writes a limit that silently queues everything forever. Clamping
+    lives in the domain helper, not in the React component.
 
   ## Performance Implications
 
-  No performance implications identified.
+  - **Admission cost** is one `SELECT COUNT(*) ... WHERE lifecycle IN (...) AND deleted_at IS NULL`
+    per feature start — negligible, and strictly cheaper than the current unbounded spawn.
+  - **The point of the feature is a performance control**: capping concurrent agents bounds CPU,
+    RAM, worktree disk churn and agent-provider rate-limit pressure.
+  - **The drain sweep** runs on dashboard load next to the existing blocked-features sweep; it is
+    one indexed query returning an empty set in the common case.
+  - **No N+1**: presentation gets the whole queue with positions in a single use-case call rather
+    than asking per feature.
 
   ## Open Questions
 

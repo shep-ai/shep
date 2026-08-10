@@ -14,7 +14,7 @@ summary: >
   admitted to a FIFO queue instead of spawning an agent; as soon as a running feature frees a slot,
   the oldest queued feature starts automatically. `0` means unlimited, which preserves today's
   behaviour for every existing installation.
-phase: Requirements
+phase: Research
 sizeEstimate: L
 
 # Relationships
