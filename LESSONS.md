@@ -1,5 +1,21 @@
 # Lessons Learned
 
+## A copied "resume" command must carry its working directory
+
+Agent CLI sessions (`claude`/`codex`/`cursor-agent --resume <id>`) are
+**project-scoped** — the binary resolves the session from the current working
+directory. The "Copy resume command" action copied a bare `claude --resume <id>`,
+which the `cwd` was captured for but never included, so pasting it anywhere but
+the project directory failed to find the session. "Resume in terminal" worked
+only because the PTY was spawned already `cwd`'d into the project.
+
+**Rule:** when a command depends on `cwd` and leaves the process that carries it
+(copy-to-clipboard, "open in…", a docs snippet), make it self-contained:
+`cd '<quoted-cwd>' && <command>`. A form that only works because *this* shell
+happens to be in the right directory is a latent bug the moment it's copied
+elsewhere. Keep the bare form for the in-place terminal write, add a distinct
+`clipboardCommand` for anything that travels.
+
 ## A dependency gate must open on "the work landed", not on "the work started"
 
 The dependency gate released a child as soon as its parent reached
@@ -1723,3 +1739,19 @@ and pushed the whole time.
   N independent mistakes. Verify one item by hand (`ls` the path, `git ls-tree`
   the commit) before regenerating anything — re-capturing evidence would never
   have fixed this.
+
+## React Context Over-Rendering and Aggressive Polling Cause UI Lag
+
+**Symptom:** The `shep` web application became extremely laggy, with click interactions taking a long time to react. The application felt unresponsive.
+
+**Root Causes:**
+
+1. **Context Over-Rendering:** `TurnStatusesProvider` managed a large `Record<string, TurnStatus>` object representing all active session statuses. It passed this entire object down via `TurnStatusesContext`. Because `useAllTurnStatuses` updated this object with a new reference on *any* status change (via a single SSE stream), `TurnStatusesProvider` re-rendered. This caused *every* component calling `useTurnStatus(id)` to re-render, even if their specific `id` hadn't changed, because the context value identity changed. This is a classic React context anti-pattern.
+2. **Aggressive Database Polling:** Several components (`applications-page-client.tsx`, `clusters-page-client.tsx`, `git-status-cluster.tsx`) were using `refetchInterval` of 3,000ms or 5,000ms. The `listDeployments` action polled the database synchronously via `better-sqlite3` and checked `process.kill(pid, 0)` every 3 seconds per open browser tab. While individually fast, this frequent synchronous activity caused noticeable background noise and event-loop pressure.
+3. **Heavy Component Re-renders:** Heavy components like `@monaco-editor/react` (used in `EditorPane`) were subject to these frequent parent re-renders. Even if Monaco is dynamically loaded, frequent React reconciliation around it contributes significantly to UI jank.
+
+**Rules and Fixes:**
+
+1. **Use Zustand for Fine-Grained Subscriptions:** Global, frequently updating state (like event streams) should NOT be passed through React Context as a single large object. Replaced `TurnStatusesContext` with a Zustand store (`useTurnStatusStore`). Components now subscribe only to the specific slice they need (`useTurnStatusStore(state => state.statuses[scopeId])`), preventing widespread re-renders.
+2. **Memoize Heavy Components:** Wrapped `EditorPane` with `React.memo` to ensure the heavy Monaco editor only re-renders when its specific props (`activePath`, `openFiles`, etc.) actually change, shielding it from unrelated parent updates.
+3. **Audit Polling Intervals:** Increased `refetchInterval` from 3,000ms/5,000ms to 10,000ms. If real-time updates are critical, use SSE or WebSockets instead of frequent short-interval polling, especially when the backend performs synchronous I/O or system calls.

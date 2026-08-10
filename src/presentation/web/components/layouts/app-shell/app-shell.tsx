@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { ErrorBoundary } from '@/components/common/error-boundary';
 import { useRouter, usePathname } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { useTranslation } from 'react-i18next';
@@ -209,38 +210,52 @@ function AppShellInner({ children, sidebarOpen, variant = 'full' }: AppShellProp
           {/* Global chat popup — fixed, visible across pages EXCEPT
               on application routes where the page owns its own
               primary actions and the chat FAB is redundant. */}
-          {hideGlobalChat ? null : <GlobalChatPopup />}
+          {hideGlobalChat ? null : (
+            <ErrorBoundary fallback={null}>
+              <GlobalChatPopup />
+            </ErrorBoundary>
+          )}
           {/* Global search dialog — Cmd+K / Ctrl+K */}
-          <GlobalSearchDialog />
-          <GitHubImportDialog
-            open={githubDialogOpen}
-            onOpenChange={setGithubDialogOpen}
-            onImportComplete={handleGitHubImportComplete}
-          />
+          <ErrorBoundary fallback={null}>
+            <GlobalSearchDialog />
+          </ErrorBoundary>
+          <ErrorBoundary fallback={null}>
+            <GitHubImportDialog
+              open={githubDialogOpen}
+              onOpenChange={setGithubDialogOpen}
+              onImportComplete={handleGitHubImportComplete}
+            />
+          </ErrorBoundary>
         </div>
       </SidebarInset>
-      <ReactFileManagerDialog
-        open={showReactPicker}
-        onOpenChange={(open) => {
-          if (!open) setShowReactPicker(false);
-        }}
-        onSelect={handleReactPickerSelect}
-      />
-      <ReactFileManagerDialog
-        open={showBulkPicker}
-        onOpenChange={(open) => {
-          if (!open) setShowBulkPicker(false);
-        }}
-        onSelect={handleBulkDirectorySelect}
-      />
-      <BulkImportDialog
-        open={bulkDirectory !== ''}
-        onOpenChange={(open) => {
-          if (!open) setBulkDirectory('');
-        }}
-        directoryPath={bulkDirectory}
-        onImportComplete={handleBulkImportComplete}
-      />
+      <ErrorBoundary fallback={null}>
+        <ReactFileManagerDialog
+          open={showReactPicker}
+          onOpenChange={(open) => {
+            if (!open) setShowReactPicker(false);
+          }}
+          onSelect={handleReactPickerSelect}
+        />
+      </ErrorBoundary>
+      <ErrorBoundary fallback={null}>
+        <ReactFileManagerDialog
+          open={showBulkPicker}
+          onOpenChange={(open) => {
+            if (!open) setShowBulkPicker(false);
+          }}
+          onSelect={handleBulkDirectorySelect}
+        />
+      </ErrorBoundary>
+      <ErrorBoundary fallback={null}>
+        <BulkImportDialog
+          open={bulkDirectory !== ''}
+          onOpenChange={(open) => {
+            if (!open) setBulkDirectory('');
+          }}
+          directoryPath={bulkDirectory}
+          onImportComplete={handleBulkImportComplete}
+        />
+      </ErrorBoundary>
     </SidebarProvider>
   );
 }
