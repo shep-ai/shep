@@ -1,0 +1,36 @@
+feature:
+  id: '110-max-parallel-features'
+  name: 'max-parallel-features'
+  number: 110
+  branch: 'feat/110-max-parallel-features'
+  lifecycle: 'research'
+  createdAt: '2026-08-10T04:42:01Z'
+
+status:
+  phase: 'research'
+  progress:
+    completed: 0
+    total: 0
+    percentage: 0
+  currentTask: null
+  lastUpdated: '2026-08-10T04:42:01Z'
+  lastUpdatedBy: 'shep-kit:new-feature'
+
+validation:
+  lastRun: null
+  gatesPassed: []
+  autoFixesApplied: []
+
+tasks:
+  current: null
+  blocked: []
+  failed: []
+
+checkpoints:
+  - phase: 'feature-created'
+    completedAt: '2026-08-10T04:42:01Z'
+    completedBy: 'shep-kit:new-feature'
+
+errors:
+  current: null
+  history: []
