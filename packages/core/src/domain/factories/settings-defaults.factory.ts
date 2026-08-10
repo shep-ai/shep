@@ -190,6 +190,12 @@ export function createDefaultSettings(): Settings {
         remoteSkillName: 'shadcn-ui',
       },
       {
+        name: 'shep-workstreams',
+        type: SkillSourceType.Remote,
+        source: 'shep-ai/shep',
+        remoteSkillName: 'shep-workstreams',
+      },
+      {
         name: 'tsp-model',
         type: SkillSourceType.Remote,
         source: 'shep-ai/shep',

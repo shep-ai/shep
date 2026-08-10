@@ -3,7 +3,8 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { ReactFlowProvider, ReactFlow } from '@xyflow/react';
 
 vi.mock('@/hooks/use-turn-statuses', () => ({
-  useTurnStatuses: () => ({}),
+  useTurnStatus: () => 'idle',
+  useTurnStatusSync: vi.fn(),
 }));
 import { RepositoryNode } from '@/components/common/repository-node';
 import type { RepositoryNodeData, RepositoryNodeType } from '@/components/common/repository-node';

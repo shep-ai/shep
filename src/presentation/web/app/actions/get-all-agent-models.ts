@@ -32,6 +32,7 @@ const AGENT_LABELS: Record<string, string> = {
   'gemini-cli': 'Gemini CLI',
   openrouter: 'OpenRouter',
   'together-ai': 'Together AI',
+  llmproxy: 'LLM Proxy',
   dev: 'Demo',
 };
 
@@ -44,6 +45,7 @@ const AGENT_ORDER: Record<string, number> = {
   'gemini-cli': 4,
   openrouter: 5,
   'together-ai': 6,
+  llmproxy: 7,
   dev: 99,
 };
 

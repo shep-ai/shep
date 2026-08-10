@@ -4,6 +4,86 @@
   </a>
 </p>
 
+# 🚀 Shep [v1.225.0](/compare/v1.224.0...v1.225.0) · _2026-08-10_
+
+> Your organization does not have access to Claude. Please login again or contact your administrator.
+
+
+
+### ✨ Features
+
+* **agents:** add shep-workstreams skill for parallel execution planning ([#845](https://github.com/shep-ai/shep/issues/845)) ([92df697](https://github.com/shep-ai/shep/commit/92df697c2d356788d6410cf82b488f56c6044259))
+
+
+## 📦 Install or update
+
+```bash
+# upgrade an existing install
+npm i -g @shepai/cli@1.225.0
+
+# or run instantly without installing
+npx @shepai/cli@latest
+```
+
+## 💬 Join the community
+
+[💬 **Discord**](https://discord.gg/ES6tdVFfur) · [📖 **Docs**](https://github.com/shep-ai/shep#readme) · [⭐ **Star on GitHub**](https://github.com/shep-ai/shep) · [🐛 **Report an issue**](https://github.com/shep-ai/shep/issues)
+
+---
+
+<sub>🤖 Released autonomously by Shep — built by parallel AI agents working in isolated git worktrees. Try it: `npx @shepai/cli`</sub>
+
+<p align="center">
+  <a href="https://github.com/shep-ai/shep">
+    <img src="https://raw.githubusercontent.com/shep-ai/shep/main/docs/screenshots/shep-card.jpg" alt="Shep — run multiple AI agents in parallel" width="720" />
+  </a>
+</p>
+
+# 🚀 Shep [v1.224.0](/compare/v1.223.1...v1.224.0) · _2026-08-10_
+
+> Your organization does not have access to Claude. Please login again or contact your administrator.
+
+
+
+### ✨ Features
+
+* **agents:** add llmproxy support ([#843](https://github.com/shep-ai/shep/issues/843)) ([ecef8a2](https://github.com/shep-ai/shep/commit/ecef8a2bcb5a383bbd6ecce4e4679394a7d17452))
+
+* squash merge feat/fix-copy-resume-command into main ([b8f7a72](https://github.com/shep-ai/shep/commit/b8f7a724ec96a4510aa14acb9c9be45f3e2d2bf4))
+
+
+
+### 🐛 Bug Fixes
+
+* **web:** copy self-contained resume command with cd into project ([#844](https://github.com/shep-ai/shep/issues/844)) ([98aa4d7](https://github.com/shep-ai/shep/commit/98aa4d7dd4ab4f7a872ab51c5ea579272f2eac13))
+
+* **web:** resolve severe UI lag and chunk loading errors in dev server ([c34b01f](https://github.com/shep-ai/shep/commit/c34b01f858b7e3876e0401f368f66041716b5932))
+
+
+## 📦 Install or update
+
+```bash
+# upgrade an existing install
+npm i -g @shepai/cli@1.224.0
+
+# or run instantly without installing
+npx @shepai/cli@latest
+```
+
+## 💬 Join the community
+
+[💬 **Discord**](https://discord.gg/ES6tdVFfur) · [📖 **Docs**](https://github.com/shep-ai/shep#readme) · [⭐ **Star on GitHub**](https://github.com/shep-ai/shep) · [🐛 **Report an issue**](https://github.com/shep-ai/shep/issues)
+
+---
+
+<sub>🤖 Released autonomously by Shep — built by parallel AI agents working in isolated git worktrees. Try it: `npx @shepai/cli`</sub>
+
+<p align="center">
+  <a href="https://github.com/shep-ai/shep">
+    <img src="https://raw.githubusercontent.com/shep-ai/shep/main/docs/screenshots/shep-card.jpg" alt="Shep — run multiple AI agents in parallel" width="720" />
+  </a>
+</p>
+
 # 🚀 Shep [v1.223.1](/compare/v1.223.0...v1.223.1) · _2026-08-08_
 
 > Your organization does not have access to Claude. Please login again or contact your administrator.
