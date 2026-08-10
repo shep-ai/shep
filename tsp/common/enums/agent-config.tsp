@@ -114,6 +114,14 @@ enum AgentType {
   Ollama: "ollama",
 
   /**
+   * LLMProxy local LLM proxy.
+   * Supported — SDK-based executor using OpenAI-compatible API.
+   * Connects to a local proxy typically running on port 4000.
+   */
+  @doc("LLMProxy local proxy")
+  LlmProxy: "llmproxy",
+
+  /**
    * Local development mock executor.
    * No agent binary required — simulates the full feature SDLC flow
    * with realistic fixture YAML artifacts for local development and demos.

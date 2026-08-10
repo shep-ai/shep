@@ -33,6 +33,7 @@ const EXPECTED_BINARIES: Record<AgentType, string | null> = {
   [AgentType.OpenRouter]: null,
   [AgentType.TogetherAi]: null,
   [AgentType.Ollama]: null,
+  [AgentType.LlmProxy]: null,
   [AgentType.Dev]: null,
 };
 

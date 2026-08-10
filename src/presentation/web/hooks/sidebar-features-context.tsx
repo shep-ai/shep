@@ -59,11 +59,15 @@ const SidebarFeaturesContext = createContext<SidebarFeaturesContextValue | null>
 
 interface SidebarFeaturesProviderProps {
   children: ReactNode;
+  initialHasRepositories?: boolean;
 }
 
-export function SidebarFeaturesProvider({ children }: SidebarFeaturesProviderProps) {
+export function SidebarFeaturesProvider({
+  children,
+  initialHasRepositories = false,
+}: SidebarFeaturesProviderProps) {
   const [features, setFeatures] = useState<SidebarFeatureItem[]>([]);
-  const [hasRepositories, setHasRepositories] = useState(false);
+  const [hasRepositories, setHasRepositories] = useState(initialHasRepositories);
 
   const value = useMemo<SidebarFeaturesContextValue>(
     () => ({ features, setFeatures, hasRepositories, setHasRepositories }),

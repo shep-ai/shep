@@ -28,6 +28,7 @@ import { CopilotCliExecutorService } from './executors/copilot-cli-executor.serv
 import { OpenRouterExecutorService } from './executors/openrouter-executor.service.js';
 import { TogetherAiExecutorService } from './executors/together-ai-executor.service.js';
 import { OllamaExecutorService } from './executors/ollama-executor.service.js';
+import { LlmProxyExecutorService } from './executors/llmproxy-executor.service.js';
 import { ClineExecutorService } from './executors/cline-executor.service.js';
 import type { SpawnFunction } from './types.js';
 import {
@@ -40,6 +41,7 @@ import {
   OPENROUTER_MODELS,
   TOGETHER_AI_MODELS,
   OLLAMA_MODELS,
+  LLMPROXY_MODELS,
 } from './agent-model-catalog.js';
 
 /**
@@ -112,6 +114,9 @@ export class AgentExecutorFactory implements IAgentExecutorFactory {
       case 'ollama':
         executor = new OllamaExecutorService(_authConfig.token ?? undefined);
         break;
+      case 'llmproxy':
+        executor = new LlmProxyExecutorService(_authConfig.token ?? undefined);
+        break;
       default:
         throw new Error(
           `Unsupported agent type: ${agentType}. Supported: ${this.getSupportedAgents().join(', ')}`
@@ -139,6 +144,7 @@ export class AgentExecutorFactory implements IAgentExecutorFactory {
       'openrouter' as AgentType,
       'together-ai' as AgentType,
       'ollama' as AgentType,
+      'llmproxy' as AgentType,
     ];
   }
 
@@ -180,6 +186,8 @@ export class AgentExecutorFactory implements IAgentExecutorFactory {
         return TOGETHER_AI_MODELS;
       case 'ollama':
         return OLLAMA_MODELS;
+      case 'llmproxy':
+        return LLMPROXY_MODELS;
       default:
         return [];
     }

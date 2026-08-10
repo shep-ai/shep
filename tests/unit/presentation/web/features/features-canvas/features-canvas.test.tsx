@@ -11,7 +11,8 @@ vi.mock('next/navigation', () => ({
 }));
 
 vi.mock('@/hooks/use-turn-statuses', () => ({
-  useTurnStatuses: () => ({}),
+  useTurnStatus: () => 'idle',
+  useTurnStatusSync: vi.fn(),
 }));
 
 const mockOnAction = vi.fn();

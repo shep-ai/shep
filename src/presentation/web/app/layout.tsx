@@ -12,6 +12,8 @@ import { QueryProvider } from '@/components/providers/query-provider';
 import { I18nProvider } from '@/components/providers/i18n-provider';
 import { getLanguagePreference } from '@/lib/language';
 import { SHELL_VARIANT_COOKIE, parseShellVariant } from '@/lib/shell-variant';
+import { resolve } from '@/lib/server-container';
+import type { ListRepositoriesUseCase } from '@shepai/core/application/use-cases/repositories/list-repositories.use-case';
 
 /** Force dynamic rendering for all pages since they depend on client-side context. */
 export const dynamic = 'force-dynamic';
@@ -46,6 +48,15 @@ export default async function RootLayout({
   const shellVariant = parseShellVariant(cookieStore.get(SHELL_VARIANT_COOKIE)?.value);
   const { language, dir } = getLanguagePreference();
 
+  let hasRepositories = false;
+  try {
+    const listRepos = resolve<ListRepositoriesUseCase>('ListRepositoriesUseCase');
+    const repos = await listRepos.execute();
+    hasRepositories = repos.length > 0;
+  } catch {
+    hasRepositories = false;
+  }
+
   return (
     <html lang={language} dir={dir} suppressHydrationWarning>
       <head>
@@ -74,7 +85,11 @@ export default async function RootLayout({
           <QueryProvider>
             <FeatureFlagsProvider flags={getFeatureFlags()}>
               <FabLayoutProvider layout={getFabLayout()}>
-                <AppShell sidebarOpen={sidebarOpen} variant={shellVariant}>
+                <AppShell
+                  sidebarOpen={sidebarOpen}
+                  variant={shellVariant}
+                  initialHasRepositories={hasRepositories}
+                >
                   {children}
                 </AppShell>
               </FabLayoutProvider>

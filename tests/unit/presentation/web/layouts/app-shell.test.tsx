@@ -11,7 +11,8 @@ vi.mock('next/navigation', () => ({
 }));
 
 vi.mock('@/hooks/use-turn-statuses', () => ({
-  useAllTurnStatuses: () => ({}),
+  useTurnStatus: () => 'idle',
+  useTurnStatusSync: vi.fn(),
 }));
 
 // AppShell wraps several global popups with next/dynamic for bundle-

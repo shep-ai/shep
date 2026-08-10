@@ -1,0 +1,46 @@
+name: llmproxy-support
+summary: Implementation plan for adding llmproxy support
+phase: implementation
+updatedAt: "2026-08-09"
+
+content: |
+  ## Architecture Overview
+
+  We will integrate `llmproxy` as a new supported `AgentType` in the `shep` ecosystem. The integration follows the established pattern for `AiSdkBaseExecutorService` subclasses.
+
+  ```mermaid
+  graph TD
+      Settings[Settings Config] -->|type: 'llmproxy'| Factory[AgentExecutorFactory]
+      Factory --> LlmProxy[LlmProxyExecutorService]
+      LlmProxy --> AiSdk[Vercel AI SDK]
+      AiSdk -->|HTTP POST| LlmProxyService[localhost:4000/v1]
+  ```
+
+  ## Implementation Strategy
+
+  1.  **TypeSpec Updates:** Add the `LlmProxy` enum member to `AgentType` in `tsp/common/enums/agent-config.tsp`. Regenerate types.
+  2.  **Model Catalog Update:** Add a static list of models to `packages/core/src/infrastructure/services/agents/common/agent-model-catalog.ts` for `llmproxy`.
+  3.  **LlmProxyExecutorService:** Create `packages/core/src/infrastructure/services/agents/common/executors/llmproxy-executor.service.ts` extending `AiSdkBaseExecutorService`.
+  4.  **AgentExecutorFactory Integration:** Update `AgentExecutorFactory` to construct and return the `LlmProxyExecutorService` when the type is `llmproxy`. Update `getSupportedAgents`, `getCliInfo` (if applicable), and `getSupportedModels`.
+
+  ## Files to Modify/Create
+
+  | File Path | Action | Description |
+  | :--- | :--- | :--- |
+  | `tsp/common/enums/agent-config.tsp` | Modify | Add `LlmProxy` to `AgentType`. |
+  | `packages/core/src/infrastructure/services/agents/common/agent-model-catalog.ts` | Modify | Define `LLMPROXY_MODELS` and export it. |
+  | `packages/core/src/infrastructure/services/agents/common/executors/llmproxy-executor.service.ts` | Create | New executor class. |
+  | `packages/core/src/infrastructure/services/agents/common/agent-executor-factory.service.ts` | Modify | Add case for `llmproxy` and import model catalog arrays. |
+
+  ## Testing Strategy
+
+  - **TypeSpec Compilation:** Ensure `pnpm tsp:compile` runs without errors.
+  - **Unit Tests:**
+    - `llmproxy-executor.service.test.ts`: TDD verify instantiation and `agentType` property.
+    - `agent-executor-factory.service.test.ts`: Verify factory returns correct instance for `llmproxy`.
+
+  ## Risks and Rollback
+
+  - **Risk:** Type mismatch if `llmproxy` breaks `AgentType` usage in other parts of the application.
+  - **Mitigation:** Comprehensive type checking (`pnpm typecheck`) and integration tests will catch usage issues.
+  - **Rollback:** Revert the commits related to `feat/109-llmproxy-support`.

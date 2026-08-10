@@ -4,7 +4,8 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { RepositoryNode } from '@/components/common/repository-node/repository-node';
 
 vi.mock('@/hooks/use-turn-statuses', () => ({
-  useTurnStatuses: () => ({}),
+  useTurnStatus: () => 'idle',
+  useTurnStatusSync: vi.fn(),
 }));
 import type { RepositoryNodeData } from '@/components/common/repository-node/repository-node-config';
 

@@ -12,7 +12,8 @@ vi.mock('next/navigation', () => ({
 }));
 
 vi.mock('@/hooks/use-turn-statuses', () => ({
-  useAllTurnStatuses: () => ({}),
+  useTurnStatus: () => 'idle',
+  useTurnStatusSync: vi.fn(),
 }));
 
 import { AppShell } from '@/components/layouts/app-shell';

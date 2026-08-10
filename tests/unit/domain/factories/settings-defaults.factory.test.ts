@@ -408,6 +408,12 @@ describe('createDefaultSettings', () => {
               remoteSkillName: 'shadcn-ui',
             },
             {
+              name: 'shep-workstreams',
+              type: SkillSourceType.Remote,
+              source: 'shep-ai/shep',
+              remoteSkillName: 'shep-workstreams',
+            },
+            {
               name: 'tsp-model',
               type: SkillSourceType.Remote,
               source: 'shep-ai/shep',
@@ -448,9 +454,9 @@ describe('createDefaultSettings', () => {
       expect(settings.workflow.skillInjection!.enabled).toBe(false);
     });
 
-    it('should have 9 default skills', () => {
+    it('should have 10 default skills', () => {
       const settings = createDefaultSettings();
-      expect(settings.workflow.skillInjection!.skills).toHaveLength(9);
+      expect(settings.workflow.skillInjection!.skills).toHaveLength(10);
     });
 
     it('should have all skills as remote type', () => {
@@ -458,7 +464,7 @@ describe('createDefaultSettings', () => {
       const remoteSkills = settings.workflow.skillInjection!.skills.filter(
         (s) => s.type === SkillSourceType.Remote
       );
-      expect(remoteSkills).toHaveLength(9);
+      expect(remoteSkills).toHaveLength(10);
     });
 
     it('should have each remote skill with a remoteSkillName matching its name', () => {
@@ -488,6 +494,7 @@ describe('createDefaultSettings', () => {
         'mermaid-diagrams',
         'react-flow',
         'shadcn-ui',
+        'shep-workstreams',
         'tsp-model',
         'vercel-react-best-practices',
         'frontend-design',

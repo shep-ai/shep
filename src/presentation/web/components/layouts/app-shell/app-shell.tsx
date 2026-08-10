@@ -61,6 +61,8 @@ interface AppShellProps {
    * top bar — see spec 091-apps-only-surface.
    */
   variant?: ShellVariant;
+  /** Server-read initial state indicating if the user has repositories. */
+  initialHasRepositories?: boolean;
 }
 
 function AppShellInner({ children, sidebarOpen, variant = 'full' }: AppShellProps) {
@@ -265,7 +267,12 @@ function TurnStatusesBridge({ children }: { children: ReactNode }) {
   return <TurnStatusesProvider>{children}</TurnStatusesProvider>;
 }
 
-export function AppShell({ children, sidebarOpen, variant = 'full' }: AppShellProps) {
+export function AppShell({
+  children,
+  sidebarOpen,
+  variant = 'full',
+  initialHasRepositories = false,
+}: AppShellProps) {
   const { i18n } = useTranslation();
   const dir = i18n.dir();
 
@@ -273,7 +280,7 @@ export function AppShell({ children, sidebarOpen, variant = 'full' }: AppShellPr
     <Direction.Provider dir={dir}>
       <AgentEventsProvider>
         <DrawerCloseGuardProvider>
-          <SidebarFeaturesProvider>
+          <SidebarFeaturesProvider initialHasRepositories={initialHasRepositories}>
             <TurnStatusesBridge>
               <AppShellInner sidebarOpen={sidebarOpen} variant={variant}>
                 {children}

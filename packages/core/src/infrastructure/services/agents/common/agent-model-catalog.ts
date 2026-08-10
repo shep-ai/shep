@@ -121,5 +121,21 @@ export const OLLAMA_MODELS: string[] = [
   'starcoder2',
 ];
 
+export const LLMPROXY_MODELS: string[] = [
+  'gpt-4o',
+  'gpt-4o-mini',
+  'claude-3-5-sonnet-latest',
+  'claude-3-5-haiku-latest',
+  'o1-preview',
+  'o1-mini',
+  'deepseek-chat',
+  'gemini-1.5-pro',
+  'gemini-1.5-flash',
+  'gemini-2.5-pro',
+  'gemini-2.5-flash',
+  'gemini-3.1-pro-preview',
+  'gemini-3-flash-preview',
+];
+
 /** Demo/fun models shown for the `dev` agent type in the UI. */
 export const DEV_MODELS: string[] = ['gpt-8', 'opus-7'];

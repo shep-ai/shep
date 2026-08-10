@@ -31,6 +31,7 @@ const AGENT_TYPE_OPTIONS = [
   { value: AgentType.Ollama, label: 'Ollama' },
   { value: AgentType.Aider, label: 'Aider' },
   { value: AgentType.Continue, label: 'Continue' },
+  { value: AgentType.LlmProxy, label: 'LLM Proxy' },
   { value: AgentType.Dev, label: 'Dev' },
 ];
 

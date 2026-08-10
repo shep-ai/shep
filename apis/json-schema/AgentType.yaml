@@ -13,5 +13,6 @@ enum:
   - openrouter
   - together-ai
   - ollama
+  - llmproxy
   - dev
 description: AI coding agent tool selection
