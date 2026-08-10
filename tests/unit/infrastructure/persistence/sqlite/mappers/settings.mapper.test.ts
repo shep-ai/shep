@@ -112,6 +112,10 @@ function createTestRow(overrides: Partial<SettingsRow> = {}): SettingsRow {
     model_plan: 'claude-sonnet-4',
     model_implement: 'claude-sonnet-4',
     model_default: 'claude-opus-4',
+    model_adaptive_enabled: 0,
+    model_adaptive_high: null,
+    model_adaptive_medium: null,
+    model_adaptive_low: null,
     user_name: 'Test User',
     user_email: 'test@example.com',
     user_github_username: 'testuser',
@@ -1654,6 +1658,59 @@ describe('Settings Mapper', () => {
         })
       );
       expect(row.messaging_telegram_pending_expires_at).toBe('2026-04-09T13:00:00.000Z');
+    });
+  });
+
+  describe('adaptive model configuration', () => {
+    it('writes zeros/NULLs when no adaptive config is present', () => {
+      const row = toDatabase(createTestSettings());
+      expect(row.model_adaptive_enabled).toBe(0);
+      expect(row.model_adaptive_high).toBeNull();
+      expect(row.model_adaptive_medium).toBeNull();
+      expect(row.model_adaptive_low).toBeNull();
+    });
+
+    it('stores a blank override as NULL, not an empty model id', () => {
+      const row = toDatabase(
+        createTestSettings({
+          models: { default: 'claude-opus-5', adaptive: { enabled: true, high: '   ' } },
+        })
+      );
+      expect(row.model_adaptive_enabled).toBe(1);
+      expect(row.model_adaptive_high).toBeNull();
+    });
+
+    it('reads all-NULL columns back as an absent config', () => {
+      const row = toDatabase(createTestSettings());
+      expect(fromDatabase(row).models.adaptive).toBeUndefined();
+    });
+
+    it('round-trips enabled=false alongside a stored override', () => {
+      const row = toDatabase(
+        createTestSettings({
+          models: {
+            default: 'claude-opus-5',
+            adaptive: { enabled: false, low: 'claude-haiku-4-5' },
+          },
+        })
+      );
+      expect(fromDatabase(row).models.adaptive).toEqual({
+        enabled: false,
+        low: 'claude-haiku-4-5',
+      });
+    });
+
+    it('round-trips a fully specified adaptive config', () => {
+      const adaptive = {
+        enabled: true,
+        high: 'claude-opus-5',
+        medium: 'claude-sonnet-5',
+        low: 'claude-haiku-4-5',
+      };
+      const row = toDatabase(
+        createTestSettings({ models: { default: 'claude-opus-5', adaptive } })
+      );
+      expect(fromDatabase(row).models.adaptive).toEqual(adaptive);
     });
   });
 });

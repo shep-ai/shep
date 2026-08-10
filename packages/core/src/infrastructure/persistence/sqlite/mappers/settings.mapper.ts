@@ -18,6 +18,7 @@ import type {
   MessagingConfig,
   MessagingPlatformConfig,
   WorktreeConfig,
+  AdaptiveModelConfig,
 } from '../../../../domain/generated/output.js';
 import { createDefaultSettings } from '../../../../domain/factories/settings-defaults.factory.js';
 import { normalizeWorktreeConfig } from '../../../../domain/shared/worktree-config.js';
@@ -51,6 +52,13 @@ export interface SettingsRow {
   model_plan: string;
   model_implement: string;
   model_default: string;
+  // AdaptiveModelConfig (models.adaptive.*) — added in migration 142.
+  // The three override columns are nullable: NULL means "derive this tier from
+  // the pinned model's family" rather than "use an empty model id".
+  model_adaptive_enabled: number;
+  model_adaptive_high: string | null;
+  model_adaptive_medium: string | null;
+  model_adaptive_low: string | null;
 
   // UserProfile (user.*) - all nullable except language
   user_name: string | null;
@@ -234,6 +242,7 @@ export function toDatabase(settings: Settings): SettingsRow {
     model_plan: settings.models.default,
     model_implement: settings.models.default,
     model_default: settings.models.default,
+    ...adaptiveModelsToRow(settings.models.adaptive),
 
     // UserProfile (optional fields → NULL, language defaults to 'en')
     user_name: settings.user.name ?? null,
@@ -458,6 +467,57 @@ function worktreeFromRow(row: SettingsRow): WorktreeConfig | undefined {
 }
 
 /**
+ * Serialize AdaptiveModelConfig into its snake_case DB columns (migration 142).
+ *
+ * A blank override string is stored as NULL: "" is not a model id, and NULL is
+ * what makes the resolver derive the tier from the pinned model's family.
+ */
+function adaptiveModelsToRow(
+  adaptive: AdaptiveModelConfig | undefined
+): Pick<
+  SettingsRow,
+  'model_adaptive_enabled' | 'model_adaptive_high' | 'model_adaptive_medium' | 'model_adaptive_low'
+> {
+  const trimmed = (value: string | undefined): string | null => {
+    const next = value?.trim();
+    if (!next) return null;
+    return next;
+  };
+
+  return {
+    model_adaptive_enabled: adaptive?.enabled ? 1 : 0,
+    model_adaptive_high: trimmed(adaptive?.high),
+    model_adaptive_medium: trimmed(adaptive?.medium),
+    model_adaptive_low: trimmed(adaptive?.low),
+  };
+}
+
+/**
+ * Deserialize AdaptiveModelConfig from the DB row (migration 142).
+ *
+ * Returns undefined when the feature is off AND no tier override is stored, so
+ * `settings.models` keeps its pre-migration shape for every untouched
+ * installation. An explicit `enabled: false` alongside a stored override still
+ * round-trips, because the user may configure tiers before switching the mode
+ * on.
+ */
+function adaptiveModelsFromRow(row: SettingsRow): AdaptiveModelConfig | undefined {
+  const enabled = row.model_adaptive_enabled === 1;
+  const high = row.model_adaptive_high ?? undefined;
+  const medium = row.model_adaptive_medium ?? undefined;
+  const low = row.model_adaptive_low ?? undefined;
+
+  if (!enabled && !high && !medium && !low) return undefined;
+
+  return {
+    enabled,
+    ...(high !== undefined && { high }),
+    ...(medium !== undefined && { medium }),
+    ...(low !== undefined && { low }),
+  };
+}
+
+/**
  * Serialize MessagingConfig into the snake_case DB row columns.
  * An undefined config writes zeros/nulls so the row is valid.
  */
@@ -606,6 +666,7 @@ function buildSkillInjectionFromRow(
  */
 export function fromDatabase(row: SettingsRow): Settings {
   const worktree = worktreeFromRow(row);
+  const adaptive = adaptiveModelsFromRow(row);
 
   return {
     // Base entity
@@ -616,6 +677,7 @@ export function fromDatabase(row: SettingsRow): Settings {
     // ModelConfiguration — model_default is the source of truth (added in migration 024)
     models: {
       default: row.model_default,
+      ...(adaptive !== undefined && { adaptive }),
     },
 
     // UserProfile (NULL → undefined, exclude from object; language defaults to 'en')

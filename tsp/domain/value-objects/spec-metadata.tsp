@@ -206,4 +206,15 @@ model SpecTask {
 
   @doc("Estimated effort (e.g., '2 hours', '1 day')")
   estimatedEffort: string;
+
+  /**
+   * How much reasoning capability this task requires. Assigned by the planning
+   * agent and consumed by adaptive model selection so mechanical tasks run on a
+   * smaller, faster model than novel design work.
+   *
+   * Optional: plans authored before adaptive selection shipped have no value
+   * here, and the implement node derives one heuristically when it is absent.
+   */
+  @doc("Reasoning capability this task requires — drives adaptive model tier selection")
+  complexity?: TaskComplexity;
 }

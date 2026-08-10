@@ -86,6 +86,25 @@ ${researchContent}
 - Dependencies between tasks
 - Acceptance criteria for each task
 - Effort estimates
+- A complexity rating per task (see the rubric below)
+
+## Task Complexity Rubric (REQUIRED on every task)
+
+Each task carries a \`complexity\` of exactly \`High\`, \`Medium\`, or \`Low\`. This routes the task
+to a model sized for the work, so rate the WORK — not how important it feels.
+
+| Value | Use when | Examples |
+| ----- | -------- | -------- |
+| \`High\` | Novel design, cross-cutting changes, or work where a subtle mistake is expensive to detect | New architecture or abstraction, concurrency/locking, auth or crypto, data migration with backfill, non-obvious algorithms, resolving conflicting constraints |
+| \`Medium\` | Ordinary feature work that follows an established pattern but still needs judgement about placement and composition | New use case wired through DI, a new API route, a new UI component with state, extending an existing service |
+| \`Low\` | Mechanical, fully specified edits where the change is obvious once you see the file | Adding a key to every locale file, adding a column to an INSERT/UPDATE list, adding an enum member to a list, writing a Storybook story for an existing component, doc/comment updates, renames |
+
+Rules:
+- Be honest about \`Low\`. Most task lists contain more mechanical work than they admit, and rating
+  those tasks \`Low\` is what makes the run cheaper without making it worse.
+- Do NOT rate a task \`High\` merely because it is on the critical path or has many acceptance
+  criteria — rate it \`High\` only when it needs genuine design reasoning.
+- When a task mixes mechanical and design work, split it into two tasks instead of averaging.
 
 ## Output Instructions
 
@@ -161,6 +180,7 @@ You MUST write TWO files:
       title: '(Task Title)'
       description: '(What this task accomplishes and why)'
       state: Todo
+      complexity: (High | Medium | Low — see the rubric above)
       dependencies: []
       acceptanceCriteria:
         - '(Specific, testable criterion)'
@@ -179,6 +199,7 @@ You MUST write TWO files:
       title: '(Next Task)'
       description: '...'
       state: Todo
+      complexity: (High | Medium | Low)
       dependencies:
         - task-1
       acceptanceCriteria:
@@ -219,6 +240,7 @@ You MUST write TWO files:
 
 - Write to BOTH ${state.specDir}/plan.yaml AND ${state.specDir}/tasks.yaml
 - Every code task MUST have TDD cycles (red/green/refactor) — non-code tasks (installs, docs) can set tdd: null
+- Every task MUST carry a complexity of High, Medium, or Low
 - Tasks must be ordered by dependency — no task should depend on a later task
 - Each phase should group logically related tasks
 - Prefer small, focused tasks over large monolithic ones

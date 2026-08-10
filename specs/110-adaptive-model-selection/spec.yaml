@@ -1,0 +1,89 @@
+# Feature Specification (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: adaptive-model-selection
+number: 110
+branch: claude/shep-adaptive-model-selection-mqhcg4
+oneLiner: Route each implementation task to a model tier matched to its complexity instead of running every task on the single pinned model.
+summary: >
+  Today a feature pinned to `claude-opus-5` runs every phase and every task on Opus — including
+  trivial work like adding a translation key or a barrel export. This feature adds an adaptive mode:
+  the plan phase classifies each task in tasks.yaml as High / Medium / Low complexity, and the
+  implement node executes each task with the model tier that matches, degrading from the pinned
+  model (never upgrading above it). Tier resolution is family-aware and catalog-driven, so a
+  Gemini or GPT pin degrades within its own family.
+phase: implementation
+sizeEstimate: M
+
+relatedFeatures:
+  - 098-im-getting-unsupported-model-nvidianemotron-3
+
+technologies:
+  - TypeScript
+  - TypeSpec
+  - LangGraph
+  - SQLite
+  - Next.js
+
+relatedLinks:
+  - title: 'Agent system architecture'
+    url: 'https://github.com/shep-ai/shep/blob/main/docs/architecture/agent-system.md'
+
+openQuestions: []
+
+content: |
+  ## Problem Statement
+
+  Shep pins one model per feature run (`Feature.model` → `FeatureAgentState.model` →
+  `AgentExecutionOptions.model`). Every node and every task inside the implement node
+  receives that same identifier. Choosing `claude-opus-5` therefore spends flagship
+  tokens on tasks that a Haiku-class model finishes correctly: adding an i18n key to
+  nine locale files, adding a column to an INSERT list, writing a Storybook story.
+
+  The cost is paid per task, and the implement node is where the token volume lives —
+  it is the only node that fans out over a task list.
+
+  ## Success Criteria
+
+  - [ ] `SpecTask` carries an optional `complexity` (High | Medium | Low).
+  - [ ] The plan prompt instructs the agent to assign a complexity to every task, with
+        explicit rubric so the classification is reproducible.
+  - [ ] Tasks that arrive without a complexity are classified deterministically by a
+        heuristic — the feature never depends on the LLM having complied.
+  - [ ] With adaptive mode ON, the implement node executes each task with the model
+        resolved for its complexity; consecutive same-model tasks are batched into one
+        executor call so dependency order inside a phase is preserved.
+  - [ ] Tier resolution NEVER selects a model more capable than the pinned model
+        (pin Sonnet → High resolves to Sonnet, Low resolves to Haiku).
+  - [ ] Tier resolution stays inside the pinned model's family and inside the agent's
+        supported-model list; an unknown/custom model id is returned unchanged.
+  - [ ] Adaptive mode is OFF by default; when off, behaviour is byte-identical to today.
+  - [ ] The user can enable it and inspect/override the resolved tier models from the
+        web Settings page AND from the CLI.
+  - [ ] The model actually used for each task group is recorded in phase timings and
+        visible in the feature Activity tab.
+
+  ## Affected Areas
+
+  | Area | Impact | Reasoning |
+  | ---- | ------ | --------- |
+  | TypeSpec | Low | `TaskComplexity` enum, `SpecTask.complexity`, `AdaptiveModelConfig` on `ModelConfiguration`. |
+  | Domain | Medium | New `domain/shared/model-tier.ts` — tier catalog, normalizer, heuristic classifier, resolver. |
+  | Persistence | Low | Migration + mapper + repository columns for `models.adaptive`. |
+  | Application | Low | `GetAdaptiveModelPlanUseCase` exposes the resolved plan to every presentation layer. |
+  | Infra/Agents | Medium | Factory port method; plan prompt; implement node grouping. |
+  | CLI | Low | `shep settings adaptive-models`. |
+  | Web | Medium | Settings section + server action + Storybook mock + Activity-tab model badge + 9 locales. |
+
+  ## Non-Goals
+
+  - Per-feature override of adaptive mode. The pinned model is already per-feature and
+    acts as the ceiling; the mode itself is a global preference for this iteration.
+  - Cost accounting / budget enforcement. Phase timings already record `costUsd`.
+  - Dynamic-catalog providers (OpenRouter, Together AI) get family-aware tiering only
+    for model ids present in the static tier catalog; unknown ids pass through unchanged.
+
+  ## Size Estimate
+
+  **M** — one new domain module with real logic, one behavioural change in the implement
+  node, and the standard settings-plumbing chain across persistence, CLI and web.

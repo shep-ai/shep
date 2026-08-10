@@ -1,0 +1,133 @@
+name: adaptive-model-selection
+number: 110
+branch: claude/shep-adaptive-model-selection-mqhcg4
+summary: >
+  Add a family-aware model-tier domain module, classify tasks at plan time, route each task
+  batch through the matching model at implement time, and expose the mode plus its resolved
+  tier mapping from Settings in both the CLI and the web UI.
+
+relatedFeatures: []
+
+technologies:
+  - TypeScript
+  - TypeSpec
+  - LangGraph
+  - SQLite
+  - Next.js
+
+relatedLinks: []
+
+phases:
+  - id: phase-1
+    name: 'Domain foundation — tier catalog and resolver'
+    description: 'TypeSpec enum + config model, generated types, and the pure model-tier module with its resolver, normalizer and heuristic classifier.'
+    parallel: false
+  - id: phase-2
+    name: 'Settings persistence'
+    description: 'Migration, mapper, repository column lists and defaults factory for models.adaptive.'
+    parallel: false
+  - id: phase-3
+    name: 'Agent wiring — plan classification and adaptive implement routing'
+    description: 'Factory port method, plan prompt rubric, buildExecutorOptions model override, and consecutive-run batching in the implement node.'
+    parallel: false
+  - id: phase-4
+    name: 'Application use case'
+    description: 'GetAdaptiveModelPlanUseCase plus DI registration under both class and string tokens.'
+    parallel: false
+  - id: phase-5
+    name: 'Presentation — CLI and web'
+    description: 'shep settings adaptive-models, web settings section + server action + Storybook mock + stories, Activity-tab model badge, nine locales.'
+    parallel: false
+
+filesToCreate:
+  - tsp/common/enums/model-tier.tsp
+  - packages/core/src/domain/shared/model-tier.ts
+  - packages/core/src/infrastructure/persistence/sqlite/migrations/142-add-adaptive-model-config.ts
+  - packages/core/src/application/use-cases/settings/get-adaptive-model-plan.use-case.ts
+  - src/presentation/cli/commands/settings/adaptive-models.command.ts
+  - src/presentation/web/app/actions/get-adaptive-model-plan.ts
+  - src/presentation/web/components/features/settings/adaptive-model-settings-section.tsx
+  - src/presentation/web/components/features/settings/adaptive-model-settings-section.stories.tsx
+  - .storybook/mocks/app/actions/get-adaptive-model-plan.ts
+
+filesToModify:
+  - tsp/common/enums/index.tsp
+  - tsp/domain/value-objects/spec-metadata.tsp
+  - tsp/domain/entities/settings.tsp
+  - packages/core/src/domain/factories/settings-defaults.factory.ts
+  - packages/core/src/infrastructure/persistence/sqlite/mappers/settings.mapper.ts
+  - packages/core/src/infrastructure/repositories/sqlite-settings.repository.ts
+  - packages/core/src/application/ports/output/agents/agent-executor-factory.interface.ts
+  - packages/core/src/infrastructure/services/agents/common/agent-executor-factory.service.ts
+  - packages/core/src/infrastructure/services/agents/feature-agent/nodes/node-helpers.ts
+  - packages/core/src/infrastructure/services/agents/feature-agent/nodes/implement.node.ts
+  - packages/core/src/infrastructure/services/agents/feature-agent/nodes/prompts/plan.prompt.ts
+  - packages/core/src/infrastructure/services/agents/feature-agent/nodes/prompts/implement.prompt.ts
+  - packages/core/src/infrastructure/di/modules/register-use-cases.ts
+  - src/presentation/cli/commands/settings/index.ts
+  - src/presentation/web/components/features/settings/settings-page-client.tsx
+  - src/presentation/web/components/common/feature-drawer-tabs/activity-tab.tsx
+  - translations/*/web.json
+  - translations/*/cli.json
+
+openQuestions: []
+
+content: |
+  ## Architecture Overview
+
+  The change has one new piece of real logic and a lot of plumbing around it.
+
+  ```
+  Settings.models.adaptive ─┐
+                            ├─→ GetAdaptiveModelPlanUseCase ─→ CLI / Web settings
+  IAgentExecutorFactory ────┘        (preview + overrides)
+        .getSupportedModels()
+
+  plan.prompt.ts  ──writes──→ tasks.yaml { complexity: High|Medium|Low }
+                                    │
+                                    ▼
+  implement.node.ts ──resolveTaskComplexity()──→ domain/shared/model-tier.ts
+                                    │                    resolveModelForComplexity()
+                                    ▼
+                     groupConsecutiveByModel(tasks) ──→ buildExecutorOptions(state, {model}, 'implement')
+  ```
+
+  `domain/shared/model-tier.ts` is pure, dependency-free data + functions, following the
+  precedent set by `domain/shared/build-mode.ts` and `domain/shared/worktree-config.ts`:
+  shared semantics live in the domain so no surface re-derives them. Relative imports inside
+  `domain/` carry **no** `.js` extension (LESSONS).
+
+  ## Key Design Decisions
+
+  1. **Ceiling, not target.** `resolveModelForComplexity` clamps the requested tier to the tier
+     of the pinned model. A user who pinned Sonnet never gets billed for Opus.
+  2. **Family-scoped degradation.** A `gemini-3.1-pro-preview` pin degrades to
+     `gemini-3-flash-preview`, never to a Claude id. Cross-family substitution is impossible by
+     construction because candidates are filtered by family before tier.
+  3. **Catalog-intersected.** Candidates must appear in the agent's own supported list, so
+     Cursor (no Haiku) degrades High→Medium and Low→Medium rather than emitting a model its CLI
+     rejects.
+  4. **Unknown ids pass through.** OpenRouter/Ollama/custom ids that are not in the tier catalog
+     resolve to themselves — adaptive mode becomes a no-op rather than a source of
+     `Unsupported model` errors (the failure mode of spec 098).
+  5. **Consecutive-run batching.** Preserves intra-phase dependency order while collapsing
+     executor calls. Parallel phases already fan out one call per task, so each simply carries
+     its own model.
+  6. **Off by default.** `adaptive.enabled = false` short-circuits before any resolution, so the
+     existing path is untouched for every current user.
+
+  ## Implementation Strategy
+
+  Phases are ordered so nothing references capability that does not yet exist: domain first,
+  then persistence, then the agent behaviour that consumes both, then the use case that exposes
+  it, and finally the two presentation layers (LESSONS: "Static repo polish ships LAST").
+
+  ## Risk Mitigation
+
+  | Risk | Mitigation |
+  | ---- | ---------- |
+  | Adaptive routing sends a model the agent CLI rejects | Candidates are intersected with `factory.getSupportedModels(agentType)`; unknown ids pass through unchanged. |
+  | Splitting a phase reorders dependent tasks | Batch only *consecutive* same-model runs; never reorder. |
+  | Plan agent omits `complexity` | Deterministic heuristic classifier fills every gap. |
+  | Settings column silently dropped on write | Round-trip integration test with non-default values for every new column (LESSONS). |
+  | New required tsp field breaks ~30 fixtures | `complexity` and `adaptive` are both declared optional. |

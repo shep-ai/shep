@@ -47,6 +47,7 @@ describe('StructuredAgentCallerService', () => {
       getCliInfo: vi.fn().mockReturnValue(undefined),
       createInteractiveExecutor: vi.fn(),
       supportsInteractive: vi.fn().mockReturnValue(false),
+      resolveAdaptiveModelPlan: vi.fn((_a: unknown, m: string) => ({ high: m, medium: m, low: m })),
     };
     service = new StructuredAgentCallerService(mockProvider, mockFactory);
   });

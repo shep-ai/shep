@@ -139,3 +139,38 @@ export const LLMPROXY_MODELS: string[] = [
 
 /** Demo/fun models shown for the `dev` agent type in the UI. */
 export const DEV_MODELS: string[] = ['gpt-8', 'opus-7'];
+
+/**
+ * Resolve the static model list for an agent type.
+ *
+ * `AgentExecutorFactory.getSupportedModels()` delegates here so callers that
+ * only need the catalog — adaptive model routing inside a graph node, for
+ * instance — do not have to construct a factory (and a spawn function) just to
+ * read static data. Unknown and non-model agents return an empty list.
+ */
+export function getModelsForAgent(agentType: string): string[] {
+  switch (agentType) {
+    case 'claude-code':
+      return CLAUDE_CODE_MODELS;
+    case 'gemini-cli':
+      return GEMINI_CLI_MODELS;
+    case 'cursor':
+      return CURSOR_MODELS;
+    case 'codex-cli':
+      return CODEX_CLI_MODELS;
+    case 'copilot-cli':
+      return COPILOT_CLI_MODELS;
+    case 'cline':
+      return CLINE_MODELS;
+    case 'openrouter':
+      return OPENROUTER_MODELS;
+    case 'together-ai':
+      return TOGETHER_AI_MODELS;
+    case 'ollama':
+      return OLLAMA_MODELS;
+    case 'llmproxy':
+      return LLMPROXY_MODELS;
+    default:
+      return [];
+  }
+}
