@@ -1,5 +1,35 @@
 # Lessons Learned
 
+## Size a wait budget for its slowest leg, not for the leg you are asserting on
+
+`waitForStatus` in the dev-server-agent harness had one 30s budget covering the whole
+`Analyzing → Installing → Booting → Ready` sequence. The Installing leg runs a real `npm install`,
+and on a Windows runner npm needs 15-20s just to print "up to date" against a fixture that already
+has `node_modules` — so two thirds of the budget was spent before the boot under test even began.
+It passed on Linux every time and lost the race on Windows.
+
+The timeout then failed *twice*: the wait threw, and the `afterEach` teardown threw
+`EBUSY: rmdir` on top of it, because the force-killed child tree still held the fixture directory.
+The teardown error is louder and arrives second, so it is the one you read first — and it points at
+cleanup code that is not the bug.
+
+**Rules:**
+
+1. When one budget spans several legs, size it for the slowest leg on the slowest platform. Write
+   down *which* leg justifies the number, or the next person shrinks it back.
+2. `process.platform === 'win32'` deserves its own constants in test harnesses — npm, process
+   startup, and file-handle release are all multiples slower. A single cross-platform number is
+   either wasteful on Linux or flaky on Windows.
+3. A per-test `timeout` must exceed the wait budget inside it. If vitest kills the test first, the
+   wait never throws and you lose the diagnostic (last status + log tail) that makes CI output
+   readable without a rerun.
+4. Windows releases file handles asynchronously after a force-kill, so `rmSync` on a fixture dir
+   needs a real retry budget (`maxRetries` x `retryDelay`), and that budget has to fit inside
+   vitest's `hookTimeout`. Raise both together.
+5. **The same constant in three test files is one constant.** `TEST_TIMEOUT_MS` was copy-pasted
+   into all three suites, so a platform fix meant three edits and three chances to miss one. It
+   now lives in `harness.ts` next to the wait budget it must stay above.
+
 ## Writing `Blocked` is not enforcing a gate — the running agent has to be stopped too
 
 The dependency gate was checked in all four *entry* paths (create, start, reparent,

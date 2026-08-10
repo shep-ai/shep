@@ -35,10 +35,10 @@ import {
   waitForLogLine,
   isPidAlive,
   SERVER_PID_FILE,
+  TEST_TIMEOUT_MS,
   type DevServerAgentHarness,
 } from './harness.js';
 
-const TEST_TIMEOUT_MS = 60_000;
 const TARGET_TYPE = 'repository';
 /** DeploymentRecovery probes the recovered URL with a 2s TCP timeout. */
 const RECOVERY_PROBE_SETTLE_MS = 2_300;
