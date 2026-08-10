@@ -17,6 +17,7 @@ import type { IFeatureRepository } from '@/application/ports/output/repositories
 import type { CheckAndUnblockFeaturesUseCase } from '@/application/use-cases/features/check-and-unblock-features.use-case.js';
 import { SdlcLifecycle, BuildMode } from '@/domain/generated/output.js';
 import type { Feature } from '@/domain/generated/output.js';
+import { createMockFeatureRepository } from '../../../../../helpers/feature-repository.mock.js';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -61,24 +62,17 @@ describe('UpdateFeatureLifecycleUseCase', () => {
   let mockCheckAndUnblock: CheckAndUnblockFeaturesUseCase;
 
   beforeEach(() => {
-    mockFeatureRepo = {
-      create: vi.fn(),
+    mockFeatureRepo = createMockFeatureRepository({
       findById: vi.fn().mockResolvedValue(makeFeature()),
-      findByIdPrefix: vi.fn(),
-      findBySlug: vi.fn(),
-      findByBranch: vi.fn(),
-      list: vi.fn(),
-      findByParentId: vi.fn(),
-      update: vi.fn().mockResolvedValue(undefined),
-      delete: vi.fn(),
-      softDelete: vi.fn(),
-    };
+    });
 
     mockCheckAndUnblock = {
       execute: vi.fn().mockResolvedValue(undefined),
     } as unknown as CheckAndUnblockFeaturesUseCase;
 
-    useCase = new UpdateFeatureLifecycleUseCase(mockFeatureRepo, mockCheckAndUnblock);
+    useCase = new UpdateFeatureLifecycleUseCase(mockFeatureRepo, mockCheckAndUnblock, {
+      execute: vi.fn().mockResolvedValue({ admittedFeatureIds: [] }),
+    } as never);
   });
 
   it('should persist the new lifecycle on the feature', async () => {

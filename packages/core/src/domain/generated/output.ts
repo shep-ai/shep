@@ -456,6 +456,10 @@ export type WorkflowConfig = {
    */
   ciWatchEnabled: boolean;
   /**
+   * Maximum concurrently running features (default: 0 = unlimited)
+   */
+  maxParallelFeatures?: number;
+  /**
    * Maximum number of CI fix/push/watch iterations before giving up (default: 3)
    */
   ciMaxFixAttempts?: number;
@@ -1539,6 +1543,10 @@ export type Feature = SoftDeletableEntity & {
    * Agent type that owned the adopted session (optional)
    */
   sourceAgentType?: AgentType;
+  /**
+   * When this feature was queued by the parallel-feature limit (optional, cleared on admission)
+   */
+  queuedAt?: any;
 };
 
 /**

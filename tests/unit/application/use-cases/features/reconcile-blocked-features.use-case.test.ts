@@ -14,6 +14,7 @@ import type { CheckAndUnblockFeaturesUseCase } from '@/application/use-cases/fea
 import type { IFeatureRepository } from '@/application/ports/output/repositories/feature-repository.interface.js';
 import { SdlcLifecycle, BuildMode } from '@/domain/generated/output.js';
 import type { Feature } from '@/domain/generated/output.js';
+import { createMockFeatureRepository } from '../../../../helpers/feature-repository.mock.js';
 
 function makeFeature(overrides?: Partial<Feature>): Feature {
   return {
@@ -49,18 +50,7 @@ describe('ReconcileBlockedFeaturesUseCase', () => {
   let mockCheckAndUnblock: CheckAndUnblockFeaturesUseCase;
 
   beforeEach(() => {
-    mockFeatureRepo = {
-      create: vi.fn(),
-      findById: vi.fn(),
-      findByIdPrefix: vi.fn(),
-      findBySlug: vi.fn(),
-      findByBranch: vi.fn(),
-      list: vi.fn().mockResolvedValue([]),
-      findByParentId: vi.fn().mockResolvedValue([]),
-      update: vi.fn(),
-      delete: vi.fn(),
-      softDelete: vi.fn(),
-    };
+    mockFeatureRepo = createMockFeatureRepository();
 
     mockCheckAndUnblock = {
       execute: vi.fn().mockResolvedValue([]),

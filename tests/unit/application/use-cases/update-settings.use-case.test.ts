@@ -22,7 +22,12 @@ describe('UpdateSettingsUseCase', () => {
 
   beforeEach(() => {
     mockRepository = new MockSettingsRepository();
-    useCase = new UpdateSettingsUseCase(mockRepository as any);
+    useCase = new UpdateSettingsUseCase(
+      mockRepository as any,
+      {
+        execute: async () => ({ admittedFeatureIds: [] }),
+      } as never
+    );
   });
 
   describe('successful updates', () => {

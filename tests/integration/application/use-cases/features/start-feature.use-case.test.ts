@@ -18,6 +18,7 @@ import { runSQLiteMigrations } from '@/infrastructure/persistence/sqlite/migrati
 import { SQLiteFeatureRepository } from '@/infrastructure/repositories/sqlite-feature.repository.js';
 import { SQLiteAgentRunRepository } from '@/infrastructure/repositories/agent-run.repository.js';
 import { StartFeatureUseCase } from '@/application/use-cases/features/start-feature.use-case.js';
+import { SpawnFeatureAgentUseCase } from '@/application/use-cases/features/spawn-feature-agent.use-case.js';
 import type { Feature, AgentRun } from '@/domain/generated/output.js';
 import { SdlcLifecycle, AgentRunStatus, AgentType, BuildMode } from '@/domain/generated/output.js';
 
@@ -107,7 +108,7 @@ describe('StartFeatureUseCase (integration)', () => {
     runRepo = new SQLiteAgentRunRepository(db);
     processService = createMockProcessService();
     worktreeService = createMockWorktreeService();
-    useCase = new StartFeatureUseCase(
+    const spawnFeatureAgent = new SpawnFeatureAgentUseCase(
       featureRepo,
       runRepo,
       processService as any,
@@ -115,6 +116,10 @@ describe('StartFeatureUseCase (integration)', () => {
       { load: vi.fn().mockResolvedValue(null) } as any,
       { execute: vi.fn().mockResolvedValue(undefined) } as any
     );
+    useCase = new StartFeatureUseCase(featureRepo, runRepo, spawnFeatureAgent, {
+      hasCapacity: vi.fn().mockResolvedValue(true),
+      getQueuePosition: vi.fn().mockResolvedValue(1),
+    } as any);
     createdFeatureIds = [];
     createdRunIds = [];
   });

@@ -30,6 +30,7 @@ import type { IAgentRunRepository } from '@/application/ports/output/agents/agen
 import type { IPhaseTimingRepository } from '@/application/ports/output/agents/phase-timing-repository.interface.js';
 import { SdlcLifecycle, AgentRunStatus } from '@/domain/generated/output.js';
 import type { Feature } from '@/domain/generated/output.js';
+import { SpawnFeatureAgentUseCase } from '@/application/use-cases/features/spawn-feature-agent.use-case.js';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -125,7 +126,20 @@ function createMockWorktreeService(): IWorktreeService {
 function createMockAgentRunRepo(): IAgentRunRepository {
   return {
     create: vi.fn().mockResolvedValue(undefined),
-    findById: vi.fn().mockResolvedValue(null),
+    // A real feature always has its AgentRun — it carries the agent identity the
+    // spawn path reads (type, model, thread).
+    findById: vi.fn().mockResolvedValue({
+      id: 'run-001',
+      agentType: 'claude-code',
+      agentName: 'feature-agent',
+      status: 'pending',
+      prompt: 'test',
+      threadId: 'thread-001',
+      featureId: 'feat-001',
+      repositoryPath: '/repo',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    }),
     findByThreadId: vi.fn(),
     updateStatus: vi.fn().mockResolvedValue(undefined),
     updatePinnedConfig: vi.fn(),
@@ -171,12 +185,18 @@ describe('CheckAndUnblockFeaturesUseCase — Auto-Sync', () => {
 
     useCase = new CheckAndUnblockFeaturesUseCase(
       mockFeatureRepo,
-      mockAgentProcess,
-      { load: vi.fn().mockResolvedValue(null) } as any,
-      mockWorktreeService,
       mockSyncFeatureBranch,
       mockAgentRunRepo,
-      mockPhaseTimingRepo
+      mockPhaseTimingRepo,
+      new SpawnFeatureAgentUseCase(
+        mockFeatureRepo,
+        mockAgentRunRepo,
+        mockAgentProcess,
+        mockWorktreeService,
+        { load: vi.fn().mockResolvedValue(null) } as any,
+        mockSyncFeatureBranch
+      ) as any,
+      { hasCapacity: vi.fn().mockResolvedValue(true), getQueuePosition: vi.fn() } as any
     );
   });
 

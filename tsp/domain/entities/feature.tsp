@@ -513,4 +513,23 @@ model Feature extends SoftDeletableEntity {
    */
   @doc("Agent type that owned the adopted session (optional)")
   sourceAgentType?: AgentType;
+
+  // ── Parallel-Capacity Queue ───────────────────────────────
+
+  /**
+   * When this feature was queued because the parallel-feature limit was reached.
+   *
+   * Set only by capacity admission control, and cleared the moment the feature
+   * is admitted and its agent spawns. Its presence — not the lifecycle — is what
+   * distinguishes a feature the system is holding back from one the user
+   * deliberately deferred with `--pending`: both sit in Pending, but only a
+   * capacity-queued feature starts on its own when a slot frees.
+   *
+   * Doubles as the FIFO ordering key, so a feature queued later by pressing
+   * Start correctly falls in behind features that were queued earlier.
+   *
+   * @example "2026-08-10T09:15:00.000Z"
+   */
+  @doc("When this feature was queued by the parallel-feature limit (optional, cleared on admission)")
+  queuedAt?: utcDateTime;
 }

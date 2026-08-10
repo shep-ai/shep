@@ -13,6 +13,7 @@ import { UnarchiveFeatureUseCase } from '@/application/use-cases/features/unarch
 import type { IFeatureRepository } from '@/application/ports/output/repositories/feature-repository.interface.js';
 import { SdlcLifecycle, BuildMode } from '@/domain/generated/output.js';
 import type { Feature } from '@/domain/generated/output.js';
+import { createMockFeatureRepository } from '../../../../helpers/feature-repository.mock.js';
 
 function createMockFeature(overrides?: Partial<Feature>): Feature {
   return {
@@ -49,18 +50,9 @@ describe('UnarchiveFeatureUseCase', () => {
   let mockFeatureRepo: IFeatureRepository;
 
   beforeEach(() => {
-    mockFeatureRepo = {
-      create: vi.fn(),
+    mockFeatureRepo = createMockFeatureRepository({
       findById: vi.fn().mockResolvedValue(createMockFeature()),
-      findByIdPrefix: vi.fn().mockResolvedValue(null),
-      findBySlug: vi.fn(),
-      findByBranch: vi.fn(),
-      list: vi.fn(),
-      findByParentId: vi.fn().mockResolvedValue([]),
-      update: vi.fn(),
-      delete: vi.fn(),
-      softDelete: vi.fn(),
-    };
+    });
 
     useCase = new UnarchiveFeatureUseCase(mockFeatureRepo);
   });

@@ -22,6 +22,10 @@ import type {
 import { createDefaultSettings } from '../../../../domain/factories/settings-defaults.factory.js';
 import { normalizeWorktreeConfig } from '../../../../domain/shared/worktree-config.js';
 import {
+  clampMaxParallelFeatures,
+  resolveMaxParallelFeatures,
+} from '../../../../domain/shared/parallel-feature-limit.js';
+import {
   type AgentType,
   type AgentAuthMethod,
   type EditorType,
@@ -99,6 +103,9 @@ export interface SettingsRow {
   ci_watch_timeout_ms: number | null;
   ci_log_max_chars: number | null;
   ci_watch_enabled: number;
+
+  // WorkflowConfig parallel-feature cap (workflow.maxParallelFeatures; 0 = unlimited)
+  workflow_max_parallel_features: number;
 
   // WorkflowConfig per-stage timeouts (workflow.stageTimeouts.*)
   stage_timeout_analyze_ms: number | null;
@@ -282,6 +289,7 @@ export function toDatabase(settings: Settings): SettingsRow {
     ci_watch_timeout_ms: settings.workflow.ciWatchTimeoutMs ?? null,
     ci_log_max_chars: settings.workflow.ciLogMaxChars ?? null,
     ci_watch_enabled: settings.workflow.ciWatchEnabled !== false ? 1 : 0,
+    workflow_max_parallel_features: resolveMaxParallelFeatures(settings),
 
     // WorkflowConfig per-stage timeouts (optional number → INTEGER | null)
     stage_timeout_analyze_ms: settings.workflow.stageTimeouts?.analyzeMs ?? null,
@@ -685,6 +693,7 @@ export function fromDatabase(row: SettingsRow): Settings {
       ...buildAnalyzeRepoTimeoutsFromRow(row),
       ...buildSkillInjectionFromRow(row),
       ciWatchEnabled: row.ci_watch_enabled !== 0,
+      maxParallelFeatures: clampMaxParallelFeatures(row.workflow_max_parallel_features),
       enableEvidence: row.workflow_enable_evidence === 1,
       commitEvidence: row.workflow_commit_evidence === 1,
       hideCiStatus: row.hide_ci_status === 1,

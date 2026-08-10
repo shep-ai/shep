@@ -5,6 +5,7 @@ import type { IFeatureRepository } from '@/application/ports/output/repositories
 import type { Feature } from '@/domain/generated/output.js';
 import { ReparentFeatureUseCase } from '@/application/use-cases/features/reparent-feature.use-case.js';
 import type { CheckAndUnblockFeaturesUseCase } from '@/application/use-cases/features/check-and-unblock-features.use-case.js';
+import { createMockFeatureRepository } from '../../../helpers/feature-repository.mock.js';
 
 function makeFeature(overrides: Partial<Feature> = {}): Feature {
   return {
@@ -39,18 +40,7 @@ describe('ReparentFeatureUseCase', () => {
   let useCase: ReparentFeatureUseCase;
 
   beforeEach(() => {
-    mockFeatureRepo = {
-      create: vi.fn().mockResolvedValue(undefined),
-      findById: vi.fn().mockResolvedValue(null),
-      findByIdPrefix: vi.fn().mockResolvedValue(null),
-      findBySlug: vi.fn().mockResolvedValue(null),
-      findByBranch: vi.fn().mockResolvedValue(null),
-      list: vi.fn().mockResolvedValue([]),
-      update: vi.fn().mockResolvedValue(undefined),
-      findByParentId: vi.fn().mockResolvedValue([]),
-      delete: vi.fn().mockResolvedValue(undefined),
-      softDelete: vi.fn().mockResolvedValue(undefined),
-    };
+    mockFeatureRepo = createMockFeatureRepository();
 
     mockCheckAndUnblock = {
       execute: vi.fn().mockResolvedValue(undefined),

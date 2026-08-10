@@ -1069,4 +1069,73 @@ describe('SQLiteSettingsRepository', () => {
       expect(loaded?.worktree).toBeUndefined();
     });
   });
+
+  describe('workflow.maxParallelFeatures', () => {
+    // Every assertion here uses a NON-default value on purpose. A test that only
+    // ever checks the default passes even when the column is missing from the
+    // INSERT/UPDATE lists entirely — the DEFAULT supplies the read value and the
+    // broken write path stays invisible until someone changes the default.
+
+    it('persists a non-default limit through initialize()', async () => {
+      const settings = createTestSettings();
+      settings.workflow.maxParallelFeatures = 4;
+
+      await repository.initialize(settings);
+
+      expect((await repository.load())?.workflow.maxParallelFeatures).toBe(4);
+    });
+
+    it('persists a changed limit through update()', async () => {
+      const settings = createTestSettings();
+      settings.workflow.maxParallelFeatures = 4;
+      await repository.initialize(settings);
+
+      settings.workflow.maxParallelFeatures = 7;
+      settings.updatedAt = new Date('2025-02-05T00:00:00Z');
+      await repository.update(settings);
+
+      expect((await repository.load())?.workflow.maxParallelFeatures).toBe(7);
+    });
+
+    it('round-trips 0 (unlimited) after a non-zero value was stored', async () => {
+      const settings = createTestSettings();
+      settings.workflow.maxParallelFeatures = 5;
+      await repository.initialize(settings);
+
+      settings.workflow.maxParallelFeatures = 0;
+      settings.updatedAt = new Date('2025-02-06T00:00:00Z');
+      await repository.update(settings);
+
+      expect((await repository.load())?.workflow.maxParallelFeatures).toBe(0);
+    });
+
+    it('defaults to unlimited when the caller never sets a limit', async () => {
+      await repository.initialize(createTestSettings());
+
+      expect((await repository.load())?.workflow.maxParallelFeatures).toBe(0);
+    });
+  });
+
+  describe('workflow.ciWatchEnabled', () => {
+    it('persists a disabled CI watch through initialize()', async () => {
+      const settings = createTestSettings();
+      settings.workflow.ciWatchEnabled = false;
+
+      await repository.initialize(settings);
+
+      expect((await repository.load())?.workflow.ciWatchEnabled).toBe(false);
+    });
+
+    it('persists a toggled CI watch through update()', async () => {
+      const settings = createTestSettings();
+      settings.workflow.ciWatchEnabled = false;
+      await repository.initialize(settings);
+
+      settings.workflow.ciWatchEnabled = true;
+      settings.updatedAt = new Date('2025-02-07T00:00:00Z');
+      await repository.update(settings);
+
+      expect((await repository.load())?.workflow.ciWatchEnabled).toBe(true);
+    });
+  });
 });
