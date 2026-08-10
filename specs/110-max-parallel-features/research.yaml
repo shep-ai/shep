@@ -29,7 +29,8 @@ relatedLinks:
 # Structured technology decisions
 decisions:
   - title: How a capacity-queued feature is represented
-    chosen: Existing `Pending` lifecycle + a new `queuedAt?: utcDateTime` marker on `Feature`
+    chosen: >-
+      Existing `Pending` lifecycle + a new `queuedAt?: utcDateTime` marker on `Feature`
     rejected:
       - New `SdlcLifecycle.Queued` enum member
       - Reuse `Blocked` for capacity as well as dependencies
