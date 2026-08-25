@@ -61,11 +61,14 @@ vi.mock('node:child_process', async (importOriginal) => {
   };
 });
 
-// Mock node-helpers (getCompletedPhases / markPhaseComplete)
-const { mockGetCompletedPhases, mockMarkPhaseComplete } = vi.hoisted(() => ({
-  mockGetCompletedPhases: vi.fn().mockReturnValue([]),
-  mockMarkPhaseComplete: vi.fn(),
-}));
+// Mock node-helpers (getCompletedPhases / markPhaseComplete / clearCompletedPhase)
+const { mockGetCompletedPhases, mockMarkPhaseComplete, mockClearCompletedPhase } = vi.hoisted(
+  () => ({
+    mockGetCompletedPhases: vi.fn().mockReturnValue([]),
+    mockMarkPhaseComplete: vi.fn(),
+    mockClearCompletedPhase: vi.fn(),
+  })
+);
 
 vi.mock(
   '@/infrastructure/services/agents/feature-agent/nodes/node-helpers.js',
@@ -75,6 +78,7 @@ vi.mock(
       ...actual,
       getCompletedPhases: mockGetCompletedPhases,
       markPhaseComplete: mockMarkPhaseComplete,
+      clearCompletedPhase: mockClearCompletedPhase,
     };
   }
 );
@@ -431,6 +435,7 @@ describe('createFastImplementNode', () => {
     mockExecSync.mockReturnValue('M  src/index.ts\n');
     mockGetCompletedPhases.mockReset().mockReturnValue([]);
     mockMarkPhaseComplete.mockReset();
+    mockClearCompletedPhase.mockReset();
     mockExecutor = createMockExecutor();
   });
 
@@ -531,6 +536,27 @@ describe('createFastImplementNode', () => {
     expect(mockExecutor.execute).not.toHaveBeenCalled();
     expect(result.currentNode).toBe('fast-implement');
     expect(result.messages![0]).toContain('already completed');
+  });
+
+  it('should re-execute (not skip) when already completed but routed back for merge-rejection rework', async () => {
+    setupFileMocks();
+    mockGetCompletedPhases.mockReturnValue(['fast-implement']);
+    const node = createFastImplementNode(mockExecutor);
+    const state = createMockState({ _needsReexecution: true });
+
+    const result = await node(state);
+
+    // Must clear the stale completed-phase flag and actually invoke the executor,
+    // otherwise the user's rejection feedback (already embedded in the prompt via
+    // spec.yaml's rejectionFeedback entries) never reaches the agent.
+    expect(mockClearCompletedPhase).toHaveBeenCalledWith(
+      state.specDir,
+      'fast-implement',
+      expect.anything()
+    );
+    expect(mockExecutor.execute).toHaveBeenCalled();
+    expect(result.currentNode).toBe('fast-implement');
+    expect(result.messages).not.toContain('[fast-implement] already completed — skipping');
   });
 
   it('should call markPhaseComplete after successful execution', async () => {

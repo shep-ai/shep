@@ -20,6 +20,7 @@ import {
   retryExecute,
   getCompletedPhases,
   markPhaseComplete,
+  clearCompletedPhase,
   applyMemorySelection,
   type MemorySelector,
 } from './node-helpers.js';
@@ -44,15 +45,23 @@ export function createFastImplementNode(executor: IAgentExecutor, selectMemory?:
     reportNodeStart('fast-implement');
     await updateNodeLifecycle('fast-implement');
 
-    // Skip if already completed (resume from error path)
+    // Skip if already completed — UNLESS we were routed back here for rework
+    // after a merge rejection. The merge node sets _needsReexecution=true and
+    // routes back to this node when the user rejects with feedback; without
+    // this check we'd skip the rework and loop straight back to merge review,
+    // silently discarding the user's feedback.
     const completedPhases = getCompletedPhases(state.specDir);
     if (completedPhases.includes('fast-implement')) {
-      log.info('Phase already completed, skipping execution');
-      return {
-        currentNode: 'fast-implement',
-        messages: ['[fast-implement] already completed — skipping'],
-        _needsReexecution: false,
-      };
+      if (!state._needsReexecution) {
+        log.info('Phase already completed, skipping execution');
+        return {
+          currentNode: 'fast-implement',
+          messages: ['[fast-implement] already completed — skipping'],
+          _needsReexecution: false,
+        };
+      }
+      log.info('Rework requested (merge rejection) — clearing completed flag and re-executing');
+      clearCompletedPhase(state.specDir, 'fast-implement', log);
     }
 
     const startTime = Date.now();

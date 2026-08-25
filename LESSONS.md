@@ -1735,3 +1735,42 @@ macOS, where 1ms barely clears `exec` and nothing had touched the DB yet.
 When modifying a module's exports (e.g. changing `useAllTurnStatuses` to `useTurnStatusSync`), vitest mocks using `vi.mock()` that return an object missing the expected exports will fail at runtime with `TypeError: (0, ...useTurnStatus) is not a function` or `Error: [vitest] No "useTurnStatusSync" export is defined...`. Vitest strictly verifies that if a module is mocked, any named import actually exists on the mocked object. 
 
 **Rule:** Always search the codebase for `vi.mock('path/to/module')` whenever you rename, add, or remove an exported function from a module, and ensure all test files update their mock returns to match the new signature.
+
+## A per-node "skip if already completed" check must distinguish crash-resume from rejection-rework
+
+`fast-implement.node.ts` unconditionally skipped execution whenever `fast-implement`
+was already in `feature.yaml`'s `completedPhases`. That check exists to make the
+crash/error-resume path idempotent (a fresh `graph.invoke` from `START` after a
+worker crash must not redo finished phases). But `merge.node.ts` also routes back
+to `fast-implement` on a **merge rejection**, setting `_needsReexecution: true` —
+and since `fast-implement` was already marked complete from the first pass, the
+same skip fired, silently discarding the user's rejection feedback and looping
+straight back to merge review. Log symptom: `"Phase already completed, skipping
+execution"` immediately followed by no re-implementation at all.
+
+**Rule:** any node with a hand-rolled `getCompletedPhases().includes(phase)` skip
+guard (i.e. one that doesn't go through the shared `executeNode()` helper in
+`node-helpers.ts`, which already handles this correctly) must also check the
+graph's rework signal (`state._needsReexecution`) before skipping, and call
+`clearCompletedPhase()` when rework is required. `_needsReexecution` is `false` by
+default on every fresh invocation, so it safely distinguishes "legitimate resume
+skip" from "must re-execute for rejection rework." Prefer routing new fast-mode
+nodes through `executeNode()` instead of reimplementing this check by hand.
+
+## Real-git integration tests must isolate the host's global/system git config
+
+`tests/integration/.../merge-step-real-git/local-merge.test.ts` and
+`smoke.test.ts` asserted a freshly-`git init`'d harness repo has **no** remotes,
+but failed with `git remote` reporting `origin` — not because the harness added
+one, but because the developer/CI machine's `~/.gitconfig` had a stray
+`[remote "origin"]` section (even one with only `prune = true`, no `url`). Git
+merges system + global + local config into one view, so that phantom section
+leaked into every repo's `git remote` output, including brand-new ones.
+
+**Rule:** any test harness that shells out to the real `git`/`gh` binaries
+(`execFile` rather than a mock) must isolate `GIT_CONFIG_GLOBAL=/dev/null` and
+`GIT_CONFIG_SYSTEM=/dev/null` in the child process env. Otherwise the test's
+pass/fail outcome depends on the ambient config of whatever machine runs it —
+a correctness bug in the harness, not flakiness in the test itself. Fixed once,
+centrally, in `setup.ts`'s `makeRealExec()` so every test in the suite inherits
+the isolation.
