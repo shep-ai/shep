@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, beforeAll, afterAll } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { NotificationEventType, PrStatus, CiStatus } from '@shepai/core/domain/generated/output';
 import type { NotificationEvent } from '@shepai/core/domain/generated/output';
 import { FeatureDrawerTabs } from '@/components/common/feature-drawer-tabs/feature-drawer-tabs';
@@ -36,6 +37,15 @@ vi.mock('@/app/actions/get-feature-phase-timings', () => ({
 
 vi.mock('@/app/actions/get-feature-plan', () => ({
   getFeaturePlan: (...args: unknown[]) => mockGetPlan(...args),
+}));
+
+// Mock bedrock server actions so activating the Bedrock tab (the last tab in
+// the default 8-tab set) does not fire a real fetch from jsdom.
+vi.mock('@/app/actions/bedrock.action', () => ({
+  enableBedrockForTarget: vi.fn().mockResolvedValue({ ok: false }),
+  syncBedrockForTarget: vi.fn().mockResolvedValue({ ok: false }),
+  shipBedrockForTarget: vi.fn().mockResolvedValue({ ok: false }),
+  getBedrockMemorySnapshot: vi.fn().mockResolvedValue(null),
 }));
 
 vi.mock('@/hooks/use-feature-logs', () => ({
@@ -110,7 +120,12 @@ function renderTabs(props: Partial<FeatureDrawerTabsProps> = {}) {
     featureId: '#f1',
     ...props,
   };
-  return render(<FeatureDrawerTabs {...defaultProps} />);
+  const queryClient = new QueryClient();
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <FeatureDrawerTabs {...defaultProps} />
+    </QueryClientProvider>
+  );
 }
 
 beforeEach(() => {
@@ -845,6 +860,276 @@ describe('FeatureDrawerTabs', () => {
 
       const logTab = screen.getByRole('tab', { name: 'Log' });
       expect(logTab).toHaveAttribute('data-state', 'active');
+    });
+  });
+
+  describe('scrollable tabs behavior', () => {
+    it('renders TabsList with scrollable prop when multiple tabs are visible', () => {
+      renderTabs({
+        featureNode: {
+          ...defaultFeatureNode,
+          lifecycle: 'implementation',
+          state: 'running',
+          hasPlan: true,
+          hasAgentRun: true,
+        },
+        interactiveAgentEnabled: true,
+      });
+
+      // Get the TabsList (parent of tab triggers)
+      const tabsList = screen.getByRole('tab', { name: 'Overview' }).closest('[role="tablist"]');
+      expect(tabsList).toBeInTheDocument();
+      expect(tabsList).toHaveClass('overflow-x-auto', 'overflow-y-hidden');
+    });
+
+    it('renders all visible tabs when 8+ tabs are shown', () => {
+      renderTabs({
+        featureNode: {
+          ...defaultFeatureNode,
+          lifecycle: 'implementation',
+          state: 'running',
+          hasPlan: true,
+          hasAgentRun: true,
+        },
+        interactiveAgentEnabled: true,
+      });
+
+      // In implementation phase with interactive agent, these tabs should be visible:
+      // Overview, Activity, Log, Plan, Tech Decisions, Product, Chat
+      expect(screen.getByRole('tab', { name: 'Overview' })).toBeInTheDocument();
+      expect(screen.getByRole('tab', { name: 'Activity' })).toBeInTheDocument();
+      expect(screen.getByRole('tab', { name: 'Log' })).toBeInTheDocument();
+      expect(screen.getByRole('tab', { name: 'Plan' })).toBeInTheDocument();
+      expect(screen.getByRole('tab', { name: 'Tech Decisions' })).toBeInTheDocument();
+      expect(screen.getByRole('tab', { name: 'Product' })).toBeInTheDocument();
+      expect(screen.getByRole('tab', { name: 'Chat' })).toBeInTheDocument();
+    });
+
+    it('maintains scroll classes even when switching tabs', async () => {
+      const user = userEvent.setup();
+      renderTabs({
+        featureNode: {
+          ...defaultFeatureNode,
+          lifecycle: 'implementation',
+          state: 'running',
+          hasPlan: true,
+          hasAgentRun: true,
+        },
+        interactiveAgentEnabled: true,
+      });
+
+      const tabsList = screen.getByRole('tab', { name: 'Overview' }).closest('[role="tablist"]');
+
+      // Switch to Activity tab
+      await user.click(screen.getByRole('tab', { name: 'Activity' }));
+
+      // TabsList should still have scroll classes
+      expect(tabsList).toHaveClass('overflow-x-auto', 'overflow-y-hidden');
+    });
+
+    it('keeps scroll classes even when only 2 tabs are visible', () => {
+      // Even with minimal tabs, scrollable prop is still applied
+      // This ensures consistent rendering and prevents UI shifts if tabs are added later
+      renderTabs({
+        featureNode: {
+          ...defaultFeatureNode,
+          lifecycle: 'exploring',
+          state: 'running',
+          hasPlan: false,
+          hasAgentRun: false,
+        },
+        interactiveAgentEnabled: false,
+      });
+
+      // In exploring mode without interactive agent, only Overview and Activity are shown
+      // Even with few tabs, the scrollable classes are still applied for consistency
+      const tabsList = screen.getByRole('tab', { name: 'Overview' }).closest('[role="tablist"]');
+      expect(tabsList).toHaveClass('overflow-x-auto', 'overflow-y-hidden');
+    });
+  });
+
+  describe('keyboard navigation in scrolled context', () => {
+    it('navigates between tabs with Arrow Right and Left keys', async () => {
+      const user = userEvent.setup();
+      renderTabs({
+        featureNode: {
+          ...defaultFeatureNode,
+          lifecycle: 'implementation',
+          state: 'running',
+          hasPlan: true,
+          hasAgentRun: true,
+        },
+        interactiveAgentEnabled: true,
+      });
+
+      // Start with Overview tab active
+      const overviewTab = screen.getByRole('tab', { name: 'Overview' });
+      expect(overviewTab).toHaveAttribute('data-state', 'active');
+
+      // Focus on Overview tab
+      overviewTab.focus();
+
+      // Press Arrow Right to move to Activity tab
+      await user.keyboard('{ArrowRight}');
+
+      // Activity tab should be active
+      const activityTab = screen.getByRole('tab', { name: 'Activity' });
+      expect(activityTab).toHaveAttribute('data-state', 'active');
+
+      // Press Arrow Right again to move to Log tab
+      await user.keyboard('{ArrowRight}');
+      const logTab = screen.getByRole('tab', { name: 'Log' });
+      expect(logTab).toHaveAttribute('data-state', 'active');
+
+      // Press Arrow Left to go back to Activity
+      await user.keyboard('{ArrowLeft}');
+      expect(activityTab).toHaveAttribute('data-state', 'active');
+
+      // Press Arrow Left again to go back to Overview
+      await user.keyboard('{ArrowLeft}');
+      expect(overviewTab).toHaveAttribute('data-state', 'active');
+    });
+
+    it('wraps around when navigating past the last tab with Arrow Right', async () => {
+      const user = userEvent.setup();
+      renderTabs({
+        featureNode: {
+          ...defaultFeatureNode,
+          lifecycle: 'implementation',
+          state: 'running',
+          hasPlan: true,
+          hasAgentRun: true,
+        },
+        interactiveAgentEnabled: true,
+      });
+
+      // Get the Bedrock tab (last visible tab in the 8-tab set)
+      const bedrockTab = screen.getByRole('tab', { name: 'Bedrock' });
+      bedrockTab.focus();
+
+      // Make sure Bedrock is active
+      await user.click(bedrockTab);
+      expect(bedrockTab).toHaveAttribute('data-state', 'active');
+
+      // Press Arrow Right from the last tab (should wrap to first)
+      await user.keyboard('{ArrowRight}');
+
+      // Overview tab should now be active
+      const overviewTab = screen.getByRole('tab', { name: 'Overview' });
+      expect(overviewTab).toHaveAttribute('data-state', 'active');
+    });
+
+    it('wraps around when navigating past the first tab with Arrow Left', async () => {
+      const user = userEvent.setup();
+      renderTabs({
+        featureNode: {
+          ...defaultFeatureNode,
+          lifecycle: 'implementation',
+          state: 'running',
+          hasPlan: true,
+          hasAgentRun: true,
+        },
+        interactiveAgentEnabled: true,
+      });
+
+      // Overview tab is active by default
+      const overviewTab = screen.getByRole('tab', { name: 'Overview' });
+      overviewTab.focus();
+
+      // Press Arrow Left from the first tab (should wrap to last)
+      await user.keyboard('{ArrowLeft}');
+
+      // Bedrock tab (last in the 8-tab set) should now be active
+      const bedrockTab = screen.getByRole('tab', { name: 'Bedrock' });
+      expect(bedrockTab).toHaveAttribute('data-state', 'active');
+    });
+
+    it('keyboard navigation works with 8+ tabs in scrollable container', async () => {
+      const user = userEvent.setup();
+      renderTabs({
+        featureNode: {
+          ...defaultFeatureNode,
+          lifecycle: 'implementation',
+          state: 'running',
+          hasPlan: true,
+          hasAgentRun: true,
+        },
+        interactiveAgentEnabled: true,
+      });
+
+      // Verify we have 8+ tabs visible
+      const tabs = screen.getAllByRole('tab');
+      expect(tabs.length).toBeGreaterThanOrEqual(8);
+
+      // Verify all tabs are rendered and can be navigated to via keyboard
+      const overviewTab = screen.getByRole('tab', { name: 'Overview' });
+      overviewTab.focus();
+
+      // Navigate forward through several tabs
+      for (let i = 1; i < 5; i++) {
+        await user.keyboard('{ArrowRight}');
+        // Find the currently active tab by checking aria-selected
+        const activeTab = screen
+          .queryAllByRole('tab')
+          .find((tab) => tab.getAttribute('data-state') === 'active');
+        expect(activeTab).toBeInTheDocument();
+      }
+
+      // Navigate back the same number of steps
+      for (let i = 0; i < 4; i++) {
+        await user.keyboard('{ArrowLeft}');
+        // Find the currently active tab by checking data-state
+        const activeTab = screen
+          .queryAllByRole('tab')
+          .find((tab) => tab.getAttribute('data-state') === 'active');
+        expect(activeTab).toBeInTheDocument();
+      }
+
+      // Should be back at Overview
+      expect(overviewTab).toHaveAttribute('data-state', 'active');
+    });
+
+    it('brings the keyboard-focused tab into view via Radix native focus scrolling', async () => {
+      const user = userEvent.setup();
+      renderTabs({
+        featureNode: {
+          ...defaultFeatureNode,
+          lifecycle: 'implementation',
+          state: 'running',
+          hasPlan: true,
+          hasAgentRun: true,
+        },
+        interactiveAgentEnabled: true,
+      });
+
+      // Radix's roving-focus group moves focus with
+      // `trigger.focus({ preventScroll: false })` — @radix-ui/react-tabs has
+      // no explicit Element.scrollIntoView() call. Browsers couple that
+      // focus call with scrolling the focused trigger into view, which is
+      // the native scroll-into-view behavior for the active tab. jsdom
+      // performs no layout, so we assert on the focus call the browser
+      // would turn into a scroll.
+      const focusSpy = vi.spyOn(HTMLElement.prototype, 'focus');
+
+      const overviewTab = screen.getByRole('tab', { name: 'Overview' });
+      overviewTab.focus();
+      focusSpy.mockClear();
+
+      await user.keyboard('{ArrowRight}');
+
+      const activityTab = screen.getByRole('tab', { name: 'Activity' });
+      expect(activityTab).toHaveAttribute('data-state', 'active');
+
+      // The activity trigger is now the focused element — the element the
+      // browser scrolls into view in a real scrolling container.
+      expect(activityTab).toHaveFocus();
+
+      // Radix focused it with preventScroll: false, i.e. the focus call is
+      // allowed to scroll the trigger into view.
+      expect(focusSpy.mock.instances).toContain(activityTab);
+      expect(focusSpy).toHaveBeenCalledWith({ preventScroll: false });
+
+      focusSpy.mockRestore();
     });
   });
 });

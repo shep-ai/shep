@@ -495,7 +495,10 @@ export function FeatureDrawerTabs({
         className="flex min-h-0 flex-1 flex-col"
       >
         {/* VS Code-style tab bar — first row */}
-        <TabsList className="bg-muted/50 h-auto w-full shrink-0 justify-start gap-0 rounded-none border-b p-0">
+        <TabsList
+          scrollable
+          className="bg-muted/50 h-auto w-full shrink-0 justify-start gap-0 rounded-none border-b p-0"
+        >
           {visibleTabDefs.map((tab) => {
             const Icon = tab.icon;
             return (

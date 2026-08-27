@@ -1,0 +1,208 @@
+# Implementation Plan (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: "scrollable-tab-bar"
+summary: |
+  Implement horizontal scrolling for the feature drawer tab bar by adding a `scrollable` prop to the TabsList component
+  and applying Tailwind overflow utilities. The implementation leverages Radix UI's native scroll-into-view support for
+  keyboard navigation, maintains VS Code-inspired styling, and reuses the proven `overflow-x-auto` pattern from 10+
+  existing components. No new dependencies required; the change is isolated to Tier 0 (TabsList) and Tier 1 (feature-drawer-tabs)
+  with minimal, additive modifications that maintain backward compatibility via optional prop.
+
+# Relationships
+relatedFeatures: []
+
+# Technologies
+technologies:
+  - "React 19.2.4"
+  - "Next.js 16.2.6"
+  - "Radix UI (@radix-ui/tabs) ^1.0.0"
+  - "Tailwind CSS 4.1.18"
+  - "TypeScript 5.3.0"
+
+# Related links for reference
+relatedLinks:
+  - title: "Radix UI Tabs Documentation"
+    url: "https://radix-ui.com/docs/primitives/components/tabs"
+  - title: "Tailwind CSS Overflow Utilities"
+    url: "https://tailwindcss.com/docs/overflow"
+  - title: "W3C ARIA: Tabs Pattern"
+    url: "https://www.w3.org/WAI/ARIA/apg/patterns/tabs/"
+  - title: "Element.scrollIntoView() API"
+    url: "https://developer.mozilla.org/en-US/docs/Web/API/Element/scrollIntoView"
+
+# Structured implementation phases
+phases:
+  - id: "phase-1"
+    name: "Foundation — Implement Scrollable Prop in TabsList"
+    description: |
+      Add `scrollable?: boolean` prop to the TabsList component (Tier 0 primitive). When enabled, the prop conditionally
+      applies `overflow-x-auto overflow-y-hidden flex w-full` classes to enable horizontal scrolling. This is the foundation
+      for all scroll behavior; no other component can scroll tabs until this prop exists and works correctly.
+    parallel: false
+
+  - id: "phase-2"
+    name: "Integration — Enable Scrolling in Feature Drawer"
+    description: |
+      Update feature-drawer-tabs (Tier 1) to pass `scrollable={true}` to TabsList. Create Storybook story demonstrating
+      scrollable tabs with 8+ tabs to show overflow behavior. This phase validates that the prop integrates correctly in
+      the real usage context and provides visual regression testing via Storybook snapshots.
+    parallel: false
+
+  - id: "phase-3"
+    name: "Verification — Testing & Accessibility"
+    description: |
+      Write integration tests verifying keyboard navigation (Arrow Left/Right) works correctly in scrolled context and
+      that active tab auto-scrolls into view. Run accessibility audit (WCAG 2.1 Level AA) and test on mobile/tablet
+      browsers (touch scrolling). Final verification ensures all tests pass and build completes without errors.
+    parallel: false
+
+# File change tracking
+filesToCreate: []
+
+filesToModify:
+  - "src/presentation/web/components/ui/tabs.tsx"
+  - "src/presentation/web/components/common/feature-drawer-tabs/feature-drawer-tabs.tsx"
+  - "src/presentation/web/components/ui/tabs.stories.tsx"
+
+# Open questions (should all be resolved before implementation)
+openQuestions: []
+
+# Markdown content (the full plan document)
+content: |
+  ## Architecture Overview
+
+  ### Component Tier Model
+
+  This implementation respects the four-tier component hierarchy defined in `docs/ui/architecture.md`:
+
+  - **Tier 0 (ui/):** Shadcn/ui primitives — encapsulate base UI behavior
+  - **Tier 1 (common/):** Cross-feature composed components — use Tier 0 primitives with feature-specific logic
+  - **Tier 2 (layouts/):** Page shells and structural wrappers
+  - **Tier 3 (features/):** Domain-specific UI bound to routes
+
+  **This feature operates at Tier 0 and Tier 1 only:**
+  - **Tier 0 change:** TabsList receives `scrollable` prop; internally applies Tailwind scroll classes
+  - **Tier 1 change:** feature-drawer-tabs passes `scrollable={true}` to TabsList; no additional scroll logic needed
+  - **Backward compatibility:** TabsList default `scrollable={false}` ensures existing callers (settings tabs, tool tabs, etc.) are unaffected
+
+  ### Radix UI Integration
+
+  Radix UI Tabs (`@radix-ui/tabs` v1.0.0) is the foundation:
+
+  - **TabsPrimitive.List:** The container for TabsTrigger components; currently uses `inline-flex` layout
+  - **Scroll-into-view:** Radix UI implements W3C ARIA tab pattern, which includes automatic `Element.scrollIntoView()` when a tab becomes focused via keyboard (Arrow Left/Right)
+  - **No API changes:** Radix UI's scroll-into-view is automatic; we only add CSS classes to enable overflow
+
+  The implementation leverages Radix UI's built-in scroll-into-view behavior without custom code. When a user navigates via Arrow Left/Right, Radix UI's keyboard handler focuses the next trigger element, and the browser's native `scrollIntoView()` automatically scrolls it into view within the scrollable container.
+
+  ### Tailwind CSS Strategy
+
+  When `scrollable={true}`, apply these classes to TabsList:
+
+  ```
+  overflow-x-auto overflow-y-hidden flex w-full
+  ```
+
+  - **`overflow-x-auto`:** Enable horizontal scrollbar when content exceeds container width
+  - **`overflow-y-hidden`:** Explicitly prevent vertical scrollbar (tab content should not exceed line height)
+  - **`flex`:** Display flex (overrides inline-flex from base TabsList, ensuring proper horizontal flex layout)
+  - **`w-full`:** Container fills available width; overflow is triggered by tab content exceeding width, not container constraints
+
+  This pattern is proven in the codebase (table-view, board-view, timeline-view, and 10+ other scrollable components).
+
+  ## Key Design Decisions
+
+  ### 1. Prop-Based Implementation
+
+  **Chosen:** Add `scrollable?: boolean` prop to TabsList
+
+  **Rationale:**
+  - Minimal and backward compatible (default `scrollable={false}`)
+  - Scroll behavior encapsulated in Tier 0 primitive
+  - Testable via prop validation and class application
+  - Scalable: future enhancements via composition without breaking the API
+
+  ### 2. Keyboard Navigation and Auto-Scroll
+
+  **Chosen:** Leverage Radix UI's native scroll-into-view behavior (no custom implementation)
+
+  **Rationale:**
+  - Radix UI implements W3C ARIA pattern; scroll-into-view on keyboard focus is automatic
+  - No custom code needed; Radix UI already provides the behavior
+  - Efficient: native `Element.scrollIntoView()` is hardware-optimized
+  - Matches standard UX (browser tabs, VS Code, IDE tabs)
+
+  ### 3. Scrollbar Visibility
+
+  **Chosen:** Always visible when overflow exists; use native `overflow-x-auto`
+
+  **Rationale:**
+  - Proven pattern across 10+ components in codebase
+  - Clear visual feedback that tabs are scrollable
+  - Consistent across modern browsers and touch devices
+  - Simple implementation; no custom CSS required
+
+  ### 4. Responsive Behavior
+
+  **Chosen:** No viewport-specific logic; scrollable behavior always on when `scrollable={true}`
+
+  **Rationale:**
+  - Feature drawer has fixed-width container (not viewport-responsive)
+  - Modern mobile browsers support native horizontal scroll
+  - Automatic overflow detection based on content width
+
+  ## Implementation Strategy
+
+  **Phase 1 (Foundation):** Implement scrollable prop in TabsList (Tier 0)
+  - Write unit test verifying prop applies correct classes
+  - Implement prop and conditional class application
+  - Why first: The prop must exist and work before any component uses it
+
+  **Phase 2 (Integration):** Enable scrolling in feature-drawer-tabs (Tier 1)
+  - Write integration test with 8+ tabs to verify scroll works
+  - Update feature-drawer-tabs to pass `scrollable={true}`
+  - Create Storybook story demonstrating scrollable behavior
+  - Why after Phase 1: Validates real-world integration and provides visual regression testing
+
+  **Phase 3 (Verification):** Comprehensive testing and accessibility
+  - Write keyboard navigation tests (Arrow Left/Right in scrolled state)
+  - Run WCAG 2.1 Level AA accessibility audit
+  - Test touch scrolling on mobile/tablet browsers
+  - Verify all tests pass and build completes
+  - Why last: Ensures no regressions and accessibility compliance
+
+  ## Risk Mitigation
+
+  | Risk | Likelihood | Impact | Mitigation |
+  | ---- | ---------- | ------ | ---------- |
+  | Prop not applied correctly | Low | High | Unit test verifies class application; integration test confirms scroll works |
+  | Keyboard scroll-into-view fails | Low | High | Radix UI handles natively; integration test verifies in scrolled context |
+  | Backward compatibility broken | Low | Medium | Default `scrollable={false}` ensures existing consumers unaffected |
+  | Mobile touch scrolling fails | Low | High | Test on iOS Safari and Chrome Mobile; use proven `overflow-x-auto` pattern |
+  | WCAG 2.1 Level AA non-compliance | Low | High | Keyboard-only navigation test; screen reader audit included |
+  | Visual regression in tab styling | Low | Medium | Storybook visual regression test; verify VS Code styling preserved |
+  | Performance degradation | Very Low | Medium | CSS-only scroll (no JavaScript overhead); GPU-accelerated browser scrolling |
+
+  ## Acceptance Criteria
+
+  - [ ] Tabs scroll horizontally when total width exceeds container
+  - [ ] All 11 possible tabs are accessible via scrolling
+  - [ ] Keyboard navigation (Arrow Left/Right) works in scrolled viewport
+  - [ ] Active tab auto-scrolls into view on keyboard selection
+  - [ ] Scrollbar visible when overflow exists
+  - [ ] Native scrolling works (wheel, trackpad, drag)
+  - [ ] VS Code-inspired styling preserved
+  - [ ] Touch scrolling works on mobile/tablet
+  - [ ] No visual regressions in tab styling
+  - [ ] Storybook story demonstrates 8+ scrollable tabs
+  - [ ] Unit tests verify prop applies correct classes
+  - [ ] Integration tests confirm scroll behavior
+  - [ ] WCAG 2.1 Level AA compliance verified
+  - [ ] All existing tests pass
+  - [ ] TypeScript typecheck passes
+  - [ ] Build completes without errors
+
+  ---
+
+  _Plan phase complete — ready for implementation_

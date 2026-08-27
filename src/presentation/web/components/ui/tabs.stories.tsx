@@ -107,3 +107,88 @@ export const Disabled: Story = {
     </Tabs>
   ),
 };
+
+export const Scrollable: Story = {
+  render: () => (
+    <div className="w-[500px] border border-dashed">
+      <Tabs defaultValue="tab1">
+        <TabsList scrollable className="w-full gap-0 rounded-none border-b p-0">
+          <TabsTrigger value="tab1" className="rounded-none border-r px-4 py-2">
+            Tab 1
+          </TabsTrigger>
+          <TabsTrigger value="tab2" className="rounded-none border-r px-4 py-2">
+            Tab 2
+          </TabsTrigger>
+          <TabsTrigger value="tab3" className="rounded-none border-r px-4 py-2">
+            Tab 3
+          </TabsTrigger>
+          <TabsTrigger value="tab4" className="rounded-none border-r px-4 py-2">
+            Tab 4
+          </TabsTrigger>
+          <TabsTrigger value="tab5" className="rounded-none border-r px-4 py-2">
+            Tab 5
+          </TabsTrigger>
+          <TabsTrigger value="tab6" className="rounded-none border-r px-4 py-2">
+            Tab 6
+          </TabsTrigger>
+          <TabsTrigger value="tab7" className="rounded-none border-r px-4 py-2">
+            Tab 7
+          </TabsTrigger>
+          <TabsTrigger value="tab8" className="rounded-none border-r px-4 py-2">
+            Tab 8
+          </TabsTrigger>
+          <TabsTrigger value="tab9" className="rounded-none border-r px-4 py-2">
+            Tab 9
+          </TabsTrigger>
+          <TabsTrigger value="tab10" className="rounded-none border-r px-4 py-2">
+            Tab 10
+          </TabsTrigger>
+          <TabsTrigger value="tab11" className="rounded-none px-4 py-2">
+            Tab 11
+          </TabsTrigger>
+        </TabsList>
+        <TabsContent value="tab1" className="p-4">
+          Content for Tab 1
+        </TabsContent>
+        <TabsContent value="tab2" className="p-4">
+          Content for Tab 2
+        </TabsContent>
+        <TabsContent value="tab3" className="p-4">
+          Content for Tab 3
+        </TabsContent>
+        <TabsContent value="tab4" className="p-4">
+          Content for Tab 4
+        </TabsContent>
+        <TabsContent value="tab5" className="p-4">
+          Content for Tab 5
+        </TabsContent>
+        <TabsContent value="tab6" className="p-4">
+          Content for Tab 6
+        </TabsContent>
+        <TabsContent value="tab7" className="p-4">
+          Content for Tab 7
+        </TabsContent>
+        <TabsContent value="tab8" className="p-4">
+          Content for Tab 8
+        </TabsContent>
+        <TabsContent value="tab9" className="p-4">
+          Content for Tab 9
+        </TabsContent>
+        <TabsContent value="tab10" className="p-4">
+          Content for Tab 10
+        </TabsContent>
+        <TabsContent value="tab11" className="p-4">
+          Content for Tab 11
+        </TabsContent>
+      </Tabs>
+    </div>
+  ),
+  parameters: {
+    docs: {
+      description: {
+        story:
+          'Demonstrates horizontal scrolling behavior when tabs exceed container width. The TabsList with `scrollable` prop applies `overflow-x-auto overflow-y-hidden` classes, allowing users to scroll through tabs via mouse wheel, trackpad, or keyboard navigation (Arrow Left/Right). All 11 tabs are accessible regardless of scroll position.',
+      },
+    },
+  },
+};

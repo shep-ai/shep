@@ -46,6 +46,25 @@ globalThis.ResizeObserver = class ResizeObserver {
   disconnect = vi.fn();
 } as unknown as typeof globalThis.ResizeObserver;
 
+// Polyfill EventSource for SSE-based hooks (chat runtime, deployment logs).
+// jsdom does not implement the EventSource API, so any component that opens
+// an SSE connection — e.g. the Chat tab content in feature-drawer-tabs —
+// crashes with "EventSource is not defined" when a test activates it. This
+// inert stub keeps such connections quiet; tests that need to drive SSE
+// payloads install their own richer mock, which simply overrides this one.
+class MockEventSource {
+  static readonly CONNECTING = 0;
+  static readonly OPEN = 1;
+  static readonly CLOSED = 2;
+  onopen: ((event: Event) => void) | null = null;
+  onmessage: ((event: MessageEvent) => void) | null = null;
+  onerror: ((event: Event) => void) | null = null;
+  addEventListener = vi.fn();
+  removeEventListener = vi.fn();
+  close = vi.fn();
+}
+globalThis.EventSource = MockEventSource as unknown as typeof EventSource;
+
 // Mock matchMedia for theme tests
 Object.defineProperty(globalThis.window ?? globalThis, 'matchMedia', {
   writable: true,

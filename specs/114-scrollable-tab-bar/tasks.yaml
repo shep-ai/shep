@@ -1,0 +1,280 @@
+# Task Breakdown (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: "scrollable-tab-bar"
+summary: "6 tasks across 3 phases implementing horizontal scrolling in feature drawer tab bar. Foundation (Tier 0 prop), Integration (Tier 1 usage), Verification (testing and accessibility)."
+
+# Relationships
+relatedFeatures: []
+
+# Technologies
+technologies:
+  - "React 19.2.4"
+  - "Next.js 16.2.6"
+  - "Radix UI (@radix-ui/tabs) ^1.0.0"
+  - "Tailwind CSS 4.1.18"
+  - "TypeScript 5.3.0"
+
+# Related links for reference
+relatedLinks:
+  - title: "Radix UI Tabs API Reference"
+    url: "https://radix-ui.com/docs/primitives/components/tabs#api-reference"
+  - title: "Tailwind CSS classname merging"
+    url: "https://tailwindcss.com/docs/customizing-your-theme#using-css-variables"
+  - title: "React Testing Library - Keyboard Events"
+    url: "https://testing-library.com/docs/user-event/keyboard"
+
+# Structured task list (ordered by dependency)
+tasks:
+  - id: "task-1"
+    phaseId: "phase-1"
+    title: "Add scrollable prop to TabsList component"
+    description: |
+      Update `src/presentation/web/components/ui/tabs.tsx` to accept an optional `scrollable?: boolean` prop on TabsList.
+      When scrollable={true}, conditionally apply overflow-x-auto, overflow-y-hidden, flex, and w-full Tailwind classes
+      to enable horizontal scrolling. Maintain backward compatibility with default scrollable={false}.
+    state: "Todo"
+    dependencies: []
+    acceptanceCriteria:
+      - "TabsList accepts `scrollable?: boolean` prop (TypeScript typed)"
+      - "When scrollable={true}, className includes 'overflow-x-auto overflow-y-hidden flex w-full'"
+      - "When scrollable={false} or undefined, className does NOT include scroll classes"
+      - "Existing TabsList consumers unaffected by prop (default false)"
+      - "Unit test verifies prop behavior"
+      - "No TypeScript errors when running typecheck"
+    tdd:
+      red:
+        - "Write unit test in `src/presentation/web/components/ui/tabs.test.tsx` (or adjacent test file)"
+        - "Test asserts that when scrollable={true}, rendered TabsList has className containing 'overflow-x-auto overflow-y-hidden flex w-full'"
+        - "Test asserts that when scrollable={false} or undefined, className does NOT include these classes"
+        - "Verify test fails (RED state) before implementing prop"
+      green:
+        - "Add `scrollable?: boolean` to TabsList props interface"
+        - "Update TabsList className to conditionally apply scroll classes using cn() utility"
+        - "Use pattern: cn(baseClasses, scrollable && 'overflow-x-auto overflow-y-hidden flex w-full')"
+        - "Verify test passes (GREEN state)"
+      refactor:
+        - "Ensure TypeScript types are correct (scrollable is optional boolean)"
+        - "Verify class merging with cn() handles conflicts correctly"
+        - "Check that baseClasses don't conflict with new scroll classes (inline-flex + flex should merge correctly)"
+    estimatedEffort: "45m"
+
+  - id: "task-2"
+    phaseId: "phase-2"
+    title: "Update feature-drawer-tabs to pass scrollable prop"
+    description: |
+      Modify `src/presentation/web/components/common/feature-drawer-tabs/feature-drawer-tabs.tsx` to pass
+      `scrollable={true}` to TabsList (currently at line 498). This enables horizontal scrolling for the
+      feature drawer tab bar in production.
+    state: "Todo"
+    dependencies:
+      - "task-1"
+    acceptanceCriteria:
+      - "TabsList at line 498 receives scrollable={true} prop"
+      - "Integration test verifies scroll behavior with 8+ visible tabs"
+      - "All existing feature-drawer-tabs tests still pass"
+      - "No changes to tab selection or URL synchronization behavior"
+      - "Keyboard navigation still works correctly"
+    tdd:
+      red:
+        - "Write integration test in `src/presentation/web/components/common/feature-drawer-tabs/feature-drawer-tabs.test.tsx`"
+        - "Test renders feature-drawer-tabs with mocked data that produces 8+ visible tabs"
+        - "Test asserts that rendered TabsList has overflow-x-auto class (verifying scrollable prop is passed)"
+        - "Test asserts that all tabs are rendered and accessible in DOM"
+        - "Verify test fails (RED state) before updating component"
+      green:
+        - "Locate TabsList render call in feature-drawer-tabs.tsx (line ~498)"
+        - "Add scrollable={true} prop to TabsList component"
+        - "Verify integration test passes (GREEN state)"
+        - "Run existing feature-drawer-tabs tests; verify they still pass"
+      refactor:
+        - "Verify no other changes needed to feature-drawer-tabs"
+        - "Check that tab switching, URL sync, and keyboard navigation still work"
+        - "Clean up any temporary test setup or mocks used in integration test"
+    estimatedEffort: "30m"
+
+  - id: "task-3"
+    phaseId: "phase-2"
+    title: "Create Storybook story for scrollable tabs"
+    description: |
+      Add a new Storybook story demonstrating the scrollable tab bar with 8+ tabs. Create story in
+      `src/presentation/web/components/ui/tabs.stories.tsx` showing overflow behavior, scroll interaction,
+      and keyboard navigation. This provides visual regression testing and interactive manual testing.
+    state: "Todo"
+    dependencies:
+      - "task-1"
+    acceptanceCriteria:
+      - "New story file or story variant demonstrates scrollable={true} with 8+ tabs"
+      - "Story is named 'Scrollable' or 'ScrollableTabBar' (clear, discoverable name)"
+      - "Story renders tabs that exceed container width (triggers overflow)"
+      - "Scrollbar is visible when overflow exists"
+      - "Keyboard navigation (Arrow Left/Right) works in Storybook story"
+      - "Story builds without errors"
+      - "Existing tabs stories still render correctly"
+    tdd:
+      red:
+        - "Create basic Storybook story file with 8+ TabsTrigger components inside a TabsList with scrollable={true}"
+        - "Render in constrained width container (e.g., width: 500px) to trigger overflow"
+        - "Add story metadata (title, description)"
+        - "Verify story file compiles and appears in Storybook"
+      green:
+        - "Expand story with multiple scroll interaction examples (all tabs visible via scroll)"
+        - "Add args/controls to toggle scrollable prop (allows interactive testing)"
+        - "Add story description explaining scroll behavior"
+        - "Verify scrollbar is visible when viewing story in Storybook"
+      refactor:
+        - "Ensure story follows project conventions (naming, structure, metadata)"
+        - "Add visual documentation (comments explaining tab overflow and scroll)"
+        - "Test scroll feel and keyboard navigation manually in Storybook UI"
+        - "Verify existing TabsList stories still render correctly"
+    estimatedEffort: "45m"
+
+  - id: "task-4"
+    phaseId: "phase-3"
+    title: "Test keyboard navigation in scrolled context"
+    description: |
+      Write integration test verifying that Arrow Left/Right keyboard navigation works correctly when tabs
+      are scrolled. Verify that Radix UI's native scroll-into-view behavior automatically scrolls the active
+      tab into view when selected via keyboard.
+    state: "Todo"
+    dependencies:
+      - "task-2"
+    acceptanceCriteria:
+      - "Test renders feature-drawer-tabs with 8+ visible tabs in scrolled state"
+      - "Test simulates Arrow Left/Right keyboard events"
+      - "Test verifies that focused tab changes correctly with keyboard navigation"
+      - "Test verifies that active tab scrolls into view (Element.scrollIntoView is called)"
+      - "Test passes without manual scroll intervention"
+      - "Radix UI's native scroll-into-view behavior is confirmed working"
+    tdd:
+      red:
+        - "Write test that renders feature-drawer-tabs with 8+ tabs and mocks scrollIntoView"
+        - "Test simulates Arrow Right key press on first tab"
+        - "Test asserts that next tab becomes focused"
+        - "Test asserts that scrollIntoView was called on the focused trigger element"
+        - "Repeat for Arrow Left (previous tab)"
+        - "Verify test fails if scrollIntoView is not called (RED state)"
+      green:
+        - "Implement test using React Testing Library and userEvent (for keyboard simulation)"
+        - "Mock Element.scrollIntoView if needed (or verify it's called by Radix UI)"
+        - "Verify keyboard events are captured and propagated correctly through Radix UI"
+        - "Verify test passes (GREEN state)"
+      refactor:
+        - "Clean up mock setup, use realistic feature drawer data"
+        - "Add test comments documenting Radix UI's scroll-into-view behavior"
+        - "Verify keyboard navigation works for all tab transitions (first → last, middle → next, etc.)"
+        - "Remove any temporary console.logs or debugging code"
+    estimatedEffort: "1h"
+
+  - id: "task-5"
+    phaseId: "phase-3"
+    title: "Accessibility and browser testing"
+    description: |
+      Run WCAG 2.1 Level AA accessibility audit on scrollable tab bar. Verify keyboard-only navigation works,
+      screen reader announces all tabs correctly, and color contrast meets standards. Test touch scrolling on
+      mobile/tablet browsers (iOS Safari, Chrome Mobile).
+    state: "Todo"
+    dependencies:
+      - "task-2"
+      - "task-3"
+    acceptanceCriteria:
+      - "WCAG 2.1 Level AA compliance audit passes (keyboard navigation, color contrast, screen reader support)"
+      - "All 11 possible tabs are accessible via keyboard navigation (no permanently hidden tabs)"
+      - "Screen reader announces tab labels and roles correctly"
+      - "Color contrast meets WCAG AA standards (all visible tabs, active states, hover states)"
+      - "Touch scrolling works on iOS Safari (iPad/iPhone)"
+      - "Touch scrolling works on Chrome Mobile (Android)"
+      - "No console errors or accessibility violations in browser DevTools"
+    tdd:
+      red:
+        - "Write accessibility test using axe-core or similar (if test infrastructure supports)"
+        - "Test keyboard-only navigation by disabling mouse and tabbing through tabs"
+        - "Test screen reader announcements (using Accessibility Insights or similar)"
+        - "Test touch scrolling on iOS Safari and Chrome Mobile"
+        - "Verify no accessibility violations are reported"
+      green:
+        - "Run WCAG 2.1 Level AA audit using accessibility testing tools"
+        - "Verify keyboard navigation works: Tab to focus, Arrow Left/Right to switch tabs, Enter/Space to select"
+        - "Verify screen reader announces tab labels, active state, and role (e.g., 'Overview tab, selected')"
+        - "Test touch scrolling by dragging on mobile browsers; verify smooth scroll and no jank"
+        - "Verify all color contrasts meet WCAG AA standards (4.5:1 for text)"
+      refactor:
+        - "Document any accessibility findings or limitations"
+        - "Ensure no visual regressions that affect contrast or readability"
+        - "Verify mobile viewport rendering is correct (no horizontal overflow beyond scroll)"
+    estimatedEffort: "1h"
+
+  - id: "task-6"
+    phaseId: "phase-3"
+    title: "Final verification - run all tests and build"
+    description: |
+      Run complete local verification suite to ensure no regressions. Verify all unit tests, integration tests,
+      Storybook build, TypeScript typecheck, and production build complete without errors. Confirm feature is
+      ready for commit and push.
+    state: "Todo"
+    dependencies:
+      - "task-1"
+      - "task-2"
+      - "task-3"
+      - "task-4"
+      - "task-5"
+    acceptanceCriteria:
+      - "All unit tests pass (pnpm test:unit)"
+      - "All integration tests pass (pnpm test:int)"
+      - "TypeScript typecheck passes (pnpm typecheck:web)"
+      - "Linting passes (pnpm lint:fix, pnpm format:check)"
+      - "Build completes successfully (pnpm build)"
+      - "Storybook builds without errors (pnpm build:storybook)"
+      - "No regressions in existing tests or functionality"
+      - "Feature is ready for commit"
+    tdd: null
+    estimatedEffort: "30m"
+
+# Total effort estimate
+totalEstimate: "4h 15m"
+
+# Open questions (all should be resolved during implementation)
+openQuestions: []
+
+# Markdown content (the full tasks document)
+content: |
+  ## Summary
+
+  Implementing horizontal scrolling for the feature drawer tab bar in 6 focused tasks across 3 phases:
+
+  **Phase 1 (Foundation):** Add `scrollable` prop to TabsList (Tier 0 primitive). The prop conditionally applies
+  Tailwind overflow utilities to enable horizontal scrolling. Unit test verifies prop behavior; implementation is minimal
+  (single prop + conditional class application using `cn()`).
+
+  **Phase 2 (Integration):** Update feature-drawer-tabs to pass `scrollable={true}` to TabsList, enabling scrolling in
+  production. Create Storybook story demonstrating scrollable tabs with 8+ tabs for visual regression testing. Integration
+  test verifies scroll works with realistic tab data.
+
+  **Phase 3 (Verification):** Write comprehensive tests ensuring keyboard navigation (Arrow Left/Right) works in scrolled
+  context and Radix UI's native scroll-into-view works correctly. Run WCAG 2.1 Level AA accessibility audit. Test touch
+  scrolling on mobile browsers. Final verification runs all test suites and build locally to confirm no regressions.
+
+  **Total effort: 4h 15m across all phases**
+
+  ## Implementation Order
+
+  1. **Task 1** (45m) — Add prop to TabsList. Must be complete before other tasks can use it.
+  2. **Task 2** (30m) — Update feature-drawer-tabs. Depends on Task 1; enables real-world usage.
+  3. **Task 3** (45m) — Create Storybook story. Depends on Task 1; provides visual regression testing.
+  4. **Task 4** (1h) — Keyboard navigation test. Depends on Task 2; validates keyboard accessibility in scrolled state.
+  5. **Task 5** (1h) — Accessibility audit. Depends on Tasks 2-3; ensures WCAG compliance and mobile scroll works.
+  6. **Task 6** (30m) — Final verification. Depends on all previous tasks; runs all local checks before commit.
+
+  ## TDD Cycles
+
+  Every code task follows strict RED → GREEN → REFACTOR:
+
+  - **RED:** Write failing test first; verify it fails before implementing
+  - **GREEN:** Implement minimal code to pass the test
+  - **REFACTOR:** Clean up, improve naming, extract helpers, ensure types are correct
+
+  This ensures tests are meaningful, implementation is correct, and code quality is high.
+
+  ---
+
+  _Task breakdown complete — ready for implementation_
