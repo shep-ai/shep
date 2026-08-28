@@ -1,0 +1,33 @@
+feature:
+  id: "114-workspace-persistence-fix"
+  name: "workspace-persistence-fix"
+  number: 114
+  branch: "feat/114-workspace-persistence-fix"
+  lifecycle: "research"
+  createdAt: "2026-08-27T07:52:54Z"
+status:
+  phase: "research"
+  progress:
+    completed: 0
+    total: 0
+    percentage: 0
+  currentTask: null
+  lastUpdated: "2026-08-27T07:52:54Z"
+  lastUpdatedBy: "feature-agent"
+  completedPhases:
+    - "evidence"
+validation:
+  lastRun: null
+  gatesPassed: []
+  autoFixesApplied: []
+tasks:
+  current: null
+  blocked: []
+  failed: []
+checkpoints:
+  - phase: "feature-created"
+    completedAt: "2026-08-27T07:52:54Z"
+    completedBy: "feature-agent"
+errors:
+  current: null
+  history: []
