@@ -123,6 +123,11 @@ function createSampleEvent(overrides?: Partial<NotificationEvent>): Notification
   };
 }
 
+/** Mirrors BASE_BACKOFF_MS in use-agent-events.ts — the delay before a dropped
+ *  stream is replaced. The watchdog closes the stream immediately; the new
+ *  EventSource only appears one backoff interval later. */
+const BASE_BACKOFF_MS = 1000;
+
 describe('useAgentEvents', () => {
   // eslint-disable-next-line @typescript-eslint/consistent-type-imports
   let useAgentEvents: typeof import('../../../../../src/presentation/web/hooks/use-agent-events.js').useAgentEvents;
@@ -402,6 +407,111 @@ describe('useAgentEvents', () => {
         vi.advanceTimersByTime(2000);
       });
       expect(MockEventSource.instances).toHaveLength(3);
+    });
+
+    it('reconnects when no heartbeat received within timeout', async () => {
+      const { result } = renderHook(() => useAgentEvents());
+      const es1 = MockEventSource.instances[0];
+
+      act(() => {
+        es1.simulateOpen();
+      });
+      expect(result.current.connectionStatus).toBe('connected');
+
+      // Advance time by 60 seconds (heartbeat timeout)
+      act(() => {
+        vi.advanceTimersByTime(60_000);
+      });
+
+      // The watchdog closes the dead stream immediately...
+      expect(es1.close).toHaveBeenCalled();
+      expect(result.current.connectionStatus).toBe('disconnected');
+
+      // ...but the replacement is scheduled through the normal backoff delay.
+      act(() => {
+        vi.advanceTimersByTime(BASE_BACKOFF_MS);
+      });
+      expect(MockEventSource.instances).toHaveLength(2);
+    });
+
+    it('resets heartbeat timeout when event received', async () => {
+      const { result } = renderHook(() => useAgentEvents());
+      const es1 = MockEventSource.instances[0];
+      const event = createSampleEvent();
+
+      act(() => {
+        es1.simulateOpen();
+      });
+
+      // Receive an event at 30 seconds
+      act(() => {
+        vi.advanceTimersByTime(30_000);
+        es1.simulateEvent('notification', JSON.stringify(event));
+      });
+
+      // The event must actually land — that delivery is what resets the watchdog.
+      expect(result.current.events).toHaveLength(1);
+
+      // Advance to 90 seconds total (60 from the event at 30)
+      act(() => {
+        vi.advanceTimersByTime(60_000);
+      });
+
+      // Verify ES was closed (no more events for 60s after the event at 30s)
+      expect(es1.close).toHaveBeenCalled();
+
+      act(() => {
+        vi.advanceTimersByTime(BASE_BACKOFF_MS);
+      });
+      expect(MockEventSource.instances).toHaveLength(2);
+    });
+
+    it('resets heartbeat timeout on every event type', async () => {
+      const { result } = renderHook(() => useAgentEvents());
+      const es1 = MockEventSource.instances[0];
+
+      act(() => {
+        es1.simulateOpen();
+      });
+
+      // Send agent_message at 20s
+      act(() => {
+        vi.advanceTimersByTime(20_000);
+        es1.simulateEvent(
+          'agent_message',
+          JSON.stringify({
+            kind: 'agent_message',
+            messageId: 'msg-1',
+            featureId: 'feat-1',
+          })
+        );
+      });
+
+      // Send agent_question at 50s (30s after previous event)
+      act(() => {
+        vi.advanceTimersByTime(30_000);
+        es1.simulateEvent(
+          'agent_question',
+          JSON.stringify({
+            kind: 'agent_question',
+            questionId: 'q-1',
+            featureId: 'feat-1',
+          })
+        );
+      });
+
+      // Just under 60s since the last event (t=109_999) — still connected.
+      act(() => {
+        vi.advanceTimersByTime(59_999);
+      });
+      expect(result.current.connectionStatus).toBe('connected');
+
+      // Crossing the 60s deadline fires the watchdog, then backoff reconnects.
+      act(() => {
+        vi.advanceTimersByTime(1 + BASE_BACKOFF_MS);
+      });
+      expect(es1.close).toHaveBeenCalled();
+      expect(MockEventSource.instances).toHaveLength(2);
     });
   });
 });

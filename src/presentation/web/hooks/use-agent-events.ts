@@ -240,6 +240,7 @@ export function useAgentEvents(options?: UseAgentEventsOptions): UseAgentEventsR
 const BASE_BACKOFF_MS = 1000;
 const MAX_BACKOFF_MS = 30_000;
 const STABLE_CONNECTION_MS = 5_000;
+const HEARTBEAT_TIMEOUT_MS = 60_000; // Close connection if no message for 60s
 
 interface DirectFallbackSetters {
   setEvents: React.Dispatch<React.SetStateAction<NotificationEvent[]>>;
@@ -267,6 +268,31 @@ function connectDirectEventSource(
   let backoff = BASE_BACKOFF_MS;
   let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   let stableTimer: ReturnType<typeof setTimeout> | null = null;
+  let heartbeatTimer: ReturnType<typeof setTimeout> | null = null;
+
+  const resetHeartbeatTimeout = (): void => {
+    if (heartbeatTimer !== null) {
+      clearTimeout(heartbeatTimer);
+    }
+    if (stopped || !es) return;
+    heartbeatTimer = setTimeout(() => {
+      heartbeatTimer = null;
+      log.warn('No heartbeat received within timeout, reconnecting...');
+      es?.close();
+      es = null;
+      setters.setConnectionStatus('disconnected');
+      if (stableTimer !== null) {
+        clearTimeout(stableTimer);
+        stableTimer = null;
+      }
+      const delay = backoff;
+      backoff = Math.min(delay * 2, MAX_BACKOFF_MS);
+      reconnectTimer = setTimeout(() => {
+        reconnectTimer = null;
+        connect();
+      }, delay);
+    }, HEARTBEAT_TIMEOUT_MS);
+  };
 
   function connect() {
     if (stopped) return;
@@ -280,6 +306,7 @@ function connectDirectEventSource(
 
     es.onopen = () => {
       setters.setConnectionStatus('connected');
+      resetHeartbeatTimeout();
       stableTimer = setTimeout(() => {
         stableTimer = null;
         backoff = BASE_BACKOFF_MS;
@@ -296,6 +323,11 @@ function connectDirectEventSource(
         stableTimer = null;
       }
 
+      if (heartbeatTimer !== null) {
+        clearTimeout(heartbeatTimer);
+        heartbeatTimer = null;
+      }
+
       const delay = backoff;
       backoff = Math.min(delay * 2, MAX_BACKOFF_MS);
 
@@ -306,6 +338,7 @@ function connectDirectEventSource(
     };
 
     es.addEventListener('notification', ((event: MessageEvent) => {
+      resetHeartbeatTimeout();
       const parsed: NotificationEvent = JSON.parse(event.data);
       setters.setEvents((prev) => {
         const next = [...prev, parsed];
@@ -315,6 +348,7 @@ function connectDirectEventSource(
     }) as EventListener);
 
     es.addEventListener('agent_message', ((event: MessageEvent) => {
+      resetHeartbeatTimeout();
       const parsed: AgentMessageStreamEvent = JSON.parse(event.data);
       setters.setAgentMessages((prev) => {
         const next = [...prev, parsed];
@@ -324,6 +358,7 @@ function connectDirectEventSource(
     }) as EventListener);
 
     es.addEventListener('agent_question', ((event: MessageEvent) => {
+      resetHeartbeatTimeout();
       const parsed: AgentQuestionStreamEvent = JSON.parse(event.data);
       setters.setAgentQuestions((prev) => {
         const next = [...prev, parsed];
@@ -333,6 +368,7 @@ function connectDirectEventSource(
     }) as EventListener);
 
     es.addEventListener('supervisor_decision', ((event: MessageEvent) => {
+      resetHeartbeatTimeout();
       const parsed: SupervisorDecisionStreamEvent = JSON.parse(event.data);
       setters.setSupervisorDecisions((prev) => {
         const next = [...prev, parsed];
@@ -353,6 +389,10 @@ function connectDirectEventSource(
     if (stableTimer !== null) {
       clearTimeout(stableTimer);
       stableTimer = null;
+    }
+    if (heartbeatTimer !== null) {
+      clearTimeout(heartbeatTimer);
+      heartbeatTimer = null;
     }
     if (es) {
       es.close();
