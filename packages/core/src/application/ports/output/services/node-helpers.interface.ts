@@ -26,4 +26,13 @@ export interface INodeHelpers {
    * @returns YAML string
    */
   safeYamlDump(data: unknown): string;
+
+  /**
+   * Clear a phase from the completedPhases array in feature.yaml.
+   * Used when a rejected phase needs to re-execute with feedback.
+   *
+   * @param specDir - Absolute path to the spec directory
+   * @param phaseId - The phase ID to remove from completedPhases
+   */
+  clearCompletedPhase(specDir: string, phaseId: string): void;
 }

@@ -9,7 +9,7 @@
 
 import { injectable } from 'tsyringe';
 import type { INodeHelpers } from '@/application/ports/output/services/node-helpers.interface.js';
-import { writeSpecFileAtomic, safeYamlDump } from './node-helpers.js';
+import { writeSpecFileAtomic, safeYamlDump, clearCompletedPhase } from './node-helpers.js';
 
 @injectable()
 export class NodeHelpersAdapter implements INodeHelpers {
@@ -19,5 +19,9 @@ export class NodeHelpersAdapter implements INodeHelpers {
 
   safeYamlDump(data: unknown): string {
     return safeYamlDump(data);
+  }
+
+  clearCompletedPhase(specDir: string, phaseId: string): void {
+    clearCompletedPhase(specDir, phaseId);
   }
 }

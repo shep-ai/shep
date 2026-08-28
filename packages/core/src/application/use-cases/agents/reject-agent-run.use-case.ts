@@ -120,6 +120,7 @@ export class RejectAgentRunUseCase {
     // Read and update spec.yaml with rejection feedback
     const specDir = feature.specPath;
     let iteration = 1;
+    let rejectedPhase: string | undefined;
     try {
       const specContent = readFileSync(join(specDir, 'spec.yaml'), 'utf-8');
       const spec = yaml.load(specContent) as Record<string, unknown>;
@@ -130,7 +131,7 @@ export class RejectAgentRunUseCase {
       iteration = existingFeedback.length + 1;
 
       // Derive the rejected phase from the agent run's current node
-      const rejectedPhase = run.result?.startsWith('node:') ? run.result.slice(5) : undefined;
+      rejectedPhase = run.result?.startsWith('node:') ? run.result.slice(5) : undefined;
 
       const newEntry: RejectionFeedbackEntry = {
         iteration,
@@ -146,6 +147,12 @@ export class RejectAgentRunUseCase {
         'spec.yaml',
         this.nodeHelpers.safeYamlDump(spec)
       );
+
+      // Clear completed phases that need to re-execute with the feedback.
+      // In fast mode, if merge is rejected, clear fast-implement so it re-runs with feedback.
+      if (feature.fast && rejectedPhase === 'merge') {
+        this.nodeHelpers.clearCompletedPhase(specDir, 'fast-implement');
+      }
     } catch {
       // If spec.yaml can't be read, still proceed with iteration 1
     }
