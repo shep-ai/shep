@@ -6,7 +6,8 @@ If nothing here looks like a fit, search the issue tracker with the [`good first
 
 > **How this list is maintained**
 > The contributor-onboarding agent grooms inbound issues into lanes and difficulty tiers. Maintainers refresh this list during the monthly recap. If an issue here is already claimed or has gone stale, it'll be re-groomed and either reopened or replaced.
-> **Status Aug 28, 2026:** All 11 curated entries (#615-#625) have been closed/merged (see #630-#635). Search the live tracker below for current `good first issue` labels.
+>
+> **Status Aug 28, 2026:** All 11 previously curated entries (#615–#625) are now closed — 6 merged (#616, #617, #618, #619, #620, #622), 2 deleted (#615, #623), and 3 closed as not planned (#621, #624, #625). Each bucket below links to a live tracker search for that lane and difficulty.
 
 ---
 
@@ -27,15 +28,15 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md) for the full flow.
 
 ### goodFirst
 
-- _No curated issues right now_ — all recent `goodFirst` docs items (#615, #616) have been merged (see #630, #632). Search [docs + good first issue](https://github.com/shep-ai/shep/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22+label%3A%22documentation%22) live.
+- _No curated issues right now_ — #615 was deleted; #616 merged via #632. [Browse open `lane:docs` + `difficulty:goodFirst` issues](https://github.com/shep-ai/shep/issues?q=is%3Aissue+is%3Aopen+label%3A%22lane%3Adocs%22+label%3A%22difficulty%3AgoodFirst%22).
 
 ### easy
 
-- _No curated issues right now_ — search [docs + easy](https://github.com/shep-ai/shep/issues?q=is%3Aissue+is%3Aopen+label%3A%22documentation%22) directly.
+- _No curated issues right now_ — [Browse open `lane:docs` + `difficulty:easy` issues](https://github.com/shep-ai/shep/issues?q=is%3Aissue+is%3Aopen+label%3A%22lane%3Adocs%22+label%3A%22difficulty%3Aeasy%22).
 
 ### medium
 
-- _No curated issues right now._
+- _No curated issues right now_ — [Browse open `lane:docs` + `difficulty:medium` issues](https://github.com/shep-ai/shep/issues?q=is%3Aissue+is%3Aopen+label%3A%22lane%3Adocs%22+label%3A%22difficulty%3Amedium%22).
 
 ---
 
@@ -45,15 +46,15 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md) for the full flow.
 
 ### goodFirst
 
-- _No curated issues right now_ — #618 has been merged (see #631). Search [agents + good first issue](https://github.com/shep-ai/shep/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22+label%3A%22agents%22) live.
+- _No curated issues right now_ — #618 merged via #631. [Browse open `lane:agents` + `difficulty:goodFirst` issues](https://github.com/shep-ai/shep/issues?q=is%3Aissue+is%3Aopen+label%3A%22lane%3Aagents%22+label%3A%22difficulty%3AgoodFirst%22).
 
 ### easy
 
-- _No curated issues right now_ — #617 has been merged (see #627). Search [agents + easy](https://github.com/shep-ai/shep/issues?q=is%3Aissue+is%3Aopen+label%3A%22easy%22+label%3A%22agents%22) live.
+- _No curated issues right now_ — #617 merged via #627. [Browse open `lane:agents` + `difficulty:easy` issues](https://github.com/shep-ai/shep/issues?q=is%3Aissue+is%3Aopen+label%3A%22lane%3Aagents%22+label%3A%22difficulty%3Aeasy%22).
 
 ### medium
 
-- _No curated issues right now._
+- _No curated issues right now_ — [Browse open `lane:agents` + `difficulty:medium` issues](https://github.com/shep-ai/shep/issues?q=is%3Aissue+is%3Aopen+label%3A%22lane%3Aagents%22+label%3A%22difficulty%3Amedium%22).
 
 ---
 
@@ -63,15 +64,15 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md) for the full flow.
 
 ### goodFirst
 
-- _No curated issues right now_ — #619, #620 have been merged (see #633, #635). Search [ui + good first issue](https://github.com/shep-ai/shep/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22+label%3A%22ui%22) live.
+- _No curated issues right now_ — #619 merged via #633; #620 merged via #635. [Browse open `lane:ui` + `difficulty:goodFirst` issues](https://github.com/shep-ai/shep/issues?q=is%3Aissue+is%3Aopen+label%3A%22lane%3Aui%22+label%3A%22difficulty%3AgoodFirst%22).
 
 ### easy
 
-- _No curated issues right now_ — #621 closed as not planned. Search [ui + easy](https://github.com/shep-ai/shep/issues?q=is%3Aissue+is%3Aopen+label%3A%22easy%22+label%3A%22ui%22) live.
+- _No curated issues right now_ — #621 closed as not planned. [Browse open `lane:ui` + `difficulty:easy` issues](https://github.com/shep-ai/shep/issues?q=is%3Aissue+is%3Aopen+label%3A%22lane%3Aui%22+label%3A%22difficulty%3Aeasy%22).
 
 ### medium
 
-- _No curated issues right now._
+- _No curated issues right now_ — [Browse open `lane:ui` + `difficulty:medium` issues](https://github.com/shep-ai/shep/issues?q=is%3Aissue+is%3Aopen+label%3A%22lane%3Aui%22+label%3A%22difficulty%3Amedium%22).
 
 ---
 
@@ -81,15 +82,15 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md) for the full flow.
 
 ### goodFirst
 
-- _No curated issues right now_ — #622 has been merged (see #630). Search [cli + good first issue](https://github.com/shep-ai/shep/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22+label%3A%22cli%22) live.
+- _No curated issues right now_ — #622 merged via #630. [Browse open `lane:cli` + `difficulty:goodFirst` issues](https://github.com/shep-ai/shep/issues?q=is%3Aissue+is%3Aopen+label%3A%22lane%3Acli%22+label%3A%22difficulty%3AgoodFirst%22).
 
 ### easy
 
-- _No curated issues right now_ — #623 was deleted. Search [cli + easy](https://github.com/shep-ai/shep/issues?q=is%3Aissue+is%3Aopen+label%3A%22easy%22+label%3A%22cli%22) live.
+- _No curated issues right now_ — #623 was deleted. [Browse open `lane:cli` + `difficulty:easy` issues](https://github.com/shep-ai/shep/issues?q=is%3Aissue+is%3Aopen+label%3A%22lane%3Acli%22+label%3A%22difficulty%3Aeasy%22).
 
 ### medium
 
-- _No curated issues right now._
+- _No curated issues right now_ — [Browse open `lane:cli` + `difficulty:medium` issues](https://github.com/shep-ai/shep/issues?q=is%3Aissue+is%3Aopen+label%3A%22lane%3Acli%22+label%3A%22difficulty%3Amedium%22).
 
 ---
 
@@ -99,15 +100,15 @@ See [CONTRIBUTING.md](./CONTRIBUTING.md) for the full flow.
 
 ### goodFirst
 
-- _No curated issues right now_ — search [infra + good first issue](https://github.com/shep-ai/shep/issues?q=is%3Aissue+is%3Aopen+label%3A%22infrastructure%22+label%3A%22good+first+issue%22) directly.
+- _No curated issues right now_ — [Browse open `lane:infra` + `difficulty:goodFirst` issues](https://github.com/shep-ai/shep/issues?q=is%3Aissue+is%3Aopen+label%3A%22lane%3Ainfra%22+label%3A%22difficulty%3AgoodFirst%22).
 
 ### easy
 
-- _No curated issues right now_ — #624 closed as not planned. Search [infra + easy](https://github.com/shep-ai/shep/issues?q=is%3Aissue+is%3Aopen+label%3A%22infrastructure%22+label%3A%22easy%22) live.
+- _No curated issues right now_ — #624 closed as not planned. [Browse open `lane:infra` + `difficulty:easy` issues](https://github.com/shep-ai/shep/issues?q=is%3Aissue+is%3Aopen+label%3A%22lane%3Ainfra%22+label%3A%22difficulty%3Aeasy%22).
 
 ### medium
 
-- _No curated issues right now_ — #625 closed as not planned. This list is now auto-refreshed via the note above.
+- _No curated issues right now_ — #625 closed as not planned. [Browse open `lane:infra` + `difficulty:medium` issues](https://github.com/shep-ai/shep/issues?q=is%3Aissue+is%3Aopen+label%3A%22lane%3Ainfra%22+label%3A%22difficulty%3Amedium%22).
 
 ---
 
