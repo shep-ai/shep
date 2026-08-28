@@ -70,7 +70,7 @@ pnpm dev:storybook
 ## Project Structure
 
 ```
-cli/
+shep/
 ├── packages/core/src/
 │   ├── domain/           # Business logic (no deps)
 │   │   ├── entities/
