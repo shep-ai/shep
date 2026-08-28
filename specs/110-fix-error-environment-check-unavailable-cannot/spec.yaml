@@ -4,7 +4,8 @@
 name: fix-error-environment-check-unavailable-cannot
 number: 110
 branch: feat/110-fix-error-environment-check-unavailable-cannot
-oneLiner: Fix error `Environment check unavailable: Cannot inject the dependency "runner" at position #0 of "RunDoctorUseCase" constructor. Reason: Cannot inject the dependency at position #0 of "DiagnosticRunner" constructor. Reason: TypeInfo not known for "Object"`
+oneLiner: >-
+  Fix error `Environment check unavailable: Cannot inject the dependency "runner" at position #0 of "RunDoctorUseCase" constructor. Reason: Cannot inject the dependency at position #0 of "DiagnosticRunner" constructor. Reason: TypeInfo not known for "Object"`
 userQuery: >
   Fix error `Environment check unavailable: Cannot inject the dependency "runner" at position #0 of "RunDoctorUseCase" constructor. Reason: Cannot inject the dependency at position #0 of "DiagnosticRunner" constructor. Reason: TypeInfo not known for "Object"`
 summary: >
