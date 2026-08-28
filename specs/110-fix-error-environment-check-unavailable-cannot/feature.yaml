@@ -1,0 +1,34 @@
+feature:
+  id: "110-fix-error-environment-check-unavailable-cannot"
+  name: "fix-error-environment-check-unavailable-cannot"
+  number: 110
+  branch: "feat/110-fix-error-environment-check-unavailable-cannot"
+  lifecycle: "research"
+  createdAt: "2026-08-13T11:49:47Z"
+status:
+  phase: "research"
+  progress:
+    completed: 0
+    total: 0
+    percentage: 0
+  currentTask: null
+  lastUpdated: "2026-08-13T11:49:47Z"
+  lastUpdatedBy: "feature-agent"
+  completedPhases:
+    - "evidence"
+    - "fast-implement"
+validation:
+  lastRun: null
+  gatesPassed: []
+  autoFixesApplied: []
+tasks:
+  current: null
+  blocked: []
+  failed: []
+checkpoints:
+  - phase: "feature-created"
+    completedAt: "2026-08-13T11:49:47Z"
+    completedBy: "feature-agent"
+errors:
+  current: null
+  history: []

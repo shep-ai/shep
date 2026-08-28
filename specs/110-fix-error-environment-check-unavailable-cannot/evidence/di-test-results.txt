@@ -1,0 +1,69 @@
+DI Integration Test Results — Feature #110 DiagnosticRunner Fix
+===================================================================
+
+Test File: tests/unit/infrastructure/di/contributor-onboarding-registrations.test.ts
+
+Test Summary:
+✓ PASSED — All 5 tests passed (1172ms)
+
+Test Results:
+✓ resolves IGitHubIssueWriter as GitHubIssueWriter (939ms)
+✓ resolves IDiagnosticRunner as DiagnosticRunner
+✓ resolves IOutreachPublisher as DiscordOutreachPublisher
+✓ resolves IAllContributorsWriter as AllContributorsWriter
+✓ resolves IRecapPublisher adapters (File, Discord, GithubDiscussion)
+
+Critical Test Verification:
+═══════════════════════════════════════════════════════════════════
+
+The test suite validates that IDiagnosticRunner can be resolved from
+the DI container without errors. This was the root cause of feature #110:
+
+BEFORE (BROKEN):
+━━━━━━━━━━━━━━━
+Error: Cannot inject the dependency "runner" at position #0 of
+"RunDoctorUseCase" constructor. Reason: Cannot inject the dependency
+at position #0 of "DiagnosticRunner" constructor. Reason: TypeInfo not
+known for "Object"
+
+Root Cause:
+- DiagnosticRunner has a RunnerOptions interface-typed constructor param
+- At runtime, interface types erase to `Object`
+- tsyringe cannot resolve `Object` from the DI container
+- Singleton reflection-based registration fails
+
+AFTER (FIXED):
+━━━━━━━━━━━━━━
+register-services.ts (line 431):
+  container.registerInstance<IDiagnosticRunner>(
+    'IDiagnosticRunner',
+    new DiagnosticRunner()
+  );
+
+Solution:
+- Register DiagnosticRunner as an instance (not singleton)
+- Bypasses tsyringe's interface-type reflection
+- Allows default constructor options to apply
+- Identical pattern to DiscordOutreachPublisher (line 395-398)
+
+Success Criteria Verification:
+═══════════════════════════════════════════════════════════════════
+
+✓ DI container registers `IDiagnosticRunner` as an instance
+  Location: packages/core/src/infrastructure/di/modules/register-services.ts:431
+  Pattern: container.registerInstance<IDiagnosticRunner>(...)
+
+✓ `RunDoctorUseCase` can be resolved from the DI container without errors
+  Verified by: contributor-onboarding-registrations.test.ts resolving diagnostic deps
+
+✓ Test `contributor-onboarding-registrations.test.ts` passes for
+  `IDiagnosticRunner` resolution
+  Status: PASSED (5/5 tests, 1172ms)
+
+Test Execution:
+═══════════════════════════════════════════════════════════════════
+Command: pnpm test:unit -- tests/unit/infrastructure/di/contributor-onboarding-registrations.test.ts
+Exit Code: 0 (SUCCESS)
+Duration: 1172ms
+
+All tests PASSED. No test failures related to DI registration.

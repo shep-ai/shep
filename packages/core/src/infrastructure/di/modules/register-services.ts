@@ -424,7 +424,11 @@ export function registerServices(container: DependencyContainer): void {
   // constructor; instantiate it directly to bypass tsyringe reflection.
   registerRecapPublisher(RecapChannel.GithubDiscussion, () => new GithubDiscussionRecapPublisher());
 
-  container.registerSingleton<IDiagnosticRunner>('IDiagnosticRunner', DiagnosticRunner);
+  // DiagnosticRunner has an interface-typed constructor param (RunnerOptions),
+  // which erases to `Object` at runtime. tsyringe cannot resolve `Object` from
+  // the container. Register an instance directly so the default options apply
+  // (similar to DiscordOutreachPublisher pattern).
+  container.registerInstance<IDiagnosticRunner>('IDiagnosticRunner', new DiagnosticRunner());
 
   // ─── Doctor diagnostics (feature 097, phase 3) ──────────────────────
   // Each diagnostic is a strategy resolved by string token. The use case
