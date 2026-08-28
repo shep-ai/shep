@@ -1,0 +1,47 @@
+feature:
+  id: "112-investigate-why-the-first-item-in-the-inventory"
+  name: "investigate-why-the-first-item-in-the-inventory"
+  number: 112
+  branch: "feat/112-investigate-why-the-first-item-in-the-inventory"
+  lifecycle: "maintain"
+  createdAt: "2026-08-26T04:25:35Z"
+status:
+  phase: "maintain"
+  progress:
+    completed: 1
+    total: 1
+    percentage: 100
+  currentTask: null
+  lastUpdated: "2026-08-27T09:55:20Z"
+  lastUpdatedBy: "claude-code"
+  completedPhases:
+    - "evidence"
+    - "research"
+    - "implementation"
+    - "review"
+validation:
+  lastRun: "2026-08-27T09:55:20Z"
+  gatesPassed:
+    - "build"
+    - "test"
+    - "lint"
+  autoFixesApplied: []
+tasks:
+  current: null
+  blocked: []
+  failed: []
+checkpoints:
+  - phase: "feature-created"
+    completedAt: "2026-08-26T04:25:35Z"
+    completedBy: "feature-agent"
+  - phase: "research-complete"
+    completedAt: "2026-08-27T09:55:20Z"
+    completedBy: "claude-code"
+    notes: "Root cause identified and fixed: buildGroupedTree was adding _children to all group headers, even empty ones. Tabulator skips expand/collapse buttons for rows with empty _children arrays. Fix: only add _children when sortedChildren.length > 0"
+  - phase: "implementation-complete"
+    completedAt: "2026-08-27T09:55:20Z"
+    completedBy: "claude-code"
+    notes: "Fix applied in feature-tree-table.tsx:478. Groups now only get _children property when they have actual children."
+errors:
+  current: null
+  history: []

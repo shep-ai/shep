@@ -475,7 +475,7 @@ export function buildGroupedTree(
       repositoryName: '',
       _isGroupHeader: true,
       _groupCount: features.length,
-      _children: sortedChildren,
+      ...(sortedChildren.length > 0 ? { _children: sortedChildren } : {}),
       // Carry repo info from the first child for create-from-repo and repo actions
       ...(groupBy === 'repositoryName' && features[0]?._repositoryPath
         ? {
