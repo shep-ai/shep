@@ -165,4 +165,24 @@ describe('buildAgentResumeDescriptor', () => {
       expect(descriptor.clipboardCommand).not.toContain('--project');
     }
   });
+
+  it('normalizes Windows paths with backslashes to forward slashes', () => {
+    const windowsPath = 'C:\\Users\\dev\\project';
+    const descriptor = buildAgentResumeDescriptor(AgentType.ClaudeCode, SESSION_ID, windowsPath);
+
+    expect(descriptor?.cwd).toBe('C:/Users/dev/project');
+    expect(descriptor?.clipboardCommand).toBe(
+      `cd 'C:/Users/dev/project' && claude --resume ${SESSION_ID}`
+    );
+  });
+
+  it('normalizes mixed paths with backslashes and spaces', () => {
+    const mixedPath = 'C:\\Users\\Dev\\My Projects\\project';
+    const descriptor = buildAgentResumeDescriptor(AgentType.ClaudeCode, SESSION_ID, mixedPath);
+
+    expect(descriptor?.cwd).toBe('C:/Users/Dev/My Projects/project');
+    expect(descriptor?.clipboardCommand).toBe(
+      `cd 'C:/Users/Dev/My Projects/project' && claude --resume ${SESSION_ID}`
+    );
+  });
 });

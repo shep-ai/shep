@@ -19,6 +19,7 @@
  */
 
 import { AgentType } from '../generated/output';
+import { normalizePath } from './normalize-path';
 
 /** The `--resume` flag every supported agent CLI uses. */
 const RESUME_FLAG = '--resume';
@@ -89,15 +90,18 @@ export function buildAgentResumeDescriptor(
   if (cwd === '') return null;
   if (!SAFE_SESSION_ID.test(sessionId)) return null;
 
+  const normalizedCwd = normalizePath(cwd);
+  if (normalizedCwd === '') return null;
+
   const args = [RESUME_FLAG, sessionId];
   const displayCommand = `${binary} ${args.join(' ')}`;
 
   return {
     binary,
     args,
-    cwd,
+    cwd: normalizedCwd,
     displayCommand,
-    clipboardCommand: `cd ${singleQuote(cwd)} && ${displayCommand}`,
+    clipboardCommand: `cd ${singleQuote(normalizedCwd)} && ${displayCommand}`,
   };
 }
 

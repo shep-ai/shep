@@ -10,6 +10,7 @@
 import { injectable } from 'tsyringe';
 import { randomUUID } from 'node:crypto';
 import { createRequire } from 'node:module';
+import { statSync } from 'node:fs';
 import type {
   CreatedTerminalSession,
   CreateTerminalSessionInput,
@@ -71,19 +72,47 @@ export class PtyTerminalSessionService implements ITerminalSessionService {
     const cols = input.cols && input.cols > 0 ? input.cols : 80;
     const rows = input.rows && input.rows > 0 ? input.rows : 24;
 
-    const proc = pty.spawn(shell, args, {
-      name: 'xterm-256color',
-      cols,
-      rows,
-      cwd: input.cwd,
-      env: {
-        ...process.env,
-        TERM: 'xterm-256color',
-        COLORTERM: 'truecolor',
-        FORCE_COLOR: '1',
-        ...(input.extraEnv ?? {}),
-      },
-    });
+    // Validate cwd exists and is accessible before spawning to prevent posix_spawn errors.
+    // Only the stat call is guarded — putting the isDirectory check inside the try would
+    // make its own throw fall through to the generic "Cannot access" branch below.
+    let stat;
+    try {
+      stat = statSync(input.cwd);
+    } catch (error: unknown) {
+      if (error instanceof Error && 'code' in error) {
+        const code = (error as NodeJS.ErrnoException).code;
+        if (code === 'ENOENT') {
+          throw new Error(`Working directory does not exist: ${input.cwd}`);
+        }
+        if (code === 'EACCES') {
+          throw new Error(`Permission denied accessing working directory: ${input.cwd}`);
+        }
+      }
+      throw new Error(`Cannot access working directory: ${input.cwd}`);
+    }
+    if (!stat.isDirectory()) {
+      throw new Error(`Working directory is not a directory: ${input.cwd}`);
+    }
+
+    let proc: NodePty.IPty;
+    try {
+      proc = pty.spawn(shell, args, {
+        name: 'xterm-256color',
+        cols,
+        rows,
+        cwd: input.cwd,
+        env: {
+          ...process.env,
+          TERM: 'xterm-256color',
+          COLORTERM: 'truecolor',
+          FORCE_COLOR: '1',
+          ...(input.extraEnv ?? {}),
+        },
+      });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Unknown spawn error';
+      throw new Error(`Failed to spawn terminal: ${message}`);
+    }
 
     const id = randomUUID();
     const entry: SessionEntry = {
