@@ -358,10 +358,14 @@ describe('SkillInjectorService', () => {
     });
   });
 
-  // --- Task 7: .gitignore management ---
+  // --- Task 7: .gitignore non-interference ---
 
-  describe('.gitignore management', () => {
-    it('should append injected untracked skill to .gitignore', async () => {
+  // Injected skills are worktree-local tooling. The injector must NEVER write
+  // to the (tracked) .gitignore: any write there produces an uncommitted diff
+  // that later leaks into the Merge Review commit via `git add -A`.
+  // Skills are kept out of commits at staging time instead (GitCommitService).
+  describe('.gitignore non-interference', () => {
+    it('should NOT modify .gitignore when injecting an untracked skill', async () => {
       const config: SkillInjectionConfig = {
         enabled: true,
         skills: [
@@ -377,22 +381,18 @@ describe('SkillInjectorService', () => {
         const path = String(p);
         if (path.includes('SKILL.md')) throw new Error('ENOENT');
       });
-
-      // git ls-files: not tracked
+      // git ls-files: untracked — the exact case the old code wrote entries for
       mockExecFile.mockRejectedValue(new Error('not tracked'));
-
-      // .gitignore exists with some content
+      // .gitignore exists with unrelated content
       mockReadFile.mockResolvedValue('node_modules/\n');
 
-      await service.inject(worktreePath, config, repoRoot);
+      const result = await service.inject(worktreePath, config, repoRoot);
 
-      expect(mockWriteFile).toHaveBeenCalledWith(
-        expect.stringContaining('.gitignore'),
-        expect.stringContaining('.claude/skills/new-skill/')
-      );
+      expect(result.injected).toContain('new-skill');
+      expect(mockWriteFile).not.toHaveBeenCalled();
     });
 
-    it('should NOT add tracked skill to .gitignore', async () => {
+    it('should NOT modify .gitignore for tracked skills', async () => {
       const config: SkillInjectionConfig = {
         enabled: true,
         skills: [
@@ -409,56 +409,19 @@ describe('SkillInjectorService', () => {
         const path = String(p);
         if (path.includes('SKILL.md')) throw new Error('ENOENT');
       });
-
-      // git ls-files: tracked (returns 0)
+      // git ls-files: tracked
       mockExecFile.mockResolvedValue({
         stdout: '.claude/skills/tracked-skill/SKILL.md',
         stderr: '',
       });
-
       mockReadFile.mockResolvedValue('');
 
       await service.inject(worktreePath, config, repoRoot);
 
-      // writeFile should not include tracked-skill
-      if (mockWriteFile.mock.calls.length > 0) {
-        const written = String(mockWriteFile.mock.calls[0][1]);
-        expect(written).not.toContain('.claude/skills/tracked-skill/');
-      }
+      expect(mockWriteFile).not.toHaveBeenCalled();
     });
 
-    it('should not create duplicate .gitignore entries on repeated runs', async () => {
-      const config: SkillInjectionConfig = {
-        enabled: true,
-        skills: [
-          {
-            name: 'skill-x',
-            type: SkillSourceType.Local,
-            source: '.claude/skills/skill-x',
-          },
-        ],
-      };
-
-      mockAccess.mockImplementation(async (p) => {
-        const path = String(p);
-        if (path.includes('SKILL.md')) throw new Error('ENOENT');
-      });
-      mockExecFile.mockRejectedValue(new Error('not tracked'));
-
-      // .gitignore already contains the entry
-      mockReadFile.mockResolvedValue('node_modules/\n.claude/skills/skill-x/\n');
-
-      await service.inject(worktreePath, config, repoRoot);
-
-      // Should not write a duplicate entry
-      if (mockWriteFile.mock.calls.length > 0) {
-        const written = String(mockWriteFile.mock.calls[0][1]);
-        const matches = written.match(/\.claude\/skills\/skill-x\//g);
-        expect(matches?.length ?? 0).toBeLessThanOrEqual(1);
-      }
-    });
-
-    it('should create .gitignore when absent', async () => {
+    it('should NOT create .gitignore when absent', async () => {
       const config: SkillInjectionConfig = {
         enabled: true,
         skills: [
@@ -475,16 +438,36 @@ describe('SkillInjectorService', () => {
         if (path.includes('SKILL.md')) throw new Error('ENOENT');
       });
       mockExecFile.mockRejectedValue(new Error('not tracked'));
-
-      // .gitignore does not exist
       mockReadFile.mockRejectedValue(new Error('ENOENT'));
 
-      await service.inject(worktreePath, config, repoRoot);
+      const result = await service.inject(worktreePath, config, repoRoot);
 
-      expect(mockWriteFile).toHaveBeenCalledWith(
-        expect.stringContaining('.gitignore'),
-        expect.stringContaining('.claude/skills/fresh-skill/')
-      );
+      expect(result.injected).toContain('fresh-skill');
+      expect(mockWriteFile).not.toHaveBeenCalled();
+    });
+
+    it('should NOT modify .gitignore when all skills are already present (skipped)', async () => {
+      const config: SkillInjectionConfig = {
+        enabled: true,
+        skills: [
+          {
+            name: 'existing-skill',
+            type: SkillSourceType.Local,
+            source: '.claude/skills/existing-skill',
+          },
+        ],
+      };
+
+      // SKILL.md exists — access succeeds
+      mockAccess.mockResolvedValue(undefined);
+      // git ls-files: untracked — old code wrote entries even for skipped skills
+      mockExecFile.mockRejectedValue(new Error('not tracked'));
+      mockReadFile.mockResolvedValue('');
+
+      const result = await service.inject(worktreePath, config, repoRoot);
+
+      expect(result.skipped).toContain('existing-skill');
+      expect(mockWriteFile).not.toHaveBeenCalled();
     });
   });
 
