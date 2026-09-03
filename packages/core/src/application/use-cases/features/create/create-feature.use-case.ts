@@ -39,6 +39,7 @@ import type { ILogger } from '../../../ports/output/services/logger.interface.js
 import { createDefaultSettings } from '../../../../domain/factories/settings-defaults.factory.js';
 import { satisfiesDependencyGate } from '../../../../domain/lifecycle-gates.js';
 import type { IAttachmentStorageService } from '../../../ports/output/services/feature-attachment-storage.interface.js';
+import { FeatureCapacityService } from '../capacity/feature-capacity.service.js';
 import { MetadataGenerator } from './metadata-generator.js';
 import { SlugResolver } from './slug-resolver.js';
 import type { CreateFeatureInput, CreateFeatureResult, CreateRecordResult } from './types.js';
@@ -73,7 +74,9 @@ export class CreateFeatureUseCase {
     @inject('ISettingsRepository')
     private readonly settingsRepository: ISettingsRepository,
     @inject('ILogger')
-    private readonly logger: ILogger
+    private readonly logger: ILogger,
+    @inject(FeatureCapacityService)
+    private readonly capacity: FeatureCapacityService
   ) {}
 
   /**
@@ -94,9 +97,14 @@ export class CreateFeatureUseCase {
    * Used by the CLI which shows a spinner and needs everything done before returning.
    */
   async execute(input: CreateFeatureInput): Promise<CreateFeatureResult> {
-    const { feature, shouldSpawn } = await this.createRecord(input);
+    const { feature, shouldSpawn, queued } = await this.createRecord(input);
     const { warning, updatedFeature } = await this.initializeAndSpawn(feature, input, shouldSpawn);
-    return { feature: updatedFeature, warning };
+    return {
+      feature: updatedFeature,
+      warning,
+      queued,
+      ...(queued ? { queuePosition: await this.capacity.getQueuePosition(updatedFeature.id) } : {}),
+    };
   }
 
   /**
@@ -170,6 +178,17 @@ export class CreateFeatureUseCase {
       }
     }
 
+    // Capacity gate — evaluated last, so it only ever applies to a feature that
+    // would otherwise start right now. A user-deferred (`--pending`) or
+    // dependency-blocked feature is already not spawning and must NOT be marked
+    // queued: only a capacity-queued feature is started automatically later.
+    let queuedAt: Date | undefined;
+    if (shouldSpawn && !(await this.capacity.hasCapacity())) {
+      initialLifecycle = SdlcLifecycle.Pending;
+      shouldSpawn = false;
+      queuedAt = new Date();
+    }
+
     // Resolve or create repository entity for this path
     const normalizedPath =
       effectiveRepoPath.replace(/\\/g, '/').replace(/\/+$/, '') || effectiveRepoPath;
@@ -233,6 +252,7 @@ export class CreateFeatureUseCase {
       specPath: '',
       repositoryId: repository.id,
       ...(input.parentId ? { parentId: input.parentId } : {}),
+      ...(queuedAt ? { queuedAt } : {}),
       iterationCount: 0,
       bedrockEnabled: false,
       createdAt: now,
@@ -269,7 +289,7 @@ export class CreateFeatureUseCase {
     };
     await this.runRepository.create(agentRun);
 
-    return { feature, shouldSpawn };
+    return { feature, shouldSpawn, queued: queuedAt !== undefined };
   }
 
   /**

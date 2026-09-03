@@ -105,6 +105,34 @@ export interface IFeatureRepository {
   findByParentId(parentId: string): Promise<Feature[]>;
 
   /**
+   * Count non-deleted features currently in any of the given lifecycles.
+   *
+   * Exists so parallel-capacity admission can ask "how many features are
+   * running" without loading every feature into the process. The count is
+   * derived rather than tracked precisely because a derived count is
+   * self-healing: a crashed or force-deleted feature stops being counted the
+   * moment its row changes, whereas a maintained counter would leak that slot
+   * forever.
+   *
+   * @param lifecycles - The lifecycles to count. An empty array counts nothing.
+   * @returns Number of matching, non-soft-deleted features
+   */
+  countByLifecycles(lifecycles: SdlcLifecycle[]): Promise<number>;
+
+  /**
+   * Returns features waiting for a parallel-capacity slot, oldest first.
+   *
+   * A feature is queued exactly when it carries a `queuedAt` timestamp; the
+   * lifecycle alone cannot say so, because a user-deferred (`--pending`)
+   * feature sits in the same lifecycle and must never be started automatically.
+   * Ordered by `queuedAt` so the queue is FIFO by when the user asked for the
+   * feature to run.
+   *
+   * @returns Queued features in admission order, excluding soft-deleted rows
+   */
+  listQueued(): Promise<Feature[]>;
+
+  /**
    * Delete a feature by ID (hard delete).
    *
    * @param id - The feature ID to delete

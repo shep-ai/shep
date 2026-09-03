@@ -62,7 +62,10 @@
         "push": "Push",
         "pr": "PR",
         "cancelled": "Konfiguration abgebrochen.",
-        "failed": "Workflow-Standardeinstellungen konnten nicht konfiguriert werden"
+        "failed": "Workflow-Standardeinstellungen konnten nicht konfiguriert werden",
+        "maxParallelOption": "Maximale Anzahl Features, die gleichzeitig einen Agenten ausführen (0 = unbegrenzt)",
+        "maxParallelUnlimited": "Keine Begrenzung paralleler Features",
+        "maxParallelSet": "Es laufen höchstens {{limit}} Features parallel"
       },
       "language": {
         "description": "Anzeigesprache konfigurieren",
@@ -332,7 +335,8 @@
         "statusLabel": "Status:",
         "agentLabel": "Agent:",
         "spawnedStatus": "gestartet",
-        "failedToStart": "Feature konnte nicht gestartet werden"
+        "failedToStart": "Feature konnte nicht gestartet werden",
+        "forceOption": "Auch dann starten, wenn das Limit paralleler Features erreicht ist"
       },
       "approve": {
         "description": "Ein auf Überprüfung wartendes Feature genehmigen",
@@ -990,5 +994,10 @@
     "failedSettings": "Einstellungen konnten nicht initialisiert werden",
     "unexpectedError": "Ein unerwarteter Fehler ist aufgetreten",
     "unhandledRejection": "Nicht behandelte Promise-Ablehnung"
+  },
+  "features": {
+    "queued": "In Warteschlange",
+    "queuedWithPosition": "In Warteschlange · {{position}} davor",
+    "queuedTooltip": "Wartet auf einen freien Platz ({{position}} in der Warteschlange)"
   }
 }

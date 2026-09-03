@@ -1,0 +1,45 @@
+feature:
+  id: '110-max-parallel-features'
+  name: 'max-parallel-features'
+  number: 110
+  branch: 'feat/110-max-parallel-features'
+  lifecycle: 'review'
+  createdAt: '2026-08-10T04:42:01Z'
+
+status:
+  phase: 'implementation-complete'
+  progress:
+    completed: 15
+    total: 15
+    percentage: 100
+  currentTask: null
+  lastUpdated: '2026-08-10T05:35:00Z'
+  lastUpdatedBy: 'shep-kit:implement'
+
+validation:
+  lastRun: null
+  gatesPassed: []
+  autoFixesApplied: []
+
+tasks:
+  current: null
+  blocked: []
+  failed: []
+
+checkpoints:
+  - phase: 'feature-created'
+    completedAt: '2026-08-10T04:42:01Z'
+    completedBy: 'shep-kit:new-feature'
+  - phase: 'research-complete'
+    completedAt: '2026-08-10T04:55:00Z'
+    completedBy: 'shep-kit:research'
+  - phase: 'plan-complete'
+    completedAt: '2026-08-10T05:10:00Z'
+    completedBy: 'shep-kit:plan'
+  - phase: 'implementation-complete'
+    completedAt: '2026-08-10T05:35:00Z'
+    completedBy: 'shep-kit:implement'
+
+errors:
+  current: null
+  history: []

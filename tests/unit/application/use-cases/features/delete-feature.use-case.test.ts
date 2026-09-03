@@ -23,6 +23,7 @@ import {
   BuildMode,
 } from '@/domain/generated/output.js';
 import type { Feature, AgentRun } from '@/domain/generated/output.js';
+import { createMockFeatureRepository } from '../../../../helpers/feature-repository.mock.js';
 
 function createMockFeature(overrides?: Partial<Feature>): Feature {
   return {
@@ -76,18 +77,9 @@ describe('DeleteFeatureUseCase', () => {
   let mockGitPrService: IGitPrService;
 
   beforeEach(() => {
-    mockFeatureRepo = {
-      create: vi.fn(),
+    mockFeatureRepo = createMockFeatureRepository({
       findById: vi.fn().mockResolvedValue(createMockFeature()),
-      findByIdPrefix: vi.fn().mockResolvedValue(null),
-      findBySlug: vi.fn(),
-      findByBranch: vi.fn(),
-      list: vi.fn(),
-      findByParentId: vi.fn().mockResolvedValue([]),
-      update: vi.fn(),
-      delete: vi.fn(),
-      softDelete: vi.fn(),
-    };
+    });
 
     mockWorktreeService = {
       create: vi.fn(),
@@ -140,7 +132,8 @@ describe('DeleteFeatureUseCase', () => {
       mockWorktreeService,
       mockProcessService,
       mockRunRepo,
-      mockGitPrService
+      mockGitPrService,
+      { execute: vi.fn().mockResolvedValue({ admittedFeatureIds: [] }) } as any
     );
   });
 

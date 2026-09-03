@@ -12,7 +12,7 @@ import type {
   IFeatureRepository,
   FeatureListFilters,
 } from '../../application/ports/output/repositories/feature-repository.interface.js';
-import type { Feature } from '../../domain/generated/output.js';
+import type { Feature, SdlcLifecycle } from '../../domain/generated/output.js';
 import {
   toDatabase,
   fromDatabase,
@@ -48,6 +48,7 @@ export class SQLiteFeatureRepository implements IFeatureRepository {
         active_plugins,
         source_agent_session_id, source_agent_type,
         iteration_count, max_iterations,
+        queued_at,
         deleted_at, created_at, updated_at
       ) VALUES (
         @id, @name, @slug, @description, @user_query, @repository_path, @branch,
@@ -66,6 +67,7 @@ export class SQLiteFeatureRepository implements IFeatureRepository {
         @active_plugins,
         @source_agent_session_id, @source_agent_type,
         @iteration_count, @max_iterations,
+        @queued_at,
         @deleted_at, @created_at, @updated_at
       )
     `);
@@ -162,6 +164,29 @@ export class SQLiteFeatureRepository implements IFeatureRepository {
     return rows.map(fromDatabase);
   }
 
+  async countByLifecycles(lifecycles: SdlcLifecycle[]): Promise<number> {
+    if (lifecycles.length === 0) {
+      return 0;
+    }
+
+    // Placeholders are generated from the array length, never interpolated
+    // values — the lifecycles themselves are always bound parameters.
+    const placeholders = lifecycles.map(() => '?').join(', ');
+    const stmt = this.db.prepare(
+      `SELECT COUNT(*) AS count FROM features WHERE lifecycle IN (${placeholders}) AND deleted_at IS NULL`
+    );
+    const row = stmt.get(...lifecycles) as { count: number };
+    return row.count;
+  }
+
+  async listQueued(): Promise<Feature[]> {
+    const stmt = this.db.prepare(
+      'SELECT * FROM features WHERE queued_at IS NOT NULL AND deleted_at IS NULL ORDER BY queued_at ASC'
+    );
+    const rows = stmt.all() as FeatureRow[];
+    return rows.map(fromDatabase);
+  }
+
   async update(feature: Feature): Promise<void> {
     const row = toDatabase(feature);
 
@@ -217,6 +242,7 @@ export class SQLiteFeatureRepository implements IFeatureRepository {
         source_agent_type = @source_agent_type,
         iteration_count = @iteration_count,
         max_iterations = @max_iterations,
+        queued_at = @queued_at,
         deleted_at = @deleted_at,
         updated_at = @updated_at
       WHERE id = @id

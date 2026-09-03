@@ -6,6 +6,7 @@
  *
  * Usage:
  *   shep feat start <id>
+ *   shep feat start <id> --force   (start even when the parallel limit is full)
  */
 
 import { Command } from 'commander';
@@ -19,17 +20,26 @@ export function createStartCommand(): Command {
   return new Command('start')
     .description(t('cli:commands.feat.start.description'))
     .argument('<id>', t('cli:commands.feat.start.idArgument'))
-    .action(async (id: string) => {
+    .option('--force', t('cli:commands.feat.start.forceOption'))
+    .action(async (id: string, options: { force?: boolean }) => {
       try {
         const useCase = container.resolve(StartFeatureUseCase);
-        const { feature, agentRun, blocked } = await spinner(
+        const { feature, agentRun, blocked, queued, queuePosition } = await spinner(
           t('cli:commands.feat.start.spinnerText'),
-          () => useCase.execute(id)
+          () => useCase.execute(id, { bypassCapacityLimit: options.force === true })
         );
 
         messages.newline();
         if (blocked) {
           messages.warning(t('cli:commands.feat.start.blockedWarning'));
+        } else if (queued) {
+          // Report what actually happened. Claiming "started" here would be a
+          // lie the user only discovers when no agent ever appears.
+          messages.warning(
+            queuePosition != null
+              ? t('features.queuedWithPosition', { position: queuePosition })
+              : t('features.queued')
+          );
         } else {
           messages.success(t('cli:commands.feat.start.featureStarted'));
         }
@@ -40,7 +50,7 @@ export function createStartCommand(): Command {
         console.log(
           `  ${colors.muted(t('cli:commands.feat.start.statusLabel'))}  ${feature.lifecycle}`
         );
-        if (!blocked) {
+        if (!blocked && !queued) {
           console.log(
             `  ${colors.muted(t('cli:commands.feat.start.agentLabel'))}   ${colors.success(t('cli:commands.feat.start.spawnedStatus'))} (run ${agentRun.id.slice(0, 8)})`
           );

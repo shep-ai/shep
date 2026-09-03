@@ -161,6 +161,10 @@ import { ListGitHubOrganizationsUseCase } from '../../../application/use-cases/r
 import { ListOperationLogEntriesUseCase } from '../../../application/use-cases/operations/list-operation-log-entries.use-case.js';
 import { CreateFeatureFromRemoteUseCase } from '../../../application/use-cases/features/create/create-feature-from-remote.use-case.js';
 import { CheckAndUnblockFeaturesUseCase } from '../../../application/use-cases/features/check-and-unblock-features.use-case.js';
+import { SpawnFeatureAgentUseCase } from '../../../application/use-cases/features/spawn-feature-agent.use-case.js';
+import { FeatureCapacityService } from '../../../application/use-cases/features/capacity/feature-capacity.service.js';
+import { AdmitQueuedFeaturesUseCase } from '../../../application/use-cases/features/capacity/admit-queued-features.use-case.js';
+import { GetParallelCapacityUseCase } from '../../../application/use-cases/features/capacity/get-parallel-capacity.use-case.js';
 import { UpdateFeatureLifecycleUseCase } from '../../../application/use-cases/features/update/update-feature-lifecycle.use-case.js';
 import { ReconcileBlockedFeaturesUseCase } from '../../../application/use-cases/features/reconcile-blocked-features.use-case.js';
 import { CleanupFeatureWorktreeUseCase } from '../../../application/use-cases/features/cleanup-feature-worktree.use-case.js';
@@ -327,6 +331,14 @@ export function registerUseCases(container: DependencyContainer): void {
   container.registerSingleton(ListGitHubRepositoriesUseCase);
   container.registerSingleton(ListGitHubOrganizationsUseCase);
   container.registerSingleton(ListOperationLogEntriesUseCase);
+  // Parallel-capacity chain. Order matters — each injects the one above it via a
+  // class token: FeatureCapacityService and SpawnFeatureAgentUseCase are the
+  // collaborators, AdmitQueuedFeaturesUseCase is the drain, and the lifecycle
+  // and unblock use cases consume both.
+  container.registerSingleton(FeatureCapacityService);
+  container.registerSingleton(SpawnFeatureAgentUseCase);
+  container.registerSingleton(AdmitQueuedFeaturesUseCase);
+  container.registerSingleton(GetParallelCapacityUseCase);
   // CheckAndUnblockFeaturesUseCase must be registered before UpdateFeatureLifecycleUseCase
   // because the latter injects the former via class token.
   container.registerSingleton(CheckAndUnblockFeaturesUseCase);
@@ -518,6 +530,15 @@ export function registerUseCases(container: DependencyContainer): void {
   });
   container.register('CheckAndUnblockFeaturesUseCase', {
     useFactory: (c) => c.resolve(CheckAndUnblockFeaturesUseCase),
+  });
+  container.register('GetParallelCapacityUseCase', {
+    useFactory: (c) => c.resolve(GetParallelCapacityUseCase),
+  });
+  container.register('AdmitQueuedFeaturesUseCase', {
+    useFactory: (c) => c.resolve(AdmitQueuedFeaturesUseCase),
+  });
+  container.register('SpawnFeatureAgentUseCase', {
+    useFactory: (c) => c.resolve(SpawnFeatureAgentUseCase),
   });
   container.register('UpdateFeatureLifecycleUseCase', {
     useFactory: (c) => c.resolve(UpdateFeatureLifecycleUseCase),

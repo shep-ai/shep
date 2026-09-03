@@ -369,6 +369,9 @@ describe('createDefaultSettings', () => {
           pushOnImplementationComplete: false,
         },
         ciWatchEnabled: true,
+        // 0 = unlimited: an installation that predates the cap must keep starting
+        // every feature immediately until the user opts in.
+        maxParallelFeatures: 0,
         enableEvidence: false,
         commitEvidence: false,
         defaultMode: 'Fast',

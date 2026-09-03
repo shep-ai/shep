@@ -30,6 +30,8 @@ import type { IAgentRunRepository } from '@/application/ports/output/agents/agen
 import type { IPhaseTimingRepository } from '@/application/ports/output/agents/phase-timing-repository.interface.js';
 import { SdlcLifecycle, BuildMode } from '@/domain/generated/output.js';
 import type { Feature } from '@/domain/generated/output.js';
+import { createMockFeatureRepository } from '../../../../helpers/feature-repository.mock.js';
+import { SpawnFeatureAgentUseCase } from '@/application/use-cases/features/spawn-feature-agent.use-case.js';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -83,18 +85,7 @@ describe('CheckAndUnblockFeaturesUseCase', () => {
   const parentId = 'parent-001';
 
   beforeEach(() => {
-    mockFeatureRepo = {
-      create: vi.fn(),
-      findById: vi.fn(),
-      findByIdPrefix: vi.fn(),
-      findBySlug: vi.fn(),
-      findByBranch: vi.fn(),
-      list: vi.fn(),
-      findByParentId: vi.fn().mockResolvedValue([]),
-      update: vi.fn().mockResolvedValue(undefined),
-      delete: vi.fn(),
-      softDelete: vi.fn(),
-    };
+    mockFeatureRepo = createMockFeatureRepository();
 
     mockAgentProcess = {
       spawn: vi.fn().mockReturnValue(1234),
@@ -118,7 +109,22 @@ describe('CheckAndUnblockFeaturesUseCase', () => {
 
     mockAgentRunRepo = {
       create: vi.fn().mockResolvedValue(undefined),
-      findById: vi.fn(),
+      // The AgentRun carries the agent identity (type, model, thread) the spawn
+      // path needs. It is created with the feature, so returning one here is the
+      // realistic case — the old code spawned without it and silently used the
+      // default agent.
+      findById: vi.fn().mockResolvedValue({
+        id: 'run-xyz',
+        agentType: 'claude-code',
+        agentName: 'feature-agent',
+        status: 'pending',
+        prompt: 'test',
+        threadId: 'thread-xyz',
+        featureId: 'child-abc',
+        repositoryPath: '/my-repo',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      }),
       findByIds: vi.fn().mockResolvedValue([]),
       findByThreadId: vi.fn(),
       updateStatus: vi.fn().mockResolvedValue(undefined),
@@ -149,12 +155,18 @@ describe('CheckAndUnblockFeaturesUseCase', () => {
 
     useCase = new CheckAndUnblockFeaturesUseCase(
       mockFeatureRepo,
-      mockAgentProcess,
-      { load: vi.fn().mockResolvedValue({ security: { mode: 'Advisory' } }) } as any,
-      mockWorktreeService,
       mockSyncFeatureBranch,
       mockAgentRunRepo,
-      mockPhaseTimingRepo
+      mockPhaseTimingRepo,
+      new SpawnFeatureAgentUseCase(
+        mockFeatureRepo,
+        mockAgentRunRepo,
+        mockAgentProcess,
+        mockWorktreeService,
+        { load: vi.fn().mockResolvedValue({ security: { mode: 'Advisory' } }) } as any,
+        mockSyncFeatureBranch
+      ) as any,
+      { hasCapacity: vi.fn().mockResolvedValue(true), getQueuePosition: vi.fn() } as any
     );
   });
 
@@ -251,6 +263,8 @@ describe('CheckAndUnblockFeaturesUseCase', () => {
         enableEvidence: blockedChild.enableEvidence,
         commitEvidence: blockedChild.commitEvidence,
         securityMode: 'Advisory',
+        agentType: 'claude-code',
+        threadId: 'thread-xyz',
       }
     );
   });
@@ -424,8 +438,44 @@ describe('CheckAndUnblockFeaturesUseCase', () => {
         enableEvidence: blockedChild.enableEvidence,
         commitEvidence: blockedChild.commitEvidence,
         securityMode: 'Advisory',
+        // Agent identity comes from the child's own AgentRun. This path used to
+        // omit both, so an auto-unblocked child silently started under the
+        // default agent instead of the one it was created with.
+        agentType: 'claude-code',
+        threadId: 'thread-xyz',
       }
     );
+  });
+
+  it('should spawn an auto-unblocked child under the agent its run recorded', async () => {
+    const parent = makeFeature({ id: parentId, lifecycle: SdlcLifecycle.Maintain });
+    const blockedChild = makeFeature({
+      id: 'child-abc',
+      lifecycle: SdlcLifecycle.Blocked,
+      agentRunId: 'run-xyz',
+    });
+    mockFeatureRepo.findById = vi.fn().mockResolvedValue(parent);
+    mockFeatureRepo.findByParentId = vi.fn().mockResolvedValue([blockedChild]);
+    mockAgentRunRepo.findById = vi.fn().mockResolvedValue({
+      id: 'run-xyz',
+      agentType: 'gemini-cli',
+      agentName: 'feature-agent',
+      status: 'pending',
+      prompt: 'test',
+      threadId: 'thread-xyz',
+      modelId: 'gemini-3.1-pro',
+      featureId: 'child-abc',
+      repositoryPath: '/my-repo',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    await useCase.execute(parentId);
+
+    expect(vi.mocked(mockAgentProcess.spawn).mock.calls[0][5]).toMatchObject({
+      agentType: 'gemini-cli',
+      model: 'gemini-3.1-pro',
+    });
   });
 
   it('should derive the worktree path when the blocked child has none stored', async () => {

@@ -24,6 +24,7 @@ import type { IWorktreeService } from '../../ports/output/services/worktree-serv
 import type { IFeatureAgentProcessService } from '../../ports/output/agents/feature-agent-process.interface.js';
 import type { IAgentRunRepository } from '../../ports/output/agents/agent-run-repository.interface.js';
 import type { IGitPrService } from '../../ports/output/services/git-pr-service.interface.js';
+import { AdmitQueuedFeaturesUseCase } from './capacity/admit-queued-features.use-case.js';
 
 export interface DeleteFeatureOptions {
   cleanup?: boolean;
@@ -39,7 +40,9 @@ export class DeleteFeatureUseCase {
     @inject('IFeatureAgentProcessService')
     private readonly processService: IFeatureAgentProcessService,
     @inject('IAgentRunRepository') private readonly runRepo: IAgentRunRepository,
-    @inject('IGitPrService') private readonly gitPrService: IGitPrService
+    @inject('IGitPrService') private readonly gitPrService: IGitPrService,
+    @inject(AdmitQueuedFeaturesUseCase)
+    private readonly admitQueued: AdmitQueuedFeaturesUseCase
   ) {}
 
   async execute(featureId: string, options?: DeleteFeatureOptions): Promise<Feature> {
@@ -68,6 +71,15 @@ export class DeleteFeatureUseCase {
       await this.cascadeCleanupChildren(feature.id, options);
     }
     await this.cleanupSingleFeature(feature, options);
+
+    // 4. Deleting a running feature frees its slot without any lifecycle
+    //    transition the queue would otherwise notice. Isolated: a failed drain
+    //    must not make a completed delete report as an error.
+    try {
+      await this.admitQueued.execute();
+    } catch {
+      // The state-side sweep retries on the next dashboard load.
+    }
 
     return feature;
   }

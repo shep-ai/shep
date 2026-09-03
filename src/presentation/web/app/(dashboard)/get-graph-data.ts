@@ -10,6 +10,8 @@ import type {
 } from '@shepai/core/application/use-cases/applications/list-applications.use-case';
 import type { AutoResolveMergedBranchesUseCase } from '@shepai/core/application/use-cases/features/auto-resolve-merged-branches.use-case';
 import type { ReconcileBlockedFeaturesUseCase } from '@shepai/core/application/use-cases/features/reconcile-blocked-features.use-case';
+import type { AdmitQueuedFeaturesUseCase } from '@shepai/core/application/use-cases/features/capacity/admit-queued-features.use-case';
+import type { GetParallelCapacityUseCase } from '@shepai/core/application/use-cases/features/capacity/get-parallel-capacity.use-case';
 import type { IAgentRunRepository } from '@shepai/core/application/ports/output/agents/agent-run-repository.interface';
 import type { DeploymentStatusEntry } from '@shepai/core/application/ports/output/services/deployment-service.interface';
 import type { ListDeploymentsUseCase } from '@shepai/core/application/use-cases/deployments/list-deployments.use-case';
@@ -217,6 +219,16 @@ export async function getGraphData(): Promise<{
     // Use case not registered — skip silently (e.g. test environments)
   }
 
+  // Same self-healing shape for the capacity queue: raising the limit, deleting
+  // a running feature, or any write that bypassed the lifecycle use case leaves
+  // features queued with no future event to release them.
+  try {
+    const admitQueued = resolve<AdmitQueuedFeaturesUseCase>('AdmitQueuedFeaturesUseCase');
+    void admitQueued.execute();
+  } catch {
+    // Use case not registered — skip silently (e.g. test environments)
+  }
+
   // Batch-fetch all agent runs in one query instead of N findById calls
   // (the SSE poll uses the same shape — see StreamAgentEventsUseCase).
   const runIds = features
@@ -246,6 +258,19 @@ export async function getGraphData(): Promise<{
     // Cluster use case not registered — skip silently
   }
 
+  // One snapshot for the whole canvas — asking per node would be an N+1, and the
+  // position of any queued feature depends on all the others anyway.
+  let queuePositions: Map<string, number> | undefined;
+  try {
+    const getParallelCapacity = resolve<GetParallelCapacityUseCase>('GetParallelCapacityUseCase');
+    const snapshot = await getParallelCapacity.execute();
+    if (snapshot.queue.length > 0) {
+      queuePositions = new Map(snapshot.queue.map((q) => [q.featureId, q.position]));
+    }
+  } catch {
+    // Use case not registered — nodes simply render without a queue position
+  }
+
   const { workflow, security, featureFlags } = getSettings();
   // Master kill switch: when the supplyChainSecurity feature flag is off, skip
   // passing securityMode so no feature card renders the SecurityBadge.
@@ -259,6 +284,7 @@ export async function getGraphData(): Promise<{
     securityMode: supplyChainSecurityEnabled ? security?.mode : undefined,
     applications,
     clusters: clustersWithLinks.length > 0 ? clustersWithLinks : undefined,
+    queuePositions,
   });
 
   // Load all live deployments via the use case. The client-side

@@ -81,7 +81,9 @@ async function persistWorkflowDefaults(
   settings.workflow.openPrOnImplementationComplete =
     workflowDefaults.openPrOnImplementationComplete;
 
-  const useCase = new UpdateSettingsUseCase(repository);
+  const useCase = new UpdateSettingsUseCase(repository, {
+    execute: async () => ({ admittedFeatureIds: [] }),
+  } as never);
   const updated = await useCase.execute(settings);
 
   resetSettings();

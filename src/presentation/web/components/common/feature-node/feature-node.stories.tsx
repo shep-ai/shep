@@ -436,6 +436,40 @@ export const BlockedByFeature: Story = {
   render: (args) => <FeatureNodeCanvas data={args} />,
 };
 
+/**
+ * Held back by the parallel-feature limit rather than by the user. It is fully
+ * initialized and starts on its own as soon as a slot frees — which is exactly
+ * what distinguishes it from the Pending story below.
+ */
+export const QueuedForCapacity: Story = {
+  args: {
+    name: 'Billing Webhooks',
+    description: 'Handle Stripe webhook retries',
+    featureId: '#f7',
+    lifecycle: 'requirements',
+    state: 'pending',
+    progress: 0,
+    queued: true,
+    queuePosition: 2,
+  },
+  render: (args) => <FeatureNodeCanvas data={args} />,
+};
+
+/** First in line — the next slot to free belongs to this feature. */
+export const QueuedNext: Story = {
+  args: {
+    name: 'Billing Webhooks',
+    description: 'Handle Stripe webhook retries',
+    featureId: '#f7',
+    lifecycle: 'requirements',
+    state: 'pending',
+    progress: 0,
+    queued: true,
+    queuePosition: 1,
+  },
+  render: (args) => <FeatureNodeCanvas data={args} />,
+};
+
 export const Creating: Story = {
   args: {
     name: 'User Onboarding',

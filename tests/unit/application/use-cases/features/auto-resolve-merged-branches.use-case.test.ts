@@ -11,6 +11,7 @@ import type { IGitPrService } from '@/application/ports/output/services/git-pr-s
 import type { IAgentRunRepository } from '@/application/ports/output/agents/agent-run-repository.interface';
 import type { Feature } from '@/domain/generated/output';
 import { SdlcLifecycle, PrStatus, AgentRunStatus, BuildMode } from '@/domain/generated/output';
+import { createMockFeatureRepository } from '../../../../helpers/feature-repository.mock.js';
 
 function createMockFeature(overrides: Partial<Feature> = {}): Feature {
   return {
@@ -42,18 +43,7 @@ function createMockFeature(overrides: Partial<Feature> = {}): Feature {
 }
 
 function createMockFeatureRepo(): IFeatureRepository {
-  return {
-    create: vi.fn(),
-    findById: vi.fn(),
-    findByIdPrefix: vi.fn(),
-    findBySlug: vi.fn(),
-    findByBranch: vi.fn(),
-    findByParentId: vi.fn().mockResolvedValue([]),
-    list: vi.fn().mockResolvedValue([]),
-    update: vi.fn(),
-    delete: vi.fn(),
-    softDelete: vi.fn(),
-  };
+  return createMockFeatureRepository();
 }
 
 function createMockGitPrService(): IGitPrService {

@@ -18,6 +18,7 @@ vi.mock('@/infrastructure/services/settings.service.js', () => ({
 }));
 
 import { StartFeatureUseCase } from '@/application/use-cases/features/start-feature.use-case.js';
+import { SpawnFeatureAgentUseCase } from '@/application/use-cases/features/spawn-feature-agent.use-case.js';
 import { SdlcLifecycle, AgentRunStatus, BuildMode } from '@/domain/generated/output.js';
 import type { Feature, AgentRun } from '@/domain/generated/output.js';
 
@@ -132,6 +133,10 @@ describe('StartFeatureUseCase', () => {
   let processService: ReturnType<typeof createMockProcessService>;
   let worktreeService: ReturnType<typeof createMockWorktreeService>;
   let syncFeatureBranch: ReturnType<typeof createMockSyncFeatureBranch>;
+  let capacity: {
+    hasCapacity: ReturnType<typeof vi.fn>;
+    getQueuePosition: ReturnType<typeof vi.fn>;
+  };
 
   beforeEach(() => {
     featureRepo = createMockFeatureRepo();
@@ -139,13 +144,26 @@ describe('StartFeatureUseCase', () => {
     processService = createMockProcessService();
     worktreeService = createMockWorktreeService();
     syncFeatureBranch = createMockSyncFeatureBranch();
-    useCase = new StartFeatureUseCase(
+    // The real spawner is wired to the mock process service, so the assertions
+    // below still verify what actually reaches spawn() — now through the single
+    // spawn path rather than a copy of it inside StartFeatureUseCase.
+    const spawnFeatureAgent = new SpawnFeatureAgentUseCase(
       featureRepo as any,
       runRepo as any,
       processService as any,
       worktreeService as any,
       { load: vi.fn().mockResolvedValue({ security: { mode: 'Advisory' } }) } as any,
       syncFeatureBranch as any
+    );
+    capacity = {
+      hasCapacity: vi.fn().mockResolvedValue(true),
+      getQueuePosition: vi.fn().mockResolvedValue(1),
+    };
+    useCase = new StartFeatureUseCase(
+      featureRepo as any,
+      runRepo as any,
+      spawnFeatureAgent,
+      capacity as any
     );
   });
 
@@ -596,5 +614,97 @@ describe('StartFeatureUseCase', () => {
     expect(result.feature).toBeDefined();
     expect(result.agentRun).toBeDefined();
     expect(result.agentRun.id).toBe('run-001');
+  });
+
+  // -------------------------------------------------------------------------
+  // Capacity gate
+  // -------------------------------------------------------------------------
+
+  describe('parallel-feature limit', () => {
+    beforeEach(() => {
+      featureRepo.findById.mockResolvedValue(createTestFeature());
+      runRepo.findById.mockResolvedValue(createTestRun());
+    });
+
+    it('queues instead of spawning when no slot is free', async () => {
+      capacity.hasCapacity.mockResolvedValue(false);
+      capacity.getQueuePosition.mockResolvedValue(2);
+
+      const result = await useCase.execute('feat-001');
+
+      expect(result.queued).toBe(true);
+      expect(result.queuePosition).toBe(2);
+      expect(result.blocked).toBe(false);
+      expect(processService.spawn).not.toHaveBeenCalled();
+    });
+
+    it('persists the queue marker so the drain can find it later', async () => {
+      capacity.hasCapacity.mockResolvedValue(false);
+
+      const result = await useCase.execute('feat-001');
+
+      expect(result.feature.lifecycle).toBe(SdlcLifecycle.Pending);
+      expect(result.feature.queuedAt).toBeInstanceOf(Date);
+      expect(featureRepo.update).toHaveBeenCalledWith(
+        expect.objectContaining({ queuedAt: expect.any(Date) })
+      );
+    });
+
+    it('does not sync the branch when the feature is only queued', async () => {
+      // The sync must happen at admission time, not queue time, or the feature
+      // starts from a base that is stale by however long it waited.
+      capacity.hasCapacity.mockResolvedValue(false);
+
+      await useCase.execute('feat-001');
+
+      expect(syncFeatureBranch.execute).not.toHaveBeenCalled();
+    });
+
+    it('reports not queued and spawns when a slot is free', async () => {
+      capacity.hasCapacity.mockResolvedValue(true);
+
+      const result = await useCase.execute('feat-001');
+
+      expect(result.queued).toBe(false);
+      expect(result.queuePosition).toBeUndefined();
+      expect(processService.spawn).toHaveBeenCalledOnce();
+    });
+
+    it('does not evaluate capacity for a feature blocked by its parent', async () => {
+      // A blocked feature cannot run anyway; queuing it would put it ahead of a
+      // feature that could actually use the slot.
+      capacity.hasCapacity.mockResolvedValue(false);
+      featureRepo.findById
+        .mockReset()
+        .mockResolvedValueOnce(createTestFeature({ parentId: 'parent-1' }))
+        .mockResolvedValueOnce(
+          createTestFeature({ id: 'parent-1', lifecycle: SdlcLifecycle.Implementation })
+        );
+
+      const result = await useCase.execute('feat-001');
+
+      expect(result.blocked).toBe(true);
+      expect(result.queued).toBe(false);
+      expect(result.feature.queuedAt).toBeUndefined();
+      expect(capacity.hasCapacity).not.toHaveBeenCalled();
+    });
+
+    it('starts anyway when the caller explicitly bypasses the limit', async () => {
+      capacity.hasCapacity.mockResolvedValue(false);
+
+      const result = await useCase.execute('feat-001', { bypassCapacityLimit: true });
+
+      expect(result.queued).toBe(false);
+      expect(processService.spawn).toHaveBeenCalledOnce();
+    });
+
+    it('clears a previous queue marker when the feature is finally admitted', async () => {
+      featureRepo.findById.mockResolvedValue(createTestFeature({ queuedAt: new Date() }));
+      capacity.hasCapacity.mockResolvedValue(true);
+
+      const result = await useCase.execute('feat-001');
+
+      expect(result.feature.queuedAt).toBeUndefined();
+    });
   });
 });

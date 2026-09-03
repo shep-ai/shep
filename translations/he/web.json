@@ -76,6 +76,8 @@
       "sectionDescription": "התנהגות אוטומציה לאחר מימוש",
       "defaultMode": "מצב ברירת מחדל לפיצ'ר",
       "defaultModeDescription": "מצב ברירת מחדל לפיצ'רים חדשים שנוצרים דרך CLI או ממשק ה-Web",
+      "maxParallelFeatures": "מקסימום פיצ'רים במקביל",
+      "maxParallelFeaturesDescription": "מספר הפיצ'רים המקסימלי שמריצים סוכן בו-זמנית. 0 פירושו ללא הגבלה. פיצ'רים נוספים ממתינים בתור ומתחילים אוטומטית כשמתפנה מקום.",
       "modeRegular": "רגיל",
       "modeFast": "מהיר",
       "modeExploration": "חקירה",
@@ -925,5 +927,11 @@
     "deleteAdoptedNote": "הפיצ׳ר שנוצר מהשיחה הזו לא יימחק.",
     "cancel": "ביטול",
     "archivedHidden": "{{count}} בארכיון מוסתרים"
+  },
+  "features": {
+    "queued": "בתור",
+    "queuedWithPosition": "בתור · {{position}} לפני",
+    "queuedTooltip": "ממתין למקום פנוי ({{position}} בתור)",
+    "startAnyway": "התחל בכל זאת"
   }
 }

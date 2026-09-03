@@ -63,11 +63,21 @@ export interface CreateFeatureInput {
 export interface CreateFeatureResult {
   feature: Feature;
   warning?: string;
+  /**
+   * True when the parallel-feature limit held the new feature back. It is fully
+   * initialized — worktree, spec, agent run record — but no agent was spawned,
+   * and it starts automatically when a slot frees.
+   */
+  queued: boolean;
+  /** 1-based place in the capacity queue, present only when `queued`. */
+  queuePosition?: number;
 }
 
 /** Result of the fast createRecord phase (before metadata/worktree/agent). */
 export interface CreateRecordResult {
   feature: Feature;
-  /** Whether the agent should be spawned (false when child is blocked). */
+  /** Whether the agent should be spawned (false when child is blocked or queued). */
   shouldSpawn: boolean;
+  /** True when the parallel-feature limit, rather than a dependency, deferred the spawn. */
+  queued: boolean;
 }

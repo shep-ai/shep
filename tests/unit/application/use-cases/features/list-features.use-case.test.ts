@@ -12,24 +12,14 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ListFeaturesUseCase } from '@/application/use-cases/features/list-features.use-case.js';
 import type { IFeatureRepository } from '@/application/ports/output/repositories/feature-repository.interface.js';
 import { SdlcLifecycle } from '@/domain/generated/output.js';
+import { createMockFeatureRepository } from '../../../../helpers/feature-repository.mock.js';
 
 describe('ListFeaturesUseCase', () => {
   let useCase: ListFeaturesUseCase;
   let mockRepo: IFeatureRepository;
 
   beforeEach(() => {
-    mockRepo = {
-      create: vi.fn(),
-      findById: vi.fn(),
-      findByIdPrefix: vi.fn(),
-      findBySlug: vi.fn(),
-      findByBranch: vi.fn(),
-      list: vi.fn().mockResolvedValue([]),
-      findByParentId: vi.fn().mockResolvedValue([]),
-      update: vi.fn(),
-      delete: vi.fn(),
-      softDelete: vi.fn(),
-    };
+    mockRepo = createMockFeatureRepository();
     useCase = new ListFeaturesUseCase(mockRepo);
   });
 

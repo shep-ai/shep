@@ -1,0 +1,182 @@
+# Feature Specification (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: max-parallel-features
+number: 110
+branch: feat/110-max-parallel-features
+oneLiner: >-
+  In the settings, allow limiting the maximum number of running parallel features.
+userQuery: >
+  new feature, in the settings allow to limit the maximum number of running parallel features
+summary: >
+  Add a global `workflow.maxParallelFeatures` setting that caps how many features may have a live
+  agent at the same time. When the cap is reached, newly created or manually started features are
+  admitted to a FIFO queue instead of spawning an agent; as soon as a running feature frees a slot,
+  the oldest queued feature starts automatically. `0` means unlimited, which preserves today's
+  behaviour for every existing installation.
+phase: Implementation
+sizeEstimate: L
+
+# Relationships
+relatedFeatures:
+  - '107-auto-commit-rebase-sync'
+
+technologies:
+  - TypeSpec
+  - TypeScript
+  - SQLite
+  - tsyringe
+  - Next.js
+  - React
+
+relatedLinks:
+  - title: Feature-flag / settings-field wiring checklist
+    url: ./../../LESSONS.md
+
+# Open questions (must be resolved before implementation)
+openQuestions:
+  - question: 'What happens when a feature is created or started while the cap is reached?'
+    resolved: true
+    answer: >-
+      Queue and auto-start. The feature is created in full (worktree, spec, agent run record) but
+      parked without spawning an agent. When a running feature releases a slot, the oldest queued
+      feature is admitted automatically — the same reconciler pattern already used for
+      dependency-blocked children.
+  - question: 'Is the limit global or per repository?'
+    resolved: true
+    answer: >-
+      Global. The real constraint (CPU, RAM, agent API rate limits) is machine-wide, matching the
+      existing `interactiveAgent.maxConcurrentSessions` precedent. No per-repository override.
+  - question: 'Which features count toward the limit?'
+    resolved: true
+    answer: >-
+      Features whose lifecycle means an agent is actively working: Started, Analyze, Requirements,
+      Research, Planning, Implementation, Exploring. Pending, Blocked, Queued, Review,
+      AwaitingUpstream, Maintain, Deleting and Archived do NOT hold a slot — a feature waiting on a
+      human or on CI is not consuming an agent.
+
+# Markdown content (the actual spec)
+content: |
+  ## Problem Statement
+
+  Shep will spawn a feature agent for every feature the user creates, with no upper bound. Each
+  running agent is a detached process driving an LLM CLI in its own worktree, so ten features
+  started in a row means ten concurrent agent processes competing for CPU, RAM, disk and — most
+  expensively — the agent provider's rate limits. Users have no way to say "run at most N of these
+  at once and hold the rest".
+
+  The platform already accepts this exact constraint for chat: `interactiveAgent.maxConcurrentSessions`
+  caps concurrent interactive sessions. The SDLC feature agents, which are far heavier, have no
+  equivalent.
+
+  There is also already a mechanism for "a feature that exists but must not start yet": the
+  dependency gate parks children in `Blocked` and `CheckAndUnblockFeaturesUseCase` releases them
+  when the parent's work lands. A capacity limit is the same shape of problem — admission control
+  with a reconciler — and must reuse that pattern rather than invent a second one.
+
+  ## Solution Overview
+
+  1. **Setting** — `workflow.maxParallelFeatures: int32 = 0`, where `0` means unlimited. Configurable
+     from the web Settings page (Workflow section), the CLI, and the TUI.
+  2. **Slot accounting** — a feature holds a slot while its lifecycle is one of
+     `Started, Analyze, Requirements, Research, Planning, Implementation, Exploring`. A single
+     domain helper owns this set and the `0 = unlimited` semantics; no surface re-derives either.
+  3. **Admission** — `CreateFeatureUseCase` and `StartFeatureUseCase` ask for a slot before
+     spawning. Denied features are persisted as queued (fully initialized, no agent) instead of
+     failing.
+  4. **Release** — after every lifecycle transition, an `AdmitQueuedFeaturesUseCase` runs alongside
+     the existing `CheckAndUnblockFeaturesUseCase` and starts queued features, oldest first, while
+     capacity remains. A dependency-blocked feature that is admitted for capacity still respects its
+     parent gate — the two gates are independent and both must open.
+  5. **Visibility** — queued features are visibly queued (badge + position) on the canvas, in the
+     drawer, in `shep feat list`, and in the TUI, with an explicit "start anyway" escape hatch.
+
+  ### Explicit non-goals
+
+  - **Never stop a running agent.** Lowering the limit below the number of currently running
+    features does not kill anything; the cap governs admission only, and the count drains naturally.
+  - No per-repository limits, no priority classes, no fair-share scheduling across repositories.
+    FIFO by creation time is the whole scheduling policy.
+
+  ## Success Criteria
+
+  - [ ] `workflow.maxParallelFeatures` persists end-to-end: tsp model → migration → mapper →
+        `sqlite-settings.repository` INSERT + UPDATE column lists → defaults factory, with a
+        repository-level round-trip test using a non-default value.
+  - [ ] Default is `0` (unlimited), so an existing installation behaves exactly as it does today
+        until the user opts in.
+  - [ ] With the limit set to N and N features running, creating a new feature completes normally
+        (worktree + spec + agent run record exist) but spawns no agent and reports itself as queued.
+  - [ ] With the limit set to N and N features running, `StartFeatureUseCase` on a Pending feature
+        leaves it queued rather than spawning, and returns a typed `queued` result carrying the
+        queue position — presentation never re-derives it.
+  - [ ] When a running feature leaves the running set (reaching Review, Maintain, failing, or being
+        deleted), the oldest queued feature is admitted and its agent spawns automatically, without
+        user action.
+  - [ ] A queued feature that also has an unsatisfied parent dependency gate does NOT start when a
+        capacity slot frees; it starts only once both gates are open.
+  - [ ] Setting the limit to `0` at any time immediately drains the whole queue.
+  - [ ] Lowering the limit below the current running count never terminates a running agent.
+  - [ ] Queued state is visible with its position on the canvas node, the feature drawer,
+        `shep feat list`, and the TUI, and a "start anyway" action bypasses the queue for one
+        feature.
+  - [ ] Translation keys exist in all nine locales (en, ar, de, es, fr, he, pt, ru, uk); the
+        translation-completeness test passes.
+  - [ ] Slot accounting is counted in SQL (`countByLifecycles`), not by loading every feature into
+        memory.
+
+  ## Affected Areas
+
+  | Area                                                        | Impact | Reasoning                                                                                 |
+  | ----------------------------------------------------------- | ------ | ----------------------------------------------------------------------------------------- |
+  | `tsp/domain/entities/settings.tsp`                           | High   | New `maxParallelFeatures` field on `WorkflowConfig`; regenerate via `pnpm tsp:codegen`      |
+  | `tsp/domain/entities/feature.tsp`                            | High   | Needs to distinguish user-deferred Pending from capacity-queued (optional field/lifecycle)  |
+  | `infrastructure/persistence/sqlite/migrations/`              | High   | Two columns: settings limit + feature queued marker                                         |
+  | `mappers/settings.mapper.ts`, `mappers/feature.mapper.ts`    | High   | Row interface + `toDatabase()` + `fromDatabase()` for both new columns                      |
+  | `repositories/sqlite-settings.repository.ts`                 | High   | INSERT columns, INSERT `@params`, UPDATE SET — silent data loss if missed (LESSONS)         |
+  | `repositories/sqlite-feature.repository.ts`                  | High   | Same three lists, plus a new `countByLifecycles` + queued-ordered query                     |
+  | `domain/factories/settings-defaults.factory.ts`              | Medium | Default `0`; exact-shape `toEqual` test must be updated                                     |
+  | `domain/shared/` (new helper)                                | High   | Running-lifecycle set + `0 = unlimited` semantics, owned once and consumed by every surface |
+  | `application/ports/output/repositories/feature-repository`   | Medium | New count + queued-listing methods on the port                                              |
+  | `use-cases/features/create/create-feature.use-case.ts`       | High   | Admission check before spawn; queued path must still initialize worktree + spec             |
+  | `use-cases/features/start-feature.use-case.ts`               | High   | Admission check; new `queued` result field alongside the existing `blocked`                 |
+  | `use-cases/features/` (new admit-queued use case)            | High   | The reconciler that drains the queue when a slot frees                                      |
+  | `use-cases/features/update/` (lifecycle transition)          | High   | Call site for the reconciler, next to `CheckAndUnblockFeaturesUseCase`                      |
+  | `infrastructure/di/` container                               | Medium | Register the new use case with explicit `@inject` tokens (hollow-dependency guard)          |
+  | `src/presentation/web/.../settings-page-client.tsx`          | Medium | Number input in the Workflow section + fallback object                                      |
+  | `src/presentation/web/.../feature-node`, feature drawer      | Medium | Queued badge, queue position, "start anyway"                                                |
+  | `src/presentation/web/app/build-graph-nodes.ts` + `get-graph-data.ts` | Medium | Node data must carry queue state; the loader must forward it (LESSONS)            |
+  | `src/presentation/cli/commands/` (settings, feat new/list)   | Medium | Read/write the limit; report queued instead of "started"                                    |
+  | `src/presentation/tui/`                                      | Low    | Parity: show queued state                                                                   |
+  | `translations/<lang>/*.json` (9 locales)                     | Medium | New settings + status keys in every locale or the completeness test fails                   |
+
+  ## Dependencies
+
+  - **107-auto-commit-rebase-sync** — the admission path wraps `StartFeatureUseCase`, which now
+    routes its git sync through `SyncFeatureBranchUseCase`. A queued feature must run that sync at
+    *admission* time, not at queue time, or it will start from a stale base.
+  - Prior art to follow, not a blocking dependency: `interactiveAgent.maxConcurrentSessions`
+    (settings shape, mapper, number input) and `CheckAndUnblockFeaturesUseCase` (reconciler shape).
+
+  ## Risks
+
+  - **Two gates, one queue.** Capacity and parent-dependency gates are independent. Modelling
+    "queued" as a second meaning of `Blocked`, or as an untagged `Pending`, makes a user-deferred
+    feature auto-start against the user's intent. The queued marker must be explicit and separate.
+  - **Silent persistence loss.** Both new columns must be added to the repository INSERT/UPDATE
+    column lists, not just the mappers — this exact defect has shipped three times (LESSONS).
+  - **Deadlock.** If a slot is released only on a happy-path transition, a crashed or deleted
+    running feature leaks its slot forever. The release must be driven by the running-lifecycle
+    predicate on every transition (including failure and delete), not by explicit decrement.
+
+  ## Size Estimate
+
+  **L** — one settings field and one feature field, each needing the full four-touch persistence
+  chain plus a migration; a new domain helper; two use cases modified and one added; a new
+  repository count query on the port and its adapter; three presentation surfaces (web, CLI, TUI)
+  plus canvas node wiring; and nine locale files. Individually mechanical, but wide, and the
+  admission/release logic needs real integration tests rather than mocks.
+
+  ---
+
+  _Generated by `/shep-kit:new-feature` — proceed with `/shep-kit:research`_

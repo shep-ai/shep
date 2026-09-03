@@ -12,6 +12,7 @@ import {
   deriveLifecycle,
 } from '@/components/common/feature-node/derive-feature-state';
 import { isProcessAlive } from '@shepai/core/infrastructure/services/process/is-process-alive';
+import { isQueuedForCapacity } from '@shepai/core/domain/shared/parallel-feature-limit';
 import { computeWorktreePath } from '@shepai/core/infrastructure/services/ide-launchers/compute-worktree-path';
 import type { CanvasNodeType } from '@/components/features/features-canvas';
 import type { Edge } from '@xyflow/react';
@@ -55,6 +56,14 @@ export interface BuildGraphNodesOptions {
   applications?: ApplicationWithStatus[];
   /** Clusters to render on the canvas (with their linked repository IDs) */
   clusters?: { cluster: Cluster; linkedRepoIds: string[] }[];
+  /**
+   * 1-based capacity-queue position keyed by feature id.
+   *
+   * Supplied by the caller from GetParallelCapacityUseCase rather than derived
+   * here: the position depends on every other queued feature, which this
+   * builder does not see, and asking per node would be an N+1.
+   */
+  queuePositions?: Map<string, number>;
 }
 
 export function buildGraphNodes(
@@ -328,6 +337,14 @@ function appendFeatureNodes(
       }),
       ...(options?.securityMode &&
         options.securityMode !== 'Disabled' && { securityMode: options.securityMode }),
+      // Capacity queue. `queuedAt` is the marker — a user-deferred (`--pending`)
+      // feature sits in the same lifecycle and must NOT read as queued.
+      ...(isQueuedForCapacity(feature) && {
+        queued: true,
+        ...(options?.queuePositions?.get(feature.id) != null && {
+          queuePosition: options.queuePositions.get(feature.id),
+        }),
+      }),
     };
 
     const featureNodeId = `feat-${feature.id}`;

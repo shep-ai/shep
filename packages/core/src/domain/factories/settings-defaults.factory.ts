@@ -37,6 +37,7 @@ import {
   TerminalType,
   WhatsAppAdapterKind,
 } from '../generated/output';
+import { UNLIMITED_PARALLEL_FEATURES } from '../shared/parallel-feature-limit';
 
 /**
  * Default AI model for all SDLC agents.
@@ -226,6 +227,7 @@ export function createDefaultSettings(): Settings {
     openPrOnImplementationComplete: false,
     approvalGateDefaults,
     ciWatchEnabled: true,
+    maxParallelFeatures: UNLIMITED_PARALLEL_FEATURES,
     enableEvidence: false,
     commitEvidence: false,
     defaultMode: 'Fast',

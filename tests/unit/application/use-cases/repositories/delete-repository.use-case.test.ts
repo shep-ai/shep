@@ -7,6 +7,7 @@ import type { IFeatureRepository } from '@/application/ports/output/repositories
 import type { IFileSystemService } from '@/application/ports/output/services/file-system-service.interface.js';
 import type { Repository, Feature } from '@/domain/generated/output.js';
 import { SdlcLifecycle } from '@/domain/generated/output.js';
+import { createMockFeatureRepository } from '../../../../helpers/feature-repository.mock.js';
 
 function createMockRepo(): IRepositoryRepository {
   return {
@@ -25,18 +26,7 @@ function createMockRepo(): IRepositoryRepository {
 }
 
 function createMockFeatureRepo(): IFeatureRepository {
-  return {
-    create: vi.fn(),
-    findById: vi.fn().mockResolvedValue(null),
-    findByIdPrefix: vi.fn().mockResolvedValue(null),
-    findBySlug: vi.fn().mockResolvedValue(null),
-    findByBranch: vi.fn().mockResolvedValue(null),
-    list: vi.fn().mockResolvedValue([]),
-    update: vi.fn(),
-    findByParentId: vi.fn().mockResolvedValue([]),
-    delete: vi.fn(),
-    softDelete: vi.fn(),
-  };
+  return createMockFeatureRepository();
 }
 
 const sampleRepo: Repository = {

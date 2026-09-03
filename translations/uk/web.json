@@ -115,6 +115,8 @@
       },
       "defaultMode": "Default feature mode",
       "defaultModeDescription": "Default mode for new features created via CLI or Web UI",
+      "maxParallelFeatures": "Максимум паралельних функцій",
+      "maxParallelFeaturesDescription": "Максимальна кількість функцій, які одночасно виконують агента. 0 означає без обмежень. Решта функцій стають у чергу та запускаються автоматично, щойно звільниться місце.",
       "modeExploration": "Exploration",
       "modeFast": "Fast",
       "modeRegular": "Regular"
@@ -925,5 +927,11 @@
     "deleteAdoptedNote": "Функцію, створену з цієї сесії, не буде видалено.",
     "cancel": "Скасувати",
     "archivedHidden": "Сховано в архіві: {{count}}"
+  },
+  "features": {
+    "queued": "У черзі",
+    "queuedWithPosition": "У черзі · {{position}} попереду",
+    "queuedTooltip": "Очікує вільного місця ({{position}} у черзі)",
+    "startAnyway": "Усе одно запустити"
   }
 }

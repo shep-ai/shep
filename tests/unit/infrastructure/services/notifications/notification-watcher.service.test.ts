@@ -25,6 +25,7 @@ import type { IAgentRunRepository } from '@/application/ports/output/agents/agen
 import type { IPhaseTimingRepository } from '@/application/ports/output/agents/phase-timing-repository.interface.js';
 import type { IFeatureRepository } from '@/application/ports/output/repositories/feature-repository.interface.js';
 import type { INotificationService } from '@/application/ports/output/services/notification-service.interface.js';
+import { createMockFeatureRepository } from '../../../../helpers/feature-repository.mock.js';
 
 function createMockAgentRun(overrides: Partial<AgentRun> = {}): AgentRun {
   return {
@@ -94,21 +95,6 @@ function createMockFeature(overrides: Partial<Feature> = {}): Feature {
   } as Feature;
 }
 
-function createMockFeatureRepository(): IFeatureRepository {
-  return {
-    create: vi.fn(),
-    findById: vi.fn().mockResolvedValue({ name: 'Quick Markdown File Creation' }),
-    findByIdPrefix: vi.fn(),
-    findBySlug: vi.fn(),
-    findByBranch: vi.fn(),
-    list: vi.fn().mockResolvedValue([]),
-    update: vi.fn(),
-    delete: vi.fn(),
-    softDelete: vi.fn(),
-    findByParentId: vi.fn(),
-  };
-}
-
 function createMockNotificationService(): INotificationService & {
   receivedEvents: NotificationEvent[];
 } {
@@ -133,7 +119,9 @@ describe('NotificationWatcherService', () => {
 
     runRepo = createMockRunRepository();
     phaseRepo = createMockPhaseTimingRepository();
-    featureRepo = createMockFeatureRepository();
+    featureRepo = createMockFeatureRepository({
+      findById: vi.fn().mockResolvedValue({ name: 'Quick Markdown File Creation' }),
+    });
     notificationService = createMockNotificationService();
     watcher = new NotificationWatcherService(runRepo, phaseRepo, featureRepo, notificationService);
   });

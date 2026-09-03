@@ -365,6 +365,25 @@ model WorkflowConfig {
   @doc("Enable CI watch/fix loop after push (default: true)")
   ciWatchEnabled: boolean = true;
 
+  /**
+   * Maximum number of features that may have a live agent at the same time.
+   *
+   * A feature occupies a slot while its lifecycle means an agent is actively
+   * working on it (Started, Analyze, Requirements, Research, Planning,
+   * Implementation, Exploring). Features waiting on a human or on CI — Pending,
+   * Blocked, Review, AwaitingUpstream, Maintain — do not occupy a slot.
+   *
+   * When the limit is reached, newly created or manually started features are
+   * queued (fully initialized, no agent spawned) and admitted automatically in
+   * FIFO order as slots free up. The limit governs admission only: lowering it
+   * below the number of currently running features never terminates anything.
+   *
+   * Set to 0 for unlimited, which is the default and preserves the behaviour of
+   * installations that predate this setting.
+   */
+  @doc("Maximum concurrently running features (default: 0 = unlimited)")
+  maxParallelFeatures?: int32;
+
   @doc("Maximum number of CI fix/push/watch iterations before giving up (default: 3)")
   ciMaxFixAttempts?: int32;
 
