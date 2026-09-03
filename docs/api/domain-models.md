@@ -190,8 +190,29 @@ export type Repository = SoftDeletableEntity & {
 ```typescript
 export type ModelConfiguration = {
   default: string; // Default model identifier for all agents
+  adaptive?: AdaptiveModelConfig; // Per-task model tier routing (spec 110)
 };
 ```
+
+### AdaptiveModelConfig
+
+Controls per-task model tier selection during implementation. The pinned model
+(`ModelConfiguration.default`, or a per-feature override) is the ceiling —
+adaptive selection may degrade below it for simple tasks but never promotes
+above it. Absent means disabled.
+
+```typescript
+export type AdaptiveModelConfig = {
+  enabled: boolean; // Route each task to a model matching its complexity
+  high?: string; // Explicit model for High-complexity tasks
+  medium?: string; // Explicit model for Medium-complexity tasks
+  low?: string; // Explicit model for Low-complexity tasks
+};
+```
+
+Unset tier fields are derived from the pinned model's family intersected with
+the configured agent's supported-model list — see
+`packages/core/src/domain/shared/model-tier.ts`.
 
 ### UserProfile
 

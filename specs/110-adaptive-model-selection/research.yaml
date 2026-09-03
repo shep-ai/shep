@@ -1,0 +1,103 @@
+name: adaptive-model-selection
+number: 110
+branch: claude/shep-adaptive-model-selection-mqhcg4
+summary: >
+  Investigated where the pinned model enters the execution path, how tasks are produced and
+  consumed, and which extension points already exist for per-call model overrides.
+
+relatedFeatures: []
+
+technologies:
+  - TypeScript
+  - LangGraph
+
+relatedLinks:
+  - title: 'LESSONS.md — Adding a Model to the Catalog Is a Four-Touch Change'
+    url: 'https://github.com/shep-ai/shep/blob/main/LESSONS.md'
+
+openQuestions: []
+
+decisions:
+  - id: D1
+    title: Where the per-task model override is applied
+    decision: >
+      In `implement.node.ts`, via the existing `buildExecutorOptions(state, overrides, nodeName)`
+      seam — extended so `overrides` may carry `model`.
+    alternatives: >
+      (a) A new `state.taskModel` channel written per task — rejected, LangGraph channels are
+      graph-wide and adding a channel breaks every full-state fixture (LESSONS).
+      (b) A second executor instance per tier — rejected, executors are cached per agent type and
+      the model is already a per-call option.
+    rationale: >
+      `AgentExecutionOptions.model` is already the per-call knob every executor honours, and
+      `buildExecutorOptions` is the single place all implement-node calls funnel through.
+
+  - id: D2
+    title: Family- and catalog-aware tier resolution rather than a fixed opus/sonnet/haiku triple
+    decision: >
+      Classify known model ids into (family, tier) pairs. Resolve by clamping the requested tier
+      to the pinned model's tier, then picking the first model of that tier in the SAME family
+      that the agent's catalog actually lists. Fall back upward toward the pinned model, and
+      return the pinned model unchanged when nothing matches.
+    alternatives: >
+      A hardcoded `{high: 'claude-opus-5', medium: 'claude-sonnet-5', low: 'claude-haiku-4-5'}`
+      map — rejected: it would silently send Claude ids to a Gemini or Codex run, and Cursor's
+      catalog has no Haiku at all.
+    rationale: >
+      Mirrors the existing lesson that a pass-through fallback in `CURSOR_MODEL_MAP` hides missing
+      mappings; here the fallback is explicit and always yields a model the agent actually serves.
+
+  - id: D3
+    title: Deterministic heuristic classifier as a backstop
+    decision: >
+      `classifyTaskComplexity(task)` scores acceptance-criteria count, TDD-cycle presence,
+      estimated effort and description keywords, and is applied whenever `task.complexity` is
+      absent or unparseable.
+    alternatives: 'Trust the plan agent; skip adaptive routing for unclassified tasks.'
+    rationale: >
+      LESSONS: "When an LLM writes user-facing copy from structured data, validate the output
+      against that same data." The same applies to a routing decision — the feature must behave
+      identically on a plan produced before this change shipped.
+
+  - id: D4
+    title: Global setting, not a FeatureFlags entry
+    decision: '`Settings.models.adaptive: AdaptiveModelConfig { enabled, high?, medium?, low? }`.'
+    alternatives: 'A `FeatureFlags.adaptiveModels` boolean.'
+    rationale: >
+      FeatureFlags gate whole web modules and routes. This is a workflow preference that also has
+      to be readable from a headless agent worker, and it needs three companion override fields —
+      it belongs next to `models.default`, which is already the single source of truth for
+      "which model do we run".
+
+  - id: D5
+    title: Never upgrade above the pinned model
+    decision: 'The pinned model is a ceiling; High clamps down to the pin when the pin is lower.'
+    alternatives: 'Let High always mean the family flagship.'
+    rationale: >
+      The pin is an explicit user choice (cost, availability, org policy). Silently promoting a
+      Sonnet pin to Opus would spend money the user declined to spend.
+
+content: |
+  ## Existing code paths
+
+  | Concern | Location |
+  | ------- | -------- |
+  | Pinned model enters graph state | `feature-agent/state.ts` → `model` channel |
+  | Model reaches the CLI flag | `buildExecutorOptions()` in `nodes/node-helpers.ts` |
+  | Task list produced | `nodes/prompts/plan.prompt.ts` (writes `tasks.yaml`) |
+  | Task list consumed | `nodes/implement.node.ts` (`PlanYaml`/`TasksYaml`) |
+  | Per-agent model lists | `infrastructure/services/agents/common/agent-model-catalog.ts` |
+  | Model exposed to UI | `IAgentExecutorFactory.getSupportedModels/listAvailableModels` |
+
+  ## Constraint discovered
+
+  A sequential phase is currently ONE executor call for all of the phase's tasks, and tasks
+  inside a phase may depend on each other. Splitting a phase into "all High tasks, then all Low
+  tasks" would reorder dependent work. Batching **consecutive runs of same-model tasks** keeps
+  the declared order intact while still collapsing calls — a phase of
+  `[High, High, Low, Low, High]` becomes three calls, not five and not two.
+
+  ## Prior art in this repo
+
+  `domain/shared/build-mode.ts` (`normalizeBuildMode`) is the precedent for "one bridge function
+  that every reader funnels through, handling legacy spellings". `model-tier.ts` follows it.

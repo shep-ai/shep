@@ -7,6 +7,7 @@
     "sections": {
       "language": "Langue",
       "agent": "Agent",
+      "adaptiveModels": "Modèles adaptatifs",
       "environment": "Environnement",
       "workflow": "Workflow",
       "worktree": "Worktree",
@@ -134,6 +135,28 @@
       "hint": "À utiliser quand un simple worktree git ne suffit pas : monorepos nécessitant un node_modules lié, ou projets qui ne compilent que depuis un répertoire préparé.",
       "links": {
         "worktreeGuide": "Provisionnement de worktree personnalisé"
+      }
+    },
+    "adaptiveModels": {
+      "title": "Sélection adaptative du modèle",
+      "description": "Exécuter chaque tâche planifiée sur un modèle adapté à sa complexité",
+      "enabled": "Router les tâches selon la complexité",
+      "enabledDescription": "Après la planification, chaque tâche s'exécute sur le modèle correspondant à sa complexité plutôt que sur le modèle épinglé. Les tâches simples reçoivent un modèle plus petit et plus rapide.",
+      "derived": "Dérivé du modèle épinglé",
+      "planUnavailable": "Impossible de déterminer les modèles par niveau pour l'agent actuel.",
+      "ceilingHint": "Le modèle épinglé {{model}} sur {{agent}} est le plafond : aucun niveau n'est plus capable que lui ni ne quitte sa famille de modèles.",
+      "singleModelHint": "{{model}} n'a pas de niveau inférieur connu dans le catalogue de cet agent, donc toutes les tâches continueraient de s'y exécuter. Épinglez un modèle ayant un équivalent plus petit, ou choisissez les modèles par niveau ci-dessous.",
+      "tiers": {
+        "high": "Complexité élevée",
+        "highDescription": "Conception inédite, changements transversaux, travail de sécurité ou de concurrence.",
+        "medium": "Complexité moyenne",
+        "mediumDescription": "Travail de fonctionnalité ordinaire suivant un motif établi.",
+        "low": "Complexité faible",
+        "lowDescription": "Modifications mécaniques : clés de traduction, entrées d'énumération, stories, renommages."
+      },
+      "hint": "Activez ceci quand vous épinglez un modèle haut de gamme alors que la plupart de vos tâches sont mécaniques. Le modèle épinglé reste le plafond, donc cela ne peut que réduire le coût.",
+      "links": {
+        "configurationGuide": "Guide de configuration"
       }
     },
     "ci": {
@@ -672,6 +695,7 @@
     "execution": "Exécution",
     "wait": "Attente",
     "cost": "Coût",
+    "modelUsed": "Exécuté sur {{model}}",
     "noActivityRecorded": "Aucune activité enregistrée"
   },
   "logTab": {

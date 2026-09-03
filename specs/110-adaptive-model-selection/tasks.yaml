@@ -1,0 +1,237 @@
+name: adaptive-model-selection
+number: 110
+branch: claude/shep-adaptive-model-selection-mqhcg4
+summary: >
+  14 tasks across 5 phases — domain tier module, settings persistence, agent wiring,
+  application use case, and CLI + web presentation.
+
+relatedFeatures: []
+technologies: []
+relatedLinks: []
+
+tasks:
+  - id: task-1
+    phaseId: phase-1
+    title: 'Add TaskComplexity enum and AdaptiveModelConfig to TypeSpec'
+    description: 'New tsp/common/enums/model-tier.tsp with TaskComplexity (High/Medium/Low); SpecTask.complexity optional; ModelConfiguration.adaptive optional. Regenerate with pnpm tsp:codegen.'
+    state: Done
+    complexity: Low
+    dependencies: []
+    acceptanceCriteria:
+      - 'TaskComplexity is exported from packages/core/src/domain/generated/output.ts'
+      - 'SpecTask.complexity and ModelConfiguration.adaptive are optional'
+    tdd: null
+    estimatedEffort: 20min
+
+  - id: task-2
+    phaseId: phase-1
+    title: 'Implement domain/shared/model-tier.ts'
+    description: 'Tier catalog (family + tier per known model id), normalizeTaskComplexity, classifyTaskComplexity heuristic, resolveModelForComplexity with clamping/family/catalog rules, resolveAdaptiveTierPlan.'
+    state: Done
+    complexity: High
+    dependencies: [task-1]
+    acceptanceCriteria:
+      - 'High clamps to the pinned model when the pin is lower-tier'
+      - 'Degradation stays within the pinned model family'
+      - 'Candidates are intersected with the supplied available-model list'
+      - 'Unknown model ids resolve to themselves'
+      - 'Relative imports inside domain/ carry no .js extension'
+    tdd:
+      red: ['Write tests for clamping, family scoping, catalog intersection, unknown ids, and the heuristic classifier']
+      green: ['Implement the tier catalog and the four exported functions']
+      refactor: ['Extract TIER_ORDER comparison helper']
+    estimatedEffort: 2h
+
+  - id: task-3
+    phaseId: phase-2
+    title: 'Migration 142 — adaptive model columns on settings'
+    description: 'Additive, PRAGMA-guarded ALTER TABLE for model_adaptive_enabled/high/medium/low.'
+    state: Done
+    complexity: Low
+    dependencies: [task-1]
+    acceptanceCriteria: ['Re-running the migration is a no-op', 'No column is dropped or renamed']
+    tdd: null
+    estimatedEffort: 15min
+
+  - id: task-4
+    phaseId: phase-2
+    title: 'Settings mapper + repository + defaults for models.adaptive'
+    description: 'SettingsRow fields, toDatabase, fromDatabase, INSERT column list, INSERT @params, UPDATE SET clause, createDefaultSettings.'
+    state: Done
+    complexity: Medium
+    dependencies: [task-3]
+    acceptanceCriteria:
+      - 'Repository round-trip preserves non-default values for all four columns'
+      - 'fromDatabase returns adaptive.enabled=false when the column is NULL'
+    tdd:
+      red: ['Repository-level round-trip test writing enabled=true plus three explicit overrides']
+      green: ['Add the columns to mapper and to all three SQL lists']
+      refactor: []
+    estimatedEffort: 45min
+
+  - id: task-5
+    phaseId: phase-3
+    title: 'Expose resolveAdaptiveModelPlan on IAgentExecutorFactory'
+    description: 'Port method + AgentExecutorFactory implementation delegating to the domain resolver with getSupportedModels as the catalog.'
+    state: Done
+    complexity: Medium
+    dependencies: [task-2]
+    acceptanceCriteria: ['Returns a tier plan for claude-code, cursor and gemini-cli pins']
+    tdd:
+      red: ['Factory test asserting the resolved triple per agent type']
+      green: ['Implement the method']
+      refactor: []
+    estimatedEffort: 30min
+
+  - id: task-6
+    phaseId: phase-3
+    title: 'Plan prompt emits a complexity per task'
+    description: 'Add a rubric section and the complexity field to the tasks.yaml template.'
+    state: Done
+    complexity: Low
+    dependencies: [task-1]
+    acceptanceCriteria: ['Prompt contains the rubric and the complexity key', 'Prompt still contains the existing YAML output rules']
+    tdd:
+      red: ['Assert the built prompt contains the rubric and complexity field']
+      green: ['Edit the prompt']
+      refactor: []
+    estimatedEffort: 20min
+
+  - id: task-7
+    phaseId: phase-3
+    title: 'buildExecutorOptions accepts a model override'
+    description: 'Widen the overrides parameter to Pick<AgentExecutionOptions, timeout | model> and let it win over state.model.'
+    state: Done
+    complexity: Low
+    dependencies: []
+    acceptanceCriteria: ['Override wins over state.model', 'Omitting it keeps current behaviour']
+    tdd:
+      red: ['node-helpers test for the override']
+      green: ['Widen the signature']
+      refactor: []
+    estimatedEffort: 15min
+
+  - id: task-8
+    phaseId: phase-3
+    title: 'Adaptive routing in the implement node'
+    description: 'Resolve a model per task, batch consecutive same-model tasks into one executor call for sequential phases, use the per-task model for parallel phases, and record the model in phase timings and logs.'
+    state: Done
+    complexity: High
+    dependencies: [task-2, task-5, task-7]
+    acceptanceCriteria:
+      - 'Adaptive off → exactly one executor call per sequential phase, model unchanged'
+      - 'Adaptive on → a Low task runs with the low-tier model'
+      - '[High, High, Low, Low, High] produces three sequential calls in that order'
+      - 'Parallel phase tasks each carry their own resolved model'
+    tdd:
+      red: ['Implement-node tests covering off, on, batching and parallel']
+      green: ['Add the grouping helper and thread the model into buildExecutorOptions']
+      refactor: ['Extract the grouping helper into its own module to keep the node focused']
+    estimatedEffort: 2h
+
+  - id: task-9
+    phaseId: phase-3
+    title: 'Surface the assigned tier in the implement prompt'
+    description: 'Render each task complexity in the task section so the agent knows the intended depth of work.'
+    state: Done
+    complexity: Low
+    dependencies: [task-8]
+    acceptanceCriteria: ['Task section shows the complexity when present']
+    tdd:
+      red: ['Prompt test']
+      green: ['Add the line']
+      refactor: []
+    estimatedEffort: 10min
+
+  - id: task-10
+    phaseId: phase-4
+    title: 'GetAdaptiveModelPlanUseCase + DI registration'
+    description: 'Use case reading settings and the factory port; registered under both the class token and the string token, and listed in the container bootstrap test.'
+    state: Done
+    complexity: Medium
+    dependencies: [task-4, task-5]
+    acceptanceCriteria:
+      - 'Resolvable by string token from a web server action'
+      - 'Returns enabled flag, base model, agent type and the resolved tier triple'
+    tdd:
+      red: ['Use-case unit test with mocked settings provider and factory']
+      green: ['Implement and register']
+      refactor: []
+    estimatedEffort: 45min
+
+  - id: task-11
+    phaseId: phase-5
+    title: 'CLI: shep settings adaptive-models'
+    description: 'Show the resolved plan; --enable/--disable; --high/--medium/--low overrides; --clear.'
+    state: Done
+    complexity: Medium
+    dependencies: [task-10]
+    acceptanceCriteria:
+      - 'Command is registered under shep settings'
+      - 'Plain-English output strings, matching the sibling worktree.command.ts convention'
+    tdd:
+      red: ['Command wiring test']
+      green: ['Implement the command']
+      refactor: []
+    estimatedEffort: 45min
+
+  - id: task-12
+    phaseId: phase-5
+    title: 'Web: adaptive model settings section'
+    description: 'Server action, Storybook mock, section component with toggle + three override pickers, stories, page wiring and a nav entry.'
+    state: Done
+    complexity: High
+    dependencies: [task-10]
+    acceptanceCriteria:
+      - 'Toggle persists through updateSettingsAction'
+      - 'Section renders the resolved tier models for the current agent'
+      - 'Colocated .stories.tsx exists and build:storybook passes'
+      - 'A nav entry exists so the section is reachable without knowing the anchor'
+    tdd:
+      red: ['Component test for toggle + override persistence']
+      green: ['Build the section and wire it in']
+      refactor: []
+    estimatedEffort: 1h30min
+
+  - id: task-13
+    phaseId: phase-5
+    title: 'Activity tab shows the model used per phase'
+    description: 'Render the phase timing modelId as a badge so adaptive routing is observable per run.'
+    state: Done
+    complexity: Low
+    dependencies: [task-8]
+    acceptanceCriteria: ['A timing with a modelId renders it', 'A timing without one renders nothing extra']
+    tdd:
+      red: ['Activity-tab test']
+      green: ['Render the badge']
+      refactor: []
+    estimatedEffort: 30min
+
+  - id: task-14
+    phaseId: phase-5
+    title: 'Translations for all nine locales'
+    description: 'settings.adaptiveModels.* in web.json and commands.settings.adaptiveModels.* in cli.json for en, ar, de, es, fr, he, pt, ru, uk.'
+    state: Done
+    complexity: Low
+    dependencies: [task-11, task-12]
+    acceptanceCriteria: ['translation-completeness test passes']
+    tdd:
+      red: ['Run the completeness test to enumerate missing keys']
+      green: ['Add every key to all nine files']
+      refactor: []
+    estimatedEffort: 45min
+
+totalEstimate: '11h'
+openQuestions: []
+
+content: |
+  ## Summary
+
+  Phase 1 lands the vocabulary and the only piece of genuine logic — a family-aware,
+  catalog-intersected tier resolver that treats the pinned model as a ceiling. Phase 2 makes the
+  mode persistable through the full four-touch settings chain. Phase 3 is where behaviour
+  changes: the plan agent labels tasks, and the implement node batches consecutive same-model
+  tasks so each batch runs on the cheapest model that fits. Phase 4 exposes the resolved mapping
+  through one presentation-agnostic use case, and phase 5 consumes it from the CLI and the web
+  Settings page, with the per-phase model surfaced in the Activity tab so the routing is
+  observable on a real run.

@@ -1461,12 +1461,13 @@ a missing mapping never throws; it just sends the wrong flag value at runtime.
 The Storybook mocks had drifted too (`get-supported-models.ts` /
 `get-all-agent-models.ts` still listed the pre-Fable-5 set).
 
-**When adding or retiring a model ID, touch all four:**
+**When adding or retiring a model ID, touch all five:**
 
 1. `packages/core/src/infrastructure/services/agents/common/agent-model-catalog.ts` — every agent list that actually supports it (ordered most-capable first).
 2. Per-agent **name translation maps** — `CURSOR_MODEL_MAP` (cursor-executor) and `LEGACY_MODEL_ALIASES` (copilot-cli-executor). Each agent CLI has its own naming convention; a pass-through fallback hides the omission.
 3. `src/presentation/web/lib/model-metadata.ts` — display name + description. Without it the picker shows a prettified raw ID and an empty description. Re-check the *neighbouring* descriptions too: a new flagship makes the old "Most capable" line a lie.
 4. `.storybook/mocks/app/actions/get-supported-models.ts` and `get-all-agent-models.ts` — static mocks that don't import the catalog, so they drift silently and stories render a stale list.
+5. `packages/core/src/domain/shared/model-tier.ts` — the `MODEL_TIERS` table (family + High/Medium/Low). A model missing from it is not an error: it simply opts out of adaptive routing, so a new flagship silently never becomes the High-tier target and a new small model is never selected for Low-complexity tasks. There is no test that can catch the omission, because "unknown model passes through unchanged" is the deliberate safe default.
 
 **Do NOT** add a Claude model to `COPILOT_CLI_MODELS` / `OPENROUTER_MODELS` just
 because Anthropic shipped it — those lists are gated by what the third party
