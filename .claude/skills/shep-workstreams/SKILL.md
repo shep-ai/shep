@@ -105,9 +105,11 @@ Shep already does worktree-per-workstream. **Do not hand-roll `git worktree add`
 - `--pending` creates the feature *without* spawning. `shep feat start <id>` spawns it later.
   This is how you stage waves.
 - `--parent <feature-id>` records a real dependency. The child starts `Blocked`. When the parent
-  reaches `Implementation`, `Review`, or `Maintain`, shep **automatically rebases the child's
-  branch onto the parent's branch and spawns its agent**. Only *direct* children unblock — a
-  chain A → B → C cascades one link at a time, which is what you want.
+  **completes** — `Maintain`, i.e. its branch actually merged — shep **automatically rebases the
+  child's branch onto the parent's work and spawns its agent**. `Implementation` and `Review` do
+  not release the child: that code is still being rewritten, and a PR under review may never land.
+  Only *direct* children unblock — a chain A → B → C cascades one link at a time, which is what
+  you want.
 - `--attach <path>` is repeatable. Attach the source PRDs/design docs to every feature so each
   agent has the context without you pasting it.
 
@@ -119,7 +121,7 @@ Full flag reference, monitoring commands, and the PM/work-item commands are in
 Create features in dependency order so `--parent` ids exist when you need them.
 
 ```bash
-# Wave 0 — foundation. Nothing else can start until this reaches Implementation.
+# Wave 0 — foundation. Nothing else can start until this one is merged.
 shep feat new "Foundation: shared types, API contracts, routing, feature flags, design tokens" \
   --repo /path/to/project \
   --attach docs/v6-overview.md --attach docs/v6-api.md \
@@ -129,7 +131,7 @@ shep feat new "Foundation: shared types, API contracts, routing, feature flags, 
 ```
 
 ```bash
-# Wave 1 — dependents. Blocked until foundation hits Implementation, then auto-rebased + spawned.
+# Wave 1 — dependents. Blocked until the foundation merges, then auto-rebased + spawned.
 shep feat new "Creator storefront: creator page, claim flow, generated profile" \
   --repo /path/to/project --parent <foundation-id> \
   --attach docs/v6-storefront.md --push --pr
@@ -182,9 +184,9 @@ shep feat reject <id>        # send it back with feedback
 shep feat resume <id>        # resume a stopped or failed feature agent
 ```
 
-Merge in the plan's stated order. After each merge, re-check `shep feat ls` — a parent reaching
-`Implementation` will have unblocked its children automatically, and their rebases may have
-surfaced conflicts worth looking at before the next wave.
+Merge in the plan's stated order. After each merge, re-check `shep feat ls` — the merge is what
+moves the parent to `Maintain`, which unblocks its children automatically, and their rebases may
+have surfaced conflicts worth looking at before the next wave.
 
 ### Step 5: Track the graph as work items (optional, for larger efforts)
 

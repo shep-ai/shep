@@ -462,9 +462,10 @@ model Feature extends SoftDeletableEntity {
   /**
    * Optional reference to the parent feature in a dependency hierarchy.
    *
-   * When set, this feature is a child of the referenced parent feature.
-   * Child features may be created in a Blocked state when the parent
-   * has not yet reached the Implementation lifecycle stage.
+   * When set, this feature is a child of the referenced parent feature and
+   * must not start before the parent's work has landed. Child features are
+   * created Blocked while the parent has not reached Maintain (or been
+   * archived after reaching it), and are released automatically once it does.
    *
    * @example "550e8400-e29b-41d4-a716-446655440000"
    */

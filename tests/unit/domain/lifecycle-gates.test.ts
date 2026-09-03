@@ -9,6 +9,8 @@ import { SdlcLifecycle } from '@/domain/generated/output.js';
 import {
   COMPLETED_LIFECYCLES,
   EXPLORING_TRANSITIONS,
+  GATE_EXEMPT_LIFECYCLES,
+  allowsLifecycleWrite,
   satisfiesDependencyGate,
 } from '@/domain/lifecycle-gates.js';
 
@@ -128,5 +130,101 @@ describe('EXPLORING_TRANSITIONS', () => {
 
   it('should NOT allow transition from Exploring to Exploring (self-loop is implicit)', () => {
     expect(EXPLORING_TRANSITIONS.has(SdlcLifecycle.Exploring)).toBe(false);
+  });
+});
+
+describe('GATE_EXEMPT_LIFECYCLES', () => {
+  it('should contain only the non-progress targets a Blocked feature may still reach', () => {
+    expect([...GATE_EXEMPT_LIFECYCLES].sort()).toEqual(
+      [SdlcLifecycle.Archived, SdlcLifecycle.Blocked, SdlcLifecycle.Deleting].sort()
+    );
+  });
+
+  it('should NOT contain any working lifecycle', () => {
+    for (const lifecycle of [
+      SdlcLifecycle.Started,
+      SdlcLifecycle.Requirements,
+      SdlcLifecycle.Research,
+      SdlcLifecycle.Planning,
+      SdlcLifecycle.Implementation,
+      SdlcLifecycle.Review,
+      SdlcLifecycle.Maintain,
+    ]) {
+      expect(GATE_EXEMPT_LIFECYCLES.has(lifecycle)).toBe(false);
+    }
+  });
+});
+
+describe('allowsLifecycleWrite', () => {
+  const blockedChild = { lifecycle: SdlcLifecycle.Blocked, parentId: 'parent-1' };
+
+  it('should allow any write to a feature that is not Blocked', () => {
+    expect(
+      allowsLifecycleWrite(
+        { lifecycle: SdlcLifecycle.Implementation, parentId: 'parent-1' },
+        { lifecycle: SdlcLifecycle.Requirements },
+        SdlcLifecycle.Review
+      )
+    ).toBe(true);
+  });
+
+  it('should refuse to advance a Blocked feature whose parent has not landed', () => {
+    for (const parentLifecycle of [
+      SdlcLifecycle.Pending,
+      SdlcLifecycle.Started,
+      SdlcLifecycle.Requirements,
+      SdlcLifecycle.Research,
+      SdlcLifecycle.Planning,
+      SdlcLifecycle.Implementation,
+      SdlcLifecycle.Review,
+      SdlcLifecycle.Blocked,
+    ]) {
+      expect(
+        allowsLifecycleWrite(
+          blockedChild,
+          { lifecycle: parentLifecycle },
+          SdlcLifecycle.Implementation
+        )
+      ).toBe(false);
+    }
+  });
+
+  it('should allow advancing a Blocked feature once its parent reached Maintain', () => {
+    expect(
+      allowsLifecycleWrite(
+        blockedChild,
+        { lifecycle: SdlcLifecycle.Maintain },
+        SdlcLifecycle.Requirements
+      )
+    ).toBe(true);
+  });
+
+  it('should allow advancing a Blocked feature under a parent archived after completing', () => {
+    expect(
+      allowsLifecycleWrite(
+        blockedChild,
+        { lifecycle: SdlcLifecycle.Archived, previousLifecycle: SdlcLifecycle.Maintain },
+        SdlcLifecycle.Requirements
+      )
+    ).toBe(true);
+  });
+
+  it('should allow the gate-exempt targets even while the gate is closed', () => {
+    for (const target of GATE_EXEMPT_LIFECYCLES) {
+      expect(
+        allowsLifecycleWrite(blockedChild, { lifecycle: SdlcLifecycle.Planning }, target)
+      ).toBe(true);
+    }
+  });
+
+  it('should allow a Blocked feature with no parent to move on', () => {
+    expect(
+      allowsLifecycleWrite({ lifecycle: SdlcLifecycle.Blocked }, null, SdlcLifecycle.Requirements)
+    ).toBe(true);
+  });
+
+  it('should allow a Blocked feature whose parent cannot be loaded to move on', () => {
+    // A dangling parentId must not strand the child — nothing is left to release it.
+    expect(allowsLifecycleWrite(blockedChild, null, SdlcLifecycle.Requirements)).toBe(true);
   });
 });

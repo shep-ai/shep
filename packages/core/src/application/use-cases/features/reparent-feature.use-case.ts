@@ -10,12 +10,20 @@
  * After reparenting, both ends of the new edge are handed to
  * CheckAndUnblockFeaturesUseCase, which owns the gate and the
  * Blocked -> Started + rebase + spawn flow.
+ *
+ * A feature that was already running when the dependency was declared has its
+ * agent stopped: writing Blocked while the worker keeps going produces a
+ * feature that claims to be waiting and is in fact still building on code the
+ * parent has not landed yet. The run is marked interrupted (resumable), and
+ * CheckAndUnblockFeaturesUseCase restarts it — rebased onto the parent — once
+ * the parent's work lands.
  */
 
 import { injectable, inject } from 'tsyringe';
 import { SdlcLifecycle } from '../../../domain/generated/output.js';
 import type { IFeatureRepository } from '../../ports/output/repositories/feature-repository.interface.js';
 import { satisfiesDependencyGate } from '../../../domain/lifecycle-gates.js';
+import { StopAgentRunUseCase } from '../agents/stop-agent-run.use-case.js';
 import { CheckAndUnblockFeaturesUseCase } from './check-and-unblock-features.use-case.js';
 
 /** Lifecycle states that cannot be reparented. */
@@ -36,7 +44,9 @@ export class ReparentFeatureUseCase {
     @inject('IFeatureRepository')
     private readonly featureRepo: IFeatureRepository,
     @inject(CheckAndUnblockFeaturesUseCase)
-    private readonly checkAndUnblock: CheckAndUnblockFeaturesUseCase
+    private readonly checkAndUnblock: CheckAndUnblockFeaturesUseCase,
+    @inject(StopAgentRunUseCase)
+    private readonly stopAgentRun: StopAgentRunUseCase
   ) {}
 
   async execute(input: ReparentFeatureInput): Promise<void> {
@@ -105,6 +115,14 @@ export class ReparentFeatureUseCase {
       updatedAt: new Date(),
     });
 
+    // The new edge just took this feature out of the running. Stop the agent
+    // that is still working on it, otherwise the dependency is decoration: the
+    // worker keeps building on a base its parent has not produced yet, and its
+    // next phase report is a lifecycle write that undoes Blocked.
+    if (newLifecycle === SdlcLifecycle.Blocked && child.lifecycle !== SdlcLifecycle.Blocked) {
+      await this.stopRunningAgent(child.agentRunId);
+    }
+
     // Re-evaluate the gate at BOTH ends of the new edge. Both calls are
     // gate-checked and idempotent inside CheckAndUnblockFeaturesUseCase, so the
     // gate is deliberately NOT re-derived here — duplicating it is what let the
@@ -118,6 +136,25 @@ export class ReparentFeatureUseCase {
     // Reparented feature: it may itself be the parent of Blocked children whose
     // gate is satisfied by its own lifecycle.
     await this.checkAndUnblock.execute(featureId);
+  }
+
+  /**
+   * Stop the feature's agent run, if it has one.
+   *
+   * StopAgentRunUseCase already no-ops on terminal runs and on a missing PID,
+   * so no liveness check is needed here. Failures are swallowed: the reparent
+   * itself has been persisted, and leaving the caller with an error would
+   * suggest the dependency edge was not recorded when it was.
+   */
+  private async stopRunningAgent(agentRunId: string | undefined): Promise<void> {
+    if (!agentRunId) {
+      return;
+    }
+    try {
+      await this.stopAgentRun.execute(agentRunId);
+    } catch {
+      // Best-effort — the gate still holds via UpdateFeatureLifecycleUseCase.
+    }
   }
 
   /**
