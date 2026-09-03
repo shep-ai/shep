@@ -4,7 +4,7 @@ This guide walks you through installing Shep AI CLI and creating your first feat
 
 ## Prerequisites
 
-- **Node.js** 18 or higher
+- **Node.js** 22 or higher
 - **pnpm** 8 or higher (`npm install -g pnpm`)
 - A repository to work with
 - Access to at least one supported AI agent provider

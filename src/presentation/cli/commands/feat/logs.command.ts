@@ -27,6 +27,14 @@ export function createLogsCommand(): Command {
     .argument('<id>', t('cli:commands.feat.logs.idArgument'))
     .option('-f, --follow', t('cli:commands.feat.logs.followOption'))
     .option('-n, --lines <count>', t('cli:commands.feat.logs.linesOption'), '0')
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep feat logs abc12345
+  $ shep feat logs -f abc12345
+  $ shep feat logs -n 50 abc12345`
+    )
     .action(async (id: string, opts: { follow?: boolean; lines: string }) => {
       try {
         const useCase = container.resolve(ShowFeatureUseCase);

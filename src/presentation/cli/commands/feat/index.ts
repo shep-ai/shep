@@ -34,6 +34,18 @@ import { createPromoteCommand } from './promote.command.js';
 export function createFeatCommand(): Command {
   return new Command('feat')
     .description(getCliI18n().t('cli:commands.feat.description'))
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep feat new "Add user authentication"
+  $ shep feat new "Add login page" --push --pr
+  $ shep feat ls
+  $ shep feat show <id>
+  $ shep feat start <id>
+  $ shep feat resume <id>
+  $ shep feat logs <id>`
+    )
     .addCommand(createNewCommand())
     .addCommand(createLsCommand())
     .addCommand(createShowCommand())
