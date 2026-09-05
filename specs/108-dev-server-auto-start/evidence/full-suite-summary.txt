@@ -1,0 +1,76 @@
+Full test suite — dev-server-auto-start (spec 108)
+Captured 2026-08-09T13:45:51Z
+
+$ pnpm test:unit
+ Test Files  941 passed (941)
+      Tests  11001 passed (11001)
+   Start at  16:24:19
+   Duration  30.94s (transform 40.96s, setup 69.97s, import 109.70s, tests 130.17s, environment 93.51s)
+
+$ pnpm test:int
+ Test Files  135 passed (135)
+      Tests  1605 passed (1605)
+   Start at  16:24:58
+   Duration  21.02s (transform 23.87s, setup 2.01s, import 35.05s, tests 272.92s, environment 12ms)
+
+$ pnpm build:storybook   (NFR-10)
+✓ built in 14.72s
+info => Preview built (18 s)
+info => Output directory: /Users/ariel/.shep/repos/d8b2e13ce678068f/wt/feat-dev-server-auto-start/storybook-static
+
+Zero failures in either suite.
+The pinned detect-dev-script.test.ts suite (492 lines) passes UNMODIFIED — the
+backward-compatibility guard for every existing Node repository (NFR-5).
+
+────────────────────────────────────────────────────────────────────────
+Re-verification after the evidence-path-resolution fix (fdfb596)
+Captured 2026-08-09T14:20:00Z
+
+$ pnpm build
+  tsc -p tsconfig.build.json — clean, no errors.
+
+$ pnpm test           (vitest run tests/unit tests/integration)
+ Test Files  1077 passed (1077)
+
+$ SHEP_E2E_USE_DIST=1 vitest run tests/e2e
+ Test Files  15 passed (15)
+      Tests  87 passed (87)
+
+$ pnpm build:storybook    (NFR-10)
+✓ built in 18.68s
+info => Preview built (22 s)
+
+$ pnpm lint && pnpm format:check && pnpm typecheck
+  All clean — 0 errors, 0 warnings.
+
+Feature-agent evidence node after the fix:
+ ✓ evidence-output-parser.test.ts    (65 tests)
+ ✓ evidence-file-resolution.test.ts   (7 tests)   <- new, real filesystem
+ ✓ evidence.node.test.ts             (38 tests)
+      Tests  110 passed (110)
+
+NOT GREEN — reported rather than hidden:
+$ pnpm test:e2e:web   (playwright, 29 tests)
+  21 passed | 2 skipped | 6 failed
+
+  chat-tab.spec.ts:306, i18n-language-switching.spec.ts (x3),
+  messaging-settings.spec.ts (x2)
+
+  Five of the six fail identically on `page.waitForLoadState('networkidle')`
+  against /settings, timing out at 30s. Reproduced with --workers=1, so this
+  is deterministic, not load contention. Diagnosed directly: after loading
+  /settings, exactly one request is still open 12s later —
+
+      http://localhost:3001/api/interactive/chat/turn-statuses/stream
+
+  A permanently-open SSE stream means `networkidle` is unreachable on any
+  page mounting that provider, so those specs can never pass as written.
+
+  Scope check: this branch changes no route, layout, provider or settings
+  code. `git diff --name-only main...HEAD` under src/presentation/web/ is
+  limited to the application-page run-plan components and three server
+  actions; the branch touches nothing matching *turn-statuses* or
+  *interactive*. The fix belongs to the interactive-chat SSE surface (either
+  closing the stream when idle or replacing `networkidle` with an explicit
+  element wait) and is filed as follow-up work rather than folded into this
+  feature.

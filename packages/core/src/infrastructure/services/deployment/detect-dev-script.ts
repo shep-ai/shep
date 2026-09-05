@@ -1,49 +1,76 @@
 /**
- * Detect Dev Script
+ * Detect Dev Script — composition layer over the ecosystem detector registry.
  *
- * Pure utility that reads package.json from a directory, scans for common dev
- * scripts (dev, start, serve), and detects the package manager from lockfile
- * presence. Returns the detected command or an error.
+ * Per-ecosystem logic lives in `detectors/`; this module owns the walk (the
+ * given directory, then one level of subdirectories) and exposes TWO
+ * projections over ONE registry walk:
+ *
+ * - {@link detectRunPlan} — rich. Carries the WINNING detector's identity
+ *   beside the result so the analyze node can name the tier in the deployment
+ *   log stream (NFR-11) and persist `language`/`framework`/`expectedPort`/
+ *   `setupCommands` on a Deterministic plan.
+ * - {@link detectDevScript} — the historical shape, returned verbatim, for
+ *   `deployment-spawner.spawnFromDetection`.
+ *
+ * That split is not duplication: two consumers that both already exist need
+ * different things, and returning provenance BESIDE the result rather than
+ * INSIDE it is what keeps the pinned `detect-dev-script.test.ts` assertions
+ * byte-identical. That suite is the strongest guard this feature has against
+ * silently changing what an existing repository starts (NFR-5).
  */
 
-import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs';
+import { readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { createDeploymentLogger } from './deployment-logger.js';
+import {
+  DETECTOR_REGISTRY,
+  Ecosystem,
+  MAX_SCANNED_SUBDIRS,
+  isSkippedDir,
+} from './detectors/registry.js';
+import type { DetectorError, DetectorResult, DetectorSuccess } from './detectors/types.js';
 
-/** Script names to search for, in priority order */
-const SCRIPT_PRIORITY = ['dev', 'start', 'serve'] as const;
+export type DetectDevScriptSuccess = DetectorSuccess;
+export type DetectDevScriptError = DetectorError;
+export type DetectDevScriptResult = DetectorResult;
 
-/** Lockfile-to-package-manager mapping, checked in order.
- *  Bun is listed first — the application-creation workflow scaffolds
- *  every new project via `bunx shadcn@latest init` which writes a
- *  `bun.lock[b]` file, and those projects MUST keep using bun for
- *  dev/build so the preview pane matches what the agent built with. */
-const LOCKFILE_MANAGERS = [
-  { lockfile: 'bun.lock', manager: 'bun' },
-  { lockfile: 'bun.lockb', manager: 'bun' },
-  { lockfile: 'pnpm-lock.yaml', manager: 'pnpm' },
-  { lockfile: 'yarn.lock', manager: 'yarn' },
-  { lockfile: 'package-lock.json', manager: 'npm' },
-] as const;
-
-export interface DetectDevScriptSuccess {
-  success: true;
-  packageManager: string;
-  scriptName: string;
-  command: string;
-  needsInstall: boolean;
-  /** The directory where package.json was found (may differ from input when scanning subdirs) */
-  resolvedDir: string;
+/** A detection result together with the detector that produced it. */
+export interface DetectionOutcome {
+  /** The winning ecosystem, or the one whose error is being reported. */
+  ecosystem: Ecosystem;
+  result: DetectorResult;
 }
-
-export interface DetectDevScriptError {
-  success: false;
-  error: string;
-}
-
-export type DetectDevScriptResult = DetectDevScriptSuccess | DetectDevScriptError;
 
 const log = createDeploymentLogger('[detectDevScript]');
+
+/**
+ * Resolve a dev command for a project directory, with detector provenance.
+ *
+ * @param dirPath - Absolute path to the project directory.
+ * @returns The winning ecosystem and its result. On total fall-through, the
+ *          Node detector's error for the given directory — so the message the
+ *          user sees stays the one they have always seen.
+ */
+export function detectRunPlan(dirPath: string): DetectionOutcome {
+  log.info(`scanning dirPath="${dirPath}"`);
+
+  // Try the given directory first
+  const direct = detectInDir(dirPath);
+  if (direct.result.success) {
+    log.info(`detector "${direct.ecosystem}" won in "${dirPath}"`);
+    return direct;
+  }
+
+  // Fallback: scan immediate subdirectories. This handles monorepos and
+  // projects where the app lives in a subdirectory (e.g., the worktree root
+  // has no manifest but `site/` or `app/` does), and it applies to EVERY
+  // ecosystem, not just Node (FR-7).
+  log.info(`no dev command at root, scanning subdirectories of "${dirPath}"`);
+  const nested = scanSubdirectories(dirPath);
+  if (nested) return nested;
+
+  return direct;
+}
 
 /**
  * Detect the dev script and package manager for a project directory.
@@ -52,77 +79,40 @@ const log = createDeploymentLogger('[detectDevScript]');
  * @returns Detection result with command info, or an error
  */
 export function detectDevScript(dirPath: string): DetectDevScriptResult {
-  log.info(`scanning dirPath="${dirPath}"`);
-
-  // Try the given directory first
-  const directResult = detectDevScriptInDir(dirPath);
-  if (directResult.success) return directResult;
-
-  // Fallback: scan immediate subdirectories for a package.json with a dev script.
-  // This handles monorepos and projects where the app lives in a subdirectory
-  // (e.g., worktree root has no package.json but `site/` or `app/` does).
-  log.info(`no dev script at root, scanning subdirectories of "${dirPath}"`);
-  const subdirResult = scanSubdirectories(dirPath);
-  if (subdirResult) return subdirResult;
-
-  return directResult;
+  return detectRunPlan(dirPath).result;
 }
 
 /**
- * Attempt detection in a single directory.
+ * Walk the ordered registry against a single directory, first success wins.
+ *
+ * On total fall-through the NODE detector's error is returned: it is the
+ * message every existing caller and test already expects, and it is the most
+ * actionable one for the overwhelmingly common case.
  */
-function detectDevScriptInDir(dirPath: string): DetectDevScriptResult {
-  // Read and parse package.json
-  let packageJson: { scripts?: Record<string, string> };
-  try {
-    const raw = readFileSync(join(dirPath, 'package.json'), 'utf-8');
-    packageJson = JSON.parse(raw);
-  } catch (err) {
-    const msg = `No package.json found in ${dirPath}`;
-    log.error(msg, err);
-    return { success: false, error: msg };
+function detectInDir(dirPath: string): DetectionOutcome {
+  let fallThrough: DetectorError = {
+    success: false,
+    error: `No dev server detected in ${dirPath}`,
+  };
+
+  for (const { ecosystem, detect } of DETECTOR_REGISTRY) {
+    const result = detect(dirPath);
+    if (result.success) return { ecosystem, result };
+    if (ecosystem === Ecosystem.Node) fallThrough = result;
   }
 
-  // Find the first matching script in priority order
-  const scripts = packageJson.scripts ?? {};
-  const availableScripts = Object.keys(scripts);
-  log.info(
-    `available scripts: [${availableScripts.join(', ')}], looking for: [${SCRIPT_PRIORITY.join(', ')}]`
-  );
-
-  const scriptName = SCRIPT_PRIORITY.find((name) => name in scripts);
-  if (!scriptName) {
-    const msg = `No dev script found in package.json. Expected one of: ${SCRIPT_PRIORITY.join(', ')}`;
-    log.warn(msg);
-    return { success: false, error: msg };
-  }
-
-  // Detect package manager from lockfile
-  const packageManager = detectPackageManager(dirPath);
-
-  // Build the command — pnpm/yarn use `<pm> <script>`; npm and bun both
-  // need the explicit `run` prefix (`bun <script>` without `run` would
-  // try to execute a binary named `<script>` instead of the package.json
-  // script).
-  const command =
-    packageManager === 'npm' || packageManager === 'bun'
-      ? `${packageManager} run ${scriptName}`
-      : `${packageManager} ${scriptName}`;
-
-  const needsInstall = !existsSync(join(dirPath, 'node_modules'));
-  log.info(
-    `detected — packageManager="${packageManager}", scriptName="${scriptName}", command="${command}", needsInstall=${needsInstall}, resolvedDir="${dirPath}"`
-  );
-  return { success: true, packageManager, scriptName, command, needsInstall, resolvedDir: dirPath };
+  return { ecosystem: Ecosystem.Node, result: fallThrough };
 }
 
 /**
- * Scan immediate subdirectories for a package.json with a dev script.
- * Skips hidden dirs, node_modules, and common non-project directories.
+ * Scan immediate subdirectories for a detectable project.
+ *
+ * Skips hidden dirs, node_modules and common build output, and stops after
+ * MAX_SCANNED_SUBDIRS entries so a wide repository root cannot turn detection
+ * into a filesystem sweep. Truncation is logged — a silently dropped
+ * directory reads as "we looked everywhere" when we did not.
  */
-function scanSubdirectories(dirPath: string): DetectDevScriptSuccess | null {
-  const SKIP_DIRS = new Set(['node_modules', '.git', '.next', 'dist', 'build', 'out', '.cache']);
-
+function scanSubdirectories(dirPath: string): DetectionOutcome | null {
   let entries: string[];
   try {
     entries = readdirSync(dirPath);
@@ -130,9 +120,14 @@ function scanSubdirectories(dirPath: string): DetectDevScriptSuccess | null {
     return null;
   }
 
-  for (const entry of entries) {
-    if (entry.startsWith('.') || SKIP_DIRS.has(entry)) continue;
+  const candidates = entries.filter((entry) => !isSkippedDir(entry));
+  if (candidates.length > MAX_SCANNED_SUBDIRS) {
+    log.warn(
+      `"${dirPath}" has ${candidates.length} candidate subdirectories — scanning only the first ${MAX_SCANNED_SUBDIRS}`
+    );
+  }
 
+  for (const entry of candidates.slice(0, MAX_SCANNED_SUBDIRS)) {
     const subPath = join(dirPath, entry);
     try {
       if (!statSync(subPath).isDirectory()) continue;
@@ -140,24 +135,14 @@ function scanSubdirectories(dirPath: string): DetectDevScriptSuccess | null {
       continue;
     }
 
-    const result = detectDevScriptInDir(subPath);
-    if (result.success) {
-      log.info(`found dev script in subdirectory "${entry}" — resolvedDir="${subPath}"`);
-      return result;
+    const outcome = detectInDir(subPath);
+    if (outcome.result.success) {
+      log.info(
+        `detector "${outcome.ecosystem}" won in subdirectory "${entry}" — resolvedDir="${subPath}"`
+      );
+      return outcome;
     }
   }
 
   return null;
-}
-
-/**
- * Detect the package manager by checking for lockfile presence.
- */
-function detectPackageManager(dirPath: string): string {
-  for (const { lockfile, manager } of LOCKFILE_MANAGERS) {
-    if (existsSync(join(dirPath, lockfile))) {
-      return manager;
-    }
-  }
-  return 'npm';
 }

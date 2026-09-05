@@ -35,6 +35,37 @@ import "../common/enums/deployment.tsp";
 import "./port-map.tsp";
 
 /**
+ * What kind of entity a local dev-server deployment is attached to.
+ *
+ * A deployment targets exactly one of three things: an Application, a
+ * Feature worktree, or a bare Repository. The member VALUES are the
+ * lowercase strings already persisted in `dev_servers.target_type` and
+ * already passed across `IDeploymentService.start()`,
+ * `setTransientState()` and `IDevServerAgentService.startDevServer()` —
+ * this enum names them rather than changing them, so no data migration
+ * is involved.
+ *
+ * @example
+ * ```typespec
+ * op startDevServer(targetId: string, targetType: DeploymentTargetType): void;
+ * ```
+ */
+@doc("Kinds of entity a local dev-server deployment can target")
+enum DeploymentTargetType {
+  /** Deployment of a generated Application. */
+  @doc("Deployment targeting an Application")
+  Application: "application",
+
+  /** Deployment of a Feature worktree. */
+  @doc("Deployment targeting a Feature worktree")
+  Feature: "feature",
+
+  /** Deployment of a bare Repository checkout. */
+  @doc("Deployment targeting a bare Repository")
+  Repository: "repository",
+}
+
+/**
  * A running deployment instance.
  *
  * Deployment extends BaseEntity and represents an active or stopped instance

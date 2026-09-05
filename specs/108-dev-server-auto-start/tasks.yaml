@@ -1,0 +1,1257 @@
+# Task Breakdown (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: dev-server-auto-start
+
+summary: |
+  43 tasks across 7 phases — TypeSpec/hashing foundation and shared detector contracts,
+  ten pure ecosystem detectors plus the ordered registry and the spawner shell fallback,
+  LangGraph integration (tier-zero .shep/dev.json, Manual pinning, ensure_infra and
+  install_deps widening), three use cases over a shared target resolver, the web run-plan
+  disclosure, the shep dev CLI group, then docs and full local verification.
+
+relatedFeatures:
+  - "103-agentic-dev-server"
+  - "079-fix-dev-server"
+  - "055-deployment-status-indicator"
+  - "061-default-env-deployment"
+
+technologies:
+  - "TypeScript (ESM, NodeNext)"
+  - "LangGraph (@langchain/langgraph)"
+  - "tsyringe"
+  - "TypeSpec"
+  - "better-sqlite3"
+  - "js-yaml"
+  - "Commander"
+  - "Next.js App Router"
+  - "React + Storybook"
+  - "Vitest"
+
+relatedLinks:
+  - title: "Docker Compose file reference — services and ports"
+    url: "https://docs.docker.com/reference/compose-file/services/"
+  - title: "PEP 621 — pyproject.toml project metadata"
+    url: "https://peps.python.org/pep-0621/"
+  - title: "Cargo manifest reference"
+    url: "https://doc.rust-lang.org/cargo/reference/manifest.html"
+  - title: "Deno — deno.json tasks"
+    url: "https://docs.deno.com/runtime/reference/cli/task/"
+  - title: "Phoenix — mix phx.server and the default 4000 port"
+    url: "https://hexdocs.pm/phoenix/up_and_running.html"
+  - title: "Django — manage.py runserver and the default 8000 port"
+    url: "https://docs.djangoproject.com/en/stable/ref/django-admin/#runserver"
+  - title: "GNU Make — rule syntax and .PHONY targets"
+    url: "https://www.gnu.org/software/make/manual/html_node/Rule-Syntax.html"
+  - title: "Vitest — expect.toEqual ignores undefined properties"
+    url: "https://vitest.dev/api/expect.html#toequal"
+
+# Structured task list — this is the single source of truth for tasks.
+# The content field below is a summary only; it does NOT duplicate task details.
+tasks:
+  # ── Phase 1 — Foundation ───────────────────────────────────────────────────
+  - id: task-1
+    phaseId: phase-1
+    title: "Add RunPlanSource.Manual in TypeSpec and regenerate"
+    description: |
+      Add a Manual member to the RunPlanSource enum in tsp/deployment/dev-server-run-plan.tsp
+      and run pnpm tsp:codegen. Research verified migration 138 declares plan_source as bare
+      TEXT NOT NULL with no CHECK constraint and the mapper casts unchecked in both
+      directions, so no SQLite migration is required — this task must prove that rather than
+      assume it.
+    state: Todo
+    dependencies: []
+    acceptanceCriteria:
+      - "RunPlanSource in packages/core/src/domain/generated/output.ts exposes Manual with the exact string value 'Manual'"
+      - "packages/core/src/domain/generated/output.ts is regenerated, never hand-edited"
+      - "An integration test round-trips a Manual plan through SQLiteDevServerRunPlanRepository on a real temp DB"
+      - "No new migration file is added; a test asserts the dev_server_run_plans schema is unchanged"
+      - "pnpm typecheck passes across the workspace"
+    tdd:
+      red:
+        - "Extend tests/unit/domain/generated/dev-server-run-plan.test.ts to assert RunPlanSource.Manual exists with value 'Manual'"
+        - "Add an integration test that upserts and reads back a plan with source Manual on a real SQLite temp DB"
+      green:
+        - "Add the enum member to tsp/deployment/dev-server-run-plan.tsp and run pnpm tsp:codegen"
+      refactor:
+        - "Replace any raw 'Deterministic'/'Agent' string literals found in dev-server code with the enum (NFR-7)"
+    estimatedEffort: "45min"
+
+  - id: task-2
+    phaseId: phase-1
+    title: "Promote DeploymentTargetType to a TypeSpec enum"
+    description: |
+      Replace the raw 'application' | 'feature' | 'repository' string union currently passed
+      through IDeploymentService.start(), setTransientState() and
+      IDevServerAgentService.startDevServer() with a TypeSpec enum, so the new use cases and
+      CLI take a domain type rather than a magic string (NFR-7).
+    state: Todo
+    dependencies:
+      - task-1
+    acceptanceCriteria:
+      - "DeploymentTargetType is defined in tsp/deployment/ and regenerated into output.ts"
+      - "Every existing call site compiles against the enum with no behaviour change"
+      - "Persisted target_type string values are unchanged (verified by an existing repository test)"
+      - "pnpm typecheck passes across the workspace"
+    tdd:
+      red:
+        - "Assert the generated DeploymentTargetType enum exposes the three members with their existing exact string values"
+      green:
+        - "Author the tsp enum, run codegen, and update call sites surfaced by typecheck"
+      refactor:
+        - "Delete the now-dead inline string unions and any local re-declarations"
+    estimatedEffort: "1h"
+
+  - id: task-3
+    phaseId: phase-1
+    title: "Shared detector contracts — types, Ecosystem constants, caps, skip-list"
+    description: |
+      Create detectors/types.ts (DetectorResult union widened with optional language,
+      framework, expectedPort, setupCommands, runtime; packageManager and scriptName made
+      optional) and the constant surface in detectors/registry.ts — Ecosystem constants,
+      SKIP_DIRS, MAX_MANIFEST_BYTES (256 KB), MAX_SCANNED_SUBDIRS (50). Plus
+      detectors/shared/manifest-read.ts, a bounded stat-before-read helper that returns null
+      on any failure and CRLF-normalises its output.
+    state: Todo
+    dependencies: []
+    acceptanceCriteria:
+      - "DetectorResult carries language, framework, expectedPort, setupCommands and runtime as optional fields"
+      - "packageManager and scriptName are optional on the success variant"
+      - "readManifest returns null for a missing file, an unreadable file (EACCES), a directory, and a file over MAX_MANIFEST_BYTES — never throws"
+      - "readManifest normalises CRLF to LF so line-anchored scanning works on Windows checkouts"
+      - "SKIP_DIRS covers node_modules, .git, .next, dist, build, out, .cache and all dot-directories"
+      - "No magic numbers or strings — every cap and ecosystem identifier is a named constant"
+    tdd:
+      red:
+        - "Fixture tests for readManifest: missing file, oversized file, unreadable path, directory path, CRLF content"
+        - "Assert Ecosystem constants and SKIP_DIRS contents"
+      green:
+        - "Implement types.ts, the constants and manifest-read.ts"
+      refactor:
+        - "Extract any duplication with existing detect-dev-script constants rather than copying them"
+    estimatedEffort: "1h"
+
+  - id: task-4
+    phaseId: phase-1
+    title: "Explicit-port extraction helper and framework port defaults"
+    description: |
+      detectors/shared/command-port.ts — extract an explicit port from a command string
+      (--port <n>, --port=<n>, -p <n>) and expose the three positively-identified framework
+      defaults (Rails 3000, Phoenix 4000, Django 8000) as named constants. Returns undefined
+      for anything ambiguous; never guesses.
+    state: Todo
+    dependencies:
+      - task-3
+    acceptanceCriteria:
+      - "Extracts the port from '--port 8080', '--port=8080' and '-p 8080'"
+      - "Returns undefined for a bare '-p' with no value, a non-numeric value, and a port outside 1–65535"
+      - "Returns undefined when the command contains no port token at all"
+      - "Framework defaults are exported as named constants, not inline numbers"
+    tdd:
+      red:
+        - "Table-driven tests over explicit, ambiguous and absent port forms including out-of-range values"
+      green:
+        - "Implement the extractor and the defaults constant map"
+      refactor:
+        - "Reuse the existing parse-port.ts helpers if they already cover any of this rather than duplicating"
+    estimatedEffort: "45min"
+
+  - id: task-5
+    phaseId: phase-1
+    title: "Widen CONFIG_FILES coverage and extend computeInstallHash per ecosystem"
+    description: |
+      Close the two upstream hashing gaps before any non-Node plan can exist. Add
+      .shep/dev.json, deno.jsonc, deno.lock, mix.lock, go.work and the makefile/GNUmakefile
+      casings to CONFIG_FILES. Extend computeInstallHash's lockfile list with Node lockfiles
+      still FIRST in the same order, then uv.lock, poetry.lock, Pipfile.lock,
+      requirements.txt, Cargo.lock, go.sum, Gemfile.lock, mix.lock, deno.lock. Without this,
+      isFresh short-circuits on an empty hash and every non-Node start re-runs its setup
+      commands forever.
+    state: Todo
+    dependencies:
+      - task-3
+    acceptanceCriteria:
+      - "computeInstallHash returns a stable non-empty hash for a repo with only Cargo.lock, only go.sum, only poetry.lock, only mix.lock, or only requirements.txt"
+      - "Node repos produce a byte-identical hash to today — existing config-hash.test.ts expectations pass unmodified"
+      - "computeConfigHash changes when .shep/dev.json is created, edited or deleted"
+      - "Lockfile precedence is a single ordered named constant, not inline strings"
+    tdd:
+      red:
+        - "Fixture tests per non-Node lockfile asserting a non-empty, stable hash and that it changes when the lockfile changes"
+        - "Test asserting an existing Node fixture's hash is unchanged from the current expectation"
+        - "Test asserting configHash differs before and after adding .shep/dev.json"
+      green:
+        - "Extend the CONFIG_FILES and lockfile constant arrays in config-hash.ts"
+      refactor:
+        - "Keep the arrays as documented ordered constants with a comment stating Node-first is a compatibility requirement"
+    estimatedEffort: "1h"
+
+  # ── Phase 2 — Detector registry ────────────────────────────────────────────
+  - id: task-6
+    phaseId: phase-2
+    title: "Extract the Node detector verbatim"
+    description: |
+      Move today's package.json logic out of detect-dev-script.ts into
+      detectors/node.detector.ts with zero behaviour change: script priority dev → start →
+      serve, lockfile order bun → pnpm → yarn → npm with npm default, 'run' prefix for npm
+      and bun only, needsInstall from node_modules absence. The pinned 492-line
+      detect-dev-script.test.ts is the acceptance criterion and must not be edited.
+    state: Todo
+    dependencies:
+      - task-3
+    acceptanceCriteria:
+      - "tests/unit/infrastructure/services/deployment/detect-dev-script.test.ts passes UNMODIFIED"
+      - "No populated ecosystem field appears on the returned result object (toEqual assertions stay byte-identical)"
+      - "node.detector.ts is a pure function of dirPath with no dependency on any other detector"
+      - "File is under ~300 lines"
+    tdd:
+      red:
+        - "Add a node.detector.test.ts using real temp-dir fixtures covering each script priority, each lockfile, and the needsInstall cases"
+      green:
+        - "Move the logic verbatim and have detect-dev-script.ts delegate to it"
+      refactor:
+        - "Pull SCRIPT_PRIORITY and LOCKFILE_MANAGERS into the shared constants module if the registry needs them"
+    estimatedEffort: "1h30min"
+
+  - id: task-7
+    phaseId: phase-2
+    title: "Deno detector"
+    description: |
+      detectors/deno.detector.ts — read deno.json/deno.jsonc, pick tasks.dev → start → serve,
+      emit 'deno task <name>'. Gates on existsSync before reading.
+    state: Todo
+    dependencies:
+      - task-6
+    acceptanceCriteria:
+      - "Resolves 'deno task dev' for a deno.json with a dev task; honours the dev → start → serve priority"
+      - "Falls through when deno.json exists but declares no matching task"
+      - "Falls through on unparseable JSON without throwing"
+      - "Gates on existsSync before reading, so it never reads another ecosystem's file"
+      - "Sets language and runtime; leaves expectedPort unset unless the task command carries an explicit --port"
+    tdd:
+      red:
+        - "Fixture tests: dev task, start-only, serve-only, no tasks, malformed JSON, deno.jsonc variant"
+      green:
+        - "Implement the detector"
+      refactor:
+        - "Share the task-priority constant with the Node detector's SCRIPT_PRIORITY if identical"
+    estimatedEffort: "45min"
+
+  - id: task-8
+    phaseId: phase-2
+    title: "Make detector"
+    description: |
+      detectors/make.detector.ts — line-anchored scan for ^(dev|start|serve|run): across
+      Makefile, makefile and GNUmakefile, emitting 'make <target>' with the same priority
+      order. CRLF-normalised before scanning.
+    state: Todo
+    dependencies:
+      - task-6
+    acceptanceCriteria:
+      - "Resolves 'make dev' for a Makefile with a dev target; honours dev → start → serve → run priority"
+      - "Matches targets on CRLF-terminated files"
+      - "Matches all three filename casings"
+      - "Does NOT match a target name appearing mid-line or inside a recipe body"
+      - "Falls through for a Makefile with no matching target and for a malformed/binary file"
+      - "Gates on existsSync before reading"
+    tdd:
+      red:
+        - "Fixture tests: dev target, .PHONY-declared target, priority ordering, CRLF file, casing variants, no matching target, garbage content"
+      green:
+        - "Implement the line-anchored scanner"
+      refactor:
+        - "Extract the target-priority list as a named constant"
+    estimatedEffort: "1h"
+
+  - id: task-9
+    phaseId: phase-2
+    title: "Python detector"
+    description: |
+      detectors/python.detector.ts — resolve a runner from sibling lockfile presence
+      (uv.lock → uv, poetry.lock → poetry, Pipfile.lock → pipenv) plus line-anchored
+      [tool.uv]/[tool.poetry] headers, then a command in this order: manage.py → Django
+      ('<runner> python manage.py runserver', expectedPort 8000), an author-declared
+      dev/start/serve key under a recognised scripts table, then a conventional entry point
+      with requirements.txt. No TOML parser (research decision 2).
+    state: Todo
+    dependencies:
+      - task-6
+    acceptanceCriteria:
+      - "manage.py + uv.lock resolves a uv-run Django command with expectedPort 8000 and framework Django"
+      - "pyproject.toml with [tool.poetry.scripts] dev = \"...\" and poetry.lock resolves 'poetry run dev'"
+      - "A bare requirements.txt with a conventional entry point resolves a command and sets setupCommands to the pip install step"
+      - "Falls through for a pyproject.toml with no recognised header or key"
+      - "The line scanner only matches line-anchored table headers and simple keys directly beneath a recognised header"
+      - "Gates on existsSync before reading; never throws on malformed content"
+      - "File is under ~300 lines"
+    tdd:
+      red:
+        - "Fixture tests per runner (uv, poetry, pipenv, bare pip), Django detection, declared-script detection, ambiguous manifest fall-through, malformed TOML"
+      green:
+        - "Implement the runner resolution and the line-anchored header/key scanner"
+      refactor:
+        - "Extract the header/key scanner into shared/ only if the Rust detector genuinely needs it too; otherwise keep it local"
+    estimatedEffort: "2h"
+
+  - id: task-10
+    phaseId: phase-2
+    title: "Go detector"
+    description: |
+      detectors/go.detector.ts — go.mod present plus a main package resolves 'go run .' (or
+      the discovered main package path). setupCommands carries 'go mod download'.
+    state: Todo
+    dependencies:
+      - task-6
+    acceptanceCriteria:
+      - "go.mod + a root main package resolves 'go run .' with language Go"
+      - "go.mod with no main package falls through rather than emitting an unrunnable command"
+      - "setupCommands includes 'go mod download'"
+      - "expectedPort is left unset (no explicit source)"
+      - "Gates on existsSync before reading"
+    tdd:
+      red:
+        - "Fixture tests: root main package, cmd/ layout, library-only module (fall-through), missing go.mod"
+      green:
+        - "Implement the detector"
+      refactor:
+        - "Name the main-package discovery rule as a documented constant/helper"
+    estimatedEffort: "1h"
+
+  - id: task-11
+    phaseId: phase-2
+    title: "Rust detector"
+    description: |
+      detectors/rust.detector.ts — Cargo.toml present resolves 'cargo run'. Content-independent
+      by design; a workspace-only manifest with no [package] or bin target falls through.
+    state: Todo
+    dependencies:
+      - task-6
+    acceptanceCriteria:
+      - "Cargo.toml with a [package] table resolves 'cargo run' with language Rust"
+      - "A virtual workspace manifest (only [workspace]) falls through"
+      - "setupCommands is empty (cargo run builds implicitly)"
+      - "Gates on existsSync before reading; never throws on malformed TOML"
+    tdd:
+      red:
+        - "Fixture tests: package manifest, virtual workspace manifest, malformed content, missing file"
+      green:
+        - "Implement the detector using line-anchored header detection only"
+      refactor:
+        - "Share the table-header matcher with the Python detector if the shapes are identical"
+    estimatedEffort: "45min"
+
+  - id: task-12
+    phaseId: phase-2
+    title: "Ruby detector"
+    description: |
+      detectors/ruby.detector.ts — bin/rails present resolves 'bin/rails server' with
+      framework Rails and expectedPort 3000; otherwise a Gemfile declaring rails resolves
+      'bundle exec rails server'; otherwise fall through. setupCommands carries
+      'bundle install' when a Gemfile exists.
+    state: Todo
+    dependencies:
+      - task-6
+      - task-4
+    acceptanceCriteria:
+      - "bin/rails resolves a Rails command with expectedPort 3000 and framework Rails"
+      - "Gemfile with a rails gem but no bin/rails resolves a bundle exec command"
+      - "A Gemfile with no rails gem falls through"
+      - "setupCommands includes 'bundle install' when a Gemfile is present"
+      - "Gates on existsSync before reading"
+    tdd:
+      red:
+        - "Fixture tests: bin/rails app, Gemfile-only rails app, non-rails Gemfile, missing files"
+      green:
+        - "Implement the detector"
+      refactor:
+        - "Take the 3000 default from the shared framework-defaults constant, not an inline literal"
+    estimatedEffort: "45min"
+
+  - id: task-13
+    phaseId: phase-2
+    title: "Elixir detector"
+    description: |
+      detectors/elixir.detector.ts — mix.exs present; a :phoenix dependency resolves
+      'mix phx.server' with framework Phoenix and expectedPort 4000, otherwise 'mix run
+      --no-halt'. setupCommands carries 'mix deps.get'.
+    state: Todo
+    dependencies:
+      - task-6
+      - task-4
+    acceptanceCriteria:
+      - "mix.exs containing :phoenix resolves 'mix phx.server' with expectedPort 4000 and framework Phoenix"
+      - "mix.exs without :phoenix resolves the non-Phoenix mix command with expectedPort unset"
+      - "setupCommands includes 'mix deps.get'"
+      - "mix.exs is never parsed as code — substring/line matching only"
+      - "Gates on existsSync before reading"
+    tdd:
+      red:
+        - "Fixture tests: Phoenix project, plain mix project, mix.exs mentioning phoenix only in a comment, missing file"
+      green:
+        - "Implement the detector"
+      refactor:
+        - "Take the 4000 default from the shared framework-defaults constant"
+    estimatedEffort: "45min"
+
+  - id: task-14
+    phaseId: phase-2
+    title: "Docker Compose detector with single-host-port inference"
+    description: |
+      detectors/compose.detector.ts — docker-compose.yml|yaml (and compose.yml|yaml) parsed
+      with js-yaml, resolving 'docker compose up'. expectedPort is set ONLY when the resolved
+      service set yields exactly one host port, supporting both the short "8080:80" syntax
+      and the long { published, target } form. Placed last in precedence because it is the
+      slowest and most side-effectful option.
+    state: Todo
+    dependencies:
+      - task-6
+      - task-4
+    acceptanceCriteria:
+      - "A compose file with one service publishing one host port resolves 'docker compose up' with that expectedPort"
+      - "A compose file publishing several host ports resolves the command with expectedPort UNSET"
+      - "A compose file with no ports resolves the command with expectedPort unset"
+      - "Long-form { published, target } port entries are handled identically to short form"
+      - "Unparseable YAML falls through without throwing"
+      - "Gates on existsSync before reading; uses the existing js-yaml dependency (no new dependency)"
+    tdd:
+      red:
+        - "Fixture tests: single service single port, multi-service multi-port, long-form ports, no ports, malformed YAML, all four filename variants"
+      green:
+        - "Implement the detector using js-yaml load() in the ownership-yaml-reader style"
+      refactor:
+        - "Extract the port-mapping normaliser if both syntaxes produce duplicated branches"
+    estimatedEffort: "1h30min"
+
+  - id: task-15
+    phaseId: phase-2
+    title: ".shep/dev.json reader and repo-config detector"
+    description: |
+      repo-dev-config-reader.ts plus detectors/repo-config.detector.ts. Reader shape,
+      validation and failure behaviour copied from aspm/ownership-yaml-reader.ts: existsSync
+      gate → bounded read → JSON.parse in try/catch → per-field type checks → return
+      "nothing declared" on any doubt with one logged warning. Never throws (NFR-4). Fields:
+      command (required, non-empty), cwd, expectedPort, language, framework, packageManager,
+      setupCommands; unknown keys ignored. cwd is confined to the repo subtree.
+    state: Todo
+    dependencies:
+      - task-3
+      - task-4
+    acceptanceCriteria:
+      - "A valid file yields a result carrying command, cwd, expectedPort, language, framework, packageManager and setupCommands"
+      - "A missing file, empty file, non-JSON file, JSON array, JSON with a non-string command, and an empty-after-trim command all fall through with a logged warning and no throw"
+      - "expectedPort outside 1–65535 or non-integer is dropped, not coerced; the rest of the file still applies"
+      - "A cwd resolving outside the repoPath subtree is rejected — the sibling-prefix case (/repo vs /repo-evil) is covered by a negative test"
+      - "setupCommands entries that are not non-empty strings are dropped"
+      - "Path comparison is normalised to forward slashes and case-insensitive on win32"
+    tdd:
+      red:
+        - "Fixture tests for every valid and invalid shape above, including the /repo vs /repo-evil escape case and a symlinked cwd"
+      green:
+        - "Implement the reader mirroring OwnershipYamlReader, then the thin detector wrapper"
+      refactor:
+        - "Extract the field validators as small named helpers; keep the module under ~300 lines"
+    estimatedEffort: "2h"
+
+  - id: task-16
+    phaseId: phase-2
+    title: "Registry composition, subdirectory scan and the two public projections"
+    description: |
+      detectors/registry.ts assembles the ordered DETECTOR_REGISTRY (node → deno → make →
+      python → go → rust → ruby → elixir → compose, first-success-wins) and the shared
+      one-level subdirectory fallback for ALL ecosystems using SKIP_DIRS and
+      MAX_SCANNED_SUBDIRS. detect-dev-script.ts becomes the composition layer exporting
+      detectRunPlan(dirPath) → { ecosystem, result } and detectDevScript(dirPath) →
+      result verbatim. When everything falls through in the root and every scanned
+      subdirectory, the node detector's error is returned verbatim.
+    state: Todo
+    dependencies:
+      - task-6
+      - task-7
+      - task-8
+      - task-9
+      - task-10
+      - task-11
+      - task-12
+      - task-13
+      - task-14
+      - task-15
+    acceptanceCriteria:
+      - "detect-dev-script.test.ts passes UNMODIFIED, including its error-message assertions"
+      - "A polyglot fixture (package.json + Makefile + docker-compose.yml + pyproject.toml) resolves to the documented Node winner across 10 consecutive runs"
+      - "Removing package.json from that fixture promotes Make; removing the Makefile promotes Python; removing pyproject.toml promotes Compose"
+      - "The subdirectory fallback applies to every ecosystem, not just Node, and honours SKIP_DIRS"
+      - "MAX_SCANNED_SUBDIRS truncation is logged, never silent"
+      - "Detection over a wide fixture completes in under 200 ms with no network I/O, no child process and no LLM call"
+      - "Under a node:fs mock returning package.json bytes for every path, non-Node detectors still fall through (existsSync gating proven end-to-end)"
+    tdd:
+      red:
+        - "Polyglot precedence test with the four progressive-removal cases"
+        - "Subdirectory-scan test per ecosystem plus a skip-list test"
+        - "Perf test asserting the 200 ms budget on a wide fixture"
+        - "Global-fs-mock test proving non-Node detectors do not read the wrong file"
+      green:
+        - "Implement the ordered walk, the subdirectory fallback and the two exported projections"
+      refactor:
+        - "Ensure precedence lives in exactly one greppable ordered array with a comment naming the compatibility rule"
+    estimatedEffort: "2h30min"
+
+  - id: task-17
+    phaseId: phase-2
+    title: "spawnFromDetection shell fallback for non-Node results"
+    description: |
+      Make packageManager and scriptName optional on the detection success type and branch in
+      deployment-spawner.spawnFromDetection — both present keeps today's exact argv spawn,
+      otherwise spawn detection.command through buildSpawnOptions with shell: true,
+      structurally identical to spawnFromRunPlan. Without this, a Make or Compose result
+      reaching deployment.service.ts:133 spawns undefined.
+    state: Todo
+    dependencies:
+      - task-16
+    acceptanceCriteria:
+      - "A Node detection still spawns via argv with the identical executable and argument list as today"
+      - "A Make detection spawns 'make dev' through the shell branch, not spawn(undefined, ...)"
+      - "A Compose detection spawns the full 'docker compose up' string, with no argument dropped"
+      - "No new execution capability is introduced — the shell branch reuses buildSpawnOptions exactly as spawnFromRunPlan does"
+      - "Existing deployment.service tests pass unmodified"
+    tdd:
+      red:
+        - "Unit tests asserting the exact spawn arguments for a Node result, a Make result and a Compose result"
+      green:
+        - "Widen the type, then implement the branch"
+      refactor:
+        - "Extract the shared spawn-option construction if spawnFromDetection and spawnFromRunPlan now duplicate it"
+    estimatedEffort: "1h"
+
+  # ── Phase 3 — Graph integration ────────────────────────────────────────────
+  - id: task-18
+    phaseId: phase-3
+    title: "analyze.node consumes detectRunPlan — rich fields plus tier-decision logging"
+    description: |
+      Switch the deterministic tier to detectRunPlan, persist language, framework,
+      expectedPort, setupCommands and runtime onto the Deterministic plan it upserts, and emit
+      a single deployment-log line naming the winning detector and why (NFR-11). The
+      "expected failures never throw" contract and capturedLogs accumulation must be preserved.
+    state: Todo
+    dependencies:
+      - task-16
+    acceptanceCriteria:
+      - "A Deterministic plan persists language, framework, expectedPort and setupCommands when the detector supplies them"
+      - "One log line per start names the winning tier and detector, visible on the deployment log stream"
+      - "capturedLogs still accumulates through every new branch"
+      - "No detector failure escapes as a thrown error — all surface as fall-through or failureReason"
+      - "Existing dev-server-agent-graph.test.ts assertions still hold except where a documented contract change requires an update"
+    tdd:
+      red:
+        - "Graph test asserting the persisted plan carries the rich fields for a Make fixture"
+        - "Test asserting the tier-decision line appears in the emitted logs"
+        - "Test asserting a detector that throws internally still yields a non-throwing analyze result"
+      green:
+        - "Wire detectRunPlan into the node and map the outcome onto the upserted plan"
+      refactor:
+        - "Extract the plan-construction mapping into a small named helper to keep the node focused"
+    estimatedEffort: "1h30min"
+
+  - id: task-19
+    phaseId: phase-3
+    title: "Degraded mode — terminal failure only when every detector falls through"
+    description: |
+      The "Could not detect a dev server … and no AI agent is configured" terminal failure
+      must fire only when no detector produced a command (FR-10). With no
+      IStructuredAgentCaller resolvable, any registry-covered repository must start.
+    state: Todo
+    dependencies:
+      - task-18
+    acceptanceCriteria:
+      - "With no structured caller resolvable, a Make/Compose/Python/Go/Rust/Deno/Ruby/Elixir repo resolves a Deterministic plan and proceeds"
+      - "With no structured caller and a repo no detector covers (e.g. a bare Maven project), the terminal failure message is unchanged"
+      - "The failure is a failureReason, never a thrown error"
+    tdd:
+      red:
+        - "Graph tests per covered ecosystem with the structured caller absent, asserting the run proceeds"
+        - "Test with an uncovered fixture asserting the unchanged terminal message"
+      green:
+        - "Adjust the degraded-mode branch to key off detector exhaustion rather than Node-only detection"
+      refactor:
+        - "Name the exhaustion condition rather than inlining it"
+    estimatedEffort: "1h"
+
+  - id: task-20
+    phaseId: phase-3
+    title: "Tier zero — .shep/dev.json read before the run-plan cache"
+    description: |
+      Add a branch in analyze.node ahead of the cache lookup: on a valid .shep/dev.json,
+      build a RunPlanSource.Manual plan from it, carry the existing row's installStampHash
+      forward (analyze already holds that row), upsert and return. The file is re-read every
+      start, so it can never go stale and needs no invalidation machinery. An invalid file
+      logs a warning and falls through to the cache tier.
+    state: Todo
+    dependencies:
+      - task-15
+      - task-18
+    acceptanceCriteria:
+      - "A repo with a valid .shep/dev.json resolves that plan ahead of every other tier, including a fresh cached plan"
+      - "Editing the file changes the next start's command with no invalidation step"
+      - "The upserted row carries the prior installStampHash, so a second start does not re-run setupCommands"
+      - "A malformed .shep/dev.json logs a warning and falls through — never throws, never crashes the graph"
+      - "The same file placed in a freshly created feature worktree is honoured there too"
+      - "capturedLogs accumulates through the tier-zero branch (it uses the existing emit/done closure, not an early return around it)"
+    tdd:
+      red:
+        - "Graph test: valid file beats a fresh cached Deterministic plan"
+        - "Graph test: install stamp carried forward across two starts"
+        - "Graph test: malformed file falls through with a warning and no throw"
+        - "Integration test in a fresh worktree path"
+      green:
+        - "Implement the tier-zero branch using the reader from task-15"
+      refactor:
+        - "Keep analyze.node under ~300 lines — extract the tier-zero branch into a helper module if needed"
+    estimatedEffort: "2h"
+
+  - id: task-21
+    phaseId: phase-3
+    title: "Manual pinning guard in the analyze cache tier"
+    description: |
+      Add a Manual branch inside the existing `if (cached)` block BEFORE the configHash
+      comparison: return the plan and emit "using your pinned run plan (config files have
+      changed since it was set)" when the hash differs. Today the node unconditionally
+      declares the plan stale and the deterministic tier upserts straight over the Manual row.
+    state: Todo
+    dependencies:
+      - task-18
+      - task-1
+    acceptanceCriteria:
+      - "After mutating package.json, a start with a cached Manual plan still uses the override command and cwd"
+      - "The staleness notice is emitted to the deployment log, and the plan is neither replaced nor deleted"
+      - "Deterministic and Agent plans still invalidate on configHash drift exactly as today"
+    tdd:
+      red:
+        - "Graph test: Manual plan + drifted configHash → same command spawned, staleness line logged, row unchanged"
+        - "Graph test: Deterministic plan + drifted configHash → re-analysed (unchanged behaviour)"
+      green:
+        - "Add the source predicate branch before the hash comparison"
+      refactor:
+        - "Express the predicate once as a named helper shared with the remediate guard"
+    estimatedEffort: "1h"
+
+  - id: task-22
+    phaseId: phase-3
+    title: "remediate.node must not delete a Manual plan"
+    description: |
+      remediate.node currently calls deleteByRepoPath unconditionally on the first failure with
+      an executor present. Widen its injected repository slice from Pick<…, 'deleteByRepoPath'>
+      to include findByRepoPath, check the source, and skip the delete with a logged line when
+      the plan is Manual (FR-15).
+    state: Todo
+    dependencies:
+      - task-21
+    acceptanceCriteria:
+      - "A failing start with a Manual plan leaves the row intact and logs why the cache was not cleared"
+      - "A failing start with a Deterministic or Agent plan still clears the cache exactly as today"
+      - "InvalidateDevServerRunPlanUseCase can still clear a Manual plan — the guard lives in the node, not the repository"
+      - "Existing dev-server-agent-remediation.int.test.ts passes unmodified"
+    tdd:
+      red:
+        - "Unit test: Manual plan + remediation → deleteByRepoPath not called, skip line logged"
+        - "Unit test: Deterministic plan + remediation → deleteByRepoPath called (unchanged)"
+      green:
+        - "Widen the injected slice and add the guard"
+      refactor:
+        - "Reuse the shared isManualPlan predicate from task-21"
+    estimatedEffort: "45min"
+
+  - id: task-23
+    phaseId: phase-3
+    title: "ensure_infra install hints for non-Node runtimes"
+    description: |
+      Extend the exported SUGGESTED_INSTALL record with make, docker, go, cargo, rustup, deno,
+      python, python3, uv, poetry, pipenv, ruby, bundle, mix and elixir — each an
+      ecosystem-appropriate, user-space, non-sudo hint. Pure data change: deriveRequiredBinaries
+      and deriveBinaryFromCommand are already command-driven and need no edit, and
+      VALID_BINARY_NAME must not be relaxed.
+    state: Todo
+    dependencies:
+      - task-18
+    acceptanceCriteria:
+      - "A missing docker yields a docker-specific failure message with a docker install hint, not the generic PATH fallback and not a node one"
+      - "The same holds for make, go, cargo, deno, mix, bundle, uv and poetry"
+      - "No hint contains sudo"
+      - "deriveRequiredBinaries, deriveBinaryFromCommand and VALID_BINARY_NAME are unchanged"
+      - "A path-like command such as bin/rails still skips probing rather than being probed"
+    tdd:
+      red:
+        - "Table-driven test asserting the specific hint for each new binary and that no generic fallback is used"
+        - "Test asserting bin/rails produces no probe attempt"
+      green:
+        - "Add the SUGGESTED_INSTALL entries"
+      refactor:
+        - "Group the record by ecosystem with comments; no logic change"
+    estimatedEffort: "45min"
+
+  - id: task-24
+    phaseId: phase-3
+    title: "install_deps for plans with no packageManager"
+    description: |
+      Prove and, where needed, fix that setupCommands run and installStampHash is stamped when
+      packageManager is unset. Research shows the loop and the stamp are already unconditional,
+      so the real work is a test that pins the contract plus the freshness path now that
+      computeInstallHash knows non-Node lockfiles (task-5).
+    state: Todo
+    dependencies:
+      - task-5
+      - task-18
+    acceptanceCriteria:
+      - "A Go plan with setupCommands and no packageManager runs every setup command and stamps installStampHash"
+      - "A second start with an unchanged go.sum skips the setup commands (isFresh true)"
+      - "Changing go.sum re-runs them"
+      - "The same holds for a Cargo.lock and a poetry.lock fixture"
+      - "No dependency on packageManager anywhere in the non-Node path"
+    tdd:
+      red:
+        - "Integration tests for run → stamp → skip → change → re-run across Go, Rust and Python fixtures"
+      green:
+        - "Fix any gating discovered by the failing tests"
+      refactor:
+        - "Extract the freshness decision into a named helper if the node has grown branchy"
+    estimatedEffort: "1h30min"
+
+  - id: task-25
+    phaseId: phase-3
+    title: "Multi-stack integration sweep — zero agent calls per ecosystem"
+    description: |
+      One integration suite covering all eight ecosystems end-to-end through the graph,
+      asserting a Deterministic plan is resolved and the structured caller was NEVER invoked
+      (NFR-2), both with an agent configured and in degraded mode.
+    state: Todo
+    dependencies:
+      - task-19
+      - task-20
+      - task-23
+      - task-24
+    acceptanceCriteria:
+      - "For each of the eight ecosystems, the run resolves RunPlanSource.Deterministic and the structured caller mock records zero calls"
+      - "The same eight succeed with no structured caller resolvable at all"
+      - "An uncovered fixture (e.g. Maven) still reaches the agent tier when one is configured"
+      - "All three pre-existing dev-server integration suites remain green unmodified"
+    tdd:
+      red:
+        - "Write the per-ecosystem integration cases asserting zero structured-caller invocations before any wiring is adjusted"
+      green:
+        - "Fix whatever the sweep surfaces"
+      refactor:
+        - "Extract the per-ecosystem fixture builder into a shared test helper rather than repeating setup eight times"
+    estimatedEffort: "2h"
+
+  # ── Phase 4 — Application layer ────────────────────────────────────────────
+  - id: task-26
+    phaseId: phase-4
+    title: "DeploymentTargetResolver application service"
+    description: |
+      One injectable resolver in application/services/ mapping { targetType, targetId } to a
+      repoPath, and additionally answering "which target is this cwd?" for the CLI. Depends
+      only on IApplicationRepository, IFeatureRepository, IRepositoryRepository and
+      IFileSystemService — no infrastructure imports.
+    state: Todo
+    dependencies:
+      - task-2
+    acceptanceCriteria:
+      - "Resolves a repoPath for each of the three target types"
+      - "Returns a typed not-found result rather than throwing for an unknown id"
+      - "Returns a typed result when the resolved path does not exist on disk"
+      - "resolveFromCwd identifies the target owning a given directory, and reports ambiguity explicitly"
+      - "No import from infrastructure/; injected by string token"
+    tdd:
+      red:
+        - "Unit tests per target type, unknown id, missing directory, cwd resolution hit, cwd resolution miss, cwd ambiguity"
+      green:
+        - "Implement the resolver"
+      refactor:
+        - "Keep it under ~300 lines; extract the cwd matching if it grows"
+    estimatedEffort: "1h30min"
+
+  - id: task-27
+    phaseId: phase-4
+    title: "IRunPlanStalenessProbe port and infrastructure adapter"
+    description: |
+      A small output port exposing the current configHash for a repoPath, implemented in
+      infrastructure over computeConfigHash. Keeps GetDevServerRunPlanUseCase from importing
+      an infrastructure utility directly — the exact violating pattern the code-quality rules
+      name.
+    state: Todo
+    dependencies:
+      - task-5
+    acceptanceCriteria:
+      - "Port interface lives in application/ports/output/services/ and is exported from the ports index"
+      - "Adapter lives in infrastructure/services/deployment/ and delegates to computeConfigHash"
+      - "No application file imports computeConfigHash or any other infrastructure symbol"
+      - "Registered by string token in register-deployment.ts"
+    tdd:
+      red:
+        - "Unit test asserting the adapter returns the same hash computeConfigHash produces for a fixture"
+        - "Grep-based test or lint assertion that application/ has no infrastructure import"
+      green:
+        - "Create the interface and the adapter"
+      refactor:
+        - "Consider folding the probe onto an existing deployment port if one already fits, rather than adding a new token"
+    estimatedEffort: "45min"
+
+  - id: task-28
+    phaseId: phase-4
+    title: "GetDevServerRunPlanUseCase with derived isStale"
+    description: |
+      Returns the resolved plan in ready-to-render form — command, cwd, source, language,
+      framework, expectedPort, setupCommands, packageManager, plus isStale derived by
+      comparing the stored configHash with the probe's current one — or an explicit "no plan"
+      result. Also reports whether a .shep/dev.json currently controls the repository, so both
+      surfaces can explain why Edit is unavailable. Presentation never computes staleness.
+    state: Todo
+    dependencies:
+      - task-26
+      - task-27
+      - task-15
+    acceptanceCriteria:
+      - "Returns a fully populated result for each of the three target types"
+      - "Returns an explicit no-plan result rather than throwing when nothing is cached"
+      - "isStale is true when the stored configHash differs from the current one, false otherwise"
+      - "Reports repoConfigControlled true when a valid .shep/dev.json exists for the target"
+      - "No presentation layer computes staleness — asserted by the CLI and web tests consuming the flag directly"
+    tdd:
+      red:
+        - "Unit tests: populated plan, no plan, stale plan, fresh plan, repo-config-controlled plan, unknown target"
+      green:
+        - "Implement the use case over the resolver, the repository and the staleness probe"
+      refactor:
+        - "Extract the plan→view mapping into a named function reused by the other use cases if useful"
+    estimatedEffort: "1h30min"
+
+  - id: task-29
+    phaseId: phase-4
+    title: "OverrideDevServerRunPlanUseCase with validation and repo-config conflict"
+    description: |
+      Persists a user-supplied plan as RunPlanSource.Manual, seeded from the currently resolved
+      plan so the user edits only what they intend. Validation lives here, never in
+      presentation: non-empty trimmed command; cwd resolving to an existing directory inside
+      the target's repoPath subtree; expectedPort an integer 1–65535 when supplied. When a
+      valid .shep/dev.json exists, returns an explicit conflict outcome instead of writing a
+      row the file would shadow.
+    state: Todo
+    dependencies:
+      - task-28
+      - task-1
+    acceptanceCriteria:
+      - "A saved override persists source Manual and the very next start spawns exactly that command in exactly that cwd"
+      - "Unspecified fields are seeded from the currently resolved plan"
+      - "An empty or whitespace-only command is rejected with a typed validation result"
+      - "A cwd outside the repo subtree is rejected — including the sibling-prefix case (/repo vs /repo-evil) and a path that escapes via ..; comparison is normalised and case-insensitive on win32"
+      - "A non-existent cwd is rejected"
+      - "expectedPort of 0, 65536, -1 or a non-integer is rejected; omitting it is accepted"
+      - "With a valid .shep/dev.json present, the use case returns the conflict outcome and writes nothing"
+    tdd:
+      red:
+        - "Unit tests for each validation rule including both cwd escape shapes, plus the conflict outcome, plus the seed-from-current behaviour"
+        - "Integration test asserting the next start spawns the overridden command verbatim"
+      green:
+        - "Implement validation and persistence"
+      refactor:
+        - "Extract the cwd confinement check as a shared helper reused by the .shep/dev.json reader (no duplicate implementations)"
+    estimatedEffort: "2h"
+
+  - id: task-30
+    phaseId: phase-4
+    title: "InvalidateDevServerRunPlanUseCase"
+    description: |
+      Clears the cached plan for a target so the next start re-runs the full cache → detect →
+      agent chain. Works regardless of plan source (including Manual) and regardless of whether
+      an agent is configured (FR-16).
+    state: Todo
+    dependencies:
+      - task-28
+    acceptanceCriteria:
+      - "Clears a Deterministic, an Agent and a Manual plan alike"
+      - "Succeeds with no agent configured; the next start re-runs detection"
+      - "Returns a typed no-op result when no plan exists rather than throwing"
+      - "Does not remove a .shep/dev.json file — the conflict message explains that the file still controls the repo"
+    tdd:
+      red:
+        - "Unit tests per source, no-plan case, and the repo-config-present case"
+        - "Integration test asserting the next start re-runs the tier chain"
+      green:
+        - "Implement over the resolver and the repository"
+      refactor:
+        - "Share the target-resolution error mapping with the other two use cases"
+    estimatedEffort: "1h"
+
+  - id: task-31
+    phaseId: phase-4
+    title: "DI wiring for the three use cases and the resolver"
+    description: |
+      Register the resolver, the staleness probe adapter and the three use cases in
+      register-deployment.ts using the file's established pattern — class registration plus the
+      string-token alias the Next.js routes rely on, because Turbopack cannot resolve .js→.ts
+      imports inside @shepai/core.
+    state: Todo
+    dependencies:
+      - task-28
+      - task-29
+      - task-30
+      - task-27
+    acceptanceCriteria:
+      - "All five registrations resolve from the container in an integration test"
+      - "Both class and string-token resolution work for each use case"
+      - "Container construction still succeeds when the structured caller is absent (safeResolve degradation preserved)"
+    tdd:
+      red:
+        - "Integration test resolving each new binding by class and by token"
+      green:
+        - "Add the registrations following the existing pattern"
+      refactor:
+        - "Group the dev-server run-plan registrations together with a comment"
+    estimatedEffort: "45min"
+
+  # ── Phase 5 — Web surface ──────────────────────────────────────────────────
+  - id: task-32
+    phaseId: phase-5
+    title: "Server actions for get / override / invalidate"
+    description: |
+      Three thin server actions in src/presentation/web/app/actions/ mirroring the existing
+      deploy-application.ts shape — resolve the use case from the container, pass through, map
+      the typed result. No repository or infrastructure access, no logic.
+    state: Todo
+    dependencies:
+      - task-31
+    acceptanceCriteria:
+      - "Each action resolves its use case from the DI container and returns the use case result unchanged in shape"
+      - "Validation errors and the repo-config conflict surface as typed results, not thrown exceptions"
+      - "No action imports a repository or an infrastructure service"
+      - "Each action accepts the DeploymentTargetType enum, not a raw string"
+    tdd:
+      red:
+        - "Unit tests asserting each action delegates to its use case and passes the typed result through, including the conflict and validation-error shapes"
+      green:
+        - "Implement the three actions"
+      refactor:
+        - "Extract the shared container-resolution boilerplate if all three repeat it"
+    estimatedEffort: "1h"
+
+  - id: task-33
+    phaseId: phase-5
+    title: "run-plan-summary component and stories"
+    description: |
+      Presentational component rendering command, cwd, source badge (Deterministic / Agent /
+      Manual), language, framework, expected port and the staleness hint. No data fetching, no
+      business logic — isStale arrives as a prop.
+    state: Todo
+    dependencies:
+      - task-32
+    acceptanceCriteria:
+      - "Renders every field, omitting rows for absent optional values rather than showing blanks"
+      - "The source badge visually distinguishes all three sources"
+      - "The staleness hint renders only when isStale is true"
+      - "Colocated .stories.tsx covers default, stale, Manual-source, repo-config-controlled and no-plan states"
+      - "No hardcoded English — all strings come from translations"
+    tdd:
+      red:
+        - "Component tests for each render state including omitted optionals"
+      green:
+        - "Implement the component"
+      refactor:
+        - "Extract the source badge if it is reused by the CLI-facing formatting or elsewhere"
+    estimatedEffort: "1h30min"
+
+  - id: task-34
+    phaseId: phase-5
+    title: "run-plan-editor component and stories"
+    description: |
+      The Edit form over the override action, carrying the mandatory "this command will be
+      executed on your machine" notice. Validation errors are rendered from the use case's typed
+      result — the component does not validate. When repoConfigControlled is true the form is
+      disabled with the "a committed .shep/dev.json controls this repository" explanation.
+    state: Todo
+    dependencies:
+      - task-32
+    acceptanceCriteria:
+      - "Fields are seeded from the currently resolved plan"
+      - "The execution notice is always visible while editing"
+      - "Server-side validation errors render inline; the component performs no validation of its own"
+      - "The form is disabled with an explanation when a .shep/dev.json controls the repository"
+      - "Colocated .stories.tsx covers editing, validation-error, repo-config-controlled and submitting states"
+      - "No hardcoded English"
+    tdd:
+      red:
+        - "Component tests for seeding, notice presence, error rendering, and the disabled repo-config state"
+      green:
+        - "Implement the editor"
+      refactor:
+        - "Keep the file under ~300 lines; extract the field rows if it grows"
+    estimatedEffort: "2h"
+
+  - id: task-35
+    phaseId: phase-5
+    title: "run-plan-disclosure and wiring into web-preview-tab"
+    description: |
+      Collapsed-by-default disclosure composing summary and editor, plus the Re-analyze action
+      over the invalidate action. Rendered from web-preview-tab.tsx. The Zustand
+      deployment-status-store and the shared deployment-status-badge contract are not touched.
+    state: Todo
+    dependencies:
+      - task-33
+      - task-34
+    acceptanceCriteria:
+      - "Collapsed by default; expanding reveals the summary with working Edit and Re-analyze actions"
+      - "Re-analyze clears the plan and the next start re-runs the tier chain"
+      - "Renders for all three target types"
+      - "deployment-status-store and deployment-status-badge are unmodified"
+      - "Colocated .stories.tsx covers collapsed, expanded, editing and error states; web-preview-tab.stories.tsx is updated"
+      - "pnpm build:storybook succeeds"
+    tdd:
+      red:
+        - "Component tests for collapse/expand, Edit invocation, Re-analyze invocation and the error path"
+      green:
+        - "Implement the disclosure and render it from the preview tab"
+      refactor:
+        - "Lift any duplicated action-invocation glue into a small hook"
+    estimatedEffort: "2h"
+
+  - id: task-36
+    phaseId: phase-5
+    title: "Web translations across all nine locales"
+    description: |
+      Add every new run-plan UI string — labels, source badges, staleness hint, execution
+      notice, repo-config conflict explanation, validation messages, action labels — to
+      translations/*/web.json for ar, de, en, es, fr, he, pt, ru and uk.
+    state: Todo
+    dependencies:
+      - task-35
+    acceptanceCriteria:
+      - "Every new key exists in all nine locale web.json files"
+      - "No hardcoded English remains in the run-plan components"
+      - "A key-parity check across translations/*/web.json passes"
+    tdd:
+      red:
+        - "Test asserting key parity across all nine web.json files for the run-plan namespace"
+      green:
+        - "Add the keys to every locale"
+      refactor:
+        - "Group the run-plan keys under one namespace object"
+    estimatedEffort: "1h"
+
+  # ── Phase 6 — CLI parity ───────────────────────────────────────────────────
+  - id: task-37
+    phaseId: phase-6
+    title: "shep dev command group scaffolding and registration"
+    description: |
+      src/presentation/cli/commands/dev/index.ts as a createDevCommand() factory following
+      commands/app/index.ts exactly, with i18n descriptions, registered in
+      src/presentation/cli/index.ts. The dev namespace was verified free against all 34
+      registered top-level commands.
+    state: Todo
+    dependencies:
+      - task-31
+    acceptanceCriteria:
+      - "shep dev --help lists start, stop, status, logs and plan"
+      - "Registering dev does not disturb the existing default action that starts the daemon"
+      - "No collision with run, start, stop, status or _serve"
+      - "Descriptions come from cli translations, not inline English"
+    tdd:
+      red:
+        - "Test asserting the registered top-level command names include dev exactly once and that the pre-existing names are unchanged"
+      green:
+        - "Create the factory and register it"
+      refactor:
+        - "Match the app command group's file layout exactly"
+    estimatedEffort: "45min"
+
+  - id: task-38
+    phaseId: phase-6
+    title: "shep dev start with log and state streaming"
+    description: |
+      Honours the fire-and-track contract — returns once the run is accepted — then streams
+      deployment logs and state transitions (Analyzing → Installing → Booting → Ready) until
+      ready, failed or interrupted. Streams through use cases, never through the
+      app/api/deployment-logs SSE route, so the CLI does not depend on the web daemon.
+    state: Todo
+    dependencies:
+      - task-37
+    acceptanceCriteria:
+      - "Accepts a target via flags and resolves a bare invocation from the cwd through the resolver"
+      - "Streams each state transition and log line until Ready, failed, or SIGINT"
+      - "SIGINT detaches the stream without killing the dev server"
+      - "Exits non-zero on a failed run with the failureReason printed"
+      - "No import of any repository, infrastructure service, or the SSE route"
+    tdd:
+      red:
+        - "Command test asserting accepted-run behaviour, streamed transitions, the SIGINT path and the non-zero failure exit"
+      green:
+        - "Implement the command over the existing start use cases plus the status/logs use cases"
+      refactor:
+        - "Extract the streaming loop so stop/status/logs can share it"
+    estimatedEffort: "2h"
+
+  - id: task-39
+    phaseId: phase-6
+    title: "shep dev stop, status and logs"
+    description: |
+      Thin Commander wiring over StopDeploymentUseCase, GetDeploymentStatusUseCase and the
+      logs use case, with the same target resolution as dev start.
+    state: Todo
+    dependencies:
+      - task-38
+    acceptanceCriteria:
+      - "Each subcommand works against a local repository with the web UI not running"
+      - "status prints the current state, command and port when known"
+      - "logs supports a follow mode reusing the shared streaming loop"
+      - "Each resolves its use case from the DI container and imports no repository or infrastructure service"
+    tdd:
+      red:
+        - "Command tests per subcommand including the not-running case for stop and status"
+      green:
+        - "Implement the three subcommands"
+      refactor:
+        - "Share target-argument parsing across all dev subcommands"
+    estimatedEffort: "1h30min"
+
+  - id: task-40
+    phaseId: phase-6
+    title: "shep dev plan show|set|clear and CLI translations"
+    description: |
+      plan show renders the resolved plan including the isStale flag computed by the use case;
+      plan set writes an override through OverrideDevServerRunPlanUseCase (surfacing validation
+      errors and the .shep/dev.json conflict); plan clear invokes the invalidate use case. All
+      new CLI strings land in translations/*/cli.json for all nine locales.
+    state: Todo
+    dependencies:
+      - task-39
+    acceptanceCriteria:
+      - "plan show prints command, cwd, source, language, framework, expectedPort and the staleness hint, and reports no-plan cleanly"
+      - "plan set persists a Manual plan and the next start spawns it verbatim"
+      - "plan set surfaces validation errors and the repo-config conflict message with a non-zero exit"
+      - "plan clear clears any plan source and reports when nothing was cached"
+      - "The CLI never computes staleness itself — it prints the flag from the use case"
+      - "Every new cli.json key exists in all nine locales, verified by a key-parity test"
+    tdd:
+      red:
+        - "Command tests for show (populated, empty, stale), set (success, validation error, conflict), clear (present, absent)"
+        - "Key-parity test across translations/*/cli.json"
+      green:
+        - "Implement the plan subcommands and add the translation keys"
+      refactor:
+        - "Extract plan rendering into a small formatter shared by show and set output"
+    estimatedEffort: "2h"
+
+  # ── Phase 7 — Docs, hygiene, verification ──────────────────────────────────
+  - id: task-41
+    phaseId: phase-7
+    title: "Document the .shep/dev.json schema and the detector precedence order"
+    description: |
+      docs/development/dev-server-run-plan.md — the full .shep/dev.json field reference with
+      examples and validation rules (it must be reasonable to hand-author, since nothing writes
+      it), the ordered detector precedence table, the per-ecosystem canonical commands, the
+      expectedPort rules, and the recorded configHash/installHash subdirectory limitation with
+      its follow-up. Linked from the Key Docs table in CLAUDE.md.
+    state: Todo
+    dependencies:
+      - task-40
+    acceptanceCriteria:
+      - "Every .shep/dev.json field is documented with type, optionality and validation rule"
+      - "The precedence table matches DETECTOR_REGISTRY exactly"
+      - "The accepted subdirectory hashing limitation is recorded with its rationale"
+      - "The doc is linked from CLAUDE.md's Key Docs table"
+    tdd: null
+    estimatedEffort: "1h"
+
+  - id: task-42
+    phaseId: phase-7
+    title: "Spec hygiene and clean-architecture verification"
+    description: |
+      Correct specs/103-agentic-dev-server/spec.yaml's stale phase field now that its code has
+      landed, and run the clean-architecture sweep over the new application and presentation
+      code — no repository or infrastructure imports in CLI commands, server actions, API routes
+      or React components (FR-23).
+    state: Todo
+    dependencies:
+      - task-41
+    acceptanceCriteria:
+      - "specs/103-agentic-dev-server/spec.yaml no longer reads phase: Requirements"
+      - "A grep over src/presentation/ and the new application files finds zero direct repository or infrastructure imports"
+      - "The clean-arch auditor reports no new violations for the touched directories"
+      - "No new file exceeds ~300 lines"
+    tdd: null
+    estimatedEffort: "45min"
+
+  - id: task-43
+    phaseId: phase-7
+    title: "Full local CI verification before push"
+    description: |
+      Run the complete local sequence that mirrors CI — lint, format:check, typecheck,
+      test:unit, test:int, build, build:storybook — capturing full output to files rather than
+      piping through tail alone, and fix every failure. CI confirms; it does not discover.
+    state: Todo
+    dependencies:
+      - task-42
+    acceptanceCriteria:
+      - "pnpm lint and pnpm format:check pass with zero errors"
+      - "pnpm typecheck passes across the workspace"
+      - "pnpm test:unit and pnpm test:int pass with zero failures"
+      - "pnpm build and pnpm build:storybook succeed"
+      - "detect-dev-script.test.ts and the three pre-existing dev-server integration suites are green and unmodified, except where a deliberate contract change is documented in the plan"
+      - "Every failure is fixed — none dismissed, skipped or explained away"
+    tdd: null
+    estimatedEffort: "1h30min"
+
+# Total effort estimate
+totalEstimate: "~52 hours (6–7 focused days) — upper bound of M"
+
+# Open questions
+openQuestions: []
+
+# Markdown content (the full tasks document)
+content: |
+  ## Status
+
+  - **Phase:** Implementation
+  - **Updated:** 2026-08-09
+
+  ## Summary
+
+  Forty-three tasks across seven phases, ordered by hazard rather than by feature area.
+
+  The **foundation** lands first because two upstream gaps would poison every later
+  measurement: `computeInstallHash` knows only Node lockfiles, so a non-Node plan shipped
+  before it is extended would silently re-run its setup commands on every start and present
+  as slow detection rather than as a caching bug; and the shared detector contracts must be
+  settled before ten modules are written against them. TypeSpec codegen for
+  `RunPlanSource.Manual` and `DeploymentTargetType` lands here too, so later phases pick them
+  up without churn. Research verified no SQLite migration is required — that verification is
+  itself an acceptance criterion rather than an assumption.
+
+  The **detector registry** is built next, in full, before anything wires it into a
+  production path. The Node detector is extracted verbatim first, with the pinned 492-line
+  `detect-dev-script.test.ts` passing unmodified as its acceptance criterion — that suite is
+  the strongest guard against the spec's highest-risk item. Each of the eight ecosystems then
+  arrives as an independent, purely functional, fixture-tested module that gates on
+  `existsSync` before reading, followed by the `.shep/dev.json` reader. The phase closes with
+  the composition layer — the ordered registry, the shared subdirectory fallback, the two
+  public projections — and the `spawnFromDetection` shell fallback, so the legacy spawn path
+  can never observe a non-Node result before it is able to handle one.
+
+  **Graph integration** then changes one node per task, each with its own RED test, so any
+  regression in the delicate "expected failures never throw" contract is attributable to a
+  single node. Tier zero, the two Manual-pinning guards, the `ensure_infra` hint data and the
+  non-Node install path all land here, and the phase exits on a multi-stack integration sweep
+  that asserts zero structured-agent calls for every covered ecosystem — the behavioural
+  heart of the feature.
+
+  The **application layer** follows: one shared target resolver, a small staleness port that
+  keeps `computeConfigHash` out of `application/`, and the three use cases carrying every
+  piece of policy — `isStale` derivation, cwd confinement, port range, non-empty command, and
+  the repo-config conflict outcome that stops the UI from silently accepting an override the
+  committed file would shadow.
+
+  Both presentation surfaces consume those same use cases. The **web** adds three thin server
+  actions and a three-part component family so the mandatory Storybook state matrix is
+  expressible on small components; the **CLI** adds the full `shep dev` group, which is the
+  honest test of the presentation-agnostic rule because a complete surface exercises every
+  use case and would expose any web-shaped assumption in the ports.
+
+  The final phase documents the `.shep/dev.json` schema and the precedence order so neither
+  requires reading code, corrects spec 103's stale phase field, and runs the full local CI
+  sequence before push.

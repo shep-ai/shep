@@ -26,7 +26,7 @@
  */
 
 import { existsSync } from 'node:fs';
-import { DeploymentState } from '@/domain/generated/output.js';
+import { DeploymentState, type DeploymentTargetType } from '@/domain/generated/output.js';
 import type { IDeploymentService } from '@/application/ports/output/services/deployment-service.interface.js';
 import type {
   IDevServerAgentService,
@@ -37,7 +37,8 @@ import type { IAgentExecutor } from '@/application/ports/output/agents/agent-exe
 import type { IAgentExecutorProvider } from '@/application/ports/output/agents/agent-executor-provider.interface.js';
 import type { IStructuredAgentCaller } from '@/application/ports/output/agents/structured-agent-caller.interface.js';
 import { DependencyInstaller } from '@/infrastructure/services/deployment/dependency-installer.js';
-import { detectDevScript } from '@/infrastructure/services/deployment/detect-dev-script.js';
+import { detectRunPlan } from '@/infrastructure/services/deployment/detect-dev-script.js';
+import { readRepoDevConfig } from '@/infrastructure/services/deployment/repo-dev-config-reader.js';
 import {
   computeConfigHash,
   computeInstallHash,
@@ -67,7 +68,7 @@ export interface DevServerAgentGraphOutcome {
 export interface DevServerAgentGraphRunner {
   invoke(input: {
     targetId: string;
-    targetType: string;
+    targetType: DeploymentTargetType;
     targetPath: string;
   }): Promise<DevServerAgentGraphOutcome>;
 }
@@ -95,7 +96,7 @@ export class DevServerAgentService implements IDevServerAgentService {
   async startDevServer(
     targetId: string,
     targetPath: string,
-    targetType: string
+    targetType: DeploymentTargetType
   ): Promise<DevServerStartResult> {
     if (this.inFlight.has(targetId)) {
       // Coalesce: the running graph owns the lifecycle — just report where
@@ -126,7 +127,11 @@ export class DevServerAgentService implements IDevServerAgentService {
   }
 
   /** Execute one full graph run for a target. Never rejects. */
-  private async runGraph(targetId: string, targetPath: string, targetType: string): Promise<void> {
+  private async runGraph(
+    targetId: string,
+    targetPath: string,
+    targetType: DeploymentTargetType
+  ): Promise<void> {
     const log = (line: string): void => this.deps.deploymentService.appendLog(targetId, line);
 
     try {
@@ -187,7 +192,7 @@ export class DevServerAgentService implements IDevServerAgentService {
   private composeNodes(
     targetId: string,
     targetPath: string,
-    targetType: string,
+    targetType: DeploymentTargetType,
     executor: IAgentExecutor | null,
     log: (line: string) => void
   ): DevServerAgentGraphNodes {
@@ -199,7 +204,8 @@ export class DevServerAgentService implements IDevServerAgentService {
     return {
       analyze: createAnalyzeNode({
         runPlanRepository,
-        detect: detectDevScript,
+        detect: detectRunPlan,
+        readRepoConfig: readRepoDevConfig,
         structuredCaller,
         computeConfigHash,
         reportAnalyzing: () => reportState(DeploymentState.Analyzing),

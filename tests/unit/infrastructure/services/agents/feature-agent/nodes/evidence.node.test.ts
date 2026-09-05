@@ -561,7 +561,13 @@ describe('createEvidenceNode', () => {
       const node = createEvidenceNode(executor);
       await node(baseState());
 
-      expect(mockValidateEvidence).toHaveBeenCalledWith(sampleEvidence, expect.any(Array));
+      // The worktree is passed so repo-relative evidence paths resolve against
+      // the directory the agent ran in, not the daemon's process.cwd().
+      expect(mockValidateEvidence).toHaveBeenCalledWith(
+        sampleEvidence,
+        expect.any(Array),
+        '/tmp/worktree'
+      );
     });
 
     it('should not retry when validation passes on first attempt', async () => {

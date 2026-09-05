@@ -13,8 +13,8 @@ import type { DevServerRunPlan } from '@/domain/generated/output.js';
 import { RunPlanSource, DeploymentState } from '@/domain/generated/output.js';
 
 describe('RunPlanSource enum', () => {
-  it('should have exactly 2 values', () => {
-    expect(Object.values(RunPlanSource)).toHaveLength(2);
+  it('should have exactly 3 values', () => {
+    expect(Object.values(RunPlanSource)).toHaveLength(3);
   });
 
   it('should map Deterministic to "Deterministic"', () => {
@@ -23,6 +23,10 @@ describe('RunPlanSource enum', () => {
 
   it('should map Agent to "Agent"', () => {
     expect(RunPlanSource.Agent).toBe('Agent');
+  });
+
+  it('should map Manual to "Manual" (spec 108 user-authored override)', () => {
+    expect(RunPlanSource.Manual).toBe('Manual');
   });
 });
 

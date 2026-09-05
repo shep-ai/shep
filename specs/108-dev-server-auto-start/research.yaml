@@ -1,0 +1,1069 @@
+# Research Artifact (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: dev-server-auto-start
+summary: |
+  Verified against the live codebase: the three-tier analyze pipeline, the
+  dev_server_run_plans table, DI wiring and SSE log streaming all exist and
+  work, so this feature is pure breadth-and-surface on a proven spine. Three
+  findings reshape the plan. (1) No TOML parser is needed — every ecosystem
+  signal we actually consume is either a sibling file's presence, a JSON/YAML
+  document (js-yaml is already a direct dependency), or a line-anchored table
+  header, so a new runtime dependency on a published CLI is avoidable. (2) No
+  SQLite migration is needed for RunPlanSource.Manual — migration 138 declares
+  plan_source as bare `TEXT NOT NULL` with no CHECK constraint and the mapper
+  does an unchecked cast, so TypeSpec + `pnpm tsp:codegen` is the entire domain
+  change. (3) detectDevScript has a second, undocumented consumer —
+  deployment-spawner.spawnFromDetection builds an argv spawn from
+  `packageManager` + `scriptName`, which a non-Node detection result cannot
+  supply — so widening the detector without a shell fallback there would spawn
+  `undefined`. The existing detect-dev-script suite pins exact result objects
+  via toEqual, which is satisfiable unmodified only if detector provenance is
+  returned as a separate projection rather than as a new field on the result.
+
+relatedFeatures:
+  - "103-agentic-dev-server"
+  - "079-fix-dev-server"
+  - "055-deployment-status-indicator"
+  - "061-default-env-deployment"
+
+technologies:
+  - "TypeScript 5.3+ (ESM, NodeNext) — Node >=22 engine floor"
+  - "LangGraph (@langchain/langgraph ^1.1.4) — StateGraph, Annotation channels"
+  - "tsyringe ^4.10 — DI by string token, instanceCachingFactory, safeResolve degradation"
+  - "TypeSpec (@typespec/compiler ^0.60) — domain source of truth, tsp:codegen emitter"
+  - "better-sqlite3 ^12.6 + umzug ^3.8 — numbered migrations, dev_server_run_plans table"
+  - "js-yaml ^4.1.1 — ALREADY a direct dependency; docker-compose.yml parsing"
+  - "node:fs (readFileSync/existsSync/readdirSync/statSync) — synchronous detector I/O"
+  - "node:child_process execFile — probeBinaryDefault cross-platform binary probe"
+  - "Commander ^14 — CLI command tree, i18n-backed descriptions"
+  - "Next.js 16 App Router — server actions + SSE deployment-logs route"
+  - "React 19 + Zustand — deployment-status-store, deployment-status-provider"
+  - "Vitest ^4 — unit + integration suites"
+  - "Storybook 8.6 — mandatory colocated .stories.tsx"
+  - "i18next / react-i18next — translations/{ar,de,en,es,fr,he,pt,ru,uk}/{cli,common,tui,web}.json"
+  - "smol-toml / @iarna/toml — EVALUATED AND REJECTED (see Library Analysis)"
+
+relatedLinks:
+  - title: "LangGraph JS — StateGraph and conditional edges"
+    url: "https://langchain-ai.github.io/langgraphjs/concepts/low_level/"
+  - title: "Docker Compose file reference — services and ports"
+    url: "https://docs.docker.com/reference/compose-file/services/"
+  - title: "PEP 621 — pyproject.toml project metadata"
+    url: "https://peps.python.org/pep-0621/"
+  - title: "Poetry — the pyproject.toml file and tool.poetry.scripts"
+    url: "https://python-poetry.org/docs/pyproject/"
+  - title: "uv — running commands in a project environment"
+    url: "https://docs.astral.sh/uv/concepts/projects/run/"
+  - title: "Cargo manifest reference"
+    url: "https://doc.rust-lang.org/cargo/reference/manifest.html"
+  - title: "Deno — deno.json tasks"
+    url: "https://docs.deno.com/runtime/reference/cli/task/"
+  - title: "Phoenix — mix phx.server and the default 4000 port"
+    url: "https://hexdocs.pm/phoenix/up_and_running.html"
+  - title: "Django — manage.py runserver and the default 8000 port"
+    url: "https://docs.djangoproject.com/en/stable/ref/django-admin/#runserver"
+  - title: "GNU Make — rule syntax and .PHONY targets"
+    url: "https://www.gnu.org/software/make/manual/html_node/Rule-Syntax.html"
+  - title: "Vitest — expect.toEqual ignores undefined properties"
+    url: "https://vitest.dev/api/expect.html#toequal"
+  - title: "TypeSpec language basics"
+    url: "https://typespec.io/docs/language-basics/overview"
+
+decisions:
+  - title: "Detector registry architecture — one ordered registry, two public projections"
+    chosen: |
+      Create `infrastructure/services/deployment/detectors/` with one pure module per
+      ecosystem exporting `(dirPath: string) => DetectorResult`, plus `registry.ts` holding
+      the ordered `DETECTOR_REGISTRY` array, the shared `SKIP_DIRS` set, the read caps and
+      the `Ecosystem` constant enum. `detect-dev-script.ts` becomes a thin composition layer
+      exporting TWO projections over ONE registry walk:
+      `detectRunPlan(dirPath): DetectionOutcome` (rich — `{ ecosystem, result }`, consumed by
+      analyze.node) and `detectDevScript(dirPath): DetectDevScriptResult` (legacy shape —
+      `outcome.result` returned verbatim, consumed by deployment-spawner). The registry walk
+      is: try every detector in order against `dirPath`; if all fall through, run the same
+      ordered walk against each immediate subdirectory; if everything falls through, return
+      the NODE detector's error verbatim.
+    rejected:
+      - |
+        "Single widened `detectDevScript` that carries an `ecosystem` field on the success
+        object" — the existing suite (tests/unit/.../detect-dev-script.test.ts, 492 lines)
+        pins whole result objects with `toEqual({ success: true, packageManager, scriptName,
+        command, needsInstall, resolvedDir })`. A defined `ecosystem: 'node'` key makes those
+        assertions fail, breaking NFR-5 and the "suite passes unmodified" success criterion
+        for a purely cosmetic gain. (Vitest's toEqual ignores `undefined`-valued keys, so
+        genuinely-absent optional fields are safe — a *populated* one is not.)
+      - |
+        "Two independent detector functions (Node-only legacy + new multi-stack)" — leaves two
+        precedence implementations to drift apart, violates the no-duplication rule, and
+        strands the legacy spawner path on Node forever.
+      - |
+        "Grow detect-dev-script.ts in place with per-ecosystem branches" — the file is already
+        163 lines against a ~300-line guidance; ten ecosystems inline would land near 1000 and
+        make NFR-3's "adding a ninth ecosystem = one new module + one registry entry" false.
+    rationale: |
+      Two projections over one implementation is not duplication — it is the minimum needed to
+      satisfy two genuinely different consumers that already exist in the codebase.
+      `analyze.node.ts` needs provenance (NFR-11 requires logging *which* detector won and why)
+      and the richer fields (FR-5/FR-6). `deployment-spawner.spawnFromDetection` needs the
+      historical shape. Returning provenance *beside* the result rather than *inside* it is
+      what lets the pinned 492-line suite pass byte-for-byte, which is the single strongest
+      regression guard this feature has (the highest-risk item in the spec is precedence
+      regression for existing Node repos).
+
+      The ordered-registry shape mirrors how the repo already expresses priority lists —
+      `SCRIPT_PRIORITY`, `LOCKFILE_MANAGERS`, `CONFIG_FILES`, `LOCKFILES` are all module-level
+      ordered `const` arrays — so precedence stays greppable in one place per NFR-7's
+      no-magic-strings rule.
+
+      Critical ordering detail discovered while reading the pinned suite: the "package.json is
+      missing" test mocks `readFileSync` to throw for EVERY path and `existsSync` to return
+      false for every path. A detector that reads a manifest inside a bare try/catch without
+      first gating on `existsSync` would, under the "no scripts field" test (which mocks
+      `readFileSync` to return `{"name":"my-project"}` for every path), receive that JSON as
+      the contents of `Makefile`, `mix.exs`, etc. Every non-Node detector MUST therefore gate
+      on `existsSync(join(dir, manifest))` before reading. This is also the right production
+      behaviour (one stat beats one failed open) and makes the fall-through deterministic.
+
+  - title: "Manifest parsing — no TOML dependency; presence + JSON + js-yaml + line-anchored scans"
+    chosen: |
+      Parse per format, cheapest correct tool:
+      - JSON (`package.json`, `deno.json`, `.shep/dev.json`) — `JSON.parse` in try/catch.
+      - YAML (`docker-compose.yml|yaml`) — `js-yaml` `load()`, already a direct dependency at
+        ^4.1.1 and already used this exact way in `aspm/ownership-yaml-reader.ts`.
+      - TOML (`pyproject.toml`, `Cargo.toml`) — NO parser. Derive from sibling-file presence
+        (`poetry.lock` → poetry, `uv.lock` → uv, `Pipfile.lock` → pipenv, `Cargo.lock` → cargo)
+        plus a line-anchored table-header/simple-key scanner that only ever matches
+        `^\s*\[tool\.poetry\]` / `^\s*\[tool\.uv\]` / `^\s*\[project\.scripts\]` style headers
+        and `^\s*(dev|start|serve)\s*=` keys directly beneath a recognised header.
+      - Make (`Makefile`) — line-anchored `^(dev|start|serve|run):` target scan.
+      - Elixir (`mix.exs`) / Ruby (`Gemfile`) — these are executable DSLs, never parsed; a
+        `:phoenix` / `gem ["']rails["']` substring plus `bin/rails` / `mix.exs` presence is the
+        only signal used.
+      All reads are capped at `MAX_MANIFEST_BYTES` (256 KB) and CRLF-normalised before scanning.
+    rejected:
+      - |
+        "Add `smol-toml` (or `@iarna/toml`) as a runtime dependency" — pulls a new package into
+        a *published* npm CLI's runtime dependency closure, which means new supply-chain surface
+        for the repo's Trivy/Semgrep/Gitleaks gates and the `pnpm.overrides` block it already
+        maintains. The payoff is close to zero: full TOML parsing buys us nothing we consume.
+        `cargo run` is correct regardless of Cargo.toml's contents, and the only pyproject facts
+        we use (which runner, is there an author-declared dev/start/serve script) are table
+        headers and one-line keys.
+      - |
+        "Hand-roll a general TOML 1.0.0 parser" — hundreds of lines of spec surface (multi-line
+        basic strings, literal strings, arrays of tables, inline tables, dotted keys, datetimes)
+        for a lookup we perform on two files. It would immediately breach NFR-3's ~300-line
+        per-module rule and be the most bug-prone code in the feature.
+      - |
+        "Skip TOML signals entirely — key Python and Rust off file presence only" — loses the
+        one honest Python signal that mirrors package.json semantics (an author who wrote
+        `dev = "..."` under `[tool.poetry.scripts]` has stated intent exactly as an npm `dev`
+        script does), and loses poetry-vs-uv disambiguation when both a lockfile and a
+        `[tool.*]` header disagree.
+    rationale: |
+      The decision hinges on what a parse *failure* costs. Every detector falls through on any
+      doubt, so a missed signal costs one agent call — the exact status quo — while a new
+      runtime dependency is permanent. The line scanner's failure mode is bounded in the safe
+      direction: it can only match a literal `[tool.poetry]`-shaped line at the start of a line,
+      a construct that essentially cannot appear inside a TOML string value in a real manifest,
+      and if it somehow did, the worst outcome is `poetry run` instead of `uv run` — which
+      `ensure_infra` then reports as a missing `poetry` binary with an install hint, not a
+      silent wrong start.
+
+      This also keeps the detectors honest about the spec's own framing (open question 1): the
+      eight ecosystems were chosen because each has a *canonical* invocation. Canonical
+      invocations do not require deep manifest introspection — that is precisely what separates
+      them from the excluded JVM/.NET/PHP cases, whose correct command genuinely lives inside
+      plugin and profile configuration.
+
+  - title: "RunPlanSource.Manual requires NO SQLite migration — verified, not assumed"
+    chosen: |
+      Add the `Manual` member to the `RunPlanSource` enum in
+      `tsp/deployment/dev-server-run-plan.tsp`, run `pnpm tsp:codegen`, and stop. No migration
+      file after `141-create-archived-agent-sessions.ts` is required.
+    rejected:
+      - |
+        "Write a defensive idempotent migration anyway" — there is nothing for it to do. SQLite
+        cannot alter a CHECK constraint in place, so a defensive migration would have to
+        table-rebuild (create/copy/drop/rename) a table that needs no change, risking real data
+        for zero benefit.
+      - |
+        "Add a separate `pinned` boolean column" — the spec already rejected this at requirements
+        time; the code confirms why. Every consumer would need to handle `pinned Deterministic`
+        and `Manual` as two overlapping concepts, and it would require the migration that
+        `Manual` does not.
+    rationale: |
+      Verified directly in the source rather than inferred:
+      - `packages/core/src/infrastructure/persistence/sqlite/migrations/138-create-dev-server-run-plans-table.ts`
+        declares `plan_source TEXT NOT NULL` with no CHECK constraint and no lookup-table FK.
+      - `packages/core/src/infrastructure/persistence/sqlite/mappers/dev-server-run-plan.mapper.ts`
+        writes `plan_source: plan.source` and reads `source: row.plan_source as RunPlanSource` —
+        an unchecked cast in both directions.
+      - `packages/core/src/infrastructure/repositories/sqlite-dev-server-run-plan.repository.ts`
+        has no enum whitelist in its INSERT/ON CONFLICT statement.
+      So a `'Manual'` string round-trips through the existing schema today. This resolves the
+      conditional in FR-17 ("if the SQLite column constrains its values…") definitively in the
+      negative and removes a task from the plan. It also satisfies NFR-5: existing
+      `Deterministic` and `Agent` rows are untouched because nothing is rewritten.
+
+  - title: "Manual-plan pinning enforced at exactly two points"
+    chosen: |
+      Enforce FR-15 with one predicate (`plan.source === RunPlanSource.Manual`) in exactly two
+      places, both of which already load the plan:
+      1. `analyze.node.ts` cache tier — the existing `if (cached)` block gains a Manual branch
+         BEFORE the `cached.configHash === configHash` comparison, returning the plan and
+         emitting a "using your pinned run plan (config files have changed since it was set)"
+         line when the hash differs.
+      2. `remediate.node.ts` — its unconditional `deleteByRepoPath(state.targetPath)` becomes
+         conditional. The node currently injects only `Pick<…, 'deleteByRepoPath'>`; widen that
+         to include `findByRepoPath` so it can check the source, and skip the delete (with a
+         logged line) when Manual.
+      Staleness itself is computed once, in `GetDevServerRunPlanUseCase`, as
+      `isStale = plan.configHash !== computeConfigHash(repoPath)` — presentation never computes it.
+    rejected:
+      - |
+        "Filter Manual plans inside the repository (`deleteByRepoPath` becomes a no-op for
+        Manual rows)" — hides policy in the persistence adapter, silently breaks
+        `InvalidateDevServerRunPlanUseCase` (FR-16 explicitly must clear a plan "regardless of
+        plan source"), and makes the repository lie about its own contract.
+      - |
+        "Add a `preserveManual` flag to the repository interface" — a boolean parameter that
+        encodes a policy decision at the wrong layer; the two call sites that care already have
+        the plan in hand.
+    rationale: |
+      This is the payoff the `RunPlanSource.Manual` modelling decision was made for: one
+      predicate, two call sites, no new column, no new merge rule. Reading the actual code
+      confirms the guard is genuinely needed and is not currently there — `analyze.node.ts:96`
+      unconditionally emits "Cached run plan is stale … re-analyzing" and falls through to the
+      deterministic tier, which then `upsert`s a `Deterministic` plan straight over the Manual
+      row; and `remediate.node.ts:52` deletes the row unconditionally on the first failure with
+      an executor present. Without both guards, a user's typed command survives exactly until
+      the next `package.json` edit or the next start failure — the precise failure mode open
+      question 4 was decided to prevent.
+
+      `isStale` living in the use case rather than the component follows the code-quality rule
+      ("if you deleted the entire CLI and rebuilt it, would you lose business logic?") and means
+      the CLI's `shep dev plan show` and the web disclosure agree by construction.
+
+  - title: "spawnFromDetection must gain a shell fallback or widening breaks the legacy spawn path"
+    chosen: |
+      Make `scriptName` and `packageManager` optional on the detector success type and update
+      `deployment-spawner.spawnFromDetection` to branch: when both are present, keep today's
+      exact argv spawn (`spawn(packageManager, ['run', scriptName] | [scriptName], opts)`);
+      otherwise spawn `detection.command` through `buildSpawnOptions` with `shell: true` —
+      structurally identical to the existing `spawnFromRunPlan`.
+    rejected:
+      - |
+        "Keep `detectDevScript` Node-only and give only the graph the widened registry" — leaves
+        `IDeploymentService.start()` without a run plan permanently Node-only, so the same
+        repository succeeds via the agent path and fails via the direct path. That is exactly
+        the kind of split behaviour the presentation-agnostic rule exists to prevent.
+      - |
+        "Synthesise a fake `packageManager`/`scriptName` for non-Node results (e.g. `make`/`dev`)"
+        — would make `spawn('make', ['dev'])` accidentally work for Make and catastrophically
+        wrong for `docker compose up` (argv-spawning `docker` with `['compose']` drops `up`).
+    rationale: |
+      This consumer is easy to miss and is the sharpest hazard in the whole feature.
+      `deployment-service-deps.ts` injects `detectDevScript` into `DeploymentService`, and
+      `deployment.service.ts:133` calls `spawnFromDetection(this.deps, targetPath)` on every
+      `start()` that arrives without a run plan. `spawnFromDetection` destructures
+      `packageManager` and `scriptName` off the success result and passes them to `deps.spawn`
+      as the executable and its argv. The moment `detectDevScript` can return a Make or Compose
+      result, that becomes `spawn(undefined, [undefined], …)`.
+
+      Making the two fields optional is the right move rather than a workaround: they were
+      always Node-specific facts leaking into a general contract, and TypeScript will flag the
+      spawner at `pnpm typecheck` the instant the type changes, so the fix cannot be forgotten.
+      The shell branch is not new capability — `spawnFromRunPlan` already shell-spawns arbitrary
+      command strings with the same options builder (NFR-6: "no new execution capability").
+
+  - title: "`.shep/dev.json` is tier zero, re-derived every analyze, persisted as a projection"
+    chosen: |
+      A `repo-config` detector reads `<repoPath>/.shep/dev.json` and runs BEFORE the run-plan
+      cache tier in `analyze.node.ts` (not merely first inside the detector registry). On a
+      valid file, analyze builds a `RunPlanSource.Manual` plan from it, carries over the
+      existing row's `installStampHash` (analyze already holds the row from its
+      `findByRepoPath` call), `upsert`s it, and returns it. The file is therefore re-read on
+      every start — the DB row is a projection for install-stamping, never a cache. Add
+      `.shep/dev.json` to `CONFIG_FILES`. Reader shape, validation and failure behaviour are
+      copied from `aspm/ownership-yaml-reader.ts`: `existsSync` gate → read → parse in
+      try/catch → field-by-field `ensureString`-style validation → return "nothing declared" on
+      any doubt. `OverrideDevServerRunPlanUseCase` detects a present, valid repo-config file and
+      returns an explicit "a committed .shep/dev.json controls this repository — edit that file"
+      outcome instead of writing a DB row that would never take effect.
+    rejected:
+      - |
+        "Place it as the first entry inside the detector registry (tier 2 of analyze)" — it
+        would lose to any fresh cached plan and, worse, to a DB `Manual` plan that by design
+        never invalidates, so a committed team-wide file could be permanently shadowed by one
+        teammate's old local override with no way to see why.
+      - |
+        "Persist the file-derived plan as a normal cached `Manual` plan" — `Manual` plans never
+        invalidate on `configHash` drift (FR-15), so the first read would freeze the file's
+        contents forever and every subsequent edit to `.shep/dev.json` would be silently
+        ignored until someone ran `plan clear`. This is the same silent-loss failure mode
+        open question 4 rejected, pointed the other way.
+      - |
+        "Tier zero and never persist anything" — clean, but `install_deps` calls
+        `stampInstallHash(repoPath, hash)`, which is an `UPDATE … WHERE repo_path = ?` against a
+        row that would not exist. Every start would silently re-run the plan's `setupCommands`,
+        turning the file override into a permanent install penalty.
+    rationale: |
+      There is direct precedent for a repo-level `.shep/` config file — `OwnershipYamlReader`
+      already reads `<repositoryPath>/.shep/ownership.yaml` and is explicitly "tolerant of
+      missing files, malformed input, and partially-shaped entries", which is verbatim NFR-4's
+      contract. Reusing that module's shape gives us a reviewed, tested precedent for
+      "user-authored file must never throw" rather than inventing one.
+
+      The projection model is what makes all three requirements hold at once: the file is
+      authoritative and takes effect immediately (its own edits need no invalidation
+      machinery at all), the row exists so `stampInstallHash` works, and `source === Manual`
+      keeps the single pinning predicate valid for the badge, the CLI and the remediate guard.
+      Adding `.shep/dev.json` to `CONFIG_FILES` remains correct and is still needed for the
+      opposite direction — *deleting* the file must invalidate the Deterministic plan that
+      subsequently gets detected. Note `join(dir, '.shep/dev.json')` normalises correctly on
+      win32, so `CONFIG_FILES` needs no structural change to hold a nested path.
+
+      The override-conflict outcome is the one piece of added scope, and it is non-negotiable:
+      without it, the Edit action in the web UI writes a row that tier zero shadows, which is a
+      silent no-op on typed user input.
+
+  - title: "Non-Node install staleness — extend the install-hash inputs per ecosystem"
+    chosen: |
+      Extend `computeInstallHash` with an ordered, ecosystem-aware lockfile list —
+      Node lockfiles first (unchanged order: bun.lock, bun.lockb, pnpm-lock.yaml, yarn.lock,
+      package-lock.json), then `uv.lock`, `poetry.lock`, `Pipfile.lock`, `requirements.txt`,
+      `Cargo.lock`, `go.sum`, `Gemfile.lock`, `mix.lock`, `deno.lock` — keeping the existing
+      `package.json` fallback and the `''` return when nothing exists. `install_deps`'s
+      `isFresh` needs no logic change once this lands.
+    rejected:
+      - |
+        "Leave `computeInstallHash` alone" — it currently returns `''` for any repo without a
+        Node lockfile or `package.json`, and `isFresh` short-circuits `currentHash === ''` to
+        false. Every Go/Rust/Python/Elixir start would therefore re-run the plan's
+        `setupCommands` in full, every time — a silent per-start penalty that would look like
+        the feature simply being slow.
+      - |
+        "Reuse `computeConfigHash` as the install hash for non-Node stacks" — over-invalidates:
+        editing a `Makefile` or `docker-compose.yml` would force a full dependency reinstall
+        that has nothing to do with dependencies.
+      - |
+        "Skip staleness entirely for non-Node plans (always fresh)" — inverts the bug: a
+        `Cargo.toml` dependency bump would never trigger the setup commands that fetch it.
+    rationale: |
+      This is a gap FR-9 implies but does not state. FR-9 says setup commands must run and
+      `installStampHash` must be stamped without a `packageManager` — reading `install-deps.node.ts`
+      shows that already works structurally (`if (runPlan.packageManager)` guards only the
+      package-manager install; the `setupCommands` loop and the stamp are unconditional). The
+      real blocker is upstream: `isFresh` returns false forever because `computeInstallHash`
+      only knows Node lockfiles, so the stamp is written and then never matched.
+
+      The ordering keeps Node repos byte-identical (Node lockfiles are still checked first, in
+      the same order), so the existing `config-hash.test.ts` expectations for Node fixtures hold.
+      `requirements.txt` is included deliberately despite not being a true lockfile — it is the
+      strongest install signal that ecosystem has, and hashing it is strictly better than the
+      current `''`.
+
+  - title: "expectedPort — three explicit sources only, wired to the verify node's TCP fallback"
+    chosen: |
+      Set `expectedPort` from exactly three explicit sources, in this order:
+      1. An explicit `--port <n>` / `--port=<n>` / `-p <n>` token in the detected command.
+      2. A Docker Compose `ports:` entry's HOST port, taken only when the resolved service set
+         yields exactly one host port (both the `"8080:80"` short syntax and the long
+         `{ published, target }` form).
+      3. A single-valued framework default, only when that framework is positively identified:
+         Rails 3000 (`bin/rails`), Phoenix 4000 (`:phoenix` in mix.exs), Django 8000 (`manage.py`).
+      Leave it unset in every other case. Never scan source files or `.env`.
+    rejected:
+      - |
+        "Also read `.env` / `PORT=` assignments and framework config modules" — `expectedPort`
+        is consumed at `verify.node.ts:119-122`, where a hit short-circuits to
+        `http://localhost:<port>` and a miss after timeout fails the run and routes to
+        remediation. A wrong port therefore manufactures a readiness failure on a server that
+        started perfectly, and can trigger a remediation agent that changes working code.
+      - |
+        "Ambiguous Compose port sets — pick the lowest host port" — a compose file with a web
+        service and a database publishes several ports; guessing which one is the app is exactly
+        the inference the agent tier is better at, and a wrong pick is worse than none.
+      - |
+        "Leave `expectedPort` unset for all deterministic plans" — throws away the TCP fallback
+        for the servers that most need it (Compose stacks and Phoenix/Rails, which often print
+        nothing the log parser recognises), for no risk reduction in the explicit cases.
+    rationale: |
+      The asymmetry in `verify.node.ts` is what settles this: an unset port degrades gracefully
+      to the existing log parsing, while a wrong port is an actively harmful false negative that
+      can escalate into an agent editing the repository. So the bar for setting it is "this is a
+      fact the author wrote down", not "this is probably right". A `--port` flag inside a
+      command the author committed, a `ports:` mapping they declared, and the three
+      framework defaults that have been stable for a decade all clear that bar; nothing else does.
+
+  - title: "ensure_infra widening is additive — extend SUGGESTED_INSTALL, no derivation change"
+    chosen: |
+      Extend the exported `SUGGESTED_INSTALL` record in `ensure-infra.node.ts` with entries for
+      `make`, `docker`, `go`, `cargo`, `rustup`, `deno`, `python`, `python3`, `uv`, `poetry`,
+      `pipenv`, `ruby`, `bundle`, `mix`, `elixir`, each carrying an ecosystem-appropriate,
+      user-space, non-`sudo` hint. Make no change to `deriveRequiredBinaries` or
+      `deriveBinaryFromCommand`. Keep `VALID_BINARY_NAME` exactly as-is.
+    rejected:
+      - |
+        "Add a per-ecosystem required-binary table keyed off the detector that won" — redundant:
+        `deriveBinaryFromCommand` already extracts the first non-env, non-builtin, non-path token
+        of `command` and of every `setupCommands` entry, which yields `make`, `docker`, `go`,
+        `cargo`, `deno`, `mix`, `bundle`, `uv`, `poetry` for free. A parallel table would be a
+        second source of truth that could disagree with the command actually being spawned.
+      - |
+        "Relax `VALID_BINARY_NAME` so paths like `./bin/rails` can be probed" — that regex is the
+        injection guard standing between a manifest-derived string and `sh -c` (NFR-6). Path-like
+        tokens are already deliberately dropped by `deriveBinaryFromCommand`; a `bin/rails`
+        command simply skips probing, which is correct — the file's existence was the detector's
+        own precondition.
+    rationale: |
+      Reading `ensure-infra.node.ts` shows FR-8's hard part is already done. The derivation is
+      command-driven, not ecosystem-driven, so it is automatically correct for any command the
+      new detectors emit; the only genuinely missing piece is that
+      `suggestedInstallCommand(binary)` falls back to the generic "install '<x>' and ensure it is
+      on PATH" for everything outside the four Node entries. That makes FR-8 a data change, not a
+      logic change — the cheapest possible way to satisfy it and the one least likely to regress
+      the probe's existing cross-platform and timeout behaviour.
+
+      Windows note (NFR-8): `make` is genuinely absent on stock Windows. The correct outcome is
+      the existing one — probe misses, one bounded user-space remediation attempt, then a
+      failure naming `make` with an install hint. No platform special-casing is needed in the
+      detector; the Makefile detector should still fire on Windows and let the probe report the
+      truth.
+
+  - title: "Three new use cases over a shared application-layer target resolver"
+    chosen: |
+      Add `GetDevServerRunPlanUseCase`, `OverrideDevServerRunPlanUseCase` and
+      `InvalidateDevServerRunPlanUseCase` under `application/use-cases/deployments/`, each
+      taking `{ targetType: DeploymentTargetType, targetId: string }` and resolving it to a
+      `repoPath` through ONE shared application-layer resolver injected into all three
+      (application/services/deployment-target-resolver.ts, depending only on
+      `IApplicationRepository`, `IFeatureRepository`, `IRepositoryRepository` and
+      `IFileSystemService`). Register all three in `register-deployment.ts` with both the class
+      registration and the string-token alias the file already uses for web routes. Introduce
+      `DeploymentTargetType` as a TypeSpec enum rather than the raw `'application' | 'feature' |
+      'repository'` strings currently passed around.
+    rejected:
+      - |
+        "Each use case takes a raw `repoPath`" — pushes "which directory does this application
+        actually live in" into the CLI and the server actions, duplicating it four ways and
+        breaking the presentation-thin rule. It also loses the existence and
+        `isSameInstance` checks the start use cases perform.
+      - |
+        "Three target-specific variants per operation (nine use cases)" — mirrors the existing
+        `StartApplication/Feature/RepositoryDeploymentUseCase` split, but those differ because
+        each performs different domain validation before starting. Reading and overriding a run
+        plan is identical for all three targets once the path is known, so nine classes would be
+        eight-ninths boilerplate.
+      - |
+        "Resolve the target inside each use case with three injected repositories" — works, but
+        triplicates the resolution and its error mapping across three new classes and every
+        future one.
+    rationale: |
+      `register-deployment.ts` already establishes both the wiring pattern (class registration
+      plus a string-token alias, with the comment explaining that Turbopack cannot resolve
+      `.js`→`.ts` imports inside `@shepai/core`) and the degradation pattern (`safeResolve`).
+      Following it exactly keeps the new use cases reachable from Next.js server actions and the
+      CLI with no new infrastructure.
+
+      The shared resolver is where the "presentation-agnostic core API" rule actually gets
+      tested. `shep dev plan show` will most often be invoked with no arguments from inside a
+      repository, so the resolver must also answer "which target is this cwd?" — a question the
+      web UI never asks. Designing it as a use-case-layer service rather than a CLI helper is
+      what keeps that logic out of `src/presentation/cli/`, alongside the existing
+      `commands/app/resolve-application.ts` precedent which is the pattern this deliberately
+      does NOT follow for business logic.
+
+      Promoting `targetType` to a TypeSpec enum addresses NFR-7's no-magic-strings rule against
+      a string triple that is currently passed raw through `IDeploymentService.start()`,
+      `setTransientState()` and `IDevServerAgentService.startDevServer()`.
+
+  - title: "`shep dev` namespace is free — verified against the registered command tree"
+    chosen: |
+      Create `src/presentation/cli/commands/dev/` as a Commander group following
+      `commands/app/index.ts` exactly (a `createDevCommand()` factory composing subcommand
+      factories, i18n descriptions via `getCliI18n().t('cli:commands.dev.*')`), registered in
+      `src/presentation/cli/index.ts`. Subcommands: `start`, `stop`, `status`, `logs`, and
+      `plan` with `show` | `set` | `clear`. `shep dev start` returns as soon as the agent
+      service accepts the run and then streams deployment logs and state transitions until
+      Ready / failed / SIGINT, reusing `IDeploymentService.getLogs`/`getStatus` through use
+      cases rather than the SSE route.
+    rejected:
+      - |
+        "Extend the existing top-level `shep start`/`stop`/`status`" — those are the web-UI
+        daemon lifecycle commands (`start.command.ts`, `stop.command.ts`, `status.command.ts`,
+        `restart.command.ts`, `_serve.command.ts`). Overloading them with dev-server semantics
+        would be an outright breaking change to the documented daemon UX.
+      - |
+        "Nest under `shep app deploy`" — that subtree is cloud deploy (`initiate`, `status`) and
+        is application-scoped, while a dev server also targets features and bare repositories.
+    rationale: |
+      Verified by reading `src/presentation/cli/index.ts` in full: the registered top-level names
+      are version, settings, ui, run, agent, feat, repo, app, cluster, session, ide-open, install,
+      tools, project, item, cycle, intake, notifications, review, doctor, supervisor, bedrock,
+      contributors, whatsapp, aspm, security, plugin, upgrade, workflow, mcp, start, stop,
+      restart, status, `_serve`. `dev` is unused, and Commander's default action (which starts
+      the daemon) only fires when no subcommand matches, so adding `dev` cannot disturb it.
+      This closes the "must be verified free during planning" caveat in the spec's open
+      question 8.
+
+      Streaming through use cases rather than the SSE route matters for FR-23: the SSE endpoint
+      at `app/api/deployment-logs/route.ts` is a web presentation adapter, and a CLI that
+      consumed it would make the web daemon a hard dependency of the CLI — the inverse of the
+      presentation-agnostic requirement.
+
+  - title: "Web surface — a new disclosure component family inside the existing preview tab"
+    chosen: |
+      Add `src/presentation/web/components/features/application-page/run-plan/` containing a
+      collapsed-by-default `run-plan-disclosure.tsx`, a presentational `run-plan-summary.tsx`
+      (command, cwd, source badge, language, framework, expectedPort, staleness hint) and
+      `run-plan-editor.tsx` (the Edit form plus the mandatory "this command runs on your
+      machine" notice), each with a colocated `.stories.tsx` covering default / stale /
+      Manual-source / repo-config-controlled / editing / error. Render it from
+      `web-preview-tab.tsx`. Data flows through three thin server actions in
+      `app/actions/` mirroring the existing `deploy-application.ts` shape. The Zustand
+      `deployment-status-store` is not touched.
+    rejected:
+      - |
+        "Put the plan UI inside `deployment-status-badge`" — the badge is a shared compact
+        indicator also used outside this tab; adding an editing surface to it changes a
+        contract several consumers depend on.
+      - |
+        "A single large `run-plan-panel.tsx`" — display, editing and disclosure state in one
+        file heads straight past the ~300-line rule and makes the required Storybook state
+        matrix awkward to express.
+      - |
+        "Fetch run plans through a new API route" — server actions are the established pattern
+        for this page (`deploy-application.ts`, `stop-deployment.ts`, `get-deployment-status.ts`
+        are all actions); a route would only be needed for streaming, which this is not.
+    rationale: |
+      Splitting summary from editor from disclosure is what makes NFR-10's state matrix
+      expressible — a stale Manual plan, a repo-config-controlled plan whose Edit action must be
+      disabled with an explanation, and a validation error are each one story on a small
+      component rather than one deeply-propped story on a large one. Colocation and the
+      three-state minimum follow the repo's existing story convention.
+
+openQuestions:
+  - question: "How should pyproject.toml and Cargo.toml be read?"
+    resolved: true
+    options:
+      - option: "Add a TOML parser dependency (smol-toml)"
+        description: |
+          Correct for the full TOML 1.0.0 grammar and about 10 KB. But it is a new runtime
+          dependency in a published npm CLI — new supply-chain surface for the repo's Trivy /
+          Semgrep / Gitleaks gates and its curated `pnpm.overrides` block — bought for two files
+          from which we read at most a table header and a one-line key.
+        selected: false
+      - option: "No parser — sibling-file presence plus a line-anchored header/key scanner"
+        description: |
+          Derive the runner from lockfiles that already exist (`poetry.lock`, `uv.lock`,
+          `Pipfile.lock`, `Cargo.lock`) and match only line-anchored constructs
+          (`^\s*\[tool\.poetry\]`, `^\s*\[project\.scripts\]`, `^\s*(dev|start|serve)\s*=`).
+          Zero dependencies, ~60 lines, and every ambiguity falls through to the next detector.
+          Cannot handle exotic TOML, which we never need.
+        selected: true
+      - option: "Hand-roll a general TOML parser in-repo"
+        description: |
+          No dependency and full fidelity, but multi-line strings, arrays of tables, inline
+          tables, dotted keys and datetimes are hundreds of lines of spec surface — instantly
+          over NFR-3's ~300-line rule and the most bug-prone module in the feature.
+        selected: false
+    selectionRationale: |
+      The cost asymmetry decides it. A missed signal costs one agent call — literally today's
+      behaviour — while a runtime dependency on a published CLI is permanent and shows up in
+      every security scan the repo runs. Crucially, nothing we consume needs a parser:
+      `cargo run` is correct independent of Cargo.toml's contents, and the Python facts that
+      matter (which runner; did the author declare a dev/start/serve script) are a table header
+      and a simple key. `js-yaml@4.1.1` is already a direct dependency used exactly this way in
+      `aspm/ownership-yaml-reader.ts`, so Docker Compose — the one format that genuinely needs
+      structured parsing, for `ports:` — is already covered with no new dependency either.
+
+  - question: "Where does `.shep/dev.json` sit relative to the persisted run-plan cache?"
+    resolved: true
+    options:
+      - option: "Tier zero in analyze — re-read every start, persisted as a projection"
+        description: |
+          Read before the cache lookup. Build a `Manual` plan from the file, carry over the
+          existing row's `installStampHash`, upsert, return. The file is authoritative and its
+          edits take effect immediately with no invalidation machinery; the row exists purely so
+          `stampInstallHash` has something to update. Requires the override use case to report a
+          conflict when a user tries to save a DB override that the file would shadow.
+        selected: true
+      - option: "First entry inside the detector registry (tier 2 of analyze)"
+        description: |
+          Smallest change — one more detector in the ordered list. But it loses to any fresh
+          cached plan and, decisively, to a DB `Manual` plan, which by design never invalidates.
+          A committed team-wide file could be permanently shadowed by one teammate's stale local
+          override with nothing on screen explaining why.
+        selected: false
+      - option: "Read once and persist as an ordinary cached Manual plan"
+        description: |
+          Simplest persistence story, but `Manual` plans never invalidate on `configHash` drift
+          (FR-15), so the first read freezes the file's contents forever and every later edit to
+          `.shep/dev.json` is silently ignored until someone runs `plan clear`.
+        selected: false
+    selectionRationale: |
+      Tier zero is the only option under which the spec's own words — "highest-precedence tier"
+      — are literally true, and it eliminates an entire class of bug rather than managing it: a
+      file that is re-read every start cannot go stale, so no invalidation rule is needed for it
+      at all. The projection detail is not incidental. `install_deps` stamps freshness with
+      `UPDATE dev_server_run_plans … WHERE repo_path = ?`; with no row, that silently no-ops and
+      the plan's `setupCommands` re-run on every single start. Upserting the derived plan while
+      carrying the prior `installStampHash` forward gets immediate file effect and working
+      install caching at once, and analyze already fetches the row it needs for that carry-over.
+
+      The one cost is real and must be paid: with the file winning, a DB override saved through
+      the Edit action would do nothing. So `OverrideDevServerRunPlanUseCase` must detect a valid
+      repo-config file and return an explicit "a committed .shep/dev.json controls this
+      repository — edit that file" outcome. Silently accepting input that has no effect is the
+      exact failure mode requirements-phase question 4 was decided to avoid.
+
+  - question: "How does the winning detector's identity reach the logs without breaking the pinned test suite?"
+    resolved: true
+    options:
+      - option: "Return provenance beside the result — two projections over one registry walk"
+        description: |
+          The registry produces `{ ecosystem, result }`. `detectRunPlan()` exposes it for
+          analyze.node's NFR-11 log line; `detectDevScript()` returns `outcome.result` verbatim
+          for the legacy spawner. The 492-line pinned suite passes untouched because the result
+          object it asserts on is byte-identical.
+        selected: true
+      - option: "Add an `ecosystem` field to the success result and update the existing tests"
+        description: |
+          Marginally simpler types. But the suite pins whole objects with
+          `toEqual({ success, packageManager, scriptName, command, needsInstall, resolvedDir })`,
+          and a populated `ecosystem` key fails that (Vitest's `toEqual` ignores only
+          `undefined`-valued properties). It would require editing about a dozen assertions in
+          the one suite NFR-5 names as the regression guard.
+        selected: false
+      - option: "Log the ecosystem from inside each detector via the deployment logger"
+        description: |
+          No contract change at all — each detector logs its own name on success. But
+          `createDeploymentLogger` writes to the process log, not the SSE deployment stream that
+          NFR-11 requires, so the user reading live logs still would not see which tier won.
+        selected: false
+    selectionRationale: |
+      NFR-5 and a stated success criterion both name the unmodified `detect-dev-script` suite as
+      the proof that no existing Node repository changes behaviour — the spec's own
+      highest-risk item. Keeping that proof intact is worth more than field-shape tidiness,
+      especially when the cost is one wrapper type. The two exports are projections of a single
+      registry walk, not parallel implementations, so no duplication rule is strained.
+
+      The third option fails on plumbing rather than taste: NFR-11 asks for the tier decision on
+      the *deployment log stream*, and only `analyze.node.ts` holds the `emit` closure that
+      writes there (it pushes to `capturedLogs` and calls `deps.log`). Provenance has to travel
+      back to that closure, which is precisely what returning it beside the result does.
+
+  - question: "How should install staleness work for stacks with no Node lockfile?"
+    resolved: true
+    options:
+      - option: "Extend `computeInstallHash` with per-ecosystem lockfiles, Node first"
+        description: |
+          Append `uv.lock`, `poetry.lock`, `Pipfile.lock`, `requirements.txt`, `Cargo.lock`,
+          `go.sum`, `Gemfile.lock`, `mix.lock`, `deno.lock` after the existing Node lockfile
+          order. Node behaviour is byte-identical because Node lockfiles are still checked
+          first; non-Node repos gain a real freshness signal. ~10 lines.
+        selected: true
+      - option: "Leave it alone — FR-9 only asks that setup commands run"
+        description: |
+          No change. But `computeInstallHash` returns `''` when no Node lockfile and no
+          `package.json` exist, and `isFresh` short-circuits `currentHash === ''` to false, so
+          every Go/Rust/Python/Elixir start re-runs the full `setupCommands` list forever. The
+          stamp gets written and never matched.
+        selected: false
+      - option: "Use `computeConfigHash` as the install hash for non-Node plans"
+        description: |
+          Guarantees invalidation on any manifest change, but over-invalidates badly: editing a
+          `Makefile` or `docker-compose.yml` would force a full dependency reinstall unrelated
+          to dependencies.
+        selected: false
+    selectionRationale: |
+      Reading `install-deps.node.ts` shows FR-9's stated requirement is already structurally
+      satisfied — `if (runPlan.packageManager)` guards only the package-manager install, while
+      the `setupCommands` loop and `stampInstallHash` are unconditional. The actual blocker sits
+      one layer up in `computeInstallHash`, which knows only Node lockfiles. Without this
+      extension the feature would appear to work while quietly reinstalling on every start, and
+      it would be diagnosed as "the new detectors are slow" rather than as a caching bug.
+      Keeping Node lockfiles at the head of the list preserves the existing `config-hash` test
+      expectations and NFR-5.
+
+  - question: "How do the three new use cases identify their deployment target?"
+    resolved: true
+    options:
+      - option: "`{ targetType, targetId }` resolved through one shared application-layer resolver"
+        description: |
+          A single injectable resolver maps a target to its `repoPath` (and answers \"which
+          target is this cwd?\" for the CLI), injected into all three use cases. One place for
+          resolution and its error mapping; naturally presentation-agnostic.
+        selected: true
+      - option: "Each use case takes a raw `repoPath`"
+        description: |
+          Smallest core surface, but it moves \"which directory does this application live in\"
+          into the CLI and the three server actions — duplicated four ways, and it drops the
+          on-disk existence check the start use cases perform.
+        selected: false
+      - option: "Nine target-specific use cases, three per operation"
+        description: |
+          Mirrors the existing `StartApplication/Feature/RepositoryDeploymentUseCase` split. But
+          those three differ because each runs different domain validation before starting;
+          reading or overriding a plan is identical once the path is known, so this would be
+          almost entirely boilerplate.
+        selected: false
+    selectionRationale: |
+      Run plans are keyed by `repoPath` and deliberately shared across all three target types
+      (stated in `dev-server-run-plan.tsp` and enforced by `repo_path` being the primary key),
+      so a single resolver plus one implementation per operation matches the domain exactly.
+      The resolver is also where the presentation-agnostic rule gets genuinely exercised:
+      `shep dev plan show` will usually run with no arguments inside a repository, so \"which
+      target is this cwd?\" must be answerable from core. Putting that in a CLI helper — as
+      `commands/app/resolve-application.ts` does for its own concern — would bake a
+      terminal-shaped assumption into logic the web UI would later need.
+
+content: |
+  ## Status
+
+  - **Phase:** Research
+  - **Updated:** 2026-08-09
+
+  Every claim below was verified by reading the current source on
+  `feat/dev-server-auto-start`. Findings that change the plan are called out as
+  **Finding**.
+
+  ## Verified Baseline
+
+  | Component | File | State |
+  | --------- | ---- | ----- |
+  | Three-tier analyze | `.../dev-server-agent/nodes/analyze.node.ts` | Cache → `detectDevScript` → structured agent, all present |
+  | Deterministic tier | `.../deployment/detect-dev-script.ts` (163 lines) | package.json only; `dev`→`start`→`serve`; bun→pnpm→yarn→npm; one-level subdir scan |
+  | Config fingerprint | `.../deployment/config-hash.ts` | `CONFIG_FILES` already lists Makefile, docker-compose, Cargo.toml, go.mod, pyproject.toml, Gemfile, mix.exs, deno.json |
+  | Persistence | migration `138-create-dev-server-run-plans-table.ts` | `plan_source TEXT NOT NULL`, **no CHECK constraint** |
+  | Mapper | `.../mappers/dev-server-run-plan.mapper.ts` | `row.plan_source as RunPlanSource` — unchecked cast both directions |
+  | Binary probe | `.../nodes/ensure-infra.node.ts` | Command-driven derivation, `VALID_BINARY_NAME` guard, `SUGGESTED_INSTALL` has 4 Node entries |
+  | Install | `.../nodes/install-deps.node.ts` | `setupCommands` loop + stamp are already unconditional on `packageManager` |
+  | Remediate | `.../nodes/remediate.node.ts` | **Unconditionally** deletes the cached plan before remediating |
+  | DI | `.../di/modules/register-deployment.ts` | Class registration + string-token alias per use case; `safeResolve` degradation |
+  | CLI tree | `src/presentation/cli/index.ts` | 34 top-level commands registered; `dev` is **not** among them |
+  | Repo config precedent | `.../aspm/ownership-yaml-reader.ts` | Already reads `<repo>/.shep/ownership.yaml`, tolerant of missing/malformed input |
+
+  ### Finding 1 — `detectDevScript` has a second consumer that would break
+
+  `deployment-service-deps.ts` injects `detectDevScript` into `DeploymentService`, and
+  `deployment.service.ts:133` calls `spawnFromDetection(this.deps, targetPath)` for every
+  `start()` that arrives without a run plan. That function destructures `packageManager` and
+  `scriptName` off the success result and passes them to `spawn` as the executable and its
+  argv:
+
+  ```ts
+  const { packageManager, scriptName, command, resolvedDir } = detection;
+  const args = packageManager === 'npm' || packageManager === 'bun'
+    ? ['run', scriptName] : [scriptName];
+  return deps.spawn(packageManager, args, buildSpawnOptions(resolvedDir, {}));
+  ```
+
+  A Make or Compose detection result has neither field, so widening the detector without
+  touching this file spawns `undefined`. Fix: make both fields optional and add a
+  `shell: true` fallback that spawns `detection.command`, structurally identical to the
+  existing `spawnFromRunPlan`. TypeScript flags the site the moment the type changes, so
+  the fix cannot be silently skipped.
+
+  ### Finding 2 — no migration is needed for `RunPlanSource.Manual`
+
+  Migration 138 declares `plan_source TEXT NOT NULL` with no CHECK constraint, the mapper
+  casts without validating, and the repository's INSERT/ON CONFLICT has no whitelist. A
+  `'Manual'` string round-trips through today's schema. FR-17's conditional resolves in the
+  negative: TypeSpec enum member + `pnpm tsp:codegen` is the whole domain change.
+
+  ### Finding 3 — the pinned detector suite constrains the result shape
+
+  `tests/unit/.../detect-dev-script.test.ts` (492 lines) asserts whole result objects with
+  `toEqual`. Vitest's `toEqual` ignores `undefined`-valued properties but not populated ones,
+  so new optional fields are safe while a populated `ecosystem: 'node'` is not. Detector
+  provenance therefore travels beside the result, not inside it.
+
+  The same suite mocks `node:fs` with `readFileSync` returning one canned value for every
+  path. Any detector that reads a manifest without first gating on `existsSync` would receive
+  `package.json`'s bytes as the contents of `Makefile`, `mix.exs`, and so on. **Every non-Node
+  detector must gate on `existsSync` before reading** — correct in production too, and it makes
+  fall-through deterministic under the mock.
+
+  ### Finding 4 — Manual plans are overwritten in two places today
+
+  `analyze.node.ts:96` emits "stale — re-analyzing" and falls through to the deterministic
+  tier, which upserts a `Deterministic` plan over the row. `remediate.node.ts:52` deletes the
+  row unconditionally on the first failure. Without guards at both, a typed override survives
+  only until the next `package.json` edit or the next failed start.
+
+  ### Finding 5 — non-Node install staleness never matches
+
+  `computeInstallHash` returns `''` for a repo with no Node lockfile and no `package.json`,
+  and `isFresh` short-circuits `currentHash === ''` to `false`. Go/Rust/Python/Elixir plans
+  would re-run their `setupCommands` on every start — the stamp is written and never matched.
+
+  ## Technology Decisions
+
+  ### 1. Detector registry — one ordered registry, two public projections
+
+  **Chosen:** `detectors/` with one pure module per ecosystem plus `registry.ts` (ordered
+  `DETECTOR_REGISTRY`, shared `SKIP_DIRS`, read caps, `Ecosystem` constants).
+  `detect-dev-script.ts` becomes a composition layer exporting `detectRunPlan()` (rich,
+  `{ ecosystem, result }`, for analyze.node) and `detectDevScript()` (legacy shape, for the
+  spawner) over a single registry walk.
+
+  **Rejected:**
+  - Single widened function carrying `ecosystem` on the result — breaks the pinned suite.
+  - Two independent detector functions — two precedence implementations that will drift.
+  - Growing `detect-dev-script.ts` in place — ~1000 lines, breaks NFR-3.
+
+  **Rationale:** Two consumers genuinely need different shapes, and returning provenance
+  beside the result is what keeps the 492-line regression guard passing byte-for-byte. Ordered
+  `const` arrays match how the repo already expresses priority (`SCRIPT_PRIORITY`,
+  `LOCKFILE_MANAGERS`, `CONFIG_FILES`).
+
+  ### 2. Precedence order
+
+  ```
+  tier 0  .shep/dev.json                      (before the cache — see decision 6)
+  ── cache lookup ──
+  1  node        package.json dev|start|serve      unchanged, byte-for-byte
+  2  deno        deno.json tasks.dev|start|serve
+  3  make        ^(dev|start|serve|run): in Makefile
+  4  python      manage.py | [tool.*.scripts] dev/start/serve | runner + entry point
+  5  go          go.mod + main package
+  6  rust        Cargo.toml
+  7  ruby        bin/rails | Gemfile
+  8  elixir      mix.exs (:phoenix → mix phx.server)
+  9  compose     docker-compose.yml|yaml           last: slowest and most side-effectful
+  ```
+
+  First success wins; a detector that cannot produce a command falls through. When every
+  detector falls through in the root and in every scanned subdirectory, the **node detector's
+  error is returned verbatim** so the pinned error-message assertions hold.
+
+  ### 3. Manifest parsing
+
+  **Chosen:** JSON via `JSON.parse`; Compose via `js-yaml` (already a direct dependency, used
+  identically in `ownership-yaml-reader.ts`); TOML via sibling-file presence plus a
+  line-anchored table-header/simple-key scanner; Make/Gemfile/mix.exs via line-anchored
+  regex only. All reads capped at 256 KB and CRLF-normalised.
+
+  **Rejected:** a TOML dependency (new supply-chain surface on a published CLI for facts we
+  do not need); a hand-rolled general TOML parser (hundreds of lines, breaks NFR-3);
+  presence-only Python detection (loses the author-declared-script signal).
+
+  ### 4. `RunPlanSource.Manual`, no migration
+
+  See Finding 2. TypeSpec member + codegen only.
+
+  ### 5. Manual pinning — two guards, one predicate
+
+  `plan.source === RunPlanSource.Manual` short-circuits (a) the analyze cache tier before the
+  `configHash` comparison and (b) the remediate node's delete. `isStale` is computed once in
+  `GetDevServerRunPlanUseCase`; presentation never computes it.
+
+  ### 6. `.shep/dev.json` — tier zero, projected not cached
+
+  Read before the cache on every analyze; build a `Manual` plan, carry the existing row's
+  `installStampHash` forward, upsert, return. Add `.shep/dev.json` to `CONFIG_FILES` so
+  *deleting* the file invalidates the Deterministic plan that replaces it.
+  `OverrideDevServerRunPlanUseCase` must report a conflict rather than write a DB row the file
+  would shadow.
+
+  Proposed schema (all fields optional except `command`; unknown keys ignored):
+
+  ```json
+  {
+    "command": "make dev",
+    "cwd": "services/api",
+    "expectedPort": 8080,
+    "language": "Go",
+    "framework": "Echo",
+    "packageManager": null,
+    "setupCommands": ["go mod download"]
+  }
+  ```
+
+  Validation mirrors `OwnershipYamlReader`: `existsSync` gate → read → `JSON.parse` in
+  try/catch → per-field type checks → any doubt returns "nothing declared" and falls through
+  with one logged warning. Never throws (NFR-4).
+
+  ### 7. `expectedPort` — three explicit sources only
+
+  An explicit `--port`/`-p` in the command; a Compose `ports:` mapping resolving to exactly
+  one host port (short and long syntax); or a positively-identified framework default
+  (Rails 3000, Phoenix 4000, Django 8000). Unset otherwise. Justified by `verify.node.ts:119`,
+  where a wrong port manufactures a readiness failure on a healthy server and can trigger a
+  remediation agent that edits working code, while an unset port degrades to log parsing.
+
+  ### 8. `ensure_infra` — data change, not logic change
+
+  `deriveBinaryFromCommand` is already command-driven and yields `make`, `docker`, `go`,
+  `cargo`, `deno`, `mix`, `bundle`, `uv`, `poetry` for free. Only `SUGGESTED_INSTALL` needs new
+  entries. `VALID_BINARY_NAME` and the path-token rejection stay exactly as they are.
+
+  ### 9. Use cases + shared target resolver
+
+  Three use cases taking `{ targetType, targetId }` over one injectable
+  application-layer resolver; registered in `register-deployment.ts` with both the class
+  registration and the string-token alias the file already uses for web routes. `targetType`
+  promoted to a TypeSpec enum (NFR-7).
+
+  ### 10. CLI namespace verified free
+
+  `shep dev` collides with nothing in the 34 registered top-level commands. Streaming goes
+  through use cases, not the SSE route — a CLI that consumed `app/api/deployment-logs` would
+  make the web daemon a hard dependency of the CLI.
+
+  ## Library Analysis
+
+  | Library | Purpose | Decision | Reasoning |
+  | ------- | ------- | -------- | --------- |
+  | `js-yaml@4.1.1` | Parse `docker-compose.yml` for services and `ports:` | **Use** | Already a direct runtime dependency and already used this exact way in `aspm/ownership-yaml-reader.ts`. Zero new surface. |
+  | `smol-toml` | Parse `pyproject.toml` / `Cargo.toml` | **Reject** | New runtime dependency in a published CLI for facts we do not need — `cargo run` is content-independent and the Python signals are a table header plus a one-line key. |
+  | `@iarna/toml` | Same | **Reject** | Same objection, larger and less actively maintained than `smol-toml`. |
+  | Hand-rolled TOML parser | Same | **Reject** | Multi-line strings, arrays of tables, inline tables, dotted keys, datetimes — instantly past NFR-3's ~300-line rule and the most bug-prone module in the feature. |
+  | `node:fs` (sync) | All detector I/O | **Use** | Detectors are pure synchronous functions today; `analyze.node` awaits nothing from them. Sync keeps them trivially unit-testable against real fixtures (NFR-9). |
+  | `ajv@8` | Validate `.shep/dev.json` | **Reject** | Already a dependency, but the schema is seven optional scalars. A dozen inline type checks matching `OwnershipYamlReader`'s style is smaller, has no schema-compilation cost on the hot path, and yields better per-field warnings. |
+  | `zod@4` | Same | **Reject** | Same reasoning; also pulls a validation style not used elsewhere in `infrastructure/services/deployment/`. |
+  | `make-parser` / compose schema validators | Ecosystem parsing | **Reject** | We match one line-anchored target pattern and read one `ports:` key. A parser would be more code than the thing it replaces. |
+  | `which@5` | Binary probing | **Reject (for this feature)** | Already a dependency, but `probeBinaryDefault` is the established, timeout-bounded, injection-guarded, cross-platform probe. Introducing a second mechanism would fragment NFR-8 coverage. |
+
+  ## Security Considerations
+
+  **Threat model.** Shep already spawns `package.json` scripts, agent-authored commands and
+  agent-authored `setupCommands` from local repositories through `shell: true`. A command the
+  user typed, or one committed to `.shep/dev.json` by a teammate, is strictly less surprising
+  than what runs today. Consistent with NFR-6, this feature adds **no new execution
+  capability** — the new paths terminate at the same `spawnFromRunPlan` / `execSetupCommand`
+  primitives.
+
+  Controls that matter, all aimed at accidents rather than intent:
+
+  - **`cwd` confinement (FR-19, NFR-6).** Validate in `OverrideDevServerRunPlanUseCase` and in
+    the `.shep/dev.json` reader: `resolve(repoPath, cwd)` must equal `repoPath` or start with
+    `repoPath + sep`. Compare on normalised forward-slash paths and case-insensitively on
+    win32, per `packages/CLAUDE.md`. A bare `startsWith` without the separator is a
+    prefix-escape bug (`/repo` vs `/repo-evil`) and must not be used.
+  - **Non-empty command.** Reject after trimming, before persistence.
+  - **`expectedPort` range.** Integer 1–65535; rejected values are dropped, never coerced.
+  - **Binary probe guard unchanged.** `VALID_BINARY_NAME` (`/^[A-Za-z0-9._+-]+$/`) is the only
+    thing standing between a manifest-derived token and `sh -c`. It must not be relaxed to
+    accommodate path-like commands such as `bin/rails`; those are already dropped by
+    `deriveBinaryFromCommand`, which is the correct outcome.
+  - **`.shep/dev.json` is untrusted input.** It arrives via `git pull` from anyone with commit
+    access, so it is treated exactly like the agent's output: validated, confined, never
+    `eval`'d, and non-fatal on any malformed content.
+  - **Docker Compose is the most side-effectful detector.** `docker compose up` creates
+    containers, networks and volumes. Placing it last in precedence (so it only wins when
+    nothing else does) and logging the tier decision loudly (NFR-11) are the mitigations; no
+    prompt, consistent with the fire-and-track contract.
+  - **Explicit notice in the editor.** "This command will be executed on your machine" is
+    required copy in `run-plan-editor.tsx`, translated across all nine locales.
+  - **Privacy (NFR-12).** Detector logs echo the detected command, the ecosystem name and the
+    resolved directory — never manifest contents, never environment variable values.
+    `buildDevServerEnv`'s existing scrub continues to strip cli-only vars and credentials from
+    spawned dev servers.
+  - **Path traversal in `cwd` from a Compose or Make detector.** Detector-produced `cwd` values
+    derive from `resolvedDir`, which is always the scanned directory itself, so no
+    user-controlled path reaches `cwd` from the deterministic tiers.
+
+  ## Performance Implications
+
+  **Budget: <200 ms, no network, no child process, zero LLM calls (NFR-1, NFR-2).**
+
+  Cost per directory is bounded by the registry: roughly 15–20 `existsSync` stats plus at most
+  3–4 small reads (only the detectors whose gate file exists actually read). A stat is
+  ~2–10 µs and a small read ~20–80 µs on warm cache, so a single directory lands in the low
+  single-digit milliseconds.
+
+  The real risk is the subdirectory fallback (FR-7), which multiplies the whole registry by the
+  entry count. Mitigations:
+
+  - **`MAX_SCANNED_SUBDIRS` (50).** A repo whose root has hundreds of directories must not turn
+    detection into a filesystem sweep. When the cap truncates, log it (the spec's own
+    "no silent caps" instinct).
+  - **`MAX_MANIFEST_BYTES` (256 KB).** Read with a bounded read rather than an unbounded
+    `readFileSync` for `Makefile`, `docker-compose.yml`, `Gemfile.lock` and friends, which can
+    be large in generated repos.
+  - **Stat-before-read everywhere.** Also the correctness requirement from Finding 3.
+  - **No recursion.** One level only, matching today's behaviour exactly.
+  - **Short-circuit on first success.** The common case (a Node repo at the root) exits at
+    detector 1 with a single `readFileSync` plus five `existsSync` calls — i.e. today's cost
+    unchanged.
+
+  Downstream, the cache tier means detection runs at most once per `configHash` per repoPath,
+  so the steady-state cost of a start is one `computeConfigHash` (a handful of small file
+  reads) plus one SQLite point lookup. Adding `.shep/dev.json` as tier zero adds exactly one
+  `existsSync` to that path, and a read only when the file exists.
+
+  **Cost.** Every repository the registry covers now consumes zero agent tokens on start,
+  versus one structured analysis call today. Tests must assert the structured caller was never
+  invoked for each of the eight ecosystems (NFR-2).
+
+  **Known limitation worth recording.** `computeConfigHash` is computed on `state.targetPath`
+  (the repo root) while `computeInstallHash` uses `plan.cwd` (possibly a subdirectory). A plan
+  resolved from a subdirectory therefore will not invalidate when only that subdirectory's
+  manifest changes. This exists today; FR-7 makes it more reachable by extending the subdir
+  scan to all eight ecosystems. Recommend flagging it in the plan as an accepted limitation
+  with a follow-up, rather than widening `computeConfigHash` inside this feature — hashing
+  every subdirectory's manifests would multiply the hash cost on the hot path.
+
+  ## Architecture Notes
+
+  **Layering.** Detectors, the registry, the `.shep/dev.json` reader, `config-hash` and every
+  graph node stay in `infrastructure/services/deployment/` and
+  `infrastructure/services/agents/dev-server-agent/` — they touch `node:fs` and `js-yaml`
+  directly, which is correct for infrastructure and forbidden anywhere outward. The three new
+  use cases and the target resolver live in `application/` and depend only on domain types and
+  output ports. Presentation (CLI commands, server actions, React components) touches only use
+  cases resolved from the container (FR-23).
+
+  One boundary needs care: `GetDevServerRunPlanUseCase` computes `isStale` from `configHash`,
+  but `computeConfigHash` is an infrastructure function. It must reach the use case through a
+  small output port (e.g. `IRunPlanStalenessProbe`, or an added method on an existing
+  deployment port), never via a direct `infrastructure/` import — the exact violating pattern
+  the code-quality rules name ("importing utility functions, path helpers … from
+  `infrastructure/` into outer layers").
+
+  **DI.** Follow `register-deployment.ts` verbatim: `container.registerSingleton(UseCase)` plus
+  a string-token alias, because Turbopack cannot resolve `.js`→`.ts` imports inside
+  `@shepai/core` and the web routes rely on the tokens. The detector registry needs no DI — it
+  is a pure function imported by `dev-server-agent.service.ts`, exactly as `detectDevScript` is
+  at line 202 today.
+
+  **Degradation.** `safeResolve` keeps the structured caller optional. Widening the
+  deterministic tier makes degraded mode *more* useful, not different: the terminal "no AI
+  agent is configured" failure in `analyze.node.ts` now fires only when every detector falls
+  through (FR-10), which is the behavioural heart of this feature.
+
+  **Failure semantics (NFR-4).** The graph's "expected failures never throw" contract is the
+  delicate part. Every new code path must return a fall-through or a `failureReason`, never
+  reject: malformed `Makefile`, unparseable YAML/TOML, `EACCES`, symlink loops, invalid
+  `.shep/dev.json`. `capturedLogs` must keep accumulating through the new tier-zero branch in
+  `analyze.node.ts` — the `emit`/`done` closure pattern already there is the mechanism, and the
+  new branch must use it rather than returning early around it.
+
+  **Cross-platform (NFR-8).** Detectors deal in `join()`-built paths and never assume `/`.
+  `Makefile` casing varies (`Makefile`, `makefile`, `GNUmakefile`) — check all three, noting
+  that on case-insensitive filesystems the first `existsSync` hit is sufficient. Normalise CRLF
+  before line-anchored scanning, or every `^…:$` Make target match fails on Windows checkouts.
+  `make` and `docker` are frequently absent on Windows; the correct behaviour is the existing
+  probe-miss path with a specific install hint, not a platform special-case in the detector.
+
+  **`CONFIG_FILES` coverage gaps observed.** The list omits `deno.jsonc`, `deno.lock`,
+  `mix.lock`, `go.work`, `makefile`/`GNUmakefile` casings, and (until this feature)
+  `.shep/dev.json`. Recommend adding them alongside the detectors so cache invalidation and
+  detection coverage finally agree — the stated motivation for open question 1.
+
+  **Testing (NFR-9).** Two distinct styles, deliberately:
+  - The pinned `detect-dev-script.test.ts` keeps its `node:fs` mocks and must pass unmodified.
+  - New per-ecosystem detector tests use real temp-directory fixtures via `mkdtempSync` on
+    `os.tmpdir()`, so parsing is genuinely exercised. This includes a polyglot fixture
+    (`package.json` + `Makefile` + `docker-compose.yml` + `pyproject.toml`) asserting the
+    documented winner across repeated runs, and a degraded-mode integration test per ecosystem
+    asserting the structured caller was never called.
+  - Normalise paths in assertions (`p.replace(/\\/g, '/')`) per `packages/CLAUDE.md`.
+
+  **Spec hygiene.** `specs/103-agentic-dev-server/spec.yaml` still reads `phase: Requirements`
+  although its code has landed. Worth correcting so 103 and 108 do not read as contradictory.

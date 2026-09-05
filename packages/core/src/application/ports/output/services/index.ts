@@ -46,6 +46,7 @@ export type {
   IDevServerAgentService,
   DevServerStartResult,
 } from './dev-server-agent-service.interface.js';
+export type { IRunPlanStalenessProbe } from './run-plan-staleness-probe.interface.js';
 export type {
   IGitHubRepositoryService,
   GitHubRepo,

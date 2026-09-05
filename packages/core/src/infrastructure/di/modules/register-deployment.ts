@@ -7,13 +7,20 @@ import { StartRepositoryDeploymentUseCase } from '../../../application/use-cases
 import { StopDeploymentUseCase } from '../../../application/use-cases/deployments/stop-deployment.use-case.js';
 import { GetDeploymentStatusUseCase } from '../../../application/use-cases/deployments/get-deployment-status.use-case.js';
 import { ListDeploymentsUseCase } from '../../../application/use-cases/deployments/list-deployments.use-case.js';
+import { StreamDeploymentLogsUseCase } from '../../../application/use-cases/deployments/stream-deployment-logs.use-case.js';
+import { GetDevServerRunPlanUseCase } from '../../../application/use-cases/deployments/get-dev-server-run-plan.use-case.js';
+import { OverrideDevServerRunPlanUseCase } from '../../../application/use-cases/deployments/override-dev-server-run-plan.use-case.js';
+import { InvalidateDevServerRunPlanUseCase } from '../../../application/use-cases/deployments/invalidate-dev-server-run-plan.use-case.js';
+import { DeploymentTargetResolver } from '../../../application/services/deployment-target-resolver.js';
 import type { IDeploymentService } from '../../../application/ports/output/services/deployment-service.interface.js';
 import type { IDevServerAgentService } from '../../../application/ports/output/services/dev-server-agent-service.interface.js';
 import type { IDevServerRunPlanRepository } from '../../../application/ports/output/repositories/dev-server-run-plan-repository.interface.js';
 import type { IAgentExecutorProvider } from '../../../application/ports/output/agents/agent-executor-provider.interface.js';
 import type { IStructuredAgentCaller } from '../../../application/ports/output/agents/structured-agent-caller.interface.js';
+import type { IRunPlanStalenessProbe } from '../../../application/ports/output/services/run-plan-staleness-probe.interface.js';
 import { SQLiteDevServerRunPlanRepository } from '../../repositories/sqlite-dev-server-run-plan.repository.js';
 import { DevServerAgentService } from '../../services/agents/dev-server-agent/dev-server-agent.service.js';
+import { RunPlanStalenessProbe } from '../../services/deployment/run-plan-staleness-probe.js';
 
 /**
  * Resolve a token, degrading to null when it is not registered. Used for
@@ -56,12 +63,24 @@ export function registerDeployment(container: DependencyContainer): void {
     ),
   });
 
+  // Run-plan visibility/override (spec 108). The staleness probe is the
+  // boundary that keeps `computeConfigHash` and the `.shep/dev.json` reader —
+  // both infrastructure — out of the application layer.
+  container.register<IRunPlanStalenessProbe>('IRunPlanStalenessProbe', {
+    useFactory: instanceCachingFactory<IRunPlanStalenessProbe>(() => new RunPlanStalenessProbe()),
+  });
+  container.registerSingleton(DeploymentTargetResolver);
+  container.registerSingleton(GetDevServerRunPlanUseCase);
+  container.registerSingleton(OverrideDevServerRunPlanUseCase);
+  container.registerSingleton(InvalidateDevServerRunPlanUseCase);
+
   container.registerSingleton(StartApplicationDeploymentUseCase);
   container.registerSingleton(StartFeatureDeploymentUseCase);
   container.registerSingleton(StartRepositoryDeploymentUseCase);
   container.registerSingleton(StopDeploymentUseCase);
   container.registerSingleton(GetDeploymentStatusUseCase);
   container.registerSingleton(ListDeploymentsUseCase);
+  container.registerSingleton(StreamDeploymentLogsUseCase);
 
   // String-token aliases for web routes (Turbopack can't resolve .js→.ts
   // imports inside @shepai/core, so routes use string tokens instead of class refs)
@@ -82,5 +101,20 @@ export function registerDeployment(container: DependencyContainer): void {
   });
   container.register('ListDeploymentsUseCase', {
     useFactory: (c) => c.resolve(ListDeploymentsUseCase),
+  });
+  container.register('StreamDeploymentLogsUseCase', {
+    useFactory: (c) => c.resolve(StreamDeploymentLogsUseCase),
+  });
+  container.register('DeploymentTargetResolver', {
+    useFactory: (c) => c.resolve(DeploymentTargetResolver),
+  });
+  container.register('GetDevServerRunPlanUseCase', {
+    useFactory: (c) => c.resolve(GetDevServerRunPlanUseCase),
+  });
+  container.register('OverrideDevServerRunPlanUseCase', {
+    useFactory: (c) => c.resolve(OverrideDevServerRunPlanUseCase),
+  });
+  container.register('InvalidateDevServerRunPlanUseCase', {
+    useFactory: (c) => c.resolve(InvalidateDevServerRunPlanUseCase),
   });
 }

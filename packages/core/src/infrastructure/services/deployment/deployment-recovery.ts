@@ -14,7 +14,8 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import net from 'node:net';
-import { DeploymentState } from '@/domain/generated/output.js';
+import { DeploymentState, type DeploymentTargetType } from '@/domain/generated/output.js';
+import { normalizeDeploymentTargetType } from '@/domain/shared/deployment-target-type.js';
 import { createDeploymentLogger } from './deployment-logger.js';
 import { type DeploymentEntry } from './deployment-entry.js';
 import { entryFromRow, type DevServerRow } from './deployment-db-store.js';
@@ -24,7 +25,7 @@ const log = createDeploymentLogger('[DeploymentService]');
 const PROBE_TIMEOUT_MS = 2000;
 
 export interface DeploymentRecoveryContext extends DeploymentContext {
-  start(targetId: string, targetPath: string, targetType: string): void;
+  start(targetId: string, targetPath: string, targetType: DeploymentTargetType): void;
 }
 
 export class DeploymentRecovery {
@@ -91,7 +92,13 @@ export class DeploymentRecovery {
     this.respawn(row.target_id, row.target_path, row.target_type);
   }
 
-  /** Re-spawn a dev server if its target directory still has a package.json. */
+  /**
+   * Re-spawn a dev server if its target directory still has a package.json.
+   *
+   * `targetType` arrives as an unvalidated string — it is read straight off
+   * the `dev_servers.target_type` TEXT column — so it is normalized here
+   * rather than cast.
+   */
   private respawn(targetId: string, targetPath: string, targetType: string): void {
     if (!existsSync(join(targetPath, 'package.json'))) {
       log.warn(`Skipping re-spawn for "${targetId}" — no package.json at "${targetPath}"`);
@@ -100,7 +107,7 @@ export class DeploymentRecovery {
 
     try {
       log.info(`Re-spawning dev server for "${targetId}" at "${targetPath}"`);
-      this.ctx.start(targetId, targetPath, targetType);
+      this.ctx.start(targetId, targetPath, normalizeDeploymentTargetType(targetType));
     } catch (err) {
       log.error(`Failed to re-spawn "${targetId}": ${err}`);
     }

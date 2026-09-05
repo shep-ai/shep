@@ -925,5 +925,53 @@
     "deleteAdoptedNote": "Das aus dieser Sitzung übernommene Feature wird nicht gelöscht.",
     "cancel": "Abbrechen",
     "archivedHidden": "{{count}} archiviert ausgeblendet"
+  },
+  "runPlan": {
+    "title": "Ausführungsplan",
+    "description": "Was ausgeführt wird, wenn du den Dev-Server startest",
+    "show": "Ausführungsplan anzeigen",
+    "hide": "Ausführungsplan ausblenden",
+    "loading": "Ausführungsplan wird geladen…",
+    "empty": "Noch kein Ausführungsplan — starte den Dev-Server einmal, dann erscheint der ermittelte Plan hier.",
+    "fields": {
+      "command": "Befehl",
+      "cwd": "Arbeitsverzeichnis",
+      "language": "Sprache",
+      "framework": "Framework",
+      "expectedPort": "Erwarteter Port",
+      "packageManager": "Paketmanager",
+      "setupCommands": "Setup-Befehle"
+    },
+    "source": {
+      "label": "Quelle",
+      "deterministic": "Erkannt",
+      "agent": "KI-analysiert",
+      "manual": "Fixiert"
+    },
+    "staleHint": "Die Konfigurationsdateien des Repositorys haben sich geändert, seit dieser Plan erstellt wurde. Analysiere neu, um die Änderung zu übernehmen, oder behalte ihn so.",
+    "repoConfigControlled": "Eine eingecheckte .shep/dev.json steuert dieses Repository. Sie wird bei jedem Start neu gelesen und hat Vorrang vor jedem gespeicherten Plan — bearbeite diese Datei, um zu ändern, was ausgeführt wird.",
+    "actions": {
+      "edit": "Bearbeiten",
+      "reanalyze": "Neu analysieren",
+      "reanalyzing": "Wird neu analysiert…",
+      "save": "Speichern",
+      "saving": "Wird gespeichert…",
+      "cancel": "Abbrechen"
+    },
+    "editor": {
+      "title": "Ausführungsplan bearbeiten",
+      "executionNotice": "Dieser Befehl wird auf deinem Rechner ausgeführt.",
+      "commandPlaceholder": "pnpm dev",
+      "cwdPlaceholder": "Repository-Wurzel",
+      "cwdHelp": "Absolut oder relativ zur Repository-Wurzel.",
+      "expectedPortPlaceholder": "Automatisch erkannt",
+      "setupCommandsLabel": "Setup-Befehle",
+      "setupCommandsHelp": "Ein Befehl pro Zeile, wird vor dem Start des Dev-Servers ausgeführt."
+    },
+    "errors": {
+      "loadFailed": "Der Ausführungsplan konnte nicht geladen werden.",
+      "saveFailed": "Der Ausführungsplan konnte nicht gespeichert werden.",
+      "reanalyzeFailed": "Der Ausführungsplan konnte nicht zurückgesetzt werden."
+    }
   }
 }

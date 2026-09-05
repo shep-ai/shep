@@ -33,7 +33,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { writeFileSync } from 'node:fs';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { DeploymentState, RunPlanSource } from '@/domain/generated/output.js';
+import { DeploymentState, RunPlanSource, DeploymentTargetType } from '@/domain/generated/output.js';
 import { computeInstallHash } from '@/infrastructure/services/deployment/config-hash.js';
 import { MAX_REMEDIATION_ATTEMPTS } from '@/infrastructure/services/agents/dev-server-agent/dev-server-agent-graph.js';
 import {
@@ -51,7 +51,7 @@ import {
 } from './harness.js';
 
 const TEST_TIMEOUT_MS = 60_000;
-const TARGET_TYPE = 'repository';
+const TARGET_TYPE = DeploymentTargetType.Repository;
 /** Entry file the broken plans point at; the remediation stub creates it. */
 const MISSING_SERVER_FILE = 'missing-server.js';
 

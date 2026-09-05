@@ -5291,6 +5291,7 @@ export type Deployment = {
 export enum RunPlanSource {
   Deterministic = 'Deterministic',
   Agent = 'Agent',
+  Manual = 'Manual',
 }
 
 /**
@@ -6236,6 +6237,11 @@ export enum AssetType {
   Service = 'Service',
   ApiAsset = 'ApiAsset',
   CloudEnvironment = 'CloudEnvironment',
+}
+export enum DeploymentTargetType {
+  Application = 'application',
+  Feature = 'feature',
+  Repository = 'repository',
 }
 export enum AgentFeature {
   sessionResume = 'session-resume',

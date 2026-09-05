@@ -30,12 +30,48 @@ const SHELL_BUILTINS = new Set(['cd', 'sh', 'bash', 'env', 'exec', 'source', '.'
 
 const NO_RUN_PLAN_REASON = 'No run plan available for infrastructure check';
 
-/** Suggested install command per well-known binary; anything else falls back to a generic PATH hint. */
+/**
+ * Suggested install command per well-known binary; anything else falls back
+ * to a generic PATH hint.
+ *
+ * Grouped by ecosystem, covering every runtime the detector registry can
+ * emit a command for (FR-8). This is deliberately a DATA table rather than a
+ * per-ecosystem required-binary table: `deriveBinaryFromCommand` already
+ * derives what to probe from the command that will actually be spawned, so a
+ * second keyed-by-detector source of truth could only ever disagree with it.
+ *
+ * Every hint is user-space and non-interactive — no `sudo`, no system
+ * package manager — matching the constraint the remediation prompt puts on
+ * the agent. A hint the user cannot run without root is not a hint.
+ */
 export const SUGGESTED_INSTALL: Record<string, string> = {
+  // Node
   pnpm: 'npm install -g pnpm',
   yarn: 'npm install -g yarn',
   bun: 'npm install -g bun',
   node: 'install Node.js from https://nodejs.org',
+  // Deno
+  deno: 'npm install -g deno (or see https://docs.deno.com/runtime/getting_started/installation/)',
+  // Task runner / containers
+  make: 'install GNU Make — macOS: `xcode-select --install`, Windows: `winget install GnuWin32.Make`',
+  docker: 'install Docker Desktop from https://docs.docker.com/get-docker/',
+  // Go
+  go: 'install Go from https://go.dev/dl/',
+  // Rust
+  cargo: 'install Rust with rustup from https://rustup.rs',
+  rustup: 'install rustup from https://rustup.rs',
+  // Python
+  python: 'install Python from https://www.python.org/downloads/ (or `uv python install`)',
+  python3: 'install Python from https://www.python.org/downloads/ (or `uv python install`)',
+  uv: 'install uv from https://docs.astral.sh/uv/getting-started/installation/',
+  poetry: 'pipx install poetry (see https://python-poetry.org/docs/#installation)',
+  pipenv: 'pipx install pipenv',
+  // Ruby
+  ruby: 'install Ruby from https://www.ruby-lang.org/en/documentation/installation/',
+  bundle: 'gem install bundler',
+  // Elixir
+  mix: 'install Elixir (which ships mix) from https://elixir-lang.org/install.html',
+  elixir: 'install Elixir from https://elixir-lang.org/install.html',
 };
 
 function suggestedInstallCommand(binary: string): string {

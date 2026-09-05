@@ -1,5 +1,6 @@
 'use client';
 
+import { DeploymentTargetType } from '@shepai/core/domain/generated/output';
 import { cn } from '@/lib/utils';
 import { TerminalTab } from '@/components/features/application-page/terminal-tab';
 import { IdeTab } from '@/components/features/application-page/ide-tab';
@@ -43,6 +44,13 @@ export function ViewBody({
   const hasWebContent =
     isDeploymentActive(deploy.status) || deploy.deployLoading || !!deploy.deployError || isBuilding;
 
+  // The run plan is keyed by the repository the target resolves to, so the
+  // Web pane only needs to say WHICH target it is looking at.
+  const runPlanTarget = {
+    targetType: DeploymentTargetType.Application,
+    targetId: applicationId,
+  };
+
   return (
     <div className="relative flex min-h-0 flex-1">
       {/* Terminal — always mounted to preserve the PTY session. */}
@@ -81,10 +89,12 @@ export function ViewBody({
           )}
           aria-hidden={activeView !== 'web'}
         >
-          <WebPreviewTab deploy={deploy} isBuilding={isBuilding} />
+          <WebPreviewTab deploy={deploy} isBuilding={isBuilding} target={runPlanTarget} />
         </div>
       ) : (
-        activeView === 'web' && <WebPreviewTab deploy={deploy} isBuilding={isBuilding} />
+        activeView === 'web' && (
+          <WebPreviewTab deploy={deploy} isBuilding={isBuilding} target={runPlanTarget} />
+        )
       )}
     </div>
   );

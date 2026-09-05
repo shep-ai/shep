@@ -1706,6 +1706,40 @@ macOS, where 1ms barely clears `exec` and nothing had touched the DB yet.
   sequence (kill, kill, run) disproved the first guess in 30s, which is what
   redirected the fix from "harden the assertion" to "stop sharing the home".
 
+## A relative path is meaningless without the directory it is relative to
+
+`validateFileExistence` called `stat(e.relativePath)` on paths like
+`specs/108-dev-server-auto-start/evidence/shot.png`. The evidence agent runs with
+`cwd = state.worktreePath`, but validation runs back in the daemon, so Node
+resolved those paths against the daemon's `process.cwd()` — a different directory
+entirely. Every committed evidence file reported "Evidence file not found", the
+node burned all three `evidenceRetries` re-capturing files that already existed,
+and then degraded to shipping partial evidence. The files were on disk, committed,
+and pushed the whole time.
+
+**Rules:**
+- **A function that consumes a relative path must take its base directory as a
+  parameter.** Not a default, not an ambient `process.cwd()` — a parameter. Every
+  *other* step in this pipeline (`buildExecutorOptions`, `buildEvidencePrompt`,
+  `saveEvidenceManifest`) computed `state.worktreePath || state.repositoryPath`
+  explicitly; validation was the one place that let Node guess, and the guess was
+  wrong everywhere except a developer's own checkout.
+- **`process.cwd()` is a property of the host process, not of the work.** In a
+  daemon that shells agents into worktrees, cwd is never the interesting
+  directory. Treat a bare `stat`/`readFile`/`existsSync` on a relative path in
+  long-lived server code as a bug on sight.
+- **Mocking `fs` hides path-resolution bugs by construction.**
+  `evidence-output-parser.test.ts` stubs `node:fs/promises` wholesale and asserts
+  only the returned strings, so it passed for as long as the defect existed and
+  would have kept passing. Path resolution needs one real-filesystem test with a
+  temp dir and a cwd deliberately pointed elsewhere — mocks agree with whatever
+  you already believe.
+- **When a validator reports that all N items failed, suspect the validator.** A
+  uniform failure across every record is a systemic resolution/config fault, not
+  N independent mistakes. Verify one item by hand (`ls` the path, `git ls-tree`
+  the commit) before regenerating anything — re-capturing evidence would never
+  have fixed this.
+
 ## React Context Over-Rendering and Aggressive Polling Cause UI Lag
 
 **Symptom:** The `shep` web application became extremely laggy, with click interactions taking a long time to react. The application felt unresponsive.

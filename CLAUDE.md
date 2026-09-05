@@ -71,6 +71,7 @@ See [clean-architecture](./docs/architecture/clean-architecture.md).
 | Implementation patterns        | [docs/development/implementation-guide.md](./docs/development/implementation-guide.md) |
 | CI/CD + Docker                 | [docs/development/cicd.md](./docs/development/cicd.md)                                 |
 | Adding agents                  | [docs/development/adding-agents.md](./docs/development/adding-agents.md)               |
+| Dev server run plans           | [docs/development/dev-server-run-plan.md](./docs/development/dev-server-run-plan.md)   |
 | CLI architecture               | [docs/cli/architecture.md](./docs/cli/architecture.md)                                 |
 | TUI architecture               | [docs/tui/architecture.md](./docs/tui/architecture.md)                                 |
 | Web UI architecture            | [docs/ui/architecture.md](./docs/ui/architecture.md)                                   |
