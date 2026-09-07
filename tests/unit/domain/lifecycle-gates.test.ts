@@ -156,12 +156,16 @@ describe('GATE_EXEMPT_LIFECYCLES', () => {
 });
 
 describe('allowsLifecycleWrite', () => {
-  const blockedChild = { lifecycle: SdlcLifecycle.Blocked, parentId: 'parent-1' };
+  const blockedChild = {
+    id: 'child-1',
+    lifecycle: SdlcLifecycle.Blocked,
+    parentId: 'parent-1',
+  };
 
   it('should allow any write to a feature that is not Blocked', () => {
     expect(
       allowsLifecycleWrite(
-        { lifecycle: SdlcLifecycle.Implementation, parentId: 'parent-1' },
+        { id: 'child-1', lifecycle: SdlcLifecycle.Implementation, parentId: 'parent-1' },
         { lifecycle: SdlcLifecycle.Requirements },
         SdlcLifecycle.Review
       )
@@ -219,12 +223,29 @@ describe('allowsLifecycleWrite', () => {
 
   it('should allow a Blocked feature with no parent to move on', () => {
     expect(
-      allowsLifecycleWrite({ lifecycle: SdlcLifecycle.Blocked }, null, SdlcLifecycle.Requirements)
+      allowsLifecycleWrite(
+        { id: 'child-1', lifecycle: SdlcLifecycle.Blocked },
+        null,
+        SdlcLifecycle.Requirements
+      )
     ).toBe(true);
   });
 
   it('should allow a Blocked feature whose parent cannot be loaded to move on', () => {
     // A dangling parentId must not strand the child — nothing is left to release it.
     expect(allowsLifecycleWrite(blockedChild, null, SdlcLifecycle.Requirements)).toBe(true);
+  });
+
+  it('should allow a feature that is its own parent to move on', () => {
+    // ReparentFeatureUseCase rejects self-parenting, so parentId === id can only
+    // come from a corrupted row. Gating such a row on itself would strand it in
+    // Blocked forever: a Blocked feature never satisfies its own gate, and there
+    // is no other feature whose progress could ever open it.
+    const selfParented = {
+      id: 'feat-loop',
+      lifecycle: SdlcLifecycle.Blocked,
+      parentId: 'feat-loop',
+    };
+    expect(allowsLifecycleWrite(selfParented, selfParented, SdlcLifecycle.Requirements)).toBe(true);
   });
 });

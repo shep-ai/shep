@@ -1,5 +1,31 @@
 # Lessons Learned
 
+## A "never strand a record" clause has to enumerate every way the gate loses its owner
+
+The write-side dependency gate deliberately let two cases through so it could not trap a feature in
+`Blocked` forever: no `parentId`, and a `parentId` whose row is gone. A reviewer found the third —
+`parentId === id`. A self-parented row gates on itself, a `Blocked` feature never satisfies its own
+gate, and nothing else can ever open it. `ReparentFeatureUseCase` rejects self-parenting, so I had
+filed it as impossible; corrupted rows do not go through use cases.
+
+The related miss: a refused write returned `void` with no logging, exactly like an accepted one. An
+agent node reporting a phase does not care, but a user dragging a card watches their action do
+nothing and gets no reason anywhere.
+
+**Rules:**
+
+1. When a guard exists to avoid stranding something, write the escape clause as one enumerated list
+   with a comment per entry. Enumerating forces the question "is that all of them?"; three separate
+   `if`s never do.
+2. "The use case rejects it" is not the same as "it cannot exist". Anything reachable by a corrupted
+   or hand-edited row is reachable — validate at the point of use, not only at the point of entry.
+3. A silent refusal needs a recorded reason. If a use case can decline to do the thing it was asked
+   to do and still resolve normally, log what it declined and why — otherwise the only way to find
+   out is to read the source.
+4. Fetch pull request *reviews*, not just review threads, when checking whether feedback landed.
+   Approving reviews carry their findings in the review body; a poll of inline threads shows zero
+   and looks like silence.
+
 ## Size a wait budget for its slowest leg, not for the leg you are asserting on
 
 `waitForStatus` in the dev-server-agent harness had one 30s budget covering the whole

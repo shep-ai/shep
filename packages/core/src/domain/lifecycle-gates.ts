@@ -86,17 +86,17 @@ export const GATE_EXEMPT_LIFECYCLES = new Set<SdlcLifecycle>([
  *
  * A feature that is not Blocked is unaffected — it was already released, and
  * re-checking here would fight `CheckAndUnblockFeaturesUseCase`. A Blocked
- * feature whose parent cannot be loaded (deleted, dangling id) is also allowed
- * through: there is no dependency left to honour, and refusing would strand it
- * in Blocked with no transition able to release it.
+ * feature with no gate left to honour is also allowed through, rather than
+ * stranded in Blocked with no transition able to release it: see the clause
+ * below for the three ways that happens.
  *
- * @param feature - The feature being written to (lifecycle + parentId are read).
+ * @param feature - The feature being written to (id + lifecycle + parentId are read).
  * @param parent - The parent feature, or null when it has none / cannot be loaded.
  * @param target - The lifecycle the caller wants to write.
  * @returns True when the write may proceed.
  */
 export function allowsLifecycleWrite(
-  feature: Pick<Feature, 'lifecycle'> & Partial<Pick<Feature, 'parentId'>>,
+  feature: Pick<Feature, 'id' | 'lifecycle'> & Partial<Pick<Feature, 'parentId'>>,
   parent: (Pick<Feature, 'lifecycle'> & Partial<Pick<Feature, 'previousLifecycle'>>) | null,
   target: SdlcLifecycle
 ): boolean {
@@ -106,7 +106,14 @@ export function allowsLifecycleWrite(
   if (GATE_EXEMPT_LIFECYCLES.has(target)) {
     return true;
   }
-  if (!feature.parentId || !parent) {
+  // Nothing left to gate on. Each of these would otherwise hold the feature in
+  // Blocked forever, because no other feature's progress could ever open it:
+  // - no parentId: the dependency was cleared.
+  // - parent not loaded: a dangling id, its parent deleted out from under it.
+  // - parentId === id: a corrupted self-parented row. ReparentFeatureUseCase
+  //   rejects self-parenting, so this only arrives from outside that path — and
+  //   a Blocked feature never satisfies its own gate.
+  if (!feature.parentId || !parent || feature.parentId === feature.id) {
     return true;
   }
 

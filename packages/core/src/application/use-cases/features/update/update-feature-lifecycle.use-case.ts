@@ -16,12 +16,14 @@
  * reporting phases, and the first one overwrites Blocked with real progress.
  *
  * No-op when the feature is not found (swallowed gracefully so agent nodes
- * do not crash on a missing feature record).
+ * do not crash on a missing feature record). A write refused by the gate is
+ * logged, so a caller whose command appeared to do nothing has a reason.
  */
 
 import { injectable, inject } from 'tsyringe';
 import { SdlcLifecycle } from '../../../../domain/generated/output.js';
 import type { IFeatureRepository } from '../../../ports/output/repositories/feature-repository.interface.js';
+import type { ILogger } from '../../../ports/output/services/logger.interface.js';
 import { allowsLifecycleWrite } from '../../../../domain/lifecycle-gates.js';
 import { CheckAndUnblockFeaturesUseCase } from '../check-and-unblock-features.use-case.js';
 
@@ -35,7 +37,8 @@ export class UpdateFeatureLifecycleUseCase {
   constructor(
     @inject('IFeatureRepository') private readonly featureRepo: IFeatureRepository,
     @inject(CheckAndUnblockFeaturesUseCase)
-    private readonly checkAndUnblock: CheckAndUnblockFeaturesUseCase
+    private readonly checkAndUnblock: CheckAndUnblockFeaturesUseCase,
+    @inject('ILogger') private readonly logger: ILogger
   ) {}
 
   async execute(input: UpdateFeatureLifecycleInput): Promise<void> {
@@ -52,6 +55,16 @@ export class UpdateFeatureLifecycleUseCase {
         ? await this.featureRepo.findById(feature.parentId)
         : null;
     if (!allowsLifecycleWrite(feature, parent, input.lifecycle)) {
+      // A refused write resolves exactly like an accepted one, so without this
+      // line a user action on the canvas that silently does nothing has no
+      // explanation anywhere. Warn rather than throw: the common caller is an
+      // agent node reporting a phase, and the gate holding is expected there.
+      this.logger.warn('[UpdateFeatureLifecycleUseCase] blocked by dependency gate', {
+        featureId: feature.id,
+        target: input.lifecycle,
+        parentId: feature.parentId,
+        parentLifecycle: parent?.lifecycle,
+      });
       return;
     }
 
