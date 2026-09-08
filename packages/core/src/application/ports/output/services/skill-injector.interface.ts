@@ -3,7 +3,11 @@
  *
  * Output port for injecting curated agent skills into worktrees
  * during feature creation. Handles local skill copying, remote skill
- * installation via npx, idempotency checks, and .gitignore management.
+ * installation via npx, and idempotency checks.
+ *
+ * Injected skills are worktree-local tooling: the injector never modifies
+ * `.gitignore`, and commits exclude newly-added files under `.claude/skills/`
+ * at staging time (see IGitCommitService).
  */
 
 import type { SkillInjectionConfig } from '../../../../domain/generated/output.js';
@@ -25,7 +29,8 @@ export interface ISkillInjectorService {
    * - Local skills are deep-copied from the source path
    * - Remote skills are installed via `npx skills add`
    * - Skills already present (SKILL.md exists) are skipped
-   * - Newly injected skills are added to .gitignore (unless already tracked in git)
+   * - Injected skills are never added to `.gitignore`; they are excluded
+   *   from commits at staging time instead
    *
    * Individual skill failures are captured in the result (not thrown).
    *

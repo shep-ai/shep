@@ -117,8 +117,8 @@ export function buildCommitPushPrPrompt(
 
   // Step 1: Commit (always)
   const stageCmd = state.commitSpecs
-    ? '`git add -A`'
-    : '`git add -A` then `git reset -- specs/` (do NOT commit the specs/ directory)';
+    ? '`git add -A` then `git reset -- .claude/skills/` (do NOT commit injected skills)'
+    : '`git add -A` then `git reset -- specs/ .claude/skills/` (do NOT commit the specs/ directory or injected skills)';
   steps.push(`1. Review the current changes using \`git diff\` and \`git status\`
 2. Stage changes with ${stageCmd}
 3. Write a conventional commit message based on the actual diff content
@@ -181,6 +181,7 @@ ${evidenceSection}
 - Every commit MUST include the co-author trailer: \`${COMMIT_CO_AUTHOR}\` — do NOT include any other Co-Authored-By trailer
 ${rejectionSection ? '- You MUST modify source code files to address the rejection feedback above BEFORE committing' : '- Do NOT modify any source code files — only perform git operations'}
 ${!state.commitSpecs ? '- Do NOT commit the `specs/` directory — it must stay untracked. If you accidentally staged it, run `git reset -- specs/` before committing' : ''}
+- Do NOT commit the \`.claude/skills/\` directory — injected skills are worktree-local tooling and must never appear in commits or PRs. If you accidentally staged skill files, run \`git reset -- .claude/skills/\` before committing
 - Do NOT amend existing commits
 - Do NOT run \`git pull\`, \`git rebase\`, or \`git merge\` — this is a fresh branch, push it directly
 - If there are no changes to commit, skip the commit step and report that no changes were found
@@ -289,7 +290,7 @@ ${failureLogs}
 
 1. Analyze the CI failure logs above to diagnose the root cause
 2. Apply a targeted fix to resolve the failure — change only what is necessary
-3. Stage all changes: \`git add -A\`
+3. Stage all changes: \`git add -A\`, then unstage injected skills: \`git reset -- .claude/skills/\` (injected skills must never be committed)
 4. Commit with this exact conventional commit message format and the Shep Bot co-author trailer:
    \`git commit -m "fix(ci): attempt ${attemptNumber}/${maxAttempts} — <short description of what you fixed>" -m "" -m "${COMMIT_CO_AUTHOR}"\`
 5. Push the fix to the branch: \`git push origin ${branch}\`

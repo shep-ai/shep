@@ -158,6 +158,22 @@ describe('buildCommitPushPrPrompt', () => {
     expect(prompt).toContain('git merge');
   });
 
+  it('should instruct agent to unstage injected skills when staging (commitSpecs=true)', () => {
+    const prompt = buildCommitPushPrPrompt(baseState({ commitSpecs: true }), 'feat/test', 'main');
+    expect(prompt).toContain('`git add -A` then `git reset -- .claude/skills/`');
+  });
+
+  it('should exclude both specs and injected skills when commitSpecs is false', () => {
+    const prompt = buildCommitPushPrPrompt(baseState({ commitSpecs: false }), 'feat/test', 'main');
+    expect(prompt).toContain('`git add -A` then `git reset -- specs/ .claude/skills/`');
+  });
+
+  it('should forbid committing the .claude/skills/ directory in constraints', () => {
+    const prompt = buildCommitPushPrPrompt(baseState(), 'feat/test', 'main');
+    expect(prompt).toContain('Do NOT commit the `.claude/skills/` directory');
+    expect(prompt).toContain('git reset -- .claude/skills/` before committing');
+  });
+
   it('should be deterministic (same input = same output)', () => {
     const state = baseState({ push: true, openPr: true });
     const prompt1 = buildCommitPushPrPrompt(state, 'feat/test', 'main');
