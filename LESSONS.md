@@ -1,5 +1,92 @@
 # Lessons Learned
 
+## A "never strand a record" clause has to enumerate every way the gate loses its owner
+
+The write-side dependency gate deliberately let two cases through so it could not trap a feature in
+`Blocked` forever: no `parentId`, and a `parentId` whose row is gone. A reviewer found the third —
+`parentId === id`. A self-parented row gates on itself, a `Blocked` feature never satisfies its own
+gate, and nothing else can ever open it. `ReparentFeatureUseCase` rejects self-parenting, so I had
+filed it as impossible; corrupted rows do not go through use cases.
+
+The related miss: a refused write returned `void` with no logging, exactly like an accepted one. An
+agent node reporting a phase does not care, but a user dragging a card watches their action do
+nothing and gets no reason anywhere.
+
+**Rules:**
+
+1. When a guard exists to avoid stranding something, write the escape clause as one enumerated list
+   with a comment per entry. Enumerating forces the question "is that all of them?"; three separate
+   `if`s never do.
+2. "The use case rejects it" is not the same as "it cannot exist". Anything reachable by a corrupted
+   or hand-edited row is reachable — validate at the point of use, not only at the point of entry.
+3. A silent refusal needs a recorded reason. If a use case can decline to do the thing it was asked
+   to do and still resolve normally, log what it declined and why — otherwise the only way to find
+   out is to read the source.
+4. Fetch pull request *reviews*, not just review threads, when checking whether feedback landed.
+   Approving reviews carry their findings in the review body; a poll of inline threads shows zero
+   and looks like silence.
+
+## Size a wait budget for its slowest leg, not for the leg you are asserting on
+
+`waitForStatus` in the dev-server-agent harness had one 30s budget covering the whole
+`Analyzing → Installing → Booting → Ready` sequence. The Installing leg runs a real `npm install`,
+and on a Windows runner npm needs 15-20s just to print "up to date" against a fixture that already
+has `node_modules` — so two thirds of the budget was spent before the boot under test even began.
+It passed on Linux every time and lost the race on Windows.
+
+The timeout then failed *twice*: the wait threw, and the `afterEach` teardown threw
+`EBUSY: rmdir` on top of it, because the force-killed child tree still held the fixture directory.
+The teardown error is louder and arrives second, so it is the one you read first — and it points at
+cleanup code that is not the bug.
+
+**Rules:**
+
+1. When one budget spans several legs, size it for the slowest leg on the slowest platform. Write
+   down *which* leg justifies the number, or the next person shrinks it back.
+2. `process.platform === 'win32'` deserves its own constants in test harnesses — npm, process
+   startup, and file-handle release are all multiples slower. A single cross-platform number is
+   either wasteful on Linux or flaky on Windows.
+3. A per-test `timeout` must exceed the wait budget inside it. If vitest kills the test first, the
+   wait never throws and you lose the diagnostic (last status + log tail) that makes CI output
+   readable without a rerun.
+4. Windows releases file handles asynchronously after a force-kill, so `rmSync` on a fixture dir
+   needs a real retry budget (`maxRetries` x `retryDelay`), and that budget has to fit inside
+   vitest's `hookTimeout`. Raise both together.
+5. **The same constant in three test files is one constant.** `TEST_TIMEOUT_MS` was copy-pasted
+   into all three suites, so a platform fix meant three edits and three chances to miss one. It
+   now lives in `harness.ts` next to the wait budget it must stay above.
+
+## Writing `Blocked` is not enforcing a gate — the running agent has to be stopped too
+
+The dependency gate was checked in all four *entry* paths (create, start, reparent,
+auto-unblock) and still did not hold, because none of them owned the case where the feature
+was **already running** when the dependency appeared. Dragging a dependency edge onto a
+running feature set its lifecycle to `Blocked` and returned. The worker kept building on a
+base its parent had not produced, and its next phase report went through
+`UpdateFeatureLifecycleUseCase`, which wrote `Research` straight over `Blocked`. The edge was
+drawn, the node said "blocked", and nothing was blocked.
+
+**Rules:**
+
+- A gate that is only evaluated at the entry points guards *starting*, not *running*. Ask the
+  second question every time: what if the thing is already in flight when the constraint
+  arrives? Here the answer is `StopAgentRunUseCase` — it marks the run `interrupted`
+  (resumable) and `CheckAndUnblockFeaturesUseCase` restarts it, rebased, when the parent lands.
+- **Enforce the invariant at the write, not only at the callers.** Every lifecycle change funnels
+  through `UpdateFeatureLifecycleUseCase`; that is where `allowsLifecycleWrite` now refuses to
+  advance a `Blocked` feature whose parent has not landed. Callers can be forgotten, a choke
+  point cannot. Keep `Deleting`/`Archived`/`Blocked` exempt — filing and teardown are not
+  progress, and refusing them turns the gate into a trap.
+- A guard that can strand a record needs its escape hatch designed in the same commit. A
+  `Blocked` feature whose parent was deleted has a dangling `parentId`; `allowsLifecycleWrite`
+  deliberately returns true when the parent cannot be loaded, because there is no transition
+  left to release it. "Deny by default" is wrong when the deny path has no exit.
+- **Skills and docs encode gates too, and they drift silently.** `shep-workstreams` still told
+  agents the gate opens at `Implementation`, a rule the code stopped using in 52f2e41 — so every
+  wave plan it produced was staged against the wrong milestone. When a gate constant changes,
+  grep `.claude/skills/`, `docs/`, and `tsp/` doc comments for the old lifecycle names in the
+  same change.
+
 ## A copied "resume" command must carry its working directory
 
 Agent CLI sessions (`claude`/`codex`/`cursor-agent --resume <id>`) are

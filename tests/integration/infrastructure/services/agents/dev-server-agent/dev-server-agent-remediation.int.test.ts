@@ -47,10 +47,10 @@ import {
   waitForLogLineCount,
   SERVER_JS_SOURCE,
   SETUP_MARKER_FILE,
+  TEST_TIMEOUT_MS,
   type DevServerAgentHarness,
 } from './harness.js';
 
-const TEST_TIMEOUT_MS = 60_000;
 const TARGET_TYPE = 'repository';
 /** Entry file the broken plans point at; the remediation stub creates it. */
 const MISSING_SERVER_FILE = 'missing-server.js';

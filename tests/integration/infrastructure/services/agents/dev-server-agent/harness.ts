@@ -50,12 +50,48 @@ export const SETUP_MARKER_FILE = 'setup-ran.marker';
 /** Default name of the fixture dev-server entry point. */
 export const SERVER_FILE = 'server.js';
 
-/** Default bound for status/log polling — generous for slow CI runners. */
-const DEFAULT_WAIT_TIMEOUT_MS = 30_000;
+/** True on Windows runners, where npm and file-handle release are far slower. */
+const IS_WINDOWS = process.platform === 'win32';
+
+/**
+ * Default bound for status/log polling.
+ *
+ * This budget covers the WHOLE Analyzing -> Installing -> Booting -> Ready
+ * sequence, and the Installing leg runs a real `npm install`. On a Windows
+ * runner npm needs 15-20s just to report "up to date" against a fixture that
+ * already has node_modules, which left under a third of a 30s budget for the
+ * boot it is actually asserting on. Size the wait for the slowest leg on the
+ * slowest platform, not for the leg under test.
+ */
+const DEFAULT_WAIT_TIMEOUT_MS = IS_WINDOWS ? 90_000 : 30_000;
 /** Poll interval — tight enough to observe the brief Installing window. */
 const DEFAULT_POLL_INTERVAL_MS = 25;
-/** Settle time after stopAll() before removing fixture dirs (Windows locks). */
-const CLEANUP_SETTLE_MS = 150;
+/**
+ * Settle time after stopAll() before removing fixture dirs.
+ *
+ * Windows has no graceful kill: the child tree is force-killed and the OS
+ * releases its file handles asynchronously, so removing the fixture directory
+ * too soon fails with EBUSY. That failure also masks the real one — a timed-out
+ * wait reports twice, once for the timeout and once for the teardown it caused.
+ */
+const CLEANUP_SETTLE_MS = IS_WINDOWS ? 1_000 : 150;
+/**
+ * rmSync retry budget for fixture dirs — Windows holds locks well past exit.
+ * Total per fixture is retries x delay, and cleanup runs inside vitest's
+ * hookTimeout, so this stays well under it even with several fixtures tracked.
+ */
+const CLEANUP_RM_MAX_RETRIES = IS_WINDOWS ? 12 : 5;
+/** Delay between rmSync retries; total budget is retries x delay. */
+const CLEANUP_RM_RETRY_DELAY_MS = 250;
+
+/**
+ * Per-test timeout for the dev-server-agent suite.
+ *
+ * Must exceed {@link DEFAULT_WAIT_TIMEOUT_MS}: if vitest kills the test first,
+ * the wait never gets to throw, and the failure arrives without the last status
+ * and log tail that make it diagnosable from CI output alone.
+ */
+export const TEST_TIMEOUT_MS = DEFAULT_WAIT_TIMEOUT_MS + 30_000;
 
 /**
  * CommonJS fixture dev server: binds an ephemeral port for real (so recovery
@@ -279,7 +315,12 @@ export async function createHarness(options: HarnessOptions = {}): Promise<DevSe
       await sleep(CLEANUP_SETTLE_MS);
       db.close();
       for (const dir of fixtures) {
-        rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+        rmSync(dir, {
+          recursive: true,
+          force: true,
+          maxRetries: CLEANUP_RM_MAX_RETRIES,
+          retryDelay: CLEANUP_RM_RETRY_DELAY_MS,
+        });
       }
     },
   };

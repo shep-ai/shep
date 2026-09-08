@@ -85,7 +85,10 @@ export default defineConfig({
           // signal we have to investigate, never a false positive at the
           // arbitrary default boundary.
           testTimeout: 60000,
-          hookTimeout: 20000,
+          // Windows teardown is slower for the same reason: a force-killed
+          // child tree releases its file handles asynchronously, so fixture
+          // removal retries for seconds inside afterEach before succeeding.
+          hookTimeout: process.platform === 'win32' ? 60000 : 20000,
         },
         resolve: sharedResolve,
       },
