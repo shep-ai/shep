@@ -9,6 +9,11 @@
  */
 
 import type { AgentType, AgentConfig } from '../../../../domain/generated/output.js';
+import {
+  resolveAdaptiveTierPlan,
+  type AdaptiveTierPlan,
+  type TierOverrides,
+} from '../../../../domain/shared/model-tier.js';
 import type { IAgentExecutor } from '../../../../application/ports/output/agents/agent-executor.interface.js';
 import type { IInteractiveAgentExecutor } from '../../../../application/ports/output/agents/interactive-agent-executor.interface.js';
 import type {
@@ -31,18 +36,7 @@ import { OllamaExecutorService } from './executors/ollama-executor.service.js';
 import { LlmProxyExecutorService } from './executors/llmproxy-executor.service.js';
 import { ClineExecutorService } from './executors/cline-executor.service.js';
 import type { SpawnFunction } from './types.js';
-import {
-  CLAUDE_CODE_MODELS,
-  GEMINI_CLI_MODELS,
-  CURSOR_MODELS,
-  CODEX_CLI_MODELS,
-  COPILOT_CLI_MODELS,
-  CLINE_MODELS,
-  OPENROUTER_MODELS,
-  TOGETHER_AI_MODELS,
-  OLLAMA_MODELS,
-  LLMPROXY_MODELS,
-} from './agent-model-catalog.js';
+import { OPENROUTER_MODELS, TOGETHER_AI_MODELS, getModelsForAgent } from './agent-model-catalog.js';
 
 /**
  * Factory that creates and caches agent executor instances.
@@ -167,30 +161,27 @@ export class AgentExecutorFactory implements IAgentExecutorFactory {
    * @returns Array of model identifier strings, or empty array for unknown/dev agents
    */
   getSupportedModels(agentType: AgentType): string[] {
-    switch (agentType as string) {
-      case 'claude-code':
-        return CLAUDE_CODE_MODELS;
-      case 'gemini-cli':
-        return GEMINI_CLI_MODELS;
-      case 'cursor':
-        return CURSOR_MODELS;
-      case 'codex-cli':
-        return CODEX_CLI_MODELS;
-      case 'copilot-cli':
-        return COPILOT_CLI_MODELS;
-      case 'cline':
-        return CLINE_MODELS;
-      case 'openrouter':
-        return OPENROUTER_MODELS;
-      case 'together-ai':
-        return TOGETHER_AI_MODELS;
-      case 'ollama':
-        return OLLAMA_MODELS;
-      case 'llmproxy':
-        return LLMPROXY_MODELS;
-      default:
-        return [];
-    }
+    return getModelsForAgent(agentType as string);
+  }
+
+  /**
+   * Resolve the model adaptive selection uses for each complexity tier.
+   *
+   * Intersects the domain tier catalog with the models THIS agent actually
+   * serves, so the resolved plan can never contain an identifier the agent's
+   * CLI would reject — the failure mode that made a picker and a validator
+   * disagree in spec 098.
+   */
+  resolveAdaptiveModelPlan(
+    agentType: AgentType,
+    baseModel: string,
+    overrides?: TierOverrides
+  ): AdaptiveTierPlan {
+    return resolveAdaptiveTierPlan({
+      baseModel,
+      availableModels: this.getSupportedModels(agentType),
+      overrides,
+    });
   }
 
   /**

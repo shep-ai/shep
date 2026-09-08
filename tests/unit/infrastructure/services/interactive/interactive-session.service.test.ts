@@ -287,6 +287,7 @@ describe('InteractiveSessionService', () => {
       listAvailableModels: vi.fn().mockResolvedValue([]),
       createInteractiveExecutor: vi.fn().mockReturnValue(mockInteractiveExecutor),
       supportsInteractive: vi.fn().mockReturnValue(true),
+      resolveAdaptiveModelPlan: vi.fn((_a: unknown, m: string) => ({ high: m, medium: m, low: m })),
     };
 
     featureRepo = {

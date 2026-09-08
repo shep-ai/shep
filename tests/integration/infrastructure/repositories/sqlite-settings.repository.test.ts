@@ -1069,4 +1069,69 @@ describe('SQLiteSettingsRepository', () => {
       expect(loaded?.worktree).toBeUndefined();
     });
   });
+
+  describe('adaptive model configuration', () => {
+    it('round-trips enabled plus all three tier overrides through initialize()', async () => {
+      const settings = createTestSettings();
+      settings.models.adaptive = {
+        enabled: true,
+        high: 'claude-opus-5',
+        medium: 'claude-sonnet-5',
+        low: 'claude-haiku-4-5',
+      };
+
+      await repository.initialize(settings);
+      const loaded = await repository.load();
+
+      expect(loaded?.models.adaptive).toEqual({
+        enabled: true,
+        high: 'claude-opus-5',
+        medium: 'claude-sonnet-5',
+        low: 'claude-haiku-4-5',
+      });
+    });
+
+    it('persists adaptive changes via update() — the write path, not a DB default', async () => {
+      const settings = createTestSettings();
+      await repository.initialize(settings);
+      expect((await repository.load())?.models.adaptive).toBeUndefined();
+
+      settings.models.adaptive = { enabled: true, low: 'claude-haiku-4-5' };
+      settings.updatedAt = new Date('2025-03-01T00:00:00Z');
+      await repository.update(settings);
+
+      const loaded = await repository.load();
+      expect(loaded?.models.adaptive?.enabled).toBe(true);
+      expect(loaded?.models.adaptive?.low).toBe('claude-haiku-4-5');
+      // Tiers left unset stay undefined so the resolver derives them.
+      expect(loaded?.models.adaptive?.high).toBeUndefined();
+      expect(loaded?.models.adaptive?.medium).toBeUndefined();
+    });
+
+    it('persists enabled=false explicitly rather than relying on the column default', async () => {
+      const settings = createTestSettings();
+      settings.models.adaptive = { enabled: true, high: 'claude-opus-5' };
+      await repository.initialize(settings);
+      expect((await repository.load())?.models.adaptive?.enabled).toBe(true);
+
+      settings.models.adaptive = { enabled: false, high: 'claude-opus-5' };
+      settings.updatedAt = new Date('2025-03-02T00:00:00Z');
+      await repository.update(settings);
+
+      const loaded = await repository.load();
+      expect(loaded?.models.adaptive?.enabled).toBe(false);
+      expect(loaded?.models.adaptive?.high).toBe('claude-opus-5');
+    });
+
+    it('stores the enabled flag as INTEGER 0/1', async () => {
+      const settings = createTestSettings();
+      settings.models.adaptive = { enabled: true };
+      await repository.initialize(settings);
+
+      const row = db.prepare('SELECT model_adaptive_enabled FROM settings').get() as {
+        model_adaptive_enabled: number;
+      };
+      expect(row.model_adaptive_enabled).toBe(1);
+    });
+  });
 });

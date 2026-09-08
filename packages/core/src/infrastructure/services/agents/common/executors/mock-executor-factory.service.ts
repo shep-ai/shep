@@ -13,6 +13,7 @@ import type {
   AgentCliInfo,
   AgentModelListing,
 } from '../../../../../application/ports/output/agents/agent-executor-factory.interface.js';
+import type { AdaptiveTierPlan, TierOverrides } from '../../../../../domain/shared/model-tier.js';
 import { MockAgentExecutorService } from './mock-executor.service.js';
 
 export class MockAgentExecutorFactory implements IAgentExecutorFactory {
@@ -39,6 +40,18 @@ export class MockAgentExecutorFactory implements IAgentExecutorFactory {
     _authConfig?: AgentConfig
   ): Promise<AgentModelListing[]> {
     return [];
+  }
+
+  /**
+   * The mock serves no catalog, so every tier collapses onto the pinned model —
+   * E2E runs stay on one deterministic model regardless of the adaptive toggle.
+   */
+  resolveAdaptiveModelPlan(
+    _agentType: AgentType,
+    baseModel: string,
+    _overrides?: TierOverrides
+  ): AdaptiveTierPlan {
+    return { high: baseModel, medium: baseModel, low: baseModel };
   }
 
   createInteractiveExecutor(

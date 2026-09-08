@@ -1,0 +1,20 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: AdaptiveModelConfig.yaml
+type: object
+properties:
+  enabled:
+    type: boolean
+    default: false
+    description: "Route each task to a model tier matching its complexity (default: false)"
+  high:
+    type: string
+    description: "Explicit model for High-complexity tasks (default: derived from the pinned model)"
+  medium:
+    type: string
+    description: "Explicit model for Medium-complexity tasks (default: derived from the pinned model)"
+  low:
+    type: string
+    description: "Explicit model for Low-complexity tasks (default: derived from the pinned model)"
+required:
+  - enabled
+description: Adaptive per-task model tier selection

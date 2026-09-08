@@ -562,3 +562,52 @@ describe('AgentExecutorFactory - LlmProxy', () => {
     expect(models).toContain('gpt-4o');
   });
 });
+
+describe('AgentExecutorFactory - resolveAdaptiveModelPlan', () => {
+  const factory = new AgentExecutorFactory(vi.fn());
+
+  it('spreads an Opus pin across the Claude tiers for claude-code', () => {
+    expect(factory.resolveAdaptiveModelPlan(AgentType.ClaudeCode, 'claude-opus-5')).toEqual({
+      high: 'claude-opus-5',
+      medium: 'claude-sonnet-5',
+      low: 'claude-haiku-4-5',
+    });
+  });
+
+  it('never promotes above the pinned model', () => {
+    expect(factory.resolveAdaptiveModelPlan(AgentType.ClaudeCode, 'claude-sonnet-4-6')).toEqual({
+      high: 'claude-sonnet-4-6',
+      medium: 'claude-sonnet-4-6',
+      low: 'claude-haiku-4-5',
+    });
+  });
+
+  it('stays inside the pinned family for gemini-cli', () => {
+    const plan = factory.resolveAdaptiveModelPlan(AgentType.GeminiCli, 'gemini-3.1-pro-preview');
+    expect(plan.high).toBe('gemini-3.1-pro-preview');
+    for (const model of Object.values(plan)) expect(model.startsWith('gemini-')).toBe(true);
+  });
+
+  it('falls back to a tier the agent actually serves — Cursor lists no Haiku', () => {
+    const plan = factory.resolveAdaptiveModelPlan(AgentType.Cursor, 'claude-opus-5');
+    expect(factory.getSupportedModels(AgentType.Cursor)).toContain(plan.low);
+    expect(plan.low).not.toBe('claude-haiku-4-5');
+  });
+
+  it('honours explicit per-tier overrides from settings', () => {
+    const plan = factory.resolveAdaptiveModelPlan(AgentType.ClaudeCode, 'claude-opus-5', {
+      low: 'claude-sonnet-4-6',
+    });
+    expect(plan.low).toBe('claude-sonnet-4-6');
+    expect(plan.high).toBe('claude-opus-5');
+  });
+
+  it('collapses all tiers onto an unrecognized model id', () => {
+    const plan = factory.resolveAdaptiveModelPlan(AgentType.Ollama, 'my-local-model');
+    expect(plan).toEqual({
+      high: 'my-local-model',
+      medium: 'my-local-model',
+      low: 'my-local-model',
+    });
+  });
+});

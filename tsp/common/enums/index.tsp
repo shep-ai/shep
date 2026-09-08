@@ -24,6 +24,7 @@ import "./interactive-session-event.tsp";
 import "./operation-log.tsp";
 import "./code-review.tsp";
 import "./build-mode.tsp";
+import "./model-tier.tsp";
 import "./whatsapp.tsp";
 import "./cluster.tsp";
 import "./security.tsp";

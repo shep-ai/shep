@@ -308,6 +308,39 @@ The agent system uses these key interfaces (defined in `packages/core/src/applic
 | **Plan**         | `planNode`         | Decompose into tasks, create artifacts (PRD, RFC, Tech Plan) |
 | **Implement**    | `implementNode`    | Execute tasks respecting dependency graph                    |
 
+## Adaptive Model Selection (spec 110)
+
+By default every node and every task in a run uses the model pinned for that run
+(`Feature.model` → `FeatureAgentState.model` → `AgentExecutionOptions.model`).
+When `settings.models.adaptive.enabled` is on, the **implement** node instead
+routes each planned task to the model tier matching its complexity.
+
+| Piece                                              | Responsibility                                                          |
+| -------------------------------------------------- | ----------------------------------------------------------------------- |
+| `domain/shared/model-tier.ts`                      | Tier catalog, complexity normalizer, heuristic classifier, resolver     |
+| `plan.prompt.ts`                                   | Asks the planning agent for a `complexity` on every task in tasks.yaml  |
+| `nodes/adaptive-task-routing.ts`                   | Resolves a model per task and batches consecutive same-model runs       |
+| `implement.node.ts`                                | Executes each batch with `buildExecutorOptions(state, { model }, …)`    |
+| `IAgentExecutorFactory.resolveAdaptiveModelPlan()` | Exposes the resolved tier triple to use cases and presentation layers   |
+
+Three invariants keep it safe:
+
+1. **The pin is a ceiling.** A tier never resolves to a model more capable than
+   the pinned one, so an explicit Sonnet pin is never promoted to Opus.
+2. **Degradation stays in-family.** A Gemini pin degrades to a Gemini model.
+   Cross-family selection only happens via an explicit per-tier override.
+3. **Candidates come from the agent's own catalog.** A pinned model the tier
+   catalog does not recognise collapses all three tiers onto itself, making the
+   mode a no-op rather than a source of `Unsupported model` errors.
+
+Tasks with no declared complexity are classified deterministically by
+`classifyTaskComplexity`, so plans written before this shipped route the same way
+on every run.
+
+Configure it from `shep settings adaptive-models` or Settings → Adaptive models.
+When adding a model to `agent-model-catalog.ts`, add a matching entry to
+`MODEL_TIERS` in `model-tier.ts` if tasks should be routable onto it.
+
 ## Practical Example
 
 For implementation details, see [docs/development/adding-agents.md](../development/adding-agents.md).

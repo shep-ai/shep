@@ -7,6 +7,7 @@
  */
 
 import { readSpecFile } from '../node-helpers.js';
+import { normalizeTaskComplexity } from '@/domain/shared/model-tier.js';
 import { buildProjectMemorySection } from './project-memory-section.js';
 import type { FeatureAgentState } from '../../state.js';
 import { COMMIT_CO_AUTHOR } from '../../../../git/pr-branding.js';
@@ -21,6 +22,11 @@ export interface PhaseTask {
   acceptanceCriteria: string[];
   tdd: { red: string[]; green: string[]; refactor: string[] } | null;
   estimatedEffort: string;
+  /**
+   * Complexity assigned by the planning agent. Typed loosely because it is read
+   * straight out of LLM-authored YAML — `classifyTaskComplexity` normalizes it.
+   */
+  complexity?: string;
 }
 
 export interface PlanPhase {
@@ -42,6 +48,14 @@ export interface TasksYaml {
 
 function formatTaskSection(task: PhaseTask): string {
   let section = `### Task ${task.id}: ${task.title}\n${task.description}\n`;
+
+  // Surfacing the planner's complexity rating tells the agent how much design
+  // latitude the task carries — and it is the same signal that chose the model
+  // now running this prompt, so the two stay consistent.
+  const complexity = normalizeTaskComplexity(task.complexity);
+  if (complexity) {
+    section += `\n**Complexity:** ${complexity}\n`;
+  }
 
   section += `\n**Acceptance Criteria:**\n`;
   for (const criterion of task.acceptanceCriteria) {

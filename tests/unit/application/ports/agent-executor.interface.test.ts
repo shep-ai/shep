@@ -138,6 +138,7 @@ describe('IAgentExecutorFactory type contracts', () => {
         throw new Error('not implemented');
       },
       supportsInteractive: () => false,
+      resolveAdaptiveModelPlan: (_a: AgentType, m: string) => ({ high: m, medium: m, low: m }),
     };
     expect(mockFactory.getSupportedAgents()).toContain(AgentType.ClaudeCode);
   });
@@ -159,6 +160,7 @@ describe('IAgentExecutorFactory type contracts', () => {
         throw new Error('not implemented');
       },
       supportsInteractive: () => false,
+      resolveAdaptiveModelPlan: (_a: AgentType, m: string) => ({ high: m, medium: m, low: m }),
     };
     const executor = mockFactory.createExecutor(AgentType.ClaudeCode, {
       type: AgentType.ClaudeCode,
@@ -184,6 +186,7 @@ describe('IAgentExecutorFactory type contracts', () => {
         throw new Error('not implemented');
       },
       supportsInteractive: () => false,
+      resolveAdaptiveModelPlan: (_a: AgentType, m: string) => ({ high: m, medium: m, low: m }),
     };
     const supported = mockFactory.getSupportedAgents();
     expect(supported).toHaveLength(2);

@@ -115,6 +115,7 @@ import { ImportWorkItemsCsvUseCase } from '../../../application/use-cases/import
 import { InitializeSettingsUseCase } from '../../../application/use-cases/settings/initialize-settings.use-case.js';
 import { LoadSettingsUseCase } from '../../../application/use-cases/settings/load-settings.use-case.js';
 import { UpdateSettingsUseCase } from '../../../application/use-cases/settings/update-settings.use-case.js';
+import { GetAdaptiveModelPlanUseCase } from '../../../application/use-cases/settings/get-adaptive-model-plan.use-case.js';
 import { CompleteOnboardingUseCase } from '../../../application/use-cases/settings/complete-onboarding.use-case.js';
 import { CompleteWebOnboardingUseCase } from '../../../application/use-cases/settings/complete-web-onboarding.use-case.js';
 import { CheckOnboardingStatusUseCase } from '../../../application/use-cases/settings/check-onboarding-status.use-case.js';
@@ -276,6 +277,7 @@ export function registerUseCases(container: DependencyContainer): void {
   container.registerSingleton(InitializeSettingsUseCase);
   container.registerSingleton(LoadSettingsUseCase);
   container.registerSingleton(UpdateSettingsUseCase);
+  container.registerSingleton(GetAdaptiveModelPlanUseCase);
   container.registerSingleton(CompleteOnboardingUseCase);
   container.registerSingleton(CompleteWebOnboardingUseCase);
   container.registerSingleton(CheckOnboardingStatusUseCase);
@@ -524,6 +526,9 @@ export function registerUseCases(container: DependencyContainer): void {
   });
   container.register('LoadSettingsUseCase', {
     useFactory: (c) => c.resolve(LoadSettingsUseCase),
+  });
+  container.register('GetAdaptiveModelPlanUseCase', {
+    useFactory: (c) => c.resolve(GetAdaptiveModelPlanUseCase),
   });
   container.register('UpdateSettingsUseCase', {
     useFactory: (c) => c.resolve(UpdateSettingsUseCase),

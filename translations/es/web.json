@@ -7,6 +7,7 @@
     "sections": {
       "language": "Idioma",
       "agent": "Agente",
+      "adaptiveModels": "Modelos adaptativos",
       "environment": "Entorno",
       "workflow": "Flujo de trabajo",
       "worktree": "Worktree",
@@ -134,6 +135,28 @@
       "hint": "Úsalo cuando un worktree de git simple no basta: monorepos que necesitan node_modules enlazado, o proyectos que solo compilan desde un directorio preparado.",
       "links": {
         "worktreeGuide": "Aprovisionamiento de worktree personalizado"
+      }
+    },
+    "adaptiveModels": {
+      "title": "Selección adaptativa de modelo",
+      "description": "Ejecuta cada tarea planificada en un modelo acorde a su complejidad",
+      "enabled": "Enrutar tareas por complejidad",
+      "enabledDescription": "Tras la planificación, cada tarea se ejecuta en el modelo que corresponde a su complejidad en lugar del modelo fijado. Las tareas simples usan un modelo más pequeño y rápido.",
+      "derived": "Derivado del modelo fijado",
+      "planUnavailable": "No se pudieron resolver los modelos por nivel para el agente actual.",
+      "ceilingHint": "El modelo fijado {{model}} en {{agent}} es el techo: ningún nivel es más capaz que él ni sale de su familia de modelos.",
+      "singleModelHint": "{{model}} no tiene un nivel inferior conocido en el catálogo de este agente, así que todas las tareas seguirían ejecutándose en él. Fija un modelo con un hermano más pequeño o elige los modelos por nivel abajo.",
+      "tiers": {
+        "high": "Complejidad alta",
+        "highDescription": "Diseño nuevo, cambios transversales, trabajo de seguridad o concurrencia.",
+        "medium": "Complejidad media",
+        "mediumDescription": "Trabajo de funcionalidad habitual que sigue un patrón establecido.",
+        "low": "Complejidad baja",
+        "lowDescription": "Ediciones mecánicas: claves de traducción, valores de enum, stories, renombrados."
+      },
+      "hint": "Actívalo cuando fijes un modelo insignia pero la mayor parte de tu lista de tareas sea mecánica. El modelo fijado sigue siendo el techo, así que esto solo puede reducir el coste.",
+      "links": {
+        "configurationGuide": "Guía de configuración"
       }
     },
     "ci": {
@@ -672,6 +695,7 @@
     "execution": "Ejecución",
     "wait": "Espera",
     "cost": "Costo",
+    "modelUsed": "Ejecutado en {{model}}",
     "noActivityRecorded": "Sin actividad registrada"
   },
   "logTab": {

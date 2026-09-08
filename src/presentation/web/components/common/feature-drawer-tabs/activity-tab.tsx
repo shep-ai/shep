@@ -7,6 +7,7 @@ import {
   AlertCircle,
   Clock,
   Zap,
+  Cpu,
   DollarSign,
   Play,
   RotateCcw,
@@ -669,6 +670,18 @@ function NodeTimingRow({
           <span className="text-muted-foreground/70 inline-flex items-center gap-0.5">
             <DollarSign className="h-3 w-3 opacity-50" />
             {formatCost(timing.costUsd)}
+          </span>
+        ) : null}
+        {/* Which model actually ran this phase. Constant across a run normally,
+            but the whole point of adaptive selection is that it varies. */}
+        {timing.modelId ? (
+          <span
+            className="text-muted-foreground/70 inline-flex items-center gap-0.5"
+            data-testid={`timing-model-${timing.phase}`}
+            title={t('activityTab.modelUsed', { model: timing.modelId })}
+          >
+            <Cpu className="h-3 w-3 opacity-50" />
+            <span className="font-mono">{timing.modelId}</span>
           </span>
         ) : null}
       </div>

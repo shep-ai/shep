@@ -31,6 +31,7 @@ describe('AgentExecutorProvider', () => {
       listAvailableModels: vi.fn().mockResolvedValue([]),
       createInteractiveExecutor: vi.fn(),
       supportsInteractive: vi.fn().mockReturnValue(false),
+      resolveAdaptiveModelPlan: vi.fn((_a: unknown, m: string) => ({ high: m, medium: m, low: m })),
     };
     mockSettingsRepo = {
       load: vi.fn().mockResolvedValue(defaultSettings),

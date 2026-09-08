@@ -241,6 +241,28 @@ export type Requirement = BaseEntity & {
 };
 
 /**
+ * Adaptive per-task model tier selection
+ */
+export type AdaptiveModelConfig = {
+  /**
+   * Route each task to a model tier matching its complexity (default: false)
+   */
+  enabled: boolean;
+  /**
+   * Explicit model for High-complexity tasks (default: derived from the pinned model)
+   */
+  high?: string;
+  /**
+   * Explicit model for Medium-complexity tasks (default: derived from the pinned model)
+   */
+  medium?: string;
+  /**
+   * Explicit model for Low-complexity tasks (default: derived from the pinned model)
+   */
+  low?: string;
+};
+
+/**
  * AI model configuration for the SDLC agent
  */
 export type ModelConfiguration = {
@@ -248,6 +270,10 @@ export type ModelConfiguration = {
    * Default model identifier for all agents
    */
   default: string;
+  /**
+   * Adaptive per-task model tier selection (default: disabled)
+   */
+  adaptive?: AdaptiveModelConfig;
 };
 export enum Language {
   English = 'en',
@@ -1724,6 +1750,11 @@ export type TddCycle = {
    */
   refactor: string[];
 };
+export enum TaskComplexity {
+  High = 'High',
+  Medium = 'Medium',
+  Low = 'Low',
+}
 
 /**
  * Task definition within a spec's task breakdown
@@ -1765,6 +1796,10 @@ export type SpecTask = {
    * Estimated effort (e.g., '2 hours', '1 day')
    */
   estimatedEffort: string;
+  /**
+   * Reasoning capability this task requires — drives adaptive model tier selection
+   */
+  complexity?: TaskComplexity;
 };
 
 /**

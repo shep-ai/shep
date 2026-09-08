@@ -104,10 +104,15 @@ export function getStageTimeoutMs(nodeName: string): number {
  * with a fallback to DEFAULT_STAGE_TIMEOUT_MS (10 min).
  *
  * When no `nodeName` is provided, the current node from state is used.
+ *
+ * `overrides.model` lets a caller run one specific executor call on a model
+ * other than the pinned `state.model` — this is the seam adaptive per-task
+ * model selection uses. Omitting it keeps the pinned model, so every existing
+ * call site is unaffected.
  */
 export function buildExecutorOptions(
   state: FeatureAgentState,
-  overrides?: Partial<Pick<AgentExecutionOptions, 'timeout'>>,
+  overrides?: Partial<Pick<AgentExecutionOptions, 'timeout' | 'model'>>,
   nodeName?: string
 ): AgentExecutionOptions {
   const stage = nodeName ?? state.currentNode ?? '';

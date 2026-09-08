@@ -122,4 +122,32 @@ describe('buildImplementPhasePrompt — co-author branding', () => {
     });
     expect(prompt).toContain(COMMIT_CO_AUTHOR);
   });
+  it('renders the planner-assigned complexity for the task', () => {
+    const prompt = buildImplementPhasePrompt(
+      baseState(),
+      samplePhase,
+      [{ ...sampleTask, complexity: 'Low' }],
+      { isLastPhase: false, phaseIndex: 0, totalPhases: 1 }
+    );
+    expect(prompt).toContain('**Complexity:** Low');
+  });
+
+  it('normalizes a loosely-spelled complexity from LLM-authored YAML', () => {
+    const prompt = buildImplementPhasePrompt(
+      baseState(),
+      samplePhase,
+      [{ ...sampleTask, complexity: 'simple' }],
+      { isLastPhase: false, phaseIndex: 0, totalPhases: 1 }
+    );
+    expect(prompt).toContain('**Complexity:** Low');
+  });
+
+  it('omits the complexity line entirely when the task has none', () => {
+    const prompt = buildImplementPhasePrompt(baseState(), samplePhase, [sampleTask], {
+      isLastPhase: false,
+      phaseIndex: 0,
+      totalPhases: 1,
+    });
+    expect(prompt).not.toContain('**Complexity:**');
+  });
 });

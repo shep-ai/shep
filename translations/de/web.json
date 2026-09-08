@@ -7,6 +7,7 @@
     "sections": {
       "language": "Sprache",
       "agent": "Agent",
+      "adaptiveModels": "Adaptive Modelle",
       "environment": "Umgebung",
       "workflow": "Workflow",
       "worktree": "Worktree",
@@ -134,6 +135,28 @@
       "hint": "Nutze das, wenn ein einfacher git-Worktree nicht reicht — Monorepos mit verlinkten node_modules oder Projekte, die nur aus einem vorbereiteten Verzeichnis bauen.",
       "links": {
         "worktreeGuide": "Eigene Worktree-Bereitstellung"
+      }
+    },
+    "adaptiveModels": {
+      "title": "Adaptive Modellauswahl",
+      "description": "Jede geplante Aufgabe auf einem Modell ausführen, das zu ihrer Komplexität passt",
+      "enabled": "Aufgaben nach Komplexität verteilen",
+      "enabledDescription": "Nach der Planung läuft jede Aufgabe auf dem Modell, das ihrer Komplexität entspricht, statt auf dem fixierten Modell. Einfache Aufgaben erhalten ein kleineres, schnelleres Modell.",
+      "derived": "Vom fixierten Modell abgeleitet",
+      "planUnavailable": "Die Stufenmodelle für den aktuellen Agenten konnten nicht ermittelt werden.",
+      "ceilingHint": "Das fixierte Modell {{model}} auf {{agent}} ist die Obergrenze — keine Stufe ist leistungsfähiger und keine verlässt seine Modellfamilie.",
+      "singleModelHint": "{{model}} hat im Katalog dieses Agenten keine bekannte niedrigere Stufe, daher liefe weiterhin jede Aufgabe darauf. Fixiere ein Modell mit kleinerem Geschwistermodell oder wähle die Stufenmodelle unten explizit.",
+      "tiers": {
+        "high": "Hohe Komplexität",
+        "highDescription": "Neuer Entwurf, übergreifende Änderungen, Sicherheits- oder Nebenläufigkeitsarbeit.",
+        "medium": "Mittlere Komplexität",
+        "mediumDescription": "Gewöhnliche Feature-Arbeit nach einem etablierten Muster.",
+        "low": "Geringe Komplexität",
+        "lowDescription": "Mechanische Änderungen — Übersetzungsschlüssel, Enum-Einträge, Stories, Umbenennungen."
+      },
+      "hint": "Aktiviere dies, wenn du ein Spitzenmodell fixierst, deine Aufgabenliste aber überwiegend mechanisch ist. Das fixierte Modell bleibt die Obergrenze, die Kosten können also nur sinken.",
+      "links": {
+        "configurationGuide": "Konfigurationsleitfaden"
       }
     },
     "ci": {
@@ -672,6 +695,7 @@
     "execution": "Ausführung",
     "wait": "Wartezeit",
     "cost": "Kosten",
+    "modelUsed": "Ausgeführt auf {{model}}",
     "noActivityRecorded": "Noch keine Aktivität aufgezeichnet"
   },
   "logTab": {

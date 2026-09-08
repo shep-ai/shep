@@ -72,6 +72,48 @@ model ModelConfiguration {
    */
   @doc("Default model identifier for all agents")
   default: string = "claude-sonnet-4-6";
+
+  /**
+   * Adaptive per-task model selection. When enabled, the implement node routes
+   * each planned task to the model tier matching its complexity instead of
+   * running everything on `default`.
+   *
+   * Optional so existing rows (and every fixture built before this shipped)
+   * keep working — absent means disabled.
+   */
+  @doc("Adaptive per-task model tier selection (default: disabled)")
+  adaptive?: AdaptiveModelConfig;
+}
+
+/**
+ * Adaptive Model Configuration
+ *
+ * Controls per-task model tier selection during implementation. The pinned
+ * model (`ModelConfiguration.default`, or a per-feature override) always acts
+ * as the **ceiling** — adaptive selection may degrade below it for simple
+ * tasks but never promotes above it.
+ *
+ * ## Tier Overrides
+ *
+ * When `high` / `medium` / `low` are unset, the tier models are derived from
+ * the pinned model's family intersected with the configured agent's supported
+ * model list (see `domain/shared/model-tier.ts`). Setting one pins that tier
+ * explicitly, which is how a user opts into a cross-family choice the
+ * automatic resolver would never make on its own.
+ */
+@doc("Adaptive per-task model tier selection")
+model AdaptiveModelConfig {
+  @doc("Route each task to a model tier matching its complexity (default: false)")
+  enabled: boolean = false;
+
+  @doc("Explicit model for High-complexity tasks (default: derived from the pinned model)")
+  high?: string;
+
+  @doc("Explicit model for Medium-complexity tasks (default: derived from the pinned model)")
+  medium?: string;
+
+  @doc("Explicit model for Low-complexity tasks (default: derived from the pinned model)")
+  low?: string;
 }
 
 /**
