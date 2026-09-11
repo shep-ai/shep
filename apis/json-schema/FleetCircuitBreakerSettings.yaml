@@ -1,0 +1,26 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: FleetCircuitBreakerSettings.yaml
+type: object
+properties:
+  enabled:
+    type: boolean
+    description: Whether the circuit breaker is active
+  consecutiveFailureThreshold:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Consecutive failed agent runs that trip the circuit breaker
+  failureRateThresholdPercent:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Percentage failure rate in rolling 15m window that trips the circuit breaker
+  autoPauseQueue:
+    type: boolean
+    description: "Reserved: whether admission should be paused when tripped. Not acted on yet — admission control (PR #847) is not on main, so the trip is reported as a status signal only."
+required:
+  - enabled
+  - consecutiveFailureThreshold
+  - failureRateThresholdPercent
+  - autoPauseQueue
+description: Fleet safety settings to prevent runaway loops and cascade failures

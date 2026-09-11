@@ -1,0 +1,11 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: FleetTriageCategory.yaml
+type: string
+enum:
+  - gate
+  - question
+  - ci_failed
+  - conflict
+  - crash
+  - warning
+description: Category of fleet triage item
