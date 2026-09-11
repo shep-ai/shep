@@ -6,6 +6,9 @@ properties:
     type: string
     default: claude-sonnet-4-6
     description: Default model identifier for all agents
+  adaptive:
+    $ref: AdaptiveModelConfig.yaml
+    description: "Adaptive per-task model tier selection (default: disabled)"
 required:
   - default
 description: AI model configuration for the SDLC agent
