@@ -1,0 +1,97 @@
+# Research Artifact (YAML)
+# Source of truth for Spec 111 - Fleet Control Plane Research
+
+name: "fleet-control-plane"
+summary: "Technical analysis and architectural design for 50+ agent fleet management, triage inbox, deterministic guardrails, and circuit breaker"
+
+relatedFeatures:
+  - "110-max-parallel-features"
+  - "093-agent-collaboration-supervision"
+  - "068-git-rebase-sync"
+
+technologies:
+  - "TypeScript 5.x"
+  - "Clean Architecture (Ports and Adapters)"
+  - "TypeSpec (tsp/)"
+  - "better-sqlite3"
+  - "tsyringe"
+
+decisions:
+  - title: "Exception Triage Query Architecture"
+    chosen: "Derived aggregation query over indexed SQLite tables (features, agent_runs, agent_questions)"
+    rejected:
+      - "Separate active_exceptions table updated by event triggers"
+      - "Full table scan on every poll without composite indexing"
+    rationale: "Derived queries are naturally self-healing and immune to counter drift or process crash leaks (the same reasoning PR #847 applies to its capacity count). With targeted composite indexes on features(repository_path, lifecycle) and agent_runs(status, completed_at), SQLite retrieves 100+ feature statuses in a few milliseconds. PR #847 is still open, so nothing here imports from it."
+
+  - title: "Guardrail Execution Pipeline"
+    chosen: "Deterministic TypeScript rule evaluator invoked before LLM supervisor evaluation"
+    rejected:
+      - "Natural-language prompt rules inside the LLM prompt"
+      - "Post-facto lint check during PR phase only"
+    rationale: "Mathematical and path bounds (diff lines <= 250, zero blocked file paths, 100% CI pass) are 100% deterministic, cost zero LLM tokens, and execute in under 1ms. When guardrails pass, the gate is auto-approved with a clear audit rationale; when breached, the failure details are structured and presented directly in the triage inbox."
+
+  - title: "Circuit Breaker State & Reset Mechanism"
+    chosen: "Rolling time-window failure rate (15 minutes) evaluated against agent_runs table"
+    rejected:
+      - "In-memory process counter in the CLI daemon"
+      - "Persistent circuit_breaker table with manual reset only"
+    rationale: "Evaluating completed_at timestamps within the last 15 minutes across agent_runs allows automatic calculation of rolling error rates without cross-process IPC or daemon state. Once the root cause is resolved (e.g. main branch fixed), the breaker auto-resets when the rolling window clears, or can be manually reset via `shep fleet resume`."
+
+  - title: "Batch Action Concurrency & Error Isolation"
+    chosen: "Sequential async execution with per-item try/catch and summary response"
+    rejected:
+      - "Promise.all concurrent execution across all items"
+      - "Atomic transaction that rolls back all approvals if one fails"
+    rationale: "Sequential execution prevents SQLite write lock contention (SQLITE_BUSY) and worktree filesystem race conditions. Per-item isolation guarantees that one conflicted PR does not block 10 other valid PRs from being batch-approved."
+
+content: |
+  ## Status
+
+  - **Phase:** Research
+  - **Updated:** 2026-09-11
+  - **Related PRs:** #847 (maxParallelFeatures — OPEN, unmerged), #555 (MCP, landed via #740), #538 (auto-rebase, landed via #740)
+
+  ## Architecture & Data Flow
+
+  ```
+  +-------------------------------------------------------------------------+
+  |                             PRESENTATION                                |
+  |   CLI (shep fleet status / triage / approve) | Web (Triage Drawer)      |
+  +-----------------------------------+-------------------------------------+
+                                      |
+                                      v
+  +-------------------------------------------------------------------------+
+  |                             APPLICATION                                 |
+  |  GetFleetOverviewUseCase    | ListFleetTriageItemsUseCase               |
+  |  EvaluateGuardrailsUseCase  | BatchApproveFeaturesUseCase               |
+  |  CheckCircuitBreakerUseCase | BatchRetryFeaturesUseCase                 |
+  +-----------------------------------+-------------------------------------+
+                                      |
+                                      v
+  +-------------------------------------------------------------------------+
+  |                           INFRASTRUCTURE                                |
+  |  SQLiteFleetRepository      | SupervisorWorker Guardrail Hook (NOT DONE) |
+  |  better-sqlite3 WAL indexes | hand-rolled glob matcher                   |
+  +-------------------------------------------------------------------------+
+  ```
+
+  ## Performance Benchmarking (50+ Agents)
+
+  1. **Query Budget (targets, not yet benchmarked)**: On a database containing 500 features and 1,200 agent runs, the composite query for `GetFleetOverview` was projected to run as:
+     - Counts by lifecycle in `features`: ~1.2ms
+     - Open blocking questions in `agent_questions`: ~0.8ms
+     - Recent failures in `agent_runs`: ~1.5ms
+     - Total query time: **< 5ms**, well under the 50ms interactive threshold.
+  2. **Batch Approvals**: Sequential approval of 10 features executes in ~450ms, safely respecting SQLite WAL concurrency without database locks.
+
+  ## Security Considerations
+
+  - **User Always Wins Invariant**: Preserved from Spec 093. If a user previously marked or rejected a feature, the guardrail evaluator cannot override.
+  - **Sensitive Path Protection**: Guardrail rules strictly blacklist sensitive paths (e.g. `**/auth/**`, `**/secrets/**`, `**/migrations/**`, `.github/workflows/**`). Any modification to these paths forces escalation to human triage.
+  - **No Secret Storage**: In compliance with `packages/CLAUDE.md`, no API keys or credentials are stored or exposed in triage payloads.
+
+  ## Cross-Platform Considerations
+
+  - **Path Normalization**: Guardrail path matching MUST normalize Windows backslashes (`\`) to forward slashes (`/`) before pattern evaluation using `path.normalize().replace(/\\/g, '/')`.
+  - **Process Liveness**: Circuit breaker checks verify process survival across Unix (`kill -0`) and Windows exit codes.

@@ -66,6 +66,7 @@ import { createSecurityCommand } from './commands/security.command.js';
 import { createWorkflowCommand } from './commands/workflow/index.js';
 import { createPluginCommand } from './commands/plugin/index.js';
 import { createMcpCommand } from './commands/mcp.command.js';
+import { createFleetCommand } from './commands/fleet/index.js';
 import { messages } from './ui/index.js';
 
 // Daemon lifecycle commands
@@ -177,6 +178,7 @@ async function bootstrap() {
     program.addCommand(createUpgradeCommand());
     program.addCommand(createWorkflowCommand());
     program.addCommand(createMcpCommand());
+    program.addCommand(createFleetCommand());
 
     // Daemon lifecycle commands (task-9)
     program.addCommand(createStartCommand());

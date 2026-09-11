@@ -1,0 +1,345 @@
+# Task Breakdown (YAML)
+# Source of truth for Spec 111 - Fleet Control Plane Tasks
+
+name: "fleet-control-plane"
+summary: "19 phased TDD tasks for Fleet Control Plane implementation (delivery is staged — see Delivery Status)"
+
+relatedFeatures:
+  - "110-max-parallel-features"
+  - "093-agent-collaboration-supervision"
+
+technologies:
+  - "TypeScript"
+  - "TypeSpec"
+  - "SQLite"
+  - "Commander"
+  - "React / Next.js"
+  - "Vitest"
+
+tasks:
+  - id: task-1
+    title: "Define TypeSpec domain models for GuardrailRule and FleetSettings"
+    description: "Create tsp/agents/fleet-guardrails.tsp defining GuardrailRule, GuardrailEvaluationResult, and FleetSettings with TypeSpec decorators."
+    state: Done
+    dependencies: []
+    acceptanceCriteria:
+      - "GuardrailRule defines id, gate, maxDiffLines, maxFilesChanged, blockedPathPatterns, requireCiPass, autoApprove"
+      - "FleetCircuitBreakerSettings defines enabled, consecutiveFailureThreshold, failureRateThresholdPercent, autoPauseQueue"
+      - "pnpm tsp:compile runs cleanly and generates types into domain/generated/output.ts"
+    tdd: null
+    estimatedEffort: "1h"
+
+  - id: task-2
+    title: "Define TypeSpec domain models for FleetOverview and FleetTriageItem"
+    description: "Create tsp/fleet/fleet-models.tsp with FleetOverview, FleetStatusCounts, FleetTriageItem, and TriagePriority."
+    state: Done
+    dependencies: [task-1]
+    acceptanceCriteria:
+      - "FleetTriageItem includes featureId, featureName, priority (P1/P2/P3), reason, gate, runId, createdAt"
+      - "FleetOverview aggregates total, cruising, queued, attentionNeeded, failed, and circuitBreakerStatus"
+      - "pnpm tsp:compile compiles cleanly"
+    tdd: null
+    estimatedEffort: "1h"
+
+  - id: task-3
+    title: "Create SQLite migration for fleet query performance indexes"
+    description: "Create migration 143-create-fleet-indexes.ts adding composite indexes on features(repository_path, lifecycle) WHERE deleted_at IS NULL, agent_runs(status, completed_at), and agent_questions(status, kind). (135 was already taken by 135-add-active-plugins-to-features.ts.)"
+    state: Done
+    dependencies: [task-2]
+    acceptanceCriteria:
+      - "Migration is idempotent with IF NOT EXISTS"
+      - "Down migration cleanly drops indexes"
+    tdd:
+      red:
+        - "Write test confirming migration applies cleanly"
+      green:
+        - "Implement migration 135"
+      refactor:
+        - "Verify explain query plan uses indexes"
+    estimatedEffort: "1.5h"
+
+  - id: task-4
+    title: "Implement SqliteFleetRepository and IFleetRepository port"
+    description: "Create output port IFleetRepository and concrete adapter SqliteFleetRepository implementing getOverview and listTriageCandidates."
+    state: Done
+    dependencies: [task-3]
+    acceptanceCriteria:
+      - "IFleetRepository port defined in application layer without infra imports"
+      - "SqliteFleetRepository performs single-pass aggregation query in < 10ms for 500 rows"
+    tdd:
+      red:
+        - "Write integration test with seeded features and runs asserting overview counts"
+      green:
+        - "Implement SqliteFleetRepository with optimized SQL"
+      refactor:
+        - "Clean SQL statement parameters and null checks"
+    estimatedEffort: "2h"
+
+  - id: task-5
+    title: "TDD: GetFleetOverviewUseCase"
+    description: "Implement application use case GetFleetOverviewUseCase aggregating repository state and circuit breaker status."
+    state: Done
+    dependencies: [task-4]
+    acceptanceCriteria:
+      - "Returns accurate counts for running, queued, cruising, attentionNeeded, and failed"
+      - "Calculates fleet health percentage and circuit breaker state"
+    tdd:
+      red:
+        - "Write unit tests with mocked IFleetRepository"
+      green:
+        - "Implement GetFleetOverviewUseCase"
+      refactor:
+        - "Ensure typed result contracts"
+    estimatedEffort: "1.5h"
+
+  - id: task-6
+    title: "TDD: ListFleetTriageItemsUseCase"
+    description: "Implement use case returning prioritized list of exceptions requiring human decision (P1 blockers, P2 failures, P3 warnings)."
+    state: Done
+    dependencies: [task-4]
+    acceptanceCriteria:
+      - "Surfaces waiting_approval runs, blocking AgentQuestions, and unmergeable PRs as P1"
+      - "Surfaces CI retry exhaustion as P2"
+      - "Orders items by priority ascending, then createdAt descending"
+    tdd:
+      red:
+        - "Write unit tests for prioritization and ordering logic"
+      green:
+        - "Implement ListFleetTriageItemsUseCase"
+      refactor:
+        - "Extract priority classifier into pure helper function"
+    estimatedEffort: "2h"
+
+  - id: task-7
+    title: "TDD: EvaluateGateGuardrailsUseCase"
+    description: "Evaluate incoming gate context against GuardrailRules using deterministic checks (diff lines, file path globs, CI status)."
+    state: Todo
+    dependencies: [task-1]
+    acceptanceCriteria:
+      - "Auto-approves if diff <= maxDiffLines and no blocked path patterns matched and CI passed"
+      - "Escalates with explicit violation details if any rule is breached"
+      - "Normalizes file paths across Windows and Unix"
+    tdd:
+      red:
+        - "Write unit tests with various mock diffs and path patterns"
+      green:
+        - "Implement EvaluateGateGuardrailsUseCase"
+      refactor:
+        - "Path matching uses a hand-rolled glob matcher; switching to picomatch was rejected to avoid a new runtime dependency"
+    estimatedEffort: "2.5h"
+
+  - id: task-8
+    title: "TDD: BatchApproveFeaturesUseCase"
+    description: "Batch approves features waiting on gates with optional filter criteria (--low-risk, --gate)."
+    state: Partial
+    dependencies: [task-6, task-7]
+    acceptanceCriteria:
+      - "Approves target features sequentially with error isolation"
+      - "Returns batch summary of approved, skipped, and failed count"
+      - "Records actor namespace correctly"
+    tdd:
+      red:
+        - "Write unit tests for partial failure and multi-gate handling"
+      green:
+        - "Implement BatchApproveFeaturesUseCase"
+      refactor:
+        - "Clean error aggregation"
+    estimatedEffort: "2h"
+
+  - id: task-9
+    title: "TDD: CheckCircuitBreakerUseCase"
+    description: "Calculates rolling failure rate over 15-minute window and trips circuit breaker when threshold exceeded."
+    state: Todo
+    dependencies: [task-5]
+    acceptanceCriteria:
+      - "Trips breaker if 4 consecutive failures or > 25% failure rate in 15m"
+      - "Provides auto-pause command execution for admission queue"
+    tdd:
+      red:
+        - "Write unit tests with mock timestamps and failure counts"
+      green:
+        - "Implement CheckCircuitBreakerUseCase"
+      refactor:
+        - "Document rolling window algorithm"
+    estimatedEffort: "1.5h"
+
+  - id: task-10
+    title: "Hook guardrails into SupervisorWorker"
+    description: "Integrate EvaluateGateGuardrailsUseCase into feature-agent-worker / supervisor before invoking LLM evaluator."
+    state: Todo
+    dependencies: [task-7]
+    acceptanceCriteria:
+      - "If guardrails pass, gate is auto-approved without LLM invocation"
+      - "If guardrails fail, evaluation proceeds to LLM or directly escalates based on policy"
+    tdd:
+      red:
+        - "Write unit test verifying worker bypasses LLM when guardrail passes"
+      green:
+        - "Connect use case in worker execution path"
+      refactor:
+        - "Log guardrail verdict in activity log"
+    estimatedEffort: "2h"
+
+  - id: task-11
+    title: "Wire DI container registrations and string tokens"
+    description: "Register IFleetRepository, all new fleet use cases, and string tokens in container.ts and tokens.ts."
+    state: Done
+    dependencies: [task-5, task-6, task-7, task-8, task-9]
+    acceptanceCriteria:
+      - "All tokens exported in tokens.ts"
+      - "Resolving via string tokens passes without undefined errors"
+    tdd:
+      red:
+        - "Write container-resolution unit test"
+      green:
+        - "Add container.register calls"
+      refactor:
+        - "Organize in register-use-cases.ts"
+    estimatedEffort: "1h"
+
+  - id: task-12
+    title: "Implement CLI command: shep fleet status"
+    description: "Create Commander command under src/presentation/cli/commands/fleet/status.command.ts displaying ASCII health banner."
+    state: Done
+    dependencies: [task-11]
+    acceptanceCriteria:
+      - "Displays formatted status bar and counts using existing ui colors and symbols"
+      - "Shows circuit breaker status clearly"
+    tdd: null
+    estimatedEffort: "1.5h"
+
+  - id: task-13
+    title: "Implement CLI command: shep fleet triage"
+    description: "Create Commander command src/presentation/cli/commands/fleet/triage.command.ts displaying prioritized actionable list."
+    state: Done
+    dependencies: [task-11]
+    acceptanceCriteria:
+      - "Displays P1, P2, P3 exceptions with colors and one-line reasons"
+      - "Shows quick commands for resolution (e.g. shep feat approve <id>)"
+    tdd: null
+    estimatedEffort: "1.5h"
+
+  - id: task-14
+    title: "Implement CLI command: shep fleet approve / pause / retry"
+    description: "Create batch action CLI subcommands under shep fleet with interactive confirmation prompts."
+    state: Partial
+    dependencies: [task-11]
+    acceptanceCriteria:
+      - "shep fleet approve --all batch approves waiting features"
+      - "shep fleet pause / resume toggles admission queue"
+    tdd: null
+    estimatedEffort: "1.5h"
+
+  - id: task-15
+    title: "Web Component: FleetStatusBar + Storybook"
+    description: "Create compact fleet status bar in presentation/web/components/fleet/fleet-status-bar.tsx with colocated Storybook story."
+    state: Todo
+    dependencies: [task-5]
+    acceptanceCriteria:
+      - "Uses shadcn/ui semantic tokens"
+      - "Displays live cruising, queued, attention, and failed badges"
+      - "fleet-status-bar.stories.tsx contains light and dark stories"
+    tdd: null
+    estimatedEffort: "2h"
+
+  - id: task-16
+    title: "Web Component: FleetTriageDrawer + Storybook"
+    description: "Create slide-out triage drawer displaying P1/P2/P3 exception cards with action buttons (Approve, Resolve, Retry)."
+    state: Todo
+    dependencies: [task-6, task-8]
+    acceptanceCriteria:
+      - "Displays exception cards with inline actions"
+      - "fleet-triage-drawer.stories.tsx with populated and empty states"
+    tdd: null
+    estimatedEffort: "2.5h"
+
+  - id: task-17
+    title: "Integrate Fleet Control Bar into Dashboard Header"
+    description: "Mount FleetStatusBar in the main app header with click-to-open FleetTriageDrawer."
+    state: Todo
+    dependencies: [task-15, task-16]
+    acceptanceCriteria:
+      - "Clicking status bar opens triage drawer"
+      - "Respects collaboration feature flag"
+    tdd: null
+    estimatedEffort: "1h"
+
+  - id: task-18
+    title: "End-to-End Simulation Test (50+ Agents)"
+    description: "Write integration test simulating 50 features: 40 cruising, 5 waiting gates, 3 CI failures, 2 questions."
+    state: Todo
+    dependencies: [task-11]
+    acceptanceCriteria:
+      - "Verifies triage query isolates exact 10 exceptions"
+      - "Verifies batch approve resolves all eligible gates in one call"
+      - "Verifies circuit breaker trips upon 4 consecutive failures"
+    tdd: null
+    estimatedEffort: "2h"
+
+  - id: task-19
+    title: "Documentation & Upstream RFC Documentation"
+    description: "Write docs/fleet/fleet-control-plane.md and update CLI/Web reference guides."
+    state: Todo
+    dependencies: [task-18]
+    acceptanceCriteria:
+      - "Documents guardrail configuration syntax"
+      - "Documents CLI commands and Web triage drawer"
+    tdd: null
+    estimatedEffort: "1h"
+
+totalEstimate: "32h"
+openQuestions: []
+
+content: |
+  ## Summary
+
+  The Fleet Control Plane implementation comprises 19 tasks structured into 7 sequential phases.
+  All business logic follows strict TDD (Red -> Green -> Refactor), domain-first TypeSpec modeling,
+  and Clean Architecture.
+
+  ## Delivery Status
+
+  Tracking issue-level truth, not intent. `Done` means the task's acceptance criteria are
+  met by code in this tree with tests; `Partial` means some criteria are met.
+
+  | Task | State | Notes |
+  | ---- | ----- | ----- |
+  | task-1 | Done | Models live in `tsp/agents/fleet-guardrails.tsp` |
+  | task-2 | Done | Models live in `tsp/domain/entities/fleet-overview.tsp` (not `tsp/fleet/fleet-models.tsp`) |
+  | task-3 | Done | Migration is `143-create-fleet-indexes.ts` |
+  | task-4 | Done | `SQLiteFleetRepository` + integration tests |
+  | task-5 | Done | Circuit breaker evaluation folded into this use case; no separate `CheckCircuitBreakerUseCase` (task-9 closed as duplicate) |
+  | task-6 | Done | |
+  | task-7 | Todo | Deferred to the guardrails slice. A working implementation was developed alongside this slice and is parked on the local `wip/spec-111-full` branch; it is intentionally not part of this PR because nothing calls it yet |
+  | task-8 | Partial | `--all` / `--gate` work; `--low-risk` not implemented |
+  | task-9 | Todo | Superseded by task-5 — kept for traceability |
+  | task-10 | Todo | Guardrails are not wired into the supervisor/worker gate path |
+  | task-11 | Done | `IFleetRepository` registered in `register-repositories.ts`; DI resolution test added |
+  | task-12 | Done | |
+  | task-13 | Done | |
+  | task-14 | Partial | `approve` implemented; `pause` / `resume` / `retry` not implemented |
+  | task-15 | Todo | |
+  | task-16 | Todo | |
+  | task-17 | Todo | |
+  | task-18 | Todo | |
+  | task-19 | Todo | Partially covered by the `Delivery Status` section of `spec.yaml` |
+
+  ### Known follow-ups
+
+  - **Circuit breaker thresholds are not user-configurable.** Exposing them needs a
+    `workflow.circuitBreaker` field on the TypeSpec `Settings` model plus a migration and a
+    settings-mapper round-trip. The use case currently reads a typed constant.
+  - **Guardrails are not in this PR at all.** `GuardrailRule`, `GuardrailEvaluationResult`, and
+    `EvaluateGateGuardrailsUseCase` were developed but deliberately split out: nothing would have
+    called them, and the evaluator needs a configuration surface on `SupervisorPolicy` before it can
+    do anything. `GuardrailGateType` stays because the triage feed and `fleet approve --gate` use it.
+  - **Circuit breaker does not pause anything.** Admission control (PR #847) is not on `main`,
+    so there is no queue to pause; the trip is reported as a status signal only.
+
+  ## Acceptance Checklist
+
+  - [ ] All 19 tasks completed
+  - [ ] All Vitest tests passing (`pnpm test`)
+  - [ ] All Storybook stories pass visual check (`pnpm build:storybook`)
+  - [ ] TypeSpec compiles (`pnpm tsp:compile`)
+  - [ ] Zero ESLint and Prettier errors (`pnpm validate`)

@@ -1,5 +1,42 @@
 # Lessons Learned
 
+## A port with consumers and a token is not a wired port
+
+Spec 111 shipped `IFleetRepository`, four use cases that `@inject('IFleetRepository')`, an exported
+`IFleetRepositoryToken`, and a token smoke test — but no `container.register` call. Every
+`shep fleet *` command resolved its use case, then threw on the unregistered dependency. The
+existing `hollow-dependency-guard` test did not catch it: it enumerates only *class* tokens
+(`if (typeof token !== 'function') continue`), and a repository is registered under a string.
+
+The same commit showed the inverse failure mode. Three use-case files imported their domain types
+from `'../../../../domain/generated/output.js'` — one `..` too deep. The files that imported the
+same path with `import type` were erased at compile time and worked; the three that needed an enum
+*value* crashed at import. The suite reported "Cannot find module" for three files while the
+type-only ones passed, so most of the feature looked green.
+
+**Rules:**
+
+1. A new output port is not done until the DI smoke test resolves it **by the same token the
+   registration uses**. Resolving the use case is not enough — tsyringe constructs an `@injectable`
+   class and only then throws on the missing inner dependency, so the assertion has to name the port.
+2. Prove a resolution test fails without the registration. Delete the `register` call and watch the
+   test go red; a DI test that passes either way is decoration.
+3. `import type` hides broken relative paths. A depth that is wrong by one level compiles fine
+   wherever the symbol is erased, so typecheck cannot be the only gate — run at least one suite that
+   imports the module for its runtime values.
+4. Before adding a constant to `infrastructure/di/tokens.ts`, use it at the registration site. A
+   token exported "for typo safety" that no production file imports is a second spelling of the same
+   string with nothing tying the two together.
+5. Check that spec prose matches the tree it describes. "Builds on PR #847" reads as a foundation;
+   PR #847 was open and conflicting, and no `maxParallelFeatures` existed on `main`. Grep for the
+   symbol before citing a PR as landed.
+6. Two hook traps that cost real time here. `#<number>` anywhere in a body paragraph makes
+   commitlint's parser treat that line as the start of the footer and reject the commit with
+   `footer-leading-blank` — put the reference in its own trailing paragraph. And `.husky/pre-commit`
+   runs `pnpm generate` (prettier'd) *before* lint-staged runs `pnpm tsp:compile` (not prettier'd),
+   so any commit touching a `.tsp` file lands `output.ts` double-quoted and `pnpm format:check`
+   fails until something reformats it.
+
 ## A "never strand a record" clause has to enumerate every way the gate loses its owner
 
 The write-side dependency gate deliberately let two cases through so it could not trap a feature in

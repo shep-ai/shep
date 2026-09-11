@@ -104,3 +104,6 @@ import "./custom-agent.tsp";
 
 // Contributor-onboarding agent structured output (spec 097, task-36)
 import "./contributor-onboarding-output.tsp";
+
+// Fleet control plane guardrails (spec 111)
+import "./fleet-guardrails.tsp";

@@ -263,6 +263,16 @@ import {
   GetBedrockMemorySnapshotUseCaseToken,
 } from '../tokens.js';
 
+// Fleet Control Plane (spec 111) use cases
+import { ListFleetTriageItemsUseCase } from '../../../application/use-cases/fleet/list-fleet-triage-items.use-case.js';
+import { GetFleetOverviewUseCase } from '../../../application/use-cases/fleet/get-fleet-overview.use-case.js';
+import { BatchApproveFeaturesUseCase } from '../../../application/use-cases/fleet/batch-approve-features.use-case.js';
+import {
+  ListFleetTriageItemsUseCaseToken,
+  GetFleetOverviewUseCaseToken,
+  BatchApproveFeaturesUseCaseToken,
+} from '../tokens.js';
+
 /**
  * Register the main body of application use cases (settings, agents, features,
  * tools, repositories, applications, projects, archival, upgrade, sessions) and
@@ -1038,4 +1048,18 @@ export function registerUseCases(container: DependencyContainer): void {
   // ─── Global Search ───────────────────────────────────────────────────────
   container.registerSingleton(GlobalSearchUseCase);
   container.register('GlobalSearchUseCase', { useFactory: (c) => c.resolve(GlobalSearchUseCase) });
+
+  // ─── Fleet Control Plane (spec 111) ───────────────────────────────────────
+  container.registerSingleton(ListFleetTriageItemsUseCase);
+  container.register(ListFleetTriageItemsUseCaseToken, {
+    useFactory: (c) => c.resolve(ListFleetTriageItemsUseCase),
+  });
+  container.registerSingleton(GetFleetOverviewUseCase);
+  container.register(GetFleetOverviewUseCaseToken, {
+    useFactory: (c) => c.resolve(GetFleetOverviewUseCase),
+  });
+  container.registerSingleton(BatchApproveFeaturesUseCase);
+  container.register(BatchApproveFeaturesUseCaseToken, {
+    useFactory: (c) => c.resolve(BatchApproveFeaturesUseCase),
+  });
 }

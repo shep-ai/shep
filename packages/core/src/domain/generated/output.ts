@@ -4733,6 +4733,151 @@ export type Plugin = BaseEntity & {
    */
   description?: string;
 };
+export enum FleetTriagePriority {
+  p1 = 'P1',
+  p2 = 'P2',
+  p3 = 'P3',
+}
+export enum FleetTriageCategory {
+  gate = 'gate',
+  question = 'question',
+  ci_failed = 'ci_failed',
+  conflict = 'conflict',
+  crash = 'crash',
+  warning = 'warning',
+}
+
+/**
+ * Actionable exception requiring human attention in the fleet triage queue
+ */
+export type FleetTriageItem = {
+  /**
+   * Feature ID
+   */
+  featureId: string;
+  /**
+   * Human readable feature name
+   */
+  featureName: string;
+  /**
+   * Feature slug identifier
+   */
+  slug: string;
+  /**
+   * Priority tier (P1, P2, or P3)
+   */
+  priority: FleetTriagePriority;
+  /**
+   * Exception category
+   */
+  category: FleetTriageCategory;
+  /**
+   * Human-readable reason for the triage item
+   */
+  reason: string;
+  /**
+   * Agent run ID that must be approved or retried, when the item maps to a run
+   */
+  runId?: string;
+  /**
+   * Lifecycle gate type (prd, plan, merge) if category is gate
+   */
+  gateType?: string;
+  /**
+   * Worktree path
+   */
+  worktreePath?: string;
+  /**
+   * Timestamp when this exception was created or observed
+   */
+  createdAt: any;
+};
+
+/**
+ * Rollup counts across all fleet features
+ */
+export type FleetStatusCounts = {
+  /**
+   * Total features in fleet (active + queued)
+   */
+  total: number;
+  /**
+   * Features running smoothly without blockers
+   */
+  cruising: number;
+  /**
+   * Features that have not started yet (lifecycle = Pending)
+   */
+  queued: number;
+  /**
+   * Features requiring human attention (P1/P2/P3)
+   */
+  attentionNeeded: number;
+  /**
+   * Features in failed or crashed state
+   */
+  failed: number;
+  /**
+   * Features waiting at approval gates
+   */
+  waitingApproval: number;
+  /**
+   * Features with unanswered blocking questions
+   */
+  blockedQuestions: number;
+};
+
+/**
+ * Complete health and triage snapshot of the agent fleet
+ */
+export type FleetOverview = {
+  /**
+   * Aggregated status counts
+   */
+  counts: FleetStatusCounts;
+  /**
+   * True if the fleet circuit breaker has tripped
+   */
+  circuitBreakerTripped: boolean;
+  /**
+   * Reason why circuit breaker was tripped if active
+   */
+  circuitBreakerReason?: string;
+  /**
+   * Number of unresolved triage items
+   */
+  activeTriageCount: number;
+  /**
+   * Consecutive failed agent runs observed in the current window
+   */
+  consecutiveFailures: number;
+  /**
+   * Timestamp of this snapshot
+   */
+  timestamp: any;
+};
+
+/**
+ * Fleet safety settings to prevent runaway loops and cascade failures
+ */
+export type FleetCircuitBreakerSettings = {
+  /**
+   * Whether the circuit breaker is active
+   */
+  enabled: boolean;
+  /**
+   * Consecutive failed agent runs that trip the circuit breaker
+   */
+  consecutiveFailureThreshold: number;
+  /**
+   * Percentage failure rate in rolling 15m window that trips the circuit breaker
+   */
+  failureRateThresholdPercent: number;
+  /**
+   * Reserved: whether admission should be paused when tripped. Not acted on yet — admission control (PR #847) is not on main, so the trip is reported as a status signal only.
+   */
+  autoPauseQueue: boolean;
+};
 
 /**
  * Single installation suggestion for a tool
@@ -6279,6 +6424,12 @@ export enum AgentFeature {
   structuredOutput = 'structured-output',
   systemPrompt = 'system-prompt',
   sessionListing = 'session-listing',
+}
+export enum GuardrailGateType {
+  prd = 'prd',
+  plan = 'plan',
+  merge = 'merge',
+  all = 'all',
 }
 export type DeployTarget = DeployTargetActionItem | DeployTargetTask | DeployTargetTasks;
 

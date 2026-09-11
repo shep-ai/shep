@@ -1,0 +1,34 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: FleetOverview.yaml
+type: object
+properties:
+  counts:
+    $ref: FleetStatusCounts.yaml
+    description: Aggregated status counts
+  circuitBreakerTripped:
+    type: boolean
+    description: True if the fleet circuit breaker has tripped
+  circuitBreakerReason:
+    type: string
+    description: Reason why circuit breaker was tripped if active
+  activeTriageCount:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Number of unresolved triage items
+  consecutiveFailures:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Consecutive failed agent runs observed in the current window
+  timestamp:
+    type: string
+    format: date-time
+    description: Timestamp of this snapshot
+required:
+  - counts
+  - circuitBreakerTripped
+  - activeTriageCount
+  - consecutiveFailures
+  - timestamp
+description: Complete health and triage snapshot of the agent fleet

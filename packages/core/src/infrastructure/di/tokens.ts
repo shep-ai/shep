@@ -37,3 +37,17 @@ export const EnableBedrockForTargetUseCaseToken = 'EnableBedrockForTargetUseCase
 
 /** Resolves to `GetBedrockMemorySnapshotUseCase`. */
 export const GetBedrockMemorySnapshotUseCaseToken = 'GetBedrockMemorySnapshotUseCase' as const;
+
+// ─── Fleet Control Plane (spec 111) ─────────────────────────────────────────
+
+/** Resolves to `IFleetRepository`. */
+export const IFleetRepositoryToken = 'IFleetRepository' as const;
+
+/** Resolves to `GetFleetOverviewUseCase`. */
+export const GetFleetOverviewUseCaseToken = 'GetFleetOverviewUseCase' as const;
+
+/** Resolves to `ListFleetTriageItemsUseCase`. */
+export const ListFleetTriageItemsUseCaseToken = 'ListFleetTriageItemsUseCase' as const;
+
+/** Resolves to `BatchApproveFeaturesUseCase`. */
+export const BatchApproveFeaturesUseCaseToken = 'BatchApproveFeaturesUseCase' as const;

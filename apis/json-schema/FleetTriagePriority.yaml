@@ -1,0 +1,8 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: FleetTriagePriority.yaml
+type: string
+enum:
+  - P1
+  - P2
+  - P3
+description: Priority tier for fleet triage items

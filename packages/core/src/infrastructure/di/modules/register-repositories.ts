@@ -107,6 +107,10 @@ import { SQLiteSdlcSubTaskRepository } from '../../repositories/sqlite-sdlc-subt
 // Project memory ("Shep Brain", feature 102) repository
 import type { IProjectMemoryRepository } from '../../../application/ports/output/repositories/project-memory-repository.interface.js';
 import { SQLiteProjectMemoryRepository } from '../../repositories/sqlite-project-memory.repository.js';
+// Fleet control plane (feature 111) repository
+import type { IFleetRepository } from '../../../application/ports/output/repositories/fleet-repository.interface.js';
+import { SQLiteFleetRepository } from '../../repositories/sqlite-fleet.repository.js';
+import { IFleetRepositoryToken } from '../tokens.js';
 
 /**
  * Register all SQLite-backed repositories.
@@ -320,5 +324,10 @@ export function registerRepositories(container: DependencyContainer): void {
   // ─── Project memory ("Shep Brain", feature 102) repository ────────────
   container.register<IProjectMemoryRepository>('IProjectMemoryRepository', {
     useFactory: (c) => new SQLiteProjectMemoryRepository(c.resolve<Database.Database>('Database')),
+  });
+
+  // ─── Fleet control plane (feature 111) repository ─────────────────────
+  container.register<IFleetRepository>(IFleetRepositoryToken, {
+    useFactory: (c) => new SQLiteFleetRepository(c.resolve<Database.Database>('Database')),
   });
 }

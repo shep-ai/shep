@@ -1,0 +1,44 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: FleetTriageItem.yaml
+type: object
+properties:
+  featureId:
+    type: string
+    description: Feature ID
+  featureName:
+    type: string
+    description: Human readable feature name
+  slug:
+    type: string
+    description: Feature slug identifier
+  priority:
+    $ref: FleetTriagePriority.yaml
+    description: Priority tier (P1, P2, or P3)
+  category:
+    $ref: FleetTriageCategory.yaml
+    description: Exception category
+  reason:
+    type: string
+    description: Human-readable reason for the triage item
+  runId:
+    type: string
+    description: Agent run ID that must be approved or retried, when the item maps to a run
+  gateType:
+    type: string
+    description: Lifecycle gate type (prd, plan, merge) if category is gate
+  worktreePath:
+    type: string
+    description: Worktree path
+  createdAt:
+    type: string
+    format: date-time
+    description: Timestamp when this exception was created or observed
+required:
+  - featureId
+  - featureName
+  - slug
+  - priority
+  - category
+  - reason
+  - createdAt
+description: Actionable exception requiring human attention in the fleet triage queue

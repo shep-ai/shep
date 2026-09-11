@@ -1,0 +1,48 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: FleetStatusCounts.yaml
+type: object
+properties:
+  total:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Total features in fleet (active + queued)
+  cruising:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Features running smoothly without blockers
+  queued:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Features that have not started yet (lifecycle = Pending)
+  attentionNeeded:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Features requiring human attention (P1/P2/P3)
+  failed:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Features in failed or crashed state
+  waitingApproval:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Features waiting at approval gates
+  blockedQuestions:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Features with unanswered blocking questions
+required:
+  - total
+  - cruising
+  - queued
+  - attentionNeeded
+  - failed
+  - waitingApproval
+  - blockedQuestions
+description: Rollup counts across all fleet features

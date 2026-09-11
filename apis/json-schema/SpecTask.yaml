@@ -33,6 +33,9 @@ properties:
   estimatedEffort:
     type: string
     description: Estimated effort (e.g., '2 hours', '1 day')
+  complexity:
+    $ref: TaskComplexity.yaml
+    description: Reasoning capability this task requires — drives adaptive model tier selection
 required:
   - id
   - phaseId
