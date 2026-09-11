@@ -339,6 +339,69 @@ Configure default LLM model.
 
 ---
 
+## Fleet Commands
+
+Manage and monitor a fleet of parallel agents. Every count is derived at query time from the
+`features`, `agent_runs`, and `agent_questions` tables (spec 111), so nothing has to be
+reconciled after a crash.
+
+### `shep fleet status`
+
+Show aggregate fleet health: total features, cruising, queued, attention needed, and failed.
+Also reports whether the circuit breaker has tripped — 4 consecutive failed agent runs, or a
+failure rate above 25% across at least 4 finished runs, within a rolling 15-minute window.
+
+**Source**: `src/presentation/cli/commands/fleet/status.command.ts`
+
+```
+$ shep fleet status
+
+  === Shep Fleet Health ===
+  Total Features:     52
+  ✓ Cruising:          42
+  • Queued:            5
+  ⚠ Attention Needed:  3
+  ✗ Failed:            2
+
+  ✓ Circuit Breaker: Normal
+```
+
+| Option          | Description                            |
+| --------------- | -------------------------------------- |
+| `--repo <path>` | Scope the fleet to one repository path |
+
+### `shep fleet triage`
+
+List only the exceptions that need a human, ordered P1 (approval gates, blocking questions),
+P2 (failed runs, merge conflicts, failing CI), then P3 (advisory warnings). Healthy features
+are omitted.
+
+**Source**: `src/presentation/cli/commands/fleet/triage.command.ts`
+
+| Option          | Description                            |
+| --------------- | -------------------------------------- |
+| `--repo <path>` | Scope the feed to one repository path  |
+
+### `shep fleet approve`
+
+Batch-approve features waiting on approval gates. Candidates are approved sequentially so one
+conflicted feature cannot block the rest of the batch; the summary reports per-feature failures.
+
+**Source**: `src/presentation/cli/commands/fleet/approve.command.ts`
+
+| Option           | Description                                          |
+| ---------------- | ---------------------------------------------------- |
+| `--all`          | Approve every feature currently waiting at a gate     |
+| `--gate <type>`  | Restrict approval to one gate: `prd`, `plan`, `merge` |
+
+At least one of `--all` or `--gate` is required, so a bare `shep fleet approve` can never
+approve anything by accident.
+
+> **Not implemented yet**: `shep fleet retry`, `shep fleet pause` / `resume`, and the
+> `--low-risk` filter. See `specs/111-fleet-control-plane/tasks.yaml` for the remaining work.
+
+---
+
 ## Tools Commands
 
 ### `shep tools list`
