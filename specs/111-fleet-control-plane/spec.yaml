@@ -1,0 +1,127 @@
+# Feature Specification (YAML)
+# Source of truth for Spec 111 - Fleet Control Plane
+
+name: "fleet-control-plane"
+number: 111
+branch: "feat/111-fleet-control-plane"
+oneLiner: "Scale to 50+ parallel agents with exception-based triage, deterministic guardrail auto-approvals, and fleet circuit breaker"
+summary: >
+  Extends Shep's parallel agent orchestration to large fleets (50+ active/queued features).
+  PR #847 ("limit the maximum number of parallel running features", spec 110) proposes
+  admission queuing via workflow.maxParallelFeatures, but that PR is still OPEN and unmerged
+  at the time of writing, so nothing in this spec may assume it is present on main. This
+  feature therefore stands alone and solves the human attention bottleneck and operational
+  safety via: (1) Exception-Based Fleet Triage which filters out the 80% cruising features
+  to surface only items needing human action; (2) Guardrailed Auto-Approval rules allowing
+  deterministic, criteria-based gate auto-approvals without blind autonomy; and (3) Fleet
+  Circuit Breaker & Batch Actions to prevent runaway loops, cascade failures, and repetitive
+  manual operations.
+
+phase: "Requirements"
+sizeEstimate: "L"
+
+relatedFeatures:
+  - "110-max-parallel-features (admission queue and maxParallelFeatures setting — OPEN PR #847, not on main; this spec must not depend on it landing)"
+  - "093-agent-collaboration-supervision (SupervisorPolicy, SupervisorDecision, AgentQuestion)"
+  - "013-feature-agent (background execution and approval gates)"
+  - "068-git-rebase-sync (auto-rebase and conflict handling)"
+
+technologies:
+  - "TypeScript / Node.js"
+  - "Clean Architecture (domain / application / infrastructure / presentation)"
+  - "TypeSpec (tsp/) — domain model definition"
+  - "SQLite (better-sqlite3 + WAL mode) — persistence & indexing"
+  - "Commander — CLI commands (shep fleet status, triage, approve, retry, pause)"
+  - "Next.js + React + shadcn/ui — Web presentation (Fleet status bar & triage drawer)"
+  - "Vitest — TDD unit & integration test coverage"
+
+relatedLinks:
+  - title: "PR #847: Limit maximum parallel running features"
+    url: "https://github.com/shep-ai/shep/pull/847"
+  - title: "Spec 093: Agent Collaboration & Supervision"
+    url: "specs/093-agent-collaboration-supervision/"
+  - title: "Shep Architecture Overview"
+    url: "docs/architecture/overview.md"
+
+openQuestions:
+  - question: "How should fleet exceptions be detected and categorized?"
+    resolved: true
+    options:
+      - option: "Derived on query from SQLite state"
+        description: "Aggregate existing status fields on features, agent_runs, and agent_questions at query time using indexed SQL. Pros: zero state duplication, self-healing, zero drift. Cons: requires efficient indexes."
+        selected: true
+      - option: "Dedicated Exception table with write triggers"
+        description: "Maintain an active_exceptions table updated by worker events. Pros: trivial querying. Cons: risks stale records if a process crashes before cleanup."
+        selected: false
+    selectionRationale: "Derived queries on indexed SQLite tables match the self-healing pattern PR #847 proposes for capacity counting (countByLifecycles). It is immune to counter leakage when processes crash. Note: PR #847 is open, so this spec does not import anything from it."
+    answer: "Derived on query from SQLite state with optimized composite indexes"
+
+  - question: "How should deterministic guardrails integrate with the existing Supervisor Agent (Spec 093)?"
+    resolved: true
+    options:
+      - option: "Pre-evaluator filter inside SupervisorWorker"
+        description: "Before calling the LLM evaluator, evaluate deterministic GuardrailRules (diff size, CI status, file paths). If criteria pass, approve immediately; if violated, either escalate to LLM or directly to human triage."
+        selected: true
+      - option: "Embed rules purely inside LLM prompt instructions"
+        description: "Pass numerical bounds to the LLM prompt. Pros: no new execution code. Cons: non-deterministic, wastes LLM tokens on simple mathematical bounds (e.g. diff > 250)."
+        selected: false
+    selectionRationale: "Deterministic code execution is faster, cheaper, and guarantees 100% adherence to safety bounds (e.g. never auto-approving changes to billing or auth)."
+    answer: "Pre-evaluator filter inside SupervisorWorker before LLM evaluation"
+
+  - question: "What is the default trigger for the Fleet Circuit Breaker?"
+    resolved: true
+    options:
+      - option: "Consecutive failures or error spike threshold"
+        description: "Trips if 4 consecutive feature runs fail or > 25% of runs fail within a rolling 15-minute window. Surfaces a tripped signal that the fleet status surface reports to the operator."
+        selected: true
+      - option: "Token / dollar cost ceiling only"
+        description: "Trips only when token consumption reaches a limit. Cons: slow to catch environment failures (like a broken main branch)."
+        selected: false
+    selectionRationale: "Early failure detection saves token cost and human remediation time by flagging a shared failure pattern as soon as it appears. Automatic admission pausing is deliberately NOT promised here because admission control (PR #847) is not on main."
+    answer: "Consecutive failures threshold (default: 4) and rolling failure rate (default: 25% in 15m)"
+
+content: |
+  ## Problem Statement
+
+  Shep already runs many features in parallel worktrees. PR #847 proposes a cap (`workflow.maxParallelFeatures`) that queues features past a configurable limit, but that PR is **open and unmerged**, so on `main` today there is no admission queue at all — every started feature runs immediately. Managing a large fleet already introduces severe operational friction, and it gets worse the more features a user starts:
+
+  1. **Attention Overload**: An operator running 50 features cannot track 50 canvas nodes. At any given moment, 40 features are progressing normally, but 10 require intervention (blocking questions, merge conflicts, failed CI, approval gates). Users need an exception-first triage interface.
+  2. **Coarse Autonomy**: Currently, users must choose between approving every single gate manually or turning on `--allow-all` / `autonomous` supervisor mode without safety guardrails. Users need deterministic bounds (e.g. auto-approve if diff < 200 lines and CI green, but escalate if auth files touched).
+  3. **Blast Radius & Cascade Failures**: If the base branch has a breaking change or an agent enters an infinite loop, many features can run and fail sequentially, wasting time and API costs.
+  4. **Lack of Fleet Control**: Halting, retrying, or approving features requires repetitive single-feature commands.
+
+  ## Delivery Status
+
+  This spec is being delivered incrementally. The RFC (`UPSTREAM_RFC_PROPOSAL.md`) proposes
+  three reviewable PRs; only the first slice exists today.
+
+  | Slice | Scope | Status |
+  | ----- | ----- | ------ |
+  | 1 — Core domain + CLI | TypeSpec models, `GetFleetOverviewUseCase`, `ListFleetTriageItemsUseCase`, `SQLiteFleetRepository` + migration 143, `shep fleet status`, `shep fleet triage`, `shep fleet approve` | Implemented |
+  | 2 — Guardrails + circuit breaker | `CheckCircuitBreakerUseCase` (folded into `GetFleetOverviewUseCase`) shipped with slice 1. Still to come: `EvaluateGateGuardrailsUseCase`, `SupervisorPolicy` rule configuration, supervisor integration, `--low-risk`, `fleet retry` / `pause` / `resume` | Not started |
+  | 3 — Web UI | Fleet status bar + triage drawer with colocated Storybook stories | Not started |
+
+  ## Success Criteria
+
+  - [x] **Fleet Health Summary**: `shep fleet status` displays aggregate counts: cruising, queued, attention-needed, and failed.
+  - [x] **Exception Triage Feed**: `shep fleet triage` lists only items requiring human action, categorized into P1 (Blockers/Gates), P2 (Failures/Conflicts), P3 (Warnings).
+  - [x] **Derived fleet state**: every count is computed at query time from indexed SQLite tables (migration 143); no mutable counters.
+  - [x] **Batch Approval**: `shep fleet approve [--all | --gate <type>]` approves waiting gates sequentially with per-item error isolation.
+  - [ ] **Deterministic Guardrail Rules**: not started. The evaluator, the `SupervisorPolicy` rule configuration, and the worker integration all belong to the next slice.
+  - [ ] **Fleet Circuit Breaker**: consecutive-failure and rolling-failure-rate thresholds trip a reported signal in `shep fleet status`. Automatic admission pausing is out of scope until admission control exists on `main`.
+  - [ ] **Batch Operations (remaining)**: `shep fleet retry [--ci | --failed]` and `shep fleet pause / resume` are not implemented; `--low-risk` is not implemented (it requires guardrail rule configuration, which is itself not wired).
+  - [ ] **Web UI**: Fleet status bar, triage drawer, and their Storybook stories are not started.
+  - [ ] **Full integration tests**: unit tests cover all four use cases; the repository has real-SQLite integration coverage. The 50-agent end-to-end simulation (task-18) is not written.
+
+  ## Affected Areas
+
+  | Area | Impact | Reasoning |
+  | ---- | ------ | --------- |
+  | `tsp/agents/fleet-guardrails.tsp` | Medium | GuardrailRule, GuardrailEvaluationResult, FleetCircuitBreakerSettings |
+  | `tsp/domain/entities/fleet-overview.tsp` | Medium | FleetOverview, FleetStatusCounts, FleetTriageItem + enums |
+  | `packages/core/src/application/use-cases/fleet/` | High | GetFleetOverview, ListFleetTriageItems, BatchApproveFeatures, EvaluateGateGuardrails |
+  | `packages/core/src/infrastructure/repositories/sqlite-fleet.repository.ts` | High | Derived fleet read model |
+  | `packages/core/src/infrastructure/persistence/sqlite/migrations/143-create-fleet-indexes.ts` | Medium | Triage / circuit-breaker indexes |
+  | `packages/core/src/infrastructure/services/agents/supervisor-agent/` | Medium | Integrate guardrails into gate evaluation (NOT DONE) |
+  | `src/presentation/cli/commands/fleet/` | Medium | New command group: status, triage, approve |
+  | `src/presentation/web/components/fleet/` | Medium | Fleet status bar, triage drawer, batch action controls (NOT DONE) |

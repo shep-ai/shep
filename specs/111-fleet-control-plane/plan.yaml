@@ -1,0 +1,131 @@
+# Implementation Plan (YAML)
+# Source of truth for Spec 111 - Fleet Control Plane Plan
+
+name: "fleet-control-plane"
+summary: "Phased TDD implementation plan for Fleet Control Plane (Triage, Guardrails, Circuit Breaker, Batch Actions)"
+
+relatedFeatures:
+  - "110-max-parallel-features (OPEN PR #847 — do not depend on it)"
+  - "093-agent-collaboration-supervision"
+
+technologies:
+  - "TypeScript 5.x"
+  - "Clean Architecture"
+  - "TypeSpec"
+  - "better-sqlite3"
+  - "Commander"
+  - "Next.js 16 App Router"
+  - "shadcn/ui"
+  - "Storybook"
+
+phases:
+  - id: phase-1
+    name: "Domain Modeling & TypeSpec"
+    parallel: false
+    taskIds:
+      - task-1
+      - task-2
+
+  - id: phase-2
+    name: "Persistence & Fleet Repository"
+    parallel: false
+    taskIds:
+      - task-3
+      - task-4
+
+  - id: phase-3
+    name: "Application Core Use Cases (TDD)"
+    parallel: false
+    taskIds:
+      - task-5
+      - task-6
+      - task-7
+      - task-8
+      - task-9
+
+  - id: phase-4
+    name: "Supervisor Agent Guardrail Integration"
+    parallel: false
+    taskIds:
+      - task-10
+      - task-11
+
+  - id: phase-5
+    name: "CLI Presentation (shep fleet)"
+    parallel: false
+    taskIds:
+      - task-12
+      - task-13
+      - task-14
+
+  - id: phase-6
+    name: "Web Presentation & Storybook"
+    parallel: false
+    taskIds:
+      - task-15
+      - task-16
+      - task-17
+
+  - id: phase-7
+    name: "End-to-End Simulation & Verification"
+    parallel: false
+    taskIds:
+      - task-18
+      - task-19
+
+filesToCreate:
+  - tsp/agents/fleet-guardrails.tsp
+  - tsp/domain/entities/fleet-overview.tsp
+  - packages/core/src/application/ports/output/repositories/fleet-repository.interface.ts
+  - packages/core/src/application/use-cases/fleet/get-fleet-overview.use-case.ts
+  - packages/core/src/application/use-cases/fleet/list-fleet-triage-items.use-case.ts
+  - packages/core/src/application/use-cases/fleet/evaluate-gate-guardrails.use-case.ts
+  - packages/core/src/application/use-cases/fleet/batch-approve-features.use-case.ts
+  - packages/core/src/application/use-cases/fleet/check-circuit-breaker.use-case.ts
+  - packages/core/src/infrastructure/repositories/sqlite-fleet.repository.ts
+  - packages/core/src/infrastructure/persistence/sqlite/migrations/143-create-fleet-indexes.ts
+  - src/presentation/cli/commands/fleet/index.ts
+  - src/presentation/cli/commands/fleet/status.command.ts
+  - src/presentation/cli/commands/fleet/triage.command.ts
+  - src/presentation/cli/commands/fleet/approve.command.ts
+  - src/presentation/cli/commands/fleet/pause.command.ts
+  - src/presentation/web/components/fleet/fleet-status-bar.tsx
+  - src/presentation/web/components/fleet/fleet-status-bar.stories.tsx
+  - src/presentation/web/components/fleet/fleet-triage-drawer.tsx
+  - src/presentation/web/components/fleet/fleet-triage-drawer.stories.tsx
+  - tests/unit/application/use-cases/fleet/get-fleet-overview.test.ts
+  - tests/unit/application/use-cases/fleet/list-fleet-triage-items.test.ts
+  - tests/unit/application/use-cases/fleet/evaluate-gate-guardrails.test.ts
+  - tests/unit/application/use-cases/fleet/batch-approve-features.test.ts
+  - tests/unit/application/use-cases/fleet/check-circuit-breaker.test.ts
+  - tests/integration/infrastructure/repositories/sqlite-fleet.repository.test.ts
+
+filesToModify:
+  - packages/core/src/infrastructure/di/modules/register-use-cases.ts
+  - packages/core/src/infrastructure/di/modules/register-repositories.ts
+  - packages/core/src/infrastructure/di/tokens.ts
+  - src/presentation/cli/index.ts
+  - src/presentation/web/components/layouts/app-header/app-header.tsx
+
+openQuestions: []
+
+content: |
+  ## Status
+
+  - **Phase:** Planning
+  - **Updated:** 2026-09-11
+
+  ## Architecture & Delivery Strategy
+
+  The implementation strictly follows Shep's Clean Architecture four-layer model:
+  1. **Domain (`tsp/`)**: Defines `GuardrailRule`, `FleetOverview`, `FleetTriageItem`, and `FleetCircuitBreaker`. Runs `pnpm tsp:compile` to generate domain outputs.
+  2. **Application (`application/use-cases/fleet/`)**: Orchestrates queries and batch operations without touching presentation or raw SQLite.
+  3. **Infrastructure (`infrastructure/repositories/sqlite-fleet.repository.ts`)**: Executes high-performance composite SQL queries leveraging SQLite WAL indexes.
+  4. **Presentation (`cli/` & `web/`)**: Commander subcommands under `shep fleet` and React/shadcn UI components with Storybook stories.
+
+  ## Testing Strategy (MANDATORY TDD)
+
+  Every phase requires failing tests FIRST, one RED -> GREEN -> REFACTOR cycle per behaviour:
+  - Unit tests mock repositories and verify boundary cases (e.g. guardrail diff edge cases, empty triage lists).
+  - Integration tests run against an in-memory or temporary SQLite database with real migrations applied.
+  - Storybook visual verification ensures dark/light theme compatibility with semantic tokens.

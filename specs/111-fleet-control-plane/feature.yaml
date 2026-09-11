@@ -1,0 +1,32 @@
+feature:
+  id: "111-fleet-control-plane"
+  name: "fleet-control-plane"
+  number: 111
+  branch: "feat/111-fleet-control-plane"
+  lifecycle: "implementation"
+  createdAt: "2026-09-11T18:00:00Z"
+status:
+  phase: "implementation"
+  progress:
+    completed: 11
+    total: 19
+    percentage: 58
+  currentTask: null
+  lastUpdated: "2026-09-11T18:00:00Z"
+  lastUpdatedBy: "maintainer:antigravity"
+  completedPhases: []
+validation:
+  lastRun: null
+  gatesPassed: []
+  autoFixesApplied: []
+tasks:
+  current: null
+  blocked: []
+  failed: []
+checkpoints:
+  - phase: "feature-created"
+    completedAt: "2026-09-11T18:00:00Z"
+    completedBy: "maintainer:antigravity"
+errors:
+  current: null
+  history: []
