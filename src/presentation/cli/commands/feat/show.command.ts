@@ -416,6 +416,13 @@ export function createShowCommand(): Command {
   return new Command('show')
     .description(t('cli:commands.feat.show.description'))
     .argument('<id>', t('cli:commands.feat.show.idArgument'))
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep feat show abc12345
+  $ shep feat show fe-auth-login`
+    )
     .action(async (featureId: string) => {
       try {
         const useCase = container.resolve(ShowFeatureUseCase);

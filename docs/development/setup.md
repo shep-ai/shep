@@ -8,7 +8,7 @@ Complete guide to setting up a development environment for Shep AI CLI.
 
 | Tool    | Version | Purpose            |
 | ------- | ------- | ------------------ |
-| Node.js | 18+     | Runtime            |
+| Node.js | 22+     | Runtime            |
 | pnpm    | 8+      | Package management |
 | Git     | 2.30+   | Version control    |
 
@@ -29,7 +29,7 @@ Install pnpm: `npm install -g pnpm`
 
 ```bash
 git clone https://github.com/shep-ai/shep.git
-cd cli
+cd shep
 ```
 
 ### 2. Install Dependencies
@@ -70,7 +70,7 @@ pnpm dev:storybook
 ## Project Structure
 
 ```
-cli/
+shep/
 ├── packages/core/src/
 │   ├── domain/           # Business logic (no deps)
 │   │   ├── entities/
@@ -300,7 +300,7 @@ SELECT * FROM tasks WHERE feature_id = 'xxx';
 node --version
 
 # Use nvm to switch
-nvm use 20
+nvm use 22
 ```
 
 ### Build Errors After Pull

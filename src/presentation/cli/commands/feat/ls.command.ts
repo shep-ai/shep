@@ -363,6 +363,14 @@ export function createLsCommand(): Command {
     .option('-r, --repo <path>', t('cli:commands.feat.ls.repoOption'))
     .option('--include-deleted', t('cli:commands.feat.ls.includeDeletedOption'))
     .option('--show-archived', t('cli:commands.feat.ls.showArchivedOption'))
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep feat ls
+  $ shep feat ls --repo /path/to/project
+  $ shep feat ls --show-archived`
+    )
     .action(async (options: LsOptions) => {
       try {
         const useCase = container.resolve(ListFeaturesUseCase);

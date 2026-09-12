@@ -232,7 +232,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        node: [18, 20]
+        node: [22]
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4

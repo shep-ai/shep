@@ -125,6 +125,15 @@ export function createNewCommand(): Command {
     .option('--inject-skills', t('cli:commands.feat.new.injectSkillsOption'))
     .option('--no-inject-skills', t('cli:commands.feat.new.noInjectSkillsOption'))
     .option('--attach <path>', t('cli:commands.feat.new.attachOption'), collect, [])
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep feat new "Add user authentication"
+  $ shep feat new "Add login page" --repo /path/to/project
+  $ shep feat new "Add dark mode" --remote owner/repo
+  $ shep feat new "Quick bug fix" --push --pr`
+    )
     .action(async (description: string, options: NewOptions) => {
       try {
         // Conflict check: --remote and --repo are mutually exclusive
