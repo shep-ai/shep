@@ -233,7 +233,7 @@ tasks:
   - id: task-15
     title: "Web Component: FleetStatusBar + Storybook"
     description: "Create compact fleet status bar in presentation/web/components/fleet/fleet-status-bar.tsx with colocated Storybook story."
-    state: Todo
+    state: Done
     dependencies: [task-5]
     acceptanceCriteria:
       - "Uses shadcn/ui semantic tokens"
@@ -245,7 +245,7 @@ tasks:
   - id: task-16
     title: "Web Component: FleetTriageDrawer + Storybook"
     description: "Create slide-out triage drawer displaying P1/P2/P3 exception cards with action buttons (Approve, Resolve, Retry)."
-    state: Todo
+    state: Done
     dependencies: [task-6, task-8]
     acceptanceCriteria:
       - "Displays exception cards with inline actions"
@@ -256,7 +256,7 @@ tasks:
   - id: task-17
     title: "Integrate Fleet Control Bar into Dashboard Header"
     description: "Mount FleetStatusBar in the main app header with click-to-open FleetTriageDrawer."
-    state: Todo
+    state: Done
     dependencies: [task-15, task-16]
     acceptanceCriteria:
       - "Clicking status bar opens triage drawer"
@@ -318,9 +318,9 @@ content: |
   | task-12 | Done | |
   | task-13 | Done | |
   | task-14 | Partial | `approve` implemented; `pause` / `resume` / `retry` not implemented |
-  | task-15 | Todo | |
-  | task-16 | Todo | |
-  | task-17 | Todo | |
+  | task-15 | Done | `components/fleet/fleet-status-bar.tsx` + stories |
+  | task-16 | Done | `components/fleet/fleet-triage-drawer.tsx` + stories |
+  | task-17 | Done | Mounted via `FleetControl` in `app/(dashboard)/layout.tsx`; hidden when the fleet is empty |
   | task-18 | Todo | |
   | task-19 | Todo | Partially covered by the `Delivery Status` section of `spec.yaml` |
 

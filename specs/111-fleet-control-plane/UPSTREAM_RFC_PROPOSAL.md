@@ -18,7 +18,7 @@ This RFC describes the full target. What actually exists in this branch today:
 | Circuit breaker evaluation (consecutive failures / rolling rate) | Implemented as a reported status signal |
 | Guardrail rule evaluator (`EvaluateGateGuardrailsUseCase`) | **Not in this PR** — deferred to the guardrails slice, since nothing would call it yet |
 | `--low-risk`, `fleet retry`, `fleet pause` / `resume` | Not implemented |
-| Web status bar + triage drawer + Storybook stories | Not started |
+| Web status bar + triage drawer + Storybook stories | Implemented (slice 3) |
 
 PR #847 is **not merged** — it is open, conflicts with `main`, and has no
 `specs/110-max-parallel-features/` directory in this tree. Nothing in this spec imports
@@ -116,7 +116,7 @@ We have drafted the complete spec in `specs/111-fleet-control-plane/`, with an e
 To keep PRs reviewable and deliver incremental value, we propose shipping this in three focused PRs:
 1. **PR 1 (Core Domain & CLI)**: TypeSpec models + `SQLiteFleetRepository` + migration + `GetFleetOverviewUseCase` + `ListFleetTriageItemsUseCase` + `BatchApproveFeaturesUseCase` + `shep fleet status` / `triage` / `approve`. **This is the slice implemented in this branch.**
 2. **PR 2 (Guardrails)**: `EvaluateGateGuardrailsUseCase`, rule configuration on `SupervisorPolicy`, wiring the evaluator into the worker gate path ahead of the LLM, `--low-risk`, and `fleet retry` / `pause` / `resume`.
-3. **PR 3 (Web UI)**: Fleet status bar + Fleet Triage Drawer with colocated Storybook stories.
+3. **PR 3 (Web UI)**: implemented — fleet status bar + triage drawer with colocated Storybook stories, mounted in the dashboard layout.
 
 I am eager to contribute, help maintain this part of Shep, and collaborate with the team on feedback and refinements!
 

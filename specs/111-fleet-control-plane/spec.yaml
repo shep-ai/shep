@@ -99,7 +99,7 @@ content: |
   | ----- | ----- | ------ |
   | 1 — Core domain + CLI | TypeSpec models, `GetFleetOverviewUseCase`, `ListFleetTriageItemsUseCase`, `SQLiteFleetRepository` + migration 143, `shep fleet status`, `shep fleet triage`, `shep fleet approve` | Implemented |
   | 2 — Guardrails + circuit breaker | `CheckCircuitBreakerUseCase` (folded into `GetFleetOverviewUseCase`) shipped with slice 1. Still to come: `EvaluateGateGuardrailsUseCase`, `SupervisorPolicy` rule configuration, supervisor integration, `--low-risk`, `fleet retry` / `pause` / `resume` | Not started |
-  | 3 — Web UI | Fleet status bar + triage drawer with colocated Storybook stories | Not started |
+  | 3 — Web UI | Fleet status bar + triage drawer with colocated Storybook stories, wired into the dashboard layout | Implemented |
 
   ## Success Criteria
 
@@ -111,7 +111,7 @@ content: |
   - [x] **Fleet Circuit Breaker**: consecutive-failure and rolling-failure-rate thresholds trip a reported signal in `shep fleet status`. Automatic admission pausing is out of scope until admission control exists on `main`.
   - [x] **Breaker metrics share the fleet scope**: when a repository path is supplied, both breaker metrics are restricted to runs belonging to that repository, matching the definition of scope used by the overview counts. A scoped view must never trip because of another repository's failures.
   - [ ] **Batch Operations (remaining)**: `shep fleet retry [--ci | --failed]` and `shep fleet pause / resume` are not implemented; `--low-risk` is not implemented (it requires guardrail rule configuration, which is itself not wired).
-  - [ ] **Web UI**: Fleet status bar, triage drawer, and their Storybook stories are not started.
+  - [x] **Web UI**: `FleetStatusBar`, `FleetTriageDrawer` and the `FleetControl` container mounted in the dashboard layout, with colocated Storybook stories covering Default / All-clear / Tripped / Empty / Loading / Error.
   - [ ] **Full integration tests**: unit tests cover all four use cases; the repository has real-SQLite integration coverage. The 50-agent end-to-end simulation (task-18) is not written.
 
   ## Affected Areas
