@@ -62,7 +62,7 @@ export interface EvaluateSupervisorDecisionResult {
    * Diagnostic reason returned when `evaluated` is false. Stable string
    * so the caller can branch deterministically.
    */
-  skippedReason?: 'flag-off' | 'no-policy' | 'supervisor-failed';
+  skippedReason?: 'flag-off' | 'no-policy' | 'disabled' | 'supervisor-failed';
   /**
    * Populated when the underlying evaluator threw or timed out (FR-22). The
    * use case absorbs the error so the caller is never crashed by a
@@ -103,6 +103,15 @@ export class EvaluateSupervisorDecisionUseCase {
     });
     if (!policy) {
       return { evaluated: false, skippedReason: 'no-policy' };
+    }
+    // A disabled policy is inert: `shep supervisor disable` flips this flag,
+    // and `shep supervisor status` reports it, so honouring it here is what
+    // makes the command mean anything. Previously the flag was written,
+    // displayed and even echoed into the evaluator prompt, but never read —
+    // an `autonomous` policy kept evaluating and auto-closing gates after it
+    // had been disabled.
+    if (!policy.enabled) {
+      return { evaluated: false, skippedReason: 'disabled' };
     }
 
     const now = new Date();
