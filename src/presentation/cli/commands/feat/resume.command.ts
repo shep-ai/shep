@@ -18,6 +18,12 @@ export function createResumeCommand(): Command {
   return new Command('resume')
     .description(t('cli:commands.feat.resume.description'))
     .argument('<id>', t('cli:commands.feat.resume.idArgument'))
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep feat resume abc12345`
+    )
     .action(async (id: string) => {
       try {
         const useCase = container.resolve(ResumeFeatureUseCase);

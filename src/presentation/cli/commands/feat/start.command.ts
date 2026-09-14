@@ -19,6 +19,12 @@ export function createStartCommand(): Command {
   return new Command('start')
     .description(t('cli:commands.feat.start.description'))
     .argument('<id>', t('cli:commands.feat.start.idArgument'))
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep feat start abc12345`
+    )
     .action(async (id: string) => {
       try {
         const useCase = container.resolve(StartFeatureUseCase);
