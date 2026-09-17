@@ -9,18 +9,26 @@
  */
 import 'reflect-metadata';
 import type * as ChildProcessModule from 'node:child_process';
+import type * as BinaryExistsModule from '@/infrastructure/services/tool-installer/binary-exists.js';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// `execFile` is wrapped (not replaced) so `probeBinaryDefault` keeps its real
-// cross-platform behaviour while still being spyable — `vi.spyOn` cannot
-// redefine a live ESM named export (Node's module namespace is frozen), so
-// the wrapping has to happen at mock-factory time instead.
+// Both modules are wrapped (not replaced) so `probeBinaryDefault` keeps its
+// real cross-platform behaviour while still being spyable — `vi.spyOn` cannot
+// redefine a live ESM named export (Node's module namespace is frozen), so the
+// wrapping has to happen at mock-factory time instead. `execFile` is wrapped
+// only so a test can assert the probe spawns nothing at all.
 vi.mock('node:child_process', async (importOriginal) => {
   const actual = (await importOriginal()) as typeof ChildProcessModule;
   return { ...actual, execFile: vi.fn(actual.execFile) };
 });
 
+vi.mock('@/infrastructure/services/tool-installer/binary-exists.js', async (importOriginal) => {
+  const actual = (await importOriginal()) as typeof BinaryExistsModule;
+  return { ...actual, checkBinaryExists: vi.fn(actual.checkBinaryExists) };
+});
+
 import * as childProcess from 'node:child_process';
+import { checkBinaryExists } from '@/infrastructure/services/tool-installer/binary-exists.js';
 import {
   RunPlanSource,
   type DevServerRunPlan,
@@ -371,29 +379,29 @@ describe('probeBinaryDefault', () => {
     await expect(probeBinaryDefault('definitely-not-a-real-binary-zzz-123')).resolves.toBe(false);
   });
 
-  it('rejects invalid binary names before ever invoking execFile (injection guard)', async () => {
+  it('rejects invalid binary names before ever looking them up (injection guard)', async () => {
     await expect(probeBinaryDefault('node; rm -rf /')).resolves.toBe(false);
     await expect(probeBinaryDefault('$(whoami)')).resolves.toBe(false);
-    expect(childProcess.execFile).not.toHaveBeenCalled();
+    expect(checkBinaryExists).not.toHaveBeenCalled();
   });
 
-  it('invokes the platform-appropriate probe command', async () => {
-    await probeBinaryDefault('node');
+  it('resolves through the shared PATH lookup on every platform', async () => {
+    await expect(probeBinaryDefault('node')).resolves.toBe(true);
 
-    if (process.platform === 'win32') {
-      expect(childProcess.execFile).toHaveBeenCalledWith(
-        'where',
-        ['node'],
-        expect.any(Object),
-        expect.any(Function)
-      );
-    } else {
-      expect(childProcess.execFile).toHaveBeenCalledWith(
-        'sh',
-        ['-c', 'command -v -- node'],
-        expect.any(Object),
-        expect.any(Function)
-      );
-    }
+    expect(checkBinaryExists).toHaveBeenCalledWith('node');
+  });
+
+  // A subprocess probe made the answer depend on how fast the OS can spawn a
+  // child: under load on Windows, `where node` exceeded the 3s bound and a
+  // present binary was reported missing, sending the graph into pointless
+  // agent remediation. The lookup is in-process, so nothing here can time out.
+  it('never spawns a child process to answer a probe', async () => {
+    const spawned = vi.mocked(childProcess.execFile);
+    spawned.mockClear();
+
+    await expect(probeBinaryDefault('node')).resolves.toBe(true);
+    await expect(probeBinaryDefault('definitely-not-a-real-binary-zzz-123')).resolves.toBe(false);
+
+    expect(spawned).not.toHaveBeenCalled();
   });
 });

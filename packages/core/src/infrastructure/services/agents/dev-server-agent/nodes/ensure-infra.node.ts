@@ -13,13 +13,11 @@
  * `failureReason` state update (never an unhandled rejection), so the graph
  * can route to its terminal failure edge instead of crashing.
  */
-import { execFile, type ExecFileException } from 'node:child_process';
-import { IS_WINDOWS } from '@/infrastructure/platform.js';
+import { checkBinaryExists } from '@/infrastructure/services/tool-installer/binary-exists.js';
 import type { IAgentExecutor } from '@/application/ports/output/agents/agent-executor.interface.js';
 import type { DevServerRunPlan } from '@/domain/generated/output.js';
 import type { DevServerAgentNodeFn } from '../types.js';
 
-const PROBE_TIMEOUT_MS = 3_000;
 const DEFAULT_REMEDIATION_TIMEOUT_MS = 120_000;
 
 /** Binary names are restricted to this shape — anything else is rejected as unavailable to avoid shell injection. */
@@ -79,32 +77,25 @@ function suggestedInstallCommand(binary: string): string {
 }
 
 /**
- * Cross-platform, non-throwing availability probe for a single binary, with
- * a short bound so a hung shell can never stall the graph.
+ * Cross-platform, non-throwing availability probe for a single binary.
  *
- * win32: `where <binary>`. Everything else: `sh -c "command -v -- <binary>"`.
- * The binary name is validated against {@link VALID_BINARY_NAME} first —
- * anything else is treated as unavailable without ever reaching a shell.
+ * Delegates to the shared {@link checkBinaryExists} PATH lookup, which
+ * resolves in-process (including Windows PATHEXT) and so cannot be starved
+ * by a slow process spawn: a subprocess probe under a time bound reported
+ * present binaries as missing on loaded Windows runners, which sent the
+ * graph into pointless agent remediation.
+ *
+ * The binary name is validated against {@link VALID_BINARY_NAME} first, so
+ * a derived token that is not a plain binary name is treated as unavailable
+ * rather than looked up.
  */
-export function probeBinaryDefault(binary: string): Promise<boolean> {
-  return new Promise((resolve) => {
-    if (!VALID_BINARY_NAME.test(binary)) {
-      resolve(false);
-      return;
-    }
+export async function probeBinaryDefault(binary: string): Promise<boolean> {
+  if (!VALID_BINARY_NAME.test(binary)) {
+    return false;
+  }
 
-    const callback = (error: ExecFileException | null): void => resolve(!error);
-
-    try {
-      if (IS_WINDOWS) {
-        execFile('where', [binary], { timeout: PROBE_TIMEOUT_MS }, callback);
-      } else {
-        execFile('sh', ['-c', `command -v -- ${binary}`], { timeout: PROBE_TIMEOUT_MS }, callback);
-      }
-    } catch {
-      resolve(false);
-    }
-  });
+  const { found } = await checkBinaryExists(binary);
+  return found;
 }
 
 /**
