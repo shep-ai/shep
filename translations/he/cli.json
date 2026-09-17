@@ -62,7 +62,10 @@
         "push": "דחיפה",
         "pr": "PR",
         "cancelled": "ההגדרה בוטלה.",
-        "failed": "הגדרת ברירות מחדל של תהליך עבודה נכשלה"
+        "failed": "הגדרת ברירות מחדל של תהליך עבודה נכשלה",
+        "maxParallelOption": "מספר הפיצ'רים המקסימלי שמריצים סוכן בו-זמנית (0 = ללא הגבלה)",
+        "maxParallelUnlimited": "אין הגבלה על פיצ'רים מקבילים",
+        "maxParallelSet": "מריץ עד {{limit}} פיצ'רים במקביל"
       },
       "language": {
         "description": "הגדר שפת תצוגה",
@@ -332,7 +335,8 @@
         "statusLabel": "סטטוס:",
         "agentLabel": "סוכן:",
         "spawnedStatus": "הופעל",
-        "failedToStart": "הפעלת הפיצ'ר נכשלה"
+        "failedToStart": "הפעלת הפיצ'ר נכשלה",
+        "forceOption": "התחל גם כשמגבלת הפיצ'רים המקבילים מלאה"
       },
       "approve": {
         "description": "אשר פיצ'ר הממתין לסקירה",
@@ -990,5 +994,10 @@
     "failedSettings": "אתחול ההגדרות נכשל",
     "unexpectedError": "אירעה שגיאה בלתי צפויה",
     "unhandledRejection": "דחיית הבטחה שלא טופלה"
+  },
+  "features": {
+    "queued": "בתור",
+    "queuedWithPosition": "בתור · {{position}} לפני",
+    "queuedTooltip": "ממתין למקום פנוי ({{position}} בתור)"
   }
 }

@@ -61,14 +61,11 @@ vi.mock('node:child_process', async (importOriginal) => {
   };
 });
 
-// Mock node-helpers (getCompletedPhases / markPhaseComplete / clearCompletedPhase)
-const { mockGetCompletedPhases, mockMarkPhaseComplete, mockClearCompletedPhase } = vi.hoisted(
-  () => ({
-    mockGetCompletedPhases: vi.fn().mockReturnValue([]),
-    mockMarkPhaseComplete: vi.fn(),
-    mockClearCompletedPhase: vi.fn(),
-  })
-);
+// Mock node-helpers (getCompletedPhases / markPhaseComplete)
+const { mockGetCompletedPhases, mockMarkPhaseComplete } = vi.hoisted(() => ({
+  mockGetCompletedPhases: vi.fn().mockReturnValue([]),
+  mockMarkPhaseComplete: vi.fn(),
+}));
 
 vi.mock(
   '@/infrastructure/services/agents/feature-agent/nodes/node-helpers.js',
@@ -78,7 +75,6 @@ vi.mock(
       ...actual,
       getCompletedPhases: mockGetCompletedPhases,
       markPhaseComplete: mockMarkPhaseComplete,
-      clearCompletedPhase: mockClearCompletedPhase,
     };
   }
 );
@@ -367,6 +363,28 @@ describe('buildFastImplementPrompt', () => {
     expect(prompt).toContain('...(truncated)');
   });
 
+  it('should include merge rejection feedback in the prompt when present in spec.yaml', () => {
+    setupFileMocks({
+      specYaml: `name: quick-fix
+userQuery: >
+  Fix the typo in the README
+summary: Fix typo
+phase: Analysis
+rejectionFeedback:
+  - iteration: 1
+    message: "Please also update the changelog"
+    phase: merge
+    timestamp: "2026-01-01T00:00:00.000Z"
+`,
+    });
+    const state = createMockState();
+
+    const prompt = buildFastImplementPrompt(state);
+
+    expect(prompt).toContain('User Rejection Feedback');
+    expect(prompt).toContain('Please also update the changelog');
+  });
+
   it('should handle missing spec.yaml gracefully', () => {
     setupFileMocks({ specYaml: null });
     const state = createMockState();
@@ -435,7 +453,6 @@ describe('createFastImplementNode', () => {
     mockExecSync.mockReturnValue('M  src/index.ts\n');
     mockGetCompletedPhases.mockReset().mockReturnValue([]);
     mockMarkPhaseComplete.mockReset();
-    mockClearCompletedPhase.mockReset();
     mockExecutor = createMockExecutor();
   });
 
@@ -538,7 +555,7 @@ describe('createFastImplementNode', () => {
     expect(result.messages![0]).toContain('already completed');
   });
 
-  it('should re-execute (not skip) when already completed but routed back for merge-rejection rework', async () => {
+  it('should re-execute despite an already-completed phase when _needsReexecution is true (merge rejection resume)', async () => {
     setupFileMocks();
     mockGetCompletedPhases.mockReturnValue(['fast-implement']);
     const node = createFastImplementNode(mockExecutor);
@@ -546,17 +563,10 @@ describe('createFastImplementNode', () => {
 
     const result = await node(state);
 
-    // Must clear the stale completed-phase flag and actually invoke the executor,
-    // otherwise the user's rejection feedback (already embedded in the prompt via
-    // spec.yaml's rejectionFeedback entries) never reaches the agent.
-    expect(mockClearCompletedPhase).toHaveBeenCalledWith(
-      state.specDir,
-      'fast-implement',
-      expect.anything()
-    );
+    // Must NOT take the "already completed — skipping" shortcut.
     expect(mockExecutor.execute).toHaveBeenCalled();
     expect(result.currentNode).toBe('fast-implement');
-    expect(result.messages).not.toContain('[fast-implement] already completed — skipping');
+    expect(result._needsReexecution).toBe(false);
   });
 
   it('should call markPhaseComplete after successful execution', async () => {

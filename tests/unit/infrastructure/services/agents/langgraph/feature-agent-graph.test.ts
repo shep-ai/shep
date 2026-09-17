@@ -518,6 +518,111 @@ describe('createFeatureAgentGraph', () => {
     });
   });
 
+  describe('merge rejection routes back to implement', () => {
+    it('re-invokes implement (not a merge self-loop) and surfaces the rejection feedback', async () => {
+      const MOCK_SPEC_YAML_WITH_REJECTION = `${MOCK_SPEC_YAML}rejectionFeedback:
+  - iteration: 1
+    message: "Please also update the changelog before merging"
+    phase: merge
+    timestamp: "2026-01-01T00:00:00.000Z"
+`;
+
+      let feature: Record<string, unknown> = {
+        id: 'feat-merge-reject',
+        lifecycle: 'Implementation',
+      };
+      const featureRepository = {
+        findById: vi.fn(async () => ({ ...feature }) as never),
+        update: vi.fn(async (f: Record<string, unknown>) => {
+          feature = { ...feature, ...f };
+          return feature as never;
+        }),
+      };
+
+      setupSpecFileMocks();
+
+      const compiled = createFeatureAgentGraph(
+        {
+          executor: mockExecutor,
+          mergeNodeDeps: {
+            selectMemory: undefined,
+            getDiffSummary: vi
+              .fn()
+              .mockResolvedValue({ filesChanged: 1, additions: 1, deletions: 0, commitCount: 1 }),
+            hasRemote: vi.fn().mockResolvedValue(false),
+            getDefaultBranch: vi.fn().mockResolvedValue('main'),
+            featureRepository,
+            localMergeSquash: vi.fn(),
+            verifyMerge: vi.fn().mockResolvedValue(true),
+            revParse: vi.fn().mockResolvedValue('abc1234'),
+            gitPrService: {} as never,
+            cleanupFeatureWorktreeUseCase: { execute: vi.fn() },
+          },
+        },
+        checkpointer
+      );
+      const config = { configurable: { thread_id: 'merge-reject-thread' } };
+
+      // First pass: analyze..implement run, then merge's own commit-only
+      // agent call, then interrupt for merge approval.
+      const first = await compiled.invoke(
+        {
+          featureId: 'feat-merge-reject',
+          repositoryPath: '/test/repo',
+          worktreePath: '/test/repo',
+          specDir: '/test/specs/001-merge-reject',
+          enableEvidence: false,
+          commitEvidence: false,
+          approvalGates: { allowPrd: true, allowPlan: true, allowMerge: false },
+        },
+        config
+      );
+      const firstInterrupt = (first as Record<string, unknown>).__interrupt__ as
+        | { value: { node: string } }[]
+        | undefined;
+      expect(firstInterrupt?.[0]?.value?.node).toBe('merge');
+
+      const callsBeforeResume = (mockExecutor.execute as ReturnType<typeof vi.fn>).mock.calls
+        .length;
+
+      // Simulate RejectAgentRunUseCase having already appended the
+      // rejection feedback to spec.yaml before the worker resumes.
+      mockReadFileSync.mockImplementation((path: string) => {
+        if (typeof path === 'string') {
+          if (path.endsWith('spec.yaml')) return MOCK_SPEC_YAML_WITH_REJECTION;
+          if (path.endsWith('research.yaml')) return MOCK_RESEARCH_YAML;
+          if (path.endsWith('plan.yaml')) return MOCK_PLAN_YAML;
+          if (path.endsWith('tasks.yaml')) return MOCK_TASKS_YAML;
+          if (path.endsWith('feature.yaml')) return MOCK_FEATURE_YAML;
+        }
+        return 'name: test\ndescription: A test feature';
+      });
+
+      const { Command } = await import('@langchain/langgraph');
+      await compiled.invoke(
+        new Command({
+          resume: { rejected: true, feedback: 'Please also update the changelog before merging' },
+          update: {
+            _approvalAction: 'rejected',
+            _rejectionFeedback: 'Please also update the changelog before merging',
+          },
+        }),
+        config
+      );
+
+      // The very next executor call after resume must be the implement
+      // redo pass carrying the rejection feedback — not another merge
+      // commit/push/PR call that never mentions it.
+      const callsAfterResume = (mockExecutor.execute as ReturnType<typeof vi.fn>).mock.calls.slice(
+        callsBeforeResume
+      );
+      expect(callsAfterResume.length).toBeGreaterThan(0);
+      const [redoPrompt] = callsAfterResume[0];
+      expect(redoPrompt).toContain('Please also update the changelog before merging');
+      expect(redoPrompt).toContain('User Rejection Feedback');
+    });
+  });
+
   describe('state persistence with checkpointer', () => {
     it('should persist state across invocations via checkpointer', async () => {
       setupSpecFileMocks();

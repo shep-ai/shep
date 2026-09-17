@@ -1,0 +1,123 @@
+# Research Artifact (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: fix-diff-ui-merge-review
+summary: Technical analysis for 110-fix-diff-ui-merge-review
+
+# Relationships
+relatedFeatures: ["073-file-tree-diff-view", "054-merge-review-diff"]
+technologies: ["TypeScript", "Node.js child_process"]
+relatedLinks: []
+
+# Structured technology decisions
+decisions:
+  - title: Handling large `git diff` output in GitPrService.getFileDiffs
+    chosen: >
+      Pass an explicit `maxBuffer: 10 * 1024 * 1024` (10MB) option to the
+      `execFile` call in `getFileDiffs`, mirroring the existing
+      `COMMAND_MAX_BUFFER_BYTES` constant/pattern already used in
+      `worktree-hook-runner.ts`.
+    rejected:
+      - "Stream/paginate the diff output incrementally"
+      - "Truncate diff output and show a 'diff too large' placeholder"
+      - "Increase Node's global default maxBuffer via process-wide config"
+    rationale: >
+      A larger fixed maxBuffer is the simplest, lowest-risk change and matches
+      an established pattern already in the codebase. Streaming/pagination
+      would require significant UI rework (virtualized diff rendering) that is
+      out of scope for a bug fix. Truncating loses information the user needs
+      to review. A process-wide default change is riskier/broader than
+      necessary since only this one call site is affected in practice.
+  - title: Surfacing partial failures to the user
+    chosen: >
+      Change `get-merge-review-data.ts` so that when `getFileDiffs` fails, the
+      returned `MergeReviewData` includes a `warning` message (reusing the
+      existing `warning` field already used for the diff-summary failure
+      case), instead of silently swallowing the error via
+      `.catch(() => undefined)`.
+    rejected:
+      - "Leave the silent `.catch(() => undefined)` as-is"
+      - "Throw and fail the whole Merge Review page load"
+    rationale: >
+      The `MergeReviewData` type already has a `warning?: string` field used
+      for the diff-summary failure path, so reusing it for file-diff failures
+      is consistent with the existing UX pattern and requires no new UI. It
+      preserves current graceful-degradation behavior (rest of the Merge
+      Review tab still renders) while making failures visible instead of
+      silent. Failing the whole page load would be a worse regression for an
+      edge case that should now rarely occur post-maxBuffer-fix.
+
+# Open questions (should be resolved by end of research)
+openQuestions:
+  []
+
+# Markdown content (the full research document)
+content: |
+  ## Status
+
+  - **Phase:** Research
+  - **Updated:** 2026-08-31
+
+  ## Technology Decisions
+
+  ### Handling large `git diff` output in GitPrService.getFileDiffs
+
+  **Options considered:**
+
+  1. Pass an explicit larger `maxBuffer` option to the `execFile` call.
+  2. Stream/paginate the diff output incrementally.
+  3. Truncate diff output beyond a size threshold and show a placeholder.
+
+  **Decision:** Pass an explicit `maxBuffer: 10 * 1024 * 1024` (10MB), reusing
+  the `COMMAND_MAX_BUFFER_BYTES`-style constant pattern from
+  `worktree-hook-runner.ts`.
+
+  **Rationale:** Node's `child_process.execFile` defaults to a 1MB
+  stdout/stderr buffer. Increasing it directly at the call site is the
+  smallest possible change that fixes the reported symptom, follows an
+  existing precedent in this codebase, and avoids the scope/risk of
+  streaming or truncation-based redesigns of the diff UI.
+
+  ### Surfacing partial failures to the user
+
+  **Options considered:**
+
+  1. Populate the existing `warning` field on `MergeReviewData` when
+     `getFileDiffs` fails.
+  2. Leave the current silent `.catch(() => undefined)` behavior unchanged.
+  3. Let the failure propagate and fail the whole Merge Review page load.
+
+  **Decision:** Populate the existing `warning` field, reusing the pattern
+  already used for diff-summary failures in the same file.
+
+  **Rationale:** Consistent with existing code, requires no new UI, and
+  converts a completely silent failure into a visible, non-blocking warning —
+  directly addressing the bug report's core complaint (users see nothing and
+  don't know why).
+
+  ## Library Analysis
+
+  No new libraries are introduced by this fix; it uses Node's built-in
+  `child_process.execFile` `maxBuffer` option, already supported by the
+  existing `ExecFunction` abstraction.
+
+  ## Security Considerations
+
+  No security implications identified. The `maxBuffer` increase only affects
+  how much of a trusted local `git diff` command's own output can be
+  buffered; it does not change what commands are run or their inputs.
+
+  ## Performance Implications
+
+  A 10MB buffer is a small, fixed increase in worst-case memory usage per
+  `getFileDiffs` call, consistent with the same trade-off already accepted
+  for `worktree-hook-runner.ts`. No measurable performance regression is
+  expected for typical (small) diffs.
+
+  ## Open Questions
+
+  All questions resolved.
+
+  ---
+
+  _Updated by `/shep-kit:research` — proceed with `/shep-kit:plan`_

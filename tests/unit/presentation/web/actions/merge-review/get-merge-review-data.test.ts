@@ -294,7 +294,7 @@ describe('getMergeReviewData server action', () => {
     expect(mockGetFileDiffs).toHaveBeenCalledWith('/tmp/worktree', 'main');
   });
 
-  it('returns undefined fileDiffs with a warning when getFileDiffs fails', async () => {
+  it('returns undefined fileDiffs and a warning when getFileDiffs fails', async () => {
     mockFindById.mockResolvedValue(baseFeature);
     mockGetPrDiffSummary.mockResolvedValue(baseDiffSummary);
     mockGetFileDiffs.mockRejectedValue(new Error('git error'));
@@ -304,34 +304,7 @@ describe('getMergeReviewData server action', () => {
     expect(result).toMatchObject({
       diffSummary: baseDiffSummary,
       fileDiffs: undefined,
-      fileDiffsWarning: 'File diffs unavailable',
-    });
-  });
-
-  it('returns a too-large warning when getFileDiffs fails due to exceeding maxBuffer', async () => {
-    mockFindById.mockResolvedValue(baseFeature);
-    mockGetPrDiffSummary.mockResolvedValue(baseDiffSummary);
-    mockGetFileDiffs.mockRejectedValue(new Error('stdout maxBuffer length exceeded'));
-
-    const result = await getMergeReviewData('feat-123');
-
-    expect(result).toMatchObject({
-      diffSummary: baseDiffSummary,
-      fileDiffs: undefined,
-      fileDiffsWarning: 'File diffs are too large to display',
-    });
-  });
-
-  it('does not set fileDiffsWarning when getFileDiffs succeeds', async () => {
-    mockFindById.mockResolvedValue(baseFeature);
-    mockGetPrDiffSummary.mockResolvedValue(baseDiffSummary);
-    mockGetFileDiffs.mockResolvedValue(baseFileDiffs);
-
-    const result = await getMergeReviewData('feat-123');
-
-    expect(result).toMatchObject({
-      fileDiffs: baseFileDiffs,
-      fileDiffsWarning: undefined,
+      warning: 'File diffs unavailable',
     });
   });
 

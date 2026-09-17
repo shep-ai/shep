@@ -14,6 +14,9 @@ export const PR_BRANDING =
 /** The co-author trailer to include in commit messages. */
 export const COMMIT_CO_AUTHOR = 'Co-Authored-By: Shep Bot <shep-agent@users.noreply.github.com>';
 
+/** Maximum length for a commit title (first line), per the conventional-commits header rule. */
+export const MAX_COMMIT_TITLE_LENGTH = 72;
+
 /**
  * Pattern matching common AI-tool attribution footers that should be
  * replaced (e.g. "Generated with Claude Code", "Co-Authored-By: Claude").
@@ -77,27 +80,19 @@ export function applyCommitBranding(message: string): string {
 }
 
 /**
- * Limit a commit message subject line to 72 characters.
+ * Truncate a commit title (first line) to at most `maxLength` characters,
+ * replacing the cut-off tail with an ellipsis so the result stays within
+ * the conventional-commits header limit.
  *
- * Commits with subjects longer than 72 characters may violate repository
- * restrictions or display issues in tools (git log, GitHub, etc.).
- *
- * Splits the message on first newline. If the subject is longer than
- * 72 characters, truncates it, preserving the body if present.
- *
- * @param message - Full commit message (subject + optional body)
- * @returns Message with subject limited to 72 characters
+ * Titles at or under the limit are returned unchanged.
  */
-export function limitCommitSubjectLength(message: string): string {
-  const lines = message.split('\n');
-  const subject = lines[0];
-
-  if (subject.length <= 72) {
-    return message;
-  }
-
-  const truncatedSubject = subject.slice(0, 72);
-  const body = lines.slice(1).join('\n');
-
-  return body ? `${truncatedSubject}\n${body}` : truncatedSubject;
+export function truncateCommitTitle(
+  title: string,
+  maxLength: number = MAX_COMMIT_TITLE_LENGTH
+): string {
+  const limit = Number.isFinite(maxLength) ? Math.floor(maxLength) : MAX_COMMIT_TITLE_LENGTH;
+  if (limit <= 0) return '';
+  if (title.length <= limit) return title;
+  if (limit === 1) return '…';
+  return `${title.slice(0, limit - 1).trimEnd()}…`;
 }

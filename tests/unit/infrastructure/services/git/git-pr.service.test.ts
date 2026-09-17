@@ -870,11 +870,9 @@ describe('GitPrService', () => {
 
       expect(mockExec).toHaveBeenNthCalledWith(1, 'git', ['diff', '--stat', 'main...HEAD'], {
         cwd: '/repo',
-        maxBuffer: 100 * 1024 * 1024,
       });
       expect(mockExec).toHaveBeenNthCalledWith(2, 'git', ['log', '--oneline', 'main...HEAD'], {
         cwd: '/repo',
-        maxBuffer: 100 * 1024 * 1024,
       });
       expect(result.filesChanged).toBe(2);
       expect(result.additions).toBe(8);
@@ -921,7 +919,7 @@ describe('GitPrService', () => {
 
       expect(mockExec).toHaveBeenCalledWith('git', ['diff', '--unified=3', 'main...HEAD'], {
         cwd: '/repo',
-        maxBuffer: 100 * 1024 * 1024,
+        maxBuffer: expect.any(Number),
       });
       expect(result).toHaveLength(3);
 
@@ -1023,6 +1021,19 @@ describe('GitPrService', () => {
       await expect(service.getFileDiffs('/repo', 'main')).rejects.toMatchObject({
         code: GitPrErrorCode.GIT_ERROR,
       });
+    });
+
+    it('should pass a large maxBuffer so large diffs are not truncated by execFile defaults', async () => {
+      vi.mocked(mockExec).mockResolvedValueOnce({ stdout: '', stderr: '' });
+
+      await service.getFileDiffs('/repo', 'main');
+
+      expect(mockExec).toHaveBeenCalledWith('git', ['diff', '--unified=3', 'main...HEAD'], {
+        cwd: '/repo',
+        maxBuffer: expect.any(Number),
+      });
+      const [, , options] = vi.mocked(mockExec).mock.calls[0];
+      expect((options as { maxBuffer: number }).maxBuffer).toBeGreaterThanOrEqual(10 * 1024 * 1024);
     });
   });
 

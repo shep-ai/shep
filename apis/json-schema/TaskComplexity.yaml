@@ -1,0 +1,8 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: TaskComplexity.yaml
+type: string
+enum:
+  - High
+  - Medium
+  - Low
+description: How much reasoning capability a unit of work requires, and equivalently the model tier that serves it

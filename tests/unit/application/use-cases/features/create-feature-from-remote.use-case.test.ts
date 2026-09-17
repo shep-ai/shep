@@ -142,8 +142,12 @@ describe('CreateFeatureFromRemoteUseCase', () => {
     } as unknown as ImportGitHubRepositoryUseCase;
 
     mockCreateFeatureUseCase = {
-      execute: vi.fn().mockResolvedValue({ feature: mockFeature, warning: undefined }),
-      createRecord: vi.fn().mockResolvedValue({ feature: mockFeature, shouldSpawn: true }),
+      execute: vi
+        .fn()
+        .mockResolvedValue({ feature: mockFeature, warning: undefined, queued: false }),
+      createRecord: vi
+        .fn()
+        .mockResolvedValue({ feature: mockFeature, shouldSpawn: true, queued: false }),
       initializeAndSpawn: vi.fn().mockResolvedValue({
         warning: undefined,
         updatedFeature: mockFeature,
@@ -198,7 +202,7 @@ describe('CreateFeatureFromRemoteUseCase', () => {
       });
       vi.mocked(mockCreateFeatureUseCase.execute).mockImplementation(async () => {
         callOrder.push('create');
-        return { feature: mockFeature, warning: undefined };
+        return { feature: mockFeature, warning: undefined, queued: false };
       });
 
       await useCase.execute(baseInput);
@@ -265,6 +269,7 @@ describe('CreateFeatureFromRemoteUseCase', () => {
       vi.mocked(mockCreateFeatureUseCase.execute).mockResolvedValue({
         feature: expectedFeature,
         warning: 'slug adjusted',
+        queued: false,
       });
 
       const result = await useCase.execute(baseInput);
@@ -302,7 +307,7 @@ describe('CreateFeatureFromRemoteUseCase', () => {
       });
       vi.mocked(mockCreateFeatureUseCase.createRecord).mockImplementation(async () => {
         callOrder.push('createRecord');
-        return { feature: mockFeature, shouldSpawn: true };
+        return { feature: mockFeature, shouldSpawn: true, queued: false };
       });
 
       await useCase.createRecord(baseInput);
@@ -320,6 +325,7 @@ describe('CreateFeatureFromRemoteUseCase', () => {
       vi.mocked(mockCreateFeatureUseCase.createRecord).mockResolvedValue({
         feature: expectedFeature,
         shouldSpawn: false,
+        queued: false,
       });
 
       const result = await useCase.createRecord(baseInput);

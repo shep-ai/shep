@@ -13,6 +13,7 @@ import { ShowFeatureUseCase } from '@/application/use-cases/features/show-featur
 import type { IFeatureRepository } from '@/application/ports/output/repositories/feature-repository.interface.js';
 import { SdlcLifecycle, BuildMode } from '@/domain/generated/output.js';
 import type { Feature } from '@/domain/generated/output.js';
+import { createMockFeatureRepository } from '../../../../helpers/feature-repository.mock.js';
 
 function createMockFeature(id: string): Feature {
   return {
@@ -47,18 +48,9 @@ describe('ShowFeatureUseCase', () => {
   let mockRepo: IFeatureRepository;
 
   beforeEach(() => {
-    mockRepo = {
-      create: vi.fn(),
+    mockRepo = createMockFeatureRepository({
       findById: vi.fn().mockResolvedValue(createMockFeature('feat-1')),
-      findByIdPrefix: vi.fn().mockResolvedValue(null),
-      findBySlug: vi.fn(),
-      findByBranch: vi.fn(),
-      list: vi.fn(),
-      findByParentId: vi.fn().mockResolvedValue([]),
-      update: vi.fn(),
-      delete: vi.fn(),
-      softDelete: vi.fn(),
-    };
+    });
     useCase = new ShowFeatureUseCase(mockRepo);
   });
 

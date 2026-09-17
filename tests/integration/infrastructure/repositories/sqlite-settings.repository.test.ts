@@ -1069,4 +1069,138 @@ describe('SQLiteSettingsRepository', () => {
       expect(loaded?.worktree).toBeUndefined();
     });
   });
+
+  describe('workflow.maxParallelFeatures', () => {
+    // Every assertion here uses a NON-default value on purpose. A test that only
+    // ever checks the default passes even when the column is missing from the
+    // INSERT/UPDATE lists entirely — the DEFAULT supplies the read value and the
+    // broken write path stays invisible until someone changes the default.
+
+    it('persists a non-default limit through initialize()', async () => {
+      const settings = createTestSettings();
+      settings.workflow.maxParallelFeatures = 4;
+
+      await repository.initialize(settings);
+
+      expect((await repository.load())?.workflow.maxParallelFeatures).toBe(4);
+    });
+
+    it('persists a changed limit through update()', async () => {
+      const settings = createTestSettings();
+      settings.workflow.maxParallelFeatures = 4;
+      await repository.initialize(settings);
+
+      settings.workflow.maxParallelFeatures = 7;
+      settings.updatedAt = new Date('2025-02-05T00:00:00Z');
+      await repository.update(settings);
+
+      expect((await repository.load())?.workflow.maxParallelFeatures).toBe(7);
+    });
+
+    it('round-trips 0 (unlimited) after a non-zero value was stored', async () => {
+      const settings = createTestSettings();
+      settings.workflow.maxParallelFeatures = 5;
+      await repository.initialize(settings);
+
+      settings.workflow.maxParallelFeatures = 0;
+      settings.updatedAt = new Date('2025-02-06T00:00:00Z');
+      await repository.update(settings);
+
+      expect((await repository.load())?.workflow.maxParallelFeatures).toBe(0);
+    });
+
+    it('defaults to unlimited when the caller never sets a limit', async () => {
+      await repository.initialize(createTestSettings());
+
+      expect((await repository.load())?.workflow.maxParallelFeatures).toBe(0);
+    });
+  });
+
+  describe('workflow.ciWatchEnabled', () => {
+    it('persists a disabled CI watch through initialize()', async () => {
+      const settings = createTestSettings();
+      settings.workflow.ciWatchEnabled = false;
+
+      await repository.initialize(settings);
+
+      expect((await repository.load())?.workflow.ciWatchEnabled).toBe(false);
+    });
+
+    it('persists a toggled CI watch through update()', async () => {
+      const settings = createTestSettings();
+      settings.workflow.ciWatchEnabled = false;
+      await repository.initialize(settings);
+
+      settings.workflow.ciWatchEnabled = true;
+      settings.updatedAt = new Date('2025-02-07T00:00:00Z');
+      await repository.update(settings);
+
+      expect((await repository.load())?.workflow.ciWatchEnabled).toBe(true);
+    });
+  });
+
+  describe('adaptive model configuration', () => {
+    it('round-trips enabled plus all three tier overrides through initialize()', async () => {
+      const settings = createTestSettings();
+      settings.models.adaptive = {
+        enabled: true,
+        high: 'claude-opus-5',
+        medium: 'claude-sonnet-5',
+        low: 'claude-haiku-4-5',
+      };
+
+      await repository.initialize(settings);
+      const loaded = await repository.load();
+
+      expect(loaded?.models.adaptive).toEqual({
+        enabled: true,
+        high: 'claude-opus-5',
+        medium: 'claude-sonnet-5',
+        low: 'claude-haiku-4-5',
+      });
+    });
+
+    it('persists adaptive changes via update() — the write path, not a DB default', async () => {
+      const settings = createTestSettings();
+      await repository.initialize(settings);
+      expect((await repository.load())?.models.adaptive).toBeUndefined();
+
+      settings.models.adaptive = { enabled: true, low: 'claude-haiku-4-5' };
+      settings.updatedAt = new Date('2025-03-01T00:00:00Z');
+      await repository.update(settings);
+
+      const loaded = await repository.load();
+      expect(loaded?.models.adaptive?.enabled).toBe(true);
+      expect(loaded?.models.adaptive?.low).toBe('claude-haiku-4-5');
+      // Tiers left unset stay undefined so the resolver derives them.
+      expect(loaded?.models.adaptive?.high).toBeUndefined();
+      expect(loaded?.models.adaptive?.medium).toBeUndefined();
+    });
+
+    it('persists enabled=false explicitly rather than relying on the column default', async () => {
+      const settings = createTestSettings();
+      settings.models.adaptive = { enabled: true, high: 'claude-opus-5' };
+      await repository.initialize(settings);
+      expect((await repository.load())?.models.adaptive?.enabled).toBe(true);
+
+      settings.models.adaptive = { enabled: false, high: 'claude-opus-5' };
+      settings.updatedAt = new Date('2025-03-02T00:00:00Z');
+      await repository.update(settings);
+
+      const loaded = await repository.load();
+      expect(loaded?.models.adaptive?.enabled).toBe(false);
+      expect(loaded?.models.adaptive?.high).toBe('claude-opus-5');
+    });
+
+    it('stores the enabled flag as INTEGER 0/1', async () => {
+      const settings = createTestSettings();
+      settings.models.adaptive = { enabled: true };
+      await repository.initialize(settings);
+
+      const row = db.prepare('SELECT model_adaptive_enabled FROM settings').get() as {
+        model_adaptive_enabled: number;
+      };
+      expect(row.model_adaptive_enabled).toBe(1);
+    });
+  });
 });

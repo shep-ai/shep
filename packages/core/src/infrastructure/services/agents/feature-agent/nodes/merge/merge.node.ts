@@ -40,10 +40,16 @@ import {
 import { updateNodeLifecycle, setFeatureLifecycle } from '../../lifecycle-context.js';
 import { buildCommitPushPrPrompt, buildLocalSquashMergePrompt } from '../prompts/merge-prompts.js';
 import {
+  resolvePrTarget,
+  type PrTarget,
+  type RemoteInfo,
+  type ForkParentInfo,
+} from '@/application/services/pr-target-resolution.js';
+import {
   GitPrError,
   GitPrErrorCode,
 } from '@/application/ports/output/services/git-pr-service.interface.js';
-import { limitCommitSubjectLength } from '@/infrastructure/services/git/pr-branding.js';
+import { truncateCommitTitle } from '@/infrastructure/services/git/pr-branding.js';
 import { parseCommitHash, parsePrUrl } from './merge-output-parser.js';
 import { runCiWatchFixLoop } from './ci-watch-fix-loop.js';
 import { getSettings } from '@/infrastructure/services/settings.service.js';
@@ -57,6 +63,18 @@ export interface MergeNodeDeps {
   getDiffSummary: (cwd: string, baseBranch: string) => Promise<DiffSummary>;
   hasRemote: (cwd: string) => Promise<boolean>;
   getDefaultBranch: (cwd: string) => Promise<string>;
+  /**
+   * List configured git remotes (name + URL). Used for upstream PR-target
+   * resolution; optional — when absent, PRs are created on origin (current
+   * behavior).
+   */
+  listRemotes?: (cwd: string) => Promise<RemoteInfo[]>;
+  /**
+   * Look up the GitHub fork-parent (parent repo + its default branch) via the
+   * gh CLI. Returns null on any failure or when not a fork. Optional — same
+   * fallback semantics as listRemotes.
+   */
+  getForkParentInfo?: (cwd: string) => Promise<ForkParentInfo | null>;
   featureRepository: Pick<IFeatureRepository, 'findById' | 'update'>;
   /**
    * Perform a local squash merge (deterministic git commands, no agent needed).
@@ -180,18 +198,34 @@ export function createMergeNode(deps: MergeNodeDeps) {
 
         const effectiveState = remoteAvailable ? state : { ...state, push: false, openPr: false };
 
+        let prTarget: PrTarget | null = null;
+        if (effectiveState.openPr && deps.listRemotes) {
+          try {
+            const remotes = await deps.listRemotes(cwd);
+            const forkParent = deps.getForkParentInfo ? await deps.getForkParentInfo(cwd) : null;
+            prTarget = resolvePrTarget({
+              remotes,
+              forkParent,
+              branch,
+              fallbackBaseBranch: baseBranch,
+            });
+            if (prTarget) {
+              log.info(`Upstream detected — PR will target ${prTarget.targetRepo}`);
+            }
+          } catch {
+            prTarget = null;
+          }
+        }
+
         log.info('Agent call 1: commit + push + PR');
         const mergePromptState = await applyMemorySelection(
           effectiveState,
           'merge',
           deps.selectMemory
         );
-        const commitPushPrPrompt = buildCommitPushPrPrompt(
-          mergePromptState,
-          branch,
-          baseBranch,
-          repoUrl
-        );
+        const commitPushPrPrompt = prTarget
+          ? buildCommitPushPrPrompt(mergePromptState, branch, baseBranch, repoUrl, prTarget)
+          : buildCommitPushPrPrompt(mergePromptState, branch, baseBranch, repoUrl);
         await updatePhasePrompt(mergeTimingId, commitPushPrPrompt);
         const commitResult = await retryExecute(executor, commitPushPrPrompt, options, {
           logger: log,
@@ -216,7 +250,9 @@ export function createMergeNode(deps: MergeNodeDeps) {
             // the real PR for this branch via the GitHub API.
             try {
               const prStatuses = await deps.gitPrService.listPrStatuses(cwd);
-              const matchingPr = prStatuses.find((pr) => pr.headRefName === branch);
+              const matchingPr = prStatuses.find(
+                (pr) => pr.headRefName === branch || pr.headRefName === prTarget?.headRef
+              );
               if (matchingPr) {
                 prUrl = matchingPr.url;
                 prNumber = matchingPr.number;
@@ -427,8 +463,7 @@ export function createMergeNode(deps: MergeNodeDeps) {
           // On MERGE_CONFLICT, falls back to agent-based merge for conflict resolution.
           log.info('Programmatic local squash merge (no agent needed)');
 
-          const rawCommitMsg = `feat: squash merge ${branch} into ${baseBranch}`;
-          const commitMsg = limitCommitSubjectLength(rawCommitMsg);
+          const commitMsg = truncateCommitTitle(`feat: squash merge ${branch} into ${baseBranch}`);
           try {
             await deps.localMergeSquash(
               state.repositoryPath,

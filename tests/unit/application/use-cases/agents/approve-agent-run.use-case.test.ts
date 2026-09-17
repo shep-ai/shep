@@ -25,7 +25,6 @@ function createFakeNodeHelpers(): INodeHelpers {
   return {
     writeSpecFileAtomic: vi.fn(),
     safeYamlDump: vi.fn().mockReturnValue(''),
-    clearCompletedPhase: vi.fn(),
   };
 }
 

@@ -21,6 +21,10 @@ import {
 } from '@/infrastructure/services/settings.service.js';
 import { messages } from '../../ui/index.js';
 import { getCliI18n } from '../../i18n.js';
+import {
+  clampMaxParallelFeatures,
+  UNLIMITED_PARALLEL_FEATURES,
+} from '@/domain/shared/parallel-feature-limit.js';
 
 interface WorkflowOptions {
   allowPrd?: true;
@@ -29,6 +33,7 @@ interface WorkflowOptions {
   allowAll?: true;
   push?: boolean;
   pr?: boolean;
+  maxParallel?: string;
 }
 
 /**
@@ -45,13 +50,19 @@ export function createWorkflowCommand(): Command {
     .option('--no-push', getCliI18n().t('cli:commands.settings.workflow.noPushOption'))
     .option('--pr', getCliI18n().t('cli:commands.settings.workflow.prOption'))
     .option('--no-pr', getCliI18n().t('cli:commands.settings.workflow.noPrOption'))
+    .option(
+      '--max-parallel <n>',
+      getCliI18n().t('cli:commands.settings.workflow.maxParallelOption')
+    )
     .addHelpText(
       'after',
       `
 Examples:
   $ shep settings workflow                              Interactive wizard
   $ shep settings workflow --allow-prd --push           Set specific flags
-  $ shep settings workflow --allow-all --pr             Full autonomous mode`
+  $ shep settings workflow --allow-all --pr             Full autonomous mode
+  $ shep settings workflow --max-parallel 3             Run at most 3 features at once
+  $ shep settings workflow --max-parallel 0             No limit (default)`
     )
     .action(async (options: WorkflowOptions) => {
       try {
@@ -61,7 +72,8 @@ Examples:
           options.allowMerge !== undefined ||
           options.allowAll !== undefined ||
           options.push !== undefined ||
-          options.pr !== undefined;
+          options.pr !== undefined ||
+          options.maxParallel !== undefined;
 
         const settings = getSettings();
         let workflowDefaults: WorkflowDefaultsResult;
@@ -112,6 +124,14 @@ Examples:
         settings.workflow.openPrOnImplementationComplete =
           workflowDefaults.openPrOnImplementationComplete;
 
+        // Clamping is the domain's rule — the same helper guards the web input,
+        // the mapper and the admission check, so a bad value can never be stored.
+        if (options.maxParallel !== undefined) {
+          settings.workflow.maxParallelFeatures = clampMaxParallelFeatures(
+            Number(options.maxParallel)
+          );
+        }
+
         // Persist
         const useCase = container.resolve(UpdateSettingsUseCase);
         const updatedSettings = await useCase.execute(settings);
@@ -132,6 +152,13 @@ Examples:
         const summary =
           enabled.length > 0 ? enabled.join(', ') : t('cli:commands.settings.workflow.summaryNone');
         messages.success(t('cli:commands.settings.workflow.success', { summary }));
+
+        const limit = settings.workflow.maxParallelFeatures ?? UNLIMITED_PARALLEL_FEATURES;
+        messages.info(
+          limit === UNLIMITED_PARALLEL_FEATURES
+            ? t('cli:commands.settings.workflow.maxParallelUnlimited')
+            : t('cli:commands.settings.workflow.maxParallelSet', { limit })
+        );
       } catch (error) {
         const err = error instanceof Error ? error : new Error(String(error));
 

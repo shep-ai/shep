@@ -16,6 +16,8 @@ import { EvaluateSupervisorDecisionUseCase } from '@/application/use-cases/agent
 import type { EscalateToUserUseCase } from '@/application/use-cases/agents/escalate-to-user.use-case.js';
 import { GetSupervisorPolicyUseCase } from '@/application/use-cases/agents/get-supervisor-policy.use-case.js';
 import { ConfigureSupervisorUseCase } from '@/application/use-cases/agents/configure-supervisor.use-case.js';
+import { DisableSupervisorUseCase } from '@/application/use-cases/agents/disable-supervisor.use-case.js';
+import { EnableSupervisorUseCase } from '@/application/use-cases/agents/enable-supervisor.use-case.js';
 import { InMemorySupervisorPolicyRepository } from '@/infrastructure/adapters/in-memory/in-memory-supervisor-policy-repository.js';
 import { InMemorySupervisorDecisionRepository } from '@/infrastructure/adapters/in-memory/in-memory-supervisor-decision-repository.js';
 import { InMemorySupervisorAgent } from '@/infrastructure/adapters/in-memory/in-memory-supervisor-agent.js';
@@ -130,6 +132,53 @@ describe('EvaluateSupervisorDecisionUseCase', () => {
     expect(result.skippedReason).toBe('no-policy');
     expect(result.decision).toBeUndefined();
     expect(activityLog.entries).toHaveLength(0);
+  });
+
+  // `shep supervisor disable` writes this flag and `shep supervisor status`
+  // prints it. Before this guard the flag was never read, so a disabled
+  // `autonomous` policy carried on evaluating gates and closing them.
+  it('returns evaluated=false with skippedReason="disabled" when the policy is disabled', async () => {
+    await configure.execute({
+      scopeType: SupervisorScopeType.app,
+      scopeId: 'app-1',
+      autonomyLevel: SupervisorAutonomy.autonomous,
+    });
+    await new DisableSupervisorUseCase(policyRepo).execute({
+      scopeType: SupervisorScopeType.app,
+      scopeId: 'app-1',
+    });
+
+    const useCase = makeUseCase(true);
+    const result = await useCase.execute({
+      event: gateEvent(),
+      supervisorRunId: 'sup-run-1',
+    });
+
+    expect(result.evaluated).toBe(false);
+    expect(result.skippedReason).toBe('disabled');
+    expect(result.decision).toBeUndefined();
+    expect(activityLog.entries).toHaveLength(0);
+  });
+
+  it('evaluates again once the policy is re-enabled', async () => {
+    await configure.execute({
+      scopeType: SupervisorScopeType.app,
+      scopeId: 'app-1',
+      autonomyLevel: SupervisorAutonomy.autonomous,
+    });
+    const disable = new DisableSupervisorUseCase(policyRepo);
+    const enable = new EnableSupervisorUseCase(policyRepo);
+    await disable.execute({ scopeType: SupervisorScopeType.app, scopeId: 'app-1' });
+    await enable.execute({ scopeType: SupervisorScopeType.app, scopeId: 'app-1' });
+
+    const useCase = makeUseCase(true);
+    const result = await useCase.execute({
+      event: gateEvent(),
+      supervisorRunId: 'sup-run-1',
+    });
+
+    expect(result.evaluated).toBe(true);
+    expect(result.decision).toBeDefined();
   });
 
   it('persists a SupervisorDecision and mirrors to activity_log on the happy path', async () => {

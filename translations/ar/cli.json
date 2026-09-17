@@ -62,7 +62,10 @@
         "push": "دفع",
         "pr": "PR",
         "cancelled": "تم إلغاء التكوين.",
-        "failed": "فشل تكوين إعدادات سير العمل الافتراضية"
+        "failed": "فشل تكوين إعدادات سير العمل الافتراضية",
+        "maxParallelOption": "أقصى عدد من الميزات التي تشغّل وكيلاً في وقت واحد (0 = بلا حد)",
+        "maxParallelUnlimited": "لا حد للميزات المتوازية",
+        "maxParallelSet": "تشغيل {{limit}} ميزات كحد أقصى بالتوازي"
       },
       "language": {
         "description": "تكوين لغة العرض",
@@ -332,7 +335,8 @@
         "statusLabel": "الحالة:",
         "agentLabel": "الوكيل:",
         "spawnedStatus": "تم التشغيل",
-        "failedToStart": "فشل بدء الميزة"
+        "failedToStart": "فشل بدء الميزة",
+        "forceOption": "ابدأ حتى عند بلوغ حد الميزات المتوازية"
       },
       "approve": {
         "description": "الموافقة على ميزة في انتظار المراجعة",
@@ -990,5 +994,10 @@
     "failedSettings": "فشلت تهيئة الإعدادات",
     "unexpectedError": "حدث خطأ غير متوقع",
     "unhandledRejection": "رفض وعد غير معالج"
+  },
+  "features": {
+    "queued": "في قائمة الانتظار",
+    "queuedWithPosition": "في الانتظار · {{position}} قبلها",
+    "queuedTooltip": "بانتظار مكان شاغر ({{position}} في الطابور)"
   }
 }

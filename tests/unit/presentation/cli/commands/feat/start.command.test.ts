@@ -62,7 +62,7 @@ describe('createStartCommand', () => {
     const cmd = createStartCommand();
     await cmd.parseAsync(['feat-001'], { from: 'user' });
 
-    expect(mockStartExecute).toHaveBeenCalledWith('feat-001');
+    expect(mockStartExecute).toHaveBeenCalledWith('feat-001', { bypassCapacityLimit: false });
   });
 
   it('should display success output with feature details on success', async () => {

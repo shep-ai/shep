@@ -37,7 +37,7 @@
  * type defined here MUST NOT be imported from any non-prototype code.
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
 const STORAGE_KEY = 'shep:workspaces:v1';
 export const DEFAULT_WORKSPACE_ID = 'default';
@@ -69,28 +69,20 @@ const INITIAL_STATE: WorkspacesState = {
   activeWorkspaceId: DEFAULT_WORKSPACE_ID,
 };
 
+function freshInitialState(): WorkspacesState {
+  return {
+    workspaces: [{ ...INITIAL_STATE.workspaces[0]! }],
+    activeWorkspaceId: INITIAL_STATE.activeWorkspaceId,
+  };
+}
+
 function loadState(): WorkspacesState {
-  if (typeof window === 'undefined') {
-    return {
-      workspaces: INITIAL_STATE.workspaces,
-      activeWorkspaceId: INITIAL_STATE.activeWorkspaceId,
-    };
-  }
+  if (typeof window === 'undefined') return freshInitialState();
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      return {
-        workspaces: INITIAL_STATE.workspaces,
-        activeWorkspaceId: INITIAL_STATE.activeWorkspaceId,
-      };
-    }
+    if (!raw) return freshInitialState();
     const parsed = JSON.parse(raw) as Partial<WorkspacesState>;
-    if (!parsed.workspaces || !Array.isArray(parsed.workspaces)) {
-      return {
-        workspaces: INITIAL_STATE.workspaces,
-        activeWorkspaceId: INITIAL_STATE.activeWorkspaceId,
-      };
-    }
+    if (!parsed.workspaces || !Array.isArray(parsed.workspaces)) return freshInitialState();
     // Make sure default workspace always exists
     const hasDefault = parsed.workspaces.some((w) => w.id === DEFAULT_WORKSPACE_ID);
     const workspaces = hasDefault
@@ -101,10 +93,7 @@ function loadState(): WorkspacesState {
       activeWorkspaceId: parsed.activeWorkspaceId ?? DEFAULT_WORKSPACE_ID,
     };
   } catch {
-    return {
-      workspaces: INITIAL_STATE.workspaces,
-      activeWorkspaceId: INITIAL_STATE.activeWorkspaceId,
-    };
+    return freshInitialState();
   }
 }
 
@@ -142,21 +131,16 @@ export interface UseWorkspacesResult {
 }
 
 export function useWorkspaces(): UseWorkspacesResult {
-  const [state, setState] = useState<WorkspacesState>(INITIAL_STATE);
-  const isHydratedRef = useRef(false);
+  // Lazy initializer: loadState() runs once, synchronously, on the first
+  // render — so `state` is already hydrated from localStorage before the
+  // persist effect below ever runs. There is deliberately no separate
+  // "hydrate after mount" effect: that pattern raced against this same
+  // persist effect (which would fire first with the un-hydrated default
+  // and clobber previously-saved workspaces) — see LESSONS.md.
+  const [state, setState] = useState<WorkspacesState>(loadState);
 
-  // Hydrate from localStorage on mount
+  // Persist whenever state changes.
   useEffect(() => {
-    const loaded = loadState();
-    setState(loaded);
-    isHydratedRef.current = true;
-  }, []);
-
-  // Persist whenever state changes, but only after initial hydration
-  // This effect runs after hydration is complete, so isHydratedRef.current
-  // should be true and state will be saved to localStorage on any change.
-  useEffect(() => {
-    if (!isHydratedRef.current) return;
     saveState(state);
   }, [state]);
 

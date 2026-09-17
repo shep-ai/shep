@@ -4,6 +4,7 @@ import { useState, useTransition, useRef, useEffect, useCallback, useMemo } from
 import {
   Check,
   Bot,
+  Gauge,
   Terminal,
   GitBranch,
   Activity,
@@ -70,6 +71,7 @@ const LANGUAGE_OPTIONS = [
 import { TimeoutSlider } from '@/components/features/settings/timeout-slider';
 import { SupplyChainSecuritySettingsSection } from '@/components/features/settings/supply-chain-security-settings-section';
 import { WorktreeSettingsSection } from '@/components/features/settings/worktree-settings-section';
+import { AdaptiveModelSettingsSection } from '@/components/features/settings/adaptive-model-settings-section';
 import type {
   Settings,
   FeatureFlags,
@@ -78,6 +80,11 @@ import type {
   FabLayoutConfig,
 } from '@shepai/core/domain/generated/output';
 import { DefaultHomePage } from '@shepai/core/domain/generated/output';
+import {
+  clampMaxParallelFeatures,
+  MAX_PARALLEL_FEATURES_LIMIT,
+  UNLIMITED_PARALLEL_FEATURES,
+} from '@shepai/core/domain/shared/parallel-feature-limit';
 import type { AvailableTerminal } from '@/app/actions/get-available-terminals';
 
 const EDITOR_OPTIONS = [
@@ -108,6 +115,7 @@ const AUTH_METHOD_OPTIONS = [
 const SECTIONS = [
   { id: 'language', labelKey: 'settings.sections.language', icon: Globe },
   { id: 'agent', labelKey: 'settings.sections.agent', icon: Bot },
+  { id: 'adaptive-models', labelKey: 'settings.sections.adaptiveModels', icon: Gauge },
   { id: 'environment', labelKey: 'settings.sections.environment', icon: Terminal },
   { id: 'workflow', labelKey: 'settings.sections.workflow', icon: GitBranch },
   { id: 'worktree', labelKey: 'settings.sections.worktree', icon: FolderGit2 },
@@ -474,6 +482,10 @@ export function SettingsPageClient({
   const [ciWatchEnabled, setCiWatchEnabled] = useState(settings.workflow.ciWatchEnabled !== false);
   const [hideCiStatus, setHideCiStatus] = useState(settings.workflow.hideCiStatus !== false);
   const [defaultMode, setDefaultMode] = useState(settings.workflow.defaultMode ?? 'Fast');
+  // 0 is a real, meaningful value here (unlimited), so it must not be coalesced away.
+  const [maxParallelFeatures, setMaxParallelFeatures] = useState(
+    String(clampMaxParallelFeatures(settings.workflow.maxParallelFeatures))
+  );
   // Auto-archive state
   const [autoArchiveEnabled, setAutoArchiveEnabled] = useState(
     (settings.workflow.autoArchiveDelayMinutes ?? 10) > 0
@@ -628,6 +640,7 @@ export function SettingsPageClient({
       ciWatchEnabled?: boolean;
       hideCiStatus?: boolean;
       defaultMode?: string;
+      maxParallelFeatures?: number;
       autoArchiveEnabled?: boolean;
       autoArchiveDelay?: string;
       ciMaxFix?: string;
@@ -661,6 +674,8 @@ export function SettingsPageClient({
         ciWatchEnabled: overrides.ciWatchEnabled ?? ciWatchEnabled,
         hideCiStatus: overrides.hideCiStatus ?? hideCiStatus,
         defaultMode: overrides.defaultMode ?? defaultMode,
+        maxParallelFeatures:
+          overrides.maxParallelFeatures ?? clampMaxParallelFeatures(Number(maxParallelFeatures)),
         autoArchiveDelayMinutes: archiveEnabled
           ? Number.isNaN(archiveDelay) || archiveDelay < 1
             ? 10
@@ -974,6 +989,24 @@ export function SettingsPageClient({
           </SectionHint>
         </div>
 
+        {/* ── Adaptive model selection ── */}
+        <div
+          id="section-adaptive-models"
+          className="grid scroll-mt-18 grid-cols-1 gap-x-5 rounded-lg lg:grid-cols-[1fr_280px]"
+        >
+          <AdaptiveModelSettingsSection adaptive={settings.models.adaptive} />
+          <SectionHint
+            links={[
+              {
+                label: t('settings.adaptiveModels.links.configurationGuide'),
+                href: 'https://github.com/shep-ai/shep/blob/main/docs/guides/configuration.md',
+              },
+            ]}
+          >
+            {t('settings.adaptiveModels.hint')}
+          </SectionHint>
+        </div>
+
         {/* ── Environment ── */}
         <div
           id="section-environment"
@@ -1161,6 +1194,28 @@ export function SettingsPageClient({
                   </SelectItem>
                 </SelectContent>
               </Select>
+            </SettingsRow>
+            <SettingsRow
+              label={t('settings.workflow.maxParallelFeatures')}
+              description={t('settings.workflow.maxParallelFeaturesDescription')}
+              htmlFor="max-parallel-features"
+            >
+              <NumberStepper
+                id="max-parallel-features"
+                testId="input-max-parallel-features"
+                value={maxParallelFeatures}
+                placeholder={String(UNLIMITED_PARALLEL_FEATURES)}
+                min={UNLIMITED_PARALLEL_FEATURES}
+                max={MAX_PARALLEL_FEATURES_LIMIT}
+                onChange={setMaxParallelFeatures}
+                onBlur={() => {
+                  // Clamping is the domain's rule, not the component's — the same
+                  // helper guards the CLI, the mapper and the admission check.
+                  const clamped = clampMaxParallelFeatures(Number(maxParallelFeatures));
+                  setMaxParallelFeatures(String(clamped));
+                  save(buildWorkflowPayload({ maxParallelFeatures: clamped }));
+                }}
+              />
             </SettingsRow>
             <SubsectionLabel>{t('settings.workflow.subsections.approve')}</SubsectionLabel>
             <SwitchRow

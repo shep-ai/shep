@@ -11,6 +11,7 @@ import type { IFeatureRepository } from '@/application/ports/output/repositories
 import type { IGitForkService } from '@/application/ports/output/services/git-fork-service.interface';
 import type { Feature } from '@/domain/generated/output';
 import { SdlcLifecycle, PrStatus, BuildMode } from '@/domain/generated/output';
+import { createMockFeatureRepository } from '../../../../helpers/feature-repository.mock.js';
 
 function createMockFeature(overrides: Partial<Feature> = {}): Feature {
   return {
@@ -55,18 +56,7 @@ describe('PollUpstreamPrUseCase', () => {
   let useCase: PollUpstreamPrUseCase;
 
   beforeEach(() => {
-    featureRepo = {
-      create: vi.fn(),
-      findById: vi.fn(),
-      findByIdPrefix: vi.fn(),
-      findBySlug: vi.fn(),
-      findByBranch: vi.fn(),
-      findByParentId: vi.fn().mockResolvedValue([]),
-      list: vi.fn().mockResolvedValue([]),
-      update: vi.fn(),
-      delete: vi.fn(),
-      softDelete: vi.fn(),
-    };
+    featureRepo = createMockFeatureRepository();
     forkService = {
       forkRepository: vi.fn(),
       pushToFork: vi.fn(),

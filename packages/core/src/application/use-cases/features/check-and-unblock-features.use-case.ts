@@ -21,27 +21,26 @@
  *   per-child and recorded in the activity timeline. Agent spawns regardless of
  *   rebase outcome.
  * - NFR-3: rebase is skipped if the child has an active (running) agent run.
+ * - Capacity: opening the dependency gate does not by itself grant a machine slot.
+ *   A released child with no slot available is queued (Pending + queuedAt) instead
+ *   of started, and AdmitQueuedFeaturesUseCase picks it up when one frees. The two
+ *   gates are independent and a child must pass both.
  *
  * Called from: UpdateFeatureLifecycleUseCase after every lifecycle transition.
  */
 
 import { injectable, inject } from 'tsyringe';
 import { randomUUID } from 'node:crypto';
-import {
-  SdlcLifecycle,
-  BuildMode,
-  AgentRunStatus,
-  AgentType,
-} from '../../../domain/generated/output.js';
+import { SdlcLifecycle, AgentRunStatus, AgentType } from '../../../domain/generated/output.js';
 import type { Feature } from '../../../domain/generated/output.js';
 import type { IFeatureRepository } from '../../ports/output/repositories/feature-repository.interface.js';
-import type { IFeatureAgentProcessService } from '../../ports/output/agents/feature-agent-process.interface.js';
-import type { ISettingsRepository } from '../../ports/output/repositories/settings.repository.interface.js';
-import type { IWorktreeService } from '../../ports/output/services/worktree-service.interface.js';
 import type { IAgentRunRepository } from '../../ports/output/agents/agent-run-repository.interface.js';
 import type { IPhaseTimingRepository } from '../../ports/output/agents/phase-timing-repository.interface.js';
 import { satisfiesDependencyGate } from '../../../domain/lifecycle-gates.js';
+import { markQueuedForCapacity } from '../../../domain/shared/parallel-feature-limit.js';
 import { SyncFeatureBranchUseCase } from './sync-feature-branch.use-case.js';
+import { SpawnFeatureAgentUseCase } from './spawn-feature-agent.use-case.js';
+import { FeatureCapacityService } from './capacity/feature-capacity.service.js';
 
 /** Maximum time (ms) to wait for a single child rebase before aborting. */
 const REBASE_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
@@ -50,18 +49,16 @@ const REBASE_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
 export class CheckAndUnblockFeaturesUseCase {
   constructor(
     @inject('IFeatureRepository') private readonly featureRepo: IFeatureRepository,
-    @inject('IFeatureAgentProcessService')
-    private readonly agentProcess: IFeatureAgentProcessService,
-    @inject('ISettingsRepository')
-    private readonly settingsRepository: ISettingsRepository,
-    @inject('IWorktreeService')
-    private readonly worktreeService: IWorktreeService,
     @inject(SyncFeatureBranchUseCase)
     private readonly syncFeatureBranch: SyncFeatureBranchUseCase,
     @inject('IAgentRunRepository')
     private readonly agentRunRepo: IAgentRunRepository,
     @inject('IPhaseTimingRepository')
-    private readonly phaseTimingRepo: IPhaseTimingRepository
+    private readonly phaseTimingRepo: IPhaseTimingRepository,
+    @inject(SpawnFeatureAgentUseCase)
+    private readonly spawnFeatureAgent: SpawnFeatureAgentUseCase,
+    @inject(FeatureCapacityService)
+    private readonly capacity: FeatureCapacityService
   ) {}
 
   /**
@@ -87,6 +84,14 @@ export class CheckAndUnblockFeaturesUseCase {
         continue;
       }
 
+      // The dependency gate is open, but a machine slot is a separate question.
+      // With none free, the child leaves Blocked for the capacity queue rather
+      // than starting — AdmitQueuedFeaturesUseCase releases it when one frees.
+      if (!(await this.capacity.hasCapacity())) {
+        await this.featureRepo.update(markQueuedForCapacity(child));
+        continue;
+      }
+
       // Transition to Started
       child.lifecycle = SdlcLifecycle.Started;
       child.updatedAt = new Date();
@@ -96,38 +101,13 @@ export class CheckAndUnblockFeaturesUseCase {
       // Rebase child branch onto parent branch (isolated per-child)
       await this.rebaseChildOntoParent(child, parent);
 
-      // Spawn agent using fields set at feature creation time
-      if (child.agentRunId && child.specPath) {
-        // A feature created as Blocked never went through worktree setup, so the
-        // stored path is often empty — derive it rather than letting the child
-        // agent run in the repository root.
-        const storedWorktreePath = child.worktreePath ?? '';
-        const worktreePath =
-          storedWorktreePath.length > 0
-            ? storedWorktreePath
-            : this.worktreeService.getWorktreePath(child.repositoryPath, child.branch);
-
-        this.agentProcess.spawn(
-          child.id,
-          child.agentRunId,
-          child.repositoryPath,
-          child.specPath,
-          worktreePath,
-          {
-            approvalGates: child.approvalGates,
-            push: child.push,
-            openPr: child.openPr,
-            forkAndPr: child.forkAndPr,
-            commitSpecs: child.commitSpecs,
-            ciWatchEnabled: child.ciWatchEnabled,
-            enableEvidence: child.enableEvidence,
-            commitEvidence: child.commitEvidence,
-            ...(child.fast ? { fast: true } : {}),
-            securityMode: (await this.settingsRepository.load())?.security?.mode,
-            ...(child.buildMode === BuildMode.Exploration ? { exploration: true } : {}),
-          }
-        );
-      }
+      // Spawn through the single spawn path. The sync is skipped because the
+      // rebase above already performed it, instrumented for the timeline.
+      await this.spawnFeatureAgent.execute({
+        feature: child,
+        syncBranch: false,
+        parentBranch: parent.branch,
+      });
     }
 
     return unblockedIds;

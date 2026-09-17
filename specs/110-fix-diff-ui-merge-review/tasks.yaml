@@ -1,0 +1,90 @@
+# Task Breakdown (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: fix-diff-ui-merge-review
+summary: Task breakdown for 110-fix-diff-ui-merge-review
+
+# Relationships
+relatedFeatures: ["073-file-tree-diff-view", "054-merge-review-diff"]
+technologies: ["TypeScript", "Node.js child_process"]
+relatedLinks: []
+
+# Structured task list — this is the single source of truth for tasks.
+# The content field below is a summary only; it does NOT duplicate task details.
+tasks:
+  - id: task-1
+    title: Add maxBuffer to GitPrService.getFileDiffs
+    description: >
+      Add an explicit `maxBuffer` option (10MB, matching the
+      `COMMAND_MAX_BUFFER_BYTES` precedent in `worktree-hook-runner.ts`) to
+      the `execFile('git', ['diff', '--unified=3', ...], { cwd })` call in
+      `GitPrService.getFileDiffs` so large diffs no longer throw a
+      maxBuffer-exceeded error.
+    state: Done
+    dependencies: []
+    acceptanceCriteria:
+      - "getFileDiffs invokes execFile with a maxBuffer option of at least 10MB"
+      - "A unit test with diff output larger than Node's default 1MB buffer parses successfully without throwing"
+      - "Existing getFileDiffs tests (parsing modified/added/deleted/renamed files) continue to pass unchanged"
+    tdd:
+      red:
+        - "Add a test in git-pr.service.test.ts asserting execFile is called with a maxBuffer option, and a test with a synthetic diff string larger than 1MB that currently would fail without the fix"
+      green:
+        - "Add the maxBuffer option (extract/reuse a constant, e.g. 10 * 1024 * 1024) to the execFile call inside getFileDiffs"
+      refactor:
+        - "Consider extracting the maxBuffer constant for reuse/consistency with worktree-hook-runner.ts naming if straightforward; otherwise leave as a local constant with a clear name"
+    estimatedEffort: XS
+
+  - id: task-2
+    title: Surface a warning when getFileDiffs fails in getMergeReviewData
+    description: >
+      Change the `getFileDiffs(...).catch(() => undefined)` handling in
+      `get-merge-review-data.ts` so a rejection also produces a `warning`
+      message on the returned `MergeReviewData`, instead of only returning
+      `fileDiffs: undefined` with no indication to the user.
+    state: Done
+    dependencies:
+      - task-1
+    acceptanceCriteria:
+      - "When getFileDiffs rejects, getMergeReviewData returns fileDiffs: undefined AND a non-empty warning string"
+      - "Existing warning behavior for other failure paths (e.g. diff-summary failure, no PR/no worktree) is unchanged"
+      - "MergeReviewContent still renders the existing warning UI without any component changes"
+    tdd:
+      red:
+        - "Add a test in get-merge-review-data.test.ts mocking getFileDiffs to reject and asserting the returned data includes a warning"
+      green:
+        - "Update the getFileDiffs call site to catch the rejection and merge/set a warning message on the result instead of silently returning undefined"
+      refactor:
+        - "Ensure warning messages from multiple partial failures (diff summary + file diffs) compose sensibly if both fail in the same request"
+    estimatedEffort: XS
+
+# Total effort estimate
+totalEstimate: S
+
+# Open questions
+openQuestions: []
+
+# Markdown content — summary and acceptance checklist only.
+# Individual task details live in the tasks[] array above (no duplication).
+content: |
+  ## Summary
+
+  Fix the Merge Review file-diff UI silently disappearing for large diffs —
+  2 tasks across 2 phases: (1) add an explicit `maxBuffer` to the `git diff`
+  exec call, and (2) surface a warning instead of silently swallowing any
+  remaining `getFileDiffs` failures.
+
+  ## Acceptance Checklist
+
+  Before marking feature complete:
+
+  - [ ] All tasks completed
+  - [ ] Tests passing (`pnpm test`)
+  - [ ] Linting clean (`pnpm lint`)
+  - [ ] Types valid (`pnpm typecheck`)
+  - [ ] TypeSpec compiles (`pnpm tsp:compile`)
+  - [ ] PR created and reviewed
+
+  ---
+
+  _Task details are in the tasks[] array of tasks.yaml_

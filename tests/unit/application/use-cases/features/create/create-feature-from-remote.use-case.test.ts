@@ -84,8 +84,12 @@ describe('CreateFeatureFromRemoteUseCase', () => {
     } as unknown as ImportGitHubRepositoryUseCase;
 
     mockCreateFeatureUseCase = {
-      execute: vi.fn().mockResolvedValue({ feature: mockFeature, warning: undefined }),
-      createRecord: vi.fn().mockResolvedValue({ feature: mockFeature, shouldSpawn: true }),
+      execute: vi
+        .fn()
+        .mockResolvedValue({ feature: mockFeature, warning: undefined, queued: false }),
+      createRecord: vi
+        .fn()
+        .mockResolvedValue({ feature: mockFeature, shouldSpawn: true, queued: false }),
       initializeAndSpawn: vi
         .fn()
         .mockResolvedValue({ updatedFeature: mockFeature, warning: undefined }),
@@ -208,6 +212,7 @@ describe('CreateFeatureFromRemoteUseCase', () => {
       vi.mocked(mockCreateFeatureUseCase.execute).mockResolvedValue({
         feature: mockFeature,
         warning: 'slug collision resolved',
+        queued: false,
       });
 
       const result = await useCase.execute(baseInput);
@@ -271,6 +276,7 @@ describe('CreateFeatureFromRemoteUseCase', () => {
       vi.mocked(mockCreateFeatureUseCase.createRecord).mockResolvedValue({
         feature: createMockFeature({ lifecycle: SdlcLifecycle.Blocked }),
         shouldSpawn: false,
+        queued: false,
       });
 
       const result = await useCase.createRecord(baseInput);

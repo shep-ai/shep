@@ -62,7 +62,10 @@
         "push": "Push",
         "pr": "PR",
         "cancelled": "Configuración cancelada.",
-        "failed": "Error al configurar los valores predeterminados del flujo de trabajo"
+        "failed": "Error al configurar los valores predeterminados del flujo de trabajo",
+        "maxParallelOption": "Máximo de funcionalidades ejecutando un agente a la vez (0 = sin límite)",
+        "maxParallelUnlimited": "Sin límite de funcionalidades paralelas",
+        "maxParallelSet": "Ejecutando como máximo {{limit}} funcionalidades en paralelo"
       },
       "language": {
         "description": "Configurar el idioma de visualización",
@@ -332,7 +335,8 @@
         "statusLabel": "Estado:",
         "agentLabel": "Agente:",
         "spawnedStatus": "iniciado",
-        "failedToStart": "Error al iniciar la funcionalidad"
+        "failedToStart": "Error al iniciar la funcionalidad",
+        "forceOption": "Iniciar incluso cuando se alcanza el límite de funcionalidades paralelas"
       },
       "approve": {
         "description": "Aprobar una funcionalidad en espera de revisión",
@@ -990,5 +994,10 @@
     "failedSettings": "Error al inicializar la configuración",
     "unexpectedError": "Ocurrió un error inesperado",
     "unhandledRejection": "Rechazo de promesa no manejado"
+  },
+  "features": {
+    "queued": "En cola",
+    "queuedWithPosition": "En cola · {{position}} por delante",
+    "queuedTooltip": "Esperando un espacio libre ({{position}} en la cola)"
   }
 }

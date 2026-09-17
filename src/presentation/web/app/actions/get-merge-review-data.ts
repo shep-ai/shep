@@ -16,19 +16,6 @@ import { getSettings } from '@shepai/core/infrastructure/services/settings.servi
 
 type GetMergeReviewDataResult = MergeReviewData | { error: string };
 
-const FILE_DIFFS_TOO_LARGE_WARNING = 'File diffs are too large to display';
-const FILE_DIFFS_UNAVAILABLE_WARNING = 'File diffs unavailable';
-
-/**
- * Node's execFile enforces a stdout buffer ceiling. If `git diff` output ever
- * exceeds it, the error message contains "maxBuffer" — detect that case so we
- * can show a warning that explains the diff is too large rather than a
- * generic failure message.
- */
-function isMaxBufferError(error: unknown): boolean {
-  return error instanceof Error && error.message.includes('maxBuffer');
-}
-
 /**
  * Compute the shep evidence directory for a given repository and feature.
  * Path: ~/.shep/repos/<sha256-hash-prefix>/evidence/<featureId>/
@@ -152,12 +139,25 @@ export async function getMergeReviewData(featureId: string): Promise<GetMergeRev
       };
     }
 
-    const [diffSummaryResult, fileDiffsResult] = await Promise.allSettled([
-      gitPrService.getPrDiffSummary(worktreePath, defaultBranch),
-      gitPrService.getFileDiffs(worktreePath, defaultBranch),
-    ]);
-
-    if (diffSummaryResult.status === 'rejected') {
+    try {
+      let fileDiffsWarning: string | undefined;
+      const [diffSummary, fileDiffs] = await Promise.all([
+        gitPrService.getPrDiffSummary(worktreePath, defaultBranch),
+        gitPrService.getFileDiffs(worktreePath, defaultBranch).catch(() => {
+          fileDiffsWarning = 'File diffs unavailable';
+          return undefined;
+        }),
+      ]);
+      return {
+        pr,
+        branch,
+        diffSummary,
+        fileDiffs,
+        evidence,
+        warning: fileDiffsWarning,
+        hideCiStatus: workflow.hideCiStatus,
+      };
+    } catch {
       return {
         pr,
         branch,
@@ -166,24 +166,6 @@ export async function getMergeReviewData(featureId: string): Promise<GetMergeRev
         hideCiStatus: workflow.hideCiStatus,
       };
     }
-
-    const fileDiffs = fileDiffsResult.status === 'fulfilled' ? fileDiffsResult.value : undefined;
-    const fileDiffsWarning =
-      fileDiffsResult.status === 'rejected'
-        ? isMaxBufferError(fileDiffsResult.reason)
-          ? FILE_DIFFS_TOO_LARGE_WARNING
-          : FILE_DIFFS_UNAVAILABLE_WARNING
-        : undefined;
-
-    return {
-      pr,
-      branch,
-      diffSummary: diffSummaryResult.value,
-      fileDiffs,
-      fileDiffsWarning,
-      evidence,
-      hideCiStatus: workflow.hideCiStatus,
-    };
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Failed to load merge review data';
     return { error: message };

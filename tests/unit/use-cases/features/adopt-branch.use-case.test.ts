@@ -10,6 +10,7 @@ import type { IAgentRunRepository } from '@/application/ports/output/agents/agen
 import type { ISpecInitializerService } from '@/application/ports/output/services/spec-initializer.interface.js';
 import type { ISettingsProvider } from '@/application/ports/output/services/settings-provider.interface.js';
 import { AdoptBranchUseCase } from '@/application/use-cases/features/adopt-branch.use-case.js';
+import { createMockFeatureRepository } from '../../../helpers/feature-repository.mock.js';
 
 // Mock fs module for spec directory detection
 vi.mock('node:fs', () => ({
@@ -57,18 +58,7 @@ describe('AdoptBranchUseCase', () => {
       }),
     } as unknown as ISettingsProvider;
 
-    mockFeatureRepo = {
-      create: vi.fn().mockResolvedValue(undefined),
-      findById: vi.fn().mockResolvedValue(null),
-      findByIdPrefix: vi.fn().mockResolvedValue(null),
-      findBySlug: vi.fn().mockResolvedValue(null),
-      findByBranch: vi.fn().mockResolvedValue(null),
-      list: vi.fn().mockResolvedValue([]),
-      update: vi.fn().mockResolvedValue(undefined),
-      findByParentId: vi.fn().mockResolvedValue([]),
-      delete: vi.fn().mockResolvedValue(undefined),
-      softDelete: vi.fn().mockResolvedValue(undefined),
-    };
+    mockFeatureRepo = createMockFeatureRepository();
 
     mockRepositoryRepo = {
       create: vi.fn().mockResolvedValue(mockRepository),

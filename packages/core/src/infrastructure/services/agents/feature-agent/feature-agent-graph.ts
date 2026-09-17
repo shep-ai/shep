@@ -297,13 +297,13 @@ export function createFeatureAgentGraph(
         .addNode('merge', createMergeNode(mergeNodeDeps))
         .addNode('extract_memory', createExtractMemoryNode({ executor, ...deps.extractMemoryDeps }))
         .addEdge('implement', 'merge')
-        .addConditionalEdges('merge', routeReexecution('merge', 'extract_memory'))
+        .addConditionalEdges('merge', routeReexecution('implement', 'extract_memory'))
         .addEdge('extract_memory', END);
     } else {
       graph
         .addNode('merge', createMergeNode(mergeNodeDeps))
         .addEdge('implement', 'merge')
-        .addConditionalEdges('merge', routeReexecution('merge', END));
+        .addConditionalEdges('merge', routeReexecution('implement', END));
     }
   } else {
     graph.addEdge('implement', END);

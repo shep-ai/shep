@@ -44,6 +44,7 @@ import type { IToolInstallerService } from '../../../application/ports/output/se
 import { ToolInstallerServiceImpl } from '../../services/tool-installer/tool-installer.service.js';
 import type { IGitPrService } from '../../../application/ports/output/services/git-pr-service.interface.js';
 import { GitPrService } from '../../services/git/git-pr.service.js';
+import { GitRemoteListService } from '../../services/git/git-remote-list.service.js';
 import type { IGitForkService } from '../../../application/ports/output/services/git-fork-service.interface.js';
 import { GitForkService } from '../../services/git/git-fork.service.js';
 import type { ISkillInjectorService } from '../../../application/ports/output/services/skill-injector.interface.js';
@@ -267,6 +268,7 @@ export function registerServices(container: DependencyContainer): void {
   );
   container.registerSingleton<IGitPrService>('IGitPrService', GitPrService);
   container.registerSingleton<IGitForkService>('IGitForkService', GitForkService);
+  container.registerSingleton<GitRemoteListService>('GitRemoteListService', GitRemoteListService);
   container.registerSingleton<IGitHubRepositoryService>(
     'IGitHubRepositoryService',
     GitHubRepositoryService

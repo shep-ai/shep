@@ -1,0 +1,42 @@
+feature:
+  id: '110-fix-diff-ui-merge-review'
+  name: 'fix-diff-ui-merge-review'
+  number: 110
+  branch: 'feature/agents/fix-file-diff-ui-merge-review'
+  lifecycle: 'implementation'
+  createdAt: '2026-08-31T02:29:37Z'
+
+status:
+  phase: 'implemented'
+  progress:
+    completed: 2
+    total: 2
+    percentage: 100
+  currentTask: null
+  lastUpdated: '2026-08-31T09:39:00Z'
+  lastUpdatedBy: 'shep-kit:new-feature-fast'
+
+validation:
+  lastRun: null
+  gatesPassed: []
+  autoFixesApplied: []
+
+tasks:
+  current: null
+  blocked: []
+  failed: []
+
+checkpoints:
+  - phase: 'feature-created'
+    completedAt: '2026-08-31T02:29:37Z'
+    completedBy: 'shep-kit:new-feature-fast'
+  - phase: 'research-complete'
+    completedAt: '2026-08-31T02:32:43Z'
+    completedBy: 'shep-kit:new-feature-fast'
+  - phase: 'plan-complete'
+    completedAt: '2026-08-31T02:32:43Z'
+    completedBy: 'shep-kit:new-feature-fast'
+
+errors:
+  current: null
+  history: []

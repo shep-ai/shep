@@ -1,5 +1,167 @@
 # Lessons Learned
 
+## Two independent gates need two independent markers — never overload a lifecycle
+
+Spec 110 added a parallel-feature cap. A capacity-queued feature and a
+user-deferred (`--pending`) feature sit in the **same** `Pending` lifecycle, and
+exactly one of them may be started automatically. Encoding "queued" as a
+lifecycle value (or as bare `Pending`) would either auto-start work the user
+deliberately deferred, or require a new `SdlcLifecycle` member rippling through
+36 files — where, per the enum lesson below, raw string comparisons compile
+silently and are missed by an `SdlcLifecycle.` grep.
+
+The marker is `Feature.queuedAt`: it is simultaneously the flag
+(`isQueuedForCapacity`), the FIFO ordering key, and an honest record of *when
+the user asked for the feature to run*.
+
+Rules:
+
+1. **When a second gate can hold an entity back, give it its own field.** Ask
+   "can both conditions be true at once, and do they release on different
+   events?" If yes, one lifecycle cannot represent both.
+2. **Evaluate gates in dependency order and stop at the first closed one.** The
+   capacity check runs only *after* the parent gate opens, so a feature that
+   cannot run anyway never takes a queue place ahead of one that can.
+3. **A capacity count must be derived, never decremented.** `countByLifecycles`
+   recomputes from lifecycle on every call; a maintained counter leaks a slot
+   forever the first time a worker crashes or a feature is force-deleted, and
+   the only symptom is a queue that silently never drains.
+4. **Wire the drain to every event that frees a slot, not just the obvious one.**
+   Lifecycle transition, settings change (raising the limit), feature deletion,
+   and a state-side sweep on dashboard load. Two of those are not lifecycle
+   transitions at all, so an event-side-only hook strands features.
+
+## Extract the spawn path before adding a gate to it
+
+Three call sites built the feature-agent spawn options bag by hand
+(`CreateFeatureUseCase`, `StartFeatureUseCase`, `CheckAndUnblockFeaturesUseCase`)
+and had already drifted: the auto-unblock path omitted `agentType` and `modelId`,
+so a feature created against `gemini-cli` silently restarted under the default
+agent when its parent landed. Nothing failed — it just ran the wrong agent.
+
+**Rule:** when a fourth concern (here, admission control) is about to be added to
+N duplicated code paths, collapse them first. `SpawnFeatureAgentUseCase` is now
+the only place that builds the bag, so the gate was written once and the drift
+was fixed as a side effect. A unit test asserting the spawned options carry the
+`AgentRun`'s `agentType`/`modelId` is the regression lock — assert on
+`spawn.mock.calls[0][5]`, because an options-bag omission is invisible to
+typecheck (every field is optional).
+
+## `ci_watch_enabled` was written by the mapper and dropped by the SQL
+
+Found while adding `workflow_max_parallel_features`: `settings.mapper.ts` wrote
+`ci_watch_enabled` in both directions, but `sqlite-settings.repository.ts` never
+listed the column in its INSERT or UPDATE. Toggling CI watch in the UI appeared
+to save and silently reverted, masked by the column DEFAULT.
+
+**Rule:** when adding a settings or feature column, grep the repository for a
+*neighbouring* column name and confirm your field appears in all three lists
+(INSERT columns, INSERT `@params`, UPDATE `SET`) — then check the neighbour is in
+all three too. This defect class has now shipped four times; each new field is a
+chance to catch an older one.
+
+**Rule:** the round-trip test must write a **non-default** value and then a
+*second, different* non-default value. Only the second write exercises UPDATE;
+asserting the default alone passes even when the write path does not exist.
+
+## A port method addition should be a one-line change, not fifteen
+
+Adding `countByLifecycles`/`listQueued` to `IFeatureRepository` broke 22 test
+files, each carrying its own `{ create: vi.fn(), findById: vi.fn(), ... }` copy
+of the mock.
+
+**Rule:** test doubles for a port live in one place
+(`tests/helpers/feature-repository.mock.ts`), typed as
+`{ [K in keyof IPort]: Mock }` so the compiler still enforces the shape. Before
+hand-patching the same mock in more than two files, extract it.
+
+## A "never strand a record" clause has to enumerate every way the gate loses its owner
+
+The write-side dependency gate deliberately let two cases through so it could not trap a feature in
+`Blocked` forever: no `parentId`, and a `parentId` whose row is gone. A reviewer found the third —
+`parentId === id`. A self-parented row gates on itself, a `Blocked` feature never satisfies its own
+gate, and nothing else can ever open it. `ReparentFeatureUseCase` rejects self-parenting, so I had
+filed it as impossible; corrupted rows do not go through use cases.
+
+The related miss: a refused write returned `void` with no logging, exactly like an accepted one. An
+agent node reporting a phase does not care, but a user dragging a card watches their action do
+nothing and gets no reason anywhere.
+
+**Rules:**
+
+1. When a guard exists to avoid stranding something, write the escape clause as one enumerated list
+   with a comment per entry. Enumerating forces the question "is that all of them?"; three separate
+   `if`s never do.
+2. "The use case rejects it" is not the same as "it cannot exist". Anything reachable by a corrupted
+   or hand-edited row is reachable — validate at the point of use, not only at the point of entry.
+3. A silent refusal needs a recorded reason. If a use case can decline to do the thing it was asked
+   to do and still resolve normally, log what it declined and why — otherwise the only way to find
+   out is to read the source.
+4. Fetch pull request *reviews*, not just review threads, when checking whether feedback landed.
+   Approving reviews carry their findings in the review body; a poll of inline threads shows zero
+   and looks like silence.
+
+## Size a wait budget for its slowest leg, not for the leg you are asserting on
+
+`waitForStatus` in the dev-server-agent harness had one 30s budget covering the whole
+`Analyzing → Installing → Booting → Ready` sequence. The Installing leg runs a real `npm install`,
+and on a Windows runner npm needs 15-20s just to print "up to date" against a fixture that already
+has `node_modules` — so two thirds of the budget was spent before the boot under test even began.
+It passed on Linux every time and lost the race on Windows.
+
+The timeout then failed *twice*: the wait threw, and the `afterEach` teardown threw
+`EBUSY: rmdir` on top of it, because the force-killed child tree still held the fixture directory.
+The teardown error is louder and arrives second, so it is the one you read first — and it points at
+cleanup code that is not the bug.
+
+**Rules:**
+
+1. When one budget spans several legs, size it for the slowest leg on the slowest platform. Write
+   down *which* leg justifies the number, or the next person shrinks it back.
+2. `process.platform === 'win32'` deserves its own constants in test harnesses — npm, process
+   startup, and file-handle release are all multiples slower. A single cross-platform number is
+   either wasteful on Linux or flaky on Windows.
+3. A per-test `timeout` must exceed the wait budget inside it. If vitest kills the test first, the
+   wait never throws and you lose the diagnostic (last status + log tail) that makes CI output
+   readable without a rerun.
+4. Windows releases file handles asynchronously after a force-kill, so `rmSync` on a fixture dir
+   needs a real retry budget (`maxRetries` x `retryDelay`), and that budget has to fit inside
+   vitest's `hookTimeout`. Raise both together.
+5. **The same constant in three test files is one constant.** `TEST_TIMEOUT_MS` was copy-pasted
+   into all three suites, so a platform fix meant three edits and three chances to miss one. It
+   now lives in `harness.ts` next to the wait budget it must stay above.
+
+## Writing `Blocked` is not enforcing a gate — the running agent has to be stopped too
+
+The dependency gate was checked in all four *entry* paths (create, start, reparent,
+auto-unblock) and still did not hold, because none of them owned the case where the feature
+was **already running** when the dependency appeared. Dragging a dependency edge onto a
+running feature set its lifecycle to `Blocked` and returned. The worker kept building on a
+base its parent had not produced, and its next phase report went through
+`UpdateFeatureLifecycleUseCase`, which wrote `Research` straight over `Blocked`. The edge was
+drawn, the node said "blocked", and nothing was blocked.
+
+**Rules:**
+
+- A gate that is only evaluated at the entry points guards *starting*, not *running*. Ask the
+  second question every time: what if the thing is already in flight when the constraint
+  arrives? Here the answer is `StopAgentRunUseCase` — it marks the run `interrupted`
+  (resumable) and `CheckAndUnblockFeaturesUseCase` restarts it, rebased, when the parent lands.
+- **Enforce the invariant at the write, not only at the callers.** Every lifecycle change funnels
+  through `UpdateFeatureLifecycleUseCase`; that is where `allowsLifecycleWrite` now refuses to
+  advance a `Blocked` feature whose parent has not landed. Callers can be forgotten, a choke
+  point cannot. Keep `Deleting`/`Archived`/`Blocked` exempt — filing and teardown are not
+  progress, and refusing them turns the gate into a trap.
+- A guard that can strand a record needs its escape hatch designed in the same commit. A
+  `Blocked` feature whose parent was deleted has a dangling `parentId`; `allowsLifecycleWrite`
+  deliberately returns true when the parent cannot be loaded, because there is no transition
+  left to release it. "Deny by default" is wrong when the deny path has no exit.
+- **Skills and docs encode gates too, and they drift silently.** `shep-workstreams` still told
+  agents the gate opens at `Implementation`, a rule the code stopped using in 52f2e41 — so every
+  wave plan it produced was staged against the wrong milestone. When a gate constant changes,
+  grep `.claude/skills/`, `docs/`, and `tsp/` doc comments for the old lifecycle names in the
+  same change.
+
 ## A copied "resume" command must carry its working directory
 
 Agent CLI sessions (`claude`/`codex`/`cursor-agent --resume <id>`) are
@@ -1461,12 +1623,13 @@ a missing mapping never throws; it just sends the wrong flag value at runtime.
 The Storybook mocks had drifted too (`get-supported-models.ts` /
 `get-all-agent-models.ts` still listed the pre-Fable-5 set).
 
-**When adding or retiring a model ID, touch all four:**
+**When adding or retiring a model ID, touch all five:**
 
 1. `packages/core/src/infrastructure/services/agents/common/agent-model-catalog.ts` — every agent list that actually supports it (ordered most-capable first).
 2. Per-agent **name translation maps** — `CURSOR_MODEL_MAP` (cursor-executor) and `LEGACY_MODEL_ALIASES` (copilot-cli-executor). Each agent CLI has its own naming convention; a pass-through fallback hides the omission.
 3. `src/presentation/web/lib/model-metadata.ts` — display name + description. Without it the picker shows a prettified raw ID and an empty description. Re-check the *neighbouring* descriptions too: a new flagship makes the old "Most capable" line a lie.
 4. `.storybook/mocks/app/actions/get-supported-models.ts` and `get-all-agent-models.ts` — static mocks that don't import the catalog, so they drift silently and stories render a stale list.
+5. `packages/core/src/domain/shared/model-tier.ts` — the `MODEL_TIERS` table (family + High/Medium/Low). A model missing from it is not an error: it simply opts out of adaptive routing, so a new flagship silently never becomes the High-tier target and a new small model is never selected for Low-complexity tasks. There is no test that can catch the omission, because "unknown model passes through unchanged" is the deliberate safe default.
 
 **Do NOT** add a Claude model to `COPILOT_CLI_MODELS` / `OPENROUTER_MODELS` just
 because Anthropic shipped it — those lists are gated by what the third party
@@ -1751,8 +1914,11 @@ execution"` immediately followed by no re-implementation at all.
 **Rule:** any node with a hand-rolled `getCompletedPhases().includes(phase)` skip
 guard (i.e. one that doesn't go through the shared `executeNode()` helper in
 `node-helpers.ts`, which already handles this correctly) must also check the
-graph's rework signal (`state._needsReexecution`) before skipping, and call
-`clearCompletedPhase()` when rework is required. `_needsReexecution` is `false` by
+graph's rework signal (`state._needsReexecution`) before skipping — the guard
+becomes `completedPhases.includes(phase) && !state._needsReexecution`, which is
+enough on its own; do **not** also clear the completed flag, as a phase marker
+mutated on the rework path is a second source of truth for the same decision.
+`_needsReexecution` is `false` by
 default on every fresh invocation, so it safely distinguishes "legitimate resume
 skip" from "must re-execute for rejection rework." Prefer routing new fast-mode
 nodes through `executeNode()` instead of reimplementing this check by hand.
@@ -1802,8 +1968,8 @@ raised above me is now this message."
 
 ## Adding a method to a port interface breaks every hand-built mock
 
-Adding `clearCompletedPhase` to `INodeHelpers` compiled fine in `packages/core`
-but broke six test files that build the port as an object literal
+Adding one method to `INodeHelpers` compiled fine in `packages/core` but broke
+six test files that build the port as an object literal
 (`{ writeSpecFileAtomic: vi.fn(), safeYamlDump: vi.fn() }`) — `TS2741`, one per
 site. Nothing in the source tree points at them, so the port change looks
 complete right up until `pnpm typecheck`.
@@ -1884,3 +2050,50 @@ Next/Turbopack compile of the web surface — it throws
 3. **A test that passes both before and after the fix is not a regression test.**
    Run it against the old code; if it stays green, delete it rather than shipping
    a green check that proves nothing.
+
+## A `useEffect`-pair "hydrate then persist" localStorage hook races itself on mount
+
+`useWorkspaces` (`src/presentation/web/hooks/use-workspaces.ts`) lost newly
+created Control Center workspaces after closing and reopening the browser.
+The hook had a hydrate effect (`useEffect(() => setState(loadState()), [])`)
+and a persist effect (`useEffect(() => saveState(state), [state])`). Both run
+in the **same initial passive-effect flush**, using the **same pre-hydration
+render closure** — so the persist effect's first invocation always fires with
+the un-hydrated default `state`, deterministically overwriting whatever was
+already in `localStorage` with just the default workspace. It "self-corrects"
+on the *next* render once the hydrate effect's `setState` commits, but that
+is not a guaranteed win against a real browser closing (or another tab
+reading storage) in that window — and a synchronous `renderHook()` test that
+only checks the *final* state after `act()` settles won't catch it, since the
+test environment's `act()` flush happens to complete the self-correction
+before the test can observe the intermediate clobber.
+
+A `useRef` guard set *inside* the hydrate effect
+(`isHydratedRef.current = true`) does **not** fix this: because both effects
+run in one synchronous pass in source order, the ref is already flipped to
+`true` by the time the persist effect's `if (!isHydratedRef.current) return`
+check runs — the guard never gets a chance to skip that first stale write.
+
+**Rules:**
+
+1. **Test the *every write*, not just the *final* state.** The regression
+   test that actually caught this asserted that no `localStorage.setItem`
+   call made during/after mount may ever contain less data than what was
+   already persisted — not just that `result.current` looks right after
+   `act()` settles. A "final state" assertion passes even when a real,
+   harmful transient write happened in between.
+2. **Prefer a lazy `useState` initializer over a hydrate-effect for
+   synchronous localStorage reads.** `useState<T>(loadState)` runs
+   `loadState()` once, synchronously, during the first render — before any
+   effect (including a persist effect) exists to race against it. This
+   removes the entire race by construction instead of patching around it
+   with ref-based guards whose correctness depends on effect execution
+   order. The sibling hook `use-viewport-persistence.ts` in the same
+   directory already uses this pattern (`useRef(readViewport()).current`);
+   follow that precedent rather than reintroducing the two-effect version.
+3. **`loadState()`-style functions must never return a shared default
+   object by reference** (e.g. `return INITIAL_STATE`) — return a freshly
+   constructed object on every branch. React's `setState` bails out on
+   referential equality, so returning the same reference silently skips a
+   re-render that downstream effects may depend on.
+

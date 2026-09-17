@@ -265,42 +265,6 @@ describe('MergeReview', () => {
 
       expect(screen.queryByText('Changed Files')).not.toBeInTheDocument();
     });
-
-    it('renders a warning message when fileDiffsWarning is set and fileDiffs is unavailable', () => {
-      const props: MergeReviewProps = {
-        ...baseProps,
-        data: {
-          ...baseProps.data,
-          fileDiffsWarning: 'File diffs are too large to display',
-        },
-      };
-      render(<MergeReview {...props} />);
-
-      expect(screen.queryByText('Changed Files')).not.toBeInTheDocument();
-      expect(screen.getByText('File diffs are too large to display')).toBeInTheDocument();
-    });
-
-    it('does not render the file diffs warning when fileDiffs are present', () => {
-      const props: MergeReviewProps = {
-        ...baseProps,
-        data: {
-          ...baseProps.data,
-          fileDiffs: [
-            {
-              path: 'src/app.ts',
-              additions: 5,
-              deletions: 2,
-              status: 'modified',
-              hunks: [{ header: '@@ -1,3 +1,6 @@', lines: [] }],
-            },
-          ],
-          fileDiffsWarning: 'File diffs are too large to display',
-        },
-      };
-      render(<MergeReview {...props} />);
-
-      expect(screen.queryByText('File diffs are too large to display')).not.toBeInTheDocument();
-    });
   });
 
   describe('evidence rendering', () => {

@@ -29,6 +29,7 @@ import type { IWorktreeService } from '@/application/ports/output/services/workt
 import type { IGitPrService } from '@/application/ports/output/services/git-pr-service.interface.js';
 import type { ISpecInitializerService } from '@/application/ports/output/services/spec-initializer.interface.js';
 import type { ISettingsProvider } from '@/application/ports/output/services/settings-provider.interface.js';
+import { createMockFeatureRepository } from '../../helpers/feature-repository.mock.js';
 
 describe('Adopt Flow Integration Tests', () => {
   let tempDir: string;
@@ -59,20 +60,11 @@ describe('Adopt Flow Integration Tests', () => {
     createdFeatures = [];
 
     // Create mock repositories
-    mockFeatureRepo = {
+    mockFeatureRepo = createMockFeatureRepository({
       create: vi.fn().mockImplementation(async (feature) => {
         createdFeatures.push(feature);
       }),
-      findById: vi.fn().mockResolvedValue(null),
-      findByIdPrefix: vi.fn().mockResolvedValue(null),
-      findBySlug: vi.fn().mockResolvedValue(null),
-      findByBranch: vi.fn().mockResolvedValue(null),
-      list: vi.fn().mockResolvedValue([]),
-      update: vi.fn().mockResolvedValue(undefined),
-      findByParentId: vi.fn().mockResolvedValue([]),
-      delete: vi.fn().mockResolvedValue(undefined),
-      softDelete: vi.fn().mockResolvedValue(undefined),
-    };
+    });
 
     mockRepositoryRepo = {
       create: vi.fn().mockResolvedValue({

@@ -2,9 +2,10 @@ import { describe, it, expect } from 'vitest';
 import {
   PR_BRANDING,
   COMMIT_CO_AUTHOR,
+  MAX_COMMIT_TITLE_LENGTH,
   applyPrBranding,
   applyCommitBranding,
-  limitCommitSubjectLength,
+  truncateCommitTitle,
 } from '@/infrastructure/services/git/pr-branding.js';
 
 describe('PR_BRANDING', () => {
@@ -161,70 +162,32 @@ describe('applyCommitBranding', () => {
   });
 });
 
-describe('limitCommitSubjectLength', () => {
-  it('should not modify subjects under 72 characters', () => {
-    const message = 'feat: add new feature';
-    const result = limitCommitSubjectLength(message);
-    expect(result).toBe(message);
+describe('truncateCommitTitle', () => {
+  it('should leave short titles unchanged', () => {
+    const title = 'feat: squash merge feat/test into main';
+    expect(truncateCommitTitle(title)).toBe(title);
   });
 
-  it('should not modify subjects exactly 72 characters', () => {
-    const subject = 'a'.repeat(72);
-    const result = limitCommitSubjectLength(subject);
-    expect(result).toBe(subject);
+  it('should not modify a title exactly at the max length', () => {
+    const title = `feat: ${'a'.repeat(MAX_COMMIT_TITLE_LENGTH - 6)}`;
+    expect(title.length).toBe(MAX_COMMIT_TITLE_LENGTH);
+    expect(truncateCommitTitle(title)).toBe(title);
   });
 
-  it('should truncate subjects longer than 72 characters', () => {
-    const message = 'a'.repeat(80);
-    const result = limitCommitSubjectLength(message);
-    expect(result.length).toBe(72);
-    expect(result).toBe('a'.repeat(72));
-  });
+  it('should truncate titles longer than 72 characters with an ellipsis', () => {
+    const longBranch = 'feat/some-very-long-descriptive-feature-branch-name-that-is-too-long';
+    const title = `feat: squash merge ${longBranch} into main`;
+    expect(title.length).toBeGreaterThan(MAX_COMMIT_TITLE_LENGTH);
 
-  it('should preserve body when truncating subject', () => {
-    const subject = 'a'.repeat(80);
-    const body = 'This is the commit body';
-    const message = `${subject}\n${body}`;
-    const result = limitCommitSubjectLength(message);
-    expect(result.startsWith('a'.repeat(72))).toBe(true);
-    expect(result).toContain('This is the commit body');
-    expect(result).toBe(`${'a'.repeat(72)}\n${body}`);
-  });
-
-  it('should handle multi-line messages with body', () => {
-    const message =
-      'feat: this is a very long subject line that definitely exceeds seventy two characters\n\nThis is the body';
-    const result = limitCommitSubjectLength(message);
-    const lines = result.split('\n');
-    expect(lines[0].length).toBe(72);
-    expect(lines[1]).toBe('');
-    expect(lines[2]).toBe('This is the body');
-  });
-
-  it('should handle squash merge commit format', () => {
-    const branch = 'feat/very-long-feature-branch-name-that-is-quite-lengthy';
-    const baseBranch = 'main';
-    const message = `feat: squash merge ${branch} into ${baseBranch}`;
-    const result = limitCommitSubjectLength(message);
-    expect(result.length).toBe(72);
+    const result = truncateCommitTitle(title);
+    expect(result.length).toBe(MAX_COMMIT_TITLE_LENGTH);
+    expect(result.endsWith('…')).toBe(true);
     expect(result.startsWith('feat: squash merge')).toBe(true);
   });
 
-  it('should handle empty body after split', () => {
-    const subject = 'a'.repeat(80);
-    const message = `${subject}\n`;
-    const result = limitCommitSubjectLength(message);
-    expect(result).toBe('a'.repeat(72));
-  });
-
-  it('should preserve multiple body paragraphs', () => {
-    const subject = 'a'.repeat(80);
-    const body = 'First paragraph\n\nSecond paragraph\n\nThird paragraph';
-    const message = `${subject}\n${body}`;
-    const result = limitCommitSubjectLength(message);
-    expect(result).toContain('First paragraph');
-    expect(result).toContain('Second paragraph');
-    expect(result).toContain('Third paragraph');
-    expect(result.startsWith('a'.repeat(72))).toBe(true);
+  it('should respect a custom max length', () => {
+    const result = truncateCommitTitle('0123456789', 5);
+    expect(result).toBe('0123…');
+    expect(result.length).toBe(5);
   });
 });

@@ -11,7 +11,10 @@ import yaml from 'js-yaml';
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { interrupt, isGraphBubbleUp } from '@langchain/langgraph';
-import type { IAgentExecutor } from '@/application/ports/output/agents/agent-executor.interface.js';
+import type {
+  IAgentExecutor,
+  AgentExecutionResult,
+} from '@/application/ports/output/agents/agent-executor.interface.js';
 import type { FeatureAgentState } from '../state.js';
 import {
   createNodeLogger,
@@ -24,6 +27,7 @@ import {
   getCompletedPhases,
   markPhaseComplete,
   applyMemorySelection,
+  getPhaseRejectionFeedback,
   type MemorySelector,
 } from './node-helpers.js';
 import { reportNodeStart } from '../heartbeat.js';
@@ -41,13 +45,21 @@ import {
 } from '../sdlc-board-context.js';
 import {
   buildImplementPhasePrompt,
+  buildImplementRejectionFixPrompt,
   type PlanPhase,
   type PlanYaml,
   type PhaseTask,
   type TasksYaml,
 } from './prompts/implement.prompt.js';
 import { createEvidenceNode } from './evidence.node.js';
+import {
+  buildAdaptiveRouting,
+  planTaskBatches,
+  resolvePhaseModelId,
+  summarizeRouting,
+} from './adaptive-task-routing.js';
 import { TaskState } from '@/domain/generated/output.js';
+import { hasSettings, getSettings } from '@/infrastructure/services/settings.service.js';
 
 /**
  * Update feature.yaml with current implementation progress.
@@ -142,6 +154,40 @@ export function createImplementNode(executor: IAgentExecutor, selectMemory?: Mem
       // --- Check for completed phases (skip on resume) ---
       const completedPhaseIds = getCompletedPhases(state.specDir);
 
+      // --- Merge-rejection redo: implementation already fully completed once,
+      // but the user rejected the merge with feedback. Every phase below would
+      // just skip (already in completedPhaseIds), silently discarding the
+      // feedback. Run one focused pass to address it instead. ---
+      if (state._needsReexecution) {
+        const specContent = readSpecFile(state.specDir, 'spec.yaml');
+        const rejectionSection = getPhaseRejectionFeedback(specContent ?? '', 'merge');
+        if (rejectionSection) {
+          log.info('Addressing merge rejection feedback');
+          const options = buildExecutorOptions(state, undefined, 'implement');
+          const prompt = buildImplementRejectionFixPrompt(stateForPrompt, rejectionSection);
+          await updatePhasePrompt(implementTimingId, prompt);
+          const result = await retryExecute(executor, prompt, options, { logger: log });
+          const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+          log.info(`Rejection feedback addressed (${result.result.length} chars, ${elapsed}s)`);
+          await recordPhaseEnd(implementTimingId, Date.now() - startTime, {
+            inputTokens: result.usage?.inputTokens,
+            outputTokens: result.usage?.outputTokens,
+            costUsd: result.usage?.costUsd,
+            numTurns: result.usage?.numTurns,
+            durationApiMs: result.usage?.durationApiMs,
+            exitCode: 'success',
+          });
+          return {
+            currentNode: 'implement',
+            messages: [`[implement] Addressed merge rejection feedback (${elapsed}s)`],
+            _needsReexecution: false,
+          };
+        }
+        log.info(
+          '_needsReexecution set but no merge rejection feedback found in spec.yaml — continuing normally'
+        );
+      }
+
       // --- Seed SDLC board: idempotent upsert of all phases as Tasks
       //     and their tasks.yaml entries as SubTasks (best-effort). ---
       {
@@ -168,6 +214,17 @@ export function createImplementNode(executor: IAgentExecutor, selectMemory?: Mem
         await seedBoardTasks(seedArray);
       }
       const retryOpts = { logger: log };
+
+      // --- Adaptive model routing (global setting; the pinned model is the ceiling) ---
+      const routing = buildAdaptiveRouting({
+        agentType: executor.agentType as string,
+        baseModel: state.model,
+        adaptive: hasSettings() ? getSettings().models?.adaptive : undefined,
+      });
+      if (routing.enabled) {
+        const summary = summarizeRouting(tasksData.tasks, routing);
+        log.info(`Adaptive model selection ON (ceiling: ${routing.baseModel}) — ${summary}`);
+      }
 
       // --- Execute phases in order ---
       for (let i = 0; i < totalPhases; i++) {
@@ -214,11 +271,14 @@ export function createImplementNode(executor: IAgentExecutor, selectMemory?: Mem
           await setBoardSubTaskStatus(phase.id, task.id, TaskState.WIP);
         }
 
-        const options = buildExecutorOptions(state, undefined, 'implement');
         const promptContext = { isLastPhase, phaseIndex: i, totalPhases };
         const phaseStartTime = Date.now();
+        // Record what this phase will ACTUALLY run on, not the pin. Under
+        // adaptive routing a phase can span two tiers, so a homogeneous phase
+        // reports one id and a mixed one reports every id it used — otherwise
+        // the Activity tab would attribute Haiku work to the pinned Opus.
         const phaseTimingId = await recordPhaseStart(`implement:${phase.id}`, {
-          modelId: state.model,
+          modelId: resolvePhaseModelId(phaseTasks, routing, state.model),
           agentType: executor.agentType,
         });
 
@@ -229,8 +289,17 @@ export function createImplementNode(executor: IAgentExecutor, selectMemory?: Mem
         let phaseNumTurns = 0;
         let phaseDurationApiMs = 0;
 
+        /** Fold one executor result into the phase usage totals. */
+        const accumulate = (usage: AgentExecutionResult['usage']): void => {
+          phaseInputTokens += usage?.inputTokens ?? 0;
+          phaseOutputTokens += usage?.outputTokens ?? 0;
+          phaseCostUsd += usage?.costUsd ?? 0;
+          phaseNumTurns += usage?.numTurns ?? 0;
+          phaseDurationApiMs += usage?.durationApiMs ?? 0;
+        };
+
         if (phase.parallel && phaseTasks.length > 1) {
-          // Parallel: one executor call per task
+          // Parallel: one executor call per task, each on its own resolved model.
           log.info(`Spawning ${phaseTasks.length} parallel executor calls`);
 
           // Build all prompts up front so we can record them before execution
@@ -250,10 +319,17 @@ export function createImplementNode(executor: IAgentExecutor, selectMemory?: Mem
 
           const results = await Promise.all(
             phaseTasks.map((task, idx) => {
+              const { complexity, model } = routing.resolve(task);
+              const routingNote = routing.enabled ? ` [${complexity} → ${model}]` : '';
               log.info(
-                `  [parallel] Task ${task.id}: "${task.title}" — ${taskPrompts[idx].length} chars`
+                `  [parallel] Task ${task.id}: "${task.title}" — ${taskPrompts[idx].length} chars${routingNote}`
               );
-              return retryExecute(executor, taskPrompts[idx], options, retryOpts);
+              const taskOptions = buildExecutorOptions(
+                state,
+                model !== undefined ? { model } : undefined,
+                'implement'
+              );
+              return retryExecute(executor, taskPrompts[idx], taskOptions, retryOpts);
             })
           );
 
@@ -261,29 +337,53 @@ export function createImplementNode(executor: IAgentExecutor, selectMemory?: Mem
             log.info(
               `  [parallel] Task ${phaseTasks[j].id} complete (${results[j].result.length} chars)`
             );
-            phaseInputTokens += results[j].usage?.inputTokens ?? 0;
-            phaseOutputTokens += results[j].usage?.outputTokens ?? 0;
-            phaseCostUsd += results[j].usage?.costUsd ?? 0;
-            phaseNumTurns += results[j].usage?.numTurns ?? 0;
-            phaseDurationApiMs += results[j].usage?.durationApiMs ?? 0;
+            accumulate(results[j].usage);
           }
         } else {
-          // Sequential: single executor call with all phase tasks
-          const prompt = buildImplementPhasePrompt(
-            stateForPrompt,
-            phase,
-            phaseTasks,
-            promptContext
-          );
-          await updatePhasePrompt(phaseTimingId, prompt);
-          log.info(`Executing phase prompt — ${prompt.length} chars`);
-          const result = await retryExecute(executor, prompt, options, retryOpts);
-          log.info(`Phase complete (${result.result.length} chars)`);
-          phaseInputTokens = result.usage?.inputTokens ?? 0;
-          phaseOutputTokens = result.usage?.outputTokens ?? 0;
-          phaseCostUsd = result.usage?.costUsd ?? 0;
-          phaseNumTurns = result.usage?.numTurns ?? 0;
-          phaseDurationApiMs = result.usage?.durationApiMs ?? 0;
+          // Sequential: one executor call per run of consecutive tasks that
+          // resolved to the same model. With adaptive routing off this is a
+          // single call carrying every task, exactly as before.
+          const batches = planTaskBatches(phaseTasks, routing);
+
+          for (let b = 0; b < batches.length; b++) {
+            const batch = batches[b];
+            const batchPhase: PlanPhase = { ...phase, taskIds: batch.tasks.map((t) => t.id) };
+            const prompt = buildImplementPhasePrompt(
+              stateForPrompt,
+              batchPhase,
+              batch.tasks,
+              promptContext
+            );
+
+            const isSingleBatch = batches.length === 1;
+            const label = isSingleBatch
+              ? `Executing phase prompt — ${prompt.length} chars`
+              : `Executing batch ${b + 1}/${batches.length} (${batch.tasks.length} task(s)) ` +
+                `[${batch.complexity} → ${batch.model}] — ${prompt.length} chars`;
+
+            // Only the first batch's prompt is recorded on the phase timing —
+            // appending each would blow the stored prompt up with duplicated
+            // spec context, which every batch prompt carries in full.
+            if (b === 0) await updatePhasePrompt(phaseTimingId, prompt);
+
+            log.info(label);
+            const result = await retryExecute(
+              executor,
+              prompt,
+              buildExecutorOptions(
+                state,
+                batch.model !== undefined ? { model: batch.model } : undefined,
+                'implement'
+              ),
+              retryOpts
+            );
+            log.info(
+              isSingleBatch
+                ? `Phase complete (${result.result.length} chars)`
+                : `Batch ${b + 1}/${batches.length} complete (${result.result.length} chars)`
+            );
+            accumulate(result.usage);
+          }
         }
 
         // Accumulate into top-level totals

@@ -55,7 +55,7 @@ that is five things queued on your attention. Set gates by merge risk:
 `--parent <fid>` is a first-class dependency edge, not just metadata:
 
 1. The child is created in the `Blocked` lifecycle and no agent spawns.
-2. When the parent reaches `Implementation`, `Review`, or `Maintain`, shep automatically
+2. When the parent completes (`Maintain` — its branch merged), shep automatically
    **rebases the child's branch onto the parent's branch** and **spawns the child's agent**.
 3. Only **direct** children are evaluated. In a chain A → B → C, C stays blocked until B itself
    reaches the gate — the cascade is one link at a time.
@@ -119,7 +119,7 @@ Feature ids accept partial prefixes (the 8-character prefix shown in `feat ls` i
 `Started` · `Analyze` · `Requirements` · `Research` · `Planning` · `Implementation` · `Review` ·
 `Maintain` · `Blocked` · `Pending` · `Exploring` · `Deleting` · `AwaitingUpstream` · `Archived`
 
-The unblock gate is `Implementation` / `Review` / `Maintain`.
+The unblock gate is `Maintain` — a child is released only once its parent's branch has merged.
 
 ---
 

@@ -12,6 +12,7 @@ import { ArchiveFeatureUseCase } from '@/application/use-cases/features/archive-
 import type { IFeatureRepository } from '@/application/ports/output/repositories/feature-repository.interface.js';
 import { SdlcLifecycle, BuildMode } from '@/domain/generated/output.js';
 import type { Feature } from '@/domain/generated/output.js';
+import { createMockFeatureRepository } from '../../../../helpers/feature-repository.mock.js';
 
 function createMockFeature(overrides?: Partial<Feature>): Feature {
   return {
@@ -48,18 +49,7 @@ describe('AutoArchiveCompletedUseCase', () => {
   let archiveFeature: ArchiveFeatureUseCase;
 
   beforeEach(() => {
-    mockFeatureRepo = {
-      create: vi.fn(),
-      findById: vi.fn(),
-      findByIdPrefix: vi.fn().mockResolvedValue(null),
-      findBySlug: vi.fn(),
-      findByBranch: vi.fn(),
-      list: vi.fn().mockResolvedValue([]),
-      findByParentId: vi.fn().mockResolvedValue([]),
-      update: vi.fn(),
-      delete: vi.fn(),
-      softDelete: vi.fn(),
-    };
+    mockFeatureRepo = createMockFeatureRepository();
 
     archiveFeature = new ArchiveFeatureUseCase(mockFeatureRepo);
     useCase = new AutoArchiveCompletedUseCase(mockFeatureRepo, archiveFeature);

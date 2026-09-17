@@ -442,7 +442,7 @@ shep ui [--port] [--no-open]      # Start web UI in foreground
 shep feat new <description>       # Create a new feature
   --repo <path>                   #   Target repository
   --push                          #   Push branch on completion
-  --pr                            #   Open PR on completion
+  --pr                            #   Open PR on completion (auto-targets the upstream repo when a fork/upstream is detected; otherwise origin)
   --allow-prd                     #   Auto-approve PRD phase
   --allow-plan                    #   Auto-approve planning phase
   --allow-merge                   #   Auto-approve merge phase

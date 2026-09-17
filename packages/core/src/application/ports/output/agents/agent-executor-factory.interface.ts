@@ -18,6 +18,7 @@
  */
 
 import type { AgentType, AgentConfig } from '../../../../domain/generated/output.js';
+import type { AdaptiveTierPlan, TierOverrides } from '../../../../domain/shared/model-tier.js';
 import type { IAgentExecutor } from './agent-executor.interface.js';
 import type { IInteractiveAgentExecutor } from './interactive-agent-executor.interface.js';
 
@@ -111,6 +112,29 @@ export interface IAgentExecutorFactory {
    * @returns Promise resolving to available model listings (possibly empty)
    */
   listAvailableModels(agentType: AgentType, authConfig?: AgentConfig): Promise<AgentModelListing[]>;
+
+  /**
+   * Resolve which model adaptive selection would use for each complexity tier,
+   * given a pinned model and the agent that will run it.
+   *
+   * The pinned model is a ceiling: a tier never resolves to a more capable
+   * model than the pin, candidates stay inside the pin's model family, and a
+   * pin this factory cannot classify collapses all three tiers onto itself.
+   *
+   * Synchronous and side-effect free — it reads the same static per-agent list
+   * as {@link getSupportedModels}, so presentation layers can call it while
+   * rendering.
+   *
+   * @param agentType - The agent that will execute the tasks
+   * @param baseModel - The model pinned for the run
+   * @param overrides - Explicit per-tier models from settings, if any
+   * @returns One model identifier per tier
+   */
+  resolveAdaptiveModelPlan(
+    agentType: AgentType,
+    baseModel: string,
+    overrides?: TierOverrides
+  ): AdaptiveTierPlan;
 
   /**
    * Create an interactive executor for multi-turn agent sessions.

@@ -30,6 +30,7 @@ import type { MetadataGenerator } from '@/application/use-cases/features/create/
 import type { SlugResolver } from '@/application/use-cases/features/create/slug-resolver.js';
 import type { CreateFeatureInput } from '@/application/use-cases/features/create/types.js';
 import type { Repository } from '@/domain/generated/output.js';
+import { createMockFeatureRepository } from '../../../../helpers/feature-repository.mock.js';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -99,18 +100,7 @@ describe('CreateFeatureUseCase', () => {
   };
 
   beforeEach(() => {
-    mockFeatureRepo = {
-      create: vi.fn().mockResolvedValue(undefined),
-      findById: vi.fn().mockResolvedValue(null),
-      findByIdPrefix: vi.fn().mockResolvedValue(null),
-      findBySlug: vi.fn().mockResolvedValue(null),
-      findByBranch: vi.fn().mockResolvedValue(null),
-      list: vi.fn().mockResolvedValue([]),
-      findByParentId: vi.fn().mockResolvedValue([]),
-      update: vi.fn().mockResolvedValue(undefined),
-      delete: vi.fn().mockResolvedValue(undefined),
-      softDelete: vi.fn(),
-    };
+    mockFeatureRepo = createMockFeatureRepository();
 
     mockWorktreeService = {
       create: vi.fn().mockResolvedValue(undefined),
@@ -239,7 +229,11 @@ describe('CreateFeatureUseCase', () => {
       mockAgentValidator,
       mockSkillInjector,
       mockSettingsRepository,
-      mockLogger
+      mockLogger,
+      {
+        hasCapacity: vi.fn().mockResolvedValue(true),
+        getQueuePosition: vi.fn().mockResolvedValue(1),
+      } as never
     );
   });
 

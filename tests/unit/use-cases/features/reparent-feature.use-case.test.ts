@@ -5,6 +5,8 @@ import type { IFeatureRepository } from '@/application/ports/output/repositories
 import type { Feature } from '@/domain/generated/output.js';
 import { ReparentFeatureUseCase } from '@/application/use-cases/features/reparent-feature.use-case.js';
 import type { CheckAndUnblockFeaturesUseCase } from '@/application/use-cases/features/check-and-unblock-features.use-case.js';
+import type { StopAgentRunUseCase } from '@/application/use-cases/agents/stop-agent-run.use-case.js';
+import { createMockFeatureRepository } from '../../../helpers/feature-repository.mock.js';
 
 function makeFeature(overrides: Partial<Feature> = {}): Feature {
   return {
@@ -36,27 +38,21 @@ function makeFeature(overrides: Partial<Feature> = {}): Feature {
 describe('ReparentFeatureUseCase', () => {
   let mockFeatureRepo: IFeatureRepository;
   let mockCheckAndUnblock: CheckAndUnblockFeaturesUseCase;
+  let mockStopAgentRun: StopAgentRunUseCase;
   let useCase: ReparentFeatureUseCase;
 
   beforeEach(() => {
-    mockFeatureRepo = {
-      create: vi.fn().mockResolvedValue(undefined),
-      findById: vi.fn().mockResolvedValue(null),
-      findByIdPrefix: vi.fn().mockResolvedValue(null),
-      findBySlug: vi.fn().mockResolvedValue(null),
-      findByBranch: vi.fn().mockResolvedValue(null),
-      list: vi.fn().mockResolvedValue([]),
-      update: vi.fn().mockResolvedValue(undefined),
-      findByParentId: vi.fn().mockResolvedValue([]),
-      delete: vi.fn().mockResolvedValue(undefined),
-      softDelete: vi.fn().mockResolvedValue(undefined),
-    };
+    mockFeatureRepo = createMockFeatureRepository();
 
     mockCheckAndUnblock = {
       execute: vi.fn().mockResolvedValue(undefined),
     } as unknown as CheckAndUnblockFeaturesUseCase;
 
-    useCase = new ReparentFeatureUseCase(mockFeatureRepo, mockCheckAndUnblock);
+    mockStopAgentRun = {
+      execute: vi.fn().mockResolvedValue({ stopped: true, reason: 'Sent SIGTERM to PID 1234' }),
+    } as unknown as StopAgentRunUseCase;
+
+    useCase = new ReparentFeatureUseCase(mockFeatureRepo, mockCheckAndUnblock, mockStopAgentRun);
   });
 
   // --- Task 1: Core validation logic ---
@@ -352,6 +348,69 @@ describe('ReparentFeatureUseCase', () => {
         id: 'child-1',
         lifecycle: SdlcLifecycle.Blocked,
       })
+    );
+  });
+
+  // --- Stopping the agent of a feature the new edge holds back ---
+
+  it('should stop the running agent when the new edge blocks an active feature', async () => {
+    const child = makeFeature({
+      id: 'child-1',
+      lifecycle: SdlcLifecycle.Implementation,
+      agentRunId: 'run-1',
+    });
+    const parent = makeFeature({ id: 'parent-1', lifecycle: SdlcLifecycle.Planning });
+    vi.mocked(mockFeatureRepo.findById).mockResolvedValueOnce(child).mockResolvedValueOnce(parent);
+
+    await useCase.execute({ featureId: 'child-1', parentId: 'parent-1' });
+
+    expect(mockStopAgentRun.execute).toHaveBeenCalledWith('run-1');
+  });
+
+  it('should not stop any agent when the new parent has already completed', async () => {
+    const child = makeFeature({
+      id: 'child-1',
+      lifecycle: SdlcLifecycle.Implementation,
+      agentRunId: 'run-1',
+    });
+    const parent = makeFeature({ id: 'parent-1', lifecycle: SdlcLifecycle.Maintain });
+    vi.mocked(mockFeatureRepo.findById).mockResolvedValueOnce(child).mockResolvedValueOnce(parent);
+
+    await useCase.execute({ featureId: 'child-1', parentId: 'parent-1' });
+
+    expect(mockStopAgentRun.execute).not.toHaveBeenCalled();
+  });
+
+  it('should not stop any agent when the feature was already Blocked', async () => {
+    const child = makeFeature({
+      id: 'child-1',
+      lifecycle: SdlcLifecycle.Blocked,
+      agentRunId: 'run-1',
+    });
+    const parent = makeFeature({ id: 'parent-1', lifecycle: SdlcLifecycle.Planning });
+    vi.mocked(mockFeatureRepo.findById).mockResolvedValueOnce(child).mockResolvedValueOnce(parent);
+
+    await useCase.execute({ featureId: 'child-1', parentId: 'parent-1' });
+
+    expect(mockStopAgentRun.execute).not.toHaveBeenCalled();
+  });
+
+  it('should still record the dependency when stopping the agent fails', async () => {
+    const child = makeFeature({
+      id: 'child-1',
+      lifecycle: SdlcLifecycle.Implementation,
+      agentRunId: 'run-1',
+    });
+    const parent = makeFeature({ id: 'parent-1', lifecycle: SdlcLifecycle.Planning });
+    vi.mocked(mockFeatureRepo.findById).mockResolvedValueOnce(child).mockResolvedValueOnce(parent);
+    vi.mocked(mockStopAgentRun.execute).mockRejectedValueOnce(new Error('process gone'));
+
+    await expect(
+      useCase.execute({ featureId: 'child-1', parentId: 'parent-1' })
+    ).resolves.toBeUndefined();
+
+    expect(mockFeatureRepo.update).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'child-1', lifecycle: SdlcLifecycle.Blocked })
     );
   });
 });

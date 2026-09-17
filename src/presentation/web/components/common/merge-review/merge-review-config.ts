@@ -73,8 +73,6 @@ export interface MergeReviewData {
   branch?: MergeReviewBranch;
   /** Warning message when diff summary could not be retrieved */
   warning?: string;
-  /** Warning message when per-file diffs could not be retrieved */
-  fileDiffsWarning?: string;
   /** Evidence captured during implementation (paths are absolute) */
   evidence?: MergeReviewEvidence[];
   /** Whether to hide CI status badges from UI (global workflow setting) */

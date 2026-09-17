@@ -30,13 +30,12 @@ import type { ExecFunction } from './worktree.service.js';
 import { applyPrBranding, applyCommitBranding } from './pr-branding.js';
 
 /**
- * Node's execFile defaults to a 1 MB stdout buffer. A PR touching many files
- * or large generated files easily produces a `git diff` larger than that,
- * which makes execFile throw ERR_CHILD_PROCESS_STDOUT_MAXBUFFER instead of
- * returning the diff — silently breaking the Merge Review diff view for
- * large changesets. Raise the ceiling well past realistic diff sizes.
+ * Node's `child_process.execFile` defaults to a 1MB stdout buffer, which is
+ * easily exceeded by `git diff` output on large changesets. Raise the limit
+ * so large diffs don't silently fail (see worktree-hook-runner.ts for the
+ * same pattern).
  */
-const GIT_DIFF_MAX_BUFFER_BYTES = 100 * 1024 * 1024;
+const DIFF_MAX_BUFFER_BYTES = 10 * 1024 * 1024;
 
 @injectable()
 export class GitPrService implements IGitPrService {
@@ -569,12 +568,12 @@ export class GitPrService implements IGitPrService {
     const { stdout: diffStat } = await this.execFile(
       'git',
       ['diff', '--stat', `${baseBranch}...HEAD`],
-      { cwd, maxBuffer: GIT_DIFF_MAX_BUFFER_BYTES }
+      { cwd }
     );
     const { stdout: logOutput } = await this.execFile(
       'git',
       ['log', '--oneline', `${baseBranch}...HEAD`],
-      { cwd, maxBuffer: GIT_DIFF_MAX_BUFFER_BYTES }
+      { cwd }
     );
 
     return this.parseDiffStat(diffStat, logOutput);
@@ -585,7 +584,7 @@ export class GitPrService implements IGitPrService {
       const { stdout } = await this.execFile(
         'git',
         ['diff', '--unified=3', `${baseBranch}...HEAD`],
-        { cwd, maxBuffer: GIT_DIFF_MAX_BUFFER_BYTES }
+        { cwd, maxBuffer: DIFF_MAX_BUFFER_BYTES }
       );
       return this.parseUnifiedDiff(stdout);
     } catch (error) {

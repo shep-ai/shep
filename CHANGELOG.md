@@ -4,6 +4,127 @@
   </a>
 </p>
 
+# 🚀 Shep [v1.226.1](/compare/v1.226.0...v1.226.1) · _2026-09-13_
+
+> Your organization does not have access to Claude. Please login again or contact your administrator.
+
+
+
+### 🐛 Bug Fixes
+
+* **agents:** exclude injected skills from feature commits ([#859](https://github.com/shep-ai/shep/issues/859)) ([0a1666e](https://github.com/shep-ai/shep/commit/0a1666e8b7c2ad2c9ef8a41492a0213e79ac78b9))
+
+* **agents:** honour SupervisorPolicy.enabled when evaluating gates ([#861](https://github.com/shep-ai/shep/issues/861)) ([3ecf1d3](https://github.com/shep-ai/shep/commit/3ecf1d3885f94c456742d1c36a939c23cb19fa96))
+
+
+## 📦 Install or update
+
+```bash
+# upgrade an existing install
+npm i -g @shepai/cli@1.226.1
+
+# or run instantly without installing
+npx @shepai/cli@latest
+```
+
+## 💬 Join the community
+
+[💬 **Discord**](https://discord.gg/ES6tdVFfur) · [📖 **Docs**](https://github.com/shep-ai/shep#readme) · [⭐ **Star on GitHub**](https://github.com/shep-ai/shep) · [🐛 **Report an issue**](https://github.com/shep-ai/shep/issues)
+
+---
+
+<sub>🤖 Released autonomously by Shep — built by parallel AI agents working in isolated git worktrees. Try it: `npx @shepai/cli`</sub>
+
+<p align="center">
+  <a href="https://github.com/shep-ai/shep">
+    <img src="https://raw.githubusercontent.com/shep-ai/shep/main/docs/screenshots/shep-card.jpg" alt="Shep — run multiple AI agents in parallel" width="720" />
+  </a>
+</p>
+
+# 🚀 Shep [v1.226.0](/compare/v1.225.1...v1.226.0) · _2026-09-08_
+
+> Your organization does not have access to Claude. Please login again or contact your administrator.
+
+
+
+### ✨ Features
+
+* **agents:** route tasks to model tiers by complexity ([#849](https://github.com/shep-ai/shep/issues/849)) ([e86d11c](https://github.com/shep-ai/shep/commit/e86d11c2589e297ea0faa9dad62851c77f6b994e)), closes [Hi#complexity](https://github.com/Hi/issues/complexity)
+
+
+
+### 🐛 Bug Fixes
+
+* **domain:** hold dependent features until the parent's work lands ([#848](https://github.com/shep-ai/shep/issues/848)) ([1f29375](https://github.com/shep-ai/shep/commit/1f29375833b1e6fba530de4039f2632dcc035075)), closes [#845](https://github.com/shep-ai/shep/issues/845)
+
+
+## 📦 Install or update
+
+```bash
+# upgrade an existing install
+npm i -g @shepai/cli@1.226.0
+
+# or run instantly without installing
+npx @shepai/cli@latest
+```
+
+## 💬 Join the community
+
+[💬 **Discord**](https://discord.gg/ES6tdVFfur) · [📖 **Docs**](https://github.com/shep-ai/shep#readme) · [⭐ **Star on GitHub**](https://github.com/shep-ai/shep) · [🐛 **Report an issue**](https://github.com/shep-ai/shep/issues)
+
+---
+
+<sub>🤖 Released autonomously by Shep — built by parallel AI agents working in isolated git worktrees. Try it: `npx @shepai/cli`</sub>
+
+<p align="center">
+  <a href="https://github.com/shep-ai/shep">
+    <img src="https://raw.githubusercontent.com/shep-ai/shep/main/docs/screenshots/shep-card.jpg" alt="Shep — run multiple AI agents in parallel" width="720" />
+  </a>
+</p>
+
+# 🚀 Shep [v1.225.1](/compare/v1.225.0...v1.225.1) · _2026-09-03_
+
+> Your organization does not have access to Claude. Please login again or contact your administrator.
+
+
+
+### 🐛 Bug Fixes
+
+* **agents:** create PRs on the upstream repo when a fork is detected ([#858](https://github.com/shep-ai/shep/issues/858)) ([356e6eb](https://github.com/shep-ai/shep/commit/356e6eb050c4e5bb3bf1349960daaa38ceef0420))
+
+* **agents:** limit merge commit title length to 72 ([#854](https://github.com/shep-ai/shep/issues/854)) ([eef870a](https://github.com/shep-ai/shep/commit/eef870ab6bfaad1ce495047f68a78517dff50e61))
+
+* **agents:** resume implementation after a merge review rejection ([#855](https://github.com/shep-ai/shep/issues/855)) ([707a849](https://github.com/shep-ai/shep/commit/707a849a7b05a926dfb1ea0de35120df2887f60d))
+
+* **web:** stop control center workspaces from being lost on browser reopen ([#857](https://github.com/shep-ai/shep/issues/857)) ([96380a7](https://github.com/shep-ai/shep/commit/96380a7aafec9b4fa08c10a4d045a4973c5ac469))
+
+* **web:** surface diffs reliably in Merge Review with large changesets ([#856](https://github.com/shep-ai/shep/issues/856)) ([bc2a02f](https://github.com/shep-ai/shep/commit/bc2a02fd3c34c150c29245438ee33c57f1ee3bce))
+
+
+## 📦 Install or update
+
+```bash
+# upgrade an existing install
+npm i -g @shepai/cli@1.225.1
+
+# or run instantly without installing
+npx @shepai/cli@latest
+```
+
+## 💬 Join the community
+
+[💬 **Discord**](https://discord.gg/ES6tdVFfur) · [📖 **Docs**](https://github.com/shep-ai/shep#readme) · [⭐ **Star on GitHub**](https://github.com/shep-ai/shep) · [🐛 **Report an issue**](https://github.com/shep-ai/shep/issues)
+
+---
+
+<sub>🤖 Released autonomously by Shep — built by parallel AI agents working in isolated git worktrees. Try it: `npx @shepai/cli`</sub>
+
+<p align="center">
+  <a href="https://github.com/shep-ai/shep">
+    <img src="https://raw.githubusercontent.com/shep-ai/shep/main/docs/screenshots/shep-card.jpg" alt="Shep — run multiple AI agents in parallel" width="720" />
+  </a>
+</p>
+
 # 🚀 Shep [v1.225.0](/compare/v1.224.0...v1.225.0) · _2026-08-10_
 
 > Your organization does not have access to Claude. Please login again or contact your administrator.

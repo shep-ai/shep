@@ -32,7 +32,6 @@ function createFakeNodeHelpers(): INodeHelpers {
   return {
     writeSpecFileAtomic: vi.fn(),
     safeYamlDump: vi.fn().mockReturnValue('updated-yaml'),
-    clearCompletedPhase: vi.fn(),
   };
 }
 

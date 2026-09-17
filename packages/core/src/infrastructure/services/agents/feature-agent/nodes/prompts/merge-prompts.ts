@@ -9,50 +9,12 @@
  * GitPrService.mergePr() and GitPrService.localMergeSquash() — not via agent prompts.
  */
 
-import yaml from 'js-yaml';
 import { EvidenceType, type Evidence } from '@/domain/generated/output.js';
-import { readSpecFile, buildResumeContext } from '../node-helpers.js';
+import { readSpecFile, buildResumeContext, getPhaseRejectionFeedback } from '../node-helpers.js';
 import { buildProjectMemorySection, renderProjectMemoryBlock } from './project-memory-section.js';
 import type { FeatureAgentState } from '../../state.js';
 import { PR_BRANDING, COMMIT_CO_AUTHOR } from './pr-branding.js';
-
-/**
- * Extract merge-phase rejection feedback from spec.yaml.
- */
-function getMergeRejectionFeedback(specContent: string): string {
-  try {
-    const specData = yaml.load(specContent) as Record<string, unknown> | null;
-    const rejectionFeedback = specData?.rejectionFeedback as
-      | { iteration: number; message: string; phase?: string; timestamp: string }[]
-      | undefined;
-    if (rejectionFeedback && rejectionFeedback.length > 0) {
-      const mergeRejections = rejectionFeedback.filter((e) => e.phase === 'merge');
-      if (mergeRejections.length > 0) {
-        const latest = mergeRejections[mergeRejections.length - 1];
-        const older = mergeRejections.slice(0, -1);
-        const olderSection =
-          older.length > 0
-            ? `\n### Earlier feedback (for context only)\n${older.map((e) => `- Iteration ${e.iteration}: ${e.message}`).join('\n')}\n`
-            : '';
-        return `
-## ⚠️ CRITICAL — User Rejection Feedback (MUST ADDRESS)
-
-**YOUR PRIMARY TASK: The user rejected the previous result and gave this feedback. You MUST act on it:**
-
-> ${latest.message}
-
-(Iteration ${latest.iteration}, ${latest.timestamp})
-
-Do NOT just record this feedback — you must actually make the changes the user requested.
-${olderSection}
-`;
-      }
-    }
-  } catch {
-    // Continue without rejection feedback
-  }
-  return '';
-}
+import type { PrTarget } from '@/application/services/pr-target-resolution.js';
 
 /**
  * Parse a GitHub remote URL (HTTPS or SSH) into owner/repo.
@@ -139,12 +101,13 @@ export function buildCommitPushPrPrompt(
   state: FeatureAgentState,
   branch: string,
   baseBranch: string,
-  repoUrl?: string
+  repoUrl?: string,
+  prTarget?: PrTarget | null
 ): string {
   const specContent = readSpecFile(state.specDir, 'spec.yaml');
   const cwd = state.worktreePath || state.repositoryPath;
   const shouldPush = state.push || state.openPr;
-  const rejectionSection = getMergeRejectionFeedback(specContent);
+  const rejectionSection = getPhaseRejectionFeedback(specContent, 'merge');
   // Only include evidence in the PR body when commitEvidence is enabled
   const evidenceSection = state.evidence?.length
     ? formatEvidenceSection(state.evidence, branch, repoUrl)
@@ -154,8 +117,8 @@ export function buildCommitPushPrPrompt(
 
   // Step 1: Commit (always)
   const stageCmd = state.commitSpecs
-    ? '`git add -A`'
-    : '`git add -A` then `git reset -- specs/` (do NOT commit the specs/ directory)';
+    ? '`git add -A` then `git reset -- .claude/skills/` (do NOT commit injected skills)'
+    : '`git add -A` then `git reset -- specs/ .claude/skills/` (do NOT commit the specs/ directory or injected skills)';
   steps.push(`1. Review the current changes using \`git diff\` and \`git status\`
 2. Stage changes with ${stageCmd}
 3. Write a conventional commit message based on the actual diff content
@@ -178,8 +141,11 @@ export function buildCommitPushPrPrompt(
 
   // Step 3: PR creation (conditional)
   if (state.openPr) {
+    const prCreateCmd = prTarget
+      ? `gh pr create --repo ${prTarget.targetRepo} --base ${prTarget.baseBranch} --head ${prTarget.headRef} --title "<title>" --body "<body>"`
+      : `gh pr create --base ${baseBranch} --head ${branch} --title "<title>" --body "<body>"`;
     steps.push(`${shouldPush ? '6' : '4'}. Create a pull request:
-   - Run \`gh pr create --base ${baseBranch} --head ${branch} --title "<title>" --body "<body>"\`
+   - Run \`${prCreateCmd}\`
    - Write a descriptive PR title using conventional commit format
    - Write a rich PR body that summarizes the changes using the spec context below
    - The PR body MUST end with this exact branding line (on its own line): \`${PR_BRANDING}\`
@@ -215,9 +181,11 @@ ${evidenceSection}
 - Every commit MUST include the co-author trailer: \`${COMMIT_CO_AUTHOR}\` — do NOT include any other Co-Authored-By trailer
 ${rejectionSection ? '- You MUST modify source code files to address the rejection feedback above BEFORE committing' : '- Do NOT modify any source code files — only perform git operations'}
 ${!state.commitSpecs ? '- Do NOT commit the `specs/` directory — it must stay untracked. If you accidentally staged it, run `git reset -- specs/` before committing' : ''}
+- Do NOT commit the \`.claude/skills/\` directory — injected skills are worktree-local tooling and must never appear in commits or PRs. If you accidentally staged skill files, run \`git reset -- .claude/skills/\` before committing
 - Do NOT amend existing commits
 - Do NOT run \`git pull\`, \`git rebase\`, or \`git merge\` — this is a fresh branch, push it directly
-- If there are no changes to commit, skip the commit step and report that no changes were found`;
+- If there are no changes to commit, skip the commit step and report that no changes were found
+${prTarget ? `- The PR MUST be created on \`${prTarget.targetRepo}\` (upstream), NOT on the origin/fork repository — use the exact \`gh pr create\` command provided above` : ''}`;
 }
 
 /**
@@ -322,7 +290,7 @@ ${failureLogs}
 
 1. Analyze the CI failure logs above to diagnose the root cause
 2. Apply a targeted fix to resolve the failure — change only what is necessary
-3. Stage all changes: \`git add -A\`
+3. Stage all changes: \`git add -A\`, then unstage injected skills: \`git reset -- .claude/skills/\` (injected skills must never be committed)
 4. Commit with this exact conventional commit message format and the Shep Bot co-author trailer:
    \`git commit -m "fix(ci): attempt ${attemptNumber}/${maxAttempts} — <short description of what you fixed>" -m "" -m "${COMMIT_CO_AUTHOR}"\`
 5. Push the fix to the branch: \`git push origin ${branch}\`
