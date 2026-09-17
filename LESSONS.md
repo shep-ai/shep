@@ -2167,3 +2167,32 @@ check runs — the guard never gets a chance to skip that first stale write.
    referential equality, so returning the same reference silently skips a
    re-render that downstream effects may depend on.
 
+## A Next.js server action must resolve core use cases by token, not by import
+
+The fleet web action imported `GetFleetOverviewUseCase` as a value and passed the class to
+`resolve()`. That is how the unit tests, the CLI and the DI container all do it, so it looked
+right — and every check that could run in isolation passed: `pnpm typecheck`, `pnpm lint`,
+`pnpm test:unit`, `pnpm test:int` and `pnpm build:storybook` were all green.
+
+`pnpm build:web` (`next build`) failed, and with it every E2E and Electron job in CI — ten red
+checks from one import line.
+
+The cause is specific: core's internal relative imports are `.js`-suffixed
+(`../../../domain/generated/output.js`) to suit Node ESM, and there is no `extensionAlias` for
+that here, so the moment a value import pulls a core module into the web bundle Turbopack fails
+with `Module not found`. Existing actions avoid it by importing the use case as a **type** and
+resolving it by string token — `resolve<LoadSettingsUseCase>('LoadSettingsUseCase')`. That is
+what `infrastructure/di/tokens.ts` and the generic `resolve<T>` signature are for.
+
+**Rules:**
+
+1. In `src/presentation/web`, import core as `import type` and resolve by token. A value import
+   of anything under `packages/core/src` is a build failure waiting for the next `next build`.
+2. Typecheck, lint and the unit suites cannot see this class of bug — nothing else in the
+   toolchain resolves modules the way Turbopack does. When a change makes the web app import a
+   core module for the first time, run `pnpm build:web` before pushing.
+3. A CI job that fails in about a minute on every platform is a build failure, not a test
+   failure. Read the shared step they all run first; the per-platform detail is noise.
+4. The same asymmetry bit in both directions. In one file a type-only import needed no
+   resolution while the sibling value import did, which is how a broken relative path and this
+   bundler mismatch each survived four other green gates.
