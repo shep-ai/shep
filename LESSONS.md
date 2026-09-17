@@ -1774,3 +1774,113 @@ pass/fail outcome depends on the ambient config of whatever machine runs it —
 a correctness bug in the harness, not flakiness in the test itself. Fixed once,
 centrally, in `setup.ts`'s `makeRealExec()` so every test in the suite inherits
 the isolation.
+
+## A `try` that both calls and throws swallows its own error
+
+`PtyTerminalSessionService.create()` guarded the cwd check like this:
+
+```ts
+try {
+  const stat = statSync(input.cwd);
+  if (!stat.isDirectory()) throw new Error(`Working directory is not a directory: ${cwd}`);
+} catch (error) {
+  if (error instanceof Error && 'code' in error) { /* ENOENT / EACCES mapping */ }
+  throw new Error(`Cannot access working directory: ${cwd}`);   // <- catches its own throw
+}
+```
+
+The `isDirectory` error has no `code`, so it fell past the errno branches and was
+rewritten as the generic "Cannot access" message. The specific diagnosis was
+computed, then discarded — and a unit test asserting the precise message is the
+only thing that shows it, because both paths still throw.
+
+**Rule:** a `try` block wraps **only** the call that can fail. Validation of that
+call's *result* goes after the `catch`, never inside the `try` — otherwise the
+catch-all rethrow becomes a silent overwrite of your own error. Any `catch` that
+ends in an unconditional `throw new Error(...)` must be read as "every error
+raised above me is now this message."
+
+## Adding a method to a port interface breaks every hand-built mock
+
+Adding `clearCompletedPhase` to `INodeHelpers` compiled fine in `packages/core`
+but broke six test files that build the port as an object literal
+(`{ writeSpecFileAtomic: vi.fn(), safeYamlDump: vi.fn() }`) — `TS2741`, one per
+site. Nothing in the source tree points at them, so the port change looks
+complete right up until `pnpm typecheck`.
+
+**Rule:** widening a port interface is a two-part change. After editing the
+interface, `grep` for a distinctive existing member (`grep -rn "safeYamlDump:" tests/`)
+and update every literal in the **same commit** — a port change that typechecks
+only in `packages/core` is not done. Prefer a shared mock factory over an inline
+literal for any port with more than two members, so the next method is one edit.
+
+## A watchdog test must advance past the reconnect delay, not just the timeout
+
+The SSE heartbeat tests advanced fake timers by exactly the 60s timeout and then
+asserted a replacement `EventSource` existed. It never did: the watchdog closes
+the dead stream immediately but schedules the reconnect one backoff interval
+later, and `advanceTimersByTime(60_000)` does not run a timer queued at 61_000.
+A fourth test advanced to exactly the deadline and expected "still connected",
+but `setTimeout(60_000)` fires *at* 60_000, not after.
+
+**Rule:** a timer test asserts each step of the chain separately — timeout fires
+(stream closed, status disconnected), *then* backoff elapses (replacement
+created). Mirror the delay as a named constant in the test rather than hiding it
+in an arithmetic literal, and probe a boundary from *just inside* it
+(`advanceTimersByTime(59_999)`), because `<=` is what fake timers implement.
+
+## Never trust a green claim from a branch you are porting
+
+Seven branches ported from a fork arrived with: three timer tests that could not
+pass as written, six port mocks never updated, a swallowed-error defect, and
+three `spec.yaml` files that did not parse. None of it was visible from reading
+the diffs — only `pnpm lint && pnpm typecheck && pnpm test:unit && pnpm test:int`
+on the merge result surfaced it.
+
+**Rule:** porting is authoring. Run the full local verification sequence against
+the *merged* tree, not the source branch, and fix what it finds in the porting
+commit — the moment the code lands here it is ours, and "it was like that on
+their branch" is not a status. Take the source branch's tests as a statement of
+intent to be re-verified, not as evidence.
+
+## Multi-line values written into `spec.yaml` must be block scalars
+
+Three ported specs failed `spec-yaml-backward-compatibility` because a user's
+pasted bug report (agent log lines) was written as a plain scalar: continuation
+lines sat at column 0, and YAML read `[2026-08-25T…] [fast-implement] …` as a new
+mapping key ("bad indentation of a mapping entry"). The same file also had lines
+that had fallen out of the `content: |` block.
+
+**Rule:** any spec field fed from free-form user input (`oneLiner`, `userQuery`,
+`summary`, `content`) is emitted as a literal block (`|-`) with every line
+indented — never as an inline scalar, however short it looks at write time. A
+value containing `: `, a leading `[`, or a newline breaks the document, and the
+repo-wide parse test is the only place it shows up.
+
+## An erased constructor parameter makes a tsyringe binding depend on the build
+
+`DiagnosticRunner(options: RunnerOptions = {})` took an **interface**, which
+erases to `Object`. Bound with `registerSingleton`, resolution goes through
+tsyringe's reflective construction, which needs `design:paramtypes` to have been
+emitted. Under `tsc` it resolves (tsyringe happily constructs `Object`), so every
+node test passes. Where the build does not emit decorator metadata — the
+Next/Turbopack compile of the web surface — it throws
+`TypeInfo not known for "Object"`, and the user sees
+"Environment check unavailable".
+
+**Rules:**
+
+1. **A class whose constructor parameter erases to `Object` must not be bound
+   reflectively.** Either give the parameter a real class token, or bind a
+   ready-made instance: `container.registerInstance(TOKEN, new Thing())`. The
+   instance form is the stronger fix — it is correct whether or not metadata is
+   emitted, and matches the bypass already used for
+   `GithubDiscussionRecapPublisher` in the same file.
+2. **`tsc`-based tests cannot prove this class of DI bug.** `@injectable()`
+   captures paramtypes at decoration time, so deleting the metadata afterwards in
+   a test changes nothing, and `typeInfo` is not exported from tsyringe 4.x.
+   Do not write a test that appears to guard it — verify the web build, and say
+   plainly when a fix is covered only by the symptom-level test.
+3. **A test that passes both before and after the fix is not a regression test.**
+   Run it against the old code; if it stays green, delete it rather than shipping
+   a green check that proves nothing.
