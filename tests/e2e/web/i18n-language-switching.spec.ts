@@ -6,16 +6,19 @@
  */
 
 import { test, expect } from '@playwright/test';
+import { COLD_ROUTE_READY_TIMEOUT_MS, COLD_ROUTE_TEST_TIMEOUT_MS } from './helpers/timeouts';
 
 test.describe('i18n: language switching', () => {
+  // First spec to land on /settings, so it may pay the cold route compile.
+  test.describe.configure({ timeout: COLD_ROUTE_TEST_TIMEOUT_MS });
+
   test('switching to Russian updates UI text immediately', async ({ page }) => {
     // Navigate to settings page
     await page.goto('/settings');
-    await page.waitForLoadState('networkidle');
 
     // Verify English text is shown initially
     const languageTitle = page.getByTestId('language-settings-section');
-    await expect(languageTitle).toBeVisible();
+    await expect(languageTitle).toBeVisible({ timeout: COLD_ROUTE_READY_TIMEOUT_MS });
 
     // The card title should say "Language" in English
     await expect(languageTitle.getByText('Language', { exact: true })).toBeVisible();
@@ -44,9 +47,9 @@ test.describe('i18n: language switching', () => {
 
   test('switching to Arabic sets RTL direction', async ({ page }) => {
     await page.goto('/settings');
-    await page.waitForLoadState('networkidle');
 
     const languageSelect = page.getByTestId('language-select');
+    await expect(languageSelect).toBeVisible({ timeout: COLD_ROUTE_READY_TIMEOUT_MS });
     await languageSelect.click();
 
     await page.getByRole('option', { name: 'العربية' }).click();
@@ -62,9 +65,9 @@ test.describe('i18n: language switching', () => {
 
   test('switching to Spanish updates navigation text', async ({ page }) => {
     await page.goto('/settings');
-    await page.waitForLoadState('networkidle');
 
     const languageSelect = page.getByTestId('language-select');
+    await expect(languageSelect).toBeVisible({ timeout: COLD_ROUTE_READY_TIMEOUT_MS });
     await languageSelect.click();
 
     await page.getByRole('option', { name: 'Español' }).click();

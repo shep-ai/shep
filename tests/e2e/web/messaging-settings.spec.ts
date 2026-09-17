@@ -8,15 +8,19 @@
  */
 
 import { test, expect } from '@playwright/test';
+import { COLD_ROUTE_READY_TIMEOUT_MS, COLD_ROUTE_TEST_TIMEOUT_MS } from './helpers/timeouts';
 
 test.describe('messaging settings', () => {
+  // Lands on /settings, which may still be compiling on a cold runner.
+  test.describe.configure({ timeout: COLD_ROUTE_TEST_TIMEOUT_MS });
+
   test('enables messaging, sets gateway URL, pairs telegram, then disconnects', async ({
     page,
   }) => {
     await page.goto('/settings');
-    await page.waitForLoadState('networkidle');
 
     const section = page.getByTestId('messaging-settings-section');
+    await expect(section).toBeVisible({ timeout: COLD_ROUTE_READY_TIMEOUT_MS });
     await section.scrollIntoViewIfNeeded();
     await expect(section).toBeVisible();
 
@@ -71,9 +75,9 @@ test.describe('messaging settings', () => {
 
   test('refuses to begin pairing with an invalid gateway URL', async ({ page }) => {
     await page.goto('/settings');
-    await page.waitForLoadState('networkidle');
 
     const section = page.getByTestId('messaging-settings-section');
+    await expect(section).toBeVisible({ timeout: COLD_ROUTE_READY_TIMEOUT_MS });
     await section.scrollIntoViewIfNeeded();
 
     const enableSwitch = page.getByTestId('switch-messaging-enabled');
