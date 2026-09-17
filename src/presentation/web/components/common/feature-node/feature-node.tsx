@@ -89,6 +89,11 @@ function getBadgeText(
         ? t('featureNode.waitingOn', { blockedBy: data.blockedBy })
         : t('featureNode.blocked');
     case 'pending':
+      if (data.queued) {
+        return data.queuePosition != null
+          ? t('features.queuedWithPosition', { position: data.queuePosition })
+          : t('features.queued');
+      }
       return t('featureNode.pending');
     case 'action-required':
       return getActionRequiredLabel(data, t);

@@ -15,20 +15,10 @@ import type { ISdlcTaskRepository } from '@/application/ports/output/repositorie
 import type { ISdlcSubTaskRepository } from '@/application/ports/output/repositories/sdlc-subtask-repository.interface.js';
 import { TaskState, SdlcLifecycle, BuildMode } from '@/domain/generated/output.js';
 import type { Feature, SdlcTask, SdlcSubTask } from '@/domain/generated/output.js';
+import { createMockFeatureRepository } from '../../../../helpers/feature-repository.mock.js';
 
 function createMockFeatureRepo(): IFeatureRepository {
-  return {
-    create: vi.fn(),
-    findById: vi.fn(),
-    findByIdPrefix: vi.fn(),
-    findBySlug: vi.fn(),
-    findByBranch: vi.fn(),
-    list: vi.fn().mockResolvedValue([]),
-    update: vi.fn(),
-    findByParentId: vi.fn(),
-    delete: vi.fn(),
-    softDelete: vi.fn(),
-  };
+  return createMockFeatureRepository();
 }
 
 function createMockTaskRepo(): ISdlcTaskRepository {

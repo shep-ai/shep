@@ -36,6 +36,9 @@ describe('commit-then-rebase DI wiring', () => {
     const { StartFeatureUseCase } = await import(
       '@/application/use-cases/features/start-feature.use-case.js'
     );
+    const { SpawnFeatureAgentUseCase } = await import(
+      '@/application/use-cases/features/spawn-feature-agent.use-case.js'
+    );
 
     expect(container.resolve(SyncFeatureBranchUseCase)).toBeDefined();
 
@@ -43,7 +46,17 @@ describe('commit-then-rebase DI wiring', () => {
     expect(
       injected(container.resolve(RebaseFeatureOnMainUseCase), 'syncFeatureBranch')
     ).toBeInstanceOf(SyncFeatureBranchUseCase);
-    expect(injected(container.resolve(StartFeatureUseCase), 'syncFeatureBranch')).toBeInstanceOf(
+
+    // StartFeatureUseCase reaches the sync one hop away now: it owns no spawn
+    // logic of its own, delegating to the single spawn path. Assert the whole
+    // chain — a hollow link anywhere still yields a use case that constructs
+    // fine and fails at the first property access.
+    const spawnFeatureAgent = injected(
+      container.resolve(StartFeatureUseCase),
+      'spawnFeatureAgent'
+    ) as object;
+    expect(spawnFeatureAgent).toBeInstanceOf(SpawnFeatureAgentUseCase);
+    expect(injected(spawnFeatureAgent, 'syncFeatureBranch')).toBeInstanceOf(
       SyncFeatureBranchUseCase
     );
   });
@@ -60,8 +73,16 @@ describe('commit-then-rebase DI wiring', () => {
     expect(
       injected(container.resolve<object>('RebaseFeatureOnMainUseCase'), 'syncFeatureBranch')
     ).toBeInstanceOf(SyncFeatureBranchUseCase);
-    expect(
-      injected(container.resolve<object>('StartFeatureUseCase'), 'syncFeatureBranch')
-    ).toBeInstanceOf(SyncFeatureBranchUseCase);
+    const { SpawnFeatureAgentUseCase } = await import(
+      '@/application/use-cases/features/spawn-feature-agent.use-case.js'
+    );
+    const spawnFeatureAgent = injected(
+      container.resolve<object>('StartFeatureUseCase'),
+      'spawnFeatureAgent'
+    ) as object;
+    expect(spawnFeatureAgent).toBeInstanceOf(SpawnFeatureAgentUseCase);
+    expect(injected(spawnFeatureAgent, 'syncFeatureBranch')).toBeInstanceOf(
+      SyncFeatureBranchUseCase
+    );
   });
 });

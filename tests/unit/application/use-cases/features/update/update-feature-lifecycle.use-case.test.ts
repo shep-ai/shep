@@ -15,9 +15,11 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { UpdateFeatureLifecycleUseCase } from '@/application/use-cases/features/update/update-feature-lifecycle.use-case.js';
 import type { IFeatureRepository } from '@/application/ports/output/repositories/feature-repository.interface.js';
 import type { CheckAndUnblockFeaturesUseCase } from '@/application/use-cases/features/check-and-unblock-features.use-case.js';
+import type { AdmitQueuedFeaturesUseCase } from '@/application/use-cases/features/capacity/admit-queued-features.use-case.js';
 import type { ILogger } from '@/application/ports/output/services/logger.interface.js';
 import { SdlcLifecycle, BuildMode } from '@/domain/generated/output.js';
 import type { Feature } from '@/domain/generated/output.js';
+import { createMockFeatureRepository } from '../../../../../helpers/feature-repository.mock.js';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -60,25 +62,21 @@ describe('UpdateFeatureLifecycleUseCase', () => {
   let useCase: UpdateFeatureLifecycleUseCase;
   let mockFeatureRepo: IFeatureRepository;
   let mockCheckAndUnblock: CheckAndUnblockFeaturesUseCase;
+  let mockAdmitQueued: AdmitQueuedFeaturesUseCase;
   let mockLogger: ILogger;
 
   beforeEach(() => {
-    mockFeatureRepo = {
-      create: vi.fn(),
+    mockFeatureRepo = createMockFeatureRepository({
       findById: vi.fn().mockResolvedValue(makeFeature()),
-      findByIdPrefix: vi.fn(),
-      findBySlug: vi.fn(),
-      findByBranch: vi.fn(),
-      list: vi.fn(),
-      findByParentId: vi.fn(),
-      update: vi.fn().mockResolvedValue(undefined),
-      delete: vi.fn(),
-      softDelete: vi.fn(),
-    };
+    });
 
     mockCheckAndUnblock = {
       execute: vi.fn().mockResolvedValue(undefined),
     } as unknown as CheckAndUnblockFeaturesUseCase;
+
+    mockAdmitQueued = {
+      execute: vi.fn().mockResolvedValue({ admittedFeatureIds: [] }),
+    } as unknown as AdmitQueuedFeaturesUseCase;
 
     mockLogger = {
       debug: vi.fn(),
@@ -87,7 +85,12 @@ describe('UpdateFeatureLifecycleUseCase', () => {
       error: vi.fn(),
     };
 
-    useCase = new UpdateFeatureLifecycleUseCase(mockFeatureRepo, mockCheckAndUnblock, mockLogger);
+    useCase = new UpdateFeatureLifecycleUseCase(
+      mockFeatureRepo,
+      mockCheckAndUnblock,
+      mockAdmitQueued,
+      mockLogger
+    );
   });
 
   it('should persist the new lifecycle on the feature', async () => {

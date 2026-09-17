@@ -13,6 +13,11 @@ properties:
     type: boolean
     default: true
     description: "Enable CI watch/fix loop after push (default: true)"
+  maxParallelFeatures:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: "Maximum concurrently running features (default: 0 = unlimited)"
   ciMaxFixAttempts:
     type: integer
     minimum: -2147483648

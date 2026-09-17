@@ -103,6 +103,7 @@ function createTestRow(overrides: Partial<FeatureRow> = {}): FeatureRow {
     source_agent_type: null,
     iteration_count: null,
     max_iterations: null,
+    queued_at: null,
     deleted_at: null,
     created_at: new Date('2026-03-08T10:00:00Z').getTime(),
     updated_at: new Date('2026-03-08T10:00:00Z').getTime(),

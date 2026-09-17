@@ -5,6 +5,8 @@
  * 1. Persists the new lifecycle value via the feature repository.
  * 2. Immediately calls CheckAndUnblockFeaturesUseCase to evaluate whether
  *    any blocked children can now be unblocked.
+ * 3. Drains the parallel-capacity queue, because a transition out of a running
+ *    lifecycle is exactly what frees a slot.
  *
  * This is the single hook point that ensures auto-unblocking fires on every
  * lifecycle transition made by the feature agent, satisfying FR-17.
@@ -14,6 +16,10 @@
  * work it depends on has not landed. Without that guard the gate is advisory —
  * an agent that was already running when the dependency was declared keeps
  * reporting phases, and the first one overwrites Blocked with real progress.
+ *
+ * The drain runs after the unblock so a child released by this very transition
+ * is already queued (rather than still Blocked) by the time the queue is walked,
+ * and can therefore be admitted in the same pass when a slot is free.
  *
  * No-op when the feature is not found (swallowed gracefully so agent nodes
  * do not crash on a missing feature record). A write refused by the gate is
@@ -26,6 +32,7 @@ import type { IFeatureRepository } from '../../../ports/output/repositories/feat
 import type { ILogger } from '../../../ports/output/services/logger.interface.js';
 import { allowsLifecycleWrite } from '../../../../domain/lifecycle-gates.js';
 import { CheckAndUnblockFeaturesUseCase } from '../check-and-unblock-features.use-case.js';
+import { AdmitQueuedFeaturesUseCase } from '../capacity/admit-queued-features.use-case.js';
 
 export interface UpdateFeatureLifecycleInput {
   featureId: string;
@@ -38,6 +45,8 @@ export class UpdateFeatureLifecycleUseCase {
     @inject('IFeatureRepository') private readonly featureRepo: IFeatureRepository,
     @inject(CheckAndUnblockFeaturesUseCase)
     private readonly checkAndUnblock: CheckAndUnblockFeaturesUseCase,
+    @inject(AdmitQueuedFeaturesUseCase)
+    private readonly admitQueued: AdmitQueuedFeaturesUseCase,
     @inject('ILogger') private readonly logger: ILogger
   ) {}
 
@@ -73,5 +82,13 @@ export class UpdateFeatureLifecycleUseCase {
     await this.featureRepo.update(feature);
 
     await this.checkAndUnblock.execute(input.featureId);
+
+    // Isolated: a queue drain that fails must not turn a successful lifecycle
+    // transition into an error for the agent node that reported it.
+    try {
+      await this.admitQueued.execute();
+    } catch {
+      // The state-side sweep will retry on the next dashboard load.
+    }
   }
 }

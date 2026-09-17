@@ -1,0 +1,423 @@
+# Task Breakdown (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: max-parallel-features
+summary: Task breakdown for 110-max-parallel-features
+
+status:
+  phase: implementation
+  updatedAt: '2026-08-10'
+
+# Relationships
+relatedFeatures:
+  - '107-auto-commit-rebase-sync'
+technologies:
+  - TypeSpec
+  - TypeScript
+  - SQLite
+  - tsyringe
+  - Next.js
+  - React
+relatedLinks: []
+
+# Structured task list — this is the single source of truth for tasks.
+# The content field below is a summary only; it does NOT duplicate task details.
+tasks:
+  - id: task-1
+    title: 'Add maxParallelFeatures and queuedAt to TypeSpec'
+    description: >
+      Add `maxParallelFeatures?: int32` to `WorkflowConfig` in tsp/domain/entities/settings.tsp and
+      `queuedAt?: utcDateTime` to `Feature` in tsp/domain/entities/feature.tsp, both with doc
+      comments stating that 0 means unlimited and that queuedAt is set only for capacity-queued
+      features. Regenerate with `pnpm tsp:codegen` (NOT tsp:compile — it leaves the generated file
+      unformatted and produces a phantom 500-line diff).
+    state: Done
+    dependencies: []
+    acceptanceCriteria:
+      - Both fields are optional so existing Partial<Feature>/Settings fixtures still compile
+      - packages/core/src/domain/generated/output.ts regenerated via pnpm tsp:codegen
+      - No hand edits to the generated file
+      - pnpm typecheck passes
+    tdd: null
+    estimatedEffort: S
+
+  - id: task-2
+    title: 'Write migrations 142 and 143'
+    description: >
+      Migration 142 adds `workflow_max_parallel_features INTEGER NOT NULL DEFAULT 0` to settings.
+      Migration 143 adds `queued_at TEXT` to features plus `idx_features_queued_at` for the FIFO
+      scan and, if absent, an index on `features(lifecycle)` for the count query. Both guarded by a
+      `pragma table_info` existence check, following migration 046 as the template.
+    state: Done
+    dependencies:
+      - task-1
+    acceptanceCriteria:
+      - Both migrations are idempotent (re-running on an already-migrated DB is a no-op)
+      - Indexes created with IF NOT EXISTS
+      - Existing rows backfill to 0 / NULL respectively
+    tdd: null
+    estimatedEffort: S
+
+  - id: task-3
+    title: 'Create the domain capacity rule'
+    description: >
+      Create packages/core/src/domain/shared/parallel-feature-limit.ts exporting
+      UNLIMITED_PARALLEL_FEATURES = 0, RUNNING_LIFECYCLES, isRunningLifecycle(),
+      hasCapacity(running, limit), clampMaxParallelFeatures(value) and
+      resolveMaxParallelFeatures(settings). This is the ONLY definition of these semantics.
+      Relative imports inside domain/ carry no .js extension (the web bundler consumes domain/ as
+      raw .ts source).
+    state: Done
+    dependencies:
+      - task-1
+    acceptanceCriteria:
+      - RUNNING_LIFECYCLES contains exactly Started, Analyze, Requirements, Research, Planning, Implementation, Exploring
+      - hasCapacity returns true for any running count when limit is 0
+      - clamp rejects NaN, negatives and values above the documented maximum
+      - Imports use no file extension (domain/ convention)
+    tdd:
+      red:
+        - 'tests/unit/domain/shared/parallel-feature-limit.test.ts: unlimited semantics, membership of every lifecycle value, clamp edge cases'
+      green:
+        - Implement the pure functions and the frozen set
+      refactor:
+        - Name constants for the documented max; keep the module dependency-free
+    estimatedEffort: S
+
+  - id: task-4
+    title: 'Persist the settings limit end-to-end'
+    description: >
+      Four-touch chain for workflow.maxParallelFeatures: settings.mapper.ts SettingsRow interface,
+      toDatabase(), fromDatabase(), and the INSERT column list, INSERT @params list and UPDATE SET
+      clause in sqlite-settings.repository.ts. Add the default (0) to settings-defaults.factory.ts
+      and update its exact-shape toEqual test.
+    state: Done
+    dependencies:
+      - task-2
+      - task-3
+    acceptanceCriteria:
+      - Integration round-trip test writes a NON-default limit (e.g. 4) and reads it back
+      - Updating the limit to a different non-default value persists (exercises UPDATE SET)
+      - settings-defaults.factory test updated for the new key
+    tdd:
+      red:
+        - 'tests/integration/infrastructure/repositories/sqlite-settings.repository.test.ts: save + load a non-default limit, then update it'
+      green:
+        - Add the column to the mapper both directions and to all three SQL lists
+      refactor:
+        - Keep the default sourced from the domain constant, not a literal 0 in the mapper
+    estimatedEffort: M
+
+  - id: task-5
+    title: 'Persist queuedAt and add the capacity queries'
+    description: >
+      Same four-touch chain for Feature.queuedAt in feature.mapper.ts and
+      sqlite-feature.repository.ts. Add countByLifecycles(lifecycles) and listQueued() to
+      IFeatureRepository and implement them in SQL — COUNT with an IN clause excluding soft-deleted
+      rows, and a FIFO SELECT ordered by queued_at ASC.
+    state: Done
+    dependencies:
+      - task-2
+      - task-3
+    acceptanceCriteria:
+      - Round-trip test sets queuedAt and then clears it back to NULL
+      - countByLifecycles excludes soft-deleted rows and counts only the given lifecycles
+      - listQueued returns FIFO order and ignores rows with a NULL queued_at
+      - Queries are parameterised — no string-interpolated SQL
+    tdd:
+      red:
+        - 'tests/integration/infrastructure/repositories/feature-capacity-queries.test.ts: count filtering, soft-delete exclusion, FIFO ordering, queuedAt round-trip'
+      green:
+        - Implement mapper both directions, the three SQL lists, and the two queries
+      refactor:
+        - Build the IN placeholder list from the domain set rather than a hardcoded string
+    estimatedEffort: M
+
+  - id: task-6
+    title: 'Extract the single feature-agent spawn path'
+    description: >
+      Create SpawnFeatureAgentUseCase owning: sync the branch via SyncFeatureBranchUseCase, resolve
+      the worktree path, build the spawn options bag from the persisted Feature plus its AgentRun,
+      and call IFeatureAgentProcessService.spawn. Migrate StartFeatureUseCase and
+      CheckAndUnblockFeaturesUseCase onto it. This fixes the divergence found in research — the
+      auto-unblock path currently omits agentType and modelId, so an unblocked child starts under
+      the wrong agent.
+    state: Done
+    dependencies:
+      - task-3
+    acceptanceCriteria:
+      - Exactly one place builds the feature-agent spawn options bag
+      - Spawned options carry agentType and modelId from the AgentRun on BOTH paths
+      - Existing StartFeature and CheckAndUnblock tests still pass unchanged in intent
+      - Every constructor parameter has an explicit @inject(Token)
+    tdd:
+      red:
+        - 'tests/unit/application/use-cases/features/spawn-feature-agent.use-case.test.ts: options carry every per-feature flag, agentType and modelId'
+        - Regression test asserting an auto-unblocked child spawns with its recorded agentType
+      green:
+        - Implement the use case and migrate both callers
+      refactor:
+        - Delete the duplicated option bags; keep one documented options builder
+    estimatedEffort: L
+
+  - id: task-7
+    title: 'Add FeatureCapacityService and GetParallelCapacityUseCase'
+    description: >
+      FeatureCapacityService reads the limit through ISettingsRepository and the running count
+      through countByLifecycles, and returns a snapshot of limit, running, available and the
+      ordered queue with positions. GetParallelCapacityUseCase is the presentation-facing wrapper —
+      no HTTP, terminal or React concepts in its result.
+    state: Done
+    dependencies:
+      - task-4
+      - task-5
+    acceptanceCriteria:
+      - available never goes negative when the limit is lowered below the running count
+      - A limit of 0 reports unlimited without querying an artificial cap
+      - Queue positions are 1-based and follow queuedAt order
+      - One repository call per snapshot — no N+1 across queued features
+    tdd:
+      red:
+        - 'tests/unit/application/use-cases/features/capacity/feature-capacity.service.test.ts: snapshot arithmetic, unlimited, lowered-limit floor'
+      green:
+        - Implement the service and the read-model use case
+      refactor:
+        - Reuse the domain predicate; no lifecycle list duplicated here
+    estimatedEffort: M
+
+  - id: task-8
+    title: 'Enforce admission on create and manual start'
+    description: >
+      CreateFeatureUseCase and StartFeatureUseCase consult the capacity service after the
+      dependency gate. When no slot is free they persist queuedAt, leave the feature Pending, and
+      skip the spawn — the worktree, spec and agent-run record are still fully created.
+      StartFeatureResult gains queued and queuePosition alongside the existing blocked/blockedBy so
+      no presentation layer re-derives the state.
+    state: Done
+    dependencies:
+      - task-6
+      - task-7
+    acceptanceCriteria:
+      - At capacity, no spawn call is made and queuedAt is persisted
+      - Below capacity, behaviour is byte-for-byte what it is today
+      - A feature whose parent gate is closed goes to Blocked and is NOT queued (capacity is evaluated second)
+      - The result carries queued and queuePosition; nothing infers them from the entity
+    tdd:
+      red:
+        - Start at capacity queues instead of spawning; start below capacity spawns
+        - Blocked-parent case never sets queuedAt
+        - Create at capacity still produces worktree, spec and agent run
+      green:
+        - Wire the capacity check into both use cases
+      refactor:
+        - Keep the gate order explicit and commented — dependency first, capacity second
+    estimatedEffort: L
+
+  - id: task-9
+    title: 'Drain the queue from every trigger'
+    description: >
+      AdmitQueuedFeaturesUseCase walks listQueued() in FIFO order, re-checks the parent dependency
+      gate per feature, clears queuedAt, sets the target lifecycle and delegates to
+      SpawnFeatureAgentUseCase, stopping when capacity runs out. Wire it into
+      UpdateFeatureLifecycleUseCase (after the existing unblock call), UpdateSettingsUseCase (limit
+      raised or set to 0), the get-graph-data sweep next to ReconcileBlockedFeaturesUseCase, and
+      the feature delete path. Also make CheckAndUnblockFeaturesUseCase queue a released child when
+      no slot is free instead of starting it.
+    state: Done
+    dependencies:
+      - task-8
+    acceptanceCriteria:
+      - Admits in queuedAt order and stops exactly at the limit
+      - A queued feature with a closed parent gate stays queued and does not consume the slot
+      - Setting the limit to 0 drains the entire queue
+      - Idempotent — calling twice admits nothing extra
+      - Failures are isolated per feature so one bad spawn does not strand the rest
+      - Nothing in this path can terminate a running agent
+    tdd:
+      red:
+        - 'tests/unit/application/use-cases/features/capacity/admit-queued-features.use-case.test.ts: ordering, stop-at-limit, closed gate, unlimited drain, idempotency, per-feature isolation'
+        - Integration: limit 2, three features, completing one admits the third
+      green:
+        - Implement the drain and wire the four triggers
+      refactor:
+        - Mirror the ReconcileBlockedFeaturesUseCase shape so the two sweeps read alike
+    estimatedEffort: L
+
+  - id: task-10
+    title: 'Register the new use cases in DI'
+    description: >
+      Register SpawnFeatureAgentUseCase, FeatureCapacityService, GetParallelCapacityUseCase and
+      AdmitQueuedFeaturesUseCase in register-use-cases.ts, including the string-token factories the
+      web layer resolves by name. Registration order matters — collaborators before their consumers.
+    state: Done
+    dependencies:
+      - task-9
+    acceptanceCriteria:
+      - Every constructor parameter has an explicit @inject(Token), including class-typed ones
+      - The hollow-dependency guard test passes without being weakened
+      - String-token factories exist for anything the web layer resolves by name
+    tdd:
+      red:
+        - Extend tests/unit/infrastructure/di/hollow-dependency-guard.test.ts coverage to the new classes
+      green:
+        - Add the registrations
+      refactor:
+        - Keep the registration block ordered by dependency
+    estimatedEffort: S
+
+  - id: task-11
+    title: 'Add the settings control and all nine locales'
+    description: >
+      Number input for the parallel-feature limit in the Workflow section of
+      settings-page-client.tsx, following the interactiveAgent.maxConcurrentSessions control
+      exactly, including the fallback object at the top of the component. Clamp through the domain
+      helper, never in the component. Add settings.workflow.maxParallelFeatures and its Description
+      key, plus the queued status strings, to all nine locales.
+    state: Done
+    dependencies:
+      - task-7
+    acceptanceCriteria:
+      - The control renders in the Workflow section and persists a changed value
+      - 0 is presented as unlimited rather than as the number zero
+      - Keys exist in en, ar, de, es, fr, he, pt, ru, uk with identical ordering
+      - tests/unit/translations/translation-completeness.test.ts passes
+      - Storybook story updated for the settings page
+    tdd:
+      red:
+        - Component test: changing the input calls the update action with the clamped value
+      green:
+        - Add the control, the fallback key and the translations
+      refactor:
+        - No parsing or clamping logic left in the component
+    estimatedEffort: M
+
+  - id: task-12
+    title: 'Show queued state on the canvas and drawer'
+    description: >
+      Carry queue state onto feature nodes via build-graph-nodes.ts and forward it from
+      get-graph-data.ts (a new build-graph-nodes option that the loader does not pass is a stranded
+      flag — the failure looks like "wired but renders nothing"). Add a Queued badge with position
+      to the feature node and drawer, plus a "start anyway" action that bypasses the queue for one
+      feature. Colocated .stories.tsx is mandatory.
+    state: Done
+    dependencies:
+      - task-7
+    acceptanceCriteria:
+      - get-graph-data passes the queue snapshot into buildGraphNodes
+      - A unit test asserts the queued fields land on the output node
+      - Badge shows the 1-based position; "start anyway" is wired to a use case, not local state
+      - Stories cover queued, running and pending variants
+    tdd:
+      red:
+        - 'tests/unit/presentation/web/app/build-graph-nodes.test.ts: queued fields present on the node'
+      green:
+        - Add the option, forward it from the loader, render the badge
+      refactor:
+        - Reuse the existing status-badge component rather than adding a parallel one
+    estimatedEffort: M
+
+  - id: task-13
+    title: 'Expose the limit and queue in the CLI'
+    description: >
+      Read and write the limit from the settings command, and report queued state from feat
+      new/start/list instead of claiming the feature started. All output strings come from
+      translations/<lang>/cli.json.
+    state: Done
+    dependencies:
+      - task-8
+    acceptanceCriteria:
+      - The settings command shows and sets the limit, rejecting invalid input via the domain clamp
+      - feat start on a queued feature prints the queue position, not "started"
+      - feat list shows a queued marker
+      - No business logic in the command — it renders what the use case returned
+    tdd:
+      red:
+        - Command test asserting queued output is rendered from the use-case result
+      green:
+        - Wire the commands to the use cases
+      refactor:
+        - Reuse the existing settings command rendering helpers
+    estimatedEffort: M
+
+  - id: task-14
+    title: 'TUI parity for queued features (not applicable)'
+    notActionable: >-
+      No target surface exists. src/presentation/tui/ contains only prompts and
+      wizards — there is no feature list or status view in the TUI to render a
+      queued badge on. Revisit if a TUI feature list is ever added.
+    description: >
+      Show the same queued state and position in the TUI feature list, sourced from the same use
+      case as the web and CLI. A second surface for an entity must offer the same information.
+    state: Done
+    dependencies:
+      - task-8
+    acceptanceCriteria:
+      - Queued features are visually distinct from Pending ones
+      - The position string is identical to the CLI's
+      - No lifecycle or capacity logic re-derived in the TUI
+    tdd:
+      red:
+        - Render test for the queued row
+      green:
+        - Render the queued state
+      refactor:
+        - Share the label builder with the CLI rather than duplicating it
+    estimatedEffort: S
+
+  - id: task-15
+    title: 'Full local verification and LESSONS.md'
+    description: >
+      Run the complete pre-push sequence — pnpm lint, pnpm format:check, pnpm typecheck,
+      pnpm test:unit, pnpm test:int, pnpm build, pnpm build:storybook — and fix everything that
+      fails. Add the lesson from this feature to LESSONS.md.
+    state: Done
+    dependencies:
+      - task-10
+      - task-11
+      - task-12
+      - task-13
+      - task-14
+    acceptanceCriteria:
+      - Every command in the sequence exits zero, with output captured to a file rather than piped away
+      - The smoke-imports web test passes (domain/ import extension convention)
+      - LESSONS.md records the two-independent-gates rule and the queue-drain trigger set
+    tdd: null
+    estimatedEffort: M
+
+# Total effort estimate
+totalEstimate: 'L — 15 tasks across 6 phases'
+
+# Open questions
+openQuestions: []
+
+# Markdown content — summary and acceptance checklist only.
+# Individual task details live in the tasks[] array above (no duplication).
+content: |
+  ## Summary
+
+  A global cap on concurrently running feature agents, with a FIFO queue that drains automatically
+  when a slot frees — 15 tasks across 6 phases.
+
+  Phase 1 lays the two persisted fields and their migrations. Phase 2 defines the capacity rule
+  once, in the domain, before any consumer exists. Phase 3 carries both fields through the full
+  persistence chain and adds the two capacity queries. Phase 4 collapses three duplicated spawn
+  paths into one (fixing an agent-type divergence found during research), then adds admission and
+  the drain. Phase 5 surfaces the setting and the queued state in web, CLI and TUI. Phase 6 verifies.
+
+  ## Acceptance Checklist
+
+  Before marking feature complete:
+
+  - [ ] All tasks completed
+  - [ ] Tests passing (`pnpm test`)
+  - [ ] Linting clean (`pnpm lint`)
+  - [ ] Types valid (`pnpm typecheck`)
+  - [ ] TypeSpec compiles (`pnpm tsp:codegen`)
+  - [ ] Translation completeness test passing across all nine locales
+  - [ ] Storybook builds (`pnpm build:storybook`)
+  - [ ] Default limit of 0 leaves existing behaviour unchanged
+  - [ ] PR created and CI green on every workflow run
+
+  ---
+
+  _Task details are in the tasks[] array of tasks.yaml_

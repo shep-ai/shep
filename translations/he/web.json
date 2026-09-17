@@ -77,6 +77,8 @@
       "sectionDescription": "התנהגות אוטומציה לאחר מימוש",
       "defaultMode": "מצב ברירת מחדל לפיצ'ר",
       "defaultModeDescription": "מצב ברירת מחדל לפיצ'רים חדשים שנוצרים דרך CLI או ממשק ה-Web",
+      "maxParallelFeatures": "מקסימום פיצ'רים במקביל",
+      "maxParallelFeaturesDescription": "מספר הפיצ'רים המקסימלי שמריצים סוכן בו-זמנית. 0 פירושו ללא הגבלה. פיצ'רים נוספים ממתינים בתור ומתחילים אוטומטית כשמתפנה מקום.",
       "modeRegular": "רגיל",
       "modeFast": "מהיר",
       "modeExploration": "חקירה",
@@ -997,5 +999,11 @@
       "saveFailed": "לא ניתן לשמור את תוכנית ההרצה.",
       "reanalyzeFailed": "לא ניתן לאפס את תוכנית ההרצה."
     }
+  },
+  "features": {
+    "queued": "בתור",
+    "queuedWithPosition": "בתור · {{position}} לפני",
+    "queuedTooltip": "ממתין למקום פנוי ({{position}} בתור)",
+    "startAnyway": "התחל בכל זאת"
   }
 }

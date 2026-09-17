@@ -21,6 +21,7 @@ import type { IRepositoryRepository } from '@/application/ports/output/repositor
 import type { Feature, AgentRun, PhaseTiming, Repository } from '@/domain/generated/output.js';
 import { colors, symbols, messages, fmt } from '../../ui/index.js';
 import { getCliI18n } from '../../i18n.js';
+import { isQueuedForCapacity } from '@/domain/shared/parallel-feature-limit.js';
 
 interface LsOptions {
   repo?: string;
@@ -65,6 +66,11 @@ function formatStatus(feature: Feature, run: AgentRun | null): string {
   }
 
   if (feature.lifecycle === 'Pending') {
+    // A queued feature is Pending too, but it is waiting on a slot rather than
+    // on the user — it starts on its own, so it must not read as "Pending".
+    if (isQueuedForCapacity(feature)) {
+      return `${colors.warning(symbols.dotEmpty)} ${colors.warning('Queued')}`;
+    }
     return `${colors.muted(symbols.dotEmpty)} ${colors.muted('Pending')}`;
   }
 

@@ -14,6 +14,7 @@ import {
   resetAutoArchiveWatcher,
 } from '@/infrastructure/services/auto-archive/auto-archive-watcher.service.js';
 import type { IFeatureRepository } from '@/application/ports/output/repositories/feature-repository.interface.js';
+import { createMockFeatureRepository } from '../../../../helpers/feature-repository.mock.js';
 
 vi.mock('@/infrastructure/services/settings.service.js', () => ({
   getSettings: vi.fn().mockReturnValue({
@@ -29,18 +30,7 @@ vi.mock('@/infrastructure/services/settings.service.js', () => ({
 }));
 
 function createMockFeatureRepo(): IFeatureRepository {
-  return {
-    create: vi.fn(),
-    findById: vi.fn().mockResolvedValue(null),
-    findByIdPrefix: vi.fn().mockResolvedValue(null),
-    findBySlug: vi.fn(),
-    findByBranch: vi.fn(),
-    list: vi.fn().mockResolvedValue([]),
-    findByParentId: vi.fn().mockResolvedValue([]),
-    update: vi.fn(),
-    delete: vi.fn(),
-    softDelete: vi.fn(),
-  };
+  return createMockFeatureRepository();
 }
 
 describe('AutoArchiveWatcherService', () => {

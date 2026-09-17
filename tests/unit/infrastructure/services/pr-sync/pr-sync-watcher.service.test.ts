@@ -29,6 +29,7 @@ import type { IAgentRunRepository } from '@/application/ports/output/agents/agen
 import type { IGitPrService } from '@/application/ports/output/services/git-pr-service.interface.js';
 import type { INotificationService } from '@/application/ports/output/services/notification-service.interface.js';
 import { AgentRunStatus } from '@/domain/generated/output.js';
+import { createMockFeatureRepository } from '../../../../helpers/feature-repository.mock.js';
 
 function createMockFeature(overrides: Partial<Feature> = {}): Feature {
   return {
@@ -65,19 +66,10 @@ function createMockFeature(overrides: Partial<Feature> = {}): Feature {
   };
 }
 
-function createMockFeatureRepository(features: Feature[] = []): IFeatureRepository {
-  return {
-    create: vi.fn(),
-    findById: vi.fn(),
-    findByIdPrefix: vi.fn(),
-    findBySlug: vi.fn(),
-    findByBranch: vi.fn(),
-    findByParentId: vi.fn().mockResolvedValue([]),
+function createFeatureRepoListing(features: Feature[] = []): IFeatureRepository {
+  return createMockFeatureRepository({
     list: vi.fn().mockResolvedValue(features),
-    update: vi.fn(),
-    delete: vi.fn(),
-    softDelete: vi.fn(),
-  };
+  }) as unknown as IFeatureRepository;
 }
 
 function createMockGitPrService(): IGitPrService {
@@ -156,7 +148,7 @@ describe('PrSyncWatcherService', () => {
   beforeEach(() => {
     vi.useFakeTimers();
 
-    featureRepo = createMockFeatureRepository();
+    featureRepo = createFeatureRepoListing();
     agentRunRepo = createMockAgentRunRepository();
     gitPrService = createMockGitPrService();
     notificationService = createMockNotificationService();
