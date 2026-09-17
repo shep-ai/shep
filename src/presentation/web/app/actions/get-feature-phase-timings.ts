@@ -22,6 +22,8 @@ export interface PhaseTimingData {
   exitCode?: string;
   errorMessage?: string;
   prompt?: string;
+  /** Model this phase actually ran on — differs per phase under adaptive routing. */
+  modelId?: string;
 }
 
 export interface RejectionFeedbackData {
@@ -65,6 +67,7 @@ export async function getFeaturePhaseTimings(featureId: string): Promise<GetPhas
       exitCode: t.exitCode ?? undefined,
       errorMessage: t.errorMessage ?? undefined,
       prompt: t.prompt ?? undefined,
+      modelId: t.modelId ?? undefined,
     }));
 
     // Read rejection feedback from spec.yaml

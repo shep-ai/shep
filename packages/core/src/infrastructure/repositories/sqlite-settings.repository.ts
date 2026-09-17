@@ -46,6 +46,7 @@ export class SQLiteSettingsRepository implements ISettingsRepository {
       INSERT INTO settings (
         id, created_at, updated_at,
         model_analyze, model_requirements, model_plan, model_implement, model_default,
+        model_adaptive_enabled, model_adaptive_high, model_adaptive_medium, model_adaptive_low,
         user_name, user_email, user_github_username, user_preferred_language,
         env_default_editor, env_shell_preference, env_terminal_preference,
         sys_auto_update, sys_log_level,
@@ -101,6 +102,7 @@ export class SQLiteSettingsRepository implements ISettingsRepository {
       ) VALUES (
         @id, @created_at, @updated_at,
         @model_analyze, @model_requirements, @model_plan, @model_implement, @model_default,
+        @model_adaptive_enabled, @model_adaptive_high, @model_adaptive_medium, @model_adaptive_low,
         @user_name, @user_email, @user_github_username, @user_preferred_language,
         @env_default_editor, @env_shell_preference, @env_terminal_preference,
         @sys_auto_update, @sys_log_level,
@@ -207,6 +209,10 @@ export class SQLiteSettingsRepository implements ISettingsRepository {
         model_plan = @model_plan,
         model_implement = @model_implement,
         model_default = @model_default,
+        model_adaptive_enabled = @model_adaptive_enabled,
+        model_adaptive_high = @model_adaptive_high,
+        model_adaptive_medium = @model_adaptive_medium,
+        model_adaptive_low = @model_adaptive_low,
         user_name = @user_name,
         user_email = @user_email,
         user_github_username = @user_github_username,

@@ -53,6 +53,12 @@ describe('buildCiWatchFixPrompt', () => {
     expect(prompt.toLowerCase()).toMatch(/diagnos|analyz|investigat|fix/);
   });
 
+  it('excludes injected skills from staging', () => {
+    const prompt = buildCiWatchFixPrompt('some failure log', 1, 3, 'feat/my-branch');
+
+    expect(prompt).toContain('git reset -- .claude/skills/');
+  });
+
   it('is deterministic (same input = same output)', () => {
     const prompt1 = buildCiWatchFixPrompt('error log', 1, 3, 'feat/test');
     const prompt2 = buildCiWatchFixPrompt('error log', 1, 3, 'feat/test');

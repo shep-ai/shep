@@ -425,6 +425,23 @@ describe('buildExecutorOptions', () => {
     expect(options.timeout).toBe(120_000);
   });
 
+  it('uses the pinned model from state when no override is given', () => {
+    const state = { ...baseState, model: 'claude-opus-5' };
+    const options = buildExecutorOptions(state as any);
+    expect(options.model).toBe('claude-opus-5');
+  });
+
+  it('lets a model override win over the pinned model — the adaptive-routing seam', () => {
+    const state = { ...baseState, model: 'claude-opus-5' };
+    const options = buildExecutorOptions(state as any, { model: 'claude-haiku-4-5' });
+    expect(options.model).toBe('claude-haiku-4-5');
+  });
+
+  it('leaves model unset when neither state nor override supplies one', () => {
+    const options = buildExecutorOptions(baseState as any);
+    expect(options.model).toBeUndefined();
+  });
+
   it('uses worktreePath as cwd when available', () => {
     const state = { ...baseState, worktreePath: '/tmp/worktree' };
     const options = buildExecutorOptions(state as any);

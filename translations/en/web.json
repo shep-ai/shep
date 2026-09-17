@@ -7,6 +7,7 @@
     "sections": {
       "language": "Language",
       "agent": "Agent",
+      "adaptiveModels": "Adaptive models",
       "environment": "Environment",
       "workflow": "Workflow",
       "worktree": "Worktree",
@@ -134,6 +135,28 @@
       "hint": "Use these when a plain git worktree is not enough — monorepos that need symlinked node_modules, or projects that only build from a prepared directory.",
       "links": {
         "worktreeGuide": "Custom worktree provisioning"
+      }
+    },
+    "adaptiveModels": {
+      "title": "Adaptive model selection",
+      "description": "Run each planned task on a model sized for its complexity",
+      "enabled": "Route tasks by complexity",
+      "enabledDescription": "After planning, each task runs on the model matching its complexity instead of the pinned model. Simple tasks get a smaller, faster model.",
+      "derived": "Derived from pinned model",
+      "planUnavailable": "Could not resolve the tier models for the current agent.",
+      "ceilingHint": "Pinned model {{model}} on {{agent}} is the ceiling — a tier is never more capable than it, and never leaves its model family.",
+      "singleModelHint": "{{model}} has no known lower tier in this agent's catalog, so every task would still run on it. Pin a model with a smaller sibling, or choose tier models explicitly below.",
+      "tiers": {
+        "high": "High complexity",
+        "highDescription": "Novel design, cross-cutting changes, security or concurrency work.",
+        "medium": "Medium complexity",
+        "mediumDescription": "Ordinary feature work that follows an established pattern.",
+        "low": "Low complexity",
+        "lowDescription": "Mechanical edits — translation keys, enum entries, stories, renames."
+      },
+      "hint": "Turn this on when you pin a flagship model but most of your task list is mechanical. The pinned model stays the ceiling, so this can only lower cost.",
+      "links": {
+        "configurationGuide": "Configuration guide"
       }
     },
     "ci": {
@@ -672,6 +695,7 @@
     "execution": "Execution",
     "wait": "Wait",
     "cost": "Cost",
+    "modelUsed": "Ran on {{model}}",
     "noActivityRecorded": "No activity recorded yet"
   },
   "logTab": {

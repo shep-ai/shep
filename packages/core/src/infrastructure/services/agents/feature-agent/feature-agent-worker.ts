@@ -27,6 +27,7 @@ import type { IAgentExecutorProvider } from '@/application/ports/output/agents/a
 import type { IAgentExecutorFactory } from '@/application/ports/output/agents/agent-executor-factory.interface.js';
 import type { IFeatureRepository } from '@/application/ports/output/repositories/feature-repository.interface.js';
 import type { IGitPrService } from '@/application/ports/output/services/git-pr-service.interface.js';
+import { type GitRemoteListService } from '@/infrastructure/services/git/git-remote-list.service.js';
 import type { IGitForkService } from '@/application/ports/output/services/git-fork-service.interface.js';
 import {
   AgentRunStatus,
@@ -302,6 +303,7 @@ export async function runWorker(args: WorkerArgs): Promise<void> {
 
   // Resolve merge node dependencies
   const gitPrService = container.resolve<IGitPrService>('IGitPrService');
+  const gitRemoteListService = container.resolve<GitRemoteListService>('GitRemoteListService');
   const featureRepository = container.resolve<IFeatureRepository>('IFeatureRepository');
   const cleanupFeatureWorktreeUseCase = container.resolve(CleanupFeatureWorktreeUseCase);
 
@@ -324,6 +326,8 @@ export async function runWorker(args: WorkerArgs): Promise<void> {
         gitPrService.getPrDiffSummary(cwd, baseBranch),
       hasRemote: (cwd: string) => gitPrService.hasRemote(cwd),
       getDefaultBranch: (cwd: string) => gitPrService.getDefaultBranch(cwd),
+      listRemotes: (cwd: string) => gitRemoteListService.listRemotes(cwd),
+      getForkParentInfo: (cwd: string) => gitRemoteListService.getForkParentInfo(cwd),
       verifyMerge: (
         cwd: string,
         featureBranch: string,

@@ -44,9 +44,11 @@ export function createFastImplementNode(executor: IAgentExecutor, selectMemory?:
     reportNodeStart('fast-implement');
     await updateNodeLifecycle('fast-implement');
 
-    // Skip if already completed (resume from error path)
+    // Skip if already completed (resume from error path). Not on a merge
+    // rejection resume, though — _needsReexecution means the user rejected
+    // the merge and gave feedback that this phase must still address.
     const completedPhases = getCompletedPhases(state.specDir);
-    if (completedPhases.includes('fast-implement')) {
+    if (completedPhases.includes('fast-implement') && !state._needsReexecution) {
       log.info('Phase already completed, skipping execution');
       return {
         currentNode: 'fast-implement',

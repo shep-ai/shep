@@ -1,0 +1,128 @@
+# Implementation Plan (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: fix-diff-ui-merge-review
+summary: Implementation plan for 110-fix-diff-ui-merge-review
+
+# Relationships
+relatedFeatures: ["073-file-tree-diff-view", "054-merge-review-diff"]
+technologies: ["TypeScript", "Node.js child_process"]
+relatedLinks: []
+
+# Structured implementation phases
+phases:
+  - id: phase-1
+    name: "Fix maxBuffer in GitPrService.getFileDiffs"
+    parallel: false
+    taskIds:
+      - task-1
+  - id: phase-2
+    name: "Surface diff-retrieval failures as a warning"
+    parallel: false
+    taskIds:
+      - task-2
+
+# File change tracking
+filesToCreate: []
+
+filesToModify:
+  - packages/core/src/infrastructure/services/git/git-pr.service.ts
+  - tests/unit/infrastructure/services/git/git-pr.service.test.ts
+  - src/presentation/web/app/actions/get-merge-review-data.ts
+  - tests/unit/presentation/web/actions/merge-review/get-merge-review-data.test.ts
+
+# Open questions (should all be resolved before implementation)
+openQuestions: []
+
+# Markdown content — architecture, strategy, and risks only.
+# Task-level detail lives in tasks.yaml (no duplication).
+content: |
+  ## Status
+
+  - **Phase:** Planning
+  - **Updated:** 2026-08-31
+
+  ## Architecture Overview
+
+  ```
+  MergeReviewContent (UI)
+        |
+        v  data.fileDiffs / data.warning
+  getMergeReviewData (server action)
+        |
+        v  gitPrService.getFileDiffs(worktreePath, defaultBranch)
+  GitPrService.getFileDiffs
+        |
+        v  execFile('git', ['diff', '--unified=3', ...], { cwd, maxBuffer })
+  ExecFunction (DI-injected, wraps promisify(execFile))
+  ```
+
+  No architectural layers change. The fix is confined to (a) the options
+  object passed to an existing `execFile` call inside `GitPrService`, and (b)
+  the error-handling branch inside the `getMergeReviewData` server action that
+  currently discards the error.
+
+  ## Implementation Strategy
+
+  **MANDATORY TDD**: All phases with executable code follow RED-GREEN-REFACTOR
+  cycles.
+
+  Phase 1 fixes the root cause: `getFileDiffs` gets an explicit `maxBuffer`
+  option (10MB, matching the existing `COMMAND_MAX_BUFFER_BYTES` precedent in
+  `worktree-hook-runner.ts`) so `git diff` output for large changesets no
+  longer throws a maxBuffer-exceeded error. A new unit test simulates a diff
+  larger than the previous default 1MB buffer and asserts it is parsed
+  successfully.
+
+  Phase 2 is a defense-in-depth UX improvement: even after the maxBuffer fix,
+  `getFileDiffs` can still fail for unrelated reasons (e.g. a corrupted
+  worktree, git errors). Today `get-merge-review-data.ts` swallows any such
+  error via `.catch(() => undefined)`, causing the diff section to disappear
+  silently. This phase changes that call site to populate the existing
+  `warning` field on `MergeReviewData` when `getFileDiffs` rejects, so the
+  user always sees *some* indication instead of a mysteriously empty section.
+  This reuses the same `warning` mechanism already used for diff-summary
+  failures in the same function, so no new UI code is needed — `MergeReviewContent`
+  already renders `warning` when present.
+
+  Phases are additive and independent: Phase 1 alone fixes the reported bug
+  for large diffs; Phase 2 improves resilience for any other failure mode.
+
+  ## Files to Create/Modify
+
+  ### Modified Files
+
+  | File | Changes |
+  | ---- | ------- |
+  | `packages/core/src/infrastructure/services/git/git-pr.service.ts` | Add a `maxBuffer` option (10MB) to the `execFile('git', ['diff', ...])` call inside `getFileDiffs`. |
+  | `tests/unit/infrastructure/services/git/git-pr.service.test.ts` | Add a test asserting `getFileDiffs` calls `execFile` with the expected `maxBuffer` option and successfully parses very large diff output. |
+  | `src/presentation/web/app/actions/get-merge-review-data.ts` | Change the `getFileDiffs(...).catch(() => undefined)` handling so a failure also sets/merges a `warning` message on the returned data instead of only returning `undefined`. |
+  | `tests/unit/presentation/web/actions/merge-review/get-merge-review-data.test.ts` | Add a test asserting that when `getFileDiffs` rejects, the returned data has `fileDiffs: undefined` and a non-empty `warning`. |
+
+  ## Testing Strategy (TDD: Tests FIRST)
+
+  **CRITICAL:** Tests are written FIRST in each TDD cycle.
+
+  ### Unit Tests (RED -> GREEN -> REFACTOR)
+
+  - `GitPrService.getFileDiffs` is invoked with a `maxBuffer` option matching
+    the chosen constant, and correctly parses a large synthetic diff.
+  - `getMergeReviewData` returns a `warning` (not just `fileDiffs: undefined`)
+    when the underlying `getFileDiffs` call rejects.
+
+  ### Integration Tests
+
+  - None required; existing unit-level coverage of `GitPrService` and
+    `getMergeReviewData` is sufficient to validate this fix end-to-end at the
+    seams that matter (exec options and server-action error handling).
+
+  ## Risk Mitigation
+
+  | Risk | Mitigation |
+  | ---- | ---------- |
+  | 10MB may still be insufficient for pathologically huge diffs | Matches existing accepted precedent (`worktree-hook-runner.ts`); can be revisited independently if ever hit again, without touching this fix's scope. |
+  | Warning field misuse could mask a "no PR" vs "diff fetch failed" distinction | Reuse existing `warning` semantics/tests already distinguishing these cases in `get-merge-review-data.test.ts`; add a dedicated test for the new failure path to avoid ambiguity. |
+
+  ---
+
+  _Updated by `/shep-kit:plan` — see tasks.yaml for detailed task breakdown_

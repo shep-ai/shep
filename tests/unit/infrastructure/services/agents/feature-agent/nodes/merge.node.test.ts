@@ -424,6 +424,31 @@ describe('createMergeNode (agent-driven)', () => {
         true
       );
     });
+
+    it('should truncate the local squash merge commit title to 72 characters when branch names are long', async () => {
+      const longBranch =
+        'feat/some-very-long-descriptive-feature-branch-name-that-is-way-too-long-for-a-commit-title';
+      const longBranchDeps = baseDeps({
+        featureRepository: {
+          findById: vi.fn().mockResolvedValue({
+            id: 'feat-001',
+            lifecycle: 'Implementation',
+            branch: longBranch,
+          }),
+          update: vi.fn().mockResolvedValue(undefined),
+        } as any,
+      });
+      const node = createMergeNode(longBranchDeps);
+      const state = baseState({
+        approvalGates: { allowPrd: false, allowPlan: false, allowMerge: true },
+      });
+      await node(state);
+
+      const [, , , commitMessage] = (longBranchDeps.localMergeSquash as ReturnType<typeof vi.fn>)
+        .mock.calls[0];
+      expect(commitMessage.length).toBeLessThanOrEqual(72);
+      expect(commitMessage.endsWith('…')).toBe(true);
+    });
   });
 
   // --- Conditional push/PR logic ---

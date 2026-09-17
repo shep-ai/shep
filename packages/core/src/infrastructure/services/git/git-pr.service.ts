@@ -29,6 +29,14 @@ import { PrStatus } from '../../../domain/generated/output.js';
 import type { ExecFunction } from './worktree.service.js';
 import { applyPrBranding, applyCommitBranding } from './pr-branding.js';
 
+/**
+ * Node's `child_process.execFile` defaults to a 1MB stdout buffer, which is
+ * easily exceeded by `git diff` output on large changesets. Raise the limit
+ * so large diffs don't silently fail (see worktree-hook-runner.ts for the
+ * same pattern).
+ */
+const DIFF_MAX_BUFFER_BYTES = 10 * 1024 * 1024;
+
 @injectable()
 export class GitPrService implements IGitPrService {
   constructor(@inject('ExecFunction') private readonly execFile: ExecFunction) {}
@@ -576,7 +584,7 @@ export class GitPrService implements IGitPrService {
       const { stdout } = await this.execFile(
         'git',
         ['diff', '--unified=3', `${baseBranch}...HEAD`],
-        { cwd }
+        { cwd, maxBuffer: DIFF_MAX_BUFFER_BYTES }
       );
       return this.parseUnifiedDiff(stdout);
     } catch (error) {

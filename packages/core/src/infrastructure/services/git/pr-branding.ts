@@ -14,6 +14,9 @@ export const PR_BRANDING =
 /** The co-author trailer to include in commit messages. */
 export const COMMIT_CO_AUTHOR = 'Co-Authored-By: Shep Bot <shep-agent@users.noreply.github.com>';
 
+/** Maximum length for a commit title (first line), per the conventional-commits header rule. */
+export const MAX_COMMIT_TITLE_LENGTH = 72;
+
 /**
  * Pattern matching common AI-tool attribution footers that should be
  * replaced (e.g. "Generated with Claude Code", "Co-Authored-By: Claude").
@@ -74,4 +77,22 @@ export function applyCommitBranding(message: string): string {
   }
 
   return cleaned;
+}
+
+/**
+ * Truncate a commit title (first line) to at most `maxLength` characters,
+ * replacing the cut-off tail with an ellipsis so the result stays within
+ * the conventional-commits header limit.
+ *
+ * Titles at or under the limit are returned unchanged.
+ */
+export function truncateCommitTitle(
+  title: string,
+  maxLength: number = MAX_COMMIT_TITLE_LENGTH
+): string {
+  const limit = Number.isFinite(maxLength) ? Math.floor(maxLength) : MAX_COMMIT_TITLE_LENGTH;
+  if (limit <= 0) return '';
+  if (title.length <= limit) return title;
+  if (limit === 1) return '…';
+  return `${title.slice(0, limit - 1).trimEnd()}…`;
 }

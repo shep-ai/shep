@@ -705,3 +705,68 @@ describe('buildLifecycleTimeline', () => {
     expect(result[2].rejectionMessage).toBeUndefined();
   });
 });
+
+describe('ActivityTab — model attribution', () => {
+  it('shows the model a phase ran on', () => {
+    const timings: PhaseTimingData[] = [
+      {
+        agentRunId: 'r1',
+        phase: 'implement:phase-1',
+        startedAt: '2024-01-01T00:00:00.000Z',
+        completedAt: '2024-01-01T00:00:05.000Z',
+        durationMs: 5000,
+        modelId: 'claude-haiku-4-5',
+      },
+    ];
+
+    render(<ActivityTab timings={timings} loading={false} error={null} />);
+
+    expect(screen.getByTestId('timing-model-implement:phase-1')).toHaveTextContent(
+      'claude-haiku-4-5'
+    );
+  });
+
+  it('renders different models for different phases of the same run', () => {
+    const timings: PhaseTimingData[] = [
+      {
+        agentRunId: 'r1',
+        phase: 'plan',
+        startedAt: '2024-01-01T00:00:00.000Z',
+        completedAt: '2024-01-01T00:00:05.000Z',
+        durationMs: 5000,
+        modelId: 'claude-opus-5',
+      },
+      {
+        agentRunId: 'r1',
+        phase: 'implement:phase-1',
+        startedAt: '2024-01-01T00:00:05.000Z',
+        completedAt: '2024-01-01T00:00:09.000Z',
+        durationMs: 4000,
+        modelId: 'claude-haiku-4-5',
+      },
+    ];
+
+    render(<ActivityTab timings={timings} loading={false} error={null} />);
+
+    expect(screen.getByTestId('timing-model-plan')).toHaveTextContent('claude-opus-5');
+    expect(screen.getByTestId('timing-model-implement:phase-1')).toHaveTextContent(
+      'claude-haiku-4-5'
+    );
+  });
+
+  it('renders nothing extra for a timing with no recorded model', () => {
+    const timings: PhaseTimingData[] = [
+      {
+        agentRunId: 'r1',
+        phase: 'analyze',
+        startedAt: '2024-01-01T00:00:00.000Z',
+        completedAt: '2024-01-01T00:00:05.000Z',
+        durationMs: 5000,
+      },
+    ];
+
+    render(<ActivityTab timings={timings} loading={false} error={null} />);
+
+    expect(screen.queryByTestId('timing-model-analyze')).toBeNull();
+  });
+});

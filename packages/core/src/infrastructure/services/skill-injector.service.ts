@@ -3,14 +3,18 @@
  *
  * Injects curated agent skills into worktrees during feature creation.
  * Handles local skill copying via fs.cp, remote skill installation via npx,
- * SKILL.md idempotency checks, and .gitignore management.
+ * and SKILL.md idempotency checks.
+ *
+ * Injected skills are worktree-local tooling: the injector never writes to
+ * the (tracked) .gitignore, and commits exclude newly-added files under
+ * `.claude/skills/` at staging time (see GitCommitService).
  *
  * Uses constructor-injected ExecFunction for process execution (npx, git)
  * and direct fs/promises imports for filesystem operations, following
  * the established codebase conventions.
  */
 
-import { access, cp, mkdir, readFile, writeFile } from 'node:fs/promises';
+import { access, cp, mkdir } from 'node:fs/promises';
 import { join } from 'node:path';
 import { injectable, inject } from 'tsyringe';
 
@@ -80,10 +84,6 @@ export class SkillInjectorService implements ISkillInjectorService {
         await this.injectRemoteSkill(worktreePath, skill, result);
       }
     }
-
-    // Update .gitignore for injected and skipped untracked skills
-    const allSkillNames = [...result.injected, ...result.skipped];
-    await this.updateGitignore(worktreePath, allSkillNames);
 
     return result;
   }
@@ -166,61 +166,5 @@ export class SkillInjectorService implements ISkillInjectorService {
     } finally {
       clearTimeout(timer);
     }
-  }
-
-  private async isTrackedInGit(worktreePath: string, skillName: string): Promise<boolean> {
-    try {
-      await this.execFile('git', ['ls-files', '--error-unmatch', `${SKILLS_DIR}/${skillName}/`], {
-        cwd: worktreePath,
-      });
-      return true;
-    } catch {
-      return false;
-    }
-  }
-
-  private async updateGitignore(worktreePath: string, skillNames: string[]): Promise<void> {
-    if (!skillNames.length) return;
-
-    // Determine which skills need .gitignore entries (untracked only)
-    const untrackedSkills: string[] = [];
-    for (const name of skillNames) {
-      if (!(await this.isTrackedInGit(worktreePath, name))) {
-        untrackedSkills.push(name);
-      }
-    }
-
-    if (!untrackedSkills.length) return;
-
-    const gitignorePath = join(worktreePath, '.gitignore');
-
-    // Read existing .gitignore (or start with empty string)
-    let existingContent = '';
-    try {
-      const content = await readFile(gitignorePath, 'utf-8');
-      existingContent = typeof content === 'string' ? content : '';
-    } catch {
-      // File doesn't exist — will create it
-    }
-
-    // Determine which entries are new
-    const existingLines = new Set(existingContent.split('\n').map((line) => line.trim()));
-    const newEntries: string[] = [];
-
-    for (const name of untrackedSkills) {
-      const pattern = `${SKILLS_DIR}/${name}/`;
-      if (!existingLines.has(pattern)) {
-        newEntries.push(pattern);
-      }
-    }
-
-    if (!newEntries.length) return;
-
-    // Append new entries, ensuring trailing newline
-    const needsNewline = existingContent.length > 0 && !existingContent.endsWith('\n');
-    const separator = needsNewline ? '\n' : '';
-    const updatedContent = `${existingContent + separator + newEntries.join('\n')}\n`;
-
-    await writeFile(gitignorePath, updatedContent);
   }
 }

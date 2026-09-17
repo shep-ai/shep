@@ -4,6 +4,7 @@ import { useState, useTransition, useRef, useEffect, useCallback, useMemo } from
 import {
   Check,
   Bot,
+  Gauge,
   Terminal,
   GitBranch,
   Activity,
@@ -70,6 +71,7 @@ const LANGUAGE_OPTIONS = [
 import { TimeoutSlider } from '@/components/features/settings/timeout-slider';
 import { SupplyChainSecuritySettingsSection } from '@/components/features/settings/supply-chain-security-settings-section';
 import { WorktreeSettingsSection } from '@/components/features/settings/worktree-settings-section';
+import { AdaptiveModelSettingsSection } from '@/components/features/settings/adaptive-model-settings-section';
 import type {
   Settings,
   FeatureFlags,
@@ -108,6 +110,7 @@ const AUTH_METHOD_OPTIONS = [
 const SECTIONS = [
   { id: 'language', labelKey: 'settings.sections.language', icon: Globe },
   { id: 'agent', labelKey: 'settings.sections.agent', icon: Bot },
+  { id: 'adaptive-models', labelKey: 'settings.sections.adaptiveModels', icon: Gauge },
   { id: 'environment', labelKey: 'settings.sections.environment', icon: Terminal },
   { id: 'workflow', labelKey: 'settings.sections.workflow', icon: GitBranch },
   { id: 'worktree', labelKey: 'settings.sections.worktree', icon: FolderGit2 },
@@ -971,6 +974,24 @@ export function SettingsPageClient({
             ]}
           >
             {t('settings.agent.hint')}
+          </SectionHint>
+        </div>
+
+        {/* ── Adaptive model selection ── */}
+        <div
+          id="section-adaptive-models"
+          className="grid scroll-mt-18 grid-cols-1 gap-x-5 rounded-lg lg:grid-cols-[1fr_280px]"
+        >
+          <AdaptiveModelSettingsSection adaptive={settings.models.adaptive} />
+          <SectionHint
+            links={[
+              {
+                label: t('settings.adaptiveModels.links.configurationGuide'),
+                href: 'https://github.com/shep-ai/shep/blob/main/docs/guides/configuration.md',
+              },
+            ]}
+          >
+            {t('settings.adaptiveModels.hint')}
           </SectionHint>
         </div>
 

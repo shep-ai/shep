@@ -34,10 +34,10 @@ import {
   SERVER_JS_SOURCE,
   SETUP_JS_SOURCE,
   SETUP_MARKER_FILE,
+  TEST_TIMEOUT_MS,
   type DevServerAgentHarness,
 } from './harness.js';
 
-const TEST_TIMEOUT_MS = 60_000;
 const TARGET_TYPE = DeploymentTargetType.Repository;
 
 /** Second fixture server, so an edit to the config is observable. */

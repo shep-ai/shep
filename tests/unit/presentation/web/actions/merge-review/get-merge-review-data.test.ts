@@ -294,7 +294,7 @@ describe('getMergeReviewData server action', () => {
     expect(mockGetFileDiffs).toHaveBeenCalledWith('/tmp/worktree', 'main');
   });
 
-  it('returns undefined fileDiffs when getFileDiffs fails', async () => {
+  it('returns undefined fileDiffs and a warning when getFileDiffs fails', async () => {
     mockFindById.mockResolvedValue(baseFeature);
     mockGetPrDiffSummary.mockResolvedValue(baseDiffSummary);
     mockGetFileDiffs.mockRejectedValue(new Error('git error'));
@@ -304,6 +304,7 @@ describe('getMergeReviewData server action', () => {
     expect(result).toMatchObject({
       diffSummary: baseDiffSummary,
       fileDiffs: undefined,
+      warning: 'File diffs unavailable',
     });
   });
 

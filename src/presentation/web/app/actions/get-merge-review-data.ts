@@ -140,11 +140,23 @@ export async function getMergeReviewData(featureId: string): Promise<GetMergeRev
     }
 
     try {
+      let fileDiffsWarning: string | undefined;
       const [diffSummary, fileDiffs] = await Promise.all([
         gitPrService.getPrDiffSummary(worktreePath, defaultBranch),
-        gitPrService.getFileDiffs(worktreePath, defaultBranch).catch(() => undefined),
+        gitPrService.getFileDiffs(worktreePath, defaultBranch).catch(() => {
+          fileDiffsWarning = 'File diffs unavailable';
+          return undefined;
+        }),
       ]);
-      return { pr, branch, diffSummary, fileDiffs, evidence, hideCiStatus: workflow.hideCiStatus };
+      return {
+        pr,
+        branch,
+        diffSummary,
+        fileDiffs,
+        evidence,
+        warning: fileDiffsWarning,
+        hideCiStatus: workflow.hideCiStatus,
+      };
     } catch {
       return {
         pr,

@@ -12,7 +12,7 @@
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import yaml from 'js-yaml';
-import { readSpecFile } from '../node-helpers.js';
+import { readSpecFile, getPhaseRejectionFeedback } from '../node-helpers.js';
 import { buildProjectMemorySection } from './project-memory-section.js';
 import type { FeatureAgentState } from '../../state.js';
 import { COMMIT_CO_AUTHOR } from '../../../../git/pr-branding.js';
@@ -111,44 +111,13 @@ function extractUserQuery(specDir: string): string {
 }
 
 /**
- * Extract rejection feedback from spec.yaml for merge-phase rejections.
+ * Extract merge-phase rejection feedback from spec.yaml.
  * Returns a formatted prompt section if feedback exists, empty string otherwise.
  */
 function getRejectionFeedback(specDir: string): string {
-  try {
-    const specContent = readSpecFile(specDir, 'spec.yaml');
-    if (!specContent) return '';
-
-    const specData = yaml.load(specContent) as Record<string, unknown> | null;
-    const rejectionFeedback = specData?.rejectionFeedback as
-      | { iteration: number; message: string; phase?: string; timestamp: string }[]
-      | undefined;
-    if (rejectionFeedback && rejectionFeedback.length > 0) {
-      const mergeRejections = rejectionFeedback.filter((e) => e.phase === 'merge');
-      if (mergeRejections.length > 0) {
-        const latest = mergeRejections[mergeRejections.length - 1];
-        const older = mergeRejections.slice(0, -1);
-        const olderSection =
-          older.length > 0
-            ? `\n### Earlier feedback (for context only)\n${older.map((e) => `- Iteration ${e.iteration}: ${e.message}`).join('\n')}\n`
-            : '';
-        return `
-## CRITICAL — User Rejection Feedback (MUST ADDRESS)
-
-**YOUR PRIMARY TASK: The user rejected the previous result and gave this feedback. You MUST act on it:**
-
-> ${latest.message}
-
-(Iteration ${latest.iteration}, ${latest.timestamp})
-
-Do NOT just record this feedback — you must actually make the changes the user requested.
-${olderSection}`;
-      }
-    }
-  } catch {
-    // Continue without rejection feedback
-  }
-  return '';
+  const specContent = readSpecFile(specDir, 'spec.yaml');
+  if (!specContent) return '';
+  return getPhaseRejectionFeedback(specContent, 'merge');
 }
 
 /**

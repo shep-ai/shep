@@ -363,6 +363,28 @@ describe('buildFastImplementPrompt', () => {
     expect(prompt).toContain('...(truncated)');
   });
 
+  it('should include merge rejection feedback in the prompt when present in spec.yaml', () => {
+    setupFileMocks({
+      specYaml: `name: quick-fix
+userQuery: >
+  Fix the typo in the README
+summary: Fix typo
+phase: Analysis
+rejectionFeedback:
+  - iteration: 1
+    message: "Please also update the changelog"
+    phase: merge
+    timestamp: "2026-01-01T00:00:00.000Z"
+`,
+    });
+    const state = createMockState();
+
+    const prompt = buildFastImplementPrompt(state);
+
+    expect(prompt).toContain('User Rejection Feedback');
+    expect(prompt).toContain('Please also update the changelog');
+  });
+
   it('should handle missing spec.yaml gracefully', () => {
     setupFileMocks({ specYaml: null });
     const state = createMockState();
@@ -531,6 +553,20 @@ describe('createFastImplementNode', () => {
     expect(mockExecutor.execute).not.toHaveBeenCalled();
     expect(result.currentNode).toBe('fast-implement');
     expect(result.messages![0]).toContain('already completed');
+  });
+
+  it('should re-execute despite an already-completed phase when _needsReexecution is true (merge rejection resume)', async () => {
+    setupFileMocks();
+    mockGetCompletedPhases.mockReturnValue(['fast-implement']);
+    const node = createFastImplementNode(mockExecutor);
+    const state = createMockState({ _needsReexecution: true });
+
+    const result = await node(state);
+
+    // Must NOT take the "already completed — skipping" shortcut.
+    expect(mockExecutor.execute).toHaveBeenCalled();
+    expect(result.currentNode).toBe('fast-implement');
+    expect(result._needsReexecution).toBe(false);
   });
 
   it('should call markPhaseComplete after successful execution', async () => {

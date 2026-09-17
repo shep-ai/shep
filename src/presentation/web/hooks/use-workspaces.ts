@@ -69,13 +69,20 @@ const INITIAL_STATE: WorkspacesState = {
   activeWorkspaceId: DEFAULT_WORKSPACE_ID,
 };
 
+function freshInitialState(): WorkspacesState {
+  return {
+    workspaces: [{ ...INITIAL_STATE.workspaces[0]! }],
+    activeWorkspaceId: INITIAL_STATE.activeWorkspaceId,
+  };
+}
+
 function loadState(): WorkspacesState {
-  if (typeof window === 'undefined') return INITIAL_STATE;
+  if (typeof window === 'undefined') return freshInitialState();
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return INITIAL_STATE;
+    if (!raw) return freshInitialState();
     const parsed = JSON.parse(raw) as Partial<WorkspacesState>;
-    if (!parsed.workspaces || !Array.isArray(parsed.workspaces)) return INITIAL_STATE;
+    if (!parsed.workspaces || !Array.isArray(parsed.workspaces)) return freshInitialState();
     // Make sure default workspace always exists
     const hasDefault = parsed.workspaces.some((w) => w.id === DEFAULT_WORKSPACE_ID);
     const workspaces = hasDefault
@@ -86,7 +93,7 @@ function loadState(): WorkspacesState {
       activeWorkspaceId: parsed.activeWorkspaceId ?? DEFAULT_WORKSPACE_ID,
     };
   } catch {
-    return INITIAL_STATE;
+    return freshInitialState();
   }
 }
 
@@ -124,14 +131,15 @@ export interface UseWorkspacesResult {
 }
 
 export function useWorkspaces(): UseWorkspacesResult {
-  const [state, setState] = useState<WorkspacesState>(INITIAL_STATE);
+  // Lazy initializer: loadState() runs once, synchronously, on the first
+  // render — so `state` is already hydrated from localStorage before the
+  // persist effect below ever runs. There is deliberately no separate
+  // "hydrate after mount" effect: that pattern raced against this same
+  // persist effect (which would fire first with the un-hydrated default
+  // and clobber previously-saved workspaces) — see LESSONS.md.
+  const [state, setState] = useState<WorkspacesState>(loadState);
 
-  // Hydrate from localStorage on mount (client-only).
-  useEffect(() => {
-    setState(loadState());
-  }, []);
-
-  // Persist whenever state changes (after hydration).
+  // Persist whenever state changes.
   useEffect(() => {
     saveState(state);
   }, [state]);

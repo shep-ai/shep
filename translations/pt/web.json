@@ -7,6 +7,7 @@
     "sections": {
       "language": "Idioma",
       "agent": "Agente",
+      "adaptiveModels": "Modelos adaptativos",
       "environment": "Ambiente",
       "workflow": "Fluxo de Trabalho",
       "worktree": "Worktree",
@@ -134,6 +135,28 @@
       "hint": "Use quando um worktree simples do git não basta — monorepos que precisam de node_modules linkado, ou projetos que só compilam a partir de um diretório preparado.",
       "links": {
         "worktreeGuide": "Provisionamento de worktree personalizado"
+      }
+    },
+    "adaptiveModels": {
+      "title": "Seleção adaptativa de modelo",
+      "description": "Execute cada tarefa planejada num modelo dimensionado para a sua complexidade",
+      "enabled": "Encaminhar tarefas por complexidade",
+      "enabledDescription": "Após o planejamento, cada tarefa roda no modelo correspondente à sua complexidade em vez do modelo fixado. Tarefas simples usam um modelo menor e mais rápido.",
+      "derived": "Derivado do modelo fixado",
+      "planUnavailable": "Não foi possível resolver os modelos por nível para o agente atual.",
+      "ceilingHint": "O modelo fixado {{model}} em {{agent}} é o teto — nenhum nível é mais capaz que ele nem sai da sua família de modelos.",
+      "singleModelHint": "{{model}} não tem um nível inferior conhecido no catálogo deste agente, então todas as tarefas continuariam rodando nele. Fixe um modelo com um irmão menor, ou escolha os modelos por nível abaixo.",
+      "tiers": {
+        "high": "Complexidade alta",
+        "highDescription": "Design inédito, mudanças transversais, trabalho de segurança ou concorrência.",
+        "medium": "Complexidade média",
+        "mediumDescription": "Trabalho de funcionalidade comum que segue um padrão estabelecido.",
+        "low": "Complexidade baixa",
+        "lowDescription": "Edições mecânicas — chaves de tradução, entradas de enum, stories, renomeações."
+      },
+      "hint": "Ative quando fixar um modelo de topo mas a maior parte da sua lista de tarefas for mecânica. O modelo fixado continua sendo o teto, então isto só pode reduzir custo.",
+      "links": {
+        "configurationGuide": "Guia de configuração"
       }
     },
     "ci": {
@@ -672,6 +695,7 @@
     "execution": "Execução",
     "wait": "Espera",
     "cost": "Custo",
+    "modelUsed": "Executado em {{model}}",
     "noActivityRecorded": "Nenhuma atividade registrada"
   },
   "logTab": {

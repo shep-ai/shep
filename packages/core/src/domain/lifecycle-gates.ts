@@ -59,6 +59,68 @@ export function satisfiesDependencyGate(
 }
 
 /**
+ * Lifecycles a feature held back by a closed dependency gate may still move to.
+ *
+ * A Blocked feature is waiting for the work it depends on to land, so nothing
+ * may advance it along the SDLC — but filing and teardown are not progress and
+ * must stay reachable:
+ * - Blocked: the idempotent re-write of the state it is already in.
+ * - Deleting: the user removed the feature; the gate does not own its removal.
+ * - Archived: the feature was filed away; `previousLifecycle` keeps the truth.
+ *
+ * Every other target means "start doing work", which is exactly what the gate
+ * exists to prevent.
+ */
+export const GATE_EXEMPT_LIFECYCLES = new Set<SdlcLifecycle>([
+  SdlcLifecycle.Blocked,
+  SdlcLifecycle.Deleting,
+  SdlcLifecycle.Archived,
+]);
+
+/**
+ * May a Blocked feature be advanced to `target` given its parent's progress?
+ *
+ * Answers the "don't start before the parent completed" invariant from the
+ * *write* side: `satisfiesDependencyGate` decides when a child is released,
+ * this decides which writes are allowed while it is not.
+ *
+ * A feature that is not Blocked is unaffected — it was already released, and
+ * re-checking here would fight `CheckAndUnblockFeaturesUseCase`. A Blocked
+ * feature with no gate left to honour is also allowed through, rather than
+ * stranded in Blocked with no transition able to release it: see the clause
+ * below for the three ways that happens.
+ *
+ * @param feature - The feature being written to (id + lifecycle + parentId are read).
+ * @param parent - The parent feature, or null when it has none / cannot be loaded.
+ * @param target - The lifecycle the caller wants to write.
+ * @returns True when the write may proceed.
+ */
+export function allowsLifecycleWrite(
+  feature: Pick<Feature, 'id' | 'lifecycle'> & Partial<Pick<Feature, 'parentId'>>,
+  parent: (Pick<Feature, 'lifecycle'> & Partial<Pick<Feature, 'previousLifecycle'>>) | null,
+  target: SdlcLifecycle
+): boolean {
+  if (feature.lifecycle !== SdlcLifecycle.Blocked) {
+    return true;
+  }
+  if (GATE_EXEMPT_LIFECYCLES.has(target)) {
+    return true;
+  }
+  // Nothing left to gate on. Each of these would otherwise hold the feature in
+  // Blocked forever, because no other feature's progress could ever open it:
+  // - no parentId: the dependency was cleared.
+  // - parent not loaded: a dangling id, its parent deleted out from under it.
+  // - parentId === id: a corrupted self-parented row. ReparentFeatureUseCase
+  //   rejects self-parenting, so this only arrives from outside that path — and
+  //   a Blocked feature never satisfies its own gate.
+  if (!feature.parentId || !parent || feature.parentId === feature.id) {
+    return true;
+  }
+
+  return satisfiesDependencyGate(parent);
+}
+
+/**
  * Valid lifecycle transitions FROM the Exploring state.
  *
  * An exploration feature may transition to:

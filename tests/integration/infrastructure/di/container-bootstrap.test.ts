@@ -98,6 +98,7 @@ const WEB_ROUTE_TOKENS: readonly string[] = [
   'CreateGitRemoteUseCase',
   'CreateTerminalSessionUseCase',
   'EnsureGhAuthenticatedUseCase',
+  'GetAdaptiveModelPlanUseCase',
   'GetApplicationUseCase',
   'GetCloudDeploymentStatusUseCase',
   'GetGitStatusUseCase',

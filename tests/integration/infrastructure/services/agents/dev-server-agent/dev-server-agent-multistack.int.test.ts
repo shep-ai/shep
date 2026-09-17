@@ -51,10 +51,10 @@ import {
   waitForLogLine,
   SERVER_FILE,
   SERVER_JS_SOURCE,
+  TEST_TIMEOUT_MS,
   type DevServerAgentHarness,
 } from './harness.js';
 
-const TEST_TIMEOUT_MS = 60_000;
 const TARGET_TYPE = DeploymentTargetType.Repository;
 
 /** One covered ecosystem: the files that identify it and what must resolve. */
