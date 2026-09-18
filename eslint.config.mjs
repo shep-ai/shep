@@ -37,7 +37,7 @@ export default tseslint.config(
       'build/**',
       'web/**',
       '**/.next/**',
-      'out/**',
+      '**/out/**',
       '**/storybook-static/**',
 
       // Dependencies
