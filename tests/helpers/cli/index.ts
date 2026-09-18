@@ -5,6 +5,8 @@
  */
 
 export {
+  MULTI_STEP_CLI_TIMEOUT_MS,
+  MULTI_STEP_TEST_TIMEOUT_MS,
   createCliRunner,
   createIsolatedCliRunner,
   runCli,

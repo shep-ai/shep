@@ -12,6 +12,13 @@
  *
  * NOTE: Uses execSync intentionally for git setup in tests. All inputs are
  * controlled by test code (hardcoded constants), not user input.
+ *
+ * TIMEOUTS: every command here creates a worktree, scaffolds a spec and writes
+ * the database, so each runner gets MULTI_STEP_CLI_TIMEOUT_MS — 60s on Windows,
+ * where the same `feat new` that takes 8s under a quiet runner has taken 30s
+ * under a loaded one. The describe-level vitest ceiling sits above that budget
+ * on every platform, so the runner's own kill always wins the race and the
+ * failure names the command that hung instead of reporting a bare timeout.
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
@@ -20,11 +27,15 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createHash } from 'node:crypto';
 import { execSync, spawnSync } from 'node:child_process';
-import { createCliRunner } from '../../helpers/cli/index.js';
+import {
+  MULTI_STEP_CLI_TIMEOUT_MS,
+  MULTI_STEP_TEST_TIMEOUT_MS,
+  createCliRunner,
+} from '../../helpers/cli/index.js';
 
 const isWindows = process.platform === 'win32';
 
-describe('CLI: feat', () => {
+describe('CLI: feat', { timeout: MULTI_STEP_TEST_TIMEOUT_MS }, () => {
   let shepHome: string;
   let tempRepo: string;
 
@@ -97,7 +108,7 @@ describe('CLI: feat', () => {
     it('should create a feature and display its details', () => {
       const runner = createCliRunner({
         env: { SHEP_HOME: shepHome },
-        timeout: 30000,
+        timeout: MULTI_STEP_CLI_TIMEOUT_MS,
       });
 
       const result = runner.run(`feat new "Add user authentication" --repo ${tempRepo}`);
@@ -106,12 +117,12 @@ describe('CLI: feat', () => {
       expect(result.stdout).toContain('Feature created');
       expect(result.stdout).toMatch(/ID:\s+[0-9a-f-]{36}/);
       expect(result.stdout).toContain('feat/add-user-authentication');
-    }, 60_000);
+    });
 
     it('should create a git worktree for the feature branch', () => {
       const runner = createCliRunner({
         env: { SHEP_HOME: shepHome },
-        timeout: 30000,
+        timeout: MULTI_STEP_CLI_TIMEOUT_MS,
       });
 
       runner.runOrThrow(`feat new "Worktree check" --repo ${tempRepo}`);
@@ -123,12 +134,12 @@ describe('CLI: feat', () => {
         .slice(0, 16);
       const worktreePath = join(shepHome, 'repos', repoHash, 'wt', 'feat-worktree-check');
       expect(existsSync(worktreePath)).toBe(true);
-    }, 60_000);
+    });
 
     it('should initialize spec directory with fast-mode YAML files by default', () => {
       const runner = createCliRunner({
         env: { SHEP_HOME: shepHome },
-        timeout: 30000,
+        timeout: MULTI_STEP_CLI_TIMEOUT_MS,
       });
 
       runner.runOrThrow(`feat new "Spec init check" --repo ${tempRepo}`);
@@ -147,12 +158,12 @@ describe('CLI: feat', () => {
       expect(files).toContain('spec.yaml');
       expect(files).toContain('feature.yaml');
       expect(files).toHaveLength(2);
-    }, 60_000);
+    });
 
     it('should initialize spec directory with all YAML files when --no-fast is used', () => {
       const runner = createCliRunner({
         env: { SHEP_HOME: shepHome },
-        timeout: 30000,
+        timeout: MULTI_STEP_CLI_TIMEOUT_MS,
       });
 
       runner.runOrThrow(`feat new "Full spec check" --no-fast --repo ${tempRepo}`);
@@ -172,12 +183,12 @@ describe('CLI: feat', () => {
       expect(files).toContain('plan.yaml');
       expect(files).toContain('tasks.yaml');
       expect(files).toContain('feature.yaml');
-    }, 60_000);
+    });
 
     it('should auto-resolve duplicate feature slugs with suffix', () => {
       const runner = createCliRunner({
         env: { SHEP_HOME: shepHome },
-        timeout: 30000,
+        timeout: MULTI_STEP_CLI_TIMEOUT_MS,
       });
 
       const first = runner.run(`feat new "Duplicate test" --repo ${tempRepo}`);
@@ -188,12 +199,12 @@ describe('CLI: feat', () => {
       // Should use a suffixed slug and warn about it
       const output = `${second.stdout} ${second.stderr}`;
       expect(output).toMatch(/already exists.*using/i);
-    }, 60_000);
+    });
 
     it('should show error when no description is provided', () => {
       const runner = createCliRunner({
         env: { SHEP_HOME: shepHome },
-        timeout: 30000,
+        timeout: MULTI_STEP_CLI_TIMEOUT_MS,
       });
 
       const result = runner.run('feat new');
@@ -206,7 +217,7 @@ describe('CLI: feat', () => {
     it('should show message when no features exist', () => {
       const runner = createCliRunner({
         env: { SHEP_HOME: shepHome },
-        timeout: 30000,
+        timeout: MULTI_STEP_CLI_TIMEOUT_MS,
       });
 
       const result = runner.run('feat ls');
@@ -218,7 +229,7 @@ describe('CLI: feat', () => {
     it('should list created features', () => {
       const runner = createCliRunner({
         env: { SHEP_HOME: shepHome },
-        timeout: 30000,
+        timeout: MULTI_STEP_CLI_TIMEOUT_MS,
       });
 
       runner.runOrThrow(`feat new "Listed feature" --repo ${tempRepo}`);
@@ -228,12 +239,12 @@ describe('CLI: feat', () => {
       expect(result.success).toBe(true);
       expect(result.stdout).toContain('Features');
       expect(result.stdout).toContain('Listed Feature');
-    }, 60_000);
+    });
 
     it('should filter features by repository path', () => {
       const runner = createCliRunner({
         env: { SHEP_HOME: shepHome },
-        timeout: 30000,
+        timeout: MULTI_STEP_CLI_TIMEOUT_MS,
       });
 
       runner.runOrThrow(`feat new "Repo filter test" --repo ${tempRepo}`);
@@ -242,14 +253,14 @@ describe('CLI: feat', () => {
 
       expect(result.success).toBe(true);
       expect(result.stdout).toContain('Repo Filter Test');
-    }, 60_000);
+    });
   });
 
   describe('shep feat show', () => {
     it('should display feature details', () => {
       const runner = createCliRunner({
         env: { SHEP_HOME: shepHome },
-        timeout: 30000,
+        timeout: MULTI_STEP_CLI_TIMEOUT_MS,
       });
 
       const createResult = runner.runOrThrow(`feat new "Show detail test" --repo ${tempRepo}`);
@@ -262,12 +273,12 @@ describe('CLI: feat', () => {
       expect(result.stdout).toContain('Show Detail Test');
       expect(result.stdout).toContain('feat/show-detail-test');
       expect(result.stdout).toContain(tempRepo.replace(/\\/g, '/'));
-    }, 60_000);
+    });
 
     it('should show error for nonexistent feature ID', () => {
       const runner = createCliRunner({
         env: { SHEP_HOME: shepHome },
-        timeout: 30000,
+        timeout: MULTI_STEP_CLI_TIMEOUT_MS,
       });
 
       const result = runner.run('feat show nonexistent-id');

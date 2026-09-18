@@ -27,27 +27,33 @@ import { readFile, access } from 'node:fs/promises';
 import { constants } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { createCliRunner } from '../../helpers/cli/runner.js';
+import {
+  MULTI_STEP_CLI_TIMEOUT_MS,
+  MULTI_STEP_TEST_TIMEOUT_MS,
+  createCliRunner,
+} from '../../helpers/cli/runner.js';
 
 const isWindows = process.platform === 'win32';
 
-// These tests involve process spawning and signal delivery — use a generous timeout
-const TEST_TIMEOUT = isWindows ? 90_000 : 30_000;
+// These tests involve process spawning and signal delivery — use a generous timeout.
+// It has to stay above MULTI_STEP_CLI_TIMEOUT_MS so the runner's own kill wins the
+// race and reports which command hung.
+const TEST_TIMEOUT = MULTI_STEP_TEST_TIMEOUT_MS;
 
 /**
- * Per-command budget for restart/upgrade.
+ * Budget for the parent's own work in `shep start`, measured on top of a plain
+ * CLI invocation rather than from zero.
  *
- * These are the most expensive commands in the suite: each runs two daemon
- * operations (stop, polling up to 5s, then start with a settle delay) plus a
- * process spawn, on top of CLI startup. The budget MUST exceed the runner's own
- * per-platform default (15s posix / 30s win32) — a flat 20s silently SHORTENED
- * it on the slowest platform, and an execSync timeout surfaces as exitCode 1,
- * indistinguishable from a genuine command failure.
+ * NFR-1 is "the parent hands the daemon off and exits", so what the test has to
+ * bound is the handoff — not how long this runner takes to boot a CLI at all. An
+ * absolute ceiling conflated the two and read 6s on one Windows run and 27.5s on
+ * the next, on identical code.
  *
- * Must also stay below TEST_TIMEOUT so the exec timeout wins the race and
- * reports a diagnosable error instead of vitest killing the test first.
+ * The handoff itself measures ~500ms — SPAWN_SETTLE_MS plus the daemon.json
+ * write — so this budget is an order of magnitude of headroom, not a guess at
+ * how slow the runner might be.
  */
-const MULTI_STEP_CLI_TIMEOUT_MS = isWindows ? 60_000 : 20_000;
+const PARENT_HANDOFF_BUDGET_MS = isWindows ? 10_000 : 5_000;
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -239,6 +245,15 @@ describe('CLI: daemon lifecycle', { timeout: TEST_TIMEOUT }, () => {
     });
 
     it('exits 0 and prints a localhost URL', () => {
+      // Baseline: the same startup work `start` does — process spawn, module
+      // load, container bootstrap, settings read — without spawning a daemon.
+      // The first call also pays one-time SHEP_HOME initialization, so the
+      // second one is the steady-state cost that `start` will also pay.
+      runCli('status');
+      const baselineStartMs = Date.now();
+      runCli('status');
+      const baselineMs = Date.now() - baselineStartMs;
+
       const startMs = Date.now();
       const result = runCli(`start --port ${testPort}`);
       const elapsed = Date.now() - startMs;
@@ -247,9 +262,13 @@ describe('CLI: daemon lifecycle', { timeout: TEST_TIMEOUT }, () => {
       expect(result.success).toBe(true);
       // URL should appear somewhere in the combined output
       expect(result.stdout + result.stderr).toMatch(/localhost:\d+/);
-      // Parent must exit quickly — proxy for NFR-1 (parent-exits-within-2s)
-      // Allow headroom for CI load and tsx compilation overhead
-      expect(elapsed).toBeLessThan(isWindows ? 20000 : 10000);
+      // NFR-1 (parent-exits-within-2s): with SHEP_SKIP_READINESS_CHECK set the
+      // parent's only extra work over an ordinary CLI invocation is the handoff
+      // — spawn, the 500ms settle window, the daemon.json write, unref and exit.
+      // A parent that awaited the child instead of detaching would add the
+      // daemon's whole lifetime, which no budget here absorbs, while a merely
+      // slow runner inflates both measurements together and cancels out.
+      expect(elapsed - baselineMs).toBeLessThan(PARENT_HANDOFF_BUDGET_MS);
     });
 
     it('writes daemon.json with the correct shape', async () => {

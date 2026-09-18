@@ -117,6 +117,30 @@ const CLI_PATH_DIST = resolve(PROJECT_ROOT, 'dist/src/presentation/cli/index.js'
 const USE_DIST_BY_DEFAULT = !!process.env.SHEP_E2E_USE_DIST;
 
 /**
+ * Per-command budget for a CLI invocation that does multi-step filesystem, git
+ * and database work — `feat new` (worktree + spec scaffold + database writes)
+ * and the daemon restart/upgrade paths (stop, poll, start, settle).
+ *
+ * It MUST exceed the runner's own per-platform default below; a flat number
+ * silently SHORTENED the budget on the slowest platform, and an execSync
+ * timeout surfaces as exitCode 1, indistinguishable from a genuine failure.
+ *
+ * Windows CI runners spawn processes and touch the filesystem several times
+ * slower than Linux ones, and under load the same `feat new` that takes 8s
+ * takes 30s — so the budget scales with the platform rather than assuming one
+ * number covers both.
+ */
+export const MULTI_STEP_CLI_TIMEOUT_MS = process.platform === 'win32' ? 60_000 : 30_000;
+
+/**
+ * Vitest-level timeout for a test that runs a MULTI_STEP_CLI_TIMEOUT_MS
+ * command. Kept strictly larger so the runner's own kill always wins the race
+ * and the failure carries the command's stderr instead of vitest's opaque
+ * "test timed out" message.
+ */
+export const MULTI_STEP_TEST_TIMEOUT_MS = MULTI_STEP_CLI_TIMEOUT_MS * 2;
+
+/**
  * Default runner options
  */
 const DEFAULT_OPTIONS: Required<CliRunnerOptions> = {
