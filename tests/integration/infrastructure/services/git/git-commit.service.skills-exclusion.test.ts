@@ -10,7 +10,8 @@
 
 import 'reflect-metadata';
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
+import { removeDirWithRetry } from '@tests/helpers/remove-dir.helper.js';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { execFile as execFileCb } from 'node:child_process';
@@ -32,7 +33,7 @@ function git(cwd: string, args: string[]): Promise<{ stdout: string; stderr: str
 
 function destroyDirs(dirs: string[]): void {
   for (const dir of dirs) {
-    rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    removeDirWithRetry(dir);
   }
 }
 

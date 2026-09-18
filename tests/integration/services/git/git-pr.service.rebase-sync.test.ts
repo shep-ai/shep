@@ -7,7 +7,8 @@
 
 import 'reflect-metadata';
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { mkdtempSync, writeFileSync, readFileSync, rmSync, existsSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, readFileSync, existsSync } from 'node:fs';
+import { removeDirWithRetry } from '@tests/helpers/remove-dir.helper.js';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { execFile as execFileCb } from 'node:child_process';
@@ -102,19 +103,18 @@ async function addUpstreamCommit(
     await git(tmpClone, ['commit', '-m', message]);
     await git(tmpClone, ['push', 'origin', 'main']);
   } finally {
-    // maxRetries + retryDelay: Windows holds transient file locks (antivirus,
-    // indexer, lingering git child handles) that briefly raise EBUSY/EPERM on
-    // rmdir; Node's built-in retry loop turns those flakes into a single
-    // visible failure only when something is genuinely stuck.
-    rmSync(tmpClone, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    // Windows holds transient file locks (antivirus, indexer, lingering git
+    // child handles) that briefly raise EBUSY/EPERM on rmdir; the helper's
+    // retry loop turns those into a visible failure only when something is
+    // genuinely stuck.
+    removeDirWithRetry(tmpClone);
   }
 }
 
 function destroyDirs(dirs: string[]): void {
   for (const dir of dirs) {
     if (existsSync(dir)) {
-      // See note above on rmSync retry options — same Windows safety net.
-      rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+      removeDirWithRetry(dir);
     }
   }
 }

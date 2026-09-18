@@ -8,7 +8,8 @@
  * `os.tmpdir()` + `mkdtempSync` keeps this cross-platform (never `/tmp`).
  */
 
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { removeDirWithRetry } from './remove-dir.helper.js';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
@@ -55,7 +56,7 @@ export function makeFixture(
 /** Remove every fixture created so far. Safe to call when none exist. */
 export function cleanupFixtures(): void {
   for (const root of createdRoots.splice(0)) {
-    rmSync(root, { recursive: true, force: true });
+    removeDirWithRetry(root);
   }
 }
 

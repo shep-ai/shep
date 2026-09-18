@@ -1,5 +1,40 @@
 # Lessons Learned
 
+## `kill()` is a signal, not a join — never remove a directory a process just left
+
+A pty unit test created a temp dir, spawned a real shell in it, called `close()`,
+then removed the dir in `finally`. Green on Linux, red on every Windows run:
+`close()` only *signals* the pty, and Windows keeps the child's handle on its cwd
+open until the process actually dies, so `rmdir` came back `EBUSY` and took the
+whole CI/CD workflow — including the release job — down with it.
+
+Rules:
+
+1. **Wait for the exit event before touching what the process was holding.** Subscribe
+   *before* closing: a session registry drops the entry on close, so a listener added
+   afterwards is never reached.
+2. **`rmSync` retries are the safety net, not the fix.** `maxRetries` / `retryDelay`
+   cover handles the OS releases on its own schedule; they do not make a teardown
+   deterministic, and reaching for them first hides the race.
+3. **A green Linux run says nothing about Windows teardown.** Anything that spawns a
+   process and then deletes files is a Windows-only failure waiting for main.
+4. **One retry budget, one home.** Six suites had each inlined their own
+   `{ maxRetries, retryDelay }`; that is `@tests/helpers/remove-dir.helper.ts` now.
+
+## A one-shot download inside a build step is an unguarded failure
+
+`electron-builder` fetches the Electron runtime from GitHub releases at package time.
+One `status code 500` on the darwin-arm64 zip — seconds after the x64 zip downloaded
+fine — surfaced as `ERR_ELECTRON_BUILDER_CANNOT_EXECUTE` and failed the job.
+
+Rules:
+
+1. **If a build step downloads at run time, wrap it in a retry.** The vendor's own
+   retry logic is not yours to rely on, and everything already fetched is cached, so a
+   retry re-attempts only what failed.
+2. **Retry the seam you control.** No knob exists inside app-builder's downloader, so
+   the outermost process invocation is the only place to put the loop.
+
 ## A port with consumers and a token is not a wired port
 
 Spec 111 shipped `IFleetRepository`, four use cases that `@inject('IFleetRepository')`, an exported

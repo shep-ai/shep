@@ -30,7 +30,8 @@
 
 import 'reflect-metadata';
 import { describe, it, expect, afterEach, beforeEach } from 'vitest';
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
+import { removeDirWithRetry } from '@tests/helpers/remove-dir.helper.js';
 import { dirname, join } from 'node:path';
 import { tmpdir } from 'node:os';
 import type Database from 'better-sqlite3';
@@ -151,7 +152,7 @@ describe('dev-server agent integration — multi-stack deterministic resolution'
   afterEach(() => {
     db.close();
     while (fixtures.length > 0) {
-      rmSync(fixtures.pop()!, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+      removeDirWithRetry(fixtures.pop()!);
     }
   });
 

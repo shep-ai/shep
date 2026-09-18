@@ -17,7 +17,8 @@
  * install.
  */
 
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
+import { removeDirWithRetry } from '@tests/helpers/remove-dir.helper.js';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { randomUUID } from 'node:crypto';
@@ -75,15 +76,6 @@ const DEFAULT_POLL_INTERVAL_MS = 25;
  * wait reports twice, once for the timeout and once for the teardown it caused.
  */
 const CLEANUP_SETTLE_MS = IS_WINDOWS ? 1_000 : 150;
-/**
- * rmSync retry budget for fixture dirs — Windows holds locks well past exit.
- * Total per fixture is retries x delay, and cleanup runs inside vitest's
- * hookTimeout, so this stays well under it even with several fixtures tracked.
- */
-const CLEANUP_RM_MAX_RETRIES = IS_WINDOWS ? 12 : 5;
-/** Delay between rmSync retries; total budget is retries x delay. */
-const CLEANUP_RM_RETRY_DELAY_MS = 250;
-
 /**
  * Per-test timeout for the dev-server-agent suite.
  *
@@ -315,12 +307,7 @@ export async function createHarness(options: HarnessOptions = {}): Promise<DevSe
       await sleep(CLEANUP_SETTLE_MS);
       db.close();
       for (const dir of fixtures) {
-        rmSync(dir, {
-          recursive: true,
-          force: true,
-          maxRetries: CLEANUP_RM_MAX_RETRIES,
-          retryDelay: CLEANUP_RM_RETRY_DELAY_MS,
-        });
+        removeDirWithRetry(dir);
       }
     },
   };

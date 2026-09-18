@@ -51,6 +51,50 @@ const npmBin = isWindows ? 'npm.cmd' : 'npm';
 const npxBin = isWindows ? 'npx.cmd' : 'npx';
 const spawnOpts = { stdio: 'inherit', shell: isWindows };
 
+/**
+ * How many times to run electron-builder before giving up.
+ *
+ * electron-builder fetches the Electron runtime and its own helper binaries
+ * (dmg-builder, winCodeSign, ...) from GitHub releases at package time. Those
+ * endpoints intermittently answer 5xx, which app-builder surfaces as a hard
+ * `ERR_ELECTRON_BUILDER_CANNOT_EXECUTE` that kills the whole build — a red CI
+ * job for a download that would have succeeded a second later. Everything it
+ * already fetched is cached on disk, so a retry only re-attempts what failed.
+ */
+const BUILDER_MAX_ATTEMPTS = 3;
+
+/** Base backoff between electron-builder attempts; grows linearly per attempt. */
+const BUILDER_RETRY_BASE_DELAY_MS = 5_000;
+
+/** Block the (synchronous) packaging script without spinning the CPU. */
+function sleepSync(ms) {
+  Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+}
+
+/**
+ * Run a command, retrying the whole invocation on failure with linear backoff.
+ *
+ * Deliberately retries the command rather than the download: app-builder owns
+ * the fetching and exposes no retry knob, so the outermost process is the only
+ * seam we control.
+ */
+function execWithRetry(bin, args, options, maxAttempts) {
+  for (let attempt = 1; ; attempt += 1) {
+    try {
+      execFileSync(bin, args, options);
+      return;
+    } catch (error) {
+      if (attempt >= maxAttempts) throw error;
+      const delayMs = BUILDER_RETRY_BASE_DELAY_MS * attempt;
+      console.warn(
+        `[retry] ${bin} failed (attempt ${attempt}/${maxAttempts}): ${error.message}\n` +
+          `[retry] retrying in ${delayMs / 1000}s — cached downloads are reused`
+      );
+      sleepSync(delayMs);
+    }
+  }
+}
+
 const [variant = 'full', target = 'linux'] = process.argv.slice(2);
 if (!['full', 'apps-only'].includes(variant)) {
   console.error(`Unknown variant: ${variant} (expected 'full' or 'apps-only')`);
@@ -159,7 +203,7 @@ writeFileSync(stagedPkgPath, JSON.stringify(stagedPkg, null, 2));
 //    the source tree (not inside stagedDir, which is ephemeral).
 const outputAbs = path.join(electronRoot, outputDir);
 console.log(`[build:${variant}] electron-builder --${target} (output → ${outputAbs})`);
-execFileSync(
+execWithRetry(
   npxBin,
   [
     'electron-builder',
@@ -169,7 +213,8 @@ execFileSync(
     '--config.directories.output',
     outputAbs,
   ],
-  { ...spawnOpts, cwd: stagedDir }
+  { ...spawnOpts, cwd: stagedDir },
+  BUILDER_MAX_ATTEMPTS
 );
 
 console.log(`Electron ${variant} ${target} build complete → ${outputAbs}`);

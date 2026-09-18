@@ -1,5 +1,6 @@
 import { vi } from 'vitest';
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
+import { removeDirWithRetry } from '@tests/helpers/remove-dir.helper.js';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { execFile as execFileCb } from 'node:child_process';
@@ -171,14 +172,12 @@ export async function createLocalOnlyHarness(): Promise<{
 
 /** Removes the harness temp directories. Called in afterEach.
  *
- *  `maxRetries` + `retryDelay` shield Windows runners from transient
- *  EBUSY/EPERM errors caused by antivirus, the file indexer, or git
- *  child processes that haven't fully released their handles yet.
- *  Without this, cleanup intermittently fails the whole test even
- *  when the run itself succeeded. */
+ *  Removal is retried so Windows runners survive the transient EBUSY/EPERM
+ *  raised by antivirus, the file indexer, or git child processes that have
+ *  not fully released their handles yet — see `removeDirWithRetry`. */
 export function destroyHarness(dirs: string[]): void {
   for (const dir of dirs) {
-    rmSync(dir, { recursive: true, force: true, maxRetries: 5, retryDelay: 100 });
+    removeDirWithRetry(dir);
   }
 }
 
