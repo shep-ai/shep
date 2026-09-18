@@ -2196,3 +2196,49 @@ what `infrastructure/di/tokens.ts` and the generic `resolve<T>` signature are fo
 4. The same asymmetry bit in both directions. In one file a type-only import needed no
    resolution while the sibling value import did, which is how a broken relative path and this
    bundler mismatch each survived four other green gates.
+
+## A wall-clock ceiling measures the runner, not the code
+
+`daemon-lifecycle.test.ts` bounded NFR-1 ("the parent hands the daemon off and exits") with
+`expect(elapsed).toBeLessThan(isWindows ? 20000 : 10000)`. The same commit read 6s on one Windows
+run and 27.5s on the next — the runner was four times slower for a few minutes, and a test with
+nothing to do with the change went red.
+
+The property is a *delta*: everything `shep start` costs beyond an ordinary CLI invocation is the
+handoff. Measuring a plain `shep status` immediately before and asserting on the difference makes
+runner speed cancel out — and the measured delta is ~500ms (`SPAWN_SETTLE_MS` plus the
+`daemon.json` write) against a 5s budget, where the old form had 10s of pure headroom and still
+flaked.
+
+**Rules:**
+
+1. Never assert an absolute duration in an E2E test. Assert the difference against a baseline
+   measured in the same environment, moments apart, or assert on an observable fact instead.
+2. Prove the budget still bites: set it to `0`, run the test, and read the real delta out of the
+   failure message. A timing assertion nobody has watched fail is decoration.
+3. Two timeouts around the same command must not be able to tie. The runner's `execSync` kill has
+   to fire before vitest's, or the failure is a bare "test timed out" with no command output —
+   `feat.test.ts` capped the runner at 30s on a platform whose own default was already 30s, so a
+   loaded Windows runner killed `feat new` mid-worktree and reported exit code 1, indistinguishable
+   from a real failure.
+
+## A nested `eslint.config.mjs` silently drops every rule scoped by path
+
+`src/presentation/web/eslint.config.mjs` re-exported the root config, so `pnpm lint:web` looked
+correctly wired. But flat-config `files` patterns resolve against the directory of the config file
+ESLint actually loaded, so the root block scoped to `src/presentation/web/**/*.tsx` matched nothing
+when ESLint was launched from inside that directory. The React, hooks and Next plugins were
+therefore never registered for the files they exist for: `pnpm lint:web` reported 38
+`Definition for rule 'react-hooks/exhaustive-deps' was not found` errors — which is ESLint saying
+"your disable comments reference rules I never loaded", not "your code is clean". Deleting the
+nested config lets ESLint find the root one by upward search, with the repo root as the base path,
+and the rules match again.
+
+**Rules:**
+
+1. One flat config per repo. A nested config that "just extends the root" re-bases every path
+   pattern in it.
+2. `Definition for rule … was not found` is never cosmetic. It means a rule you believe is
+   enforcing something is absent — check what else that plugin was supposed to be checking.
+3. Prove a lint gate is live before trusting it: write a file that violates the rule and watch it
+   fail. Here `useEffect` with a missing dependency went from silently passing to reported.
