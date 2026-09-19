@@ -283,18 +283,19 @@ describe('createMergeNode — CI watch/fix loop', () => {
       expect(deps.gitPrService.getCiStatus).not.toHaveBeenCalled();
     });
 
-    it('should skip CI watch when getCiStatus returns no runUrl', async () => {
-      deps.gitPrService.getCiStatus = vi.fn().mockResolvedValue({ status: 'pending' });
+    it('should skip CI watch when getCiStatus returns success without a runUrl', async () => {
+      deps.gitPrService.getCiStatus = vi.fn().mockResolvedValue({ status: 'success' });
       const node = createMergeNode(deps);
-      await node(baseState({ push: true }));
+      const result = await node(baseState({ push: true }));
 
       expect(deps.gitPrService.getCiStatus).toHaveBeenCalled();
       // No agent watch call — only the commit-push-pr executor call
       expect(mockParseCiWatchResult).not.toHaveBeenCalled();
+      expect(result.ciStatus).toBe('Success');
     });
 
     it('should return Failure ciStatus when no CI run and PR has merge conflicts', async () => {
-      deps.gitPrService.getCiStatus = vi.fn().mockResolvedValue({ status: 'pending' });
+      deps.gitPrService.getCiStatus = vi.fn().mockResolvedValue({ status: 'success' });
       deps.gitPrService.getMergeableStatus = vi.fn().mockResolvedValue(false);
       const node = createMergeNode(deps);
       const state = baseState({ push: true, openPr: true });
@@ -307,7 +308,7 @@ describe('createMergeNode — CI watch/fix loop', () => {
     });
 
     it('should return Success ciStatus when no CI run and PR is mergeable', async () => {
-      deps.gitPrService.getCiStatus = vi.fn().mockResolvedValue({ status: 'pending' });
+      deps.gitPrService.getCiStatus = vi.fn().mockResolvedValue({ status: 'success' });
       deps.gitPrService.getMergeableStatus = vi.fn().mockResolvedValue(true);
       const node = createMergeNode(deps);
       const state = baseState({ push: true, openPr: true });
@@ -318,8 +319,34 @@ describe('createMergeNode — CI watch/fix loop', () => {
       expect(result.ciStatus).toBe('Success');
     });
 
-    it('should return Success ciStatus when no CI run and getMergeableStatus fails', async () => {
+    it('should preserve Pending ciStatus when external PR checks are pending without a CI run', async () => {
       deps.gitPrService.getCiStatus = vi.fn().mockResolvedValue({ status: 'pending' });
+      deps.gitPrService.getMergeableStatus = vi.fn().mockResolvedValue(true);
+      const node = createMergeNode(deps);
+      const state = baseState({ push: true, openPr: true });
+      state.prNumber = 42;
+      const result = await node(state);
+
+      expect(result.ciStatus).toBe('Pending');
+      expect(result.ciFixStatus).toBe('idle');
+      expect(mockParseCiWatchResult).not.toHaveBeenCalled();
+    });
+
+    it('should preserve Failure ciStatus when external PR checks fail without a CI run', async () => {
+      deps.gitPrService.getCiStatus = vi.fn().mockResolvedValue({ status: 'failure' });
+      deps.gitPrService.getMergeableStatus = vi.fn().mockResolvedValue(true);
+      const node = createMergeNode(deps);
+      const state = baseState({ push: true, openPr: true });
+      state.prNumber = 42;
+      const result = await node(state);
+
+      expect(result.ciStatus).toBe('Failure');
+      expect(result.ciFixStatus).toBe('idle');
+      expect(mockParseCiWatchResult).not.toHaveBeenCalled();
+    });
+
+    it('should return Success ciStatus when no CI run and getMergeableStatus fails', async () => {
+      deps.gitPrService.getCiStatus = vi.fn().mockResolvedValue({ status: 'success' });
       deps.gitPrService.getMergeableStatus = vi.fn().mockRejectedValue(new Error('API error'));
       const node = createMergeNode(deps);
       const state = baseState({ push: true, openPr: true });

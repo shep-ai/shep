@@ -161,6 +161,18 @@ export async function runCiWatchFixLoop(
     throw err;
   }
   if (!initialCiStatus.runUrl) {
+    // A missing workflow URL is not enough to declare success: PR checks may
+    // still be pending or failed when a repository has no GitHub Actions.
+    if (initialCiStatus.status !== 'success') {
+      log.info(`No CI run detected — preserving PR check status: ${initialCiStatus.status}`);
+      return {
+        ciStatus: initialCiStatus.status === 'failure' ? CiStatus.Failure : CiStatus.Pending,
+        ciFixAttempts,
+        ciFixHistory,
+        ciFixStatus: 'idle',
+      };
+    }
+
     // No CI run detected — check if PR has merge conflicts which would prevent CI from running
     if (params.prNumber != null) {
       try {

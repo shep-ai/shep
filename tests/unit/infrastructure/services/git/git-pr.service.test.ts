@@ -471,14 +471,14 @@ describe('GitPrService', () => {
       expect(result.runUrl).toBe('https://github.com/org/repo/actions/runs/123');
     });
 
-    it('should return pending when no runs found', async () => {
+    it('should return success when no workflow runs or PR checks are found', async () => {
       vi.mocked(mockExec)
         .mockResolvedValueOnce({ stdout: '[]', stderr: '' })
         .mockResolvedValueOnce({ stdout: JSON.stringify([]), stderr: '' });
 
       const result = await service.getCiStatus('/repo', 'feat/branch');
 
-      expect(result.status).toBe('pending');
+      expect(result.status).toBe('success');
     });
 
     it('should throw GitPrError when gh command fails', async () => {
@@ -620,6 +620,147 @@ describe('GitPrService', () => {
       const result = await service.getCiStatus('/repo', 'feat/branch');
 
       expect(result.status).toBe('success');
+    });
+
+    it('should treat no reported PR checks as success when workflow runs pass', async () => {
+      const noChecksError = new Error(
+        'Command failed: gh pr checks feat/branch --json bucket,state,name'
+      ) as Error & { code: number; stderr: string };
+      noChecksError.code = 1;
+      noChecksError.stderr = "no checks reported on the 'feat/branch' branch\n";
+
+      vi.mocked(mockExec)
+        .mockResolvedValueOnce({
+          stdout: JSON.stringify([
+            {
+              conclusion: 'success',
+              url: 'https://github.com/org/repo/actions/runs/123',
+            },
+          ]),
+          stderr: '',
+        })
+        .mockRejectedValueOnce(noChecksError);
+
+      const result = await service.getCiStatus('/repo', 'feat/branch');
+
+      expect(result.status).toBe('success');
+    });
+
+    it('should return success when no workflow runs or PR checks are reported', async () => {
+      const noChecksError = new Error(
+        'Command failed: gh pr checks feat/branch --json bucket,state,name'
+      ) as Error & { code: number; stderr: string };
+      noChecksError.code = 1;
+      noChecksError.stderr = "no checks reported on the 'feat/branch' branch\n";
+
+      vi.mocked(mockExec)
+        .mockResolvedValueOnce({ stdout: '[]', stderr: '' })
+        .mockRejectedValueOnce(noChecksError);
+
+      const result = await service.getCiStatus('/repo', 'feat/branch');
+
+      expect(result).toEqual({ status: 'success' });
+    });
+
+    it('should preserve pending PR checks when no workflow runs exist', async () => {
+      vi.mocked(mockExec)
+        .mockResolvedValueOnce({ stdout: '[]', stderr: '' })
+        .mockResolvedValueOnce({
+          stdout: JSON.stringify([
+            { bucket: 'pending', state: 'IN_PROGRESS', name: 'External CI' },
+          ]),
+          stderr: '',
+        });
+
+      const result = await service.getCiStatus('/repo', 'feat/branch');
+
+      expect(result).toEqual({ status: 'pending' });
+    });
+
+    it('should preserve failed PR checks when no workflow runs exist', async () => {
+      vi.mocked(mockExec)
+        .mockResolvedValueOnce({ stdout: '[]', stderr: '' })
+        .mockResolvedValueOnce({
+          stdout: JSON.stringify([{ bucket: 'fail', state: 'FAILURE', name: 'External CI' }]),
+          stderr: '',
+        });
+
+      const result = await service.getCiStatus('/repo', 'feat/branch');
+
+      expect(result.status).toBe('failure');
+      expect(result.logExcerpt).toContain('External CI');
+    });
+
+    it('should return pending when gh pr checks exits with its pending status code', async () => {
+      const pendingError = new Error(
+        'Command failed: gh pr checks feat/branch --json bucket,state,name\nchecks pending'
+      ) as Error & { code: number; stderr: string };
+      pendingError.code = 8;
+      pendingError.stderr = 'checks pending\n';
+
+      vi.mocked(mockExec)
+        .mockResolvedValueOnce({
+          stdout: JSON.stringify([
+            {
+              conclusion: 'success',
+              url: 'https://github.com/org/repo/actions/runs/123',
+            },
+          ]),
+          stderr: '',
+        })
+        .mockRejectedValueOnce(pendingError);
+
+      const result = await service.getCiStatus('/repo', 'feat/branch');
+
+      expect(result.status).toBe('pending');
+    });
+
+    it('should preserve authentication errors from gh pr checks', async () => {
+      const authError = new Error(
+        'Command failed: gh pr checks feat/branch --json bucket,state,name\nauthentication required'
+      ) as Error & { code: number; stderr: string };
+      authError.code = 4;
+      authError.stderr = 'authentication required\n';
+
+      vi.mocked(mockExec)
+        .mockResolvedValueOnce({
+          stdout: JSON.stringify([
+            {
+              conclusion: 'success',
+              url: 'https://github.com/org/repo/actions/runs/123',
+            },
+          ]),
+          stderr: '',
+        })
+        .mockRejectedValueOnce(authError);
+
+      await expect(service.getCiStatus('/repo', 'feat/branch')).rejects.toMatchObject({
+        code: GitPrErrorCode.AUTH_FAILURE,
+      });
+    });
+
+    it('should preserve API errors from gh pr checks', async () => {
+      const apiError = new Error(
+        'Command failed: gh pr checks feat/branch --json bucket,state,name\nGraphQL: Could not find repository'
+      ) as Error & { code: number; stderr: string };
+      apiError.code = 1;
+      apiError.stderr = 'GraphQL: Could not find repository\n';
+
+      vi.mocked(mockExec)
+        .mockResolvedValueOnce({
+          stdout: JSON.stringify([
+            {
+              conclusion: 'success',
+              url: 'https://github.com/org/repo/actions/runs/123',
+            },
+          ]),
+          stderr: '',
+        })
+        .mockRejectedValueOnce(apiError);
+
+      await expect(service.getCiStatus('/repo', 'feat/branch')).rejects.toMatchObject({
+        code: GitPrErrorCode.GIT_ERROR,
+      });
     });
 
     it('should ignore missing PR when checking PR checks', async () => {

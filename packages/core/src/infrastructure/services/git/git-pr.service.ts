@@ -413,7 +413,13 @@ export class GitPrService implements IGitPrService {
         };
       }
 
-      if (workflowStatus.status === 'pending' || prCheckStatus.status === 'pending') {
+      // A missing workflow run is neutral when PR checks are also neutral
+      // (for example, a repository with no Actions and no configured checks).
+      // Preserve pending when an external PR check is still running.
+      if (
+        prCheckStatus.status === 'pending' ||
+        (workflowStatus.status === 'pending' && workflowStatus.runUrl)
+      ) {
         return { status: 'pending', runUrl: workflowStatus.runUrl };
       }
 
@@ -474,11 +480,35 @@ export class GitPrService implements IGitPrService {
 
       return { status: 'success' };
     } catch (error) {
+      const errorDetails = (typeof error === 'object' && error !== null ? error : {}) as {
+        code?: number | string;
+        stdout?: string;
+        stderr?: string;
+      };
       const message = error instanceof Error ? error.message : String(error);
+      const output = [message, errorDetails.stdout, errorDetails.stderr]
+        .filter((part): part is string => Boolean(part))
+        .join('\n');
+
       // No open PR for this branch — workflow runs are the only signal available.
-      if (message.includes('no pull requests found') || message.includes('Could not find')) {
+      if (
+        /no pull requests found/i.test(output) ||
+        /could not find (?:a )?pull request/i.test(output)
+      ) {
         return { status: 'success' };
       }
+
+      // gh pr checks exits with code 8 while checks are still pending.
+      if (Number(errorDetails.code) === 8) {
+        return { status: 'pending' };
+      }
+
+      // A PR can exist without any configured checks. gh reports this as a
+      // non-zero exit instead of returning an empty JSON array.
+      if (/no checks reported on the .+ branch/i.test(output)) {
+        return { status: 'success' };
+      }
+
       throw error;
     }
   }
