@@ -2277,3 +2277,45 @@ and the rules match again.
    enforcing something is absent — check what else that plugin was supposed to be checking.
 3. Prove a lint gate is live before trusting it: write a file that violates the rule and watch it
    fail. Here `useEffect` with a missing dependency went from silently passing to reported.
+
+## A catch-all mock turns a new dependency into a merge-time landmine
+
+Two PRs were green in isolation and red the moment both were on `main`. #863 made
+`runClusterWorker` resolve `IAgentCheckpointService` from the container (so checkpoints
+respect `SHEP_HOME`); #866 landed crash-handling tests whose `container.resolve` stub ended
+in `return {}` for any token it did not name. Neither branch had the other's change, so
+neither CI run could see that the catch-all was now swallowing a *required* dependency —
+`checkpointService.getClusterCheckpointPath is not a function` only appeared after the merge,
+on `main`, 8 tests down.
+
+Rules:
+
+1. **A container stub must name every token, and throw on anything else.** `return {}` for the
+   unknown case converts "the worker gained a dependency" from a loud failure into a
+   `TypeError` deep inside the call, and only on whichever branch merges second.
+2. **Adding a `container.resolve` call is a test-surface change.** Grep for the stubs of every
+   suite that exercises the changed module in the same PR — the sibling worker's test already
+   stubbed `IAgentCheckpointService`; the cluster one never learned about it.
+3. **Green on a branch is not green on the merge.** When a PR changes what a module resolves,
+   rebase on the latest `main` before merging; two independently-green CI runs prove nothing
+   about their union.
+4. **Assert the wiring, not just the absence of a crash.** The path a checkpointer is built
+   from is the whole point of the SHEP_HOME fix, so a test now asserts `createCheckpointer`
+   receives the injected service's path — it goes red if anyone hardcodes it again.
+
+## An uncleaned `setTimeout` fails the suite even when every test passes
+
+`PrdQuestionnaire` auto-advanced with a bare `setTimeout(() => setCurrentStep(...), 250)`.
+Nothing cancelled it, so a run could finish with the timer still armed; it then fired against
+a torn-down jsdom and vitest reported `976 passed` **and exited 1** on
+`ReferenceError: window is not defined` under "Unhandled Errors".
+
+Rules:
+
+1. **Every timer a component starts needs an owner.** Keep the handle in a ref, clear it in a
+   `useEffect` cleanup, and clear the previous one before arming a new one.
+2. **A deferred state update also loses a race with the user.** The same pending advance
+   over-shot when someone clicked a step dot first — manual navigation has to cancel it, which
+   is why navigation now goes through a single `goToStep`.
+3. **`Tests: all passed` is not a green run.** Read vitest's exit code and its "Errors" line;
+   an unhandled rejection or late timer fails CI with no red test to point at.

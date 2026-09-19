@@ -1,13 +1,16 @@
 'use client';
 
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { DrawerActionBar } from '@/components/common/drawer-action-bar';
 import { useSoundAction } from '@/hooks/use-sound-action';
 import type { PrdQuestionnaireProps } from './prd-questionnaire-config';
+
+/** How long a chosen option stays highlighted before the questionnaire auto-advances. */
+const AUTO_ADVANCE_DELAY_MS = 250;
 
 export function PrdQuestionnaire({
   data,
@@ -25,6 +28,28 @@ export function PrdQuestionnaire({
   const [currentStep, setCurrentStep] = useState(0);
   const selectSound = useSoundAction('select');
   const navigateSound = useSoundAction('navigate');
+  const autoAdvanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const cancelAutoAdvance = useCallback(() => {
+    if (autoAdvanceTimer.current !== null) {
+      clearTimeout(autoAdvanceTimer.current);
+      autoAdvanceTimer.current = null;
+    }
+  }, []);
+
+  // A pending auto-advance outliving the component would call setCurrentStep on a
+  // torn-down tree, so it is cancelled on unmount.
+  useEffect(() => cancelAutoAdvance, [cancelAutoAdvance]);
+
+  /** Manual navigation wins over a pending auto-advance, which would otherwise overshoot. */
+  const goToStep = useCallback(
+    (nextStep: number | ((current: number) => number)) => {
+      cancelAutoAdvance();
+      navigateSound.play();
+      setCurrentStep(nextStep);
+    },
+    [cancelAutoAdvance, navigateSound]
+  );
 
   const total = questions.length;
   const isFirstStep = currentStep === 0;
@@ -39,10 +64,14 @@ export function PrdQuestionnaire({
       onSelect(questionId, optionId);
       // Auto-advance to the next step after selection (unless last step)
       if (!isLastStep) {
-        setTimeout(() => setCurrentStep((s) => s + 1), 250);
+        cancelAutoAdvance();
+        autoAdvanceTimer.current = setTimeout(() => {
+          autoAdvanceTimer.current = null;
+          setCurrentStep((s) => s + 1);
+        }, AUTO_ADVANCE_DELAY_MS);
       }
     },
-    [onSelect, isLastStep, selectSound]
+    [onSelect, isLastStep, selectSound, cancelAutoAdvance]
   );
 
   if (total === 0) return null;
@@ -79,10 +108,7 @@ export function PrdQuestionnaire({
                     idx !== currentStep && selections[q.id] ? 'bg-primary/50' : '',
                     idx !== currentStep && !selections[q.id] ? 'bg-muted-foreground/25' : ''
                   )}
-                  onClick={() => {
-                    navigateSound.play();
-                    setCurrentStep(idx);
-                  }}
+                  onClick={() => goToStep(idx)}
                 />
               ))}
             </div>
@@ -143,10 +169,7 @@ export function PrdQuestionnaire({
             variant="ghost"
             size="sm"
             disabled={isFirstStep || isProcessing}
-            onClick={() => {
-              navigateSound.play();
-              setCurrentStep((s) => s - 1);
-            }}
+            onClick={() => goToStep((s) => s - 1)}
           >
             <ChevronLeft className="me-1 h-4 w-4" />
             Previous
@@ -158,10 +181,7 @@ export function PrdQuestionnaire({
               variant="ghost"
               size="sm"
               disabled={isProcessing}
-              onClick={() => {
-                navigateSound.play();
-                setCurrentStep((s) => s + 1);
-              }}
+              onClick={() => goToStep((s) => s + 1)}
             >
               {selections[currentQuestion.id] ? 'Next' : 'Skip'}
               <ChevronRight className="ms-1 h-4 w-4" />

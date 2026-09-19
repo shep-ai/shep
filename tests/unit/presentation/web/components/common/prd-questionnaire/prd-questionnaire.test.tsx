@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { PrdQuestionnaire } from '@/components/common/prd-questionnaire';
 import type { PrdQuestionnaireProps } from '@/components/common/prd-questionnaire';
 
@@ -340,6 +340,52 @@ describe('PrdQuestionnaire', () => {
       render(<PrdQuestionnaire {...defaultProps} onReject={onReject} isRejecting />);
 
       expect(screen.getByRole('button', { name: /approve requirements/i })).toBeDisabled();
+    });
+  });
+
+  describe('auto-advance timer lifecycle', () => {
+    it('leaves no pending auto-advance timer behind when unmounted mid-selection', () => {
+      vi.useFakeTimers();
+      try {
+        const { unmount } = render(<PrdQuestionnaire {...defaultProps} />);
+
+        const option = screen
+          .getAllByRole('button')
+          .find((btn) => btn.textContent?.includes('Pain Point'));
+        fireEvent.click(option!);
+        expect(vi.getTimerCount()).toBeGreaterThan(0);
+
+        unmount();
+
+        // A timer surviving unmount fires setCurrentStep against a torn-down tree —
+        // harmless-looking in a browser, fatal ("window is not defined") after jsdom teardown.
+        expect(vi.getTimerCount()).toBe(0);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('does not overshoot when the user navigates while an auto-advance is pending', () => {
+      vi.useFakeTimers();
+      try {
+        render(<PrdQuestionnaire {...defaultProps} />);
+
+        const option = screen
+          .getAllByRole('button')
+          .find((btn) => btn.textContent?.includes('Pain Point'));
+        fireEvent.click(option!);
+
+        // Jump straight to the last question before the auto-advance fires.
+        const stepDots = screen.getAllByRole('button', { name: /Go to question/ });
+        fireEvent.click(stepDots[stepDots.length - 1]);
+        act(() => {
+          vi.runAllTimers();
+        });
+
+        expect(screen.getByText(/What is the priority\?/)).toBeInTheDocument();
+      } finally {
+        vi.useRealTimers();
+      }
     });
   });
 

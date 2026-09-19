@@ -4,13 +4,19 @@ import { ClusterStatus } from '@/domain/generated/output.js';
 import type { Cluster } from '@/domain/generated/output.js';
 
 // Use vi.hoisted so mock fns are available when vi.mock factories run
-const { mockInitializeContainer, mockResolve, mockGraphInvoke, mockCreateClusterAgentGraph } =
-  vi.hoisted(() => ({
-    mockInitializeContainer: vi.fn(),
-    mockResolve: vi.fn(),
-    mockGraphInvoke: vi.fn(),
-    mockCreateClusterAgentGraph: vi.fn(),
-  }));
+const {
+  mockInitializeContainer,
+  mockResolve,
+  mockGraphInvoke,
+  mockCreateClusterAgentGraph,
+  mockCreateCheckpointer,
+} = vi.hoisted(() => ({
+  mockInitializeContainer: vi.fn(),
+  mockResolve: vi.fn(),
+  mockGraphInvoke: vi.fn(),
+  mockCreateClusterAgentGraph: vi.fn(),
+  mockCreateCheckpointer: vi.fn(),
+}));
 
 vi.mock('@/infrastructure/di/container.js', () => ({
   initializeContainer: () => mockInitializeContainer(),
@@ -22,7 +28,7 @@ vi.mock('@/infrastructure/services/agents/cluster-agent/cluster-agent-graph.js',
 }));
 
 vi.mock('@/infrastructure/services/agents/common/checkpointer.js', () => ({
-  createCheckpointer: vi.fn().mockReturnValue({}),
+  createCheckpointer: (...args: unknown[]) => mockCreateCheckpointer(...args),
 }));
 
 vi.mock('@/infrastructure/services/settings.service.js', () => ({
@@ -62,6 +68,51 @@ function makeMockClusterRepository(cluster: Cluster) {
     list: vi.fn().mockResolvedValue([cluster]),
     update: vi.fn().mockResolvedValue(undefined),
     delete: vi.fn().mockResolvedValue(undefined),
+  };
+}
+
+const CLUSTER_CHECKPOINT_DIR = '/tmp/shep-test/checkpoints';
+
+function clusterCheckpointPath(checkpointId: string): string {
+  return `${CLUSTER_CHECKPOINT_DIR}/cluster-${checkpointId}.db`;
+}
+
+/** Tokens the worker resolves purely to hand on to the graph — an opaque stub is enough. */
+const OPAQUE_GRAPH_DEPENDENCY_TOKENS = [
+  'IK3dService',
+  'IKubectlService',
+  'IArgoCDService',
+  'IDockerHealthService',
+] as const;
+
+/**
+ * Stubs every token `runClusterWorker` resolves from the container, and throws on any other
+ * token. Resolving an unknown token to a bare `{}` would let a newly added worker dependency
+ * pass here and only blow up as a `TypeError` deep inside the call, so every dependency has
+ * to be taught to this one place.
+ */
+function makeMockContainerResolve(clusterRepo: ReturnType<typeof makeMockClusterRepository>) {
+  return (token: unknown) => {
+    const key = typeof token === 'string' ? token : (token as { name?: string })?.name;
+    if (key === 'IClusterRepository') return clusterRepo;
+    if (key === 'IAgentCheckpointService') {
+      return { getClusterCheckpointPath: vi.fn(clusterCheckpointPath) };
+    }
+    if (key === 'InitializeSettingsUseCase') {
+      return {
+        execute: vi.fn().mockResolvedValue({
+          agent: { type: 'claude-code', authMethod: 'token', token: 'test' },
+        }),
+      };
+    }
+    if (
+      OPAQUE_GRAPH_DEPENDENCY_TOKENS.includes(
+        key as (typeof OPAQUE_GRAPH_DEPENDENCY_TOKENS)[number]
+      )
+    ) {
+      return {};
+    }
+    throw new Error(`Unstubbed container token in cluster-agent-worker test: ${String(key)}`);
   };
 }
 
@@ -178,6 +229,29 @@ describe('parseClusterWorkerArgs', () => {
   });
 });
 
+describe('runClusterWorker checkpoint wiring', () => {
+  it('should build the checkpointer from the injected checkpoint service path', async () => {
+    vi.clearAllMocks();
+    const mockClusterRepo = makeMockClusterRepository(makeMockCluster());
+    mockInitializeContainer.mockResolvedValue(undefined);
+    mockResolve.mockImplementation(makeMockContainerResolve(mockClusterRepo));
+    mockCreateCheckpointer.mockReturnValue({});
+    mockGraphInvoke.mockResolvedValue({ error: null });
+    mockCreateClusterAgentGraph.mockReturnValue({ invoke: mockGraphInvoke });
+
+    await runClusterWorker({
+      clusterId: 'cluster-1',
+      runId: 'run-1',
+      argoCdEnabled: false,
+      argoCdNamespace: 'argocd',
+      resume: false,
+      threadId: 'thread-1',
+    });
+
+    expect(mockCreateCheckpointer).toHaveBeenCalledWith(clusterCheckpointPath('thread-1'));
+  });
+});
+
 describe('runClusterWorker crash handling', () => {
   let mockClusterRepo: ReturnType<typeof makeMockClusterRepository>;
   let cluster: Cluster;
@@ -187,19 +261,8 @@ describe('runClusterWorker crash handling', () => {
     cluster = makeMockCluster();
     mockClusterRepo = makeMockClusterRepository(cluster);
     mockInitializeContainer.mockResolvedValue(undefined);
-    mockResolve.mockImplementation((token: unknown) => {
-      const key = typeof token === 'string' ? token : (token as { name?: string })?.name;
-      if (key === 'IClusterRepository') return mockClusterRepo;
-      if (key === 'InitializeSettingsUseCase') {
-        return {
-          execute: vi.fn().mockResolvedValue({
-            agent: { type: 'claude-code', authMethod: 'token', token: 'test' },
-          }),
-        };
-      }
-      // IK3dService, IKubectlService, IArgoCDService, IDockerHealthService
-      return {};
-    });
+    mockResolve.mockImplementation(makeMockContainerResolve(mockClusterRepo));
+    mockCreateCheckpointer.mockReturnValue({});
     mockGraphInvoke.mockResolvedValue({ error: null });
     mockCreateClusterAgentGraph.mockReturnValue({ invoke: mockGraphInvoke });
   });
@@ -258,18 +321,8 @@ describe('cluster-agent-worker process-level crash handlers', () => {
     cluster = makeMockCluster();
     mockClusterRepo = makeMockClusterRepository(cluster);
     mockInitializeContainer.mockResolvedValue(undefined);
-    mockResolve.mockImplementation((token: unknown) => {
-      const key = typeof token === 'string' ? token : (token as { name?: string })?.name;
-      if (key === 'IClusterRepository') return mockClusterRepo;
-      if (key === 'InitializeSettingsUseCase') {
-        return {
-          execute: vi.fn().mockResolvedValue({
-            agent: { type: 'claude-code', authMethod: 'token', token: 'test' },
-          }),
-        };
-      }
-      return {};
-    });
+    mockResolve.mockImplementation(makeMockContainerResolve(mockClusterRepo));
+    mockCreateCheckpointer.mockReturnValue({});
     mockGraphInvoke.mockResolvedValue({ error: null });
     mockCreateClusterAgentGraph.mockReturnValue({ invoke: mockGraphInvoke });
 
