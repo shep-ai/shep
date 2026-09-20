@@ -18,12 +18,47 @@ jobs:
           path: shep-cloud
 
       - name: bump core.pin to new CLI SHA
+        working-directory: shep-cloud
         run: |
-          echo "${{ github.sha }}" > shep-cloud/core.pin
-          cd shep-cloud
+          set -euo pipefail
+
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git config user.name "github-actions[bot]"
-          git add core.pin
-          git diff --staged --quiet && echo "pin unchanged, skipping" && exit 0
-          git commit -m "chore: bump cli pin to ${{ github.sha }}"
-          git push
+
+          # shep-cloud's main can move between our checkout and our push — a PR
+          # merging there, or another deploy run for a later CLI commit. The
+          # push is then rejected ("fetch first") and the bump is silently lost
+          # until the next push to this repo's main.
+          #
+          # Rebuild the commit on top of the current remote tip on each attempt
+          # rather than racing a stale checkout. Re-deriving the file instead of
+          # rebasing means a concurrent pin bump can never leave a conflict to
+          # resolve: whichever run pushes last writes its own SHA, which is the
+          # intended outcome.
+          for attempt in $(seq 1 "$MAX_ATTEMPTS"); do
+            git fetch --quiet origin main
+            git reset --quiet --hard origin/main
+
+            echo "$CLI_SHA" > core.pin
+            if git diff --quiet -- core.pin; then
+              echo "pin already at $CLI_SHA, nothing to do"
+              exit 0
+            fi
+
+            git add core.pin
+            git commit --quiet -m "chore: bump cli pin to $CLI_SHA"
+
+            if git push --quiet origin HEAD:main; then
+              echo "pin bumped to $CLI_SHA (attempt $attempt)"
+              exit 0
+            fi
+
+            echo "push rejected (attempt $attempt of $MAX_ATTEMPTS) — retrying on the current remote tip"
+            sleep "$attempt"
+          done
+
+          echo "::error::could not bump core.pin to $CLI_SHA after $MAX_ATTEMPTS attempts"
+          exit 1
+        env:
+          CLI_SHA: ${{ github.sha }}
+          MAX_ATTEMPTS: '5'
