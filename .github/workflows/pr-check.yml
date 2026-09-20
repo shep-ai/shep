@@ -15,6 +15,13 @@ jobs:
   # ===========================================================================
   commitlint:
     name: Validate Commits
+    # `edited` fires on closed and merged PRs too — editing the description of
+    # a PR that landed weeks ago re-runs this job. GitHub stops maintaining
+    # refs/pull/N/merge once a PR closes, so the base..head range no longer
+    # resolves and commitlint dies with "fatal: Invalid revision range", making
+    # a merged PR look freshly broken. Nothing here is worth checking after the
+    # commits have already landed.
+    if: github.event.pull_request.state == 'open'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -46,6 +53,8 @@ jobs:
   # ===========================================================================
   pr-title:
     name: Validate PR Title
+    # Same reason as above: a merged PR's title is no longer actionable.
+    if: github.event.pull_request.state == 'open'
     runs-on: ubuntu-latest
     permissions:
       pull-requests: read
