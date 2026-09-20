@@ -2319,3 +2319,56 @@ Rules:
    is why navigation now goes through a single `goToStep`.
 3. **`Tests: all passed` is not a green run.** Read vitest's exit code and its "Errors" line;
    an unhandled rejection or late timer fails CI with no red test to point at.
+
+## A `postinstall` hook needs its script in the image before the install runs
+
+`Docker Publish` failed on all 15 releases from v1.219.1 to v1.228.1 — every release since
+the workflow last went green. #831 added `"postinstall": "node scripts/verify-native-bindings.mjs"`
+to the root `package.json`, but the Dockerfile's builder stage copies only the package.json
+files and lockfile before `RUN pnpm install --frozen-lockfile`. `scripts/` arrives later, so
+node exited 1 on `MODULE_NOT_FOUND` and the install step died at layer 8/14.
+
+The guard is written to never fail an install — `try { main() } catch {}` then
+`process.exit(0)` — and that protection was worth nothing here, because node could not resolve
+the file to begin with. None of the script's own error handling ever ran.
+
+Rules:
+
+1. **Adding a lifecycle hook to `package.json` is a Dockerfile change.** Any `preinstall`,
+   `postinstall`, or `prepare` that shells out to a repo file means that file must be COPY'd
+   before the install layer, in every stage that installs with scripts enabled. The `deps`
+   stage was immune only because it passes `--ignore-scripts`.
+2. **`exit(0)` inside a script cannot protect the script's own absence.** A guard that must
+   never fail the build has to be resilient at the *call site* too — or the file has to be
+   guaranteed present.
+3. **A release-only workflow hides its own breakage.** `docker-publish.yml` runs on
+   `release: published` and nothing else, so 15 consecutive failures never blocked a PR and
+   never showed on `main`. Workflows that only fire on release need their failures surfaced
+   somewhere a human looks daily.
+4. **Verify the build context, not just the Dockerfile text.** `.dockerignore` decides whether
+   a COPY can resolve at all; confirm the file lands at the exact path the hook invokes.
+
+## An issue reference in a commit body makes commitlint fail `footer-leading-blank`
+
+A commit whose body said "Since PR #831 the root package.json carries…" failed CI with
+`✖ footer must have leading blank line [footer-leading-blank]` — even though the real
+trailers did have a blank line before them.
+
+`@commitlint/parse` treats the first issue reference (`#nnn`, per the parser's default
+`issuePrefixes`) as the start of the footer. So the body was just the first line, and
+everything from `#831` onward — four paragraphs plus the trailers — became "footer", which
+of course does not begin after a blank line. The error names a symptom three paragraphs
+away from its cause.
+
+Rules:
+
+1. **Keep `#nnn` out of the commit body.** Put the reference in a trailer where it belongs —
+   `Refs: #831` — and refer to the change in prose without the `#`.
+2. **Debug this rule with the parser, not by eye.** `@commitlint/parse` prints the
+   header/body/footer split; the misplaced boundary is obvious there and invisible in the
+   message itself. Guessing at the cause cost a wasted amend.
+3. **commitlint runs locally without a full install.** `npm i @commitlint/cli
+   @commitlint/config-conventional` in a temp dir, symlink it as the repo's `node_modules`
+   so the config's `extends` resolves, then `commitlint --from <base> --to HEAD`. Cheaper
+   than a CI round trip. Remove the symlink afterwards — `.gitignore`'s `node_modules/`
+   pattern does not match a symlink, so it shows up as untracked.

@@ -50,6 +50,14 @@ COPY packages/core/package.json ./packages/core/package.json
 # the build logs `git: not found` and silently drops version/git metadata.
 RUN apk add --no-cache python3 make g++ git
 
+# The root `postinstall` runs scripts/verify-native-bindings.mjs, so that
+# script must exist before the install below. The guard itself never fails an
+# install (it always exits 0), but node cannot resolve a file that was never
+# copied — it exits 1 before any of the guard's own error handling runs.
+# The deps stage sidesteps this with --ignore-scripts; this stage needs the
+# scripts to build native addons, so it needs the file instead.
+COPY scripts/ ./scripts/
+
 # Install all dependencies (including devDependencies for TypeScript compiler)
 RUN pnpm install --frozen-lockfile
 
