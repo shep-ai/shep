@@ -23,6 +23,7 @@ import type {
 } from '../../../../../application/ports/output/agents/agent-executor.interface.js';
 import type { SpawnFunction } from '../types.js';
 import { getCurrentPhase, getLogPrefix } from '../../feature-agent/log-context.js';
+import { describeSubprocessFailure } from './subprocess-failure-message.js';
 
 /** Features supported by Cline CLI */
 const SUPPORTED_FEATURES = new Set<string>(['streaming', 'system-prompt']);
@@ -138,7 +139,7 @@ export class ClineExecutorService implements IAgentExecutor {
         }
 
         if (code !== 0 && code !== null) {
-          reject(new Error(stderr.trim() || `Process exited with code ${code}`));
+          reject(new Error(describeSubprocessFailure({ code, resultText, stderr })));
           return;
         }
 

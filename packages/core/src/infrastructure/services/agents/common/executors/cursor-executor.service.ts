@@ -23,6 +23,7 @@ import type {
 import type { SpawnFunction } from '../types.js';
 import { getCurrentPhase, getLogPrefix } from '../../feature-agent/log-context.js';
 import { IS_WINDOWS } from '../../../../platform.js';
+import { describeSubprocessFailure } from './subprocess-failure-message.js';
 
 /**
  * Map canonical model IDs (used across shep) to Cursor CLI model names.
@@ -190,7 +191,7 @@ export class CursorExecutorService implements IAgentExecutor {
         }
 
         if (code !== 0 && code !== null) {
-          reject(new Error(stderr.trim() || `Process exited with code ${code}`));
+          reject(new Error(describeSubprocessFailure({ code, resultText: finalText, stderr })));
           return;
         }
 

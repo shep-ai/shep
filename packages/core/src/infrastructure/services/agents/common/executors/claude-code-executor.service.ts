@@ -24,6 +24,7 @@ import {
   validateSecurityConstraints,
   type ExecutorCapabilities,
 } from './security-constraint-validator.js';
+import { describeSubprocessFailure } from './subprocess-failure-message.js';
 
 /** Features supported by Claude Code CLI */
 const SUPPORTED_FEATURES = new Set<string>([
@@ -198,7 +199,7 @@ export class ClaudeCodeExecutorService implements IAgentExecutor {
         }
 
         if (code !== 0 && code !== null) {
-          reject(new Error(stderr.trim() || `Process exited with code ${code}`));
+          reject(new Error(describeSubprocessFailure({ code, resultText, stderr })));
           return;
         }
 
