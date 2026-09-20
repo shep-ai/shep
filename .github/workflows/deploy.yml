@@ -6,6 +6,15 @@ on:
 permissions:
   contents: read
 
+# Two merges to main in quick succession queue two pin bumps that would
+# otherwise race each other for the same file. The retry below recovers from
+# any push we lose, but serialising our own runs means we rarely have to:
+# the remaining race is only against pushes from shep-cloud itself.
+# Runs are queued rather than cancelled so a bump is never aborted mid-push.
+concurrency:
+  group: core-pin-bump
+  cancel-in-progress: false
+
 jobs:
   pin:
     runs-on: ubuntu-latest
