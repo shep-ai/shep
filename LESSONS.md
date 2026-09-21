@@ -2597,3 +2597,17 @@ The executor factory caches one instance per agent type. A `silent` field set pe
 two agents running in parallel mute each other, and a stream that never sets it inherits the
 previous call's value. A logger built per call (`createExecutorLogger(options?.silent)`)
 carries the flag with it and cannot be overwritten.
+
+## An overlay pinned over the canvas must reserve its space
+
+`FleetControl` mounted `absolute top-3 right-3 z-20` over the Control Center canvas.
+`pointer-events-none` on the wrapper let clicks through the padding, so the mount looked
+safe — but the pill itself is opaque, and it covered both the canvas chrome in the same
+band and whatever feature node dagre laid out underneath it. Shipping it took a UI surface
+away from the user to add a summary of that same surface.
+
+**Rule:** a surface drawn over the canvas either lives in real chrome (app shell header,
+session-tree sidebar) or the canvas viewport is inset so nothing is ever laid out beneath
+it. `pointer-events-none` answers "can I click through it", never "can I see through it" —
+and never check only the empty-canvas case, since the overlap appears exactly when the
+canvas is full.
