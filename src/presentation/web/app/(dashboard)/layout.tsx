@@ -1,7 +1,5 @@
 import type { ReactNode } from 'react';
 import { ControlCenter } from '@/components/features/control-center';
-import { FleetControl } from '@/components/fleet';
-import { getFleetData } from '@/app/actions/fleet-data';
 import { SessionTreePanel } from '@/components/features/session-tree';
 import { DeploymentStatusProvider } from '@/hooks/deployment-status-provider';
 import { SessionsProvider } from '@/hooks/sessions-provider';
@@ -24,14 +22,16 @@ interface DashboardLayoutProps {
  * a hand-maintained path list, which had already shipped wrong twice. And it
  * puts the tree inside the same deployment and sessions providers as the
  * canvas, so a repository action taken on either surface is reflected in both.
+ *
+ * `FleetControl` (spec 111) used to mount here, pinned to the canvas's top
+ * right. It overlapped the canvas chrome and covered the workspace beneath it,
+ * so the mount is withdrawn until the surface is redesigned. The components,
+ * their stories, tests, the `getFleetData` action and `shep fleet status` are
+ * all untouched — re-mounting is a one-line change once the placement is
+ * settled. See the tracking issue for the redesign.
  */
 export default async function DashboardLayout({ children, drawer }: DashboardLayoutProps) {
   const { nodes, edges, deployments } = await getGraphData();
-  // Fleet snapshot is resolved here so the status bar paints with the canvas
-  // rather than popping in after a client round-trip. A failure here must not
-  // take the dashboard down: FleetControl falls back to loading on the client
-  // and renders its own error state if that also fails.
-  const fleetData = await getFleetData().catch(() => undefined);
 
   return (
     <div className="flex h-screen w-full">
@@ -46,10 +46,6 @@ export default async function DashboardLayout({ children, drawer }: DashboardLay
           </aside>
           <div className="relative min-w-0 flex-1">
             <ControlCenter initialNodes={nodes} initialEdges={edges} drawer={drawer} />
-            <FleetControl
-              initialData={fleetData}
-              className="pointer-events-none absolute top-3 right-3 z-20 [&>*]:pointer-events-auto"
-            />
             {children}
           </div>
         </SessionsProvider>
