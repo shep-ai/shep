@@ -134,4 +134,19 @@ describe('computeQuestionDeltas', () => {
     const cache = emptyCache();
     expect(computeQuestionDeltas({ questions: [], cache })).toEqual([]);
   });
+
+  // Spec 116: questions are re-listed in full each poll (no cursor), so the
+  // per-id status map only needs the ids of that listing; an id that left it
+  // (deleted or pruned) must not pin memory for the life of the connection.
+  it('forgets ids that are no longer listed, without re-emitting the rest', () => {
+    const cache: CachedAgentQuestionState = { lastSeenAt: 0, lastStatus: new Map() };
+    const q1 = makeQuestion({ id: 'q-1' });
+    const q2 = makeQuestion({ id: 'q-2' });
+
+    computeQuestionDeltas({ questions: [q1, q2], cache });
+    const second = computeQuestionDeltas({ questions: [q2], cache });
+
+    expect(second).toEqual([]);
+    expect([...cache.lastStatus.keys()]).toEqual(['q-2']);
+  });
 });

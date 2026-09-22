@@ -54,7 +54,9 @@ export interface IStructuredAgentCaller {
    * @typeParam T - The expected return type matching the schema
    * @param prompt - The prompt to send to the agent
    * @param schema - JSON Schema object describing the expected output shape
-   * @param options - Optional execution configuration (cwd, maxTurns, silent, etc.)
+   * @param options - Optional execution configuration (cwd, maxTurns, silent, etc.).
+   *   When `timeout` is omitted the implementation applies its default agent
+   *   call budget — a call is never unbounded.
    * @returns Parsed and typed result from the agent
    * @throws {StructuredCallError} When the agent response cannot be parsed as valid JSON
    */

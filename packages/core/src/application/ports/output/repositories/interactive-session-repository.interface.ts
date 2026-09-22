@@ -47,6 +47,15 @@ export interface IInteractiveSessionRepository {
   updateStatus(id: string, status: InteractiveSessionStatus, stoppedAt?: Date): Promise<void>;
 
   /**
+   * Mark a session stopped only while it is still `booting` or `ready` — the
+   * status check and the write are one statement, so a stop can never
+   * overwrite a status another process wrote in between.
+   *
+   * @returns true when the row changed
+   */
+  markStoppedIfActive(id: string, stoppedAt: Date): Promise<boolean>;
+
+  /**
    * Update the lastActivityAt timestamp for a session.
    */
   updateLastActivity(id: string, lastActivityAt: Date): Promise<void>;

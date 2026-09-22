@@ -15,8 +15,7 @@
 import { resolve } from '@/lib/server-container';
 import { createLogFileTail } from '@/lib/log-file-tail';
 import type { IFeatureRepository } from '@shepai/core/application/ports/output/repositories/feature-repository.interface';
-import { getShepHomeDir } from '@shepai/core/infrastructure/services/filesystem/shep-directory.service';
-import { join } from 'node:path';
+import type { GetWorkerLogPathUseCase } from '@shepai/core/application/use-cases/logs/get-worker-log-path.use-case';
 import { watch, type FSWatcher } from 'node:fs';
 
 // Force dynamic — SSE streams must never be statically optimized or cached
@@ -66,8 +65,10 @@ export async function GET(request: Request): Promise<Response> {
       return sseError(`Feature "${feature.name}" has no agent run`);
     }
 
-    // Same directory the worker writes to — honours SHEP_HOME.
-    const logPath = join(getShepHomeDir(), 'logs', `worker-${feature.agentRunId}.log`);
+    // Core owns where the worker writes its log (honours SHEP_HOME).
+    const logPath = resolve<GetWorkerLogPathUseCase>('GetWorkerLogPathUseCase').execute(
+      feature.agentRunId
+    );
 
     const stream = new ReadableStream<Uint8Array>({
       start(controller) {

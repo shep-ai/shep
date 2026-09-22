@@ -7,35 +7,40 @@
  *   - The `shep start` command (start.command.ts)
  *
  * Flow:
- *   1. Resolve available port (respects --port override)
+ *   1. Acquire the cross-process start lock (a concurrent `shep start` waits)
  *   2. Check if daemon is already running (idempotent — print URL and return)
- *   3. Spawn the daemon with execArgv propagated (supports tsx in dev mode)
+ *   3. Resolve available port (respects --port override); rotate daemon.log
+ *   4. Spawn the daemon with execArgv propagated (supports tsx in dev mode)
  *      {detached: true, stdio: ['ignore','ignore','pipe']} + child.unref()
- *   4. Wait briefly to confirm the child is alive; surface stderr on crash
- *   5. Write daemon.json atomically via IDaemonService
- *   6. Print formatted URL to stdout
- *   7. Open browser via IBrowserOpener (resolved from DI container)
+ *   5. Wait briefly to confirm the child is alive (exit event AND pid check)
+ *   6. Wait for readiness (HTTP answers), bounded; a child that exits first
+ *      is reported as failed and never recorded
+ *   7. Write daemon.json atomically via IDaemonService, then release the lock
+ *   8. Open browser via IBrowserOpener (resolved from DI container)
+ *
+ * Steps 2–7 run under the lock: two unserialised starts both saw "no live
+ * daemon", both chose the same free port, and the loser (dying on
+ * EADDRINUSE) overwrote daemon.json and rotated the winner's log.
  */
 
 import { spawn } from 'node:child_process';
 import { closeSync, openSync, renameSync, existsSync } from 'node:fs';
-import http from 'node:http';
 import { container } from '@/infrastructure/di/container.js';
 import { findAvailablePort, DEFAULT_PORT } from '@/infrastructure/services/port.service.js';
 import { getDaemonLogPath } from '@/infrastructure/services/filesystem/shep-directory.service.js';
+import {
+  acquireDaemonStartLock,
+  getDaemonStartLockPath,
+} from '@/infrastructure/services/daemon/daemon-start-lock.js';
 import { ROTATED_LOG_SUFFIX } from '@/infrastructure/services/logging/daemon-log-rotator.js';
 import { fmt, messages, spinner } from '../../ui/index.js';
 import type { IDaemonService } from '@/application/ports/output/services/daemon-service.interface.js';
 import type { IBrowserOpener } from '@/application/ports/output/services/i-browser-opener.js';
 import { getCliI18n } from '../../i18n.js';
+import { DaemonReadiness, waitForDaemonReady } from './daemon-readiness.js';
 
 /** How long to wait (ms) after spawn to verify the child is still alive. */
-const SPAWN_SETTLE_MS = 500;
-
-/** Max time (ms) to wait for the server to become reachable before opening the browser. */
-const READY_TIMEOUT_MS = 30_000;
-/** Interval (ms) between readiness probes. */
-const READY_POLL_MS = 300;
+export const SPAWN_SETTLE_MS = 500;
 
 export interface StartDaemonOptions {
   port?: number;
@@ -46,24 +51,51 @@ export interface StartDaemonOptions {
  * Idempotent: if a daemon is already running, prints the existing URL and returns.
  */
 export async function startDaemon(opts: StartDaemonOptions = {}): Promise<void> {
-  const t = getCliI18n().t;
   const daemonService = container.resolve<IDaemonService>('IDaemonService');
 
-  // Check for an already-running daemon
+  const lock = await acquireDaemonStartLock(getDaemonStartLockPath(), {
+    isAlive: (pid) => daemonService.isAlive(pid),
+  });
+  let url: string | null;
+  try {
+    url = await spawnDaemonUnderLock(daemonService, opts);
+  } finally {
+    lock.release();
+  }
+  if (!url) return;
+
+  announceDaemon(url);
+}
+
+/**
+ * Everything that must not interleave with another `shep start`. Returns the
+ * URL of a daemon this call spawned and recorded, or null when nothing more
+ * is to be done (already running, or the child died).
+ */
+async function spawnDaemonUnderLock(
+  daemonService: IDaemonService,
+  opts: StartDaemonOptions
+): Promise<string | null> {
+  const t = getCliI18n().t;
+
+  // Check for an already-running daemon — inside the lock, so a start that
+  // finished while we waited is seen here.
   const existing = await daemonService.read();
   if (existing && daemonService.isAlive(existing.pid)) {
     const url = `http://localhost:${existing.port}`;
     messages.newline();
     messages.info(t('cli:ui.daemon.alreadyRunning', { url: fmt.code(url) }));
     messages.newline();
-    return;
+    return null;
   }
 
   // Resolve the port
   const startPort = opts.port ?? DEFAULT_PORT;
   const port = await findAvailablePort(startPort);
 
-  // Rotate existing daemon.log → daemon.log.old (keep 1 backup).
+  // Rotate existing daemon.log → daemon.log.old (keep 1 backup). Safe here:
+  // no live daemon is recorded and the lock keeps another start from
+  // spawning one between that check and this rename.
   //
   // This start-of-day rotation is only half the policy: the running daemon
   // also caps the log on SIZE via DaemonLogRotator (see _serve.command.ts),
@@ -97,25 +129,61 @@ export async function startDaemon(opts: StartDaemonOptions = {}): Promise<void> 
   );
 
   // Wait briefly for the child to either settle or crash.
+  const childExited = new Promise<number | null>((resolve) =>
+    child.on('exit', (code) => resolve(code))
+  );
+  let settleTimer: ReturnType<typeof setTimeout> | undefined;
   const exitCode = await Promise.race([
-    new Promise<number | null>((resolve) => child.on('exit', (code) => resolve(code))),
-    new Promise<undefined>((resolve) => setTimeout(() => resolve(undefined), SPAWN_SETTLE_MS)),
+    childExited,
+    new Promise<undefined>((resolve) => {
+      settleTimer = setTimeout(() => resolve(undefined), SPAWN_SETTLE_MS);
+    }),
   ]);
+  clearTimeout(settleTimer);
+  closeSync(logFd);
 
-  if (exitCode !== undefined) {
-    // Child exited during the settle window — startup failed.
-    closeSync(logFd);
+  const reportFailure = async (code: number | null | undefined): Promise<null> => {
     messages.newline();
-    messages.error(t('cli:ui.daemon.daemonFailed', { code: exitCode ?? 'unknown' }));
+    messages.error(t('cli:ui.daemon.daemonFailed', { code: code ?? 'unknown' }));
     messages.info(t('cli:ui.daemon.checkLogs', { path: fmt.code(logPath) }));
     messages.newline();
     // Clean up stale daemon.json if it exists
     await daemonService.delete();
-    return;
-  }
+    return null;
+  };
 
-  // Child is alive — close the log fd in the parent and detach fully.
-  closeSync(logFd);
+  // An exit event is not the only way to die in the window (the event can
+  // be lost once we unref), so also confirm the pid before recording it.
+  const isChildAlive = () => !!child.pid && daemonService.isAlive(child.pid);
+  if (exitCode !== undefined || !isChildAlive()) return reportFailure(exitCode);
+
+  const url = `http://localhost:${port}`;
+  messages.newline();
+  console.log(fmt.heading(t('cli:ui.daemon.heading')));
+  messages.newline();
+
+  // Record the daemon only once it serves (or is still alive at the
+  // timeout): a child that dies while booting must not leave a dead pid in
+  // daemon.json. Skipped in E2E / CI where the child cannot start Next.js
+  // within the test's time window.
+  if (process.env.SHEP_SKIP_READINESS_CHECK) {
+    messages.success(t('cli:ui.daemon.daemonSpawned', { url: fmt.code(url) }));
+  } else {
+    const readiness = await spinner(t('cli:ui.daemon.startingServer'), () =>
+      waitForDaemonReady(url, childExited)
+    );
+    if (readiness === DaemonReadiness.Exited || !isChildAlive()) {
+      return reportFailure(await Promise.race([childExited, Promise.resolve(undefined)]));
+    }
+    if (readiness === DaemonReadiness.Ready) {
+      messages.success(t('cli:ui.daemon.serverReady', { url: fmt.code(url) }));
+    } else {
+      messages.warning(t('cli:ui.daemon.serverMayBeStarting', { url: fmt.code(url) }));
+    }
+  }
+  messages.newline();
+
+  // Child is alive — detach fully.
   child.unref();
 
   // Write daemon.json atomically
@@ -125,57 +193,11 @@ export async function startDaemon(opts: StartDaemonOptions = {}): Promise<void> 
     startedAt: new Date().toISOString(),
   });
 
-  const url = `http://localhost:${port}`;
-  messages.newline();
-  console.log(fmt.heading(t('cli:ui.daemon.heading')));
-  messages.newline();
-
-  // Poll until the server responds, with a spinner on stderr.
-  // Skip readiness check in E2E / CI environments where the daemon child
-  // cannot actually start a Next.js server within the test's time window.
-  if (process.env.SHEP_SKIP_READINESS_CHECK) {
-    messages.success(t('cli:ui.daemon.daemonSpawned', { url: fmt.code(url) }));
-  } else {
-    const ready = await spinner(t('cli:ui.daemon.startingServer'), () =>
-      waitForServer(url, READY_TIMEOUT_MS)
-    );
-
-    if (ready) {
-      messages.success(t('cli:ui.daemon.serverReady', { url: fmt.code(url) }));
-    } else {
-      messages.warning(t('cli:ui.daemon.serverMayBeStarting', { url: fmt.code(url) }));
-    }
-  }
-  messages.newline();
-
-  const opener = container.resolve<IBrowserOpener>('IBrowserOpener');
-  opener.open(`${url}/applications`);
+  return url;
 }
 
-/**
- * Poll a URL until it returns any HTTP response (even 500).
- * Resolves true when reachable, false on timeout.
- */
-function waitForServer(url: string, timeoutMs: number): Promise<boolean> {
-  const deadline = Date.now() + timeoutMs;
-
-  return new Promise((resolve) => {
-    const probe = () => {
-      if (Date.now() > deadline) return resolve(false);
-
-      const req = http.get(url, (res) => {
-        // Drain the response so the socket doesn't keep the event loop alive
-        res.resume();
-        res.on('end', () => resolve(true));
-      });
-      req.on('error', () => {
-        setTimeout(probe, READY_POLL_MS);
-      });
-      req.setTimeout(2000, () => {
-        req.destroy();
-        setTimeout(probe, READY_POLL_MS);
-      });
-    };
-    probe();
-  });
+/** Open the browser on a daemon this call started and recorded. */
+function announceDaemon(url: string): void {
+  const opener = container.resolve<IBrowserOpener>('IBrowserOpener');
+  opener.open(`${url}/applications`);
 }

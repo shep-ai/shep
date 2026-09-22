@@ -10,10 +10,11 @@ import type Database from 'better-sqlite3';
 import { injectable } from 'tsyringe';
 import type {
   IFeatureRepository,
+  CountByLifecyclesOptions,
   FeatureListFilters,
   FeatureStartClaim,
 } from '../../application/ports/output/repositories/feature-repository.interface.js';
-import type { Feature, SdlcLifecycle } from '../../domain/generated/output.js';
+import type { AgentRunStatus, Feature, SdlcLifecycle } from '../../domain/generated/output.js';
 import { UNLIMITED_PARALLEL_FEATURES } from '../../domain/shared/parallel-feature-limit.js';
 import { normalizeRepositoryPath } from '../../domain/shared/repository-path.js';
 import {
@@ -21,6 +22,47 @@ import {
   fromDatabase,
   type FeatureRow,
 } from '../persistence/sqlite/mappers/feature.mapper.js';
+
+/**
+ * A scalar sub-select counting the features that occupy a parallel slot.
+ *
+ * The ONE definition of "occupies a slot", shared by the read-model count and
+ * by the claim that authorises a start — so the number the user is shown and
+ * the number the claim enforces cannot drift. A feature counts when its
+ * lifecycle is a running one, it is not soft-deleted, and its current agent
+ * run (if one is recorded) has not finished. Placeholders come from the array
+ * lengths; the values themselves are always bound into `params`.
+ */
+function occupiedSlotCountSql(
+  runningLifecycles: readonly SdlcLifecycle[],
+  releasingRunStatuses: readonly AgentRunStatus[] | undefined,
+  params: Record<string, unknown>
+): string {
+  const lifecyclePlaceholders = runningLifecycles
+    .map((lifecycle, i) => {
+      params[`slot_lifecycle_${i}`] = lifecycle;
+      return `@slot_lifecycle_${i}`;
+    })
+    .join(', ');
+
+  let releasedByRun = '';
+  if (releasingRunStatuses && releasingRunStatuses.length > 0) {
+    const statusPlaceholders = releasingRunStatuses
+      .map((status, i) => {
+        params[`slot_released_${i}`] = status;
+        return `@slot_released_${i}`;
+      })
+      .join(', ');
+    releasedByRun = `
+             AND NOT EXISTS (SELECT 1 FROM agent_runs AS run
+                              WHERE run.id = occupied.agent_run_id
+                                AND run.status IN (${statusPlaceholders}))`;
+  }
+
+  return `(SELECT COUNT(*) FROM features AS occupied
+           WHERE occupied.lifecycle IN (${lifecyclePlaceholders})
+             AND occupied.deleted_at IS NULL${releasedByRun})`;
+}
 
 /**
  * SQLite implementation of IFeatureRepository.
@@ -174,18 +216,19 @@ export class SQLiteFeatureRepository implements IFeatureRepository {
     return rows.map(fromDatabase);
   }
 
-  async countByLifecycles(lifecycles: SdlcLifecycle[]): Promise<number> {
+  async countByLifecycles(
+    lifecycles: SdlcLifecycle[],
+    options?: CountByLifecyclesOptions
+  ): Promise<number> {
     if (lifecycles.length === 0) {
       return 0;
     }
 
-    // Placeholders are generated from the array length, never interpolated
-    // values — the lifecycles themselves are always bound parameters.
-    const placeholders = lifecycles.map(() => '?').join(', ');
+    const params: Record<string, unknown> = {};
     const stmt = this.db.prepare(
-      `SELECT COUNT(*) AS count FROM features WHERE lifecycle IN (${placeholders}) AND deleted_at IS NULL`
+      `SELECT ${occupiedSlotCountSql(lifecycles, options?.releasingRunStatuses, params)} AS count`
     );
-    const row = stmt.get(...lifecycles) as { count: number };
+    const row = stmt.get(params) as { count: number };
     return row.count;
   }
 
@@ -281,6 +324,17 @@ export class SQLiteFeatureRepository implements IFeatureRepository {
       params.expected_lifecycle = claim.requireLifecycle;
     }
 
+    if (claim.requireAgentRunId !== undefined) {
+      conditions.push('agent_run_id = @expected_agent_run_id');
+      params.expected_agent_run_id = claim.requireAgentRunId;
+    }
+
+    const assignments = ['queued_at = NULL', 'lifecycle = @lifecycle', 'updated_at = @updated_at'];
+    if (claim.agentRunId !== undefined) {
+      assignments.push('agent_run_id = @agent_run_id');
+      params.agent_run_id = claim.agentRunId;
+    }
+
     const capacity = claim.capacity;
     // No cap, an unlimited cap, or nothing that can occupy a slot: the claim
     // carries no capacity condition at all. (An empty lifecycle list would
@@ -291,25 +345,14 @@ export class SQLiteFeatureRepository implements IFeatureRepository {
       capacity.limit !== UNLIMITED_PARALLEL_FEATURES &&
       capacity.runningLifecycles.length > 0
     ) {
-      // Placeholders come from the array length; the lifecycles themselves
-      // are always bound parameters.
-      const placeholders = capacity.runningLifecycles.map((_, i) => `@running_${i}`).join(', ');
       conditions.push(
-        `(SELECT COUNT(*) FROM features AS running
-           WHERE running.lifecycle IN (${placeholders})
-             AND running.deleted_at IS NULL) < @limit`
+        `${occupiedSlotCountSql(capacity.runningLifecycles, capacity.releasingRunStatuses, params)} < @limit`
       );
       params.limit = capacity.limit;
-      capacity.runningLifecycles.forEach((lifecycle, i) => {
-        params[`running_${i}`] = lifecycle;
-      });
     }
 
     const stmt = this.db.prepare(`
-      UPDATE features SET
-        queued_at = NULL,
-        lifecycle = @lifecycle,
-        updated_at = @updated_at
+      UPDATE features SET ${assignments.join(', ')}
       WHERE ${conditions.join(' AND ')}
     `);
 

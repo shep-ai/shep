@@ -69,23 +69,73 @@ content: |
   | `application/use-cases/agents/stream-agent-events*` + `web/hooks/use-agent-events.ts` | Medium | reconnect replay, listener leak, heartbeat |
   | `web/app/api/feature-logs` | Medium | incremental read |
 
-  ## Out of Scope (tracked follow-ups)
+  ## Scope
 
-  Confirmed by triage but deliberately deferred to keep this change reviewable: a liveness sweep
-  for live-but-hung workers (stale heartbeat), a guard against an agent stopping its own daemon,
-  messaging-tunnel reconnect after a failed connect, cross-instance GitHub webhook deletion, the
-  concurrent `shep start` port race, SW subscription counting, whole-file session-transcript
-  parsing, worker-log rotation, and retry for spec-phase `executeNode`.
-
-  Found during implementation and also deferred: the CI *fix* call still runs with
-  `maxAttempts: 1` (retrying a half-applied fix needs its own design); the CLI `log-viewer.ts`
-  follow mode decodes each chunk with `toString()` (multi-byte split); the interactive executor
-  reports `input_tokens` without cache tokens; Codex/Copilot `execute()` still resolve captured
-  text when the process exits 0 without its terminal event.
+  The first pass covered the success criteria above. A follow-up pass fixed every other finding
+  the triage confirmed; nothing confirmed is deferred. Items the triage marked N/A for shep
+  (tracing/span volume, a small default context window, tool-call argument parsing) have no code
+  here to change.
 
   Added during implementation: Stop and the worker's SIGTERM handler use the same guarded write,
   Stop records `interrupted` before signalling, and Approve/Reject hand their claim back when the
   resume worker fails to start.
+
+  Fixed in the follow-up set (originally deferred or found by a second audit):
+
+  - A run-liveness sweep (`ReconcileAgentRunLivenessUseCase`) runs inside the feature and agent
+    list/show use cases, so the CLI, TUI, MCP and web dashboard all trigger it. A dead worker's
+    run is marked `interrupted`, a live worker whose heartbeat is stale for 10 intervals is failed
+    and its process tree force-killed, and a run whose worker never recorded a pid within 30
+    minutes is failed. Every write is guarded by status and by the exact `updated_at` it judged.
+  - Stop terminates the worker's whole process tree (the worker process group plus a tree kill)
+    and escalates to SIGKILL after 5s; on Windows it is a single forced tree kill.
+  - `shep stop` / `restart` / `upgrade` no longer kill daemon-forked feature workers: they signal
+    the daemon's process group on Unix, and force-kill only the daemon pid on Windows. Workers mark
+    their environment (`SHEP_AGENT_RUN_ID`, `SHEP_FEATURE_ID`). From inside an agent run, those
+    commands, `shep agent stop` / `agent delete --force` on the caller's own run, and the MCP
+    `stop_agent_run` tool refuse without `--force` (`force: true` for MCP). The SQLite-busy
+    message no longer tells the reader to stop the daemon.
+  - A Blocked child of a parent whose run failed, was interrupted or was cancelled gets a
+    `blocked-on-parent` activity entry naming why; the reconcile loop logs per-parent errors.
+  - An auto-rebase that times out is reported at once, but the child agent is spawned only once
+    the git operation has settled.
+  - `AgentExecutionOptions.abortSignal` is honoured by every subprocess executor, through one
+    shared helper, and by the AI SDK executors. A parallel implement phase aborts its sibling
+    tasks on the first failure and awaits their teardown. An aborted call is never retried.
+  - The MCP config temp file is unique per write, so one worker's teardown cannot delete
+    another's file.
+  - The parallel-feature slot count ignores features whose current run is terminal; a stop or a
+    run failure drains the queue; and Resume claims a slot (and switches the run) in one
+    statement, refusing with the reason when the cap is full (`shep feat resume --force`
+    overrides, like `feat start --force`).
+  - Spec phases retry transient API/network errors through `retryExecute`; timeouts, signal
+    kills, max-turns, auth failures and aborts are never retried; a cut stream is retried once.
+    The CI watch and CI fix calls retry only transient errors.
+  - Codex and Copilot fail a turn that exits 0 without its terminal event. Every agent call has a
+    timeout (structured calls, repair, conflict resolution, the supervisor passes it to the
+    executor), and every subprocess executor honours an opt-in idle timeout ("no output for Ns")
+    that feature nodes set to 15 minutes (Cursor/Gemini one-shot JSON mode excepted: it is
+    silent until done by design and stays bounded by the total timeout).
+  - Usage counts cache tokens once in both the batch and interactive Claude executors; worker
+    logs cap each tool call's input at 2000 characters.
+  - The messaging tunnel reconnects after a failed connect with capped exponential backoff,
+    refreshes its token per attempt and detects half-open sockets; messaging config is read
+    fresh, and a pairing code cannot be replayed.
+  - GitHub webhooks carry a persisted per-installation tag and secret; only this
+    installation's stale hooks are removed.
+  - `shep start` holds a cross-process lock and records the daemon only once it is ready.
+  - The notification watcher polls only active and tracked runs, with an in-flight guard.
+    Answers from another process reach an awaiting agent (the awaiter polls its row), and
+    Answer/Cancel settle a question in one conditional write; the loser is told on CLI and web.
+  - Stopping a session that is not in memory marks its persisted row stopped and settles any
+    pending interaction.
+  - The agent-events service worker tracks subscribers per client and per scope, forwards
+    heartbeats, and pages re-subscribe when it goes silent.
+  - Claude, Codex and Cursor transcript listings read only appended bytes and tolerate a
+    half-written last line; the long-running daemon prunes retained data and old worker logs
+    hourly (never a running feature's log); CLI log readers honour `SHEP_HOME` and decode
+    multi-byte text across reads; operation-log polling stops when idle and is bounded; delivery
+    dedupe sets are trimmed at the time cursor.
 
   ## Dependencies
 

@@ -31,6 +31,7 @@ describe('PruneRetainedDataUseCase', () => {
     pruneOlderThan: ReturnType<typeof vi.fn>;
   };
   let operationLogRepo: { pruneBefore: ReturnType<typeof vi.fn> };
+  let pruneLogs: { execute: ReturnType<typeof vi.fn> };
   let useCase: PruneRetainedDataUseCase;
 
   beforeEach(() => {
@@ -39,7 +40,14 @@ describe('PruneRetainedDataUseCase', () => {
       pruneOlderThan: vi.fn().mockResolvedValue({ ...EMPTY_COUNTS, activityLog: 3 }),
     };
     operationLogRepo = { pruneBefore: vi.fn().mockResolvedValue(7) };
-    useCase = new PruneRetainedDataUseCase(retentionRepo as never, operationLogRepo as never);
+    pruneLogs = {
+      execute: vi.fn().mockResolvedValue({ deleted: [{}, {}], reclaimedBytes: 10, failures: [] }),
+    };
+    useCase = new PruneRetainedDataUseCase(
+      retentionRepo as never,
+      operationLogRepo as never,
+      pruneLogs as never
+    );
   });
 
   it('prunes everything older than the retention window', async () => {
@@ -63,7 +71,12 @@ describe('PruneRetainedDataUseCase', () => {
   it('reports what each table gave up', async () => {
     const result = await useCase.execute({ now: NOW });
 
-    expect(result.counts).toEqual({ ...EMPTY_COUNTS, activityLog: 3, operationLog: 7 });
+    expect(result.counts).toEqual({
+      ...EMPTY_COUNTS,
+      activityLog: 3,
+      operationLog: 7,
+      workerLogFiles: 2,
+    });
   });
 
   it('does nothing when another process already pruned inside the interval', async () => {
@@ -74,6 +87,7 @@ describe('PruneRetainedDataUseCase', () => {
     expect(result).toEqual({ pruned: false });
     expect(retentionRepo.pruneOlderThan).not.toHaveBeenCalled();
     expect(operationLogRepo.pruneBefore).not.toHaveBeenCalled();
+    expect(pruneLogs.execute).not.toHaveBeenCalled();
   });
 
   it('claims the cycle with the configured interval', async () => {
@@ -98,5 +112,13 @@ describe('PruneRetainedDataUseCase', () => {
     await useCase.execute({ now: NOW, retentionDays: 7 });
 
     expect(retentionRepo.pruneOlderThan).toHaveBeenCalledWith(retentionCutoff(NOW, 7));
+  });
+
+  // Spec 116: nothing deleted ~/.shep/logs/worker-*.log unless a user ran
+  // `shep logs prune --yes`. The same window now governs them.
+  it('deletes worker logs past the same retention window', async () => {
+    await useCase.execute({ now: NOW, retentionDays: 30 });
+
+    expect(pruneLogs.execute).toHaveBeenCalledWith({ olderThan: '30d', dryRun: false, now: NOW });
   });
 });

@@ -9,7 +9,11 @@
  * - Infrastructure layer provides concrete implementations
  */
 
-import type { Feature, SdlcLifecycle } from '../../../../domain/generated/output.js';
+import type {
+  AgentRunStatus,
+  Feature,
+  SdlcLifecycle,
+} from '../../../../domain/generated/output.js';
 
 /**
  * Filters for listing features.
@@ -32,6 +36,17 @@ export interface FeatureListFilters {
  * here is therefore evaluated INSIDE the write, so the answer and the action
  * cannot be separated.
  */
+/** Refinements to {@link IFeatureRepository.countByLifecycles}. */
+export interface CountByLifecyclesOptions {
+  /**
+   * Do not count a feature whose current agent run (`features.agent_run_id`)
+   * has one of these statuses. A worker that died or was stopped leaves the
+   * lifecycle in a running phase; its run's status is what says nothing is
+   * working on it any more. A feature with no run recorded is still counted.
+   */
+  releasingRunStatuses?: readonly AgentRunStatus[];
+}
+
 export interface FeatureStartClaim {
   /** The feature to claim. */
   featureId: string;
@@ -54,6 +69,20 @@ export interface FeatureStartClaim {
    */
   requireLifecycle?: SdlcLifecycle;
   /**
+   * Require the row to still point at this agent run.
+   *
+   * Resume uses it: two resumes of one feature both read the same finished
+   * run, and only the first may replace it — the second finds the pointer
+   * already moved and claims nothing.
+   */
+  requireAgentRunId?: string;
+  /**
+   * Point the feature at this agent run in the same statement. A feature whose
+   * current run is live occupies a slot, so switching to the new run IS taking
+   * the slot, and must not be a separate write.
+   */
+  agentRunId?: string;
+  /**
    * Enforce the parallel-feature cap as part of the same statement.
    *
    * The count is still DERIVED (see IFeatureRepository.countByLifecycles) —
@@ -65,6 +94,12 @@ export interface FeatureStartClaim {
     limit: number;
     /** Lifecycles that occupy a slot. */
     runningLifecycles: readonly SdlcLifecycle[];
+    /**
+     * Statuses of a feature's current agent run that release its slot even
+     * though its lifecycle is still a running one (see
+     * {@link CountByLifecyclesOptions.releasingRunStatuses}).
+     */
+    releasingRunStatuses?: readonly AgentRunStatus[];
   };
 }
 
@@ -160,9 +195,13 @@ export interface IFeatureRepository {
    * forever.
    *
    * @param lifecycles - The lifecycles to count. An empty array counts nothing.
+   * @param options - Optionally exclude features whose current run has finished
    * @returns Number of matching, non-soft-deleted features
    */
-  countByLifecycles(lifecycles: SdlcLifecycle[]): Promise<number>;
+  countByLifecycles(
+    lifecycles: SdlcLifecycle[],
+    options?: CountByLifecyclesOptions
+  ): Promise<number>;
 
   /**
    * Returns features waiting for a parallel-capacity slot, oldest first.

@@ -233,6 +233,50 @@ describe('Agent Tools', () => {
       expect(parsed.reason).toBe('User requested');
     });
 
+    // The MCP server is started by the agent CLI, so it inherits the worker's
+    // agent-run marker: an agent calling this tool on its own run kills itself.
+    describe('inside an agent run', () => {
+      const saved = process.env.SHEP_AGENT_RUN_ID;
+      beforeEach(() => {
+        process.env.SHEP_AGENT_RUN_ID = 'run-self';
+      });
+      afterEach(() => {
+        if (saved === undefined) delete process.env.SHEP_AGENT_RUN_ID;
+        else process.env.SHEP_AGENT_RUN_ID = saved;
+      });
+
+      it('refuses to stop the calling agent’s own run', async () => {
+        const result = await client.callTool({
+          name: 'stop_agent_run',
+          arguments: { runId: 'run-self' },
+        });
+
+        expect(mockStopAgentRunUseCase.execute).not.toHaveBeenCalled();
+        expect(result.isError).toBe(true);
+        const textContent = result.content as { type: string; text: string }[];
+        expect(textContent[0].text).toContain('force');
+      });
+
+      it('stops its own run when force is set', async () => {
+        mockStopAgentRunUseCase.execute.mockResolvedValue({ stopped: true, reason: 'ok' });
+
+        await client.callTool({
+          name: 'stop_agent_run',
+          arguments: { runId: 'run-self', force: true },
+        });
+
+        expect(mockStopAgentRunUseCase.execute).toHaveBeenCalledWith('run-self');
+      });
+
+      it('stops another run without force', async () => {
+        mockStopAgentRunUseCase.execute.mockResolvedValue({ stopped: true, reason: 'ok' });
+
+        await client.callTool({ name: 'stop_agent_run', arguments: { runId: 'run-other' } });
+
+        expect(mockStopAgentRunUseCase.execute).toHaveBeenCalledWith('run-other');
+      });
+    });
+
     it('returns error when stop fails', async () => {
       mockStopAgentRunUseCase.execute.mockRejectedValue(
         new Error('Run is already in terminal state')

@@ -8,6 +8,7 @@
 
 import { Command } from 'commander';
 import { container } from '@/infrastructure/di/container.js';
+import { questionAlreadySettledMessage } from '@/domain/shared/agent-question-settlement.js';
 import { AnswerAgentQuestionUseCase } from '@/application/use-cases/agents/answer-agent-question.use-case.js';
 import { colors, messages } from '../../../ui/index.js';
 
@@ -41,6 +42,9 @@ export function createAnswerCommand(): Command {
         }
         if (!result.question) {
           throw new Error(`Question ${questionId} not found in app ${options.app}`);
+        }
+        if (result.alreadySettledAs) {
+          throw new Error(questionAlreadySettledMessage(questionId, result.alreadySettledAs));
         }
 
         messages.newline();

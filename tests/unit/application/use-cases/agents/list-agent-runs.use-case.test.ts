@@ -10,6 +10,7 @@
 import 'reflect-metadata';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ListAgentRunsUseCase } from '@/application/use-cases/agents/list-agent-runs.use-case.js';
+import type { ReconcileAgentRunLivenessUseCase } from '@/application/use-cases/agents/reconcile-agent-run-liveness.use-case.js';
 import type { IAgentRunRepository } from '@/application/ports/output/agents/agent-run-repository.interface.js';
 import type { AgentRun } from '@/domain/generated/output.js';
 import { AgentRunStatus, AgentType } from '@/domain/generated/output.js';
@@ -29,6 +30,8 @@ function createMockAgentRun(overrides?: Partial<AgentRun>): AgentRun {
 }
 
 describe('ListAgentRunsUseCase', () => {
+  const livenessSweep = { execute: vi.fn() };
+  const sweep = livenessSweep as unknown as ReconcileAgentRunLivenessUseCase;
   let useCase: ListAgentRunsUseCase;
   let mockRepo: IAgentRunRepository;
 
@@ -45,7 +48,7 @@ describe('ListAgentRunsUseCase', () => {
       list: vi.fn().mockResolvedValue([]),
       delete: vi.fn(),
     };
-    useCase = new ListAgentRunsUseCase(mockRepo);
+    useCase = new ListAgentRunsUseCase(mockRepo, sweep);
   });
 
   it('should list all agent runs', async () => {
@@ -91,5 +94,25 @@ describe('ListAgentRunsUseCase', () => {
     const result = await useCase.execute();
     expect(result[0].id).toBe('run-new');
     expect(result[1].id).toBe('run-old');
+  });
+
+  // The read paths every surface uses (CLI, TUI, web) run the run-liveness
+  // sweep first, so what they return already reflects a crashed or hung worker.
+  describe('run-liveness sweep', () => {
+    it('reconciles run liveness before reading', async () => {
+      const order: string[] = [];
+      livenessSweep.execute.mockImplementation(async () => {
+        order.push('sweep');
+        return { reconciledRunIds: [] };
+      });
+      mockRepo.list = vi.fn(async () => {
+        order.push('read');
+        return [];
+      });
+
+      await useCase.execute();
+
+      expect(order).toEqual(['sweep', 'read']);
+    });
   });
 });

@@ -133,4 +133,33 @@ describe('SQLiteAgentMessageBus', () => {
     expect(handlerA).toHaveBeenCalled();
     expect(handlerB).not.toHaveBeenCalled();
   });
+
+  // Spec 116: each subscription remembered every id it ever delivered, for
+  // the life of the process. Only ids at the time cursor can come back from a
+  // `created_at >= cursor` read, so only those need remembering.
+  it('keeps its delivered-id memory bounded without delivering anything twice', async () => {
+    const handler = vi.fn();
+    readerBus.subscribe({ appId: 'app-1' }, handler);
+    const BASE_MS = Date.now();
+    const TOTAL = 30;
+    const BATCH = 10;
+    const POLL_SETTLE_MS = 200;
+
+    for (let batch = 0; batch < TOTAL / BATCH; batch++) {
+      for (let i = 0; i < BATCH; i++) {
+        const n = batch * BATCH + i;
+        await writerBus.publish(
+          makeMessage({ id: `bounded-${n}`, appId: 'app-1', createdAt: new Date(BASE_MS + n) })
+        );
+      }
+      await new Promise((r) => setTimeout(r, POLL_SETTLE_MS));
+    }
+
+    const deliveredIds = handler.mock.calls.map(([m]) => (m as AgentMessage).id);
+    expect(deliveredIds).toEqual(Array.from({ length: TOTAL }, (_, n) => `bounded-${n}`));
+    const [subscription] = (
+      readerBus as unknown as { subscriptions: Set<{ delivered: { size: number } }> }
+    ).subscriptions;
+    expect(subscription.delivered.size).toBe(1);
+  });
 });

@@ -11,7 +11,12 @@
  * Registered events: pull_request, check_suite, check_run
  */
 
-import { createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
+import { createHmac, timingSafeEqual } from 'node:crypto';
+import {
+  createWebhookIdentity,
+  WEBHOOK_INSTANCE_QUERY_PARAM,
+  type WebhookInstanceIdentity,
+} from './webhook-identity.store.js';
 import type {
   IWebhookService,
   WebhookEvent,
@@ -29,6 +34,27 @@ import type { NotificationEvent, Feature } from '../../../domain/generated/outpu
 const TAG = '[GitHubWebhook]';
 const WEBHOOK_EVENTS = ['pull_request', 'check_suite', 'check_run'] as const;
 const MAX_EVENT_HISTORY = 200;
+const WEBHOOK_PATH = '/api/webhooks/github';
+
+/** Tag a webhook URL with the owning installation's id. */
+function withInstanceTag(webhookUrl: string, instanceId: string): string {
+  const url = new URL(webhookUrl);
+  url.searchParams.set(WEBHOOK_INSTANCE_QUERY_PARAM, instanceId);
+  return url.toString();
+}
+
+/** Whether a hook URL on GitHub is a Shep webhook created by this installation. */
+function isOwnedHookUrl(hookUrl: string, instanceId: string): boolean {
+  try {
+    const url = new URL(hookUrl);
+    return (
+      url.pathname.endsWith(WEBHOOK_PATH) &&
+      url.searchParams.get(WEBHOOK_INSTANCE_QUERY_PARAM) === instanceId
+    );
+  } catch {
+    return false;
+  }
+}
 
 function normalizePath(p: string): string {
   return p.replace(/\\/g, '/');
@@ -67,7 +93,8 @@ export class GitHubWebhookService implements IWebhookService {
   private readonly logger: ILogger;
   private readonly registeredWebhooks: RegisteredWebhook[] = [];
   private readonly deliveryHistory: WebhookDeliveryRecord[] = [];
-  private webhookSecret: string;
+  private readonly webhookSecret: string;
+  private readonly instanceId: string;
 
   constructor(
     featureRepo: IFeatureRepository,
@@ -82,14 +109,22 @@ export class GitHubWebhookService implements IWebhookService {
      * Defaults to a ConsoleLogger so existing callers are unaffected; DI
      * passes the container's ILogger.
      */
-    logger: ILogger = new ConsoleLogger()
+    logger: ILogger = new ConsoleLogger(),
+    /**
+     * This installation's persisted secret + instance id (see
+     * webhook-identity.store). A stable secret keeps hooks created by a
+     * previous run validating; the instance id limits stale-hook cleanup to
+     * hooks this installation created. Defaults to a throwaway identity.
+     */
+    identity: WebhookInstanceIdentity = createWebhookIdentity()
   ) {
     this.featureRepo = featureRepo;
     this.gitPrService = gitPrService;
     this.notificationService = notificationService;
     this.execFn = execFn;
     this.logger = logger;
-    this.webhookSecret = randomBytes(32).toString('hex');
+    this.webhookSecret = identity.secret;
+    this.instanceId = identity.instanceId;
   }
 
   /**
@@ -172,7 +207,7 @@ export class GitHubWebhookService implements IWebhookService {
   }
 
   async registerWebhooks(publicUrl: string): Promise<void> {
-    const webhookUrl = `${publicUrl}/api/webhooks/github`;
+    const webhookUrl = `${publicUrl}${WEBHOOK_PATH}`;
 
     // Find all repos with features in Review lifecycle
     const features = await this.featureRepo.list({ lifecycle: SdlcLifecycle.Review });
@@ -193,7 +228,7 @@ export class GitHubWebhookService implements IWebhookService {
   }
 
   async updateWebhookUrl(newUrl: string): Promise<void> {
-    const webhookUrl = `${newUrl}/api/webhooks/github`;
+    const webhookUrl = withInstanceTag(`${newUrl}${WEBHOOK_PATH}`, this.instanceId);
 
     for (const webhook of this.registeredWebhooks) {
       try {
@@ -506,7 +541,7 @@ export class GitHubWebhookService implements IWebhookService {
           '-f',
           'name=web',
           '-f',
-          `config[url]=${webhookUrl}`,
+          `config[url]=${withInstanceTag(webhookUrl, this.instanceId)}`,
           '-f',
           'config[content_type]=json',
           '-f',
@@ -535,8 +570,10 @@ export class GitHubWebhookService implements IWebhookService {
   }
 
   /**
-   * Remove stale webhooks from a previous session that point to our webhook path.
-   * Lists all hooks on the repo and deletes any whose URL ends with /api/webhooks/github.
+   * Remove stale webhooks a previous run of THIS installation left behind.
+   * Only hooks tagged with our instance id are deleted: another Shep
+   * installation (another machine, dev next to prod) registers hooks on the
+   * same path, and deleting those made the two delete each other forever.
    */
   private async removeStaleWebhooks(repoFullName: string, repoPath: string): Promise<void> {
     try {
@@ -552,8 +589,7 @@ export class GitHubWebhookService implements IWebhookService {
       }[];
 
       for (const hook of hooks) {
-        const hookUrl = hook.config?.url ?? '';
-        if (hookUrl.endsWith('/api/webhooks/github')) {
+        if (isOwnedHookUrl(hook.config?.url ?? '', this.instanceId)) {
           try {
             await this.execFn(
               'gh',

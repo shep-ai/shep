@@ -22,6 +22,7 @@ import {
 } from '@/infrastructure/services/agents/feature-agent/nodes/repair.node.js';
 import type { FeatureAgentState } from '@/infrastructure/services/agents/feature-agent/state.js';
 import type { IAgentExecutor } from '@/application/ports/output/agents/agent-executor.interface.js';
+import { DEFAULT_AGENT_CALL_TIMEOUT_MS } from '@/infrastructure/services/agents/common/agent-timeouts.js';
 
 function createMockExecutor(): IAgentExecutor {
   return {
@@ -128,6 +129,16 @@ describe('createRepairNode', () => {
     expect(options.maxTurns).toBe(5);
     expect(options.disableMcp).toBe(true);
     expect(options.allowedTools).toEqual(['write']);
+  });
+
+  it('bounds the repair call with the default agent timeout', async () => {
+    // Without a timeout a wedged repair agent hung the validate→repair loop,
+    // and with it the whole feature run, forever.
+    const node = createRepairNode('spec.yaml', executor);
+    await node(baseState());
+
+    const [, options] = (executor.execute as ReturnType<typeof vi.fn>).mock.calls[0];
+    expect(options.timeout).toBe(DEFAULT_AGENT_CALL_TIMEOUT_MS);
   });
 
   it('returns messages about repair attempt', async () => {

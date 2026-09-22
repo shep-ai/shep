@@ -8,7 +8,10 @@ import 'reflect-metadata';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 import { FeatureCapacityService } from '@/application/use-cases/features/capacity/feature-capacity.service.js';
-import { RUNNING_LIFECYCLES } from '@/domain/shared/parallel-feature-limit.js';
+import {
+  RUNNING_LIFECYCLES,
+  SLOT_RELEASING_RUN_STATUSES,
+} from '@/domain/shared/parallel-feature-limit.js';
 import { createMockFeatureRepository } from '../../../../../helpers/feature-repository.mock.js';
 
 const settingsWithLimit = (maxParallelFeatures?: number) => ({
@@ -45,12 +48,14 @@ describe('FeatureCapacityService', () => {
       expect(await service(settingsWithLimit(3)).hasCapacity()).toBe(false);
     });
 
-    it('counts exactly the running lifecycles', async () => {
+    it('counts exactly the running lifecycles, minus features whose run finished', async () => {
       featureRepo.countByLifecycles.mockResolvedValue(1);
 
       await service(settingsWithLimit(3)).hasCapacity();
 
-      expect(featureRepo.countByLifecycles).toHaveBeenCalledWith([...RUNNING_LIFECYCLES]);
+      expect(featureRepo.countByLifecycles).toHaveBeenCalledWith([...RUNNING_LIFECYCLES], {
+        releasingRunStatuses: [...SLOT_RELEASING_RUN_STATUSES],
+      });
     });
 
     it('treats uninitialised settings as unlimited', async () => {

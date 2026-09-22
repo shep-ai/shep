@@ -36,6 +36,7 @@ function makeSessionRepo(
     updateStatus: vi.fn().mockResolvedValue(undefined),
     updateLastActivity: vi.fn().mockResolvedValue(undefined),
     markAllActiveStopped: vi.fn().mockResolvedValue(undefined),
+    markStoppedIfActive: vi.fn().mockResolvedValue(false),
     countActiveSessions: vi.fn().mockResolvedValue(0),
     updateAgentSessionId: vi.fn().mockResolvedValue(undefined),
     getAgentSessionId: vi.fn().mockResolvedValue(null),

@@ -78,6 +78,7 @@ function makeSessionRepo(): IInteractiveSessionRepository {
     findAllActive: vi.fn(),
     updateStatus: vi.fn(),
     markAllActiveStopped: vi.fn(),
+    markStoppedIfActive: vi.fn().mockResolvedValue(false),
     countActiveSessions: vi.fn(),
     updateAgentSessionId: vi.fn(),
     getAgentSessionId: vi.fn(),

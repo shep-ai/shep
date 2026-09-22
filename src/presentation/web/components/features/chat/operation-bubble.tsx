@@ -20,13 +20,15 @@
  *
  * Source of truth: the existing `/api/operations/:kind/:id/logs`
  * endpoint backed by `operation_log_entries`. Polls on a 1.5s
- * interval only while `in-progress`; goes static otherwise.
+ * interval only while `in-progress`; goes static otherwise, and
+ * refetches when the agent-events stream reports a new entry for
+ * this application and kind (spec 116).
  *
  * Obeys the three-layer rule in `CLAUDE.md`: no auto-opened
  * sidebar drawer — the card is the in-place status indicator.
  */
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import {
   AlertTriangle,
@@ -40,6 +42,12 @@ import {
 } from 'lucide-react';
 import { OperationLogKind } from '@shepai/core/domain/generated/output';
 import { cn } from '@/lib/utils';
+import { useOperationLogAppend } from '@/hooks/agent-events-provider';
+
+/** Refetch cadence while the latest run is still writing entries. */
+export const OPERATION_IN_PROGRESS_POLL_MS = 1500;
+/** A run whose last entry is younger than this is considered in progress. */
+const IN_PROGRESS_WINDOW_MS = 10_000;
 
 interface OperationLogEntryDto {
   id: string;
@@ -156,7 +164,7 @@ function deriveStatus(entries: OperationLogEntryDto[]): BubbleStatus {
   const last = entries[entries.length - 1];
   const lastAtMs = new Date(last.createdAt).getTime();
   const ageMs = Date.now() - lastAtMs;
-  if (ageMs < 10_000) return 'in-progress';
+  if (ageMs < IN_PROGRESS_WINDOW_MS) return 'in-progress';
   switch (last.level) {
     case 'Error':
       return 'failed';
@@ -203,35 +211,34 @@ export function useOperationRuns(
   applicationId: string | undefined,
   kind: OperationBubbleProps['kind']
 ): OperationRun[] {
-  const { data } = useQuery({
+  const opKind = KIND_TO_OP[kind];
+  const { data, dataUpdatedAt, refetch } = useQuery({
     queryKey: ['operation-logs', applicationId ?? '', kind] as const,
     queryFn: () =>
       applicationId
         ? fetchLogs(applicationId, kind)
         : Promise.resolve({ entries: [] as OperationLogEntryDto[] }),
     enabled: Boolean(applicationId),
-    // Two-speed polling:
-    //   • 1500 ms while the LAST run is still in-progress — the
-    //     user is actively watching a live bubble.
-    //   • 2500 ms at all other times (including when there are no
-    //     entries yet). This is the critical one: when the user
-    //     clicks Save & Redeploy from the smart-deploy cluster, the
-    //     new "Starting …" entry is written by the server but the
-    //     query has nothing in-flight to trigger a refetch. Without
-    //     a baseline idle interval the new bubble wouldn't appear
-    //     until the next manual refresh. 2500 ms is fast enough to
-    //     feel immediate (the button's own progress chip holds
-    //     attention for a beat) and slow enough to be cheap.
+    // Poll only while the LAST run is in progress — the user is watching a
+    // live bubble. Otherwise stay quiet: ChatTab mounts this hook once per
+    // operation kind, and idle polling cost three requests every 2.5 s for
+    // as long as the chat was open. A new run is picked up from the
+    // agent-events stream below instead.
     refetchInterval: (q) => {
-      const entries = q.state.data?.entries ?? [];
-      if (entries.length === 0) return 2500;
-      const runs = splitIntoRuns(entries);
+      const runs = splitIntoRuns(q.state.data?.entries ?? []);
       const lastRun = runs[runs.length - 1] ?? [];
-      const status = deriveStatus(lastRun);
-      return status === 'in-progress' ? 1500 : 2500;
+      return deriveStatus(lastRun) === 'in-progress' ? OPERATION_IN_PROGRESS_POLL_MS : false;
     },
     staleTime: 0,
   });
+
+  // New activity signal: the server re-emits every operation-log append as
+  // an `OperationLogAppended` notification. One for this application and
+  // kind (e.g. the "Starting …" entry of a redeploy) means a fresh read.
+  const appended = useOperationLogAppend(applicationId ?? '');
+  useEffect(() => {
+    if (applicationId && appended?.operationKind === opKind) void refetch();
+  }, [appended, applicationId, opKind, refetch]);
 
   return useMemo<OperationRun[]>(() => {
     const split = splitIntoRuns(data?.entries ?? []);
@@ -244,7 +251,11 @@ export function useOperationRuns(
         entries: run,
       };
     });
-  }, [data, kind]);
+    // `dataUpdatedAt` is a dependency on purpose: a refetch that returns the
+    // same entries keeps `data` referentially equal, yet the run's status is
+    // time-derived and may just have left the in-progress window.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [data, dataUpdatedAt, kind]);
 }
 
 /**

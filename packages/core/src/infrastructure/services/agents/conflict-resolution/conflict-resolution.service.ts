@@ -21,6 +21,7 @@ import {
   buildStashPopResolutionPrompt,
   type ConflictedFile,
 } from './conflict-resolution.prompt.js';
+import { DEFAULT_AGENT_CALL_TIMEOUT_MS } from '../common/agent-timeouts.js';
 
 const MAX_RETRIES_PER_COMMIT = 3;
 
@@ -78,7 +79,7 @@ export class ConflictResolutionService implements IConflictResolutionService {
           previousFeedback,
         });
 
-        await executor.execute(prompt, { cwd });
+        await executor.execute(prompt, { cwd, timeout: DEFAULT_AGENT_CALL_TIMEOUT_MS });
 
         // Validate: check no conflict markers remain
         if (this.validateResolution(cwd, conflictedFiles)) {
@@ -154,7 +155,7 @@ export class ConflictResolutionService implements IConflictResolutionService {
         previousFeedback,
       });
 
-      await executor.execute(prompt, { cwd });
+      await executor.execute(prompt, { cwd, timeout: DEFAULT_AGENT_CALL_TIMEOUT_MS });
 
       if (this.validateResolution(cwd, conflictedFiles)) {
         await this.gitPrService.stageFiles(cwd, conflictedFiles);

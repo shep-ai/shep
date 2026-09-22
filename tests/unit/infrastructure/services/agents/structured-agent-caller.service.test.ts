@@ -11,6 +11,7 @@ import type { IAgentExecutor } from '@/application/ports/output/agents/agent-exe
 import type { IAgentExecutorProvider } from '@/application/ports/output/agents/agent-executor-provider.interface.js';
 import type { IAgentExecutorFactory } from '@/application/ports/output/agents/agent-executor-factory.interface.js';
 import { AgentFeature } from '@/domain/generated/output.js';
+import { DEFAULT_AGENT_CALL_TIMEOUT_MS } from '@/infrastructure/services/agents/common/agent-timeouts.js';
 
 describe('StructuredAgentCallerService', () => {
   let service: StructuredAgentCallerService;
@@ -50,6 +51,38 @@ describe('StructuredAgentCallerService', () => {
       resolveAdaptiveModelPlan: vi.fn((_a: unknown, m: string) => ({ high: m, medium: m, low: m })),
     };
     service = new StructuredAgentCallerService(mockProvider, mockFactory);
+  });
+
+  describe('timeout', () => {
+    // No caller of structuredCaller.call passed a timeout, so a wedged agent
+    // hung feature creation, session adoption, code review and dev-server
+    // analysis forever. The caller now bounds every call it makes.
+    it.each([
+      ['native', true],
+      ['prompt fallback', false],
+    ])('bounds a %s call with the default agent timeout', async (_label, native) => {
+      vi.mocked(mockExecutor.supportsFeature).mockReturnValue(native);
+      vi.mocked(mockExecutor.execute).mockResolvedValue({ result: '{"name":"x","count":1}' });
+
+      await service.call('prompt', testSchema, { maxTurns: 10 });
+
+      expect(mockExecutor.execute).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({ timeout: DEFAULT_AGENT_CALL_TIMEOUT_MS })
+      );
+    });
+
+    it('keeps a timeout the caller chose', async () => {
+      vi.mocked(mockExecutor.supportsFeature).mockReturnValue(true);
+      vi.mocked(mockExecutor.execute).mockResolvedValue({ result: '{"name":"x","count":1}' });
+
+      await service.call('prompt', testSchema, { timeout: 5_000 });
+
+      expect(mockExecutor.execute).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({ timeout: 5_000 })
+      );
+    });
   });
 
   describe('native path (agent supports structured-output)', () => {

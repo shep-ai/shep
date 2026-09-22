@@ -2688,3 +2688,29 @@ quiet stream every 60s — and each reconnect replayed the full message/question
 per-connection caches started empty. Send a named `heartbeat` event, seed per-connection caches
 silently on connect (sending only still-open state such as pending questions), and upsert by id
 on the client so a replay is idempotent.
+
+## A commit hook that fails restores its backup over everyone's working tree
+
+Mid-session a failed `git commit` (the typecheck hook tripped on uninstalled electron deps)
+made lint-staged restore its automatic backup, silently reverting uncommitted edits other
+agents were making in the same checkout. Rules: never commit from a checkout another writer is
+editing — wait until every writer reports, then run the full verification, then commit; if a
+hook fails, check `git diff` of every in-flight file before anything else. When a dependency
+cannot be installed (egress 403), install the exact package from an allowed registry into the
+ignored `node_modules` **and apply the repo's `patches/` to it** — an unpatched stand-in made a
+security test fail for a reason that had nothing to do with the code.
+
+## A liveness signal nobody reads is not liveness
+
+`agent_runs.last_heartbeat` was written every 30s and read by nothing, so a hung worker kept its
+run `running` forever and a worker that died before recording its pid left a `pending` run no
+command could clear. A heartbeat is only half a mechanism; the sweep that acts on it is the other
+half, and it must run on every surface's read path (CLI, TUI, MCP, web), guarded on the exact
+`updated_at` it judged so a heartbeat landing mid-sweep wins.
+
+## A derived count must also derive "is it still running"
+
+The parallel-feature slot count read lifecycle only; a failed or stopped run leaves the
+lifecycle in a running phase, so every crash leaked a slot permanently. Derive occupancy from
+the current run's status in the same sub-select the atomic claim uses, and wire the queue drain
+to every event that frees a slot — including failure and stop, not only completion.

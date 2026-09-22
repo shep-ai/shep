@@ -1,4 +1,5 @@
 import type { DependencyContainer } from 'tsyringe';
+import { instanceCachingFactory } from 'tsyringe';
 import { spawn } from 'node:child_process';
 
 import type { IAgentExecutorFactory } from '../../../application/ports/output/agents/agent-executor-factory.interface.js';
@@ -123,17 +124,19 @@ export function registerAgents(container: DependencyContainer): void {
   container.registerSingleton<ISpecArtifactParser>('ISpecArtifactParser', SpecYamlParserService);
 
   // Session repositories (per-AgentType string tokens)
+  // Cached (Claude Code, Cursor, Codex): each repository keeps per-transcript
+  // scan progress, which a fresh instance per resolve would discard (spec 116).
   container.register(`IAgentSessionRepository:${AgentType.ClaudeCode}`, {
-    useFactory: () => new ClaudeCodeSessionRepository(),
+    useFactory: instanceCachingFactory(() => new ClaudeCodeSessionRepository()),
   });
   container.register(`IAgentSessionRepository:${AgentType.Cursor}`, {
-    useFactory: () => new CursorSessionRepository(),
+    useFactory: instanceCachingFactory(() => new CursorSessionRepository()),
   });
   container.register(`IAgentSessionRepository:${AgentType.GeminiCli}`, {
     useFactory: () => new StubSessionRepository(AgentType.GeminiCli),
   });
   container.register(`IAgentSessionRepository:${AgentType.CodexCli}`, {
-    useFactory: () => new CodexCliSessionRepository(),
+    useFactory: instanceCachingFactory(() => new CodexCliSessionRepository()),
   });
   container.register(`IAgentSessionRepository:${AgentType.CopilotCli}`, {
     useFactory: () => new StubSessionRepository(AgentType.CopilotCli),

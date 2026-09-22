@@ -47,6 +47,23 @@ const ENOENT_CODE = 'ENOENT';
  */
 export const DEFAULT_MAX_STDERR_CHARS = 256 * 1024;
 
+/**
+ * Characters of a tool call's input written to the worker log.
+ *
+ * The log line exists to show WHICH tool ran and on what; a Write or Edit call
+ * carries the whole file body, so logging it verbatim grew worker logs by
+ * megabytes per run with content already in the worktree.
+ */
+export const MAX_TOOL_INPUT_LOG_CHARS = 2000;
+
+/** Serialise a tool call's input for the worker log, capped at {@link MAX_TOOL_INPUT_LOG_CHARS}. */
+export function toolInputLogPreview(input: unknown): string {
+  const json = typeof input === 'string' ? input : JSON.stringify(input ?? {});
+  if (json.length <= MAX_TOOL_INPUT_LOG_CHARS) return json;
+  const omitted = json.length - MAX_TOOL_INPUT_LOG_CHARS;
+  return `${json.slice(0, MAX_TOOL_INPUT_LOG_CHARS)}… (${omitted} more chars)`;
+}
+
 /** Grace period before escalating a terminated process from SIGTERM to SIGKILL. */
 export const SIGKILL_GRACE_MS = 5_000;
 
@@ -334,9 +351,40 @@ export function signalTerminationMessage(
 ): string {
   const cause = signal ? `signal ${signal}` : 'an unknown signal';
   const detail = stderrText.trim();
-  return `Agent process was terminated by ${cause} before producing a result.${
+  return `${SIGNAL_TERMINATION_MESSAGE_PREFIX} ${cause} before producing a result.${
     detail ? ` ${detail}` : ''
   }`;
+}
+
+/**
+ * Prefix of every {@link signalTerminationMessage}.
+ *
+ * Retry classification matches on it: a signal kill is the OOM killer, a
+ * container stop or a user's Stop, and re-running the turn helps none of them.
+ */
+export const SIGNAL_TERMINATION_MESSAGE_PREFIX = 'Agent process was terminated by';
+
+/**
+ * Clause ending every "the turn ended without its terminal event" message.
+ *
+ * Retry classification matches on it: a cut stream is worth one re-run, since
+ * the usual cause (a dropped pipe, an over-long line) does not repeat.
+ */
+export const TURN_CUT_SHORT_CLAUSE = 'the turn was cut short before it finished';
+
+/**
+ * Describe an agent CLI that exited cleanly without the event that ends a turn
+ * (Claude/Copilot `result`, Codex `turn.completed`).
+ *
+ * Every CLI ends a turn with such an event — also when it gives up — so a
+ * clean exit without one means stdout was cut short, and whatever text had
+ * arrived is a fragment, not an answer.
+ *
+ * @param agentName - Human name of the agent CLI, e.g. "Codex CLI"
+ * @param terminalEvent - The event type the CLI ends a turn with
+ */
+export function missingTerminalEventMessage(agentName: string, terminalEvent: string): string {
+  return `${agentName} exited without a ${terminalEvent} event — ${TURN_CUT_SHORT_CLAUSE}`;
 }
 
 /**
@@ -358,4 +406,182 @@ const MS_PER_SECOND = 1000;
  */
 export function agentTimeoutMessage(timeoutMs: number): string {
   return `${AGENT_TIMEOUT_MESSAGE_PREFIX} after ${timeoutMs / MS_PER_SECOND}s`;
+}
+
+/**
+ * Describe a run that went silent for its whole idle budget.
+ *
+ * Shares {@link AGENT_TIMEOUT_MESSAGE_PREFIX} so every timeout — total or
+ * idle — is recognised (and not retried) by the same check.
+ */
+export function agentIdleTimeoutMessage(idleTimeoutMs: number): string {
+  return `${AGENT_TIMEOUT_MESSAGE_PREFIX}: no output for ${idleTimeoutMs / MS_PER_SECOND}s`;
+}
+
+/**
+ * True when `error` is an agent timeout — total or idle, from any executor,
+ * including an AI SDK executor that prefixes its provider name.
+ */
+export function isAgentTimeoutError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return message.includes(AGENT_TIMEOUT_MESSAGE_PREFIX);
+}
+
+/**
+ * Error every executor reports for a run its caller aborted
+ * (`AgentExecutionOptions.abortSignal`). Retry classification treats it as
+ * final: the caller asked the agent to stop, so re-running it would defy that.
+ */
+export const AGENT_ABORTED_MESSAGE = 'Agent execution aborted by its caller';
+
+/**
+ * How long an aborted run waits for its process to close before giving up on
+ * it: the SIGTERM grace, the SIGKILL, and as long again for the OS to reap it.
+ * Only a process stuck in uninterruptible I/O is still open by then.
+ */
+const ABORT_REAP_BACKSTOP_MS = 2 * SIGKILL_GRACE_MS;
+
+/** A live subscription to an abort signal, from {@link watchAbortSignal}. */
+export interface AbortWatch {
+  /** True once the signal fired and the agent was told to terminate. */
+  readonly aborted: boolean;
+  /** Stop listening and cancel any pending escalation. Idempotent. */
+  stop(): void;
+}
+
+/** What an executor does when its caller aborts. */
+export interface AbortHandlers {
+  /** Runs once the termination was issued (log it; a stream may report it). */
+  onAbort?: () => void;
+  /**
+   * Runs if the process has still not closed {@link ABORT_REAP_BACKSTOP_MS}
+   * after the abort, so a caller never waits forever on an unreapable process.
+   */
+  onUnreaped?: () => void;
+}
+
+/**
+ * Terminate `proc` — tree kill, SIGKILL escalation — when `signal` aborts,
+ * including a signal that was already aborted before the call.
+ *
+ * The one implementation of `AgentExecutionOptions.abortSignal` for every
+ * subprocess executor. It deliberately does not settle the run: `execute()`
+ * rejects with {@link AGENT_ABORTED_MESSAGE} from its `close` handler, so a
+ * caller awaiting it has awaited the agent's teardown, not just the request
+ * for it. The watch disarms itself (and cancels the escalation, whose pid may
+ * be reused) when the process closes or fails to spawn.
+ */
+export function watchAbortSignal(
+  proc: ChildProcess,
+  signal: AbortSignal | undefined,
+  handlers: AbortHandlers = {},
+  killOptions?: KillOptions
+): AbortWatch {
+  let aborted = false;
+  let stopped = false;
+  let cancelEscalation: (() => void) | undefined;
+  let backstop: ReturnType<typeof setTimeout> | undefined;
+
+  const stop = (): void => {
+    if (stopped) return;
+    stopped = true;
+    signal?.removeEventListener('abort', onAbortSignal);
+    if (backstop) clearTimeout(backstop);
+    cancelEscalation?.();
+  };
+
+  function onAbortSignal(): void {
+    if (stopped || aborted) return;
+    aborted = true;
+    cancelEscalation = terminateWithEscalation(proc, killOptions);
+    handlers.onAbort?.();
+    backstop = setTimeout(() => handlers.onUnreaped?.(), ABORT_REAP_BACKSTOP_MS);
+    backstop.unref?.();
+  }
+
+  if (signal) {
+    proc.once('close', stop);
+    proc.once('error', stop);
+    if (signal.aborted) onAbortSignal();
+    else signal.addEventListener('abort', onAbortSignal, { once: true });
+  }
+
+  return {
+    get aborted() {
+      return aborted;
+    },
+    stop,
+  };
+}
+
+/** A timer that fires only after a stretch with no activity. */
+export interface IdleWatchdog {
+  /** Record activity (any stdout/stderr chunk), restarting the idle budget. */
+  touch(): void;
+  /** Disarm for good. Idempotent. */
+  stop(): void;
+}
+
+/**
+ * Call `onIdle` once, when `idleTimeoutMs` pass without a {@link IdleWatchdog.touch}.
+ *
+ * With no budget (`undefined`/0) the watchdog is inert, so an executor can
+ * wire it unconditionally and let the caller opt in. The timer is `unref`'d:
+ * the guard must never keep a worker alive on its own.
+ */
+export function createIdleWatchdog(
+  idleTimeoutMs: number | undefined,
+  onIdle: () => void
+): IdleWatchdog {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  let stopped = !idleTimeoutMs;
+
+  const arm = (): void => {
+    if (stopped) return;
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(() => {
+      stopped = true;
+      onIdle();
+    }, idleTimeoutMs);
+    timer.unref?.();
+  };
+
+  arm();
+  return {
+    touch: arm,
+    stop(): void {
+      stopped = true;
+      if (timer) clearTimeout(timer);
+    },
+  };
+}
+
+/**
+ * Arm the opt-in no-output guard on a spawned agent.
+ *
+ * Every stdout or stderr chunk restarts the budget, and the guard disarms
+ * itself when the process closes or fails to spawn, so an executor only has to
+ * say what "idle" does to its run. `onIdle` receives the
+ * {@link agentIdleTimeoutMessage} to report; it should return without acting
+ * once the CLI's terminal event has arrived — output after it is teardown,
+ * which the executor's own shutdown handling already bounds.
+ *
+ * @param idleTimeoutMs - `AgentExecutionOptions.idleTimeout`; unset disables it
+ */
+export function watchProcessIdle(
+  proc: Pick<ChildProcess, 'stdout' | 'stderr' | 'once'>,
+  idleTimeoutMs: number | undefined,
+  onIdle: (message: string) => void
+): IdleWatchdog {
+  if (!idleTimeoutMs) return createIdleWatchdog(undefined, () => undefined);
+
+  const watchdog = createIdleWatchdog(idleTimeoutMs, () =>
+    onIdle(agentIdleTimeoutMessage(idleTimeoutMs))
+  );
+  const touch = (): void => watchdog.touch();
+  proc.stdout?.on('data', touch);
+  proc.stderr?.on('data', touch);
+  proc.once('close', () => watchdog.stop());
+  proc.once('error', () => watchdog.stop());
+  return watchdog;
 }

@@ -19,6 +19,7 @@ import type {
   AgentExecutionStreamEvent,
 } from '@/application/ports/output/agents/agent-executor.interface.js';
 import type { EventChannel } from './event-channel.js';
+import { TURN_CUT_SHORT_CLAUSE } from '../common/executors/process-stream.js';
 
 /**
  * The proxy exists specifically to surface streaming events to a channel,
@@ -32,8 +33,7 @@ function withStreamProgress(options?: AgentExecutionOptions): AgentExecutionOpti
 }
 
 /** Reported when an agent stream ended without the event that carries its answer. */
-const NO_RESULT_EVENT_MESSAGE =
-  'Agent stream ended without a result event — the run was cut short before it finished';
+const NO_RESULT_EVENT_MESSAGE = `Agent stream ended without a result event — ${TURN_CUT_SHORT_CLAUSE}`;
 
 export class StreamingExecutorProxy implements IAgentExecutor {
   get agentType(): AgentType {

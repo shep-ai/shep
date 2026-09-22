@@ -16,8 +16,11 @@
  */
 
 import 'reflect-metadata';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { CheckAndUnblockFeaturesUseCase } from '@/application/use-cases/features/check-and-unblock-features.use-case.js';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import {
+  CheckAndUnblockFeaturesUseCase,
+  REBASE_TIMEOUT_MS,
+} from '@/application/use-cases/features/check-and-unblock-features.use-case.js';
 import type { SyncFeatureBranchUseCase } from '@/application/use-cases/features/sync-feature-branch.use-case.js';
 import type { IFeatureRepository } from '@/application/ports/output/repositories/feature-repository.interface.js';
 import type { IFeatureAgentProcessService } from '@/application/ports/output/agents/feature-agent-process.interface.js';
@@ -325,6 +328,64 @@ describe('CheckAndUnblockFeaturesUseCase — Auto-Sync', () => {
       AgentRunStatus.failed,
       expect.objectContaining({ error: expect.stringContaining('Unexpected git failure') })
     );
+  });
+
+  // -------------------------------------------------------------------------
+  // Timeout — the sync is not cancellable, so the agent must wait for it
+  // -------------------------------------------------------------------------
+
+  describe('when the sync outlives its timeout', () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    // Promise.race only stopped WAITING for the sync; git kept running in the
+    // worktree, and the child agent was spawned into it mid-rebase.
+    it('reports the timeout but does not spawn into the worktree until git has finished', async () => {
+      const parent = makeFeature({ id: parentId, branch: 'feat/parent' });
+      const child = makeFeature({ id: 'child-001', lifecycle: SdlcLifecycle.Blocked });
+      vi.mocked(mockFeatureRepo.findById).mockResolvedValue(parent);
+      vi.mocked(mockFeatureRepo.findByParentId).mockResolvedValue([child]);
+      let finishSync!: () => void;
+      vi.mocked(mockSyncFeatureBranch.execute).mockReturnValue(
+        new Promise((resolve) => {
+          finishSync = () => resolve({} as never);
+        })
+      );
+
+      const done = useCase.execute(parentId);
+      await vi.advanceTimersByTimeAsync(REBASE_TIMEOUT_MS + 1);
+
+      expect(mockPhaseTimingRepo.update).toHaveBeenCalledWith(
+        expect.any(String),
+        expect.objectContaining({
+          exitCode: 'error',
+          errorMessage: expect.stringMatching(/timeout/i),
+        })
+      );
+      expect(mockAgentProcess.spawn).not.toHaveBeenCalled();
+
+      finishSync();
+      await done;
+
+      expect(mockAgentProcess.spawn).toHaveBeenCalledOnce();
+    });
+
+    it('leaves no timer behind when the sync finishes in time', async () => {
+      const parent = makeFeature({ id: parentId, branch: 'feat/parent' });
+      const child = makeFeature({ id: 'child-001', lifecycle: SdlcLifecycle.Blocked });
+      vi.mocked(mockFeatureRepo.findById).mockResolvedValue(parent);
+      vi.mocked(mockFeatureRepo.findByParentId).mockResolvedValue([child]);
+
+      await useCase.execute(parentId);
+
+      // A leftover 5-minute timer kept a short-lived CLI process alive.
+      expect(vi.getTimerCount()).toBe(0);
+    });
   });
 
   // -------------------------------------------------------------------------

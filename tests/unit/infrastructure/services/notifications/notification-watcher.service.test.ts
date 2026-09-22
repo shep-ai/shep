@@ -581,6 +581,14 @@ describe('NotificationWatcherService', () => {
   });
 
   describe('feature lifecycle detection (merge review ready)', () => {
+    /** Features are only watched while an agent run references them. */
+    function watch(feature: Feature): void {
+      vi.mocked(runRepo.list).mockResolvedValue([
+        createMockAgentRun({ id: 'run-1', featureId: feature.id, status: AgentRunStatus.running }),
+      ]);
+      vi.mocked(featureRepo.findById).mockResolvedValue(feature);
+    }
+
     it('should emit MergeReviewReady when feature transitions to Review', async () => {
       await bootstrapWithEmptyRuns();
 
@@ -591,7 +599,7 @@ describe('NotificationWatcherService', () => {
       });
 
       // Poll 2: feature is in Implementation — seed it
-      vi.mocked(featureRepo.list).mockResolvedValueOnce([feature]);
+      watch(feature);
       await vi.advanceTimersByTimeAsync(3000);
       notificationService.receivedEvents.length = 0;
       vi.mocked(notificationService.notify).mockClear();
@@ -603,7 +611,7 @@ describe('NotificationWatcherService', () => {
         lifecycle: SdlcLifecycle.Review,
         pr: { url: 'https://github.com/org/repo/pull/42', number: 42, status: 'open' as any },
       });
-      vi.mocked(featureRepo.list).mockResolvedValueOnce([reviewFeature]);
+      watch(reviewFeature);
       await vi.advanceTimersByTimeAsync(3000);
 
       const reviewEvents = notificationService.receivedEvents.filter(
@@ -624,7 +632,7 @@ describe('NotificationWatcherService', () => {
         lifecycle: SdlcLifecycle.Implementation,
       });
 
-      vi.mocked(featureRepo.list).mockResolvedValueOnce([feature]);
+      watch(feature);
       await vi.advanceTimersByTimeAsync(3000);
       notificationService.receivedEvents.length = 0;
       vi.mocked(notificationService.notify).mockClear();
@@ -634,7 +642,7 @@ describe('NotificationWatcherService', () => {
         lifecycle: SdlcLifecycle.Review,
         pr: { url: 'https://github.com/org/repo/pull/99', number: 99, status: 'open' as any },
       });
-      vi.mocked(featureRepo.list).mockResolvedValueOnce([reviewFeature]);
+      watch(reviewFeature);
       await vi.advanceTimersByTimeAsync(3000);
 
       const reviewEvents = notificationService.receivedEvents.filter(
@@ -653,7 +661,7 @@ describe('NotificationWatcherService', () => {
         lifecycle: SdlcLifecycle.Implementation,
       });
 
-      vi.mocked(featureRepo.list).mockResolvedValueOnce([feature]);
+      watch(feature);
       await vi.advanceTimersByTimeAsync(3000);
       notificationService.receivedEvents.length = 0;
       vi.mocked(notificationService.notify).mockClear();
@@ -662,7 +670,7 @@ describe('NotificationWatcherService', () => {
         id: 'feat-1',
         lifecycle: SdlcLifecycle.Review,
       });
-      vi.mocked(featureRepo.list).mockResolvedValueOnce([reviewFeature]);
+      watch(reviewFeature);
       await vi.advanceTimersByTimeAsync(3000);
 
       const reviewEvents = notificationService.receivedEvents.filter(
@@ -677,9 +685,8 @@ describe('NotificationWatcherService', () => {
         lifecycle: SdlcLifecycle.Review,
       });
 
-      vi.mocked(runRepo.list).mockResolvedValue([]);
       vi.mocked(phaseRepo.findByRunId).mockResolvedValue([]);
-      vi.mocked(featureRepo.list).mockResolvedValue([feature]);
+      watch(feature);
 
       watcher.start();
       await vi.advanceTimersByTimeAsync(0); // bootstrap poll
@@ -695,7 +702,7 @@ describe('NotificationWatcherService', () => {
         lifecycle: SdlcLifecycle.Implementation,
       });
 
-      vi.mocked(featureRepo.list).mockResolvedValueOnce([feature]);
+      watch(feature);
       await vi.advanceTimersByTimeAsync(3000);
       notificationService.receivedEvents.length = 0;
       vi.mocked(notificationService.notify).mockClear();
@@ -705,7 +712,7 @@ describe('NotificationWatcherService', () => {
         id: 'feat-1',
         lifecycle: SdlcLifecycle.Review,
       });
-      vi.mocked(featureRepo.list).mockResolvedValue([reviewFeature]);
+      watch(reviewFeature);
       await vi.advanceTimersByTimeAsync(3000); // emits MergeReviewReady
       expect(notificationService.receivedEvents).toHaveLength(1);
 
@@ -725,7 +732,7 @@ describe('NotificationWatcherService', () => {
         lifecycle: SdlcLifecycle.Started,
       });
 
-      vi.mocked(featureRepo.list).mockResolvedValueOnce([feature]);
+      watch(feature);
       await vi.advanceTimersByTimeAsync(3000);
       notificationService.receivedEvents.length = 0;
       vi.mocked(notificationService.notify).mockClear();
@@ -735,13 +742,133 @@ describe('NotificationWatcherService', () => {
         id: 'feat-1',
         lifecycle: SdlcLifecycle.Implementation,
       });
-      vi.mocked(featureRepo.list).mockResolvedValueOnce([implFeature]);
+      watch(implFeature);
       await vi.advanceTimersByTimeAsync(3000);
 
       const reviewEvents = notificationService.receivedEvents.filter(
         (e) => e.eventType === NotificationEventType.MergeReviewReady
       );
       expect(reviewEvents).toHaveLength(0);
+    });
+  });
+
+  describe('poll hygiene', () => {
+    const POLL_INTERVAL_MS = 3000;
+
+    it('never runs two polls at once, so a slow poll cannot emit a status twice', async () => {
+      await bootstrapWithEmptyRuns();
+      const run = createMockAgentRun({ id: 'run-slow', status: AgentRunStatus.running });
+      vi.mocked(runRepo.list).mockResolvedValue([run]);
+
+      // The feature lookup for the newly seen run outlasts two poll intervals.
+      let releaseLookup!: () => void;
+      const lookupGate = new Promise<void>((resolve) => {
+        releaseLookup = resolve;
+      });
+      vi.mocked(featureRepo.findById).mockImplementation(async () => {
+        await lookupGate;
+        return createMockFeature();
+      });
+
+      await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS); // poll 2 starts, blocks on lookup
+      await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS); // poll 3 would overlap
+      releaseLookup();
+      await vi.advanceTimersByTimeAsync(0);
+
+      const started = notificationService.receivedEvents.filter(
+        (e) => e.eventType === NotificationEventType.AgentStarted
+      );
+      expect(started).toHaveLength(1);
+    });
+
+    it('asks the repository only for runs that can still change', async () => {
+      watcher.start();
+      await vi.advanceTimersByTimeAsync(0);
+
+      expect(runRepo.list).toHaveBeenCalledWith({
+        statuses: expect.arrayContaining([
+          AgentRunStatus.pending,
+          AgentRunStatus.running,
+          AgentRunStatus.waitingApproval,
+        ]),
+      });
+      const { statuses } = vi.mocked(runRepo.list).mock.calls[0][0]!;
+      expect(statuses).not.toContain(AgentRunStatus.completed);
+    });
+
+    it('still reports the terminal transition of a tracked run that left the active set', async () => {
+      await bootstrapWithEmptyRuns();
+      const running = createMockAgentRun({ id: 'run-t', status: AgentRunStatus.running });
+      vi.mocked(runRepo.list).mockResolvedValue([running]);
+      await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS);
+
+      // The run is no longer active, so a status-filtered list omits it.
+      vi.mocked(runRepo.list).mockResolvedValue([]);
+      vi.mocked(runRepo.findByIds).mockResolvedValue([
+        { ...running, status: AgentRunStatus.completed },
+      ]);
+      await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS);
+
+      expect(runRepo.findByIds).toHaveBeenCalledWith(['run-t']);
+      expect(notificationService.receivedEvents.map((e) => e.eventType)).toContain(
+        NotificationEventType.AgentCompleted
+      );
+    });
+  });
+
+  describe('feature reads are limited to features agent runs reference', () => {
+    const POLL_INTERVAL_MS = 3000;
+
+    it('never lists every feature on a tick', async () => {
+      watcher.start();
+      await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS * 2);
+      expect(featureRepo.list).not.toHaveBeenCalled();
+    });
+
+    it('reads only the features of active or tracked runs', async () => {
+      await bootstrapWithEmptyRuns();
+      vi.mocked(runRepo.list).mockResolvedValue([
+        createMockAgentRun({ id: 'run-a', featureId: 'feat-a', status: AgentRunStatus.running }),
+      ]);
+      vi.mocked(featureRepo.findById).mockClear();
+
+      await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS);
+
+      const ids = vi.mocked(featureRepo.findById).mock.calls.map((c) => c[0]);
+      expect(new Set(ids)).toEqual(new Set(['feat-a']));
+    });
+
+    it('forgets a feature no run references, so a later re-observation is not a transition', async () => {
+      await bootstrapWithEmptyRuns();
+      const implementing = createMockFeature({
+        id: 'feat-z',
+        lifecycle: SdlcLifecycle.Implementation,
+      });
+      vi.mocked(featureRepo.findById).mockResolvedValue(implementing);
+      vi.mocked(runRepo.list).mockResolvedValue([
+        createMockAgentRun({ id: 'run-z1', featureId: 'feat-z', status: AgentRunStatus.running }),
+      ]);
+      await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS);
+
+      // The run goes away (deleted) and the feature is no longer watched.
+      vi.mocked(runRepo.list).mockResolvedValue([]);
+      await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS);
+
+      // Much later a new run starts on a feature that is already in Review.
+      vi.mocked(featureRepo.findById).mockResolvedValue(
+        createMockFeature({ id: 'feat-z', lifecycle: SdlcLifecycle.Review })
+      );
+      vi.mocked(runRepo.list).mockResolvedValue([
+        createMockAgentRun({ id: 'run-z2', featureId: 'feat-z', status: AgentRunStatus.running }),
+      ]);
+      notificationService.receivedEvents.length = 0;
+      await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS);
+
+      expect(
+        notificationService.receivedEvents.filter(
+          (e) => e.eventType === NotificationEventType.MergeReviewReady
+        )
+      ).toHaveLength(0);
     });
   });
 });

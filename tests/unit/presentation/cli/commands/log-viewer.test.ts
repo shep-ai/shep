@@ -5,7 +5,8 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
+import { appendFileSync, mkdtempSync, writeFileSync, rmSync } from 'node:fs';
+import { open } from 'node:fs/promises';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
@@ -19,7 +20,10 @@ vi.mock('../../../../../src/presentation/cli/ui/index.js', () => ({
   },
 }));
 
-import { viewLog } from '../../../../../src/presentation/cli/commands/log-viewer.js';
+import {
+  createLogFollower,
+  viewLog,
+} from '../../../../../src/presentation/cli/commands/log-viewer.js';
 
 describe('viewLog', () => {
   let tmpDir: string;
@@ -116,5 +120,90 @@ describe('viewLog', () => {
     const output = stdoutWriteSpy.mock.calls.map((c: unknown[]) => String(c[0])).join('');
     expect(output).toContain('log entry 1999');
     expect(output).not.toContain('log entry 0:');
+  });
+});
+
+/**
+ * Spec 116 — follow mode read raw chunks and decoded each one on its own, so
+ * a multi-byte character split across two reads printed as U+FFFD twice.
+ * The split must land inside a real Buffer, not a JS string (see LESSONS.md).
+ */
+describe('createLogFollower', () => {
+  let tmpDir: string;
+
+  beforeEach(() => {
+    tmpDir = mkdtempSync(join(tmpdir(), 'log-follow-test-'));
+  });
+
+  afterEach(() => {
+    rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  it('keeps a 4-byte emoji intact when a write splits it across two reads', async () => {
+    const logPath = join(tmpDir, 'follow.log');
+    writeFileSync(logPath, '');
+    const text = 'héllo — 日本語 🚀 done\n';
+    const payload = Buffer.from(text, 'utf8');
+    const split = payload.indexOf(Buffer.from('🚀', 'utf8')) + 2;
+
+    const handle = await open(logPath, 'r');
+    const output: string[] = [];
+    const readNew = createLogFollower(logPath, handle, 0, (chunk) => output.push(chunk));
+
+    appendFileSync(logPath, payload.subarray(0, split));
+    await readNew();
+    appendFileSync(logPath, payload.subarray(split));
+    await readNew();
+    await handle.close();
+
+    expect(output.join('')).toBe(text);
+  });
+
+  it('prints each appended byte once when two reads overlap', async () => {
+    const logPath = join(tmpDir, 'overlap.log');
+    writeFileSync(logPath, '');
+    const handle = await open(logPath, 'r');
+    const output: string[] = [];
+    const readNew = createLogFollower(logPath, handle, 0, (chunk) => output.push(chunk));
+
+    appendFileSync(logPath, 'one line\n');
+    // fs.watch and the fallback poll can fire together.
+    await Promise.all([readNew(), readNew()]);
+    await handle.close();
+
+    expect(output.join('')).toBe('one line\n');
+  });
+});
+
+describe('viewLog tail of a large file', () => {
+  let tmpDir: string;
+  let stdoutWriteSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    tmpDir = mkdtempSync(join(tmpdir(), 'log-tail-test-'));
+    stdoutWriteSpy = vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+  });
+
+  afterEach(() => {
+    rmSync(tmpDir, { recursive: true, force: true });
+    stdoutWriteSpy.mockRestore();
+  });
+
+  it('does not corrupt a multi-byte character on a backwards read boundary', async () => {
+    /** Mirrors the backwards read chunk in log-viewer.ts#readTailLines. */
+    const TAIL_CHUNK_BYTES = 8192;
+    const lastLine = `${'x'.repeat(10)}🚀${'y'.repeat(TAIL_CHUNK_BYTES - 2)}`;
+    // Put the chunk boundary (size - 8192) two bytes into the emoji.
+    const emojiStart = Buffer.byteLength(`${'x'.repeat(10)}`);
+    const tailBytes = Buffer.byteLength(lastLine) - emojiStart - 2;
+    expect(tailBytes).toBe(TAIL_CHUNK_BYTES);
+    const logPath = join(tmpDir, 'big.log');
+    writeFileSync(logPath, `${'filler line\n'.repeat(8000)}${lastLine}`);
+
+    await viewLog({ logPath, lines: 1, label: 'test run' });
+
+    const output = stdoutWriteSpy.mock.calls.map((c: unknown[]) => String(c[0])).join('');
+    expect(output).not.toContain('�');
+    expect(output).toContain('🚀');
   });
 });

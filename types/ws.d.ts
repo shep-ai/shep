@@ -21,6 +21,7 @@ declare module 'ws' {
     on(event: 'close', listener: () => void): this;
     on(event: 'error', listener: (err: Error) => void): this;
     on(event: 'message', listener: (data: RawData) => void): this;
+    on(event: 'pong', listener: () => void): this;
     once(event: 'open', listener: () => void): this;
     once(event: 'close', listener: () => void): this;
     once(event: 'error', listener: (err: Error) => void): this;
@@ -30,6 +31,7 @@ declare module 'ws' {
     off(event: 'message', listener: (data: RawData) => void): this;
     off(event: string, listener: (...args: unknown[]) => void): this;
     ping(): void;
+    terminate(): void;
     [key: string]: unknown;
   }
 

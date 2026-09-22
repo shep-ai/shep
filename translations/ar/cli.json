@@ -389,7 +389,8 @@
         "agentResumed": "تم استئناف وكيل الميزة",
         "featureLabel": "الميزة:",
         "runIdLabel": "معرّف التشغيل:",
-        "failedToResume": "فشل استئناف الميزة"
+        "failedToResume": "فشل استئناف الميزة",
+        "forceOption": "استئناف حتى عند بلوغ حد الميزات المتوازية"
       },
       "review": {
         "description": "مراجعة تفاعلية لميزة في انتظار الموافقة",
@@ -1104,6 +1105,9 @@
       "noLogFile": "لم يتم العثور على ملف سجل لـ {{label}}",
       "expectedAt": "المتوقع: {{path}}",
       "logEmpty": "ملف السجل فارغ لـ {{label}}"
+    },
+    "agentGuard": {
+      "forceOption": "التشغيل حتى داخل تشغيل وكيل Shep، رغم أن ذلك سيوقف الوكيل الذي يشغّله"
     }
   },
   "bootstrap": {

@@ -142,10 +142,40 @@ describe('recordRunFailure', () => {
       runRepository,
       featureRepository,
       recordLifecycleEvent: vi.fn().mockResolvedValue(undefined),
+      drainCapacityQueue: vi.fn().mockResolvedValue(undefined),
       log: vi.fn(),
     };
   }
   const input = { runId: RUN_ID, featureId: 'feat-ws', message: 'boom', failedAt: new Date() };
+
+  // A failed run releases its parallel-feature slot even though the lifecycle
+  // is reset to Started, so the failure is one of the events that must drain
+  // the capacity queue — otherwise a queued feature waits for an unrelated
+  // transition that may never come.
+  it('drains the capacity queue once the failure has freed the slot', async () => {
+    const deps = makeDeps();
+
+    await recordRunFailure(deps, input);
+
+    expect(deps.drainCapacityQueue).toHaveBeenCalledOnce();
+  });
+
+  it('does not drain when the run was already stopped by someone else', async () => {
+    const deps = makeDeps(AgentRunStatus.interrupted);
+
+    await recordRunFailure(deps, input);
+
+    expect(deps.drainCapacityQueue).not.toHaveBeenCalled();
+  });
+
+  it('logs a drain failure instead of throwing', async () => {
+    const deps = makeDeps();
+    deps.drainCapacityQueue.mockRejectedValueOnce(new Error('SQLITE_BUSY'));
+
+    await expect(recordRunFailure(deps, input)).resolves.toBeUndefined();
+
+    expect(deps.log).toHaveBeenCalledWith(expect.stringContaining('SQLITE_BUSY'));
+  });
 
   it('marks the run failed, resets the lifecycle and records run:failed', async () => {
     const deps = makeDeps();

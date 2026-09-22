@@ -149,6 +149,8 @@ export function useAgentEvents(options?: UseAgentEventsOptions): UseAgentEventsR
     } else if (msg.type === 'status') {
       setConnectionStatus(msg.status as ConnectionStatus);
     }
+    // A relayed `heartbeat` carries nothing to apply: its arrival alone is
+    // what the effect's silence watchdog needs.
   }, []);
 
   useEffect(() => {
@@ -175,26 +177,51 @@ export function useAgentEvents(options?: UseAgentEventsOptions): UseAgentEventsR
 
     let cancelled = false;
     const fallbackCleanupRef = { current: undefined as (() => void) | undefined };
+    let silenceTimer: ReturnType<typeof setTimeout> | null = null;
+
+    function clearSilenceWatchdog() {
+      if (silenceTimer !== null) {
+        clearTimeout(silenceTimer);
+        silenceTimer = null;
+      }
+    }
+
+    // The browser may terminate an idle worker, and its subscriber list dies
+    // with it: the page would then wait forever. The worker relays the
+    // server's heartbeat, so a silent window means "subscribe again" — which
+    // also restarts a terminated worker. Subscribing is idempotent per tab.
+    function armSilenceWatchdog() {
+      clearSilenceWatchdog();
+      if (cancelled) return;
+      silenceTimer = setTimeout(() => {
+        silenceTimer = null;
+        const worker = navigator.serviceWorker.controller ?? swRef.current;
+        if (!worker) return;
+        log.warn('Service worker silent past the heartbeat window, re-subscribing...');
+        subscribeToWorker(worker);
+      }, HEARTBEAT_TIMEOUT_MS);
+    }
 
     function subscribeToWorker(worker: ServiceWorker) {
       if (cancelled) return;
       swRef.current = worker;
       worker.postMessage({ type: 'subscribe', runId });
       setConnectionStatus('connecting');
+      armSilenceWatchdog();
     }
 
     // Listen for messages from whatever SW controls this page
-    navigator.serviceWorker.addEventListener('message', onMessage);
+    function handleWorkerMessage(event: MessageEvent) {
+      if (swRef.current) armSilenceWatchdog();
+      onMessage(event);
+    }
+    navigator.serviceWorker.addEventListener('message', handleWorkerMessage);
 
     // Re-subscribe when SW controller changes (e.g., after SW update via skipWaiting)
     function handleControllerChange() {
       if (cancelled) return;
       const newController = navigator.serviceWorker.controller;
-      if (newController) {
-        swRef.current = newController;
-        newController.postMessage({ type: 'subscribe', runId });
-        setConnectionStatus('connecting');
-      }
+      if (newController) subscribeToWorker(newController);
     }
     navigator.serviceWorker.addEventListener('controllerchange', handleControllerChange);
 
@@ -252,7 +279,8 @@ export function useAgentEvents(options?: UseAgentEventsOptions): UseAgentEventsR
 
     return () => {
       cancelled = true;
-      navigator.serviceWorker.removeEventListener('message', onMessage);
+      clearSilenceWatchdog();
+      navigator.serviceWorker.removeEventListener('message', handleWorkerMessage);
       navigator.serviceWorker.removeEventListener('controllerchange', handleControllerChange);
       swRef.current?.postMessage({ type: 'unsubscribe' });
       swRef.current = null;

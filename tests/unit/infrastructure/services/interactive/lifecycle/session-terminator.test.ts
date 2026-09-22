@@ -43,6 +43,8 @@ function makePersistence(): SessionPersistence {
     updateTurnStatusAndNotify: vi.fn().mockResolvedValue(undefined),
     persistMessage: vi.fn().mockResolvedValue(undefined),
     flushAssistantBuffer: vi.fn().mockResolvedValue(undefined),
+    stopOrphanedSession: vi.fn().mockResolvedValue(false),
+    stopOrphanedSessionForFeature: vi.fn().mockResolvedValue(false),
   } as unknown as SessionPersistence;
 }
 
@@ -220,6 +222,60 @@ describe('SessionTerminator', () => {
         InteractiveSessionStatus.stopped,
         expect.any(Date)
       );
+    });
+  });
+
+  // ---------------------------------------------------------------------------
+  // sessions this process does not hold (server restart / hot reload)
+  // ---------------------------------------------------------------------------
+
+  describe('orphaned persisted sessions', () => {
+    it('stop() marks a persisted session stopped when it is not in the registry', async () => {
+      vi.mocked(persistence.stopOrphanedSession).mockResolvedValue(true);
+
+      await terminator.stop('sess-orphan');
+
+      expect(persistence.stopOrphanedSession).toHaveBeenCalledWith('sess-orphan');
+      expect(logger.info).toHaveBeenCalledWith(
+        expect.stringContaining('sess-orphan'),
+        expect.anything()
+      );
+    });
+
+    it("stopByFeature() marks the feature's persisted session stopped when none is live here", async () => {
+      vi.mocked(persistence.stopOrphanedSessionForFeature).mockResolvedValue(true);
+
+      await terminator.stopByFeature('feat-orphan');
+
+      expect(persistence.stopOrphanedSessionForFeature).toHaveBeenCalledWith('feat-orphan');
+      expect(logger.info).toHaveBeenCalled();
+    });
+
+    it('does not touch persisted rows for a session this process holds', async () => {
+      registry.set('sess-1', makeState());
+      await terminator.stop('sess-1');
+      expect(persistence.stopOrphanedSession).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('pending AskUserQuestion interaction', () => {
+    it('settles the pending interaction promise on stop so it does not leak', async () => {
+      let settled: Record<string, string> | undefined;
+      let state!: SessionState;
+      const pending = new Promise<Record<string, string>>((resolve) => {
+        state = makeState({
+          pendingInteraction: { questions: [] } as never,
+          pendingInteractionResolver: resolve,
+        });
+      }).then((answers) => (settled = answers));
+      registry.set('sess-1', state);
+
+      await terminator.stop('sess-1');
+      await pending;
+
+      expect(settled).toEqual({});
+      expect(state.pendingInteraction).toBeNull();
+      expect(state.pendingInteractionResolver).toBeNull();
     });
   });
 });

@@ -22,6 +22,7 @@ import type {
 import type { IAgentMessageRepository } from '@/application/ports/output/repositories/agent-message-repository.interface.js';
 import { PeerAddressingForbiddenError } from '@/domain/errors/peer-addressing-forbidden.error.js';
 import type { AgentMessage } from '@/domain/generated/output.js';
+import { createdAtMillis, retainDeliveredAtCursor } from '@/domain/shared/delivery-cursor.js';
 
 /** Default poll cadence — matches StreamAgentEventsUseCase (2s). */
 const DEFAULT_POLL_INTERVAL_MS = 2_000;
@@ -32,15 +33,12 @@ interface Subscription {
   handler: AgentMessageHandler;
   /** High-water mark — only deliver messages with `created_at >` this id's createdAt. */
   lastSeenAt: number;
-  /** Messages already delivered to this subscription (avoid double-fire on retry). */
+  /**
+   * Ids delivered AT `lastSeenAt` — the `since` read is inclusive, so those
+   * come back on the next poll. Trimmed after every poll (spec 116): older
+   * ids can never be returned again, and keeping them grew without bound.
+   */
   delivered: Set<string>;
-}
-
-function toMillis(value: AgentMessage['createdAt']): number {
-  if (value instanceof Date) return value.getTime();
-  if (typeof value === 'number') return value;
-  if (typeof value === 'string') return new Date(value).getTime();
-  return 0;
 }
 
 function matchesAgentRun(filter: AgentMessageBusFilter, message: AgentMessage): boolean {
@@ -146,7 +144,7 @@ export class SQLiteAgentMessageBus implements IAgentMessageBus {
           if (!matchesAgentRun(sub.filter, row)) continue;
 
           sub.delivered.add(row.id);
-          const createdMs = toMillis(row.createdAt);
+          const createdMs = createdAtMillis(row.createdAt);
           if (createdMs > sub.lastSeenAt) sub.lastSeenAt = createdMs;
 
           try {
@@ -164,6 +162,7 @@ export class SQLiteAgentMessageBus implements IAgentMessageBus {
             }
           }
         }
+        retainDeliveredAtCursor(sub.delivered, rows, sub.lastSeenAt);
       }
     } finally {
       this.polling = false;

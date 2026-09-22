@@ -44,7 +44,9 @@ describe('computeMessageDeltas', () => {
 
     expect(events).toHaveLength(2);
     expect(events.map((e) => e.kind)).toEqual(['agent_message', 'agent_message']);
-    expect(cache.deliveredIds.has('a')).toBe(true);
+    // Only the ids AT the cursor are kept: `a` is older than the cursor, so a
+    // `created_at >= cursor` read can never return it again (spec 116).
+    expect(cache.deliveredIds.has('a')).toBe(false);
     expect(cache.deliveredIds.has('b')).toBe(true);
     expect(cache.lastSeenAt).toBe(new Date('2026-04-01T10:00:01Z').getTime());
   });
@@ -111,5 +113,37 @@ describe('computeMessageDeltas', () => {
   it('returns zero events when no messages are passed', () => {
     const cache = { lastSeenAt: 0, deliveredIds: new Set<string>() };
     expect(computeMessageDeltas({ messages: [], cache })).toEqual([]);
+  });
+
+  // Spec 116: deliveredIds grew by one id per message for the life of an SSE
+  // connection. It is now trimmed to the ids sharing the cursor millisecond;
+  // the `since` cursor (inclusive, as every repository implements it) is what
+  // makes re-emitting an evicted id impossible.
+  it('stays bounded across polls and never re-emits an evicted id', () => {
+    const BASE_MS = new Date('2026-04-01T10:00:00Z').getTime();
+    const TOTAL = 200;
+    const PER_POLL = 7;
+    const table = Array.from({ length: TOTAL }, (_, i) =>
+      makeMessage({ id: `m${i}`, createdAt: new Date(BASE_MS + Math.floor(i / 2)) })
+    );
+    const cache = { lastSeenAt: 0, deliveredIds: new Set<string>() };
+    const emitted: string[] = [];
+    let visible = 0;
+    let maxRemembered = 0;
+
+    while (visible < TOTAL) {
+      visible = Math.min(TOTAL, visible + PER_POLL);
+      // What the repository returns for `since = lastSeenAt` (created_at >= ?).
+      const since = cache.lastSeenAt;
+      const rows = table.slice(0, visible).filter((m) => (m.createdAt as Date).getTime() >= since);
+      for (const e of computeMessageDeltas({ messages: rows, cache })) {
+        if (e.kind === 'agent_message') emitted.push(e.messageId);
+      }
+      maxRemembered = Math.max(maxRemembered, cache.deliveredIds.size);
+    }
+
+    expect(emitted).toEqual(table.map((m) => m.id));
+    // Two messages share each millisecond in this table.
+    expect(maxRemembered).toBeLessThanOrEqual(2);
   });
 });

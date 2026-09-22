@@ -13,7 +13,11 @@
  *   - Handle tunnel.connected → auto-activate the configured routes
  *   - Decode incoming tunnel.request frames and dispatch to `onRequest`
  *   - Send tunnel.response frames back with the handler's reply
- *   - Reconnect on disconnect with a small delay
+ *   - Reconnect after ANY failure — a failed upgrade (gateway down, 401), a
+ *     token fetch error, a close, or a missed pong — with capped exponential
+ *     backoff plus jitter, fetching a fresh access token on every attempt
+ *   - Detect half-open sockets: every ping must be answered by a pong within
+ *     TUNNEL_PONG_TIMEOUT_MS or the socket is terminated and replaced
  */
 
 import WebSocket, { type ClientOptions, type RawData } from 'ws';
@@ -29,9 +33,14 @@ import type {
   TunnelResponseFrame,
   TunnelRouteDeactivatedFrame,
 } from './tunnel-protocol.js';
-
-const RECONNECT_DELAY_MS = 5_000;
-const PING_INTERVAL_MS = 25_000;
+import {
+  base64Decode,
+  base64Encode,
+  headersArrayToRecord,
+  headersRecordToArray,
+} from './tunnel-codec.js';
+import { computeReconnectDelay } from './tunnel-reconnect-policy.js';
+import { TunnelHeartbeat } from './tunnel-heartbeat.js';
 
 export type TunnelRequestHandler = (
   request: DecodedTunnelRequest
@@ -44,47 +53,35 @@ const defaultFactory: WebSocketFactory = (url, options) => new WebSocket(url, op
 
 export interface MessagingTunnelAdapterDeps {
   gatewayUrl: string;
-  accessToken: string;
+  /**
+   * Fetches a bearer token for the upgrade request. Called on EVERY
+   * connection attempt so an expired token is never reused.
+   */
+  getAccessToken: () => Promise<string>;
   deviceId: string;
   /** Route IDs to claim after tunnel.connected arrives. */
   routeIds: string[];
   webSocketFactory?: WebSocketFactory;
-}
-
-function headersArrayToRecord(pairs?: [string, string][]): Record<string, string> {
-  if (!pairs) return {};
-  const out: Record<string, string> = {};
-  for (const [k, v] of pairs) {
-    out[k.toLowerCase()] = v;
-  }
-  return out;
-}
-
-function headersRecordToArray(record?: Record<string, string>): [string, string][] | undefined {
-  if (!record) return undefined;
-  return Object.entries(record);
-}
-
-function base64Encode(s: string): string {
-  return Buffer.from(s, 'utf8').toString('base64');
-}
-
-function base64Decode(b64: string): string {
-  return Buffer.from(b64, 'base64').toString('utf8');
+  /** Jitter source in [0, 1). Defaults to Math.random. */
+  random?: () => number;
 }
 
 export class MessagingTunnelAdapter {
   private ws: WebSocket | null = null;
   private requestHandler: TunnelRequestHandler | null = null;
-  private pingTimer: ReturnType<typeof setInterval> | null = null;
+  private readonly heartbeat = new TunnelHeartbeat();
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+  private reconnectAttempt = 0;
   private connected = false;
+  private connecting = false;
   private stopping = false;
   private readonly activatedRoutes = new Set<string>();
   private readonly factory: WebSocketFactory;
+  private readonly random: () => number;
 
   constructor(private readonly deps: MessagingTunnelAdapterDeps) {
     this.factory = deps.webSocketFactory ?? defaultFactory;
+    this.random = deps.random ?? Math.random;
   }
 
   /** Register a handler for inbound tunnel.request frames. */
@@ -103,11 +100,46 @@ export class MessagingTunnelAdapter {
   }
 
   /**
-   * Open the tunnel and resolve once the server has emitted tunnel.connected.
-   * Reconnects are silent (fire-and-forget).
+   * Open the tunnel and resolve once the WebSocket is open. A failure
+   * rejects AND schedules a backoff retry, so the caller may treat the
+   * initial failure as non-fatal.
    */
   async connect(): Promise<void> {
-    if (this.connected || this.stopping) return;
+    if (this.connected || this.connecting || this.stopping) return;
+    this.connecting = true;
+    try {
+      await this.openSocket();
+      this.reconnectAttempt = 0;
+    } catch (err) {
+      this.scheduleReconnect();
+      throw err;
+    } finally {
+      this.connecting = false;
+    }
+  }
+
+  /** Close the tunnel permanently (no auto-reconnect). */
+  async disconnect(): Promise<void> {
+    this.stopping = true;
+    this.heartbeat.stop();
+    this.clearReconnect();
+    this.activatedRoutes.clear();
+
+    const ws = this.ws;
+    this.ws = null;
+    this.connected = false;
+    if (ws) {
+      try {
+        ws.close();
+      } catch {
+        // ignore
+      }
+    }
+  }
+
+  private async openSocket(): Promise<void> {
+    const accessToken = await this.deps.getAccessToken();
+    if (this.stopping) return;
 
     const base = this.deps.gatewayUrl.replace(/^http/, 'ws').replace(/\/$/, '');
     const url = `${base}/gateway/v1/integrations/tunnel/connect?device_id=${encodeURIComponent(
@@ -115,53 +147,50 @@ export class MessagingTunnelAdapter {
     )}`;
 
     const ws = this.factory(url, {
-      headers: { authorization: `Bearer ${this.deps.accessToken}` },
+      headers: { authorization: `Bearer ${accessToken}` },
     });
     this.ws = ws;
 
-    await new Promise<void>((resolve, reject) => {
-      const onceOpen = () => {
-        ws.off('error', onceError);
-        resolve();
-      };
-      const onceError = (err: Error) => {
-        ws.off('open', onceOpen);
-        reject(err);
-      };
-      ws.once('open', onceOpen);
-      ws.once('error', onceError);
+    // Attach the lifecycle listeners BEFORE the upgrade completes: a failed
+    // upgrade emits error + close and never open, and an EventEmitter with
+    // no 'error' listener throws.
+    ws.on('error', () => {
+      // Surfaced through the open promise or the close handler.
     });
-
+    ws.on('close', () => this.handleSocketClose(ws));
+    ws.on('pong', () => this.heartbeat.pongReceived());
     ws.on('message', (data: RawData) => {
       this.handleRawFrame(data).catch(() => {
         // Malformed frames are non-fatal.
       });
     });
-    ws.on('close', () => this.handleClose());
-    ws.on('error', () => {
-      // Errors also trigger close; avoid duplicate handling.
+
+    await new Promise<void>((resolve, reject) => {
+      const cleanup = () => {
+        ws.off('open', onceOpen);
+        ws.off('error', onceError);
+        ws.off('close', onceClose);
+      };
+      const onceOpen = () => {
+        cleanup();
+        resolve();
+      };
+      const onceError = (err: Error) => {
+        cleanup();
+        reject(err);
+      };
+      const onceClose = () => {
+        cleanup();
+        reject(new Error('Tunnel closed before the connection opened'));
+      };
+      ws.once('open', onceOpen);
+      ws.once('error', onceError);
+      ws.once('close', onceClose);
     });
 
+    if (this.stopping || this.ws !== ws) return;
     this.connected = true;
-    this.startPing();
-  }
-
-  /** Close the tunnel permanently (no auto-reconnect). */
-  async disconnect(): Promise<void> {
-    this.stopping = true;
-    this.stopPing();
-    this.clearReconnect();
-    this.activatedRoutes.clear();
-
-    if (this.ws) {
-      try {
-        this.ws.close();
-      } catch {
-        // ignore
-      }
-      this.ws = null;
-    }
-    this.connected = false;
+    this.heartbeat.start(ws, () => this.handleLivenessTimeout(ws));
   }
 
   private async handleRawFrame(data: RawData): Promise<void> {
@@ -268,42 +297,42 @@ export class MessagingTunnelAdapter {
     }
   }
 
-  private handleClose(): void {
+  /**
+   * A socket that had opened went away. Pre-open failures are handled by
+   * connect()'s catch, so only an established socket schedules here.
+   */
+  private handleSocketClose(ws: WebSocket): void {
+    if (this.ws !== ws) return;
+    this.ws = null;
+    const wasConnected = this.connected;
     this.connected = false;
     this.activatedRoutes.clear();
-    this.stopPing();
-    if (!this.stopping) {
+    this.heartbeat.stop();
+    if (wasConnected) {
       this.scheduleReconnect();
     }
   }
 
-  private startPing(): void {
-    this.pingTimer = setInterval(() => {
-      if (this.ws?.readyState === WebSocket.OPEN) {
-        try {
-          this.ws.ping();
-        } catch {
-          // ignore
-        }
-      }
-    }, PING_INTERVAL_MS);
-    this.pingTimer.unref?.();
-  }
-
-  private stopPing(): void {
-    if (this.pingTimer) {
-      clearInterval(this.pingTimer);
-      this.pingTimer = null;
+  /** No pong in time: the socket is half-open — replace it. */
+  private handleLivenessTimeout(ws: WebSocket): void {
+    try {
+      ws.terminate();
+    } catch {
+      // ignore — we replace the socket regardless
     }
+    // terminate() normally emits close; handleSocketClose is idempotent per socket.
+    this.handleSocketClose(ws);
   }
 
   private scheduleReconnect(): void {
-    this.clearReconnect();
+    if (this.stopping || this.reconnectTimer) return;
+    const delay = computeReconnectDelay(this.reconnectAttempt, this.random);
+    this.reconnectAttempt += 1;
     this.reconnectTimer = setTimeout(() => {
-      this.connect().catch(() => {
-        // Will retry on the next close event.
-      });
-    }, RECONNECT_DELAY_MS);
+      this.reconnectTimer = null;
+      // A rejection has already scheduled the next attempt inside connect().
+      this.connect().catch(() => undefined);
+    }, delay);
     this.reconnectTimer.unref?.();
   }
 

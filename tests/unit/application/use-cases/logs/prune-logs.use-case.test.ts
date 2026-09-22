@@ -1,14 +1,15 @@
 /**
  * PruneLogsUseCase — the business half of `shep logs prune`.
  *
- * Nothing rotates, caps or deletes `~/.shep/logs/worker-*.log` today: not
- * on feature delete, not on archive, not ever.
+ * Also the log-file half of unattended data retention (spec 116), which is
+ * why the log of a still-active run must never be selected.
  */
 
 import 'reflect-metadata';
 import { describe, it, expect, vi } from 'vitest';
 
 import { PruneLogsUseCase } from '@/application/use-cases/logs/prune-logs.use-case.js';
+import { AgentRunStatus } from '@/domain/generated/output.js';
 import type {
   ILogFileStore,
   LogFileInfo,
@@ -34,10 +35,19 @@ function store(files: LogFileInfo[], remove = vi.fn().mockResolvedValue(undefine
   };
 }
 
+/** A run repository that reports the given runs, by id and status. */
+function runs(...rows: { id: string; status: AgentRunStatus }[]) {
+  return { list: vi.fn(async () => rows) };
+}
+
+function newPruneLogs(logStore: ILogFileStore, runRepo = runs()): PruneLogsUseCase {
+  return new PruneLogsUseCase(logStore, runRepo as never);
+}
+
 describe('PruneLogsUseCase', () => {
   it('is a dry run by default and deletes nothing', async () => {
     const remove = vi.fn();
-    const result = await new PruneLogsUseCase(store([file('worker-a.log', 30)], remove)).execute({
+    const result = await newPruneLogs(store([file('worker-a.log', 30)], remove)).execute({
       olderThan: '7d',
       now: NOW,
     });
@@ -49,7 +59,7 @@ describe('PruneLogsUseCase', () => {
   });
 
   it('reports the bytes a dry run would reclaim', async () => {
-    const result = await new PruneLogsUseCase(
+    const result = await newPruneLogs(
       store([file('worker-a.log', 30, 4096), file('worker-b.log', 30, 1024)])
     ).execute({ olderThan: '7d', now: NOW });
 
@@ -57,7 +67,7 @@ describe('PruneLogsUseCase', () => {
   });
 
   it('selects only files older than the cutoff', async () => {
-    const result = await new PruneLogsUseCase(
+    const result = await newPruneLogs(
       store([file('old.log', 30), file('recent.log', 2), file('exactly.log', 7)])
     ).execute({ olderThan: '7d', now: NOW });
 
@@ -66,9 +76,11 @@ describe('PruneLogsUseCase', () => {
 
   it('deletes when confirmed and reports what it removed', async () => {
     const remove = vi.fn().mockResolvedValue(undefined);
-    const result = await new PruneLogsUseCase(
-      store([file('worker-a.log', 30, 2048)], remove)
-    ).execute({ olderThan: '7d', dryRun: false, now: NOW });
+    const result = await newPruneLogs(store([file('worker-a.log', 30, 2048)], remove)).execute({
+      olderThan: '7d',
+      dryRun: false,
+      now: NOW,
+    });
 
     expect(result.dryRun).toBe(false);
     expect(remove).toHaveBeenCalledWith('/home/u/.shep/logs/worker-a.log');
@@ -79,9 +91,11 @@ describe('PruneLogsUseCase', () => {
 
   it('reports a failed delete instead of counting it as reclaimed', async () => {
     const remove = vi.fn().mockRejectedValue(new Error('EACCES'));
-    const result = await new PruneLogsUseCase(
-      store([file('worker-a.log', 30, 2048)], remove)
-    ).execute({ olderThan: '7d', dryRun: false, now: NOW });
+    const result = await newPruneLogs(store([file('worker-a.log', 30, 2048)], remove)).execute({
+      olderThan: '7d',
+      dryRun: false,
+      now: NOW,
+    });
 
     expect(result.deleted).toEqual([]);
     expect(result.reclaimedBytes).toBe(0);
@@ -93,7 +107,7 @@ describe('PruneLogsUseCase', () => {
       .fn()
       .mockRejectedValueOnce(new Error('EACCES'))
       .mockResolvedValueOnce(undefined);
-    const result = await new PruneLogsUseCase(
+    const result = await newPruneLogs(
       store([file('a.log', 30), file('b.log', 30)], remove)
     ).execute({ olderThan: '7d', dryRun: false, now: NOW });
 
@@ -103,27 +117,27 @@ describe('PruneLogsUseCase', () => {
 
   it('rejects an unparseable --older-than rather than deleting everything', async () => {
     await expect(
-      new PruneLogsUseCase(store([file('a.log', 30)])).execute({ olderThan: 'forever', now: NOW })
+      newPruneLogs(store([file('a.log', 30)])).execute({ olderThan: 'forever', now: NOW })
     ).rejects.toThrow(/older-than/i);
   });
 
   it('rejects a bare number, which would be an ambiguous unit', async () => {
     await expect(
-      new PruneLogsUseCase(store([file('a.log', 30)])).execute({ olderThan: '7', now: NOW })
+      newPruneLogs(store([file('a.log', 30)])).execute({ olderThan: '7', now: NOW })
     ).rejects.toThrow(/older-than/i);
   });
 
   it('applies a default age when none was given, rather than pruning everything', async () => {
-    const result = await new PruneLogsUseCase(
-      store([file('old.log', 60), file('fresh.log', 1)])
-    ).execute({ now: NOW });
+    const result = await newPruneLogs(store([file('old.log', 60), file('fresh.log', 1)])).execute({
+      now: NOW,
+    });
 
     expect(result.candidates.map((c) => c.name)).toEqual(['old.log']);
     expect(result.olderThanMs).toBeGreaterThan(0);
   });
 
   it('reports the total footprint and directory so the caller can render context', async () => {
-    const result = await new PruneLogsUseCase(
+    const result = await newPruneLogs(
       store([file('a.log', 30, 100), file('b.log', 1, 900)])
     ).execute({ olderThan: '7d', now: NOW });
 
@@ -133,8 +147,30 @@ describe('PruneLogsUseCase', () => {
   });
 
   it('returns an empty result for an empty log directory', async () => {
-    const result = await new PruneLogsUseCase(store([])).execute({ olderThan: '7d', now: NOW });
+    const result = await newPruneLogs(store([])).execute({ olderThan: '7d', now: NOW });
     expect(result.candidates).toEqual([]);
     expect(result.totalFiles).toBe(0);
+  });
+
+  // Spec 116: retention now runs unattended in the daemon, so a feature that
+  // has idled at an approval gate for weeks must not lose its only log.
+  it('never selects the log of a run that is still active, however old', async () => {
+    const result = await newPruneLogs(
+      store([
+        file('worker-waiting.log', 60),
+        file('worker-running.log', 60),
+        file('cluster-worker-pending.log', 60),
+        file('worker-done.log', 60),
+      ]),
+      runs(
+        { id: 'waiting', status: AgentRunStatus.waitingApproval },
+        { id: 'running', status: AgentRunStatus.running },
+        { id: 'pending', status: AgentRunStatus.pending },
+        { id: 'done', status: AgentRunStatus.completed }
+      )
+    ).execute({ olderThan: '7d', dryRun: false, now: NOW });
+
+    expect(result.candidates.map((c) => c.name)).toEqual(['worker-done.log']);
+    expect(result.deleted.map((c) => c.name)).toEqual(['worker-done.log']);
   });
 });

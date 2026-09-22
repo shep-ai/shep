@@ -6,6 +6,7 @@ import type { AnswerAgentQuestionUseCase } from '@shepai/core/application/use-ca
 import type { CancelAgentQuestionUseCase } from '@shepai/core/application/use-cases/agents/cancel-agent-question.use-case';
 import type { AgentQuestion, AgentQuestionStatus } from '@shepai/core/domain/generated/output';
 import { requireFeatureFlag } from '@/lib/feature-flags';
+import { questionAlreadySettledMessage } from '@shepai/core/domain/shared/agent-question-settlement';
 
 export interface ListAgentQuestionsActionInput {
   appId: string;
@@ -49,6 +50,12 @@ export async function answerAgentQuestion(
     if (!result.enabled) {
       return { ok: false, error: 'Collaboration feature flag is off' };
     }
+    if (result.alreadySettledAs) {
+      return {
+        ok: false,
+        error: questionAlreadySettledMessage(input.questionId, result.alreadySettledAs),
+      };
+    }
     return { ok: true };
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Failed to answer agent question';
@@ -72,6 +79,12 @@ export async function cancelAgentQuestion(
     const result = await useCase.execute(input);
     if (!result.enabled) {
       return { ok: false, error: 'Collaboration feature flag is off' };
+    }
+    if (result.alreadySettledAs) {
+      return {
+        ok: false,
+        error: questionAlreadySettledMessage(input.questionId, result.alreadySettledAs),
+      };
     }
     return { ok: true };
   } catch (error) {

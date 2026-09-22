@@ -21,14 +21,19 @@ import type { SpawnFunction } from '../types.js';
 import { EventChannel } from '../../streaming/event-channel.js';
 import { createExecutorLogger, type ExecutorLogger } from './executor-logger.js';
 import {
+  AGENT_ABORTED_MESSAGE,
   agentTimeoutMessage,
   buildSpawnOptions,
   classifySpawnError,
   createLineAccumulator,
   createStderrTail,
+  missingTerminalEventMessage,
   signalTerminationMessage,
   terminateWithEscalation,
+  watchAbortSignal,
+  watchProcessIdle,
   writePromptToStdin,
+  toolInputLogPreview,
 } from './process-stream.js';
 import {
   validateSecurityConstraints,
@@ -36,6 +41,7 @@ import {
 } from './security-constraint-validator.js';
 import { describeSubprocessFailure } from './subprocess-failure-message.js';
 import { describeResultEventError, resultEventError } from './result-event-outcome.js';
+import { claudeInputTokens } from './claude-usage.js';
 
 /** Binary name on PATH. */
 const CLAUDE_BINARY = 'claude';
@@ -73,7 +79,7 @@ const AGENT_NAME = 'Claude Code';
  * was cut short (e.g. a line dropped for exceeding the line cap), so the turn
  * cannot be reported as finished, however much text arrived before it.
  */
-const MISSING_RESULT_EVENT_MESSAGE = `${AGENT_NAME} exited without a result event — its output was cut short before the turn finished`;
+const MISSING_RESULT_EVENT_MESSAGE = missingTerminalEventMessage(AGENT_NAME, 'result');
 
 /** Claude Code stream-json event types. */
 const EVENT_TYPE_STREAM_EVENT = 'stream_event';
@@ -149,6 +155,8 @@ export class ClaudeCodeExecutorService implements IAgentExecutor {
         if (settled) return;
         settled = true;
         if (timeoutId) clearTimeout(timeoutId);
+        idleWatchdog.stop();
+        abortWatch.stop();
         if (postResultKillTimer) clearTimeout(postResultKillTimer);
         cancelEscalation?.();
         outcome();
@@ -182,6 +190,24 @@ export class ClaudeCodeExecutorService implements IAgentExecutor {
           });
         }, timeoutMs);
       }
+
+      // Opt-in no-output guard: a stalled stream (hung API connection, wedged
+      // MCP call) fails with a message naming the silence instead of sitting
+      // out the whole total budget. Output after the result event is only
+      // teardown, which the post-result grace timer already bounds.
+      const idleWatchdog = watchProcessIdle(proc, options?.idleTimeout, (message) => {
+        if (resultSeen) return;
+        log(`${message} — terminating agent`);
+        cancelEscalation = terminateWithEscalation(proc);
+        settle(() => reject(new Error(message)));
+      });
+
+      // The caller's cancel (a failed sibling task): terminate now, reject from
+      // `close` so awaiting this call awaits the teardown.
+      const abortWatch = watchAbortSignal(proc, options?.abortSignal, {
+        onAbort: () => log(`${AGENT_ABORTED_MESSAGE} — terminating agent`),
+        onUnreaped: () => settle(() => reject(new Error(AGENT_ABORTED_MESSAGE))),
+      });
 
       const accumulator = createLineAccumulator(
         (line) => {
@@ -232,6 +258,10 @@ export class ClaudeCodeExecutorService implements IAgentExecutor {
         log(`Process closed with code ${code}, result=${resultText.length} chars`);
 
         settle(() => {
+          if (abortWatch.aborted) {
+            reject(new Error(AGENT_ABORTED_MESSAGE));
+            return;
+          }
           if (code !== 0 && code !== null) {
             // The CLI reports WHY it failed in its final result text; stderr
             // carries setup diagnostics that healthy runs emit too, so leading
@@ -291,6 +321,7 @@ export class ClaudeCodeExecutorService implements IAgentExecutor {
     if (timeoutMs) {
       timeoutId = setTimeout(() => {
         timedOut = true;
+        idleWatchdog.stop();
         log(`Timeout after ${timeoutMs}ms — terminating agent`);
         terminateWithEscalation(proc);
         channel.push({
@@ -301,6 +332,30 @@ export class ClaudeCodeExecutorService implements IAgentExecutor {
         channel.close();
       }, timeoutMs);
     }
+
+    // Same opt-in no-output guard as execute().
+    const idleWatchdog = watchProcessIdle(proc, options?.idleTimeout, (message) => {
+      if (resultSeen || timedOut) return;
+      timedOut = true;
+      if (timeoutId) clearTimeout(timeoutId);
+      log(`${message} — terminating agent`);
+      terminateWithEscalation(proc);
+      channel.push({ type: 'error', content: message, timestamp: new Date() });
+      channel.close();
+    });
+
+    // The caller's cancel: terminate the agent and end the stream with it.
+    const abortWatch = watchAbortSignal(proc, options?.abortSignal, {
+      onAbort: () => {
+        if (timedOut) return;
+        timedOut = true;
+        if (timeoutId) clearTimeout(timeoutId);
+        idleWatchdog.stop();
+        log(`${AGENT_ABORTED_MESSAGE} — terminating agent`);
+        channel.push({ type: 'error', content: AGENT_ABORTED_MESSAGE, timestamp: new Date() });
+        channel.close();
+      },
+    });
 
     const accumulator = createLineAccumulator((line) => {
       const parsed = parseJsonLine(line);
@@ -356,6 +411,8 @@ export class ClaudeCodeExecutorService implements IAgentExecutor {
       yield* channel;
     } finally {
       if (timeoutId) clearTimeout(timeoutId);
+      idleWatchdog.stop();
+      abortWatch.stop();
       // A consumer that breaks out of the loop would otherwise leave the agent
       // running — holding a worktree, burning tokens — until it exits on its own.
       if (!processClosed) terminateWithEscalation(proc);
@@ -425,7 +482,7 @@ export class ClaudeCodeExecutorService implements IAgentExecutor {
         text?: string;
       }[]) {
         if (block.type === 'tool_use') {
-          log(`[tool] ${block.name} ${JSON.stringify(block.input ?? {})}`);
+          log(`[tool] ${block.name} ${toolInputLogPreview(block.input)}`);
         } else if (block.type === 'text' && block.text?.trim()) {
           log(`[text] ${block.text.trim().replace(/\n/g, ' ')}`);
         }
@@ -440,10 +497,7 @@ export class ClaudeCodeExecutorService implements IAgentExecutor {
       );
       const u = parsed.usage as Record<string, number> | undefined;
       if (u) {
-        const inTokens =
-          (u.input_tokens ?? 0) +
-          (u.cache_creation_input_tokens ?? 0) +
-          (u.cache_read_input_tokens ?? 0);
+        const inTokens = claudeInputTokens(u);
         const costStr =
           parsed.total_cost_usd != null ? `, $${Number(parsed.total_cost_usd).toFixed(4)}` : '';
         log(`[tokens] ${inTokens} in / ${u.output_tokens ?? 0} out${costStr}`);
@@ -493,7 +547,7 @@ function extractUsage(parsed: Record<string, unknown>): AgentExecutionUsage | un
 
   const cacheCreation = u.cache_creation_input_tokens ?? 0;
   const cacheRead = u.cache_read_input_tokens ?? 0;
-  const inputTokens = (u.input_tokens ?? 0) + cacheCreation + cacheRead;
+  const inputTokens = claudeInputTokens(u);
 
   const usage: AgentExecutionUsage = { inputTokens, outputTokens: u.output_tokens };
 

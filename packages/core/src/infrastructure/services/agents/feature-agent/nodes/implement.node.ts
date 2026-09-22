@@ -100,6 +100,39 @@ function updateFeatureProgress(
   }
 }
 
+/**
+ * Run a parallel phase's task calls; on the first failure, cancel the rest,
+ * wait for EVERY call to end, then fail with that first failure.
+ *
+ * `Promise.all` rejected on the first failure while the other tasks' agent
+ * CLIs kept running; the worker then recorded the run as failed and exited,
+ * orphaning live agents in the worktree — agents a resume would then run
+ * beside. Each call receives the shared abort signal, and an executor rejects
+ * an aborted call only once its agent process has closed, so awaiting the
+ * calls here awaits their teardown.
+ *
+ * @param start - Starts one task's call with the phase's abort signal.
+ */
+async function runCancellingOnFailure<T>(
+  count: number,
+  start: (index: number, abortSignal: AbortSignal) => Promise<T>
+): Promise<T[]> {
+  const controller = new AbortController();
+  let firstFailure: { error: unknown } | undefined;
+  const calls = Array.from({ length: count }, (_, index) =>
+    start(index, controller.signal).catch((error: unknown) => {
+      if (!firstFailure) {
+        firstFailure = { error };
+        controller.abort();
+      }
+      throw error;
+    })
+  );
+  const outcomes = await Promise.allSettled(calls);
+  if (firstFailure) throw firstFailure.error;
+  return outcomes.map((outcome) => (outcome as PromiseFulfilledResult<T>).value);
+}
+
 export function createImplementNode(executor: IAgentExecutor, selectMemory?: MemorySelector) {
   const log = createNodeLogger('implement');
 
@@ -317,21 +350,25 @@ export function createImplementNode(executor: IAgentExecutor, selectMemory?: Mem
           });
           await updatePhasePrompt(phaseTimingId, taskPrompts.join('\n\n---\n\n'));
 
-          const results = await Promise.all(
-            phaseTasks.map((task, idx) => {
-              const { complexity, model } = routing.resolve(task);
-              const routingNote = routing.enabled ? ` [${complexity} → ${model}]` : '';
-              log.info(
-                `  [parallel] Task ${task.id}: "${task.title}" — ${taskPrompts[idx].length} chars${routingNote}`
-              );
-              const taskOptions = buildExecutorOptions(
-                state,
-                model !== undefined ? { model } : undefined,
-                'implement'
-              );
-              return retryExecute(executor, taskPrompts[idx], taskOptions, retryOpts);
-            })
-          );
+          const results = await runCancellingOnFailure(phaseTasks.length, (idx, abortSignal) => {
+            const task = phaseTasks[idx];
+            const { complexity, model } = routing.resolve(task);
+            const routingNote = routing.enabled ? ` [${complexity} → ${model}]` : '';
+            log.info(
+              `  [parallel] Task ${task.id}: "${task.title}" — ${taskPrompts[idx].length} chars${routingNote}`
+            );
+            const taskOptions = buildExecutorOptions(
+              state,
+              model !== undefined ? { model } : undefined,
+              'implement'
+            );
+            return retryExecute(
+              executor,
+              taskPrompts[idx],
+              { ...taskOptions, abortSignal },
+              retryOpts
+            );
+          });
 
           for (let j = 0; j < results.length; j++) {
             log.info(

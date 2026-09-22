@@ -139,6 +139,21 @@ describe('InMemoryAgentQuestionRepository', () => {
     expect(after?.status).toBe('pending');
   });
 
+  it('settlePending moves a pending row once and refuses a second settle', async () => {
+    await repo.create(makeQuestion({ id: 'q1' }));
+    const fields = { answer: 'a', answeredBy: 'user:a', answeredAt: new Date() };
+    expect(await repo.settlePending('app-1', 'q1', AgentQuestionStatus.answered, fields)).toBe(
+      true
+    );
+    expect(
+      await repo.settlePending('app-1', 'q1', AgentQuestionStatus.cancelled, { answer: 'b' })
+    ).toBe(false);
+    const after = await repo.findById('app-1', 'q1');
+    expect(after?.status).toBe(AgentQuestionStatus.answered);
+    expect(after?.answer).toBe('a');
+    expect(await repo.settlePending('app-2', 'q1', AgentQuestionStatus.answered)).toBe(false);
+  });
+
   it('findExpired returns pending questions whose expiresAt is at or before the cutoff', async () => {
     await repo.create(makeQuestion({ id: 'expired-1', expiresAt: new Date(2026, 0, 1) }));
     await repo.create(makeQuestion({ id: 'expired-2', expiresAt: new Date(2026, 0, 2) }));

@@ -50,6 +50,7 @@ import type {
   ToolResultMessage,
   UserQuestion,
 } from '../../../../../application/ports/output/agents/interactive-agent-executor.interface.js';
+import { claudeInputTokens } from './claude-usage.js';
 
 /** Default model used when options.model is not specified. */
 const DEFAULT_MODEL = 'claude-sonnet-4-6';
@@ -391,7 +392,7 @@ export class ClaudeCodeInteractiveExecutor implements IInteractiveAgentExecutor 
             content: msg.result,
             usage: {
               costUsd: msg.total_cost_usd,
-              inputTokens: msg.usage?.input_tokens,
+              inputTokens: msg.usage ? claudeInputTokens(msg.usage) : undefined,
               outputTokens: msg.usage?.output_tokens,
               numTurns: msg.num_turns,
               durationMs: msg.duration_ms,
@@ -425,7 +426,7 @@ export class ClaudeCodeInteractiveExecutor implements IInteractiveAgentExecutor 
             // Attach usage data even on errors — cost was still incurred
             usage: {
               costUsd: msg.total_cost_usd,
-              inputTokens: msg.usage?.input_tokens,
+              inputTokens: msg.usage ? claudeInputTokens(msg.usage) : undefined,
               outputTokens: msg.usage?.output_tokens,
               numTurns: msg.num_turns,
               durationMs: msg.duration_ms,

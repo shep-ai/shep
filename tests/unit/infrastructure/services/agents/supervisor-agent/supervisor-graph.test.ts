@@ -23,6 +23,7 @@ import type {
 import { createSupervisorAgent } from '@/infrastructure/services/agents/supervisor-agent/supervisor-graph.js';
 import { SUPERVISOR_EVALUATOR_PROMPT_VERSION } from '@/infrastructure/services/agents/supervisor-agent/evaluator-prompt.js';
 import type { SupervisorGateEvent } from '@/application/ports/output/agents/supervisor-agent.interface.js';
+import { agentTimeoutMessage } from '@/infrastructure/services/agents/common/executors/process-stream.js';
 
 function makePolicy(overrides: Partial<SupervisorPolicy> = {}): SupervisorPolicy {
   const now = new Date();
@@ -142,6 +143,34 @@ describe('createSupervisorAgent (LangGraph workflow)', () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it('passes its time budget to the executor so the agent process is killed, not orphaned', async () => {
+    // withTimeout only stops WAITING: without `timeout` in the options the
+    // executor never armed its own timer, so the evaluator subprocess kept
+    // running (and billing) after the graph had moved on.
+    const execute = vi.fn().mockResolvedValue({ result: 'verdict: advise\nfine' });
+    const executor = { ...makeStubExecutor('unused'), execute };
+    const agent = createSupervisorAgent({ executor, evaluatorTimeoutMs: 1_234 });
+
+    await agent.evaluate({ event: gateEvent(), policy: makePolicy() });
+
+    expect(execute).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({ timeout: 1_234 })
+    );
+  });
+
+  it("treats the executor's own timeout as the evaluator timing out", async () => {
+    // With the budget passed through, the executor's timer can fire first —
+    // that must still take the fail-safe escalate path, not fail the gate.
+    const executor = makeStubExecutor(new Error(agentTimeoutMessage(25)));
+    const agent = createSupervisorAgent({ executor, evaluatorTimeoutMs: 25 });
+
+    const decision = await agent.evaluate({ event: gateEvent(), policy: makePolicy() });
+
+    expect(decision.verdict).toBe(SupervisorVerdict.escalate);
+    expect(decision.rationale).toBe('timeout');
   });
 
   it('uses fallback model id when policy.modelId is unset', async () => {

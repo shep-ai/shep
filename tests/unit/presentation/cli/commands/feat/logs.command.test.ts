@@ -9,11 +9,21 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 const mockShowExecute = vi.fn();
 const mockViewLog = vi.fn();
+/** Where core says the worker writes — honours SHEP_HOME (spec 116). */
+const CORE_LOG_PATH = '/custom/shep-home/logs/worker-run-001.log';
+const mockGetLogPath = vi.fn((_runId: string) => CORE_LOG_PATH);
 
 vi.mock('@/infrastructure/di/container.js', () => ({
   container: {
-    resolve: () => ({ execute: mockShowExecute }),
+    resolve: (token: { name?: string }) =>
+      token?.name === 'GetWorkerLogPathUseCase'
+        ? { execute: mockGetLogPath }
+        : { execute: mockShowExecute },
   },
+}));
+
+vi.mock('@/application/use-cases/logs/get-worker-log-path.use-case.js', () => ({
+  GetWorkerLogPathUseCase: class GetWorkerLogPathUseCase {},
 }));
 
 vi.mock('@/application/use-cases/features/show-feature.use-case.js', () => ({
@@ -87,6 +97,17 @@ describe('createLogsCommand', () => {
         label: 'feature "Test Feature"',
       })
     );
+  });
+
+  it('reads the log where core resolves it, not a hard-coded ~/.shep', async () => {
+    mockShowExecute.mockResolvedValue(makeFeature());
+    mockViewLog.mockResolvedValue(true);
+
+    const cmd = createLogsCommand();
+    await cmd.parseAsync(['feat-001'], { from: 'user' });
+
+    expect(mockGetLogPath).toHaveBeenCalledWith('run-001');
+    expect(mockViewLog).toHaveBeenCalledWith(expect.objectContaining({ logPath: CORE_LOG_PATH }));
   });
 
   it('passes follow option through', async () => {

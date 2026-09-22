@@ -83,6 +83,21 @@ export class InMemoryAgentQuestionRepository implements IAgentQuestionRepository
     });
   }
 
+  async settlePending(
+    appId: string,
+    id: string,
+    status: AgentQuestionStatus,
+    fields: Partial<Pick<AgentQuestion, 'answer' | 'answeredBy' | 'answeredAt'>> = {}
+  ): Promise<boolean> {
+    // Check and write with no await between them, like the SQL WHERE clause.
+    const row = this.questions.get(id);
+    if (!row || row.appId !== appId || row.status !== AgentQuestionStatusEnum.pending) {
+      return false;
+    }
+    await this.updateStatus(appId, id, status, fields);
+    return true;
+  }
+
   async findExpired(cutoff: Date, limit?: number): Promise<AgentQuestion[]> {
     const cutoffMillis = cutoff.getTime();
     const result: AgentQuestion[] = [];

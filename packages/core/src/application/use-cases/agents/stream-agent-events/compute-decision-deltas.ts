@@ -11,6 +11,10 @@
  */
 
 import type { SupervisorDecision } from '../../../../domain/generated/output.js';
+import {
+  createdAtMillis,
+  retainDeliveredAtCursor,
+} from '../../../../domain/shared/delivery-cursor.js';
 import type {
   StreamedAgentEvent,
   SupervisorDecisionStreamEvent,
@@ -20,7 +24,11 @@ import type {
 export interface CachedSupervisorDecisionState {
   /** High-water mark — millis of the most-recent decision we emitted. */
   lastSeenAt: number;
-  /** Ids already emitted (bounded set; trimmed by the use case if needed). */
+  /**
+   * Ids already emitted AT `lastSeenAt` — the only ones the next
+   * `since = lastSeenAt` read can return again. Trimmed after every batch, so
+   * it never outgrows the rows sharing one millisecond (spec 116).
+   */
   deliveredIds: Set<string>;
 }
 
@@ -28,13 +36,6 @@ export interface ComputeDecisionDeltasArgs {
   /** Decisions returned by ISupervisorDecisionRepository for the current scope. */
   decisions: SupervisorDecision[];
   cache: CachedSupervisorDecisionState;
-}
-
-function toMillis(value: SupervisorDecision['createdAt']): number {
-  if (value instanceof Date) return value.getTime();
-  if (typeof value === 'number') return value;
-  if (typeof value === 'string') return new Date(value).getTime();
-  return 0;
 }
 
 function toIsoString(value: SupervisorDecision['createdAt']): string {
@@ -51,7 +52,7 @@ export function computeDecisionDeltas(args: ComputeDecisionDeltasArgs): Streamed
   for (const d of decisions) {
     if (cache.deliveredIds.has(d.id)) continue;
 
-    const createdMs = toMillis(d.createdAt);
+    const createdMs = createdAtMillis(d.createdAt);
     cache.deliveredIds.add(d.id);
     if (createdMs > cache.lastSeenAt) cache.lastSeenAt = createdMs;
 
@@ -74,5 +75,6 @@ export function computeDecisionDeltas(args: ComputeDecisionDeltasArgs): Streamed
     });
   }
 
+  retainDeliveredAtCursor(cache.deliveredIds, decisions, cache.lastSeenAt);
   return events;
 }

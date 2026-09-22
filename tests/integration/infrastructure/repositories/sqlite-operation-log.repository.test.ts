@@ -9,7 +9,10 @@ import type Database from 'better-sqlite3';
 
 import { createInMemoryDatabase, tableExists } from '../../../helpers/database.helper.js';
 import { runSQLiteMigrations } from '@/infrastructure/persistence/sqlite/migrations.js';
-import { SQLiteOperationLogRepository } from '@/infrastructure/repositories/sqlite-operation-log.repository.js';
+import {
+  SQLiteOperationLogRepository,
+  MAX_OPERATION_LOG_ENTRIES_PER_SCOPE,
+} from '@/infrastructure/repositories/sqlite-operation-log.repository.js';
 import { InMemoryOperationLogEventBus } from '@/infrastructure/services/events/in-memory-operation-log-event-bus.js';
 import { OperationLogKind, OperationLogLevel } from '@/domain/generated/output.js';
 
@@ -96,5 +99,26 @@ describe('SQLiteOperationLogRepository', () => {
     const deleted = await repo.pruneBefore(cutoff + 60_000);
     expect(deleted).toBe(1);
     expect(await repo.listByScope(OperationLogKind.CloudDeploy, 'app-1')).toHaveLength(0);
+  });
+
+  // Spec 116: the chat polls this per operation kind; a long-lived app's
+  // history must not be read (and shipped to the browser) in full each time.
+  it('listByScope returns only the newest entries, still oldest first', async () => {
+    const overflow = 5;
+    const total = MAX_OPERATION_LOG_ENTRIES_PER_SCOPE + overflow;
+    for (let i = 0; i < total; i++) {
+      await repo.append({
+        operationKind: OperationLogKind.CloudDeploy,
+        operationId: 'app-1',
+        level: OperationLogLevel.Info,
+        message: `m${i}`,
+      });
+    }
+
+    const entries = await repo.listByScope(OperationLogKind.CloudDeploy, 'app-1');
+
+    expect(entries).toHaveLength(MAX_OPERATION_LOG_ENTRIES_PER_SCOPE);
+    expect(entries[0].message).toBe(`m${overflow}`);
+    expect(entries[entries.length - 1].message).toBe(`m${total - 1}`);
   });
 });

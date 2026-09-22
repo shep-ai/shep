@@ -7,7 +7,17 @@
 
 import 'reflect-metadata';
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { mkdtempSync, mkdirSync, writeFileSync, rmSync, utimesSync } from 'node:fs';
+import {
+  appendFileSync,
+  closeSync,
+  mkdtempSync,
+  mkdirSync,
+  openSync,
+  writeFileSync,
+  writeSync,
+  rmSync,
+  utimesSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { CursorSessionRepository } from '@/infrastructure/services/agents/sessions/cursor-session.repository.js';
@@ -172,5 +182,37 @@ describe('CursorSessionRepository', () => {
     const sessions = await repo.list({ projectPath: PROJECT_PATH });
 
     expect(sessions[0].preview).toBe('block text');
+  });
+
+  // Spec 116: the session list is re-read every 30 s; a poll must read only
+  // what the agent appended since the last one, not the whole transcript.
+  it('re-reads only the bytes appended since the previous list', async () => {
+    const first = line('user', 'original question', '2026-01-01T10:00:00Z');
+    const file = join(transcriptsDir, 'live.jsonl');
+    writeFileSync(file, first);
+    await repo.list({ projectPath: PROJECT_PATH });
+
+    // Same-length in-place edit of already-scanned bytes, then an append. A
+    // whole-file reader would see the edit.
+    const fd = openSync(file, 'r+');
+    writeSync(fd, first.replace('original', 'REWRITTE'), 0);
+    closeSync(fd);
+    appendFileSync(file, line('assistant', 'reply', '2026-01-01T10:01:00Z'));
+
+    const [session] = await repo.list({ projectPath: PROJECT_PATH });
+
+    expect(session.preview).toBe('original question');
+    expect(session.messageCount).toBe(2);
+    expect(session.lastMessageAt).toEqual(new Date('2026-01-01T10:01:00Z'));
+  });
+
+  it('keeps counting a live transcript whose last line is half-written', async () => {
+    const partial = line('assistant', 'streaming answer').slice(0, 25);
+    writeFileSync(join(transcriptsDir, 'partial.jsonl'), line('user', 'q') + partial);
+
+    const [session] = await repo.list({ projectPath: PROJECT_PATH });
+
+    expect(session.messageCount).toBe(1);
+    expect(session.preview).toBe('q');
   });
 });

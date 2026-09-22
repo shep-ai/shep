@@ -291,6 +291,27 @@ describe('McpServerManagerService', () => {
       await service.stopServersForFeature('feature-1');
       expect(existsSync(configPath!)).toBe(false);
     });
+
+    // Supervisor auto-approve starts the next worker for a feature while the
+    // previous one is still tearing down. Each worker owns its own manager, so
+    // a path derived from the feature alone was shared: the old worker's
+    // cleanup deleted the config the new worker's agent was about to read.
+    it("does not delete another worker's config for the same feature", async () => {
+      const oldWorker = service;
+      const newWorker = new McpServerManagerService(spawnMock as unknown as SpawnFn);
+      const plugin = createMcpPlugin();
+      await oldWorker.startServersForFeature('feature-1', [plugin]);
+      await newWorker.startServersForFeature('feature-1', [plugin]);
+      const oldPath = await oldWorker.generateMcpConfigPath('feature-1');
+      const newPath = await newWorker.generateMcpConfigPath('feature-1');
+
+      await oldWorker.stopServersForFeature('feature-1');
+
+      expect(newPath).not.toBe(oldPath);
+      expect(existsSync(oldPath!)).toBe(false);
+      expect(existsSync(newPath!)).toBe(true);
+      await newWorker.stopServersForFeature('feature-1');
+    });
   });
 
   describe('shutdown', () => {

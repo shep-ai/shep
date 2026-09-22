@@ -88,6 +88,26 @@ export class SQLiteAgentQuestionRepository implements IAgentQuestionRepository {
     status: AgentQuestionStatus,
     fields: Partial<Pick<AgentQuestion, 'answer' | 'answeredBy' | 'answeredAt'>> = {}
   ): Promise<void> {
+    this.writeStatus(appId, id, status, fields, false);
+  }
+
+  async settlePending(
+    appId: string,
+    id: string,
+    status: AgentQuestionStatus,
+    fields: Partial<Pick<AgentQuestion, 'answer' | 'answeredBy' | 'answeredAt'>> = {}
+  ): Promise<boolean> {
+    return this.writeStatus(appId, id, status, fields, true);
+  }
+
+  /** One UPDATE; with `onlyIfPending` the pending check is in its WHERE clause. */
+  private writeStatus(
+    appId: string,
+    id: string,
+    status: AgentQuestionStatus,
+    fields: Partial<Pick<AgentQuestion, 'answer' | 'answeredBy' | 'answeredAt'>>,
+    onlyIfPending: boolean
+  ): boolean {
     const now = Date.now();
     const setClauses: string[] = ['status = ?', 'updated_at = ?'];
     const values: unknown[] = [status, now];
@@ -108,10 +128,15 @@ export class SQLiteAgentQuestionRepository implements IAgentQuestionRepository {
     }
 
     values.push(id, appId);
+    let where = 'id = ? AND app_id = ?';
+    if (onlyIfPending) {
+      where += ' AND status = ?';
+      values.push(AgentQuestionStatusEnum.pending);
+    }
     const stmt = this.db.prepare(
-      `UPDATE agent_questions SET ${setClauses.join(', ')} WHERE id = ? AND app_id = ?`
+      `UPDATE agent_questions SET ${setClauses.join(', ')} WHERE ${where}`
     );
-    stmt.run(...values);
+    return stmt.run(...values).changes > 0;
   }
 
   async findExpired(cutoff: Date, limit?: number): Promise<AgentQuestion[]> {

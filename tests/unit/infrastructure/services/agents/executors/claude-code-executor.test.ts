@@ -1116,6 +1116,85 @@ describe('ClaudeCodeExecutorService', () => {
     });
   });
 
+  describe('idle timeout', () => {
+    const assistantLine = JSON.stringify({
+      type: 'assistant',
+      message: { content: [{ type: 'text', text: 'still working' }] },
+    });
+
+    it('should kill an agent that produced no output for the idle budget, naming it', async () => {
+      vi.useFakeTimers();
+      const mockProc = createMockChildProcess();
+      vi.mocked(mockSpawn).mockReturnValue(mockProc as any);
+
+      const executePromise = executor.execute('Prompt', { silent: true, idleTimeout: 60_000 });
+      const assertion = expect(executePromise).rejects.toThrow(
+        'Agent execution timed out: no output for 60s'
+      );
+      await vi.advanceTimersByTimeAsync(60_001);
+
+      await assertion;
+      expect(mockProc.kill).toHaveBeenCalled();
+    });
+
+    it('should restart the idle budget on every chunk of output', async () => {
+      vi.useFakeTimers();
+      const mockProc = createMockChildProcess();
+      vi.mocked(mockSpawn).mockReturnValue(mockProc as any);
+
+      const executePromise = executor.execute('Prompt', { silent: true, idleTimeout: 60_000 });
+      // 3 minutes of wall time, but never 60s without a line.
+      for (let i = 0; i < 4; i++) {
+        await vi.advanceTimersByTimeAsync(45_000);
+        mockProc.stdout.write(`${assistantLine}\n`);
+      }
+      mockProc.stdout.write(`${buildStreamResult({ result: 'finished' })}\n`);
+      mockProc.stdout.end();
+      mockProc.stderr.end();
+      mockProc.emit('close', 0, null);
+
+      expect((await executePromise).result).toBe('finished');
+      expect(mockProc.kill).not.toHaveBeenCalled();
+    });
+
+    it('should not arm an idle guard the caller did not ask for', async () => {
+      vi.useFakeTimers();
+      const mockProc = createMockChildProcess();
+      vi.mocked(mockSpawn).mockReturnValue(mockProc as any);
+
+      let settled = false;
+      const executePromise = executor
+        .execute('Prompt', { silent: true })
+        .finally(() => (settled = true));
+      await vi.advanceTimersByTimeAsync(24 * 60 * 60 * 1000);
+
+      expect(settled).toBe(false);
+      expect(mockProc.kill).not.toHaveBeenCalled();
+      mockProc.stdout.write(`${buildStreamResult({ result: 'done' })}\n`);
+      mockProc.emit('close', 0, null);
+      await executePromise;
+    });
+
+    it('should end a silent stream with an idle-timeout error event', async () => {
+      const mockProc = createMockChildProcess();
+      vi.mocked(mockSpawn).mockReturnValue(mockProc as any);
+
+      const events: { type: string; content: string }[] = [];
+      for await (const event of executor.executeStream('Prompt', {
+        silent: true,
+        idleTimeout: 20,
+      })) {
+        events.push({ type: event.type, content: event.content });
+      }
+
+      expect(events).toContainEqual({
+        type: 'error',
+        content: 'Agent execution timed out: no output for 0.02s',
+      });
+      expect(mockProc.kill).toHaveBeenCalled();
+    });
+  });
+
   describe('executeStream lifetime', () => {
     it('should kill the child when the consumer stops iterating early', async () => {
       const mockProc = createMockChildProcess();

@@ -10,6 +10,7 @@
  */
 
 import { injectable, inject } from 'tsyringe';
+import { ReconcileAgentRunLivenessUseCase } from './reconcile-agent-run-liveness.use-case.js';
 import type { AgentRun } from '../../../domain/generated/output.js';
 import type { IAgentRunRepository } from '../../ports/output/agents/agent-run-repository.interface.js';
 import type { IFeatureAgentProcessService } from '../../ports/output/agents/feature-agent-process.interface.js';
@@ -25,10 +26,15 @@ export class ShowAgentRunUseCase {
     @inject('IAgentRunRepository')
     private readonly runRepo: IAgentRunRepository,
     @inject('IFeatureAgentProcessService')
-    private readonly processService: IFeatureAgentProcessService
+    private readonly processService: IFeatureAgentProcessService,
+    @inject(ReconcileAgentRunLivenessUseCase)
+    private readonly reconcileRunLiveness: ReconcileAgentRunLivenessUseCase
   ) {}
 
   async execute(runId: string): Promise<ShowAgentRunResult> {
+    // Settle crashed, hung and never-started runs first, so what every surface
+    // shows reflects them. Never throws.
+    await this.reconcileRunLiveness.execute();
     // Try exact match first
     let run = await this.runRepo.findById(runId);
 

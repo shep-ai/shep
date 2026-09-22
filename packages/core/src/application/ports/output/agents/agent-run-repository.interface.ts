@@ -41,6 +41,14 @@ export interface AgentRunPinnedConfigUpdate {
 export interface AgentRunStatusUpdateOptions {
   /** Apply the update only while the run is in one of these statuses. */
   allowedFrom?: readonly AgentRunStatus[];
+  /**
+   * Apply the update only while the row's `updatedAt` is still exactly this
+   * value — i.e. nothing has written the run since the caller read it. For a
+   * writer that judged the run from its fields (a stale heartbeat, a dead pid
+   * past a grace period): a heartbeat or a new worker's claim that lands in
+   * between refreshes `updatedAt`, and the write then refuses.
+   */
+  expectedUpdatedAt?: AgentRun['updatedAt'];
 }
 
 /**
@@ -52,6 +60,12 @@ export interface AgentRunStatusUpdateOptions {
  * leaves any field unchanged.
  */
 export type AgentRunStatusUpdates = Omit<Partial<AgentRun>, 'pid'> & { pid?: number | null };
+
+/** Narrows `list()`; an omitted field does not filter. */
+export interface AgentRunListFilter {
+  /** Only runs currently in one of these statuses. */
+  statuses?: readonly AgentRunStatus[];
+}
 
 export interface IAgentRunRepository {
   /**
@@ -133,11 +147,16 @@ export interface IAgentRunRepository {
   findRunningByPid(pid: number): Promise<AgentRun[]>;
 
   /**
-   * List all agent runs.
+   * List agent runs — all of them, or those matching `filter`.
    *
-   * @returns Array of all agent runs
+   * Pollers should filter: listing (and mapping) every run ever recorded on
+   * each tick grows without bound. `statuses` is served by
+   * `idx_agent_runs_status_completed`.
+   *
+   * @param filter - Optional narrowing; omitted means every run
+   * @returns Array of matching agent runs
    */
-  list(): Promise<AgentRun[]>;
+  list(filter?: AgentRunListFilter): Promise<AgentRun[]>;
 
   /**
    * Delete an agent run by ID.

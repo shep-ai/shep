@@ -389,7 +389,8 @@
         "agentResumed": "Agent de fonctionnalité repris",
         "featureLabel": "Fonctionnalité :",
         "runIdLabel": "ID d'exécution :",
-        "failedToResume": "Échec de la reprise de la fonctionnalité"
+        "failedToResume": "Échec de la reprise de la fonctionnalité",
+        "forceOption": "Reprendre même si la limite de fonctionnalités parallèles est atteinte"
       },
       "review": {
         "description": "Revue interactive d'une fonctionnalité en attente d'approbation",
@@ -1104,6 +1105,9 @@
       "noLogFile": "Aucun fichier journal trouvé pour {{label}}",
       "expectedAt": "Attendu : {{path}}",
       "logEmpty": "Le fichier journal est vide pour {{label}}"
+    },
+    "agentGuard": {
+      "forceOption": "Exécuter même dans une exécution d'agent Shep, au risque d'arrêter l'agent qui l'exécute"
     }
   },
   "bootstrap": {

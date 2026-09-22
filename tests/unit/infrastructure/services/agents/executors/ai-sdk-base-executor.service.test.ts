@@ -15,6 +15,10 @@ import type { LanguageModelV3 } from '@ai-sdk/provider';
 import { AgentFeature } from '@/domain/generated/output.js';
 import type { AgentExecutionStreamEvent } from '@/application/ports/output/agents/agent-executor.interface.js';
 import { AiSdkBaseExecutorService } from '@/infrastructure/services/agents/common/executors/ai-sdk-base-executor.service.js';
+import {
+  classifyError,
+  retryExecute,
+} from '@/infrastructure/services/agents/feature-agent/nodes/node-helpers.js';
 
 /**
  * Concrete test subclass of the abstract AiSdkBaseExecutorService.
@@ -166,8 +170,30 @@ describe('AiSdkBaseExecutorService', () => {
       const executor = new TestSdkExecutor('test-key', model);
 
       await expect(executor.execute('Prompt', { timeout: 1234 })).rejects.toThrow(
-        'TestProvider: Request timed out after 1234ms.'
+        'TestProvider: Agent execution timed out after 1.234s'
       );
+    });
+
+    it('is not retried: a timed-out request is not re-sent three more times', async () => {
+      // The TimeoutError is classified as a timeout here, but retryExecute's
+      // classifier did not recognise the resulting "Request timed out" text,
+      // filed it as `unknown`, and re-ran the whole request up to 3x — so a
+      // 5-minute budget could spend 15 more minutes.
+      let calls = 0;
+      const model = new MockLanguageModelV3({
+        doGenerate: async () => {
+          calls++;
+          throw new DOMException('The operation was aborted due to timeout', 'TimeoutError');
+        },
+      });
+      const executor = new TestSdkExecutor('test-key', model);
+
+      const error = await retryExecute(executor, 'Prompt', { timeout: 1234 }, { baseDelayMs: 1 })
+        .then(() => undefined)
+        .catch((e: Error) => e);
+
+      expect(classifyError(error?.message ?? '')).toBe('non-retryable');
+      expect(calls).toBe(1);
     });
 
     it('names the provider in the truncation error', async () => {
@@ -384,7 +410,7 @@ describe('AiSdkBaseExecutorService', () => {
 
       const { events, error } = await drain(executor, { timeout: 20 });
 
-      expect(error?.message).toBe('TestProvider: Request timed out after 20ms.');
+      expect(error?.message).toBe('TestProvider: Agent execution timed out after 0.02s');
       expect(events.some((e) => e.type === 'result')).toBe(false);
     });
 

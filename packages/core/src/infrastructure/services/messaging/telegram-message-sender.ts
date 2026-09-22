@@ -19,7 +19,10 @@ export interface TelegramMessageSenderConfig {
   chatId: string;
 }
 
-export type TelegramConfigResolver = () => TelegramMessageSenderConfig | null;
+export type TelegramConfigResolver = () =>
+  | TelegramMessageSenderConfig
+  | null
+  | Promise<TelegramMessageSenderConfig | null>;
 
 function formatNotification(notification: MessagingNotification): string {
   const lines: string[] = [];
@@ -36,7 +39,7 @@ export class TelegramMessageSender implements IMessageSender {
   ) {}
 
   async send(notification: MessagingNotification): Promise<void> {
-    const config = this.resolveConfig();
+    const config = await this.resolveConfig();
     if (!config?.botToken || !config.chatId) return;
 
     const text = formatNotification(notification);

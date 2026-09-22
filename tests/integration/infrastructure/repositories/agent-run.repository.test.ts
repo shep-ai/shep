@@ -367,6 +367,23 @@ describe('SQLiteAgentRunRepository', () => {
 
       expect(all).toEqual([]);
     });
+
+    it('should return only runs in the requested statuses', async () => {
+      await repository.create(createTestAgentRun({ id: 'run-a', status: AgentRunStatus.running }));
+      await repository.create(
+        createTestAgentRun({ id: 'run-b', threadId: 't-b', status: AgentRunStatus.completed })
+      );
+      await repository.create(
+        createTestAgentRun({ id: 'run-c', threadId: 't-c', status: AgentRunStatus.waitingApproval })
+      );
+
+      const active = await repository.list({
+        statuses: [AgentRunStatus.running, AgentRunStatus.waitingApproval],
+      });
+
+      expect(active.map((r) => r.id).sort()).toEqual(['run-a', 'run-c']);
+      expect(await repository.list({ statuses: [] })).toEqual([]);
+    });
   });
 
   describe('approval gates fields', () => {

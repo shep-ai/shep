@@ -24,6 +24,11 @@ import { AgentQuestionStatus, type AgentQuestion } from '../../../domain/generat
 export interface CancelAgentQuestionResult {
   enabled: boolean;
   question?: AgentQuestion;
+  /**
+   * Set when the question was no longer pending — already answered or
+   * cancelled, possibly by a concurrent caller. Nothing was written.
+   */
+  alreadySettledAs?: AgentQuestionStatus;
 }
 
 @injectable()
@@ -44,11 +49,11 @@ export class CancelAgentQuestionUseCase {
     const existing = await this.questionRepository.findById(input.appId, input.questionId);
     if (!existing) return { enabled: true };
     if (existing.status !== AgentQuestionStatus.pending) {
-      return { enabled: true, question: existing };
+      return { enabled: true, question: existing, alreadySettledAs: existing.status };
     }
 
     const now = new Date();
-    await this.questionRepository.updateStatus(
+    const settled = await this.questionRepository.settlePending(
       input.appId,
       input.questionId,
       AgentQuestionStatus.cancelled,
@@ -58,6 +63,12 @@ export class CancelAgentQuestionUseCase {
         answeredAt: now,
       }
     );
+    if (!settled) {
+      // Answered or cancelled by a concurrent caller — never overwrite it.
+      const current =
+        (await this.questionRepository.findById(input.appId, input.questionId)) ?? existing;
+      return { enabled: true, question: current, alreadySettledAs: current.status };
+    }
 
     if (this.deferredRegistry.has(input.questionId)) {
       this.deferredRegistry.reject(input.questionId, input.reason);

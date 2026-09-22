@@ -13,6 +13,8 @@ import { DeleteAgentRunUseCase } from '@/application/use-cases/agents/delete-age
 import { colors, messages } from '../../ui/index.js';
 import { resolveAgentRun } from './resolve-run.js';
 import { getCliI18n } from '../../i18n.js';
+import { refuseStoppingOwnRun } from '@/domain/shared/agent-run-environment.js';
+import { reportAgentRunRefusal } from '../agent-run-guard.js';
 
 export function createDeleteCommand(): Command {
   const t = getCliI18n().t;
@@ -30,6 +32,18 @@ export function createDeleteCommand(): Command {
         }
 
         if (opts.force && resolved.run.status === 'running') {
+          // Stopping first is the part that would kill a caller that IS this run.
+          const refusal = refuseStoppingOwnRun(
+            process.env,
+            {
+              runId: resolved.run.id,
+              ...(resolved.run.featureId ? { featureId: resolved.run.featureId } : {}),
+            },
+            false,
+            `Stop it explicitly first: shep agent stop ${resolved.run.id} --force`
+          );
+          if (reportAgentRunRefusal(refusal)) return;
+
           // Force delete: stop first, then delete
           const { StopAgentRunUseCase } = await import(
             '@/application/use-cases/agents/stop-agent-run.use-case.js'

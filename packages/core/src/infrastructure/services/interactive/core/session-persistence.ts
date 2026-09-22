@@ -29,9 +29,12 @@ import type { IInteractiveMessageRepository } from '../../../../application/port
 import type { IInteractiveSessionRepository } from '../../../../application/ports/output/repositories/interactive-session-repository.interface.js';
 import type {
   InteractiveMessage,
+  InteractiveSession,
+} from '../../../../domain/generated/output.js';
+import {
+  InteractiveMessageRole,
   InteractiveSessionStatus,
 } from '../../../../domain/generated/output.js';
-import { InteractiveMessageRole } from '../../../../domain/generated/output.js';
 import type { SessionRegistry, SessionState } from './session-registry.js';
 import type { StreamEventDispatcher } from './stream-event-dispatcher.js';
 
@@ -183,5 +186,34 @@ export class SessionPersistence {
     if (latest) {
       void this.updateTurnStatusAndNotify(latest.id, featureId, 'idle');
     }
+  }
+
+  /**
+   * Stop a persisted session that no in-memory state backs (the process
+   * that booted it restarted or hot-reloaded). Without this the row stays
+   * `booting`/`ready` and chat-state keeps reporting a live session.
+   *
+   * @returns true when a live-looking row was actually stopped
+   */
+  async stopOrphanedSession(sessionId: string): Promise<boolean> {
+    return this.stopPersisted(await this.sessionRepo.findById(sessionId));
+  }
+
+  /** As {@link stopOrphanedSession}, for the feature's most recent session. */
+  async stopOrphanedSessionForFeature(featureId: string): Promise<boolean> {
+    return this.stopPersisted(await this.sessionRepo.findByFeatureId(featureId));
+  }
+
+  private async stopPersisted(session: InteractiveSession | null): Promise<boolean> {
+    if (!session) return false;
+    const stopped = await this.sessionRepo.markStoppedIfActive(session.id, new Date());
+    if (!stopped) return false;
+    this.dispatcher.notifyByFeatureId(session.featureId, {
+      delta: '',
+      done: false,
+      sessionStatus: InteractiveSessionStatus.stopped,
+    });
+    await this.updateTurnStatusAndNotify(session.id, session.featureId, 'idle');
+    return true;
   }
 }

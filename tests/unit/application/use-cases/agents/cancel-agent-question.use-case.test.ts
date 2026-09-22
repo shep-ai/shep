@@ -135,4 +135,43 @@ describe('CancelAgentQuestionUseCase', () => {
     expect(result.enabled).toBe(true);
     expect(result.question).toBeUndefined();
   });
+
+  it('a cancel racing an answer never overwrites the recorded answer', async () => {
+    const settings = makeSettingsRepo(true);
+    await repo.create({
+      id: 'q-race',
+      appId: 'app-1',
+      agentRunId: 'run-1',
+      kind: AgentQuestionKind.question,
+      prompt: '?',
+      answerer: AgentQuestionAnswerer.user,
+      status: AgentQuestionStatus.pending,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as never);
+    const cancel = new CancelAgentQuestionUseCase(repo, registry, settings);
+
+    // The answer lands between the cancel's read and its write.
+    const findById = repo.findById.bind(repo);
+    vi.spyOn(repo, 'findById').mockImplementationOnce(async (appId, id) => {
+      const snapshot = await findById(appId, id);
+      await repo.updateStatus(appId, id, AgentQuestionStatus.answered, {
+        answer: 'yes',
+        answeredBy: 'user:web',
+        answeredAt: new Date(),
+      });
+      return snapshot;
+    });
+
+    const result = await cancel.execute({
+      appId: 'app-1',
+      questionId: 'q-race',
+      cancelledBy: 'user:cli',
+    });
+
+    const stored = await repo.findById('app-1', 'q-race');
+    expect(stored?.status).toBe(AgentQuestionStatus.answered);
+    expect(stored?.answer).toBe('yes');
+    expect(result.alreadySettledAs).toBe(AgentQuestionStatus.answered);
+  });
 });

@@ -15,6 +15,8 @@
  */
 
 import { SdlcLifecycle } from '../generated/output';
+import type { AgentRunStatus } from '../generated/output';
+import { TERMINAL_AGENT_RUN_STATUSES } from './agent-run-status';
 import type { Feature } from '../generated/output';
 
 /**
@@ -55,6 +57,22 @@ export const RUNNING_LIFECYCLES: ReadonlySet<SdlcLifecycle> = new Set<SdlcLifecy
   SdlcLifecycle.Implementation,
   SdlcLifecycle.Exploring,
 ]);
+
+/**
+ * Agent-run statuses that release a slot even while the lifecycle still says
+ * "running".
+ *
+ * Lifecycle alone over-counts: a worker that is SIGKILLed, OOM-killed, stopped
+ * or fails leaves the feature in a running phase (the failure path even resets
+ * it to `Started`, which is itself in {@link RUNNING_LIFECYCLES}), so with a cap
+ * set every such feature held a slot forever and the queue never drained. A
+ * feature occupies a slot only while its CURRENT agent run is not finished.
+ *
+ * Exactly the terminal statuses. `waiting_approval` is deliberately absent: the run is parked on a human gate
+ * and will resume in place, so it keeps the slot it holds. A feature with no
+ * run recorded yet (spawn in progress) also keeps its slot.
+ */
+export const SLOT_RELEASING_RUN_STATUSES: ReadonlySet<AgentRunStatus> = TERMINAL_AGENT_RUN_STATUSES;
 
 /** Does a feature in this lifecycle occupy one of the parallel slots? */
 export function isRunningLifecycle(lifecycle: SdlcLifecycle): boolean {

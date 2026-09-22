@@ -15,6 +15,15 @@
  */
 const RESULT_ERROR_SUBTYPE_PREFIX = 'error_';
 
+/**
+ * Subtype of a turn that ran out of `--max-turns`. Re-running it spends the
+ * same budget on the same work, so retry classification never re-runs it.
+ */
+export const MAX_TURNS_SUBTYPE = 'error_max_turns';
+
+/** Text of every {@link describeResultEventError} message; retry classification matches on it. */
+export const RESULT_EVENT_FAILURE_TEXT = 'run did not complete successfully';
+
 /** Shown when a failing result carried no text and nothing reached stderr. */
 const NO_DETAIL = 'no detail provided';
 
@@ -53,5 +62,5 @@ export function describeResultEventError(
 ): string {
   const subtype = error.subtype ? ` (${error.subtype})` : '';
   const detail = resultText.trim() || stderrText.trim() || NO_DETAIL;
-  return `${agentName} run did not complete successfully${subtype}: ${detail}`;
+  return `${agentName} ${RESULT_EVENT_FAILURE_TEXT}${subtype}: ${detail}`;
 }

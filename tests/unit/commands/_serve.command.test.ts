@@ -116,6 +116,17 @@ vi.mock('@/application/use-cases/contributors/publish-monthly-recap.use-case.js'
   PublishMonthlyRecapUseCase: vi.fn(),
 }));
 
+// Mock data-retention scheduling (spec 116)
+const retentionScheduler = vi.hoisted(() => ({ start: vi.fn(), stop: vi.fn() }));
+vi.mock('@/infrastructure/services/maintenance/retention-scheduler.js', () => ({
+  RetentionScheduler: vi.fn(function () {
+    return retentionScheduler;
+  }),
+}));
+vi.mock('@/application/use-cases/maintenance/prune-retained-data.use-case.js', () => ({
+  PruneRetainedDataUseCase: vi.fn(),
+}));
+
 // Mock workflow scheduler
 vi.mock('@/infrastructure/services/workflow-scheduler/workflow-scheduler.service.js', () => ({
   initializeWorkflowScheduler: vi.fn(),
@@ -202,6 +213,33 @@ describe('_serve command', () => {
       await cmd.parseAsync(['--port', '4050'], { from: 'user' });
       const watcher = getNotificationWatcher();
       expect(watcher.start).toHaveBeenCalled();
+    });
+  });
+
+  describe('data retention (spec 116)', () => {
+    it('schedules retention while the daemon runs', async () => {
+      const cmd = createServeCommand();
+      await cmd.parseAsync(['--port', '4050'], { from: 'user' });
+      expect(retentionScheduler.start).toHaveBeenCalled();
+    });
+
+    it('stops the retention schedule on shutdown', async () => {
+      const handlers: Record<string, () => Promise<void>> = {};
+      const processSpy = vi
+        .spyOn(process, 'on')
+        .mockImplementation((event: string | symbol, listener: (...args: unknown[]) => void) => {
+          handlers[String(event)] = listener as () => Promise<void>;
+          return process;
+        });
+      const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => undefined as never);
+
+      const cmd = createServeCommand();
+      await cmd.parseAsync(['--port', '4050'], { from: 'user' });
+      await handlers['SIGTERM']?.();
+
+      expect(retentionScheduler.stop).toHaveBeenCalled();
+      processSpy.mockRestore();
+      exitSpy.mockRestore();
     });
   });
 

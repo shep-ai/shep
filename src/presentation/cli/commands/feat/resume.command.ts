@@ -4,7 +4,7 @@
  * Resumes an interrupted or failed feature agent run.
  *
  * Usage:
- *   shep feat resume <id>
+ *   shep feat resume <id> [--force]
  */
 
 import { Command } from 'commander';
@@ -18,10 +18,13 @@ export function createResumeCommand(): Command {
   return new Command('resume')
     .description(t('cli:commands.feat.resume.description'))
     .argument('<id>', t('cli:commands.feat.resume.idArgument'))
-    .action(async (id: string) => {
+    .option('--force', t('cli:commands.feat.resume.forceOption'))
+    .action(async (id: string, options: { force?: boolean }) => {
       try {
         const useCase = container.resolve(ResumeFeatureUseCase);
-        const { feature, newRun } = await useCase.execute(id);
+        const { feature, newRun } = await useCase.execute(id, {
+          bypassCapacityLimit: options.force === true,
+        });
 
         messages.newline();
         messages.success(t('cli:commands.feat.resume.agentResumed'));

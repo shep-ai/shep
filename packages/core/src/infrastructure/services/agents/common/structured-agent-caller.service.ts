@@ -9,6 +9,7 @@ import type {
 } from '../../../../application/ports/output/agents/structured-agent-caller.interface.js';
 import { StructuredCallError } from '../../../../application/ports/output/agents/structured-call-error.js';
 import { getSettings } from '../../settings.service.js';
+import { DEFAULT_AGENT_CALL_TIMEOUT_MS } from './agent-timeouts.js';
 
 /**
  * Structured agent caller that abstracts native structured output vs prompt-based JSON extraction.
@@ -25,9 +26,15 @@ export class StructuredAgentCallerService implements IStructuredAgentCaller {
     private readonly executorFactory: IAgentExecutorFactory
   ) {}
 
-  async call<T>(prompt: string, schema: object, options?: StructuredCallOptions): Promise<T> {
+  async call<T>(prompt: string, schema: object, callerOptions?: StructuredCallOptions): Promise<T> {
+    // Every call is bounded: a caller that names no timeout would otherwise
+    // wait forever on a wedged agent (feature creation, code review, …).
+    const options: StructuredCallOptions = {
+      ...callerOptions,
+      timeout: callerOptions?.timeout ?? DEFAULT_AGENT_CALL_TIMEOUT_MS,
+    };
     let executor: IAgentExecutor;
-    if (options?.agentType) {
+    if (options.agentType) {
       const settings = getSettings();
       executor = this.executorFactory.createExecutor(options.agentType, settings.agent);
     } else {

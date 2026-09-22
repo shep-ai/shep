@@ -9,6 +9,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createHmac } from 'node:crypto';
 import { GitHubWebhookService } from '@/infrastructure/services/webhook/github-webhook.service.js';
+import {
+  WEBHOOK_INSTANCE_QUERY_PARAM,
+  type WebhookInstanceIdentity,
+} from '@/infrastructure/services/webhook/webhook-identity.store.js';
 import { SdlcLifecycle, PrStatus, CiStatus } from '@/domain/generated/output.js';
 import type { IFeatureRepository } from '@/application/ports/output/repositories/feature-repository.interface.js';
 import type { IGitPrService } from '@/application/ports/output/services/git-pr-service.interface.js';
@@ -518,6 +522,111 @@ describe('GitHubWebhookService', () => {
       );
       await service.removeWebhookForRepo('\\home\\user\\repo');
       expect(service.getRegisteredWebhooks()).toHaveLength(0);
+    });
+  });
+
+  describe('hook ownership across Shep instances', () => {
+    const identity: WebhookInstanceIdentity = {
+      instanceId: 'inst-ours',
+      secret: 'persisted-secret',
+    };
+    const OUR_OLD_HOOK_ID = 11;
+    const OTHER_INSTANCE_HOOK_ID = 22;
+    const LEGACY_HOOK_ID = 33;
+    const UNRELATED_HOOK_ID = 44;
+    const NEW_HOOK_ID = 99;
+
+    function hookUrl(base: string, instanceId?: string): string {
+      const url = `${base}/api/webhooks/github`;
+      return instanceId ? `${url}?${WEBHOOK_INSTANCE_QUERY_PARAM}=${instanceId}` : url;
+    }
+
+    function ownedService(): GitHubWebhookService {
+      return new GitHubWebhookService(
+        mockFeatureRepo,
+        mockGitPrService,
+        mockNotificationService,
+        mockExecFn,
+        undefined,
+        identity
+      );
+    }
+
+    function deletedHookIds(): string[] {
+      return mockExecFn.mock.calls
+        .filter((call: [string, string[]]) => call[1].includes('DELETE'))
+        .map((call: [string, string[]]) => call[1][call[1].length - 1].split('/').pop());
+    }
+
+    beforeEach(() => {
+      vi.mocked(mockGitPrService.getRemoteUrl).mockResolvedValue('https://github.com/owner/repo');
+      mockExecFn.mockImplementation(async (_file: string, args: string[]) => {
+        if (args.includes('POST'))
+          return { stdout: JSON.stringify({ id: NEW_HOOK_ID }), stderr: '' };
+        if (args.includes('DELETE') || args.includes('PATCH')) return { stdout: '', stderr: '' };
+        return {
+          stdout: JSON.stringify([
+            {
+              id: OUR_OLD_HOOK_ID,
+              config: { url: hookUrl('https://old.trycloudflare.com', identity.instanceId) },
+            },
+            {
+              id: OTHER_INSTANCE_HOOK_ID,
+              config: { url: hookUrl('https://other.trycloudflare.com', 'inst-theirs') },
+            },
+            { id: LEGACY_HOOK_ID, config: { url: hookUrl('https://legacy.trycloudflare.com') } },
+            { id: UNRELATED_HOOK_ID, config: { url: 'https://ci.example.com/hook' } },
+          ]),
+          stderr: '',
+        };
+      });
+    });
+
+    it("removes only the stale hooks this instance created, never another instance's", async () => {
+      await ownedService().registerWebhookForSingleRepo(
+        '/repo/path',
+        'https://new.trycloudflare.com/api/webhooks/github'
+      );
+
+      expect(deletedHookIds()).toEqual([String(OUR_OLD_HOOK_ID)]);
+    });
+
+    it('tags the hook it creates with its instance id', async () => {
+      await ownedService().registerWebhookForSingleRepo(
+        '/repo/path',
+        'https://new.trycloudflare.com/api/webhooks/github'
+      );
+
+      const post = mockExecFn.mock.calls.find((call: [string, string[]]) =>
+        call[1].includes('POST')
+      );
+      expect(post[1]).toContain(
+        `config[url]=${hookUrl('https://new.trycloudflare.com', identity.instanceId)}`
+      );
+      expect(post[1]).toContain(`config[secret]=${identity.secret}`);
+    });
+
+    it('keeps the instance tag when the tunnel URL changes', async () => {
+      const svc = ownedService();
+      await svc.registerWebhookForSingleRepo(
+        '/repo/path',
+        'https://new.trycloudflare.com/api/webhooks/github'
+      );
+      mockExecFn.mockClear();
+
+      await svc.updateWebhookUrl('https://newer.trycloudflare.com');
+
+      const patch = mockExecFn.mock.calls.find((call: [string, string[]]) =>
+        call[1].includes('PATCH')
+      );
+      expect(patch[1]).toContain(
+        `config[url]=${hookUrl('https://newer.trycloudflare.com', identity.instanceId)}`
+      );
+    });
+
+    it('validates signatures with the persisted secret, so hooks survive a restart', () => {
+      expect(ownedService().getSecret()).toBe(identity.secret);
+      expect(ownedService().getSecret()).toBe(ownedService().getSecret());
     });
   });
 });

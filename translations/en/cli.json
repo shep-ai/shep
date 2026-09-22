@@ -389,7 +389,8 @@
         "agentResumed": "Feature agent resumed",
         "featureLabel": "Feature:",
         "runIdLabel": "Run ID:",
-        "failedToResume": "Failed to resume feature"
+        "failedToResume": "Failed to resume feature",
+        "forceOption": "Resume even when the parallel feature limit is reached"
       },
       "review": {
         "description": "Interactive review of a feature waiting for approval",
@@ -1104,6 +1105,9 @@
       "noLogFile": "No log file found for {{label}}",
       "expectedAt": "Expected: {{path}}",
       "logEmpty": "Log file is empty for {{label}}"
+    },
+    "agentGuard": {
+      "forceOption": "Run even inside a Shep agent run, where it would stop the agent running it"
     }
   },
   "bootstrap": {

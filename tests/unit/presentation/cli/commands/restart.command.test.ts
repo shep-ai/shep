@@ -239,4 +239,37 @@ describe('Restart Command', () => {
       await expect(cmd.parseAsync(['node', 'test', '--port', 'abc'])).rejects.toThrow();
     });
   });
+
+  describe('inside a Shep agent run', () => {
+    const saved = process.env.SHEP_AGENT_RUN_ID;
+
+    beforeEach(() => {
+      process.env.SHEP_AGENT_RUN_ID = 'run-inside';
+      vi.mocked(container.resolve).mockReturnValue(
+        makeDaemonService({
+          read: vi.fn().mockResolvedValue(RUNNING_STATE),
+          isAlive: vi.fn().mockReturnValue(true),
+        })
+      );
+    });
+
+    afterEach(() => {
+      if (saved === undefined) delete process.env.SHEP_AGENT_RUN_ID;
+      else process.env.SHEP_AGENT_RUN_ID = saved;
+    });
+
+    it('refuses to restart the daemon without --force', async () => {
+      await createRestartCommand().parseAsync(['node', 'test']);
+
+      expect(stopDaemon).not.toHaveBeenCalled();
+      expect(startDaemon).not.toHaveBeenCalled();
+      expect(process.exitCode).toBe(1);
+    });
+
+    it('restarts with --force', async () => {
+      await createRestartCommand().parseAsync(['node', 'test', '--force']);
+
+      expect(stopDaemon).toHaveBeenCalled();
+    });
+  });
 });

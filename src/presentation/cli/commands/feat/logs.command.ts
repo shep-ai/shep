@@ -12,9 +12,8 @@
  */
 
 import { Command } from 'commander';
-import { join } from 'node:path';
-import { homedir } from 'node:os';
 import { container } from '@/infrastructure/di/container.js';
+import { GetWorkerLogPathUseCase } from '@/application/use-cases/logs/get-worker-log-path.use-case.js';
 import { ShowFeatureUseCase } from '@/application/use-cases/features/show-feature.use-case.js';
 import { messages } from '../../ui/index.js';
 import { viewLog } from '../log-viewer.js';
@@ -38,7 +37,7 @@ export function createLogsCommand(): Command {
           return;
         }
 
-        const logPath = join(homedir(), '.shep', 'logs', `worker-${feature.agentRunId}.log`);
+        const logPath = container.resolve(GetWorkerLogPathUseCase).execute(feature.agentRunId);
         const ok = await viewLog({
           logPath,
           follow: opts.follow,

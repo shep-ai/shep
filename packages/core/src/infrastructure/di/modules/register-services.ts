@@ -86,7 +86,9 @@ import { SqliteUsageStatsRepository } from '../../services/usage/sqlite-usage-st
 import type { IOperationLogService } from '../../../application/ports/output/services/operation-log-service.interface.js';
 import { OperationLogService } from '../../services/operation-log/operation-log.service.js';
 import type { IProcessLivenessProbe } from '../../../application/ports/output/services/process-liveness.interface.js';
+import type { IProcessTreeTerminator } from '../../../application/ports/output/services/process-tree-terminator.interface.js';
 import { ProcessLivenessAdapter } from '../../services/process/process-liveness.adapter.js';
+import { ProcessTreeTerminatorAdapter } from '../../services/process/process-tree-terminator.adapter.js';
 import type { IProjectBuildService } from '../../../application/ports/output/services/project-build-service.interface.js';
 import { NodeProjectBuildService } from '../../services/build/node-project-build.service.js';
 import type { IOperationLogEventBus } from '../../../application/ports/output/services/operation-log-event-bus.interface.js';
@@ -360,6 +362,15 @@ export function registerServices(container: DependencyContainer): void {
   container.registerSingleton<IProcessLivenessProbe>(
     'IProcessLivenessProbe',
     ProcessLivenessAdapter
+  );
+
+  // Process tree terminator — Stop and the run-liveness sweep end a worker AND
+  // its agent CLI subprocesses through this port instead of `process.kill`.
+  // An instance, not a class: the adapter's optional constructor argument is a
+  // test seam tsyringe must not try to resolve.
+  container.registerInstance<IProcessTreeTerminator>(
+    'IProcessTreeTerminator',
+    new ProcessTreeTerminatorAdapter()
   );
 
   container.registerSingleton<IProjectBuildService>(

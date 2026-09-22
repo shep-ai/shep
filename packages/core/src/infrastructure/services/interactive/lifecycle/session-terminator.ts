@@ -16,6 +16,12 @@
  * 4. Closes the SDK session handle.
  * 5. Persists `stopped` status + `idle` turn status to the DB and notifies
  *    SSE subscribers.
+ * 6. Settles a pending AskUserQuestion promise (empty answers) so the
+ *    `canUseTool` callback awaiting it does not leak.
+ *
+ * A session this process does not hold (the server restarted or
+ * hot-reloaded) is still stopped: its persisted row is marked `stopped`
+ * through a guarded write, so chat-state stops reporting it as live.
  *
  * Replaces the `console.log(new Error().stack)` diagnostic call with a
  * structured `logger.debug` call.
@@ -50,7 +56,13 @@ export class SessionTerminator {
   async stop(sessionId: string): Promise<void> {
     const state = this.registry.get(sessionId);
     if (!state) {
-      // Already stopped — idempotent
+      // Not live in this process. Idempotent for a stopped row; a row still
+      // booting/ready was orphaned by a restart and is stopped here.
+      if (await this.persistence.stopOrphanedSession(sessionId)) {
+        this.logger.info(`[InteractiveSession] stopped orphaned session ${sessionId}`, {
+          sessionId,
+        });
+      }
       return;
     }
 
@@ -66,6 +78,14 @@ export class SessionTerminator {
     }
     state.turnQueue.length = 0;
     state.turnInProgress = false;
+
+    // Settle a pending AskUserQuestion so its awaiter does not leak.
+    if (state.pendingInteractionResolver) {
+      const settle = state.pendingInteractionResolver;
+      state.pendingInteraction = null;
+      state.pendingInteractionResolver = null;
+      settle({});
+    }
 
     // Cache agentSessionId so resumption works when session restarts
     if (state.agentSessionId) {
@@ -93,13 +113,20 @@ export class SessionTerminator {
   }
 
   /**
-   * Find the active session for `featureId` and stop it.
-   * No-op when no active session is found.
+   * Find the active session for `featureId` and stop it. When none is live
+   * in this process, stop the feature's orphaned persisted session instead.
    */
   async stopByFeature(featureId: string): Promise<void> {
     const state = this.registry.findActiveStateForFeature(featureId);
-    if (!state) return;
-    await this.stop(state.sessionId);
+    if (state) {
+      await this.stop(state.sessionId);
+      return;
+    }
+    if (await this.persistence.stopOrphanedSessionForFeature(featureId)) {
+      this.logger.info(`[InteractiveSession] stopped orphaned session for feature ${featureId}`, {
+        featureId,
+      });
+    }
   }
 
   /**

@@ -3,9 +3,10 @@
  *
  * Tests for the shared daemon-stop helper.
  * Covers: SIGTERM path, SIGKILL fallback (Unix only), not-running path,
- * invalid PID path. Uses tree-kill for cross-platform process tree
- * termination — the Windows path awaits the kill subprocess via callback,
- * so the mock invokes the callback if one is supplied.
+ * invalid PID path. Signals go through `signalDaemonProcesses`, which reaches
+ * the daemon and its own process group but never the feature workers it
+ * forked (real processes: tests/integration/services/
+ * stop-daemon.feature-workers.test.ts).
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
@@ -13,9 +14,11 @@ import type { IDaemonService } from '@/application/ports/output/services/daemon-
 
 const isWindows = process.platform === 'win32';
 
-// Mock tree-kill wrapper (must use vi.hoisted for factory reference)
-const { mockTreeKill } = vi.hoisted(() => ({ mockTreeKill: vi.fn() }));
-vi.mock('@/infrastructure/services/process/tree-kill', () => ({ treeKill: mockTreeKill }));
+// Mock the daemon signal helper (must use vi.hoisted for factory reference)
+const { mockSignalDaemon } = vi.hoisted(() => ({ mockSignalDaemon: vi.fn() }));
+vi.mock('@/infrastructure/services/process/daemon-process-signal', () => ({
+  signalDaemonProcesses: mockSignalDaemon,
+}));
 
 // Mock messages to prevent stdout noise
 vi.mock('../../../../src/presentation/cli/ui/index.js', () => ({
@@ -46,11 +49,7 @@ describe('stopDaemon()', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.useFakeTimers();
-    // The Windows code path awaits a callback-style treeKill. Default mock
-    // invokes the callback synchronously so promises resolve in tests.
-    mockTreeKill.mockImplementation((_pid: number, _sig: string, cb?: () => void) => {
-      if (typeof cb === 'function') cb();
-    });
+    mockSignalDaemon.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -65,7 +64,7 @@ describe('stopDaemon()', () => {
       await vi.runAllTimersAsync();
       await p;
 
-      expect(mockTreeKill).not.toHaveBeenCalled();
+      expect(mockSignalDaemon).not.toHaveBeenCalled();
     });
 
     it('calls delete() silently when read() returns null', async () => {
@@ -100,7 +99,7 @@ describe('stopDaemon()', () => {
       await vi.runAllTimersAsync();
       await p;
 
-      expect(mockTreeKill).not.toHaveBeenCalled();
+      expect(mockSignalDaemon).not.toHaveBeenCalled();
     });
 
     it('calls delete() silently when isAlive returns false', async () => {
@@ -135,7 +134,7 @@ describe('stopDaemon()', () => {
       await vi.runAllTimersAsync();
       await p;
 
-      expect(mockTreeKill).not.toHaveBeenCalled();
+      expect(mockSignalDaemon).not.toHaveBeenCalled();
     });
 
     it('calls delete() for invalid PID to clean up stale daemon.json', async () => {
@@ -155,7 +154,7 @@ describe('stopDaemon()', () => {
   });
 
   describe('SIGTERM success path (process dies within grace window)', () => {
-    it('sends SIGTERM to the daemon PID via tree-kill', async () => {
+    it('sends SIGTERM to the daemon PID', async () => {
       const pid = 12345;
       const isAlive = vi
         .fn()
@@ -171,11 +170,9 @@ describe('stopDaemon()', () => {
       await vi.runAllTimersAsync();
       await p;
 
-      // Windows path passes a third callback arg; Unix path is fire-and-forget.
-      // Check arg-by-arg so the test passes on both.
-      expect(mockTreeKill).toHaveBeenCalled();
-      expect(mockTreeKill.mock.calls[0]?.[0]).toBe(pid);
-      expect(mockTreeKill.mock.calls[0]?.[1]).toBe('SIGTERM');
+      expect(mockSignalDaemon).toHaveBeenCalled();
+      expect(mockSignalDaemon.mock.calls[0]?.[0]).toBe(pid);
+      expect(mockSignalDaemon.mock.calls[0]?.[1]).toBe('SIGTERM');
     });
 
     it('does NOT send SIGKILL when process dies before grace window expires', async () => {
@@ -191,7 +188,7 @@ describe('stopDaemon()', () => {
       await vi.runAllTimersAsync();
       await p;
 
-      const sigkillCalls = mockTreeKill.mock.calls.filter(
+      const sigkillCalls = mockSignalDaemon.mock.calls.filter(
         (call: unknown[]) => call[1] === 'SIGKILL'
       );
       expect(sigkillCalls).toHaveLength(0);
@@ -214,11 +211,11 @@ describe('stopDaemon()', () => {
     });
   });
 
-  // Windows uses an always-forceful taskkill /T /F and skips the
+  // Windows uses an always-forceful taskkill /F and skips the
   // graceful-then-escalate dance entirely — the SIGKILL fallback path only
   // exists on Unix.
   describe.skipIf(isWindows)('SIGKILL fallback path (grace window expires)', () => {
-    it('sends SIGKILL via tree-kill after 5s when process does not respond to SIGTERM', async () => {
+    it('sends SIGKILL after 5s when process does not respond to SIGTERM', async () => {
       const pid = 12345;
       // Always alive — never responds to SIGTERM
       const daemonService = makeDaemonService({
@@ -230,7 +227,7 @@ describe('stopDaemon()', () => {
       await vi.advanceTimersByTimeAsync(6000);
       await p;
 
-      const sigkillCalls = mockTreeKill.mock.calls.filter(
+      const sigkillCalls = mockSignalDaemon.mock.calls.filter(
         (call: unknown[]) => call[1] === 'SIGKILL'
       );
       expect(sigkillCalls.length).toBeGreaterThan(0);
@@ -251,17 +248,15 @@ describe('stopDaemon()', () => {
       expect(daemonService.delete).toHaveBeenCalled();
     });
 
-    it('does not throw if SIGKILL itself throws (process already exited)', async () => {
+    it('does not throw if the daemon exits right before the SIGKILL', async () => {
       const pid = 12345;
       const daemonService = makeDaemonService({
         read: vi.fn().mockResolvedValue({ pid, port: 4050, startedAt: new Date().toISOString() }),
         isAlive: vi.fn().mockReturnValue(true),
       });
 
-      // Make tree-kill throw on SIGKILL (process already gone between check and kill)
-      mockTreeKill.mockImplementation((_pid: number, sig: string) => {
-        if (sig === 'SIGKILL') throw new Error('ESRCH: no such process');
-      });
+      // The helper swallows ESRCH; the daemon being gone is the expected case.
+      mockSignalDaemon.mockResolvedValue(undefined);
 
       const p = stopDaemon(daemonService);
       await vi.advanceTimersByTimeAsync(6000);

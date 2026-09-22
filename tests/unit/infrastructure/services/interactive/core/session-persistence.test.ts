@@ -18,7 +18,7 @@ import { StreamEventDispatcher } from '@/infrastructure/services/interactive/cor
 import { SessionPersistence } from '@/infrastructure/services/interactive/core/session-persistence.js';
 import type { IInteractiveMessageRepository } from '@/application/ports/output/repositories/interactive-message-repository.interface.js';
 import type { IInteractiveSessionRepository } from '@/application/ports/output/repositories/interactive-session-repository.interface.js';
-import type { InteractiveMessage } from '@/domain/generated/output.js';
+import type { InteractiveMessage, InteractiveSession } from '@/domain/generated/output.js';
 import { InteractiveMessageRole, InteractiveSessionStatus } from '@/domain/generated/output.js';
 
 function makeState(overrides: Partial<SessionState> = {}): SessionState {
@@ -260,6 +260,57 @@ describe('SessionPersistence', () => {
       await persistence.updateTurnStatusAndNotify('sess-1', 'feat-1', 'processing');
       expect(sessionRepo.updateTurnStatus).toHaveBeenCalledWith('sess-1', 'processing');
       expect(featureCb).toHaveBeenCalledWith(expect.objectContaining({ turnStatus: 'processing' }));
+    });
+  });
+
+  describe('stopping a persisted session no live process holds', () => {
+    const persisted = {
+      id: 'sess-orphan',
+      featureId: 'feat-9',
+      status: InteractiveSessionStatus.ready,
+    } as InteractiveSession;
+
+    beforeEach(() => {
+      Object.assign(sessionRepo, {
+        findById: vi.fn().mockResolvedValue(persisted),
+        findByFeatureId: vi.fn().mockResolvedValue(persisted),
+        markStoppedIfActive: vi.fn().mockResolvedValue(true),
+      });
+    });
+
+    it('stopOrphanedSession marks the row stopped through the guarded write and notifies', async () => {
+      const featureCb = vi.fn();
+      dispatcher.subscribeByFeature('feat-9', featureCb);
+
+      await expect(persistence.stopOrphanedSession('sess-orphan')).resolves.toBe(true);
+
+      expect(sessionRepo.markStoppedIfActive).toHaveBeenCalledWith('sess-orphan', expect.any(Date));
+      expect(sessionRepo.updateStatus).not.toHaveBeenCalled();
+      expect(sessionRepo.updateTurnStatus).toHaveBeenCalledWith('sess-orphan', 'idle');
+      expect(featureCb).toHaveBeenCalledWith(
+        expect.objectContaining({ sessionStatus: InteractiveSessionStatus.stopped })
+      );
+    });
+
+    it('stopOrphanedSessionForFeature resolves the latest row for the feature', async () => {
+      await expect(persistence.stopOrphanedSessionForFeature('feat-9')).resolves.toBe(true);
+      expect(sessionRepo.findByFeatureId).toHaveBeenCalledWith('feat-9');
+      expect(sessionRepo.markStoppedIfActive).toHaveBeenCalledWith('sess-orphan', expect.any(Date));
+    });
+
+    it('reports false and notifies nobody when the row was not active', async () => {
+      vi.mocked(sessionRepo.markStoppedIfActive).mockResolvedValue(false);
+      const featureCb = vi.fn();
+      dispatcher.subscribeByFeature('feat-9', featureCb);
+
+      await expect(persistence.stopOrphanedSession('sess-orphan')).resolves.toBe(false);
+      expect(featureCb).not.toHaveBeenCalled();
+    });
+
+    it('reports false when there is no row', async () => {
+      vi.mocked(sessionRepo.findById).mockResolvedValue(null);
+      await expect(persistence.stopOrphanedSession('missing')).resolves.toBe(false);
+      expect(sessionRepo.markStoppedIfActive).not.toHaveBeenCalled();
     });
   });
 });

@@ -14,6 +14,7 @@
 
 import { vi, type Mock } from 'vitest';
 import type {
+  AgentRunListFilter,
   AgentRunStatusUpdateOptions,
   AgentRunStatusUpdates,
   IAgentRunRepository,
@@ -26,6 +27,11 @@ export type FakeAgentRunRepository = { [K in keyof IAgentRunRepository]: Mock } 
   /** Seed or overwrite a row, bypassing the spies. */
   seed(run: AgentRun): void;
 };
+
+/** Compare instants the way the SQL does: as epoch milliseconds. */
+function timestampOf(value: unknown): number {
+  return value instanceof Date ? value.getTime() : new Date(value as string | number).getTime();
+}
 
 export function createFakeAgentRunRepository(initial: AgentRun[] = []): FakeAgentRunRepository {
   const rows = new Map<string, AgentRun>();
@@ -45,6 +51,10 @@ export function createFakeAgentRunRepository(initial: AgentRun[] = []): FakeAgen
       allowedFrom.length > 0 &&
       !allowedFrom.includes(existing.status)
     ) {
+      return false;
+    }
+    const expected = options?.expectedUpdatedAt;
+    if (expected !== undefined && timestampOf(existing.updatedAt) !== timestampOf(expected)) {
       return false;
     }
     const defined = Object.fromEntries(
@@ -87,7 +97,11 @@ export function createFakeAgentRunRepository(initial: AgentRun[] = []): FakeAgen
     ),
     updatePinnedConfig: vi.fn(async () => undefined),
     findRunningByPid: vi.fn(async () => []),
-    list: vi.fn(async () => [...rows.values()].map((r) => ({ ...r }))),
+    list: vi.fn(async (filter?: AgentRunListFilter) =>
+      [...rows.values()]
+        .filter((r) => filter?.statuses === undefined || filter.statuses.includes(r.status))
+        .map((r) => ({ ...r }))
+    ),
     delete: vi.fn(async (id: string) => {
       rows.delete(id);
     }),

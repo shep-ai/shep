@@ -20,6 +20,13 @@ import type {
   OperationLogLevel,
 } from '../../domain/generated/output.js';
 
+/**
+ * Most entries `listByScope` returns — the newest ones. The chat timeline
+ * re-reads a scope while an operation runs; an application that has been
+ * redeployed for months would otherwise ship its whole history each time.
+ */
+export const MAX_OPERATION_LOG_ENTRIES_PER_SCOPE = 1000;
+
 interface OperationLogRow {
   id: string;
   operation_kind: string;
@@ -93,15 +100,17 @@ export class SQLiteOperationLogRepository implements IOperationLogRepository {
     // Tiebreak by SQLite's built-in rowid (monotonic per insert) so entries
     // appended in the same millisecond still read back in insertion order.
     // Random UUID `id` sorts alphabetically, which is NOT insertion order.
+    // The newest N are selected, then returned oldest first as callers expect.
     const rows = this.db
-      .prepare<[string, string], OperationLogRow>(
+      .prepare<[string, string, number], OperationLogRow>(
         `SELECT id, operation_kind, operation_id, level, message, detail, created_at, updated_at
            FROM operation_log_entries
           WHERE operation_kind = ? AND operation_id = ?
-          ORDER BY created_at ASC, rowid ASC`
+          ORDER BY created_at DESC, rowid DESC
+          LIMIT ?`
       )
-      .all(operationKind, operationId);
-    return rows.map(rowToEntry);
+      .all(operationKind, operationId, MAX_OPERATION_LOG_ENTRIES_PER_SCOPE);
+    return rows.reverse().map(rowToEntry);
   }
 
   async pruneBefore(timestamp: number): Promise<number> {

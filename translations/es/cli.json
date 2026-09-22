@@ -389,7 +389,8 @@
         "agentResumed": "Agente de funcionalidad reanudado",
         "featureLabel": "Funcionalidad:",
         "runIdLabel": "ID de ejecución:",
-        "failedToResume": "Error al reanudar la funcionalidad"
+        "failedToResume": "Error al reanudar la funcionalidad",
+        "forceOption": "Reanudar aunque se haya alcanzado el límite de funcionalidades en paralelo"
       },
       "review": {
         "description": "Revisión interactiva de una funcionalidad en espera de aprobación",
@@ -1104,6 +1105,9 @@
       "noLogFile": "No se encontró archivo de registro para {{label}}",
       "expectedAt": "Esperado: {{path}}",
       "logEmpty": "El archivo de registro está vacío para {{label}}"
+    },
+    "agentGuard": {
+      "forceOption": "Ejecutar incluso dentro de una ejecución de agente de Shep, aunque detenga al agente que lo ejecuta"
     }
   },
   "bootstrap": {

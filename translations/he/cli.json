@@ -389,7 +389,8 @@
         "agentResumed": "סוכן הפיצ'ר חודש",
         "featureLabel": "פיצ'ר:",
         "runIdLabel": "מזהה הרצה:",
-        "failedToResume": "חידוש הפיצ'ר נכשל"
+        "failedToResume": "חידוש הפיצ'ר נכשל",
+        "forceOption": "המשך גם כאשר הושגה מגבלת הפיצ'רים המקבילים"
       },
       "review": {
         "description": "סקירה אינטראקטיבית של פיצ'ר הממתין לאישור",
@@ -1104,6 +1105,9 @@
       "noLogFile": "לא נמצא קובץ יומן עבור {{label}}",
       "expectedAt": "צפוי ב: {{path}}",
       "logEmpty": "קובץ היומן ריק עבור {{label}}"
+    },
+    "agentGuard": {
+      "forceOption": "הרץ גם מתוך הרצת סוכן של Shep, למרות שהפעולה תעצור את הסוכן שמריץ אותה"
     }
   },
   "bootstrap": {

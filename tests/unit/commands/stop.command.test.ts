@@ -10,9 +10,11 @@ import { Command } from 'commander';
 
 const isWindows = process.platform === 'win32';
 
-// Mock tree-kill wrapper (must use vi.hoisted for factory reference)
-const { mockTreeKill } = vi.hoisted(() => ({ mockTreeKill: vi.fn() }));
-vi.mock('@/infrastructure/services/process/tree-kill', () => ({ treeKill: mockTreeKill }));
+// Mock the daemon signal helper (must use vi.hoisted for factory reference)
+const { mockSignalDaemon } = vi.hoisted(() => ({ mockSignalDaemon: vi.fn() }));
+vi.mock('@/infrastructure/services/process/daemon-process-signal', () => ({
+  signalDaemonProcesses: mockSignalDaemon,
+}));
 
 // Mock IDaemonService via the DI container
 const mockDaemonService = {
@@ -50,11 +52,7 @@ describe('stop command', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.useFakeTimers();
-    // The Windows code path awaits a callback-style treeKill. Default mock
-    // invokes the callback synchronously so promises resolve in tests.
-    mockTreeKill.mockImplementation((_pid: number, _sig: string, cb?: () => void) => {
-      if (typeof cb === 'function') cb();
-    });
+    mockSignalDaemon.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
@@ -74,13 +72,13 @@ describe('stop command', () => {
   });
 
   describe('no daemon running', () => {
-    it('prints a clear message and does not call tree-kill when read() returns null', async () => {
+    it('prints a clear message and does not signal the daemon when read() returns null', async () => {
       mockDaemonService.read.mockResolvedValue(null);
 
       const cmd = createStopCommand();
       await cmd.parseAsync([], { from: 'user' });
 
-      expect(mockTreeKill).not.toHaveBeenCalled();
+      expect(mockSignalDaemon).not.toHaveBeenCalled();
     });
 
     it('calls delete() even when read() returns null to clean up stale state', async () => {
@@ -93,7 +91,7 @@ describe('stop command', () => {
       expect(mockDaemonService.delete).toHaveBeenCalled();
     });
 
-    it('does not call tree-kill when PID is not alive', async () => {
+    it('does not signal the daemon when PID is not alive', async () => {
       mockDaemonService.read.mockResolvedValue({
         pid: 99999,
         port: 4050,
@@ -104,7 +102,7 @@ describe('stop command', () => {
       const cmd = createStopCommand();
       await cmd.parseAsync([], { from: 'user' });
 
-      expect(mockTreeKill).not.toHaveBeenCalled();
+      expect(mockSignalDaemon).not.toHaveBeenCalled();
     });
   });
 
@@ -134,9 +132,9 @@ describe('stop command', () => {
 
       // Windows path passes a third callback arg; Unix path is fire-and-forget.
       // Check arg-by-arg so the test passes on both.
-      expect(mockTreeKill).toHaveBeenCalled();
-      expect(mockTreeKill.mock.calls[0]?.[0]).toBe(pid);
-      expect(mockTreeKill.mock.calls[0]?.[1]).toBe('SIGTERM');
+      expect(mockSignalDaemon).toHaveBeenCalled();
+      expect(mockSignalDaemon.mock.calls[0]?.[0]).toBe(pid);
+      expect(mockSignalDaemon.mock.calls[0]?.[1]).toBe('SIGTERM');
     });
 
     it('does NOT send SIGKILL when process dies before 5s timeout', async () => {
@@ -155,7 +153,7 @@ describe('stop command', () => {
       await vi.runAllTimersAsync();
       await parsePromise;
 
-      const sigkillCalls = mockTreeKill.mock.calls.filter(
+      const sigkillCalls = mockSignalDaemon.mock.calls.filter(
         (call: unknown[]) => call[1] === 'SIGKILL'
       );
       expect(sigkillCalls).toHaveLength(0);
@@ -200,7 +198,7 @@ describe('stop command', () => {
       await vi.advanceTimersByTimeAsync(6000);
       await parsePromise;
 
-      const sigkillCalls = mockTreeKill.mock.calls.filter(
+      const sigkillCalls = mockSignalDaemon.mock.calls.filter(
         (call: unknown[]) => call[1] === 'SIGKILL'
       );
       expect(sigkillCalls.length).toBeGreaterThan(0);
@@ -226,7 +224,7 @@ describe('stop command', () => {
   });
 
   describe('PID validation', () => {
-    it('does not call tree-kill for a NaN PID', async () => {
+    it('does not signal the daemon for a NaN PID', async () => {
       mockDaemonService.read.mockResolvedValue({
         pid: NaN,
         port: 4050,
@@ -237,7 +235,46 @@ describe('stop command', () => {
       const cmd = createStopCommand();
       await cmd.parseAsync([], { from: 'user' });
 
-      expect(mockTreeKill).not.toHaveBeenCalled();
+      expect(mockSignalDaemon).not.toHaveBeenCalled();
+    });
+  });
+
+  // An agent inside a feature worktree has `shep` on its PATH; `shep stop`
+  // would stop the daemon that serves the UI and schedules every feature.
+  describe('inside a Shep agent run', () => {
+    const saved = process.env.SHEP_AGENT_RUN_ID;
+    let savedExitCode: typeof process.exitCode;
+
+    beforeEach(() => {
+      process.env.SHEP_AGENT_RUN_ID = 'run-inside';
+      savedExitCode = process.exitCode;
+      mockDaemonService.read.mockResolvedValue({ pid: 12345, port: 4050, startedAt: '' });
+      mockDaemonService.isAlive.mockReturnValueOnce(true).mockReturnValue(false);
+    });
+
+    afterEach(() => {
+      if (saved === undefined) delete process.env.SHEP_AGENT_RUN_ID;
+      else process.env.SHEP_AGENT_RUN_ID = saved;
+      process.exitCode = savedExitCode;
+    });
+
+    it('refuses without --force and never signals the daemon', async () => {
+      const cmd = createStopCommand();
+      const parsePromise = cmd.parseAsync([], { from: 'user' });
+      await vi.runAllTimersAsync();
+      await parsePromise;
+
+      expect(mockSignalDaemon).not.toHaveBeenCalled();
+      expect(process.exitCode).toBe(1);
+    });
+
+    it('stops the daemon with --force', async () => {
+      const cmd = createStopCommand();
+      const parsePromise = cmd.parseAsync(['--force'], { from: 'user' });
+      await vi.runAllTimersAsync();
+      await parsePromise;
+
+      expect(mockSignalDaemon).toHaveBeenCalled();
     });
   });
 });

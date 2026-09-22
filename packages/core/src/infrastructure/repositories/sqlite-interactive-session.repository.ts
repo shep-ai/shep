@@ -84,6 +84,17 @@ export class SQLiteInteractiveSessionRepository implements IInteractiveSessionRe
       .run({ id, last_activity_at: lastActivityAt.getTime(), updated_at: Date.now() });
   }
 
+  async markStoppedIfActive(id: string, stoppedAt: Date): Promise<boolean> {
+    const result = this.db
+      .prepare(
+        `UPDATE interactive_sessions
+         SET status = 'stopped', stopped_at = ?, updated_at = ?
+         WHERE id = ? AND status IN ('booting','ready')`
+      )
+      .run(stoppedAt.getTime(), Date.now(), id);
+    return result.changes > 0;
+  }
+
   async markAllActiveStopped(): Promise<void> {
     this.db
       .prepare(

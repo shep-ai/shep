@@ -61,15 +61,51 @@ function createMockChild(): MockChild {
 }
 
 // ---- child_process.spawn mock ------------------------------------------------
-const { mockSpawn, mockOpenSync } = vi.hoisted(() => {
+const { mockSpawn, mockOpenSync, mockRenameSync, mockExistsSync } = vi.hoisted(() => {
   const mockSpawn = vi.fn();
   const mockOpenSync = vi.fn().mockReturnValue(42); // fake fd
-  return { mockSpawn, mockOpenSync };
+  const mockRenameSync = vi.fn();
+  const mockExistsSync = vi.fn().mockReturnValue(false);
+  return { mockSpawn, mockOpenSync, mockRenameSync, mockExistsSync };
 });
 
 vi.mock('node:child_process', () => ({
   spawn: mockSpawn,
 }));
+
+// ---- node:http mock — the readiness probe ---------------------------------------
+const { mockHttpGet, httpState } = vi.hoisted(() => {
+  const httpState = { ready: false };
+  const mockHttpGet = vi.fn((_url: string, onResponse: (res: unknown) => void) => {
+    let onError: ((err: Error) => void) | undefined;
+    const req = {
+      on(event: string, fn: (err: Error) => void) {
+        if (event === 'error') onError = fn;
+        return req;
+      },
+      setTimeout: vi.fn(),
+      destroy: vi.fn(),
+    };
+    process.nextTick(() => {
+      if (httpState.ready) {
+        const res = {
+          resume: vi.fn(),
+          on(event: string, fn: () => void) {
+            if (event === 'end') fn();
+            return res;
+          },
+        };
+        onResponse(res);
+      } else {
+        onError?.(new Error('connect ECONNREFUSED'));
+      }
+    });
+    return req;
+  });
+  return { mockHttpGet, httpState };
+});
+
+vi.mock('node:http', () => ({ default: { get: mockHttpGet }, get: mockHttpGet }));
 
 vi.mock('node:fs', async (importOriginal) => {
   const actual = (await importOriginal()) as Record<string, unknown>;
@@ -77,13 +113,25 @@ vi.mock('node:fs', async (importOriginal) => {
     ...actual,
     openSync: mockOpenSync,
     closeSync: vi.fn(),
-    renameSync: vi.fn(),
-    existsSync: vi.fn().mockReturnValue(false),
+    renameSync: mockRenameSync,
+    existsSync: mockExistsSync,
   };
 });
 
 vi.mock('@/infrastructure/services/filesystem/shep-directory.service.js', () => ({
   getDaemonLogPath: vi.fn().mockReturnValue('/tmp/test-shep/daemon.log'),
+}));
+
+// ---- Cross-process start lock mock -------------------------------------------
+const { mockAcquireLock, mockReleaseLock } = vi.hoisted(() => {
+  const mockReleaseLock = vi.fn();
+  const mockAcquireLock = vi.fn();
+  return { mockAcquireLock, mockReleaseLock };
+});
+
+vi.mock('@/infrastructure/services/daemon/daemon-start-lock.js', () => ({
+  acquireDaemonStartLock: mockAcquireLock,
+  getDaemonStartLockPath: vi.fn().mockReturnValue('/tmp/test-shep/daemon.start.lock'),
 }));
 
 // Global mock child — reassigned per test in beforeEach
@@ -118,7 +166,7 @@ vi.mock('@/infrastructure/services/port.service.js', () => ({
 }));
 
 // ---- CLI UI mocks (suppress console output) ----------------------------------
-vi.mock('src/presentation/cli/ui/index.js', () => ({
+vi.mock('../../../../src/presentation/cli/ui/index.js', () => ({
   colors: {
     success: vi.fn((s: string) => s),
     muted: vi.fn((s: string) => s),
@@ -140,7 +188,14 @@ vi.mock('src/presentation/cli/ui/index.js', () => ({
 }));
 
 import { findAvailablePort } from '@/infrastructure/services/port.service.js';
-import { startDaemon } from '../../../../src/presentation/cli/commands/daemon/start-daemon.js';
+import {
+  startDaemon,
+  SPAWN_SETTLE_MS,
+} from '../../../../src/presentation/cli/commands/daemon/start-daemon.js';
+import {
+  READY_TIMEOUT_MS,
+  READY_POLL_MS,
+} from '../../../../src/presentation/cli/commands/daemon/daemon-readiness.js';
 
 describe('startDaemon()', () => {
   const originalEnv = process.env.SHEP_SKIP_READINESS_CHECK;
@@ -151,7 +206,10 @@ describe('startDaemon()', () => {
     mockChild = createMockChild();
     mockSpawn.mockReturnValue(mockChild);
     mockDaemonService.read.mockResolvedValue(null);
-    mockDaemonService.isAlive.mockReturnValue(false);
+    // Only the freshly spawned child is alive.
+    mockDaemonService.isAlive.mockImplementation((pid: number) => pid === mockChild.pid);
+    mockAcquireLock.mockResolvedValue({ release: mockReleaseLock });
+    mockExistsSync.mockReturnValue(false);
     (findAvailablePort as ReturnType<typeof vi.fn>).mockResolvedValue(4050);
 
     // Skip readiness check in unit tests (avoids http.get calls)
@@ -320,6 +378,136 @@ describe('startDaemon()', () => {
       await startDaemon();
 
       expect(mockBrowserOpen).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('concurrent starts (cross-process start lock)', () => {
+    function order(fn: { mock: { invocationCallOrder: number[] } }): number {
+      return fn.mock.invocationCallOrder[0];
+    }
+
+    it('reads daemon.json only after acquiring the start lock', async () => {
+      await startDaemon();
+      expect(mockAcquireLock).toHaveBeenCalledWith(
+        '/tmp/test-shep/daemon.start.lock',
+        expect.objectContaining({ isAlive: expect.any(Function) })
+      );
+      expect(order(mockAcquireLock)).toBeLessThan(order(mockDaemonService.read));
+    });
+
+    it('holds the lock until daemon.json is written', async () => {
+      await startDaemon();
+      expect(order(mockDaemonService.write)).toBeLessThan(order(mockReleaseLock));
+    });
+
+    it('does not spawn when the lock holder started a daemon while we waited', async () => {
+      // The lock is granted only after the other start wrote daemon.json.
+      mockAcquireLock.mockImplementation(async () => {
+        mockDaemonService.read.mockResolvedValue({
+          pid: 1234,
+          port: 4050,
+          startedAt: '2026-01-01T00:00:00.000Z',
+        });
+        mockDaemonService.isAlive.mockImplementation((pid: number) => pid === 1234);
+        return { release: mockReleaseLock };
+      });
+
+      await startDaemon();
+
+      expect(mockSpawn).not.toHaveBeenCalled();
+      expect(mockRenameSync).not.toHaveBeenCalled();
+      expect(mockDaemonService.write).not.toHaveBeenCalled();
+      expect(mockReleaseLock).toHaveBeenCalled();
+    });
+
+    it('rotates daemon.log only while holding the lock', async () => {
+      mockExistsSync.mockReturnValue(true);
+      await startDaemon();
+      expect(mockRenameSync).toHaveBeenCalled();
+      expect(order(mockAcquireLock)).toBeLessThan(order(mockRenameSync));
+      expect(order(mockRenameSync)).toBeLessThan(order(mockReleaseLock));
+    });
+
+    it('releases the lock when the child crashes at startup', async () => {
+      mockSpawn.mockImplementation(() => {
+        const child = createMockChild();
+        process.nextTick(() => child._emit('exit', 1, null));
+        return child;
+      });
+      await startDaemon();
+      expect(mockReleaseLock).toHaveBeenCalled();
+    });
+
+    it('does not record a pid that is no longer alive after the settle window', async () => {
+      mockDaemonService.isAlive.mockReturnValue(false);
+
+      await startDaemon();
+
+      expect(mockDaemonService.write).not.toHaveBeenCalled();
+      expect(mockDaemonService.delete).toHaveBeenCalled();
+      expect(mockBrowserOpen).not.toHaveBeenCalled();
+      expect(mockReleaseLock).toHaveBeenCalled();
+    });
+  });
+
+  describe('readiness gates the daemon.json record', () => {
+    beforeEach(() => {
+      delete process.env.SHEP_SKIP_READINESS_CHECK;
+      httpState.ready = false;
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      expect(vi.getTimerCount()).toBe(0);
+      vi.useRealTimers();
+    });
+
+    function order(fn: { mock: { invocationCallOrder: number[] } }): number {
+      return fn.mock.invocationCallOrder[0];
+    }
+
+    it('does not record a daemon that dies after the settle window but before it is ready', async () => {
+      const done = startDaemon();
+      await vi.advanceTimersByTimeAsync(SPAWN_SETTLE_MS);
+      // Still starting: the port refuses connections for a while…
+      await vi.advanceTimersByTimeAsync(READY_POLL_MS * 3);
+      // …then the child dies (e.g. EADDRINUSE, a crash while booting).
+      mockChild._emit('exit', 1, null);
+      await vi.advanceTimersByTimeAsync(READY_POLL_MS);
+      await done;
+
+      const recorded = mockDaemonService.write.mock.calls.length > 0;
+      const removed = mockDaemonService.delete.mock.calls.length > 0;
+      expect(!recorded || removed).toBe(true);
+      expect(mockBrowserOpen).not.toHaveBeenCalled();
+      expect(mockReleaseLock).toHaveBeenCalled();
+    });
+
+    it('writes daemon.json only after the readiness probe succeeds', async () => {
+      const done = startDaemon();
+      await vi.advanceTimersByTimeAsync(SPAWN_SETTLE_MS);
+      await vi.advanceTimersByTimeAsync(READY_POLL_MS * 2);
+      expect(mockDaemonService.write).not.toHaveBeenCalled();
+
+      httpState.ready = true;
+      await vi.advanceTimersByTimeAsync(READY_POLL_MS);
+      await done;
+
+      expect(mockDaemonService.write).toHaveBeenCalledTimes(1);
+      const lastProbe = mockHttpGet.mock.invocationCallOrder.at(-1)!;
+      expect(lastProbe).toBeLessThan(order(mockDaemonService.write));
+      expect(mockBrowserOpen).toHaveBeenCalledWith('http://localhost:4050/applications');
+    });
+
+    it('records a daemon that is still alive when readiness times out, and stops probing', async () => {
+      const done = startDaemon();
+      await vi.advanceTimersByTimeAsync(SPAWN_SETTLE_MS + READY_TIMEOUT_MS + READY_POLL_MS);
+      await done;
+
+      expect(mockDaemonService.write).toHaveBeenCalledTimes(1);
+      const probes = mockHttpGet.mock.calls.length;
+      await vi.advanceTimersByTimeAsync(READY_TIMEOUT_MS);
+      expect(mockHttpGet.mock.calls.length).toBe(probes);
     });
   });
 });

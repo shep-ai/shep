@@ -16,6 +16,7 @@ import { execFileSync } from 'node:child_process';
 import { writeFileSync, unlinkSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
+import { randomUUID } from 'node:crypto';
 import { PluginType, type Plugin } from '../../../domain/generated/output.js';
 import type {
   IMcpServerManager,
@@ -193,7 +194,12 @@ export class McpServerManagerService implements IMcpServerManager {
 
     if (Object.keys(mcpServers).length === 0) return null;
 
-    const configPath = join(tmpdir(), `shep-mcp-${featureId}.json`);
+    // Unique per write, not per feature. Every worker process owns its own
+    // manager, and supervisor auto-approve starts the next worker for a feature
+    // while the previous one is still tearing down — a feature-derived path
+    // let the old worker's cleanup delete the file the new worker had just
+    // written. Each manager only ever unlinks the path it generated.
+    const configPath = join(tmpdir(), `shep-mcp-${featureId}-${randomUUID()}.json`);
     writeFileSync(configPath, JSON.stringify({ mcpServers }, null, 2), 'utf-8');
     entry.configPath = configPath;
 

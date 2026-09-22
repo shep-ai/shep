@@ -162,6 +162,31 @@ describe('SQLiteInteractiveSessionRepository', () => {
     });
   });
 
+  describe('markStoppedIfActive()', () => {
+    it('stops a booting or ready row and reports the change', async () => {
+      await repository.create(
+        createTestSession({ id: 's1', status: InteractiveSessionStatus.ready })
+      );
+      const stoppedAt = new Date();
+
+      expect(await repository.markStoppedIfActive('s1', stoppedAt)).toBe(true);
+
+      const row = await repository.findById('s1');
+      expect(row!.status).toBe(InteractiveSessionStatus.stopped);
+      expect(row!.stoppedAt?.getTime()).toBe(stoppedAt.getTime());
+    });
+
+    it('leaves a row that is already stopped or errored untouched', async () => {
+      await repository.create(
+        createTestSession({ id: 's2', status: InteractiveSessionStatus.error })
+      );
+
+      expect(await repository.markStoppedIfActive('s2', new Date())).toBe(false);
+      expect((await repository.findById('s2'))!.status).toBe(InteractiveSessionStatus.error);
+      expect(await repository.markStoppedIfActive('missing', new Date())).toBe(false);
+    });
+  });
+
   describe('countActiveSessions()', () => {
     it('returns 0 when no active sessions', async () => {
       expect(await repository.countActiveSessions()).toBe(0);

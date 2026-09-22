@@ -685,4 +685,27 @@ describe('Upgrade Command', () => {
       );
     });
   });
+
+  describe('inside a Shep agent run', () => {
+    const saved = process.env.SHEP_AGENT_RUN_ID;
+
+    beforeEach(() => {
+      process.env.SHEP_AGENT_RUN_ID = 'run-inside';
+    });
+
+    afterEach(() => {
+      if (saved === undefined) delete process.env.SHEP_AGENT_RUN_ID;
+      else process.env.SHEP_AGENT_RUN_ID = saved;
+    });
+
+    it('refuses to upgrade (which stops the daemon) without --force', async () => {
+      const { spawnFn } = createMockSpawn();
+
+      await createUpgradeCommand(spawnFn as any).parseAsync(['node', 'test']);
+
+      expect(spawnFn).not.toHaveBeenCalled();
+      expect(stopDaemon).not.toHaveBeenCalled();
+      expect(process.exitCode).toBe(1);
+    });
+  });
 });

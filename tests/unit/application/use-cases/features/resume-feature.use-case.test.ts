@@ -19,6 +19,7 @@ vi.mock('@/infrastructure/services/settings.service.js', () => ({
 import { ResumeFeatureUseCase } from '@/application/use-cases/features/resume-feature.use-case.js';
 import { AgentRunStatus, SdlcLifecycle, BuildMode } from '@/domain/generated/output.js';
 import type { AgentRun, Feature } from '@/domain/generated/output.js';
+import { createMockFeatureCapacityService } from '../../../../helpers/feature-capacity.mock.js';
 
 function createMockFeatureRepo() {
   return {
@@ -117,8 +118,10 @@ describe('ResumeFeatureUseCase', () => {
   let runRepo: ReturnType<typeof createMockRunRepo>;
   let processService: ReturnType<typeof createMockProcessService>;
   let worktreeService: ReturnType<typeof createMockWorktreeService>;
+  let capacity: ReturnType<typeof createMockFeatureCapacityService>;
 
   beforeEach(() => {
+    capacity = createMockFeatureCapacityService();
     featureRepo = createMockFeatureRepo();
     runRepo = createMockRunRepo();
     processService = createMockProcessService();
@@ -128,7 +131,8 @@ describe('ResumeFeatureUseCase', () => {
       runRepo as any,
       processService as any,
       worktreeService as any,
-      { load: vi.fn().mockResolvedValue({ security: { mode: 'Advisory' } }) } as any
+      { load: vi.fn().mockResolvedValue({ security: { mode: 'Advisory' } }) } as any,
+      capacity as never
     );
   });
 

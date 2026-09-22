@@ -49,6 +49,8 @@ import {
   initializeMonthlyRecapWatcher,
   getMonthlyRecapWatcher,
 } from '@/infrastructure/services/contributors/monthly-recap-watcher.service.js';
+import { RetentionScheduler } from '@/infrastructure/services/maintenance/retention-scheduler.js';
+import { PruneRetainedDataUseCase } from '@/application/use-cases/maintenance/prune-retained-data.use-case.js';
 import { DetectStaleGoodFirstIssueUseCase } from '@/application/use-cases/contributors/detect-stale-good-first-issue.use-case.js';
 import { GenerateMonthlyRecapUseCase } from '@/application/use-cases/contributors/generate-monthly-recap.use-case.js';
 import { PublishMonthlyRecapUseCase } from '@/application/use-cases/contributors/publish-monthly-recap.use-case.js';
@@ -136,6 +138,14 @@ Examples:
         );
         getPrSyncWatcher().start();
 
+        // Re-run data retention while this long-lived process is up: it
+        // otherwise runs only at process start (spec 116).
+        const retentionScheduler = new RetentionScheduler(
+          () => container.resolve(PruneRetainedDataUseCase).execute(),
+          (error) => process.stderr.write(`[ui] data retention prune failed: ${String(error)}\n`)
+        );
+        retentionScheduler.start();
+
         // Start auto-archive watcher for completed features
         initializeAutoArchiveWatcher(featureRepo);
         getAutoArchiveWatcher().start();
@@ -213,6 +223,7 @@ Examples:
           getPrSyncWatcher().stop();
           getNotificationWatcher().stop();
           getAutoArchiveWatcher().stop();
+          retentionScheduler.stop();
           getStaleGoodFirstIssueWatcher().stop();
           getMonthlyRecapWatcher().stop();
           void whatsappService.stop();

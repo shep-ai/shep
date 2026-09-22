@@ -11,6 +11,7 @@ import type {
   IAgentRunRepository,
   AgentRunPinnedConfigUpdate,
   AgentRunStatusUpdateOptions,
+  AgentRunListFilter,
   AgentRunStatusUpdates,
 } from '../../application/ports/output/agents/agent-run-repository.interface.js';
 import type { AgentRun, AgentRunStatus } from '../../domain/generated/output.js';
@@ -187,6 +188,10 @@ export class SQLiteAgentRunRepository implements IAgentRunRepository {
         params[`allowed_${i}`] = allowed;
       });
     }
+    if (options?.expectedUpdatedAt !== undefined) {
+      conditions.push('updated_at = @expected_updated_at');
+      params.expected_updated_at = toTimestamp(options.expectedUpdatedAt);
+    }
 
     const stmt = this.db.prepare(
       `UPDATE agent_runs SET ${setClauses.join(', ')} WHERE ${conditions.join(' AND ')}`
@@ -219,10 +224,18 @@ export class SQLiteAgentRunRepository implements IAgentRunRepository {
     return rows.map(fromDatabase);
   }
 
-  async list(): Promise<AgentRun[]> {
-    const stmt = this.db.prepare('SELECT * FROM agent_runs');
-    const rows = stmt.all() as AgentRunRow[];
+  async list(filter?: AgentRunListFilter): Promise<AgentRun[]> {
+    const statuses = filter?.statuses;
+    if (statuses === undefined) {
+      const rows = this.db.prepare('SELECT * FROM agent_runs').all() as AgentRunRow[];
+      return rows.map(fromDatabase);
+    }
+    if (statuses.length === 0) return [];
 
+    const placeholders = statuses.map(() => '?').join(',');
+    const rows = this.db
+      .prepare(`SELECT * FROM agent_runs WHERE status IN (${placeholders})`)
+      .all(...statuses) as AgentRunRow[];
     return rows.map(fromDatabase);
   }
 

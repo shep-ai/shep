@@ -7,14 +7,15 @@
  * Fixture layout:
  *   -home-user-projects-foo/session-001.jsonl  (valid, string content, 4 messages)
  *   -home-user-projects-foo/session-002.jsonl  (valid, array content, 2 messages)
- *   -home-user-projects-foo/session-003.jsonl  (malformed — invalid JSON on line 2)
+ *   -home-user-projects-foo/session-003.jsonl  (cwd line + an invalid JSON line — kept,
+ *                                                 the bad line is skipped: spec 116)
  *   -home-user-projects-bar/session-004.jsonl  (minimal, 1 user message)
  *
- * Mtime order (descending): session-001 > session-002 > session-004 > session-003
+ * Mtime order (descending): session-001 > session-002 > session-003 > session-004
  */
 
 import 'reflect-metadata';
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach, afterAll } from 'vitest';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import * as url from 'node:url';
@@ -59,16 +60,16 @@ describe('ClaudeCodeSessionRepository (integration)', () => {
   });
 
   describe('list()', () => {
-    it('should return 3 valid sessions (session-003 is skipped as malformed)', async () => {
+    it('should return all 4 sessions (a malformed line no longer hides session-003)', async () => {
       const sessions = await repo.list({ limit: 0 });
-      expect(sessions).toHaveLength(3);
+      expect(sessions).toHaveLength(4);
     });
 
     it('should return sessions sorted by mtime descending', async () => {
       const sessions = await repo.list({ limit: 0 });
       const ids = sessions.map((s) => s.id);
-      // session-001 newest, then session-002, then session-004 oldest
-      expect(ids).toEqual(['session-001', 'session-002', 'session-004']);
+      // session-001 newest, then session-002, session-003, and session-004 oldest
+      expect(ids).toEqual(['session-001', 'session-002', 'session-003', 'session-004']);
     });
 
     it('should return at most 2 sessions with limit: 2', async () => {
@@ -88,10 +89,11 @@ describe('ClaudeCodeSessionRepository (integration)', () => {
       expect(sessions.length).toBeLessThanOrEqual(20);
     });
 
-    it('should skip malformed session-003 silently without crashing', async () => {
+    it('should skip the malformed line of session-003 without dropping the session', async () => {
       const sessions = await repo.list({ limit: 0 });
-      const ids = sessions.map((s) => s.id);
-      expect(ids).not.toContain('session-003');
+      const session003 = sessions.find((s) => s.id === 'session-003');
+      expect(session003?.projectPath).toBe('/home/user/projects/foo');
+      expect(session003?.messageCount).toBe(0);
     });
 
     it('should extract preview from array content blocks for session-002', async () => {
@@ -141,11 +143,12 @@ describe('ClaudeCodeSessionRepository (integration)', () => {
   describe('list() with projectPath filter', () => {
     it('should return only sessions from the matching project directory', async () => {
       const sessions = await repo.list({ limit: 0, projectPath: '/home/user/projects/foo' });
-      // foo has session-001 and session-002 (session-003 is malformed)
-      expect(sessions).toHaveLength(2);
+      // foo has session-001, session-002 and session-003 (whose bad line is skipped)
+      expect(sessions).toHaveLength(3);
       const ids = sessions.map((s) => s.id);
       expect(ids).toContain('session-001');
       expect(ids).toContain('session-002');
+      expect(ids).toContain('session-003');
       expect(ids).not.toContain('session-004');
     });
 
@@ -297,6 +300,135 @@ describe('ClaudeCodeSessionRepository (integration)', () => {
 
       const uniquePaths = new Set(sessions.map((sess) => sess.filePath));
       expect(uniquePaths.size).toBe(sessions.length);
+    });
+  });
+
+  describe('live transcripts (spec 116)', () => {
+    let liveRoot: string;
+    let liveRepo: ClaudeCodeSessionRepository;
+    const PROJECT = '/home/user/projects/live';
+
+    function line(role: 'user' | 'assistant', content: string, timestamp: string): string {
+      return `${JSON.stringify({
+        type: role,
+        cwd: PROJECT,
+        timestamp,
+        message: { role, content },
+      })}\n`;
+    }
+
+    async function writeTranscript(id: string, body: string): Promise<string> {
+      const dir = path.join(liveRoot, encodeClaudeProjectDir(PROJECT));
+      await fs.mkdir(dir, { recursive: true });
+      const file = path.join(dir, `${id}.jsonl`);
+      await fs.writeFile(file, body);
+      return file;
+    }
+
+    beforeAll(async () => {
+      liveRoot = await fs.mkdtemp(path.join(os.tmpdir(), 'shep-live-sessions-'));
+    });
+
+    beforeEach(() => {
+      liveRepo = new ClaudeCodeSessionRepository(liveRoot);
+    });
+
+    afterAll(async () => {
+      await fs.rm(liveRoot, { recursive: true, force: true });
+    });
+
+    it('keeps a session whose last line is still being written', async () => {
+      const complete = line('user', 'first question', '2026-01-01T10:00:00Z');
+      const partial = line('assistant', 'half an answer', '2026-01-01T10:00:05Z').slice(0, 30);
+      await writeTranscript('live-partial', complete + partial);
+
+      const sessions = await liveRepo.list({ projectPath: PROJECT, limit: 0 });
+      const live = sessions.find((s) => s.id === 'live-partial');
+
+      expect(live).toBeDefined();
+      expect(live?.messageCount).toBe(1);
+      expect(live?.preview).toBe('first question');
+    });
+
+    it('skips a malformed line in the middle instead of dropping the session', async () => {
+      await writeTranscript(
+        'live-malformed',
+        `${line('user', 'q', '2026-01-01T10:00:00Z')}NOT JSON\n${line(
+          'assistant',
+          'a',
+          '2026-01-01T10:00:09Z'
+        )}`
+      );
+
+      const sessions = await liveRepo.list({ projectPath: PROJECT, limit: 0 });
+      const session = sessions.find((s) => s.id === 'live-malformed');
+
+      expect(session?.messageCount).toBe(2);
+      expect(session?.lastMessageAt).toEqual(new Date('2026-01-01T10:00:09Z'));
+    });
+
+    it('counts a final line that is complete JSON without a trailing newline', async () => {
+      const last = line('assistant', 'done', '2026-01-01T10:00:07Z').trimEnd();
+      await writeTranscript('live-no-eol', line('user', 'q', '2026-01-01T10:00:00Z') + last);
+
+      const [session] = (await liveRepo.list({ projectPath: PROJECT, limit: 0 })).filter(
+        (s) => s.id === 'live-no-eol'
+      );
+
+      expect(session.messageCount).toBe(2);
+      expect(session.lastMessageAt).toEqual(new Date('2026-01-01T10:00:07Z'));
+    });
+
+    it('re-reads only the bytes appended since the previous list', async () => {
+      const first = line('user', 'original question', '2026-01-01T10:00:00Z');
+      const file = await writeTranscript('live-append', first);
+      await liveRepo.list({ projectPath: PROJECT, limit: 0 });
+
+      // Rewrite already-scanned bytes in place (same length), then append a
+      // message. A reader that re-parses the whole file would see the edit.
+      const handle = await fs.open(file, 'r+');
+      const edited = Buffer.from(first.replace('original', 'REWRITTEN'.slice(0, 8)));
+      await handle.write(edited, 0, edited.length, 0);
+      await handle.close();
+      await fs.appendFile(file, line('assistant', 'reply', '2026-01-01T10:01:00Z'));
+
+      const [session] = (await liveRepo.list({ projectPath: PROJECT, limit: 0 })).filter(
+        (s) => s.id === 'live-append'
+      );
+
+      expect(session.preview).toBe('original question');
+      expect(session.messageCount).toBe(2);
+      expect(session.lastMessageAt).toEqual(new Date('2026-01-01T10:01:00Z'));
+    });
+
+    it('rescans a transcript that was truncated or replaced', async () => {
+      const file = await writeTranscript(
+        'live-replaced',
+        line('user', 'old', '2026-01-01T10:00:00Z') +
+          line('assistant', 'old', '2026-01-01T10:00:01Z')
+      );
+      await liveRepo.list({ projectPath: PROJECT, limit: 0 });
+
+      await fs.writeFile(file, line('user', 'new', '2026-01-02T10:00:00Z'));
+
+      const [session] = (await liveRepo.list({ projectPath: PROJECT, limit: 0 })).filter(
+        (s) => s.id === 'live-replaced'
+      );
+
+      expect(session.preview).toBe('new');
+      expect(session.messageCount).toBe(1);
+    });
+
+    it('returns the complete messages of a live session from findById', async () => {
+      const partial = line('assistant', 'streaming', '2026-01-01T10:00:05Z').slice(0, 20);
+      await writeTranscript(
+        'live-detail',
+        `${line('user', 'q', '2026-01-01T10:00:00Z')}garbage\n${partial}`
+      );
+
+      const session = await liveRepo.findById('live-detail', { messageLimit: 0 });
+
+      expect(session?.messages?.map((m) => m.content)).toEqual(['q']);
     });
   });
 });

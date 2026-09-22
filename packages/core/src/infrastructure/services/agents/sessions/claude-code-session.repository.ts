@@ -4,7 +4,9 @@
  * Infrastructure implementation of IAgentSessionRepository for Claude Code.
  * Reads JSONL session files from ~/.claude/projects/ using a lazy stat-then-parse
  * strategy for performance: stat all files in parallel for mtime-based sorting,
- * then fully parse only the top-N files needed for the list view.
+ * then summarise only the top-N files needed for the list view — incrementally,
+ * reading just the bytes appended since the previous list (see
+ * jsonl-transcript-scanner.ts).
  *
  * File structure:
  *   ~/.claude/projects/<encoded-project-path>/<uuid>.jsonl
@@ -17,12 +19,14 @@ import * as fs from 'node:fs/promises';
 import * as os from 'node:os';
 import * as path from 'node:path';
 import { injectable } from 'tsyringe';
-import type {
-  AgentSession,
-  AgentSessionMessage,
-  AgentType,
-} from '../../../../domain/generated/output.js';
+import type { AgentSession, AgentType } from '../../../../domain/generated/output.js';
 import { deleteTranscriptPath } from './transcript-deletion.js';
+import {
+  resolveTimestamp,
+  scanTranscript,
+  TranscriptSummaryCache,
+} from './jsonl-transcript-scanner.js';
+import { ClaudeTranscriptAccumulator, type SessionMetadata } from './claude-code-transcript.js';
 import {
   ClaudeCodeSessionFileCollector,
   type SessionFileInfo,
@@ -33,41 +37,15 @@ import type {
   GetSessionOptions,
 } from '../../../../application/ports/output/agents/agent-session-repository.interface.js';
 
-/**
- * A parsed line entry from a Claude Code JSONL session file.
- */
-interface JournalEntry {
-  uuid?: string;
-  parentUuid?: string;
-  sessionId?: string;
-  timestamp?: string;
-  cwd?: string;
-  gitBranch?: string;
-  version?: string;
-  isSidechain?: boolean;
-  permissionMode?: string;
-  userType?: string;
-  type: string;
-  message?: {
-    role?: string;
-    content?: unknown;
-  };
-}
-
-/** Extra metadata extracted from session JSONL that isn't in the domain type */
-export interface SessionMetadata {
-  cliVersion?: string;
-  gitBranch?: string;
-  permissionMode?: string;
-  userType?: string;
-  toolUsage: Record<string, number>;
-  userMessageCount: number;
-  assistantMessageCount: number;
-}
+export type { SessionMetadata } from './claude-code-transcript.js';
 
 @injectable()
 export class ClaudeCodeSessionRepository implements IAgentSessionRepository {
   private readonly files: ClaudeCodeSessionFileCollector;
+  /** List summaries, advanced by the bytes appended since the previous list. */
+  private readonly summaries = new TranscriptSummaryCache(
+    () => new ClaudeTranscriptAccumulator(false)
+  );
 
   constructor(private readonly basePath: string = path.join(os.homedir(), '.claude', 'projects')) {
     this.files = new ClaudeCodeSessionFileCollector(basePath);
@@ -139,171 +117,53 @@ export class ClaudeCodeSessionRepository implements IAgentSessionRepository {
   }
 
   /**
-   * Parse a JSONL session file into an AgentSession.
+   * Read a JSONL session file into an AgentSession.
    *
-   * Throws on any JSON parse failure so the caller can skip the file.
+   * The list view folds only the bytes appended since its previous scan; the
+   * detail view reads the whole file for its messages. Both skip malformed
+   * lines and tolerate a half-written last line, so a live session stays
+   * visible while the agent is still writing it.
    */
   private async parseSessionFile(
     fileInfo: SessionFileInfo,
     options: { includeMessages: boolean; messageLimit?: number }
   ): Promise<AgentSession | null> {
-    const content = await fs.readFile(fileInfo.filePath, 'utf-8');
-    const lines = content.split('\n').filter((l) => l.trim().length > 0);
+    const transcript = options.includeMessages
+      ? await scanTranscript(fileInfo.filePath, new ClaudeTranscriptAccumulator(true))
+      : await this.summaries.summarize(fileInfo.filePath);
 
-    let cwd: string | undefined;
-    let firstMessageAt: Date | undefined;
-    let lastMessageAt: Date | undefined;
-    let preview: string | undefined;
-    let messageCount = 0;
-    const messages: AgentSessionMessage[] = [];
-
-    // Extra metadata tracking
-    let cliVersion: string | undefined;
-    let gitBranch: string | undefined;
-    let permissionMode: string | undefined;
-    let userType: string | undefined;
-    const toolUsage: Record<string, number> = {};
-    let userMessageCount = 0;
-    let assistantMessageCount = 0;
-
-    for (const line of lines) {
-      // JSON.parse throws on invalid JSON — propagates to caller which skips the file
-      const entry = JSON.parse(line) as JournalEntry;
-
-      if (!cwd && typeof entry.cwd === 'string') {
-        cwd = entry.cwd;
-      }
-      if (!cliVersion && typeof entry.version === 'string') {
-        cliVersion = entry.version;
-      }
-      if (!gitBranch && typeof entry.gitBranch === 'string') {
-        gitBranch = entry.gitBranch;
-      }
-      if (!permissionMode && typeof entry.permissionMode === 'string') {
-        permissionMode = entry.permissionMode;
-      }
-      if (!userType && typeof entry.userType === 'string') {
-        userType = entry.userType;
-      }
-
-      if (entry.type === 'user' || entry.type === 'assistant') {
-        const message = entry.message;
-        const role = message?.role;
-        if (role === 'user' || role === 'assistant') {
-          messageCount++;
-          if (role === 'user') userMessageCount++;
-          if (role === 'assistant') assistantMessageCount++;
-
-          const timestamp = entry.timestamp ? new Date(entry.timestamp) : fileInfo.mtime;
-
-          firstMessageAt ??= timestamp;
-          lastMessageAt = timestamp;
-
-          if (entry.type === 'user' && preview === undefined) {
-            preview = this.extractTextContent(message?.content);
-          }
-
-          // Track tool usage from assistant messages
-          if (role === 'assistant' && Array.isArray(message?.content)) {
-            for (const block of message.content as Record<string, unknown>[]) {
-              if (block?.type === 'tool_use' && typeof block.name === 'string') {
-                toolUsage[block.name] = (toolUsage[block.name] ?? 0) + 1;
-              }
-            }
-          }
-
-          if (options.includeMessages) {
-            messages.push({
-              uuid: entry.uuid ?? '',
-              role: role as 'user' | 'assistant',
-              content: this.extractTextContent(message?.content),
-              timestamp,
-            });
-          }
-        }
-      }
-    }
-
-    if (cwd === undefined) {
+    if (transcript.cwd === undefined) {
       // Could not determine project path — file is too sparse to be useful
       return null;
     }
 
-    let messagesToReturn = messages;
-    if (options.includeMessages && options.messageLimit !== undefined && options.messageLimit > 0) {
-      messagesToReturn = messages.slice(-options.messageLimit);
-    }
+    const firstMessageAt = resolveTimestamp(transcript.firstTimestamp, fileInfo.mtime);
+    const lastMessageAt = resolveTimestamp(transcript.lastTimestamp, fileInfo.mtime);
 
     const session: AgentSession & { metadata?: SessionMetadata } = {
       id: fileInfo.id,
       agentType: 'claude-code' as AgentType,
-      projectPath: this.abbreviatePath(cwd),
+      projectPath: this.abbreviatePath(transcript.cwd),
       // Absolute transcript path, so callers can adopt a session without
       // re-deriving the provider's on-disk path encoding themselves.
       filePath: fileInfo.filePath,
-      messageCount,
+      messageCount: transcript.messageCount,
       createdAt: firstMessageAt ?? fileInfo.mtime,
       updatedAt: lastMessageAt ?? fileInfo.mtime,
     };
 
-    if (preview !== undefined) {
-      session.preview = preview;
-    }
-    if (firstMessageAt !== undefined) {
-      session.firstMessageAt = firstMessageAt;
-    }
-    if (lastMessageAt !== undefined) {
-      session.lastMessageAt = lastMessageAt;
-    }
+    if (transcript.preview !== undefined) session.preview = transcript.preview;
+    if (firstMessageAt !== undefined) session.firstMessageAt = firstMessageAt;
+    if (lastMessageAt !== undefined) session.lastMessageAt = lastMessageAt;
+
     if (options.includeMessages) {
-      session.messages = messagesToReturn;
-      session.metadata = {
-        cliVersion,
-        gitBranch,
-        permissionMode,
-        userType,
-        toolUsage,
-        userMessageCount,
-        assistantMessageCount,
-      };
+      const messages = transcript.messagesAt(fileInfo.mtime);
+      const limit = options.messageLimit;
+      session.messages = limit !== undefined && limit > 0 ? messages.slice(-limit) : messages;
+      session.metadata = transcript.metadata;
     }
 
     return session;
-  }
-
-  /**
-   * Extract plain text from message content.
-   * - string content: returned as-is
-   * - array content: concatenates all text blocks; falls back to tool_use summary
-   */
-  private extractTextContent(content: unknown): string {
-    if (typeof content === 'string') {
-      return content;
-    }
-    if (Array.isArray(content)) {
-      // Collect all text blocks
-      const textParts: string[] = [];
-      const toolNames: string[] = [];
-
-      for (const block of content) {
-        if (typeof block !== 'object' || block === null) continue;
-        const b = block as Record<string, unknown>;
-        if (b.type === 'text' && typeof b.text === 'string') {
-          textParts.push(b.text);
-        } else if (b.type === 'tool_use' && typeof b.name === 'string') {
-          toolNames.push(b.name);
-        }
-      }
-
-      if (textParts.length > 0) {
-        return textParts.join('\n');
-      }
-      // No text blocks — summarize tool usage
-      if (toolNames.length > 0) {
-        return `[${toolNames.join(', ')}]`;
-      }
-    }
-    return '';
   }
 
   /** Replace home directory prefix with ~ in a file path */

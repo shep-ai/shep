@@ -21,11 +21,14 @@ import * as os from 'node:os';
 import * as path from 'node:path';
 import { injectable } from 'tsyringe';
 import { deleteTranscriptPath } from './transcript-deletion.js';
-import type {
-  AgentSession,
-  AgentSessionMessage,
-  AgentType,
-} from '../../../../domain/generated/output.js';
+import type { AgentSession, AgentType } from '../../../../domain/generated/output.js';
+import {
+  resolveTimestamp,
+  scanTranscript,
+  TranscriptSummaryCache,
+} from './jsonl-transcript-scanner.js';
+import { CodexTranscriptAccumulator } from './codex-cli-transcript.js';
+import { CodexRolloutFiles, type CodexRolloutFileInfo } from './codex-cli-rollout-files.js';
 import type {
   IAgentSessionRepository,
   ListSessionsOptions,
@@ -38,43 +41,27 @@ interface SessionIndexEntry {
   updated_at?: string;
 }
 
-interface SessionFileInfo {
-  id: string;
-  filePath: string;
-  mtime: Date;
-  threadName?: string;
-}
-
-/** Parsed response_item payload from a Codex rollout file */
-interface ResponseItemPayload {
-  type: string;
-  role?: string;
-  name?: string;
-  content?: ContentBlock[] | null;
-  arguments?: string;
-  output?: string;
-  call_id?: string;
-  phase?: string;
-}
-
-interface ContentBlock {
-  type: string;
-  text?: string;
-}
-
-/** Parsed session_meta payload */
-interface SessionMetaPayload {
-  id: string;
-  timestamp?: string;
-  cwd?: string;
-  cli_version?: string;
-  model_provider?: string;
-  source?: string;
-}
+type SessionFileInfo = CodexRolloutFileInfo;
 
 @injectable()
 export class CodexCliSessionRepository implements IAgentSessionRepository {
-  constructor(private readonly basePath: string = CodexCliSessionRepository.resolveCodexHome()) {}
+  /**
+   * Rollout summaries for the index-less list fallback, advanced by the bytes
+   * appended since the previous list (spec 116).
+   */
+  private readonly summaries = new TranscriptSummaryCache(
+    (filePath) =>
+      new CodexTranscriptAccumulator(
+        CodexRolloutFiles.sessionIdOf(path.basename(filePath)) ?? '',
+        false
+      )
+  );
+
+  private readonly files: CodexRolloutFiles;
+
+  constructor(private readonly basePath: string = CodexCliSessionRepository.resolveCodexHome()) {
+    this.files = new CodexRolloutFiles(basePath);
+  }
 
   /**
    * Resolve the Codex home directory.
@@ -115,7 +102,7 @@ export class CodexCliSessionRepository implements IAgentSessionRepository {
     }
 
     // Fallback: scan rollout files directly
-    const fileInfos = await this.collectSessionFiles();
+    const fileInfos = await this.files.collectSessionFiles();
     fileInfos.sort((a, b) => b.mtime.getTime() - a.mtime.getTime());
 
     const toParse = limit > 0 ? fileInfos.slice(0, limit) : fileInfos;
@@ -141,7 +128,7 @@ export class CodexCliSessionRepository implements IAgentSessionRepository {
    * can only map to a file this repository already owns.
    */
   async delete(id: string): Promise<boolean> {
-    const match = await this.findSessionFile(id);
+    const match = await this.files.findSessionFile(id);
     if (match === null) return false;
 
     return deleteTranscriptPath(match.filePath, this.basePath);
@@ -150,7 +137,7 @@ export class CodexCliSessionRepository implements IAgentSessionRepository {
   async findById(id: string, options?: GetSessionOptions): Promise<AgentSession | null> {
     const messageLimit = options?.messageLimit ?? 20;
 
-    const match = await this.findSessionFile(id);
+    const match = await this.files.findSessionFile(id);
     if (match === null) return null;
 
     try {
@@ -202,241 +189,49 @@ export class CodexCliSessionRepository implements IAgentSessionRepository {
   }
 
   /**
-   * Recursively collect all rollout .jsonl files from the sessions/ directory.
-   * Structure: sessions/YYYY/MM/DD/rollout-<timestamp>-<id>.jsonl
-   */
-  private async collectSessionFiles(): Promise<SessionFileInfo[]> {
-    const sessionsDir = path.join(this.basePath, 'sessions');
-    const fileInfos: SessionFileInfo[] = [];
-
-    try {
-      await this.walkDirectory(sessionsDir, fileInfos);
-    } catch {
-      // sessions directory doesn't exist
-    }
-
-    return fileInfos;
-  }
-
-  /** Recursively walk a directory tree collecting .jsonl rollout files */
-  private async walkDirectory(dir: string, results: SessionFileInfo[]): Promise<void> {
-    let entries;
-    try {
-      entries = await fs.readdir(dir, { withFileTypes: true, encoding: 'utf-8' });
-    } catch {
-      return;
-    }
-
-    const promises: Promise<void>[] = [];
-
-    for (const entry of entries) {
-      const fullPath = path.join(dir, entry.name);
-      if (entry.isDirectory()) {
-        promises.push(this.walkDirectory(fullPath, results));
-      } else if (
-        entry.isFile() &&
-        entry.name.endsWith('.jsonl') &&
-        entry.name.startsWith('rollout-')
-      ) {
-        promises.push(
-          fs
-            .stat(fullPath)
-            .then((stat) => {
-              const sessionId = this.extractSessionIdFromFilename(entry.name);
-              if (sessionId) {
-                results.push({ id: sessionId, filePath: fullPath, mtime: stat.mtime });
-              }
-            })
-            .catch(() => {
-              // Skip files we can't stat
-            })
-        );
-      }
-    }
-
-    await Promise.allSettled(promises);
-  }
-
-  /**
-   * Extract session ID from a rollout filename.
-   * Format: rollout-YYYY-MM-DDTHH-MM-SS-<session-id>.jsonl
-   * The session ID is the UUID portion after the timestamp.
-   */
-  private extractSessionIdFromFilename(filename: string): string | null {
-    // rollout-2026-03-24T12-25-16-019d1f60-95de-7141-a648-e3e2fe3da012.jsonl
-    // The UUID starts after the timestamp prefix (rollout-YYYY-MM-DDTHH-MM-SS-)
-    const withoutExt = filename.replace(/\.jsonl$/, '');
-    // Match: rollout-<date>T<time>-<uuid>
-    const match = withoutExt.match(/^rollout-\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}-(.+)$/);
-    return match ? match[1] : null;
-  }
-
-  /**
-   * Find a session rollout file by ID.
-   * Scans the sessions/ directory recursively for a file containing the given ID.
-   */
-  private async findSessionFile(
-    id: string
-  ): Promise<{ filePath: string; resolvedId: string } | null> {
-    const fileInfos = await this.collectSessionFiles();
-
-    // Exact match first
-    for (const fi of fileInfos) {
-      if (fi.id === id) {
-        return { filePath: fi.filePath, resolvedId: fi.id };
-      }
-    }
-
-    // Prefix match
-    const matches = fileInfos.filter((fi) => fi.id.startsWith(id));
-    if (matches.length === 1) {
-      return { filePath: matches[0].filePath, resolvedId: matches[0].id };
-    }
-
-    return null;
-  }
-
-  /**
-   * Parse a Codex CLI rollout JSONL file into an AgentSession.
+   * Read a Codex CLI rollout JSONL file into an AgentSession.
+   *
+   * The list fallback folds only the bytes appended since its previous scan;
+   * the detail view reads the whole file for its messages. Both skip
+   * malformed lines and tolerate a half-written last line.
    */
   private async parseRolloutFile(
     fileInfo: SessionFileInfo,
     options: { includeMessages: boolean; messageLimit?: number }
   ): Promise<AgentSession | null> {
-    const content = await fs.readFile(fileInfo.filePath, 'utf-8');
-    const lines = content.split('\n').filter((l) => l.trim().length > 0);
+    const transcript = options.includeMessages
+      ? await scanTranscript(fileInfo.filePath, new CodexTranscriptAccumulator(fileInfo.id, true))
+      : await this.summaries.summarize(fileInfo.filePath);
 
-    let cwd: string | undefined;
-    let firstMessageAt: Date | undefined;
-    let lastMessageAt: Date | undefined;
-    let preview: string | undefined;
-    let messageCount = 0;
-    const messages: AgentSessionMessage[] = [];
-
-    for (const line of lines) {
-      let entry;
-      try {
-        entry = JSON.parse(line);
-      } catch {
-        continue;
-      }
-
-      const type = entry.type as string;
-      const timestamp = entry.timestamp ? new Date(entry.timestamp) : fileInfo.mtime;
-
-      if (type === 'session_meta') {
-        const payload = entry.payload as SessionMetaPayload;
-        if (payload?.cwd) cwd = payload.cwd;
-        continue;
-      }
-
-      if (type === 'turn_context') {
-        // Use turn context cwd as fallback
-        if (!cwd && entry.payload?.cwd) cwd = entry.payload.cwd;
-        continue;
-      }
-
-      if (type === 'response_item') {
-        const payload = entry.payload as ResponseItemPayload;
-        if (!payload) continue;
-
-        // Only count user and assistant messages (skip developer/system)
-        if (
-          payload.type === 'message' &&
-          (payload.role === 'user' || payload.role === 'assistant')
-        ) {
-          messageCount++;
-
-          firstMessageAt ??= timestamp;
-          lastMessageAt = timestamp;
-
-          // Extract preview from first user message
-          if (payload.role === 'user' && preview === undefined) {
-            preview = this.extractTextFromContent(payload.content);
-          }
-
-          if (options.includeMessages) {
-            messages.push({
-              uuid: entry.payload?.call_id ?? `${fileInfo.id}-${messageCount}`,
-              role: payload.role as 'user' | 'assistant',
-              content: this.extractTextFromContent(payload.content),
-              timestamp,
-            });
-          }
-        }
-
-        // Count function calls as part of conversation but don't add as messages
-        if (payload.type === 'function_call') {
-          messageCount++;
-          lastMessageAt = timestamp;
-
-          if (options.includeMessages) {
-            const toolName = payload.name ?? 'unknown_tool';
-            messages.push({
-              uuid: payload.call_id ?? `${fileInfo.id}-${messageCount}`,
-              role: 'assistant',
-              content: `[tool: ${toolName}] ${payload.arguments ?? ''}`,
-              timestamp,
-            });
-          }
-        }
-
-        if (payload.type === 'function_call_output') {
-          lastMessageAt = timestamp;
-
-          if (options.includeMessages) {
-            const output = payload.output ?? '';
-            const truncated = output.length > 500 ? `${output.slice(0, 497)}...` : output;
-            messages.push({
-              uuid: payload.call_id ?? `${fileInfo.id}-result-${messageCount}`,
-              role: 'assistant',
-              content: `[tool-result] ${truncated}`,
-              timestamp,
-            });
-          }
-        }
-      }
-    }
-
-    if (cwd === undefined) {
+    if (transcript.cwd === undefined) {
       // Can't determine project path — too sparse
       return null;
     }
 
-    let messagesToReturn = messages;
-    if (options.includeMessages && options.messageLimit !== undefined && options.messageLimit > 0) {
-      messagesToReturn = messages.slice(-options.messageLimit);
-    }
+    const firstMessageAt = resolveTimestamp(transcript.firstTimestamp, fileInfo.mtime);
+    const lastMessageAt = resolveTimestamp(transcript.lastTimestamp, fileInfo.mtime);
 
     const session: AgentSession = {
       id: fileInfo.id,
       agentType: 'codex-cli' as AgentType,
-      projectPath: this.abbreviatePath(cwd),
+      projectPath: this.abbreviatePath(transcript.cwd),
       // Absolute transcript path — see AgentSession.filePath.
       filePath: fileInfo.filePath,
-      messageCount,
+      messageCount: transcript.messageCount,
       createdAt: firstMessageAt ?? fileInfo.mtime,
       updatedAt: lastMessageAt ?? fileInfo.mtime,
     };
 
-    if (preview !== undefined) session.preview = preview;
+    if (transcript.preview !== undefined) session.preview = transcript.preview;
     if (firstMessageAt !== undefined) session.firstMessageAt = firstMessageAt;
     if (lastMessageAt !== undefined) session.lastMessageAt = lastMessageAt;
-    if (options.includeMessages) session.messages = messagesToReturn;
+    if (options.includeMessages) {
+      const messages = transcript.messagesAt(fileInfo.mtime);
+      const limit = options.messageLimit;
+      session.messages = limit !== undefined && limit > 0 ? messages.slice(-limit) : messages;
+    }
 
     return session;
-  }
-
-  /** Extract text from Codex content blocks */
-  private extractTextFromContent(content: ContentBlock[] | null | undefined): string {
-    if (!content || !Array.isArray(content)) return '';
-    const parts: string[] = [];
-    for (const block of content) {
-      if ((block.type === 'input_text' || block.type === 'output_text') && block.text) {
-        parts.push(block.text);
-      }
-    }
-    return parts.join('\n');
   }
 
   /** Replace home directory prefix with ~ */

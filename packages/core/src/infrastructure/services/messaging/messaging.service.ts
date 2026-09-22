@@ -12,6 +12,13 @@
  *
  * Lifecycle:
  *   1. `isConfigured()` checks settings for required fields.
+ *
+ * Config lifetime: the messaging settings are re-read through `loadConfig`
+ * every time they are used (routing, pairing, replies, notifications). A
+ * pairing begun or confirmed after start() — possibly by another process —
+ * is therefore visible immediately, and a consumed pairing code is gone.
+ * Only the tunnel's route list and the debounce/buffer tuning are fixed at
+ * start().
  *   2. `start()` opens the tunnel and subscribes to the notification bus.
  *   3. Inbound `tunnel.request` frames are parsed as Telegram Update objects
  *      and dispatched to either the pair confirm flow or the command executor.
@@ -30,6 +37,7 @@ import {
   MessagingCommandType,
 } from '../../../domain/generated/output.js';
 import { MessagingTunnelAdapter } from './messaging-tunnel.adapter.js';
+import { isMessagingConfigured } from './messaging-config.js';
 import type { DecodedTunnelRequest, TunnelRequestResponse } from './tunnel-protocol.js';
 import { MessagingCommandExecutor } from './command-executor.js';
 import { MessagingNotificationEmitter } from './notification-emitter.js';
@@ -46,17 +54,24 @@ import type { RejectAgentRunUseCase } from '../../../application/use-cases/agent
 import type { StopAgentRunUseCase } from '../../../application/use-cases/agents/stop-agent-run.use-case.js';
 import type { ResumeFeatureUseCase } from '../../../application/use-cases/features/resume-feature.use-case.js';
 import type { ListRepositoriesUseCase } from '../../../application/use-cases/repositories/list-repositories.use-case.js';
-import type { ConfirmMessagingPairingUseCase } from '../../../application/use-cases/messaging/confirm-pairing.use-case.js';
+import {
+  INVALID_PAIRING_CODE_MESSAGE,
+  type ConfirmMessagingPairingUseCase,
+} from '../../../application/use-cases/messaging/confirm-pairing.use-case.js';
 import type { ITelegramClient } from '../../../application/ports/output/services/telegram-client.interface.js';
+import type { IGatewayClient } from '../../../application/ports/output/services/gateway-client.interface.js';
+import { DEFAULT_GATEWAY_CLIENT_ID } from '../../../application/use-cases/messaging/begin-pairing.use-case.js';
 import type { IInteractiveSessionService } from '../../../application/ports/output/services/interactive-session-service.interface.js';
 import { parseWhatsAppUpdate } from './whatsapp-webhook.parser.js';
 
-interface MessagingServiceDeps {
-  config: MessagingConfig;
-  accessToken: string;
+export interface MessagingServiceDeps {
+  /** Reads the CURRENT messaging settings. Called at use time; never cached. */
+  loadConfig: () => Promise<MessagingConfig | undefined>;
+  /** Issues gateway access tokens; asked afresh on every tunnel connection attempt. */
+  gatewayClient: IGatewayClient;
   telegramClient: ITelegramClient;
-  /** Bot token the sender will use to reply to Telegram users. */
-  telegramBotToken?: string;
+  /** Bot token used when settings carry none (dev convenience env var). */
+  fallbackTelegramBotToken?: string;
   notificationBus: NotificationBus;
   featureRepo: IFeatureRepository;
   createFeature: CreateFeatureUseCase;
@@ -80,6 +95,9 @@ interface SlashCommand {
 const COMMAND_REGEX =
   /^\/(new|approve|reject|stop|resume|status|list|chat|end|mute|unmute|help)(?:@\w+)?(?:\s+(\S+))?(?:\s+(.+))?$/i;
 
+const DEFAULT_DEBOUNCE_MS = 5_000;
+const DEFAULT_CHAT_BUFFER_MS = 3_000;
+
 const COMMANDS_TAKING_FEATURE_ID: readonly MessagingCommandType[] = [
   MessagingCommandType.Approve,
   MessagingCommandType.Reject,
@@ -88,6 +106,22 @@ const COMMANDS_TAKING_FEATURE_ID: readonly MessagingCommandType[] = [
   MessagingCommandType.Status,
   MessagingCommandType.Chat,
 ];
+
+function collectRouteIds(config: MessagingConfig): string[] {
+  const out: string[] = [];
+  if (config.telegram?.routeId) out.push(config.telegram.routeId);
+  if (config.whatsapp?.routeId) out.push(config.whatsapp.routeId);
+  return out;
+}
+
+function platformForRoute(
+  config: MessagingConfig | undefined,
+  routeId: string
+): MessagingPlatform | null {
+  if (config?.telegram?.routeId === routeId) return MessagingPlatform.Telegram;
+  if (config?.whatsapp?.routeId === routeId) return MessagingPlatform.WhatsApp;
+  return null;
+}
 
 function parseSlashCommand(text: string): SlashCommand | null {
   const match = text.trim().match(COMMAND_REGEX);
@@ -114,20 +148,11 @@ export class MessagingService implements IMessagingService {
 
   constructor(private readonly deps: MessagingServiceDeps) {}
 
-  isConfigured(): boolean {
-    const { config } = this.deps;
-    if (!config.enabled || !config.gatewayUrl || !config.deviceId) return false;
+  /** Last config observed; the synchronous port method cannot read the DB. */
+  private lastConfig: MessagingConfig | undefined;
 
-    // The tunnel must start as soon as a route exists — not only after the
-    // user is fully paired. The auto-confirm flow requires this: the daemon
-    // needs to be receiving tunnel.request frames in order to see the
-    // inbound `/pair <code>` message from the user's first DM and call
-    // ConfirmMessagingPairingUseCase. If we gated on `paired && chatId`
-    // the user could never complete pairing without a manual chatId entry
-    // in the UI.
-    const telegramReady = !!config.telegram?.routeId;
-    const whatsappReady = !!config.whatsapp?.routeId;
-    return telegramReady || whatsappReady;
+  isConfigured(): boolean {
+    return isMessagingConfigured(this.lastConfig);
   }
 
   isConnected(): boolean {
@@ -135,21 +160,23 @@ export class MessagingService implements IMessagingService {
   }
 
   async start(): Promise<void> {
-    if (this.started || !this.isConfigured()) return;
+    if (this.started) return;
+    const config = await this.currentConfig();
+    if (!config || !isMessagingConfigured(config)) return;
 
-    const { config, accessToken, telegramClient, notificationBus, featureRepo } = this.deps;
+    const { telegramClient, notificationBus, featureRepo } = this.deps;
 
-    const routeIds = this.collectRouteIds();
     this.tunnelAdapter = new MessagingTunnelAdapter({
       gatewayUrl: config.gatewayUrl!,
-      accessToken,
+      getAccessToken: () => this.fetchAccessToken(),
       deviceId: config.deviceId!,
-      routeIds,
+      routeIds: collectRouteIds(config),
     });
 
-    this.sender = new TelegramMessageSender(telegramClient, () => {
-      const chatId = this.deps.config.telegram?.chatId;
-      const botToken = this.deps.telegramBotToken;
+    this.sender = new TelegramMessageSender(telegramClient, async () => {
+      const current = await this.currentConfig();
+      const chatId = current?.telegram?.chatId;
+      const botToken = this.botToken(current);
       if (!chatId || !botToken) return null;
       return { chatId, botToken };
     });
@@ -169,17 +196,20 @@ export class MessagingService implements IMessagingService {
     this.notificationEmitter = new MessagingNotificationEmitter(
       this.sender,
       notificationBus,
-      config.debounceMs ?? 5_000
+      config.debounceMs ?? DEFAULT_DEBOUNCE_MS
     );
 
-    this.chatRelay = new MessagingChatRelay(this.sender, config.chatBufferMs ?? 3_000);
+    this.chatRelay = new MessagingChatRelay(
+      this.sender,
+      config.chatBufferMs ?? DEFAULT_CHAT_BUFFER_MS
+    );
 
     this.tunnelAdapter.onRequest((req) => this.handleTunnelRequest(req));
 
     try {
       await this.tunnelAdapter.connect();
     } catch {
-      // Connection failure is non-fatal — the adapter reconnects automatically.
+      // Non-fatal: a failed connect schedules the adapter's backoff retry.
     }
 
     this.notificationEmitter.start();
@@ -205,17 +235,31 @@ export class MessagingService implements IMessagingService {
     await this.sender?.send(notification);
   }
 
-  private collectRouteIds(): string[] {
-    const out: string[] = [];
-    const { config } = this.deps;
-    if (config.telegram?.routeId) out.push(config.telegram.routeId);
-    if (config.whatsapp?.routeId) out.push(config.whatsapp.routeId);
-    return out;
+  private async currentConfig(): Promise<MessagingConfig | undefined> {
+    this.lastConfig = await this.deps.loadConfig();
+    return this.lastConfig;
+  }
+
+  private botToken(config: MessagingConfig | undefined): string | undefined {
+    return config?.telegram?.botToken ?? this.deps.fallbackTelegramBotToken;
+  }
+
+  private async fetchAccessToken(): Promise<string> {
+    const config = await this.currentConfig();
+    if (!config?.gatewayUrl) {
+      throw new Error('Messaging gateway URL is not configured.');
+    }
+    const token = await this.deps.gatewayClient.fetchAccessToken({
+      gatewayUrl: config.gatewayUrl,
+      clientId: config.gatewayClientId ?? DEFAULT_GATEWAY_CLIENT_ID,
+    });
+    return token.accessToken;
   }
 
   private async handleTunnelRequest(req: DecodedTunnelRequest): Promise<TunnelRequestResponse> {
-    // Per-route → platform resolution.
-    const platform = this.platformForRoute(req.routeId);
+    // Per-route → platform resolution, against the current settings.
+    const config = await this.currentConfig();
+    const platform = platformForRoute(config, req.routeId);
     if (!platform) {
       return { status: 404 };
     }
@@ -231,7 +275,7 @@ export class MessagingService implements IMessagingService {
     // 1. Handle /pair <code> auto-confirmation before anything else.
     const pair = parsePairCommand(parsed.text);
     if (pair) {
-      await this.handlePairConfirm(platform, parsed.chatId, pair.code);
+      await this.handlePairConfirm(platform, parsed.chatId, pair.code, config);
       return { status: 200 };
     }
 
@@ -345,40 +389,38 @@ export class MessagingService implements IMessagingService {
     }
   }
 
-  private platformForRoute(routeId: string): MessagingPlatform | null {
-    const { config } = this.deps;
-    if (config.telegram?.routeId === routeId) return MessagingPlatform.Telegram;
-    if (config.whatsapp?.routeId === routeId) return MessagingPlatform.WhatsApp;
-    return null;
-  }
-
   private async handlePairConfirm(
     platform: MessagingPlatform,
     chatId: string,
-    code: string
+    code: string,
+    config: MessagingConfig | undefined
   ): Promise<void> {
-    const { config } = this.deps;
-    const platformCfg = platform === MessagingPlatform.Telegram ? config.telegram : config.whatsapp;
-
-    if (!platformCfg?.pendingPairingCode || platformCfg.pendingPairingCode !== code) {
-      await this.sendReply(chatId, 'Invalid or expired pairing code.');
+    const platformCfg =
+      platform === MessagingPlatform.Telegram ? config?.telegram : config?.whatsapp;
+    if (!platformCfg?.pendingPairingCode) {
+      await this.sendReply(chatId, INVALID_PAIRING_CODE_MESSAGE);
       return;
     }
 
     try {
-      await this.deps.confirmPairing.execute({ platform, chatId });
+      // The use case verifies the code and its expiry in the same
+      // load/update that consumes it, so a replayed code is rejected.
+      await this.deps.confirmPairing.execute({ platform, chatId, code });
       await this.sendReply(
         chatId,
         'Paired with Shep. You can now send commands like /status, /list, or /help.'
       );
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      await this.sendReply(chatId, `Pairing failed: ${msg}`);
+      await this.sendReply(
+        chatId,
+        msg === INVALID_PAIRING_CODE_MESSAGE ? msg : `Pairing failed: ${msg}`
+      );
     }
   }
 
   private async sendReply(chatId: string, text: string): Promise<void> {
-    const botToken = this.deps.telegramBotToken;
+    const botToken = this.botToken(await this.currentConfig());
     if (!botToken || !text) return;
     try {
       await this.deps.telegramClient.sendMessage({ botToken, chatId, text });

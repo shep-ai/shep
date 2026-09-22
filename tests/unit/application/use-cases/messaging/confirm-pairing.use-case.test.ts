@@ -77,4 +77,51 @@ describe('ConfirmMessagingPairingUseCase', () => {
     expect(result.messaging?.whatsapp?.paired).toBe(false);
     expect(result.messaging?.whatsapp?.enabled).toBe(false);
   });
+
+  describe('when the caller supplies the code it received', () => {
+    const TTL_MS = 60_000;
+
+    it('confirms when the code matches and has not expired', async () => {
+      const settings = settingsWithPendingCode('telegram', '123456');
+      settings.messaging!.telegram!.pendingPairingExpiresAt = new Date(
+        Date.now() + TTL_MS
+      ).toISOString();
+      await mockRepository.initialize(settings);
+
+      const result = await useCase.execute({
+        platform: MessagingPlatform.Telegram,
+        chatId: '42',
+        code: '123456',
+      });
+      expect(result.messaging?.telegram?.paired).toBe(true);
+    });
+
+    it('rejects a code that does not match the pending one', async () => {
+      await mockRepository.initialize(settingsWithPendingCode('telegram', '123456'));
+      await expect(
+        useCase.execute({ platform: MessagingPlatform.Telegram, chatId: '42', code: '000000' })
+      ).rejects.toThrow(/invalid or expired/i);
+      expect((await mockRepository.load())?.messaging?.telegram?.paired).toBe(false);
+    });
+
+    it('rejects an expired code', async () => {
+      const settings = settingsWithPendingCode('telegram', '123456');
+      settings.messaging!.telegram!.pendingPairingExpiresAt = new Date(
+        Date.now() - 1
+      ).toISOString();
+      await mockRepository.initialize(settings);
+      await expect(
+        useCase.execute({ platform: MessagingPlatform.Telegram, chatId: '42', code: '123456' })
+      ).rejects.toThrow(/invalid or expired/i);
+    });
+
+    it('rejects a code replayed after the pairing was confirmed', async () => {
+      await mockRepository.initialize(settingsWithPendingCode('telegram', '123456'));
+      await useCase.execute({ platform: MessagingPlatform.Telegram, chatId: '42', code: '123456' });
+      await expect(
+        useCase.execute({ platform: MessagingPlatform.Telegram, chatId: '99', code: '123456' })
+      ).rejects.toThrow();
+      expect((await mockRepository.load())?.messaging?.telegram?.chatId).toBe('42');
+    });
+  });
 });

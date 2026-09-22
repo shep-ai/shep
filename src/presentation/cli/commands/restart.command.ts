@@ -14,6 +14,8 @@ import { messages } from '../ui/index.js';
 import { stopDaemon } from './daemon/stop-daemon.js';
 import { startDaemon } from './daemon/start-daemon.js';
 import { getCliI18n } from '../i18n.js';
+import { refuseHostShutdownFromAgent } from '@/domain/shared/agent-run-environment.js';
+import { reportAgentRunRefusal } from './agent-run-guard.js';
 
 function parsePort(value: string): number {
   const port = parseInt(value, 10);
@@ -31,6 +33,7 @@ export function createRestartCommand(): Command {
   return new Command('restart')
     .description(t('cli:commands.restart.description'))
     .option('-p, --port <number>', t('cli:commands.restart.portOption'), parsePort)
+    .option('--force', t('cli:ui.agentGuard.forceOption'))
     .addHelpText(
       'after',
       `
@@ -38,7 +41,10 @@ Examples:
   $ shep restart               Restart (or start) on default port
   $ shep restart --port 8080   Restart on custom port`
     )
-    .action(async (options: { port?: number }) => {
+    .action(async (options: { port?: number; force?: boolean }) => {
+      if (reportAgentRunRefusal(refuseHostShutdownFromAgent(process.env, options.force === true))) {
+        return;
+      }
       const daemonService = container.resolve<IDaemonService>('IDaemonService');
 
       const state = await daemonService.read();

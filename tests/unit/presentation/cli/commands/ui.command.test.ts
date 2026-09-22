@@ -139,6 +139,17 @@ vi.mock('@/application/use-cases/contributors/publish-monthly-recap.use-case.js'
   PublishMonthlyRecapUseCase: vi.fn(),
 }));
 
+// Mock data-retention scheduling (spec 116)
+const retentionScheduler = vi.hoisted(() => ({ start: vi.fn(), stop: vi.fn() }));
+vi.mock('@/infrastructure/services/maintenance/retention-scheduler.js', () => ({
+  RetentionScheduler: vi.fn(function () {
+    return retentionScheduler;
+  }),
+}));
+vi.mock('@/application/use-cases/maintenance/prune-retained-data.use-case.js', () => ({
+  PruneRetainedDataUseCase: vi.fn(),
+}));
+
 // Mock IBrowserOpener — resolved from DI container
 const mockBrowserOpen = vi.fn();
 
@@ -207,6 +218,18 @@ describe('UI Command', () => {
       await cmd.parseAsync([], { from: 'user' });
 
       expect(mockWebServerService.start).toHaveBeenCalledWith(4050, '/mock/web/dir', true);
+      consoleSpy.mockRestore();
+    });
+  });
+
+  describe('data retention (spec 116)', () => {
+    it('schedules retention while the UI server runs', async () => {
+      const cmd = createUiCommand();
+      const consoleSpy = vi.spyOn(console, 'log').mockImplementation(vi.fn());
+
+      await cmd.parseAsync([], { from: 'user' });
+
+      expect(retentionScheduler.start).toHaveBeenCalled();
       consoleSpy.mockRestore();
     });
   });

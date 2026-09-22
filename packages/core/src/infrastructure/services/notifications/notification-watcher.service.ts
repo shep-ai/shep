@@ -20,6 +20,7 @@ import {
   NotificationSeverity,
   SdlcLifecycle,
 } from '../../../domain/generated/output.js';
+import { TERMINAL_AGENT_RUN_STATUSES } from '../../../domain/shared/agent-run-status.js';
 import type { IAgentRunRepository } from '../../../application/ports/output/agents/agent-run-repository.interface.js';
 import type { IPhaseTimingRepository } from '../../../application/ports/output/agents/phase-timing-repository.interface.js';
 import type { IFeatureRepository } from '../../../application/ports/output/repositories/feature-repository.interface.js';
@@ -27,18 +28,12 @@ import type { INotificationService } from '../../../application/ports/output/ser
 
 const DEFAULT_POLL_INTERVAL_MS = 3000;
 
-const ACTIVE_STATUSES = new Set<string>([
+const ACTIVE_STATUS_LIST: readonly AgentRunStatus[] = [
   AgentRunStatus.pending,
   AgentRunStatus.running,
   AgentRunStatus.waitingApproval,
-]);
-
-const TERMINAL_STATUSES = new Set<string>([
-  AgentRunStatus.completed,
-  AgentRunStatus.failed,
-  AgentRunStatus.cancelled,
-  AgentRunStatus.interrupted,
-]);
+];
+const ACTIVE_STATUSES = new Set<string>(ACTIVE_STATUS_LIST);
 
 interface WatcherState {
   status: AgentRunStatus;
@@ -84,6 +79,9 @@ export class NotificationWatcherService {
   private readonly trackedRuns = new Map<string, WatcherState>();
   private readonly trackedFeatureLifecycles = new Map<string, SdlcLifecycle>();
   private intervalId: ReturnType<typeof setInterval> | null = null;
+  // A poll still awaiting the DB when the next tick fires would see the same
+  // untracked run and emit its status a second time — ticks skip instead.
+  private pollInFlight = false;
   // Suppresses notifications on the first poll to avoid replaying historical state
   private isBootstrapped = false;
 
@@ -124,19 +122,67 @@ export class NotificationWatcherService {
   }
 
   private async poll(): Promise<void> {
+    if (this.pollInFlight) return;
+    this.pollInFlight = true;
     try {
-      const runs = await this.runRepository.list();
+      await this.pollOnce();
+    } finally {
+      this.pollInFlight = false;
+    }
+  }
+
+  /**
+   * Only runs that can still change are read: the active ones, plus any run
+   * we are tracking that has since left the active set (to report its
+   * terminal transition). Listing every run ever recorded every tick grew
+   * without bound.
+   */
+  private async fetchChangeableRuns(): Promise<AgentRun[]> {
+    const active = await this.runRepository.list({ statuses: ACTIVE_STATUS_LIST });
+    const seen = new Set(active.map((run) => run.id));
+    const departed = [...this.trackedRuns.keys()].filter((id) => !seen.has(id));
+    if (departed.length === 0) return active;
+    return [...active, ...(await this.runRepository.findByIds(departed))];
+  }
+
+  private async pollOnce(): Promise<void> {
+    let runs: AgentRun[] = [];
+    try {
+      runs = await this.fetchChangeableRuns();
       await this.processRuns(runs);
     } catch {
       // DB not ready or query failed — skip this poll cycle
     }
 
     try {
-      const features = await this.featureRepository.list();
+      const features = await this.fetchWatchedFeatures(runs);
       this.checkFeatureLifecycles(features);
     } catch {
       // DB not ready or query failed — skip this poll cycle
     }
+  }
+
+  /**
+   * Only a feature an agent run is driving can move to Review under the
+   * watcher's eye, so only those are read: the features of the runs fetched
+   * this tick — every active run plus every tracked run, including one that
+   * just finished.
+   * Listing every feature ever created on each tick grew without bound.
+   */
+  private async fetchWatchedFeatures(runs: AgentRun[]): Promise<Feature[]> {
+    const featureIds = new Set<string>();
+    for (const run of runs) if (run.featureId) featureIds.add(run.featureId);
+
+    // A feature nobody watches any more is forgotten, so a later
+    // re-observation is a first sighting rather than a stale "transition".
+    for (const id of this.trackedFeatureLifecycles.keys()) {
+      if (!featureIds.has(id)) this.trackedFeatureLifecycles.delete(id);
+    }
+
+    const features = await Promise.all(
+      [...featureIds].map((id) => this.featureRepository.findById(id))
+    );
+    return features.filter((feature): feature is Feature => feature !== null);
   }
 
   private async processRuns(runs: AgentRun[]): Promise<void> {
@@ -173,7 +219,7 @@ export class NotificationWatcherService {
         prevState.status = run.status;
         this.emitStatusEvent(run, prevState);
 
-        if (TERMINAL_STATUSES.has(run.status)) {
+        if (TERMINAL_AGENT_RUN_STATUSES.has(run.status)) {
           // Run reached terminal state — clean up after emitting
           this.trackedRuns.delete(run.id);
         } else {

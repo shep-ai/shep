@@ -4,6 +4,11 @@
  * Finalizes a pairing handshake started by BeginMessagingPairingUseCase.
  * Marks the platform as paired, stores the chatId, and clears the pending
  * pairing code.
+ *
+ * When the caller supplies the code it received (the tunnel's `/pair <code>`
+ * path), the code is verified here — against the pending code and its expiry
+ * — in the same load/update as the confirmation, so a code is accepted at most
+ * once and never after it expires.
  */
 
 import { injectable, inject } from 'tsyringe';
@@ -13,6 +18,17 @@ import type { ISettingsRepository } from '../../ports/output/repositories/settin
 export interface ConfirmMessagingPairingInput {
   platform: MessagingPlatform;
   chatId: string;
+  /** The pairing code presented by the user; verified when supplied. */
+  code?: string;
+}
+
+export const INVALID_PAIRING_CODE_MESSAGE = 'Invalid or expired pairing code.';
+
+/** `pendingPairingExpiresAt` is an ISO string when written, but may be revived as a Date. */
+function isExpired(expiresAt: string | Date | undefined, now: number): boolean {
+  if (!expiresAt) return false;
+  const deadline = new Date(expiresAt).getTime();
+  return Number.isFinite(deadline) && deadline <= now;
 }
 
 @injectable()
@@ -40,6 +56,14 @@ export class ConfirmMessagingPairingUseCase {
 
     if (!messaging || !existingPlatform?.pendingPairingCode) {
       throw new Error(`No pairing in progress for ${platformKey}.`);
+    }
+
+    if (
+      input.code !== undefined &&
+      (existingPlatform.pendingPairingCode !== input.code ||
+        isExpired(existingPlatform.pendingPairingExpiresAt, Date.now()))
+    ) {
+      throw new Error(INVALID_PAIRING_CODE_MESSAGE);
     }
 
     settings.messaging = {

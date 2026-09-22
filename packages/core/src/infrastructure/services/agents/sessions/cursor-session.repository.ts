@@ -22,13 +22,15 @@ import * as fs from 'node:fs/promises';
 import * as os from 'node:os';
 import * as path from 'node:path';
 import { injectable } from 'tsyringe';
-import type {
-  AgentSession,
-  AgentSessionMessage,
-  AgentType,
-} from '../../../../domain/generated/output.js';
+import type { AgentSession, AgentType } from '../../../../domain/generated/output.js';
 import { encodeCursorProjectDir } from '../../../../domain/shared/agent-session-paths.js';
 import { deleteTranscriptPath } from './transcript-deletion.js';
+import {
+  resolveTimestamp,
+  scanTranscript,
+  TranscriptSummaryCache,
+} from './jsonl-transcript-scanner.js';
+import { CursorTranscriptAccumulator } from './cursor-transcript.js';
 import type {
   IAgentSessionRepository,
   ListSessionsOptions,
@@ -46,15 +48,13 @@ interface TranscriptFile {
   projectPath: string;
 }
 
-/** A parsed line from a Cursor transcript. */
-interface CursorEntry {
-  role?: string;
-  message?: { content?: unknown };
-  timestamp?: string;
-}
-
 @injectable()
 export class CursorSessionRepository implements IAgentSessionRepository {
+  /** List summaries, advanced by the bytes appended since the previous list (spec 116). */
+  private readonly summaries = new TranscriptSummaryCache(
+    (filePath) => new CursorTranscriptAccumulator(path.basename(filePath, JSONL_EXT), false)
+  );
+
   constructor(private readonly basePath: string = path.join(os.homedir(), '.cursor', 'projects')) {}
 
   isSupported(): boolean {
@@ -198,100 +198,49 @@ export class CursorSessionRepository implements IAgentSessionRepository {
     return files;
   }
 
+  /**
+   * Read a transcript into an AgentSession. The list view folds only the
+   * bytes appended since its previous scan; the detail view reads the whole
+   * file. Both skip malformed lines and tolerate a half-written last line.
+   */
   private async parse(
     file: TranscriptFile,
     options: { includeMessages: boolean; messageLimit?: number }
   ): Promise<AgentSession | null> {
-    let raw: string;
+    let transcript: CursorTranscriptAccumulator;
     try {
-      raw = await fs.readFile(file.filePath, 'utf-8');
+      transcript = options.includeMessages
+        ? await scanTranscript(file.filePath, new CursorTranscriptAccumulator(file.id, true))
+        : await this.summaries.summarize(file.filePath);
     } catch {
       return null;
     }
 
-    const messages: AgentSessionMessage[] = [];
-    let preview: string | undefined;
-    let firstMessageAt: Date | undefined;
-    let lastMessageAt: Date | undefined;
-    let messageCount = 0;
+    if (transcript.messageCount === 0) return null;
 
-    for (const line of raw.split('\n')) {
-      const trimmed = line.trim();
-      if (trimmed === '') continue;
-
-      let entry: CursorEntry;
-      try {
-        entry = JSON.parse(trimmed) as CursorEntry;
-      } catch {
-        // Malformed line — skip it rather than discarding the whole transcript.
-        continue;
-      }
-
-      // Cursor puts role at the top level, not under message.role.
-      if (entry.role !== 'user' && entry.role !== 'assistant') continue;
-
-      messageCount++;
-      const content = this.extractText(entry.message?.content);
-      const timestamp = entry.timestamp ? new Date(entry.timestamp) : file.mtime;
-
-      firstMessageAt ??= timestamp;
-      lastMessageAt = timestamp;
-
-      if (entry.role === 'user' && preview === undefined && content !== '') {
-        preview = content;
-      }
-
-      if (options.includeMessages) {
-        messages.push({
-          uuid: `${file.id}-${messageCount}`,
-          role: entry.role,
-          content,
-          timestamp,
-        });
-      }
-    }
-
-    if (messageCount === 0) return null;
+    const firstMessageAt = resolveTimestamp(transcript.firstTimestamp, file.mtime);
+    const lastMessageAt = resolveTimestamp(transcript.lastTimestamp, file.mtime);
 
     const session: AgentSession = {
       id: file.id,
       agentType: 'cursor' as AgentType,
       projectPath: file.projectPath,
       filePath: file.filePath,
-      messageCount,
+      messageCount: transcript.messageCount,
       createdAt: firstMessageAt ?? file.mtime,
       updatedAt: lastMessageAt ?? file.mtime,
     };
 
-    if (preview !== undefined) session.preview = preview;
+    if (transcript.preview !== undefined) session.preview = transcript.preview;
     if (firstMessageAt !== undefined) session.firstMessageAt = firstMessageAt;
     if (lastMessageAt !== undefined) session.lastMessageAt = lastMessageAt;
 
     if (options.includeMessages) {
-      session.messages =
-        options.messageLimit !== undefined && options.messageLimit > 0
-          ? messages.slice(-options.messageLimit)
-          : messages;
+      const messages = transcript.messagesAt(file.mtime);
+      const limit = options.messageLimit;
+      session.messages = limit !== undefined && limit > 0 ? messages.slice(-limit) : messages;
     }
 
     return session;
-  }
-
-  /** Cursor content may be a plain string or an array of typed blocks. */
-  private extractText(content: unknown): string {
-    if (typeof content === 'string') return content;
-
-    if (Array.isArray(content)) {
-      const parts: string[] = [];
-      for (const block of content) {
-        if (typeof block === 'object' && block !== null) {
-          const record = block as Record<string, unknown>;
-          if (record.type === 'text' && typeof record.text === 'string') parts.push(record.text);
-        }
-      }
-      return parts.join('\n');
-    }
-
-    return '';
   }
 }

@@ -52,7 +52,8 @@ describe('computeDecisionDeltas', () => {
 
     expect(events).toHaveLength(2);
     expect(events.every((e) => e.kind === 'supervisor_decision')).toBe(true);
-    expect(cache.deliveredIds.has('a')).toBe(true);
+    // Only ids AT the cursor are kept; `a` is older and cannot be re-read.
+    expect(cache.deliveredIds.has('a')).toBe(false);
     expect(cache.deliveredIds.has('b')).toBe(true);
     expect(cache.lastSeenAt).toBe(new Date('2026-04-01T10:00:01Z').getTime());
   });
@@ -125,5 +126,32 @@ describe('computeDecisionDeltas', () => {
   it('returns zero events for an empty input', () => {
     const cache = { lastSeenAt: 0, deliveredIds: new Set<string>() };
     expect(computeDecisionDeltas({ decisions: [], cache })).toEqual([]);
+  });
+
+  // Spec 116: same bound as the message stream — see compute-message-deltas.
+  it('stays bounded across polls and never re-emits an evicted id', () => {
+    const BASE_MS = new Date('2026-04-01T10:00:00Z').getTime();
+    const TOTAL = 120;
+    const PER_POLL = 5;
+    const table = Array.from({ length: TOTAL }, (_, i) =>
+      makeDecision({ id: `d${i}`, createdAt: new Date(BASE_MS + i) })
+    );
+    const cache = { lastSeenAt: 0, deliveredIds: new Set<string>() };
+    const emitted: string[] = [];
+    let visible = 0;
+    let maxRemembered = 0;
+
+    while (visible < TOTAL) {
+      visible = Math.min(TOTAL, visible + PER_POLL);
+      const since = cache.lastSeenAt;
+      const rows = table.slice(0, visible).filter((d) => (d.createdAt as Date).getTime() >= since);
+      for (const e of computeDecisionDeltas({ decisions: rows, cache })) {
+        if (e.kind === 'supervisor_decision') emitted.push(e.decisionId);
+      }
+      maxRemembered = Math.max(maxRemembered, cache.deliveredIds.size);
+    }
+
+    expect(emitted).toEqual(table.map((d) => d.id));
+    expect(maxRemembered).toBe(1);
   });
 });

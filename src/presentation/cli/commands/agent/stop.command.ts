@@ -13,13 +13,16 @@ import { StopAgentRunUseCase } from '@/application/use-cases/agents/stop-agent-r
 import { colors, messages } from '../../ui/index.js';
 import { resolveAgentRun } from './resolve-run.js';
 import { getCliI18n } from '../../i18n.js';
+import { refuseStoppingOwnRun } from '@/domain/shared/agent-run-environment.js';
+import { reportAgentRunRefusal } from '../agent-run-guard.js';
 
 export function createStopCommand(): Command {
   const t = getCliI18n().t;
   return new Command('stop')
     .description(t('cli:commands.agent.stop.description'))
     .argument('<id>', t('cli:commands.agent.stop.idArgument'))
-    .action(async (id: string) => {
+    .option('--force', t('cli:ui.agentGuard.forceOption'))
+    .action(async (id: string, options: { force?: boolean }) => {
       try {
         const resolved = await resolveAgentRun(id);
         if ('error' in resolved) {
@@ -27,6 +30,14 @@ export function createStopCommand(): Command {
           process.exitCode = 1;
           return;
         }
+
+        const { run } = resolved;
+        const refusal = refuseStoppingOwnRun(
+          process.env,
+          { runId: run.id, ...(run.featureId ? { featureId: run.featureId } : {}) },
+          options.force === true
+        );
+        if (reportAgentRunRefusal(refusal)) return;
 
         const useCase = container.resolve(StopAgentRunUseCase);
         const result = await useCase.execute(resolved.run.id);

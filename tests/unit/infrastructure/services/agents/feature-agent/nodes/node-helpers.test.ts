@@ -14,6 +14,7 @@ import {
   removeSpecCommitsIfNeeded,
 } from '@/infrastructure/services/agents/feature-agent/nodes/node-helpers.js';
 import { initializeSettings, resetSettings } from '@/infrastructure/services/settings.service.js';
+import { DEFAULT_AGENT_IDLE_TIMEOUT_MS } from '@/infrastructure/services/agents/common/agent-timeouts.js';
 import { createDefaultSettings } from '@/domain/factories/settings-defaults.factory.js';
 
 /**
@@ -363,6 +364,12 @@ describe('buildExecutorOptions', () => {
     messages: [],
     _needsReexecution: false,
   };
+
+  it('arms the default idle guard so a stalled agent fails long before the stage budget', () => {
+    const options = buildExecutorOptions(baseState as any);
+    expect(options.idleTimeout).toBe(DEFAULT_AGENT_IDLE_TIMEOUT_MS);
+    expect(options.idleTimeout).toBeLessThan(options.timeout!);
+  });
 
   it('uses default timeout (1_800_000ms) when settings are not initialized', () => {
     const options = buildExecutorOptions(baseState as any);

@@ -64,6 +64,20 @@ export interface IAgentQuestionRepository {
   ): Promise<void>;
 
   /**
+   * Settle a question that is STILL pending — the status check and the write
+   * are one statement, so of two concurrent answers (CLI + web) or an answer
+   * racing a cancel, exactly one wins and the other changes nothing.
+   *
+   * @returns true when this call settled the row
+   */
+  settlePending(
+    appId: string,
+    id: string,
+    status: AgentQuestionStatus,
+    fields?: Partial<Pick<AgentQuestion, 'answer' | 'answeredBy' | 'answeredAt'>>
+  ): Promise<boolean>;
+
+  /**
    * Find pending questions whose expiresAt is at or before the cutoff.
    * Used by the auto-expiry sweep.
    */

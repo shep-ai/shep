@@ -33,9 +33,14 @@ import {
   classifySpawnError,
   createLineAccumulator,
   createStderrTail,
+  missingTerminalEventMessage,
   signalTerminationMessage,
   terminateWithEscalation,
+  watchProcessIdle,
   writePromptToStdin,
+  toolInputLogPreview,
+  AGENT_ABORTED_MESSAGE,
+  watchAbortSignal,
 } from './process-stream.js';
 import {
   validateSecurityConstraints,
@@ -77,6 +82,15 @@ const EVENT_TYPE_ITEM_COMPLETED = 'item.completed';
 const EVENT_TYPE_TURN_COMPLETED = 'turn.completed';
 const EVENT_TYPE_TURN_FAILED = 'turn.failed';
 const EVENT_TYPE_ERROR = 'error';
+
+/** Agent name used in failure messages. */
+const AGENT_NAME = 'Codex CLI';
+
+/** Codex exited 0 without the event that ends every turn. */
+const TURN_NOT_COMPLETED_MESSAGE = missingTerminalEventMessage(
+  AGENT_NAME,
+  EVENT_TYPE_TURN_COMPLETED
+);
 
 /** Codex item types. */
 const ITEM_TYPE_COMMAND = 'command_execution';
@@ -191,18 +205,32 @@ export class CodexCliExecutorService implements IAgentExecutor {
           if (settled) return;
           settled = true;
           if (timeoutId) clearTimeout(timeoutId);
+          abortWatch.stop();
           cancelEscalation?.();
           outcome();
         };
 
+        /** Out of budget (total or idle): kill, and let 'close' report it. */
+        const expire = (message: string): void => {
+          if (timeoutError) return;
+          timeoutError = message;
+          log(`${message} — terminating agent`);
+          cancelEscalation = terminateWithEscalation(proc);
+        };
+
         const timeoutMs = options?.timeout;
         if (timeoutMs) {
-          timeoutId = setTimeout(() => {
-            timeoutError = agentTimeoutMessage(timeoutMs);
-            log(`Timeout after ${timeoutMs}ms — terminating agent`);
-            cancelEscalation = terminateWithEscalation(proc);
-          }, timeoutMs);
+          timeoutId = setTimeout(() => expire(agentTimeoutMessage(timeoutMs)), timeoutMs);
         }
+        watchProcessIdle(proc, options?.idleTimeout, (message) => {
+          if (!turnCompleted) expire(message);
+        });
+        // The caller's cancel: like a timeout, 'close' reports it, so awaiting
+        // this call awaits the teardown.
+        const abortWatch = watchAbortSignal(proc, options?.abortSignal, {
+          onAbort: () => expire(AGENT_ABORTED_MESSAGE),
+          onUnreaped: () => settle(() => reject(new Error(AGENT_ABORTED_MESSAGE))),
+        });
 
         const accumulator = createLineAccumulator(
           (line) => {
@@ -273,6 +301,16 @@ export class CodexCliExecutorService implements IAgentExecutor {
               return;
             }
 
+            // Exit 0 without `turn.completed` means stdout was cut short: the
+            // captured text is a fragment, however complete it reads. A stderr
+            // diagnosis (auth, quota) names the cause better when there is no
+            // text at all.
+            if (!turnCompleted) {
+              const diagnosis = resultText ? undefined : diagnoseStderr(stderr.text());
+              reject(new Error(diagnosis ?? TURN_NOT_COMPLETED_MESSAGE));
+              return;
+            }
+
             // A complete message IS the run's outcome. stderr noise from a
             // sub-request the CLI recovered from must not discard it.
             if (resultText) {
@@ -333,20 +371,28 @@ export class CodexCliExecutorService implements IAgentExecutor {
       let timedOut = false;
       let timeoutId: ReturnType<typeof setTimeout> | undefined;
 
+      /** Out of budget (total or idle): kill and end the stream with the reason. */
+      const expire = (message: string): void => {
+        if (timedOut) return;
+        timedOut = true;
+        if (timeoutId) clearTimeout(timeoutId);
+        log(`${message} — terminating agent`);
+        terminateWithEscalation(proc);
+        channel.push({ type: 'error', content: message, timestamp: new Date() });
+        channel.close();
+      };
+
       const timeoutMs = options?.timeout;
       if (timeoutMs) {
-        timeoutId = setTimeout(() => {
-          timedOut = true;
-          log(`Timeout after ${timeoutMs}ms — terminating agent`);
-          terminateWithEscalation(proc);
-          channel.push({
-            type: 'error',
-            content: agentTimeoutMessage(timeoutMs),
-            timestamp: new Date(),
-          });
-          channel.close();
-        }, timeoutMs);
+        timeoutId = setTimeout(() => expire(agentTimeoutMessage(timeoutMs)), timeoutMs);
       }
+      watchProcessIdle(proc, options?.idleTimeout, (message) => {
+        if (!turnCompleted) expire(message);
+      });
+      // The caller's cancel ends the stream the way a timeout does.
+      const abortWatch = watchAbortSignal(proc, options?.abortSignal, {
+        onAbort: () => expire(AGENT_ABORTED_MESSAGE),
+      });
 
       const accumulator = createLineAccumulator((line) => {
         this.logStreamEvent(line, log);
@@ -488,6 +534,15 @@ export class CodexCliExecutorService implements IAgentExecutor {
             content: signalTerminationMessage(signal, stderr.text()),
             timestamp: new Date(),
           });
+        } else if (!turnCompleted) {
+          // Same rule as execute(): a clean exit before `turn.completed` is a
+          // cut turn, named by the stderr diagnosis when there was no text.
+          const diagnosis = resultText ? undefined : diagnoseStderr(stderr.text());
+          channel.push({
+            type: 'error',
+            content: diagnosis ?? TURN_NOT_COMPLETED_MESSAGE,
+            timestamp: new Date(),
+          });
         } else if (!resultText) {
           // Same rule as execute(): stderr only gets to fail the run when the
           // agent produced nothing of its own.
@@ -503,6 +558,7 @@ export class CodexCliExecutorService implements IAgentExecutor {
         yield* channel;
       } finally {
         if (timeoutId) clearTimeout(timeoutId);
+        abortWatch.stop();
         // A consumer that breaks out of the loop would otherwise leave the
         // agent running until it finished on its own.
         if (!processClosed) terminateWithEscalation(proc);
@@ -602,7 +658,9 @@ export class CodexCliExecutorService implements IAgentExecutor {
 
     // Function/tool calls — log name and arguments
     if (type === EVENT_TYPE_ITEM_STARTED && itemType === ITEM_TYPE_FUNCTION_CALL) {
-      log(`[tool] ${asText(item?.name ?? item?.call_id) || 'unknown'} ${asText(item?.arguments)}`);
+      log(
+        `[tool] ${asText(item?.name ?? item?.call_id) || 'unknown'} ${toolInputLogPreview(asText(item?.arguments))}`
+      );
       return;
     }
     if (type === EVENT_TYPE_ITEM_COMPLETED && itemType === ITEM_TYPE_FUNCTION_CALL) {

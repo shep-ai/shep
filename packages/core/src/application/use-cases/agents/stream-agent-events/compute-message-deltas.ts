@@ -12,13 +12,21 @@
  */
 
 import type { AgentMessage } from '../../../../domain/generated/output.js';
+import {
+  createdAtMillis,
+  retainDeliveredAtCursor,
+} from '../../../../domain/shared/delivery-cursor.js';
 import type { AgentMessageStreamEvent, StreamedAgentEvent } from './stream-agent-events.types.js';
 
 /** Per-connection cached state for the agent-message stream. */
 export interface CachedAgentMessageState {
   /** High-water mark — millis of the most-recent message we emitted. */
   lastSeenAt: number;
-  /** Ids already emitted (bounded set; trimmed by the use case if needed). */
+  /**
+   * Ids already emitted AT `lastSeenAt` — the only ones the next
+   * `since = lastSeenAt` read can return again. Trimmed after every batch, so
+   * it never outgrows the rows sharing one millisecond (spec 116).
+   */
   deliveredIds: Set<string>;
 }
 
@@ -26,13 +34,6 @@ export interface ComputeMessageDeltasArgs {
   /** Messages returned by IAgentMessageBus.listFor for the current scope. */
   messages: AgentMessage[];
   cache: CachedAgentMessageState;
-}
-
-function toMillis(value: AgentMessage['createdAt']): number {
-  if (value instanceof Date) return value.getTime();
-  if (typeof value === 'number') return value;
-  if (typeof value === 'string') return new Date(value).getTime();
-  return 0;
 }
 
 function toIsoString(value: AgentMessage['createdAt']): string {
@@ -49,7 +50,7 @@ export function computeMessageDeltas(args: ComputeMessageDeltasArgs): StreamedAg
   for (const m of messages) {
     if (cache.deliveredIds.has(m.id)) continue;
 
-    const createdMs = toMillis(m.createdAt);
+    const createdMs = createdAtMillis(m.createdAt);
     cache.deliveredIds.add(m.id);
     if (createdMs > cache.lastSeenAt) cache.lastSeenAt = createdMs;
 
@@ -70,5 +71,6 @@ export function computeMessageDeltas(args: ComputeMessageDeltasArgs): StreamedAg
     });
   }
 
+  retainDeliveredAtCursor(cache.deliveredIds, messages, cache.lastSeenAt);
   return events;
 }

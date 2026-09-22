@@ -13,6 +13,7 @@ import { GetAgentRunUseCase } from '../../../../application/use-cases/agents/get
 import { ListAgentRunsUseCase } from '../../../../application/use-cases/agents/list-agent-runs.use-case.js';
 import { StopAgentRunUseCase } from '../../../../application/use-cases/agents/stop-agent-run.use-case.js';
 import { withErrorHandling } from './with-error-handling.js';
+import { refuseStoppingOwnRun } from '../../../../domain/shared/agent-run-environment.js';
 
 /**
  * Register agent-related MCP tools on the server.
@@ -87,10 +88,23 @@ export function registerAgentTools(server: McpServer, container: DependencyConta
       description: 'Stop a running agent by its run ID. Returns whether the stop was successful.',
       inputSchema: {
         runId: z.string().describe('Agent run ID to stop'),
+        force: z
+          .boolean()
+          .optional()
+          .describe('Stop the run even when it is the run executing the caller'),
       },
     },
-    async ({ runId }) => {
+    async ({ runId, force }) => {
       return withErrorHandling(async () => {
+        // This server is started by the agent CLI and inherits the worker's
+        // agent-run marker: stopping that run would kill the calling agent.
+        const refusal = refuseStoppingOwnRun(
+          process.env,
+          { runId },
+          force === true,
+          'Set force: true to stop it anyway.'
+        );
+        if (refusal) throw new Error(refusal);
         const useCase = container.resolve(StopAgentRunUseCase);
         const result = await useCase.execute(runId);
         return {

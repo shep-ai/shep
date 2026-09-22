@@ -127,6 +127,35 @@ describe('shep agent questions commands', () => {
     expect(process.exitCode).toBe(1);
   });
 
+  it('answer fails when the question was already settled by someone else', async () => {
+    answerExecute.mockResolvedValue({
+      enabled: true,
+      forwardedToGate: false,
+      question: question({ status: AgentQuestionStatus.answered, answer: 'other answer' }),
+      alreadySettledAs: AgentQuestionStatus.answered,
+    });
+    const cmd = createAnswerCommand();
+    await cmd.parseAsync(
+      ['aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee', '--app', 'app-1', '--answer', 'yes'],
+      { from: 'user' }
+    );
+    // The answer was NOT recorded; reporting success would be a lie.
+    expect(process.exitCode).toBe(1);
+  });
+
+  it('cancel fails when the question was already settled by someone else', async () => {
+    cancelExecute.mockResolvedValue({
+      enabled: true,
+      question: question({ status: AgentQuestionStatus.answered }),
+      alreadySettledAs: AgentQuestionStatus.answered,
+    });
+    const cmd = createCancelCommand();
+    await cmd.parseAsync(['aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee', '--app', 'app-1'], {
+      from: 'user',
+    });
+    expect(process.exitCode).toBe(1);
+  });
+
   it('cancel invokes CancelAgentQuestionUseCase with cancelledBy + reason', async () => {
     cancelExecute.mockResolvedValue({
       enabled: true,

@@ -32,6 +32,7 @@ import type {
   AgentExecutionStreamEvent,
   AgentExecutionUsage,
 } from '../../../../../application/ports/output/agents/agent-executor.interface.js';
+import { AGENT_ABORTED_MESSAGE, agentTimeoutMessage } from './process-stream.js';
 
 /** Default timeout in milliseconds (5 minutes) */
 const DEFAULT_TIMEOUT_MS = 300_000;
@@ -143,6 +144,7 @@ export abstract class AiSdkBaseExecutorService implements IAgentExecutor {
         prompt,
         system: options?.systemPrompt,
         timeout,
+        abortSignal: options?.abortSignal,
       });
 
       assertFinished(response.finishReason);
@@ -153,7 +155,7 @@ export abstract class AiSdkBaseExecutorService implements IAgentExecutor {
         usage: this.mapUsage(response.usage),
       };
     } catch (error) {
-      throw this.enhanceError(error, timeout);
+      throw this.enhanceError(error, timeout, options?.abortSignal);
     }
   }
 
@@ -171,9 +173,10 @@ export abstract class AiSdkBaseExecutorService implements IAgentExecutor {
         prompt,
         system: options?.systemPrompt,
         timeout,
+        abortSignal: options?.abortSignal,
       });
     } catch (error) {
-      throw this.enhanceError(error, timeout);
+      throw this.enhanceError(error, timeout, options?.abortSignal);
     }
 
     let fullText = '';
@@ -194,8 +197,8 @@ export abstract class AiSdkBaseExecutorService implements IAgentExecutor {
           finishReason = part.finishReason;
         } else if (part.type === PART_ABORT) {
           // streamText reports an abort as a part and then ends the stream
-          // cleanly. No abortSignal is passed in, so the only abort source is
-          // the `timeout` budget above.
+          // cleanly. The source is the `timeout` budget or the caller's
+          // abortSignal; enhanceError tells the two apart.
           throw streamAbortedError(part.reason);
         }
       }
@@ -209,7 +212,7 @@ export abstract class AiSdkBaseExecutorService implements IAgentExecutor {
         timestamp: new Date(),
       };
     } catch (error) {
-      throw this.enhanceError(error, timeout);
+      throw this.enhanceError(error, timeout, options?.abortSignal);
     }
   }
 
@@ -229,6 +232,7 @@ export abstract class AiSdkBaseExecutorService implements IAgentExecutor {
       system: options.systemPrompt,
       schema: jsonSchema(options.outputSchema!),
       timeout,
+      abortSignal: options.abortSignal,
     });
 
     return {
@@ -264,8 +268,14 @@ export abstract class AiSdkBaseExecutorService implements IAgentExecutor {
    * Enhance errors with provider context for better diagnostics.
    * Never includes the API key in error messages.
    */
-  private enhanceError(error: unknown, timeout: number): Error {
+  private enhanceError(error: unknown, timeout: number, abortSignal?: AbortSignal): Error {
     const provider = this.providerDisplayName;
+
+    // Checked first: the SDK reports a cancelled request with the same error
+    // names as a timeout, and a caller's cancel must not read as one.
+    if (abortSignal?.aborted) {
+      return new Error(`${provider}: ${AGENT_ABORTED_MESSAGE}`);
+    }
 
     if (APICallError.isInstance(error)) {
       const { statusCode, responseHeaders } = error;
@@ -293,7 +303,10 @@ export abstract class AiSdkBaseExecutorService implements IAgentExecutor {
 
     if (error instanceof Error) {
       if (TIMEOUT_ERROR_NAMES.has(error.name) || error.message.includes(TIMED_OUT_TEXT)) {
-        return new Error(`${provider}: Request timed out after ${timeout}ms.`);
+        // The shared timeout text is what retry classification and the
+        // supervisor fail-safe recognise; a provider-specific wording read as
+        // `unknown` and the request was re-sent three more times.
+        return new Error(`${provider}: ${agentTimeoutMessage(timeout)}`);
       }
 
       if (

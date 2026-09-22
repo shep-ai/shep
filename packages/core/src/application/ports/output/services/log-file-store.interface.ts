@@ -1,10 +1,10 @@
 /**
  * Log File Store (port)
  *
- * Read/delete access to the worker log directory `~/.shep/logs`. Nothing
- * rotates, caps or deletes those files today — not on feature delete, not
- * on archive, not ever — and they are large by design: `[tool]` lines
- * carry full tool-input JSON and `[text]` lines full assistant prose.
+ * Read/delete access to the worker log directory `~/.shep/logs`. The files
+ * are large by design: `[tool]` lines carry full tool-input JSON and
+ * `[text]` lines full assistant prose. `PruneLogsUseCase` is the only thing
+ * that deletes them — on demand, and on the data-retention schedule.
  */
 
 /** One log file on disk. */

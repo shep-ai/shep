@@ -2,18 +2,25 @@
  * PruneLogsUseCase
  *
  * Selects and (when confirmed) deletes worker logs older than a cutoff.
- * Nothing in Shep rotates, caps or deletes `~/.shep/logs/worker-*.log`:
- * not on feature delete, not on archive, not ever — and those files are
- * large by design, since `[tool]` lines carry full tool-input JSON and
- * `[text]` lines full assistant prose.
+ * `~/.shep/logs/worker-*.log` files are large by design, since `[tool]`
+ * lines carry full tool-input JSON and `[text]` lines full assistant prose.
+ * Two callers: `shep logs prune`, and `PruneRetainedDataUseCase`, which
+ * applies the data-retention window unattended (spec 116).
  *
  * Dry run is the DEFAULT. Deleting a run's log destroys the only record of
  * what that agent did, so the caller has to ask for it explicitly.
+ *
+ * The log of a run that is still active is never a candidate, however old:
+ * a feature parked at an approval gate can leave its log untouched for weeks
+ * and still resume into it (spec 116).
  */
 
 import { inject, injectable } from 'tsyringe';
 
 import { DURATION_SYNTAX_HINT, parseDurationMs } from '../../../domain/shared/parse-duration.js';
+import { isActiveAgentRunStatus } from '../../../domain/shared/agent-run-status.js';
+import { runIdOfWorkerLog } from '../../../domain/shared/worker-log.js';
+import type { IAgentRunRepository } from '../../ports/output/agents/agent-run-repository.interface.js';
 import type {
   ILogFileStore,
   LogFileInfo,
@@ -60,7 +67,9 @@ export interface PruneLogsResult {
 export class PruneLogsUseCase {
   constructor(
     @inject('ILogFileStore')
-    private readonly store: ILogFileStore
+    private readonly store: ILogFileStore,
+    @inject('IAgentRunRepository')
+    private readonly runs: IAgentRunRepository
   ) {}
 
   async execute(input: PruneLogsInput = {}): Promise<PruneLogsResult> {
@@ -77,7 +86,12 @@ export class PruneLogsUseCase {
     const cutoffMs = now.getTime() - olderThanMs;
 
     const files = await this.store.list();
-    const candidates = files.filter((file) => file.modifiedAt.getTime() <= cutoffMs);
+    const activeRunIds = await this.activeRunIds();
+    const candidates = files.filter((file) => {
+      if (file.modifiedAt.getTime() > cutoffMs) return false;
+      const runId = runIdOfWorkerLog(file.name);
+      return runId === null || !activeRunIds.has(runId);
+    });
 
     const result: PruneLogsResult = {
       logsDirectory: this.store.getLogsDirectory(),
@@ -108,6 +122,11 @@ export class PruneLogsUseCase {
     }
     result.reclaimedBytes = sumBytes(result.deleted);
     return result;
+  }
+
+  private async activeRunIds(): Promise<Set<string>> {
+    const runs = await this.runs.list();
+    return new Set(runs.filter((run) => isActiveAgentRunStatus(run.status)).map((run) => run.id));
   }
 }
 

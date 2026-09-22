@@ -389,7 +389,8 @@
         "agentResumed": "Agente do recurso retomado",
         "featureLabel": "Recurso:",
         "runIdLabel": "ID da Execução:",
-        "failedToResume": "Falha ao retomar recurso"
+        "failedToResume": "Falha ao retomar recurso",
+        "forceOption": "Retomar mesmo quando o limite de funcionalidades paralelas for atingido"
       },
       "review": {
         "description": "Revisão interativa de um recurso aguardando aprovação",
@@ -1104,6 +1105,9 @@
       "noLogFile": "Nenhum arquivo de log encontrado para {{label}}",
       "expectedAt": "Esperado: {{path}}",
       "logEmpty": "O arquivo de log está vazio para {{label}}"
+    },
+    "agentGuard": {
+      "forceOption": "Executar mesmo dentro de uma execução de agente do Shep, mesmo que isso pare o agente que o executa"
     }
   },
   "bootstrap": {

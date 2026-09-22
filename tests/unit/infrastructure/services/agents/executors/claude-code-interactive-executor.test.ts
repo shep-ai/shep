@@ -336,6 +336,51 @@ describe('ClaudeCodeInteractiveExecutor', () => {
     });
   });
 
+  describe('usage on result events', () => {
+    // The SDK's `input_tokens` EXCLUDES prompt-cache reads and writes. The
+    // batch Claude executor reports input as input + cache creation + cache
+    // read, so an interactive session under-reported its input by the whole
+    // cached prompt — typically most of it — next to a feature run that did
+    // not.
+    const USAGE = {
+      input_tokens: 12,
+      output_tokens: 40,
+      cache_creation_input_tokens: 300,
+      cache_read_input_tokens: 5_000,
+    };
+
+    async function streamResult(result: Record<string, unknown>) {
+      const messages = [{ type: 'result', session_id: 's-1', usage: USAGE, ...result }];
+      const sdkSession = {
+        ...createMockSdkSession(),
+        stream: () =>
+          (async function* () {
+            yield* messages;
+          })(),
+      };
+      mockCreateSession.mockReturnValue(sdkSession);
+      const handle = await executor.createSession({ cwd: process.cwd() });
+      const events = [];
+      for await (const event of handle.stream()) events.push(event);
+      return events;
+    }
+
+    it('counts cached prompt tokens as input on a successful turn', async () => {
+      const [event] = await streamResult({ subtype: 'success', result: 'hi', num_turns: 1 });
+
+      expect(event.type).toBe('done');
+      expect(event.usage?.inputTokens).toBe(12 + 300 + 5_000);
+      expect(event.usage?.outputTokens).toBe(40);
+    });
+
+    it('counts cached prompt tokens as input on a failed turn', async () => {
+      const [event] = await streamResult({ subtype: 'error_max_turns', errors: [] });
+
+      expect(event.type).toBe('error');
+      expect(event.usage?.inputTokens).toBe(12 + 300 + 5_000);
+    });
+  });
+
   describe('resumeSession', () => {
     it('should pass session ID and options to SDK resume', async () => {
       await executor.resumeSession('existing-session-id', {

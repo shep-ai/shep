@@ -110,6 +110,12 @@ export interface RunFailureDeps {
   runRepository: IAgentRunRepository;
   featureRepository: Pick<IFeatureRepository, 'findById' | 'update'>;
   recordLifecycleEvent: (event: string) => Promise<void>;
+  /**
+   * Admit queued features. A failed run releases its parallel-feature slot
+   * (its status does, although the lifecycle is reset to a running one), so
+   * the failure is one of the events that frees a slot.
+   */
+  drainCapacityQueue: () => Promise<unknown>;
   log: WorkerLog;
 }
 
@@ -129,7 +135,7 @@ export async function recordRunFailure(
   deps: RunFailureDeps,
   input: RunFailureInput
 ): Promise<void> {
-  const { runRepository, featureRepository, recordLifecycleEvent, log } = deps;
+  const { runRepository, featureRepository, recordLifecycleEvent, drainCapacityQueue, log } = deps;
   const { runId, featureId, message, failedAt } = input;
 
   // undefined = the write threw, so the outcome is unknown; the run did fail.
@@ -171,4 +177,21 @@ export async function recordRunFailure(
     log(`Failed to record run:failed event: ${errorMessage(eventErr)}`);
   }
   log('Run marked as failed');
+
+  await drainCapacityQueueAfterFailure(drainCapacityQueue, log);
+}
+
+/**
+ * Admit queued features now that a failed run has released its slot.
+ * Best-effort: the dashboard's state-side drain retries on its next load.
+ */
+export async function drainCapacityQueueAfterFailure(
+  drainCapacityQueue: () => Promise<unknown>,
+  log: WorkerLog
+): Promise<void> {
+  try {
+    await drainCapacityQueue();
+  } catch (drainErr) {
+    log(`Failed to drain the capacity queue after the failure: ${errorMessage(drainErr)}`);
+  }
 }

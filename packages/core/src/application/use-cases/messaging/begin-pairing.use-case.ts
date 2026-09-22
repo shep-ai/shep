@@ -28,7 +28,7 @@ import type { ISettingsRepository } from '../../ports/output/repositories/settin
 import type { IGatewayClient } from '../../ports/output/services/gateway-client.interface.js';
 
 const PAIRING_CODE_TTL_MS = 10 * 60 * 1000; // 10 minutes
-const DEFAULT_GATEWAY_CLIENT_ID = 'commands-desktop-public';
+export const DEFAULT_GATEWAY_CLIENT_ID = 'commands-desktop-public';
 
 export interface BeginMessagingPairingInput {
   platform: MessagingPlatform;

@@ -14,6 +14,7 @@ import type { IGitPrService } from '@/application/ports/output/services/git-pr-s
 import { CiStatus, type CiFixRecord } from '@/domain/generated/output.js';
 import type { NodeLogger, MemorySelector } from '../node-helpers.js';
 import { retryExecute } from '../node-helpers.js';
+import { TRANSIENT_ERROR_CATEGORIES } from '../agent-retry.js';
 import type { AgentExecutionOptions } from '@/application/ports/output/agents/agent-executor.interface.js';
 import { buildCiWatchFixPrompt, buildCiWatchPrompt } from '../prompts/merge-prompts.js';
 import { parseCiWatchResult, type CiWatchParseStatus } from './merge-output-parser.js';
@@ -291,8 +292,14 @@ export async function runCiWatchFixLoop(
       }
     }
 
-    // Invoke fix executor — maxAttempts:1 prevents retryExecute's internal
-    // retry logic from consuming CI fix attempts behind the outer loop's back.
+    // Invoke the fix executor with the default retry budget, restricted to
+    // TRANSIENT errors (API 429/5xx, dropped connections). Re-running the fix
+    // after one of those is safe even if it struck mid-turn: the prompt carries
+    // only the CI failure logs, and the fix agent re-reads the worktree and
+    // branch as they are now, so work a cut-off attempt already committed or
+    // pushed is seen and built on, not redone. Anything else (an unknown
+    // failure, a cut stream, a timeout) is not retried here — it counts as a
+    // failed fix attempt and the next CI watch judges what the agent left.
     const fixPrompt = buildCiWatchFixPrompt(
       failureLogs,
       ciFixAttempts + 1,
@@ -302,7 +309,7 @@ export async function runCiWatchFixLoop(
     );
     try {
       const fixResult = await retryExecute(executor, fixPrompt, options, {
-        maxAttempts: 1,
+        retryOn: TRANSIENT_ERROR_CATEGORIES,
         logger: log,
       });
       await recordPhaseEnd(fixTimingId, Date.now() - fixStart, {

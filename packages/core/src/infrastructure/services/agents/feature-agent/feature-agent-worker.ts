@@ -40,6 +40,7 @@ import { InitializeSettingsUseCase } from '@/application/use-cases/settings/init
 import { setHeartbeatContext } from './heartbeat.js';
 import {
   claimRunForWorker,
+  drainCapacityQueueAfterFailure,
   finishRun,
   recordRunFailure,
   startRunHeartbeat,
@@ -57,12 +58,14 @@ import type { IPhaseTimingRepository } from '@/application/ports/output/agents/p
 import type { IPluginRepository } from '@/application/ports/output/repositories/plugin-repository.interface.js';
 import type { IMcpServerManager } from '@/application/ports/output/services/mcp-server-manager.interface.js';
 import { UpdateFeatureLifecycleUseCase } from '@/application/use-cases/features/update/update-feature-lifecycle.use-case.js';
+import { AdmitQueuedFeaturesUseCase } from '@/application/use-cases/features/capacity/admit-queued-features.use-case.js';
 import { CleanupFeatureWorktreeUseCase } from '@/application/use-cases/features/cleanup-feature-worktree.use-case.js';
 import { startPluginServers, stopPluginServers } from './plugin-startup.js';
 import { SelectProjectMemoryUseCase } from '@/application/use-cases/project-memory/select-project-memory.use-case.js';
 import { RecordProjectMemoryUseCase } from '@/application/use-cases/project-memory/record-project-memory.use-case.js';
 
 import type { ApprovalGates } from '@/domain/generated/output.js';
+import { FEATURE_WORKER_HEARTBEAT_INTERVAL_MS } from '@/domain/shared/agent-run-liveness.js';
 
 export interface WorkerArgs {
   featureId: string;
@@ -213,8 +216,11 @@ function log(message: string): void {
   process.stdout.write(`[${ts}] ${getLogPrefix()}[WORKER] ${message}\n`);
 }
 
-/** Heartbeat interval (30 seconds) */
-const HEARTBEAT_INTERVAL_MS = 30_000;
+/**
+ * Heartbeat interval. Owned by the domain because the run-liveness sweep's
+ * staleness thresholds are defined as multiples of it.
+ */
+const HEARTBEAT_INTERVAL_MS = FEATURE_WORKER_HEARTBEAT_INTERVAL_MS;
 
 /**
  * Run the feature agent worker with the given arguments.
@@ -397,6 +403,11 @@ export async function runWorker(args: WorkerArgs): Promise<void> {
   // fires on every transition, automatically unblocking eligible blocked children.
   const updateLifecycleUseCase = container.resolve(UpdateFeatureLifecycleUseCase);
   setLifecycleContext(args.featureId, updateLifecycleUseCase);
+
+  // A failed run releases its parallel-feature slot; admitting the next
+  // queued feature is part of recording the failure.
+  const admitQueuedFeatures = container.resolve(AdmitQueuedFeaturesUseCase);
+  const drainCapacityQueue = () => admitQueuedFeatures.execute();
 
   // Set SDLC board context so the implement node can write task/sub-task progress
   // to the board in real time. Best-effort: tracker errors are swallowed in the context.
@@ -627,6 +638,7 @@ export async function runWorker(args: WorkerArgs): Promise<void> {
       }
       await recordLifecycleEvent('run:failed');
       log(`Run marked as failed: ${result.error}`);
+      await drainCapacityQueueAfterFailure(drainCapacityQueue, log);
       return;
     }
 
@@ -655,6 +667,7 @@ export async function runWorker(args: WorkerArgs): Promise<void> {
         runRepository,
         featureRepository,
         recordLifecycleEvent: (event) => recordLifecycleEvent(event),
+        drainCapacityQueue,
         log,
       },
       { runId: args.runId, featureId: args.featureId, message, failedAt }

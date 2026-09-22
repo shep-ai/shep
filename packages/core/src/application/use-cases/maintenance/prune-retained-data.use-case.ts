@@ -8,12 +8,16 @@
  * interactive messages, phase timings and PM notifications had no retention at
  * all — about 184 MB a year at five agents a day.
  *
- * It runs on process start rather than on a timer because Shep has no
- * always-on component it can rely on: the daemon may never have been started,
- * and a CLI invocation may be the only process that runs all week. The
- * interval claim is what makes that affordable — a due check is one indexed
- * point read, and the prune itself happens once a day no matter how many
- * processes ask.
+ * It runs on every process start, because the daemon may never have been
+ * started and a CLI invocation may be the only process that runs all week —
+ * and, while one is up, on a timer in the long-running daemon / `shep ui`
+ * process (RetentionScheduler), since one that is never restarted would
+ * otherwise never prune (spec 116). The interval claim is what makes both
+ * affordable — a due check is one indexed point read, and the prune itself
+ * happens once a day no matter how many processes ask.
+ *
+ * Worker log files (`~/.shep/logs/worker-*.log`) follow the same window, via
+ * `PruneLogsUseCase` — which never touches the log of a still-active run.
  */
 
 import { injectable, inject } from 'tsyringe';
@@ -25,6 +29,10 @@ import {
   DATA_RETENTION_PRUNE_INTERVAL_MS,
   retentionCutoff,
 } from '../../../domain/shared/data-retention.js';
+import { PruneLogsUseCase } from '../logs/prune-logs.use-case.js';
+
+/** Unit suffix `PruneLogsUseCase` parses for a window given in days. */
+const DAYS_DURATION_SUFFIX = 'd';
 
 export interface PruneRetainedDataResult {
   /** False when another process already pruned inside the interval. */
@@ -32,7 +40,7 @@ export interface PruneRetainedDataResult {
   /** The cutoff applied, present only when `pruned`. */
   cutoff?: Date;
   /** Rows removed per table, present only when `pruned`. */
-  counts?: RetentionPruneCounts & { operationLog: number };
+  counts?: RetentionPruneCounts & { operationLog: number; workerLogFiles: number };
 }
 
 export interface PruneRetainedDataOptions {
@@ -50,7 +58,9 @@ export class PruneRetainedDataUseCase {
     @inject('IRetentionRepository')
     private readonly retentionRepo: IRetentionRepository,
     @inject('IOperationLogRepository')
-    private readonly operationLogRepo: IOperationLogRepository
+    private readonly operationLogRepo: IOperationLogRepository,
+    @inject(PruneLogsUseCase)
+    private readonly pruneLogs: Pick<PruneLogsUseCase, 'execute'>
   ) {}
 
   async execute(options?: PruneRetainedDataOptions): Promise<PruneRetainedDataResult> {
@@ -72,7 +82,16 @@ export class PruneRetainedDataUseCase {
     // The operation log keeps its own port: `pruneBefore` was already the
     // right method, it simply had no caller.
     const operationLog = await this.operationLogRepo.pruneBefore(cutoff.getTime());
+    const logs = await this.pruneLogs.execute({
+      olderThan: `${retentionDays}${DAYS_DURATION_SUFFIX}`,
+      dryRun: false,
+      now,
+    });
 
-    return { pruned: true, cutoff, counts: { ...counts, operationLog } };
+    return {
+      pruned: true,
+      cutoff,
+      counts: { ...counts, operationLog, workerLogFiles: logs.deleted.length },
+    };
   }
 }

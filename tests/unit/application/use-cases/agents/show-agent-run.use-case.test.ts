@@ -10,6 +10,7 @@
 import 'reflect-metadata';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ShowAgentRunUseCase } from '@/application/use-cases/agents/show-agent-run.use-case.js';
+import type { ReconcileAgentRunLivenessUseCase } from '@/application/use-cases/agents/reconcile-agent-run-liveness.use-case.js';
 import type { IAgentRunRepository } from '@/application/ports/output/agents/agent-run-repository.interface.js';
 import type { IFeatureAgentProcessService } from '@/application/ports/output/agents/feature-agent-process.interface.js';
 import type { AgentRun } from '@/domain/generated/output.js';
@@ -31,6 +32,8 @@ function createMockAgentRun(overrides?: Partial<AgentRun>): AgentRun {
 }
 
 describe('ShowAgentRunUseCase', () => {
+  const livenessSweep = { execute: vi.fn() };
+  const sweep = livenessSweep as unknown as ReconcileAgentRunLivenessUseCase;
   let useCase: ShowAgentRunUseCase;
   let mockRepo: IAgentRunRepository;
   let mockProcessService: IFeatureAgentProcessService;
@@ -53,7 +56,7 @@ describe('ShowAgentRunUseCase', () => {
       isAlive: vi.fn().mockReturnValue(true),
       checkAndMarkCrashed: vi.fn(),
     };
-    useCase = new ShowAgentRunUseCase(mockRepo, mockProcessService);
+    useCase = new ShowAgentRunUseCase(mockRepo, mockProcessService, sweep);
   });
 
   it('should return agent run by exact ID', async () => {
@@ -115,5 +118,25 @@ describe('ShowAgentRunUseCase', () => {
   it('should not call prefix match if exact match succeeds', async () => {
     await useCase.execute('abcd1234-5678-9abc-def0-123456789abc');
     expect(mockRepo.list).not.toHaveBeenCalled();
+  });
+
+  // The read paths every surface uses (CLI, TUI, web) run the run-liveness
+  // sweep first, so what they return already reflects a crashed or hung worker.
+  describe('run-liveness sweep', () => {
+    it('reconciles run liveness before reading', async () => {
+      const order: string[] = [];
+      livenessSweep.execute.mockImplementation(async () => {
+        order.push('sweep');
+        return { reconciledRunIds: [] };
+      });
+      mockRepo.findById = vi.fn(async () => {
+        order.push('read');
+        return createMockAgentRun();
+      });
+
+      await useCase.execute('run-1');
+
+      expect(order).toEqual(['sweep', 'read']);
+    });
   });
 });

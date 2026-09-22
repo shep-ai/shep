@@ -271,7 +271,14 @@ describe('CopilotCliExecutorService', () => {
       vi.mocked(mockSpawn).mockReturnValue(mockProc as any);
 
       const executePromise = executor.execute('Prompt', { silent: true });
-      emitJsonlLines(mockProc, [assistantMessage('OK')], null, 0);
+      // A result event WITHOUT a sessionId — the fixture used to omit the
+      // result event altogether, which is a cut stream, not this case.
+      emitJsonlLines(
+        mockProc,
+        [assistantMessage('OK'), JSON.stringify({ type: 'result' })],
+        null,
+        0
+      );
 
       const result = await executePromise;
       expect(result.sessionId).toBeUndefined();
@@ -629,14 +636,15 @@ describe('CopilotCliExecutorService', () => {
       vi.useRealTimers();
     });
 
-    it('should handle exit code 0 with empty response gracefully', async () => {
+    it('should resolve an empty answer when the completed turn carried no text', async () => {
       const mockProc = createMockChildProcess();
       vi.mocked(mockSpawn).mockReturnValue(mockProc as any);
 
       const executePromise = executor.execute('Prompt', { silent: true });
-      emitJsonlLines(mockProc, [], null, 0);
+      // The turn completed (result event) with nothing to say. Exit 0 with no
+      // output at all is a cut stream and rejects — see 'turn completion'.
+      emitJsonlLines(mockProc, [resultEvent('sess-empty')], null, 0);
 
-      // Should resolve without error even if empty
       const result = await executePromise;
       expect(result.result).toBe('');
     });
@@ -944,7 +952,8 @@ describe('CopilotCliExecutorService', () => {
       vi.mocked(mockSpawn).mockReturnValue(mockProc as any);
 
       const answer = 'héllo — ✅ 日本語 🚀 done';
-      const payload = Buffer.from(`${assistantMessage(answer)}\n`, 'utf8');
+      // A real run ends with its result event; only the message is split.
+      const payload = Buffer.from(`${assistantMessage(answer)}\n${resultEvent('s-1')}\n`, 'utf8');
       const splitAt = payload.indexOf(Buffer.from('🚀', 'utf8')) + 2;
 
       const executePromise = executor.execute('Prompt', { silent: true });
@@ -974,7 +983,7 @@ describe('CopilotCliExecutorService', () => {
       });
 
       const executePromise = executor.execute('Prompt', { silent: true });
-      emitJsonlLines(mockProc, [blocks], null, 0);
+      emitJsonlLines(mockProc, [blocks, resultEvent('sess-1')], null, 0);
 
       const result = await executePromise;
       expect(result.result).not.toContain('[object Object]');
@@ -1104,6 +1113,38 @@ describe('CopilotCliExecutorService', () => {
     });
   });
 
+  describe('turn completion', () => {
+    // Copilot ends every turn with a `result` event. A clean exit without one
+    // means stdout was cut short — the text captured so far is a fragment.
+    it('should reject an exit 0 that never emitted a result event, even with captured text', async () => {
+      const mockProc = createMockChildProcess();
+      vi.mocked(mockSpawn).mockReturnValue(mockProc as any);
+
+      const executePromise = executor.execute('Test', { silent: true });
+      emitJsonlLines(mockProc, [assistantMessage('Halfway through the refactor')], null, 0);
+
+      await expect(executePromise).rejects.toThrow(
+        'Copilot CLI exited without a result event — the turn was cut short before it finished'
+      );
+    });
+
+    it('should stream an error, not silence, for an exit 0 without a result event', async () => {
+      const mockProc = createMockChildProcess();
+      vi.mocked(mockSpawn).mockReturnValue(mockProc as any);
+
+      const events: { type: string; content: string }[] = [];
+      const stream = executor.executeStream('Test', { silent: true });
+      emitJsonlLines(mockProc, [assistantMessage('Halfway')], null, 0);
+      for await (const event of stream) events.push({ type: event.type, content: event.content });
+
+      expect(events).toContainEqual({
+        type: 'error',
+        content:
+          'Copilot CLI exited without a result event — the turn was cut short before it finished',
+      });
+    });
+  });
+
   describe('executeStream lifetime', () => {
     it('should kill the child when the consumer stops iterating early', async () => {
       const mockProc = createMockChildProcess();
@@ -1120,5 +1161,62 @@ describe('CopilotCliExecutorService', () => {
 
       expect(mockProc.kill).toHaveBeenCalled();
     });
+  });
+});
+
+describe('CopilotCliExecutorService — idle timeout', () => {
+  // A stalled agent (hung API connection, wedged tool) used to sit out the
+  // whole total budget — 30 minutes by default, hours for a long implement
+  // stage. `idleTimeout` ends it after that long without any output.
+  const IDLE_MESSAGE = 'Agent execution timed out: no output for 60s';
+  let mockSpawn: SpawnFunction;
+  let executor: CopilotCliExecutorService;
+
+  beforeEach(() => {
+    mockSpawn = vi.fn();
+    executor = new CopilotCliExecutorService(mockSpawn);
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('execute(): kills an agent silent for the idle budget, naming the budget', async () => {
+    vi.useFakeTimers();
+    const proc = createMockChildProcess();
+    vi.mocked(mockSpawn).mockReturnValue(proc as any);
+
+    const outcome = executor.execute('Prompt', { silent: true, idleTimeout: 60_000 }).then(
+      () => 'resolved',
+      (error: Error) => error.message
+    );
+    await vi.advanceTimersByTimeAsync(30_000);
+    proc.stderr.write('still working\n'); // any output restarts the budget
+    await vi.advanceTimersByTimeAsync(45_000);
+    expect(proc.kill).not.toHaveBeenCalled();
+
+    await vi.advanceTimersByTimeAsync(20_000);
+    expect(proc.kill).toHaveBeenCalled();
+    proc.emit('close', null, 'SIGTERM');
+
+    expect(await outcome).toBe(IDLE_MESSAGE);
+  });
+
+  it('executeStream(): ends a silent stream with an idle-timeout error event', async () => {
+    const proc = createMockChildProcess();
+    vi.mocked(mockSpawn).mockReturnValue(proc as any);
+
+    const events: { type: string; content: string }[] = [];
+    for await (const event of executor.executeStream('Prompt', {
+      silent: true,
+      idleTimeout: 20,
+    })) {
+      events.push({ type: event.type, content: event.content });
+    }
+
+    expect(events).toContainEqual({
+      type: 'error',
+      content: 'Agent execution timed out: no output for 0.02s',
+    });
+    expect(proc.kill).toHaveBeenCalled();
   });
 });

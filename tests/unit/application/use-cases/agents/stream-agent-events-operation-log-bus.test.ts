@@ -69,6 +69,7 @@ function buildUseCase(bus: InMemoryOperationLogEventBus): StreamAgentEventsUseCa
     updateStatus: vi.fn(),
     updateLastActivity: vi.fn(),
     markAllActiveStopped: vi.fn(),
+    markStoppedIfActive: vi.fn(),
     countActiveSessions: vi.fn().mockResolvedValue(0),
     updateAgentSessionId: vi.fn(),
     getAgentSessionId: vi.fn().mockResolvedValue(null),

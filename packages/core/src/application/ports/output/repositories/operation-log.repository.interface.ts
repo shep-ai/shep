@@ -43,7 +43,8 @@ export interface IOperationLogRepository {
   append(input: AppendOperationLogEntryInput): Promise<OperationLogEntry>;
 
   /**
-   * List every entry for the given operation, oldest first. Returns an empty
+   * List the entries for the given operation, oldest first — at most the
+   * newest `MAX_OPERATION_LOG_ENTRIES_PER_SCOPE` of them. Returns an empty
    * array if no entries exist yet (the operation may still be in progress
    * before its first entry, or it may never have run at all).
    */

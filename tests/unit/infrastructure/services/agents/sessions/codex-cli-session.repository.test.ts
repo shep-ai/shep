@@ -11,7 +11,8 @@
  */
 
 import 'reflect-metadata';
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import * as os from 'node:os';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 import * as url from 'node:url';
@@ -220,6 +221,62 @@ describe('CodexCliSessionRepository', () => {
       const nonexistentRepo = new CodexCliSessionRepository('/tmp/nonexistent-codex-sessions');
       const session = await nonexistentRepo.findById('any-id');
       expect(session).toBeNull();
+    });
+  });
+
+  // Spec 116: without a session index, list() falls back to parsing rollout
+  // files; that fallback must read only bytes appended since the last list.
+  describe('rollout fallback (no session index)', () => {
+    let home: string;
+    const SESSION_ID = 'dddd4444-0000-0000-0000-000000000004';
+
+    function rollout(type: string, payload: unknown, timestamp: string): string {
+      return `${JSON.stringify({ type, payload, timestamp })}\n`;
+    }
+
+    function message(role: 'user' | 'assistant', text: string, timestamp: string): string {
+      const kind = role === 'user' ? 'input_text' : 'output_text';
+      return rollout(
+        'response_item',
+        { type: 'message', role, content: [{ type: kind, text }] },
+        timestamp
+      );
+    }
+
+    beforeAll(async () => {
+      home = await fs.mkdtemp(path.join(os.tmpdir(), 'shep-codex-rollout-'));
+    });
+
+    afterAll(async () => {
+      await fs.rm(home, { recursive: true, force: true });
+    });
+
+    it('re-reads only the bytes appended since the previous list', async () => {
+      const dir = path.join(home, 'sessions', '2026', '03', '25');
+      await fs.mkdir(dir, { recursive: true });
+      const file = path.join(dir, `rollout-2026-03-25T10-00-00-${SESSION_ID}.jsonl`);
+      const meta = rollout(
+        'session_meta',
+        { id: SESSION_ID, cwd: '/work/app' },
+        '2026-03-25T10:00:00Z'
+      );
+      const first = message('user', 'original question', '2026-03-25T10:00:01Z');
+      await fs.writeFile(file, meta + first);
+      const liveRepo = new CodexCliSessionRepository(home);
+      await liveRepo.list({ limit: 0 });
+
+      const handle = await fs.open(file, 'r+');
+      const edited = Buffer.from(first.replace('original', 'REWRITTE'));
+      await handle.write(edited, 0, edited.length, Buffer.byteLength(meta));
+      await handle.close();
+      await fs.appendFile(file, message('assistant', 'reply', '2026-03-25T10:01:00Z'));
+
+      const [session] = await liveRepo.list({ limit: 0 });
+
+      expect(session.projectPath).toBe('/work/app');
+      expect(session.preview).toBe('original question');
+      expect(session.messageCount).toBe(2);
+      expect(session.lastMessageAt).toEqual(new Date('2026-03-25T10:01:00Z'));
     });
   });
 });

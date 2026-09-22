@@ -3,7 +3,7 @@
  * are correctly installed and importable from within the core package.
  *
  * These packages are used by:
- * - tree-kill: deployment.service.ts, stop-daemon.ts (process tree termination)
+ * - tree-kill: process-tree-terminator.adapter.ts (Stop / liveness sweep tree termination)
  * - which: tool-installer.service.ts, json-driven-ide-launcher.service.ts (binary detection)
  */
 import { describe, it, expect } from 'vitest';

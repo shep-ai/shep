@@ -22,30 +22,17 @@ import {
   type SecurityActionCategory,
   type SecurityActionDisposition,
 } from '@/domain/generated/output.js';
+import { crashedWorkerMessage } from '@/domain/shared/agent-run-liveness.js';
+import {
+  NON_TERMINAL_AGENT_RUN_STATUSES,
+  TERMINAL_AGENT_RUN_STATUSES,
+} from '@/domain/shared/agent-run-status.js';
+import { agentRunEnvironment } from '@/domain/shared/agent-run-environment.js';
 import { IS_WINDOWS } from '../../../platform.js';
 import { LOG_LEVEL_ENV_VAR } from '../../logging/log-level.js';
 import { getShepHomeDir } from '../../filesystem/shep-directory.service.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-
-/** Terminal statuses that should not be updated */
-const TERMINAL_STATUSES = new Set<AgentRunStatus>([
-  AgentRunStatus.completed,
-  AgentRunStatus.failed,
-  AgentRunStatus.interrupted,
-  AgentRunStatus.cancelled,
-]);
-
-/**
- * The statuses a crash mark may overwrite — every status that is not terminal.
- *
- * Derived from the enum rather than listed, so a new AgentRunStatus member is
- * automatically treated as non-terminal unless it is added to
- * {@link TERMINAL_STATUSES}, and the two lists cannot drift apart.
- */
-const NON_TERMINAL_STATUSES: AgentRunStatus[] = Object.values(AgentRunStatus).filter(
-  (status) => !TERMINAL_STATUSES.has(status)
-);
 
 export class FeatureAgentProcessService implements IFeatureAgentProcessService {
   constructor(private readonly runRepository: IAgentRunRepository) {}
@@ -183,9 +170,14 @@ export class FeatureAgentProcessService implements IFeatureAgentProcessService {
       // long-lived daemon would otherwise carry whatever log level the daemon
       // started with, so raising verbosity from a later terminal never reached
       // the executors.
+      //
+      // The run marker is inherited by every agent CLI the worker spawns, so a
+      // `shep stop` / `shep agent stop` an agent runs knows it would be
+      // stopping itself and refuses (domain/shared/agent-run-environment.ts).
       env: {
         ...process.env,
         ...(options?.logLevel ? { [LOG_LEVEL_ENV_VAR]: options.logLevel } : {}),
+        ...agentRunEnvironment(runId, featureId),
       },
       ...(IS_WINDOWS ? { windowsHide: true } : {}),
     });
@@ -223,7 +215,7 @@ export class FeatureAgentProcessService implements IFeatureAgentProcessService {
    */
   async checkAndMarkCrashed(runId: string): Promise<void> {
     const run = await this.runRepository.findById(runId);
-    if (!run?.pid || TERMINAL_STATUSES.has(run.status)) {
+    if (!run?.pid || TERMINAL_AGENT_RUN_STATUSES.has(run.status)) {
       return;
     }
 
@@ -233,11 +225,11 @@ export class FeatureAgentProcessService implements IFeatureAgentProcessService {
         runId,
         AgentRunStatus.interrupted,
         {
-          error: `Agent process (PID ${run.pid}) crashed or was killed`,
+          error: crashedWorkerMessage(run.pid),
           completedAt: now,
           updatedAt: now,
         },
-        { allowedFrom: NON_TERMINAL_STATUSES }
+        { allowedFrom: NON_TERMINAL_AGENT_RUN_STATUSES }
       );
     }
   }

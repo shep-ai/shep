@@ -3,7 +3,8 @@
 /**
  * SSE API Route: GET /api/feature-logs (spec 116, task 12).
  *
- * - reads the worker log from SHEP_HOME, where the worker writes it
+ * - reads the worker log where core resolves it (GetWorkerLogPathUseCase,
+ *   which honours SHEP_HOME) — never via a global accessor in presentation
  * - after the initial event, streams only the appended text
  */
 
@@ -14,10 +15,28 @@ import { join } from 'node:path';
 
 const RUN_ID = 'run-42';
 
+/** Where core resolves the worker log; set per test from SHEP_HOME. */
+let coreLogPath = '';
+const resolvedTokens: string[] = [];
+
+// The route must ask core for the log path (GetWorkerLogPathUseCase, by token)
+// instead of calling the global getShepHomeDir() from presentation.
 vi.mock('@/lib/server-container', () => ({
-  resolve: vi.fn(() => ({
-    findById: vi.fn(async (id: string) => ({ id, name: 'Feature', agentRunId: RUN_ID })),
-  })),
+  resolve: vi.fn((token: string) => {
+    resolvedTokens.push(token);
+    if (token === 'GetWorkerLogPathUseCase') {
+      return { execute: vi.fn((runId: string) => (runId === RUN_ID ? coreLogPath : '')) };
+    }
+    return {
+      findById: vi.fn(async (id: string) => ({ id, name: 'Feature', agentRunId: RUN_ID })),
+    };
+  }),
+}));
+
+vi.mock('@shepai/core/infrastructure/services/filesystem/shep-directory.service', () => ({
+  getShepHomeDir: () => {
+    throw new Error('presentation must not call getShepHomeDir()');
+  },
 }));
 
 /** Read SSE frames until `predicate` matches one; returns every frame seen. */
@@ -59,6 +78,8 @@ describe('SSE API Route: GET /api/feature-logs', () => {
     process.env.SHEP_HOME = shepHome;
     mkdirSync(join(shepHome, 'logs'));
     logPath = join(shepHome, 'logs', `worker-${RUN_ID}.log`);
+    coreLogPath = logPath;
+    resolvedTokens.length = 0;
   });
 
   afterEach(() => {
@@ -83,6 +104,7 @@ describe('SSE API Route: GET /api/feature-logs', () => {
     try {
       const initial = await readUntil(reader, (f) => f.startsWith('event: initial'));
       expect(dataOf(initial.at(-1)!).content).toBe('démarrage ✅\n');
+      expect(resolvedTokens).toContain('GetWorkerLogPathUseCase');
 
       appendFileSync(logPath, 'étape 2 🚀\n');
       const appended = await readUntil(reader, (f) => f.startsWith('event: log'));

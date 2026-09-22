@@ -14,7 +14,12 @@
 import 'reflect-metadata';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
-import { DeferredQuestionRegistry } from '@/infrastructure/services/agents/agent-question-service/deferred-question-registry.js';
+import {
+  DeferredQuestionRegistry,
+  QUESTION_ANSWER_POLL_INTERVAL_MS,
+} from '@/infrastructure/services/agents/agent-question-service/deferred-question-registry.js';
+import type { IAgentQuestionRepository } from '@/application/ports/output/repositories/agent-question-repository.interface.js';
+import { AgentQuestionStatus, type AgentQuestion } from '@/domain/generated/output.js';
 import {
   AgentQuestionCancelledError,
   AgentQuestionTimeoutError,
@@ -150,5 +155,84 @@ describe('DeferredQuestionRegistry', () => {
 
     vi.advanceTimersByTime(30 * 60 * 1000);
     await exp;
+  });
+
+  describe('answers written by another process', () => {
+    const TIMEOUT_MS = 30 * 60 * 1000;
+    let rows: Map<string, Partial<AgentQuestion>>;
+    let repo: IAgentQuestionRepository;
+
+    beforeEach(() => {
+      rows = new Map([['q-x', { id: 'q-x', appId: 'app-1', status: AgentQuestionStatus.pending }]]);
+      repo = {
+        findById: vi.fn(
+          async (_appId: string, id: string) => (rows.get(id) as AgentQuestion) ?? null
+        ),
+      } as unknown as IAgentQuestionRepository;
+      registry = new DeferredQuestionRegistry(repo);
+    });
+
+    function answerInDb(status: AgentQuestionStatus, answer?: string): void {
+      rows.set('q-x', { ...rows.get('q-x'), status, answer });
+    }
+
+    it('resolves when the question row is answered in the DB, without an in-process resolve()', async () => {
+      const promise = registry.register('q-x', { appId: 'app-1' }, TIMEOUT_MS);
+      let settled = false;
+      void promise.then(() => (settled = true));
+
+      answerInDb(AgentQuestionStatus.answered, 'from-cli');
+
+      await vi.advanceTimersByTimeAsync(QUESTION_ANSWER_POLL_INTERVAL_MS - 1);
+      expect(settled).toBe(false);
+      await vi.advanceTimersByTimeAsync(1);
+
+      await expect(promise).resolves.toBe('from-cli');
+      expect(registry.has('q-x')).toBe(false);
+      expect(vi.getTimerCount()).toBe(0);
+    });
+
+    it('rejects as cancelled when the row is cancelled elsewhere', async () => {
+      const promise = registry.register('q-x', { appId: 'app-1' }, TIMEOUT_MS);
+      const expectation = expect(promise).rejects.toBeInstanceOf(AgentQuestionCancelledError);
+
+      answerInDb(AgentQuestionStatus.cancelled);
+      await vi.advanceTimersByTimeAsync(QUESTION_ANSWER_POLL_INTERVAL_MS);
+
+      await expectation;
+      expect(vi.getTimerCount()).toBe(0);
+    });
+
+    it('rejects when the row expired elsewhere', async () => {
+      const promise = registry.register('q-x', { appId: 'app-1' }, TIMEOUT_MS);
+      const expectation = expect(promise).rejects.toBeInstanceOf(AgentQuestionCancelledError);
+
+      answerInDb(AgentQuestionStatus.expired);
+      await vi.advanceTimersByTimeAsync(QUESTION_ANSWER_POLL_INTERVAL_MS);
+
+      await expectation;
+    });
+
+    it('keeps waiting while the row is pending and stops polling once settled in-process', async () => {
+      const promise = registry.register('q-x', { appId: 'app-1' }, TIMEOUT_MS);
+      await vi.advanceTimersByTimeAsync(QUESTION_ANSWER_POLL_INTERVAL_MS * 3);
+      expect(registry.has('q-x')).toBe(true);
+      expect(repo.findById).toHaveBeenCalledTimes(3);
+
+      registry.resolve('q-x', 'local');
+      await expect(promise).resolves.toBe('local');
+      expect(vi.getTimerCount()).toBe(0);
+    });
+
+    it('keeps polling after a transient DB error', async () => {
+      vi.mocked(repo.findById).mockRejectedValueOnce(new Error('SQLITE_BUSY'));
+      const promise = registry.register('q-x', { appId: 'app-1' }, TIMEOUT_MS);
+
+      await vi.advanceTimersByTimeAsync(QUESTION_ANSWER_POLL_INTERVAL_MS);
+      answerInDb(AgentQuestionStatus.answered, 'late');
+      await vi.advanceTimersByTimeAsync(QUESTION_ANSWER_POLL_INTERVAL_MS);
+
+      await expect(promise).resolves.toBe('late');
+    });
   });
 });

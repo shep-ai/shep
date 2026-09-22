@@ -18,12 +18,14 @@ import type Database from 'better-sqlite3';
 // Messaging — not yet in a registration module
 import type { IMessagingService } from '../../application/ports/output/services/messaging-service.interface.js';
 import { getSettings } from '../services/settings.service.js';
+import type { ISettingsRepository } from '../../application/ports/output/repositories/settings.repository.interface.js';
 import { BeginMessagingPairingUseCase } from '../../application/use-cases/messaging/begin-pairing.use-case.js';
 import { ConfirmMessagingPairingUseCase } from '../../application/use-cases/messaging/confirm-pairing.use-case.js';
 import { DisconnectMessagingUseCase } from '../../application/use-cases/messaging/disconnect-messaging.use-case.js';
 import type { IGatewayClient } from '../../application/ports/output/services/gateway-client.interface.js';
 import { HttpGatewayClient } from '../services/messaging/http-gateway.client.js';
 import { StubGatewayClient } from '../services/messaging/stub-gateway.client.js';
+import { isMessagingConfigured } from '../services/messaging/messaging-config.js';
 import { type getNotificationBus } from '../services/notifications/notification-bus.js';
 import { CreateFeatureUseCase } from '../../application/use-cases/features/create/create-feature.use-case.js';
 import { ApproveAgentRunUseCase } from '../../application/use-cases/agents/approve-agent-run.use-case.js';
@@ -43,6 +45,12 @@ import type { INotificationService } from '../../application/ports/output/servic
 import type { ExecFunction } from '../services/webhook/github-webhook.service.js';
 import { CloudflareTunnelService } from '../services/tunnel/cloudflare-tunnel.service.js';
 import { GitHubWebhookService } from '../services/webhook/github-webhook.service.js';
+import {
+  loadOrCreateWebhookIdentity,
+  WEBHOOK_IDENTITY_FILENAME,
+} from '../services/webhook/webhook-identity.store.js';
+import { getShepHomeDir } from '../services/filesystem/shep-directory.service.js';
+import { join as joinPath } from 'node:path';
 
 // Database connection
 import { getSQLiteConnection } from '../persistence/sqlite/connection.js';
@@ -137,10 +145,11 @@ export async function initializeContainer(): Promise<typeof container> {
   registerPlugins(container);
 
   // ─── Retention housekeeping ──────────────────────────────────────────────
-  // Shep has no always-on component to hang a timer on — the daemon may never
-  // have been started — so history is pruned on process start. The use case
-  // claims a once-a-day cycle first, so the usual cost here is one indexed
-  // point read. Housekeeping must never be the reason Shep fails to start.
+  // The daemon may never have been started, so history (and worker log files)
+  // is pruned on every process start; long-lived processes (`_serve`, `shep ui`)
+  // additionally re-run it on a RetentionScheduler timer. The use case claims
+  // a once-a-day cycle first, so the usual cost here is one indexed point
+  // read. Housekeeping must never be the reason Shep fails to start.
   try {
     await container.resolve(PruneRetainedDataUseCase).execute();
   } catch (error) {
@@ -196,12 +205,19 @@ export async function initializeContainer(): Promise<typeof container> {
       // The webhook service runs inside the daemon; give it the container's
       // logger rather than letting it fall back to its own ConsoleLogger.
       const webhookLogger = c.resolve<ILogger>('ILogger');
+      // A persisted per-installation identity: a stable secret keeps existing
+      // hooks validating across restarts, and the instance id limits stale-hook
+      // cleanup to hooks this installation created.
+      const identity = loadOrCreateWebhookIdentity(
+        joinPath(getShepHomeDir(), WEBHOOK_IDENTITY_FILENAME)
+      );
       return new GitHubWebhookService(
         featureRepo,
         gitPrService,
         notifService,
         execFnResolved,
-        webhookLogger
+        webhookLogger,
+        identity
       );
     },
   });
@@ -358,42 +374,16 @@ export async function initializeContainer(): Promise<typeof container> {
           const { HttpTelegramClient } = await import(
             '../services/messaging/http-telegram.client.js'
           );
-          const settingsModule = await import('../services/settings.service.js');
-          const settings = settingsModule.getSettings();
-          const messagingConfig = settings.messaging ?? {
-            enabled: false,
-            debounceMs: 5000,
-            chatBufferMs: 3000,
-          };
+          const settingsRepository = c.resolve<ISettingsRepository>('ISettingsRepository');
 
-          // Fetch an OAuth access token from the Gateway so the tunnel
-          // upgrade carries a valid Bearer header. If the fetch fails the
-          // service still constructs (isConfigured will return false) so
-          // startup doesn't crash the daemon.
-          let accessToken = '';
-          if (messagingConfig.enabled && messagingConfig.gatewayUrl) {
-            try {
-              const gatewayClient = c.resolve<IGatewayClient>('IGatewayClient');
-              const token = await gatewayClient.fetchAccessToken({
-                gatewayUrl: messagingConfig.gatewayUrl,
-                clientId: messagingConfig.gatewayClientId ?? 'commands-desktop-public',
-              });
-              accessToken = token.accessToken;
-            } catch {
-              // Non-fatal — isConfigured() will gate start().
-            }
-          }
-
-          // Bot token precedence: settings.db > env var. Per-platform token
-          // from settings takes priority; env var is a dev convenience.
-          const telegramBotToken =
-            messagingConfig.telegram?.botToken ?? process.env.SHEP_TELEGRAM_BOT_TOKEN;
-
+          // The service re-reads messaging settings from the DB at use time
+          // (pairing may be begun/confirmed by another process) and asks the
+          // gateway for a fresh token on every tunnel connection attempt.
           instance = new MessagingService({
-            config: messagingConfig,
-            accessToken,
+            loadConfig: async () => (await settingsRepository.load())?.messaging,
+            gatewayClient: c.resolve<IGatewayClient>('IGatewayClient'),
             telegramClient: new HttpTelegramClient(),
-            telegramBotToken,
+            fallbackTelegramBotToken: process.env.SHEP_TELEGRAM_BOT_TOKEN,
             notificationBus: c.resolve('NotificationEventBus') as ReturnType<
               typeof getNotificationBus
             >,
@@ -423,12 +413,7 @@ export async function initializeContainer(): Promise<typeof container> {
             // message and auto-confirm via the tunnel.
             return () => {
               try {
-                const settings = getSettings();
-                const mc = settings.messaging;
-                if (!mc?.enabled || !mc?.gatewayUrl || !mc?.deviceId) return false;
-                const telegramReady = !!mc.telegram?.routeId;
-                const whatsappReady = !!mc.whatsapp?.routeId;
-                return telegramReady || whatsappReady;
+                return isMessagingConfigured(getSettings().messaging);
               } catch {
                 return false;
               }

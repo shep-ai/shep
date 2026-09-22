@@ -4,6 +4,7 @@ import { ConflictResolutionService } from '@/infrastructure/services/agents/conf
 import type { IAgentExecutorProvider } from '@/application/ports/output/agents/agent-executor-provider.interface.js';
 import type { IAgentExecutor } from '@/application/ports/output/agents/agent-executor.interface.js';
 import type { IGitPrService } from '@/application/ports/output/services/git-pr-service.interface.js';
+import { DEFAULT_AGENT_CALL_TIMEOUT_MS } from '@/infrastructure/services/agents/common/agent-timeouts.js';
 import {
   GitPrError,
   GitPrErrorCode,
@@ -310,6 +311,38 @@ describe('ConflictResolutionService', () => {
     expect(mockExecutor.execute).toHaveBeenCalledWith(
       expect.any(String),
       expect.objectContaining({ cwd: '/my/worktree' })
+    );
+  });
+
+  // A wedged agent used to hang the rebase — and the merge waiting on it —
+  // forever: neither call passed a timeout, so the executor never armed one.
+  it('should bound the rebase-conflict agent call with the default agent timeout', async () => {
+    vi.mocked(mockGitPrService.getConflictedFiles)
+      .mockResolvedValueOnce(['src/index.ts'])
+      .mockResolvedValueOnce([]);
+    mockedReadFileSync
+      .mockReturnValueOnce('<<<<<<< HEAD\na\n=======\nb\n>>>>>>> feat/x' as never)
+      .mockReturnValueOnce('clean' as never);
+
+    await service.resolve('/my/worktree', 'feat/x', 'main');
+
+    expect(mockExecutor.execute).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({ timeout: DEFAULT_AGENT_CALL_TIMEOUT_MS })
+    );
+  });
+
+  it('should bound the stash-pop agent call with the default agent timeout', async () => {
+    vi.mocked(mockGitPrService.getConflictedFiles).mockResolvedValue(['src/index.ts']);
+    mockedReadFileSync
+      .mockReturnValueOnce('<<<<<<< HEAD\nbase\n=======\nstashed\n>>>>>>> stash' as never)
+      .mockReturnValueOnce('merged content' as never);
+
+    await service.resolveStashPop('/repo', 'feat/x', 'main');
+
+    expect(mockExecutor.execute).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.objectContaining({ timeout: DEFAULT_AGENT_CALL_TIMEOUT_MS })
     );
   });
 

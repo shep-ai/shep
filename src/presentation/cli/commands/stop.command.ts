@@ -13,6 +13,8 @@ import type { IDaemonService } from '@/application/ports/output/services/daemon-
 import { messages } from '../ui/index.js';
 import { stopDaemon } from './daemon/stop-daemon.js';
 import { getCliI18n } from '../i18n.js';
+import { refuseHostShutdownFromAgent } from '@/domain/shared/agent-run-environment.js';
+import { reportAgentRunRefusal } from './agent-run-guard.js';
 
 /**
  * Create the stop command.
@@ -21,6 +23,7 @@ export function createStopCommand(): Command {
   const t = getCliI18n().t;
   return new Command('stop')
     .description(t('cli:commands.stop.description'))
+    .option('--force', t('cli:ui.agentGuard.forceOption'))
     .addHelpText(
       'after',
       `
@@ -29,7 +32,10 @@ Examples:
   $ shep status        Check daemon state before stopping
   $ shep restart       Restart the daemon after stopping`
     )
-    .action(async () => {
+    .action(async (options: { force?: boolean }) => {
+      if (reportAgentRunRefusal(refuseHostShutdownFromAgent(process.env, options.force === true))) {
+        return;
+      }
       const daemonService = container.resolve<IDaemonService>('IDaemonService');
 
       const state = await daemonService.read();

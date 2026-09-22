@@ -41,6 +41,7 @@ import {
   SUPERVISOR_TIMEOUT_DECISION,
 } from './evaluator-prompt.js';
 import { parseEvaluatorResponse } from './verdict-parser.js';
+import { isAgentTimeoutError } from '../common/executors/process-stream.js';
 
 /** Stable slot key for the supervisor evaluator system header. */
 const EVALUATOR_PROMPT_SLOT = {
@@ -135,9 +136,12 @@ function evaluateNode(
 
     try {
       const response = await withTimeout(
+        // The race only stops WAITING; passing the budget down makes the
+        // executor kill the evaluator process instead of orphaning it.
         deps.executor.execute(state.prompt, {
           model: policy.modelId,
           silent: true,
+          timeout: timeoutMs,
         }),
         timeoutMs
       );
@@ -150,7 +154,9 @@ function evaluateNode(
       };
       return { decision };
     } catch (err) {
-      if (err instanceof SupervisorEvaluatorTimeoutError) {
+      // Whichever timer fires first — the race's or the executor's own — it is
+      // the same timeout and takes the same fail-safe path.
+      if (err instanceof SupervisorEvaluatorTimeoutError || isAgentTimeoutError(err)) {
         const decision: SupervisorDecisionResult = {
           verdict: SUPERVISOR_TIMEOUT_DECISION.verdict,
           rationale: SUPERVISOR_TIMEOUT_DECISION.rationale,

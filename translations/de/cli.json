@@ -389,7 +389,8 @@
         "agentResumed": "Feature-Agent fortgesetzt",
         "featureLabel": "Feature:",
         "runIdLabel": "Lauf-ID:",
-        "failedToResume": "Feature konnte nicht fortgesetzt werden"
+        "failedToResume": "Feature konnte nicht fortgesetzt werden",
+        "forceOption": "Auch dann fortsetzen, wenn das Limit paralleler Features erreicht ist"
       },
       "review": {
         "description": "Interaktive Überprüfung eines auf Genehmigung wartenden Features",
@@ -1104,6 +1105,9 @@
       "noLogFile": "Keine Log-Datei gefunden für {{label}}",
       "expectedAt": "Erwartet: {{path}}",
       "logEmpty": "Log-Datei ist leer für {{label}}"
+    },
+    "agentGuard": {
+      "forceOption": "Auch innerhalb eines Shep-Agentenlaufs ausführen, obwohl dies den ausführenden Agenten stoppt"
     }
   },
   "bootstrap": {

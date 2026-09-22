@@ -33,6 +33,9 @@ import {
   createStderrTail,
   signalTerminationMessage,
   terminateWithEscalation,
+  watchProcessIdle,
+  AGENT_ABORTED_MESSAGE,
+  watchAbortSignal,
 } from './process-stream.js';
 import {
   validateSecurityConstraints,
@@ -106,19 +109,33 @@ export class ClineExecutorService implements IAgentExecutor {
       const settle = (outcome: () => void): void => {
         if (settled) return;
         settled = true;
+        abortWatch.stop();
         if (timeoutId) clearTimeout(timeoutId);
         cancelEscalation?.();
         outcome();
       };
 
+      /** Out of budget (total or idle): kill, and let 'close' report it. */
+      const expire = (message: string): void => {
+        if (timeoutError) return;
+        timeoutError = message;
+        log(`${message} — terminating agent`);
+        cancelEscalation = terminateWithEscalation(proc);
+      };
+
       const timeoutMs = options?.timeout;
       if (timeoutMs) {
-        timeoutId = setTimeout(() => {
-          timeoutError = agentTimeoutMessage(timeoutMs);
-          log(`Timeout after ${timeoutMs}ms — terminating agent`);
-          cancelEscalation = terminateWithEscalation(proc);
-        }, timeoutMs);
+        timeoutId = setTimeout(() => expire(agentTimeoutMessage(timeoutMs)), timeoutMs);
       }
+      watchProcessIdle(proc, options?.idleTimeout, (message) => {
+        expire(message);
+      });
+      // The caller's cancel: like a timeout, 'close' reports it, so awaiting
+      // this call awaits the teardown.
+      const abortWatch = watchAbortSignal(proc, options?.abortSignal, {
+        onAbort: () => expire(AGENT_ABORTED_MESSAGE),
+        onUnreaped: () => settle(() => reject(new Error(AGENT_ABORTED_MESSAGE))),
+      });
 
       const accumulator = createLineAccumulator(
         (line) => {
@@ -206,19 +223,30 @@ export class ClineExecutorService implements IAgentExecutor {
     let processClosed = false;
     let timeoutId: ReturnType<typeof setTimeout> | undefined;
 
+    /** Set once a budget ran out; the kill's 'close' must not report again. */
+    let expired = false;
+    /** Out of budget (total or idle): kill and end the stream with the reason. */
+    const expire = (message: string): void => {
+      if (expired) return;
+      expired = true;
+      if (timeoutId) clearTimeout(timeoutId);
+      log(`${message} — terminating agent`);
+      terminateWithEscalation(proc);
+      channel.push({ type: 'error', content: message, timestamp: new Date() });
+      channel.close();
+    };
+
     const timeoutMs = options?.timeout;
     if (timeoutMs) {
-      timeoutId = setTimeout(() => {
-        log(`Timeout after ${timeoutMs}ms — terminating agent`);
-        terminateWithEscalation(proc);
-        channel.push({
-          type: 'error',
-          content: agentTimeoutMessage(timeoutMs),
-          timestamp: new Date(),
-        });
-        channel.close();
-      }, timeoutMs);
+      timeoutId = setTimeout(() => expire(agentTimeoutMessage(timeoutMs)), timeoutMs);
     }
+    watchProcessIdle(proc, options?.idleTimeout, (message) => {
+      expire(message);
+    });
+    // The caller's cancel ends the stream the way a timeout does.
+    const abortWatch = watchAbortSignal(proc, options?.abortSignal, {
+      onAbort: () => expire(AGENT_ABORTED_MESSAGE),
+    });
 
     const accumulator = createLineAccumulator((line) => {
       const parsed = parseJsonLine(line);
@@ -290,6 +318,7 @@ export class ClineExecutorService implements IAgentExecutor {
       // A consumer that breaks out of the loop would otherwise leave the agent
       // running — holding a worktree, burning tokens — until it exits on its own.
       if (timeoutId) clearTimeout(timeoutId);
+      abortWatch.stop();
       if (!processClosed) terminateWithEscalation(proc);
     }
   }

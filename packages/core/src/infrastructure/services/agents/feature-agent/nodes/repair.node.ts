@@ -10,6 +10,7 @@ import { join } from 'node:path';
 import type { FeatureAgentState } from '../state.js';
 import type { IAgentExecutor } from '@/application/ports/output/agents/agent-executor.interface.js';
 import { readSpecFile, createNodeLogger } from './node-helpers.js';
+import { DEFAULT_AGENT_CALL_TIMEOUT_MS } from '../../common/agent-timeouts.js';
 
 /**
  * Build a repair prompt containing the broken YAML, validation errors,
@@ -77,7 +78,7 @@ export function buildRepairPrompt(
  *
  * Reads the broken YAML, builds a repair prompt with validation errors
  * from state, and calls the executor with constrained options (maxTurns=5,
- * write-only tools, no MCP).
+ * write-only tools, no MCP, the default agent call timeout).
  */
 export function createRepairNode(
   filename: string | string[],
@@ -106,6 +107,8 @@ export function createRepairNode(
       maxTurns: 5,
       disableMcp: true,
       allowedTools: ['write'] as string[],
+      // A wedged repair agent must not hang the validate→repair loop forever.
+      timeout: DEFAULT_AGENT_CALL_TIMEOUT_MS,
     };
 
     try {

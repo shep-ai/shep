@@ -409,6 +409,64 @@ describe('useAgentEvents', () => {
       expect(result.current.events).toHaveLength(0);
       expect(result.current.lastEvent).toBeNull();
     });
+
+    const subscribeCount = () =>
+      swPostMessage.mock.calls.filter(([message]) => message?.type === 'subscribe').length;
+
+    it('re-subscribes when the worker stays silent for the watchdog window', async () => {
+      const { result } = renderHook(() => useAgentEvents({ runId: 'run-abc' }));
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(0);
+      });
+      act(() => {
+        simulateSWMessage({ type: 'status', status: 'connected' });
+      });
+      expect(subscribeCount()).toBe(1);
+
+      // A terminated worker loses its subscribers and goes quiet.
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(HEARTBEAT_TIMEOUT_MS - 1);
+      });
+      expect(subscribeCount()).toBe(1);
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(1);
+      });
+      expect(subscribeCount()).toBe(2);
+      expect(swPostMessage).toHaveBeenLastCalledWith({ type: 'subscribe', runId: 'run-abc' });
+      expect(result.current.connectionStatus).toBe('connecting');
+    });
+
+    it('keeps the subscription while the worker relays server heartbeats', async () => {
+      renderHook(() => useAgentEvents());
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(0);
+      });
+
+      for (let beat = 0; beat < 3; beat++) {
+        await act(async () => {
+          await vi.advanceTimersByTimeAsync(SERVER_HEARTBEAT_MS);
+        });
+        act(() => {
+          simulateSWMessage({ type: AGENT_EVENTS_HEARTBEAT_EVENT });
+        });
+      }
+
+      expect(subscribeCount()).toBe(1);
+    });
+
+    it('stops the silence watchdog on unmount', async () => {
+      const { unmount } = renderHook(() => useAgentEvents());
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(0);
+      });
+      unmount();
+
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(HEARTBEAT_TIMEOUT_MS * 2);
+      });
+      expect(subscribeCount()).toBe(1);
+    });
   });
 
   describe('EventSource fallback', () => {

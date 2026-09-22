@@ -5,7 +5,8 @@
  * caller that needs it — admission on create and manual start, the queue drain,
  * and the read models the web/CLI/TUI render.
  *
- * The running count is DERIVED from lifecycle on every call rather than tracked
+ * The running count is DERIVED from lifecycle and the feature's current agent
+ * run on every call rather than tracked
  * in a counter. A counter would be cheaper and would be wrong: a crashed worker,
  * a force-deleted feature, or any write that bypasses the transition use case
  * leaks a slot permanently, and the only symptom is a queue that never drains.
@@ -22,6 +23,7 @@ import type { ISettingsRepository } from '../../../ports/output/repositories/set
 import type { SdlcLifecycle } from '../../../../domain/generated/output.js';
 import {
   RUNNING_LIFECYCLES,
+  SLOT_RELEASING_RUN_STATUSES,
   UNLIMITED_PARALLEL_FEATURES,
   hasCapacity,
   resolveMaxParallelFeatures,
@@ -45,6 +47,10 @@ export interface ClaimSlotInput {
   requireQueued?: boolean;
   /** Require the feature to still be in this lifecycle. */
   requireLifecycle?: SdlcLifecycle;
+  /** Require the feature to still point at this agent run (see FeatureStartClaim). */
+  requireAgentRunId?: string;
+  /** Point the feature at this agent run as part of the claim (see FeatureStartClaim). */
+  agentRunId?: string;
   /**
    * The user's explicit "start anyway". Skips the cap — and ONLY the cap: the
    * queue and lifecycle conditions still hold, because they are about whether
@@ -88,7 +94,9 @@ export class FeatureCapacityService {
 
   /** Features currently holding a slot. */
   async getRunningCount(): Promise<number> {
-    return this.featureRepo.countByLifecycles([...RUNNING_LIFECYCLES]);
+    return this.featureRepo.countByLifecycles([...RUNNING_LIFECYCLES], {
+      releasingRunStatuses: [...SLOT_RELEASING_RUN_STATUSES],
+    });
   }
 
   /**
@@ -138,7 +146,15 @@ export class FeatureCapacityService {
       updatedAt: input.now ?? new Date(),
       ...(input.requireQueued === undefined ? {} : { requireQueued: input.requireQueued }),
       ...(input.requireLifecycle === undefined ? {} : { requireLifecycle: input.requireLifecycle }),
-      capacity: { limit, runningLifecycles: [...RUNNING_LIFECYCLES] },
+      ...(input.requireAgentRunId === undefined
+        ? {}
+        : { requireAgentRunId: input.requireAgentRunId }),
+      ...(input.agentRunId === undefined ? {} : { agentRunId: input.agentRunId }),
+      capacity: {
+        limit,
+        runningLifecycles: [...RUNNING_LIFECYCLES],
+        releasingRunStatuses: [...SLOT_RELEASING_RUN_STATUSES],
+      },
     });
   }
 

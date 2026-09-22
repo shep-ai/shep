@@ -10,6 +10,7 @@ import { randomUUID } from 'node:crypto';
 import { describe, it, expect, beforeAll, beforeEach, afterEach, afterAll } from 'vitest';
 import type Database from 'better-sqlite3';
 import { ListFeaturesUseCase } from '@/application/use-cases/features/list-features.use-case.js';
+import type { ReconcileAgentRunLivenessUseCase } from '@/application/use-cases/agents/reconcile-agent-run-liveness.use-case.js';
 import { SQLiteFeatureRepository } from '@/infrastructure/repositories/sqlite-feature.repository.js';
 import { runSQLiteMigrations } from '@/infrastructure/persistence/sqlite/migrations.js';
 import {
@@ -61,7 +62,11 @@ describe('ListFeaturesUseCase (integration)', () => {
     db = await getSQLiteConnection();
     await runSQLiteMigrations(db);
     repository = new SQLiteFeatureRepository(db);
-    useCase = new ListFeaturesUseCase(repository);
+    // The run-liveness sweep has its own tests; this suite is about the query.
+    const noSweep = {
+      execute: async () => ({ reconciledRunIds: [] }),
+    } as unknown as ReconcileAgentRunLivenessUseCase;
+    useCase = new ListFeaturesUseCase(repository, noSweep);
   });
 
   beforeEach(() => {

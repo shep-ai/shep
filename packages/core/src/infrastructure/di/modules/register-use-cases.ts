@@ -134,6 +134,7 @@ import { MetadataGenerator } from '../../../application/use-cases/features/creat
 import { SlugResolver } from '../../../application/use-cases/features/create/slug-resolver.js';
 import { ListFeaturesUseCase } from '../../../application/use-cases/features/list-features.use-case.js';
 import { ShowFeatureUseCase } from '../../../application/use-cases/features/show-feature.use-case.js';
+import { GetWorkerLogPathUseCase } from '../../../application/use-cases/logs/get-worker-log-path.use-case.js';
 import { DeleteFeatureUseCase } from '../../../application/use-cases/features/delete-feature.use-case.js';
 import { ResumeFeatureUseCase } from '../../../application/use-cases/features/resume-feature.use-case.js';
 import { StartFeatureUseCase } from '../../../application/use-cases/features/start-feature.use-case.js';
@@ -168,6 +169,7 @@ import { AdmitQueuedFeaturesUseCase } from '../../../application/use-cases/featu
 import { GetParallelCapacityUseCase } from '../../../application/use-cases/features/capacity/get-parallel-capacity.use-case.js';
 import { UpdateFeatureLifecycleUseCase } from '../../../application/use-cases/features/update/update-feature-lifecycle.use-case.js';
 import { ReconcileBlockedFeaturesUseCase } from '../../../application/use-cases/features/reconcile-blocked-features.use-case.js';
+import { ReconcileAgentRunLivenessUseCase } from '../../../application/use-cases/agents/reconcile-agent-run-liveness.use-case.js';
 import { CleanupFeatureWorktreeUseCase } from '../../../application/use-cases/features/cleanup-feature-worktree.use-case.js';
 import { ArchiveFeatureUseCase } from '../../../application/use-cases/features/archive-feature.use-case.js';
 import { UnarchiveFeatureUseCase } from '../../../application/use-cases/features/unarchive-feature.use-case.js';
@@ -357,6 +359,8 @@ export function registerUseCases(container: DependencyContainer): void {
   container.registerSingleton(CheckAndUnblockFeaturesUseCase);
   container.registerSingleton(UpdateFeatureLifecycleUseCase);
   container.registerSingleton(ReconcileBlockedFeaturesUseCase);
+  // Run-liveness sweep: injected into the feature/agent list and show use cases.
+  container.registerSingleton(ReconcileAgentRunLivenessUseCase);
   container.registerSingleton(CleanupFeatureWorktreeUseCase);
   container.registerSingleton(ArchiveFeatureUseCase);
   container.registerSingleton(UnarchiveFeatureUseCase);
@@ -435,6 +439,10 @@ export function registerUseCases(container: DependencyContainer): void {
   });
   container.register('ShowFeatureUseCase', {
     useFactory: (c) => c.resolve(ShowFeatureUseCase),
+  });
+  // Spec 116: web routes locate a worker log through core, not getShepHomeDir().
+  container.register('GetWorkerLogPathUseCase', {
+    useFactory: (c) => c.resolve(GetWorkerLogPathUseCase),
   });
   container.register('DeleteFeatureUseCase', {
     useFactory: (c) => c.resolve(DeleteFeatureUseCase),
@@ -597,6 +605,9 @@ export function registerUseCases(container: DependencyContainer): void {
   });
   container.register('ReconcileBlockedFeaturesUseCase', {
     useFactory: (c) => c.resolve(ReconcileBlockedFeaturesUseCase),
+  });
+  container.register('ReconcileAgentRunLivenessUseCase', {
+    useFactory: (c) => c.resolve(ReconcileAgentRunLivenessUseCase),
   });
   container.register('CreateApplicationUseCase', {
     useFactory: (c) => c.resolve(CreateApplicationUseCase),

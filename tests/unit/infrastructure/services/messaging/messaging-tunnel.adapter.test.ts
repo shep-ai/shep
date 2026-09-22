@@ -7,10 +7,18 @@
  */
 
 import 'reflect-metadata';
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { EventEmitter } from 'node:events';
 import WebSocket from 'ws';
 import { MessagingTunnelAdapter } from '@/infrastructure/services/messaging/messaging-tunnel.adapter.js';
+import {
+  computeReconnectDelay,
+  TUNNEL_RECONNECT_BASE_DELAY_MS,
+  TUNNEL_RECONNECT_MAX_DELAY_MS,
+  TUNNEL_RECONNECT_JITTER_RATIO,
+  TUNNEL_PING_INTERVAL_MS,
+  TUNNEL_PONG_TIMEOUT_MS,
+} from '@/infrastructure/services/messaging/tunnel-reconnect-policy.js';
 import type {
   TunnelActivateFrame,
   TunnelConnectedFrame,
@@ -29,6 +37,8 @@ class FakeWebSocket extends EventEmitter {
   public options: unknown;
   public sent: string[] = [];
   public closed = false;
+  public terminated = false;
+  public pings = 0;
 
   constructor(url: string, options: unknown) {
     super();
@@ -41,7 +51,20 @@ class FakeWebSocket extends EventEmitter {
   }
 
   ping(): void {
-    /* no-op */
+    this.pings += 1;
+  }
+
+  terminate(): void {
+    this.terminated = true;
+    this.readyState = WebSocket.CLOSED;
+    this.emit('close');
+  }
+
+  /** A failed upgrade (gateway down, 401): error then close, never open. */
+  failUpgrade(): void {
+    this.readyState = WebSocket.CLOSED;
+    this.emit('error', new Error('Unexpected server response: 401'));
+    this.emit('close');
   }
 
   close(): void {
@@ -90,7 +113,7 @@ describe('MessagingTunnelAdapter', () => {
   function buildAdapter(routeIds: string[] = ['route-telegram']) {
     adapter = new MessagingTunnelAdapter({
       gatewayUrl: 'http://gateway.test',
-      accessToken: 'tok-abc',
+      getAccessToken: async () => 'tok-abc',
       deviceId: 'dev-1',
       routeIds,
       webSocketFactory: (url, options) => {
@@ -122,7 +145,7 @@ describe('MessagingTunnelAdapter', () => {
   it('converts https to wss', async () => {
     adapter = new MessagingTunnelAdapter({
       gatewayUrl: 'https://gw.example.com',
-      accessToken: 't',
+      getAccessToken: async () => 't',
       deviceId: 'd',
       routeIds: ['r'],
       webSocketFactory: (url, options) => {
@@ -305,5 +328,190 @@ describe('MessagingTunnelAdapter', () => {
     fakeWs.emit('message', Buffer.from(JSON.stringify({ type: 'unknown.frame' }), 'utf8'));
     // Should not crash; nothing sent back.
     expect(fakeWs.sent).toHaveLength(0);
+  });
+
+  describe('reconnect, backoff, token refresh and liveness', () => {
+    let sockets: FakeWebSocket[];
+    let tokens: string[];
+    let tokenCalls: number;
+
+    function buildReconnectingAdapter(
+      getAccessToken: () => Promise<string> = async () => `tok-${++tokenCalls}`
+    ) {
+      sockets = [];
+      tokens = [];
+      adapter = new MessagingTunnelAdapter({
+        gatewayUrl: 'http://gateway.test',
+        getAccessToken,
+        deviceId: 'dev-1',
+        routeIds: ['route-telegram'],
+        // No jitter: every delay is exactly the capped exponential step.
+        random: () => 0,
+        webSocketFactory: (url, options) => {
+          const ws = new FakeWebSocket(url, options);
+          tokens.push((options as { headers: Record<string, string> }).headers.authorization);
+          sockets.push(ws);
+          fakeWs = ws;
+          return ws as unknown as WebSocket;
+        },
+      });
+    }
+
+    /** Flush the async token fetch so the factory has been called. */
+    async function flushMicrotasks(): Promise<void> {
+      await vi.advanceTimersByTimeAsync(0);
+    }
+
+    beforeEach(() => {
+      vi.useFakeTimers();
+      tokenCalls = 0;
+      buildReconnectingAdapter();
+    });
+
+    afterEach(async () => {
+      await adapter.disconnect();
+      expect(vi.getTimerCount()).toBe(0);
+      vi.useRealTimers();
+    });
+
+    it('computeReconnectDelay doubles from the base, caps at the max, and jitters downward', () => {
+      expect(computeReconnectDelay(0, () => 0)).toBe(TUNNEL_RECONNECT_BASE_DELAY_MS);
+      expect(computeReconnectDelay(1, () => 0)).toBe(TUNNEL_RECONNECT_BASE_DELAY_MS * 2);
+      expect(computeReconnectDelay(2, () => 0)).toBe(TUNNEL_RECONNECT_BASE_DELAY_MS * 4);
+      expect(computeReconnectDelay(1_000, () => 0)).toBe(TUNNEL_RECONNECT_MAX_DELAY_MS);
+      expect(computeReconnectDelay(0, () => 1)).toBe(
+        TUNNEL_RECONNECT_BASE_DELAY_MS * (1 - TUNNEL_RECONNECT_JITTER_RATIO)
+      );
+    });
+
+    it('retries after a failed upgrade (error + close before open) instead of dying', async () => {
+      const first = adapter.connect();
+      await flushMicrotasks();
+      expect(sockets).toHaveLength(1);
+      sockets[0].failUpgrade();
+      await expect(first).rejects.toThrow(/401/);
+
+      await vi.advanceTimersByTimeAsync(TUNNEL_RECONNECT_BASE_DELAY_MS - 1);
+      expect(sockets).toHaveLength(1);
+      await vi.advanceTimersByTimeAsync(1);
+      expect(sockets).toHaveLength(2);
+
+      sockets[1].emitOpen();
+      await flushMicrotasks();
+      expect(adapter.isConnected()).toBe(true);
+    });
+
+    it('backs off exponentially across consecutive failures', async () => {
+      adapter.connect().catch(() => undefined);
+      await flushMicrotasks();
+      sockets[0].failUpgrade();
+      await flushMicrotasks();
+
+      // attempt 1 after base
+      await vi.advanceTimersByTimeAsync(TUNNEL_RECONNECT_BASE_DELAY_MS);
+      expect(sockets).toHaveLength(2);
+      sockets[1].failUpgrade();
+      await flushMicrotasks();
+
+      // attempt 2 after 2x base — probe just inside
+      await vi.advanceTimersByTimeAsync(TUNNEL_RECONNECT_BASE_DELAY_MS * 2 - 1);
+      expect(sockets).toHaveLength(2);
+      await vi.advanceTimersByTimeAsync(1);
+      expect(sockets).toHaveLength(3);
+    });
+
+    it('fetches a fresh access token for every connection attempt', async () => {
+      adapter.connect().catch(() => undefined);
+      await flushMicrotasks();
+      sockets[0].failUpgrade();
+      await flushMicrotasks();
+      await vi.advanceTimersByTimeAsync(TUNNEL_RECONNECT_BASE_DELAY_MS);
+
+      expect(tokens).toEqual(['Bearer tok-1', 'Bearer tok-2']);
+    });
+
+    it('schedules a retry when the token fetch itself fails', async () => {
+      let calls = 0;
+      buildReconnectingAdapter(async () => {
+        calls += 1;
+        if (calls === 1) throw new Error('gateway down');
+        return 'tok-ok';
+      });
+
+      await expect(adapter.connect()).rejects.toThrow(/gateway down/);
+      expect(sockets).toHaveLength(0);
+
+      await vi.advanceTimersByTimeAsync(TUNNEL_RECONNECT_BASE_DELAY_MS);
+      expect(sockets).toHaveLength(1);
+      expect(tokens).toEqual(['Bearer tok-ok']);
+    });
+
+    it('resets the backoff after a successful open, then reconnects on close', async () => {
+      adapter.connect().catch(() => undefined);
+      await flushMicrotasks();
+      sockets[0].failUpgrade();
+      await flushMicrotasks();
+      await vi.advanceTimersByTimeAsync(TUNNEL_RECONNECT_BASE_DELAY_MS);
+      sockets[1].emitOpen();
+      await flushMicrotasks();
+      expect(adapter.isConnected()).toBe(true);
+
+      sockets[1].close();
+      expect(adapter.isConnected()).toBe(false);
+      await vi.advanceTimersByTimeAsync(TUNNEL_RECONNECT_BASE_DELAY_MS - 1);
+      expect(sockets).toHaveLength(2);
+      await vi.advanceTimersByTimeAsync(1);
+      expect(sockets).toHaveLength(3);
+    });
+
+    it('terminates a half-open socket when no pong arrives, then reconnects', async () => {
+      const p = adapter.connect();
+      await flushMicrotasks();
+      sockets[0].emitOpen();
+      await p;
+
+      await vi.advanceTimersByTimeAsync(TUNNEL_PING_INTERVAL_MS);
+      expect(sockets[0].pings).toBe(1);
+
+      // Just inside the pong deadline the socket is still considered alive.
+      await vi.advanceTimersByTimeAsync(TUNNEL_PONG_TIMEOUT_MS - 1);
+      expect(sockets[0].terminated).toBe(false);
+      expect(adapter.isConnected()).toBe(true);
+
+      await vi.advanceTimersByTimeAsync(1);
+      expect(sockets[0].terminated).toBe(true);
+      expect(adapter.isConnected()).toBe(false);
+
+      // Reconnect happens one backoff step later, not at the timeout.
+      expect(sockets).toHaveLength(1);
+      await vi.advanceTimersByTimeAsync(TUNNEL_RECONNECT_BASE_DELAY_MS);
+      expect(sockets).toHaveLength(2);
+    });
+
+    it('keeps a socket that answers pings', async () => {
+      const p = adapter.connect();
+      await flushMicrotasks();
+      sockets[0].emitOpen();
+      await p;
+
+      await vi.advanceTimersByTimeAsync(TUNNEL_PING_INTERVAL_MS);
+      sockets[0].emit('pong');
+      await vi.advanceTimersByTimeAsync(TUNNEL_PONG_TIMEOUT_MS);
+      expect(sockets[0].terminated).toBe(false);
+      expect(adapter.isConnected()).toBe(true);
+    });
+
+    it('disconnect() cancels a pending reconnect', async () => {
+      adapter.connect().catch(() => undefined);
+      await flushMicrotasks();
+      sockets[0].failUpgrade();
+      await flushMicrotasks();
+      expect(vi.getTimerCount()).toBe(1);
+
+      await adapter.disconnect();
+      expect(vi.getTimerCount()).toBe(0);
+      await vi.advanceTimersByTimeAsync(TUNNEL_RECONNECT_MAX_DELAY_MS);
+      expect(sockets).toHaveLength(1);
+    });
   });
 });

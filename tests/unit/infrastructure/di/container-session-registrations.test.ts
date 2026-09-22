@@ -90,6 +90,36 @@ describe('session DI registrations', () => {
     expect(repo).toBeInstanceOf(ClaudeCodeSessionRepository);
   });
 
+  // Spec 116: the Claude Code repository remembers how far it scanned each
+  // transcript, so a poll reads only appended bytes. A fresh instance per
+  // resolve would throw that progress away on every list.
+  it('resolves one shared Claude Code session repository per container', async () => {
+    const { initializeContainer } = await import(
+      '../../../../packages/core/src/infrastructure/di/container.js'
+    );
+    const { AgentType } = await import('../../../../packages/core/src/domain/generated/output.js');
+
+    const container = await initializeContainer();
+    const token = `IAgentSessionRepository:${AgentType.ClaudeCode}`;
+    expect(container.resolve(token)).toBe(container.resolve(token));
+  });
+
+  it.each(['CodexCli', 'Cursor'] as const)(
+    'resolves one shared %s session repository per container (spec 116)',
+    async (agent) => {
+      const { initializeContainer } = await import(
+        '../../../../packages/core/src/infrastructure/di/container.js'
+      );
+      const { AgentType } = await import(
+        '../../../../packages/core/src/domain/generated/output.js'
+      );
+
+      const container = await initializeContainer();
+      const token = `IAgentSessionRepository:${AgentType[agent]}`;
+      expect(container.resolve(token)).toBe(container.resolve(token));
+    }
+  );
+
   // Spec 105 replaced the Cursor stub with a real repository so the duplicated
   // web session scanner could be deleted without losing Cursor coverage.
   it('resolves IAgentSessionRepository:cursor as CursorSessionRepository', async () => {

@@ -13,7 +13,6 @@ import { interrupt, isGraphBubbleUp } from '@langchain/langgraph';
 import type {
   IAgentExecutor,
   AgentExecutionOptions,
-  AgentExecutionResult,
 } from '@/application/ports/output/agents/agent-executor.interface.js';
 import type { ApprovalGates, Evidence } from '@/domain/generated/output.js';
 import { hasSettings, getSettings } from '@/infrastructure/services/settings.service.js';
@@ -29,6 +28,11 @@ import {
 import { updateNodeLifecycle } from '../lifecycle-context.js';
 import { getLogPrefix, setCurrentPhase } from '../log-context.js';
 import { COMMIT_CO_AUTHOR } from './prompts/pr-branding.js';
+import {
+  DEFAULT_AGENT_CALL_TIMEOUT_MS,
+  DEFAULT_AGENT_IDLE_TIMEOUT_MS,
+} from '../../common/agent-timeouts.js';
+import { retryExecute } from './agent-retry.js';
 
 /**
  * Create a scoped logger that prefixes messages with the node name.
@@ -65,8 +69,8 @@ export function readSpecFile(specDir: string, filename: string): string {
   }
 }
 
-/** Default timeout per agent call (30 minutes) — prevents infinite hangs. */
-const DEFAULT_STAGE_TIMEOUT_MS = 1_800_000;
+/** Default timeout per agent call — prevents infinite hangs. */
+const DEFAULT_STAGE_TIMEOUT_MS = DEFAULT_AGENT_CALL_TIMEOUT_MS;
 
 /**
  * Map from node name to the corresponding StageTimeouts field.
@@ -101,7 +105,8 @@ export function getStageTimeoutMs(nodeName: string): number {
 /**
  * Build executor options with cwd. Each node gets a clean agent context.
  * The timeout is resolved per-stage from settings (workflow.stageTimeouts)
- * with a fallback to DEFAULT_STAGE_TIMEOUT_MS (10 min).
+ * with a fallback to DEFAULT_STAGE_TIMEOUT_MS (30 min), plus the default idle
+ * (no-output) guard so a stalled agent fails long before a large stage budget.
  *
  * When no `nodeName` is provided, the current node from state is used.
  *
@@ -121,6 +126,7 @@ export function buildExecutorOptions(
     cwd: state.worktreePath || state.repositoryPath,
     maxTurns: 5000,
     timeout: stageTimeout,
+    idleTimeout: DEFAULT_AGENT_IDLE_TIMEOUT_MS,
     ...(state.model ? { model: state.model } : {}),
     ...(state.mcpConfigPath ? { mcpConfigPath: state.mcpConfigPath } : {}),
     ...overrides,
@@ -227,81 +233,16 @@ export function shouldInterrupt(nodeName: string, gates: ApprovalGates | undefin
 }
 
 /* ------------------------------------------------------------------ */
-/*  Error classification & retry                                      */
+/*  Error classification & retry — see ./agent-retry.ts               */
 /* ------------------------------------------------------------------ */
 
-export type ErrorCategory = 'retryable-api' | 'retryable-network' | 'non-retryable' | 'unknown';
-
-const API_ERROR_RE = /API Error: (400|429|5\d{2})/;
-const NETWORK_ERROR_RE = /ECONNREFUSED|ETIMEDOUT|ENOTFOUND|network timed out/i;
-const NON_RETRYABLE_RE = /Process exited with code|ENOENT|SyntaxError|Agent execution timed out/;
-
-/**
- * Classify an error message into a retry category.
- *
- * - **retryable-api**: Transient API errors (rate-limit, overload, bad request)
- * - **retryable-network**: Network-level failures (DNS, timeouts, connection refused)
- * - **non-retryable**: Logic / filesystem / syntax errors that won't resolve on retry
- * - **unknown**: Anything unrecognised (callers may choose to retry cautiously)
- */
-export function classifyError(errorMessage: string): ErrorCategory {
-  if (API_ERROR_RE.test(errorMessage)) return 'retryable-api';
-  if (NETWORK_ERROR_RE.test(errorMessage)) return 'retryable-network';
-  if (NON_RETRYABLE_RE.test(errorMessage)) return 'non-retryable';
-  return 'unknown';
-}
-
-export interface RetryOptions {
-  /** Maximum number of execution attempts (default 3). */
-  maxAttempts?: number;
-  /** Base delay in ms before the first retry (default 2000). Doubles each retry. */
-  baseDelayMs?: number;
-  /** Optional logger for retry messages. */
-  logger?: NodeLogger;
-}
-
-/**
- * Execute a prompt via the given executor with automatic retry and
- * exponential back-off for transient errors.
- *
- * Non-retryable errors are thrown immediately. Unknown errors are
- * retried (conservative stance: could be transient).
- */
-export async function retryExecute(
-  executor: IAgentExecutor,
-  prompt: string,
-  options: AgentExecutionOptions,
-  retryOpts?: RetryOptions
-): Promise<AgentExecutionResult> {
-  const maxAttempts = retryOpts?.maxAttempts ?? 3;
-  const baseDelayMs = retryOpts?.baseDelayMs ?? 2000;
-  const log = retryOpts?.logger;
-
-  let lastError: Error | undefined;
-
-  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    try {
-      return await executor.execute(prompt, options);
-    } catch (err: unknown) {
-      lastError = err instanceof Error ? err : new Error(String(err));
-      const category = classifyError(lastError.message);
-
-      if (category === 'non-retryable') {
-        throw lastError;
-      }
-
-      if (attempt < maxAttempts) {
-        const delayMs = baseDelayMs * Math.pow(2, attempt - 1);
-        log?.info(
-          `Attempt ${attempt}/${maxAttempts} failed (${category}), retrying in ${delayMs}ms`
-        );
-        await new Promise((resolve) => setTimeout(resolve, delayMs));
-      }
-    }
-  }
-
-  throw lastError!;
-}
+export {
+  classifyError,
+  retryExecute,
+  TRANSIENT_ERROR_CATEGORIES,
+  type ErrorCategory,
+  type RetryOptions,
+} from './agent-retry.js';
 
 /**
  * Read completed phases from feature.yaml.
@@ -728,7 +669,10 @@ export function executeNode(
     try {
       log.info(`Executing agent at cwd=${options.cwd}`);
       log.info(`Prompt length: ${prompt.length} chars`);
-      const result = await executor.execute(prompt, options);
+      // A spec phase fails the whole run, so one transient 429/5xx or dropped
+      // connection must not end it; timeouts, kills and the turn limit still
+      // fail on the first attempt (see classifyError).
+      const result = await retryExecute(executor, prompt, options, { logger: log });
       const durationMs = Date.now() - startTime;
       const elapsed = (durationMs / 1000).toFixed(1);
       log.info(`Complete (${result.result.length} chars, ${elapsed}s)`);

@@ -120,6 +120,30 @@ describe('SQLiteAgentQuestionRepository', () => {
     expect(after?.status).toBe(AgentQuestionStatus.pending);
   });
 
+  it('settlePending is a single conditional write: only a pending row changes, once', async () => {
+    await repo.create(makeQuestion({ id: 'q1' }));
+    const answeredAt = new Date();
+    expect(
+      await repo.settlePending('app-1', 'q1', AgentQuestionStatus.answered, {
+        answer: 'first',
+        answeredBy: 'user:cli',
+        answeredAt,
+      })
+    ).toBe(true);
+    expect(
+      await repo.settlePending('app-1', 'q1', AgentQuestionStatus.answered, {
+        answer: 'second',
+        answeredBy: 'user:web',
+        answeredAt,
+      })
+    ).toBe(false);
+    expect(await repo.settlePending('app-2', 'q1', AgentQuestionStatus.cancelled)).toBe(false);
+
+    const after = await repo.findById('app-1', 'q1');
+    expect(after?.answer).toBe('first');
+    expect(after?.answeredBy).toBe('user:cli');
+  });
+
   it('findExpired returns pending rows whose expires_at is at or before the cutoff', async () => {
     await repo.create(makeQuestion({ id: 'expired-1', expiresAt: new Date(2026, 0, 1) }));
     await repo.create(makeQuestion({ id: 'expired-2', expiresAt: new Date(2026, 0, 2) }));

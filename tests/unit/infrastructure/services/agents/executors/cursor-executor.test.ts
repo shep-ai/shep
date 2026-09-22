@@ -1188,3 +1188,61 @@ describe('CursorExecutorService', () => {
     });
   });
 });
+
+describe('CursorExecutorService — idle timeout', () => {
+  // A stalled agent (hung API connection, wedged tool) used to sit out the
+  // whole total budget — 30 minutes by default, hours for a long implement
+  // stage. `idleTimeout` ends it after that long without any output.
+  let mockSpawn: SpawnFunction;
+  let executor: CursorExecutorService;
+
+  beforeEach(() => {
+    mockSpawn = vi.fn();
+    executor = new CursorExecutorService(mockSpawn);
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('execute(): arms no idle guard — its single-result json mode is silent until the end', async () => {
+    // execute() runs the CLI with `--output-format json`, which prints ONE
+    // line when the whole turn is done. Silence there is the normal shape of
+    // a healthy run, so an idle guard would kill every run longer than the
+    // budget; only the total timeout bounds it.
+    vi.useFakeTimers();
+    const proc = createMockChildProcess();
+    vi.mocked(mockSpawn).mockReturnValue(proc as any);
+
+    let settled = false;
+    const pending = executor
+      .execute('Prompt', { silent: true, idleTimeout: 60_000 })
+      .finally(() => (settled = true));
+    await vi.advanceTimersByTimeAsync(10 * 60_000);
+
+    expect(settled).toBe(false);
+    expect(proc.kill).not.toHaveBeenCalled();
+    proc.stdout.end();
+    proc.stderr.end();
+    proc.emit('close', 1, null);
+    await pending.catch(() => undefined);
+  });
+
+  it('executeStream(): ends a silent stream with an idle-timeout error event', async () => {
+    const proc = createMockChildProcess();
+    vi.mocked(mockSpawn).mockReturnValue(proc as any);
+
+    const events: { type: string; content: string }[] = [];
+    for await (const event of executor.executeStream('Prompt', {
+      silent: true,
+      idleTimeout: 20,
+    })) {
+      events.push({ type: event.type, content: event.content });
+    }
+
+    expect(events).toContainEqual({
+      type: 'error',
+      content: 'Agent execution timed out: no output for 0.02s',
+    });
+    expect(proc.kill).toHaveBeenCalled();
+  });
+});

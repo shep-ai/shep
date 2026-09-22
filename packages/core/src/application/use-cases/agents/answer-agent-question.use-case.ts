@@ -42,6 +42,11 @@ export interface AnswerAgentQuestionResult {
   question?: AgentQuestion;
   /** True when the answer was forwarded to the approval-gate use case. */
   forwardedToGate: boolean;
+  /**
+   * Set when the question was no longer pending — already answered or
+   * cancelled, possibly by a concurrent caller. Nothing was written.
+   */
+  alreadySettledAs?: AgentQuestionStatus;
 }
 
 /** Canonical approve/reject vocabulary used by gate-linked questions. */
@@ -72,13 +77,13 @@ export class AnswerAgentQuestionUseCase {
     const existing = await this.questionRepository.findById(input.appId, input.questionId);
     if (!existing) return { enabled: true, forwardedToGate: false };
     if (existing.status !== AgentQuestionStatus.pending) {
-      return { enabled: true, question: existing, forwardedToGate: false };
+      return this.alreadySettled(input, existing);
     }
 
     validateAnswerAgainstOptions(existing, input.answer);
 
     const now = new Date();
-    await this.questionRepository.updateStatus(
+    const settled = await this.questionRepository.settlePending(
       input.appId,
       input.questionId,
       AgentQuestionStatus.answered,
@@ -88,6 +93,8 @@ export class AnswerAgentQuestionUseCase {
         answeredAt: now,
       }
     );
+    // Another caller (CLI vs web) settled it between our read and our write.
+    if (!settled) return this.alreadySettled(input, existing);
 
     // Resolve any in-process awaiter so the SDK callback returns.
     if (this.deferredRegistry.has(input.questionId)) {
@@ -99,6 +106,20 @@ export class AnswerAgentQuestionUseCase {
 
     const updated = await this.questionRepository.findById(input.appId, input.questionId);
     return { enabled: true, question: updated ?? existing, forwardedToGate };
+  }
+
+  private async alreadySettled(
+    input: AnswerAgentQuestionInput,
+    fallback: AgentQuestion
+  ): Promise<AnswerAgentQuestionResult> {
+    const current =
+      (await this.questionRepository.findById(input.appId, input.questionId)) ?? fallback;
+    return {
+      enabled: true,
+      question: current,
+      forwardedToGate: false,
+      alreadySettledAs: current.status,
+    };
   }
 
   private async maybeForwardToGate(

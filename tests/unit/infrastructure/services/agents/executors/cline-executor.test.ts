@@ -881,3 +881,60 @@ describe('ClineExecutorService', () => {
     });
   });
 });
+
+describe('ClineExecutorService — idle timeout', () => {
+  // A stalled agent (hung API connection, wedged tool) used to sit out the
+  // whole total budget — 30 minutes by default, hours for a long implement
+  // stage. `idleTimeout` ends it after that long without any output.
+  const IDLE_MESSAGE = 'Agent execution timed out: no output for 60s';
+  let mockSpawn: SpawnFunction;
+  let executor: ClineExecutorService;
+
+  beforeEach(() => {
+    mockSpawn = vi.fn();
+    executor = new ClineExecutorService(mockSpawn);
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('execute(): kills an agent silent for the idle budget, naming the budget', async () => {
+    vi.useFakeTimers();
+    const proc = createMockChildProcess();
+    vi.mocked(mockSpawn).mockReturnValue(proc as any);
+
+    const outcome = executor.execute('Prompt', { silent: true, idleTimeout: 60_000 }).then(
+      () => 'resolved',
+      (error: Error) => error.message
+    );
+    await vi.advanceTimersByTimeAsync(30_000);
+    proc.stderr.write('still working\n'); // any output restarts the budget
+    await vi.advanceTimersByTimeAsync(45_000);
+    expect(proc.kill).not.toHaveBeenCalled();
+
+    await vi.advanceTimersByTimeAsync(20_000);
+    expect(proc.kill).toHaveBeenCalled();
+    proc.emit('close', null, 'SIGTERM');
+
+    expect(await outcome).toBe(IDLE_MESSAGE);
+  });
+
+  it('executeStream(): ends a silent stream with an idle-timeout error event', async () => {
+    const proc = createMockChildProcess();
+    vi.mocked(mockSpawn).mockReturnValue(proc as any);
+
+    const events: { type: string; content: string }[] = [];
+    for await (const event of executor.executeStream('Prompt', {
+      silent: true,
+      idleTimeout: 20,
+    })) {
+      events.push({ type: event.type, content: event.content });
+    }
+
+    expect(events).toContainEqual({
+      type: 'error',
+      content: 'Agent execution timed out: no output for 0.02s',
+    });
+    expect(proc.kill).toHaveBeenCalled();
+  });
+});

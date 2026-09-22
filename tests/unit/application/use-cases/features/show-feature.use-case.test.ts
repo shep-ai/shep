@@ -10,6 +10,7 @@
 import 'reflect-metadata';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ShowFeatureUseCase } from '@/application/use-cases/features/show-feature.use-case.js';
+import type { ReconcileAgentRunLivenessUseCase } from '@/application/use-cases/agents/reconcile-agent-run-liveness.use-case.js';
 import type { IFeatureRepository } from '@/application/ports/output/repositories/feature-repository.interface.js';
 import { SdlcLifecycle, BuildMode } from '@/domain/generated/output.js';
 import type { Feature } from '@/domain/generated/output.js';
@@ -44,6 +45,8 @@ function createMockFeature(id: string): Feature {
 }
 
 describe('ShowFeatureUseCase', () => {
+  const livenessSweep = { execute: vi.fn() };
+  const sweep = livenessSweep as unknown as ReconcileAgentRunLivenessUseCase;
   let useCase: ShowFeatureUseCase;
   let mockRepo: IFeatureRepository;
 
@@ -51,7 +54,7 @@ describe('ShowFeatureUseCase', () => {
     mockRepo = createMockFeatureRepository({
       findById: vi.fn().mockResolvedValue(createMockFeature('feat-1')),
     });
-    useCase = new ShowFeatureUseCase(mockRepo);
+    useCase = new ShowFeatureUseCase(mockRepo, sweep);
   });
 
   it('should return feature by id', async () => {
@@ -95,5 +98,25 @@ describe('ShowFeatureUseCase', () => {
     const result = await useCase.execute('feat-2');
     expect(result.name).toBe('My Feature');
     expect(result.lifecycle).toBe(SdlcLifecycle.Implementation);
+  });
+
+  // The read paths every surface uses (CLI, TUI, web) run the run-liveness
+  // sweep first, so what they return already reflects a crashed or hung worker.
+  describe('run-liveness sweep', () => {
+    it('reconciles run liveness before reading', async () => {
+      const order: string[] = [];
+      livenessSweep.execute.mockImplementation(async () => {
+        order.push('sweep');
+        return { reconciledRunIds: [] };
+      });
+      mockRepo.findById = vi.fn(async () => {
+        order.push('read');
+        return { id: 'feat-1' } as Feature;
+      });
+
+      await useCase.execute('feat-1');
+
+      expect(order).toEqual(['sweep', 'read']);
+    });
   });
 });

@@ -17,6 +17,8 @@ import type { IVersionService } from '@/application/ports/output/services/versio
 import type { IDaemonService } from '@/application/ports/output/services/daemon-service.interface.js';
 import { messages } from '../ui/index.js';
 import { getCliI18n } from '../i18n.js';
+import { refuseHostShutdownFromAgent } from '@/domain/shared/agent-run-environment.js';
+import { reportAgentRunRefusal } from './agent-run-guard.js';
 import { stopDaemon } from './daemon/stop-daemon.js';
 import { startDaemon } from './daemon/start-daemon.js';
 
@@ -169,6 +171,7 @@ export function createUpgradeCommand(spawnFn: SpawnFn = defaultSpawn): Command {
   const t = getCliI18n().t;
   return new Command('upgrade')
     .description(t('cli:commands.upgrade.description'))
+    .option('--force', t('cli:ui.agentGuard.forceOption'))
     .addHelpText(
       'after',
       `
@@ -177,7 +180,11 @@ Examples:
   $ shep stop && shep upgrade     Upgrade and restart the daemon automatically
   $ shep upgrade                  No-op when Shep is already up to date`
     )
-    .action(async () => {
+    .action(async (options: { force?: boolean }) => {
+      // Upgrading stops the daemon to replace it.
+      if (reportAgentRunRefusal(refuseHostShutdownFromAgent(process.env, options.force === true))) {
+        return;
+      }
       try {
         const versionService = container.resolve<IVersionService>('IVersionService');
         const { version: currentVersion } = versionService.getVersion();

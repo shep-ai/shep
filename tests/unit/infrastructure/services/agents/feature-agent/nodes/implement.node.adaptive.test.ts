@@ -218,6 +218,92 @@ describe('implement node — adaptive model selection', () => {
     expect(calls.map((c) => c.model).sort()).toEqual(['claude-haiku-4-5', 'claude-opus-5']);
   });
 
+  // Promise.all rejected on the first failure while the sibling's agent CLI
+  // kept running; the worker then marked the run failed and exited, orphaning
+  // a live agent in the worktree — one a resume would then run beside.
+  it('does not fail a parallel phase until every sibling agent call has ended', async () => {
+    settingsWithAdaptive(undefined);
+    stubSpecFiles(planYaml(true), tasksYaml([{ id: 'task-1' }, { id: 'task-2' }]));
+    let finishSibling!: () => void;
+    let siblingEnded = false;
+    const executor = {
+      agentType: 'claude-code' as AgentType,
+      execute: vi.fn(async (prompt: string) => {
+        if (prompt.includes('task-1')) {
+          // Non-retryable, so the failure is immediate.
+          throw new Error('Agent authentication failed: invalid API key');
+        }
+        await new Promise<void>((resolve) => {
+          finishSibling = resolve;
+        });
+        siblingEnded = true;
+        return { result: 'done' };
+      }),
+      executeStream: vi.fn(),
+      supportsFeature: vi.fn().mockReturnValue(true),
+    } as unknown as IAgentExecutor;
+
+    let settled = false;
+    const run = createImplementNode(executor)(makeState()).then(
+      () => (settled = true),
+      () => (settled = true)
+    );
+    await vi.waitFor(() => expect(finishSibling).toBeDefined());
+    await new Promise((resolve) => setTimeout(resolve, 20));
+
+    expect(settled).toBe(false);
+
+    finishSibling();
+    await run;
+    expect(siblingEnded).toBe(true);
+  });
+
+  it('cancels the sibling tasks on the first failure and reports that failure', async () => {
+    settingsWithAdaptive(undefined);
+    stubSpecFiles(planYaml(true), tasksYaml([{ id: 'task-1' }, { id: 'task-2' }]));
+    let siblingSignal: AbortSignal | undefined;
+    let siblingTornDown = false;
+    const executor = {
+      agentType: 'claude-code' as AgentType,
+      execute: vi.fn(async (prompt: string, options?: AgentExecutionOptions) => {
+        if (prompt.includes('task-1')) {
+          await new Promise((resolve) => setTimeout(resolve, 5));
+          throw new Error('Agent authentication failed: invalid API key');
+        }
+        siblingSignal = options?.abortSignal;
+        // Like a real executor: rejects only once its process has closed.
+        await new Promise<void>((resolve) => {
+          options?.abortSignal?.addEventListener('abort', () => setTimeout(resolve, 5));
+        });
+        siblingTornDown = true;
+        throw new Error('Agent execution aborted by its caller');
+      }),
+      executeStream: vi.fn(),
+      supportsFeature: vi.fn().mockReturnValue(true),
+    } as unknown as IAgentExecutor;
+
+    await expect(createImplementNode(executor)(makeState())).rejects.toThrow(/invalid API key/);
+
+    expect(siblingSignal?.aborted).toBe(true);
+    expect(siblingTornDown).toBe(true);
+  });
+
+  it('reports the failing task, not the sibling that succeeded', async () => {
+    settingsWithAdaptive(undefined);
+    stubSpecFiles(planYaml(true), tasksYaml([{ id: 'task-1' }, { id: 'task-2' }]));
+    const executor = {
+      agentType: 'claude-code' as AgentType,
+      execute: vi.fn(async (prompt: string) => {
+        if (prompt.includes('task-2')) throw new Error('Agent authentication failed: task-2 key');
+        return { result: 'done' };
+      }),
+      executeStream: vi.fn(),
+      supportsFeature: vi.fn().mockReturnValue(true),
+    } as unknown as IAgentExecutor;
+
+    await expect(createImplementNode(executor)(makeState())).rejects.toThrow(/task-2 key/);
+  });
+
   it('honours the pinned model as a ceiling — a Sonnet pin never yields Opus', async () => {
     settingsWithAdaptive({ enabled: true });
     stubSpecFiles(planYaml(false), tasksYaml([{ id: 'task-1', complexity: 'High' }]));
