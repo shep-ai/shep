@@ -2714,3 +2714,15 @@ The parallel-feature slot count read lifecycle only; a failed or stopped run lea
 lifecycle in a running phase, so every crash leaked a slot permanently. Derive occupancy from
 the current run's status in the same sub-select the atomic claim uses, and wire the queue drain
 to every event that frees a slot — including failure and stop, not only completion.
+
+## "Full local verification" means every script CI runs, not the four in the rule
+
+The spec 116 follow-up passed lint, format, typecheck, unit, integration and three builds locally,
+then went red twice in CI: `check:stories` rejected a grandfathered entry for a component that
+had just gained its story, and the Electron build rejected `tree-kill` because a core adapter
+started importing it and the Electron bundle includes core. Neither check is in the four-step
+rule, and both run in seconds. Rules: before pushing, grep `.github/workflows/*.yml` for every
+`pnpm run …` and run each one that can run locally (`check:stories`, `generate` with a clean
+diff, `node packages/electron/scripts/build.mjs`); a new third-party import in `packages/core`
+is also a `packages/electron/package.json` dependency; when adding a story, remove the
+component from `scripts/check-stories.mjs`'s grandfathered list in the same change.
