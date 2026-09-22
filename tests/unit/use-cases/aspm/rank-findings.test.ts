@@ -84,6 +84,16 @@ describe('RankFindingsUseCase', () => {
     expect(listRanked.mock.calls[0][1]).toEqual({ offset: 0, limit: 1 });
   });
 
+  // `shep aspm findings --limit abc` arrives here as Number("abc"). The clamp
+  // propagates NaN, so without the guard it is bound into `LIMIT ? OFFSET ?`.
+  it('falls back to the defaults when the cursor is not a finite number', async () => {
+    const { repo, listRanked } = makeRepo([]);
+    const uc = new RankFindingsUseCase(repo);
+
+    await uc.execute({ cursor: { offset: NaN, limit: NaN } });
+    expect(listRanked.mock.calls[0][1]).toEqual({ offset: 0, limit: 25 });
+  });
+
   it('echoes the items the repository returned', async () => {
     const items = [
       { finding: makeFinding('a'), riskScoreTotal: 90 },
