@@ -15,8 +15,10 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { readFileSync, existsSync } from 'node:fs';
 import {
   McpServerManagerService,
+  REAP_GRACE_MS,
   type SpawnFn,
 } from '@/infrastructure/services/plugin/mcp-server-manager.service.js';
+import { SIGKILL_GRACE_MS } from '@/infrastructure/services/agents/common/executors/process-stream.js';
 import { PluginType, PluginTransport, PluginHealthStatus } from '@/domain/generated/output.js';
 import type { Plugin } from '@/domain/generated/output.js';
 
@@ -43,12 +45,23 @@ function createMcpPlugin(overrides: Partial<Plugin> = {}): Plugin {
 
 /**
  * Creates a fake child process for testing.
+ *
+ * `ignoreSigterm` models a server that swallowed SIGTERM: it never emits
+ * `exit`, so the manager has to escalate. By default the fake behaves like a
+ * well-behaved server and exits as soon as it is asked to, which keeps teardown
+ * instant for the many tests that never care about termination.
  */
-function createFakeProcess(pid = 12345) {
+function createFakeProcess(pid = 12345, options: { ignoreSigterm?: boolean } = {}) {
   const listeners: Record<string, ((...args: unknown[]) => void)[]> = {};
   return {
     pid,
-    kill: vi.fn(),
+    kill: vi.fn((signal?: string) => {
+      if (!options.ignoreSigterm && (signal === 'SIGTERM' || signal === 'SIGKILL')) {
+        for (const handler of listeners['exit'] ?? []) {
+          handler(0, signal);
+        }
+      }
+    }),
     on: vi.fn((event: string, handler: (...args: unknown[]) => void) => {
       listeners[event] = listeners[event] ?? [];
       listeners[event].push(handler);
@@ -293,6 +306,78 @@ describe('McpServerManagerService', () => {
 
       expect(fakeProcess.kill).toHaveBeenCalledWith('SIGTERM');
       expect(fakeProcess2.kill).toHaveBeenCalledWith('SIGTERM');
+    });
+  });
+
+  // LESSONS.md: "`kill()` is a signal, not a join". SIGTERM is a request the
+  // child may ignore, and Windows keeps a child's handles open until it
+  // actually dies — so teardown must wait for the exit event and escalate.
+  describe('termination escalation', () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('should escalate to SIGKILL when the server ignores SIGTERM', async () => {
+      // A server that swallowed SIGTERM: kill() records the call but never
+      // emits 'exit', so only the escalation can end the wait.
+      const stubborn = createFakeProcess(12345, { ignoreSigterm: true });
+      spawnMock.mockReturnValue(stubborn);
+
+      const plugin = createMcpPlugin();
+      await service.startServersForFeature('feature-1', [plugin]);
+
+      const stopping = service.stopServersForFeature('feature-1');
+      // SIGTERM grace, then the short reap window after SIGKILL.
+      await vi.advanceTimersByTimeAsync(SIGKILL_GRACE_MS + REAP_GRACE_MS + 1);
+      await stopping;
+
+      expect(stubborn.kill).toHaveBeenCalledWith('SIGTERM');
+      expect(stubborn.kill).toHaveBeenCalledWith('SIGKILL');
+    });
+
+    it('should not send SIGKILL once the server has exited on its own', async () => {
+      // Well-behaved server: it is asked to leave and does so before the grace
+      // period elapses, so the escalation must never fire.
+      const polite = createFakeProcess(12345);
+      spawnMock.mockReturnValue(polite);
+
+      const plugin = createMcpPlugin();
+      await service.startServersForFeature('feature-1', [plugin]);
+
+      const stopping = service.stopServersForFeature('feature-1');
+      await vi.advanceTimersByTimeAsync(SIGKILL_GRACE_MS + 1);
+      await stopping;
+
+      expect(polite.kill).toHaveBeenCalledWith('SIGTERM');
+      expect(polite.kill).not.toHaveBeenCalledWith('SIGKILL');
+    });
+
+    it('should not resolve shutdown while a server is still alive', async () => {
+      const stubborn = createFakeProcess(12345, { ignoreSigterm: true });
+      spawnMock.mockReturnValue(stubborn);
+
+      const plugin = createMcpPlugin();
+      await service.startServersForFeature('feature-1', [plugin]);
+
+      let settled = false;
+      const shuttingDown = service.shutdown().then(() => {
+        settled = true;
+      });
+
+      await vi.advanceTimersByTimeAsync(SIGKILL_GRACE_MS - 1);
+      expect(settled).toBe(false);
+
+      // Past the SIGTERM grace the manager escalates; past the reap window
+      // shutdown finally settles.
+      await vi.advanceTimersByTimeAsync(REAP_GRACE_MS + 1);
+      expect(stubborn.kill).toHaveBeenCalledWith('SIGKILL');
+      await shuttingDown;
+
+      expect(settled).toBe(true);
     });
   });
 });
