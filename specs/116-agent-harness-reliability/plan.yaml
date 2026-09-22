@@ -1,0 +1,71 @@
+name: "agent-harness-reliability"
+summary: |-
+  Three independent phases touching disjoint files, so they can be implemented in parallel and
+  verified together.
+relatedFeatures: []
+technologies:
+  - "TypeScript"
+  - "Vitest"
+relatedLinks: []
+phases:
+  - id: phase-1
+    name: "Truthful turn outcomes (executors + proxy)"
+    description: "Proxy rejects on error/no result and keeps its channel open; signal kills and missing terminal events reject; max-turns in stream mode rejects; timeout messages name the budget; catalog fetches get a timeout."
+    parallel: true
+    taskIds: ["task-1", "task-2", "task-3", "task-4"]
+  - id: phase-2
+    name: "Guarded run-state writes"
+    description: "Worker writes use allowedFrom; boot claim; Approve/Reject claim atomically; failure path survives a failed write; CI watch retry budget; usage total."
+    parallel: true
+    taskIds: ["task-5", "task-6", "task-7", "task-8", "task-9"]
+  - id: phase-3
+    name: "Streams without replay"
+    description: "Silent seeding of SSE caches, abort-listener cleanup, named heartbeat, incremental feature-log tail."
+    parallel: true
+    taskIds: ["task-10", "task-11", "task-12"]
+filesToCreate: []
+filesToModify:
+  - "packages/core/src/infrastructure/services/agents/streaming/streaming-executor-proxy.ts"
+  - "packages/core/src/infrastructure/services/agents/common/agent-runner.service.ts"
+  - "packages/core/src/infrastructure/services/agents/common/executors/*.ts"
+  - "packages/core/src/infrastructure/services/agents/common/model-catalogs/*.ts"
+  - "packages/core/src/infrastructure/services/agents/feature-agent/feature-agent-worker.ts"
+  - "packages/core/src/infrastructure/services/agents/feature-agent/heartbeat.ts"
+  - "packages/core/src/infrastructure/services/agents/feature-agent/nodes/merge/ci-watch-fix-loop.ts"
+  - "packages/core/src/application/use-cases/agents/approve-agent-run.use-case.ts"
+  - "packages/core/src/application/use-cases/agents/reject-agent-run.use-case.ts"
+  - "packages/core/src/application/use-cases/usage/get-usage-stats.use-case.ts"
+  - "packages/core/src/application/use-cases/agents/stream-agent-events.use-case.ts"
+  - "src/presentation/web/app/api/agent-events/route.ts"
+  - "src/presentation/web/hooks/use-agent-events.ts"
+  - "src/presentation/web/app/api/feature-logs/route.ts"
+openQuestions: []
+content: |
+  ## Architecture Overview
+
+  No new components. Each fix tightens an existing seam:
+
+  ```
+  executor ──events──▶ StreamingExecutorProxy ──result/throw──▶ graph node ──▶ AgentRunner.mark*
+  worker ──updateStatus(allowedFrom)──▶ agent_runs ◀──updateStatus(allowedFrom)── Approve/Reject/Stop
+  agent_messages/questions ──poll──▶ StreamAgentEvents (seeded cache) ──SSE──▶ useAgentEvents
+  ```
+
+  ## Implementation Strategy
+
+  Phases touch disjoint files and run in parallel. Each task is RED first: a test reproducing the
+  reference failure against the current code, then the minimal fix.
+
+  ## Testing Strategy (TDD: Tests FIRST)
+
+  Unit tests with fake executors / fake child processes for phase 1; the in-memory SQLite
+  repository for the conditional-write claims in phase 2 (a real `UPDATE … WHERE status IN`
+  exercised twice); use-case tests with fake repositories and fake timers for phase 3.
+
+  ## Risk Mitigation
+
+  | Risk | Mitigation |
+  | --- | --- |
+  | A legitimate empty turn now fails | Only reject where the terminal event is mandatory (Claude `result`) or the process was signalled |
+  | Resume from `interrupted` refused by the boot claim | Resume/approve write `running` before spawn; the worker claim allows `pending`/`running` |
+  | Error-message classification relies on "Agent execution timed out" | Keep that prefix; append the budget |

@@ -1,0 +1,37 @@
+feature:
+  id: "116-agent-harness-reliability"
+  name: "agent-harness-reliability"
+  number: 116
+  branch: "claude/wonderful-ride-w2offi"
+  lifecycle: "implementation"
+  createdAt: "2026-09-22T00:00:00Z"
+status:
+  phase: "ready-to-implement"
+  progress:
+    completed: 0
+    total: 12
+    percentage: 0
+  currentTask: null
+  lastUpdated: "2026-09-22T00:00:00Z"
+  lastUpdatedBy: "shep-kit:new-feature-fast"
+validation:
+  lastRun: null
+  gatesPassed: []
+  autoFixesApplied: []
+tasks:
+  current: null
+  blocked: []
+  failed: []
+checkpoints:
+  - phase: "feature-created"
+    completedAt: "2026-09-22T00:00:00Z"
+    completedBy: "shep-kit:new-feature-fast"
+  - phase: "research-complete"
+    completedAt: "2026-09-22T00:00:00Z"
+    completedBy: "shep-kit:new-feature-fast"
+  - phase: "plan-complete"
+    completedAt: "2026-09-22T00:00:00Z"
+    completedBy: "shep-kit:new-feature-fast"
+errors:
+  current: null
+  history: []

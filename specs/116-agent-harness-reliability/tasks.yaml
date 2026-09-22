@@ -1,0 +1,248 @@
+name: agent-harness-reliability
+summary: 12 tasks across 3 parallel phases; each fix is RED-first.
+relatedFeatures: []
+technologies: []
+relatedLinks: []
+tasks:
+- id: task-1
+  phaseId: phase-1
+  title: StreamingExecutorProxy reports failed and truncated streams
+  description: execute() rejects on an error event or when no result event arrived; the shared channel
+    is closed once by AgentRunnerService, not after every node call.
+  state: Todo
+  dependencies: []
+  acceptanceCriteria:
+  - error event -> execute() rejects with its content
+  - stream without a result event -> rejects
+  - a second execute() on the same proxy still pushes events to the channel
+  tdd:
+    red:
+    - 'Write a test reproducing: error event -> execute() rejects with its content'
+    - 'Write a test reproducing: stream without a result event -> rejects'
+    - 'Write a test reproducing: a second execute() on the same proxy still pushes events to the channel'
+    green:
+    - Minimal change making the tests pass
+    refactor:
+    - Extract shared helpers where two executors repeat the same outcome rule
+  estimatedEffort: M
+- id: task-2
+  phaseId: phase-1
+  title: Subprocess executors reject signal kills and missing terminal events
+  description: A signal kill rejects even with partial output (codex, cursor, copilot, kimi, cline); Claude
+    exit 0 with no result event rejects.
+  state: Todo
+  dependencies: []
+  acceptanceCriteria:
+  - 'codex/cursor/copilot/kimi/cline: close(null,''SIGKILL'') after partial text rejects naming the signal'
+  - 'claude: exit 0 without a result event rejects'
+  tdd:
+    red:
+    - 'Write a test reproducing: codex/cursor/copilot/kimi/cline: close(null,''SIGKILL'') after partial
+      text rejects naming the signal'
+    - 'Write a test reproducing: claude: exit 0 without a result event rejects'
+    green:
+    - Minimal change making the tests pass
+    refactor:
+    - Extract shared helpers where two executors repeat the same outcome rule
+  estimatedEffort: M
+- id: task-3
+  phaseId: phase-1
+  title: Max-turns and error results fail in stream mode
+  description: Claude executeStream emits an error for error_max_turns / is_error results; cursor honours
+    is_error; AI SDK stream rejects on finishReason length/content-filter/error.
+  state: Todo
+  dependencies: []
+  acceptanceCriteria:
+  - claude stream error_max_turns -> error event, no result event
+  - AI SDK stream finishReason 'length' -> throws
+  tdd:
+    red:
+    - 'Write a test reproducing: claude stream error_max_turns -> error event, no result event'
+    - 'Write a test reproducing: AI SDK stream finishReason ''length'' -> throws'
+    green:
+    - Minimal change making the tests pass
+    refactor:
+    - Extract shared helpers where two executors repeat the same outcome rule
+  estimatedEffort: M
+- id: task-4
+  phaseId: phase-1
+  title: Timeouts name their budget and upstream fetches are bounded
+  description: Timeout errors keep the 'Agent execution timed out' prefix and append the budget; AI SDK
+    TimeoutError classifies as timeout; model-catalog fetches pass AbortSignal.timeout.
+  state: Todo
+  dependencies: []
+  acceptanceCriteria:
+  - message contains the timeout in seconds
+  - TimeoutError -> timeout classification
+  - catalog fetch receives a signal
+  tdd:
+    red:
+    - 'Write a test reproducing: message contains the timeout in seconds'
+    - 'Write a test reproducing: TimeoutError -> timeout classification'
+    - 'Write a test reproducing: catalog fetch receives a signal'
+    green:
+    - Minimal change making the tests pass
+    refactor:
+    - Extract shared helpers where two executors repeat the same outcome rule
+  estimatedEffort: M
+- id: task-5
+  phaseId: phase-2
+  title: Worker status writes cannot clobber Stop
+  description: Boot, heartbeat and node-start writes of running use allowedFrom [pending, running]; terminal
+    writes use allowedFrom [running]; a refused boot claim exits before the graph runs.
+  state: Todo
+  dependencies: []
+  acceptanceCriteria:
+  - run interrupted before boot -> worker does not invoke the graph
+  - heartbeat after Stop leaves status interrupted
+  - completed write after Stop leaves status interrupted
+  tdd:
+    red:
+    - 'Write a test reproducing: run interrupted before boot -> worker does not invoke the graph'
+    - 'Write a test reproducing: heartbeat after Stop leaves status interrupted'
+    - 'Write a test reproducing: completed write after Stop leaves status interrupted'
+    green:
+    - Minimal change making the tests pass
+    refactor:
+    - Extract shared helpers where two executors repeat the same outcome rule
+  estimatedEffort: M
+- id: task-6
+  phaseId: phase-2
+  title: Approve and Reject claim the run atomically
+  description: The waitingApproval -> running transition is a conditional update; the loser does not spawn.
+  state: Todo
+  dependencies: []
+  acceptanceCriteria:
+  - two concurrent approves -> spawn called once
+  - approve + reject concurrently -> one worker
+  tdd:
+    red:
+    - 'Write a test reproducing: two concurrent approves -> spawn called once'
+    - 'Write a test reproducing: approve + reject concurrently -> one worker'
+    green:
+    - Minimal change making the tests pass
+    refactor:
+    - Extract shared helpers where two executors repeat the same outcome rule
+  estimatedEffort: M
+- id: task-7
+  phaseId: phase-2
+  title: Worker failure path survives a failed status write
+  description: A throw from the failed-status write is logged and the lifecycle reset, run:failed event
+    and log line still run.
+  state: Todo
+  dependencies: []
+  acceptanceCriteria:
+  - updateStatus(failed) throwing -> lifecycle still reset and failure logged
+  tdd:
+    red:
+    - 'Write a test reproducing: updateStatus(failed) throwing -> lifecycle still reset and failure logged'
+    green:
+    - Minimal change making the tests pass
+    refactor:
+    - Extract shared helpers where two executors repeat the same outcome rule
+  estimatedEffort: M
+- id: task-8
+  phaseId: phase-2
+  title: CI watch gets a real retry budget
+  description: The CI watch call uses the default retry budget so one transient executor error neither
+    burns a CI-fix attempt nor ends the merge.
+  state: Todo
+  dependencies: []
+  acceptanceCriteria:
+  - one transient failure then success -> CI status from the second call
+  tdd:
+    red:
+    - 'Write a test reproducing: one transient failure then success -> CI status from the second call'
+    green:
+    - Minimal change making the tests pass
+    refactor:
+    - Extract shared helpers where two executors repeat the same outcome rule
+  estimatedEffort: M
+- id: task-9
+  phaseId: phase-2
+  title: Usage totals count cached tokens once
+  description: totalTokens = input + output when input already includes cache tokens.
+  state: Todo
+  dependencies: []
+  acceptanceCriteria:
+  - input 100 (incl. 60 cache read) + output 10 -> total 110
+  tdd:
+    red:
+    - 'Write a test reproducing: input 100 (incl. 60 cache read) + output 10 -> total 110'
+    green:
+    - Minimal change making the tests pass
+    refactor:
+    - Extract shared helpers where two executors repeat the same outcome rule
+  estimatedEffort: M
+- id: task-10
+  phaseId: phase-3
+  title: Agent-event SSE connections do not replay history
+  description: Message, question and decision caches are seeded silently on connect; only later changes
+    are emitted.
+  state: Todo
+  dependencies: []
+  acceptanceCriteria:
+  - existing rows at connect -> no events
+  - row added after connect -> one event
+  tdd:
+    red:
+    - 'Write a test reproducing: existing rows at connect -> no events'
+    - 'Write a test reproducing: row added after connect -> one event'
+    green:
+    - Minimal change making the tests pass
+    refactor:
+    - Extract shared helpers where two executors repeat the same outcome rule
+  estimatedEffort: M
+- id: task-11
+  phaseId: phase-3
+  title: Poll loop does not leak abort listeners and heartbeat is observable
+  description: The abort listener is removed when the tick timer fires; the server sends a named heartbeat
+    event and the direct client resets its watchdog on it.
+  state: Todo
+  dependencies: []
+  acceptanceCriteria:
+  - N ticks -> listener count unchanged
+  - heartbeat event resets the watchdog
+  tdd:
+    red:
+    - 'Write a test reproducing: N ticks -> listener count unchanged'
+    - 'Write a test reproducing: heartbeat event resets the watchdog'
+    green:
+    - Minimal change making the tests pass
+    refactor:
+    - Extract shared helpers where two executors repeat the same outcome rule
+  estimatedEffort: M
+- id: task-12
+  phaseId: phase-3
+  title: Feature-log tail reads only appended bytes
+  description: Track a byte offset and read from it; non-ASCII logs stop re-reading the whole file.
+  state: Todo
+  dependencies: []
+  acceptanceCriteria:
+  - 'non-ASCII log: second tick with no growth -> no read, no event'
+  - append -> only the new bytes are sent
+  tdd:
+    red:
+    - 'Write a test reproducing: non-ASCII log: second tick with no growth -> no read, no event'
+    - 'Write a test reproducing: append -> only the new bytes are sent'
+    green:
+    - Minimal change making the tests pass
+    refactor:
+    - Extract shared helpers where two executors repeat the same outcome rule
+  estimatedEffort: M
+totalEstimate: L
+openQuestions: []
+content: '## Summary
+
+
+  Phase 1 makes turn outcomes truthful, phase 2 guards run-state writes, phase 3 removes stream replays.
+
+
+  ## Acceptance Checklist
+
+
+  - [ ] Every task''s RED test fails on the old code
+
+  - [ ] pnpm lint, typecheck, test:unit, test:int, build pass
+
+  '

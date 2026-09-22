@@ -1,0 +1,87 @@
+name: "agent-harness-reliability"
+number: 116
+branch: "claude/wonderful-ride-w2offi"
+oneLiner: |-
+  Stop the agent harness reporting failed, stopped or truncated turns as successes, and stop it replaying or re-reading state it has already delivered
+summary: |-
+  A list of agent-harness bugs from another system was triaged against shep by three parallel
+  code audits. Twenty-odd patterns reproduce here by reading the code. This feature fixes the
+  ones where shep records a false outcome, runs one action twice, or does unbounded repeated
+  work. Every fix is guarded by a regression test that fails on the old code.
+phase: "Requirements"
+sizeEstimate: "L"
+relatedFeatures:
+  - "113-cluster-provisioning-error-details"
+technologies:
+  - "TypeScript"
+  - "better-sqlite3 (conditional UPDATE claims)"
+  - "Vercel AI SDK v6"
+  - "Next.js route handlers + EventSource (SSE)"
+  - "Vitest"
+relatedLinks: []
+openQuestions: []
+content: |
+  ## Problem Statement
+
+  The reference list ("harness bugs") names failure modes of an agent runtime. Triage against
+  shep found these reproduce, each cited in research.yaml:
+
+  | Reference bug | shep equivalent |
+  | --- | --- |
+  | cut stream parsed as a successful empty turn | `StreamingExecutorProxy.execute()` ignores `error` stream events and returns `''`; subprocess `execute()` resolves on any close, including a signal kill after partial output |
+  | providers treating any connection close as done | the same — no executor requires its terminal event before resolving |
+  | sub agents hitting the turn limit, all reporting completed | Claude `executeStream`, Cursor and the AI SDK stream map `error_max_turns` / `is_error` / `finishReason` other than `stop` to a normal result |
+  | stop button clobbered by a stale write from the step it was stopping | every worker write of `running` (boot, heartbeat, node start) and every terminal write is an unconditional `UPDATE … WHERE id = ?`, so a Stop is overwritten by the worker it stopped |
+  | two parallel approvals both waking one turn, executed twice | Approve / Reject check the status, await, then write `running` and spawn — two concurrent approvals start two workers on one worktree |
+  | failure cleanup timing out and logging skipped | an exception from the worker's `failed` write skips the lifecycle reset, the `run:failed` event and the log line |
+  | retry budget of 1 killing turns one step from done | CI watch runs with `maxAttempts: 1` and a failed watch burns a CI-fix attempt |
+  | 120s idle guard / opaque error; no read timeout on upstream clients | every timeout rejects with a bare "Agent execution timed out"; the AI SDK `TimeoutError` is not classified as a timeout; model-catalog fetches have no timeout |
+  | cached tokens double billed | `shep usage` adds cache-read and cache-creation tokens on top of an input count that already contains them |
+  | poison message re-flushed on every reconnect / reset loop every N seconds | every agent-events SSE connection replays the full message/question/decision history as new, and the direct EventSource client reconnects every ~61s because the server heartbeat is an SSE comment the browser never dispatches |
+  | approval hook registered 171 times | the agent-events poll loop adds an `abort` listener to the request signal every 2s and never removes it |
+  | 10MB session log replayed | `/api/feature-logs` compares a byte size to a UTF-16 length, so any non-ASCII log is re-read whole every 2s forever |
+
+  ## Success Criteria
+
+  - A stream that ends with an `error` event, or with no `result` event, makes
+    `StreamingExecutorProxy.execute()` reject; the channel stays open across node calls.
+  - A subprocess killed by a signal rejects even when partial output was captured; Claude exit 0
+    with no `result` event rejects; max-turns / `is_error` results reject in stream mode.
+  - After Stop, no worker write can move the run out of `interrupted`; a worker that finds its run
+    no longer claimable exits without executing the graph.
+  - Two concurrent Approve (or Approve + Reject) calls on one run spawn exactly one worker.
+  - Timeout errors state the budget that elapsed; AI SDK timeouts classify as `timeout`.
+  - `shep usage` total tokens count each cached token once.
+  - An SSE reconnect emits no event for a message, question or decision the connection history
+    already contains; the abort-listener count stays constant across poll ticks; the direct
+    client does not reconnect while the server is healthy.
+  - The feature-log tail reads only appended bytes.
+
+  ## Affected Areas
+
+  | Area | Impact | Reasoning |
+  | --- | --- | --- |
+  | `infrastructure/services/agents/streaming` | High | proxy outcome + channel lifetime |
+  | `infrastructure/services/agents/common/executors` | High | terminal-event and signal-kill outcome |
+  | `infrastructure/services/agents/feature-agent` | High | guarded status writes, boot claim, failure path |
+  | `application/use-cases/agents` (approve/reject/stop) | High | atomic claim |
+  | `application/use-cases/usage` | Low | token total |
+  | `application/use-cases/agents/stream-agent-events*` + `web/hooks/use-agent-events.ts` | Medium | reconnect replay, listener leak, heartbeat |
+  | `web/app/api/feature-logs` | Medium | incremental read |
+
+  ## Out of Scope (tracked follow-ups)
+
+  Confirmed by triage but deliberately deferred to keep this change reviewable: a liveness sweep
+  for live-but-hung workers (stale heartbeat), a guard against an agent stopping its own daemon,
+  messaging-tunnel reconnect after a failed connect, cross-instance GitHub webhook deletion, the
+  concurrent `shep start` port race, SW subscription counting, whole-file session-transcript
+  parsing, worker-log rotation, and retry for spec-phase `executeNode`.
+
+  ## Dependencies
+
+  None. Uses the existing `allowedFrom` conditional-update option on `IAgentRunRepository.updateStatus`.
+
+  ## Size Estimate
+
+  L — about fifteen files across three independent clusters (executor outcome, run-state writes,
+  web streaming), each individually small.

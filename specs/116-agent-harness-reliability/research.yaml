@@ -1,0 +1,77 @@
+name: "agent-harness-reliability"
+summary: |-
+  Three read-only audits (executors, worker lifecycle, sessions/streams) mapped each reference bug
+  to shep code. The fixes reuse existing mechanisms: the `allowedFrom` WHERE-clause guard already on
+  `updateStatus`, the `signalTerminationMessage` helper, `retryExecute`, and the positioned-read tail
+  the CLI log viewer already uses.
+relatedFeatures:
+  - "113-cluster-provisioning-error-details"
+technologies:
+  - "TypeScript"
+  - "better-sqlite3"
+  - "Vercel AI SDK v6"
+  - "EventSource / SSE"
+relatedLinks: []
+decisions:
+  - title: "How to stop a stale worker write clobbering Stop"
+    chosen: |-
+      Every worker-originated status write passes `allowedFrom`: boot and heartbeat writes of
+      `running` are allowed only from `pending`/`running`; terminal writes only from `running`.
+      The boot write's boolean result is the worker's claim — when it is false the worker logs why
+      and exits before building or invoking the graph.
+    rejected:
+      - "Re-read the status before each write — a check another process can invalidate before the write (LESSONS: a read that authorises a write must live in the same statement)."
+      - "Kill the worker harder on Stop — does not help the boot window, where Stop has no PID to signal."
+    rationale: |-
+      The guard is one SQL condition that already exists and is already trusted by the crash sweep;
+      it closes both the boot-window race and the heartbeat/terminal overwrite.
+  - title: "How to make Approve / Reject idempotent"
+    chosen: |-
+      Claim the transition with `updateStatus(id, running, …, { allowedFrom: [waitingApproval] })`
+      before any spawn; a false return means another approval already won, and the call reports
+      that instead of spawning.
+    rejected:
+      - "An in-memory mutex — CLI and web are different processes."
+    rationale: "Same single-statement claim shape as `claimSlot`."
+  - title: "What counts as a finished turn"
+    chosen: |-
+      A turn succeeds only when the executor observed its terminal event (Claude `result`, stream
+      `result`) or the process exited 0 with output. A signal kill always rejects. In the proxy, an
+      `error` event rejects and no `result` event rejects.
+    rejected:
+      - "Treat empty output as failure for every CLI — some CLIs legitimately end a turn with no final message; limited to the cases where the terminal event is mandatory."
+    rationale: "Exit code 0 is not 'it finished' (LESSONS: gates must fail closed)."
+  - title: "SSE replay on reconnect"
+    chosen: |-
+      Seed the per-connection message/question/decision caches silently from the current rows on
+      connect (as features already are), then emit only deltas. The server also sends a named
+      `heartbeat` event so EventSource clients can reset their watchdog.
+    rejected:
+      - "Client-side dedupe only — still ships the whole history every reconnect."
+    rationale: "Mirrors the existing silent `seedFeatureCache` pattern."
+openQuestions: []
+content: |
+  ## Technology Decisions
+
+  See `decisions`. No new libraries.
+
+  ## Evidence (file:line at the time of triage)
+
+  - Proxy: `infrastructure/services/agents/streaming/streaming-executor-proxy.ts:44-71`.
+  - Unguarded worker writes: `feature-agent-worker.ts:221, 382, 583, 619, 630, 643`; `heartbeat.ts:44-49`.
+  - Approve race: `approve-agent-run.use-case.ts:97 → 139 → 169`; reject `reject-agent-run.use-case.ts:102 → 155 → 198`.
+  - CI watch single attempt: `nodes/merge/ci-watch-fix-loop.ts:101-104`.
+  - Usage double count: `get-usage-stats.use-case.ts:228, 255`.
+  - SSE replay: `stream-agent-events.use-case.ts:142-144, 456-511`; listener leak `:205-215`.
+  - Heartbeat comment: `web/app/api/agent-events/route.ts:109-111`; watchdog `use-agent-events.ts:273-294`.
+  - Log tail: `web/app/api/feature-logs/route.ts:227-235`.
+
+  ## Security Considerations
+
+  The double-spawn fix removes a path where two agents with shell access ran concurrently in one
+  worktree. No new inputs are accepted.
+
+  ## Performance Implications
+
+  Removes full-history SSE replays, a full-file log read every 2s, and a listener leak of ~1800
+  closures per hour per connection.
