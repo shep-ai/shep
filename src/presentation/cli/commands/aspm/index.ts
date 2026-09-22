@@ -30,6 +30,15 @@ function isAspmEnabled(): boolean {
   return getSettings().featureFlags?.aspm === true;
 }
 
+/** Printed for any `shep aspm` invocation while the feature flag is off. */
+const ASPM_DISABLED_MESSAGE =
+  'The ASPM module is disabled. Enable the "aspm" feature flag in settings to use `shep aspm`.';
+
+function blockAspm(): never {
+  messages.error(ASPM_DISABLED_MESSAGE);
+  process.exit(1);
+}
+
 export function createAspmCommand(): Command {
   const cmd = new Command('aspm').description(
     'Application Security Posture Management — findings, campaigns, posture, exceptions, AI-review'
@@ -48,12 +57,13 @@ export function createAspmCommand(): Command {
     // Hide the surface from --help and short-circuit any invocation so
     // the default CLI output is unchanged for users who haven't opted in.
     (cmd as unknown as { _hidden: boolean })._hidden = true;
-    cmd.hook('preAction', () => {
-      messages.error(
-        'The ASPM module is disabled. Enable the "aspm" feature flag in settings to use `shep aspm`.'
-      );
-      process.exit(1);
-    });
+
+    // `preAction` only fires once a subcommand's own action runs, so a bare
+    // `shep aspm` used to fall through to Commander's default help — which
+    // lists every subcommand and defeats the flag entirely. Giving the parent
+    // its own action puts the no-subcommand invocation on the same blocked path.
+    cmd.hook('preAction', blockAspm);
+    cmd.action(blockAspm);
   }
 
   return cmd;
