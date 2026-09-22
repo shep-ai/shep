@@ -47,6 +47,7 @@ import {
 import type { IActivityLogRepository } from '@/application/ports/output/repositories/activity-log-repository.interface.js';
 import type { IApplicationRepository } from '@/application/ports/output/repositories/application-repository.interface.js';
 import type { ISettingsRepository } from '@/application/ports/output/repositories/settings.repository.interface.js';
+import { createMockAgentRunRepository } from '../../../../../helpers/agent-run-repository.fake.js';
 
 // Reject use case mocks fs / yaml — we stub them so the evaluator can
 // drive the autonomous-reject path without touching disk.
@@ -216,16 +217,9 @@ function buildEvaluator(opts: {
     { execute: vi.fn().mockResolvedValue({ escalated: false }) } as any
   );
 
-  const runRepo = {
-    create: vi.fn(),
+  const runRepo = createMockAgentRunRepository({
     findById: vi.fn().mockResolvedValue(waitingRun()),
-    findByThreadId: vi.fn(),
-    findLatestByFeatureId: vi.fn().mockResolvedValue(null),
-    updateStatus: vi.fn(),
-    findRunningByPid: vi.fn(),
-    list: vi.fn(),
-    delete: vi.fn(),
-  };
+  });
   const processService = {
     spawn: vi.fn().mockReturnValue(123),
     isAlive: vi.fn().mockReturnValue(true),

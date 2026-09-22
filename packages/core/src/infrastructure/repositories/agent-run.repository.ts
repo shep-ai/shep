@@ -11,6 +11,7 @@ import type {
   IAgentRunRepository,
   AgentRunPinnedConfigUpdate,
   AgentRunStatusUpdateOptions,
+  AgentRunStatusUpdates,
 } from '../../application/ports/output/agents/agent-run-repository.interface.js';
 import type { AgentRun, AgentRunStatus } from '../../domain/generated/output.js';
 import {
@@ -122,7 +123,7 @@ export class SQLiteAgentRunRepository implements IAgentRunRepository {
   async updateStatus(
     id: string,
     status: AgentRunStatus,
-    updates?: Partial<AgentRun>,
+    updates?: AgentRunStatusUpdates,
     options?: AgentRunStatusUpdateOptions
   ): Promise<boolean> {
     const setClauses: string[] = ['status = @status', 'updated_at = @updated_at'];

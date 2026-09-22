@@ -15,6 +15,7 @@
  * - bringing the branch in sync before the agent starts (optional, best-effort)
  * - resolving the worktree path, deriving it when the record has none
  * - building the per-feature options bag
+ * - re-arming a stopped run so the worker's boot claim accepts it
  * - the spawn call itself
  *
  * What it does NOT own: lifecycle transitions and gate decisions. Callers
@@ -23,13 +24,24 @@
 
 import { injectable, inject } from 'tsyringe';
 import type { Feature, AgentRun } from '../../../domain/generated/output.js';
-import { BuildMode } from '../../../domain/generated/output.js';
+import { AgentRunStatus, BuildMode } from '../../../domain/generated/output.js';
 import type { IFeatureRepository } from '../../ports/output/repositories/feature-repository.interface.js';
 import type { IAgentRunRepository } from '../../ports/output/agents/agent-run-repository.interface.js';
 import type { IFeatureAgentProcessService } from '../../ports/output/agents/feature-agent-process.interface.js';
 import type { IWorktreeService } from '../../ports/output/services/worktree-service.interface.js';
 import type { ISettingsRepository } from '../../ports/output/repositories/settings.repository.interface.js';
 import { SyncFeatureBranchUseCase } from './sync-feature-branch.use-case.js';
+
+/**
+ * Run statuses a restart re-arms to `pending`. The worker only claims a run
+ * that is pending or running (so a Stop before it boots is honoured); a feature
+ * stopped when it became Blocked, or whose run failed, is restarted through
+ * here with its existing run and must be handed back as `pending`.
+ */
+const RESTARTABLE_RUN_STATUSES: readonly AgentRunStatus[] = [
+  AgentRunStatus.interrupted,
+  AgentRunStatus.failed,
+];
 
 export interface SpawnFeatureAgentInput {
   /** The feature to start. Must already carry `agentRunId` and `specPath`. */
@@ -112,6 +124,17 @@ export class SpawnFeatureAgentUseCase {
         : this.worktreeService.getWorktreePath(feature.repositoryPath, feature.branch);
 
     const settings = await this.settingsRepository.load();
+
+    // The status read is only an early exit; the guard that decides is in the
+    // write's WHERE clause.
+    if (RESTARTABLE_RUN_STATUSES.includes(agentRun.status)) {
+      await this.runRepo.updateStatus(
+        agentRun.id,
+        AgentRunStatus.pending,
+        { updatedAt: new Date() },
+        { allowedFrom: RESTARTABLE_RUN_STATUSES }
+      );
+    }
 
     this.processService.spawn(
       feature.id,

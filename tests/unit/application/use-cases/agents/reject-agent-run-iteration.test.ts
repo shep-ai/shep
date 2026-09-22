@@ -55,22 +55,14 @@ vi.mock('@/infrastructure/services/agents/feature-agent/phase-timing-context.js'
 
 import { readFileSync } from 'node:fs';
 import yaml from 'js-yaml';
+import { RESUMABLE_RUN_STATUSES } from '@/application/use-cases/agents/resume-run-claim.js';
+import { createMockAgentRunRepository } from '../../../../helpers/agent-run-repository.fake.js';
 
 const mockReadFileSync = vi.mocked(readFileSync);
 const mockYamlLoad = vi.mocked(yaml.load);
 
 function createMockRunRepository() {
-  return {
-    create: vi.fn(),
-    findById: vi.fn(),
-    findByThreadId: vi.fn(),
-    findLatestByFeatureId: vi.fn().mockResolvedValue(null),
-    findByIds: vi.fn().mockResolvedValue([]),
-    updateStatus: vi.fn(),
-    findRunningByPid: vi.fn(),
-    list: vi.fn(),
-    delete: vi.fn(),
-  };
+  return createMockAgentRunRepository({ findById: vi.fn() });
 }
 
 function createMockProcessService() {
@@ -234,7 +226,8 @@ describe('RejectAgentRunUseCase (iteration support)', () => {
     expect(mockRunRepo.updateStatus).toHaveBeenCalledWith(
       'run-001',
       AgentRunStatus.running,
-      expect.objectContaining({ updatedAt: expect.any(Date) })
+      expect.objectContaining({ pid: null, updatedAt: expect.any(Date) }),
+      { allowedFrom: RESUMABLE_RUN_STATUSES }
     );
   });
 

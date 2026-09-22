@@ -77,6 +77,16 @@ content: |
   concurrent `shep start` port race, SW subscription counting, whole-file session-transcript
   parsing, worker-log rotation, and retry for spec-phase `executeNode`.
 
+  Found during implementation and also deferred: the CI *fix* call still runs with
+  `maxAttempts: 1` (retrying a half-applied fix needs its own design); the CLI `log-viewer.ts`
+  follow mode decodes each chunk with `toString()` (multi-byte split); the interactive executor
+  reports `input_tokens` without cache tokens; Codex/Copilot `execute()` still resolve captured
+  text when the process exits 0 without its terminal event.
+
+  Added during implementation: Stop and the worker's SIGTERM handler use the same guarded write,
+  Stop records `interrupted` before signalling, and Approve/Reject hand their claim back when the
+  resume worker fails to start.
+
   ## Dependencies
 
   None. Uses the existing `allowedFrom` conditional-update option on `IAgentRunRepository.updateStatus`.

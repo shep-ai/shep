@@ -2645,3 +2645,46 @@ session-tree sidebar) or the canvas viewport is inset so nothing is ever laid ou
 it. `pointer-events-none` answers "can I click through it", never "can I see through it" —
 and never check only the empty-canvas case, since the overlap appears exactly when the
 canvas is full.
+
+## A status only one writer guards is a status any writer can overturn
+
+Spec 116 audited shep against an external list of agent-harness bugs. The `allowedFrom` guard on
+`agent_runs.updateStatus` existed, but only the crash sweep used it. Every other writer — the
+worker's boot/heartbeat/terminal writes, Stop, Approve, Reject — wrote `WHERE id = ?`, so a Stop
+issued while the worker booted was overwritten by its first heartbeat, and two concurrent
+approvals each spawned a worker into one worktree.
+
+**Rules:**
+
+1. **Every status writer states the statuses it may leave.** The worker may write `running` only
+   from `pending`/`running` and a terminal status only from `running`; Stop only from a
+   non-terminal status; Approve/Reject only from a resumable one. The boolean the write returns
+   IS the claim — a worker whose boot claim fails exits before building its graph.
+2. **Record a stop before you signal.** Signalling first lets the dying worker's own write land
+   first, and then the stop looks like it failed.
+3. **A claim needs a release on the path that cannot finish.** A run claimed to `running` whose
+   worker fails to spawn has no owner; hand the claim back (guarded on `running`) and rethrow.
+
+## "It ended" is not "it answered" — for streams as much as for exit codes
+
+`StreamingExecutorProxy.execute()` only caught thrown errors, but subprocess executors report
+timeouts, kills and non-zero exits as an `error` stream event and then end — so every failed
+`shep run` stream was recorded as a completed run with `result: ''`. It also closed the shared
+channel after every node, silently dropping the events of every node after the first.
+
+**Rules:**
+
+1. The last `result`/`error` event decides a stream's outcome; a stream with neither was cut
+   short and rejects.
+2. A signal kill rejects even with partial output unless the CLI's terminal event (Codex
+   `turn.completed`, Claude/Cursor/Copilot `result`) was already seen.
+3. Whoever owns a channel's lifetime closes it once; a per-call helper must never close it.
+
+## An SSE comment is invisible to EventSource
+
+`': heartbeat\n\n'` keeps proxies from idling out a connection, but `EventSource` never
+dispatches comments to page code, so a client watchdog reset only by events tore down a healthy
+quiet stream every 60s — and each reconnect replayed the full message/question history because
+per-connection caches started empty. Send a named `heartbeat` event, seed per-connection caches
+silently on connect (sending only still-open state such as pending questions), and upsert by id
+on the client so a replay is idempotent.

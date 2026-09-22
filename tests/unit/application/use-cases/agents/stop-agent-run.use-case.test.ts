@@ -10,6 +10,10 @@ import type { IAgentRunRepository } from '@/application/ports/output/agents/agen
 import type { IPhaseTimingRepository } from '@/application/ports/output/agents/phase-timing-repository.interface.js';
 import type { IPhaseTimingContext } from '@/application/ports/output/services/phase-timing-context.interface.js';
 import type { AgentRun } from '@/domain/generated/output.js';
+import {
+  createFakeAgentRunRepository,
+  createMockAgentRunRepository,
+} from '../../../../helpers/agent-run-repository.fake.js';
 
 function makeAgentRun(overrides: Partial<AgentRun> = {}): AgentRun {
   const now = new Date().toISOString();
@@ -51,18 +55,7 @@ describe('StopAgentRunUseCase', () => {
   let mockPhaseTimingContext: IPhaseTimingContext;
 
   beforeEach(() => {
-    mockRepo = {
-      create: vi.fn().mockResolvedValue(undefined),
-      findById: vi.fn().mockResolvedValue(null),
-      findByThreadId: vi.fn().mockResolvedValue(null),
-      findLatestByFeatureId: vi.fn().mockResolvedValue(null),
-      findByIds: vi.fn().mockResolvedValue([]),
-      updateStatus: vi.fn().mockResolvedValue(undefined),
-      updatePinnedConfig: vi.fn().mockResolvedValue(undefined),
-      findRunningByPid: vi.fn().mockResolvedValue([]),
-      list: vi.fn().mockResolvedValue([]),
-      delete: vi.fn().mockResolvedValue(undefined),
-    };
+    mockRepo = createMockAgentRunRepository() as unknown as IAgentRunRepository;
     mockTimingRepo = createMockTimingRepo();
     mockPhaseTimingContext = createMockPhaseTimingContext();
 
@@ -101,7 +94,8 @@ describe('StopAgentRunUseCase', () => {
     expect(mockRepo.updateStatus).toHaveBeenCalledWith(
       'run-123',
       AgentRunStatus.interrupted,
-      expect.objectContaining({ error: expect.stringContaining('Stopped by user') })
+      expect.objectContaining({ error: expect.stringContaining('Stopped by user') }),
+      { allowedFrom: expect.not.arrayContaining([AgentRunStatus.completed]) }
     );
   });
 
@@ -123,7 +117,8 @@ describe('StopAgentRunUseCase', () => {
     expect(mockRepo.updateStatus).toHaveBeenCalledWith(
       'run-123',
       AgentRunStatus.interrupted,
-      expect.objectContaining({ error: 'Stopped by user' })
+      expect.objectContaining({ error: 'Stopped by user' }),
+      { allowedFrom: expect.not.arrayContaining([AgentRunStatus.completed]) }
     );
   });
 
@@ -142,7 +137,52 @@ describe('StopAgentRunUseCase', () => {
     expect(mockRepo.updateStatus).toHaveBeenCalledWith(
       'run-123',
       AgentRunStatus.interrupted,
-      expect.anything()
+      expect.anything(),
+      { allowedFrom: expect.not.arrayContaining([AgentRunStatus.completed]) }
     );
+  });
+
+  describe('guarded write (spec 116)', () => {
+    it('does not report a run that finished during the stop as stopped', async () => {
+      const repo = createFakeAgentRunRepository([
+        makeAgentRun({ status: AgentRunStatus.completed, pid: undefined }),
+      ]);
+      // The read still sees the run running; it completes before the write.
+      repo.findById.mockResolvedValueOnce(makeAgentRun({ pid: undefined }));
+      const stop = new StopAgentRunUseCase(
+        repo as unknown as IAgentRunRepository,
+        mockTimingRepo,
+        mockPhaseTimingContext
+      );
+
+      const result = await stop.execute('run-123');
+
+      expect(result.stopped).toBe(false);
+      expect(result.reason).toContain('completed');
+      expect(repo.peek('run-123')?.status).toBe(AgentRunStatus.completed);
+    });
+
+    it('records interrupted before signalling the worker', async () => {
+      const order: string[] = [];
+      vi.mocked(mockRepo.findById).mockResolvedValue(makeAgentRun({ pid: 4242 }));
+      vi.mocked(mockRepo.updateStatus).mockImplementation(async () => {
+        order.push('write');
+        return true;
+      });
+      const killSpy = vi.spyOn(process, 'kill').mockImplementation((_pid, signal) => {
+        if (signal === 'SIGTERM') order.push('signal');
+        return true;
+      });
+
+      try {
+        await useCase.execute('run-123');
+      } finally {
+        killSpy.mockRestore();
+      }
+
+      // The worker's own writes are refused once the run is interrupted, so the
+      // stop must land before the worker is told to exit.
+      expect(order).toEqual(['write', 'signal']);
+    });
   });
 });

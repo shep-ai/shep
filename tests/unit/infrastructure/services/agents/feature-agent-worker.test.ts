@@ -12,11 +12,17 @@ import 'reflect-metadata';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import {
   AgentRunStatus,
+  SdlcLifecycle,
   SecurityMode,
   SecurityActionCategory,
   SecurityActionDisposition,
 } from '@/domain/generated/output.js';
 import type { AgentRun } from '@/domain/generated/output.js';
+import { createFakeAgentRunRepository } from '../../../../helpers/agent-run-repository.fake.js';
+import {
+  WORKER_CLAIMABLE_STATUSES,
+  WORKER_OWNED_STATUSES,
+} from '@/infrastructure/services/agents/feature-agent/worker-run-status.js';
 
 // Use vi.hoisted so mock fns are available when vi.mock factories run
 const {
@@ -71,32 +77,25 @@ import {
   runWorker,
 } from '@/infrastructure/services/agents/feature-agent/feature-agent-worker.js';
 
-function makeMockRunRepository() {
-  const stored = new Map<string, AgentRun>();
-  return {
-    create: vi.fn().mockImplementation(async (run: AgentRun) => {
-      stored.set(run.id, { ...run });
-    }),
-    findById: vi.fn().mockImplementation(async (id: string) => {
-      return stored.get(id) ?? null;
-    }),
-    findByThreadId: vi.fn().mockResolvedValue(null),
-    findLatestByFeatureId: vi.fn().mockResolvedValue(null),
-    findByIds: vi.fn().mockResolvedValue([]),
-    updateStatus: vi
-      .fn()
-      .mockImplementation(
-        async (id: string, status: AgentRunStatus, updates?: Partial<AgentRun>) => {
-          const existing = stored.get(id);
-          if (existing) {
-            stored.set(id, { ...existing, status, ...updates });
-          }
-        }
-      ),
-    findRunningByPid: vi.fn().mockResolvedValue([]),
-    list: vi.fn().mockResolvedValue([]),
-    delete: vi.fn().mockResolvedValue(undefined),
-  };
+/**
+ * The run the worker boots against. The fake honours `allowedFrom` exactly as
+ * the SQLite repository does, so a status guard is exercised rather than
+ * silently accepted by a spy.
+ */
+function makeMockRunRepository(status: AgentRunStatus = AgentRunStatus.pending) {
+  return createFakeAgentRunRepository([
+    {
+      id: 'run-1',
+      agentType: 'claude-code' as AgentRun['agentType'],
+      agentName: 'feature-agent',
+      status,
+      prompt: 'test',
+      threadId: 'thread-1',
+      featureId: 'feat-1',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    },
+  ]);
 }
 
 function makeMockExecutorProvider() {
@@ -446,6 +445,11 @@ describe('runWorker', () => {
       if (key === 'IAgentExecutorProvider') return mockExecutorProvider;
       if (key === 'FeatureAgentLifecyclePublisher') return mockLifecyclePublisher;
       if (key === 'FeatureAgentGateQuestionPublisher') return mockGateQuestionPublisher;
+      if (key === 'FeatureAgentSupervisorGateEvaluator') {
+        return {
+          evaluateForGate: vi.fn().mockResolvedValue({ autoResolved: false, evaluated: false }),
+        };
+      }
       if (key === 'IAgentCheckpointService') {
         return {
           getFeatureCheckpointPath: (checkpointId: string) =>
@@ -551,7 +555,8 @@ describe('runWorker', () => {
       AgentRunStatus.running,
       expect.objectContaining({
         pid: process.pid,
-      })
+      }),
+      { allowedFrom: WORKER_CLAIMABLE_STATUSES }
     );
   });
 
@@ -612,7 +617,8 @@ describe('runWorker', () => {
       AgentRunStatus.completed,
       expect.objectContaining({
         completedAt: expect.any(Date),
-      })
+      }),
+      { allowedFrom: WORKER_OWNED_STATUSES }
     );
   });
 
@@ -632,7 +638,8 @@ describe('runWorker', () => {
       expect.objectContaining({
         error: 'Graph execution failed',
         completedAt: expect.any(Date),
-      })
+      }),
+      { allowedFrom: WORKER_OWNED_STATUSES }
     );
   });
 
@@ -681,7 +688,8 @@ describe('runWorker', () => {
       AgentRunStatus.waitingApproval,
       expect.objectContaining({
         updatedAt: expect.any(Date),
-      })
+      }),
+      { allowedFrom: WORKER_OWNED_STATUSES }
     );
   });
 
@@ -775,7 +783,8 @@ describe('runWorker', () => {
       AgentRunStatus.failed,
       expect.objectContaining({
         error: 'ENOENT: no such file or directory',
-      })
+      }),
+      { allowedFrom: WORKER_OWNED_STATUSES }
     );
   });
 
@@ -855,7 +864,8 @@ describe('runWorker', () => {
       AgentRunStatus.completed,
       expect.objectContaining({
         completedAt: expect.any(Date),
-      })
+      }),
+      { allowedFrom: WORKER_OWNED_STATUSES }
     );
   });
 
@@ -979,5 +989,92 @@ describe('runWorker', () => {
     const invokeArg = mockGraphInvoke.mock.calls[0][0];
     expect(invokeArg.securityMode).toBeUndefined();
     expect(invokeArg.securityActionDispositions).toBeUndefined();
+  });
+
+  /**
+   * Stop writes `interrupted`; when the run has no PID yet it signals nothing.
+   * The worker used to write `running` unconditionally at boot, in every
+   * heartbeat and at the end, so a Stop was silently undone.
+   */
+  describe('run ownership (Stop is not clobbered)', () => {
+    const baseArgs = { featureId: 'feat-1', runId: 'run-1', repo: '/repo', specDir: '/specs' };
+
+    it('does not build or invoke the graph when the run was stopped before boot', async () => {
+      mockRunRepo = makeMockRunRepository(AgentRunStatus.interrupted);
+
+      await runWorker(baseArgs);
+
+      expect(mockCreateFeatureAgentGraph).not.toHaveBeenCalled();
+      expect(mockGraphInvoke).not.toHaveBeenCalled();
+      expect(mockLifecyclePublisher.publishStarted).not.toHaveBeenCalled();
+      expect(mockRunRepo.peek('run-1')?.status).toBe(AgentRunStatus.interrupted);
+      expect(mockRunRepo.peek('run-1')?.pid).toBeUndefined();
+    });
+
+    it('leaves the run interrupted when Stop lands while the graph is running', async () => {
+      mockGraphInvoke.mockImplementation(async () => {
+        const current = mockRunRepo.peek('run-1')!;
+        mockRunRepo.seed({ ...current, status: AgentRunStatus.interrupted });
+        return { currentNode: 'implement', messages: ['[implement] done'], error: null };
+      });
+
+      await runWorker(baseArgs);
+
+      expect(mockRunRepo.peek('run-1')?.status).toBe(AgentRunStatus.interrupted);
+      expect(mockLifecyclePublisher.publishCompleted).not.toHaveBeenCalled();
+    });
+
+    it('does not open an approval gate on a run that was stopped mid-run', async () => {
+      mockGraphInvoke.mockImplementation(async () => {
+        const current = mockRunRepo.peek('run-1')!;
+        mockRunRepo.seed({ ...current, status: AgentRunStatus.interrupted });
+        return { messages: [], error: null, __interrupt__: [{ value: { node: 'requirements' } }] };
+      });
+
+      await runWorker(baseArgs);
+
+      expect(mockRunRepo.peek('run-1')?.status).toBe(AgentRunStatus.interrupted);
+      expect(mockGateQuestionPublisher.publishWaitingApproval).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('failure path', () => {
+    it('still resets the lifecycle and logs the failure when the failed-status write throws', async () => {
+      const featureRepo = {
+        findById: vi
+          .fn()
+          .mockResolvedValue({ id: 'feat-1', lifecycle: SdlcLifecycle.Implementation }),
+        update: vi.fn().mockResolvedValue(undefined),
+      };
+      const baseResolve = mockResolve.getMockImplementation()!;
+      mockResolve.mockImplementation((token: unknown) =>
+        token === 'IFeatureRepository' ? featureRepo : baseResolve(token)
+      );
+      const guarded = mockRunRepo.updateStatus.getMockImplementation()!;
+      mockRunRepo.updateStatus.mockImplementation(async (...args: unknown[]) => {
+        if (args[1] === AgentRunStatus.failed) throw new Error('SQLITE_BUSY: database is locked');
+        return guarded(...args);
+      });
+      mockGraphInvoke.mockRejectedValue(new Error('Graph execution failed'));
+      const written: string[] = [];
+      const writeSpy = vi.spyOn(process.stdout, 'write').mockImplementation((chunk) => {
+        written.push(String(chunk));
+        return true;
+      });
+
+      try {
+        await expect(
+          runWorker({ featureId: 'feat-1', runId: 'run-1', repo: '/repo', specDir: '/specs' })
+        ).resolves.toBeUndefined();
+      } finally {
+        writeSpy.mockRestore();
+      }
+
+      expect(featureRepo.update).toHaveBeenCalledWith(
+        expect.objectContaining({ lifecycle: SdlcLifecycle.Started })
+      );
+      expect(written.some((line) => line.includes('SQLITE_BUSY'))).toBe(true);
+      expect(written.some((line) => line.includes('Run marked as failed'))).toBe(true);
+    });
   });
 });

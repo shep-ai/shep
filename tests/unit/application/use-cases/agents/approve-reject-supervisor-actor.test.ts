@@ -23,6 +23,8 @@ import 'reflect-metadata';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 
 import { ApproveAgentRunUseCase } from '@/application/use-cases/agents/approve-agent-run.use-case.js';
+import { RESUMABLE_RUN_STATUSES } from '@/application/use-cases/agents/resume-run-claim.js';
+import { createMockAgentRunRepository } from '../../../../helpers/agent-run-repository.fake.js';
 import { RejectAgentRunUseCase } from '@/application/use-cases/agents/reject-agent-run.use-case.js';
 import { AgentRunStatus, type ActivityEntry, type AgentRun } from '@/domain/generated/output.js';
 import type { IActivityLogRepository } from '@/application/ports/output/repositories/activity-log-repository.interface.js';
@@ -73,16 +75,7 @@ function fakePhaseTimingContext(): IPhaseTimingContext {
 }
 
 function makeRunRepo(run: AgentRun) {
-  return {
-    create: vi.fn(),
-    findById: vi.fn().mockResolvedValue(run),
-    findByThreadId: vi.fn(),
-    findLatestByFeatureId: vi.fn().mockResolvedValue(null),
-    updateStatus: vi.fn(),
-    findRunningByPid: vi.fn(),
-    list: vi.fn(),
-    delete: vi.fn(),
-  };
+  return createMockAgentRunRepository({ findById: vi.fn().mockResolvedValue(run) });
 }
 
 function makeProcessService() {
@@ -219,7 +212,10 @@ describe('ApproveAgentRunUseCase — supervisor actor', () => {
     expect(runRepo.updateStatus).toHaveBeenCalledWith(
       'run-1',
       AgentRunStatus.running,
-      expect.any(Object)
+      // The claim: waiting -> running only from a resumable status, clearing
+      // the previous worker's PID in the same statement.
+      expect.objectContaining({ pid: null, updatedAt: expect.any(Date) }),
+      { allowedFrom: RESUMABLE_RUN_STATUSES }
     );
     expect(proc.spawn).toHaveBeenCalled();
     expect(activityLog.entries).toHaveLength(2);

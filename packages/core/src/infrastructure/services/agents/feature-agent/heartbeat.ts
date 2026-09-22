@@ -7,9 +7,9 @@
  */
 
 import type { IAgentRunRepository } from '@/application/ports/output/agents/agent-run-repository.interface.js';
-import { AgentRunStatus } from '@/domain/generated/output.js';
 import { ConsoleLogger } from '../../logging/console-logger.js';
 import { TelemetryFailureCounter } from './telemetry-failure-counter.js';
+import { writeRunHeartbeat } from './worker-run-status.js';
 
 /**
  * One counter per worker process — the worker runs exactly one feature, so
@@ -40,13 +40,13 @@ export function reportNodeStart(nodeName: string): void {
   const runId = contextRunId;
   const repo = contextRepository;
 
-  // Fire-and-forget — don't await in the graph's hot path
-  repo
-    .updateStatus(runId, AgentRunStatus.running, {
-      result: `node:${nodeName}`,
-      lastHeartbeat: new Date(),
-      updatedAt: new Date(),
-    })
+  // Fire-and-forget — don't await in the graph's hot path. Guarded so a node
+  // that starts after a Stop cannot turn `interrupted` back into `running`.
+  writeRunHeartbeat(repo, runId, {
+    result: `node:${nodeName}`,
+    lastHeartbeat: new Date(),
+    updatedAt: new Date(),
+  })
     .then(() => heartbeatFailures.recordSuccess())
     .catch((error: unknown) => heartbeatFailures.recordFailure(error));
 }

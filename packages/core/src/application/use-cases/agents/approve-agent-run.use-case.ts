@@ -33,19 +33,30 @@ import type { IFeatureRepository } from '../../ports/output/repositories/feature
 import type { IWorktreePathProvider } from '../../ports/output/services/worktree-path-provider.interface.js';
 import type { INodeHelpers } from '../../ports/output/services/node-helpers.interface.js';
 import type { ISettingsRepository } from '../../ports/output/repositories/settings.repository.interface.js';
-import { AgentRunStatus } from '../../../domain/generated/output.js';
 import type { ActivityEntry, PrdApprovalPayload } from '../../../domain/generated/output.js';
 import {
   SUPERVISOR_ACTOR_NAMESPACE_SUPERVISOR,
   SUPERVISOR_ACTOR_NAMESPACE_USER,
   type SupervisorActor,
 } from '../../../domain/value-objects/supervisor-actor.js';
+import {
+  RESUMABLE_RUN_STATUSES,
+  claimRunForResume,
+  startClaimedResumeWorker,
+} from './resume-run-claim.js';
 
 const GATE_DECISION_FIELD = 'gate.approval';
 
 function isGateDecisionField(field: string | undefined): boolean {
   if (!field) return false;
   return field === 'gate.approval' || field === 'gate.rejection';
+}
+
+function notApprovable(status: string): { approved: false; reason: string } {
+  return {
+    approved: false,
+    reason: `Agent run is not in an approvable state (status: ${status})`,
+  };
 }
 
 @injectable()
@@ -89,20 +100,23 @@ export class ApproveAgentRunUseCase {
       }
     }
 
-    const APPROVABLE_STATUSES = new Set([
-      AgentRunStatus.waitingApproval,
-      AgentRunStatus.failed,
-      AgentRunStatus.interrupted,
-    ]);
-    if (!APPROVABLE_STATUSES.has(run.status)) {
-      return {
-        approved: false,
-        reason: `Agent run is not in an approvable state (status: ${run.status})`,
-      };
+    // Early exit only — the claim below is what decides.
+    if (!RESUMABLE_RUN_STATUSES.includes(run.status)) {
+      return notApprovable(run.status);
     }
 
     // Look up the feature to get specPath
     const feature = run.featureId ? await this.featureRepository.findById(run.featureId) : null;
+
+    // Claim the run before any side effect: of two concurrent approvals (or an
+    // approve racing a reject) only the one whose write changed the row goes on
+    // to touch spec.yaml and spawn a worker.
+    const now = new Date();
+    const claimed = await claimRunForResume(this.agentRunRepository, id, now);
+    if (!claimed) {
+      const current = await this.agentRunRepository.findById(id);
+      return notApprovable(current?.status ?? run.status);
+    }
 
     // Write updated selections to spec.yaml if changedSelections provided
     if (payload?.changedSelections && payload.changedSelections.length > 0 && feature?.specPath) {
@@ -135,11 +149,6 @@ export class ApproveAgentRunUseCase {
       }
     }
 
-    const now = new Date();
-    await this.agentRunRepository.updateStatus(id, AgentRunStatus.running, {
-      updatedAt: now,
-    });
-
     // Compute and record approval wait duration
     try {
       const timings = await this.phaseTimingRepository.findByRunId(id);
@@ -166,30 +175,32 @@ export class ApproveAgentRunUseCase {
         ? this.worktreePaths.getWorktreePath(feature.repositoryPath, feature.branch)
         : undefined);
 
-    this.processService.spawn(
-      run.featureId ?? '',
-      id,
-      feature?.repositoryPath ?? run.repositoryPath ?? '',
-      feature?.specPath ?? '',
-      worktreePath,
-      {
-        resume: true,
-        approvalGates: run.approvalGates,
-        threadId: run.threadId,
-        resumeFromInterrupt: true,
-        push: feature?.push ?? false,
-        openPr: feature?.openPr ?? false,
-        forkAndPr: feature?.forkAndPr ?? false,
-        commitSpecs: feature?.commitSpecs ?? true,
-        ciWatchEnabled: feature?.ciWatchEnabled ?? true,
-        enableEvidence: feature?.enableEvidence ?? false,
-        commitEvidence: feature?.commitEvidence ?? false,
-        ...(payload ? { resumePayload: JSON.stringify(payload) } : {}),
-        agentType: run.agentType,
-        ...(run.modelId ? { model: run.modelId } : {}),
-        ...(feature?.fast ? { fast: true } : {}),
-        securityMode: (await this.settingsRepository.load())?.security?.mode,
-      }
+    await startClaimedResumeWorker(this.agentRunRepository, id, run.status, async () =>
+      this.processService.spawn(
+        run.featureId ?? '',
+        id,
+        feature?.repositoryPath ?? run.repositoryPath ?? '',
+        feature?.specPath ?? '',
+        worktreePath,
+        {
+          resume: true,
+          approvalGates: run.approvalGates,
+          threadId: run.threadId,
+          resumeFromInterrupt: true,
+          push: feature?.push ?? false,
+          openPr: feature?.openPr ?? false,
+          forkAndPr: feature?.forkAndPr ?? false,
+          commitSpecs: feature?.commitSpecs ?? true,
+          ciWatchEnabled: feature?.ciWatchEnabled ?? true,
+          enableEvidence: feature?.enableEvidence ?? false,
+          commitEvidence: feature?.commitEvidence ?? false,
+          ...(payload ? { resumePayload: JSON.stringify(payload) } : {}),
+          agentType: run.agentType,
+          ...(run.modelId ? { model: run.modelId } : {}),
+          ...(feature?.fast ? { fast: true } : {}),
+          securityMode: (await this.settingsRepository.load())?.security?.mode,
+        }
+      )
     );
 
     if (actor) {

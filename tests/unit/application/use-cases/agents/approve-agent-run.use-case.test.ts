@@ -14,6 +14,8 @@ import type { AgentRun } from '@/domain/generated/output.js';
 import { ApproveAgentRunUseCase } from '@/application/use-cases/agents/approve-agent-run.use-case.js';
 import type { IWorktreePathProvider } from '@/application/ports/output/services/worktree-path-provider.interface.js';
 import type { INodeHelpers } from '@/application/ports/output/services/node-helpers.interface.js';
+import { RESUMABLE_RUN_STATUSES } from '@/application/use-cases/agents/resume-run-claim.js';
+import { createMockAgentRunRepository } from '../../../../helpers/agent-run-repository.fake.js';
 
 function createFakeWorktreePaths(): IWorktreePathProvider {
   return {
@@ -29,17 +31,7 @@ function createFakeNodeHelpers(): INodeHelpers {
 }
 
 function createMockRunRepository() {
-  return {
-    create: vi.fn(),
-    findById: vi.fn(),
-    findByThreadId: vi.fn(),
-    findLatestByFeatureId: vi.fn().mockResolvedValue(null),
-    findByIds: vi.fn().mockResolvedValue([]),
-    updateStatus: vi.fn(),
-    findRunningByPid: vi.fn(),
-    list: vi.fn(),
-    delete: vi.fn(),
-  };
+  return createMockAgentRunRepository({ findById: vi.fn() });
 }
 
 function createMockProcessService() {
@@ -129,9 +121,10 @@ describe('ApproveAgentRunUseCase', () => {
     expect(mockRunRepo.updateStatus).toHaveBeenCalledWith(
       'run-001',
       AgentRunStatus.running,
-      expect.objectContaining({
-        updatedAt: expect.any(Date),
-      })
+      // The claim: waiting -> running only from a resumable status, clearing
+      // the previous worker's PID in the same statement.
+      expect.objectContaining({ pid: null, updatedAt: expect.any(Date) }),
+      { allowedFrom: RESUMABLE_RUN_STATUSES }
     );
     const wt = '/test/repo/.shep/wt/feat-branch';
     expect(mockProcessService.spawn).toHaveBeenCalledWith(

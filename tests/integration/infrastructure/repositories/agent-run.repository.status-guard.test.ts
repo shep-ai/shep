@@ -21,6 +21,11 @@ import { removeDirWithRetry } from '../../../helpers/remove-dir.helper.js';
 import { runSQLiteMigrations } from '@/infrastructure/persistence/sqlite/migrations.js';
 import { SQLiteAgentRunRepository } from '@/infrastructure/repositories/agent-run.repository.js';
 import { AgentRunStatus, AgentType } from '@/domain/generated/output.js';
+import {
+  claimRunForWorker,
+  finishRun,
+} from '@/infrastructure/services/agents/feature-agent/worker-run-status.js';
+import { claimRunForResume } from '@/application/use-cases/agents/resume-run-claim.js';
 import type { AgentRun } from '@/domain/generated/output.js';
 
 const RUN_ID = 'run-1';
@@ -130,5 +135,51 @@ describe('SQLiteAgentRunRepository.updateStatus — state guard', () => {
 
     expect(wrote).toBe(true);
     expect((await daemon.findById(RUN_ID))?.status).toBe(AgentRunStatus.running);
+  });
+
+  it('clears the pid in the same statement when the update passes pid: null', async () => {
+    const wrote = await daemon.updateStatus(RUN_ID, AgentRunStatus.running, { pid: null });
+
+    expect(wrote).toBe(true);
+    expect((await worker.findById(RUN_ID))?.pid).toBeUndefined();
+  });
+
+  describe('worker ownership (spec 116)', () => {
+    it('refuses the worker boot claim once Stop marked the run interrupted', async () => {
+      await worker.updateStatus(RUN_ID, AgentRunStatus.pending, { pid: null });
+      await daemon.updateStatus(RUN_ID, AgentRunStatus.interrupted, { error: 'Stopped by user' });
+
+      const claimed = await claimRunForWorker(worker, RUN_ID, 7777, new Date());
+
+      expect(claimed).toBe(false);
+      const run = await daemon.findById(RUN_ID);
+      expect(run?.status).toBe(AgentRunStatus.interrupted);
+      expect(run?.pid).toBeUndefined();
+    });
+
+    it('does not let a completed write overwrite a Stop', async () => {
+      await daemon.updateStatus(RUN_ID, AgentRunStatus.interrupted, { error: 'Stopped by user' });
+
+      const wrote = await finishRun(worker, RUN_ID, AgentRunStatus.completed, {
+        completedAt: new Date(),
+      });
+
+      expect(wrote).toBe(false);
+      expect((await daemon.findById(RUN_ID))?.status).toBe(AgentRunStatus.interrupted);
+    });
+
+    it('lets exactly one of two racing resume claims win and clears the old pid', async () => {
+      await worker.updateStatus(RUN_ID, AgentRunStatus.waitingApproval);
+
+      const results = await Promise.all([
+        claimRunForResume(worker, RUN_ID, new Date()),
+        claimRunForResume(daemon, RUN_ID, new Date()),
+      ]);
+
+      expect(results.filter(Boolean)).toHaveLength(1);
+      const run = await daemon.findById(RUN_ID);
+      expect(run?.status).toBe(AgentRunStatus.running);
+      expect(run?.pid).toBeUndefined();
+    });
   });
 });

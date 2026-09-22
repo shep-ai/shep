@@ -22,6 +22,8 @@ import type { IWorktreePathProvider } from '@/application/ports/output/services/
 import type { INodeHelpers } from '@/application/ports/output/services/node-helpers.interface.js';
 import type { IPhaseTimingContext } from '@/application/ports/output/services/phase-timing-context.interface.js';
 import { NodeHelpersAdapter } from '@/infrastructure/services/agents/feature-agent/nodes/node-helpers.adapter.js';
+import { RESUMABLE_RUN_STATUSES } from '@/application/use-cases/agents/resume-run-claim.js';
+import { createMockAgentRunRepository } from '../helpers/agent-run-repository.fake.js';
 
 function createFakeWorktreePaths(): IWorktreePathProvider {
   return {
@@ -53,16 +55,7 @@ vi.mock('@/infrastructure/services/settings.service.js', () => ({
 // --- Mock Factories ---
 
 function createMockRunRepository() {
-  return {
-    create: vi.fn(),
-    findById: vi.fn(),
-    findByThreadId: vi.fn(),
-    findByIds: vi.fn().mockResolvedValue([]),
-    updateStatus: vi.fn(),
-    findRunningByPid: vi.fn(),
-    list: vi.fn(),
-    delete: vi.fn(),
-  };
+  return createMockAgentRunRepository({ findById: vi.fn() });
 }
 
 function createMockProcessService() {
@@ -219,7 +212,8 @@ describe('PRD Approval Iterations (Integration)', () => {
       expect(mockRunRepo.updateStatus).toHaveBeenCalledWith(
         'run-001',
         AgentRunStatus.running,
-        expect.objectContaining({ updatedAt: expect.any(Date) })
+        expect.objectContaining({ pid: null, updatedAt: expect.any(Date) }),
+        { allowedFrom: RESUMABLE_RUN_STATUSES }
       );
 
       // Verify worker spawned with resumeFromInterrupt and rejection payload

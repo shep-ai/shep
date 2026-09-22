@@ -9,7 +9,7 @@ tasks:
   title: StreamingExecutorProxy reports failed and truncated streams
   description: execute() rejects on an error event or when no result event arrived; the shared channel
     is closed once by AgentRunnerService, not after every node call.
-  state: Todo
+  state: Done
   dependencies: []
   acceptanceCriteria:
   - error event -> execute() rejects with its content
@@ -30,7 +30,7 @@ tasks:
   title: Subprocess executors reject signal kills and missing terminal events
   description: A signal kill rejects even with partial output (codex, cursor, copilot, kimi, cline); Claude
     exit 0 with no result event rejects.
-  state: Todo
+  state: Done
   dependencies: []
   acceptanceCriteria:
   - 'codex/cursor/copilot/kimi/cline: close(null,''SIGKILL'') after partial text rejects naming the signal'
@@ -50,7 +50,7 @@ tasks:
   title: Max-turns and error results fail in stream mode
   description: Claude executeStream emits an error for error_max_turns / is_error results; cursor honours
     is_error; AI SDK stream rejects on finishReason length/content-filter/error.
-  state: Todo
+  state: Done
   dependencies: []
   acceptanceCriteria:
   - claude stream error_max_turns -> error event, no result event
@@ -69,7 +69,7 @@ tasks:
   title: Timeouts name their budget and upstream fetches are bounded
   description: Timeout errors keep the 'Agent execution timed out' prefix and append the budget; AI SDK
     TimeoutError classifies as timeout; model-catalog fetches pass AbortSignal.timeout.
-  state: Todo
+  state: Done
   dependencies: []
   acceptanceCriteria:
   - message contains the timeout in seconds
@@ -90,7 +90,7 @@ tasks:
   title: Worker status writes cannot clobber Stop
   description: Boot, heartbeat and node-start writes of running use allowedFrom [pending, running]; terminal
     writes use allowedFrom [running]; a refused boot claim exits before the graph runs.
-  state: Todo
+  state: Done
   dependencies: []
   acceptanceCriteria:
   - run interrupted before boot -> worker does not invoke the graph
@@ -110,7 +110,7 @@ tasks:
   phaseId: phase-2
   title: Approve and Reject claim the run atomically
   description: The waitingApproval -> running transition is a conditional update; the loser does not spawn.
-  state: Todo
+  state: Done
   dependencies: []
   acceptanceCriteria:
   - two concurrent approves -> spawn called once
@@ -129,7 +129,7 @@ tasks:
   title: Worker failure path survives a failed status write
   description: A throw from the failed-status write is logged and the lifecycle reset, run:failed event
     and log line still run.
-  state: Todo
+  state: Done
   dependencies: []
   acceptanceCriteria:
   - updateStatus(failed) throwing -> lifecycle still reset and failure logged
@@ -146,7 +146,7 @@ tasks:
   title: CI watch gets a real retry budget
   description: The CI watch call uses the default retry budget so one transient executor error neither
     burns a CI-fix attempt nor ends the merge.
-  state: Todo
+  state: Done
   dependencies: []
   acceptanceCriteria:
   - one transient failure then success -> CI status from the second call
@@ -162,7 +162,7 @@ tasks:
   phaseId: phase-2
   title: Usage totals count cached tokens once
   description: totalTokens = input + output when input already includes cache tokens.
-  state: Todo
+  state: Done
   dependencies: []
   acceptanceCriteria:
   - input 100 (incl. 60 cache read) + output 10 -> total 110
@@ -179,7 +179,7 @@ tasks:
   title: Agent-event SSE connections do not replay history
   description: Message, question and decision caches are seeded silently on connect; only later changes
     are emitted.
-  state: Todo
+  state: Done
   dependencies: []
   acceptanceCriteria:
   - existing rows at connect -> no events
@@ -198,7 +198,7 @@ tasks:
   title: Poll loop does not leak abort listeners and heartbeat is observable
   description: The abort listener is removed when the tick timer fires; the server sends a named heartbeat
     event and the direct client resets its watchdog on it.
-  state: Todo
+  state: Done
   dependencies: []
   acceptanceCriteria:
   - N ticks -> listener count unchanged
@@ -216,7 +216,7 @@ tasks:
   phaseId: phase-3
   title: Feature-log tail reads only appended bytes
   description: Track a byte offset and read from it; non-ASCII logs stop re-reading the whole file.
-  state: Todo
+  state: Done
   dependencies: []
   acceptanceCriteria:
   - 'non-ASCII log: second tick with no growth -> no read, no event'

@@ -11,6 +11,22 @@ import type { IPhaseTimingRepository } from '../../ports/output/agents/phase-tim
 import type { IPhaseTimingContext } from '../../ports/output/services/phase-timing-context.interface.js';
 import { AgentRunStatus } from '../../../domain/generated/output.js';
 
+const TERMINAL_STATUSES: ReadonlySet<AgentRunStatus> = new Set([
+  AgentRunStatus.completed,
+  AgentRunStatus.failed,
+  AgentRunStatus.interrupted,
+  AgentRunStatus.cancelled,
+]);
+
+/**
+ * Statuses a Stop may move to `interrupted`. The condition is part of the
+ * write, so a run that finished between the read and the write keeps its real
+ * outcome instead of being reported as stopped.
+ */
+const STOPPABLE_STATUSES: readonly AgentRunStatus[] = Object.values(AgentRunStatus).filter(
+  (status) => !TERMINAL_STATUSES.has(status)
+);
+
 @injectable()
 export class StopAgentRunUseCase {
   constructor(
@@ -28,25 +44,20 @@ export class StopAgentRunUseCase {
       return { stopped: false, reason: 'Agent run not found' };
     }
 
-    const terminalStatuses = new Set([
-      AgentRunStatus.completed,
-      AgentRunStatus.failed,
-      AgentRunStatus.interrupted,
-      AgentRunStatus.cancelled,
-    ]);
-
-    if (terminalStatuses.has(run.status)) {
+    if (TERMINAL_STATUSES.has(run.status)) {
       return { stopped: false, reason: `Agent run already in terminal state: ${run.status}` };
     }
 
     if (!run.pid) {
       // No PID — just mark as interrupted (resumable)
       const now = new Date();
-      await this.agentRunRepository.updateStatus(id, AgentRunStatus.interrupted, {
-        error: 'Stopped by user (no PID)',
-        completedAt: now,
-        updatedAt: now,
-      });
+      const marked = await this.agentRunRepository.updateStatus(
+        id,
+        AgentRunStatus.interrupted,
+        { error: 'Stopped by user (no PID)', completedAt: now, updatedAt: now },
+        { allowedFrom: STOPPABLE_STATUSES }
+      );
+      if (!marked) return this.alreadyFinished(id);
       await this.phaseTimingContext.recordLifecycleEvent(
         'run:stopped',
         id,
@@ -64,6 +75,18 @@ export class StopAgentRunUseCase {
       alive = false;
     }
 
+    // Record the stop BEFORE signalling. The worker's own writes (heartbeat,
+    // completion, its SIGTERM handler) are only allowed from pending/running,
+    // so once this lands nothing the dying worker writes can overturn it.
+    const now = new Date();
+    const marked = await this.agentRunRepository.updateStatus(
+      id,
+      AgentRunStatus.interrupted,
+      { error: 'Stopped by user', completedAt: now, updatedAt: now },
+      { allowedFrom: STOPPABLE_STATUSES }
+    );
+    if (!marked) return this.alreadyFinished(id);
+
     if (alive) {
       // Send SIGTERM for graceful shutdown
       try {
@@ -72,13 +95,6 @@ export class StopAgentRunUseCase {
         // Process may have died between check and signal
       }
     }
-
-    const now = new Date();
-    await this.agentRunRepository.updateStatus(id, AgentRunStatus.interrupted, {
-      error: 'Stopped by user',
-      completedAt: now,
-      updatedAt: now,
-    });
 
     // For alive processes, the worker's SIGTERM handler records run:stopped.
     // For dead processes, record it here since the worker can't.
@@ -95,6 +111,14 @@ export class StopAgentRunUseCase {
       reason: alive
         ? `Sent SIGTERM to PID ${run.pid}`
         : `Process already dead, marked as interrupted`,
+    };
+  }
+
+  private async alreadyFinished(id: string): Promise<{ stopped: false; reason: string }> {
+    const current = await this.agentRunRepository.findById(id);
+    return {
+      stopped: false,
+      reason: `Agent run already in terminal state: ${current?.status ?? 'unknown'}`,
     };
   }
 }

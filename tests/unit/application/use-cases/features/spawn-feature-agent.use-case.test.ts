@@ -15,6 +15,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { SpawnFeatureAgentUseCase } from '@/application/use-cases/features/spawn-feature-agent.use-case.js';
 import { SdlcLifecycle, AgentRunStatus, BuildMode } from '@/domain/generated/output.js';
 import type { Feature, AgentRun } from '@/domain/generated/output.js';
+import { createFakeAgentRunRepository } from '../../../../helpers/agent-run-repository.fake.js';
 
 function createTestFeature(overrides?: Partial<Feature>): Feature {
   return {
@@ -247,6 +248,53 @@ describe('SpawnFeatureAgentUseCase', () => {
 
       expect(result.spawned).toBe(false);
       expect(processService.spawn).not.toHaveBeenCalled();
+    });
+  });
+
+  /**
+   * The worker only claims a run that is pending or running, so a Stop before
+   * boot is honoured. A feature stopped because it became Blocked keeps its
+   * interrupted run and is restarted here on unblock — that restart has to
+   * re-arm the run, or the worker would refuse it.
+   */
+  describe('restarting a stopped run', () => {
+    it.each([AgentRunStatus.interrupted, AgentRunStatus.failed])(
+      're-arms a %s run to pending before the worker boots',
+      async (status) => {
+        const repo = createFakeAgentRunRepository([createTestRun({ status })]);
+        useCase = new SpawnFeatureAgentUseCase(
+          featureRepo as never,
+          repo as never,
+          processService as never,
+          worktreeService as never,
+          settingsRepository as never,
+          syncFeatureBranch as never
+        );
+
+        const result = await useCase.execute({ feature: createTestFeature() });
+
+        expect(result.spawned).toBe(true);
+        expect(repo.peek('run-001')?.status).toBe(AgentRunStatus.pending);
+        const rearmOrder = repo.updateStatus.mock.invocationCallOrder[0];
+        expect(rearmOrder).toBeLessThan(processService.spawn.mock.invocationCallOrder[0]);
+      }
+    );
+
+    it('does not touch a pending run', async () => {
+      const repo = createFakeAgentRunRepository([createTestRun()]);
+      useCase = new SpawnFeatureAgentUseCase(
+        featureRepo as never,
+        repo as never,
+        processService as never,
+        worktreeService as never,
+        settingsRepository as never,
+        syncFeatureBranch as never
+      );
+
+      await useCase.execute({ feature: createTestFeature() });
+
+      expect(repo.updateStatus).not.toHaveBeenCalled();
+      expect(processService.spawn).toHaveBeenCalledTimes(1);
     });
   });
 

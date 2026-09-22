@@ -225,7 +225,7 @@ function summarise(key: string, samples: UsageSample[]): UsageGroupStats {
     outputTokens,
     cacheCreationInputTokens,
     cacheReadInputTokens,
-    totalTokens: inputTokens + outputTokens + cacheCreationInputTokens + cacheReadInputTokens,
+    totalTokens: totalTokensOf(inputTokens, outputTokens),
     // null, not 0 — see the class header.
     costUsd: withCost.length === 0 ? null : sum(withCost, (s) => s.costUsd),
     costReported: withCost.length > 0,
@@ -252,12 +252,22 @@ function buildTotals(samples: UsageSample[]): UsageTotals {
     outputTokens,
     cacheCreationInputTokens,
     cacheReadInputTokens,
-    totalTokens: inputTokens + outputTokens + cacheCreationInputTokens + cacheReadInputTokens,
+    totalTokens: totalTokensOf(inputTokens, outputTokens),
     costUsd: withCost.length === 0 ? null : sum(withCost, (s) => s.costUsd),
     costIsPartial: missingCost.length > 0,
     phasesMissingCost: missingCost.length,
     agentsMissingCost: [...new Set(missingCost.map((s) => s.agentType ?? UNATTRIBUTED_GROUP_KEY))],
   };
+}
+
+/**
+ * Total tokens for a bucket. `inputTokens` already INCLUDES the cache buckets:
+ * the Claude executor adds cache_creation + cache_read to input_tokens, and the
+ * AI SDK's inputTokens is the total with a cache breakdown beside it. The
+ * cache fields are a breakdown of input, so adding them again double counts.
+ */
+function totalTokensOf(inputTokens: number, outputTokens: number): number {
+  return inputTokens + outputTokens;
 }
 
 function countRuns(lifecycle: UsageSample[]): UsageRunCounts {

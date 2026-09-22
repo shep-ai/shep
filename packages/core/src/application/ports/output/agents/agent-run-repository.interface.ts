@@ -43,6 +43,16 @@ export interface AgentRunStatusUpdateOptions {
   allowedFrom?: readonly AgentRunStatus[];
 }
 
+/**
+ * Fields a status transition may write alongside the status.
+ *
+ * `pid` additionally accepts `null` to clear a previous worker's PID in the
+ * same statement as the transition — a resume that claims a waiting run must
+ * not leave the dead worker's PID where Stop would signal it. `undefined`
+ * leaves any field unchanged.
+ */
+export type AgentRunStatusUpdates = Omit<Partial<AgentRun>, 'pid'> & { pid?: number | null };
+
 export interface IAgentRunRepository {
   /**
    * Create a new agent run record.
@@ -101,7 +111,7 @@ export interface IAgentRunRepository {
   updateStatus(
     id: string,
     status: AgentRunStatus,
-    updates?: Partial<AgentRun>,
+    updates?: AgentRunStatusUpdates,
     options?: AgentRunStatusUpdateOptions
   ): Promise<boolean>;
 

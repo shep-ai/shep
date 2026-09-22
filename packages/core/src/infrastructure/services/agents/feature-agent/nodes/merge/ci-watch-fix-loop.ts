@@ -98,10 +98,12 @@ async function watchCiViaAgent(
   });
 
   try {
-    const result = await retryExecute(executor, watchPrompt, watchOptions, {
-      maxAttempts: 1,
-      logger: log,
-    });
+    // Default retry budget: a single transient executor error (API 5xx, a
+    // dropped connection) must not be reported as a CI failure — that spends a
+    // fix attempt on a green build — nor as a CI timeout that ends the merge.
+    // A real watch timeout ("Agent execution timed out") is non-retryable and
+    // still surfaces on the first attempt.
+    const result = await retryExecute(executor, watchPrompt, watchOptions, { logger: log });
 
     const elapsed = Date.now() - watchStart;
     await recordPhaseEnd(timingId, elapsed, {

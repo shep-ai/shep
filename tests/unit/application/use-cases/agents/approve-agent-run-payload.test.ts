@@ -44,22 +44,13 @@ vi.mock('@/infrastructure/services/settings.service.js', () => ({
 
 import { readFileSync } from 'node:fs';
 import yaml from 'js-yaml';
+import { createMockAgentRunRepository } from '../../../../helpers/agent-run-repository.fake.js';
 
 const mockReadFileSync = vi.mocked(readFileSync);
 const mockYamlLoad = vi.mocked(yaml.load);
 
 function createMockRunRepository() {
-  return {
-    create: vi.fn(),
-    findById: vi.fn(),
-    findByThreadId: vi.fn(),
-    findLatestByFeatureId: vi.fn().mockResolvedValue(null),
-    findByIds: vi.fn().mockResolvedValue([]),
-    updateStatus: vi.fn(),
-    findRunningByPid: vi.fn(),
-    list: vi.fn(),
-    delete: vi.fn(),
-  };
+  return createMockAgentRunRepository({ findById: vi.fn() });
 }
 
 function createMockProcessService() {

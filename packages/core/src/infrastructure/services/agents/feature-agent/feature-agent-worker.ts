@@ -30,7 +30,6 @@ import { type GitRemoteListService } from '@/infrastructure/services/git/git-rem
 import type { IGitForkService } from '@/application/ports/output/services/git-fork-service.interface.js';
 import {
   AgentRunStatus,
-  SdlcLifecycle,
   SecurityMode,
   type AgentType,
   type SecurityActionCategory,
@@ -39,6 +38,13 @@ import {
 import { initializeSettings } from '@/infrastructure/services/settings.service.js';
 import { InitializeSettingsUseCase } from '@/application/use-cases/settings/initialize-settings.use-case.js';
 import { setHeartbeatContext } from './heartbeat.js';
+import {
+  claimRunForWorker,
+  finishRun,
+  recordRunFailure,
+  startRunHeartbeat,
+  WORKER_CLAIMABLE_STATUSES,
+} from './worker-run-status.js';
 import { setPhaseTimingContext, recordLifecycleEvent } from './phase-timing-context.js';
 import { setLifecycleContext } from './lifecycle-context.js';
 import { setSdlcBoardContext } from './sdlc-board-context.js';
@@ -211,27 +217,6 @@ function log(message: string): void {
 const HEARTBEAT_INTERVAL_MS = 30_000;
 
 /**
- * Start periodic heartbeat that updates last_heartbeat in the DB.
- * Returns a cleanup function to stop the interval.
- */
-function startHeartbeat(runId: string, runRepository: IAgentRunRepository): () => void {
-  const interval = setInterval(async () => {
-    try {
-      const now = new Date();
-      await runRepository.updateStatus(runId, AgentRunStatus.running, {
-        lastHeartbeat: now,
-        updatedAt: now,
-      });
-    } catch {
-      // Heartbeat failure is non-fatal — just log it
-      log('Heartbeat update failed (non-fatal)');
-    }
-  }, HEARTBEAT_INTERVAL_MS);
-
-  return () => clearInterval(interval);
-}
-
-/**
  * Run the feature agent worker with the given arguments.
  * Initializes DI, creates the graph, and executes it.
  */
@@ -283,6 +268,23 @@ export async function runWorker(args: WorkerArgs): Promise<void> {
   initializeSettings(settings);
 
   const runRepository = container.resolve<IAgentRunRepository>('IAgentRunRepository');
+
+  // Claim the run with our PID before building anything. The claim only
+  // succeeds from pending/running, so a Stop that landed before we booted
+  // (Stop marks the run interrupted and, with no PID yet, signals nothing)
+  // is honoured instead of overwritten.
+  const bootedAt = new Date();
+  log(`Claiming run as running (PID ${process.pid})...`);
+  const claimed = await claimRunForWorker(runRepository, args.runId, process.pid, bootedAt);
+  if (!claimed) {
+    const current = await runRepository.findById(args.runId);
+    log(
+      `Run ${args.runId} is not claimable (status: ${current?.status ?? 'not found'}) — ` +
+        'it was stopped or finished before this worker booted. Exiting without running the graph.'
+    );
+    return;
+  }
+
   const executorProvider = container.resolve<IAgentExecutorProvider>('IAgentExecutorProvider');
 
   // Create executor — use pinned agentType when resuming, otherwise fall back to settings
@@ -376,18 +378,8 @@ export async function runWorker(args: WorkerArgs): Promise<void> {
     graph = createFeatureAgentGraph(graphDeps, checkpointer);
   }
 
-  // Mark the run as running with our PID
-  const now = new Date();
-  log(`Updating status to running (PID ${process.pid})...`);
-  await runRepository.updateStatus(args.runId, AgentRunStatus.running, {
-    pid: process.pid,
-    startedAt: now,
-    lastHeartbeat: now,
-    updatedAt: now,
-  });
-
   // Start heartbeat so the CLI can detect if we're still alive
-  const stopHeartbeat = startHeartbeat(args.runId, runRepository);
+  const stopHeartbeat = startRunHeartbeat(runRepository, args.runId, HEARTBEAT_INTERVAL_MS, log);
 
   // Set heartbeat context so node-helpers can update current node
   setHeartbeatContext(args.runId, runRepository);
@@ -580,10 +572,16 @@ export async function runWorker(args: WorkerArgs): Promise<void> {
       const interruptValue = interruptPayload[0]?.value as Record<string, unknown> | undefined;
       const interruptNode =
         typeof interruptValue?.node === 'string' ? interruptValue.node : undefined;
-      await runRepository.updateStatus(args.runId, AgentRunStatus.waitingApproval, {
+      const paused = await finishRun(runRepository, args.runId, AgentRunStatus.waitingApproval, {
         updatedAt: now,
         ...(interruptNode ? { result: `node:${interruptNode}` } : {}),
       });
+      if (!paused) {
+        // Stopped while the graph ran: opening a gate (or letting a
+        // supervisor auto-approve it) would restart a run the user stopped.
+        log('Run is no longer running (stopped) — not opening the approval gate');
+        return;
+      }
       await lifecyclePublisher.publishBlocked({
         ...lifecycleScope,
         reason: interruptNode ? `waiting_approval:${interruptNode}` : 'waiting_approval',
@@ -616,22 +614,34 @@ export async function runWorker(args: WorkerArgs): Promise<void> {
     // Check if the graph itself reported an error in state
     if (result.error) {
       const failedAt = new Date();
-      await runRepository.updateStatus(args.runId, AgentRunStatus.failed, {
+      const marked = await finishRun(runRepository, args.runId, AgentRunStatus.failed, {
         error: result.error as string,
         completedAt: failedAt,
         updatedAt: failedAt,
       });
+      if (!marked) {
+        log(
+          `Run is no longer running (stopped) — leaving its status; graph error: ${result.error}`
+        );
+        return;
+      }
       await recordLifecycleEvent('run:failed');
       log(`Run marked as failed: ${result.error}`);
       return;
     }
 
     const completedAt = new Date();
-    await runRepository.updateStatus(args.runId, AgentRunStatus.completed, {
+    const completed = await finishRun(runRepository, args.runId, AgentRunStatus.completed, {
       result: (result.messages as string[])?.join('\n') ?? '',
       completedAt,
       updatedAt: completedAt,
     });
+    if (!completed) {
+      log(
+        'Run is no longer running (stopped) — leaving its status instead of marking it completed'
+      );
+      return;
+    }
     await recordLifecycleEvent('run:completed');
     await lifecyclePublisher.publishCompleted(lifecycleScope);
     log('Run marked as completed');
@@ -640,32 +650,15 @@ export async function runWorker(args: WorkerArgs): Promise<void> {
     const failedAt = new Date();
     const message = error instanceof Error ? error.message : String(error);
     log(`Graph invocation error: ${message}`);
-    await runRepository.updateStatus(args.runId, AgentRunStatus.failed, {
-      error: message,
-      completedAt: failedAt,
-      updatedAt: failedAt,
-    });
-
-    // Reset the feature lifecycle to Started so it doesn't appear stuck
-    // in a running phase (e.g., Requirements, Implementation) when the agent has failed.
-    try {
-      const feature = await featureRepository.findById(args.featureId);
-      if (feature && feature.lifecycle !== SdlcLifecycle.Maintain) {
-        await featureRepository.update({
-          ...feature,
-          lifecycle: SdlcLifecycle.Started,
-          updatedAt: failedAt,
-        });
-        log('Feature lifecycle reset to Started');
-      }
-    } catch (resetErr) {
-      log(
-        `Failed to reset feature lifecycle: ${resetErr instanceof Error ? resetErr.message : String(resetErr)}`
-      );
-    }
-
-    await recordLifecycleEvent('run:failed');
-    log('Run marked as failed');
+    await recordRunFailure(
+      {
+        runRepository,
+        featureRepository,
+        recordLifecycleEvent: (event) => recordLifecycleEvent(event),
+        log,
+      },
+      { runId: args.runId, featureId: args.featureId, message, failedAt }
+    );
   } finally {
     // Stop MCP plugin servers regardless of success/failure/interrupt
     await stopPluginServers(args.featureId, mcpServerManager, log);
@@ -697,11 +690,14 @@ process.on('SIGTERM', async () => {
   log('Received SIGTERM, shutting down...');
   if (runIdForSignal && runRepoForSignal) {
     const now = new Date();
-    await runRepoForSignal.updateStatus(runIdForSignal, AgentRunStatus.interrupted, {
-      error: 'Process received SIGTERM',
-      completedAt: now,
-      updatedAt: now,
-    });
+    // Guarded like every other worker write: a SIGTERM that arrives after the
+    // run already finished must not turn its real outcome into `interrupted`.
+    await runRepoForSignal.updateStatus(
+      runIdForSignal,
+      AgentRunStatus.interrupted,
+      { error: 'Process received SIGTERM', completedAt: now, updatedAt: now },
+      { allowedFrom: WORKER_CLAIMABLE_STATUSES }
+    );
     await recordLifecycleEvent('run:stopped', runIdForSignal, timingRepoForSignal);
   }
   process.exit(0);

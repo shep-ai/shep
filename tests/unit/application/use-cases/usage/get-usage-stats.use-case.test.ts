@@ -196,8 +196,32 @@ describe('GetUsageStatsUseCase duration and tokens', () => {
     expect(group.outputTokens).toBe(3);
     expect(group.cacheCreationInputTokens).toBe(6);
     expect(group.cacheReadInputTokens).toBe(9);
-    expect(group.totalTokens).toBe(48);
-    expect(result.totals.totalTokens).toBe(48);
+    // input already includes the cache buckets, so the total is input + output
+    // (30 + 3), not input + output + cache (which double counted to 48).
+    expect(group.totalTokens).toBe(33);
+    expect(result.totals.totalTokens).toBe(33);
+  });
+
+  /**
+   * Every executor that reports cache buckets already folds them into
+   * inputTokens (Claude's extractUsage adds cache_creation + cache_read to
+   * input_tokens; the AI SDK's inputTokens is the total with a cache
+   * breakdown). The cache fields are a breakdown of input, not extra tokens.
+   */
+  it('counts cached input tokens once in the total', async () => {
+    const result = await new GetUsageStatsUseCase(
+      repo([
+        sample({
+          inputTokens: 100, // includes the 60 cache-read tokens below
+          outputTokens: 10,
+          cacheCreationInputTokens: 0,
+          cacheReadInputTokens: 60,
+        }),
+      ])
+    ).execute({ since: '7d', now: NOW });
+
+    expect(result.groups[0]!.totalTokens).toBe(110);
+    expect(result.totals.totalTokens).toBe(110);
   });
 
   it('excludes zero-duration lifecycle rows from phase aggregation', async () => {
