@@ -8,7 +8,7 @@
  */
 
 import 'reflect-metadata';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { EventEmitter } from 'node:events';
 import { PassThrough } from 'node:stream';
 import { ClaudeCodeExecutorService } from '@/infrastructure/services/agents/common/executors/claude-code-executor.service.js';
@@ -83,6 +83,12 @@ describe('ClaudeCodeExecutorService', () => {
   beforeEach(() => {
     mockSpawn = vi.fn();
     executor = new ClaudeCodeExecutorService(mockSpawn);
+  });
+
+  // A fake-timer test that fails before its own `useRealTimers()` must not
+  // leave every later test waiting on timers that never advance.
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   describe('agentType', () => {
@@ -567,23 +573,36 @@ describe('ClaudeCodeExecutorService', () => {
       mockProc.emit('close', null);
 
       // Act & Assert
-      await expect(executePromise).rejects.toThrow(/timed out/i);
+      await expect(executePromise).rejects.toThrow('Agent execution timed out after 5s');
       expect(mockProc.kill).toHaveBeenCalled();
       vi.useRealTimers();
     });
 
-    it('should handle empty result gracefully', async () => {
-      // Arrange — no result line emitted, just a close
+    it('should reject an exit 0 that never emitted a result event', async () => {
+      // The claude CLI always ends a turn with a `result` event. Exit 0 without
+      // one means the output was cut (e.g. a line that overflowed the cap),
+      // not that the agent had nothing to say.
+      const mockProc = createMockChildProcess();
+      vi.mocked(mockSpawn).mockReturnValue(mockProc as any);
+
+      const assistantLine = JSON.stringify({
+        type: 'assistant',
+        message: { content: [{ type: 'text', text: 'Halfway through...' }] },
+      });
+      const executePromise = executor.execute('Test');
+      emitStreamData(mockProc, [assistantLine], null, 0);
+
+      await expect(executePromise).rejects.toThrow(/without a result event/i);
+    });
+
+    it('should resolve an empty answer when the result event itself was empty', async () => {
       const mockProc = createMockChildProcess();
       vi.mocked(mockSpawn).mockReturnValue(mockProc as any);
 
       const executePromise = executor.execute('Test');
-      emitStreamData(mockProc, [], null, 0);
+      emitStreamData(mockProc, [buildStreamResult({ subtype: 'success', result: '' })], null, 0);
 
-      // Act
       const result = await executePromise;
-
-      // Assert — empty result, no crash
       expect(result.result).toBe('');
       expect(result.sessionId).toBeUndefined();
     });
@@ -871,6 +890,64 @@ describe('ClaudeCodeExecutorService', () => {
       expect(errorEvents[0].content).toContain('Fatal error occurred');
     });
 
+    /** Drive executeStream over the given stdout lines and exit code. */
+    async function collectStream(lines: string[], exitCode: number | null, stderrText = '') {
+      const mockProc = createMockChildProcess();
+      vi.mocked(mockSpawn).mockReturnValue(mockProc as any);
+      emitStreamData(mockProc, lines, stderrText || null, exitCode);
+
+      const events: { type: string; content: string }[] = [];
+      for await (const event of executor.executeStream('Task', { silent: true })) {
+        events.push({ type: event.type, content: event.content });
+      }
+      return events;
+    }
+
+    it('should emit an error, not a result, for an error_max_turns result', async () => {
+      const events = await collectStream(
+        [
+          buildStreamResult({
+            subtype: 'error_max_turns',
+            is_error: true,
+            result: 'Partial work done before running out of turns',
+          }),
+        ],
+        0
+      );
+
+      expect(events.some((e) => e.type === 'result')).toBe(false);
+      const errors = events.filter((e) => e.type === 'error');
+      expect(errors).toHaveLength(1);
+      expect(errors[0].content).toMatch(/error_max_turns/);
+    });
+
+    it('should emit an error, not a result, for an is_error result without a subtype', async () => {
+      const events = await collectStream(
+        [buildStreamResult({ is_error: true, result: 'something went wrong' })],
+        0
+      );
+
+      expect(events.some((e) => e.type === 'result')).toBe(false);
+      expect(
+        events.some((e) => e.type === 'error' && e.content.includes('something went wrong'))
+      ).toBe(true);
+    });
+
+    it('should still emit a result for the success subtype', async () => {
+      const events = await collectStream(
+        [buildStreamResult({ subtype: 'success', is_error: false, result: 'All done' })],
+        0
+      );
+
+      expect(events).toEqual([{ type: 'result', content: 'All done' }]);
+    });
+
+    it('should emit an error for a non-zero exit even when stderr is empty', async () => {
+      const events = await collectStream([], 1);
+
+      expect(events).toEqual([{ type: 'error', content: 'Process exited with code 1' }]);
+    });
+
     it('should include timestamps on all events', async () => {
       // Arrange
       const mockProc = createMockChildProcess();
@@ -1065,7 +1142,10 @@ describe('ClaudeCodeExecutorService', () => {
         events.push({ type: event.type, content: event.content });
       }
 
-      expect(events).toContainEqual({ type: 'error', content: 'Agent execution timed out' });
+      expect(events).toContainEqual({
+        type: 'error',
+        content: 'Agent execution timed out after 0.02s',
+      });
       expect(mockProc.kill).toHaveBeenCalled();
     });
   });

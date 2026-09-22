@@ -13,6 +13,7 @@
  */
 
 import type { AgentModelListing } from '../../../../../application/ports/output/agents/agent-executor-factory.interface.js';
+import { MODEL_CATALOG_FETCH_TIMEOUT_MS } from './catalog-fetch.js';
 
 const ENDPOINT = 'https://openrouter.ai/api/v1/models';
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
@@ -52,7 +53,10 @@ export class OpenRouterModelCatalogService {
 
     let response: Response;
     try {
-      response = await this.fetchFn(ENDPOINT, { headers });
+      response = await this.fetchFn(ENDPOINT, {
+        headers,
+        signal: AbortSignal.timeout(MODEL_CATALOG_FETCH_TIMEOUT_MS),
+      });
     } catch {
       return this.cache?.data ?? [];
     }

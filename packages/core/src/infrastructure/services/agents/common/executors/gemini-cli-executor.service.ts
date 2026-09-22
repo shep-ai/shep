@@ -23,6 +23,7 @@ import type { SpawnFunction } from '../types.js';
 import { EventChannel } from '../../streaming/event-channel.js';
 import { createExecutorLogger, type ExecutorLogger } from './executor-logger.js';
 import {
+  agentTimeoutMessage,
   buildSpawnOptions,
   classifySpawnError,
   createLineAccumulator,
@@ -106,7 +107,8 @@ export class GeminiCliExecutorService implements IAgentExecutor {
     return new Promise<AgentExecutionResult>((resolve, reject) => {
       const stderr = createStderrTail();
       const stdoutLines: string[] = [];
-      let timedOut = false;
+      /** Set when the budget elapsed — the run's outcome, whatever follows. */
+      let timeoutError: string | undefined;
       let settled = false;
       let timeoutId: ReturnType<typeof setTimeout> | undefined;
       let cancelEscalation: (() => void) | undefined;
@@ -119,12 +121,13 @@ export class GeminiCliExecutorService implements IAgentExecutor {
         outcome();
       };
 
-      if (options?.timeout) {
+      const timeoutMs = options?.timeout;
+      if (timeoutMs) {
         timeoutId = setTimeout(() => {
-          timedOut = true;
-          log(`Timeout after ${options.timeout}ms — terminating agent`);
+          timeoutError = agentTimeoutMessage(timeoutMs);
+          log(`Timeout after ${timeoutMs}ms — terminating agent`);
           cancelEscalation = terminateWithEscalation(proc);
-        }, options.timeout);
+        }, timeoutMs);
       }
 
       // A single JSON document, read through the decoder so a multi-byte
@@ -153,8 +156,8 @@ export class GeminiCliExecutorService implements IAgentExecutor {
         log(`Process closed with code ${code}, stdout=${stdout.length} chars`);
 
         settle(() => {
-          if (timedOut) {
-            reject(new Error('Agent execution timed out'));
+          if (timeoutError) {
+            reject(new Error(timeoutError));
             return;
           }
 
@@ -230,18 +233,19 @@ export class GeminiCliExecutorService implements IAgentExecutor {
     let timedOut = false;
     let timeoutId: ReturnType<typeof setTimeout> | undefined;
 
-    if (options?.timeout) {
+    const timeoutMs = options?.timeout;
+    if (timeoutMs) {
       timeoutId = setTimeout(() => {
         timedOut = true;
-        log(`Timeout after ${options.timeout}ms — terminating agent`);
+        log(`Timeout after ${timeoutMs}ms — terminating agent`);
         terminateWithEscalation(proc);
         channel.push({
           type: 'error',
-          content: 'Agent execution timed out',
+          content: agentTimeoutMessage(timeoutMs),
           timestamp: new Date(),
         });
         channel.close();
-      }, options.timeout);
+      }, timeoutMs);
     }
 
     const accumulator = createLineAccumulator((line) => {

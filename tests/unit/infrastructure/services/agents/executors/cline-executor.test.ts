@@ -8,7 +8,7 @@
  */
 
 import 'reflect-metadata';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { EventEmitter } from 'node:events';
 import { PassThrough } from 'node:stream';
 import { ClineExecutorService } from '@/infrastructure/services/agents/common/executors/cline-executor.service.js';
@@ -85,6 +85,12 @@ describe('ClineExecutorService', () => {
   beforeEach(() => {
     mockSpawn = vi.fn();
     executor = new ClineExecutorService(mockSpawn);
+  });
+
+  // A fake-timer test that fails before its own `useRealTimers()` must not
+  // leave every later test waiting on timers that never advance.
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   // --- agentType and supportsFeature ---
@@ -411,7 +417,7 @@ describe('ClineExecutorService', () => {
       mockProc.stderr.end();
       mockProc.emit('close', null);
 
-      await expect(executePromise).rejects.toThrow(/timed out/i);
+      await expect(executePromise).rejects.toThrow('Agent execution timed out after 5s');
       expect(mockProc.kill).toHaveBeenCalled();
       vi.useRealTimers();
     });
@@ -586,7 +592,25 @@ describe('ClineExecutorService', () => {
       }
 
       expect(events.some((e) => e.type === 'error')).toBe(true);
-      expect(events.find((e) => e.type === 'error')?.content).toBe('Internal server error');
+      // Same shape as execute(): the exit code first, stderr as the detail.
+      expect(events.find((e) => e.type === 'error')?.content).toBe(
+        'Process exited with code 1: Internal server error'
+      );
+    });
+
+    it('should yield an error event on a non-zero exit even when stderr is empty', async () => {
+      const mockProc = createMockChildProcess();
+      vi.mocked(mockSpawn).mockReturnValue(mockProc as any);
+
+      const events: { type: string; content: string }[] = [];
+      const gen = executor.executeStream('Prompt', { silent: true });
+      emitJsonlLines(mockProc, [], null, 2);
+
+      for await (const event of gen) {
+        events.push({ type: event.type, content: event.content });
+      }
+
+      expect(events).toEqual([{ type: 'error', content: 'Process exited with code 2' }]);
     });
 
     it('should yield error event on process error', async () => {
@@ -693,20 +717,40 @@ describe('ClineExecutorService', () => {
       await expect(executePromise).rejects.toThrow(/SIGKILL/);
     });
 
-    it('should still return work already captured before the signal', async () => {
+    // Cline's protocol has no terminal event, so a signal kill can never be
+    // told apart from a finished turn by the output — it is always a failure.
+    it('should reject naming the signal when killed after partial text', async () => {
       const mockProc = createMockChildProcess();
       vi.mocked(mockSpawn).mockReturnValue(mockProc as any);
 
       const executePromise = executor.execute('Prompt', { silent: true });
       process.nextTick(() => {
-        mockProc.stdout.write(`${sayEvent('partial work')}\n`);
+        for (const line of [sayEvent('partial work')]) mockProc.stdout.write(`${line}\n`);
         mockProc.stdout.end();
         mockProc.stderr.end();
         mockProc.emit('close', null, 'SIGTERM');
       });
 
-      const result = await executePromise;
-      expect(result.result).toBe('partial work');
+      await expect(executePromise).rejects.toThrow(/SIGTERM/);
+    });
+
+    it('should stream an error, not a result, when killed after partial text', async () => {
+      const mockProc = createMockChildProcess();
+      vi.mocked(mockSpawn).mockReturnValue(mockProc as any);
+
+      process.nextTick(() => {
+        for (const line of [sayEvent('partial work')]) mockProc.stdout.write(`${line}\n`);
+        mockProc.stdout.end();
+        mockProc.stderr.end();
+        mockProc.emit('close', null, 'SIGKILL');
+      });
+      const events: { type: string; content: string }[] = [];
+      for await (const event of executor.executeStream('Prompt', { silent: true })) {
+        events.push({ type: event.type, content: event.content });
+      }
+
+      expect(events.some((e) => e.type === 'error' && e.content.includes('SIGKILL'))).toBe(true);
+      expect(events.some((e) => e.type === 'result')).toBe(false);
     });
   });
 
@@ -803,7 +847,10 @@ describe('ClineExecutorService', () => {
         events.push({ type: event.type, content: event.content });
       }
 
-      expect(events).toContainEqual({ type: 'error', content: 'Agent execution timed out' });
+      expect(events).toContainEqual({
+        type: 'error',
+        content: 'Agent execution timed out after 0.02s',
+      });
       expect(mockProc.kill).toHaveBeenCalled();
     });
 

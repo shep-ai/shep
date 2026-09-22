@@ -65,6 +65,7 @@ describe('StreamingExecutorProxy', () => {
         streamProgress: true,
       });
 
+      channel.close();
       await consumer;
     });
 
@@ -84,6 +85,7 @@ describe('StreamingExecutorProxy', () => {
 
       expect(executeStreamSpy).toHaveBeenCalledWith('test prompt', { streamProgress: true });
 
+      channel.close();
       await consumer;
     });
 
@@ -103,6 +105,7 @@ describe('StreamingExecutorProxy', () => {
 
       expect(executeStreamSpy).toHaveBeenCalledWith('test prompt', { streamProgress: true });
 
+      channel.close();
       await consumer;
     });
 
@@ -124,6 +127,7 @@ describe('StreamingExecutorProxy', () => {
 
       await proxy.execute('prompt');
 
+      channel.close();
       await consumer;
 
       expect(collected).toHaveLength(3);
@@ -150,6 +154,7 @@ describe('StreamingExecutorProxy', () => {
 
       const result = await proxy.execute('prompt');
 
+      channel.close();
       await consumer;
 
       expect(result.result).toBe('The final result text');
@@ -173,6 +178,7 @@ describe('StreamingExecutorProxy', () => {
       })();
 
       const result = await proxy.execute('prompt');
+      channel.close();
       await consumer;
 
       // Without this the session is unresumable through the proxy, and the
@@ -192,6 +198,7 @@ describe('StreamingExecutorProxy', () => {
       })();
 
       const result = await proxy.execute('prompt');
+      channel.close();
       await consumer;
 
       expect(result).not.toHaveProperty('sessionId');
@@ -218,6 +225,7 @@ describe('StreamingExecutorProxy', () => {
 
       await expect(proxy.execute('prompt')).rejects.toThrow('Stream exploded');
 
+      channel.close();
       await consumer;
 
       expect(collected.some((e) => e.type === 'error')).toBe(true);
@@ -225,23 +233,104 @@ describe('StreamingExecutorProxy', () => {
       expect(errorEvent!.content).toBe('Stream exploded');
     });
 
-    it('should close channel after execute() completes', async () => {
-      const events = [makeEvent('result', 'done')];
-      const inner = createMockExecutor(events);
+    it('should reject with the content of an error event after forwarding it', async () => {
+      // Subprocess executors report timeouts, non-zero exits and signal kills as
+      // an error event and then end the stream — they never throw.
+      const inner = createMockExecutor([
+        makeEvent('progress', 'Working...'),
+        makeEvent('error', 'Agent execution timed out after 300s'),
+      ]);
       const proxy = new StreamingExecutorProxy(inner, channel);
 
-      let iterationEnded = false;
+      const collected: AgentExecutionStreamEvent[] = [];
+      const consumer = (async () => {
+        for await (const event of channel) {
+          collected.push(event);
+        }
+      })();
+
+      await expect(proxy.execute('prompt')).rejects.toThrow('Agent execution timed out after 300s');
+      channel.close();
+      await consumer;
+
+      // Forwarded exactly once — not re-pushed by the catch block.
+      const errors = collected.filter((e) => e.type === 'error');
+      expect(errors).toHaveLength(1);
+      expect(errors[0].content).toBe('Agent execution timed out after 300s');
+    });
+
+    it('should reject when an error event follows the result (e.g. non-zero exit after the answer)', async () => {
+      const inner = createMockExecutor([
+        makeEvent('result', 'partial answer'),
+        makeEvent('error', 'Process exited with code 1'),
+      ]);
+      const proxy = new StreamingExecutorProxy(inner, channel);
+
       const consumer = (async () => {
         for await (const _event of channel) {
           /* drain */
         }
-        iterationEnded = true;
       })();
 
-      await proxy.execute('prompt');
+      await expect(proxy.execute('prompt')).rejects.toThrow('Process exited with code 1');
+      channel.close();
+      await consumer;
+    });
+
+    it('should resolve when a recoverable error event is followed by the result', async () => {
+      // Codex reports a stream reconnect as an error event mid-turn, then
+      // finishes the turn; the finished turn is the outcome.
+      const inner = createMockExecutor([
+        makeEvent('error', 'Reconnecting... 1/5'),
+        makeEvent('result', 'Final answer'),
+      ]);
+      const proxy = new StreamingExecutorProxy(inner, channel);
+
+      const consumer = (async () => {
+        for await (const _event of channel) {
+          /* drain */
+        }
+      })();
+
+      await expect(proxy.execute('prompt')).resolves.toEqual({ result: 'Final answer' });
+      channel.close();
+      await consumer;
+    });
+
+    it('should reject when the stream ended without a result event', async () => {
+      const inner = createMockExecutor([makeEvent('progress', 'partial text')]);
+      const proxy = new StreamingExecutorProxy(inner, channel);
+
+      const consumer = (async () => {
+        for await (const _event of channel) {
+          /* drain */
+        }
+      })();
+
+      await expect(proxy.execute('prompt')).rejects.toThrow(/without a result/i);
+      channel.close();
+      await consumer;
+    });
+
+    it('should keep the shared channel open so a second execute() still delivers events', async () => {
+      // One proxy + channel serves every node of a graph; closing it after the
+      // first node silently dropped every later node's events.
+      const inner = createMockExecutor([makeEvent('result', 'node output')]);
+      const proxy = new StreamingExecutorProxy(inner, channel);
+
+      const collected: AgentExecutionStreamEvent[] = [];
+      const consumer = (async () => {
+        for await (const event of channel) {
+          collected.push(event);
+        }
+      })();
+
+      await proxy.execute('first node');
+      await proxy.execute('second node');
+      channel.close();
       await consumer;
 
-      expect(iterationEnded).toBe(true);
+      expect(collected.filter((e) => e.type === 'result')).toHaveLength(2);
     });
   });
 

@@ -26,6 +26,7 @@ import { EventChannel } from '../../streaming/event-channel.js';
 import { createExecutorLogger, type ExecutorLogger } from './executor-logger.js';
 import { describeSubprocessFailure } from './subprocess-failure-message.js';
 import {
+  agentTimeoutMessage,
   buildSpawnOptions,
   classifySpawnError,
   createLineAccumulator,
@@ -95,7 +96,8 @@ export class ClineExecutorService implements IAgentExecutor {
       let resultText = '';
       /** Anything the CLI printed that was not JSON (banners, warnings). */
       let rawText = '';
-      let timedOut = false;
+      /** Set when the budget elapsed — the run's outcome, whatever follows. */
+      let timeoutError: string | undefined;
       let settled = false;
       let timeoutId: ReturnType<typeof setTimeout> | undefined;
       let cancelEscalation: (() => void) | undefined;
@@ -109,12 +111,13 @@ export class ClineExecutorService implements IAgentExecutor {
         outcome();
       };
 
-      if (options?.timeout) {
+      const timeoutMs = options?.timeout;
+      if (timeoutMs) {
         timeoutId = setTimeout(() => {
-          timedOut = true;
-          log(`Timeout after ${options.timeout}ms — terminating agent`);
+          timeoutError = agentTimeoutMessage(timeoutMs);
+          log(`Timeout after ${timeoutMs}ms — terminating agent`);
           cancelEscalation = terminateWithEscalation(proc);
-        }, options.timeout);
+        }, timeoutMs);
       }
 
       const accumulator = createLineAccumulator(
@@ -157,8 +160,8 @@ export class ClineExecutorService implements IAgentExecutor {
         log(`Process closed with code ${code}, result=${finalText.length} chars`);
 
         settle(() => {
-          if (timedOut) {
-            reject(new Error('Agent execution timed out'));
+          if (timeoutError) {
+            reject(new Error(timeoutError));
             return;
           }
 
@@ -174,9 +177,10 @@ export class ClineExecutorService implements IAgentExecutor {
           }
 
           // code === null means a signal killed the agent (OOM killer, an
-          // external kill). Resolving that as success hands the caller an
-          // empty result as if the agent had nothing to say.
-          if (code === null && !finalText) {
+          // external kill). Cline's output has no terminal event, so text that
+          // arrived before the kill cannot be told apart from a finished turn —
+          // a kill is always a failure, never a partial answer.
+          if (code === null) {
             reject(new Error(signalTerminationMessage(signal, stderr.text())));
             return;
           }
@@ -202,17 +206,18 @@ export class ClineExecutorService implements IAgentExecutor {
     let processClosed = false;
     let timeoutId: ReturnType<typeof setTimeout> | undefined;
 
-    if (options?.timeout) {
+    const timeoutMs = options?.timeout;
+    if (timeoutMs) {
       timeoutId = setTimeout(() => {
-        log(`Timeout after ${options.timeout}ms — terminating agent`);
+        log(`Timeout after ${timeoutMs}ms — terminating agent`);
         terminateWithEscalation(proc);
         channel.push({
           type: 'error',
-          content: 'Agent execution timed out',
+          content: agentTimeoutMessage(timeoutMs),
           timestamp: new Date(),
         });
         channel.close();
-      }, options.timeout);
+      }, timeoutMs);
     }
 
     const accumulator = createLineAccumulator((line) => {
@@ -256,15 +261,24 @@ export class ClineExecutorService implements IAgentExecutor {
 
       const finalText = resultText || rawText.trim();
 
-      if (code !== 0 && code !== null && stderr.text().trim()) {
-        channel.push({ type: 'error', content: stderr.text().trim(), timestamp: new Date() });
-      } else if (code === null && !finalText) {
+      if (code !== 0 && code !== null) {
+        channel.push({
+          type: 'error',
+          content: describeSubprocessFailure({
+            code,
+            resultText: finalText,
+            stderr: stderr.text(),
+          }),
+          timestamp: new Date(),
+        });
+      } else if (code === null) {
+        // Same rule as execute(): no terminal event exists, so a kill is never a result.
         channel.push({
           type: 'error',
           content: signalTerminationMessage(signal, stderr.text()),
           timestamp: new Date(),
         });
-      } else if (code === 0 || code === null) {
+      } else {
         channel.push({ type: 'result', content: finalText, timestamp: new Date() });
       }
       channel.close();

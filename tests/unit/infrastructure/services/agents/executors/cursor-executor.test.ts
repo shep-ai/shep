@@ -127,6 +127,7 @@ describe('CursorExecutorService', () => {
 
   afterEach(() => {
     Object.defineProperty(process, 'platform', { value: originalPlatform, writable: true });
+    vi.useRealTimers();
   });
 
   describe('agentType', () => {
@@ -249,7 +250,7 @@ describe('CursorExecutorService', () => {
       mockProc.stderr.end();
       mockProc.emit('close', null);
 
-      await expect(executePromise).rejects.toThrow(/timed out/i);
+      await expect(executePromise).rejects.toThrow('Agent execution timed out after 5s');
       expect(mockProc.kill).toHaveBeenCalled();
       vi.useRealTimers();
     });
@@ -859,6 +860,83 @@ describe('CursorExecutorService', () => {
   // --- defects proven by audit: result mapping, quoting, UTF-8, lifetime ---
 
   describe('stream result mapping', () => {
+    it('should emit an error for a non-zero exit even when stderr is empty', async () => {
+      const mockProc = createMockChildProcess();
+      vi.mocked(mockSpawn).mockReturnValue(mockProc as any);
+
+      const events: { type: string; content: string }[] = [];
+      const gen = executor.executeStream('Q', { silent: true });
+      emitStreamData(mockProc, [], null, 2);
+
+      for await (const event of gen) {
+        events.push({ type: event.type, content: event.content });
+      }
+
+      expect(events).toEqual([{ type: 'error', content: 'Process exited with code 2' }]);
+    });
+
+    it('should reject execute() when the result event reports is_error', async () => {
+      const mockProc = createMockChildProcess();
+      vi.mocked(mockSpawn).mockReturnValue(mockProc as any);
+
+      const executePromise = executor.execute('Q', { silent: true });
+      emitStreamData(
+        mockProc,
+        [
+          buildCursorResultEvent('sess-1', 10, {
+            subtype: 'error_max_turns',
+            is_error: true,
+            result: 'Partial work',
+          }),
+        ],
+        null,
+        0
+      );
+
+      await expect(executePromise).rejects.toThrow(/error_max_turns/);
+    });
+
+    it('should reject execute() for is_error without a subtype', async () => {
+      const mockProc = createMockChildProcess();
+      vi.mocked(mockSpawn).mockReturnValue(mockProc as any);
+
+      const executePromise = executor.execute('Q', { silent: true });
+      emitStreamData(
+        mockProc,
+        [buildCursorResultEvent('sess-1', 10, { is_error: true, result: 'provider failed' })],
+        null,
+        0
+      );
+
+      await expect(executePromise).rejects.toThrow(/provider failed/);
+    });
+
+    it('should emit an error, not a result, when the stream result reports is_error', async () => {
+      const mockProc = createMockChildProcess();
+      vi.mocked(mockSpawn).mockReturnValue(mockProc as any);
+
+      const events: { type: string; content: string }[] = [];
+      const gen = executor.executeStream('Q', { silent: true });
+      emitStreamData(
+        mockProc,
+        [
+          buildCursorAssistantEvent('Partial'),
+          buildCursorResultEvent('sess-1', 10, { subtype: 'error_max_turns', is_error: true }),
+        ],
+        null,
+        0
+      );
+
+      for await (const event of gen) {
+        events.push({ type: event.type, content: event.content });
+      }
+
+      expect(events.some((e) => e.type === 'result')).toBe(false);
+      expect(events.some((e) => e.type === 'error' && /error_max_turns/.test(e.content))).toBe(
+        true
+      );
+    });
+
     it('should report the session id out of band rather than as the answer', async () => {
       const mockProc = createMockChildProcess();
       vi.mocked(mockSpawn).mockReturnValue(mockProc as any);
@@ -982,6 +1060,58 @@ describe('CursorExecutorService', () => {
   });
 
   describe('signal termination', () => {
+    it('should reject naming the signal when killed after partial text', async () => {
+      const mockProc = createMockChildProcess();
+      vi.mocked(mockSpawn).mockReturnValue(mockProc as any);
+
+      const executePromise = executor.execute('Q', { silent: true });
+      process.nextTick(() => {
+        for (const line of [buildCursorAssistantEvent('partial work')])
+          mockProc.stdout.write(`${line}\n`);
+        mockProc.stdout.end();
+        mockProc.stderr.end();
+        mockProc.emit('close', null, 'SIGKILL');
+      });
+
+      await expect(executePromise).rejects.toThrow(/SIGKILL/);
+    });
+
+    it('should keep the answer when the signal arrives after the result event', async () => {
+      const mockProc = createMockChildProcess();
+      vi.mocked(mockSpawn).mockReturnValue(mockProc as any);
+
+      const executePromise = executor.execute('Q', { silent: true });
+      process.nextTick(() => {
+        for (const line of [buildCursorResultEvent('sess-1', 10, { result: 'all done' })])
+          mockProc.stdout.write(`${line}\n`);
+        mockProc.stdout.end();
+        mockProc.stderr.end();
+        mockProc.emit('close', null, 'SIGTERM');
+      });
+
+      expect((await executePromise).result).toBe('all done');
+    });
+
+    it('should stream an error, not a result, when killed after partial text', async () => {
+      const mockProc = createMockChildProcess();
+      vi.mocked(mockSpawn).mockReturnValue(mockProc as any);
+
+      process.nextTick(() => {
+        for (const line of [buildCursorAssistantEvent('partial work')])
+          mockProc.stdout.write(`${line}\n`);
+        mockProc.stdout.end();
+        mockProc.stderr.end();
+        mockProc.emit('close', null, 'SIGKILL');
+      });
+      const events: { type: string; content: string }[] = [];
+      for await (const event of executor.executeStream('Prompt', { silent: true })) {
+        events.push({ type: event.type, content: event.content });
+      }
+
+      expect(events.some((e) => e.type === 'error' && e.content.includes('SIGKILL'))).toBe(true);
+      expect(events.some((e) => e.type === 'result')).toBe(false);
+    });
+
     it('should reject when the CLI is killed by a signal with nothing captured', async () => {
       const mockProc = createMockChildProcess();
       vi.mocked(mockSpawn).mockReturnValue(mockProc as any);
@@ -1050,7 +1180,10 @@ describe('CursorExecutorService', () => {
         events.push({ type: event.type, content: event.content });
       }
 
-      expect(events).toContainEqual({ type: 'error', content: 'Agent execution timed out' });
+      expect(events).toContainEqual({
+        type: 'error',
+        content: 'Agent execution timed out after 0.02s',
+      });
       expect(mockProc.kill).toHaveBeenCalled();
     });
   });

@@ -11,6 +11,7 @@
  */
 
 import type { AgentModelListing } from '../../../../../application/ports/output/agents/agent-executor-factory.interface.js';
+import { MODEL_CATALOG_FETCH_TIMEOUT_MS } from './catalog-fetch.js';
 
 const ENDPOINT = 'https://api.together.xyz/v1/models';
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
@@ -51,6 +52,7 @@ export class TogetherAiModelCatalogService {
           Accept: 'application/json',
           Authorization: `Bearer ${apiKey}`,
         },
+        signal: AbortSignal.timeout(MODEL_CATALOG_FETCH_TIMEOUT_MS),
       });
     } catch {
       return this.cache?.data ?? [];

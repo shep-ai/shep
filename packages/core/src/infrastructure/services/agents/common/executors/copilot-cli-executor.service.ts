@@ -34,6 +34,7 @@ import { tmpdir } from 'node:os';
 import { EventChannel } from '../../streaming/event-channel.js';
 import { createExecutorLogger, type ExecutorLogger } from './executor-logger.js';
 import {
+  agentTimeoutMessage,
   buildSpawnOptions,
   classifySpawnError,
   createLineAccumulator,
@@ -224,7 +225,10 @@ export class CopilotCliExecutorService implements IAgentExecutor {
       let resultText = '';
       let sessionId: string | undefined;
       let usage: AgentExecutionUsage | undefined;
-      let timedOut = false;
+      /** True once Copilot emitted its terminal `result` event. */
+      let resultSeen = false;
+      /** Set when the budget elapsed — the run's outcome, whatever follows. */
+      let timeoutError: string | undefined;
       let settled = false;
       let timeoutId: ReturnType<typeof setTimeout> | undefined;
       let cancelEscalation: (() => void) | undefined;
@@ -237,12 +241,13 @@ export class CopilotCliExecutorService implements IAgentExecutor {
         outcome();
       };
 
-      if (options?.timeout) {
+      const timeoutMs = options?.timeout;
+      if (timeoutMs) {
         timeoutId = setTimeout(() => {
-          timedOut = true;
-          log(`Timeout after ${options.timeout}ms — terminating agent`);
+          timeoutError = agentTimeoutMessage(timeoutMs);
+          log(`Timeout after ${timeoutMs}ms — terminating agent`);
           cancelEscalation = terminateWithEscalation(proc);
-        }, options.timeout);
+        }, timeoutMs);
       }
 
       const accumulator = createLineAccumulator(
@@ -253,6 +258,7 @@ export class CopilotCliExecutorService implements IAgentExecutor {
           if (parsed.type === EVENT_TYPE_MESSAGE && parsed.content) {
             resultText += contentToText(parsed.content);
           } else if (parsed.type === EVENT_TYPE_RESULT) {
+            resultSeen = true;
             if (typeof parsed.sessionId === 'string') sessionId = parsed.sessionId;
             if (parsed.usage) usage = extractUsage(parsed.usage as Record<string, unknown>);
           }
@@ -279,8 +285,8 @@ export class CopilotCliExecutorService implements IAgentExecutor {
         log(`Process closed with code ${code}, result=${resultText.length} chars`);
 
         settle(() => {
-          if (timedOut) {
-            reject(new Error('Agent execution timed out'));
+          if (timeoutError) {
+            reject(new Error(timeoutError));
             return;
           }
 
@@ -302,7 +308,9 @@ export class CopilotCliExecutorService implements IAgentExecutor {
             return;
           }
 
-          if (code === null && !resultText) {
+          // A signal kill (OOM killer, external kill) before the terminal
+          // `result` event cut the turn short, however much text had arrived.
+          if (code === null && !resultSeen) {
             reject(new Error(signalTerminationMessage(signal, stderr.text())));
             return;
           }
@@ -359,22 +367,25 @@ export class CopilotCliExecutorService implements IAgentExecutor {
     const stderr = createStderrTail();
     /** Accumulated final response text (from assistant.message events) */
     let resultText = '';
+    /** True once Copilot emitted its terminal `result` event. */
+    let resultSeen = false;
     let processClosed = false;
     let timedOut = false;
     let timeoutId: ReturnType<typeof setTimeout> | undefined;
 
-    if (options?.timeout) {
+    const timeoutMs = options?.timeout;
+    if (timeoutMs) {
       timeoutId = setTimeout(() => {
         timedOut = true;
-        log(`Timeout after ${options.timeout}ms — terminating agent`);
+        log(`Timeout after ${timeoutMs}ms — terminating agent`);
         terminateWithEscalation(proc);
         channel.push({
           type: 'error',
-          content: 'Agent execution timed out',
+          content: agentTimeoutMessage(timeoutMs),
           timestamp: new Date(),
         });
         channel.close();
-      }, options.timeout);
+      }, timeoutMs);
     }
 
     const accumulator = createLineAccumulator((line) => {
@@ -401,6 +412,7 @@ export class CopilotCliExecutorService implements IAgentExecutor {
       }
 
       if (parsed.type === EVENT_TYPE_RESULT) {
+        resultSeen = true;
         // Final event — yield result with accumulated text
         const event: AgentExecutionStreamEvent = {
           type: 'result',
@@ -456,7 +468,7 @@ export class CopilotCliExecutorService implements IAgentExecutor {
               : `Process exited with code ${code}`),
           timestamp: new Date(),
         });
-      } else if (code === null && !resultText) {
+      } else if (code === null && !resultSeen) {
         channel.push({
           type: 'error',
           content: signalTerminationMessage(signal, stderr.text()),

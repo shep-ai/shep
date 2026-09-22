@@ -79,21 +79,18 @@ export class AgentRunnerService implements IAgentRunner {
     const checkpointer = await getCheckpointer();
     const compiledGraph = definition.graphFactory(proxy, checkpointer);
 
-    // Start graph invocation in background
+    // Start graph invocation in background. The channel spans every node of
+    // the graph (the proxy never closes it), so it is closed exactly once here,
+    // after the run's outcome is recorded — on success and failure alike.
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const graphPromise = (compiledGraph as any)
       .invoke(
         { repositoryPath: options?.repositoryPath ?? process.cwd() },
         { configurable: { thread_id: threadId } }
       )
-      .then(async (result: Record<string, unknown>) => {
-        channel.close();
-        await this.markCompleted(runId, result);
-      })
-      .catch(async (error: unknown) => {
-        channel.close();
-        await this.markFailed(runId, error);
-      });
+      .then((result: Record<string, unknown>) => this.markCompleted(runId, result))
+      .catch((error: unknown) => this.markFailed(runId, error))
+      .finally(() => channel.close());
 
     // Yield events as they arrive, mapping infra → domain type
     for await (const event of channel) {

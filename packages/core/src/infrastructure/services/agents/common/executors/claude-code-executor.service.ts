@@ -21,6 +21,7 @@ import type { SpawnFunction } from '../types.js';
 import { EventChannel } from '../../streaming/event-channel.js';
 import { createExecutorLogger, type ExecutorLogger } from './executor-logger.js';
 import {
+  agentTimeoutMessage,
   buildSpawnOptions,
   classifySpawnError,
   createLineAccumulator,
@@ -34,6 +35,7 @@ import {
   type ExecutorCapabilities,
 } from './security-constraint-validator.js';
 import { describeSubprocessFailure } from './subprocess-failure-message.js';
+import { describeResultEventError, resultEventError } from './result-event-outcome.js';
 
 /** Binary name on PATH. */
 const CLAUDE_BINARY = 'claude';
@@ -62,16 +64,16 @@ const SUPPORTED_FEATURES = new Set<string>([
  */
 const RESULT_TO_CLOSE_GRACE_MS = 30_000;
 
+/** Agent name used in failure messages. */
+const AGENT_NAME = 'Claude Code';
+
 /**
- * Prefix the Claude CLI uses on every failing `result` subtype
- * (`error_max_turns`, `error_during_execution`, …).
- *
- * A run that ends this way exits 0 and still carries a `result` string, so
- * exit code alone reports a truncated or aborted run as a success. Every
- * downstream gate — evidence, CI watch, merge — then reads partial work as
- * finished work, which is exactly the fail-open this guards against.
+ * The Claude CLI ends every turn with a `result` event — also when it gives up
+ * (see {@link resultEventError}). A clean exit without one means the output
+ * was cut short (e.g. a line dropped for exceeding the line cap), so the turn
+ * cannot be reported as finished, however much text arrived before it.
  */
-const RESULT_ERROR_SUBTYPE_PREFIX = 'error_';
+const MISSING_RESULT_EVENT_MESSAGE = `${AGENT_NAME} exited without a result event — its output was cut short before the turn finished`;
 
 /** Claude Code stream-json event types. */
 const EVENT_TYPE_STREAM_EVENT = 'stream_event';
@@ -128,12 +130,14 @@ export class ClaudeCodeExecutorService implements IAgentExecutor {
       let cancelEscalation: (() => void) | undefined;
 
       // Collected from the stream — only the final result line matters
+      /** True once the CLI emitted its terminal `result` event. */
+      let resultSeen = false;
       let resultText = '';
       let sessionId: string | undefined;
       let usage: AgentExecutionUsage | undefined;
       let metadata: Record<string, unknown> | undefined;
       // Error signal carried by the final `result` event, if any.
-      let resultError: { isError: boolean; subtype?: string } | undefined;
+      let resultError: ReturnType<typeof resultEventError>;
 
       /**
        * Settle exactly once and drop every timer.
@@ -159,23 +163,24 @@ export class ClaudeCodeExecutorService implements IAgentExecutor {
         resolve(result);
       };
 
-      if (options?.timeout) {
+      const timeoutMs = options?.timeout;
+      if (timeoutMs) {
         timeoutId = setTimeout(() => {
-          log(`Timeout after ${options.timeout}ms — terminating agent`);
+          log(`Timeout after ${timeoutMs}ms — terminating agent`);
           cancelEscalation = terminateWithEscalation(proc);
           // Settle now rather than waiting for a 'close' a wedged child may
           // never emit. If the agent already produced its answer and only the
           // teardown hung, that answer is the run's outcome — discarding it
           // threw away completed work.
           settle(() => {
-            if (resultText && !resultError) {
+            if (resultSeen && !resultError) {
               log('Timed out after the result arrived — returning the captured result');
               resolveCaptured();
               return;
             }
-            reject(new Error('Agent execution timed out'));
+            reject(new Error(agentTimeoutMessage(timeoutMs)));
           });
-        }, options.timeout);
+        }, timeoutMs);
       }
 
       const accumulator = createLineAccumulator(
@@ -184,14 +189,11 @@ export class ClaudeCodeExecutorService implements IAgentExecutor {
           const parsed = parseJsonLine(line);
           if (parsed?.type !== EVENT_TYPE_RESULT) return;
 
+          resultSeen = true;
           resultText = asText(parsed.result);
           if (typeof parsed.session_id === 'string') sessionId = parsed.session_id;
           usage = extractUsage(parsed);
-
-          const subtype = typeof parsed.subtype === 'string' ? parsed.subtype : undefined;
-          const isError =
-            parsed.is_error === true || (subtype?.startsWith(RESULT_ERROR_SUBTYPE_PREFIX) ?? false);
-          resultError = isError ? { isError: true, ...(subtype ? { subtype } : {}) } : undefined;
+          resultError = resultEventError(parsed);
 
           const { type: _t, result: _r, session_id: _s, usage: _u, ...rest } = parsed;
           if (Object.keys(rest).length > 0) metadata = rest;
@@ -243,22 +245,24 @@ export class ClaudeCodeExecutorService implements IAgentExecutor {
           // The CLI exits 0 even when it gives up (turn limit, internal error).
           // Trust the result event's own error signal over the exit code.
           if (resultError) {
-            const detail = resultError.subtype ? ` (${resultError.subtype})` : '';
             reject(
               new Error(
-                `Claude Code run did not complete successfully${detail}: ${
-                  resultText.trim() || stderr.text().trim() || 'no detail provided'
-                }`
+                describeResultEventError(AGENT_NAME, resultError, resultText, stderr.text())
               )
             );
             return;
           }
 
           // code === null means a signal killed the agent (OOM killer, an
-          // external kill, our own post-result teardown). With no result that
-          // is a failure, not an empty answer.
-          if (code === null && !resultText) {
+          // external kill, our own post-result teardown). Before the result
+          // event that is a failure, however much text had streamed.
+          if (code === null && !resultSeen) {
             reject(new Error(signalTerminationMessage(signal, stderr.text())));
+            return;
+          }
+
+          if (!resultSeen) {
+            reject(new Error(MISSING_RESULT_EVENT_MESSAGE));
             return;
           }
 
@@ -277,26 +281,31 @@ export class ClaudeCodeExecutorService implements IAgentExecutor {
 
     const channel = new EventChannel<AgentExecutionStreamEvent>();
     const stderr = createStderrTail();
+    /** True once the CLI emitted its terminal `result` event (success or not). */
+    let resultSeen = false;
     let processClosed = false;
     let timedOut = false;
     let timeoutId: ReturnType<typeof setTimeout> | undefined;
 
-    if (options?.timeout) {
+    const timeoutMs = options?.timeout;
+    if (timeoutMs) {
       timeoutId = setTimeout(() => {
         timedOut = true;
-        log(`Timeout after ${options.timeout}ms — terminating agent`);
+        log(`Timeout after ${timeoutMs}ms — terminating agent`);
         terminateWithEscalation(proc);
         channel.push({
           type: 'error',
-          content: 'Agent execution timed out',
+          content: agentTimeoutMessage(timeoutMs),
           timestamp: new Date(),
         });
         channel.close();
-      }, options.timeout);
+      }, timeoutMs);
     }
 
     const accumulator = createLineAccumulator((line) => {
-      const event = parseStreamLine(line);
+      const parsed = parseJsonLine(line);
+      if (parsed?.type === EVENT_TYPE_RESULT) resultSeen = true;
+      const event = parseStreamLine(line, parsed);
       if (event) channel.push(event);
     });
 
@@ -321,12 +330,22 @@ export class ClaudeCodeExecutorService implements IAgentExecutor {
 
       accumulator.flush();
 
-      if (code !== 0 && code !== null && stderr.text().trim()) {
-        channel.push({ type: 'error', content: stderr.text().trim(), timestamp: new Date() });
-      } else if (code === null) {
+      // Same outcome rule as execute(): a non-zero exit always fails, a signal
+      // or a clean exit before the terminal `result` event means the turn was
+      // cut short.
+      if (code !== 0 && code !== null) {
         channel.push({
           type: 'error',
-          content: signalTerminationMessage(signal, stderr.text()),
+          content: describeSubprocessFailure({ code, stderr: stderr.text() }),
+          timestamp: new Date(),
+        });
+      } else if (!resultSeen) {
+        channel.push({
+          type: 'error',
+          content:
+            code === null
+              ? signalTerminationMessage(signal, stderr.text())
+              : MISSING_RESULT_EVENT_MESSAGE,
           timestamp: new Date(),
         });
       }
@@ -489,9 +508,15 @@ function extractUsage(parsed: Record<string, unknown>): AgentExecutionUsage | un
   return usage;
 }
 
-/** Map one stream-json line to a stream event, or null when it carries nothing. */
-function parseStreamLine(line: string): AgentExecutionStreamEvent | null {
-  const parsed = parseJsonLine(line);
+/**
+ * Map one stream-json line to a stream event, or null when it carries nothing.
+ *
+ * @param parsed - The line already parsed by {@link parseJsonLine}
+ */
+function parseStreamLine(
+  line: string,
+  parsed: Record<string, unknown> | null
+): AgentExecutionStreamEvent | null {
   if (!parsed) {
     // Non-JSON line, treat as progress text
     return { type: 'progress', content: line, timestamp: new Date() };
@@ -514,11 +539,18 @@ function parseStreamLine(line: string): AgentExecutionStreamEvent | null {
   if (parsed.type === EVENT_TYPE_ASSISTANT) return null;
 
   if (parsed.type === EVENT_TYPE_RESULT) {
-    const event: AgentExecutionStreamEvent = {
-      type: 'result',
-      content: asText(parsed.result),
-      timestamp: new Date(),
-    };
+    const content = asText(parsed.result);
+    // A turn-limit or errored result is the CLI giving up, not an answer —
+    // reported as an error so no consumer can take the fragment as finished.
+    const failure = resultEventError(parsed);
+    if (failure) {
+      return {
+        type: 'error',
+        content: describeResultEventError(AGENT_NAME, failure, content),
+        timestamp: new Date(),
+      };
+    }
+    const event: AgentExecutionStreamEvent = { type: 'result', content, timestamp: new Date() };
     if (typeof parsed.session_id === 'string') event.sessionId = parsed.session_id;
     return event;
   }

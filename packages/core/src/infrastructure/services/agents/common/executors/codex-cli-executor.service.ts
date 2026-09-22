@@ -28,6 +28,7 @@ import { EventChannel } from '../../streaming/event-channel.js';
 import { createExecutorLogger, type ExecutorLogger } from './executor-logger.js';
 import { describeSubprocessFailure } from './subprocess-failure-message.js';
 import {
+  agentTimeoutMessage,
   buildSpawnOptions,
   classifySpawnError,
   createLineAccumulator,
@@ -126,6 +127,15 @@ function itemOf(parsed: Record<string, unknown>): Record<string, unknown> | unde
   return parsed.item as Record<string, unknown> | undefined;
 }
 
+/** Shown when a `turn.failed` event carried no message of its own. */
+const TURN_FAILED_FALLBACK = 'Turn failed';
+
+/** The reason a `turn.failed` event gives, which may be nested under `error`. */
+function turnFailedMessage(parsed: Record<string, unknown>): string {
+  const error = parsed.error as { message?: unknown } | undefined;
+  return asText(error?.message ?? parsed.message) || TURN_FAILED_FALLBACK;
+}
+
 /** True when the event describes an assistant text message. */
 function isMessageItem(parsed: Record<string, unknown>): boolean {
   const type = itemOf(parsed)?.type;
@@ -167,7 +177,12 @@ export class CodexCliExecutorService implements IAgentExecutor {
         let resultText = '';
         let sessionId: string | undefined;
         let usage: AgentExecutionUsage | undefined;
-        let timedOut = false;
+        /** True once Codex emitted `turn.completed` — the turn's terminal event. */
+        let turnCompleted = false;
+        /** Reason Codex gave in `turn.failed`, if the turn failed. */
+        let turnFailure: string | undefined;
+        /** Set when the budget elapsed — the run's outcome, whatever follows. */
+        let timeoutError: string | undefined;
         let settled = false;
         let timeoutId: ReturnType<typeof setTimeout> | undefined;
         let cancelEscalation: (() => void) | undefined;
@@ -180,12 +195,13 @@ export class CodexCliExecutorService implements IAgentExecutor {
           outcome();
         };
 
-        if (options?.timeout) {
+        const timeoutMs = options?.timeout;
+        if (timeoutMs) {
           timeoutId = setTimeout(() => {
-            timedOut = true;
-            log(`Timeout after ${options.timeout}ms — terminating agent`);
+            timeoutError = agentTimeoutMessage(timeoutMs);
+            log(`Timeout after ${timeoutMs}ms — terminating agent`);
             cancelEscalation = terminateWithEscalation(proc);
-          }, options.timeout);
+          }, timeoutMs);
         }
 
         const accumulator = createLineAccumulator(
@@ -200,8 +216,11 @@ export class CodexCliExecutorService implements IAgentExecutor {
               // Accumulate response text from completed agent messages
               const text = extractItemText(parsed);
               if (text) resultText += text;
-            } else if (parsed.type === EVENT_TYPE_TURN_COMPLETED && parsed.usage) {
-              usage = extractUsage(parsed.usage as Record<string, number>);
+            } else if (parsed.type === EVENT_TYPE_TURN_COMPLETED) {
+              turnCompleted = true;
+              if (parsed.usage) usage = extractUsage(parsed.usage as Record<string, number>);
+            } else if (parsed.type === EVENT_TYPE_TURN_FAILED) {
+              turnFailure = turnFailedMessage(parsed);
             }
           },
           {
@@ -227,8 +246,8 @@ export class CodexCliExecutorService implements IAgentExecutor {
           log(`Process closed with code ${code}, result=${resultText.length} chars`);
 
           settle(() => {
-            if (timedOut) {
-              reject(new Error('Agent execution timed out'));
+            if (timeoutError) {
+              reject(new Error(timeoutError));
               return;
             }
 
@@ -238,6 +257,19 @@ export class CodexCliExecutorService implements IAgentExecutor {
               reject(
                 new Error(describeSubprocessFailure({ code, resultText, stderr: stderr.text() }))
               );
+              return;
+            }
+
+            // Codex exits 0 after a failed turn; the text before it is a fragment.
+            if (turnFailure) {
+              reject(new Error(turnFailure));
+              return;
+            }
+
+            // A signal kill (OOM killer, external kill) before `turn.completed`
+            // cut the turn short, however much text had already arrived.
+            if (code === null && !turnCompleted) {
+              reject(new Error(signalTerminationMessage(signal, stderr.text())));
               return;
             }
 
@@ -255,11 +287,6 @@ export class CodexCliExecutorService implements IAgentExecutor {
             const diagnosis = diagnoseStderr(stderr.text());
             if (diagnosis) {
               reject(new Error(diagnosis));
-              return;
-            }
-
-            if (code === null) {
-              reject(new Error(signalTerminationMessage(signal, stderr.text())));
               return;
             }
 
@@ -300,22 +327,25 @@ export class CodexCliExecutorService implements IAgentExecutor {
       let sessionId: string | undefined;
       /** Text already emitted for the message item in flight. */
       let emittedText = '';
+      /** True once Codex emitted `turn.completed` — the turn's terminal event. */
+      let turnCompleted = false;
       let processClosed = false;
       let timedOut = false;
       let timeoutId: ReturnType<typeof setTimeout> | undefined;
 
-      if (options?.timeout) {
+      const timeoutMs = options?.timeout;
+      if (timeoutMs) {
         timeoutId = setTimeout(() => {
           timedOut = true;
-          log(`Timeout after ${options.timeout}ms — terminating agent`);
+          log(`Timeout after ${timeoutMs}ms — terminating agent`);
           terminateWithEscalation(proc);
           channel.push({
             type: 'error',
-            content: 'Agent execution timed out',
+            content: agentTimeoutMessage(timeoutMs),
             timestamp: new Date(),
           });
           channel.close();
-        }, options.timeout);
+        }, timeoutMs);
       }
 
       const accumulator = createLineAccumulator((line) => {
@@ -391,6 +421,7 @@ export class CodexCliExecutorService implements IAgentExecutor {
         }
 
         if (type === EVENT_TYPE_TURN_COMPLETED) {
+          turnCompleted = true;
           const event: AgentExecutionStreamEvent = {
             type: 'result',
             content: resultText,
@@ -402,10 +433,9 @@ export class CodexCliExecutorService implements IAgentExecutor {
         }
 
         if (type === EVENT_TYPE_TURN_FAILED) {
-          const error = parsed.error as { message?: unknown } | undefined;
           channel.push({
             type: 'error',
-            content: asText(error?.message ?? parsed.message) || 'Turn failed',
+            content: turnFailedMessage(parsed),
             timestamp: new Date(),
           });
           return;
@@ -451,18 +481,19 @@ export class CodexCliExecutorService implements IAgentExecutor {
             content: describeSubprocessFailure({ code, resultText, stderr: stderr.text() }),
             timestamp: new Date(),
           });
+        } else if (code === null && !turnCompleted) {
+          // Same rule as execute(): a kill before `turn.completed` is a cut turn.
+          channel.push({
+            type: 'error',
+            content: signalTerminationMessage(signal, stderr.text()),
+            timestamp: new Date(),
+          });
         } else if (!resultText) {
           // Same rule as execute(): stderr only gets to fail the run when the
           // agent produced nothing of its own.
           const diagnosis = diagnoseStderr(stderr.text());
           if (diagnosis) {
             channel.push({ type: 'error', content: diagnosis, timestamp: new Date() });
-          } else if (code === null) {
-            channel.push({
-              type: 'error',
-              content: signalTerminationMessage(signal, stderr.text()),
-              timestamp: new Date(),
-            });
           }
         }
         channel.close();

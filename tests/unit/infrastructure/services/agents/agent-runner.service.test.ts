@@ -400,6 +400,52 @@ describe('AgentRunnerService', () => {
       expect(lastUpdate[2]).toEqual(expect.objectContaining({ error: 'Graph crashed' }));
     });
 
+    it('should deliver the events of every graph node, not only the first', async () => {
+      mockExecutor.executeStream = async function* (prompt: string) {
+        yield makeStreamEvent('progress', `${prompt}: working`);
+        yield makeStreamEvent('result', `${prompt}: done`);
+      };
+      mockDefinition.graphFactory = vi.fn().mockImplementation((executor: IAgentExecutor) => ({
+        invoke: vi.fn().mockImplementation(async () => {
+          await executor.execute('node-1');
+          const second = await executor.execute('node-2');
+          return { analysisMarkdown: second.result };
+        }),
+      }));
+
+      const contents: string[] = [];
+      for await (const event of runner.runAgentStream('analyze-repository', 'Analyze')) {
+        contents.push(event.content);
+      }
+
+      expect(contents).toEqual([
+        'node-1: working',
+        'node-1: done',
+        'node-2: working',
+        'node-2: done',
+      ]);
+    });
+
+    it('should mark the run failed with the reason when the executor streams an error event', async () => {
+      setupStreamingMocks([
+        makeStreamEvent('progress', 'Analyzing...'),
+        makeStreamEvent('error', 'Agent execution timed out after 300s'),
+      ]);
+
+      const events: AgentRunEvent[] = [];
+      for await (const event of runner.runAgentStream('analyze-repository', 'Analyze')) {
+        events.push(event);
+      }
+
+      expect(events.map((e) => e.type)).toEqual(['progress', 'error']);
+      const updateCalls = vi.mocked(mockRunRepository.updateStatus).mock.calls;
+      const lastUpdate = updateCalls[updateCalls.length - 1];
+      expect(lastUpdate[1]).toBe(AgentRunStatus.failed);
+      expect(lastUpdate[2]).toEqual(
+        expect.objectContaining({ error: 'Agent execution timed out after 300s' })
+      );
+    });
+
     it('should throw for unknown agent name', async () => {
       vi.mocked(mockRegistry.get).mockResolvedValue(undefined);
 

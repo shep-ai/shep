@@ -46,6 +46,7 @@ import {
 } from './security-constraint-validator.js';
 import { createExecutorLogger, type ExecutorLogger } from './executor-logger.js';
 import {
+  agentTimeoutMessage,
   createLineAccumulator,
   createStderrTail,
   killProcessTree,
@@ -182,9 +183,10 @@ export class KimiCodeExecutorService implements IAgentExecutor {
         outcome();
       };
 
-      if (options?.timeout) {
+      const timeoutMs = options?.timeout;
+      if (timeoutMs) {
         timeoutId = setTimeout(() => {
-          log(`Timeout after ${options.timeout}ms — terminating agent`);
+          log(`Timeout after ${timeoutMs}ms — terminating agent`);
           killProcessTree(proc);
           // SIGTERM is a request the child may ignore. Escalate to SIGKILL so
           // the process cannot survive, and reject NOW rather than waiting for
@@ -198,8 +200,8 @@ export class KimiCodeExecutorService implements IAgentExecutor {
             }
           }, SIGKILL_GRACE_MS);
           sigkillId.unref?.();
-          settle(() => reject(new Error('Agent execution timed out')));
-        }, options.timeout);
+          settle(() => reject(new Error(agentTimeoutMessage(timeoutMs))));
+        }, timeoutMs);
       }
 
       const accumulator = createLineAccumulator(
@@ -268,9 +270,10 @@ export class KimiCodeExecutorService implements IAgentExecutor {
           }
 
           // code === null means a signal killed the agent (OOM killer, an
-          // external kill). Resolving that as success hands the caller an
-          // empty result as if the agent had nothing to say.
-          if (code === null && !finalText) {
+          // external kill). Kimi's output has no terminal event, so text that
+          // arrived before the kill cannot be told apart from a finished turn —
+          // a kill is always a failure, never a partial answer.
+          if (code === null) {
             reject(new Error(signalTerminationMessage(signal, stderr.text())));
             return;
           }
@@ -314,14 +317,18 @@ export class KimiCodeExecutorService implements IAgentExecutor {
     /** Assistant text seen so far — the answer the result event announces. */
     let resultText = '';
     let processClosed = false;
+    /** The timeout already reported the outcome; the kill's 'close' must not. */
+    let timedOut = false;
     let timeoutId: ReturnType<typeof setTimeout> | undefined;
 
-    if (options?.timeout) {
+    const timeoutMs = options?.timeout;
+    if (timeoutMs) {
       timeoutId = setTimeout(() => {
-        log(`Timeout after ${options.timeout}ms — terminating agent`);
+        timedOut = true;
+        log(`Timeout after ${timeoutMs}ms — terminating agent`);
         terminateWithEscalation(proc);
-        enqueue({ type: 'error', content: 'Agent execution timed out', timestamp: new Date() });
-      }, options.timeout);
+        enqueue({ type: 'error', content: agentTimeoutMessage(timeoutMs), timestamp: new Date() });
+      }, timeoutMs);
     }
 
     const accumulator = createLineAccumulator((line) => {
@@ -349,14 +356,17 @@ export class KimiCodeExecutorService implements IAgentExecutor {
       accumulator.flush();
       if (timeoutId) clearTimeout(timeoutId);
 
-      if (code !== 0 && code !== null) {
+      if (timedOut) {
+        // Already reported by the timeout callback.
+      } else if (code !== 0 && code !== null) {
         const detail = stderr.text().trim() || `Process exited with code ${code}`;
         const content =
           code === EXIT_CODE_TRANSIENT_FAILURE
             ? `Kimi Code reported a transient failure (exit ${code}) — ${detail}`
             : detail;
         enqueue({ type: 'error', content, timestamp: new Date() });
-      } else if (code === null && !resultText) {
+      } else if (code === null) {
+        // No terminal event exists in Kimi's output: a kill is never a result.
         enqueue({
           type: 'error',
           content: signalTerminationMessage(signal, stderr.text()),

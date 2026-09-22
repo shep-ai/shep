@@ -338,3 +338,24 @@ export function signalTerminationMessage(
     detail ? ` ${detail}` : ''
   }`;
 }
+
+/**
+ * Prefix of every executor timeout error.
+ *
+ * Retry classification (`feature-agent/nodes/node-helpers.ts`) matches on this
+ * exact text to treat a timeout as non-retryable, so it must never change.
+ */
+export const AGENT_TIMEOUT_MESSAGE_PREFIX = 'Agent execution timed out';
+
+/** Milliseconds per second, for rendering a budget in human units. */
+const MS_PER_SECOND = 1000;
+
+/**
+ * Describe a run that exceeded its time budget, naming the budget.
+ *
+ * A bare "timed out" leaves the reader guessing whether the agent hung for
+ * seconds or for an hour, and whether raising the limit would help.
+ */
+export function agentTimeoutMessage(timeoutMs: number): string {
+  return `${AGENT_TIMEOUT_MESSAGE_PREFIX} after ${timeoutMs / MS_PER_SECOND}s`;
+}

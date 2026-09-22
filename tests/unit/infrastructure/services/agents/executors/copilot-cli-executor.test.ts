@@ -8,7 +8,7 @@
  */
 
 import 'reflect-metadata';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { EventEmitter } from 'node:events';
 import { PassThrough } from 'node:stream';
 import { existsSync } from 'node:fs';
@@ -89,6 +89,12 @@ describe('CopilotCliExecutorService', () => {
   beforeEach(() => {
     mockSpawn = vi.fn();
     executor = new CopilotCliExecutorService(mockSpawn);
+  });
+
+  // A fake-timer test that fails before its own `useRealTimers()` must not
+  // leave every later test waiting on timers that never advance.
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   // --- agentType and supportsFeature ---
@@ -618,7 +624,7 @@ describe('CopilotCliExecutorService', () => {
       mockProc.stderr.end();
       mockProc.emit('close', null);
 
-      await expect(executePromise).rejects.toThrow(/timed out/i);
+      await expect(executePromise).rejects.toThrow('Agent execution timed out after 5s');
       expect(mockProc.kill).toHaveBeenCalled();
       vi.useRealTimers();
     });
@@ -815,7 +821,9 @@ describe('CopilotCliExecutorService', () => {
       await collectPromise;
 
       expect(mockProc.kill).toHaveBeenCalled();
-      expect(events.some((e) => e.type === 'error' && /timed out/i.test(e.content))).toBe(true);
+      expect(
+        events.some((e) => e.type === 'error' && e.content === 'Agent execution timed out after 3s')
+      ).toBe(true);
 
       vi.useRealTimers();
     });
@@ -1016,14 +1024,56 @@ describe('CopilotCliExecutorService', () => {
       await expect(executePromise).rejects.toThrow(/SIGKILL/);
     });
 
-    it('should still return work already captured before the signal', async () => {
+    // Partial text is not a finished turn: Copilot ends every turn with a
+    // `result` event, and a kill before it means the work was cut short.
+    it('should reject naming the signal when killed after partial text', async () => {
       const mockProc = createMockChildProcess();
       vi.mocked(mockSpawn).mockReturnValue(mockProc as any);
 
       const executePromise = executor.execute('Prompt', { silent: true });
-      emitJsonlLines(mockProc, [assistantMessage('partial work')], null, null);
+      process.nextTick(() => {
+        for (const line of [assistantMessage('partial work')]) mockProc.stdout.write(`${line}\n`);
+        mockProc.stdout.end();
+        mockProc.stderr.end();
+        mockProc.emit('close', null, 'SIGKILL');
+      });
 
-      expect((await executePromise).result).toBe('partial work');
+      await expect(executePromise).rejects.toThrow(/SIGKILL/);
+    });
+
+    it('should keep the answer when the signal arrives after the result event', async () => {
+      const mockProc = createMockChildProcess();
+      vi.mocked(mockSpawn).mockReturnValue(mockProc as any);
+
+      const executePromise = executor.execute('Prompt', { silent: true });
+      process.nextTick(() => {
+        for (const line of [assistantMessage('all done'), resultEvent('sess-1')])
+          mockProc.stdout.write(`${line}\n`);
+        mockProc.stdout.end();
+        mockProc.stderr.end();
+        mockProc.emit('close', null, 'SIGTERM');
+      });
+
+      expect((await executePromise).result).toBe('all done');
+    });
+
+    it('should stream an error, not a result, when killed after partial text', async () => {
+      const mockProc = createMockChildProcess();
+      vi.mocked(mockSpawn).mockReturnValue(mockProc as any);
+
+      process.nextTick(() => {
+        for (const line of [assistantMessage('partial work')]) mockProc.stdout.write(`${line}\n`);
+        mockProc.stdout.end();
+        mockProc.stderr.end();
+        mockProc.emit('close', null, 'SIGKILL');
+      });
+      const events: { type: string; content: string }[] = [];
+      for await (const event of executor.executeStream('Prompt', { silent: true })) {
+        events.push({ type: event.type, content: event.content });
+      }
+
+      expect(events.some((e) => e.type === 'error' && e.content.includes('SIGKILL'))).toBe(true);
+      expect(events.some((e) => e.type === 'result')).toBe(false);
     });
   });
 

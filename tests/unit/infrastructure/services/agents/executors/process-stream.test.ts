@@ -11,6 +11,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { EventEmitter } from 'node:events';
 import {
   SIGKILL_GRACE_MS,
+  agentTimeoutMessage,
   buildSpawnOptions,
   classifySpawnError,
   createLineAccumulator,
@@ -417,5 +418,21 @@ describe('signalTerminationMessage', () => {
 
     expect(message).not.toContain('null');
     expect(message.length).toBeGreaterThan(0);
+  });
+});
+
+describe('agentTimeoutMessage', () => {
+  it('should keep the prefix retry classification matches on', () => {
+    // node-helpers treats this prefix as non-retryable; changing it would
+    // silently turn every timeout into a retry.
+    expect(agentTimeoutMessage(300_000)).toMatch(/^Agent execution timed out/);
+  });
+
+  it('should name the budget that elapsed, in seconds', () => {
+    expect(agentTimeoutMessage(300_000)).toBe('Agent execution timed out after 300s');
+  });
+
+  it('should keep sub-second budgets exact rather than rounding them to 0s', () => {
+    expect(agentTimeoutMessage(1_500)).toBe('Agent execution timed out after 1.5s');
   });
 });

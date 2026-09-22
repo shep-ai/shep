@@ -24,7 +24,9 @@ import { IS_WINDOWS } from '../../../../platform.js';
 import { EventChannel } from '../../streaming/event-channel.js';
 import { createExecutorLogger, type ExecutorLogger } from './executor-logger.js';
 import { describeSubprocessFailure } from './subprocess-failure-message.js';
+import { describeResultEventError, resultEventError } from './result-event-outcome.js';
 import {
+  agentTimeoutMessage,
   buildSpawnOptions,
   classifySpawnError,
   createLineAccumulator,
@@ -36,6 +38,9 @@ import {
   validateSecurityConstraints,
   type ExecutorCapabilities,
 } from './security-constraint-validator.js';
+
+/** Agent name used in failure messages. */
+const AGENT_NAME = 'Cursor';
 
 /** Binary name on PATH (POSIX) and the command PowerShell invokes on Windows. */
 const CURSOR_BINARY = 'cursor-agent';
@@ -150,7 +155,12 @@ export class CursorExecutorService implements IAgentExecutor {
       let rawText = '';
       let sessionId: string | undefined;
       let metadata: Record<string, unknown> | undefined;
-      let timedOut = false;
+      /** True once the CLI emitted its terminal `result` event. */
+      let resultSeen = false;
+      /** Error signal carried by the `result` event, if any. */
+      let resultError: ReturnType<typeof resultEventError>;
+      /** Set when the budget elapsed — the run's outcome, whatever follows. */
+      let timeoutError: string | undefined;
       let settled = false;
       let timeoutId: ReturnType<typeof setTimeout> | undefined;
       let cancelEscalation: (() => void) | undefined;
@@ -164,12 +174,13 @@ export class CursorExecutorService implements IAgentExecutor {
         outcome();
       };
 
-      if (options?.timeout) {
+      const timeoutMs = options?.timeout;
+      if (timeoutMs) {
         timeoutId = setTimeout(() => {
-          timedOut = true;
-          log(`Timeout after ${options.timeout}ms — terminating agent`);
+          timeoutError = agentTimeoutMessage(timeoutMs);
+          log(`Timeout after ${timeoutMs}ms — terminating agent`);
           cancelEscalation = terminateWithEscalation(proc);
-        }, options.timeout);
+        }, timeoutMs);
       }
 
       const accumulator = createLineAccumulator(
@@ -184,6 +195,8 @@ export class CursorExecutorService implements IAgentExecutor {
           if (parsed.type === EVENT_TYPE_ASSISTANT) {
             resultText += assistantText(parsed);
           } else if (parsed.type === EVENT_TYPE_RESULT) {
+            resultSeen = true;
+            resultError = resultEventError(parsed);
             // json format puts the full result text in parsed.result
             if (typeof parsed.result === 'string' && parsed.result) resultText = parsed.result;
             if (typeof parsed.session_id === 'string') sessionId = parsed.session_id;
@@ -224,8 +237,8 @@ export class CursorExecutorService implements IAgentExecutor {
         log(`Process closed with code ${code}, result=${finalText.length} chars`);
 
         settle(() => {
-          if (timedOut) {
-            reject(new Error('Agent execution timed out'));
+          if (timeoutError) {
+            reject(new Error(timeoutError));
             return;
           }
 
@@ -240,7 +253,17 @@ export class CursorExecutorService implements IAgentExecutor {
             return;
           }
 
-          if (code === null && !finalText) {
+          // A turn-limit or errored result exits 0 — its own error signal wins.
+          if (resultError) {
+            reject(
+              new Error(describeResultEventError(AGENT_NAME, resultError, finalText, stderr.text()))
+            );
+            return;
+          }
+
+          // A signal kill (OOM killer, external kill) before the terminal
+          // `result` event cut the turn short, however much text had arrived.
+          if (code === null && !resultSeen) {
             reject(new Error(signalTerminationMessage(signal, stderr.text())));
             return;
           }
@@ -270,20 +293,23 @@ export class CursorExecutorService implements IAgentExecutor {
     const stderr = createStderrTail();
     /** Assistant text seen so far — the answer the `result` event announces. */
     let resultText = '';
+    /** True once the CLI emitted its terminal `result` event (success or not). */
+    let resultSeen = false;
     let processClosed = false;
     let timeoutId: ReturnType<typeof setTimeout> | undefined;
 
-    if (options?.timeout) {
+    const timeoutMs = options?.timeout;
+    if (timeoutMs) {
       timeoutId = setTimeout(() => {
-        log(`Timeout after ${options.timeout}ms — terminating agent`);
+        log(`Timeout after ${timeoutMs}ms — terminating agent`);
         terminateWithEscalation(proc);
         channel.push({
           type: 'error',
-          content: 'Agent execution timed out',
+          content: agentTimeoutMessage(timeoutMs),
           timestamp: new Date(),
         });
         channel.close();
-      }, options.timeout);
+      }, timeoutMs);
     }
 
     const accumulator = createLineAccumulator((line) => {
@@ -303,10 +329,20 @@ export class CursorExecutorService implements IAgentExecutor {
       }
 
       if (parsed.type === EVENT_TYPE_RESULT) {
+        resultSeen = true;
         // The session id identifies the conversation; it is NOT the answer.
         // Returning it as `content` handed every downstream graph node a UUID.
         const content =
           typeof parsed.result === 'string' && parsed.result ? parsed.result : resultText;
+        const failure = resultEventError(parsed);
+        if (failure) {
+          channel.push({
+            type: 'error',
+            content: describeResultEventError(AGENT_NAME, failure, content),
+            timestamp: new Date(),
+          });
+          return;
+        }
         const event: AgentExecutionStreamEvent = {
           type: 'result',
           content,
@@ -340,9 +376,13 @@ export class CursorExecutorService implements IAgentExecutor {
       accumulator.flush();
       if (timeoutId) clearTimeout(timeoutId);
 
-      if (code !== 0 && code !== null && stderr.text().trim()) {
-        channel.push({ type: 'error', content: stderr.text().trim(), timestamp: new Date() });
-      } else if (code === null && !resultText) {
+      if (code !== 0 && code !== null) {
+        channel.push({
+          type: 'error',
+          content: describeSubprocessFailure({ code, resultText, stderr: stderr.text() }),
+          timestamp: new Date(),
+        });
+      } else if (code === null && !resultSeen) {
         channel.push({
           type: 'error',
           content: signalTerminationMessage(signal, stderr.text()),

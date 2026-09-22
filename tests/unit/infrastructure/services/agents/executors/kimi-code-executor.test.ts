@@ -416,7 +416,7 @@ describe('KimiCodeExecutorService', () => {
     it('should kill the process and reject when the timeout elapses', async () => {
       // No output, no close — the timeout must fire.
       await expect(executor.execute('go', { silent: true, timeout: 20 })).rejects.toThrow(
-        /timed out/i
+        'Agent execution timed out after 0.02s'
       );
       expect(proc.kill).toHaveBeenCalled();
     });
@@ -479,6 +479,59 @@ describe('KimiCodeExecutorService', () => {
   });
 
   describe('signal termination', () => {
+    // Kimi's protocol has no terminal event, so a signal kill can never be
+    // told apart from a finished turn by the output — it is always a failure.
+    it('should reject naming the signal when killed after partial text', async () => {
+      const executePromise = executor.execute('go', { silent: true });
+      process.nextTick(() => {
+        for (const line of [assistantMessage('partial work')]) proc.stdout.write(`${line}\n`);
+        proc.stdout.end();
+        proc.stderr.end();
+        proc.emit('close', null, 'SIGKILL');
+      });
+
+      await expect(executePromise).rejects.toThrow(/SIGKILL/);
+    });
+
+    it('should stream an error, not a result, when killed after partial text', async () => {
+      process.nextTick(() => {
+        for (const line of [assistantMessage('partial work')]) proc.stdout.write(`${line}\n`);
+        proc.stdout.end();
+        proc.stderr.end();
+        proc.emit('close', null, 'SIGKILL');
+      });
+      const events: { type: string; content: string }[] = [];
+      for await (const event of executor.executeStream('go', { silent: true })) {
+        events.push({ type: event.type, content: event.content });
+      }
+
+      expect(events.some((e) => e.type === 'error' && e.content.includes('SIGKILL'))).toBe(true);
+      expect(events.some((e) => e.type === 'result')).toBe(false);
+    });
+
+    it('should stream the timeout with its budget and no result', async () => {
+      // A timeout kill reaches 'close' as a signal too; it must be reported once.
+      proc.kill.mockImplementation(() => {
+        process.nextTick(() => {
+          proc.stdout.write(`${assistantMessage('partial work')}\n`);
+          proc.stdout.end();
+          proc.stderr.end();
+          proc.emit('close', null, 'SIGTERM');
+        });
+        return true;
+      });
+
+      const events: { type: string; content: string }[] = [];
+      for await (const event of executor.executeStream('go', { silent: true, timeout: 20 })) {
+        events.push({ type: event.type, content: event.content });
+      }
+
+      expect(events.filter((e) => e.type === 'error')).toEqual([
+        { type: 'error', content: 'Agent execution timed out after 0.02s' },
+      ]);
+      expect(events.some((e) => e.type === 'result')).toBe(false);
+    });
+
     it('should reject when the CLI is killed by a signal with nothing captured', async () => {
       const executePromise = executor.execute('go', { silent: true });
       process.nextTick(() => {
