@@ -64,4 +64,24 @@ describe('ListFindingsUseCase', () => {
     expect(result.offset).toBe(50);
     expect(result.limit).toBe(10);
   });
+
+  // `shep aspm findings --limit abc` reaches the CLI's Number("abc") as NaN.
+  // Math.max/Math.min propagate NaN rather than rejecting it, so the clamp
+  // above is a no-op for it and the NaN is bound straight into
+  // `LIMIT ? OFFSET ?`.
+  it('falls back to the defaults when the cursor is NaN', async () => {
+    const { port, listMock } = fakeRepo();
+    const uc = new ListFindingsUseCase(port);
+    const result = await uc.execute({ cursor: { offset: NaN, limit: NaN } });
+    expect(listMock).toHaveBeenCalledWith({}, { offset: 0, limit: 25 });
+    expect(result.offset).toBe(0);
+    expect(result.limit).toBe(25);
+  });
+
+  it('clamps a non-finite limit instead of forwarding it', async () => {
+    const { port, listMock } = fakeRepo();
+    const uc = new ListFindingsUseCase(port);
+    await uc.execute({ cursor: { limit: Number.POSITIVE_INFINITY } });
+    expect(listMock).toHaveBeenCalledWith({}, { offset: 0, limit: 25 });
+  });
 });
