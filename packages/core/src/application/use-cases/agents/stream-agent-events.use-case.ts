@@ -47,23 +47,17 @@ import {
 } from '../../../domain/generated/output.js';
 
 import { computeApplicationDeltas } from './stream-agent-events/compute-application-deltas.js';
-import {
-  computeDecisionDeltas,
-  type CachedSupervisorDecisionState,
-} from './stream-agent-events/compute-decision-deltas.js';
 import { computeFeatureDeltas } from './stream-agent-events/compute-feature-deltas.js';
-import {
-  computeMessageDeltas,
-  type CachedAgentMessageState,
-} from './stream-agent-events/compute-message-deltas.js';
-import {
-  computeQuestionDeltas,
-  type CachedAgentQuestionState,
-} from './stream-agent-events/compute-question-deltas.js';
 import { computePhaseCompletionDeltas } from './stream-agent-events/compute-phase-completion-deltas.js';
 import { computePrDeltas } from './stream-agent-events/compute-pr-deltas.js';
 import { computeSessionDeltas } from './stream-agent-events/compute-session-deltas.js';
 import { computeStatusDeltas } from './stream-agent-events/compute-status-deltas.js';
+import {
+  createCollaborationStreamState,
+  pollCollaborationDeltas,
+  type CollaborationStreamState,
+} from './stream-agent-events/poll-collaboration-deltas.js';
+import { waitForNextTick } from './stream-agent-events/wait-for-next-tick.js';
 import type {
   CachedApplicationState,
   CachedFeatureState,
@@ -139,9 +133,7 @@ export class StreamAgentEventsUseCase {
     const featureCache = new Map<string, CachedFeatureState>();
     const sessionCache = new Map<string, CachedSessionState>();
     const applicationCache = new Map<string, CachedApplicationState>();
-    const agentMessageCache = new Map<string, CachedAgentMessageState>();
-    const agentQuestionCache = new Map<string, CachedAgentQuestionState>();
-    const supervisorDecisionCache = new Map<string, CachedSupervisorDecisionState>();
+    const collaboration = createCollaborationStreamState();
 
     const queue: StreamedAgentEvent[] = [];
     let notify: (() => void) | null = null;
@@ -167,9 +159,7 @@ export class StreamAgentEventsUseCase {
             featureCache,
             sessionCache,
             applicationCache,
-            agentMessageCache,
-            agentQuestionCache,
-            supervisorDecisionCache,
+            collaboration,
             enqueue,
           });
           pollErrorCount = 0;
@@ -193,28 +183,10 @@ export class StreamAgentEventsUseCase {
         if (signal?.aborted) break;
 
         // Wait for the next poll tick OR a wake-up from the cloud bus.
-        await new Promise<void>((resolve) => {
-          const timer = setTimeout(() => {
-            notify = null;
-            resolve();
-          }, pollIntervalMs);
-          notify = () => {
-            clearTimeout(timer);
-            resolve();
-          };
-          if (signal) {
-            const onAbort = () => {
-              clearTimeout(timer);
-              notify = null;
-              resolve();
-            };
-            if (signal.aborted) {
-              onAbort();
-            } else {
-              signal.addEventListener('abort', onAbort, { once: true });
-            }
-          }
+        await waitForNextTick(pollIntervalMs, signal, (wake) => {
+          notify = wake;
         });
+        notify = null;
 
         // Flush any events the cloud bus pushed while we were waiting.
         while (queue.length > 0) {
@@ -320,21 +292,11 @@ export class StreamAgentEventsUseCase {
     featureCache: Map<string, CachedFeatureState>;
     sessionCache: Map<string, CachedSessionState>;
     applicationCache: Map<string, CachedApplicationState>;
-    agentMessageCache: Map<string, CachedAgentMessageState>;
-    agentQuestionCache: Map<string, CachedAgentQuestionState>;
-    supervisorDecisionCache: Map<string, CachedSupervisorDecisionState>;
+    collaboration: CollaborationStreamState;
     enqueue: (event: StreamedAgentEvent) => void;
   }): Promise<void> {
-    const {
-      runIdFilter,
-      featureCache,
-      sessionCache,
-      applicationCache,
-      agentMessageCache,
-      agentQuestionCache,
-      supervisorDecisionCache,
-      enqueue,
-    } = args;
+    const { runIdFilter, featureCache, sessionCache, applicationCache, collaboration, enqueue } =
+      args;
 
     const features = await this.listFeatures.execute();
 
@@ -425,11 +387,11 @@ export class StreamAgentEventsUseCase {
 
     // Application row polling — diff against per-connection cache and emit
     // `ApplicationUpdated` on any watched-field change. Seed is silent.
-    let applicationIds: string[] = [];
+    let applicationIds: string[];
     try {
       const applications = await this.applicationRepo.list();
+      applicationIds = applications.map((app) => app.id);
       for (const app of applications) {
-        applicationIds.push(app.id);
         if (runIdFilter && app.id !== runIdFilter) continue;
         const prev = applicationCache.get(app.id);
         for (const event of computeApplicationDeltas({ application: app, prev })) {
@@ -444,71 +406,25 @@ export class StreamAgentEventsUseCase {
       }
     } catch {
       // Ignore application-poll failures; same posture as session polling.
-      applicationIds = [];
+      // Without a scope list there is nothing to poll below this tick.
+      return;
     }
 
-    // Agent message bus polling (spec 093) — for each known app scope, fetch
-    // new messages since the cached high-water mark and forward them as
-    // `agent_message` SSE events. Skipped silently if the bus is unavailable.
-    for (const appId of applicationIds) {
-      let cache = agentMessageCache.get(appId);
-      if (!cache) {
-        cache = { lastSeenAt: 0, deliveredIds: new Set<string>() };
-        agentMessageCache.set(appId, cache);
-      }
-      try {
-        const messages = await this.agentMessageBus.listFor({
-          appId,
-          since: cache.lastSeenAt > 0 ? new Date(cache.lastSeenAt) : undefined,
-        });
-        for (const event of computeMessageDeltas({ messages, cache })) {
-          enqueue(event);
-        }
-      } catch {
-        // Ignore message-bus poll failures; same posture as session polling.
-      }
-    }
-
-    // Agent question polling (spec 093, task 18) — same pattern as the
-    // message bus. Per-app cache keyed by appId tracks both a high-water
-    // mark and the last-known status per question id so status
-    // transitions emit a separate event.
-    for (const appId of applicationIds) {
-      let cache = agentQuestionCache.get(appId);
-      if (!cache) {
-        cache = { lastSeenAt: 0, lastStatus: new Map() };
-        agentQuestionCache.set(appId, cache);
-      }
-      try {
-        const questions = await this.agentQuestionRepo.listByScope(appId, undefined);
-        for (const event of computeQuestionDeltas({ questions, cache })) {
-          enqueue(event);
-        }
-      } catch {
-        // Ignore question-poll failures; same posture as session polling.
-      }
-    }
-
-    // Supervisor decision polling (spec 093, task 30) — decisions are
-    // immutable, so we reuse the deliveredIds + lastSeenAt cache shape
-    // from messages. The since cursor lets the SQLite repo skip rows
-    // we've already emitted.
-    for (const appId of applicationIds) {
-      let cache = supervisorDecisionCache.get(appId);
-      if (!cache) {
-        cache = { lastSeenAt: 0, deliveredIds: new Set<string>() };
-        supervisorDecisionCache.set(appId, cache);
-      }
-      try {
-        const decisions = await this.supervisorDecisionRepo.listByScope('app', appId, undefined, {
-          since: cache.lastSeenAt > 0 ? new Date(cache.lastSeenAt) : undefined,
-        });
-        for (const event of computeDecisionDeltas({ decisions, cache })) {
-          enqueue(event);
-        }
-      } catch {
-        // Ignore decision-poll failures; same posture as session polling.
-      }
+    // Collaboration streams (spec 093): agent messages, agent questions and
+    // supervisor decisions per application scope. History that existed when
+    // the connection opened is seeded silently (spec 116).
+    const collaborationEvents = await pollCollaborationDeltas({
+      appIds: applicationIds,
+      state: collaboration,
+      sources: {
+        listMessages: (appId, since) => this.agentMessageBus.listFor({ appId, since }),
+        listQuestions: (appId) => this.agentQuestionRepo.listByScope(appId, undefined),
+        listDecisions: (appId, since) =>
+          this.supervisorDecisionRepo.listByScope('app', appId, undefined, { since }),
+      },
+    });
+    for (const event of collaborationEvents) {
+      enqueue(event);
     }
   }
 

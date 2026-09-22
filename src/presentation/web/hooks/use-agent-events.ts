@@ -8,6 +8,7 @@ import type {
   SupervisorDecisionStreamEvent,
 } from '@shepai/core/application/use-cases/agents/stream-agent-events.use-case';
 import { createLogger } from '@/lib/logger';
+import { AGENT_EVENTS_HEARTBEAT_EVENT, appendBounded, upsertById } from '@/lib/agent-event-stream';
 
 export type ConnectionStatus = 'connected' | 'connecting' | 'disconnected';
 
@@ -44,8 +45,62 @@ export interface UseAgentEventsResult {
 
 const log = createLogger('[SSE]');
 const SW_PATH = '/agent-events-sw.js';
-const MAX_EVENTS = 500;
-const PRUNE_KEEP = 250;
+
+/** Stream channels carrying a payload; the SW relays each one as `{ type, data }`. */
+const DATA_CHANNELS = [
+  'notification',
+  'agent_message',
+  'agent_question',
+  'supervisor_decision',
+] as const;
+type DataChannel = (typeof DATA_CHANNELS)[number];
+
+const messageKey = (m: AgentMessageStreamEvent) => m.messageId;
+const questionKey = (q: AgentQuestionStreamEvent) => q.questionId;
+const decisionKey = (d: SupervisorDecisionStreamEvent) => d.decisionId;
+
+/**
+ * Apply one stream payload to the hook state. Collaboration rows are keyed by
+ * id so a row delivered twice (e.g. replayed on reconnect) is kept once and a
+ * later delivery of the same id (a question status change) replaces it.
+ */
+function applyStreamPayload(
+  channel: DataChannel,
+  data: unknown,
+  setters: DirectFallbackSetters
+): void {
+  switch (channel) {
+    case 'notification': {
+      const parsed = data as NotificationEvent;
+      log.debug('event received:', parsed.eventType, parsed);
+      setters.setEvents((prev) => appendBounded(prev, parsed));
+      setters.setLastEvent(parsed);
+      return;
+    }
+    case 'agent_message': {
+      const parsed = data as AgentMessageStreamEvent;
+      setters.setAgentMessages((prev) => upsertById(prev, parsed, messageKey));
+      setters.setLastAgentMessage(parsed);
+      return;
+    }
+    case 'agent_question': {
+      const parsed = data as AgentQuestionStreamEvent;
+      setters.setAgentQuestions((prev) => upsertById(prev, parsed, questionKey));
+      setters.setLastAgentQuestion(parsed);
+      return;
+    }
+    case 'supervisor_decision': {
+      const parsed = data as SupervisorDecisionStreamEvent;
+      setters.setSupervisorDecisions((prev) => upsertById(prev, parsed, decisionKey));
+      setters.setLastSupervisorDecision(parsed);
+      return;
+    }
+  }
+}
+
+function isDataChannel(type: unknown): type is DataChannel {
+  return (DATA_CHANNELS as readonly unknown[]).includes(type);
+}
 
 /**
  * Hook that receives real-time agent notification events via a Service Worker.
@@ -79,35 +134,18 @@ export function useAgentEvents(options?: UseAgentEventsOptions): UseAgentEventsR
     const msg = event.data;
     if (!msg || typeof msg !== 'object') return;
 
-    if (msg.type === 'notification') {
-      const parsed = msg.data as NotificationEvent;
-      log.debug('event received:', parsed.eventType, parsed);
-      setEvents((prev) => {
-        const next = [...prev, parsed];
-        return next.length > MAX_EVENTS ? next.slice(-PRUNE_KEEP) : next;
+    if (isDataChannel(msg.type)) {
+      applyStreamPayload(msg.type, msg.data, {
+        setEvents,
+        setLastEvent,
+        setAgentMessages,
+        setLastAgentMessage,
+        setAgentQuestions,
+        setLastAgentQuestion,
+        setSupervisorDecisions,
+        setLastSupervisorDecision,
+        setConnectionStatus,
       });
-      setLastEvent(parsed);
-    } else if (msg.type === 'agent_message') {
-      const parsed = msg.data as AgentMessageStreamEvent;
-      setAgentMessages((prev) => {
-        const next = [...prev, parsed];
-        return next.length > MAX_EVENTS ? next.slice(-PRUNE_KEEP) : next;
-      });
-      setLastAgentMessage(parsed);
-    } else if (msg.type === 'agent_question') {
-      const parsed = msg.data as AgentQuestionStreamEvent;
-      setAgentQuestions((prev) => {
-        const next = [...prev, parsed];
-        return next.length > MAX_EVENTS ? next.slice(-PRUNE_KEEP) : next;
-      });
-      setLastAgentQuestion(parsed);
-    } else if (msg.type === 'supervisor_decision') {
-      const parsed = msg.data as SupervisorDecisionStreamEvent;
-      setSupervisorDecisions((prev) => {
-        const next = [...prev, parsed];
-        return next.length > MAX_EVENTS ? next.slice(-PRUNE_KEEP) : next;
-      });
-      setLastSupervisorDecision(parsed);
     } else if (msg.type === 'status') {
       setConnectionStatus(msg.status as ConnectionStatus);
     }
@@ -337,45 +375,15 @@ function connectDirectEventSource(
       }, delay);
     };
 
-    es.addEventListener('notification', ((event: MessageEvent) => {
-      resetHeartbeatTimeout();
-      const parsed: NotificationEvent = JSON.parse(event.data);
-      setters.setEvents((prev) => {
-        const next = [...prev, parsed];
-        return next.length > MAX_EVENTS ? next.slice(-PRUNE_KEEP) : next;
-      });
-      setters.setLastEvent(parsed);
-    }) as EventListener);
+    for (const channel of DATA_CHANNELS) {
+      es.addEventListener(channel, ((event: MessageEvent) => {
+        resetHeartbeatTimeout();
+        applyStreamPayload(channel, JSON.parse(event.data), setters);
+      }) as EventListener);
+    }
 
-    es.addEventListener('agent_message', ((event: MessageEvent) => {
-      resetHeartbeatTimeout();
-      const parsed: AgentMessageStreamEvent = JSON.parse(event.data);
-      setters.setAgentMessages((prev) => {
-        const next = [...prev, parsed];
-        return next.length > MAX_EVENTS ? next.slice(-PRUNE_KEEP) : next;
-      });
-      setters.setLastAgentMessage(parsed);
-    }) as EventListener);
-
-    es.addEventListener('agent_question', ((event: MessageEvent) => {
-      resetHeartbeatTimeout();
-      const parsed: AgentQuestionStreamEvent = JSON.parse(event.data);
-      setters.setAgentQuestions((prev) => {
-        const next = [...prev, parsed];
-        return next.length > MAX_EVENTS ? next.slice(-PRUNE_KEEP) : next;
-      });
-      setters.setLastAgentQuestion(parsed);
-    }) as EventListener);
-
-    es.addEventListener('supervisor_decision', ((event: MessageEvent) => {
-      resetHeartbeatTimeout();
-      const parsed: SupervisorDecisionStreamEvent = JSON.parse(event.data);
-      setters.setSupervisorDecisions((prev) => {
-        const next = [...prev, parsed];
-        return next.length > MAX_EVENTS ? next.slice(-PRUNE_KEEP) : next;
-      });
-      setters.setLastSupervisorDecision(parsed);
-    }) as EventListener);
+    // The server's keep-alive: carries no payload, only proves the stream is live.
+    es.addEventListener(AGENT_EVENTS_HEARTBEAT_EVENT, resetHeartbeatTimeout);
   }
 
   connect();

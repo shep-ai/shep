@@ -13,10 +13,10 @@
  */
 
 import { resolve } from '@/lib/server-container';
+import { createLogFileTail } from '@/lib/log-file-tail';
 import type { IFeatureRepository } from '@shepai/core/application/ports/output/repositories/feature-repository.interface';
+import { getShepHomeDir } from '@shepai/core/infrastructure/services/filesystem/shep-directory.service';
 import { join } from 'node:path';
-import { homedir } from 'node:os';
-import { readFile, stat } from 'node:fs/promises';
 import { watch, type FSWatcher } from 'node:fs';
 
 // Force dynamic — SSE streams must never be statically optimized or cached
@@ -66,13 +66,14 @@ export async function GET(request: Request): Promise<Response> {
       return sseError(`Feature "${feature.name}" has no agent run`);
     }
 
-    const logPath = join(homedir(), '.shep', 'logs', `worker-${feature.agentRunId}.log`);
+    // Same directory the worker writes to — honours SHEP_HOME.
+    const logPath = join(getShepHomeDir(), 'logs', `worker-${feature.agentRunId}.log`);
 
     const stream = new ReadableStream<Uint8Array>({
       start(controller) {
         const encoder = new TextEncoder();
         let stopped = false;
-        let bytesRead = 0;
+        const tail = createLogFileTail(logPath);
         let watcher: FSWatcher | null = null;
         let pollInterval: ReturnType<typeof setInterval> | null = null;
 
@@ -86,31 +87,12 @@ export async function GET(request: Request): Promise<Response> {
         }
 
         /**
-         * Read any new content from the log file starting at `bytesRead`.
-         * Returns the content read, or null if the file doesn't exist yet.
-         */
-        async function readNewContent(): Promise<string | null> {
-          try {
-            const fileStat = await stat(logPath);
-            if (fileStat.size <= bytesRead) return null;
-
-            const content = await readFile(logPath, 'utf-8');
-            const newContent = content.slice(bytesRead);
-            bytesRead = content.length;
-            return newContent || null;
-          } catch {
-            // File doesn't exist yet — agent may have just started
-            return null;
-          }
-        }
-
-        /**
          * Check for new content and send it as a log event.
          */
         async function checkForUpdates() {
           if (stopped) return;
           try {
-            const content = await readNewContent();
+            const content = await tail.readAppended();
             if (content) {
               enqueue(`event: log\ndata: ${JSON.stringify({ content })}\n\n`);
             }
@@ -123,7 +105,7 @@ export async function GET(request: Request): Promise<Response> {
         (async () => {
           try {
             // Send existing content as initial event
-            const initialContent = await readNewContent();
+            const initialContent = await tail.readAppended();
             if (initialContent) {
               enqueue(`event: initial\ndata: ${JSON.stringify({ content: initialContent })}\n\n`);
             }

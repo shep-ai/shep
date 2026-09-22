@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { NotificationSeverity, NotificationEventType } from '@/domain/generated/output.js';
 import type { NotificationEvent } from '@/domain/generated/output.js';
+import { AGENT_EVENTS_HEARTBEAT_EVENT } from '../../../../../src/presentation/web/lib/agent-event-stream.js';
 
 // --- Mock Service Worker API ---
 
@@ -127,6 +128,10 @@ function createSampleEvent(overrides?: Partial<NotificationEvent>): Notification
  *  stream is replaced. The watchdog closes the stream immediately; the new
  *  EventSource only appears one backoff interval later. */
 const BASE_BACKOFF_MS = 1000;
+/** Mirrors HEARTBEAT_TIMEOUT_MS in use-agent-events.ts (the client watchdog). */
+const HEARTBEAT_TIMEOUT_MS = 60_000;
+/** Mirrors HEARTBEAT_INTERVAL_MS in app/api/agent-events/route.ts. */
+const SERVER_HEARTBEAT_MS = 30_000;
 
 describe('useAgentEvents', () => {
   // eslint-disable-next-line @typescript-eslint/consistent-type-imports
@@ -331,6 +336,64 @@ describe('useAgentEvents', () => {
       expect(result.current.lastSupervisorDecision?.verdict).toBe('advise');
     });
 
+    it('keeps one entry per question id across a replayed and a status delivery', async () => {
+      const { result } = renderHook(() => useAgentEvents());
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(0);
+      });
+
+      const pending = {
+        kind: 'agent_question' as const,
+        questionId: 'q-1',
+        appId: 'app-1',
+        agentRunId: 'run-1',
+        questionKind: 'blocking',
+        answerer: 'user',
+        status: 'pending',
+        prompt: 'Approve?',
+        transition: 'new' as const,
+        createdAt: '2026-04-28T10:00:00Z',
+      };
+      act(() => {
+        simulateSWMessage({ type: 'agent_question', data: pending });
+        simulateSWMessage({ type: 'agent_question', data: { ...pending } });
+      });
+      expect(result.current.agentQuestions).toHaveLength(1);
+
+      act(() => {
+        simulateSWMessage({
+          type: 'agent_question',
+          data: { ...pending, status: 'answered', transition: 'status' },
+        });
+      });
+      expect(result.current.agentQuestions).toHaveLength(1);
+      expect(result.current.agentQuestions[0].status).toBe('answered');
+    });
+
+    it('does not duplicate a replayed agent_message or supervisor_decision', async () => {
+      const { result } = renderHook(() => useAgentEvents());
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(0);
+      });
+
+      const message = { kind: 'agent_message' as const, messageId: 'msg-1', appId: 'app-1' };
+      const decision = {
+        kind: 'supervisor_decision' as const,
+        decisionId: 'd-1',
+        scopeType: 'app',
+        scopeId: 'app-1',
+      };
+      act(() => {
+        simulateSWMessage({ type: 'agent_message', data: message });
+        simulateSWMessage({ type: 'agent_message', data: { ...message } });
+        simulateSWMessage({ type: 'supervisor_decision', data: decision });
+        simulateSWMessage({ type: 'supervisor_decision', data: { ...decision } });
+      });
+
+      expect(result.current.agentMessages).toHaveLength(1);
+      expect(result.current.supervisorDecisions).toHaveLength(1);
+    });
+
     it('ignores messages with invalid shape', async () => {
       const { result } = renderHook(() => useAgentEvents());
       await act(async () => {
@@ -460,6 +523,49 @@ describe('useAgentEvents', () => {
       // Verify ES was closed (no more events for 60s after the event at 30s)
       expect(es1.close).toHaveBeenCalled();
 
+      act(() => {
+        vi.advanceTimersByTime(BASE_BACKOFF_MS);
+      });
+      expect(MockEventSource.instances).toHaveLength(2);
+    });
+
+    it('resets the watchdog on the server heartbeat event', async () => {
+      const { result } = renderHook(() => useAgentEvents());
+      const es1 = MockEventSource.instances[0];
+
+      act(() => {
+        es1.simulateOpen();
+      });
+
+      // A quiet session: nothing but heartbeats, one every SERVER_HEARTBEAT_MS.
+      act(() => {
+        vi.advanceTimersByTime(SERVER_HEARTBEAT_MS);
+        es1.simulateEvent(AGENT_EVENTS_HEARTBEAT_EVENT, '{}');
+      });
+      act(() => {
+        vi.advanceTimersByTime(SERVER_HEARTBEAT_MS);
+        es1.simulateEvent(AGENT_EVENTS_HEARTBEAT_EVENT, '{}');
+      });
+
+      // 60s after open, but only 30s after the last heartbeat — still connected.
+      expect(es1.close).not.toHaveBeenCalled();
+      expect(result.current.connectionStatus).toBe('connected');
+
+      // Just inside the deadline measured from the last heartbeat.
+      act(() => {
+        vi.advanceTimersByTime(HEARTBEAT_TIMEOUT_MS - 1);
+      });
+      expect(es1.close).not.toHaveBeenCalled();
+      expect(MockEventSource.instances).toHaveLength(1);
+
+      // Crossing it fires the watchdog...
+      act(() => {
+        vi.advanceTimersByTime(1);
+      });
+      expect(es1.close).toHaveBeenCalled();
+      expect(result.current.connectionStatus).toBe('disconnected');
+
+      // ...and the replacement arrives one backoff interval later.
       act(() => {
         vi.advanceTimersByTime(BASE_BACKOFF_MS);
       });

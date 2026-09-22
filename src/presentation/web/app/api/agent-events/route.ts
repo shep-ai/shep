@@ -9,11 +9,13 @@
  *
  * - Resolves the use case via DI
  * - Frames each yielded event as an SSE `data:` line
- * - Sends heartbeats every 30 s to keep the connection alive
+ * - Sends a named `heartbeat` event every 30 s to keep the connection alive
+ *   (a named event, not an SSE comment, so the client watchdog can see it)
  * - Propagates the client abort signal into the generator
  */
 
 import { resolve } from '@/lib/server-container';
+import { AGENT_EVENTS_HEARTBEAT_EVENT } from '@/lib/agent-event-stream';
 import type {
   StreamAgentEventsUseCase,
   StreamedAgentEvent,
@@ -105,9 +107,11 @@ export function GET(request: Request): Response {
           }
         };
 
-        // Heartbeat to keep connection alive.
+        // Heartbeat to keep the connection alive. A named event: EventSource
+        // never dispatches SSE comments, so a comment cannot reset the
+        // client's watchdog.
         const heartbeatInterval = setInterval(() => {
-          enqueue(': heartbeat\n\n');
+          enqueue(`event: ${AGENT_EVENTS_HEARTBEAT_EVENT}\ndata: {}\n\n`);
         }, HEARTBEAT_INTERVAL_MS);
 
         request.signal.addEventListener('abort', cleanup, { once: true });
