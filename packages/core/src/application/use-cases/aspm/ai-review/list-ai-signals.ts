@@ -28,6 +28,19 @@ export interface ListAiSignalsInput {
   offset?: number;
 }
 
+/**
+ * Pass a requested page size / offset through only when it is a usable number.
+ *
+ * A non-numeric CLI flag (`--limit abc`) arrives here as NaN, and the
+ * repository's `?? DEFAULT` cannot catch it — NaN is not nullish — so it would
+ * reach `LIMIT ? OFFSET ?`, where SQLite raises a datatype mismatch instead of
+ * reading a page of rows. Dropping it leaves the repository to apply its own
+ * default, which stays the single source of truth for what that default is.
+ */
+function usableNumber(value: number | undefined): number | undefined {
+  return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
+}
+
 @injectable()
 export class ListAiSignalsUseCase {
   constructor(
@@ -41,8 +54,8 @@ export class ListAiSignalsUseCase {
       agentSessionId: input.agentSessionId,
       states: input.states,
       signalTypes: input.signalTypes,
-      limit: input.limit,
-      offset: input.offset,
+      limit: usableNumber(input.limit),
+      offset: usableNumber(input.offset),
     };
     return this.signalRepo.list(filter);
   }

@@ -178,6 +178,45 @@ describe('GetPostureSummaryUseCase', () => {
     expect(received).toBe(12);
   });
 
+  // `shep aspm posture --top abc` yields NaN. Math.max propagates NaN rather
+  // than rejecting it, so the clamp below is a no-op for it and the value is
+  // bound straight into `LIMIT ?`, where SQLite raises a datatype mismatch.
+  it('falls back to the default top limit when topAtRiskLimit is NaN', async () => {
+    let received = -1;
+    const uc = new GetPostureSummaryUseCase(
+      fakeFindingRepo({
+        topAtRiskApplications: async (limit) => {
+          received = limit;
+          return [];
+        },
+      }),
+      fakeExceptionRepo([]),
+      fakePolicyRepo(makePolicy()),
+      new FakeSlaClock(FIXED_NOW),
+      fakeAiRepo()
+    );
+    await uc.execute({ topAtRiskLimit: Number('abc') });
+    expect(received).toBe(5);
+  });
+
+  it('clamps a zero or negative topAtRiskLimit to one', async () => {
+    let received = -1;
+    const uc = new GetPostureSummaryUseCase(
+      fakeFindingRepo({
+        topAtRiskApplications: async (limit) => {
+          received = limit;
+          return [];
+        },
+      }),
+      fakeExceptionRepo([]),
+      fakePolicyRepo(makePolicy()),
+      new FakeSlaClock(FIXED_NOW),
+      fakeAiRepo()
+    );
+    await uc.execute({ topAtRiskLimit: 0 });
+    expect(received).toBe(1);
+  });
+
   it('returns 0 SLA breaches when no policy is active', async () => {
     const uc = new GetPostureSummaryUseCase(
       fakeFindingRepo({

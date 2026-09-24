@@ -112,4 +112,36 @@ describe('ListAiSignalsUseCase', () => {
       offset: undefined,
     });
   });
+
+  // A non-numeric `--limit abc` reaches the use case as NaN, which SQLite
+  // rejects in `LIMIT ? OFFSET ?` instead of reading a page of rows. The
+  // repository's `?? DEFAULT` cannot catch it — NaN is not nullish — so the
+  // use case drops it and leaves the repository to apply its own default.
+  it('drops a NaN limit so the repository applies its own default', async () => {
+    const repo = new FakeSignalRepo([]);
+    const uc = new ListAiSignalsUseCase(repo);
+
+    await uc.execute({ limit: Number('abc') });
+
+    expect(repo.lastFilter?.limit).toBeUndefined();
+  });
+
+  it('drops a NaN offset so the repository applies its own default', async () => {
+    const repo = new FakeSignalRepo([]);
+    const uc = new ListAiSignalsUseCase(repo);
+
+    await uc.execute({ offset: Number('abc') });
+
+    expect(repo.lastFilter?.offset).toBeUndefined();
+  });
+
+  it('forwards a finite limit and offset unchanged', async () => {
+    const repo = new FakeSignalRepo([]);
+    const uc = new ListAiSignalsUseCase(repo);
+
+    await uc.execute({ limit: 25, offset: 50 });
+
+    expect(repo.lastFilter?.limit).toBe(25);
+    expect(repo.lastFilter?.offset).toBe(50);
+  });
 });
