@@ -86,7 +86,12 @@ export async function GET(request: NextRequest, { params }: RouteParams): Promis
     const { id: sessionId } = await params;
     const url = new URL(request.url);
     const limit = url.searchParams.get('limit');
-    const limitNum = limit ? parseInt(limit, 10) : undefined;
+    const parsedLimit = limit ? parseInt(limit, 10) : undefined;
+    // `?limit=abc` parses to NaN, which the service forwards and the
+    // repository binds into `LIMIT ?` — SQLite raises a datatype mismatch
+    // instead of returning the default page. Treat it as "not requested".
+    const limitNum =
+      parsedLimit !== undefined && Number.isFinite(parsedLimit) ? parsedLimit : undefined;
 
     const service = resolve<IInteractiveSessionService>('IInteractiveSessionService');
 

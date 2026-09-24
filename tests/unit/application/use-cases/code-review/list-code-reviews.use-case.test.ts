@@ -82,6 +82,27 @@ describe('ListCodeReviewsUseCase', () => {
     expect(mockRepo.list).toHaveBeenCalledWith(undefined, { limit: 10 });
   });
 
+  // `GET /api/code-reviews?limit=abc` reaches the use case as NaN, because
+  // parseInt('abc', 10) is NaN and neither the route nor the repository's
+  // `?? 50` can catch it — NaN is not nullish. It would then be bound into
+  // `LIMIT ?`, where SQLite raises a datatype mismatch instead of returning a
+  // page of rows. Same root cause as the ASPM paging-cursor fix.
+  it('should fall back to the default limit when the limit is not finite', async () => {
+    vi.mocked(mockRepo.list).mockResolvedValue([]);
+
+    await useCase.execute({ limit: Number('abc') });
+
+    expect(mockRepo.list).toHaveBeenCalledWith(undefined, { limit: 50 });
+  });
+
+  it('should fall back to the default limit when the limit is Infinity', async () => {
+    vi.mocked(mockRepo.list).mockResolvedValue([]);
+
+    await useCase.execute({ limit: Number.POSITIVE_INFINITY });
+
+    expect(mockRepo.list).toHaveBeenCalledWith(undefined, { limit: 50 });
+  });
+
   it('should return empty array when no reviews exist', async () => {
     vi.mocked(mockRepo.list).mockResolvedValue([]);
 
