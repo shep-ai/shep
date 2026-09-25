@@ -103,6 +103,14 @@ describe('ListCodeReviewsUseCase', () => {
     expect(mockRepo.list).toHaveBeenCalledWith(undefined, { limit: 50 });
   });
 
+  it('should fall back to the default limit when the limit is fractional', async () => {
+    vi.mocked(mockRepo.list).mockResolvedValue([]);
+
+    await useCase.execute({ limit: 2.5 });
+
+    expect(mockRepo.list).toHaveBeenCalledWith(undefined, { limit: 50 });
+  });
+
   it('should return empty array when no reviews exist', async () => {
     vi.mocked(mockRepo.list).mockResolvedValue([]);
 

@@ -30,7 +30,7 @@ import type { IRiskExceptionRepository } from '../../../ports/output/repositorie
 import type { ISecurityPolicyRepository } from '../../../ports/output/repositories/security-policy-repository.interface.js';
 import type { IAiChangeRiskSignalRepository } from '../../../ports/output/repositories/ai-change-risk-signal-repository.interface.js';
 import type { ISlaClockPort } from '../../../ports/output/services/sla-clock-port.interface.js';
-import { finiteOrFallback } from '../../../../domain/shared/cursor-number.js';
+import { integerOrFallback } from '../../../../domain/shared/cursor-number.js';
 
 export interface GetPostureSummaryInput {
   /** Override top-N applications cap. Defaults to 5. */
@@ -64,10 +64,11 @@ export class GetPostureSummaryUseCase {
   ) {}
 
   async execute(input: GetPostureSummaryInput = {}): Promise<PostureSummary> {
-    // `shep aspm posture --top abc` yields NaN. Math.max propagates NaN
-    // rather than rejecting it, so the clamp alone would forward it into
-    // `LIMIT ?`, where SQLite raises a datatype mismatch. Normalize first.
-    const topLimit = Math.max(1, finiteOrFallback(input.topAtRiskLimit, DEFAULT_TOP_LIMIT));
+    // `shep aspm posture --top abc` yields NaN and `--top 1.5` a fraction.
+    // Math.max propagates the first and keeps the second, so the clamp alone
+    // would forward either into `LIMIT ?`, where SQLite raises a datatype
+    // mismatch. Normalize first.
+    const topLimit = Math.max(1, integerOrFallback(input.topAtRiskLimit, DEFAULT_TOP_LIMIT));
     const now = this.clock.now();
 
     const policy = await this.policies.findActive();

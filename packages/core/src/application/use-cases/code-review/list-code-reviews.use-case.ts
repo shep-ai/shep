@@ -7,7 +7,7 @@
 
 import { injectable, inject } from 'tsyringe';
 import type { CodeReview } from '../../../domain/generated/output.js';
-import { finiteOrFallback } from '../../../domain/shared/cursor-number.js';
+import { integerOrFallback } from '../../../domain/shared/cursor-number.js';
 import type { ICodeReviewRepository } from '../../ports/output/repositories/code-review-repository.interface.js';
 
 /** Page size applied when the caller names none. */
@@ -40,7 +40,7 @@ export class ListCodeReviewsUseCase {
     // nullish — so it would be bound into `LIMIT ?`, where SQLite raises a
     // datatype mismatch instead of returning a page of rows.
     return this.codeReviewRepo.list(input?.repositoryPath, {
-      limit: finiteOrFallback(input?.limit, DEFAULT_LIMIT),
+      limit: integerOrFallback(input?.limit, DEFAULT_LIMIT),
     });
   }
 }

@@ -18,6 +18,7 @@ import type {
   AiSignalListFilter,
   IAiChangeRiskSignalRepository,
 } from '../../../ports/output/repositories/ai-change-risk-signal-repository.interface.js';
+import { integerOrFallback } from '../../../../domain/shared/cursor-number.js';
 
 export interface ListAiSignalsInput {
   applicationId?: string;
@@ -26,19 +27,6 @@ export interface ListAiSignalsInput {
   signalTypes?: AiSignalType[];
   limit?: number;
   offset?: number;
-}
-
-/**
- * Pass a requested page size / offset through only when it is a usable number.
- *
- * A non-numeric CLI flag (`--limit abc`) arrives here as NaN, and the
- * repository's `?? DEFAULT` cannot catch it — NaN is not nullish — so it would
- * reach `LIMIT ? OFFSET ?`, where SQLite raises a datatype mismatch instead of
- * reading a page of rows. Dropping it leaves the repository to apply its own
- * default, which stays the single source of truth for what that default is.
- */
-function usableNumber(value: number | undefined): number | undefined {
-  return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
 }
 
 @injectable()
@@ -54,8 +42,11 @@ export class ListAiSignalsUseCase {
       agentSessionId: input.agentSessionId,
       states: input.states,
       signalTypes: input.signalTypes,
-      limit: usableNumber(input.limit),
-      offset: usableNumber(input.offset),
+      // An unusable page size / offset (`--limit abc`, `--limit 2.5`) falls
+      // back to undefined so the repository's own default applies — it stays
+      // the single source of truth for what that default is.
+      limit: integerOrFallback(input.limit, undefined),
+      offset: integerOrFallback(input.offset, undefined),
     };
     return this.signalRepo.list(filter);
   }

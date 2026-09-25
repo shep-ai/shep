@@ -15,7 +15,7 @@
 import { inject, injectable } from 'tsyringe';
 
 import type { FindingFilter } from '../../../../domain/generated/output.js';
-import { finiteOrFallback } from '../../../../domain/shared/cursor-number.js';
+import { integerOrFallback } from '../../../../domain/shared/cursor-number.js';
 import type {
   IFindingRepository,
   ListFindingsCursor,
@@ -43,8 +43,8 @@ export class RankFindingsUseCase {
   constructor(@inject('IFindingRepository') private readonly repo: IFindingRepository) {}
 
   async execute(input: RankFindingsInput = {}): Promise<RankFindingsResult> {
-    const offset = Math.max(0, finiteOrFallback(input.cursor?.offset, DEFAULT_OFFSET));
-    const requestedLimit = finiteOrFallback(input.cursor?.limit, DEFAULT_LIMIT);
+    const offset = Math.max(0, integerOrFallback(input.cursor?.offset, DEFAULT_OFFSET));
+    const requestedLimit = integerOrFallback(input.cursor?.limit, DEFAULT_LIMIT);
     const limit = Math.min(MAX_LIMIT, Math.max(1, requestedLimit));
     const filter = input.filter ?? {};
 

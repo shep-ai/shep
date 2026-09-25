@@ -1,24 +1,29 @@
 /**
  * Cursor Number Normalization
  *
- * Shared guard for the numeric values a paging cursor carries. Both
- * `list-findings` and `rank-findings` clamp a requested limit/offset into
- * range before handing it to the repository, and both are reachable straight
- * from a CLI flag: `shep aspm findings --limit abc`.
+ * Shared guard for the numeric values a paging cursor carries. Every caller
+ * binds the value into SQLite's `LIMIT ?` / `OFFSET ?`, and every caller is
+ * reachable straight from a CLI flag or a URL query parameter:
+ * `shep aspm findings --limit abc`, `shep agent questions ls --limit 2.5`.
  */
 
 /**
- * Return `value` when it is a usable number, otherwise `fallback`.
+ * Return `value` when it is a usable page size / offset, otherwise `fallback`.
  *
- * `Math.max` and `Math.min` propagate `NaN` rather than rejecting it, so the
- * usual clamp is a no-op for it: `Math.min(200, Math.max(1, NaN))` is `NaN`.
- * That `NaN` is then bound straight into `LIMIT ? OFFSET ?`, where SQLite
- * rejects it instead of reading a page of rows — a typo in a flag turns into a
- * crash rather than a default page.
+ * SQLite accepts only an integer in `LIMIT ?` / `OFFSET ?`; `NaN`, `±Infinity`
+ * and a fractional value such as `2.5` all raise `datatype mismatch`. None of
+ * them is caught by the usual guards: `?? DEFAULT` lets `NaN` through because
+ * it is not nullish, and `Math.max` / `Math.min` propagate `NaN` and keep a
+ * fraction — `Math.min(200, Math.max(1, NaN))` is `NaN`, and
+ * `Math.max(1, 2.5)` is `2.5`. A typo in a flag would turn into a crash rather
+ * than a default page.
  *
- * `Number.isFinite` covers both `NaN` and `±Infinity`, so an overflowing value
- * (`--limit 1e999`) is treated as "not requested" too.
+ * `Number.isInteger` rejects all three at once. Pass `undefined` as the
+ * fallback to leave the repository to apply its own default.
  */
-export function finiteOrFallback(value: number | undefined, fallback: number): number {
-  return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
+export function integerOrFallback<F extends number | undefined>(
+  value: number | undefined,
+  fallback: F
+): number | F {
+  return typeof value === 'number' && Number.isInteger(value) ? value : fallback;
 }

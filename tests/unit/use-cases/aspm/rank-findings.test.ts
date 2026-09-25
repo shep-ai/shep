@@ -94,6 +94,15 @@ describe('RankFindingsUseCase', () => {
     expect(listRanked.mock.calls[0][1]).toEqual({ offset: 0, limit: 25 });
   });
 
+  // A fractional cursor is finite but still rejected by SQLite's `LIMIT ?`.
+  it('falls back to the defaults when the cursor is fractional', async () => {
+    const { repo, listRanked } = makeRepo([]);
+    const uc = new RankFindingsUseCase(repo);
+
+    await uc.execute({ cursor: { offset: 0.5, limit: 2.5 } });
+    expect(listRanked.mock.calls[0][1]).toEqual({ offset: 0, limit: 25 });
+  });
+
   it('echoes the items the repository returned', async () => {
     const items = [
       { finding: makeFinding('a'), riskScoreTotal: 90 },

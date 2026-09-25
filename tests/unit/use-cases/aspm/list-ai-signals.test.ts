@@ -135,6 +135,18 @@ describe('ListAiSignalsUseCase', () => {
     expect(repo.lastFilter?.offset).toBeUndefined();
   });
 
+  // `--limit 2.5` is finite, so a finiteness check forwards it, but SQLite
+  // rejects a fractional `LIMIT ? OFFSET ?` exactly as it rejects NaN.
+  it('drops a fractional limit and offset so the repository applies its own default', async () => {
+    const repo = new FakeSignalRepo([]);
+    const uc = new ListAiSignalsUseCase(repo);
+
+    await uc.execute({ limit: 2.5, offset: 0.5 });
+
+    expect(repo.lastFilter?.limit).toBeUndefined();
+    expect(repo.lastFilter?.offset).toBeUndefined();
+  });
+
   it('forwards a finite limit and offset unchanged', async () => {
     const repo = new FakeSignalRepo([]);
     const uc = new ListAiSignalsUseCase(repo);

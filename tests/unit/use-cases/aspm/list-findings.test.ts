@@ -84,4 +84,13 @@ describe('ListFindingsUseCase', () => {
     await uc.execute({ cursor: { limit: Number.POSITIVE_INFINITY } });
     expect(listMock).toHaveBeenCalledWith({}, { offset: 0, limit: 25 });
   });
+
+  // `--limit 2.5` is finite, so it survives both the finiteness check and the
+  // clamp, and SQLite rejects `LIMIT 2.5` with the same datatype mismatch.
+  it('falls back to the defaults when the cursor is fractional', async () => {
+    const { port, listMock } = fakeRepo();
+    const uc = new ListFindingsUseCase(port);
+    await uc.execute({ cursor: { offset: 0.5, limit: 2.5 } });
+    expect(listMock).toHaveBeenCalledWith({}, { offset: 0, limit: 25 });
+  });
 });

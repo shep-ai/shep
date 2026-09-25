@@ -199,6 +199,26 @@ describe('GetPostureSummaryUseCase', () => {
     expect(received).toBe(5);
   });
 
+  // `--top 1.5` is finite and already at least one, so the clamp keeps it and
+  // SQLite rejects `LIMIT 1.5` with the same datatype mismatch as NaN.
+  it('falls back to the default top limit when topAtRiskLimit is fractional', async () => {
+    let received = -1;
+    const uc = new GetPostureSummaryUseCase(
+      fakeFindingRepo({
+        topAtRiskApplications: async (limit) => {
+          received = limit;
+          return [];
+        },
+      }),
+      fakeExceptionRepo([]),
+      fakePolicyRepo(makePolicy()),
+      new FakeSlaClock(FIXED_NOW),
+      fakeAiRepo()
+    );
+    await uc.execute({ topAtRiskLimit: 1.5 });
+    expect(received).toBe(5);
+  });
+
   it('clamps a zero or negative topAtRiskLimit to one', async () => {
     let received = -1;
     const uc = new GetPostureSummaryUseCase(

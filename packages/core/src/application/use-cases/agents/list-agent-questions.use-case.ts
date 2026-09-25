@@ -13,6 +13,7 @@ import { inject, injectable } from 'tsyringe';
 import type { IAgentQuestionRepository } from '../../ports/output/repositories/agent-question-repository.interface.js';
 import type { ListAgentQuestionsFilter } from '../../ports/output/agents/agent-question-service.interface.js';
 import type { AgentQuestion } from '../../../domain/generated/output.js';
+import { integerOrFallback } from '../../../domain/shared/cursor-number.js';
 
 @injectable()
 export class ListAgentQuestionsUseCase {
@@ -21,10 +22,15 @@ export class ListAgentQuestionsUseCase {
     private readonly questionRepository: IAgentQuestionRepository
   ) {}
 
-  async execute(filter: ListAgentQuestionsFilter): Promise<AgentQuestion[]> {
-    if (!filter.appId) {
+  async execute(input: ListAgentQuestionsFilter): Promise<AgentQuestion[]> {
+    if (!input.appId) {
       throw new Error('appId is required to list agent questions (NFR-7 scope isolation)');
     }
+
+    // `shep agent questions ls --limit 2.5` (or `abc`) must not reach SQLite's
+    // `LIMIT ?`, which accepts only an integer. An unusable limit is treated as
+    // "no limit requested".
+    const filter = { ...input, limit: integerOrFallback(input.limit, undefined) };
 
     if (filter.agentRunId) {
       const rows = await this.questionRepository.listByAgentRun(filter.appId, filter.agentRunId);

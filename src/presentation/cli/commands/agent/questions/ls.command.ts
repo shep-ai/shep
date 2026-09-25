@@ -31,12 +31,11 @@ export function createListCommand(): Command {
     .action(async (options: LsOptions) => {
       try {
         const useCase = container.resolve(ListAgentQuestionsUseCase);
-        const limit = options.limit ? Number(options.limit) : undefined;
         const questions = await useCase.execute({
           appId: options.app,
           featureId: options.feature,
           status: options.status,
-          limit: typeof limit === 'number' && Number.isFinite(limit) ? limit : undefined,
+          limit: options.limit ? Number(options.limit) : undefined,
         });
 
         const rows = questions.map((q) => [
