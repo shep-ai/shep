@@ -201,6 +201,22 @@ describe('RejectAgentRunUseCase', () => {
     );
   });
 
+  it('should resume with the effort pinned on the run', async () => {
+    mockRunRepo.findById.mockResolvedValue(createWaitingRun({ effort: 'max' as any }));
+
+    await useCase.execute('run-001', 'feedback');
+
+    expect(mockProcessService.spawn.mock.calls[0]?.[5].effort).toBe('max');
+  });
+
+  it('should omit effort on resume when the run pinned none', async () => {
+    mockRunRepo.findById.mockResolvedValue(createWaitingRun());
+
+    await useCase.execute('run-001', 'feedback');
+
+    expect(mockProcessService.spawn.mock.calls[0]?.[5]).not.toHaveProperty('effort');
+  });
+
   it('should return error when run not found', async () => {
     mockRunRepo.findById.mockResolvedValue(null);
 

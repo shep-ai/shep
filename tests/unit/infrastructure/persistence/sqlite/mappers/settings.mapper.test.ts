@@ -16,6 +16,7 @@ import {
   type SettingsRow,
 } from '@/infrastructure/persistence/sqlite/mappers/settings.mapper.js';
 import type { Settings } from '@/domain/generated/output.js';
+import { AgentEffort } from '@/domain/generated/output.js';
 import {
   AgentType,
   AgentAuthMethod,
@@ -116,6 +117,7 @@ function createTestRow(overrides: Partial<SettingsRow> = {}): SettingsRow {
     model_adaptive_high: null,
     model_adaptive_medium: null,
     model_adaptive_low: null,
+    model_effort: null,
     user_name: 'Test User',
     user_email: 'test@example.com',
     user_github_username: 'testuser',
@@ -1659,6 +1661,31 @@ describe('Settings Mapper', () => {
         })
       );
       expect(row.messaging_telegram_pending_expires_at).toBe('2026-04-09T13:00:00.000Z');
+    });
+  });
+
+  describe('model effort', () => {
+    it('writes NULL when no effort is set (agent default)', () => {
+      expect(toDatabase(createTestSettings()).model_effort).toBeNull();
+    });
+
+    it('round-trips every effort level', () => {
+      for (const effort of Object.values(AgentEffort)) {
+        const row = toDatabase(
+          createTestSettings({ models: { default: 'claude-opus-5-5', effort } })
+        );
+        expect(row.model_effort).toBe(effort);
+        expect(fromDatabase(row).models.effort).toBe(effort);
+      }
+    });
+
+    it('reads NULL back as an absent effort', () => {
+      expect(fromDatabase(createTestRow({ model_effort: null })).models.effort).toBeUndefined();
+      expect('effort' in fromDatabase(createTestRow({ model_effort: null })).models).toBe(false);
+    });
+
+    it('reads an unknown stored value back as absent instead of passing it on', () => {
+      expect(fromDatabase(createTestRow({ model_effort: 'ultra' })).models.effort).toBeUndefined();
     });
   });
 

@@ -9,6 +9,7 @@ import { toCursorModelName } from '@/infrastructure/services/agents/common/execu
 describe('toCursorModelName', () => {
   it.each([
     ['composer-1.5', 'composer-2.5'],
+    ['claude-opus-5-5', 'claude-opus-5-5-medium'],
     ['claude-opus-4-8', 'claude-opus-4-8-high'],
     ['claude-sonnet-4-6', 'claude-4.6-sonnet-medium'],
     ['gemini-3.1-pro-preview', 'gemini-3.1-pro'],

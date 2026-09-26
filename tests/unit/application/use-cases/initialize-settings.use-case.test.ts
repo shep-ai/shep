@@ -13,6 +13,7 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { InitializeSettingsUseCase } from '@/application/use-cases/settings/initialize-settings.use-case.js';
 import { MockSettingsRepository } from '../../../helpers/mock-repository.helper.js';
 import { createDefaultSettings } from '@/domain/factories/settings-defaults.factory.js';
+import { DEFAULT_MODEL_ID } from '@/domain/shared/default-model.js';
 
 describe('InitializeSettingsUseCase', () => {
   let useCase: InitializeSettingsUseCase;
@@ -33,7 +34,7 @@ describe('InitializeSettingsUseCase', () => {
 
       // Assert
       expect(result).toBeDefined();
-      expect(result.models.default).toBe('claude-sonnet-4-6');
+      expect(result.models.default).toBe(DEFAULT_MODEL_ID);
       expect(result.environment.defaultEditor).toBe('vscode');
       expect(result.system.autoUpdate).toBe(true);
     });

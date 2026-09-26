@@ -20,6 +20,7 @@ import type { IWorktreeService } from '../../ports/output/services/worktree-serv
 import type { ISettingsRepository } from '../../ports/output/repositories/settings.repository.interface.js';
 import { isRunningLifecycle } from '../../../domain/shared/parallel-feature-limit.js';
 import { FeatureCapacityService } from './capacity/feature-capacity.service.js';
+import { effortField } from '../../../domain/shared/agent-effort.js';
 
 const RESUMABLE_STATUSES = new Set<string>([
   AgentRunStatus.interrupted,
@@ -121,6 +122,7 @@ export class ResumeFeatureUseCase {
       repositoryPath: feature.repositoryPath,
       approvalGates: lastRun.approvalGates,
       ...(lastRun.modelId ? { modelId: lastRun.modelId } : {}),
+      ...effortField(lastRun.effort),
       createdAt: now,
       updatedAt: now,
     };
@@ -177,6 +179,7 @@ export class ResumeFeatureUseCase {
         ...(feature.fast ? { fast: true } : {}),
         ...(feature.buildMode === BuildMode.Exploration ? { exploration: true } : {}),
         ...(lastRun.modelId ? { model: lastRun.modelId } : {}),
+        ...effortField(lastRun.effort),
         resumeReason: lastRun.status,
         securityMode: (await this.settingsRepository.load())?.security?.mode,
       }

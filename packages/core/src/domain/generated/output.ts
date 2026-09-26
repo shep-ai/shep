@@ -239,6 +239,13 @@ export type Requirement = BaseEntity & {
    */
   researches: Research[];
 };
+export enum AgentEffort {
+  low = 'low',
+  medium = 'medium',
+  high = 'high',
+  xhigh = 'xhigh',
+  max = 'max',
+}
 
 /**
  * Adaptive per-task model tier selection
@@ -270,6 +277,10 @@ export type ModelConfiguration = {
    * Default model identifier for all agents
    */
   default: string;
+  /**
+   * Default reasoning effort for new feature runs (default: agent default)
+   */
+  effort?: AgentEffort;
   /**
    * Adaptive per-task model tier selection (default: disabled)
    */
@@ -5623,6 +5634,10 @@ export type AgentRun = BaseEntity & {
    * LLM model identifier used for this run (optional, set at creation)
    */
   modelId?: string;
+  /**
+   * Reasoning effort pinned for this run (optional, set at creation; absent = agent default)
+   */
+  effort?: AgentEffort;
 };
 
 /**
@@ -6448,6 +6463,7 @@ export enum AgentFeature {
   structuredOutput = 'structured-output',
   systemPrompt = 'system-prompt',
   sessionListing = 'session-listing',
+  effort = 'effort',
 }
 export enum GuardrailGateType {
   prd = 'prd',

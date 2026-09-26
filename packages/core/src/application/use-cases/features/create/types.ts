@@ -1,4 +1,5 @@
 import type {
+  AgentEffort,
   ApprovalGates,
   Attachment,
   BuildMode,
@@ -46,6 +47,11 @@ export interface CreateFeatureInput {
   agentType?: string;
   /** Optional model identifier forwarded to the agent executor for this invocation. */
   model?: string;
+  /**
+   * Optional reasoning effort for this feature (overrides settings.models.effort).
+   * Pinned on the agent run and re-sent on every resume.
+   */
+  effort?: AgentEffort;
   /** Attachment records to persist with the feature. */
   attachments?: Attachment[];
   /** Session ID for committing pending uploads (web UI flow). */

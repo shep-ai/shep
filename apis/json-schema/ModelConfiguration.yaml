@@ -4,8 +4,11 @@ type: object
 properties:
   default:
     type: string
-    default: claude-sonnet-4-6
+    default: claude-opus-5-5
     description: Default model identifier for all agents
+  effort:
+    $ref: AgentEffort.yaml
+    description: "Default reasoning effort for new feature runs (default: agent default)"
   adaptive:
     $ref: AdaptiveModelConfig.yaml
     description: "Adaptive per-task model tier selection (default: disabled)"

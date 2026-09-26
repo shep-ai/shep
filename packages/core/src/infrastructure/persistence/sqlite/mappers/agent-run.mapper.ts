@@ -12,6 +12,7 @@
 
 import type { AgentRun, ApprovalGates } from '../../../../domain/generated/output.js';
 import { type AgentType, type AgentRunStatus } from '../../../../domain/generated/output.js';
+import { parseAgentEffort } from '../../../../domain/shared/agent-effort.js';
 
 /**
  * Database row type matching the agent_runs table schema.
@@ -37,6 +38,7 @@ export interface AgentRunRow {
   updated_at: number;
   approval_gates: string | null;
   model_id: string | null;
+  effort: string | null;
 }
 
 /**
@@ -70,6 +72,7 @@ export function toDatabase(agentRun: AgentRun): AgentRunRow {
       agentRun.updatedAt instanceof Date ? agentRun.updatedAt.getTime() : agentRun.updatedAt,
     approval_gates: agentRun.approvalGates ? JSON.stringify(agentRun.approvalGates) : null,
     model_id: agentRun.modelId ?? null,
+    effort: agentRun.effort ?? null,
   };
 }
 
@@ -104,5 +107,12 @@ export function fromDatabase(row: AgentRunRow): AgentRun {
       approvalGates: JSON.parse(row.approval_gates) as ApprovalGates,
     }),
     ...(row.model_id !== null && { modelId: row.model_id }),
+    ...effortFromRow(row.effort),
   };
+}
+
+/** Unknown stored values read back as absent (agent default), never passed on. */
+function effortFromRow(value: string | null): Pick<AgentRun, 'effort'> {
+  const effort = parseAgentEffort(value);
+  return effort ? { effort } : {};
 }

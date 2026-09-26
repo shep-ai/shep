@@ -38,6 +38,7 @@ import type { ISettingsRepository } from '../../../ports/output/repositories/set
 import type { ILogger } from '../../../ports/output/services/logger.interface.js';
 import { createDefaultSettings } from '../../../../domain/factories/settings-defaults.factory.js';
 import { satisfiesDependencyGate } from '../../../../domain/lifecycle-gates.js';
+import { effortField } from '../../../../domain/shared/agent-effort.js';
 import type { IApplicationRepository } from '../../../ports/output/repositories/application-repository.interface.js';
 import type { IAttachmentStorageService } from '../../../ports/output/services/feature-attachment-storage.interface.js';
 import { FeatureCapacityService } from '../capacity/feature-capacity.service.js';
@@ -292,6 +293,7 @@ export class CreateFeatureUseCase {
         : settings.models?.default
           ? { modelId: settings.models.default }
           : {}),
+      ...effortField(input.effort ?? settings.models?.effort),
       createdAt: now.toISOString(),
       updatedAt: now.toISOString(),
     };
@@ -473,6 +475,7 @@ export class CreateFeatureUseCase {
           ...(feature.buildMode === BuildMode.Exploration ? { exploration: true } : {}),
           ...(input.agentType ? { agentType: input.agentType as AgentType } : {}),
           ...(input.model ? { model: input.model } : {}),
+          ...effortField(agentRun?.effort ?? input.effort ?? settings.models?.effort),
           securityMode: settings.security?.mode,
         }
       );

@@ -40,7 +40,7 @@ describe('CLI: settings init', () => {
     expect(afterResult.exitCode).toBe(0);
 
     const settings = JSON.parse(afterResult.stdout);
-    expect(settings.models.default).toBe('claude-sonnet-4-6');
+    expect(settings.models.default).toBe('claude-opus-5-5');
     expect(settings.environment.defaultEditor).toBe('vscode');
     expect(settings.system.autoUpdate).toBe(true);
   }, 30_000);

@@ -132,6 +132,13 @@ export const Default: Story = {
   args: { data: fullData },
 };
 
+/** Run pinned to Opus 5.5 at high effort — effort shown next to the model. */
+export const WithPinnedEffort: Story = {
+  args: {
+    data: { ...fullData, agentType: 'claude-code', modelId: 'claude-opus-5-5', effort: 'high' },
+  },
+};
+
 /** Feature with no PR — PR card is hidden. */
 export const NoPr: Story = {
   args: { data: noPrData },

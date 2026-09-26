@@ -9,6 +9,13 @@ export {
   type FloatingActionButtonProps,
   type FloatingActionButtonAction,
 } from './floating-action-button';
+export {
+  EffortSelect,
+  AGENT_DEFAULT_EFFORT_VALUE,
+  effortFromSelectValue,
+  selectValueFromEffort,
+  type EffortSelectProps,
+} from './effort-select';
 export { ElapsedTime, formatElapsed } from './elapsed-time';
 export { EmptyState, type EmptyStateProps } from './empty-state';
 export {

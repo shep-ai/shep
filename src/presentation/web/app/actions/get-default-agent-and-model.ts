@@ -15,7 +15,7 @@ export interface DefaultAgentAndModel {
  * a freshly-opened picker / new application use by default?". Every
  * surface that needs to know the active default (empty-state composer,
  * ChatTab, feature-create drawer) MUST go through this action — never
- * hardcode a fallback like `'claude-code'` / `'claude-sonnet-4-6'`,
+ * hardcode a fallback like `'claude-code'` / `'claude-opus-5-5'`,
  * because that lies about what the system will actually use and lets
  * a stale settings value (e.g. demo `dev` agent) surface a misleading
  * "Claude Code" label in the UI while the real session boots with the
@@ -23,8 +23,8 @@ export interface DefaultAgentAndModel {
  *
  * Falls back to the values baked into `createDefaultSettings()` only
  * when settings haven't been initialised yet (fresh install before
- * onboarding). Those defaults already say `claude-code` /
- * `claude-sonnet-4-6` — same place, same source of truth.
+ * onboarding). Those defaults come from `claude-code` and
+ * `DEFAULT_MODEL_ID` — same place, same source of truth.
  */
 export async function getDefaultAgentAndModel(): Promise<DefaultAgentAndModel> {
   const settings = hasSettings() ? getSettings() : createDefaultSettings();

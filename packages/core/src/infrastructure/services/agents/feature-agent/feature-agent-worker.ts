@@ -31,11 +31,13 @@ import type { IGitForkService } from '@/application/ports/output/services/git-fo
 import {
   AgentRunStatus,
   SecurityMode,
+  type AgentEffort,
   type AgentType,
   type SecurityActionCategory,
   type SecurityActionDisposition,
 } from '@/domain/generated/output.js';
 import { initializeSettings } from '@/infrastructure/services/settings.service.js';
+import { parseAgentEffort } from '@/domain/shared/agent-effort.js';
 import { InitializeSettingsUseCase } from '@/application/use-cases/settings/initialize-settings.use-case.js';
 import { setHeartbeatContext } from './heartbeat.js';
 import {
@@ -89,6 +91,7 @@ export interface WorkerArgs {
   fast?: boolean;
   exploration?: boolean;
   model?: string;
+  effort?: AgentEffort;
   resumeReason?: string;
   securityMode?: SecurityMode;
   securityActionDispositions?: Partial<Record<SecurityActionCategory, SecurityActionDisposition>>;
@@ -152,6 +155,13 @@ export function parseWorkerArgs(args: string[]): WorkerArgs {
   const modelIdx = args.indexOf('--model');
   const model = modelIdx !== -1 && modelIdx + 1 < args.length ? args[modelIdx + 1] : undefined;
 
+  // Validated here so an unknown level never reaches the agent CLI's argv.
+  const effortIdx = args.indexOf('--effort');
+  const effort =
+    effortIdx !== -1 && effortIdx + 1 < args.length
+      ? parseAgentEffort(args[effortIdx + 1])
+      : undefined;
+
   const resumeReasonIdx = args.indexOf('--resume-reason');
   const resumeReason =
     resumeReasonIdx !== -1 && resumeReasonIdx + 1 < args.length
@@ -204,6 +214,7 @@ export function parseWorkerArgs(args: string[]): WorkerArgs {
     fast,
     exploration,
     model,
+    effort,
     resumeReason,
     securityMode,
     securityActionDispositions,
@@ -256,6 +267,7 @@ export async function runWorker(args: WorkerArgs): Promise<void> {
     ...(args.fast ? ['--fast'] : []),
     ...(args.exploration ? ['--explore'] : []),
     ...(args.model ? ['--model', args.model] : []),
+    ...(args.effort ? ['--effort', args.effort] : []),
     ...(args.securityMode ? ['--security-mode', args.securityMode] : []),
     ...(args.securityActionDispositions
       ? ['--security-dispositions', JSON.stringify(args.securityActionDispositions)]
@@ -524,6 +536,7 @@ export async function runWorker(args: WorkerArgs): Promise<void> {
           error: undefined, // Clear previous error state
           ...(args.approvalGates ? { approvalGates: args.approvalGates } : {}),
           ...(args.model ? { model: args.model } : {}),
+          ...(args.effort ? { effort: args.effort } : {}),
           ...(args.resumeReason ? { resumeReason: args.resumeReason } : {}),
           ...(mcpConfigPath ? { mcpConfigPath } : {}),
           push: args.push ?? false,
@@ -554,6 +567,7 @@ export async function runWorker(args: WorkerArgs): Promise<void> {
           specDir: args.specDir,
           ...(args.approvalGates ? { approvalGates: args.approvalGates } : {}),
           ...(args.model ? { model: args.model } : {}),
+          ...(args.effort ? { effort: args.effort } : {}),
           ...(mcpConfigPath ? { mcpConfigPath } : {}),
           push: args.push ?? false,
           openPr: args.openPr ?? false,

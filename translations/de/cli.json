@@ -44,6 +44,19 @@
         "cancelled": "Konfiguration abgebrochen.",
         "failed": "Modell konnte nicht konfiguriert werden"
       },
+      "effort": {
+        "description": "Standard-Denkaufwand für neue Feature-Läufe konfigurieren",
+        "levelArgument": "Aufwandsstufe (low, medium, high, xhigh, max)",
+        "clearOption": "Den Standardaufwand des Agenten verwenden",
+        "selectPrompt": "Standard-Denkaufwand auswählen",
+        "agentDefault": "Agent-Standard",
+        "success": "Aufwand konfiguriert: {{effort}}",
+        "cleared": "Aufwand auf den Agent-Standard zurückgesetzt",
+        "cancelled": "Konfiguration abgebrochen.",
+        "failed": "Aufwand konnte nicht konfiguriert werden",
+        "invalid": "Unbekannter Aufwand \"{{level}}\". Gültige Stufen: {{levels}}",
+        "clearConflict": "Eine Stufe kann nicht mit --clear kombiniert werden"
+      },
       "workflow": {
         "description": "Standard-Workflow-Verhalten für neue Features konfigurieren",
         "allowPrdOption": "Anforderungsphase automatisch genehmigen",
@@ -235,6 +248,8 @@
         "exploreOption": "Start an exploration/prototyping session for iterative design",
         "exploreAndFastConflict": "Cannot use --explore and --fast together. Choose one mode.",
         "modelOption": "LLM-Modellbezeichnung für diesen Lauf (z.B. claude-opus-4-6)",
+        "effortOption": "Denkaufwand für diesen Lauf: low, medium, high, xhigh oder max (Standard: Einstellungen)",
+        "invalidEffort": "Unbekannter Aufwand \"{{level}}\". Gültige Stufen: {{levels}}",
         "noRebaseOption": "Skip syncing main from remote before creating the feature branch",
         "injectSkillsOption": "Inject curated skills into the worktree",
         "noInjectSkillsOption": "Skip skill injection for this invocation",

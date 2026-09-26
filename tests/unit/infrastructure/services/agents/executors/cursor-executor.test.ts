@@ -157,6 +157,10 @@ describe('CursorExecutorService', () => {
       expect(executor.supportsFeature(AgentFeature.toolScoping)).toBe(false);
     });
 
+    it('should NOT support effort (the option is ignored)', () => {
+      expect(executor.supportsFeature(AgentFeature.effort)).toBe(false);
+    });
+
     it('should NOT support session-listing feature', () => {
       expect(executor.supportsFeature(AgentFeature.sessionListing)).toBe(false);
     });

@@ -12,6 +12,7 @@
  *   shep settings ide       # Configure preferred IDE
  *   shep settings workflow  # Configure workflow defaults
  *   shep settings model     # Configure default LLM model
+ *   shep settings effort    # Configure default reasoning effort
  *   shep settings adaptive-models # Configure per-task adaptive model tiers
  *   shep settings language  # Configure display language
  *   shep settings worktree  # Configure custom worktree provisioning commands
@@ -25,6 +26,7 @@ import { createIdeCommand } from './ide.command.js';
 import { createWorkflowCommand } from './workflow.command.js';
 import { createModelCommand } from './model.command.js';
 import { createAdaptiveModelsCommand } from './adaptive-models.command.js';
+import { createEffortCommand } from './effort.command.js';
 import { createLanguageCommand } from './language.command.js';
 import { createMessagingCommand } from './messaging.command.js';
 import { createWorktreeCommand } from './worktree.command.js';
@@ -44,6 +46,7 @@ export function createSettingsCommand(): Command {
     .addCommand(createIdeCommand())
     .addCommand(createWorkflowCommand())
     .addCommand(createModelCommand())
+    .addCommand(createEffortCommand())
     .addCommand(createAdaptiveModelsCommand())
     .addCommand(createLanguageCommand())
     .addCommand(createMessagingCommand())

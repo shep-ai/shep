@@ -73,6 +73,7 @@ import { WorktreeSettingsSection } from '@/components/features/settings/worktree
 import { SettingsSectionNav } from './settings-section-nav';
 import { useHydrated } from '@/hooks/use-hydrated';
 import { AdaptiveModelSettingsSection } from '@/components/features/settings/adaptive-model-settings-section';
+import { EffortSettingsControl } from '@/components/features/settings/effort-settings-control';
 import type {
   Settings,
   FeatureFlags,
@@ -831,6 +832,13 @@ export function SettingsPageClient({
                 }}
                 className="w-55"
               />
+            </SettingsRow>
+            <SettingsRow
+              label={t('settings.agent.effort')}
+              description={t('settings.agent.effortDescription')}
+              htmlFor="agent-effort"
+            >
+              <EffortSettingsControl initialEffort={settings.models.effort} className="w-55" />
             </SettingsRow>
             <SettingsRow
               label="Auth Method"
