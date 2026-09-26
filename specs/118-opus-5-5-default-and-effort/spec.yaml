@@ -1,0 +1,122 @@
+name: "opus-5-5-default-and-effort"
+number: 118
+branch: "claude/quirky-faraday-inagpw"
+oneLiner: |-
+  Make Claude Opus 5.5 the default model and add an agent effort setting (low/medium/high/xhigh/max)
+  that flows from settings or a per-feature override to the agent CLI
+summary: |-
+  #901 made Claude Opus 5.5 selectable, but new installs still default to Claude Sonnet 4.6, and
+  Shep has no way to set reasoning effort, the main cost/quality lever on current Claude models
+  (Opus 5.5's API default is `medium`, one level below Opus 5's `high`). This feature makes
+  `claude-opus-5-5` the default from a single domain constant. It adds an `AgentEffort` TypeSpec
+  enum with a global default (`settings.models.effort`) and a per-feature override pinned on the
+  agent run next to the model. Effort is carried through the feature worker into
+  `AgentExecutionOptions`, and the Claude Code executor passes it as `--effort`. The setting is
+  exposed in the web settings page, the feature create drawer, the feature overview, and the CLI
+  (`shep settings effort`, `shep feat new --effort`).
+phase: "Requirements"
+sizeEstimate: "L"
+relatedFeatures:
+  - "117-claude-live-model-discovery"
+  - "110-adaptive-model-selection"
+  - "052-llm-model-selection"
+technologies:
+  - "TypeScript"
+  - "TypeSpec"
+  - "SQLite (better-sqlite3, umzug migrations)"
+  - "LangGraph (feature-agent state)"
+  - "Next.js / React / shadcn Select"
+  - "Commander + @inquirer/prompts"
+  - "Vitest"
+  - "Playwright"
+relatedLinks:
+  - "https://code.claude.com/docs/en/cli-reference"
+openQuestions: []
+content: |
+  ## Problem Statement
+
+  - **Stale default.** `settings-defaults.factory.ts`, `settings.tsp`, the interactive Claude
+    executor and the chat-state assembler each hardcode `claude-sonnet-4-6` as the default model.
+    New installs therefore start two generations behind, and the three copies can drift.
+  - **No effort control.** Effort (`low` | `medium` | `high` | `xhigh` | `max`) now decides how much
+    a Claude model thinks, and so its cost, latency and quality. The installed `claude` CLI accepts
+    `--effort <level>`, but Shep never passes it, so every run silently uses whatever the user's
+    Claude Code config or the model default says. There is no domain concept, setting, per-feature
+    override, or UI for it.
+
+  ## Success Criteria
+
+  - **Default model.** A fresh install's `settings.models.default` is `claude-opus-5-5`. The
+    factory, the TypeSpec default, the interactive executor fallback and the chat-state display
+    fallback all read one exported domain constant (`DEFAULT_MODEL_ID`). Existing persisted
+    settings are not rewritten.
+  - **Domain model.** `AgentEffort` is a TypeSpec enum (`low`, `medium`, `high`, `xhigh`, `max`).
+    Both `ModelConfiguration.effort` and `AgentRun.effort` are optional; unset means "use the
+    agent's own default".
+  - **Persistence.**
+    - `settings.models.effort` round-trips through SQLite (new nullable `model_effort` column).
+    - `AgentRun.effort` round-trips (new nullable `effort` column on `agent_runs`).
+    - Unknown stored values read back as unset rather than crashing.
+  - **Creation and resume.**
+    - Creating a feature pins `input.effort ?? settings.models.effort` on the run.
+    - Every spawn and resume path (create, start, spawn, resume, approve, reject) forwards the
+      pinned effort to the worker as `--effort`.
+    - The feature agent puts it on `state.effort`, and `buildExecutorOptions` sets
+      `AgentExecutionOptions.effort`.
+  - **Executors.**
+    - The Claude Code executor appends `--effort <level>` when `options.effort` is set, and
+      declares `AgentFeature.effort`.
+    - Executors without the feature ignore the option; none throws.
+    - The Claude Code executor passes the model id unchanged. The Cursor executor maps the
+      canonical `claude-opus-5-5` id to a Cursor-served id, so the new default does not break
+      Cursor users.
+  - **Web UI.**
+    - Settings shows an "Effort" select in the Agent section. It saves `models.effort`, and
+      "Agent default" clears it.
+    - The feature create drawer offers an effort override, prefilled from settings.
+    - The feature overview shows the pinned effort.
+    - Every new component has a colocated story.
+  - **CLI.**
+    - `shep settings effort [level]` sets the default; `--clear` resets it; with no argument it
+      runs an interactive picker.
+    - `shep feat new --effort <level>` overrides per feature.
+    - Invalid levels exit non-zero with the list of valid values.
+  - **E2E tests.** Playwright covers setting and clearing effort in settings and seeing it
+    persist across a reload. The CLI e2e test covers `shep settings effort high` → `shep settings
+    show`, and the new-install default model (`claude-opus-5-5`).
+
+  ## Affected Areas
+
+  | Area | Impact | Reasoning |
+  | --- | --- | --- |
+  | `tsp/common/enums/`, `tsp/domain/entities/settings.tsp`, `tsp/agents/agent-run.tsp`, `tsp/agents/enums/agent-feature.tsp` | High | New `AgentEffort` enum, optional `effort` fields, new `AgentFeature.effort` |
+  | `domain/factories/settings-defaults.factory.ts`, new `domain/shared/default-model.ts` | Medium | Single default-model constant |
+  | `infrastructure/persistence/sqlite/` (migration, settings + agent-run mappers, repository) | Medium | New nullable columns |
+  | `application/use-cases/features/*`, `application/use-cases/agents/{approve,reject}-agent-run` | Medium | Pin and forward effort |
+  | `application/ports/output/agents/{agent-executor,feature-agent-process}.interface.ts` | Medium | `effort` option |
+  | `infrastructure/services/agents/feature-agent/` (worker, process service, state, node-helpers) | Medium | Worker arg → state → executor options |
+  | `infrastructure/services/agents/common/executors/claude-code-executor.service.ts`, `cursor-cli.ts` | Medium | `--effort`; Cursor id mapping for the new default |
+  | `src/presentation/web/` (settings page, create drawer, overview tab, actions, i18n) | Medium | UI |
+  | `src/presentation/cli/commands/{settings,feat}` + i18n | Medium | CLI |
+  | `tests/e2e/{web,cli}` | Low | New and updated e2e tests |
+
+  ## Out of Scope (follow-ups)
+
+  - Rendering Opus 5.5 progress-update thinking blocks in logs and chat.
+  - Detecting `stop_reason: refusal`.
+  - Bumping `@anthropic-ai/claude-agent-sdk`. Its V2 session API cannot pass effort, so interactive
+    chat keeps the CLI default.
+  - A per-tier effort for adaptive routing.
+  - Changing effort on an already-created feature. It is shown but read-only there, like the
+    creation-time settings; the pinned-config editor keeps changing agent and model only.
+  - Mapping effort onto Cursor's model-id suffixes and Codex's reasoning-effort flag.
+
+  ## Dependencies
+
+  - `claude` CLI with `--effort` support (present in 2.1.x). Older CLIs reject unknown flags, which
+    is why effort is sent only when set; unset keeps today's exact argv.
+
+  ## Size Estimate
+
+  L — touches all four layers plus TypeSpec, one migration, and three presentation surfaces, but
+  every change follows an existing pattern (`model` / `modelId`).

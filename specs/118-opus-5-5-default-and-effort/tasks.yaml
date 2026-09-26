@@ -1,0 +1,203 @@
+name: opus-5-5-default-and-effort
+summary: 9 tasks across 5 phases; every code task is RED-first.
+relatedFeatures: []
+technologies: []
+relatedLinks: []
+tasks:
+- id: task-1
+  phaseId: phase-1
+  title: AgentEffort TypeSpec enum, optional effort fields, AgentFeature.effort, parser
+  description: >-
+    Add `AgentEffort` (low, medium, high, xhigh, max), `ModelConfiguration.effort?`,
+    `AgentRun.effort?` and `AgentFeature.effort`, then regenerate. Add `parseAgentEffort` in
+    `domain/shared/agent-effort.ts` as the single validator.
+  state: Todo
+  dependencies: []
+  acceptanceCriteria:
+  - pnpm generate emits AgentEffort with the five wire values and optional effort fields
+  - parseAgentEffort returns the enum member for each valid value (case-insensitive, trimmed) and undefined otherwise
+  - AGENT_EFFORT_LEVELS lists the levels in ascending order
+  tdd:
+    red:
+    - agent-effort.test.ts covering valid, invalid, empty and mixed-case inputs
+    green:
+    - TypeSpec enum + fields; parseAgentEffort + AGENT_EFFORT_LEVELS
+    refactor:
+    - Keep the level order in one exported constant used by CLI and web
+  estimatedEffort: S
+- id: task-2
+  phaseId: phase-1
+  title: Default model constant set to claude-opus-5-5
+  description: >-
+    `domain/shared/default-model.ts` exports DEFAULT_MODEL_ID. The settings factory, the
+    TypeSpec default, the interactive Claude executor and the chat-state assembler use it.
+  state: Todo
+  dependencies: []
+  acceptanceCriteria:
+  - createDefaultSettings().models.default === 'claude-opus-5-5'
+  - a test asserts the generated TypeSpec default equals DEFAULT_MODEL_ID
+  - no other source file hardcodes claude-sonnet-4-6 as a default model
+  tdd:
+    red:
+    - settings-defaults.factory.test expects claude-opus-5-5; default-model.test pins the TypeSpec literal
+    green:
+    - Add the constant and import it at the four sites; update the settings.tsp default and docs
+    refactor:
+    - Update the stale supported-model doc list in settings.tsp
+  estimatedEffort: S
+- id: task-3
+  phaseId: phase-2
+  title: Persist settings.models.effort and AgentRun.effort
+  description: >-
+    Migration 147 adds nullable settings.model_effort and agent_runs.effort. The settings mapper,
+    the agent-run mapper and the repository create and read the new columns.
+  state: Todo
+  dependencies: [task-1]
+  acceptanceCriteria:
+  - migration is idempotent (re-run is a no-op)
+  - settings with effort 'high' round-trips; unset round-trips as undefined
+  - agent run created with effort 'low' reads back 'low'; an unknown stored string reads back undefined
+  tdd:
+    red:
+    - migration test + settings mapper test + agent-run repository integration test
+    green:
+    - migration file, mapper fields, INSERT column list
+    refactor:
+    - Reuse parseAgentEffort in both mappers
+  estimatedEffort: M
+- id: task-4
+  phaseId: phase-3
+  title: Pin effort on create; forward on every spawn/resume path
+  description: >-
+    CreateFeatureInput.effort; create pins input.effort ?? settings.models.effort on the run. The
+    spawn-feature-agent, resume-feature, approve-agent-run and reject-agent-run paths forward
+    run.effort to IFeatureAgentProcessService.spawn.
+  state: Todo
+  dependencies: [task-3]
+  acceptanceCriteria:
+  - create with input.effort pins it; without input it uses settings; with neither it stays unset
+  - each resume path passes effort when the run has one and omits it otherwise
+  tdd:
+    red:
+    - create-feature.use-case tests; spawn/resume/approve/reject forwarding tests
+    green:
+    - add optional effort to input types and spawn options; forward it next to model
+    refactor:
+    - none beyond keeping the model/effort spread adjacent
+  estimatedEffort: M
+- id: task-5
+  phaseId: phase-3
+  title: Worker argv → state.effort → AgentExecutionOptions.effort
+  description: >-
+    The process service appends --effort. The worker parses it with parseAgentEffort and seeds
+    state.effort, forwarding it on re-spawn. buildExecutorOptions sets options.effort.
+  state: Todo
+  dependencies: [task-4]
+  acceptanceCriteria:
+  - spawn with effort 'xhigh' includes ['--effort','xhigh'] in argv
+  - worker parseWorkerArgs returns effort for valid values and undefined for invalid ones
+  - buildExecutorOptions includes effort when state.effort is set
+  tdd:
+    red:
+    - feature-agent-process.service, worker args, node-helpers tests
+    green:
+    - argv, parse, state annotation, options spread
+    refactor:
+    - none
+  estimatedEffort: M
+- id: task-6
+  phaseId: phase-3
+  title: Claude Code --effort and Cursor opus-5-5 mapping
+  description: >-
+    The Claude Code executor declares AgentFeature.effort and appends --effort <level> when
+    options.effort is set. The Cursor CLI map converts claude-opus-5-5 to a Cursor-served id so
+    the new default works on Cursor.
+  state: Todo
+  dependencies: [task-1]
+  acceptanceCriteria:
+  - buildArgs with effort 'max' contains --effort max; without effort the argv is unchanged
+  - supportsFeature(AgentFeature.effort) is true for claude-code and false for cursor/codex/gemini
+  - toCursorModelName('claude-opus-5-5') returns a Cursor claude-opus-5-5-* id
+  tdd:
+    red:
+    - claude-code executor argv + supportsFeature tests; cursor-cli map test
+    green:
+    - SUPPORTED_FEATURES entry, args push, map entry
+    refactor:
+    - none
+  estimatedEffort: S
+- id: task-7
+  phaseId: phase-4
+  title: CLI shep settings effort and feat new --effort
+  description: >-
+    `shep settings effort [level]` sets models.effort, `--clear` unsets it, and with no argument it
+    runs an interactive select. `shep feat new --effort <level>` forwards to create. Invalid
+    levels exit non-zero. i18n keys in every locale.
+  state: Todo
+  dependencies: [task-4]
+  acceptanceCriteria:
+  - settings effort high persists high; --clear removes it; invalid value exits 1 listing valid levels
+  - feat new --effort low passes effort low to CreateFeatureUseCase
+  - shep settings show displays the effort (or 'agent default')
+  tdd:
+    red:
+    - effort.command.test (option algebra via exported resolver); feat new option test
+    green:
+    - command file registered in settings index; option on feat new; i18n
+    refactor:
+    - Share the level list with parseAgentEffort
+  estimatedEffort: M
+- id: task-8
+  phaseId: phase-4
+  title: Web EffortSelect in settings, create drawer and overview
+  description: >-
+    Add a shared EffortSelect component with an "Agent default" option. EffortSettingsRow saves
+    models.effort through updateSettingsAction. The create drawer passes effort through
+    createFeature. The overview tab shows the pinned effort. Stories accompany every new
+    component; i18n goes into every locale.
+  state: Todo
+  dependencies: [task-4]
+  acceptanceCriteria:
+  - EffortSelect lists Agent default + five levels and calls onChange(undefined) for Agent default
+  - settings row persists and shows saved state; clearing sends effort undefined
+  - create drawer includes effort in the createFeature payload when chosen
+  - overview shows the run's effort when set
+  - stories exist for EffortSelect and EffortSettingsRow
+  tdd:
+    red:
+    - effort-select.test.tsx; create-feature action test for effort; overview test
+    green:
+    - components, action/input plumbing, settings page mount, drawer field
+    refactor:
+    - Keep settings-page-client additions to the import + mount only
+  estimatedEffort: L
+- id: task-9
+  phaseId: phase-5
+  title: E2E coverage and docs
+  description: >-
+    Add a Playwright spec that sets effort in settings, reloads, and clears it. Add a CLI e2e test
+    for the settings effort round trip, and update the settings-init default-model assertion.
+    Document effort in docs/guides/configuration.md.
+  state: Todo
+  dependencies: [task-7, task-8]
+  acceptanceCriteria:
+  - tests/e2e/web/effort-settings.spec.ts passes locally
+  - tests/e2e/cli/settings-effort.test.ts passes locally
+  - configuration guide documents effort and the new default model
+  tdd: null
+  estimatedEffort: M
+totalEstimate: L
+openQuestions: []
+content: |
+  ## Summary
+
+  Default model → Opus 5.5 from one constant; `AgentEffort` from settings or a per-feature pin down
+  to Claude Code `--effort`; CLI + web UI + e2e.
+
+  ## Acceptance checklist
+
+  - [ ] Fresh install default model is claude-opus-5-5
+  - [ ] Effort persists in settings and on agent runs
+  - [ ] Effort reaches `claude --effort` on every spawn/resume path
+  - [ ] CLI and web UI can set, clear and override effort
+  - [ ] Unit, integration and e2e tests green

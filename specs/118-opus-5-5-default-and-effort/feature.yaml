@@ -1,0 +1,42 @@
+feature:
+  id: '118-opus-5-5-default-and-effort'
+  name: 'opus-5-5-default-and-effort'
+  number: 118
+  branch: 'claude/quirky-faraday-inagpw'
+  lifecycle: 'implementation'
+  createdAt: '2026-09-26T07:46:26Z'
+
+status:
+  phase: 'ready-to-implement'
+  progress:
+    completed: 0
+    total: 9
+    percentage: 0
+  currentTask: null
+  lastUpdated: '2026-09-26T08:05:00Z'
+  lastUpdatedBy: 'shep-kit:new-feature-fast'
+
+validation:
+  lastRun: null
+  gatesPassed: []
+  autoFixesApplied: []
+
+tasks:
+  current: null
+  blocked: []
+  failed: []
+
+checkpoints:
+  - phase: 'feature-created'
+    completedAt: '2026-09-26T07:46:26Z'
+    completedBy: 'shep-kit:new-feature-fast'
+  - phase: 'research-complete'
+    completedAt: '2026-09-26T08:05:00Z'
+    completedBy: 'shep-kit:new-feature-fast'
+  - phase: 'plan-complete'
+    completedAt: '2026-09-26T08:05:00Z'
+    completedBy: 'shep-kit:new-feature-fast'
+
+errors:
+  current: null
+  history: []
