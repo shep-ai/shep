@@ -47,9 +47,14 @@ export class ResumeApplicationWorkflowUseCase {
     const steps = await this.stepRepo.listByFeature(featureId);
     if (steps.length === 0) return;
 
-    // Reset interrupted steps back to pending
+    // Reset interrupted AND failed steps back to pending — "Try again" on the
+    // setup-failed banner promises to re-run the failed step (e.g. after the
+    // user logs in to their agent). A failed step left as-is stops the walk.
     for (const step of steps) {
-      if (step.status === WorkflowStepStatus.interrupted) {
+      if (
+        step.status === WorkflowStepStatus.interrupted ||
+        step.status === WorkflowStepStatus.failed
+      ) {
         await this.stepRepo.updateStatus(step.id, WorkflowStepStatus.pending);
         this.session.notifyWorkflowStep(featureId, await this.refreshStep(step.id));
       }
