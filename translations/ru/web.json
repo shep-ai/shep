@@ -39,6 +39,9 @@
       "agentType": "Тип агента",
       "agentAndModel": "Агент и модель",
       "agentAndModelDescription": "Провайдер и модель для всех операций",
+      "effort": "Уровень рассуждений",
+      "effortDescription": "Уровень рассуждений для новых фич (Claude Code)",
+      "effortFailed": "Не удалось сохранить уровень",
       "authMethod": "Метод аутентификации",
       "apiToken": "API-токен",
       "apiTokenPlaceholder": "Введите ваш API-токен",
@@ -677,7 +680,9 @@
     "skills": "SKILLS",
     "skillsDescription": "Curated skills to guide the agent during feature development.",
     "injectSkills": "Inject",
-    "injectSkillsDescription": "Include curated skills in the feature worktree."
+    "injectSkillsDescription": "Include curated skills in the feature worktree.",
+    "effort": "Уровень",
+    "effortFromSettings": "Из настроек"
   },
   "featureDrawer": {
     "copyFeatureId": "Копировать ID функции",
@@ -713,7 +718,8 @@
     "pr": "PR",
     "watch": "Наблюдение",
     "commitSpecs": "Коммит спецификаций",
-    "forkAndPr": "Форк и PR"
+    "forkAndPr": "Форк и PR",
+    "effortValue": "Уровень: {{level}}"
   },
   "activityTab": {
     "copyPromptToClipboard": "Копировать промпт в буфер обмена",
@@ -793,6 +799,16 @@
   },
   "modelPicker": {
     "searchPlaceholder": "Поиск или введите ID модели…"
+  },
+  "effortSelect": {
+    "agentDefault": "По умолчанию агента",
+    "levels": {
+      "low": "Низкий",
+      "medium": "Средний",
+      "high": "Высокий",
+      "xhigh": "Очень высокий",
+      "max": "Максимальный"
+    }
   },
   "skills": {
     "searchPlaceholder": "Поиск навыков..."

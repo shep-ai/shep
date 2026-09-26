@@ -288,6 +288,40 @@ describe('createFeature server action', () => {
     });
   });
 
+  // --- effort forwarding ---
+
+  describe('effort forwarding', () => {
+    it('forwards a valid effort to createRecord and initializeAndSpawn', async () => {
+      const feature = { id: '1', name: 'Test', slug: 'test' };
+      mockCreateRecord.mockResolvedValue({ feature, shouldSpawn: true });
+
+      await createFeature({ description: 'Fix it', repositoryPath: '/repo', effort: 'xhigh' });
+
+      expect(mockCreateRecord).toHaveBeenCalledWith(expect.objectContaining({ effort: 'xhigh' }));
+      expect(mockInitializeAndSpawn).toHaveBeenCalledWith(
+        feature,
+        expect.objectContaining({ effort: 'xhigh' }),
+        true
+      );
+    });
+
+    it('drops an unknown effort instead of passing it to the use case', async () => {
+      mockCreateRecord.mockResolvedValue({ feature: { id: '1' }, shouldSpawn: true });
+
+      await createFeature({ description: 'Fix it', repositoryPath: '/repo', effort: 'ultra' });
+
+      expect(mockCreateRecord.mock.calls[0][0]).not.toHaveProperty('effort');
+    });
+
+    it('omits effort when none is chosen (settings default applies)', async () => {
+      mockCreateRecord.mockResolvedValue({ feature: { id: '1' }, shouldSpawn: true });
+
+      await createFeature({ description: 'Fix it', repositoryPath: '/repo' });
+
+      expect(mockCreateRecord.mock.calls[0][0]).not.toHaveProperty('effort');
+    });
+  });
+
   // --- push/openPr forwarding ---
 
   describe('push/openPr forwarding', () => {

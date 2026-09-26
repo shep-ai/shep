@@ -44,6 +44,19 @@
         "cancelled": "ההגדרה בוטלה.",
         "failed": "הגדרת המודל נכשלה"
       },
+      "effort": {
+        "description": "הגדרת רמת החשיבה המוגדרת כברירת מחדל להרצות חדשות",
+        "levelArgument": "רמת מאמץ (low, medium, high, xhigh, max)",
+        "clearOption": "שימוש ברמת ברירת המחדל של הסוכן",
+        "selectPrompt": "בחרו רמת חשיבה כברירת מחדל",
+        "agentDefault": "ברירת המחדל של הסוכן",
+        "success": "רמת המאמץ הוגדרה: {{effort}}",
+        "cleared": "רמת המאמץ אופסה לברירת המחדל של הסוכן",
+        "cancelled": "ההגדרה בוטלה.",
+        "failed": "הגדרת רמת המאמץ נכשלה",
+        "invalid": "רמת מאמץ לא מוכרת \"{{level}}\". רמות תקפות: {{levels}}",
+        "clearConflict": "לא ניתן לשלב רמה עם --clear"
+      },
       "workflow": {
         "description": "הגדר התנהגות ברירת מחדל של תהליך עבודה עבור פיצ'רים חדשים",
         "allowPrdOption": "אשר אוטומטית את שלב הדרישות",
@@ -235,6 +248,8 @@
         "exploreOption": "Start an exploration/prototyping session for iterative design",
         "exploreAndFastConflict": "Cannot use --explore and --fast together. Choose one mode.",
         "modelOption": "מזהה מודל LLM להרצה זו (לדוגמה claude-opus-4-6)",
+        "effortOption": "רמת חשיבה להרצה זו: low, medium, high, xhigh או max (ברירת מחדל: הגדרות)",
+        "invalidEffort": "רמת מאמץ לא מוכרת \"{{level}}\". רמות תקפות: {{levels}}",
         "noRebaseOption": "Skip syncing main from remote before creating the feature branch",
         "injectSkillsOption": "Inject curated skills into the worktree",
         "noInjectSkillsOption": "Skip skill injection for this invocation",

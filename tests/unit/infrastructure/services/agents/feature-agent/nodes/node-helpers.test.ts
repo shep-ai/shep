@@ -371,6 +371,15 @@ describe('buildExecutorOptions', () => {
     expect(options.idleTimeout).toBeLessThan(options.timeout!);
   });
 
+  it('forwards the pinned effort to the executor options', () => {
+    const options = buildExecutorOptions({ ...baseState, effort: 'xhigh' } as any);
+    expect(options.effort).toBe('xhigh');
+  });
+
+  it('omits effort when the run pinned none', () => {
+    expect(buildExecutorOptions(baseState as any)).not.toHaveProperty('effort');
+  });
+
   it('uses default timeout (1_800_000ms) when settings are not initialized', () => {
     const options = buildExecutorOptions(baseState as any);
     expect(options.timeout).toBe(1_800_000);

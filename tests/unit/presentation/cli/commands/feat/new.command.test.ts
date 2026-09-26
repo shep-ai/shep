@@ -489,6 +489,37 @@ describe('createNewCommand', () => {
     });
   });
 
+  describe('--effort flag', () => {
+    it('should expose --effort option in command help', () => {
+      const cmd = createNewCommand();
+      expect(cmd.options.find((o) => o.long === '--effort')?.description).toBeTruthy();
+    });
+
+    it('should forward a valid --effort to the use case input', async () => {
+      const cmd = createNewCommand();
+      await cmd.parseAsync(['Add feature', '--effort', 'HIGH'], { from: 'user' });
+
+      expect(mockCreateExecute).toHaveBeenCalledWith(expect.objectContaining({ effort: 'high' }));
+    });
+
+    it('should not include effort when --effort is not provided', async () => {
+      const cmd = createNewCommand();
+      await cmd.parseAsync(['Add feature'], { from: 'user' });
+
+      expect(mockCreateExecute).toHaveBeenCalledWith(
+        expect.not.objectContaining({ effort: expect.anything() })
+      );
+    });
+
+    it('should reject an unknown --effort without creating a feature', async () => {
+      const cmd = createNewCommand();
+      await cmd.parseAsync(['Add feature', '--effort', 'ultra'], { from: 'user' });
+
+      expect(mockCreateExecute).not.toHaveBeenCalled();
+      expect(process.exitCode).toBe(1);
+    });
+  });
+
   describe('--model flag', () => {
     it('should expose --model option in command help', () => {
       const cmd = createNewCommand();

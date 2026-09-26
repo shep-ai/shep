@@ -46,6 +46,29 @@ describe('updateModel server action', () => {
     expect(result).toEqual({ ok: true });
   });
 
+  it('keeps the other model settings (adaptive, effort) when changing the default', async () => {
+    mockGetSettings.mockReturnValue({
+      ...baseSettings,
+      models: {
+        default: 'claude-sonnet-4-6',
+        effort: 'high',
+        adaptive: { enabled: true, low: 'claude-haiku-4-5' },
+      },
+    });
+
+    await updateModel('claude-opus-5-5');
+
+    expect(mockExecute).toHaveBeenCalledWith(
+      expect.objectContaining({
+        models: {
+          default: 'claude-opus-5-5',
+          effort: 'high',
+          adaptive: { enabled: true, low: 'claude-haiku-4-5' },
+        },
+      })
+    );
+  });
+
   it('refreshes the in-memory settings singleton after persisting', async () => {
     await updateModel('claude-haiku-4-5');
 

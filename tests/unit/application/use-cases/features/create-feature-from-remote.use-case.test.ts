@@ -13,6 +13,7 @@ import type { CreateFeatureFromRemoteInput } from '@/application/use-cases/featu
 import type { ImportGitHubRepositoryUseCase } from '@/application/use-cases/repositories/import-github-repository.use-case.js';
 import type { CreateFeatureUseCase } from '@/application/use-cases/features/create/create-feature.use-case.js';
 import type { Repository, Feature } from '@/domain/generated/output.js';
+import { AgentEffort } from '@/domain/generated/output.js';
 import {
   GitHubAuthError,
   GitHubUrlParseError,
@@ -224,6 +225,7 @@ describe('CreateFeatureFromRemoteUseCase', () => {
         pending: false,
         agentType: 'claude-code',
         model: 'claude-opus-4-6',
+        effort: AgentEffort.high,
         attachments: [],
         sessionId: 'sess-1',
         attachmentPaths: ['/file.txt'],
@@ -244,6 +246,7 @@ describe('CreateFeatureFromRemoteUseCase', () => {
         pending: false,
         agentType: 'claude-code',
         model: 'claude-opus-4-6',
+        effort: AgentEffort.high,
         attachments: [],
         sessionId: 'sess-1',
         attachmentPaths: ['/file.txt'],

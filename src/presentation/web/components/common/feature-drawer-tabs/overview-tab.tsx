@@ -174,6 +174,7 @@ export function OverviewTab({
   rebaseLoading,
   rebaseError,
 }: OverviewTabProps) {
+  const { t } = useTranslation('web');
   const featureFlags = useFeatureFlags();
   const isCompleted = data.lifecycle === 'maintain';
   const isRunning = data.state === 'running' || data.state === 'action-required';
@@ -359,6 +360,14 @@ export function OverviewTab({
                 {data.modelId ? (
                   <span className="text-foreground/50 text-[12px]">
                     {getModelMeta(data.modelId).displayName || data.modelId}
+                  </span>
+                ) : null}
+                {data.effort ? (
+                  <span data-testid="overview-effort" className="text-foreground/50 text-[12px]">
+                    ·{' '}
+                    {t('overviewTab.effortValue', {
+                      level: t(`effortSelect.levels.${data.effort}`),
+                    })}
                   </span>
                 ) : null}
               </span>

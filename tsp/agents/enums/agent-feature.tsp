@@ -24,4 +24,7 @@ enum AgentFeature {
 
   @doc("Supports listing agent provider CLI sessions")
   sessionListing: "session-listing",
+
+  @doc("Supports a reasoning effort level (AgentExecutionOptions.effort)")
+  effort: "effort",
 }

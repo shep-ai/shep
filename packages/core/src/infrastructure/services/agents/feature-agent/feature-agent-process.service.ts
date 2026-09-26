@@ -17,6 +17,7 @@ import type { IAgentRunRepository } from '@/application/ports/output/agents/agen
 import {
   AgentRunStatus,
   type ApprovalGates,
+  type AgentEffort,
   type AgentType,
   type SecurityMode,
   type SecurityActionCategory,
@@ -60,6 +61,7 @@ export class FeatureAgentProcessService implements IFeatureAgentProcessService {
       fast?: boolean;
       exploration?: boolean;
       model?: string;
+      effort?: AgentEffort;
       resumeReason?: string;
       securityMode?: SecurityMode;
       securityActionDispositions?: Partial<
@@ -131,6 +133,9 @@ export class FeatureAgentProcessService implements IFeatureAgentProcessService {
     }
     if (options?.model) {
       args.push('--model', options.model);
+    }
+    if (options?.effort) {
+      args.push('--effort', options.effort);
     }
     if (options?.resumeReason) {
       args.push('--resume-reason', options.resumeReason);

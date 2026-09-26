@@ -24,7 +24,9 @@ export const CURSOR_NOT_FOUND_MESSAGE =
 const CURSOR_MODEL_MAP: Record<string, string> = {
   // Obsolete Composer
   'composer-1.5': 'composer-2.5',
-  // Pre-rename Claude aliases → current Cursor CLI ids
+  // Pre-rename Claude aliases → current Cursor CLI ids. Cursor ids encode
+  // effort; the canonical Opus 5.5 id maps to medium, its own default effort.
+  'claude-opus-5-5': 'claude-opus-5-5-medium',
   'claude-opus-5': 'claude-opus-5-high',
   'claude-opus-4-8': 'claude-opus-4-8-high',
   'claude-opus-4-7': 'claude-opus-4-7-high',

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { BaseDrawer } from '@/components/common/base-drawer';
 
@@ -89,6 +89,36 @@ describe('BaseDrawer', () => {
       );
 
       expect(screen.getByTestId('my-drawer-close-button')).toBeInTheDocument();
+    });
+  });
+
+  describe('outside clicks', () => {
+    it('closes when a click lands on an element outside the drawer', () => {
+      const onClose = vi.fn();
+      render(
+        <>
+          <div data-testid="canvas">canvas</div>
+          <BaseDrawer open onClose={onClose}>
+            <p>content</p>
+          </BaseDrawer>
+        </>
+      );
+      fireEvent.click(screen.getByTestId('canvas'));
+      expect(onClose).toHaveBeenCalledOnce();
+    });
+
+    it('ignores a click whose target is <body> (e.g. the click that follows opening a Radix Select)', () => {
+      // Radix Select opens on pointerdown and blocks pointer events on <body>,
+      // so the trailing click targets <body> itself, not a page element.
+      const onClose = vi.fn();
+      render(
+        <BaseDrawer open onClose={onClose}>
+          <p>content</p>
+        </BaseDrawer>
+      );
+      fireEvent.click(document.body);
+      fireEvent.click(document.documentElement);
+      expect(onClose).not.toHaveBeenCalled();
     });
   });
 

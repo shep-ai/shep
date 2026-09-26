@@ -12,7 +12,11 @@
 
 import { injectable, inject } from 'tsyringe';
 import type { Feature } from '../../../../domain/generated/output.js';
-import type { ApprovalGates, Attachment } from '../../../../domain/generated/output.js';
+import type {
+  AgentEffort,
+  ApprovalGates,
+  Attachment,
+} from '../../../../domain/generated/output.js';
 import type {
   CloneOptions,
   ForkOptions,
@@ -45,6 +49,8 @@ export interface CreateFeatureFromRemoteInput {
   pending?: boolean;
   agentType?: string;
   model?: string;
+  /** Optional reasoning effort for the created feature (see CreateFeatureInput.effort). */
+  effort?: AgentEffort;
   attachments?: Attachment[];
   sessionId?: string;
   attachmentPaths?: string[];
@@ -85,6 +91,7 @@ export class CreateFeatureFromRemoteUseCase {
       pending: input.pending,
       agentType: input.agentType,
       model: input.model,
+      effort: input.effort,
       attachments: input.attachments,
       sessionId: input.sessionId,
       attachmentPaths: input.attachmentPaths,
@@ -117,6 +124,7 @@ export class CreateFeatureFromRemoteUseCase {
       pending: input.pending,
       agentType: input.agentType,
       model: input.model,
+      effort: input.effort,
       attachments: input.attachments,
       sessionId: input.sessionId,
       attachmentPaths: input.attachmentPaths,
@@ -150,6 +158,7 @@ export class CreateFeatureFromRemoteUseCase {
         pending: input.pending,
         agentType: input.agentType,
         model: input.model,
+        effort: input.effort,
         attachments: input.attachments,
         sessionId: input.sessionId,
         attachmentPaths: input.attachmentPaths,

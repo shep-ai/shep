@@ -225,6 +225,28 @@ describe('ResumeFeatureUseCase', () => {
     );
   });
 
+  it('should clone the pinned effort into the retry run and spawn options', async () => {
+    featureRepo.findById.mockResolvedValue(createTestFeature());
+    runRepo.findById.mockResolvedValue(
+      createTestRun({ status: AgentRunStatus.failed, effort: 'xhigh' as any })
+    );
+
+    await useCase.execute('feat-001');
+
+    expect(runRepo.create.mock.calls[0]?.[0].effort).toBe('xhigh');
+    expect(processService.spawn.mock.calls[0]?.[5].effort).toBe('xhigh');
+  });
+
+  it('should leave effort unset on retry when the run pinned none', async () => {
+    featureRepo.findById.mockResolvedValue(createTestFeature());
+    runRepo.findById.mockResolvedValue(createTestRun({ status: AgentRunStatus.failed }));
+
+    await useCase.execute('feat-001');
+
+    expect(runRepo.create.mock.calls[0]?.[0]).not.toHaveProperty('effort');
+    expect(processService.spawn.mock.calls[0]?.[5]).not.toHaveProperty('effort');
+  });
+
   it('should resume a failed run without resumeFromInterrupt', async () => {
     featureRepo.findById.mockResolvedValue(createTestFeature());
     runRepo.findById.mockResolvedValue(createTestRun({ status: AgentRunStatus.failed }));

@@ -39,6 +39,9 @@
       "agentType": "Type d'agent",
       "agentAndModel": "Agent et modèle",
       "agentAndModelDescription": "Fournisseur et modèle pour toutes les opérations",
+      "effort": "Effort de raisonnement",
+      "effortDescription": "Raisonnement par tour des nouvelles fonctions (Claude Code)",
+      "effortFailed": "Échec de l'enregistrement de l'effort",
       "authMethod": "Méthode d'authentification",
       "apiToken": "Jeton API",
       "apiTokenPlaceholder": "Entrez votre jeton API",
@@ -677,7 +680,9 @@
     "skills": "SKILLS",
     "skillsDescription": "Curated skills to guide the agent during feature development.",
     "injectSkills": "Inject",
-    "injectSkillsDescription": "Include curated skills in the feature worktree."
+    "injectSkillsDescription": "Include curated skills in the feature worktree.",
+    "effort": "Effort",
+    "effortFromSettings": "Selon les paramètres"
   },
   "featureDrawer": {
     "copyFeatureId": "Copier l'ID de la fonctionnalité",
@@ -713,7 +718,8 @@
     "pr": "PR",
     "watch": "Surveiller",
     "commitSpecs": "Commit des specs",
-    "forkAndPr": "Fork et PR"
+    "forkAndPr": "Fork et PR",
+    "effortValue": "Effort {{level}}"
   },
   "activityTab": {
     "copyPromptToClipboard": "Copier le prompt dans le presse-papiers",
@@ -793,6 +799,16 @@
   },
   "modelPicker": {
     "searchPlaceholder": "Rechercher ou saisir un ID de modèle…"
+  },
+  "effortSelect": {
+    "agentDefault": "Défaut de l'agent",
+    "levels": {
+      "low": "Faible",
+      "medium": "Moyen",
+      "high": "Élevé",
+      "xhigh": "Très élevé",
+      "max": "Maximum"
+    }
   },
   "skills": {
     "searchPlaceholder": "Rechercher des compétences..."

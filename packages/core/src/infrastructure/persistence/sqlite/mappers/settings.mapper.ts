@@ -22,6 +22,7 @@ import type {
 } from '../../../../domain/generated/output.js';
 import { createDefaultSettings } from '../../../../domain/factories/settings-defaults.factory.js';
 import { normalizeWorktreeConfig } from '../../../../domain/shared/worktree-config.js';
+import { parseAgentEffort } from '../../../../domain/shared/agent-effort.js';
 import {
   clampMaxParallelFeatures,
   resolveMaxParallelFeatures,
@@ -63,6 +64,8 @@ export interface SettingsRow {
   model_adaptive_high: string | null;
   model_adaptive_medium: string | null;
   model_adaptive_low: string | null;
+  // ModelConfiguration.effort — added in migration 147. NULL = agent default.
+  model_effort: string | null;
 
   // UserProfile (user.*) - all nullable except language
   user_name: string | null;
@@ -250,6 +253,7 @@ export function toDatabase(settings: Settings): SettingsRow {
     model_implement: settings.models.default,
     model_default: settings.models.default,
     ...adaptiveModelsToRow(settings.models.adaptive),
+    model_effort: settings.models.effort ?? null,
 
     // UserProfile (optional fields → NULL, language defaults to 'en')
     user_name: settings.user.name ?? null,
@@ -675,6 +679,7 @@ function buildSkillInjectionFromRow(
 export function fromDatabase(row: SettingsRow): Settings {
   const worktree = worktreeFromRow(row);
   const adaptive = adaptiveModelsFromRow(row);
+  const effort = parseAgentEffort(row.model_effort);
 
   return {
     // Base entity
@@ -685,6 +690,7 @@ export function fromDatabase(row: SettingsRow): Settings {
     // ModelConfiguration — model_default is the source of truth (added in migration 024)
     models: {
       default: row.model_default,
+      ...(effort !== undefined && { effort }),
       ...(adaptive !== undefined && { adaptive }),
     },
 
