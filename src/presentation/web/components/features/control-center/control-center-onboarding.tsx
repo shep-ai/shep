@@ -13,6 +13,7 @@ import {
   ChevronDown,
   ExternalLink,
   Github,
+  Sparkles,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
@@ -30,6 +31,8 @@ import { NewProjectDialog } from './new-project-dialog';
 
 export interface ControlCenterOnboardingProps {
   onRepositorySelect?: (path: string) => void;
+  /** Opens the "start from a prompt" composer (Spec-driven by default). */
+  onStartFromPrompt?: () => void;
   className?: string;
 }
 
@@ -37,6 +40,7 @@ const commands = ['cd ~/my-repo', 'shep feat new "sleek dashboard"'];
 
 export function ControlCenterOnboarding({
   onRepositorySelect,
+  onStartFromPrompt,
   className,
 }: ControlCenterOnboardingProps) {
   const { t } = useTranslation('web');
@@ -215,6 +219,19 @@ export function ControlCenterOnboarding({
             <FolderPlus className="h-4 w-4" />
             New Project
           </button>
+
+          {onStartFromPrompt ? (
+            <button
+              type="button"
+              data-testid="empty-state-start-from-prompt"
+              onClick={onStartFromPrompt}
+              disabled={loading}
+              className="border-foreground/15 text-foreground/80 hover:bg-foreground/5 hover:border-foreground/25 mt-3 flex w-full cursor-pointer items-center justify-center gap-2.5 rounded-xl border px-6 py-3.5 text-sm font-medium transition-all duration-200 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Sparkles className="h-4 w-4" />
+              {t('fab.newApplication')}
+            </button>
+          ) : null}
 
           <button
             type="button"

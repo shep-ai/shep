@@ -19,6 +19,7 @@ import type { IWorktreeService } from '@/application/ports/output/services/workt
 import type { IFeatureAgentProcessService } from '@/application/ports/output/agents/feature-agent-process.interface.js';
 import type { IAgentRunRepository } from '@/application/ports/output/agents/agent-run-repository.interface.js';
 import type { ISpecInitializerService } from '@/application/ports/output/services/spec-initializer.interface.js';
+import type { IApplicationRepository } from '@/application/ports/output/repositories/application-repository.interface.js';
 import type { IRepositoryRepository } from '@/application/ports/output/repositories/repository-repository.interface.js';
 import type { IGitPrService } from '@/application/ports/output/services/git-pr-service.interface.js';
 import type { IAgentValidator } from '@/application/ports/output/agents/agent-validator.interface.js';
@@ -98,6 +99,7 @@ describe('CreateFeatureUseCase', () => {
   let mockSettingsRepository: ISettingsRepository;
   let mockLoadSettings: ReturnType<typeof vi.fn>;
   let mockLogger: ILogger;
+  let mockApplicationRepo: Pick<IApplicationRepository, 'findByPath'>;
 
   const baseInput: CreateFeatureInput = {
     userInput: 'Add authentication',
@@ -165,6 +167,10 @@ describe('CreateFeatureUseCase', () => {
         warning: undefined,
       }),
     } as unknown as SlugResolver;
+
+    mockApplicationRepo = {
+      findByPath: vi.fn().mockResolvedValue(null),
+    };
 
     mockRepositoryRepo = {
       create: vi.fn().mockResolvedValue(testRepository),
@@ -238,7 +244,8 @@ describe('CreateFeatureUseCase', () => {
       {
         hasCapacity: vi.fn().mockResolvedValue(true),
         getQueuePosition: vi.fn().mockResolvedValue(1),
-      } as never
+      } as never,
+      mockApplicationRepo as IApplicationRepository
     );
   });
 
@@ -1110,6 +1117,29 @@ describe('CreateFeatureUseCase', () => {
       expect(persisted.fast).toBe(false);
       expect(result.feature.applicationId).toBe(APP_ID);
       expect(result.feature.buildMode).toBe(BuildMode.Spec);
+    });
+
+    it('attaches the feature to the application that owns its repository', async () => {
+      vi.mocked(mockApplicationRepo.findByPath).mockResolvedValue({
+        id: APP_ID,
+      } as Awaited<ReturnType<IApplicationRepository['findByPath']>>);
+
+      const result = await useCase.execute({ ...baseInput, buildMode: BuildMode.Spec });
+
+      expect(mockApplicationRepo.findByPath).toHaveBeenCalledWith(testRepository.path);
+      expect(getCreatedFeature().applicationId).toBe(APP_ID);
+      expect(result.feature.applicationId).toBe(APP_ID);
+      expect(mockLogger.warn).not.toHaveBeenCalled();
+    });
+
+    it('keeps an explicit applicationId over the repository owner', async () => {
+      vi.mocked(mockApplicationRepo.findByPath).mockResolvedValue({
+        id: 'another-app',
+      } as Awaited<ReturnType<IApplicationRepository['findByPath']>>);
+
+      await useCase.execute({ ...baseInput, buildMode: BuildMode.Spec, applicationId: APP_ID });
+
+      expect(getCreatedFeature().applicationId).toBe(APP_ID);
     });
 
     it('case 2 — buildMode=Spec without applicationId: warn fired, persists with no applicationId', async () => {

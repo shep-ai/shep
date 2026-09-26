@@ -7,6 +7,7 @@ import { useTranslation } from 'react-i18next';
 import { BuildMode } from '@shepai/core/domain/generated/output';
 import { DropdownMenuItem } from '@/components/ui/dropdown-menu';
 import { buildCreateUrl } from '@/lib/url-params';
+import { useCanStartFeatures } from '@/hooks/shell-variant-context';
 
 export interface OpenInControlCenterMenuItemProps {
   applicationId: string;
@@ -22,7 +23,11 @@ export function OpenInControlCenterMenuItem({ applicationId }: OpenInControlCent
   const router = useRouter();
   const { t } = useTranslation('web');
 
+  const canStartFeatures = useCanStartFeatures();
+
   const label = t('fab.openInControlCenterSdd');
+  // The apps-only shell's route guard would bounce /create.
+  if (!canStartFeatures) return null;
 
   return (
     <DropdownMenuItem

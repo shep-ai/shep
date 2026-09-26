@@ -2,6 +2,7 @@
 
 import React, { useCallback, useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
+import { buildExistingFolderFeatureUrl } from '@/lib/url-params';
 import {
   Search,
   SlidersHorizontal,
@@ -915,7 +916,7 @@ export function FeatureTreePageClient({
               onClick={() => setShowCreatePrompt(true)}
             >
               <LayoutGrid className="size-3.5" />
-              New application
+              {t('fab.newApplication')}
             </Button>
             <Button
               variant="outline"
@@ -1083,6 +1084,10 @@ export function FeatureTreePageClient({
                   .catch(() => {
                     toast.error('Failed to add repository');
                   });
+              }}
+              onOpenExistingFolder={(folderPath, prompt) => {
+                setShowCreatePrompt(false);
+                router.push(buildExistingFolderFeatureUrl(folderPath, prompt));
               }}
               onApplicationCreated={(appId) => {
                 setShowCreatePrompt(false);

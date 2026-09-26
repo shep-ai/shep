@@ -84,6 +84,7 @@ const mockApps: ApplicationWithStatus[] = [
 const meta: Meta<typeof ApplicationsPageClient> = {
   title: 'Features/ApplicationsPageClient',
   component: ApplicationsPageClient,
+  args: { specDrivenAvailable: true },
   parameters: {
     layout: 'fullscreen',
     applications: mockApps,
@@ -130,6 +131,12 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
+  parameters: { applications: mockApps },
+};
+
+/** Apps-only (Electron) shell: only the Vite + shadcn prototype starter. */
+export const AppsOnlyShell: Story = {
+  args: { specDrivenAvailable: false },
   parameters: { applications: mockApps },
 };
 

@@ -1,0 +1,77 @@
+name: "sdd-vs-app-builder-clarity"
+summary: |-
+  The domain already supported "app → features": an Application can exist without the Vite
+  scaffold (adoptLocalDirectory), features carry an applicationId, and the canvas draws
+  app → feature edges. The work is recomposition, not new machinery.
+relatedFeatures:
+  - "091-apps-only-surface"
+technologies:
+  - "TypeSpec"
+  - "TypeScript"
+  - "tsyringe"
+  - "Commander"
+  - "Next.js"
+  - "react-i18next"
+relatedLinks:
+  - "https://github.com/shep-ai/shep/issues/896"
+decisions:
+  - title: "Mental model"
+    chosen: "Start an app, then add features. Every new project is an Application; the Vite + shadcn template is one starter, not a separate product."
+    rejected:
+      - "\"Everything is a feature, start in an empty folder\" — correct internally, but not how users think; it required explanation on every surface."
+      - "Two products (\"Features\" vs an \"App Builder\") — an interim version of this PR; it hardened the split users were confused by."
+    rationale: "Matches the users' model and removes the single-stack trap at the point of creation, where the choice is visible."
+  - title: "Where app creation lives"
+    chosen: |-
+      StartApplicationUseCase dispatches on ApplicationStarter: blank → ApplicationProjectAllocator
+      (shared with CreateApplicationUseCase) + Application row + CreateFeatureUseCase with the
+      app's id; vite-shadcn → CreateApplicationUseCase. `awaitFeatureSetup` lets the CLI wait for
+      the first feature while the web returns immediately.
+    rejected:
+      - "Branch in each presentation layer — logic in presentation; CLI and web would drift."
+      - "Add a blank path inside CreateApplicationUseCase — a 560-line use case built around scaffolding and chat."
+    rationale: "One presentation-agnostic entry point; the template path is unchanged."
+  - title: "Persist the starter?"
+    chosen: "No. ApplicationStarter is a TypeSpec enum used as input only."
+    rejected:
+      - "A new applications column — a migration and mapper/repository SQL changes with no reader."
+    rationale: "Nothing branches on the starter after creation."
+  - title: "How later features join their app"
+    chosen: "CreateFeatureUseCase resolves applicationId from the repository path when the caller gives none; an explicit id wins."
+    rejected:
+      - "A required --app flag — users would have to know app ids."
+    rationale: "`cd <app> && shep feat new` and the create drawer both do the right thing with no extra input."
+  - title: "What the agent is told about the stack"
+    chosen: "Nothing extra: the prompt is passed unchanged; spec mode's research records the stack decision."
+    rejected:
+      - "Keep or replace the React + Vite preamble — it rewrites the user's prompt and locks the stack."
+    rationale: "Stack defaults belong only to the starter that advertises them."
+  - title: "Default workflow of a blank app's first feature"
+    chosen: "BuildMode.Spec (domain constant + resolver)."
+    rejected:
+      - "The global settings default (Fast) — an empty repo has no stack, so skipping research is the wrong default."
+    rationale: "Greenfield work is where requirements and research matter most."
+  - title: "Existing-folder prompts"
+    chosen: "A pure domain helper finds absolute paths under well-known roots; the composer hints and hands off to /create?repo=…&mode=spec."
+    rejected:
+      - "Any '/'-prefixed token — false positives on '/health' or '/api/users'."
+    rationale: "Deterministic and testable; CreateFeatureUseCase already registers unknown paths."
+  - title: "Apps-only shell"
+    chosen: "A ShellVariantContext (useCanStartFeatures) hides options that route to Control Center."
+    rejected:
+      - "Reading the cookie in each server page — two mechanisms for one fact."
+    rationale: "The apps-only route guard would bounce those links."
+openQuestions: []
+content: |
+  ## Technology Decisions
+
+  See `decisions` above. No new dependency is introduced.
+
+  ## Security Considerations
+
+  The existing-folder hint only reads the prompt; the hand-off uses the /create drawer, which
+  validates the repository path. `--starter` values are parsed against the enum.
+
+  ## Performance Implications
+
+  One `findByPath` lookup per feature creation; one regex scan of the prompt per composer render.

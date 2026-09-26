@@ -1,0 +1,7 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: ApplicationStarter.yaml
+type: string
+enum:
+  - blank
+  - vite-shadcn
+description: "How a new Application gets its first code: a blank project or the Vite + shadcn template"

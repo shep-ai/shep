@@ -132,6 +132,7 @@ export function createNewCommand(): Command {
       'after',
       `
 Examples:
+  $ shep app new "A booking tool"          # starting from nothing? start an app first
   $ shep feat new "Add user authentication"
   $ shep feat new "Add login page" --repo /path/to/project
   $ shep feat new "Add dark mode" --remote owner/repo

@@ -16,94 +16,103 @@ import {
   MAX_PORT_ATTEMPTS,
 } from '@/infrastructure/services/port.service.js';
 
+/**
+ * Ports are always chosen by the OS, never hard-coded: Windows runners reserve
+ * parts of the dynamic range (49152+) per boot, so a fixed port can fail to
+ * bind with EACCES on one run and work on the next.
+ */
+const PORT_RANGE_ATTEMPTS = 20;
+
+function listenOn(port: number): Promise<net.Server> {
+  return new Promise((resolve, reject) => {
+    const server = net.createServer();
+    server.once('error', reject);
+    server.listen(port, '127.0.0.1', () => resolve(server));
+  });
+}
+
+function closeAll(servers: net.Server[]): Promise<void[]> {
+  return Promise.all(servers.map((s) => new Promise<void>((resolve) => s.close(() => resolve()))));
+}
+
+/** A port the OS just reported free (released again before returning). */
+async function freePort(): Promise<number> {
+  const server = await listenOn(0);
+  const address = server.address();
+  await closeAll([server]);
+  if (!address || typeof address === 'string') throw new Error('No TCP address assigned');
+  return address.port;
+}
+
+/** Bind `count` consecutive ports; retries from a new OS-chosen base if any bind fails. */
+async function occupyConsecutivePorts(
+  count: number
+): Promise<{ start: number; servers: net.Server[] }> {
+  for (let attempt = 0; attempt < PORT_RANGE_ATTEMPTS; attempt++) {
+    const start = await freePort();
+    if (start + count - 1 > 65535) continue;
+    const servers: net.Server[] = [];
+    try {
+      for (let offset = 0; offset < count; offset++) {
+        servers.push(await listenOn(start + offset));
+      }
+      return { start, servers };
+    } catch {
+      await closeAll(servers);
+    }
+  }
+  throw new Error(`Could not bind ${count} consecutive ports`);
+}
+
 describe('Port Service', () => {
   describe('isPortAvailable', () => {
     it('should return true for an available port', async () => {
-      // Use a port in the ephemeral range that's less likely to be in use
-      // Get OS to pick an available one by binding to port 0
-      const server = net.createServer();
-      const availablePort = await new Promise<number>((resolve) => {
-        server.listen(0, '127.0.0.1', () => {
-          const addr = server.address();
-          if (addr && typeof addr !== 'string') {
-            resolve(addr.port);
-          }
-        });
-      });
-      server.close();
-
-      // Give the OS a moment to release the port
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      const availablePort = await freePort();
 
       const result = await isPortAvailable(availablePort);
       expect(result).toBe(true);
     });
 
     it('should return false for an occupied port', async () => {
-      // Bind a port to make it occupied
-      const server = net.createServer();
-      await new Promise<void>((resolve) => {
-        server.listen(49153, '127.0.0.1', () => resolve());
-      });
+      const { start, servers } = await occupyConsecutivePorts(1);
 
       try {
-        const result = await isPortAvailable(49153);
+        const result = await isPortAvailable(start);
         expect(result).toBe(false);
       } finally {
-        await new Promise<void>((resolve) => {
-          server.close(() => resolve());
-        });
+        await closeAll(servers);
       }
     });
   });
 
   describe('findAvailablePort', () => {
     it('should return the start port when it is available', async () => {
-      const port = await findAvailablePort(49154);
-      expect(port).toBe(49154);
+      const startPort = await freePort();
+
+      const port = await findAvailablePort(startPort);
+      expect(port).toBe(startPort);
     });
 
     it('should skip occupied ports and find the next available one', async () => {
-      // Occupy ports 49155 and 49156
-      const servers: net.Server[] = [];
-      for (const p of [49155, 49156]) {
-        const server = net.createServer();
-        await new Promise<void>((resolve) => {
-          server.listen(p, '127.0.0.1', () => resolve());
-        });
-        servers.push(server);
-      }
+      const { start, servers } = await occupyConsecutivePorts(2);
 
       try {
-        const port = await findAvailablePort(49155);
+        const port = await findAvailablePort(start);
         // Must skip at least past the two occupied ports; other system processes
         // may occupy additional ports so we check >= rather than exact equality.
-        expect(port).toBeGreaterThanOrEqual(49157);
+        expect(port).toBeGreaterThanOrEqual(start + 2);
       } finally {
-        await Promise.all(
-          servers.map((s) => new Promise<void>((resolve) => s.close(() => resolve())))
-        );
+        await closeAll(servers);
       }
     });
 
     it('should throw after max attempts are exhausted', async () => {
-      // Occupy a contiguous range of ports
-      const startPort = 49160;
-      const servers: net.Server[] = [];
-      for (let p = startPort; p < startPort + 3; p++) {
-        const server = net.createServer();
-        await new Promise<void>((resolve) => {
-          server.listen(p, '127.0.0.1', () => resolve());
-        });
-        servers.push(server);
-      }
+      const { start, servers } = await occupyConsecutivePorts(3);
 
       try {
-        await expect(findAvailablePort(startPort, 3)).rejects.toThrow(/No available port found/);
+        await expect(findAvailablePort(start, 3)).rejects.toThrow(/No available port found/);
       } finally {
-        await Promise.all(
-          servers.map((s) => new Promise<void>((resolve) => s.close(() => resolve())))
-        );
+        await closeAll(servers);
       }
     });
 

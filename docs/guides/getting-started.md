@@ -290,6 +290,7 @@ shep ide <id>
 
 ## Next Steps
 
+- Starting from nothing? [Start an app, then add features](./start-an-app.md) — any stack, chosen during research
 - Learn about [configuration options](./configuration.md)
 - Explore the [CLI commands](./cli-commands.md)
 - Master the [web UI](./web-ui.md)

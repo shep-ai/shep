@@ -51,6 +51,24 @@ describe('Control Center onboarding recovery', () => {
     expect(screen.getByRole('status')).toHaveTextContent('Checking setup');
   });
 
+  it('offers a spec-driven new project from a prompt on first run (issue 896)', async () => {
+    const onStartFromPrompt = vi.fn();
+    render(<ControlCenterOnboarding onStartFromPrompt={onStartFromPrompt} />);
+
+    const button = await screen.findByTestId('empty-state-start-from-prompt');
+    expect(button).toHaveTextContent('Start from a prompt');
+    await userEvent.click(button);
+
+    expect(onStartFromPrompt).toHaveBeenCalledTimes(1);
+  });
+
+  it('hides the prompt entry point when the surface cannot open it', async () => {
+    render(<ControlCenterOnboarding />);
+
+    await screen.findByTestId('empty-state-add-repository');
+    expect(screen.queryByTestId('empty-state-start-from-prompt')).not.toBeInTheDocument();
+  });
+
   it('launches the catalog tool id for Cursor', async () => {
     render(<ControlCenterOnboarding />);
     await userEvent.click(await screen.findByTestId('auth-banner-open-terminal'));

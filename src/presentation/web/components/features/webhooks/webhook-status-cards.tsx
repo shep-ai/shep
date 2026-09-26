@@ -29,7 +29,11 @@ export function WebhookStatusCards({ status }: WebhookStatusCardsProps) {
             <span className="text-2xl font-bold">{status.running ? 'Active' : 'Inactive'}</span>
           </div>
           {uptime ? (
-            <p className="text-muted-foreground text-xs">Up for {uptime}</p>
+            // Uptime is read from the clock, so the server and client renders
+            // differ by however long hydration took — expected, not a bug.
+            <p className="text-muted-foreground text-xs" suppressHydrationWarning>
+              Up for {uptime}
+            </p>
           ) : (
             <p className="text-muted-foreground text-xs">Webhook system not started</p>
           )}

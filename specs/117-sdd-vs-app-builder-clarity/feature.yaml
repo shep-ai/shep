@@ -1,0 +1,37 @@
+feature:
+  id: "117-sdd-vs-app-builder-clarity"
+  name: "sdd-vs-app-builder-clarity"
+  number: 117
+  branch: "claude/sweet-dijkstra-z16oad"
+  lifecycle: "implementation"
+  createdAt: "2026-09-26T05:49:03Z"
+status:
+  phase: "implementation-complete"
+  progress:
+    completed: 12
+    total: 12
+    percentage: 100
+  currentTask: null
+  lastUpdated: "2026-09-26T05:49:03Z"
+  lastUpdatedBy: "shep-kit:implement"
+validation:
+  lastRun: null
+  gatesPassed: []
+  autoFixesApplied: []
+tasks:
+  current: null
+  blocked: []
+  failed: []
+checkpoints:
+  - phase: "feature-created"
+    completedAt: "2026-09-26T05:49:03Z"
+    completedBy: "shep-kit:new-feature-fast"
+  - phase: "research-complete"
+    completedAt: "2026-09-26T05:49:03Z"
+    completedBy: "shep-kit:new-feature-fast"
+  - phase: "plan-complete"
+    completedAt: "2026-09-26T05:49:03Z"
+    completedBy: "shep-kit:new-feature-fast"
+errors:
+  current: null
+  history: []

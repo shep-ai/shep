@@ -29,7 +29,12 @@ vi.mock('@/hooks/deployment-status-provider', () => ({
 }));
 
 vi.mock('@/components/features/control-center/control-center-empty-state', () => ({
-  ControlCenterEmptyState: () => React.createElement('div', { 'data-testid': 'empty-state-stub' }),
+  ControlCenterEmptyState: (props: { initialMode?: string; onRepositorySelect?: unknown }) =>
+    React.createElement('div', {
+      'data-testid': 'empty-state-stub',
+      'data-initial-mode': props.initialMode,
+      'data-can-start-features': String(Boolean(props.onRepositorySelect)),
+    }),
 }));
 
 vi.mock('@/components/features/applications/application-card', () => ({
@@ -37,7 +42,7 @@ vi.mock('@/components/features/applications/application-card', () => ({
     React.createElement('div', { 'data-testid': `application-card-${application.id}` }),
 }));
 
-function renderWithClient() {
+function renderWithClient(props: React.ComponentProps<typeof ApplicationsPageClient> = {}) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
@@ -45,7 +50,7 @@ function renderWithClient() {
     React.createElement(
       QueryClientProvider,
       { client },
-      React.createElement(ApplicationsPageClient)
+      React.createElement(ApplicationsPageClient, props)
     )
   );
 }
@@ -273,5 +278,77 @@ describe('ApplicationsPageClient query failure', () => {
     expect(screen.getByTestId('applications-stale-warning')).toBeInTheDocument();
     expect(screen.getByTestId('application-card-app-1')).toBeInTheDocument();
     expect(screen.queryByTestId('empty-state-stub')).not.toBeInTheDocument();
+  });
+});
+
+describe('Start an app, then add features (issue 896)', () => {
+  const apps = [
+    {
+      id: 'weather',
+      name: 'Weather Dashboard',
+      description: 'Forecasts',
+      repositoryPath: '/projects/weather',
+      effectiveStatus: 'ready',
+      createdAt: '2026-09-20',
+    },
+  ];
+
+  beforeEach(() => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => apps,
+    } as Response);
+  });
+
+  afterEach(() => vi.restoreAllMocks());
+
+  it('frames Apps as "start an app, then add features" and names both starters', async () => {
+    renderWithClient({ specDrivenAvailable: true });
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'Apps' })).toBeInTheDocument();
+    const intro = screen.getByTestId('apps-intro');
+    expect(intro).toHaveTextContent('Start an app, then add features');
+    expect(intro).toHaveTextContent('any stack');
+    expect(intro).toHaveTextContent('Vite + React + Tailwind + shadcn');
+  });
+
+  it('opens "New app" in Spec-driven mode where features can be started', async () => {
+    renderWithClient({ specDrivenAvailable: true });
+
+    await userEvent.click(await screen.findByRole('button', { name: /New app/ }));
+
+    const composer = screen.getByTestId('empty-state-stub');
+    expect(composer).toHaveAttribute('data-initial-mode', 'spec');
+    expect(composer).toHaveAttribute('data-can-start-features', 'true');
+  });
+
+  it('opens the quick prototype starter from the create card', async () => {
+    renderWithClient({ specDrivenAvailable: true });
+
+    await userEvent.click(await screen.findByRole('button', { name: /Quick prototype/ }));
+
+    expect(screen.getByTestId('empty-state-stub')).toHaveAttribute(
+      'data-initial-mode',
+      'application'
+    );
+  });
+
+  it('opens "Plan it first" in Spec-driven mode from the create card', async () => {
+    renderWithClient({ specDrivenAvailable: true });
+
+    await userEvent.click(await screen.findByRole('button', { name: /Plan it first/ }));
+
+    expect(screen.getByTestId('empty-state-stub')).toHaveAttribute('data-initial-mode', 'spec');
+  });
+
+  it('offers only the prototype starter in the apps-only shell', async () => {
+    renderWithClient({ specDrivenAvailable: false });
+
+    await screen.findByTestId('applications-page-grid');
+    expect(screen.queryByRole('button', { name: /Plan it first/ })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: /New app/ }));
+    const composer = screen.getByTestId('empty-state-stub');
+    expect(composer).toHaveAttribute('data-initial-mode', 'application');
+    expect(composer).toHaveAttribute('data-can-start-features', 'false');
   });
 });

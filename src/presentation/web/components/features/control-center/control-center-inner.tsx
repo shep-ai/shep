@@ -55,7 +55,7 @@ import { useControlCenterState } from './use-control-center-state';
 import { useCanvasEventListeners } from './use-canvas-event-listeners';
 import { useWorkspaceFitView } from './use-workspace-fit-view';
 import { useFabActions } from './use-fab-actions';
-import { buildCreateUrl } from '@/lib/url-params';
+import { buildCreateUrl, buildExistingFolderFeatureUrl } from '@/lib/url-params';
 import { BuildMode } from '@shepai/core/domain/generated/output';
 
 const AUTO_FOCUS_OPTIONS = {
@@ -490,6 +490,18 @@ export function ControlCenterInner({ initialNodes, initialEdges }: ControlCenter
     fitView,
   });
 
+  // ── Full-screen create prompt overlay ────────────────────────────────
+  const [showCreatePrompt, setShowCreatePrompt] = useState(false);
+  /** Control that opened the create prompt, so focus can be handed back to it
+   *  on close. The dialog has no DialogTrigger (it opens from the FAB menu),
+   *  so Radix's own trigger-based restore has nothing to return focus to. */
+  const createPromptOpenerRef = useRef<HTMLElement | null>(null);
+
+  const openCreatePrompt = useCallback(() => {
+    createPromptOpenerRef.current = (document.activeElement as HTMLElement | null) ?? null;
+    setShowCreatePrompt(true);
+  }, []);
+
   // When the active (non-default) workspace has no members but real canvas
   // content (repos or applications) exists, show a workspace-aware empty
   // state instead of the welcome wizard. The wizard would imply "no nodes
@@ -529,20 +541,11 @@ export function ControlCenterInner({ initialNodes, initialEdges }: ControlCenter
       </div>
     </div>
   ) : (
-    <ControlCenterOnboarding onRepositorySelect={addRepoAndFocus} />
+    <ControlCenterOnboarding
+      onRepositorySelect={addRepoAndFocus}
+      onStartFromPrompt={openCreatePrompt}
+    />
   );
-
-  // ── Full-screen create prompt overlay ────────────────────────────────
-  const [showCreatePrompt, setShowCreatePrompt] = useState(false);
-  /** Control that opened the create prompt, so focus can be handed back to it
-   *  on close. The dialog has no DialogTrigger (it opens from the FAB menu),
-   *  so Radix's own trigger-based restore has nothing to return focus to. */
-  const createPromptOpenerRef = useRef<HTMLElement | null>(null);
-
-  const openCreatePrompt = useCallback(() => {
-    createPromptOpenerRef.current = (document.activeElement as HTMLElement | null) ?? null;
-    setShowCreatePrompt(true);
-  }, []);
 
   const featureFlags = useFeatureFlags();
 
@@ -772,6 +775,10 @@ export function ControlCenterInner({ initialNodes, initialEdges }: ControlCenter
             onRepositorySelect={(path) => {
               setShowCreatePrompt(false);
               addRepoAndFocus(path);
+            }}
+            onOpenExistingFolder={(folderPath, prompt) => {
+              setShowCreatePrompt(false);
+              router.push(buildExistingFolderFeatureUrl(folderPath, prompt));
             }}
             onApplicationCreated={(appId) => {
               // Navigate first — keep overlay mounted to avoid canvas flash.

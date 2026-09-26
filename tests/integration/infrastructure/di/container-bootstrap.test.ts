@@ -108,6 +108,7 @@ const WEB_ROUTE_TOKENS: readonly string[] = [
   'IScanRunRepository',
   'ScanApplicationUseCase',
   'RescanApplicationUseCase',
+  'StartApplicationUseCase',
   'ListScanRunsUseCase',
   'GetScanRunUseCase',
   'IAgentRunRepository',
