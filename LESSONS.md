@@ -2780,3 +2780,11 @@ Rules:
    two products ("Features" vs an "App Builder") honestly — made the split harder, not easier.
    The right fix made the opinionated template one *starter* of an app, so the choice is visible
    at creation and every feature has a home.
+
+## A hard-coded port in a test is a Windows failure waiting for a reboot
+
+`port.service.test.ts` bound 49153–49162 directly. Windows reserves slices of the dynamic range
+(49152+) per boot, so the same commit passed on one runner and failed on the next with
+`listen EACCES`; the test's `listen` promise had no error handler, so each failure became a 60s
+timeout. Rules: let the OS choose (`listen(0)`), bind consecutive ranges from an OS-chosen base
+with retries, and make every test `listen` reject on `error`.
