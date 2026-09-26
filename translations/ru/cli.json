@@ -44,6 +44,19 @@
         "cancelled": "Настройка отменена.",
         "failed": "Не удалось настроить модель"
       },
+      "effort": {
+        "description": "Настроить уровень рассуждений по умолчанию для новых запусков",
+        "levelArgument": "Уровень (low, medium, high, xhigh, max)",
+        "clearOption": "Использовать уровень агента по умолчанию",
+        "selectPrompt": "Выберите уровень рассуждений по умолчанию",
+        "agentDefault": "По умолчанию агента",
+        "success": "Уровень настроен: {{effort}}",
+        "cleared": "Уровень сброшен на значение агента по умолчанию",
+        "cancelled": "Настройка отменена.",
+        "failed": "Не удалось настроить уровень",
+        "invalid": "Неизвестный уровень «{{level}}». Допустимые: {{levels}}",
+        "clearConflict": "Уровень нельзя сочетать с --clear"
+      },
       "workflow": {
         "description": "Настроить поведение рабочего процесса по умолчанию для новых функций",
         "allowPrdOption": "Автоматически одобрять этап требований",
@@ -235,6 +248,8 @@
         "exploreOption": "Start an exploration/prototyping session for iterative design",
         "exploreAndFastConflict": "Cannot use --explore and --fast together. Choose one mode.",
         "modelOption": "Идентификатор модели LLM для этого запуска (например, claude-opus-4-6)",
+        "effortOption": "Уровень рассуждений для этого запуска: low, medium, high, xhigh или max (по умолчанию: настройки)",
+        "invalidEffort": "Неизвестный уровень «{{level}}». Допустимые: {{levels}}",
         "noRebaseOption": "Skip syncing main from remote before creating the feature branch",
         "injectSkillsOption": "Inject curated skills into the worktree",
         "noInjectSkillsOption": "Skip skill injection for this invocation",

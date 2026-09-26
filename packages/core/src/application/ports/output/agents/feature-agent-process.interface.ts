@@ -11,6 +11,7 @@
  */
 
 import type {
+  AgentEffort,
   ApprovalGates,
   AgentType,
   SecurityMode,
@@ -54,6 +55,8 @@ export interface IFeatureAgentProcessService {
       fast?: boolean;
       exploration?: boolean;
       model?: string;
+      /** Reasoning effort pinned on the run; unset = the agent's own default. */
+      effort?: AgentEffort;
       resumeReason?: string;
       securityMode?: SecurityMode;
       securityActionDispositions?: Partial<

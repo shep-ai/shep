@@ -39,6 +39,9 @@
       "agentType": "نوع الوكيل",
       "agentAndModel": "الوكيل والنموذج",
       "agentAndModelDescription": "المزود والنموذج لجميع العمليات",
+      "effort": "مستوى الاستدلال",
+      "effortDescription": "مستوى الاستدلال لكل خطوة في الميزات الجديدة (Claude Code)",
+      "effortFailed": "فشل حفظ مستوى الجهد",
       "authMethod": "طريقة المصادقة",
       "apiToken": "رمز API",
       "apiTokenPlaceholder": "أدخل رمز API الخاص بك",
@@ -677,7 +680,9 @@
     "skills": "SKILLS",
     "skillsDescription": "Curated skills to guide the agent during feature development.",
     "injectSkills": "Inject",
-    "injectSkillsDescription": "Include curated skills in the feature worktree."
+    "injectSkillsDescription": "Include curated skills in the feature worktree.",
+    "effort": "الجهد",
+    "effortFromSettings": "من الإعدادات"
   },
   "featureDrawer": {
     "copyFeatureId": "نسخ معرف الميزة",
@@ -713,7 +718,8 @@
     "pr": "PR",
     "watch": "مراقبة",
     "commitSpecs": "حفظ المواصفات",
-    "forkAndPr": "Fork و PR"
+    "forkAndPr": "Fork و PR",
+    "effortValue": "الجهد: {{level}}"
   },
   "activityTab": {
     "copyPromptToClipboard": "نسخ الأمر إلى الحافظة",
@@ -793,6 +799,16 @@
   },
   "modelPicker": {
     "searchPlaceholder": "البحث أو كتابة معرف النموذج…"
+  },
+  "effortSelect": {
+    "agentDefault": "الافتراضي للوكيل",
+    "levels": {
+      "low": "منخفض",
+      "medium": "متوسط",
+      "high": "مرتفع",
+      "xhigh": "مرتفع جدًا",
+      "max": "أقصى"
+    }
   },
   "skills": {
     "searchPlaceholder": "البحث عن مهارات..."

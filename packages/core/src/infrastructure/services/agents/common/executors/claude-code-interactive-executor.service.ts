@@ -51,9 +51,7 @@ import type {
   UserQuestion,
 } from '../../../../../application/ports/output/agents/interactive-agent-executor.interface.js';
 import { claudeInputTokens } from './claude-usage.js';
-
-/** Default model used when options.model is not specified. */
-const DEFAULT_MODEL = 'claude-sonnet-4-6';
+import { DEFAULT_MODEL_ID } from '../../../../../domain/shared/default-model.js';
 
 /**
  * All standard Claude Code tool names to auto-allow without permission prompts.
@@ -211,7 +209,7 @@ export class ClaudeCodeInteractiveExecutor implements IInteractiveAgentExecutor 
     // trap for future readers.
 
     return {
-      model: options.model ?? DEFAULT_MODEL,
+      model: options.model ?? DEFAULT_MODEL_ID,
       // Auto-allow all standard tools at the CLI level. This replaces the V1
       // bypassPermissions approach — V2 hardcodes allowDangerouslySkipPermissions
       // to false, so bypassPermissions silently falls back to default mode.

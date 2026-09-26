@@ -81,6 +81,10 @@ export function BaseDrawer({
       // longer in the DOM tree — treat it as an internal click, not an outside one.
       if (!document.body.contains(target)) return;
       if (contentRef.current?.contains(target)) return;
+      // A Radix Select opens on pointerdown and sets `pointer-events: none` on
+      // <body>, so the click that completes the same gesture targets <body>
+      // itself. A genuine outside click always lands on a page element.
+      if (target === document.body || target === document.documentElement) return;
       // Don't close when clicking inside Radix overlays.
       // When dismissOnOutsideClick is false (default), also respect data-no-drawer-close guards.
       const ignoreSelector = dismissOnOutsideClick

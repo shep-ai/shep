@@ -117,6 +117,20 @@ describe('SpawnFeatureAgentUseCase', () => {
       expect(spawnOptions()).not.toHaveProperty('model');
     });
 
+    it('carries the agent run effort into the spawn options', async () => {
+      runRepo.findById.mockResolvedValue(createTestRun({ effort: 'low' as any }));
+
+      await useCase.execute({ feature: createTestFeature() });
+
+      expect(spawnOptions().effort).toBe('low');
+    });
+
+    it('omits effort entirely when the run pinned none', async () => {
+      await useCase.execute({ feature: createTestFeature() });
+
+      expect(spawnOptions()).not.toHaveProperty('effort');
+    });
+
     it('carries the agent run threadId so the conversation resumes', async () => {
       await useCase.execute({ feature: createTestFeature() });
 

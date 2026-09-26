@@ -7,6 +7,8 @@
 export { InitializeSettingsUseCase } from './initialize-settings.use-case.js';
 export { LoadSettingsUseCase } from './load-settings.use-case.js';
 export { UpdateSettingsUseCase } from './update-settings.use-case.js';
+export { SetDefaultEffortUseCase } from './set-default-effort.use-case.js';
+export type { SetDefaultEffortInput } from './set-default-effort.use-case.js';
 export { GetAdaptiveModelPlanUseCase } from './get-adaptive-model-plan.use-case.js';
 export type { AdaptiveModelPlan } from './get-adaptive-model-plan.use-case.js';
 export { CheckOnboardingStatusUseCase } from './check-onboarding-status.use-case.js';

@@ -27,7 +27,7 @@ describe('FeatureAgentAnnotation', () => {
       expect(FeatureAgentAnnotation.spec).toBeDefined();
     });
 
-    it('should have all 41 channels', () => {
+    it('should have all 42 channels', () => {
       const channelNames = Object.keys(FeatureAgentAnnotation.spec);
       // Original: featureId, repositoryPath, specDir, worktreePath, currentNode, error,
       //           approvalGates, messages, validationRetries, lastValidationTarget, lastValidationErrors
@@ -68,7 +68,8 @@ describe('FeatureAgentAnnotation', () => {
       expect(channelNames).toContain('explorationStatus');
       expect(channelNames).toContain('projectMemory');
       expect(channelNames).toContain('merged');
-      expect(channelNames.length).toBe(41);
+      expect(channelNames).toContain('effort');
+      expect(channelNames.length).toBe(42);
     });
   });
 

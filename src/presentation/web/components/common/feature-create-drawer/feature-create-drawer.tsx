@@ -39,12 +39,13 @@ import { AgentModelPicker } from '@/components/features/settings/AgentModelPicke
 import { Separator } from '@/components/ui/separator';
 import { pickFolder } from '@/components/common/add-repository-button/pick-folder';
 import { ReactFileManagerDialog } from '@/components/common/react-file-manager-dialog';
+import { EffortSelect } from '@/components/common/effort-select';
 import { useFeatureFlags } from '@/hooks/feature-flags-context';
 import { addRepository } from '@/app/actions/add-repository';
 import { BuildMode as BuildModeEnum } from '@shepai/core/domain/generated/output';
 import { normalizeBuildMode } from '@shepai/core/domain/shared/build-mode';
 import { GitHubImportDialog } from '@/components/common/github-import-dialog';
-import type { Repository } from '@shepai/core/domain/generated/output';
+import type { AgentEffort, Repository } from '@shepai/core/domain/generated/output';
 import { pickFiles } from './pick-files';
 
 export type { FileAttachment } from '@shepai/core/infrastructure/services/file-dialog.service';
@@ -138,6 +139,8 @@ export interface FeatureCreatePayload {
   agentType?: string;
   /** Optional model override for this feature run */
   model?: string;
+  /** Optional reasoning effort override (absent = the settings default) */
+  effort?: AgentEffort;
   sessionId?: string;
   /** When the drawer was launched scoped to an Application, the
    *  application's domain UUID. Persisted on the Feature so the
@@ -372,6 +375,7 @@ export function FeatureCreateDrawer({
   });
   const [overrideAgent, setOverrideAgent] = useState<string | undefined>(undefined);
   const [overrideModel, setOverrideModel] = useState<string | undefined>(undefined);
+  const [overrideEffort, setOverrideEffort] = useState<AgentEffort | undefined>(undefined);
   const [selectedRepoPath, setSelectedRepoPath] = useState<string | undefined>(
     validRepoPath || undefined
   );
@@ -464,6 +468,7 @@ export function FeatureCreateDrawer({
     setRebaseBeforeBranch(true);
     setOverrideAgent(undefined);
     setOverrideModel(undefined);
+    setOverrideEffort(undefined);
     setUploadError(null);
     dragCounterRef.current = 0;
     setIsDragOver(false);
@@ -643,6 +648,7 @@ export function FeatureCreateDrawer({
         ...(pending ? { pending } : {}),
         ...(overrideAgent ? { agentType: overrideAgent } : {}),
         ...(overrideModel ? { model: overrideModel } : {}),
+        ...(overrideEffort ? { effort: overrideEffort } : {}),
         ...(parentId ? { parentId } : {}),
         ...(initialApplicationId ? { applicationId: initialApplicationId } : {}),
         sessionId: sessionIdRef.current,
@@ -671,6 +677,7 @@ export function FeatureCreateDrawer({
       pending,
       overrideAgent,
       overrideModel,
+      overrideEffort,
       parentId,
       initialApplicationId,
       createSound,
@@ -966,6 +973,16 @@ export function FeatureCreateDrawer({
                     }}
                     disabled={isSubmitting}
                     className="w-55"
+                  />
+                  <EffortSelect
+                    id="create-drawer-effort"
+                    testId="create-drawer-effort-select"
+                    value={overrideEffort}
+                    onChange={setOverrideEffort}
+                    defaultLabel={t('createDrawer.effortFromSettings')}
+                    ariaLabel={t('createDrawer.effort')}
+                    disabled={isSubmitting}
+                    className="w-36"
                   />
                   <Tooltip>
                     <TooltipTrigger asChild>

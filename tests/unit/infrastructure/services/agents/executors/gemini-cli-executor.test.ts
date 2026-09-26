@@ -100,6 +100,10 @@ describe('GeminiCliExecutorService', () => {
       expect(executor.supportsFeature(AgentFeature.toolScoping)).toBe(true);
     });
 
+    it('should NOT support effort (the option is ignored)', () => {
+      expect(executor.supportsFeature(AgentFeature.effort)).toBe(false);
+    });
+
     it('should NOT support structured-output feature', () => {
       expect(executor.supportsFeature(AgentFeature.structuredOutput)).toBe(false);
     });

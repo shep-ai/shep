@@ -1,5 +1,6 @@
 import { Annotation } from '@langchain/langgraph';
 import type {
+  AgentEffort,
   ApprovalGates,
   CiFixRecord,
   Evidence,
@@ -30,6 +31,11 @@ export const FeatureAgentAnnotation = Annotation.Root({
     default: () => undefined,
   }),
   model: Annotation<string | undefined>({
+    reducer: (_prev, next) => next ?? _prev,
+    default: () => undefined,
+  }),
+  // Reasoning effort pinned on the run (unset = the agent's own default).
+  effort: Annotation<AgentEffort | undefined>({
     reducer: (_prev, next) => next ?? _prev,
     default: () => undefined,
   }),

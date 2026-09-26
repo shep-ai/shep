@@ -20,6 +20,7 @@ import {
   WorkflowStepStatus,
 } from '../../../../domain/generated/output.js';
 import type { SessionRegistry } from '../core/session-registry.js';
+import { DEFAULT_MODEL_ID } from '../../../../domain/shared/default-model.js';
 
 export class ChatStateAssembler {
   constructor(
@@ -46,7 +47,7 @@ export class ChatStateAssembler {
         streamingText = state.currentAssistantBuffer;
       }
       // Resolve model display: explicit override > default
-      const displayModel = state.model ?? 'claude-sonnet-4-6';
+      const displayModel = state.model ?? DEFAULT_MODEL_ID;
 
       const usage = await this.sessionRepo.getUsage(state.sessionId);
       sessionInfo = {

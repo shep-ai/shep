@@ -244,6 +244,8 @@ export interface FeatureNodeData {
   agentType?: AgentTypeValue;
   /** LLM model identifier used for this feature's agent run. */
   modelId?: string;
+  /** Reasoning effort pinned on this feature's agent run (absent = agent default). */
+  effort?: string;
   /** Feature summary / user query */
   summary?: string;
   /** Epoch ms or ISO string when the feature was created */

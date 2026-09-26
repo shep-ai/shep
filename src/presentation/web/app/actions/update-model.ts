@@ -27,7 +27,7 @@ export async function updateModel(model: string): Promise<{ ok: boolean; error?:
     const currentSettings = getSettings();
     const updatedSettings = {
       ...currentSettings,
-      models: { default: model.trim() },
+      models: { ...currentSettings.models, default: model.trim() },
     };
 
     const updateUseCase = resolve<UpdateSettingsUseCase>('UpdateSettingsUseCase');

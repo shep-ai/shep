@@ -8,4 +8,5 @@ enum:
   - structured-output
   - system-prompt
   - session-listing
+  - effort
 description: Agent executor capability declarations

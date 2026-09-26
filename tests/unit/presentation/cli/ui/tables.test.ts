@@ -8,6 +8,7 @@ import { describe, it, expect } from 'vitest';
 
 import { TableFormatter } from '../../../../../src/presentation/cli/ui/tables.js';
 import { createDefaultSettings } from '@/domain/factories/settings-defaults.factory.js';
+import { DEFAULT_MODEL_ID } from '@/domain/shared/default-model.js';
 
 describe('TableFormatter', () => {
   const sampleSettings = createDefaultSettings();
@@ -32,14 +33,31 @@ describe('TableFormatter', () => {
     it('should include model values', () => {
       const result = TableFormatter.createSettingsTable(sampleSettings);
 
-      expect(result).toContain('claude-sonnet-4-6');
+      expect(result).toContain(DEFAULT_MODEL_ID);
     });
 
     it('should show model under Agent section', () => {
       const result = TableFormatter.createSettingsTable(sampleSettings);
 
       expect(result).toContain('Model');
-      expect(result).toContain('claude-sonnet-4-6');
+      expect(result).toContain(DEFAULT_MODEL_ID);
+    });
+
+    it('should show the effort as "agent default" when none is set', () => {
+      const result = TableFormatter.createSettingsTable(sampleSettings);
+
+      expect(result).toContain('Effort');
+      expect(result).toContain('agent default');
+    });
+
+    it('should show the configured effort level', () => {
+      const result = TableFormatter.createSettingsTable({
+        ...sampleSettings,
+        models: { ...sampleSettings.models, effort: 'xhigh' },
+      });
+
+      expect(result).toContain('xhigh');
+      expect(result).not.toContain('agent default');
     });
 
     it('should include agent configuration', () => {
