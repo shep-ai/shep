@@ -16,6 +16,18 @@ describe('getModelMeta', () => {
     expect(meta.description).not.toBe('');
   });
 
+  it.each([
+    ['claude-opus-6-5', 'Opus 6.5'],
+    ['claude-opus-6', 'Opus 6'],
+    ['claude-haiku-4-5-20251001', 'Haiku 4.5'],
+    ['claude-mythos-5-1', 'Mythos 5.1'],
+  ])('renders unlisted Claude id %s as a dotted version', (id, displayName) => {
+    const meta = getModelMeta(id);
+
+    expect(meta.displayName).toBe(displayName);
+    expect(meta.description).toBe('');
+  });
+
   it('falls back to a prettified id for unknown models', () => {
     const meta = getModelMeta('claude-unknown-model');
 
@@ -28,6 +40,18 @@ describe('getModelMeta', () => {
     ['composer-2.5', 'Composer 2.5'],
     ['composer-2.5-fast', 'Composer 2.5 Fast'],
   ])('returns display metadata for Cursor id %s', (id, displayName) => {
+    const meta = getModelMeta(id);
+
+    expect(meta.displayName).toBe(displayName);
+    expect(meta.description).not.toBe('');
+  });
+});
+
+describe('getModelMeta curated Claude entries', () => {
+  it.each([
+    ['claude-opus-5-5', 'Opus 5.5'],
+    ['claude-fable-5-1', 'Fable 5.1'],
+  ])('has a curated description for %s', (id, displayName) => {
     const meta = getModelMeta(id);
 
     expect(meta.displayName).toBe(displayName);

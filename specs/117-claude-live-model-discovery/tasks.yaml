@@ -8,7 +8,7 @@ tasks:
   phaseId: phase-1
   title: Classify Claude model tiers from the id shape
   description: getModelTierInfo falls back to the family word of a claude- id when the table has no entry.
-  state: Todo
+  state: Done
   dependencies: []
   acceptanceCriteria:
   - claude-opus-5-5 and claude-fable-5-1 classify as claude/High
@@ -27,7 +27,7 @@ tasks:
   phaseId: phase-1
   title: Render unlisted Claude ids as "<Family> <major>.<minor>"
   description: getModelMeta prettifies claude-<family>-<version>[-YYYYMMDD] with a dotted version.
-  state: Todo
+  state: Done
   dependencies: []
   acceptanceCriteria:
   - claude-opus-5-5 -> "Opus 5.5"
@@ -45,7 +45,7 @@ tasks:
   phaseId: phase-2
   title: Anthropic Models API client
   description: anthropic-models-api.ts resolves CLI-equivalent credentials from env and lists models with pagination.
-  state: Todo
+  state: Done
   dependencies: []
   acceptanceCriteria:
   - ANTHROPIC_API_KEY -> x-api-key; ANTHROPIC_AUTH_TOKEN -> Authorization Bearer; API key wins
@@ -66,7 +66,7 @@ tasks:
   phaseId: phase-2
   title: Claude catalog lists API first, then CLI aliases
   description: ClaudeCodeModelCatalogService takes injectable listApiModels/listCliModels and merges with the hardcoded floor.
-  state: Todo
+  state: Done
   dependencies:
   - task-3
   acceptanceCriteria:
@@ -86,7 +86,7 @@ tasks:
   phaseId: phase-3
   title: Refresh the hardcoded fallback floor
   description: Add claude-fable-5-1 and claude-opus-5-5 to CLAUDE_CODE_MODELS, alias map, metadata and Storybook mocks.
-  state: Todo
+  state: Done
   dependencies:
   - task-4
   acceptanceCriteria:
@@ -106,7 +106,7 @@ tasks:
   phaseId: phase-3
   title: Docs and lessons
   description: Document the discovery order and record the lesson that model lists must be discovered, not maintained.
-  state: Todo
+  state: Done
   dependencies:
   - task-4
   acceptanceCriteria:
@@ -124,7 +124,7 @@ content: |
 
   ## Acceptance Checklist
 
-  - [ ] Models API used when credentials exist; CLI and hardcoded fallbacks intact
-  - [ ] New Claude ids classify and render without table edits
-  - [ ] Opus 5.5 / Fable 5.1 in the fallback floor
-  - [ ] lint, typecheck, unit + integration tests, build all green
+  - [x] Models API used when credentials exist; CLI and hardcoded fallbacks intact
+  - [x] New Claude ids classify and render without table edits
+  - [x] Opus 5.5 / Fable 5.1 in the fallback floor
+  - [x] lint, typecheck, unit + integration tests, build all green
