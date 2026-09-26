@@ -57,6 +57,7 @@ const SUPPORTED_FEATURES = new Set<string>([
   'system-prompt',
   'structured-output',
   'session-listing',
+  'effort',
 ]);
 
 /**
@@ -511,6 +512,8 @@ export class ClaudeCodeExecutorService implements IAgentExecutor {
     const args = ['-p', '--output-format', 'json', '--dangerously-skip-permissions'];
     if (options?.resumeSession) args.push('--resume', options.resumeSession);
     if (options?.model) args.push('--model', options.model);
+    // Only when set: an unset effort keeps today's argv (and the agent's own default).
+    if (options?.effort) args.push('--effort', options.effort);
     if (options?.systemPrompt) args.push('--append-system-prompt', options.systemPrompt);
     if (options?.allowedTools?.length) args.push('--allowedTools', options.allowedTools.join(','));
     if (options?.outputSchema) args.push('--json-schema', JSON.stringify(options.outputSchema));

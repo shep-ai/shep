@@ -33,3 +33,14 @@ export function parseAgentEffort(value: string | null | undefined): AgentEffort 
   const key = value.trim().toLowerCase();
   return EFFORT_VALUES.has(key) ? (key as AgentEffort) : undefined;
 }
+
+/**
+ * Spread helper for optional effort fields: `{ effort }` when the value is a
+ * known level, `{}` otherwise. Every place that pins or forwards effort (agent
+ * run creation, worker spawn, resume paths, executor options) uses it, so an
+ * unset or invalid value is never written as `effort: undefined` or passed on.
+ */
+export function effortField(value: string | null | undefined): { effort?: AgentEffort } {
+  const effort = parseAgentEffort(value);
+  return effort ? { effort } : {};
+}

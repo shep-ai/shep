@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { AGENT_EFFORT_LEVELS, parseAgentEffort } from '@/domain/shared/agent-effort.js';
+import {
+  AGENT_EFFORT_LEVELS,
+  effortField,
+  parseAgentEffort,
+} from '@/domain/shared/agent-effort.js';
 import { AgentEffort } from '@/domain/generated/output.js';
 
 describe('AGENT_EFFORT_LEVELS', () => {
@@ -34,5 +38,16 @@ describe('parseAgentEffort', () => {
     expect(parseAgentEffort('')).toBeUndefined();
     expect(parseAgentEffort('ultra')).toBeUndefined();
     expect(parseAgentEffort('--effort')).toBeUndefined();
+  });
+});
+
+describe('effortField', () => {
+  it('spreads a known level', () => {
+    expect(effortField('high')).toEqual({ effort: AgentEffort.high });
+  });
+
+  it('spreads nothing for missing or unknown values', () => {
+    expect(effortField(undefined)).toEqual({});
+    expect(effortField('bogus')).toEqual({});
   });
 });

@@ -44,6 +44,7 @@ import {
   claimRunForResume,
   startClaimedResumeWorker,
 } from './resume-run-claim.js';
+import { effortField } from '../../../domain/shared/agent-effort.js';
 
 const GATE_DECISION_FIELD = 'gate.approval';
 
@@ -197,6 +198,7 @@ export class ApproveAgentRunUseCase {
           ...(payload ? { resumePayload: JSON.stringify(payload) } : {}),
           agentType: run.agentType,
           ...(run.modelId ? { model: run.modelId } : {}),
+          ...effortField(run.effort),
           ...(feature?.fast ? { fast: true } : {}),
           securityMode: (await this.settingsRepository.load())?.security?.mode,
         }

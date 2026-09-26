@@ -24,7 +24,12 @@ import type { IGitPrService } from '@/application/ports/output/services/git-pr-s
 import type { IAgentValidator } from '@/application/ports/output/agents/agent-validator.interface.js';
 import type { ISkillInjectorService } from '@/application/ports/output/services/skill-injector.interface.js';
 import type { ILogger } from '@/application/ports/output/services/logger.interface.js';
-import { SdlcLifecycle, SkillSourceType, BuildMode } from '@/domain/generated/output.js';
+import {
+  SdlcLifecycle,
+  SkillSourceType,
+  BuildMode,
+  AgentEffort,
+} from '@/domain/generated/output.js';
 import type { Feature } from '@/domain/generated/output.js';
 import type { MetadataGenerator } from '@/application/use-cases/features/create/metadata-generator.js';
 import type { SlugResolver } from '@/application/use-cases/features/create/slug-resolver.js';
@@ -750,6 +755,70 @@ describe('CreateFeatureUseCase', () => {
         model: 'claude-sonnet-4-6',
       };
       expect(input.model).toBe('claude-sonnet-4-6');
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // effort: pinned on the agent run, forwarded to the worker
+  // -------------------------------------------------------------------------
+
+  describe('effort wiring', () => {
+    const createdRun = () =>
+      (mockRunRepo.create as ReturnType<typeof vi.fn>).mock.calls[0][0] as { effort?: string };
+    const spawnOptions = () =>
+      (mockAgentProcess.spawn as ReturnType<typeof vi.fn>).mock.calls[0][5] as {
+        effort?: string;
+      };
+
+    it('pins input.effort on the agent run and forwards it to the worker', async () => {
+      await useCase.execute({ ...baseInput, effort: AgentEffort.high });
+
+      expect(createdRun().effort).toBe(AgentEffort.high);
+      expect(spawnOptions().effort).toBe(AgentEffort.high);
+    });
+
+    it('falls back to settings.models.effort when the input has none', async () => {
+      mockLoadSettings.mockResolvedValue({
+        agent: { type: 'claude-code' },
+        workflow: {},
+        models: { default: 'claude-opus-5-5', effort: AgentEffort.low },
+      } as unknown as Settings);
+
+      await useCase.execute(baseInput);
+
+      expect(createdRun().effort).toBe(AgentEffort.low);
+      expect(spawnOptions().effort).toBe(AgentEffort.low);
+    });
+
+    it('prefers input.effort over the settings default', async () => {
+      mockLoadSettings.mockResolvedValue({
+        agent: { type: 'claude-code' },
+        workflow: {},
+        models: { default: 'claude-opus-5-5', effort: AgentEffort.low },
+      } as unknown as Settings);
+
+      await useCase.execute({ ...baseInput, effort: AgentEffort.max });
+
+      expect(createdRun().effort).toBe(AgentEffort.max);
+    });
+
+    it('leaves effort unset when neither input nor settings specify one', async () => {
+      await useCase.execute(baseInput);
+
+      expect('effort' in createdRun()).toBe(false);
+      expect(spawnOptions().effort).toBeUndefined();
+    });
+
+    it('forwards the effort stored on the run when spawning', async () => {
+      (mockRunRepo.findById as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: 'run-1',
+        threadId: 'thread-1',
+        effort: AgentEffort.xhigh,
+      });
+
+      await useCase.execute(baseInput);
+
+      expect(spawnOptions().effort).toBe(AgentEffort.xhigh);
     });
   });
 
