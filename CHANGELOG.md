@@ -4,6 +4,43 @@
   </a>
 </p>
 
+# 🚀 Shep [v1.231.0](/compare/v1.230.1...v1.231.0) · _2026-09-26_
+
+> Your organization does not have access to Claude. Please login again or contact your administrator.
+
+
+
+### ✨ Features
+
+* **agents:** discover claude models from the anthropic models api ([#901](https://github.com/shep-ai/shep/issues/901)) ([20a4c24](https://github.com/shep-ai/shep/commit/20a4c24d51811edc07605f85a036c0cbbbd60a35))
+
+* **agents:** run Application chat on Cursor via cursor-agent acp ([#902](https://github.com/shep-ai/shep/issues/902)) ([afbf66a](https://github.com/shep-ai/shep/commit/afbf66af87844915dfe9f36abbd7eaf0d53fd2af))
+
+
+## 📦 Install or update
+
+```bash
+# upgrade an existing install
+npm i -g @shepai/cli@1.231.0
+
+# or run instantly without installing
+npx @shepai/cli@latest
+```
+
+## 💬 Join the community
+
+[💬 **Discord**](https://discord.gg/ES6tdVFfur) · [📖 **Docs**](https://github.com/shep-ai/shep#readme) · [⭐ **Star on GitHub**](https://github.com/shep-ai/shep) · [🐛 **Report an issue**](https://github.com/shep-ai/shep/issues)
+
+---
+
+<sub>🤖 Released autonomously by Shep — built by parallel AI agents working in isolated git worktrees. Try it: `npx @shepai/cli`</sub>
+
+<p align="center">
+  <a href="https://github.com/shep-ai/shep">
+    <img src="https://raw.githubusercontent.com/shep-ai/shep/main/docs/screenshots/shep-card.jpg" alt="Shep — run multiple AI agents in parallel" width="720" />
+  </a>
+</p>
+
 # 🚀 Shep [v1.230.1](/compare/v1.230.0...v1.230.1) · _2026-09-26_
 
 > Your organization does not have access to Claude. Please login again or contact your administrator.
