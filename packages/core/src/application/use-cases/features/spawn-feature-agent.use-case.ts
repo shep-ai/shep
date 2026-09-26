@@ -31,6 +31,7 @@ import type { IFeatureAgentProcessService } from '../../ports/output/agents/feat
 import type { IWorktreeService } from '../../ports/output/services/worktree-service.interface.js';
 import type { ISettingsRepository } from '../../ports/output/repositories/settings.repository.interface.js';
 import { SyncFeatureBranchUseCase } from './sync-feature-branch.use-case.js';
+import { effortField } from '../../../domain/shared/agent-effort.js';
 
 /**
  * Run statuses a restart re-arms to `pending`. The worker only claims a run
@@ -156,6 +157,7 @@ export class SpawnFeatureAgentUseCase {
         ...(feature.fast || feature.buildMode === BuildMode.Fast ? { fast: true } : {}),
         ...(feature.buildMode === BuildMode.Exploration ? { exploration: true } : {}),
         ...(agentRun.modelId ? { model: agentRun.modelId } : {}),
+        ...effortField(agentRun.effort),
         securityMode: settings?.security?.mode,
       }
     );

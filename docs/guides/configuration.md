@@ -22,7 +22,7 @@ The settings record groups its fields as:
 | Group           | Holds                                                         |
 | --------------- | ------------------------------------------------------------- |
 | `agent`         | Selected AI coding agent, auth method, token                  |
-| `models`        | Default model, plus optional adaptive per-task model tiers    |
+| `models`        | Default model, reasoning effort, adaptive per-task model tiers |
 | `user`          | Name, email, GitHub username, preferred UI language           |
 | `environment`   | Default editor, shell, terminal                               |
 | `system`        | System-level behaviour (auto-update, log level, …)            |
@@ -50,6 +50,7 @@ Running `shep settings` with no subcommand launches the full interactive onboard
 | `shep settings ide`             | Preferred IDE / editor (`--editor <name>`)                          |
 | `shep settings workflow`        | Default approval gates for new features                             |
 | `shep settings model`           | Default LLM model (interactive picker)                              |
+| `shep settings effort`          | Default reasoning effort for new features                           |
 | `shep settings adaptive-models` | Per-task adaptive model tiers                                       |
 | `shep settings language`        | Display language (interactive picker)                               |
 | `shep settings messaging`       | Telegram / WhatsApp remote control                                  |
@@ -115,7 +116,8 @@ shep settings model              # interactive picker, limited to the agent's su
 shep feat new "…" --model <id>   # per-feature override
 ```
 
-The default model is `claude-sonnet-4-6`. The picker only offers models the **configured agent**
+The default model for a fresh install is `claude-opus-5-5` (`DEFAULT_MODEL_ID` in
+`domain/shared/default-model.ts`); a model you already chose is never changed. The picker only offers models the **configured agent**
 supports, so switching agents can change which models are available.
 
 | Agent | Model list |
@@ -137,6 +139,24 @@ shep settings adaptive-models --disable
 
 Leaving a tier unset derives it from the pinned model's family intersected with the agent's
 supported model list.
+
+### Reasoning effort
+
+Effort (`low`, `medium`, `high`, `xhigh`, `max`) sets how much the agent reasons per turn, which
+drives cost, latency and quality. Unset means the agent's own default: Shep passes no flag.
+
+```bash
+shep settings effort                 # interactive picker
+shep settings effort high            # default for new features
+shep settings effort --clear         # back to the agent's own default
+shep feat new "…" --effort xhigh     # per-feature override
+```
+
+The web UI has the same controls: **Settings → Agent → Reasoning effort**, and an effort picker
+in the create drawer. A feature's effort is pinned on its agent run when it is created and
+re-sent on every resume, approval and retry, so changing the default later does not affect
+features already in flight. Agents that support effort receive it (Claude Code: `--effort`);
+others ignore it.
 
 ## Workflow Defaults and Per-Feature Overrides
 

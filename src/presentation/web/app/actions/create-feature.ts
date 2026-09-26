@@ -5,6 +5,7 @@ import type { CreateFeatureUseCase } from '@shepai/core/application/use-cases/fe
 import type { Feature } from '@shepai/core/domain/generated/output';
 import { type BuildMode } from '@shepai/core/domain/generated/output';
 import { composeUserInput } from './compose-user-input';
+import { effortField } from '@shepai/core/domain/shared/agent-effort';
 
 interface Attachment {
   path: string;
@@ -60,6 +61,8 @@ interface CreateFeatureInput {
   agentType?: string;
   /** Optional model identifier for this feature run */
   model?: string;
+  /** Optional reasoning effort override (validated; unknown values are dropped). */
+  effort?: string;
   /** Sync main from remote before creating the feature branch (default: true). */
   rebaseBeforeBranch?: boolean;
   /** Inject curated skills into the feature worktree. */
@@ -94,6 +97,7 @@ export async function createFeature(
     commitEvidence,
     agentType,
     model,
+    effort: rawEffort,
     rebaseBeforeBranch,
     injectSkills,
     applicationId,
@@ -137,6 +141,7 @@ export async function createFeature(
       ...(commitEvidence != null ? { commitEvidence } : {}),
       ...(agentType ? { agentType } : {}),
       ...(model ? { model } : {}),
+      ...effortField(rawEffort),
       ...(rebaseBeforeBranch != null ? { rebaseBeforeBranch } : {}),
       ...(injectSkills != null ? { injectSkills } : {}),
       ...(applicationId ? { applicationId } : {}),
@@ -165,6 +170,7 @@ export async function createFeature(
           ...(commitEvidence != null ? { commitEvidence } : {}),
           ...(agentType ? { agentType } : {}),
           ...(model ? { model } : {}),
+          ...effortField(rawEffort),
           ...(sessionId ? { sessionId } : {}),
           ...(rebaseBeforeBranch != null ? { rebaseBeforeBranch } : {}),
           ...(injectSkills != null ? { injectSkills } : {}),

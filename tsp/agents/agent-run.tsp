@@ -9,6 +9,7 @@
  */
 import "../common/base.tsp";
 import "../common/enums/agent-config.tsp";
+import "../common/enums/agent-effort.tsp";
 import "./enums/agent-run-status.tsp";
 import "./approval-gates.tsp";
 
@@ -61,4 +62,7 @@ model AgentRun extends BaseEntity {
 
   @doc("LLM model identifier used for this run (optional, set at creation)")
   modelId?: string;
+
+  @doc("Reasoning effort pinned for this run (optional, set at creation; absent = agent default)")
+  effort?: AgentEffort;
 }

@@ -55,6 +55,9 @@ properties:
   modelId:
     type: string
     description: LLM model identifier used for this run (optional, set at creation)
+  effort:
+    $ref: AgentEffort.yaml
+    description: Reasoning effort pinned for this run (optional, set at creation; absent = agent default)
 required:
   - agentType
   - agentName

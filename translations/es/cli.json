@@ -44,6 +44,19 @@
         "cancelled": "Configuración cancelada.",
         "failed": "Error al configurar el modelo"
       },
+      "effort": {
+        "description": "Configurar el esfuerzo de razonamiento predeterminado para nuevas ejecuciones",
+        "levelArgument": "Nivel de esfuerzo (low, medium, high, xhigh, max)",
+        "clearOption": "Usar el esfuerzo predeterminado del agente",
+        "selectPrompt": "Selecciona el esfuerzo de razonamiento predeterminado",
+        "agentDefault": "Predeterminado del agente",
+        "success": "Esfuerzo configurado: {{effort}}",
+        "cleared": "Esfuerzo restablecido al predeterminado del agente",
+        "cancelled": "Configuración cancelada.",
+        "failed": "No se pudo configurar el esfuerzo",
+        "invalid": "Esfuerzo desconocido \"{{level}}\". Niveles válidos: {{levels}}",
+        "clearConflict": "No se puede combinar un nivel con --clear"
+      },
       "workflow": {
         "description": "Configurar el comportamiento predeterminado del flujo de trabajo para nuevas funcionalidades",
         "allowPrdOption": "Auto-aprobar la fase de requisitos",
@@ -235,6 +248,8 @@
         "exploreOption": "Start an exploration/prototyping session for iterative design",
         "exploreAndFastConflict": "Cannot use --explore and --fast together. Choose one mode.",
         "modelOption": "Identificador del modelo LLM para esta ejecución (ej., claude-opus-4-6)",
+        "effortOption": "Esfuerzo de razonamiento para esta ejecución: low, medium, high, xhigh o max (predeterminado: ajustes)",
+        "invalidEffort": "Esfuerzo desconocido \"{{level}}\". Niveles válidos: {{levels}}",
         "noRebaseOption": "Skip syncing main from remote before creating the feature branch",
         "injectSkillsOption": "Inject curated skills into the worktree",
         "noInjectSkillsOption": "Skip skill injection for this invocation",

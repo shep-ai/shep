@@ -115,6 +115,18 @@ describe('parseWorkerArgs - model', () => {
     expect(args.model).toBeUndefined();
   });
 
+  it('should parse a valid --effort', () => {
+    expect(parseWorkerArgs([...baseArgs, '--effort', 'high']).effort).toBe('high');
+  });
+
+  it('should drop an unknown --effort instead of passing it to the agent', () => {
+    expect(parseWorkerArgs([...baseArgs, '--effort', 'ultra']).effort).toBeUndefined();
+  });
+
+  it('should set effort to undefined when --effort is not present', () => {
+    expect(parseWorkerArgs(baseArgs).effort).toBeUndefined();
+  });
+
   it('should coexist with --agent-type and other flags', () => {
     const args = parseWorkerArgs([
       ...baseArgs,

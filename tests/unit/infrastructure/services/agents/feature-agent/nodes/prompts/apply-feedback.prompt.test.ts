@@ -34,6 +34,7 @@ function createState(overrides?: Partial<FeatureAgentState>): FeatureAgentState 
     evidence: [],
     evidenceRetries: 0,
     model: undefined,
+    effort: undefined,
     resumeReason: undefined,
     forkAndPr: false,
     commitSpecs: true,

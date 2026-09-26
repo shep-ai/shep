@@ -22,6 +22,7 @@
  */
 
 import type {
+  AgentEffort,
   AgentType,
   AgentFeature,
   SecurityMode,
@@ -108,6 +109,12 @@ export interface AgentExecutionOptions {
   maxTurns?: number;
   /** Model to use for execution */
   model?: string;
+  /**
+   * Reasoning effort for this call. Executors that declare
+   * `AgentFeature.effort` pass it to their agent (Claude Code: `--effort`);
+   * others ignore it. Unset means the agent's own default.
+   */
+  effort?: AgentEffort;
   /** System prompt to prepend */
   systemPrompt?: string;
   /** JSON schema for structured output */

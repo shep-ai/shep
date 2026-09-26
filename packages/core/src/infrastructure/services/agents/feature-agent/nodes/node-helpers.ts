@@ -128,6 +128,7 @@ export function buildExecutorOptions(
     timeout: stageTimeout,
     idleTimeout: DEFAULT_AGENT_IDLE_TIMEOUT_MS,
     ...(state.model ? { model: state.model } : {}),
+    ...(state.effort ? { effort: state.effort } : {}),
     ...(state.mcpConfigPath ? { mcpConfigPath: state.mcpConfigPath } : {}),
     ...overrides,
   };

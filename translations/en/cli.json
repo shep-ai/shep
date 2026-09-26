@@ -44,6 +44,19 @@
         "cancelled": "Configuration cancelled.",
         "failed": "Failed to configure model"
       },
+      "effort": {
+        "description": "Configure the default reasoning effort for new feature runs",
+        "levelArgument": "Effort level (low, medium, high, xhigh, max)",
+        "clearOption": "Use the agent's own default effort",
+        "selectPrompt": "Select default reasoning effort",
+        "agentDefault": "Agent default",
+        "success": "Effort configured: {{effort}}",
+        "cleared": "Effort reset to the agent default",
+        "cancelled": "Configuration cancelled.",
+        "failed": "Failed to configure effort",
+        "invalid": "Unknown effort \"{{level}}\". Valid levels: {{levels}}",
+        "clearConflict": "A level cannot be combined with --clear"
+      },
       "workflow": {
         "description": "Configure default workflow behavior for new features",
         "allowPrdOption": "Auto-approve requirements phase",
@@ -235,6 +248,8 @@
         "exploreOption": "Start an exploration/prototyping session for iterative design",
         "exploreAndFastConflict": "Cannot use --explore and --fast together. Choose one mode.",
         "modelOption": "LLM model identifier for this run (e.g. claude-opus-4-6)",
+        "effortOption": "Reasoning effort for this run: low, medium, high, xhigh or max (default: settings)",
+        "invalidEffort": "Unknown effort \"{{level}}\". Valid levels: {{levels}}",
         "noRebaseOption": "Skip syncing main from remote before creating the feature branch",
         "injectSkillsOption": "Inject curated skills into the worktree",
         "noInjectSkillsOption": "Skip skill injection for this invocation",

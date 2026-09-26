@@ -11,6 +11,9 @@ import type { Settings } from '@/domain/generated/output.js';
 import { colors } from './colors.js';
 import pc from 'picocolors';
 
+/** Shown when no effort is configured: the agent CLI uses its own default. */
+const AGENT_DEFAULT_EFFORT_LABEL = 'agent default';
+
 export interface DatabaseMeta {
   path: string;
   size: string;
@@ -37,6 +40,7 @@ export class TableFormatter {
       ...TableFormatter.section('Agent', [
         ['Type', s.agent.type],
         ['Model', s.models.default],
+        ['Effort', s.models.effort ?? AGENT_DEFAULT_EFFORT_LABEL],
         ['Auth', s.agent.authMethod],
         ...(s.agent.token ? [['Token', '••••••••'] as [string, string | undefined]] : []),
       ])

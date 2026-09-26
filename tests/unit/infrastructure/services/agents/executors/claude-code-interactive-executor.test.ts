@@ -19,6 +19,7 @@ vi.mock('@anthropic-ai/claude-agent-sdk', () => ({
 }));
 
 import { ClaudeCodeInteractiveExecutor } from '@/infrastructure/services/agents/common/executors/claude-code-interactive-executor.service.js';
+import { DEFAULT_MODEL_ID } from '@/domain/shared/default-model.js';
 
 function createMockSdkSession() {
   return {
@@ -227,7 +228,7 @@ describe('ClaudeCodeInteractiveExecutor', () => {
         cwd: process.cwd(),
       } as Parameters<typeof executor.createSession>[0]);
 
-      expect(capturedOptions.model).toBe('claude-sonnet-4-6');
+      expect(capturedOptions.model).toBe(DEFAULT_MODEL_ID);
     });
   });
 

@@ -1,0 +1,76 @@
+name: "opus-5-5-default-and-effort"
+summary: |-
+  Effort follows the exact path `model` already takes (settings default → per-run pin on the agent
+  run → worker argv → graph state → executor options → CLI flag). The default model moves to a
+  single domain constant. No new dependency.
+relatedFeatures:
+  - "117-claude-live-model-discovery"
+  - "110-adaptive-model-selection"
+technologies:
+  - "TypeSpec"
+  - "SQLite"
+  - "Claude Code CLI --effort"
+relatedLinks:
+  - "https://code.claude.com/docs/en/cli-reference"
+decisions:
+  - title: "Where effort is resolved"
+    chosen: |-
+      Once, at feature creation: `input.effort ?? settings.models.effort`, pinned on `AgentRun.effort`
+      beside `modelId`. Every resume path re-reads the pin.
+    rejected:
+      - "Read settings inside the worker on every call: a settings change would silently alter in-flight features, and it adds another getSettings() call inside nodes."
+      - "Only a global setting: the create drawer and `feat new --model` already support per-feature overrides, so users expect effort to behave the same way."
+    rationale: |-
+      Mirrors `modelId`, so a feature runs with the effort it was created with. Resume paths already
+      forward `run.modelId`, and forwarding `run.effort` beside it is mechanical.
+  - title: "Meaning of an unset effort"
+    chosen: "Unset means the agent's own default. No `--effort` flag is sent, so argv is identical to today."
+    rejected:
+      - "Default to `medium`: this overrides a user's Claude Code config and changes behaviour for every existing install on upgrade."
+    rationale: |-
+      No behaviour change on upgrade. Opus 5.5's own default is already `medium`, so unset is
+      sensible for the new default model too.
+  - title: "How executors opt in"
+    chosen: "New `AgentFeature.effort` member; the Claude Code executor declares it and appends `--effort <level>`. Other executors ignore the option."
+    rejected:
+      - "Hardcode `if (agentType === 'claude-code')` in the node: this violates the agent-agnostic rule."
+      - "Translate effort into Cursor model suffixes now: Cursor ids already encode effort, and rewriting a user's explicit Cursor model id is surprising."
+    rationale: "Capability flags are the existing mechanism (`structuredOutput`, `systemPrompt`)."
+  - title: "Single source for the default model"
+    chosen: "`domain/shared/default-model.ts` exports `DEFAULT_MODEL_ID = 'claude-opus-5-5'`. The factory, the interactive executor and the chat-state assembler import it. The TypeSpec literal is kept in sync by a unit test."
+    rejected:
+      - "Keep separate literals in each file: this is exactly how the three copies drifted."
+    rationale: "TypeSpec defaults must be literals, so a test pins the generated default to the constant."
+  - title: "Existing installs"
+    chosen: "No data migration of `model_default`. The new default applies to fresh settings only."
+    rejected:
+      - "Rewrite `claude-sonnet-4-6` rows to Opus 5.5: this overrides an explicit user choice and changes cost without consent."
+    rationale: "A persisted model is a user decision."
+openQuestions: []
+content: |
+  ## Technology Decisions
+
+  See `decisions` above. In short:
+  - Effort mirrors `modelId`: pinned per run, resolved at creation.
+  - Unset means "agent default", and no flag is sent.
+  - Executors opt in through `AgentFeature.effort`.
+  - The default model comes from one domain constant.
+
+  ## Library Analysis
+
+  No new libraries. Claude Code CLI `--effort <level>` accepts `low`, `medium`, `high`, `xhigh`
+  and `max` (verified with `claude --help`, CLI 2.1.283). The TypeSpec enum uses the same wire
+  values, so no translation layer is needed.
+
+  ## Security Considerations
+
+  - Effort is a closed enum. It is validated at every boundary: CLI argument, server action, worker
+    argv parse and DB read. Arbitrary strings never reach the spawned CLI's argv.
+  - The value is passed as a separate argv element (no shell), like `--model`.
+
+  ## Performance Implications
+
+  - None at runtime beyond the chosen effort itself.
+  - Opus 5.5 as default raises per-token cost versus Sonnet 4.6 ($4/$20 vs $3/$15 per MTok) for new
+    installs, in exchange for higher quality. The per-feature effort control is the lever to trade
+    that back.

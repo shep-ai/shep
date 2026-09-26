@@ -277,6 +277,37 @@ describe('FeatureCreateDrawer', () => {
       expect(submittedData).not.toHaveProperty('name');
     });
 
+    it('sends the chosen effort override and omits effort by default', async () => {
+      // Radix Select needs these pointer/scroll APIs, which jsdom lacks.
+      Element.prototype.hasPointerCapture ??= () => false;
+      Element.prototype.releasePointerCapture ??= () => undefined;
+      Element.prototype.scrollIntoView ??= () => undefined;
+
+      const onSubmit = vi.fn();
+      const user = userEvent.setup();
+      renderDrawer({ onSubmit });
+
+      expect(screen.getByTestId('create-drawer-effort-select')).toHaveTextContent('From settings');
+
+      await user.type(screen.getByPlaceholderText(descriptionPlaceholder), 'Add a feature');
+      await user.click(screen.getByTestId('create-drawer-effort-select'));
+      await user.click(await screen.findByTestId('create-drawer-effort-select-option-high'));
+      await user.click(screen.getByRole('button', { name: '+ Create Feature' }));
+
+      expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ effort: 'high' }));
+    });
+
+    it('omits effort when the user keeps the settings default', async () => {
+      const onSubmit = vi.fn();
+      const user = userEvent.setup();
+      renderDrawer({ onSubmit });
+
+      await user.type(screen.getByPlaceholderText(descriptionPlaceholder), 'Add a feature');
+      await user.click(screen.getByRole('button', { name: '+ Create Feature' }));
+
+      expect(onSubmit.mock.calls[0][0]).not.toHaveProperty('effort');
+    });
+
     it('sends approvalGates with only PRD checked', async () => {
       const onSubmit = vi.fn();
       const user = userEvent.setup();

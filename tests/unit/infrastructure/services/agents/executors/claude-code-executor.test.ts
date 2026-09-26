@@ -13,7 +13,7 @@ import { EventEmitter } from 'node:events';
 import { PassThrough } from 'node:stream';
 import { ClaudeCodeExecutorService } from '@/infrastructure/services/agents/common/executors/claude-code-executor.service.js';
 import type { SpawnFunction } from '@/infrastructure/services/agents/common/types.js';
-import { AgentType, AgentFeature } from '@/domain/generated/output.js';
+import { AgentType, AgentFeature, AgentEffort } from '@/domain/generated/output.js';
 
 /**
  * Creates a mock ChildProcess-like object that can emit events and provide
@@ -116,6 +116,10 @@ describe('ClaudeCodeExecutorService', () => {
 
     it('should support session-listing feature', () => {
       expect(executor.supportsFeature(AgentFeature.sessionListing)).toBe(true);
+    });
+
+    it('should support effort feature', () => {
+      expect(executor.supportsFeature(AgentFeature.effort)).toBe(true);
     });
 
     it('should NOT support tool-scoping feature', () => {
@@ -439,6 +443,29 @@ describe('ClaudeCodeExecutorService', () => {
         expect.arrayContaining(['--model', 'claude-sonnet-4-5-20250929']),
         expect.any(Object)
       );
+    });
+
+    it('should pass --effort when effort option is set', async () => {
+      const mockProc = createMockChildProcess();
+      vi.mocked(mockSpawn).mockReturnValue(mockProc as any);
+
+      const executePromise = executor.execute('Test', { effort: AgentEffort.xhigh });
+      emitStreamData(mockProc, [buildStreamResult({ result: 'Done' })], null, 0);
+      await executePromise;
+
+      const args = vi.mocked(mockSpawn).mock.calls[0][1] as string[];
+      expect(args[args.indexOf('--effort') + 1]).toBe('xhigh');
+    });
+
+    it('should NOT pass --effort when effort option is unset (keeps the agent default)', async () => {
+      const mockProc = createMockChildProcess();
+      vi.mocked(mockSpawn).mockReturnValue(mockProc as any);
+
+      const executePromise = executor.execute('Test', { model: 'claude-opus-5-5' });
+      emitStreamData(mockProc, [buildStreamResult({ result: 'Done' })], null, 0);
+      await executePromise;
+
+      expect(vi.mocked(mockSpawn).mock.calls[0][1]).not.toContain('--effort');
     });
 
     it('should pass --append-system-prompt when systemPrompt option is set', async () => {

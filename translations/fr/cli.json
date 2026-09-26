@@ -44,6 +44,19 @@
         "cancelled": "Configuration annulée.",
         "failed": "Échec de la configuration du modèle"
       },
+      "effort": {
+        "description": "Configurer l'effort de raisonnement par défaut des nouvelles exécutions",
+        "levelArgument": "Niveau d'effort (low, medium, high, xhigh, max)",
+        "clearOption": "Utiliser l'effort par défaut de l'agent",
+        "selectPrompt": "Sélectionnez l'effort de raisonnement par défaut",
+        "agentDefault": "Défaut de l'agent",
+        "success": "Effort configuré : {{effort}}",
+        "cleared": "Effort réinitialisé au défaut de l'agent",
+        "cancelled": "Configuration annulée.",
+        "failed": "Échec de la configuration de l'effort",
+        "invalid": "Effort inconnu « {{level}} ». Niveaux valides : {{levels}}",
+        "clearConflict": "Un niveau ne peut pas être combiné avec --clear"
+      },
       "workflow": {
         "description": "Configurer le comportement par défaut du workflow pour les nouvelles fonctionnalités",
         "allowPrdOption": "Approuver automatiquement la phase d'exigences",
@@ -235,6 +248,8 @@
         "exploreOption": "Start an exploration/prototyping session for iterative design",
         "exploreAndFastConflict": "Cannot use --explore and --fast together. Choose one mode.",
         "modelOption": "Identifiant du modèle LLM pour cette exécution (par ex. claude-opus-4-6)",
+        "effortOption": "Effort de raisonnement pour cette exécution : low, medium, high, xhigh ou max (défaut : paramètres)",
+        "invalidEffort": "Effort inconnu « {{level}} ». Niveaux valides : {{levels}}",
         "noRebaseOption": "Skip syncing main from remote before creating the feature branch",
         "injectSkillsOption": "Inject curated skills into the worktree",
         "noInjectSkillsOption": "Skip skill injection for this invocation",

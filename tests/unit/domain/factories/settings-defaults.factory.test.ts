@@ -24,6 +24,7 @@ import {
   SkillSourceType,
   SecurityMode,
 } from '@/domain/generated/output.js';
+import { DEFAULT_MODEL_ID } from '@/domain/shared/default-model.js';
 
 describe('createDefaultSettings', () => {
   describe('return type and structure', () => {
@@ -83,14 +84,15 @@ describe('createDefaultSettings', () => {
   });
 
   describe('ModelConfiguration defaults', () => {
-    it('should set default model field to "claude-sonnet-4-6"', () => {
+    it('should set default model field to DEFAULT_MODEL_ID (claude-opus-5-5)', () => {
       // Act
       const settings = createDefaultSettings();
       const models: ModelConfiguration = settings.models;
 
       // Assert
       expect(models).toBeDefined();
-      expect(models.default).toBe('claude-sonnet-4-6');
+      expect(models.default).toBe(DEFAULT_MODEL_ID);
+      expect(models.effort).toBeUndefined();
       expect((models as Record<string, unknown>).analyze).toBeUndefined();
       expect((models as Record<string, unknown>).requirements).toBeUndefined();
       expect((models as Record<string, unknown>).plan).toBeUndefined();
@@ -103,7 +105,7 @@ describe('createDefaultSettings', () => {
 
       // Assert - Verify all fields match TypeSpec defaults
       expect(settings.models).toEqual({
-        default: 'claude-sonnet-4-6',
+        default: DEFAULT_MODEL_ID,
       });
     });
   });
@@ -538,7 +540,7 @@ describe('createDefaultSettings', () => {
 
       // Assert - Verify entire structure (except id and timestamps)
       expect(settings.models).toEqual({
-        default: 'claude-sonnet-4-6',
+        default: DEFAULT_MODEL_ID,
       });
       expect(settings.user).toEqual({});
       expect(settings.environment).toEqual({

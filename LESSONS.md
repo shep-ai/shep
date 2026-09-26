@@ -1,5 +1,34 @@
 # Lessons Learned
 
+## Fetch main before reporting what the code does or lacks
+
+Before an audit or status report says a model, flag or fix is missing, run
+`git fetch origin main` and check the finding against `origin/main`. A session
+checkout can be days behind, and a stale "X is missing" sends the reader after
+work that already shipped.
+
+## A gate piped into `tail` never fails
+
+`check.sh | tail -5 && git commit` commits even when `check.sh` fails, because
+the pipeline returns `tail`'s exit status. Redirect gate output to a file and
+test the command's own status (`check.sh > log; echo $?`), or set
+`set -o pipefail`, before chaining anything that depends on it.
+
+## An e2e test must assert the surroundings survive the interaction
+
+The effort picker's e2e test checked the dropdown options and the trigger text,
+and it passed while picking a value was closing the create drawer: Radix Select
+opens on pointerdown, so the trailing click targeted <body> and BaseDrawer read
+it as an outside click. After interacting with a control in a drawer, dialog or
+popover, assert that the container is still open and the URL is unchanged.
+
+## Write settings sub-objects by spreading, never by rebuilding
+
+`models: { default }` silently drops `models.adaptive` and `models.effort`.
+Update one field with `{ ...current.models, default }`. To clear an optional
+field, go through a use case that deletes it: `updateSettingsAction`'s deep
+merge skips `undefined`, so it can set a field but never clear one.
+
 ## A fake child process must emit events in the order a real one does
 
 The ACP session ends its input stream on the process's `close`, so a turn that dies mid-way

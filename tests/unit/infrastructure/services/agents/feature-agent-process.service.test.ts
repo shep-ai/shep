@@ -177,6 +177,21 @@ describe('FeatureAgentProcessService', () => {
       expect(args).not.toContain('--model');
     });
 
+    it('should include --effort in fork args when effort option is set', () => {
+      service.spawn('feat-1', 'run-1', '/repo', '/repo/specs/001', undefined, {
+        effort: 'medium' as never,
+      });
+
+      const args = mockFork.mock.calls[0][1] as string[];
+      expect(args[args.indexOf('--effort') + 1]).toBe('medium');
+    });
+
+    it('should NOT include --effort in fork args when effort option is not set', () => {
+      service.spawn('feat-1', 'run-1', '/repo', '/repo/specs/001');
+
+      expect(mockFork.mock.calls[0][1]).not.toContain('--effort');
+    });
+
     it('should throw if fork returns no pid', () => {
       mockFork.mockReturnValue({ ...mockChildProcess, pid: undefined });
 
