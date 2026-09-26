@@ -4,6 +4,41 @@
   </a>
 </p>
 
+# 🚀 Shep [v1.233.0](/compare/v1.232.0...v1.233.0) · _2026-09-26_
+
+> Your organization does not have access to Claude. Please login again or contact your administrator.
+
+
+
+### ✨ Features
+
+* **agents:** default to Opus 5.5 and add a reasoning effort setting ([#904](https://github.com/shep-ai/shep/issues/904)) ([1585034](https://github.com/shep-ai/shep/commit/15850345d0fc6393d7a22d77ec70d49920719074)), closes [#901](https://github.com/shep-ai/shep/issues/901)
+
+
+## 📦 Install or update
+
+```bash
+# upgrade an existing install
+npm i -g @shepai/cli@1.233.0
+
+# or run instantly without installing
+npx @shepai/cli@latest
+```
+
+## 💬 Join the community
+
+[💬 **Discord**](https://discord.gg/ES6tdVFfur) · [📖 **Docs**](https://github.com/shep-ai/shep#readme) · [⭐ **Star on GitHub**](https://github.com/shep-ai/shep) · [🐛 **Report an issue**](https://github.com/shep-ai/shep/issues)
+
+---
+
+<sub>🤖 Released autonomously by Shep — built by parallel AI agents working in isolated git worktrees. Try it: `npx @shepai/cli`</sub>
+
+<p align="center">
+  <a href="https://github.com/shep-ai/shep">
+    <img src="https://raw.githubusercontent.com/shep-ai/shep/main/docs/screenshots/shep-card.jpg" alt="Shep — run multiple AI agents in parallel" width="720" />
+  </a>
+</p>
+
 # 🚀 Shep [v1.232.0](/compare/v1.231.0...v1.232.0) · _2026-09-26_
 
 > Your organization does not have access to Claude. Please login again or contact your administrator.
