@@ -6,6 +6,7 @@ import { StopInteractiveSessionUseCase } from '../../../application/use-cases/in
 import { GetInteractiveChatStateUseCase } from '../../../application/use-cases/interactive/get-interactive-chat-state.use-case.js';
 import { GetChatTurnGroupsUseCase } from '../../../application/use-cases/interactive/get-chat-turn-groups.use-case.js';
 import { RespondToInteractionUseCase } from '../../../application/use-cases/interactive/respond-to-interaction.use-case.js';
+import { GetInteractiveAgentSupportUseCase } from '../../../application/use-cases/interactive/get-interactive-agent-support.use-case.js';
 import { RunWorkflowUseCase } from '../../../application/use-cases/workflows/run-workflow.use-case.js';
 import { ForceStopWorkflowStepUseCase } from '../../../application/use-cases/workflows/force-stop-workflow-step.use-case.js';
 
@@ -23,6 +24,7 @@ export function registerInteractive(container: DependencyContainer): void {
   container.registerSingleton(GetInteractiveChatStateUseCase);
   container.registerSingleton(GetChatTurnGroupsUseCase);
   container.registerSingleton(RespondToInteractionUseCase);
+  container.registerSingleton(GetInteractiveAgentSupportUseCase);
 
   // String-token aliases for web routes (Turbopack can't resolve .js→.ts
   // imports inside @shepai/core, so routes use string tokens instead of class refs)
@@ -43,6 +45,9 @@ export function registerInteractive(container: DependencyContainer): void {
   });
   container.register('RespondToInteractionUseCase', {
     useFactory: (c) => c.resolve(RespondToInteractionUseCase),
+  });
+  container.register('GetInteractiveAgentSupportUseCase', {
+    useFactory: (c) => c.resolve(GetInteractiveAgentSupportUseCase),
   });
 
   container.registerSingleton(RunWorkflowUseCase);

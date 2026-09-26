@@ -36,6 +36,7 @@ import type { ILogger } from '../../ports/output/services/logger.interface.js';
 import type { SendInteractiveMessageUseCase } from '../interactive/send-interactive-message.use-case.js';
 import { WorkflowStepStatus, type WorkflowStep } from '../../../domain/generated/output.js';
 import type { WorkflowDefinition } from '../applications/application-creation.workflow.js';
+import { sendAndWatchTurn } from './send-and-watch-turn.js';
 
 /** Per-step usage snapshot. All fields are cumulative session totals
  *  captured BEFORE or AFTER a step runs; a diff between two snapshots
@@ -123,26 +124,28 @@ export class RunWorkflowUseCase {
     const firstStepDef = input.workflow.steps[0];
     if (!firstStepDef) return;
 
-    // Subscribe before sending to avoid racing a fast first turn.
-    const firstTurnDone = this.session.waitForTurnDone(input.featureId);
-
     const firstAgentPrompt = input.firstStepPromptWrapper
       ? input.firstStepPromptWrapper(firstStepDef.prompt)
       : firstStepDef.prompt;
 
-    await this.sendMessage.execute({
-      featureId: input.featureId,
-      content: input.visibleFirstMessage ?? firstStepDef.prompt,
-      worktreePath: input.worktreePath,
-      model: input.model,
-      agentType: input.agentType,
-      agentKickoffOverride: firstAgentPrompt,
-      // Skip the DB-persist step when the caller already wrote the
-      // user's first bubble in the foreground. The session still
-      // boots and sees `firstAgentPrompt`; we just don't create a
-      // duplicate row for `visibleFirstMessage`.
-      persistUserMessage: !input.firstUserMessageAlreadyPersisted,
-    });
+    // Subscribes before sending to avoid racing a fast first turn. A send
+    // that throws (e.g. an agent with no interactive mode) propagates, so
+    // the caller can mark its setup failed.
+    const firstTurn = await sendAndWatchTurn(this.session, input.featureId, () =>
+      this.sendMessage.execute({
+        featureId: input.featureId,
+        content: input.visibleFirstMessage ?? firstStepDef.prompt,
+        worktreePath: input.worktreePath,
+        model: input.model,
+        agentType: input.agentType,
+        agentKickoffOverride: firstAgentPrompt,
+        // Skip the DB-persist step when the caller already wrote the
+        // user's first bubble in the foreground. The session still
+        // boots and sees `firstAgentPrompt`; we just don't create a
+        // duplicate row for `visibleFirstMessage`.
+        persistUserMessage: !input.firstUserMessageAlreadyPersisted,
+      })
+    );
 
     // Resolve the session id — newly booted, so poll briefly.
     const sessionId = await this.resolveSessionId(input.featureId);
@@ -186,7 +189,7 @@ export class RunWorkflowUseCase {
     const firstStepUsageBefore = await this.snapshotUsage(sessionId);
 
     try {
-      await firstTurnDone;
+      await firstTurn.done;
       const firstStepUsageAfter = await this.snapshotUsage(sessionId);
       await this.stepRepo.updateStatus(firstStep.id, WorkflowStepStatus.done, {
         summary: firstStepDef.title,
@@ -199,7 +202,8 @@ export class RunWorkflowUseCase {
       });
       this.session.notifyWorkflowStep(input.featureId, await this.refreshStep(firstStep.id));
       this.session.clearActiveStep(input.featureId);
-      return;
+      // Rethrow: the caller treats a normal return as "workflow complete".
+      throw err;
     }
     this.session.clearActiveStep(input.featureId);
 
@@ -215,18 +219,19 @@ export class RunWorkflowUseCase {
       this.session.notifyWorkflowStep(input.featureId, await this.refreshStep(step.id));
       this.session.setActiveStep(input.featureId, step.id);
 
-      const turnDone = this.session.waitForTurnDone(input.featureId);
       const usageBefore = await this.snapshotUsage(sessionId);
 
       try {
-        await this.sendMessage.execute({
-          featureId: input.featureId,
-          content: definition.prompt,
-          worktreePath: input.worktreePath,
-          model: input.model,
-          agentType: input.agentType,
-        });
-        await turnDone;
+        const turn = await sendAndWatchTurn(this.session, input.featureId, () =>
+          this.sendMessage.execute({
+            featureId: input.featureId,
+            content: definition.prompt,
+            worktreePath: input.worktreePath,
+            model: input.model,
+            agentType: input.agentType,
+          })
+        );
+        await turn.done;
 
         const usageAfter = await this.snapshotUsage(sessionId);
         await this.stepRepo.updateStatus(step.id, WorkflowStepStatus.done, {
@@ -239,7 +244,7 @@ export class RunWorkflowUseCase {
           error: err instanceof Error ? err.message : String(err),
         });
         this.session.notifyWorkflowStep(input.featureId, await this.refreshStep(step.id));
-        return;
+        throw err;
       } finally {
         this.session.clearActiveStep(input.featureId);
       }

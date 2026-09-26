@@ -3,8 +3,9 @@
  *
  * GET /api/applications/:id
  *
- * Returns the application entity, initial chat state, and deployment snapshot
- * in a single call — everything the application page needs to render.
+ * Returns the application entity, initial chat state, deployment snapshot and
+ * whether the application's agent can run chat sessions, in a single call —
+ * everything the application page needs to render.
  */
 
 import type { NextRequest } from 'next/server';
@@ -14,6 +15,10 @@ import type { GetApplicationUseCase } from '@shepai/core/application/use-cases/a
 import type { GetInteractiveChatStateUseCase } from '@shepai/core/application/use-cases/interactive/get-interactive-chat-state.use-case';
 import type { ChatState } from '@shepai/core/application/ports/output/services/interactive-session-service.interface';
 import type { IDeploymentService } from '@shepai/core/application/ports/output/services/deployment-service.interface';
+import type {
+  GetInteractiveAgentSupportUseCase,
+  InteractiveAgentSupport,
+} from '@shepai/core/application/use-cases/interactive/get-interactive-agent-support.use-case';
 import { featureIdForApplication } from '@shepai/core/domain/shared/feature-id';
 
 export const dynamic = 'force-dynamic';
@@ -55,7 +60,17 @@ export async function GET(_request: NextRequest, { params }: RouteParams): Promi
       deployment = undefined;
     }
 
-    return NextResponse.json({ application, initialChatState, deployment });
+    let interactiveAgent: InteractiveAgentSupport | undefined;
+    try {
+      const getSupport = resolve<GetInteractiveAgentSupportUseCase>(
+        'GetInteractiveAgentSupportUseCase'
+      );
+      interactiveAgent = await getSupport.execute({ agentType: application.agentType });
+    } catch {
+      interactiveAgent = undefined;
+    }
+
+    return NextResponse.json({ application, initialChatState, deployment, interactiveAgent });
   } catch (error) {
     // eslint-disable-next-line no-console
     console.error('[GET /api/applications/:id]', error);

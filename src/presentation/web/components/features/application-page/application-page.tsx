@@ -4,16 +4,18 @@ import { useState } from 'react';
 import type { Application, DeploymentState } from '@shepai/core/domain/generated/output';
 import { ApplicationStatus } from '@shepai/core/domain/generated/output';
 import type { ChatState } from '@shepai/core/application/ports/output/services/interactive-session-service.interface';
+import type { InteractiveAgentSupport } from '@shepai/core/application/use-cases/interactive/get-interactive-agent-support.use-case';
 import { featureIdForApplication } from '@shepai/core/domain/shared/feature-id';
 
 import { ChatTab } from '@/components/features/chat/ChatTab';
-import type { ApplicationErrorState, ScaffoldingState } from '@/components/features/chat/ChatTab';
+import type { ScaffoldingState } from '@/components/features/chat/ChatTab';
 import { APPLICATION_CREATION_PLACEHOLDER_STEPS } from '@/components/features/chat/workflow-placeholder';
 import { useCloudDeployAction } from '@/hooks/use-cloud-deploy-action';
 import { useDeployAction } from '@/hooks/use-deploy-action';
 import { useTurnStatus } from '@/hooks/turn-statuses-provider';
 
 import { AppTopBar } from './app-top-bar';
+import { deriveApplicationErrorState } from './application-error-state';
 import { ResizableSplit } from './resizable-split';
 import { useDevServerCoordinator } from './use-dev-server-coordinator';
 import { ViewBody } from './view-body';
@@ -44,9 +46,15 @@ export interface ApplicationPageProps {
    * paint already shows the running URL.
    */
   initialDeployment?: InitialDeploymentSnapshot;
+  /** Whether the application's agent can run chat sessions. */
+  interactiveAgent?: InteractiveAgentSupport;
 }
 
-export function ApplicationPage({ application, initialChatState }: ApplicationPageProps) {
+export function ApplicationPage({
+  application,
+  initialChatState,
+  interactiveAgent,
+}: ApplicationPageProps) {
   const [compactPane, setCompactPane] = useState<'left' | 'right'>('left');
   // Hoisted dev-server state — subscribes to the shared
   // DeploymentStatusProvider scoped to this application's id. The server
@@ -105,23 +113,8 @@ export function ApplicationPage({ application, initialChatState }: ApplicationPa
           startedAt: new Date(application.createdAt).getTime(),
         };
 
-  // Derive a recovery-banner payload for ChatTab when the application
-  // is in a broken state. The server-side
-  // `application.status === Error` flag is the authoritative signal:
-  // the setup / build pipeline crashed, was logged, and the row was
-  // stamped. Without a visible banner the user would otherwise only
-  // see a red "ERROR" pill in the top bar with no explanation. The
-  // `/resume` endpoint re-runs the last failed step, so the banner
-  // is always retryable when we render it.
-  const applicationError: ApplicationErrorState | null =
-    application.status === ApplicationStatus.Error
-      ? {
-          kind: 'Setup failed',
-          message:
-            'The last setup run errored out before it could finish. Click Try again to re-run the failed step, or open the Smart Deploy activity log from the top bar to see what went wrong.',
-          retryable: true,
-        }
-      : null;
+  // Recovery banner for ChatTab when setup failed or the agent cannot chat.
+  const applicationError = deriveApplicationErrorState(application.status, interactiveAgent);
 
   return (
     // `h-full` (not `h-dvh`) so the page fills its shell's main area

@@ -19,6 +19,7 @@ import type { IInteractiveSessionRepository } from '../../ports/output/repositor
 import type { SendInteractiveMessageUseCase } from '../interactive/send-interactive-message.use-case.js';
 import { featureIdForApplication } from '../../../domain/shared/feature-id.js';
 import { APPLICATION_CREATION_WORKFLOW } from './application-creation.workflow.js';
+import { sendAndWatchTurn } from '../workflows/send-and-watch-turn.js';
 
 export interface ResumeApplicationWorkflowInput {
   applicationId: string;
@@ -47,9 +48,14 @@ export class ResumeApplicationWorkflowUseCase {
     const steps = await this.stepRepo.listByFeature(featureId);
     if (steps.length === 0) return;
 
-    // Reset interrupted steps back to pending
+    // Reset interrupted AND failed steps back to pending — "Try again" on the
+    // setup-failed banner promises to re-run the failed step (e.g. after the
+    // user logs in to their agent). A failed step left as-is stops the walk.
     for (const step of steps) {
-      if (step.status === WorkflowStepStatus.interrupted) {
+      if (
+        step.status === WorkflowStepStatus.interrupted ||
+        step.status === WorkflowStepStatus.failed
+      ) {
         await this.stepRepo.updateStatus(step.id, WorkflowStepStatus.pending);
         this.session.notifyWorkflowStep(featureId, await this.refreshStep(step.id));
       }
@@ -72,17 +78,17 @@ export class ResumeApplicationWorkflowUseCase {
       this.session.notifyWorkflowStep(featureId, await this.refreshStep(step.id));
       this.session.setActiveStep(featureId, step.id);
 
-      const turnDone = this.session.waitForTurnDone(featureId);
-
       try {
-        await this.sendMessage.execute({
-          featureId,
-          content: definition.prompt,
-          worktreePath: app.repositoryPath,
-          model: app.modelOverride,
-          agentType: app.agentType,
-        });
-        await turnDone;
+        const turn = await sendAndWatchTurn(this.session, featureId, () =>
+          this.sendMessage.execute({
+            featureId,
+            content: definition.prompt,
+            worktreePath: app.repositoryPath,
+            model: app.modelOverride,
+            agentType: app.agentType,
+          })
+        );
+        await turn.done;
 
         await this.stepRepo.updateStatus(step.id, WorkflowStepStatus.done, {
           summary: definition.title,

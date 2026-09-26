@@ -17,6 +17,7 @@ import type { SendInteractiveMessageUseCase } from '@shepai/core/application/use
 import type { GetInteractiveChatStateUseCase } from '@shepai/core/application/use-cases/interactive/get-interactive-chat-state.use-case';
 import type { IInteractiveSessionService } from '@shepai/core/application/ports/output/services/interactive-session-service.interface';
 import { getShepHomeDir } from '@shepai/core/infrastructure/services/filesystem/shep-directory.service';
+import { interactiveSessionErrorResponse } from '@/lib/interactive-error-response';
 
 export const dynamic = 'force-dynamic';
 
@@ -62,9 +63,8 @@ export async function POST(request: NextRequest, { params }: RouteParams): Promi
 
     return NextResponse.json({ message }, { status: 201 });
   } catch (error) {
-    if (error instanceof Error && error.message.includes('concurrent session limit')) {
-      return NextResponse.json({ error: error.message }, { status: 429 });
-    }
+    const expected = interactiveSessionErrorResponse(error);
+    if (expected) return expected;
     // eslint-disable-next-line no-console
     console.error('[POST /api/interactive/chat/:featureId/messages]', error);
     return NextResponse.json(

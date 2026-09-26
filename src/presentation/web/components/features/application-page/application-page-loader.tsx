@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/common/empty-state';
 import type { Application } from '@shepai/core/domain/generated/output';
 import type { ChatState } from '@shepai/core/application/ports/output/services/interactive-session-service.interface';
+import type { InteractiveAgentSupport } from '@shepai/core/application/use-cases/interactive/get-interactive-agent-support.use-case';
 import { DeploymentStatusProvider } from '@/hooks/deployment-status-provider';
 import type { DeploymentStatusEntry } from '@shepai/core/application/ports/output/services/deployment-service.interface';
 import { useApplicationUpdate } from '@/hooks/agent-events-provider';
@@ -18,6 +19,7 @@ interface AppData {
   application: Application;
   initialChatState?: ChatState;
   deployment?: { state: string; url: string | null };
+  interactiveAgent?: InteractiveAgentSupport;
 }
 
 export function ApplicationPageLoader({ applicationId }: { applicationId: string }) {
@@ -120,6 +122,7 @@ export function ApplicationPageLoader({ applicationId }: { applicationId: string
         application={application}
         initialChatState={initialChatState}
         initialDeployment={initialDeployment}
+        interactiveAgent={data.interactiveAgent}
       />
     </DeploymentStatusProvider>
   );

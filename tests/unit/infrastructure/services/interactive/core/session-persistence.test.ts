@@ -253,6 +253,28 @@ describe('SessionPersistence', () => {
     });
   });
 
+  describe('failSessionAndNotify', () => {
+    // A session that fails to boot never produces a turn, so the reason has to
+    // travel with the status change: it is the only message the user will see.
+    it('marks the session errored and notifies subscribers with the reason', async () => {
+      const featureCb = vi.fn();
+      dispatcher.subscribeByFeature('feat-1', featureCb);
+
+      await persistence.failSessionAndNotify('sess-1', 'feat-1', 'cursor-agent is not logged in');
+
+      expect(sessionRepo.updateStatus).toHaveBeenCalledWith(
+        'sess-1',
+        InteractiveSessionStatus.error
+      );
+      expect(featureCb).toHaveBeenCalledWith(
+        expect.objectContaining({
+          sessionStatus: InteractiveSessionStatus.error,
+          sessionError: 'cursor-agent is not logged in',
+        })
+      );
+    });
+  });
+
   describe('updateTurnStatusAndNotify', () => {
     it('calls updateTurnStatus and notifies subscribers with the new status', async () => {
       const featureCb = vi.fn();

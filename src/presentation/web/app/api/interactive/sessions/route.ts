@@ -3,14 +3,15 @@
  *
  * Start a new interactive agent session for a feature.
  * Returns 201 with { sessionId, status } on success.
- * Returns 429 when the concurrent session cap is reached.
+ * Returns 422 when the agent has no interactive mode, and 429 when the
+ * concurrent session cap is reached.
  */
 
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { resolve } from '@/lib/server-container';
 import type { StartInteractiveSessionUseCase } from '@shepai/core/application/use-cases/interactive/start-interactive-session.use-case';
-import { ConcurrentSessionLimitError } from '@shepai/core/domain/errors/concurrent-session-limit.error';
+import { interactiveSessionErrorResponse } from '@/lib/interactive-error-response';
 
 export const dynamic = 'force-dynamic';
 
@@ -36,15 +37,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     return NextResponse.json({ sessionId: session.id, status: session.status }, { status: 201 });
   } catch (error) {
-    if (error instanceof ConcurrentSessionLimitError) {
-      return NextResponse.json(
-        {
-          error: error.message,
-          code: 'CONCURRENT_SESSION_LIMIT',
-        },
-        { status: 429 }
-      );
-    }
+    const expected = interactiveSessionErrorResponse(error);
+    if (expected) return expected;
     // eslint-disable-next-line no-console
     console.error('[POST /api/interactive/sessions]', error);
     return NextResponse.json(

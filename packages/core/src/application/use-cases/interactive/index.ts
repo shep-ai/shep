@@ -14,3 +14,8 @@ export { GetInteractiveChatStateUseCase } from './get-interactive-chat-state.use
 export type { GetInteractiveChatStateInput } from './get-interactive-chat-state.use-case.js';
 export { RespondToInteractionUseCase } from './respond-to-interaction.use-case.js';
 export type { RespondToInteractionInput } from './respond-to-interaction.use-case.js';
+export { GetInteractiveAgentSupportUseCase } from './get-interactive-agent-support.use-case.js';
+export type {
+  GetInteractiveAgentSupportInput,
+  InteractiveAgentSupport,
+} from './get-interactive-agent-support.use-case.js';

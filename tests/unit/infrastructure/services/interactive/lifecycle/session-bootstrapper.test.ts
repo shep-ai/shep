@@ -32,6 +32,7 @@ import type {
 } from '@/application/ports/output/agents/interactive-agent-executor.interface.js';
 import { InteractiveSessionStatus, AgentType } from '@/domain/generated/output.js';
 import { ConcurrentSessionLimitError } from '@/domain/errors/concurrent-session-limit.error.js';
+import { InteractiveAgentUnsupportedError } from '@/domain/errors/interactive-agent-unsupported.error.js';
 
 async function flushPromises(rounds = 15): Promise<void> {
   for (let i = 0; i < rounds; i++) {
@@ -84,6 +85,7 @@ function makePersistence(): SessionPersistence {
   return {
     updateTurnStatusAndNotify: vi.fn().mockResolvedValue(undefined),
     updateSessionStatusAndNotify: vi.fn().mockResolvedValue(undefined),
+    failSessionAndNotify: vi.fn().mockResolvedValue(undefined),
     persistMessage: vi.fn().mockResolvedValue(undefined),
     flushAssistantBuffer: vi.fn().mockResolvedValue(undefined),
   } as unknown as SessionPersistence;
@@ -324,12 +326,44 @@ describe('SessionBootstrapper', () => {
       await bootstrapper.startSession('feat-1', '/wt');
       await flushPromises();
 
-      expect(persistence.updateSessionStatusAndNotify).toHaveBeenCalledWith(
+      // The boot error's own message is the reason the user sees (e.g.
+      // "cursor-agent is not logged in"); it must not be swallowed.
+      expect(persistence.failSessionAndNotify).toHaveBeenCalledWith(
         expect.any(String),
         'feat-1',
-        InteractiveSessionStatus.error
+        'agent failed'
       );
       expect(logger.error).toHaveBeenCalled();
+    });
+
+    // startSession marks the turn 'processing' before the async boot runs.
+    // A failed boot must hand it back, or the chat spinner never stops.
+    it('resets the turn to idle when boot throws', async () => {
+      (streamConsumer.consume as ReturnType<typeof vi.fn>).mockRejectedValue(
+        new Error('agent failed')
+      );
+
+      await bootstrapper.startSession('feat-1', '/wt');
+      await flushPromises();
+
+      const turnCalls = (persistence.updateTurnStatusAndNotify as ReturnType<typeof vi.fn>).mock
+        .calls;
+      expect(turnCalls.at(-1)).toEqual([expect.any(String), 'feat-1', 'idle']);
+    });
+
+    it('throws InteractiveAgentUnsupportedError before creating a session row', async () => {
+      (executorFactory.supportsInteractive as ReturnType<typeof vi.fn>).mockReturnValue(false);
+      (agentConfigResolver.resolveAgentType as ReturnType<typeof vi.fn>).mockReturnValue(
+        AgentType.GeminiCli
+      );
+
+      await expect(
+        bootstrapper.startSession('feat-1', '/wt', undefined, AgentType.GeminiCli)
+      ).rejects.toBeInstanceOf(InteractiveAgentUnsupportedError);
+
+      expect(executorFactory.supportsInteractive).toHaveBeenCalledWith(AgentType.GeminiCli);
+      expect(sessionRepo.create).not.toHaveBeenCalled();
+      expect(executorFactory.createInteractiveExecutor).not.toHaveBeenCalled();
     });
 
     it('skips sending boot prompt and goes to ready when bootPrompt is empty (silent boot)', async () => {
@@ -356,6 +390,32 @@ describe('SessionBootstrapper', () => {
         expect.any(String),
         'feat-1',
         InteractiveSessionStatus.ready
+      );
+    });
+  });
+
+  describe('assertInteractiveSupported', () => {
+    it('checks the agent resolved from the override or settings', () => {
+      (agentConfigResolver.resolveAgentType as ReturnType<typeof vi.fn>).mockReturnValue(
+        AgentType.ClaudeCode
+      );
+
+      expect(() => bootstrapper.assertInteractiveSupported()).not.toThrow();
+      expect(agentConfigResolver.resolveAgentType).toHaveBeenCalledWith(undefined);
+      expect(executorFactory.supportsInteractive).toHaveBeenCalledWith(AgentType.ClaudeCode);
+    });
+
+    it('throws a typed error naming the agent when it has no interactive mode', () => {
+      (executorFactory.supportsInteractive as ReturnType<typeof vi.fn>).mockReturnValue(false);
+      (agentConfigResolver.resolveAgentType as ReturnType<typeof vi.fn>).mockReturnValue(
+        AgentType.GeminiCli
+      );
+
+      expect(() => bootstrapper.assertInteractiveSupported(AgentType.GeminiCli)).toThrow(
+        InteractiveAgentUnsupportedError
+      );
+      expect(() => bootstrapper.assertInteractiveSupported(AgentType.GeminiCli)).toThrow(
+        /Gemini CLI does not support chat sessions yet/
       );
     });
   });

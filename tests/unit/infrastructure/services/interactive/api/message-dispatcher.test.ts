@@ -20,6 +20,7 @@ import type { IInteractiveSessionRepository } from '@/application/ports/output/r
 import type { IInteractiveMessageRepository } from '@/application/ports/output/repositories/interactive-message-repository.interface.js';
 import type { InteractiveSession } from '@/domain/generated/output.js';
 import { InteractiveSessionStatus, InteractiveMessageRole } from '@/domain/generated/output.js';
+import { InteractiveAgentUnsupportedError } from '@/domain/errors/interactive-agent-unsupported.error.js';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -70,6 +71,7 @@ function makePersistence(): SessionPersistence {
 function makeBootstrapper(): SessionBootstrapper {
   return {
     startSession: vi.fn().mockResolvedValue({ id: 'session-1', featureId: 'feat-1' }),
+    assertInteractiveSupported: vi.fn(),
   } as unknown as SessionBootstrapper;
 }
 
@@ -280,6 +282,51 @@ describe('MessageDispatcher', () => {
         undefined,
         'kickoff override'
       );
+    });
+
+    // An agent with no interactive mode must be rejected before anything is
+    // written: a persisted user message with no reply would reappear on every
+    // reload, and the boot would only fail later in the background.
+    it('rejects an unsupported agent before persisting the message or booting', async () => {
+      vi.mocked(bootstrapper.assertInteractiveSupported).mockImplementation(() => {
+        throw new InteractiveAgentUnsupportedError('gemini-cli');
+      });
+
+      await expect(
+        dispatcher.sendUserMessage('feat-1', 'hello', '/tmp/worktree', undefined, 'gemini-cli')
+      ).rejects.toBeInstanceOf(InteractiveAgentUnsupportedError);
+
+      expect(bootstrapper.assertInteractiveSupported).toHaveBeenCalledWith('gemini-cli');
+      expect(persistence.persistMessage).not.toHaveBeenCalled();
+      expect(bootstrapper.startSession).not.toHaveBeenCalled();
+    });
+
+    it('checks the requested agent before stopping a live session to switch to it', async () => {
+      const sessionId = 'session-live';
+      const featureId = 'feat-switch';
+      registry.set(sessionId, makeSessionState(sessionId, featureId));
+      vi.mocked(bootstrapper.assertInteractiveSupported).mockImplementation(() => {
+        throw new InteractiveAgentUnsupportedError('gemini-cli');
+      });
+
+      await expect(
+        dispatcher.sendUserMessage(featureId, 'hello', '/tmp/worktree', undefined, 'gemini-cli')
+      ).rejects.toBeInstanceOf(InteractiveAgentUnsupportedError);
+
+      expect(terminator.stop).not.toHaveBeenCalled();
+      expect(persistence.persistMessage).not.toHaveBeenCalled();
+    });
+
+    it('does not re-check a live session when no agent is requested', async () => {
+      const sessionId = 'session-ready-3';
+      const featureId = 'feat-ready-3';
+      registry.set(sessionId, makeSessionState(sessionId, featureId));
+      vi.mocked(sessionRepo.findById).mockResolvedValue(makeReadyDbSession(sessionId, featureId));
+
+      await dispatcher.sendUserMessage(featureId, 'hello', '/tmp/worktree');
+
+      expect(bootstrapper.assertInteractiveSupported).not.toHaveBeenCalled();
+      expect(turnExecutor.enqueueTurn).toHaveBeenCalledOnce();
     });
 
     it('enqueues turn on ready session', async () => {
