@@ -50,13 +50,19 @@ filesToCreate:
   - "src/presentation/web/components/common/effort-select/effort-select.tsx"
   - "src/presentation/web/components/common/effort-select/effort-select.stories.tsx"
   - "src/presentation/web/components/common/effort-select/index.ts"
-  - "src/presentation/web/components/features/settings/effort-settings-row.tsx"
-  - "src/presentation/web/components/features/settings/effort-settings-row.stories.tsx"
+  - "src/presentation/web/components/features/settings/effort-settings-control.tsx"
+  - "src/presentation/web/components/features/settings/effort-settings-control.stories.tsx"
+  - "packages/core/src/application/use-cases/settings/set-default-effort.use-case.ts"
+  - "src/presentation/web/app/actions/update-default-effort.ts"
+  - ".storybook/mocks/app/actions/update-default-effort.ts"
+  - "tests/unit/application/use-cases/settings/set-default-effort.use-case.test.ts"
+  - "tests/unit/presentation/web/actions/update-default-effort.test.ts"
+  - "tests/unit/presentation/web/components/features/settings/effort-settings-control.test.tsx"
   - "tests/unit/domain/shared/agent-effort.test.ts"
   - "tests/unit/domain/shared/default-model.test.ts"
   - "tests/unit/presentation/cli/commands/settings/effort.command.test.ts"
-  - "tests/unit/presentation/web/components/common/effort-select.test.tsx"
-  - "tests/integration/infrastructure/persistence/sqlite/migrations/147-add-agent-effort.test.ts"
+  - "tests/unit/presentation/web/common/effort-select.test.tsx"
+  - "tests/integration/infrastructure/persistence/sqlite/migration-147-agent-effort.test.ts"
   - "tests/e2e/web/effort-settings.spec.ts"
   - "tests/e2e/cli/settings-effort.test.ts"
 filesToModify:
@@ -90,6 +96,11 @@ filesToModify:
   - "src/presentation/web/components/common/feature-create-drawer/feature-create-drawer.tsx"
   - "src/presentation/web/components/common/feature-drawer-tabs/overview-tab.tsx"
   - "src/presentation/web/app/actions/create-feature.ts"
+  - "src/presentation/web/app/actions/update-model.ts"
+  - "src/presentation/web/app/build-feature-node-data.ts"
+  - "packages/core/src/application/use-cases/features/create/create-feature-from-remote.use-case.ts"
+  - "packages/core/src/infrastructure/di/modules/register-use-cases.ts"
+  - "src/presentation/cli/ui/tables.ts"
   - "translations/*/cli.json"
   - "translations/*/web.json"
   - "docs/guides/configuration.md"
@@ -137,8 +148,11 @@ content: |
      only when effort is set.
   4. **Presentation.**
      - CLI: `shep settings effort` and `feat new --effort`.
-     - Web: a shared `EffortSelect` used by the settings row and the create drawer, plus a
-       read-only badge in the overview.
+     - Web: a shared `EffortSelect` used by the settings control and the create drawer, plus
+       a read-only badge in the overview.
+     - `SetDefaultEffortUseCase` owns validation and the set/clear rule, and CLI and web both
+       call it. `updateSettingsAction`'s deep merge skips `undefined`, so it cannot clear a
+       field.
      - `settings-page-client.tsx` (2,272 lines) gets only the row import and mount. Refactoring
        that file is out of scope and flagged in the PR.
   5. **E2E.**

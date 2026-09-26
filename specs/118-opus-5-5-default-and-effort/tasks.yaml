@@ -11,7 +11,7 @@ tasks:
     Add `AgentEffort` (low, medium, high, xhigh, max), `ModelConfiguration.effort?`,
     `AgentRun.effort?` and `AgentFeature.effort`, then regenerate. Add `parseAgentEffort` in
     `domain/shared/agent-effort.ts` as the single validator.
-  state: Todo
+  state: Done
   dependencies: []
   acceptanceCriteria:
   - pnpm generate emits AgentEffort with the five wire values and optional effort fields
@@ -31,7 +31,7 @@ tasks:
   description: >-
     `domain/shared/default-model.ts` exports DEFAULT_MODEL_ID. The settings factory, the
     TypeSpec default, the interactive Claude executor and the chat-state assembler use it.
-  state: Todo
+  state: Done
   dependencies: []
   acceptanceCriteria:
   - createDefaultSettings().models.default === 'claude-opus-5-5'
@@ -51,7 +51,7 @@ tasks:
   description: >-
     Migration 147 adds nullable settings.model_effort and agent_runs.effort. The settings mapper,
     the agent-run mapper and the repository create and read the new columns.
-  state: Todo
+  state: Done
   dependencies: [task-1]
   acceptanceCriteria:
   - migration is idempotent (re-run is a no-op)
@@ -72,7 +72,7 @@ tasks:
     CreateFeatureInput.effort; create pins input.effort ?? settings.models.effort on the run. The
     spawn-feature-agent, resume-feature, approve-agent-run and reject-agent-run paths forward
     run.effort to IFeatureAgentProcessService.spawn.
-  state: Todo
+  state: Done
   dependencies: [task-3]
   acceptanceCriteria:
   - create with input.effort pins it; without input it uses settings; with neither it stays unset
@@ -91,7 +91,7 @@ tasks:
   description: >-
     The process service appends --effort. The worker parses it with parseAgentEffort and seeds
     state.effort, forwarding it on re-spawn. buildExecutorOptions sets options.effort.
-  state: Todo
+  state: Done
   dependencies: [task-4]
   acceptanceCriteria:
   - spawn with effort 'xhigh' includes ['--effort','xhigh'] in argv
@@ -112,7 +112,7 @@ tasks:
     The Claude Code executor declares AgentFeature.effort and appends --effort <level> when
     options.effort is set. The Cursor CLI map converts claude-opus-5-5 to a Cursor-served id so
     the new default works on Cursor.
-  state: Todo
+  state: Done
   dependencies: [task-1]
   acceptanceCriteria:
   - buildArgs with effort 'max' contains --effort max; without effort the argv is unchanged
@@ -133,7 +133,7 @@ tasks:
     `shep settings effort [level]` sets models.effort, `--clear` unsets it, and with no argument it
     runs an interactive select. `shep feat new --effort <level>` forwards to create. Invalid
     levels exit non-zero. i18n keys in every locale.
-  state: Todo
+  state: Done
   dependencies: [task-4]
   acceptanceCriteria:
   - settings effort high persists high; --clear removes it; invalid value exits 1 listing valid levels
@@ -155,7 +155,7 @@ tasks:
     models.effort through updateSettingsAction. The create drawer passes effort through
     createFeature. The overview tab shows the pinned effort. Stories accompany every new
     component; i18n goes into every locale.
-  state: Todo
+  state: Done
   dependencies: [task-4]
   acceptanceCriteria:
   - EffortSelect lists Agent default + five levels and calls onChange(undefined) for Agent default
@@ -178,7 +178,7 @@ tasks:
     Add a Playwright spec that sets effort in settings, reloads, and clears it. Add a CLI e2e test
     for the settings effort round trip, and update the settings-init default-model assertion.
     Document effort in docs/guides/configuration.md.
-  state: Todo
+  state: Done
   dependencies: [task-7, task-8]
   acceptanceCriteria:
   - tests/e2e/web/effort-settings.spec.ts passes locally
@@ -196,8 +196,8 @@ content: |
 
   ## Acceptance checklist
 
-  - [ ] Fresh install default model is claude-opus-5-5
-  - [ ] Effort persists in settings and on agent runs
-  - [ ] Effort reaches `claude --effort` on every spawn/resume path
-  - [ ] CLI and web UI can set, clear and override effort
-  - [ ] Unit, integration and e2e tests green
+  - [x] Fresh install default model is claude-opus-5-5
+  - [x] Effort persists in settings and on agent runs
+  - [x] Effort reaches `claude --effort` on every spawn/resume path
+  - [x] CLI and web UI can set, clear and override effort
+  - [x] Unit, integration and e2e tests green
