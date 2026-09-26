@@ -162,7 +162,7 @@ import { ListGitHubRepositoriesUseCase } from '../../../application/use-cases/re
 import { ListGitHubOrganizationsUseCase } from '../../../application/use-cases/repositories/list-github-organizations.use-case.js';
 import { ListOperationLogEntriesUseCase } from '../../../application/use-cases/operations/list-operation-log-entries.use-case.js';
 import { CreateFeatureFromRemoteUseCase } from '../../../application/use-cases/features/create/create-feature-from-remote.use-case.js';
-import { CreateProjectFeatureUseCase } from '../../../application/use-cases/features/create/create-project-feature.use-case.js';
+import { StartApplicationUseCase } from '../../../application/use-cases/applications/start-application.use-case.js';
 import { CheckAndUnblockFeaturesUseCase } from '../../../application/use-cases/features/check-and-unblock-features.use-case.js';
 import { SpawnFeatureAgentUseCase } from '../../../application/use-cases/features/spawn-feature-agent.use-case.js';
 import { FeatureCapacityService } from '../../../application/use-cases/features/capacity/feature-capacity.service.js';
@@ -344,7 +344,7 @@ export function registerUseCases(container: DependencyContainer): void {
   container.registerSingleton(ImportGitHubRepositoryUseCase);
   container.registerSingleton(InitRemoteRepositoryUseCase);
   container.registerSingleton(CreateFeatureFromRemoteUseCase);
-  container.registerSingleton(CreateProjectFeatureUseCase);
+  container.registerSingleton(StartApplicationUseCase);
   container.registerSingleton(ListGitHubRepositoriesUseCase);
   container.registerSingleton(ListGitHubOrganizationsUseCase);
   container.registerSingleton(ListOperationLogEntriesUseCase);
@@ -542,8 +542,8 @@ export function registerUseCases(container: DependencyContainer): void {
   container.register('CreateFeatureFromRemoteUseCase', {
     useFactory: (c) => c.resolve(CreateFeatureFromRemoteUseCase),
   });
-  container.register('CreateProjectFeatureUseCase', {
-    useFactory: (c) => c.resolve(CreateProjectFeatureUseCase),
+  container.register('StartApplicationUseCase', {
+    useFactory: (c) => c.resolve(StartApplicationUseCase),
   });
   container.register('ListGitHubRepositoriesUseCase', {
     useFactory: (c) => c.resolve(ListGitHubRepositoriesUseCase),

@@ -2771,7 +2771,12 @@ Rules:
 3. A greenfield project defaults to the spec-driven workflow — an empty repo has no stack, so
    skipping research is the wrong default.
 4. Orchestration of "create project + create feature" lives in a core use case
-   (`CreateProjectFeatureUseCase`), never in a server action, so the rules are testable and
+   (`StartApplicationUseCase`), never in a server action, so the rules are testable and
    shared by every surface.
 5. When a user's prompt names an existing folder, a "new project" flow must notice and offer to
    work on that folder instead of silently creating an empty sandbox.
+6. Build on the user's mental model instead of teaching yours. "Everything is a feature" was
+   true internally, but people think "start an app, then add features". The first fix — label
+   two products ("Features" vs an "App Builder") honestly — made the split harder, not easier.
+   The right fix made the opinionated template one *starter* of an app, so the choice is visible
+   at creation and every feature has a home.

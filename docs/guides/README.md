@@ -7,7 +7,7 @@ Guides for using Shep AI CLI effectively.
 | Guide                                                                | Description                             |
 | -------------------------------------------------------------------- | --------------------------------------- |
 | [getting-started.md](./getting-started.md)                           | Installation and first run              |
-| [new-project-sdd.md](./new-project-sdd.md)                           | Start a new project with SDD, any stack |
+| [start-an-app.md](./start-an-app.md)                                 | Start an app, then add features         |
 | [configuration.md](./configuration.md)                               | Settings, agents, and env vars          |
 | [cli-commands.md](./cli-commands.md)                                 | Complete CLI command reference          |
 | [web-ui.md](./web-ui.md)                                             | Web interface usage                     |
@@ -36,7 +36,7 @@ agent and a model — happens there, in the browser.
 
 New to Shep? Start with [getting-started.md](./getting-started.md) for installation and your first feature.
 
-Starting a brand-new project? [new-project-sdd.md](./new-project-sdd.md) explains Features vs the App Builder and walks through a spec-driven start in an empty folder.
+Starting something new? [start-an-app.md](./start-an-app.md) walks through starting an app (any stack, or the Vite + shadcn prototype template) and adding features to it.
 
 ### Configuration
 

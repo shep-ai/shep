@@ -196,10 +196,9 @@ export function AppSidebar({
             </div>
           </SidebarMenuItem>
 
-          {/* Control Center — the stack-agnostic, spec-driven Feature path —
-              comes first. The App Builder is the opinionated Vite + shadcn
-              quick-app path; listing it first as "Home" made users take it
-              for Shep's main workflow. */}
+          {/* Control Center — the canvas of every app and its features — comes
+              first and is Home. Listing the Apps page first as "Home" made users
+              take its Vite + shadcn prototype template for Shep's main workflow. */}
           <SidebarNavItem
             icon={Home}
             label={t('navigation.controlCenter')}

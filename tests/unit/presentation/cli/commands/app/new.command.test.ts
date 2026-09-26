@@ -8,8 +8,13 @@
 
 import 'reflect-metadata';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { ApplicationStatus } from '@/domain/generated/output.js';
-import type { Application } from '@/domain/generated/output.js';
+import {
+  ApplicationStarter,
+  ApplicationStatus,
+  BuildMode,
+  SdlcLifecycle,
+} from '@/domain/generated/output.js';
+import type { Application, Feature } from '@/domain/generated/output.js';
 
 const { mockResolve, mockExecute } = vi.hoisted(() => ({
   mockResolve: vi.fn(),
@@ -22,8 +27,8 @@ vi.mock('@/infrastructure/di/container.js', () => ({
   },
 }));
 
-vi.mock('@/application/use-cases/applications/create-application.use-case.js', () => ({
-  CreateApplicationUseCase: class {
+vi.mock('@/application/use-cases/applications/start-application.use-case.js', () => ({
+  StartApplicationUseCase: class {
     execute = mockExecute;
   },
 }));
@@ -47,6 +52,35 @@ function makeApplication(overrides?: Partial<Application>): Application {
   };
 }
 
+function makeFeature(overrides?: Partial<Feature>): Feature {
+  return {
+    id: 'f1e2d3c4-0000-4000-8000-000000000001',
+    name: 'Todo list',
+    slug: 'todo-list',
+    description: 'Build a todo list app',
+    userQuery: 'Build a todo list app',
+    repositoryPath: '/home/user/.shep/projects/todo-app-f3a2c1',
+    branch: 'feat/todo-list',
+    lifecycle: SdlcLifecycle.Requirements,
+    messages: [],
+    relatedArtifacts: [],
+    buildMode: BuildMode.Spec,
+    fast: false,
+    push: false,
+    openPr: false,
+    forkAndPr: false,
+    commitSpecs: true,
+    ciWatchEnabled: true,
+    enableEvidence: false,
+    injectSkills: false,
+    commitEvidence: false,
+    approvalGates: { allowPrd: false, allowPlan: false, allowMerge: false },
+    createdAt: new Date('2025-01-01'),
+    updatedAt: new Date('2025-01-01'),
+    ...overrides,
+  };
+}
+
 describe('app new command', () => {
   let consoleSpy: ReturnType<typeof vi.spyOn>;
 
@@ -61,25 +95,64 @@ describe('app new command', () => {
   it('should create a command named "new" with correct description', () => {
     const cmd = createNewCommand();
     expect(cmd.name()).toBe('new');
-    expect(cmd.description()).toBe('Create a new application');
+    expect(cmd.description()).toMatch(/any stack/i);
   });
 
-  it('should create an application with description', async () => {
-    const app = makeApplication();
+  it('starts a blank app with a spec-driven first feature by default', async () => {
+    const app = makeApplication({ setupComplete: true });
     mockExecute.mockResolvedValue({
       application: app,
       repositoryPath: app.repositoryPath,
+      feature: makeFeature(),
     });
 
     const cmd = createNewCommand();
     await cmd.parseAsync(['Build a todo list app'], { from: 'user' });
 
+    expect(mockExecute).toHaveBeenCalledWith({
+      description: 'Build a todo list app',
+      starter: ApplicationStarter.Blank,
+    });
+    const output = consoleSpy.mock.calls.map((c: unknown[]) => c[0]).join('\n');
+    expect(output).toContain('f1e2d3c4-0000-4000-8000-000000000001');
+    expect(output).toContain('shep feat new');
+    expect(output).toContain(app.repositoryPath);
+  });
+
+  it('uses the Vite + shadcn template with --starter vite-shadcn', async () => {
+    const app = makeApplication();
+    mockExecute.mockResolvedValue({ application: app, repositoryPath: app.repositoryPath });
+
+    const cmd = createNewCommand();
+    await cmd.parseAsync(['Landing page', '--starter', 'vite-shadcn'], { from: 'user' });
+
     expect(mockExecute).toHaveBeenCalledWith(
-      expect.objectContaining({
-        description: 'Build a todo list app',
-        initialPrompt: 'Build a todo list app',
-      })
+      expect.objectContaining({ starter: ApplicationStarter.ViteShadcn })
     );
+  });
+
+  it('runs the first feature in fast mode with --fast', async () => {
+    const app = makeApplication();
+    mockExecute.mockResolvedValue({
+      application: app,
+      repositoryPath: app.repositoryPath,
+      feature: makeFeature({ buildMode: BuildMode.Fast }),
+    });
+
+    const cmd = createNewCommand();
+    await cmd.parseAsync(['Build a todo list app', '--fast'], { from: 'user' });
+
+    expect(mockExecute).toHaveBeenCalledWith(
+      expect.objectContaining({ starter: ApplicationStarter.Blank, buildMode: BuildMode.Fast })
+    );
+  });
+
+  it('rejects an unknown starter without creating anything', async () => {
+    const cmd = createNewCommand();
+    await cmd.parseAsync(['Build a todo list app', '--starter', 'rails'], { from: 'user' });
+
+    expect(mockExecute).not.toHaveBeenCalled();
+    expect(process.exitCode).toBe(1);
   });
 
   it('should display application details after creation', async () => {
@@ -123,9 +196,7 @@ describe('app new command', () => {
       from: 'user',
     });
 
-    expect(mockExecute).toHaveBeenCalledWith(
-      expect.objectContaining({ modelOverride: 'claude-opus-4-6' })
-    );
+    expect(mockExecute).toHaveBeenCalledWith(expect.objectContaining({ model: 'claude-opus-4-6' }));
   });
 
   it('should set process.exitCode = 1 on error', async () => {

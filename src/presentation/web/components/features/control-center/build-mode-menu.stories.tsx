@@ -23,7 +23,7 @@ export const Fast: Story = {
   args: { mode: BuildMode.Fast },
 };
 
-/** App Builder mode — the option names its Vite + shadcn stack. */
+/** Quick prototype mode — the option names its Vite + shadcn stack. */
 export const QuickWebApp: Story = {
   args: { mode: BuildMode.Application },
 };

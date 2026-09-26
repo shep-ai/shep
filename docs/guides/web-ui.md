@@ -66,28 +66,32 @@ shep ui --port 8080
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
-## Control Center vs App Builder
+## Apps and Features
 
-The sidebar starts with **Control Center**, the home of the Feature workflow: any stack, your
-repositories or a new empty folder, and optional spec-driven gates (requirements → research →
-plan) before code.
+Start an **app**, then add **features** to it. The sidebar starts with **Control Center**, the
+canvas of every app and its features. **Apps** (`/applications`) lists your apps and starts new
+ones:
 
-**App Builder** (the Applications page, `/applications`) is a separate, opinionated path. It
-creates a Vite + React + TypeScript + Tailwind + shadcn web app under `~/.shep/projects/` and
-builds it straight from chat with a live preview, with no spec phase.
+| Starter | Stack | First steps |
+| --- | --- | --- |
+| Plan it first (default) | Any, chosen by the first feature during research | Requirements, research and a plan you approve before code |
+| Quick prototype | Vite + React + TypeScript + Tailwind + shadcn | Built straight from chat with a live preview |
 
-The **Start from a prompt** composer serves both paths and always shows what the selected mode
-does and which stack it uses:
+The **Start from a prompt** composer (Apps → **New app**, or Control Center) always shows what the
+selected mode does and which stack it uses:
 
 | Mode | What it does | Stack |
 | --- | --- | --- |
-| Spec-driven (default in Control Center) | New empty project, then requirements, research and a plan you approve before code | Any, chosen during research |
-| Fast | New empty project, implemented straight from the prompt | Any |
-| Quick web app | App Builder application | Vite + React + Tailwind + shadcn |
+| Spec-driven (default) | New app whose first feature runs requirements, research and a plan | Any, chosen during research |
+| Fast | New app whose first feature is implemented straight from the prompt | Any |
+| Quick prototype | New app from the prototype template | Vite + React + Tailwind + shadcn |
+
+On an app's page, **Add feature** opens a spec-driven feature scoped to that app. Features created
+on an app's folder from anywhere (the CLI, the create drawer) attach to the app automatically.
 
 If the prompt names an existing folder (for example `/home/me/code/app`), the composer offers
 **Work on this folder instead**, which opens a spec-driven feature on that folder rather than an
-empty project. See [Start a new project with SDD](./new-project-sdd.md).
+empty app. See [Start an app](./start-an-app.md).
 
 ## Feature Workflow
 

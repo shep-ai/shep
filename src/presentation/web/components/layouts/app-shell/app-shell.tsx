@@ -51,6 +51,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useNotifications } from '@/hooks/use-notifications';
 import { useFeatureFlags } from '@/hooks/feature-flags-context';
 import type { ShellVariant } from '@/lib/shell-variant';
+import { ShellVariantProvider } from '@/hooks/shell-variant-context';
 import { AppsOnlyShell } from './apps-only-shell';
 
 interface AppShellProps {
@@ -365,9 +366,11 @@ export function AppShell({
         <DrawerCloseGuardProvider>
           <SidebarFeaturesProvider initialHasRepositories={initialHasRepositories}>
             <TurnStatusesBridge>
-              <AppShellInner sidebarOpen={sidebarOpen} variant={variant}>
-                {children}
-              </AppShellInner>
+              <ShellVariantProvider variant={variant}>
+                <AppShellInner sidebarOpen={sidebarOpen} variant={variant}>
+                  {children}
+                </AppShellInner>
+              </ShellVariantProvider>
             </TurnStatusesBridge>
           </SidebarFeaturesProvider>
         </DrawerCloseGuardProvider>

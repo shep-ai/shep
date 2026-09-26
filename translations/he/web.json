@@ -279,7 +279,7 @@
       "labelDescription": "The page you land on when opening the web UI",
       "options": {
         "control-center": "Control Center",
-        "applications": "בונה האפליקציות",
+        "applications": "אפליקציות",
         "features": "Features"
       },
       "hint": "This controls where you land when you open the web UI. You can change it at any time."
@@ -382,7 +382,7 @@
     "sessions": "סשנים",
     "tools": "כלים",
     "skills": "כישורים",
-    "applications": "בונה האפליקציות",
+    "applications": "אפליקציות",
     "agentQuestions": "Agent Questions",
     "aspm": "Security",
     "aspmDashboard": "Dashboard",
@@ -462,8 +462,8 @@
         "stack": "כל סטאק"
       },
       "application": {
-        "label": "אפליקציית ווב מהירה",
-        "description": "אב-טיפוס מיידי של אפליקציית ווב עם תצוגה חיה. ללא שלב מפרט.",
+        "label": "אב-טיפוס מהיר",
+        "description": "אב-טיפוס מיידי של אפליקציית ווב מתבנית Vite + shadcn עם תצוגה חיה. ללא שלב מפרט.",
         "stack": "Vite + React + Tailwind + shadcn"
       }
     },
@@ -592,7 +592,8 @@
     "newApplication": "התחל מתיאור",
     "newSddFeature": "פיצ'ר SDD חדש",
     "newSddForApp": "פיצ'ר SDD חדש עבור {{appName}}",
-    "openInControlCenterSdd": "פתיחה ב-Control Center (מצב SDD)"
+    "openInControlCenterSdd": "פתיחה ב-Control Center (מצב SDD)",
+    "addFeature": "הוסף פיצ׳ר"
   },
   "chat": {
     "shepChat": "צ'אט Shep",

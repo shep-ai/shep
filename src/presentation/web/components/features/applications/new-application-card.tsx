@@ -12,17 +12,17 @@ import {
 } from 'lucide-react';
 
 export interface NewApplicationCardProps {
-  /** Opens the App Builder prompt (Vite + React + shadcn). */
-  onQuickWebApp(): void;
-  /** Opens the stack-agnostic, spec-driven project prompt. Omit where Features are unavailable. */
-  onSpecDrivenProject?: () => void;
+  /** Starts a blank app whose first feature plans it (any stack). Omit where Features are unavailable. */
+  onPlanFirst?: () => void;
+  /** Starts an app from the Vite + React + Tailwind + shadcn template. */
+  onQuickPrototype(): void;
   onOpenLocalDirectory?: () => void;
   onImportGitHub?: () => void;
   /** True while a local folder import is running. */
   importing?: boolean;
 }
 
-type OptionId = 'quick-web-app' | 'spec-driven-project' | 'open-local' | 'import-github';
+type OptionId = 'plan-first' | 'quick-prototype' | 'open-local' | 'import-github';
 
 interface CreateOption {
   id: OptionId;
@@ -33,31 +33,31 @@ interface CreateOption {
 }
 
 /**
- * Creation choices on the App Builder page. Each option says what it builds,
- * so the single-stack App Builder is never mistaken for Shep's stack-agnostic,
- * spec-driven Feature workflow.
+ * Ways to start an app. Each option says which stack it produces, so the
+ * Vite + shadcn prototype template is never mistaken for Shep's
+ * stack-agnostic, spec-driven start. Features are added to the app afterwards.
  */
 export function NewApplicationCard({
-  onQuickWebApp,
-  onSpecDrivenProject,
+  onPlanFirst,
+  onQuickPrototype,
   onOpenLocalDirectory,
   onImportGitHub,
   importing,
 }: NewApplicationCardProps) {
   const options: CreateOption[] = [
     {
-      id: 'quick-web-app',
-      icon: Sparkles,
-      label: 'Quick web app',
-      description: 'Vite + React + shadcn · live preview, no spec phase',
-      onClick: onQuickWebApp,
+      id: 'plan-first',
+      icon: ClipboardList,
+      label: 'Plan it first',
+      description: 'Any stack · requirements, research and a plan before code',
+      onClick: onPlanFirst,
     },
     {
-      id: 'spec-driven-project',
-      icon: ClipboardList,
-      label: 'Spec-driven project',
-      description: 'Any stack · requirements, research and a plan first',
-      onClick: onSpecDrivenProject,
+      id: 'quick-prototype',
+      icon: Sparkles,
+      label: 'Quick prototype',
+      description: 'Vite + React + shadcn template · live preview, no spec phase',
+      onClick: onQuickPrototype,
     },
     {
       id: 'open-local',
@@ -77,7 +77,7 @@ export function NewApplicationCard({
 
   return (
     <section
-      aria-label="Create an application"
+      aria-label="Start an app"
       className="border-primary/25 bg-primary/[0.025] flex min-h-[320px] flex-col rounded-xl border border-dashed p-5"
     >
       <div className="mb-5 flex items-center gap-3">
@@ -85,7 +85,7 @@ export function NewApplicationCard({
           <Plus className="size-5" aria-hidden="true" />
         </span>
         <div>
-          <h2 className="text-sm font-semibold">Make room for your next idea</h2>
+          <h2 className="text-sm font-semibold">Start a new app</h2>
           <p className="text-muted-foreground mt-1 text-xs">Pick how Shep should build it.</p>
         </div>
       </div>

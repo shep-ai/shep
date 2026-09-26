@@ -279,7 +279,7 @@
       "labelDescription": "The page you land on when opening the web UI",
       "options": {
         "control-center": "Control Center",
-        "applications": "App Builder",
+        "applications": "Apps",
         "features": "Features"
       },
       "hint": "This controls where you land when you open the web UI. You can change it at any time."
@@ -382,7 +382,7 @@
     "sessions": "Sessions",
     "tools": "Tools",
     "skills": "Skills",
-    "applications": "App Builder",
+    "applications": "Apps",
     "agentQuestions": "Agent Questions",
     "aspm": "Security",
     "aspmDashboard": "Dashboard",
@@ -462,8 +462,8 @@
         "stack": "Any stack"
       },
       "application": {
-        "label": "Quick web app",
-        "description": "Instant web-app prototype with a live preview. No spec phase.",
+        "label": "Quick prototype",
+        "description": "Instant web-app prototype from the Vite + shadcn template, with a live preview. No spec phase.",
         "stack": "Vite + React + Tailwind + shadcn"
       }
     },
@@ -592,7 +592,8 @@
     "newApplication": "Start from a prompt",
     "newSddFeature": "New SDD feature",
     "newSddForApp": "New SDD feature for {{appName}}",
-    "openInControlCenterSdd": "Open in Control Center (SDD mode)"
+    "openInControlCenterSdd": "Open in Control Center (SDD mode)",
+    "addFeature": "Add feature"
   },
   "chat": {
     "shepChat": "Shep Chat",

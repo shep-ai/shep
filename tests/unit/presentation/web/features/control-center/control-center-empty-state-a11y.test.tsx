@@ -132,7 +132,7 @@ describe('ControlCenterEmptyState — keyboard trap (P0-2)', () => {
     expect(screen.getByTestId('build-mode-selector')).toHaveTextContent('Fast');
 
     await user.keyboard(MODE_CHORD);
-    expect(screen.getByTestId('build-mode-selector')).toHaveTextContent('Quick web app');
+    expect(screen.getByTestId('build-mode-selector')).toHaveTextContent('Quick prototype');
 
     await user.keyboard(MODE_CHORD);
     expect(screen.getByTestId('build-mode-selector')).toHaveTextContent('Spec-driven');
@@ -172,7 +172,7 @@ describe('ControlCenterEmptyState — keyboard trap (P0-2)', () => {
     await user.click(screen.getByTestId('build-mode-application'));
 
     await waitFor(() => {
-      expect(screen.getByRole('status')).toHaveTextContent(/Quick web app/);
+      expect(screen.getByRole('status')).toHaveTextContent(/Quick prototype/);
     });
   });
 

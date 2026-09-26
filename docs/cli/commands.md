@@ -659,14 +659,14 @@ shep ide feat-123 --zed
 
 ## Application Commands
 
-`shep app` manages applications — the deployment-facing aggregate that
-repositories and clusters attach to.
+`shep app` starts and manages apps. Start an app, then add features to it: every feature
+created in an app's folder (`shep feat new`) attaches to that app.
 
 | Command                      | Description                                                |
 | ---------------------------- | ---------------------------------------------------------- |
 | `shep app ls`                | List applications                                          |
 | `shep app show`              | Display details of an application                          |
-| `shep app new`               | Create a new application                                   |
+| `shep app new`               | Start a new app: blank (any stack; spec-driven first feature) or `--starter vite-shadcn` |
 | `shep app del`               | Delete an application                                      |
 | `shep app cloud-providers ls`      | List cloud deployment providers and their connection state |
 | `shep app cloud-providers connect` | Connect a provider with an API token                 |
@@ -674,6 +674,13 @@ repositories and clusters attach to.
 | `shep app deploy start`      | Start a cloud deployment (streams progress)                |
 | `shep app deploy status`     | Show the latest cloud deployment status                    |
 | `shep app git create-remote` | Create a GitHub repository for the application and push    |
+
+```bash
+shep app new "A booking tool for climbing gyms"              # blank starter, spec-driven first feature
+shep app new "A photo-renaming CLI" --fast                   # blank starter, first feature built directly
+shep app new "Landing page for a bakery" --starter vite-shadcn  # Vite + React + Tailwind + shadcn template
+cd ~/.shep/projects/<app-slug> && shep feat new "Add waitlists" # add a feature to the app
+```
 
 **Source**: `src/presentation/cli/commands/app/`
 

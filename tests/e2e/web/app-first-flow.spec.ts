@@ -1,10 +1,11 @@
 import { expect, test } from '@playwright/test';
 
 /**
- * Issue 896: users took the App Builder (Vite + shadcn, no spec phase) for
- * Shep's stack-agnostic, spec-driven workflow. These journeys pin the
- * surfaces that now tell them apart. No project is created — nothing is
- * submitted, and the only navigation is the existing-folder hand-off URL.
+ * Issue 896: "start an app, then add features". Apps are started either by
+ * planning them first on any stack (spec-driven) or from the Vite + shadcn
+ * prototype template, and each option says which. No project is created —
+ * nothing is submitted, and the only navigation is the existing-folder
+ * hand-off URL.
  */
 
 const applications = [
@@ -28,43 +29,41 @@ test.beforeEach(async ({ page }) => {
   await page.route('**/api/applications', (route) => route.fulfill({ json: applications }));
 });
 
-test('the sidebar leads with Control Center and names the App Builder', async ({ page }) => {
+test('the sidebar leads with Control Center, then Apps', async ({ page }) => {
   await page.goto('/applications');
 
   const nav = page.locator('[data-sidebar="sidebar"]');
   const controlCenter = nav.getByRole('link', { name: 'Control Center' });
-  const appBuilder = nav.getByRole('link', { name: 'App Builder' });
+  const apps = nav.getByRole('link', { name: 'Apps', exact: true });
   await expect(controlCenter).toBeVisible();
-  await expect(appBuilder).toBeVisible();
+  await expect(apps).toBeVisible();
 
   const [ccTop, abTop] = await Promise.all([
     controlCenter.boundingBox().then((box) => box!.y),
-    appBuilder.boundingBox().then((box) => box!.y),
+    apps.boundingBox().then((box) => box!.y),
   ]);
-  expect(ccTop, 'Control Center is listed above the App Builder').toBeLessThan(abTop);
+  expect(ccTop, 'Control Center is listed above Apps').toBeLessThan(abTop);
 });
 
-test('the App Builder states its stack and offers the spec-driven path', async ({ page }) => {
+test('Apps says "start an app, then add features" and names both starters', async ({ page }) => {
   await page.goto('/applications');
 
-  await expect(page.getByRole('heading', { level: 1, name: 'App Builder' })).toBeVisible();
-  await expect(page.getByTestId('app-builder-intro')).toContainText(
-    'Vite + React + Tailwind + shadcn'
-  );
-  await expect(page.getByTestId('new-application-option-quick-web-app')).toContainText(
+  await expect(page.getByRole('heading', { level: 1, name: 'Apps' })).toBeVisible();
+  const intro = page.getByTestId('apps-intro');
+  await expect(intro).toContainText('Start an app, then add features');
+  await expect(intro).toContainText('Vite + React + Tailwind + shadcn');
+  await expect(page.getByTestId('new-application-option-plan-first')).toContainText('Any stack');
+  await expect(page.getByTestId('new-application-option-quick-prototype')).toContainText(
     'Vite + React + shadcn'
-  );
-  await expect(page.getByTestId('new-application-option-spec-driven-project')).toContainText(
-    'Any stack'
   );
   await expect(page.getByText('Describe with AI')).toHaveCount(0);
 });
 
-test('a spec-driven project opens in Spec-driven mode and hands existing folders off', async ({
+test('"Plan it first" opens in Spec-driven mode and hands existing folders off', async ({
   page,
 }) => {
   await page.goto('/applications');
-  await page.getByTestId('new-application-option-spec-driven-project').click();
+  await page.getByTestId('new-application-option-plan-first').click();
 
   await expect(page.getByTestId('build-mode-selector')).toContainText('Spec-driven');
   await expect(page.getByTestId('build-mode-description')).toContainText(
@@ -84,12 +83,22 @@ test('a spec-driven project opens in Spec-driven mode and hands existing folders
   expect(url.searchParams.get('prompt')).toBe(prompt);
 });
 
-test('Quick web app mode names its Vite + shadcn stack', async ({ page }) => {
+test('Quick prototype mode names its Vite + shadcn stack', async ({ page }) => {
   await page.goto('/applications');
-  await page.getByTestId('new-application-option-quick-web-app').click();
+  await page.getByTestId('new-application-option-quick-prototype').click();
 
-  await expect(page.getByTestId('build-mode-selector')).toContainText('Quick web app');
+  await expect(page.getByTestId('build-mode-selector')).toContainText('Quick prototype');
   await expect(page.getByTestId('build-mode-description')).toContainText(
     'Vite + React + Tailwind + shadcn'
+  );
+});
+
+test('"New app" plans the app first by default', async ({ page }) => {
+  await page.goto('/applications');
+  await page.getByRole('button', { name: 'New app' }).click();
+
+  await expect(page.getByTestId('build-mode-selector')).toContainText('Spec-driven');
+  await expect(page.getByTestId('build-mode-description')).toContainText(
+    'Any stack, chosen during research'
   );
 });

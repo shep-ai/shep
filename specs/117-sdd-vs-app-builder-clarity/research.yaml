@@ -1,62 +1,66 @@
 name: "sdd-vs-app-builder-clarity"
 summary: |-
-  All work reuses existing mechanisms: the two-phase createRecord / initializeAndSpawn pattern of
-  CreateFeatureFromRemoteUseCase, CreateFeatureUseCase's repository auto-registration and git init,
-  the BuildMode enum, buildCreateUrl deep links, and the shep-shell-variant cookie. No new library.
+  The domain already supported "app → features": an Application can exist without the Vite
+  scaffold (adoptLocalDirectory), features carry an applicationId, and the canvas draws
+  app → feature edges. The work is recomposition, not new machinery.
 relatedFeatures:
   - "091-apps-only-surface"
 technologies:
+  - "TypeSpec"
   - "TypeScript"
   - "tsyringe"
+  - "Commander"
   - "Next.js"
   - "react-i18next"
 relatedLinks:
   - "https://github.com/shep-ai/shep/issues/896"
 decisions:
-  - title: "Where greenfield project + feature creation lives"
+  - title: "Mental model"
+    chosen: "Start an app, then add features. Every new project is an Application; the Vite + shadcn template is one starter, not a separate product."
+    rejected:
+      - "\"Everything is a feature, start in an empty folder\" — correct internally, but not how users think; it required explanation on every surface."
+      - "Two products (\"Features\" vs an \"App Builder\") — an interim version of this PR; it hardened the split users were confused by."
+    rationale: "Matches the users' model and removes the single-stack trap at the point of creation, where the choice is visible."
+  - title: "Where app creation lives"
     chosen: |-
-      A composite core use case, CreateProjectFeatureUseCase, that chains CreateProjectUseCase and
-      CreateFeatureUseCase and exposes createRecord() + initializeAndSpawn() like
-      CreateFeatureFromRemoteUseCase. The web action only resolves it by string token.
+      StartApplicationUseCase dispatches on ApplicationStarter: blank → ApplicationProjectAllocator
+      (shared with CreateApplicationUseCase) + Application row + CreateFeatureUseCase with the
+      app's id; vite-shadcn → CreateApplicationUseCase. `awaitFeatureSetup` lets the CLI wait for
+      the first feature while the web returns immediately.
     rejected:
-      - "Keep the logic in the server action — violates 'logic lives in core'; the CLI/TUI could not reuse it."
-      - "Add a 'newProject' flag to CreateFeatureUseCase — widens an already large use case for one caller."
-    rationale: "Same shape as an existing, tested composite; presentation-agnostic."
-  - title: "What the agent is told about the stack for a new project"
-    chosen: |-
-      Nothing extra: the user's prompt is passed unchanged. In spec mode the research phase already
-      records technology decisions; in fast mode the agent picks a stack that fits the prompt.
+      - "Branch in each presentation layer — logic in presentation; CLI and web would drift."
+      - "Add a blank path inside CreateApplicationUseCase — a 560-line use case built around scaffolding and chat."
+    rationale: "One presentation-agnostic entry point; the template path is unchanged."
+  - title: "Persist the starter?"
+    chosen: "No. ApplicationStarter is a TypeSpec enum used as input only."
     rejected:
-      - "Keep the React + Vite preamble — this is the lock-in the issue reports."
-      - "Replace it with a neutral preamble — it would still rewrite the user's description shown in the UI."
-    rationale: "The Feature path's promise is 'any stack'; the App Builder is the opinionated path."
-  - title: "Default build mode for a new project"
-    chosen: "BuildMode.Spec, via a domain constant + resolver used by the use case and the composer."
+      - "A new applications column — a migration and mapper/repository SQL changes with no reader."
+    rationale: "Nothing branches on the starter after creation."
+  - title: "How later features join their app"
+    chosen: "CreateFeatureUseCase resolves applicationId from the repository path when the caller gives none; an explicit id wins."
     rejected:
-      - "Keep Fast — an empty repo has no stack, so skipping research is exactly the wrong default."
-      - "Change settings.workflow.defaultMode globally — changes behaviour for existing repos; out of scope."
+      - "A required --app flag — users would have to know app ids."
+    rationale: "`cd <app> && shep feat new` and the create drawer both do the right thing with no extra input."
+  - title: "What the agent is told about the stack"
+    chosen: "Nothing extra: the prompt is passed unchanged; spec mode's research records the stack decision."
+    rejected:
+      - "Keep or replace the React + Vite preamble — it rewrites the user's prompt and locks the stack."
+    rationale: "Stack defaults belong only to the starter that advertises them."
+  - title: "Default workflow of a blank app's first feature"
+    chosen: "BuildMode.Spec (domain constant + resolver)."
+    rejected:
+      - "The global settings default (Fast) — an empty repo has no stack, so skipping research is the wrong default."
     rationale: "Greenfield work is where requirements and research matter most."
-  - title: "Detecting a prompt that points at existing code"
-    chosen: |-
-      A pure domain helper that finds an absolute folder path under a well-known root (home dirs,
-      ~/, /tmp, /opt, /srv, /mnt, /workspace(s), drive letters). The composer shows a hint with a
-      button that deep-links to /create?repo=<path>&mode=spec&prompt=<prompt>.
+  - title: "Existing-folder prompts"
+    chosen: "A pure domain helper finds absolute paths under well-known roots; the composer hints and hands off to /create?repo=…&mode=spec."
     rejected:
-      - "Any '/'-prefixed token — false positives on '/health endpoint' or '/api/users'."
-      - "Refuse to create — too aggressive; a hint keeps the user in control."
-    rationale: "Deterministic, cheap, testable; CreateFeatureUseCase already registers unknown paths."
-  - title: "Naming Applications"
-    chosen: |-
-      Present it as the "App Builder" in the sidebar, page header and home-page setting; keep the
-      /applications route, entity and API names. Control Center moves first with the Home icon.
-    rejected:
-      - "Rename the entity/route — large churn with no user-visible gain."
-    rationale: "'Application' reads as 'my app' and hides that this is a single-stack builder."
+      - "Any '/'-prefixed token — false positives on '/health' or '/api/users'."
+    rationale: "Deterministic and testable; CreateFeatureUseCase already registers unknown paths."
   - title: "Apps-only shell"
-    chosen: "The Applications server page reads the shell-variant cookie and hides spec-driven hand-offs in apps-only mode, where Control Center routes are guarded."
+    chosen: "A ShellVariantContext (useCanStartFeatures) hides options that route to Control Center."
     rejected:
-      - "A new React context for the variant — one prop is enough."
-    rationale: "Never offer a link the route guard would bounce."
+      - "Reading the cookie in each server page — two mechanisms for one fact."
+    rationale: "The apps-only route guard would bounce those links."
 openQuestions: []
 content: |
   ## Technology Decisions
@@ -65,9 +69,9 @@ content: |
 
   ## Security Considerations
 
-  The existing-folder hint only reads the prompt string; the hand-off uses the existing /create
-  drawer, which already validates the repository path before creating anything.
+  The existing-folder hint only reads the prompt; the hand-off uses the /create drawer, which
+  validates the repository path. `--starter` values are parsed against the enum.
 
   ## Performance Implications
 
-  No performance implications identified — one regex scan of the prompt per keystroke render.
+  One `findByPath` lookup per feature creation; one regex scan of the prompt per composer render.

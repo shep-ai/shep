@@ -25,13 +25,14 @@ import {
   type ControlCenterEmptyStateProps,
 } from '@/components/features/control-center/control-center-empty-state';
 import {
-  APP_BUILDER_MODE,
+  PROTOTYPE_MODE,
   type ComposerBuildMode,
 } from '@/components/features/control-center/build-mode-options';
 import { buildExistingFolderFeatureUrl } from '@/lib/url-params';
 import { BuildMode } from '@shepai/core/domain/generated/output';
 import { ApplicationCard } from './application-card';
 import { NewApplicationCard } from './new-application-card';
+import { useCanStartFeatures } from '@/hooks/shell-variant-context';
 import { listDeployments } from '@/app/actions/list-deployments';
 import type { ApplicationWithStatus } from '@shepai/core/application/use-cases/applications/list-applications.use-case';
 import type { DeploymentStatusEntry } from '@shepai/core/application/ports/output/services/deployment-service.interface';
@@ -39,8 +40,9 @@ import type { DeploymentStatusEntry } from '@shepai/core/application/ports/outpu
 export interface ApplicationsPageClientProps {
   className?: string;
   /**
-   * Whether this shell can start Features (Control Center, /create). False in
-   * the apps-only shell, whose route guard would bounce those links.
+   * Whether this shell can start Features (Control Center, /create). Defaults
+   * to the shell variant; false in the apps-only shell, whose route guard
+   * would bounce those links.
    */
   specDrivenAvailable?: boolean;
 }
@@ -77,9 +79,13 @@ function matchesSearch(app: ApplicationWithStatus, query: string): boolean {
 
 export function ApplicationsPageClient({
   className,
-  specDrivenAvailable = false,
+  specDrivenAvailable: specDrivenOverride,
 }: ApplicationsPageClientProps) {
   const router = useRouter();
+  const canStartFeatures = useCanStartFeatures();
+  const specDrivenAvailable = specDrivenOverride ?? canStartFeatures;
+  /** "New app" starts spec-driven wherever features can run, else from the template. */
+  const newAppMode: ComposerBuildMode = specDrivenAvailable ? BuildMode.Spec : PROTOTYPE_MODE;
   /** Mode the full-screen create prompt opened in; null while it is closed. */
   const [createPromptMode, setCreatePromptMode] = useState<ComposerBuildMode | null>(null);
   const [search, setSearch] = useState('');
@@ -136,7 +142,7 @@ export function ApplicationsPageClient({
     [sorted]
   );
 
-  // The same composer serves the App Builder and — where the shell can start
+  // The same composer serves the prototype template and — where the shell can start
   // Features — the stack-agnostic, spec-driven path, so users are never left
   // with a single-stack generator as their only way to start a project.
   const composerProps: Pick<
@@ -220,38 +226,35 @@ export function ApplicationsPageClient({
                   <LayoutGrid className="size-3.5" aria-hidden="true" />
                   Your workspace
                 </div>
-                <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">App Builder</h1>
+                <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Apps</h1>
                 <p
-                  data-testid="app-builder-intro"
+                  data-testid="apps-intro"
                   className="text-muted-foreground max-w-xl text-sm leading-relaxed sm:text-base"
                 >
-                  Quick web apps from a prompt, built with{' '}
+                  Start an app, then add features.{' '}
+                  {specDrivenAvailable ? (
+                    <>
+                      Plan it first on{' '}
+                      <span className="text-foreground font-medium">any stack</span>, or start from
+                      the{' '}
+                    </>
+                  ) : (
+                    <>Start from the </>
+                  )}
                   <span className="text-foreground font-medium">
                     Vite + React + Tailwind + shadcn
                   </span>{' '}
-                  and a live preview. No spec phase.
+                  prototype template.
                 </p>
-                {specDrivenAvailable ? (
-                  <p className="text-muted-foreground max-w-xl text-xs leading-relaxed sm:text-sm">
-                    Need another stack, or requirements and a plan before any code?{' '}
-                    <button
-                      type="button"
-                      onClick={() => setCreatePromptMode(BuildMode.Spec)}
-                      className="text-primary font-medium underline-offset-4 hover:underline"
-                    >
-                      Start a spec-driven project
-                    </button>
-                  </p>
-                ) : null}
               </div>
               {!isLoading && sorted.length > 0 ? (
                 <Button
                   size="lg"
                   className="h-11 shrink-0 rounded-xl shadow-sm"
-                  onClick={() => setCreatePromptMode(APP_BUILDER_MODE)}
+                  onClick={() => setCreatePromptMode(newAppMode)}
                 >
                   <Plus className="size-4" aria-hidden="true" />
-                  New web app
+                  New app
                 </Button>
               ) : null}
             </div>
@@ -287,7 +290,7 @@ export function ApplicationsPageClient({
             </div>
           ) : sorted.length === 0 ? (
             <div className="flex flex-1 items-center justify-center">
-              <ControlCenterEmptyState initialMode={APP_BUILDER_MODE} {...composerProps} />
+              <ControlCenterEmptyState initialMode={newAppMode} {...composerProps} />
             </div>
           ) : (
             <>
@@ -400,10 +403,10 @@ export function ApplicationsPageClient({
                   className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4"
                 >
                   <NewApplicationCard
-                    onQuickWebApp={() => setCreatePromptMode(APP_BUILDER_MODE)}
                     {...(specDrivenAvailable
-                      ? { onSpecDrivenProject: () => setCreatePromptMode(BuildMode.Spec) }
+                      ? { onPlanFirst: () => setCreatePromptMode(BuildMode.Spec) }
                       : {})}
+                    onQuickPrototype={() => setCreatePromptMode(PROTOTYPE_MODE)}
                     importing={importing}
                     onOpenLocalDirectory={() => void openLocalProject()}
                     onImportGitHub={() =>

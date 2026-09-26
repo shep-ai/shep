@@ -279,7 +279,7 @@
       "labelDescription": "The page you land on when opening the web UI",
       "options": {
         "control-center": "Control Center",
-        "applications": "منشئ التطبيقات",
+        "applications": "التطبيقات",
         "features": "Features"
       },
       "hint": "This controls where you land when you open the web UI. You can change it at any time."
@@ -382,7 +382,7 @@
     "sessions": "الجلسات",
     "tools": "الأدوات",
     "skills": "المهارات",
-    "applications": "منشئ التطبيقات",
+    "applications": "التطبيقات",
     "agentQuestions": "Agent Questions",
     "aspm": "Security",
     "aspmDashboard": "Dashboard",
@@ -462,8 +462,8 @@
         "stack": "أي تقنيات"
       },
       "application": {
-        "label": "تطبيق ويب سريع",
-        "description": "نموذج أولي فوري لتطبيق ويب مع معاينة مباشرة. دون مرحلة مواصفات.",
+        "label": "نموذج أولي سريع",
+        "description": "نموذج أولي فوري لتطبيق ويب من قالب Vite + shadcn مع معاينة مباشرة. دون مرحلة مواصفات.",
         "stack": "Vite + React + Tailwind + shadcn"
       }
     },
@@ -592,7 +592,8 @@
     "newApplication": "ابدأ من وصف",
     "newSddFeature": "ميزة SDD جديدة",
     "newSddForApp": "ميزة SDD جديدة لـ {{appName}}",
-    "openInControlCenterSdd": "فتح في مركز التحكم (وضع SDD)"
+    "openInControlCenterSdd": "فتح في مركز التحكم (وضع SDD)",
+    "addFeature": "إضافة ميزة"
   },
   "chat": {
     "shepChat": "محادثة Shep",

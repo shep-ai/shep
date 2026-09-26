@@ -38,6 +38,7 @@ import type { ISettingsRepository } from '../../../ports/output/repositories/set
 import type { ILogger } from '../../../ports/output/services/logger.interface.js';
 import { createDefaultSettings } from '../../../../domain/factories/settings-defaults.factory.js';
 import { satisfiesDependencyGate } from '../../../../domain/lifecycle-gates.js';
+import type { IApplicationRepository } from '../../../ports/output/repositories/application-repository.interface.js';
 import type { IAttachmentStorageService } from '../../../ports/output/services/feature-attachment-storage.interface.js';
 import { FeatureCapacityService } from '../capacity/feature-capacity.service.js';
 import { MetadataGenerator } from './metadata-generator.js';
@@ -76,7 +77,9 @@ export class CreateFeatureUseCase {
     @inject('ILogger')
     private readonly logger: ILogger,
     @inject(FeatureCapacityService)
-    private readonly capacity: FeatureCapacityService
+    private readonly capacity: FeatureCapacityService,
+    @inject('IApplicationRepository')
+    private readonly applicationRepo: IApplicationRepository
   ) {}
 
   /**
@@ -120,16 +123,6 @@ export class CreateFeatureUseCase {
       input.buildMode ?? ((input.fast ?? false) ? BuildMode.Fast : BuildMode.Application);
     const isFastMode = effectiveBuildMode === BuildMode.Fast;
     const isExplorationMode = effectiveBuildMode === BuildMode.Exploration;
-
-    // Soft-warn when a spec-mode feature is created without a parent
-    // application. The legacy "FAB → New feature → Spec" path intentionally
-    // creates spec features without an application context, so this MUST NOT
-    // throw — it is a breadcrumb only.
-    if (effectiveBuildMode === BuildMode.Spec && input.applicationId === undefined) {
-      this.logger.warn(
-        '[CreateFeatureUseCase] spec-mode feature created without an applicationId — proceeding'
-      );
-    }
 
     let initialLifecycle: SdlcLifecycle = isExplorationMode
       ? SdlcLifecycle.Exploring
@@ -212,6 +205,21 @@ export class CreateFeatureUseCase {
       }
     }
 
+    // Features belong to their app: when the caller did not name one, attach
+    // the feature to the application that owns this repository (if any).
+    const applicationId =
+      input.applicationId ?? (await this.applicationRepo.findByPath(normalizedPath))?.id;
+
+    // Soft-warn when a spec-mode feature has no parent application. The
+    // "FAB → New feature → Spec" path on a plain repository legitimately
+    // creates spec features without one, so this MUST NOT throw — it is a
+    // breadcrumb only.
+    if (effectiveBuildMode === BuildMode.Spec && applicationId === undefined) {
+      this.logger.warn(
+        '[CreateFeatureUseCase] spec-mode feature created without an applicationId — proceeding'
+      );
+    }
+
     const featureName = input.name ?? input.userInput.slice(0, 100);
     const runId = randomUUID();
     const featureId = randomUUID();
@@ -231,7 +239,7 @@ export class CreateFeatureUseCase {
       relatedArtifacts: [],
       buildMode: effectiveBuildMode,
       fast: isFastMode,
-      ...(input.applicationId ? { applicationId: input.applicationId } : {}),
+      ...(applicationId ? { applicationId } : {}),
       push: input.push ?? false,
       openPr: input.openPr ?? false,
       forkAndPr: input.forkAndPr ?? false,

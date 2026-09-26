@@ -21,7 +21,7 @@ const meta: Meta<typeof ControlCenterEmptyState> = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** App Builder surface (no canvas): Quick web app only, with its stack stated. */
+/** Apps-only surface (no canvas): Quick prototype only, with its stack stated. */
 export const Default: Story = {
   args: {},
 };
@@ -59,7 +59,7 @@ export const SpecDrivenDefault: Story = {
   },
 };
 
-/** Canvas surface opened straight into the App Builder mode. */
+/** Canvas surface opened straight into the Quick prototype mode. */
 export const QuickWebAppMode: Story = {
   args: {
     onRepositorySelect: () => undefined,

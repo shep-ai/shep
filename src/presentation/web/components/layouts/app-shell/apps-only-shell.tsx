@@ -71,7 +71,7 @@ export function AppsOnlyShell({ children }: AppsOnlyShellProps) {
         >
           <Link
             href="/applications"
-            aria-label="App Builder"
+            aria-label="Apps"
             className="group flex items-center gap-2 rounded px-1 py-0.5 outline-none"
             style={NO_DRAG_REGION}
           >

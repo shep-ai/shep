@@ -191,7 +191,7 @@ describe('ControlCenterEmptyState', () => {
         { wrapper: Wrapper }
       );
 
-      expect(screen.getByTestId('build-mode-selector')).toHaveTextContent('Quick web app');
+      expect(screen.getByTestId('build-mode-selector')).toHaveTextContent('Quick prototype');
     });
 
     it('states what the selected mode does and which stack it uses', async () => {

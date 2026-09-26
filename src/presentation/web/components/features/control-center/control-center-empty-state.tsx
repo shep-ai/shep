@@ -16,7 +16,7 @@ import { BuildMode } from '@shepai/core/domain/generated/output';
 import { findExistingFolderReference } from '@shepai/core/domain/shared/existing-code-reference';
 import { isAbsolutePath } from '@shepai/core/domain/shared/absolute-path';
 import {
-  APP_BUILDER_MODE,
+  PROTOTYPE_MODE,
   COMPOSER_BUILD_MODES,
   COMPOSER_BUILD_MODE_CONFIG,
   FEATURE_SURFACE_DEFAULT_MODE,
@@ -103,7 +103,7 @@ export function ControlCenterEmptyState({
   // don't have.
   const showModeDropdown = Boolean(onRepositorySelect);
   const [buildMode, setBuildMode] = useState<ComposerBuildMode>(
-    initialMode ?? (showModeDropdown ? FEATURE_SURFACE_DEFAULT_MODE : APP_BUILDER_MODE)
+    initialMode ?? (showModeDropdown ? FEATURE_SURFACE_DEFAULT_MODE : PROTOTYPE_MODE)
   );
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -117,7 +117,7 @@ export function ControlCenterEmptyState({
   const errorId = useId();
   const att = useAttachments();
 
-  const effectiveMode: ComposerBuildMode = showModeDropdown ? buildMode : APP_BUILDER_MODE;
+  const effectiveMode: ComposerBuildMode = showModeDropdown ? buildMode : PROTOTYPE_MODE;
   const existingFolder = findExistingFolderReference(description);
 
   const modeChordLabel = getModeChordLabel();

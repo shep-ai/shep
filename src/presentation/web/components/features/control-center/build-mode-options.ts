@@ -3,9 +3,9 @@
  *
  * Every mode states what it does and which stack it produces, because the
  * modes are two different products: Spec-driven and Fast are the
- * stack-agnostic Feature path; Quick web app is the opinionated App Builder
+ * stack-agnostic path; Quick prototype is the opinionated template
  * (Vite + React + Tailwind + shadcn, no spec phase). Hiding that difference
- * is what made users mistake the App Builder for Shep's SDD orchestrator.
+ * is what made users mistake the template for Shep's SDD orchestrator.
  */
 
 import type { ElementType } from 'react';
@@ -24,8 +24,8 @@ export const COMPOSER_BUILD_MODES: readonly ComposerBuildMode[] = [
 /** Mode on surfaces that can start Features (the Control Center canvas). */
 export const FEATURE_SURFACE_DEFAULT_MODE: ComposerBuildMode = BuildMode.Spec;
 
-/** The only mode on the App Builder surface. */
-export const APP_BUILDER_MODE: ComposerBuildMode = BuildMode.Application;
+/** The Vite + shadcn prototype template — the only mode where Features are unavailable. */
+export const PROTOTYPE_MODE: ComposerBuildMode = BuildMode.Application;
 
 export interface ComposerBuildModeConfig {
   icon: ElementType;
@@ -79,9 +79,10 @@ export const COMPOSER_BUILD_MODE_CONFIG: Record<ComposerBuildMode, ComposerBuild
   [BuildMode.Application]: {
     icon: LayoutGrid,
     labelKey: 'emptyState.modes.application.label',
-    label: 'Quick web app',
+    label: 'Quick prototype',
     descriptionKey: 'emptyState.modes.application.description',
-    description: 'Instant web-app prototype with a live preview. No spec phase.',
+    description:
+      'Instant web-app prototype from the Vite + shadcn template, with a live preview. No spec phase.',
     stackKey: 'emptyState.modes.application.stack',
     stack: 'Vite + React + Tailwind + shadcn',
     placeholder: 'Build a modern e-commerce storefront with product catalog...',

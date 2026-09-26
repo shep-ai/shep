@@ -2,9 +2,10 @@ import { describe, it, expect } from 'vitest';
 import {
   NEW_PROJECT_DEFAULT_BUILD_MODE,
   deriveProjectNameFromDescription,
+  parseApplicationStarter,
   resolveNewProjectBuildMode,
 } from '@/domain/shared/new-project.js';
-import { BuildMode } from '@/domain/generated/output.js';
+import { ApplicationStarter, BuildMode } from '@/domain/generated/output.js';
 
 describe('resolveNewProjectBuildMode', () => {
   it('defaults a new project to the spec-driven workflow', () => {
@@ -34,5 +35,20 @@ describe('deriveProjectNameFromDescription', () => {
 
   it('returns an empty string for a blank description', () => {
     expect(deriveProjectNameFromDescription('   ')).toBe('');
+  });
+});
+
+describe('parseApplicationStarter', () => {
+  it('defaults to the blank starter', () => {
+    expect(parseApplicationStarter(undefined)).toBe(ApplicationStarter.Blank);
+  });
+
+  it('accepts every starter case-insensitively', () => {
+    expect(parseApplicationStarter('blank')).toBe(ApplicationStarter.Blank);
+    expect(parseApplicationStarter(' Vite-Shadcn ')).toBe(ApplicationStarter.ViteShadcn);
+  });
+
+  it('returns null for an unknown starter', () => {
+    expect(parseApplicationStarter('rails')).toBeNull();
   });
 });

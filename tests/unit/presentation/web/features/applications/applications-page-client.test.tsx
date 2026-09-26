@@ -281,7 +281,7 @@ describe('ApplicationsPageClient query failure', () => {
   });
 });
 
-describe('App Builder framing (issue 896)', () => {
+describe('Start an app, then add features (issue 896)', () => {
   const apps = [
     {
       id: 'weather',
@@ -302,21 +302,30 @@ describe('App Builder framing (issue 896)', () => {
 
   afterEach(() => vi.restoreAllMocks());
 
-  it('names the page the App Builder and states its stack and missing spec phase', async () => {
-    renderWithClient();
-
-    expect(
-      await screen.findByRole('heading', { level: 1, name: 'App Builder' })
-    ).toBeInTheDocument();
-    const intro = screen.getByTestId('app-builder-intro');
-    expect(intro).toHaveTextContent('Vite + React + Tailwind + shadcn');
-    expect(intro).toHaveTextContent(/no spec phase/i);
-  });
-
-  it('opens the App Builder prompt in Quick web app mode', async () => {
+  it('frames Apps as "start an app, then add features" and names both starters', async () => {
     renderWithClient({ specDrivenAvailable: true });
 
-    await userEvent.click(await screen.findByRole('button', { name: /New web app/ }));
+    expect(await screen.findByRole('heading', { level: 1, name: 'Apps' })).toBeInTheDocument();
+    const intro = screen.getByTestId('apps-intro');
+    expect(intro).toHaveTextContent('Start an app, then add features');
+    expect(intro).toHaveTextContent('any stack');
+    expect(intro).toHaveTextContent('Vite + React + Tailwind + shadcn');
+  });
+
+  it('opens "New app" in Spec-driven mode where features can be started', async () => {
+    renderWithClient({ specDrivenAvailable: true });
+
+    await userEvent.click(await screen.findByRole('button', { name: /New app/ }));
+
+    const composer = screen.getByTestId('empty-state-stub');
+    expect(composer).toHaveAttribute('data-initial-mode', 'spec');
+    expect(composer).toHaveAttribute('data-can-start-features', 'true');
+  });
+
+  it('opens the quick prototype starter from the create card', async () => {
+    renderWithClient({ specDrivenAvailable: true });
+
+    await userEvent.click(await screen.findByRole('button', { name: /Quick prototype/ }));
 
     expect(screen.getByTestId('empty-state-stub')).toHaveAttribute(
       'data-initial-mode',
@@ -324,22 +333,22 @@ describe('App Builder framing (issue 896)', () => {
     );
   });
 
-  it('points spec-driven users to an any-stack project', async () => {
+  it('opens "Plan it first" in Spec-driven mode from the create card', async () => {
     renderWithClient({ specDrivenAvailable: true });
 
-    await userEvent.click(
-      await screen.findByRole('button', { name: /Start a spec-driven project/ })
-    );
+    await userEvent.click(await screen.findByRole('button', { name: /Plan it first/ }));
 
-    const composer = screen.getByTestId('empty-state-stub');
-    expect(composer).toHaveAttribute('data-initial-mode', 'spec');
-    expect(composer).toHaveAttribute('data-can-start-features', 'true');
+    expect(screen.getByTestId('empty-state-stub')).toHaveAttribute('data-initial-mode', 'spec');
   });
 
-  it('offers no spec-driven hand-off where Features are unavailable (apps-only shell)', async () => {
+  it('offers only the prototype starter in the apps-only shell', async () => {
     renderWithClient({ specDrivenAvailable: false });
 
     await screen.findByTestId('applications-page-grid');
-    expect(screen.queryByRole('button', { name: /spec-driven/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Plan it first/ })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: /New app/ }));
+    const composer = screen.getByTestId('empty-state-stub');
+    expect(composer).toHaveAttribute('data-initial-mode', 'application');
+    expect(composer).toHaveAttribute('data-can-start-features', 'false');
   });
 });

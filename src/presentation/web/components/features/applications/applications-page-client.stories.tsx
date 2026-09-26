@@ -134,7 +134,7 @@ export const Default: Story = {
   parameters: { applications: mockApps },
 };
 
-/** Apps-only (Electron) shell: no spec-driven hand-off, only the App Builder. */
+/** Apps-only (Electron) shell: only the Vite + shadcn prototype starter. */
 export const AppsOnlyShell: Story = {
   args: { specDrivenAvailable: false },
   parameters: { applications: mockApps },

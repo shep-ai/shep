@@ -44,6 +44,7 @@ import { AppViewTabs, type AppView } from './app-view-tabs';
 import { CopyPromptButton } from './copy-prompt-button';
 import { DeleteApplicationMenuItem } from './delete-application-menu-item';
 import { OpenInControlCenterMenuItem } from './open-in-control-center-menu-item';
+import { AddFeatureButton } from './add-feature-button';
 import { PathCluster } from './path-cluster';
 import { SessionChip } from './session-chip';
 import { StatusPill } from './status-pill';
@@ -197,6 +198,8 @@ export function AppTopBar({
           </Button>
         </>
       ) : null}
+
+      <AddFeatureButton applicationId={application.id} />
 
       {/* ── Group 5: overflow ─────────────────────────────── */}
       <AppOverflowMenu>

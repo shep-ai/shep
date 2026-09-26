@@ -15,8 +15,8 @@ const meta: Meta<typeof NewApplicationCard> = {
     ),
   ],
   args: {
-    onQuickWebApp: noop,
-    onSpecDrivenProject: noop,
+    onPlanFirst: noop,
+    onQuickPrototype: noop,
     onOpenLocalDirectory: noop,
     onImportGitHub: noop,
   },
@@ -25,12 +25,12 @@ const meta: Meta<typeof NewApplicationCard> = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Full shell: the App Builder next to the stack-agnostic spec-driven path. */
+/** Full shell: Plan it first (any stack) next to the prototype template. */
 export const Default: Story = {};
 
-/** Apps-only shell: no spec-driven option. */
+/** Apps-only shell: only the prototype template, no "Plan it first". */
 export const AppsOnlyShell: Story = {
-  args: { onSpecDrivenProject: undefined },
+  args: { onPlanFirst: undefined },
 };
 
 /** Local folder import in progress. */

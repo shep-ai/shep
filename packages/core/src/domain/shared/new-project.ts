@@ -11,7 +11,7 @@
 
 // No .js extension: the web package consumes this subtree as raw TypeScript
 // through Turbopack, which does not map .js back to .ts.
-import { BuildMode } from '../generated/output';
+import { ApplicationStarter, BuildMode } from '../generated/output';
 
 /** Build mode a new project runs when the caller does not choose one. */
 export const NEW_PROJECT_DEFAULT_BUILD_MODE: BuildMode = BuildMode.Spec;
@@ -34,4 +34,19 @@ export function deriveProjectNameFromDescription(description: string): string {
     .filter(Boolean)
     .slice(0, PROJECT_NAME_WORD_COUNT)
     .join(' ');
+}
+
+/** Starter a new app uses when the caller does not choose one. */
+export const DEFAULT_APPLICATION_STARTER: ApplicationStarter = ApplicationStarter.Blank;
+
+const APPLICATION_STARTERS = new Set<string>(Object.values(ApplicationStarter));
+
+/**
+ * Parse a user-supplied starter (CLI flag, URL param). Absent → the default
+ * starter; unknown → null so the caller can report the valid choices.
+ */
+export function parseApplicationStarter(value: string | undefined): ApplicationStarter | null {
+  if (value === undefined) return DEFAULT_APPLICATION_STARTER;
+  const key = value.trim().toLowerCase();
+  return APPLICATION_STARTERS.has(key) ? (key as ApplicationStarter) : null;
 }

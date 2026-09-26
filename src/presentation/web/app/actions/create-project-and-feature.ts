@@ -2,10 +2,10 @@
 
 import { resolve } from '@/lib/server-container';
 import type {
-  CreateProjectFeatureInput,
-  CreateProjectFeatureUseCase,
-} from '@shepai/core/application/use-cases/features/create/create-project-feature.use-case';
-import type { BuildMode, Feature } from '@shepai/core/domain/generated/output';
+  StartApplicationInput,
+  StartApplicationUseCase,
+} from '@shepai/core/application/use-cases/applications/start-application.use-case';
+import type { Application, BuildMode, Feature } from '@shepai/core/domain/generated/output';
 import { composeUserInput } from './compose-user-input';
 
 interface NewProjectFeatureInput {
@@ -13,18 +13,18 @@ interface NewProjectFeatureInput {
   attachments?: { path: string; name: string; notes?: string }[];
   agentType?: string;
   model?: string;
-  /** Workflow to run. Omitted → the core default for new projects (spec-driven). */
+  /** Workflow of the app's first feature. Omitted → spec-driven (core default). */
   buildMode?: BuildMode;
 }
 
 /**
- * Start a brand-new project from a prompt on the Feature path: an empty
- * project folder plus a feature on it. Stack-agnostic — the prompt is sent
- * unchanged. All rules (naming, default mode) live in
- * CreateProjectFeatureUseCase; this action only maps input and runs the
- * background phase, like createFeature.
+ * Start a new app from a prompt on the stack-agnostic path: an empty project,
+ * an Application, and its first feature. All rules live in
+ * StartApplicationUseCase; this action maps input and lets the first
+ * feature's setup continue in the background.
  */
 export async function createProjectAndFeature(input: NewProjectFeatureInput): Promise<{
+  application?: Application;
   feature?: Feature;
   repositoryPath?: string;
   error?: string;
@@ -34,7 +34,7 @@ export async function createProjectAndFeature(input: NewProjectFeatureInput): Pr
     return { error: 'Description is required' };
   }
 
-  const useCaseInput: CreateProjectFeatureInput = {
+  const useCaseInput: StartApplicationInput = {
     description,
     userInput: composeUserInput(description, input.attachments),
     ...(input.buildMode ? { buildMode: input.buildMode } : {}),
@@ -43,16 +43,11 @@ export async function createProjectAndFeature(input: NewProjectFeatureInput): Pr
   };
 
   try {
-    const useCase = resolve<CreateProjectFeatureUseCase>('CreateProjectFeatureUseCase');
-    const { feature, shouldSpawn, repositoryPath } = await useCase.createRecord(useCaseInput);
-
-    // Phase 2 (background): metadata, worktree, spec, agent spawn.
-    useCase.initializeAndSpawn(feature, useCaseInput, shouldSpawn).catch((err: unknown) => {
-      // eslint-disable-next-line no-console
-      console.error('[createProjectAndFeature] initializeAndSpawn failed:', err);
+    const useCase = resolve<StartApplicationUseCase>('StartApplicationUseCase');
+    const { application, feature, repositoryPath } = await useCase.execute(useCaseInput, {
+      awaitFeatureSetup: false,
     });
-
-    return { feature, repositoryPath };
+    return { application, feature, repositoryPath };
   } catch (error: unknown) {
     return { error: error instanceof Error ? error.message : 'Failed to create project' };
   }

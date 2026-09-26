@@ -279,7 +279,7 @@
       "labelDescription": "The page you land on when opening the web UI",
       "options": {
         "control-center": "Control Center",
-        "applications": "Конструктор приложений",
+        "applications": "Приложения",
         "features": "Features"
       },
       "hint": "This controls where you land when you open the web UI. You can change it at any time."
@@ -382,7 +382,7 @@
     "sessions": "Сессии",
     "tools": "Инструменты",
     "skills": "Навыки",
-    "applications": "Конструктор приложений",
+    "applications": "Приложения",
     "agentQuestions": "Agent Questions",
     "aspm": "Security",
     "aspmDashboard": "Dashboard",
@@ -462,8 +462,8 @@
         "stack": "Любой стек"
       },
       "application": {
-        "label": "Быстрое веб-приложение",
-        "description": "Мгновенный прототип веб-приложения с живым предпросмотром. Без этапа спецификации.",
+        "label": "Быстрый прототип",
+        "description": "Мгновенный прототип веб-приложения из шаблона Vite + shadcn с живым предпросмотром. Без этапа спецификации.",
         "stack": "Vite + React + Tailwind + shadcn"
       }
     },
@@ -592,7 +592,8 @@
     "newApplication": "Начать с описания",
     "newSddFeature": "Новая SDD-функция",
     "newSddForApp": "Новая SDD-функция для {{appName}}",
-    "openInControlCenterSdd": "Открыть в Control Center (режим SDD)"
+    "openInControlCenterSdd": "Открыть в Control Center (режим SDD)",
+    "addFeature": "Добавить функцию"
   },
   "chat": {
     "shepChat": "Shep Чат",

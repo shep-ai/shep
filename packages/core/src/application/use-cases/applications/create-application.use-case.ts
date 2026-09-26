@@ -12,7 +12,7 @@
  */
 
 import { injectable, inject } from 'tsyringe';
-import { randomUUID, randomBytes } from 'node:crypto';
+import { randomUUID } from 'node:crypto';
 import type { Application, InteractiveMessage } from '../../../domain/generated/output.js';
 import {
   ApplicationStatus,
@@ -34,6 +34,7 @@ import type { RunWorkflowUseCase } from '../workflows/run-workflow.use-case.js';
 import type { IInteractiveSessionRepository } from '../../ports/output/repositories/interactive-session-repository.interface.js';
 import { featureIdForApplication } from '../../../domain/shared/feature-id.js';
 import { APPLICATION_CREATION_WORKFLOW } from './application-creation.workflow.js';
+import { ApplicationProjectAllocator } from './application-project-allocator.js';
 
 /**
  * Build the very first message the agent sees on turn 1. Carries the
@@ -86,68 +87,7 @@ export interface CreateApplicationResult {
   repositoryPath: string;
 }
 
-/** Stop words stripped when building the application slug. */
-const STOP_WORDS = new Set([
-  'a',
-  'an',
-  'the',
-  'and',
-  'or',
-  'but',
-  'with',
-  'for',
-  'in',
-  'on',
-  'to',
-  'of',
-  'is',
-  'it',
-  'that',
-  'this',
-  'my',
-  'our',
-  'your',
-  'me',
-  'i',
-  'build',
-  'create',
-  'make',
-  'add',
-  'implement',
-  'develop',
-  'write',
-]);
-
-function slugify(description: string): string {
-  const words = description
-    .toLowerCase()
-    .replace(/[^a-z0-9\s]/g, '')
-    .split(/\s+/)
-    .filter((w) => w.length > 0 && !STOP_WORDS.has(w));
-
-  const slug = words.slice(0, 5).join('-');
-  return slug || 'application';
-}
-
-function toTitleCase(slug: string): string {
-  return slug
-    .split('-')
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
-}
-
-/**
- * 6-character lowercase hex tag (~16M combinations). Appended to every
- * application slug so each one is unique on disk and in the DB without
- * needing a sequential lookup-and-retry against existing rows. Random
- * also avoids the failure mode where a stale folder (left over from a
- * deleted DB row) blocks recreation under the same description.
- *
- * Exported for unit testing.
- */
-export function randomSlugTag(): string {
-  return randomBytes(3).toString('hex');
-}
+export { randomSlugTag } from './application-project-allocator.js';
 
 @injectable()
 export class CreateApplicationUseCase {
@@ -229,14 +169,12 @@ export class CreateApplicationUseCase {
       modelOverride: input.modelOverride,
     });
 
-    // 1. Derive a stable slug stem from the description.
-    const baseSlug = slugify(input.description);
-
-    // 2. Allocate a unique <stem>-<6hex> slug + create the empty project folder.
-    const { slug, projectPath } = await this.allocateUniqueSlugAndScaffold(baseSlug);
-
-    // 3. Generate the human-readable display name from the BASE slug
-    const name = toTitleCase(baseSlug);
+    // 1–3. Allocate a unique <stem>-<6hex> slug, create the empty project
+    //      folder, and derive the display name from the stem.
+    const { slug, name, projectPath } = await new ApplicationProjectAllocator(
+      this.appRepo,
+      this.createProject
+    ).allocate(input.description);
 
     // 4. Persist the Application row IMMEDIATELY and return to the caller.
     //
@@ -471,37 +409,5 @@ export class CreateApplicationUseCase {
         // Best-effort status update — original error already logged.
       }
     }
-  }
-
-  /**
-   * Generate `<baseSlug>-<random>` candidates until both the DB has no row
-   * with that slug AND CreateProjectUseCase reports the folder doesn't
-   * exist. Retries up to MAX_ATTEMPTS times before giving up.
-   */
-  private async allocateUniqueSlugAndScaffold(
-    baseSlug: string
-  ): Promise<{ slug: string; projectPath: string }> {
-    const MAX_ATTEMPTS = 5;
-    let lastError: string | undefined;
-
-    for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
-      const candidate = `${baseSlug}-${randomSlugTag()}`;
-
-      const existing = await this.appRepo.findBySlug(candidate);
-      if (existing) continue;
-
-      const result = await this.createProject.execute({ name: candidate });
-      if (result.ok) {
-        return { slug: candidate, projectPath: result.path };
-      }
-      // Folder already exists (extremely unlikely with random tag) — retry
-      // with a fresh random tag.
-      lastError = result.error;
-    }
-
-    throw new Error(
-      lastError ??
-        `Failed to allocate a unique slug for "${baseSlug}" after ${MAX_ATTEMPTS} attempts.`
-    );
   }
 }

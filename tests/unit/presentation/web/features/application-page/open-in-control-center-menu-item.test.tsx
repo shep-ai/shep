@@ -62,3 +62,16 @@ describe('OpenInControlCenterMenuItem', () => {
     expect(item.getAttribute('aria-label')).toBeTruthy();
   });
 });
+
+describe('OpenInControlCenterMenuItem in the apps-only shell', () => {
+  it('is hidden, because the shell cannot open Control Center', async () => {
+    const { ShellVariantProvider } = await import('@/hooks/shell-variant-context');
+    render(
+      <ShellVariantProvider variant="apps-only">
+        <OpenInControlCenterMenuItem applicationId="app-42" />
+      </ShellVariantProvider>
+    );
+
+    expect(screen.queryByTestId('open-in-control-center-sdd-menu-item')).not.toBeInTheDocument();
+  });
+});
