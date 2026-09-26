@@ -84,6 +84,14 @@ export class MessageDispatcher {
     agentKickoffOverride?: string,
     persistUserMessage = true
   ): Promise<InteractiveMessage> {
+    // 0. Reject an agent that cannot run a chat session BEFORE anything is
+    //    written or stopped. Only needed when this message could boot a new
+    //    session: there is no live one, or the caller asks for an agent. A
+    //    live session with no agent requested keeps the agent it booted with.
+    if (!this.registry.findActiveStateForFeature(featureId) || agentType) {
+      this.bootstrapper.assertInteractiveSupported(agentType);
+    }
+
     // 1. Persist user message to DB immediately — this is the source
     //    of truth. SKIPPED when `persistUserMessage === false`, which
     //    the application-creation flow uses to boot the session on top

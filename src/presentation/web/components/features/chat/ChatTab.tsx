@@ -15,6 +15,7 @@ import { useChatRuntime } from './useChatRuntime';
 import { ChatComposer } from './ChatComposer';
 import { InteractionBubble } from './InteractionBubble';
 import { StepTracker } from './StepTracker';
+import { withFailureReason } from './failure-reason';
 import { SingleTurnCard, useTurnGroupsView, type TurnGroupView } from './turn-group-list';
 import { OperationRunCard, useOperationRuns, type OperationRun } from './operation-bubble';
 import type { PlaceholderStep } from './workflow-placeholder';
@@ -117,6 +118,8 @@ export interface ApplicationErrorState {
   message: string;
   /** True if the backend can re-run the failed pipeline. */
   retryable: boolean;
+  /** The underlying error, e.g. "cursor-agent is not logged in", when known. */
+  detail?: string;
 }
 
 const IS_DEV = process.env.NODE_ENV === 'development';
@@ -539,7 +542,10 @@ export function ChatTab({
                      the persisted bubble list when turn groups are on,
                      so the overlay owns the entire visible surface. */}
                   {applicationError ? (
-                    <ErrorRecoveryBanner state={applicationError} onRetry={onResumeWorkflow} />
+                    <ErrorRecoveryBanner
+                      state={withFailureReason(applicationError, trackerSteps) ?? applicationError}
+                      onRetry={onResumeWorkflow}
+                    />
                   ) : null}
                   {showTracker ? (
                     <StepTracker
@@ -614,7 +620,7 @@ export function ChatTab({
 // top bar. Gives the user a clear headline, an explanation, and — if
 // the backend says the operation is retryable — a prominent
 // "Try again" button wired to `onResumeWorkflow`.
-function ErrorRecoveryBanner({
+export function ErrorRecoveryBanner({
   state,
   onRetry,
 }: {
@@ -656,6 +662,11 @@ function ErrorRecoveryBanner({
           <div className="text-foreground/80 mt-0.5 text-[12px] leading-relaxed">
             {state.message}
           </div>
+          {state.detail ? (
+            <div className="mt-1.5 rounded bg-red-500/10 px-2 py-1 font-mono text-[11px] break-words text-red-700 dark:text-red-300">
+              {state.detail}
+            </div>
+          ) : null}
           {state.retryable && onRetry ? (
             <div className="mt-2.5 flex items-center gap-2">
               <button

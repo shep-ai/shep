@@ -7,6 +7,11 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import type { InteractiveMessage, WorkflowStep } from '@shepai/core/domain/generated/output';
 import { InteractiveMessageRole } from '@shepai/core/domain/generated/output';
+import {
+  SETTINGS_PATH,
+  chatSendErrorFromResponse,
+  isInteractiveAgentUnsupported,
+} from '@/lib/chat-errors';
 
 /** Shape matching UserInteractionData from the agent executor interface. */
 export interface InteractionData {
@@ -150,7 +155,7 @@ async function postMessage(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ content, worktreePath, model, agentType }),
   });
-  if (!res.ok) throw new Error(`Failed to send message: ${res.status}`);
+  if (!res.ok) throw await chatSendErrorFromResponse(res);
   const data = (await res.json()) as { message: InteractiveMessage };
   return data.message;
 }
@@ -164,6 +169,9 @@ const RETRY_LABEL = 'Retry';
 const ANSWER_FAILED_MESSAGE = 'Your answer was not delivered';
 const ANSWER_FAILED_DESCRIPTION = 'The agent is still waiting for it. Retry to answer again.';
 const SEND_FAILED_MESSAGE = 'Message not sent';
+const AGENT_UNSUPPORTED_MESSAGE = 'Chat unavailable for this agent';
+const SESSION_FAILED_MESSAGE = 'Chat session failed to start';
+const OPEN_SETTINGS_LABEL = 'Open Settings';
 const STOP_FAILED_MESSAGE = 'Could not stop the agent';
 const STOP_FAILED_DESCRIPTION = 'It is still running. Try again in a moment.';
 
@@ -531,8 +539,16 @@ export function useChatRuntime(
 
     es.addEventListener('session_status', (event: MessageEvent) => {
       try {
-        const data = JSON.parse(event.data as string) as { sessionStatus: string };
+        const data = JSON.parse(event.data as string) as {
+          sessionStatus: string;
+          sessionError?: string;
+        };
         if (data.sessionStatus) mergeSessionStatus(data.sessionStatus);
+        // A failed boot never produces a turn; its reason is the only
+        // explanation the user gets (agent not logged in, CLI missing, …).
+        if (data.sessionError) {
+          toast.error(SESSION_FAILED_MESSAGE, { description: data.sessionError });
+        }
       } catch {
         // Ignore
       }
@@ -653,7 +669,7 @@ export function useChatRuntime(
 
       return { previous };
     },
-    onError: (_err, content, context) => {
+    onError: (err, content, context) => {
       // Rollback on error. The composer was cleared the moment the user hit
       // send, so a silent rollback makes the message vanish as if it had
       // never been typed — say so, and hand the text back via a retry.
@@ -661,6 +677,18 @@ export function useChatRuntime(
         queryClient.setQueryData(chatQueryKey(featureId), context.previous);
       }
       cancelAwaiting();
+      // A retry cannot succeed until the agent changes, so explain why in
+      // the server's words and point at Settings instead.
+      if (isInteractiveAgentUnsupported(err)) {
+        toast.error(AGENT_UNSUPPORTED_MESSAGE, {
+          description: err.message,
+          action: {
+            label: OPEN_SETTINGS_LABEL,
+            onClick: () => window.location.assign(SETTINGS_PATH),
+          },
+        });
+        return;
+      }
       toast.error(SEND_FAILED_MESSAGE, {
         description: previewMessage(content),
         action: {

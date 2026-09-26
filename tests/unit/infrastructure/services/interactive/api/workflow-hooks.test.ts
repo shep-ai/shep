@@ -12,7 +12,7 @@ import { WorkflowHooks } from '@/infrastructure/services/interactive/api/workflo
 import { SessionRegistry } from '@/infrastructure/services/interactive/core/session-registry.js';
 import { StreamEventDispatcher } from '@/infrastructure/services/interactive/core/stream-event-dispatcher.js';
 import type { WorkflowStep } from '@/domain/generated/output.js';
-import { WorkflowStepStatus } from '@/domain/generated/output.js';
+import { InteractiveSessionStatus, WorkflowStepStatus } from '@/domain/generated/output.js';
 
 function makeStep(id: string, featureId: string): WorkflowStep {
   return {
@@ -86,6 +86,50 @@ describe('WorkflowHooks', () => {
 
       // Emit a non-done chunk first, then a done chunk
       eventDispatcher.notifyByFeatureId(featureId, { delta: 'partial', done: false });
+      eventDispatcher.notifyByFeatureId(featureId, { delta: '', done: true });
+
+      await expect(promise).resolves.toBeUndefined();
+    });
+
+    // A session that errors (e.g. its boot failed) never emits `done: true`,
+    // so a waiter that only listens for `done` would hang forever and keep
+    // the workflow step "running".
+    it('rejects when the session reports an error status', async () => {
+      const featureId = 'feat-wait-error';
+      const promise = hooks.waitForTurnDone(featureId);
+
+      eventDispatcher.notifyByFeatureId(featureId, {
+        delta: '',
+        done: false,
+        sessionStatus: InteractiveSessionStatus.error,
+      });
+
+      await expect(promise).rejects.toThrow(/session failed/i);
+    });
+
+    it('rejects with the session error reason when one is reported', async () => {
+      const featureId = 'feat-wait-error-reason';
+      const promise = hooks.waitForTurnDone(featureId);
+
+      eventDispatcher.notifyByFeatureId(featureId, {
+        delta: '',
+        done: false,
+        sessionStatus: InteractiveSessionStatus.error,
+        sessionError: 'cursor-agent is not installed',
+      });
+
+      await expect(promise).rejects.toThrow('cursor-agent is not installed');
+    });
+
+    it('ignores non-error session status updates while waiting', async () => {
+      const featureId = 'feat-wait-status';
+      const promise = hooks.waitForTurnDone(featureId);
+
+      eventDispatcher.notifyByFeatureId(featureId, {
+        delta: '',
+        done: false,
+        sessionStatus: InteractiveSessionStatus.ready,
+      });
       eventDispatcher.notifyByFeatureId(featureId, { delta: '', done: true });
 
       await expect(promise).resolves.toBeUndefined();
