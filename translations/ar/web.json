@@ -279,7 +279,7 @@
       "labelDescription": "The page you land on when opening the web UI",
       "options": {
         "control-center": "Control Center",
-        "applications": "Applications",
+        "applications": "منشئ التطبيقات",
         "features": "Features"
       },
       "hint": "This controls where you land when you open the web UI. You can change it at any time."
@@ -382,7 +382,7 @@
     "sessions": "الجلسات",
     "tools": "الأدوات",
     "skills": "المهارات",
-    "applications": "Applications",
+    "applications": "منشئ التطبيقات",
     "agentQuestions": "Agent Questions",
     "aspm": "Security",
     "aspmDashboard": "Dashboard",
@@ -449,7 +449,29 @@
     "git": "Git",
     "gitRequired": "مطلوب لجميع المراحل",
     "githubCli": "GitHub CLI",
-    "githubCliRequired": "مطلوب لطلبات السحب"
+    "githubCliRequired": "مطلوب لطلبات السحب",
+    "modes": {
+      "spec": {
+        "label": "قائم على المواصفات",
+        "description": "المتطلبات والبحث وخطة أولًا — توافق عليها قبل كتابة أي شيفرة.",
+        "stack": "أي تقنيات، تُختار أثناء البحث"
+      },
+      "fast": {
+        "label": "سريع",
+        "description": "ينفّذ مباشرةً من وصفك، دون مرحلة مواصفات.",
+        "stack": "أي تقنيات"
+      },
+      "application": {
+        "label": "تطبيق ويب سريع",
+        "description": "نموذج أولي فوري لتطبيق ويب مع معاينة مباشرة. دون مرحلة مواصفات.",
+        "stack": "Vite + React + Tailwind + shadcn"
+      }
+    },
+    "existingFolder": {
+      "body": "يذكر وصفك {{path}}. يبدأ المشروع الجديد فارغًا ولن يطّلع على محتوى ذلك المجلد.",
+      "fallback": "لمتابعة شيفرة موجودة، افتح ذلك المجلد كمشروع بدلًا من ذلك.",
+      "action": "اعمل على هذا المجلد بدلًا من ذلك"
+    }
   },
   "welcome": {
     "loadingAgents": "جارٍ تحميل الوكلاء…",
@@ -567,7 +589,7 @@
     "folderOfRepos": "مجلد مستودعات",
     "adoptBranch": "تبني فرع",
     "fromGithub": "من GitHub",
-    "newApplication": "تطبيق جديد",
+    "newApplication": "ابدأ من وصف",
     "newSddFeature": "ميزة SDD جديدة",
     "newSddForApp": "ميزة SDD جديدة لـ {{appName}}",
     "openInControlCenterSdd": "فتح في مركز التحكم (وضع SDD)"

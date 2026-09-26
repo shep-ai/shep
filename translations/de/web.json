@@ -279,7 +279,7 @@
       "labelDescription": "The page you land on when opening the web UI",
       "options": {
         "control-center": "Control Center",
-        "applications": "Applications",
+        "applications": "App Builder",
         "features": "Features"
       },
       "hint": "This controls where you land when you open the web UI. You can change it at any time."
@@ -382,7 +382,7 @@
     "sessions": "Sitzungen",
     "tools": "Tools",
     "skills": "Skills",
-    "applications": "Applications",
+    "applications": "App Builder",
     "agentQuestions": "Agent Questions",
     "aspm": "Security",
     "aspmDashboard": "Dashboard",
@@ -449,7 +449,29 @@
     "git": "Git",
     "gitRequired": "Für alle Phasen erforderlich",
     "githubCli": "GitHub CLI",
-    "githubCliRequired": "Für Pull Requests erforderlich"
+    "githubCliRequired": "Für Pull Requests erforderlich",
+    "modes": {
+      "spec": {
+        "label": "Spezifikationsgetrieben",
+        "description": "Zuerst Anforderungen, Recherche und ein Plan — du gibst sie frei, bevor Code geschrieben wird.",
+        "stack": "Beliebiger Stack, gewählt während der Recherche"
+      },
+      "fast": {
+        "label": "Schnell",
+        "description": "Setzt deine Beschreibung direkt um, ohne Spezifikationsphase.",
+        "stack": "Beliebiger Stack"
+      },
+      "application": {
+        "label": "Schnelle Web-App",
+        "description": "Sofortiger Web-App-Prototyp mit Live-Vorschau. Keine Spezifikationsphase.",
+        "stack": "Vite + React + Tailwind + shadcn"
+      }
+    },
+    "existingFolder": {
+      "body": "Deine Beschreibung erwähnt {{path}}. Ein neues Projekt beginnt leer und schaut nicht in diesen Ordner.",
+      "fallback": "Um bestehenden Code fortzusetzen, öffne diesen Ordner stattdessen als Projekt.",
+      "action": "Stattdessen an diesem Ordner arbeiten"
+    }
   },
   "welcome": {
     "loadingAgents": "Agenten werden geladen…",
@@ -567,7 +589,7 @@
     "folderOfRepos": "Ordner mit Repos",
     "adoptBranch": "Branch übernehmen",
     "fromGithub": "Von GitHub",
-    "newApplication": "Neue Anwendung",
+    "newApplication": "Mit einer Beschreibung starten",
     "newSddFeature": "Neues SDD-Feature",
     "newSddForApp": "Neues SDD-Feature für {{appName}}",
     "openInControlCenterSdd": "Im Control Center öffnen (SDD-Modus)"

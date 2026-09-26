@@ -1,0 +1,89 @@
+name: "sdd-vs-app-builder-clarity"
+number: 117
+branch: "claude/sweet-dijkstra-z16oad"
+oneLiner: |-
+  Make the difference between spec-driven Features (any stack) and the Vite + shadcn App Builder impossible to miss, and give new projects a stack-agnostic spec-driven path
+summary: |-
+  A user spent two days assuming Shep's Applications "Describe with AI" flow was the spec-driven
+  orchestrator and abandoned Shep when it turned out to be a Vite + shadcn generator (issue 896).
+  The investigation found the confusion is not only copy: every web entry point that starts a
+  NEW project is stack-locked. The Control Center composer defaults to Application mode, and its
+  Fast / Spec modes prepend a hard-coded "Build this as a React application using Vite" preamble.
+  This feature removes the lock-in from the Feature path, makes spec-driven the default for new
+  projects, labels every surface honestly, and documents the greenfield SDD path.
+phase: "Requirements"
+sizeEstimate: "M"
+relatedFeatures:
+  - "091-apps-only-surface"
+technologies:
+  - "TypeScript"
+  - "tsyringe"
+  - "Next.js (server actions, client components)"
+  - "react-i18next"
+  - "Storybook"
+  - "Vitest"
+  - "Playwright"
+relatedLinks:
+  - "https://github.com/shep-ai/shep/issues/896"
+openQuestions: []
+content: |
+  ## Problem Statement
+
+  Shep has two ways to build, and nothing tells users which is which:
+
+  | Path | What it really does |
+  | --- | --- |
+  | Features (Control Center, `shep feat`) | Any stack, the user's repo or an empty folder, optional SDD (requirements → research → plan → approval gates) |
+  | Applications ("Describe with AI") | Always scaffolds Vite + React + TS + Tailwind + shadcn + bun under `~/.shep/projects`, no spec phase, "don't ask, just build" |
+
+  Evidence in the code:
+
+  - The sidebar lists Applications first with the Home icon, above Control Center.
+  - The Applications card says only "Describe with AI — Start with an idea".
+  - `ControlCenterEmptyState` defaults to `application` mode, including in Control Center.
+  - Its Fast / Spec modes call `createProjectAndFeature`, which prepends a React + Vite preamble
+    to the user's prompt and defaults to Fast — so there is no stack-agnostic greenfield path in
+    the web UI at all, and the project-creation rules live in a server action, not in core.
+  - A prompt like "look at /home/me/code/app and plan" is treated as prose; the path is ignored
+    and a new empty sandbox is created.
+  - README never mentions Applications, and no guide covers starting a new project with SDD.
+
+  ## Success Criteria
+
+  - Creating a new project from any Feature mode sends the user's prompt unchanged — no stack
+    preamble — and a new project with no explicit mode runs the spec-driven workflow.
+  - The project-plus-feature orchestration lives in a core use case resolvable by string token;
+    the server action is a thin wrapper.
+  - The Control Center composer lists Spec-driven first and selects it by default; every mode
+    shows what it does and which stack it uses ("Any stack" vs "Vite + React + shadcn").
+  - A prompt that references an existing folder shows an inline hint with a one-click hand-off
+    to a spec-driven feature on that folder.
+  - Applications is presented as the App Builder: honest header copy, an option labelled with
+    its stack, and a "Spec-driven project (any stack)" option (hidden in the apps-only shell).
+  - The sidebar lists Control Center first with the Home icon.
+  - README has a "Two ways to build" section, and a new guide walks through starting a new project
+    with SDD from both the web UI and the CLI.
+
+  ## Affected Areas
+
+  | Area | Impact | Reasoning |
+  | --- | --- | --- |
+  | `packages/core/src/domain/shared` | Medium | New pure helpers: new-project defaults + existing-folder reference detection |
+  | `packages/core/src/application/use-cases/features/create` | Medium | New `CreateProjectFeatureUseCase` |
+  | `packages/core/src/infrastructure/di` | Low | Register class + string token |
+  | `web/app/actions/create-project-and-feature.ts` | Medium | Becomes a thin wrapper; preamble removed |
+  | `web/components/features/control-center` | High | Mode order/default/labels, hint, file split |
+  | `web/components/features/applications` | High | App Builder copy, create card split + spec option |
+  | `web/components/layouts/app-sidebar` | Low | Order + icons |
+  | `translations/*/web.json` | Low | New keys + renamed labels in all 9 locales |
+  | `README.md`, `docs/guides/*` | Medium | Two-ways section + greenfield SDD guide |
+
+  ## Dependencies
+
+  None. Reuses `CreateProjectUseCase`, `CreateFeatureUseCase` (which already registers an unknown
+  repository path and initialises git), `buildCreateUrl`, and the shell-variant cookie.
+
+  ## Size Estimate
+
+  **M** — no schema or TypeSpec changes; one new use case, two domain helpers, and UI/doc work
+  across several surfaces.

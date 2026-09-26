@@ -1,0 +1,73 @@
+name: "sdd-vs-app-builder-clarity"
+summary: |-
+  All work reuses existing mechanisms: the two-phase createRecord / initializeAndSpawn pattern of
+  CreateFeatureFromRemoteUseCase, CreateFeatureUseCase's repository auto-registration and git init,
+  the BuildMode enum, buildCreateUrl deep links, and the shep-shell-variant cookie. No new library.
+relatedFeatures:
+  - "091-apps-only-surface"
+technologies:
+  - "TypeScript"
+  - "tsyringe"
+  - "Next.js"
+  - "react-i18next"
+relatedLinks:
+  - "https://github.com/shep-ai/shep/issues/896"
+decisions:
+  - title: "Where greenfield project + feature creation lives"
+    chosen: |-
+      A composite core use case, CreateProjectFeatureUseCase, that chains CreateProjectUseCase and
+      CreateFeatureUseCase and exposes createRecord() + initializeAndSpawn() like
+      CreateFeatureFromRemoteUseCase. The web action only resolves it by string token.
+    rejected:
+      - "Keep the logic in the server action — violates 'logic lives in core'; the CLI/TUI could not reuse it."
+      - "Add a 'newProject' flag to CreateFeatureUseCase — widens an already large use case for one caller."
+    rationale: "Same shape as an existing, tested composite; presentation-agnostic."
+  - title: "What the agent is told about the stack for a new project"
+    chosen: |-
+      Nothing extra: the user's prompt is passed unchanged. In spec mode the research phase already
+      records technology decisions; in fast mode the agent picks a stack that fits the prompt.
+    rejected:
+      - "Keep the React + Vite preamble — this is the lock-in the issue reports."
+      - "Replace it with a neutral preamble — it would still rewrite the user's description shown in the UI."
+    rationale: "The Feature path's promise is 'any stack'; the App Builder is the opinionated path."
+  - title: "Default build mode for a new project"
+    chosen: "BuildMode.Spec, via a domain constant + resolver used by the use case and the composer."
+    rejected:
+      - "Keep Fast — an empty repo has no stack, so skipping research is exactly the wrong default."
+      - "Change settings.workflow.defaultMode globally — changes behaviour for existing repos; out of scope."
+    rationale: "Greenfield work is where requirements and research matter most."
+  - title: "Detecting a prompt that points at existing code"
+    chosen: |-
+      A pure domain helper that finds an absolute folder path under a well-known root (home dirs,
+      ~/, /tmp, /opt, /srv, /mnt, /workspace(s), drive letters). The composer shows a hint with a
+      button that deep-links to /create?repo=<path>&mode=spec&prompt=<prompt>.
+    rejected:
+      - "Any '/'-prefixed token — false positives on '/health endpoint' or '/api/users'."
+      - "Refuse to create — too aggressive; a hint keeps the user in control."
+    rationale: "Deterministic, cheap, testable; CreateFeatureUseCase already registers unknown paths."
+  - title: "Naming Applications"
+    chosen: |-
+      Present it as the "App Builder" in the sidebar, page header and home-page setting; keep the
+      /applications route, entity and API names. Control Center moves first with the Home icon.
+    rejected:
+      - "Rename the entity/route — large churn with no user-visible gain."
+    rationale: "'Application' reads as 'my app' and hides that this is a single-stack builder."
+  - title: "Apps-only shell"
+    chosen: "The Applications server page reads the shell-variant cookie and hides spec-driven hand-offs in apps-only mode, where Control Center routes are guarded."
+    rejected:
+      - "A new React context for the variant — one prop is enough."
+    rationale: "Never offer a link the route guard would bounce."
+openQuestions: []
+content: |
+  ## Technology Decisions
+
+  See `decisions` above. No new dependency is introduced.
+
+  ## Security Considerations
+
+  The existing-folder hint only reads the prompt string; the hand-off uses the existing /create
+  drawer, which already validates the repository path before creating anything.
+
+  ## Performance Implications
+
+  No performance implications identified — one regex scan of the prompt per keystroke render.

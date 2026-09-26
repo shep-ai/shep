@@ -7,6 +7,7 @@
  */
 
 import type { Route } from 'next';
+import { BuildMode } from '@shepai/core/domain/generated/output';
 
 export const URL_PARAMS = {
   repo: 'repo',
@@ -40,4 +41,13 @@ export function buildCreateUrl(params: CreateUrlParams = {}): Route {
   if (params.applicationId) search.set(URL_PARAMS.applicationId, params.applicationId);
   const qs = search.toString();
   return (qs ? `/create?${qs}` : '/create') as Route;
+}
+
+/**
+ * `/create` URL for a spec-driven feature on a folder that already exists —
+ * the hand-off offered when a "new project" prompt names existing code.
+ * The create flow registers the folder as a repository if needed.
+ */
+export function buildExistingFolderFeatureUrl(folderPath: string, prompt: string): Route {
+  return buildCreateUrl({ repo: folderPath, prompt, mode: BuildMode.Spec });
 }

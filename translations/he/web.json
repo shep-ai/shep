@@ -279,7 +279,7 @@
       "labelDescription": "The page you land on when opening the web UI",
       "options": {
         "control-center": "Control Center",
-        "applications": "Applications",
+        "applications": "בונה האפליקציות",
         "features": "Features"
       },
       "hint": "This controls where you land when you open the web UI. You can change it at any time."
@@ -382,7 +382,7 @@
     "sessions": "סשנים",
     "tools": "כלים",
     "skills": "כישורים",
-    "applications": "Applications",
+    "applications": "בונה האפליקציות",
     "agentQuestions": "Agent Questions",
     "aspm": "Security",
     "aspmDashboard": "Dashboard",
@@ -449,7 +449,29 @@
     "git": "Git",
     "gitRequired": "נדרש לכל השלבים",
     "githubCli": "GitHub CLI",
-    "githubCliRequired": "נדרש לבקשות משיכה"
+    "githubCliRequired": "נדרש לבקשות משיכה",
+    "modes": {
+      "spec": {
+        "label": "מונחה מפרט",
+        "description": "דרישות, מחקר ותוכנית קודם — אתה מאשר אותם לפני שנכתב קוד.",
+        "stack": "כל סטאק, נבחר במהלך המחקר"
+      },
+      "fast": {
+        "label": "מהיר",
+        "description": "מממש ישירות מהתיאור שלך, ללא שלב מפרט.",
+        "stack": "כל סטאק"
+      },
+      "application": {
+        "label": "אפליקציית ווב מהירה",
+        "description": "אב-טיפוס מיידי של אפליקציית ווב עם תצוגה חיה. ללא שלב מפרט.",
+        "stack": "Vite + React + Tailwind + shadcn"
+      }
+    },
+    "existingFolder": {
+      "body": "התיאור שלך מזכיר את {{path}}. פרויקט חדש מתחיל ריק ולא יסתכל בתוך התיקייה הזו.",
+      "fallback": "כדי להמשיך קוד קיים, פתח את התיקייה הזו כפרויקט במקום.",
+      "action": "עבוד על התיקייה הזו במקום"
+    }
   },
   "welcome": {
     "loadingAgents": "טוען סוכנים…",
@@ -567,7 +589,7 @@
     "folderOfRepos": "תיקיית מאגרים",
     "adoptBranch": "אימוץ ענף",
     "fromGithub": "מ-GitHub",
-    "newApplication": "אפליקציה חדשה",
+    "newApplication": "התחל מתיאור",
     "newSddFeature": "פיצ'ר SDD חדש",
     "newSddForApp": "פיצ'ר SDD חדש עבור {{appName}}",
     "openInControlCenterSdd": "פתיחה ב-Control Center (מצב SDD)"

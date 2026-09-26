@@ -29,7 +29,12 @@ vi.mock('@/hooks/deployment-status-provider', () => ({
 }));
 
 vi.mock('@/components/features/control-center/control-center-empty-state', () => ({
-  ControlCenterEmptyState: () => React.createElement('div', { 'data-testid': 'empty-state-stub' }),
+  ControlCenterEmptyState: (props: { initialMode?: string; onRepositorySelect?: unknown }) =>
+    React.createElement('div', {
+      'data-testid': 'empty-state-stub',
+      'data-initial-mode': props.initialMode,
+      'data-can-start-features': String(Boolean(props.onRepositorySelect)),
+    }),
 }));
 
 vi.mock('@/components/features/applications/application-card', () => ({
@@ -37,7 +42,7 @@ vi.mock('@/components/features/applications/application-card', () => ({
     React.createElement('div', { 'data-testid': `application-card-${application.id}` }),
 }));
 
-function renderWithClient() {
+function renderWithClient(props: React.ComponentProps<typeof ApplicationsPageClient> = {}) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
@@ -45,7 +50,7 @@ function renderWithClient() {
     React.createElement(
       QueryClientProvider,
       { client },
-      React.createElement(ApplicationsPageClient)
+      React.createElement(ApplicationsPageClient, props)
     )
   );
 }
@@ -273,5 +278,68 @@ describe('ApplicationsPageClient query failure', () => {
     expect(screen.getByTestId('applications-stale-warning')).toBeInTheDocument();
     expect(screen.getByTestId('application-card-app-1')).toBeInTheDocument();
     expect(screen.queryByTestId('empty-state-stub')).not.toBeInTheDocument();
+  });
+});
+
+describe('App Builder framing (issue 896)', () => {
+  const apps = [
+    {
+      id: 'weather',
+      name: 'Weather Dashboard',
+      description: 'Forecasts',
+      repositoryPath: '/projects/weather',
+      effectiveStatus: 'ready',
+      createdAt: '2026-09-20',
+    },
+  ];
+
+  beforeEach(() => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue({
+      ok: true,
+      json: async () => apps,
+    } as Response);
+  });
+
+  afterEach(() => vi.restoreAllMocks());
+
+  it('names the page the App Builder and states its stack and missing spec phase', async () => {
+    renderWithClient();
+
+    expect(
+      await screen.findByRole('heading', { level: 1, name: 'App Builder' })
+    ).toBeInTheDocument();
+    const intro = screen.getByTestId('app-builder-intro');
+    expect(intro).toHaveTextContent('Vite + React + Tailwind + shadcn');
+    expect(intro).toHaveTextContent(/no spec phase/i);
+  });
+
+  it('opens the App Builder prompt in Quick web app mode', async () => {
+    renderWithClient({ specDrivenAvailable: true });
+
+    await userEvent.click(await screen.findByRole('button', { name: /New web app/ }));
+
+    expect(screen.getByTestId('empty-state-stub')).toHaveAttribute(
+      'data-initial-mode',
+      'application'
+    );
+  });
+
+  it('points spec-driven users to an any-stack project', async () => {
+    renderWithClient({ specDrivenAvailable: true });
+
+    await userEvent.click(
+      await screen.findByRole('button', { name: /Start a spec-driven project/ })
+    );
+
+    const composer = screen.getByTestId('empty-state-stub');
+    expect(composer).toHaveAttribute('data-initial-mode', 'spec');
+    expect(composer).toHaveAttribute('data-can-start-features', 'true');
+  });
+
+  it('offers no spec-driven hand-off where Features are unavailable (apps-only shell)', async () => {
+    renderWithClient({ specDrivenAvailable: false });
+
+    await screen.findByTestId('applications-page-grid');
+    expect(screen.queryByRole('button', { name: /spec-driven/i })).not.toBeInTheDocument();
   });
 });

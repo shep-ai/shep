@@ -56,6 +56,7 @@ vi.mock('@/app/actions/create-application', () => ({
 import { createProjectAndFeature } from '@/app/actions/create-project-and-feature';
 import { createApplication } from '@/app/actions/create-application';
 import { ControlCenterEmptyState } from '@/components/features/control-center/control-center-empty-state';
+import { BuildMode } from '@shepai/core/domain/generated/output';
 
 const mockedCreateProjectAndFeature = vi.mocked(createProjectAndFeature);
 const mockedCreateApplication = vi.mocked(createApplication);
@@ -151,6 +152,128 @@ describe('ControlCenterEmptyState', () => {
     await waitFor(() => {
       expect(mockedCreateProjectAndFeature).toHaveBeenCalledTimes(1);
       expect(mockedCreateApplication).not.toHaveBeenCalled();
+    });
+    expect(mockedCreateProjectAndFeature.mock.calls[0][0]).toMatchObject({
+      buildMode: BuildMode.Fast,
+    });
+  });
+
+  describe('spec-driven default and honest mode labels (issue 896)', () => {
+    it('selects Spec-driven by default on a surface that can start features', () => {
+      render(<ControlCenterEmptyState onRepositorySelect={vi.fn()} />, { wrapper: Wrapper });
+
+      expect(screen.getByTestId('build-mode-selector')).toHaveTextContent('Spec-driven');
+    });
+
+    it('starts a spec-driven new project when submitted without changing the mode', async () => {
+      const user = userEvent.setup();
+      render(<ControlCenterEmptyState onRepositorySelect={vi.fn()} />, { wrapper: Wrapper });
+
+      await user.type(screen.getByRole('textbox'), 'A booking tool for climbing gyms');
+      await user.keyboard('{Meta>}{Enter}{/Meta}');
+
+      await waitFor(() => {
+        expect(mockedCreateProjectAndFeature).toHaveBeenCalledTimes(1);
+      });
+      expect(mockedCreateProjectAndFeature.mock.calls[0][0]).toMatchObject({
+        description: 'A booking tool for climbing gyms',
+        buildMode: BuildMode.Spec,
+      });
+      expect(mockedCreateApplication).not.toHaveBeenCalled();
+    });
+
+    it('honours an explicit initial mode', () => {
+      render(
+        <ControlCenterEmptyState
+          onRepositorySelect={vi.fn()}
+          initialMode={BuildMode.Application}
+        />,
+        { wrapper: Wrapper }
+      );
+
+      expect(screen.getByTestId('build-mode-selector')).toHaveTextContent('Quick web app');
+    });
+
+    it('states what the selected mode does and which stack it uses', async () => {
+      const user = userEvent.setup();
+      render(<ControlCenterEmptyState onRepositorySelect={vi.fn()} />, { wrapper: Wrapper });
+
+      const description = screen.getByTestId('build-mode-description');
+      expect(description).toHaveTextContent('Any stack, chosen during research');
+      expect(description).toHaveTextContent(/before any code is written/);
+
+      await user.click(screen.getByTestId('build-mode-selector'));
+      await user.click(screen.getByTestId('build-mode-application'));
+
+      expect(screen.getByTestId('build-mode-description')).toHaveTextContent(
+        'Vite + React + Tailwind + shadcn'
+      );
+    });
+
+    it('tells App Builder users which stack they get', () => {
+      render(<ControlCenterEmptyState onApplicationCreated={vi.fn()} />, { wrapper: Wrapper });
+
+      expect(screen.getByTestId('build-mode-description')).toHaveTextContent(
+        'Vite + React + Tailwind + shadcn'
+      );
+    });
+
+    it('lists every mode with its stack in the dropdown', async () => {
+      const user = userEvent.setup();
+      render(<ControlCenterEmptyState onRepositorySelect={vi.fn()} />, { wrapper: Wrapper });
+
+      await user.click(screen.getByTestId('build-mode-selector'));
+
+      expect(screen.getByTestId('build-mode-spec')).toHaveTextContent('Any stack');
+      expect(screen.getByTestId('build-mode-fast')).toHaveTextContent('Any stack');
+      expect(screen.getByTestId('build-mode-application')).toHaveTextContent('Vite');
+    });
+  });
+
+  describe('prompt that points at an existing folder', () => {
+    it('shows no hint for an ordinary prompt', async () => {
+      const user = userEvent.setup();
+      render(<ControlCenterEmptyState onRepositorySelect={vi.fn()} />, { wrapper: Wrapper });
+
+      await user.type(screen.getByRole('textbox'), 'add a /health endpoint');
+
+      expect(screen.queryByTestId('existing-code-hint')).not.toBeInTheDocument();
+    });
+
+    it('hands the folder and prompt off instead of creating an empty project', async () => {
+      const user = userEvent.setup();
+      const onOpenExistingFolder = vi.fn();
+      render(
+        <ControlCenterEmptyState
+          onRepositorySelect={vi.fn()}
+          onOpenExistingFolder={onOpenExistingFolder}
+        />,
+        { wrapper: Wrapper }
+      );
+
+      const prompt = 'look at /home/alex/code/trainer and plan in docs folder';
+      await user.type(screen.getByRole('textbox'), prompt);
+
+      expect(screen.getByTestId('existing-code-hint')).toHaveTextContent('/home/alex/code/trainer');
+      await user.click(screen.getByRole('button', { name: /work on this folder/i }));
+
+      expect(onOpenExistingFolder).toHaveBeenCalledWith('/home/alex/code/trainer', prompt);
+      expect(mockedCreateProjectAndFeature).not.toHaveBeenCalled();
+    });
+
+    it('does not offer the hand-off for a home-relative path', async () => {
+      const user = userEvent.setup();
+      render(
+        <ControlCenterEmptyState onRepositorySelect={vi.fn()} onOpenExistingFolder={vi.fn()} />,
+        { wrapper: Wrapper }
+      );
+
+      await user.type(screen.getByRole('textbox'), 'refactor ~/work/api');
+
+      expect(screen.getByTestId('existing-code-hint')).toBeInTheDocument();
+      expect(
+        screen.queryByRole('button', { name: /work on this folder/i })
+      ).not.toBeInTheDocument();
     });
   });
 });

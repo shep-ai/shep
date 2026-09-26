@@ -2752,3 +2752,26 @@ rule, and both run in seconds. Rules: before pushing, grep `.github/workflows/*.
 diff, `node packages/electron/scripts/build.mjs`); a new third-party import in `packages/core`
 is also a `packages/electron/package.json` dependency; when adding a story, remove the
 component from `scripts/check-stories.mjs`'s grandfathered list in the same change.
+
+## An opinionated path must say so on every surface — and must not leak into the neutral one
+
+Issue 896: a user spent two days in the Applications "Describe with AI" flow believing it was
+Shep's spec-driven orchestrator; it always scaffolds Vite + React + shadcn with no spec phase.
+The copy said only "Start with an idea", the sidebar listed Applications first as Home, and the
+README never mentioned it. Worse, tracing it showed the "neutral" path was not neutral: the
+Control Center composer defaulted to Application mode, and its Fast/Spec modes prepended a
+hard-coded "Build this as a React application using Vite" preamble inside a server action.
+
+Rules:
+
+1. Every create surface names what it builds and on which stack. If an option is single-stack,
+   the stack is in the option itself, not in a doc the user has not read.
+2. Never rewrite the user's prompt to inject a technology choice on a path that promises "any
+   stack". Stack defaults belong only to the path that advertises them.
+3. A greenfield project defaults to the spec-driven workflow — an empty repo has no stack, so
+   skipping research is the wrong default.
+4. Orchestration of "create project + create feature" lives in a core use case
+   (`CreateProjectFeatureUseCase`), never in a server action, so the rules are testable and
+   shared by every surface.
+5. When a user's prompt names an existing folder, a "new project" flow must notice and offer to
+   work on that folder instead of silently creating an empty sandbox.

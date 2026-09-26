@@ -279,7 +279,7 @@
       "labelDescription": "The page you land on when opening the web UI",
       "options": {
         "control-center": "Control Center",
-        "applications": "Applications",
+        "applications": "Конструктор приложений",
         "features": "Features"
       },
       "hint": "This controls where you land when you open the web UI. You can change it at any time."
@@ -382,7 +382,7 @@
     "sessions": "Сессии",
     "tools": "Инструменты",
     "skills": "Навыки",
-    "applications": "Applications",
+    "applications": "Конструктор приложений",
     "agentQuestions": "Agent Questions",
     "aspm": "Security",
     "aspmDashboard": "Dashboard",
@@ -449,7 +449,29 @@
     "git": "Git",
     "gitRequired": "Необходим для всех фаз",
     "githubCli": "GitHub CLI",
-    "githubCliRequired": "Необходим для запросов на слияние"
+    "githubCliRequired": "Необходим для запросов на слияние",
+    "modes": {
+      "spec": {
+        "label": "По спецификации",
+        "description": "Сначала требования, исследование и план — вы утверждаете их до написания кода.",
+        "stack": "Любой стек, выбирается на этапе исследования"
+      },
+      "fast": {
+        "label": "Быстро",
+        "description": "Реализует сразу по вашему описанию, без этапа спецификации.",
+        "stack": "Любой стек"
+      },
+      "application": {
+        "label": "Быстрое веб-приложение",
+        "description": "Мгновенный прототип веб-приложения с живым предпросмотром. Без этапа спецификации.",
+        "stack": "Vite + React + Tailwind + shadcn"
+      }
+    },
+    "existingFolder": {
+      "body": "В описании упомянута папка {{path}}. Новый проект создаётся пустым и не заглядывает в эту папку.",
+      "fallback": "Чтобы продолжить работу с существующим кодом, откройте эту папку как проект.",
+      "action": "Работать с этой папкой"
+    }
   },
   "welcome": {
     "loadingAgents": "Загрузка агентов…",
@@ -567,7 +589,7 @@
     "folderOfRepos": "Папка с репозиториями",
     "adoptBranch": "Принять ветку",
     "fromGithub": "Из GitHub",
-    "newApplication": "Новое приложение",
+    "newApplication": "Начать с описания",
     "newSddFeature": "Новая SDD-функция",
     "newSddForApp": "Новая SDD-функция для {{appName}}",
     "openInControlCenterSdd": "Открыть в Control Center (режим SDD)"

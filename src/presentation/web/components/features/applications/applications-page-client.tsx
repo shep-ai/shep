@@ -4,16 +4,12 @@ import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import {
-  ArrowUpRight,
   CheckCircle2,
-  FolderOpen,
-  Github,
   LayoutGrid,
   Loader2,
   Plus,
   RefreshCw,
   Search,
-  Sparkles,
   TriangleAlert,
   X,
   Zap,
@@ -24,14 +20,29 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { EmptyState } from '@/components/common/empty-state';
 import { DeploymentStatusProvider } from '@/hooks/deployment-status-provider';
-import { ControlCenterEmptyState } from '@/components/features/control-center/control-center-empty-state';
+import {
+  ControlCenterEmptyState,
+  type ControlCenterEmptyStateProps,
+} from '@/components/features/control-center/control-center-empty-state';
+import {
+  APP_BUILDER_MODE,
+  type ComposerBuildMode,
+} from '@/components/features/control-center/build-mode-options';
+import { buildExistingFolderFeatureUrl } from '@/lib/url-params';
+import { BuildMode } from '@shepai/core/domain/generated/output';
 import { ApplicationCard } from './application-card';
+import { NewApplicationCard } from './new-application-card';
 import { listDeployments } from '@/app/actions/list-deployments';
 import type { ApplicationWithStatus } from '@shepai/core/application/use-cases/applications/list-applications.use-case';
 import type { DeploymentStatusEntry } from '@shepai/core/application/ports/output/services/deployment-service.interface';
 
 export interface ApplicationsPageClientProps {
   className?: string;
+  /**
+   * Whether this shell can start Features (Control Center, /create). False in
+   * the apps-only shell, whose route guard would bounce those links.
+   */
+  specDrivenAvailable?: boolean;
 }
 
 /**
@@ -64,16 +75,13 @@ function matchesSearch(app: ApplicationWithStatus, query: string): boolean {
     .some((field) => field.toLowerCase().includes(needle));
 }
 
-interface NewApplicationCardProps {
-  importing?: boolean;
-  onDescribe(): void;
-  onOpenLocalDirectory?: () => void;
-  onImportGitHub?: () => void;
-}
-
-export function ApplicationsPageClient({ className }: ApplicationsPageClientProps) {
+export function ApplicationsPageClient({
+  className,
+  specDrivenAvailable = false,
+}: ApplicationsPageClientProps) {
   const router = useRouter();
-  const [showCreatePrompt, setShowCreatePrompt] = useState(false);
+  /** Mode the full-screen create prompt opened in; null while it is closed. */
+  const [createPromptMode, setCreatePromptMode] = useState<ComposerBuildMode | null>(null);
   const [search, setSearch] = useState('');
   const [importing, setImporting] = useState(false);
   const [statusFilter, setStatusFilter] = useState<StatusFilterId>('all');
@@ -127,6 +135,23 @@ export function ApplicationsPageClient({ className }: ApplicationsPageClientProp
     }),
     [sorted]
   );
+
+  // The same composer serves the App Builder and — where the shell can start
+  // Features — the stack-agnostic, spec-driven path, so users are never left
+  // with a single-stack generator as their only way to start a project.
+  const composerProps: Pick<
+    ControlCenterEmptyStateProps,
+    'onApplicationCreated' | 'onRepositorySelect' | 'onOpenExistingFolder'
+  > = {
+    onApplicationCreated: (appId) => router.push(`/application/${appId}`),
+    ...(specDrivenAvailable
+      ? {
+          onRepositorySelect: () => router.push('/control-center'),
+          onOpenExistingFolder: (folderPath: string, prompt: string) =>
+            router.push(buildExistingFolderFeatureUrl(folderPath, prompt)),
+        }
+      : {}),
+  };
 
   const openLocalProject = async () => {
     if (importing) return;
@@ -195,19 +220,38 @@ export function ApplicationsPageClient({ className }: ApplicationsPageClientProp
                   <LayoutGrid className="size-3.5" aria-hidden="true" />
                   Your workspace
                 </div>
-                <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Applications</h1>
-                <p className="text-muted-foreground max-w-lg text-sm leading-relaxed sm:text-base">
-                  From the first idea to your next release. Build something great.
+                <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">App Builder</h1>
+                <p
+                  data-testid="app-builder-intro"
+                  className="text-muted-foreground max-w-xl text-sm leading-relaxed sm:text-base"
+                >
+                  Quick web apps from a prompt, built with{' '}
+                  <span className="text-foreground font-medium">
+                    Vite + React + Tailwind + shadcn
+                  </span>{' '}
+                  and a live preview. No spec phase.
                 </p>
+                {specDrivenAvailable ? (
+                  <p className="text-muted-foreground max-w-xl text-xs leading-relaxed sm:text-sm">
+                    Need another stack, or requirements and a plan before any code?{' '}
+                    <button
+                      type="button"
+                      onClick={() => setCreatePromptMode(BuildMode.Spec)}
+                      className="text-primary font-medium underline-offset-4 hover:underline"
+                    >
+                      Start a spec-driven project
+                    </button>
+                  </p>
+                ) : null}
               </div>
               {!isLoading && sorted.length > 0 ? (
                 <Button
                   size="lg"
                   className="h-11 shrink-0 rounded-xl shadow-sm"
-                  onClick={() => setShowCreatePrompt(true)}
+                  onClick={() => setCreatePromptMode(APP_BUILDER_MODE)}
                 >
                   <Plus className="size-4" aria-hidden="true" />
-                  New application
+                  New web app
                 </Button>
               ) : null}
             </div>
@@ -243,11 +287,7 @@ export function ApplicationsPageClient({ className }: ApplicationsPageClientProp
             </div>
           ) : sorted.length === 0 ? (
             <div className="flex flex-1 items-center justify-center">
-              <ControlCenterEmptyState
-                onApplicationCreated={(appId) => {
-                  router.push(`/application/${appId}`);
-                }}
-              />
+              <ControlCenterEmptyState initialMode={APP_BUILDER_MODE} {...composerProps} />
             </div>
           ) : (
             <>
@@ -360,7 +400,10 @@ export function ApplicationsPageClient({ className }: ApplicationsPageClientProp
                   className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4"
                 >
                   <NewApplicationCard
-                    onDescribe={() => setShowCreatePrompt(true)}
+                    onQuickWebApp={() => setCreatePromptMode(APP_BUILDER_MODE)}
+                    {...(specDrivenAvailable
+                      ? { onSpecDrivenProject: () => setCreatePromptMode(BuildMode.Spec) }
+                      : {})}
                     importing={importing}
                     onOpenLocalDirectory={() => void openLocalProject()}
                     onImportGitHub={() =>
@@ -380,90 +423,17 @@ export function ApplicationsPageClient({ className }: ApplicationsPageClientProp
             so it stays contained within the page's relative root and
             never covers the AppsOnlyShell top bar. Sibling of the padded
             content div so it ignores the list's `p-6`. */}
-        {showCreatePrompt ? (
+        {createPromptMode ? (
           <div className="absolute inset-0 z-40">
             <ControlCenterEmptyState
-              onApplicationCreated={(appId) => {
-                router.push(`/application/${appId}`);
-              }}
-              onClose={() => setShowCreatePrompt(false)}
+              initialMode={createPromptMode}
+              {...composerProps}
+              onClose={() => setCreatePromptMode(null)}
               className="bg-background"
             />
           </div>
         ) : null}
       </div>
     </DeploymentStatusProvider>
-  );
-}
-
-/** Creation choices stay visible for mouse, keyboard and touch users. */
-function NewApplicationCard({
-  onDescribe,
-  onOpenLocalDirectory,
-  onImportGitHub,
-  importing,
-}: NewApplicationCardProps) {
-  const options = [
-    {
-      icon: Sparkles,
-      label: 'Describe with AI',
-      description: 'Start with an idea',
-      onClick: onDescribe,
-    },
-    {
-      icon: FolderOpen,
-      label: 'Open local project',
-      description: 'Continue from a folder',
-      onClick: onOpenLocalDirectory,
-    },
-    {
-      icon: Github,
-      label: 'Import from GitHub',
-      description: 'Bring an existing repository',
-      onClick: onImportGitHub,
-    },
-  ];
-  return (
-    <section
-      aria-label="Create an application"
-      className="border-primary/25 bg-primary/[0.025] flex min-h-[320px] flex-col rounded-xl border border-dashed p-5"
-    >
-      <div className="mb-5 flex items-center gap-3">
-        <span className="bg-primary/10 text-primary flex size-10 items-center justify-center rounded-xl">
-          <Plus className="size-5" aria-hidden="true" />
-        </span>
-        <div>
-          <h2 className="text-sm font-semibold">Make room for your next idea</h2>
-          <p className="text-muted-foreground mt-1 text-xs">Three ways to get started.</p>
-        </div>
-      </div>
-      <div className="flex flex-1 flex-col justify-center gap-2">
-        {options
-          .filter((option) => option.onClick)
-          .map(({ icon: Icon, label, description, onClick }) => (
-            <button
-              key={label}
-              type="button"
-              onClick={onClick}
-              disabled={label === 'Open local project' && importing}
-              className="border-border/60 bg-card hover:border-primary/35 hover:bg-primary/5 focus-visible:ring-ring group flex min-h-14 w-full items-center gap-3 rounded-lg border px-3 py-2.5 text-start transition-colors outline-none focus-visible:ring-2 disabled:cursor-wait disabled:opacity-60"
-            >
-              {label === 'Open local project' && importing ? (
-                <Loader2 className="text-primary size-4 shrink-0 animate-spin" aria-hidden="true" />
-              ) : (
-                <Icon className="text-primary size-4 shrink-0" aria-hidden="true" />
-              )}
-              <span className="min-w-0 flex-1">
-                <span className="block text-xs font-semibold">{label}</span>
-                <span className="text-muted-foreground mt-0.5 block text-xs">{description}</span>
-              </span>
-              <ArrowUpRight
-                className="text-muted-foreground size-3.5 shrink-0"
-                aria-hidden="true"
-              />
-            </button>
-          ))}
-      </div>
-    </section>
   );
 }

@@ -1,0 +1,179 @@
+name: "sdd-vs-app-builder-clarity"
+summary: "9 tasks across 3 phases; code tasks are RED-first."
+relatedFeatures: []
+technologies: []
+relatedLinks: []
+tasks:
+  - id: task-1
+    phaseId: phase-1
+    title: "Domain helpers: new-project defaults and existing-folder detection"
+    description: "Pure helpers in domain/shared shared by core and the web composer."
+    state: Done
+    dependencies: []
+    acceptanceCriteria:
+      - "resolveNewProjectBuildMode(undefined) === BuildMode.Spec; explicit modes pass through"
+      - "deriveProjectNameFromDescription keeps the first six words"
+      - "findExistingFolderReference finds /home/…, /Users/…, ~/…, C:\\… paths and strips trailing punctuation"
+      - "findExistingFolderReference returns null for '/health endpoint' and '/api/users'"
+    tdd:
+      red:
+        - "new-project.test.ts: default Spec, passthrough, name derivation"
+        - "existing-code-reference.test.ts: positives and API-route negatives"
+      green:
+        - "Implement both modules without .js import suffixes"
+      refactor:
+        - "Name the root list as a constant with a comment per entry"
+    estimatedEffort: S
+  - id: task-2
+    phaseId: phase-1
+    title: "CreateProjectFeatureUseCase"
+    description: "Composite of CreateProjectUseCase + CreateFeatureUseCase with createRecord/initializeAndSpawn."
+    state: Done
+    dependencies: ["task-1"]
+    acceptanceCriteria:
+      - "userInput is forwarded unchanged (no stack preamble)"
+      - "buildMode defaults to Spec, explicit Fast is honoured"
+      - "project creation failure throws and never calls CreateFeatureUseCase"
+      - "registered as class and as 'CreateProjectFeatureUseCase' string token; bootstrap test lists it"
+    tdd:
+      red:
+        - "Use-case unit tests for each acceptance criterion"
+        - "Add token to WEB_ROUTE_TOKENS in container-bootstrap.test.ts"
+      green:
+        - "Implement the use case and register it"
+      refactor:
+        - "Share one input mapper between both phases"
+    estimatedEffort: M
+  - id: task-3
+    phaseId: phase-1
+    title: "Thin create-project-and-feature server action"
+    description: "Remove the React + Vite preamble and name derivation; resolve the use case by token; accept buildMode."
+    state: Done
+    dependencies: ["task-2"]
+    acceptanceCriteria:
+      - "No stack text is added to the prompt"
+      - "Action accepts buildMode and resolves the use case by string token with import type"
+      - "Storybook mock signature matches"
+    tdd: null
+    estimatedEffort: S
+  - id: task-4
+    phaseId: phase-2
+    title: "Composer: spec-driven default, honest mode labels, existing-folder hint"
+    description: "Split mode config out of control-center-empty-state, reorder to spec/fast/application, default spec on canvas surfaces, show mode description + stack, add ExistingCodeHint with hand-off."
+    state: Done
+    dependencies: ["task-1", "task-3"]
+    acceptanceCriteria:
+      - "With onRepositorySelect the default mode is spec unless initialMode is given"
+      - "Each mode shows its description and stack line"
+      - "Prompt with /home/me/app shows the hint; clicking hand-off calls onOpenExistingFolder(path, prompt)"
+      - "Composer submits buildMode (spec/fast) to createProjectAndFeature"
+      - "Stories exist for the hint and the new composer states"
+    tdd:
+      red:
+        - "Component tests for default mode, descriptions, hint, hand-off, submitted buildMode"
+      green:
+        - "Implement build-mode-options.ts, existing-code-hint.tsx and composer changes"
+      refactor:
+        - "Keep control-center-empty-state under its previous size"
+    estimatedEffort: M
+  - id: task-5
+    phaseId: phase-2
+    title: "App Builder page and create card"
+    description: "Extract NewApplicationCard, relabel options with the stack, add a spec-driven project option gated by shell variant, honest header copy."
+    state: Done
+    dependencies: ["task-4"]
+    acceptanceCriteria:
+      - "Card shows 'Quick web app' with 'Vite + React + shadcn' and no longer says only 'Describe with AI'"
+      - "'Spec-driven project' option opens the composer in spec mode; hidden when specDrivenAvailable is false"
+      - "Header names the page App Builder and states the stack and absence of a spec phase"
+      - "Story for the card; existing page stories still render"
+    tdd:
+      red:
+        - "new-application-card.test.tsx for options and gating"
+      green:
+        - "Implement card + page wiring + page.tsx cookie read"
+      refactor:
+        - "applications-page-client.tsx shrinks below 450 lines"
+    estimatedEffort: M
+  - id: task-6
+    phaseId: phase-2
+    title: "Sidebar order and renamed labels in all locales"
+    description: "Control Center first with Home icon; Applications label becomes App Builder; FAB label; new keys in 9 locales."
+    state: Done
+    dependencies: []
+    acceptanceCriteria:
+      - "Control Center is the first nav item and uses the Home icon"
+      - "navigation.applications reads App Builder (translated) in all 9 locales"
+      - "translation-completeness test passes"
+    tdd:
+      red:
+        - "app-sidebar.test.tsx asserts Control Center precedes App Builder"
+      green:
+        - "Reorder items and update translations"
+      refactor: []
+    estimatedEffort: S
+  - id: task-7
+    phaseId: phase-3
+    title: "Docs: README, new-project SDD guide, web-ui guide, LESSONS"
+    description: "Two-ways-to-build section; greenfield guide for web and CLI; link from guides index and getting-started; lesson entry."
+    state: Done
+    dependencies: ["task-4", "task-5"]
+    acceptanceCriteria:
+      - "README has a comparison table naming the Vite + shadcn stack of the App Builder"
+      - "docs/guides/new-project-sdd.md covers web composer and `shep feat new` in an empty folder"
+      - "LESSONS.md records the lesson"
+    tdd: null
+    estimatedEffort: S
+  - id: task-8
+    phaseId: phase-3
+    title: "Playwright e2e coverage"
+    description: "E2E spec for sidebar order, App Builder copy, and the composer's spec-driven default."
+    state: Done
+    dependencies: ["task-4", "task-5", "task-6"]
+    acceptanceCriteria:
+      - "tests/e2e/web/sdd-vs-app-builder.spec.ts passes locally"
+    tdd:
+      red:
+        - "Write the e2e spec against the new copy before wiring is complete"
+      green:
+        - "Passes once phase 2 lands"
+      refactor: []
+    estimatedEffort: S
+  - id: task-9
+    phaseId: phase-2
+    title: "First-run Control Center entry point and discovered defects"
+    description: |-
+      Added during implementation. The first-run Control Center screen had no way to start a
+      project from a prompt (the (+) menu is hidden until a repository exists), so it gains a
+      "Start from a prompt" button. The e2e run also exposed a Webhooks page hydration mismatch
+      (uptime read from the clock on server and client), fixed with suppressHydrationWarning.
+    state: Done
+    dependencies: ["task-4"]
+    acceptanceCriteria:
+      - "Onboarding shows 'Start from a prompt' when the surface can open the composer"
+      - "WebhookStatusCards hydrates without a recoverable error when the clock ticks"
+    tdd:
+      red:
+        - "control-center-onboarding.test.tsx: entry point shown + hidden"
+        - "webhook-status-cards-hydration.test.tsx: renderToString at T, hydrate at T+1s"
+      green:
+        - "Add the prop/button; suppressHydrationWarning on the uptime text"
+      refactor: []
+    estimatedEffort: S
+totalEstimate: "M"
+openQuestions: []
+content: |
+  ## Summary
+
+  Core removes the stack lock-in from new projects; the web surfaces say what each path does; docs
+  explain the greenfield SDD path.
+
+  ## Acceptance Checklist
+
+  - [x] No stack preamble in any Feature path
+  - [x] Spec-driven default for new projects
+  - [x] Honest labels on every create surface
+  - [x] Existing-folder hint + hand-off
+  - [x] Control Center first in the sidebar
+  - [x] README + guide
+  - [x] Unit, integration, component and e2e tests green

@@ -66,6 +66,29 @@ shep ui --port 8080
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
+## Control Center vs App Builder
+
+The sidebar starts with **Control Center**, the home of the Feature workflow: any stack, your
+repositories or a new empty folder, and optional spec-driven gates (requirements → research →
+plan) before code.
+
+**App Builder** (the Applications page, `/applications`) is a separate, opinionated path. It
+creates a Vite + React + TypeScript + Tailwind + shadcn web app under `~/.shep/projects/` and
+builds it straight from chat with a live preview, with no spec phase.
+
+The **Start from a prompt** composer serves both paths and always shows what the selected mode
+does and which stack it uses:
+
+| Mode | What it does | Stack |
+| --- | --- | --- |
+| Spec-driven (default in Control Center) | New empty project, then requirements, research and a plan you approve before code | Any, chosen during research |
+| Fast | New empty project, implemented straight from the prompt | Any |
+| Quick web app | App Builder application | Vite + React + Tailwind + shadcn |
+
+If the prompt names an existing folder (for example `/home/me/code/app`), the composer offers
+**Work on this folder instead**, which opens a spec-driven feature on that folder rather than an
+empty project. See [Start a new project with SDD](./new-project-sdd.md).
+
 ## Feature Workflow
 
 ### Creating a Feature

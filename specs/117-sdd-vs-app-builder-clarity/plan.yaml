@@ -1,0 +1,125 @@
+name: "sdd-vs-app-builder-clarity"
+summary: |-
+  Core first (helpers + use case, RED-first), then the web surfaces that consume it, then docs.
+  Phase 2 and phase 3 touch disjoint files and can run in parallel once phase 1 lands.
+relatedFeatures:
+  - "091-apps-only-surface"
+technologies:
+  - "TypeScript"
+  - "Vitest"
+  - "Storybook"
+  - "Playwright"
+relatedLinks:
+  - "https://github.com/shep-ai/shep/issues/896"
+phases:
+  - id: phase-1
+    name: "Core: stack-agnostic new projects"
+    description: "Domain helpers for new-project defaults and existing-folder detection; CreateProjectFeatureUseCase; DI registration; thin server action."
+    parallel: false
+    taskIds: ["task-1", "task-2", "task-3"]
+  - id: phase-2
+    name: "Web: honest surfaces"
+    description: "Composer modes/default/hint, App Builder page + create card, sidebar order, translations."
+    parallel: true
+    taskIds: ["task-4", "task-5", "task-6", "task-9"]
+  - id: phase-3
+    name: "Docs and e2e"
+    description: "README two-ways section, greenfield SDD guide, web-ui guide, LESSONS entry, Playwright coverage."
+    parallel: true
+    taskIds: ["task-7", "task-8"]
+filesToCreate:
+  - "packages/core/src/domain/shared/new-project.ts"
+  - "packages/core/src/domain/shared/existing-code-reference.ts"
+  - "packages/core/src/application/use-cases/features/create/create-project-feature.use-case.ts"
+  - "tests/unit/domain/shared/new-project.test.ts"
+  - "tests/unit/domain/shared/existing-code-reference.test.ts"
+  - "tests/unit/application/use-cases/features/create/create-project-feature.use-case.test.ts"
+  - "src/presentation/web/components/features/control-center/build-mode-options.ts"
+  - "src/presentation/web/components/features/control-center/build-mode-menu.tsx"
+  - "src/presentation/web/components/features/control-center/build-mode-menu.stories.tsx"
+  - "src/presentation/web/components/features/control-center/existing-code-hint.tsx"
+  - "src/presentation/web/components/features/control-center/existing-code-hint.stories.tsx"
+  - "src/presentation/web/components/features/applications/new-application-card.tsx"
+  - "src/presentation/web/components/features/applications/new-application-card.stories.tsx"
+  - "tests/unit/presentation/web/features/applications/new-application-card.test.tsx"
+  - "tests/unit/presentation/web/features/control-center/existing-code-hint.test.tsx"
+  - "tests/unit/presentation/web/features/webhooks/webhook-status-cards-hydration.test.tsx"
+  - "tests/e2e/web/sdd-vs-app-builder.spec.ts"
+  - "docs/guides/new-project-sdd.md"
+filesToModify:
+  - "packages/core/src/infrastructure/di/modules/register-use-cases.ts"
+  - "tests/integration/infrastructure/di/container-bootstrap.test.ts"
+  - "src/presentation/web/app/actions/create-project-and-feature.ts"
+  - ".storybook/mocks/app/actions/create-project-and-feature.ts"
+  - "src/presentation/web/components/features/control-center/control-center-empty-state.tsx"
+  - "src/presentation/web/components/features/control-center/control-center-empty-state.stories.tsx"
+  - "src/presentation/web/components/features/control-center/control-center-inner.tsx"
+  - "src/presentation/web/components/features/control-center/control-center-onboarding.tsx"
+  - "src/presentation/web/components/features/control-center/control-center-onboarding.stories.tsx"
+  - "src/presentation/web/app/features/feature-tree-page-client.tsx"
+  - "src/presentation/web/components/layouts/app-shell/apps-only-shell.tsx"
+  - "src/presentation/web/components/features/webhooks/webhook-status-cards.tsx"
+  - "src/presentation/web/lib/url-params.ts"
+  - "src/presentation/web/components/features/applications/applications-page-client.tsx"
+  - "src/presentation/web/components/features/applications/applications-page-client.stories.tsx"
+  - "src/presentation/web/app/applications/page.tsx"
+  - "src/presentation/web/components/layouts/app-sidebar/app-sidebar.tsx"
+  - "translations/*/web.json"
+  - "README.md"
+  - "docs/guides/README.md"
+  - "docs/guides/getting-started.md"
+  - "docs/guides/web-ui.md"
+  - "LESSONS.md"
+openQuestions: []
+content: |
+  ## Architecture Overview
+
+  ```
+  Composer (web)  ──createProjectAndFeature(action)──▶ CreateProjectFeatureUseCase (core)
+     │  mode: spec|fast|application                         ├─ CreateProjectUseCase  (empty folder + git)
+     │  existing-folder hint ──▶ /create?repo&mode=spec     └─ CreateFeatureUseCase  (registers repo,
+     │                                                         prompt unchanged, default BuildMode.Spec)
+     └─ application ──createApplication──▶ CreateApplicationUseCase (Vite + shadcn App Builder, unchanged)
+
+  domain/shared/new-project.ts            NEW_PROJECT_DEFAULT_BUILD_MODE, resolveNewProjectBuildMode,
+                                          deriveProjectNameFromDescription
+  domain/shared/existing-code-reference.ts findExistingFolderReference(prompt)
+  ```
+
+  ## Implementation Strategy
+
+  Clean Architecture holds throughout: pure rules in `domain/shared`, orchestration in an
+  application-layer use case resolved by string token, and presentation reduced to mapping input
+  and rendering.
+
+  1. Domain helpers are pure and shared by core and the web composer, so they come first.
+  2. The use case replaces the server action's inline orchestration; the action keeps only
+     input mapping and the fire-and-forget phase 2, mirroring createFeature.
+  3. Oversized UI files (applications-page-client 469 lines, control-center-empty-state 614 lines)
+     are split before being extended: mode config and the new-application card move to their own
+     modules.
+  4. Copy changes land with translations in all 9 locales in the same commit.
+  5. Docs last, describing what the UI now does.
+
+  ## Testing Strategy (TDD: Tests FIRST)
+
+  Every code task runs RED → GREEN → REFACTOR: the failing test lands first, then the minimal
+  change, then cleanup.
+
+  - Unit (domain): path detection positives/negatives (incl. "/health endpoint"), name
+    derivation, mode resolution.
+  - Unit (use case): prompt forwarded unchanged; default Spec; explicit Fast honoured; project
+    failure surfaces as an error and creates no feature; phase 2 uses the created path.
+  - Integration: container resolves `CreateProjectFeatureUseCase` by string token.
+  - Component: composer default mode per context, mode descriptions, hint visibility + hand-off;
+    new-application card options and spec option gating; sidebar order.
+  - E2E (Playwright): sidebar order, App Builder copy, spec-driven default in the composer.
+
+  ## Risk Mitigation
+
+  | Risk | Mitigation |
+  | --- | --- |
+  | Path detection false positives on API routes | Whitelisted roots only; negative tests for `/health`, `/api/users` |
+  | Existing tests assert old labels/defaults | Update them in the same task; grep for old strings |
+  | Web bundle breaks on a value import from core | Domain helpers only (no .js suffix); use case imported as type; run build:web |
+  | Missing Storybook mock / story | Update mock + add stories; run check:stories and build:storybook |

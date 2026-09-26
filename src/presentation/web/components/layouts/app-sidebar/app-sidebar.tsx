@@ -196,8 +196,18 @@ export function AppSidebar({
             </div>
           </SidebarMenuItem>
 
+          {/* Control Center — the stack-agnostic, spec-driven Feature path —
+              comes first. The App Builder is the opinionated Vite + shadcn
+              quick-app path; listing it first as "Home" made users take it
+              for Shep's main workflow. */}
           <SidebarNavItem
             icon={Home}
+            label={t('navigation.controlCenter')}
+            href="/control-center"
+            active={pathname === '/control-center'}
+          />
+          <SidebarNavItem
+            icon={LayoutGrid}
             label={t('navigation.applications')}
             href="/applications"
             active={pathname === '/applications'}
@@ -210,12 +220,6 @@ export function AppSidebar({
               active={pathname?.startsWith('/clusters') ?? false}
             />
           ) : null}
-          <SidebarNavItem
-            icon={LayoutGrid}
-            label={t('navigation.controlCenter')}
-            href="/control-center"
-            active={pathname === '/control-center'}
-          />
           <SidebarNavItem
             icon={TableProperties}
             label={t('navigation.inventory')}

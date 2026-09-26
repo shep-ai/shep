@@ -279,7 +279,7 @@
       "labelDescription": "The page you land on when opening the web UI",
       "options": {
         "control-center": "Control Center",
-        "applications": "Applications",
+        "applications": "Criador de apps",
         "features": "Features"
       },
       "hint": "This controls where you land when you open the web UI. You can change it at any time."
@@ -382,7 +382,7 @@
     "sessions": "Sessões",
     "tools": "Ferramentas",
     "skills": "Skills",
-    "applications": "Applications",
+    "applications": "Criador de apps",
     "agentQuestions": "Agent Questions",
     "aspm": "Security",
     "aspmDashboard": "Dashboard",
@@ -449,7 +449,29 @@
     "git": "Git",
     "gitRequired": "Necessário para todas as fases",
     "githubCli": "GitHub CLI",
-    "githubCliRequired": "Necessário para pull requests"
+    "githubCliRequired": "Necessário para pull requests",
+    "modes": {
+      "spec": {
+        "label": "Orientado a especificações",
+        "description": "Requisitos, pesquisa e um plano primeiro — você os aprova antes de qualquer código.",
+        "stack": "Qualquer stack, escolhida durante a pesquisa"
+      },
+      "fast": {
+        "label": "Rápido",
+        "description": "Implementa direto da sua descrição, sem fase de especificação.",
+        "stack": "Qualquer stack"
+      },
+      "application": {
+        "label": "App web rápido",
+        "description": "Protótipo instantâneo de app web com pré-visualização ao vivo. Sem fase de especificação.",
+        "stack": "Vite + React + Tailwind + shadcn"
+      }
+    },
+    "existingFolder": {
+      "body": "Sua descrição menciona {{path}}. Um projeto novo começa vazio e não vai olhar dentro dessa pasta.",
+      "fallback": "Para continuar um código existente, abra essa pasta como projeto.",
+      "action": "Trabalhar nesta pasta"
+    }
   },
   "welcome": {
     "loadingAgents": "Carregando agentes…",
@@ -567,7 +589,7 @@
     "folderOfRepos": "Pasta de repositórios",
     "adoptBranch": "Adotar branch",
     "fromGithub": "Do GitHub",
-    "newApplication": "Nova Aplicação",
+    "newApplication": "Começar com uma descrição",
     "newSddFeature": "Nova funcionalidade SDD",
     "newSddForApp": "Nova funcionalidade SDD para {{appName}}",
     "openInControlCenterSdd": "Abrir no Control Center (modo SDD)"

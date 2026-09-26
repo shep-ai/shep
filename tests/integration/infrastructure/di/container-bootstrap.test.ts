@@ -96,6 +96,7 @@ const WEB_ROUTE_TOKENS: readonly string[] = [
   'AttachmentStorageService',
   'ConnectCloudProviderUseCase',
   'CreateGitRemoteUseCase',
+  'CreateProjectFeatureUseCase',
   'CreateTerminalSessionUseCase',
   'EnsureGhAuthenticatedUseCase',
   'GetAdaptiveModelPlanUseCase',

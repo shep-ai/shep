@@ -32,3 +32,11 @@ export const WithCallback: Story = {
     },
   },
 };
+
+/** First run with the "Start from a prompt" (spec-driven new project) entry point. */
+export const WithStartFromPrompt: Story = {
+  args: {
+    onRepositorySelect: () => undefined,
+    onStartFromPrompt: () => undefined,
+  },
+};

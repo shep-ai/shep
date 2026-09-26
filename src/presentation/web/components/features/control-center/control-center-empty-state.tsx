@@ -1,17 +1,7 @@
 'use client';
 
 import { useState, useCallback, useRef, useEffect, useId } from 'react';
-import {
-  SendHorizontal,
-  Paperclip,
-  Loader2,
-  LayoutGrid,
-  Zap,
-  ClipboardList,
-  ChevronDown,
-  Check,
-  X,
-} from 'lucide-react';
+import { SendHorizontal, Paperclip, Loader2, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { createProjectAndFeature } from '@/app/actions/create-project-and-feature';
@@ -21,62 +11,19 @@ import { AgentModelPicker } from '@/components/features/settings/AgentModelPicke
 import { AttachmentChip } from '@/components/common/attachment-chip';
 import { ShepLogo } from '@/components/common/shep-logo';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { useAttachments } from '@/hooks/use-attachments';
-
-type BuildMode = 'application' | 'fast' | 'spec';
-
-const BUILD_MODES: BuildMode[] = ['application', 'fast', 'spec'];
-
-const BUILD_MODE_CONFIG: Record<
-  BuildMode,
-  {
-    icon: React.ElementType;
-    label: string;
-    placeholder: string;
-    suggestions: string[];
-  }
-> = {
-  application: {
-    icon: LayoutGrid,
-    label: 'Application',
-    placeholder: 'Build a modern e-commerce storefront with product catalog...',
-    suggestions: [
-      'A landing page with hero, features, and pricing sections',
-      'Full-stack SaaS app with auth, billing, and dashboard',
-      'Mobile-first social media app with real-time chat',
-      'Personal portfolio with blog and project showcase',
-    ],
-  },
-  fast: {
-    icon: Zap,
-    label: 'Fast',
-    placeholder: 'Add a dark mode toggle to the settings page...',
-    suggestions: [
-      'Add pagination to the users list endpoint',
-      'Fix the broken logout redirect',
-      'Add input validation to the signup form',
-      'Refactor the API error handling middleware',
-    ],
-  },
-  spec: {
-    icon: ClipboardList,
-    label: 'Spec Driven',
-    placeholder: 'Implement a role-based access control system with audit logging...',
-    suggestions: [
-      'OAuth2 authentication with SSO and MFA support',
-      'Event-driven notification system with email and push',
-      'REST API with versioning, rate limiting, and OpenAPI docs',
-      'Data pipeline with ETL, validation, and monitoring',
-    ],
-  },
-};
+import { BuildMode } from '@shepai/core/domain/generated/output';
+import { findExistingFolderReference } from '@shepai/core/domain/shared/existing-code-reference';
+import { isAbsolutePath } from '@shepai/core/domain/shared/absolute-path';
+import {
+  APP_BUILDER_MODE,
+  COMPOSER_BUILD_MODES,
+  COMPOSER_BUILD_MODE_CONFIG,
+  FEATURE_SURFACE_DEFAULT_MODE,
+  type ComposerBuildMode,
+} from './build-mode-options';
+import { BuildModeMenu } from './build-mode-menu';
+import { ExistingCodeHint } from './existing-code-hint';
 
 /**
  * Physical key of the build-mode cycle chord: Alt+Shift+M ("M" = mode).
@@ -109,8 +56,16 @@ function getSubmitChordLabel(): string {
 }
 
 export interface ControlCenterEmptyStateProps {
+  /** Present on surfaces that can start Features; enables the mode picker. */
   onRepositorySelect?: (path: string) => void;
   onApplicationCreated?: (applicationId: string) => void;
+  /**
+   * Called when the prompt names an existing folder and the user chooses to
+   * work on it instead of creating an empty project. Omit to show guidance only.
+   */
+  onOpenExistingFolder?: (path: string, prompt: string) => void;
+  /** Mode selected on open. Defaults to Spec-driven when features can be started. */
+  initialMode?: ComposerBuildMode;
   onClose?: () => void;
   className?: string;
 }
@@ -118,6 +73,8 @@ export interface ControlCenterEmptyStateProps {
 export function ControlCenterEmptyState({
   onRepositorySelect,
   onApplicationCreated,
+  onOpenExistingFolder,
+  initialMode,
   onClose,
   className,
 }: ControlCenterEmptyStateProps) {
@@ -140,7 +97,14 @@ export function ControlCenterEmptyState({
       setOverrideModel((prev) => prev ?? d.model);
     });
   }, []);
-  const [buildMode, setBuildMode] = useState<BuildMode>('application');
+  // Apps-only surface (no onRepositorySelect handler): fast/spec modes don't
+  // make sense — there's no canvas to attach a feature to. Force the App
+  // Builder mode and hide the picker so the UI doesn't promise behavior we
+  // don't have.
+  const showModeDropdown = Boolean(onRepositorySelect);
+  const [buildMode, setBuildMode] = useState<ComposerBuildMode>(
+    initialMode ?? (showModeDropdown ? FEATURE_SURFACE_DEFAULT_MODE : APP_BUILDER_MODE)
+  );
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isFocused, setIsFocused] = useState(false);
@@ -153,21 +117,19 @@ export function ControlCenterEmptyState({
   const errorId = useId();
   const att = useAttachments();
 
-  // Apps-only surface (no onRepositorySelect handler): fast/spec modes don't
-  // make sense — there's no canvas to attach a feature to. Force application
-  // mode and hide the dropdown so the UI doesn't promise behavior we don't have.
-  const showModeDropdown = Boolean(onRepositorySelect);
-  const effectiveMode: BuildMode = showModeDropdown ? buildMode : 'application';
+  const effectiveMode: ComposerBuildMode = showModeDropdown ? buildMode : APP_BUILDER_MODE;
+  const existingFolder = findExistingFolderReference(description);
 
   const modeChordLabel = getModeChordLabel();
   const submitChordLabel = getSubmitChordLabel();
 
   const selectBuildMode = useCallback(
-    (mode: BuildMode) => {
+    (mode: ComposerBuildMode) => {
       setBuildMode(mode);
+      const cfg = COMPOSER_BUILD_MODE_CONFIG[mode];
       setModeAnnouncement(
         t('emptyState.buildModeChanged', 'Build mode: {{mode}}', {
-          mode: BUILD_MODE_CONFIG[mode].label,
+          mode: t(cfg.labelKey, cfg.label),
         })
       );
     },
@@ -175,8 +137,8 @@ export function ControlCenterEmptyState({
   );
 
   const cycleBuildMode = useCallback(() => {
-    const idx = BUILD_MODES.indexOf(buildMode);
-    selectBuildMode(BUILD_MODES[(idx + 1) % BUILD_MODES.length]);
+    const idx = COMPOSER_BUILD_MODES.indexOf(buildMode);
+    selectBuildMode(COMPOSER_BUILD_MODES[(idx + 1) % COMPOSER_BUILD_MODES.length]);
   }, [buildMode, selectBuildMode]);
 
   /**
@@ -221,7 +183,7 @@ export function ControlCenterEmptyState({
       // surface), fast/spec modes can't navigate to a repository canvas.
       // Route ALL modes through the application creation flow so the user
       // lands on /application/[id] regardless of selected mode.
-      const useApplicationFlow = effectiveMode === 'application' || !onRepositorySelect;
+      const useApplicationFlow = effectiveMode === BuildMode.Application || !onRepositorySelect;
 
       if (useApplicationFlow) {
         // The server action creates the app AND synchronously posts the
@@ -255,7 +217,7 @@ export function ControlCenterEmptyState({
           })),
           agentType: overrideAgent,
           model: overrideModel,
-          fast: effectiveMode === 'fast',
+          buildMode: effectiveMode,
         });
 
         if (result.error) {
@@ -339,8 +301,11 @@ export function ControlCenterEmptyState({
     textareaRef.current?.focus();
   }, []);
 
-  const modeConfig = BUILD_MODE_CONFIG[effectiveMode];
-  const ModeIcon = modeConfig.icon;
+  const modeConfig = COMPOSER_BUILD_MODE_CONFIG[effectiveMode];
+  const openExistingFolder =
+    existingFolder && onOpenExistingFolder && isAbsolutePath(existingFolder)
+      ? () => onOpenExistingFolder(existingFolder, description.trim())
+      : undefined;
 
   return (
     <div
@@ -478,59 +443,11 @@ export function ControlCenterEmptyState({
                   fast/spec (i.e. there's an onRepositorySelect handler tied to
                   a canvas). */}
               {showModeDropdown ? (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button
-                      type="button"
-                      data-testid="build-mode-selector"
-                      title={`${t('emptyState.buildMode', 'Build mode')}: ${modeConfig.label} (${modeChordLabel})`}
-                      aria-label={`${t('emptyState.buildMode', 'Build mode')}: ${modeConfig.label}. ${t(
-                        'emptyState.buildModeChordHint',
-                        'Press {{chord}} to cycle build mode',
-                        { chord: modeChordLabel }
-                      )}`}
-                      className="text-muted-foreground hover:text-foreground hover:bg-accent/50 flex cursor-pointer items-center gap-1.5 rounded-md px-2 py-1 text-xs transition-colors"
-                    >
-                      <span
-                        key={effectiveMode}
-                        className="flex animate-[onboard-fade-up_0.25s_ease-out_both] items-center gap-1.5"
-                      >
-                        <ModeIcon className="h-3.5 w-3.5" />
-                        {modeConfig.label}
-                      </span>
-                      <ChevronDown className="h-3 w-3 opacity-50" />
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="min-w-[160px]">
-                    {BUILD_MODES.map((mode) => {
-                      const cfg = BUILD_MODE_CONFIG[mode];
-                      const Icon = cfg.icon;
-                      const isActive = effectiveMode === mode;
-                      return (
-                        <DropdownMenuItem
-                          key={mode}
-                          onClick={() => selectBuildMode(mode)}
-                          data-testid={`build-mode-${mode}`}
-                          className="flex items-center gap-2"
-                        >
-                          <Icon className="h-3.5 w-3.5" />
-                          <span className="flex-1">{cfg.label}</span>
-                          {isActive ? <Check className="text-foreground h-3.5 w-3.5" /> : null}
-                        </DropdownMenuItem>
-                      );
-                    })}
-                    <DropdownMenuSeparator />
-                    {/* Discoverability: the chord is only useful if it's
-                        visible. Hidden from ARIA because a `menu` should only
-                        expose `menuitem` children — screen-reader users get
-                        the same hint from the trigger's aria-label. */}
-                    <p aria-hidden="true" className="text-muted-foreground px-2 py-1 text-[11px]">
-                      {t('emptyState.buildModeChordHint', 'Press {{chord}} to cycle build mode', {
-                        chord: modeChordLabel,
-                      })}
-                    </p>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <BuildModeMenu
+                  mode={effectiveMode}
+                  onSelect={selectBuildMode}
+                  chordLabel={modeChordLabel}
+                />
               ) : null}
 
               <Tooltip>
@@ -583,6 +500,22 @@ export function ControlCenterEmptyState({
           >
             {modeAnnouncement}
           </span>
+
+          {/* What the selected mode does and which stack it produces. */}
+          <p
+            data-testid="build-mode-description"
+            className="text-muted-foreground mt-3 text-center text-xs leading-relaxed"
+          >
+            <span className="text-foreground/80 font-medium">
+              {t(modeConfig.stackKey, modeConfig.stack)}
+            </span>
+            {' · '}
+            {t(modeConfig.descriptionKey, modeConfig.description)}
+          </p>
+
+          {existingFolder ? (
+            <ExistingCodeHint path={existingFolder} onOpen={openExistingFolder} className="mt-3" />
+          ) : null}
 
           {error ? (
             <p id={errorId} role="alert" className="text-destructive mt-2 text-center text-sm">

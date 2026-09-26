@@ -106,6 +106,18 @@ describe('AppSidebar', () => {
     expect(screen.getByText('Control Center')).toBeInTheDocument();
   });
 
+  it('lists Control Center first and the App Builder after it (issue 896)', () => {
+    renderWithSidebar(<AppSidebar features={mockFeatures} featureFlags={defaultFlags} />);
+
+    const controlCenter = screen.getByRole('link', { name: /Control Center/ });
+    const appBuilder = screen.getByRole('link', { name: /App Builder/ });
+    expect(controlCenter.getAttribute('href')).toBe('/control-center');
+    expect(appBuilder.getAttribute('href')).toBe('/applications');
+    expect(
+      controlCenter.compareDocumentPosition(appBuilder) & Node.DOCUMENT_POSITION_FOLLOWING
+    ).toBeTruthy();
+  });
+
   it('renders Tools nav item in header', () => {
     renderWithSidebar(<AppSidebar features={mockFeatures} featureFlags={defaultFlags} />);
 

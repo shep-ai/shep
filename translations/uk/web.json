@@ -279,7 +279,7 @@
       "labelDescription": "The page you land on when opening the web UI",
       "options": {
         "control-center": "Control Center",
-        "applications": "Applications",
+        "applications": "Конструктор застосунків",
         "features": "Features"
       },
       "hint": "This controls where you land when you open the web UI. You can change it at any time."
@@ -382,7 +382,7 @@
     "sessions": "Сесії",
     "tools": "Інструменти",
     "skills": "Навички",
-    "applications": "Applications",
+    "applications": "Конструктор застосунків",
     "agentQuestions": "Agent Questions",
     "aspm": "Security",
     "aspmDashboard": "Dashboard",
@@ -449,7 +449,29 @@
     "git": "Git",
     "gitRequired": "Необхідний для всіх фаз",
     "githubCli": "GitHub CLI",
-    "githubCliRequired": "Необхідний для запитів на злиття"
+    "githubCliRequired": "Необхідний для запитів на злиття",
+    "modes": {
+      "spec": {
+        "label": "За специфікацією",
+        "description": "Спершу вимоги, дослідження й план — ви затверджуєте їх до написання коду.",
+        "stack": "Будь-який стек, обирається під час дослідження"
+      },
+      "fast": {
+        "label": "Швидко",
+        "description": "Реалізує одразу за вашим описом, без етапу специфікації.",
+        "stack": "Будь-який стек"
+      },
+      "application": {
+        "label": "Швидкий вебзастосунок",
+        "description": "Миттєвий прототип вебзастосунку з живим переглядом. Без етапу специфікації.",
+        "stack": "Vite + React + Tailwind + shadcn"
+      }
+    },
+    "existingFolder": {
+      "body": "В описі згадано папку {{path}}. Новий проєкт створюється порожнім і не зазирає в цю папку.",
+      "fallback": "Щоб продовжити наявний код, відкрийте цю папку як проєкт.",
+      "action": "Працювати з цією папкою"
+    }
   },
   "welcome": {
     "loadingAgents": "Завантаження агентів…",
@@ -567,7 +589,7 @@
     "folderOfRepos": "Тека з репозиторіями",
     "adoptBranch": "Прийняти гілку",
     "fromGithub": "З GitHub",
-    "newApplication": "Новий застосунок",
+    "newApplication": "Почати з опису",
     "newSddFeature": "Нова SDD-функція",
     "newSddForApp": "Нова SDD-функція для {{appName}}",
     "openInControlCenterSdd": "Відкрити у Control Center (режим SDD)"

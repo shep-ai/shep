@@ -1,5 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { URL_PARAMS, buildCreateUrl, type UrlParam } from '@/lib/url-params';
+import {
+  URL_PARAMS,
+  buildCreateUrl,
+  buildExistingFolderFeatureUrl,
+  type UrlParam,
+} from '@/lib/url-params';
 
 describe('URL_PARAMS', () => {
   it('exposes all five /create query keys with their canonical values', () => {
@@ -52,5 +57,19 @@ describe('buildCreateUrl', () => {
     expect(buildCreateUrl({ prompt: 'hello world & friends' })).toBe(
       '/create?prompt=hello+world+%26+friends'
     );
+  });
+});
+
+describe('buildExistingFolderFeatureUrl', () => {
+  it('opens a spec-driven feature on the folder with the prompt pre-filled', () => {
+    const url = new URL(
+      buildExistingFolderFeatureUrl('/home/alex/code/app', 'plan the docs'),
+      'http://localhost'
+    );
+
+    expect(url.pathname).toBe('/create');
+    expect(url.searchParams.get('repo')).toBe('/home/alex/code/app');
+    expect(url.searchParams.get('prompt')).toBe('plan the docs');
+    expect(url.searchParams.get('mode')).toBe('spec');
   });
 });
