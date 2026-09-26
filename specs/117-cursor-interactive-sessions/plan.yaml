@@ -1,0 +1,135 @@
+# Implementation Plan (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: cursor-interactive-sessions
+summary: >
+  A generic ACP interactive session (one agent process per chat, protocol updates mapped to
+  InteractiveAgentEvent) with a thin Cursor profile, registered in the executor factory.
+
+relatedFeatures:
+  - 116-agent-harness-reliability
+technologies:
+  - TypeScript
+  - '@agentclientprotocol/sdk'
+  - Vitest
+relatedLinks: []
+
+phases:
+  - id: phase-1
+    name: 'Pure building blocks'
+    parallel: true
+    taskIds:
+      - task-1
+      - task-2
+      - task-3
+  - id: phase-2
+    name: 'ACP session and Cursor executor'
+    parallel: false
+    taskIds:
+      - task-4
+      - task-5
+  - id: phase-3
+    name: 'Wiring, real-process verification and docs'
+    parallel: false
+    taskIds:
+      - task-6
+      - task-7
+      - task-8
+
+filesToCreate:
+  - packages/core/src/infrastructure/services/agents/common/executors/cursor-model-name.ts
+  - packages/core/src/infrastructure/services/agents/common/executors/acp/acp-update-mapper.ts
+  - packages/core/src/infrastructure/services/agents/common/executors/acp/acp-interactive-session.ts
+  - packages/core/src/infrastructure/services/agents/common/executors/acp/acp-interactive-executor.ts
+  - packages/core/src/infrastructure/services/agents/common/executors/cursor-ask-question.ts
+  - packages/core/src/infrastructure/services/agents/common/executors/cursor-interactive-executor.service.ts
+  - tests/unit/infrastructure/services/agents/executors/cursor-model-name.test.ts
+  - tests/unit/infrastructure/services/agents/executors/acp/acp-update-mapper.test.ts
+  - tests/unit/infrastructure/services/agents/executors/acp/acp-interactive-session.test.ts
+  - tests/unit/infrastructure/services/agents/executors/cursor-ask-question.test.ts
+  - tests/unit/infrastructure/services/agents/executors/cursor-interactive-executor.test.ts
+  - tests/helpers/fake-acp-agent.ts
+  - tests/integration/infrastructure/services/agents/cursor-interactive-executor.test.ts
+  - tests/integration/infrastructure/services/agents/fixtures/fake-cursor-acp-agent.mjs
+
+filesToModify:
+  - packages/core/src/infrastructure/services/agents/common/executors/cursor-executor.service.ts
+  - packages/core/src/infrastructure/services/agents/common/agent-executor-factory.service.ts
+  - tests/unit/infrastructure/services/agents/agent-executor-factory.test.ts
+  - package.json
+  - packages/electron/package.json
+  - pnpm-lock.yaml
+  - docs/architecture/agent-system.md
+  - docs/development/adding-agent-types.md
+  - LESSONS.md
+
+openQuestions: []
+
+content: |
+  ## Architecture Overview
+
+  ```
+  SessionBootstrapper / TurnExecutor            (unchanged — consume InteractiveAgentSessionHandle)
+          │ createInteractiveExecutor(Cursor)
+          ▼
+  AgentExecutorFactory ── INTERACTIVE_EXECUTORS registry (claude-code, cursor)
+          │                    supportsInteractive() = registry membership
+          ▼
+  CursorInteractiveExecutor        (Cursor profile: binary, Windows launch, model map,
+          │                          cursor/ask_question handler, "run cursor-agent login")
+          ▼
+  AcpInteractiveExecutor ─ spawn ─▶ cursor-agent acp   (one process per chat session)
+          │                              ▲ stdin/stdout NDJSON (ndJsonStream)
+          ▼                              │
+  AcpInteractiveSession ── ClientApp ────┘
+    initialize → session/new | session/load (replay suppressed) → set model
+    send(msg)   → session/prompt → per-turn EventChannel
+    session/update ──▶ acp-update-mapper ──▶ InteractiveAgentEvent (delta, thinking, tool_use, …)
+    prompt response ─▶ done | error         process exit ─▶ error + channel closed
+    session/request_permission ─▶ allow_once
+    close() ─▶ session/cancel, kill tree, await exit
+  ```
+
+  ## Implementation Strategy
+
+  **MANDATORY TDD**: All phases with executable code follow RED-GREEN-REFACTOR cycles.
+
+  Phase 1 builds the three pure pieces the session composes: the Cursor model-name map (extracted
+  from the one-shot executor so both executors share one table), the ACP `session/update` →
+  `InteractiveAgentEvent` mapper, and the translation between Cursor's `cursor/ask_question` payload
+  and Shep's `UserQuestion` / answer map. They have no I/O and are tested in isolation.
+
+  Phase 2 builds `AcpInteractiveSession` — the protocol state machine — and tests it against a real
+  in-process ACP agent (`agent()` from the SDK) wired through a fake child process whose stdio is
+  PassThrough streams, so the NDJSON wire path is exercised without spawning anything. The Cursor
+  executor is then a profile over it.
+
+  Phase 3 registers Cursor in the factory, proves the persistent-process claim with a real
+  subprocess (a Node fixture that serves ACP), and updates docs and LESSONS.md.
+
+  The chat runtime is deliberately untouched: the handle contract (`send` then `stream` per turn,
+  `sessionId`, `close`) already fits, and changing it would ripple through the Claude path.
+
+  ## Testing Strategy (TDD: Tests FIRST)
+
+  - **Unit (pure):** model map; update mapper per ACP update kind; ask-question translation for
+    single/multi select, "Other" free text, and missing answers.
+  - **Unit (session, in-process ACP agent):** create → prompt → deltas → done; two turns on one
+    connection; load replays history silently; load of an unknown session falls back to new;
+    permission requests auto-approved with `allow_once`; ask_question reaches `onUserQuestion`;
+    model set only when advertised; refusal / max_tokens → error; agent process exit mid-turn →
+    error and closed stream; auth-required → actionable error; close kills and awaits exit.
+  - **Unit (factory):** `supportsInteractive(Cursor)` true, `createInteractiveExecutor(Cursor)`
+    returns the Cursor executor, unsupported agents still throw with the derived list.
+  - **Integration (real subprocess):** a Node fixture serving ACP on stdio stands in for
+    `cursor-agent`; two turns report the same PID; `close()` leaves no process behind.
+
+  ## Risk Mitigation
+
+  | Risk | Mitigation |
+  | ---- | ---------- |
+  | `acp` is a hidden command and may change | Protocol handling is generic ACP (a published standard); Cursor specifics are isolated in one profile; the SDK is pinned; a spawn/initialize failure names the command and suggests `cursor-agent update` |
+  | Cursor's ACP model ids differ from `--list-models` ids | Only advertised values are set; otherwise the turn reports that Cursor's default model is used |
+  | Loaded history replayed as new chat output | Updates are routed only to an active turn; none exists while `session/load` is in flight |
+  | Windows stdio through a `.cmd` shim | Launch via `cmd.exe /d /s /c` with constant arguments; Windows unit test pins the command line |
+  | Orphaned agent processes | `close()` kills the tree with SIGKILL escalation and awaits exit; a process that dies on its own ends the turn with an error |

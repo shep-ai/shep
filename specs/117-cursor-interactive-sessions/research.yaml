@@ -1,0 +1,162 @@
+# Research Artifact (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: cursor-interactive-sessions
+summary: >
+  Drive Cursor chat through `cursor-agent acp` (Agent Client Protocol over stdio) with the official
+  ACP TypeScript SDK, one persistent process per chat session.
+
+relatedFeatures:
+  - 116-agent-harness-reliability
+technologies:
+  - Agent Client Protocol v1
+  - '@agentclientprotocol/sdk 1.5.0'
+  - cursor-agent 2026.09.26
+relatedLinks:
+  - title: ACP protocol overview
+    url: https://agentclientprotocol.com/protocol/overview
+  - title: ACP TypeScript SDK
+    url: https://www.npmjs.com/package/@agentclientprotocol/sdk
+
+decisions:
+  - title: Transport for a Cursor chat turn
+    chosen: '`cursor-agent acp` — one long-lived ACP server process per chat session'
+    rejected:
+      - >-
+        `cursor-agent --print --output-format stream-json --resume <chatId>` per turn — spawns a new
+        process for every message, which LESSONS.md forbids for interactive chat, and has no way to
+        pause for a question (tools are auto-run under --yolo)
+      - >-
+        Driving the interactive TUI through a pseudo-terminal — screen scraping, no structured
+        events
+    rationale: >
+      The CLI has no stdin input format for `--print`. Its hidden `acp` command serves the Agent
+      Client Protocol: verified against cursor-agent 2026.09.26, `initialize` advertises
+      `loadSession: true`, `session/prompt` returns a stop reason after streaming `session/update`
+      notifications, `session/cancel` is honoured, and questions arrive as a `cursor/ask_question`
+      request. It is the same server Cursor's own editor integrations use.
+  - title: ACP client implementation
+    chosen: Official `@agentclientprotocol/sdk` (exact-pinned 1.5.0), `client()` app builder over `ndJsonStream`
+    rejected:
+      - Hand-written JSON-RPC over NDJSON — re-implements request ids, error mapping and schema validation the SDK already ships
+      - Deprecated `ClientSideConnection` class — still exported, but the SDK marks it deprecated in favour of the app builder
+    rationale: >
+      Cursor itself bundles this SDK (0.14.1, protocol v1), so both ends speak the same generated
+      schema. The builder's `agent().connect(clientApp)` lets unit tests run a real in-process ACP
+      agent instead of mocking JSON. Its only peer dependency is `zod`, already a runtime
+      dependency. Pinned exactly, like the Claude Agent SDK, to avoid surprise protocol drift.
+  - title: Shape of the executor
+    chosen: Generic `AcpInteractiveSession` (protocol → InteractiveAgentEvent) plus a thin Cursor profile
+    rejected:
+      - One Cursor-specific class holding transport, mapping and Cursor quirks together
+    rationale: >
+      Gemini CLI, Claude Code (via claude-code-acp) and others speak ACP too. Keeping the protocol
+      handling agent-agnostic means the next ACP agent is a launch spec, not a copy (LESSONS.md:
+      "Prefer a shared port when one provider gains a capability"). Cursor-only facts — binary,
+      model-name map, the `cursor/ask_question` extension — live in the Cursor module.
+  - title: Authentication
+    chosen: Never call ACP `authenticate`; map an "Authentication required" error to "run `cursor-agent login`"
+    rejected:
+      - Calling `authenticate({ methodId: 'cursor_login' })` on every boot
+    rationale: >
+      The ACP server reads stored credentials and `CURSOR_API_KEY` at startup. Calling
+      `authenticate` while logged out makes it try to open a browser — verified locally — which a
+      background daemon must never do.
+  - title: Tool permission requests
+    chosen: Auto-select the agent's `allow_once` option (fallback `allow_always`, else the first option)
+    rejected:
+      - Forwarding every permission request to the user
+    rationale: >
+      Matches the one-shot Cursor executor (`--yolo`) and the Claude interactive executor, which
+      auto-allow every tool except AskUserQuestion. `allow_once` avoids writing a permanent
+      allowlist entry into the user's Cursor configuration.
+  - title: Model selection
+    chosen: After session/new or session/load, set the `model` config option when Cursor advertises the mapped id
+    rejected:
+      - Always sending `session/set_config_option` and failing the boot if the id is unknown
+    rationale: >
+      Shep's Cursor model ids come from `cursor-agent --list-models`; the ACP `model` config option
+      advertises the values it accepts. Setting only an advertised value keeps an unknown id from
+      failing the chat; the turn reports that Cursor's default was used instead.
+  - title: Windows launch
+    chosen: '`cmd.exe /d /s /c cursor-agent acp` with constant arguments'
+    rejected:
+      - PowerShell `& cursor-agent` (used by the one-shot executor to pass a long prompt)
+      - Spawning `cursor-agent` directly — Node refuses to spawn a `.cmd` shim without a shell
+    rationale: >
+      The ACP command line never contains user text (prompts travel as JSON over stdin), so there
+      is nothing to quote, and cmd.exe hands its own stdio handles to the child, which the
+      bidirectional pipe depends on.
+
+openQuestions: []
+
+content: |
+  ## Technology Decisions
+
+  ### 1. Transport: `cursor-agent acp`
+
+  **Options considered:**
+
+  1. Per-turn `cursor-agent --print --output-format stream-json --resume <chatId>`
+  2. `cursor-agent acp` — Agent Client Protocol server over stdio
+  3. Pseudo-terminal automation of the interactive TUI
+
+  **Decision:** `cursor-agent acp`, one process per chat session.
+
+  **Rationale:** Verified against cursor-agent 2026.09.26 by driving the server with raw JSON-RPC:
+
+  ```
+  initialize  -> agentCapabilities { loadSession: true, promptCapabilities { image: true }, sessionCapabilities { list } }
+                 authMethods [{ id: "cursor_login" }]
+  session/new -> (logged out) error -32000 "Authentication required ... run 'agent login'"
+  authenticate(cursor_login) while logged out -> tries to open a browser (never call it from the daemon)
+  stdin EOF   -> the server keeps running; it must be killed
+  ```
+
+  From the bundled agent: `session/prompt` resolves `{ stopReason: "end_turn" | "cancelled" }`;
+  `session/load` replays history as `session/update` notifications before it returns; questions go
+  out as the `cursor/ask_question` request `{ toolCallId, title, questions: [{ id, prompt,
+  options: [{ id, label }], allowMultiple }] }` answered with `{ outcome: { outcome: "answered",
+  answers: [{ questionId, selectedOptionIds }] } }` or `{ outcome: { outcome: "skipped", reason } }`;
+  the model is a `select` config option with id `model`.
+
+  Option 1 spawns a process per message (forbidden for chat by LESSONS.md) and cannot pause for a
+  question. Option 3 has no structured events.
+
+  ### 2. ACP client: official SDK
+
+  **Decision:** `@agentclientprotocol/sdk` 1.5.0, using the `client()` builder and `ndJsonStream`.
+
+  **Rationale:** Same generated schema Cursor uses; typed requests; in-process `agent()` apps make
+  the protocol testable without mocking JSON lines.
+
+  ### 3. Answers to Cursor questions
+
+  Shep's question UI returns `Record<questionText, "Label A, Label B">`, and a free-text "Other"
+  answer is allowed. Cursor's answer carries option ids only. Each selected label is matched back
+  to its option id; when any question has no matching option (a free-text answer), the questions are
+  returned as `skipped` with a reason that quotes every answer, so the agent still reads what the
+  user wrote.
+
+  ## Library Analysis
+
+  | Library | Version | Purpose | Pros | Cons |
+  | ------- | ------- | ------- | ---- | ---- |
+  | @agentclientprotocol/sdk | 1.5.0 | ACP client over stdio | Official, typed schema, in-process test harness, Apache-2.0, peer dep `zod` already present | 5.6 MB unpacked; must be added to the Electron package too |
+
+  ## Security Considerations
+
+  - Tool permission requests are auto-approved, exactly like the one-shot Cursor executor's `--yolo`
+    and the Claude interactive executor. `allow_once` is preferred so no permanent allowlist entry is
+    written to the user's Cursor configuration.
+  - The client advertises no `fs` or `terminal` capability, so the agent cannot ask Shep to read or
+    write files or run commands on its behalf; it uses its own tools inside the worktree.
+  - The spawn command line is constant (`cursor-agent acp`); prompts travel over stdin as JSON, so no
+    user text reaches a shell on any platform.
+  - `authenticate` is never called, so a background daemon never opens a browser.
+
+  ## Performance Implications
+
+  One persistent process per chat replaces a process spawn per message, removing CLI start-up from
+  every turn. Idle sessions still hold a process until the session is stopped, the same trade-off
+  the Claude interactive executor makes.
