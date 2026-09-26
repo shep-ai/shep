@@ -67,7 +67,7 @@ export async function GET(request: NextRequest, { params }: RouteParams): Promis
           }
           if (chunk.sessionStatus) {
             enqueue(
-              `event: session_status\ndata: ${JSON.stringify({ sessionStatus: chunk.sessionStatus, featureId })}\n\n`
+              `event: session_status\ndata: ${JSON.stringify({ sessionStatus: chunk.sessionStatus, sessionError: chunk.sessionError, featureId })}\n\n`
             );
           }
           if (chunk.turnStatus) {

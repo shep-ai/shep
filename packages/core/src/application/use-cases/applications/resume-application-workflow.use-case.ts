@@ -73,6 +73,8 @@ export class ResumeApplicationWorkflowUseCase {
       this.session.setActiveStep(featureId, step.id);
 
       const turnDone = this.session.waitForTurnDone(featureId);
+      // Handled up front: the turn can fail while the send is still in flight.
+      turnDone.catch(() => undefined);
 
       try {
         await this.sendMessage.execute({

@@ -3,7 +3,8 @@
  *
  * Start a new interactive agent session for a feature.
  * Returns 201 with { sessionId, status } on success.
- * Returns 429 when the concurrent session cap is reached.
+ * Returns 422 when the agent has no interactive mode, and 429 when the
+ * concurrent session cap is reached.
  */
 
 import type { NextRequest } from 'next/server';
@@ -11,6 +12,8 @@ import { NextResponse } from 'next/server';
 import { resolve } from '@/lib/server-container';
 import type { StartInteractiveSessionUseCase } from '@shepai/core/application/use-cases/interactive/start-interactive-session.use-case';
 import { ConcurrentSessionLimitError } from '@shepai/core/domain/errors/concurrent-session-limit.error';
+import { INTERACTIVE_AGENT_UNSUPPORTED_CODE } from '@shepai/core/domain/errors/interactive-agent-unsupported.error';
+import { errorCode } from '@/lib/error-code';
 
 export const dynamic = 'force-dynamic';
 
@@ -36,6 +39,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     return NextResponse.json({ sessionId: session.id, status: session.status }, { status: 201 });
   } catch (error) {
+    // An agent without an interactive mode is the user's to fix (Settings), so
+    // answer 422 with the message. Match on `code`: `instanceof` never matches
+    // across the route bundle (see lib/error-code.ts).
+    if (errorCode(error) === INTERACTIVE_AGENT_UNSUPPORTED_CODE) {
+      return NextResponse.json(
+        { error: (error as Error).message, code: INTERACTIVE_AGENT_UNSUPPORTED_CODE },
+        { status: 422 }
+      );
+    }
     if (error instanceof ConcurrentSessionLimitError) {
       return NextResponse.json(
         {

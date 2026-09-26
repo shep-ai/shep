@@ -123,8 +123,11 @@ export class RunWorkflowUseCase {
     const firstStepDef = input.workflow.steps[0];
     if (!firstStepDef) return;
 
-    // Subscribe before sending to avoid racing a fast first turn.
+    // Subscribe before sending to avoid racing a fast first turn. It is only
+    // awaited after the session id is resolved, so mark it handled: a boot
+    // that fails in that window must not surface as an unhandled rejection.
     const firstTurnDone = this.session.waitForTurnDone(input.featureId);
+    firstTurnDone.catch(() => undefined);
 
     const firstAgentPrompt = input.firstStepPromptWrapper
       ? input.firstStepPromptWrapper(firstStepDef.prompt)
@@ -199,7 +202,8 @@ export class RunWorkflowUseCase {
       });
       this.session.notifyWorkflowStep(input.featureId, await this.refreshStep(firstStep.id));
       this.session.clearActiveStep(input.featureId);
-      return;
+      // Rethrow: the caller treats a normal return as "workflow complete".
+      throw err;
     }
     this.session.clearActiveStep(input.featureId);
 
@@ -216,6 +220,7 @@ export class RunWorkflowUseCase {
       this.session.setActiveStep(input.featureId, step.id);
 
       const turnDone = this.session.waitForTurnDone(input.featureId);
+      turnDone.catch(() => undefined);
       const usageBefore = await this.snapshotUsage(sessionId);
 
       try {
@@ -239,7 +244,7 @@ export class RunWorkflowUseCase {
           error: err instanceof Error ? err.message : String(err),
         });
         this.session.notifyWorkflowStep(input.featureId, await this.refreshStep(step.id));
-        return;
+        throw err;
       } finally {
         this.session.clearActiveStep(input.featureId);
       }
