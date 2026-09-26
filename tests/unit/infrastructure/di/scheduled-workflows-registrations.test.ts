@@ -57,7 +57,7 @@ const SCHEDULED_WORKFLOW_USE_CASE_TOKENS = [
   'DeleteWorkflowUseCase',
   'ListWorkflowsUseCase',
   'GetWorkflowUseCase',
-  'RunWorkflowUseCase',
+  'RunScheduledWorkflowUseCase',
   'ScheduleWorkflowUseCase',
   'GetWorkflowHistoryUseCase',
   'ToggleWorkflowUseCase',

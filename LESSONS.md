@@ -1,5 +1,16 @@
 # Lessons Learned
 
+## A reused string token silently hands every consumer the last registration
+
+`register-scheduled-workflows.ts` registered `'RunWorkflowUseCase'` for
+`RunScheduledWorkflowUseCase`, a name the interactive orchestrator already
+owned. tsyringe resolves the last registration, so `CreateApplicationUseCase`
+received the scheduled class and every prompt-created Application failed.
+Typecheck passed, and the registration test passed too, because it only checked
+`toBeDefined()`. Name a string token after the class it resolves to.
+`string-token-collision-guard.test.ts` now fails when one string token resolves
+to two classes.
+
 ## Prefer a shared port when one provider gains a capability
 
 When a capability exists for one agent or integration (for example live model

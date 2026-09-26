@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { resolve } from '@/lib/server-container';
 import { getFeatureFlags } from '@/lib/feature-flags';
-import type { RunScheduledWorkflowUseCase as RunWorkflowUseCase } from '@shepai/core/application/use-cases/scheduled-workflows/run-scheduled-workflow.use-case';
+import type { RunScheduledWorkflowUseCase } from '@shepai/core/application/use-cases/scheduled-workflows/run-scheduled-workflow.use-case';
 import type { WorkflowExecution } from '@shepai/core/domain/generated/output';
 
 export interface TriggerWorkflowResult {
@@ -18,7 +18,7 @@ export async function triggerWorkflow(workflowId: string): Promise<TriggerWorkfl
   }
 
   try {
-    const useCase = resolve<RunWorkflowUseCase>('RunWorkflowUseCase');
+    const useCase = resolve<RunScheduledWorkflowUseCase>('RunScheduledWorkflowUseCase');
     const execution = await useCase.execute(workflowId);
     revalidatePath('/workflows');
     return { execution, success: true };

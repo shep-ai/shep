@@ -72,7 +72,11 @@ export function registerScheduledWorkflows(c: DependencyContainer): void {
   c.register('GetWorkflowUseCase', {
     useFactory: (container) => container.resolve(GetScheduledWorkflowUseCase),
   });
-  c.register('RunWorkflowUseCase', {
+  // NOT 'RunWorkflowUseCase': that token belongs to the interactive step
+  // orchestrator (register-interactive.ts), which CreateApplicationUseCase
+  // injects. tsyringe resolves the last registration for a token, and this
+  // module runs later, so reusing the name hijacked Application creation.
+  c.register('RunScheduledWorkflowUseCase', {
     useFactory: (container) => container.resolve(RunScheduledWorkflowUseCase),
   });
   c.register('ScheduleWorkflowUseCase', {
