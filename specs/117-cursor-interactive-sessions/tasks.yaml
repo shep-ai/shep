@@ -1,0 +1,201 @@
+# Task Breakdown (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: cursor-interactive-sessions
+summary: Task breakdown for 117-cursor-interactive-sessions
+
+# Relationships
+relatedFeatures:
+  - 116-agent-harness-reliability
+technologies:
+  - TypeScript
+  - '@agentclientprotocol/sdk'
+  - Vitest
+relatedLinks: []
+
+tasks:
+  - id: task-1
+    title: Extract the Cursor CLI facts (binary, install hint, model-name map) into cursor-cli.ts
+    description: >
+      Move CURSOR_MODEL_MAP and toCursorModelName out of cursor-executor.service.ts so the one-shot
+      and interactive executors translate model ids from one table.
+    state: Done
+    dependencies: []
+    acceptanceCriteria:
+      - cursor-cli.ts exports toCursorModelName and the binary/install-hint constants; cursor-executor.service.ts imports them
+      - Existing cursor-executor tests pass unchanged
+    tdd:
+      red:
+        - Test that legacy ids map (composer-1.5 → composer-2.5, claude-opus-4-8 → claude-opus-4-8-high) and unknown ids pass through
+      green:
+        - Create cursor-cli.ts and import it from the one-shot executor
+      refactor:
+        - Remove the now-unused local map
+    estimatedEffort: S
+
+  - id: task-2
+    title: Map ACP session updates to InteractiveAgentEvent
+    description: >
+      Pure mapper from an ACP SessionUpdate to zero or more InteractiveAgentEvents.
+    state: Done
+    dependencies: []
+    acceptanceCriteria:
+      - agent_message_chunk text → delta; agent_thought_chunk text → thinking
+      - tool_call → tool_use labelled with the tool title and its raw input as detail
+      - tool_call_update completed/failed → tool_result carrying the textual content or raw output
+      - plan, mode, command and config updates produce no chat output; user_message_chunk is ignored
+    tdd:
+      red:
+        - One test per update kind, including non-text content blocks and a failed tool call
+      green:
+        - Implement AcpUpdateTranslator (translate + flush, coalescing thought chunks)
+      refactor:
+        - Share the content-to-text helper between chunk and tool-result mapping
+    estimatedEffort: S
+
+  - id: task-3
+    title: Translate Cursor ask_question payloads to and from Shep questions
+    description: >
+      Convert cursor/ask_question params to UserInteractionData and convert the answer map returned
+      by onUserQuestion into Cursor's answered/skipped response.
+    state: Done
+    dependencies: []
+    acceptanceCriteria:
+      - Single- and multi-select questions round-trip to option ids
+      - A free-text or missing answer produces a skipped response whose reason quotes the user's answers
+    tdd:
+      red:
+        - Tests for single select, multi select (comma-joined labels), labels containing commas, free text, empty answers
+      green:
+        - Implement toUserInteraction and toCursorAnswers
+      refactor:
+        - Keep the wire types in one place next to the translation
+    estimatedEffort: S
+
+  - id: task-4
+    title: AcpInteractiveSession — persistent ACP connection behind InteractiveAgentSessionHandle
+    description: >
+      Own one agent process and its ACP connection: initialize, new/load session, model selection,
+      per-turn prompt/stream, permission auto-approval, extension request hooks, error and exit
+      handling, and close.
+    state: Done
+    dependencies:
+      - task-2
+    acceptanceCriteria:
+      - Two turns run on one connection and each stream ends with done
+      - Updates replayed during session/load never reach a stream
+      - A failed session/load (other than auth) falls back to session/new
+      - Permission requests are answered with allow_once
+      - Refusal and max_tokens stop reasons end the turn with an error
+      - Agent exit mid-turn ends the stream with an error; later sends fail fast
+      - An auth-required error surfaces the profile's login hint
+      - close() cancels, kills the process tree and resolves after exit
+    tdd:
+      red:
+        - In-process ACP agent harness (tests/helpers/fake-acp-agent.ts) and one test per criterion
+      green:
+        - Implement AcpAgentProcess (stdio transport, first-wins death reason), AcpInteractiveSession and AcpInteractiveExecutor
+      refactor:
+        - Keep the turn channel lifecycle in one private helper
+    estimatedEffort: L
+
+  - id: task-5
+    title: CursorInteractiveExecutor profile
+    description: >
+      Cursor launch spec (POSIX direct spawn, Windows via cmd.exe), model mapping, login hint and
+      the cursor/ask_question handler wired to onUserQuestion / agentQuestionBridge.
+    state: Done
+    dependencies:
+      - task-1
+      - task-3
+      - task-4
+    acceptanceCriteria:
+      - Spawns `cursor-agent acp` on POSIX and `cmd.exe /d /s /c cursor-agent acp` on Windows
+      - Model option is the mapped Cursor id
+      - ask_question answers come from agentQuestionBridge when it returns answers, else onUserQuestion
+      - A missing binary reports the Cursor install hint
+    tdd:
+      red:
+        - Tests for launch command per platform, ask_question routing and the ENOENT message
+      green:
+        - Implement the Cursor profile over AcpInteractiveExecutor
+      refactor:
+        - Reuse the Cursor not-found message constant from the one-shot executor
+    estimatedEffort: M
+
+  - id: task-6
+    title: Register Cursor as an interactive agent in the factory
+    description: >
+      Replace the hardcoded 'claude-code' check with a registry so createInteractiveExecutor and
+      supportsInteractive share one source of truth.
+    state: Done
+    dependencies:
+      - task-5
+    acceptanceCriteria:
+      - supportsInteractive(Cursor) and supportsInteractive(ClaudeCode) are true; SDK agents stay false
+      - createInteractiveExecutor(Cursor) returns a CursorInteractiveExecutor
+      - The unsupported-agent error lists the registered interactive agents
+    tdd:
+      red:
+        - Factory tests for Cursor support and the derived error message
+      green:
+        - Add INTERACTIVE_EXECUTORS and derive both methods from it
+      refactor:
+        - Remove the duplicated literal
+    estimatedEffort: S
+
+  - id: task-7
+    title: Real-subprocess integration test
+    description: >
+      A Node fixture serving ACP on stdio stands in for cursor-agent so the executor is exercised
+      through a real child process.
+    state: Done
+    dependencies:
+      - task-6
+    acceptanceCriteria:
+      - Two turns are answered by the same PID
+      - After close() the PID is no longer alive
+      - Resume after close restores the session id
+    tdd:
+      red:
+        - Integration test against the fixture (fails before the executor is registered)
+      green:
+        - Make the spawn function route cursor-agent to the fixture
+      refactor:
+        - Share the fixture's ACP behaviour with the unit harness where practical
+    estimatedEffort: M
+
+  - id: task-8
+    title: Dependencies, docs and lessons
+    description: >
+      Declare the SDK for the Electron bundle, document interactive support per agent and record
+      the lessons learned.
+    state: Done
+    dependencies:
+      - task-6
+    acceptanceCriteria:
+      - '@agentclientprotocol/sdk is in root and packages/electron dependencies'
+      - agent-system.md and adding-agent-types.md describe the interactive registry and the ACP path
+      - LESSONS.md records the ACP findings (no authenticate, stdin EOF does not exit)
+    tdd: null
+    estimatedEffort: S
+
+totalEstimate: M
+
+openQuestions: []
+
+content: |
+  ## Summary
+
+  Cursor chat over `cursor-agent acp`: three pure building blocks, the ACP session and Cursor
+  profile, then factory wiring, a real-subprocess test and docs — 8 tasks across 3 phases.
+
+  ## Acceptance Checklist
+
+  Before marking feature complete:
+
+  - [ ] All tasks' acceptance criteria met
+  - [ ] `pnpm lint`, `pnpm format:check`, `pnpm typecheck` pass
+  - [ ] `pnpm test:unit` and `pnpm test:int` pass
+  - [ ] `pnpm build` and the Electron build pass
+  - [ ] Docs updated

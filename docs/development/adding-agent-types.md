@@ -402,8 +402,12 @@ That set and `getSupportedAgents()` used to be hand-listed and could disagree wi
 `supported: true` in the catalog without adding the switch case reintroduces exactly that, so do
 both in the same change.
 
-`createInteractiveExecutor` / `supportsInteractive` are separate and currently Claude-Code-only;
-leave them alone unless you are implementing a real interactive session.
+`createInteractiveExecutor` / `supportsInteractive` are separate: both read the factory's
+`INTERACTIVE_EXECUTORS` table, which currently holds `claude-code` and `cursor`. Add an entry only
+when you are implementing a real interactive session — one agent process for the whole chat, not a
+process per message. If the agent's CLI serves the Agent Client Protocol, write an `AcpAgentProfile`
+and reuse `AcpInteractiveExecutor` (see `cursor-interactive-executor.service.ts`) instead of a new
+executor.
 
 ## Step 5 — Add the tool-installer entry
 

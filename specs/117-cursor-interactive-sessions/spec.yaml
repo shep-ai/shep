@@ -1,0 +1,99 @@
+# Feature Specification (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: cursor-interactive-sessions
+number: 117
+branch: claude/beautiful-cray-ep2kxx
+oneLiner: |-
+  Let Application chat (and every other interactive chat) run on Cursor through cursor-agent's ACP server
+summary: >
+  Application chat goes through IAgentExecutorFactory.createInteractiveExecutor(), which only knows
+  Claude Code. Picking Cursor as the agent makes every chat boot fail with "Agent type 'cursor' does
+  not support interactive sessions". This feature adds a Cursor IInteractiveAgentExecutor that drives
+  `cursor-agent acp` (the Agent Client Protocol server built into the Cursor CLI) as one long-lived
+  process per chat, resumes conversations with ACP session/load, routes Cursor's AskQuestion tool to
+  the existing question UI, and flips supportsInteractive(Cursor) to true.
+phase: Requirements
+sizeEstimate: M
+
+# Relationships
+relatedFeatures:
+  - 116-agent-harness-reliability
+
+technologies:
+  - TypeScript
+  - Agent Client Protocol (@agentclientprotocol/sdk)
+  - cursor-agent CLI
+  - Vitest
+
+relatedLinks:
+  - title: Issue 894 - Cursor interactive sessions for Application chat
+    url: https://github.com/shep-ai/shep/issues/894
+  - title: Issue 895 - UX guard when the agent has no interactive support
+    url: https://github.com/shep-ai/shep/issues/895
+  - title: Agent Client Protocol
+    url: https://agentclientprotocol.com
+
+# Open questions (must be resolved before implementation)
+openQuestions: []
+
+# Markdown content (the actual spec)
+content: |
+  ## Problem Statement
+
+  Every chat surface (Application chat, feature/repository/global chat) boots through
+  `SessionBootstrapper` → `IAgentExecutorFactory.createInteractiveExecutor(agentType)`. The factory
+  returns an executor only for `claude-code` and throws for every other agent, so a user whose
+  Settings agent is Cursor cannot use chat at all, and an Application created with Cursor never
+  starts its build workflow.
+
+  Cursor already has a one-shot executor (`CursorExecutorService`, `cursor-agent --print`). Chat needs
+  more than that: the agent process must stay alive across turns (LESSONS.md: "Interactive Agent
+  Process MUST Be Persistent"), a conversation must survive a daemon restart, and the agent must be
+  able to pause and ask the user a question.
+
+  `cursor-agent` ships a hidden `acp` command that serves the Agent Client Protocol over stdio. It
+  advertises `loadSession`, streams `session/update` notifications, answers `session/prompt` with a
+  stop reason, supports `session/cancel`, and asks questions through a `cursor/ask_question`
+  extension request. That is the interactive surface chat needs.
+
+  ## Success Criteria
+
+  - [ ] `factory.supportsInteractive(AgentType.Cursor)` is `true`, and `createInteractiveExecutor(Cursor)`
+        returns a working `IInteractiveAgentExecutor`; the set of interactive agents has one source
+        of truth, so the two methods cannot disagree.
+  - [ ] One `cursor-agent acp` process serves every turn of a chat session (same PID across turns);
+        `close()` kills it and waits for it to exit.
+  - [ ] `resumeSession(id)` restores the conversation with ACP `session/load`; history the agent
+        replays during load never reaches the chat as new output. A session Cursor no longer has
+        falls back to a fresh session instead of failing the chat forever.
+  - [ ] ACP updates map onto `InteractiveAgentEvent`: message chunks → `delta`, thought chunks →
+        `thinking`, tool calls → `tool_use` / `tool_result`, prompt response → `done` (or `error`
+        for refusal / max-tokens / a dead process).
+  - [ ] Cursor's AskQuestion reaches the existing `onUserQuestion` pause and the user's answer goes
+        back to the agent; tool permission requests are auto-approved once (the `--yolo` behaviour
+        the one-shot executor already has).
+  - [ ] A missing binary, a logged-out Cursor CLI, and an agent process that dies mid-turn each end
+        the turn with an actionable error instead of a hang.
+  - [ ] Docs no longer say interactive sessions are Claude-Code-only.
+
+  ## Affected Areas
+
+  | Area | Impact | Reasoning |
+  | ---- | ------ | --------- |
+  | `infrastructure/services/agents/common/executors/` | High | New ACP session + Cursor interactive executor; Cursor model-name map extracted for reuse |
+  | `agent-executor-factory.service.ts` | Medium | Interactive executor registry replaces the hardcoded `'claude-code'` check |
+  | Interactive session runtime (`services/interactive/`) | None | Consumes the existing `InteractiveAgentSessionHandle` contract unchanged |
+  | Dependencies (`package.json`, `packages/electron/package.json`) | Low | Adds `@agentclientprotocol/sdk` (peer: `zod`, already present) |
+  | Docs (`agent-system.md`, `adding-agent-types.md`) | Low | Describe interactive support per agent |
+
+  ## Dependencies
+
+  - Requires a `cursor-agent` build that includes the `acp` command (present in 2026.09.x builds).
+  - Issue 895 (UX guard for agents without interactive support) is independent; once this lands,
+    its `supportsInteractive` check admits Cursor with no extra change.
+
+  ## Size Estimate
+
+  **M** - One new executor built on an existing protocol SDK, a factory change and docs. The chat
+  runtime, persistence and UI are untouched because the handle contract already fits.

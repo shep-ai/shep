@@ -1,0 +1,45 @@
+feature:
+  id: '117-cursor-interactive-sessions'
+  name: 'cursor-interactive-sessions'
+  number: 117
+  branch: 'claude/beautiful-cray-ep2kxx'
+  lifecycle: 'implementation'
+  createdAt: '2026-09-26T05:51:11Z'
+
+status:
+  phase: 'implementation-complete'
+  progress:
+    completed: 8
+    total: 8
+    percentage: 100
+  currentTask: null
+  lastUpdated: '2026-09-26T06:09:02Z'
+  lastUpdatedBy: 'shep-kit:implement'
+
+validation:
+  lastRun: null
+  gatesPassed: []
+  autoFixesApplied: []
+
+tasks:
+  current: null
+  blocked: []
+  failed: []
+
+checkpoints:
+  - phase: 'feature-created'
+    completedAt: '2026-09-26T05:51:11Z'
+    completedBy: 'shep-kit:new-feature-fast'
+  - phase: 'research-complete'
+    completedAt: '2026-09-26T05:54:17Z'
+    completedBy: 'shep-kit:new-feature-fast'
+  - phase: 'implementation-complete'
+    completedAt: '2026-09-26T06:09:02Z'
+    completedBy: 'shep-kit:implement'
+  - phase: 'plan-complete'
+    completedAt: '2026-09-26T05:54:17Z'
+    completedBy: 'shep-kit:new-feature-fast'
+
+errors:
+  current: null
+  history: []
