@@ -250,6 +250,7 @@
   },
   "packageManager": "pnpm@10.33.0",
   "dependencies": {
+    "@agentclientprotocol/sdk": "1.5.0",
     "@ai-sdk/openai-compatible": "^2.0.75",
     "@ai-sdk/provider": "^3.0.8",
     "@anthropic-ai/claude-agent-sdk": "0.2.81",

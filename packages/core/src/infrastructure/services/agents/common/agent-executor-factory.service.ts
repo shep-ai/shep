@@ -8,7 +8,7 @@
  * to enable testability without mocking node:child_process directly.
  */
 
-import type { AgentType, AgentConfig } from '../../../../domain/generated/output.js';
+import { AgentType, type AgentConfig } from '../../../../domain/generated/output.js';
 import {
   resolveAdaptiveTierPlan,
   type AdaptiveTierPlan,
@@ -29,6 +29,7 @@ import {
 import { ClaudeCodeExecutorService } from './executors/claude-code-executor.service.js';
 import { ClaudeCodeInteractiveExecutor } from './executors/claude-code-interactive-executor.service.js';
 import { CursorExecutorService } from './executors/cursor-executor.service.js';
+import { CursorInteractiveExecutor } from './executors/cursor-interactive-executor.service.js';
 import { DevAgentExecutorService } from './executors/dev-executor.service.js';
 import { GeminiCliExecutorService } from './executors/gemini-cli-executor.service.js';
 import { CodexCliExecutorService } from './executors/codex-cli-executor.service.js';
@@ -55,6 +56,21 @@ const EXECUTABLE_AGENT_TYPES: ReadonlySet<string> = new Set(
     .filter((descriptor) => descriptor.supported)
     .map((descriptor) => descriptor.type as string)
 );
+
+/**
+ * Agents that can hold a multi-turn chat session, and how to build each one's
+ * interactive executor.
+ *
+ * `createInteractiveExecutor` and `supportsInteractive` both read this one
+ * table, so they cannot disagree — the same drift `EXECUTABLE_AGENT_TYPES`
+ * exists to prevent for one-shot executors.
+ */
+const INTERACTIVE_EXECUTORS: Partial<
+  Record<AgentType, (spawn: SpawnFunction) => IInteractiveAgentExecutor>
+> = {
+  [AgentType.ClaudeCode]: () => new ClaudeCodeInteractiveExecutor(),
+  [AgentType.Cursor]: (spawn) => new CursorInteractiveExecutor(spawn),
+};
 
 /**
  * Ollama and LLMProxy take a BASE URL where every other agent takes an API key,
@@ -258,7 +274,6 @@ export class AgentExecutorFactory implements IAgentExecutorFactory {
 
   /**
    * Create an interactive executor for multi-turn agent sessions.
-   * Currently only Claude Code supports interactive sessions via the SDK.
    *
    * @param agentType - The type of agent to create an interactive executor for
    * @param _authConfig - Agent authentication and configuration
@@ -269,13 +284,14 @@ export class AgentExecutorFactory implements IAgentExecutorFactory {
     agentType: AgentType,
     _authConfig: AgentConfig
   ): IInteractiveAgentExecutor {
-    const key = agentType as string;
-    if (key === 'claude-code') {
-      return new ClaudeCodeInteractiveExecutor();
-    }
+    const build = INTERACTIVE_EXECUTORS[agentType];
+    if (build) return build(this.spawn);
+    const available = Object.keys(INTERACTIVE_EXECUTORS)
+      .map((type) => `'${type}'`)
+      .join(', ');
     throw new Error(
       `Agent type '${agentType}' does not support interactive sessions. ` +
-        `Only 'claude-code' supports interactive mode.`
+        `Interactive sessions are available for: ${available}.`
     );
   }
 
@@ -286,7 +302,7 @@ export class AgentExecutorFactory implements IAgentExecutorFactory {
    * @returns true if createInteractiveExecutor can be called for this type
    */
   supportsInteractive(agentType: AgentType): boolean {
-    return (agentType as string) === 'claude-code';
+    return INTERACTIVE_EXECUTORS[agentType] !== undefined;
   }
 }
 

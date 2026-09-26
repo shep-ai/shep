@@ -345,13 +345,45 @@ executor factory. There is no `aider-executor.service.ts`.
 Supporting files in the same directory:
 
 - `ai-sdk-base-executor.service.ts` -- shared base for the four SDK executors
-- `claude-code-interactive-executor.service.ts` -- interactive (chat) variant
+- `claude-code-interactive-executor.service.ts` -- Claude Code chat sessions (Agent SDK V2)
+- `cursor-interactive-executor.service.ts` -- Cursor chat sessions over `cursor-agent acp`
+- `acp/` -- agent-agnostic Agent Client Protocol chat session (see below)
+- `cursor-cli.ts` -- Cursor binary, install hint and model-id map shared by both Cursor executors
 - `mock-executor.service.ts` / `mock-executor-factory.service.ts` -- test doubles
 - `process-stream.ts` -- reusable `createLineAccumulator()` and `killProcessTree()`
 - `security-constraint-validator.ts` -- per-execution constraint checks
 
 `packages/core/src/domain/shared/agent-resume-descriptor.ts` (`RESUME_BINARIES`)
 records which CLI agents support session resume.
+
+### Interactive (chat) executors
+
+Every chat surface (Application, feature, repository and global chat) boots through
+`IAgentExecutorFactory.createInteractiveExecutor(agentType)`. The factory's
+`INTERACTIVE_EXECUTORS` table is the single source of truth: an agent is interactive exactly when
+it has an entry there, and `supportsInteractive()` reads the same table.
+
+| Agent         | Executor                                    | Transport                                          |
+| ------------- | ------------------------------------------- | -------------------------------------------------- |
+| `claude-code` | `claude-code-interactive-executor.service.ts` | Claude Agent SDK V2 session (persistent process) |
+| `cursor`      | `cursor-interactive-executor.service.ts`    | `cursor-agent acp` — Agent Client Protocol on stdio |
+
+Both keep **one agent process per chat session** and resume a conversation from the stored
+agent session id after a restart.
+
+The ACP path is generic (`executors/acp/`): `AcpInteractiveSession` speaks ACP through
+`@agentclientprotocol/sdk`, maps `session/update` notifications to `InteractiveAgentEvent`
+(`AcpUpdateTranslator`), resumes with `session/load` (history the agent replays during the load is
+never shown as new output) and approves tool permission requests once. An agent-specific
+`AcpAgentProfile` supplies the launch command, model-id mapping, login hint and extension methods —
+for Cursor, the `cursor/ask_question` request, which is routed to the same question UI as Claude's
+AskUserQuestion. Another agent that serves ACP (for example Gemini CLI) needs a profile, not a new
+executor.
+
+Cursor specifics worth knowing: the ACP server reads the stored login or `CURSOR_API_KEY` at start-up
+and is never sent `authenticate` (a logged-out server would try to open a browser); it does not exit
+when stdin closes, so `close()` kills it; on Windows it is launched through `cmd.exe /d /c` because
+`cursor-agent` is a `.cmd` shim.
 
 ## Agent Executor Interfaces
 

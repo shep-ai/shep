@@ -10,6 +10,8 @@
 import 'reflect-metadata';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AgentExecutorFactory } from '@/infrastructure/services/agents/common/agent-executor-factory.service.js';
+import { ClaudeCodeInteractiveExecutor } from '@/infrastructure/services/agents/common/executors/claude-code-interactive-executor.service.js';
+import { CursorInteractiveExecutor } from '@/infrastructure/services/agents/common/executors/cursor-interactive-executor.service.js';
 import { DevAgentExecutorService } from '@/infrastructure/services/agents/common/executors/dev-executor.service.js';
 import { CodexCliExecutorService } from '@/infrastructure/services/agents/common/executors/codex-cli-executor.service.js';
 import { CopilotCliExecutorService } from '@/infrastructure/services/agents/common/executors/copilot-cli-executor.service.js';
@@ -497,6 +499,40 @@ describe('AgentExecutorFactory', () => {
 
     it('should return false for ollama', () => {
       expect(factory.supportsInteractive(AgentType.Ollama)).toBe(false);
+    });
+
+    it('should return true for claude-code and cursor', () => {
+      expect(factory.supportsInteractive(AgentType.ClaudeCode)).toBe(true);
+      expect(factory.supportsInteractive(AgentType.Cursor)).toBe(true);
+    });
+
+    it('should agree with createInteractiveExecutor for every agent type', () => {
+      // One source of truth: an agent is interactive exactly when the factory
+      // can build it an interactive executor.
+      for (const agentType of Object.values(AgentType)) {
+        const build = () => factory.createInteractiveExecutor(agentType, defaultAuthConfig);
+        if (factory.supportsInteractive(agentType)) expect(build).not.toThrow();
+        else expect(build).toThrow('does not support interactive sessions');
+      }
+    });
+  });
+
+  describe('createInteractiveExecutor', () => {
+    it('should create a ClaudeCodeInteractiveExecutor for claude-code', () => {
+      const executor = factory.createInteractiveExecutor(AgentType.ClaudeCode, defaultAuthConfig);
+      expect(executor).toBeInstanceOf(ClaudeCodeInteractiveExecutor);
+    });
+
+    it('should create a CursorInteractiveExecutor for cursor', () => {
+      const executor = factory.createInteractiveExecutor(AgentType.Cursor, defaultAuthConfig);
+      expect(executor).toBeInstanceOf(CursorInteractiveExecutor);
+    });
+
+    it('should name the interactive agents when an agent has no interactive support', () => {
+      expect(() => factory.createInteractiveExecutor(AgentType.Dev, defaultAuthConfig)).toThrow(
+        "Agent type 'dev' does not support interactive sessions. " +
+          "Interactive sessions are available for: 'claude-code', 'cursor'."
+      );
     });
   });
 });

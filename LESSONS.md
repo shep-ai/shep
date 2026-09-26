@@ -1,5 +1,27 @@
 # Lessons Learned
 
+## A fake child process must emit events in the order a real one does
+
+The ACP session ends its input stream on the process's `close`, so a turn that dies mid-way
+reports the exit code and stderr. Ending it on stdout `end` instead would lose them, because Node
+emits `end` before `close` and the connection would reject its requests with a generic "closed"
+first. A mutation that made exactly that change passed every unit test: the fake process emitted
+`close` and then ended stdout, the reverse of Node. `FakeChildProcess.exit()` in
+`tests/helpers/fake-acp-agent.ts` now follows the real order, and the mutation fails. The real
+binary then caught what no fake did. Cursor answered `session/new` with a JSON-RPC error, and the
+executor reported "Internal error" plus an "update your CLI" hint that only fits an agent that
+never answered.
+
+Rules:
+
+1. A test double for a process or stream must reproduce the event order of the real thing. When a
+   design choice depends on an ordering, mutate the code to the wrong order and watch a test fail.
+2. When a real binary is obtainable, drive the new executor against it, even logged out. The
+   failure paths it exercises (auth, missing binary, backend errors) are the ones users hit first.
+3. `cursor-agent acp`: never call `authenticate` (while logged out it tries to open a browser); it
+   does not exit on stdin EOF, so it must be killed; history arrives as `session/update` during
+   `session/load` and must not be shown as new output.
+
 ## A reused string token silently hands every consumer the last registration
 
 `register-scheduled-workflows.ts` registered `'RunWorkflowUseCase'` for
@@ -1441,7 +1463,7 @@ Model lists are centralized, but several adapters keep their own provider-format
 
 1. `packages/core/src/infrastructure/services/agents/common/agent-model-catalog.ts` — add to `CLAUDE_CODE_MODELS`, `CURSOR_MODELS`, and `COPILOT_CLI_MODELS` (note Copilot uses dotted form `claude-opus-4.8`, the others hyphenated). This is the source of truth for `AgentExecutorFactory.getSupportedModels()`.
 2. `src/presentation/web/lib/model-metadata.ts` — add a `displayName`/`description` entry (hyphenated key). Missing entries fall back to a prettified raw ID.
-3. `packages/core/src/infrastructure/services/agents/common/executors/cursor-executor.service.ts` — `CURSOR_MODEL_MAP` maps `claude-opus-4-8` → `opus-4.8`. Unmapped IDs pass through unchanged (a silent bug — the catalog can list a model the map doesn't translate).
+3. `packages/core/src/infrastructure/services/agents/common/executors/cursor-cli.ts` — `CURSOR_MODEL_MAP` (shared by the one-shot and interactive Cursor executors) maps `claude-opus-4-8` → `claude-opus-4-8-high`. Unmapped IDs pass through unchanged (a silent bug — the catalog can list a model the map doesn't translate).
 4. `packages/core/src/infrastructure/services/agents/common/executors/copilot-cli-executor.service.ts` — `LEGACY_MODEL_ALIASES` maps hyphenated → dotted for old settings payloads.
 5. `.storybook/mocks/app/actions/get-all-agent-models.ts` and `get-supported-models.ts` — Storybook bundles the client only, so these mocks must mirror the catalog or the picker stories drift.
 6. `tests/unit/infrastructure/services/agents/agent-executor-factory.test.ts` — `getSupportedModels` tests assert exact lists AND lengths per agent (Claude Code, Cursor, Copilot). Update the arrays and the `toHaveLength` count.
@@ -1788,7 +1810,7 @@ The Storybook mocks had drifted too (`get-supported-models.ts` /
 **When adding or retiring a model ID, touch all five:**
 
 1. `packages/core/src/infrastructure/services/agents/common/agent-model-catalog.ts` — every agent list that actually supports it (ordered most-capable first).
-2. Per-agent **name translation maps** — `CURSOR_MODEL_MAP` (cursor-executor) and `LEGACY_MODEL_ALIASES` (copilot-cli-executor). Each agent CLI has its own naming convention; a pass-through fallback hides the omission.
+2. Per-agent **name translation maps** — `CURSOR_MODEL_MAP` (`cursor-cli.ts`) and `LEGACY_MODEL_ALIASES` (copilot-cli-executor). Each agent CLI has its own naming convention; a pass-through fallback hides the omission.
 3. `src/presentation/web/lib/model-metadata.ts` — display name + description. Without it the picker shows a prettified raw ID and an empty description. Re-check the *neighbouring* descriptions too: a new flagship makes the old "Most capable" line a lie.
 4. `.storybook/mocks/app/actions/get-supported-models.ts` and `get-all-agent-models.ts` — static mocks that don't import the catalog, so they drift silently and stories render a stale list.
 5. `packages/core/src/domain/shared/model-tier.ts` — the `MODEL_TIERS` table (family + High/Medium/Low). A model missing from it is not an error: it simply opts out of adaptive routing, so a new flagship silently never becomes the High-tier target and a new small model is never selected for Low-complexity tasks. There is no test that can catch the omission, because "unknown model passes through unchanged" is the deliberate safe default.

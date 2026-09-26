@@ -15,20 +15,20 @@ relatedLinks: []
 
 tasks:
   - id: task-1
-    title: Extract the Cursor model-name map into a shared module
+    title: Extract the Cursor CLI facts (binary, install hint, model-name map) into cursor-cli.ts
     description: >
       Move CURSOR_MODEL_MAP and toCursorModelName out of cursor-executor.service.ts so the one-shot
       and interactive executors translate model ids from one table.
-    state: Todo
+    state: Done
     dependencies: []
     acceptanceCriteria:
-      - cursor-model-name.ts exports toCursorModelName; cursor-executor.service.ts imports it
+      - cursor-cli.ts exports toCursorModelName and the binary/install-hint constants; cursor-executor.service.ts imports them
       - Existing cursor-executor tests pass unchanged
     tdd:
       red:
         - Test that legacy ids map (composer-1.5 → composer-2.5, claude-opus-4-8 → claude-opus-4-8-high) and unknown ids pass through
       green:
-        - Create cursor-model-name.ts and import it from the one-shot executor
+        - Create cursor-cli.ts and import it from the one-shot executor
       refactor:
         - Remove the now-unused local map
     estimatedEffort: S
@@ -37,7 +37,7 @@ tasks:
     title: Map ACP session updates to InteractiveAgentEvent
     description: >
       Pure mapper from an ACP SessionUpdate to zero or more InteractiveAgentEvents.
-    state: Todo
+    state: Done
     dependencies: []
     acceptanceCriteria:
       - agent_message_chunk text → delta; agent_thought_chunk text → thinking
@@ -48,7 +48,7 @@ tasks:
       red:
         - One test per update kind, including non-text content blocks and a failed tool call
       green:
-        - Implement mapAcpSessionUpdate
+        - Implement AcpUpdateTranslator (translate + flush, coalescing thought chunks)
       refactor:
         - Share the content-to-text helper between chunk and tool-result mapping
     estimatedEffort: S
@@ -58,7 +58,7 @@ tasks:
     description: >
       Convert cursor/ask_question params to UserInteractionData and convert the answer map returned
       by onUserQuestion into Cursor's answered/skipped response.
-    state: Todo
+    state: Done
     dependencies: []
     acceptanceCriteria:
       - Single- and multi-select questions round-trip to option ids
@@ -78,7 +78,7 @@ tasks:
       Own one agent process and its ACP connection: initialize, new/load session, model selection,
       per-turn prompt/stream, permission auto-approval, extension request hooks, error and exit
       handling, and close.
-    state: Todo
+    state: Done
     dependencies:
       - task-2
     acceptanceCriteria:
@@ -94,7 +94,7 @@ tasks:
       red:
         - In-process ACP agent harness (tests/helpers/fake-acp-agent.ts) and one test per criterion
       green:
-        - Implement AcpInteractiveSession and AcpInteractiveExecutor
+        - Implement AcpAgentProcess (stdio transport, first-wins death reason), AcpInteractiveSession and AcpInteractiveExecutor
       refactor:
         - Keep the turn channel lifecycle in one private helper
     estimatedEffort: L
@@ -104,7 +104,7 @@ tasks:
     description: >
       Cursor launch spec (POSIX direct spawn, Windows via cmd.exe), model mapping, login hint and
       the cursor/ask_question handler wired to onUserQuestion / agentQuestionBridge.
-    state: Todo
+    state: Done
     dependencies:
       - task-1
       - task-3
@@ -128,7 +128,7 @@ tasks:
     description: >
       Replace the hardcoded 'claude-code' check with a registry so createInteractiveExecutor and
       supportsInteractive share one source of truth.
-    state: Todo
+    state: Done
     dependencies:
       - task-5
     acceptanceCriteria:
@@ -149,7 +149,7 @@ tasks:
     description: >
       A Node fixture serving ACP on stdio stands in for cursor-agent so the executor is exercised
       through a real child process.
-    state: Todo
+    state: Done
     dependencies:
       - task-6
     acceptanceCriteria:
@@ -170,7 +170,7 @@ tasks:
     description: >
       Declare the SDK for the Electron bundle, document interactive support per agent and record
       the lessons learned.
-    state: Todo
+    state: Done
     dependencies:
       - task-6
     acceptanceCriteria:

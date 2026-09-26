@@ -37,15 +37,18 @@ phases:
       - task-8
 
 filesToCreate:
-  - packages/core/src/infrastructure/services/agents/common/executors/cursor-model-name.ts
-  - packages/core/src/infrastructure/services/agents/common/executors/acp/acp-update-mapper.ts
+  - packages/core/src/infrastructure/services/agents/common/executors/cursor-cli.ts
+  - packages/core/src/infrastructure/services/agents/common/executors/acp/acp-update-translator.ts
   - packages/core/src/infrastructure/services/agents/common/executors/acp/acp-interactive-session.ts
+  - packages/core/src/infrastructure/services/agents/common/executors/acp/acp-process.ts
+  - packages/core/src/infrastructure/services/agents/common/executors/acp/acp-protocol.ts
   - packages/core/src/infrastructure/services/agents/common/executors/acp/acp-interactive-executor.ts
   - packages/core/src/infrastructure/services/agents/common/executors/cursor-ask-question.ts
   - packages/core/src/infrastructure/services/agents/common/executors/cursor-interactive-executor.service.ts
-  - tests/unit/infrastructure/services/agents/executors/cursor-model-name.test.ts
-  - tests/unit/infrastructure/services/agents/executors/acp/acp-update-mapper.test.ts
+  - tests/unit/infrastructure/services/agents/executors/cursor-cli.test.ts
+  - tests/unit/infrastructure/services/agents/executors/acp/acp-update-translator.test.ts
   - tests/unit/infrastructure/services/agents/executors/acp/acp-interactive-session.test.ts
+  - tests/unit/infrastructure/services/agents/executors/acp/acp-protocol.test.ts
   - tests/unit/infrastructure/services/agents/executors/cursor-ask-question.test.ts
   - tests/unit/infrastructure/services/agents/executors/cursor-interactive-executor.test.ts
   - tests/helpers/fake-acp-agent.ts
@@ -84,7 +87,7 @@ content: |
   AcpInteractiveSession ── ClientApp ────┘
     initialize → session/new | session/load (replay suppressed) → set model
     send(msg)   → session/prompt → per-turn EventChannel
-    session/update ──▶ acp-update-mapper ──▶ InteractiveAgentEvent (delta, thinking, tool_use, …)
+    session/update ──▶ AcpUpdateTranslator ──▶ InteractiveAgentEvent (delta, thinking, tool_use, …)
     prompt response ─▶ done | error         process exit ─▶ error + channel closed
     session/request_permission ─▶ allow_once
     close() ─▶ session/cancel, kill tree, await exit
@@ -94,8 +97,8 @@ content: |
 
   **MANDATORY TDD**: All phases with executable code follow RED-GREEN-REFACTOR cycles.
 
-  Phase 1 builds the three pure pieces the session composes: the Cursor model-name map (extracted
-  from the one-shot executor so both executors share one table), the ACP `session/update` →
+  Phase 1 builds the three pure pieces the session composes: `cursor-cli.ts` (binary, install hint
+  and model-name map, extracted from the one-shot executor so both executors share one table), the ACP `session/update` →
   `InteractiveAgentEvent` mapper, and the translation between Cursor's `cursor/ask_question` payload
   and Shep's `UserQuestion` / answer map. They have no I/O and are tested in isolation.
 
