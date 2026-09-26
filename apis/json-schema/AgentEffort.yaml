@@ -1,0 +1,10 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: AgentEffort.yaml
+type: string
+enum:
+  - low
+  - medium
+  - high
+  - xhigh
+  - max
+description: Reasoning effort an agent spends per turn

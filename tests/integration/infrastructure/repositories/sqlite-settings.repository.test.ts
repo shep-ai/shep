@@ -18,6 +18,7 @@ import { SQLiteSettingsRepository } from '@/infrastructure/repositories/sqlite-s
 import type { Settings } from '@/domain/generated/output.js';
 import {
   AgentType,
+  AgentEffort,
   AgentAuthMethod,
   EditorType,
   Language,
@@ -1149,6 +1150,29 @@ describe('SQLiteSettingsRepository', () => {
       await repository.update(settings);
 
       expect((await repository.load())?.workflow.ciWatchEnabled).toBe(true);
+    });
+  });
+
+  describe('model effort', () => {
+    it('round-trips effort through initialize()', async () => {
+      const settings = createTestSettings();
+      settings.models.effort = AgentEffort.high;
+      await repository.initialize(settings);
+      expect((await repository.load())?.models.effort).toBe(AgentEffort.high);
+    });
+
+    it('persists setting and clearing effort via update()', async () => {
+      const settings = createTestSettings();
+      await repository.initialize(settings);
+      expect((await repository.load())?.models.effort).toBeUndefined();
+
+      settings.models.effort = AgentEffort.max;
+      await repository.update(settings);
+      expect((await repository.load())?.models.effort).toBe(AgentEffort.max);
+
+      delete settings.models.effort;
+      await repository.update(settings);
+      expect((await repository.load())?.models.effort).toBeUndefined();
     });
   });
 

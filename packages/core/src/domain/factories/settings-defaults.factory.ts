@@ -5,7 +5,7 @@
  * matching the TypeSpec model specification.
  *
  * This factory ensures:
- * - Default model: claude-sonnet-4-6
+ * - Default model: DEFAULT_MODEL_ID (claude-opus-5-5)
  * - User profile fields are optional (empty object)
  * - Editor defaults to vscode, shell to bash
  * - Auto-update enabled, log level set to info
@@ -38,12 +38,7 @@ import {
   WhatsAppAdapterKind,
 } from '../generated/output';
 import { UNLIMITED_PARALLEL_FEATURES } from '../shared/parallel-feature-limit';
-
-/**
- * Default AI model for all SDLC agents.
- * Provides balanced performance and cost for all workflow stages.
- */
-const DEFAULT_MODEL = 'claude-sonnet-4-6' as const;
+import { DEFAULT_MODEL_ID } from '../shared/default-model';
 
 /**
  * Default code editor preference.
@@ -106,7 +101,7 @@ export function createDefaultSettings(): Settings {
   const now = new Date();
 
   const models: ModelConfiguration = {
-    default: DEFAULT_MODEL,
+    default: DEFAULT_MODEL_ID,
   };
 
   const user: UserProfile = {};

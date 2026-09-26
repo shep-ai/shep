@@ -16,7 +16,7 @@ import { createInMemoryDatabase, tableExists } from '../../../helpers/database.h
 import { runSQLiteMigrations } from '@/infrastructure/persistence/sqlite/migrations.js';
 import { SQLiteAgentRunRepository } from '@/infrastructure/repositories/agent-run.repository.js';
 import type { AgentRun } from '@/domain/generated/output.js';
-import { AgentType, AgentRunStatus } from '@/domain/generated/output.js';
+import { AgentType, AgentRunStatus, AgentEffort } from '@/domain/generated/output.js';
 
 describe('SQLiteAgentRunRepository', () => {
   let db: Database.Database;
@@ -249,6 +249,39 @@ describe('SQLiteAgentRunRepository', () => {
 
       const found = await repository.findById('run-001');
       expect((found?.updatedAt as Date).toISOString()).toBe('2025-01-02T00:00:00.000Z');
+    });
+  });
+
+  describe('effort', () => {
+    it('round-trips a pinned effort', async () => {
+      await repository.create(createTestAgentRun({ effort: AgentEffort.xhigh }));
+      expect((await repository.findById('run-001'))?.effort).toBe(AgentEffort.xhigh);
+    });
+
+    it('leaves effort absent when none was pinned', async () => {
+      await repository.create(createTestAgentRun());
+      const found = await repository.findById('run-001');
+      expect(found?.effort).toBeUndefined();
+      const row = db.prepare('SELECT effort FROM agent_runs WHERE id = ?').get('run-001') as {
+        effort: string | null;
+      };
+      expect(row.effort).toBeNull();
+    });
+
+    it('reads an unknown stored value back as absent', async () => {
+      await repository.create(createTestAgentRun());
+      db.prepare('UPDATE agent_runs SET effort = ? WHERE id = ?').run('ultra', 'run-001');
+      expect((await repository.findById('run-001'))?.effort).toBeUndefined();
+    });
+
+    it('keeps the pinned effort when the pinned agent/model changes', async () => {
+      await repository.create(createTestAgentRun({ effort: AgentEffort.low }));
+      await repository.updatePinnedConfig('run-001', {
+        agentType: AgentType.ClaudeCode,
+        modelId: 'claude-opus-5-5',
+        updatedAt: new Date('2025-01-02T00:00:00Z'),
+      });
+      expect((await repository.findById('run-001'))?.effort).toBe(AgentEffort.low);
     });
   });
 

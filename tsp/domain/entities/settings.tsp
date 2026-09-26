@@ -25,7 +25,7 @@
  * ## Initialization
  *
  * On first run, Settings is created with sensible defaults:
- * - Default model: claude-sonnet-4-6
+ * - Default model: claude-opus-5-5
  * - Editor defaults to vscode
  * - Shell defaults to bash
  * - Auto-update enabled
@@ -34,6 +34,7 @@
  */
 import "../../common/base.tsp";
 import "../../common/enums/agent-config.tsp";
+import "../../common/enums/agent-effort.tsp";
 import "../../common/enums/editor.tsp";
 import "../../common/enums/language.tsp";
 import "../../common/enums/notification.tsp";
@@ -54,13 +55,15 @@ import "../../agents/supervisor-policy.tsp";
  *
  * Users can configure the model via:
  * - `shep settings model` — interactive CLI prompt
+ * - `shep settings effort` — default reasoning effort
  * - `shep feat new --model <model>` — per-invocation override
  * - Web UI settings panel — model picker component
  *
  * ## Supported Models
  *
  * Valid model IDs depend on the configured agent executor:
- * - claude-code: claude-opus-4-6, claude-sonnet-4-6, claude-haiku-4-5
+ * - claude-code: discovered live from the Anthropic Models API or the `claude`
+ *   CLI (e.g. claude-opus-5-5, claude-fable-5-1, claude-sonnet-5, claude-haiku-4-5)
  * - gemini-cli: gemini-3.1-pro, gemini-3-flash, gemini-2.5-pro, gemini-2.5-flash
  * - cursor: auto, composer-2.5, and the full set from `cursor-agent --list-models`
  */
@@ -71,7 +74,17 @@ model ModelConfiguration {
    * Can be overridden per-invocation via the --model CLI flag.
    */
   @doc("Default model identifier for all agents")
-  default: string = "claude-sonnet-4-6";
+  default: string = "claude-opus-5-5";
+
+  /**
+   * Default reasoning effort for new feature runs. A feature can override it
+   * at creation (`shep feat new --effort`, the create drawer), and the chosen
+   * value is pinned on its agent run.
+   *
+   * Absent means "use the agent's own default": no effort flag is sent.
+   */
+  @doc("Default reasoning effort for new feature runs (default: agent default)")
+  effort?: AgentEffort;
 
   /**
    * Adaptive per-task model selection. When enabled, the implement node routes
