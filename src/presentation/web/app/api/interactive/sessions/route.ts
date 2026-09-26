@@ -10,7 +10,8 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 import { resolve } from '@/lib/server-container';
 import type { StartInteractiveSessionUseCase } from '@shepai/core/application/use-cases/interactive/start-interactive-session.use-case';
-import { ConcurrentSessionLimitError } from '@shepai/core/domain/errors/concurrent-session-limit.error';
+import { CONCURRENT_SESSION_LIMIT_CODE } from '@shepai/core/domain/errors/concurrent-session-limit.error';
+import { errorCode } from '@/lib/error-code';
 
 export const dynamic = 'force-dynamic';
 
@@ -36,12 +37,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     return NextResponse.json({ sessionId: session.id, status: session.status }, { status: 201 });
   } catch (error) {
-    if (error instanceof ConcurrentSessionLimitError) {
+    // Match on `code`: `instanceof` never matches across the route bundle
+    // (see lib/error-code.ts).
+    if (errorCode(error) === CONCURRENT_SESSION_LIMIT_CODE) {
       return NextResponse.json(
-        {
-          error: error.message,
-          code: 'CONCURRENT_SESSION_LIMIT',
-        },
+        { error: (error as Error).message, code: CONCURRENT_SESSION_LIMIT_CODE },
         { status: 429 }
       );
     }
