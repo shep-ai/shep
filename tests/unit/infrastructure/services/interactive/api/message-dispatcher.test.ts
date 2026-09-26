@@ -20,6 +20,7 @@ import type { IInteractiveSessionRepository } from '@/application/ports/output/r
 import type { IInteractiveMessageRepository } from '@/application/ports/output/repositories/interactive-message-repository.interface.js';
 import type { InteractiveSession } from '@/domain/generated/output.js';
 import { InteractiveSessionStatus, InteractiveMessageRole } from '@/domain/generated/output.js';
+import { InteractiveAgentUnsupportedError } from '@/domain/errors/interactive-agent-unsupported.error.js';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -70,6 +71,7 @@ function makePersistence(): SessionPersistence {
 function makeBootstrapper(): SessionBootstrapper {
   return {
     startSession: vi.fn().mockResolvedValue({ id: 'session-1', featureId: 'feat-1' }),
+    assertInteractiveSupported: vi.fn(),
   } as unknown as SessionBootstrapper;
 }
 
@@ -280,6 +282,31 @@ describe('MessageDispatcher', () => {
         undefined,
         'kickoff override'
       );
+    });
+
+    // Rejecting before anything is written means no orphaned user message
+    // that would reappear on reload with no reply.
+    it('rejects an unsupported agent before persisting the message', async () => {
+      vi.mocked(bootstrapper.assertInteractiveSupported).mockImplementation(() => {
+        throw new InteractiveAgentUnsupportedError('gemini-cli');
+      });
+
+      await expect(
+        dispatcher.sendUserMessage('feat-1', 'hello', '/tmp/worktree', undefined, 'gemini-cli')
+      ).rejects.toThrow(InteractiveAgentUnsupportedError);
+      expect(persistence.persistMessage).not.toHaveBeenCalled();
+      expect(bootstrapper.startSession).not.toHaveBeenCalled();
+    });
+
+    it('does not re-check a live session when no agent is requested', async () => {
+      registry.set('session-live', makeSessionState('session-live', 'feat-live'));
+      vi.mocked(sessionRepo.findById).mockResolvedValue(
+        makeReadyDbSession('session-live', 'feat-live')
+      );
+
+      await dispatcher.sendUserMessage('feat-live', 'hello', '/tmp/worktree');
+
+      expect(bootstrapper.assertInteractiveSupported).not.toHaveBeenCalled();
     });
 
     it('enqueues turn on ready session', async () => {
