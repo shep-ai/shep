@@ -40,7 +40,7 @@
       "agentAndModel": "Agente y modelo",
       "agentAndModelDescription": "Proveedor y modelo para todas las operaciones",
       "effort": "Esfuerzo de razonamiento",
-      "effortDescription": "Cuánto razona el agente por turno en nuevas funcionalidades. Predeterminado del agente deja decidir a la CLI. Solo lo usan los agentes compatibles (Claude Code).",
+      "effortDescription": "Razonamiento por turno en nuevas funciones (Claude Code)",
       "effortFailed": "No se pudo guardar el esfuerzo",
       "authMethod": "Método de autenticación",
       "apiToken": "Token de API",

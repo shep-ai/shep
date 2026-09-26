@@ -14,6 +14,14 @@ the pipeline returns `tail`'s exit status. Redirect gate output to a file and
 test the command's own status (`check.sh > log; echo $?`), or set
 `set -o pipefail`, before chaining anything that depends on it.
 
+## An e2e test must assert the surroundings survive the interaction
+
+The effort picker's e2e test checked the dropdown options and the trigger text,
+and it passed while picking a value was closing the create drawer: Radix Select
+opens on pointerdown, so the trailing click targeted <body> and BaseDrawer read
+it as an outside click. After interacting with a control in a drawer, dialog or
+popover, assert that the container is still open and the URL is unchanged.
+
 ## Write settings sub-objects by spreading, never by rebuilding
 
 `models: { default }` silently drops `models.adaptive` and `models.effort`.

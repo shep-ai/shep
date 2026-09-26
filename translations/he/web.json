@@ -40,7 +40,7 @@
       "agentAndModel": "סוכן ומודל",
       "agentAndModelDescription": "ספק ומודל לכל הפעולות",
       "effort": "רמת חשיבה",
-      "effortDescription": "כמה הסוכן חושב בכל צעד בפיצ'רים חדשים. ברירת המחדל של הסוכן משאירה את הבחירה ל-CLI. רק סוכנים שתומכים בכך (Claude Code) משתמשים בה.",
+      "effortDescription": "רמת החשיבה בכל צעד בפיצ'רים חדשים (Claude Code)",
       "effortFailed": "שמירת רמת המאמץ נכשלה",
       "authMethod": "שיטת אימות",
       "apiToken": "אסימון API",

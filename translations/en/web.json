@@ -40,7 +40,7 @@
       "agentAndModel": "Agent & Model",
       "agentAndModelDescription": "Provider and model for all operations",
       "effort": "Reasoning effort",
-      "effortDescription": "How much the agent reasons per turn for new features. Agent default lets the agent CLI decide. Only agents that support effort (Claude Code) use it.",
+      "effortDescription": "Per-turn reasoning for new features (Claude Code)",
       "effortFailed": "Failed to save effort",
       "authMethod": "Authentication Method",
       "apiToken": "API Token",

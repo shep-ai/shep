@@ -40,7 +40,7 @@
       "agentAndModel": "Agent et modèle",
       "agentAndModelDescription": "Fournisseur et modèle pour toutes les opérations",
       "effort": "Effort de raisonnement",
-      "effortDescription": "Quantité de raisonnement de l'agent par tour pour les nouvelles fonctionnalités. Le défaut de l'agent laisse la CLI décider. Seuls les agents compatibles (Claude Code) l'utilisent.",
+      "effortDescription": "Raisonnement par tour des nouvelles fonctions (Claude Code)",
       "effortFailed": "Échec de l'enregistrement de l'effort",
       "authMethod": "Méthode d'authentification",
       "apiToken": "Jeton API",

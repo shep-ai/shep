@@ -40,7 +40,7 @@
       "agentAndModel": "Agent & Modell",
       "agentAndModelDescription": "Provider und Modell für alle Operationen",
       "effort": "Denkaufwand",
-      "effortDescription": "Wie viel der Agent pro Schritt bei neuen Features nachdenkt. Agent-Standard überlässt die Wahl der Agent-CLI. Nur Agenten mit Aufwandsunterstützung (Claude Code) nutzen ihn.",
+      "effortDescription": "Denkaufwand pro Schritt für neue Features (Claude Code)",
       "effortFailed": "Aufwand konnte nicht gespeichert werden",
       "authMethod": "Authentifizierungsmethode",
       "apiToken": "API-Token",

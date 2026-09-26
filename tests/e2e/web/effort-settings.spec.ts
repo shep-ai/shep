@@ -79,5 +79,11 @@ test.describe('effort settings', () => {
     }
     await page.getByTestId('create-drawer-effort-select-option-xhigh').click();
     await expect(trigger).toHaveText('Extra high');
+
+    // Opening a Select inside the drawer must not dismiss the drawer.
+    await page.waitForTimeout(1000);
+    await expect(page).toHaveURL(/\/create$/);
+    await expect(page.getByRole('heading', { name: 'NEW FEATURE' })).toBeVisible();
+    await expect(trigger).toHaveText('Extra high');
   });
 });
