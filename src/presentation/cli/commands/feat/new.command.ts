@@ -35,6 +35,7 @@ import { getShepHomeDir } from '@/infrastructure/services/filesystem/shep-direct
 import { getSettings, hasSettings } from '@/infrastructure/services/settings.service.js';
 import { CheckOnboardingStatusUseCase } from '@/application/use-cases/settings/check-onboarding-status.use-case.js';
 import { onboardingWizard } from '../../../tui/wizards/onboarding/onboarding.wizard.js';
+import { AGENT_EFFORT_LEVELS, parseAgentEffort } from '@/domain/shared/agent-effort.js';
 
 interface NewOptions {
   repo?: string;
@@ -50,6 +51,7 @@ interface NewOptions {
   explore?: boolean;
   pending?: boolean;
   model?: string;
+  effort?: string;
   attach?: string[];
   rebase?: boolean;
   injectSkills?: boolean;
@@ -121,6 +123,7 @@ export function createNewCommand(): Command {
     .option('--no-fast', t('cli:commands.feat.new.noFastOption'))
     .option('--explore', t('cli:commands.feat.new.exploreOption'))
     .option('--model <model>', t('cli:commands.feat.new.modelOption'))
+    .option('--effort <level>', t('cli:commands.feat.new.effortOption'))
     .option('--no-rebase', t('cli:commands.feat.new.noRebaseOption'))
     .option('--inject-skills', t('cli:commands.feat.new.injectSkillsOption'))
     .option('--no-inject-skills', t('cli:commands.feat.new.noInjectSkillsOption'))
@@ -196,6 +199,19 @@ Examples:
           }
         }
 
+        // Validate --effort before any side effect so a typo never creates a feature.
+        const effort = parseAgentEffort(options.effort);
+        if (options.effort !== undefined && !effort) {
+          messages.error(
+            t('cli:commands.feat.new.invalidEffort', {
+              level: options.effort,
+              levels: AGENT_EFFORT_LEVELS.join(', '),
+            })
+          );
+          process.exitCode = 1;
+          return;
+        }
+
         const fast = options.fast ?? defaults.fast;
 
         // Validate mutually exclusive mode flags
@@ -221,6 +237,7 @@ Examples:
           ...(fast && { fast: true }),
           buildMode,
           ...(options.model !== undefined && { model: options.model }),
+          ...(effort && { effort }),
           ...(attachmentPaths.length > 0 && { attachmentPaths }),
         };
 

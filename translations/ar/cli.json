@@ -44,6 +44,19 @@
         "cancelled": "تم إلغاء التكوين.",
         "failed": "فشل تكوين النموذج"
       },
+      "effort": {
+        "description": "تهيئة مستوى الاستدلال الافتراضي لعمليات التشغيل الجديدة",
+        "levelArgument": "مستوى الجهد (low, medium, high, xhigh, max)",
+        "clearOption": "استخدام المستوى الافتراضي للوكيل",
+        "selectPrompt": "اختر مستوى الاستدلال الافتراضي",
+        "agentDefault": "الافتراضي للوكيل",
+        "success": "تمت تهيئة مستوى الجهد: {{effort}}",
+        "cleared": "تمت إعادة مستوى الجهد إلى الافتراضي للوكيل",
+        "cancelled": "تم إلغاء التهيئة.",
+        "failed": "فشل تهيئة مستوى الجهد",
+        "invalid": "مستوى جهد غير معروف \"{{level}}\". المستويات الصالحة: {{levels}}",
+        "clearConflict": "لا يمكن الجمع بين مستوى و --clear"
+      },
       "workflow": {
         "description": "تكوين سلوك سير العمل الافتراضي للميزات الجديدة",
         "allowPrdOption": "الموافقة التلقائية على مرحلة المتطلبات",
@@ -235,6 +248,8 @@
         "exploreOption": "Start an exploration/prototyping session for iterative design",
         "exploreAndFastConflict": "Cannot use --explore and --fast together. Choose one mode.",
         "modelOption": "معرّف نموذج LLM لهذا التشغيل (مثال: claude-opus-4-6)",
+        "effortOption": "مستوى الاستدلال لهذا التشغيل: low أو medium أو high أو xhigh أو max (الافتراضي: الإعدادات)",
+        "invalidEffort": "مستوى جهد غير معروف \"{{level}}\". المستويات الصالحة: {{levels}}",
         "noRebaseOption": "Skip syncing main from remote before creating the feature branch",
         "injectSkillsOption": "Inject curated skills into the worktree",
         "noInjectSkillsOption": "Skip skill injection for this invocation",
