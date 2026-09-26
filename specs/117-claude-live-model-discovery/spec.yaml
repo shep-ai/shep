@@ -1,0 +1,71 @@
+name: "claude-live-model-discovery"
+number: 117
+branch: "claude/great-johnson-vwiwf1"
+oneLiner: |-
+  Ask Anthropic's Models API which Claude models exist, falling back to the Claude CLI aliases and then the hardcoded catalog, so new Claude releases appear without a code change
+summary: |-
+  Shep missed Claude Opus 5.5 because every Claude model id is hand-maintained: the Claude Code
+  catalog only learns aliases from `claude -p /model` and maps them through a fixed alias table,
+  and adaptive tiers and display names come from fixed tables too. This feature lists models from
+  `GET /v1/models` whenever Anthropic credentials are available, keeps the CLI alias probe and the
+  hardcoded list as ordered fallbacks, and derives tier and display name for any Claude id from its
+  shape so a model discovered at runtime is routable and readable.
+phase: "Requirements"
+sizeEstimate: "M"
+relatedFeatures:
+  - "116-agent-harness-reliability"
+technologies:
+  - "TypeScript"
+  - "Anthropic Models API (GET /v1/models)"
+  - "Node fetch + AbortSignal.timeout"
+  - "Vitest"
+relatedLinks:
+  - "https://docs.anthropic.com/en/api/models-list"
+openQuestions: []
+content: |
+  ## Problem Statement
+
+  Each Claude release needs manual edits in several places before Shep offers it:
+
+  - `CLAUDE_MODEL_ALIAS_TO_CANONICAL` pins `opus` to `claude-opus-5`, so the live `/model` probe
+    turns Claude Code's own "opus = Opus 5.5" back into Opus 5.
+  - `CLAUDE_CODE_MODELS` (agent-catalog) is the only source of full Claude ids.
+  - `MODEL_TIERS` (model-tier) classifies only listed ids; an unlisted Claude model silently opts
+    out of adaptive routing.
+  - `MODEL_METADATA` (web) renders an unlisted id as "Opus 5 5".
+
+  ## Success Criteria
+
+  - With `ANTHROPIC_API_KEY` (x-api-key) or `ANTHROPIC_AUTH_TOKEN` (Bearer) set, the Claude Code
+    catalog lists every model returned by `GET {ANTHROPIC_BASE_URL|https://api.anthropic.com}/v1/models`,
+    following `has_more`/`last_id` pagination, with `display_name` and `max_input_tokens` mapped.
+  - When no credentials are set, Bedrock/Vertex/Foundry mode is on, or the API fails or returns
+    nothing, the catalog falls back to the existing `/model` alias probe; when that fails too the
+    factory falls back to the hardcoded list. No unit test touches the network or spawns `claude`.
+  - Dated snapshots (`claude-haiku-4-5-20251001`) collapse onto the undated catalog id when the
+    catalog lists it, so the picker shows one entry per model.
+  - `getModelTierInfo('claude-opus-5-5')` returns `{ claude, High }` without a table entry; sonnet →
+    Medium, haiku → Low; explicit table entries still win; non-Claude unknown ids stay `undefined`.
+  - The web picker names an unlisted Claude id "Opus 5.5" (not "Opus 5 5").
+  - The hardcoded fallback includes `claude-opus-5-5` and `claude-fable-5-1`, and the `opus` / `fable`
+    aliases map to them.
+
+  ## Affected Areas
+
+  | Area | Impact | Reasoning |
+  | --- | --- | --- |
+  | `infrastructure/services/agents/common/model-catalogs/` | High | New Models API client; Claude catalog gains an API-first fetch |
+  | `domain/shared/model-tier.ts` | Medium | Pattern-based Claude tier fallback |
+  | `domain/shared/agent-catalog.ts` | Low | Hardcoded floor gains Opus 5.5 / Fable 5.1 |
+  | `src/presentation/web/lib/model-metadata.ts` | Low | Metadata entries + Claude display-name fallback |
+  | `.storybook/mocks/app/actions/` | Low | Mocks mirror the static list |
+
+  ## Dependencies
+
+  - Anthropic Models API (`anthropic-version: 2023-06-01`). Optional at runtime: every failure
+    degrades to the existing discovery path.
+
+  ## Size Estimate
+
+  M — one new infrastructure module, one catalog rewire, two pattern fallbacks, list/metadata
+  updates. No schema, TypeSpec, DI or UI component changes.

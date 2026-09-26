@@ -10,6 +10,8 @@
  * - Concurrent callers for the same key share one in-flight fetch (singleflight).
  * - Returned arrays are shallow copies so callers cannot mutate the cache.
  * - Token-backed providers (Together AI, OpenRouter) key by `authConfig.token`.
+ * - Claude Code tries the Anthropic Models API, then the `claude` CLI aliases,
+ *   then the hardcoded list (see `claude-code-model-catalog.service.ts`).
  *
  * Boot also calls {@link IAgentExecutorFactory.warmModelCatalogs} from the web
  * serve/ui path so the first picker open usually hits a warm cache. Discovery is

@@ -159,6 +159,51 @@ describe('getModelTierInfo', () => {
   it('returns undefined for a model it does not know', () => {
     expect(getModelTierInfo('nvidia/nemotron-3-super-120b-a12b:free')).toBeUndefined();
   });
+
+  describe('Claude ids missing from the table (discovered at runtime)', () => {
+    it.each([
+      ['claude-opus-5-5', TaskComplexity.High],
+      ['claude-fable-5-1', TaskComplexity.High],
+      ['claude-mythos-5-1', TaskComplexity.High],
+      ['claude-opus-6', TaskComplexity.High],
+      ['claude-sonnet-6', TaskComplexity.Medium],
+      ['claude-sonnet-5-5-20270101', TaskComplexity.Medium],
+      ['claude-haiku-5', TaskComplexity.Low],
+      ['anthropic/claude-haiku-5.1', TaskComplexity.Low],
+    ])('classifies %s from its family name', (id, tier) => {
+      expect(getModelTierInfo(id)).toEqual({ family: 'claude', tier });
+    });
+
+    it('lets an explicit table entry win over the family name', () => {
+      // The table entry and the family rule agree today; this pins that the
+      // table is consulted first so an override can diverge later.
+      expect(getModelTierInfo('claude-3-5-sonnet-latest')).toEqual({
+        family: 'claude',
+        tier: TaskComplexity.Medium,
+      });
+    });
+
+    it('does not classify a Claude id without a known family name', () => {
+      expect(getModelTierInfo('claude-unknown-model')).toBeUndefined();
+    });
+
+    it('does not classify a non-Claude id that merely contains a family word', () => {
+      expect(getModelTierInfo('my-opus-finetune')).toBeUndefined();
+    });
+
+    it('degrades a newly discovered Opus pin onto the catalog Sonnet and Haiku', () => {
+      expect(
+        resolveAdaptiveTierPlan({
+          baseModel: 'claude-opus-5-5',
+          availableModels: CLAUDE_CODE_CATALOG,
+        })
+      ).toEqual({
+        high: 'claude-opus-5-5',
+        medium: 'claude-sonnet-5',
+        low: 'claude-haiku-4-5',
+      });
+    });
+  });
 });
 
 describe('resolveModelForComplexity', () => {

@@ -1,0 +1,130 @@
+name: claude-live-model-discovery
+summary: 6 tasks across 3 phases; every code task is RED-first.
+relatedFeatures: []
+technologies: []
+relatedLinks: []
+tasks:
+- id: task-1
+  phaseId: phase-1
+  title: Classify Claude model tiers from the id shape
+  description: getModelTierInfo falls back to the family word of a claude- id when the table has no entry.
+  state: Done
+  dependencies: []
+  acceptanceCriteria:
+  - claude-opus-5-5 and claude-fable-5-1 classify as claude/High
+  - claude-sonnet-6 classifies Medium, claude-haiku-5 Low, dated snapshots follow their family
+  - table entries still take precedence; non-Claude unknown ids stay undefined
+  - resolveModelForComplexity degrades a claude-opus-5-5 pin to catalog Sonnet/Haiku
+  tdd:
+    red:
+    - Tests for the four criteria above in model-tier.test.ts
+    green:
+    - Add a CLAUDE_FAMILY_TIERS map and a shape fallback in getModelTierInfo
+    refactor:
+    - Keep normalizeModelId as the single normalization step
+  estimatedEffort: S
+- id: task-2
+  phaseId: phase-1
+  title: Render unlisted Claude ids as "<Family> <major>.<minor>"
+  description: getModelMeta prettifies claude-<family>-<version>[-YYYYMMDD] with a dotted version.
+  state: Done
+  dependencies: []
+  acceptanceCriteria:
+  - claude-opus-5-5 -> "Opus 5.5"
+  - claude-haiku-4-5-20251001 -> "Haiku 4.5"
+  - claude-unknown-model still -> "Unknown Model"
+  tdd:
+    red:
+    - Tests for the three criteria in model-metadata.test.ts
+    green:
+    - Add a Claude id regex branch before the generic prettifier
+    refactor:
+    - Extract the Claude formatter into a named helper
+  estimatedEffort: S
+- id: task-3
+  phaseId: phase-2
+  title: Anthropic Models API client
+  description: anthropic-models-api.ts resolves CLI-equivalent credentials from env and lists models with pagination.
+  state: Done
+  dependencies: []
+  acceptanceCriteria:
+  - ANTHROPIC_API_KEY -> x-api-key; ANTHROPIC_AUTH_TOKEN -> Authorization Bearer; API key wins
+  - no credential, or CLAUDE_CODE_USE_BEDROCK/VERTEX/FOUNDRY set -> no request
+  - ANTHROPIC_BASE_URL honoured (trailing slash tolerated)
+  - follows has_more/last_id, capped page count
+  - non-OK response throws with status only; request has a timeout signal
+  - maps display_name (without leading "Claude "), max_input_tokens, vendor anthropic
+  tdd:
+    red:
+    - Tests for each criterion with a stubbed fetch and env
+    green:
+    - resolveAnthropicModelsApiAuth + listAnthropicModels
+    refactor:
+    - Share MODEL_CATALOG_FETCH_TIMEOUT_MS; named constants for version header, page size, page cap
+  estimatedEffort: M
+- id: task-4
+  phaseId: phase-2
+  title: Claude catalog lists API first, then CLI aliases
+  description: ClaudeCodeModelCatalogService takes injectable listApiModels/listCliModels and merges with the hardcoded floor.
+  state: Done
+  dependencies:
+  - task-3
+  acceptanceCriteria:
+  - API listings non-empty -> CLI is not spawned; result = API ids + missing hardcoded ids
+  - API returns null (no credentials), [] or throws -> CLI alias path used
+  - dated snapshot collapses onto the undated catalog id and keeps the API display name
+  - TTL caching and last-good behaviour unchanged
+  tdd:
+    red:
+    - Catalog tests for API-first, each fallback trigger, snapshot collapse
+    green:
+    - Rewrite fetchModels as an ordered source chain
+    refactor:
+    - One merge function for both sources
+  estimatedEffort: M
+- id: task-5
+  phaseId: phase-3
+  title: Refresh the hardcoded fallback floor
+  description: Add claude-fable-5-1 and claude-opus-5-5 to CLAUDE_CODE_MODELS, alias map, metadata and Storybook mocks.
+  state: Done
+  dependencies:
+  - task-4
+  acceptanceCriteria:
+  - getSupportedModels(ClaudeCode) lists the two new ids most-capable first
+  - opus / opus[1m] / best / default / opusplan -> claude-opus-5-5; fable / fable[1m] -> claude-fable-5-1
+  - model-metadata has entries; neighbouring "most capable" descriptions corrected
+  - Storybook mocks mirror the list
+  tdd:
+    red:
+    - Update factory list assertion and alias-mapping test to the new ids
+    green:
+    - Edit the lists, map, metadata and mocks
+    refactor:
+    - None
+  estimatedEffort: S
+- id: task-6
+  phaseId: phase-3
+  title: Docs and lessons
+  description: Document the discovery order and record the lesson that model lists must be discovered, not maintained.
+  state: Done
+  dependencies:
+  - task-4
+  acceptanceCriteria:
+  - agent-system.md and catalog-fetch.ts describe API -> CLI -> hardcoded
+  - LESSONS.md entry added
+  tdd: null
+  estimatedEffort: S
+totalEstimate: M
+openQuestions: []
+content: |
+  ## Summary
+
+  Six tasks: two pure-function fallbacks, the Models API client, the catalog rewire, the static
+  floor refresh, and docs.
+
+  ## Acceptance Checklist
+
+  - [x] Models API used when credentials exist; CLI and hardcoded fallbacks intact
+  - [x] New Claude ids classify and render without table edits
+  - [x] Opus 5.5 / Fable 5.1 in the fallback floor
+  - [x] lint, typecheck, unit + integration tests, build all green

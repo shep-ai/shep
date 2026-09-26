@@ -401,6 +401,25 @@ The agent system uses these key interfaces (defined in `packages/core/src/applic
 | `IFeatureAgentProcessService` | Manage feature agent background processes                               |
 | `IStructuredAgentCaller`      | Make structured (typed) calls to agents                                 |
 
+### Claude Code model discovery (spec 117)
+
+`ClaudeCodeModelCatalogService` asks three sources in order and uses the first
+that returns models:
+
+1. **Anthropic Models API** — `GET /v1/models` (`model-catalogs/anthropic-models-api.ts`),
+   authenticated with the same variables the `claude` CLI uses: `ANTHROPIC_API_KEY`
+   (`x-api-key`) or `ANTHROPIC_AUTH_TOKEN` (`Bearer`), against `ANTHROPIC_BASE_URL`
+   when set. Skipped when `CLAUDE_CODE_USE_BEDROCK` / `_VERTEX` / `_FOUNDRY` is on.
+   The Claude subscription OAuth token is never used.
+2. **`claude -p /model`** — alias list mapped through `CLAUDE_MODEL_ALIAS_TO_CANONICAL`.
+3. **Hardcoded** — `CLAUDE_CODE_MODELS` in `domain/shared/agent-catalog.ts`, served by
+   the executor factory when both sources are empty.
+
+Sources 1 and 2 are merged with the hardcoded list; dated snapshots
+(`claude-haiku-4-5-20251001`) collapse onto their undated catalog id. Models the
+API returns that no table lists still get an adaptive tier (from the family word,
+see below) and a readable name (`claude-opus-5-5` → "Opus 5.5").
+
 ## Workflow Stages
 
 | Stage            | Node factory              | Responsibility                                               |
@@ -446,8 +465,10 @@ Tasks with no declared complexity are classified deterministically by
 on every run.
 
 Configure it from `shep settings adaptive-models` or Settings → Adaptive models.
-When adding a model to `agent-model-catalog.ts`, add a matching entry to
-`MODEL_TIERS` in `model-tier.ts` if tasks should be routable onto it.
+Claude ids are classified from their family word when `MODEL_TIERS` has no
+entry (fable/mythos/opus → High, sonnet → Medium, haiku → Low), so a Claude
+release discovered at runtime is routable immediately. Other families still need
+a `MODEL_TIERS` entry to be routable.
 
 ## Practical Example
 

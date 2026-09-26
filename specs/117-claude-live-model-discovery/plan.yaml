@@ -1,0 +1,91 @@
+name: "claude-live-model-discovery"
+summary: |-
+  Three phases: shape-based classification (domain + web lib), the Models API source and catalog
+  rewire (infrastructure), then the hardcoded floor, mocks and docs.
+relatedFeatures: []
+technologies:
+  - "TypeScript"
+  - "Vitest"
+relatedLinks: []
+phases:
+  - id: phase-1
+    name: "Shape-based tier and display name"
+    description: "Claude ids classify and render from their shape when no table entry exists."
+    parallel: true
+    taskIds: ["task-1", "task-2"]
+  - id: phase-2
+    name: "Models API discovery"
+    description: "Models API client; Claude catalog lists API → CLI aliases → hardcoded."
+    parallel: false
+    taskIds: ["task-3", "task-4"]
+  - id: phase-3
+    name: "Fallback floor, mocks and docs"
+    description: "Opus 5.5 / Fable 5.1 in the static list, alias map, metadata, Storybook mocks, docs, lessons."
+    parallel: false
+    taskIds: ["task-5", "task-6"]
+filesToCreate:
+  - "packages/core/src/infrastructure/services/agents/common/model-catalogs/anthropic-models-api.ts"
+  - "tests/unit/infrastructure/services/agents/model-catalogs/anthropic-models-api.test.ts"
+filesToModify:
+  - "packages/core/src/infrastructure/services/agents/common/model-catalogs/claude-code-model-catalog.service.ts"
+  - "packages/core/src/infrastructure/services/agents/common/model-catalogs/catalog-fetch.ts"
+  - "packages/core/src/domain/shared/model-tier.ts"
+  - "packages/core/src/domain/shared/agent-catalog.ts"
+  - "src/presentation/web/lib/model-metadata.ts"
+  - ".storybook/mocks/app/actions/get-supported-models.ts"
+  - ".storybook/mocks/app/actions/get-all-agent-models.ts"
+  - "tests/unit/infrastructure/services/agents/model-catalogs/claude-code-model-catalog.service.test.ts"
+  - "tests/unit/infrastructure/services/agents/agent-executor-factory.test.ts"
+  - "tests/unit/domain/shared/model-tier.test.ts"
+  - "tests/unit/presentation/web/lib/model-metadata.test.ts"
+  - "docs/architecture/agent-system.md"
+  - "LESSONS.md"
+openQuestions: []
+content: |
+  ## Architecture Overview
+
+  ```
+  web picker / validation ─▶ IAgentExecutorFactory.listAvailableModels(ClaudeCode)
+                                   │
+                                   ▼
+                  ClaudeCodeModelCatalogService (TtlModelCatalog: 1h cache, last-good)
+                     1. listApiModels()  ── GET /v1/models (anthropic-models-api.ts)
+                     2. listCliModels()  ── claude -p /model  (existing alias parser)
+                     └─ merge with AGENT_CATALOG[ClaudeCode].models (hardcoded floor)
+                                   │ empty
+                                   ▼
+                  factory fallback: getSupportedModels(ClaudeCode)
+  ```
+
+  Tier (`getModelTierInfo`) and display name (`getModelMeta`) consult their tables first, then
+  the Claude id shape.
+
+  ## Implementation Strategy
+
+  Phase 1 is pure functions with no I/O, so it lands first and makes any id Phase 2 discovers
+  immediately routable and readable. Phase 2 adds the API source behind injectable functions
+  (fetch, env) so tests never reach the network. Phase 3 refreshes the static floor last so the
+  lists, mocks and assertions change in one diff.
+
+  ## Files to Create/Modify
+
+  See `filesToCreate` / `filesToModify`.
+
+  ## Testing Strategy (TDD: Tests FIRST)
+
+  - Unit (domain): tier shape fallback — opus/fable/mythos/sonnet/haiku, dated and dotted forms,
+    table precedence, non-Claude unknown stays undefined.
+  - Unit (web lib): display fallback for `claude-opus-5-5`, dated and unknown ids.
+  - Unit (infrastructure): credentials resolution per env combination; pagination; header choice;
+    base URL; non-OK → throws; mapping of display name/context; catalog order API → CLI → []
+    with stubbed fetch and CLI functions; snapshot collapsing.
+  - Existing factory / catalog tests updated for the new static list.
+
+  ## Risk Mitigation
+
+  | Risk | Mitigation |
+  | --- | --- |
+  | API lists legacy models, cluttering the picker | Account-scoped list is the truth; dated snapshots collapse onto catalog ids |
+  | Gateway at `ANTHROPIC_BASE_URL` lacks `/v1/models` | Non-OK throws, catalog falls back to the CLI probe |
+  | Unit test hits the network when a dev has a key | Catalog takes injected `listApiModels`; tests always pass stubs |
+  | Shape fallback misclassifies a provider variant | Explicit table entries still win; fallback only for `claude-` ids naming a known family |

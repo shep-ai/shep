@@ -116,15 +116,48 @@ function normalizeModelId(modelId: string): string {
   return lastSegment.replace(/\./g, '-');
 }
 
+const CLAUDE_FAMILY = 'claude';
+const CLAUDE_ID_PREFIX = `${CLAUDE_FAMILY}-`;
+
+/**
+ * Capability tier implied by the family word inside a Claude model id.
+ *
+ * Anthropic names every release `claude-<family>-<version>` (older ones
+ * `claude-<version>-<family>`), and the family word is the capability tier.
+ * Models discovered at runtime through the Anthropic Models API are therefore
+ * routable the day they ship, without a {@link MODEL_TIERS} entry.
+ */
+const CLAUDE_FAMILY_TIERS: Readonly<Record<string, TaskComplexity>> = {
+  fable: TaskComplexity.High,
+  mythos: TaskComplexity.High,
+  opus: TaskComplexity.High,
+  sonnet: TaskComplexity.Medium,
+  haiku: TaskComplexity.Low,
+};
+
+/** Classify a normalized `claude-…` id by its family word, if it names one. */
+function classifyClaudeIdByFamily(normalizedId: string): ModelTierInfo | undefined {
+  if (!normalizedId.startsWith(CLAUDE_ID_PREFIX)) return undefined;
+  for (const segment of normalizedId.split('-')) {
+    const tier = CLAUDE_FAMILY_TIERS[segment];
+    if (tier) return { family: CLAUDE_FAMILY, tier };
+  }
+  return undefined;
+}
+
 /**
  * Look up the family and capability tier of a model identifier.
  *
- * @returns `undefined` when the model is not in the tier catalog — the caller
- *   must then treat it as un-routable and keep using it as-is.
+ * The explicit {@link MODEL_TIERS} table wins; Claude ids it does not list fall
+ * back to their family word.
+ *
+ * @returns `undefined` when the model cannot be classified — the caller must
+ *   then treat it as un-routable and keep using it as-is.
  */
 export function getModelTierInfo(modelId: string | undefined | null): ModelTierInfo | undefined {
   if (!modelId) return undefined;
-  return MODEL_TIERS[normalizeModelId(modelId)];
+  const normalized = normalizeModelId(modelId);
+  return MODEL_TIERS[normalized] ?? classifyClaudeIdByFamily(normalized);
 }
 
 /** Synonyms an LLM plausibly writes instead of the canonical enum value. */

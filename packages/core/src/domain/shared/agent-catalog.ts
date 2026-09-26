@@ -75,8 +75,16 @@ export interface AgentDescriptor {
   readonly i18nKey: string;
 }
 
+/**
+ * Offline fallback for the Claude Code picker, ordered most-capable first.
+ * The live list comes from the Anthropic Models API or the `claude` CLI (see
+ * `claude-code-model-catalog.service.ts`); this floor only needs updating so
+ * an offline machine still offers the newest models.
+ */
 const CLAUDE_CODE_MODELS = [
+  'claude-fable-5-1',
   'claude-fable-5',
+  'claude-opus-5-5',
   'claude-opus-5',
   'claude-opus-4-8',
   'claude-opus-4-7',

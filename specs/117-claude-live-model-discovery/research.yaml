@@ -1,0 +1,68 @@
+name: "claude-live-model-discovery"
+summary: |-
+  The existing `IModelCatalog` / `TtlModelCatalog` port already gives caching, singleflight and
+  last-good fallback; the feature adds a Models API source in front of the Claude CLI probe and
+  replaces two exact-match tables with shape-based fallbacks. No new dependency.
+relatedFeatures:
+  - "116-agent-harness-reliability"
+technologies:
+  - "TypeScript"
+  - "Anthropic Models API"
+relatedLinks:
+  - "https://docs.anthropic.com/en/api/models-list"
+decisions:
+  - title: "Where the Claude model list comes from"
+    chosen: |-
+      `GET /v1/models` first, `claude -p /model` aliases second, hardcoded `CLAUDE_CODE_MODELS`
+      last. API and alias results are both merged with the hardcoded list so no known id disappears.
+    rejected:
+      - "CLI aliases only (today) — aliases resolve to fixed ids in a table that goes stale every release."
+      - "Scrape the Anthropic docs model table — undocumented HTML contract, breaks silently."
+    rationale: |-
+      The Models API is the documented, account-scoped source of truth and returns ids, display
+      names and context windows. The fallbacks keep subscription-only users (no API credential)
+      and offline machines working exactly as before.
+  - title: "Which credentials the Models API call uses"
+    chosen: |-
+      `ANTHROPIC_API_KEY` as `x-api-key`, else `ANTHROPIC_AUTH_TOKEN` as `Authorization: Bearer`,
+      against `ANTHROPIC_BASE_URL` when set — the same variables the `claude` CLI itself uses, so the
+      list reflects the endpoint the executor will actually call. Skipped when
+      `CLAUDE_CODE_USE_BEDROCK` / `CLAUDE_CODE_USE_VERTEX` / `CLAUDE_CODE_USE_FOUNDRY` is set.
+    rejected:
+      - "Read the Claude subscription OAuth token (`~/.claude/.credentials.json`, `CLAUDE_CODE_OAUTH_TOKEN`) — it belongs to the Claude Code client; reusing it for direct API calls is outside what that credential is issued for."
+      - "Use `Settings.agent.token` — the Claude Code executor never sends it, so listing with it could advertise models the executor cannot reach."
+    rationale: |-
+      Mirrors exactly what the executor's `claude` subprocess authenticates with; cloud-provider
+      modes use different model ids, so the first-party list would be wrong there.
+  - title: "How newly discovered ids get a tier and a name"
+    chosen: |-
+      Keep the explicit tables as overrides and add a shape fallback: a normalized id starting with
+      `claude-` whose segments contain fable/mythos/opus → High, sonnet → Medium, haiku → Low. The
+      web display fallback renders `claude-<family>-<major>-<minor>[-YYYYMMDD]` as "<Family> <major>.<minor>".
+    rejected:
+      - "Store tiers returned by the API — the API has no tier concept."
+      - "Keep exact tables only — the reported bug."
+    rationale: |-
+      Claude ids follow a stable family-version shape; the family word is the capability tier.
+openQuestions: []
+content: |
+  ## Technology Decisions
+
+  See `decisions` above: API-first discovery with ordered fallbacks; CLI-equivalent credentials;
+  shape-based tier and display-name fallbacks.
+
+  ## Library Analysis
+
+  No new library. `@anthropic-ai/sdk` is not a dependency of `packages/core`; one paginated GET
+  does not justify adding it, and the sibling OpenRouter / Together catalogs already use `fetch`.
+
+  ## Security Considerations
+
+  - Credentials are read from the process environment and sent only to the configured Anthropic
+    base URL, never logged. Failure logs include only the HTTP status.
+  - Requests carry `AbortSignal.timeout(MODEL_CATALOG_FETCH_TIMEOUT_MS)`; pagination is capped.
+
+  ## Performance Implications
+
+  One HTTP call per hour per process (shared TTL cache), usually faster than spawning `claude`.
+  The CLI probe now runs only when the API path yields nothing.

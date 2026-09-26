@@ -1457,6 +1457,26 @@ When building a web UI feature, shipping the presentational components and their
 4. Only THEN the isolated components + Storybook stories.
 
 **Sequencing:** build the page UI as a first-class deliverable of the same phase, not a "later". When planning a UI feature, the route + client + nav are line items, never assumed. Treat "build:storybook passes" as a quality gate, NOT as "the UI is done".
+## Discover model lists from the provider; hardcoded lists are only the offline floor
+
+Shep missed Claude Opus 5.5 even though the Claude catalog was "live": the
+`/model` probe returned the alias `opus`, and `CLAUDE_MODEL_ALIAS_TO_CANONICAL`
+mapped it back to the stale `claude-opus-5`. A live source routed through a
+hand-maintained mapping table is not live.
+
+**Rules:**
+- A provider's own list endpoint (Anthropic `GET /v1/models`, OpenRouter
+  `/api/v1/models`) comes first; CLI probes and hardcoded lists are ordered
+  fallbacks, merged so no known id disappears.
+- Anything keyed by model id (tiers, display names) needs a shape-based
+  fallback (`claude-<family>-<version>`), so a discovered id is usable without a
+  table edit. Tables stay as overrides.
+- Authenticate discovery with exactly the credentials the executor uses, so
+  the list describes the endpoint that will run the model. Never reuse a
+  subscription OAuth token issued to another client.
+- Discovery code takes injected `fetch` / `env` / CLI runners; unit tests must
+  pass stubs so a developer's real API key never makes a test hit the network.
+
 ## Adding a New Claude Model — Exact Touchpoints
 
 Model lists are centralized, but several adapters keep their own provider-format copies. Claude Code passes `options.model` straight to the `claude` CLI via `--model`, so no mapping is needed there — but Cursor and Copilot rewrite the canonical hyphenated ID into their own format. To add a model (e.g. `claude-opus-4-8`), touch ALL of:
