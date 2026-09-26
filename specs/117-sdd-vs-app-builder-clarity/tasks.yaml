@@ -1,0 +1,242 @@
+name: "sdd-vs-app-builder-clarity"
+summary: "12 tasks across 3 phases; code tasks are RED-first."
+relatedFeatures: []
+technologies: []
+relatedLinks: []
+tasks:
+  - id: task-1
+    phaseId: phase-1
+    title: "Domain helpers: new-project defaults and existing-folder detection"
+    description: "Pure helpers in domain/shared shared by core and the web composer."
+    state: Done
+    dependencies: []
+    acceptanceCriteria:
+      - "resolveNewProjectBuildMode(undefined) === BuildMode.Spec; explicit modes pass through"
+      - "deriveProjectNameFromDescription keeps the first six words"
+      - "findExistingFolderReference finds /home/…, /Users/…, ~/…, C:\\… paths and strips trailing punctuation"
+      - "findExistingFolderReference returns null for '/health endpoint' and '/api/users'"
+    tdd:
+      red:
+        - "new-project.test.ts: default Spec, passthrough, name derivation"
+        - "existing-code-reference.test.ts: positives and API-route negatives"
+      green:
+        - "Implement both modules without .js import suffixes"
+      refactor:
+        - "Name the root list as a constant with a comment per entry"
+    estimatedEffort: S
+  - id: task-2
+    phaseId: phase-1
+    title: "Stack-agnostic new-project use case (superseded by task-10)"
+    description: "Composite of CreateProjectUseCase + CreateFeatureUseCase with createRecord/initializeAndSpawn."
+    state: Done
+    dependencies: ["task-1"]
+    acceptanceCriteria:
+      - "userInput is forwarded unchanged (no stack preamble)"
+      - "buildMode defaults to Spec, explicit Fast is honoured"
+      - "project creation failure throws and never calls CreateFeatureUseCase"
+      - "registered as class and string token; bootstrap test lists it"
+    tdd:
+      red:
+        - "Use-case unit tests for each acceptance criterion"
+        - "Add token to WEB_ROUTE_TOKENS in container-bootstrap.test.ts"
+      green:
+        - "Implement the use case and register it"
+      refactor:
+        - "Share one input mapper between both phases"
+    estimatedEffort: M
+  - id: task-3
+    phaseId: phase-1
+    title: "Thin create-project-and-feature server action"
+    description: "Remove the React + Vite preamble and name derivation; resolve the use case by token; accept buildMode."
+    state: Done
+    dependencies: ["task-2"]
+    acceptanceCriteria:
+      - "No stack text is added to the prompt"
+      - "Action accepts buildMode and resolves the use case by string token with import type"
+      - "Storybook mock signature matches"
+    tdd: null
+    estimatedEffort: S
+  - id: task-4
+    phaseId: phase-2
+    title: "Composer: spec-driven default, honest mode labels, existing-folder hint"
+    description: "Split mode config out of control-center-empty-state, reorder to spec/fast/application, default spec on canvas surfaces, show mode description + stack, add ExistingCodeHint with hand-off."
+    state: Done
+    dependencies: ["task-1", "task-3"]
+    acceptanceCriteria:
+      - "With onRepositorySelect the default mode is spec unless initialMode is given"
+      - "Each mode shows its description and stack line"
+      - "Prompt with /home/me/app shows the hint; clicking hand-off calls onOpenExistingFolder(path, prompt)"
+      - "Composer submits buildMode (spec/fast) to createProjectAndFeature"
+      - "Stories exist for the hint and the new composer states"
+    tdd:
+      red:
+        - "Component tests for default mode, descriptions, hint, hand-off, submitted buildMode"
+      green:
+        - "Implement build-mode-options.ts, existing-code-hint.tsx and composer changes"
+      refactor:
+        - "Keep control-center-empty-state under its previous size"
+    estimatedEffort: M
+  - id: task-5
+    phaseId: phase-2
+    title: "Apps page and create card"
+    description: "Extract NewApplicationCard, relabel options with the stack, add a spec-driven project option gated by shell variant, honest header copy."
+    state: Done
+    dependencies: ["task-4"]
+    acceptanceCriteria:
+      - "Card shows 'Quick web app' with 'Vite + React + shadcn' and no longer says only 'Describe with AI'"
+      - "'Spec-driven project' option opens the composer in spec mode; hidden when specDrivenAvailable is false"
+      - "Header names the page Apps and states both starters with their stacks"
+      - "Story for the card; existing page stories still render"
+    tdd:
+      red:
+        - "new-application-card.test.tsx for options and gating"
+      green:
+        - "Implement card + page wiring + page.tsx cookie read"
+      refactor:
+        - "applications-page-client.tsx shrinks below 450 lines"
+    estimatedEffort: M
+  - id: task-6
+    phaseId: phase-2
+    title: "Sidebar order and renamed labels in all locales"
+    description: "Control Center first with Home icon; Applications label becomes Apps; FAB label; new keys in 9 locales."
+    state: Done
+    dependencies: []
+    acceptanceCriteria:
+      - "Control Center is the first nav item and uses the Home icon"
+      - "navigation.applications reads Apps (translated) in all 9 locales"
+      - "translation-completeness test passes"
+    tdd:
+      red:
+        - "app-sidebar.test.tsx asserts Control Center precedes Apps"
+      green:
+        - "Reorder items and update translations"
+      refactor: []
+    estimatedEffort: S
+  - id: task-7
+    phaseId: phase-3
+    title: "Docs: README, new-project SDD guide, web-ui guide, LESSONS"
+    description: "Two-ways-to-build section; greenfield guide for web and CLI; link from guides index and getting-started; lesson entry."
+    state: Done
+    dependencies: ["task-4", "task-5"]
+    acceptanceCriteria:
+      - "README has a 'Start an app, then add features' section naming both starters and their stacks"
+      - "docs/guides/start-an-app.md covers the CLI and the web UI"
+      - "LESSONS.md records the lesson"
+    tdd: null
+    estimatedEffort: S
+  - id: task-8
+    phaseId: phase-3
+    title: "Playwright e2e coverage"
+    description: "E2E spec for sidebar order, Apps copy and starters, and the composer's spec-driven default."
+    state: Done
+    dependencies: ["task-4", "task-5", "task-6"]
+    acceptanceCriteria:
+      - "tests/e2e/web/app-first-flow.spec.ts passes locally"
+    tdd:
+      red:
+        - "Write the e2e spec against the new copy before wiring is complete"
+      green:
+        - "Passes once phase 2 lands"
+      refactor: []
+    estimatedEffort: S
+  - id: task-9
+    phaseId: phase-2
+    title: "First-run Control Center entry point and discovered defects"
+    description: |-
+      Added during implementation. The first-run Control Center screen had no way to start a
+      project from a prompt (the (+) menu is hidden until a repository exists), so it gains a
+      "Start from a prompt" button. The e2e run also exposed a Webhooks page hydration mismatch
+      (uptime read from the clock on server and client), fixed with suppressHydrationWarning.
+    state: Done
+    dependencies: ["task-4"]
+    acceptanceCriteria:
+      - "Onboarding shows 'Start from a prompt' when the surface can open the composer"
+      - "WebhookStatusCards hydrates without a recoverable error when the clock ticks"
+    tdd:
+      red:
+        - "control-center-onboarding.test.tsx: entry point shown + hidden"
+        - "webhook-status-cards-hydration.test.tsx: renderToString at T, hydrate at T+1s"
+      green:
+        - "Add the prop/button; suppressHydrationWarning on the uptime text"
+      refactor: []
+    estimatedEffort: S
+  - id: task-10
+    phaseId: phase-1
+    title: "App-first core: ApplicationStarter + StartApplicationUseCase + auto-attach"
+    description: |-
+      Every new project is an Application. ApplicationStarter (blank | vite-shadcn) selects how it
+      gets its first code; StartApplicationUseCase replaces the stack-agnostic new-project use case
+      and also creates the Application; slug allocation is shared with CreateApplicationUseCase;
+      CreateFeatureUseCase attaches features to the app that owns their repository.
+    state: Done
+    dependencies: ["task-1"]
+    acceptanceCriteria:
+      - "blank: empty folder + Application(setupComplete) + first feature with applicationId, Spec by default, prompt unchanged"
+      - "vite-shadcn delegates to CreateApplicationUseCase"
+      - "awaitFeatureSetup=false returns after createRecord and logs background failures"
+      - "a feature on an app's repository gets that app's id; an explicit id wins"
+      - "'StartApplicationUseCase' resolves from the container"
+    tdd:
+      red:
+        - "start-application.use-case.test.ts"
+        - "create-feature.use-case.test.ts: auto-attach + explicit id"
+        - "container-bootstrap.test.ts lists the token"
+      green:
+        - "Implement enum, allocator, use case, lookup, registration"
+      refactor:
+        - "CreateApplicationUseCase uses ApplicationProjectAllocator (412 lines, was 560)"
+    estimatedEffort: L
+  - id: task-11
+    phaseId: phase-2
+    title: "CLI: shep app new starts an app"
+    description: "Blank starter by default, --starter vite-shadcn, --fast; next steps printed; app/feat help texts; 9 locales."
+    state: Done
+    dependencies: ["task-10"]
+    acceptanceCriteria:
+      - "default execute({ description, starter: blank })"
+      - "--starter vite-shadcn and --fast map to the use case input"
+      - "unknown starter exits 1 listing valid starters"
+      - "output lists the first feature and how to add another"
+    tdd:
+      red:
+        - "app/new.command.test.ts"
+        - "new-project.test.ts: parseApplicationStarter"
+      green:
+        - "Rewrite the command on StartApplicationUseCase"
+      refactor: []
+    estimatedEffort: M
+  - id: task-12
+    phaseId: phase-2
+    title: "Web: Apps naming, starters, Add feature, shell gating"
+    description: "Apps (not App Builder); Plan it first / Quick prototype; New app opens Spec-driven; app page Add feature; ShellVariantContext hides Control Center links in apps-only."
+    state: Done
+    dependencies: ["task-10"]
+    acceptanceCriteria:
+      - "Apps page heading, intro and both starters"
+      - "New app and Plan it first open the composer in Spec-driven mode"
+      - "Add feature opens /create scoped to the app in spec mode"
+      - "apps-only shell: no Plan it first, no Add feature, no Open in Control Center"
+    tdd:
+      red:
+        - "new-application-card, applications-page-client, add-feature-button, open-in-control-center, shell-variant tests"
+      green:
+        - "Implement components, context and translations"
+      refactor: []
+    estimatedEffort: M
+totalEstimate: "L"
+openQuestions: []
+content: |
+  ## Summary
+
+  Core removes the stack lock-in from new projects; the web surfaces say what each path does; docs
+  explain the greenfield SDD path.
+
+  ## Acceptance Checklist
+
+  - [x] No stack preamble in any Feature path
+  - [x] Spec-driven default for new projects
+  - [x] Honest labels on every create surface
+  - [x] Existing-folder hint + hand-off
+  - [x] Control Center first in the sidebar
+  - [x] README + guide
+  - [x] Unit, integration, component and e2e tests green

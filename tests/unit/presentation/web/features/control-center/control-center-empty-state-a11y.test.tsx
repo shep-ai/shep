@@ -113,12 +113,12 @@ describe('ControlCenterEmptyState — keyboard trap (P0-2)', () => {
     const user = userEvent.setup();
     render(<ControlCenterEmptyState onRepositorySelect={vi.fn()} />, { wrapper: Wrapper });
 
-    expect(screen.getByTestId('build-mode-selector')).toHaveTextContent('Application');
+    expect(screen.getByTestId('build-mode-selector')).toHaveTextContent('Spec-driven');
 
     await user.tab({ shift: true });
     await user.tab({ shift: true });
 
-    expect(screen.getByTestId('build-mode-selector')).toHaveTextContent('Application');
+    expect(screen.getByTestId('build-mode-selector')).toHaveTextContent('Spec-driven');
   });
 
   it('cycles the build mode with Alt+Shift+M while the composer has focus', async () => {
@@ -132,10 +132,10 @@ describe('ControlCenterEmptyState — keyboard trap (P0-2)', () => {
     expect(screen.getByTestId('build-mode-selector')).toHaveTextContent('Fast');
 
     await user.keyboard(MODE_CHORD);
-    expect(screen.getByTestId('build-mode-selector')).toHaveTextContent('Spec Driven');
+    expect(screen.getByTestId('build-mode-selector')).toHaveTextContent('Quick prototype');
 
     await user.keyboard(MODE_CHORD);
-    expect(screen.getByTestId('build-mode-selector')).toHaveTextContent('Application');
+    expect(screen.getByTestId('build-mode-selector')).toHaveTextContent('Spec-driven');
   });
 
   it('ignores the chord when focus is outside the composer subtree', async () => {
@@ -149,7 +149,7 @@ describe('ControlCenterEmptyState — keyboard trap (P0-2)', () => {
 
     await user.keyboard(MODE_CHORD);
 
-    expect(screen.getByTestId('build-mode-selector')).toHaveTextContent('Application');
+    expect(screen.getByTestId('build-mode-selector')).toHaveTextContent('Spec-driven');
   });
 
   it('announces the new build mode in a live region', async () => {
@@ -169,10 +169,10 @@ describe('ControlCenterEmptyState — keyboard trap (P0-2)', () => {
     render(<ControlCenterEmptyState onRepositorySelect={vi.fn()} />, { wrapper: Wrapper });
 
     await user.click(screen.getByTestId('build-mode-selector'));
-    await user.click(screen.getByTestId('build-mode-spec'));
+    await user.click(screen.getByTestId('build-mode-application'));
 
     await waitFor(() => {
-      expect(screen.getByRole('status')).toHaveTextContent(/Spec Driven/);
+      expect(screen.getByRole('status')).toHaveTextContent(/Quick prototype/);
     });
   });
 

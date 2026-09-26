@@ -279,7 +279,7 @@
       "labelDescription": "The page you land on when opening the web UI",
       "options": {
         "control-center": "Control Center",
-        "applications": "Applications",
+        "applications": "Apps",
         "features": "Features"
       },
       "hint": "This controls where you land when you open the web UI. You can change it at any time."
@@ -382,7 +382,7 @@
     "sessions": "Sessions",
     "tools": "Outils",
     "skills": "Compétences",
-    "applications": "Applications",
+    "applications": "Apps",
     "agentQuestions": "Agent Questions",
     "aspm": "Security",
     "aspmDashboard": "Dashboard",
@@ -449,7 +449,29 @@
     "git": "Git",
     "gitRequired": "Requis pour toutes les phases",
     "githubCli": "GitHub CLI",
-    "githubCliRequired": "Requis pour les pull requests"
+    "githubCliRequired": "Requis pour les pull requests",
+    "modes": {
+      "spec": {
+        "label": "Piloté par les spécifications",
+        "description": "Exigences, recherche et plan d’abord — vous les validez avant toute ligne de code.",
+        "stack": "N’importe quelle stack, choisie pendant la recherche"
+      },
+      "fast": {
+        "label": "Rapide",
+        "description": "Implémente directement à partir de votre description, sans phase de spécification.",
+        "stack": "N’importe quelle stack"
+      },
+      "application": {
+        "label": "Prototype rapide",
+        "description": "Prototype d’app web instantané à partir du modèle Vite + shadcn, avec aperçu en direct. Sans phase de spécification.",
+        "stack": "Vite + React + Tailwind + shadcn"
+      }
+    },
+    "existingFolder": {
+      "body": "Votre description mentionne {{path}}. Un nouveau projet démarre vide et ne regardera pas dans ce dossier.",
+      "fallback": "Pour poursuivre un code existant, ouvrez plutôt ce dossier comme projet.",
+      "action": "Travailler sur ce dossier"
+    }
   },
   "welcome": {
     "loadingAgents": "Chargement des agents…",
@@ -567,10 +589,11 @@
     "folderOfRepos": "Dossier de dépôts",
     "adoptBranch": "Adopter une branche",
     "fromGithub": "Depuis GitHub",
-    "newApplication": "Nouvelle application",
+    "newApplication": "Partir d’une description",
     "newSddFeature": "Nouvelle fonctionnalité SDD",
     "newSddForApp": "Nouvelle fonctionnalité SDD pour {{appName}}",
-    "openInControlCenterSdd": "Ouvrir dans Control Center (mode SDD)"
+    "openInControlCenterSdd": "Ouvrir dans Control Center (mode SDD)",
+    "addFeature": "Ajouter une fonctionnalité"
   },
   "chat": {
     "shepChat": "Shep Chat",

@@ -216,9 +216,9 @@
       }
     },
     "feat": {
-      "description": "Gerenciar recursos através do ciclo de vida SDLC",
+      "description": "Adicione funcionalidades a um app ou repositório e leve-as pelo SDLC",
       "new": {
-        "description": "Criar um novo recurso",
+        "description": "Adicione uma funcionalidade ao app ou repositório da pasta atual",
         "descriptionArgument": "Descrição do recurso",
         "repoOption": "Caminho do repositório (padrão: diretório atual)",
         "pushOption": "Enviar branch para o remoto após a implementação",
@@ -555,7 +555,7 @@
       }
     },
     "app": {
-      "description": "Manage applications",
+      "description": "Inicie e gerencie apps — comece um app, depois adicione funcionalidades",
       "ls": {
         "description": "List applications",
         "title": "Applications",
@@ -586,12 +586,12 @@
         "failedToShow": "Failed to show application"
       },
       "new": {
-        "description": "Create a new application",
-        "descriptionArgument": "Application description",
+        "description": "Inicie um app novo com qualquer stack (a primeira funcionalidade é orientada a especificações por padrão)",
+        "descriptionArgument": "O que o app deve fazer",
         "agentOption": "Agent type override",
         "modelOption": "LLM model override (e.g. claude-opus-4-6)",
-        "spinnerText": "Creating application",
-        "appCreated": "Application created",
+        "spinnerText": "Iniciando app",
+        "appCreated": "App iniciado",
         "idLabel": "ID:",
         "nameLabel": "Name:",
         "slugLabel": "Slug:",
@@ -599,7 +599,14 @@
         "statusLabel": "Status:",
         "agentLabel": "Agent:",
         "modelLabel": "Model:",
-        "failedToCreate": "Failed to create application"
+        "failedToCreate": "Failed to create application",
+        "starterOption": "Como o app recebe o primeiro código: blank (qualquer stack, escolhida pela primeira funcionalidade) ou vite-shadcn (template Vite + React + Tailwind + shadcn, sem fase de especificação)",
+        "fastOption": "Construa a primeira funcionalidade direto da descrição, sem fase de especificação",
+        "invalidStarter": "Ponto de partida desconhecido \"{{starter}}\". Use um de: {{starters}}",
+        "nextStepsTitle": "Próximos passos",
+        "firstFeatureStep": "Acompanhe a primeira funcionalidade: shep feat show {{id}}",
+        "previewStep": "Acompanhe a construção na interface web: shep ui",
+        "addFeatureStep": "Adicione uma funcionalidade: cd {{path}} && shep feat new \"<o que adicionar>\""
       },
       "del": {
         "description": "Delete an application",

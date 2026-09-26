@@ -56,6 +56,23 @@ Three agents, three worktrees, zero branch conflicts — monitored from one plac
 
 The default flow is prompt → implement → commit → push → PR. Your working directory is never touched: every feature lives in its own worktree on its own branch. If CI fails, the agent reads the logs and pushes a fix (3 retries by default, configurable). For complex features, add `--no-fast` to enable the full spec-driven pipeline — requirements, research, and a plan as versioned YAML artifacts, with approval gates before any code is written. See the [spec-driven development guide](./docs/development/spec-driven-workflow.md).
 
+## Start an app, then add features
+
+```bash
+shep app new "A booking tool for climbing gyms"   # start an app — any stack
+cd ~/.shep/projects/<app>                         # the app's folder (printed by the command)
+shep feat new "Add waitlists"                     # add features to it, as many as you like
+```
+
+A new app starts one of two ways:
+
+| Starter | Stack | First steps |
+|---|---|---|
+| **Plan it first** (default, `blank`) | Any. Chosen by the app's first feature during research | Requirements → research → plan, each approved before code |
+| **Quick prototype** (`--starter vite-shadcn`) | Vite + React + TypeScript + Tailwind + shadcn | Built straight from chat with a live preview, no spec phase |
+
+Every later feature attaches to its app — create it in the app's folder, or with **Add feature** on the app page. Already have code? Run `shep feat new` in that repository, or open the folder from **Apps**. In the web UI: **Apps → New app**. See [Start an app](./docs/guides/start-an-app.md).
+
 ## Supported agents
 
 | Agent | Binary | Support |

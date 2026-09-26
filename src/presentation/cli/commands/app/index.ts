@@ -9,7 +9,7 @@
  * Subcommands:
  *   shep app ls                                List applications
  *   shep app show <id>                         Display details of an application
- *   shep app new <desc>                        Create a new application
+ *   shep app new <desc>                        Start a new app (any stack, or --starter vite-shadcn)
  *   shep app del <id>                          Delete an application
  *   shep app cloud-providers ls                List cloud deployment providers
  *   shep app cloud-providers connect <id>      Connect a cloud provider token

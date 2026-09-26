@@ -6402,6 +6402,10 @@ export enum InteractiveSessionEventType {
   Stopped = 'interactive_session_stopped',
   Error = 'interactive_session_error',
 }
+export enum ApplicationStarter {
+  Blank = 'blank',
+  ViteShadcn = 'vite-shadcn',
+}
 export enum WhatsAppThreadTargetKind {
   Feature = 'feature',
   Application = 'application',

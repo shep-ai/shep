@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
+import { BuildMode } from '@shepai/core/domain/generated/output';
 import { ControlCenterEmptyState } from './control-center-empty-state';
 
 const meta: Meta<typeof ControlCenterEmptyState> = {
@@ -20,7 +21,7 @@ const meta: Meta<typeof ControlCenterEmptyState> = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Prompt-first onboarding — the default view after agent setup */
+/** Apps-only surface (no canvas): Quick prototype only, with its stack stated. */
 export const Default: Story = {
   args: {},
 };
@@ -47,5 +48,21 @@ export const AsOverlay: Story = {
       console.log('Close clicked');
     },
     className: 'bg-background',
+  },
+};
+
+/** Canvas surface: Spec-driven (any stack) is selected by default. */
+export const SpecDrivenDefault: Story = {
+  args: {
+    onRepositorySelect: () => undefined,
+    onOpenExistingFolder: () => undefined,
+  },
+};
+
+/** Canvas surface opened straight into the Quick prototype mode. */
+export const QuickWebAppMode: Story = {
+  args: {
+    onRepositorySelect: () => undefined,
+    initialMode: BuildMode.Application,
   },
 };

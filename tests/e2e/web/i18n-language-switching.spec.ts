@@ -30,10 +30,25 @@ test.describe('i18n: language switching', () => {
 
   // Language is a persisted singleton setting, so every case must restore it
   // before handing the server to another browser context or spec.
+  //
+  // Check the PERSISTED value, not the client: `selectLanguage` resolves on
+  // the first server-action response, which can belong to another action, and
+  // the client flips `html[lang]` optimistically. When the page then closed,
+  // the English save was aborted mid-flight and every later spec ran in
+  // Spanish. A reload renders `lang` from the stored setting, so retry the
+  // selection until the server agrees.
   async function resetLanguage(page: Page) {
-    await page.goto('/settings');
-    await selectLanguage(page, 'English');
-    await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+    await expect
+      .poll(
+        async () => {
+          await page.goto('/settings');
+          await selectLanguage(page, 'English');
+          await page.reload();
+          return page.getAttribute('html', 'lang');
+        },
+        { timeout: COLD_ROUTE_READY_TIMEOUT_MS }
+      )
+      .toBe('en');
   }
 
   test.beforeEach(async ({ page }) => resetLanguage(page));

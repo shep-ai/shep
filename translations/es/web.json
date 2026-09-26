@@ -279,7 +279,7 @@
       "labelDescription": "The page you land on when opening the web UI",
       "options": {
         "control-center": "Control Center",
-        "applications": "Applications",
+        "applications": "Apps",
         "features": "Features"
       },
       "hint": "This controls where you land when you open the web UI. You can change it at any time."
@@ -382,7 +382,7 @@
     "sessions": "Sesiones",
     "tools": "Herramientas",
     "skills": "Habilidades",
-    "applications": "Applications",
+    "applications": "Apps",
     "agentQuestions": "Agent Questions",
     "aspm": "Security",
     "aspmDashboard": "Dashboard",
@@ -449,7 +449,29 @@
     "git": "Git",
     "gitRequired": "Requerido para todas las fases",
     "githubCli": "GitHub CLI",
-    "githubCliRequired": "Requerido para pull requests"
+    "githubCliRequired": "Requerido para pull requests",
+    "modes": {
+      "spec": {
+        "label": "Guiado por especificaciones",
+        "description": "Primero requisitos, investigación y un plan: los apruebas antes de escribir código.",
+        "stack": "Cualquier stack, elegido durante la investigación"
+      },
+      "fast": {
+        "label": "Rápido",
+        "description": "Implementa directamente a partir de tu descripción, sin fase de especificación.",
+        "stack": "Cualquier stack"
+      },
+      "application": {
+        "label": "Prototipo rápido",
+        "description": "Prototipo instantáneo de app web con la plantilla Vite + shadcn y vista previa en vivo. Sin fase de especificación.",
+        "stack": "Vite + React + Tailwind + shadcn"
+      }
+    },
+    "existingFolder": {
+      "body": "Tu descripción menciona {{path}}. Un proyecto nuevo empieza vacío y no mirará dentro de esa carpeta.",
+      "fallback": "Para continuar código existente, abre esa carpeta como proyecto.",
+      "action": "Trabajar en esta carpeta"
+    }
   },
   "welcome": {
     "loadingAgents": "Cargando agentes…",
@@ -567,10 +589,11 @@
     "folderOfRepos": "Carpeta de repositorios",
     "adoptBranch": "Adoptar rama",
     "fromGithub": "Desde GitHub",
-    "newApplication": "Nueva Aplicación",
+    "newApplication": "Empezar con una descripción",
     "newSddFeature": "Nueva función SDD",
     "newSddForApp": "Nueva función SDD para {{appName}}",
-    "openInControlCenterSdd": "Abrir en Control Center (modo SDD)"
+    "openInControlCenterSdd": "Abrir en Control Center (modo SDD)",
+    "addFeature": "Añadir función"
   },
   "chat": {
     "shepChat": "Shep Chat",

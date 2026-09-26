@@ -196,8 +196,17 @@ export function AppSidebar({
             </div>
           </SidebarMenuItem>
 
+          {/* Control Center — the canvas of every app and its features — comes
+              first and is Home. Listing the Apps page first as "Home" made users
+              take its Vite + shadcn prototype template for Shep's main workflow. */}
           <SidebarNavItem
             icon={Home}
+            label={t('navigation.controlCenter')}
+            href="/control-center"
+            active={pathname === '/control-center'}
+          />
+          <SidebarNavItem
+            icon={LayoutGrid}
             label={t('navigation.applications')}
             href="/applications"
             active={pathname === '/applications'}
@@ -210,12 +219,6 @@ export function AppSidebar({
               active={pathname?.startsWith('/clusters') ?? false}
             />
           ) : null}
-          <SidebarNavItem
-            icon={LayoutGrid}
-            label={t('navigation.controlCenter')}
-            href="/control-center"
-            active={pathname === '/control-center'}
-          />
           <SidebarNavItem
             icon={TableProperties}
             label={t('navigation.inventory')}

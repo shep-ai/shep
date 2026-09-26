@@ -1,110 +1,54 @@
 'use server';
 
 import { resolve } from '@/lib/server-container';
-import type { CreateProjectUseCase } from '@shepai/core/application/use-cases/projects/create-project.use-case';
-import type { AddRepositoryUseCase } from '@shepai/core/application/use-cases/repositories/add-repository.use-case';
-import { BuildMode, type Feature, type Repository } from '@shepai/core/domain/generated/output';
-import { createFeature } from './create-feature';
+import type {
+  StartApplicationInput,
+  StartApplicationUseCase,
+} from '@shepai/core/application/use-cases/applications/start-application.use-case';
+import type { Application, BuildMode, Feature } from '@shepai/core/domain/generated/output';
+import { composeUserInput } from './compose-user-input';
 
-interface QuickFeatureInput {
+interface NewProjectFeatureInput {
   description: string;
   attachments?: { path: string; name: string; notes?: string }[];
   agentType?: string;
   model?: string;
-  fast?: boolean;
+  /** Workflow of the app's first feature. Omitted → spec-driven (core default). */
+  buildMode?: BuildMode;
 }
 
 /**
- * Default project instructions prepended to the user's description.
- * These ensure that even a vague one-liner from a non-technical user
- * results in a well-structured, runnable React application.
+ * Start a new app from a prompt on the stack-agnostic path: an empty project,
+ * an Application, and its first feature. All rules live in
+ * StartApplicationUseCase; this action maps input and lets the first
+ * feature's setup continue in the background.
  */
-const PROJECT_PREAMBLE = `\
-## Project Requirements
-
-Build this as a **React application** using Vite as the build tool.
-
-### Structure
-- Initialize with \`npm create vite@latest . -- --template react-ts\` scaffolding
-- Organize code into clear folders: \`src/components/\`, \`src/pages/\`, \`src/assets/\`
-- Use TypeScript throughout
-- Include a working \`package.json\` with all dependencies
-
-### Design & UI
-- Create a polished, production-quality interface — not a prototype
-- Use modern CSS (CSS modules or Tailwind CSS) with thoughtful spacing, typography, and color
-- Make it fully responsive (mobile-first)
-- Add subtle micro-interactions: hover states, transitions, focus rings
-- Use professional placeholder content (realistic text, not lorem ipsum)
-- Pick a cohesive color palette and apply it consistently
-
-### Quality
-- Every component should be self-contained and reusable
-- Include proper HTML semantics and accessibility (ARIA labels, alt text, keyboard nav)
-- The app must start successfully with \`npm install && npm run dev\`
-
----
-
-## What to Build
-`;
-
-/**
- * Derive a concise project name from a free-form description.
- * Takes the first handful of meaningful words — `CreateProjectUseCase`
- * will then slugify + cap length for the actual directory name.
- */
-function deriveProjectName(description: string): string {
-  return description.trim().split(/\s+/).slice(0, 6).join(' ');
-}
-
-export async function createProjectAndFeature(input: QuickFeatureInput): Promise<{
+export async function createProjectAndFeature(input: NewProjectFeatureInput): Promise<{
+  application?: Application;
   feature?: Feature;
-  repository?: Repository;
   repositoryPath?: string;
   error?: string;
 }> {
-  const { description, attachments, agentType, model } = input;
-
-  if (!description?.trim()) {
+  const description = input.description?.trim();
+  if (!description) {
     return { error: 'Description is required' };
   }
 
+  const useCaseInput: StartApplicationInput = {
+    description,
+    userInput: composeUserInput(description, input.attachments),
+    ...(input.buildMode ? { buildMode: input.buildMode } : {}),
+    ...(input.agentType ? { agentType: input.agentType } : {}),
+    ...(input.model ? { model: input.model } : {}),
+  };
+
   try {
-    const createProject = resolve<CreateProjectUseCase>('CreateProjectUseCase');
-    const projectResult = await createProject.execute({
-      name: deriveProjectName(description),
+    const useCase = resolve<StartApplicationUseCase>('StartApplicationUseCase');
+    const { application, feature, repositoryPath } = await useCase.execute(useCaseInput, {
+      awaitFeatureSetup: false,
     });
-    if (!projectResult.ok) {
-      return { error: projectResult.error };
-    }
-    const projectPath = projectResult.path;
-
-    const addRepo = resolve<AddRepositoryUseCase>('AddRepositoryUseCase');
-    const repository = await addRepo.execute({ path: projectPath });
-
-    // Enrich the user's prompt with project-quality instructions
-    const enrichedDescription = PROJECT_PREAMBLE + description.trim();
-
-    const featureResult = await createFeature({
-      description: enrichedDescription,
-      repositoryPath: projectPath,
-      attachments,
-      agentType,
-      model,
-      buildMode: input.fast === false ? undefined : BuildMode.Fast,
-    });
-
-    if (featureResult.error) {
-      return { error: featureResult.error };
-    }
-
-    return {
-      feature: featureResult.feature,
-      repository,
-      repositoryPath: projectPath,
-    };
+    return { application, feature, repositoryPath };
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Failed to create project';
-    return { error: message };
+    return { error: error instanceof Error ? error.message : 'Failed to create project' };
   }
 }

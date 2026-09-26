@@ -1,0 +1,122 @@
+name: "sdd-vs-app-builder-clarity"
+summary: |-
+  Core first (enum, helpers, use cases — RED-first), then the CLI and web surfaces that consume
+  them, then docs and e2e. The CLI and web phases touch disjoint files.
+relatedFeatures:
+  - "091-apps-only-surface"
+technologies:
+  - "TypeScript"
+  - "Vitest"
+  - "Storybook"
+  - "Playwright"
+relatedLinks:
+  - "https://github.com/shep-ai/shep/issues/896"
+phases:
+  - id: phase-1
+    name: "Core: every new project is an app"
+    description: "ApplicationStarter enum; new-project helpers; existing-folder detection; ApplicationProjectAllocator; StartApplicationUseCase; auto-attach features to their app; DI; thin server action."
+    parallel: false
+    taskIds: ["task-1", "task-2", "task-3", "task-10"]
+  - id: phase-2
+    name: "Surfaces: CLI and web"
+    description: "shep app new starters; composer modes and hint; Apps page starters; Add feature; sidebar; onboarding; shell-variant gating; translations."
+    parallel: true
+    taskIds: ["task-4", "task-5", "task-6", "task-9", "task-11", "task-12"]
+  - id: phase-3
+    name: "Docs and e2e"
+    description: "README 'Start an app, then add features', start-an-app guide, CLI and web-ui docs, LESSONS entry, Playwright coverage."
+    parallel: true
+    taskIds: ["task-7", "task-8"]
+filesToCreate:
+  - "tsp/common/enums/application-starter.tsp"
+  - "packages/core/src/domain/shared/new-project.ts"
+  - "packages/core/src/domain/shared/existing-code-reference.ts"
+  - "packages/core/src/application/use-cases/applications/application-project-allocator.ts"
+  - "packages/core/src/application/use-cases/applications/start-application.use-case.ts"
+  - "src/presentation/web/hooks/shell-variant-context.tsx"
+  - "src/presentation/web/components/features/control-center/build-mode-options.ts"
+  - "src/presentation/web/components/features/control-center/build-mode-menu.tsx"
+  - "src/presentation/web/components/features/control-center/existing-code-hint.tsx"
+  - "src/presentation/web/components/features/applications/new-application-card.tsx"
+  - "src/presentation/web/components/features/application-page/add-feature-button.tsx"
+  - "tests/e2e/web/app-first-flow.spec.ts"
+  - "docs/guides/start-an-app.md"
+filesToModify:
+  - "packages/core/src/application/use-cases/applications/create-application.use-case.ts"
+  - "packages/core/src/application/use-cases/features/create/create-feature.use-case.ts"
+  - "packages/core/src/infrastructure/di/modules/register-use-cases.ts"
+  - "src/presentation/cli/commands/app/new.command.ts"
+  - "src/presentation/cli/commands/feat/new.command.ts"
+  - "src/presentation/web/app/actions/create-project-and-feature.ts"
+  - "src/presentation/web/components/features/control-center/control-center-empty-state.tsx"
+  - "src/presentation/web/components/features/control-center/control-center-inner.tsx"
+  - "src/presentation/web/components/features/control-center/control-center-onboarding.tsx"
+  - "src/presentation/web/components/features/applications/applications-page-client.tsx"
+  - "src/presentation/web/components/features/application-page/app-top-bar.tsx"
+  - "src/presentation/web/components/features/application-page/open-in-control-center-menu-item.tsx"
+  - "src/presentation/web/components/layouts/app-shell/app-shell.tsx"
+  - "src/presentation/web/components/layouts/app-sidebar/app-sidebar.tsx"
+  - "src/presentation/web/components/features/webhooks/webhook-status-cards.tsx"
+  - "src/presentation/web/lib/url-params.ts"
+  - "translations/*/web.json"
+  - "translations/*/cli.json"
+  - "README.md"
+  - "docs/cli/commands.md"
+  - "docs/guides/README.md"
+  - "docs/guides/getting-started.md"
+  - "docs/guides/web-ui.md"
+  - "LESSONS.md"
+openQuestions: []
+content: |
+  ## Architecture Overview
+
+  ```
+  CLI: shep app new ─┐                       ┌─ blank ──▶ ApplicationProjectAllocator (empty folder)
+  Web: composer ─────┼─▶ StartApplicationUseCase ─┤            + Application row
+     (Spec/Fast)     │   (ApplicationStarter)     │            + CreateFeatureUseCase(applicationId,
+                     │                            │              prompt unchanged, Spec by default)
+  Web: Quick ────────┘                            └─ vite-shadcn ▶ CreateApplicationUseCase (template)
+  prototype (createApplication)
+
+  Later features: shep feat new (in the app folder) / Add feature / create drawer
+      └─▶ CreateFeatureUseCase ── applicationId ?? appRepo.findByPath(repo) ──▶ attached to the app
+  ```
+
+  ## Implementation Strategy
+
+  Clean Architecture holds throughout: the starter is a TypeSpec enum, pure rules live in
+  `domain/shared`, orchestration in application-layer use cases resolved by string token, and the
+  CLI command, server action and components only map input and render.
+
+  1. Domain helpers and the enum come first; both core and web import them.
+  2. Slug/folder allocation is extracted from CreateApplicationUseCase before the blank path reuses
+     it (refactor before extending a 560-line file).
+  3. Oversized UI files are split before being extended (composer mode config/menu, create card).
+  4. Copy lands with translations in all 9 locales in the same change.
+  5. Docs last, describing what the product now does.
+
+  ## Testing Strategy (TDD: Tests FIRST)
+
+  Every code task runs RED → GREEN → REFACTOR: the failing test lands first, then the minimal
+  change, then cleanup.
+
+  - Unit (domain): path detection, name derivation, mode resolution, starter parsing.
+  - Unit (use cases): blank app = folder + app + linked spec feature, prompt unchanged, fast honoured,
+    background setup logs failures, template delegation; features auto-attach to the owning app.
+  - Unit (CLI): default starter, `--starter vite-shadcn`, `--fast`, invalid starter, next steps.
+  - Integration: container resolves `StartApplicationUseCase` by string token.
+  - Component: composer modes/hint/hand-off; Apps page starters and gating; Add feature; sidebar;
+    onboarding; shell-variant hook; webhook hydration.
+  - E2E (Playwright): sidebar order, Apps copy and starters, New app → Spec-driven, hand-off URL.
+  - Manual CLI run: `shep app new` with the demo agent, then `shep feat new` in the app folder;
+    both features carry the app's id.
+
+  ## Risk Mitigation
+
+  | Risk | Mitigation |
+  | --- | --- |
+  | Path detection false positives on API routes | Whitelisted roots only; negative tests |
+  | CreateFeatureUseCase constructor change breaks mocks | Only one test constructs it; updated in the same change |
+  | Web bundle breaks on a value import from core | Domain helpers only (no .js suffix); use cases imported as type; build:web |
+  | Links to Control Center in the apps-only shell | useCanStartFeatures gates every such entry point |
+  | Missing Storybook mock / story | Mock updated; stories for every new component; check:stories |
