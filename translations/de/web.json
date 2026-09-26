@@ -39,6 +39,9 @@
       "agentType": "Agententyp",
       "agentAndModel": "Agent & Modell",
       "agentAndModelDescription": "Provider und Modell für alle Operationen",
+      "effort": "Denkaufwand",
+      "effortDescription": "Wie viel der Agent pro Schritt bei neuen Features nachdenkt. Agent-Standard überlässt die Wahl der Agent-CLI. Nur Agenten mit Aufwandsunterstützung (Claude Code) nutzen ihn.",
+      "effortFailed": "Aufwand konnte nicht gespeichert werden",
       "authMethod": "Authentifizierungsmethode",
       "apiToken": "API-Token",
       "apiTokenPlaceholder": "Geben Sie Ihren API-Token ein",
@@ -654,7 +657,9 @@
     "skills": "SKILLS",
     "skillsDescription": "Curated skills to guide the agent during feature development.",
     "injectSkills": "Inject",
-    "injectSkillsDescription": "Include curated skills in the feature worktree."
+    "injectSkillsDescription": "Include curated skills in the feature worktree.",
+    "effort": "Aufwand",
+    "effortFromSettings": "Aus Einstellungen"
   },
   "featureDrawer": {
     "copyFeatureId": "Feature-ID kopieren",
@@ -690,7 +695,8 @@
     "pr": "PR",
     "watch": "Überwachen",
     "commitSpecs": "Specs committen",
-    "forkAndPr": "Fork & PR"
+    "forkAndPr": "Fork & PR",
+    "effortValue": "Aufwand: {{level}}"
   },
   "activityTab": {
     "copyPromptToClipboard": "Prompt in Zwischenablage kopieren",
@@ -770,6 +776,16 @@
   },
   "modelPicker": {
     "searchPlaceholder": "Modell-ID suchen oder eingeben…"
+  },
+  "effortSelect": {
+    "agentDefault": "Agent-Standard",
+    "levels": {
+      "low": "Niedrig",
+      "medium": "Mittel",
+      "high": "Hoch",
+      "xhigh": "Sehr hoch",
+      "max": "Maximal"
+    }
   },
   "skills": {
     "searchPlaceholder": "Fähigkeiten suchen..."

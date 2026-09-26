@@ -39,6 +39,9 @@
       "agentType": "Tipo de agente",
       "agentAndModel": "Agente y modelo",
       "agentAndModelDescription": "Proveedor y modelo para todas las operaciones",
+      "effort": "Esfuerzo de razonamiento",
+      "effortDescription": "Cuánto razona el agente por turno en nuevas funcionalidades. Predeterminado del agente deja decidir a la CLI. Solo lo usan los agentes compatibles (Claude Code).",
+      "effortFailed": "No se pudo guardar el esfuerzo",
       "authMethod": "Método de autenticación",
       "apiToken": "Token de API",
       "apiTokenPlaceholder": "Ingresa tu token de API",
@@ -654,7 +657,9 @@
     "skills": "SKILLS",
     "skillsDescription": "Curated skills to guide the agent during feature development.",
     "injectSkills": "Inject",
-    "injectSkillsDescription": "Include curated skills in the feature worktree."
+    "injectSkillsDescription": "Include curated skills in the feature worktree.",
+    "effort": "Esfuerzo",
+    "effortFromSettings": "Según ajustes"
   },
   "featureDrawer": {
     "copyFeatureId": "Copiar ID de función",
@@ -690,7 +695,8 @@
     "pr": "PR",
     "watch": "Vigilar",
     "commitSpecs": "Commit de specs",
-    "forkAndPr": "Fork y PR"
+    "forkAndPr": "Fork y PR",
+    "effortValue": "Esfuerzo {{level}}"
   },
   "activityTab": {
     "copyPromptToClipboard": "Copiar prompt al portapapeles",
@@ -770,6 +776,16 @@
   },
   "modelPicker": {
     "searchPlaceholder": "Buscar o escribir un ID de modelo…"
+  },
+  "effortSelect": {
+    "agentDefault": "Predeterminado del agente",
+    "levels": {
+      "low": "Bajo",
+      "medium": "Medio",
+      "high": "Alto",
+      "xhigh": "Muy alto",
+      "max": "Máximo"
+    }
   },
   "skills": {
     "searchPlaceholder": "Buscar habilidades..."

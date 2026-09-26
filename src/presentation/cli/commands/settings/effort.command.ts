@@ -14,7 +14,7 @@
 import { Command } from 'commander';
 import { select } from '@inquirer/prompts';
 import { container } from '@/infrastructure/di/container.js';
-import { UpdateSettingsUseCase } from '@/application/use-cases/settings/update-settings.use-case.js';
+import { SetDefaultEffortUseCase } from '@/application/use-cases/settings/set-default-effort.use-case.js';
 import {
   getSettings,
   resetSettings,
@@ -98,18 +98,16 @@ Examples:
     .action(async (level: string | undefined, options: EffortCommandOptions) => {
       try {
         const change = resolveEffortChange(level, options);
-        const settings = getSettings();
         const next =
           change.kind === 'set'
             ? change.effort
             : change.kind === 'clear'
               ? undefined
-              : await promptForEffort(settings.models.effort);
+              : await promptForEffort(getSettings().models.effort);
 
-        if (next) settings.models.effort = next;
-        else delete settings.models.effort;
-
-        const updated = await container.resolve(UpdateSettingsUseCase).execute(settings);
+        const updated = await container
+          .resolve(SetDefaultEffortUseCase)
+          .execute({ effort: next ?? null });
         resetSettings();
         initializeSettings(updated);
 

@@ -39,6 +39,9 @@
       "agentType": "Agent Type",
       "agentAndModel": "Agent & Model",
       "agentAndModelDescription": "Provider and model for all operations",
+      "effort": "Reasoning effort",
+      "effortDescription": "How much the agent reasons per turn for new features. Agent default lets the agent CLI decide. Only agents that support effort (Claude Code) use it.",
+      "effortFailed": "Failed to save effort",
       "authMethod": "Authentication Method",
       "apiToken": "API Token",
       "apiTokenPlaceholder": "Enter your API token",
@@ -654,7 +657,9 @@
     "plan": "Plan",
     "planDescription": "Auto-approve planning move to implementation.",
     "merge": "Merge",
-    "mergeDescription": "Auto-approve merge move to Done."
+    "mergeDescription": "Auto-approve merge move to Done.",
+    "effort": "Effort",
+    "effortFromSettings": "From settings"
   },
   "featureDrawer": {
     "copyFeatureId": "Copy feature ID",
@@ -690,7 +695,8 @@
     "pr": "PR",
     "watch": "Watch",
     "commitSpecs": "Commit Specs",
-    "forkAndPr": "Fork & PR"
+    "forkAndPr": "Fork & PR",
+    "effortValue": "{{level}} effort"
   },
   "activityTab": {
     "copyPromptToClipboard": "Copy prompt to clipboard",
@@ -770,6 +776,16 @@
   },
   "modelPicker": {
     "searchPlaceholder": "Search or type a model ID…"
+  },
+  "effortSelect": {
+    "agentDefault": "Agent default",
+    "levels": {
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High",
+      "xhigh": "Extra high",
+      "max": "Max"
+    }
   },
   "skills": {
     "searchPlaceholder": "Search skills..."

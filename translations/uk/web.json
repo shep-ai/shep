@@ -39,6 +39,9 @@
       "agentType": "Тип агента",
       "agentAndModel": "Агент і модель",
       "agentAndModelDescription": "Провайдер і модель для всіх операцій",
+      "effort": "Рівень міркувань",
+      "effortDescription": "Скільки агент міркує за крок для нових фіч. «За замовчуванням агента» залишає вибір CLI. Використовується лише агентами з підтримкою (Claude Code).",
+      "effortFailed": "Не вдалося зберегти рівень",
       "authMethod": "Метод автентифікації",
       "apiToken": "API-токен",
       "apiTokenPlaceholder": "Введіть ваш API-токен",
@@ -654,7 +657,9 @@
     "skills": "НАВИЧКИ",
     "skillsDescription": "Підібрані навички для керування агентом під час розробки функції.",
     "injectSkills": "Впровадити",
-    "injectSkillsDescription": "Включити підібрані навички у робоче дерево функції."
+    "injectSkillsDescription": "Включити підібрані навички у робоче дерево функції.",
+    "effort": "Рівень",
+    "effortFromSettings": "З налаштувань"
   },
   "featureDrawer": {
     "copyFeatureId": "Копіювати ID функції",
@@ -690,7 +695,8 @@
     "pr": "PR",
     "watch": "Спостереження",
     "commitSpecs": "Коміт специфікацій",
-    "forkAndPr": "Форк та PR"
+    "forkAndPr": "Форк та PR",
+    "effortValue": "Рівень: {{level}}"
   },
   "activityTab": {
     "copyPromptToClipboard": "Копіювати промпт у буфер обміну",
@@ -770,6 +776,16 @@
   },
   "modelPicker": {
     "searchPlaceholder": "Пошук або введіть ID моделі…"
+  },
+  "effortSelect": {
+    "agentDefault": "За замовчуванням агента",
+    "levels": {
+      "low": "Низький",
+      "medium": "Середній",
+      "high": "Високий",
+      "xhigh": "Дуже високий",
+      "max": "Максимальний"
+    }
   },
   "skills": {
     "searchPlaceholder": "Пошук навичок..."

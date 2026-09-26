@@ -39,6 +39,9 @@
       "agentType": "Tipo de Agente",
       "agentAndModel": "Agente e Modelo",
       "agentAndModelDescription": "Provedor e modelo para todas as operações",
+      "effort": "Esforço de raciocínio",
+      "effortDescription": "Quanto o agente raciocina por turno em novas funcionalidades. Padrão do agente deixa a CLI decidir. Só agentes compatíveis (Claude Code) o usam.",
+      "effortFailed": "Falha ao salvar o esforço",
       "authMethod": "Método de Autenticação",
       "apiToken": "Token de API",
       "apiTokenPlaceholder": "Insira seu token de API",
@@ -654,7 +657,9 @@
     "skills": "SKILLS",
     "skillsDescription": "Curated skills to guide the agent during feature development.",
     "injectSkills": "Inject",
-    "injectSkillsDescription": "Include curated skills in the feature worktree."
+    "injectSkillsDescription": "Include curated skills in the feature worktree.",
+    "effort": "Esforço",
+    "effortFromSettings": "Das configurações"
   },
   "featureDrawer": {
     "copyFeatureId": "Copiar ID da funcionalidade",
@@ -690,7 +695,8 @@
     "pr": "PR",
     "watch": "Monitorar",
     "commitSpecs": "Commit de specs",
-    "forkAndPr": "Fork e PR"
+    "forkAndPr": "Fork e PR",
+    "effortValue": "Esforço {{level}}"
   },
   "activityTab": {
     "copyPromptToClipboard": "Copiar prompt para área de transferência",
@@ -770,6 +776,16 @@
   },
   "modelPicker": {
     "searchPlaceholder": "Buscar ou digitar um ID de modelo…"
+  },
+  "effortSelect": {
+    "agentDefault": "Padrão do agente",
+    "levels": {
+      "low": "Baixo",
+      "medium": "Médio",
+      "high": "Alto",
+      "xhigh": "Muito alto",
+      "max": "Máximo"
+    }
   },
   "skills": {
     "searchPlaceholder": "Buscar habilidades..."

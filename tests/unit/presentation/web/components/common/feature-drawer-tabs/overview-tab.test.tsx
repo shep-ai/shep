@@ -390,6 +390,20 @@ describe('OverviewTab', () => {
       expect(screen.getByText('Sonnet 4.6')).toBeInTheDocument();
     });
 
+    it('renders the pinned effort next to the model', () => {
+      renderOverviewTab({
+        ...defaultData,
+        modelId: 'claude-opus-5-5',
+        effort: 'high',
+      });
+      expect(screen.getByTestId('overview-effort')).toHaveTextContent('High effort');
+    });
+
+    it('omits the effort badge when the run pinned none', () => {
+      renderOverviewTab({ ...defaultData, modelId: 'claude-opus-5-5' });
+      expect(screen.queryByTestId('overview-effort')).toBeNull();
+    });
+
     it('renders all settings together', () => {
       renderOverviewTab({
         ...defaultData,

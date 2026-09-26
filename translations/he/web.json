@@ -39,6 +39,9 @@
       "agentType": "סוג סוכן",
       "agentAndModel": "סוכן ומודל",
       "agentAndModelDescription": "ספק ומודל לכל הפעולות",
+      "effort": "רמת חשיבה",
+      "effortDescription": "כמה הסוכן חושב בכל צעד בפיצ'רים חדשים. ברירת המחדל של הסוכן משאירה את הבחירה ל-CLI. רק סוכנים שתומכים בכך (Claude Code) משתמשים בה.",
+      "effortFailed": "שמירת רמת המאמץ נכשלה",
       "authMethod": "שיטת אימות",
       "apiToken": "אסימון API",
       "apiTokenPlaceholder": "הזן את אסימון ה-API שלך",
@@ -654,7 +657,9 @@
     "skills": "SKILLS",
     "skillsDescription": "Curated skills to guide the agent during feature development.",
     "injectSkills": "Inject",
-    "injectSkillsDescription": "Include curated skills in the feature worktree."
+    "injectSkillsDescription": "Include curated skills in the feature worktree.",
+    "effort": "מאמץ",
+    "effortFromSettings": "לפי ההגדרות"
   },
   "featureDrawer": {
     "copyFeatureId": "העתקת מזהה פיצ'ר",
@@ -690,7 +695,8 @@
     "pr": "PR",
     "watch": "מעקב",
     "commitSpecs": "שמירת מפרטים",
-    "forkAndPr": "Fork ו-PR"
+    "forkAndPr": "Fork ו-PR",
+    "effortValue": "מאמץ: {{level}}"
   },
   "activityTab": {
     "copyPromptToClipboard": "העתקת פרומפט ללוח",
@@ -770,6 +776,16 @@
   },
   "modelPicker": {
     "searchPlaceholder": "חיפוש או הקלדת מזהה מודל…"
+  },
+  "effortSelect": {
+    "agentDefault": "ברירת המחדל של הסוכן",
+    "levels": {
+      "low": "נמוכה",
+      "medium": "בינונית",
+      "high": "גבוהה",
+      "xhigh": "גבוהה מאוד",
+      "max": "מקסימלית"
+    }
   },
   "skills": {
     "searchPlaceholder": "חיפוש כישורים..."
