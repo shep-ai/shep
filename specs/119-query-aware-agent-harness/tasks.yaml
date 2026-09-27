@@ -44,8 +44,8 @@ tasks:
     HarnessBudget, HarnessEvalRun and HarnessEvalResult under tsp/domain/entities/harness/. Add
     Settings.harness: HarnessConfig with mode, budgetMode, maxTurns, backendAgentType, backendModel,
     context {maxInputTokens=64000, reserveOutputTokens=8000, candidateLimit=200, hideThreshold=0.10,
-    fullThreshold=0.80, uncertainDefault=long}, decisions {primary, fallback, jevEndpoint?,
-    decisionModel?}, shadow {contextRouter, permissions, toolRouter} and permissions
+    fullThreshold=0.80, uncertainDefault=long}, decisions {providers[] ({id, kind, endpoint?, model?,
+    apiKeyRef?, timeoutMs}), routes (per DecisionKind), default, fallback[]}, shadow {contextRouter, permissions, toolRouter} and permissions
     {defaultUnknown=ask, nonInteractiveAsk=deny, approvalTimeoutMs}. Add
     FeatureFlags.queryAwareHarness=false.
   state: Todo
@@ -203,26 +203,35 @@ tasks:
   estimatedEffort: M
 - id: task-9
   phaseId: phase-3
-  title: Structured-LLM and Jev decision providers with a fallback chain
+  title: Pluggable decision providers (open-source replacements for Jev), registry and fallback
   description: >-
-    StructuredLlmDecisionProvider uses IHarnessModelProvider.generateObject with a JSON schema and
-    one call per batch. JevDecisionProvider is an HTTP adapter, active only when
-    settings.harness.decisions.jevEndpoint is set. FallbackDecisionProvider tries
-    primary → fallback → deterministic and marks degraded=true when it falls back.
+    DecisionProviderRegistry builds named provider instances from
+    settings.harness.decisions.providers[] and resolves a provider per DecisionKind from `routes`,
+    falling back to `default`, then the `fallback` chain, then deterministic. Adapters:
+    - openai-compatible: any Ollama, vLLM, llama.cpp, LM Studio or SGLang server via
+      @ai-sdk/openai-compatible; JSON-schema output; requests logprobs and maps them to
+      probabilities when present;
+    - reranker: an HTTP cross-encoder `/rerank` (text-embeddings-inference BGE/Jina, Infinity,
+      vLLM); sigmoid scores become probabilities;
+    - structured-llm: the harness backend;
+    - jev: HTTP, only when configured.
+    One shared conformance suite runs against every adapter, using recorded HTTP fixtures.
   state: Todo
   dependencies: [task-8]
   acceptanceCriteria:
-  - with no Jev endpoint configured, no HTTP request is ever made (fetch spy)
-  - a thrown or timed-out primary falls back and the persisted decision has degraded=true and the failing provider in metadata
-  - an LLM batch of N items issues one model call
+  - swapping Jev for an openai-compatible or reranker provider is a settings-only change (no code change), per decision kind
+  - every adapter passes the conformance suite (shapes, batch order, typed timeout error, no network when unconfigured)
+  - a failing or slow provider falls back along the chain; the persisted decision has degraded=true and names the failed provider
+  - a batch of N items issues one request per provider call
+  - probabilities are populated from logprobs or rerank scores when available and are null (never fabricated) otherwise
   tdd:
     red:
-    - fallback-chain tests with throwing/slow stubs; a batch-call-count test; a no-network test
+    - conformance suite (parametrised over adapters with fetch fixtures); per-kind routing tests; fallback-chain tests; batch-count tests
     green:
-    - implement the three adapters
+    - implement the registry and the four network adapters
     refactor:
-    - shared timeout wrapper with timeout errors that name the budget (spec 116)
-  estimatedEffort: M
+    - shared HTTP/timeout wrapper with timeout errors that name the budget (spec 116)
+  estimatedEffort: L
 # ───────────────────────── phase-4: Tools & capabilities ─────────────────────────
 - id: task-10
   phaseId: phase-4
@@ -850,8 +859,9 @@ openQuestions: []
 content: |
   ## Summary
 
-  34 tasks across 12 phases, delivered as six flag-gated PR slices (see plan.yaml "Delivery
-  slices"). Phases 3, 4 and 5 parallelize after persistence. Phase 8 (prompt sections) can land any
+  34 tasks across 12 phases, delivered as ONE flag-gated pull request built from six ordered, green
+  commit groups (see plan.yaml "Delivery: Single Pull Request").
+  Phases 3, 4 and 5 parallelize after persistence. Phase 8 (prompt sections) can land any
   time after task-2.
 
   ## Acceptance Checklist

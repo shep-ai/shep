@@ -73,22 +73,41 @@ decisions:
     rationale: >-
       This matches CLAUDE.md's data-storage model and `SHEP_HOME` test isolation. The web layer can
       query it. Policies and instructions stay reviewable in the repo.
-  - title: "Decision providers"
+  - title: "Decision providers (Jev replaceable by open-source alternatives)"
     chosen: >-
-      `IDecisionProvider { noul, choice, score, batch }`, with three adapters:
-      `DeterministicDecisionProvider` (default; lexical/path/recency heuristics reusing the
-      memory scorer's `rankByContentScore`);
-      `StructuredLlmDecisionProvider` (`generateObject` on a configurable small model through the
-      same backend, batched);
-      `JevDecisionProvider` (HTTP adapter, enabled only when `harness.decisions.jevEndpoint` is
-      set).
-      Every call is persisted as a HarnessDecision.
+      A provider-neutral `IDecisionProvider { noul, choice, score, batch }` plus a
+      `DecisionProviderRegistry` of named provider instances configured in
+      `settings.harness.decisions.providers[]` ({id, kind, endpoint?, model?, apiKeyRef?, timeoutMs}).
+      Routing is per decision kind (`routes: {chunk_visibility: <id>, capability_choice: <id>,
+      cache_strategy: <id>, permission_risk: <id>}`) with a `default` and an ordered `fallback`
+      list that always ends in `deterministic`.
+      V0 ships five kinds. Three are open source or local and need no vendor:
+      - `deterministic`: lexical, path and recency heuristics that reuse `rankByContentScore`;
+        the default, with no network;
+      - `openai-compatible`: any self-hosted LLM server (Ollama, vLLM, llama.cpp server,
+        LM Studio, SGLang) via `@ai-sdk/openai-compatible`, with JSON-schema output; it requests
+        `logprobs` for the choice token and maps them to `probabilities` when the server returns
+        them, and otherwise reports confidence as null;
+      - `reranker`: an HTTP cross-encoder rerank endpoint (Hugging Face
+        text-embeddings-inference `/rerank` with BGE/Jina rerankers, or a compatible
+        vLLM/Infinity endpoint); it serves `score`, and `choice` over relevance, which fits
+        chunk visibility and capability choice; sigmoid scores become probabilities.
+      Two are optional:
+      - `structured-llm`: the harness's own backend model;
+      - `jev`: an HTTP adapter, used only when configured.
+      Every provider must pass one shared conformance test suite (result shapes, batch ordering,
+      timeout → typed error, no network when unconfigured). Every call is persisted as a
+      HarnessDecision tagged with provider id and kind.
     rejected:
-      - "Jev-only: not publicly available; the spec requires the harness to run without it."
-      - "Reuse IStructuredAgentCaller: routes through the full agent executor (CLI spawn), far too heavy for per-turn batch decisions."
+      - "Jev-only, or Jev as a privileged default: it is not publicly available, and the user needs to swap it for an open-source alternative."
+      - "Hard-wire one open-source model/library (e.g. Outlines or guidance in-process): would pull a Python runtime or native deps into the Node CLI; an HTTP contract to OpenAI-compatible or rerank servers covers them all."
+      - "Reuse IStructuredAgentCaller: it routes through the full agent executor (CLI spawn), which is far too heavy for per-turn batch decisions."
     rationale: >-
-      The deterministic default keeps CI and offline runs network-free (mirrors the embedding
-      lesson). An LLM or Jev can be swapped in and measured via shadow mode and evals.
+      A decision is a typed classification, so any local LLM with constrained output or any
+      cross-encoder can serve it. Per-kind routing lets a cheap reranker handle high-frequency
+      chunk visibility while a small LLM handles capability choice. The deterministic default keeps
+      CI and offline runs network-free (the embedding lesson), and shadow mode plus component evals
+      make providers directly comparable (recall, false-allow rate, latency, cost).
   - title: "Permission policy backend"
     chosen: >-
       A new YAML rule engine for harness actions. Rules use `when`: action_class, path_matches,
@@ -193,9 +212,19 @@ content: |
   | Skills on disk | `skill-injector.service.ts` (SKILL.md) | V1: SKILL.md → Tier-1 snippet + Tier-3 docs |
   | Plugin MCP servers | `mcp-server-manager.service.ts` | V1: MCP ToolSource |
 
+  ## Open-Source Decision Backends (tested targets)
+
+  | Backend | Adapter kind | Serves | Probabilities |
+  | --- | --- | --- | --- |
+  | Ollama (Qwen, Llama, Phi small models) | openai-compatible | noul, choice, score, batch | when logprobs are returned, else confidence null |
+  | vLLM / SGLang (guided JSON decoding) | openai-compatible | all | logprobs supported |
+  | llama.cpp server / LM Studio | openai-compatible | all | logprobs supported by llama.cpp |
+  | HF text-embeddings-inference + BGE/Jina reranker | reranker | score, relevance choice | sigmoid of the rerank score |
+  | none (offline / CI) | deterministic | all | heuristic scores |
+
   ## Library Analysis
 
-  No new runtime dependencies in V0. Everything used is already in the workspace: `ai@^6`,
+  No new runtime dependencies in V0. `@ai-sdk/openai-compatible` is already installed. Everything used is already in the workspace: `ai@^6`,
   `@ai-sdk/provider`, `@ai-sdk/openai-compatible`, `@openrouter/ai-sdk-provider`, `ajv@^8`,
   `js-yaml@^4`, `minimatch`, `zod@^4`. `ripgrep` is an optional system binary, detected by doctor.
 

@@ -111,7 +111,7 @@ content: |
   | EventEnvelope | `HarnessEvent` | append-only, monotonic sequence per session |
   | `.harness/` project dir | `<repo>/.shep/harness/` | config, policies, instructions (versioned with code) |
   | `harness <cmd>` | `shep harness <cmd>` | `shep run`/`doctor`/`session` already exist |
-  | Jev | `IDecisionProvider` adapter | V0 ships deterministic + structured-LLM; Jev adapter is config-gated |
+  | Jev | `IDecisionProvider` plugin | Jev is one interchangeable provider; open-source providers (OpenAI-compatible local LLM, reranker) ship in V0 and can replace it per decision kind |
 
   ## User Flows (V0)
 
@@ -232,6 +232,16 @@ content: |
   - [ ] **Architecture:** `domain/` and `application/` harness code imports no AI SDK, provider,
         MCP, SQLite or process module; an architecture test enforces it. The harness runs with
         the Jev adapter disabled.
+  - [ ] **Replaceable decision layer:** Jev can be swapped for an open-source provider purely by
+        configuration, either globally or per decision kind (chunk_visibility,
+        capability_choice, …). V0 ships two open-source adapters:
+        - `openai-compatible`: any local/self-hosted LLM server (Ollama, vLLM, llama.cpp
+          server, LM Studio, SGLang) with JSON-schema output, using logprobs for probabilities
+          when the server returns them;
+        - `reranker`: a cross-encoder rerank endpoint such as Hugging Face
+          text-embeddings-inference with a BGE reranker.
+        Every provider passes one shared conformance suite, and providers can be compared
+        head-to-head in shadow mode and in the component evals.
   - [ ] **Executor integration:** With `shep-harness` selected, every feature-agent node completes
         through `IAgentExecutorProvider` without graph changes. Usage returned by the executor
         rolls up into `PhaseTiming` and `shep usage`.
@@ -295,8 +305,11 @@ content: |
 
   ## Dependencies
 
-  - An AI-SDK backend with API credentials (OpenRouter, LLMProxy, Ollama or Together).
-    Subscription-auth Claude Code users need one to use the harness; doctor and settings say so.
+  - An AI-SDK backend with API credentials (OpenRouter, LLMProxy, Ollama or Together). The
+    project owner has an API key, so real-model evals are unblocked. Subscription-only Claude Code
+    users still need one; doctor and settings say so.
+  - Optional open-source decision backends: any OpenAI-compatible server and any rerank endpoint.
+    None is required, because the deterministic provider is the default.
   - `ripgrep` is optional (search falls back to `git ls-files` + a JS scan). `git` is required
     for snapshots.
   - Spec 116 outcome rules (terminal-event and finish-reason checks) apply to the harness
@@ -304,5 +317,7 @@ content: |
 
   ## Size Estimate
 
-  **XL**: V0 alone is ~34 tasks across 12 phases, spanning every layer. It should ship as a
-  sequence of flag-gated PRs (see plan.yaml "Delivery slices"), not one.
+  **XL**: V0 alone is ~34 tasks across 12 phases, spanning every layer. It ships as **one pull
+  request** from this branch, behind `featureFlags.queryAwareHarness`. It is built as ordered,
+  individually-green commit groups (see plan.yaml "Delivery: Single Pull Request") so the PR can be
+  reviewed milestone by milestone.

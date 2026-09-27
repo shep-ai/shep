@@ -14,7 +14,7 @@ summary: |-
   11. Evals
   12. Hardening and docs
   Phases 3/4/5 and 6/8 can run in parallel once persistence lands. Everything ships behind
-  `featureFlags.queryAwareHarness` as six mergeable PR slices.
+  `featureFlags.queryAwareHarness` in ONE pull request, built as ordered commit groups that are each green.
 relatedFeatures:
   - "102-shep-brain"
   - "110-adaptive-model-selection"
@@ -41,7 +41,7 @@ phases:
     taskIds: ["task-4", "task-5", "task-6", "task-7"]
   - id: phase-3
     name: "Decision layer"
-    description: "IDecisionProvider with deterministic, structured-LLM and Jev adapters, the fallback chain, and persisted decisions."
+    description: "IDecisionProvider, provider registry with per-decision-kind routing, the deterministic, openai-compatible (open-source LLM servers), reranker, structured-llm and optional Jev adapters, a shared conformance suite, the fallback chain, and persisted decisions."
     parallel: true
     taskIds: ["task-8", "task-9"]
   - id: phase-4
@@ -175,6 +175,10 @@ filesToCreate:
   - "packages/core/src/infrastructure/services/harness/decisions/deterministic-decision-provider.ts"
   - "packages/core/src/infrastructure/services/harness/decisions/structured-llm-decision-provider.ts"
   - "packages/core/src/infrastructure/services/harness/decisions/jev-decision-provider.ts"
+  - "packages/core/src/infrastructure/services/harness/decisions/openai-compatible-decision-provider.ts"
+  - "packages/core/src/infrastructure/services/harness/decisions/reranker-decision-provider.ts"
+  - "packages/core/src/infrastructure/services/harness/decisions/decision-provider-registry.ts"
+  - "tests/unit/infrastructure/services/harness/decisions/decision-provider.conformance.ts"
   - "packages/core/src/infrastructure/services/harness/decisions/fallback-decision-provider.ts"
   - "packages/core/src/infrastructure/services/harness/tools/builtin-tool-source.ts"
   - "packages/core/src/infrastructure/services/harness/tools/{list-files,search-source,read-file,git-inspect,run-command,run-tests,apply-patch}.tool.ts"
@@ -265,8 +269,8 @@ content: |
    └───────┬─────────────┬───────────────┬──────────────┬─────────────┬───────────────┬──────────┘
       ports│             │               │              │             │               │
    IDecisionProvider IHarnessModel  IToolExecutor   IPolicyEngine  IBlobStore     IHarness*Repository
-   (det/LLM/Jev)     Provider(AI SDK) (7 builtins)  ICommandInsp.  (~/.shep/objects) IHarnessEventLog
-                                                                   IRepoSnapshotter (SQLite ~/.shep/data)
+   (registry: det,   Provider(AI SDK) (7 builtins)  ICommandInsp.  (~/.shep/objects) IHarnessEventLog
+   openai-compat,     rerank, Jev)                                IRepoSnapshotter (SQLite ~/.shep/data)
   ```
 
   Dependency rule: `domain/harness` holds pure functions over generated types. `application`
@@ -350,16 +354,29 @@ content: |
     `settings.agent.type` (or the feature's agent) is `shep-harness`. The PromptSection refactor is
     proven identical by golden snapshot tests of every prompt builder.
 
-  ## Delivery Slices (one PR each, all behind the flag)
+  ## Delivery: Single Pull Request
 
-  | Slice | Tasks | Demo at merge |
+  All of V0 ships as **one PR** from `claude/sweet-heisenberg-2at9ie` (this spec is its first
+  commit). Size is managed by commit structure, not by splitting PRs:
+
+  | Commit group | Tasks | Must be true at the end of the group |
   | --- | --- | --- |
-  | S1 State core | 1–7 | `shep harness inspect` on a synthetic session; kill/reopen persistence test |
-  | S2 Tools, decisions, permissions | 8–15 | a scripted run executes tools with permission records; policy eval green in CI |
-  | S3 Context engine + prompt sections | 16–19, 25 | a ContextPlan is built and persisted for a node prompt; golden prompts unchanged |
-  | S4 Runtime + CLI | 20–24, 26–27 | `shep harness run` fixes a fixture bug end-to-end; `feat new --agent shep-harness` completes |
-  | S5 Web | 28–31 | enable flag → settings → run → Context tab → approve permission → explain |
-  | S6 Evals + hardening | 32–34 | `shep harness eval run seed` report; acceptance suite green |
+  | G1 State core | 1–7 | kill/reopen persistence test green; `pnpm generate` clean |
+  | G2 Decisions, tools, permissions | 8–15 | provider conformance suite green for every adapter; policy table tests green |
+  | G3 Context engine + prompt sections | 16–19, 25 | a ContextPlan builds for a node prompt; golden prompts byte-identical |
+  | G4 Runtime + CLI | 20–24, 26–27 | `shep harness run` fixes a fixture bug with the scripted backend; `feat new --agent shep-harness` completes |
+  | G5 Web | 28–31 | `pnpm build:storybook` green; the flag reveals every surface |
+  | G6 Evals + hardening | 32–34 | acceptance suite green; seed eval report produced with a real backend |
+
+  Rules for the single PR:
+  - Every commit group passes `pnpm validate`, `test:unit` and `test:int` locally before it is
+    pushed. CI stays green on each push, never only at the end.
+  - The flag is off by default, so a partially reviewed PR cannot change user behaviour.
+  - The PR description carries a group-by-group review map (files, entry points, what to try).
+    Reviewers can review per group via the commit ranges.
+  - `feature.yaml` progress is updated per task, so the PR shows live status.
+  - Real-model evals run with the owner's API key, supplied as an environment secret and never
+    committed. CI uses the scripted backend and the deterministic decision provider.
 
   ## Roadmap Beyond V0 (separate specs, same flag until graduation)
 
