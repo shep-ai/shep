@@ -1,0 +1,442 @@
+name: "query-aware-agent-harness"
+summary: |-
+  Twelve phases, built inside-out, each RED-first:
+  1. Domain
+  2. Persistence
+  3. Decisions
+  4. Tools and capabilities
+  5. Permissions
+  6. Context engine
+  7. Runtime and executor
+  8. Feature-agent prompt sections
+  9. Use cases and CLI
+  10. Web
+  11. Evals
+  12. Hardening and docs
+  Phases 3/4/5 and 6/8 can run in parallel once persistence lands. Everything ships behind
+  `featureFlags.queryAwareHarness` as six mergeable PR slices.
+relatedFeatures:
+  - "102-shep-brain"
+  - "110-adaptive-model-selection"
+  - "116-agent-harness-reliability"
+technologies:
+  - "TypeScript"
+  - "TypeSpec"
+  - "Vercel AI SDK v6"
+  - "better-sqlite3"
+  - "Next.js"
+  - "Vitest"
+  - "Playwright"
+relatedLinks: []
+phases:
+  - id: phase-1
+    name: "Domain: TypeSpec models and pure harness rules"
+    description: "Enums, entities, value objects, HarnessConfig, the feature flag, AgentType.ShepHarness plus its catalog row; pure rules (task state machine, visibility ladder, budget fitter, fingerprints, permission precedence)."
+    parallel: false
+    taskIds: ["task-1", "task-2", "task-3"]
+  - id: phase-2
+    name: "Persistence: blob store, tables, event log, snapshots"
+    description: "CAS blob store, migrations 148+, repositories and mappers, the append-only event log with per-session sequence, and the git repo snapshotter."
+    parallel: false
+    taskIds: ["task-4", "task-5", "task-6", "task-7"]
+  - id: phase-3
+    name: "Decision layer"
+    description: "IDecisionProvider with deterministic, structured-LLM and Jev adapters, the fallback chain, and persisted decisions."
+    parallel: true
+    taskIds: ["task-8", "task-9"]
+  - id: phase-4
+    name: "Tools and capability routing"
+    description: "Seven builtin tools, raw output persisted as chunks before rendering, the capability registry with tiered disclosure, ajv validation, and the capability router."
+    parallel: true
+    taskIds: ["task-10", "task-11", "task-12"]
+  - id: phase-5
+    name: "Permissions"
+    description: "YAML policy engine, command effect inspector, permission service with grants and the pending-request wait/resolve flow."
+    parallel: true
+    taskIds: ["task-13", "task-14", "task-15"]
+  - id: phase-6
+    name: "Context engine"
+    description: "Chunk renderers, instruction source, candidate retrieval, and ContextEngine.build (visibility, budget fit, stable prefix, persistence, degraded and shadow modes)."
+    parallel: false
+    taskIds: ["task-16", "task-17", "task-18", "task-19"]
+  - id: phase-7
+    name: "Runtime loop and executor"
+    description: "Extracted LanguageModelFactory plus the AI-SDK harness model provider, the query-aware turn loop, baseline and shadow modes, restart/resume, the HarnessAgentExecutor and DI module."
+    parallel: false
+    taskIds: ["task-20", "task-21", "task-22", "task-23", "task-24"]
+  - id: phase-8
+    name: "Feature-agent integration"
+    description: "Prompt builders emit PromptSection[] (byte-identical rendered string); promptSections and callContext are threaded to every executor call site."
+    parallel: true
+    taskIds: ["task-25"]
+  - id: phase-9
+    name: "Use cases and CLI"
+    description: "Init/run/resume/inspect/explain/permissions/capabilities use cases with string tokens; the `shep harness` command group; doctor diagnostics."
+    parallel: false
+    taskIds: ["task-26", "task-27"]
+  - id: phase-10
+    name: "Web UI"
+    description: "Settings plus the flag, the /harness section, the feature drawer Context tab, permission prompts, the decision Why drawer, the chunk viewer, SSE, and the repository setup dialog."
+    parallel: false
+    taskIds: ["task-28", "task-29", "task-30", "task-31"]
+  - id: phase-11
+    name: "Evaluation"
+    description: "Component eval suites in CI (deterministic provider) and the paired end-to-end runner with report, CLI and web Evals tab."
+    parallel: false
+    taskIds: ["task-32", "task-33"]
+  - id: phase-12
+    name: "Hardening, acceptance and docs"
+    description: "Acceptance suite mapped 1:1 to spec criteria, architecture import test, redaction, Playwright happy path, and docs."
+    parallel: false
+    taskIds: ["task-34"]
+filesToCreate:
+  # TypeSpec
+  - "tsp/common/enums/harness.tsp"
+  - "tsp/domain/entities/harness/index.tsp"
+  - "tsp/domain/entities/harness/harness-session.tsp"
+  - "tsp/domain/entities/harness/harness-task.tsp"
+  - "tsp/domain/entities/harness/context-chunk.tsp"
+  - "tsp/domain/entities/harness/context-plan.tsp"
+  - "tsp/domain/entities/harness/harness-decision.tsp"
+  - "tsp/domain/entities/harness/model-call.tsp"
+  - "tsp/domain/entities/harness/capability.tsp"
+  - "tsp/domain/entities/harness/harness-tool-call.tsp"
+  - "tsp/domain/entities/harness/permission.tsp"
+  - "tsp/domain/entities/harness/repo-snapshot.tsp"
+  - "tsp/domain/entities/harness/instruction.tsp"
+  - "tsp/domain/entities/harness/harness-event.tsp"
+  - "tsp/domain/entities/harness/harness-eval.tsp"
+  # Domain (pure)
+  - "packages/core/src/domain/harness/task-state-machine.ts"
+  - "packages/core/src/domain/harness/visibility-ladder.ts"
+  - "packages/core/src/domain/harness/budget-fitter.ts"
+  - "packages/core/src/domain/harness/fingerprints.ts"
+  - "packages/core/src/domain/harness/permission-precedence.ts"
+  - "packages/core/src/domain/harness/harness-constants.ts"
+  # Application ports
+  - "packages/core/src/application/ports/output/harness/blob-store.interface.ts"
+  - "packages/core/src/application/ports/output/harness/harness-repositories.interface.ts"
+  - "packages/core/src/application/ports/output/harness/harness-event-log.interface.ts"
+  - "packages/core/src/application/ports/output/harness/repo-snapshotter.interface.ts"
+  - "packages/core/src/application/ports/output/harness/decision-provider.interface.ts"
+  - "packages/core/src/application/ports/output/harness/harness-model-provider.interface.ts"
+  - "packages/core/src/application/ports/output/harness/tool-executor.interface.ts"
+  - "packages/core/src/application/ports/output/harness/tool-source.interface.ts"
+  - "packages/core/src/application/ports/output/harness/policy-engine.interface.ts"
+  - "packages/core/src/application/ports/output/harness/command-inspector.interface.ts"
+  - "packages/core/src/application/ports/output/harness/instruction-source.interface.ts"
+  - "packages/core/src/application/ports/output/harness/chunk-renderer.interface.ts"
+  - "packages/core/src/application/ports/output/harness/eval-fixture-provisioner.interface.ts"
+  # Application services (harness runtime, no infrastructure imports)
+  - "packages/core/src/application/services/harness/harness-runtime.ts"
+  - "packages/core/src/application/services/harness/turn-loop.ts"
+  - "packages/core/src/application/services/harness/baseline-turn-loop.ts"
+  - "packages/core/src/application/services/harness/meta-tools.ts"
+  - "packages/core/src/application/services/harness/context-engine.ts"
+  - "packages/core/src/application/services/harness/candidate-retriever.ts"
+  - "packages/core/src/application/services/harness/capability-registry.ts"
+  - "packages/core/src/application/services/harness/capability-router.ts"
+  - "packages/core/src/application/services/harness/permission-service.ts"
+  - "packages/core/src/application/services/harness/instruction-resolver.ts"
+  - "packages/core/src/application/services/harness/decision-recorder.ts"
+  - "packages/core/src/application/services/harness/chunk-writer.ts"
+  - "packages/core/src/application/services/harness/session-restorer.ts"
+  - "packages/core/src/application/services/harness/renderers/*.renderer.ts (file, search-result, command-output, test-result, diff, instruction, prompt-section)"
+  # Use cases
+  - "packages/core/src/application/use-cases/harness/init-harness-project.use-case.ts"
+  - "packages/core/src/application/use-cases/harness/run-harness-task.use-case.ts"
+  - "packages/core/src/application/use-cases/harness/resume-harness-session.use-case.ts"
+  - "packages/core/src/application/use-cases/harness/stop-harness-session.use-case.ts"
+  - "packages/core/src/application/use-cases/harness/list-harness-sessions.use-case.ts"
+  - "packages/core/src/application/use-cases/harness/get-harness-session.use-case.ts"
+  - "packages/core/src/application/use-cases/harness/get-context-plan.use-case.ts"
+  - "packages/core/src/application/use-cases/harness/get-harness-tool-call.use-case.ts"
+  - "packages/core/src/application/use-cases/harness/render-chunk-view.use-case.ts"
+  - "packages/core/src/application/use-cases/harness/explain-harness-decision.use-case.ts"
+  - "packages/core/src/application/use-cases/harness/list-permission-requests.use-case.ts"
+  - "packages/core/src/application/use-cases/harness/resolve-permission-request.use-case.ts"
+  - "packages/core/src/application/use-cases/harness/list-capabilities.use-case.ts"
+  - "packages/core/src/application/use-cases/harness/get-harness-policies.use-case.ts"
+  - "packages/core/src/application/use-cases/harness/get-harness-metrics.use-case.ts"
+  - "packages/core/src/application/use-cases/harness/run-harness-eval-suite.use-case.ts"
+  - "packages/core/src/application/use-cases/harness/get-harness-eval-report.use-case.ts"
+  - "packages/core/src/application/use-cases/doctor/diagnostics/harness-*.diagnostic.ts"
+  # Infrastructure
+  - "packages/core/src/infrastructure/di/modules/register-harness.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/migrations/148-create-harness-core-tables.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/migrations/149-create-harness-tool-permission-tables.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/migrations/150-create-harness-eval-tables.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/migrations/151-add-harness-settings-and-flag.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/mappers/harness/*.mapper.ts"
+  - "packages/core/src/infrastructure/repositories/harness/sqlite-*.repository.ts"
+  - "packages/core/src/infrastructure/repositories/harness/sqlite-harness-event-log.ts"
+  - "packages/core/src/infrastructure/services/harness/storage/file-system-blob-store.ts"
+  - "packages/core/src/infrastructure/services/harness/git-repo-snapshotter.ts"
+  - "packages/core/src/infrastructure/services/harness/decisions/deterministic-decision-provider.ts"
+  - "packages/core/src/infrastructure/services/harness/decisions/structured-llm-decision-provider.ts"
+  - "packages/core/src/infrastructure/services/harness/decisions/jev-decision-provider.ts"
+  - "packages/core/src/infrastructure/services/harness/decisions/fallback-decision-provider.ts"
+  - "packages/core/src/infrastructure/services/harness/tools/builtin-tool-source.ts"
+  - "packages/core/src/infrastructure/services/harness/tools/{list-files,search-source,read-file,git-inspect,run-command,run-tests,apply-patch}.tool.ts"
+  - "packages/core/src/infrastructure/services/harness/tools/tool-argument-validator.ts"
+  - "packages/core/src/infrastructure/services/harness/policy/yaml-policy-engine.ts"
+  - "packages/core/src/infrastructure/services/harness/policy/default-policy.yaml"
+  - "packages/core/src/infrastructure/services/harness/policy/shell-command-inspector.ts"
+  - "packages/core/src/infrastructure/services/harness/instructions/file-system-instruction-source.ts"
+  - "packages/core/src/infrastructure/services/harness/retrieval/ripgrep-or-scan-search.ts"
+  - "packages/core/src/infrastructure/services/harness/retrieval/regex-outline-extractor.ts"
+  - "packages/core/src/infrastructure/services/harness/model/ai-sdk-harness-model-provider.ts"
+  - "packages/core/src/infrastructure/services/harness/model/scripted-harness-model-provider.ts"
+  - "packages/core/src/infrastructure/services/harness/evals/temp-dir-fixture-provisioner.ts"
+  - "packages/core/src/infrastructure/services/agents/common/language-model-factory.ts"
+  - "packages/core/src/infrastructure/services/agents/common/executors/harness-agent-executor.service.ts"
+  - "packages/core/src/infrastructure/services/agents/feature-agent/nodes/prompts/prompt-sections.ts"
+  # CLI
+  - "src/presentation/cli/commands/harness/index.ts"
+  - "src/presentation/cli/commands/harness/{init,run,resume,stop,ls,inspect,view,explain,permissions,capabilities,eval}.command.ts"
+  - "src/presentation/cli/commands/harness/render-turn-line.ts"
+  # Web
+  - "src/presentation/web/app/harness/layout.tsx"
+  - "src/presentation/web/app/harness/page.tsx"
+  - "src/presentation/web/app/harness/sessions/[sessionId]/page.tsx"
+  - "src/presentation/web/app/harness/approvals/page.tsx"
+  - "src/presentation/web/app/harness/evals/page.tsx"
+  - "src/presentation/web/app/harness/evals/[runId]/page.tsx"
+  - "src/presentation/web/app/harness/capabilities/page.tsx"
+  - "src/presentation/web/app/harness/policies/page.tsx"
+  - "src/presentation/web/app/api/harness-events/route.ts"
+  - "src/presentation/web/app/actions/harness-*.ts"
+  - ".storybook/mocks/app/actions/harness-*.ts"
+  - "src/presentation/web/hooks/use-harness-events.ts"
+  - "src/presentation/web/components/features/harness/* (session list, new-task dialog, turn timeline, context-plan table, visibility pill + histogram, tool-call row, chunk viewer, decision why drawer, permission prompt, approvals inbox, capability catalog, policy viewer, eval launcher, eval report, setup dialog, settings section), each with .stories.tsx"
+  - "src/presentation/web/components/common/feature-drawer-tabs/context-tab.tsx (+ stories)"
+  # Evals and docs
+  - "evals/harness/suites/seed/*.yaml"
+  - "evals/harness/fixtures/<case>/ (small fixture repos)"
+  - "evals/harness/component/{permissions,capability-routing,context-recall,instructions}/*.yaml"
+  - "docs/architecture/agent-harness.md"
+  - "docs/guides/agent-harness.md"
+filesToModify:
+  - "tsp/common/enums/agent-config.tsp (AgentType.ShepHarness)"
+  - "tsp/domain/entities/settings.tsp (HarnessConfig, FeatureFlags.queryAwareHarness)"
+  - "tsp/domain/entities/index.tsp, tsp/common/enums/index.tsp"
+  - "packages/core/src/domain/shared/agent-catalog.ts (shep-harness row, kind sdk)"
+  - "packages/core/src/domain/factories/settings-defaults.factory.ts"
+  - "packages/core/src/infrastructure/persistence/sqlite/mappers/settings.mapper.ts"
+  - "packages/core/src/infrastructure/repositories/sqlite-settings.repository.ts"
+  - "packages/core/src/application/ports/output/agents/agent-executor.interface.ts (promptSections?, callContext?)"
+  - "packages/core/src/infrastructure/services/agents/common/agent-executor-factory.service.ts (shep-harness case)"
+  - "packages/core/src/infrastructure/services/agents/common/executors/{ai-sdk-base,openrouter,together-ai,ollama,llmproxy}-executor.service.ts (use LanguageModelFactory)"
+  - "packages/core/src/infrastructure/services/agents/feature-agent/nodes/node-helpers.ts (executeNode, buildExecutorOptions)"
+  - "packages/core/src/infrastructure/services/agents/feature-agent/nodes/{implement,fast-implement,merge,repair}.node.ts and ci-fix prompt caller"
+  - "packages/core/src/infrastructure/services/agents/feature-agent/nodes/prompts/*.prompt.ts"
+  - "packages/core/src/infrastructure/di/container.ts (registerHarness)"
+  - "packages/core/src/infrastructure/services/doctor/diagnostic-runner.service.ts (harness diagnostics)"
+  - "src/presentation/cli/index.ts (harness group)"
+  - "src/presentation/web/lib/feature-flags.ts, hooks/feature-flags-context.tsx"
+  - "src/presentation/web/components/features/settings/settings-page-client.tsx (flag row + section)"
+  - "src/presentation/web/components/layouts/app-sidebar/app-sidebar.tsx (Harness nav + approvals badge)"
+  - "src/presentation/web/components/common/feature-drawer-tabs/feature-drawer-tabs.tsx + drawer-view.ts (context tab)"
+  - "src/presentation/web/components/common/feature-drawer-tabs/activity-tab.tsx (harness metrics)"
+  - "src/presentation/web/components/common/feature-node/* (permission badge)"
+  - "src/presentation/web/components/common/repository-node/repository-drawer* (Set up harness CTA)"
+  - "translations/{en,ar,de,es,fr,he,pt,ru,uk}/web.json"
+  - "tests/integration/infrastructure/di/container-bootstrap.test.ts (WEB_ROUTE_TOKENS, harness tokens)"
+  - "docs/cli/commands.md, docs/architecture/agent-system.md, AGENTS.md, docs/FEATURES.md"
+openQuestions: []
+content: |
+  ## Architecture Overview
+
+  ```text
+   CLI: shep harness …        Web: /harness, drawer Context tab       Feature-agent graph (unchanged)
+          │                            │  server actions / SSE                 │ executeNode / implement / merge
+          ▼                            ▼                                       ▼
+   ┌───────────────────── application/use-cases/harness ─────┐     IAgentExecutorProvider
+   │ Init · Run · Resume · Stop · List/Get · Explain · View  │           │ (settings.agent.type = shep-harness)
+   │ Permissions · Capabilities · Metrics · Eval             │           ▼
+   └──────────────────────────┬──────────────────────────────┘   HarnessAgentExecutor (infra, thin)
+                              ▼                                          │ prompt + promptSections + callContext
+   ┌──────────────── application/services/harness ───────────────────────▼──────────────────────┐
+   │ HarnessRuntime ── TurnLoop (query-aware) | BaselineTurnLoop | shadow                          │
+   │   ├─ ContextEngine ── CandidateRetriever ─ renderers ─ budget-fitter(domain) ─ ContextPlan    │
+   │   ├─ CapabilityRegistry / CapabilityRouter (tiered disclosure)                                │
+   │   ├─ PermissionService (policy → shadow AI → grants → ask/wait)                               │
+   │   ├─ InstructionResolver · DecisionRecorder · ChunkWriter · SessionRestorer                   │
+   └───────┬─────────────┬───────────────┬──────────────┬─────────────┬───────────────┬──────────┘
+      ports│             │               │              │             │               │
+   IDecisionProvider IHarnessModel  IToolExecutor   IPolicyEngine  IBlobStore     IHarness*Repository
+   (det/LLM/Jev)     Provider(AI SDK) (7 builtins)  ICommandInsp.  (~/.shep/objects) IHarnessEventLog
+                                                                   IRepoSnapshotter (SQLite ~/.shep/data)
+  ```
+
+  Dependency rule: `domain/harness` holds pure functions over generated types. `application`
+  holds ports, services and use cases, and imports only the domain and ports. `infrastructure`
+  holds adapters and the DI module `register-harness.ts`. Presentation reaches use cases only,
+  by string token from the web.
+
+  ## One Query-Aware Turn (TurnLoop)
+
+  ```text
+   1. load task state (store)            8. model returns: tool call | use_capability | expand_chunk | complete_task
+   2. RepoSnapshot (capture or reuse)    9. use_capability → CapabilityRouter → implementation → load Tier-2 schema (next turn)
+   3. InstructionResolver (pinned)      10. tool call → ajv validate → PermissionService (allow | ask→wait | deny)
+   4. CandidateRetriever (≤ limit)      11. execute → raw → blob + ContextChunk (BEFORE rendering) → events
+   5. IDecisionProvider.batch visibility 12. expand_chunk → new ChunkView from stored raw (no re-run)
+   6. render → budget fit → ContextPlan  13. complete_task → HarnessTaskResult → task completed
+   7. persist plan → ModelCall(start)     14. every step: HarnessEvent (sequence), decisions persisted
+  ```
+
+  Prompt shape: a **stable prefix** (runtime rules, hard-policy summary, Tier-1 capability
+  snippets, pinned instructions) followed by a **dynamic tail** (task goal, planned chunk views,
+  loaded Tier-2 schemas, the last model message). The prefix fingerprint is recorded in
+  `CacheStrategy` (`stable_prefix`) so cached-token effects can be measured.
+
+  Loop limits: `harness.maxTurns` (default 50), the node timeout and the abort signal. On limit,
+  the task fails with a result, never a false success (spec 116 rule).
+
+  ## Context Algorithm (V0)
+
+  1. Candidates come from: the current task's prompt sections, pinned instructions, current
+     diff/status, the last N tool results of the task, chunks whose paths or symbols match the
+     query/goal, chunks linked by `derived_from`/`supersedes` edges, unresolved error chunks, and
+     explicit path references in the goal. Superseded chunks drop out unless referenced.
+  2. Visibility is decided by one batched `choice` over {hidden, short, long, full} per candidate:
+     - p(relevant) < `hideThreshold` (0.10) → hidden;
+     - > `fullThreshold` (0.80) → full;
+     - otherwise → `uncertainDefault` (long).
+     Pinned and current-task chunks are forced visible.
+  3. Views are rendered by kind-specific renderers and cached by (chunk, visibility, query
+     fingerprint, renderer version).
+  4. Budget fit is a pure `budget-fitter`, applied in this order: reserve system + output +
+     headroom → pinned → goal → policy-required → full/high-confidence → downgrade full→long→short
+     by ascending priority → hide the lowest. Every change is recorded with a reason code; nothing
+     is truncated silently.
+  5. The plan is persisted with, per chunk: visibility, probability, renderer, tokens, reason code
+     and source (deterministic | ai | policy | degraded).
+
+  ## Data Model (tables, migrations 148–151)
+
+  | Table | Key columns |
+  | --- | --- |
+  | harness_sessions | id, status, mode, repo_root, agent_run_id?, feature_id?, root_task_id?, budget_mode, created/updated |
+  | harness_tasks | id, session_id, parent_task_id?, goal, normalized_goal, type, status, read_set, write_set, repo_snapshot_id, budget, dedupe_key, phase?, result_json?, result_chunk_id? |
+  | harness_events | id, session_id, task_id?, sequence (UNIQUE per session), type, payload_json, payload_ref?, trace_id |
+  | repo_snapshots | id, session_id, root, git_commit, working_tree_hash, staged_diff_hash, unstaged_diff_hash |
+  | context_chunks | id, session_id, task_id?, kind, source_json, content_ref, content_hash, token_estimate, sensitivity, read_write, repo_snapshot_id?, supersedes?, superseded_by?, tags_json, metadata_json |
+  | chunk_views | id, chunk_id, query_fingerprint, visibility, content_ref?, estimated_tokens, renderer_id, source_version |
+  | context_plans | id, task_id, query, query_fingerprint, state_version, repo_snapshot_id, planned_chunks_json, instruction_ids_json, capability_ids_json, estimated_tokens, token_budget, cache_strategy_json, degraded, shadow |
+  | harness_decisions | id, task_id?, kind, provider, model?, input_ref, result_json, probabilities_json?, confidence?, latency_ms, cost_usd?, enforced, shadow, degraded |
+  | model_calls | id, task_id, model_id, context_plan_id, status, input/output/cached tokens, cost_usd, latency_ms, response_chunk_id |
+  | harness_tool_calls | id, task_id, capability_id, implementation_id, arguments_ref, arguments_hash, permission_decision_id, status, raw_output_chunk_id, idempotency_key, started/completed |
+  | permission_decisions | id, task_id, action_json, resources_json, effects_json, result, status(pending/resolved), deterministic_policy_ids, ai_decision_id?, reason_code, resolved_by?, scope?, expires_at? |
+  | permission_grants | id, session_id, task_id?, scope, action_pattern, resource_pattern?, expires_at? |
+  | harness_eval_runs / harness_eval_results | run: suite, variants, repeats, status; result: case_id, variant, repeat, success, scores_json, session_id, artifacts_json |
+
+  Capabilities and instructions are **not** tables in V0. They are derived at runtime from the
+  builtin tool source and the instruction files, and every plan and decision records the IDs and
+  content hashes it used. Settings get flat `harness_*` columns, following the adaptive-model
+  precedent, plus `feature_flag_query_aware_harness`.
+
+  ## Implementation Strategy
+
+  - **Inside-out, flag-gated.** Phases 1–2 give an inspectable store before any model is called.
+    Phases 3–5 are independent adapters behind ports and parallelize. Phase 6 needs 3 (decisions)
+    and 2 (chunks). Phase 7 assembles the loop. Phase 8 is independent of 3–7 (pure prompt
+    refactor with golden tests) and can land early.
+  - **Deterministic first.** Every subsystem works with the deterministic decision provider and
+    the scripted model provider, so CI never needs network. LLM/Jev adapters are measured in
+    shadow before enforcement.
+  - **Flag-off is byte-identical.** Nothing in the SDLC path changes unless
+    `settings.agent.type` (or the feature's agent) is `shep-harness`. The PromptSection refactor is
+    proven identical by golden snapshot tests of every prompt builder.
+
+  ## Delivery Slices (one PR each, all behind the flag)
+
+  | Slice | Tasks | Demo at merge |
+  | --- | --- | --- |
+  | S1 State core | 1–7 | `shep harness inspect` on a synthetic session; kill/reopen persistence test |
+  | S2 Tools, decisions, permissions | 8–15 | a scripted run executes tools with permission records; policy eval green in CI |
+  | S3 Context engine + prompt sections | 16–19, 25 | a ContextPlan is built and persisted for a node prompt; golden prompts unchanged |
+  | S4 Runtime + CLI | 20–24, 26–27 | `shep harness run` fixes a fixture bug end-to-end; `feat new --agent shep-harness` completes |
+  | S5 Web | 28–31 | enable flag → settings → run → Context tab → approve permission → explain |
+  | S6 Evals + hardening | 32–34 | `shep harness eval run seed` report; acceptance suite green |
+
+  ## Roadmap Beyond V0 (separate specs, same flag until graduation)
+
+  - **V1: conditional behaviour, richer safety, CLI-agent middleware.**
+    - Instruction `when:` conditions (paths / task type / capability / branch) with
+      activation/deactivation events.
+    - SkillManifest over existing SKILL.md: the frontmatter is the Tier-1 snippet and the body is
+      Tier-3 docs; skills attach capabilities and hooks.
+    - MCP/plugin ToolSource from `mcp-server-manager`, with lexical/embedding top-N retrieval over
+      large catalogs.
+    - Tier-3 docs, tree-sitter outlines, script effect inspection, an `ISandbox` adapter, shadow
+      AI permission judgment, and an optional `@ai-sdk/anthropic` adapter.
+    - **Track M (context middleware for CLI agents):**
+      - M1: compute ContextPlans over node PromptSections for *every* agent in shadow, and compare
+        against PhaseTiming tokens.
+      - M2: enforce rendered sections, and attach a `shep-context` MCP server (`expand_chunk`,
+        `search_state`, `get_task_result`) through the existing `mcpConfigPath` channel so Claude
+        Code, Codex and Gemini can escalate.
+      - M3: a Claude Code PreToolUse hook calling `shep harness hook pre-tool-use`, so the
+        deterministic policy governs CLI agents and replaces blanket
+        `--dangerously-skip-permissions`. Spike first: hook injection via `--settings` and
+        `ask` semantics in `-p` mode.
+  - **V2: read-only subagents and shared retrieval.**
+    - Child HarnessTasks with a dedupe key (normalized goal + scope + snapshot + type): reuse a
+      completed match, join a running one.
+    - Read-only parallelism.
+    - A `RetrievalSnapshot` feeding background jobs after implement (review, test/eval generation,
+      explanation, security). This complements `code-review` and ASPM; results are
+      `background_result` chunks.
+  - **V3: routing and parallel writes.**
+    - The spec-110 complexity tiers become a `RouteEstimate`, including context-load,
+      reintegration, cache-loss and retry costs.
+    - Security-aware provider filtering by chunk sensitivity, and `--shadow-model-router` first.
+    - Task-level worktrees inside a feature, reusing the worktree service, with serial patch merge
+      and conflicts as blocked tasks.
+
+  ## Testing Strategy (TDD: tests first)
+
+  - **Domain (unit):** state-machine transition table (every illegal transition throws), budget
+    fitter (pinned never dropped, downgrade order, reason codes), visibility ladder, fingerprints,
+    permission precedence (hard deny beats everything).
+  - **Persistence (integration, `SHEP_HOME` temp):** migrations up/down, repository round-trips,
+    event sequence monotonic under concurrent appends, blob CAS dedupe/permissions, a kill/reopen
+    test (child process killed after N events, state intact), and a drift test with a real temp
+    git repo (gpgsign off).
+  - **Adapters (unit):** each tool against a temp repo; ajv rejects bad arguments before the
+    executor spy is called; command inspector table tests; YAML policy fixtures; decision
+    providers with a stubbed model (no network).
+  - **Runtime (integration):** `ScriptedHarnessModelProvider` drives full loops:
+    - query-aware vs baseline on the same script;
+    - escalation doesn't re-run the tool (executor spy count);
+    - a permission ask→allow/deny/timeout;
+    - degraded mode when the decision provider throws;
+    - resume after a simulated crash mid tool call (unknown side effect → ask, never replayed).
+  - **Executor contract:** the harness executor passes the shared IAgentExecutor contract tests
+    (stream error → reject, no terminal event → reject, max turns → reject).
+  - **Feature agent:** golden snapshots prove every prompt builder renders byte-identical
+    strings; a parametrised test proves promptSections/callContext reach every executor call
+    site.
+  - **Presentation:** CLI command tests with the DI-override pattern (`usage.command.ts`); web
+    component unit tests plus Storybook stories (Default/Loading/Error/Empty + permission
+    variants); a server-action test per action; one Playwright flow (flag → settings → standalone
+    run with scripted backend → approve → Context tab → Why drawer).
+  - **Evals:** component suites run as Vitest in CI; the paired e2e runner is exercised with the
+    scripted backend in CI, and real-model runs are manual/nightly.
+
+  ## Risk Mitigation
+
+  | Risk | Mitigation |
+  | --- | --- |
+  | Harness coding quality below mature CLI agents | experimental flag; the thesis is measured harness-baseline vs harness-query-aware; Claude Code is only an informational reference column |
+  | Over-aggressive hiding causes extra turns | conservative thresholds, `uncertain → long`, pinned/current-task forced visible; evals report turns and required-evidence recall; shadow mode before enforcement |
+  | Decision cost/latency per turn | deterministic default; one batched call per turn; candidate cap; decisions carry latency/cost and are summed in the report |
+  | Blocking permission wait stalls a feature | stage timeout → deny with reason; notification + canvas badge + inbox; the non-interactive policy resolves ask→deny |
+  | Secrets leak into prompts or blobs | hard-deny default paths; `secret` sensitivity never rendered; redacted events; blob file modes |
+  | Unknown side effects replayed after crash | idempotency key + args hash per ToolCall; `running` at restart → `unknown` → ask |
+  | Scope creep (spec lists V1–V3 ideas) | V0 is exactly tasks 1–34; later versions are separate specs; ADR required before any irreversible V0 deviation |
+  | SQLite growth | CAS dedupe; views cached by fingerprint; retention integration in V1 |
+  | Name collisions (Task, Session, Tool) | Harness-prefixed entities; `shep harness` CLI group |
+  | Windows paths | `path.isAbsolute`/`path.relative` for outside-repo checks; no shell-specific assumptions in tools (lessons) |

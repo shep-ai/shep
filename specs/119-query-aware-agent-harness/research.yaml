@@ -1,0 +1,236 @@
+name: "query-aware-agent-harness"
+summary: |-
+  The harness spec assumes it owns the model loop. Shep's CLI executors own theirs, so V0 is a new
+  SDK-kind executor backed by an application-layer runtime. It reuses shep's AI-SDK providers,
+  SQLite, DI, SSE, approval UI and memory-selection patterns, and adds one CAS blob store, one event
+  log and one YAML policy backend. No new runtime dependencies.
+relatedFeatures:
+  - "102-shep-brain"
+  - "110-adaptive-model-selection"
+  - "116-agent-harness-reliability"
+technologies:
+  - "Vercel AI SDK v6"
+  - "ajv"
+  - "js-yaml"
+  - "minimatch"
+  - "better-sqlite3"
+relatedLinks: []
+decisions:
+  - title: "Where the harness lives"
+    chosen: >-
+      A new agent type `shep-harness` (catalog kind `sdk`), with a thin infrastructure executor
+      (`HarnessAgentExecutor implements IAgentExecutor`) that delegates to an application-layer
+      `HarnessRuntime`. Feature nodes reach it only through IAgentExecutorProvider.
+    rejected:
+      - "Context middleware only (shape the first prompt of CLI agents): shep cannot see or plan inside Claude Code/Codex turns, so per-call ContextPlans, tool routing and per-action permissions are impossible and the thesis is unmeasurable. Staged as V1 track M instead."
+      - "Separate package/app mirroring the spec's `packages/decision|context|models|…` layout: duplicates shep's DI, persistence, settings and UI; violates the four-layer rule in CLAUDE.md."
+      - "Build on @anthropic-ai/claude-agent-sdk: the SDK owns context assembly and compaction, which is exactly the thing under test; also provider-locked."
+    rationale: >-
+      The executor boundary is the one seam every node already uses (`executeNode`, implement,
+      merge, repair). Adding a catalog row makes every missing touchpoint a compile error
+      (`AGENT_CATALOG: Record<AgentType,…>`). No graph change is needed, and flag-off behaviour is
+      identical.
+  - title: "Coding-model backend (exactly one adapter in V0)"
+    chosen: >-
+      One `IHarnessModelProvider` adapter over AI SDK `LanguageModelV3`. The model instance comes
+      from a `LanguageModelFactory` extracted from the existing openrouter/together-ai/ollama/llmproxy
+      executors' `createModel()`. `settings.harness.backendAgentType` picks which one, and that
+      agent's credentials are reused.
+    rejected:
+      - "Add @ai-sdk/anthropic now: new dependency and a second credential path; revisit in V1 if cache evals need explicit cache_control breakpoints."
+      - "Route through a CLI agent: no tool/turn control."
+    rationale: >-
+      Zero new dependencies, and it stays agent-agnostic. OpenRouter and LLMProxy already expose
+      Anthropic, OpenAI and Gemini models, and the extraction removes duplication instead of adding
+      a fourth copy.
+  - title: "Loop and tool-calling protocol"
+    chosen: >-
+      The runtime owns the loop and calls `generateText` for a single step (no `stopWhen`
+      auto-loop). The model sees the following:
+      Tier-1 capability snippets in the stable prefix;
+      three meta-tools: `use_capability({capabilityId, intent})`, `expand_chunk({chunkId, level})`
+      and `complete_task({status, summary, evidence[]})`;
+      the Tier-2 schemas of implementations selected in this task, exposed as real AI SDK tools
+      while they stay relevant.
+      Baseline mode exposes all builtin tool schemas as tools on every turn, with no meta-tools
+      except complete_task.
+    rejected:
+      - "AI SDK multi-step auto-loop: hides per-step context assembly, so a ContextPlan per call is impossible."
+      - "Always expose every tool schema: defeats tiered disclosure."
+    rationale: >-
+      This keeps a ContextPlan per model call, lets escalation happen without re-running tools, and
+      makes the baseline a fair comparison (same tools, same executors, only disclosure and context
+      differ).
+  - title: "Storage location"
+    chosen: >-
+      Metadata goes in shep's SQLite (`~/.shep/data`), in new `harness_*` tables created by umzug
+      migrations 148+. Blobs go in `~/.shep/objects/<sha[0:2]>/<sha256>` behind an `IBlobStore`
+      port. Per-repo, versioned files (`config.yaml`, `policies/*.yaml`, `instructions/*.md`) live
+      under `<repo>/.shep/harness/`.
+    rejected:
+      - "Spec's per-repo `.harness/state/harness.db`: second database the daemon/web/retention cannot see; breaks the one-DB model."
+      - "Store blobs as SQLite BLOBs: bloats WAL and backups; raw logs can be MBs."
+    rationale: >-
+      This matches CLAUDE.md's data-storage model and `SHEP_HOME` test isolation. The web layer can
+      query it. Policies and instructions stay reviewable in the repo.
+  - title: "Decision providers"
+    chosen: >-
+      `IDecisionProvider { noul, choice, score, batch }`, with three adapters:
+      `DeterministicDecisionProvider` (default; lexical/path/recency heuristics reusing the
+      memory scorer's `rankByContentScore`);
+      `StructuredLlmDecisionProvider` (`generateObject` on a configurable small model through the
+      same backend, batched);
+      `JevDecisionProvider` (HTTP adapter, enabled only when `harness.decisions.jevEndpoint` is
+      set).
+      Every call is persisted as a HarnessDecision.
+    rejected:
+      - "Jev-only: not publicly available; the spec requires the harness to run without it."
+      - "Reuse IStructuredAgentCaller: routes through the full agent executor (CLI spawn), far too heavy for per-turn batch decisions."
+    rationale: >-
+      The deterministic default keeps CI and offline runs network-free (mirrors the embedding
+      lesson). An LLM or Jev can be swapped in and measured via shadow mode and evals.
+  - title: "Permission policy backend"
+    chosen: >-
+      A new YAML rule engine for harness actions. Rules use `when`: action_class, path_matches,
+      writes_outside_repo, network, destructive, capability.
+      Precedence: hard deny > deny > ask > allow. `hard: true` rules cannot be overridden by grants
+      or AI.
+      A `CommandInspector` tokenizes shell commands and predicts effects (writes, network, deletes,
+      git push/reset, sudo, redirections outside repo, script targets).
+      Files are validated with ajv and matched with minimatch; `path.isAbsolute` is used for
+      Windows safety.
+    rejected:
+      - "Reuse supply-chain SecurityPolicy (spec 083): different subject (dependencies/releases), different lifecycle."
+      - "Reuse SupervisorPolicy: AI verdicts; hard policy must be deterministic."
+      - "Model-classified permissions in V0: spec allows AI judgment only in shadow initially."
+    rationale: >-
+      This covers the V0 hard-policy list: sensitive paths, outside-repo writes/reads, destructive
+      commands, detectable network, unknown → ask.
+  - title: "Waiting for a permission answer inside a node"
+    chosen: >-
+      The runtime persists a pending PermissionDecision, emits `permission.requested`, marks the
+      HarnessTask `blocked`, and polls the row (1s) until it is resolved, the stage timeout
+      elapses (→ deny, `approval_timeout`), or the abort signal fires. The AgentRun stays
+      `running`; an SSE event and a notification surface the prompt.
+    rejected:
+      - "LangGraph interrupt(): cannot be raised from inside an executor call; would restart the whole node and discard the harness turn."
+      - "Reuse AgentQuestion (spec 093): gated by the collaboration flag and free-text; permission answers are typed (scope) and must be effect-oriented."
+    rationale: >-
+      The feature-agent worker is already a long-lived detached process, and polling matches the
+      agent-message-bus pattern. It is also crash-safe: a pending row survives restart and is
+      restored.
+  - title: "Structured prompts from feature nodes"
+    chosen: >-
+      Prompt builders return `PromptSection[]` ({id, kind, title, content, pinned, sourcePath?}).
+      `renderPromptSections()` produces today's string byte-for-byte (golden tests). Executors
+      receive the string as now, plus optional `AgentExecutionOptions.promptSections` and
+      `callContext` ({agentRunId, featureId, phase}); CLI executors ignore both.
+    rejected:
+      - "Harness re-parses the flat prompt: brittle; loses spec-file identity needed for chunk addressing and drift detection."
+    rationale: >-
+      This lets the harness turn spec YAMLs, feedback history and memory into addressable chunks,
+      bound to content hashes, without touching any CLI agent's behaviour. It is also the
+      prerequisite for the V1 context-middleware track.
+  - title: "Repository retrieval backend"
+    chosen: >-
+      `rg --json` when it is on PATH; otherwise `git ls-files` + a streaming JS scan. A regex outline
+      extractor for TS/JS/Python/Go serves `short` file views. `git status --porcelain=v2` and
+      `git diff` are used for snapshots and diffs.
+    rejected:
+      - "Bundle @vscode/ripgrep: native download at install (see lesson on one-shot downloads in build steps)."
+      - "tree-sitter in V0: native/WASM weight; roadmap V1 structural retrieval."
+    rationale: "Good enough for V0 renderers and evals, and no new deps."
+  - title: "Token accounting"
+    chosen: >-
+      Estimate with `ceil(chars / 4)`, calibrated per backend+model by an EWMA of reported
+      `inputTokens` / estimated-plan tokens. Provider-reported usage is authoritative in ModelCall.
+      Cached tokens are counted once (spec 116 rule).
+    rejected:
+      - "Bundle tokenizers per model family: heavy, provider-specific, and wrong for proxies."
+    rationale: "Budget fitting needs a monotonic, cheap estimate; evals report real usage."
+  - title: "Event log and live UI"
+    chosen: >-
+      A `harness_events` table: (session_id, sequence) unique, type enum, small inline JSON
+      payload, and `payload_ref` for anything over 4 KB. Projections are the entity tables. A new
+      `/api/harness-events?sessionId&after=<seq>` SSE route resumes strictly after the client's
+      last sequence.
+    rejected:
+      - "Piggy-back /api/agent-events: its per-connection delta model caused the replay bugs fixed in spec 116; harness events have a natural cursor."
+    rationale: >-
+      A monotonic cursor makes reconnect idempotent, and restart and audit read from the same log.
+  - title: "Baseline definition"
+    chosen: >-
+      `HarnessMode.Baseline`: the same runtime, backend, model, temperature/effort, tool executors
+      and permission engine. The differences are an append-only message transcript, every builtin
+      tool schema loaded every turn, and raw tool output appended in full (a hard per-output cap
+      recorded as truncation). No context planning happens. Baseline is permanent (ADR-010).
+    rejected:
+      - "Compare against Claude Code: different model loop, tools and prompts; useful only as an informational reference column, never the gate."
+    rationale: "Only disclosure and context assembly vary, which is exactly the thesis variable."
+openQuestions: []
+content: |
+  ## Technology Decisions
+
+  See `decisions` above. The load-bearing one is **where the loop lives**: CLI agents hide their
+  per-turn context and tool use from shep, so the spec's core objects (a ContextPlan per model call,
+  a ToolCall with a permission record) can only exist where shep owns the loop. The AI-SDK
+  executors already call models directly but pass no tools; the harness is the tool-using version
+  of that path.
+
+  ## Reuse Map
+
+  | Need | Existing shep asset | Use |
+  | --- | --- | --- |
+  | Model access | `ai-sdk-base-executor.service.ts` + openrouter/together/ollama/llmproxy `createModel()` | extract `LanguageModelFactory`; harness and SDK executors share it |
+  | Finish-reason and timeout correctness | spec 116 `INCOMPLETE_FINISH_REASONS`, timeout classification | reuse in harness model adapter |
+  | Budgeted relevance selection | `SelectProjectMemoryUseCase`, lexical/embedding scorers, `IEmbeddingProvider` | candidate scoring; brain memory becomes a chunk source |
+  | Phase usage rollup | `PhaseTiming`, `recordPhaseEnd`, `GetUsageStatsUseCase` | harness executor returns summed usage |
+  | Approve UI with named target | `drawer-action-bar` `ApproveConfirmation` | extend into `PermissionPrompt` (effects list + scopes) |
+  | "Why?" explanation drawer | `supervisor-decision-why-drawer.tsx` | pattern for `DecisionWhyDrawer` |
+  | Log redaction | `logging/redact-log-line.ts` | trace/event attribute redaction |
+  | Diagnostics | `RunDoctorUseCase` + `IDiagnostic` strategies | harness diagnostics |
+  | Worktree isolation | per-feature worktrees `~/.shep/repos/<hash>/wt/<branch>` | the harness operates in the node's `cwd`; V3 adds task-level worktrees |
+  | Skills on disk | `skill-injector.service.ts` (SKILL.md) | V1: SKILL.md → Tier-1 snippet + Tier-3 docs |
+  | Plugin MCP servers | `mcp-server-manager.service.ts` | V1: MCP ToolSource |
+
+  ## Library Analysis
+
+  No new runtime dependencies in V0. Everything used is already in the workspace: `ai@^6`,
+  `@ai-sdk/provider`, `@ai-sdk/openai-compatible`, `@openrouter/ai-sdk-provider`, `ajv@^8`,
+  `js-yaml@^4`, `minimatch`, `zod@^4`. `ripgrep` is an optional system binary, detected by doctor.
+
+  ## Security Considerations
+
+  - This is the first shep agent path that is **not** auto-approved. Every write or side effect
+    carries a persisted PermissionDecision.
+  - Default policy hard-denies reads and writes of:
+    - `**/.env*`
+    - `~/.ssh/**`
+    - `**/*.pem`
+    - `**/id_*`
+    - `~/.aws/**`
+    - `~/.config/gcloud/**`
+    - `~/.shep/secret.key`
+  - Writes outside the repository/worktree `ask`. Destructive commands (`rm -rf`, `git reset
+    --hard`, `git push --force`, `git clean -fdx`, `sudo`, `mkfs`, `dd`) `ask`, or are
+    hard-denied when the target is outside the repo. Detectable network egress (`curl`, `wget`,
+    `nc`, `ssh`, `scp`, `npm publish`, `pip install`, `git push`) asks.
+  - Chunks carry a sensitivity label. `secret` chunks are never rendered into a model context, and
+    blob content never enters event attributes (redaction reuses `redact-log-line`).
+  - Blob store files are created `0600`, directories `0700`.
+  - Non-interactive runs (evals, CI) resolve `ask` to `deny` unless the eval sandbox policy
+    explicitly allows actions inside its temp fixture directory.
+  - A hard deny is never presented as approvable in the UI or CLI.
+  - Known limit (documented): a shell command's effects are predicted, not sandbox-observed, in
+    V0. OS-level sandboxing is a V1 `ISandbox` adapter.
+
+  ## Performance Implications
+
+  - The extra per-turn work is candidate retrieval (indexed SQL + lexical scoring over tens to
+    hundreds of chunks), one batched decision call (deterministic by default: ~ms), rendering
+    (cached `ChunkView` keyed by query fingerprint) and SQLite writes. The target is under 150 ms
+    p95 harness overhead per turn with the deterministic provider, measured in evals.
+  - Blob writes are content-addressed, so repeated identical outputs cost nothing.
+  - SSE uses a sequence cursor with no replay (spec 116 lessons).
+  - `harness_events` and `harness_decisions` join `sqlite-retention` in V1. V0 keeps everything,
+    as the spec allows.

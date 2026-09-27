@@ -1,0 +1,867 @@
+name: query-aware-agent-harness
+summary: 34 tasks across 12 phases; every code task is RED-first; all behaviour ships behind featureFlags.queryAwareHarness.
+relatedFeatures: []
+technologies: []
+relatedLinks: []
+tasks:
+# ───────────────────────── phase-1: Domain ─────────────────────────
+- id: task-1
+  phaseId: phase-1
+  title: Harness enums, AgentType.ShepHarness and catalog row
+  description: >-
+    Add tsp/common/enums/harness.tsp with ChunkKind, ChunkVisibility (hidden|short|long|full),
+    SensitivityLabel, HarnessTaskType, HarnessTaskStatus, HarnessSessionStatus, HarnessMode
+    (baseline|query-aware), BudgetMode, DecisionKind, DecisionProviderKind, VisibilitySource,
+    PermissionEffect, PermissionRequestStatus, GrantScope, ToolReadWriteMode, RiskClass,
+    ToolSourceKind, CacheStrategyMode, HarnessEventType, ModelCallStatus and HarnessToolCallStatus.
+    Add AgentType.ShepHarness ("shep-harness") and its AGENT_CATALOG row (kind sdk, no binary,
+    requiresPermissiveMode false; features: streaming, system-prompt, structured-output,
+    tool-scoping), with translations in all 9 locales.
+  state: Todo
+  dependencies: []
+  acceptanceCriteria:
+  - pnpm generate emits every enum; no raw string literal is used for any of these concepts
+  - the missing catalog row is a compile error before the row is added (Record<AgentType,…>)
+  - agent pickers list "Shep Harness" only when featureFlags.queryAwareHarness is on
+  - supportsFeature(tool-scoping) is true for shep-harness and unchanged for other agents
+  tdd:
+    red:
+    - catalog test asserts the shep-harness descriptor (kind sdk, requiresPermissiveMode false, features)
+    - picker filter test hides shep-harness when the flag is off
+    green:
+    - add the TypeSpec enums, regenerate, add the catalog row, translations and picker filter
+    refactor:
+    - group harness enums under one barrel export
+  estimatedEffort: M
+- id: task-2
+  phaseId: phase-1
+  title: Harness entities, value objects, HarnessConfig and feature flag in TypeSpec
+  description: >-
+    Model HarnessSession, HarnessTask, ContextChunk, ChunkView, ContextPlan (+PlannedChunk,
+    CacheStrategy, ContextBudget), HarnessDecision, ModelCall, Capability, ToolImplementation,
+    HarnessToolCall, PermissionDecision (+ActionDescriptor, ResourceDescriptor, EffectDescriptor),
+    PermissionGrant, RepoSnapshot, Instruction, HarnessTaskResult, HarnessEvidenceRef, HarnessEvent,
+    HarnessBudget, HarnessEvalRun and HarnessEvalResult under tsp/domain/entities/harness/. Add
+    Settings.harness: HarnessConfig with mode, budgetMode, maxTurns, backendAgentType, backendModel,
+    context {maxInputTokens=64000, reserveOutputTokens=8000, candidateLimit=200, hideThreshold=0.10,
+    fullThreshold=0.80, uncertainDefault=long}, decisions {primary, fallback, jevEndpoint?,
+    decisionModel?}, shadow {contextRouter, permissions, toolRouter} and permissions
+    {defaultUnknown=ask, nonInteractiveAsk=deny, approvalTimeoutMs}. Add
+    FeatureFlags.queryAwareHarness=false.
+  state: Todo
+  dependencies: [task-1]
+  acceptanceCriteria:
+  - generated output.ts contains every entity; fields match plan.yaml "Data Model"
+  - settings defaults factory returns the documented HarnessConfig defaults and queryAwareHarness=false
+  - every hardcoded FeatureFlags/Settings fixture listed in LESSONS.md compiles (pnpm typecheck)
+  tdd:
+    red:
+    - settings-defaults.factory test expects the exact harness defaults and the flag (toEqual)
+    green:
+    - author the TypeSpec, pnpm generate, update the defaults factory and fixtures
+    refactor:
+    - move numeric defaults into domain/harness/harness-constants.ts and reference them from the factory
+  estimatedEffort: L
+- id: task-3
+  phaseId: phase-1
+  title: Pure harness domain rules
+  description: >-
+    Add these pure functions in domain/harness:
+    task-state-machine (transition table + assertTransition; terminal states never reopen);
+    visibility-ladder (escalate/downgrade/compare);
+    budget-fitter (the ordered fitting algorithm from plan.yaml, returning a plan with reason codes);
+    fingerprints (queryFingerprint over normalized query + goal + snapshot + renderer versions +
+    instruction set; dedupeKey);
+    permission-precedence (combine rule effects: hard deny > deny > ask > allow; grants cannot
+    lift hard deny).
+  state: Todo
+  dependencies: [task-2]
+  acceptanceCriteria:
+  - every illegal task transition throws a typed error; every legal one returns the new status
+  - pinned chunks are never hidden or downgraded by budget-fitter, even when over budget (plan marked over_budget)
+  - downgrade order is full→long→short→hidden by ascending priority; each change carries a reason code
+  - queryFingerprint is stable under whitespace/case changes in the query and changes with the snapshot id
+  - a hard deny combined with any grant or AI allow stays deny
+  tdd:
+    red:
+    - table-driven tests for transitions, budget fitting (8 scenarios), fingerprints and precedence
+    green:
+    - implement the pure functions with no imports outside domain/generated
+    refactor:
+    - extract shared token-arithmetic helpers
+  estimatedEffort: M
+# ───────────────────────── phase-2: Persistence ─────────────────────────
+- id: task-4
+  phaseId: phase-2
+  title: Content-addressed blob store
+  description: >-
+    Add an IBlobStore port (put/get/exists/stat) and FileSystemBlobStore writing
+    ~/.shep/objects/<sha[0:2]>/<sha256> atomically (temp file + rename). Files are 0600 and
+    directories 0700. BlobRef is "sha256:<hex>". SHEP_HOME is respected.
+  state: Todo
+  dependencies: [task-2]
+  acceptanceCriteria:
+  - put of identical content twice returns the same ref and writes one file
+  - get of an unknown ref throws BlobNotFoundError; a partial write is never visible under the final name
+  - file mode 0600 on POSIX (skipped on Windows)
+  tdd:
+    red:
+    - dedupe, round-trip, not-found, atomicity (crash between write and rename) tests in a temp SHEP_HOME
+    green:
+    - implement with fs.promises + crypto createHash
+    refactor:
+    - share the SHEP_HOME path helper with shep-directory.service
+  estimatedEffort: S
+- id: task-5
+  phaseId: phase-2
+  title: Harness migrations (tables, settings columns, flag)
+  description: >-
+    Migrations 148–151 create the plan.yaml tables with indexes on (session_id), (task_id),
+    (dedupe_key,status), UNIQUE(session_id,sequence) on harness_events and (status) on
+    permission_decisions. They also add harness_* settings columns and
+    feature_flag_query_aware_harness, guarded by pragma table_info, and include down() for each.
+  state: Todo
+  dependencies: [task-2]
+  acceptanceCriteria:
+  - migrations are idempotent (running twice is a no-op) and backward compatible (old rows read)
+  - down() drops only what up() created
+  tdd:
+    red:
+    - migration integration test against a temp DB that asserts tables, indexes, columns and idempotency
+    green:
+    - write the four migration files
+    refactor:
+    - share a guarded addColumn helper if one does not already exist
+  estimatedEffort: M
+- id: task-6
+  phaseId: phase-2
+  title: Harness repositories, mappers, event log and settings persistence
+  description: >-
+    Add SQLite repositories and mappers for every harness table, behind ports in
+    application/ports/output/harness. SqliteHarnessEventLog.append allocates the next sequence
+    inside an IMMEDIATE transaction; payloads over 4 KB go to the blob store and payload_ref. The
+    settings mapper and repository read and write every harness_* column and the new flag (INSERT
+    column list, VALUES, UPDATE: the four-edit rule).
+  state: Todo
+  dependencies: [task-4, task-5]
+  acceptanceCriteria:
+  - every entity round-trips field-for-field (dates as unix ms, JSON columns, booleans)
+  - 200 concurrent appends from two connections yield sequences 1..200 with no gaps or duplicates
+  - a settings save/load round-trips every HarnessConfig field and the flag
+  - a child process killed after N appends leaves N readable events and consistent projections
+  tdd:
+    red:
+    - repository round-trip tests, the concurrent append test, the settings round-trip test and the kill/reopen test
+    green:
+    - implement repositories, mappers and the event log; register them in register-harness.ts
+    refactor:
+    - one generic JSON-column helper for the harness mappers
+  estimatedEffort: L
+- id: task-7
+  phaseId: phase-2
+  title: Git repository snapshotter with drift detection
+  description: >-
+    Add IRepoSnapshotter.capture(root) and compare(snapshotId, root). The working-tree hash is
+    computed over git ls-files -s plus untracked non-ignored file hashes; staged and unstaged diff
+    hashes come from git diff --cached / git diff. compare returns the changed paths.
+  state: Todo
+  dependencies: [task-6]
+  acceptanceCriteria:
+  - an unchanged tree yields an identical hash; editing, adding or deleting a file yields drift listing that path
+  - works outside a git repo (degenerate snapshot with no commit) without throwing
+  tdd:
+    red:
+    - real temp-git tests (isolated global config, gpgsign off) for no-change, edit, add, delete and staged cases
+    green:
+    - implement with execFile git (non-interactive flags)
+    refactor:
+    - reuse the existing git service's exec wrapper
+  estimatedEffort: M
+# ───────────────────────── phase-3: Decisions ─────────────────────────
+- id: task-8
+  phaseId: phase-3
+  title: Decision provider port, deterministic provider and decision recorder
+  description: >-
+    Add IDecisionProvider (noul/choice/score/batch, typed results with provider, model, latency and
+    cost). DeterministicDecisionProvider scores candidates with lexical overlap, path match,
+    recency and kind priors (reusing rankByContentScore). DecisionRecorder wraps any provider:
+    inputs go to a blob, and each call becomes a HarnessDecision row with enforced, shadow and
+    degraded flags.
+  state: Todo
+  dependencies: [task-6]
+  acceptanceCriteria:
+  - every decision call made through the recorder produces exactly one persisted HarnessDecision with a stable id
+  - batch returns one result per item in order
+  - a shadow decision is persisted with shadow=true, enforced=false
+  tdd:
+    red:
+    - recorder persistence tests; deterministic ranking tests (path match beats lexical, recency tie-break)
+    green:
+    - implement the port, provider and recorder
+    refactor:
+    - share scoring weights with the project-memory scorer via a common helper
+  estimatedEffort: M
+- id: task-9
+  phaseId: phase-3
+  title: Structured-LLM and Jev decision providers with a fallback chain
+  description: >-
+    StructuredLlmDecisionProvider uses IHarnessModelProvider.generateObject with a JSON schema and
+    one call per batch. JevDecisionProvider is an HTTP adapter, active only when
+    settings.harness.decisions.jevEndpoint is set. FallbackDecisionProvider tries
+    primary → fallback → deterministic and marks degraded=true when it falls back.
+  state: Todo
+  dependencies: [task-8]
+  acceptanceCriteria:
+  - with no Jev endpoint configured, no HTTP request is ever made (fetch spy)
+  - a thrown or timed-out primary falls back and the persisted decision has degraded=true and the failing provider in metadata
+  - an LLM batch of N items issues one model call
+  tdd:
+    red:
+    - fallback-chain tests with throwing/slow stubs; a batch-call-count test; a no-network test
+    green:
+    - implement the three adapters
+    refactor:
+    - shared timeout wrapper with timeout errors that name the budget (spec 116)
+  estimatedEffort: M
+# ───────────────────────── phase-4: Tools & capabilities ─────────────────────────
+- id: task-10
+  phaseId: phase-4
+  title: Seven builtin tools with raw output persisted before rendering
+  description: >-
+    Add IToolExecutor implementations: list_files, search_source (rg --json or a scan fallback),
+    read_file (range support), git_inspect (status/diff), run_command (execFile via the shell with
+    cwd pinned, timeout and output cap recorded), run_tests (command from .shep/harness/config.yaml
+    or detected), and apply_patch (unified diff; reject hunks that fail; returns changed paths).
+    ChunkWriter stores raw output in the blob store and creates a ContextChunk of the right kind
+    before any rendering.
+  state: Todo
+  dependencies: [task-6]
+  acceptanceCriteria:
+  - each tool works against a temp repo on Linux/macOS/Windows path semantics
+  - the chunk and blob exist before the tool call returns its rendered view (ordering asserted)
+  - apply_patch never writes outside cwd (path.relative check), and a failed hunk leaves the file untouched
+  tdd:
+    red:
+    - per-tool tests in a temp repo; ordering test (chunk written before render); patch-escape test (../../x)
+    green:
+    - implement the tools and ChunkWriter
+    refactor:
+    - one shared process runner with output capping, reusing process-stream helpers
+  estimatedEffort: L
+- id: task-11
+  phaseId: phase-4
+  title: Capability registry, builtin tool source and argument validation
+  description: >-
+    CapabilityRegistry.list/get/implementations is fed by IToolSource.discover; BuiltinToolSource
+    maps the 7 tools to capabilities (list_files, search_source_code, read_file, inspect_git,
+    run_command, run_tests, apply_patch). Each capability has a Tier-1 snippet; each implementation
+    has a Tier-2 JSON schema blob and an optional Tier-3 docs blob. ToolArgumentValidator (ajv)
+    validates before execution.
+  state: Todo
+  dependencies: [task-10]
+  acceptanceCriteria:
+  - invalid arguments produce a validation-error result and the executor spy is never called
+  - Tier-1 snippet total for the builtin set is under 400 estimated tokens
+  - a registry with 1,000 synthetic capabilities lists them without loading any schema blob
+  tdd:
+    red:
+    - validation-before-execution test; lazy schema load test (blob get spy count 0 on list)
+    green:
+    - implement the registry, source and validator
+    refactor:
+    - cache compiled ajv validators per schema hash
+  estimatedEffort: M
+- id: task-12
+  phaseId: phase-4
+  title: Capability router
+  description: >-
+    CapabilityRouter.resolve(intent) runs these steps: lexical/tag top-N candidates, then a decision
+    choice among them (recorded), then implementation filtering (availability, policy mode,
+    read/write, config) and ranking, then a CapabilityPlan with both decision ids. It supports
+    shadow tool routing (records the choice while the model's explicit choice is enforced).
+  state: Todo
+  dependencies: [task-8, task-11]
+  acceptanceCriteria:
+  - with 1,000 synthetic capabilities, the decision input contains at most candidateLimit options
+  - both capability and implementation decisions are persisted and linked from the plan
+  - shadow mode persists shadow=true decisions and never changes the executed tool
+  tdd:
+    red:
+    - routing table tests; a candidate-cap test; a shadow-no-enforce test
+    green:
+    - implement the router
+    refactor:
+    - share top-N lexical retrieval with the candidate retriever
+  estimatedEffort: M
+# ───────────────────────── phase-5: Permissions ─────────────────────────
+- id: task-13
+  phaseId: phase-5
+  title: YAML policy engine and default policy
+  description: >-
+    IPolicyEngine.evaluate(PolicyRequest) → {effect allow|ask|deny|unresolved, matchedRuleIds,
+    reasonCodes}. Rules come from the builtin default-policy.yaml plus <repo>/.shep/harness/policies/*.yaml,
+    validated by an ajv schema. `when:` supports action_class, capability, path_matches (minimatch,
+    ~ expansion), reads_outside_repo, writes_outside_repo, network, destructive and `hard: true`.
+  state: Todo
+  dependencies: [task-3]
+  acceptanceCriteria:
+  - the default policy hard-denies reads and writes of .env*, ~/.ssh/**, *.pem, id_*, ~/.aws/**, ~/.shep/secret.key
+  - outside-repo writes ask; unknown actions resolve to settings.harness.permissions.defaultUnknown (ask)
+  - an invalid policy file yields a doctor blocker and a clear error naming the file and path
+  tdd:
+    red:
+    - fixture-driven rule tests (≥30 cases incl. Windows paths); schema error test
+    green:
+    - implement the engine and the default policy
+    refactor:
+    - compile globs once per policy load
+  estimatedEffort: M
+- id: task-14
+  phaseId: phase-5
+  title: Shell command inspector (predicted effects)
+  description: >-
+    ICommandInspector.inspect(command, cwd, repoRoot) tokenizes (quotes, &&, ||, ;, pipes,
+    redirections), then classifies each segment into effects: file writes (redirections, known
+    writers), deletes, network (curl, wget, nc, ssh, scp, git push/fetch, npm/pnpm publish/install,
+    pip install), destructive git, privilege escalation, and script execution (python/node/bash x →
+    resolved script path, marked "unknown effects" in V0). Returns ResourceDescriptors and
+    EffectDescriptors.
+  state: Todo
+  dependencies: [task-3]
+  acceptanceCriteria:
+  - '`python deploy.py` yields effect script_execution with the resolved path and unknown_effects=true'
+  - '`rm -rf ../x` is destructive with target outside repo; `echo a > /etc/x` is a write outside repo'
+  - commands it cannot parse yield effect unknown (never allow-by-default)
+  tdd:
+    red:
+    - a table of ≥40 commands → expected effects
+    green:
+    - implement the tokenizer and classifier (no new dependencies)
+    refactor:
+    - move command vocabularies to named constant sets
+  estimatedEffort: M
+- id: task-15
+  phaseId: phase-5
+  title: Permission service, grants and the ask/wait/resolve flow
+  description: >-
+    PermissionService.evaluate composes policy → optional shadow AI risk judgment (recorded, never
+    enforced in V0) → grants (once/task/session) → approval. For "ask" it persists a pending
+    PermissionDecision, emits permission.requested, sets the task to blocked, and waits (poll 1s)
+    until resolved, timed out (→ deny, approval_timeout) or aborted. When non-interactive, ask
+    becomes deny. ResolvePermissionRequestUseCase validates the scope, rejects resolving a hard
+    deny, creates a grant and emits permission.resolved.
+  state: Todo
+  dependencies: [task-13, task-14, task-6]
+  acceptanceCriteria:
+  - every write/side-effect tool call has exactly one final PermissionDecision linked from HarnessToolCall
+  - resolving a hard-denied request is rejected; a "task" grant auto-allows a matching later action in the same task only
+  - a timeout resolves deny with reason approval_timeout and the task returns to running
+  - two concurrent resolutions of one request: exactly one wins (conditional UPDATE … WHERE status='pending')
+  tdd:
+    red:
+    - service tests for each path; a concurrent-resolve test; a grant-scope test; a timeout test with fake timers (cleaned up)
+    green:
+    - implement the service and use case
+    refactor:
+    - extract the waiter into a reusable pending-row poller
+  estimatedEffort: L
+# ───────────────────────── phase-6: Context engine ─────────────────────────
+- id: task-16
+  phaseId: phase-6
+  title: Chunk renderers for the seven core kinds
+  description: >-
+    Add IChunkRenderer implementations with short/long/full views: file (outline / relevant symbols
+    ± context / raw), search result (top hits / hits+context / raw), command output (normalized
+    facts+tail / selected sections / raw), test result (failing tests + first causal error / stack
+    traces / raw), diff (files+stats / query-relevant hunks / full), instruction (always full when
+    active) and prompt section/user message. Views record chunkId, contentHash, rendererId@version
+    and truncation markers.
+  state: Todo
+  dependencies: [task-10]
+  acceptanceCriteria:
+  - the same chunk renders hidden/short/long/full without mutating the chunk row or blob
+  - every non-full view carries a reversible reference (chunkId + contentHash + renderer version)
+  - the test-result short view of a fixture log contains every failing test name
+  tdd:
+    red:
+    - golden-fixture tests per renderer (vitest/jest/pytest logs, rg output, diffs)
+    green:
+    - implement the renderers plus the regex outline extractor
+    refactor:
+    - share line-window utilities
+  estimatedEffort: L
+- id: task-17
+  phaseId: phase-6
+  title: Instruction source and resolver (pinned, V0)
+  description: >-
+    FileSystemInstructionSource discovers CLAUDE.md, AGENTS.md, .claude/rules/*.md and
+    .shep/harness/instructions/*.md, parses optional YAML frontmatter (id, title, priority, pin,
+    when), and stores content in the blob store. The V0 InstructionResolver activates every enabled
+    instruction without a `when` (pinned); instructions with `when` are parsed, validated and
+    reported as inactive-unsupported until V1. Emits instruction.activated events.
+  state: Todo
+  dependencies: [task-4]
+  acceptanceCriteria:
+  - pinned active instructions appear in every ContextPlan and survive budget fitting
+  - a malformed frontmatter yields a doctor warning naming the file; other instructions still load
+  tdd:
+    red:
+    - discovery/frontmatter tests on a temp repo; an "inactive-unsupported" test for `when`
+    green:
+    - implement the source and resolver
+    refactor:
+    - share frontmatter parsing with the skill injector if an equivalent exists
+  estimatedEffort: S
+- id: task-18
+  phaseId: phase-6
+  title: Candidate retriever
+  description: >-
+    CandidateRetriever.retrieve gathers, with reasons and deterministic scores, the sources listed
+    in plan.yaml "Context Algorithm": prompt sections, pinned instructions, diff/status, recent tool
+    results, path/lexical matches, graph edges, unresolved errors and explicit references. It
+    excludes superseded chunks unless referenced, excludes `secret` sensitivity, and caps at
+    candidateLimit.
+  state: Todo
+  dependencies: [task-16, task-17]
+  acceptanceCriteria:
+  - candidate count never exceeds candidateLimit; each candidate lists ≥1 reason
+  - secret chunks never appear; superseded chunks appear only when referenced
+  tdd:
+    red:
+    - retrieval tests over a seeded store (60 chunks) with expected candidate sets
+    green:
+    - implement with indexed SQL queries plus the lexical scorer
+    refactor:
+    - move reason codes to a named constant set
+  estimatedEffort: M
+- id: task-19
+  phaseId: phase-6
+  title: ContextEngine.build with persistence, degraded and shadow modes
+  description: >-
+    ContextEngine.build runs these steps: candidates, then a batched visibility decision (via the
+    recorder) with the threshold mapping, then forced visibility for pinned and current-task
+    chunks, then render (view cache by fingerprint), then budget-fitter, then the stable
+    prefix/dynamic tail with CacheStrategy, then a persisted ContextPlan (+ context_plan.created
+    event), then materialized model input. On decision failure it runs degraded mode. It supports
+    shadow plans.
+  state: Todo
+  dependencies: [task-9, task-18, task-3]
+  acceptanceCriteria:
+  - one fixture chunk is hidden for query A and full for query B with no mutation
+  - materialized input is reproducible from the persisted plan alone (rebuild by id yields identical text)
+  - a decision-provider outage yields uncertain→long, degraded=true, and pinned instructions kept
+  - plan records per chunk visibility, probability, renderer, tokens, reason code and source
+  tdd:
+    red:
+    - engine tests for the four criteria plus a shadow-plan test
+    green:
+    - implement the engine
+    refactor:
+    - split materialization into its own module if the engine file exceeds ~300 lines
+  estimatedEffort: L
+# ───────────────────────── phase-7: Runtime & executor ─────────────────────────
+- id: task-20
+  phaseId: phase-7
+  title: LanguageModelFactory extraction and AI-SDK harness model provider
+  description: >-
+    Extract createModel() from the openrouter/together-ai/ollama/llmproxy executors into
+    LanguageModelFactory.create(agentType, config, modelId); the executors use it (behaviour
+    unchanged). AiSdkHarnessModelProvider implements IHarnessModelProvider.complete({system, messages,
+    tools, abortSignal}) as a single-step generateText and maps usage (cached tokens counted once),
+    tool calls, finish reasons (incomplete → reject, spec 116) and timeouts. It also provides
+    generateObject for decisions. ScriptedHarnessModelProvider is a test double driven by a YAML
+    script.
+  state: Todo
+  dependencies: [task-2]
+  acceptanceCriteria:
+  - existing SDK executor tests pass unchanged after the extraction
+  - finishReason length/content-filter/error rejects; tool calls map to typed intents
+  - backendAgentType must be a catalog kind=sdk agent; anything else is a config error
+  tdd:
+    red:
+    - provider tests with a mocked LanguageModelV3 (tool call, text, usage with cache, length finish)
+    green:
+    - implement the factory, provider and scripted double
+    refactor:
+    - delete the now-duplicated createModel bodies
+  estimatedEffort: M
+- id: task-21
+  phaseId: phase-7
+  title: Query-aware turn loop with meta-tools
+  description: >-
+    Add HarnessRuntime.runTask and TurnLoop implementing plan.yaml "One Query-Aware Turn". Meta-tools:
+    use_capability (routes and loads Tier-2 for subsequent turns), expand_chunk (new view from
+    stored raw) and complete_task (HarnessTaskResult with evidence bound to the snapshot). The loop
+    enforces maxTurns, the abort signal and the timeout. It emits task/model/tool/plan events and
+    returns summed usage.
+  state: Todo
+  dependencies: [task-12, task-15, task-19, task-20]
+  acceptanceCriteria:
+  - each model call references a persisted ContextPlan (ModelCall.contextPlanId non-null)
+  - only the schemas of implementations selected in this task are passed as tools (assert tools list)
+  - expand_chunk short→long→full never calls the tool executor again (spy count)
+  - reaching maxTurns fails the task with a result; it never reports success
+  tdd:
+    red:
+    - scripted-model integration tests for each criterion
+    green:
+    - implement the runtime and loop
+    refactor:
+    - keep the loop and meta-tools in separate files (<300 lines each)
+  estimatedEffort: L
+- id: task-22
+  phaseId: phase-7
+  title: Baseline mode and shadow context mode
+  description: >-
+    BaselineTurnLoop keeps an append-only transcript, every builtin schema on every turn, and full
+    raw outputs (with a recorded hard cap). It shares the executors, permission service and
+    events. With shadow context mode, the baseline is enforced and ContextEngine.build runs each
+    turn with shadow=true.
+  state: Todo
+  dependencies: [task-21]
+  acceptanceCriteria:
+  - baseline and query-aware runs of the same script use the same tool executors, model id and permission engine
+  - shadow plans are persisted with shadow=true and never influence the baseline model input (byte-compare)
+  tdd:
+    red:
+    - paired scripted run test; shadow non-interference test
+    green:
+    - implement the baseline loop and shadow hook
+    refactor:
+    - share the turn-bookkeeping helpers between both loops
+  estimatedEffort: M
+- id: task-23
+  phaseId: phase-7
+  title: Restart and resume without transcript replay
+  description: >-
+    SessionRestorer loads the session/task projection, compares the RepoSnapshot (drift → new
+    snapshot, invalidates dependent views, and records a drift event), restores pending permission
+    waits, and marks tool calls left `running` as unknown. For read-only unknowns it retries; for
+    write/side-effect unknowns it asks. It never replays blindly. It then builds a fresh
+    ContextPlan.
+  state: Todo
+  dependencies: [task-21, task-7]
+  acceptanceCriteria:
+  - after a kill mid-task, resume continues with a fresh ContextPlan whose inputs contain no model message older than the last completed turn
+  - a write tool call with unknown status is not re-executed without a new permission decision
+  - a drift after kill produces a new snapshot and invalidates views of changed files
+  tdd:
+    red:
+    - kill/resume integration test (child process), an unknown-side-effect test and a drift test
+    green:
+    - implement the restorer
+    refactor:
+    - share drift handling with the context engine view cache
+  estimatedEffort: L
+- id: task-24
+  phaseId: phase-7
+  title: HarnessAgentExecutor, factory wiring and DI module
+  description: >-
+    HarnessAgentExecutor implements IAgentExecutor. execute/executeStream map prompt,
+    promptSections, callContext, cwd, model, maxTurns, timeout and abortSignal to
+    HarnessRuntime.runTask, creating or reusing a HarnessSession per agentRunId and one HarnessTask
+    per call. Progress events are emitted per turn/tool, and summed usage plus sessionId are
+    returned. The executor factory gets a shep-harness case. register-harness.ts registers
+    everything, and the bootstrap test lists the tokens. SHEP_MOCK_EXECUTOR swaps in the scripted
+    provider.
+  state: Todo
+  dependencies: [task-21, task-22, task-23]
+  acceptanceCriteria:
+  - passes the shared IAgentExecutor contract tests (stream error/no terminal/max turns reject)
+  - a full fast-feature graph run with agent shep-harness and the scripted backend completes; PhaseTiming rows carry the summed usage
+  - container bootstrap test resolves every new token
+  tdd:
+    red:
+    - contract tests, a graph integration test with the scripted backend and bootstrap token assertions
+    green:
+    - implement the executor and wiring
+    refactor:
+    - remove any agent-type branching outside the factory/catalog
+  estimatedEffort: M
+# ───────────────────────── phase-8: Feature-agent integration ─────────────────────────
+- id: task-25
+  phaseId: phase-8
+  title: PromptSection output from prompt builders, threaded to every executor call
+  description: >-
+    Prompt builders (analyze, requirements, research, plan, implement, fast-implement, merge,
+    ci-fix, repair, evidence, exploration) return PromptSection[] via a shared helper;
+    renderPromptSections() yields today's exact string. AgentExecutionOptions gains optional
+    promptSections and callContext {agentRunId, featureId, phase}. These are populated in
+    executeNode/buildExecutorOptions and in every custom-execution node.
+  state: Todo
+  dependencies: [task-2]
+  acceptanceCriteria:
+  - golden snapshots of every builder's rendered string are byte-identical before and after
+  - a parametrised test asserts promptSections and callContext reach the executor from every node
+  - CLI executors ignore the new options (no argument changes; existing executor tests unchanged)
+  tdd:
+    red:
+    - capture golden snapshots first; a parametrised call-site test
+    green:
+    - refactor the builders to sections plus render; thread the options
+    refactor:
+    - remove duplicated readSpecFile inlining via a section factory
+  estimatedEffort: L
+# ───────────────────────── phase-9: Use cases & CLI ─────────────────────────
+- id: task-26
+  phaseId: phase-9
+  title: Harness use cases with string-token aliases
+  description: >-
+    Implement the use cases listed in plan.yaml filesToCreate:
+    - InitHarnessProject: detect instruction files, manifests, test/lint commands and sensitive
+      paths; return a preview; write only on confirm.
+    - RunHarnessTask (standalone session).
+    - Resume, Stop, List and Get session.
+    - GetContextPlan, GetToolCall and RenderChunkView.
+    - ExplainHarnessDecision: result, alternatives with probabilities, policy filters, cost and
+      latency, source ids, shadow.
+    - List and Resolve permission requests.
+    - ListCapabilities, GetHarnessPolicies and GetHarnessMetrics.
+    Register each by class and by string token.
+  state: Todo
+  dependencies: [task-24]
+  acceptanceCriteria:
+  - InitHarnessProject never writes when confirm=false and never touches files outside .shep/harness/
+  - ExplainHarnessDecision returns source ids that resolve (plan, chunk, tool call) for every DecisionKind
+  - every web-facing use case resolves by string token (bootstrap WEB_ROUTE_TOKENS)
+  tdd:
+    red:
+    - use-case unit tests with in-memory port doubles
+    green:
+    - implement the use cases and registrations
+    refactor:
+    - share an id-not-found domain error
+  estimatedEffort: L
+- id: task-27
+  phaseId: phase-9
+  title: "`shep harness` CLI group and doctor diagnostics"
+  description: >-
+    Commands:
+    init [--repo] [--yes];
+    run "<task>" [--repo] [--mode] [--shadow-context-router] [--shadow-permissions]
+    [--shadow-tool-router] [--budget] [--max-turns] [--model] [--non-interactive] [--json];
+    resume <id>;
+    stop <id>;
+    ls;
+    inspect session|task|context|tool-call <id> [--json];
+    view <chunk-id> --level;
+    explain <decision-id> [--json];
+    permissions ls|allow|deny <id> [--scope];
+    capabilities ls|show;
+    eval run|ls|report.
+    Standalone runs prompt inline for permissions (inquirer select with an effects list). The group
+    is hidden when the flag is off. Harness IDiagnostic strategies cover backend credentials, blob
+    store writable, decision provider or fallback, policy/instruction parse, and rg/git
+    availability, as warning vs blocker. docs/cli/commands.md is updated.
+  state: Todo
+  dependencies: [task-26]
+  acceptanceCriteria:
+  - every command follows the create<Name>Command pattern, sets process.exitCode=1 on error, and never calls process.exit
+  - '`run --non-interactive` resolves ask→deny and says so in the output'
+  - '`--json` output is stable and documented; doctor distinguishes warnings from blockers'
+  tdd:
+    red:
+    - command tests via DI override (usage.command.ts pattern) for each subcommand; doctor diagnostic tests
+    green:
+    - implement the commands and diagnostics
+    refactor:
+    - share the turn-line renderer between run and resume
+  estimatedEffort: L
+# ───────────────────────── phase-10: Web ─────────────────────────
+- id: task-28
+  phaseId: phase-10
+  title: Feature flag and Agent Harness settings section
+  description: >-
+    Follow the full LESSONS.md flag checklist: tsp, migration, mapper, repo SQL, defaults,
+    feature-flags.ts, context, SwitchRow, translations in 9 locales, fixtures. Add an "Agent
+    Harness" settings section (backend agent + model from the live catalog, mode, budget, context
+    thresholds, decision provider, shadow toggles, permission defaults, approval timeout) with
+    stories and a test. Add shep-harness to the agent pickers when the flag is on.
+  state: Todo
+  dependencies: [task-2, task-6]
+  acceptanceCriteria:
+  - toggling the flag in Settings persists and reveals the section and the sidebar entry without a reload
+  - every section field round-trips through update-settings
+  - pnpm typecheck passes with all fixture updates; there are no raw i18n keys on screen in any locale
+  tdd:
+    red:
+    - settings section unit tests; update-settings action test for harness fields
+    green:
+    - implement the section and flag wiring
+    refactor:
+    - extract harness-settings-section.tsx (settings-page-client stays under its current size)
+  estimatedEffort: M
+- id: task-29
+  phaseId: phase-10
+  title: /harness section (sessions, new task, session detail, approvals, capabilities, policies)
+  description: >-
+    Pages under app/harness with a flag-gated sidebar nav item and a pending-approvals badge.
+    Components:
+    - SessionList (status, mode, repo, tokens, cost, turns);
+    - NewTaskDialog (repo picker, task, mode, shadow toggles);
+    - SessionDetail (task tree + TurnTimeline + result panel + Resume/Stop action bar);
+    - ApprovalsInbox;
+    - CapabilityCatalog (Tier-1/2/3 sizes, source);
+    - PolicyViewer (rules, recent decisions) and InstructionList.
+    Server actions wrap the string-token use cases, each with a Storybook mock and stories for
+    Default/Loading/Empty/Error.
+  state: Todo
+  dependencies: [task-26, task-28]
+  acceptanceCriteria:
+  - a user who just enabled the flag reaches every page from the sidebar (no URL typing)
+  - every empty state has a working CTA (no "run shep …" text)
+  - a pnpm build:storybook build succeeds with the new mocks
+  tdd:
+    red:
+    - component unit tests; server-action tests (flag disabled → FeatureFlagDisabledError shape)
+    green:
+    - implement the pages, components, actions and mocks
+    refactor:
+    - share turn-row primitives with the drawer Context tab
+  estimatedEffort: L
+- id: task-30
+  phaseId: phase-10
+  title: Context tab, permission prompt, Why drawer, chunk viewer, SSE and canvas badge
+  description: >-
+    Add /api/harness-events SSE (cursor = after sequence, heartbeat, no replay) and the
+    useHarnessEvents hook. The feature drawer gets a Context tab (visible only when a run used
+    shep-harness) embedding TurnTimeline and ContextPlanTable (visibility pills, histogram, tokens vs
+    budget, degraded/shadow badges). Also add:
+    - ChunkViewer (short/long/full switch without re-run);
+    - DecisionWhyDrawer (explain);
+    - PermissionPrompt, extending ApproveConfirmation with the effects list, scopes, and hard-deny
+      read-only state;
+    - Activity tab harness metrics (context tokens, visible/raw ratio, repeated reads);
+    - a canvas feature-node permission badge.
+  state: Todo
+  dependencies: [task-29]
+  acceptanceCriteria:
+  - a reconnect with the last sequence receives only newer events (no duplicates) and the listener count stays constant
+  - approving from the drawer resolves the request and the running task continues (e2e with the scripted backend)
+  - a hard-denied action renders with no approve button
+  tdd:
+    red:
+    - SSE route tests (cursor, no replay); component tests for pills, prompt scopes, hard deny and the viewer levels
+    green:
+    - implement the route, hook and components with stories
+    refactor:
+    - reuse the drawer-action-bar primitives rather than forking them
+  estimatedEffort: L
+- id: task-31
+  phaseId: phase-10
+  title: Repository "Set up harness" dialog
+  description: >-
+    Add a repository drawer CTA that opens SetupHarnessDialog. The dialog shows the
+    InitHarnessProject preview (detected instructions, test/lint commands, sensitive paths, files to
+    be written with contents) and writes on confirm. Once set up, the drawer shows harness status
+    (policies and instructions counts, doctor warnings).
+  state: Todo
+  dependencies: [task-29]
+  acceptanceCriteria:
+  - cancel writes nothing; confirm writes exactly the previewed files
+  - an existing .shep/harness/ is shown as "configured" with an edit-in-IDE link, not overwritten
+  tdd:
+    red:
+    - dialog tests (preview, cancel, confirm) and an action test
+    green:
+    - implement the dialog, CTA and action with a mock and stories
+    refactor:
+    - share the file-preview component with other preview dialogs if one exists
+  estimatedEffort: M
+# ───────────────────────── phase-11: Evals ─────────────────────────
+- id: task-32
+  phaseId: phase-11
+  title: Component eval suites in CI
+  description: >-
+    evals/harness/component holds YAML cases and a Vitest runner:
+    - permissions: action + resources + scope → expected effect; false-allow count must be 0;
+    - capability routing: intent → expected capability, reporting top-1/top-k;
+    - context recall: query + candidate chunks + required/optional/noise sets → required-evidence
+      recall and irrelevant-token share;
+    - instructions: repo layout → expected active set.
+    All run with the deterministic decision provider.
+  state: Todo
+  dependencies: [task-15, task-12, task-19, task-17]
+  acceptanceCriteria:
+  - the suites run in pnpm test:unit with no network and fail CI on any false-allow or a recall drop below the stored floor
+  - each suite prints a metrics summary
+  tdd:
+    red:
+    - write the eval cases first (≥50 permission, ≥30 routing, ≥20 context, ≥10 instruction) with thresholds
+    green:
+    - implement the runner
+    refactor:
+    - shared case loader and report printer
+  estimatedEffort: M
+- id: task-33
+  phaseId: phase-11
+  title: Paired end-to-end eval runner, report, CLI and web Evals tab
+  description: >-
+    RunHarnessEvalSuite loops over case × variant (baseline, query-aware) × repeat. For each run it
+    provisions the fixture repo into a temp dir (same snapshot), runs the harness non-interactively
+    with the eval sandbox policy, and runs the success check command. It records success, input and
+    output tokens, cached tokens, cost, wall time, turns, repeated reads/searches, visible/raw
+    tool-output tokens and context recall. GetHarnessEvalReport pairs variants and flags quality
+    regressions. It is exposed through `shep harness eval run|ls|report` and /harness/evals
+    (launcher + report with recharts bars). A seed suite has 6 fixture cases.
+  state: Todo
+  dependencies: [task-27, task-29, task-32]
+  acceptanceCriteria:
+  - both variants use the identical model, tools, snapshot and task wording (asserted in the run record)
+  - the report never shows an efficiency delta without the paired success/quality delta beside it; regressions are highlighted
+  - missing cost is shown as n/a/partial, never summed as zero
+  - the seed suite runs end-to-end in CI with the scripted backend
+  tdd:
+    red:
+    - runner tests with the scripted backend; report-pairing tests; UI component tests
+    green:
+    - implement the runner, report, CLI, page and fixtures
+    refactor:
+    - share metric formatting with the usage command
+  estimatedEffort: L
+# ───────────────────────── phase-12: Hardening ─────────────────────────
+- id: task-34
+  phaseId: phase-12
+  title: Acceptance suite, architecture guard, redaction, e2e and docs
+  description: >-
+    Add an acceptance test file mapping each spec success criterion to a test id. An architecture
+    test asserts domain/application harness files import no ai, @ai-sdk/*, better-sqlite3,
+    node:child_process or @modelcontextprotocol. Event and decision attributes are redacted via
+    redact-log-line. Add a Playwright flow (flag → settings → standalone run → approve permission →
+    Context tab → Why drawer). Write docs/architecture/agent-harness.md and
+    docs/guides/agent-harness.md; update AGENTS.md, agent-system.md, FEATURES.md and LESSONS.md
+    with anything learned.
+  state: Todo
+  dependencies: [task-30, task-31, task-33]
+  acceptanceCriteria:
+  - every spec.yaml success criterion is linked to at least one passing test
+  - pnpm validate, test:unit, test:int, build and build:storybook pass; the Playwright flow passes in dev and `shep ui` modes
+  - docs describe the flows F1–F9 with CLI and web equivalents
+  tdd:
+    red:
+    - the architecture import test and the acceptance mapping test (fails while any criterion is unmapped)
+    green:
+    - add the remaining tests, redaction and docs
+    refactor:
+    - prune dead code paths found by the acceptance pass
+  estimatedEffort: M
+totalEstimate: XL
+openQuestions: []
+content: |
+  ## Summary
+
+  34 tasks across 12 phases, delivered as six flag-gated PR slices (see plan.yaml "Delivery
+  slices"). Phases 3, 4 and 5 parallelize after persistence. Phase 8 (prompt sections) can land any
+  time after task-2.
+
+  ## Acceptance Checklist
+
+  - [ ] Harness core has no provider/SQLite/process imports (architecture test)
+  - [ ] Kill/resume preserves state; no transcript replay; drift detected; unknown side effects not replayed
+  - [ ] Every query-aware model call has a persisted ContextPlan; escalation never re-runs tools
+  - [ ] Only selected Tier-2 schemas reach the model; invalid args fail before execution
+  - [ ] Every write/side effect has a PermissionDecision; hard deny is unoverridable; prompts list effects
+  - [ ] `explain` works for every DecisionKind; shadow decisions never enforced
+  - [ ] Baseline and query-aware eval on identical inputs; the report pairs quality with efficiency
+  - [ ] Flag-off behaviour is byte-identical (golden prompts, executor tests unchanged)
+  - [ ] Every CLI verb has a reachable web surface; all 9 locales complete; stories for every component
