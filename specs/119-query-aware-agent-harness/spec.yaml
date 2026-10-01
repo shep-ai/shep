@@ -137,8 +137,10 @@ content: |
   It previews `.shep/harness/config.yaml`, `policies/default.yaml` and `instructions/` and writes
   them only on confirm. Source files are never modified.
 
-  **F3: Run a feature on the harness.** Create feature → Agent: Shep Harness → normal SDLC flow and
-  approval gates. The feature drawer gains a **Context** tab listing turns live. Each turn shows:
+  **F3: Run a feature on the harness.** Create feature → Agent: Shep Harness (marked
+  experimental) → normal SDLC flow and approval gates. The feature drawer gains a **Context** tab.
+  A phase selector (analyze … merge) heads a per-phase summary (turns, tokens, cost) and a live
+  turn list. Selecting a turn shows "what the model saw" on that turn:
   - context-plan tokens vs budget;
   - a visibility histogram;
   - the chosen capability → implementation;
@@ -146,26 +148,50 @@ content: |
   - raw vs visible tool-output tokens.
 
   **F4: Standalone task.** `shep harness run "Fix refresh token expiry" [--repo] [--mode]
-  [--shadow-context-router]`, or /harness → New task (repo picker, task text, mode). Live turns
-  stream in the CLI (spinner + per-turn line) and on the web session page. The run ends with a
-  structured result: summary, evidence refs, patch, tests.
+  [--shadow-context-router]`, or /harness → New task (repo picker, task text, mode). It is for
+  quick, low-ceremony changes and for evals.
+  - It **always runs in its own worktree** (reusing the worktree service), never in the user's
+    checkout.
+  - Live turns stream in the CLI (spinner + per-turn line) and on the web session page.
+  - The run ends with a structured result: summary, evidence refs, patch, tests.
+  - The user then chooses an outcome:
+    - **Apply** the patch to a branch (`shep harness apply <id> --branch`);
+    - **Promote** it to a feature, carrying the goal, patch and evidence into the normal spec →
+      review → PR flow (`shep harness promote <id>`);
+    - **Discard** it (the worktree is removed; state and evidence are kept).
+  - Standalone runs never push or open PRs. That stays the feature merge step's job, so the two
+    entry points don't compete.
 
-  **F5: Permission ask.** The agent intends `python deploy.py`. Shep parses the command, predicts
-  its effects, and runs deterministic policy, which returns `ask`. The harness task goes
-  `blocked`, and a pending PermissionDecision is persisted. The user sees an **effect-oriented**
-  prompt, not "allow python?":
+  **F5: Permission ask.** During implement, the agent intends `pnpm add jsonwebtoken@9`. Shep
+  parses the command, predicts its effects, and runs deterministic policy, which returns `ask`
+  (`ask-network-egress`, `ask-dependency-change`). The harness task goes `blocked`, and a pending
+  PermissionDecision is persisted. The user sees the agent's stated reason (the `intent` from
+  `use_capability`) and an **effect-oriented** prompt, not "allow pnpm?":
 
   ```text
-  This action may:
-    • read environment credentials (.env)
-    • make outbound network requests
-    • write outside the repository (/etc/app.conf)
-  [Allow once] [Allow for this task] [Allow for session] [Deny]
+  Agent's reason: verify the refresh token's exp claim with jsonwebtoken
+  This action will:
+    • download packages from registry.npmjs.org
+    • change package.json and pnpm-lock.yaml in this feature's worktree
+    • may run package install scripts
+  [Allow once] [Allow for this phase] [Allow for this feature] [Deny]
+  Note to the agent (optional): "We already use jose; use jose.jwtVerify instead"
   ```
+
+  - **Scopes use the user's vocabulary.** For feature runs they are once / this phase /
+    this feature; for standalone runs, once / this session. Internally they map to
+    once / task / session grants.
+  - **The note is returned to the agent with the decision.** A deny can say what to do
+    instead, so the agent doesn't retry the same action.
+  - **Default policy knows shep's SDLC.** `git push`, `gh pr create` and remote-branch
+    deletion are **denied** in harness runs with the reason "Shep pushes in the merge step".
+    The merge node's own push is unaffected.
+  - **Every phase keeps a permission log.** The feature drawer shows allows and denies with
+    the rule that decided each one.
 
   The prompt appears in several places:
   - a toast/notification;
-  - a banner in the feature drawer;
+  - a banner pinned above **every** feature-drawer tab (not just Context), with "Review";
   - a pending badge on the canvas node;
   - the /harness Approvals inbox;
   - inline in `shep harness run`, or via `shep harness permissions allow <id> --scope task`.
@@ -178,9 +204,18 @@ content: |
   degraded). From there:
   - "View" renders the chunk at short / long / full (escalation from stored raw; the tool is never
     re-run);
-  - "Why?" opens a decision drawer (≡ `shep harness explain <decision-id>`) showing the result,
-    alternatives and probabilities, policy filters, provider/latency/cost, source IDs and the
-    shadow flag.
+  - "Why?" opens a decision drawer (≡ `shep harness explain <decision-id>`). It shows:
+    - the result;
+    - the relevance score on the visibility bands (hidden < 0.10 ≤ short < 0.45 ≤ long < 0.80 ≤
+      full);
+    - class probabilities only when the provider really returns them (LLM logprobs), never
+      invented for a reranker or a heuristic;
+    - policy filters, provider/latency/cost, source IDs and the shadow flag.
+  - The drawer has two actions that close the feedback loop:
+    - **Include from next turn**: a task-scoped user override, persisted as a HarnessDecision with
+      source `user`, which the context engine honours like a pin;
+    - **Save as context eval case**: the query, candidates and the user's "this was needed" label
+      go into a context-eval suite.
 
   **F7: Resume.** If the worker dies mid-node, the existing `feat resume` path re-enters the node.
   The harness then restores the HarnessTask from the store:
@@ -206,6 +241,11 @@ content: |
 
   A quality regression is flagged red; the report never claims an efficiency win while hiding a
   quality drop.
+
+  Suites are not limited to seed fixtures. **Add case from a session** turns any completed
+  session into a case: the task wording, its RepoSnapshot, and a success check the user confirms
+  (default: the repo's test command). This way teams measure the harness on their own repository.
+  Eval sessions are hidden from the Sessions list by default.
 
   ## UI Surfaces
 

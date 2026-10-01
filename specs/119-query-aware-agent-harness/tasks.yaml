@@ -44,7 +44,7 @@ tasks:
     HarnessBudget, HarnessEvalRun and HarnessEvalResult under tsp/domain/entities/harness/. Add
     Settings.harness: HarnessConfig with mode, budgetMode, maxTurns, backendAgentType, backendModel,
     context {maxInputTokens=64000, reserveOutputTokens=8000, candidateLimit=200, hideThreshold=0.10,
-    fullThreshold=0.80, uncertainDefault=long}, decisions {providers[] ({id, kind, endpoint?, model?,
+    longThreshold=0.45, fullThreshold=0.80, uncertainDefault=long}, decisions {providers[] ({id, kind, endpoint?, model?,
     apiKeyRef?, timeoutMs}), routes (per DecisionKind), default, fallback[]}, shadow {contextRouter, permissions, toolRouter} and permissions
     {defaultUnknown=ask, nonInteractiveAsk=deny, approvalTimeoutMs}. Add
     FeatureFlags.queryAwareHarness=false.
@@ -316,6 +316,7 @@ tasks:
   acceptanceCriteria:
   - the default policy hard-denies reads and writes of .env*, ~/.ssh/**, *.pem, id_*, ~/.aws/**, ~/.shep/secret.key
   - outside-repo writes ask; unknown actions resolve to settings.harness.permissions.defaultUnknown (ask)
+  - dependency changes (pnpm/npm/yarn add, pip install) and network egress ask; git push, gh pr create and remote branch deletion are denied in harness runs with reason "Shep pushes in the merge step"
   - an invalid policy file yields a doctor blocker and a clear error naming the file and path
   tdd:
     red:
@@ -365,6 +366,8 @@ tasks:
   - every write/side-effect tool call has exactly one final PermissionDecision linked from HarnessToolCall
   - resolving a hard-denied request is rejected; a "task" grant auto-allows a matching later action in the same task only
   - a timeout resolves deny with reason approval_timeout and the task returns to running
+  - the resolver's optional note is delivered to the model with the decision on its next turn
+  - scope labels map to grants: feature runs once/phase/feature → once/task/session; standalone once/session
   - two concurrent resolutions of one request: exactly one wins (conditional UPDATE … WHERE status='pending')
   tdd:
     red:
@@ -626,11 +629,16 @@ tasks:
       latency, source ids, shadow.
     - List and Resolve permission requests.
     - ListCapabilities, GetHarnessPolicies and GetHarnessMetrics.
+    - Apply / Promote / Discard for standalone sessions. Standalone runs always execute in a
+      dedicated worktree. Promote creates a Feature carrying the goal, patch and evidence.
+    - OverrideChunkVisibility ("Include from next turn", persisted as a user-sourced decision).
+    - SaveEvalCase (from a decision or a completed session).
     Register each by class and by string token.
   state: Todo
   dependencies: [task-24]
   acceptanceCriteria:
   - InitHarnessProject never writes when confirm=false and never touches files outside .shep/harness/
+  - a standalone run never modifies the user's checkout; apply writes only to the named branch; promote yields a Feature whose first phase sees the patch and evidence
   - ExplainHarnessDecision returns source ids that resolve (plan, chunk, tool call) for every DecisionKind
   - every web-facing use case resolves by string token (bootstrap WEB_ROUTE_TOKENS)
   tdd:
@@ -651,6 +659,9 @@ tasks:
     [--shadow-tool-router] [--budget] [--max-turns] [--model] [--non-interactive] [--json];
     resume <id>;
     stop <id>;
+    apply <id> --branch;
+    promote <id>;
+    discard <id>;
     ls;
     inspect session|task|context|tool-call <id> [--json];
     view <chunk-id> --level;
@@ -718,6 +729,7 @@ tasks:
   dependencies: [task-26, task-28]
   acceptanceCriteria:
   - a user who just enabled the flag reaches every page from the sidebar (no URL typing)
+  - eval-run sessions are hidden from the Sessions list by default; standalone results offer Apply / Promote / Discard
   - every empty state has a working CTA (no "run shep …" text)
   - a pnpm build:storybook build succeeds with the new mocks
   tdd:
@@ -748,6 +760,8 @@ tasks:
   - a reconnect with the last sequence receives only newer events (no duplicates) and the listener count stays constant
   - approving from the drawer resolves the request and the running task continues (e2e with the scripted backend)
   - a hard-denied action renders with no approve button
+  - a pending-permission banner shows on every drawer tab; the Context tab has a phase selector with per-phase totals; the drawer shows a per-feature permission log
+  - the Why drawer shows the score on the visibility bands, shows class probabilities only when the provider returned them, and offers Include from next turn and Save as eval case
   tdd:
     red:
     - SSE route tests (cursor, no replay); component tests for pills, prompt scopes, hard deny and the viewer levels
@@ -820,6 +834,7 @@ tasks:
   - the report never shows an efficiency delta without the paired success/quality delta beside it; regressions are highlighted
   - missing cost is shown as n/a/partial, never summed as zero
   - the seed suite runs end-to-end in CI with the scripted backend
+  - Add case from a session creates a runnable case from a completed session (task wording, snapshot, confirmed success check)
   tdd:
     red:
     - runner tests with the scripted backend; report-pairing tests; UI component tests

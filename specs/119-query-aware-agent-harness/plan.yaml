@@ -158,6 +158,11 @@ filesToCreate:
   - "packages/core/src/application/use-cases/harness/list-capabilities.use-case.ts"
   - "packages/core/src/application/use-cases/harness/get-harness-policies.use-case.ts"
   - "packages/core/src/application/use-cases/harness/get-harness-metrics.use-case.ts"
+  - "packages/core/src/application/use-cases/harness/apply-harness-session.use-case.ts"
+  - "packages/core/src/application/use-cases/harness/promote-harness-session.use-case.ts"
+  - "packages/core/src/application/use-cases/harness/discard-harness-session.use-case.ts"
+  - "packages/core/src/application/use-cases/harness/override-chunk-visibility.use-case.ts"
+  - "packages/core/src/application/use-cases/harness/save-eval-case.use-case.ts"
   - "packages/core/src/application/use-cases/harness/run-harness-eval-suite.use-case.ts"
   - "packages/core/src/application/use-cases/harness/get-harness-eval-report.use-case.ts"
   - "packages/core/src/application/use-cases/doctor/diagnostics/harness-*.diagnostic.ts"
@@ -304,11 +309,16 @@ content: |
      diff/status, the last N tool results of the task, chunks whose paths or symbols match the
      query/goal, chunks linked by `derived_from`/`supersedes` edges, unresolved error chunks, and
      explicit path references in the goal. Superseded chunks drop out unless referenced.
-  2. Visibility is decided by one batched `choice` over {hidden, short, long, full} per candidate:
-     - p(relevant) < `hideThreshold` (0.10) → hidden;
-     - > `fullThreshold` (0.80) → full;
-     - otherwise → `uncertainDefault` (long).
-     Pinned and current-task chunks are forced visible.
+  2. Visibility comes from one batched relevance scoring per turn (`score` for rerankers and
+     heuristics, `choice` with logprobs for LLMs), mapped to bands:
+     - score < `hideThreshold` (0.10) → hidden;
+     - score < `longThreshold` (0.45) → short;
+     - score < `fullThreshold` (0.80) → long;
+     - otherwise → full.
+     A chunk with no score (provider down) → `uncertainDefault` (long), with `degraded=true`.
+     Pinned chunks, current-task chunks and user "include" overrides are forced visible. A
+     model's `expand_chunk` request raises that chunk for the rest of the task, recorded with
+     source `escalation`.
   3. Views are rendered by kind-specific renderers and cached by (chunk, visibility, query
      fingerprint, renderer version).
   4. Budget fit is a pure `budget-fitter`, applied in this order: reserve system + output +
