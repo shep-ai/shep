@@ -39,7 +39,10 @@ export class SearchSourceTool implements IToolExecutor {
       properties: {
         query: { type: 'string', minLength: 1 },
         regex: { type: 'boolean', description: 'Treat query as a regular expression' },
-        path: { type: 'string', description: 'Limit to a directory (repository-relative)' },
+        path: {
+          type: 'string',
+          description: 'Limit to a directory or a single file (repository-relative)',
+        },
         glob: { type: 'string', description: 'Limit to files matching a glob' },
         contextLines: { type: 'integer', minimum: 0, maximum: 10 },
         maxResults: { type: 'integer', minimum: 1, maximum: 2000 },
@@ -88,7 +91,16 @@ export class SearchSourceTool implements IToolExecutor {
     context: number,
     limit: number
   ): Promise<string[]> {
-    const argv = ['--line-number', '--no-heading', '--color', 'never', '--max-columns', '400'];
+    // --with-filename: rg drops the path when the scope is a single file, and every hit must be path:line.
+    const argv = [
+      '--with-filename',
+      '--line-number',
+      '--no-heading',
+      '--color',
+      'never',
+      '--max-columns',
+      '400',
+    ];
     if (!regex) argv.push('--fixed-strings');
     if (context > 0) argv.push('-C', String(context));
     if (glob) argv.push('--glob', glob);

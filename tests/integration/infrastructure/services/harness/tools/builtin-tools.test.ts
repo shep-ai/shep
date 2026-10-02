@@ -73,6 +73,16 @@ describe('builtin harness tools', () => {
     expect(out.output).toContain('src/auth/session.ts:2:');
   });
 
+  it('search_source counts matches when path is a single file', async () => {
+    // rg omits the file name when searching one file; the result must still be path:line.
+    const out = await new SearchSourceTool().execute(
+      { query: 'refresh', path: 'src/auth/refresh.ts' },
+      ctx
+    );
+    expect(out.output).toBe('src/auth/refresh.ts:1:export function refresh(token: string) {');
+    expect(out.summary).toBe('1 matches for "refresh"');
+  });
+
   it('search_source returns an empty result (not an error) when nothing matches', async () => {
     const out = await new SearchSourceTool().execute({ query: 'zzz_nothing_here' }, ctx);
     expect(out.ok).toBe(true);
