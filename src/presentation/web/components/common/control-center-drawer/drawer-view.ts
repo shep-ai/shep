@@ -15,7 +15,8 @@ export type FeatureTabKey =
   | 'merge-review'
   | 'prototype'
   | 'chat'
-  | 'bedrock';
+  | 'bedrock'
+  | 'context';
 
 /** All valid tab key values — used for URL param validation. */
 export const VALID_TAB_KEYS: ReadonlySet<string> = new Set<FeatureTabKey>([
@@ -30,6 +31,7 @@ export const VALID_TAB_KEYS: ReadonlySet<string> = new Set<FeatureTabKey>([
   'prototype',
   'chat',
   'bedrock',
+  'context',
 ]);
 
 /** Type-guard: returns the value as FeatureTabKey if valid, otherwise undefined. */

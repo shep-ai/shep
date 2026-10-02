@@ -14,6 +14,7 @@ import {
   Wrench,
   Puzzle,
   CalendarClock,
+  Workflow,
   Plug,
   Settings,
   TableProperties,
@@ -341,6 +342,14 @@ export function AppSidebar({
               label="Workflows"
               href="/workflows"
               active={pathname === '/workflows'}
+            />
+          ) : null}
+          {featureFlags.queryAwareHarness ? (
+            <SidebarNavItem
+              icon={Workflow}
+              label={t('navigation.harness')}
+              href="/harness"
+              active={pathname.startsWith('/harness')}
             />
           ) : null}
           <SidebarNavItem

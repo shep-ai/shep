@@ -149,6 +149,7 @@ const WEB_ROUTE_TOKENS: readonly string[] = [
   'CheckBedrockHealthUseCase',
   // Query-aware harness (spec 119)
   'ListHarnessSessionsUseCase',
+  'ListHarnessEventsUseCase',
   'GetHarnessSessionUseCase',
   'GetContextPlanUseCase',
   'RenderChunkViewUseCase',

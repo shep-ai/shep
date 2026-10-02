@@ -2,7 +2,14 @@ import { describe, it, expect, vi, beforeEach, beforeAll, afterAll } from 'vites
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { NotificationEventType, PrStatus, CiStatus } from '@shepai/core/domain/generated/output';
+import {
+  AgentType,
+  NotificationEventType,
+  PrStatus,
+  CiStatus,
+} from '@shepai/core/domain/generated/output';
+import { FeatureFlagsProvider } from '@/hooks/feature-flags-context';
+import type { FeatureFlagsState } from '@/lib/feature-flags';
 import type { NotificationEvent } from '@shepai/core/domain/generated/output';
 import { FeatureDrawerTabs } from '@/components/common/feature-drawer-tabs/feature-drawer-tabs';
 import type { FeatureNodeData } from '@/components/common/feature-node';
@@ -46,6 +53,13 @@ vi.mock('@/app/actions/bedrock.action', () => ({
   syncBedrockForTarget: vi.fn().mockResolvedValue({ ok: false }),
   shipBedrockForTarget: vi.fn().mockResolvedValue({ ok: false }),
   getBedrockMemorySnapshot: vi.fn().mockResolvedValue(null),
+}));
+
+vi.mock('@/app/actions/harness-queries', () => ({
+  getHarnessSessionForFeature: vi.fn().mockResolvedValue({ ok: true, data: null }),
+  listHarnessPermissions: vi
+    .fn()
+    .mockResolvedValue({ ok: true, data: [{ decision: { id: 'p1' } }] }),
 }));
 
 vi.mock('@/hooks/use-feature-logs', () => ({
@@ -1131,5 +1145,33 @@ describe('FeatureDrawerTabs', () => {
 
       focusSpy.mockRestore();
     });
+  });
+});
+
+describe('Context tab (spec 119)', () => {
+  const harnessNode: FeatureNodeData = { ...defaultFeatureNode, agentType: AgentType.ShepHarness };
+  const renderWithFlags = (node: FeatureNodeData, queryAwareHarness: boolean) =>
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <FeatureFlagsProvider flags={{ queryAwareHarness } as FeatureFlagsState}>
+          <FeatureDrawerTabs featureNode={node} featureId="#f1" />
+        </FeatureFlagsProvider>
+      </QueryClientProvider>
+    );
+
+  it('shows Context and the approval banner for a harness feature while the flag is on', async () => {
+    renderWithFlags(harnessNode, true);
+    expect(screen.getByRole('tab', { name: 'Context' })).toBeInTheDocument();
+    expect(await screen.findByTestId('harness-permission-banner')).toBeInTheDocument();
+  });
+
+  it('hides Context when the flag is off', () => {
+    renderWithFlags(harnessNode, false);
+    expect(screen.queryByRole('tab', { name: 'Context' })).not.toBeInTheDocument();
+  });
+
+  it('hides Context for features on other agents', () => {
+    renderWithFlags({ ...defaultFeatureNode, agentType: AgentType.ClaudeCode }, true);
+    expect(screen.queryByRole('tab', { name: 'Context' })).not.toBeInTheDocument();
   });
 });

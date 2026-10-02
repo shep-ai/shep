@@ -727,6 +727,17 @@ export function listAgentDescriptors(): AgentDescriptor[] {
   return Object.values(AGENT_CATALOG).sort((a, b) => a.order - b.order);
 }
 
+/**
+ * Whether a picker may offer this agent: experimental agents only while the
+ * query-aware harness flag is on (spec 119).
+ */
+export function isAgentOffered(
+  descriptor: Pick<AgentDescriptor, 'experimental'>,
+  flags: { queryAwareHarness?: boolean } | undefined
+): boolean {
+  return !descriptor.experimental || flags?.queryAwareHarness === true;
+}
+
 /** Agent types Shep can actually run, in picker order. */
 export function listSupportedAgentTypes(): AgentType[] {
   return listAgentDescriptors()

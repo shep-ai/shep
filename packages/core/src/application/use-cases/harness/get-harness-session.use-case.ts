@@ -21,6 +21,7 @@ import {
   type IHarnessSessionRepository,
 } from '../../ports/output/harness/index.js';
 import { HarnessNotFoundError } from './harness-errors.js';
+import { grantScopesFor, type HarnessPermissionItem } from './list-harness-permissions.use-case.js';
 import {
   addSummaries,
   emptySummary,
@@ -52,7 +53,8 @@ export interface HarnessTaskDetail {
 export interface HarnessSessionDetail {
   session: HarnessSession;
   tasks: HarnessTaskDetail[];
-  pendingPermissions: PermissionDecision[];
+  /** Requests waiting for a person, with the scopes they may be granted with. */
+  pendingPermissions: HarnessPermissionItem[];
   permissionLog: PermissionDecision[];
   usage: HarnessUsageSummary;
 }
@@ -115,7 +117,14 @@ export class GetHarnessSessionUseCase {
     return {
       session,
       tasks,
-      pendingPermissions: permissionLog.filter((p) => p.status === PermissionRequestStatus.Pending),
+      pendingPermissions: permissionLog
+        .filter((p) => p.status === PermissionRequestStatus.Pending)
+        .map((decision) => ({
+          decision,
+          session,
+          approvable: !decision.hard,
+          scopes: grantScopesFor(session),
+        })),
       permissionLog,
       usage,
     };

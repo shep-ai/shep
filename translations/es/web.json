@@ -22,7 +22,8 @@
       "integrations": "Integraciones",
       "security": "Security",
       "messaging": "Messaging",
-      "mcp": "MCP"
+      "mcp": "MCP",
+      "harness": "Harness del agente"
     },
     "language": {
       "title": "Idioma",
@@ -262,7 +263,9 @@
       "whatsappDispatchDescription": "Despacha y dirige los agentes de shep desde WhatsApp: crea funciones, recibe actualizaciones del agente y aprueba puertas respondiendo en un chat.",
       "clusters": "Clústeres",
       "clustersDescription": "Habilitar la navegación de clústeres y la gestión de clústeres Kubernetes en la interfaz web",
-      "hint": "Funcionalidades experimentales que aún están en desarrollo. Habilítalas bajo tu propio riesgo — pueden cambiar o ser eliminadas en versiones futuras. El modo de depuración agrega registro detallado útil para la resolución de problemas."
+      "hint": "Funcionalidades experimentales que aún están en desarrollo. Habilítalas bajo tu propio riesgo — pueden cambiar o ser eliminadas en versiones futuras. El modo de depuración agrega registro detallado útil para la resolución de problemas.",
+      "queryAwareHarness": "Harness del agente sensible a la consulta",
+      "queryAwareHarnessDescription": "Experimental: el agente Shep Harness, /harness, la pestaña Contexto de la funcionalidad y las solicitudes de permiso"
     },
     "interactiveAgent": {
       "title": "Agente interactivo",
@@ -373,6 +376,47 @@
         "connected": "Connected",
         "error": "Error"
       }
+    },
+    "harness": {
+      "title": "Harness del agente",
+      "experimental": "Experimental",
+      "description": "Cómo construye Shep Harness el contexto del modelo, en qué modelo se ejecuta y cómo pregunta antes de actuar",
+      "hint": "El harness se ejecuta sobre un backend SDK (OpenRouter, Together AI, Ollama o LLMProxy). La relevancia del contexto la puede puntuar un modelo local de código abierto o Jev, o hacerse de forma determinista, sin red.",
+      "mode": "Modo de contexto",
+      "modeDescription": "Sensible a la consulta crea un plan de contexto nuevo y específico para cada llamada al modelo; el modo base conserva una transcripción",
+      "backend": "Backend del modelo",
+      "backendDescription": "Agente SDK al que llama el harness; su clave proviene del token del agente o de su variable de entorno",
+      "model": "Modelo del backend",
+      "modelDescription": "ID del modelo en el backend; déjalo vacío para usar el predeterminado del backend",
+      "modelPlaceholder": "Predeterminado del backend",
+      "budget": "Modo de presupuesto",
+      "budgetDescription": "Equilibra coste y calidad al ajustar el contexto al presupuesto de tokens",
+      "maxTurns": "Límite de turnos",
+      "maxTurnsDescription": "Llamadas al modelo por tarea antes de detenerse",
+      "decisionsTitle": "Proveedor de relevancia del contexto",
+      "decisionsDescription": "Quién puntúa la relevancia de cada parte del estado para la consulta actual. Cualquier fallo del proveedor recurre a la puntuación determinista.",
+      "providerKind": "Proveedor",
+      "providerKindDescription": "Determinista (sin red), un servidor compatible con OpenAI, un reranker, el propio modelo del harness o Jev",
+      "providerEndpoint": "Endpoint",
+      "providerEndpointDescription": "URL base del proveedor",
+      "providerModel": "Modelo",
+      "providerModelDescription": "Modelo que debe usar el endpoint (opcional)",
+      "providerKeyEnv": "Variable de la clave API",
+      "providerKeyEnvDescription": "Nombre de la variable de entorno que contiene la clave, nunca la clave en sí",
+      "shadowTitle": "Modos sombra",
+      "shadow": {
+        "contextRouter": "Enrutador de contexto en sombra",
+        "contextRouterDescription": "Ejecutar en modo base y registrar los planes sensibles a la consulta que se habrían usado",
+        "permissions": "Riesgo de permisos en sombra",
+        "permissionsDescription": "Registrar las puntuaciones de riesgo de permisos de AI sin aplicarlas",
+        "toolRouter": "Enrutador de herramientas en sombra",
+        "toolRouterDescription": "Registrar el enrutamiento de capacidades sin aplicarlo"
+      },
+      "permissionsTitle": "Permisos",
+      "unknownDefault": "Acciones desconocidas",
+      "unknownDefaultDescription": "Qué ocurre cuando ninguna regla coincide con una acción",
+      "approvalTimeout": "Tiempo límite de aprobación (minutos)",
+      "approvalTimeoutDescription": "Una solicitud sin respuesta se deniega pasado este tiempo"
     }
   },
   "navigation": {
@@ -397,7 +441,8 @@
     "collaboration": "Collaboration",
     "clusters": "Clústeres",
     "plugins": "Plugins",
-    "projectMemory": "Project Memory"
+    "projectMemory": "Project Memory",
+    "harness": "Harness"
   },
   "sidebar": {
     "features": "Funcionalidades",
@@ -1044,5 +1089,178 @@
     "queuedWithPosition": "En cola · {{position}} por delante",
     "queuedTooltip": "Esperando un espacio libre ({{position}} en la cola)",
     "startAnyway": "Iniciar de todos modos"
+  },
+  "harness": {
+    "title": "Harness del agente",
+    "subtitle": "Tareas independientes, lo que vio el modelo en cada turno y acciones pendientes de tu aprobación",
+    "loading": "Cargando…",
+    "noTasks": "Aún no hay tareas.",
+    "taskN": "Tarea {{n}}",
+    "turn": "Turno {{n}}",
+    "tabs": {
+      "sessions": "Sesiones",
+      "newTask": "Nueva tarea",
+      "approvals": "Aprobaciones",
+      "catalog": "Herramientas y políticas",
+      "setup": "Configurar un repositorio",
+      "evals": "Evaluaciones"
+    },
+    "mode": {
+      "query_aware": "Sensible a la consulta",
+      "baseline": "Base"
+    },
+    "budget": {
+      "economy": "Económico",
+      "balanced": "Equilibrado",
+      "quality": "Calidad"
+    },
+    "effect": {
+      "allow": "Permitir",
+      "ask": "Preguntar",
+      "deny": "Denegar"
+    },
+    "origin": {
+      "feature": "Funcionalidad",
+      "standalone": "Independiente",
+      "eval": "Evaluación"
+    },
+    "sessionStatus": {
+      "active": "En ejecución",
+      "idle": "Inactiva",
+      "completed": "Completada",
+      "failed": "Fallida",
+      "discarded": "Descartada"
+    },
+    "visibility": {
+      "hidden": "Oculto",
+      "short": "Corto",
+      "long": "Largo",
+      "full": "Completo"
+    },
+    "source": {
+      "deterministic": "determinista",
+      "ai": "AI",
+      "policy": "política",
+      "degraded": "degradado",
+      "escalation": "solicitado por el agente",
+      "user": "tú",
+      "budget": "presupuesto"
+    },
+    "providerKind": {
+      "deterministic": "Determinista",
+      "openai_compatible": "Servidor compatible con OpenAI",
+      "reranker": "Reranker",
+      "structured_llm": "Modelo del harness",
+      "jev": "Jev"
+    },
+    "sessions": {
+      "empty": "Aún no hay sesiones del harness. Inicia una desde Nueva tarea.",
+      "title": "Sesión",
+      "origin": "Origen",
+      "mode": "Modo",
+      "status": "Estado",
+      "tasks": "Tareas",
+      "pending": "{{count}} en espera"
+    },
+    "newTask": {
+      "repository": "Repositorio",
+      "task": "Tarea",
+      "taskPlaceholder": "Corregir la comprobación de caducidad del token de actualización",
+      "worktreeNote": "Se ejecuta en su propio worktree: tu checkout nunca se toca. Después puedes aplicarlo a una rama, convertirlo en funcionalidad o descartarlo.",
+      "run": "Ejecutar tarea"
+    },
+    "approvals": {
+      "empty": "No hay nada pendiente de aprobación."
+    },
+    "permission": {
+      "reason": "Motivo del agente:",
+      "willDo": "Esta acción hará:",
+      "noEffects": "(sin efectos previstos)",
+      "rules": "Reglas:",
+      "notePlaceholder": "Nota para el agente (opcional), p. ej. usa jose en su lugar",
+      "allowOnce": "Permitir una vez",
+      "allowPhase": "Permitir en esta fase",
+      "allowFeature": "Permitir en esta funcionalidad",
+      "allowSession": "Permitir en esta sesión",
+      "deny": "Denegar",
+      "hardDeny": "Denegado por una regla estricta; no se puede aprobar."
+    },
+    "banner": {
+      "waiting": "{{count}} acción(es) del harness esperan tu aprobación",
+      "review": "Revisar"
+    },
+    "context": {
+      "empty": "Esta funcionalidad aún no se ha ejecutado en Shep Harness."
+    },
+    "usage": {
+      "turns": "Turnos",
+      "input": "Tokens de entrada",
+      "output": "Tokens de salida",
+      "cost": "Coste",
+      "toolOutputSeen": "Salida de herramientas vista",
+      "denied": "Acciones denegadas"
+    },
+    "plan": {
+      "summary": "{{tokens}} de {{budget}} tokens · {{count}} candidatos",
+      "shadow": "sombra",
+      "degraded": "degradado",
+      "overBudget": "por encima del presupuesto",
+      "none": "Selecciona un turno para ver lo que vio el modelo.",
+      "chunk": "Fragmento",
+      "visibility": "Visibilidad",
+      "tokens": "Tokens mostrados/brutos",
+      "relevance": "Relevancia",
+      "reason": "Motivo",
+      "view": "Ver",
+      "why": "¿Por qué?"
+    },
+    "chunk": {
+      "redacted": "Este fragmento está marcado como secreto y nunca se muestra.",
+      "truncated": "truncado",
+      "storedNote": "mostrado a partir de la salida almacenada; no se volvió a ejecutar nada"
+    },
+    "why": {
+      "title": "¿Por qué esta visibilidad?",
+      "tokens": "{{visible}} de {{raw}} tokens mostrados",
+      "relevance": "Relevancia {{score}}",
+      "bands": "oculto < {{hide}} ≤ corto < {{long}} ≤ largo < {{full}} ≤ completo",
+      "noProbabilities": "Sin probabilidades de clase: este proveedor no las devuelve.",
+      "provider": "Decidido por {{provider}} en {{latency}} ms · {{cost}}",
+      "shadow": "sombra",
+      "degraded": "degradado",
+      "include": "Incluir desde el siguiente turno",
+      "included": "Incluido desde el siguiente turno"
+    },
+    "actions": {
+      "stop": "Detener",
+      "stopRequested": "Detención solicitada; la tarea se detiene antes de su siguiente turno",
+      "branchPlaceholder": "Rama (opcional)",
+      "apply": "Aplicar a la rama",
+      "applied": "Se confirmaron {{count}} archivo(s) en {{branch}}",
+      "promote": "Convertir en funcionalidad",
+      "discard": "Descartar",
+      "discarded": "Worktree eliminado; la sesión se conserva"
+    },
+    "capabilities": {
+      "title": "Herramientas que el agente puede cargar",
+      "description": "Los fragmentos de nivel 1 se muestran siempre; los esquemas de nivel 2 solo se cargan cuando el agente solicita una capacidad.",
+      "cost": "{{snippet}} / {{schema}} tokens"
+    },
+    "policies": {
+      "title": "Reglas de permisos",
+      "description": "Valores predeterminados de Shep más .shep/harness/policies/*.yaml. Precedencia: deny > ask > allow.",
+      "hard": "estricta"
+    },
+    "setup": {
+      "description": "Detecta archivos de instrucciones, comandos de test y lint y archivos sensibles, muestra una vista previa de .shep/harness/ y solo escribe cuando lo confirmas. Los archivos fuente nunca se modifican.",
+      "preview": "Vista previa",
+      "instructions": "Instrucciones",
+      "manifests": "Manifiestos",
+      "commands": "Test / lint",
+      "sensitive": "Archivos sensibles",
+      "exists": "existe, se conserva",
+      "confirm": "Escribir archivos",
+      "written": "Se escribieron {{count}} archivo(s)"
+    }
   }
 }

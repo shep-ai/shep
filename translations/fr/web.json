@@ -22,7 +22,8 @@
       "integrations": "Intégrations",
       "security": "Security",
       "messaging": "Messaging",
-      "mcp": "MCP"
+      "mcp": "MCP",
+      "harness": "Harness d'agent"
     },
     "language": {
       "title": "Langue",
@@ -262,7 +263,9 @@
       "whatsappDispatchDescription": "Lancez et pilotez les agents shep depuis WhatsApp : créez des fonctionnalités, recevez les mises à jour de l'agent et approuvez les étapes en répondant dans une discussion.",
       "clusters": "Clusters",
       "clustersDescription": "Activer la navigation des clusters et la gestion des clusters Kubernetes dans l'interface web",
-      "hint": "Fonctionnalités expérimentales encore en cours de développement. Activez à vos risques et périls — elles peuvent changer ou être supprimées dans les versions futures. Le mode débogage ajoute une journalisation détaillée utile pour le dépannage."
+      "hint": "Fonctionnalités expérimentales encore en cours de développement. Activez à vos risques et périls — elles peuvent changer ou être supprimées dans les versions futures. Le mode débogage ajoute une journalisation détaillée utile pour le dépannage.",
+      "queryAwareHarness": "Harness d'agent sensible à la requête",
+      "queryAwareHarnessDescription": "Expérimental : l'agent Shep Harness, /harness, l'onglet Contexte des fonctionnalités et les demandes d'autorisation"
     },
     "interactiveAgent": {
       "title": "Agent interactif",
@@ -373,6 +376,47 @@
         "connected": "Connected",
         "error": "Error"
       }
+    },
+    "harness": {
+      "title": "Harness d'agent",
+      "experimental": "Expérimental",
+      "description": "Comment Shep Harness construit le contexte du modèle, sur quel modèle il s'exécute et comment il demande avant d'agir",
+      "hint": "Le harness s'exécute sur un backend SDK (OpenRouter, Together AI, Ollama ou LLMProxy). La pertinence du contexte peut être évaluée par un modèle open source local ou par Jev — ou de façon déterministe, sans aucun réseau.",
+      "mode": "Mode de contexte",
+      "modeDescription": "Le mode sensible à la requête crée un plan de contexte neuf et propre à chaque appel au modèle ; le mode de référence conserve une transcription",
+      "backend": "Backend du modèle",
+      "backendDescription": "Agent SDK appelé par le harness ; sa clé provient du jeton de l'agent ou de sa variable d'environnement",
+      "model": "Modèle du backend",
+      "modelDescription": "Identifiant du modèle sur le backend ; laisser vide pour la valeur par défaut du backend",
+      "modelPlaceholder": "Valeur par défaut du backend",
+      "budget": "Mode de budget",
+      "budgetDescription": "Arbitrer entre coût et qualité lors de l'ajustement du contexte au budget de jetons",
+      "maxTurns": "Limite de tours",
+      "maxTurnsDescription": "Appels au modèle par tâche avant l'arrêt",
+      "decisionsTitle": "Fournisseur de pertinence du contexte",
+      "decisionsDescription": "Qui évalue la pertinence de chaque élément d'état pour la requête en cours. Toute défaillance du fournisseur bascule sur l'évaluation déterministe.",
+      "providerKind": "Fournisseur",
+      "providerKindDescription": "Déterministe (sans réseau), un serveur compatible OpenAI, un reranker, le modèle du harness lui-même ou Jev",
+      "providerEndpoint": "Point de terminaison",
+      "providerEndpointDescription": "URL de base du fournisseur",
+      "providerModel": "Modèle",
+      "providerModelDescription": "Modèle que le point de terminaison doit utiliser (facultatif)",
+      "providerKeyEnv": "Variable de clé API",
+      "providerKeyEnvDescription": "Nom de la variable d'environnement contenant la clé — jamais la clé elle-même",
+      "shadowTitle": "Modes fantôme",
+      "shadow": {
+        "contextRouter": "Routeur de contexte fantôme",
+        "contextRouterDescription": "S'exécuter en mode de référence et enregistrer les plans sensibles à la requête qui auraient été utilisés",
+        "permissions": "Risque d'autorisation fantôme",
+        "permissionsDescription": "Enregistrer les scores de risque d'autorisation AI sans les appliquer",
+        "toolRouter": "Routeur d'outils fantôme",
+        "toolRouterDescription": "Enregistrer le routage des capacités sans l'appliquer"
+      },
+      "permissionsTitle": "Autorisations",
+      "unknownDefault": "Actions inconnues",
+      "unknownDefaultDescription": "Ce qui se passe quand aucune règle ne correspond à une action",
+      "approvalTimeout": "Délai d'approbation (minutes)",
+      "approvalTimeoutDescription": "Une demande sans réponse est refusée passé ce délai"
     }
   },
   "navigation": {
@@ -397,7 +441,8 @@
     "collaboration": "Collaboration",
     "clusters": "Clusters",
     "plugins": "Plugins",
-    "projectMemory": "Project Memory"
+    "projectMemory": "Project Memory",
+    "harness": "Harness"
   },
   "sidebar": {
     "features": "Fonctionnalités",
@@ -1044,5 +1089,178 @@
     "queuedWithPosition": "En file · {{position}} devant",
     "queuedTooltip": "En attente d'une place libre ({{position}} dans la file)",
     "startAnyway": "Démarrer quand même"
+  },
+  "harness": {
+    "title": "Harness d'agent",
+    "subtitle": "Tâches autonomes, ce que le modèle a vu à chaque tour et actions en attente de votre approbation",
+    "loading": "Chargement…",
+    "noTasks": "Aucune tâche pour l'instant.",
+    "taskN": "Tâche {{n}}",
+    "turn": "Tour {{n}}",
+    "tabs": {
+      "sessions": "Sessions",
+      "newTask": "Nouvelle tâche",
+      "approvals": "Approbations",
+      "catalog": "Outils et règles",
+      "setup": "Configurer un dépôt",
+      "evals": "Évaluations"
+    },
+    "mode": {
+      "query_aware": "Sensible à la requête",
+      "baseline": "Référence"
+    },
+    "budget": {
+      "economy": "Économie",
+      "balanced": "Équilibré",
+      "quality": "Qualité"
+    },
+    "effect": {
+      "allow": "Autoriser",
+      "ask": "Demander",
+      "deny": "Refuser"
+    },
+    "origin": {
+      "feature": "Fonctionnalité",
+      "standalone": "Autonome",
+      "eval": "Évaluation"
+    },
+    "sessionStatus": {
+      "active": "En cours",
+      "idle": "Inactive",
+      "completed": "Terminée",
+      "failed": "Échouée",
+      "discarded": "Abandonnée"
+    },
+    "visibility": {
+      "hidden": "Masqué",
+      "short": "Court",
+      "long": "Long",
+      "full": "Complet"
+    },
+    "source": {
+      "deterministic": "déterministe",
+      "ai": "AI",
+      "policy": "règle",
+      "degraded": "dégradé",
+      "escalation": "demandé par l'agent",
+      "user": "vous",
+      "budget": "budget"
+    },
+    "providerKind": {
+      "deterministic": "Déterministe",
+      "openai_compatible": "Serveur compatible OpenAI",
+      "reranker": "Reranker",
+      "structured_llm": "Modèle du harness",
+      "jev": "Jev"
+    },
+    "sessions": {
+      "empty": "Aucune session de harness pour l'instant. Lancez-en une depuis Nouvelle tâche.",
+      "title": "Session",
+      "origin": "Origine",
+      "mode": "Mode",
+      "status": "Statut",
+      "tasks": "Tâches",
+      "pending": "{{count}} en attente"
+    },
+    "newTask": {
+      "repository": "Dépôt",
+      "task": "Tâche",
+      "taskPlaceholder": "Corriger la vérification d'expiration du jeton de rafraîchissement",
+      "worktreeNote": "S'exécute dans son propre worktree — votre checkout n'est jamais modifié. Ensuite, vous l'appliquez à une branche, le promouvez en fonctionnalité ou l'abandonnez.",
+      "run": "Lancer la tâche"
+    },
+    "approvals": {
+      "empty": "Rien n'attend d'approbation."
+    },
+    "permission": {
+      "reason": "Raison de l'agent :",
+      "willDo": "Cette action va :",
+      "noEffects": "(aucun effet prévu)",
+      "rules": "Règles :",
+      "notePlaceholder": "Note pour l'agent (facultatif), p. ex. utilise plutôt jose",
+      "allowOnce": "Autoriser une fois",
+      "allowPhase": "Autoriser pour cette phase",
+      "allowFeature": "Autoriser pour cette fonctionnalité",
+      "allowSession": "Autoriser pour cette session",
+      "deny": "Refuser",
+      "hardDeny": "Refusé par une règle stricte ; impossible à approuver."
+    },
+    "banner": {
+      "waiting": "{{count}} action(s) du harness en attente de votre approbation",
+      "review": "Examiner"
+    },
+    "context": {
+      "empty": "Cette fonctionnalité n'a pas encore été exécutée sur Shep Harness."
+    },
+    "usage": {
+      "turns": "Tours",
+      "input": "Jetons d'entrée",
+      "output": "Jetons de sortie",
+      "cost": "Coût",
+      "toolOutputSeen": "Sortie d'outils vue",
+      "denied": "Actions refusées"
+    },
+    "plan": {
+      "summary": "{{tokens}} sur {{budget}} jetons · {{count}} candidats",
+      "shadow": "fantôme",
+      "degraded": "dégradé",
+      "overBudget": "hors budget",
+      "none": "Sélectionnez un tour pour voir ce que le modèle a vu.",
+      "chunk": "Fragment",
+      "visibility": "Visibilité",
+      "tokens": "Jetons affichés/bruts",
+      "relevance": "Pertinence",
+      "reason": "Raison",
+      "view": "Vue",
+      "why": "Pourquoi ?"
+    },
+    "chunk": {
+      "redacted": "Ce fragment est marqué comme secret et n'est jamais affiché.",
+      "truncated": "tronqué",
+      "storedNote": "affiché à partir de la sortie stockée ; rien n'a été relancé"
+    },
+    "why": {
+      "title": "Pourquoi cette visibilité ?",
+      "tokens": "{{visible}} sur {{raw}} jetons affichés",
+      "relevance": "Pertinence {{score}}",
+      "bands": "masqué < {{hide}} ≤ court < {{long}} ≤ long < {{full}} ≤ complet",
+      "noProbabilities": "Aucune probabilité de classe : ce fournisseur ne les renvoie pas.",
+      "provider": "Décidé par {{provider}} en {{latency}} ms · {{cost}}",
+      "shadow": "fantôme",
+      "degraded": "dégradé",
+      "include": "Inclure dès le prochain tour",
+      "included": "Inclus dès le prochain tour"
+    },
+    "actions": {
+      "stop": "Arrêter",
+      "stopRequested": "Arrêt demandé ; la tâche s'arrête avant son prochain tour",
+      "branchPlaceholder": "Branche (facultatif)",
+      "apply": "Appliquer à la branche",
+      "applied": "{{count}} fichier(s) commité(s) sur {{branch}}",
+      "promote": "Promouvoir en fonctionnalité",
+      "discard": "Abandonner",
+      "discarded": "Worktree supprimé ; la session est conservée"
+    },
+    "capabilities": {
+      "title": "Outils que l'agent peut charger",
+      "description": "Les extraits de niveau 1 sont toujours affichés ; les schémas de niveau 2 ne sont chargés que lorsque l'agent demande une capacité.",
+      "cost": "{{snippet}} / {{schema}} jetons"
+    },
+    "policies": {
+      "title": "Règles d'autorisation",
+      "description": "Valeurs par défaut de Shep plus .shep/harness/policies/*.yaml. Priorité : deny > ask > allow.",
+      "hard": "stricte"
+    },
+    "setup": {
+      "description": "Détecte les fichiers d'instructions, les commandes de test et de lint ainsi que les fichiers sensibles, prévisualise .shep/harness/ et n'écrit qu'après votre confirmation. Les fichiers sources ne sont jamais modifiés.",
+      "preview": "Aperçu",
+      "instructions": "Instructions",
+      "manifests": "Manifestes",
+      "commands": "Test / lint",
+      "sensitive": "Fichiers sensibles",
+      "exists": "existe, conservé",
+      "confirm": "Écrire les fichiers",
+      "written": "{{count}} fichier(s) écrit(s)"
+    }
   }
 }

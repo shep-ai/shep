@@ -48,6 +48,7 @@ import { GetHarnessPoliciesUseCase } from '../../../application/use-cases/harnes
 import { GetHarnessSessionUseCase } from '../../../application/use-cases/harness/get-harness-session.use-case.js';
 import { InitHarnessProjectUseCase } from '../../../application/use-cases/harness/init-harness-project.use-case.js';
 import { ListHarnessCapabilitiesUseCase } from '../../../application/use-cases/harness/list-harness-capabilities.use-case.js';
+import { ListHarnessEventsUseCase } from '../../../application/use-cases/harness/list-harness-events.use-case.js';
 import { ListHarnessPermissionsUseCase } from '../../../application/use-cases/harness/list-harness-permissions.use-case.js';
 import { ListHarnessSessionsUseCase } from '../../../application/use-cases/harness/list-harness-sessions.use-case.js';
 import { OverrideChunkVisibilityUseCase } from '../../../application/use-cases/harness/override-chunk-visibility.use-case.js';
@@ -68,6 +69,7 @@ const HARNESS_USE_CASES = {
   GetHarnessSessionUseCase,
   InitHarnessProjectUseCase,
   ListHarnessCapabilitiesUseCase,
+  ListHarnessEventsUseCase,
   ListHarnessPermissionsUseCase,
   ListHarnessSessionsUseCase,
   OverrideChunkVisibilityUseCase,
