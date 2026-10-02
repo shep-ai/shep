@@ -1234,6 +1234,7 @@
     "actions": {
       "stop": "Detener",
       "stopRequested": "Detención solicitada; la tarea se detiene antes de su siguiente turno",
+      "stoppedOrphan": "Detenida: el proceso que ejecutaba la tarea había terminado, así que se canceló",
       "branchPlaceholder": "Rama (opcional)",
       "apply": "Aplicar a la rama",
       "applied": "Se confirmaron {{count}} archivo(s) en {{branch}}",

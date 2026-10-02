@@ -14,7 +14,7 @@ export async function startHarnessTask(_req: unknown) {
   return ok(fixtureSession);
 }
 export async function stopHarnessSession(_sessionId: string) {
-  return ok(fixtureSession);
+  return ok({ session: fixtureSession, cancelledTaskIds: [] as string[] });
 }
 export async function applyHarnessSession(_sessionId: string, branch?: string) {
   return ok({

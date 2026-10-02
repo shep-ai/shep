@@ -1234,6 +1234,7 @@
     "actions": {
       "stop": "Stop",
       "stopRequested": "Stop requested; the task stops before its next turn",
+      "stoppedOrphan": "Stopped: the process running the task had exited, so it is cancelled",
       "branchPlaceholder": "Branch (optional)",
       "apply": "Apply to branch",
       "applied": "Committed {{count}} file(s) to {{branch}}",

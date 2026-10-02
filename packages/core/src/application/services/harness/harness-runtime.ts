@@ -79,6 +79,8 @@ export interface HarnessRuntimeDeps {
   decisionFactory: IDecisionProviderFactory;
   /** Poll interval while waiting for a permission answer (tests shorten it). */
   permissionPollMs?: number;
+  /** OS process id recorded on each task, so a stop can tell an orphaned task. */
+  processId?: number;
 }
 
 export interface RunTaskInput {
@@ -168,6 +170,7 @@ export class HarnessRuntime {
       }),
       stateVersion: 0,
       turnCount: 0,
+      ...(d.processId !== undefined && { ownerPid: d.processId }),
       createdAt: now,
       updatedAt: now,
     };

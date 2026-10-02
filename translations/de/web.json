@@ -1234,6 +1234,7 @@
     "actions": {
       "stop": "Stoppen",
       "stopRequested": "Stopp angefordert; die Aufgabe stoppt vor ihrem nächsten Zug",
+      "stoppedOrphan": "Gestoppt: Der Prozess der Aufgabe war beendet, daher wurde sie abgebrochen",
       "branchPlaceholder": "Branch (optional)",
       "apply": "Auf Branch anwenden",
       "applied": "{{count}} Datei(en) in {{branch}} committet",

@@ -48,6 +48,11 @@ properties:
   failureReason:
     type: string
     description: Failure reason when status is failed
+  ownerPid:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: OS process running the task; lets a stop cancel a task whose process has exited
 required:
   - sessionId
   - goal

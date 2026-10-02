@@ -5450,6 +5450,10 @@ export type HarnessTask = BaseEntity & {
    * Failure reason when status is failed
    */
   failureReason?: string;
+  /**
+   * OS process running the task; lets a stop cancel a task whose process has exited
+   */
+  ownerPid?: number;
 };
 
 /**

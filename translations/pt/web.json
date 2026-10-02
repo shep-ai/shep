@@ -1234,6 +1234,7 @@
     "actions": {
       "stop": "Parar",
       "stopRequested": "Parada solicitada; a tarefa para antes do próximo turno",
+      "stoppedOrphan": "Parada: o processo que executava a tarefa tinha terminado, então ela foi cancelada",
       "branchPlaceholder": "Branch (opcional)",
       "apply": "Aplicar ao branch",
       "applied": "{{count}} arquivo(s) commitado(s) em {{branch}}",

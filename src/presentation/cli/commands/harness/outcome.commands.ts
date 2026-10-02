@@ -16,8 +16,14 @@ export function createStopCommand(): Command {
     .argument('<id>', 'Session id')
     .action(async (id: string) => {
       try {
-        await container.resolve(StopHarnessSessionUseCase).execute({ sessionId: id });
-        messages.success('Stop requested; the task stops before its next turn.');
+        const { cancelledTaskIds } = await container
+          .resolve(StopHarnessSessionUseCase)
+          .execute({ sessionId: id });
+        messages.success(
+          cancelledTaskIds.length > 0
+            ? 'Stopped: the process running the task had exited, so it is cancelled.'
+            : 'Stop requested; the task stops before its next turn.'
+        );
       } catch (error) {
         fail(error, 'Could not stop the session');
       }

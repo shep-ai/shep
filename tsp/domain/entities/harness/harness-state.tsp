@@ -127,6 +127,9 @@ model HarnessTask extends BaseEntity {
 
   @doc("Failure reason when status is failed")
   failureReason?: string;
+
+  @doc("OS process running the task; lets a stop cancel a task whose process has exited")
+  ownerPid?: int32;
 }
 
 @doc("A reference to repository evidence bound to a snapshot or content hash")

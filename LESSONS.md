@@ -2911,3 +2911,15 @@ A merge bumped `next` to 16.3.6 but `node_modules` still linked 16.3.5, so 473 w
 locally (mocks of `next/navigation` missed the stale copy) while CI was green. Run
 `pnpm install --frozen-lockfile` after every merge that touches a lockfile; in the sandbox add
 `--filter '!@shepai/electron'` (its git dependency cannot be downloaded here).
+
+## `rg` drops the file name when its scope is a single file
+
+`search_source` with `path: src/auth/errors.js` printed `7:export class …`, so the hit counter
+reported "0 matches" and a real model searched the same thing 14 times. Always pass
+`--with-filename` when the output is parsed as `path:line:`.
+
+## A killed process leaves its harness task "running" forever
+
+`stop` only acts "before the next turn", which never comes once the process is gone, so the
+session could not be discarded. Record the owning pid on the task and cancel orphans on stop.
+Real-model runs find these; scripted ones did not.

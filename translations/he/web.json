@@ -1234,6 +1234,7 @@
     "actions": {
       "stop": "עצור",
       "stopRequested": "התבקשה עצירה; המשימה תיעצר לפני הסבב הבא שלה",
+      "stoppedOrphan": "נעצרה: התהליך שהריץ את המשימה הסתיים, ולכן היא בוטלה",
       "branchPlaceholder": "ענף (אופציונלי)",
       "apply": "החל על ענף",
       "applied": "בוצע commit של {{count}} קבצים ל-{{branch}}",

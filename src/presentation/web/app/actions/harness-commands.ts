@@ -16,7 +16,10 @@ import type { ResolveHarnessPermissionUseCase } from '@shepai/core/application/u
 import type { OverrideChunkVisibilityUseCase } from '@shepai/core/application/use-cases/harness/override-chunk-visibility.use-case';
 import type { RunHarnessTaskUseCase } from '@shepai/core/application/use-cases/harness/run-harness-task.use-case';
 import type { ResumeHarnessSessionUseCase } from '@shepai/core/application/use-cases/harness/resume-harness-session.use-case';
-import type { StopHarnessSessionUseCase } from '@shepai/core/application/use-cases/harness/stop-harness-session.use-case';
+import type {
+  StopHarnessSessionResult,
+  StopHarnessSessionUseCase,
+} from '@shepai/core/application/use-cases/harness/stop-harness-session.use-case';
 import type {
   ApplyHarnessSessionResult,
   ApplyHarnessSessionUseCase,
@@ -88,7 +91,7 @@ export async function startHarnessTask(
 
 export async function stopHarnessSession(
   sessionId: string
-): Promise<HarnessResult<HarnessSession>> {
+): Promise<HarnessResult<StopHarnessSessionResult>> {
   return run(() =>
     resolve<StopHarnessSessionUseCase>('StopHarnessSessionUseCase').execute({ sessionId })
   );

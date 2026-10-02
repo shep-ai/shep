@@ -179,7 +179,9 @@ describe('standalone harness sessions', () => {
   });
 
   it('stops a running task before its next turn (cross-process stop request)', async () => {
-    const stop = new StopHarnessSessionUseCase(u.h.store.sessions, u.h.store.events);
+    const stop = new StopHarnessSessionUseCase(u.h.store.sessions, u.h.store.events, {
+      isProcessAlive: () => true,
+    });
     let sessionId = '';
     u.script((_req, i) => {
       if (i === 0) void stop.execute({ sessionId });
@@ -200,6 +202,59 @@ describe('standalone harness sessions', () => {
     });
     expect(result.task.status).toBe(HarnessTaskStatus.Cancelled);
     expect(result.result.summary).toBe('Stopped by the user.');
+  });
+
+  it('records the process that runs a task', async () => {
+    u.script(EDIT);
+    const { task } = await run.execute({
+      repoRoot: repo.root,
+      task: 'Make refresh trim the token',
+      interactive: false,
+    });
+    expect((await u.h.store.sessions.getTask(task.id))?.ownerPid).toBe(process.pid);
+  });
+
+  describe('stopping a task whose process is gone', () => {
+    const DEAD_PID = 999_999;
+    const liveness = { isProcessAlive: (pid: number) => pid === process.pid };
+
+    async function leaveTaskRunning(ownerPid: number) {
+      u.script(EDIT);
+      const { session, task } = await run.execute({
+        repoRoot: repo.root,
+        task: 'Make refresh trim the token',
+        interactive: false,
+      });
+      // As if the process was killed mid-turn: the task stays running in the database.
+      await u.h.store.sessions.updateTask({ ...task, status: HarnessTaskStatus.Running, ownerPid });
+      return { session, task };
+    }
+
+    it('cancels the task at once so the session can be discarded', async () => {
+      const { session, task } = await leaveTaskRunning(DEAD_PID);
+      const stop = new StopHarnessSessionUseCase(u.h.store.sessions, u.h.store.events, liveness);
+
+      const stopped = await stop.execute({ sessionId: session.id });
+
+      expect(stopped.cancelledTaskIds).toEqual([task.id]);
+      expect((await u.h.store.sessions.getTask(task.id))?.status).toBe(HarnessTaskStatus.Cancelled);
+      const discarded = await new DiscardHarnessSessionUseCase(
+        u.h.store.sessions,
+        u.workspaces
+      ).execute({ sessionId: session.id });
+      expect(discarded.status).toBe(HarnessSessionStatus.Discarded);
+    });
+
+    it('only requests a stop while the owning process is alive', async () => {
+      const { session, task } = await leaveTaskRunning(process.pid);
+      const stop = new StopHarnessSessionUseCase(u.h.store.sessions, u.h.store.events, liveness);
+
+      const stopped = await stop.execute({ sessionId: session.id });
+
+      expect(stopped.cancelledTaskIds).toEqual([]);
+      expect(stopped.session.stopRequestedAt).toBeInstanceOf(Date);
+      expect((await u.h.store.sessions.getTask(task.id))?.status).toBe(HarnessTaskStatus.Running);
+    });
   });
 
   it('honours run overrides: shadow context routing executes as baseline', async () => {

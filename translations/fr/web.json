@@ -1234,6 +1234,7 @@
     "actions": {
       "stop": "Arrêter",
       "stopRequested": "Arrêt demandé ; la tâche s'arrête avant son prochain tour",
+      "stoppedOrphan": "Arrêtée : le processus qui exécutait la tâche s'était terminé, elle est donc annulée",
       "branchPlaceholder": "Branche (facultatif)",
       "apply": "Appliquer à la branche",
       "applied": "{{count}} fichier(s) commité(s) sur {{branch}}",

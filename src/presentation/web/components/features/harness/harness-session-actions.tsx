@@ -69,7 +69,14 @@ export function HarnessSessionActions({
         onClick={() =>
           act(
             () => stopHarnessSession(session.id),
-            () => toast.success(t('harness.actions.stopRequested'))
+            (stopped) =>
+              toast.success(
+                t(
+                  stopped.cancelledTaskIds.length > 0
+                    ? 'harness.actions.stoppedOrphan'
+                    : 'harness.actions.stopRequested'
+                )
+              )
           )
         }
       >

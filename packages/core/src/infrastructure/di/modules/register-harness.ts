@@ -193,6 +193,7 @@ export function registerHarness(container: DependencyContainer): void {
         inspector: c.resolve(HARNESS_TOKENS.CommandInspector),
         instructions: c.resolve(HARNESS_TOKENS.InstructionSource),
         decisionFactory: c.resolve(HARNESS_TOKENS.DecisionProviderFactory),
+        processId: process.pid,
       }),
   });
   container.register<HarnessTaskService>(HARNESS_TOKENS.TaskService, {

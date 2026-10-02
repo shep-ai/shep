@@ -63,6 +63,7 @@ export async function createRuntimeHarness(
     instructions: new FileSystemInstructionSource(),
     decisionFactory: new DecisionProviderFactory(),
     permissionPollMs: 5,
+    processId: process.pid,
   });
   const config = resolveHarnessConfig(options.config as never);
   let model: ScriptedHarnessModelProvider | undefined;
