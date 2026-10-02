@@ -19,7 +19,17 @@ import {
   type IHarnessPermissionRepository,
   type IHarnessSessionRepository,
   type IRepoSnapshotter,
+  type ICommandInspector,
+  type IDecisionProviderFactory,
+  type IPolicyEngine,
+  type IToolArgumentValidator,
+  type IToolSource,
 } from '../../../application/ports/output/harness/index.js';
+import { DecisionProviderFactory } from '../../services/harness/decisions/decision-provider-factory.js';
+import { BuiltinToolSource } from '../../services/harness/tools/builtin-tool-source.js';
+import { AjvToolArgumentValidator } from '../../services/harness/tools/ajv-tool-argument-validator.js';
+import { YamlPolicyEngine } from '../../services/harness/policy/yaml-policy-engine.js';
+import { ShellCommandInspector } from '../../services/harness/policy/shell-command-inspector.js';
 import { getShepHomeDir } from '../../services/filesystem/shep-directory.service.js';
 import { FileSystemBlobStore } from '../../services/harness/storage/file-system-blob-store.js';
 import { GitRepoSnapshotter } from '../../services/harness/git-repo-snapshotter.js';
@@ -65,5 +75,22 @@ export function registerHarness(container: DependencyContainer): void {
   container.register<IHarnessEventLog>(HARNESS_TOKENS.EventLog, {
     useFactory: (c) =>
       new SqliteHarnessEventLog(db(c), c.resolve<IBlobStore>(HARNESS_TOKENS.BlobStore)),
+  });
+
+  // ─── Decisions, tools and policy ─────────────────────────────────────────
+  container.register<IDecisionProviderFactory>(HARNESS_TOKENS.DecisionProviderFactory, {
+    useFactory: () => new DecisionProviderFactory(),
+  });
+  container.register<IToolSource[]>(HARNESS_TOKENS.ToolSources, {
+    useFactory: () => [new BuiltinToolSource()],
+  });
+  container.register<IToolArgumentValidator>(HARNESS_TOKENS.ToolArgumentValidator, {
+    useFactory: () => new AjvToolArgumentValidator(),
+  });
+  container.register<IPolicyEngine>(HARNESS_TOKENS.PolicyEngine, {
+    useFactory: () => new YamlPolicyEngine(),
+  });
+  container.register<ICommandInspector>(HARNESS_TOKENS.CommandInspector, {
+    useFactory: () => new ShellCommandInspector(),
   });
 }

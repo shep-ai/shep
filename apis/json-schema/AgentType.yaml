@@ -16,4 +16,5 @@ enum:
   - ollama
   - llmproxy
   - dev
+  - shep-harness
 description: AI coding agent tool selection

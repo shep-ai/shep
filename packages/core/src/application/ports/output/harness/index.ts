@@ -3,3 +3,7 @@ export * from './harness-event-log.interface.js';
 export * from './repo-snapshotter.interface.js';
 export * from './harness-repositories.interface.js';
 export * from './harness-tokens.js';
+export * from './decision-provider.interface.js';
+export * from './tool-executor.interface.js';
+export * from './policy-engine.interface.js';
+export * from './harness-model-provider.interface.js';

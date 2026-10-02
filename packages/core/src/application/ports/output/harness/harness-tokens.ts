@@ -14,4 +14,9 @@ export const HARNESS_TOKENS = {
   PermissionRepository: 'IHarnessPermissionRepository',
   EvalRepository: 'IHarnessEvalRepository',
   RepoSnapshotter: 'IRepoSnapshotter',
+  DecisionProviderFactory: 'IDecisionProviderFactory',
+  ToolSources: 'IHarnessToolSources',
+  ToolArgumentValidator: 'IToolArgumentValidator',
+  PolicyEngine: 'IHarnessPolicyEngine',
+  CommandInspector: 'ICommandInspector',
 } as const;

@@ -54,6 +54,9 @@ properties:
   worktree:
     $ref: WorktreeConfig.yaml
     description: Custom worktree provisioning commands (optional, built-in git worktree by default)
+  harness:
+    $ref: HarnessConfig.yaml
+    description: Query-aware agent harness configuration (optional, defaults applied at runtime)
 required:
   - models
   - user
