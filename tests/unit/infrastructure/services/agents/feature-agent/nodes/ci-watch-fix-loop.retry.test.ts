@@ -17,6 +17,7 @@ vi.mock('@/infrastructure/services/settings.service.js', () => ({
 }));
 
 vi.mock('@/infrastructure/services/agents/feature-agent/phase-timing-context.js', () => ({
+  getPhaseTimingRunId: vi.fn().mockReturnValue(undefined),
   recordPhaseStart: vi.fn().mockResolvedValue('timing-1'),
   recordPhaseEnd: vi.fn().mockResolvedValue(undefined),
 }));

@@ -24,12 +24,14 @@ import {
   type IPolicyEngine,
   type IToolArgumentValidator,
   type IToolSource,
+  type IInstructionSource,
 } from '../../../application/ports/output/harness/index.js';
 import { DecisionProviderFactory } from '../../services/harness/decisions/decision-provider-factory.js';
 import { BuiltinToolSource } from '../../services/harness/tools/builtin-tool-source.js';
 import { AjvToolArgumentValidator } from '../../services/harness/tools/ajv-tool-argument-validator.js';
 import { YamlPolicyEngine } from '../../services/harness/policy/yaml-policy-engine.js';
 import { ShellCommandInspector } from '../../services/harness/policy/shell-command-inspector.js';
+import { FileSystemInstructionSource } from '../../services/harness/instructions/file-system-instruction-source.js';
 import { getShepHomeDir } from '../../services/filesystem/shep-directory.service.js';
 import { FileSystemBlobStore } from '../../services/harness/storage/file-system-blob-store.js';
 import { GitRepoSnapshotter } from '../../services/harness/git-repo-snapshotter.js';
@@ -92,5 +94,8 @@ export function registerHarness(container: DependencyContainer): void {
   });
   container.register<ICommandInspector>(HARNESS_TOKENS.CommandInspector, {
     useFactory: () => new ShellCommandInspector(),
+  });
+  container.register<IInstructionSource>(HARNESS_TOKENS.InstructionSource, {
+    useFactory: () => new FileSystemInstructionSource(),
   });
 }

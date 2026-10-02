@@ -35,6 +35,11 @@ export function getLastTimingId(): string | null {
 /**
  * Set the phase timing context. Called once by the worker after DI init.
  */
+/** Agent run id the worker registered, if any (spec 119 call context). */
+export function getPhaseTimingRunId(): string | undefined {
+  return contextRunId;
+}
+
 export function setPhaseTimingContext(runId: string, repository: IPhaseTimingRepository): void {
   contextRunId = runId;
   contextRepository = repository;

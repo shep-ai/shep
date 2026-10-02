@@ -7,3 +7,4 @@ export * from './decision-provider.interface.js';
 export * from './tool-executor.interface.js';
 export * from './policy-engine.interface.js';
 export * from './harness-model-provider.interface.js';
+export * from './instruction-source.interface.js';

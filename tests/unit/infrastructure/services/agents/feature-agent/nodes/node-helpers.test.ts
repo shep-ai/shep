@@ -14,6 +14,10 @@ import {
   removeSpecCommitsIfNeeded,
 } from '@/infrastructure/services/agents/feature-agent/nodes/node-helpers.js';
 import { initializeSettings, resetSettings } from '@/infrastructure/services/settings.service.js';
+import {
+  setPhaseTimingContext,
+  clearPhaseTimingContext,
+} from '@/infrastructure/services/agents/feature-agent/phase-timing-context.js';
 import { DEFAULT_AGENT_IDLE_TIMEOUT_MS } from '@/infrastructure/services/agents/common/agent-timeouts.js';
 import { createDefaultSettings } from '@/domain/factories/settings-defaults.factory.js';
 
@@ -478,6 +482,28 @@ describe('buildExecutorOptions', () => {
   it('omits mcpConfigPath when undefined in state', () => {
     const options = buildExecutorOptions(baseState as any);
     expect(options).not.toHaveProperty('mcpConfigPath');
+  });
+
+  it('identifies the call (agent run, feature, phase) for executors that keep per-run state', () => {
+    setPhaseTimingContext('run-123', { findByRunId: async () => [] } as any);
+    try {
+      const options = buildExecutorOptions(
+        { ...baseState, featureId: 'feat-9' } as any,
+        undefined,
+        'plan'
+      );
+      expect(options.callContext).toEqual({
+        agentRunId: 'run-123',
+        featureId: 'feat-9',
+        phase: 'plan',
+      });
+    } finally {
+      clearPhaseTimingContext();
+    }
+  });
+
+  it('omits unknown call identity fields instead of sending empty strings', () => {
+    expect(buildExecutorOptions(baseState as any).callContext).toEqual({ phase: 'implement' });
   });
 });
 

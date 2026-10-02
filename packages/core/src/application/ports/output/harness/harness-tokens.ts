@@ -19,4 +19,5 @@ export const HARNESS_TOKENS = {
   ToolArgumentValidator: 'IToolArgumentValidator',
   PolicyEngine: 'IHarnessPolicyEngine',
   CommandInspector: 'ICommandInspector',
+  InstructionSource: 'IInstructionSource',
 } as const;

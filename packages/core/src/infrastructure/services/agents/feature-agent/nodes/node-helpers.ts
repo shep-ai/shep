@@ -24,6 +24,7 @@ import {
   recordPhaseStart,
   recordPhaseEnd,
   recordApprovalWaitStart,
+  getPhaseTimingRunId,
 } from '../phase-timing-context.js';
 import { updateNodeLifecycle } from '../lifecycle-context.js';
 import { getLogPrefix, setCurrentPhase } from '../log-context.js';
@@ -130,6 +131,11 @@ export function buildExecutorOptions(
     ...(state.model ? { model: state.model } : {}),
     ...(state.effort ? { effort: state.effort } : {}),
     ...(state.mcpConfigPath ? { mcpConfigPath: state.mcpConfigPath } : {}),
+    callContext: {
+      ...(getPhaseTimingRunId() && { agentRunId: getPhaseTimingRunId() }),
+      ...(state.featureId && { featureId: state.featureId }),
+      ...(stage && { phase: stage }),
+    },
     ...overrides,
   };
 }

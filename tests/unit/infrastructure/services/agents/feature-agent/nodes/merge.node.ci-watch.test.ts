@@ -94,6 +94,7 @@ vi.mock('@/infrastructure/services/agents/feature-agent/heartbeat.js', () => ({
 }));
 
 vi.mock('@/infrastructure/services/agents/feature-agent/phase-timing-context.js', () => ({
+  getPhaseTimingRunId: vi.fn().mockReturnValue(undefined),
   recordPhaseStart: mockRecordPhaseStart,
   recordPhaseEnd: mockRecordPhaseEnd,
   recordApprovalWaitStart: mockRecordApprovalWaitStart,

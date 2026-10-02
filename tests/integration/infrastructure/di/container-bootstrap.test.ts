@@ -169,6 +169,7 @@ const CRITICAL_INFRA_TOKENS: readonly string[] = [
   'IToolArgumentValidator',
   'IHarnessPolicyEngine',
   'ICommandInspector',
+  'IInstructionSource',
   'IApplicationRepository',
   'IPhaseTimingRepository',
   'IInteractiveSessionRepository',
