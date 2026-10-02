@@ -33,6 +33,7 @@ export const DEFAULT_HARNESS_CONFIG: Readonly<HarnessConfig> = Object.freeze({
     hideThreshold: 0.1,
     longThreshold: 0.45,
     fullThreshold: 0.8,
+    fullTokenCap: 4_000,
     uncertainDefault: ChunkVisibility.Long,
   },
   decisions: {

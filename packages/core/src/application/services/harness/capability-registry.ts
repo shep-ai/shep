@@ -67,7 +67,20 @@ export class CapabilityRegistry {
   /** Tier 1: `id — snippet` lines for the given capabilities (all by default). */
   snippetCatalog(ids?: readonly string[]): string {
     const caps = ids ? ids.map((id) => this.capabilities.get(id)).filter(Boolean) : this.list();
-    return (caps as Capability[]).map((c) => `${c.id} — ${c.snippet}`).join('\n');
+    return (caps as Capability[])
+      .map((c) => `${c.id}(${this.parameterList(c)}) — ${c.snippet}`)
+      .join('\n');
+  }
+
+  /** Parameter names of a capability's first implementation; optional ones end in `?`. */
+  private parameterList(c: Capability): string {
+    const schema = this.implementations(c.id)[0]?.inputSchema as
+      | { properties?: Record<string, unknown>; required?: string[] }
+      | undefined;
+    const required = new Set(schema?.required ?? []);
+    return Object.keys(schema?.properties ?? {})
+      .map((name) => (required.has(name) ? name : `${name}?`))
+      .join(', ');
   }
 
   /** Tier 3 docs, if the implementation has any. */

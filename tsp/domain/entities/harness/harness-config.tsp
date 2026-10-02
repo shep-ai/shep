@@ -28,6 +28,9 @@ model HarnessContextConfig {
   @doc("Relevance from this is full")
   fullThreshold: float64 = 0.8;
 
+  @doc("Largest view (tokens) shown in full without an explicit request; bigger chunks get their long view")
+  fullTokenCap: int32 = 4000;
+
   @doc("Visibility used when no provider could score a chunk")
   uncertainDefault: ChunkVisibility = ChunkVisibility.Long;
 }

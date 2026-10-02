@@ -272,4 +272,29 @@ describe('ContextEngine', () => {
     expect(plan.chunks.some((c) => c.chunkId === chunks.refresh.id)).toBe(false);
     expect(plan.chunks.some((c) => c.chunkId === newer.id)).toBe(true);
   });
+
+  it('shows a big relevant chunk at long (size cap) unless the agent asks for it', async () => {
+    const log = await writer.write({
+      sessionId,
+      kind: ChunkKind.File,
+      label: 'logs/rotate.log',
+      source: 'read_file',
+      content: Array.from({ length: 3000 }, (_, i) => `line ${i} rotate refresh token step`).join(
+        '\n'
+      ),
+      path: 'logs/rotate.log',
+    });
+    const capped = (
+      await engine.build(input({ query: 'rotate the refresh token in logs/rotate.log' }))
+    ).plan.chunks.find((c) => c.chunkId === log.id)!;
+    expect(capped.visibility).toBe(V.Long);
+    expect(capped.reasonCode).toBe('size_cap');
+    expect(capped.tokens).toBeLessThan(capped.rawTokens / 5);
+
+    const asked = (
+      await engine.build(input({ escalations: new Map([[log.id, V.Full]]) }))
+    ).plan.chunks.find((c) => c.chunkId === log.id)!;
+    expect(asked.visibility).toBe(V.Full);
+    expect(asked.source).toBe(VisibilitySource.Escalation);
+  });
 });

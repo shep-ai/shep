@@ -1261,6 +1261,31 @@
       "exists": "existe, conservé",
       "confirm": "Écrire les fichiers",
       "written": "{{count}} fichier(s) écrit(s)"
+    },
+    "evals": {
+      "description": "Exécutez les mêmes tâches en baseline et en query-aware, chacune dans un dépôt jetable, et comparez réussite, tokens, coût, tours et couverture des preuves.",
+      "repeats": "Répétitions",
+      "run": "Lancer l'éval",
+      "empty": "Aucune exécution d'éval pour l'instant.",
+      "score": "Mesure",
+      "change": "Écart",
+      "status": {
+        "pending": "En attente",
+        "running": "En cours",
+        "completed": "Terminée",
+        "failed": "Échouée"
+      },
+      "scores": {
+        "success": "Réussite",
+        "inputTokens": "Tokens d'entrée",
+        "outputTokens": "Tokens de sortie",
+        "costUsd": "Coût",
+        "turns": "Tours",
+        "wallMs": "Durée",
+        "repeatedReads": "Lectures répétées",
+        "toolOutputRatio": "Sortie d'outils vue",
+        "evidenceRecall": "Couverture des preuves"
+      }
     }
   }
 }

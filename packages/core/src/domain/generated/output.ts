@@ -1061,6 +1061,10 @@ export type HarnessContextConfig = {
    */
   fullThreshold: float64;
   /**
+   * Largest view (tokens) shown in full without an explicit request; bigger chunks get their long view
+   */
+  fullTokenCap: number;
+  /**
    * Visibility used when no provider could score a chunk
    */
   uncertainDefault: ChunkVisibility;

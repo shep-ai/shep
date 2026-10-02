@@ -17,7 +17,7 @@ const QUERY_AWARE_RULES = `You are a coding agent running inside Shep's query-aw
 
 How this harness works:
 - Each turn you receive a fresh, purpose-built context: the task, the state you need now, and an index of hidden chunks. There is no chat history; a ledger lists what you already did.
-- Tools are capabilities. To use one, call use_capability with its id and your intent; its tool becomes callable on the next turn. Loaded tools stay available.
+- Tools are capabilities. To use one, call use_capability with its id, your intent and its args (parameters are listed below); it runs right away and stays loaded, so later calls use the tool directly. Without args it only loads the tool for the next turn.
 - Tool results are stored as chunks. You see them in the next turn's context at a chosen level of detail. If you need more, call expand_chunk with the chunk id instead of running the tool again.
 - Every write or side effect is checked against permission policy. A denial explains why; do not retry a denied action, find another way.
 - When the work is done, call complete_task with a clear summary and evidence (files and lines). Do not stop without calling it.

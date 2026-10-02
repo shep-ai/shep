@@ -3,11 +3,13 @@ import { getFeatureFlags } from '@/lib/feature-flags';
 import {
   getHarnessPolicies,
   listHarnessCapabilities,
+  listHarnessEvals,
   listHarnessPermissions,
   listHarnessRepositoryPaths,
   listHarnessSessions,
 } from '@/app/actions/harness-queries';
 import { HarnessPageClient } from '@/components/features/harness/harness-page-client';
+import { HarnessEvalsPanel } from '@/components/features/harness/harness-evals-panel';
 
 /** Skip static pre-rendering since we need runtime DI container and server context. */
 export const dynamic = 'force-dynamic';
@@ -15,11 +17,12 @@ export const dynamic = 'force-dynamic';
 export default async function HarnessPage() {
   if (!getFeatureFlags().queryAwareHarness) redirect('/');
 
-  const [sessions, approvals, capabilities, repositories] = await Promise.all([
+  const [sessions, approvals, capabilities, repositories, evals] = await Promise.all([
     listHarnessSessions(),
     listHarnessPermissions(),
     listHarnessCapabilities(),
     listHarnessRepositoryPaths(),
+    listHarnessEvals(),
   ]);
   const repoPaths = repositories.ok ? repositories.data : [];
   const policies = await getHarnessPolicies(repoPaths[0] ?? '');
@@ -40,6 +43,7 @@ export default async function HarnessPage() {
         capabilities={capabilities.ok ? capabilities.data : []}
         policies={policies.ok ? policies.data : { rules: [], issues: [] }}
         repositories={repoPaths}
+        evals={evals.ok ? <HarnessEvalsPanel initial={evals.data} /> : undefined}
       />
     </div>
   );

@@ -32,3 +32,6 @@ export async function discardHarnessSession(_sessionId: string) {
 export async function setUpHarnessRepository(_repoRoot: string, confirm: boolean) {
   return ok({ ...fixtureSetup, written: confirm ? fixtureSetup.files.map((f) => f.path) : [] });
 }
+export async function startHarnessEval(_req: unknown) {
+  return ok({ runId: 'eval-1' });
+}

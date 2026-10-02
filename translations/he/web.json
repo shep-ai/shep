@@ -1261,6 +1261,31 @@
       "exists": "קיים, נשמר",
       "confirm": "כתוב קבצים",
       "written": "נכתבו {{count}} קבצים"
+    },
+    "evals": {
+      "description": "הריצו את אותן משימות במצבי baseline ו-query-aware, כל אחת במאגר זמני, והשוו הצלחה, טוקנים, עלות, סבבים וכיסוי ראיות.",
+      "repeats": "חזרות",
+      "run": "הרצת הערכה",
+      "empty": "עדיין אין הרצות הערכה.",
+      "score": "מדד",
+      "change": "שינוי",
+      "status": {
+        "pending": "ממתין",
+        "running": "רץ",
+        "completed": "הושלם",
+        "failed": "נכשל"
+      },
+      "scores": {
+        "success": "הצלחה",
+        "inputTokens": "טוקני קלט",
+        "outputTokens": "טוקני פלט",
+        "costUsd": "עלות",
+        "turns": "סבבים",
+        "wallMs": "משך",
+        "repeatedReads": "קריאות חוזרות",
+        "toolOutputRatio": "פלט כלים שהוצג",
+        "evidenceRecall": "כיסוי ראיות"
+      }
     }
   }
 }

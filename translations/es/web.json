@@ -1261,6 +1261,31 @@
       "exists": "existe, se conserva",
       "confirm": "Escribir archivos",
       "written": "Se escribieron {{count}} archivo(s)"
+    },
+    "evals": {
+      "description": "Ejecuta las mismas tareas en baseline y query-aware, cada una en un repositorio desechable, y compara éxito, tokens, coste, turnos y cobertura de evidencias.",
+      "repeats": "Repeticiones",
+      "run": "Ejecutar eval",
+      "empty": "Aún no hay ejecuciones de eval.",
+      "score": "Métrica",
+      "change": "Cambio",
+      "status": {
+        "pending": "Pendiente",
+        "running": "En curso",
+        "completed": "Completada",
+        "failed": "Fallida"
+      },
+      "scores": {
+        "success": "Éxito",
+        "inputTokens": "Tokens de entrada",
+        "outputTokens": "Tokens de salida",
+        "costUsd": "Coste",
+        "turns": "Turnos",
+        "wallMs": "Tiempo total",
+        "repeatedReads": "Lecturas repetidas",
+        "toolOutputRatio": "Salida de herramientas vista",
+        "evidenceRecall": "Cobertura de evidencias"
+      }
     }
   }
 }

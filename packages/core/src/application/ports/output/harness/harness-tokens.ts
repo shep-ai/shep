@@ -26,4 +26,6 @@ export const HARNESS_TOKENS = {
   WorkspaceService: 'IHarnessWorkspaceService',
   ProjectSetup: 'IHarnessProjectSetup',
   EnvironmentProbe: 'IHarnessEnvironmentProbe',
+  EvalSuiteSource: 'IHarnessEvalSuiteSource',
+  EvalWorkspaceFactory: 'IHarnessEvalWorkspaceFactory',
 } as const;

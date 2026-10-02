@@ -7,6 +7,7 @@
  *   shep harness stop | apply | promote | discard <id>
  *   shep harness ls | inspect session|context <id> | view <chunk-id> | explain <id>
  *   shep harness permissions ls|allow|deny | capabilities | policies
+ *   shep harness eval run <suite> | ls | report <run-id> | save <session-id> --suite <id>
  */
 import { Command } from 'commander';
 import { createRunCommand } from './run.command.js';
@@ -29,6 +30,7 @@ import {
   createPermissionsCommand,
   createPoliciesCommand,
 } from './control.commands.js';
+import { createEvalCommand } from './eval.commands.js';
 
 export function createHarnessCommand(): Command {
   return new Command('harness')
@@ -48,5 +50,6 @@ export function createHarnessCommand(): Command {
     .addCommand(createExplainCommand())
     .addCommand(createPermissionsCommand())
     .addCommand(createCapabilitiesCommand())
-    .addCommand(createPoliciesCommand());
+    .addCommand(createPoliciesCommand())
+    .addCommand(createEvalCommand());
 }

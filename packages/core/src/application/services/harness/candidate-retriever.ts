@@ -32,6 +32,11 @@ export const ChunkTag = {
   PromptSection: 'prompt_section',
   /** Put by the session restorer on chunks of files that drifted. */
   Stale: 'stale',
+  /**
+   * A model response with tool calls only: the ledger already says what was
+   * done, so the chunk is kept for audit but never offered as context.
+   */
+  LedgerOnly: 'ledger_only',
 } as const;
 
 const TOOL_OUTPUT_KINDS = new Set<ChunkKind>([
@@ -86,7 +91,10 @@ export class CandidateRetriever {
     // Secret chunks never reach a model; stale chunks describe files that
     // changed since they were read (a fresh read supersedes them).
     const chunks = (await this.context.listChunks({ sessionId: input.sessionId })).filter(
-      (c) => c.sensitivity !== SensitivityLabel.Secret && !c.tags.includes(ChunkTag.Stale)
+      (c) =>
+        c.sensitivity !== SensitivityLabel.Secret &&
+        !c.tags.includes(ChunkTag.Stale) &&
+        !c.tags.includes(ChunkTag.LedgerOnly)
     );
     const text = `${input.query}\n${input.task.goal}`;
     const lowered = text.toLowerCase();

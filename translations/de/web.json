@@ -1261,6 +1261,31 @@
       "exists": "vorhanden, beibehalten",
       "confirm": "Dateien schreiben",
       "written": "{{count}} Datei(en) geschrieben"
+    },
+    "evals": {
+      "description": "Dieselben Aufgaben mit Baseline und Query-aware ausführen, jeweils in einem Wegwerf-Repository, und Erfolg, Tokens, Kosten, Runden und Evidenz-Abdeckung vergleichen.",
+      "repeats": "Wiederholungen",
+      "run": "Eval starten",
+      "empty": "Noch keine Eval-Läufe.",
+      "score": "Kennzahl",
+      "change": "Änderung",
+      "status": {
+        "pending": "Ausstehend",
+        "running": "Läuft",
+        "completed": "Abgeschlossen",
+        "failed": "Fehlgeschlagen"
+      },
+      "scores": {
+        "success": "Erfolg",
+        "inputTokens": "Eingabe-Tokens",
+        "outputTokens": "Ausgabe-Tokens",
+        "costUsd": "Kosten",
+        "turns": "Runden",
+        "wallMs": "Laufzeit",
+        "repeatedReads": "Wiederholte Lesezugriffe",
+        "toolOutputRatio": "Gesehene Tool-Ausgabe",
+        "evidenceRecall": "Evidenz-Abdeckung"
+      }
     }
   }
 }

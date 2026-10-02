@@ -467,3 +467,42 @@ content: |
   | SQLite growth | CAS dedupe; views cached by fingerprint; retention integration in V1 |
   | Name collisions (Task, Session, Tool) | Harness-prefixed entities; `shep harness` CLI group |
   | Windows paths | `path.isAbsolute`/`path.relative` for outside-repo checks; no shell-specific assumptions in tools (lessons) |
+
+  ## Clean Architecture Compliance
+
+  The harness follows shep's Clean Architecture:
+  - **Domain** (`domain/harness/`) is pure.
+  - **Application** (`application/services|use-cases|ports/output/harness/`) reaches models,
+    tools, storage, policy, git and the file system only through ports.
+  - **Infrastructure** implements those ports.
+  - **CLI and web** call use cases (web through server actions).
+
+  `tests/unit/architecture/harness-dependency-rule.test.ts` enforces this:
+  - no infrastructure or provider-SDK import in the harness application layer;
+  - no non-domain import in `domain/harness`;
+  - no container or infrastructure import in the web harness components.
+
+  ## Implementation Notes and Deviations (V0, as built)
+
+  - **Prompt sections (task-25).** Derived from the rendered prompt's Markdown headings, so each
+    section is byte-identical to the prompt. The prompt builders were not refactored.
+    `callContext` is threaded through `buildExecutorOptions`.
+  - **Storage.** Harness tables are JSON documents (indexed columns plus a `data` JSON column).
+    The harness config is one `settings.harness_config` JSON column.
+  - **Tool loading.** `use_capability` accepts `args` and calls the tool in the same turn
+    (load-and-call), and the Tier-1 catalog lists parameter names. The paired eval showed the
+    load-only form cost an extra turn on every tool's first use.
+  - **Size cap.** `HarnessContextConfig.fullTokenCap` (default 4,000): a chunk over the cap gets
+    its long view unless the agent expands it. Long views of dense matches are bounded
+    (rare-token ranking, at most 160 lines). The long-output paired eval case measures this.
+  - **Tool-call-only responses** are kept for audit but tagged `ledger_only`, so they never
+    re-enter context; the ledger already records them.
+  - **`gh` publishing.** `gh pr create|merge`, releases and repo publishing are `git_push`
+    effects, so `deny-git-push` covers them.
+  - **Repository setup** lives in /harness → "Set up a repository" (a repository picker with
+    preview and confirm), not in the repository drawer.
+  - **Not in V0:**
+    - the canvas pending-approval badge (the drawer banner and the Approvals inbox cover it);
+    - "Save as context eval case" in the Why drawer (`shep harness eval save` saves a whole
+      standalone session as a task case).
+  - **Conditional instructions** (`when`) are parsed and reported inactive until V1.

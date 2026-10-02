@@ -2870,3 +2870,37 @@ Rules:
 `listen EACCES`; the test's `listen` promise had no error handler, so each failure became a 60s
 timeout. Rules: let the OS choose (`listen(0)`), bind consecutive ranges from an OS-chosen base
 with retries, and make every test `listen` reject on `error`.
+
+## An efficiency claim needs a paired measurement that counts everything the provider counts
+
+The first paired eval showed the query-aware harness costing 6× baseline's input tokens on
+small tasks. Two causes, both found only by measuring:
+- the scripted provider's token estimate left out the tool schemas that baseline sends on every
+  turn, so baseline looked artificially cheap;
+- tiered tool loading spent a whole extra turn on each tool's first use.
+
+Fixing those surfaced a third problem: on a long task, a relevant 2,500-line log was shown in
+full on every turn (229K tokens against baseline's 55K). Rules:
+- count tools, the system prompt and every message the way a real provider bills them;
+- run one small case and one long case before claiming a saving;
+- cap what any single chunk may cost per turn, and bound dense-match "relevant ranges"
+  (a token that appears on every line of a log is not a match).
+
+## `pnpm generate` output must be committed exactly as generate writes it
+
+A commit carried `domain/generated/output.ts` with double quotes, while `pnpm generate` (which
+runs prettier) writes single quotes. CI's Type Check re-runs generate and diffs. After any
+TypeSpec change, run `pnpm generate` last and confirm `git diff --quiet
+packages/core/src/domain/generated/` before committing.
+
+## `cat >> file <<'EOF' … EOF || true` creates the file even when you meant to probe it
+
+An empty heredoc appended to a path that did not exist left an empty test file behind, and the
+next edit "appended" a test without imports. Check existence with `test -f` or `ls`; never use
+an append as a probe.
+
+## Model-supplied text that reaches a shell must be restricted, not escaped
+
+`run_tests` appended the model's `filter` to the test command and ran it through a shell, so
+`a; curl …` would have run. Restrict such arguments to a safe character set in both the JSON
+schema and the executor, and pin it with a test of shell metacharacters.

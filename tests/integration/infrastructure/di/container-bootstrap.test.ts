@@ -166,6 +166,10 @@ const WEB_ROUTE_TOKENS: readonly string[] = [
   'PromoteHarnessSessionUseCase',
   'DiscardHarnessSessionUseCase',
   'InitHarnessProjectUseCase',
+  'RunHarnessEvalUseCase',
+  'ListHarnessEvalRunsUseCase',
+  'GetHarnessEvalReportUseCase',
+  'SaveHarnessEvalCaseUseCase',
 ] as const;
 
 /**
@@ -194,6 +198,8 @@ const CRITICAL_INFRA_TOKENS: readonly string[] = [
   'HarnessTaskService',
   'IHarnessWorkspaceService',
   'IHarnessProjectSetup',
+  'IHarnessEvalSuiteSource',
+  'IHarnessEvalWorkspaceFactory',
   'IApplicationRepository',
   'IPhaseTimingRepository',
   'IInteractiveSessionRepository',

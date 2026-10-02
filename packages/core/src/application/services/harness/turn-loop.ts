@@ -11,10 +11,11 @@ import {
   HarnessEventType,
   HarnessTaskOutcome,
   HarnessToolCallStatus,
+  type ToolImplementation,
 } from '../../../domain/generated/output.js';
 import { estimateTokens } from '../../../domain/harness/fingerprints.js';
 import { escalateVisibility } from '../../../domain/harness/visibility-ladder.js';
-import type { HarnessToolSpec } from '../../ports/output/harness/index.js';
+import type { HarnessToolCallRequest, HarnessToolSpec } from '../../ports/output/harness/index.js';
 import { failureResult, resultFromCompleteTask } from './completion.js';
 import { callModel } from './model-call-recorder.js';
 import { MetaTool, QUERY_AWARE_META_TOOLS } from './meta-tools.js';
@@ -29,6 +30,38 @@ function loadedTools(tc: TurnContext): HarnessToolSpec[] {
     .map((id) => tc.registry.executor(id)?.implementation)
     .filter((i) => i !== undefined)
     .map((i) => ({ name: i.toolName, description: i.snippet, inputSchema: i.inputSchema }));
+}
+
+async function invokeLoaded(
+  tc: TurnContext,
+  turn: number,
+  call: HarnessToolCallRequest,
+  impl: ToolImplementation,
+  intent: string,
+  produced: string[],
+  focus: string[]
+): Promise<void> {
+  tc.progress({ kind: 'tool', message: `turn ${turn}: ${call.name}` });
+  const outcome = await tc.invoker.invoke({
+    session: tc.session,
+    task: tc.task,
+    turn,
+    call,
+    impl,
+    intent: intent.slice(0, 300) || undefined,
+    ctx: tc.toolCtx,
+  });
+  if (outcome.chunk) produced.push(outcome.chunk.id);
+  if (outcome.status === HarnessToolCallStatus.Denied) {
+    tc.progress({ kind: 'permission', message: outcome.summary });
+  }
+  tc.ledger.add({
+    turn,
+    action: outcome.action,
+    outcome: outcome.summary,
+    ...(outcome.chunk && { chunkId: outcome.chunk.id }),
+  });
+  focus.push(outcome.summary);
 }
 
 export async function runQueryAwareLoop(tc: TurnContext): Promise<LoopOutcome> {
@@ -144,6 +177,16 @@ export async function runQueryAwareLoop(tc: TurnContext): Promise<LoopOutcome> {
             action: `use_capability ${plan.capabilityId}`,
             outcome: `loaded tool ${plan.implementation.toolName}${docs ? ` (docs: ${docs})` : ''}`,
           });
+          const args = call.args.args;
+          if (args && typeof args === 'object' && !Array.isArray(args)) {
+            // Load and call in one turn: the schema is validated as usual.
+            const direct = {
+              id: call.id,
+              name: plan.implementation.toolName,
+              args: args as Record<string, unknown>,
+            };
+            await invokeLoaded(tc, turn, direct, plan.implementation, intent, produced, focus);
+          }
         } catch (error) {
           tc.ledger.add({
             turn,
@@ -163,27 +206,7 @@ export async function runQueryAwareLoop(tc: TurnContext): Promise<LoopOutcome> {
         });
         continue;
       }
-      tc.progress({ kind: 'tool', message: `turn ${turn}: ${call.name}` });
-      const outcome = await tc.invoker.invoke({
-        session: tc.session,
-        task: tc.task,
-        turn,
-        call,
-        impl,
-        intent: response.text.slice(0, 300) || undefined,
-        ctx: tc.toolCtx,
-      });
-      if (outcome.chunk) produced.push(outcome.chunk.id);
-      if (outcome.status === HarnessToolCallStatus.Denied) {
-        tc.progress({ kind: 'permission', message: outcome.summary });
-      }
-      tc.ledger.add({
-        turn,
-        action: outcome.action,
-        outcome: outcome.summary,
-        ...(outcome.chunk && { chunkId: outcome.chunk.id }),
-      });
-      focus.push(outcome.summary);
+      await invokeLoaded(tc, turn, call, impl, response.text, produced, focus);
     }
     lastFocus = focus.filter(Boolean).join('\n').slice(0, 2000);
   }

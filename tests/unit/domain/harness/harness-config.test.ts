@@ -21,6 +21,7 @@ describe('resolveHarnessConfig', () => {
       hideThreshold: 0.1,
       longThreshold: 0.45,
       fullThreshold: 0.8,
+      fullTokenCap: 4000,
       uncertainDefault: ChunkVisibility.Long,
     });
     expect(c.decisions).toEqual({

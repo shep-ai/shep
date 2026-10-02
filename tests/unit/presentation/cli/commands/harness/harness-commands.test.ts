@@ -165,13 +165,11 @@ describe('shep harness', () => {
   it('permissions allow resolves with the scope and note', async () => {
     mockResolve.mockImplementation((cls: { name: string }) => {
       impls[cls.name] ??= {
-        execute: vi
-          .fn()
-          .mockResolvedValue({
-            action: { summary: 'pnpm add jose' },
-            result: 'allow',
-            scope: GrantScope.Task,
-          }),
+        execute: vi.fn().mockResolvedValue({
+          action: { summary: 'pnpm add jose' },
+          result: 'allow',
+          scope: GrantScope.Task,
+        }),
       };
       return impls[cls.name];
     });
@@ -204,13 +202,11 @@ describe('shep harness', () => {
   it('init --json without --yes previews and never writes', async () => {
     mockResolve.mockImplementation((cls: { name: string }) => {
       impls[cls.name] ??= {
-        execute: vi
-          .fn()
-          .mockResolvedValue({
-            inspection: { instructionFiles: [], manifests: [], sensitivePaths: [] },
-            files: [],
-            written: [],
-          }),
+        execute: vi.fn().mockResolvedValue({
+          inspection: { instructionFiles: [], manifests: [], sensitivePaths: [] },
+          files: [],
+          written: [],
+        }),
       };
       return impls[cls.name];
     });
@@ -231,5 +227,41 @@ describe('shep harness', () => {
     const out = await run('ls');
     expect(out).toContain('sess-123');
     expect(out).toContain('1 awaiting approval');
+  });
+
+  it('eval report prints the baseline vs query-aware comparison', async () => {
+    const report = {
+      run: {
+        id: 'run-1',
+        suite: 'smoke',
+        status: 'completed',
+        variants: ['baseline', 'query_aware'],
+        repeats: 1,
+      },
+      results: [
+        {
+          caseId: 'trim-token',
+          variant: 'query_aware',
+          repeat: 1,
+          success: false,
+          error: 'timed out',
+        },
+      ],
+      variants: [],
+      comparison: [
+        { score: 'success', baseline: 1, queryAware: 0.5, relativeChange: -0.5 },
+        { score: 'inputTokens', baseline: 54795, queryAware: 13640, relativeChange: -0.751 },
+        { score: 'costUsd' },
+      ],
+    };
+    mockResolve.mockImplementation((cls: { name: string }) => {
+      impls[cls.name] ??= { execute: vi.fn().mockResolvedValue(report) };
+      return impls[cls.name];
+    });
+    const out = await run('eval', 'report', 'run-1');
+    expect(impls.GetHarnessEvalReportUseCase.execute).toHaveBeenCalledWith({ runId: 'run-1' });
+    expect(out).toMatch(/inputTokens\s+54,795\s+13,640\s+-75%/);
+    expect(out).toMatch(/success\s+100%\s+50%\s+-50%/);
+    expect(out).toContain('trim-token (query_aware #1): timed out');
   });
 });

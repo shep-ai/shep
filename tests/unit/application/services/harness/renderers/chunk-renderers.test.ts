@@ -140,3 +140,20 @@ describe('chunk renderers', () => {
     }
   });
 });
+
+describe('dense matches (spec 119)', () => {
+  it('ranks rare query tokens first and bounds the long view of a log', async () => {
+    const { matchingLineIndexes, windows, MAX_WINDOW_LINES } = await import(
+      '@/application/services/harness/renderers/render-support.js'
+    );
+    const all = Array.from({ length: 2000 }, (_, i) =>
+      i === 1500 ? 'ERROR bundle exceeded timeoutMs' : `INFO step ${i} build ok`
+    );
+    const hits = matchingLineIndexes(all, 'why did the build step fail with timeoutMs');
+    expect(hits[0]).toBe(1500);
+    const ranges = windows(hits, 8, all.length, 8);
+    const covered = ranges.reduce((n, [from, to]) => n + to - from + 1, 0);
+    expect(covered).toBeLessThanOrEqual(MAX_WINDOW_LINES);
+    expect(ranges.some(([from, to]) => from <= 1500 && 1500 <= to)).toBe(true);
+  });
+});

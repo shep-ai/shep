@@ -29,6 +29,8 @@ import {
   type IHarnessProjectSetup,
   type IHarnessWorkspaceService,
   type IHarnessEnvironmentProbe,
+  type IHarnessEvalSuiteSource,
+  type IHarnessEvalWorkspaceFactory,
 } from '../../../application/ports/output/harness/index.js';
 import type { ISettingsRepository } from '../../../application/ports/output/repositories/settings.repository.interface.js';
 import { HarnessRuntime } from '../../../application/services/harness/harness-runtime.js';
@@ -57,6 +59,14 @@ import { RenderChunkViewUseCase } from '../../../application/use-cases/harness/r
 import { ResolveHarnessPermissionUseCase } from '../../../application/use-cases/harness/resolve-harness-permission.use-case.js';
 import { ResumeHarnessSessionUseCase } from '../../../application/use-cases/harness/resume-harness-session.use-case.js';
 import { RunHarnessTaskUseCase } from '../../../application/use-cases/harness/run-harness-task.use-case.js';
+import { RunHarnessEvalUseCase } from '../../../application/use-cases/harness/run-harness-eval.use-case.js';
+import {
+  GetHarnessEvalReportUseCase,
+  ListHarnessEvalRunsUseCase,
+} from '../../../application/use-cases/harness/harness-eval-report.use-cases.js';
+import { SaveHarnessEvalCaseUseCase } from '../../../application/use-cases/harness/save-harness-eval-case.use-case.js';
+import { YamlHarnessEvalSuiteSource } from '../../services/harness/evals/yaml-eval-suite-source.js';
+import { TempGitEvalWorkspaceFactory } from '../../services/harness/evals/temp-git-eval-workspace.js';
 import { StopHarnessSessionUseCase } from '../../../application/use-cases/harness/stop-harness-session.use-case.js';
 
 /** Harness use cases, registered by class and by class-name string token. */
@@ -65,10 +75,12 @@ const HARNESS_USE_CASES = {
   DiscardHarnessSessionUseCase,
   ExplainHarnessDecisionUseCase,
   GetContextPlanUseCase,
+  GetHarnessEvalReportUseCase,
   GetHarnessPoliciesUseCase,
   GetHarnessSessionUseCase,
   InitHarnessProjectUseCase,
   ListHarnessCapabilitiesUseCase,
+  ListHarnessEvalRunsUseCase,
   ListHarnessEventsUseCase,
   ListHarnessPermissionsUseCase,
   ListHarnessSessionsUseCase,
@@ -77,7 +89,9 @@ const HARNESS_USE_CASES = {
   RenderChunkViewUseCase,
   ResolveHarnessPermissionUseCase,
   ResumeHarnessSessionUseCase,
+  RunHarnessEvalUseCase,
   RunHarnessTaskUseCase,
+  SaveHarnessEvalCaseUseCase,
   StopHarnessSessionUseCase,
 } as const;
 
@@ -202,6 +216,12 @@ export function registerHarness(container: DependencyContainer): void {
   });
   container.register<IHarnessProjectSetup>(HARNESS_TOKENS.ProjectSetup, {
     useFactory: () => new FileSystemHarnessProjectSetup(),
+  });
+  container.register<IHarnessEvalSuiteSource>(HARNESS_TOKENS.EvalSuiteSource, {
+    useFactory: () => new YamlHarnessEvalSuiteSource(),
+  });
+  container.register<IHarnessEvalWorkspaceFactory>(HARNESS_TOKENS.EvalWorkspaceFactory, {
+    useFactory: () => new TempGitEvalWorkspaceFactory(),
   });
   container.register<IHarnessEnvironmentProbe>(HARNESS_TOKENS.EnvironmentProbe, {
     useFactory: () => new HarnessEnvironmentProbe(join(getShepHomeDir(), HARNESS_OBJECTS_DIR)),

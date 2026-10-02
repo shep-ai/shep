@@ -11,3 +11,4 @@ export * from './instruction-source.interface.js';
 export * from './harness-workspace.interface.js';
 export * from './harness-project-setup.interface.js';
 export * from './harness-environment-probe.interface.js';
+export * from './harness-eval.interface.js';

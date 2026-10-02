@@ -183,6 +183,16 @@ export class ContextEngine {
             ? VisibilitySource.Deterministic
             : VisibilitySource.Ai;
       }
+      // A big chunk is not shown in full just because it is relevant and fits
+      // the budget: replaying it every turn is the transcript cost the harness
+      // exists to avoid. The agent can still ask for it with expand_chunk.
+      if (
+        w.visibility === ChunkVisibility.Full &&
+        w.views[ChunkVisibility.Full].tokens > input.config.fullTokenCap
+      ) {
+        w.visibility = ChunkVisibility.Long;
+        w.reasonCode = 'size_cap';
+      }
       // Explicit requests are credited as the reason a chunk is shown.
       const escalation = input.escalations.get(chunk.id);
       if (escalation) {

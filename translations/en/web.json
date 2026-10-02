@@ -1261,6 +1261,31 @@
       "exists": "exists, kept",
       "confirm": "Write files",
       "written": "Wrote {{count}} file(s)"
+    },
+    "evals": {
+      "description": "Run the same tasks on baseline and query-aware, each in a throwaway repository, and compare success, tokens, cost, turns and evidence recall.",
+      "repeats": "Repeats",
+      "run": "Run eval",
+      "empty": "No eval runs yet.",
+      "score": "Score",
+      "change": "Change",
+      "status": {
+        "pending": "Pending",
+        "running": "Running",
+        "completed": "Completed",
+        "failed": "Failed"
+      },
+      "scores": {
+        "success": "Success",
+        "inputTokens": "Input tokens",
+        "outputTokens": "Output tokens",
+        "costUsd": "Cost",
+        "turns": "Turns",
+        "wallMs": "Wall time",
+        "repeatedReads": "Repeated reads",
+        "toolOutputRatio": "Tool output seen",
+        "evidenceRecall": "Evidence recall"
+      }
     }
   }
 }

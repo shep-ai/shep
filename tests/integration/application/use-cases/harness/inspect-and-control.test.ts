@@ -294,4 +294,24 @@ describe('harness inspection and control use cases', () => {
       content: 'version: 1\ntest_command: "custom"\n',
     });
   });
+
+  it('never renders a secret chunk, in any view', async () => {
+    const { ChunkWriter } = await import('@/application/services/harness/chunk-writer.js');
+    const { ChunkKind, SensitivityLabel } = await import('@/domain/generated/output.js');
+    const session = await u.h.session();
+    const secret = await new ChunkWriter(u.h.store.context, u.h.store.blobs).write({
+      sessionId: session.id,
+      kind: ChunkKind.File,
+      label: '.env',
+      source: 'test',
+      content: 'API_KEY=sk-live-123',
+      sensitivity: SensitivityLabel.Secret,
+    });
+    const render = new RenderChunkViewUseCase(u.h.store.context, u.h.store.blobs);
+    for (const visibility of [ChunkVisibility.Short, ChunkVisibility.Long, ChunkVisibility.Full]) {
+      const view = await render.execute({ chunkId: secret.id, visibility });
+      expect(view.redacted).toBe(true);
+      expect(view.content).not.toContain('sk-live');
+    }
+  });
 });

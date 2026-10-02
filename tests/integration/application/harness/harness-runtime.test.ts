@@ -137,7 +137,7 @@ describe('HarnessRuntime', () => {
     expect(requests.every((r) => r.messages.length === 1)).toBe(true);
     // Instructions sit in the stable prefix; capabilities as Tier-1 snippets only.
     expect(requests[0].system).toContain('Always keep tests green.');
-    expect(requests[0].system).toContain('apply_patch — change files');
+    expect(requests[0].system).toContain('apply_patch(edits?, files?, patch?) — change files');
     expect(requests[0].system).not.toContain('"oldText"');
 
     const calls = await h.store.execution.listModelCalls(run.task.id);
@@ -396,5 +396,47 @@ describe('HarnessRuntime', () => {
       (c) => c.path === 'README.md'
     );
     expect(readmeChunks.every((c) => c.tags.includes('stale'))).toBe(true);
+  });
+
+  it('load-and-call: use_capability with args runs the tool in the same turn', async () => {
+    const session = await h.session();
+    const run = await h.run(session, [
+      {
+        toolCalls: [
+          {
+            name: 'use_capability',
+            args: {
+              capabilityId: 'read_file',
+              intent: 'read refresh',
+              args: { path: 'src/auth/refresh.ts' },
+            },
+          },
+        ],
+      },
+      { toolCalls: [{ name: 'complete_task', args: { status: 'success', summary: 'Read it.' } }] },
+    ]);
+    const tools = await h.store.execution.listToolCalls(run.task.id);
+    expect(tools.map((t) => [t.turn, t.capabilityId, t.status])).toEqual([
+      [1, 'read_file', HarnessToolCallStatus.Completed],
+    ]);
+    // The result is in the very next turn's context, and the tool stays loaded.
+    expect(userMessage(h, 1)).toContain('return token;');
+    expect(h.lastModel().requests[1].tools.map((t) => t.name)).toContain('read_file');
+  });
+
+  it('keeps tool-call-only responses out of later context (the ledger covers them)', async () => {
+    const session = await h.session();
+    await h.run(session, [
+      {
+        toolCalls: [
+          {
+            name: 'use_capability',
+            args: { capabilityId: 'list_files', intent: 'look', args: {} },
+          },
+        ],
+      },
+      { toolCalls: [{ name: 'complete_task', args: { status: 'success', summary: 'ok' } }] },
+    ]);
+    expect(userMessage(h, 1)).not.toContain('kind="assistant_message"');
   });
 });

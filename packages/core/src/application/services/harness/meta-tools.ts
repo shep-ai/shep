@@ -3,7 +3,8 @@
  * "Loop and tool-calling protocol"):
  *
  * - use_capability: ask for a capability by id; its Tier-2 schema is loaded
- *   and becomes a callable tool from the next turn.
+ *   and becomes a callable tool from the next turn — or, with `args`, it is
+ *   called right away (load-and-call saves a turn on first use).
  * - expand_chunk: see a chunk in more detail next turn, from stored raw
  *   content (the original tool is never re-run).
  * - complete_task: finish with a structured result.
@@ -20,13 +21,14 @@ export const MetaTool = {
 export const USE_CAPABILITY_TOOL: HarnessToolSpec = {
   name: MetaTool.UseCapability,
   description:
-    'Load a capability (from the capability list) so you can call it next turn. Say what you intend to do with it.',
+    'Load a capability from the capability list. Pass `args` (its parameters, as listed) to call it right away; without args it becomes a callable tool from the next turn. Say what you intend to do with it.',
   inputSchema: {
     type: 'object',
     properties: {
       capabilityId: { type: 'string', description: 'Capability id, e.g. search_source_code' },
       intent: { type: 'string', description: 'What you want to do and why' },
       withDocs: { type: 'boolean', description: 'Also load the long-form usage docs' },
+      args: { type: 'object', description: 'Arguments to call the capability with now (optional)' },
     },
     required: ['intent'],
     additionalProperties: false,

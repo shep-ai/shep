@@ -15,6 +15,7 @@ import type {
   HarnessModelResponse,
 } from '../../ports/output/harness/index.js';
 import type { TurnContext } from './turn-context.js';
+import { ChunkTag } from './candidate-retriever.js';
 
 export async function callModel(
   tc: TurnContext,
@@ -68,6 +69,7 @@ export async function callModel(
     label: `turn ${turn} response`,
     source: call.id,
     content: canonicalJson({ text: response.text, toolCalls: response.toolCalls }),
+    ...(!response.text.trim() && { tags: [ChunkTag.LedgerOnly] }),
   });
   const u = response.usage;
   await tc.execution.putModelCall({

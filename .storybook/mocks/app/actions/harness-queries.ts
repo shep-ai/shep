@@ -10,6 +10,8 @@ import {
   fixturePolicies,
   fixtureSessionDetail,
   fixtureSessionList,
+  fixtureEvalListing,
+  fixtureEvalReport,
 } from '@/components/features/harness/harness-fixtures';
 
 const ok = <T>(data: T): HarnessResult<T> => ({ ok: true, data });
@@ -46,4 +48,10 @@ export async function getHarnessPolicies(_repoRoot: string) {
 }
 export async function listHarnessRepositoryPaths() {
   return ok(['/home/dev/acme-api', '/home/dev/acme-web']);
+}
+export async function listHarnessEvals(_repoRoot?: string) {
+  return ok(fixtureEvalListing);
+}
+export async function getHarnessEvalReport(_runId: string) {
+  return ok(fixtureEvalReport);
 }

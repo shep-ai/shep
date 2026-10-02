@@ -1,7 +1,7 @@
 /**
  * Shared text utilities for chunk renderers (spec 119).
  */
-import { tokenizeForRelevance } from '../../../../domain/shared/lexical-relevance.js';
+import { intentTokens } from '../../../../domain/shared/lexical-relevance.js';
 
 export interface RenderedView {
   content: string;
@@ -41,38 +41,69 @@ export function numbered(all: readonly string[], startLine = 1): string {
 }
 
 /** Line indexes whose text shares a token with the query. */
+/** Lines a query token appears on more often than this share are not distinctive. */
+const COMMON_TOKEN_SHARE = 0.2;
+/** Upper bound on lines a set of windows may cover (dense matches stay bounded). */
+export const MAX_WINDOW_LINES = 160;
+
+/**
+ * Lines matching the query, most relevant first: each matched query token
+ * weighs by how rare it is in the text, so a token on every line of a log
+ * (`step`, `INFO`) cannot outrank the one line that names the error.
+ */
 export function matchingLineIndexes(all: readonly string[], query: string): number[] {
-  const q = tokenizeForRelevance(query);
+  const q = intentTokens(query);
   if (q.size === 0) return [];
-  const out: number[] = [];
-  all.forEach((line, i) => {
-    for (const token of tokenizeForRelevance(line)) {
-      if (q.has(token)) {
-        out.push(i);
-        return;
-      }
-    }
+  const perLine = all.map((line) => {
+    const hits = new Set<string>();
+    for (const t of intentTokens(line)) if (q.has(t)) hits.add(t);
+    return hits;
   });
-  return out;
+  const frequency = new Map<string, number>();
+  for (const hits of perLine) for (const t of hits) frequency.set(t, (frequency.get(t) ?? 0) + 1);
+  const commonAt = Math.max(1, all.length * COMMON_TOKEN_SHARE);
+  const scored: { i: number; score: number }[] = [];
+  perLine.forEach((hits, i) => {
+    let score = 0;
+    for (const t of hits) {
+      const f = frequency.get(t) ?? 1;
+      score += f > commonAt ? 0.01 : 1 / f;
+    }
+    if (score > 0) scored.push({ i, score });
+  });
+  return scored.sort((x, y) => y.score - x.score || x.i - y.i).map((x) => x.i);
 }
 
-/** Merge ±radius windows around hit lines into line ranges. */
+/**
+ * ±radius windows around hit lines, taken in hit order (most relevant first)
+ * until `maxWindows` windows or `maxLines` lines, then merged and sorted.
+ */
 export function windows(
   hits: readonly number[],
   radius: number,
   total: number,
-  maxWindows: number
+  maxWindows: number,
+  maxLines = MAX_WINDOW_LINES
 ): [number, number][] {
-  const ranges: [number, number][] = [];
+  const picked: [number, number][] = [];
+  let lines = 0;
   for (const h of hits) {
+    if (picked.length >= maxWindows) break;
     const from = Math.max(0, h - radius);
     const to = Math.min(total - 1, h + radius);
-    const last = ranges[ranges.length - 1];
-    if (last && from <= last[1] + 1) last[1] = Math.max(last[1], to);
-    else ranges.push([from, to]);
-    if (ranges.length > maxWindows) break;
+    if (picked.some(([f, t]) => h >= f && h <= t)) continue;
+    if (lines + (to - from + 1) > maxLines && picked.length > 0) break;
+    picked.push([from, to]);
+    lines += to - from + 1;
   }
-  return ranges.slice(0, maxWindows);
+  picked.sort((x, y) => x[0] - y[0]);
+  const merged: [number, number][] = [];
+  for (const [from, to] of picked) {
+    const last = merged[merged.length - 1];
+    if (last && from <= last[1] + 1) last[1] = Math.max(last[1], to);
+    else merged.push([from, to]);
+  }
+  return merged;
 }
 
 /** Render selected line ranges with numbers and gap markers. */

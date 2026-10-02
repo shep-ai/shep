@@ -17,7 +17,7 @@ tasks:
     Add AgentType.ShepHarness ("shep-harness") and its AGENT_CATALOG row (kind sdk, no binary,
     requiresPermissiveMode false; features: streaming, system-prompt, structured-output,
     tool-scoping), with translations in all 9 locales.
-  state: Todo
+  state: Done
   dependencies: []
   acceptanceCriteria:
   - pnpm generate emits every enum; no raw string literal is used for any of these concepts
@@ -48,7 +48,7 @@ tasks:
     apiKeyRef?, timeoutMs}), routes (per DecisionKind), default, fallback[]}, shadow {contextRouter, permissions, toolRouter} and permissions
     {defaultUnknown=ask, nonInteractiveAsk=deny, approvalTimeoutMs}. Add
     FeatureFlags.queryAwareHarness=false.
-  state: Todo
+  state: Done
   dependencies: [task-1]
   acceptanceCriteria:
   - generated output.ts contains every entity; fields match plan.yaml "Data Model"
@@ -74,7 +74,7 @@ tasks:
     instruction set; dedupeKey);
     permission-precedence (combine rule effects: hard deny > deny > ask > allow; grants cannot
     lift hard deny).
-  state: Todo
+  state: Done
   dependencies: [task-2]
   acceptanceCriteria:
   - every illegal task transition throws a typed error; every legal one returns the new status
@@ -98,7 +98,7 @@ tasks:
     Add an IBlobStore port (put/get/exists/stat) and FileSystemBlobStore writing
     ~/.shep/objects/<sha[0:2]>/<sha256> atomically (temp file + rename). Files are 0600 and
     directories 0700. BlobRef is "sha256:<hex>". SHEP_HOME is respected.
-  state: Todo
+  state: Done
   dependencies: [task-2]
   acceptanceCriteria:
   - put of identical content twice returns the same ref and writes one file
@@ -120,7 +120,7 @@ tasks:
     (dedupe_key,status), UNIQUE(session_id,sequence) on harness_events and (status) on
     permission_decisions. They also add harness_* settings columns and
     feature_flag_query_aware_harness, guarded by pragma table_info, and include down() for each.
-  state: Todo
+  state: Done
   dependencies: [task-2]
   acceptanceCriteria:
   - migrations are idempotent (running twice is a no-op) and backward compatible (old rows read)
@@ -142,7 +142,7 @@ tasks:
     inside an IMMEDIATE transaction; payloads over 4 KB go to the blob store and payload_ref. The
     settings mapper and repository read and write every harness_* column and the new flag (INSERT
     column list, VALUES, UPDATE: the four-edit rule).
-  state: Todo
+  state: Done
   dependencies: [task-4, task-5]
   acceptanceCriteria:
   - every entity round-trips field-for-field (dates as unix ms, JSON columns, booleans)
@@ -164,7 +164,7 @@ tasks:
     Add IRepoSnapshotter.capture(root) and compare(snapshotId, root). The working-tree hash is
     computed over git ls-files -s plus untracked non-ignored file hashes; staged and unstaged diff
     hashes come from git diff --cached / git diff. compare returns the changed paths.
-  state: Todo
+  state: Done
   dependencies: [task-6]
   acceptanceCriteria:
   - an unchanged tree yields an identical hash; editing, adding or deleting a file yields drift listing that path
@@ -187,7 +187,7 @@ tasks:
     recency and kind priors (reusing rankByContentScore). DecisionRecorder wraps any provider:
     inputs go to a blob, and each call becomes a HarnessDecision row with enforced, shadow and
     degraded flags.
-  state: Todo
+  state: Done
   dependencies: [task-6]
   acceptanceCriteria:
   - every decision call made through the recorder produces exactly one persisted HarnessDecision with a stable id
@@ -216,7 +216,7 @@ tasks:
     - structured-llm: the harness backend;
     - jev: HTTP, only when configured.
     One shared conformance suite runs against every adapter, using recorded HTTP fixtures.
-  state: Todo
+  state: Done
   dependencies: [task-8]
   acceptanceCriteria:
   - swapping Jev for an openai-compatible or reranker provider is a settings-only change (no code change), per decision kind
@@ -243,7 +243,7 @@ tasks:
     or detected), and apply_patch (unified diff; reject hunks that fail; returns changed paths).
     ChunkWriter stores raw output in the blob store and creates a ContextChunk of the right kind
     before any rendering.
-  state: Todo
+  state: Done
   dependencies: [task-6]
   acceptanceCriteria:
   - each tool works against a temp repo on Linux/macOS/Windows path semantics
@@ -266,7 +266,7 @@ tasks:
     run_command, run_tests, apply_patch). Each capability has a Tier-1 snippet; each implementation
     has a Tier-2 JSON schema blob and an optional Tier-3 docs blob. ToolArgumentValidator (ajv)
     validates before execution.
-  state: Todo
+  state: Done
   dependencies: [task-10]
   acceptanceCriteria:
   - invalid arguments produce a validation-error result and the executor spy is never called
@@ -288,7 +288,7 @@ tasks:
     choice among them (recorded), then implementation filtering (availability, policy mode,
     read/write, config) and ranking, then a CapabilityPlan with both decision ids. It supports
     shadow tool routing (records the choice while the model's explicit choice is enforced).
-  state: Todo
+  state: Done
   dependencies: [task-8, task-11]
   acceptanceCriteria:
   - with 1,000 synthetic capabilities, the decision input contains at most candidateLimit options
@@ -311,7 +311,7 @@ tasks:
     reasonCodes}. Rules come from the builtin default-policy.yaml plus <repo>/.shep/harness/policies/*.yaml,
     validated by an ajv schema. `when:` supports action_class, capability, path_matches (minimatch,
     ~ expansion), reads_outside_repo, writes_outside_repo, network, destructive and `hard: true`.
-  state: Todo
+  state: Done
   dependencies: [task-3]
   acceptanceCriteria:
   - the default policy hard-denies reads and writes of .env*, ~/.ssh/**, *.pem, id_*, ~/.aws/**, ~/.shep/secret.key
@@ -336,7 +336,7 @@ tasks:
     pip install), destructive git, privilege escalation, and script execution (python/node/bash x →
     resolved script path, marked "unknown effects" in V0). Returns ResourceDescriptors and
     EffectDescriptors.
-  state: Todo
+  state: Done
   dependencies: [task-3]
   acceptanceCriteria:
   - '`python deploy.py` yields effect script_execution with the resolved path and unknown_effects=true'
@@ -360,7 +360,7 @@ tasks:
     until resolved, timed out (→ deny, approval_timeout) or aborted. When non-interactive, ask
     becomes deny. ResolvePermissionRequestUseCase validates the scope, rejects resolving a hard
     deny, creates a grant and emits permission.resolved.
-  state: Todo
+  state: Done
   dependencies: [task-13, task-14, task-6]
   acceptanceCriteria:
   - every write/side-effect tool call has exactly one final PermissionDecision linked from HarnessToolCall
@@ -388,7 +388,7 @@ tasks:
     traces / raw), diff (files+stats / query-relevant hunks / full), instruction (always full when
     active) and prompt section/user message. Views record chunkId, contentHash, rendererId@version
     and truncation markers.
-  state: Todo
+  state: Done
   dependencies: [task-10]
   acceptanceCriteria:
   - the same chunk renders hidden/short/long/full without mutating the chunk row or blob
@@ -411,7 +411,7 @@ tasks:
     when), and stores content in the blob store. The V0 InstructionResolver activates every enabled
     instruction without a `when` (pinned); instructions with `when` are parsed, validated and
     reported as inactive-unsupported until V1. Emits instruction.activated events.
-  state: Todo
+  state: Done
   dependencies: [task-4]
   acceptanceCriteria:
   - pinned active instructions appear in every ContextPlan and survive budget fitting
@@ -433,7 +433,7 @@ tasks:
     results, path/lexical matches, graph edges, unresolved errors and explicit references. It
     excludes superseded chunks unless referenced, excludes `secret` sensitivity, and caps at
     candidateLimit.
-  state: Todo
+  state: Done
   dependencies: [task-16, task-17]
   acceptanceCriteria:
   - candidate count never exceeds candidateLimit; each candidate lists ≥1 reason
@@ -456,7 +456,7 @@ tasks:
     prefix/dynamic tail with CacheStrategy, then a persisted ContextPlan (+ context_plan.created
     event), then materialized model input. On decision failure it runs degraded mode. It supports
     shadow plans.
-  state: Todo
+  state: Done
   dependencies: [task-9, task-18, task-3]
   acceptanceCriteria:
   - one fixture chunk is hidden for query A and full for query B with no mutation
@@ -483,7 +483,7 @@ tasks:
     tool calls, finish reasons (incomplete → reject, spec 116) and timeouts. It also provides
     generateObject for decisions. ScriptedHarnessModelProvider is a test double driven by a YAML
     script.
-  state: Todo
+  state: Done
   dependencies: [task-2]
   acceptanceCriteria:
   - existing SDK executor tests pass unchanged after the extraction
@@ -506,7 +506,7 @@ tasks:
     stored raw) and complete_task (HarnessTaskResult with evidence bound to the snapshot). The loop
     enforces maxTurns, the abort signal and the timeout. It emits task/model/tool/plan events and
     returns summed usage.
-  state: Todo
+  state: Done
   dependencies: [task-12, task-15, task-19, task-20]
   acceptanceCriteria:
   - each model call references a persisted ContextPlan (ModelCall.contextPlanId non-null)
@@ -529,7 +529,7 @@ tasks:
     raw outputs (with a recorded hard cap). It shares the executors, permission service and
     events. With shadow context mode, the baseline is enforced and ContextEngine.build runs each
     turn with shadow=true.
-  state: Todo
+  state: Done
   dependencies: [task-21]
   acceptanceCriteria:
   - baseline and query-aware runs of the same script use the same tool executors, model id and permission engine
@@ -551,7 +551,7 @@ tasks:
     waits, and marks tool calls left `running` as unknown. For read-only unknowns it retries; for
     write/side-effect unknowns it asks. It never replays blindly. It then builds a fresh
     ContextPlan.
-  state: Todo
+  state: Done
   dependencies: [task-21, task-7]
   acceptanceCriteria:
   - after a kill mid-task, resume continues with a fresh ContextPlan whose inputs contain no model message older than the last completed turn
@@ -576,7 +576,7 @@ tasks:
     returned. The executor factory gets a shep-harness case. register-harness.ts registers
     everything, and the bootstrap test lists the tokens. SHEP_MOCK_EXECUTOR swaps in the scripted
     provider.
-  state: Todo
+  state: Done
   dependencies: [task-21, task-22, task-23]
   acceptanceCriteria:
   - passes the shared IAgentExecutor contract tests (stream error/no terminal/max turns reject)
@@ -600,7 +600,7 @@ tasks:
     renderPromptSections() yields today's exact string. AgentExecutionOptions gains optional
     promptSections and callContext {agentRunId, featureId, phase}. These are populated in
     executeNode/buildExecutorOptions and in every custom-execution node.
-  state: Todo
+  state: Done
   dependencies: [task-2]
   acceptanceCriteria:
   - golden snapshots of every builder's rendered string are byte-identical before and after
@@ -634,7 +634,7 @@ tasks:
     - OverrideChunkVisibility ("Include from next turn", persisted as a user-sourced decision).
     - SaveEvalCase (from a decision or a completed session).
     Register each by class and by string token.
-  state: Todo
+  state: Done
   dependencies: [task-24]
   acceptanceCriteria:
   - InitHarnessProject never writes when confirm=false and never touches files outside .shep/harness/
@@ -673,7 +673,7 @@ tasks:
     is hidden when the flag is off. Harness IDiagnostic strategies cover backend credentials, blob
     store writable, decision provider or fallback, policy/instruction parse, and rg/git
     availability, as warning vs blocker. docs/cli/commands.md is updated.
-  state: Todo
+  state: Done
   dependencies: [task-26]
   acceptanceCriteria:
   - every command follows the create<Name>Command pattern, sets process.exitCode=1 on error, and never calls process.exit
@@ -697,7 +697,7 @@ tasks:
     Harness" settings section (backend agent + model from the live catalog, mode, budget, context
     thresholds, decision provider, shadow toggles, permission defaults, approval timeout) with
     stories and a test. Add shep-harness to the agent pickers when the flag is on.
-  state: Todo
+  state: Done
   dependencies: [task-2, task-6]
   acceptanceCriteria:
   - toggling the flag in Settings persists and reveals the section and the sidebar entry without a reload
@@ -725,7 +725,7 @@ tasks:
     - PolicyViewer (rules, recent decisions) and InstructionList.
     Server actions wrap the string-token use cases, each with a Storybook mock and stories for
     Default/Loading/Empty/Error.
-  state: Todo
+  state: Done
   dependencies: [task-26, task-28]
   acceptanceCriteria:
   - a user who just enabled the flag reaches every page from the sidebar (no URL typing)
@@ -754,7 +754,7 @@ tasks:
       read-only state;
     - Activity tab harness metrics (context tokens, visible/raw ratio, repeated reads);
     - a canvas feature-node permission badge.
-  state: Todo
+  state: Done
   dependencies: [task-29]
   acceptanceCriteria:
   - a reconnect with the last sequence receives only newer events (no duplicates) and the listener count stays constant
@@ -778,7 +778,7 @@ tasks:
     InitHarnessProject preview (detected instructions, test/lint commands, sensitive paths, files to
     be written with contents) and writes on confirm. Once set up, the drawer shows harness status
     (policies and instructions counts, doctor warnings).
-  state: Todo
+  state: Done
   dependencies: [task-29]
   acceptanceCriteria:
   - cancel writes nothing; confirm writes exactly the previewed files
@@ -803,7 +803,7 @@ tasks:
       recall and irrelevant-token share;
     - instructions: repo layout → expected active set.
     All run with the deterministic decision provider.
-  state: Todo
+  state: Done
   dependencies: [task-15, task-12, task-19, task-17]
   acceptanceCriteria:
   - the suites run in pnpm test:unit with no network and fail CI on any false-allow or a recall drop below the stored floor
@@ -827,7 +827,7 @@ tasks:
     tool-output tokens and context recall. GetHarnessEvalReport pairs variants and flags quality
     regressions. It is exposed through `shep harness eval run|ls|report` and /harness/evals
     (launcher + report with recharts bars). A seed suite has 6 fixture cases.
-  state: Todo
+  state: Done
   dependencies: [task-27, task-29, task-32]
   acceptanceCriteria:
   - both variants use the identical model, tools, snapshot and task wording (asserted in the run record)
@@ -855,7 +855,7 @@ tasks:
     Context tab → Why drawer). Write docs/architecture/agent-harness.md and
     docs/guides/agent-harness.md; update AGENTS.md, agent-system.md, FEATURES.md and LESSONS.md
     with anything learned.
-  state: Todo
+  state: Done
   dependencies: [task-30, task-31, task-33]
   acceptanceCriteria:
   - every spec.yaml success criterion is linked to at least one passing test

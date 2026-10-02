@@ -48,8 +48,12 @@ export class ScriptedHarnessModelProvider implements IHarnessModelProvider {
       typeof this.script === 'function'
         ? this.script(request, index)
         : (this.script[index] ?? DONE);
+    // Like a real provider, count the tool schemas sent with the call.
     const estimate = Math.ceil(
-      (request.system.length + JSON.stringify(request.messages).length) / 4
+      (request.system.length +
+        JSON.stringify(request.messages).length +
+        JSON.stringify(request.tools).length) /
+        4
     );
     const toolCalls: HarnessToolCallRequest[] = (turn.toolCalls ?? []).map((c, i) => ({
       id: `call_${index + 1}_${i + 1}`,

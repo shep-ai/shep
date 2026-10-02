@@ -27,6 +27,7 @@ import type {
   InitHarnessProjectResult,
   InitHarnessProjectUseCase,
 } from '@shepai/core/application/use-cases/harness/init-harness-project.use-case';
+import type { RunHarnessEvalUseCase } from '@shepai/core/application/use-cases/harness/run-harness-eval.use-case';
 import type { HarnessRunOverrides } from '@shepai/core/application/services/harness/harness-task-service';
 
 export interface ResolveHarnessPermissionRequest {
@@ -131,4 +132,22 @@ export async function setUpHarnessRepository(
   return run(() =>
     resolve<InitHarnessProjectUseCase>('InitHarnessProjectUseCase').execute({ repoRoot, confirm })
   );
+}
+
+export interface StartHarnessEvalRequest {
+  suite: string;
+  repoRoot?: string;
+  repeats?: number;
+}
+
+/** Record the eval run and execute it in the background; the Evals tab polls its report. */
+export async function startHarnessEval(
+  req: StartHarnessEvalRequest
+): Promise<HarnessResult<{ runId: string }>> {
+  return run(async () => {
+    const runner = resolve<RunHarnessEvalUseCase>('RunHarnessEvalUseCase');
+    const started = await runner.start(req);
+    void runner.execute(req, started).catch(() => undefined);
+    return { runId: started.id };
+  });
 }

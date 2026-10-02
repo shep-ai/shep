@@ -44,7 +44,10 @@ function syntheticSource(count: number): IToolSource {
         source: ToolSourceKind.Custom,
         toolName: id,
         snippet: id,
-        inputSchema: { type: 'object', properties: { secretSchemaMarker: { type: 'string' } } },
+        inputSchema: {
+          type: 'object',
+          properties: { query: { type: 'string', description: 'secretSchemaMarker' } },
+        },
         risk: RiskClass.Low,
         readWriteMode: ToolReadWriteMode.Read,
       },
@@ -147,7 +150,7 @@ describe('capability routing', () => {
     expect(input.choices.length).toBeLessThanOrEqual(DEFAULT_CAPABILITY_CANDIDATE_LIMIT);
   });
 
-  it('the Tier-1 catalog never contains Tier-2 schema text', async () => {
+  it('the Tier-1 catalog lists parameter names but never Tier-2 schema text', async () => {
     const registry = await CapabilityRegistry.fromSources([
       new BuiltinToolSource(),
       syntheticSource(1000),
@@ -156,7 +159,7 @@ describe('capability routing', () => {
     expect(tier1).not.toContain('secretSchemaMarker');
     expect(tier1).not.toContain('"type"');
     expect(registry.snippetCatalog(['read_file'])).toBe(
-      'read_file — read a file or a line range of a file'
+      'read_file(path, startLine?, endLine?) — read a file or a line range of a file'
     );
   });
 });

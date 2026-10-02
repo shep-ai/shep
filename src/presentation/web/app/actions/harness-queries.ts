@@ -7,6 +7,11 @@
 import { resolve } from '@/lib/server-container';
 import { toHarnessResult as run, type HarnessResult } from '@/lib/harness-result';
 import type { ChunkVisibility } from '@shepai/core/domain/generated/output';
+import type {
+  GetHarnessEvalReportUseCase,
+  HarnessEvalReport,
+  ListHarnessEvalRunsUseCase,
+} from '@shepai/core/application/use-cases/harness/harness-eval-report.use-cases';
 import type { ListRepositoriesUseCase } from '@shepai/core/application/use-cases/repositories/list-repositories.use-case';
 import type {
   HarnessSessionListItem,
@@ -124,3 +129,23 @@ export async function listHarnessRepositoryPaths(): Promise<HarnessResult<string
     return repos.map((r) => r.path).filter((p): p is string => Boolean(p));
   });
 }
+
+export async function listHarnessEvals(
+  repoRoot?: string
+): Promise<HarnessResult<HarnessEvalListing>> {
+  return run(() =>
+    resolve<ListHarnessEvalRunsUseCase>('ListHarnessEvalRunsUseCase').execute(
+      repoRoot ? { repoRoot } : {}
+    )
+  );
+}
+
+export async function getHarnessEvalReport(
+  runId: string
+): Promise<HarnessResult<HarnessEvalReport>> {
+  return run(() =>
+    resolve<GetHarnessEvalReportUseCase>('GetHarnessEvalReportUseCase').execute({ runId })
+  );
+}
+
+export type HarnessEvalListing = Awaited<ReturnType<ListHarnessEvalRunsUseCase['execute']>>;
