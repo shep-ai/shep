@@ -49,6 +49,12 @@ export interface StreamChunk {
    */
   sessionStatus?: string;
   /**
+   * Why the session entered `error`, when known — e.g. "cursor-agent is not
+   * logged in". Sent with `sessionStatus: 'error'`. A session that fails to
+   * boot never produces a turn, so this is the only message the user sees.
+   */
+  sessionError?: string;
+  /**
    * Turn activity transition: 'idle' / 'processing' / 'unread' /
    * 'awaiting_input'. Emitted ONCE per `sessionRepo.updateTurnStatus`
    * call. This is what drives the client's "Thinking…" indicator

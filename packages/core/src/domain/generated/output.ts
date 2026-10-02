@@ -1432,6 +1432,10 @@ export type SupervisorPolicy = BaseEntity & {
    */
   policyRulesJson?: string;
   /**
+   * JSON array of deterministic GuardrailRules evaluated before the LLM evaluator
+   */
+  guardrailRulesJson?: string;
+  /**
    * JSON object overriding the user's notification preferences for supervisor events
    */
   notificationOverridesJson?: string;
@@ -7771,6 +7775,72 @@ export type ContributorOnboardingAgentOutput = {
    */
   welcomeComment?: string;
 };
+export enum GuardrailGateType {
+  prd = 'prd',
+  plan = 'plan',
+  merge = 'merge',
+  all = 'all',
+}
+
+/**
+ * Deterministic criteria-based rule governing gate approvals and escalations
+ */
+export type GuardrailRule = {
+  /**
+   * Unique identifier for this rule
+   */
+  id: string;
+  /**
+   * Which gate this rule governs (prd, plan, merge, or all)
+   */
+  gate: GuardrailGateType;
+  /**
+   * Maximum lines of diff permitted for auto-approval
+   */
+  maxDiffLines?: number;
+  /**
+   * Maximum number of files changed permitted for auto-approval
+   */
+  maxFilesChanged?: number;
+  /**
+   * Glob patterns that trigger mandatory escalation if touched (e.g. auth/**, migrations/**)
+   */
+  blockedPathPatterns?: string[];
+  /**
+   * Whether CI pipeline must be passing for auto-approval
+   */
+  requireCiPass?: boolean;
+  /**
+   * Whether auto-approval is granted when all criteria pass (false = advise only)
+   */
+  autoApprove: boolean;
+};
+
+/**
+ * Result of evaluating deterministic guardrail rules against an approval gate
+ */
+export type GuardrailEvaluationResult = {
+  /**
+   * True if all criteria are satisfied
+   */
+  passed: boolean;
+  /**
+   * True if the gate should be auto-approved without human intervention
+   */
+  autoApproved: boolean;
+  /**
+   * Rule that decided the outcome, when a single rule is responsible
+   */
+  ruleId?: string;
+  /**
+   * List of violation reasons if any criteria failed
+   */
+  violations: string[];
+  /**
+   * Human-readable explanation of the evaluation
+   */
+  rationale: string;
+};
 
 /**
  * A selectable option within a PRD questionnaire question
@@ -7912,12 +7982,6 @@ export enum AgentFeature {
   systemPrompt = 'system-prompt',
   sessionListing = 'session-listing',
   effort = 'effort',
-}
-export enum GuardrailGateType {
-  prd = 'prd',
-  plan = 'plan',
-  merge = 'merge',
-  all = 'all',
 }
 export type DeployTarget = DeployTargetActionItem | DeployTargetTask | DeployTargetTasks;
 

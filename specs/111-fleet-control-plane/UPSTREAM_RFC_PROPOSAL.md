@@ -16,7 +16,7 @@ This RFC describes the full target. What actually exists in this branch today:
 | TypeSpec models + generated JSON Schema (`apis/json-schema/`) | Implemented |
 | `SQLiteFleetRepository` (derived read model) + indexes (migration 143) | Implemented |
 | Circuit breaker evaluation (consecutive failures / rolling rate) | Implemented as a reported status signal |
-| Guardrail rule evaluator (`EvaluateGateGuardrailsUseCase`) | **Not in this PR** — deferred to the guardrails slice, since nothing would call it yet |
+| Guardrail rule evaluator + `SupervisorPolicy` configuration + pre-LLM wiring | Implemented (slice 2) |
 | `--low-risk`, `fleet retry`, `fleet pause` / `resume` | Not implemented |
 | Web status bar + triage drawer + Storybook stories | Implemented (slice 3) |
 
@@ -115,7 +115,7 @@ We have drafted the complete spec in `specs/111-fleet-control-plane/`, with an e
 
 To keep PRs reviewable and deliver incremental value, we propose shipping this in three focused PRs:
 1. **PR 1 (Core Domain & CLI)**: TypeSpec models + `SQLiteFleetRepository` + migration + `GetFleetOverviewUseCase` + `ListFleetTriageItemsUseCase` + `BatchApproveFeaturesUseCase` + `shep fleet status` / `triage` / `approve`. **This is the slice implemented in this branch.**
-2. **PR 2 (Guardrails)**: `EvaluateGateGuardrailsUseCase`, rule configuration on `SupervisorPolicy`, wiring the evaluator into the worker gate path ahead of the LLM, `--low-risk`, and `fleet retry` / `pause` / `resume`.
+2. **PR 2 (Guardrails)**: implemented — deterministic rules on `SupervisorPolicy.guardrailRulesJson`, evaluated before the LLM in the gate path. Still open: a CLI flag to author rules, `--low-risk`, and `fleet retry` / `pause` / `resume`.
 3. **PR 3 (Web UI)**: implemented — fleet status bar + triage drawer with colocated Storybook stories, mounted in the dashboard layout.
 
 I am eager to contribute, help maintain this part of Shep, and collaborate with the team on feedback and refinements!

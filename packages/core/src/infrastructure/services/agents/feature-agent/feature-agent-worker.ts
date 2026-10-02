@@ -623,7 +623,13 @@ export async function runWorker(args: WorkerArgs): Promise<void> {
         ...lifecycleScope,
         interruptNode,
       });
-      if (supervisorOutcome.autoResolved) {
+      if (supervisorOutcome.guardrailVerdict === 'auto_approved') {
+        log(
+          `Guardrails auto-approved gate (rule=${supervisorOutcome.guardrailRuleId ?? 'unknown'}); LLM evaluator skipped`
+        );
+      } else if (supervisorOutcome.guardrailVerdict === 'escalated') {
+        log('Guardrails escalated gate to human review; LLM evaluator skipped');
+      } else if (supervisorOutcome.autoResolved) {
         log(
           `Supervisor auto-resolved gate (verdict=${supervisorOutcome.verdict}, autonomy=${supervisorOutcome.effectiveAutonomy})`
         );

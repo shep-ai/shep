@@ -113,7 +113,7 @@ tasks:
   - id: task-7
     title: "TDD: EvaluateGateGuardrailsUseCase"
     description: "Evaluate incoming gate context against GuardrailRules using deterministic checks (diff lines, file path globs, CI status)."
-    state: Todo
+    state: Done
     dependencies: [task-1]
     acceptanceCriteria:
       - "Auto-approves if diff <= maxDiffLines and no blocked path patterns matched and CI passed"
@@ -166,7 +166,7 @@ tasks:
   - id: task-10
     title: "Hook guardrails into SupervisorWorker"
     description: "Integrate EvaluateGateGuardrailsUseCase into feature-agent-worker / supervisor before invoking LLM evaluator."
-    state: Todo
+    state: Done
     dependencies: [task-7]
     acceptanceCriteria:
       - "If guardrails pass, gate is auto-approved without LLM invocation"
@@ -310,10 +310,10 @@ content: |
   | task-4 | Done | `SQLiteFleetRepository` + integration tests |
   | task-5 | Done | Circuit breaker evaluation folded into this use case; no separate `CheckCircuitBreakerUseCase` (task-9 closed as duplicate) |
   | task-6 | Done | |
-  | task-7 | Todo | Deferred to the guardrails slice. A working implementation was developed alongside this slice and is parked on the local `wip/spec-111-full` branch; it is intentionally not part of this PR because nothing calls it yet |
+  | task-7 | Done | Evaluates conjunctively (every matching rule must pass) and fails closed when metrics are unavailable |
   | task-8 | Partial | `--all` / `--gate` work; `--low-risk` not implemented |
   | task-9 | Todo | Superseded by task-5 — kept for traceability |
-  | task-10 | Todo | Guardrails are not wired into the supervisor/worker gate path |
+  | task-10 | Done | Pre-LLM pass in `FeatureAgentSupervisorGateEvaluator.applyGuardrails()`, behind the `collaboration` flag and `policy.enabled` |
   | task-11 | Done | `IFleetRepository` registered in `register-repositories.ts`; DI resolution test added |
   | task-12 | Done | |
   | task-13 | Done | |
@@ -329,10 +329,13 @@ content: |
   - **Circuit breaker thresholds are not user-configurable.** Exposing them needs a
     `workflow.circuitBreaker` field on the TypeSpec `Settings` model plus a migration and a
     settings-mapper round-trip. The use case currently reads a typed constant.
-  - **Guardrails are not in this PR at all.** `GuardrailRule`, `GuardrailEvaluationResult`, and
-    `EvaluateGateGuardrailsUseCase` were developed but deliberately split out: nothing would have
-    called them, and the evaluator needs a configuration surface on `SupervisorPolicy` before it can
-    do anything. `GuardrailGateType` stays because the triage feed and `fleet approve --gate` use it.
+  - **Guardrail rules have no CLI authoring surface.** They are settable through
+    `ConfigureSupervisorUseCase`, but `shep supervisor configure` has no flag for them yet.
+  - **`SupervisorPolicy.enabled` is enforced in two places.** The guardrail pass added here checks it
+    first, because it runs ahead of `EvaluateSupervisorDecisionUseCase` and is therefore the only
+    thing between a disabled policy and a deterministic auto-approval. The LLM path's own check was a
+    pre-existing spec-093 gap (the flag was written by `shep supervisor disable`, displayed by
+    `supervisor status`, and read by nothing) and is fixed separately rather than in this slice.
   - **Circuit breaker does not pause anything.** Admission control (PR #847) is not on `main`,
     so there is no queue to pause; the trip is reported as a status signal only.
 

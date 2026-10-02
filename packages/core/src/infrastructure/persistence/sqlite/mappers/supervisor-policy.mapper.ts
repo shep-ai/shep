@@ -22,6 +22,7 @@ export interface SupervisorPolicyRow {
   model_id: string | null;
   prompt_version: string | null;
   policy_rules_json: string | null;
+  guardrail_rules_json: string | null;
   notification_overrides_json: string | null;
   created_at: number;
   updated_at: number;
@@ -46,6 +47,7 @@ export function toDatabase(policy: SupervisorPolicy): SupervisorPolicyRow {
     model_id: policy.modelId ?? null,
     prompt_version: policy.promptVersion ?? null,
     policy_rules_json: policy.policyRulesJson ?? null,
+    guardrail_rules_json: policy.guardrailRulesJson ?? null,
     notification_overrides_json: policy.notificationOverridesJson ?? null,
     created_at: toMillis(policy.createdAt),
     updated_at: toMillis(policy.updatedAt),
@@ -64,6 +66,7 @@ export function fromDatabase(row: SupervisorPolicyRow): SupervisorPolicy {
     modelId: row.model_id ?? undefined,
     promptVersion: row.prompt_version ?? undefined,
     policyRulesJson: row.policy_rules_json ?? undefined,
+    guardrailRulesJson: row.guardrail_rules_json ?? undefined,
     notificationOverridesJson: row.notification_overrides_json ?? undefined,
     createdAt: new Date(row.created_at),
     updatedAt: new Date(row.updated_at),

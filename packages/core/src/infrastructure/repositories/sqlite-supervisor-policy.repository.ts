@@ -27,12 +27,12 @@ export class SQLiteSupervisorPolicyRepository implements ISupervisorPolicyReposi
       INSERT INTO supervisor_policies (
         id, scope_type, scope_id, feature_id, enabled, autonomy_level,
         gate_authority_json, model_id, prompt_version,
-        policy_rules_json, notification_overrides_json,
+        policy_rules_json, guardrail_rules_json, notification_overrides_json,
         created_at, updated_at
       ) VALUES (
         @id, @scope_type, @scope_id, @feature_id, @enabled, @autonomy_level,
         @gate_authority_json, @model_id, @prompt_version,
-        @policy_rules_json, @notification_overrides_json,
+        @policy_rules_json, @guardrail_rules_json, @notification_overrides_json,
         @created_at, @updated_at
       )
     `);
@@ -52,6 +52,7 @@ export class SQLiteSupervisorPolicyRepository implements ISupervisorPolicyReposi
         model_id = @model_id,
         prompt_version = @prompt_version,
         policy_rules_json = @policy_rules_json,
+        guardrail_rules_json = @guardrail_rules_json,
         notification_overrides_json = @notification_overrides_json,
         updated_at = @updated_at
       WHERE id = @id

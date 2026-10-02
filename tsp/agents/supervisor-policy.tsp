@@ -121,6 +121,9 @@ model SupervisorPolicy extends BaseEntity {
   @doc("JSON array of structured policy rules")
   policyRulesJson?: string;
 
+  @doc("JSON array of deterministic GuardrailRules evaluated before the LLM evaluator")
+  guardrailRulesJson?: string;
+
   @doc("JSON object overriding the user's notification preferences for supervisor events")
   notificationOverridesJson?: string;
 }

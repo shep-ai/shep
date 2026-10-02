@@ -28,16 +28,21 @@ import { GetSupervisorPolicyUseCase } from '@/application/use-cases/agents/get-s
 import { RejectAgentRunUseCase } from '@/application/use-cases/agents/reject-agent-run.use-case.js';
 import {
   FeatureAgentSupervisorGateEvaluator,
+  parseGuardrailRules,
   resolveEffectiveAutonomy,
 } from '@/infrastructure/services/agents/feature-agent/feature-agent-supervisor-gate-evaluator.js';
+import { EvaluateGateGuardrailsUseCase } from '@/application/use-cases/fleet/evaluate-gate-guardrails.use-case.js';
 import { InMemorySupervisorAgent } from '@/infrastructure/adapters/in-memory/in-memory-supervisor-agent.js';
 import { InMemorySupervisorDecisionRepository } from '@/infrastructure/adapters/in-memory/in-memory-supervisor-decision-repository.js';
 import { InMemorySupervisorPolicyRepository } from '@/infrastructure/adapters/in-memory/in-memory-supervisor-policy-repository.js';
 import {
   AgentRunStatus,
+  CiStatus,
+  GuardrailGateType,
   SupervisorAutonomy,
   SupervisorScopeType,
   SupervisorVerdict,
+  type GuardrailRule,
   type ActivityEntry,
   type AgentRun,
   type Application,
@@ -191,11 +196,32 @@ interface EvaluatorBundle {
   approveSpy: ReturnType<typeof vi.spyOn>;
   rejectSpy: ReturnType<typeof vi.spyOn>;
   runRepo: any;
+  /** The LLM evaluator, exposed so tests can assert it was skipped. */
+  evaluateDecision: EvaluateSupervisorDecisionUseCase;
+  /** Mock feature repository backing the guardrail metric lookup. */
+  featureRepo: { findById: ReturnType<typeof vi.fn> };
+  /** Mock git service backing the guardrail metric lookup. */
+  gitPrService: {
+    getDefaultBranch: ReturnType<typeof vi.fn>;
+    getPrDiffSummary: ReturnType<typeof vi.fn>;
+    getFileDiffs: ReturnType<typeof vi.fn>;
+  };
+}
+
+/** Gate metrics the guardrail pass reads, defaulted to "well within bounds". */
+function defaultMetrics() {
+  return {
+    feature: { id: 'feature-1', worktreePath: '/tmp/wt', pr: { ciStatus: CiStatus.Success } },
+    summary: { filesChanged: 2, additions: 30, deletions: 10, commitCount: 1 },
+    fileDiffs: [{ path: 'src/app.ts' }],
+  };
 }
 
 function buildEvaluator(opts: {
   collaboration: boolean;
   verdict: SupervisorVerdict;
+  guardrailRules?: GuardrailRule[];
+  metricsFailing?: boolean;
 }): EvaluatorBundle {
   const policyRepo = new InMemorySupervisorPolicyRepository();
   const decisionRepo = new InMemorySupervisorDecisionRepository();
@@ -230,26 +256,59 @@ function buildEvaluator(opts: {
   const approveSpy = vi.spyOn(approve, 'execute');
   const rejectSpy = vi.spyOn(reject, 'execute');
 
+  const metrics = defaultMetrics();
+  const featureRepo = {
+    findById: vi.fn().mockResolvedValue(opts.metricsFailing ? null : metrics.feature),
+  };
+  const gitPrService = {
+    getDefaultBranch: vi.fn().mockResolvedValue('main'),
+    getPrDiffSummary: vi.fn().mockImplementation(() => {
+      if (opts.metricsFailing) return Promise.reject(new Error('git unavailable'));
+      return Promise.resolve(metrics.summary);
+    }),
+    getFileDiffs: vi.fn().mockImplementation(() => {
+      if (opts.metricsFailing) return Promise.reject(new Error('git unavailable'));
+      return Promise.resolve(metrics.fileDiffs);
+    }),
+  };
+
   const evaluator = new FeatureAgentSupervisorGateEvaluator(
     applicationRepo(makeApp()),
     getPolicy,
     evaluateDecision,
     approve,
-    reject
+    reject,
+    new EvaluateGateGuardrailsUseCase(),
+    featureRepo as never,
+    gitPrService as never,
+    settingsRepo(opts.collaboration)
   );
 
-  return { evaluator, activityLog, policyRepo, decisionRepo, approveSpy, rejectSpy, runRepo };
+  return {
+    evaluator,
+    activityLog,
+    policyRepo,
+    decisionRepo,
+    approveSpy,
+    rejectSpy,
+    runRepo,
+    evaluateDecision,
+    featureRepo,
+    gitPrService,
+  };
 }
 
 async function configurePolicy(
   policyRepo: InMemorySupervisorPolicyRepository,
-  autonomy: SupervisorAutonomy
+  autonomy: SupervisorAutonomy,
+  guardrailRules?: GuardrailRule[]
 ): Promise<void> {
   const configure = new ConfigureSupervisorUseCase(policyRepo);
   await configure.execute({
     scopeType: SupervisorScopeType.app,
     scopeId: 'app-1',
     autonomyLevel: autonomy,
+    ...(guardrailRules ? { guardrailRules } : {}),
   });
 }
 
@@ -423,5 +482,173 @@ describe('resolveEffectiveAutonomy', () => {
   it('ignores invalid override values and returns the default', () => {
     const p = policy({ gateAuthorityJson: JSON.stringify({ plan: 'wat' }) });
     expect(resolveEffectiveAutonomy(p, 'plan')).toBe(SupervisorAutonomy.advisory);
+  });
+});
+
+describe('deterministic guardrails (spec 111)', () => {
+  let bundle: EvaluatorBundle;
+
+  const gate = {
+    runId: 'run-1',
+    featureId: 'feat-1',
+    repositoryPath: '/repo',
+    interruptNode: 'plan',
+  };
+
+  const lowRiskRule: GuardrailRule = {
+    id: 'rule-low-risk',
+    gate: GuardrailGateType.plan,
+    maxDiffLines: 250,
+    maxFilesChanged: 5,
+    blockedPathPatterns: ['**/auth/**'],
+    autoApprove: true,
+  };
+
+  it('auto-approves through the supervisor actor without consulting the LLM', async () => {
+    bundle = buildEvaluator({ collaboration: true, verdict: SupervisorVerdict.escalate });
+    await configurePolicy(bundle.policyRepo, SupervisorAutonomy.advisory, [lowRiskRule]);
+    const decisionSpy = vi.spyOn(bundle.evaluateDecision, 'execute');
+
+    const result = await bundle.evaluator.evaluateForGate(gate);
+
+    expect(result.guardrailVerdict).toBe('auto_approved');
+    expect(result.autoResolved).toBe(true);
+    expect(result.guardrailRuleId).toBe('rule-low-risk');
+    expect(bundle.approveSpy).toHaveBeenCalledWith(
+      'run-1',
+      undefined,
+      expect.objectContaining({ namespace: 'supervisor' })
+    );
+    expect(decisionSpy).not.toHaveBeenCalled();
+  });
+
+  it('escalates and skips the LLM when the diff exceeds the bound', async () => {
+    bundle = buildEvaluator({ collaboration: true, verdict: SupervisorVerdict.approve });
+    await configurePolicy(bundle.policyRepo, SupervisorAutonomy.autonomous, [
+      { ...lowRiskRule, maxDiffLines: 10 },
+    ]);
+    const decisionSpy = vi.spyOn(bundle.evaluateDecision, 'execute');
+
+    const result = await bundle.evaluator.evaluateForGate(gate);
+
+    expect(result.guardrailVerdict).toBe('escalated');
+    expect(result.autoResolved).toBe(false);
+    expect(bundle.approveSpy).not.toHaveBeenCalled();
+    // A deterministic breach must never be overridable by a model verdict.
+    expect(decisionSpy).not.toHaveBeenCalled();
+  });
+
+  it('escalates when a blocked path is touched even though the size bounds pass', async () => {
+    bundle = buildEvaluator({ collaboration: true, verdict: SupervisorVerdict.approve });
+    await configurePolicy(bundle.policyRepo, SupervisorAutonomy.autonomous, [lowRiskRule]);
+    bundle.gitPrService.getFileDiffs.mockResolvedValue([{ path: 'src/auth/session.ts' }]);
+
+    const result = await bundle.evaluator.evaluateForGate(gate);
+
+    expect(result.guardrailVerdict).toBe('escalated');
+    expect(bundle.approveSpy).not.toHaveBeenCalled();
+  });
+
+  it('fails closed when the diff metrics cannot be gathered', async () => {
+    bundle = buildEvaluator({
+      collaboration: true,
+      verdict: SupervisorVerdict.approve,
+      metricsFailing: true,
+    });
+    await configurePolicy(bundle.policyRepo, SupervisorAutonomy.autonomous, [lowRiskRule]);
+
+    const result = await bundle.evaluator.evaluateForGate(gate);
+
+    expect(result.guardrailVerdict).toBe('escalated');
+    expect(bundle.approveSpy).not.toHaveBeenCalled();
+  });
+
+  it('fails closed when the stored rules are unreadable', async () => {
+    bundle = buildEvaluator({ collaboration: true, verdict: SupervisorVerdict.approve });
+    await configurePolicy(bundle.policyRepo, SupervisorAutonomy.autonomous);
+    const policy = await bundle.policyRepo.findByScope(SupervisorScopeType.app, 'app-1');
+    await bundle.policyRepo.update({ ...policy!, guardrailRulesJson: '{not json' });
+
+    const result = await bundle.evaluator.evaluateForGate(gate);
+
+    expect(result.guardrailVerdict).toBe('escalated');
+    expect(bundle.approveSpy).not.toHaveBeenCalled();
+  });
+
+  it('falls through to the LLM when every rule passed but none permits auto-approval', async () => {
+    bundle = buildEvaluator({ collaboration: true, verdict: SupervisorVerdict.escalate });
+    await configurePolicy(bundle.policyRepo, SupervisorAutonomy.advisory, [
+      { ...lowRiskRule, autoApprove: false },
+    ]);
+    const decisionSpy = vi.spyOn(bundle.evaluateDecision, 'execute');
+
+    const result = await bundle.evaluator.evaluateForGate(gate);
+
+    expect(result.guardrailVerdict).toBeUndefined();
+    expect(decisionSpy).toHaveBeenCalled();
+    expect(bundle.approveSpy).not.toHaveBeenCalled();
+  });
+
+  it('stands down when the policy is disabled', async () => {
+    bundle = buildEvaluator({ collaboration: true, verdict: SupervisorVerdict.approve });
+    await configurePolicy(bundle.policyRepo, SupervisorAutonomy.autonomous, [lowRiskRule]);
+    const policy = await bundle.policyRepo.findByScope(SupervisorScopeType.app, 'app-1');
+    await bundle.policyRepo.update({ ...policy!, enabled: false });
+
+    const result = await bundle.evaluator.evaluateForGate(gate);
+
+    // Guardrails never auto-approve a disabled policy. This check is required
+    // independently of the LLM path: `applyGuardrails` runs first, so it is the
+    // only thing standing between a disabled policy and a deterministic
+    // auto-approval.
+    expect(result.guardrailVerdict).toBeUndefined();
+  });
+
+  it('does nothing when the collaboration feature flag is off', async () => {
+    bundle = buildEvaluator({ collaboration: false, verdict: SupervisorVerdict.approve });
+    await configurePolicy(bundle.policyRepo, SupervisorAutonomy.autonomous, [lowRiskRule]);
+
+    const result = await bundle.evaluator.evaluateForGate(gate);
+
+    expect(result.guardrailVerdict).toBeUndefined();
+    expect(bundle.approveSpy).not.toHaveBeenCalled();
+  });
+
+  it('ignores rules configured for a different gate', async () => {
+    bundle = buildEvaluator({ collaboration: true, verdict: SupervisorVerdict.escalate });
+    await configurePolicy(bundle.policyRepo, SupervisorAutonomy.advisory, [
+      { ...lowRiskRule, gate: GuardrailGateType.merge },
+    ]);
+    const decisionSpy = vi.spyOn(bundle.evaluateDecision, 'execute');
+
+    const result = await bundle.evaluator.evaluateForGate(gate);
+
+    expect(result.guardrailVerdict).toBeUndefined();
+    expect(decisionSpy).toHaveBeenCalled();
+  });
+});
+
+describe('parseGuardrailRules', () => {
+  const valid: GuardrailRule = {
+    id: 'r1',
+    gate: GuardrailGateType.merge,
+    autoApprove: true,
+  };
+
+  it('treats an absent value as "no rules configured"', () => {
+    expect(parseGuardrailRules(undefined)).toEqual([]);
+    expect(parseGuardrailRules('')).toEqual([]);
+  });
+
+  it('parses a well-formed rule array', () => {
+    expect(parseGuardrailRules(JSON.stringify([valid]))).toEqual([valid]);
+  });
+
+  it('returns null for malformed JSON, a non-array, or a single bad rule', () => {
+    expect(parseGuardrailRules('{not json')).toBeNull();
+    expect(parseGuardrailRules(JSON.stringify({ id: 'r1' }))).toBeNull();
+    // Silently dropping the broken entry would disable a safety bound unnoticed.
+    expect(parseGuardrailRules(JSON.stringify([valid, { id: '' }]))).toBeNull();
+    expect(parseGuardrailRules(JSON.stringify([{ ...valid, gate: 'nope' }]))).toBeNull();
   });
 });

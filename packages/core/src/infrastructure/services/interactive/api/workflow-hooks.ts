@@ -9,6 +9,7 @@
  */
 
 import type { WorkflowStep } from '../../../../domain/generated/output.js';
+import { InteractiveSessionStatus } from '../../../../domain/generated/output.js';
 import type { SessionRegistry } from '../core/session-registry.js';
 import type { StreamEventDispatcher } from '../core/stream-event-dispatcher.js';
 
@@ -36,7 +37,9 @@ export class WorkflowHooks {
 
   /**
    * Resolves the next time any subscriber receives a `done: true`
-   * chunk for the given feature.
+   * chunk for the given feature. Rejects if the session reports
+   * `error` first — an errored session never emits `done`, so waiting
+   * on it would hang the caller forever.
    */
   async waitForTurnDone(featureId: string, signal?: AbortSignal): Promise<void> {
     return new Promise<void>((resolve, reject) => {
@@ -49,6 +52,12 @@ export class WorkflowHooks {
           unsubscribe();
           signal?.removeEventListener('abort', onAbort);
           resolve();
+        } else if (chunk.sessionStatus === InteractiveSessionStatus.error) {
+          unsubscribe();
+          signal?.removeEventListener('abort', onAbort);
+          reject(
+            new Error(chunk.sessionError ?? 'Interactive session failed before the turn completed')
+          );
         }
       });
       const onAbort = () => {

@@ -21,7 +21,9 @@ import { randomUUID } from 'node:crypto';
 
 import type { ISupervisorPolicyRepository } from '../../ports/output/repositories/supervisor-policy-repository.interface.js';
 import {
+  GuardrailGateType,
   SupervisorAutonomy,
+  type GuardrailRule,
   type SupervisorPolicy,
   type SupervisorScopeType,
 } from '../../../domain/generated/output.js';
@@ -48,6 +50,11 @@ export interface ConfigureSupervisorInput {
   promptVersion?: string;
   gateAuthority?: Partial<Record<GateKey, SupervisorAutonomy>>;
   policyRules?: SupervisorPolicyRule[];
+  /**
+   * Deterministic bounds evaluated before the supervisor's LLM evaluator.
+   * When supplied, these replace any previously configured rule set.
+   */
+  guardrailRules?: GuardrailRule[];
   notificationOverrides?: Record<string, boolean>;
 }
 
@@ -89,6 +96,10 @@ export class ConfigureSupervisorUseCase {
       policyRulesJson:
         input.policyRules && input.policyRules.length > 0
           ? JSON.stringify(input.policyRules)
+          : undefined,
+      guardrailRulesJson:
+        input.guardrailRules && input.guardrailRules.length > 0
+          ? JSON.stringify(input.guardrailRules)
           : undefined,
       notificationOverridesJson:
         input.notificationOverrides && Object.keys(input.notificationOverrides).length > 0
@@ -135,6 +146,46 @@ function validateInput(input: ConfigureSupervisorInput): void {
         );
       }
     }
+  }
+  if (input.guardrailRules) {
+    const validGates = new Set<string>(Object.values(GuardrailGateType));
+    input.guardrailRules.forEach((rule, idx) => {
+      const at = `guardrailRules[${idx}]`;
+      if (!rule || typeof rule !== 'object') {
+        throw new InvalidSupervisorPolicyError(at, 'must be an object');
+      }
+      if (typeof rule.id !== 'string' || rule.id.trim().length === 0) {
+        throw new InvalidSupervisorPolicyError(`${at}.id`, 'must be a non-empty string');
+      }
+      if (!validGates.has(rule.gate)) {
+        throw new InvalidSupervisorPolicyError(
+          `${at}.gate`,
+          `must be one of ${[...validGates].join(', ')}`
+        );
+      }
+      if (typeof rule.autoApprove !== 'boolean') {
+        throw new InvalidSupervisorPolicyError(`${at}.autoApprove`, 'must be a boolean');
+      }
+      for (const bound of ['maxDiffLines', 'maxFilesChanged'] as const) {
+        const value = rule[bound];
+        if (value !== undefined && (!Number.isInteger(value) || value < 0)) {
+          throw new InvalidSupervisorPolicyError(
+            `${at}.${bound}`,
+            'must be a non-negative integer when supplied'
+          );
+        }
+      }
+      if (
+        rule.blockedPathPatterns !== undefined &&
+        (!Array.isArray(rule.blockedPathPatterns) ||
+          rule.blockedPathPatterns.some((pattern) => typeof pattern !== 'string'))
+      ) {
+        throw new InvalidSupervisorPolicyError(
+          `${at}.blockedPathPatterns`,
+          'must be an array of strings when supplied'
+        );
+      }
+    });
   }
   if (input.policyRules) {
     input.policyRules.forEach((rule, idx) => {

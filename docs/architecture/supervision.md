@@ -175,6 +175,72 @@ Key properties:
 
 ---
 
+## Deterministic guardrails (spec 111)
+
+A supervisor can be configured with **deterministic** bounds that decide a gate
+*before* the LLM evaluator runs. They exist because mathematical and path bounds
+(`diff <= 250 lines`, zero blocked file paths, CI green) are exact, cost no
+tokens, and must never be left to a model's judgement.
+
+Rules live on `SupervisorPolicy.guardrailRulesJson` (a JSON array of
+`GuardrailRule`, see `tsp/agents/fleet-guardrails.tsp`) and are set through
+`ConfigureSupervisorUseCase`:
+
+```jsonc
+[
+  {
+    "id": "rule-low-risk-merge",
+    "gate": "merge",              // prd | plan | merge | all
+    "maxDiffLines": 250,
+    "maxFilesChanged": 5,
+    "blockedPathPatterns": ["**/auth/**", "**/migrations/**"],
+    "requireCiPass": true,
+    "autoApprove": true
+  }
+]
+```
+
+Evaluation is **conjunctive**: every rule matching the gate must pass. A rule
+never short-circuits another, so adding a stricter rule can only make the
+outcome safer. A rule with no criteria (`{ "gate": "all", "autoApprove": true }`)
+passes trivially — that is the explicit "approve everything" configuration.
+
+```mermaid
+flowchart TD
+    G[gate interrupt] --> P{policy found<br/>and enabled<br/>and flag on?}
+    P -- no --> L[LLM evaluator]
+    P -- yes --> R{rules configured<br/>for this gate?}
+    R -- no --> L
+    R -- yes --> M{metrics<br/>available?}
+    M -- no --> E[gate stays open<br/>human decides]
+    M -- yes --> E2{every rule passes?}
+    E2 -- no --> E
+    E2 -- yes --> A{autoApprove<br/>on every rule?}
+    A -- no --> L
+    A -- yes --> C[ApproveAgentRunUseCase<br/>actor = supervisor:&lt;id&gt;]
+```
+
+Three properties are deliberate:
+
+- **Failing closed.** Unreadable stored rules, or diff/CI metrics that cannot be
+  gathered, escalate instead of assuming "within bounds". Treating an unknown
+  diff size as `0` would let a `maxDiffLines` rule pass.
+- **A breach is terminal.** When a rule is violated the LLM is *not* consulted:
+  a deterministic breach must never be overridable by a model verdict, or
+  `never auto-approve changes to billing or auth` would be advisory only.
+- **The default path is untouched.** With no rules configured — or with the
+  policy disabled, or the `collaboration` flag off — the evaluator behaves
+  exactly as it did before spec 111.
+
+| Fact | Where |
+|---|---|
+| `GuardrailRule` / `GuardrailEvaluationResult` | `tsp/agents/fleet-guardrails.tsp` |
+| Pure evaluator | `packages/core/src/application/use-cases/fleet/evaluate-gate-guardrails.use-case.ts` |
+| Pre-LLM pass | `feature-agent-supervisor-gate-evaluator.ts` → `applyGuardrails()` |
+| Rule storage | `supervisor_policies.guardrail_rules_json` (migration 144) |
+
+---
+
 ## Unified question pipeline
 
 `AgentQuestion` is the single surface for **every** agent-to-human ask, no

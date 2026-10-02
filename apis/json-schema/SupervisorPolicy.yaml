@@ -29,6 +29,9 @@ properties:
   policyRulesJson:
     type: string
     description: JSON array of structured policy rules
+  guardrailRulesJson:
+    type: string
+    description: JSON array of deterministic GuardrailRules evaluated before the LLM evaluator
   notificationOverridesJson:
     type: string
     description: JSON object overriding the user's notification preferences for supervisor events

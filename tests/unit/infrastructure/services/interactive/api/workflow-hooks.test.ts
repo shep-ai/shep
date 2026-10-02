@@ -12,7 +12,7 @@ import { WorkflowHooks } from '@/infrastructure/services/interactive/api/workflo
 import { SessionRegistry } from '@/infrastructure/services/interactive/core/session-registry.js';
 import { StreamEventDispatcher } from '@/infrastructure/services/interactive/core/stream-event-dispatcher.js';
 import type { WorkflowStep } from '@/domain/generated/output.js';
-import { WorkflowStepStatus } from '@/domain/generated/output.js';
+import { InteractiveSessionStatus, WorkflowStepStatus } from '@/domain/generated/output.js';
 
 function makeStep(id: string, featureId: string): WorkflowStep {
   return {
@@ -89,6 +89,22 @@ describe('WorkflowHooks', () => {
       eventDispatcher.notifyByFeatureId(featureId, { delta: '', done: true });
 
       await expect(promise).resolves.toBeUndefined();
+    });
+
+    // An errored session never emits `done`, so waiting only for `done`
+    // would keep the workflow step "running" forever.
+    it('rejects with the reason when the session reports an error', async () => {
+      const featureId = 'feat-wait-error';
+      const promise = hooks.waitForTurnDone(featureId);
+
+      eventDispatcher.notifyByFeatureId(featureId, {
+        delta: '',
+        done: false,
+        sessionStatus: InteractiveSessionStatus.error,
+        sessionError: 'cursor-agent is not logged in',
+      });
+
+      await expect(promise).rejects.toThrow('cursor-agent is not logged in');
     });
 
     it('rejects when AbortSignal is already aborted', async () => {

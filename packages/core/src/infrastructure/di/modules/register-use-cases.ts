@@ -275,8 +275,10 @@ import {
 import { ListFleetTriageItemsUseCase } from '../../../application/use-cases/fleet/list-fleet-triage-items.use-case.js';
 import { GetFleetOverviewUseCase } from '../../../application/use-cases/fleet/get-fleet-overview.use-case.js';
 import { BatchApproveFeaturesUseCase } from '../../../application/use-cases/fleet/batch-approve-features.use-case.js';
+import { EvaluateGateGuardrailsUseCase } from '../../../application/use-cases/fleet/evaluate-gate-guardrails.use-case.js';
 import { PruneRetainedDataUseCase } from '../../../application/use-cases/maintenance/prune-retained-data.use-case.js';
 import {
+  EvaluateGateGuardrailsUseCaseToken,
   ListFleetTriageItemsUseCaseToken,
   GetFleetOverviewUseCaseToken,
   BatchApproveFeaturesUseCaseToken,
@@ -1093,6 +1095,10 @@ export function registerUseCases(container: DependencyContainer): void {
   container.register('GlobalSearchUseCase', { useFactory: (c) => c.resolve(GlobalSearchUseCase) });
 
   // ─── Fleet Control Plane (spec 111) ───────────────────────────────────────
+  container.registerSingleton(EvaluateGateGuardrailsUseCase);
+  container.register(EvaluateGateGuardrailsUseCaseToken, {
+    useFactory: (c) => c.resolve(EvaluateGateGuardrailsUseCase),
+  });
   container.registerSingleton(ListFleetTriageItemsUseCase);
   container.register(ListFleetTriageItemsUseCaseToken, {
     useFactory: (c) => c.resolve(ListFleetTriageItemsUseCase),

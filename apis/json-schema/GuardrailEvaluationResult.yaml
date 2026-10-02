@@ -1,0 +1,27 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: GuardrailEvaluationResult.yaml
+type: object
+properties:
+  passed:
+    type: boolean
+    description: True if all criteria are satisfied
+  autoApproved:
+    type: boolean
+    description: True if the gate should be auto-approved without human intervention
+  ruleId:
+    type: string
+    description: Rule that decided the outcome, when a single rule is responsible
+  violations:
+    type: array
+    items:
+      type: string
+    description: List of violation reasons if any criteria failed
+  rationale:
+    type: string
+    description: Human-readable explanation of the evaluation
+required:
+  - passed
+  - autoApproved
+  - violations
+  - rationale
+description: Result of evaluating deterministic guardrail rules against an approval gate

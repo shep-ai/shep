@@ -46,6 +46,9 @@ export const IFleetRepositoryToken = 'IFleetRepository' as const;
 /** Resolves to `GetFleetOverviewUseCase`. */
 export const GetFleetOverviewUseCaseToken = 'GetFleetOverviewUseCase' as const;
 
+/** Resolves to `EvaluateGateGuardrailsUseCase`. */
+export const EvaluateGateGuardrailsUseCaseToken = 'EvaluateGateGuardrailsUseCase' as const;
+
 /** Resolves to `ListFleetTriageItemsUseCase`. */
 export const ListFleetTriageItemsUseCaseToken = 'ListFleetTriageItemsUseCase' as const;
 

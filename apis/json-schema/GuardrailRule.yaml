@@ -1,0 +1,36 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: GuardrailRule.yaml
+type: object
+properties:
+  id:
+    type: string
+    description: Unique identifier for this rule
+  gate:
+    $ref: GuardrailGateType.yaml
+    description: Which gate this rule governs (prd, plan, merge, or all)
+  maxDiffLines:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Maximum lines of diff permitted for auto-approval
+  maxFilesChanged:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Maximum number of files changed permitted for auto-approval
+  blockedPathPatterns:
+    type: array
+    items:
+      type: string
+    description: Glob patterns that trigger mandatory escalation if touched (e.g. auth/**, migrations/**)
+  requireCiPass:
+    type: boolean
+    description: Whether CI pipeline must be passing for auto-approval
+  autoApprove:
+    type: boolean
+    description: Whether auto-approval is granted when all criteria pass (false = advise only)
+required:
+  - id
+  - gate
+  - autoApprove
+description: Deterministic criteria-based rule governing gate approvals and escalations

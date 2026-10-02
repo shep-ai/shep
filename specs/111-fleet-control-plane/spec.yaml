@@ -98,7 +98,8 @@ content: |
   | Slice | Scope | Status |
   | ----- | ----- | ------ |
   | 1 — Core domain + CLI | TypeSpec models, `GetFleetOverviewUseCase`, `ListFleetTriageItemsUseCase`, `SQLiteFleetRepository` + migration 143, `shep fleet status`, `shep fleet triage`, `shep fleet approve` | Implemented |
-  | 2 — Guardrails + circuit breaker | `CheckCircuitBreakerUseCase` (folded into `GetFleetOverviewUseCase`) shipped with slice 1. Still to come: `EvaluateGateGuardrailsUseCase`, `SupervisorPolicy` rule configuration, supervisor integration, `--low-risk`, `fleet retry` / `pause` / `resume` | Not started |
+  | 2 — Guardrails | `EvaluateGateGuardrailsUseCase` + `SupervisorPolicy.guardrailRulesJson` (migration 144) + the pre-LLM pass in the supervisor gate evaluator | Implemented |
+  | 2b — Remaining fleet actions | `--low-risk` on `fleet approve`, `fleet retry` / `pause` / `resume` | Not started |
   | 3 — Web UI | Fleet status bar + triage drawer with colocated Storybook stories, wired into the dashboard layout | Implemented |
 
   ## Success Criteria
@@ -107,7 +108,8 @@ content: |
   - [x] **Exception Triage Feed**: `shep fleet triage` lists only items requiring human action, categorized into P1 (Blockers/Gates), P2 (Failures/Conflicts), P3 (Warnings).
   - [x] **Derived fleet state**: every count is computed at query time from indexed SQLite tables (migration 143); no mutable counters.
   - [x] **Batch Approval**: `shep fleet approve [--all | --gate <type>]` approves waiting gates sequentially with per-item error isolation.
-  - [ ] **Deterministic Guardrail Rules**: not started. The evaluator, the `SupervisorPolicy` rule configuration, and the worker integration all belong to the next slice.
+  - [x] **Deterministic Guardrail Rules**: `SupervisorPolicy.guardrailRulesJson` holds `GuardrailRule`s that are evaluated in pure TypeScript before the LLM evaluator. All matching rules must pass; a breach, unreadable rules, or missing diff/CI metrics escalate to a human without consulting the model.
+  - [ ] **Guardrail rule authoring UX**: rules are settable through `ConfigureSupervisorUseCase` (and therefore the programmatic API) but there is no `shep supervisor configure --guardrail` flag yet.
   - [x] **Fleet Circuit Breaker**: consecutive-failure and rolling-failure-rate thresholds trip a reported signal in `shep fleet status`. Automatic admission pausing is out of scope until admission control exists on `main`.
   - [x] **Breaker metrics share the fleet scope**: when a repository path is supplied, both breaker metrics are restricted to runs belonging to that repository, matching the definition of scope used by the overview counts. A scoped view must never trip because of another repository's failures.
   - [ ] **Batch Operations (remaining)**: `shep fleet retry [--ci | --failed]` and `shep fleet pause / resume` are not implemented; `--low-risk` is not implemented (it requires guardrail rule configuration, which is itself not wired).

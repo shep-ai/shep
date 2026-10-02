@@ -273,6 +273,62 @@ describe('useChatRuntime — failed send', () => {
     });
   });
 
+  // Resending cannot succeed while the agent has no interactive mode, so the
+  // toast explains why (in the server's words) and points at Settings instead
+  // of offering a retry.
+  it('explains an agent without chat support and offers Settings instead of a retry', async () => {
+    const serverMessage =
+      'Gemini CLI does not support chat sessions yet. Choose an agent that does in Settings, then send your message again.';
+    routes.send = {
+      ok: false,
+      status: 422,
+      body: { error: serverMessage, code: 'INTERACTIVE_AGENT_UNSUPPORTED' },
+    };
+    const assign = vi.fn();
+    vi.stubGlobal('location', { ...window.location, assign });
+    try {
+      const { result } = renderChatRuntime();
+
+      act(() => {
+        result.current.runtime.thread.append('build it');
+      });
+      await waitFor(() => expect(toast.error).toHaveBeenCalledTimes(1));
+
+      const [title, options] = vi.mocked(toast.error).mock.calls[0] as [
+        string,
+        { description?: string; action?: { label: string; onClick: () => void } },
+      ];
+      expect(title).toBe('Chat unavailable for this agent');
+      expect(options.description).toBe(serverMessage);
+      expect(options.action?.label).toBe('Open Settings');
+
+      options.action!.onClick();
+      expect(assign).toHaveBeenCalledWith('/settings');
+      await waitFor(() => expect(result.current.rawMessages).toHaveLength(0));
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('keeps the retry affordance for other rejected sends', async () => {
+    routes.send = {
+      ok: false,
+      status: 429,
+      body: { error: 'Cannot start a new session', code: 'CONCURRENT_SESSION_LIMIT' },
+    };
+    const { result } = renderChatRuntime();
+
+    act(() => {
+      result.current.runtime.thread.append('deploy the app');
+    });
+    await waitFor(() => expect(toast.error).toHaveBeenCalledTimes(1));
+
+    const options = vi.mocked(toast.error).mock.calls[0][1] as {
+      action?: { label: string };
+    };
+    expect(options.action?.label).toBe('Retry');
+  });
+
   it('does not toast when the send succeeds', async () => {
     const { result } = renderChatRuntime();
 
@@ -283,6 +339,36 @@ describe('useChatRuntime — failed send', () => {
     await waitFor(() =>
       expect(fetchCalls.some((c) => c.url.endsWith('/messages') && c.method === 'POST')).toBe(true)
     );
+    expect(toast.error).not.toHaveBeenCalled();
+  });
+});
+
+describe('useChatRuntime — session fails to start', () => {
+  // A boot failure (agent not logged in, CLI missing, …) never produces a
+  // turn, so the reason carried with the error status is the only thing that
+  // can tell the user what went wrong.
+  it('shows the reason when the session reports an error', async () => {
+    renderChatRuntime();
+    await waitFor(() => expect(sseListeners.get('session_status')?.size).toBeGreaterThan(0));
+
+    emitSse('session_status', {
+      sessionStatus: 'error',
+      sessionError: 'cursor-agent is not logged in. Run `cursor-agent login`, then try again.',
+    });
+
+    await waitFor(() =>
+      expect(toast.error).toHaveBeenCalledWith('Chat session failed to start', {
+        description: 'cursor-agent is not logged in. Run `cursor-agent login`, then try again.',
+      })
+    );
+  });
+
+  it('does not toast for an error status without a reason', async () => {
+    renderChatRuntime();
+    await waitFor(() => expect(sseListeners.get('session_status')?.size).toBeGreaterThan(0));
+
+    emitSse('session_status', { sessionStatus: 'error' });
+
     expect(toast.error).not.toHaveBeenCalled();
   });
 });

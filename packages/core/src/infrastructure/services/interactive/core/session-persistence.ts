@@ -157,6 +157,20 @@ export class SessionPersistence {
     });
   }
 
+  /**
+   * Mark the session `error` AND notify subscribers with the reason, so the
+   * failure can be shown to the user rather than only logged.
+   */
+  async failSessionAndNotify(sessionId: string, featureId: string, reason: string): Promise<void> {
+    await this.sessionRepo.updateStatus(sessionId, InteractiveSessionStatus.error);
+    this.dispatcher.notifyByFeatureId(featureId, {
+      delta: '',
+      done: false,
+      sessionStatus: InteractiveSessionStatus.error,
+      sessionError: reason,
+    });
+  }
+
   /** Update turn status AND notify subscribers. */
   async updateTurnStatusAndNotify(
     sessionId: string,

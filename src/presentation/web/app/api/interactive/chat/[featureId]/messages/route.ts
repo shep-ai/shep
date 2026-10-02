@@ -17,6 +17,7 @@ import type { SendInteractiveMessageUseCase } from '@shepai/core/application/use
 import type { GetInteractiveChatStateUseCase } from '@shepai/core/application/use-cases/interactive/get-interactive-chat-state.use-case';
 import type { IInteractiveSessionService } from '@shepai/core/application/ports/output/services/interactive-session-service.interface';
 import { getShepHomeDir } from '@shepai/core/infrastructure/services/filesystem/shep-directory.service';
+import { INTERACTIVE_AGENT_UNSUPPORTED_CODE } from '@shepai/core/domain/errors/interactive-agent-unsupported.error';
 import { CONCURRENT_SESSION_LIMIT_CODE } from '@shepai/core/domain/errors/concurrent-session-limit.error';
 import { errorCode } from '@/lib/error-code';
 
@@ -64,7 +65,16 @@ export async function POST(request: NextRequest, { params }: RouteParams): Promi
 
     return NextResponse.json({ message }, { status: 201 });
   } catch (error) {
-    // Match on `code`, not the message or `instanceof` (see lib/error-code.ts).
+    // An agent without an interactive mode is the user's to fix (Settings), so
+    // answer 422 with the message. Match on `code`, not the message or
+    // `instanceof`: `instanceof` never matches across the route bundle
+    // (see lib/error-code.ts).
+    if (errorCode(error) === INTERACTIVE_AGENT_UNSUPPORTED_CODE) {
+      return NextResponse.json(
+        { error: (error as Error).message, code: INTERACTIVE_AGENT_UNSUPPORTED_CODE },
+        { status: 422 }
+      );
+    }
     if (errorCode(error) === CONCURRENT_SESSION_LIMIT_CODE) {
       return NextResponse.json(
         { error: (error as Error).message, code: CONCURRENT_SESSION_LIMIT_CODE },

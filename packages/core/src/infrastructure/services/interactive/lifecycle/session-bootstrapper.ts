@@ -43,6 +43,7 @@ import type { ILogger } from '../../../../application/ports/output/services/logg
 import type { InteractiveSession } from '../../../../domain/generated/output.js';
 import { InteractiveSessionStatus } from '../../../../domain/generated/output.js';
 import { ConcurrentSessionLimitError } from '../../../../domain/errors/concurrent-session-limit.error.js';
+import { InteractiveAgentUnsupportedError } from '../../../../domain/errors/interactive-agent-unsupported.error.js';
 import { BootWatchdog } from './boot-watchdog.js';
 
 export class SessionBootstrapper {
@@ -60,8 +61,27 @@ export class SessionBootstrapper {
   ) {}
 
   /**
+   * Throw `InteractiveAgentUnsupportedError` when the agent a session would
+   * boot with — the explicit override, else the settings default — has no
+   * interactive mode.
+   *
+   * `createInteractiveExecutor` would throw the same condition, but only
+   * inside the background boot, after the caller has been told the session
+   * started. Checking here lets callers reject before any side effect.
+   */
+  assertInteractiveSupported(agentType?: string): void {
+    const resolved = this.agentConfigResolver.resolveAgentType(agentType);
+    if (!this.executorFactory.supportsInteractive(resolved)) {
+      throw new InteractiveAgentUnsupportedError(resolved);
+    }
+  }
+
+  /**
    * Start a new session for the given feature scope.
    * Returns immediately in `booting` status; the async boot runs in the background.
+   *
+   * @throws InteractiveAgentUnsupportedError when the agent has no interactive mode
+   * @throws ConcurrentSessionLimitError when the configured session cap is reached
    */
   async startSession(
     featureId: string,
@@ -71,6 +91,8 @@ export class SessionBootstrapper {
     systemPrompt?: string,
     initialUserMessage?: string
   ): Promise<InteractiveSession> {
+    this.assertInteractiveSupported(agentType);
+
     const cap = this.agentConfigResolver.getCap();
     const activeCount = await this.sessionRepo.countActiveSessions();
     if (activeCount >= cap) {
@@ -323,11 +345,17 @@ export class SessionBootstrapper {
         error: err,
       });
       try {
-        await this.persistence.updateSessionStatusAndNotify(
+        // The error's own message is the actionable part ("cursor-agent is not
+        // logged in", "cursor-agent was not found") — pass it on, don't just log it.
+        await this.persistence.failSessionAndNotify(
           state.sessionId,
           state.featureId,
-          InteractiveSessionStatus.error
+          err instanceof Error ? err.message : String(err)
         );
+        // startSession marked the turn 'processing' before the boot ran;
+        // hand it back so the chat stops showing a spinner for a turn that
+        // will never produce output.
+        await this.persistence.updateTurnStatusAndNotify(state.sessionId, state.featureId, 'idle');
       } catch {
         // Best-effort DB update
       }
