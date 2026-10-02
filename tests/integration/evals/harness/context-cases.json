@@ -1,0 +1,559 @@
+{
+  "suite": "context",
+  "description": "Required-evidence recall: needed chunks must be visible (\u2265 short); distractors should not be shown in full (spec 119)",
+  "cases": [
+    {
+      "id": "context-01",
+      "query": "Fix refresh token expiry check",
+      "chunks": [
+        {
+          "label": "src/auth/refreshToken.ts",
+          "kind": "file",
+          "path": "src/auth/refreshToken.ts",
+          "content": "export function refreshToken(token: string) {\n  if (isExpired(token)) throw new ExpiredError();\n}\n",
+          "needed": true
+        },
+        {
+          "label": "README.md",
+          "kind": "file",
+          "path": "README.md",
+          "content": "# Acme API\n\nSetup: pnpm install. Deploy with the release workflow.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\n",
+          "needed": false
+        },
+        {
+          "label": "src/billing/invoice.ts",
+          "kind": "file",
+          "path": "src/billing/invoice.ts",
+          "content": "export function createInvoice(customer: Customer) {\n  return stripe.invoices.create({ customer: customer.id });\n}\nexport function createInvoice(customer: Customer) {\n  return stripe.invoices.create({ customer: customer.id });\n}\nexport function createInvoice(customer: Customer) {\n  return stripe.invoices.create({ customer: customer.id });\n}\nexport function createInvoice(customer: Customer) {\n  return stripe.invoices.create({ customer: customer.id });\n}\nexport function createInvoice(customer: Customer) {\n  return stripe.invoices.create({ customer: customer.id });\n}\nexport function createInvoice(customer: Customer) {\n  return stripe.invoices.create({ customer: customer.id });\n}\n",
+          "needed": false
+        }
+      ]
+    },
+    {
+      "id": "context-02",
+      "query": "Why does the login test fail?",
+      "chunks": [
+        {
+          "label": "$ pnpm test auth",
+          "kind": "test_result",
+          "content": "FAIL src/auth/login.test.ts > login > rejects bad password\nExpected 401, received 500\n",
+          "needed": true
+        },
+        {
+          "label": "src/auth/login.ts",
+          "kind": "file",
+          "path": "src/auth/login.ts",
+          "content": "export async function login(user, password) { return verifyPassword(user, password); }\n",
+          "needed": true
+        },
+        {
+          "label": "styles/app.css",
+          "kind": "file",
+          "path": "styles/app.css",
+          "content": ".button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n",
+          "needed": false
+        }
+      ]
+    },
+    {
+      "id": "context-03",
+      "query": "Add pagination to the users endpoint",
+      "chunks": [
+        {
+          "label": "src/routes/users.ts",
+          "kind": "file",
+          "path": "src/routes/users.ts",
+          "content": "router.get('/users', async (req, res) => res.json(await listUsers()));\n",
+          "needed": true
+        },
+        {
+          "label": "src/db/users.repository.ts",
+          "kind": "file",
+          "path": "src/db/users.repository.ts",
+          "content": "export async function listUsers(limit = 50, offset = 0) {}\n",
+          "needed": true
+        },
+        {
+          "label": "src/billing/invoice.ts",
+          "kind": "file",
+          "path": "src/billing/invoice.ts",
+          "content": "export function createInvoice(customer: Customer) {\n  return stripe.invoices.create({ customer: customer.id });\n}\nexport function createInvoice(customer: Customer) {\n  return stripe.invoices.create({ customer: customer.id });\n}\nexport function createInvoice(customer: Customer) {\n  return stripe.invoices.create({ customer: customer.id });\n}\nexport function createInvoice(customer: Customer) {\n  return stripe.invoices.create({ customer: customer.id });\n}\nexport function createInvoice(customer: Customer) {\n  return stripe.invoices.create({ customer: customer.id });\n}\nexport function createInvoice(customer: Customer) {\n  return stripe.invoices.create({ customer: customer.id });\n}\n",
+          "needed": false
+        },
+        {
+          "label": "README.md",
+          "kind": "file",
+          "path": "README.md",
+          "content": "# Acme API\n\nSetup: pnpm install. Deploy with the release workflow.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\n",
+          "needed": false
+        }
+      ]
+    },
+    {
+      "id": "context-04",
+      "query": "Rename the parseDate helper to parseIsoDate",
+      "chunks": [
+        {
+          "label": "search 'parseDate'",
+          "kind": "search_result",
+          "content": "src/utils/date.ts:3: export function parseDate(\nsrc/api/events.ts:10: parseDate(raw)\n",
+          "needed": true
+        },
+        {
+          "label": "src/utils/date.ts",
+          "kind": "file",
+          "path": "src/utils/date.ts",
+          "content": "export function parseDate(value: string) { return new Date(value); }\n",
+          "needed": true
+        },
+        {
+          "label": "styles/app.css",
+          "kind": "file",
+          "path": "styles/app.css",
+          "content": ".button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n",
+          "needed": false
+        }
+      ]
+    },
+    {
+      "id": "context-05",
+      "query": "Update the Stripe invoice creation to pass the currency",
+      "chunks": [
+        {
+          "label": "src/billing/invoice.ts",
+          "kind": "file",
+          "path": "src/billing/invoice.ts",
+          "content": "export function createInvoice(customer: Customer) {\n  return stripe.invoices.create({ customer: customer.id });\n}\nexport function createInvoice(customer: Customer) {\n  return stripe.invoices.create({ customer: customer.id });\n}\nexport function createInvoice(customer: Customer) {\n  return stripe.invoices.create({ customer: customer.id });\n}\nexport function createInvoice(customer: Customer) {\n  return stripe.invoices.create({ customer: customer.id });\n}\nexport function createInvoice(customer: Customer) {\n  return stripe.invoices.create({ customer: customer.id });\n}\nexport function createInvoice(customer: Customer) {\n  return stripe.invoices.create({ customer: customer.id });\n}\n",
+          "needed": true
+        },
+        {
+          "label": "src/auth/refreshToken.ts",
+          "kind": "file",
+          "path": "src/auth/refreshToken.ts",
+          "content": "export function refreshToken() {}\n",
+          "needed": false
+        },
+        {
+          "label": "README.md",
+          "kind": "file",
+          "path": "README.md",
+          "content": "# Acme API\n\nSetup: pnpm install. Deploy with the release workflow.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\n",
+          "needed": false
+        }
+      ]
+    },
+    {
+      "id": "context-06",
+      "query": "Fix the off-by-one error in pagination offset",
+      "chunks": [
+        {
+          "label": "src/db/users.repository.ts",
+          "kind": "file",
+          "path": "src/db/users.repository.ts",
+          "content": "export function page(offset: number, limit: number) { return rows.slice(offset + 1, offset + limit); }\n",
+          "needed": true
+        },
+        {
+          "label": "styles/app.css",
+          "kind": "file",
+          "path": "styles/app.css",
+          "content": ".button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n",
+          "needed": false
+        },
+        {
+          "label": "docs/deploy.md",
+          "kind": "file",
+          "path": "docs/deploy.md",
+          "content": "Deploy instructions for production clusters.\nDeploy instructions for production clusters.\nDeploy instructions for production clusters.\nDeploy instructions for production clusters.\nDeploy instructions for production clusters.\nDeploy instructions for production clusters.\nDeploy instructions for production clusters.\nDeploy instructions for production clusters.\nDeploy instructions for production clusters.\nDeploy instructions for production clusters.\nDeploy instructions for production clusters.\nDeploy instructions for production clusters.\nDeploy instructions for production clusters.\nDeploy instructions for production clusters.\nDeploy instructions for production clusters.\nDeploy instructions for production clusters.\nDeploy instructions for production clusters.\nDeploy instructions for production clusters.\nDeploy instructions for production clusters.\nDeploy instructions for production clusters.\n",
+          "needed": false
+        }
+      ]
+    },
+    {
+      "id": "context-07",
+      "query": "Make the button color follow the theme",
+      "chunks": [
+        {
+          "label": "styles/button.css",
+          "kind": "file",
+          "path": "styles/button.css",
+          "content": ".button { color: var(--theme-primary); }\n",
+          "needed": true
+        },
+        {
+          "label": "src/billing/invoice.ts",
+          "kind": "file",
+          "path": "src/billing/invoice.ts",
+          "content": "export function createInvoice(customer: Customer) {\n  return stripe.invoices.create({ customer: customer.id });\n}\nexport function createInvoice(customer: Customer) {\n  return stripe.invoices.create({ customer: customer.id });\n}\nexport function createInvoice(customer: Customer) {\n  return stripe.invoices.create({ customer: customer.id });\n}\nexport function createInvoice(customer: Customer) {\n  return stripe.invoices.create({ customer: customer.id });\n}\nexport function createInvoice(customer: Customer) {\n  return stripe.invoices.create({ customer: customer.id });\n}\nexport function createInvoice(customer: Customer) {\n  return stripe.invoices.create({ customer: customer.id });\n}\n",
+          "needed": false
+        },
+        {
+          "label": "src/auth/login.ts",
+          "kind": "file",
+          "path": "src/auth/login.ts",
+          "content": "export async function login() {}\n",
+          "needed": false
+        }
+      ]
+    },
+    {
+      "id": "context-08",
+      "query": "Handle network timeout errors in the HTTP client",
+      "chunks": [
+        {
+          "label": "src/http/client.ts",
+          "kind": "file",
+          "path": "src/http/client.ts",
+          "content": "export async function request(url) { return fetch(url, { signal: AbortSignal.timeout(5000) }); }\n",
+          "needed": true
+        },
+        {
+          "label": "$ pnpm test http",
+          "kind": "test_result",
+          "content": "FAIL client.test.ts > retries on timeout error\n",
+          "needed": true
+        },
+        {
+          "label": "README.md",
+          "kind": "file",
+          "path": "README.md",
+          "content": "# Acme API\n\nSetup: pnpm install. Deploy with the release workflow.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\n",
+          "needed": false
+        }
+      ]
+    },
+    {
+      "id": "context-09",
+      "query": "Add a unit test for the email validator",
+      "chunks": [
+        {
+          "label": "src/validation/email.ts",
+          "kind": "file",
+          "path": "src/validation/email.ts",
+          "content": "export function isValidEmail(email: string) { return /.+@.+/.test(email); }\n",
+          "needed": true
+        },
+        {
+          "label": "src/validation/email.test.ts",
+          "kind": "file",
+          "path": "src/validation/email.test.ts",
+          "content": "describe('isValidEmail', () => {});\n",
+          "needed": true
+        },
+        {
+          "label": "styles/app.css",
+          "kind": "file",
+          "path": "styles/app.css",
+          "content": ".button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n",
+          "needed": false
+        }
+      ]
+    },
+    {
+      "id": "context-10",
+      "query": "Remove the deprecated legacy export endpoint",
+      "chunks": [
+        {
+          "label": "search 'legacyExport'",
+          "kind": "search_result",
+          "content": "src/routes/export.ts:4: router.get('/legacy-export', legacyExport)\n",
+          "needed": true
+        },
+        {
+          "label": "src/routes/export.ts",
+          "kind": "file",
+          "path": "src/routes/export.ts",
+          "content": "router.get('/legacy-export', legacyExport);\n",
+          "needed": true
+        },
+        {
+          "label": "src/billing/invoice.ts",
+          "kind": "file",
+          "path": "src/billing/invoice.ts",
+          "content": "export function createInvoice(customer: Customer) {\n  return stripe.invoices.create({ customer: customer.id });\n}\nexport function createInvoice(customer: Customer) {\n  return stripe.invoices.create({ customer: customer.id });\n}\nexport function createInvoice(customer: Customer) {\n  return stripe.invoices.create({ customer: customer.id });\n}\nexport function createInvoice(customer: Customer) {\n  return stripe.invoices.create({ customer: customer.id });\n}\nexport function createInvoice(customer: Customer) {\n  return stripe.invoices.create({ customer: customer.id });\n}\nexport function createInvoice(customer: Customer) {\n  return stripe.invoices.create({ customer: customer.id });\n}\n",
+          "needed": false
+        }
+      ]
+    },
+    {
+      "id": "context-11",
+      "query": "Increase the database connection pool size",
+      "chunks": [
+        {
+          "label": "src/db/pool.ts",
+          "kind": "file",
+          "path": "src/db/pool.ts",
+          "content": "export const pool = createPool({ connectionLimit: 5 });\n",
+          "needed": true
+        },
+        {
+          "label": "styles/app.css",
+          "kind": "file",
+          "path": "styles/app.css",
+          "content": ".button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n",
+          "needed": false
+        },
+        {
+          "label": "README.md",
+          "kind": "file",
+          "path": "README.md",
+          "content": "# Acme API\n\nSetup: pnpm install. Deploy with the release workflow.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\n",
+          "needed": false
+        }
+      ]
+    },
+    {
+      "id": "context-12",
+      "query": "Why is the cache returning stale user profiles?",
+      "chunks": [
+        {
+          "label": "src/cache/profile-cache.ts",
+          "kind": "file",
+          "path": "src/cache/profile-cache.ts",
+          "content": "const ttl = 86400; export function getProfile(id) { return cache.get(`profile:${id}`); }\n",
+          "needed": true
+        },
+        {
+          "label": "src/billing/invoice.ts",
+          "kind": "file",
+          "path": "src/billing/invoice.ts",
+          "content": "export function createInvoice(customer: Customer) {\n  return stripe.invoices.create({ customer: customer.id });\n}\nexport function createInvoice(customer: Customer) {\n  return stripe.invoices.create({ customer: customer.id });\n}\nexport function createInvoice(customer: Customer) {\n  return stripe.invoices.create({ customer: customer.id });\n}\nexport function createInvoice(customer: Customer) {\n  return stripe.invoices.create({ customer: customer.id });\n}\nexport function createInvoice(customer: Customer) {\n  return stripe.invoices.create({ customer: customer.id });\n}\nexport function createInvoice(customer: Customer) {\n  return stripe.invoices.create({ customer: customer.id });\n}\n",
+          "needed": false
+        },
+        {
+          "label": "docs/deploy.md",
+          "kind": "file",
+          "path": "docs/deploy.md",
+          "content": "Deploy instructions.\nDeploy instructions.\nDeploy instructions.\nDeploy instructions.\nDeploy instructions.\nDeploy instructions.\nDeploy instructions.\nDeploy instructions.\nDeploy instructions.\nDeploy instructions.\nDeploy instructions.\nDeploy instructions.\nDeploy instructions.\nDeploy instructions.\nDeploy instructions.\nDeploy instructions.\nDeploy instructions.\nDeploy instructions.\nDeploy instructions.\nDeploy instructions.\n",
+          "needed": false
+        }
+      ]
+    },
+    {
+      "id": "context-13",
+      "query": "Log failed webhook deliveries",
+      "chunks": [
+        {
+          "label": "src/webhooks/deliver.ts",
+          "kind": "file",
+          "path": "src/webhooks/deliver.ts",
+          "content": "export async function deliverWebhook(event) { await post(event.url, event.body); }\n",
+          "needed": true
+        },
+        {
+          "label": "styles/app.css",
+          "kind": "file",
+          "path": "styles/app.css",
+          "content": ".button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n",
+          "needed": false
+        }
+      ]
+    },
+    {
+      "id": "context-14",
+      "query": "Fix the TypeScript error in the order service",
+      "chunks": [
+        {
+          "label": "$ pnpm typecheck",
+          "kind": "command_output",
+          "content": "src/orders/order.service.ts(14,7): error TS2322: Type 'string' is not assignable to type 'number'.\n",
+          "needed": true
+        },
+        {
+          "label": "src/orders/order.service.ts",
+          "kind": "file",
+          "path": "src/orders/order.service.ts",
+          "content": "export class OrderService { total: number = '0'; }\n",
+          "needed": true
+        },
+        {
+          "label": "README.md",
+          "kind": "file",
+          "path": "README.md",
+          "content": "# Acme API\n\nSetup: pnpm install. Deploy with the release workflow.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\n",
+          "needed": false
+        }
+      ]
+    },
+    {
+      "id": "context-15",
+      "query": "Translate the welcome email subject to German",
+      "chunks": [
+        {
+          "label": "templates/welcome-email.ts",
+          "kind": "file",
+          "path": "templates/welcome-email.ts",
+          "content": "export const subject = 'Welcome to Acme';\n",
+          "needed": true
+        },
+        {
+          "label": "translations/de/emails.json",
+          "kind": "file",
+          "path": "translations/de/emails.json",
+          "content": "{\"welcome\": {\"subject\": \"\"}}\n",
+          "needed": true
+        },
+        {
+          "label": "src/billing/invoice.ts",
+          "kind": "file",
+          "path": "src/billing/invoice.ts",
+          "content": "export function createInvoice(customer: Customer) {\n  return stripe.invoices.create({ customer: customer.id });\n}\nexport function createInvoice(customer: Customer) {\n  return stripe.invoices.create({ customer: customer.id });\n}\nexport function createInvoice(customer: Customer) {\n  return stripe.invoices.create({ customer: customer.id });\n}\nexport function createInvoice(customer: Customer) {\n  return stripe.invoices.create({ customer: customer.id });\n}\nexport function createInvoice(customer: Customer) {\n  return stripe.invoices.create({ customer: customer.id });\n}\nexport function createInvoice(customer: Customer) {\n  return stripe.invoices.create({ customer: customer.id });\n}\n",
+          "needed": false
+        }
+      ]
+    },
+    {
+      "id": "context-16",
+      "query": "Disable the feature flag for the new checkout",
+      "chunks": [
+        {
+          "label": "src/flags/feature-flags.ts",
+          "kind": "file",
+          "path": "src/flags/feature-flags.ts",
+          "content": "export const flags = { newCheckout: true };\n",
+          "needed": true
+        },
+        {
+          "label": "styles/app.css",
+          "kind": "file",
+          "path": "styles/app.css",
+          "content": ".button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n",
+          "needed": false
+        },
+        {
+          "label": "README.md",
+          "kind": "file",
+          "path": "README.md",
+          "content": "# Acme API\n\nSetup: pnpm install. Deploy with the release workflow.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\nMarketing copy and changelog notes.\n",
+          "needed": false
+        }
+      ]
+    },
+    {
+      "id": "context-17",
+      "query": "Sort search results by relevance score",
+      "chunks": [
+        {
+          "label": "src/search/rank.ts",
+          "kind": "file",
+          "path": "src/search/rank.ts",
+          "content": "export function rank(results) { return results; }\n",
+          "needed": true
+        },
+        {
+          "label": "search 'score'",
+          "kind": "search_result",
+          "content": "src/search/rank.ts:1 relevance score unused\n",
+          "needed": true
+        },
+        {
+          "label": "styles/app.css",
+          "kind": "file",
+          "path": "styles/app.css",
+          "content": ".button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n",
+          "needed": false
+        }
+      ]
+    },
+    {
+      "id": "context-18",
+      "query": "Upgrade the logger to structured JSON output",
+      "chunks": [
+        {
+          "label": "src/logging/logger.ts",
+          "kind": "file",
+          "path": "src/logging/logger.ts",
+          "content": "export const logger = { info: (msg) => console.log(msg) };\n",
+          "needed": true
+        },
+        {
+          "label": "src/billing/invoice.ts",
+          "kind": "file",
+          "path": "src/billing/invoice.ts",
+          "content": "export function createInvoice(customer: Customer) {\n  return stripe.invoices.create({ customer: customer.id });\n}\nexport function createInvoice(customer: Customer) {\n  return stripe.invoices.create({ customer: customer.id });\n}\nexport function createInvoice(customer: Customer) {\n  return stripe.invoices.create({ customer: customer.id });\n}\nexport function createInvoice(customer: Customer) {\n  return stripe.invoices.create({ customer: customer.id });\n}\nexport function createInvoice(customer: Customer) {\n  return stripe.invoices.create({ customer: customer.id });\n}\nexport function createInvoice(customer: Customer) {\n  return stripe.invoices.create({ customer: customer.id });\n}\n",
+          "needed": false
+        }
+      ]
+    },
+    {
+      "id": "context-19",
+      "query": "Fix the flaky retry backoff test",
+      "chunks": [
+        {
+          "label": "$ pnpm test retry",
+          "kind": "test_result",
+          "content": "FAIL retry.test.ts > backoff doubles delay each attempt\nexpected 400, got 300\n",
+          "needed": true
+        },
+        {
+          "label": "src/http/retry.ts",
+          "kind": "file",
+          "path": "src/http/retry.ts",
+          "content": "export function backoff(attempt) { return 100 * attempt; }\n",
+          "needed": true
+        },
+        {
+          "label": "docs/deploy.md",
+          "kind": "file",
+          "path": "docs/deploy.md",
+          "content": "Deploy instructions.\nDeploy instructions.\nDeploy instructions.\nDeploy instructions.\nDeploy instructions.\nDeploy instructions.\nDeploy instructions.\nDeploy instructions.\nDeploy instructions.\nDeploy instructions.\nDeploy instructions.\nDeploy instructions.\nDeploy instructions.\nDeploy instructions.\nDeploy instructions.\nDeploy instructions.\nDeploy instructions.\nDeploy instructions.\nDeploy instructions.\nDeploy instructions.\n",
+          "needed": false
+        }
+      ]
+    },
+    {
+      "id": "context-20",
+      "query": "Document the rate limit headers in the API guide",
+      "chunks": [
+        {
+          "label": "docs/api-guide.md",
+          "kind": "file",
+          "path": "docs/api-guide.md",
+          "content": "# API guide\n\nAuthentication uses bearer tokens.\n",
+          "needed": true
+        },
+        {
+          "label": "src/middleware/rate-limit.ts",
+          "kind": "file",
+          "path": "src/middleware/rate-limit.ts",
+          "content": "res.setHeader('X-RateLimit-Remaining', remaining);\n",
+          "needed": true
+        },
+        {
+          "label": "styles/app.css",
+          "kind": "file",
+          "path": "styles/app.css",
+          "content": ".button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n.button { color: red; }\n",
+          "needed": false
+        }
+      ]
+    },
+    {
+      "id": "context-21",
+      "query": "Prevent duplicate user signups with the same email",
+      "chunks": [
+        {
+          "label": "src/auth/signup.ts",
+          "kind": "file",
+          "path": "src/auth/signup.ts",
+          "content": "export async function signup(email, password) { return users.insert({ email, password }); }\n",
+          "needed": true
+        },
+        {
+          "label": "src/db/migrations/001_users.sql",
+          "kind": "file",
+          "path": "src/db/migrations/001_users.sql",
+          "content": "CREATE TABLE users (id serial, email text);\n",
+          "needed": true
+        },
+        {
+          "label": "src/billing/invoice.ts",
+          "kind": "file",
+          "path": "src/billing/invoice.ts",
+          "content": "export function createInvoice(customer: Customer) {\n  return stripe.invoices.create({ customer: customer.id });\n}\nexport function createInvoice(customer: Customer) {\n  return stripe.invoices.create({ customer: customer.id });\n}\nexport function createInvoice(customer: Customer) {\n  return stripe.invoices.create({ customer: customer.id });\n}\nexport function createInvoice(customer: Customer) {\n  return stripe.invoices.create({ customer: customer.id });\n}\nexport function createInvoice(customer: Customer) {\n  return stripe.invoices.create({ customer: customer.id });\n}\nexport function createInvoice(customer: Customer) {\n  return stripe.invoices.create({ customer: customer.id });\n}\n",
+          "needed": false
+        }
+      ]
+    }
+  ]
+}

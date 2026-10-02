@@ -118,6 +118,18 @@ const NETWORK = new Set([
   'helm',
   'terraform',
 ]);
+/** `gh` subcommands that publish to GitHub (PRs, merges, releases, pushes). */
+const GH_PUBLISH: ReadonlyMap<string, ReadonlySet<string>> = new Map([
+  ['pr', new Set(['create', 'merge', 'ready', 'edit', 'close', 'reopen'])],
+  ['release', new Set(['create', 'upload', 'edit', 'delete'])],
+  ['repo', new Set(['create', 'delete', 'fork', 'sync'])],
+]);
+
+function isGhPublish(args: readonly string[]): boolean {
+  const [group, action] = args.filter((a) => !a.startsWith('-'));
+  return Boolean(group && action && GH_PUBLISH.get(group)?.has(action));
+}
+
 const PACKAGE_MANAGERS = new Set(['npm', 'pnpm', 'yarn', 'bun']);
 const PM_INSTALL = new Set([
   'install',
@@ -362,6 +374,12 @@ export class ShellCommandInspector implements ICommandInspector {
         add(EffectCategory.Network, `Download packages (${bin} ${sub})`);
         add(EffectCategory.Dependency, `Change dependencies (${bin} ${sub})`);
       }
+      return;
+    }
+    if (bin === 'gh' && isGhPublish(args)) {
+      // Opening or merging PRs and publishing releases is the merge step's job.
+      add(EffectCategory.GitPush, `Publish to GitHub (gh ${args.slice(0, 2).join(' ')})`);
+      add(EffectCategory.Network, 'Contact GitHub');
       return;
     }
     if (NETWORK.has(bin)) {

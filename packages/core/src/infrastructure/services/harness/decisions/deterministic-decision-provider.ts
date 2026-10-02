@@ -20,10 +20,7 @@ import type {
   ScoreBatchResult,
 } from '../../../../application/ports/output/harness/index.js';
 import { DETERMINISTIC_PROVIDER_ID } from '../../../../domain/harness/harness-config.js';
-import {
-  lexicalOverlapScore,
-  tokenizeForRelevance,
-} from '../../../../domain/shared/lexical-relevance.js';
+import { intentOverlapScore, intentTokens } from '../../../../domain/shared/lexical-relevance.js';
 
 function clamp01(n: number): number {
   return Math.min(1, Math.max(0, n));
@@ -35,11 +32,11 @@ export class DeterministicDecisionProvider implements IDecisionProvider {
 
   async scoreBatch(req: ScoreBatchRequest): Promise<ScoreBatchResult> {
     const started = Date.now();
-    const q = tokenizeForRelevance(req.query);
+    const q = intentTokens(req.query);
     return {
       scores: req.items.map((item) => ({
         id: item.id,
-        score: clamp01(Math.max(item.prior ?? 0, lexicalOverlapScore(q, item.text))),
+        score: clamp01(Math.max(item.prior ?? 0, intentOverlapScore(q, item.text))),
       })),
       latencyMs: Date.now() - started,
     };
@@ -47,11 +44,11 @@ export class DeterministicDecisionProvider implements IDecisionProvider {
 
   async choice(req: ChoiceRequest): Promise<ChoiceResult> {
     const started = Date.now();
-    const q = tokenizeForRelevance(req.question);
+    const q = intentTokens(req.question);
     const ranked = req.choices
       .map((c, index) => ({
         id: c.id,
-        score: lexicalOverlapScore(q, `${c.id.replace(/_/g, ' ')} ${c.description}`),
+        score: intentOverlapScore(q, `${c.id.replace(/_/g, ' ')} ${c.description}`),
         index,
       }))
       .sort((a, b) => b.score - a.score || a.index - b.index)

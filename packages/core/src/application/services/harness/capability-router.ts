@@ -14,10 +14,7 @@ import {
   type Capability,
   type ToolImplementation,
 } from '../../../domain/generated/output.js';
-import {
-  lexicalOverlapScore,
-  tokenizeForRelevance,
-} from '../../../domain/shared/lexical-relevance.js';
+import { intentOverlapScore, intentTokens } from '../../../domain/shared/lexical-relevance.js';
 import type { CapabilityRegistry } from './capability-registry.js';
 import type { DecisionContext, DecisionService } from './decision-service.js';
 
@@ -63,13 +60,13 @@ export class CapabilityRouter {
     description: string,
     limit = this.options.candidateLimit ?? DEFAULT_CAPABILITY_CANDIDATE_LIMIT
   ): Capability[] {
-    const q = tokenizeForRelevance(description);
+    const q = intentTokens(description);
     return this.registry
       .list()
       .map((c, index) => ({
         c,
         index,
-        score: lexicalOverlapScore(
+        score: intentOverlapScore(
           q,
           `${c.id.replace(/_/g, ' ')} ${c.title} ${c.snippet} ${c.tags.join(' ')}`
         ),

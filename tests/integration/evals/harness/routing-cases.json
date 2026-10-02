@@ -1,0 +1,166 @@
+{
+  "suite": "routing",
+  "description": "Capability routing from the agent's stated intent, deterministic provider (spec 119)",
+  "cases": [
+    {
+      "id": "route-01",
+      "intent": "find where refreshToken is defined",
+      "expect": "search_source_code"
+    },
+    {
+      "id": "route-02",
+      "intent": "search the code for TODO comments",
+      "expect": "search_source_code"
+    },
+    {
+      "id": "route-03",
+      "intent": "locate usages of the deprecated parseDate helper",
+      "expect": "search_source_code"
+    },
+    {
+      "id": "route-04",
+      "intent": "grep for the string 'Unauthorized'",
+      "expect": "search_source_code"
+    },
+    {
+      "id": "route-05",
+      "intent": "look for all calls to fetchUser",
+      "expect": "search_source_code"
+    },
+    {
+      "id": "route-06",
+      "intent": "find the regular expression that validates emails",
+      "expect": "search_source_code"
+    },
+    {
+      "id": "route-07",
+      "intent": "read src/auth/refresh.ts",
+      "expect": "read_file"
+    },
+    {
+      "id": "route-08",
+      "intent": "open the file package.json and read it",
+      "expect": "read_file"
+    },
+    {
+      "id": "route-09",
+      "intent": "show lines 10 to 40 of src/server.ts",
+      "expect": "read_file"
+    },
+    {
+      "id": "route-10",
+      "intent": "read the contents of the config file",
+      "expect": "read_file"
+    },
+    {
+      "id": "route-11",
+      "intent": "view the README file",
+      "expect": "read_file"
+    },
+    {
+      "id": "route-12",
+      "intent": "list the files in the src directory",
+      "expect": "list_files"
+    },
+    {
+      "id": "route-13",
+      "intent": "list all test files matching *.test.ts",
+      "expect": "list_files"
+    },
+    {
+      "id": "route-14",
+      "intent": "what files exist under packages/core",
+      "expect": "list_files"
+    },
+    {
+      "id": "route-15",
+      "intent": "list the directory tree of the repository",
+      "expect": "list_files"
+    },
+    {
+      "id": "route-16",
+      "intent": "show git status",
+      "expect": "inspect_git"
+    },
+    {
+      "id": "route-17",
+      "intent": "show the working tree diff of my changes",
+      "expect": "inspect_git"
+    },
+    {
+      "id": "route-18",
+      "intent": "check which files git reports as modified",
+      "expect": "inspect_git"
+    },
+    {
+      "id": "route-19",
+      "intent": "inspect the git diff before committing",
+      "expect": "inspect_git"
+    },
+    {
+      "id": "route-20",
+      "intent": "run the tests",
+      "expect": "run_tests"
+    },
+    {
+      "id": "route-21",
+      "intent": "run the test suite for the auth module",
+      "expect": "run_tests"
+    },
+    {
+      "id": "route-22",
+      "intent": "verify the change by running the repository's tests",
+      "expect": "run_tests"
+    },
+    {
+      "id": "route-23",
+      "intent": "run tests filtered to refresh",
+      "expect": "run_tests"
+    },
+    {
+      "id": "route-24",
+      "intent": "edit refresh.ts to trim the token",
+      "expect": "apply_patch"
+    },
+    {
+      "id": "route-25",
+      "intent": "change the timeout constant from 30 to 60",
+      "expect": "apply_patch"
+    },
+    {
+      "id": "route-26",
+      "intent": "create a new file src/utils/clock.ts",
+      "expect": "apply_patch"
+    },
+    {
+      "id": "route-27",
+      "intent": "apply a unified diff to fix the bug",
+      "expect": "apply_patch"
+    },
+    {
+      "id": "route-28",
+      "intent": "fix the off-by-one error in pagination by editing the file",
+      "expect": "apply_patch"
+    },
+    {
+      "id": "route-29",
+      "intent": "write a new test file for the parser",
+      "expect": "apply_patch"
+    },
+    {
+      "id": "route-30",
+      "intent": "run a shell command to build the project",
+      "expect": "run_command"
+    },
+    {
+      "id": "route-31",
+      "intent": "execute the database migration script",
+      "expect": "run_command"
+    },
+    {
+      "id": "route-32",
+      "intent": "run the linter command in the worktree",
+      "expect": "run_command"
+    }
+  ]
+}
