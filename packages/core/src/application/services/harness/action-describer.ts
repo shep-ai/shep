@@ -59,7 +59,7 @@ export class ActionDescriber {
         outsideRepo: !isPathInside(ctx.repoRoot, value),
       });
     };
-    let summary = impl.toolName;
+    let summary: string;
     switch (impl.capabilityId) {
       case 'read_file':
       case 'list_files':
