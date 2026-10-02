@@ -424,6 +424,54 @@ describe('HarnessRuntime', () => {
     expect(h.lastModel().requests[1].tools.map((t) => t.name)).toContain('read_file');
   });
 
+  it('answers a repeated read from the ledger instead of re-running it, until files change', async () => {
+    const search = { name: 'search_source', args: { query: 'trim(' } };
+    const session = await h.session();
+    const run = await h.run(session, [
+      {
+        toolCalls: [
+          {
+            name: 'use_capability',
+            args: { capabilityId: 'search_source_code', intent: 'find trim', args: search.args },
+          },
+        ],
+      },
+      { toolCalls: [search] },
+      {
+        toolCalls: [
+          {
+            name: 'use_capability',
+            args: {
+              capabilityId: 'apply_patch',
+              intent: 'trim',
+              args: {
+                edits: [
+                  {
+                    path: 'src/auth/refresh.ts',
+                    oldText: 'return token;',
+                    newText: 'return token.trim();',
+                  },
+                ],
+              },
+            },
+          },
+        ],
+      },
+      { toolCalls: [search] },
+      { toolCalls: [{ name: 'complete_task', args: { status: 'success', summary: 'ok' } }] },
+    ]);
+    const tools = await h.store.execution.listToolCalls(run.task.id);
+    const searches = tools.filter((t) => t.capabilityId === 'search_source_code');
+    expect(searches.map((t) => t.turn)).toEqual([1, 2, 4]);
+    // Turn 2 repeats turn 1 with nothing changed in between: not executed, no new output.
+    expect(searches[1].rawOutputChunkId).toBeUndefined();
+    expect(searches[1].summary).toMatch(/^Same call as turn 1, and no file changed since/);
+    expect(userMessage(h, 2)).toContain('Same call as turn 1');
+    // Turn 4 comes after an edit, so it runs again and finds the new text.
+    expect(searches[2].rawOutputChunkId).toBeDefined();
+    expect(searches[2].summary).toBe('1 matches for "trim("');
+  });
+
   it('keeps tool-call-only responses out of later context (the ledger covers them)', async () => {
     const session = await h.session();
     await h.run(session, [

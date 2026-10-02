@@ -26,6 +26,15 @@ const execFileAsync = promisify(execFile);
 const DEFAULT_SEARCH_LIMIT = 200;
 const DEFAULT_CONTEXT_LINES = 0;
 
+/** An empty search says how the query was matched, so the model can change it instead of repeating it. */
+function noMatches(query: string, regex: boolean, scope: string): string {
+  const where = scope === '.' ? '' : ` in ${scope}`;
+  const how = regex
+    ? 'regular expression'
+    : 'matched as literal text; set regex: true for a regular expression';
+  return `0 matches for ${JSON.stringify(query)}${where} (${how})`;
+}
+
 export class SearchSourceTool implements IToolExecutor {
   readonly implementation = impl(
     'builtin.search_source',
@@ -77,7 +86,8 @@ export class SearchSourceTool implements IToolExecutor {
       output: lines.join('\n'),
       kind: ChunkKind.SearchResult,
       label: `search ${JSON.stringify(query)}`,
-      summary: `${hits} matches for ${JSON.stringify(query)}`,
+      summary:
+        hits > 0 ? `${hits} matches for ${JSON.stringify(query)}` : noMatches(query, regex, scope),
       truncated: hits >= limit,
     };
   }

@@ -82,7 +82,16 @@ export interface ToolInvokerDeps {
   setTaskStatus: (status: HarnessTaskStatus) => Promise<void>;
 }
 
+/** A read that completed, remembered until a non-read tool runs (it may have changed files). */
+interface RememberedRead {
+  turn: number;
+  summary: string;
+}
+
 export class ToolInvoker {
+  /** Keyed by `${implementationId}:${argumentsHash}`; one invoker serves one task. */
+  private readonly reads = new Map<string, RememberedRead>();
+
   constructor(private readonly deps: ToolInvokerDeps) {}
 
   async invoke(input: InvokeInput): Promise<InvokeOutcome> {
@@ -112,6 +121,15 @@ export class ToolInvoker {
     if (!validation.valid) {
       const summary = `Invalid arguments for ${impl.toolName}: ${validation.errors.join('; ')}`;
       await save({ status: HarnessToolCallStatus.Invalid, summary });
+      return { toolCall, status: toolCall.status, action: impl.toolName, summary };
+    }
+
+    // Weak models repeat the same read; its answer cannot have changed, so say so instead.
+    const readKey = `${impl.id}:${argumentsHash}`;
+    const earlier = impl.readWriteMode === ToolReadWriteMode.Read && this.reads.get(readKey);
+    if (earlier) {
+      const summary = `Same call as turn ${earlier.turn}, and no file changed since: ${earlier.summary}. Change the arguments or use another tool.`;
+      await save({ status: HarnessToolCallStatus.Completed, summary, completedAt: new Date() });
       return { toolCall, status: toolCall.status, action: impl.toolName, summary };
     }
 
@@ -212,6 +230,8 @@ export class ToolInvoker {
       ...(path && { path }),
       tags: ok ? [] : [ChunkTag.Failed],
     });
+    if (impl.readWriteMode !== ToolReadWriteMode.Read) this.reads.clear();
+    else if (ok) this.reads.set(readKey, { turn, summary });
     await save({
       status: ok ? HarnessToolCallStatus.Completed : HarnessToolCallStatus.Failed,
       rawOutputChunkId: chunk.id,

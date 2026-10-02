@@ -89,6 +89,18 @@ describe('builtin harness tools', () => {
     expect(out.output).toBe('');
   });
 
+  it('search_source says how a query that found nothing was matched', async () => {
+    const literal = await new SearchSourceTool().execute(
+      { query: 'refresh\\(\\)', path: 'src/auth/refresh.ts' },
+      ctx
+    );
+    expect(literal.summary).toBe(
+      '0 matches for "refresh\\\\(\\\\)" in src/auth/refresh.ts (matched as literal text; set regex: true for a regular expression)'
+    );
+    const regex = await new SearchSourceTool().execute({ query: 'zzz.+', regex: true }, ctx);
+    expect(regex.summary).toBe('0 matches for "zzz.+" (regular expression)');
+  });
+
   it('read_file reads whole files and ranges, and refuses paths outside the repo', async () => {
     const whole = await new ReadFileTool().execute({ path: 'src/auth/refresh.ts' }, ctx);
     expect(whole).toMatchObject({ kind: ChunkKind.File, path: 'src/auth/refresh.ts' });
