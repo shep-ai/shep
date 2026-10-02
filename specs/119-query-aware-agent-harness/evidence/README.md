@@ -2,13 +2,21 @@
 
 Everything here was produced from this branch.
 
+## Animations
+
+| File | Shows |
+| ---- | ----- |
+| `harness-walkthrough.gif` | 44-second captioned tour of the web UI: new task, approvals, a session, per-turn context plans, "Why?", the chunk viewer at short/long/full, evals, and open-source settings. Playwright drove the built Storybook, so the clicks hit the real components with fixture data |
+| `harness-cli.gif` | `cli-session.txt` replayed as a terminal: `init`, a standalone `run`, `ls` and `policies`. The output is real; the typing is simulated |
+| `token-savings.gif` | The two paired evals below, as an animated bar chart drawn from `evals/paired-*.json` |
+
 ## Screenshots
 
 Taken from the built Storybook with Playwright and fixture data. Real servers are not involved.
 
 | File | Shows |
 | ---- | ----- |
-| `settings-agent-harness-open-source.png` | Settings → Agent Harness on a fully open-source stack: Ollama backend plus an OpenAI-compatible relevance scorer |
+| `harness-settings.png` | Settings → Agent Harness on a fully open-source stack: Ollama backend plus an OpenAI-compatible relevance scorer |
 | `harness-page-sessions.png`, `harness-page-approvals.png` | /harness: the sessions list and the approvals inbox |
 | `permission-prompt-feature.png`, `permission-prompt-hard-deny.png` | Effect-oriented permission prompt; a hard deny is never approvable |
 | `session-waiting-for-approval.png` | A session: the pending approval first, then usage, turns and the selected turn's context plan |

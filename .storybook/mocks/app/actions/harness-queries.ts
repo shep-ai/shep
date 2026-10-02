@@ -3,6 +3,7 @@ import type { ChunkVisibility } from '@shepai/core/domain/generated/output';
 import type { HarnessResult } from '@/lib/harness-result';
 import {
   fixtureCapabilities,
+  fixtureChunkContentByVisibility,
   fixtureChunkView,
   fixtureExplanation,
   fixturePermissionItem,
@@ -32,7 +33,8 @@ export async function getHarnessContextPlan(_planId: string) {
   });
 }
 export async function renderHarnessChunk(_chunkId: string, visibility: ChunkVisibility) {
-  return ok({ ...fixtureChunkView, visibility });
+  const content = fixtureChunkContentByVisibility[visibility] ?? fixtureChunkView.content;
+  return ok({ ...fixtureChunkView, visibility, content });
 }
 export async function explainHarnessDecision(_input: unknown) {
   return ok(fixtureExplanation);

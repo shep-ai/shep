@@ -439,6 +439,22 @@ export const fixtureChunkView: RenderedChunkView = {
   redacted: false,
 };
 
+/** Per-level contents for the chunk viewer story: the same stored output rendered three ways. */
+export const fixtureChunkContentByVisibility: Partial<Record<ChunkVisibility, string>> = {
+  [ChunkVisibility.Short]: '4 matches in 2 files: src/auth/refresh.ts (3), src/auth/session.ts (1)',
+  [ChunkVisibility.Long]: fixtureChunkView.content,
+  [ChunkVisibility.Full]: [
+    'src/auth/refresh.ts',
+    '  12: export function refresh(token: string) {',
+    '  13:   // validates the refresh token before minting a new access token',
+    '  14:   const claims = decode(token);',
+    '  15:   if (claims.exp < now()) throw new ExpiredTokenError();',
+    '  31: export const REFRESH_TTL_SECONDS = 60 * 60 * 24 * 14;',
+    'src/auth/session.ts',
+    '  44:   const next = await refresh(session.refreshToken);',
+  ].join('\n'),
+};
+
 export const fixtureSetup: InitHarnessProjectResult = {
   inspection: {
     instructionFiles: ['CLAUDE.md', '.claude/rules/testing.md'],

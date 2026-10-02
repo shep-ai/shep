@@ -2904,3 +2904,10 @@ an append as a probe.
 `run_tests` appended the model's `filter` to the test command and ran it through a shell, so
 `a; curl …` would have run. Restrict such arguments to a safe character set in both the JSON
 schema and the executor, and pin it with a test of shell metacharacters.
+
+## After merging main, reinstall before trusting local test results
+
+A merge bumped `next` to 16.3.6 but `node_modules` still linked 16.3.5, so 473 web tests failed
+locally (mocks of `next/navigation` missed the stale copy) while CI was green. Run
+`pnpm install --frozen-lockfile` after every merge that touches a lockfile; in the sandbox add
+`--filter '!@shepai/electron'` (its git dependency cannot be downloaded here).
