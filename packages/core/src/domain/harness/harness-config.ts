@@ -19,12 +19,14 @@ import {
 /** Id of the always-available heuristic decision provider. */
 export const DETERMINISTIC_PROVIDER_ID = 'deterministic';
 
+const FIVE_MINUTES_MS = 5 * 60 * 1000;
 const THIRTY_MINUTES_MS = 30 * 60 * 1000;
 
 export const DEFAULT_HARNESS_CONFIG: Readonly<HarnessConfig> = Object.freeze({
   mode: HarnessMode.QueryAware,
   budgetMode: HarnessBudgetMode.Balanced,
   maxTurns: 50,
+  modelTimeoutMs: FIVE_MINUTES_MS,
   backendAgentType: AgentType.OpenRouter,
   context: {
     maxInputTokens: 64_000,
@@ -76,6 +78,7 @@ export function resolveHarnessConfig(
     mode: s.mode ?? d.mode,
     budgetMode: s.budgetMode ?? d.budgetMode,
     maxTurns: s.maxTurns ?? d.maxTurns,
+    modelTimeoutMs: s.modelTimeoutMs ?? d.modelTimeoutMs,
     backendAgentType: s.backendAgentType ?? d.backendAgentType,
     ...(s.backendModel !== undefined && { backendModel: s.backendModel }),
     context: resolvedContext,

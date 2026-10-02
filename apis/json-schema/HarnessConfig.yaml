@@ -16,6 +16,12 @@ properties:
     maximum: 2147483647
     default: 50
     description: Maximum model calls per task
+  modelTimeoutMs:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    default: 300000
+    description: Timeout for one model call in milliseconds; raise it for slow local models
   backendAgentType:
     $ref: AgentType.yaml
     default: openrouter
@@ -39,6 +45,7 @@ required:
   - mode
   - budgetMode
   - maxTurns
+  - modelTimeoutMs
   - backendAgentType
   - context
   - decisions

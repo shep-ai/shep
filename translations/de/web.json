@@ -393,6 +393,8 @@
       "budgetDescription": "Kosten gegen Qualität abwägen, wenn der Kontext an das Token-Budget angepasst wird",
       "maxTurns": "Zuglimit",
       "maxTurnsDescription": "Modellaufrufe pro Aufgabe, bevor sie stoppt",
+      "modelTimeout": "Zeitlimit pro Modellaufruf (Sekunden)",
+      "modelTimeoutDescription": "Wie lange ein Modellaufruf dauern darf; für langsame lokale Modelle erhöhen",
       "decisionsTitle": "Anbieter für Kontextrelevanz",
       "decisionsDescription": "Wer bewertet, wie relevant jeder Zustandsteil für die aktuelle Abfrage ist. Bei jedem Anbieterfehler wird auf deterministische Bewertung zurückgegriffen.",
       "providerKind": "Anbieter",

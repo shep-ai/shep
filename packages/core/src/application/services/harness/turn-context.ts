@@ -65,6 +65,8 @@ export interface TurnContext {
   loadedImplementationIds: Set<string>;
   usage: HarnessUsageTotals;
   maxTurns: number;
+  /** Timeout for each model call. */
+  modelTimeoutMs: number;
   shadowContext: boolean;
   abortSignal?: AbortSignal;
   execution: IHarnessExecutionRepository;

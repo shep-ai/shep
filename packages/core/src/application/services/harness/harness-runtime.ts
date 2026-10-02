@@ -318,6 +318,7 @@ export class HarnessRuntime {
         apiLatencyMs: 0,
       },
       maxTurns: input.config.maxTurns,
+      modelTimeoutMs: input.config.modelTimeoutMs,
       shadowContext: session.shadowContext,
       ...(input.abortSignal && { abortSignal: input.abortSignal }),
       execution: d.execution,

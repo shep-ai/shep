@@ -1209,6 +1209,10 @@ export type HarnessConfig = {
    */
   maxTurns: number;
   /**
+   * Timeout for one model call in milliseconds; raise it for slow local models
+   */
+  modelTimeoutMs: number;
+  /**
    * SDK agent whose model access (and credentials) the harness reuses
    */
   backendAgentType: AgentType;

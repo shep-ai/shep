@@ -14,6 +14,7 @@ describe('resolveHarnessConfig', () => {
     expect(c.mode).toBe(HarnessMode.QueryAware);
     expect(c.backendAgentType).toBe(AgentType.OpenRouter);
     expect(c.maxTurns).toBe(50);
+    expect(c.modelTimeoutMs).toBe(300_000);
     expect(c.context).toEqual({
       maxInputTokens: 64000,
       reserveOutputTokens: 8000,
@@ -35,6 +36,10 @@ describe('resolveHarnessConfig', () => {
       nonInteractiveAsk: PermissionEffect.Deny,
       approvalTimeoutMs: 1_800_000,
     });
+  });
+
+  it('keeps a stored model call timeout (slow local models need more)', () => {
+    expect(resolveHarnessConfig({ modelTimeoutMs: 900_000 }).modelTimeoutMs).toBe(900_000);
   });
 
   it('merges nested partial values over defaults', () => {

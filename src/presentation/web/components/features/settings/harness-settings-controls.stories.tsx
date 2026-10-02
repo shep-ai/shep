@@ -1,6 +1,10 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { Input } from '@/components/ui/input';
-import { HarnessEnumSelect, HarnessSettingRow } from './harness-settings-controls';
+import {
+  HarnessEnumSelect,
+  HarnessNumberInput,
+  HarnessSettingRow,
+} from './harness-settings-controls';
 
 const meta: Meta<typeof HarnessSettingRow> = {
   title: 'Settings/HarnessSettingsControls',
@@ -36,6 +40,23 @@ export const WithSelect: Story = {
         options={['query_aware', 'baseline']}
         label={(v) => v}
         onChange={() => undefined}
+      />
+    ),
+  },
+};
+
+/** A row with a whole-number field that saves on blur. */
+export const WithNumberInput: Story = {
+  args: {
+    id: 'demo-number',
+    label: 'Model call timeout (seconds)',
+    description: 'How long one model call may take; raise it for slow local models',
+    children: (
+      <HarnessNumberInput
+        id="demo-number"
+        value="300"
+        onChange={() => undefined}
+        onCommit={() => undefined}
       />
     ),
   },

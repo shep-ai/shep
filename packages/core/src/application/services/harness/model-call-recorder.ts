@@ -52,7 +52,7 @@ export async function callModel(
   });
   let response: HarnessModelResponse;
   try {
-    response = await tc.model.complete(request);
+    response = await tc.model.complete({ timeoutMs: tc.modelTimeoutMs, ...request });
   } catch (error) {
     await tc.execution.putModelCall({
       ...call,

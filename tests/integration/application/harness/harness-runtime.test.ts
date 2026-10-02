@@ -472,6 +472,18 @@ describe('HarnessRuntime', () => {
     expect(searches[2].summary).toBe('1 matches for "trim("');
   });
 
+  it('gives every model call the configured timeout', async () => {
+    const slow = await createRuntimeHarness(repo.root, { config: { modelTimeoutMs: 900_000 } });
+    try {
+      await slow.run(await slow.session(), [
+        { toolCalls: [{ name: 'complete_task', args: { status: 'success', summary: 'ok' } }] },
+      ]);
+      expect(slow.lastModel().requests[0].timeoutMs).toBe(900_000);
+    } finally {
+      slow.store.close();
+    }
+  });
+
   it('keeps tool-call-only responses out of later context (the ledger covers them)', async () => {
     const session = await h.session();
     await h.run(session, [

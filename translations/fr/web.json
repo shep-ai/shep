@@ -393,6 +393,8 @@
       "budgetDescription": "Arbitrer entre coût et qualité lors de l'ajustement du contexte au budget de jetons",
       "maxTurns": "Limite de tours",
       "maxTurnsDescription": "Appels au modèle par tâche avant l'arrêt",
+      "modelTimeout": "Délai par appel au modèle (secondes)",
+      "modelTimeoutDescription": "Durée maximale d'un appel au modèle ; augmentez-la pour les modèles locaux lents",
       "decisionsTitle": "Fournisseur de pertinence du contexte",
       "decisionsDescription": "Qui évalue la pertinence de chaque élément d'état pour la requête en cours. Toute défaillance du fournisseur bascule sur l'évaluation déterministe.",
       "providerKind": "Fournisseur",

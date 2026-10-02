@@ -393,6 +393,8 @@
       "budgetDescription": "Equilibra coste y calidad al ajustar el contexto al presupuesto de tokens",
       "maxTurns": "Límite de turnos",
       "maxTurnsDescription": "Llamadas al modelo por tarea antes de detenerse",
+      "modelTimeout": "Tiempo límite por llamada al modelo (segundos)",
+      "modelTimeoutDescription": "Cuánto puede tardar una llamada al modelo; súbelo para modelos locales lentos",
       "decisionsTitle": "Proveedor de relevancia del contexto",
       "decisionsDescription": "Quién puntúa la relevancia de cada parte del estado para la consulta actual. Cualquier fallo del proveedor recurre a la puntuación determinista.",
       "providerKind": "Proveedor",

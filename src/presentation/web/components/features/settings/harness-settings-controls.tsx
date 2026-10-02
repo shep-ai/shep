@@ -1,6 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
+import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
@@ -60,5 +61,29 @@ export function HarnessEnumSelect<T extends string>({
         ))}
       </SelectContent>
     </Select>
+  );
+}
+
+export interface HarnessNumberInputProps {
+  id: string;
+  value: string;
+  onChange: (value: string) => void;
+  /** Saves on blur, so typing does not write every keystroke. */
+  onCommit: () => void;
+}
+
+/** A small whole-number field for a settings row. */
+export function HarnessNumberInput({ id, value, onChange, onCommit }: HarnessNumberInputProps) {
+  return (
+    <Input
+      id={id}
+      data-testid={id}
+      type="number"
+      min={1}
+      className="w-24 text-xs"
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      onBlur={onCommit}
+    />
   );
 }

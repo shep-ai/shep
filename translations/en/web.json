@@ -393,6 +393,8 @@
       "budgetDescription": "Trade cost against quality when fitting context to the token budget",
       "maxTurns": "Turn limit",
       "maxTurnsDescription": "Model calls per task before it stops",
+      "modelTimeout": "Model call timeout (seconds)",
+      "modelTimeoutDescription": "How long one model call may take; raise it for slow local models",
       "decisionsTitle": "Context relevance provider",
       "decisionsDescription": "Who scores how relevant each piece of state is to the current query. Any provider failure falls back to deterministic scoring.",
       "providerKind": "Provider",

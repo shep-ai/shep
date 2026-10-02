@@ -121,6 +121,9 @@ model HarnessConfig {
   @doc("Maximum model calls per task")
   maxTurns: int32 = 50;
 
+  @doc("Timeout for one model call in milliseconds; raise it for slow local models")
+  modelTimeoutMs: int32 = 300000;
+
   @doc("SDK agent whose model access (and credentials) the harness reuses")
   backendAgentType: AgentType = AgentType.OpenRouter;
 

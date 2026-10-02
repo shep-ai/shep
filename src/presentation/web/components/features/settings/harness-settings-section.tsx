@@ -6,7 +6,11 @@ import { toast } from 'sonner';
 import { useTranslation } from 'react-i18next';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
-import { HarnessEnumSelect, HarnessSettingRow } from './harness-settings-controls';
+import {
+  HarnessEnumSelect,
+  HarnessNumberInput,
+  HarnessSettingRow,
+} from './harness-settings-controls';
 import { HarnessDecisionProviderFields } from './harness-decision-provider-fields';
 import { updateSettingsAction } from '@/app/actions/update-settings';
 import {
@@ -23,7 +27,14 @@ import { getAgentDescriptor } from '@shepai/core/domain/shared/agent-catalog';
 
 /** Id of the provider this section manages for context relevance decisions. */
 export const CONTEXT_PROVIDER_ID = 'context';
+const SECOND_MS = 1_000;
 const MINUTE_MS = 60_000;
+
+/** A whole number above zero from a text field, or the fallback when the input is not one. */
+function positiveIntOr(value: string, fallback: number): number {
+  const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
 
 const BACKENDS: readonly AgentType[] = [
   AgentType.OpenRouter,
@@ -55,6 +66,9 @@ export function HarnessSettingsSection({ harness }: HarnessSettingsSectionProps)
     contextProvider ?? { id: CONTEXT_PROVIDER_ID, kind: DecisionProviderKind.Deterministic }
   );
   const [maxTurns, setMaxTurns] = useState(String(initial.maxTurns));
+  const [modelTimeoutSeconds, setModelTimeoutSeconds] = useState(
+    String(Math.round(initial.modelTimeoutMs / SECOND_MS))
+  );
   const [timeoutMinutes, setTimeoutMinutes] = useState(
     String(Math.round(initial.permissions.approvalTimeoutMs / MINUTE_MS))
   );
@@ -101,18 +115,26 @@ export function HarnessSettingsSection({ harness }: HarnessSettingsSectionProps)
   }
 
   function saveMaxTurns() {
-    const parsed = Number.parseInt(maxTurns, 10);
-    const next = Number.isFinite(parsed) && parsed > 0 ? parsed : config.maxTurns;
+    const next = positiveIntOr(maxTurns, config.maxTurns);
     setMaxTurns(String(next));
     if (next !== config.maxTurns) save({ ...config, maxTurns: next });
   }
 
+  function saveModelTimeout() {
+    const seconds = positiveIntOr(
+      modelTimeoutSeconds,
+      Math.round(config.modelTimeoutMs / SECOND_MS)
+    );
+    setModelTimeoutSeconds(String(seconds));
+    const ms = seconds * SECOND_MS;
+    if (ms !== config.modelTimeoutMs) save({ ...config, modelTimeoutMs: ms });
+  }
+
   function saveTimeout() {
-    const parsed = Number.parseInt(timeoutMinutes, 10);
-    const minutes =
-      Number.isFinite(parsed) && parsed > 0
-        ? parsed
-        : Math.round(config.permissions.approvalTimeoutMs / MINUTE_MS);
+    const minutes = positiveIntOr(
+      timeoutMinutes,
+      Math.round(config.permissions.approvalTimeoutMs / MINUTE_MS)
+    );
     setTimeoutMinutes(String(minutes));
     const ms = minutes * MINUTE_MS;
     if (ms !== config.permissions.approvalTimeoutMs) {
@@ -207,15 +229,23 @@ export function HarnessSettingsSection({ harness }: HarnessSettingsSectionProps)
           label={t('settings.harness.maxTurns')}
           description={t('settings.harness.maxTurnsDescription')}
         >
-          <Input
+          <HarnessNumberInput
             id="harness-max-turns"
-            data-testid="harness-max-turns"
-            type="number"
-            min={1}
-            className="w-24 text-xs"
             value={maxTurns}
-            onChange={(e) => setMaxTurns(e.target.value)}
-            onBlur={saveMaxTurns}
+            onChange={setMaxTurns}
+            onCommit={saveMaxTurns}
+          />
+        </HarnessSettingRow>
+        <HarnessSettingRow
+          id="harness-model-timeout"
+          label={t('settings.harness.modelTimeout')}
+          description={t('settings.harness.modelTimeoutDescription')}
+        >
+          <HarnessNumberInput
+            id="harness-model-timeout"
+            value={modelTimeoutSeconds}
+            onChange={setModelTimeoutSeconds}
+            onCommit={saveModelTimeout}
           />
         </HarnessSettingRow>
 
@@ -259,15 +289,11 @@ export function HarnessSettingsSection({ harness }: HarnessSettingsSectionProps)
           label={t('settings.harness.approvalTimeout')}
           description={t('settings.harness.approvalTimeoutDescription')}
         >
-          <Input
+          <HarnessNumberInput
             id="harness-approval-timeout"
-            data-testid="harness-approval-timeout"
-            type="number"
-            min={1}
-            className="w-24 text-xs"
             value={timeoutMinutes}
-            onChange={(e) => setTimeoutMinutes(e.target.value)}
-            onBlur={saveTimeout}
+            onChange={setTimeoutMinutes}
+            onCommit={saveTimeout}
           />
         </HarnessSettingRow>
       </div>
