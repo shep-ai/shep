@@ -470,12 +470,18 @@ export const fixtureSetup: InitHarnessProjectResult = {
 
 export const fixtureEvalListing = {
   suites: [
+    {
+      id: 'long-output',
+      description: 'A 2,500-line build log to triage',
+      cases: 1,
+      source: '.shep/harness/evals/long-output.yaml',
+    },
     { id: 'smoke', description: 'Three small Node tasks', cases: 3, source: 'builtin:smoke' },
   ],
   runs: [
     {
       id: 'eval-1',
-      suite: 'smoke',
+      suite: 'long-output',
       variants: [HarnessMode.Baseline, HarnessMode.QueryAware],
       repeats: 1,
       status: HarnessEvalRunStatus.Completed,
@@ -485,19 +491,20 @@ export const fixtureEvalListing = {
   ],
 };
 
+/** Measured by the paired-eval integration test (long-output case, scripted agent). */
 export const fixtureEvalReport = {
   run: fixtureEvalListing.runs[0],
   results: [],
   variants: [],
   comparison: [
     { score: 'success' as const, baseline: 1, queryAware: 1, relativeChange: 0 },
-    { score: 'inputTokens' as const, baseline: 54795, queryAware: 13640, relativeChange: -0.751 },
-    { score: 'outputTokens' as const, baseline: 104, queryAware: 104, relativeChange: 0 },
+    { score: 'inputTokens' as const, baseline: 54795, queryAware: 13640, relativeChange: -0.7511 },
+    { score: 'outputTokens' as const, baseline: 140, queryAware: 140, relativeChange: 0 },
     { score: 'costUsd' as const },
     { score: 'turns' as const, baseline: 7, queryAware: 7, relativeChange: 0 },
-    { score: 'wallMs' as const, baseline: 1300, queryAware: 1200, relativeChange: -0.077 },
+    { score: 'wallMs' as const, baseline: 67, queryAware: 100, relativeChange: 0.4925 },
     { score: 'repeatedReads' as const, baseline: 0, queryAware: 0 },
-    { score: 'toolOutputRatio' as const, queryAware: 0.015 },
+    { score: 'toolOutputRatio' as const, queryAware: 0.0152 },
     { score: 'evidenceRecall' as const, baseline: 1, queryAware: 1, relativeChange: 0 },
   ],
 };

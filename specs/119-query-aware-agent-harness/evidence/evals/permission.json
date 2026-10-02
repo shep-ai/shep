@@ -1,0 +1,7 @@
+{
+  "suite": "permission",
+  "cases": 60,
+  "passed": 60,
+  "score": 1,
+  "failures": []
+}

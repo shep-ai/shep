@@ -32,6 +32,12 @@ properties:
     type: number
     default: 0.8
     description: Relevance from this is full
+  fullTokenCap:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    default: 4000
+    description: Largest view (tokens) shown in full without an explicit request; bigger chunks get their long view
   uncertainDefault:
     $ref: ChunkVisibility.yaml
     default: long
@@ -43,5 +49,6 @@ required:
   - hideThreshold
   - longThreshold
   - fullThreshold
+  - fullTokenCap
   - uncertainDefault
 description: Context budget and visibility bands

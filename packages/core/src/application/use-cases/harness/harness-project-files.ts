@@ -31,7 +31,7 @@ export function buildHarnessConfigYaml(inspection: HarnessProjectInspection): st
 export function buildHarnessPolicyYaml(inspection: HarnessProjectInspection): string {
   const header = [
     "# Repository permission rules for the Shep Harness, merged with shep's builtin defaults",
-    '# (see `shep harness capabilities` / the Policies page). Precedence: deny > ask > allow;',
+    '# (see `shep harness policies` or /harness → Tools & policies). Precedence: deny > ask > allow;',
     '# `hard: true` rules can never be approved.',
     'version: 1',
   ];

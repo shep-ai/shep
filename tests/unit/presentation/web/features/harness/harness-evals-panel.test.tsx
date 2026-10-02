@@ -30,6 +30,8 @@ describe('HarnessEvalsPanel', () => {
     render(<HarnessEvalsPanel initial={fixtureEvalListing} />);
     fireEvent.change(screen.getByLabelText('Repeats'), { target: { value: '3' } });
     fireEvent.click(screen.getByTestId('harness-eval-run'));
-    await waitFor(() => expect(mockStart).toHaveBeenCalledWith({ suite: 'smoke', repeats: 3 }));
+    await waitFor(() =>
+      expect(mockStart).toHaveBeenCalledWith({ suite: 'long-output', repeats: 3 })
+    );
   });
 });

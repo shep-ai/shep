@@ -1,0 +1,140 @@
+$ shep harness --help
+Usage: shep harness [options] [command]
+
+Query-aware agent harness (experimental): standalone tasks, context plans,
+permissions
+
+Options:
+  -h, --help                    display help for command
+
+Commands:
+  init [options]                Set up a repository for the harness (writes only
+                                under .shep/harness/)
+  run [options] <task>          Run a standalone task in its own worktree
+  resume [options] <id> [task]  Continue a standalone session with a follow-up
+                                instruction (or retry its last goal)
+  stop <id>                     Stop the running task of a session before its
+                                next turn
+  apply [options] <id>          Commit a standalone session's changes to a
+                                branch (nothing is pushed)
+  promote [options] <id>        Continue a standalone result as a feature (spec
+                                → review → PR)
+  discard <id>                  Remove a standalone session's worktree (its
+                                state and evidence are kept)
+  ls [options]                  List harness sessions
+  inspect                       Inspect sessions and context plans
+  view [options] <chunk-id>     Render a chunk at a visibility level (from
+                                stored output; nothing re-runs)
+  explain [options] <id>        Why a decision came out the way it did
+  permissions                   Answer and review permission requests
+  capabilities [options]        The tiered tool catalog the agent sees
+  policies [options]            Effective permission rules for a repository
+  eval                          Paired evals: baseline vs query-aware on the
+                                same tasks
+  help [command]                display help for command
+
+$ shep harness init --repo <repo> --yes
+Detected
+  instructions CLAUDE.md
+  manifests    package.json
+  test         npm test   lint npm run lint
+  sensitive    .env
+
+.shep/harness/config.yaml
+  # Shep Harness repository config — written by `shep harness init`.
+  version: 1
+  test_command: "npm test"
+  lint_command: "npm run lint"
+
+.shep/harness/policies/default.yaml
+  # Repository permission rules for the Shep Harness, merged with shep's builtin defaults
+  # (see `shep harness policies` or /harness → Tools & policies). Precedence: deny > ask > allow;
+  # `hard: true` rules can never be approved.
+  version: 1
+  rules:
+    - id: deny-repo-sensitive-files
+      effect: deny
+      hard: true
+      reason: Sensitive files detected in this repository by shep harness init
+      when:
+        path_matches:
+          - "**/.env"
+
+.shep/harness/instructions/README.md
+  # Harness instructions
+  
+  Markdown files in this folder are instructions the Shep Harness always follows
+  in this repository, alongside these files it already reads:
+  
+  - CLAUDE.md
+  
+  Optional frontmatter: `id`, `title`, `priority` (higher first) and `enabled`.
+√ Wrote .shep/harness/config.yaml, .shep/harness/policies/default.yaml, .shep/harness/instructions/README.md
+
+$ SHEP_MOCK_EXECUTOR=1 shep harness run "Make refresh trim the token" --repo <repo> --non-interactive   # scripted model that completes at once (no API key in this sandbox)
+i Non-interactive: actions that need approval will be denied.
+  session b8ee344b-b8ce-4d42-bbe8-187666990bf0 · worktree <SHEP_HOME>/repos/716309818964b5e0/wt/harness-b8ee344b
+  ◦ turn 1: context 922 tokens, 1/1 chunks shown
+  ✓ Done.
+
+√ SUCCESS — Done.
+  usage 1 turns · 1.0k in / 20 out · n/a
+  session b8ee344b-b8ce-4d42-bbe8-187666990bf0
+
+  Next:
+    shep harness apply b8ee344b-b8ce-4d42-bbe8-187666990bf0 --branch <name>   commit the change to a branch
+    shep harness promote b8ee344b-b8ce-4d42-bbe8-187666990bf0                 continue it as a feature
+    shep harness discard b8ee344b-b8ce-4d42-bbe8-187666990bf0                 remove the worktree
+
+$ shep harness ls
+b8ee344b  idle      standalone query_aware 1 task(s)  Make refresh trim the token
+
+$ shep harness capabilities
+list_files           low    15/68 tok  list repository files under a directory or matching a glob
+  ↳ list_files (builtin, read)
+search_source_code   low    15/119 tok  find source locations matching text or a regular expression
+  ↳ search_source (builtin, read)
+read_file            low    10/51 tok  read a file or a line range of a file
+  ↳ read_file (builtin, read)
+inspect_git          low    10/46 tok  show git status or the working-tree diff
+  ↳ git_inspect (builtin, read)
+run_command          high   18/48 tok  run a shell command in the worktree (checked against permission policy)
+  ↳ run_command (builtin, side_effect)
+run_tests            medium 12/52 tok  run the repository's tests, optionally filtered
+  ↳ run_tests (builtin, side_effect)
+apply_patch          medium 15/181 tok  change files: exact text edits, new files, or a unified diff
+  ↳ apply_patch (builtin, write)
+
+$ shep harness policies --repo <repo>
+deny   deny-secret-files (hard)  builtin:default
+       Credential and key files are never read or written by agents
+deny   deny-git-push  builtin:default
+       Shep pushes and opens pull requests in the merge step, not inside agent turns
+deny   deny-delete-outside-repo (hard)  builtin:default
+       Agents never delete files outside the repository
+ask    ask-write-outside-repo  builtin:default
+       Writes outside the repository need your approval
+ask    ask-read-outside-repo  builtin:default
+       Reading files outside the repository needs your approval
+ask    ask-destructive  builtin:default
+       Deleting files, discarding changes or elevating privileges needs your approval
+ask    ask-network-egress  builtin:default
+       Network access needs your approval
+ask    ask-dependency-change  builtin:default
+       Changing dependencies needs your approval
+ask    ask-unpredictable-command  builtin:default
+       Shep cannot predict what this command will do
+allow  allow-read-only  builtin:default
+       Reading inside the repository is always allowed
+allow  allow-worktree-write  builtin:default
+       Editing files inside the repository is allowed
+allow  allow-inspected-command  builtin:default
+       The command was inspected and has no risky effects
+deny   deny-repo-sensitive-files (hard)  .shep/harness/policies/default.yaml
+       Sensitive files detected in this repository by shep harness init
+
+$ shep harness eval ls --repo <repo>
+Suites
+  smoke              3 cases  builtin:smoke
+Runs
+i No eval runs yet: shep harness eval run smoke

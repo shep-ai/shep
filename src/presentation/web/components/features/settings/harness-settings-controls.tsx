@@ -49,7 +49,7 @@ export function HarnessEnumSelect<T extends string>({
 }: HarnessEnumSelectProps<T>) {
   return (
     <Select value={value} onValueChange={(v) => onChange(v as T)}>
-      <SelectTrigger id={id} data-testid={id} className="w-48 text-xs">
+      <SelectTrigger id={id} data-testid={id} className="w-56 text-xs">
         <SelectValue />
       </SelectTrigger>
       <SelectContent>

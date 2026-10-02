@@ -19,6 +19,7 @@ import {
   type HarnessConfig,
 } from '@shepai/core/domain/generated/output';
 import { resolveHarnessConfig } from '@shepai/core/domain/harness/harness-config';
+import { getAgentDescriptor } from '@shepai/core/domain/shared/agent-catalog';
 
 /** Id of the provider this section manages for context relevance decisions. */
 export const CONTEXT_PROVIDER_ID = 'context';
@@ -166,7 +167,7 @@ export function HarnessSettingsSection({ harness }: HarnessSettingsSectionProps)
             id="harness-backend"
             value={config.backendAgentType}
             options={BACKENDS}
-            label={(b) => b}
+            label={(b) => getAgentDescriptor(b)?.label ?? b}
             onChange={(backendAgentType) => save({ ...config, backendAgentType })}
           />
         </HarnessSettingRow>
