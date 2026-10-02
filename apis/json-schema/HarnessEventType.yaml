@@ -1,0 +1,24 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: HarnessEventType.yaml
+type: string
+enum:
+  - session.created
+  - session.resumed
+  - task.created
+  - task.status_changed
+  - repo_snapshot.created
+  - repo.drift_detected
+  - instruction.activated
+  - context_plan.created
+  - decision.recorded
+  - model_call.started
+  - model_call.completed
+  - tool.selected
+  - permission.requested
+  - permission.resolved
+  - tool.execution_started
+  - tool.execution_completed
+  - chunk.expanded
+  - task.completed
+  - task.failed
+description: Type of an append-only harness event

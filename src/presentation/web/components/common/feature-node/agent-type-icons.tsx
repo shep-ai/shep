@@ -73,6 +73,41 @@ function DevAgentIcon({ className, ...props }: IconProps) {
 }
 DevAgentIcon.displayName = 'DevAgentIcon';
 
+/** Layered-stack icon for the Shep Harness: state projected into one model call. */
+function ShepHarnessIcon({ className, ...props }: IconProps) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className={cn('h-6 w-6', className)}
+      {...(props as object)}
+    >
+      <path
+        d="M12 3 3 7.5l9 4.5 9-4.5L12 3Z"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinejoin="round"
+      />
+      <path
+        d="m3 12 9 4.5 9-4.5"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinejoin="round"
+        opacity="0.7"
+      />
+      <path
+        d="m3 16.5 9 4.5 9-4.5"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        strokeLinejoin="round"
+        opacity="0.4"
+      />
+    </svg>
+  );
+}
+ShepHarnessIcon.displayName = 'ShepHarnessIcon';
+
 const agentTypeIconMap: Record<AgentTypeValue, ComponentType<IconProps>> = {
   'claude-code': createBrandIcon('/icons/agents/claude-ai-icon.svg', 'Claude Code'),
   'kimi-code': createBrandIcon('/icons/agents/kimi.svg', 'Kimi Code', true),
@@ -88,6 +123,7 @@ const agentTypeIconMap: Record<AgentTypeValue, ComponentType<IconProps>> = {
   ollama: createBrandIcon('/icons/agents/ollama.svg', 'Ollama', true),
   llmproxy: createBrandIcon('/icons/agents/openai.svg', 'LLM Proxy', true),
   dev: DevAgentIcon,
+  'shep-harness': ShepHarnessIcon,
 };
 
 /** Human-readable labels for agent types. */
@@ -106,6 +142,7 @@ export const agentTypeLabels: Record<AgentTypeValue, string> = {
   ollama: 'Ollama',
   llmproxy: 'LLM Proxy',
   dev: 'Demo',
+  'shep-harness': 'Shep Harness',
 };
 
 /** Resolve an agent type string to its corresponding icon component. */

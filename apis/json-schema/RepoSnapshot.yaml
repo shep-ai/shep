@@ -1,0 +1,38 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: RepoSnapshot.yaml
+type: object
+properties:
+  sessionId:
+    type: string
+    description: Owning session
+  root:
+    type: string
+    description: Repository root
+  gitCommit:
+    type: string
+    description: HEAD commit, if the root is a git repository
+  workingTreeHash:
+    type: string
+    description: Hash over tracked and untracked non-ignored file contents
+  stagedDiffHash:
+    type: string
+    description: Hash of the staged diff
+  unstagedDiffHash:
+    type: string
+    description: Hash of the unstaged diff
+  fileHashesRef:
+    type: string
+    description: Blob reference of the per-file hash map, used to compute drift
+  fileCount:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Number of files in the snapshot
+required:
+  - sessionId
+  - root
+  - workingTreeHash
+  - fileCount
+allOf:
+  - $ref: BaseEntity.yaml
+description: An immutable fingerprint of a repository working tree

@@ -1,0 +1,10 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: SensitivityLabel.yaml
+type: string
+enum:
+  - public
+  - internal
+  - confidential
+  - secret
+  - regulated
+description: Data sensitivity label carried by a chunk or resource

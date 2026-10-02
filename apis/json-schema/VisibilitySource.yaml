@@ -1,0 +1,12 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: VisibilitySource.yaml
+type: string
+enum:
+  - deterministic
+  - ai
+  - policy
+  - degraded
+  - escalation
+  - user
+  - budget
+description: Who or what set a chunk's visibility in a context plan

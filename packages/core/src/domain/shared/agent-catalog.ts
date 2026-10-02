@@ -67,6 +67,11 @@ export interface AgentDescriptor {
   /** Where a user learns to install or authenticate this agent. */
   readonly docsUrl: string | null;
   /**
+   * Experimental agents are hidden from pickers unless their feature flag is
+   * on (the Shep Harness behind `featureFlags.queryAwareHarness`).
+   */
+  readonly experimental?: boolean;
+  /**
    * Key under `tui:prompts.selectAgent.choices` for this agent's translated
    * name and description. Held here rather than derived from the type, because
    * the existing keys are irregular (`openRouter`, `devMock`) and renaming them
@@ -645,6 +650,25 @@ export const AGENT_CATALOG: Record<AgentType, AgentDescriptor> = {
     requiresToken: false,
     docsUrl: null,
     i18nKey: 'llmProxy',
+  },
+  [AgentType.ShepHarness]: {
+    type: AgentType.ShepHarness,
+    label: 'Shep Harness',
+    description:
+      'Shep-owned query-aware agent loop with permission prompts (experimental; uses an SDK backend)',
+    kind: 'sdk',
+    supported: true,
+    binary: null,
+    versionArgs: VERSION_FLAG,
+    toolId: null,
+    // Offline floor only: the live list is the configured backend's models.
+    models: OPENROUTER_MODELS,
+    order: 11,
+    // Credentials come from the configured backend agent (settings.harness.backendAgentType).
+    requiresToken: false,
+    docsUrl: null,
+    experimental: true,
+    i18nKey: 'shepHarness',
   },
   [AgentType.Aider]: {
     type: AgentType.Aider,

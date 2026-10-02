@@ -25,6 +25,7 @@ export interface FeatureFlagsState {
   clusters: boolean;
   scheduledWorkflows: boolean;
   githubImport: boolean;
+  queryAwareHarness: boolean;
 }
 
 export function getFeatureFlags(): FeatureFlagsState {
@@ -45,6 +46,7 @@ export function getFeatureFlags(): FeatureFlagsState {
           clusters: flags.clusters,
           scheduledWorkflows: flags.scheduledWorkflows,
           githubImport: flags.githubImport ?? true,
+          queryAwareHarness: flags.queryAwareHarness ?? false,
         };
       }
     }
@@ -80,6 +82,7 @@ export function getFeatureFlags(): FeatureFlagsState {
     clusters: false,
     scheduledWorkflows: false,
     githubImport: true,
+    queryAwareHarness: isEnabled(process.env.NEXT_PUBLIC_FLAG_QUERY_AWARE_HARNESS),
   };
 }
 

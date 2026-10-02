@@ -1,0 +1,17 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: DecisionRoutes.yaml
+type: object
+properties:
+  chunkVisibility:
+    type: string
+    description: Provider for chunk visibility
+  capabilityChoice:
+    type: string
+    description: Provider for capability choice
+  cacheStrategy:
+    type: string
+    description: Provider for cache strategy
+  permissionRisk:
+    type: string
+    description: Provider for (shadow) permission risk
+description: Which provider answers each decision kind

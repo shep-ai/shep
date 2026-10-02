@@ -337,6 +337,7 @@ describe('createDefaultSettings', () => {
         supplyChainSecurity: true,
         scheduledWorkflows: false,
         githubImport: true,
+        queryAwareHarness: false,
       });
     });
 

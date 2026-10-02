@@ -153,6 +153,7 @@ const flagsWithCollaboration: FeatureFlagsState = {
   clusters: false,
   scheduledWorkflows: false,
   githubImport: true,
+  queryAwareHarness: false,
 };
 
 const repoNode = {

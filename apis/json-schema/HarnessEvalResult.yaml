@@ -1,0 +1,40 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: HarnessEvalResult.yaml
+type: object
+properties:
+  runId:
+    type: string
+    description: Eval run
+  caseId:
+    type: string
+    description: Case id
+  variant:
+    $ref: HarnessMode.yaml
+    description: Variant
+  repeat:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Repeat index (0-based)
+  success:
+    type: boolean
+    description: Whether the success check passed
+  scores:
+    $ref: RecordFloat64.yaml
+    description: Metric values (inputTokens, outputTokens, cachedTokens, costUsd, wallMs, turns, repeatedReads, visibleToolTokens, rawToolTokens, recall)
+  sessionId:
+    type: string
+    description: Harness session of the run
+  error:
+    type: string
+    description: Error message when the case failed to run
+required:
+  - runId
+  - caseId
+  - variant
+  - repeat
+  - success
+  - scores
+allOf:
+  - $ref: BaseEntity.yaml
+description: Result of one case × variant × repeat in an eval run

@@ -36,6 +36,7 @@ const EXPECTED_BINARIES: Record<AgentType, string | null> = {
   [AgentType.Ollama]: null,
   [AgentType.LlmProxy]: null,
   [AgentType.Dev]: null,
+  [AgentType.ShepHarness]: null,
 };
 
 describe('buildAgentResumeDescriptor', () => {

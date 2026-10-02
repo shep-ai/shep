@@ -1,0 +1,54 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: PlannedChunk.yaml
+type: object
+properties:
+  chunkId:
+    type: string
+    description: Chunk id
+  kind:
+    $ref: ChunkKind.yaml
+    description: Chunk kind
+  label:
+    type: string
+    description: Chunk label
+  visibility:
+    $ref: ChunkVisibility.yaml
+    description: Chosen visibility
+  relevance:
+    type: number
+    description: Relevance score between 0 and 1, if one was computed
+  probabilities:
+    $ref: RecordFloat64.yaml
+    description: Class probabilities, only when the provider really returned them
+  tokens:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Estimated tokens of the chosen view
+  rawTokens:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Estimated tokens of the raw content
+  reasonCode:
+    type: string
+    description: Why the chunk was a candidate or got this visibility
+  source:
+    $ref: VisibilitySource.yaml
+    description: Who set the visibility
+  decisionId:
+    type: string
+    description: Decision that scored this chunk, if any
+  rendererId:
+    type: string
+    description: Renderer id and version
+required:
+  - chunkId
+  - kind
+  - label
+  - visibility
+  - tokens
+  - rawTokens
+  - reasonCode
+  - source
+description: One candidate's outcome inside a context plan

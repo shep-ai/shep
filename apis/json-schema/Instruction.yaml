@@ -1,0 +1,50 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: Instruction.yaml
+type: object
+properties:
+  id:
+    type: string
+    description: Stable id (from frontmatter or derived from the path)
+  title:
+    type: string
+    description: Title
+  source:
+    type: string
+    description: Repository-relative source path
+  priority:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Priority; higher wins ordering
+  pinWhileActive:
+    type: boolean
+    description: Always included while active
+  contentRef:
+    type: string
+    description: Blob reference of the body
+  contentHash:
+    type: string
+    description: SHA-256 of the body
+  enabled:
+    type: boolean
+    description: Enabled flag
+  condition:
+    $ref: RecordUnknown.yaml
+    description: Raw `when` condition, if any (conditional activation arrives in V1)
+  active:
+    type: boolean
+    description: Whether the instruction is active for the current task
+  inactiveReason:
+    type: string
+    description: Why the instruction is inactive, if it is
+required:
+  - id
+  - title
+  - source
+  - priority
+  - pinWhileActive
+  - contentRef
+  - contentHash
+  - enabled
+  - active
+description: A rule the agent follows while its condition holds (CLAUDE.md, rules files, harness instructions)

@@ -1,0 +1,41 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: ToolImplementation.yaml
+type: object
+properties:
+  id:
+    type: string
+    description: Stable id, e.g. builtin.search_source
+  capabilityId:
+    type: string
+    description: Capability satisfied
+  source:
+    $ref: ToolSourceKind.yaml
+    description: Source of the implementation
+  toolName:
+    type: string
+    description: Tool name exposed to the model once its schema is loaded
+  snippet:
+    type: string
+    description: Snippet
+  inputSchema:
+    $ref: RecordUnknown.yaml
+    description: JSON Schema of the arguments (Tier-2)
+  docs:
+    type: string
+    description: Long-form docs (Tier-3), loaded only on demand
+  risk:
+    $ref: RiskClass.yaml
+    description: Risk class
+  readWriteMode:
+    $ref: ToolReadWriteMode.yaml
+    description: Read, write or side effect
+required:
+  - id
+  - capabilityId
+  - source
+  - toolName
+  - snippet
+  - inputSchema
+  - risk
+  - readWriteMode
+description: A concrete tool satisfying a capability (Tier-2 schema, optional Tier-3 docs)

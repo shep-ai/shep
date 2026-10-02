@@ -1,0 +1,13 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: HarnessDecisionKind.yaml
+type: string
+enum:
+  - chunk_visibility
+  - cache_strategy
+  - model_route
+  - capability_choice
+  - tool_choice
+  - permission_risk
+  - sensitivity
+  - instruction_activation
+description: Kind of typed decision the harness records

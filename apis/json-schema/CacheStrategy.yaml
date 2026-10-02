@@ -1,0 +1,18 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: CacheStrategy.yaml
+type: object
+properties:
+  mode:
+    $ref: CacheStrategyMode.yaml
+    description: Cache mode
+  prefixFingerprint:
+    type: string
+    description: Fingerprint of the stable prompt prefix
+  prefixTokens:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Estimated tokens of the stable prefix
+required:
+  - mode
+description: How a plan expects to use provider prompt caching

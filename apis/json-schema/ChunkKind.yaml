@@ -1,0 +1,22 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: ChunkKind.yaml
+type: string
+enum:
+  - user_message
+  - assistant_message
+  - prompt_section
+  - file
+  - file_excerpt
+  - search_result
+  - tool_input
+  - tool_output
+  - command_output
+  - diff
+  - test_result
+  - instruction
+  - plan
+  - decision
+  - subagent_result
+  - background_result
+  - documentation
+description: Kind of an addressable unit of harness state

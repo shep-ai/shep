@@ -1,0 +1,63 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: HarnessTask.yaml
+type: object
+properties:
+  sessionId:
+    type: string
+    description: Owning session
+  parentTaskId:
+    type: string
+    description: Parent task, for child tasks
+  goal:
+    type: string
+    description: Goal as given by the caller
+  normalizedGoal:
+    type: string
+    description: Normalized goal used for fingerprints and dedupe
+  type:
+    $ref: HarnessTaskType.yaml
+    description: Read-only, write or side-effect task
+  status:
+    $ref: HarnessTaskStatus.yaml
+    description: Lifecycle status
+  phase:
+    type: string
+    description: SDLC phase label when the task is a feature-node call (e.g. implement:phase-2)
+  repoSnapshotId:
+    type: string
+    description: Repository snapshot the task started from
+  budget:
+    $ref: HarnessBudget.yaml
+    description: Budget for the task
+  dedupeKey:
+    type: string
+    description: Stable dedupe key over normalized goal, scope, snapshot and type
+  stateVersion:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Monotonic state version, bumped whenever task state that feeds context changes
+  turnCount:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Number of model calls made so far
+  result:
+    $ref: HarnessTaskResult.yaml
+    description: Structured result once completed or failed
+  failureReason:
+    type: string
+    description: Failure reason when status is failed
+required:
+  - sessionId
+  - goal
+  - normalizedGoal
+  - type
+  - status
+  - budget
+  - dedupeKey
+  - stateVersion
+  - turnCount
+allOf:
+  - $ref: BaseEntity.yaml
+description: The canonical unit of harness work

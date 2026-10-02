@@ -400,6 +400,7 @@ export function SettingsPageClient({
     supplyChainSecurity: true,
     scheduledWorkflows: false,
     githubImport: true,
+    queryAwareHarness: false,
   };
 
   // Language state

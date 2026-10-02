@@ -58,6 +58,10 @@
         "llmProxy": {
           "name": "LLM Proxy",
           "description": "وكيل محلي متوافق مع OpenAI (عادةً على المنفذ 4000)"
+        },
+        "shepHarness": {
+          "name": "Shep Harness (تجريبي)",
+          "description": "حلقة وكيل يديرها Shep تراعي الاستعلام مع طلبات الأذونات"
         }
       }
     },

@@ -103,6 +103,7 @@ function WithGitOpsTemplate({ data }: { data: RepositoryNodeData }) {
     clusters: false,
     scheduledWorkflows: true,
     githubImport: true,
+    queryAwareHarness: false,
   };
 
   return (

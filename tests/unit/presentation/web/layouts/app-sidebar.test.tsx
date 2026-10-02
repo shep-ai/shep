@@ -51,6 +51,7 @@ const defaultFlags = {
   clusters: false,
   scheduledWorkflows: false,
   githubImport: true,
+  queryAwareHarness: false,
 };
 
 function renderWithSidebar(ui: React.ReactElement) {

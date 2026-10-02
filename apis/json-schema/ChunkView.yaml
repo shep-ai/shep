@@ -1,0 +1,41 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: ChunkView.yaml
+type: object
+properties:
+  chunkId:
+    type: string
+    description: Rendered chunk
+  queryFingerprint:
+    type: string
+    description: Fingerprint of the query the view was rendered for
+  visibility:
+    $ref: ChunkVisibility.yaml
+    description: Visibility level
+  content:
+    type: string
+    description: Rendered text (absent for hidden views)
+  estimatedTokens:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Estimated tokens of the rendered text
+  rendererId:
+    type: string
+    description: Renderer id and version, e.g. test-result@1
+  sourceHash:
+    type: string
+    description: Content hash of the chunk the view was rendered from
+  truncated:
+    type: boolean
+    description: Whether the renderer cut content to fit; recorded, never silent
+required:
+  - chunkId
+  - queryFingerprint
+  - visibility
+  - estimatedTokens
+  - rendererId
+  - sourceHash
+  - truncated
+allOf:
+  - $ref: BaseEntity.yaml
+description: A rendering of a chunk at one visibility level for one query

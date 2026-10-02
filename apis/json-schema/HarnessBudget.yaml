@@ -1,0 +1,28 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: HarnessBudget.yaml
+type: object
+properties:
+  maxUsd:
+    type: number
+    description: "Maximum spend in USD for the task (unset: no limit)"
+  maxWallTimeMs:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: "Maximum wall time in milliseconds (unset: the caller's timeout)"
+  maxInputTokens:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Maximum input tokens per model call
+  maxOutputTokens:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Maximum output tokens per model call
+  quality:
+    $ref: HarnessBudgetMode.yaml
+    description: Budget mode controlling quality/cost trade-offs
+required:
+  - quality
+description: Cost, time and token limits for one harness task

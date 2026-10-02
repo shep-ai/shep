@@ -58,6 +58,10 @@
         "llmProxy": {
           "name": "LLM Proxy",
           "description": "Локальний OpenAI-сумісний проксі (зазвичай на порту 4000)"
+        },
+        "shepHarness": {
+          "name": "Shep Harness (експериментально)",
+          "description": "Керований Shep цикл агента з урахуванням запиту та запитами дозволів"
         }
       }
     },

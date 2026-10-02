@@ -1,0 +1,8 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: RiskClass.yaml
+type: string
+enum:
+  - low
+  - medium
+  - high
+description: Coarse risk class of a capability or tool implementation

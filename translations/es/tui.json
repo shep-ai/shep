@@ -58,6 +58,10 @@
         "llmProxy": {
           "name": "LLM Proxy",
           "description": "Proxy local compatible con OpenAI (normalmente en el puerto 4000)"
+        },
+        "shepHarness": {
+          "name": "Shep Harness (experimental)",
+          "description": "Bucle de agente de Shep, consciente de la consulta, con solicitudes de permiso"
         }
       }
     },

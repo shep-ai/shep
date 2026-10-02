@@ -1,0 +1,59 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: HarnessToolCall.yaml
+type: object
+properties:
+  taskId:
+    type: string
+    description: Task
+  turn:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Turn number (1-based)
+  capabilityId:
+    type: string
+    description: Capability
+  implementationId:
+    type: string
+    description: Implementation
+  arguments:
+    $ref: RecordUnknown.yaml
+    description: Validated arguments
+  argumentsHash:
+    type: string
+    description: SHA-256 of the canonical arguments
+  idempotencyKey:
+    type: string
+    description: Idempotency key (task + turn + arguments hash)
+  permissionDecisionId:
+    type: string
+    description: Permission decision that allowed or denied the call
+  status:
+    $ref: HarnessToolCallStatus.yaml
+    description: Status
+  rawOutputChunkId:
+    type: string
+    description: Chunk holding the raw output (persisted before rendering)
+  summary:
+    type: string
+    description: Short status line for UIs
+  startedAt:
+    type: string
+    format: date-time
+    description: When execution started
+  completedAt:
+    type: string
+    format: date-time
+    description: When execution finished
+required:
+  - taskId
+  - turn
+  - capabilityId
+  - implementationId
+  - arguments
+  - argumentsHash
+  - idempotencyKey
+  - status
+allOf:
+  - $ref: BaseEntity.yaml
+description: One tool execution with its permission record

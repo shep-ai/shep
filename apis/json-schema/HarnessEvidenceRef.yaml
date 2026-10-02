@@ -1,0 +1,26 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: HarnessEvidenceRef.yaml
+type: object
+properties:
+  resource:
+    type: string
+    description: Repository-relative path or resource identifier
+  repoSnapshotId:
+    type: string
+    description: Snapshot the evidence refers to
+  startLine:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: First line of the referenced range
+  endLine:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Last line of the referenced range
+  contentHash:
+    type: string
+    description: Content hash of the referenced content
+required:
+  - resource
+description: A reference to repository evidence bound to a snapshot or content hash

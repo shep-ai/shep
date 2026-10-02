@@ -41,6 +41,7 @@ const defaultFlags = {
   clusters: false,
   scheduledWorkflows: false,
   githubImport: true,
+  queryAwareHarness: false,
 };
 
 function renderShell() {

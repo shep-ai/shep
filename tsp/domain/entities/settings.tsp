@@ -42,6 +42,7 @@ import "../../common/enums/security.tsp";
 import "../../common/enums/terminal.tsp";
 import "../../common/enums/whatsapp.tsp";
 import "../../common/enums/messaging.tsp";
+import "./harness/harness-config.tsp";
 import "../../agents/supervisor-policy.tsp";
 
 /**
@@ -729,6 +730,9 @@ model FeatureFlags {
 
   @doc("Enable GitHub repository import flow (clone, fork, and add to Shep)")
   githubImport: boolean = true;
+
+  @doc("Enable the experimental query-aware agent harness: the Shep Harness agent, /harness pages, the feature Context tab and `shep harness` commands (spec 119)")
+  queryAwareHarness: boolean = false;
 }
 
 /**
@@ -1273,4 +1277,12 @@ model Settings extends BaseEntity {
    */
   @doc("Custom worktree provisioning commands (optional, built-in git worktree by default)")
   worktree?: WorktreeConfig;
+
+  /**
+   * Query-aware agent harness configuration (spec 119).
+   * Optional for backward compatibility — defaults applied at runtime.
+   * Gated by the `queryAwareHarness` feature flag.
+   */
+  @doc("Query-aware agent harness configuration (optional, defaults applied at runtime)")
+  harness?: HarnessConfig;
 }

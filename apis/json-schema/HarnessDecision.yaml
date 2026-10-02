@@ -1,0 +1,75 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: HarnessDecision.yaml
+type: object
+properties:
+  taskId:
+    type: string
+    description: Task the decision belongs to
+  kind:
+    $ref: HarnessDecisionKind.yaml
+    description: Decision kind
+  providerId:
+    type: string
+    description: Configured provider id that answered
+  providerKind:
+    $ref: DecisionProviderKind.yaml
+    description: Provider implementation family
+  model:
+    type: string
+    description: Model the provider used, if any
+  question:
+    type: string
+    description: Short question the decision answered
+  inputRef:
+    type: string
+    description: Blob reference of the full decision input
+  result:
+    $ref: RecordUnknown.yaml
+    description: Decision result
+  alternatives:
+    type: array
+    items:
+      $ref: RecordUnknown.yaml
+    description: Alternatives with scores or probabilities, when available
+  confidence:
+    type: number
+    description: Confidence between 0 and 1, when available
+  latencyMs:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Latency in milliseconds
+  estimatedCostUsd:
+    type: number
+    description: Estimated cost in USD, when known
+  enforced:
+    type: boolean
+    description: Whether the result was enforced
+  shadow:
+    type: boolean
+    description: Computed in shadow mode; never enforced
+  degraded:
+    type: boolean
+    description: A fallback provider answered because the routed one failed
+  failedProviders:
+    type: array
+    items:
+      type: string
+    description: Providers that failed before this one answered
+  contextPlanId:
+    type: string
+    description: Context plan the decision fed, if any
+required:
+  - kind
+  - providerId
+  - providerKind
+  - question
+  - inputRef
+  - result
+  - latencyMs
+  - enforced
+  - shadow
+  - degraded
+allOf:
+  - $ref: BaseEntity.yaml
+description: A persisted, typed decision made by a decision provider

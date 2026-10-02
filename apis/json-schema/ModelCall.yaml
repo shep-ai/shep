@@ -1,0 +1,67 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: ModelCall.yaml
+type: object
+properties:
+  taskId:
+    type: string
+    description: Task
+  turn:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Turn number (1-based)
+  modelId:
+    type: string
+    description: Model id
+  contextPlanId:
+    type: string
+    description: Context plan the input was materialized from (query-aware mode)
+  status:
+    $ref: ModelCallStatus.yaml
+    description: Status
+  inputTokens:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Provider-reported input tokens (including cached)
+  outputTokens:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Provider-reported output tokens
+  cachedInputTokens:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Provider-reported cached input tokens (counted once, inside inputTokens)
+  costUsd:
+    type: number
+    description: Cost in USD when the provider reports it
+  latencyMs:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Latency in milliseconds
+  estimatedInputTokens:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Estimated tokens of the materialized input
+  responseChunkId:
+    type: string
+    description: Chunk holding the model response
+  finishReason:
+    type: string
+    description: Finish reason reported by the provider
+  error:
+    type: string
+    description: Error message when the call failed
+required:
+  - taskId
+  - turn
+  - modelId
+  - status
+  - estimatedInputTokens
+allOf:
+  - $ref: BaseEntity.yaml
+description: One call to the coding model

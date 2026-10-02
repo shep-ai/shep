@@ -34,6 +34,7 @@ const defaultFlags = {
   supplyChainSecurity: false,
   scheduledWorkflows: false,
   githubImport: true,
+  queryAwareHarness: false,
 };
 
 /**
