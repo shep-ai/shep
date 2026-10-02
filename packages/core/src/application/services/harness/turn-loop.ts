@@ -25,6 +25,13 @@ import { beforeTurn } from './turn-guard.js';
 const ACT_NOW =
   'Decide the next step. Use loaded tools directly, load more with use_capability, ask for detail with expand_chunk, or call complete_task when done.';
 
+/** Parameter names of a tool's JSON schema, required ones first. */
+function parameterNames(schema: { properties?: Record<string, unknown>; required?: string[] }) {
+  const all = Object.keys(schema.properties ?? {});
+  const required = schema.required ?? [];
+  return [...required, ...all.filter((n) => !required.includes(n))].join(', ');
+}
+
 function loadedTools(tc: TurnContext): HarnessToolSpec[] {
   return [...tc.loadedImplementationIds]
     .map((id) => tc.registry.executor(id)?.implementation)
@@ -169,15 +176,22 @@ export async function runQueryAwareLoop(tc: TurnContext): Promise<LoopOutcome> {
             },
             { sessionId: tc.session.id, taskId: tc.task.id, shadow: false }
           );
+          const args = call.args.args;
+          const alreadyLoaded = tc.loadedImplementationIds.has(plan.implementation.id);
           tc.loadedImplementationIds.add(plan.implementation.id);
           const docs =
             call.args.withDocs === true ? tc.registry.docsFor(plan.implementation.id) : undefined;
+          const toolName = plan.implementation.toolName;
+          // Weak models keep "loading" a loaded tool and never call it; say what to do instead.
+          const outcome =
+            alreadyLoaded && !args
+              ? `${toolName} is already loaded: call ${toolName} directly with its arguments (${parameterNames(plan.implementation.inputSchema)})`
+              : `loaded tool ${toolName}`;
           tc.ledger.add({
             turn,
             action: `use_capability ${plan.capabilityId}`,
-            outcome: `loaded tool ${plan.implementation.toolName}${docs ? ` (docs: ${docs})` : ''}`,
+            outcome: `${outcome}${docs ? ` (docs: ${docs})` : ''}`,
           });
-          const args = call.args.args;
           if (args && typeof args === 'object' && !Array.isArray(args)) {
             // Load and call in one turn: the schema is validated as usual.
             const direct = {

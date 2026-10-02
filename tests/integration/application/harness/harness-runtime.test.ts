@@ -472,6 +472,20 @@ describe('HarnessRuntime', () => {
     expect(searches[2].summary).toBe('1 matches for "trim("');
   });
 
+  it('tells the model to call an already-loaded tool instead of loading it again', async () => {
+    const load = { name: 'use_capability', args: { capabilityId: 'read_file', intent: 'read' } };
+    const session = await h.session();
+    await h.run(session, [
+      { toolCalls: [load] },
+      { toolCalls: [load] },
+      { toolCalls: [{ name: 'complete_task', args: { status: 'success', summary: 'ok' } }] },
+    ]);
+    expect(userMessage(h, 1)).toContain('loaded tool read_file');
+    expect(userMessage(h, 2)).toContain(
+      'read_file is already loaded: call read_file directly with its arguments (path'
+    );
+  });
+
   it('gives every model call the configured timeout', async () => {
     const slow = await createRuntimeHarness(repo.root, { config: { modelTimeoutMs: 900_000 } });
     try {
