@@ -9,6 +9,7 @@
  */
 
 import { AgentType, type AgentConfig } from '../../../../domain/generated/output.js';
+import { resolveLocalProviderBaseUrl } from './language-model-factory.js';
 import {
   resolveAdaptiveTierPlan,
   type AdaptiveTierPlan,
@@ -73,33 +74,13 @@ const INTERACTIVE_EXECUTORS: Partial<
 };
 
 /**
- * Ollama and LLMProxy take a BASE URL where every other agent takes an API key,
- * because both front a local server. The settings field is nonetheless called
- * `token`, so a user who pastes a key there would send it as a URL — and a
- * hostile value such as a cloud metadata endpoint would receive the full
- * prompt, which contains the source of the repository being worked on.
- *
- * Accept the value only when it is a plausible base URL, and refuse the
- * link-local metadata range outright. Anything else falls back to the
- * executor's own default.
+ * Builders for executors that need container-resolved dependencies (the Shep
+ * Harness needs its repositories and runtime). DI passes them in; a factory
+ * built without one reports the agent as unavailable instead of guessing.
  */
-function resolveLocalProviderBaseUrl(value: string | null | undefined): string | undefined {
-  const trimmed = value?.trim();
-  if (!trimmed) return undefined;
-
-  let parsed: URL;
-  try {
-    parsed = new URL(trimmed);
-  } catch {
-    return undefined;
-  }
-
-  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') return undefined;
-  // 169.254.0.0/16 — cloud instance metadata lives here on every major provider.
-  if (parsed.hostname.startsWith('169.254.')) return undefined;
-
-  return trimmed;
-}
+export type ExternalExecutorBuilders = Partial<
+  Record<AgentType, (authConfig: AgentConfig) => IAgentExecutor>
+>;
 
 /**
  * Factory that creates and caches agent executor instances.
@@ -115,10 +96,12 @@ export class AgentExecutorFactory implements IAgentExecutorFactory {
    * @param spawn - Spawn function for creating subprocesses (injectable for testing).
    * @param catalogs - Optional per-agent {@link IModelCatalog} registry
    *   (defaults to {@link createDefaultModelCatalogs}).
+   * @param externalBuilders - Executors whose dependencies live in the DI container.
    */
   constructor(
     private readonly spawn: SpawnFunction,
-    catalogs?: ModelCatalogRegistry
+    catalogs?: ModelCatalogRegistry,
+    private readonly externalBuilders: ExternalExecutorBuilders = {}
   ) {
     this.catalogs = catalogs ?? createDefaultModelCatalogs();
   }
@@ -174,6 +157,12 @@ export class AgentExecutorFactory implements IAgentExecutorFactory {
       case 'llmproxy':
         executor = new LlmProxyExecutorService(resolveLocalProviderBaseUrl(_authConfig.token));
         break;
+      case 'shep-harness': {
+        const build = this.externalBuilders[AgentType.ShepHarness];
+        if (!build) throw new Error('The Shep Harness executor is not registered in this process');
+        executor = build(_authConfig);
+        break;
+      }
       default:
         throw new Error(
           `Unsupported agent type: ${agentType}. Supported: ${this.getSupportedAgents().join(', ')}`

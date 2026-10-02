@@ -25,7 +25,62 @@ import {
   type IToolArgumentValidator,
   type IToolSource,
   type IInstructionSource,
+  type IHarnessModelProviderFactory,
+  type IHarnessProjectSetup,
+  type IHarnessWorkspaceService,
+  type IHarnessEnvironmentProbe,
 } from '../../../application/ports/output/harness/index.js';
+import type { ISettingsRepository } from '../../../application/ports/output/repositories/settings.repository.interface.js';
+import { HarnessRuntime } from '../../../application/services/harness/harness-runtime.js';
+import { HarnessTaskService } from '../../../application/services/harness/harness-task-service.js';
+import { HarnessModelProviderFactory } from '../../services/harness/model/harness-model-provider-factory.js';
+import { ScriptedHarnessModelProvider } from '../../services/harness/model/scripted-harness-model-provider.js';
+import { GitHarnessWorkspaceService } from '../../services/harness/git-harness-workspace.service.js';
+import { FileSystemHarnessProjectSetup } from '../../services/harness/file-system-harness-project-setup.js';
+import { HarnessEnvironmentProbe } from '../../services/harness/harness-environment-probe.js';
+import type { IWorktreeService } from '../../../application/ports/output/services/worktree-service.interface.js';
+import type { IWorktreePathProvider } from '../../../application/ports/output/services/worktree-path-provider.interface.js';
+import { ApplyHarnessSessionUseCase } from '../../../application/use-cases/harness/apply-harness-session.use-case.js';
+import { DiscardHarnessSessionUseCase } from '../../../application/use-cases/harness/discard-harness-session.use-case.js';
+import { ExplainHarnessDecisionUseCase } from '../../../application/use-cases/harness/explain-harness-decision.use-case.js';
+import { GetContextPlanUseCase } from '../../../application/use-cases/harness/get-context-plan.use-case.js';
+import { GetHarnessPoliciesUseCase } from '../../../application/use-cases/harness/get-harness-policies.use-case.js';
+import { GetHarnessSessionUseCase } from '../../../application/use-cases/harness/get-harness-session.use-case.js';
+import { InitHarnessProjectUseCase } from '../../../application/use-cases/harness/init-harness-project.use-case.js';
+import { ListHarnessCapabilitiesUseCase } from '../../../application/use-cases/harness/list-harness-capabilities.use-case.js';
+import { ListHarnessPermissionsUseCase } from '../../../application/use-cases/harness/list-harness-permissions.use-case.js';
+import { ListHarnessSessionsUseCase } from '../../../application/use-cases/harness/list-harness-sessions.use-case.js';
+import { OverrideChunkVisibilityUseCase } from '../../../application/use-cases/harness/override-chunk-visibility.use-case.js';
+import { PromoteHarnessSessionUseCase } from '../../../application/use-cases/harness/promote-harness-session.use-case.js';
+import { RenderChunkViewUseCase } from '../../../application/use-cases/harness/render-chunk-view.use-case.js';
+import { ResolveHarnessPermissionUseCase } from '../../../application/use-cases/harness/resolve-harness-permission.use-case.js';
+import { ResumeHarnessSessionUseCase } from '../../../application/use-cases/harness/resume-harness-session.use-case.js';
+import { RunHarnessTaskUseCase } from '../../../application/use-cases/harness/run-harness-task.use-case.js';
+import { StopHarnessSessionUseCase } from '../../../application/use-cases/harness/stop-harness-session.use-case.js';
+
+/** Harness use cases, registered by class and by class-name string token. */
+const HARNESS_USE_CASES = {
+  ApplyHarnessSessionUseCase,
+  DiscardHarnessSessionUseCase,
+  ExplainHarnessDecisionUseCase,
+  GetContextPlanUseCase,
+  GetHarnessPoliciesUseCase,
+  GetHarnessSessionUseCase,
+  InitHarnessProjectUseCase,
+  ListHarnessCapabilitiesUseCase,
+  ListHarnessPermissionsUseCase,
+  ListHarnessSessionsUseCase,
+  OverrideChunkVisibilityUseCase,
+  PromoteHarnessSessionUseCase,
+  RenderChunkViewUseCase,
+  ResolveHarnessPermissionUseCase,
+  ResumeHarnessSessionUseCase,
+  RunHarnessTaskUseCase,
+  StopHarnessSessionUseCase,
+} as const;
+
+/** String tokens of the harness use cases (web routes and server actions resolve these). */
+export const HARNESS_USE_CASE_TOKENS = Object.keys(HARNESS_USE_CASES);
 import { DecisionProviderFactory } from '../../services/harness/decisions/decision-provider-factory.js';
 import { BuiltinToolSource } from '../../services/harness/tools/builtin-tool-source.js';
 import { AjvToolArgumentValidator } from '../../services/harness/tools/ajv-tool-argument-validator.js';
@@ -98,4 +153,63 @@ export function registerHarness(container: DependencyContainer): void {
   container.register<IInstructionSource>(HARNESS_TOKENS.InstructionSource, {
     useFactory: () => new FileSystemInstructionSource(),
   });
+
+  // ─── Runtime ─────────────────────────────────────────────────────────────
+  container.register<IHarnessModelProviderFactory>(HARNESS_TOKENS.ModelProviderFactory, {
+    useFactory: () =>
+      process.env.SHEP_MOCK_EXECUTOR === '1'
+        ? { create: () => new ScriptedHarnessModelProvider([]) }
+        : new HarnessModelProviderFactory(),
+  });
+  container.register<HarnessRuntime>(HARNESS_TOKENS.Runtime, {
+    useFactory: (c) =>
+      new HarnessRuntime({
+        sessions: c.resolve(HARNESS_TOKENS.SessionRepository),
+        context: c.resolve(HARNESS_TOKENS.ContextRepository),
+        execution: c.resolve(HARNESS_TOKENS.ExecutionRepository),
+        permissionRepo: c.resolve(HARNESS_TOKENS.PermissionRepository),
+        events: c.resolve(HARNESS_TOKENS.EventLog),
+        blobs: c.resolve(HARNESS_TOKENS.BlobStore),
+        snapshotter: c.resolve(HARNESS_TOKENS.RepoSnapshotter),
+        toolSources: c.resolve(HARNESS_TOKENS.ToolSources),
+        validator: c.resolve(HARNESS_TOKENS.ToolArgumentValidator),
+        policy: c.resolve(HARNESS_TOKENS.PolicyEngine),
+        inspector: c.resolve(HARNESS_TOKENS.CommandInspector),
+        instructions: c.resolve(HARNESS_TOKENS.InstructionSource),
+        decisionFactory: c.resolve(HARNESS_TOKENS.DecisionProviderFactory),
+      }),
+  });
+  container.register<HarnessTaskService>(HARNESS_TOKENS.TaskService, {
+    useFactory: (c) =>
+      new HarnessTaskService(
+        c.resolve(HARNESS_TOKENS.Runtime),
+        c.resolve(HARNESS_TOKENS.SessionRepository),
+        c.resolve(HARNESS_TOKENS.EventLog),
+        c.resolve<ISettingsRepository>('ISettingsRepository'),
+        c.resolve(HARNESS_TOKENS.ModelProviderFactory)
+      ),
+  });
+
+  // ─── Standalone workspaces and repository setup ──────────────────────────
+  container.register<IHarnessWorkspaceService>(HARNESS_TOKENS.WorkspaceService, {
+    useFactory: (c) =>
+      new GitHarnessWorkspaceService(
+        c.resolve<IWorktreeService>('IWorktreeService'),
+        c.resolve<IWorktreePathProvider>('IWorktreePathProvider')
+      ),
+  });
+  container.register<IHarnessProjectSetup>(HARNESS_TOKENS.ProjectSetup, {
+    useFactory: () => new FileSystemHarnessProjectSetup(),
+  });
+  container.register<IHarnessEnvironmentProbe>(HARNESS_TOKENS.EnvironmentProbe, {
+    useFactory: () => new HarnessEnvironmentProbe(join(getShepHomeDir(), HARNESS_OBJECTS_DIR)),
+  });
+
+  // ─── Use cases ───────────────────────────────────────────────────────────
+  for (const [token, useCase] of Object.entries(HARNESS_USE_CASES)) {
+    container.registerSingleton(useCase as new (...args: never[]) => unknown);
+    container.register(token, {
+      useFactory: (c) => c.resolve(useCase as new (...args: never[]) => unknown),
+    });
+  }
 }

@@ -8,3 +8,6 @@ export * from './tool-executor.interface.js';
 export * from './policy-engine.interface.js';
 export * from './harness-model-provider.interface.js';
 export * from './instruction-source.interface.js';
+export * from './harness-workspace.interface.js';
+export * from './harness-project-setup.interface.js';
+export * from './harness-environment-probe.interface.js';

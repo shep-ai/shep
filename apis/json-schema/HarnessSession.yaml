@@ -41,6 +41,13 @@ properties:
   shadowContext:
     type: boolean
     description: Whether shadow context planning is on for this session
+  baseCommit:
+    type: string
+    description: Commit a standalone session's worktree started from (the base of its patch)
+  stopRequestedAt:
+    type: string
+    format: date-time
+    description: When a person asked to stop the session; the running task stops before its next turn
 required:
   - status
   - origin

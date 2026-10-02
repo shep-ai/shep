@@ -9,7 +9,13 @@
 import type Database from 'better-sqlite3';
 
 /** Entity timestamp fields revived from ISO strings on read. */
-const DATE_FIELDS = new Set(['createdAt', 'updatedAt', 'startedAt', 'completedAt']);
+const DATE_FIELDS = new Set([
+  'createdAt',
+  'updatedAt',
+  'startedAt',
+  'completedAt',
+  'stopRequestedAt',
+]);
 
 export type ColumnValue = string | number | null;
 

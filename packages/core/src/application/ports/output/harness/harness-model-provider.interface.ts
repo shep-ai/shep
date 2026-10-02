@@ -6,6 +6,8 @@
  * infrastructure; this port speaks plain messages and JSON-schema tools.
  */
 
+import type { AgentType } from '../../../../domain/generated/output.js';
+
 export interface HarnessToolSpec {
   name: string;
   description: string;
@@ -76,4 +78,18 @@ export class HarnessModelIncompleteError extends Error {
     super(`Model response incomplete (finish reason: ${finishReason})`);
     this.name = 'HarnessModelIncompleteError';
   }
+}
+
+/** Which SDK backend (and model) a harness task runs on. */
+export interface HarnessModelSpec {
+  /** An SDK agent type (OpenRouter, Together AI, Ollama, LLMProxy). */
+  backendAgentType: AgentType;
+  modelId?: string;
+  /** API key, or base URL for local servers. Falls back to the backend's env var. */
+  credential?: string;
+}
+
+/** Builds the model backend for a harness task. */
+export interface IHarnessModelProviderFactory {
+  create(spec: HarnessModelSpec): IHarnessModelProvider;
 }

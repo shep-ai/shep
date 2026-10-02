@@ -72,6 +72,12 @@ model HarnessSession extends BaseEntity {
 
   @doc("Whether shadow context planning is on for this session")
   shadowContext: boolean;
+
+  @doc("Commit a standalone session's worktree started from (the base of its patch)")
+  baseCommit?: string;
+
+  @doc("When a person asked to stop the session; the running task stops before its next turn")
+  stopRequestedAt?: utcDateTime;
 }
 
 /**

@@ -2,7 +2,7 @@
  * Builtin harness tools against a real temporary git repository (spec 119).
  */
 import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { ChunkKind } from '@/domain/generated/output.js';
 import {
@@ -123,6 +123,37 @@ describe('builtin harness tools', () => {
     );
     expect(out).toMatchObject({ kind: ChunkKind.TestResult, ok: true });
     expect(out.output).toContain('1 passed');
+  });
+
+  it('run_tests prefers the test_command from .shep/harness/config.yaml', async () => {
+    mkdirSync(join(repo.root, '.shep', 'harness'), { recursive: true });
+    writeFileSync(
+      join(repo.root, '.shep', 'harness', 'config.yaml'),
+      'version: 1\ntest_command: "pnpm vitest run"\n'
+    );
+    expect(await detectTestCommand(repo.root)).toBe('pnpm vitest run');
+  });
+
+  it('run_tests rejects filters that could inject shell syntax', async () => {
+    const tool = new RunTestsTool();
+    const testCtx = {
+      ...ctx,
+      testCommand: 'node -e "console.log(process.argv.slice(1).join(\',\'))"',
+    };
+    for (const filter of [
+      'a; touch pwned',
+      '$(touch pwned)',
+      'a && b',
+      'a | b',
+      '`id`',
+      'a > out',
+      '"quoted"',
+    ]) {
+      await expect(tool.execute({ filter }, testCtx)).rejects.toBeInstanceOf(ToolInputError);
+    }
+    expect(existsSync(join(repo.root, 'pwned'))).toBe(false);
+    const ok = await tool.execute({ filter: 'src/auth/refresh.test.ts' }, testCtx);
+    expect(ok.ok).toBe(true);
   });
 
   it('apply_patch applies exact edits and new files', async () => {

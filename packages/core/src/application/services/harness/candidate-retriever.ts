@@ -30,6 +30,8 @@ export const CandidateReason = {
 export const ChunkTag = {
   Failed: 'failed',
   PromptSection: 'prompt_section',
+  /** Put by the session restorer on chunks of files that drifted. */
+  Stale: 'stale',
 } as const;
 
 const TOOL_OUTPUT_KINDS = new Set<ChunkKind>([
@@ -81,8 +83,10 @@ export class CandidateRetriever {
   constructor(private readonly context: IHarnessContextRepository) {}
 
   async retrieve(input: RetrieveInput): Promise<Candidate[]> {
+    // Secret chunks never reach a model; stale chunks describe files that
+    // changed since they were read (a fresh read supersedes them).
     const chunks = (await this.context.listChunks({ sessionId: input.sessionId })).filter(
-      (c) => c.sensitivity !== SensitivityLabel.Secret
+      (c) => c.sensitivity !== SensitivityLabel.Secret && !c.tags.includes(ChunkTag.Stale)
     );
     const text = `${input.query}\n${input.task.goal}`;
     const lowered = text.toLowerCase();

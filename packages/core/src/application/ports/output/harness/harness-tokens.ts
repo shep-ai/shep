@@ -20,4 +20,10 @@ export const HARNESS_TOKENS = {
   PolicyEngine: 'IHarnessPolicyEngine',
   CommandInspector: 'ICommandInspector',
   InstructionSource: 'IInstructionSource',
+  ModelProviderFactory: 'IHarnessModelProviderFactory',
+  Runtime: 'HarnessRuntime',
+  TaskService: 'HarnessTaskService',
+  WorkspaceService: 'IHarnessWorkspaceService',
+  ProjectSetup: 'IHarnessProjectSetup',
+  EnvironmentProbe: 'IHarnessEnvironmentProbe',
 } as const;
