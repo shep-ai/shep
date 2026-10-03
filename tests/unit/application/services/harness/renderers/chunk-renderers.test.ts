@@ -57,6 +57,21 @@ describe('chunk renderers', () => {
     expect(renderChunkView(chunk(ChunkKind.File), 'a\nb', V.Full, 'q').content).toBe('1│a\n2│b');
   });
 
+  it('command short view does not mistake file names for errors', () => {
+    const listing = ['src/auth/errors.js', 'src/net/failover.ts', 'src/auth/refresh.js'].join('\n');
+    expect(
+      renderChunkView(chunk(ChunkKind.ToolOutput), listing, V.Short, 'q').content
+    ).not.toContain('Errors:');
+    const crash = [
+      'starting',
+      'TypeError: claims is undefined',
+      '    at refresh (src/auth/refresh.js:12)',
+    ];
+    expect(
+      renderChunkView(chunk(ChunkKind.CommandOutput), crash.join('\n'), V.Short, 'q').content
+    ).toContain('Errors:\nTypeError: claims is undefined');
+  });
+
   it('file short view is the outline with line numbers', () => {
     const r = renderChunkView(chunk(ChunkKind.File), FILE, V.Short, 'refresh');
     expect(r.content).toContain('209 lines. Outline:');

@@ -91,15 +91,21 @@ export const searchRenderer: ChunkRenderer = {
   },
 };
 
-const ERROR_LINE =
-  /(error|\bERR!|fail|failed|exception|traceback|panic|fatal|cannot|denied|not found|✗|×|✖)/i;
+const ERROR_WORDS =
+  /(error|\bERR!|\bfail(?:s|ed|ure|ing)?\b|exception|traceback|panic|fatal|cannot|denied|not found|✗|×|✖)/i;
+/** File names such as errors.js or failover.ts are not errors. */
+const FILE_NAME = /[\w./-]*\.[a-z][a-z0-9]{0,4}\b/gi;
+
+function isErrorLine(line: string): boolean {
+  return ERROR_WORDS.test(line.replace(FILE_NAME, ''));
+}
 
 export const commandRenderer: ChunkRenderer = {
   id: 'command@1',
   kinds: [ChunkKind.CommandOutput, ChunkKind.ToolOutput, ChunkKind.ToolInput],
   render(raw, visibility) {
     const all = lines(raw);
-    const errors = all.flatMap((l, i) => (ERROR_LINE.test(l) ? [i] : []));
+    const errors = all.flatMap((l, i) => (isErrorLine(l) ? [i] : []));
     if (visibility === ChunkVisibility.Short) {
       const t = tail(raw, 15);
       const firstErrors = errors.slice(0, 5).map((i) => all[i].slice(0, 240));
