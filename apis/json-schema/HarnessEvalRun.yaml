@@ -24,6 +24,11 @@ properties:
   error:
     type: string
     description: Error message when the run failed
+  ownerPid:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: OS process running the eval; a run whose process exited is reported as failed
 required:
   - suite
   - variants
