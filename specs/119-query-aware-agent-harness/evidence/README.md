@@ -110,7 +110,7 @@ Earlier versions of this measurement were worse. These fixes came out of it:
 
 - `pnpm lint`, `pnpm format:check`, `pnpm typecheck` (core and web): clean.
   `packages/electron` cannot typecheck here because its dependencies cannot be downloaded in this container.
-- `pnpm test:unit`: 1,161 files and 13,750 tests passed.
-- `pnpm test:int`: 173 of 174 files passed.
+- `pnpm test:unit`: 1,165 files and 13,796 tests passed (2 skipped).
+- `pnpm test:int`: 174 of 175 files and 1,922 tests passed.
   `tests/integration/security/dependency-path-traversal.test.ts` cannot load here: it requires the `electron` package, which this container cannot install (403 on download). CI installs it.
 - `pnpm build`, `pnpm build:web` and `pnpm build:storybook` all succeed. `pnpm check:stories` passes.
