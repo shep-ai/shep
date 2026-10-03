@@ -11,6 +11,7 @@ import { injectable } from 'tsyringe';
 import { randomUUID } from 'node:crypto';
 import { createRequire } from 'node:module';
 import { statSync } from 'node:fs';
+import { dirname } from 'node:path';
 import type {
   CreatedTerminalSession,
   CreateTerminalSessionInput,
@@ -19,6 +20,7 @@ import type {
   TerminalOutputListener,
 } from '../../../application/ports/output/services/terminal-session-service.interface.js';
 import { IS_WINDOWS } from '../../platform.js';
+import { ensureSpawnHelperExecutable, explainSpawnError } from './pty-spawn-helper.js';
 import type * as NodePty from 'node-pty';
 
 // node-pty is a native CJS module — keep it behind a lazy-resolved handle
@@ -51,6 +53,7 @@ export class PtyTerminalSessionService implements ITerminalSessionService {
 
   private loadPty(): PtyModule {
     if (this.ptyModule) return this.ptyModule;
+    ensureSpawnHelperExecutable(dirname(requireCjs.resolve('node-pty/package.json')));
     // Dynamic CJS require so the native module is only loaded on demand.
     const mod = requireCjs('node-pty') as PtyModule;
     this.ptyModule = mod;
@@ -111,7 +114,7 @@ export class PtyTerminalSessionService implements ITerminalSessionService {
       });
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : 'Unknown spawn error';
-      throw new Error(`Failed to spawn terminal: ${message}`);
+      throw new Error(`Failed to spawn terminal: ${explainSpawnError(message)}`);
     }
 
     const id = randomUUID();
