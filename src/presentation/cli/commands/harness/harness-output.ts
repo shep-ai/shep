@@ -111,29 +111,65 @@ export function describePermission(item: HarnessPermissionItem): string {
   return lines.join('\n');
 }
 
-/** Ask the person at the terminal and record the answer. */
-export async function promptForPermission(item: HarnessPermissionItem): Promise<void> {
+/**
+ * Ask the person at the terminal and record the answer. The prompt closes
+ * itself when the request is answered elsewhere (the web inbox, another terminal).
+ */
+export async function promptForPermission(
+  item: HarnessPermissionItem,
+  options: { pollMs: number } = { pollMs: PERMISSION_POLL_MS }
+): Promise<void> {
   console.log(`\n${describePermission(item)}`);
-  const resolver = container.resolve(ResolveHarnessPermissionUseCase);
   if (!item.approvable) {
     messages.warning('This action is denied by a hard rule and cannot be approved.');
     return;
   }
-  const choice = await select<string>({
-    message: 'Allow this action?',
-    choices: [
-      ...item.scopes.map((s) => ({ name: SCOPE_LABEL[s], value: s })),
-      { name: 'Deny', value: 'deny' },
-    ],
-  });
-  const note = await input({ message: 'Note to the agent (optional):' });
-  await resolver.execute({
-    id: item.decision.id,
-    allow: choice !== 'deny',
-    ...(choice !== 'deny' && { scope: choice as GrantScope }),
-    ...(note.trim() && { note }),
-    resolvedBy: 'cli',
-  });
+  const answeredElsewhere = new AbortController();
+  const stopWatching = watchUntilAnswered(item, options.pollMs, () => answeredElsewhere.abort());
+  try {
+    const context = { signal: answeredElsewhere.signal };
+    const choice = await select<string>(
+      {
+        message: 'Allow this action?',
+        choices: [
+          ...item.scopes.map((s) => ({ name: SCOPE_LABEL[s], value: s })),
+          { name: 'Deny', value: 'deny' },
+        ],
+      },
+      context
+    );
+    const note = await input({ message: 'Note to the agent (optional):' }, context);
+    await container.resolve(ResolveHarnessPermissionUseCase).execute({
+      id: item.decision.id,
+      allow: choice !== 'deny',
+      ...(choice !== 'deny' && { scope: choice as GrantScope }),
+      ...(note.trim() && { note }),
+      resolvedBy: 'cli',
+    });
+  } catch (error) {
+    if (!answeredElsewhere.signal.aborted) throw error;
+    messages.info('Answered in another window (web UI or another terminal); continuing.');
+  } finally {
+    stopWatching();
+  }
+}
+
+/** Calls `onAnswered` once the request is no longer pending. */
+function watchUntilAnswered(
+  item: HarnessPermissionItem,
+  pollMs: number,
+  onAnswered: () => void
+): () => void {
+  const list = container.resolve(ListHarnessPermissionsUseCase);
+  const timer = setInterval(() => {
+    void list
+      .execute({ sessionId: item.decision.sessionId })
+      .then((pending) => {
+        if (!pending.some((p) => p.decision.id === item.decision.id)) onAnswered();
+      })
+      .catch(() => undefined);
+  }, pollMs);
+  return () => clearInterval(timer);
 }
 
 /** Poll for this session's permission requests and prompt for each one. */
