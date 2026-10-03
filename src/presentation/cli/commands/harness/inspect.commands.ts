@@ -12,8 +12,6 @@ import { ExplainHarnessDecisionUseCase } from '@/application/use-cases/harness/e
 import { colors, fmt, messages } from '../../ui/index.js';
 import { fail, formatTokens, printJson, renderUsage } from './harness-output.js';
 
-const shortId = (id: string) => id.slice(0, 8);
-
 export function createLsCommand(): Command {
   return new Command('ls')
     .description('List harness sessions')
@@ -40,7 +38,7 @@ export function createLsCommand(): Command {
             ? colors.warning(` · ${i.pendingPermissions} awaiting approval`)
             : '';
           console.log(
-            `${colors.brand(shortId(i.session.id))}  ${i.session.status.padEnd(9)} ${i.session.origin.padEnd(10)} ${i.session.mode.padEnd(11)} ${i.taskCount} task(s)  ${i.session.title}${pending}`
+            `${colors.brand(i.session.id)}  ${i.session.status.padEnd(9)} ${i.session.origin.padEnd(10)} ${i.session.mode.padEnd(11)} ${i.taskCount} task(s)  ${i.session.title}${pending}`
           );
         }
       } catch (error) {
@@ -71,14 +69,14 @@ function inspectSession(): Command {
         );
         for (const t of d.tasks) {
           console.log(
-            `\n  ${colors.brand(shortId(t.task.id))} ${t.task.phase ? `[${t.task.phase}] ` : ''}${t.task.status} — ${t.task.goal}`
+            `\n  ${colors.brand(t.task.id)} ${t.task.phase ? `[${t.task.phase}] ` : ''}${t.task.status} — ${t.task.goal}`
           );
           console.log(colors.muted(`    ${renderUsage(t.usage)}`));
           for (const p of t.plans) {
             const tag = p.shadow ? ' shadow' : p.degraded ? ' degraded' : '';
             console.log(
               colors.muted(
-                `    turn ${p.turn}: ${formatTokens(p.estimatedTokens)}/${formatTokens(p.tokenBudget)} tokens, ${p.candidateCount} candidates (plan ${shortId(p.id)})${tag}`
+                `    turn ${p.turn}: ${formatTokens(p.estimatedTokens)}/${formatTokens(p.tokenBudget)} tokens, ${p.candidateCount} candidates (plan ${p.id})${tag}`
               )
             );
           }

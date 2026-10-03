@@ -217,7 +217,7 @@ describe('shep harness', () => {
     });
   });
 
-  it('ls prints one line per session with pending approvals', async () => {
+  it('ls prints one line per session with pending approvals and the full id other commands take', async () => {
     mockResolve.mockImplementation((cls: { name: string }) => {
       impls[cls.name] ??= {
         execute: vi.fn().mockResolvedValue([{ session, taskCount: 2, pendingPermissions: 1 }]),
@@ -225,7 +225,7 @@ describe('shep harness', () => {
       return impls[cls.name];
     });
     const out = await run('ls');
-    expect(out).toContain('sess-123');
+    expect(out).toContain('sess-1234-5678');
     expect(out).toContain('1 awaiting approval');
   });
 
