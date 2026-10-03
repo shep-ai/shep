@@ -1,0 +1,60 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: HarnessSession.yaml
+type: object
+properties:
+  status:
+    $ref: HarnessSessionStatus.yaml
+    description: Lifecycle status of the session
+  origin:
+    $ref: HarnessSessionOrigin.yaml
+    description: Where the session came from
+  mode:
+    $ref: HarnessMode.yaml
+    description: Context-assembly mode used by the session
+  repoRoot:
+    type: string
+    description: Repository root (or worktree) the session operates in
+  title:
+    type: string
+    description: Human-readable goal of the session
+  agentRunId:
+    type: string
+    description: Agent run this session belongs to (feature sessions)
+  featureId:
+    type: string
+    description: Feature this session belongs to (feature sessions)
+  sourceRepoPath:
+    type: string
+    description: Original repository path when the session runs in a dedicated worktree
+  worktreePath:
+    type: string
+    description: Dedicated worktree path of a standalone session
+  worktreeBranch:
+    type: string
+    description: Branch of the dedicated worktree of a standalone session
+  rootTaskId:
+    type: string
+    description: Root task of the session
+  modelId:
+    type: string
+    description: Model id used by the session
+  shadowContext:
+    type: boolean
+    description: Whether shadow context planning is on for this session
+  baseCommit:
+    type: string
+    description: Commit a standalone session's worktree started from (the base of its patch)
+  stopRequestedAt:
+    type: string
+    format: date-time
+    description: When a person asked to stop the session; the running task stops before its next turn
+required:
+  - status
+  - origin
+  - mode
+  - repoRoot
+  - title
+  - shadowContext
+allOf:
+  - $ref: BaseEntity.yaml
+description: A logical harness work session (a feature run, a standalone task, or an eval case)

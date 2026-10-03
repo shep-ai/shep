@@ -1,0 +1,96 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: ContextPlan.yaml
+type: object
+properties:
+  taskId:
+    type: string
+    description: Task the plan belongs to
+  turn:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Turn number (1-based) the plan was built for
+  query:
+    type: string
+    description: Query the plan was built for
+  queryFingerprint:
+    type: string
+    description: Fingerprint over query, goal, snapshot, renderer versions and instruction set
+  stateVersion:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Task state version the plan was built from
+  repoSnapshotId:
+    type: string
+    description: Repository snapshot the plan was built against
+  chunks:
+    type: array
+    items:
+      $ref: PlannedChunk.yaml
+    description: Every candidate with its outcome
+  instructionIds:
+    type: array
+    items:
+      type: string
+    description: Active instruction ids
+  capabilityIds:
+    type: array
+    items:
+      type: string
+    description: Capability ids whose Tier-1 snippet was included
+  loadedSchemaIds:
+    type: array
+    items:
+      type: string
+    description: Implementation ids whose Tier-2 schema was loaded
+  estimatedTokens:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Estimated tokens of the materialized input
+  tokenBudget:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Token budget available for context
+  candidateCount:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Number of candidates considered
+  cacheStrategy:
+    $ref: CacheStrategy.yaml
+    description: Cache strategy
+  degraded:
+    type: boolean
+    description: Decision provider failed and conservative fallback was used
+  shadow:
+    type: boolean
+    description: Computed but not enforced (shadow mode)
+  overBudget:
+    type: boolean
+    description: Over budget even after downgrading everything that may be downgraded
+  decidedBy:
+    type: string
+    description: Provider id that scored the candidates
+required:
+  - taskId
+  - turn
+  - query
+  - queryFingerprint
+  - stateVersion
+  - chunks
+  - instructionIds
+  - capabilityIds
+  - loadedSchemaIds
+  - estimatedTokens
+  - tokenBudget
+  - candidateCount
+  - cacheStrategy
+  - degraded
+  - shadow
+  - overBudget
+allOf:
+  - $ref: BaseEntity.yaml
+description: The persisted, query-specific projection of state used for one model call

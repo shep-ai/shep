@@ -1,0 +1,28 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: DecisionProviderConfig.yaml
+type: object
+properties:
+  id:
+    type: string
+    description: Unique id referenced by routes
+  kind:
+    $ref: DecisionProviderKind.yaml
+    description: Implementation family
+  endpoint:
+    type: string
+    description: HTTP endpoint (openai_compatible, reranker, jev)
+  model:
+    type: string
+    description: Model name the endpoint should use
+  apiKeyEnv:
+    type: string
+    description: Name of the environment variable holding an API key (never the key itself)
+  timeoutMs:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Per-call timeout in milliseconds
+required:
+  - id
+  - kind
+description: One configured decision provider instance

@@ -1,0 +1,21 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: HarnessShadowConfig.yaml
+type: object
+properties:
+  contextRouter:
+    type: boolean
+    default: false
+    description: Run baseline but record query-aware plans
+  permissions:
+    type: boolean
+    default: false
+    description: Record AI permission-risk judgments without enforcing them
+  toolRouter:
+    type: boolean
+    default: false
+    description: Record capability-router picks while the model's choice runs
+required:
+  - contextRouter
+  - permissions
+  - toolRouter
+description: Shadow (record-only) switches

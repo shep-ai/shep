@@ -1,0 +1,363 @@
+name: "query-aware-agent-harness"
+number: 119
+branch: "claude/sweet-heisenberg-2at9ie"
+oneLiner: |-
+  A shep-owned agent runtime in which canonical state is explicit and every model call gets a
+  recorded, query-specific context plan, with tiered tool disclosure, deterministic permissions and
+  a permanent baseline to measure it against
+summary: |-
+  Adapts the "Query-Aware Agent Harness" specification package (Jev engineering note + V0-V3 design)
+  to shep's Clean Architecture. Shep today delegates every agent turn to an external CLI (Claude
+  Code, Codex, Cursor, …) that owns its own loop, transcript, tool catalog and permission model;
+  shep only controls the first prompt and a handful of flags. This feature adds a native,
+  flag-gated agent type, `shep-harness`, whose loop shep owns: state lives in SQLite plus a
+  content-addressed blob store, each model call is built from a persisted ContextPlan
+  (hidden | short | long | full per chunk), tools are routed intent -> capability -> implementation
+  with only the selected schema loaded, every write/side effect carries a persisted permission
+  decision, and a transcript-first baseline mode runs on the same model and tools so the thesis is
+  measured rather than asserted. It plugs into the existing SDLC graph through
+  IAgentExecutorProvider (so every feature node can run on it), and adds `shep harness …` CLI
+  commands, a /harness web section, a feature-drawer Context tab, effect-oriented permission
+  prompts, decision explanations and a paired eval runner. V0 is specified task-by-task; V1-V3
+  (conditional instructions/skills/MCP, context middleware for CLI agents, read-only subagents,
+  routing and parallel writes) are staged as follow-up specs.
+phase: "Requirements"
+sizeEstimate: "XL"
+relatedFeatures:
+  - "102-shep-brain"
+  - "109-llmproxy-support"
+  - "110-adaptive-model-selection"
+  - "116-agent-harness-reliability"
+  - "118-opus-5-5-default-and-effort"
+  - "093-agent-collaboration-supervision"
+technologies:
+  - "TypeScript"
+  - "TypeSpec"
+  - "SQLite (better-sqlite3, umzug migrations)"
+  - "Vercel AI SDK v6 (generateText with tools, single-step)"
+  - "ajv (JSON Schema validation of tool arguments)"
+  - "js-yaml + minimatch (policy and instruction files)"
+  - "LangGraph (feature-agent graph, unchanged topology)"
+  - "Commander + @inquirer/prompts"
+  - "Next.js App Router, shadcn/ui, recharts, SSE"
+  - "Vitest, Playwright, Storybook"
+relatedLinks:
+  - title: "Clean Architecture"
+    url: "./docs/architecture/clean-architecture.md"
+  - title: "Agent system"
+    url: "./docs/architecture/agent-system.md"
+  - title: "Adding an agent type"
+    url: "./docs/development/adding-agent-types.md"
+openQuestions: []
+content: |
+  ## Problem Statement
+
+  Shep's leverage is in what it puts in front of a model each turn, but today it controls almost
+  none of it:
+
+  - **The transcript is the state.** Every feature node calls an external CLI agent with one big
+    prompt string. Prompt builders inline whole `spec.yaml` / `research.yaml` / `plan.yaml` /
+    `tasks.yaml` files (`nodes/prompts/*.prompt.ts`, `implement.node.ts`); inside the CLI the
+    conversation grows append-only and is compacted generically. Nothing records *which* state a
+    call saw, so context choices cannot be inspected, replayed or evaluated.
+  - **Permissions are all-or-nothing.** Every CLI executor runs fully auto-approved
+    (`--dangerously-skip-permissions`, `--yolo`, `-y`, `--allow-all`, `danger-full-access`). The
+    only gate is `security-pre-check.ts`, keyed on the node name. `securityConstraints` has no
+    producer. There is no per-action, effect-aware policy and no permission record.
+  - **Observability stops at the phase.** `PhaseTiming` records tokens and cost per node call, but
+    shep can see nothing per turn or per tool call: no visible-vs-raw tool output, no repeated
+    reads, and no explanation of why something was or wasn't in context.
+  - **No way to measure improvements.** There is no eval harness. Claims like "smaller context,
+    same quality" (brain memory selection, adaptive models) are not checked against a baseline.
+
+  The harness specification's thesis is: *canonical state is explicit, typed, persistent and
+  addressable; a prompt is a temporary, query-specific projection of that state.* Testing it
+  requires a loop shep owns. The AI-SDK executors already call models directly, but they pass no
+  tools, so they cannot edit code.
+
+  ## Product Shape
+
+  **Shep Harness** is a new, experimental agent type (`AgentType.ShepHarness`, catalog
+  `kind: 'sdk'`), flag-gated by `featureFlags.queryAwareHarness`. It runs on a configurable
+  AI-SDK backend: OpenRouter, LLMProxy, Ollama or Together, with credentials reused from those
+  agents' settings.
+
+  It works in three places:
+
+  1. **As the agent for a feature.** It can be selected per feature (create drawer, `feat new
+     --agent`) or globally. Every SDLC node call goes through it unchanged: analyze, requirements,
+     research, plan, implement, merge.
+  2. **Standalone.** `shep harness run "<task>"` or `/harness → New task` runs one coding task
+     against a repository without the SDLC pipeline. This powers quick tasks and the eval runner.
+  3. **As a measurement instrument.** Paired baseline-vs-query-aware eval runs (and shadow mode)
+     answer: *does query-aware projection keep quality while cutting replay, retrieval or cost?*
+
+  ## Concept Mapping (harness spec -> shep)
+
+  | Harness spec | Shep | Note |
+  | --- | --- | --- |
+  | Session | `HarnessSession` | optional link to `AgentRun` / `Feature`; "Session" already means provider CLI sessions |
+  | Task | `HarnessTask` | `Task` exists (SDLC plan task); one HarnessTask per executor call (node/phase) |
+  | Chunk / ChunkView | `ContextChunk` / `ChunkView` | raw content in the blob store, views are derived |
+  | ContextPlan | `ContextPlan` (+ `PlannedChunk`) | persisted before every model call |
+  | Decision | `HarnessDecision` | distinct from `SupervisorDecision` |
+  | ModelCall | `ModelCall` | finer-grained than `PhaseTiming`; sums roll up into it |
+  | Capability / ToolImplementation | `Capability` / `ToolImplementation` | `Tool` exists (installable CLIs), so no reuse |
+  | ToolCall | `HarnessToolCall` | |
+  | PermissionDecision / TemporaryGrant | `PermissionDecision` / `PermissionGrant` | ask flow uses a pending decision row |
+  | RepoSnapshot | `RepoSnapshot` | |
+  | Instruction | `Instruction` | CLAUDE.md, AGENTS.md, `.claude/rules/*`, `.shep/harness/instructions/*` |
+  | TaskResult | `HarnessTaskResult` (value object) | |
+  | EventEnvelope | `HarnessEvent` | append-only, monotonic sequence per session |
+  | `.harness/` project dir | `<repo>/.shep/harness/` | config, policies, instructions (versioned with code) |
+  | `harness <cmd>` | `shep harness <cmd>` | `shep run`/`doctor`/`session` already exist |
+  | Jev | `IDecisionProvider` plugin | Jev is one interchangeable provider; open-source providers (OpenAI-compatible local LLM, reranker) ship in V0 and can replace it per decision kind |
+
+  ## User Flows (V0)
+
+  **F1: Enable.** Settings → Feature Flags → "Query-aware harness (experimental)". A new
+  **Agent Harness** settings section then appears, with:
+  - backend provider and model;
+  - mode (query-aware / baseline);
+  - context budget and thresholds;
+  - decision provider;
+  - shadow toggles;
+  - the unknown-permission default.
+
+  "Shep Harness" becomes selectable wherever an agent is chosen. `shep doctor` / the web doctor
+  gain harness checks: backend credentials, storage writable, decision provider or fallback,
+  policies and instructions parse, ripgrep/git available. Each check is a warning or a blocker.
+
+  **F2: Set up a repository.** Repository drawer → "Set up harness" (≡ `shep harness init`).
+  Shep detects:
+  - instruction files;
+  - package manifests and test/lint commands;
+  - sensitive paths (`.env*`, keys, `~/.ssh`).
+
+  It previews `.shep/harness/config.yaml`, `policies/default.yaml` and `instructions/` and writes
+  them only on confirm. Source files are never modified.
+
+  **F3: Run a feature on the harness.** Create feature → Agent: Shep Harness (marked
+  experimental) → normal SDLC flow and approval gates. The feature drawer gains a **Context** tab.
+  A phase selector (analyze … merge) heads a per-phase summary (turns, tokens, cost) and a live
+  turn list. Selecting a turn shows "what the model saw" on that turn:
+  - context-plan tokens vs budget;
+  - a visibility histogram;
+  - the chosen capability → implementation;
+  - the permission result;
+  - raw vs visible tool-output tokens.
+
+  **F4: Standalone task.** `shep harness run "Fix refresh token expiry" [--repo] [--mode]
+  [--shadow-context-router]`, or /harness → New task (repo picker, task text, mode). It is for
+  quick, low-ceremony changes and for evals.
+  - It **always runs in its own worktree** (reusing the worktree service), never in the user's
+    checkout.
+  - Live turns stream in the CLI (spinner + per-turn line) and on the web session page.
+  - The run ends with a structured result: summary, evidence refs, patch, tests.
+  - The user then chooses an outcome:
+    - **Apply** the patch to a branch (`shep harness apply <id> --branch`);
+    - **Promote** it to a feature, carrying the goal, patch and evidence into the normal spec →
+      review → PR flow (`shep harness promote <id>`);
+    - **Discard** it (the worktree is removed; state and evidence are kept).
+  - Standalone runs never push or open PRs. That stays the feature merge step's job, so the two
+    entry points don't compete.
+
+  **F5: Permission ask.** During implement, the agent intends `pnpm add jsonwebtoken@9`. Shep
+  parses the command, predicts its effects, and runs deterministic policy, which returns `ask`
+  (`ask-network-egress`, `ask-dependency-change`). The harness task goes `blocked`, and a pending
+  PermissionDecision is persisted. The user sees the agent's stated reason (the `intent` from
+  `use_capability`) and an **effect-oriented** prompt, not "allow pnpm?":
+
+  ```text
+  Agent's reason: verify the refresh token's exp claim with jsonwebtoken
+  This action will:
+    • download packages from registry.npmjs.org
+    • change package.json and pnpm-lock.yaml in this feature's worktree
+    • may run package install scripts
+  [Allow once] [Allow for this phase] [Allow for this feature] [Deny]
+  Note to the agent (optional): "We already use jose; use jose.jwtVerify instead"
+  ```
+
+  - **Scopes use the user's vocabulary.** For feature runs they are once / this phase /
+    this feature; for standalone runs, once / this session. Internally they map to
+    once / task / session grants.
+  - **The note is returned to the agent with the decision.** A deny can say what to do
+    instead, so the agent doesn't retry the same action.
+  - **Default policy knows shep's SDLC.** `git push`, `gh pr create` and remote-branch
+    deletion are **denied** in harness runs with the reason "Shep pushes in the merge step".
+    The merge node's own push is unaffected.
+  - **Every phase keeps a permission log.** The feature drawer shows allows and denies with
+    the rule that decided each one.
+
+  The prompt appears in several places:
+  - a toast/notification;
+  - a banner pinned above **every** feature-drawer tab (not just Context), with "Review";
+  - a pending badge on the canvas node;
+  - the /harness Approvals inbox;
+  - inline in `shep harness run`, or via `shep harness permissions allow <id> --scope task`.
+
+  A hard deny is never shown as approvable. On timeout the request resolves `deny`
+  (`approval_timeout`).
+
+  **F6: Inspect and explain.** Context tab → a turn → the plan table. Each row shows chunk, kind,
+  visibility pill, tokens, relevance, reason code and source (deterministic / AI / policy /
+  degraded). From there:
+  - "View" renders the chunk at short / long / full (escalation from stored raw; the tool is never
+    re-run);
+  - "Why?" opens a decision drawer (≡ `shep harness explain <decision-id>`). It shows:
+    - the result;
+    - the relevance score on the visibility bands (hidden < 0.10 ≤ short < 0.45 ≤ long < 0.80 ≤
+      full);
+    - class probabilities only when the provider really returns them (LLM logprobs), never
+      invented for a reranker or a heuristic;
+    - policy filters, provider/latency/cost, source IDs and the shadow flag.
+  - The drawer has two actions that close the feedback loop:
+    - **Include from next turn**: a task-scoped user override, persisted as a HarnessDecision with
+      source `user`, which the context engine honours like a pin;
+    - **Save as context eval case**: the query, candidates and the user's "this was needed" label
+      go into a context-eval suite.
+
+  **F7: Resume.** If the worker dies mid-node, the existing `feat resume` path re-enters the node.
+  The harness then restores the HarnessTask from the store:
+  - it detects repo drift against the last RepoSnapshot;
+  - it restores pending approvals;
+  - it never blindly replays a side effect with unknown status (`unknown` → ask);
+  - it builds a fresh ContextPlan without concatenating any transcript.
+
+  Standalone sessions resume with `shep harness resume <id>` or the "Resume" button.
+
+  **F8: Shadow mode.** Toggle "Shadow context router" (or `--shadow-context-router`). Execution
+  uses baseline behaviour, while query-aware plans are computed and persisted with `shadow=true`.
+  The Context tab shows "would have used N tokens (−x%)".
+
+  **F9: Evaluate.** /harness → Evals → choose a suite, variants (baseline, query-aware) and
+  repeats → Run (≡ `shep harness eval run <suite>`). The comparison report shows:
+  - success/quality;
+  - input tokens, cost and wall time;
+  - turns;
+  - repeated reads/searches;
+  - tool-output visible/raw ratio;
+  - context required-evidence recall.
+
+  A quality regression is flagged red; the report never claims an efficiency win while hiding a
+  quality drop.
+
+  Suites are not limited to seed fixtures. **Add case from a session** turns any completed
+  session into a case: the task wording, its RepoSnapshot, and a success check the user confirms
+  (default: the repo's test command). This way teams measure the harness on their own repository.
+  Eval sessions are hidden from the Sessions list by default.
+
+  ## UI Surfaces
+
+  - **Sidebar → Harness** (`/harness`, flag-gated, with a badge for pending approvals). Tabs:
+    - Sessions (list + New task);
+    - Approvals;
+    - Evals;
+    - Capabilities (catalog with Tier-1/2/3 sizes and sources);
+    - Policies & Instructions (parsed rules, recent permission decisions, instruction list and
+      activation).
+  - **`/harness/sessions/[id]`**: session detail. A task tree with turns shows ModelCall → ContextPlan →
+    ToolCalls, a result panel, and a Resume/Stop action bar.
+  - **Feature drawer → Context tab** (only when a run used `shep-harness`). This is the same turn
+    timeline, embedded.
+  - **Activity tab**: the existing per-phase rows gain context tokens, visible/raw ratio and
+    repeated-read counts.
+  - **Canvas feature node**: a "permission needed" badge (same pattern as agent questions).
+  - **Settings → Agent Harness** section, plus a flag row under Feature Flags.
+  - **Repository drawer**: a "Set up harness" CTA with a preview dialog. There is no CLI-only
+    flow: every CLI verb has a web equivalent.
+
+  ## Success Criteria
+
+  - [ ] **Architecture:** `domain/` and `application/` harness code imports no AI SDK, provider,
+        MCP, SQLite or process module; an architecture test enforces it. The harness runs with
+        the Jev adapter disabled.
+  - [ ] **Replaceable decision layer:** Jev can be swapped for an open-source provider purely by
+        configuration, either globally or per decision kind (chunk_visibility,
+        capability_choice, …). V0 ships two open-source adapters:
+        - `openai-compatible`: any local/self-hosted LLM server (Ollama, vLLM, llama.cpp
+          server, LM Studio, SGLang) with JSON-schema output, using logprobs for probabilities
+          when the server returns them;
+        - `reranker`: a cross-encoder rerank endpoint such as Hugging Face
+          text-embeddings-inference with a BGE reranker.
+        Every provider passes one shared conformance suite, and providers can be compared
+        head-to-head in shadow mode and in the component evals.
+  - [ ] **Executor integration:** With `shep-harness` selected, every feature-agent node completes
+        through `IAgentExecutorProvider` without graph changes. Usage returned by the executor
+        rolls up into `PhaseTiming` and `shep usage`.
+  - [ ] **State and restart:** Sessions, tasks, chunks, plans, decisions, model calls, tool calls
+        and events survive a process kill after any persisted event. Resume rebuilds context from
+        the store (asserted: no model message older than the current turn is replayed). Drift is
+        detected and dependent views are invalidated. A side effect with unknown status is not
+        re-executed.
+  - [ ] **Context plan per call:** Every query-aware model call references a persisted ContextPlan.
+        The same chunk can be `hidden` for one query and `full` for another without mutation.
+        Pinned instructions survive budget fitting. Escalation short → long → full never re-runs
+        the tool. A decision-provider outage yields degraded mode (`uncertain → long`,
+        `degraded=true`).
+  - [ ] **Tiered tools:** Registering 1,000 synthetic capabilities adds only Tier-1 snippets
+        (bounded by candidate retrieval) to prompts. Only the selected implementation's schema is
+        sent. Invalid arguments fail validation before execution. Raw output is persisted before
+        rendering.
+  - [ ] **Permissions:** Every write or side-effect tool call has a persisted PermissionDecision.
+        AI judgment and user grants cannot override a hard deny. The prompt lists predicted
+        effects. The V0 default for unknown actions is `ask`, and non-interactive runs resolve
+        `ask` to `deny`.
+  - [ ] **Observability:** `shep harness explain <decision-id>` and the web "Why?" drawer return
+        the result, alternatives, filters and source IDs. Task, plan, model-call, tool-call and
+        decision IDs correlate in events. Shadow decisions are `shadow=true` and never enforced.
+  - [ ] **Evaluation:** `shep harness eval run <suite>` runs baseline and query-aware on the same
+        model, tools, snapshot and wording. The report shows quality, tokens, cost, turns and
+        repeated retrieval. Component evals for permission, capability routing and context recall
+        run in CI with the deterministic decision provider (no network).
+  - [ ] **Parity:** Every V0 CLI verb (init, run, resume, ls, inspect, explain, permissions, eval,
+        capabilities) has a reachable web surface. The flag gates the sidebar, routes, settings
+        and agent pickers.
+
+  ## Affected Areas
+
+  | Area | Impact | Reasoning |
+  | --- | --- | --- |
+  | TypeSpec (`tsp/harness/`, `tsp/common/enums/`) | High | ~14 entities / value objects, ~16 enums, `AgentType.ShepHarness`, `HarnessConfig` on Settings, `FeatureFlags.queryAwareHarness` |
+  | Persistence (`sqlite/migrations/148+`, mappers, repositories) | High | ~13 new tables, settings columns, `FileSystemBlobStore` under `~/.shep/objects` |
+  | Application (`use-cases/harness/`, `ports/output/harness/`) | High | runtime loop, context engine, capability router, permission service, instruction resolver, eval runner, inspection use cases |
+  | Infrastructure (`services/harness/`, `agents/common/executors/`) | High | harness executor, AI-SDK model adapter (extracted factory shared with SDK executors), builtin tools, policy YAML backend, command inspector, repo snapshotter, decision providers |
+  | Feature agent (`nodes/prompts/*`, `node-helpers.ts`) | Medium | prompt builders emit `PromptSection[]`; `renderPrompt()` keeps CLI prompts byte-identical; `AgentExecutionOptions.promptSections` / `callContext` |
+  | CLI (`commands/harness/*`, `doctor`) | Medium | new `shep harness` group; harness diagnostics |
+  | Web (`app/harness/*`, drawer Context tab, settings, sidebar, SSE route) | High | new pages, ~20 components with stories, actions with Storybook mocks, `/api/harness-events` SSE |
+  | i18n (`translations/*/web.json`, 9 locales) | Medium | nav, settings, tab and dialog strings |
+  | Evals (`evals/harness/`) | Medium | seed suites, fixture repos, component-eval cases |
+  | Docs | Medium | `docs/architecture/agent-harness.md`, `docs/cli/commands.md`, `docs/guides/agent-harness.md`, AGENTS.md |
+
+  ## Out of Scope for V0 (staged, see plan.yaml "Roadmap")
+
+  - Conditional (path/intent) instruction activation.
+  - Structured skills and hooks.
+  - MCP/plugin tool sources.
+  - Tier-3 docs content (the model supports it).
+  - Structural retrieval (tree-sitter).
+  - AI permission judgment beyond shadow.
+  - Context middleware and policy hooks for CLI agents.
+  - Child tasks, subagents, dedupe and RetrievalSnapshot background jobs.
+  - Dynamic model routing (spec 110 stays as-is).
+  - Intra-feature parallel write worktrees and patch merge.
+  - Remote/distributed execution.
+
+  ## Dependencies
+
+  - An AI-SDK backend with API credentials (OpenRouter, LLMProxy, Ollama or Together). The
+    project owner has an API key, so real-model evals are unblocked. Subscription-only Claude Code
+    users still need one; doctor and settings say so.
+  - Optional open-source decision backends: any OpenAI-compatible server and any rerank endpoint.
+    None is required, because the deterministic provider is the default.
+  - `ripgrep` is optional (search falls back to `git ls-files` + a JS scan). `git` is required
+    for snapshots.
+  - Spec 116 outcome rules (terminal-event and finish-reason checks) apply to the harness
+    executor.
+
+  ## Size Estimate
+
+  **XL**: V0 alone is ~34 tasks across 12 phases, spanning every layer. It ships as **one pull
+  request** from this branch, behind `featureFlags.queryAwareHarness`. It is built as ordered,
+  individually-green commit groups (see plan.yaml "Delivery: Single Pull Request") so the PR can be
+  reviewed milestone by milestone.

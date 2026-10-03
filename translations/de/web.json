@@ -22,7 +22,8 @@
       "integrations": "Integrationen",
       "security": "Security",
       "messaging": "Messaging",
-      "mcp": "MCP"
+      "mcp": "MCP",
+      "harness": "Agent-Harness"
     },
     "language": {
       "title": "Sprache",
@@ -262,7 +263,9 @@
       "whatsappDispatchDescription": "Starte und steuere shep-Agenten über WhatsApp – erstelle Features, erhalte Agent-Updates und genehmige Gates per Antwort im Chat.",
       "clusters": "Cluster",
       "clustersDescription": "Cluster-Navigation und Kubernetes-Cluster-Verwaltung in der Web-Oberfläche aktivieren",
-      "hint": "Experimentelle Features, die noch in Entwicklung sind. Aktivierung auf eigene Gefahr — sie können sich in zukünftigen Versionen ändern oder entfernt werden. Der Debug-Modus fügt ausführliche Protokollierung hinzu, die bei der Fehlerbehebung nützlich ist."
+      "hint": "Experimentelle Features, die noch in Entwicklung sind. Aktivierung auf eigene Gefahr — sie können sich in zukünftigen Versionen ändern oder entfernt werden. Der Debug-Modus fügt ausführliche Protokollierung hinzu, die bei der Fehlerbehebung nützlich ist.",
+      "queryAwareHarness": "Abfragebewusstes Agent-Harness",
+      "queryAwareHarnessDescription": "Experimentell: der Shep Harness-Agent, /harness, der Kontext-Tab bei Features und Berechtigungsabfragen"
     },
     "interactiveAgent": {
       "title": "Interaktiver Agent",
@@ -373,6 +376,49 @@
         "connected": "Connected",
         "error": "Error"
       }
+    },
+    "harness": {
+      "title": "Agent-Harness",
+      "experimental": "Experimentell",
+      "description": "Wie das Shep Harness den Modellkontext aufbaut, auf welchem Modell es läuft und wie es vor Aktionen nachfragt",
+      "hint": "Das Harness läuft auf einem SDK-Backend (OpenRouter, Together AI, Ollama oder LLMProxy). Die Kontextrelevanz kann von einem lokalen Open-Source-Modell oder von Jev bewertet werden – oder deterministisch, ganz ohne Netzwerk.",
+      "mode": "Kontextmodus",
+      "modeDescription": "Abfragebewusst erstellt für jeden Modellaufruf einen neuen, abfragespezifischen Kontextplan; Baseline behält ein Transkript",
+      "backend": "Modell-Backend",
+      "backendDescription": "SDK-Agent, den das Harness aufruft; der Schlüssel stammt aus dem Agent-Token oder seiner Umgebungsvariable",
+      "model": "Backend-Modell",
+      "modelDescription": "Modell-ID im Backend; leer lassen für den Backend-Standard",
+      "modelPlaceholder": "Backend-Standard",
+      "budget": "Budgetmodus",
+      "budgetDescription": "Kosten gegen Qualität abwägen, wenn der Kontext an das Token-Budget angepasst wird",
+      "maxTurns": "Zuglimit",
+      "maxTurnsDescription": "Modellaufrufe pro Aufgabe, bevor sie stoppt",
+      "modelTimeout": "Zeitlimit pro Modellaufruf (Sekunden)",
+      "modelTimeoutDescription": "Wie lange ein Modellaufruf dauern darf; für langsame lokale Modelle erhöhen",
+      "decisionsTitle": "Anbieter für Kontextrelevanz",
+      "decisionsDescription": "Wer bewertet, wie relevant jeder Zustandsteil für die aktuelle Abfrage ist. Bei jedem Anbieterfehler wird auf deterministische Bewertung zurückgegriffen.",
+      "providerKind": "Anbieter",
+      "providerKindDescription": "Deterministisch (ohne Netzwerk), ein OpenAI-kompatibler Server, ein Reranker, das eigene Modell des Harness oder Jev",
+      "providerEndpoint": "Endpunkt",
+      "providerEndpointDescription": "Basis-URL des Anbieters",
+      "providerModel": "Modell",
+      "providerModelDescription": "Modell, das der Endpunkt verwenden soll (optional)",
+      "providerKeyEnv": "API-Schlüssel-Variable",
+      "providerKeyEnvDescription": "Name der Umgebungsvariable mit dem Schlüssel – niemals der Schlüssel selbst",
+      "shadowTitle": "Schattenmodi",
+      "shadow": {
+        "contextRouter": "Schatten-Kontextrouter",
+        "contextRouterDescription": "Als Baseline ausführen und die abfragebewussten Pläne aufzeichnen, die verwendet worden wären",
+        "permissions": "Schatten-Berechtigungsrisiko",
+        "permissionsDescription": "AI-Risikobewertungen für Berechtigungen aufzeichnen, ohne sie durchzusetzen",
+        "toolRouter": "Schatten-Toolrouter",
+        "toolRouterDescription": "Fähigkeits-Routing aufzeichnen, ohne es durchzusetzen"
+      },
+      "permissionsTitle": "Berechtigungen",
+      "unknownDefault": "Unbekannte Aktionen",
+      "unknownDefaultDescription": "Was passiert, wenn keine Regel auf eine Aktion zutrifft",
+      "approvalTimeout": "Genehmigungs-Timeout (Minuten)",
+      "approvalTimeoutDescription": "Eine unbeantwortete Anfrage wird nach dieser Zeit abgelehnt"
     }
   },
   "navigation": {
@@ -397,7 +443,8 @@
     "collaboration": "Collaboration",
     "clusters": "Cluster",
     "plugins": "Plugins",
-    "projectMemory": "Project Memory"
+    "projectMemory": "Project Memory",
+    "harness": "Harness"
   },
   "sidebar": {
     "features": "Features",
@@ -1044,5 +1091,204 @@
     "queuedWithPosition": "In Warteschlange · {{position}} davor",
     "queuedTooltip": "Wartet auf einen freien Platz ({{position}} in der Warteschlange)",
     "startAnyway": "Trotzdem starten"
+  },
+  "harness": {
+    "title": "Agent-Harness",
+    "subtitle": "Eigenständige Aufgaben, was das Modell in jedem Zug gesehen hat, und Aktionen, die auf Ihre Genehmigung warten",
+    "loading": "Wird geladen…",
+    "noTasks": "Noch keine Aufgaben.",
+    "taskN": "Aufgabe {{n}}",
+    "turn": "Zug {{n}}",
+    "tabs": {
+      "sessions": "Sitzungen",
+      "newTask": "Neue Aufgabe",
+      "approvals": "Genehmigungen",
+      "catalog": "Tools & Richtlinien",
+      "setup": "Repository einrichten",
+      "evals": "Evals"
+    },
+    "mode": {
+      "query_aware": "Abfragebewusst",
+      "baseline": "Baseline"
+    },
+    "budget": {
+      "economy": "Sparsam",
+      "balanced": "Ausgewogen",
+      "quality": "Qualität"
+    },
+    "effect": {
+      "allow": "Erlauben",
+      "ask": "Nachfragen",
+      "deny": "Ablehnen"
+    },
+    "origin": {
+      "feature": "Feature",
+      "standalone": "Eigenständig",
+      "eval": "Eval"
+    },
+    "sessionStatus": {
+      "active": "Läuft",
+      "idle": "Inaktiv",
+      "completed": "Abgeschlossen",
+      "failed": "Fehlgeschlagen",
+      "discarded": "Verworfen"
+    },
+    "visibility": {
+      "hidden": "Verborgen",
+      "short": "Kurz",
+      "long": "Lang",
+      "full": "Vollständig"
+    },
+    "source": {
+      "deterministic": "deterministisch",
+      "ai": "AI",
+      "policy": "Richtlinie",
+      "degraded": "eingeschränkt",
+      "escalation": "vom Agenten angefordert",
+      "user": "Sie",
+      "budget": "Budget"
+    },
+    "providerKind": {
+      "deterministic": "Deterministisch",
+      "openai_compatible": "OpenAI-kompatibler Server",
+      "reranker": "Reranker",
+      "structured_llm": "Harness-Modell",
+      "jev": "Jev"
+    },
+    "sessions": {
+      "empty": "Noch keine Harness-Sitzungen. Starten Sie eine unter Neue Aufgabe.",
+      "title": "Sitzung",
+      "origin": "Herkunft",
+      "mode": "Modus",
+      "status": "Status",
+      "tasks": "Aufgaben",
+      "pending": "{{count}} wartend"
+    },
+    "newTask": {
+      "repository": "Repository",
+      "task": "Aufgabe",
+      "taskPlaceholder": "Ablaufprüfung des Refresh-Tokens korrigieren",
+      "worktreeNote": "Läuft in einem eigenen Worktree – Ihr Checkout wird nie angetastet. Danach wenden Sie das Ergebnis auf einen Branch an, machen es zu einem Feature oder verwerfen es.",
+      "run": "Aufgabe ausführen"
+    },
+    "approvals": {
+      "empty": "Nichts wartet auf Genehmigung."
+    },
+    "permission": {
+      "reason": "Begründung des Agenten:",
+      "willDo": "Diese Aktion wird:",
+      "noEffects": "(keine vorhergesagten Auswirkungen)",
+      "rules": "Regeln:",
+      "notePlaceholder": "Hinweis an den Agenten (optional), z. B. verwende stattdessen jose",
+      "allowOnce": "Einmal erlauben",
+      "allowPhase": "Für diese Phase erlauben",
+      "allowFeature": "Für dieses Feature erlauben",
+      "allowSession": "Für diese Sitzung erlauben",
+      "deny": "Ablehnen",
+      "hardDeny": "Durch eine feste Regel abgelehnt; kann nicht genehmigt werden."
+    },
+    "banner": {
+      "waiting": "{{count}} Harness-Aktion(en) warten auf Ihre Genehmigung",
+      "review": "Prüfen"
+    },
+    "context": {
+      "empty": "Dieses Feature lief noch nicht auf dem Shep Harness."
+    },
+    "usage": {
+      "turns": "Züge",
+      "input": "Eingabe-Tokens",
+      "output": "Ausgabe-Tokens",
+      "cost": "Kosten",
+      "toolOutputSeen": "Gesehene Tool-Ausgabe",
+      "denied": "Abgelehnte Aktionen"
+    },
+    "plan": {
+      "summary": "{{tokens}} von {{budget}} Tokens · {{count}} Kandidaten",
+      "shadow": "Schatten",
+      "degraded": "eingeschränkt",
+      "overBudget": "über Budget",
+      "none": "Wählen Sie einen Zug, um zu sehen, was das Modell gesehen hat.",
+      "chunk": "Abschnitt",
+      "visibility": "Sichtbarkeit",
+      "tokens": "Tokens angezeigt/roh",
+      "relevance": "Relevanz",
+      "reason": "Grund",
+      "view": "Ansicht",
+      "why": "Warum?"
+    },
+    "chunk": {
+      "redacted": "Dieser Abschnitt ist als geheim markiert und wird nie angezeigt.",
+      "truncated": "gekürzt",
+      "storedNote": "aus gespeicherter Ausgabe dargestellt; nichts wurde erneut ausgeführt"
+    },
+    "why": {
+      "title": "Warum diese Sichtbarkeit?",
+      "tokens": "{{visible}} von {{raw}} Tokens angezeigt",
+      "relevance": "Relevanz {{score}}",
+      "bands": "verborgen < {{hide}} ≤ kurz < {{long}} ≤ lang < {{full}} ≤ vollständig",
+      "noProbabilities": "Keine Klassenwahrscheinlichkeiten: Dieser Anbieter liefert sie nicht.",
+      "provider": "Entschieden von {{provider}} in {{latency}} ms · {{cost}}",
+      "shadow": "Schatten",
+      "degraded": "eingeschränkt",
+      "include": "Ab nächstem Zug einbeziehen",
+      "included": "Ab dem nächsten Zug einbezogen"
+    },
+    "actions": {
+      "stop": "Stoppen",
+      "stopRequested": "Stopp angefordert; die Aufgabe stoppt vor ihrem nächsten Zug",
+      "stoppedOrphan": "Gestoppt: Der Prozess der Aufgabe war beendet, daher wurde sie abgebrochen",
+      "branchPlaceholder": "Branch (optional)",
+      "apply": "Auf Branch anwenden",
+      "applied": "{{count}} Datei(en) in {{branch}} committet",
+      "promote": "Zu Feature machen",
+      "discard": "Verwerfen",
+      "discarded": "Worktree entfernt; die Sitzung bleibt erhalten"
+    },
+    "capabilities": {
+      "title": "Tools, die der Agent laden kann",
+      "description": "Tier-1-Snippets werden immer angezeigt; Tier-2-Schemas werden nur geladen, wenn der Agent eine Fähigkeit anfordert.",
+      "cost": "{{snippet}} / {{schema}} Tokens"
+    },
+    "policies": {
+      "title": "Berechtigungsregeln",
+      "description": "Shep-Standards plus .shep/harness/policies/*.yaml. Rangfolge: deny > ask > allow.",
+      "hard": "fest"
+    },
+    "setup": {
+      "description": "Erkennt Anweisungsdateien, Test- und Lint-Befehle sowie sensible Dateien, zeigt eine Vorschau von .shep/harness/ und schreibt erst nach Ihrer Bestätigung. Quelldateien werden nie verändert.",
+      "preview": "Vorschau",
+      "instructions": "Anweisungen",
+      "manifests": "Manifeste",
+      "commands": "Test / Lint",
+      "sensitive": "Sensible Dateien",
+      "exists": "vorhanden, beibehalten",
+      "confirm": "Dateien schreiben",
+      "written": "{{count}} Datei(en) geschrieben"
+    },
+    "evals": {
+      "description": "Dieselben Aufgaben mit Baseline und Query-aware ausführen, jeweils in einem Wegwerf-Repository, und Erfolg, Tokens, Kosten, Runden und Evidenz-Abdeckung vergleichen.",
+      "repeats": "Wiederholungen",
+      "run": "Eval starten",
+      "empty": "Noch keine Eval-Läufe.",
+      "score": "Kennzahl",
+      "change": "Änderung",
+      "status": {
+        "pending": "Ausstehend",
+        "running": "Läuft",
+        "completed": "Abgeschlossen",
+        "failed": "Fehlgeschlagen"
+      },
+      "scores": {
+        "success": "Erfolg",
+        "inputTokens": "Eingabe-Tokens",
+        "outputTokens": "Ausgabe-Tokens",
+        "costUsd": "Kosten",
+        "turns": "Runden",
+        "wallMs": "Laufzeit",
+        "repeatedReads": "Wiederholte Lesezugriffe",
+        "toolOutputRatio": "Gesehene Tool-Ausgabe",
+        "evidenceRecall": "Evidenz-Abdeckung"
+      }
+    }
   }
 }

@@ -1,0 +1,9 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: ToolSourceKind.yaml
+type: string
+enum:
+  - builtin
+  - mcp
+  - plugin
+  - custom
+description: Where a tool implementation comes from

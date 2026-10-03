@@ -1,0 +1,11 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: HarnessTaskStatus.yaml
+type: string
+enum:
+  - pending
+  - running
+  - blocked
+  - completed
+  - failed
+  - cancelled
+description: Lifecycle status of a harness task

@@ -2,7 +2,12 @@
 
 import { resolve } from '@/lib/server-container';
 import { getModelMeta } from '@/lib/model-metadata';
-import { listAgentDescriptors } from '@shepai/core/domain/shared/agent-catalog';
+import {
+  getAgentDescriptor,
+  isAgentOffered,
+  listAgentDescriptors,
+} from '@shepai/core/domain/shared/agent-catalog';
+import { getFeatureFlags } from '@/lib/feature-flags';
 import type {
   IAgentExecutorFactory,
   AgentModelListing,
@@ -73,7 +78,11 @@ export async function getAllAgentModels(): Promise<AgentModelGroup[]> {
       activeAgent = undefined;
     }
 
-    const agents = factory.getSupportedAgents();
+    const flags = getFeatureFlags();
+    const agents = factory.getSupportedAgents().filter((agentType) => {
+      const descriptor = getAgentDescriptor(agentType as string);
+      return !descriptor || isAgentOffered(descriptor, flags);
+    });
     const groups = await Promise.all(
       agents.map(async (agentType) => {
         const authConfig =

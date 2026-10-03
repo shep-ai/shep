@@ -75,6 +75,7 @@ import { createMcpCommand } from './commands/mcp.command.js';
 import { createFleetCommand } from './commands/fleet/index.js';
 import { createLogsCommand } from './commands/logs/index.js';
 import { createUsageCommand } from './commands/usage.command.js';
+import { createHarnessCommand } from './commands/harness/index.js';
 import { messages } from './ui/index.js';
 import { registerGlobalVerbosityOptions } from './global-options.js';
 
@@ -90,7 +91,7 @@ import { startDaemon } from './commands/daemon/start-daemon.js';
 import { initializeContainer, container } from '@/infrastructure/di/container.js';
 import { SqliteNativeBindingError } from '@/infrastructure/errors/sqlite-native-binding-error.js';
 import { InitializeSettingsUseCase } from '@/application/use-cases/settings/initialize-settings.use-case.js';
-import { initializeSettings } from '@/infrastructure/services/settings.service.js';
+import { getSettings, initializeSettings } from '@/infrastructure/services/settings.service.js';
 import { initI18n as initCliI18n } from './i18n.js';
 import { initI18n as initTuiI18n } from '../tui/i18n.js';
 
@@ -201,6 +202,10 @@ async function bootstrap() {
     program.addCommand(createFleetCommand());
     program.addCommand(createLogsCommand());
     program.addCommand(createUsageCommand());
+    // Experimental (spec 119): hidden from --help until the flag is on.
+    program.addCommand(createHarnessCommand(), {
+      hidden: !(getSettings().featureFlags?.queryAwareHarness ?? false),
+    });
 
     // Daemon lifecycle commands (task-9)
     program.addCommand(createStartCommand());

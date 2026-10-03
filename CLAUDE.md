@@ -162,6 +162,7 @@ config) and `<repo>/.shep/ownership.yaml` (ASPM ownership import). There is no
 | CI/CD + Docker                 | [docs/development/cicd.md](./docs/development/cicd.md)                                 |
 | Adding an agent provider       | [docs/development/adding-agent-types.md](./docs/development/adding-agent-types.md)     |
 | Adding a LangGraph agent node  | [docs/development/adding-agent-nodes.md](./docs/development/adding-agent-nodes.md)     |
+| Query-aware agent harness      | [docs/architecture/query-aware-harness.md](./docs/architecture/query-aware-harness.md) |
 | Dev server run plans           | [docs/development/dev-server-run-plan.md](./docs/development/dev-server-run-plan.md)   |
 | CLI architecture               | [docs/cli/architecture.md](./docs/cli/architecture.md)                                 |
 | TUI architecture               | [docs/tui/architecture.md](./docs/tui/architecture.md)                                 |

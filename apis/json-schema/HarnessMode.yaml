@@ -1,0 +1,7 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: HarnessMode.yaml
+type: string
+enum:
+  - baseline
+  - query_aware
+description: How the harness assembles model context

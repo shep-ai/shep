@@ -1,0 +1,31 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: PermissionGrant.yaml
+type: object
+properties:
+  sessionId:
+    type: string
+    description: Session
+  taskId:
+    type: string
+    description: Task, for task-scoped grants
+  scope:
+    $ref: GrantScope.yaml
+    description: Scope
+  capabilityId:
+    type: string
+    description: Capability id the grant covers
+  actionPattern:
+    type: string
+    description: Normalized action summary the grant covers (e.g. the command)
+  consumed:
+    type: boolean
+    description: Whether the once-grant was consumed
+required:
+  - sessionId
+  - scope
+  - capabilityId
+  - actionPattern
+  - consumed
+allOf:
+  - $ref: BaseEntity.yaml
+description: A temporary user grant; hard policy still wins

@@ -245,6 +245,7 @@ export function createDefaultSettings(): Settings {
     supplyChainSecurity: true,
     scheduledWorkflows: false,
     githubImport: true,
+    queryAwareHarness: false,
   };
 
   const whatsapp: WhatsAppConfig = {

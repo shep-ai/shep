@@ -1,0 +1,8 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: CacheStrategyMode.yaml
+type: string
+enum:
+  - reuse
+  - rebuild
+  - stable_prefix
+description: How a context plan expects to use provider prompt caching

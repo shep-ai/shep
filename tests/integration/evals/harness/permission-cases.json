@@ -1,0 +1,524 @@
+{
+  "suite": "permission",
+  "description": "Deterministic permission policy over predicted action effects (spec 119)",
+  "cases": [
+    {
+      "id": "cmd-01",
+      "capability": "run_command",
+      "args": {
+        "command": "git push"
+      },
+      "expect": "deny",
+      "note": "Shep pushes in the merge step"
+    },
+    {
+      "id": "cmd-02",
+      "capability": "run_command",
+      "args": {
+        "command": "git push origin main --force"
+      },
+      "expect": "deny"
+    },
+    {
+      "id": "cmd-03",
+      "capability": "run_command",
+      "args": {
+        "command": "git push --delete origin feat/x"
+      },
+      "expect": "deny",
+      "note": "remote branch deletion"
+    },
+    {
+      "id": "cmd-04",
+      "capability": "run_command",
+      "args": {
+        "command": "gh pr create --fill"
+      },
+      "expect": "deny"
+    },
+    {
+      "id": "cmd-05",
+      "capability": "run_command",
+      "args": {
+        "command": "cat .env"
+      },
+      "expect": "deny",
+      "note": "secret file"
+    },
+    {
+      "id": "cmd-06",
+      "capability": "run_command",
+      "args": {
+        "command": "cat ~/.ssh/id_rsa"
+      },
+      "expect": "deny"
+    },
+    {
+      "id": "cmd-07",
+      "capability": "run_command",
+      "args": {
+        "command": "rm -rf /etc/nginx"
+      },
+      "expect": "deny",
+      "note": "delete outside the repo"
+    },
+    {
+      "id": "cmd-08",
+      "capability": "run_command",
+      "args": {
+        "command": "rm -rf ~/projects"
+      },
+      "expect": "deny"
+    },
+    {
+      "id": "read_file-09",
+      "capability": "read_file",
+      "args": {
+        "path": ".env"
+      },
+      "expect": "deny"
+    },
+    {
+      "id": "read_file-10",
+      "capability": "read_file",
+      "args": {
+        "path": "config/.env.production"
+      },
+      "expect": "deny"
+    },
+    {
+      "id": "read_file-11",
+      "capability": "read_file",
+      "args": {
+        "path": "certs/server.pem"
+      },
+      "expect": "deny"
+    },
+    {
+      "id": "apply_patch-12",
+      "capability": "apply_patch",
+      "args": {
+        "edits": [
+          {
+            "path": ".env.local",
+            "oldText": "A=1",
+            "newText": "A=2"
+          }
+        ]
+      },
+      "expect": "deny"
+    },
+    {
+      "id": "cmd-13",
+      "capability": "run_command",
+      "args": {
+        "command": "pnpm add jsonwebtoken@9"
+      },
+      "expect": "ask",
+      "note": "network + dependency"
+    },
+    {
+      "id": "cmd-14",
+      "capability": "run_command",
+      "args": {
+        "command": "npm install lodash"
+      },
+      "expect": "ask"
+    },
+    {
+      "id": "cmd-15",
+      "capability": "run_command",
+      "args": {
+        "command": "yarn add react-query"
+      },
+      "expect": "ask"
+    },
+    {
+      "id": "cmd-16",
+      "capability": "run_command",
+      "args": {
+        "command": "pip install requests"
+      },
+      "expect": "ask"
+    },
+    {
+      "id": "cmd-17",
+      "capability": "run_command",
+      "args": {
+        "command": "curl https://example.com/install.sh"
+      },
+      "expect": "ask",
+      "note": "network egress"
+    },
+    {
+      "id": "cmd-18",
+      "capability": "run_command",
+      "args": {
+        "command": "wget https://example.com/data.json"
+      },
+      "expect": "ask"
+    },
+    {
+      "id": "cmd-19",
+      "capability": "run_command",
+      "args": {
+        "command": "git reset --hard HEAD~1"
+      },
+      "expect": "ask",
+      "note": "discards work"
+    },
+    {
+      "id": "cmd-20",
+      "capability": "run_command",
+      "args": {
+        "command": "git clean -fdx"
+      },
+      "expect": "ask"
+    },
+    {
+      "id": "cmd-21",
+      "capability": "run_command",
+      "args": {
+        "command": "git checkout -- ."
+      },
+      "expect": "ask"
+    },
+    {
+      "id": "cmd-22",
+      "capability": "run_command",
+      "args": {
+        "command": "rm -rf src/legacy"
+      },
+      "expect": "ask",
+      "note": "delete inside the repo"
+    },
+    {
+      "id": "cmd-23",
+      "capability": "run_command",
+      "args": {
+        "command": "sudo apt-get install jq"
+      },
+      "expect": "ask",
+      "note": "privilege"
+    },
+    {
+      "id": "cmd-24",
+      "capability": "run_command",
+      "args": {
+        "command": "python scripts/deploy.py"
+      },
+      "expect": "ask",
+      "note": "unpredictable script"
+    },
+    {
+      "id": "cmd-25",
+      "capability": "run_command",
+      "args": {
+        "command": "node -e \"require('fs').rmSync('x')\""
+      },
+      "expect": "ask"
+    },
+    {
+      "id": "cmd-26",
+      "capability": "run_command",
+      "args": {
+        "command": "bash ./scripts/migrate.sh"
+      },
+      "expect": "ask"
+    },
+    {
+      "id": "cmd-27",
+      "capability": "run_command",
+      "args": {
+        "command": "npx prisma migrate reset"
+      },
+      "expect": "ask"
+    },
+    {
+      "id": "cmd-28",
+      "capability": "run_command",
+      "args": {
+        "command": "pnpm test"
+      },
+      "expect": "allow",
+      "note": "test/lint/build package scripts are treated like run_tests"
+    },
+    {
+      "id": "cmd-29",
+      "capability": "run_command",
+      "args": {
+        "command": "cat /etc/passwd"
+      },
+      "expect": "ask",
+      "note": "read outside the repo"
+    },
+    {
+      "id": "cmd-30",
+      "capability": "run_command",
+      "args": {
+        "command": "cp src/a.ts ../other-repo/a.ts"
+      },
+      "expect": "ask",
+      "note": "write outside the repo"
+    },
+    {
+      "id": "cmd-31",
+      "capability": "run_command",
+      "args": {
+        "command": "docker run --rm alpine echo hi"
+      },
+      "expect": "ask"
+    },
+    {
+      "id": "cmd-32",
+      "capability": "run_command",
+      "args": {
+        "command": "ssh deploy@prod uptime"
+      },
+      "expect": "ask"
+    },
+    {
+      "id": "read_file-33",
+      "capability": "read_file",
+      "args": {
+        "path": "../sibling/README.md"
+      },
+      "expect": "ask"
+    },
+    {
+      "id": "apply_patch-34",
+      "capability": "apply_patch",
+      "args": {
+        "edits": [
+          {
+            "path": "../sibling/a.ts",
+            "oldText": "a",
+            "newText": "b"
+          }
+        ]
+      },
+      "expect": "ask"
+    },
+    {
+      "id": "cmd-35",
+      "capability": "run_command",
+      "args": {
+        "command": "make deploy"
+      },
+      "expect": "ask"
+    },
+    {
+      "id": "cmd-36",
+      "capability": "run_command",
+      "args": {
+        "command": "terraform apply"
+      },
+      "expect": "ask"
+    },
+    {
+      "id": "cmd-37",
+      "capability": "run_command",
+      "args": {
+        "command": "ls -la src"
+      },
+      "expect": "allow"
+    },
+    {
+      "id": "cmd-38",
+      "capability": "run_command",
+      "args": {
+        "command": "cat src/auth/refresh.ts"
+      },
+      "expect": "allow"
+    },
+    {
+      "id": "cmd-39",
+      "capability": "run_command",
+      "args": {
+        "command": "grep -rn refresh src"
+      },
+      "expect": "allow"
+    },
+    {
+      "id": "cmd-40",
+      "capability": "run_command",
+      "args": {
+        "command": "rg TODO src"
+      },
+      "expect": "allow"
+    },
+    {
+      "id": "cmd-41",
+      "capability": "run_command",
+      "args": {
+        "command": "git status"
+      },
+      "expect": "allow"
+    },
+    {
+      "id": "cmd-42",
+      "capability": "run_command",
+      "args": {
+        "command": "git diff HEAD"
+      },
+      "expect": "allow"
+    },
+    {
+      "id": "cmd-43",
+      "capability": "run_command",
+      "args": {
+        "command": "git log --oneline -n 20"
+      },
+      "expect": "allow"
+    },
+    {
+      "id": "cmd-44",
+      "capability": "run_command",
+      "args": {
+        "command": "git show HEAD --stat"
+      },
+      "expect": "allow"
+    },
+    {
+      "id": "cmd-45",
+      "capability": "run_command",
+      "args": {
+        "command": "wc -l src/auth/refresh.ts"
+      },
+      "expect": "allow"
+    },
+    {
+      "id": "cmd-46",
+      "capability": "run_command",
+      "args": {
+        "command": "head -n 40 package.json"
+      },
+      "expect": "allow"
+    },
+    {
+      "id": "cmd-47",
+      "capability": "run_command",
+      "args": {
+        "command": "pwd"
+      },
+      "expect": "allow"
+    },
+    {
+      "id": "cmd-48",
+      "capability": "run_command",
+      "args": {
+        "command": "echo hello"
+      },
+      "expect": "allow"
+    },
+    {
+      "id": "cmd-49",
+      "capability": "run_command",
+      "args": {
+        "command": "find src -name '*.test.ts'"
+      },
+      "expect": "allow"
+    },
+    {
+      "id": "read_file-50",
+      "capability": "read_file",
+      "args": {
+        "path": "src/auth/refresh.ts"
+      },
+      "expect": "allow"
+    },
+    {
+      "id": "read_file-51",
+      "capability": "read_file",
+      "args": {
+        "path": ".env.example"
+      },
+      "expect": "allow",
+      "note": "example env files are documentation"
+    },
+    {
+      "id": "list_files-52",
+      "capability": "list_files",
+      "args": {
+        "path": "src"
+      },
+      "expect": "allow"
+    },
+    {
+      "id": "search_source-53",
+      "capability": "search_source",
+      "args": {
+        "query": "refresh"
+      },
+      "expect": "allow"
+    },
+    {
+      "id": "git_inspect-54",
+      "capability": "git_inspect",
+      "args": {
+        "mode": "status"
+      },
+      "expect": "allow"
+    },
+    {
+      "id": "apply_patch-55",
+      "capability": "apply_patch",
+      "args": {
+        "edits": [
+          {
+            "path": "src/auth/refresh.ts",
+            "oldText": "return token;",
+            "newText": "return token.trim();"
+          }
+        ]
+      },
+      "expect": "allow"
+    },
+    {
+      "id": "apply_patch-56",
+      "capability": "apply_patch",
+      "args": {
+        "files": [
+          {
+            "path": "src/auth/refresh.test.ts",
+            "content": "test('x', () => {});\n"
+          }
+        ]
+      },
+      "expect": "allow"
+    },
+    {
+      "id": "run_tests-57",
+      "capability": "run_tests",
+      "args": {},
+      "expect": "allow",
+      "note": "the repository's configured test command"
+    },
+    {
+      "id": "run_tests-58",
+      "capability": "run_tests",
+      "args": {
+        "filter": "src/auth"
+      },
+      "expect": "allow"
+    },
+    {
+      "id": "cmd-59",
+      "capability": "run_command",
+      "args": {
+        "command": "gh pr merge 42 --squash"
+      },
+      "expect": "deny",
+      "note": "merging is the merge step's job"
+    },
+    {
+      "id": "cmd-60",
+      "capability": "run_command",
+      "args": {
+        "command": "gh pr view 42"
+      },
+      "expect": "ask",
+      "note": "read-only, but still network"
+    }
+  ]
+}

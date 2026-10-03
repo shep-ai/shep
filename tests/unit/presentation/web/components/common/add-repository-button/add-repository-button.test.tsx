@@ -61,6 +61,7 @@ vi.mock('@/hooks/feature-flags-context', () => ({
     clusters: false,
     scheduledWorkflows: false,
     githubImport: true,
+    queryAwareHarness: false,
   })),
 }));
 
@@ -87,6 +88,7 @@ describe('AddRepositoryButton', () => {
       clusters: false,
       scheduledWorkflows: false,
       githubImport: true,
+      queryAwareHarness: false,
     });
   });
 
@@ -188,6 +190,7 @@ describe('AddRepositoryButton', () => {
         clusters: false,
         scheduledWorkflows: false,
         githubImport: true,
+        queryAwareHarness: false,
       });
     });
 
@@ -322,6 +325,7 @@ describe('AddRepositoryButton', () => {
         clusters: false,
         scheduledWorkflows: false,
         githubImport: true,
+        queryAwareHarness: false,
       });
     });
 
@@ -398,6 +402,7 @@ describe('AddRepositoryButton', () => {
         clusters: false,
         scheduledWorkflows: false,
         githubImport: true,
+        queryAwareHarness: false,
       });
       const user = userEvent.setup();
       render(<AddRepositoryButton />);

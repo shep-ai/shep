@@ -1,0 +1,27 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: HarnessDecisionsConfig.yaml
+type: object
+properties:
+  providers:
+    type: array
+    items:
+      $ref: DecisionProviderConfig.yaml
+    description: Configured providers; 'deterministic' always exists implicitly
+  routes:
+    $ref: DecisionRoutes.yaml
+    description: Per-kind routes
+  defaultProviderId:
+    type: string
+    default: deterministic
+    description: Provider for kinds without a route
+  fallbackProviderIds:
+    type: array
+    items:
+      type: string
+    description: Ordered fallbacks; deterministic is always appended last
+required:
+  - providers
+  - routes
+  - defaultProviderId
+  - fallbackProviderIds
+description: "Pluggable decision layer: Jev is optional and replaceable by open-source providers"

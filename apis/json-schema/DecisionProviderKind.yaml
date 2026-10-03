@@ -1,0 +1,10 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: DecisionProviderKind.yaml
+type: string
+enum:
+  - deterministic
+  - openai_compatible
+  - reranker
+  - structured_llm
+  - jev
+description: Implementation family of a decision provider

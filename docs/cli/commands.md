@@ -953,6 +953,40 @@ their input from the Actions environment, not from flags.
 
 ---
 
+## Harness Commands
+
+Experimental (spec 119). The `shep harness` group is hidden from `--help` until
+`featureFlags.queryAwareHarness` is on (Settings → Feature flags). Every command
+sets `process.exitCode = 1` on error; `--json` output is the use case's result
+object, unchanged. Architecture: [query-aware harness](../architecture/query-aware-harness.md).
+
+| Command | What it does |
+| ------- | ------------ |
+| `shep harness init [--repo] [--yes] [--json]` | Detect instruction files, test/lint commands and sensitive files; preview `.shep/harness/{config.yaml,policies/default.yaml,instructions/README.md}`; write only on confirm, never outside `.shep/harness/`, never overwriting |
+| `shep harness run "<task>" [--repo] [--mode baseline\|query_aware] [--budget] [--max-turns] [--model] [--test-command] [--shadow-context-router] [--shadow-permissions] [--shadow-tool-router] [--non-interactive] [--json]` | Run a standalone task in its own worktree (`harness/<id>` branch); the checkout is never touched. Permission asks are answered inline; with `--non-interactive` (or no TTY, or `--json`) they resolve to deny and the output says so |
+| `shep harness resume <id> ["<next instruction>"]` | Next task in a standalone session (or retry its last goal); state is restored, never replayed |
+| `shep harness stop <id>` | Stop the running task before its next turn (works across processes) |
+| `shep harness apply <id> [--branch] [--message]` | Commit the worktree's changes and point a branch at them; nothing is pushed |
+| `shep harness promote <id> [--agent]` | Commit to the harness branch and create a feature that starts from it |
+| `shep harness discard <id>` | Remove the worktree; the session's state and evidence are kept |
+| `shep harness ls [--origin] [--feature] [--json]` | Sessions, newest first, with pending approvals |
+| `shep harness inspect session <id>` | A session (or feature AgentRun id): tasks, turns, tool calls, usage, permission log |
+| `shep harness inspect context <plan-id \| task-id --turn n>` | What the model saw on one turn: every candidate with visibility, tokens shown/raw, relevance, reason and source |
+| `shep harness view <chunk-id> [--level short\|long\|full]` | Render a chunk from stored output (nothing re-runs); secret chunks are never rendered |
+| `shep harness explain <decision-id> \| <plan-id> --chunk <id>` | Why: score on the visibility bands, provider, latency, cost, probabilities only when the provider returned them, matched rules |
+| `shep harness permissions ls [--session] [--all]` / `allow <id> [--scope once\|task\|session] [--note]` / `deny <id> [--note]` | Answer and review permission requests; the note goes back to the agent |
+| `shep harness capabilities` | The tiered tool catalog (Tier-1 snippet vs Tier-2 schema token cost) |
+| `shep harness policies [--repo]` | Effective rules (builtin + `.shep/harness/policies/*.yaml`); exits 1 on a policy file that fails to parse |
+| `shep harness eval run <suite> [--repo] [--variants] [--repeats] [--model] [--json]` | Run a suite on baseline and query-aware in throwaway repositories and print the comparison |
+| `shep harness eval ls` / `eval report <run-id>` / `eval save <session-id> --suite <id> [--check]` | Suites and runs; a run's report; save a standalone session as a case in `.shep/harness/evals/<suite>.yaml` |
+
+`shep doctor` gains a `harness-readiness` check while the flag is on: backend
+credential (blocker when Shep Harness is the configured agent), blob storage
+writable and git installed (blockers), ripgrep and decision-provider endpoints
+(warnings), builtin policy parse (blocker).
+
+**Source**: `src/presentation/cli/commands/harness/`
+
 ## Other Commands
 
 ### `shep doctor`

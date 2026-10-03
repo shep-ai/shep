@@ -22,7 +22,8 @@
       "integrations": "التكاملات",
       "security": "Security",
       "messaging": "Messaging",
-      "mcp": "MCP"
+      "mcp": "MCP",
+      "harness": "Harness الوكيل"
     },
     "language": {
       "title": "اللغة",
@@ -262,7 +263,9 @@
       "whatsappDispatchDescription": "أرسِل وكلاء shep ووجّههم من واتساب — أنشئ الميزات، واستقبل تحديثات الوكيل، ووافق على البوابات بالرد في محادثة.",
       "clusters": "المجموعات",
       "clustersDescription": "تمكين التنقل بين المجموعات وإدارة مجموعات Kubernetes في واجهة الويب",
-      "hint": "ميزات تجريبية لا تزال قيد التطوير. قم بتمكينها على مسؤوليتك — قد تتغير أو تُزال في الإصدارات المستقبلية. وضع التصحيح يضيف تسجيلًا مفصلاً مفيدًا لاستكشاف الأخطاء."
+      "hint": "ميزات تجريبية لا تزال قيد التطوير. قم بتمكينها على مسؤوليتك — قد تتغير أو تُزال في الإصدارات المستقبلية. وضع التصحيح يضيف تسجيلًا مفصلاً مفيدًا لاستكشاف الأخطاء.",
+      "queryAwareHarness": "Harness وكيل مدرك للاستعلام",
+      "queryAwareHarnessDescription": "تجريبي: وكيل Shep Harness و/harness وتبويب السياق في الميزة وطلبات الأذونات"
     },
     "interactiveAgent": {
       "title": "الوكيل التفاعلي",
@@ -373,6 +376,49 @@
         "connected": "Connected",
         "error": "Error"
       }
+    },
+    "harness": {
+      "title": "Harness الوكيل",
+      "experimental": "تجريبي",
+      "description": "كيف يبني Shep Harness سياق النموذج، وعلى أي نموذج يعمل، وكيف يستأذن قبل التنفيذ",
+      "hint": "يعمل الـ harness على واجهة SDK خلفية (OpenRouter أو Together AI أو Ollama أو LLMProxy). يمكن تقييم صلة السياق بواسطة نموذج محلي مفتوح المصدر أو بواسطة Jev — أو بشكل حتمي دون أي شبكة.",
+      "mode": "وضع السياق",
+      "modeDescription": "الوضع المدرك للاستعلام يبني خطة سياق جديدة خاصة بالاستعلام لكل استدعاء للنموذج؛ أما الوضع الأساسي فيحتفظ بسجل المحادثة",
+      "backend": "الواجهة الخلفية للنموذج",
+      "backendDescription": "وكيل SDK الذي يستدعيه الـ harness؛ يُؤخذ مفتاحه من رمز الوكيل أو من متغير البيئة الخاص به",
+      "model": "نموذج الواجهة الخلفية",
+      "modelDescription": "معرّف النموذج في الواجهة الخلفية؛ اتركه فارغًا لاستخدام الافتراضي",
+      "modelPlaceholder": "افتراضي الواجهة الخلفية",
+      "budget": "وضع الميزانية",
+      "budgetDescription": "الموازنة بين التكلفة والجودة عند ملاءمة السياق لميزانية الرموز",
+      "maxTurns": "حد الأدوار",
+      "maxTurnsDescription": "عدد استدعاءات النموذج لكل مهمة قبل التوقف",
+      "modelTimeout": "مهلة استدعاء النموذج (بالثواني)",
+      "modelTimeoutDescription": "المدة المسموح بها لاستدعاء واحد للنموذج؛ زِدها للنماذج المحلية البطيئة",
+      "decisionsTitle": "مزوّد تقييم صلة السياق",
+      "decisionsDescription": "من يقيّم مدى صلة كل جزء من الحالة بالاستعلام الحالي. عند أي فشل للمزوّد يتم الرجوع إلى التقييم الحتمي.",
+      "providerKind": "المزوّد",
+      "providerKindDescription": "حتمي (دون شبكة)، أو خادم متوافق مع OpenAI، أو أداة إعادة ترتيب، أو نموذج الـ harness نفسه، أو Jev",
+      "providerEndpoint": "نقطة النهاية",
+      "providerEndpointDescription": "عنوان URL الأساسي للمزوّد",
+      "providerModel": "النموذج",
+      "providerModelDescription": "النموذج الذي يجب أن تستخدمه نقطة النهاية (اختياري)",
+      "providerKeyEnv": "متغير مفتاح API",
+      "providerKeyEnvDescription": "اسم متغير البيئة الذي يحتوي على المفتاح — وليس المفتاح نفسه أبدًا",
+      "shadowTitle": "أوضاع الظل",
+      "shadow": {
+        "contextRouter": "موجّه السياق في وضع الظل",
+        "contextRouterDescription": "التشغيل بالوضع الأساسي وتسجيل خطط السياق المدركة للاستعلام التي كانت ستُستخدم",
+        "permissions": "مخاطر الأذونات في وضع الظل",
+        "permissionsDescription": "تسجيل درجات مخاطر الأذونات من AI دون فرضها",
+        "toolRouter": "موجّه الأدوات في وضع الظل",
+        "toolRouterDescription": "تسجيل توجيه القدرات دون فرضه"
+      },
+      "permissionsTitle": "الأذونات",
+      "unknownDefault": "الإجراءات غير المعروفة",
+      "unknownDefaultDescription": "ما يحدث عندما لا تنطبق أي قاعدة على إجراء",
+      "approvalTimeout": "مهلة الموافقة (بالدقائق)",
+      "approvalTimeoutDescription": "يُرفض الطلب الذي لم تتم الإجابة عليه بعد هذه المدة"
     }
   },
   "navigation": {
@@ -397,7 +443,8 @@
     "collaboration": "Collaboration",
     "clusters": "المجموعات",
     "plugins": "Plugins",
-    "projectMemory": "Project Memory"
+    "projectMemory": "Project Memory",
+    "harness": "Harness"
   },
   "sidebar": {
     "features": "الميزات",
@@ -1044,5 +1091,204 @@
     "queuedWithPosition": "في الانتظار · {{position}} قبلها",
     "queuedTooltip": "بانتظار مكان شاغر ({{position}} في الطابور)",
     "startAnyway": "ابدأ على أي حال"
+  },
+  "harness": {
+    "title": "Harness الوكيل",
+    "subtitle": "المهام المستقلة، وما رآه النموذج في كل دور، والإجراءات التي تنتظر موافقتك",
+    "loading": "جارٍ التحميل…",
+    "noTasks": "لا توجد مهام بعد.",
+    "taskN": "المهمة {{n}}",
+    "turn": "الدور {{n}}",
+    "tabs": {
+      "sessions": "الجلسات",
+      "newTask": "مهمة جديدة",
+      "approvals": "الموافقات",
+      "catalog": "الأدوات والسياسات",
+      "setup": "إعداد مستودع",
+      "evals": "التقييمات"
+    },
+    "mode": {
+      "query_aware": "مدرك للاستعلام",
+      "baseline": "أساسي"
+    },
+    "budget": {
+      "economy": "اقتصادي",
+      "balanced": "متوازن",
+      "quality": "الجودة"
+    },
+    "effect": {
+      "allow": "سماح",
+      "ask": "سؤال",
+      "deny": "رفض"
+    },
+    "origin": {
+      "feature": "ميزة",
+      "standalone": "مستقلة",
+      "eval": "تقييم"
+    },
+    "sessionStatus": {
+      "active": "قيد التشغيل",
+      "idle": "خاملة",
+      "completed": "مكتملة",
+      "failed": "فشلت",
+      "discarded": "مُهملة"
+    },
+    "visibility": {
+      "hidden": "مخفي",
+      "short": "قصير",
+      "long": "طويل",
+      "full": "كامل"
+    },
+    "source": {
+      "deterministic": "حتمي",
+      "ai": "AI",
+      "policy": "سياسة",
+      "degraded": "متدهور",
+      "escalation": "بطلب من الوكيل",
+      "user": "أنت",
+      "budget": "الميزانية"
+    },
+    "providerKind": {
+      "deterministic": "حتمي",
+      "openai_compatible": "خادم متوافق مع OpenAI",
+      "reranker": "أداة إعادة الترتيب",
+      "structured_llm": "نموذج الـ harness",
+      "jev": "Jev"
+    },
+    "sessions": {
+      "empty": "لا توجد جلسات harness بعد. ابدأ واحدة من مهمة جديدة.",
+      "title": "الجلسة",
+      "origin": "المصدر",
+      "mode": "الوضع",
+      "status": "الحالة",
+      "tasks": "المهام",
+      "pending": "{{count}} قيد الانتظار"
+    },
+    "newTask": {
+      "repository": "المستودع",
+      "task": "المهمة",
+      "taskPlaceholder": "إصلاح التحقق من انتهاء صلاحية رمز التحديث",
+      "worktreeNote": "تعمل في شجرة عمل خاصة بها — لا يتم المساس بنسختك المحلية أبدًا. بعد ذلك يمكنك تطبيقها على فرع أو ترقيتها إلى ميزة أو إهمالها.",
+      "run": "تشغيل المهمة"
+    },
+    "approvals": {
+      "empty": "لا شيء ينتظر الموافقة."
+    },
+    "permission": {
+      "reason": "سبب الوكيل:",
+      "willDo": "سيقوم هذا الإجراء بما يلي:",
+      "noEffects": "(لا توجد تأثيرات متوقعة)",
+      "rules": "القواعد:",
+      "notePlaceholder": "ملاحظة للوكيل (اختياري)، مثلاً: استخدم jose بدلاً من ذلك",
+      "allowOnce": "السماح مرة واحدة",
+      "allowPhase": "السماح لهذه المرحلة",
+      "allowFeature": "السماح لهذه الميزة",
+      "allowSession": "السماح لهذه الجلسة",
+      "deny": "رفض",
+      "hardDeny": "مرفوض بقاعدة صارمة؛ لا يمكن الموافقة عليه."
+    },
+    "banner": {
+      "waiting": "{{count}} إجراء(ات) harness بانتظار موافقتك",
+      "review": "مراجعة"
+    },
+    "context": {
+      "empty": "لم تُشغَّل هذه الميزة على Shep Harness بعد."
+    },
+    "usage": {
+      "turns": "الأدوار",
+      "input": "رموز الإدخال",
+      "output": "رموز الإخراج",
+      "cost": "التكلفة",
+      "toolOutputSeen": "مخرجات الأدوات المعروضة",
+      "denied": "الإجراءات المرفوضة"
+    },
+    "plan": {
+      "summary": "{{tokens}} من {{budget}} رمز · {{count}} مرشح",
+      "shadow": "ظل",
+      "degraded": "متدهور",
+      "overBudget": "تجاوز الميزانية",
+      "none": "اختر دورًا لرؤية ما رآه النموذج.",
+      "chunk": "الجزء",
+      "visibility": "الظهور",
+      "tokens": "الرموز المعروضة/الخام",
+      "relevance": "الصلة",
+      "reason": "السبب",
+      "view": "عرض",
+      "why": "لماذا؟"
+    },
+    "chunk": {
+      "redacted": "هذا الجزء مُعلَّم كسري ولا يُعرض أبدًا.",
+      "truncated": "مقتطع",
+      "storedNote": "معروض من المخرجات المخزنة؛ لم تتم إعادة تشغيل أي شيء"
+    },
+    "why": {
+      "title": "لماذا هذا المستوى من الظهور؟",
+      "tokens": "عُرض {{visible}} من {{raw}} رمز",
+      "relevance": "الصلة {{score}}",
+      "bands": "مخفي < {{hide}} ≤ قصير < {{long}} ≤ طويل < {{full}} ≤ كامل",
+      "noProbabilities": "لا توجد احتمالات للفئات: هذا المزوّد لا يُرجعها.",
+      "provider": "قرّره {{provider}} في {{latency}} مللي ثانية · {{cost}}",
+      "shadow": "ظل",
+      "degraded": "متدهور",
+      "include": "تضمين بدءًا من الدور التالي",
+      "included": "مُضمَّن بدءًا من الدور التالي"
+    },
+    "actions": {
+      "stop": "إيقاف",
+      "stopRequested": "تم طلب الإيقاف؛ ستتوقف المهمة قبل دورها التالي",
+      "stoppedOrphan": "تم الإيقاف: انتهت العملية التي كانت تشغّل المهمة، لذا أُلغيت",
+      "branchPlaceholder": "الفرع (اختياري)",
+      "apply": "تطبيق على الفرع",
+      "applied": "تم إيداع {{count}} ملف(ات) في {{branch}}",
+      "promote": "ترقية إلى ميزة",
+      "discard": "إهمال",
+      "discarded": "تمت إزالة شجرة العمل؛ تم الاحتفاظ بالجلسة"
+    },
+    "capabilities": {
+      "title": "الأدوات التي يمكن للوكيل تحميلها",
+      "description": "تُعرض مقتطفات المستوى 1 دائمًا؛ ولا تُحمَّل مخططات المستوى 2 إلا عندما يطلب الوكيل قدرة ما.",
+      "cost": "{{snippet}} / {{schema}} رمز"
+    },
+    "policies": {
+      "title": "قواعد الأذونات",
+      "description": "الإعدادات الافتراضية لـ Shep إضافةً إلى .shep/harness/policies/*.yaml. الأولوية: deny > ask > allow.",
+      "hard": "صارمة"
+    },
+    "setup": {
+      "description": "يكتشف ملفات التعليمات وأوامر الاختبار والتدقيق والملفات الحساسة، ويعرض معاينة لـ .shep/harness/، ولا يكتب إلا بعد تأكيدك. لا يتم تعديل الملفات المصدرية أبدًا.",
+      "preview": "معاينة",
+      "instructions": "التعليمات",
+      "manifests": "ملفات البيان",
+      "commands": "الاختبار / التدقيق",
+      "sensitive": "الملفات الحساسة",
+      "exists": "موجود، تم الاحتفاظ به",
+      "confirm": "كتابة الملفات",
+      "written": "تمت كتابة {{count}} ملف(ات)"
+    },
+    "evals": {
+      "description": "شغّل المهام نفسها في وضعي baseline وquery-aware، كلٌّ في مستودع مؤقت، وقارن النجاح والرموز والتكلفة والجولات وتغطية الأدلة.",
+      "repeats": "التكرارات",
+      "run": "تشغيل التقييم",
+      "empty": "لا توجد عمليات تقييم بعد.",
+      "score": "المقياس",
+      "change": "التغيّر",
+      "status": {
+        "pending": "قيد الانتظار",
+        "running": "قيد التشغيل",
+        "completed": "مكتمل",
+        "failed": "فشل"
+      },
+      "scores": {
+        "success": "النجاح",
+        "inputTokens": "رموز الإدخال",
+        "outputTokens": "رموز الإخراج",
+        "costUsd": "التكلفة",
+        "turns": "الجولات",
+        "wallMs": "المدة",
+        "repeatedReads": "قراءات مكررة",
+        "toolOutputRatio": "مخرجات الأدوات المعروضة",
+        "evidenceRecall": "تغطية الأدلة"
+      }
+    }
   }
 }

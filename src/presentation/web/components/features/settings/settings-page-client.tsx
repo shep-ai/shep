@@ -26,6 +26,7 @@ import {
   EyeOff,
   Github,
   FolderGit2,
+  Workflow,
   Plug,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -70,6 +71,7 @@ const LANGUAGE_OPTIONS = [
 import { TimeoutSlider } from '@/components/features/settings/timeout-slider';
 import { SupplyChainSecuritySettingsSection } from '@/components/features/settings/supply-chain-security-settings-section';
 import { WorktreeSettingsSection } from '@/components/features/settings/worktree-settings-section';
+import { HarnessSettingsSection } from '@/components/features/settings/harness-settings-section';
 import { SettingsSectionNav } from './settings-section-nav';
 import { useHydrated } from '@/hooks/use-hydrated';
 import { AdaptiveModelSettingsSection } from '@/components/features/settings/adaptive-model-settings-section';
@@ -123,6 +125,7 @@ const SECTIONS = [
   { id: 'environment', labelKey: 'settings.sections.environment', icon: Terminal },
   { id: 'workflow', labelKey: 'settings.sections.workflow', icon: GitBranch },
   { id: 'worktree', labelKey: 'settings.sections.worktree', icon: FolderGit2 },
+  { id: 'harness', labelKey: 'settings.sections.harness', icon: Workflow },
   { id: 'security', labelKey: 'settings.sections.security', icon: Shield },
   { id: 'ci', labelKey: 'settings.sections.ci', icon: Activity },
   { id: 'stage-timeouts', labelKey: 'settings.sections.timeouts', icon: Timer },
@@ -400,6 +403,7 @@ export function SettingsPageClient({
     supplyChainSecurity: true,
     scheduledWorkflows: false,
     githubImport: true,
+    queryAwareHarness: false,
   };
 
   // Language state
@@ -697,9 +701,11 @@ export function SettingsPageClient({
   const visibleSections = useMemo<readonly (typeof SECTIONS)[number][]>(
     () =>
       SECTIONS.filter(
-        (s: (typeof SECTIONS)[number]) => s.id !== 'security' || flags.supplyChainSecurity
+        (s: (typeof SECTIONS)[number]) =>
+          (s.id !== 'security' || flags.supplyChainSecurity) &&
+          (s.id !== 'harness' || flags.queryAwareHarness)
       ),
-    [flags.supplyChainSecurity]
+    [flags.supplyChainSecurity, flags.queryAwareHarness]
   );
 
   // Track which section is in view via IntersectionObserver
@@ -1124,6 +1130,17 @@ export function SettingsPageClient({
             {t('settings.worktree.hint')}
           </SectionHint>
         </div>
+
+        {/* ── Agent Harness (spec 119, experimental) ── */}
+        {flags.queryAwareHarness ? (
+          <div
+            id="section-harness"
+            className="grid scroll-mt-32 grid-cols-1 gap-x-5 rounded-lg lg:grid-cols-[minmax(0,1fr)_280px]"
+          >
+            <HarnessSettingsSection harness={settings.harness} />
+            <SectionHint>{t('settings.harness.hint')}</SectionHint>
+          </div>
+        ) : null}
 
         {/* ── Workflow ── */}
         <div
@@ -2023,6 +2040,18 @@ export function SettingsPageClient({
               checked={flags.scheduledWorkflows}
               onChange={(v) => {
                 const newFlags = { ...flags, scheduledWorkflows: v };
+                setFlags(newFlags);
+                save({ featureFlags: newFlags });
+              }}
+            />
+            <SwitchRow
+              label={t('settings.featureFlags.queryAwareHarness')}
+              description={t('settings.featureFlags.queryAwareHarnessDescription')}
+              id="flag-queryAwareHarness"
+              testId="switch-flag-queryAwareHarness"
+              checked={flags.queryAwareHarness}
+              onChange={(v) => {
+                const newFlags = { ...flags, queryAwareHarness: v };
                 setFlags(newFlags);
                 save({ featureFlags: newFlags });
               }}

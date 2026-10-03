@@ -17,28 +17,17 @@ import type {
 } from '../../../application/ports/output/services/memory-relevance-scorer.interface.js';
 import { RELEVANCE_STOPWORDS } from '../../../application/use-cases/project-memory/project-memory.constants.js';
 import { rankByContentScore } from './relevance-ranking.js';
-
-const MIN_TOKEN_LENGTH = 3;
+import {
+  lexicalOverlapScore,
+  tokenizeForRelevance,
+} from '../../../domain/shared/lexical-relevance.js';
 
 function tokenize(text: string): Set<string> {
-  const tokens = new Set<string>();
-  for (const raw of text.toLowerCase().split(/[^a-z0-9]+/)) {
-    if (raw.length >= MIN_TOKEN_LENGTH && !RELEVANCE_STOPWORDS.has(raw)) {
-      tokens.add(raw);
-    }
-  }
-  return tokens;
+  return tokenizeForRelevance(text, RELEVANCE_STOPWORDS);
 }
 
-/** Saturating overlap → [0,1): 1 match ≈ 0.33, 2 ≈ 0.5, 4 ≈ 0.67. */
 function lexicalScore(queryTokens: Set<string>, entryText: string): number {
-  if (queryTokens.size === 0) return 0;
-  const entryTokens = tokenize(entryText);
-  let overlap = 0;
-  for (const t of queryTokens) {
-    if (entryTokens.has(t)) overlap += 1;
-  }
-  return overlap === 0 ? 0 : overlap / (overlap + 2);
+  return lexicalOverlapScore(queryTokens, entryText, RELEVANCE_STOPWORDS);
 }
 
 @injectable()

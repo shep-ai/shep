@@ -1,0 +1,8 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: ToolReadWriteMode.yaml
+type: string
+enum:
+  - read
+  - write
+  - side_effect
+description: Whether a tool reads, writes, or has external side effects

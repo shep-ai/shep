@@ -22,7 +22,8 @@
       "integrations": "אינטגרציות",
       "security": "Security",
       "messaging": "Messaging",
-      "mcp": "MCP"
+      "mcp": "MCP",
+      "harness": "Harness לסוכן"
     },
     "language": {
       "title": "שפה",
@@ -262,7 +263,9 @@
       "whatsappDispatchDescription": "שגרו והנחו את סוכני shep מתוך WhatsApp — צרו פיצ׳רים, קבלו עדכוני סוכן ואשרו שערים על ידי מענה בשרשור צ׳אט.",
       "clusters": "אשכולות",
       "clustersDescription": "הפעלת ניווט אשכולות וניהול אשכולות Kubernetes בממשק הווב",
-      "hint": "תכונות ניסיוניות שעדיין בפיתוח. הפעל על אחריותך — הן עשויות להשתנות או להיות מוסרות בגרסאות עתידיות. מצב ניפוי שגיאות מוסיף רישום מפורט שימושי לפתרון בעיות."
+      "hint": "תכונות ניסיוניות שעדיין בפיתוח. הפעל על אחריותך — הן עשויות להשתנות או להיות מוסרות בגרסאות עתידיות. מצב ניפוי שגיאות מוסיף רישום מפורט שימושי לפתרון בעיות.",
+      "queryAwareHarness": "Harness סוכן מודע-שאילתה",
+      "queryAwareHarnessDescription": "ניסיוני: סוכן Shep Harness, /harness, לשונית ההקשר של הפיצ'ר ובקשות הרשאה"
     },
     "interactiveAgent": {
       "title": "סוכן אינטראקטיבי",
@@ -373,6 +376,49 @@
         "connected": "מחובר",
         "error": "שגיאה"
       }
+    },
+    "harness": {
+      "title": "Harness לסוכן",
+      "experimental": "ניסיוני",
+      "description": "איך Shep Harness בונה את הקשר המודל, על איזה מודל הוא רץ ואיך הוא שואל לפני פעולה",
+      "hint": "ה-harness רץ על backend של SDK (OpenRouter, Together AI, Ollama או LLMProxy). את רלוונטיות ההקשר יכול לדרג מודל קוד פתוח מקומי או Jev — או באופן דטרמיניסטי, בלי רשת בכלל.",
+      "mode": "מצב הקשר",
+      "modeDescription": "מצב מודע-שאילתה בונה תוכנית הקשר חדשה וייעודית לכל קריאה למודל; מצב בסיס שומר תמליל",
+      "backend": "Backend של המודל",
+      "backendDescription": "סוכן ה-SDK שה-harness קורא לו; המפתח נלקח מטוקן הסוכן או ממשתנה הסביבה שלו",
+      "model": "מודל ה-backend",
+      "modelDescription": "מזהה המודל ב-backend; השאר ריק לברירת המחדל של ה-backend",
+      "modelPlaceholder": "ברירת המחדל של ה-backend",
+      "budget": "מצב תקציב",
+      "budgetDescription": "איזון בין עלות לאיכות בעת התאמת ההקשר לתקציב הטוקנים",
+      "maxTurns": "מגבלת סבבים",
+      "maxTurnsDescription": "מספר קריאות למודל לכל משימה לפני עצירה",
+      "modelTimeout": "זמן קצוב לקריאה למודל (שניות)",
+      "modelTimeoutDescription": "כמה זמן קריאה אחת למודל רשאית להימשך; הגדילו עבור מודלים מקומיים איטיים",
+      "decisionsTitle": "ספק רלוונטיות הקשר",
+      "decisionsDescription": "מי מדרג עד כמה כל חלק במצב רלוונטי לשאילתה הנוכחית. כל כשל של הספק חוזר לדירוג דטרמיניסטי.",
+      "providerKind": "ספק",
+      "providerKindDescription": "דטרמיניסטי (בלי רשת), שרת תואם OpenAI, מדרג מחדש, המודל של ה-harness עצמו או Jev",
+      "providerEndpoint": "נקודת קצה",
+      "providerEndpointDescription": "כתובת URL בסיסית של הספק",
+      "providerModel": "מודל",
+      "providerModelDescription": "המודל שנקודת הקצה צריכה להשתמש בו (אופציונלי)",
+      "providerKeyEnv": "משתנה מפתח API",
+      "providerKeyEnvDescription": "שם משתנה הסביבה שמכיל את המפתח — לעולם לא המפתח עצמו",
+      "shadowTitle": "מצבי צל",
+      "shadow": {
+        "contextRouter": "נתב הקשר במצב צל",
+        "contextRouterDescription": "לרוץ במצב בסיס ולתעד את תוכניות ההקשר מודעות-השאילתה שהיו בשימוש",
+        "permissions": "סיכון הרשאות במצב צל",
+        "permissionsDescription": "לתעד ציוני סיכון הרשאות של AI בלי לאכוף אותם",
+        "toolRouter": "נתב כלים במצב צל",
+        "toolRouterDescription": "לתעד ניתוב יכולות בלי לאכוף אותו"
+      },
+      "permissionsTitle": "הרשאות",
+      "unknownDefault": "פעולות לא מוכרות",
+      "unknownDefaultDescription": "מה קורה כשאף כלל לא מתאים לפעולה",
+      "approvalTimeout": "זמן קצוב לאישור (דקות)",
+      "approvalTimeoutDescription": "בקשה שלא נענתה נדחית לאחר זמן זה"
     }
   },
   "navigation": {
@@ -397,7 +443,8 @@
     "collaboration": "Collaboration",
     "clusters": "אשכולות",
     "plugins": "Plugins",
-    "projectMemory": "Project Memory"
+    "projectMemory": "Project Memory",
+    "harness": "Harness"
   },
   "sidebar": {
     "features": "פיצ'רים",
@@ -1044,5 +1091,204 @@
     "queuedWithPosition": "בתור · {{position}} לפני",
     "queuedTooltip": "ממתין למקום פנוי ({{position}} בתור)",
     "startAnyway": "התחל בכל זאת"
+  },
+  "harness": {
+    "title": "Harness לסוכן",
+    "subtitle": "משימות עצמאיות, מה המודל ראה בכל סבב ופעולות שממתינות לאישורך",
+    "loading": "טוען…",
+    "noTasks": "אין משימות עדיין.",
+    "taskN": "משימה {{n}}",
+    "turn": "סבב {{n}}",
+    "tabs": {
+      "sessions": "סשנים",
+      "newTask": "משימה חדשה",
+      "approvals": "אישורים",
+      "catalog": "כלים ומדיניות",
+      "setup": "הגדרת מאגר",
+      "evals": "הערכות"
+    },
+    "mode": {
+      "query_aware": "מודע-שאילתה",
+      "baseline": "בסיס"
+    },
+    "budget": {
+      "economy": "חסכוני",
+      "balanced": "מאוזן",
+      "quality": "איכות"
+    },
+    "effect": {
+      "allow": "לאפשר",
+      "ask": "לשאול",
+      "deny": "לדחות"
+    },
+    "origin": {
+      "feature": "פיצ'ר",
+      "standalone": "עצמאי",
+      "eval": "הערכה"
+    },
+    "sessionStatus": {
+      "active": "פועל",
+      "idle": "במנוחה",
+      "completed": "הושלם",
+      "failed": "נכשל",
+      "discarded": "נזנח"
+    },
+    "visibility": {
+      "hidden": "מוסתר",
+      "short": "קצר",
+      "long": "ארוך",
+      "full": "מלא"
+    },
+    "source": {
+      "deterministic": "דטרמיניסטי",
+      "ai": "AI",
+      "policy": "מדיניות",
+      "degraded": "מוגבל",
+      "escalation": "לבקשת הסוכן",
+      "user": "אתה",
+      "budget": "תקציב"
+    },
+    "providerKind": {
+      "deterministic": "דטרמיניסטי",
+      "openai_compatible": "שרת תואם OpenAI",
+      "reranker": "מדרג מחדש",
+      "structured_llm": "מודל ה-harness",
+      "jev": "Jev"
+    },
+    "sessions": {
+      "empty": "אין עדיין סשנים של harness. התחל אחד ממשימה חדשה.",
+      "title": "סשן",
+      "origin": "מקור",
+      "mode": "מצב",
+      "status": "סטטוס",
+      "tasks": "משימות",
+      "pending": "{{count}} ממתינות"
+    },
+    "newTask": {
+      "repository": "מאגר",
+      "task": "משימה",
+      "taskPlaceholder": "תקן את בדיקת התפוגה של טוקן הרענון",
+      "worktreeNote": "רץ בעץ עבודה משלו — ה-checkout שלך לעולם לא נוגעים בו. לאחר מכן תוכל להחיל אותו על ענף, לקדם אותו לפיצ'ר או לזנוח אותו.",
+      "run": "הרץ משימה"
+    },
+    "approvals": {
+      "empty": "שום דבר לא ממתין לאישור."
+    },
+    "permission": {
+      "reason": "הנימוק של הסוכן:",
+      "willDo": "פעולה זו:",
+      "noEffects": "(אין השפעות צפויות)",
+      "rules": "כללים:",
+      "notePlaceholder": "הערה לסוכן (אופציונלי), למשל: השתמש ב-jose במקום",
+      "allowOnce": "אפשר פעם אחת",
+      "allowPhase": "אפשר לשלב הזה",
+      "allowFeature": "אפשר לפיצ'ר הזה",
+      "allowSession": "אפשר לסשן הזה",
+      "deny": "דחה",
+      "hardDeny": "נדחה על ידי כלל קשיח; לא ניתן לאשר."
+    },
+    "banner": {
+      "waiting": "{{count}} פעולות harness ממתינות לאישורך",
+      "review": "סקירה"
+    },
+    "context": {
+      "empty": "הפיצ'ר הזה עדיין לא רץ על Shep Harness."
+    },
+    "usage": {
+      "turns": "סבבים",
+      "input": "טוקני קלט",
+      "output": "טוקני פלט",
+      "cost": "עלות",
+      "toolOutputSeen": "פלט כלים שנצפה",
+      "denied": "פעולות שנדחו"
+    },
+    "plan": {
+      "summary": "{{tokens}} מתוך {{budget}} טוקנים · {{count}} מועמדים",
+      "shadow": "צל",
+      "degraded": "מוגבל",
+      "overBudget": "חריגה מהתקציב",
+      "none": "בחר סבב כדי לראות מה המודל ראה.",
+      "chunk": "מקטע",
+      "visibility": "נראות",
+      "tokens": "טוקנים מוצגים/גולמיים",
+      "relevance": "רלוונטיות",
+      "reason": "סיבה",
+      "view": "תצוגה",
+      "why": "למה?"
+    },
+    "chunk": {
+      "redacted": "מקטע זה מסומן כסודי ולעולם אינו מוצג.",
+      "truncated": "קוצר",
+      "storedNote": "מוצג מפלט שמור; שום דבר לא הורץ מחדש"
+    },
+    "why": {
+      "title": "למה הנראות הזו?",
+      "tokens": "{{visible}} מתוך {{raw}} טוקנים מוצגים",
+      "relevance": "רלוונטיות {{score}}",
+      "bands": "מוסתר < {{hide}} ≤ קצר < {{long}} ≤ ארוך < {{full}} ≤ מלא",
+      "noProbabilities": "אין הסתברויות מחלקה: הספק הזה אינו מחזיר אותן.",
+      "provider": "הוחלט על ידי {{provider}} תוך {{latency}} ms · {{cost}}",
+      "shadow": "צל",
+      "degraded": "מוגבל",
+      "include": "כלול מהסבב הבא",
+      "included": "נכלל מהסבב הבא"
+    },
+    "actions": {
+      "stop": "עצור",
+      "stopRequested": "התבקשה עצירה; המשימה תיעצר לפני הסבב הבא שלה",
+      "stoppedOrphan": "נעצרה: התהליך שהריץ את המשימה הסתיים, ולכן היא בוטלה",
+      "branchPlaceholder": "ענף (אופציונלי)",
+      "apply": "החל על ענף",
+      "applied": "בוצע commit של {{count}} קבצים ל-{{branch}}",
+      "promote": "קדם לפיצ'ר",
+      "discard": "זנח",
+      "discarded": "עץ העבודה הוסר; הסשן נשמר"
+    },
+    "capabilities": {
+      "title": "כלים שהסוכן יכול לטעון",
+      "description": "קטעי רמה 1 מוצגים תמיד; סכמות רמה 2 נטענות רק כשהסוכן מבקש יכולת.",
+      "cost": "{{snippet}} / {{schema}} טוקנים"
+    },
+    "policies": {
+      "title": "כללי הרשאה",
+      "description": "ברירות המחדל של Shep בתוספת .shep/harness/policies/*.yaml. סדר עדיפות: deny > ask > allow.",
+      "hard": "קשיח"
+    },
+    "setup": {
+      "description": "מזהה קובצי הוראות, פקודות בדיקה ו-lint וקבצים רגישים, מציג תצוגה מקדימה של .shep/harness/ וכותב רק לאחר אישורך. קובצי המקור לעולם אינם משתנים.",
+      "preview": "תצוגה מקדימה",
+      "instructions": "הוראות",
+      "manifests": "מניפסטים",
+      "commands": "בדיקה / lint",
+      "sensitive": "קבצים רגישים",
+      "exists": "קיים, נשמר",
+      "confirm": "כתוב קבצים",
+      "written": "נכתבו {{count}} קבצים"
+    },
+    "evals": {
+      "description": "הריצו את אותן משימות במצבי baseline ו-query-aware, כל אחת במאגר זמני, והשוו הצלחה, טוקנים, עלות, סבבים וכיסוי ראיות.",
+      "repeats": "חזרות",
+      "run": "הרצת הערכה",
+      "empty": "עדיין אין הרצות הערכה.",
+      "score": "מדד",
+      "change": "שינוי",
+      "status": {
+        "pending": "ממתין",
+        "running": "רץ",
+        "completed": "הושלם",
+        "failed": "נכשל"
+      },
+      "scores": {
+        "success": "הצלחה",
+        "inputTokens": "טוקני קלט",
+        "outputTokens": "טוקני פלט",
+        "costUsd": "עלות",
+        "turns": "סבבים",
+        "wallMs": "משך",
+        "repeatedReads": "קריאות חוזרות",
+        "toolOutputRatio": "פלט כלים שהוצג",
+        "evidenceRecall": "כיסוי ראיות"
+      }
+    }
   }
 }

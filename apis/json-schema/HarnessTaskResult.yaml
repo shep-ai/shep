@@ -1,0 +1,37 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: HarnessTaskResult.yaml
+type: object
+properties:
+  status:
+    $ref: HarnessTaskOutcome.yaml
+    description: Outcome
+  summary:
+    type: string
+    description: Short summary of what was done
+  evidence:
+    type: array
+    items:
+      $ref: HarnessEvidenceRef.yaml
+    description: Evidence supporting the result
+  producedChunkIds:
+    type: array
+    items:
+      type: string
+    description: Chunks produced by the task
+  patchRef:
+    type: string
+    description: Blob reference of the produced patch, if any
+  testResultChunkIds:
+    type: array
+    items:
+      type: string
+    description: Chunks holding test results
+  confidence:
+    type: number
+    description: Self-reported confidence between 0 and 1
+required:
+  - status
+  - summary
+  - evidence
+  - producedChunkIds
+description: Structured result of a harness task, returned instead of a transcript

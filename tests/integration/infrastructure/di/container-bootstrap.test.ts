@@ -46,6 +46,7 @@ import { registerDeployment } from '@/infrastructure/di/modules/register-deploym
 import { registerUseCases } from '@/infrastructure/di/modules/register-use-cases.js';
 import { registerInteractive } from '@/infrastructure/di/modules/register-interactive.js';
 import { registerAspm } from '@/infrastructure/di/modules/register-aspm.js';
+import { registerHarness } from '@/infrastructure/di/modules/register-harness.js';
 import type { IDeploymentService } from '@/application/ports/output/services/deployment-service.interface.js';
 import { DeploymentService } from '@/infrastructure/services/deployment/deployment.service.js';
 import type { IInteractiveSessionRepository } from '@/application/ports/output/repositories/interactive-session-repository.interface.js';
@@ -146,6 +147,29 @@ const WEB_ROUTE_TOKENS: readonly string[] = [
   'EnableBedrockForApplicationUseCase',
   'RunBedrockLifecycleUseCase',
   'CheckBedrockHealthUseCase',
+  // Query-aware harness (spec 119)
+  'ListHarnessSessionsUseCase',
+  'ListHarnessEventsUseCase',
+  'GetHarnessSessionUseCase',
+  'GetContextPlanUseCase',
+  'RenderChunkViewUseCase',
+  'ExplainHarnessDecisionUseCase',
+  'ListHarnessPermissionsUseCase',
+  'ResolveHarnessPermissionUseCase',
+  'ListHarnessCapabilitiesUseCase',
+  'GetHarnessPoliciesUseCase',
+  'OverrideChunkVisibilityUseCase',
+  'RunHarnessTaskUseCase',
+  'ResumeHarnessSessionUseCase',
+  'StopHarnessSessionUseCase',
+  'ApplyHarnessSessionUseCase',
+  'PromoteHarnessSessionUseCase',
+  'DiscardHarnessSessionUseCase',
+  'InitHarnessProjectUseCase',
+  'RunHarnessEvalUseCase',
+  'ListHarnessEvalRunsUseCase',
+  'GetHarnessEvalReportUseCase',
+  'SaveHarnessEvalCaseUseCase',
 ] as const;
 
 /**
@@ -154,6 +178,28 @@ const WEB_ROUTE_TOKENS: readonly string[] = [
  * if someone deletes a registration.
  */
 const CRITICAL_INFRA_TOKENS: readonly string[] = [
+  // Query-aware harness (spec 119)
+  'IHarnessBlobStore',
+  'IHarnessEventLog',
+  'IHarnessSessionRepository',
+  'IHarnessContextRepository',
+  'IHarnessExecutionRepository',
+  'IHarnessPermissionRepository',
+  'IHarnessEvalRepository',
+  'IRepoSnapshotter',
+  'IDecisionProviderFactory',
+  'IHarnessToolSources',
+  'IToolArgumentValidator',
+  'IHarnessPolicyEngine',
+  'ICommandInspector',
+  'IInstructionSource',
+  'IHarnessModelProviderFactory',
+  'HarnessRuntime',
+  'HarnessTaskService',
+  'IHarnessWorkspaceService',
+  'IHarnessProjectSetup',
+  'IHarnessEvalSuiteSource',
+  'IHarnessEvalWorkspaceFactory',
   'IApplicationRepository',
   'IPhaseTimingRepository',
   'IInteractiveSessionRepository',
@@ -294,6 +340,7 @@ describe('DI container bootstrap (integration)', () => {
     registerUseCases(scopedContainer);
     registerInteractive(scopedContainer);
     registerAspm(scopedContainer);
+    registerHarness(scopedContainer);
 
     // Replicate the eager bootstrap done by initializeContainer() so the
     // test exercises the SAME container shape that web routes see at runtime.

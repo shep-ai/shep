@@ -1,0 +1,8 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: HarnessTaskType.yaml
+type: string
+enum:
+  - read_only
+  - write
+  - side_effect
+description: Whether a harness task only reads, writes the repository, or causes external side effects

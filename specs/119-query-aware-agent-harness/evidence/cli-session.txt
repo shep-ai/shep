@@ -1,0 +1,85 @@
+# Real CLI session (spec 119), captured from this branch
+# Model: Qwen3-8B (Q4_K_M) served by llama.cpp on a 4-core CPU through the harness's Ollama backend.
+# Paths shortened: <repo> is the demo repository, <SHEP_HOME> shep's data directory.
+
+$ shep harness init --yes
+Detected
+  instructions CLAUDE.md
+  manifests    package.json
+  test         npm test   lint npm run lint
+  sensitive    .env
+
+.shep/harness/config.yaml
+  # Shep Harness repository config — written by `shep harness init`.
+  version: 1
+  test_command: "npm test"
+  lint_command: "npm run lint"
+
+.shep/harness/policies/default.yaml
+  # Repository permission rules for the Shep Harness, merged with shep's builtin defaults
+  # (see `shep harness policies` or /harness → Tools & policies). Precedence: deny > ask > allow;
+  # `hard: true` rules can never be approved.
+  version: 1
+  rules:
+    - id: deny-repo-sensitive-files
+      effect: deny
+      hard: true
+      reason: Sensitive files detected in this repository by shep harness init
+      when:
+        path_matches:
+          - "**/.env"
+
+.shep/harness/instructions/README.md
+  # Harness instructions
+
+  Markdown files in this folder are instructions the Shep Harness always follows
+  in this repository, alongside these files it already reads:
+
+  - CLAUDE.md
+
+  Optional frontmatter: `id`, `title`, `priority` (higher first) and `enabled`.
+√ Wrote .shep/harness/config.yaml, .shep/harness/policies/default.yaml, .shep/harness/instructions/README.md
+
+$ shep harness run "Add the zod package as a dependency: run the command npm install zod@3.23.8 with run_command, then complete the task." --repo <repo>
+  session 21747325-5d0f-43d2-beb6-034c1b938f45 · worktree <SHEP_HOME>/repos/d01da46423c4c95b/wt/harness-21747325
+  ◦ turn 1: context 1109 tokens, 1/1 chunks shown
+  • turn 1: run_command
+
+Permission needed npm install zod@3.23.8
+  Agent's reason: Run the command to install zod as a dependency
+  This action will:
+    • Download packages from the package registry
+    • Change dependencies (package.json and the lockfile)
+    • May run package install scripts
+  Rules: ask-network-egress, ask-dependency-change, ask-unpredictable-command
+? Allow this action?
+> Allow once
+  Allow for this session
+  Deny
+
+↑↓ navigate • ⏎ select
+# ↑ annotation: answered in the web UI (Approvals → Allow once), not here
+i Answered in another window (web UI or another terminal); continuing.
+  ◦ turn 2: context 1261 tokens, 2/2 chunks shown
+  ✓ The zod package was successfully added as a dependency.
+
+√ SUCCESS — The zod package was successfully added as a dependency.
+  evidence npm install zod@3.23.8:1-1
+  usage 2 turns · 3.0k in / 132 out · n/a
+  session 21747325-5d0f-43d2-beb6-034c1b938f45
+
+  Next:
+    shep harness apply 21747325-5d0f-43d2-beb6-034c1b938f45 --branch <name>   commit the change to a branch
+    shep harness promote 21747325-5d0f-43d2-beb6-034c1b938f45                 continue it as a feature
+    shep harness discard 21747325-5d0f-43d2-beb6-034c1b938f45                 remove the worktree
+
+$ shep harness apply 21747325-5d0f-43d2-beb6-034c1b938f45 --branch feat/add-zod
+√ Committed 2 file(s) to feat/add-zod (6497d3f15b)
+
+$ shep harness ls
+21747325-5d0f-43d2-beb6-034c1b938f45  completed standalone query_aware 1 task(s)  Add the zod package as a dependency: run the command npm install zod@3.23.8 with run_command, then complete the task.
+177a644c-f65e-4028-8d50-98fc066f473e  idle      standalone query_aware 1 task(s)  Add the dayjs package as a dependency: run the command npm install dayjs@1.11.13 with run_command, then complete the task.
+d173087c-00dd-4676-9788-715d3d41be1e  idle      eval       query_aware 1 task(s)  smoke/add-greet (query_aware #1)
+a5b95ac7-4a78-4bf7-a7eb-3d3f75567348  idle      eval       baseline    1 task(s)  smoke/add-greet (baseline #1)
+a2ddf709-243d-470c-afc9-a0f6a3a2e2b9  idle      eval       query_aware 1 task(s)  smoke/fix-sum (query_aware #1)
+a4e7c0bf-61ac-4e90-aa47-61cb0ac2637d  idle      eval       baseline    1 task(s)  smoke/fix-sum (baseline #1)

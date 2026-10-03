@@ -1,0 +1,54 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: HarnessContextConfig.yaml
+type: object
+properties:
+  maxInputTokens:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    default: 64000
+    description: Maximum input tokens of a model call
+  reserveOutputTokens:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    default: 8000
+    description: Tokens reserved for the model's output
+  candidateLimit:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    default: 200
+    description: Maximum candidate chunks scored per turn
+  hideThreshold:
+    type: number
+    default: 0.1
+    description: Relevance below this is hidden
+  longThreshold:
+    type: number
+    default: 0.45
+    description: "Relevance from this is long (below it: short)"
+  fullThreshold:
+    type: number
+    default: 0.8
+    description: Relevance from this is full
+  fullTokenCap:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    default: 4000
+    description: Largest view (tokens) shown in full without an explicit request; bigger chunks get their long view
+  uncertainDefault:
+    $ref: ChunkVisibility.yaml
+    default: long
+    description: Visibility used when no provider could score a chunk
+required:
+  - maxInputTokens
+  - reserveOutputTokens
+  - candidateLimit
+  - hideThreshold
+  - longThreshold
+  - fullThreshold
+  - fullTokenCap
+  - uncertainDefault
+description: Context budget and visibility bands

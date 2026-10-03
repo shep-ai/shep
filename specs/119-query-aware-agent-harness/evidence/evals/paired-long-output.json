@@ -1,0 +1,112 @@
+{
+  "variants": [
+    {
+      "variant": "baseline",
+      "runs": 1,
+      "means": {
+        "success": 1,
+        "inputTokens": 54825,
+        "outputTokens": 140,
+        "turns": 7,
+        "wallMs": 82,
+        "repeatedReads": 0,
+        "evidenceRecall": 1
+      }
+    },
+    {
+      "variant": "query_aware",
+      "runs": 1,
+      "means": {
+        "success": 1,
+        "inputTokens": 13416,
+        "outputTokens": 140,
+        "turns": 7,
+        "wallMs": 170,
+        "repeatedReads": 0,
+        "toolOutputRatio": 0.014463733561822449,
+        "evidenceRecall": 1
+      }
+    }
+  ],
+  "comparison": [
+    {
+      "score": "success",
+      "baseline": 1,
+      "queryAware": 1,
+      "relativeChange": 0
+    },
+    {
+      "score": "inputTokens",
+      "baseline": 54825,
+      "queryAware": 13416,
+      "relativeChange": -0.7552941176470588
+    },
+    {
+      "score": "outputTokens",
+      "baseline": 140,
+      "queryAware": 140,
+      "relativeChange": 0
+    },
+    {
+      "score": "costUsd"
+    },
+    {
+      "score": "turns",
+      "baseline": 7,
+      "queryAware": 7,
+      "relativeChange": 0
+    },
+    {
+      "score": "wallMs",
+      "baseline": 82,
+      "queryAware": 170,
+      "relativeChange": 1.0731707317073171
+    },
+    {
+      "score": "repeatedReads",
+      "baseline": 0,
+      "queryAware": 0
+    },
+    {
+      "score": "toolOutputRatio",
+      "queryAware": 0.014463733561822449
+    },
+    {
+      "score": "evidenceRecall",
+      "baseline": 1,
+      "queryAware": 1,
+      "relativeChange": 0
+    }
+  ],
+  "results": [
+    {
+      "caseId": "build-log",
+      "variant": "baseline",
+      "success": true,
+      "scores": {
+        "success": 1,
+        "inputTokens": 54825,
+        "outputTokens": 140,
+        "turns": 7,
+        "wallMs": 82,
+        "repeatedReads": 0,
+        "evidenceRecall": 1
+      }
+    },
+    {
+      "caseId": "build-log",
+      "variant": "query_aware",
+      "success": true,
+      "scores": {
+        "success": 1,
+        "inputTokens": 13416,
+        "outputTokens": 140,
+        "turns": 7,
+        "wallMs": 170,
+        "repeatedReads": 0,
+        "toolOutputRatio": 0.014463733561822449,
+        "evidenceRecall": 1
+      }
+    }
+  ]
+}

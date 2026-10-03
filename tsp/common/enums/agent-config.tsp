@@ -140,6 +140,17 @@ enum AgentType {
    */
   @doc("Local development mock — no agent binary required")
   Dev: "dev",
+
+  /**
+   * Shep Harness (spec 119, experimental).
+   * Shep owns the agent loop: every model call is built from a persisted
+   * ContextPlan, tools are routed capability → implementation with only the
+   * selected schema loaded, and every write or side effect carries a
+   * persisted permission decision. Model access is reused from an SDK agent
+   * (OpenRouter, Together AI, Ollama or LLMProxy).
+   */
+  @doc("Shep Harness: shep-owned, query-aware agent loop (experimental)")
+  ShepHarness: "shep-harness",
 }
 
 /**

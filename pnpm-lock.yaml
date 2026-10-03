@@ -523,6 +523,9 @@ importers:
       js-yaml:
         specifier: ^4.3.2
         version: 4.3.2
+      minimatch:
+        specifier: ^7.x
+        version: 7.4.9
       next:
         specifier: 16.3.6
         version: 16.3.6(@babel/core@7.29.7)(@opentelemetry/api@1.9.0)(@playwright/test@1.58.1)(@types/node@25.2.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)

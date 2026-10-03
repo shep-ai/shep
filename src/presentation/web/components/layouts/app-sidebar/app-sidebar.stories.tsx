@@ -20,6 +20,7 @@ const defaultFeatureFlags = {
   clusters: false,
   scheduledWorkflows: false,
   githubImport: true,
+  queryAwareHarness: false,
 };
 
 const meta: Meta<typeof AppSidebar> = {

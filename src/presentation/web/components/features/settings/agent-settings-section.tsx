@@ -16,7 +16,8 @@ import {
 } from '@/components/ui/select';
 import { updateSettingsAction } from '@/app/actions/update-settings';
 import { AgentType, AgentAuthMethod } from '@shepai/core/domain/generated/output';
-import { listAgentDescriptors } from '@shepai/core/domain/shared/agent-catalog';
+import { isAgentOffered, listAgentDescriptors } from '@shepai/core/domain/shared/agent-catalog';
+import { useFeatureFlags } from '@/hooks/feature-flags-context';
 import { getAgentTypeIcon } from '@/components/common/feature-node/agent-type-icons';
 import type { AgentConfig } from '@shepai/core/domain/generated/output';
 
@@ -32,6 +33,7 @@ const AGENT_TYPE_OPTIONS = listAgentDescriptors().map((descriptor) => ({
   value: descriptor.type,
   label: descriptor.label,
   supported: descriptor.supported,
+  experimental: descriptor.experimental,
 }));
 
 /** Agent types that only support session-based auth (no API token). */
@@ -54,6 +56,7 @@ export interface AgentSettingsSectionProps {
 }
 
 export function AgentSettingsSection({ agent }: AgentSettingsSectionProps) {
+  const flags = useFeatureFlags();
   const [agentType, setAgentType] = useState(agent.type);
   const [authMethod, setAuthMethod] = useState(agent.authMethod);
   const [token, setToken] = useState('');
@@ -147,13 +150,18 @@ export function AgentSettingsSection({ agent }: AgentSettingsSectionProps) {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {AGENT_TYPE_OPTIONS.map((opt) => {
+              {AGENT_TYPE_OPTIONS.filter(
+                (opt) => isAgentOffered(opt, flags) || opt.value === agentType
+              ).map((opt) => {
                 const Icon = getAgentTypeIcon(opt.value);
                 return (
                   <SelectItem key={opt.value} value={opt.value} disabled={!opt.supported}>
                     <span className="flex items-center gap-2">
                       <Icon className="h-4 w-4 shrink-0" />
                       {opt.label}
+                      {opt.experimental ? (
+                        <span className="text-muted-foreground text-xs">(Experimental)</span>
+                      ) : null}
                       {!opt.supported && (
                         <span className="text-muted-foreground text-xs">(Coming Soon)</span>
                       )}

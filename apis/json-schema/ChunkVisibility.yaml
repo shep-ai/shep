@@ -1,0 +1,9 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: ChunkVisibility.yaml
+type: string
+enum:
+  - hidden
+  - short
+  - long
+  - full
+description: How much of a chunk a single model call sees

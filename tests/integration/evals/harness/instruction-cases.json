@@ -1,0 +1,113 @@
+{
+  "suite": "instruction",
+  "description": "Instruction discovery, priority order, disabled and conditional instructions, broken frontmatter (spec 119)",
+  "cases": [
+    {
+      "id": "instr-01",
+      "files": {
+        "CLAUDE.md": "# Rules\nKeep tests green.\n"
+      },
+      "active": ["claude"],
+      "inactive": [],
+      "issues": []
+    },
+    {
+      "id": "instr-02",
+      "files": {
+        "CLAUDE.md": "# A\n",
+        "AGENTS.md": "# B\n"
+      },
+      "active": ["claude", "agents"],
+      "inactive": [],
+      "issues": []
+    },
+    {
+      "id": "instr-03",
+      "files": {
+        "AGENTS.md": "# Agents\n",
+        ".claude/rules/testing.md": "# Testing\nTDD.\n"
+      },
+      "active": ["agents", "claude-rules-testing"],
+      "inactive": [],
+      "issues": []
+    },
+    {
+      "id": "instr-04",
+      "files": {
+        ".shep/harness/instructions/style.md": "---\nid: style\npriority: 150\n---\n# Style\nUse tabs.\n",
+        "CLAUDE.md": "# Rules\n"
+      },
+      "active": ["style", "claude"],
+      "inactive": [],
+      "issues": []
+    },
+    {
+      "id": "instr-05",
+      "files": {
+        ".shep/harness/instructions/off.md": "---\nid: off\nenabled: false\n---\n# Off\n"
+      },
+      "active": [],
+      "inactive": ["off"],
+      "issues": []
+    },
+    {
+      "id": "instr-06",
+      "files": {
+        ".shep/harness/instructions/db.md": "---\nid: db-rules\nwhen:\n  paths: [\"src/db/**\"]\n---\n# DB\nUse migrations.\n"
+      },
+      "active": [],
+      "inactive": ["db-rules"],
+      "issues": []
+    },
+    {
+      "id": "instr-07",
+      "files": {
+        ".shep/harness/instructions/bad.md": "---\nid: [unclosed\n---\n# Bad\n",
+        "CLAUDE.md": "# Rules\n"
+      },
+      "active": ["claude"],
+      "inactive": [],
+      "issues": [".shep/harness/instructions/bad.md"]
+    },
+    {
+      "id": "instr-08",
+      "files": {
+        "README.md": "# Not an instruction\n"
+      },
+      "active": [],
+      "inactive": [],
+      "issues": []
+    },
+    {
+      "id": "instr-09",
+      "files": {
+        ".claude/rules/a.md": "# A\n",
+        ".claude/rules/b.md": "# B\n",
+        ".claude/rules/notes.txt": "ignored\n"
+      },
+      "active": ["claude-rules-a", "claude-rules-b"],
+      "inactive": [],
+      "issues": []
+    },
+    {
+      "id": "instr-10",
+      "files": {
+        "CLAUDE.md": "---\ntitle: House rules\npriority: 10\n---\n# Rules\n",
+        ".claude/rules/security.md": "# Security\nNever log secrets.\n"
+      },
+      "active": ["claude-rules-security", "claude"],
+      "inactive": [],
+      "issues": []
+    },
+    {
+      "id": "instr-11",
+      "files": {
+        ".shep/harness/instructions/a.md": "---\nid: same\n---\n# A\n",
+        ".shep/harness/instructions/b.md": "---\nid: other\nenabled: true\n---\n# B\n"
+      },
+      "active": ["same", "other"],
+      "inactive": [],
+      "issues": []
+    }
+  ]
+}

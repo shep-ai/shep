@@ -1,0 +1,13 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: HarnessToolCallStatus.yaml
+type: string
+enum:
+  - pending
+  - running
+  - completed
+  - failed
+  - cancelled
+  - denied
+  - invalid
+  - unknown
+description: Status of a single tool call

@@ -6,28 +6,21 @@
  * http://localhost:11434/v1. No API key required — Ollama runs locally.
  */
 
-import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 import type { LanguageModelV3 } from '@ai-sdk/provider';
 import { AgentType } from '../../../../../domain/generated/output.js';
 import { AiSdkBaseExecutorService } from './ai-sdk-base-executor.service.js';
-
-const OLLAMA_DEFAULT_BASE_URL = 'http://localhost:11434/v1';
-const DEFAULT_MODEL = 'llama3.2';
+import { createLanguageModelSource, type LanguageModelSource } from '../language-model-factory.js';
 
 export class OllamaExecutorService extends AiSdkBaseExecutorService {
   readonly agentType = AgentType.Ollama;
-  private readonly provider: ReturnType<typeof createOpenAICompatible>;
+  private readonly source: LanguageModelSource;
 
   constructor(baseUrl?: string) {
     super('', 'Ollama');
-    this.provider = createOpenAICompatible({
-      name: 'ollama',
-      baseURL: baseUrl ?? OLLAMA_DEFAULT_BASE_URL,
-      apiKey: 'ollama',
-    });
+    this.source = createLanguageModelSource(AgentType.Ollama, baseUrl);
   }
 
   protected createModel(modelId?: string): LanguageModelV3 {
-    return this.provider.chatModel(modelId ?? DEFAULT_MODEL);
+    return this.source.model(modelId);
   }
 }

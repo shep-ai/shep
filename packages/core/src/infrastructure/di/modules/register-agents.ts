@@ -40,6 +40,9 @@ import { FeatureAgentGateQuestionPublisher } from '../../services/agents/feature
 import { FeatureAgentSupervisorGateEvaluator } from '../../services/agents/feature-agent/feature-agent-supervisor-gate-evaluator.js';
 import { LangGraphSupervisorAgent } from '../../services/agents/supervisor-agent/langgraph-supervisor-agent.js';
 import { SdlcBoardTracker } from '../../services/agents/sdlc-board-tracker.js';
+import { HarnessAgentExecutor } from '../../services/harness/harness-agent-executor.js';
+import { HARNESS_TOKENS } from '../../../application/ports/output/harness/index.js';
+import type { HarnessTaskService } from '../../../application/services/harness/harness-task-service.js';
 
 /**
  * Register agent-execution infrastructure: executor factory/provider, runner,
@@ -61,7 +64,7 @@ export function registerAgents(container: DependencyContainer): void {
       // Must be process-wide singleton: model catalogs own an in-process TTL
       // cache. A fresh factory per resolve re-spawns every CLI/HTTP discovery
       // on each picker open.
-      useFactory: instanceCachingFactory(() => {
+      useFactory: instanceCachingFactory((c) => {
         // Wrap spawn with sensible defaults: stdio piped and windowsHide on Win32.
         // Each executor controls its own `shell` option — cursor needs shell: true
         // for .cmd scripts, but claude-code must NOT use shell (DEP0190 / prompt mangling).
@@ -72,7 +75,13 @@ export function registerAgents(container: DependencyContainer): void {
             ...options,
           });
         };
-        return new AgentExecutorFactory(spawnWithPipe);
+        return new AgentExecutorFactory(spawnWithPipe, undefined, {
+          [AgentType.ShepHarness]: (authConfig) =>
+            new HarnessAgentExecutor(
+              () => c.resolve<HarnessTaskService>(HARNESS_TOKENS.TaskService),
+              authConfig
+            ),
+        });
       }),
     });
   }

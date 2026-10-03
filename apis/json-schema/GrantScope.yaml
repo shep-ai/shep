@@ -1,0 +1,8 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: GrantScope.yaml
+type: string
+enum:
+  - once
+  - task
+  - session
+description: How long a user permission grant applies

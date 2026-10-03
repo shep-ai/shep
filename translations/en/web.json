@@ -22,7 +22,8 @@
       "integrations": "Integrations",
       "security": "Security",
       "messaging": "Messaging",
-      "mcp": "MCP"
+      "mcp": "MCP",
+      "harness": "Agent Harness"
     },
     "language": {
       "title": "Language",
@@ -262,7 +263,9 @@
       "whatsappDispatchDescription": "Dispatch and steer shep agents from WhatsApp — create features, receive agent updates, and approve gates by replying in a chat thread (spec 101).",
       "clusters": "Clusters",
       "clustersDescription": "Enable Clusters navigation and Kubernetes cluster management in the web UI",
-      "hint": "Experimental features that are still under development. Enable at your own risk — they may change or be removed in future versions. Debug mode adds verbose logging useful for troubleshooting."
+      "hint": "Experimental features that are still under development. Enable at your own risk — they may change or be removed in future versions. Debug mode adds verbose logging useful for troubleshooting.",
+      "queryAwareHarness": "Query-aware agent harness",
+      "queryAwareHarnessDescription": "Experimental: the Shep Harness agent, /harness, the feature Context tab and permission prompts"
     },
     "interactiveAgent": {
       "title": "Interactive Agent",
@@ -373,6 +376,49 @@
         "connected": "Connected",
         "error": "Error"
       }
+    },
+    "harness": {
+      "title": "Agent Harness",
+      "experimental": "Experimental",
+      "description": "How the Shep Harness builds model context, which model it runs on, and how it asks before acting",
+      "hint": "The harness runs on an SDK backend (OpenRouter, Together AI, Ollama or LLMProxy). Context relevance can be scored by a local open-source model or by Jev — or deterministically, with no network at all.",
+      "mode": "Context mode",
+      "modeDescription": "Query-aware builds a fresh, query-specific context plan for every model call; baseline keeps a transcript",
+      "backend": "Model backend",
+      "backendDescription": "SDK agent the harness calls; its key comes from the agent token or its environment variable",
+      "model": "Backend model",
+      "modelDescription": "Model id on the backend; leave empty for the backend default",
+      "modelPlaceholder": "Backend default",
+      "budget": "Budget mode",
+      "budgetDescription": "Trade cost against quality when fitting context to the token budget",
+      "maxTurns": "Turn limit",
+      "maxTurnsDescription": "Model calls per task before it stops",
+      "modelTimeout": "Model call timeout (seconds)",
+      "modelTimeoutDescription": "How long one model call may take; raise it for slow local models",
+      "decisionsTitle": "Context relevance provider",
+      "decisionsDescription": "Who scores how relevant each piece of state is to the current query. Any provider failure falls back to deterministic scoring.",
+      "providerKind": "Provider",
+      "providerKindDescription": "Deterministic (no network), an OpenAI-compatible server, a reranker, the harness's own model, or Jev",
+      "providerEndpoint": "Endpoint",
+      "providerEndpointDescription": "Base URL of the provider",
+      "providerModel": "Model",
+      "providerModelDescription": "Model the endpoint should use (optional)",
+      "providerKeyEnv": "API key variable",
+      "providerKeyEnvDescription": "Name of the environment variable holding the key — never the key itself",
+      "shadowTitle": "Shadow modes",
+      "shadow": {
+        "contextRouter": "Shadow context router",
+        "contextRouterDescription": "Run as baseline and record the query-aware plans it would have used",
+        "permissions": "Shadow permission risk",
+        "permissionsDescription": "Record AI permission risk scores without enforcing them",
+        "toolRouter": "Shadow tool router",
+        "toolRouterDescription": "Record capability routing without enforcing it"
+      },
+      "permissionsTitle": "Permissions",
+      "unknownDefault": "Unknown actions",
+      "unknownDefaultDescription": "What happens when no rule matches an action",
+      "approvalTimeout": "Approval timeout (minutes)",
+      "approvalTimeoutDescription": "An unanswered request is denied after this long"
     }
   },
   "navigation": {
@@ -397,7 +443,8 @@
     "collaboration": "Collaboration",
     "clusters": "Clusters",
     "plugins": "Plugins",
-    "projectMemory": "Project Memory"
+    "projectMemory": "Project Memory",
+    "harness": "Harness"
   },
   "sidebar": {
     "features": "Features",
@@ -1044,5 +1091,204 @@
     "queuedWithPosition": "Queued · {{position}} ahead",
     "queuedTooltip": "Waiting for a free slot ({{position}} in queue)",
     "startAnyway": "Start anyway"
+  },
+  "harness": {
+    "title": "Agent Harness",
+    "subtitle": "Standalone tasks, what the model saw on each turn, and actions waiting for your approval",
+    "loading": "Loading…",
+    "noTasks": "No tasks yet.",
+    "taskN": "Task {{n}}",
+    "turn": "Turn {{n}}",
+    "tabs": {
+      "sessions": "Sessions",
+      "newTask": "New task",
+      "approvals": "Approvals",
+      "catalog": "Tools & policies",
+      "setup": "Set up a repository",
+      "evals": "Evals"
+    },
+    "mode": {
+      "query_aware": "Query-aware",
+      "baseline": "Baseline"
+    },
+    "budget": {
+      "economy": "Economy",
+      "balanced": "Balanced",
+      "quality": "Quality"
+    },
+    "effect": {
+      "allow": "Allow",
+      "ask": "Ask",
+      "deny": "Deny"
+    },
+    "origin": {
+      "feature": "Feature",
+      "standalone": "Standalone",
+      "eval": "Eval"
+    },
+    "sessionStatus": {
+      "active": "Running",
+      "idle": "Idle",
+      "completed": "Completed",
+      "failed": "Failed",
+      "discarded": "Discarded"
+    },
+    "visibility": {
+      "hidden": "Hidden",
+      "short": "Short",
+      "long": "Long",
+      "full": "Full"
+    },
+    "source": {
+      "deterministic": "deterministic",
+      "ai": "AI",
+      "policy": "policy",
+      "degraded": "degraded",
+      "escalation": "requested by the agent",
+      "user": "you",
+      "budget": "budget"
+    },
+    "providerKind": {
+      "deterministic": "Deterministic",
+      "openai_compatible": "OpenAI-compatible server",
+      "reranker": "Reranker",
+      "structured_llm": "Harness model",
+      "jev": "Jev"
+    },
+    "sessions": {
+      "empty": "No harness sessions yet. Start one from New task.",
+      "title": "Session",
+      "origin": "Origin",
+      "mode": "Mode",
+      "status": "Status",
+      "tasks": "Tasks",
+      "pending": "{{count}} waiting"
+    },
+    "newTask": {
+      "repository": "Repository",
+      "task": "Task",
+      "taskPlaceholder": "Fix the refresh token expiry check",
+      "worktreeNote": "Runs in its own worktree — your checkout is never touched. Afterwards you apply it to a branch, promote it to a feature, or discard it.",
+      "run": "Run task"
+    },
+    "approvals": {
+      "empty": "Nothing is waiting for approval."
+    },
+    "permission": {
+      "reason": "Agent's reason:",
+      "willDo": "This action will:",
+      "noEffects": "(no predicted effects)",
+      "rules": "Rules:",
+      "notePlaceholder": "Note to the agent (optional), e.g. use jose instead",
+      "allowOnce": "Allow once",
+      "allowPhase": "Allow for this phase",
+      "allowFeature": "Allow for this feature",
+      "allowSession": "Allow for this session",
+      "deny": "Deny",
+      "hardDeny": "Denied by a hard rule; it cannot be approved."
+    },
+    "banner": {
+      "waiting": "{{count}} harness action(s) waiting for your approval",
+      "review": "Review"
+    },
+    "context": {
+      "empty": "This feature has not run on the Shep Harness yet."
+    },
+    "usage": {
+      "turns": "Turns",
+      "input": "Input tokens",
+      "output": "Output tokens",
+      "cost": "Cost",
+      "toolOutputSeen": "Tool output seen",
+      "denied": "Denied actions"
+    },
+    "plan": {
+      "summary": "{{tokens}} of {{budget}} tokens · {{count}} candidates",
+      "shadow": "shadow",
+      "degraded": "degraded",
+      "overBudget": "over budget",
+      "none": "Select a turn to see what the model saw.",
+      "chunk": "Chunk",
+      "visibility": "Visibility",
+      "tokens": "Tokens shown/raw",
+      "relevance": "Relevance",
+      "reason": "Reason",
+      "view": "View",
+      "why": "Why?"
+    },
+    "chunk": {
+      "redacted": "This chunk is marked secret and is never rendered.",
+      "truncated": "truncated",
+      "storedNote": "rendered from stored output; nothing was re-run"
+    },
+    "why": {
+      "title": "Why this visibility?",
+      "tokens": "{{visible}} of {{raw}} tokens shown",
+      "relevance": "Relevance {{score}}",
+      "bands": "hidden < {{hide}} ≤ short < {{long}} ≤ long < {{full}} ≤ full",
+      "noProbabilities": "No class probabilities: this provider does not return them.",
+      "provider": "Decided by {{provider}} in {{latency}} ms · {{cost}}",
+      "shadow": "shadow",
+      "degraded": "degraded",
+      "include": "Include from next turn",
+      "included": "Included from the next turn"
+    },
+    "actions": {
+      "stop": "Stop",
+      "stopRequested": "Stop requested; the task stops before its next turn",
+      "stoppedOrphan": "Stopped: the process running the task had exited, so it is cancelled",
+      "branchPlaceholder": "Branch (optional)",
+      "apply": "Apply to branch",
+      "applied": "Committed {{count}} file(s) to {{branch}}",
+      "promote": "Promote to feature",
+      "discard": "Discard",
+      "discarded": "Worktree removed; the session is kept"
+    },
+    "capabilities": {
+      "title": "Tools the agent can load",
+      "description": "Tier 1 snippets are always shown; Tier 2 schemas load only when the agent asks for a capability.",
+      "cost": "{{snippet}} / {{schema}} tokens"
+    },
+    "policies": {
+      "title": "Permission rules",
+      "description": "Shep defaults plus .shep/harness/policies/*.yaml. Precedence: deny > ask > allow.",
+      "hard": "hard"
+    },
+    "setup": {
+      "description": "Detects instruction files, test and lint commands and sensitive files, previews .shep/harness/, and writes only when you confirm. Source files are never modified.",
+      "preview": "Preview",
+      "instructions": "Instructions",
+      "manifests": "Manifests",
+      "commands": "Test / lint",
+      "sensitive": "Sensitive files",
+      "exists": "exists, kept",
+      "confirm": "Write files",
+      "written": "Wrote {{count}} file(s)"
+    },
+    "evals": {
+      "description": "Run the same tasks on baseline and query-aware, each in a throwaway repository, and compare success, tokens, cost, turns and evidence recall.",
+      "repeats": "Repeats",
+      "run": "Run eval",
+      "empty": "No eval runs yet.",
+      "score": "Score",
+      "change": "Change",
+      "status": {
+        "pending": "Pending",
+        "running": "Running",
+        "completed": "Completed",
+        "failed": "Failed"
+      },
+      "scores": {
+        "success": "Success",
+        "inputTokens": "Input tokens",
+        "outputTokens": "Output tokens",
+        "costUsd": "Cost",
+        "turns": "Turns",
+        "wallMs": "Wall time",
+        "repeatedReads": "Repeated reads",
+        "toolOutputRatio": "Tool output seen",
+        "evidenceRecall": "Evidence recall"
+      }
+    }
   }
 }

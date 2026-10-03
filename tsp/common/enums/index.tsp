@@ -32,3 +32,4 @@ import "./security.tsp";
 import "./scheduled-workflow.tsp";
 import "./plugin.tsp";
 import "./agent-effort.tsp";
+import "./harness.tsp";

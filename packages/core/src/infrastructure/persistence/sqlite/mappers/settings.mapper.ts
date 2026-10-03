@@ -19,10 +19,12 @@ import type {
   MessagingPlatformConfig,
   WorktreeConfig,
   AdaptiveModelConfig,
+  HarnessConfig,
 } from '../../../../domain/generated/output.js';
 import { createDefaultSettings } from '../../../../domain/factories/settings-defaults.factory.js';
 import { normalizeWorktreeConfig } from '../../../../domain/shared/worktree-config.js';
 import { parseAgentEffort } from '../../../../domain/shared/agent-effort.js';
+import { resolveHarnessConfig } from '../../../../domain/harness/harness-config.js';
 import {
   clampMaxParallelFeatures,
   resolveMaxParallelFeatures,
@@ -159,6 +161,8 @@ export interface SettingsRow {
   feature_flag_supply_chain_security: number;
   feature_flag_scheduled_workflows: number;
   feature_flag_github_import?: number;
+  // Query-aware harness flag (migration 151)
+  feature_flag_query_aware_harness?: number;
   // Interactive agent config (added in migration 046)
   interactive_agent_enabled: number;
   interactive_agent_auto_timeout_minutes: number;
@@ -195,6 +199,9 @@ export interface SettingsRow {
   security_mode: string;
   security_last_evaluation_at: string | null;
   security_policy_source: string | null;
+
+  // HarnessConfig as JSON (migration 151) — NULL means all defaults
+  harness_config?: string | null;
 
   // WorktreeConfig (added in migration 139) — NULL means built-in `git worktree add`
   worktree_create_command: string | null;
@@ -348,6 +355,7 @@ export function toDatabase(settings: Settings): SettingsRow {
     feature_flag_supply_chain_security: settings.featureFlags?.supplyChainSecurity ? 1 : 0,
     feature_flag_scheduled_workflows: settings.featureFlags?.scheduledWorkflows ? 1 : 0,
     feature_flag_github_import: settings.featureFlags?.githubImport !== false ? 1 : 0,
+    feature_flag_query_aware_harness: settings.featureFlags?.queryAwareHarness ? 1 : 0,
 
     // InteractiveAgentConfig (boolean → 0/1, integer fields; defaults applied here)
     interactive_agent_enabled: (settings.interactiveAgent?.enabled ?? true) ? 1 : 0,
@@ -394,6 +402,9 @@ export function toDatabase(settings: Settings): SettingsRow {
     // WorktreeConfig (migration 139) — normalized first so blank commands
     // persist as NULL and a cleared Settings input restores `git worktree add`.
     ...worktreeToRow(settings.worktree),
+
+    // HarnessConfig (migration 151) — stored as JSON, normalized on read
+    harness_config: settings.harness ? JSON.stringify(settings.harness) : null,
 
     // Messaging remote control (migration 056)
     ...messagingToRow(settings.messaging),
@@ -452,6 +463,23 @@ function worktreeToRow(
     worktree_post_create_command: normalized?.postCreateCommand ?? null,
     worktree_command_timeout_ms: normalized?.commandTimeoutMs ?? null,
   };
+}
+
+/**
+ * Deserialize HarnessConfig from the JSON column (migration 151).
+ *
+ * Returns undefined when the column is NULL so `settings.harness` stays absent
+ * until the user configures it. A stored value is normalized through
+ * `resolveHarnessConfig`; unreadable JSON reads back as undefined (defaults)
+ * instead of breaking every settings load.
+ */
+function harnessFromRow(row: SettingsRow): HarnessConfig | undefined {
+  if (row.harness_config === null || row.harness_config === undefined) return undefined;
+  try {
+    return resolveHarnessConfig(JSON.parse(row.harness_config) as Partial<HarnessConfig>);
+  } catch {
+    return undefined;
+  }
 }
 
 /**
@@ -678,6 +706,7 @@ function buildSkillInjectionFromRow(
  */
 export function fromDatabase(row: SettingsRow): Settings {
   const worktree = worktreeFromRow(row);
+  const harness = harnessFromRow(row);
   const adaptive = adaptiveModelsFromRow(row);
   const effort = parseAgentEffort(row.model_effort);
 
@@ -789,6 +818,7 @@ export function fromDatabase(row: SettingsRow): Settings {
       scheduledWorkflows: row.feature_flag_scheduled_workflows === 1,
       // Default true when column is missing/null (pre-migration upgrades)
       githubImport: (row.feature_flag_github_import ?? 1) !== 0,
+      queryAwareHarness: row.feature_flag_query_aware_harness === 1,
     },
 
     // InteractiveAgentConfig (INTEGER 0/1 → boolean, integer → number)
@@ -830,6 +860,9 @@ export function fromDatabase(row: SettingsRow): Settings {
     // configured, so `settings.worktree` stays undefined for the default
     // built-in `git worktree add` flow.
     ...(worktree !== undefined && { worktree }),
+
+    // HarnessConfig (migration 151) — undefined when never configured
+    ...(harness !== undefined && { harness }),
 
     // Onboarding (INTEGER → boolean)
     onboardingComplete: row.onboarding_complete === 1,

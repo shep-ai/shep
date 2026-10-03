@@ -1,0 +1,67 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: ContextChunk.yaml
+type: object
+properties:
+  sessionId:
+    type: string
+    description: Owning session
+  taskId:
+    type: string
+    description: Task that produced the chunk
+  kind:
+    $ref: ChunkKind.yaml
+    description: Chunk kind; selects the renderer
+  label:
+    type: string
+    description: Short human label (a path, a command, a section title)
+  source:
+    type: string
+    description: Where the chunk came from (tool call id, file path, prompt section id)
+  contentRef:
+    type: string
+    description: Blob reference of the raw content
+  contentHash:
+    type: string
+    description: SHA-256 of the raw content; immutable
+  tokenEstimate:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Estimated tokens of the raw content
+  sensitivity:
+    $ref: SensitivityLabel.yaml
+    description: Sensitivity label; secret chunks are never rendered into model context
+  path:
+    type: string
+    description: Repository path the chunk refers to, if any
+  repoSnapshotId:
+    type: string
+    description: Snapshot the chunk's content was captured from
+  supersedes:
+    type: string
+    description: Chunk this one replaces (a newer read of the same file)
+  supersededBy:
+    type: string
+    description: Chunk that replaced this one
+  pinned:
+    type: boolean
+    description: Pinned chunks are always visible while active
+  tags:
+    type: array
+    items:
+      type: string
+    description: Free-form tags used by candidate retrieval
+required:
+  - sessionId
+  - kind
+  - label
+  - source
+  - contentRef
+  - contentHash
+  - tokenEstimate
+  - sensitivity
+  - pinned
+  - tags
+allOf:
+  - $ref: BaseEntity.yaml
+description: An addressable unit of harness state whose raw content lives in the blob store

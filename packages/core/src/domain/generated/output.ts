@@ -568,6 +568,7 @@ export enum AgentType {
   Ollama = 'ollama',
   LlmProxy = 'llmproxy',
   Dev = 'dev',
+  ShepHarness = 'shep-harness',
 }
 export enum AgentAuthMethod {
   Session = 'session',
@@ -774,6 +775,10 @@ export type FeatureFlags = {
    * Enable GitHub repository import flow (clone, fork, and add to Shep)
    */
   githubImport: boolean;
+  /**
+   * Enable the experimental query-aware agent harness: the Shep Harness agent, /harness pages, the feature Context tab and `shep harness` commands (spec 119)
+   */
+  queryAwareHarness: boolean;
 };
 export enum WhatsAppAdapterKind {
   Baileys = 'baileys',
@@ -1009,6 +1014,229 @@ export enum DefaultHomePage {
   Applications = 'applications',
   Features = 'features',
 }
+export enum HarnessMode {
+  Baseline = 'baseline',
+  QueryAware = 'query_aware',
+}
+export enum HarnessBudgetMode {
+  Economy = 'economy',
+  Balanced = 'balanced',
+  Quality = 'quality',
+}
+export type float = any;
+export type float64 = float;
+export enum ChunkVisibility {
+  Hidden = 'hidden',
+  Short = 'short',
+  Long = 'long',
+  Full = 'full',
+}
+
+/**
+ * Context budget and visibility bands
+ */
+export type HarnessContextConfig = {
+  /**
+   * Maximum input tokens of a model call
+   */
+  maxInputTokens: number;
+  /**
+   * Tokens reserved for the model's output
+   */
+  reserveOutputTokens: number;
+  /**
+   * Maximum candidate chunks scored per turn
+   */
+  candidateLimit: number;
+  /**
+   * Relevance below this is hidden
+   */
+  hideThreshold: float64;
+  /**
+   * Relevance from this is long (below it: short)
+   */
+  longThreshold: float64;
+  /**
+   * Relevance from this is full
+   */
+  fullThreshold: float64;
+  /**
+   * Largest view (tokens) shown in full without an explicit request; bigger chunks get their long view
+   */
+  fullTokenCap: number;
+  /**
+   * Visibility used when no provider could score a chunk
+   */
+  uncertainDefault: ChunkVisibility;
+};
+export enum DecisionProviderKind {
+  Deterministic = 'deterministic',
+  OpenAiCompatible = 'openai_compatible',
+  Reranker = 'reranker',
+  StructuredLlm = 'structured_llm',
+  Jev = 'jev',
+}
+
+/**
+ * One configured decision provider instance
+ */
+export type DecisionProviderConfig = {
+  /**
+   * Unique id referenced by routes
+   */
+  id: string;
+  /**
+   * Implementation family
+   */
+  kind: DecisionProviderKind;
+  /**
+   * HTTP endpoint (openai_compatible, reranker, jev)
+   */
+  endpoint?: string;
+  /**
+   * Model name the endpoint should use
+   */
+  model?: string;
+  /**
+   * Name of the environment variable holding an API key (never the key itself)
+   */
+  apiKeyEnv?: string;
+  /**
+   * Per-call timeout in milliseconds
+   */
+  timeoutMs?: number;
+};
+
+/**
+ * Which provider answers each decision kind
+ */
+export type DecisionRoutes = {
+  /**
+   * Provider for chunk visibility
+   */
+  chunkVisibility?: string;
+  /**
+   * Provider for capability choice
+   */
+  capabilityChoice?: string;
+  /**
+   * Provider for cache strategy
+   */
+  cacheStrategy?: string;
+  /**
+   * Provider for (shadow) permission risk
+   */
+  permissionRisk?: string;
+};
+
+/**
+ * Pluggable decision layer: Jev is optional and replaceable by open-source providers
+ */
+export type HarnessDecisionsConfig = {
+  /**
+   * Configured providers; 'deterministic' always exists implicitly
+   */
+  providers: DecisionProviderConfig[];
+  /**
+   * Per-kind routes
+   */
+  routes: DecisionRoutes;
+  /**
+   * Provider for kinds without a route
+   */
+  defaultProviderId: string;
+  /**
+   * Ordered fallbacks; deterministic is always appended last
+   */
+  fallbackProviderIds: string[];
+};
+
+/**
+ * Shadow (record-only) switches
+ */
+export type HarnessShadowConfig = {
+  /**
+   * Run baseline but record query-aware plans
+   */
+  contextRouter: boolean;
+  /**
+   * Record AI permission-risk judgments without enforcing them
+   */
+  permissions: boolean;
+  /**
+   * Record capability-router picks while the model's choice runs
+   */
+  toolRouter: boolean;
+};
+export enum PermissionEffect {
+  Allow = 'allow',
+  Ask = 'ask',
+  Deny = 'deny',
+}
+
+/**
+ * Permission defaults
+ */
+export type HarnessPermissionsConfig = {
+  /**
+   * Effect for actions no rule matches
+   */
+  defaultUnknown: PermissionEffect;
+  /**
+   * What 'ask' becomes when nobody can answer (evals, --non-interactive)
+   */
+  nonInteractiveAsk: PermissionEffect;
+  /**
+   * How long to wait for a person before denying, in milliseconds
+   */
+  approvalTimeoutMs: number;
+};
+
+/**
+ * Global configuration of the query-aware agent harness (spec 119)
+ */
+export type HarnessConfig = {
+  /**
+   * Context-assembly mode
+   */
+  mode: HarnessMode;
+  /**
+   * Budget mode
+   */
+  budgetMode: HarnessBudgetMode;
+  /**
+   * Maximum model calls per task
+   */
+  maxTurns: number;
+  /**
+   * Timeout for one model call in milliseconds; raise it for slow local models
+   */
+  modelTimeoutMs: number;
+  /**
+   * SDK agent whose model access (and credentials) the harness reuses
+   */
+  backendAgentType: AgentType;
+  /**
+   * Model id on the backend (unset: settings.models.default)
+   */
+  backendModel?: string;
+  /**
+   * Context budget and visibility bands
+   */
+  context: HarnessContextConfig;
+  /**
+   * Decision layer
+   */
+  decisions: HarnessDecisionsConfig;
+  /**
+   * Shadow switches
+   */
+  shadow: HarnessShadowConfig;
+  /**
+   * Permission defaults
+   */
+  permissions: HarnessPermissionsConfig;
+};
 
 /**
  * Global Shep platform settings (singleton)
@@ -1082,6 +1310,88 @@ export type Settings = BaseEntity & {
    * Custom worktree provisioning commands (optional, built-in git worktree by default)
    */
   worktree?: WorktreeConfig;
+  /**
+   * Query-aware agent harness configuration (optional, defaults applied at runtime)
+   */
+  harness?: HarnessConfig;
+};
+export enum HarnessEvalRunStatus {
+  Pending = 'pending',
+  Running = 'running',
+  Completed = 'completed',
+  Failed = 'failed',
+}
+
+/**
+ * One eval run over a suite: cases × variants × repeats
+ */
+export type HarnessEvalRun = BaseEntity & {
+  /**
+   * Suite name
+   */
+  suite: string;
+  /**
+   * Variants compared
+   */
+  variants: HarnessMode[];
+  /**
+   * Repeats per case and variant
+   */
+  repeats: number;
+  /**
+   * Status
+   */
+  status: HarnessEvalRunStatus;
+  /**
+   * Model id used by every variant
+   */
+  modelId?: string;
+  /**
+   * Error message when the run failed
+   */
+  error?: string;
+  /**
+   * OS process running the eval; a run whose process exited is reported as failed
+   */
+  ownerPid?: number;
+};
+
+/**
+ * Result of one case × variant × repeat in an eval run
+ */
+export type HarnessEvalResult = BaseEntity & {
+  /**
+   * Eval run
+   */
+  runId: string;
+  /**
+   * Case id
+   */
+  caseId: string;
+  /**
+   * Variant
+   */
+  variant: HarnessMode;
+  /**
+   * Repeat index (0-based)
+   */
+  repeat: number;
+  /**
+   * Whether the success check passed
+   */
+  success: boolean;
+  /**
+   * Metric values (inputTokens, outputTokens, cachedTokens, costUsd, wallMs, turns, repeatedReads, visibleToolTokens, rawToolTokens, recall)
+   */
+  scores: Record<string, float64>;
+  /**
+   * Harness session of the run
+   */
+  sessionId?: string;
+  /**
+   * Error message when the case failed to run
+   */
+  error?: string;
 };
 export enum SupervisorScopeType {
   global = 'global',
@@ -2833,8 +3143,6 @@ export enum Priority {
   Low = 'Low',
   None = 'None',
 }
-export type float = any;
-export type float64 = float;
 
 /**
  * A unit of work within a project — issue, task, bug, or story
@@ -4906,6 +5214,1158 @@ export type FleetCircuitBreakerSettings = {
    * Reserved: whether admission should be paused when tripped. Not acted on yet — admission control (PR #847) is not on main, so the trip is reported as a status signal only.
    */
   autoPauseQueue: boolean;
+};
+
+/**
+ * Cost, time and token limits for one harness task
+ */
+export type HarnessBudget = {
+  /**
+   * Maximum spend in USD for the task (unset: no limit)
+   */
+  maxUsd?: float64;
+  /**
+   * Maximum wall time in milliseconds (unset: the caller's timeout)
+   */
+  maxWallTimeMs?: number;
+  /**
+   * Maximum input tokens per model call
+   */
+  maxInputTokens?: number;
+  /**
+   * Maximum output tokens per model call
+   */
+  maxOutputTokens?: number;
+  /**
+   * Budget mode controlling quality/cost trade-offs
+   */
+  quality: HarnessBudgetMode;
+};
+export enum HarnessSessionStatus {
+  Active = 'active',
+  Idle = 'idle',
+  Completed = 'completed',
+  Failed = 'failed',
+  Discarded = 'discarded',
+}
+export enum HarnessSessionOrigin {
+  Feature = 'feature',
+  Standalone = 'standalone',
+  Eval = 'eval',
+}
+
+/**
+ * A logical harness work session (a feature run, a standalone task, or an eval case)
+ */
+export type HarnessSession = BaseEntity & {
+  /**
+   * Lifecycle status of the session
+   */
+  status: HarnessSessionStatus;
+  /**
+   * Where the session came from
+   */
+  origin: HarnessSessionOrigin;
+  /**
+   * Context-assembly mode used by the session
+   */
+  mode: HarnessMode;
+  /**
+   * Repository root (or worktree) the session operates in
+   */
+  repoRoot: string;
+  /**
+   * Human-readable goal of the session
+   */
+  title: string;
+  /**
+   * Agent run this session belongs to (feature sessions)
+   */
+  agentRunId?: string;
+  /**
+   * Feature this session belongs to (feature sessions)
+   */
+  featureId?: string;
+  /**
+   * Original repository path when the session runs in a dedicated worktree
+   */
+  sourceRepoPath?: string;
+  /**
+   * Dedicated worktree path of a standalone session
+   */
+  worktreePath?: string;
+  /**
+   * Branch of the dedicated worktree of a standalone session
+   */
+  worktreeBranch?: string;
+  /**
+   * Root task of the session
+   */
+  rootTaskId?: string;
+  /**
+   * Model id used by the session
+   */
+  modelId?: string;
+  /**
+   * Whether shadow context planning is on for this session
+   */
+  shadowContext: boolean;
+  /**
+   * Commit a standalone session's worktree started from (the base of its patch)
+   */
+  baseCommit?: string;
+  /**
+   * When a person asked to stop the session; the running task stops before its next turn
+   */
+  stopRequestedAt?: any;
+};
+export enum HarnessTaskType {
+  ReadOnly = 'read_only',
+  Write = 'write',
+  SideEffect = 'side_effect',
+}
+export enum HarnessTaskStatus {
+  Pending = 'pending',
+  Running = 'running',
+  Blocked = 'blocked',
+  Completed = 'completed',
+  Failed = 'failed',
+  Cancelled = 'cancelled',
+}
+export enum HarnessTaskOutcome {
+  Success = 'success',
+  Partial = 'partial',
+  Failure = 'failure',
+}
+
+/**
+ * A reference to repository evidence bound to a snapshot or content hash
+ */
+export type HarnessEvidenceRef = {
+  /**
+   * Repository-relative path or resource identifier
+   */
+  resource: string;
+  /**
+   * Snapshot the evidence refers to
+   */
+  repoSnapshotId?: string;
+  /**
+   * First line of the referenced range
+   */
+  startLine?: number;
+  /**
+   * Last line of the referenced range
+   */
+  endLine?: number;
+  /**
+   * Content hash of the referenced content
+   */
+  contentHash?: string;
+};
+
+/**
+ * Structured result of a harness task, returned instead of a transcript
+ */
+export type HarnessTaskResult = {
+  /**
+   * Outcome
+   */
+  status: HarnessTaskOutcome;
+  /**
+   * Short summary of what was done
+   */
+  summary: string;
+  /**
+   * Evidence supporting the result
+   */
+  evidence: HarnessEvidenceRef[];
+  /**
+   * Chunks produced by the task
+   */
+  producedChunkIds: string[];
+  /**
+   * Blob reference of the produced patch, if any
+   */
+  patchRef?: string;
+  /**
+   * Chunks holding test results
+   */
+  testResultChunkIds?: string[];
+  /**
+   * Self-reported confidence between 0 and 1
+   */
+  confidence?: float64;
+};
+
+/**
+ * The canonical unit of harness work
+ */
+export type HarnessTask = BaseEntity & {
+  /**
+   * Owning session
+   */
+  sessionId: string;
+  /**
+   * Parent task, for child tasks
+   */
+  parentTaskId?: string;
+  /**
+   * Goal as given by the caller
+   */
+  goal: string;
+  /**
+   * Normalized goal used for fingerprints and dedupe
+   */
+  normalizedGoal: string;
+  /**
+   * Read-only, write or side-effect task
+   */
+  type: HarnessTaskType;
+  /**
+   * Lifecycle status
+   */
+  status: HarnessTaskStatus;
+  /**
+   * SDLC phase label when the task is a feature-node call (e.g. implement:phase-2)
+   */
+  phase?: string;
+  /**
+   * Repository snapshot the task started from
+   */
+  repoSnapshotId?: string;
+  /**
+   * Budget for the task
+   */
+  budget: HarnessBudget;
+  /**
+   * Stable dedupe key over normalized goal, scope, snapshot and type
+   */
+  dedupeKey: string;
+  /**
+   * Monotonic state version, bumped whenever task state that feeds context changes
+   */
+  stateVersion: number;
+  /**
+   * Number of model calls made so far
+   */
+  turnCount: number;
+  /**
+   * Structured result once completed or failed
+   */
+  result?: HarnessTaskResult;
+  /**
+   * Failure reason when status is failed
+   */
+  failureReason?: string;
+  /**
+   * OS process running the task; lets a stop cancel a task whose process has exited
+   */
+  ownerPid?: number;
+};
+
+/**
+ * An immutable fingerprint of a repository working tree
+ */
+export type RepoSnapshot = BaseEntity & {
+  /**
+   * Owning session
+   */
+  sessionId: string;
+  /**
+   * Repository root
+   */
+  root: string;
+  /**
+   * HEAD commit, if the root is a git repository
+   */
+  gitCommit?: string;
+  /**
+   * Hash over tracked and untracked non-ignored file contents
+   */
+  workingTreeHash: string;
+  /**
+   * Hash of the staged diff
+   */
+  stagedDiffHash?: string;
+  /**
+   * Hash of the unstaged diff
+   */
+  unstagedDiffHash?: string;
+  /**
+   * Blob reference of the per-file hash map, used to compute drift
+   */
+  fileHashesRef?: string;
+  /**
+   * Number of files in the snapshot
+   */
+  fileCount: number;
+};
+export enum HarnessEventType {
+  SessionCreated = 'session.created',
+  SessionResumed = 'session.resumed',
+  TaskCreated = 'task.created',
+  TaskStatusChanged = 'task.status_changed',
+  RepoSnapshotCreated = 'repo_snapshot.created',
+  RepoDriftDetected = 'repo.drift_detected',
+  InstructionActivated = 'instruction.activated',
+  ContextPlanCreated = 'context_plan.created',
+  DecisionRecorded = 'decision.recorded',
+  ModelCallStarted = 'model_call.started',
+  ModelCallCompleted = 'model_call.completed',
+  ToolSelected = 'tool.selected',
+  PermissionRequested = 'permission.requested',
+  PermissionResolved = 'permission.resolved',
+  ToolExecutionStarted = 'tool.execution_started',
+  ToolExecutionCompleted = 'tool.execution_completed',
+  ChunkExpanded = 'chunk.expanded',
+  TaskCompleted = 'task.completed',
+  TaskFailed = 'task.failed',
+}
+
+/**
+ * An append-only harness event; sequence is monotonic within a session
+ */
+export type HarnessEvent = BaseEntity & {
+  /**
+   * Owning session
+   */
+  sessionId: string;
+  /**
+   * Task the event concerns
+   */
+  taskId?: string;
+  /**
+   * Monotonic sequence number within the session
+   */
+  sequence: number;
+  /**
+   * Event type
+   */
+  type: HarnessEventType;
+  /**
+   * Small JSON payload (larger payloads live in payloadRef)
+   */
+  payload: Record<string, unknown>;
+  /**
+   * Blob reference for payloads larger than the inline limit
+   */
+  payloadRef?: string;
+};
+export enum ChunkKind {
+  UserMessage = 'user_message',
+  AssistantMessage = 'assistant_message',
+  PromptSection = 'prompt_section',
+  File = 'file',
+  FileExcerpt = 'file_excerpt',
+  SearchResult = 'search_result',
+  ToolInput = 'tool_input',
+  ToolOutput = 'tool_output',
+  CommandOutput = 'command_output',
+  Diff = 'diff',
+  TestResult = 'test_result',
+  Instruction = 'instruction',
+  Plan = 'plan',
+  Decision = 'decision',
+  SubagentResult = 'subagent_result',
+  BackgroundResult = 'background_result',
+  Documentation = 'documentation',
+}
+export enum SensitivityLabel {
+  Public = 'public',
+  Internal = 'internal',
+  Confidential = 'confidential',
+  Secret = 'secret',
+  Regulated = 'regulated',
+}
+
+/**
+ * An addressable unit of harness state whose raw content lives in the blob store
+ */
+export type ContextChunk = BaseEntity & {
+  /**
+   * Owning session
+   */
+  sessionId: string;
+  /**
+   * Task that produced the chunk
+   */
+  taskId?: string;
+  /**
+   * Chunk kind; selects the renderer
+   */
+  kind: ChunkKind;
+  /**
+   * Short human label (a path, a command, a section title)
+   */
+  label: string;
+  /**
+   * Where the chunk came from (tool call id, file path, prompt section id)
+   */
+  source: string;
+  /**
+   * Blob reference of the raw content
+   */
+  contentRef: string;
+  /**
+   * SHA-256 of the raw content; immutable
+   */
+  contentHash: string;
+  /**
+   * Estimated tokens of the raw content
+   */
+  tokenEstimate: number;
+  /**
+   * Sensitivity label; secret chunks are never rendered into model context
+   */
+  sensitivity: SensitivityLabel;
+  /**
+   * Repository path the chunk refers to, if any
+   */
+  path?: string;
+  /**
+   * Snapshot the chunk's content was captured from
+   */
+  repoSnapshotId?: string;
+  /**
+   * Chunk this one replaces (a newer read of the same file)
+   */
+  supersedes?: string;
+  /**
+   * Chunk that replaced this one
+   */
+  supersededBy?: string;
+  /**
+   * Pinned chunks are always visible while active
+   */
+  pinned: boolean;
+  /**
+   * Free-form tags used by candidate retrieval
+   */
+  tags: string[];
+};
+
+/**
+ * A rendering of a chunk at one visibility level for one query
+ */
+export type ChunkView = BaseEntity & {
+  /**
+   * Rendered chunk
+   */
+  chunkId: string;
+  /**
+   * Fingerprint of the query the view was rendered for
+   */
+  queryFingerprint: string;
+  /**
+   * Visibility level
+   */
+  visibility: ChunkVisibility;
+  /**
+   * Rendered text (absent for hidden views)
+   */
+  content?: string;
+  /**
+   * Estimated tokens of the rendered text
+   */
+  estimatedTokens: number;
+  /**
+   * Renderer id and version, e.g. test-result@1
+   */
+  rendererId: string;
+  /**
+   * Content hash of the chunk the view was rendered from
+   */
+  sourceHash: string;
+  /**
+   * Whether the renderer cut content to fit; recorded, never silent
+   */
+  truncated: boolean;
+};
+export enum VisibilitySource {
+  Deterministic = 'deterministic',
+  Ai = 'ai',
+  Policy = 'policy',
+  Degraded = 'degraded',
+  Escalation = 'escalation',
+  User = 'user',
+  Budget = 'budget',
+}
+
+/**
+ * One candidate's outcome inside a context plan
+ */
+export type PlannedChunk = {
+  /**
+   * Chunk id
+   */
+  chunkId: string;
+  /**
+   * Chunk kind
+   */
+  kind: ChunkKind;
+  /**
+   * Chunk label
+   */
+  label: string;
+  /**
+   * Chosen visibility
+   */
+  visibility: ChunkVisibility;
+  /**
+   * Relevance score between 0 and 1, if one was computed
+   */
+  relevance?: float64;
+  /**
+   * Class probabilities, only when the provider really returned them
+   */
+  probabilities?: Record<string, float64>;
+  /**
+   * Estimated tokens of the chosen view
+   */
+  tokens: number;
+  /**
+   * Estimated tokens of the raw content
+   */
+  rawTokens: number;
+  /**
+   * Why the chunk was a candidate or got this visibility
+   */
+  reasonCode: string;
+  /**
+   * Who set the visibility
+   */
+  source: VisibilitySource;
+  /**
+   * Decision that scored this chunk, if any
+   */
+  decisionId?: string;
+  /**
+   * Renderer id and version
+   */
+  rendererId?: string;
+};
+export enum CacheStrategyMode {
+  Reuse = 'reuse',
+  Rebuild = 'rebuild',
+  StablePrefix = 'stable_prefix',
+}
+
+/**
+ * How a plan expects to use provider prompt caching
+ */
+export type CacheStrategy = {
+  /**
+   * Cache mode
+   */
+  mode: CacheStrategyMode;
+  /**
+   * Fingerprint of the stable prompt prefix
+   */
+  prefixFingerprint?: string;
+  /**
+   * Estimated tokens of the stable prefix
+   */
+  prefixTokens?: number;
+};
+
+/**
+ * The persisted, query-specific projection of state used for one model call
+ */
+export type ContextPlan = BaseEntity & {
+  /**
+   * Task the plan belongs to
+   */
+  taskId: string;
+  /**
+   * Turn number (1-based) the plan was built for
+   */
+  turn: number;
+  /**
+   * Query the plan was built for
+   */
+  query: string;
+  /**
+   * Fingerprint over query, goal, snapshot, renderer versions and instruction set
+   */
+  queryFingerprint: string;
+  /**
+   * Task state version the plan was built from
+   */
+  stateVersion: number;
+  /**
+   * Repository snapshot the plan was built against
+   */
+  repoSnapshotId?: string;
+  /**
+   * Every candidate with its outcome
+   */
+  chunks: PlannedChunk[];
+  /**
+   * Active instruction ids
+   */
+  instructionIds: string[];
+  /**
+   * Capability ids whose Tier-1 snippet was included
+   */
+  capabilityIds: string[];
+  /**
+   * Implementation ids whose Tier-2 schema was loaded
+   */
+  loadedSchemaIds: string[];
+  /**
+   * Estimated tokens of the materialized input
+   */
+  estimatedTokens: number;
+  /**
+   * Token budget available for context
+   */
+  tokenBudget: number;
+  /**
+   * Number of candidates considered
+   */
+  candidateCount: number;
+  /**
+   * Cache strategy
+   */
+  cacheStrategy: CacheStrategy;
+  /**
+   * Decision provider failed and conservative fallback was used
+   */
+  degraded: boolean;
+  /**
+   * Computed but not enforced (shadow mode)
+   */
+  shadow: boolean;
+  /**
+   * Over budget even after downgrading everything that may be downgraded
+   */
+  overBudget: boolean;
+  /**
+   * Provider id that scored the candidates
+   */
+  decidedBy?: string;
+};
+
+/**
+ * A rule the agent follows while its condition holds (CLAUDE.md, rules files, harness instructions)
+ */
+export type Instruction = {
+  /**
+   * Stable id (from frontmatter or derived from the path)
+   */
+  id: string;
+  /**
+   * Title
+   */
+  title: string;
+  /**
+   * Repository-relative source path
+   */
+  source: string;
+  /**
+   * Priority; higher wins ordering
+   */
+  priority: number;
+  /**
+   * Always included while active
+   */
+  pinWhileActive: boolean;
+  /**
+   * Blob reference of the body
+   */
+  contentRef: string;
+  /**
+   * SHA-256 of the body
+   */
+  contentHash: string;
+  /**
+   * Enabled flag
+   */
+  enabled: boolean;
+  /**
+   * Raw `when` condition, if any (conditional activation arrives in V1)
+   */
+  condition?: Record<string, unknown>;
+  /**
+   * Whether the instruction is active for the current task
+   */
+  active: boolean;
+  /**
+   * Why the instruction is inactive, if it is
+   */
+  inactiveReason?: string;
+};
+export enum HarnessDecisionKind {
+  ChunkVisibility = 'chunk_visibility',
+  CacheStrategy = 'cache_strategy',
+  ModelRoute = 'model_route',
+  CapabilityChoice = 'capability_choice',
+  ToolChoice = 'tool_choice',
+  PermissionRisk = 'permission_risk',
+  Sensitivity = 'sensitivity',
+  InstructionActivation = 'instruction_activation',
+}
+
+/**
+ * A persisted, typed decision made by a decision provider
+ */
+export type HarnessDecision = BaseEntity & {
+  /**
+   * Task the decision belongs to
+   */
+  taskId?: string;
+  /**
+   * Decision kind
+   */
+  kind: HarnessDecisionKind;
+  /**
+   * Configured provider id that answered
+   */
+  providerId: string;
+  /**
+   * Provider implementation family
+   */
+  providerKind: DecisionProviderKind;
+  /**
+   * Model the provider used, if any
+   */
+  model?: string;
+  /**
+   * Short question the decision answered
+   */
+  question: string;
+  /**
+   * Blob reference of the full decision input
+   */
+  inputRef: string;
+  /**
+   * Decision result
+   */
+  result: Record<string, unknown>;
+  /**
+   * Alternatives with scores or probabilities, when available
+   */
+  alternatives?: Record<string, unknown>[];
+  /**
+   * Confidence between 0 and 1, when available
+   */
+  confidence?: float64;
+  /**
+   * Latency in milliseconds
+   */
+  latencyMs: number;
+  /**
+   * Estimated cost in USD, when known
+   */
+  estimatedCostUsd?: float64;
+  /**
+   * Whether the result was enforced
+   */
+  enforced: boolean;
+  /**
+   * Computed in shadow mode; never enforced
+   */
+  shadow: boolean;
+  /**
+   * A fallback provider answered because the routed one failed
+   */
+  degraded: boolean;
+  /**
+   * Providers that failed before this one answered
+   */
+  failedProviders?: string[];
+  /**
+   * Context plan the decision fed, if any
+   */
+  contextPlanId?: string;
+};
+export enum ModelCallStatus {
+  Pending = 'pending',
+  Running = 'running',
+  Completed = 'completed',
+  Failed = 'failed',
+}
+
+/**
+ * One call to the coding model
+ */
+export type ModelCall = BaseEntity & {
+  /**
+   * Task
+   */
+  taskId: string;
+  /**
+   * Turn number (1-based)
+   */
+  turn: number;
+  /**
+   * Model id
+   */
+  modelId: string;
+  /**
+   * Context plan the input was materialized from (query-aware mode)
+   */
+  contextPlanId?: string;
+  /**
+   * Status
+   */
+  status: ModelCallStatus;
+  /**
+   * Provider-reported input tokens (including cached)
+   */
+  inputTokens?: number;
+  /**
+   * Provider-reported output tokens
+   */
+  outputTokens?: number;
+  /**
+   * Provider-reported cached input tokens (counted once, inside inputTokens)
+   */
+  cachedInputTokens?: number;
+  /**
+   * Cost in USD when the provider reports it
+   */
+  costUsd?: float64;
+  /**
+   * Latency in milliseconds
+   */
+  latencyMs?: number;
+  /**
+   * Estimated tokens of the materialized input
+   */
+  estimatedInputTokens: number;
+  /**
+   * Chunk holding the model response
+   */
+  responseChunkId?: string;
+  /**
+   * Finish reason reported by the provider
+   */
+  finishReason?: string;
+  /**
+   * Error message when the call failed
+   */
+  error?: string;
+};
+export enum RiskClass {
+  Low = 'low',
+  Medium = 'medium',
+  High = 'high',
+}
+
+/**
+ * What can be done, independent of how (Tier-1 is the snippet)
+ */
+export type Capability = {
+  /**
+   * Stable id, e.g. search_source_code
+   */
+  id: string;
+  /**
+   * Title
+   */
+  title: string;
+  /**
+   * Tier-1 snippet; always cheap
+   */
+  snippet: string;
+  /**
+   * Tags for candidate retrieval
+   */
+  tags: string[];
+  /**
+   * Risk class
+   */
+  risk: RiskClass;
+  /**
+   * Implementations satisfying the capability
+   */
+  implementationIds: string[];
+};
+export enum ToolSourceKind {
+  Builtin = 'builtin',
+  Mcp = 'mcp',
+  Plugin = 'plugin',
+  Custom = 'custom',
+}
+export enum ToolReadWriteMode {
+  Read = 'read',
+  Write = 'write',
+  SideEffect = 'side_effect',
+}
+
+/**
+ * A concrete tool satisfying a capability (Tier-2 schema, optional Tier-3 docs)
+ */
+export type ToolImplementation = {
+  /**
+   * Stable id, e.g. builtin.search_source
+   */
+  id: string;
+  /**
+   * Capability satisfied
+   */
+  capabilityId: string;
+  /**
+   * Source of the implementation
+   */
+  source: ToolSourceKind;
+  /**
+   * Tool name exposed to the model once its schema is loaded
+   */
+  toolName: string;
+  /**
+   * Snippet
+   */
+  snippet: string;
+  /**
+   * JSON Schema of the arguments (Tier-2)
+   */
+  inputSchema: Record<string, unknown>;
+  /**
+   * Long-form docs (Tier-3), loaded only on demand
+   */
+  docs?: string;
+  /**
+   * Risk class
+   */
+  risk: RiskClass;
+  /**
+   * Read, write or side effect
+   */
+  readWriteMode: ToolReadWriteMode;
+};
+export enum HarnessToolCallStatus {
+  Pending = 'pending',
+  Running = 'running',
+  Completed = 'completed',
+  Failed = 'failed',
+  Cancelled = 'cancelled',
+  Denied = 'denied',
+  Invalid = 'invalid',
+  Unknown = 'unknown',
+}
+
+/**
+ * One tool execution with its permission record
+ */
+export type HarnessToolCall = BaseEntity & {
+  /**
+   * Task
+   */
+  taskId: string;
+  /**
+   * Turn number (1-based)
+   */
+  turn: number;
+  /**
+   * Capability
+   */
+  capabilityId: string;
+  /**
+   * Implementation
+   */
+  implementationId: string;
+  /**
+   * Validated arguments
+   */
+  arguments: Record<string, unknown>;
+  /**
+   * SHA-256 of the canonical arguments
+   */
+  argumentsHash: string;
+  /**
+   * Idempotency key (task + turn + arguments hash)
+   */
+  idempotencyKey: string;
+  /**
+   * Permission decision that allowed or denied the call
+   */
+  permissionDecisionId?: string;
+  /**
+   * Status
+   */
+  status: HarnessToolCallStatus;
+  /**
+   * Chunk holding the raw output (persisted before rendering)
+   */
+  rawOutputChunkId?: string;
+  /**
+   * Short status line for UIs
+   */
+  summary?: string;
+  /**
+   * When execution started
+   */
+  startedAt?: any;
+  /**
+   * When execution finished
+   */
+  completedAt?: any;
+};
+
+/**
+ * A normalized action under permission evaluation
+ */
+export type ActionDescriptor = {
+  /**
+   * Capability id
+   */
+  capabilityId: string;
+  /**
+   * Read, write or side effect
+   */
+  actionClass: ToolReadWriteMode;
+  /**
+   * Human summary, e.g. the command line
+   */
+  summary: string;
+  /**
+   * Agent's stated reason for the action
+   */
+  intent?: string;
+};
+
+/**
+ * A resource an action touches
+ */
+export type ResourceDescriptor = {
+  /**
+   * Kind of resource: path, host, remote, process
+   */
+  kind: string;
+  /**
+   * Resource value (absolute path, host name, …)
+   */
+  value: string;
+  /**
+   * Access: read, write, delete, connect, execute
+   */
+  access: string;
+  /**
+   * Whether the resource lies outside the repository/worktree
+   */
+  outsideRepo: boolean;
+};
+
+/**
+ * A predicted effect of an action, phrased for a person
+ */
+export type EffectDescriptor = {
+  /**
+   * Effect category: network, write, delete, dependency, git_push, script, privilege, secret, unknown
+   */
+  category: string;
+  /**
+   * Sentence shown in the permission prompt
+   */
+  description: string;
+};
+export enum PermissionRequestStatus {
+  Pending = 'pending',
+  Resolved = 'resolved',
+}
+export enum GrantScope {
+  Once = 'once',
+  Task = 'task',
+  Session = 'session',
+}
+
+/**
+ * The persisted permission result for one action
+ */
+export type PermissionDecision = BaseEntity & {
+  /**
+   * Task
+   */
+  taskId: string;
+  /**
+   * Session
+   */
+  sessionId: string;
+  /**
+   * Tool call this decision gates
+   */
+  toolCallId?: string;
+  /**
+   * Action
+   */
+  action: ActionDescriptor;
+  /**
+   * Resources touched
+   */
+  resources: ResourceDescriptor[];
+  /**
+   * Predicted effects
+   */
+  effects: EffectDescriptor[];
+  /**
+   * Final (or pending) effect
+   */
+  result: PermissionEffect;
+  /**
+   * Pending while waiting for a person
+   */
+  status: PermissionRequestStatus;
+  /**
+   * Deterministic policy rule ids that matched
+   */
+  matchedRuleIds: string[];
+  /**
+   * Whether a matched rule is hard (never approvable)
+   */
+  hard: boolean;
+  /**
+   * Shadow AI risk decision, if any (never enforced in V0)
+   */
+  aiDecisionId?: string;
+  /**
+   * Reason code, e.g. policy_match, grant, approval_timeout, user
+   */
+  reasonCode: string;
+  /**
+   * Who resolved it: policy, grant, user, timeout, non_interactive
+   */
+  resolvedBy?: string;
+  /**
+   * Grant scope chosen by the user
+   */
+  scope?: GrantScope;
+  /**
+   * Note from the user returned to the agent with the decision
+   */
+  note?: string;
+};
+
+/**
+ * A temporary user grant; hard policy still wins
+ */
+export type PermissionGrant = BaseEntity & {
+  /**
+   * Session
+   */
+  sessionId: string;
+  /**
+   * Task, for task-scoped grants
+   */
+  taskId?: string;
+  /**
+   * Scope
+   */
+  scope: GrantScope;
+  /**
+   * Capability id the grant covers
+   */
+  capabilityId: string;
+  /**
+   * Normalized action summary the grant covers (e.g. the command)
+   */
+  actionPattern: string;
+  /**
+   * Whether the once-grant was consumed
+   */
+  consumed: boolean;
 };
 
 /**

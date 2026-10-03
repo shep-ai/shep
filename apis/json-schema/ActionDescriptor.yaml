@@ -1,0 +1,21 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: ActionDescriptor.yaml
+type: object
+properties:
+  capabilityId:
+    type: string
+    description: Capability id
+  actionClass:
+    $ref: ToolReadWriteMode.yaml
+    description: Read, write or side effect
+  summary:
+    type: string
+    description: Human summary, e.g. the command line
+  intent:
+    type: string
+    description: Agent's stated reason for the action
+required:
+  - capabilityId
+  - actionClass
+  - summary
+description: A normalized action under permission evaluation

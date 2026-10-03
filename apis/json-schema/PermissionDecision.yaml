@@ -1,0 +1,69 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: PermissionDecision.yaml
+type: object
+properties:
+  taskId:
+    type: string
+    description: Task
+  sessionId:
+    type: string
+    description: Session
+  toolCallId:
+    type: string
+    description: Tool call this decision gates
+  action:
+    $ref: ActionDescriptor.yaml
+    description: Action
+  resources:
+    type: array
+    items:
+      $ref: ResourceDescriptor.yaml
+    description: Resources touched
+  effects:
+    type: array
+    items:
+      $ref: EffectDescriptor.yaml
+    description: Predicted effects
+  result:
+    $ref: PermissionEffect.yaml
+    description: Final (or pending) effect
+  status:
+    $ref: PermissionRequestStatus.yaml
+    description: Pending while waiting for a person
+  matchedRuleIds:
+    type: array
+    items:
+      type: string
+    description: Deterministic policy rule ids that matched
+  hard:
+    type: boolean
+    description: Whether a matched rule is hard (never approvable)
+  aiDecisionId:
+    type: string
+    description: Shadow AI risk decision, if any (never enforced in V0)
+  reasonCode:
+    type: string
+    description: Reason code, e.g. policy_match, grant, approval_timeout, user
+  resolvedBy:
+    type: string
+    description: "Who resolved it: policy, grant, user, timeout, non_interactive"
+  scope:
+    $ref: GrantScope.yaml
+    description: Grant scope chosen by the user
+  note:
+    type: string
+    description: Note from the user returned to the agent with the decision
+required:
+  - taskId
+  - sessionId
+  - action
+  - resources
+  - effects
+  - result
+  - status
+  - matchedRuleIds
+  - hard
+  - reasonCode
+allOf:
+  - $ref: BaseEntity.yaml
+description: The persisted permission result for one action

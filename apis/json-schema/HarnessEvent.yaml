@@ -1,0 +1,32 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: HarnessEvent.yaml
+type: object
+properties:
+  sessionId:
+    type: string
+    description: Owning session
+  taskId:
+    type: string
+    description: Task the event concerns
+  sequence:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Monotonic sequence number within the session
+  type:
+    $ref: HarnessEventType.yaml
+    description: Event type
+  payload:
+    $ref: RecordUnknown.yaml
+    description: Small JSON payload (larger payloads live in payloadRef)
+  payloadRef:
+    type: string
+    description: Blob reference for payloads larger than the inline limit
+required:
+  - sessionId
+  - sequence
+  - type
+  - payload
+allOf:
+  - $ref: BaseEntity.yaml
+description: An append-only harness event; sequence is monotonic within a session

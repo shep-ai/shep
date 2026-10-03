@@ -1,0 +1,8 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: HarnessSessionOrigin.yaml
+type: string
+enum:
+  - feature
+  - standalone
+  - eval
+description: Where a harness session came from

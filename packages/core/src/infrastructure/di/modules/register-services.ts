@@ -137,6 +137,7 @@ import { WorkingTreeCleanDiagnostic } from '../../../application/use-cases/docto
 import { MigrationStatusDiagnostic } from '../../../application/use-cases/doctor/diagnostics/migration-status.diagnostic.js';
 import { TypespecFreshnessDiagnostic } from '../../../application/use-cases/doctor/diagnostics/typespec-freshness.diagnostic.js';
 import { DiGraphValidationDiagnostic } from '../../../application/use-cases/doctor/diagnostics/di-graph-validation.diagnostic.js';
+import { HarnessReadinessDiagnostic } from '../../../application/use-cases/doctor/diagnostics/harness-readiness.diagnostic.js';
 import { DaemonReachableDiagnostic } from '../../../application/use-cases/doctor/diagnostics/daemon-reachable.diagnostic.js';
 import { ShepHomePermissionsDiagnostic } from '../../../application/use-cases/doctor/diagnostics/shep-home-permissions.diagnostic.js';
 import { DiskSpaceDiagnostic } from '../../../application/use-cases/doctor/diagnostics/disk-space.diagnostic.js';
@@ -516,6 +517,7 @@ export function registerServices(container: DependencyContainer): void {
       )
   );
   registerDiagnostic((c) => new DiGraphValidationDiagnostic((token) => c.isRegistered(token)));
+  registerDiagnostic((c) => c.resolve(HarnessReadinessDiagnostic));
 
   // ─── Runtime diagnostics (observability audit) ──────────────────────
   // The ten checks above are install-time checks: they answer "is this

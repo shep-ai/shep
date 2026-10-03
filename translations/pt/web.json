@@ -22,7 +22,8 @@
       "integrations": "Integrações",
       "security": "Security",
       "messaging": "Messaging",
-      "mcp": "MCP"
+      "mcp": "MCP",
+      "harness": "Harness do agente"
     },
     "language": {
       "title": "Idioma",
@@ -262,7 +263,9 @@
       "whatsappDispatchDescription": "Despache e conduza os agentes do shep pelo WhatsApp — crie funcionalidades, receba atualizações do agente e aprove etapas respondendo em uma conversa.",
       "clusters": "Clusters",
       "clustersDescription": "Habilitar navegação de clusters e gerenciamento de clusters Kubernetes na interface web",
-      "hint": "Recursos experimentais que ainda estão em desenvolvimento. Ative por sua conta e risco — podem mudar ou ser removidos em versões futuras. O modo debug adiciona logs detalhados úteis para solução de problemas."
+      "hint": "Recursos experimentais que ainda estão em desenvolvimento. Ative por sua conta e risco — podem mudar ou ser removidos em versões futuras. O modo debug adiciona logs detalhados úteis para solução de problemas.",
+      "queryAwareHarness": "Harness do agente sensível à consulta",
+      "queryAwareHarnessDescription": "Experimental: o agente Shep Harness, /harness, a aba Contexto da funcionalidade e os pedidos de permissão"
     },
     "interactiveAgent": {
       "title": "Agente Interativo",
@@ -373,6 +376,49 @@
         "connected": "Connected",
         "error": "Error"
       }
+    },
+    "harness": {
+      "title": "Harness do agente",
+      "experimental": "Experimental",
+      "description": "Como o Shep Harness monta o contexto do modelo, em qual modelo ele roda e como pergunta antes de agir",
+      "hint": "O harness roda sobre um backend SDK (OpenRouter, Together AI, Ollama ou LLMProxy). A relevância do contexto pode ser pontuada por um modelo local de código aberto ou pelo Jev — ou de forma determinística, sem rede alguma.",
+      "mode": "Modo de contexto",
+      "modeDescription": "O modo sensível à consulta cria um plano de contexto novo e específico para cada chamada ao modelo; o modo base mantém uma transcrição",
+      "backend": "Backend do modelo",
+      "backendDescription": "Agente SDK que o harness chama; a chave vem do token do agente ou da sua variável de ambiente",
+      "model": "Modelo do backend",
+      "modelDescription": "ID do modelo no backend; deixe vazio para usar o padrão do backend",
+      "modelPlaceholder": "Padrão do backend",
+      "budget": "Modo de orçamento",
+      "budgetDescription": "Equilibrar custo e qualidade ao ajustar o contexto ao orçamento de tokens",
+      "maxTurns": "Limite de turnos",
+      "maxTurnsDescription": "Chamadas ao modelo por tarefa antes de parar",
+      "modelTimeout": "Tempo limite por chamada ao modelo (segundos)",
+      "modelTimeoutDescription": "Quanto tempo uma chamada ao modelo pode levar; aumente para modelos locais lentos",
+      "decisionsTitle": "Provedor de relevância de contexto",
+      "decisionsDescription": "Quem pontua o quanto cada parte do estado é relevante para a consulta atual. Qualquer falha do provedor recorre à pontuação determinística.",
+      "providerKind": "Provedor",
+      "providerKindDescription": "Determinístico (sem rede), um servidor compatível com OpenAI, um reranker, o próprio modelo do harness ou o Jev",
+      "providerEndpoint": "Endpoint",
+      "providerEndpointDescription": "URL base do provedor",
+      "providerModel": "Modelo",
+      "providerModelDescription": "Modelo que o endpoint deve usar (opcional)",
+      "providerKeyEnv": "Variável da chave de API",
+      "providerKeyEnvDescription": "Nome da variável de ambiente que contém a chave — nunca a própria chave",
+      "shadowTitle": "Modos sombra",
+      "shadow": {
+        "contextRouter": "Roteador de contexto em sombra",
+        "contextRouterDescription": "Executar no modo base e registrar os planos sensíveis à consulta que teriam sido usados",
+        "permissions": "Risco de permissão em sombra",
+        "permissionsDescription": "Registrar as pontuações de risco de permissão da AI sem aplicá-las",
+        "toolRouter": "Roteador de ferramentas em sombra",
+        "toolRouterDescription": "Registrar o roteamento de capacidades sem aplicá-lo"
+      },
+      "permissionsTitle": "Permissões",
+      "unknownDefault": "Ações desconhecidas",
+      "unknownDefaultDescription": "O que acontece quando nenhuma regra corresponde a uma ação",
+      "approvalTimeout": "Tempo limite de aprovação (minutos)",
+      "approvalTimeoutDescription": "Um pedido sem resposta é negado após esse tempo"
     }
   },
   "navigation": {
@@ -397,7 +443,8 @@
     "collaboration": "Collaboration",
     "clusters": "Clusters",
     "plugins": "Plugins",
-    "projectMemory": "Project Memory"
+    "projectMemory": "Project Memory",
+    "harness": "Harness"
   },
   "sidebar": {
     "features": "Recursos",
@@ -1044,5 +1091,204 @@
     "queuedWithPosition": "Na fila · {{position}} à frente",
     "queuedTooltip": "Aguardando uma vaga livre ({{position}} na fila)",
     "startAnyway": "Iniciar mesmo assim"
+  },
+  "harness": {
+    "title": "Harness do agente",
+    "subtitle": "Tarefas independentes, o que o modelo viu em cada turno e ações aguardando sua aprovação",
+    "loading": "Carregando…",
+    "noTasks": "Nenhuma tarefa ainda.",
+    "taskN": "Tarefa {{n}}",
+    "turn": "Turno {{n}}",
+    "tabs": {
+      "sessions": "Sessões",
+      "newTask": "Nova tarefa",
+      "approvals": "Aprovações",
+      "catalog": "Ferramentas e políticas",
+      "setup": "Configurar um repositório",
+      "evals": "Avaliações"
+    },
+    "mode": {
+      "query_aware": "Sensível à consulta",
+      "baseline": "Base"
+    },
+    "budget": {
+      "economy": "Econômico",
+      "balanced": "Equilibrado",
+      "quality": "Qualidade"
+    },
+    "effect": {
+      "allow": "Permitir",
+      "ask": "Perguntar",
+      "deny": "Negar"
+    },
+    "origin": {
+      "feature": "Funcionalidade",
+      "standalone": "Independente",
+      "eval": "Avaliação"
+    },
+    "sessionStatus": {
+      "active": "Em execução",
+      "idle": "Ociosa",
+      "completed": "Concluída",
+      "failed": "Falhou",
+      "discarded": "Descartada"
+    },
+    "visibility": {
+      "hidden": "Oculto",
+      "short": "Curto",
+      "long": "Longo",
+      "full": "Completo"
+    },
+    "source": {
+      "deterministic": "determinístico",
+      "ai": "AI",
+      "policy": "política",
+      "degraded": "degradado",
+      "escalation": "solicitado pelo agente",
+      "user": "você",
+      "budget": "orçamento"
+    },
+    "providerKind": {
+      "deterministic": "Determinístico",
+      "openai_compatible": "Servidor compatível com OpenAI",
+      "reranker": "Reranker",
+      "structured_llm": "Modelo do harness",
+      "jev": "Jev"
+    },
+    "sessions": {
+      "empty": "Nenhuma sessão do harness ainda. Inicie uma em Nova tarefa.",
+      "title": "Sessão",
+      "origin": "Origem",
+      "mode": "Modo",
+      "status": "Status",
+      "tasks": "Tarefas",
+      "pending": "{{count}} aguardando"
+    },
+    "newTask": {
+      "repository": "Repositório",
+      "task": "Tarefa",
+      "taskPlaceholder": "Corrigir a verificação de expiração do refresh token",
+      "worktreeNote": "Roda em seu próprio worktree — seu checkout nunca é tocado. Depois você o aplica a um branch, promove a funcionalidade ou descarta.",
+      "run": "Executar tarefa"
+    },
+    "approvals": {
+      "empty": "Nada aguardando aprovação."
+    },
+    "permission": {
+      "reason": "Motivo do agente:",
+      "willDo": "Esta ação vai:",
+      "noEffects": "(nenhum efeito previsto)",
+      "rules": "Regras:",
+      "notePlaceholder": "Nota para o agente (opcional), ex.: use jose em vez disso",
+      "allowOnce": "Permitir uma vez",
+      "allowPhase": "Permitir nesta fase",
+      "allowFeature": "Permitir nesta funcionalidade",
+      "allowSession": "Permitir nesta sessão",
+      "deny": "Negar",
+      "hardDeny": "Negado por uma regra rígida; não pode ser aprovado."
+    },
+    "banner": {
+      "waiting": "{{count}} ação(ões) do harness aguardando sua aprovação",
+      "review": "Revisar"
+    },
+    "context": {
+      "empty": "Esta funcionalidade ainda não foi executada no Shep Harness."
+    },
+    "usage": {
+      "turns": "Turnos",
+      "input": "Tokens de entrada",
+      "output": "Tokens de saída",
+      "cost": "Custo",
+      "toolOutputSeen": "Saída de ferramentas vista",
+      "denied": "Ações negadas"
+    },
+    "plan": {
+      "summary": "{{tokens}} de {{budget}} tokens · {{count}} candidatos",
+      "shadow": "sombra",
+      "degraded": "degradado",
+      "overBudget": "acima do orçamento",
+      "none": "Selecione um turno para ver o que o modelo viu.",
+      "chunk": "Trecho",
+      "visibility": "Visibilidade",
+      "tokens": "Tokens exibidos/brutos",
+      "relevance": "Relevância",
+      "reason": "Motivo",
+      "view": "Ver",
+      "why": "Por quê?"
+    },
+    "chunk": {
+      "redacted": "Este trecho está marcado como secreto e nunca é exibido.",
+      "truncated": "truncado",
+      "storedNote": "exibido a partir da saída armazenada; nada foi executado novamente"
+    },
+    "why": {
+      "title": "Por que esta visibilidade?",
+      "tokens": "{{visible}} de {{raw}} tokens exibidos",
+      "relevance": "Relevância {{score}}",
+      "bands": "oculto < {{hide}} ≤ curto < {{long}} ≤ longo < {{full}} ≤ completo",
+      "noProbabilities": "Sem probabilidades de classe: este provedor não as retorna.",
+      "provider": "Decidido por {{provider}} em {{latency}} ms · {{cost}}",
+      "shadow": "sombra",
+      "degraded": "degradado",
+      "include": "Incluir a partir do próximo turno",
+      "included": "Incluído a partir do próximo turno"
+    },
+    "actions": {
+      "stop": "Parar",
+      "stopRequested": "Parada solicitada; a tarefa para antes do próximo turno",
+      "stoppedOrphan": "Parada: o processo que executava a tarefa tinha terminado, então ela foi cancelada",
+      "branchPlaceholder": "Branch (opcional)",
+      "apply": "Aplicar ao branch",
+      "applied": "{{count}} arquivo(s) commitado(s) em {{branch}}",
+      "promote": "Promover a funcionalidade",
+      "discard": "Descartar",
+      "discarded": "Worktree removido; a sessão foi mantida"
+    },
+    "capabilities": {
+      "title": "Ferramentas que o agente pode carregar",
+      "description": "Trechos de nível 1 são sempre exibidos; esquemas de nível 2 só são carregados quando o agente solicita uma capacidade.",
+      "cost": "{{snippet}} / {{schema}} tokens"
+    },
+    "policies": {
+      "title": "Regras de permissão",
+      "description": "Padrões do Shep mais .shep/harness/policies/*.yaml. Precedência: deny > ask > allow.",
+      "hard": "rígida"
+    },
+    "setup": {
+      "description": "Detecta arquivos de instruções, comandos de teste e lint e arquivos sensíveis, mostra uma prévia de .shep/harness/ e só grava quando você confirma. Os arquivos-fonte nunca são modificados.",
+      "preview": "Prévia",
+      "instructions": "Instruções",
+      "manifests": "Manifestos",
+      "commands": "Teste / lint",
+      "sensitive": "Arquivos sensíveis",
+      "exists": "existe, mantido",
+      "confirm": "Gravar arquivos",
+      "written": "{{count}} arquivo(s) gravado(s)"
+    },
+    "evals": {
+      "description": "Execute as mesmas tarefas em baseline e query-aware, cada uma num repositório descartável, e compare sucesso, tokens, custo, turnos e cobertura de evidências.",
+      "repeats": "Repetições",
+      "run": "Executar eval",
+      "empty": "Ainda não há execuções de eval.",
+      "score": "Métrica",
+      "change": "Variação",
+      "status": {
+        "pending": "Pendente",
+        "running": "Em execução",
+        "completed": "Concluída",
+        "failed": "Falhou"
+      },
+      "scores": {
+        "success": "Sucesso",
+        "inputTokens": "Tokens de entrada",
+        "outputTokens": "Tokens de saída",
+        "costUsd": "Custo",
+        "turns": "Turnos",
+        "wallMs": "Tempo total",
+        "repeatedReads": "Leituras repetidas",
+        "toolOutputRatio": "Saída de ferramentas vista",
+        "evidenceRecall": "Cobertura de evidências"
+      }
+    }
   }
 }

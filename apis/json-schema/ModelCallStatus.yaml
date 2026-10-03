@@ -1,0 +1,9 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: ModelCallStatus.yaml
+type: string
+enum:
+  - pending
+  - running
+  - completed
+  - failed
+description: Status of a single model call

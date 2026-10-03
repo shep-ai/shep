@@ -1,0 +1,14 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: EffectDescriptor.yaml
+type: object
+properties:
+  category:
+    type: string
+    description: "Effect category: network, write, delete, dependency, git_push, script, privilege, secret, unknown"
+  description:
+    type: string
+    description: Sentence shown in the permission prompt
+required:
+  - category
+  - description
+description: A predicted effect of an action, phrased for a person

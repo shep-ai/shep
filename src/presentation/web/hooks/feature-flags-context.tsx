@@ -16,6 +16,7 @@ const defaultFlags: FeatureFlagsState = {
   clusters: false,
   scheduledWorkflows: false,
   githubImport: true,
+  queryAwareHarness: false,
 };
 
 const FeatureFlagsContext = createContext<FeatureFlagsState>(defaultFlags);

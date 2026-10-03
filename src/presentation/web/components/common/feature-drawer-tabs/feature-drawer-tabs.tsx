@@ -26,7 +26,7 @@ import {
 import type { NotificationEvent } from '@shepai/core/domain/generated/output';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { BedrockMemorySection } from '@/components/bedrock-memory-section';
-import { BedrockTargetKind } from '@shepai/core/domain/generated/output';
+import { AgentType, BedrockTargetKind } from '@shepai/core/domain/generated/output';
 import { useFeatureFlags } from '@/hooks/feature-flags-context';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { getFeaturePhaseTimings } from '@/app/actions/get-feature-phase-timings';
@@ -52,6 +52,8 @@ import { DrawerActionBar } from '@/components/common/drawer-action-bar';
 import type { RejectAttachment } from '@/components/common/drawer-action-bar';
 import type { BuildMode } from '@shepai/core/domain/generated/output';
 import { OverviewTab } from './overview-tab';
+import { HarnessContextTab } from '@/components/features/harness/harness-context-tab';
+import { HarnessPermissionBanner } from '@/components/features/harness/harness-permission-banner';
 import { ActivityTab } from './activity-tab';
 import { LogTab } from './log-tab';
 import { PlanTab } from './plan-tab';
@@ -87,13 +89,15 @@ const ALL_TABS: TabDef[] = [
   { key: 'merge-review', label: 'Merge Review', icon: GitMerge },
   { key: 'chat', label: 'Chat', icon: MessageSquare },
   { key: 'bedrock', label: 'Bedrock', icon: Database },
+  { key: 'context', label: 'Context', icon: Layers },
 ];
 
 /** Compute which tabs are visible based on feature lifecycle + state. */
 function computeVisibleTabs(
   node: FeatureNodeData,
   interactiveAgentEnabled = true,
-  bedrockIntegrationEnabled = false
+  bedrockIntegrationEnabled = false,
+  queryAwareHarnessEnabled = false
 ): FeatureTabKey[] {
   const tabs: FeatureTabKey[] = ['overview'];
 
@@ -145,6 +149,11 @@ function computeVisibleTabs(
   // Bedrock memory tab is gated behind the bedrockIntegration feature flag.
   if (bedrockIntegrationEnabled) {
     tabs.push('bedrock');
+  }
+
+  // Context tab (spec 119): what the model saw, for features run on the Shep Harness.
+  if (queryAwareHarnessEnabled && node.hasAgentRun && node.agentType === AgentType.ShepHarness) {
+    tabs.push('context');
   }
 
   return tabs;
@@ -286,11 +295,17 @@ export function FeatureDrawerTabs({
   onStart,
 }: FeatureDrawerTabsProps) {
   const pathname = usePathname();
-  const { bedrockIntegration } = useFeatureFlags();
+  const { bedrockIntegration, queryAwareHarness } = useFeatureFlags();
 
   const visibleTabs = useMemo(
-    () => computeVisibleTabs(featureNode, interactiveAgentEnabled, bedrockIntegration),
-    [featureNode, interactiveAgentEnabled, bedrockIntegration]
+    () =>
+      computeVisibleTabs(
+        featureNode,
+        interactiveAgentEnabled,
+        bedrockIntegration,
+        queryAwareHarness
+      ),
+    [featureNode, interactiveAgentEnabled, bedrockIntegration, queryAwareHarness]
   );
   const visibleTabDefs = useMemo(
     () =>
@@ -503,6 +518,12 @@ export function FeatureDrawerTabs({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
+      {queryAwareHarness && featureNode.agentType === AgentType.ShepHarness ? (
+        <HarnessPermissionBanner
+          featureId={featureId}
+          onReview={() => handleTabChange('context')}
+        />
+      ) : null}
       <Tabs
         value={activeTab}
         onValueChange={handleTabChange}
@@ -831,6 +852,11 @@ export function FeatureDrawerTabs({
               targetLabel={featureNode.name ?? featureId}
               initialEnabled={false}
             />
+          </TabsContent>
+        ) : null}
+        {visibleTabs.includes('context') ? (
+          <TabsContent value="context" className="mt-0 flex-1 overflow-y-auto p-4">
+            <HarnessContextTab featureId={featureId} />
           </TabsContent>
         ) : null}
       </Tabs>

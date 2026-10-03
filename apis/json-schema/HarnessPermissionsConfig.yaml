@@ -1,0 +1,23 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: HarnessPermissionsConfig.yaml
+type: object
+properties:
+  defaultUnknown:
+    $ref: PermissionEffect.yaml
+    default: ask
+    description: Effect for actions no rule matches
+  nonInteractiveAsk:
+    $ref: PermissionEffect.yaml
+    default: deny
+    description: What 'ask' becomes when nobody can answer (evals, --non-interactive)
+  approvalTimeoutMs:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    default: 1800000
+    description: How long to wait for a person before denying, in milliseconds
+required:
+  - defaultUnknown
+  - nonInteractiveAsk
+  - approvalTimeoutMs
+description: Permission defaults

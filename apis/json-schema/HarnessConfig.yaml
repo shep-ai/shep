@@ -1,0 +1,54 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: HarnessConfig.yaml
+type: object
+properties:
+  mode:
+    $ref: HarnessMode.yaml
+    default: query_aware
+    description: Context-assembly mode
+  budgetMode:
+    $ref: HarnessBudgetMode.yaml
+    default: balanced
+    description: Budget mode
+  maxTurns:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    default: 50
+    description: Maximum model calls per task
+  modelTimeoutMs:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    default: 300000
+    description: Timeout for one model call in milliseconds; raise it for slow local models
+  backendAgentType:
+    $ref: AgentType.yaml
+    default: openrouter
+    description: SDK agent whose model access (and credentials) the harness reuses
+  backendModel:
+    type: string
+    description: "Model id on the backend (unset: settings.models.default)"
+  context:
+    $ref: HarnessContextConfig.yaml
+    description: Context budget and visibility bands
+  decisions:
+    $ref: HarnessDecisionsConfig.yaml
+    description: Decision layer
+  shadow:
+    $ref: HarnessShadowConfig.yaml
+    description: Shadow switches
+  permissions:
+    $ref: HarnessPermissionsConfig.yaml
+    description: Permission defaults
+required:
+  - mode
+  - budgetMode
+  - maxTurns
+  - modelTimeoutMs
+  - backendAgentType
+  - context
+  - decisions
+  - shadow
+  - permissions
+description: Global configuration of the query-aware agent harness (spec 119)

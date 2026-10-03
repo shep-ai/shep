@@ -58,6 +58,10 @@
         "llmProxy": {
           "name": "LLM Proxy",
           "description": "פרוקסי מקומי תואם OpenAI (בדרך כלל בפורט 4000)"
+        },
+        "shepHarness": {
+          "name": "Shep Harness (ניסיוני)",
+          "description": "לולאת סוכן בניהול Shep, מודעת לשאילתה, עם בקשות הרשאה"
         }
       }
     },

@@ -186,3 +186,15 @@ describe('lookup helpers', () => {
     expect(getModelsForAgent(AgentType.ClaudeCode)).not.toContain('injected');
   });
 });
+
+describe('isAgentOffered (spec 119)', () => {
+  it('offers experimental agents only while the harness flag is on', async () => {
+    const { isAgentOffered, getAgentDescriptor } = await import('@/domain/shared/agent-catalog.js');
+    const harness = getAgentDescriptor('shep-harness')!;
+    const claude = getAgentDescriptor('claude-code')!;
+    expect(isAgentOffered(harness, { queryAwareHarness: false })).toBe(false);
+    expect(isAgentOffered(harness, undefined)).toBe(false);
+    expect(isAgentOffered(harness, { queryAwareHarness: true })).toBe(true);
+    expect(isAgentOffered(claude, undefined)).toBe(true);
+  });
+});

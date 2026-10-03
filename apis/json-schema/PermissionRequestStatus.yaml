@@ -1,0 +1,7 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: PermissionRequestStatus.yaml
+type: string
+enum:
+  - pending
+  - resolved
+description: Whether a permission decision is final or waiting for a person

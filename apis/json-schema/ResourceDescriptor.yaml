@@ -1,0 +1,22 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: ResourceDescriptor.yaml
+type: object
+properties:
+  kind:
+    type: string
+    description: "Kind of resource: path, host, remote, process"
+  value:
+    type: string
+    description: Resource value (absolute path, host name, …)
+  access:
+    type: string
+    description: "Access: read, write, delete, connect, execute"
+  outsideRepo:
+    type: boolean
+    description: Whether the resource lies outside the repository/worktree
+required:
+  - kind
+  - value
+  - access
+  - outsideRepo
+description: A resource an action touches
