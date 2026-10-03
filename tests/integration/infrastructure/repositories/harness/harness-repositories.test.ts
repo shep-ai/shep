@@ -138,7 +138,8 @@ describe('harness repositories', () => {
       expect(
         (await repo.listChunks({ sessionId: 's', kinds: [ChunkKind.TestResult] })).map((c) => c.id)
       ).toEqual([log.id]);
-      expect((await repo.findLatestChunkByPath('s', 'src/a.ts'))?.id).toBe(b.id);
+      expect((await repo.findLatestChunkByPath('s', 'src/a.ts', ChunkKind.File))?.id).toBe(b.id);
+      expect(await repo.findLatestChunkByPath('s', 'src/a.ts', ChunkKind.FileExcerpt)).toBeNull();
       expect((await repo.getChunk(a.id))?.supersededBy).toBe(b.id);
       expect((await repo.getChunk(b.id))?.supersedes).toBe(a.id);
     });

@@ -287,6 +287,28 @@ describe('ContextEngine', () => {
     expect(plan.chunks.some((c) => c.chunkId === newer.id)).toBe(true);
   });
 
+  it('supersedes an older full read even when an excerpt of the file was read in between', async () => {
+    await writer.write({
+      sessionId,
+      kind: ChunkKind.FileExcerpt,
+      label: 'src/auth/refresh.ts:1-2',
+      source: 'read_file',
+      content: 'export function rotateRefreshToken(token: string) {\n  return token;',
+      path: 'src/auth/refresh.ts',
+    });
+    const newer = await writer.write({
+      sessionId,
+      kind: ChunkKind.File,
+      label: 'src/auth/refresh.ts',
+      source: 'read_file',
+      content: `${REFRESH_TS}// v2\n`,
+      path: 'src/auth/refresh.ts',
+    });
+    const { plan } = await engine.build(input({ query: 'refresh.ts' }));
+    expect(plan.chunks.some((c) => c.chunkId === chunks.refresh.id)).toBe(false);
+    expect(plan.chunks.some((c) => c.chunkId === newer.id)).toBe(true);
+  });
+
   it('shows a big relevant chunk at long (size cap) unless the agent asks for it', async () => {
     const log = await writer.write({
       sessionId,

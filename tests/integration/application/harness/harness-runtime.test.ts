@@ -486,6 +486,52 @@ describe('HarnessRuntime', () => {
     );
   });
 
+  it('marks earlier reads of a file stale once the agent edits it', async () => {
+    const session = await h.session();
+    const run = await h.run(session, [
+      {
+        toolCalls: [
+          {
+            name: 'use_capability',
+            args: {
+              capabilityId: 'read_file',
+              intent: 'read',
+              args: { path: 'src/auth/refresh.ts' },
+            },
+          },
+        ],
+      },
+      {
+        toolCalls: [
+          {
+            name: 'use_capability',
+            args: {
+              capabilityId: 'apply_patch',
+              intent: 'trim',
+              args: {
+                edits: [
+                  {
+                    path: 'src/auth/refresh.ts',
+                    oldText: 'return token;',
+                    newText: 'return token.trim();',
+                  },
+                ],
+              },
+            },
+          },
+        ],
+      },
+      { toolCalls: [{ name: 'complete_task', args: { status: 'success', summary: 'ok' } }] },
+    ]);
+    const reads = (await h.store.context.listChunks({ sessionId: run.task.sessionId })).filter(
+      (c) => c.path === 'src/auth/refresh.ts'
+    );
+    expect(reads).toHaveLength(1);
+    expect(reads[0].tags).toContain('stale');
+    // The model's next turn no longer shows the pre-edit file.
+    expect(userMessage(h, 2)).not.toContain('kind="file" label="src/auth/refresh.ts"');
+  });
+
   it('gives every model call the configured timeout', async () => {
     const slow = await createRuntimeHarness(repo.root, { config: { modelTimeoutMs: 900_000 } });
     try {

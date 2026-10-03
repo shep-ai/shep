@@ -8,7 +8,7 @@
         "inputTokens": 4729,
         "outputTokens": 80,
         "turns": 4,
-        "wallMs": 96.66666666666667,
+        "wallMs": 70.66666666666667,
         "repeatedReads": 0,
         "evidenceRecall": 1
       }
@@ -18,10 +18,10 @@
       "runs": 3,
       "means": {
         "success": 1,
-        "inputTokens": 5211.666666666667,
+        "inputTokens": 5147,
         "outputTokens": 80,
         "turns": 4,
-        "wallMs": 59.666666666666664,
+        "wallMs": 70.33333333333333,
         "repeatedReads": 0,
         "toolOutputRatio": 1,
         "evidenceRecall": 1
@@ -38,8 +38,8 @@
     {
       "score": "inputTokens",
       "baseline": 4729,
-      "queryAware": 5211.666666666667,
-      "relativeChange": 0.10206527102276738
+      "queryAware": 5147,
+      "relativeChange": 0.08839078029181645
     },
     {
       "score": "outputTokens",
@@ -58,9 +58,9 @@
     },
     {
       "score": "wallMs",
-      "baseline": 96.66666666666667,
-      "queryAware": 59.666666666666664,
-      "relativeChange": -0.3827586206896552
+      "baseline": 70.66666666666667,
+      "queryAware": 70.33333333333333,
+      "relativeChange": -0.004716981132075605
     },
     {
       "score": "repeatedReads",
@@ -88,7 +88,7 @@
         "inputTokens": 3416,
         "outputTokens": 60,
         "turns": 3,
-        "wallMs": 72,
+        "wallMs": 62,
         "repeatedReads": 0,
         "evidenceRecall": 1
       }
@@ -117,7 +117,7 @@
         "inputTokens": 6107,
         "outputTokens": 100,
         "turns": 5,
-        "wallMs": 110,
+        "wallMs": 51,
         "repeatedReads": 0,
         "evidenceRecall": 1
       }
@@ -128,10 +128,10 @@
       "success": true,
       "scores": {
         "success": 1,
-        "inputTokens": 6675,
+        "inputTokens": 6533,
         "outputTokens": 100,
         "turns": 5,
-        "wallMs": 57,
+        "wallMs": 72,
         "repeatedReads": 0,
         "toolOutputRatio": 1,
         "evidenceRecall": 1
@@ -146,7 +146,7 @@
         "inputTokens": 4664,
         "outputTokens": 80,
         "turns": 4,
-        "wallMs": 108,
+        "wallMs": 99,
         "repeatedReads": 0,
         "evidenceRecall": 1
       }
@@ -157,10 +157,10 @@
       "success": true,
       "scores": {
         "success": 1,
-        "inputTokens": 5348,
+        "inputTokens": 5296,
         "outputTokens": 80,
         "turns": 4,
-        "wallMs": 72,
+        "wallMs": 89,
         "repeatedReads": 0,
         "toolOutputRatio": 1,
         "evidenceRecall": 1

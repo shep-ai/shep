@@ -8,7 +8,7 @@
         "inputTokens": 54825,
         "outputTokens": 140,
         "turns": 7,
-        "wallMs": 67,
+        "wallMs": 82,
         "repeatedReads": 0,
         "evidenceRecall": 1
       }
@@ -18,12 +18,12 @@
       "runs": 1,
       "means": {
         "success": 1,
-        "inputTokens": 13532,
+        "inputTokens": 13416,
         "outputTokens": 140,
         "turns": 7,
-        "wallMs": 155,
+        "wallMs": 170,
         "repeatedReads": 0,
-        "toolOutputRatio": 0.014560100575047145,
+        "toolOutputRatio": 0.014463733561822449,
         "evidenceRecall": 1
       }
     }
@@ -38,8 +38,8 @@
     {
       "score": "inputTokens",
       "baseline": 54825,
-      "queryAware": 13532,
-      "relativeChange": -0.7531782945736434
+      "queryAware": 13416,
+      "relativeChange": -0.7552941176470588
     },
     {
       "score": "outputTokens",
@@ -58,9 +58,9 @@
     },
     {
       "score": "wallMs",
-      "baseline": 67,
-      "queryAware": 155,
-      "relativeChange": 1.3134328358208955
+      "baseline": 82,
+      "queryAware": 170,
+      "relativeChange": 1.0731707317073171
     },
     {
       "score": "repeatedReads",
@@ -69,7 +69,7 @@
     },
     {
       "score": "toolOutputRatio",
-      "queryAware": 0.014560100575047145
+      "queryAware": 0.014463733561822449
     },
     {
       "score": "evidenceRecall",
@@ -88,7 +88,7 @@
         "inputTokens": 54825,
         "outputTokens": 140,
         "turns": 7,
-        "wallMs": 67,
+        "wallMs": 82,
         "repeatedReads": 0,
         "evidenceRecall": 1
       }
@@ -99,12 +99,12 @@
       "success": true,
       "scores": {
         "success": 1,
-        "inputTokens": 13532,
+        "inputTokens": 13416,
         "outputTokens": 140,
         "turns": 7,
-        "wallMs": 155,
+        "wallMs": 170,
         "repeatedReads": 0,
-        "toolOutputRatio": 0.014560100575047145,
+        "toolOutputRatio": 0.014463733561822449,
         "evidenceRecall": 1
       }
     }

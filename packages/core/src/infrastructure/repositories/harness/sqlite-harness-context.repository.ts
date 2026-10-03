@@ -3,6 +3,7 @@
  */
 import type Database from 'better-sqlite3';
 import type {
+  ChunkKind,
   ChunkView,
   ChunkVisibility,
   ContextChunk,
@@ -90,12 +91,18 @@ export class SQLiteHarnessContextRepository implements IHarnessContextRepository
     );
   }
 
-  async findLatestChunkByPath(sessionId: string, path: string): Promise<ContextChunk | null> {
+  async findLatestChunkByPath(
+    sessionId: string,
+    path: string,
+    kind: ChunkKind
+  ): Promise<ContextChunk | null> {
     return this.chunks.queryOne(
-      `SELECT data FROM harness_chunks WHERE session_id = ? AND path = ? AND superseded_by IS NULL
+      `SELECT data FROM harness_chunks
+       WHERE session_id = ? AND path = ? AND kind = ? AND superseded_by IS NULL
        ORDER BY created_at DESC, rowid DESC LIMIT 1`,
       sessionId,
-      path
+      path,
+      kind
     );
   }
 

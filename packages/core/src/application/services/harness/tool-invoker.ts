@@ -220,6 +220,7 @@ export class ToolInvoker {
       output = `Error: ${(error as Error).message}`;
       summary = `${impl.toolName} failed: ${(error as Error).message}`;
     }
+    if (changedPaths?.length) await d.writer.markStale(session.id, changedPaths);
     const chunk = await d.writer.write({
       sessionId: session.id,
       taskId: task.id,

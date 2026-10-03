@@ -30,7 +30,7 @@ import type {
   IHarnessSessionRepository,
   IRepoSnapshotter,
 } from '../../ports/output/harness/index.js';
-import { ChunkTag } from './candidate-retriever.js';
+import { markPathsStale } from './chunk-writer.js';
 import type { CapabilityRegistry } from './capability-registry.js';
 
 export const INTERRUPTED_REASON = 'Interrupted: the process stopped before the task finished';
@@ -129,16 +129,7 @@ export class SessionRestorer {
       const drift = await this.snapshotter.compare({ fileHashes: previous }, repoRoot);
       if (drift.drifted) {
         report.driftedPaths = drift.changedPaths;
-        const changed = new Set(drift.changedPaths);
-        for (const chunk of await this.context.listChunks({ sessionId: session.id })) {
-          if (chunk.path && changed.has(chunk.path) && !chunk.tags.includes(ChunkTag.Stale)) {
-            await this.context.putChunk({
-              ...chunk,
-              tags: [...chunk.tags, ChunkTag.Stale],
-              updatedAt: new Date(),
-            });
-          }
-        }
+        await markPathsStale(this.context, session.id, drift.changedPaths);
         await this.events.append({
           sessionId: session.id,
           type: HarnessEventType.RepoDriftDetected,

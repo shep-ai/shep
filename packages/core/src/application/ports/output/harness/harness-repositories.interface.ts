@@ -63,7 +63,12 @@ export interface IHarnessContextRepository {
   getChunks(ids: readonly string[]): Promise<ContextChunk[]>;
   listChunks(query: ListChunksQuery): Promise<ContextChunk[]>;
   /** Latest non-superseded chunk for a repository path in a session. */
-  findLatestChunkByPath(sessionId: string, path: string): Promise<ContextChunk | null>;
+  /** The newest live chunk of this kind read from this path. */
+  findLatestChunkByPath(
+    sessionId: string,
+    path: string,
+    kind: ChunkKind
+  ): Promise<ContextChunk | null>;
   /** Link `oldId` → `newId` in both directions. */
   markSuperseded(oldId: string, newId: string): Promise<void>;
 

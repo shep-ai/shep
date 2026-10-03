@@ -60,8 +60,8 @@ not model quality; a real-model run is `shep harness eval run smoke` with a back
 
 | Case | Success (B / QA) | Input tokens (B → QA) | Turns |
 | ---- | ---------------- | --------------------- | ----- |
-| smoke: 3 small Node tasks | 100% / 100% | 4,729 → 5,212 (**+10%**) | 4 / 4 |
-| long-output: triage a 2,500-line build log | 100% / 100% | 54,825 → 13,532 (**−75%**) | 7 / 7 |
+| smoke: 3 small Node tasks | 100% / 100% | 4,729 → 5,147 (**+9%**) | 4 / 4 |
+| long-output: triage a 2,500-line build log | 100% / 100% | 54,825 → 13,416 (**−76%**) | 7 / 7 |
 
 Query-aware does not win everywhere. On tiny tasks its larger system prompt (rules plus the
 capability catalog) costs more than the transcript it saves. The saving appears when tool output
