@@ -1,38 +1,71 @@
 # Evidence: query-aware agent harness (spec 119)
 
-Everything here was produced from this branch.
+Everything here was captured from **the real app on this branch**: the production web build (`shep ui`)
+and the CLI, against a real SQLite database, real git worktrees and a real model. No Storybook, no
+fixtures, no scripted agent in the screenshots or animations.
+
+**Setup.** No API key was available, so the harness ran on the open-source path it supports:
+**Qwen3-8B (Q4_K_M) served by llama.cpp** on a shared 4-core CPU, reached through the harness's
+Ollama backend, with the deterministic relevance scorer. Configured in Settings → Agent Harness.
+A small CPU model is slow (one to three minutes per turn) and makes mistakes; the runs below show
+both, and the harness reports failures as failures.
+
+The demo repository is a small Node auth service (`refresh()` accepts expired tokens) with
+`CLAUDE.md`, `npm test` and a `.env` file.
 
 ## Animations
 
 | File | Shows |
 | ---- | ----- |
-| `harness-walkthrough.gif` | 44-second captioned tour of the web UI: new task, approvals, a session, per-turn context plans, "Why?", the chunk viewer at short/long/full, evals, and open-source settings. Playwright drove the built Storybook, so the clicks hit the real components with fixture data |
-| `harness-cli.gif` | `cli-session.txt` replayed as a terminal: `init`, a standalone `run`, `ls` and `policies`. The output is real; the typing is simulated |
-| `token-savings.gif` | The two paired evals below, as an animated bar chart drawn from `evals/paired-*.json` |
+| `harness-walkthrough.gif` | Captioned 45-second tour of the real web app: settings, sessions, a new task, a **live** permission request approved with one click while the agent waited, a real eval session's per-turn context plans, "Why?", the chunk viewer, and the real Evals tab |
+| `harness-cli.gif` | `cli-session.txt` replayed: `init`, a run that asks to `npm install`, answered in the web UI ("Answered in another window"), `apply` to a branch, `ls`. Only the typing is simulated |
+| `token-savings.gif` | Input tokens per mode: the two paired evals and the real-model eval below |
 
 ## Screenshots
 
-Taken from the built Storybook with Playwright and fixture data. Real servers are not involved.
-
 | File | Shows |
 | ---- | ----- |
-| `harness-settings.png` | Settings → Agent Harness on a fully open-source stack: Ollama backend plus an OpenAI-compatible relevance scorer |
-| `harness-page-sessions.png`, `harness-page-approvals.png` | /harness: the sessions list and the approvals inbox |
-| `permission-prompt-feature.png`, `permission-prompt-hard-deny.png` | Effect-oriented permission prompt; a hard deny is never approvable |
-| `session-waiting-for-approval.png` | A session: the pending approval first, then usage, turns and the selected turn's context plan |
-| `context-plan-per-turn.png` | "What the model saw" on one turn: visibility, tokens shown/raw, relevance, reason, source |
-| `why-drawer.png`, `chunk-viewer.png` | "Why?" (relevance on the bands, provider, include from next turn), and a chunk at short/long/full |
-| `evals-baseline-vs-query-aware.png` | The Evals tab; its numbers are the long-output paired eval below |
-| `tools-and-policies.png`, `repository-setup.png` | The tiered tool catalog and policy rules; repository setup preview |
+| `settings-open-source-stack.png` | Settings → Agent Harness: Ollama backend, model `qwen3-8b`, the model call timeout added for slow local models |
+| `sessions.png` | /harness: every real run, including failures and runs that were stopped |
+| `approval-request.png` | A real request: `npm install`, the agent's reason, predicted effects and the matching rules |
+| `session-after-approval.png` | The approved run: 2 turns, success, the plan for the last turn |
+| `context-plan-13-turn-run.png` | A 13-turn real eval run: per-turn plans with full and long views, tokens shown/raw and reasons |
+| `why-drawer.png` | "Why?" for one chunk: relevance on the visibility bands, who decided, the input fingerprint |
+| `chunk-viewer-short.png`, `chunk-viewer-full.png` | One stored search result rendered short and full; nothing re-runs |
+| `evals-real-model.png` | The Evals tab with the real-model run below |
+| `tools-and-policies.png` | The tiered tool catalog and the effective permission rules |
 
-## CLI
+## What the real runs found (all fixed in this PR, each with a test)
 
-`cli-session.txt` was captured in a throwaway repository:
+Running a real model surfaced problems that scripted tests never hit:
 
-- `harness --help`;
-- `init --yes`, which detects CLAUDE.md, the test and lint commands and `.env`;
-- a standalone `run` in its own worktree, using the scripted model because this sandbox has no API key;
-- `ls`, `capabilities`, `policies` and `eval ls`.
+1. `search_source` reported "0 matches" when limited to one file (`rg` drops the file name), so the model kept searching.
+2. A task whose process died stayed "running" forever and could not be stopped or discarded. Tasks now record their pid; stop cancels orphans.
+3. Agents looped on identical reads. A repeated read with nothing changed returns the earlier result and a nudge; empty searches say how they matched.
+4. The model call timeout was fixed at five minutes; slow local models exceeded it. It is now a setting.
+5. Loading an already-loaded tool said "loaded" again, so a small model never called it. It now says to call the tool.
+6. A tiny output's "long" view was bigger than the output ("tool output seen 116%"). A view that is not smaller now shows the content.
+7. **After the agent edited a file, its pre-edit read stayed in context**, so the model saw two versions of the file. Edits now mark earlier reads stale, and full reads supersede each other across excerpts.
+8. File names such as `errors.js` were summarized as errors.
+9. The CLI permission prompt stayed on screen after the request was answered in the web UI.
+10. `shep harness ls` printed short ids that no other command accepted.
+11. An eval run whose process exited stayed "Running" in the Evals tab.
+
+## Real-model eval (`evals/real-model-smoke.json`)
+
+`shep harness eval run smoke` with the local Qwen3-8B: three small Node tasks, each in a throwaway
+repository, once per mode.
+
+| Score | Baseline | Query-aware |
+| ----- | -------- | ----------- |
+| Success | 67% | 67% |
+| Input tokens (mean per task) | 10,999 | 14,279 (**+30%**) |
+| Turns | 6.7 | 7.3 |
+| Evidence recall | 83% | **100%** |
+
+One case failed in each mode (`add-greet` on baseline, `fix-sum` on query-aware). On tasks this small
+the query-aware system prompt costs more than the transcript it saves; see the paired evals for the
+large-output case.
 
 ## Component evals (`evals/*.json`)
 
@@ -56,7 +89,7 @@ The evals found three real problems, all fixed in this PR:
 
 These come from `tests/integration/application/use-cases/harness/paired-eval.test.ts`. A **scripted
 agent** performs the same actions in both modes. This measures what each mode *sends* to the model,
-not model quality; a real-model run is `shep harness eval run smoke` with a backend key.
+not model quality; the real-model run is above.
 
 | Case | Success (B / QA) | Input tokens (B → QA) | Turns |
 | ---- | ---------------- | --------------------- | ----- |
