@@ -170,6 +170,8 @@ export function registerHarness(container: DependencyContainer): void {
     useFactory: () => new FileSystemInstructionSource(),
   });
 
+  container.register<number>(HARNESS_TOKENS.ProcessId, { useValue: process.pid });
+
   // ─── Runtime ─────────────────────────────────────────────────────────────
   container.register<IHarnessModelProviderFactory>(HARNESS_TOKENS.ModelProviderFactory, {
     useFactory: () =>

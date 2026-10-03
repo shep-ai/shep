@@ -52,7 +52,8 @@ export class RunHarnessEvalUseCase {
     @inject(HARNESS_TOKENS.EvalRepository) private readonly evals: IHarnessEvalRepository,
     @inject(HARNESS_TOKENS.ExecutionRepository)
     private readonly execution: IHarnessExecutionRepository,
-    @inject(HARNESS_TOKENS.ContextRepository) private readonly context: IHarnessContextRepository
+    @inject(HARNESS_TOKENS.ContextRepository) private readonly context: IHarnessContextRepository,
+    @inject(HARNESS_TOKENS.ProcessId) private readonly processId: number
   ) {}
 
   /** Record the run and return it; execute() then fills in results. */
@@ -66,6 +67,7 @@ export class RunHarnessEvalUseCase {
         input.variants && input.variants.length > 0 ? input.variants : [...DEFAULT_VARIANTS],
       repeats: Math.min(MAX_REPEATS, Math.max(1, input.repeats ?? 1)),
       status: HarnessEvalRunStatus.Pending,
+      ownerPid: this.processId,
       ...(input.modelId && { modelId: input.modelId }),
       createdAt: now,
       updatedAt: now,
@@ -80,6 +82,7 @@ export class RunHarnessEvalUseCase {
     await this.evals.putRun({
       ...run,
       status: HarnessEvalRunStatus.Running,
+      ownerPid: this.processId,
       updatedAt: new Date(),
     });
     try {

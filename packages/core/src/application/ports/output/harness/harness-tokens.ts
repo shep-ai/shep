@@ -28,4 +28,6 @@ export const HARNESS_TOKENS = {
   EnvironmentProbe: 'IHarnessEnvironmentProbe',
   EvalSuiteSource: 'IHarnessEvalSuiteSource',
   EvalWorkspaceFactory: 'IHarnessEvalWorkspaceFactory',
+  /** OS process id of this shep process (recorded on tasks and eval runs). */
+  ProcessId: 'HarnessProcessId',
 } as const;

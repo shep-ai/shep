@@ -162,6 +162,9 @@ model HarnessEvalRun extends BaseEntity {
 
   @doc("Error message when the run failed")
   error?: string;
+
+  @doc("OS process running the eval; a run whose process exited is reported as failed")
+  ownerPid?: int32;
 }
 
 @doc("Result of one case × variant × repeat in an eval run")

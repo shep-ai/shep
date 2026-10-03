@@ -1350,6 +1350,10 @@ export type HarnessEvalRun = BaseEntity & {
    * Error message when the run failed
    */
   error?: string;
+  /**
+   * OS process running the eval; a run whose process exited is reported as failed
+   */
+  ownerPid?: number;
 };
 
 /**

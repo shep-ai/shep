@@ -199,7 +199,8 @@ function runnerFor(h: RuntimeHarness): RunHarnessEvalUseCase {
     new TempGitEvalWorkspaceFactory(),
     h.store.evals,
     h.store.execution,
-    h.store.context
+    h.store.context,
+    process.pid
   );
 }
 
