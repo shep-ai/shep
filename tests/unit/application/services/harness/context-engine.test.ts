@@ -228,10 +228,24 @@ describe('ContextEngine', () => {
       store.blobs,
       failing
     );
+    const guide = await writer.write({
+      sessionId,
+      kind: ChunkKind.File,
+      label: 'docs/guide.md',
+      source: 'read_file',
+      content: Array.from({ length: 400 }, (_, i) => `Step ${i}: configure the gateway`).join('\n'),
+      path: 'docs/guide.md',
+    });
     const { plan } = await degradedEngine.build(input({ query: 'anything' }));
     expect(plan.degraded).toBe(true);
-    expect(plan.chunks.find((c) => c.chunkId === chunks.readme.id)).toMatchObject({
+    // Unscored chunks fall back to the uncertain default…
+    expect(plan.chunks.find((c) => c.chunkId === guide.id)).toMatchObject({
       visibility: V.Long,
+      source: VisibilitySource.Degraded,
+    });
+    // …unless the full content is no larger than that view.
+    expect(plan.chunks.find((c) => c.chunkId === chunks.readme.id)).toMatchObject({
+      visibility: V.Full,
       source: VisibilitySource.Degraded,
     });
     expect(visibilityOf(plan, chunks.instructions.id)).toBe(V.Full);
@@ -296,5 +310,22 @@ describe('ContextEngine', () => {
     ).plan.chunks.find((c) => c.chunkId === log.id)!;
     expect(asked.visibility).toBe(V.Full);
     expect(asked.source).toBe(VisibilitySource.Escalation);
+  });
+
+  it('shows a tiny chunk in full when its shorter view would cost as much or more', async () => {
+    // A reduced view adds a header; for a one-line output that is larger than the output itself.
+    const tiny = await writer.write({
+      sessionId,
+      kind: ChunkKind.CommandOutput,
+      label: '$ npm install ms@2.1.3',
+      source: 'run_command',
+      content: 'added 1 package in 1s',
+    });
+    const planned = (await engine.build(input({ query: 'add the ms package' }))).plan.chunks.find(
+      (c) => c.chunkId === tiny.id
+    )!;
+    expect(planned.visibility).toBe(V.Full);
+    expect(planned.tokens).toBe(planned.rawTokens);
+    expect(planned.reasonCode).toBe('full_not_larger');
   });
 });

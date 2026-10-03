@@ -5,10 +5,10 @@
       "runs": 3,
       "means": {
         "success": 1,
-        "inputTokens": 4711.666666666667,
+        "inputTokens": 4729,
         "outputTokens": 80,
         "turns": 4,
-        "wallMs": 65,
+        "wallMs": 96.66666666666667,
         "repeatedReads": 0,
         "evidenceRecall": 1
       }
@@ -18,12 +18,12 @@
       "runs": 3,
       "means": {
         "success": 1,
-        "inputTokens": 5222.333333333333,
+        "inputTokens": 5211.666666666667,
         "outputTokens": 80,
         "turns": 4,
-        "wallMs": 53.666666666666664,
+        "wallMs": 59.666666666666664,
         "repeatedReads": 0,
-        "toolOutputRatio": 1.1161377930245855,
+        "toolOutputRatio": 1,
         "evidenceRecall": 1
       }
     }
@@ -37,9 +37,9 @@
     },
     {
       "score": "inputTokens",
-      "baseline": 4711.666666666667,
-      "queryAware": 5222.333333333333,
-      "relativeChange": 0.10838344534842576
+      "baseline": 4729,
+      "queryAware": 5211.666666666667,
+      "relativeChange": 0.10206527102276738
     },
     {
       "score": "outputTokens",
@@ -58,9 +58,9 @@
     },
     {
       "score": "wallMs",
-      "baseline": 65,
-      "queryAware": 53.666666666666664,
-      "relativeChange": -0.1743589743589744
+      "baseline": 96.66666666666667,
+      "queryAware": 59.666666666666664,
+      "relativeChange": -0.3827586206896552
     },
     {
       "score": "repeatedReads",
@@ -69,7 +69,7 @@
     },
     {
       "score": "toolOutputRatio",
-      "queryAware": 1.1161377930245855
+      "queryAware": 1
     },
     {
       "score": "evidenceRecall",
@@ -85,10 +85,10 @@
       "success": true,
       "scores": {
         "success": 1,
-        "inputTokens": 3403,
+        "inputTokens": 3416,
         "outputTokens": 60,
         "turns": 3,
-        "wallMs": 35,
+        "wallMs": 72,
         "repeatedReads": 0,
         "evidenceRecall": 1
       }
@@ -99,41 +99,41 @@
       "success": true,
       "scores": {
         "success": 1,
-        "inputTokens": 3615,
+        "inputTokens": 3612,
         "outputTokens": 60,
         "turns": 3,
-        "wallMs": 37,
-        "repeatedReads": 0,
-        "toolOutputRatio": 1.0545454545454545,
-        "evidenceRecall": 1
-      }
-    },
-    {
-      "caseId": "fix-sum",
-      "variant": "baseline",
-      "success": true,
-      "scores": {
-        "success": 1,
-        "inputTokens": 6084,
-        "outputTokens": 100,
-        "turns": 5,
-        "wallMs": 60,
-        "repeatedReads": 0,
-        "evidenceRecall": 1
-      }
-    },
-    {
-      "caseId": "fix-sum",
-      "variant": "query_aware",
-      "success": true,
-      "scores": {
-        "success": 1,
-        "inputTokens": 6681,
-        "outputTokens": 100,
-        "turns": 5,
         "wallMs": 50,
         "repeatedReads": 0,
-        "toolOutputRatio": 1.0188679245283019,
+        "toolOutputRatio": 1,
+        "evidenceRecall": 1
+      }
+    },
+    {
+      "caseId": "fix-sum",
+      "variant": "baseline",
+      "success": true,
+      "scores": {
+        "success": 1,
+        "inputTokens": 6107,
+        "outputTokens": 100,
+        "turns": 5,
+        "wallMs": 110,
+        "repeatedReads": 0,
+        "evidenceRecall": 1
+      }
+    },
+    {
+      "caseId": "fix-sum",
+      "variant": "query_aware",
+      "success": true,
+      "scores": {
+        "success": 1,
+        "inputTokens": 6675,
+        "outputTokens": 100,
+        "turns": 5,
+        "wallMs": 57,
+        "repeatedReads": 0,
+        "toolOutputRatio": 1,
         "evidenceRecall": 1
       }
     },
@@ -143,10 +143,10 @@
       "success": true,
       "scores": {
         "success": 1,
-        "inputTokens": 4648,
+        "inputTokens": 4664,
         "outputTokens": 80,
         "turns": 4,
-        "wallMs": 100,
+        "wallMs": 108,
         "repeatedReads": 0,
         "evidenceRecall": 1
       }
@@ -157,12 +157,12 @@
       "success": true,
       "scores": {
         "success": 1,
-        "inputTokens": 5371,
+        "inputTokens": 5348,
         "outputTokens": 80,
         "turns": 4,
-        "wallMs": 74,
+        "wallMs": 72,
         "repeatedReads": 0,
-        "toolOutputRatio": 1.275,
+        "toolOutputRatio": 1,
         "evidenceRecall": 1
       }
     }

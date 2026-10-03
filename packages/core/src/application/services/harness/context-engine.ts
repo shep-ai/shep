@@ -193,6 +193,14 @@ export class ContextEngine {
         w.visibility = ChunkVisibility.Long;
         w.reasonCode = 'size_cap';
       }
+      // A shorter view adds a header; when that is no smaller than the content, show the content.
+      if (
+        (w.visibility === ChunkVisibility.Short || w.visibility === ChunkVisibility.Long) &&
+        w.views[ChunkVisibility.Full].tokens <= w.views[w.visibility].tokens
+      ) {
+        w.visibility = ChunkVisibility.Full;
+        w.reasonCode = 'full_not_larger';
+      }
       // Explicit requests are credited as the reason a chunk is shown.
       const escalation = input.escalations.get(chunk.id);
       if (escalation) {
