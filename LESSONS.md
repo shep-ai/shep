@@ -2923,3 +2923,9 @@ reported "0 matches" and a real model searched the same thing 14 times. Always p
 `stop` only acts "before the next turn", which never comes once the process is gone, so the
 session could not be discarded. Record the owning pid on the task and cancel orphans on stop.
 Real-model runs find these; scripted ones did not.
+
+## Check the pass count, not just that a test command printed something
+
+A demo repo's `node --test test/` failed on Node 22 ("Cannot find module …/test") while my check
+only tailed the summary lines, so a real agent was asked to run tests that could never pass.
+Grep for `# pass N` / `# fail 0` (or the runner's equivalent) before calling a suite green.
