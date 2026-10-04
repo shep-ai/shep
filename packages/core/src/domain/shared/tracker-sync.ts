@@ -104,20 +104,6 @@ export function priorityToJiraName(priority: Priority): string | undefined {
   return JIRA_PRIORITY_NAMES[priority];
 }
 
-// ─── Scheduling ──────────────────────────────────────────────────────────────
-
-const MS_PER_MINUTE = 60_000;
-
-/** Whether an enabled rule's interval has passed since its last run (or it never ran). */
-export function isTrackerRuleDue(
-  rule: { enabled: boolean; intervalMinutes: number; lastRunAt?: Date | string },
-  now: Date
-): boolean {
-  if (!rule.enabled) return false;
-  if (!rule.lastRunAt) return true;
-  return now.getTime() - new Date(rule.lastRunAt).getTime() >= rule.intervalMinutes * MS_PER_MINUTE;
-}
-
 // ─── Per-field sync ──────────────────────────────────────────────────────────
 
 /** The fields kept in sync between a work item and its issue. */

@@ -7,6 +7,7 @@
  */
 
 import { resolve } from '@/lib/server-container';
+import { errorMessage } from '@/lib/action-outcome';
 import type { PrComment, PrCommentRound } from '@shepai/core/domain/generated/output';
 import type { GetPrCommentsUseCase } from '@shepai/core/application/use-cases/pr-comments/get-pr-comments.use-case';
 import type { FetchPrCommentsUseCase } from '@shepai/core/application/use-cases/pr-comments/fetch-pr-comments.use-case';
@@ -16,17 +17,13 @@ export type PrCommentsSnapshot =
   | { ok: true; comments: PrComment[]; rounds: PrCommentRound[] }
   | { ok: false; error: string };
 
-function message(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
-}
-
 /** The stored comments and rounds, without asking GitHub. */
 export async function getPrComments(featureId: string): Promise<PrCommentsSnapshot> {
   try {
     const result = await resolve<GetPrCommentsUseCase>('GetPrCommentsUseCase').execute(featureId);
     return result.ok ? { ok: true, comments: result.comments, rounds: result.rounds } : result;
   } catch (error: unknown) {
-    return { ok: false, error: message(error) };
+    return { ok: false, error: errorMessage(error) };
   }
 }
 
@@ -38,7 +35,7 @@ export async function refreshPrComments(featureId: string): Promise<PrCommentsSn
     if (!fetched.ok) return fetched;
     return getPrComments(featureId);
   } catch (error: unknown) {
-    return { ok: false, error: message(error) };
+    return { ok: false, error: errorMessage(error) };
   }
 }
 
@@ -60,6 +57,6 @@ export async function addressPrComments(
     });
     return { ok: true, round: started.round };
   } catch (error: unknown) {
-    return { ok: false, error: message(error) };
+    return { ok: false, error: errorMessage(error) };
   }
 }

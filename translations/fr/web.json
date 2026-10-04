@@ -1387,9 +1387,9 @@
   },
   "trackers": {
     "title": "Connexions",
-    "subtitle": "Les tickets Linear et Jira dans des projets shep, dans les deux sens si vous le souhaitez.",
+    "subtitle": "Tickets Linear et Jira gardés dans des projets shep, et pages Notion gardées comme connaissances d'équipe.",
     "syncAll": "Synchroniser maintenant",
-    "empty": "Aucune connexion. Ajoutez ci-dessus votre clé Linear ou votre jeton Jira.",
+    "empty": "Aucune connexion. Ajoutez ci-dessus votre clé API Linear, jeton Jira ou jeton d'intégration Notion.",
     "add": {
       "title": "Ajouter une connexion",
       "provider": "Outil",
@@ -1399,7 +1399,8 @@
       "email": "E-mail du compte",
       "linearSecret": "Clé d'API Linear",
       "jiraSecret": "Jeton d'API Jira",
-      "submit": "Connecter"
+      "submit": "Connecter",
+      "notionSecret": "Jeton d'intégration Notion"
     },
     "connection": {
       "connected": "Connecté",
@@ -1409,7 +1410,7 @@
       "test": "Tester",
       "remove": "Supprimer la connexion",
       "removeTitle": "Supprimer {{name}} ?",
-      "removeDescription": "Ses règles s'arrêtent et sont supprimées. Les éléments déjà synchronisés restent dans leurs projets.",
+      "removeDescription": "Ses règles de synchronisation et sources de connaissances s'arrêtent et sont supprimées. Les éléments déjà synchronisés restent dans leurs projets.",
       "cancel": "Annuler"
     },
     "rules": {
@@ -1493,5 +1494,34 @@
       "Review": "Revue"
     },
     "addressNone": "Rien à traiter"
+  },
+  "knowledge": {
+    "sources": {
+      "title": "Sources de connaissances",
+      "empty": "Aucune source. Partagez une page ou base de données Notion avec l'intégration, puis ajoutez son lien.",
+      "kind": {
+        "Page": "Arborescence",
+        "Database": "Base de données"
+      },
+      "productLine": "{{name}} uniquement",
+      "wholeSpace": "Tout l'espace",
+      "productLineLabel": "Ligne de produits",
+      "scope": "Lien de page ou base de données Notion",
+      "documents_one": "{{count}} document",
+      "documents_few": "{{count}} documents",
+      "documents_many": "{{count}} documents",
+      "documents_other": "{{count}} documents",
+      "summary": "{{added}} ajoutés, {{updated}} mis à jour, {{removed}} supprimés, {{failed}} en échec",
+      "never": "Pas encore synchronisée",
+      "add": "Ajouter une source",
+      "syncNow": "Synchroniser",
+      "remove": "Supprimer la source"
+    },
+    "documents": {
+      "title": "Connaissances d'équipe",
+      "subtitle": "Pages Notion que les agents de chaque espace lisent quand elles correspondent à la tâche.",
+      "empty": "Aucune connaissance d'équipe. Ajoutez une connexion Notion et ses pages dans",
+      "connections": "Connexions"
+    }
   }
 }

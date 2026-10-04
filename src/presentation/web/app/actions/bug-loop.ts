@@ -7,6 +7,7 @@
  */
 
 import { resolve } from '@/lib/server-container';
+import { errorMessage } from '@/lib/action-outcome';
 import type { AgentType, WorkItemInvestigation } from '@shepai/core/domain/generated/output';
 import type { InvestigateWorkItemUseCase } from '@shepai/core/application/use-cases/bug-loop/investigate-work-item.use-case';
 import type { ApproveHypothesisUseCase } from '@shepai/core/application/use-cases/bug-loop/approve-hypothesis.use-case';
@@ -15,10 +16,6 @@ import type { GetWorkItemInvestigationsUseCase } from '@shepai/core/application/
 export type InvestigationOutcome =
   | { ok: true; investigation: WorkItemInvestigation }
   | { ok: false; error: string };
-
-function message(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
-}
 
 /** The work item's latest investigation, if any. */
 export async function getLatestInvestigation(
@@ -32,7 +29,7 @@ export async function getLatestInvestigation(
     const [latest] = result.investigations;
     return latest ? { investigation: latest } : {};
   } catch (error: unknown) {
-    return { error: message(error) };
+    return { error: errorMessage(error) };
   }
 }
 
@@ -56,7 +53,7 @@ export async function startInvestigation(input: {
     });
     return { ok: true, investigation: started.investigation };
   } catch (error: unknown) {
-    return { ok: false, error: message(error) };
+    return { ok: false, error: errorMessage(error) };
   }
 }
 
@@ -80,6 +77,6 @@ export async function approveHypothesis(input: {
     });
     return { ok: true, featureId: result.feature.id };
   } catch (error: unknown) {
-    return { ok: false, error: message(error) };
+    return { ok: false, error: errorMessage(error) };
   }
 }

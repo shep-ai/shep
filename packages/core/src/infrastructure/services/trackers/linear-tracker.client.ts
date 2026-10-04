@@ -4,6 +4,7 @@
  */
 
 import type { ExternalIssue } from '../../../domain/generated/output.js';
+import type { ConnectionAccount } from '../../../application/ports/output/services/connection-verifier.interface.js';
 import {
   LINEAR_STATE_TYPE_FOR_GROUP,
   linearPriority,
@@ -13,7 +14,6 @@ import {
 import {
   TrackerStatusUnavailableError,
   type ITrackerClient,
-  type TrackerAccount,
   type TrackerIssueChanges,
   type TrackerIssuePage,
 } from '../../../application/ports/output/services/tracker-client.interface.js';
@@ -77,7 +77,7 @@ export class LinearTrackerClient implements ITrackerClient {
     private readonly fetchFn: FetchFunction = fetch
   ) {}
 
-  async testConnection(): Promise<TrackerAccount> {
+  async testConnection(): Promise<ConnectionAccount> {
     const data = await this.query<{ viewer: { name: string } }>(VIEWER, {});
     return { name: data.viewer.name };
   }

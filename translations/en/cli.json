@@ -1244,12 +1244,12 @@
       }
     },
     "connection": {
-      "description": "Connect Linear and Jira accounts that shep keeps in sync",
+      "description": "Connect Linear and Jira accounts shep keeps in sync, and Notion workspaces it reads",
       "failed": "Connection command failed",
       "connectionArg": "Connection slug or id",
       "add": {
-        "description": "Connect a Linear or Jira account; the key is tested before it is saved",
-        "providerArg": "linear or jira",
+        "description": "Connect a Linear, Jira or Notion account; the key is tested before it is saved",
+        "providerArg": "linear, jira or notion",
         "nameOption": "Display name",
         "spaceOption": "Space the connection belongs to (default space if omitted)",
         "siteOption": "Jira site URL, for example https://acme.atlassian.net",
@@ -1257,16 +1257,17 @@
         "secretEnvOption": "Read the API key or token from this environment variable instead of prompting",
         "linearPrompt": "Linear API key",
         "jiraPrompt": "Jira API token",
-        "badProvider": "\"{{provider}}\" is not a tracker; use linear or jira",
+        "badProvider": "\"{{provider}}\" is not supported; use linear, jira or notion",
         "emptyEnv": "The environment variable {{variable}} is empty or not set",
-        "success": "Connected {{name}} ({{slug}}) as {{account}}"
+        "success": "Connected {{name}} ({{slug}}) as {{account}}",
+        "notionPrompt": "Notion integration token"
       },
       "ls": {
-        "description": "List tracker connections",
-        "title": "Tracker connections",
+        "description": "List connections",
+        "title": "Connections",
         "nameColumn": "Name",
         "slugColumn": "Slug",
-        "providerColumn": "Tracker",
+        "providerColumn": "Tool",
         "accountColumn": "Account",
         "statusColumn": "Status",
         "empty": "No connections yet. Add one with shep connection add."
@@ -1294,7 +1295,6 @@
           "scopeOption": "Linear team key (ENG) or Jira JQL query",
           "twoWayOption": "Also push shep changes back to the tracker",
           "everyOption": "Minutes between automatic runs (default 15)",
-          "badEvery": "\"{{value}}\" is not a whole number of minutes",
           "success": "Sync rule {{id}} added for {{scope}}"
         },
         "ls": {
@@ -1363,6 +1363,68 @@
     },
     "agentOption": {
       "unknown": "\"{{value}}\" is not a supported agent. Use one of: {{supported}}"
+    },
+    "everyOption": {
+      "invalid": "\"{{value}}\" is not a whole number of minutes"
+    },
+    "knowledge": {
+      "description": "Team knowledge from Notion that agents in a space can read",
+      "failed": "Knowledge command failed",
+      "connectionArg": "Notion connection slug or id",
+      "sourceArg": "Knowledge source id (see shep knowledge source ls)",
+      "summary": "{{added}} added, {{updated}} updated, {{removed}} removed, {{failed}} failed",
+      "source": {
+        "description": "Manage the Notion pages and databases shep keeps in sync",
+        "add": {
+          "description": "Keep a Notion page tree or database in sync as knowledge of the connection's space",
+          "scopeOption": "Link or id of a Notion page or database shared with the integration",
+          "productLineOption": "Only for repositories of this product line (slug or id)",
+          "everyOption": "Minutes between automatic syncs (default 60)",
+          "success": "Knowledge source {{id}} added for {{title}}; run shep knowledge sync to read it now"
+        },
+        "ls": {
+          "description": "List knowledge sources with their last sync",
+          "title": "Knowledge sources",
+          "idColumn": "Id",
+          "fromColumn": "From",
+          "documentsColumn": "Docs",
+          "everyColumn": "Every",
+          "lastRunColumn": "Last sync",
+          "never": "never synced",
+          "off": "(off)",
+          "empty": "No knowledge sources yet. Add one with shep knowledge source add."
+        },
+        "enable": {
+          "description": "Let the daemon sync a source",
+          "success": "Knowledge source {{id}} enabled"
+        },
+        "disable": {
+          "description": "Stop the daemon syncing a source",
+          "success": "Knowledge source {{id}} disabled"
+        },
+        "rm": {
+          "description": "Remove a source and the documents it synced",
+          "success": "Knowledge source {{id}} removed"
+        }
+      },
+      "sync": {
+        "description": "Sync one knowledge source, or every enabled one, now",
+        "nothing": "No enabled knowledge sources"
+      },
+      "ls": {
+        "description": "List the knowledge documents of a space",
+        "spaceOption": "Space slug or id (default space if omitted)",
+        "title": "Knowledge of {{space}}",
+        "titleColumn": "Document",
+        "linkColumn": "Link",
+        "empty": "No knowledge documents in this space yet."
+      },
+      "search": {
+        "description": "Show the passages an agent working in a repository would read for a task",
+        "queryArg": "Task text to match",
+        "repoOption": "Repository path (current directory if omitted)",
+        "none": "No team knowledge matches that task in this repository's space."
+      }
     }
   },
   "ui": {

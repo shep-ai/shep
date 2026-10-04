@@ -1,0 +1,51 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: KnowledgeSource.yaml
+type: object
+properties:
+  connectionId:
+    type: string
+    description: The knowledge connection to read
+  spaceId:
+    type: string
+    description: The space the documents belong to (the connection's space)
+  productLineId:
+    type: string
+    description: Limit the documents to one product line of the space; unset makes them space-wide
+  scopeId:
+    type: string
+    description: The tool's id of the page or database
+  scopeKind:
+    $ref: KnowledgeScopeKind.yaml
+    description: Whether the scope is a page tree or a database
+  scopeTitle:
+    type: string
+    description: The page or database title when the source was added
+  intervalMinutes:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Minutes between automatic syncs
+  enabled:
+    type: boolean
+    description: Whether the daemon syncs this source
+  lastRunAt:
+    type: string
+    format: date-time
+    description: When the source last synced
+  lastRun:
+    $ref: KnowledgeSyncSummary.yaml
+    description: What the last sync did
+  lastError:
+    type: string
+    description: Why the last sync failed, when it did
+required:
+  - connectionId
+  - spaceId
+  - scopeId
+  - scopeKind
+  - scopeTitle
+  - intervalMinutes
+  - enabled
+allOf:
+  - $ref: BaseEntity.yaml
+description: A page tree or database of a knowledge tool kept in sync as a space's knowledge

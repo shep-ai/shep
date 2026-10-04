@@ -6,6 +6,7 @@ import {
   DEFAULT_SPACE,
   type MockProjectMemoryRepository,
 } from '../../../helpers/space-repositories.mock.js';
+import type { SelectKnowledgeUseCase } from '@/application/use-cases/knowledge/select-knowledge.use-case.js';
 import type { ResolveSpaceContextUseCase } from '@/application/use-cases/spaces/resolve-space-context.use-case.js';
 import { MemoryScope, SpaceResolutionSource } from '@/domain/generated/output.js';
 import type { IMemoryRelevanceScorer } from '@/application/ports/output/services/memory-relevance-scorer.interface.js';
@@ -51,6 +52,7 @@ describe('SelectProjectMemoryUseCase', () => {
   let repo: MockProjectMemoryRepository;
   let scorer: IMemoryRelevanceScorer;
   let useCase: SelectProjectMemoryUseCase;
+  let knowledge: { execute: ReturnType<typeof vi.fn> };
 
   beforeEach(() => {
     repo = createMockProjectMemoryRepository();
@@ -60,7 +62,13 @@ describe('SelectProjectMemoryUseCase', () => {
         entries.map((e, i) => ({ entry: e, score: 1 - i * 0.01 }))
       ),
     };
-    useCase = new SelectProjectMemoryUseCase(repo, scorer, resolverFor());
+    knowledge = { execute: vi.fn(async () => ({ blob: '', passages: [] })) };
+    useCase = new SelectProjectMemoryUseCase(
+      repo,
+      scorer,
+      resolverFor(),
+      knowledge as unknown as SelectKnowledgeUseCase
+    );
   });
 
   it('returns an empty blob for a blank repository path without querying', async () => {
@@ -71,7 +79,7 @@ describe('SelectProjectMemoryUseCase', () => {
 
   it('returns an empty blob when the store is empty', async () => {
     const result = await useCase.execute({ repositoryPath: '/repo' });
-    expect(result).toEqual({ blob: '', selectedCount: 0, totalCount: 0 });
+    expect(result).toEqual({ blob: '', selectedCount: 0, totalCount: 0, knowledgeCount: 0 });
   });
 
   it('merges repo + space-wide candidates and passes them to the scorer', async () => {
@@ -109,5 +117,33 @@ describe('SelectProjectMemoryUseCase', () => {
     const result = await useCase.execute({ repositoryPath: '/repo', tokenBudget: 1 });
     expect(result.selectedCount).toBe(1);
     expect(result.blob).toContain('y'.repeat(50));
+  });
+
+  it('adds the team knowledge relevant to the task after the memory (spec 125)', async () => {
+    repo.listByRepository.mockResolvedValue([
+      entry({ id: 'p', entryKey: 'p', content: 'Use zod.' }),
+    ]);
+    knowledge.execute.mockResolvedValue({
+      blob: '### Team knowledge\n\nFrom Refunds (u):\nGuests by email.',
+      passages: [{ title: 'Refunds', url: 'u', text: 'Guests by email.' }],
+    });
+    const result = await useCase.execute({ repositoryPath: '/repo', taskText: 'refund guests' });
+    expect(knowledge.execute).toHaveBeenCalledWith({
+      repositoryPath: '/repo',
+      taskText: 'refund guests',
+    });
+    expect(result.blob).toMatch(/Use zod\.[\s\S]*### Team knowledge/);
+    expect(result.knowledgeCount).toBe(1);
+  });
+
+  it('gives knowledge alone when there is no memory yet', async () => {
+    knowledge.execute.mockResolvedValue({ blob: '### Team knowledge\n\nx', passages: [{}] });
+    const result = await useCase.execute({ repositoryPath: '/repo', taskText: 't' });
+    expect(result).toEqual({
+      blob: '### Team knowledge\n\nx',
+      selectedCount: 0,
+      totalCount: 0,
+      knowledgeCount: 1,
+    });
   });
 });

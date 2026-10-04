@@ -1244,12 +1244,12 @@
       }
     },
     "connection": {
-      "description": "Connecter des comptes Linear et Jira que shep garde synchronisés",
+      "description": "Connecter des comptes Linear et Jira que shep garde synchronisés, et des espaces Notion qu'il lit",
       "failed": "La commande de connexion a échoué",
       "connectionArg": "Slug ou id de la connexion",
       "add": {
-        "description": "Connecter un compte Linear ou Jira ; la clé est testée avant d'être enregistrée",
-        "providerArg": "linear ou jira",
+        "description": "Connecter un compte Linear, Jira ou Notion ; la clé est testée avant d'être enregistrée",
+        "providerArg": "linear, jira ou notion",
         "nameOption": "Nom affiché",
         "spaceOption": "Espace de la connexion (par défaut si omis)",
         "siteOption": "URL du site Jira, par exemple https://acme.atlassian.net",
@@ -1257,13 +1257,14 @@
         "secretEnvOption": "Lire la clé ou le jeton depuis cette variable d'environnement au lieu de le demander",
         "linearPrompt": "Clé d'API Linear",
         "jiraPrompt": "Jeton d'API Jira",
-        "badProvider": "« {{provider}} » n'est pas un outil de suivi ; utilisez linear ou jira",
+        "badProvider": "« {{provider}} » n'est pas pris en charge ; utilisez linear, jira ou notion",
         "emptyEnv": "La variable d'environnement {{variable}} est vide ou absente",
-        "success": "{{name}} ({{slug}}) connecté en tant que {{account}}"
+        "success": "{{name}} ({{slug}}) connecté en tant que {{account}}",
+        "notionPrompt": "Jeton d'intégration Notion"
       },
       "ls": {
         "description": "Lister les connexions",
-        "title": "Connexions aux outils de suivi",
+        "title": "Connexions",
         "nameColumn": "Nom",
         "slugColumn": "Slug",
         "providerColumn": "Outil",
@@ -1294,7 +1295,6 @@
           "scopeOption": "Clé d'équipe Linear (ENG) ou requête JQL Jira",
           "twoWayOption": "Renvoyer aussi les modifications shep vers l'outil",
           "everyOption": "Minutes entre deux exécutions automatiques (15 par défaut)",
-          "badEvery": "« {{value}} » n'est pas un nombre entier de minutes",
           "success": "Règle {{id}} ajoutée pour {{scope}}"
         },
         "ls": {
@@ -1363,6 +1363,68 @@
     },
     "agentOption": {
       "unknown": "« {{value}} » n'est pas un agent pris en charge. Utilisez l'un de : {{supported}}"
+    },
+    "everyOption": {
+      "invalid": "« {{value}} » n'est pas un nombre entier de minutes"
+    },
+    "knowledge": {
+      "description": "Connaissances d'équipe issues de Notion que les agents d'un espace peuvent lire",
+      "failed": "La commande knowledge a échoué",
+      "connectionArg": "Slug ou id de la connexion Notion",
+      "sourceArg": "Id de la source de connaissances (voir shep knowledge source ls)",
+      "summary": "{{added}} ajoutés, {{updated}} mis à jour, {{removed}} supprimés, {{failed}} en échec",
+      "source": {
+        "description": "Gérer les pages et bases de données Notion que shep garde synchronisées",
+        "add": {
+          "description": "Garder une arborescence de pages ou une base de données Notion comme connaissances de l'espace de la connexion",
+          "scopeOption": "Lien ou id d'une page ou base de données Notion partagée avec l'intégration",
+          "productLineOption": "Uniquement pour les dépôts de cette ligne de produits (slug ou id)",
+          "everyOption": "Minutes entre les synchronisations automatiques (60 par défaut)",
+          "success": "Source de connaissances {{id}} ajoutée pour {{title}} ; lancez shep knowledge sync pour la lire maintenant"
+        },
+        "ls": {
+          "description": "Lister les sources de connaissances avec leur dernière synchronisation",
+          "title": "Sources de connaissances",
+          "idColumn": "Id",
+          "fromColumn": "Depuis",
+          "documentsColumn": "Docs",
+          "everyColumn": "Toutes les",
+          "lastRunColumn": "Dernière synchronisation",
+          "never": "jamais synchronisée",
+          "off": "(désactivée)",
+          "empty": "Aucune source de connaissances. Ajoutez-en une avec shep knowledge source add."
+        },
+        "enable": {
+          "description": "Laisser le daemon synchroniser une source",
+          "success": "Source de connaissances {{id}} activée"
+        },
+        "disable": {
+          "description": "Empêcher le daemon de synchroniser une source",
+          "success": "Source de connaissances {{id}} désactivée"
+        },
+        "rm": {
+          "description": "Supprimer une source et les documents qu'elle a synchronisés",
+          "success": "Source de connaissances {{id}} supprimée"
+        }
+      },
+      "sync": {
+        "description": "Synchroniser maintenant une source de connaissances, ou toutes celles activées",
+        "nothing": "Aucune source de connaissances activée"
+      },
+      "ls": {
+        "description": "Lister les documents de connaissances d'un espace",
+        "spaceOption": "Slug ou id de l'espace (espace par défaut si omis)",
+        "title": "Connaissances de {{space}}",
+        "titleColumn": "Document",
+        "linkColumn": "Lien",
+        "empty": "Aucun document de connaissances dans cet espace pour l'instant."
+      },
+      "search": {
+        "description": "Afficher les passages qu'un agent travaillant dans un dépôt lirait pour une tâche",
+        "queryArg": "Texte de la tâche à rechercher",
+        "repoOption": "Chemin du dépôt (répertoire courant si omis)",
+        "none": "Aucune connaissance d'équipe de l'espace de ce dépôt ne correspond à cette tâche."
+      }
     }
   },
   "ui": {

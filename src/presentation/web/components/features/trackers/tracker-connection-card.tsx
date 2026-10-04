@@ -1,16 +1,19 @@
 'use client';
 
 /**
- * TrackerConnectionCard — one Linear or Jira connection: account, space and
- * health, its sync rules, and test / remove controls. Removing a connection
- * removes its rules but keeps every work item it synced.
+ * TrackerConnectionCard — one connection: account, space and health, test /
+ * remove controls, and what it feeds — sync rules for a tracker (Linear,
+ * Jira), knowledge sources for a knowledge tool (Notion, spec 125). Removing
+ * a connection removes its rules and sources but keeps every work item it
+ * synced.
  */
 
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PlugZap, Trash2 } from 'lucide-react';
 import type { ConnectionOverview } from '@shepai/core/application/use-cases/trackers/get-tracker-overview.use-case';
-import { ConnectionStatus } from '@shepai/core/domain/generated/output';
+import { ConnectionKind, ConnectionStatus } from '@shepai/core/domain/generated/output';
+import { connectionKind } from '@shepai/core/domain/shared/connection-kind';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -24,19 +27,25 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { removeConnection, testConnection } from '@/app/actions/manage-trackers';
-import { AddSyncRuleForm } from './add-sync-rule-form';
-import { TrackerRuleRow } from './tracker-rule-row';
+import { KnowledgeSourcesSection } from '@/components/features/knowledge/knowledge-sources-section';
+import { SyncRulesSection } from './sync-rules-section';
 import type { RunTrackerAction } from './trackers-types';
 
 export interface TrackerConnectionCardProps {
   overview: ConnectionOverview;
   projects: { id: string; name: string }[];
+  productLines: { id: string; spaceId: string; name: string }[];
   run: RunTrackerAction;
 }
 
-export function TrackerConnectionCard({ overview, projects, run }: TrackerConnectionCardProps) {
+export function TrackerConnectionCard({
+  overview,
+  projects,
+  productLines,
+  run,
+}: TrackerConnectionCardProps) {
   const { t } = useTranslation('web');
-  const { connection, spaceName, rules } = overview;
+  const { connection, spaceName, rules, sources } = overview;
   const [confirmRemove, setConfirmRemove] = useState(false);
   const healthy = connection.status === ConnectionStatus.Connected;
 
@@ -97,26 +106,22 @@ export function TrackerConnectionCard({ overview, projects, run }: TrackerConnec
         </div>
       </header>
 
-      <section className="space-y-2">
-        <h3 className="text-muted-foreground text-[11px] font-medium tracking-wide uppercase">
-          {t('trackers.rules.title')}
-        </h3>
-        {rules.length === 0 ? (
-          <p className="text-muted-foreground text-xs">{t('trackers.rules.empty')}</p>
-        ) : (
-          <ul className="space-y-1">
-            {rules.map((view) => (
-              <TrackerRuleRow key={view.rule.id} view={view} run={run} />
-            ))}
-          </ul>
-        )}
-        <AddSyncRuleForm
+      {connectionKind(connection.provider) === ConnectionKind.Knowledge ? (
+        <KnowledgeSourcesSection
+          connectionId={connection.id}
+          sources={sources}
+          productLines={productLines.filter((line) => line.spaceId === connection.spaceId)}
+          run={run}
+        />
+      ) : (
+        <SyncRulesSection
           connectionId={connection.id}
           provider={connection.provider}
+          rules={rules}
           projects={projects}
           run={run}
         />
-      </section>
+      )}
 
       <AlertDialog open={confirmRemove} onOpenChange={setConfirmRemove}>
         <AlertDialogContent>

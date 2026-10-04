@@ -7,6 +7,12 @@
  */
 
 import { resolve } from '@/lib/server-container';
+import {
+  attemptOutcome,
+  errorMessage,
+  runsOutcome,
+  type ActionOutcome,
+} from '@/lib/action-outcome';
 import type {
   CreateConnectionInput,
   ManageConnectionsUseCase,
@@ -22,24 +28,8 @@ import type {
   TrackerOverview,
 } from '@shepai/core/application/use-cases/trackers/get-tracker-overview.use-case';
 
-type Outcome = { ok: true } | { ok: false; error: string };
-
 const connections = () => resolve<ManageConnectionsUseCase>('ManageConnectionsUseCase');
 const rules = () => resolve<ManageTrackerSyncRulesUseCase>('ManageTrackerSyncRulesUseCase');
-
-function message(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
-}
-
-/** Only success or the error: results carry nothing the page needs beyond a refresh. */
-async function attempt(body: () => Promise<{ ok: boolean; error?: string }>): Promise<Outcome> {
-  try {
-    const result = await body();
-    return result.ok ? { ok: true } : { ok: false, error: result.error ?? 'Failed' };
-  } catch (error: unknown) {
-    return { ok: false, error: message(error) };
-  }
-}
 
 export async function getTrackerOverview(): Promise<{
   overview?: TrackerOverview;
@@ -50,46 +40,39 @@ export async function getTrackerOverview(): Promise<{
       overview: await resolve<GetTrackerOverviewUseCase>('GetTrackerOverviewUseCase').execute(),
     };
   } catch (error: unknown) {
-    return { error: message(error) };
+    return { error: errorMessage(error) };
   }
 }
 
 export async function createConnection(input: CreateConnectionInput) {
-  return attempt(() => connections().create(input));
+  return attemptOutcome(() => connections().create(input));
 }
 
 export async function testConnection(ref: string) {
-  return attempt(() => connections().test(ref));
+  return attemptOutcome(() => connections().test(ref));
 }
 
 export async function removeConnection(ref: string) {
-  return attempt(() => connections().remove(ref));
+  return attemptOutcome(() => connections().remove(ref));
 }
 
 export async function createTrackerSyncRule(input: CreateTrackerSyncRuleInput) {
-  return attempt(() => rules().create(input));
+  return attemptOutcome(() => rules().create(input));
 }
 
 export async function setTrackerSyncRuleEnabled(id: string, enabled: boolean) {
-  return attempt(() => rules().setEnabled(id, enabled));
+  return attemptOutcome(() => rules().setEnabled(id, enabled));
 }
 
 export async function removeTrackerSyncRule(id: string) {
-  return attempt(() => rules().remove(id));
+  return attemptOutcome(() => rules().remove(id));
 }
 
 /** Runs one rule, or every enabled rule; fails with the first run's error, if any. */
-export async function runTrackerSync(ruleId?: string): Promise<Outcome> {
-  try {
-    const results = ruleId
+export async function runTrackerSync(ruleId?: string): Promise<ActionOutcome> {
+  return runsOutcome(async () =>
+    ruleId
       ? [await resolve<RunTrackerSyncUseCase>('RunTrackerSyncUseCase').execute(ruleId)]
-      : await resolve<SyncTrackerRulesUseCase>('SyncTrackerRulesUseCase').runAll();
-    for (const result of results) {
-      if (!result.ok) return { ok: false, error: result.error };
-      if (result.error) return { ok: false, error: result.error };
-    }
-    return { ok: true };
-  } catch (error: unknown) {
-    return { ok: false, error: message(error) };
-  }
+      : await resolve<SyncTrackerRulesUseCase>('SyncTrackerRulesUseCase').runAll()
+  );
 }

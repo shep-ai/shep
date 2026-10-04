@@ -17,7 +17,7 @@ tasks:
     title: Rename tracker connections to connections
     description: >
       Connection, ConnectionProvider, ConnectionStatus; repository, use case and web actions renamed; migration 157 renames the table. No behaviour change.
-    state: Todo
+    state: Done
     dependencies: []
     acceptanceCriteria:
       - All tracker tests pass unchanged
@@ -34,7 +34,7 @@ tasks:
     title: Shared connection errors and HTTP
     description: >
       ConnectionAuthError, ConnectionRateLimitError, ConnectionRequestError and the JSON HTTP helper move out of trackers; connection management moves to use-cases/connections.
-    state: Todo
+    state: Done
     dependencies:
       - task-1
     acceptanceCriteria:
@@ -52,7 +52,7 @@ tasks:
     title: Connection kinds and verifier
     description: >
       ConnectionKind per provider; IConnectionVerifier checks credentials for every provider; tracker rules refuse non-tracker connections.
-    state: Todo
+    state: Done
     dependencies:
       - task-2
     acceptanceCriteria:
@@ -70,7 +70,7 @@ tasks:
     title: Notion client
     description: >
       Knowledge client port and Notion implementation: verify, list a page tree or database across pages and depth, fetch a page as Markdown.
-    state: Todo
+    state: Done
     dependencies:
       - task-3
     acceptanceCriteria:
@@ -88,7 +88,7 @@ tasks:
     title: Notion blocks to Markdown
     description: >
       Pure converter for every block type Notion's editor produces, with rich text annotations and links.
-    state: Todo
+    state: Done
     dependencies: []
     acceptanceCriteria:
       - Each block type and annotation is tested
@@ -105,7 +105,7 @@ tasks:
     title: Knowledge domain model
     description: >
       KnowledgeSource and KnowledgeDocument in TypeSpec; migration 158; repositories.
-    state: Todo
+    state: Done
     dependencies:
       - task-3
     acceptanceCriteria:
@@ -123,7 +123,7 @@ tasks:
     title: Knowledge sync
     description: >
       Manage sources; sync one source (edited pages fetched, removed pages deleted, connection error on rejected token); run due sources from the daemon.
-    state: Todo
+    state: Done
     dependencies:
       - task-4
       - task-6
@@ -142,7 +142,7 @@ tasks:
     title: Passage selection
     description: >
       Pure split of documents into passages under headings, lexical ranking against the task text, budgeted rendering with page names.
-    state: Todo
+    state: Done
     dependencies:
       - task-6
     acceptanceCriteria:
@@ -160,7 +160,7 @@ tasks:
     title: Knowledge in agent prompts
     description: >
       SelectProjectMemoryUseCase appends the space's best passages under Team knowledge; the memory section framing mentions team documents.
-    state: Todo
+    state: Done
     dependencies:
       - task-8
     acceptanceCriteria:
@@ -178,7 +178,7 @@ tasks:
     title: CLI
     description: >
       shep connection add notion; shep knowledge source add/ls/enable/disable/rm, sync, ls, search.
-    state: Todo
+    state: Done
     dependencies:
       - task-7
       - task-9
@@ -197,7 +197,7 @@ tasks:
     title: Web
     description: >
       Notion on the connections page with its sources; knowledge documents on the memory page; stories and 9 locales.
-    state: Todo
+    state: Done
     dependencies:
       - task-7
     acceptanceCriteria:
@@ -215,7 +215,7 @@ tasks:
     title: Docs
     description: >
       Knowledge guide, architecture note, CLI reference, connections and spaces docs.
-    state: Todo
+    state: Done
     dependencies:
       - task-10
       - task-11
@@ -234,7 +234,7 @@ tasks:
     title: Verification
     description: >
       lint, format, typecheck, unit, integration, build, web build, stories.
-    state: Todo
+    state: Done
     dependencies:
       - task-12
     acceptanceCriteria:

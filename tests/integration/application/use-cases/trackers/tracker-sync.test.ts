@@ -17,6 +17,7 @@ import { runSQLiteMigrations } from '@/infrastructure/persistence/sqlite/migrati
 import { registerRepositories } from '@/infrastructure/di/modules/register-repositories.js';
 import { registerSpaces } from '@/infrastructure/di/modules/register-spaces.js';
 import { registerTrackers } from '@/infrastructure/di/modules/register-trackers.js';
+import { registerKnowledge } from '@/infrastructure/di/modules/register-knowledge.js';
 import { LocalSecretBox } from '@/infrastructure/services/crypto/local-secret-box.js';
 import { CreatePmProjectUseCase } from '@/application/use-cases/pm-projects/create-pm-project.use-case.js';
 import { UpdateWorkItemUseCase } from '@/application/use-cases/work-items/update-work-item.use-case.js';
@@ -98,6 +99,7 @@ describe('Tracker sync (integration)', () => {
     registerRepositories(c);
     registerSpaces(c);
     registerTrackers(c);
+    registerKnowledge(c);
     linear = new FakeLinear();
     c.registerInstance<ITrackerClientFactory>('ITrackerClientFactory', { create: () => linear });
 

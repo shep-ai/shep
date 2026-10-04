@@ -16,6 +16,19 @@ enum ConnectionProvider {
 
   @doc("Jira Cloud (REST API v3, account email and API token)")
   Jira,
+
+  @doc("Notion (REST API, internal integration token)")
+  Notion,
+}
+
+/** What shep does with a provider's data. */
+@doc("What shep does with a connection provider's data")
+enum ConnectionKind {
+  @doc("Issues kept in sync with shep projects (spec 122)")
+  Tracker,
+
+  @doc("Documents agents read as team knowledge (spec 125)")
+  Knowledge,
 }
 
 /** Whether a connection's credentials last worked. */

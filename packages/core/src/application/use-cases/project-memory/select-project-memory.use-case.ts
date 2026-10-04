@@ -9,6 +9,10 @@
  *
  * The result is a compact, on-topic memory blob tailored per project / repo /
  * task / prompt — bounded in size no matter how large the store grows.
+ *
+ * The team knowledge most relevant to the task (synced documents of the
+ * repository's space, spec 125) follows the memory, within its own budget, so
+ * every consumer of project memory reads both.
  */
 
 import { injectable, inject } from 'tsyringe';
@@ -19,6 +23,7 @@ import { loadCandidateMemory } from './load-candidate-memory.js';
 import { ResolveSpaceContextUseCase } from '../spaces/resolve-space-context.use-case.js';
 import { renderMemoryBlob } from './render-memory-blob.js';
 import { MEMORY_TOKEN_BUDGET, CHARS_PER_TOKEN } from './project-memory.constants.js';
+import { SelectKnowledgeUseCase } from '../knowledge/select-knowledge.use-case.js';
 
 export interface SelectProjectMemoryInput {
   /** Normalised repository path whose memory should be considered. */
@@ -38,6 +43,8 @@ export interface SelectProjectMemoryResult {
   selectedCount: number;
   /** Total candidate entries considered (repository + product line + space). */
   totalCount: number;
+  /** Team knowledge passages included after the memory. */
+  knowledgeCount: number;
 }
 
 @injectable()
@@ -48,15 +55,33 @@ export class SelectProjectMemoryUseCase {
     @inject('IMemoryRelevanceScorer')
     private readonly scorer: IMemoryRelevanceScorer,
     @inject(ResolveSpaceContextUseCase)
-    private readonly resolveSpaceContext: ResolveSpaceContextUseCase
+    private readonly resolveSpaceContext: ResolveSpaceContextUseCase,
+    @inject(SelectKnowledgeUseCase) private readonly selectKnowledge: SelectKnowledgeUseCase
   ) {}
 
   async execute(input: SelectProjectMemoryInput): Promise<SelectProjectMemoryResult> {
     const repositoryPath = input.repositoryPath?.trim();
     if (!repositoryPath) {
-      return { blob: '', selectedCount: 0, totalCount: 0 };
+      return { blob: '', selectedCount: 0, totalCount: 0, knowledgeCount: 0 };
     }
 
+    const memory = await this.selectMemory(repositoryPath, input);
+    const knowledge = await this.selectKnowledge.execute({
+      repositoryPath,
+      taskText: input.taskText ?? '',
+    });
+    return {
+      blob: [memory.blob, knowledge.blob].filter((part) => part !== '').join('\n\n'),
+      selectedCount: memory.selectedCount,
+      totalCount: memory.totalCount,
+      knowledgeCount: knowledge.passages.length,
+    };
+  }
+
+  private async selectMemory(
+    repositoryPath: string,
+    input: SelectProjectMemoryInput
+  ): Promise<{ blob: string; selectedCount: number; totalCount: number }> {
     const context = await this.resolveSpaceContext.execute(repositoryPath);
     const candidates = await loadCandidateMemory(this.memoryRepo, context);
     if (candidates.length === 0) {

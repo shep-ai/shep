@@ -1,0 +1,40 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: KnowledgeDocument.yaml
+type: object
+properties:
+  sourceId:
+    type: string
+    description: The source it was synced by
+  spaceId:
+    type: string
+    description: The space it belongs to
+  productLineId:
+    type: string
+    description: The product line it is limited to; unset when space-wide
+  pageId:
+    type: string
+    description: The tool's id of the page; unique per source
+  title:
+    type: string
+    description: Page title
+  url:
+    type: string
+    description: Link to the page
+  content:
+    type: string
+    description: The page as Markdown
+  pageEditedAt:
+    type: string
+    format: date-time
+    description: When the page was last edited in the tool
+required:
+  - sourceId
+  - spaceId
+  - pageId
+  - title
+  - url
+  - content
+  - pageEditedAt
+allOf:
+  - $ref: BaseEntity.yaml
+description: One page of a knowledge source, as Markdown

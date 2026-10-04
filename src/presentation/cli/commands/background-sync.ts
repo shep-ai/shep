@@ -4,6 +4,7 @@
  *
  * - data retention (spec 116)
  * - Linear and Jira sync rules (spec 122)
+ * - Notion knowledge sources (spec 125)
  * - PR and CI status of features in review
  * - PR review comments (spec 124)
  *
@@ -13,7 +14,7 @@
 
 import { container } from '@/infrastructure/di/container.js';
 import { RetentionScheduler } from '@/infrastructure/services/maintenance/retention-scheduler.js';
-import { createTrackerSyncWatcher } from '@/infrastructure/services/trackers/tracker-sync-watcher.js';
+import { createDueWorkWatcher } from '@/infrastructure/services/scheduling/due-work-watcher.js';
 import { createPrCommentWatcher } from '@/infrastructure/services/pr-sync/pr-comment-watcher.js';
 import {
   getPrSyncWatcher,
@@ -22,6 +23,7 @@ import {
 import { getExistingConnection } from '@/infrastructure/persistence/sqlite/connection.js';
 import { PruneRetainedDataUseCase } from '@/application/use-cases/maintenance/prune-retained-data.use-case.js';
 import type { SyncTrackerRulesUseCase } from '@/application/use-cases/trackers/sync-tracker-rules.use-case.js';
+import type { SyncKnowledgeSourcesUseCase } from '@/application/use-cases/knowledge/sync-knowledge-sources.use-case.js';
 import type { SyncPrCommentsUseCase } from '@/application/use-cases/pr-comments/sync-pr-comments.use-case.js';
 import type { IAgentRunRepository } from '@/application/ports/output/agents/agent-run-repository.interface.js';
 import type { IFeatureRepository } from '@/application/ports/output/repositories/feature-repository.interface.js';
@@ -43,9 +45,14 @@ export function startBackgroundSync(label: string): BackgroundSync {
     () => container.resolve(PruneRetainedDataUseCase).execute(),
     report('data retention prune')
   );
-  const trackers = createTrackerSyncWatcher(
+  const trackers = createDueWorkWatcher(
     (now) => container.resolve<SyncTrackerRulesUseCase>('SyncTrackerRulesUseCase').runDue(now),
     report('tracker sync')
+  );
+  const knowledge = createDueWorkWatcher(
+    (now) =>
+      container.resolve<SyncKnowledgeSourcesUseCase>('SyncKnowledgeSourcesUseCase').runDue(now),
+    report('knowledge sync')
   );
   const prComments = createPrCommentWatcher(
     () => container.resolve<SyncPrCommentsUseCase>('SyncPrCommentsUseCase').runDue(),
@@ -64,6 +71,7 @@ export function startBackgroundSync(label: string): BackgroundSync {
 
   retention.start();
   trackers.start();
+  knowledge.start();
   prComments.start();
   getPrSyncWatcher().start();
 
@@ -71,6 +79,7 @@ export function startBackgroundSync(label: string): BackgroundSync {
     stop() {
       retention.stop();
       trackers.stop();
+      knowledge.stop();
       prComments.stop();
       getPrSyncWatcher().stop();
     },

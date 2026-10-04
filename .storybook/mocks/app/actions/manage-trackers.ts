@@ -3,7 +3,7 @@
 const ok = async () => ({ ok: true as const });
 
 export async function getTrackerOverview() {
-  return { overview: { connections: [], spaces: [], projects: [] } };
+  return { overview: { connections: [], spaces: [], productLines: [], projects: [] } };
 }
 export const createConnection = async (_input: unknown) => ok();
 export const testConnection = async (_ref: string) => ok();

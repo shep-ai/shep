@@ -51,6 +51,7 @@ import { registerSpaces } from '@/infrastructure/di/modules/register-spaces.js';
 import { registerTrackers } from '@/infrastructure/di/modules/register-trackers.js';
 import { registerBugLoop } from '@/infrastructure/di/modules/register-bug-loop.js';
 import { registerPrComments } from '@/infrastructure/di/modules/register-pr-comments.js';
+import { registerKnowledge } from '@/infrastructure/di/modules/register-knowledge.js';
 import { SessionSpaceEnvironment } from '@/infrastructure/services/interactive/lifecycle/session-space-environment.js';
 import { ResolveSpaceEnvironmentUseCase } from '@/application/use-cases/spaces/resolve-space-environment.use-case.js';
 import type { IDeploymentService } from '@/application/ports/output/services/deployment-service.interface.js';
@@ -194,6 +195,10 @@ const WEB_ROUTE_TOKENS: readonly string[] = [
   'AddressPrCommentsUseCase',
   'GetPrCommentsUseCase',
   'SyncPrCommentsUseCase',
+  'ManageKnowledgeSourcesUseCase',
+  'SyncKnowledgeSourceUseCase',
+  'SyncKnowledgeSourcesUseCase',
+  'ListKnowledgeUseCase',
   'RunTrackerSyncUseCase',
   'SyncTrackerRulesUseCase',
   'GetTrackerIssueLinkUseCase',
@@ -218,6 +223,9 @@ const CRITICAL_INFRA_TOKENS: readonly string[] = [
   'IInvestigationWorkspace',
   'IPrCommentRepository',
   'IPrCommentRoundRepository',
+  'IKnowledgeSourceRepository',
+  'IKnowledgeDocumentRepository',
+  'IConnectionVerifier',
   'IPullRequestCommentService',
   'ITrackerClientFactory',
   // Query-aware harness (spec 119)
@@ -375,6 +383,7 @@ describe('DI container bootstrap (integration)', () => {
     registerRepositories(scopedContainer);
     registerSpaces(scopedContainer);
     registerTrackers(scopedContainer);
+    registerKnowledge(scopedContainer);
     registerBugLoop(scopedContainer);
     registerPrComments(scopedContainer);
     registerServices(scopedContainer);

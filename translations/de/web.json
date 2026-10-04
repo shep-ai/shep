@@ -1387,19 +1387,20 @@
   },
   "trackers": {
     "title": "Verbindungen",
-    "subtitle": "Linear- und Jira-Issues in shep-Projekten, auf Wunsch in beide Richtungen.",
+    "subtitle": "Linear- und Jira-Issues in shep-Projekten und Notion-Seiten als Team-Wissen.",
     "syncAll": "Jetzt synchronisieren",
-    "empty": "Noch keine Verbindungen. Füge oben deinen Linear-API-Schlüssel oder dein Jira-Token hinzu.",
+    "empty": "Noch keine Verbindungen. Oben Linear-API-Schlüssel, Jira-Token oder Notion-Integrationstoken hinzufügen.",
     "add": {
       "title": "Verbindung hinzufügen",
-      "provider": "Tracker",
+      "provider": "Tool",
       "name": "Name",
       "space": "Space",
       "site": "Jira-Site",
       "email": "Konto-E-Mail",
       "linearSecret": "Linear-API-Schlüssel",
       "jiraSecret": "Jira-API-Token",
-      "submit": "Verbinden"
+      "submit": "Verbinden",
+      "notionSecret": "Notion-Integrationstoken"
     },
     "connection": {
       "connected": "Verbunden",
@@ -1409,7 +1410,7 @@
       "test": "Testen",
       "remove": "Verbindung entfernen",
       "removeTitle": "{{name}} entfernen?",
-      "removeDescription": "Ihre Sync-Regeln werden beendet und entfernt. Bereits synchronisierte Arbeitselemente bleiben in ihren Projekten.",
+      "removeDescription": "Ihre Sync-Regeln und Wissensquellen stoppen und werden entfernt. Bereits synchronisierte Work Items bleiben in ihren Projekten.",
       "cancel": "Abbrechen"
     },
     "rules": {
@@ -1493,5 +1494,34 @@
       "Review": "Review"
     },
     "addressNone": "Nichts zu bearbeiten"
+  },
+  "knowledge": {
+    "sources": {
+      "title": "Wissensquellen",
+      "empty": "Noch keine Quellen. Eine Notion-Seite oder -Datenbank mit der Integration teilen und dann ihren Link hinzufügen.",
+      "kind": {
+        "Page": "Seitenbaum",
+        "Database": "Datenbank"
+      },
+      "productLine": "nur {{name}}",
+      "wholeSpace": "Ganzer Space",
+      "productLineLabel": "Produktlinie",
+      "scope": "Link zu Notion-Seite oder -Datenbank",
+      "documents_one": "{{count}} Dokument",
+      "documents_few": "{{count}} Dokumente",
+      "documents_many": "{{count}} Dokumente",
+      "documents_other": "{{count}} Dokumente",
+      "summary": "{{added}} hinzugefügt, {{updated}} aktualisiert, {{removed}} entfernt, {{failed}} fehlgeschlagen",
+      "never": "Noch nicht synchronisiert",
+      "add": "Quelle hinzufügen",
+      "syncNow": "Jetzt synchronisieren",
+      "remove": "Quelle entfernen"
+    },
+    "documents": {
+      "title": "Team-Wissen",
+      "subtitle": "Notion-Seiten, die Agenten in jedem Space lesen, wenn sie zur Aufgabe passen.",
+      "empty": "Noch kein Team-Wissen. Notion-Verbindung und Seiten hinzufügen unter",
+      "connections": "Verbindungen"
+    }
   }
 }

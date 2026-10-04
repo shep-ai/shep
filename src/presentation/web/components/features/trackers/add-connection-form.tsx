@@ -1,8 +1,8 @@
 'use client';
 
 /**
- * AddConnectionForm — connect a Linear or Jira account to a space. Jira also
- * needs its site URL and the account email the token belongs to. The key is
+ * AddConnectionForm — connect a Linear, Jira or Notion account to a space.
+ * Jira also needs its site URL and the account email the token belongs to. The key is
  * tested by the server before anything is saved, and the field is cleared
  * once the connection exists.
  */
@@ -16,6 +16,18 @@ import { Input } from '@/components/ui/input';
 import { NATIVE_SELECT_CLASS } from '@/lib/native-select-class';
 import { createConnection } from '@/app/actions/manage-trackers';
 import type { RunTrackerAction } from './trackers-types';
+
+const PROVIDER_LABELS: Record<ConnectionProvider, string> = {
+  [ConnectionProvider.Linear]: 'Linear',
+  [ConnectionProvider.Jira]: 'Jira',
+  [ConnectionProvider.Notion]: 'Notion',
+};
+
+const SECRET_LABELS: Record<ConnectionProvider, string> = {
+  [ConnectionProvider.Linear]: 'trackers.add.linearSecret',
+  [ConnectionProvider.Jira]: 'trackers.add.jiraSecret',
+  [ConnectionProvider.Notion]: 'trackers.add.notionSecret',
+};
 
 export interface AddConnectionFormProps {
   spaces: { id: string; name: string }[];
@@ -65,8 +77,11 @@ export function AddConnectionForm({ spaces, run }: AddConnectionFormProps) {
           className={NATIVE_SELECT_CLASS}
           data-testid="add-connection-provider"
         >
-          <option value={ConnectionProvider.Linear}>Linear</option>
-          <option value={ConnectionProvider.Jira}>Jira</option>
+          {Object.values(ConnectionProvider).map((option) => (
+            <option key={option} value={option}>
+              {PROVIDER_LABELS[option]}
+            </option>
+          ))}
         </select>
       </label>
       <label className="flex flex-col gap-1 text-xs">
@@ -74,7 +89,7 @@ export function AddConnectionForm({ spaces, run }: AddConnectionFormProps) {
         <Input
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder={jira ? 'Acme Jira' : 'Acme Linear'}
+          placeholder={`Acme ${PROVIDER_LABELS[provider]}`}
           className="h-8 w-36 text-sm"
           data-testid="add-connection-name"
         />
@@ -119,7 +134,7 @@ export function AddConnectionForm({ spaces, run }: AddConnectionFormProps) {
         </>
       ) : null}
       <label className="flex flex-col gap-1 text-xs">
-        {t(jira ? 'trackers.add.jiraSecret' : 'trackers.add.linearSecret')}
+        {t(SECRET_LABELS[provider])}
         <Input
           type="password"
           autoComplete="off"

@@ -8,7 +8,7 @@
  */
 
 import { injectable, inject } from 'tsyringe';
-import { isTrackerRuleDue } from '../../../domain/shared/tracker-sync.js';
+import { isIntervalDue } from '../../../domain/shared/interval-schedule.js';
 import type { ITrackerSyncRuleRepository } from '../../ports/output/repositories/tracker-sync-rule-repository.interface.js';
 import { RunTrackerSyncUseCase, type TrackerSyncOutcome } from './run-tracker-sync.use-case.js';
 import type { ConnectionResult } from '../connections/connection-refs.js';
@@ -21,7 +21,7 @@ export class SyncTrackerRulesUseCase {
   ) {}
 
   async runDue(now: Date): Promise<ConnectionResult<TrackerSyncOutcome>[]> {
-    const due = (await this.rules.list()).filter((rule) => isTrackerRuleDue(rule, now));
+    const due = (await this.rules.list()).filter((rule) => isIntervalDue(rule, now));
     return this.runEach(due.map((rule) => rule.id));
   }
 

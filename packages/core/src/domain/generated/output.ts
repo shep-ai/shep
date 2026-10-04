@@ -6660,6 +6660,7 @@ export type PermissionGrant = BaseEntity & {
 export enum ConnectionProvider {
   Linear = 'Linear',
   Jira = 'Jira',
+  Notion = 'Notion',
 }
 export enum ConnectionStatus {
   Connected = 'Connected',
@@ -6710,6 +6711,120 @@ export type Connection = BaseEntity & {
    * When the credentials were last checked
    */
   lastCheckedAt?: any;
+};
+
+/**
+ * What one sync of a knowledge source did
+ */
+export type KnowledgeSyncSummary = {
+  /**
+   * Documents created from new pages
+   */
+  added: number;
+  /**
+   * Documents refreshed from edited pages
+   */
+  updated: number;
+  /**
+   * Documents deleted because their pages are gone
+   */
+  removed: number;
+  /**
+   * Pages that could not be read this run
+   */
+  failed: number;
+};
+export enum KnowledgeScopeKind {
+  Page = 'Page',
+  Database = 'Database',
+}
+
+/**
+ * A page tree or database of a knowledge tool kept in sync as a space's knowledge
+ */
+export type KnowledgeSource = BaseEntity & {
+  /**
+   * The knowledge connection to read
+   */
+  connectionId: string;
+  /**
+   * The space the documents belong to (the connection's space)
+   */
+  spaceId: string;
+  /**
+   * Limit the documents to one product line of the space; unset makes them space-wide
+   */
+  productLineId?: string;
+  /**
+   * The tool's id of the page or database
+   */
+  scopeId: string;
+  /**
+   * Whether the scope is a page tree or a database
+   */
+  scopeKind: KnowledgeScopeKind;
+  /**
+   * The page or database title when the source was added
+   */
+  scopeTitle: string;
+  /**
+   * Minutes between automatic syncs
+   */
+  intervalMinutes: number;
+  /**
+   * Whether the daemon syncs this source
+   */
+  enabled: boolean;
+  /**
+   * When the source last synced
+   */
+  lastRunAt?: any;
+  /**
+   * What the last sync did
+   */
+  lastRun?: KnowledgeSyncSummary;
+  /**
+   * Why the last sync failed, when it did
+   */
+  lastError?: string;
+};
+
+/**
+ * One page of a knowledge source, as Markdown
+ */
+export type KnowledgeDocument = BaseEntity & {
+  /**
+   * The source it was synced by
+   */
+  sourceId: string;
+  /**
+   * The space it belongs to
+   */
+  spaceId: string;
+  /**
+   * The product line it is limited to; unset when space-wide
+   */
+  productLineId?: string;
+  /**
+   * The tool's id of the page; unique per source
+   */
+  pageId: string;
+  /**
+   * Page title
+   */
+  title: string;
+  /**
+   * Link to the page
+   */
+  url: string;
+  /**
+   * The page as Markdown
+   */
+  content: string;
+  /**
+   * When the page was last edited in the tool
+   */
+  pageEditedAt: any;
 };
 
 /**
@@ -8594,6 +8709,10 @@ export enum SpaceResolutionSource {
   Assignment = 'Assignment',
   Rule = 'Rule',
   Default = 'Default',
+}
+export enum ConnectionKind {
+  Tracker = 'Tracker',
+  Knowledge = 'Knowledge',
 }
 export enum BedrockLifecycleAction {
   Init = 'init',

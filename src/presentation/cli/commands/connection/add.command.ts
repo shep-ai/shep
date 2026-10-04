@@ -1,5 +1,6 @@
 /**
- * shep connection add <linear|jira> — connect a tracker account (spec 122).
+ * shep connection add <linear|jira|notion> — connect a tracker (spec 122) or a
+ * knowledge tool (spec 125).
  *
  * The API key or token is prompted for (hidden), or read from the environment
  * variable named by --secret-env. It is never a command-line argument, so it
@@ -18,6 +19,13 @@ import { report, runCommand } from '../command-result.js';
 const PROVIDERS: Record<string, ConnectionProvider> = {
   linear: ConnectionProvider.Linear,
   jira: ConnectionProvider.Jira,
+  notion: ConnectionProvider.Notion,
+};
+
+const SECRET_PROMPTS: Record<ConnectionProvider, string> = {
+  [ConnectionProvider.Linear]: 'cli:commands.connection.add.linearPrompt',
+  [ConnectionProvider.Jira]: 'cli:commands.connection.add.jiraPrompt',
+  [ConnectionProvider.Notion]: 'cli:commands.connection.add.notionPrompt',
 };
 
 interface AddOptions {
@@ -44,6 +52,7 @@ export function createAddCommand(): Command {
 Examples:
   $ shep connection add linear --name "Acme Linear" --space acme
   $ shep connection add jira --name "Acme Jira" --site https://acme.atlassian.net --email me@acme.com
+  $ shep connection add notion --name "Acme Notion" --space acme
   $ LINEAR_KEY=... shep connection add linear --name CI --secret-env LINEAR_KEY`
     )
     .action((providerName: string, options: AddOptions) =>
@@ -66,11 +75,7 @@ Examples:
           }
         } else {
           secret = await password({
-            message: t(
-              provider === ConnectionProvider.Linear
-                ? 'cli:commands.connection.add.linearPrompt'
-                : 'cli:commands.connection.add.jiraPrompt'
-            ),
+            message: t(SECRET_PROMPTS[provider]),
             mask: '*',
           });
         }

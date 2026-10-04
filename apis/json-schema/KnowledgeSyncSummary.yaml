@@ -1,0 +1,30 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: KnowledgeSyncSummary.yaml
+type: object
+properties:
+  added:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Documents created from new pages
+  updated:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Documents refreshed from edited pages
+  removed:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Documents deleted because their pages are gone
+  failed:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Pages that could not be read this run
+required:
+  - added
+  - updated
+  - removed
+  - failed
+description: What one sync of a knowledge source did

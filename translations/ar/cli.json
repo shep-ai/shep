@@ -1244,12 +1244,12 @@
       }
     },
     "connection": {
-      "description": "ربط حسابات Linear وJira التي يبقيها shep متزامنة",
+      "description": "ربط حسابات Linear وJira التي يبقيها shep متزامنة، ومساحات Notion التي يقرأها",
       "failed": "فشل أمر الاتصال",
       "connectionArg": "المعرّف المختصر للاتصال أو معرّفه",
       "add": {
-        "description": "ربط حساب Linear أو Jira؛ يُختبر المفتاح قبل حفظه",
-        "providerArg": "linear أو jira",
+        "description": "ربط حساب Linear أو Jira أو Notion؛ يُختبر المفتاح قبل حفظه",
+        "providerArg": "linear أو jira أو notion",
         "nameOption": "الاسم المعروض",
         "spaceOption": "المساحة التي يتبع لها الاتصال (الافتراضية إن لم تُحدَّد)",
         "siteOption": "عنوان موقع Jira، مثل https://acme.atlassian.net",
@@ -1257,16 +1257,17 @@
         "secretEnvOption": "قراءة المفتاح أو الرمز من متغير البيئة هذا بدلًا من السؤال",
         "linearPrompt": "مفتاح واجهة Linear البرمجية",
         "jiraPrompt": "رمز واجهة Jira البرمجية",
-        "badProvider": "\"{{provider}}\" ليس متتبعًا؛ استخدم linear أو jira",
+        "badProvider": "\"{{provider}}\" غير مدعوم؛ استخدم linear أو jira أو notion",
         "emptyEnv": "متغير البيئة {{variable}} فارغ أو غير معيّن",
-        "success": "تم ربط {{name}} ‏({{slug}}) باسم {{account}}"
+        "success": "تم ربط {{name}} ‏({{slug}}) باسم {{account}}",
+        "notionPrompt": "رمز تكامل Notion"
       },
       "ls": {
         "description": "عرض الاتصالات",
-        "title": "اتصالات المتتبعات",
+        "title": "الاتصالات",
         "nameColumn": "الاسم",
         "slugColumn": "المعرّف المختصر",
-        "providerColumn": "المتتبع",
+        "providerColumn": "الأداة",
         "accountColumn": "الحساب",
         "statusColumn": "الحالة",
         "empty": "لا توجد اتصالات بعد. أضف واحدًا عبر shep connection add."
@@ -1294,7 +1295,6 @@
           "scopeOption": "مفتاح فريق Linear ‏(ENG) أو استعلام JQL من Jira",
           "twoWayOption": "إرسال تغييرات shep أيضًا إلى المتتبع",
           "everyOption": "الدقائق بين التشغيلات التلقائية (الافتراضي 15)",
-          "badEvery": "\"{{value}}\" ليس عددًا صحيحًا من الدقائق",
           "success": "أُضيفت القاعدة {{id}} لـ {{scope}}"
         },
         "ls": {
@@ -1363,6 +1363,68 @@
     },
     "agentOption": {
       "unknown": "\"{{value}}\" ليس وكيلاً مدعوماً. استخدم أحد: {{supported}}"
+    },
+    "everyOption": {
+      "invalid": "\"{{value}}\" ليس عددًا صحيحًا من الدقائق"
+    },
+    "knowledge": {
+      "description": "معرفة الفريق من Notion التي يمكن لوكلاء المساحة قراءتها",
+      "failed": "فشل أمر المعرفة",
+      "connectionArg": "المعرّف المختصر أو معرّف اتصال Notion",
+      "sourceArg": "معرّف مصدر المعرفة (راجع shep knowledge source ls)",
+      "summary": "{{added}} مضاف، {{updated}} محدَّث، {{removed}} محذوف، {{failed}} فاشل",
+      "source": {
+        "description": "إدارة صفحات Notion وقواعد بياناته التي يبقيها shep متزامنة",
+        "add": {
+          "description": "إبقاء شجرة صفحات أو قاعدة بيانات في Notion متزامنة كمعرفة لمساحة الاتصال",
+          "scopeOption": "رابط أو معرّف صفحة أو قاعدة بيانات في Notion مشاركة مع التكامل",
+          "productLineOption": "فقط لمستودعات خط المنتجات هذا (المعرّف المختصر أو المعرّف)",
+          "everyOption": "الدقائق بين المزامنات التلقائية (الافتراضي 60)",
+          "success": "أُضيف مصدر المعرفة {{id}} لـ {{title}}؛ شغّل shep knowledge sync لقراءته الآن"
+        },
+        "ls": {
+          "description": "عرض مصادر المعرفة مع آخر مزامنة لها",
+          "title": "مصادر المعرفة",
+          "idColumn": "المعرّف",
+          "fromColumn": "من",
+          "documentsColumn": "مستندات",
+          "everyColumn": "كل",
+          "lastRunColumn": "آخر مزامنة",
+          "never": "لم تتم مزامنته قط",
+          "off": "(متوقف)",
+          "empty": "لا توجد مصادر معرفة بعد. أضف واحدًا باستخدام shep knowledge source add."
+        },
+        "enable": {
+          "description": "السماح للخدمة الخلفية بمزامنة مصدر",
+          "success": "تم تفعيل مصدر المعرفة {{id}}"
+        },
+        "disable": {
+          "description": "إيقاف مزامنة مصدر في الخدمة الخلفية",
+          "success": "تم تعطيل مصدر المعرفة {{id}}"
+        },
+        "rm": {
+          "description": "إزالة مصدر والمستندات التي زامنها",
+          "success": "تمت إزالة مصدر المعرفة {{id}}"
+        }
+      },
+      "sync": {
+        "description": "مزامنة مصدر معرفة واحد، أو كل المصادر المفعّلة، الآن",
+        "nothing": "لا توجد مصادر معرفة مفعّلة"
+      },
+      "ls": {
+        "description": "عرض مستندات المعرفة لمساحة",
+        "spaceOption": "المعرّف المختصر أو معرّف المساحة (الافتراضية إن لم تُحدَّد)",
+        "title": "معرفة {{space}}",
+        "titleColumn": "المستند",
+        "linkColumn": "الرابط",
+        "empty": "لا توجد مستندات معرفة في هذه المساحة بعد."
+      },
+      "search": {
+        "description": "عرض المقاطع التي سيقرؤها وكيل يعمل في مستودع لمهمة ما",
+        "queryArg": "نص المهمة للمطابقة",
+        "repoOption": "مسار المستودع (الدليل الحالي إن لم يُحدَّد)",
+        "none": "لا توجد معرفة فريق في مساحة هذا المستودع تطابق هذه المهمة."
+      }
     }
   },
   "ui": {

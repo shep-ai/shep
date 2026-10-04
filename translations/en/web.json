@@ -1387,19 +1387,20 @@
   },
   "trackers": {
     "title": "Connections",
-    "subtitle": "Linear and Jira issues kept in shep projects, both ways if you want.",
+    "subtitle": "Linear and Jira issues kept in shep projects, and Notion pages kept as team knowledge.",
     "syncAll": "Sync now",
-    "empty": "No connections yet. Add your Linear API key or Jira token above.",
+    "empty": "No connections yet. Add your Linear API key, Jira token or Notion integration token above.",
     "add": {
       "title": "Add a connection",
-      "provider": "Tracker",
+      "provider": "Tool",
       "name": "Name",
       "space": "Space",
       "site": "Jira site",
       "email": "Account email",
       "linearSecret": "Linear API key",
       "jiraSecret": "Jira API token",
-      "submit": "Connect"
+      "submit": "Connect",
+      "notionSecret": "Notion integration token"
     },
     "connection": {
       "connected": "Connected",
@@ -1409,7 +1410,7 @@
       "test": "Test",
       "remove": "Remove connection",
       "removeTitle": "Remove {{name}}?",
-      "removeDescription": "Its sync rules stop and are removed. Work items it already synced stay in their projects.",
+      "removeDescription": "Its sync rules and knowledge sources stop and are removed. Work items it already synced stay in their projects.",
       "cancel": "Cancel"
     },
     "rules": {
@@ -1493,5 +1494,34 @@
       "Review": "Review"
     },
     "addressNone": "Nothing to address"
+  },
+  "knowledge": {
+    "sources": {
+      "title": "Knowledge sources",
+      "empty": "No sources yet. Share a Notion page or database with the integration, then add its link.",
+      "kind": {
+        "Page": "Page tree",
+        "Database": "Database"
+      },
+      "productLine": "{{name}} only",
+      "wholeSpace": "Whole space",
+      "productLineLabel": "Product line",
+      "scope": "Notion page or database link",
+      "documents_one": "{{count}} document",
+      "documents_few": "{{count}} documents",
+      "documents_many": "{{count}} documents",
+      "documents_other": "{{count}} documents",
+      "summary": "{{added}} added, {{updated}} updated, {{removed}} removed, {{failed}} failed",
+      "never": "Not synced yet",
+      "add": "Add source",
+      "syncNow": "Sync now",
+      "remove": "Remove source"
+    },
+    "documents": {
+      "title": "Team knowledge",
+      "subtitle": "Notion pages agents in each space read when they match the task.",
+      "empty": "No team knowledge yet. Add a Notion connection and its pages on",
+      "connections": "Connections"
+    }
   }
 }

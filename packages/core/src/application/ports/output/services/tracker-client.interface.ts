@@ -3,28 +3,8 @@
  * whichever it is. Implementations live in infrastructure/services/trackers.
  */
 
-import type {
-  ExternalIssue,
-  Priority,
-  StateGroup,
-  ConnectionProvider,
-} from '../../../../domain/generated/output.js';
-
-/** Everything needed to talk to one tracker account. */
-export interface TrackerClientConfig {
-  provider: ConnectionProvider;
-  /** Jira site URL; unset for Linear. */
-  siteUrl?: string;
-  /** Jira account email; unset for Linear. */
-  accountEmail?: string;
-  /** Linear API key or Jira API token. */
-  secret: string;
-}
-
-export interface TrackerAccount {
-  /** Display name of the account the credentials belong to. */
-  name: string;
-}
+import type { ConnectionAccount, ConnectionCredentials } from './connection-verifier.interface.js';
+import type { ExternalIssue, Priority, StateGroup } from '../../../../domain/generated/output.js';
 
 export interface TrackerIssuePage {
   issues: ExternalIssue[];
@@ -42,7 +22,7 @@ export interface TrackerIssueChanges {
 
 export interface ITrackerClient {
   /** Checks the credentials and names the account. */
-  testConnection(): Promise<TrackerAccount>;
+  testConnection(): Promise<ConnectionAccount>;
   /**
    * One page of the issues in `scope` (Linear team key or Jira JQL) updated
    * after `since` (every issue when unset).
@@ -57,7 +37,7 @@ export interface ITrackerClient {
 }
 
 export interface ITrackerClientFactory {
-  create(config: TrackerClientConfig): ITrackerClient;
+  create(credentials: ConnectionCredentials): ITrackerClient;
 }
 
 /** The tracker has no state or transition for a requested status group. */

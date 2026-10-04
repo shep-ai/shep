@@ -1,10 +1,11 @@
 /**
  * Connection Command Group (spec 122)
  *
- * Tracker accounts shep syncs with. Sync rules live under `shep sync`.
+ * Tracker accounts shep syncs with (sync rules live under `shep sync`) and
+ * knowledge tools it reads (sources live under `shep knowledge source`).
  *
  * Usage:
- *   shep connection add <linear|jira> --name <name> [--space] [--site --email] [--secret-env]
+ *   shep connection add <linear|jira|notion> --name <name> [--space] [--site --email] [--secret-env]
  *   shep connection ls
  *   shep connection test <connection>
  *   shep connection rm <connection>

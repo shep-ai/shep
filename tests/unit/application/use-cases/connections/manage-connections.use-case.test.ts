@@ -1,10 +1,7 @@
 import 'reflect-metadata';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ManageConnectionsUseCase } from '@/application/use-cases/connections/manage-connections.use-case.js';
-import {
-  type ITrackerClient,
-  type ITrackerClientFactory,
-} from '@/application/ports/output/services/tracker-client.interface.js';
+import type { IConnectionVerifier } from '@/application/ports/output/services/connection-verifier.interface.js';
 import { ConnectionAuthError } from '@/application/ports/output/services/connection-errors.js';
 import {
   ConnectionStatus,
@@ -20,26 +17,40 @@ import {
   InMemoryTrackerLinks,
   InMemoryTrackerRules,
 } from '../../../../helpers/tracker-repositories.mock.js';
+import {
+  InMemoryKnowledgeDocuments,
+  InMemoryKnowledgeSources,
+} from '../../../../helpers/knowledge-repositories.mock.js';
 
 describe('ManageConnectionsUseCase', () => {
   let connections: InMemoryConnections;
   let rules: InMemoryTrackerRules;
   let links: InMemoryTrackerLinks;
-  let client: { testConnection: ReturnType<typeof vi.fn> };
-  let factory: ITrackerClientFactory & { create: ReturnType<typeof vi.fn> };
+  let sources: InMemoryKnowledgeSources;
+  let documents: InMemoryKnowledgeDocuments;
+  let verifier: IConnectionVerifier & { verify: ReturnType<typeof vi.fn> };
   let useCase: ManageConnectionsUseCase;
 
   beforeEach(() => {
     connections = new InMemoryConnections();
     rules = new InMemoryTrackerRules();
     links = new InMemoryTrackerLinks();
-    client = { testConnection: vi.fn().mockResolvedValue({ name: 'Ada' }) };
-    factory = { create: vi.fn().mockReturnValue(client as unknown as ITrackerClient) };
+    sources = new InMemoryKnowledgeSources();
+    documents = new InMemoryKnowledgeDocuments();
+    verifier = { verify: vi.fn().mockResolvedValue({ name: 'Ada' }) };
     const spaces = createMockSpaceRepository({
       findById: vi.fn(async () => null),
       findBySlug: vi.fn(async (slug: string) => (slug === 'default' ? DEFAULT_SPACE : null)),
     });
-    useCase = new ManageConnectionsUseCase(connections, rules, links, factory, spaces);
+    useCase = new ManageConnectionsUseCase(
+      connections,
+      rules,
+      links,
+      sources,
+      documents,
+      verifier,
+      spaces
+    );
   });
 
   it('tests a Linear key before saving it, in the default space', async () => {
@@ -49,7 +60,7 @@ describe('ManageConnectionsUseCase', () => {
       secret: ' lin_api_x ',
     });
     expect(result.ok).toBe(true);
-    expect(factory.create).toHaveBeenCalledWith({
+    expect(verifier.verify).toHaveBeenCalledWith({
       provider: ConnectionProvider.Linear,
       secret: 'lin_api_x',
     });
@@ -78,7 +89,7 @@ describe('ManageConnectionsUseCase', () => {
       space: 'default',
     });
     expect(result.ok).toBe(true);
-    expect(factory.create).toHaveBeenCalledWith({
+    expect(verifier.verify).toHaveBeenCalledWith({
       provider: ConnectionProvider.Jira,
       siteUrl: 'https://acme.atlassian.net',
       accountEmail: 'me@acme.com',
@@ -98,9 +109,7 @@ describe('ManageConnectionsUseCase', () => {
   });
 
   it('saves nothing when the credentials fail', async () => {
-    client.testConnection.mockRejectedValue(
-      new ConnectionAuthError('Linear: Authentication required')
-    );
+    verifier.verify.mockRejectedValue(new ConnectionAuthError('Linear: Authentication required'));
     const result = await useCase.create({
       provider: ConnectionProvider.Linear,
       name: 'L',
@@ -127,7 +136,7 @@ describe('ManageConnectionsUseCase', () => {
 
   it('re-tests a connection and records the outcome', async () => {
     await useCase.create({ provider: ConnectionProvider.Linear, name: 'L', secret: 'k' });
-    client.testConnection.mockRejectedValue(new ConnectionAuthError('Linear: revoked'));
+    verifier.verify.mockRejectedValue(new ConnectionAuthError('Linear: revoked'));
 
     const result = await useCase.test('l');
 
@@ -136,6 +145,57 @@ describe('ManageConnectionsUseCase', () => {
       status: ConnectionStatus.Error,
       lastError: 'Linear: revoked',
     });
+  });
+
+  it('saves a Notion connection after checking its token (spec 125)', async () => {
+    verifier.verify.mockResolvedValue({ name: 'Acme workspace' });
+    const result = await useCase.create({
+      provider: ConnectionProvider.Notion,
+      name: 'Acme Notion',
+      secret: 'secret_x',
+    });
+    expect(result.ok && result.connection).toMatchObject({
+      provider: ConnectionProvider.Notion,
+      accountName: 'Acme workspace',
+    });
+    expect(verifier.verify).toHaveBeenCalledWith({
+      provider: ConnectionProvider.Notion,
+      secret: 'secret_x',
+    });
+  });
+
+  it('removes a knowledge connection with its sources and documents (spec 125)', async () => {
+    await useCase.create({ provider: ConnectionProvider.Notion, name: 'N', secret: 't' });
+    const [connection] = await connections.list();
+    const T = new Date();
+    await sources.create({
+      id: 's1',
+      connectionId: connection.id,
+      spaceId: 's',
+      scopeId: 'p',
+      scopeKind: 'Page' as never,
+      scopeTitle: 'Root',
+      intervalMinutes: 60,
+      enabled: true,
+      createdAt: T,
+      updatedAt: T,
+    });
+    await documents.create({
+      id: 'd1',
+      sourceId: 's1',
+      spaceId: 's',
+      pageId: 'p',
+      title: 'Root',
+      url: 'u',
+      content: 'c',
+      pageEditedAt: T,
+      createdAt: T,
+      updatedAt: T,
+    });
+    expect((await useCase.remove('n')).ok).toBe(true);
+    expect(sources.rows.size).toBe(0);
+    expect(documents.rows.size).toBe(0);
+    expect(await connections.list()).toEqual([]);
   });
 
   it('removes a connection with its rules and links, keeping work items', async () => {

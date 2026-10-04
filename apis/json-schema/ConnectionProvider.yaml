@@ -4,4 +4,5 @@ type: string
 enum:
   - Linear
   - Jira
+  - Notion
 description: An outside tool shep can connect to

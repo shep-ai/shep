@@ -1387,19 +1387,20 @@
   },
   "trackers": {
     "title": "الاتصالات",
-    "subtitle": "مهام Linear وJira في مشاريع shep، وفي الاتجاهين إن أردت.",
+    "subtitle": "مشكلات Linear وJira محفوظة في مشاريع shep، وصفحات Notion محفوظة كمعرفة للفريق.",
     "syncAll": "مزامنة الآن",
-    "empty": "لا توجد اتصالات بعد. أضف أعلاه مفتاح Linear أو رمز Jira.",
+    "empty": "لا توجد اتصالات بعد. أضف أعلاه مفتاح API لـ Linear أو رمز Jira أو رمز تكامل Notion.",
     "add": {
       "title": "إضافة اتصال",
-      "provider": "المتتبع",
+      "provider": "الأداة",
       "name": "الاسم",
       "space": "المساحة",
       "site": "موقع Jira",
       "email": "بريد الحساب",
       "linearSecret": "مفتاح Linear",
       "jiraSecret": "رمز Jira",
-      "submit": "ربط"
+      "submit": "ربط",
+      "notionSecret": "رمز تكامل Notion"
     },
     "connection": {
       "connected": "متصل",
@@ -1409,7 +1410,7 @@
       "test": "اختبار",
       "remove": "إزالة الاتصال",
       "removeTitle": "إزالة {{name}}؟",
-      "removeDescription": "تتوقف قواعده وتُزال. تبقى عناصر العمل المتزامنة في مشاريعها.",
+      "removeDescription": "تتوقف قواعد المزامنة ومصادر المعرفة الخاصة به وتُزال. تبقى عناصر العمل التي زامنها في مشاريعها.",
       "cancel": "إلغاء"
     },
     "rules": {
@@ -1493,5 +1494,34 @@
       "Review": "مراجعة"
     },
     "addressNone": "لا شيء للمعالجة"
+  },
+  "knowledge": {
+    "sources": {
+      "title": "مصادر المعرفة",
+      "empty": "لا توجد مصادر بعد. شارك صفحة أو قاعدة بيانات في Notion مع التكامل ثم أضف رابطها.",
+      "kind": {
+        "Page": "شجرة صفحات",
+        "Database": "قاعدة بيانات"
+      },
+      "productLine": "{{name}} فقط",
+      "wholeSpace": "المساحة كاملة",
+      "productLineLabel": "خط المنتجات",
+      "scope": "رابط صفحة أو قاعدة بيانات في Notion",
+      "documents_one": "{{count}} مستند",
+      "documents_few": "{{count}} مستندات",
+      "documents_many": "{{count}} مستندًا",
+      "documents_other": "{{count}} مستند",
+      "summary": "{{added}} مضاف، {{updated}} محدَّث، {{removed}} محذوف، {{failed}} فاشل",
+      "never": "لم تتم المزامنة بعد",
+      "add": "إضافة مصدر",
+      "syncNow": "مزامنة الآن",
+      "remove": "إزالة المصدر"
+    },
+    "documents": {
+      "title": "معرفة الفريق",
+      "subtitle": "صفحات Notion التي يقرؤها الوكلاء في كل مساحة عندما تطابق المهمة.",
+      "empty": "لا توجد معرفة فريق بعد. أضف اتصال Notion وصفحاته في صفحة",
+      "connections": "الاتصالات"
+    }
   }
 }

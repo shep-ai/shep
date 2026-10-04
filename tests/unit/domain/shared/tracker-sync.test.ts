@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import {
-  isTrackerRuleDue,
   jiraPriority,
   jiraStateGroup,
   linearPriority,
@@ -149,23 +148,5 @@ describe('planIssueSync', () => {
       conflicts: [],
     });
     expect(planIssueSync(TrackerSyncDirection.TwoWay, base, base, remote).applyLocal).toEqual({});
-  });
-});
-
-describe('isTrackerRuleDue', () => {
-  const now = new Date('2026-10-01T12:00:00Z');
-  it('runs a rule that never ran, and skips a disabled one', () => {
-    expect(isTrackerRuleDue({ enabled: true, intervalMinutes: 15 }, now)).toBe(true);
-    expect(isTrackerRuleDue({ enabled: false, intervalMinutes: 15 }, now)).toBe(false);
-  });
-
-  it('waits for the interval since the last run', () => {
-    const rule = { enabled: true, intervalMinutes: 15 };
-    expect(isTrackerRuleDue({ ...rule, lastRunAt: new Date('2026-10-01T11:50:00Z') }, now)).toBe(
-      false
-    );
-    expect(isTrackerRuleDue({ ...rule, lastRunAt: new Date('2026-10-01T11:45:00Z') }, now)).toBe(
-      true
-    );
   });
 });

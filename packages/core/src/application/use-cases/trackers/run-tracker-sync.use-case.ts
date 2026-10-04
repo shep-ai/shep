@@ -19,7 +19,6 @@
 
 import { injectable, inject } from 'tsyringe';
 import {
-  ConnectionStatus,
   TrackerSyncDirection,
   type ExternalIssue,
   type Connection,
@@ -46,6 +45,7 @@ import {
 import { CreateWorkItemUseCase } from '../work-items/create-work-item.use-case.js';
 import { UpdateWorkItemUseCase } from '../work-items/update-work-item.use-case.js';
 import { errorMessage, failure, type ConnectionResult } from '../connections/connection-refs.js';
+import { recordConnectionHealth } from '../connections/connection-health.js';
 import {
   emptySummary,
   localFields,
@@ -120,7 +120,7 @@ export class RunTrackerSyncUseCase {
       rejected = caught instanceof ConnectionAuthError;
     }
 
-    await this.recordConnection(connection, error, rejected);
+    await recordConnectionHealth(this.connections, connection, error, rejected);
     const { lastError: _previous, ...ruleRest } = rule;
     const updated: TrackerSyncRule = {
       ...ruleRest,
@@ -260,22 +260,5 @@ export class RunTrackerSyncUseCase {
         summary.failed += 1;
       }
     }
-  }
-
-  /** Marks the connection broken when the tracker rejected its credentials, and healthy after a clean run. */
-  private async recordConnection(
-    connection: Connection,
-    error: string | undefined,
-    rejected: boolean
-  ): Promise<void> {
-    const recovered = error === undefined && connection.status === ConnectionStatus.Error;
-    if (!rejected && !recovered) return;
-    const { lastError: _previous, ...rest } = connection;
-    await this.connections.update({
-      ...rest,
-      status: rejected ? ConnectionStatus.Error : ConnectionStatus.Connected,
-      ...(rejected && error ? { lastError: error } : {}),
-      updatedAt: new Date(),
-    });
   }
 }

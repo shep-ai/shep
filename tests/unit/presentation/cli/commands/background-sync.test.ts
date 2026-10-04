@@ -1,7 +1,8 @@
 /**
  * startBackgroundSync: the daemon (`_serve`) and `shep ui` keep the same
- * background sync running — retention, tracker sync, PR status and PR
- * comments (spec 124) — and stop all of it on shutdown.
+ * background sync running — retention, tracker sync, knowledge sync
+ * (spec 125), PR status and PR comments (spec 124) — and stop all of it on
+ * shutdown.
  */
 
 import 'reflect-metadata';
@@ -11,6 +12,7 @@ const { tasks, prSync, resolved } = vi.hoisted(() => ({
   tasks: {
     retention: { start: vi.fn(), stop: vi.fn() },
     trackers: { start: vi.fn(), stop: vi.fn() },
+    knowledge: { start: vi.fn(), stop: vi.fn() },
     comments: { start: vi.fn(), stop: vi.fn() },
   },
   prSync: { start: vi.fn(), stop: vi.fn() },
@@ -18,6 +20,8 @@ const { tasks, prSync, resolved } = vi.hoisted(() => ({
 }));
 
 const jobs: Record<string, () => Promise<unknown>> = {};
+/** Due-work jobs in creation order: tracker rules, then knowledge sources. */
+const dueJobs: ((now: Date) => Promise<unknown>)[] = [];
 
 vi.mock('@/infrastructure/di/container.js', () => ({
   container: { resolve: vi.fn(() => resolved) },
@@ -27,8 +31,11 @@ vi.mock('@/infrastructure/services/maintenance/retention-scheduler.js', () => ({
     return tasks.retention;
   }),
 }));
-vi.mock('@/infrastructure/services/trackers/tracker-sync-watcher.js', () => ({
-  createTrackerSyncWatcher: vi.fn(() => tasks.trackers),
+vi.mock('@/infrastructure/services/scheduling/due-work-watcher.js', () => ({
+  createDueWorkWatcher: vi.fn((job: (now: Date) => Promise<unknown>) => {
+    dueJobs.push(job);
+    return dueJobs.length === 1 ? tasks.trackers : tasks.knowledge;
+  }),
 }));
 vi.mock('@/infrastructure/services/pr-sync/pr-comment-watcher.js', () => ({
   createPrCommentWatcher: vi.fn((job: () => Promise<unknown>) => {
@@ -51,15 +58,18 @@ import { startBackgroundSync } from '../../../../../src/presentation/cli/command
 import { container } from '@/infrastructure/di/container.js';
 
 describe('startBackgroundSync', () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    dueJobs.length = 0;
+  });
 
   it('starts every sync and stops it all', () => {
     const sync = startBackgroundSync('test');
-    for (const task of [tasks.retention, tasks.trackers, tasks.comments, prSync]) {
+    for (const task of [tasks.retention, tasks.trackers, tasks.knowledge, tasks.comments, prSync]) {
       expect(task.start).toHaveBeenCalledTimes(1);
     }
     sync.stop();
-    for (const task of [tasks.retention, tasks.trackers, tasks.comments, prSync]) {
+    for (const task of [tasks.retention, tasks.trackers, tasks.knowledge, tasks.comments, prSync]) {
       expect(task.stop).toHaveBeenCalledTimes(1);
     }
   });
@@ -69,5 +79,16 @@ describe('startBackgroundSync', () => {
     await jobs.comments();
     expect(container.resolve).toHaveBeenCalledWith('SyncPrCommentsUseCase');
     expect(resolved.runDue).toHaveBeenCalled();
+  });
+
+  it('runs due tracker rules and due knowledge sources through their use cases', async () => {
+    startBackgroundSync('test');
+    const now = new Date('2026-10-04T12:00:00Z');
+    const [trackerJob, knowledgeJob] = dueJobs;
+    await trackerJob(now);
+    expect(container.resolve).toHaveBeenCalledWith('SyncTrackerRulesUseCase');
+    await knowledgeJob(now);
+    expect(container.resolve).toHaveBeenCalledWith('SyncKnowledgeSourcesUseCase');
+    expect(resolved.runDue).toHaveBeenCalledWith(now);
   });
 });

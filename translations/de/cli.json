@@ -1244,12 +1244,12 @@
       }
     },
     "connection": {
-      "description": "Linear- und Jira-Konten verbinden, die shep synchron hält",
+      "description": "Linear- und Jira-Konten verbinden, die shep synchron hält, und Notion-Workspaces, die es liest",
       "failed": "Verbindungsbefehl fehlgeschlagen",
       "connectionArg": "Slug oder ID der Verbindung",
       "add": {
-        "description": "Linear- oder Jira-Konto verbinden; der Schlüssel wird vor dem Speichern geprüft",
-        "providerArg": "linear oder jira",
+        "description": "Linear-, Jira- oder Notion-Konto verbinden; der Schlüssel wird vor dem Speichern geprüft",
+        "providerArg": "linear, jira oder notion",
         "nameOption": "Anzeigename",
         "spaceOption": "Space der Verbindung (sonst der Standard-Space)",
         "siteOption": "Jira-Site-URL, z. B. https://acme.atlassian.net",
@@ -1257,16 +1257,17 @@
         "secretEnvOption": "API-Schlüssel oder Token aus dieser Umgebungsvariable lesen statt nachzufragen",
         "linearPrompt": "Linear-API-Schlüssel",
         "jiraPrompt": "Jira-API-Token",
-        "badProvider": "\"{{provider}}\" ist kein Tracker; linear oder jira verwenden",
+        "badProvider": "\"{{provider}}\" wird nicht unterstützt; linear, jira oder notion verwenden",
         "emptyEnv": "Die Umgebungsvariable {{variable}} ist leer oder nicht gesetzt",
-        "success": "{{name}} ({{slug}}) als {{account}} verbunden"
+        "success": "{{name}} ({{slug}}) als {{account}} verbunden",
+        "notionPrompt": "Notion-Integrationstoken"
       },
       "ls": {
-        "description": "Tracker-Verbindungen auflisten",
-        "title": "Tracker-Verbindungen",
+        "description": "Verbindungen auflisten",
+        "title": "Verbindungen",
         "nameColumn": "Name",
         "slugColumn": "Slug",
-        "providerColumn": "Tracker",
+        "providerColumn": "Tool",
         "accountColumn": "Konto",
         "statusColumn": "Status",
         "empty": "Noch keine Verbindungen. Mit shep connection add hinzufügen."
@@ -1294,7 +1295,6 @@
           "scopeOption": "Linear-Team-Key (ENG) oder Jira-JQL-Abfrage",
           "twoWayOption": "Änderungen aus shep auch an den Tracker zurückgeben",
           "everyOption": "Minuten zwischen automatischen Läufen (Standard 15)",
-          "badEvery": "\"{{value}}\" ist keine ganze Minutenzahl",
           "success": "Sync-Regel {{id}} für {{scope}} hinzugefügt"
         },
         "ls": {
@@ -1363,6 +1363,68 @@
     },
     "agentOption": {
       "unknown": "\"{{value}}\" ist kein unterstützter Agent. Verwende einen von: {{supported}}"
+    },
+    "everyOption": {
+      "invalid": "\"{{value}}\" ist keine ganze Minutenzahl"
+    },
+    "knowledge": {
+      "description": "Team-Wissen aus Notion, das Agenten in einem Space lesen können",
+      "failed": "Knowledge-Befehl fehlgeschlagen",
+      "connectionArg": "Slug oder ID der Notion-Verbindung",
+      "sourceArg": "ID der Wissensquelle (siehe shep knowledge source ls)",
+      "summary": "{{added}} hinzugefügt, {{updated}} aktualisiert, {{removed}} entfernt, {{failed}} fehlgeschlagen",
+      "source": {
+        "description": "Notion-Seiten und -Datenbanken verwalten, die shep synchron hält",
+        "add": {
+          "description": "Einen Notion-Seitenbaum oder eine Datenbank als Wissen des Space der Verbindung synchron halten",
+          "scopeOption": "Link oder ID einer mit der Integration geteilten Notion-Seite oder -Datenbank",
+          "productLineOption": "Nur für Repositories dieser Produktlinie (Slug oder ID)",
+          "everyOption": "Minuten zwischen automatischen Synchronisierungen (Standard 60)",
+          "success": "Wissensquelle {{id}} für {{title}} hinzugefügt; shep knowledge sync liest sie sofort"
+        },
+        "ls": {
+          "description": "Wissensquellen mit ihrer letzten Synchronisierung auflisten",
+          "title": "Wissensquellen",
+          "idColumn": "ID",
+          "fromColumn": "Von",
+          "documentsColumn": "Dok.",
+          "everyColumn": "Alle",
+          "lastRunColumn": "Letzte Synchronisierung",
+          "never": "nie synchronisiert",
+          "off": "(aus)",
+          "empty": "Noch keine Wissensquellen. Mit shep knowledge source add hinzufügen."
+        },
+        "enable": {
+          "description": "Den Daemon eine Quelle synchronisieren lassen",
+          "success": "Wissensquelle {{id}} aktiviert"
+        },
+        "disable": {
+          "description": "Den Daemon eine Quelle nicht mehr synchronisieren lassen",
+          "success": "Wissensquelle {{id}} deaktiviert"
+        },
+        "rm": {
+          "description": "Eine Quelle und ihre synchronisierten Dokumente entfernen",
+          "success": "Wissensquelle {{id}} entfernt"
+        }
+      },
+      "sync": {
+        "description": "Eine Wissensquelle oder alle aktivierten jetzt synchronisieren",
+        "nothing": "Keine aktivierten Wissensquellen"
+      },
+      "ls": {
+        "description": "Die Wissensdokumente eines Space auflisten",
+        "spaceOption": "Slug oder ID des Space (sonst der Standard-Space)",
+        "title": "Wissen von {{space}}",
+        "titleColumn": "Dokument",
+        "linkColumn": "Link",
+        "empty": "Noch keine Wissensdokumente in diesem Space."
+      },
+      "search": {
+        "description": "Die Passagen zeigen, die ein Agent in einem Repository für eine Aufgabe lesen würde",
+        "queryArg": "Aufgabentext zum Abgleichen",
+        "repoOption": "Repository-Pfad (sonst das aktuelle Verzeichnis)",
+        "none": "Kein Team-Wissen im Space dieses Repositories passt zu dieser Aufgabe."
+      }
     }
   },
   "ui": {

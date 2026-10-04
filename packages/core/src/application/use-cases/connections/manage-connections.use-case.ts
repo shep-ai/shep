@@ -1,9 +1,9 @@
 /**
  * ManageConnectionsUseCase (spec 122)
  *
- * Adds, checks, lists and removes Linear and Jira connections. A connection
- * is only saved once its credentials work, so a typo never leaves a broken
- * connection behind. The secret goes to the repository (encrypted) and never
+ * Adds, checks, lists and removes connections — Linear, Jira and Notion
+ * (spec 125). A connection is only saved once its credentials work, so a typo
+ * never leaves a broken connection behind. The secret goes to the repository (encrypted) and never
  * comes back in a result.
  */
 
@@ -20,9 +20,13 @@ import type { ITrackerSyncRuleRepository } from '../../ports/output/repositories
 import type { ITrackerIssueLinkRepository } from '../../ports/output/repositories/tracker-issue-link-repository.interface.js';
 import type { ISpaceRepository } from '../../ports/output/repositories/space-repository.interface.js';
 import type {
-  ITrackerClientFactory,
-  TrackerClientConfig,
-} from '../../ports/output/services/tracker-client.interface.js';
+  IKnowledgeDocumentRepository,
+  IKnowledgeSourceRepository,
+} from '../../ports/output/repositories/knowledge-repository.interface.js';
+import type {
+  ConnectionCredentials,
+  IConnectionVerifier,
+} from '../../ports/output/services/connection-verifier.interface.js';
 import { findSpace } from '../spaces/space-refs.js';
 import { errorMessage, failure, findConnection, type ConnectionResult } from './connection-refs.js';
 
@@ -32,7 +36,7 @@ const HTTPS = 'https:';
 export interface CreateConnectionInput {
   provider: ConnectionProvider;
   name: string;
-  /** Linear API key or Jira API token. */
+  /** Linear API key, Jira API token or Notion integration token. */
   secret: string;
   /** Space id or slug; the default space when omitted. */
   space?: string;
@@ -65,7 +69,10 @@ export class ManageConnectionsUseCase {
     private readonly connections: IConnectionRepository,
     @inject('ITrackerSyncRuleRepository') private readonly rules: ITrackerSyncRuleRepository,
     @inject('ITrackerIssueLinkRepository') private readonly links: ITrackerIssueLinkRepository,
-    @inject('ITrackerClientFactory') private readonly clients: ITrackerClientFactory,
+    @inject('IKnowledgeSourceRepository') private readonly sources: IKnowledgeSourceRepository,
+    @inject('IKnowledgeDocumentRepository')
+    private readonly documents: IKnowledgeDocumentRepository,
+    @inject('IConnectionVerifier') private readonly verifier: IConnectionVerifier,
     @inject('ISpaceRepository') private readonly spaces: ISpaceRepository
   ) {}
 
@@ -90,7 +97,7 @@ export class ManageConnectionsUseCase {
       : await this.spaces.getDefault();
     if (!space) return failure(`No space "${input.space}".`);
 
-    let config: TrackerClientConfig = { provider: input.provider, secret };
+    let config: ConnectionCredentials = { provider: input.provider, secret };
     if (input.provider === ConnectionProvider.Jira) {
       const site = jiraSite(input.siteUrl);
       if (typeof site !== 'string') return failure(site.error);
@@ -102,7 +109,7 @@ export class ManageConnectionsUseCase {
 
     let accountName: string;
     try {
-      accountName = (await this.clients.create(config).testConnection()).name;
+      accountName = (await this.verifier.verify(config)).name;
     } catch (error) {
       return failure(errorMessage(error));
     }
@@ -133,14 +140,12 @@ export class ManageConnectionsUseCase {
     const secret = await this.connections.getSecret(connection.id);
     const now = new Date();
     try {
-      const account = await this.clients
-        .create({
-          provider: connection.provider,
-          ...(connection.siteUrl ? { siteUrl: connection.siteUrl } : {}),
-          ...(connection.accountEmail ? { accountEmail: connection.accountEmail } : {}),
-          secret: secret ?? '',
-        })
-        .testConnection();
+      const account = await this.verifier.verify({
+        provider: connection.provider,
+        ...(connection.siteUrl ? { siteUrl: connection.siteUrl } : {}),
+        ...(connection.accountEmail ? { accountEmail: connection.accountEmail } : {}),
+        secret: secret ?? '',
+      });
       const { lastError: _cleared, ...rest } = connection;
       const updated: Connection = {
         ...rest,
@@ -164,10 +169,17 @@ export class ManageConnectionsUseCase {
     }
   }
 
-  /** Removes the connection, its rules and its links; synced work items stay. */
+  /**
+   * Removes the connection with what it synced into: tracker rules and links
+   * (synced work items stay), knowledge sources and their documents.
+   */
   async remove(ref: string): Promise<ConnectionResult> {
     const connection = await findConnection(this.connections, ref);
     if (!connection) return failure(`No connection "${ref}".`);
+    for (const source of await this.sources.list(connection.id)) {
+      await this.documents.deleteBySource(source.id);
+      await this.sources.delete(source.id);
+    }
     await this.links.deleteByConnection(connection.id);
     await this.rules.deleteByConnection(connection.id);
     await this.connections.delete(connection.id);

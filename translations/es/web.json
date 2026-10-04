@@ -1387,19 +1387,20 @@
   },
   "trackers": {
     "title": "Conexiones",
-    "subtitle": "Incidencias de Linear y Jira en proyectos de shep, en ambos sentidos si quieres.",
+    "subtitle": "Issues de Linear y Jira en proyectos de shep, y páginas de Notion como conocimiento del equipo.",
     "syncAll": "Sincronizar ahora",
-    "empty": "Aún no hay conexiones. Añade arriba tu clave de Linear o tu token de Jira.",
+    "empty": "Aún no hay conexiones. Añade arriba tu clave API de Linear, token de Jira o token de integración de Notion.",
     "add": {
       "title": "Añadir una conexión",
-      "provider": "Gestor",
+      "provider": "Herramienta",
       "name": "Nombre",
       "space": "Espacio",
       "site": "Sitio de Jira",
       "email": "Correo de la cuenta",
       "linearSecret": "Clave de API de Linear",
       "jiraSecret": "Token de API de Jira",
-      "submit": "Conectar"
+      "submit": "Conectar",
+      "notionSecret": "Token de integración de Notion"
     },
     "connection": {
       "connected": "Conectado",
@@ -1409,7 +1410,7 @@
       "test": "Probar",
       "remove": "Eliminar conexión",
       "removeTitle": "¿Eliminar {{name}}?",
-      "removeDescription": "Sus reglas se detienen y se eliminan. Los elementos ya sincronizados se quedan en sus proyectos.",
+      "removeDescription": "Sus reglas de sincronización y fuentes de conocimiento se detienen y se eliminan. Los elementos ya sincronizados se quedan en sus proyectos.",
       "cancel": "Cancelar"
     },
     "rules": {
@@ -1493,5 +1494,34 @@
       "Review": "Revisión"
     },
     "addressNone": "Nada que atender"
+  },
+  "knowledge": {
+    "sources": {
+      "title": "Fuentes de conocimiento",
+      "empty": "Aún no hay fuentes. Comparte una página o base de datos de Notion con la integración y añade su enlace.",
+      "kind": {
+        "Page": "Árbol de páginas",
+        "Database": "Base de datos"
+      },
+      "productLine": "solo {{name}}",
+      "wholeSpace": "Todo el espacio",
+      "productLineLabel": "Línea de producto",
+      "scope": "Enlace a página o base de datos de Notion",
+      "documents_one": "{{count}} documento",
+      "documents_few": "{{count}} documentos",
+      "documents_many": "{{count}} documentos",
+      "documents_other": "{{count}} documentos",
+      "summary": "{{added}} añadidos, {{updated}} actualizados, {{removed}} eliminados, {{failed}} fallidos",
+      "never": "Aún sin sincronizar",
+      "add": "Añadir fuente",
+      "syncNow": "Sincronizar ahora",
+      "remove": "Eliminar fuente"
+    },
+    "documents": {
+      "title": "Conocimiento del equipo",
+      "subtitle": "Páginas de Notion que leen los agentes de cada espacio cuando encajan con la tarea.",
+      "empty": "Aún no hay conocimiento del equipo. Añade una conexión de Notion y sus páginas en",
+      "connections": "Conexiones"
+    }
   }
 }

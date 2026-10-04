@@ -9,7 +9,7 @@ export default async function ConnectionsPage() {
   return (
     <div className="flex h-full flex-col overflow-y-auto bg-[#eef0f3] dark:bg-[#111113]">
       <TrackersPageClient
-        overview={overview ?? { connections: [], spaces: [], projects: [] }}
+        overview={overview ?? { connections: [], spaces: [], productLines: [], projects: [] }}
         loadError={error}
       />
     </div>

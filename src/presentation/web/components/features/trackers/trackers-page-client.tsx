@@ -2,8 +2,9 @@
 
 /**
  * TrackersPageClient — the Connections page (spec 122). Linear and Jira
- * accounts, the rules that keep their issues in shep projects, and a button
- * to sync everything now. The daemon runs rules on their own interval.
+ * accounts with the rules that keep their issues in shep projects, Notion
+ * accounts with the pages they keep as team knowledge (spec 125), and a
+ * button to sync everything now. The daemon runs each on its own interval.
  *
  * Thin presentation: each change is one server action backed by a use case;
  * after a success the page refreshes to re-read the overview.
@@ -16,6 +17,7 @@ import { ArrowLeftRight, RefreshCw } from 'lucide-react';
 import type { TrackerOverview } from '@shepai/core/application/use-cases/trackers/get-tracker-overview.use-case';
 import { Button } from '@/components/ui/button';
 import { runTrackerSync } from '@/app/actions/manage-trackers';
+import { syncKnowledge } from '@/app/actions/manage-knowledge';
 import { AddConnectionForm } from './add-connection-form';
 import { TrackerConnectionCard } from './tracker-connection-card';
 import type { RunTrackerAction, TrackerActionOutcome } from './trackers-types';
@@ -52,7 +54,13 @@ export function TrackersPageClient({ overview, loadError }: TrackersPageClientPr
   async function syncAll() {
     setSyncing(true);
     try {
-      await run(() => runTrackerSync(undefined));
+      await run(async () => {
+        const [trackers, knowledge] = await Promise.all([
+          runTrackerSync(undefined),
+          syncKnowledge(undefined),
+        ]);
+        return trackers.ok ? knowledge : trackers;
+      });
     } finally {
       setSyncing(false);
     }
@@ -97,6 +105,7 @@ export function TrackersPageClient({ overview, loadError }: TrackersPageClientPr
               key={connection.connection.id}
               overview={connection}
               projects={overview.projects}
+              productLines={overview.productLines}
               run={run}
             />
           ))}

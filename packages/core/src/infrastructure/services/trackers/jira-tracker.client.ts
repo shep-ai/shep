@@ -8,6 +8,7 @@
  */
 
 import type { ExternalIssue } from '../../../domain/generated/output.js';
+import type { ConnectionAccount } from '../../../application/ports/output/services/connection-verifier.interface.js';
 import {
   jiraPriority,
   jiraStateGroup,
@@ -16,7 +17,6 @@ import {
 import {
   TrackerStatusUnavailableError,
   type ITrackerClient,
-  type TrackerAccount,
   type TrackerIssueChanges,
   type TrackerIssuePage,
 } from '../../../application/ports/output/services/tracker-client.interface.js';
@@ -69,7 +69,7 @@ export class JiraTrackerClient implements ITrackerClient {
     this.authorization = `Basic ${credentials}`;
   }
 
-  async testConnection(): Promise<TrackerAccount> {
+  async testConnection(): Promise<ConnectionAccount> {
     const me = await this.request<{ displayName: string }>('GET', '/myself');
     return { name: me.displayName };
   }

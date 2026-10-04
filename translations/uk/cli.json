@@ -1244,12 +1244,12 @@
       }
     },
     "connection": {
-      "description": "Підключити облікові записи Linear і Jira, які shep синхронізує",
+      "description": "Підключити облікові записи Linear і Jira, які shep синхронізує, і простори Notion, які він читає",
       "failed": "Команду підключення не виконано",
       "connectionArg": "Слаг або id підключення",
       "add": {
-        "description": "Підключити обліковий запис Linear або Jira; ключ перевіряється перед збереженням",
-        "providerArg": "linear або jira",
+        "description": "Підключити обліковий запис Linear, Jira або Notion; ключ перевіряється перед збереженням",
+        "providerArg": "linear, jira або notion",
         "nameOption": "Відображувана назва",
         "spaceOption": "Простір підключення (типовий, якщо не вказано)",
         "siteOption": "URL сайту Jira, наприклад https://acme.atlassian.net",
@@ -1257,16 +1257,17 @@
         "secretEnvOption": "Читати ключ або токен із цієї змінної оточення замість запиту",
         "linearPrompt": "API-ключ Linear",
         "jiraPrompt": "API-токен Jira",
-        "badProvider": "«{{provider}}» — не трекер; використовуйте linear або jira",
+        "badProvider": "«{{provider}}» не підтримується; використовуйте linear, jira або notion",
         "emptyEnv": "Змінна оточення {{variable}} порожня або не задана",
-        "success": "{{name}} ({{slug}}) підключено як {{account}}"
+        "success": "{{name}} ({{slug}}) підключено як {{account}}",
+        "notionPrompt": "Токен інтеграції Notion"
       },
       "ls": {
         "description": "Список підключень",
-        "title": "Підключення трекерів",
+        "title": "Підключення",
         "nameColumn": "Назва",
         "slugColumn": "Слаг",
-        "providerColumn": "Трекер",
+        "providerColumn": "Сервіс",
         "accountColumn": "Обліковий запис",
         "statusColumn": "Статус",
         "empty": "Підключень ще немає. Додайте через shep connection add."
@@ -1294,7 +1295,6 @@
           "scopeOption": "Ключ команди Linear (ENG) або JQL-запит Jira",
           "twoWayOption": "Також надсилати зміни з shep у трекер",
           "everyOption": "Хвилин між автоматичними запусками (типово 15)",
-          "badEvery": "«{{value}}» — не ціле число хвилин",
           "success": "Правило {{id}} додано для {{scope}}"
         },
         "ls": {
@@ -1363,6 +1363,68 @@
     },
     "agentOption": {
       "unknown": "«{{value}}» — непідтримуваний агент. Використайте один із: {{supported}}"
+    },
+    "everyOption": {
+      "invalid": "«{{value}}» — не ціле число хвилин"
+    },
+    "knowledge": {
+      "description": "Знання команди з Notion, які можуть читати агенти простору",
+      "failed": "Команда knowledge завершилася з помилкою",
+      "connectionArg": "Slug або id підключення Notion",
+      "sourceArg": "Id джерела знань (див. shep knowledge source ls)",
+      "summary": "{{added}} додано, {{updated}} оновлено, {{removed}} видалено, {{failed}} з помилкою",
+      "source": {
+        "description": "Керувати сторінками та базами даних Notion, які shep синхронізує",
+        "add": {
+          "description": "Синхронізувати дерево сторінок або базу даних Notion як знання простору підключення",
+          "scopeOption": "Посилання або id сторінки чи бази даних Notion, відкритої для інтеграції",
+          "productLineOption": "Лише для репозиторіїв цієї продуктової лінії (slug або id)",
+          "everyOption": "Хвилини між автоматичними синхронізаціями (типово 60)",
+          "success": "Джерело знань {{id}} додано для {{title}}; запустіть shep knowledge sync, щоб прочитати його зараз"
+        },
+        "ls": {
+          "description": "Список джерел знань з останньою синхронізацією",
+          "title": "Джерела знань",
+          "idColumn": "Id",
+          "fromColumn": "Звідки",
+          "documentsColumn": "Док.",
+          "everyColumn": "Кожні",
+          "lastRunColumn": "Остання синхронізація",
+          "never": "ще не синхронізовано",
+          "off": "(вимк.)",
+          "empty": "Джерел знань поки немає. Додайте за допомогою shep knowledge source add."
+        },
+        "enable": {
+          "description": "Дозволити демону синхронізувати джерело",
+          "success": "Джерело знань {{id}} увімкнено"
+        },
+        "disable": {
+          "description": "Заборонити демону синхронізувати джерело",
+          "success": "Джерело знань {{id}} вимкнено"
+        },
+        "rm": {
+          "description": "Видалити джерело та синхронізовані з нього документи",
+          "success": "Джерело знань {{id}} видалено"
+        }
+      },
+      "sync": {
+        "description": "Синхронізувати зараз одне джерело знань або всі увімкнені",
+        "nothing": "Немає увімкнених джерел знань"
+      },
+      "ls": {
+        "description": "Список документів знань простору",
+        "spaceOption": "Slug або id простору (типовий, якщо не вказано)",
+        "title": "Знання {{space}}",
+        "titleColumn": "Документ",
+        "linkColumn": "Посилання",
+        "empty": "У цьому просторі поки немає документів знань."
+      },
+      "search": {
+        "description": "Показати фрагменти, які агент у репозиторії прочитає для задачі",
+        "queryArg": "Текст задачі для пошуку",
+        "repoOption": "Шлях до репозиторію (поточний каталог, якщо не вказано)",
+        "none": "Знання команди в просторі цього репозиторію не відповідають цій задачі."
+      }
     }
   },
   "ui": {

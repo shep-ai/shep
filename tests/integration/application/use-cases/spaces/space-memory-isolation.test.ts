@@ -14,6 +14,7 @@ import { createInMemoryDatabase } from '../../../../helpers/database.helper.js';
 import { runSQLiteMigrations } from '@/infrastructure/persistence/sqlite/migrations.js';
 import { registerRepositories } from '@/infrastructure/di/modules/register-repositories.js';
 import { registerSpaces } from '@/infrastructure/di/modules/register-spaces.js';
+import { registerKnowledge } from '@/infrastructure/di/modules/register-knowledge.js';
 import { LexicalMemoryRelevanceScorer } from '@/infrastructure/services/project-memory/lexical-memory-relevance-scorer.js';
 import { ManageSpacesUseCase } from '@/application/use-cases/spaces/manage-spaces.use-case.js';
 import { ManageSpaceMembershipUseCase } from '@/application/use-cases/spaces/manage-space-membership.use-case.js';
@@ -22,6 +23,8 @@ import { ManageProjectMemoryUseCase } from '@/application/use-cases/project-memo
 import { ReadProjectMemoryUseCase } from '@/application/use-cases/project-memory/read-project-memory.use-case.js';
 import { SelectProjectMemoryUseCase } from '@/application/use-cases/project-memory/select-project-memory.use-case.js';
 import { DEFAULT_SPACE_ID } from '@/domain/shared/space-resolution.js';
+import type { ISpaceRepository } from '@/application/ports/output/repositories/space-repository.interface.js';
+import type { IKnowledgeDocumentRepository } from '@/application/ports/output/repositories/knowledge-repository.interface.js';
 import { MemoryCategory, MemoryScope, SpaceRuleKind } from '@/domain/generated/output.js';
 
 const ACME_API = '/work/acme/api';
@@ -62,6 +65,8 @@ describe('Space memory isolation (integration)', () => {
     c.registerInstance<Database.Database>('Database', db);
     registerRepositories(c);
     registerSpaces(c);
+    c.register('ITrackerClientFactory', { useValue: {} });
+    registerKnowledge(c);
     c.registerSingleton('IMemoryRelevanceScorer', LexicalMemoryRelevanceScorer);
 
     const spaces = c.resolve(ManageSpacesUseCase);
@@ -147,5 +152,26 @@ describe('Space memory isolation (integration)', () => {
     await shareFromAcme(MemoryScope.Space);
     const result = await c.resolve(ManageSpacesUseCase).delete('acme');
     expect(result.ok).toBe(false);
+  });
+
+  it('shows team knowledge of a space to its repositories only (spec 125)', async () => {
+    const acme = await c.resolve<ISpaceRepository>('ISpaceRepository').findBySlug('acme');
+    if (!acme) throw new Error('Acme space missing');
+    const now = new Date();
+    await c.resolve<IKnowledgeDocumentRepository>('IKnowledgeDocumentRepository').create({
+      id: 'doc-release',
+      sourceId: 'src',
+      spaceId: acme.id,
+      pageId: 'page',
+      title: 'Release process',
+      url: 'https://notion.so/release',
+      content: `# Deploys\n\n${SECRET}.`,
+      pageEditedAt: now,
+      createdAt: now,
+      updatedAt: now,
+    });
+
+    expect((await visibleTo(ACME_WEB)).select).toContain(SECRET);
+    expect((await visibleTo(BLOG)).select).not.toContain(SECRET);
   });
 });

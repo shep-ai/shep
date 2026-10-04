@@ -7,6 +7,7 @@
  */
 
 import { resolve } from '@/lib/server-container';
+import { errorMessage } from '@/lib/action-outcome';
 import type {
   CreateSpaceInput,
   ManageSpacesUseCase,
@@ -31,17 +32,13 @@ import type { SpaceResult } from '@shepai/core/application/use-cases/spaces/spac
 const spaces = () => resolve<ManageSpacesUseCase>('ManageSpacesUseCase');
 const membership = () => resolve<ManageSpaceMembershipUseCase>('ManageSpaceMembershipUseCase');
 
-function message(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
-}
-
 async function attempt<T extends object>(
   body: () => Promise<SpaceResult<T>>
 ): Promise<SpaceResult<T>> {
   try {
     return await body();
   } catch (error: unknown) {
-    return { ok: false, error: message(error) };
+    return { ok: false, error: errorMessage(error) };
   }
 }
 
@@ -50,7 +47,7 @@ export async function getSpacesOverview(): Promise<{ overview?: SpacesOverview; 
     const overview = await resolve<GetSpacesOverviewUseCase>('GetSpacesOverviewUseCase').execute();
     return { overview };
   } catch (error: unknown) {
-    return { error: message(error) };
+    return { error: errorMessage(error) };
   }
 }
 

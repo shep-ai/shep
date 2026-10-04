@@ -8,6 +8,7 @@
 import { injectable, inject } from 'tsyringe';
 import { randomUUID } from 'node:crypto';
 import {
+  ConnectionKind,
   ConnectionProvider,
   TrackerSyncDirection,
   type TrackerSyncRule,
@@ -16,6 +17,7 @@ import type { IConnectionRepository } from '../../ports/output/repositories/conn
 import type { ITrackerSyncRuleRepository } from '../../ports/output/repositories/tracker-sync-rule-repository.interface.js';
 import type { ITrackerIssueLinkRepository } from '../../ports/output/repositories/tracker-issue-link-repository.interface.js';
 import type { IPmProjectRepository } from '../../ports/output/repositories/pm-project-repository.interface.js';
+import { connectionKind } from '../../../domain/shared/connection-kind.js';
 import { failure, findConnection, type ConnectionResult } from '../connections/connection-refs.js';
 
 export const DEFAULT_SYNC_INTERVAL_MINUTES = 15;
@@ -86,6 +88,11 @@ export class ManageTrackerSyncRulesUseCase {
   ): Promise<ConnectionResult<{ rule: TrackerSyncRule }>> {
     const connection = await findConnection(this.connections, input.connection);
     if (!connection) return failure(`No connection "${input.connection}".`);
+    if (connectionKind(connection.provider) !== ConnectionKind.Tracker) {
+      return failure(
+        `${connection.name} is a ${connection.provider} connection, not an issue tracker.`
+      );
+    }
     const projectRef = input.project?.trim() ?? '';
     const project =
       (await this.projects.findById(projectRef)) ?? (await this.projects.findBySlug(projectRef));

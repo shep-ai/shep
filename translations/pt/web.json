@@ -1387,19 +1387,20 @@
   },
   "trackers": {
     "title": "Ligações",
-    "subtitle": "Issues do Linear e do Jira em projetos shep, nos dois sentidos se quiser.",
+    "subtitle": "Issues do Linear e Jira mantidas em projetos do shep, e páginas do Notion como conhecimento da equipe.",
     "syncAll": "Sincronizar agora",
-    "empty": "Ainda não há ligações. Adicione acima a sua chave do Linear ou token do Jira.",
+    "empty": "Nenhuma conexão ainda. Adicione acima sua chave de API do Linear, token do Jira ou token de integração do Notion.",
     "add": {
       "title": "Adicionar uma ligação",
-      "provider": "Gestor",
+      "provider": "Ferramenta",
       "name": "Nome",
       "space": "Espaço",
       "site": "Site do Jira",
       "email": "Email da conta",
       "linearSecret": "Chave de API do Linear",
       "jiraSecret": "Token de API do Jira",
-      "submit": "Ligar"
+      "submit": "Ligar",
+      "notionSecret": "Token de integração do Notion"
     },
     "connection": {
       "connected": "Ligado",
@@ -1409,7 +1410,7 @@
       "test": "Testar",
       "remove": "Remover ligação",
       "removeTitle": "Remover {{name}}?",
-      "removeDescription": "As regras param e são removidas. Os itens já sincronizados ficam nos projetos.",
+      "removeDescription": "Suas regras de sincronização e fontes de conhecimento param e são removidas. Itens já sincronizados permanecem em seus projetos.",
       "cancel": "Cancelar"
     },
     "rules": {
@@ -1493,5 +1494,34 @@
       "Review": "Revisão"
     },
     "addressNone": "Nada a tratar"
+  },
+  "knowledge": {
+    "sources": {
+      "title": "Fontes de conhecimento",
+      "empty": "Nenhuma fonte ainda. Compartilhe uma página ou banco de dados do Notion com a integração e adicione o link.",
+      "kind": {
+        "Page": "Árvore de páginas",
+        "Database": "Banco de dados"
+      },
+      "productLine": "somente {{name}}",
+      "wholeSpace": "Espaço inteiro",
+      "productLineLabel": "Linha de produto",
+      "scope": "Link de página ou banco de dados do Notion",
+      "documents_one": "{{count}} documento",
+      "documents_few": "{{count}} documentos",
+      "documents_many": "{{count}} documentos",
+      "documents_other": "{{count}} documentos",
+      "summary": "{{added}} adicionados, {{updated}} atualizados, {{removed}} removidos, {{failed}} com falha",
+      "never": "Ainda não sincronizada",
+      "add": "Adicionar fonte",
+      "syncNow": "Sincronizar agora",
+      "remove": "Remover fonte"
+    },
+    "documents": {
+      "title": "Conhecimento da equipe",
+      "subtitle": "Páginas do Notion que os agentes de cada espaço leem quando combinam com a tarefa.",
+      "empty": "Nenhum conhecimento da equipe ainda. Adicione uma conexão do Notion e suas páginas em",
+      "connections": "Conexões"
+    }
   }
 }

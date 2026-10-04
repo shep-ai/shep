@@ -1387,19 +1387,20 @@
   },
   "trackers": {
     "title": "חיבורים",
-    "subtitle": "משימות Linear ו-Jira בפרויקטים של shep, בשני הכיוונים אם תרצו.",
+    "subtitle": "משימות Linear ו-Jira נשמרות בפרויקטים של shep, ודפי Notion נשמרים כידע צוות.",
     "syncAll": "סנכרון עכשיו",
-    "empty": "אין עדיין חיבורים. הוסיפו למעלה מפתח Linear או אסימון Jira.",
+    "empty": "אין עדיין חיבורים. הוסיפו למעלה מפתח API של Linear, אסימון Jira או אסימון אינטגרציה של Notion.",
     "add": {
       "title": "הוספת חיבור",
-      "provider": "מערכת",
+      "provider": "כלי",
       "name": "שם",
       "space": "מרחב",
       "site": "אתר Jira",
       "email": "דוא\"ל החשבון",
       "linearSecret": "מפתח API של Linear",
       "jiraSecret": "אסימון API של Jira",
-      "submit": "חיבור"
+      "submit": "חיבור",
+      "notionSecret": "אסימון אינטגרציה של Notion"
     },
     "connection": {
       "connected": "מחובר",
@@ -1409,7 +1410,7 @@
       "test": "בדיקה",
       "remove": "הסרת החיבור",
       "removeTitle": "להסיר את {{name}}?",
-      "removeDescription": "כללי הסנכרון שלו ייעצרו ויוסרו. פריטי עבודה שכבר סונכרנו יישארו בפרויקטים.",
+      "removeDescription": "כללי הסנכרון ומקורות הידע שלו ייעצרו ויוסרו. פריטי עבודה שכבר סונכרנו יישארו בפרויקטים שלהם.",
       "cancel": "ביטול"
     },
     "rules": {
@@ -1493,5 +1494,34 @@
       "Review": "סקירה"
     },
     "addressNone": "אין במה לטפל"
+  },
+  "knowledge": {
+    "sources": {
+      "title": "מקורות ידע",
+      "empty": "אין עדיין מקורות. שתפו דף או מסד נתונים ב-Notion עם האינטגרציה, ואז הוסיפו את הקישור.",
+      "kind": {
+        "Page": "עץ דפים",
+        "Database": "מסד נתונים"
+      },
+      "productLine": "רק {{name}}",
+      "wholeSpace": "כל המרחב",
+      "productLineLabel": "קו מוצרים",
+      "scope": "קישור לדף או מסד נתונים ב-Notion",
+      "documents_one": "מסמך {{count}}",
+      "documents_few": "{{count}} מסמכים",
+      "documents_many": "{{count}} מסמכים",
+      "documents_other": "{{count}} מסמכים",
+      "summary": "{{added}} נוספו, {{updated}} עודכנו, {{removed}} הוסרו, {{failed}} נכשלו",
+      "never": "עדיין לא סונכרן",
+      "add": "הוספת מקור",
+      "syncNow": "סנכרון עכשיו",
+      "remove": "הסרת מקור"
+    },
+    "documents": {
+      "title": "ידע צוות",
+      "subtitle": "דפי Notion שסוכנים בכל מרחב קוראים כשהם מתאימים למשימה.",
+      "empty": "אין עדיין ידע צוות. הוסיפו חיבור Notion ואת הדפים שלו בעמוד",
+      "connections": "חיבורים"
+    }
   }
 }

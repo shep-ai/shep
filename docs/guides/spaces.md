@@ -96,6 +96,13 @@ A space also decides which review comments on shep's pull requests are answered 
 asking: those mentioning `#shep` (the default), all of them, or none
 (`shep space config acme --pr-comments all`). See [PR comments](./pr-comments.md).
 
+## Team knowledge
+
+Besides the memory agents write, a space can hold your team's own documents: Notion pages kept
+in sync through a Notion connection of the space. Agents in the space read the sections that fit
+their task; a source limited to a product line reaches only that product line's repositories.
+See [Team knowledge from Notion](./knowledge.md).
+
 ## Things to know
 
 - **Deleting is safe.** Shep refuses to delete a space that still holds memory, or a

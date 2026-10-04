@@ -21,6 +21,10 @@ const actions = vi.hoisted(() => ({
   removeTrackerSyncRule: vi.fn(),
   runTrackerSync: vi.fn(),
 }));
+const knowledgeActions = vi.hoisted(() => ({ syncKnowledge: vi.fn() }));
+vi.mock('@/app/actions/manage-knowledge', () => ({
+  syncKnowledge: (...a: unknown[]) => knowledgeActions.syncKnowledge(...a),
+}));
 vi.mock('@/app/actions/manage-trackers', () =>
   Object.fromEntries(
     Object.keys(actions).map((name) => [
@@ -74,12 +78,14 @@ const OVERVIEW: TrackerOverview = {
           project: { name: 'Payments', slug: 'pay' },
         },
       ],
+      sources: [],
     },
   ],
   spaces: [
     { id: 's-me', name: 'Personal' },
     { id: 's-acme', name: 'Acme' },
   ],
+  productLines: [],
   projects: [{ id: 'p1', name: 'Payments', slug: 'pay' }],
 };
 
@@ -89,6 +95,7 @@ describe('TrackersPageClient', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     for (const fn of Object.values(actions)) fn.mockResolvedValue({ ok: true });
+    knowledgeActions.syncKnowledge.mockResolvedValue({ ok: true });
   });
 
   it('shows each connection with its account, space and rules', () => {
@@ -190,11 +197,12 @@ describe('TrackersPageClient', () => {
     expect(actions.removeTrackerSyncRule).toHaveBeenCalledWith('r1');
   });
 
-  it('syncs everything now and reports an error', async () => {
+  it('syncs every rule and knowledge source now and reports an error', async () => {
     actions.runTrackerSync.mockResolvedValue({ ok: false, error: 'Jira: rate limited' });
     render(<TrackersPageClient overview={OVERVIEW} />);
     await userEvent.click(screen.getByTestId('trackers-sync-all'));
     expect(actions.runTrackerSync).toHaveBeenCalledWith(undefined);
+    expect(knowledgeActions.syncKnowledge).toHaveBeenCalledWith(undefined);
     expect(await screen.findByRole('alert')).toHaveTextContent('rate limited');
   });
 

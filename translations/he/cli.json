@@ -1244,12 +1244,12 @@
       }
     },
     "connection": {
-      "description": "חיבור חשבונות Linear ו-Jira ש-shep שומר מסונכרנים",
+      "description": "חיבור חשבונות Linear ו-Jira ש-shep שומר מסונכרנים, וסביבות Notion שהוא קורא",
       "failed": "פקודת החיבור נכשלה",
       "connectionArg": "slug או מזהה של החיבור",
       "add": {
-        "description": "חיבור חשבון Linear או Jira; המפתח נבדק לפני השמירה",
-        "providerArg": "linear או jira",
+        "description": "חיבור חשבון Linear, Jira או Notion; המפתח נבדק לפני השמירה",
+        "providerArg": "linear, jira או notion",
         "nameOption": "שם תצוגה",
         "spaceOption": "המרחב שאליו שייך החיבור (ברירת המחדל אם לא צוין)",
         "siteOption": "כתובת אתר Jira, למשל https://acme.atlassian.net",
@@ -1257,16 +1257,17 @@
         "secretEnvOption": "קריאת המפתח או האסימון ממשתנה סביבה זה במקום לשאול",
         "linearPrompt": "מפתח API של Linear",
         "jiraPrompt": "אסימון API של Jira",
-        "badProvider": "\"{{provider}}\" אינו מערכת מעקב; השתמשו ב-linear או jira",
+        "badProvider": "\"{{provider}}\" אינו נתמך; השתמשו ב-linear, jira או notion",
         "emptyEnv": "משתנה הסביבה {{variable}} ריק או לא מוגדר",
-        "success": "{{name}} ‏({{slug}}) חובר בתור {{account}}"
+        "success": "{{name}} ‏({{slug}}) חובר בתור {{account}}",
+        "notionPrompt": "אסימון אינטגרציה של Notion"
       },
       "ls": {
         "description": "הצגת החיבורים",
-        "title": "חיבורי מערכות מעקב",
+        "title": "חיבורים",
         "nameColumn": "שם",
         "slugColumn": "Slug",
-        "providerColumn": "מערכת",
+        "providerColumn": "כלי",
         "accountColumn": "חשבון",
         "statusColumn": "סטטוס",
         "empty": "אין עדיין חיבורים. הוסיפו עם shep connection add."
@@ -1294,7 +1295,6 @@
           "scopeOption": "מפתח צוות Linear ‏(ENG) או שאילתת JQL של Jira",
           "twoWayOption": "שליחת שינויים מ-shep גם חזרה למערכת המעקב",
           "everyOption": "דקות בין הרצות אוטומטיות (ברירת מחדל 15)",
-          "badEvery": "\"{{value}}\" אינו מספר שלם של דקות",
           "success": "כלל {{id}} נוסף עבור {{scope}}"
         },
         "ls": {
@@ -1363,6 +1363,68 @@
     },
     "agentOption": {
       "unknown": "\"{{value}}\" אינו סוכן נתמך. השתמשו באחד מאלה: {{supported}}"
+    },
+    "everyOption": {
+      "invalid": "\"{{value}}\" אינו מספר שלם של דקות"
+    },
+    "knowledge": {
+      "description": "ידע צוות מ-Notion שסוכנים במרחב יכולים לקרוא",
+      "failed": "פקודת הידע נכשלה",
+      "connectionArg": "Slug או מזהה של חיבור Notion",
+      "sourceArg": "מזהה מקור ידע (ראו shep knowledge source ls)",
+      "summary": "{{added}} נוספו, {{updated}} עודכנו, {{removed}} הוסרו, {{failed}} נכשלו",
+      "source": {
+        "description": "ניהול דפי Notion ומסדי נתונים ש-shep שומר מסונכרנים",
+        "add": {
+          "description": "שמירת עץ דפים או מסד נתונים של Notion מסונכרן כידע של המרחב של החיבור",
+          "scopeOption": "קישור או מזהה של דף או מסד נתונים ב-Notion ששותף עם האינטגרציה",
+          "productLineOption": "רק עבור מאגרים של קו המוצרים הזה (slug או מזהה)",
+          "everyOption": "דקות בין סנכרונים אוטומטיים (ברירת מחדל 60)",
+          "success": "מקור הידע {{id}} נוסף עבור {{title}}; הריצו shep knowledge sync כדי לקרוא אותו עכשיו"
+        },
+        "ls": {
+          "description": "הצגת מקורות הידע עם הסנכרון האחרון שלהם",
+          "title": "מקורות ידע",
+          "idColumn": "מזהה",
+          "fromColumn": "מקור",
+          "documentsColumn": "מסמכים",
+          "everyColumn": "כל",
+          "lastRunColumn": "סנכרון אחרון",
+          "never": "לא סונכרן מעולם",
+          "off": "(כבוי)",
+          "empty": "אין עדיין מקורות ידע. הוסיפו אחד עם shep knowledge source add."
+        },
+        "enable": {
+          "description": "לאפשר לשירות הרקע לסנכרן מקור",
+          "success": "מקור הידע {{id}} הופעל"
+        },
+        "disable": {
+          "description": "לעצור את סנכרון המקור בשירות הרקע",
+          "success": "מקור הידע {{id}} הושבת"
+        },
+        "rm": {
+          "description": "הסרת מקור והמסמכים שסונכרנו ממנו",
+          "success": "מקור הידע {{id}} הוסר"
+        }
+      },
+      "sync": {
+        "description": "סנכרון מקור ידע אחד, או כל המקורות הפעילים, עכשיו",
+        "nothing": "אין מקורות ידע פעילים"
+      },
+      "ls": {
+        "description": "הצגת מסמכי הידע של מרחב",
+        "spaceOption": "Slug או מזהה של המרחב (ברירת המחדל אם לא צוין)",
+        "title": "הידע של {{space}}",
+        "titleColumn": "מסמך",
+        "linkColumn": "קישור",
+        "empty": "אין עדיין מסמכי ידע במרחב הזה."
+      },
+      "search": {
+        "description": "הצגת הקטעים שסוכן שעובד במאגר יקרא עבור משימה",
+        "queryArg": "טקסט המשימה להתאמה",
+        "repoOption": "נתיב המאגר (התיקייה הנוכחית אם לא צוין)",
+        "none": "שום ידע צוות במרחב של המאגר הזה לא מתאים למשימה הזו."
+      }
     }
   },
   "ui": {

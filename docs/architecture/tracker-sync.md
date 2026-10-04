@@ -9,7 +9,7 @@ Spec: [`specs/122-tracker-sync`](../../specs/122-tracker-sync/). User guide:
 
 | Entity | Purpose |
 | ------ | ------- |
-| `Connection` | A Linear or Jira account owned by a space. Its secret is encrypted in the row (`LocalSecretBox`) and only read through `IConnectionRepository.getSecret`. |
+| `Connection` | A Linear or Jira account owned by a space (Notion too since spec 125; see [knowledge](./knowledge.md)). Its secret is encrypted in the row (`LocalSecretBox`) and only read through `IConnectionRepository.getSecret`. |
 | `TrackerSyncRule` | Keeps a scope (Linear team key or Jira JQL) in a project; direction, interval, cursor and last-run summary. |
 | `TrackerIssueLink` | One per synced work item: external id/key/URL plus the title, description, status group and priority both sides had at the last sync. `(connection_id, external_id)` is unique. |
 | `ExternalIssue` | A tracker issue in shep's terms, whichever tracker. |
@@ -25,14 +25,16 @@ Tables: migration `154-create-tracker-sync`.
 - `planIssueSync(direction, snapshot, local, remote)` decides each field: remote-only change →
   apply locally; local-only change → push (two-way); both changed differently → take remote,
   count a conflict.
-- `isTrackerRuleDue(rule, now)`.
+- Due-ness comes from `isIntervalDue(item, now)` in `domain/shared/interval-schedule.ts`,
+  shared with knowledge sources (spec 125).
 
 ## Clients
 
 `ITrackerClient` (`application/ports/output/services/tracker-client.interface.ts`) has three
 calls: `testConnection`, `searchUpdatedSince(scope, since, page)` and `updateIssue`. Both
-implementations sit on an injected `fetch` and share `tracker-http.ts` (timeout, `Retry-After`,
-typed `ConnectionAuthError` / `ConnectionRateLimitError` / `ConnectionRequestError`):
+implementations sit on an injected `fetch` and share `connections/connection-http.ts` (timeout,
+`Retry-After`, typed `ConnectionAuthError` / `ConnectionRateLimitError` /
+`ConnectionRequestError`, also used by the Notion client):
 
 - `LinearTrackerClient`: GraphQL at `api.linear.app`, `issues(filter: {team, updatedAt > since})`,
   status write via the team's first `workflowStates` of the group's type.
@@ -50,9 +52,9 @@ simply repeated (idempotent by external id). A rate limit or rejected credential
 other per-issue failures are counted.
 
 `SyncTrackerRulesUseCase` runs due rules (`runDue`) or every enabled rule (`runAll`) one after
-another. The daemon (`_serve`) and `shep ui` tick it every minute through `IntervalTask`
-(`infrastructure/services/scheduling/interval-task.ts`, shared with the retention scheduler),
-which never overlaps runs.
+another. The daemon (`_serve`) and `shep ui` tick it every minute through the due-work watcher
+(`infrastructure/services/scheduling/due-work-watcher.ts`, shared with knowledge sources) on
+`IntervalTask`, which never overlaps runs.
 
 ## Surfaces
 

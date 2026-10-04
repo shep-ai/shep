@@ -8,9 +8,9 @@ import { colors, messages, renderListView } from '../../ui/index.js';
 import { getCliI18n } from '../../i18n.js';
 import { report, runCommand } from '../command-result.js';
 import { formatRunSummary } from './format-summary.js';
+import { parseEveryOption } from '../every-option.js';
 
 const FAILED = 'cli:commands.sync.failed';
-const WHOLE_NUMBER = /^\d+$/;
 
 interface AddRuleOptions {
   project: string;
@@ -37,19 +37,16 @@ Examples:
     )
     .action((connection: string, options: AddRuleOptions) =>
       runCommand(FAILED, async () => {
-        if (options.every !== undefined && !WHOLE_NUMBER.test(options.every.trim())) {
-          messages.error(t('cli:commands.sync.rule.add.badEvery', { value: options.every }));
-          process.exitCode = 1;
-          return;
-        }
+        const every = parseEveryOption(options.every);
+        if (!every.ok) return;
         const result = await container.resolve(ManageTrackerSyncRulesUseCase).create({
           connection,
           project: options.project,
           scope: options.scope,
           direction: options.twoWay ? TrackerSyncDirection.TwoWay : TrackerSyncDirection.Import,
-          ...(options.every !== undefined
-            ? { intervalMinutes: Number.parseInt(options.every, 10) }
-            : {}),
+          ...(every.intervalMinutes === undefined
+            ? {}
+            : { intervalMinutes: every.intervalMinutes }),
         });
         report(result, ({ rule }) =>
           messages.success(

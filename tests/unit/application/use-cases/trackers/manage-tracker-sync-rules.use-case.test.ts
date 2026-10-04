@@ -36,6 +36,7 @@ describe('ManageTrackerSyncRulesUseCase', () => {
     const connections = new InMemoryConnections();
     await connections.create(conn(ConnectionProvider.Linear, 'linear'), 'k');
     await connections.create(conn(ConnectionProvider.Jira, 'jira'), 'k');
+    await connections.create(conn(ConnectionProvider.Notion, 'notion'), 'k');
     rules = new InMemoryTrackerRules();
     links = new InMemoryTrackerLinks();
     const projects = {
@@ -91,6 +92,11 @@ describe('ManageTrackerSyncRulesUseCase', () => {
     });
     expect(result.ok).toBe(false);
     if (!result.ok) expect(result.error).toContain(message);
+  });
+
+  it('refuses a connection that is not an issue tracker (spec 125)', async () => {
+    const result = await useCase.create({ connection: 'notion', project: 'pay', scope: 'x' });
+    expect(result).toEqual({ ok: false, error: expect.stringMatching(/not an issue tracker/) });
   });
 
   it('refuses the same scope into the same project twice', async () => {

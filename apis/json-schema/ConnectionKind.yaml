@@ -1,0 +1,7 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: ConnectionKind.yaml
+type: string
+enum:
+  - Tracker
+  - Knowledge
+description: What shep does with a connection provider's data

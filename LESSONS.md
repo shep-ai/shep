@@ -2952,3 +2952,11 @@ the same text, so it kills the calling shell (exit 144) and every command after 
 call silently never runs — a commit was skipped this way, twice in one session. Stop a
 background server by its pid (`kill $(cat server.pid)`), or use a bracketed pattern that cannot
 match itself (`pkill -f "[h]ttp.server 6107"`), and never chain other work after it.
+
+## The pre-commit hook type-checks the whole working tree, not only what is staged
+
+lint-staged stashes unstaged edits, but `tsc --noEmit` still sees untracked files. Committing
+a rename in slices failed twice: staged `git mv`s without their content, then an untracked test
+that imported a module not yet written. Commit a slice only when the working tree type-checks
+as a whole — stage every file the slice touches, and keep work-in-progress files that import
+missing modules out of the tree (or finish them) before `git commit`.

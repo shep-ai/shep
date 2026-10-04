@@ -58,8 +58,8 @@ content: |
   - **Sync**: list every page in scope; fetch the content of pages edited since their document
     was stored; delete documents whose pages are gone; record counts. A rejected token marks the
     connection Error; a rate limit stops the run and it is repeated next time.
-  - **Selection**: documents of the repository's space (all product lines' when the repository
-    has none, its own line's and space-wide ones when it has one) are split into passages under
+  - **Selection**: the space's space-wide documents, plus its product line's when the repository
+    is in one (the rule project memory follows), are split into passages under
     their headings, ranked against the task text, and the best fit within the knowledge budget
     joins the project memory section, each passage naming its page.
 

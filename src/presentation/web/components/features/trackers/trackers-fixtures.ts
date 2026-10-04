@@ -8,6 +8,7 @@ import {
 import type { TrackerOverview } from '@shepai/core/application/use-cases/trackers/get-tracker-overview.use-case';
 import type { TrackerSyncRuleView } from '@shepai/core/application/use-cases/trackers/manage-tracker-sync-rules.use-case';
 import type { RunTrackerAction } from './trackers-types';
+import { NOTION_OVERVIEW, PRODUCT_LINES } from '../knowledge/knowledge-fixtures';
 
 const T = new Date('2026-10-01T10:00:00Z');
 
@@ -69,6 +70,7 @@ export const OVERVIEW: TrackerOverview = {
       },
       spaceName: 'Acme',
       rules: [JIRA_RULE, FAILING_RULE],
+      sources: [],
     },
     {
       connection: {
@@ -84,9 +86,12 @@ export const OVERVIEW: TrackerOverview = {
       },
       spaceName: 'Personal',
       rules: [],
+      sources: [],
     },
+    NOTION_OVERVIEW,
   ],
   spaces: SPACES,
+  productLines: PRODUCT_LINES,
   projects: PROJECTS,
 };
 
