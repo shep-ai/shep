@@ -1,0 +1,89 @@
+## Problem Statement
+
+Every agent CLI shep starts inherits `process.env` (`buildSpawnOptions` in
+`agents/common/executors/process-stream.ts`, and the forked feature worker in
+`feature-agent-process.service.ts`). Nothing in that chain knows which repository, and so which
+space, a run belongs to. A person with a work Claude subscription and a personal one, or a
+work GitHub account and a personal one, has to log in and out by hand, and commits made by
+agents carry whatever git identity the machine has.
+
+The audit also found two hard-coded `~/.shep` paths that ignore `SHEP_HOME`
+(`cluster-agent/nodes/configure-kubectl.ts`, `sessions/claude-code-session-file-collector.ts`)
+plus three copies of the home resolver that read `HOME` instead of `os.homedir()` and so break
+on Windows (`register-aspm.ts`, `exploit-intel-adapter.ts`, `feature-context.builder.ts`).
+
+## Product Shape
+
+Each space has optional **agent settings**:
+
+| Setting | Effect on processes for the space's repositories |
+| --- | --- |
+| Claude config directory | `CLAUDE_CONFIG_DIR`; host `ANTHROPIC_API_KEY`, `ANTHROPIC_AUTH_TOKEN` and `CLAUDE_CODE_OAUTH_TOKEN` are removed so the space login is the one used |
+| gh config directory | `GH_CONFIG_DIR`; host `GH_TOKEN`, `GITHUB_TOKEN`, `GH_ENTERPRISE_TOKEN` and `GITHUB_ENTERPRISE_TOKEN` are removed |
+| Git author name / email | `GIT_AUTHOR_*` and `GIT_COMMITTER_*` |
+| Use Bedrock (on / off / inherit) | `CLAUDE_CODE_USE_BEDROCK=1`, or removed when off |
+| AWS profile | `AWS_PROFILE` |
+| Allowed agent types | A run or chat with any other agent type is refused with a message naming the space |
+
+Unset settings inherit the host environment, so a space without settings changes nothing.
+
+## User Flows
+
+**F1. Work and personal GitHub.** `gh auth login` once with `GH_CONFIG_DIR=~/.config/gh-acme`,
+then `shep space config acme --gh-config-dir ~/.config/gh-acme`. PRs opened by feature runs in
+Acme repositories are opened as the Acme account; personal repositories keep the default login.
+
+**F2. A separate Claude login.** `CLAUDE_CONFIG_DIR=~/.claude-acme claude` once to log in,
+then `shep space config acme --claude-config-dir ~/.claude-acme`.
+
+**F3. Commits under the right name.** `shep space config acme --git-email me@acme.com
+--git-name "Me"`.
+
+**F4. Only approved agents at work.** `shep space config acme --agents claude-code` refuses a
+Codex run on an Acme repository before it starts, with a message naming the space.
+
+**F5. The same from the browser.** Each space card on /spaces has an "Agent settings" section
+with the same fields.
+
+## Success Criteria
+
+- [ ] A feature worker for a repository of a configured space has the space's variables set and
+      the overridden host credentials removed before the executor is created (unit test on the
+      worker helper, integration test through the real container).
+- [ ] A run whose agent type the space does not allow ends as failed with a message naming the
+      space and the allowed agents, without starting the graph.
+- [ ] An interactive session for a feature in a configured space passes the space environment
+      to its executor (Claude SDK and ACP paths), and refuses a disallowed agent type.
+- [ ] A space without settings produces an empty environment change (unit test).
+- [ ] Claude session lookups honour `CLAUDE_CONFIG_DIR`; no code path joins `homedir()` with
+      `.shep` or reads `HOME` to find the Shep home.
+- [ ] `shep space config` and the /spaces agent settings section can set and clear every field;
+      strings in the 9 locales; stories for every new component.
+
+## Affected Areas
+
+| Area | Impact | Reasoning |
+| --- | --- | --- |
+| TypeSpec (`space.tsp`) | Low | SpaceAgentSettings value object on Space |
+| Persistence (migration 153, space mapper) | Low | 7 nullable columns on spaces |
+| Domain (`domain/shared/space-environment.ts`) | Medium | Pure settings → environment mapping and agent allow check |
+| Application (`use-cases/spaces/`) | Medium | Configure and resolve use cases |
+| Agents (feature worker, interactive bootstrapper, executors, process-stream) | Medium | Environment application at the two choke points |
+| Infrastructure paths (kubectl, session collector, ASPM, feature context) | Low | Canonical Shep home and Claude config dir |
+| CLI (`space config`) and Web (/spaces agent settings) | Medium | Set, show and clear settings |
+
+## Dependencies
+
+- Spec 120 (spaces, ResolveSpaceContextUseCase).
+
+## Out of Scope
+
+- Storing secrets (API keys, tokens) per space. Spaces point at config directories the tools
+  already manage; shep never copies a credential.
+- Scoping the web server's own `gh` calls (repository lists, imports) by space; they run in the
+  daemon with the host login.
+- Per-space default model, effort or budget.
+
+## Size Estimate
+
+**M**: 10 tasks; the environment reaches agents through two choke points.

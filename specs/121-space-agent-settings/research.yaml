@@ -1,0 +1,69 @@
+# Research (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: space-agent-settings
+summary: Technical decisions for 121 — where per-space credentials enter agent processes.
+
+relatedFeatures:
+  - 120-spaces-and-product-lines
+technologies:
+  - Node.js child_process
+  - TypeSpec
+  - SQLite
+relatedLinks: []
+
+decisions:
+  - title: Point at tool config directories instead of storing secrets
+    chosen: CLAUDE_CONFIG_DIR and GH_CONFIG_DIR per space
+    rejected:
+      - 'Per-space API keys in the settings table: settings.agent_token is already stored in plain text, and a second copy per space multiplies the exposure'
+      - 'Per-space GitHub PATs in the encrypted github_integration row: that table is a singleton and gh would still prefer its own login'
+    rationale: >
+      Claude Code and gh both support a relocatable config directory and handle login, refresh
+      and keychain storage themselves. A space only needs a path, which is not a secret.
+
+  - title: Apply the environment in the feature worker, not in each use case that spawns it
+    chosen: The forked worker resolves its repository's space and updates its own process.env right after claiming the run
+    rejected:
+      - 'Pass an environment through IFeatureAgentProcessService.spawn: six use cases call spawn synchronously and would each need the async space lookup'
+      - 'Pass the environment through every executor: twelve executors build env independently and the factory caches executors per agent type for the life of the process'
+    rationale: >
+      Each run has a dedicated worker process, so process.env is exactly run-scoped there. Every
+      agent CLI (buildSpawnOptions copies process.env at spawn time), every gh call through
+      ExecFunction and every git call inherit it with no further change.
+
+  - title: Interactive sessions carry the environment as a per-session option
+    chosen: InteractiveAgentOptions.environment, applied by the Claude SDK executor and the ACP process
+    rejected:
+      - 'Mutating process.env in the daemon: sessions of different spaces run concurrently in one process'
+    rationale: >
+      The Claude SDK already takes an env per session, and ACP spawns a process per session
+      through buildSpawnOptions, so one optional field reaches both.
+
+  - title: Remove host credentials that would override a space login
+    chosen: The environment is { set, unset }; a Claude config dir unsets ANTHROPIC_API_KEY, ANTHROPIC_AUTH_TOKEN and CLAUDE_CODE_OAUTH_TOKEN; a gh config dir unsets GH_TOKEN, GITHUB_TOKEN and the enterprise variants
+    rejected:
+      - 'Set only: Claude Code prefers ANTHROPIC_API_KEY and gh prefers GH_TOKEN over their config directories, so the space login would silently lose'
+    rationale: >
+      The space setting must win, or the feature is a trap.
+
+  - title: Allowed agent types are enforced where the agent type is final
+    chosen: The worker after resolving pinned-or-settings agent type, and the interactive bootstrapper after resolveAgentType
+    rejected:
+      - 'Only in the UI: the CLI, resumes and approvals would bypass it'
+    rationale: >
+      Those two points see the agent type that will actually run, whatever surface started it.
+
+openQuestions: []
+
+content: |
+  ## Findings
+
+  - `buildSpawnOptions` (process-stream.ts) copies `process.env` at spawn time; Gemini, Codex
+    and Kimi executors add their own token variables on top of the same copy.
+  - The feature worker is forked with `{ ...process.env, ... }` and receives `--repo`; its
+    executors run with `cwd` set to the worktree, which lives under the Shep home and so cannot
+    be used for space resolution.
+  - `ClaudeCodeInteractiveExecutor` passes `env` to the SDK per session; `AcpAgentProcess`
+    spawns per session through `buildSpawnOptions`.
+  - `ClaudeCodeSessionRepository` and the session file collector assume `~/.claude`.

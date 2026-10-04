@@ -1,0 +1,90 @@
+# Implementation Plan (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: space-agent-settings
+summary: Implementation plan for 121 — per-space agent credentials, identity and allowed agents.
+
+relatedFeatures:
+  - 120-spaces-and-product-lines
+technologies:
+  - TypeSpec
+  - SQLite
+  - tsyringe
+  - Commander
+  - Next.js
+relatedLinks: []
+
+phases:
+  - id: phase-1
+    name: 'Domain (TypeSpec + pure environment mapping)'
+    parallel: false
+    taskIds:
+      - task-1
+      - task-2
+  - id: phase-2
+    name: 'Persistence and use cases'
+    parallel: false
+    taskIds:
+      - task-3
+      - task-4
+  - id: phase-3
+    name: 'Agent processes'
+    parallel: false
+    taskIds:
+      - task-5
+      - task-6
+      - task-7
+  - id: phase-4
+    name: 'CLI and web'
+    parallel: false
+    taskIds:
+      - task-8
+      - task-9
+  - id: phase-5
+    name: 'Docs and full verification'
+    parallel: false
+    taskIds:
+      - task-10
+
+filesToCreate:
+  - packages/core/src/domain/shared/space-environment.ts
+  - packages/core/src/infrastructure/persistence/sqlite/migrations/153-add-space-agent-settings.ts
+  - packages/core/src/application/use-cases/spaces/configure-space-agent.use-case.ts
+  - packages/core/src/application/use-cases/spaces/resolve-space-environment.use-case.ts
+  - packages/core/src/infrastructure/services/agents/feature-agent/apply-space-environment.ts
+  - src/presentation/cli/commands/space/config.command.ts
+  - src/presentation/web/components/features/spaces/space-agent-settings-form.tsx
+
+filesToModify:
+  - tsp/domain/entities/space.tsp
+  - packages/core/src/infrastructure/persistence/sqlite/mappers/space.mapper.ts
+  - packages/core/src/infrastructure/repositories/sqlite-space.repository.ts
+  - packages/core/src/infrastructure/di/modules/register-spaces.ts
+  - packages/core/src/infrastructure/services/agents/feature-agent/feature-agent-worker.ts
+  - packages/core/src/infrastructure/services/interactive/lifecycle/session-bootstrapper.ts
+  - packages/core/src/application/ports/output/agents/interactive-agent-executor.interface.ts
+  - packages/core/src/infrastructure/services/agents/common/executors/process-stream.ts
+  - packages/core/src/infrastructure/services/agents/common/executors/claude-code-interactive-executor.service.ts
+  - packages/core/src/infrastructure/services/agents/common/executors/acp/acp-process.ts
+  - packages/core/src/infrastructure/services/agents/cluster-agent/nodes/configure-kubectl.ts
+  - packages/core/src/infrastructure/services/agents/sessions/claude-code-session-file-collector.ts
+  - src/presentation/web/components/features/spaces/space-card.tsx
+
+content: |
+  ## Approach
+
+  TDD throughout: every task starts with a failing test (RED), then the minimal implementation
+  (GREEN), then cleanup (REFACTOR).
+
+  Clean Architecture: the settings → environment mapping is a pure domain function; the use
+  cases depend only on the space ports and ResolveSpaceContextUseCase; infrastructure applies the
+  environment at the worker and the interactive bootstrapper; CLI and web call the use cases.
+
+  ## Risks
+
+  - The worker mutates its own `process.env`. Safe because a worker serves exactly one run, and
+    the change happens before any executor or subprocess exists.
+  - Claude transcripts for a space with its own config directory live under that directory;
+    session lookups read `CLAUDE_CONFIG_DIR`, which the worker has set.
+
+openQuestions: []
