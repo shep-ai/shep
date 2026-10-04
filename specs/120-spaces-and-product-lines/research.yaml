@@ -1,0 +1,78 @@
+# Research (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: spaces-and-product-lines
+summary: Technical decisions for 120 — how spaces are stored, resolved and enforced.
+
+relatedFeatures:
+  - 102-shep-brain
+technologies:
+  - SQLite
+  - TypeSpec
+  - tsyringe
+relatedLinks: []
+
+decisions:
+  - title: One database with a space id, not one SHEP_HOME per space
+    chosen: Add space tables and space_id/product_line_id columns in the existing database
+    rejected:
+      - 'A separate SHEP_HOME per space: the DB connection, settings and DI container are process singletons, so each space would need its own daemon and no screen could list spaces side by side'
+      - 'A space column on every table at once: too wide for one PR; later specs scope other entities through the same resolver'
+    rationale: >
+      Knowledge isolation only needs the read path filtered. One database keeps a single
+      daemon, a single /spaces page and cheap switching, and the resolver is reusable by later
+      specs. Credential isolation (agent and gh logins) is a separate concern handled by
+      per-space environment injection in spec 121.
+
+  - title: Assignments and rules live in their own tables, keyed by normalised repository path
+    chosen: repository_space_assignments(repository_path PK, ...) and space_rules
+    rejected:
+      - 'Columns on repositories: memory, features and workers key on repository path and many paths are never registered as Repository rows; adding columns also ripples through the Repository mapper and SQL lists'
+    rationale: >
+      Every memory reader already has a repository path. Keying assignments by the same
+      normalised path (normalizeRepositoryPath) means resolution works for any path, registered
+      or not, and the Repository entity stays untouched.
+
+  - title: Rule matching is a pure domain function
+    chosen: domain/shared/space-resolution.ts with a minimal glob (* and **) for remote patterns
+    rejected:
+      - 'minimatch in domain: domain must not import third-party packages'
+    rationale: >
+      The matcher is small, has no I/O and is the heart of the boundary, so it is unit-tested
+      exhaustively: segment-aware path prefixes (/code/acme must not match /code/acme-fork),
+      Windows drive letters (C:/ vs c:/), trailing slashes, remote URL normalisation
+      (https://, git@host:org/repo, .git suffix, case).
+
+  - title: Legacy Organization rows are read as the default space, never rewritten
+    chosen: Keep scope='Organization' in place; backfill space_id to the default space; new promotions write 'Space'
+    rejected:
+      - "Rewriting 'Organization' to 'Space': an older build reading scope = 'Organization' would silently lose every promoted entry (LESSONS: migrations stay backward compatible)"
+    rationale: >
+      The reader treats Organization and Space alike, restricted to the entry's space_id.
+      Rolling back to an older build keeps working.
+
+  - title: Scope survives re-recording
+    chosen: The upsert keeps the stored scope and space ids on conflict; only setScope changes them
+    rationale: >
+      Fixes the silent demotion bug. Space ids are stamped on insert from the resolver and
+      re-stamped by setScope, so a promoted entry always carries the space it was promoted in.
+
+  - title: Fixed default space id
+    chosen: DEFAULT_SPACE_ID constant in domain/shared, inserted by migration 152
+    rationale: >
+      Code that needs "the default space" before any query (fallback resolution, backfill) can
+      use the constant. Making another space the default flips an is_default flag instead.
+
+openQuestions: []
+
+content: |
+  ## Findings
+
+  An inventory of machine-global state found no tenant, space or organization key anywhere in
+  the schema. Shep Brain is the only place where knowledge crosses repositories today, through
+  `listOrganization()`. Credentials (agent token, GitHub integration, cloud tokens) and settings
+  are also machine-wide; those are scoped in spec 121.
+
+  The decisions above keep this spec to knowledge isolation: one database, assignment and rule
+  tables keyed by normalised repository path, a pure domain resolver, and memory reads split into
+  three narrow, always-filtered queries.

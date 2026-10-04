@@ -1,0 +1,95 @@
+## Problem Statement
+
+`SQLiteProjectMemoryRepository.listOrganization()` returns every Organization-scoped memory on
+the machine (`WHERE scope = 'Organization'`, no other filter), and `loadCandidateMemory` merges
+it into the candidate set of every repository. Organization therefore means "everything this
+laptop has ever learned". There is no way to keep work knowledge out of personal projects, or to
+share a rule between the repositories of one product line without sharing it with all of them.
+
+The audit behind this spec also found three adjacent defects in the same code path:
+
+- **Silent demotion.** `upsert` writes `scope = excluded.scope` and record never passes a scope,
+  so re-extracting a key that a person promoted to Organization demotes it back to Project.
+- **Wrong lookup key.** The interactive agent falls back to the worktree path when a session has
+  no feature, and memory is never keyed by worktree path, so those sessions get no memory.
+- **Unscoped management view.** The /memory page lists every repository's memory on one screen.
+
+## Product Shape
+
+- **Space**: name, slug, optional description and colour. Exactly one space is the default; it
+  is created by the migration as "Default" and can be renamed. A space cannot be deleted while
+  it is the default.
+- **Product line**: belongs to one space; name and slug unique within the space.
+- **Space rules**: map repositories to a space (and optionally a line) by `path` prefix or
+  `remote` pattern (`github.com/acme/*`). The most specific matching rule wins; ties go to the
+  lower priority number.
+- **Assignment**: an explicit repository → space/line mapping. It beats every rule.
+- **Resolution order**: assignment, then rules, then the default space. Every resolution
+  reports which source decided it, so the UI and CLI can say why.
+- **Memory scopes**: `Project` (one repository), `ProductLine` (every repository of the line),
+  `Space` (every repository of the space). Legacy `Organization` rows are read as `Space` rows of
+  the default space; no row is rewritten, so older builds keep working.
+
+## User Flows
+
+**F1. Separate work from personal.** `shep space new Acme` then
+`shep space rule add acme --remote "github.com/acme/*"` and
+`shep space rule add personal --path ~/code/personal`. From then on every repository resolves on
+its own; `shep space show` in any repository prints the space, the line and why.
+
+**F2. Group repositories into a product line.** `shep space line new acme Payments` and
+`shep space rule add acme --remote "github.com/acme/payments-*" --line payments`. Memory promoted
+to "Payments" reaches only those repositories.
+
+**F3. Promote knowledge to the right level.** On /memory, an entry's scope menu offers
+Project, Product line (when the repository has one) and Space. The page is filtered to one space
+at a time and shows each entry's scope.
+
+**F4. Fix a wrong guess.** `shep space assign <path> personal` (or the repository row on
+/spaces) overrides the rules for one repository; `shep space unassign <path>` returns it to the
+rules.
+
+## Success Criteria
+
+- [ ] An agent in a repository of space A never receives a Space- or ProductLine-scoped memory
+      entry of space B, including legacy Organization entries (integration test with two spaces).
+- [ ] Resolution follows assignment → most specific rule → default space and reports its source;
+      path prefixes match on whole path segments, Windows drive letters compare
+      case-insensitively, and remote patterns match normalised remote URLs (unit tests).
+- [ ] Re-recording an entry never changes its scope (regression test for the demotion bug).
+- [ ] The interactive agent with no feature looks memory up by repository path, never by
+      worktree path.
+- [ ] Single-space users see identical memory behaviour: existing rows load through the default
+      space (migration test on a database with pre-existing Project and Organization rows).
+- [ ] Every CLI verb has a web equivalent on /spaces; /spaces is reachable from the sidebar;
+      /memory filters by space; all new strings exist in the 9 locales; every new component
+      has a story.
+
+## Affected Areas
+
+| Area | Impact | Reasoning |
+| --- | --- | --- |
+| TypeSpec (`tsp/domain/entities/space.tsp`, `project-memory.tsp`) | Medium | Space, ProductLine, SpaceRule, RepositorySpaceAssignment, SpaceRuleKind, SpaceResolutionSource; MemoryScope gains Space and ProductLine; ProjectMemory gains spaceId/productLineId |
+| Persistence (migration 152, mappers, repositories) | Medium | 4 new tables, 2 new project_memory columns, backfill to the default space |
+| Domain (`domain/shared/space-resolution.ts`) | Medium | Pure rule matching and resolution, cross-platform paths |
+| Application (`use-cases/spaces/`, `use-cases/project-memory/`) | High | 4 space use cases; memory load/record/manage become space-aware |
+| Agents (interactive boot prompt resolver) | Low | Repository-path lookup fix |
+| CLI (`commands/space/`) | Medium | New `shep space` group |
+| Web (`app/spaces`, memory page, sidebar, actions, stories, i18n) | High | New page, memory filter and scope menu, 9 locales |
+
+## Dependencies
+
+- Builds on spec 102 (Shep Brain). No external services.
+- Per-space settings and credential isolation (agent logins, `gh`, model providers) are the
+  next spec; this spec only scopes knowledge.
+
+## Out of Scope
+
+- Per-space agent, model, budget or credential settings (spec 121).
+- Scoping applications, PM projects, ASPM data, plugins or usage by space (follow-ups that reuse
+  `ResolveSpaceContextUseCase`).
+- A global space switcher that filters every page (only /memory and /spaces filter in this spec).
+
+## Size Estimate
+
+**L**: ~12 tasks across domain, persistence, application, CLI and web, in one PR.

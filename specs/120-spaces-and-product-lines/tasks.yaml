@@ -1,0 +1,299 @@
+# Task Breakdown (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: spaces-and-product-lines
+summary: Task breakdown for 120 — spaces, product lines and space-scoped memory.
+
+relatedFeatures:
+  - 102-shep-brain
+technologies:
+  - TypeSpec
+  - SQLite
+  - tsyringe
+relatedLinks: []
+
+tasks:
+  - id: task-1
+    title: Space domain model (TypeSpec)
+    description: >
+      Add tsp/domain/entities/space.tsp with Space, ProductLine, SpaceRule,
+      RepositorySpaceAssignment and enums SpaceRuleKind (Path, Remote) and
+      SpaceResolutionSource (Assignment, Rule, Default). Extend MemoryScope with Space and
+      ProductLine (Organization kept for legacy rows) and ProjectMemory with optional spaceId and
+      productLineId. Regenerate with pnpm generate.
+    state: Todo
+    dependencies: []
+    acceptanceCriteria:
+      - Generated output.ts exports the new models and enums
+      - New ProjectMemory fields are optional so existing fixtures still compile
+    tdd:
+      red:
+        - Type-level test importing the new types fails to compile
+      green:
+        - Author space.tsp, extend project-memory.tsp, pnpm generate
+      refactor:
+        - Doc comments on every field
+    estimatedEffort: S
+
+  - id: task-2
+    title: Pure space resolution in domain/shared
+    description: >
+      space-resolution.ts exports DEFAULT_SPACE_ID, normalizeRemotePattern, matchesSpaceRule and
+      resolveSpace(assignment, rules, path, remoteUrl, defaultSpaceId). Path rules match whole
+      segments, ignore trailing slashes and compare Windows drive letters case-insensitively;
+      remote rules normalise https/ssh/scp forms, case and .git and support * and **.
+      Specificity: assignment > longest matching path prefix or most literal remote pattern >
+      lower priority > default.
+    state: Todo
+    dependencies:
+      - task-1
+    acceptanceCriteria:
+      - /code/acme does not match /code/acme-fork
+      - C:/Code/Acme matches rule c:/code/acme
+      - git@github.com:Acme/Repo.git matches github.com/acme/*
+      - Resolution reports its source
+    tdd:
+      red:
+        - Table-driven unit tests for matching and resolution
+      green:
+        - Implement the functions without third-party imports
+      refactor:
+        - Name the specificity score
+    estimatedEffort: M
+
+  - id: task-3
+    title: Migration 152 — spaces, product lines, rules, assignments, memory columns
+    description: >
+      Create spaces, product_lines, space_rules and repository_space_assignments; insert the
+      default space with DEFAULT_SPACE_ID; add project_memory.space_id and product_line_id and
+      backfill space_id to the default space. Additive and guarded so re-running is a no-op;
+      Organization rows are not rewritten.
+    state: Todo
+    dependencies:
+      - task-2
+    acceptanceCriteria:
+      - Running migrations twice is a no-op
+      - Pre-existing Project and Organization rows end up with space_id = default
+    tdd:
+      red:
+        - Integration test on a database seeded before 152
+      green:
+        - Write the migration
+      refactor:
+        - Comments aligned with neighbouring migrations
+    estimatedEffort: S
+
+  - id: task-4
+    title: Space ports, SQLite repositories, mappers and DI
+    description: >
+      ISpaceRepository, IProductLineRepository and ISpaceMembershipRepository with SQLite
+      implementations and one mapper module; register in register-spaces.ts under string
+      tokens; add the tokens to the container bootstrap test.
+    state: Todo
+    dependencies:
+      - task-3
+    acceptanceCriteria:
+      - Round-trip tests write two different non-default values per field
+      - Tokens resolve from the real container
+    tdd:
+      red:
+        - Repository integration tests and a DI resolution test
+      green:
+        - Implement repositories and registration
+      refactor:
+        - Shared row helpers
+    estimatedEffort: M
+
+  - id: task-5
+    title: Space-aware memory repository
+    description: >
+      Replace listOrganization with listSpaceWide(spaceId) (Space plus legacy Organization rows of
+      that space) and listProductLine(productLineId); upsert stamps space ids on insert and keeps
+      scope and space ids on conflict; updateScope also writes space ids; listAll accepts a space
+      filter. Update every full mock of the port.
+    state: Todo
+    dependencies:
+      - task-4
+    acceptanceCriteria:
+      - A Space entry of space B is never returned for space A
+      - Re-upserting a promoted entry keeps its scope
+    tdd:
+      red:
+        - Repository tests for isolation and the demotion regression
+      green:
+        - Change SQL and port
+      refactor:
+        - Remove the dead method
+    estimatedEffort: M
+
+  - id: task-6
+    title: ResolveSpaceContextUseCase
+    description: >
+      Loads the default space, the assignment for the normalised path, the rules and the
+      repository's remote URL, then calls resolveSpace. Returns the space, the optional line and
+      the source.
+    state: Todo
+    dependencies:
+      - task-5
+    acceptanceCriteria:
+      - Falls back to the default space when nothing matches
+    tdd:
+      red:
+        - Use-case tests with typed port mocks
+      green:
+        - Implement
+      refactor:
+        - None expected
+    estimatedEffort: S
+
+  - id: task-7
+    title: Space management use cases
+    description: >
+      ManageSpacesUseCase (create, rename, describe, set default, delete non-default, product line
+      create/delete), ManageSpaceMembershipUseCase (rules add/remove, assign/unassign) and
+      GetSpacesOverviewUseCase (spaces with lines, rules, known repositories with their resolved
+      space and source, memory counts) with validation returning result objects.
+    state: Todo
+    dependencies:
+      - task-6
+    acceptanceCriteria:
+      - Default space cannot be deleted; slugs unique; a rule's line must belong to its space
+    tdd:
+      red:
+        - Use-case tests for each operation and each rejection
+      green:
+        - Implement
+      refactor:
+        - Shared slug helper
+    estimatedEffort: M
+
+  - id: task-8
+    title: Space-aware memory use cases
+    description: >
+      loadCandidateMemory takes the resolved context; read and select resolve through
+      ResolveSpaceContextUseCase; record stamps space ids; manage.list filters by space and
+      setScope accepts Project, ProductLine (only when the repository has a line) and Space.
+    state: Todo
+    dependencies:
+      - task-6
+    acceptanceCriteria:
+      - Two-space isolation test through the real container passes
+    tdd:
+      red:
+        - Isolation integration test and updated unit tests
+      green:
+        - Implement
+      refactor:
+        - None expected
+    estimatedEffort: M
+
+  - id: task-9
+    title: Interactive agent memory lookup by repository path
+    description: >
+      The boot prompt resolver stops falling back to the worktree path; without a feature it
+      resolves the repository path from the session context.
+    state: Todo
+    dependencies:
+      - task-8
+    acceptanceCriteria:
+      - Select is never called with a worktree path
+    tdd:
+      red:
+        - Resolver unit test
+      green:
+        - Fix the fallback
+      refactor:
+        - None expected
+    estimatedEffort: S
+
+  - id: task-10
+    title: shep space CLI
+    description: >
+      ls, show [path], new, rename, rm, default, line new|rm, rule add|ls|rm, assign, unassign —
+      thin commands over the use cases with the shared ui module.
+    state: Todo
+    dependencies:
+      - task-7
+    acceptanceCriteria:
+      - Every verb has a command test using the DI override pattern
+    tdd:
+      red:
+        - Command tests
+      green:
+        - Implement commands and register the group
+      refactor:
+        - Shared output helpers
+    estimatedEffort: M
+
+  - id: task-11
+    title: /spaces web page
+    description: >
+      Server actions (with Storybook mocks), page loader, client component and presentational
+      components for spaces, product lines, rules and repository mapping with create, rename,
+      default, delete, add/remove rule and assign/unassign; sidebar entry; strings in 9 locales;
+      stories for every component.
+    state: Todo
+    dependencies:
+      - task-7
+    acceptanceCriteria:
+      - Every CLI verb has a control on the page
+      - pnpm build:storybook and the translation completeness test pass
+    tdd:
+      red:
+        - Component tests and action tests
+      green:
+        - Implement
+      refactor:
+        - Extract shared form pieces
+    estimatedEffort: L
+
+  - id: task-12
+    title: /memory filtered by space with scope menu
+    description: >
+      The memory page loads per space with a space picker; each entry shows its scope; the scope
+      menu offers Project, Product line and Space.
+    state: Todo
+    dependencies:
+      - task-8
+      - task-11
+    acceptanceCriteria:
+      - Entries of another space are not listed
+    tdd:
+      red:
+        - Component and action tests
+      green:
+        - Implement
+      refactor:
+        - None expected
+    estimatedEffort: M
+
+  - id: task-13
+    title: Docs and full local verification
+    description: >
+      docs/cli/commands.md, docs/architecture note on spaces, LESSONS if anything new; run lint,
+      format, typecheck, generate diff, unit, integration, build, build:web, build:storybook,
+      check:stories and every other CI script that runs locally.
+    state: Todo
+    dependencies:
+      - task-10
+      - task-11
+      - task-12
+    acceptanceCriteria:
+      - All local CI-equivalent checks green
+    tdd:
+      red:
+        - n/a
+      green:
+        - n/a
+      refactor:
+        - n/a
+    estimatedEffort: S
+
+totalEstimate: L (13 tasks)
+
+content: |
+  ## Order
+
+  Domain first (task 1-2), then persistence (3-5), then use cases (6-9), then the CLI (10) and
+  the web surfaces (11-12), then docs and the full verification sequence (13). Every task is
+  RED-GREEN-REFACTOR; no task is marked Done until its tests and pnpm typecheck pass.

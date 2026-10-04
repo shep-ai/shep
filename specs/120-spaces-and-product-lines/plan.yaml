@@ -1,0 +1,133 @@
+# Implementation Plan (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: spaces-and-product-lines
+summary: Implementation plan for 120 — spaces, product lines and space-scoped memory.
+
+relatedFeatures:
+  - 102-shep-brain
+technologies:
+  - TypeSpec
+  - SQLite
+  - tsyringe
+  - Commander
+  - Next.js
+relatedLinks: []
+
+phases:
+  - id: phase-1
+    name: 'Domain (TypeSpec + pure resolution)'
+    parallel: false
+    taskIds:
+      - task-1
+      - task-2
+  - id: phase-2
+    name: 'Persistence (migration 152, repositories, DI)'
+    parallel: false
+    taskIds:
+      - task-3
+      - task-4
+      - task-5
+  - id: phase-3
+    name: 'Use cases'
+    parallel: false
+    taskIds:
+      - task-6
+      - task-7
+      - task-8
+      - task-9
+  - id: phase-4
+    name: 'CLI'
+    parallel: false
+    taskIds:
+      - task-10
+  - id: phase-5
+    name: 'Web'
+    parallel: false
+    taskIds:
+      - task-11
+      - task-12
+  - id: phase-6
+    name: 'Docs and full verification'
+    parallel: false
+    taskIds:
+      - task-13
+
+filesToCreate:
+  - tsp/domain/entities/space.tsp
+  - packages/core/src/domain/shared/space-resolution.ts
+  - packages/core/src/infrastructure/persistence/sqlite/migrations/152-create-spaces.ts
+  - packages/core/src/application/ports/output/repositories/space-repository.interface.ts
+  - packages/core/src/application/ports/output/repositories/product-line-repository.interface.ts
+  - packages/core/src/application/ports/output/repositories/space-membership-repository.interface.ts
+  - packages/core/src/infrastructure/repositories/sqlite-space.repository.ts
+  - packages/core/src/infrastructure/repositories/sqlite-product-line.repository.ts
+  - packages/core/src/infrastructure/repositories/sqlite-space-membership.repository.ts
+  - packages/core/src/infrastructure/persistence/sqlite/mappers/space.mapper.ts
+  - packages/core/src/application/use-cases/spaces/resolve-space-context.use-case.ts
+  - packages/core/src/application/use-cases/spaces/manage-spaces.use-case.ts
+  - packages/core/src/application/use-cases/spaces/manage-space-membership.use-case.ts
+  - packages/core/src/application/use-cases/spaces/get-spaces-overview.use-case.ts
+  - packages/core/src/infrastructure/di/modules/register-spaces.ts
+  - src/presentation/cli/commands/space/index.ts
+  - src/presentation/web/app/spaces/page.tsx
+  - src/presentation/web/app/actions/manage-spaces.ts
+  - .storybook/mocks/app/actions/manage-spaces.ts
+  - src/presentation/web/components/features/spaces/
+
+filesToModify:
+  - tsp/domain/entities/project-memory.tsp
+  - tsp/domain/entities/index.tsp
+  - packages/core/src/domain/generated/output.ts
+  - packages/core/src/application/ports/output/repositories/project-memory-repository.interface.ts
+  - packages/core/src/infrastructure/repositories/sqlite-project-memory.repository.ts
+  - packages/core/src/infrastructure/persistence/sqlite/mappers/project-memory.mapper.ts
+  - packages/core/src/application/use-cases/project-memory/
+  - packages/core/src/infrastructure/services/interactive/lifecycle/boot-prompt.resolver.ts
+  - packages/core/src/infrastructure/di/container.ts
+  - tests/integration/infrastructure/di/container-bootstrap.test.ts
+  - src/presentation/cli/index.ts
+  - src/presentation/web/app/memory/page.tsx
+  - src/presentation/web/components/features/project-memory/
+  - src/presentation/web/components/layouts/app-sidebar/app-sidebar.tsx
+  - translations/*/web.json
+  - docs/cli/commands.md
+
+content: |
+  ## Approach
+
+  Knowledge isolation is a read-path problem, so the work centres on one use case,
+  `ResolveSpaceContextUseCase`, which every memory reader and writer calls with a repository
+  path. It returns the space, the optional product line and the source of the decision
+  (assignment, rule or default). Resolution logic itself is a pure domain function so the
+  boundary can be tested exhaustively without a database.
+
+  Memory reads become three narrow queries — the repository's Project entries, the line's
+  ProductLine entries, the space's Space (and legacy Organization) entries — so a missing filter
+  cannot recreate the leak: there is no longer a query that returns another space's rows to a
+  prompt.
+
+  ## Clean Architecture
+
+  Domain holds the types (TypeSpec) and the pure resolver; application holds the use cases and
+  output ports; infrastructure holds the SQLite repositories and DI; presentation (CLI and web)
+  only calls use cases. No layer imports outward.
+
+  ## TDD (RED-GREEN-REFACTOR)
+
+  Every task starts RED: domain tests for matching and resolution, repository round-trip tests
+  with non-default values (LESSONS: INSERT and UPDATE column lists), a migration test on a
+  database that already holds Project and Organization rows, use-case tests with typed port
+  mocks, a two-space isolation test through the real container, CLI command tests with the DI
+  override pattern, web component tests plus stories, and server-action tests.
+
+  ## Risks
+
+  | Risk | Mitigation |
+  | --- | --- |
+  | An older build after rollback | migration is additive; Organization rows untouched |
+  | Port mocks across tests break when methods change | update every full mock in the same commit (LESSONS) |
+  | Path matching differs on Windows | segment-aware, case-insensitive drive letters, tests with C:/ paths |
+  | A web action resolves an unregistered token | string-token aliases plus container-bootstrap test entries |
+
+openQuestions: []

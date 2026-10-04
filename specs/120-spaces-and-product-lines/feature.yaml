@@ -1,0 +1,42 @@
+feature:
+  id: '120-spaces-and-product-lines'
+  name: 'spaces-and-product-lines'
+  number: 120
+  branch: 'claude/wonderful-keller-g4wgaf'
+  lifecycle: 'implementation'
+  createdAt: '2026-10-04T09:29:48Z'
+
+status:
+  phase: 'implementation'
+  progress:
+    completed: 0
+    total: 13
+    percentage: 0
+  currentTask: null
+  lastUpdated: '2026-10-04T09:29:48Z'
+  lastUpdatedBy: 'shep-kit:new-feature'
+
+validation:
+  lastRun: null
+  gatesPassed: []
+  autoFixesApplied: []
+
+tasks:
+  current: null
+  blocked: []
+  failed: []
+
+checkpoints:
+  - phase: 'feature-created'
+    completedAt: '2026-10-04T09:29:48Z'
+    completedBy: 'shep-kit:new-feature-fast'
+  - phase: 'research-complete'
+    completedAt: '2026-10-04T09:40:00Z'
+    completedBy: 'shep-kit:new-feature-fast'
+  - phase: 'plan-complete'
+    completedAt: '2026-10-04T09:40:00Z'
+    completedBy: 'shep-kit:new-feature-fast'
+
+errors:
+  current: null
+  history: []
