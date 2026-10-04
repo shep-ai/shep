@@ -1,0 +1,52 @@
+# Research (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: feedback-themes
+summary: Technical decisions for 127 — keyed feedback ingestion and lexical themes.
+
+relatedFeatures:
+  - 126-opportunities
+technologies:
+  - Next.js route handlers
+relatedLinks: []
+
+decisions:
+  - title: Per-space bearer keys, hashed
+    chosen: A random key per space and tool, stored as SHA-256 with a short prefix, compared after hashing
+    rejected:
+      - 'The web session token: it unlocks the whole UI and cannot be scoped to one space'
+      - 'HMAC-signed bodies: every sending tool would need code to sign; most support tools can only add a header'
+    rationale: >
+      A header is what support tools and scripts can send; scoping the key to a space keeps
+      personal and work feedback apart, and revoking one tool does not affect the others.
+
+  - title: An exact externally authenticated path
+    chosen: Add /api/feedback to EXTERNALLY_AUTHENTICATED_PATHS; the route verifies the key itself
+    rejected:
+      - 'A prefix exemption: the guard deliberately exempts exact paths only'
+    rationale: >
+      Same pattern as the GitHub and WhatsApp webhooks, with the route owning its own check.
+
+  - title: External ids for idempotency
+    chosen: Signals gain an optional externalId, unique per space; a repeat returns the existing signal
+    rejected:
+      - 'Text similarity dedup: two customers asking the same thing are two signals, which is the point'
+    rationale: >
+      Webhooks retry; the sending tool's id makes retries harmless without losing real repeats.
+
+  - title: Lexical themes first
+    chosen: Single-link grouping of unlinked signals by Jaccard similarity of their terms, labelled by frequent terms
+    rejected:
+      - 'Embeddings or an agent call: needs a provider and is not reproducible; discovery (128) adds agent judgement'
+    rationale: >
+      Deterministic, instant and explainable, with the same term rules knowledge ranking uses.
+
+openQuestions: []
+
+content: |
+  ## Findings
+
+  - `lib/request-guard.ts` exempts exact paths that verify their own callers; the middleware
+    otherwise requires the session token and a loopback Host.
+  - `domain/shared/knowledge.ts` already tokenizes text with stopwords; its term rules move to a
+    shared module.

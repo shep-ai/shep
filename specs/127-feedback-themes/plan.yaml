@@ -1,0 +1,63 @@
+# Implementation Plan (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: feedback-themes
+summary: Implementation plan for 127 — feedback keys, ingestion, themes and promotion.
+
+relatedFeatures:
+  - 126-opportunities
+technologies:
+  - TypeSpec
+  - SQLite
+  - tsyringe
+  - Commander
+  - Next.js
+relatedLinks: []
+
+phases:
+  - id: phase-1
+    name: 'Model and domain'
+    parallel: false
+    taskIds: [task-1, task-2]
+  - id: phase-2
+    name: 'Use cases'
+    parallel: false
+    taskIds: [task-3, task-4, task-5]
+  - id: phase-3
+    name: 'Endpoint, CLI and web'
+    parallel: false
+    taskIds: [task-6, task-7]
+  - id: phase-4
+    name: 'Docs and verification'
+    parallel: false
+    taskIds: [task-8, task-9]
+
+filesToCreate:
+  - tsp/domain/entities/feedback-key.tsp
+  - packages/core/src/domain/shared/text-terms.ts
+  - packages/core/src/domain/shared/feedback-themes.ts
+  - packages/core/src/infrastructure/persistence/sqlite/migrations/160-create-feedback-keys.ts
+  - packages/core/src/application/use-cases/feedback/
+  - src/presentation/web/app/api/feedback/route.ts
+  - src/presentation/cli/commands/feedback/
+
+filesToModify:
+  - tsp/domain/entities/opportunity.tsp
+  - packages/core/src/application/use-cases/opportunities/manage-signals.use-case.ts
+  - src/presentation/web/lib/request-guard.ts
+  - src/presentation/web/components/features/opportunities/opportunities-page-client.tsx
+
+content: |
+  ## Approach
+
+  TDD throughout: every task begins with a failing test (RED), then the minimal implementation
+  (GREEN), then cleanup (REFACTOR).
+
+  Clean Architecture: terms and themes are pure domain code; key hashing and random key
+  generation sit behind a port; the route handler only parses the request and calls the
+  ingestion use case.
+
+  ## Risks
+
+  - A public endpoint: exact-path exemption, constant-time hash comparison, a body size limit and
+    revocable keys; the endpoint never echoes the key.

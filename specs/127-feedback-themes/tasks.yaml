@@ -1,0 +1,182 @@
+# Task Breakdown (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: feedback-themes
+summary: Task breakdown for 127 — feedback keys, ingestion, themes and promotion.
+
+relatedFeatures:
+  - 126-opportunities
+technologies:
+  - TypeSpec
+  - SQLite
+  - Next.js
+relatedLinks: []
+
+tasks:
+  - id: task-1
+    title: Model
+    description: >
+      FeedbackKey in TypeSpec; Signal.externalId; migration 160 with a unique (space, external id) index.
+    state: Todo
+    dependencies: []
+    acceptanceCriteria:
+      - Repositories round-trip every field
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: S
+
+  - id: task-2
+    title: Terms and themes
+    description: >
+      domain/shared/text-terms.ts shared with knowledge ranking; feedback-themes.ts groups signals by Jaccard similarity and labels them.
+    state: Todo
+    dependencies:
+      - task-1
+    acceptanceCriteria:
+      - Grouping, labels and determinism tested
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: M
+
+  - id: task-3
+    title: Feedback keys
+    description: >
+      ManageFeedbackKeysUseCase creates (secret shown once), lists and revokes keys through an IFeedbackKeyGenerator port.
+    state: Todo
+    dependencies:
+      - task-1
+    acceptanceCriteria:
+      - Only hashes stored
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: S
+
+  - id: task-4
+    title: Ingestion
+    description: >
+      IngestFeedbackUseCase verifies a key, validates the payload and records a Feedback signal; externalId makes repeats idempotent.
+    state: Todo
+    dependencies:
+      - task-3
+    acceptanceCriteria:
+      - Revoked keys refused; repeats return the existing signal
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: M
+
+  - id: task-5
+    title: Themes and promotion
+    description: >
+      GetFeedbackThemesUseCase and PromoteThemeUseCase (opportunity plus linked signals).
+    state: Todo
+    dependencies:
+      - task-2
+    acceptanceCriteria:
+      - Promotion links every signal of the theme
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: M
+
+  - id: task-6
+    title: Endpoint
+    description: >
+      POST /api/feedback, exact externally authenticated path, body limit, status codes.
+    state: Todo
+    dependencies:
+      - task-4
+    acceptanceCriteria:
+      - Route tests for 201, 200, 400, 401, 413
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: M
+
+  - id: task-7
+    title: CLI and web
+    description: >
+      shep feedback key/themes/promote; themes and keys on the Opportunities page; 9 locales; stories.
+    state: Todo
+    dependencies:
+      - task-5
+      - task-6
+    acceptanceCriteria:
+      - Command and component tests
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: M
+
+  - id: task-8
+    title: Docs
+    description: >
+      Feedback guide with a curl example, architecture note, CLI reference.
+    state: Todo
+    dependencies:
+      - task-7
+    acceptanceCriteria:
+      - Docs cover the endpoint contract
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: S
+
+  - id: task-9
+    title: Verification
+    description: >
+      lint, format, typecheck, unit, integration, build, web build, storybook.
+    state: Todo
+    dependencies:
+      - task-8
+    acceptanceCriteria:
+      - All green
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: S
+
+totalEstimate: M (9 tasks)
+openQuestions: []
+
+content: |
+  Tasks follow the plan phases; each starts with a failing test.
