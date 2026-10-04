@@ -1,0 +1,7 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: SpaceRuleKind.yaml
+type: string
+enum:
+  - Path
+  - Remote
+description: How a space rule recognises a repository

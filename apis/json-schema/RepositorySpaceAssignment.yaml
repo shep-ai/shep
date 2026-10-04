@@ -1,0 +1,27 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: RepositorySpaceAssignment.yaml
+type: object
+properties:
+  repositoryPath:
+    type: string
+    description: Normalised repository path (forward slashes, no trailing slash)
+  spaceId:
+    type: string
+    description: Space the repository belongs to
+  productLineId:
+    type: string
+    description: Optional product line inside that space
+  createdAt:
+    type: string
+    format: date-time
+    description: When the assignment was created
+  updatedAt:
+    type: string
+    format: date-time
+    description: When the assignment was last changed
+required:
+  - repositoryPath
+  - spaceId
+  - createdAt
+  - updatedAt
+description: An explicit repository placement that overrides every space rule

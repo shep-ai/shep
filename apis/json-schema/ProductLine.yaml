@@ -1,0 +1,23 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: ProductLine.yaml
+type: object
+properties:
+  spaceId:
+    type: string
+    description: The space this product line belongs to
+  name:
+    type: string
+    description: Display name
+  slug:
+    type: string
+    description: Identifier unique within its space
+  description:
+    type: string
+    description: Optional description
+required:
+  - spaceId
+  - name
+  - slug
+allOf:
+  - $ref: BaseEntity.yaml
+description: A group of related repositories inside one space

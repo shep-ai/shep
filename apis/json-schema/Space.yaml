@@ -1,0 +1,26 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: Space.yaml
+type: object
+properties:
+  name:
+    type: string
+    description: Display name
+  slug:
+    type: string
+    description: URL- and CLI-friendly identifier, unique across spaces
+  description:
+    type: string
+    description: Optional description
+  color:
+    type: string
+    description: Optional display colour as a CSS hex value
+  isDefault:
+    type: boolean
+    description: Whether repositories that match nothing fall back to this space; exactly one space is the default
+required:
+  - name
+  - slug
+  - isDefault
+allOf:
+  - $ref: BaseEntity.yaml
+description: A hard knowledge boundary such as a company or personal context

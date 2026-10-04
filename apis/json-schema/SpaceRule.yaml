@@ -1,0 +1,29 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: SpaceRule.yaml
+type: object
+properties:
+  spaceId:
+    type: string
+    description: Space the matching repositories belong to
+  productLineId:
+    type: string
+    description: Optional product line inside that space
+  kind:
+    $ref: SpaceRuleKind.yaml
+    description: Whether the pattern matches the repository path or its git remote
+  pattern:
+    type: string
+    description: Path prefix or remote pattern, stored normalised
+  priority:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Tie-breaker between equally specific rules; lower wins
+required:
+  - spaceId
+  - kind
+  - pattern
+  - priority
+allOf:
+  - $ref: BaseEntity.yaml
+description: Maps repositories to a space, and optionally a product line, by path or remote pattern

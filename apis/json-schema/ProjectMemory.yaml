@@ -19,7 +19,13 @@ properties:
     description: Optional ID of the feature whose merge produced this entry
   scope:
     $ref: MemoryScope.yaml
-    description: "Reach of this entry: Project (default) or Organization-wide"
+    description: "Reach of this entry: Project (default), ProductLine, or Space; Organization is legacy Space"
+  spaceId:
+    type: string
+    description: Space the entry belongs to, stamped from the repository's resolved space
+  productLineId:
+    type: string
+    description: Product line the entry belongs to, when its repository has one
 required:
   - repositoryPath
   - category
