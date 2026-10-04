@@ -1,0 +1,57 @@
+# Research (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: opportunities
+summary: Technical decisions for 126 — evidence, value per review hour and the capacity line.
+
+relatedFeatures:
+  - 120-spaces-and-product-lines
+technologies:
+  - TypeSpec
+  - SQLite
+relatedLinks: []
+
+decisions:
+  - title: Review hours are the unit of cost
+    chosen: Each opportunity carries an estimate in review hours, and each space a weekly review capacity
+    rejected:
+      - 'Story points or agent tokens: agents are cheap and parallel; the human review that gates a merge is what runs out'
+    rationale: >
+      The factory's throughput is bounded by people reading diffs, so value per review hour is
+      the ratio that decides what to build next.
+
+  - title: A transparent weighted sum, not RICE or a model
+    chosen: value = weighted customers + revenue at stake + urgent signals + strategic, times confidence, over review hours
+    rejected:
+      - 'RICE verbatim: its reach and impact are guesses typed by a person; here reach and revenue come from linked evidence'
+      - 'An agent-assigned score: not reproducible, and nobody can argue with it'
+    rationale: >
+      Every number on the page can be traced to a signal or a weight the team chose, and changing
+      a weight re-ranks instantly.
+
+  - title: Signals and opportunities separate from intake items
+    chosen: New Signal and Opportunity entities owned by a space; building creates an ordinary work item
+    rejected:
+      - 'Reusing IntakeItem: it belongs to one project and is triaged into a work item one-to-one, while many signals across projects support one opportunity'
+    rationale: >
+      Evidence arrives before anyone knows which project will own the work; the space is the
+      boundary that already separates personal and work data.
+
+  - title: Weights as a per-space row with defaults
+    chosen: An opportunity_weights table keyed by space; a space without a row uses DEFAULT_OPPORTUNITY_WEIGHTS
+    rejected:
+      - 'Columns on spaces: couples spaces to a feature most spaces never configure'
+    rationale: >
+      Spaces stay small; reading weights is one lookup with a domain default.
+
+openQuestions: []
+
+content: |
+  ## Findings
+
+  - Spaces and product lines (spec 120) give every repository a space; tracker connections and
+    knowledge sources already hang off a space.
+  - CreateWorkItemUseCase creates a work item in a project with its default state; the
+    opportunity keeps its id.
+  - The sidebar lists pages in one long component; this feature moves its plain links into a
+    list before adding Opportunities.

@@ -1,0 +1,67 @@
+# Implementation Plan (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: opportunities
+summary: Implementation plan for 126 — signals, opportunities, scoring and the capacity line.
+
+relatedFeatures:
+  - 120-spaces-and-product-lines
+technologies:
+  - TypeSpec
+  - SQLite
+  - tsyringe
+  - Commander
+  - Next.js
+relatedLinks: []
+
+phases:
+  - id: phase-1
+    name: 'Model and scoring'
+    parallel: false
+    taskIds: [task-1, task-2, task-3]
+  - id: phase-2
+    name: 'Use cases'
+    parallel: false
+    taskIds: [task-4, task-5, task-6, task-7]
+  - id: phase-3
+    name: 'CLI and web'
+    parallel: false
+    taskIds: [task-8, task-9]
+  - id: phase-4
+    name: 'Docs and verification'
+    parallel: false
+    taskIds: [task-10, task-11]
+
+filesToCreate:
+  - tsp/domain/entities/opportunity.tsp
+  - packages/core/src/domain/shared/opportunity-score.ts
+  - packages/core/src/application/ports/output/repositories/opportunity-repository.interface.ts
+  - packages/core/src/infrastructure/persistence/sqlite/migrations/159-create-opportunities.ts
+  - packages/core/src/infrastructure/repositories/sqlite-opportunity.repository.ts
+  - packages/core/src/application/use-cases/opportunities/
+  - packages/core/src/infrastructure/di/modules/register-opportunities.ts
+  - src/presentation/cli/commands/signal/
+  - src/presentation/cli/commands/opportunity/
+  - src/presentation/web/app/opportunities/page.tsx
+  - src/presentation/web/components/features/opportunities/
+
+filesToModify:
+  - packages/core/src/infrastructure/di/container.ts
+  - src/presentation/web/components/layouts/app-sidebar/app-sidebar.tsx
+
+content: |
+  ## Approach
+
+  TDD throughout: every task begins with a failing test (RED), then the minimal implementation
+  (GREEN), then cleanup (REFACTOR).
+
+  Clean Architecture: evidence, scoring and the line are pure domain functions; use cases depend
+  on repository ports and the existing work item use case; SQLite repositories implement the
+  ports; CLI and web call use cases through the container.
+
+  ## Risks
+
+  - Scores that look precise but rest on guesses: every input is shown next to the score, and
+    confidence is explicit.
+  - Revenue entered by hand drifts: it is per signal, so a newer signal replaces an older one's
+    weight for the same customer (largest amount per customer).
