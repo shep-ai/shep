@@ -1,0 +1,100 @@
+# Feature Specification (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: discovery
+number: 128
+branch: claude/wonderful-keller-g4wgaf
+oneLiner: |-
+  An agent reads a space's loose evidence and team knowledge, and proposes opportunities with
+  the signals behind them, an outline and a review estimate — on demand or on a schedule
+summary: |-
+  Signals pile up faster than people shape them into bets. Discovery hands the pile to an agent:
+  the space's unlinked signals, its feedback themes, the titles of its open opportunities (so it
+  does not repeat them) and the team's knowledge documents. The agent answers with a few proposed
+  opportunities, each naming the signals it rests on, the problem, a short outline of what to
+  build, a review-hour estimate and a confidence. Shep keeps only proposals backed by real
+  signals of the space and new titles, creates them as Proposed opportunities marked as
+  discovered, links their signals and records the run. A space can run discovery every N hours;
+  the daemon does it while nobody watches. People still decide: discovered opportunities rank
+  like any other and wait to be accepted, dropped or built.
+phase: Requirements
+sizeEstimate: M
+relatedFeatures:
+  - 125-knowledge-sources
+  - 126-opportunities
+  - 127-feedback-themes
+technologies:
+  - TypeScript
+  - TypeSpec
+  - SQLite (better-sqlite3, umzug migrations)
+  - tsyringe
+  - Commander
+  - Next.js App Router, shadcn/ui
+relatedLinks: []
+openQuestions: []
+content: |
+  ## Problem Statement
+
+  - Turning dozens of signals into a handful of bets is slow, manual work, so evidence goes
+    stale before anyone reads it.
+  - Nothing in shep looks at a space's evidence on its own; scheduled workflows never run an
+    agent.
+  - An opportunity does not say where it came from or why it was suggested.
+
+  ## Product Shape
+
+  - **Opportunity source**: Manual, Theme or Discovery; a discovered opportunity keeps the
+    agent's outline and rationale as its brief.
+  - **Discovery run** (per space): status (Running, Succeeded, Failed), agent type, start and end,
+    proposals made, error.
+  - **Run**: gather evidence (up to 60 unlinked signals, themes, open opportunity titles, up to
+    20 knowledge document titles), ask the agent for at most 5 proposals in a JSON schema, keep
+    proposals that cite at least one real unlinked signal of the space and do not repeat an open
+    title, create them and link their signals. One run per space at a time; a run stuck longer
+    than the agent budget counts as failed.
+  - **Agent**: the space's agent rules apply — a space limited to some agents uses the first
+    allowed one unless one is named, and refuses a named agent it does not allow; the space's
+    environment (accounts, config dirs) is used. The agent gets no tools: the evidence is in the
+    prompt.
+  - **Schedule**: a space's opportunity settings gain "discover every N hours" (off by default);
+    the daemon runs due spaces.
+
+  ## User Flows
+
+  **F1. Discover now.** `shep discovery run --space acme` (or **Discover** on the Opportunities
+  page) proposes opportunities; they appear in the ranking marked as discovered.
+
+  **F2. Schedule.** `shep discovery schedule --space acme --every 24` turns on daily discovery;
+  `--off` turns it off. `shep discovery ls --space acme` lists runs and what they proposed.
+
+  ## Success Criteria
+
+  - [ ] Proposals citing unknown or linked signals, or repeating an open title, are dropped;
+        kept proposals become Proposed, Discovery-sourced opportunities with their signals linked.
+  - [ ] A second run while one is running is refused; a failed agent call records a Failed run.
+  - [ ] Space agent rules and environment apply to the agent call.
+  - [ ] The daemon runs only spaces whose schedule is due.
+  - [ ] CLI and web expose run, schedule and history; strings in 9 locales; stories for every new
+        component.
+
+  ## Affected Areas
+
+  | Area | Impact | Reasoning |
+  | --- | --- | --- |
+  | TypeSpec | Low | DiscoveryRun, OpportunitySource; Opportunity source and brief; discovery interval |
+  | Persistence | Low | Migration 161 |
+  | Application | High | Evidence gathering, prompt, validation, runs, schedule |
+  | Presentation | Medium | `shep discovery`, Discover button, run status, discovered badge |
+
+  ## Dependencies
+
+  - Specs 125 (knowledge), 126 (opportunities), 127 (themes).
+
+  ## Out of Scope
+
+  - Agents browsing the product or reading code to find problems (later, with tools).
+  - Proposals without any signal behind them.
+
+  ## Size Estimate
+
+  **M**: 8 tasks.

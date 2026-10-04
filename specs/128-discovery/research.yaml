@@ -1,0 +1,47 @@
+# Research (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: discovery
+summary: Technical decisions for 128 — an agent that proposes evidence-backed opportunities.
+
+relatedFeatures:
+  - 126-opportunities
+technologies:
+  - IStructuredAgentCaller
+relatedLinks: []
+
+decisions:
+  - title: A structured call with the evidence in the prompt
+    chosen: IStructuredAgentCaller with a JSON schema, no tools, the space's agent and environment
+    rejected:
+      - 'A full feature-agent run: needs a repository and worktree; discovery works on a space'
+      - 'Letting the agent read the database: an agent with tools could touch other spaces'
+    rationale: >
+      The agent sees exactly the evidence of one space and nothing else, and its answer is
+      validated before anything is written.
+
+  - title: Proposals must cite real signals
+    chosen: Keep only proposals whose signal ids are unlinked signals of the space; drop repeats of open titles
+    rejected:
+      - 'Trusting the agent: an invented signal id or a duplicate bet would pollute the ranking'
+    rationale: >
+      Every discovered opportunity can be traced to evidence a person can read, and the score
+      comes from those signals, not from the agent.
+
+  - title: Schedule on the opportunity settings
+    chosen: OpportunityWeights gains discoveryEveryHours; the daemon's due-work watcher runs due spaces
+    rejected:
+      - 'ScheduledWorkflow: its execution never runs an agent and is tied to repositories'
+    rationale: >
+      Discovery feeds the same board the weights shape, and the due-work watcher already ticks
+      tracker rules and knowledge sources.
+
+openQuestions: []
+
+content: |
+  ## Findings
+
+  - IStructuredAgentCaller validates JSON-schema output and accepts agentType and environment.
+  - domain/shared/space-environment.ts gives a space's environment and agent rules without a
+    repository.
+  - Feature metadata generation already calls the agent with no tools.

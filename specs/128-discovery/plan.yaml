@@ -1,0 +1,61 @@
+# Implementation Plan (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: discovery
+summary: Implementation plan for 128 — discovery runs, schedule and surfaces.
+
+relatedFeatures:
+  - 126-opportunities
+technologies:
+  - TypeSpec
+  - SQLite
+  - tsyringe
+  - Commander
+  - Next.js
+relatedLinks: []
+
+phases:
+  - id: phase-1
+    name: 'Model'
+    parallel: false
+    taskIds: [task-1, task-2]
+  - id: phase-2
+    name: 'Discovery'
+    parallel: false
+    taskIds: [task-3, task-4, task-5]
+  - id: phase-3
+    name: 'CLI and web'
+    parallel: false
+    taskIds: [task-6]
+  - id: phase-4
+    name: 'Docs and verification'
+    parallel: false
+    taskIds: [task-7, task-8]
+
+filesToCreate:
+  - tsp/domain/entities/discovery.tsp
+  - packages/core/src/domain/shared/discovery-proposals.ts
+  - packages/core/src/infrastructure/persistence/sqlite/migrations/161-create-discovery.ts
+  - packages/core/src/application/use-cases/discovery/
+  - src/presentation/cli/commands/discovery/
+
+filesToModify:
+  - tsp/domain/entities/opportunity.tsp
+  - src/presentation/cli/commands/background-sync.ts
+  - src/presentation/web/components/features/opportunities/opportunities-page-client.tsx
+
+content: |
+  ## Approach
+
+  TDD throughout: every task begins with a failing test (RED), then the minimal implementation
+  (GREEN), then cleanup (REFACTOR).
+
+  Clean Architecture: proposal validation is pure domain code; the run use case gathers
+  evidence through repository ports, calls the agent through the IStructuredAgentCaller port and
+  writes through the opportunity use cases; CLI, web and the daemon reach it through the
+  container.
+
+  ## Risks
+
+  - Cost: discovery is off until a space schedules it; one run per space at a time; at most five
+    proposals per run.

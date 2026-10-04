@@ -1,0 +1,163 @@
+# Task Breakdown (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: discovery
+summary: Task breakdown for 128 — discovery runs, schedule and surfaces.
+
+relatedFeatures:
+  - 126-opportunities
+technologies:
+  - TypeSpec
+  - SQLite
+relatedLinks: []
+
+tasks:
+  - id: task-1
+    title: Model
+    description: >
+      DiscoveryRun and OpportunitySource in TypeSpec; Opportunity source and brief; OpportunityWeights discoveryEveryHours; migration 161.
+    state: Todo
+    dependencies: []
+    acceptanceCriteria:
+      - Repositories round-trip every field
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: S
+
+  - id: task-2
+    title: Proposal validation
+    description: >
+      domain/shared/discovery-proposals.ts keeps proposals citing unlinked signals of the space and new titles, clamps estimates.
+    state: Todo
+    dependencies:
+      - task-1
+    acceptanceCriteria:
+      - Invented ids, repeats and bad numbers dropped
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: S
+
+  - id: task-3
+    title: Run discovery
+    description: >
+      RunDiscoveryUseCase gathers evidence, applies space agent rules, calls the agent, records the run, creates and links proposals.
+    state: Todo
+    dependencies:
+      - task-2
+    acceptanceCriteria:
+      - One run at a time; failures recorded
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: M
+
+  - id: task-4
+    title: Schedule
+    description: >
+      Discovery interval on opportunity settings; SyncDiscoveryUseCase runs due spaces; due-work watcher in the daemon.
+    state: Todo
+    dependencies:
+      - task-3
+    acceptanceCriteria:
+      - Only due spaces run
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: M
+
+  - id: task-5
+    title: History
+    description: >
+      ListDiscoveryRunsUseCase for a space.
+    state: Todo
+    dependencies:
+      - task-3
+    acceptanceCriteria:
+      - Newest first
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: S
+
+  - id: task-6
+    title: CLI and web
+    description: >
+      shep discovery run/ls/schedule; Discover button, last run and discovered badge on the Opportunities page; 9 locales; stories.
+    state: Todo
+    dependencies:
+      - task-4
+      - task-5
+    acceptanceCriteria:
+      - Command and component tests
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: M
+
+  - id: task-7
+    title: Docs
+    description: >
+      Discovery guide, architecture note, CLI reference.
+    state: Todo
+    dependencies:
+      - task-6
+    acceptanceCriteria:
+      - Docs cover runs and schedules
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: S
+
+  - id: task-8
+    title: Verification
+    description: >
+      lint, format, typecheck, unit, integration, build, web build, storybook.
+    state: Todo
+    dependencies:
+      - task-7
+    acceptanceCriteria:
+      - All green
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: S
+
+totalEstimate: M (8 tasks)
+openQuestions: []
+
+content: |
+  Tasks follow the plan phases; each starts with a failing test.
