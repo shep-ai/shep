@@ -1,0 +1,7 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: TrackerSyncDirection.yaml
+type: string
+enum:
+  - Import
+  - TwoWay
+description: Which way a tracker sync rule moves changes

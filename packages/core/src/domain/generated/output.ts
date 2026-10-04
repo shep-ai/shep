@@ -6519,6 +6519,234 @@ export type PermissionGrant = BaseEntity & {
    */
   consumed: boolean;
 };
+export enum TrackerProvider {
+  Linear = 'Linear',
+  Jira = 'Jira',
+}
+export enum TrackerConnectionStatus {
+  Connected = 'Connected',
+  Error = 'Error',
+}
+
+/**
+ * A tracker account shep can read and write; the secret is stored encrypted outside the entity
+ */
+export type TrackerConnection = BaseEntity & {
+  /**
+   * Which tracker
+   */
+  provider: TrackerProvider;
+  /**
+   * Display name
+   */
+  name: string;
+  /**
+   * CLI-friendly identifier, unique across connections
+   */
+  slug: string;
+  /**
+   * The space the connection belongs to
+   */
+  spaceId: string;
+  /**
+   * Jira site URL such as https://acme.atlassian.net; unset for Linear
+   */
+  siteUrl?: string;
+  /**
+   * Jira account email used with the API token; unset for Linear
+   */
+  accountEmail?: string;
+  /**
+   * The tracker account name reported by the last successful check
+   */
+  accountName?: string;
+  /**
+   * Whether the credentials last worked
+   */
+  status: TrackerConnectionStatus;
+  /**
+   * Why the last check or sync failed
+   */
+  lastError?: string;
+  /**
+   * When the credentials were last checked
+   */
+  lastCheckedAt?: any;
+};
+
+/**
+ * What one run of a tracker sync rule did
+ */
+export type TrackerSyncRunSummary = {
+  /**
+   * Work items created from new issues
+   */
+  created: number;
+  /**
+   * Work items updated from tracker changes
+   */
+  updated: number;
+  /**
+   * Issues updated from shep changes (two-way rules)
+   */
+  pushed: number;
+  /**
+   * Fields changed on both sides; the tracker's value was kept
+   */
+  conflicts: number;
+  /**
+   * Issues that could not be synced this run
+   */
+  failed: number;
+  /**
+   * Whether the tracker rate-limited the run before it finished
+   */
+  rateLimited: boolean;
+};
+export enum TrackerSyncDirection {
+  Import = 'Import',
+  TwoWay = 'TwoWay',
+}
+
+/**
+ * Keeps one tracker scope (Linear team or Jira JQL) in one shep project
+ */
+export type TrackerSyncRule = BaseEntity & {
+  /**
+   * The connection to read and write
+   */
+  connectionId: string;
+  /**
+   * The shep project issues become work items in
+   */
+  projectId: string;
+  /**
+   * Linear team key (for example ENG) or Jira JQL query
+   */
+  scope: string;
+  /**
+   * Import only, or two-way
+   */
+  direction: TrackerSyncDirection;
+  /**
+   * Minutes between automatic runs
+   */
+  intervalMinutes: number;
+  /**
+   * Whether the daemon runs this rule
+   */
+  enabled: boolean;
+  /**
+   * Newest tracker update time applied; the next run asks for issues updated after it
+   */
+  cursor?: any;
+  /**
+   * When the rule last ran
+   */
+  lastRunAt?: any;
+  /**
+   * What the last run did
+   */
+  lastRun?: TrackerSyncRunSummary;
+  /**
+   * Why the last run failed, when it did
+   */
+  lastError?: string;
+};
+
+/**
+ * Links a work item to a tracker issue, with the values both sides had at the last sync
+ */
+export type TrackerIssueLink = {
+  /**
+   * The linked work item; one link per work item
+   */
+  workItemId: string;
+  /**
+   * The rule that created the link
+   */
+  ruleId: string;
+  /**
+   * The connection of that rule
+   */
+  connectionId: string;
+  /**
+   * The tracker's id for the issue
+   */
+  externalId: string;
+  /**
+   * The human key such as ENG-42 or PAY-7
+   */
+  externalKey: string;
+  /**
+   * Link to the issue in the tracker
+   */
+  externalUrl: string;
+  /**
+   * Title at the last sync
+   */
+  syncedTitle: string;
+  /**
+   * Description at the last sync
+   */
+  syncedDescription?: string;
+  /**
+   * Status group at the last sync
+   */
+  syncedStateGroup: StateGroup;
+  /**
+   * Priority at the last sync
+   */
+  syncedPriority: Priority;
+  /**
+   * The tracker's update time at the last sync
+   */
+  remoteUpdatedAt: any;
+  /**
+   * When the link was created
+   */
+  createdAt: any;
+  /**
+   * When the link was last synced
+   */
+  updatedAt: any;
+};
+
+/**
+ * A tracker issue in shep's terms, whichever tracker it came from
+ */
+export type ExternalIssue = {
+  /**
+   * The tracker's id
+   */
+  externalId: string;
+  /**
+   * The human key such as ENG-42
+   */
+  key: string;
+  /**
+   * Link to the issue
+   */
+  url: string;
+  title: string;
+  /**
+   * Markdown description
+   */
+  description?: string;
+  /**
+   * The tracker status, mapped to shep's status group
+   */
+  stateGroup: StateGroup;
+  /**
+   * The tracker's own status name
+   */
+  stateName: string;
+  priority: Priority;
+  /**
+   * When the tracker last changed the issue
+   */
+  updatedAt: any;
+};
 
 /**
  * Single installation suggestion for a tool

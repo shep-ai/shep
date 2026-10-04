@@ -1,0 +1,40 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: ExternalIssue.yaml
+type: object
+properties:
+  externalId:
+    type: string
+    description: The tracker's id
+  key:
+    type: string
+    description: The human key such as ENG-42
+  url:
+    type: string
+    description: Link to the issue
+  title:
+    type: string
+  description:
+    type: string
+    description: Markdown description
+  stateGroup:
+    $ref: StateGroup.yaml
+    description: The tracker status, mapped to shep's status group
+  stateName:
+    type: string
+    description: The tracker's own status name
+  priority:
+    $ref: Priority.yaml
+  updatedAt:
+    type: string
+    format: date-time
+    description: When the tracker last changed the issue
+required:
+  - externalId
+  - key
+  - url
+  - title
+  - stateGroup
+  - stateName
+  - priority
+  - updatedAt
+description: A tracker issue in shep's terms, whichever tracker it came from

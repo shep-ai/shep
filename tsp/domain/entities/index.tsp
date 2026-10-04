@@ -65,3 +65,4 @@ import "./workflow-execution.tsp";
 import "./plugin.tsp";
 import "./fleet-overview.tsp";
 import "./harness/index.tsp";
+import "./tracker-sync.tsp";

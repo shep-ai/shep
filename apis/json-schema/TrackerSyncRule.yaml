@@ -1,0 +1,48 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: TrackerSyncRule.yaml
+type: object
+properties:
+  connectionId:
+    type: string
+    description: The connection to read and write
+  projectId:
+    type: string
+    description: The shep project issues become work items in
+  scope:
+    type: string
+    description: Linear team key (for example ENG) or Jira JQL query
+  direction:
+    $ref: TrackerSyncDirection.yaml
+    description: Import only, or two-way
+  intervalMinutes:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Minutes between automatic runs
+  enabled:
+    type: boolean
+    description: Whether the daemon runs this rule
+  cursor:
+    type: string
+    format: date-time
+    description: Newest tracker update time applied; the next run asks for issues updated after it
+  lastRunAt:
+    type: string
+    format: date-time
+    description: When the rule last ran
+  lastRun:
+    $ref: TrackerSyncRunSummary.yaml
+    description: What the last run did
+  lastError:
+    type: string
+    description: Why the last run failed, when it did
+required:
+  - connectionId
+  - projectId
+  - scope
+  - direction
+  - intervalMinutes
+  - enabled
+allOf:
+  - $ref: BaseEntity.yaml
+description: Keeps one tracker scope (Linear team or Jira JQL) in one shep project

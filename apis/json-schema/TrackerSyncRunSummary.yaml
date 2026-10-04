@@ -1,0 +1,40 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: TrackerSyncRunSummary.yaml
+type: object
+properties:
+  created:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Work items created from new issues
+  updated:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Work items updated from tracker changes
+  pushed:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Issues updated from shep changes (two-way rules)
+  conflicts:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Fields changed on both sides; the tracker's value was kept
+  failed:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Issues that could not be synced this run
+  rateLimited:
+    type: boolean
+    description: Whether the tracker rate-limited the run before it finished
+required:
+  - created
+  - updated
+  - pushed
+  - conflicts
+  - failed
+  - rateLimited
+description: What one run of a tracker sync rule did

@@ -48,6 +48,7 @@ import { registerInteractive } from '@/infrastructure/di/modules/register-intera
 import { registerAspm } from '@/infrastructure/di/modules/register-aspm.js';
 import { registerHarness } from '@/infrastructure/di/modules/register-harness.js';
 import { registerSpaces } from '@/infrastructure/di/modules/register-spaces.js';
+import { registerTrackers } from '@/infrastructure/di/modules/register-trackers.js';
 import { SessionSpaceEnvironment } from '@/infrastructure/services/interactive/lifecycle/session-space-environment.js';
 import { ResolveSpaceEnvironmentUseCase } from '@/application/use-cases/spaces/resolve-space-environment.use-case.js';
 import type { IDeploymentService } from '@/application/ports/output/services/deployment-service.interface.js';
@@ -181,6 +182,12 @@ const WEB_ROUTE_TOKENS: readonly string[] = [
   // Space agent settings (spec 121)
   'ConfigureSpaceAgentUseCase',
   'ResolveSpaceEnvironmentUseCase',
+  // Tracker sync (spec 122)
+  'ManageTrackerConnectionsUseCase',
+  'ManageTrackerSyncRulesUseCase',
+  'RunTrackerSyncUseCase',
+  'SyncTrackerRulesUseCase',
+  'GetTrackerIssueLinkUseCase',
 ] as const;
 
 /**
@@ -193,6 +200,11 @@ const CRITICAL_INFRA_TOKENS: readonly string[] = [
   'ISpaceRepository',
   'IProductLineRepository',
   'ISpaceMembershipRepository',
+  // Tracker sync (spec 122)
+  'ITrackerConnectionRepository',
+  'ITrackerSyncRuleRepository',
+  'ITrackerIssueLinkRepository',
+  'ITrackerClientFactory',
   // Query-aware harness (spec 119)
   'IHarnessBlobStore',
   'IHarnessEventLog',
@@ -347,6 +359,7 @@ describe('DI container bootstrap (integration)', () => {
 
     registerRepositories(scopedContainer);
     registerSpaces(scopedContainer);
+    registerTrackers(scopedContainer);
     registerServices(scopedContainer);
     registerTools(scopedContainer);
     registerAgents(scopedContainer);

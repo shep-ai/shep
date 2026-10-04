@@ -1,0 +1,7 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: TrackerProvider.yaml
+type: string
+enum:
+  - Linear
+  - Jira
+description: An issue tracker shep can sync with

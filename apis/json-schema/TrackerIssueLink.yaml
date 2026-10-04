@@ -1,0 +1,60 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: TrackerIssueLink.yaml
+type: object
+properties:
+  workItemId:
+    type: string
+    description: The linked work item; one link per work item
+  ruleId:
+    type: string
+    description: The rule that created the link
+  connectionId:
+    type: string
+    description: The connection of that rule
+  externalId:
+    type: string
+    description: The tracker's id for the issue
+  externalKey:
+    type: string
+    description: The human key such as ENG-42 or PAY-7
+  externalUrl:
+    type: string
+    description: Link to the issue in the tracker
+  syncedTitle:
+    type: string
+    description: Title at the last sync
+  syncedDescription:
+    type: string
+    description: Description at the last sync
+  syncedStateGroup:
+    $ref: StateGroup.yaml
+    description: Status group at the last sync
+  syncedPriority:
+    $ref: Priority.yaml
+    description: Priority at the last sync
+  remoteUpdatedAt:
+    type: string
+    format: date-time
+    description: The tracker's update time at the last sync
+  createdAt:
+    type: string
+    format: date-time
+    description: When the link was created
+  updatedAt:
+    type: string
+    format: date-time
+    description: When the link was last synced
+required:
+  - workItemId
+  - ruleId
+  - connectionId
+  - externalId
+  - externalKey
+  - externalUrl
+  - syncedTitle
+  - syncedStateGroup
+  - syncedPriority
+  - remoteUpdatedAt
+  - createdAt
+  - updatedAt
+description: Links a work item to a tracker issue, with the values both sides had at the last sync
