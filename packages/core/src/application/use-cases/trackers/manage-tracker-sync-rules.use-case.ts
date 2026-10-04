@@ -23,6 +23,13 @@ export const MIN_SYNC_INTERVAL_MINUTES = 5;
 export const MAX_SYNC_INTERVAL_MINUTES = 1440;
 const LINEAR_TEAM_KEY = /^[A-Za-z][A-Za-z0-9]*$/;
 
+/** A rule with the names a list shows. */
+export interface TrackerSyncRuleView {
+  rule: TrackerSyncRule;
+  connection: { name: string; slug: string; provider: TrackerProvider };
+  project: { name: string; slug: string };
+}
+
 export interface CreateTrackerSyncRuleInput {
   /** Connection id or slug. */
   connection: string;
@@ -44,11 +51,30 @@ export class ManageTrackerSyncRulesUseCase {
     @inject('IPmProjectRepository') private readonly projects: IPmProjectRepository
   ) {}
 
-  async list(connectionRef?: string): Promise<TrackerResult<{ rules: TrackerSyncRule[] }>> {
-    if (!connectionRef?.trim()) return { ok: true, rules: await this.rules.list() };
-    const connection = await findConnection(this.connections, connectionRef);
-    if (!connection) return failure(`No connection "${connectionRef}".`);
-    return { ok: true, rules: await this.rules.list(connection.id) };
+  async list(connectionRef?: string): Promise<TrackerResult<{ rules: TrackerSyncRuleView[] }>> {
+    let rules: TrackerSyncRule[];
+    if (connectionRef?.trim()) {
+      const connection = await findConnection(this.connections, connectionRef);
+      if (!connection) return failure(`No connection "${connectionRef}".`);
+      rules = await this.rules.list(connection.id);
+    } else {
+      rules = await this.rules.list();
+    }
+    const views: TrackerSyncRuleView[] = [];
+    for (const rule of rules) {
+      const connection = await this.connections.findById(rule.connectionId);
+      const project = await this.projects.findById(rule.projectId);
+      views.push({
+        rule,
+        connection: connection
+          ? { name: connection.name, slug: connection.slug, provider: connection.provider }
+          : { name: rule.connectionId, slug: rule.connectionId, provider: TrackerProvider.Linear },
+        project: project
+          ? { name: project.name, slug: project.slug }
+          : { name: rule.projectId, slug: rule.projectId },
+      });
+    }
+    return { ok: true, rules: views };
   }
 
   async create(

@@ -1219,6 +1219,91 @@
         "removes": "يزيل",
         "success": "تم حفظ إعدادات وكلاء {{name}}"
       }
+    },
+    "connection": {
+      "description": "ربط حسابات Linear وJira التي يبقيها shep متزامنة",
+      "failed": "فشل أمر الاتصال",
+      "connectionArg": "المعرّف المختصر للاتصال أو معرّفه",
+      "add": {
+        "description": "ربط حساب Linear أو Jira؛ يُختبر المفتاح قبل حفظه",
+        "providerArg": "linear أو jira",
+        "nameOption": "الاسم المعروض",
+        "spaceOption": "المساحة التي يتبع لها الاتصال (الافتراضية إن لم تُحدَّد)",
+        "siteOption": "عنوان موقع Jira، مثل https://acme.atlassian.net",
+        "emailOption": "بريد حساب Jira الذي يخصه الرمز",
+        "secretEnvOption": "قراءة المفتاح أو الرمز من متغير البيئة هذا بدلًا من السؤال",
+        "linearPrompt": "مفتاح واجهة Linear البرمجية",
+        "jiraPrompt": "رمز واجهة Jira البرمجية",
+        "badProvider": "\"{{provider}}\" ليس متتبعًا؛ استخدم linear أو jira",
+        "emptyEnv": "متغير البيئة {{variable}} فارغ أو غير معيّن",
+        "success": "تم ربط {{name}} ‏({{slug}}) باسم {{account}}"
+      },
+      "ls": {
+        "description": "عرض الاتصالات",
+        "title": "اتصالات المتتبعات",
+        "nameColumn": "الاسم",
+        "slugColumn": "المعرّف المختصر",
+        "providerColumn": "المتتبع",
+        "accountColumn": "الحساب",
+        "statusColumn": "الحالة",
+        "empty": "لا توجد اتصالات بعد. أضف واحدًا عبر shep connection add."
+      },
+      "test": {
+        "description": "إعادة التحقق من بيانات اعتماد الاتصال",
+        "success": "{{name}} يعمل ({{account}})"
+      },
+      "rm": {
+        "description": "إزالة اتصال وقواعد مزامنته؛ تبقى عناصر العمل المتزامنة",
+        "success": "تمت إزالة الاتصال {{ref}}"
+      }
+    },
+    "sync": {
+      "description": "إبقاء فرق Linear واستعلامات Jira في مشاريع shep",
+      "failed": "فشل أمر المزامنة",
+      "connectionArg": "المعرّف المختصر للاتصال أو معرّفه",
+      "ruleArg": "معرّف القاعدة (راجع shep sync rule ls)",
+      "summary": "{{created}} أُنشئت، {{updated}} حُدّثت، {{pushed}} أُرسلت، {{conflicts}} تعارضات، {{failed}} فشلت",
+      "rule": {
+        "description": "إدارة قواعد المزامنة",
+        "add": {
+          "description": "إبقاء فريق Linear أو استعلام JQL من Jira في مشروع shep",
+          "projectOption": "المعرّف المختصر لمشروع shep أو معرّفه",
+          "scopeOption": "مفتاح فريق Linear ‏(ENG) أو استعلام JQL من Jira",
+          "twoWayOption": "إرسال تغييرات shep أيضًا إلى المتتبع",
+          "everyOption": "الدقائق بين التشغيلات التلقائية (الافتراضي 15)",
+          "badEvery": "\"{{value}}\" ليس عددًا صحيحًا من الدقائق",
+          "success": "أُضيفت القاعدة {{id}} لـ {{scope}}"
+        },
+        "ls": {
+          "description": "عرض القواعد مع آخر تشغيل",
+          "title": "قواعد المزامنة",
+          "idColumn": "المعرّف",
+          "fromColumn": "من",
+          "intoColumn": "إلى",
+          "modeColumn": "الوضع",
+          "lastRunColumn": "آخر تشغيل",
+          "never": "لم يُشغَّل",
+          "off": "(معطّلة)",
+          "empty": "لا توجد قواعد بعد. أضف واحدة عبر shep sync rule add."
+        },
+        "enable": {
+          "description": "السماح للخدمة بتشغيل قاعدة",
+          "success": "تم تفعيل القاعدة {{id}}"
+        },
+        "disable": {
+          "description": "منع الخدمة من تشغيل قاعدة",
+          "success": "تم تعطيل القاعدة {{id}}"
+        },
+        "rm": {
+          "description": "إزالة قاعدة؛ تبقى العناصر المتزامنة",
+          "success": "تمت إزالة القاعدة {{id}}"
+        }
+      },
+      "run": {
+        "description": "تشغيل قاعدة واحدة أو كل القواعد المفعّلة الآن",
+        "nothing": "لا توجد قواعد مفعّلة",
+        "conflictsNote": "تغيّر {{count}} حقل في الجهتين؛ أُبقيت قيمة المتتبع"
+      }
     }
   },
   "ui": {

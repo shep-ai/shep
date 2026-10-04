@@ -51,6 +51,8 @@ import {
   getMonthlyRecapWatcher,
 } from '@/infrastructure/services/contributors/monthly-recap-watcher.service.js';
 import { RetentionScheduler } from '@/infrastructure/services/maintenance/retention-scheduler.js';
+import { createTrackerSyncWatcher } from '@/infrastructure/services/trackers/tracker-sync-watcher.js';
+import type { SyncTrackerRulesUseCase } from '@/application/use-cases/trackers/sync-tracker-rules.use-case.js';
 import { PruneRetainedDataUseCase } from '@/application/use-cases/maintenance/prune-retained-data.use-case.js';
 import { DetectStaleGoodFirstIssueUseCase } from '@/application/use-cases/contributors/detect-stale-good-first-issue.use-case.js';
 import { GenerateMonthlyRecapUseCase } from '@/application/use-cases/contributors/generate-monthly-recap.use-case.js';
@@ -150,6 +152,14 @@ Examples:
         );
         retentionScheduler.start();
 
+        // Keep Linear and Jira sync rules current while this process is up (spec 122).
+        const trackerSyncWatcher = createTrackerSyncWatcher(
+          (now) =>
+            container.resolve<SyncTrackerRulesUseCase>('SyncTrackerRulesUseCase').runDue(now),
+          (error) => process.stderr.write(`[ui] tracker sync failed: ${String(error)}\n`)
+        );
+        trackerSyncWatcher.start();
+
         // Start auto-archive watcher for completed features
         initializeAutoArchiveWatcher(featureRepo);
         getAutoArchiveWatcher().start();
@@ -228,6 +238,7 @@ Examples:
           getNotificationWatcher().stop();
           getAutoArchiveWatcher().stop();
           retentionScheduler.stop();
+          trackerSyncWatcher.stop();
           getStaleGoodFirstIssueWatcher().stop();
           getMonthlyRecapWatcher().stop();
           void whatsappService.stop();

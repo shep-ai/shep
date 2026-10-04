@@ -16,7 +16,8 @@ import { SpaceResolutionSource } from '@shepai/core/domain/generated/output';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { assignRepository, unassignRepository } from '@/app/actions/manage-spaces';
-import { SPACE_SELECT_CLASS, type RunSpaceAction } from './spaces-types';
+import { NATIVE_SELECT_CLASS } from '@/lib/native-select-class';
+import type { RunSpaceAction } from './spaces-types';
 
 export interface RepositoryPlacementsProps {
   repositories: RepositoryPlacement[];
@@ -117,7 +118,7 @@ export function RepositoryPlacements({ repositories, spaces, run }: RepositoryPl
                             )
                           }
                           aria-label={t('spaces.repositories.pin')}
-                          className={SPACE_SELECT_CLASS}
+                          className={NATIVE_SELECT_CLASS}
                           data-testid="repository-pin"
                         >
                           <option value="" disabled>

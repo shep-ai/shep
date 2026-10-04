@@ -445,7 +445,8 @@
     "plugins": "Plugins",
     "projectMemory": "Project Memory",
     "harness": "Harness",
-    "spaces": "Простори"
+    "spaces": "Простори",
+    "trackers": "Підключення"
   },
   "sidebar": {
     "features": "Функції",
@@ -1374,6 +1375,60 @@
       "allowedAgents": "Дозволені агенти",
       "allowedAgentsHint": "Якщо нічого не вибрано, дозволено всі агенти.",
       "save": "Зберегти налаштування агентів"
+    }
+  },
+  "trackers": {
+    "title": "Підключення",
+    "subtitle": "Задачі Linear і Jira в проєктах shep, за бажання в обидва боки.",
+    "syncAll": "Синхронізувати",
+    "empty": "Підключень ще немає. Додайте вище ключ Linear або токен Jira.",
+    "add": {
+      "title": "Додати підключення",
+      "provider": "Трекер",
+      "name": "Назва",
+      "space": "Простір",
+      "site": "Сайт Jira",
+      "email": "Email облікового запису",
+      "linearSecret": "API-ключ Linear",
+      "jiraSecret": "API-токен Jira",
+      "submit": "Підключити"
+    },
+    "connection": {
+      "connected": "Підключено",
+      "error": "Помилка",
+      "account": "як {{account}}",
+      "space": "простір {{space}}",
+      "test": "Перевірити",
+      "remove": "Видалити підключення",
+      "removeTitle": "Видалити {{name}}?",
+      "removeDescription": "Його правила зупиняються й видаляються. Уже синхронізовані задачі залишаються в проєктах.",
+      "cancel": "Скасувати"
+    },
+    "rules": {
+      "title": "Правила синхронізації",
+      "empty": "Правил ще немає. Додайте правило, щоб імпортувати задачі.",
+      "noProjects": "Спершу створіть проєкт: правила записують задачі в проєкт.",
+      "scope": "Ключ команди Linear або JQL Jira",
+      "project": "Проєкт",
+      "twoWay": "В обидва боки",
+      "import": "Імпорт",
+      "every": "кожні",
+      "minutes": "хв",
+      "everyShort": "кожні {{minutes}} хв",
+      "paused": "Призупинено",
+      "summary": "створено {{created}}, оновлено {{updated}}, надіслано {{pushed}}, конфліктів {{conflicts}}, помилок {{failed}}",
+      "never": "Ще не запускалося",
+      "add": "Додати правило",
+      "pause": "Призупинити",
+      "resume": "Відновити",
+      "runNow": "Запустити зараз",
+      "remove": "Видалити правило"
+    },
+    "errors": {
+      "actionFailed": "Не вдалося зберегти зміну. Спробуйте ще раз."
+    },
+    "badge": {
+      "open": "Відкрити {{key}} у трекері"
     }
   }
 }

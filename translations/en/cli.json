@@ -1219,6 +1219,91 @@
         "removes": "Removes",
         "success": "Agent settings for {{name}} saved"
       }
+    },
+    "connection": {
+      "description": "Connect Linear and Jira accounts that shep keeps in sync",
+      "failed": "Connection command failed",
+      "connectionArg": "Connection slug or id",
+      "add": {
+        "description": "Connect a Linear or Jira account; the key is tested before it is saved",
+        "providerArg": "linear or jira",
+        "nameOption": "Display name",
+        "spaceOption": "Space the connection belongs to (default space if omitted)",
+        "siteOption": "Jira site URL, for example https://acme.atlassian.net",
+        "emailOption": "Jira account email the token belongs to",
+        "secretEnvOption": "Read the API key or token from this environment variable instead of prompting",
+        "linearPrompt": "Linear API key",
+        "jiraPrompt": "Jira API token",
+        "badProvider": "\"{{provider}}\" is not a tracker; use linear or jira",
+        "emptyEnv": "The environment variable {{variable}} is empty or not set",
+        "success": "Connected {{name}} ({{slug}}) as {{account}}"
+      },
+      "ls": {
+        "description": "List tracker connections",
+        "title": "Tracker connections",
+        "nameColumn": "Name",
+        "slugColumn": "Slug",
+        "providerColumn": "Tracker",
+        "accountColumn": "Account",
+        "statusColumn": "Status",
+        "empty": "No connections yet. Add one with shep connection add."
+      },
+      "test": {
+        "description": "Check a connection's credentials again",
+        "success": "{{name}} works ({{account}})"
+      },
+      "rm": {
+        "description": "Remove a connection and its sync rules; synced work items stay",
+        "success": "Connection {{ref}} removed"
+      }
+    },
+    "sync": {
+      "description": "Keep Linear teams and Jira queries in shep projects",
+      "failed": "Sync command failed",
+      "connectionArg": "Connection slug or id",
+      "ruleArg": "Sync rule id (see shep sync rule ls)",
+      "summary": "{{created}} created, {{updated}} updated, {{pushed}} pushed, {{conflicts}} conflicts, {{failed}} failed",
+      "rule": {
+        "description": "Manage sync rules",
+        "add": {
+          "description": "Keep a Linear team or Jira JQL query in a shep project",
+          "projectOption": "shep project slug or id",
+          "scopeOption": "Linear team key (ENG) or Jira JQL query",
+          "twoWayOption": "Also push shep changes back to the tracker",
+          "everyOption": "Minutes between automatic runs (default 15)",
+          "badEvery": "\"{{value}}\" is not a whole number of minutes",
+          "success": "Sync rule {{id}} added for {{scope}}"
+        },
+        "ls": {
+          "description": "List sync rules with their last run",
+          "title": "Sync rules",
+          "idColumn": "Id",
+          "fromColumn": "From",
+          "intoColumn": "Into",
+          "modeColumn": "Mode",
+          "lastRunColumn": "Last run",
+          "never": "never ran",
+          "off": "(off)",
+          "empty": "No sync rules yet. Add one with shep sync rule add."
+        },
+        "enable": {
+          "description": "Let the daemon run a rule",
+          "success": "Sync rule {{id}} enabled"
+        },
+        "disable": {
+          "description": "Stop the daemon running a rule",
+          "success": "Sync rule {{id}} disabled"
+        },
+        "rm": {
+          "description": "Remove a sync rule; synced work items stay",
+          "success": "Sync rule {{id}} removed"
+        }
+      },
+      "run": {
+        "description": "Run one sync rule, or every enabled rule, now",
+        "nothing": "No enabled sync rules",
+        "conflictsNote": "{{count}} field(s) changed on both sides; the tracker's value was kept"
+      }
     }
   },
   "ui": {

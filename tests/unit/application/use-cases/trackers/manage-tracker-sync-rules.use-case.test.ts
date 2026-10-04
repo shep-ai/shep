@@ -120,7 +120,13 @@ describe('ManageTrackerSyncRulesUseCase', () => {
 
     expect(await useCase.list('linear')).toEqual({
       ok: true,
-      rules: [expect.objectContaining({ id })],
+      rules: [
+        {
+          rule: expect.objectContaining({ id }),
+          connection: { name: 'linear', slug: 'linear', provider: TrackerProvider.Linear },
+          project: { name: 'Payments', slug: 'pay' },
+        },
+      ],
     });
     expect(await useCase.list('jira')).toEqual({ ok: true, rules: [] });
     await useCase.setEnabled(id, false);

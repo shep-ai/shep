@@ -1219,6 +1219,91 @@
         "removes": "Elimina",
         "success": "Ajustes de agentes de {{name}} guardados"
       }
+    },
+    "connection": {
+      "description": "Conecta cuentas de Linear y Jira que shep mantiene sincronizadas",
+      "failed": "El comando de conexión falló",
+      "connectionArg": "Slug o id de la conexión",
+      "add": {
+        "description": "Conecta una cuenta de Linear o Jira; la clave se prueba antes de guardarla",
+        "providerArg": "linear o jira",
+        "nameOption": "Nombre visible",
+        "spaceOption": "Espacio de la conexión (el predeterminado si se omite)",
+        "siteOption": "URL del sitio de Jira, por ejemplo https://acme.atlassian.net",
+        "emailOption": "Correo de la cuenta de Jira del token",
+        "secretEnvOption": "Leer la clave o el token de esta variable de entorno en lugar de preguntar",
+        "linearPrompt": "Clave de API de Linear",
+        "jiraPrompt": "Token de API de Jira",
+        "badProvider": "\"{{provider}}\" no es un gestor; usa linear o jira",
+        "emptyEnv": "La variable de entorno {{variable}} está vacía o no existe",
+        "success": "{{name}} ({{slug}}) conectado como {{account}}"
+      },
+      "ls": {
+        "description": "Listar conexiones",
+        "title": "Conexiones de gestores",
+        "nameColumn": "Nombre",
+        "slugColumn": "Slug",
+        "providerColumn": "Gestor",
+        "accountColumn": "Cuenta",
+        "statusColumn": "Estado",
+        "empty": "Aún no hay conexiones. Añade una con shep connection add."
+      },
+      "test": {
+        "description": "Volver a comprobar las credenciales de una conexión",
+        "success": "{{name}} funciona ({{account}})"
+      },
+      "rm": {
+        "description": "Eliminar una conexión y sus reglas; los elementos sincronizados se conservan",
+        "success": "Conexión {{ref}} eliminada"
+      }
+    },
+    "sync": {
+      "description": "Mantener equipos de Linear y consultas de Jira en proyectos de shep",
+      "failed": "El comando de sincronización falló",
+      "connectionArg": "Slug o id de la conexión",
+      "ruleArg": "Id de la regla (ver shep sync rule ls)",
+      "summary": "{{created}} creados, {{updated}} actualizados, {{pushed}} enviados, {{conflicts}} conflictos, {{failed}} fallidos",
+      "rule": {
+        "description": "Gestionar reglas de sincronización",
+        "add": {
+          "description": "Mantener un equipo de Linear o una consulta JQL de Jira en un proyecto",
+          "projectOption": "Slug o id del proyecto de shep",
+          "scopeOption": "Clave de equipo de Linear (ENG) o consulta JQL de Jira",
+          "twoWayOption": "Enviar también los cambios de shep al gestor",
+          "everyOption": "Minutos entre ejecuciones automáticas (15 por defecto)",
+          "badEvery": "\"{{value}}\" no es un número entero de minutos",
+          "success": "Regla {{id}} añadida para {{scope}}"
+        },
+        "ls": {
+          "description": "Listar reglas con su última ejecución",
+          "title": "Reglas de sincronización",
+          "idColumn": "Id",
+          "fromColumn": "Desde",
+          "intoColumn": "Hacia",
+          "modeColumn": "Modo",
+          "lastRunColumn": "Última ejecución",
+          "never": "nunca se ejecutó",
+          "off": "(desactivada)",
+          "empty": "Aún no hay reglas. Añade una con shep sync rule add."
+        },
+        "enable": {
+          "description": "Permitir que el daemon ejecute una regla",
+          "success": "Regla {{id}} activada"
+        },
+        "disable": {
+          "description": "Impedir que el daemon ejecute una regla",
+          "success": "Regla {{id}} desactivada"
+        },
+        "rm": {
+          "description": "Eliminar una regla; los elementos sincronizados se conservan",
+          "success": "Regla {{id}} eliminada"
+        }
+      },
+      "run": {
+        "description": "Ejecutar ahora una regla o todas las activas",
+        "nothing": "No hay reglas activas",
+        "conflictsNote": "{{count}} campo(s) cambiaron en ambos lados; se conservó el valor del gestor"
+      }
     }
   },
   "ui": {

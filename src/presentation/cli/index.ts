@@ -72,6 +72,8 @@ import { createSecurityCommand } from './commands/security.command.js';
 import { createWorkflowCommand } from './commands/workflow/index.js';
 import { createPluginCommand } from './commands/plugin/index.js';
 import { createSpaceCommand } from './commands/space/index.js';
+import { createConnectionCommand } from './commands/connection/index.js';
+import { createSyncCommand } from './commands/sync/index.js';
 import { createMcpCommand } from './commands/mcp.command.js';
 import { createFleetCommand } from './commands/fleet/index.js';
 import { createLogsCommand } from './commands/logs/index.js';
@@ -198,6 +200,8 @@ async function bootstrap() {
     program.addCommand(createSecurityCommand());
     program.addCommand(createPluginCommand());
     program.addCommand(createSpaceCommand());
+    program.addCommand(createConnectionCommand());
+    program.addCommand(createSyncCommand());
     program.addCommand(createUpgradeCommand());
     program.addCommand(createWorkflowCommand());
     program.addCommand(createMcpCommand());

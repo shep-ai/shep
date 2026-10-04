@@ -188,6 +188,7 @@ const WEB_ROUTE_TOKENS: readonly string[] = [
   'RunTrackerSyncUseCase',
   'SyncTrackerRulesUseCase',
   'GetTrackerIssueLinkUseCase',
+  'GetTrackerOverviewUseCase',
 ] as const;
 
 /**

@@ -17,7 +17,7 @@ tasks:
     title: Tracker sync domain model in TypeSpec
     description: >
       Enums TrackerProvider, TrackerConnectionStatus, TrackerSyncDirection; entities TrackerConnection, TrackerSyncRule, TrackerIssueLink; value object ExternalIssue (provider-neutral issue snapshot).
-    state: Todo
+    state: Done
     dependencies: []
     acceptanceCriteria:
       - pnpm tsp:compile passes
@@ -35,7 +35,7 @@ tasks:
     title: Pure mapping and sync planner
     description: >
       domain/shared/tracker-sync.ts: Linear state type and Jira status category to StateGroup, tracker priorities to Priority, and planIssueSync(direction, snapshot, local, remote) returning fields to apply, fields to push and conflicts.
-    state: Todo
+    state: Done
     dependencies:
       - task-1
     acceptanceCriteria:
@@ -53,7 +53,7 @@ tasks:
     title: Migration 154 and repositories
     description: >
       tracker_connections (encrypted secret), tracker_sync_rules, tracker_issue_links; SQLite repositories and mappers; DI.
-    state: Todo
+    state: Done
     dependencies:
       - task-1
     acceptanceCriteria:
@@ -71,7 +71,7 @@ tasks:
     title: ADF converter
     description: >
       adfToMarkdown covering paragraphs, headings, nested and ordered lists, task lists, code, quotes, panels, rules, tables, mentions, links, emoji, status, dates and media; markdownToAdf for paragraphs, headings, lists, code and links.
-    state: Todo
+    state: Done
     dependencies: []
     acceptanceCriteria:
       - Fixture tests for every node type
@@ -88,7 +88,7 @@ tasks:
     title: Tracker client port and Linear client
     description: >
       ITrackerClient (test, searchUpdatedSince with pagination, listStatusTargets, updateIssue) and ITrackerClientFactory; LinearTrackerClient over injected fetch with rate-limit errors.
-    state: Todo
+    state: Done
     dependencies:
       - task-1
     acceptanceCriteria:
@@ -106,7 +106,7 @@ tasks:
     title: Jira client
     description: >
       JiraTrackerClient: /search/jql with nextPageToken, updated >= cursor, transitions for status, PUT for summary and description, 429 with Retry-After.
-    state: Todo
+    state: Done
     dependencies:
       - task-4
       - task-5
@@ -125,7 +125,7 @@ tasks:
     title: Manage connections and rules
     description: >
       ManageTrackerConnectionsUseCase (create tests first, list, test, remove) and ManageTrackerSyncRulesUseCase (create, list, enable, remove).
-    state: Todo
+    state: Done
     dependencies:
       - task-3
       - task-5
@@ -144,7 +144,7 @@ tasks:
     title: Run sync
     description: >
       RunTrackerSyncUseCase runs one rule: fetch since cursor, create or update work items through the planner, push local changes for two-way rules, record counts, cursor and error; SyncDueTrackerRulesUseCase runs every due rule.
-    state: Todo
+    state: Done
     dependencies:
       - task-2
       - task-6
@@ -164,7 +164,7 @@ tasks:
     title: Daemon watcher
     description: >
       TrackerSyncWatcher polls every minute for due rules with an in-flight guard; started and stopped by the daemon.
-    state: Todo
+    state: Done
     dependencies:
       - task-8
     acceptanceCriteria:
@@ -182,7 +182,7 @@ tasks:
     title: shep connection and shep sync CLI
     description: >
       connection add (secret prompted, never an argument), ls, test, rm; sync rule add, ls, enable, disable, rm; sync run [rule].
-    state: Todo
+    state: Done
     dependencies:
       - task-8
     acceptanceCriteria:
@@ -200,7 +200,7 @@ tasks:
     title: Connections web page
     description: >
       /connections with connections, rules and Sync now; server actions with Storybook mocks; sidebar entry; 9 locales; stories.
-    state: Todo
+    state: Done
     dependencies:
       - task-8
     acceptanceCriteria:
@@ -218,7 +218,7 @@ tasks:
     title: Synced work item shows its issue
     description: >
       The work item page shows the tracker key linking to the issue.
-    state: Todo
+    state: Done
     dependencies:
       - task-8
     acceptanceCriteria:
@@ -236,7 +236,7 @@ tasks:
     title: Integration test through the real container
     description: >
       Two rules, faked trackers, real SQLite: import, re-run, remote edit, local edit pushed, conflict.
-    state: Todo
+    state: Done
     dependencies:
       - task-8
     acceptanceCriteria:
@@ -254,7 +254,7 @@ tasks:
     title: Docs
     description: >
       Guide, CLI reference and architecture note.
-    state: Todo
+    state: Done
     dependencies:
       - task-10
       - task-11
@@ -273,7 +273,7 @@ tasks:
     title: Full local verification
     description: >
       lint, format, typecheck, generate, unit, integration, build, build:web, build:storybook, check:stories.
-    state: Todo
+    state: Done
     dependencies:
       - task-14
     acceptanceCriteria:

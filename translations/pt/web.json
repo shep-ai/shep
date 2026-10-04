@@ -445,7 +445,8 @@
     "plugins": "Plugins",
     "projectMemory": "Project Memory",
     "harness": "Harness",
-    "spaces": "Espaços"
+    "spaces": "Espaços",
+    "trackers": "Ligações"
   },
   "sidebar": {
     "features": "Recursos",
@@ -1374,6 +1375,60 @@
       "allowedAgents": "Agentes permitidos",
       "allowedAgentsHint": "Sem seleção, qualquer agente é permitido.",
       "save": "Guardar definições de agentes"
+    }
+  },
+  "trackers": {
+    "title": "Ligações",
+    "subtitle": "Issues do Linear e do Jira em projetos shep, nos dois sentidos se quiser.",
+    "syncAll": "Sincronizar agora",
+    "empty": "Ainda não há ligações. Adicione acima a sua chave do Linear ou token do Jira.",
+    "add": {
+      "title": "Adicionar uma ligação",
+      "provider": "Gestor",
+      "name": "Nome",
+      "space": "Espaço",
+      "site": "Site do Jira",
+      "email": "Email da conta",
+      "linearSecret": "Chave de API do Linear",
+      "jiraSecret": "Token de API do Jira",
+      "submit": "Ligar"
+    },
+    "connection": {
+      "connected": "Ligado",
+      "error": "Erro",
+      "account": "como {{account}}",
+      "space": "espaço {{space}}",
+      "test": "Testar",
+      "remove": "Remover ligação",
+      "removeTitle": "Remover {{name}}?",
+      "removeDescription": "As regras param e são removidas. Os itens já sincronizados ficam nos projetos.",
+      "cancel": "Cancelar"
+    },
+    "rules": {
+      "title": "Regras de sincronização",
+      "empty": "Ainda não há regras. Adicione uma para importar issues.",
+      "noProjects": "Crie primeiro um projeto; as regras escrevem issues num projeto.",
+      "scope": "Chave de equipa Linear ou JQL do Jira",
+      "project": "Projeto",
+      "twoWay": "Bidirecional",
+      "import": "Importar",
+      "every": "a cada",
+      "minutes": "min",
+      "everyShort": "a cada {{minutes}} min",
+      "paused": "Em pausa",
+      "summary": "{{created}} criados, {{updated}} atualizados, {{pushed}} enviados, {{conflicts}} conflitos, {{failed}} falhados",
+      "never": "Ainda não executada",
+      "add": "Adicionar regra",
+      "pause": "Pausar",
+      "resume": "Retomar",
+      "runNow": "Executar agora",
+      "remove": "Remover regra"
+    },
+    "errors": {
+      "actionFailed": "Não foi possível guardar a alteração. Tente novamente."
+    },
+    "badge": {
+      "open": "Abrir {{key}} no gestor"
     }
   }
 }

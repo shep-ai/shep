@@ -445,7 +445,8 @@
     "plugins": "Plugins",
     "projectMemory": "Project Memory",
     "harness": "Harness",
-    "spaces": "المساحات"
+    "spaces": "المساحات",
+    "trackers": "الاتصالات"
   },
   "sidebar": {
     "features": "الميزات",
@@ -1374,6 +1375,60 @@
       "allowedAgents": "الوكلاء المسموح بهم",
       "allowedAgentsHint": "عدم التحديد يسمح بكل الوكلاء.",
       "save": "حفظ إعدادات الوكلاء"
+    }
+  },
+  "trackers": {
+    "title": "الاتصالات",
+    "subtitle": "مهام Linear وJira في مشاريع shep، وفي الاتجاهين إن أردت.",
+    "syncAll": "مزامنة الآن",
+    "empty": "لا توجد اتصالات بعد. أضف أعلاه مفتاح Linear أو رمز Jira.",
+    "add": {
+      "title": "إضافة اتصال",
+      "provider": "المتتبع",
+      "name": "الاسم",
+      "space": "المساحة",
+      "site": "موقع Jira",
+      "email": "بريد الحساب",
+      "linearSecret": "مفتاح Linear",
+      "jiraSecret": "رمز Jira",
+      "submit": "ربط"
+    },
+    "connection": {
+      "connected": "متصل",
+      "error": "خطأ",
+      "account": "باسم {{account}}",
+      "space": "المساحة {{space}}",
+      "test": "اختبار",
+      "remove": "إزالة الاتصال",
+      "removeTitle": "إزالة {{name}}؟",
+      "removeDescription": "تتوقف قواعده وتُزال. تبقى عناصر العمل المتزامنة في مشاريعها.",
+      "cancel": "إلغاء"
+    },
+    "rules": {
+      "title": "قواعد المزامنة",
+      "empty": "لا توجد قواعد بعد. أضف قاعدة لاستيراد المهام.",
+      "noProjects": "أنشئ مشروعًا أولًا؛ فالقواعد تكتب المهام في مشروع.",
+      "scope": "مفتاح فريق Linear أو JQL من Jira",
+      "project": "المشروع",
+      "twoWay": "باتجاهين",
+      "import": "استيراد",
+      "every": "كل",
+      "minutes": "دقيقة",
+      "everyShort": "كل {{minutes}} دقيقة",
+      "paused": "متوقفة مؤقتًا",
+      "summary": "{{created}} أُنشئت، {{updated}} حُدّثت، {{pushed}} أُرسلت، {{conflicts}} تعارضات، {{failed}} فشلت",
+      "never": "لم يُشغَّل بعد",
+      "add": "إضافة قاعدة",
+      "pause": "إيقاف مؤقت",
+      "resume": "استئناف",
+      "runNow": "تشغيل الآن",
+      "remove": "إزالة القاعدة"
+    },
+    "errors": {
+      "actionFailed": "تعذر حفظ التغيير. حاول مرة أخرى."
+    },
+    "badge": {
+      "open": "فتح {{key}} في المتتبع"
     }
   }
 }

@@ -1,3 +1,5 @@
+import { IntervalTask } from '../scheduling/interval-task.js';
+
 /**
  * Retention Scheduler
  *
@@ -17,44 +19,13 @@
  */
 export const RETENTION_CHECK_INTERVAL_MS = 60 * 60 * 1000;
 
-export class RetentionScheduler {
-  private timer: ReturnType<typeof setInterval> | null = null;
-  private inFlight = false;
-
+/** Re-runs data retention every {@link RETENTION_CHECK_INTERVAL_MS}. */
+export class RetentionScheduler extends IntervalTask {
   constructor(
-    private readonly prune: () => Promise<unknown>,
-    private readonly onError: (error: unknown) => void = () => undefined,
-    private readonly intervalMs: number = RETENTION_CHECK_INTERVAL_MS
-  ) {}
-
-  isRunning(): boolean {
-    return this.timer !== null;
-  }
-
-  /** Schedule ticks. The first one fires after one interval, not now. */
-  start(): void {
-    if (this.timer !== null) return;
-    this.timer = setInterval(() => void this.tick(), this.intervalMs);
-    // Never hold the process open just to prune history.
-    this.timer.unref?.();
-  }
-
-  stop(): void {
-    if (this.timer === null) return;
-    clearInterval(this.timer);
-    this.timer = null;
-  }
-
-  private async tick(): Promise<void> {
-    // A slow prune (a year of backlog) must not stack up behind itself.
-    if (this.inFlight) return;
-    this.inFlight = true;
-    try {
-      await this.prune();
-    } catch (error) {
-      this.onError(error);
-    } finally {
-      this.inFlight = false;
-    }
+    prune: () => Promise<unknown>,
+    onError: (error: unknown) => void = () => undefined,
+    intervalMs: number = RETENTION_CHECK_INTERVAL_MS
+  ) {
+    super(prune, intervalMs, onError);
   }
 }

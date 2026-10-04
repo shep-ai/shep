@@ -59,6 +59,8 @@ import type { IGitHubRepositoryService } from '@/application/ports/output/servic
 import type { IDesktopNotifier } from '@/application/ports/output/services/i-desktop-notifier.js';
 import type { IDeploymentService } from '@/application/ports/output/services/deployment-service.interface.js';
 import { RetentionScheduler } from '@/infrastructure/services/maintenance/retention-scheduler.js';
+import { createTrackerSyncWatcher } from '@/infrastructure/services/trackers/tracker-sync-watcher.js';
+import type { SyncTrackerRulesUseCase } from '@/application/use-cases/trackers/sync-tracker-rules.use-case.js';
 import { PruneRetainedDataUseCase } from '@/application/use-cases/maintenance/prune-retained-data.use-case.js';
 import { DaemonLogRotator } from '@/infrastructure/services/logging/daemon-log-rotator.js';
 import { getDaemonLogPath } from '@/infrastructure/services/filesystem/shep-directory.service.js';
@@ -124,6 +126,14 @@ export function createServeCommand(): Command {
             process.stderr.write(`[_serve] data retention prune failed: ${String(error)}\n`)
         );
         retentionScheduler.start();
+
+        // Keep Linear and Jira sync rules current while this process is up (spec 122).
+        const trackerSyncWatcher = createTrackerSyncWatcher(
+          (now) =>
+            container.resolve<SyncTrackerRulesUseCase>('SyncTrackerRulesUseCase').runDue(now),
+          (error) => process.stderr.write(`[_serve] tracker sync failed: ${String(error)}\n`)
+        );
+        trackerSyncWatcher.start();
 
         // Start notification watcher
         const runRepo = container.resolve<IAgentRunRepository>('IAgentRunRepository');
@@ -198,6 +208,7 @@ export function createServeCommand(): Command {
           }
           daemonLogRotator.stop();
           retentionScheduler.stop();
+          trackerSyncWatcher.stop();
           getNotificationWatcher().stop();
           getAutoArchiveWatcher().stop();
           getStaleGoodFirstIssueWatcher().stop();

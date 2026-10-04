@@ -14,6 +14,7 @@ Guides for using Shep AI CLI effectively.
 | [langgraph-agents.md](./langgraph-agents.md)                         | LangGraph agent system guide            |
 | [custom-worktree-provisioning.md](./custom-worktree-provisioning.md) | Custom worktree create / setup commands |
 | [spaces.md](./spaces.md)                                             | Keep personal and work knowledge apart  |
+| [trackers.md](./trackers.md)                                         | Keep Linear and Jira in sync            |
 
 ## Quick Start
 

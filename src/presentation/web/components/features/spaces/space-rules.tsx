@@ -14,7 +14,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { addSpaceRule, removeSpaceRule } from '@/app/actions/manage-spaces';
-import { SPACE_SELECT_CLASS, type RunSpaceAction } from './spaces-types';
+import { NATIVE_SELECT_CLASS } from '@/lib/native-select-class';
+import type { RunSpaceAction } from './spaces-types';
 
 export interface SpaceRulesProps {
   space: Space;
@@ -87,7 +88,7 @@ export function SpaceRules({ space, rules, productLines, run }: SpaceRulesProps)
             value={line}
             onChange={(e) => setLine(e.target.value)}
             aria-label={t('spaces.rules.line')}
-            className={`${SPACE_SELECT_CLASS} h-7`}
+            className={`${NATIVE_SELECT_CLASS} h-7`}
             data-testid="add-rule-line"
           >
             <option value="">{t('spaces.rules.noLine')}</option>

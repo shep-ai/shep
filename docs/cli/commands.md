@@ -903,6 +903,28 @@ removed for them.
 
 ---
 
+## Connection and Sync Commands
+
+`shep connection` connects Linear and Jira accounts; `shep sync` keeps their issues in shep
+projects (spec 122). See the [tracker guide](../guides/trackers.md).
+
+| Command | Description |
+| ------- | ----------- |
+| `shep connection add <linear\|jira> --name <n>` | Connect an account (`--space`, Jira: `--site`, `--email`); the key is prompted, or read from `--secret-env VAR`, and tested before saving |
+| `shep connection ls` | Connections with account and status |
+| `shep connection test <connection>` | Re-check the stored credentials |
+| `shep connection rm <connection>` | Remove a connection and its rules; synced work items stay |
+| `shep sync rule add <connection> --project <p> --scope <s>` | Keep a Linear team key or Jira JQL in a project (`--two-way`, `--every <minutes>`, 5-1440, default 15) |
+| `shep sync rule ls [connection]` | Rules with mode, interval and last run |
+| `shep sync rule enable\|disable\|rm <rule>` | Pause, resume or remove a rule |
+| `shep sync run [rule]` | Run one rule, or every enabled rule, now; exits 1 if a run failed |
+
+The daemon runs enabled rules on their interval. Secrets are never accepted as arguments.
+
+**Source**: `src/presentation/cli/commands/connection/`, `src/presentation/cli/commands/sync/`
+
+---
+
 ## Scheduled Workflow Commands
 
 `shep workflow` manages scheduled workflows. Gated on the `scheduledWorkflows`

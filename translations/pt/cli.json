@@ -1219,6 +1219,91 @@
         "removes": "Remove",
         "success": "Definições de agentes de {{name}} guardadas"
       }
+    },
+    "connection": {
+      "description": "Ligar contas Linear e Jira que o shep mantém sincronizadas",
+      "failed": "O comando de ligação falhou",
+      "connectionArg": "Slug ou id da ligação",
+      "add": {
+        "description": "Ligar uma conta Linear ou Jira; a chave é testada antes de ser guardada",
+        "providerArg": "linear ou jira",
+        "nameOption": "Nome a apresentar",
+        "spaceOption": "Espaço da ligação (o predefinido se omitido)",
+        "siteOption": "URL do site Jira, por exemplo https://acme.atlassian.net",
+        "emailOption": "Email da conta Jira do token",
+        "secretEnvOption": "Ler a chave ou o token desta variável de ambiente em vez de perguntar",
+        "linearPrompt": "Chave de API do Linear",
+        "jiraPrompt": "Token de API do Jira",
+        "badProvider": "\"{{provider}}\" não é um gestor; use linear ou jira",
+        "emptyEnv": "A variável de ambiente {{variable}} está vazia ou não definida",
+        "success": "{{name}} ({{slug}}) ligado como {{account}}"
+      },
+      "ls": {
+        "description": "Listar ligações",
+        "title": "Ligações a gestores",
+        "nameColumn": "Nome",
+        "slugColumn": "Slug",
+        "providerColumn": "Gestor",
+        "accountColumn": "Conta",
+        "statusColumn": "Estado",
+        "empty": "Ainda não há ligações. Adicione uma com shep connection add."
+      },
+      "test": {
+        "description": "Verificar de novo as credenciais de uma ligação",
+        "success": "{{name}} funciona ({{account}})"
+      },
+      "rm": {
+        "description": "Remover uma ligação e as suas regras; os itens sincronizados ficam",
+        "success": "Ligação {{ref}} removida"
+      }
+    },
+    "sync": {
+      "description": "Manter equipas Linear e consultas Jira em projetos shep",
+      "failed": "O comando de sincronização falhou",
+      "connectionArg": "Slug ou id da ligação",
+      "ruleArg": "Id da regra (ver shep sync rule ls)",
+      "summary": "{{created}} criados, {{updated}} atualizados, {{pushed}} enviados, {{conflicts}} conflitos, {{failed}} falhados",
+      "rule": {
+        "description": "Gerir regras de sincronização",
+        "add": {
+          "description": "Manter uma equipa Linear ou uma consulta JQL do Jira num projeto",
+          "projectOption": "Slug ou id do projeto shep",
+          "scopeOption": "Chave de equipa Linear (ENG) ou consulta JQL do Jira",
+          "twoWayOption": "Enviar também as alterações do shep para o gestor",
+          "everyOption": "Minutos entre execuções automáticas (15 por omissão)",
+          "badEvery": "\"{{value}}\" não é um número inteiro de minutos",
+          "success": "Regra {{id}} adicionada para {{scope}}"
+        },
+        "ls": {
+          "description": "Listar regras com a última execução",
+          "title": "Regras de sincronização",
+          "idColumn": "Id",
+          "fromColumn": "Origem",
+          "intoColumn": "Para",
+          "modeColumn": "Modo",
+          "lastRunColumn": "Última execução",
+          "never": "nunca executada",
+          "off": "(desativada)",
+          "empty": "Ainda não há regras. Adicione uma com shep sync rule add."
+        },
+        "enable": {
+          "description": "Deixar o daemon executar uma regra",
+          "success": "Regra {{id}} ativada"
+        },
+        "disable": {
+          "description": "Impedir o daemon de executar uma regra",
+          "success": "Regra {{id}} desativada"
+        },
+        "rm": {
+          "description": "Remover uma regra; os itens sincronizados ficam",
+          "success": "Regra {{id}} removida"
+        }
+      },
+      "run": {
+        "description": "Executar agora uma regra ou todas as ativas",
+        "nothing": "Não há regras ativas",
+        "conflictsNote": "{{count}} campo(s) alterado(s) dos dois lados; manteve-se o valor do gestor"
+      }
     }
   },
   "ui": {

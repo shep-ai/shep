@@ -445,7 +445,8 @@
     "plugins": "Plugins",
     "projectMemory": "Project Memory",
     "harness": "Harness",
-    "spaces": "מרחבים"
+    "spaces": "מרחבים",
+    "trackers": "חיבורים"
   },
   "sidebar": {
     "features": "פיצ'רים",
@@ -1374,6 +1375,60 @@
       "allowedAgents": "סוכנים מותרים",
       "allowedAgentsHint": "ללא בחירה, כל הסוכנים מותרים.",
       "save": "שמירת הגדרות הסוכנים"
+    }
+  },
+  "trackers": {
+    "title": "חיבורים",
+    "subtitle": "משימות Linear ו-Jira בפרויקטים של shep, בשני הכיוונים אם תרצו.",
+    "syncAll": "סנכרון עכשיו",
+    "empty": "אין עדיין חיבורים. הוסיפו למעלה מפתח Linear או אסימון Jira.",
+    "add": {
+      "title": "הוספת חיבור",
+      "provider": "מערכת",
+      "name": "שם",
+      "space": "מרחב",
+      "site": "אתר Jira",
+      "email": "דוא\"ל החשבון",
+      "linearSecret": "מפתח API של Linear",
+      "jiraSecret": "אסימון API של Jira",
+      "submit": "חיבור"
+    },
+    "connection": {
+      "connected": "מחובר",
+      "error": "שגיאה",
+      "account": "בתור {{account}}",
+      "space": "מרחב {{space}}",
+      "test": "בדיקה",
+      "remove": "הסרת החיבור",
+      "removeTitle": "להסיר את {{name}}?",
+      "removeDescription": "כללי הסנכרון שלו ייעצרו ויוסרו. פריטי עבודה שכבר סונכרנו יישארו בפרויקטים.",
+      "cancel": "ביטול"
+    },
+    "rules": {
+      "title": "כללי סנכרון",
+      "empty": "אין עדיין כללים. הוסיפו כלל כדי לייבא משימות.",
+      "noProjects": "צרו קודם פרויקט; כללים כותבים משימות לתוך פרויקט.",
+      "scope": "מפתח צוות Linear או JQL של Jira",
+      "project": "פרויקט",
+      "twoWay": "דו-כיווני",
+      "import": "ייבוא",
+      "every": "כל",
+      "minutes": "דק׳",
+      "everyShort": "כל {{minutes}} דק׳",
+      "paused": "מושהה",
+      "summary": "{{created}} נוצרו, {{updated}} עודכנו, {{pushed}} נשלחו, {{conflicts}} התנגשויות, {{failed}} נכשלו",
+      "never": "טרם הורץ",
+      "add": "הוספת כלל",
+      "pause": "השהיה",
+      "resume": "המשך",
+      "runNow": "הרצה עכשיו",
+      "remove": "הסרת כלל"
+    },
+    "errors": {
+      "actionFailed": "לא ניתן היה לשמור את השינוי. נסו שוב."
+    },
+    "badge": {
+      "open": "פתיחת {{key}} במערכת המעקב"
     }
   }
 }

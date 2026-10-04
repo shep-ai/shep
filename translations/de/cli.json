@@ -1219,6 +1219,91 @@
         "removes": "Entfernt",
         "success": "Agent-Einstellungen für {{name}} gespeichert"
       }
+    },
+    "connection": {
+      "description": "Linear- und Jira-Konten verbinden, die shep synchron hält",
+      "failed": "Verbindungsbefehl fehlgeschlagen",
+      "connectionArg": "Slug oder ID der Verbindung",
+      "add": {
+        "description": "Linear- oder Jira-Konto verbinden; der Schlüssel wird vor dem Speichern geprüft",
+        "providerArg": "linear oder jira",
+        "nameOption": "Anzeigename",
+        "spaceOption": "Space der Verbindung (sonst der Standard-Space)",
+        "siteOption": "Jira-Site-URL, z. B. https://acme.atlassian.net",
+        "emailOption": "Jira-Konto-E-Mail, zu der das Token gehört",
+        "secretEnvOption": "API-Schlüssel oder Token aus dieser Umgebungsvariable lesen statt nachzufragen",
+        "linearPrompt": "Linear-API-Schlüssel",
+        "jiraPrompt": "Jira-API-Token",
+        "badProvider": "\"{{provider}}\" ist kein Tracker; linear oder jira verwenden",
+        "emptyEnv": "Die Umgebungsvariable {{variable}} ist leer oder nicht gesetzt",
+        "success": "{{name}} ({{slug}}) als {{account}} verbunden"
+      },
+      "ls": {
+        "description": "Tracker-Verbindungen auflisten",
+        "title": "Tracker-Verbindungen",
+        "nameColumn": "Name",
+        "slugColumn": "Slug",
+        "providerColumn": "Tracker",
+        "accountColumn": "Konto",
+        "statusColumn": "Status",
+        "empty": "Noch keine Verbindungen. Mit shep connection add hinzufügen."
+      },
+      "test": {
+        "description": "Zugangsdaten einer Verbindung erneut prüfen",
+        "success": "{{name}} funktioniert ({{account}})"
+      },
+      "rm": {
+        "description": "Verbindung und ihre Sync-Regeln entfernen; synchronisierte Arbeitselemente bleiben",
+        "success": "Verbindung {{ref}} entfernt"
+      }
+    },
+    "sync": {
+      "description": "Linear-Teams und Jira-Abfragen in shep-Projekten aktuell halten",
+      "failed": "Sync-Befehl fehlgeschlagen",
+      "connectionArg": "Slug oder ID der Verbindung",
+      "ruleArg": "Sync-Regel-ID (siehe shep sync rule ls)",
+      "summary": "{{created}} erstellt, {{updated}} aktualisiert, {{pushed}} übertragen, {{conflicts}} Konflikte, {{failed}} fehlgeschlagen",
+      "rule": {
+        "description": "Sync-Regeln verwalten",
+        "add": {
+          "description": "Ein Linear-Team oder eine Jira-JQL-Abfrage in einem shep-Projekt halten",
+          "projectOption": "Slug oder ID des shep-Projekts",
+          "scopeOption": "Linear-Team-Key (ENG) oder Jira-JQL-Abfrage",
+          "twoWayOption": "Änderungen aus shep auch an den Tracker zurückgeben",
+          "everyOption": "Minuten zwischen automatischen Läufen (Standard 15)",
+          "badEvery": "\"{{value}}\" ist keine ganze Minutenzahl",
+          "success": "Sync-Regel {{id}} für {{scope}} hinzugefügt"
+        },
+        "ls": {
+          "description": "Sync-Regeln mit dem letzten Lauf auflisten",
+          "title": "Sync-Regeln",
+          "idColumn": "ID",
+          "fromColumn": "Von",
+          "intoColumn": "Nach",
+          "modeColumn": "Modus",
+          "lastRunColumn": "Letzter Lauf",
+          "never": "nie gelaufen",
+          "off": "(aus)",
+          "empty": "Noch keine Sync-Regeln. Mit shep sync rule add hinzufügen."
+        },
+        "enable": {
+          "description": "Den Daemon eine Regel ausführen lassen",
+          "success": "Sync-Regel {{id}} aktiviert"
+        },
+        "disable": {
+          "description": "Den Daemon eine Regel nicht mehr ausführen lassen",
+          "success": "Sync-Regel {{id}} deaktiviert"
+        },
+        "rm": {
+          "description": "Sync-Regel entfernen; synchronisierte Arbeitselemente bleiben",
+          "success": "Sync-Regel {{id}} entfernt"
+        }
+      },
+      "run": {
+        "description": "Eine Sync-Regel oder alle aktiven jetzt ausführen",
+        "nothing": "Keine aktiven Sync-Regeln",
+        "conflictsNote": "{{count}} Feld(er) auf beiden Seiten geändert; der Wert des Trackers wurde behalten"
+      }
     }
   },
   "ui": {

@@ -1219,6 +1219,91 @@
         "removes": "מסיר",
         "success": "הגדרות הסוכנים של {{name}} נשמרו"
       }
+    },
+    "connection": {
+      "description": "חיבור חשבונות Linear ו-Jira ש-shep שומר מסונכרנים",
+      "failed": "פקודת החיבור נכשלה",
+      "connectionArg": "slug או מזהה של החיבור",
+      "add": {
+        "description": "חיבור חשבון Linear או Jira; המפתח נבדק לפני השמירה",
+        "providerArg": "linear או jira",
+        "nameOption": "שם תצוגה",
+        "spaceOption": "המרחב שאליו שייך החיבור (ברירת המחדל אם לא צוין)",
+        "siteOption": "כתובת אתר Jira, למשל https://acme.atlassian.net",
+        "emailOption": "דוא\"ל חשבון ה-Jira שאליו שייך האסימון",
+        "secretEnvOption": "קריאת המפתח או האסימון ממשתנה סביבה זה במקום לשאול",
+        "linearPrompt": "מפתח API של Linear",
+        "jiraPrompt": "אסימון API של Jira",
+        "badProvider": "\"{{provider}}\" אינו מערכת מעקב; השתמשו ב-linear או jira",
+        "emptyEnv": "משתנה הסביבה {{variable}} ריק או לא מוגדר",
+        "success": "{{name}} ‏({{slug}}) חובר בתור {{account}}"
+      },
+      "ls": {
+        "description": "הצגת החיבורים",
+        "title": "חיבורי מערכות מעקב",
+        "nameColumn": "שם",
+        "slugColumn": "Slug",
+        "providerColumn": "מערכת",
+        "accountColumn": "חשבון",
+        "statusColumn": "סטטוס",
+        "empty": "אין עדיין חיבורים. הוסיפו עם shep connection add."
+      },
+      "test": {
+        "description": "בדיקה חוזרת של פרטי ההתחברות",
+        "success": "{{name}} פועל ({{account}})"
+      },
+      "rm": {
+        "description": "הסרת חיבור וכללי הסנכרון שלו; פריטי העבודה המסונכרנים נשארים",
+        "success": "החיבור {{ref}} הוסר"
+      }
+    },
+    "sync": {
+      "description": "שמירת צוותי Linear ושאילתות Jira בפרויקטים של shep",
+      "failed": "פקודת הסנכרון נכשלה",
+      "connectionArg": "slug או מזהה של החיבור",
+      "ruleArg": "מזהה כלל (ראו shep sync rule ls)",
+      "summary": "{{created}} נוצרו, {{updated}} עודכנו, {{pushed}} נשלחו, {{conflicts}} התנגשויות, {{failed}} נכשלו",
+      "rule": {
+        "description": "ניהול כללי סנכרון",
+        "add": {
+          "description": "שמירת צוות Linear או שאילתת JQL של Jira בפרויקט shep",
+          "projectOption": "slug או מזהה של פרויקט shep",
+          "scopeOption": "מפתח צוות Linear ‏(ENG) או שאילתת JQL של Jira",
+          "twoWayOption": "שליחת שינויים מ-shep גם חזרה למערכת המעקב",
+          "everyOption": "דקות בין הרצות אוטומטיות (ברירת מחדל 15)",
+          "badEvery": "\"{{value}}\" אינו מספר שלם של דקות",
+          "success": "כלל {{id}} נוסף עבור {{scope}}"
+        },
+        "ls": {
+          "description": "הצגת כללי סנכרון עם ההרצה האחרונה",
+          "title": "כללי סנכרון",
+          "idColumn": "מזהה",
+          "fromColumn": "מקור",
+          "intoColumn": "יעד",
+          "modeColumn": "מצב",
+          "lastRunColumn": "הרצה אחרונה",
+          "never": "לא הורץ",
+          "off": "(כבוי)",
+          "empty": "אין עדיין כללים. הוסיפו עם shep sync rule add."
+        },
+        "enable": {
+          "description": "לאפשר לשירות להריץ כלל",
+          "success": "כלל {{id}} הופעל"
+        },
+        "disable": {
+          "description": "מניעת הרצת כלל על ידי השירות",
+          "success": "כלל {{id}} הושבת"
+        },
+        "rm": {
+          "description": "הסרת כלל; פריטי העבודה המסונכרנים נשארים",
+          "success": "כלל {{id}} הוסר"
+        }
+      },
+      "run": {
+        "description": "הרצה עכשיו של כלל אחד או של כל הכללים הפעילים",
+        "nothing": "אין כללים פעילים",
+        "conflictsNote": "{{count}} שדות שונו בשני הצדדים; נשמר הערך של מערכת המעקב"
+      }
     }
   },
   "ui": {

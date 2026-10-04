@@ -25,6 +25,7 @@ import {
   ShieldAlert,
   Bot,
   GraduationCap,
+  ArrowLeftRight,
   Boxes,
   Brain,
   Users,
@@ -244,6 +245,12 @@ export function AppSidebar({
             label={t('navigation.spaces')}
             href="/spaces"
             active={pathname?.startsWith('/spaces') ?? false}
+          />
+          <SidebarNavItem
+            icon={ArrowLeftRight}
+            label={t('navigation.trackers')}
+            href="/connections"
+            active={pathname?.startsWith('/connections') ?? false}
           />
           <SidebarNavItem
             icon={Wrench}

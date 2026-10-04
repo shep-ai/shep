@@ -445,7 +445,8 @@
     "plugins": "Plugins",
     "projectMemory": "Project Memory",
     "harness": "Harness",
-    "spaces": "Spaces"
+    "spaces": "Spaces",
+    "trackers": "Verbindungen"
   },
   "sidebar": {
     "features": "Features",
@@ -1374,6 +1375,60 @@
       "allowedAgents": "Erlaubte Agents",
       "allowedAgentsHint": "Keine Auswahl erlaubt alle Agents.",
       "save": "Agent-Einstellungen speichern"
+    }
+  },
+  "trackers": {
+    "title": "Verbindungen",
+    "subtitle": "Linear- und Jira-Issues in shep-Projekten, auf Wunsch in beide Richtungen.",
+    "syncAll": "Jetzt synchronisieren",
+    "empty": "Noch keine Verbindungen. Füge oben deinen Linear-API-Schlüssel oder dein Jira-Token hinzu.",
+    "add": {
+      "title": "Verbindung hinzufügen",
+      "provider": "Tracker",
+      "name": "Name",
+      "space": "Space",
+      "site": "Jira-Site",
+      "email": "Konto-E-Mail",
+      "linearSecret": "Linear-API-Schlüssel",
+      "jiraSecret": "Jira-API-Token",
+      "submit": "Verbinden"
+    },
+    "connection": {
+      "connected": "Verbunden",
+      "error": "Fehler",
+      "account": "als {{account}}",
+      "space": "Space {{space}}",
+      "test": "Testen",
+      "remove": "Verbindung entfernen",
+      "removeTitle": "{{name}} entfernen?",
+      "removeDescription": "Ihre Sync-Regeln werden beendet und entfernt. Bereits synchronisierte Arbeitselemente bleiben in ihren Projekten.",
+      "cancel": "Abbrechen"
+    },
+    "rules": {
+      "title": "Sync-Regeln",
+      "empty": "Noch keine Regeln. Füge eine hinzu, um Issues zu importieren.",
+      "noProjects": "Lege zuerst ein Projekt an; Regeln schreiben Issues in ein Projekt.",
+      "scope": "Linear-Team-Key oder Jira-JQL",
+      "project": "Projekt",
+      "twoWay": "Beidseitig",
+      "import": "Import",
+      "every": "alle",
+      "minutes": "Min.",
+      "everyShort": "alle {{minutes}} Min.",
+      "paused": "Pausiert",
+      "summary": "{{created}} erstellt, {{updated}} aktualisiert, {{pushed}} übertragen, {{conflicts}} Konflikte, {{failed}} fehlgeschlagen",
+      "never": "Noch nicht gelaufen",
+      "add": "Regel hinzufügen",
+      "pause": "Pausieren",
+      "resume": "Fortsetzen",
+      "runNow": "Jetzt ausführen",
+      "remove": "Regel entfernen"
+    },
+    "errors": {
+      "actionFailed": "Die Änderung konnte nicht gespeichert werden. Bitte erneut versuchen."
+    },
+    "badge": {
+      "open": "{{key}} im Tracker öffnen"
     }
   }
 }

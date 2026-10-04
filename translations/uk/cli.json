@@ -1219,6 +1219,91 @@
         "removes": "Видаляє",
         "success": "Налаштування агентів {{name}} збережено"
       }
+    },
+    "connection": {
+      "description": "Підключити облікові записи Linear і Jira, які shep синхронізує",
+      "failed": "Команду підключення не виконано",
+      "connectionArg": "Слаг або id підключення",
+      "add": {
+        "description": "Підключити обліковий запис Linear або Jira; ключ перевіряється перед збереженням",
+        "providerArg": "linear або jira",
+        "nameOption": "Відображувана назва",
+        "spaceOption": "Простір підключення (типовий, якщо не вказано)",
+        "siteOption": "URL сайту Jira, наприклад https://acme.atlassian.net",
+        "emailOption": "Email облікового запису Jira, якому належить токен",
+        "secretEnvOption": "Читати ключ або токен із цієї змінної оточення замість запиту",
+        "linearPrompt": "API-ключ Linear",
+        "jiraPrompt": "API-токен Jira",
+        "badProvider": "«{{provider}}» — не трекер; використовуйте linear або jira",
+        "emptyEnv": "Змінна оточення {{variable}} порожня або не задана",
+        "success": "{{name}} ({{slug}}) підключено як {{account}}"
+      },
+      "ls": {
+        "description": "Список підключень",
+        "title": "Підключення трекерів",
+        "nameColumn": "Назва",
+        "slugColumn": "Слаг",
+        "providerColumn": "Трекер",
+        "accountColumn": "Обліковий запис",
+        "statusColumn": "Статус",
+        "empty": "Підключень ще немає. Додайте через shep connection add."
+      },
+      "test": {
+        "description": "Повторно перевірити облікові дані підключення",
+        "success": "{{name}} працює ({{account}})"
+      },
+      "rm": {
+        "description": "Видалити підключення та його правила; синхронізовані задачі залишаються",
+        "success": "Підключення {{ref}} видалено"
+      }
+    },
+    "sync": {
+      "description": "Синхронізувати команди Linear і запити Jira з проєктами shep",
+      "failed": "Команду синхронізації не виконано",
+      "connectionArg": "Слаг або id підключення",
+      "ruleArg": "Id правила (див. shep sync rule ls)",
+      "summary": "створено {{created}}, оновлено {{updated}}, надіслано {{pushed}}, конфліктів {{conflicts}}, помилок {{failed}}",
+      "rule": {
+        "description": "Керування правилами синхронізації",
+        "add": {
+          "description": "Синхронізувати команду Linear або JQL-запит Jira з проєктом shep",
+          "projectOption": "Слаг або id проєкту shep",
+          "scopeOption": "Ключ команди Linear (ENG) або JQL-запит Jira",
+          "twoWayOption": "Також надсилати зміни з shep у трекер",
+          "everyOption": "Хвилин між автоматичними запусками (типово 15)",
+          "badEvery": "«{{value}}» — не ціле число хвилин",
+          "success": "Правило {{id}} додано для {{scope}}"
+        },
+        "ls": {
+          "description": "Список правил з останнім запуском",
+          "title": "Правила синхронізації",
+          "idColumn": "Id",
+          "fromColumn": "Звідки",
+          "intoColumn": "Куди",
+          "modeColumn": "Режим",
+          "lastRunColumn": "Останній запуск",
+          "never": "не запускалося",
+          "off": "(вимк.)",
+          "empty": "Правил ще немає. Додайте через shep sync rule add."
+        },
+        "enable": {
+          "description": "Дозволити демону запускати правило",
+          "success": "Правило {{id}} увімкнено"
+        },
+        "disable": {
+          "description": "Заборонити демону запускати правило",
+          "success": "Правило {{id}} вимкнено"
+        },
+        "rm": {
+          "description": "Видалити правило; синхронізовані задачі залишаються",
+          "success": "Правило {{id}} видалено"
+        }
+      },
+      "run": {
+        "description": "Запустити зараз одне правило або всі увімкнені",
+        "nothing": "Немає увімкнених правил",
+        "conflictsNote": "{{count}} пол. змінено з обох боків; збережено значення трекера"
+      }
     }
   },
   "ui": {

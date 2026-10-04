@@ -445,7 +445,8 @@
     "plugins": "Plugins",
     "projectMemory": "Project Memory",
     "harness": "Harness",
-    "spaces": "Spaces"
+    "spaces": "Spaces",
+    "trackers": "Connections"
   },
   "sidebar": {
     "features": "Features",
@@ -1374,6 +1375,60 @@
       "allowedAgents": "Allowed agents",
       "allowedAgentsHint": "None selected allows every agent.",
       "save": "Save agent settings"
+    }
+  },
+  "trackers": {
+    "title": "Connections",
+    "subtitle": "Linear and Jira issues kept in shep projects, both ways if you want.",
+    "syncAll": "Sync now",
+    "empty": "No connections yet. Add your Linear API key or Jira token above.",
+    "add": {
+      "title": "Add a connection",
+      "provider": "Tracker",
+      "name": "Name",
+      "space": "Space",
+      "site": "Jira site",
+      "email": "Account email",
+      "linearSecret": "Linear API key",
+      "jiraSecret": "Jira API token",
+      "submit": "Connect"
+    },
+    "connection": {
+      "connected": "Connected",
+      "error": "Error",
+      "account": "as {{account}}",
+      "space": "space {{space}}",
+      "test": "Test",
+      "remove": "Remove connection",
+      "removeTitle": "Remove {{name}}?",
+      "removeDescription": "Its sync rules stop and are removed. Work items it already synced stay in their projects.",
+      "cancel": "Cancel"
+    },
+    "rules": {
+      "title": "Sync rules",
+      "empty": "No rules yet. Add one to start importing issues.",
+      "noProjects": "Create a project first; rules write issues into a project.",
+      "scope": "Linear team key or Jira JQL",
+      "project": "Project",
+      "twoWay": "Two-way",
+      "import": "Import",
+      "every": "every",
+      "minutes": "min",
+      "everyShort": "every {{minutes}} min",
+      "paused": "Paused",
+      "summary": "{{created}} created, {{updated}} updated, {{pushed}} pushed, {{conflicts}} conflicts, {{failed}} failed",
+      "never": "Not run yet",
+      "add": "Add rule",
+      "pause": "Pause",
+      "resume": "Resume",
+      "runNow": "Run now",
+      "remove": "Remove rule"
+    },
+    "errors": {
+      "actionFailed": "That change could not be saved. Try again."
+    },
+    "badge": {
+      "open": "Open {{key}} in the tracker"
     }
   }
 }

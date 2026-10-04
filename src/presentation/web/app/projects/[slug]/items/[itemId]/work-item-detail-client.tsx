@@ -18,6 +18,7 @@ import { WorkItemRelationsPanel } from '@/components/pm/relations/work-item-rela
 import { SubItemsSection } from '@/components/pm/sub-items/sub-items-section';
 import { AttachmentList } from '@/components/pm/attachments/attachment-list';
 import { TimeEntryList } from '@/components/pm/time-entries/time-entry-list';
+import { TrackerIssueBadge } from '@/components/features/trackers/tracker-issue-badge';
 
 const PRIORITY_COLORS: Record<string, string> = {
   Urgent: 'bg-red-500/10 text-red-700 dark:text-red-300',
@@ -36,6 +37,8 @@ export interface WorkItemDetailClientProps {
   attachments: PmAttachment[];
   timeEntries: TimeEntry[];
   totalMinutes: number;
+  /** The Linear or Jira issue this work item is synced with (spec 122). */
+  trackerLink?: { key: string; url: string };
   className?: string;
 }
 
@@ -48,6 +51,7 @@ export function WorkItemDetailClient({
   attachments,
   timeEntries,
   totalMinutes,
+  trackerLink,
   className,
 }: WorkItemDetailClientProps) {
   const router = useRouter();
@@ -87,6 +91,9 @@ export function WorkItemDetailClient({
               />
               {state.name}
             </Badge>
+          ) : null}
+          {trackerLink ? (
+            <TrackerIssueBadge issueKey={trackerLink.key} url={trackerLink.url} />
           ) : null}
           {workItem.priority && workItem.priority !== 'None' ? (
             <Badge

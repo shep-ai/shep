@@ -18,7 +18,8 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { configureSpaceAgent } from '@/app/actions/manage-spaces';
-import { SPACE_SELECT_CLASS, type RunSpaceAction } from './spaces-types';
+import { NATIVE_SELECT_CLASS } from '@/lib/native-select-class';
+import type { RunSpaceAction } from './spaces-types';
 
 type TextField =
   | 'claudeConfigDir'
@@ -156,7 +157,7 @@ export function SpaceAgentSettingsForm({ space, run }: SpaceAgentSettingsFormPro
               <select
                 value={bedrock}
                 onChange={(e) => setBedrock(e.target.value as BedrockChoice)}
-                className={`${SPACE_SELECT_CLASS} h-7`}
+                className={`${NATIVE_SELECT_CLASS} h-7`}
                 data-testid="agent-settings-bedrock"
               >
                 <option value="">{t('spaces.agent.bedrockInherit')}</option>

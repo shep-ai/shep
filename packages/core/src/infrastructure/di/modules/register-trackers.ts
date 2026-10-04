@@ -24,6 +24,7 @@ import { ManageTrackerSyncRulesUseCase } from '../../../application/use-cases/tr
 import { RunTrackerSyncUseCase } from '../../../application/use-cases/trackers/run-tracker-sync.use-case.js';
 import { SyncTrackerRulesUseCase } from '../../../application/use-cases/trackers/sync-tracker-rules.use-case.js';
 import { GetTrackerIssueLinkUseCase } from '../../../application/use-cases/trackers/get-tracker-issue-link.use-case.js';
+import { GetTrackerOverviewUseCase } from '../../../application/use-cases/trackers/get-tracker-overview.use-case.js';
 
 export function registerTrackers(container: DependencyContainer): void {
   // ─── Repositories ────────────────────────────────────────────────────────
@@ -52,6 +53,7 @@ export function registerTrackers(container: DependencyContainer): void {
   container.registerSingleton(RunTrackerSyncUseCase);
   container.registerSingleton(SyncTrackerRulesUseCase);
   container.registerSingleton(GetTrackerIssueLinkUseCase);
+  container.registerSingleton(GetTrackerOverviewUseCase);
 
   // ─── String-token aliases (for web server actions) ───────────────────────
   container.register('ManageTrackerConnectionsUseCase', {
@@ -68,5 +70,8 @@ export function registerTrackers(container: DependencyContainer): void {
   });
   container.register('GetTrackerIssueLinkUseCase', {
     useFactory: (c) => c.resolve(GetTrackerIssueLinkUseCase),
+  });
+  container.register('GetTrackerOverviewUseCase', {
+    useFactory: (c) => c.resolve(GetTrackerOverviewUseCase),
   });
 }

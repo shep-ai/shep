@@ -1219,6 +1219,91 @@
         "removes": "Supprime",
         "success": "Paramètres des agents de {{name}} enregistrés"
       }
+    },
+    "connection": {
+      "description": "Connecter des comptes Linear et Jira que shep garde synchronisés",
+      "failed": "La commande de connexion a échoué",
+      "connectionArg": "Slug ou id de la connexion",
+      "add": {
+        "description": "Connecter un compte Linear ou Jira ; la clé est testée avant d'être enregistrée",
+        "providerArg": "linear ou jira",
+        "nameOption": "Nom affiché",
+        "spaceOption": "Espace de la connexion (par défaut si omis)",
+        "siteOption": "URL du site Jira, par exemple https://acme.atlassian.net",
+        "emailOption": "E-mail du compte Jira du jeton",
+        "secretEnvOption": "Lire la clé ou le jeton depuis cette variable d'environnement au lieu de le demander",
+        "linearPrompt": "Clé d'API Linear",
+        "jiraPrompt": "Jeton d'API Jira",
+        "badProvider": "« {{provider}} » n'est pas un outil de suivi ; utilisez linear ou jira",
+        "emptyEnv": "La variable d'environnement {{variable}} est vide ou absente",
+        "success": "{{name}} ({{slug}}) connecté en tant que {{account}}"
+      },
+      "ls": {
+        "description": "Lister les connexions",
+        "title": "Connexions aux outils de suivi",
+        "nameColumn": "Nom",
+        "slugColumn": "Slug",
+        "providerColumn": "Outil",
+        "accountColumn": "Compte",
+        "statusColumn": "Statut",
+        "empty": "Aucune connexion. Ajoutez-en une avec shep connection add."
+      },
+      "test": {
+        "description": "Revérifier les identifiants d'une connexion",
+        "success": "{{name}} fonctionne ({{account}})"
+      },
+      "rm": {
+        "description": "Supprimer une connexion et ses règles ; les éléments synchronisés restent",
+        "success": "Connexion {{ref}} supprimée"
+      }
+    },
+    "sync": {
+      "description": "Garder des équipes Linear et des requêtes Jira dans des projets shep",
+      "failed": "La commande de synchronisation a échoué",
+      "connectionArg": "Slug ou id de la connexion",
+      "ruleArg": "Id de la règle (voir shep sync rule ls)",
+      "summary": "{{created}} créés, {{updated}} mis à jour, {{pushed}} envoyés, {{conflicts}} conflits, {{failed}} échecs",
+      "rule": {
+        "description": "Gérer les règles de synchronisation",
+        "add": {
+          "description": "Garder une équipe Linear ou une requête JQL Jira dans un projet shep",
+          "projectOption": "Slug ou id du projet shep",
+          "scopeOption": "Clé d'équipe Linear (ENG) ou requête JQL Jira",
+          "twoWayOption": "Renvoyer aussi les modifications shep vers l'outil",
+          "everyOption": "Minutes entre deux exécutions automatiques (15 par défaut)",
+          "badEvery": "« {{value}} » n'est pas un nombre entier de minutes",
+          "success": "Règle {{id}} ajoutée pour {{scope}}"
+        },
+        "ls": {
+          "description": "Lister les règles avec leur dernière exécution",
+          "title": "Règles de synchronisation",
+          "idColumn": "Id",
+          "fromColumn": "Source",
+          "intoColumn": "Vers",
+          "modeColumn": "Mode",
+          "lastRunColumn": "Dernière exécution",
+          "never": "jamais exécutée",
+          "off": "(désactivée)",
+          "empty": "Aucune règle. Ajoutez-en une avec shep sync rule add."
+        },
+        "enable": {
+          "description": "Laisser le démon exécuter une règle",
+          "success": "Règle {{id}} activée"
+        },
+        "disable": {
+          "description": "Empêcher le démon d'exécuter une règle",
+          "success": "Règle {{id}} désactivée"
+        },
+        "rm": {
+          "description": "Supprimer une règle ; les éléments synchronisés restent",
+          "success": "Règle {{id}} supprimée"
+        }
+      },
+      "run": {
+        "description": "Exécuter maintenant une règle ou toutes les règles actives",
+        "nothing": "Aucune règle active",
+        "conflictsNote": "{{count}} champ(s) modifié(s) des deux côtés ; la valeur de l'outil a été conservée"
+      }
     }
   },
   "ui": {

@@ -445,7 +445,8 @@
     "plugins": "Plugins",
     "projectMemory": "Project Memory",
     "harness": "Harness",
-    "spaces": "Espaces"
+    "spaces": "Espaces",
+    "trackers": "Connexions"
   },
   "sidebar": {
     "features": "Fonctionnalités",
@@ -1374,6 +1375,60 @@
       "allowedAgents": "Agents autorisés",
       "allowedAgentsHint": "Sans sélection, tous les agents sont autorisés.",
       "save": "Enregistrer les paramètres des agents"
+    }
+  },
+  "trackers": {
+    "title": "Connexions",
+    "subtitle": "Les tickets Linear et Jira dans des projets shep, dans les deux sens si vous le souhaitez.",
+    "syncAll": "Synchroniser maintenant",
+    "empty": "Aucune connexion. Ajoutez ci-dessus votre clé Linear ou votre jeton Jira.",
+    "add": {
+      "title": "Ajouter une connexion",
+      "provider": "Outil",
+      "name": "Nom",
+      "space": "Espace",
+      "site": "Site Jira",
+      "email": "E-mail du compte",
+      "linearSecret": "Clé d'API Linear",
+      "jiraSecret": "Jeton d'API Jira",
+      "submit": "Connecter"
+    },
+    "connection": {
+      "connected": "Connecté",
+      "error": "Erreur",
+      "account": "en tant que {{account}}",
+      "space": "espace {{space}}",
+      "test": "Tester",
+      "remove": "Supprimer la connexion",
+      "removeTitle": "Supprimer {{name}} ?",
+      "removeDescription": "Ses règles s'arrêtent et sont supprimées. Les éléments déjà synchronisés restent dans leurs projets.",
+      "cancel": "Annuler"
+    },
+    "rules": {
+      "title": "Règles de synchronisation",
+      "empty": "Aucune règle. Ajoutez-en une pour importer des tickets.",
+      "noProjects": "Créez d'abord un projet ; les règles écrivent les tickets dans un projet.",
+      "scope": "Clé d'équipe Linear ou JQL Jira",
+      "project": "Projet",
+      "twoWay": "Bidirectionnel",
+      "import": "Import",
+      "every": "toutes les",
+      "minutes": "min",
+      "everyShort": "toutes les {{minutes}} min",
+      "paused": "En pause",
+      "summary": "{{created}} créés, {{updated}} mis à jour, {{pushed}} envoyés, {{conflicts}} conflits, {{failed}} échecs",
+      "never": "Pas encore exécutée",
+      "add": "Ajouter une règle",
+      "pause": "Mettre en pause",
+      "resume": "Reprendre",
+      "runNow": "Exécuter maintenant",
+      "remove": "Supprimer la règle"
+    },
+    "errors": {
+      "actionFailed": "La modification n'a pas pu être enregistrée. Réessayez."
+    },
+    "badge": {
+      "open": "Ouvrir {{key}} dans l'outil"
     }
   }
 }
