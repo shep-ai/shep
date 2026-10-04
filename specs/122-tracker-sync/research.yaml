@@ -1,0 +1,64 @@
+# Research (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: tracker-sync
+summary: Technical decisions for 122 — how shep talks to Linear and Jira and keeps work items in sync.
+
+relatedFeatures:
+  - 087-project-management
+technologies:
+  - Linear GraphQL
+  - Jira Cloud REST v3
+relatedLinks: []
+
+decisions:
+  - title: Hand-written clients on injected fetch, no SDKs
+    chosen: LinearTrackerClient (GraphQL over fetch) and JiraTrackerClient (REST v3 over fetch)
+    rejected:
+      - '@linear/sdk and jira.js: large dependency trees for the six calls each client needs, and harder to fake in tests'
+    rationale: >
+      shep's convention is an injected fetch faked with vi.fn() in tests. Each client needs only
+      search-updated-since, get, update fields, list states or transitions, and a connection test.
+
+  - title: Polling with an updated-since cursor, not webhooks
+    chosen: Each rule stores the newest remote updatedAt it has applied and asks for issues updated after it (minus a one-minute overlap)
+    rejected:
+      - 'Tracker webhooks: need a public URL (the tunnel is GitHub-only), per-provider signature schemes and still need polling to recover missed deliveries'
+      - 'Full refetch (prototype): 1,000-issue cap and a cost that grows with the backlog'
+    rationale: >
+      Incremental polling is correct on its own and cheap; webhooks can later just trigger a run.
+
+  - title: Per-field three-way comparison against a synced snapshot
+    chosen: The link stores the last synced title, description, status group and priority; local, remote and snapshot decide each field
+    rejected:
+      - 'Timestamps only: a local edit and a remote edit after the same sync are indistinguishable from one side being stale'
+      - 'Last writer wins on the whole issue: silently loses edits'
+    rationale: >
+      Three-way comparison is the standard way to detect which side changed; the tie rule (tracker
+      wins, counted as a conflict) keeps the tracker authoritative for teams that live there.
+
+  - title: Status through state groups
+    chosen: Linear state.type and Jira statusCategory map to StateGroup; shep applies the project's first state in the group; write-back picks the tracker's state or transition in the same group
+    rejected:
+      - 'Per-rule status mapping tables: configuration burden before anything works'
+    rationale: >
+      Both trackers and shep already classify statuses into the same five buckets.
+
+  - title: Secrets in the connection row, encrypted with LocalSecretBox
+    chosen: secret_ciphertext / secret_iv / secret_tag columns; the entity carries no secret
+    rejected:
+      - 'Plain-text token columns (as settings.agent_token is)'
+    rationale: >
+      Same scheme as the GitHub integration token; the key lives in <Shep home>/secret.key.
+
+openQuestions: []
+
+content: |
+  ## Findings
+
+  - Work item descriptions render as plain text in the web UI, so Markdown is stored as-is.
+  - StateGroup (Backlog/Unstarted/Started/Completed/Cancelled) matches Linear's state types
+    (triage/backlog/unstarted/started/completed/canceled) and Jira's status categories
+    (new/indeterminate/done) closely enough to map without configuration.
+  - The bug-solver prototype's ADF parser misses nested lists, task lists, status/date/expand
+    nodes and escaping, and has no tests; this spec writes a tested converter.

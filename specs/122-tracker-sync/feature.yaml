@@ -1,0 +1,42 @@
+feature:
+  id: '122-tracker-sync'
+  name: 'tracker-sync'
+  number: 122
+  branch: 'claude/wonderful-keller-g4wgaf'
+  lifecycle: 'implementation'
+  createdAt: '2026-10-04T13:00:00Z'
+
+status:
+  phase: 'implementation'
+  progress:
+    completed: 0
+    total: 15
+    percentage: 0
+  currentTask: null
+  lastUpdated: '2026-10-04T13:10:00Z'
+  lastUpdatedBy: 'shep-kit:implement'
+
+validation:
+  lastRun: null
+  gatesPassed: []
+  autoFixesApplied: []
+
+tasks:
+  current: null
+  blocked: []
+  failed: []
+
+checkpoints:
+  - phase: 'feature-created'
+    completedAt: '2026-10-04T13:00:00Z'
+    completedBy: 'shep-kit:new-feature-fast'
+  - phase: 'research-complete'
+    completedAt: '2026-10-04T13:10:00Z'
+    completedBy: 'shep-kit:new-feature-fast'
+  - phase: 'plan-complete'
+    completedAt: '2026-10-04T13:10:00Z'
+    completedBy: 'shep-kit:new-feature-fast'
+
+errors:
+  current: null
+  history: []

@@ -1,0 +1,124 @@
+# Feature Specification (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: tracker-sync
+number: 122
+branch: claude/wonderful-keller-g4wgaf
+oneLiner: |-
+  Connect Linear and Jira once; shep keeps their issues in its projects automatically and
+  writes status and edits back
+summary: |-
+  Teams keep their backlog in Linear or Jira, while shep's agents work from shep projects. Today
+  the two never meet: shep has no Linear code, an unregistered single-ticket Jira fetcher, and no
+  external identity on work items. This feature adds connections (a Linear API key, or a Jira
+  Cloud site, email and API token, stored encrypted and owned by a space) and sync rules (a Linear
+  team or a Jira JQL query feeding a shep project, import-only or two-way, every N minutes). The
+  daemon runs due rules continuously: new issues become work items, remote changes to title,
+  description, status and priority are applied, and in two-way rules local changes are pushed
+  back (status through Linear workflow states or Jira transitions). Each work item remembers the
+  issue it came from and the values last synced, so changes are detected per field and a field
+  changed on both sides resolves in the tracker's favour and is counted as a conflict.
+phase: Requirements
+sizeEstimate: L
+relatedFeatures:
+  - 087-project-management
+  - 120-spaces-and-product-lines
+  - 121-space-agent-settings
+technologies:
+  - TypeScript
+  - TypeSpec
+  - SQLite (better-sqlite3, umzug migrations)
+  - Linear GraphQL API
+  - Jira Cloud REST API v3, Atlassian Document Format
+  - tsyringe
+  - Commander
+  - Next.js App Router, shadcn/ui
+relatedLinks:
+  - title: Linear GraphQL API
+    url: https://developers.linear.app/docs/graphql/working-with-the-graphql-api
+  - title: Jira Cloud REST v3 search (JQL)
+    url: https://developer.atlassian.com/cloud/jira/platform/rest/v3/api-group-issue-search/
+openQuestions: []
+content: |
+  ## Problem Statement
+
+  - No PM entity carries an external id, URL or provider, so nothing can be matched to an issue in
+    another tool and an import cannot be repeated without duplicating.
+  - `JiraTicketFetcher` reads one ticket and is not registered in DI; nothing reads Linear.
+  - The bug-solver prototype's Jira sync refetched up to 1,000 issues every time, had no
+    incremental cursor, no rate-limit handling and no tests, and wrote nothing back but status.
+
+  ## Product Shape
+
+  - **Connection**: provider (Linear | Jira), name, the space it belongs to, Jira site URL and
+    account email, and a secret (Linear API key or Jira API token) encrypted with the local secret
+    box and never returned to any surface. Creating one tests it first.
+  - **Sync rule**: connection, target shep project, scope (Linear team key such as `ENG`, or a
+    Jira JQL query such as `project = PAY AND type = Bug`), direction (Import | TwoWay), interval
+    in minutes, enabled flag, and the last run's time, counts and error.
+  - **Issue link**: work item ↔ external issue (id, key such as `ENG-42`, URL) plus the last
+    synced title, description, status group and priority.
+  - **Status** maps through the project's state groups: Linear state types and Jira status
+    categories map to Backlog/Unstarted/Started/Completed/Cancelled; writing back picks the
+    tracker's first state (Linear) or an available transition (Jira) in the same group.
+  - **Field rule**: for each of title, description, status and priority — remote changed only:
+    apply locally; local changed only (two-way): push; both changed to different values: take the
+    remote value and count a conflict.
+
+  ## User Flows
+
+  **F1. Import a Linear team.** `shep connection add linear --name "Acme Linear" --space acme`
+  (prompts for the API key), then `shep sync rule add acme-linear --project pay --scope ENG`.
+  Within the interval every ENG issue is a work item in project PAY, and stays current.
+
+  **F2. Two-way Jira.** `shep connection add jira --site https://acme.atlassian.net --email
+  me@acme.com`, then `shep sync rule add acme-jira --project pay --scope "project = PAY"
+  --two-way`. Moving a work item to Done in shep transitions the Jira issue at the next run.
+
+  **F3. Run now and see what happened.** `shep sync run` (or "Sync now" on /connections) runs
+  every enabled rule and prints created / updated / pushed / conflicts / errors per rule.
+
+  **F4. From the browser.** /connections lists connections with status, lets you add, test and
+  remove them, and manage their rules. A synced work item shows its issue key linking to the
+  tracker.
+
+  ## Success Criteria
+
+  - [ ] Running a rule twice creates no duplicates; a second run only fetches issues updated since
+        the first (cursor), and paginates past any page size (unit tests with fixtures).
+  - [ ] The field rule holds for every combination of local/remote change in both directions
+        (pure domain tests).
+  - [ ] Two-way status write-back uses Linear workflow states and Jira transitions of the same
+        group; a status with no matching transition is reported, not guessed.
+  - [ ] Secrets are stored encrypted and never appear in list results, logs or the web.
+  - [ ] Rate-limited responses (HTTP 429 / Linear RATELIMITED) back off and the run reports it.
+  - [ ] Jira descriptions convert from ADF to Markdown, including nested lists, code, links,
+        tables and task lists; pushed descriptions convert back to ADF.
+  - [ ] The daemon runs due rules on its own; CLI, web and run results agree; strings in the 9
+        locales; stories for every new component.
+
+  ## Affected Areas
+
+  | Area | Impact | Reasoning |
+  | --- | --- | --- |
+  | TypeSpec | Medium | TrackerConnection, TrackerSyncRule, TrackerIssueLink, ExternalIssue; 4 enums |
+  | Persistence | Medium | Migration 154, three tables, encrypted secret columns |
+  | Domain | Medium | Status/priority mapping and the per-field sync planner |
+  | Infrastructure | High | Linear and Jira clients, ADF converter, daemon watcher |
+  | Application | High | Connection, rule and sync use cases |
+  | CLI and Web | Medium | `shep connection`, `shep sync`, /connections, work item link |
+
+  ## Dependencies
+
+  - Spec 087 (projects and work items), spec 120 (spaces own connections).
+
+  ## Out of Scope
+
+  - Comments, labels, assignees and attachments (next spec on this base).
+  - Inbound tracker webhooks (polling with an updated-since cursor first).
+  - OAuth apps and Jira Server/Data Center.
+  - Creating tracker issues from shep-only work items.
+
+  ## Size Estimate
+
+  **L**: 15 tasks.

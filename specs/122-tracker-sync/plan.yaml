@@ -1,0 +1,82 @@
+# Implementation Plan (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: tracker-sync
+summary: Implementation plan for 122 — Linear and Jira connections with continuous two-way sync.
+
+relatedFeatures:
+  - 087-project-management
+  - 120-spaces-and-product-lines
+technologies:
+  - TypeSpec
+  - SQLite
+  - tsyringe
+  - Commander
+  - Next.js
+relatedLinks: []
+
+phases:
+  - id: phase-1
+    name: 'Domain'
+    parallel: false
+    taskIds: [task-1, task-2]
+  - id: phase-2
+    name: 'Persistence and clients'
+    parallel: false
+    taskIds: [task-3, task-4, task-5, task-6]
+  - id: phase-3
+    name: 'Use cases and daemon'
+    parallel: false
+    taskIds: [task-7, task-8, task-9, task-13]
+  - id: phase-4
+    name: 'CLI'
+    parallel: false
+    taskIds: [task-10]
+  - id: phase-5
+    name: 'Web'
+    parallel: false
+    taskIds: [task-11, task-12]
+  - id: phase-6
+    name: 'Docs and verification'
+    parallel: false
+    taskIds: [task-14, task-15]
+
+filesToCreate:
+  - tsp/domain/entities/tracker-sync.tsp
+  - packages/core/src/domain/shared/tracker-sync.ts
+  - packages/core/src/infrastructure/persistence/sqlite/migrations/154-create-tracker-sync.ts
+  - packages/core/src/application/ports/output/services/tracker-client.interface.ts
+  - packages/core/src/infrastructure/services/trackers/linear-tracker.client.ts
+  - packages/core/src/infrastructure/services/trackers/jira-tracker.client.ts
+  - packages/core/src/infrastructure/services/trackers/adf.ts
+  - packages/core/src/application/use-cases/trackers/run-tracker-sync.use-case.ts
+  - packages/core/src/infrastructure/services/trackers/tracker-sync-watcher.service.ts
+  - src/presentation/cli/commands/connection/
+  - src/presentation/cli/commands/sync/
+  - src/presentation/web/app/connections/page.tsx
+
+filesToModify:
+  - src/presentation/cli/commands/_serve.command.ts
+  - src/presentation/cli/index.ts
+  - src/presentation/web/components/layouts/app-sidebar/app-sidebar.tsx
+  - src/presentation/web/app/projects/[slug]/items/[itemId]/work-item-detail-client.tsx
+  - packages/core/src/infrastructure/di/container.ts
+
+content: |
+  ## Approach
+
+  TDD throughout: every task begins with a failing test (RED), then the minimal implementation
+  (GREEN), then cleanup (REFACTOR).
+
+  Clean Architecture: the mappings and the per-field planner are pure domain code; use cases
+  depend on repository ports and the ITrackerClientFactory port; the Linear and Jira clients and
+  the ADF converter are infrastructure behind that port; the daemon watcher only calls a use case;
+  CLI and web call use cases through the container.
+
+  ## Risks
+
+  - Tracker APIs change: each client is small, faked from recorded fixtures, and isolated behind
+    the port.
+  - A sync writing many work items: the PM SSE stream already pushes deltas to the UI.
+
+openQuestions: []

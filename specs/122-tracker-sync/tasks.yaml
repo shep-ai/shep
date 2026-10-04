@@ -1,0 +1,293 @@
+# Task Breakdown (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: tracker-sync
+summary: Task breakdown for 122 — Linear and Jira connections with continuous two-way sync.
+
+relatedFeatures:
+  - 087-project-management
+technologies:
+  - TypeSpec
+  - SQLite
+  - tsyringe
+relatedLinks: []
+
+tasks:
+  - id: task-1
+    title: Tracker sync domain model in TypeSpec
+    description: >
+      Enums TrackerProvider, TrackerConnectionStatus, TrackerSyncDirection; entities TrackerConnection, TrackerSyncRule, TrackerIssueLink; value object ExternalIssue (provider-neutral issue snapshot).
+    state: Todo
+    dependencies: []
+    acceptanceCriteria:
+      - pnpm tsp:compile passes
+      - Schemas committed
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: S
+
+  - id: task-2
+    title: Pure mapping and sync planner
+    description: >
+      domain/shared/tracker-sync.ts: Linear state type and Jira status category to StateGroup, tracker priorities to Priority, and planIssueSync(direction, snapshot, local, remote) returning fields to apply, fields to push and conflicts.
+    state: Todo
+    dependencies:
+      - task-1
+    acceptanceCriteria:
+      - Every local/remote change combination in both directions is tested
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: M
+
+  - id: task-3
+    title: Migration 154 and repositories
+    description: >
+      tracker_connections (encrypted secret), tracker_sync_rules, tracker_issue_links; SQLite repositories and mappers; DI.
+    state: Todo
+    dependencies:
+      - task-1
+    acceptanceCriteria:
+      - Round trips of every field; secrets never leave the repository except through getSecret
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: M
+
+  - id: task-4
+    title: ADF converter
+    description: >
+      adfToMarkdown covering paragraphs, headings, nested and ordered lists, task lists, code, quotes, panels, rules, tables, mentions, links, emoji, status, dates and media; markdownToAdf for paragraphs, headings, lists, code and links.
+    state: Todo
+    dependencies: []
+    acceptanceCriteria:
+      - Fixture tests for every node type
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: M
+
+  - id: task-5
+    title: Tracker client port and Linear client
+    description: >
+      ITrackerClient (test, searchUpdatedSince with pagination, listStatusTargets, updateIssue) and ITrackerClientFactory; LinearTrackerClient over injected fetch with rate-limit errors.
+    state: Todo
+    dependencies:
+      - task-1
+    acceptanceCriteria:
+      - Fixture tests for search pagination, state update and RATELIMITED
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: M
+
+  - id: task-6
+    title: Jira client
+    description: >
+      JiraTrackerClient: /search/jql with nextPageToken, updated >= cursor, transitions for status, PUT for summary and description, 429 with Retry-After.
+    state: Todo
+    dependencies:
+      - task-4
+      - task-5
+    acceptanceCriteria:
+      - Fixture tests for search, transition choice and 429
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: M
+
+  - id: task-7
+    title: Manage connections and rules
+    description: >
+      ManageTrackerConnectionsUseCase (create tests first, list, test, remove) and ManageTrackerSyncRulesUseCase (create, list, enable, remove).
+    state: Todo
+    dependencies:
+      - task-3
+      - task-5
+    acceptanceCriteria:
+      - Bad credentials never create a connection
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: M
+
+  - id: task-8
+    title: Run sync
+    description: >
+      RunTrackerSyncUseCase runs one rule: fetch since cursor, create or update work items through the planner, push local changes for two-way rules, record counts, cursor and error; SyncDueTrackerRulesUseCase runs every due rule.
+    state: Todo
+    dependencies:
+      - task-2
+      - task-6
+      - task-7
+    acceptanceCriteria:
+      - Idempotent re-run; conflicts counted; a failing issue does not stop the rule
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: L
+
+  - id: task-9
+    title: Daemon watcher
+    description: >
+      TrackerSyncWatcher polls every minute for due rules with an in-flight guard; started and stopped by the daemon.
+    state: Todo
+    dependencies:
+      - task-8
+    acceptanceCriteria:
+      - Overlapping ticks never run two syncs
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: S
+
+  - id: task-10
+    title: shep connection and shep sync CLI
+    description: >
+      connection add (secret prompted, never an argument), ls, test, rm; sync rule add, ls, enable, disable, rm; sync run [rule].
+    state: Todo
+    dependencies:
+      - task-8
+    acceptanceCriteria:
+      - Every verb has a command test
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: M
+
+  - id: task-11
+    title: Connections web page
+    description: >
+      /connections with connections, rules and Sync now; server actions with Storybook mocks; sidebar entry; 9 locales; stories.
+    state: Todo
+    dependencies:
+      - task-8
+    acceptanceCriteria:
+      - Every CLI verb has a control
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: L
+
+  - id: task-12
+    title: Synced work item shows its issue
+    description: >
+      The work item page shows the tracker key linking to the issue.
+    state: Todo
+    dependencies:
+      - task-8
+    acceptanceCriteria:
+      - Linked and unlinked work items render correctly
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: S
+
+  - id: task-13
+    title: Integration test through the real container
+    description: >
+      Two rules, faked trackers, real SQLite: import, re-run, remote edit, local edit pushed, conflict.
+    state: Todo
+    dependencies:
+      - task-8
+    acceptanceCriteria:
+      - Runs green in test:int
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: M
+
+  - id: task-14
+    title: Docs
+    description: >
+      Guide, CLI reference and architecture note.
+    state: Todo
+    dependencies:
+      - task-10
+      - task-11
+    acceptanceCriteria:
+      - Docs match behaviour
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: S
+
+  - id: task-15
+    title: Full local verification
+    description: >
+      lint, format, typecheck, generate, unit, integration, build, build:web, build:storybook, check:stories.
+    state: Todo
+    dependencies:
+      - task-14
+    acceptanceCriteria:
+      - All green
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: S
+
+totalEstimate: L (15 tasks)
+
+content: |
+  Fifteen tasks in six phases; see plan.yaml for the order.
