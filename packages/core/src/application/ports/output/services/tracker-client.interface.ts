@@ -60,41 +60,10 @@ export interface ITrackerClientFactory {
   create(config: TrackerClientConfig): ITrackerClient;
 }
 
-/** The tracker rejected the credentials. */
-export class TrackerAuthError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'TrackerAuthError';
-  }
-}
-
-/** The tracker asked shep to slow down. */
-export class TrackerRateLimitError extends Error {
-  constructor(
-    message: string,
-    /** How long the tracker asked to wait, when it said. */
-    readonly retryAfterMs?: number
-  ) {
-    super(message);
-    this.name = 'TrackerRateLimitError';
-  }
-}
-
 /** The tracker has no state or transition for a requested status group. */
 export class TrackerStatusUnavailableError extends Error {
   constructor(message: string) {
     super(message);
     this.name = 'TrackerStatusUnavailableError';
-  }
-}
-
-/** Any other failed request. */
-export class TrackerRequestError extends Error {
-  constructor(
-    message: string,
-    readonly status?: number
-  ) {
-    super(message);
-    this.name = 'TrackerRequestError';
   }
 }

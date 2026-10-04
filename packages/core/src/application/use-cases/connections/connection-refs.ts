@@ -1,12 +1,12 @@
 /**
- * Shared helpers for the tracker sync use cases (spec 122): result objects,
+ * Shared helpers for the connection and sync use cases (spec 122, shared by connections in spec 125): result objects,
  * lookups by id or slug, and turning a thrown error into a message.
  */
 
 import type { Connection } from '../../../domain/generated/output.js';
 import type { IConnectionRepository } from '../../ports/output/repositories/connection-repository.interface.js';
 
-export type TrackerResult<T extends object = object> =
+export type ConnectionResult<T extends object = object> =
   | ({ ok: true } & T)
   | { ok: false; error: string };
 

@@ -16,7 +16,7 @@ import type { IConnectionRepository } from '../../ports/output/repositories/conn
 import type { ITrackerSyncRuleRepository } from '../../ports/output/repositories/tracker-sync-rule-repository.interface.js';
 import type { ITrackerIssueLinkRepository } from '../../ports/output/repositories/tracker-issue-link-repository.interface.js';
 import type { IPmProjectRepository } from '../../ports/output/repositories/pm-project-repository.interface.js';
-import { failure, findConnection, type TrackerResult } from './tracker-refs.js';
+import { failure, findConnection, type ConnectionResult } from '../connections/connection-refs.js';
 
 export const DEFAULT_SYNC_INTERVAL_MINUTES = 15;
 export const MIN_SYNC_INTERVAL_MINUTES = 5;
@@ -51,7 +51,7 @@ export class ManageTrackerSyncRulesUseCase {
     @inject('IPmProjectRepository') private readonly projects: IPmProjectRepository
   ) {}
 
-  async list(connectionRef?: string): Promise<TrackerResult<{ rules: TrackerSyncRuleView[] }>> {
+  async list(connectionRef?: string): Promise<ConnectionResult<{ rules: TrackerSyncRuleView[] }>> {
     let rules: TrackerSyncRule[];
     if (connectionRef?.trim()) {
       const connection = await findConnection(this.connections, connectionRef);
@@ -83,7 +83,7 @@ export class ManageTrackerSyncRulesUseCase {
 
   async create(
     input: CreateTrackerSyncRuleInput
-  ): Promise<TrackerResult<{ rule: TrackerSyncRule }>> {
+  ): Promise<ConnectionResult<{ rule: TrackerSyncRule }>> {
     const connection = await findConnection(this.connections, input.connection);
     if (!connection) return failure(`No connection "${input.connection}".`);
     const projectRef = input.project?.trim() ?? '';
@@ -136,7 +136,7 @@ export class ManageTrackerSyncRulesUseCase {
   async setEnabled(
     id: string,
     enabled: boolean
-  ): Promise<TrackerResult<{ rule: TrackerSyncRule }>> {
+  ): Promise<ConnectionResult<{ rule: TrackerSyncRule }>> {
     const rule = await this.rules.findById(id.trim());
     if (!rule) return failure(`No sync rule "${id}".`);
     const updated = { ...rule, enabled, updatedAt: new Date() };
@@ -145,7 +145,7 @@ export class ManageTrackerSyncRulesUseCase {
   }
 
   /** Removes the rule and its links; synced work items stay. */
-  async remove(id: string): Promise<TrackerResult> {
+  async remove(id: string): Promise<ConnectionResult> {
     const rule = await this.rules.findById(id.trim());
     if (!rule) return failure(`No sync rule "${id}".`);
     await this.links.deleteByRule(rule.id);

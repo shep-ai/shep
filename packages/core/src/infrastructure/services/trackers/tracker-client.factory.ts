@@ -2,14 +2,14 @@
 
 import { ConnectionProvider } from '../../../domain/generated/output.js';
 import {
-  TrackerRequestError,
   type ITrackerClient,
   type ITrackerClientFactory,
   type TrackerClientConfig,
 } from '../../../application/ports/output/services/tracker-client.interface.js';
+import { ConnectionRequestError } from '../../../application/ports/output/services/connection-errors.js';
 import { JiraTrackerClient } from './jira-tracker.client.js';
 import { LinearTrackerClient } from './linear-tracker.client.js';
-import type { FetchFunction } from './tracker-http.js';
+import type { FetchFunction } from '../connections/connection-http.js';
 
 export class TrackerClientFactory implements ITrackerClientFactory {
   constructor(private readonly fetchFn: FetchFunction = fetch) {}
@@ -20,7 +20,7 @@ export class TrackerClientFactory implements ITrackerClientFactory {
         return new LinearTrackerClient(config.secret, this.fetchFn);
       case ConnectionProvider.Jira:
         if (!config.siteUrl || !config.accountEmail) {
-          throw new TrackerRequestError('A Jira client needs the site URL and account email.');
+          throw new ConnectionRequestError('A Jira client needs the site URL and account email.');
         }
         return new JiraTrackerClient(
           { siteUrl: config.siteUrl, accountEmail: config.accountEmail, secret: config.secret },

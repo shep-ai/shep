@@ -6,12 +6,14 @@ import type { UpdateWorkItemUseCase } from '@/application/use-cases/work-items/u
 import type { IWorkItemRepository } from '@/application/ports/output/repositories/work-item-repository.interface.js';
 import type { IWorkItemStateRepository } from '@/application/ports/output/repositories/work-item-state-repository.interface.js';
 import {
-  TrackerAuthError,
-  TrackerRateLimitError,
   type ITrackerClient,
   type TrackerIssueChanges,
   type TrackerIssuePage,
 } from '@/application/ports/output/services/tracker-client.interface.js';
+import {
+  ConnectionAuthError,
+  ConnectionRateLimitError,
+} from '@/application/ports/output/services/connection-errors.js';
 import {
   Priority,
   StateGroup,
@@ -342,7 +344,7 @@ describe('RunTrackerSyncUseCase', () => {
     await addRule();
     tracker.pages = [
       { issues: [issue()], nextPage: 'p2' },
-      new TrackerRateLimitError('Linear: rate limited', 30_000),
+      new ConnectionRateLimitError('Linear: rate limited', 30_000),
     ];
 
     const { summary, rule, error } = await run();
@@ -355,7 +357,7 @@ describe('RunTrackerSyncUseCase', () => {
 
   it('marks the connection broken on rejected credentials and healthy after a clean run', async () => {
     await addRule();
-    tracker.pages = [new TrackerAuthError('Linear: revoked')];
+    tracker.pages = [new ConnectionAuthError('Linear: revoked')];
     await run();
     expect(await connections.findById('conn')).toMatchObject({
       status: ConnectionStatus.Error,

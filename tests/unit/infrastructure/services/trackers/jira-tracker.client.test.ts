@@ -1,10 +1,10 @@
 import { describe, it, expect, vi } from 'vitest';
 import { JiraTrackerClient } from '@/infrastructure/services/trackers/jira-tracker.client.js';
+import { TrackerStatusUnavailableError } from '@/application/ports/output/services/tracker-client.interface.js';
 import {
-  TrackerAuthError,
-  TrackerRateLimitError,
-  TrackerStatusUnavailableError,
-} from '@/application/ports/output/services/tracker-client.interface.js';
+  ConnectionAuthError,
+  ConnectionRateLimitError,
+} from '@/application/ports/output/services/connection-errors.js';
 import { Priority, StateGroup } from '@/domain/generated/output.js';
 
 type Fetch = typeof fetch;
@@ -161,7 +161,7 @@ describe('JiraTrackerClient', () => {
     const unauthorized = vi
       .fn()
       .mockResolvedValue(json({ errorMessages: ['Unauthorized'] }, { status: 401 }));
-    await expect(client(unauthorized).testConnection()).rejects.toBeInstanceOf(TrackerAuthError);
+    await expect(client(unauthorized).testConnection()).rejects.toBeInstanceOf(ConnectionAuthError);
 
     const limited = vi
       .fn()
@@ -169,8 +169,8 @@ describe('JiraTrackerClient', () => {
     const error = await client(limited)
       .testConnection()
       .catch((e: unknown) => e);
-    expect(error).toBeInstanceOf(TrackerRateLimitError);
-    expect((error as TrackerRateLimitError).retryAfterMs).toBe(7000);
+    expect(error).toBeInstanceOf(ConnectionRateLimitError);
+    expect((error as ConnectionRateLimitError).retryAfterMs).toBe(7000);
   });
 
   it('includes Jira error messages in other failures', async () => {

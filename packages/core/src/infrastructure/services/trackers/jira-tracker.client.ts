@@ -21,7 +21,7 @@ import {
   type TrackerIssuePage,
 } from '../../../application/ports/output/services/tracker-client.interface.js';
 import { adfToMarkdown, markdownToAdf } from './adf.js';
-import { httpFailure, sendJson, type FetchFunction } from './tracker-http.js';
+import { httpFailure, sendJson, type FetchFunction } from '../connections/connection-http.js';
 
 const LABEL = 'Jira';
 const PAGE_SIZE = 100;

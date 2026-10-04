@@ -24,7 +24,7 @@ import type {
   TrackerClientConfig,
 } from '../../ports/output/services/tracker-client.interface.js';
 import { findSpace } from '../spaces/space-refs.js';
-import { errorMessage, failure, findConnection, type TrackerResult } from './tracker-refs.js';
+import { errorMessage, failure, findConnection, type ConnectionResult } from './connection-refs.js';
 
 const EMAIL = /^[^\s@]+@[^\s@]+$/;
 const HTTPS = 'https:';
@@ -73,7 +73,9 @@ export class ManageConnectionsUseCase {
     return this.connections.list();
   }
 
-  async create(input: CreateConnectionInput): Promise<TrackerResult<{ connection: Connection }>> {
+  async create(
+    input: CreateConnectionInput
+  ): Promise<ConnectionResult<{ connection: Connection }>> {
     const name = input.name?.trim() ?? '';
     const slug = cleanDeployName(name);
     if (!slug) return failure('A connection name needs at least one letter or digit.');
@@ -125,7 +127,7 @@ export class ManageConnectionsUseCase {
   }
 
   /** Checks the stored credentials again and records the outcome. */
-  async test(ref: string): Promise<TrackerResult<{ connection: Connection }>> {
+  async test(ref: string): Promise<ConnectionResult<{ connection: Connection }>> {
     const connection = await findConnection(this.connections, ref);
     if (!connection) return failure(`No connection "${ref}".`);
     const secret = await this.connections.getSecret(connection.id);
@@ -163,7 +165,7 @@ export class ManageConnectionsUseCase {
   }
 
   /** Removes the connection, its rules and its links; synced work items stay. */
-  async remove(ref: string): Promise<TrackerResult> {
+  async remove(ref: string): Promise<ConnectionResult> {
     const connection = await findConnection(this.connections, ref);
     if (!connection) return failure(`No connection "${ref}".`);
     await this.links.deleteByConnection(connection.id);

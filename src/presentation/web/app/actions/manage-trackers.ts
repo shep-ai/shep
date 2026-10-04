@@ -10,7 +10,7 @@ import { resolve } from '@/lib/server-container';
 import type {
   CreateConnectionInput,
   ManageConnectionsUseCase,
-} from '@shepai/core/application/use-cases/trackers/manage-connections.use-case';
+} from '@shepai/core/application/use-cases/connections/manage-connections.use-case';
 import type {
   CreateTrackerSyncRuleInput,
   ManageTrackerSyncRulesUseCase,

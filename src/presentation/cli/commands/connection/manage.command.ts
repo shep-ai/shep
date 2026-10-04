@@ -2,7 +2,7 @@
 
 import { Command } from 'commander';
 import { container } from '@/infrastructure/di/container.js';
-import { ManageConnectionsUseCase } from '@/application/use-cases/trackers/manage-connections.use-case.js';
+import { ManageConnectionsUseCase } from '@/application/use-cases/connections/manage-connections.use-case.js';
 import { ConnectionStatus } from '@/domain/generated/output.js';
 import { colors, messages, renderListView } from '../../ui/index.js';
 import { getCliI18n } from '../../i18n.js';

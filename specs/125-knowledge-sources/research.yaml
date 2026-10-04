@@ -1,0 +1,58 @@
+# Research (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: knowledge-sources
+summary: Technical decisions for 125 — a general connector framework and Notion knowledge in agent prompts.
+
+relatedFeatures:
+  - 102-project-memory
+  - 122-tracker-sync
+technologies:
+  - Notion REST API
+relatedLinks: []
+
+decisions:
+  - title: One Connection for every provider, with a kind
+    chosen: Rename TrackerConnection to Connection, move auth/rate-limit/request errors and HTTP plumbing out of trackers, add ConnectionKind and a per-provider verifier
+    rejected:
+      - 'A separate NotionConnection entity: a second secret store, page and set of commands for the same idea'
+    rationale: >
+      The factory needs a connector per category (knowledge, errors, feedback, revenue); one
+      entity and verifier make each new provider an adapter, not a feature.
+
+  - title: Whole pages as documents, passages chosen at prompt time
+    chosen: KnowledgeDocument stores a page's Markdown; selection splits documents under headings into passages and ranks them lexically against the task
+    rejected:
+      - 'Distilling pages into project memory entries: lossy, 600-character entries, and an agent call per page'
+      - 'Embeddings first: needs a configured embedding provider; the memory scorer already treats it as optional'
+    rationale: >
+      The prompt gets the exact words the team wrote, with a link to the page, and the selection
+      is cheap enough to run on every phase.
+
+  - title: Full listing each run, content only for edited pages
+    chosen: List every page in scope (page tree walk or database query), compare last_edited_time with the stored document, fetch changed pages, delete missing ones
+    rejected:
+      - 'A last-edited cursor: Notion page trees have no "edited since" filter, and a cursor cannot see deletions'
+    rationale: >
+      Listing is a few requests; content fetches are the cost, and only edited pages pay it.
+
+  - title: Knowledge joins the project memory section
+    chosen: SelectProjectMemoryUseCase appends the selected passages under "Team knowledge" with their own budget
+    rejected:
+      - 'A second prompt section wired through every node: the graph already passes one memory selector to every node and the interactive boot prompt'
+    rationale: >
+      Every consumer of project memory gets knowledge with no new plumbing, under the same
+      read-only framing.
+
+openQuestions: []
+
+content: |
+  ## Findings
+
+  - Notion: Bearer integration token, Notion-Version 2022-06-28; GET /v1/users/me names the
+    bot's workspace; GET /v1/blocks/{id}/children (paginated, has_children) walks pages and
+    content; POST /v1/databases/{id}/query lists a database; 429 carries Retry-After.
+  - Pages are only visible to an integration once shared with it in Notion; a 404 on the scope
+    means "not shared", which the error says.
+  - Project memory selection merges repository, product line and space entries and renders a
+    Markdown blob injected into every phase and the interactive boot prompt.

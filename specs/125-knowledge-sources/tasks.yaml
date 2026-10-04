@@ -1,0 +1,256 @@
+# Task Breakdown (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: knowledge-sources
+summary: Task breakdown for 125 — connector framework and Notion knowledge sources.
+
+relatedFeatures:
+  - 122-tracker-sync
+technologies:
+  - TypeSpec
+  - SQLite
+  - tsyringe
+relatedLinks: []
+
+tasks:
+  - id: task-1
+    title: Rename tracker connections to connections
+    description: >
+      Connection, ConnectionProvider, ConnectionStatus; repository, use case and web actions renamed; migration 157 renames the table. No behaviour change.
+    state: Todo
+    dependencies: []
+    acceptanceCriteria:
+      - All tracker tests pass unchanged
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: M
+
+  - id: task-2
+    title: Shared connection errors and HTTP
+    description: >
+      ConnectionAuthError, ConnectionRateLimitError, ConnectionRequestError and the JSON HTTP helper move out of trackers; connection management moves to use-cases/connections.
+    state: Todo
+    dependencies:
+      - task-1
+    acceptanceCriteria:
+      - All tracker tests pass unchanged
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: S
+
+  - id: task-3
+    title: Connection kinds and verifier
+    description: >
+      ConnectionKind per provider; IConnectionVerifier checks credentials for every provider; tracker rules refuse non-tracker connections.
+    state: Todo
+    dependencies:
+      - task-2
+    acceptanceCriteria:
+      - Refusals and verification per provider are tested
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: M
+
+  - id: task-4
+    title: Notion client
+    description: >
+      Knowledge client port and Notion implementation: verify, list a page tree or database across pages and depth, fetch a page as Markdown.
+    state: Todo
+    dependencies:
+      - task-3
+    acceptanceCriteria:
+      - Fixtures cover pagination, nesting, databases, 401/404/429
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: L
+
+  - id: task-5
+    title: Notion blocks to Markdown
+    description: >
+      Pure converter for every block type Notion's editor produces, with rich text annotations and links.
+    state: Todo
+    dependencies: []
+    acceptanceCriteria:
+      - Each block type and annotation is tested
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: M
+
+  - id: task-6
+    title: Knowledge domain model
+    description: >
+      KnowledgeSource and KnowledgeDocument in TypeSpec; migration 158; repositories.
+    state: Todo
+    dependencies:
+      - task-3
+    acceptanceCriteria:
+      - Round-trips every field
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: M
+
+  - id: task-7
+    title: Knowledge sync
+    description: >
+      Manage sources; sync one source (edited pages fetched, removed pages deleted, connection error on rejected token); run due sources from the daemon.
+    state: Todo
+    dependencies:
+      - task-4
+      - task-6
+    acceptanceCriteria:
+      - Second sync is incremental; deletions; refusals
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: L
+
+  - id: task-8
+    title: Passage selection
+    description: >
+      Pure split of documents into passages under headings, lexical ranking against the task text, budgeted rendering with page names.
+    state: Todo
+    dependencies:
+      - task-6
+    acceptanceCriteria:
+      - Ranking, splitting and budget are tested
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: M
+
+  - id: task-9
+    title: Knowledge in agent prompts
+    description: >
+      SelectProjectMemoryUseCase appends the space's best passages under Team knowledge; the memory section framing mentions team documents.
+    state: Todo
+    dependencies:
+      - task-8
+    acceptanceCriteria:
+      - Space isolation and product line rules are tested
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: M
+
+  - id: task-10
+    title: CLI
+    description: >
+      shep connection add notion; shep knowledge source add/ls/enable/disable/rm, sync, ls, search.
+    state: Todo
+    dependencies:
+      - task-7
+      - task-9
+    acceptanceCriteria:
+      - Command tests
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: M
+
+  - id: task-11
+    title: Web
+    description: >
+      Notion on the connections page with its sources; knowledge documents on the memory page; stories and 9 locales.
+    state: Todo
+    dependencies:
+      - task-7
+    acceptanceCriteria:
+      - Component tests and stories
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: L
+
+  - id: task-12
+    title: Docs
+    description: >
+      Knowledge guide, architecture note, CLI reference, connections and spaces docs.
+    state: Todo
+    dependencies:
+      - task-10
+      - task-11
+    acceptanceCriteria:
+      - Docs describe the shipped behaviour
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: S
+
+  - id: task-13
+    title: Verification
+    description: >
+      lint, format, typecheck, unit, integration, build, web build, stories.
+    state: Todo
+    dependencies:
+      - task-12
+    acceptanceCriteria:
+      - All green
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: S
+
+totalEstimate: L (13 tasks)
+
+openQuestions: []
+
+content: |
+  Tasks follow the plan phases; each starts with a failing test.

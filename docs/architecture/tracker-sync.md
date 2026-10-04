@@ -32,7 +32,7 @@ Tables: migration `154-create-tracker-sync`.
 `ITrackerClient` (`application/ports/output/services/tracker-client.interface.ts`) has three
 calls: `testConnection`, `searchUpdatedSince(scope, since, page)` and `updateIssue`. Both
 implementations sit on an injected `fetch` and share `tracker-http.ts` (timeout, `Retry-After`,
-typed `TrackerAuthError` / `TrackerRateLimitError` / `TrackerRequestError`):
+typed `ConnectionAuthError` / `ConnectionRateLimitError` / `ConnectionRequestError`):
 
 - `LinearTrackerClient`: GraphQL at `api.linear.app`, `issues(filter: {team, updatedAt > since})`,
   status write via the team's first `workflowStates` of the group's type.

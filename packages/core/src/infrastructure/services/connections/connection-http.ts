@@ -1,19 +1,19 @@
 /**
- * HTTP plumbing shared by the tracker clients (spec 122): a timed JSON
+ * HTTP plumbing shared by the connection clients (spec 122, generalised in spec 125): a timed JSON
  * request, the wait a rate-limited response asks for, and HTTP failures as the
  * port's typed errors.
  */
 
 import {
-  TrackerAuthError,
-  TrackerRateLimitError,
-  TrackerRequestError,
-} from '../../../application/ports/output/services/tracker-client.interface.js';
+  ConnectionAuthError,
+  ConnectionRateLimitError,
+  ConnectionRequestError,
+} from '../../../application/ports/output/services/connection-errors.js';
 
 export type FetchFunction = typeof fetch;
 
-/** No tracker call may hang a sync run. */
-export const TRACKER_REQUEST_TIMEOUT_MS = 30_000;
+/** No connection call may hang a sync run. */
+export const CONNECTION_REQUEST_TIMEOUT_MS = 30_000;
 
 const HTTP_UNAUTHORIZED = 401;
 const HTTP_FORBIDDEN = 403;
@@ -33,7 +33,7 @@ export async function sendJson(
 ): Promise<JsonResponse> {
   const response = await fetchFn(url, {
     ...init,
-    signal: AbortSignal.timeout(TRACKER_REQUEST_TIMEOUT_MS),
+    signal: AbortSignal.timeout(CONNECTION_REQUEST_TIMEOUT_MS),
   });
   const text = await response.text();
   if (!text) return { response, body: undefined };
@@ -57,10 +57,10 @@ export function retryAfterMs(headers: Headers, now = Date.now()): number | undef
 export function httpFailure(label: string, response: Response, detail: string): Error {
   const message = `${label}: ${detail || `HTTP ${response.status}`}`;
   if (response.status === HTTP_UNAUTHORIZED || response.status === HTTP_FORBIDDEN) {
-    return new TrackerAuthError(message);
+    return new ConnectionAuthError(message);
   }
   if (response.status === HTTP_TOO_MANY_REQUESTS) {
-    return new TrackerRateLimitError(message, retryAfterMs(response.headers));
+    return new ConnectionRateLimitError(message, retryAfterMs(response.headers));
   }
-  return new TrackerRequestError(message, response.status);
+  return new ConnectionRequestError(message, response.status);
 }

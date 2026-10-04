@@ -36,14 +36,16 @@ import type { ITrackerIssueLinkRepository } from '../../ports/output/repositorie
 import type { IWorkItemRepository } from '../../ports/output/repositories/work-item-repository.interface.js';
 import type { IWorkItemStateRepository } from '../../ports/output/repositories/work-item-state-repository.interface.js';
 import {
-  TrackerAuthError,
-  TrackerRateLimitError,
   type ITrackerClient,
   type ITrackerClientFactory,
 } from '../../ports/output/services/tracker-client.interface.js';
+import {
+  ConnectionAuthError,
+  ConnectionRateLimitError,
+} from '../../ports/output/services/connection-errors.js';
 import { CreateWorkItemUseCase } from '../work-items/create-work-item.use-case.js';
 import { UpdateWorkItemUseCase } from '../work-items/update-work-item.use-case.js';
-import { errorMessage, failure, type TrackerResult } from './tracker-refs.js';
+import { errorMessage, failure, type ConnectionResult } from '../connections/connection-refs.js';
 import {
   emptySummary,
   localFields,
@@ -67,7 +69,7 @@ export interface TrackerSyncOutcome {
 }
 
 function isStoppingError(error: unknown): boolean {
-  return error instanceof TrackerRateLimitError || error instanceof TrackerAuthError;
+  return error instanceof ConnectionRateLimitError || error instanceof ConnectionAuthError;
 }
 
 @injectable()
@@ -84,7 +86,7 @@ export class RunTrackerSyncUseCase {
     @inject(UpdateWorkItemUseCase) private readonly updateWorkItem: UpdateWorkItemUseCase
   ) {}
 
-  async execute(ruleId: string): Promise<TrackerResult<TrackerSyncOutcome>> {
+  async execute(ruleId: string): Promise<ConnectionResult<TrackerSyncOutcome>> {
     const rule = await this.rules.findById(ruleId.trim());
     if (!rule) return failure(`No sync rule "${ruleId}".`);
     const connection = await this.connections.findById(rule.connectionId);
@@ -114,8 +116,8 @@ export class RunTrackerSyncUseCase {
       if (pulled.complete && pulled.newest) cursor = pulled.newest;
     } catch (caught) {
       error = errorMessage(caught);
-      summary.rateLimited = caught instanceof TrackerRateLimitError;
-      rejected = caught instanceof TrackerAuthError;
+      summary.rateLimited = caught instanceof ConnectionRateLimitError;
+      rejected = caught instanceof ConnectionAuthError;
     }
 
     await this.recordConnection(connection, error, rejected);

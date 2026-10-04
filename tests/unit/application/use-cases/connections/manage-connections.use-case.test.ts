@@ -1,11 +1,11 @@
 import 'reflect-metadata';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { ManageConnectionsUseCase } from '@/application/use-cases/trackers/manage-connections.use-case.js';
+import { ManageConnectionsUseCase } from '@/application/use-cases/connections/manage-connections.use-case.js';
 import {
-  TrackerAuthError,
   type ITrackerClient,
   type ITrackerClientFactory,
 } from '@/application/ports/output/services/tracker-client.interface.js';
+import { ConnectionAuthError } from '@/application/ports/output/services/connection-errors.js';
 import {
   ConnectionStatus,
   ConnectionProvider,
@@ -99,7 +99,7 @@ describe('ManageConnectionsUseCase', () => {
 
   it('saves nothing when the credentials fail', async () => {
     client.testConnection.mockRejectedValue(
-      new TrackerAuthError('Linear: Authentication required')
+      new ConnectionAuthError('Linear: Authentication required')
     );
     const result = await useCase.create({
       provider: ConnectionProvider.Linear,
@@ -127,7 +127,7 @@ describe('ManageConnectionsUseCase', () => {
 
   it('re-tests a connection and records the outcome', async () => {
     await useCase.create({ provider: ConnectionProvider.Linear, name: 'L', secret: 'k' });
-    client.testConnection.mockRejectedValue(new TrackerAuthError('Linear: revoked'));
+    client.testConnection.mockRejectedValue(new ConnectionAuthError('Linear: revoked'));
 
     const result = await useCase.test('l');
 

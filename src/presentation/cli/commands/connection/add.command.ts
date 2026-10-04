@@ -9,7 +9,7 @@
 import { Command } from 'commander';
 import { password } from '@inquirer/prompts';
 import { container } from '@/infrastructure/di/container.js';
-import { ManageConnectionsUseCase } from '@/application/use-cases/trackers/manage-connections.use-case.js';
+import { ManageConnectionsUseCase } from '@/application/use-cases/connections/manage-connections.use-case.js';
 import { ConnectionProvider } from '@/domain/generated/output.js';
 import { messages } from '../../ui/index.js';
 import { getCliI18n } from '../../i18n.js';

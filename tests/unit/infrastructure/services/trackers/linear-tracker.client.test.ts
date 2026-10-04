@@ -1,10 +1,10 @@
 import { describe, it, expect, vi } from 'vitest';
 import { LinearTrackerClient } from '@/infrastructure/services/trackers/linear-tracker.client.js';
+import { TrackerStatusUnavailableError } from '@/application/ports/output/services/tracker-client.interface.js';
 import {
-  TrackerAuthError,
-  TrackerRateLimitError,
-  TrackerStatusUnavailableError,
-} from '@/application/ports/output/services/tracker-client.interface.js';
+  ConnectionAuthError,
+  ConnectionRateLimitError,
+} from '@/application/ports/output/services/connection-errors.js';
 import { Priority, StateGroup } from '@/domain/generated/output.js';
 
 type Fetch = typeof fetch;
@@ -146,7 +146,7 @@ describe('LinearTrackerClient', () => {
       );
     await expect(
       new LinearTrackerClient('bad', fetchFn as unknown as Fetch).testConnection()
-    ).rejects.toBeInstanceOf(TrackerAuthError);
+    ).rejects.toBeInstanceOf(ConnectionAuthError);
   });
 
   it('turns RATELIMITED into a rate-limit error with the reset delay', async () => {
@@ -162,8 +162,8 @@ describe('LinearTrackerClient', () => {
     const error = await new LinearTrackerClient('k', fetchFn as unknown as Fetch)
       .testConnection()
       .catch((e: unknown) => e);
-    expect(error).toBeInstanceOf(TrackerRateLimitError);
-    expect((error as TrackerRateLimitError).retryAfterMs).toBeGreaterThan(20_000);
+    expect(error).toBeInstanceOf(ConnectionRateLimitError);
+    expect((error as ConnectionRateLimitError).retryAfterMs).toBeGreaterThan(20_000);
   });
 
   it('surfaces GraphQL errors on a 200 response', async () => {

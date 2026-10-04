@@ -19,7 +19,7 @@ import { SQLiteTrackerIssueLinkRepository } from '../../repositories/sqlite-trac
 import { LocalSecretBox } from '../../services/crypto/local-secret-box.js';
 import { TrackerClientFactory } from '../../services/trackers/tracker-client.factory.js';
 
-import { ManageConnectionsUseCase } from '../../../application/use-cases/trackers/manage-connections.use-case.js';
+import { ManageConnectionsUseCase } from '../../../application/use-cases/connections/manage-connections.use-case.js';
 import { ManageTrackerSyncRulesUseCase } from '../../../application/use-cases/trackers/manage-tracker-sync-rules.use-case.js';
 import { RunTrackerSyncUseCase } from '../../../application/use-cases/trackers/run-tracker-sync.use-case.js';
 import { SyncTrackerRulesUseCase } from '../../../application/use-cases/trackers/sync-tracker-rules.use-case.js';

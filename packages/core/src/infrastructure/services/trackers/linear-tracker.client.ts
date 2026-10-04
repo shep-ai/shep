@@ -11,15 +11,22 @@ import {
   priorityToLinear,
 } from '../../../domain/shared/tracker-sync.js';
 import {
-  TrackerRateLimitError,
-  TrackerRequestError,
   TrackerStatusUnavailableError,
   type ITrackerClient,
   type TrackerAccount,
   type TrackerIssueChanges,
   type TrackerIssuePage,
 } from '../../../application/ports/output/services/tracker-client.interface.js';
-import { httpFailure, retryAfterMs, sendJson, type FetchFunction } from './tracker-http.js';
+import {
+  ConnectionRateLimitError,
+  ConnectionRequestError,
+} from '../../../application/ports/output/services/connection-errors.js';
+import {
+  httpFailure,
+  retryAfterMs,
+  sendJson,
+  type FetchFunction,
+} from '../connections/connection-http.js';
 
 export const LINEAR_API_URL = 'https://api.linear.app/graphql';
 const LABEL = 'Linear';
@@ -132,12 +139,12 @@ export class LinearTrackerClient implements ITrackerClient {
     const payload = (body ?? {}) as { data?: T; errors?: GraphQlError[] };
     const errors = payload.errors ?? [];
     if (errors.some((error) => error.extensions?.code === RATE_LIMITED)) {
-      throw new TrackerRateLimitError(`${LABEL}: rate limited`, retryAfterMs(response.headers));
+      throw new ConnectionRateLimitError(`${LABEL}: rate limited`, retryAfterMs(response.headers));
     }
     const detail = errors.map((error) => error.message).join('; ');
     if (!response.ok) throw httpFailure(LABEL, response, detail);
     if (errors.length > 0 || payload.data === undefined) {
-      throw new TrackerRequestError(`${LABEL}: ${detail || 'empty response'}`, response.status);
+      throw new ConnectionRequestError(`${LABEL}: ${detail || 'empty response'}`, response.status);
     }
     return payload.data;
   }
