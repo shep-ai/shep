@@ -1425,6 +1425,115 @@
         "repoOption": "Chemin du dépôt (répertoire courant si omis)",
         "none": "Aucune connaissance d'équipe de l'espace de ce dépôt ne correspond à cette tâche."
       }
+    },
+    "numberOption": {
+      "invalid": "{{option}} attend un nombre, pas « {{value}} »"
+    },
+    "signal": {
+      "description": "Enregistrer des preuves de ce dont les utilisateurs ont besoin",
+      "failed": "La commande signal a échoué",
+      "spaceOption": "Slug ou id de l'espace (espace par défaut si omis)",
+      "signalArg": "Id du signal (voir shep signal ls)",
+      "add": {
+        "description": "Enregistrer un signal : une demande, un incident, un ticket ou une découverte",
+        "titleArg": "Résumé en une ligne",
+        "productLineOption": "Ligne de produits concernée (slug ou id)",
+        "kindOption": "feedback, incident, tracker, discovery ou manual (manual par défaut)",
+        "customerOption": "Client ou compte concerné",
+        "revenueOption": "Revenu mensuel en jeu pour ce client",
+        "urgentOption": "Demande une attention rapide",
+        "urlOption": "Lien vers l'original",
+        "detailOption": "Texte plus long",
+        "opportunityOption": "Id de l'opportunité à lier",
+        "badKind": "« {{kind}} » n'est pas un type de signal ; utilisez feedback, incident, tracker, discovery ou manual",
+        "success": "Signal {{id}} enregistré"
+      },
+      "ls": {
+        "description": "Lister les signaux, les plus récents d'abord",
+        "unlinkedOption": "Seulement les signaux sans opportunité",
+        "title": "Signaux",
+        "idColumn": "Id",
+        "titleColumn": "Signal",
+        "kindColumn": "Type",
+        "customerColumn": "Client",
+        "opportunityColumn": "Opportunité",
+        "unlinked": "non lié",
+        "empty": "Aucun signal. Enregistrez-en un avec shep signal add."
+      },
+      "rm": {
+        "description": "Supprimer un signal",
+        "success": "Signal {{id}} supprimé"
+      }
+    },
+    "opportunity": {
+      "description": "Paris appuyés par des signaux, classés par valeur par heure de revue",
+      "failed": "La commande opportunity a échoué",
+      "opportunityArg": "Id de l'opportunité (voir shep opportunity ls)",
+      "signalArg": "Id du signal (voir shep signal ls)",
+      "spaceOption": "Slug ou id de l'espace (espace par défaut si omis)",
+      "hoursOption": "Heures estimées de revue humaine pour la fusionner",
+      "confidenceOption": "Confiance qu'elle apporte la valeur, de 0 à 1 (0.5 par défaut)",
+      "strategicOption": "Fait avancer un objectif stratégique de l'espace",
+      "problemOption": "Le problème qu'elle résout, dans les mots des utilisateurs",
+      "evidence": "{{signals}} signaux, {{customers}} clients, {{revenue}}/mois, {{urgent}} urgents",
+      "add": {
+        "description": "Former une nouvelle opportunité",
+        "titleArg": "Nom du pari en une ligne",
+        "productLineOption": "Ligne de produits concernée (slug ou id)",
+        "success": "Opportunité {{id}} proposée"
+      },
+      "estimate": {
+        "description": "Modifier l'estimation, la confiance ou le problème d'une opportunité",
+        "success": "Opportunité {{id}} mise à jour"
+      },
+      "link": {
+        "description": "Lier un signal à une opportunité de son espace",
+        "success": "Le signal {{signal}} appuie {{opportunity}}"
+      },
+      "unlink": {
+        "description": "Délier un signal de son opportunité",
+        "success": "Signal {{signal}} délié"
+      },
+      "accept": {
+        "description": "Accepter une opportunité : elle concourt pour la capacité de revue",
+        "success": "{{title}} acceptée"
+      },
+      "drop": {
+        "description": "Abandonner une opportunité, en disant pourquoi",
+        "reasonOption": "Pourquoi elle est abandonnée",
+        "success": "{{title}} abandonnée"
+      },
+      "build": {
+        "description": "Transformer une opportunité en élément de travail d'un projet",
+        "projectOption": "Slug ou id du projet",
+        "success": "Construction de {{title}} comme élément {{workItem}}"
+      },
+      "ls": {
+        "description": "Classer les opportunités ouvertes et marquer la ligne (▶) qui tient cette semaine",
+        "title": "Opportunités de {{space}} — {{used}} sur {{capacity}} heures de revue dans la ligne",
+        "idColumn": "Id",
+        "titleColumn": "Opportunité",
+        "statusColumn": "Statut",
+        "scoreColumn": "Valeur/h",
+        "hoursColumn": "Heures",
+        "evidenceColumn": "Preuves",
+        "empty": "Aucune opportunité ouverte. Formez-en une avec shep opportunity add.",
+        "unlinked": "{{count}} signal(aux) pas encore lié(s) à une opportunité (shep signal ls --unlinked)"
+      },
+      "show": {
+        "description": "Afficher une opportunité avec ses preuves et son score",
+        "score": "{{score}} de valeur par heure de revue (valeur {{value}}, {{hours}} h, confiance {{confidence}})",
+        "dropped": "Abandonnée : {{reason}}"
+      },
+      "weights": {
+        "description": "Afficher ou définir les poids et la capacité de revue hebdomadaire d'un espace",
+        "reachOption": "Valeur de chaque client",
+        "revenueOption": "Valeur de chaque 1 000 par mois en jeu",
+        "urgencyOption": "Valeur de chaque signal urgent",
+        "strategicOption": "Valeur ajoutée pour un pari stratégique",
+        "capacityOption": "Heures de revue humaine par semaine",
+        "current": "portée {{reach}} · revenu {{revenue}} · urgence {{urgency}} · stratégique {{strategic}} · capacité {{capacity}} h/semaine"
+      }
     }
   },
   "ui": {

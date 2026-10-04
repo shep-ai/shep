@@ -1,0 +1,10 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: SignalKind.yaml
+type: string
+enum:
+  - Feedback
+  - Incident
+  - Tracker
+  - Discovery
+  - Manual
+description: Where a signal came from

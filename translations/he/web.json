@@ -446,7 +446,8 @@
     "projectMemory": "Project Memory",
     "harness": "Harness",
     "spaces": "מרחבים",
-    "trackers": "חיבורים"
+    "trackers": "חיבורים",
+    "opportunities": "הזדמנויות"
   },
   "sidebar": {
     "features": "פיצ'רים",
@@ -1522,6 +1523,92 @@
       "subtitle": "דפי Notion שסוכנים בכל מרחב קוראים כשהם מתאימים למשימה.",
       "empty": "אין עדיין ידע צוות. הוסיפו חיבור Notion ואת הדפים שלו בעמוד",
       "connections": "חיבורים"
+    }
+  },
+  "opportunities": {
+    "title": "הזדמנויות",
+    "subtitle": "הימורים שנתמכים בראיות, מדורגים לפי ערך לשעת סקירה.",
+    "space": "מרחב",
+    "empty": "אין הזדמנויות פתוחות במרחב הזה. עצבו אחת למעלה.",
+    "errors": {
+      "actionFailed": "לא ניתן היה לשמור את השינוי. נסו שוב."
+    },
+    "capacity": {
+      "title": "קיבולת הסקירה השבוע",
+      "used": "{{used}} מתוך {{capacity}} שעות סקירה",
+      "waiting_one": "הימור מאושר {{count}} ממתין לקיבולת",
+      "waiting_few": "{{count}} הימורים מאושרים ממתינים לקיבולת",
+      "waiting_many": "{{count}} הימורים מאושרים ממתינים לקיבולת",
+      "waiting_other": "{{count}} הימורים מאושרים ממתינים לקיבולת"
+    },
+    "row": {
+      "inLine": "בקו של השבוע",
+      "outOfLine": "מחוץ לקו",
+      "strategic": "אסטרטגית",
+      "evidence": "{{signals}} אותות · {{customers}} לקוחות · {{revenue}} לחודש · {{urgent}} דחופים",
+      "cost": "{{hours}} שעות · ביטחון {{confidence}}%"
+    },
+    "status": {
+      "Proposed": "הוצעה",
+      "Accepted": "התקבלה",
+      "Building": "בבנייה",
+      "Shipped": "שוחררה",
+      "Dropped": "נדחתה"
+    },
+    "kind": {
+      "Feedback": "משוב",
+      "Incident": "תקלה",
+      "Tracker": "מערכת מעקב",
+      "Discovery": "ממצא",
+      "Manual": "הערה"
+    },
+    "actions": {
+      "accept": "קבלה",
+      "build": "בנייה",
+      "drop": "דחייה",
+      "cancel": "ביטול",
+      "reason": "למה לדחות?",
+      "project": "פרויקט",
+      "noProjects": "צרו קודם פרויקט; בנייה יוצרת בו פריט עבודה."
+    },
+    "inbox": {
+      "title": "אותות לקישור ({{count}})",
+      "empty": "כל אות תומך בהזדמנות.",
+      "urgent": "דחוף",
+      "customerRevenue": "{{customer}} · {{revenue}} לחודש",
+      "link": "קישור אל…",
+      "remove": "הסרת אות"
+    },
+    "signalForm": {
+      "title": "תיעוד אות",
+      "signal": "אות",
+      "placeholder": "מה משתמש ביקש, או מה נשבר?",
+      "kind": "סוג",
+      "customer": "לקוח",
+      "revenue": "הכנסה לחודש",
+      "urgent": "דחוף",
+      "submit": "תיעוד"
+    },
+    "opportunityForm": {
+      "title": "עיצוב הזדמנות",
+      "name": "הזדמנות",
+      "placeholder": "הימור ששווה לבנות",
+      "hours": "שעות סקירה",
+      "confidence": "% ביטחון",
+      "productLine": "קו מוצרים",
+      "anyLine": "כל המרחב",
+      "strategic": "אסטרטגית",
+      "submit": "הוספה"
+    },
+    "weights": {
+      "title": "משקלים וקיבולת",
+      "formula": "ערך = תפוצה × לקוחות + הכנסה × (הכנסה בסיכון ÷ 1,000) + דחיפות × אותות דחופים + אסטרטגי. ציון = ערך × ביטחון ÷ שעות סקירה.",
+      "reach": "תפוצה",
+      "revenue": "הכנסה",
+      "urgency": "דחיפות",
+      "strategic": "אסטרטגי",
+      "weeklyReviewHours": "שעות סקירה בשבוע",
+      "save": "שמירה"
     }
   }
 }

@@ -10,8 +10,7 @@
  * after a success the page refreshes to re-read the overview.
  */
 
-import { useCallback, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ArrowLeftRight, RefreshCw } from 'lucide-react';
 import type { TrackerOverview } from '@shepai/core/application/use-cases/trackers/get-tracker-overview.use-case';
@@ -20,7 +19,7 @@ import { runTrackerSync } from '@/app/actions/manage-trackers';
 import { syncKnowledge } from '@/app/actions/manage-knowledge';
 import { AddConnectionForm } from './add-connection-form';
 import { TrackerConnectionCard } from './tracker-connection-card';
-import type { RunTrackerAction, TrackerActionOutcome } from './trackers-types';
+import { useRunAction } from '@/hooks/use-run-action';
 
 export interface TrackersPageClientProps {
   overview: TrackerOverview;
@@ -30,26 +29,12 @@ export interface TrackersPageClientProps {
 
 export function TrackersPageClient({ overview, loadError }: TrackersPageClientProps) {
   const { t } = useTranslation('web');
-  const router = useRouter();
-  const [error, setError] = useState<string | null>(loadError ?? null);
+  const { run, error } = useRunAction({
+    fallbackError: t('trackers.errors.actionFailed'),
+    refreshOnFailure: true,
+    ...(loadError ? { initialError: loadError } : {}),
+  });
   const [syncing, setSyncing] = useState(false);
-
-  const run = useCallback<RunTrackerAction>(
-    async (action) => {
-      setError(null);
-      const result: TrackerActionOutcome = await action().catch((cause: unknown) => ({
-        ok: false,
-        error: cause instanceof Error ? cause.message : t('trackers.errors.actionFailed'),
-      }));
-      router.refresh();
-      if (!result.ok) {
-        setError(result.error ?? t('trackers.errors.actionFailed'));
-        return false;
-      }
-      return true;
-    },
-    [router, t]
-  );
 
   async function syncAll() {
     setSyncing(true);

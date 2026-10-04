@@ -446,7 +446,8 @@
     "projectMemory": "Project Memory",
     "harness": "Harness",
     "spaces": "Spaces",
-    "trackers": "Connections"
+    "trackers": "Connections",
+    "opportunities": "Opportunities"
   },
   "sidebar": {
     "features": "Features",
@@ -1522,6 +1523,92 @@
       "subtitle": "Notion pages agents in each space read when they match the task.",
       "empty": "No team knowledge yet. Add a Notion connection and its pages on",
       "connections": "Connections"
+    }
+  },
+  "opportunities": {
+    "title": "Opportunities",
+    "subtitle": "Bets backed by evidence, ranked by value per review hour.",
+    "space": "Space",
+    "empty": "No open opportunities in this space. Shape one above.",
+    "errors": {
+      "actionFailed": "That change could not be saved. Try again."
+    },
+    "capacity": {
+      "title": "This week's review capacity",
+      "used": "{{used}} of {{capacity}} review hours",
+      "waiting_one": "{{count}} accepted bet waits for capacity",
+      "waiting_few": "{{count}} accepted bets wait for capacity",
+      "waiting_many": "{{count}} accepted bets wait for capacity",
+      "waiting_other": "{{count}} accepted bets wait for capacity"
+    },
+    "row": {
+      "inLine": "In this week’s line",
+      "outOfLine": "Not in the line",
+      "strategic": "Strategic",
+      "evidence": "{{signals}} signals · {{customers}} customers · {{revenue}}/month · {{urgent}} urgent",
+      "cost": "{{hours}} h · {{confidence}}% confidence"
+    },
+    "status": {
+      "Proposed": "Proposed",
+      "Accepted": "Accepted",
+      "Building": "Building",
+      "Shipped": "Shipped",
+      "Dropped": "Dropped"
+    },
+    "kind": {
+      "Feedback": "Feedback",
+      "Incident": "Incident",
+      "Tracker": "Tracker",
+      "Discovery": "Discovery",
+      "Manual": "Note"
+    },
+    "actions": {
+      "accept": "Accept",
+      "build": "Build",
+      "drop": "Drop",
+      "cancel": "Cancel",
+      "reason": "Why drop it?",
+      "project": "Project",
+      "noProjects": "Create a project first; building creates a work item in one."
+    },
+    "inbox": {
+      "title": "Signals to link ({{count}})",
+      "empty": "Every signal supports an opportunity.",
+      "urgent": "Urgent",
+      "customerRevenue": "{{customer}} · {{revenue}}/month",
+      "link": "Link to…",
+      "remove": "Remove signal"
+    },
+    "signalForm": {
+      "title": "Record a signal",
+      "signal": "Signal",
+      "placeholder": "What did a user ask for, or what broke?",
+      "kind": "Kind",
+      "customer": "Customer",
+      "revenue": "Revenue/month",
+      "urgent": "Urgent",
+      "submit": "Record"
+    },
+    "opportunityForm": {
+      "title": "Shape an opportunity",
+      "name": "Opportunity",
+      "placeholder": "A bet worth building",
+      "hours": "review h",
+      "confidence": "% confident",
+      "productLine": "Product line",
+      "anyLine": "Whole space",
+      "strategic": "Strategic",
+      "submit": "Add"
+    },
+    "weights": {
+      "title": "Weights and capacity",
+      "formula": "Value = reach × customers + revenue × (revenue at stake ÷ 1,000) + urgency × urgent signals + strategic. Score = value × confidence ÷ review hours.",
+      "reach": "Reach",
+      "revenue": "Revenue",
+      "urgency": "Urgency",
+      "strategic": "Strategic",
+      "weeklyReviewHours": "Review h/week",
+      "save": "Save"
     }
   }
 }

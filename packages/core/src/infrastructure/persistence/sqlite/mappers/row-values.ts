@@ -14,10 +14,4 @@ export function optionalMillis(value: Date | string | number | undefined): numbe
 }
 
 /** Only the non-null entries of `fields`, so optional properties stay absent. */
-export function defined<T extends Record<string, unknown>>(
-  fields: T
-): { [K in keyof T]?: NonNullable<T[K]> } {
-  return Object.fromEntries(
-    Object.entries(fields).filter(([, value]) => value !== null && value !== undefined)
-  ) as { [K in keyof T]?: NonNullable<T[K]> };
-}
+export { defined } from '../../../../domain/shared/defined.js';

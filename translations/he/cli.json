@@ -1425,6 +1425,115 @@
         "repoOption": "נתיב המאגר (התיקייה הנוכחית אם לא צוין)",
         "none": "שום ידע צוות במרחב של המאגר הזה לא מתאים למשימה הזו."
       }
+    },
+    "numberOption": {
+      "invalid": "{{option}} מצפה למספר, לא \"{{value}}\""
+    },
+    "signal": {
+      "description": "תיעוד ראיות למה שמשתמשים צריכים",
+      "failed": "פקודת האות נכשלה",
+      "spaceOption": "Slug או מזהה של המרחב (ברירת המחדל אם לא צוין)",
+      "signalArg": "מזהה אות (ראו shep signal ls)",
+      "add": {
+        "description": "תיעוד אות: בקשה, תקלה, משימה או ממצא",
+        "titleArg": "תקציר בשורה אחת",
+        "productLineOption": "קו המוצרים הנוגע בדבר (slug או מזהה)",
+        "kindOption": "feedback, incident, tracker, discovery או manual (ברירת מחדל manual)",
+        "customerOption": "הלקוח או החשבון שמאחוריו",
+        "revenueOption": "הכנסה חודשית בסיכון עבור הלקוח",
+        "urgentOption": "דורש תשומת לב בקרוב",
+        "urlOption": "קישור למקור",
+        "detailOption": "טקסט ארוך יותר",
+        "opportunityOption": "מזהה ההזדמנות לקשר אליה",
+        "badKind": "\"{{kind}}\" אינו סוג אות; השתמשו ב-feedback, incident, tracker, discovery או manual",
+        "success": "האות {{id}} תועד"
+      },
+      "ls": {
+        "description": "הצגת אותות, החדשים קודם",
+        "unlinkedOption": "רק אותות ללא הזדמנות",
+        "title": "אותות",
+        "idColumn": "מזהה",
+        "titleColumn": "אות",
+        "kindColumn": "סוג",
+        "customerColumn": "לקוח",
+        "opportunityColumn": "הזדמנות",
+        "unlinked": "לא מקושר",
+        "empty": "אין עדיין אותות. תעדו אחד עם shep signal add."
+      },
+      "rm": {
+        "description": "הסרת אות",
+        "success": "האות {{id}} הוסר"
+      }
+    },
+    "opportunity": {
+      "description": "הימורים שנתמכים באותות, מדורגים לפי ערך לשעת סקירה",
+      "failed": "פקודת ההזדמנות נכשלה",
+      "opportunityArg": "מזהה הזדמנות (ראו shep opportunity ls)",
+      "signalArg": "מזהה אות (ראו shep signal ls)",
+      "spaceOption": "Slug או מזהה של המרחב (ברירת המחדל אם לא צוין)",
+      "hoursOption": "שעות סקירה אנושית משוערות עד המיזוג",
+      "confidenceOption": "ביטחון שתספק את הערך, מ-0 עד 1 (ברירת מחדל 0.5)",
+      "strategicOption": "מקדמת מטרה אסטרטגית של המרחב",
+      "problemOption": "הבעיה שהיא פותרת, במילים של המשתמשים",
+      "evidence": "{{signals}} אותות, {{customers}} לקוחות, {{revenue}} לחודש, {{urgent}} דחופים",
+      "add": {
+        "description": "עיצוב הזדמנות חדשה",
+        "titleArg": "שם ההימור בשורה אחת",
+        "productLineOption": "קו המוצרים הנוגע בדבר (slug או מזהה)",
+        "success": "ההזדמנות {{id}} הוצעה"
+      },
+      "estimate": {
+        "description": "שינוי ההערכה, הביטחון או הבעיה של הזדמנות",
+        "success": "ההזדמנות {{id}} עודכנה"
+      },
+      "link": {
+        "description": "קישור אות להזדמנות במרחב שלו",
+        "success": "האות {{signal}} תומך ב-{{opportunity}}"
+      },
+      "unlink": {
+        "description": "ניתוק אות מההזדמנות שלו",
+        "success": "האות {{signal}} נותק"
+      },
+      "accept": {
+        "description": "קבלת הזדמנות: היא מתחרה על זמן סקירה",
+        "success": "{{title}} התקבלה"
+      },
+      "drop": {
+        "description": "דחיית הזדמנות, עם סיבה",
+        "reasonOption": "למה היא נדחית",
+        "success": "{{title}} נדחתה"
+      },
+      "build": {
+        "description": "הפיכת הזדמנות לפריט עבודה בפרויקט",
+        "projectOption": "Slug או מזהה של הפרויקט",
+        "success": "{{title}} נבנית כפריט עבודה {{workItem}}"
+      },
+      "ls": {
+        "description": "דירוג ההזדמנויות הפתוחות וסימון הקו (▶) שנכנס השבוע",
+        "title": "הזדמנויות ב-{{space}} — {{used}} מתוך {{capacity}} שעות סקירה בקו",
+        "idColumn": "מזהה",
+        "titleColumn": "הזדמנות",
+        "statusColumn": "מצב",
+        "scoreColumn": "ערך/שעה",
+        "hoursColumn": "שעות",
+        "evidenceColumn": "ראיות",
+        "empty": "אין הזדמנויות פתוחות. עצבו אחת עם shep opportunity add.",
+        "unlinked": "אותות ללא הזדמנות: {{count}} (shep signal ls --unlinked)"
+      },
+      "show": {
+        "description": "הצגת הזדמנות עם הראיות והציון שלה",
+        "score": "{{score}} ערך לשעת סקירה (ערך {{value}}, {{hours}} שעות, ביטחון {{confidence}})",
+        "dropped": "נדחתה: {{reason}}"
+      },
+      "weights": {
+        "description": "הצגה או הגדרה של המשקלים וקיבולת הסקירה השבועית של מרחב",
+        "reachOption": "ערך כל לקוח",
+        "revenueOption": "ערך כל 1,000 לחודש בסיכון",
+        "urgencyOption": "ערך כל אות דחוף",
+        "strategicOption": "תוספת להימור אסטרטגי",
+        "capacityOption": "שעות סקירה אנושית בשבוע",
+        "current": "תפוצה {{reach}} · הכנסה {{revenue}} · דחיפות {{urgency}} · אסטרטגי {{strategic}} · קיבולת {{capacity}} שעות בשבוע"
+      }
     }
   },
   "ui": {

@@ -944,6 +944,31 @@ arguments.
 
 ---
 
+## Signal and Opportunity Commands
+
+`shep signal` records evidence of what users need; `shep opportunity` shapes bets backed by
+signals, ranks them by value per review hour and draws the line that fits a space's weekly
+review capacity (spec 126). See the [opportunities guide](../guides/opportunities.md).
+
+| Command | Description |
+| ------- | ----------- |
+| `shep signal add <title>` | Record a signal (`--space`, `--product-line`, `--kind feedback\|incident\|tracker\|discovery\|manual`, `--customer`, `--revenue <per month>`, `--urgent`, `--url`, `--detail`, `--opportunity`) |
+| `shep signal ls` | Signals, newest first (`--space`, `--unlinked`) |
+| `shep signal rm <signal>` | Remove a signal |
+| `shep opportunity add <title> --hours <h>` | Shape an opportunity (`--confidence 0-1`, `--strategic`, `--problem`, `--space`, `--product-line`) |
+| `shep opportunity ls [--space]` | Open opportunities ranked by value per review hour; ▶ marks the line |
+| `shep opportunity show <opportunity>` | Score, evidence and signals |
+| `shep opportunity estimate <opportunity>` | Change `--hours`, `--confidence`, `--strategic` or `--problem` |
+| `shep opportunity link <signal> <opportunity>` / `unlink <signal>` | Link a signal to an opportunity of its space, or unlink it |
+| `shep opportunity accept <opportunity>` | Accept: it competes for review capacity |
+| `shep opportunity drop <opportunity> --reason <text>` | Drop it, saying why |
+| `shep opportunity build <opportunity> --project <p>` | Create a work item carrying the problem and evidence |
+| `shep opportunity weights` | Show, or set with `--reach`, `--revenue`, `--urgency`, `--strategic`, `--capacity <h/week>` |
+
+**Source**: `src/presentation/cli/commands/signal/`, `src/presentation/cli/commands/opportunity/`
+
+---
+
 ## Bug Loop Commands
 
 `shep item investigate`, `hypotheses` and `fix` take a bug from report to fix (spec 123). See the

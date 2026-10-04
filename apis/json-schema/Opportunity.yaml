@@ -1,0 +1,48 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: Opportunity.yaml
+type: object
+properties:
+  spaceId:
+    type: string
+    description: The space the opportunity belongs to
+  productLineId:
+    type: string
+    description: The product line it concerns, if any
+  title:
+    type: string
+    description: One-line name of the bet
+  problem:
+    type: string
+    description: The problem it solves, in the users' terms
+  status:
+    $ref: OpportunityStatus.yaml
+    description: Where the opportunity stands
+  reviewHours:
+    type: number
+    description: Estimated hours of human review to merge it
+  confidence:
+    type: number
+    description: Confidence that it delivers the value, from 0 to 1
+  strategic:
+    type: boolean
+    description: Whether it advances a strategic goal of the space
+  workItemId:
+    type: string
+    description: The work item it became when built
+  decidedAt:
+    type: string
+    format: date-time
+    description: When it was accepted, dropped or built
+  dropReason:
+    type: string
+    description: Why it was dropped
+required:
+  - spaceId
+  - title
+  - status
+  - reviewHours
+  - confidence
+  - strategic
+allOf:
+  - $ref: BaseEntity.yaml
+description: A bet worth building, backed by signals and scored by value per review hour

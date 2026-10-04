@@ -75,6 +75,8 @@ import { createSpaceCommand } from './commands/space/index.js';
 import { createConnectionCommand } from './commands/connection/index.js';
 import { createSyncCommand } from './commands/sync/index.js';
 import { createKnowledgeCommand } from './commands/knowledge/index.js';
+import { createSignalCommand } from './commands/signal/index.js';
+import { createOpportunityCommand } from './commands/opportunity/index.js';
 import { createMcpCommand } from './commands/mcp.command.js';
 import { createFleetCommand } from './commands/fleet/index.js';
 import { createLogsCommand } from './commands/logs/index.js';
@@ -204,6 +206,8 @@ async function bootstrap() {
     program.addCommand(createConnectionCommand());
     program.addCommand(createSyncCommand());
     program.addCommand(createKnowledgeCommand());
+    program.addCommand(createSignalCommand());
+    program.addCommand(createOpportunityCommand());
     program.addCommand(createUpgradeCommand());
     program.addCommand(createWorkflowCommand());
     program.addCommand(createMcpCommand());

@@ -1425,6 +1425,115 @@
         "repoOption": "مسار المستودع (الدليل الحالي إن لم يُحدَّد)",
         "none": "لا توجد معرفة فريق في مساحة هذا المستودع تطابق هذه المهمة."
       }
+    },
+    "numberOption": {
+      "invalid": "يتوقع {{option}} رقمًا، وليس \"{{value}}\""
+    },
+    "signal": {
+      "description": "تسجيل أدلة على ما يحتاجه المستخدمون",
+      "failed": "فشل أمر الإشارة",
+      "spaceOption": "المعرّف المختصر أو معرّف المساحة (الافتراضية إن لم تُحدَّد)",
+      "signalArg": "معرّف الإشارة (راجع shep signal ls)",
+      "add": {
+        "description": "تسجيل إشارة: طلب أو حادث أو مشكلة أو اكتشاف",
+        "titleArg": "ملخص في سطر واحد",
+        "productLineOption": "خط المنتجات المعني (المعرّف المختصر أو المعرّف)",
+        "kindOption": "feedback أو incident أو tracker أو discovery أو manual (الافتراضي manual)",
+        "customerOption": "العميل أو الحساب المعني",
+        "revenueOption": "الإيراد الشهري المعرّض للخطر لهذا العميل",
+        "urgentOption": "يحتاج إلى اهتمام قريب",
+        "urlOption": "رابط المصدر",
+        "detailOption": "نص أطول",
+        "opportunityOption": "معرّف الفرصة لربطها بها",
+        "badKind": "\"{{kind}}\" ليس نوع إشارة؛ استخدم feedback أو incident أو tracker أو discovery أو manual",
+        "success": "تم تسجيل الإشارة {{id}}"
+      },
+      "ls": {
+        "description": "عرض الإشارات، الأحدث أولًا",
+        "unlinkedOption": "الإشارات غير المرتبطة بفرصة فقط",
+        "title": "الإشارات",
+        "idColumn": "المعرّف",
+        "titleColumn": "الإشارة",
+        "kindColumn": "النوع",
+        "customerColumn": "العميل",
+        "opportunityColumn": "الفرصة",
+        "unlinked": "غير مرتبطة",
+        "empty": "لا توجد إشارات بعد. سجّل واحدة باستخدام shep signal add."
+      },
+      "rm": {
+        "description": "إزالة إشارة",
+        "success": "تمت إزالة الإشارة {{id}}"
+      }
+    },
+    "opportunity": {
+      "description": "رهانات مدعومة بإشارات، مرتبة حسب القيمة لكل ساعة مراجعة",
+      "failed": "فشل أمر الفرصة",
+      "opportunityArg": "معرّف الفرصة (راجع shep opportunity ls)",
+      "signalArg": "معرّف الإشارة (راجع shep signal ls)",
+      "spaceOption": "المعرّف المختصر أو معرّف المساحة (الافتراضية إن لم تُحدَّد)",
+      "hoursOption": "الساعات المقدّرة للمراجعة البشرية حتى الدمج",
+      "confidenceOption": "الثقة في تحقيق القيمة، من 0 إلى 1 (الافتراضي 0.5)",
+      "strategicOption": "تخدم هدفًا استراتيجيًا للمساحة",
+      "problemOption": "المشكلة التي تحلها، بكلمات المستخدمين",
+      "evidence": "{{signals}} إشارات، {{customers}} عملاء، {{revenue}} شهريًا، {{urgent}} عاجلة",
+      "add": {
+        "description": "صياغة فرصة جديدة",
+        "titleArg": "اسم الرهان في سطر واحد",
+        "productLineOption": "خط المنتجات المعني (المعرّف المختصر أو المعرّف)",
+        "success": "تم اقتراح الفرصة {{id}}"
+      },
+      "estimate": {
+        "description": "تغيير تقدير الفرصة أو الثقة أو المشكلة",
+        "success": "تم تحديث الفرصة {{id}}"
+      },
+      "link": {
+        "description": "ربط إشارة بفرصة في مساحتها",
+        "success": "الإشارة {{signal}} تدعم {{opportunity}}"
+      },
+      "unlink": {
+        "description": "فك ربط إشارة بفرصتها",
+        "success": "تم فك ربط الإشارة {{signal}}"
+      },
+      "accept": {
+        "description": "قبول فرصة: تتنافس على سعة المراجعة",
+        "success": "تم قبول {{title}}"
+      },
+      "drop": {
+        "description": "استبعاد فرصة مع ذكر السبب",
+        "reasonOption": "سبب الاستبعاد",
+        "success": "تم استبعاد {{title}}"
+      },
+      "build": {
+        "description": "تحويل فرصة إلى عنصر عمل في مشروع",
+        "projectOption": "المعرّف المختصر أو معرّف المشروع",
+        "success": "يجري بناء {{title}} كعنصر العمل {{workItem}}"
+      },
+      "ls": {
+        "description": "ترتيب الفرص المفتوحة وتمييز الخط (▶) الذي يتسع له هذا الأسبوع",
+        "title": "الفرص في {{space}} — {{used}} من {{capacity}} ساعة مراجعة في الخط",
+        "idColumn": "المعرّف",
+        "titleColumn": "الفرصة",
+        "statusColumn": "الحالة",
+        "scoreColumn": "القيمة/ساعة",
+        "hoursColumn": "الساعات",
+        "evidenceColumn": "الأدلة",
+        "empty": "لا توجد فرص مفتوحة. صغ واحدة باستخدام shep opportunity add.",
+        "unlinked": "إشارات غير مرتبطة بفرصة: {{count}} (shep signal ls --unlinked)"
+      },
+      "show": {
+        "description": "عرض فرصة مع أدلتها ودرجتها",
+        "score": "{{score}} قيمة لكل ساعة مراجعة (القيمة {{value}}، {{hours}} ساعة، الثقة {{confidence}})",
+        "dropped": "مستبعدة: {{reason}}"
+      },
+      "weights": {
+        "description": "عرض أو ضبط أوزان المساحة وسعة المراجعة الأسبوعية",
+        "reachOption": "قيمة كل عميل",
+        "revenueOption": "قيمة كل 1000 شهريًا معرّضة للخطر",
+        "urgencyOption": "قيمة كل إشارة عاجلة",
+        "strategicOption": "قيمة مضافة للرهان الاستراتيجي",
+        "capacityOption": "ساعات المراجعة البشرية أسبوعيًا",
+        "current": "الانتشار {{reach}} · الإيراد {{revenue}} · الإلحاح {{urgency}} · استراتيجي {{strategic}} · السعة {{capacity}} ساعة/أسبوع"
+      }
     }
   },
   "ui": {

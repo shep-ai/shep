@@ -446,7 +446,8 @@
     "projectMemory": "Project Memory",
     "harness": "Harness",
     "spaces": "المساحات",
-    "trackers": "الاتصالات"
+    "trackers": "الاتصالات",
+    "opportunities": "الفرص"
   },
   "sidebar": {
     "features": "الميزات",
@@ -1522,6 +1523,92 @@
       "subtitle": "صفحات Notion التي يقرؤها الوكلاء في كل مساحة عندما تطابق المهمة.",
       "empty": "لا توجد معرفة فريق بعد. أضف اتصال Notion وصفحاته في صفحة",
       "connections": "الاتصالات"
+    }
+  },
+  "opportunities": {
+    "title": "الفرص",
+    "subtitle": "رهانات مدعومة بالأدلة، مرتبة حسب القيمة لكل ساعة مراجعة.",
+    "space": "المساحة",
+    "empty": "لا توجد فرص مفتوحة في هذه المساحة. صغ واحدة أعلاه.",
+    "errors": {
+      "actionFailed": "تعذر حفظ التغيير. حاول مرة أخرى."
+    },
+    "capacity": {
+      "title": "سعة المراجعة هذا الأسبوع",
+      "used": "{{used}} من {{capacity}} ساعة مراجعة",
+      "waiting_one": "رهان مقبول {{count}} ينتظر السعة",
+      "waiting_few": "{{count}} رهانات مقبولة تنتظر السعة",
+      "waiting_many": "{{count}} رهانًا مقبولًا ينتظر السعة",
+      "waiting_other": "{{count}} رهان مقبول ينتظر السعة"
+    },
+    "row": {
+      "inLine": "في خط هذا الأسبوع",
+      "outOfLine": "خارج الخط",
+      "strategic": "استراتيجية",
+      "evidence": "{{signals}} إشارات · {{customers}} عملاء · {{revenue}} شهريًا · {{urgent}} عاجلة",
+      "cost": "{{hours}} ساعة · ثقة {{confidence}}٪"
+    },
+    "status": {
+      "Proposed": "مقترحة",
+      "Accepted": "مقبولة",
+      "Building": "قيد البناء",
+      "Shipped": "مُطلقة",
+      "Dropped": "مستبعدة"
+    },
+    "kind": {
+      "Feedback": "ملاحظات",
+      "Incident": "حادث",
+      "Tracker": "متتبع",
+      "Discovery": "اكتشاف",
+      "Manual": "ملاحظة"
+    },
+    "actions": {
+      "accept": "قبول",
+      "build": "بناء",
+      "drop": "استبعاد",
+      "cancel": "إلغاء",
+      "reason": "لماذا تُستبعد؟",
+      "project": "المشروع",
+      "noProjects": "أنشئ مشروعًا أولًا؛ البناء ينشئ فيه عنصر عمل."
+    },
+    "inbox": {
+      "title": "إشارات للربط ({{count}})",
+      "empty": "كل إشارة تدعم فرصة.",
+      "urgent": "عاجل",
+      "customerRevenue": "{{customer}} · {{revenue}} شهريًا",
+      "link": "ربط بـ…",
+      "remove": "إزالة الإشارة"
+    },
+    "signalForm": {
+      "title": "تسجيل إشارة",
+      "signal": "الإشارة",
+      "placeholder": "ماذا طلب مستخدم، أو ما الذي تعطل؟",
+      "kind": "النوع",
+      "customer": "العميل",
+      "revenue": "الإيراد شهريًا",
+      "urgent": "عاجل",
+      "submit": "تسجيل"
+    },
+    "opportunityForm": {
+      "title": "صياغة فرصة",
+      "name": "الفرصة",
+      "placeholder": "رهان يستحق البناء",
+      "hours": "ساعات مراجعة",
+      "confidence": "٪ ثقة",
+      "productLine": "خط المنتجات",
+      "anyLine": "المساحة كاملة",
+      "strategic": "استراتيجية",
+      "submit": "إضافة"
+    },
+    "weights": {
+      "title": "الأوزان والسعة",
+      "formula": "القيمة = الانتشار × العملاء + الإيراد × (الإيراد المعرّض للخطر ÷ 1000) + الإلحاح × الإشارات العاجلة + الاستراتيجي. الدرجة = القيمة × الثقة ÷ ساعات المراجعة.",
+      "reach": "الانتشار",
+      "revenue": "الإيراد",
+      "urgency": "الإلحاح",
+      "strategic": "استراتيجي",
+      "weeklyReviewHours": "ساعات مراجعة/أسبوع",
+      "save": "حفظ"
     }
   }
 }

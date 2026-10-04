@@ -1425,6 +1425,115 @@
         "repoOption": "Repository path (current directory if omitted)",
         "none": "No team knowledge matches that task in this repository's space."
       }
+    },
+    "numberOption": {
+      "invalid": "{{option}} expects a number, not \"{{value}}\""
+    },
+    "signal": {
+      "description": "Record evidence of what users need",
+      "failed": "Signal command failed",
+      "spaceOption": "Space slug or id (default space if omitted)",
+      "signalArg": "Signal id (see shep signal ls)",
+      "add": {
+        "description": "Record a signal: a request, an incident, an issue or a finding",
+        "titleArg": "One-line summary",
+        "productLineOption": "Product line it concerns (slug or id)",
+        "kindOption": "feedback, incident, tracker, discovery or manual (default manual)",
+        "customerOption": "Customer or account behind it",
+        "revenueOption": "Revenue at stake per month for that customer",
+        "urgentOption": "Needs attention soon",
+        "urlOption": "Link to the original",
+        "detailOption": "Longer text",
+        "opportunityOption": "Opportunity id to link it to",
+        "badKind": "\"{{kind}}\" is not a signal kind; use feedback, incident, tracker, discovery or manual",
+        "success": "Signal {{id}} recorded"
+      },
+      "ls": {
+        "description": "List signals, newest first",
+        "unlinkedOption": "Only signals not linked to an opportunity",
+        "title": "Signals",
+        "idColumn": "Id",
+        "titleColumn": "Signal",
+        "kindColumn": "Kind",
+        "customerColumn": "Customer",
+        "opportunityColumn": "Opportunity",
+        "unlinked": "not linked",
+        "empty": "No signals yet. Record one with shep signal add."
+      },
+      "rm": {
+        "description": "Remove a signal",
+        "success": "Signal {{id}} removed"
+      }
+    },
+    "opportunity": {
+      "description": "Bets backed by signals, ranked by value per review hour",
+      "failed": "Opportunity command failed",
+      "opportunityArg": "Opportunity id (see shep opportunity ls)",
+      "signalArg": "Signal id (see shep signal ls)",
+      "spaceOption": "Space slug or id (default space if omitted)",
+      "hoursOption": "Estimated hours of human review to merge it",
+      "confidenceOption": "Confidence it delivers the value, from 0 to 1 (default 0.5)",
+      "strategicOption": "It advances a strategic goal of the space",
+      "problemOption": "The problem it solves, in the users' terms",
+      "evidence": "{{signals}} signals, {{customers}} customers, {{revenue}}/month, {{urgent}} urgent",
+      "add": {
+        "description": "Shape a new opportunity",
+        "titleArg": "One-line name of the bet",
+        "productLineOption": "Product line it concerns (slug or id)",
+        "success": "Opportunity {{id}} proposed"
+      },
+      "estimate": {
+        "description": "Change an opportunity's estimate, confidence or problem",
+        "success": "Opportunity {{id}} updated"
+      },
+      "link": {
+        "description": "Link a signal to an opportunity of its space",
+        "success": "Signal {{signal}} supports {{opportunity}}"
+      },
+      "unlink": {
+        "description": "Unlink a signal from its opportunity",
+        "success": "Signal {{signal}} unlinked"
+      },
+      "accept": {
+        "description": "Accept an opportunity: it competes for review capacity",
+        "success": "Accepted {{title}}"
+      },
+      "drop": {
+        "description": "Drop an opportunity, saying why",
+        "reasonOption": "Why it is dropped",
+        "success": "Dropped {{title}}"
+      },
+      "build": {
+        "description": "Turn an opportunity into a work item of a project",
+        "projectOption": "Project slug or id",
+        "success": "Building {{title}} as work item {{workItem}}"
+      },
+      "ls": {
+        "description": "Rank open opportunities and mark the line (▶) that fits this week",
+        "title": "Opportunities in {{space}} — {{used}} of {{capacity}} review hours in the line",
+        "idColumn": "Id",
+        "titleColumn": "Opportunity",
+        "statusColumn": "Status",
+        "scoreColumn": "Value/h",
+        "hoursColumn": "Hours",
+        "evidenceColumn": "Evidence",
+        "empty": "No open opportunities. Shape one with shep opportunity add.",
+        "unlinked": "{{count}} signal(s) are not linked to an opportunity yet (shep signal ls --unlinked)"
+      },
+      "show": {
+        "description": "Show an opportunity with its evidence and score",
+        "score": "{{score}} value per review hour (value {{value}}, {{hours}} h, confidence {{confidence}})",
+        "dropped": "Dropped: {{reason}}"
+      },
+      "weights": {
+        "description": "Show or set a space's weights and weekly review capacity",
+        "reachOption": "Value of each customer",
+        "revenueOption": "Value of each 1,000 a month at stake",
+        "urgencyOption": "Value of each urgent signal",
+        "strategicOption": "Value added for a strategic bet",
+        "capacityOption": "Hours of human review each week",
+        "current": "reach {{reach}} · revenue {{revenue}} · urgency {{urgency}} · strategic {{strategic}} · capacity {{capacity}} h/week"
+      }
     }
   },
   "ui": {

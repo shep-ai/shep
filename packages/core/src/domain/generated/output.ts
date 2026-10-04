@@ -6826,6 +6826,146 @@ export type KnowledgeDocument = BaseEntity & {
    */
   pageEditedAt: any;
 };
+export enum SignalKind {
+  Feedback = 'Feedback',
+  Incident = 'Incident',
+  Tracker = 'Tracker',
+  Discovery = 'Discovery',
+  Manual = 'Manual',
+}
+
+/**
+ * One piece of evidence of what users need: a request, an incident, an issue or a finding
+ */
+export type Signal = BaseEntity & {
+  /**
+   * The space the signal belongs to
+   */
+  spaceId: string;
+  /**
+   * The product line it concerns, if known
+   */
+  productLineId?: string;
+  /**
+   * Where the signal came from
+   */
+  kind: SignalKind;
+  /**
+   * One-line summary
+   */
+  title: string;
+  /**
+   * Longer text: the request, the error, the finding
+   */
+  detail?: string;
+  /**
+   * The customer (account) behind it, if any
+   */
+  customer?: string;
+  /**
+   * Revenue at stake per month for that customer, in the team's currency
+   */
+  monthlyRevenue?: float64;
+  /**
+   * Whether it needs attention soon
+   */
+  urgent: boolean;
+  /**
+   * Link to the original: ticket, message, issue, dashboard
+   */
+  url?: string;
+  /**
+   * The opportunity this signal supports, if linked
+   */
+  opportunityId?: string;
+};
+export enum OpportunityStatus {
+  Proposed = 'Proposed',
+  Accepted = 'Accepted',
+  Building = 'Building',
+  Shipped = 'Shipped',
+  Dropped = 'Dropped',
+}
+
+/**
+ * A bet worth building, backed by signals and scored by value per review hour
+ */
+export type Opportunity = BaseEntity & {
+  /**
+   * The space the opportunity belongs to
+   */
+  spaceId: string;
+  /**
+   * The product line it concerns, if any
+   */
+  productLineId?: string;
+  /**
+   * One-line name of the bet
+   */
+  title: string;
+  /**
+   * The problem it solves, in the users' terms
+   */
+  problem?: string;
+  /**
+   * Where the opportunity stands
+   */
+  status: OpportunityStatus;
+  /**
+   * Estimated hours of human review to merge it
+   */
+  reviewHours: float64;
+  /**
+   * Confidence that it delivers the value, from 0 to 1
+   */
+  confidence: float64;
+  /**
+   * Whether it advances a strategic goal of the space
+   */
+  strategic: boolean;
+  /**
+   * The work item it became when built
+   */
+  workItemId?: string;
+  /**
+   * When it was accepted, dropped or built
+   */
+  decidedAt?: any;
+  /**
+   * Why it was dropped
+   */
+  dropReason?: string;
+};
+
+/**
+ * How a space values evidence, and how many review hours it has each week
+ */
+export type OpportunityWeights = {
+  /**
+   * The space these weights belong to
+   */
+  spaceId: string;
+  /**
+   * Value of each customer behind an opportunity
+   */
+  reach: float64;
+  /**
+   * Value of each 1,000 a month of revenue at stake
+   */
+  revenue: float64;
+  /**
+   * Value of each urgent signal
+   */
+  urgency: float64;
+  /**
+   * Value added once for a strategic opportunity
+   */
+  strategic: float64;
+  /**
+   * Hours of human review available each week
+   */
+  weeklyReviewHours: float64;
+};
 
 /**
  * What one run of a tracker sync rule did

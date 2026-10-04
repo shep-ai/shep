@@ -446,7 +446,8 @@
     "projectMemory": "Project Memory",
     "harness": "Harness",
     "spaces": "Espacios",
-    "trackers": "Conexiones"
+    "trackers": "Conexiones",
+    "opportunities": "Oportunidades"
   },
   "sidebar": {
     "features": "Funcionalidades",
@@ -1522,6 +1523,92 @@
       "subtitle": "Páginas de Notion que leen los agentes de cada espacio cuando encajan con la tarea.",
       "empty": "Aún no hay conocimiento del equipo. Añade una conexión de Notion y sus páginas en",
       "connections": "Conexiones"
+    }
+  },
+  "opportunities": {
+    "title": "Oportunidades",
+    "subtitle": "Apuestas respaldadas por evidencia, ordenadas por valor por hora de revisión.",
+    "space": "Espacio",
+    "empty": "No hay oportunidades abiertas en este espacio. Crea una arriba.",
+    "errors": {
+      "actionFailed": "No se pudo guardar el cambio. Inténtalo de nuevo."
+    },
+    "capacity": {
+      "title": "Capacidad de revisión de esta semana",
+      "used": "{{used}} de {{capacity}} horas de revisión",
+      "waiting_one": "{{count}} apuesta aceptada espera capacidad",
+      "waiting_few": "{{count}} apuestas aceptadas esperan capacidad",
+      "waiting_many": "{{count}} apuestas aceptadas esperan capacidad",
+      "waiting_other": "{{count}} apuestas aceptadas esperan capacidad"
+    },
+    "row": {
+      "inLine": "En la línea de esta semana",
+      "outOfLine": "Fuera de la línea",
+      "strategic": "Estratégica",
+      "evidence": "{{signals}} señales · {{customers}} clientes · {{revenue}}/mes · {{urgent}} urgentes",
+      "cost": "{{hours}} h · {{confidence}} % de confianza"
+    },
+    "status": {
+      "Proposed": "Propuesta",
+      "Accepted": "Aceptada",
+      "Building": "En construcción",
+      "Shipped": "Entregada",
+      "Dropped": "Descartada"
+    },
+    "kind": {
+      "Feedback": "Feedback",
+      "Incident": "Incidente",
+      "Tracker": "Tracker",
+      "Discovery": "Hallazgo",
+      "Manual": "Nota"
+    },
+    "actions": {
+      "accept": "Aceptar",
+      "build": "Construir",
+      "drop": "Descartar",
+      "cancel": "Cancelar",
+      "reason": "¿Por qué descartarla?",
+      "project": "Proyecto",
+      "noProjects": "Crea primero un proyecto; construir crea un elemento de trabajo en él."
+    },
+    "inbox": {
+      "title": "Señales por vincular ({{count}})",
+      "empty": "Cada señal respalda una oportunidad.",
+      "urgent": "Urgente",
+      "customerRevenue": "{{customer}} · {{revenue}}/mes",
+      "link": "Vincular a…",
+      "remove": "Eliminar señal"
+    },
+    "signalForm": {
+      "title": "Registrar una señal",
+      "signal": "Señal",
+      "placeholder": "¿Qué pidió un usuario o qué se rompió?",
+      "kind": "Tipo",
+      "customer": "Cliente",
+      "revenue": "Ingresos/mes",
+      "urgent": "Urgente",
+      "submit": "Registrar"
+    },
+    "opportunityForm": {
+      "title": "Dar forma a una oportunidad",
+      "name": "Oportunidad",
+      "placeholder": "Una apuesta que vale la pena construir",
+      "hours": "h de revisión",
+      "confidence": "% de confianza",
+      "productLine": "Línea de producto",
+      "anyLine": "Todo el espacio",
+      "strategic": "Estratégica",
+      "submit": "Añadir"
+    },
+    "weights": {
+      "title": "Pesos y capacidad",
+      "formula": "Valor = alcance × clientes + ingresos × (ingresos en juego ÷ 1.000) + urgencia × señales urgentes + estratégico. Puntuación = valor × confianza ÷ horas de revisión.",
+      "reach": "Alcance",
+      "revenue": "Ingresos",
+      "urgency": "Urgencia",
+      "strategic": "Estratégico",
+      "weeklyReviewHours": "h de revisión/semana",
+      "save": "Guardar"
     }
   }
 }

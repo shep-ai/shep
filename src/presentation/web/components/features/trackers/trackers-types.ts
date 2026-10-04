@@ -1,11 +1,8 @@
-/** What every Connections server action resolves to. */
-export interface TrackerActionOutcome {
-  ok: boolean;
-  error?: string;
-}
-
 /**
- * Runs one server action for a Connections component: shows its error, or
- * refreshes the page so the overview is re-read. Resolves true on success.
+ * What a Connections server action resolves to, and how a Connections
+ * component runs one: shared with every page built on `useRunAction`.
  */
-export type RunTrackerAction = (action: () => Promise<TrackerActionOutcome>) => Promise<boolean>;
+export type {
+  ActionResult as TrackerActionOutcome,
+  RunAction as RunTrackerAction,
+} from '@/hooks/use-run-action';

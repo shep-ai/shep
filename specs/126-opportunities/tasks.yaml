@@ -17,7 +17,7 @@ tasks:
     title: Opportunity model
     description: >
       Signal, Opportunity, OpportunityWeights, SignalKind and OpportunityStatus in TypeSpec; generated output.
-    state: Todo
+    state: Done
     dependencies: []
     acceptanceCriteria:
       - Generated types compile
@@ -34,7 +34,7 @@ tasks:
     title: Evidence, score and line
     description: >
       domain/shared/opportunity-score.ts: evidence from signals, value, score per review hour, ranking and the capacity line; default weights.
-    state: Todo
+    state: Done
     dependencies:
       - task-1
     acceptanceCriteria:
@@ -52,7 +52,7 @@ tasks:
     title: Persistence
     description: >
       Migration 159; SQLite repositories for signals, opportunities and weights with mappers.
-    state: Todo
+    state: Done
     dependencies:
       - task-1
     acceptanceCriteria:
@@ -70,7 +70,7 @@ tasks:
     title: Record signals
     description: >
       RecordSignalUseCase validates and stores a signal in a space (and product line), optionally linked to an opportunity of the same space; ListSignalsUseCase.
-    state: Todo
+    state: Done
     dependencies:
       - task-3
     acceptanceCriteria:
@@ -88,7 +88,7 @@ tasks:
     title: Manage opportunities
     description: >
       Create, estimate, link and unlink signals, accept, drop with a reason, show with evidence and score.
-    state: Todo
+    state: Done
     dependencies:
       - task-2
       - task-3
@@ -107,7 +107,7 @@ tasks:
     title: Board and weights
     description: >
       GetOpportunityBoardUseCase ranks a space's open opportunities, draws the line and lists unlinked signals; ManageOpportunityWeightsUseCase reads and sets weights and capacity.
-    state: Todo
+    state: Done
     dependencies:
       - task-5
     acceptanceCriteria:
@@ -125,7 +125,7 @@ tasks:
     title: Build
     description: >
       BuildOpportunityUseCase creates a work item in a project with the problem and evidence and moves the opportunity to Building.
-    state: Todo
+    state: Done
     dependencies:
       - task-5
     acceptanceCriteria:
@@ -143,7 +143,7 @@ tasks:
     title: CLI
     description: >
       shep signal add/ls; shep opportunity add/ls/show/link/unlink/accept/drop/build/weights; 9 locales.
-    state: Todo
+    state: Done
     dependencies:
       - task-6
       - task-7
@@ -162,7 +162,7 @@ tasks:
     title: Web
     description: >
       /opportunities page: capacity bar, ranked list with actions, unlinked signals, forms for signals and opportunities, weights; sidebar link; stories and 9 locales.
-    state: Todo
+    state: Done
     dependencies:
       - task-6
       - task-7
@@ -181,7 +181,7 @@ tasks:
     title: Docs
     description: >
       Opportunities guide, architecture note, CLI reference.
-    state: Todo
+    state: Done
     dependencies:
       - task-8
       - task-9
@@ -200,7 +200,7 @@ tasks:
     title: Verification
     description: >
       lint, format, typecheck, unit, integration, build, web build, storybook.
-    state: Todo
+    state: Done
     dependencies:
       - task-10
     acceptanceCriteria:

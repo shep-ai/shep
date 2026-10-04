@@ -1425,6 +1425,115 @@
         "repoOption": "Repository-Pfad (sonst das aktuelle Verzeichnis)",
         "none": "Kein Team-Wissen im Space dieses Repositories passt zu dieser Aufgabe."
       }
+    },
+    "numberOption": {
+      "invalid": "{{option}} erwartet eine Zahl, nicht \"{{value}}\""
+    },
+    "signal": {
+      "description": "Belege dafür erfassen, was Nutzer brauchen",
+      "failed": "Signal-Befehl fehlgeschlagen",
+      "spaceOption": "Slug oder ID des Space (sonst der Standard-Space)",
+      "signalArg": "Signal-ID (siehe shep signal ls)",
+      "add": {
+        "description": "Ein Signal erfassen: Anfrage, Vorfall, Issue oder Fund",
+        "titleArg": "Einzeilige Zusammenfassung",
+        "productLineOption": "Betroffene Produktlinie (Slug oder ID)",
+        "kindOption": "feedback, incident, tracker, discovery oder manual (Standard manual)",
+        "customerOption": "Kunde oder Account dahinter",
+        "revenueOption": "Monatlicher Umsatz, der für diesen Kunden auf dem Spiel steht",
+        "urgentOption": "Braucht bald Aufmerksamkeit",
+        "urlOption": "Link zum Original",
+        "detailOption": "Längerer Text",
+        "opportunityOption": "ID der Opportunity, mit der es verknüpft wird",
+        "badKind": "\"{{kind}}\" ist keine Signalart; feedback, incident, tracker, discovery oder manual verwenden",
+        "success": "Signal {{id}} erfasst"
+      },
+      "ls": {
+        "description": "Signale auflisten, neueste zuerst",
+        "unlinkedOption": "Nur Signale ohne Opportunity",
+        "title": "Signale",
+        "idColumn": "ID",
+        "titleColumn": "Signal",
+        "kindColumn": "Art",
+        "customerColumn": "Kunde",
+        "opportunityColumn": "Opportunity",
+        "unlinked": "nicht verknüpft",
+        "empty": "Noch keine Signale. Mit shep signal add erfassen."
+      },
+      "rm": {
+        "description": "Ein Signal entfernen",
+        "success": "Signal {{id}} entfernt"
+      }
+    },
+    "opportunity": {
+      "description": "Wetten mit Signalen als Beleg, sortiert nach Wert pro Review-Stunde",
+      "failed": "Opportunity-Befehl fehlgeschlagen",
+      "opportunityArg": "Opportunity-ID (siehe shep opportunity ls)",
+      "signalArg": "Signal-ID (siehe shep signal ls)",
+      "spaceOption": "Slug oder ID des Space (sonst der Standard-Space)",
+      "hoursOption": "Geschätzte Stunden menschlichen Reviews bis zum Merge",
+      "confidenceOption": "Zuversicht, dass sie den Wert liefert, von 0 bis 1 (Standard 0.5)",
+      "strategicOption": "Dient einem strategischen Ziel des Space",
+      "problemOption": "Das Problem, das sie löst, in Worten der Nutzer",
+      "evidence": "{{signals}} Signale, {{customers}} Kunden, {{revenue}}/Monat, {{urgent}} dringend",
+      "add": {
+        "description": "Eine neue Opportunity formen",
+        "titleArg": "Einzeiliger Name der Wette",
+        "productLineOption": "Betroffene Produktlinie (Slug oder ID)",
+        "success": "Opportunity {{id}} vorgeschlagen"
+      },
+      "estimate": {
+        "description": "Schätzung, Zuversicht oder Problem einer Opportunity ändern",
+        "success": "Opportunity {{id}} aktualisiert"
+      },
+      "link": {
+        "description": "Ein Signal mit einer Opportunity seines Space verknüpfen",
+        "success": "Signal {{signal}} stützt {{opportunity}}"
+      },
+      "unlink": {
+        "description": "Ein Signal von seiner Opportunity lösen",
+        "success": "Signal {{signal}} gelöst"
+      },
+      "accept": {
+        "description": "Eine Opportunity annehmen: sie konkurriert um Review-Kapazität",
+        "success": "{{title}} angenommen"
+      },
+      "drop": {
+        "description": "Eine Opportunity verwerfen, mit Begründung",
+        "reasonOption": "Warum sie verworfen wird",
+        "success": "{{title}} verworfen"
+      },
+      "build": {
+        "description": "Eine Opportunity zu einem Work Item eines Projekts machen",
+        "projectOption": "Slug oder ID des Projekts",
+        "success": "{{title}} wird als Work Item {{workItem}} gebaut"
+      },
+      "ls": {
+        "description": "Offene Opportunities sortieren und die Linie (▶) markieren, die diese Woche passt",
+        "title": "Opportunities in {{space}} — {{used}} von {{capacity}} Review-Stunden in der Linie",
+        "idColumn": "ID",
+        "titleColumn": "Opportunity",
+        "statusColumn": "Status",
+        "scoreColumn": "Wert/h",
+        "hoursColumn": "Std.",
+        "evidenceColumn": "Belege",
+        "empty": "Keine offenen Opportunities. Mit shep opportunity add eine formen.",
+        "unlinked": "{{count}} Signal(e) noch ohne Opportunity (shep signal ls --unlinked)"
+      },
+      "show": {
+        "description": "Eine Opportunity mit Belegen und Score zeigen",
+        "score": "{{score}} Wert pro Review-Stunde (Wert {{value}}, {{hours}} Std., Zuversicht {{confidence}})",
+        "dropped": "Verworfen: {{reason}}"
+      },
+      "weights": {
+        "description": "Gewichte und wöchentliche Review-Kapazität eines Space zeigen oder setzen",
+        "reachOption": "Wert je Kunde",
+        "revenueOption": "Wert je 1.000 pro Monat auf dem Spiel",
+        "urgencyOption": "Wert je dringendem Signal",
+        "strategicOption": "Zusatzwert für eine strategische Wette",
+        "capacityOption": "Stunden menschlichen Reviews pro Woche",
+        "current": "Reichweite {{reach}} · Umsatz {{revenue}} · Dringlichkeit {{urgency}} · strategisch {{strategic}} · Kapazität {{capacity}} Std./Woche"
+      }
     }
   },
   "ui": {

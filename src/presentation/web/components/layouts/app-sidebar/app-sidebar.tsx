@@ -3,38 +3,27 @@
 import { useMemo, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import {
-  Home,
-  LayoutGrid,
   Moon,
   Sun,
   Volume2,
   VolumeOff,
   Zap,
   ZapOff,
-  Wrench,
-  Puzzle,
   CalendarClock,
   Workflow,
   Plug,
   Settings,
-  TableProperties,
-  FolderKanban,
-  KanbanSquare,
   MessageCircleQuestion,
   ShieldCheck,
   ShieldAlert,
   Bot,
   GraduationCap,
-  ArrowLeftRight,
-  Boxes,
-  Brain,
   Users,
   Bug,
   Package,
   Sparkles,
   ClipboardCheck,
   Gauge,
-  Server,
   Webhook,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -52,6 +41,7 @@ import {
 
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { SidebarNavItem } from '@/components/common/sidebar-nav-item';
+import { isSidebarLinkActive, visibleSidebarLinks } from './sidebar-links';
 import { SidebarNavGroup } from '@/components/common/sidebar-nav-group/sidebar-nav-group';
 import { SidebarCollapseToggle } from '@/components/common/sidebar-collapse-toggle';
 import { ShepLogo } from '@/components/common/shep-logo';
@@ -199,79 +189,15 @@ export function AppSidebar({
             </div>
           </SidebarMenuItem>
 
-          {/* Control Center — the canvas of every app and its features — comes
-              first and is Home. Listing the Apps page first as "Home" made users
-              take its Vite + shadcn prototype template for Shep's main workflow. */}
-          <SidebarNavItem
-            icon={Home}
-            label={t('navigation.controlCenter')}
-            href="/control-center"
-            active={pathname === '/control-center'}
-          />
-          <SidebarNavItem
-            icon={LayoutGrid}
-            label={t('navigation.applications')}
-            href="/applications"
-            active={pathname === '/applications'}
-          />
-          {featureFlags.clusters ? (
+          {visibleSidebarLinks(featureFlags).map((link) => (
             <SidebarNavItem
-              icon={Server}
-              label={t('navigation.clusters')}
-              href="/clusters"
-              active={pathname?.startsWith('/clusters') ?? false}
+              key={link.href}
+              icon={link.icon}
+              label={link.labelKey ? t(`navigation.${link.labelKey}`) : (link.label ?? link.href)}
+              href={link.href}
+              active={isSidebarLinkActive(link, pathname)}
             />
-          ) : null}
-          <SidebarNavItem
-            icon={TableProperties}
-            label={t('navigation.inventory')}
-            href="/features"
-            active={pathname === '/features'}
-          />
-          <SidebarNavItem
-            icon={KanbanSquare}
-            label="SDLC Board"
-            href="/sdlc"
-            active={pathname?.startsWith('/sdlc') ?? false}
-          />
-          <SidebarNavItem
-            icon={Brain}
-            label={t('navigation.projectMemory')}
-            href="/memory"
-            active={pathname?.startsWith('/memory') ?? false}
-          />
-          <SidebarNavItem
-            icon={Boxes}
-            label={t('navigation.spaces')}
-            href="/spaces"
-            active={pathname?.startsWith('/spaces') ?? false}
-          />
-          <SidebarNavItem
-            icon={ArrowLeftRight}
-            label={t('navigation.trackers')}
-            href="/connections"
-            active={pathname?.startsWith('/connections') ?? false}
-          />
-          <SidebarNavItem
-            icon={Wrench}
-            label={t('navigation.tools')}
-            href="/tools"
-            active={pathname === '/tools'}
-          />
-          {featureFlags.projects ? (
-            <SidebarNavItem
-              icon={FolderKanban}
-              label="Projects"
-              href="/projects"
-              active={pathname?.startsWith('/projects') ?? false}
-            />
-          ) : null}
-          <SidebarNavItem
-            icon={Puzzle}
-            label={t('navigation.skills')}
-            href="/skills"
-            active={pathname === '/skills'}
-          />
+          ))}
           {featureFlags.collaboration ? (
             <SidebarNavGroup
               icon={Users}

@@ -446,7 +446,8 @@
     "projectMemory": "Project Memory",
     "harness": "Harness",
     "spaces": "Spaces",
-    "trackers": "Verbindungen"
+    "trackers": "Verbindungen",
+    "opportunities": "Opportunities"
   },
   "sidebar": {
     "features": "Features",
@@ -1522,6 +1523,92 @@
       "subtitle": "Notion-Seiten, die Agenten in jedem Space lesen, wenn sie zur Aufgabe passen.",
       "empty": "Noch kein Team-Wissen. Notion-Verbindung und Seiten hinzufügen unter",
       "connections": "Verbindungen"
+    }
+  },
+  "opportunities": {
+    "title": "Opportunities",
+    "subtitle": "Wetten mit Belegen, sortiert nach Wert pro Review-Stunde.",
+    "space": "Space",
+    "empty": "Keine offenen Opportunities in diesem Space. Oben eine formen.",
+    "errors": {
+      "actionFailed": "Die Änderung konnte nicht gespeichert werden. Bitte erneut versuchen."
+    },
+    "capacity": {
+      "title": "Review-Kapazität dieser Woche",
+      "used": "{{used}} von {{capacity}} Review-Stunden",
+      "waiting_one": "{{count}} angenommene Wette wartet auf Kapazität",
+      "waiting_few": "{{count}} angenommene Wetten warten auf Kapazität",
+      "waiting_many": "{{count}} angenommene Wetten warten auf Kapazität",
+      "waiting_other": "{{count}} angenommene Wetten warten auf Kapazität"
+    },
+    "row": {
+      "inLine": "In der Linie dieser Woche",
+      "outOfLine": "Nicht in der Linie",
+      "strategic": "Strategisch",
+      "evidence": "{{signals}} Signale · {{customers}} Kunden · {{revenue}}/Monat · {{urgent}} dringend",
+      "cost": "{{hours}} Std. · {{confidence}} % Zuversicht"
+    },
+    "status": {
+      "Proposed": "Vorgeschlagen",
+      "Accepted": "Angenommen",
+      "Building": "Im Bau",
+      "Shipped": "Ausgeliefert",
+      "Dropped": "Verworfen"
+    },
+    "kind": {
+      "Feedback": "Feedback",
+      "Incident": "Vorfall",
+      "Tracker": "Tracker",
+      "Discovery": "Fund",
+      "Manual": "Notiz"
+    },
+    "actions": {
+      "accept": "Annehmen",
+      "build": "Bauen",
+      "drop": "Verwerfen",
+      "cancel": "Abbrechen",
+      "reason": "Warum verwerfen?",
+      "project": "Projekt",
+      "noProjects": "Zuerst ein Projekt anlegen; Bauen erstellt darin ein Work Item."
+    },
+    "inbox": {
+      "title": "Zu verknüpfende Signale ({{count}})",
+      "empty": "Jedes Signal stützt eine Opportunity.",
+      "urgent": "Dringend",
+      "customerRevenue": "{{customer}} · {{revenue}}/Monat",
+      "link": "Verknüpfen mit…",
+      "remove": "Signal entfernen"
+    },
+    "signalForm": {
+      "title": "Ein Signal erfassen",
+      "signal": "Signal",
+      "placeholder": "Was wollte ein Nutzer, oder was ist kaputt?",
+      "kind": "Art",
+      "customer": "Kunde",
+      "revenue": "Umsatz/Monat",
+      "urgent": "Dringend",
+      "submit": "Erfassen"
+    },
+    "opportunityForm": {
+      "title": "Eine Opportunity formen",
+      "name": "Opportunity",
+      "placeholder": "Eine Wette, die sich zu bauen lohnt",
+      "hours": "Review-Std.",
+      "confidence": "% Zuversicht",
+      "productLine": "Produktlinie",
+      "anyLine": "Ganzer Space",
+      "strategic": "Strategisch",
+      "submit": "Hinzufügen"
+    },
+    "weights": {
+      "title": "Gewichte und Kapazität",
+      "formula": "Wert = Reichweite × Kunden + Umsatz × (Umsatz auf dem Spiel ÷ 1.000) + Dringlichkeit × dringende Signale + strategisch. Score = Wert × Zuversicht ÷ Review-Stunden.",
+      "reach": "Reichweite",
+      "revenue": "Umsatz",
+      "urgency": "Dringlichkeit",
+      "strategic": "Strategisch",
+      "weeklyReviewHours": "Review-Std./Woche",
+      "save": "Speichern"
     }
   }
 }

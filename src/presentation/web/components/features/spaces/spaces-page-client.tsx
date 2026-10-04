@@ -11,15 +11,13 @@
  * server rather than patched locally.
  */
 
-import { useCallback, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { useTranslation } from 'react-i18next';
 import { Boxes } from 'lucide-react';
 import type { SpacesOverview } from '@shepai/core/application/use-cases/spaces/get-spaces-overview.use-case';
 import { CreateSpaceForm } from './create-space-form';
 import { SpaceCard } from './space-card';
 import { RepositoryPlacements } from './repository-placements';
-import type { RunSpaceAction, SpaceActionOutcome } from './spaces-types';
+import { useRunAction } from '@/hooks/use-run-action';
 
 export interface SpacesPageClientProps {
   overview: SpacesOverview;
@@ -29,25 +27,10 @@ export interface SpacesPageClientProps {
 
 export function SpacesPageClient({ overview, loadError }: SpacesPageClientProps) {
   const { t } = useTranslation('web');
-  const router = useRouter();
-  const [error, setError] = useState<string | null>(loadError ?? null);
-
-  const run = useCallback<RunSpaceAction>(
-    async (action) => {
-      setError(null);
-      const result: SpaceActionOutcome = await action().catch((cause: unknown) => ({
-        ok: false,
-        error: cause instanceof Error ? cause.message : t('spaces.errors.actionFailed'),
-      }));
-      if (!result.ok) {
-        setError(result.error ?? t('spaces.errors.actionFailed'));
-        return false;
-      }
-      router.refresh();
-      return true;
-    },
-    [router, t]
-  );
+  const { run, error } = useRunAction({
+    fallbackError: t('spaces.errors.actionFailed'),
+    ...(loadError ? { initialError: loadError } : {}),
+  });
 
   return (
     <div data-testid="spaces-page" className="mx-auto w-full max-w-5xl space-y-6 p-4">

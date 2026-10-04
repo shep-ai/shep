@@ -1,0 +1,30 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: OpportunityWeights.yaml
+type: object
+properties:
+  spaceId:
+    type: string
+    description: The space these weights belong to
+  reach:
+    type: number
+    description: Value of each customer behind an opportunity
+  revenue:
+    type: number
+    description: Value of each 1,000 a month of revenue at stake
+  urgency:
+    type: number
+    description: Value of each urgent signal
+  strategic:
+    type: number
+    description: Value added once for a strategic opportunity
+  weeklyReviewHours:
+    type: number
+    description: Hours of human review available each week
+required:
+  - spaceId
+  - reach
+  - revenue
+  - urgency
+  - strategic
+  - weeklyReviewHours
+description: How a space values evidence, and how many review hours it has each week

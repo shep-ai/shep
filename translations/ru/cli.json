@@ -1425,6 +1425,115 @@
         "repoOption": "Путь к репозиторию (текущий каталог, если не указан)",
         "none": "Знания команды в пространстве этого репозитория не подходят к этой задаче."
       }
+    },
+    "numberOption": {
+      "invalid": "{{option}} ожидает число, а не «{{value}}»"
+    },
+    "signal": {
+      "description": "Записывать свидетельства того, что нужно пользователям",
+      "failed": "Команда signal завершилась с ошибкой",
+      "spaceOption": "Slug или id пространства (по умолчанию, если не указано)",
+      "signalArg": "Id сигнала (см. shep signal ls)",
+      "add": {
+        "description": "Записать сигнал: запрос, инцидент, задачу или находку",
+        "titleArg": "Краткое описание в одну строку",
+        "productLineOption": "Затронутая продуктовая линия (slug или id)",
+        "kindOption": "feedback, incident, tracker, discovery или manual (по умолчанию manual)",
+        "customerOption": "Клиент или аккаунт",
+        "revenueOption": "Месячная выручка этого клиента под угрозой",
+        "urgentOption": "Требует скорого внимания",
+        "urlOption": "Ссылка на оригинал",
+        "detailOption": "Подробный текст",
+        "opportunityOption": "Id возможности для связи",
+        "badKind": "«{{kind}}» — не тип сигнала; используйте feedback, incident, tracker, discovery или manual",
+        "success": "Сигнал {{id}} записан"
+      },
+      "ls": {
+        "description": "Список сигналов, новые сначала",
+        "unlinkedOption": "Только сигналы без возможности",
+        "title": "Сигналы",
+        "idColumn": "Id",
+        "titleColumn": "Сигнал",
+        "kindColumn": "Тип",
+        "customerColumn": "Клиент",
+        "opportunityColumn": "Возможность",
+        "unlinked": "не связан",
+        "empty": "Сигналов пока нет. Запишите с помощью shep signal add."
+      },
+      "rm": {
+        "description": "Удалить сигнал",
+        "success": "Сигнал {{id}} удалён"
+      }
+    },
+    "opportunity": {
+      "description": "Ставки, подкреплённые сигналами, по ценности на час ревью",
+      "failed": "Команда opportunity завершилась с ошибкой",
+      "opportunityArg": "Id возможности (см. shep opportunity ls)",
+      "signalArg": "Id сигнала (см. shep signal ls)",
+      "spaceOption": "Slug или id пространства (по умолчанию, если не указано)",
+      "hoursOption": "Оценка часов человеческого ревью до слияния",
+      "confidenceOption": "Уверенность, что ценность будет получена, от 0 до 1 (по умолчанию 0.5)",
+      "strategicOption": "Продвигает стратегическую цель пространства",
+      "problemOption": "Проблема, которую она решает, словами пользователей",
+      "evidence": "{{signals}} сигналов, {{customers}} клиентов, {{revenue}}/мес., {{urgent}} срочных",
+      "add": {
+        "description": "Сформировать новую возможность",
+        "titleArg": "Название ставки в одну строку",
+        "productLineOption": "Затронутая продуктовая линия (slug или id)",
+        "success": "Возможность {{id}} предложена"
+      },
+      "estimate": {
+        "description": "Изменить оценку, уверенность или проблему возможности",
+        "success": "Возможность {{id}} обновлена"
+      },
+      "link": {
+        "description": "Связать сигнал с возможностью его пространства",
+        "success": "Сигнал {{signal}} поддерживает {{opportunity}}"
+      },
+      "unlink": {
+        "description": "Отвязать сигнал от возможности",
+        "success": "Сигнал {{signal}} отвязан"
+      },
+      "accept": {
+        "description": "Принять возможность: она претендует на время ревью",
+        "success": "{{title}} принята"
+      },
+      "drop": {
+        "description": "Отклонить возможность с причиной",
+        "reasonOption": "Почему она отклонена",
+        "success": "{{title}} отклонена"
+      },
+      "build": {
+        "description": "Превратить возможность в рабочий элемент проекта",
+        "projectOption": "Slug или id проекта",
+        "success": "{{title}} строится как рабочий элемент {{workItem}}"
+      },
+      "ls": {
+        "description": "Ранжировать открытые возможности и отметить линию (▶), которая помещается в эту неделю",
+        "title": "Возможности в {{space}} — {{used}} из {{capacity}} часов ревью в линии",
+        "idColumn": "Id",
+        "titleColumn": "Возможность",
+        "statusColumn": "Статус",
+        "scoreColumn": "Ценн./ч",
+        "hoursColumn": "Часы",
+        "evidenceColumn": "Свидетельства",
+        "empty": "Открытых возможностей нет. Создайте с помощью shep opportunity add.",
+        "unlinked": "Сигналов без возможности: {{count}} (shep signal ls --unlinked)"
+      },
+      "show": {
+        "description": "Показать возможность со свидетельствами и оценкой",
+        "score": "{{score}} ценности на час ревью (ценность {{value}}, {{hours}} ч, уверенность {{confidence}})",
+        "dropped": "Отклонена: {{reason}}"
+      },
+      "weights": {
+        "description": "Показать или задать веса и недельную ёмкость ревью пространства",
+        "reachOption": "Ценность каждого клиента",
+        "revenueOption": "Ценность каждой 1000 в месяц под угрозой",
+        "urgencyOption": "Ценность каждого срочного сигнала",
+        "strategicOption": "Добавка для стратегической ставки",
+        "capacityOption": "Часы человеческого ревью в неделю",
+        "current": "охват {{reach}} · выручка {{revenue}} · срочность {{urgency}} · стратегия {{strategic}} · ёмкость {{capacity}} ч/нед."
+      }
     }
   },
   "ui": {

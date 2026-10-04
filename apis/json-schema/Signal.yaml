@@ -1,0 +1,42 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: Signal.yaml
+type: object
+properties:
+  spaceId:
+    type: string
+    description: The space the signal belongs to
+  productLineId:
+    type: string
+    description: The product line it concerns, if known
+  kind:
+    $ref: SignalKind.yaml
+    description: Where the signal came from
+  title:
+    type: string
+    description: One-line summary
+  detail:
+    type: string
+    description: "Longer text: the request, the error, the finding"
+  customer:
+    type: string
+    description: The customer (account) behind it, if any
+  monthlyRevenue:
+    type: number
+    description: Revenue at stake per month for that customer, in the team's currency
+  urgent:
+    type: boolean
+    description: Whether it needs attention soon
+  url:
+    type: string
+    description: "Link to the original: ticket, message, issue, dashboard"
+  opportunityId:
+    type: string
+    description: The opportunity this signal supports, if linked
+required:
+  - spaceId
+  - kind
+  - title
+  - urgent
+allOf:
+  - $ref: BaseEntity.yaml
+description: "One piece of evidence of what users need: a request, an incident, an issue or a finding"
