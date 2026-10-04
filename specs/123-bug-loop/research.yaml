@@ -1,0 +1,58 @@
+# Research (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: bug-loop
+summary: Technical decisions for 123 — how shep investigates a bug safely and turns a hypothesis into a fix.
+
+relatedFeatures:
+  - 122-tracker-sync
+technologies:
+  - git worktree
+  - Structured agent calls
+relatedLinks: []
+
+decisions:
+  - title: A detached worktree per investigation
+    chosen: git worktree add --detach <shep home>/inv/<id> HEAD, removed with --force when the investigation ends
+    rejected:
+      - 'The user''s checkout (prototype): an agent with write tools can change it'
+      - 'A full clone: slow for large repositories and needs the remote'
+    rationale: >
+      A detached worktree shares the object store, takes seconds, leaves no branch behind and
+      isolates file writes from the user's checkout whatever the agent does.
+
+  - title: One structured agent call, not a feature run
+    chosen: IStructuredAgentCaller.call with a JSON schema, Read/Grep/Glob tools, MCP disabled, a 20-minute budget
+    rejected:
+      - 'A feature in a new Investigate mode: feature runs have full permissions, a branch and a PR lifecycle that an investigation must not have'
+    rationale: >
+      The result is data (hypotheses), which is exactly what structured calls return and what
+      the CLI and web need, and the call already resolves any agent through the executor provider.
+
+  - title: Space environment travels in the execution options
+    chosen: AgentExecutionOptions.environment, applied by every subprocess executor when spawning
+    rejected:
+      - 'Mutating process.env: the web server and daemon serve many spaces at once'
+    rationale: >
+      Feature workers are separate processes and set their own environment (spec 121), but an
+      investigation runs inside the long-lived server, so the environment must be per call.
+
+  - title: Approval goes through CreateFeatureUseCase
+    chosen: createRecord, then initializeAndSpawn; Fast mode unless the spec pipeline is asked for
+    rejected:
+      - 'A dedicated bug-fix pipeline: duplicates the feature lifecycle, CI loop and PR handling'
+    rationale: >
+      A fix is a feature with a sharper prompt; every existing gate, worktree and PR behaviour
+      applies unchanged.
+
+openQuestions: []
+
+content: |
+  ## Findings
+
+  - Work items have no repository; the project's application may carry one, and repositories
+    are listed by ListRepositoriesUseCase, so the web offers a picker.
+  - Claude Code accepts `--tools` to restrict built-in tools; other CLI agents accept no
+    equivalent, so the detached worktree is the containment for them.
+  - The agent-run liveness reconciler kills stale run pids, so investigations do not create
+    AgentRun rows owned by the server process; they keep their own status and timestamps.

@@ -1,0 +1,76 @@
+# Implementation Plan (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: bug-loop
+summary: Implementation plan for 123 — investigations, ranked hypotheses and approval into a fix feature.
+
+relatedFeatures:
+  - 122-tracker-sync
+technologies:
+  - TypeSpec
+  - SQLite
+  - tsyringe
+  - Commander
+  - Next.js
+relatedLinks: []
+
+phases:
+  - id: phase-1
+    name: 'Domain'
+    parallel: false
+    taskIds: [task-1, task-2]
+  - id: phase-2
+    name: 'Persistence, workspace and agents'
+    parallel: false
+    taskIds: [task-3, task-4, task-5]
+  - id: phase-3
+    name: 'Use cases'
+    parallel: false
+    taskIds: [task-6, task-7]
+  - id: phase-4
+    name: 'CLI'
+    parallel: false
+    taskIds: [task-8]
+  - id: phase-5
+    name: 'Web'
+    parallel: false
+    taskIds: [task-9, task-10]
+  - id: phase-6
+    name: 'Docs and verification'
+    parallel: false
+    taskIds: [task-11, task-12]
+
+filesToCreate:
+  - tsp/domain/entities/investigation.tsp
+  - packages/core/src/domain/shared/investigation.ts
+  - packages/core/src/infrastructure/persistence/sqlite/migrations/155-create-work-item-investigations.ts
+  - packages/core/src/application/ports/output/repositories/investigation-repository.interface.ts
+  - packages/core/src/application/ports/output/services/investigation-workspace.interface.ts
+  - packages/core/src/infrastructure/services/git/investigation-workspace.service.ts
+  - packages/core/src/application/use-cases/bug-loop/
+  - src/presentation/cli/commands/item/investigate.command.ts
+  - src/presentation/web/components/features/bug-loop/
+
+filesToModify:
+  - packages/core/src/application/ports/output/agents/agent-executor.interface.ts
+  - packages/core/src/infrastructure/services/agents/common/executors/
+  - src/presentation/cli/commands/item/index.ts
+  - src/presentation/web/app/projects/[slug]/items/[itemId]/page.tsx
+  - packages/core/src/infrastructure/di/container.ts
+
+content: |
+  ## Approach
+
+  TDD throughout: every task begins with a failing test (RED), then the minimal implementation
+  (GREEN), then cleanup (REFACTOR).
+
+  Clean Architecture: ranking and normalising hypotheses and building prompts are pure code; the
+  use cases depend on the investigation repository, workspace, structured agent caller, settings
+  provider, space environment and feature creation; the detached-worktree workspace is
+  infrastructure behind a port; CLI and web call use cases through the container.
+
+  ## Risks
+
+  - An agent ignores the read-only instruction: it can only change the throwaway worktree.
+  - A server restart mid-investigation: the record reads as Failed once past the timeout, and
+    the orphan worktree is pruned by the next workspace preparation.

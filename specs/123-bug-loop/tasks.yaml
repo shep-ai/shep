@@ -1,0 +1,241 @@
+# Task Breakdown (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: bug-loop
+summary: Task breakdown for 123 — investigations, ranked hypotheses and approval into a fix feature.
+
+relatedFeatures:
+  - 122-tracker-sync
+technologies:
+  - TypeSpec
+  - SQLite
+  - tsyringe
+relatedLinks: []
+
+tasks:
+  - id: task-1
+    title: Investigation domain model in TypeSpec
+    description: >
+      Enums InvestigationStatus and HypothesisConfidence; WorkItemInvestigation entity with Hypothesis and HypothesisEvidence value objects.
+    state: Todo
+    dependencies: []
+    acceptanceCriteria:
+      - pnpm tsp:compile passes
+      - Schemas committed
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: S
+
+  - id: task-2
+    title: Pure hypothesis normalisation
+    description: >
+      domain/shared/investigation.ts: rank by confidence, number from 1, cap at five, make evidence paths repository-relative with forward slashes, and detect stale active investigations.
+    state: Todo
+    dependencies:
+      - task-1
+    acceptanceCriteria:
+      - Absolute worktree paths, backslashes, missing fields and over-long lists are covered
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: M
+
+  - id: task-3
+    title: Investigation persistence
+    description: >
+      Migration 155 (work_item_investigations), mapper and SQLite repository: create, update, findById, listByWorkItem newest first.
+    state: Todo
+    dependencies:
+      - task-1
+    acceptanceCriteria:
+      - Round-trips every field including hypotheses JSON
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: M
+
+  - id: task-4
+    title: Detached worktree workspace
+    description: >
+      IInvestigationWorkspace port and a git implementation: prepare(repo) adds a detached worktree of HEAD under the shep home and returns its path and commit; dispose removes it; stale leftovers are swept.
+    state: Todo
+    dependencies: []
+    acceptanceCriteria:
+      - Integration test on a real repository leaves its status and branch unchanged
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: M
+
+  - id: task-5
+    title: Space environment in execution options
+    description: >
+      AgentExecutionOptions.environment, applied by every subprocess executor through buildSpawnOptions.
+    state: Todo
+    dependencies: []
+    acceptanceCriteria:
+      - Each subprocess executor passes it to spawn (unit tests)
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: S
+
+  - id: task-6
+    title: InvestigateWorkItemUseCase
+    description: >
+      start resolves the work item and repository and refuses a second active investigation; run prepares the workspace, applies the space environment and agent policy, calls the structured agent with read-only tools, normalises and stores the result, and always disposes the workspace.
+    state: Todo
+    dependencies:
+      - task-2
+      - task-3
+      - task-4
+      - task-5
+    acceptanceCriteria:
+      - Success, agent failure, refusal and missing repository are tested
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: L
+
+  - id: task-7
+    title: ApproveHypothesisUseCase
+    description: >
+      Builds the fix prompt, creates the feature (Fast or spec), records it on the investigation and moves the work item to its first Started state.
+    state: Todo
+    dependencies:
+      - task-6
+    acceptanceCriteria:
+      - Feature input, recording and state move are tested; a second approval is refused
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: M
+
+  - id: task-8
+    title: CLI
+    description: >
+      shep item investigate, hypotheses and fix; shared hypothesis rendering.
+    state: Todo
+    dependencies:
+      - task-6
+      - task-7
+    acceptanceCriteria:
+      - Command tests for each, including failures
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: M
+
+  - id: task-9
+    title: Web actions and panel
+    description: >
+      Server actions (start, get, approve) with a Storybook mock; InvestigationPanel with repository picker, running state with polling, hypotheses and fix button.
+    state: Todo
+    dependencies:
+      - task-6
+      - task-7
+    acceptanceCriteria:
+      - Component tests and stories for every state
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: L
+
+  - id: task-10
+    title: Work item page wiring and i18n
+    description: >
+      Load the latest investigation and repositories on the work item page; strings in 9 locales.
+    state: Todo
+    dependencies:
+      - task-9
+    acceptanceCriteria:
+      - Page renders the panel; locale parity test passes
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: S
+
+  - id: task-11
+    title: Docs
+    description: >
+      Guide, architecture note and CLI reference.
+    state: Todo
+    dependencies:
+      - task-8
+      - task-9
+    acceptanceCriteria:
+      - Docs describe the shipped behaviour
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: S
+
+  - id: task-12
+    title: Verification
+    description: >
+      lint, format, typecheck, unit, integration, build, web build, stories.
+    state: Todo
+    dependencies:
+      - task-11
+    acceptanceCriteria:
+      - All green
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: S
+
+totalEstimate: L (12 tasks)
+
+openQuestions: []
+
+content: |
+  Tasks follow the plan phases; each starts with a failing test.
