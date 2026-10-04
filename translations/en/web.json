@@ -1430,5 +1430,36 @@
     "badge": {
       "open": "Open {{key}} in the tracker"
     }
+  },
+  "bugLoop": {
+    "title": "Investigation",
+    "intro": "An agent reads the repository in a throwaway read-only copy and ranks the likely root causes. Your checkout is never touched.",
+    "repository": "Repository",
+    "noRepositories": "Add a repository to shep to investigate this item.",
+    "investigate": "Investigate",
+    "investigateAgain": "Investigate again",
+    "running": "The agent is reading a read-only copy of {{repository}}…",
+    "approved": "Hypothesis {{number}} is being fixed.",
+    "openFeature": "Open the fix feature",
+    "fullSpec": "Fix through the full spec pipeline instead of Fast mode",
+    "status": {
+      "Pending": "Starting",
+      "Running": "Investigating",
+      "Completed": "Hypotheses ready",
+      "Failed": "Failed"
+    },
+    "confidence": {
+      "High": "High confidence",
+      "Medium": "Medium confidence",
+      "Low": "Low confidence"
+    },
+    "hypothesis": {
+      "evidence": "Evidence",
+      "test": "Failing test",
+      "fix": "Fix",
+      "fixThis": "Fix this",
+      "fixing": "Starting fix…",
+      "approved": "Being fixed"
+    }
   }
 }

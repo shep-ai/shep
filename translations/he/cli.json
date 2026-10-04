@@ -1304,6 +1304,42 @@
         "nothing": "אין כללים פעילים",
         "conflictsNote": "{{count}} שדות שונו בשני הצדדים; נשמר הערך של מערכת המעקב"
       }
+    },
+    "item": {
+      "itemArg": "מפתח פריט העבודה (PAY-42) או מזהה",
+      "agentOption": "הסוכן לשימוש (ברירת מחדל: הסוכן המוגדר)",
+      "failed": "פקודת פריט העבודה נכשלה",
+      "investigate": {
+        "description": "סוכן קורא את הקוד ומדרג השערות לגבי שורש הבאג",
+        "repoOption": "המאגר לקריאה (ברירת מחדל: האחרון של הפריט, ואז היישום של הפרויקט)",
+        "spinner": "חוקרים את {{key}} (עותק לקריאה בלבד של {{repository}})",
+        "starting": "חוקרים את {{key}} ב-{{repository}} עם {{agent}}. עותק העבודה שלכם לא משתנה."
+      },
+      "hypotheses": {
+        "description": "הצגת החקירה האחרונה של פריט עבודה"
+      },
+      "fix": {
+        "description": "התחלת פיצ׳ר תיקון מהשערה: קודם בדיקה שנכשלת, ואז התיקון",
+        "numberArg": "מספר ההשערה (1 היא הסבירה ביותר)",
+        "specOption": "הרצת צינור המפרט המלא במקום המצב המהיר",
+        "agentOption": "הסוכן לתיקון (ברירת מחדל: הסוכן שחקר)",
+        "spinner": "מתחילים את פיצ׳ר התיקון",
+        "created": "הפיצ׳ר {{name}} ({{id}}) מתקן את {{key}} לפי השערה {{number}}.",
+        "startFailed": "הפיצ׳ר נוצר אך לא התחיל: {{error}}"
+      },
+      "render": {
+        "none": "{{key}} עדיין לא נחקר. הריצו: shep item investigate {{key}} --repo <נתיב>",
+        "header": "נחקר {{repository}}{{commit}} עם {{agent}} — {{status}}",
+        "running": "עדיין רץ; בדקו שוב עם: shep item hypotheses {{key}}",
+        "evidence": "ראיות",
+        "test": "בדיקה שנכשלת",
+        "fix": "תיקון",
+        "next": "התחילו תיקון עם: shep item fix {{key}} <מספר>",
+        "approved": "השערה {{number}} מתוקנת על ידי הפיצ׳ר {{feature}}."
+      }
+    },
+    "agentOption": {
+      "unknown": "\"{{value}}\" אינו סוכן נתמך. השתמשו באחד מאלה: {{supported}}"
     }
   },
   "ui": {

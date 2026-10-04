@@ -18,6 +18,7 @@ import { colors, messages, renderDetailView } from '../../ui/index.js';
 import { getCliI18n } from '../../i18n.js';
 import { expandHome } from '../../paths.js';
 import { report, runSpaceCommand } from './run-space-command.js';
+import { parseAgentTypeList } from '../agent-option.js';
 
 interface ConfigOptions {
   claudeConfigDir?: string;
@@ -26,7 +27,7 @@ interface ConfigOptions {
   gitEmail?: string;
   awsProfile?: string;
   bedrock?: boolean;
-  agents?: string;
+  agents?: AgentType[];
   clear?: string[];
 }
 
@@ -55,10 +56,7 @@ function buildPatch(options: ConfigOptions): SpaceAgentSettingsPatch {
   if (options.awsProfile !== undefined) patch.awsProfile = options.awsProfile;
   if (options.bedrock !== undefined) patch.useBedrock = options.bedrock;
   if (options.agents !== undefined) {
-    patch.allowedAgentTypes = options.agents
-      .split(',')
-      .map((agent) => agent.trim())
-      .filter(Boolean) as AgentType[];
+    patch.allowedAgentTypes = options.agents;
   }
   return patch;
 }
@@ -136,7 +134,7 @@ export function createConfigCommand(): Command {
     .option('--aws-profile <name>', t('cli:commands.space.config.awsProfileOption'))
     .option('--bedrock', t('cli:commands.space.config.bedrockOption'))
     .option('--no-bedrock', t('cli:commands.space.config.noBedrockOption'))
-    .option('--agents <list>', t('cli:commands.space.config.agentsOption'))
+    .option('--agents <list>', t('cli:commands.space.config.agentsOption'), parseAgentTypeList)
     .option('--clear <fields...>', t('cli:commands.space.config.clearOption'))
     .addHelpText(
       'after',

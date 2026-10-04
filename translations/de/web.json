@@ -1430,5 +1430,36 @@
     "badge": {
       "open": "{{key}} im Tracker öffnen"
     }
+  },
+  "bugLoop": {
+    "title": "Untersuchung",
+    "intro": "Ein Agent liest das Repository in einer schreibgeschützten Wegwerf-Kopie und bewertet die wahrscheinlichen Ursachen. Dein Checkout bleibt unberührt.",
+    "repository": "Repository",
+    "noRepositories": "Füge shep ein Repository hinzu, um dieses Element zu untersuchen.",
+    "investigate": "Untersuchen",
+    "investigateAgain": "Erneut untersuchen",
+    "running": "Der Agent liest eine schreibgeschützte Kopie von {{repository}}…",
+    "approved": "Hypothese {{number}} wird behoben.",
+    "openFeature": "Fix-Feature öffnen",
+    "fullSpec": "Über die vollständige Spec-Pipeline statt im Fast-Modus beheben",
+    "status": {
+      "Pending": "Startet",
+      "Running": "Wird untersucht",
+      "Completed": "Hypothesen bereit",
+      "Failed": "Fehlgeschlagen"
+    },
+    "confidence": {
+      "High": "Hohe Sicherheit",
+      "Medium": "Mittlere Sicherheit",
+      "Low": "Geringe Sicherheit"
+    },
+    "hypothesis": {
+      "evidence": "Belege",
+      "test": "Fehlschlagender Test",
+      "fix": "Fix",
+      "fixThis": "Beheben",
+      "fixing": "Fix wird gestartet…",
+      "approved": "Wird behoben"
+    }
   }
 }

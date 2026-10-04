@@ -52,6 +52,7 @@ export interface FixStartOutcome {
 export type ApproveHypothesisResult =
   | {
       ok: true;
+      workItem: WorkItem;
       feature: Feature;
       investigation: WorkItemInvestigation;
       started: Promise<FixStartOutcome>;
@@ -118,7 +119,7 @@ export class ApproveHypothesisUseCase {
         error: error instanceof Error ? error.message : String(error),
       })
     );
-    return { ok: true, feature, investigation: approved, started };
+    return { ok: true, workItem, feature, investigation: approved, started };
   }
 
   private async findInvestigation(

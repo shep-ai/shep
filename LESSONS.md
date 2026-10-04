@@ -2944,3 +2944,11 @@ raw `.ts` and cannot resolve `../filesystem/shep-directory.service.js`.
 `tests/unit/presentation/web/core-bundle-imports.test.ts` caught it. Before adding a relative
 value import to a core file, grep `src/presentation/web` for that file. If web imports it, drop
 the `.js`, as `domain/` files do.
+
+## Never `pkill -f <pattern>` from the shell that contains the pattern
+
+`pkill -f "http.server 6107"` matches the Bash tool's own `bash -c` command line, which contains
+the same text, so it kills the calling shell (exit 144) and every command after it in that
+call silently never runs — a commit was skipped this way, twice in one session. Stop a
+background server by its pid (`kill $(cat server.pid)`), or use a bracketed pattern that cannot
+match itself (`pkill -f "[h]ttp.server 6107"`), and never chain other work after it.

@@ -1304,6 +1304,42 @@
         "nothing": "Aucune règle active",
         "conflictsNote": "{{count}} champ(s) modifié(s) des deux côtés ; la valeur de l'outil a été conservée"
       }
+    },
+    "item": {
+      "itemArg": "Clé de l'élément de travail (PAY-42) ou identifiant",
+      "agentOption": "Agent à utiliser (par défaut : l'agent configuré)",
+      "failed": "La commande d'élément de travail a échoué",
+      "investigate": {
+        "description": "Faire lire le code par un agent et classer les hypothèses sur la cause d'un bug",
+        "repoOption": "Dépôt à lire (par défaut : le dernier de l'élément, puis l'application du projet)",
+        "spinner": "Investigation de {{key}} (copie en lecture seule de {{repository}})",
+        "starting": "Investigation de {{key}} dans {{repository}} avec {{agent}}. Votre copie de travail n'est pas modifiée."
+      },
+      "hypotheses": {
+        "description": "Afficher la dernière investigation d'un élément de travail"
+      },
+      "fix": {
+        "description": "Lancer une fonctionnalité de correction à partir d'une hypothèse : d'abord un test qui échoue, puis la correction",
+        "numberArg": "Numéro de l'hypothèse (1 est la plus probable)",
+        "specOption": "Exécuter le pipeline de spécification complet au lieu du mode rapide",
+        "agentOption": "Agent pour la correction (par défaut : l'agent qui a investigué)",
+        "spinner": "Lancement de la fonctionnalité de correction",
+        "created": "La fonctionnalité {{name}} ({{id}}) corrige {{key}} à partir de l'hypothèse {{number}}.",
+        "startFailed": "La fonctionnalité a été créée mais n'a pas démarré : {{error}}"
+      },
+      "render": {
+        "none": "{{key}} n'a pas été investigué. Lancez : shep item investigate {{key}} --repo <chemin>",
+        "header": "{{repository}}{{commit}} investigué avec {{agent}} — {{status}}",
+        "running": "Toujours en cours ; vérifiez de nouveau avec : shep item hypotheses {{key}}",
+        "evidence": "Preuves",
+        "test": "Test qui échoue",
+        "fix": "Correction",
+        "next": "Lancez une correction avec : shep item fix {{key}} <numéro>",
+        "approved": "L'hypothèse {{number}} est corrigée par la fonctionnalité {{feature}}."
+      }
+    },
+    "agentOption": {
+      "unknown": "« {{value}} » n'est pas un agent pris en charge. Utilisez l'un de : {{supported}}"
     }
   },
   "ui": {

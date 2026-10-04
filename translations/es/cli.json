@@ -1304,6 +1304,42 @@
         "nothing": "No hay reglas activas",
         "conflictsNote": "{{count}} campo(s) cambiaron en ambos lados; se conservó el valor del gestor"
       }
+    },
+    "item": {
+      "itemArg": "Clave del elemento de trabajo (PAY-42) o id",
+      "agentOption": "Agente a usar (por defecto: el agente configurado)",
+      "failed": "Falló el comando de elementos de trabajo",
+      "investigate": {
+        "description": "Hacer que un agente lea el código y ordene hipótesis sobre la causa de un error",
+        "repoOption": "Repositorio a leer (por defecto: el último del elemento, luego la aplicación del proyecto)",
+        "spinner": "Investigando {{key}} (copia de solo lectura de {{repository}})",
+        "starting": "Investigando {{key}} en {{repository}} con {{agent}}. Tu copia de trabajo no se toca."
+      },
+      "hypotheses": {
+        "description": "Mostrar la última investigación de un elemento de trabajo"
+      },
+      "fix": {
+        "description": "Iniciar una funcionalidad de corrección a partir de una hipótesis: primero una prueba que falle, luego la corrección",
+        "numberArg": "Número de hipótesis (1 es la más probable)",
+        "specOption": "Ejecutar el flujo completo de especificación en lugar del modo rápido",
+        "agentOption": "Agente para la corrección (por defecto: el agente que investigó)",
+        "spinner": "Iniciando la funcionalidad de corrección",
+        "created": "La funcionalidad {{name}} ({{id}}) corrige {{key}} a partir de la hipótesis {{number}}.",
+        "startFailed": "La funcionalidad se creó pero no se inició: {{error}}"
+      },
+      "render": {
+        "none": "{{key}} no se ha investigado. Ejecuta: shep item investigate {{key}} --repo <ruta>",
+        "header": "Se investigó {{repository}}{{commit}} con {{agent}} — {{status}}",
+        "running": "Sigue en curso; vuelve a consultar con: shep item hypotheses {{key}}",
+        "evidence": "Evidencia",
+        "test": "Prueba que falla",
+        "fix": "Corrección",
+        "next": "Inicia una corrección con: shep item fix {{key}} <número>",
+        "approved": "La funcionalidad {{feature}} está corrigiendo la hipótesis {{number}}."
+      }
+    },
+    "agentOption": {
+      "unknown": "\"{{value}}\" no es un agente compatible. Usa uno de: {{supported}}"
     }
   },
   "ui": {

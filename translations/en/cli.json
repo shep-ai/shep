@@ -1304,6 +1304,42 @@
         "nothing": "No enabled sync rules",
         "conflictsNote": "{{count}} field(s) changed on both sides; the tracker's value was kept"
       }
+    },
+    "item": {
+      "itemArg": "Work item key (PAY-42) or id",
+      "agentOption": "Agent to use (default: the configured agent)",
+      "failed": "Work item command failed",
+      "investigate": {
+        "description": "Have an agent read the code and rank root-cause hypotheses for a bug",
+        "repoOption": "Repository to read (default: the item's last one, then its project's application)",
+        "spinner": "Investigating {{key}} (read-only copy of {{repository}})",
+        "starting": "Investigating {{key}} in {{repository}} with {{agent}}. Your checkout is not touched."
+      },
+      "hypotheses": {
+        "description": "Show the latest investigation of a work item"
+      },
+      "fix": {
+        "description": "Start a fix feature from a hypothesis: failing test first, then the fix",
+        "numberArg": "Hypothesis number (1 is the most likely)",
+        "specOption": "Run the full spec pipeline instead of Fast mode",
+        "agentOption": "Agent for the fix (default: the investigating agent)",
+        "spinner": "Starting the fix feature",
+        "created": "Feature {{name}} ({{id}}) is fixing {{key}} from hypothesis {{number}}.",
+        "startFailed": "The feature was created but did not start: {{error}}"
+      },
+      "render": {
+        "none": "{{key}} has not been investigated. Run: shep item investigate {{key}} --repo <path>",
+        "header": "Investigated {{repository}}{{commit}} with {{agent}} — {{status}}",
+        "running": "Still running; check again with: shep item hypotheses {{key}}",
+        "evidence": "Evidence",
+        "test": "Failing test",
+        "fix": "Fix",
+        "next": "Start a fix with: shep item fix {{key}} <number>",
+        "approved": "Hypothesis {{number}} is being fixed by feature {{feature}}."
+      }
+    },
+    "agentOption": {
+      "unknown": "\"{{value}}\" is not a supported agent. Use one of: {{supported}}"
     }
   },
   "ui": {

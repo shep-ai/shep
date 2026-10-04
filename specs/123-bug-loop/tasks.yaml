@@ -17,7 +17,7 @@ tasks:
     title: Investigation domain model in TypeSpec
     description: >
       Enums InvestigationStatus and HypothesisConfidence; WorkItemInvestigation entity with Hypothesis and HypothesisEvidence value objects.
-    state: Todo
+    state: Done
     dependencies: []
     acceptanceCriteria:
       - pnpm tsp:compile passes
@@ -35,7 +35,7 @@ tasks:
     title: Pure hypothesis normalisation
     description: >
       domain/shared/investigation.ts: rank by confidence, number from 1, cap at five, make evidence paths repository-relative with forward slashes, and detect stale active investigations.
-    state: Todo
+    state: Done
     dependencies:
       - task-1
     acceptanceCriteria:
@@ -53,7 +53,7 @@ tasks:
     title: Investigation persistence
     description: >
       Migration 155 (work_item_investigations), mapper and SQLite repository: create, update, findById, listByWorkItem newest first.
-    state: Todo
+    state: Done
     dependencies:
       - task-1
     acceptanceCriteria:
@@ -71,7 +71,7 @@ tasks:
     title: Detached worktree workspace
     description: >
       IInvestigationWorkspace port and a git implementation: prepare(repo) adds a detached worktree of HEAD under the shep home and returns its path and commit; dispose removes it; stale leftovers are swept.
-    state: Todo
+    state: Done
     dependencies: []
     acceptanceCriteria:
       - Integration test on a real repository leaves its status and branch unchanged
@@ -88,7 +88,7 @@ tasks:
     title: Space environment in execution options
     description: >
       AgentExecutionOptions.environment, applied by every subprocess executor through buildSpawnOptions.
-    state: Todo
+    state: Done
     dependencies: []
     acceptanceCriteria:
       - Each subprocess executor passes it to spawn (unit tests)
@@ -105,7 +105,7 @@ tasks:
     title: InvestigateWorkItemUseCase
     description: >
       start resolves the work item and repository and refuses a second active investigation; run prepares the workspace, applies the space environment and agent policy, calls the structured agent with read-only tools, normalises and stores the result, and always disposes the workspace.
-    state: Todo
+    state: Done
     dependencies:
       - task-2
       - task-3
@@ -126,7 +126,7 @@ tasks:
     title: ApproveHypothesisUseCase
     description: >
       Builds the fix prompt, creates the feature (Fast or spec), records it on the investigation and moves the work item to its first Started state.
-    state: Todo
+    state: Done
     dependencies:
       - task-6
     acceptanceCriteria:
@@ -144,7 +144,7 @@ tasks:
     title: CLI
     description: >
       shep item investigate, hypotheses and fix; shared hypothesis rendering.
-    state: Todo
+    state: Done
     dependencies:
       - task-6
       - task-7
@@ -163,7 +163,7 @@ tasks:
     title: Web actions and panel
     description: >
       Server actions (start, get, approve) with a Storybook mock; InvestigationPanel with repository picker, running state with polling, hypotheses and fix button.
-    state: Todo
+    state: Done
     dependencies:
       - task-6
       - task-7
@@ -182,7 +182,7 @@ tasks:
     title: Work item page wiring and i18n
     description: >
       Load the latest investigation and repositories on the work item page; strings in 9 locales.
-    state: Todo
+    state: Done
     dependencies:
       - task-9
     acceptanceCriteria:
@@ -200,7 +200,7 @@ tasks:
     title: Docs
     description: >
       Guide, architecture note and CLI reference.
-    state: Todo
+    state: Done
     dependencies:
       - task-8
       - task-9
@@ -219,7 +219,7 @@ tasks:
     title: Verification
     description: >
       lint, format, typecheck, unit, integration, build, web build, stories.
-    state: Todo
+    state: Done
     dependencies:
       - task-11
     acceptanceCriteria:

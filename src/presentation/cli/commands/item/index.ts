@@ -10,6 +10,9 @@
  *   shep item ls <project>                    List work items in a project
  *   shep item new <project>                   Create a new work item
  *   shep item relate <source> <target>        Create a relation between work items
+ *   shep item investigate <item>              Rank root-cause hypotheses for a bug
+ *   shep item hypotheses <item>               Show the latest investigation
+ *   shep item fix <item> <number>             Start a fix feature from a hypothesis
  */
 
 import { Command } from 'commander';
@@ -17,6 +20,9 @@ import { createLsCommand } from './ls.command.js';
 import { createNewCommand } from './new.command.js';
 import { createRelateCommand } from './relate.command.js';
 import { createExportCommand } from './export.command.js';
+import { createInvestigateCommand } from './investigate.command.js';
+import { createHypothesesCommand } from './hypotheses.command.js';
+import { createFixCommand } from './fix.command.js';
 
 export function createItemCommand(): Command {
   return new Command('item')
@@ -24,5 +30,8 @@ export function createItemCommand(): Command {
     .addCommand(createLsCommand())
     .addCommand(createNewCommand())
     .addCommand(createRelateCommand())
-    .addCommand(createExportCommand());
+    .addCommand(createExportCommand())
+    .addCommand(createInvestigateCommand())
+    .addCommand(createHypothesesCommand())
+    .addCommand(createFixCommand());
 }

@@ -925,6 +925,24 @@ The daemon runs enabled rules on their interval. Secrets are never accepted as a
 
 ---
 
+## Bug Loop Commands
+
+`shep item investigate`, `hypotheses` and `fix` take a bug from report to fix (spec 123). See the
+[bug loop guide](../guides/bug-loop.md).
+
+| Command | Description |
+| ------- | ----------- |
+| `shep item investigate <item>` | An agent reads a throwaway read-only copy of the repository and ranks up to five root-cause hypotheses (`--repo <path>`, `--agent <type>`); exits 1 if the investigation fails |
+| `shep item hypotheses <item>` | The latest investigation of a work item |
+| `shep item fix <item> <number>` | Start a feature from a hypothesis that writes the failing test first (`--spec` for the full pipeline, `--agent <type>`); moves the item to Started |
+
+`<item>` is a key such as `PAY-42` or a work item id. Without `--repo`, the item's previous
+repository is used, then its project's application repository.
+
+**Source**: `src/presentation/cli/commands/item/`
+
+---
+
 ## Scheduled Workflow Commands
 
 `shep workflow` manages scheduled workflows. Gated on the `scheduledWorkflows`

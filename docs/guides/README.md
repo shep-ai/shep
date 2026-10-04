@@ -15,6 +15,7 @@ Guides for using Shep AI CLI effectively.
 | [custom-worktree-provisioning.md](./custom-worktree-provisioning.md) | Custom worktree create / setup commands |
 | [spaces.md](./spaces.md)                                             | Keep personal and work knowledge apart  |
 | [trackers.md](./trackers.md)                                         | Keep Linear and Jira in sync            |
+| [bug-loop.md](./bug-loop.md)                                         | Investigate and fix bugs                |
 
 ## Quick Start
 

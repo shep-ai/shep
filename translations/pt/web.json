@@ -1430,5 +1430,36 @@
     "badge": {
       "open": "Abrir {{key}} no gestor"
     }
+  },
+  "bugLoop": {
+    "title": "Investigação",
+    "intro": "Um agente lê o repositório numa cópia descartável somente leitura e classifica as causas prováveis. Seu checkout nunca é alterado.",
+    "repository": "Repositório",
+    "noRepositories": "Adicione um repositório ao shep para investigar este item.",
+    "investigate": "Investigar",
+    "investigateAgain": "Investigar novamente",
+    "running": "O agente está lendo uma cópia somente leitura de {{repository}}…",
+    "approved": "A hipótese {{number}} está sendo corrigida.",
+    "openFeature": "Abrir a funcionalidade de correção",
+    "fullSpec": "Corrigir pelo pipeline completo de especificação em vez do modo rápido",
+    "status": {
+      "Pending": "Iniciando",
+      "Running": "Investigando",
+      "Completed": "Hipóteses prontas",
+      "Failed": "Falhou"
+    },
+    "confidence": {
+      "High": "Confiança alta",
+      "Medium": "Confiança média",
+      "Low": "Confiança baixa"
+    },
+    "hypothesis": {
+      "evidence": "Evidências",
+      "test": "Teste que falha",
+      "fix": "Correção",
+      "fixThis": "Corrigir isto",
+      "fixing": "Iniciando correção…",
+      "approved": "Em correção"
+    }
   }
 }

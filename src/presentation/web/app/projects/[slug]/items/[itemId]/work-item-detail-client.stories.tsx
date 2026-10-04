@@ -8,6 +8,10 @@ import {
 } from '@shepai/core/domain/generated/output';
 import type { PmProject, WorkItem, WorkItemState } from '@shepai/core/domain/generated/output';
 import type { WorkItemRelation } from '@shepai/core/application/ports/output/repositories/work-item-relation-repository.interface';
+import {
+  COMPLETED_INVESTIGATION,
+  SAMPLE_REPOSITORIES,
+} from '@/components/features/bug-loop/bug-loop-fixtures';
 
 const mockProject: PmProject = {
   id: 'proj-1',
@@ -166,5 +170,18 @@ export const WithSubItemsOnly: Story = {
     allWorkItems: [mockWorkItem, ...mockChildItems],
     states: mockStates,
     relations: [],
+  },
+};
+
+/** Investigated (spec 123): ranked hypotheses ready to fix. */
+export const WithInvestigation: Story = {
+  args: {
+    project: mockProject,
+    workItem: mockWorkItem,
+    allWorkItems: [mockWorkItem],
+    states: mockStates,
+    relations: [],
+    repositories: SAMPLE_REPOSITORIES,
+    investigation: COMPLETED_INVESTIGATION,
   },
 };

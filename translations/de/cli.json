@@ -1304,6 +1304,42 @@
         "nothing": "Keine aktiven Sync-Regeln",
         "conflictsNote": "{{count}} Feld(er) auf beiden Seiten geändert; der Wert des Trackers wurde behalten"
       }
+    },
+    "item": {
+      "itemArg": "Arbeitselement-Schlüssel (PAY-42) oder ID",
+      "agentOption": "Zu verwendender Agent (Standard: der konfigurierte Agent)",
+      "failed": "Arbeitselement-Befehl fehlgeschlagen",
+      "investigate": {
+        "description": "Einen Agenten den Code lesen und Hypothesen zur Fehlerursache bewerten lassen",
+        "repoOption": "Zu lesendes Repository (Standard: das zuletzt verwendete, dann die Anwendung des Projekts)",
+        "spinner": "{{key}} wird untersucht (schreibgeschützte Kopie von {{repository}})",
+        "starting": "{{key}} wird in {{repository}} mit {{agent}} untersucht. Dein Checkout bleibt unberührt."
+      },
+      "hypotheses": {
+        "description": "Die letzte Untersuchung eines Arbeitselements anzeigen"
+      },
+      "fix": {
+        "description": "Ein Fix-Feature aus einer Hypothese starten: erst ein fehlschlagender Test, dann der Fix",
+        "numberArg": "Nummer der Hypothese (1 ist die wahrscheinlichste)",
+        "specOption": "Die vollständige Spec-Pipeline statt des Fast-Modus ausführen",
+        "agentOption": "Agent für den Fix (Standard: der untersuchende Agent)",
+        "spinner": "Fix-Feature wird gestartet",
+        "created": "Feature {{name}} ({{id}}) behebt {{key}} anhand von Hypothese {{number}}.",
+        "startFailed": "Das Feature wurde angelegt, aber nicht gestartet: {{error}}"
+      },
+      "render": {
+        "none": "{{key}} wurde noch nicht untersucht. Ausführen: shep item investigate {{key}} --repo <pfad>",
+        "header": "{{repository}}{{commit}} mit {{agent}} untersucht — {{status}}",
+        "running": "Läuft noch; erneut prüfen mit: shep item hypotheses {{key}}",
+        "evidence": "Belege",
+        "test": "Fehlschlagender Test",
+        "fix": "Fix",
+        "next": "Fix starten mit: shep item fix {{key}} <nummer>",
+        "approved": "Hypothese {{number}} wird von Feature {{feature}} behoben."
+      }
+    },
+    "agentOption": {
+      "unknown": "\"{{value}}\" ist kein unterstützter Agent. Verwende einen von: {{supported}}"
     }
   },
   "ui": {

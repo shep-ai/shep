@@ -22,15 +22,20 @@ export async function runCommand(failedKey: string, body: () => Promise<void>): 
   }
 }
 
+/** True, after printing it as an error (exit code 1), when the use case refused. */
+export function refused<T extends object>(
+  result: UseCaseResult<T>
+): result is { ok: false; error: string } {
+  if (result.ok) return false;
+  messages.error(result.error);
+  process.exitCode = 1;
+  return true;
+}
+
 /** Print a refused result as an error (exit code 1), or hand a success on. */
 export function report<T extends object>(
   result: UseCaseResult<T>,
   onOk: (value: { ok: true } & T) => void
 ): void {
-  if (!result.ok) {
-    messages.error(result.error);
-    process.exitCode = 1;
-    return;
-  }
-  onOk(result);
+  if (!refused(result)) onOk(result);
 }

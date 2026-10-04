@@ -1430,5 +1430,36 @@
     "badge": {
       "open": "Ouvrir {{key}} dans l'outil"
     }
+  },
+  "bugLoop": {
+    "title": "Investigation",
+    "intro": "Un agent lit le dépôt dans une copie jetable en lecture seule et classe les causes probables. Votre copie de travail n'est jamais modifiée.",
+    "repository": "Dépôt",
+    "noRepositories": "Ajoutez un dépôt à shep pour investiguer cet élément.",
+    "investigate": "Investiguer",
+    "investigateAgain": "Investiguer à nouveau",
+    "running": "L'agent lit une copie en lecture seule de {{repository}}…",
+    "approved": "L'hypothèse {{number}} est en cours de correction.",
+    "openFeature": "Ouvrir la fonctionnalité de correction",
+    "fullSpec": "Corriger via le pipeline de spécification complet au lieu du mode rapide",
+    "status": {
+      "Pending": "Démarrage",
+      "Running": "Investigation en cours",
+      "Completed": "Hypothèses prêtes",
+      "Failed": "Échec"
+    },
+    "confidence": {
+      "High": "Confiance élevée",
+      "Medium": "Confiance moyenne",
+      "Low": "Confiance faible"
+    },
+    "hypothesis": {
+      "evidence": "Preuves",
+      "test": "Test qui échoue",
+      "fix": "Correction",
+      "fixThis": "Corriger",
+      "fixing": "Lancement de la correction…",
+      "approved": "En correction"
+    }
   }
 }
