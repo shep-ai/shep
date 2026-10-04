@@ -1,0 +1,75 @@
+# Implementation Plan (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: pr-comment-loop
+summary: Implementation plan for 124 — review comments read, addressed in the worktree and answered.
+
+relatedFeatures:
+  - 121-space-agent-settings
+technologies:
+  - TypeSpec
+  - SQLite
+  - tsyringe
+  - Commander
+  - Next.js
+relatedLinks: []
+
+phases:
+  - id: phase-1
+    name: 'Domain'
+    parallel: false
+    taskIds: [task-1, task-2]
+  - id: phase-2
+    name: 'Persistence and GitHub client'
+    parallel: false
+    taskIds: [task-3, task-4]
+  - id: phase-3
+    name: 'Use cases and daemon'
+    parallel: false
+    taskIds: [task-5, task-6, task-7]
+  - id: phase-4
+    name: 'CLI'
+    parallel: false
+    taskIds: [task-8]
+  - id: phase-5
+    name: 'Web'
+    parallel: false
+    taskIds: [task-9, task-10]
+  - id: phase-6
+    name: 'Docs and verification'
+    parallel: false
+    taskIds: [task-11, task-12]
+
+filesToCreate:
+  - tsp/domain/entities/pr-comment.tsp
+  - packages/core/src/domain/shared/pr-comments.ts
+  - packages/core/src/infrastructure/persistence/sqlite/migrations/156-create-pr-comments.ts
+  - packages/core/src/application/ports/output/services/pull-request-comment-service.interface.ts
+  - packages/core/src/infrastructure/services/git/gh-pull-request-comment.service.ts
+  - packages/core/src/application/use-cases/pr-comments/
+  - src/presentation/cli/commands/feat/comments.command.ts
+  - src/presentation/web/components/features/pr-comments/
+
+filesToModify:
+  - tsp/domain/entities/space.tsp
+  - src/presentation/cli/commands/_serve.command.ts
+  - src/presentation/cli/commands/ui.command.ts
+  - src/presentation/cli/commands/space/config.command.ts
+  - src/presentation/web/components/common/feature-drawer-tabs/overview-tab.tsx
+
+content: |
+  ## Approach
+
+  TDD throughout: every task begins with a failing test (RED), then the minimal implementation
+  (GREEN), then cleanup (REFACTOR).
+
+  Clean Architecture: trigger rules, the reply marker and reply text are pure domain code; use
+  cases depend on comment and round repositories, the PR comment client port, the structured
+  agent caller and the space environment; the gh client is infrastructure behind its port; the
+  daemon only calls a use case.
+
+  ## Risks
+
+  - A reviewer comment the agent misreads: replies say what changed and the commit, and Off or
+    Mention keep the human in charge.
+  - GitHub rate limits: two-minute polling, only features in Review with an open PR.

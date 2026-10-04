@@ -1,0 +1,239 @@
+# Task Breakdown (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: pr-comment-loop
+summary: Task breakdown for 124 — review comments read, addressed in the worktree and answered.
+
+relatedFeatures:
+  - 121-space-agent-settings
+technologies:
+  - TypeSpec
+  - SQLite
+  - tsyringe
+relatedLinks: []
+
+tasks:
+  - id: task-1
+    title: PR comment domain model in TypeSpec
+    description: >
+      Enums PrCommentKind, PrCommentStatus, PrCommentTrigger, PrCommentRoundStatus; entities PrComment and PrCommentRound; SpaceAgentSettings gains prCommentTrigger and prCommentResolveThreads.
+    state: Todo
+    dependencies: []
+    acceptanceCriteria:
+      - pnpm tsp:compile passes
+      - Schemas committed
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: S
+
+  - id: task-2
+    title: Pure trigger and reply rules
+    description: >
+      domain/shared/pr-comments.ts: the reply marker, whether a comment is shep's own, whether a trigger addresses a comment, and reply text with the commit.
+    state: Todo
+    dependencies:
+      - task-1
+    acceptanceCriteria:
+      - Every trigger and marker case is tested
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: S
+
+  - id: task-3
+    title: Persistence
+    description: >
+      Migration 156, mappers and SQLite repositories for comments (upsert by feature and GitHub id) and rounds; spaces columns.
+    state: Todo
+    dependencies:
+      - task-1
+    acceptanceCriteria:
+      - Round-trips every field; re-reading a comment keeps its status
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: M
+
+  - id: task-4
+    title: gh PR comment client
+    description: >
+      IPullRequestCommentService and its gh implementation: list all three kinds across pages with thread ids, reply on a thread or as a quoted comment, resolve a thread; runs gh with the space environment.
+    state: Todo
+    dependencies: []
+    acceptanceCriteria:
+      - Argument and parsing tests with a fake exec
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: M
+
+  - id: task-5
+    title: FetchPrCommentsUseCase
+    description: >
+      Reads a feature's PR comments into the store, skipping shep's own replies.
+    state: Todo
+    dependencies:
+      - task-2
+      - task-3
+      - task-4
+    acceptanceCriteria:
+      - New, known and edited comments are handled
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: M
+
+  - id: task-6
+    title: AddressPrCommentsUseCase
+    description: >
+      start validates the feature and records a round; run calls the agent in the worktree, checks the push, posts replies, resolves threads and records the outcome.
+    state: Todo
+    dependencies:
+      - task-5
+    acceptanceCriteria:
+      - Success, no change, failed push, agent failure and refusals are tested
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: L
+
+  - id: task-7
+    title: Daemon sync
+    description: >
+      SyncPrCommentsUseCase.runDue fetches comments of features in Review and addresses those the space's trigger selects; shep start and shep ui run it and PR status sync through one shared starter.
+    state: Todo
+    dependencies:
+      - task-6
+    acceptanceCriteria:
+      - Trigger modes tested; both processes start the watchers
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: M
+
+  - id: task-8
+    title: CLI
+    description: >
+      shep feat comments and address-comments; space config --pr-comments and --resolve-threads.
+    state: Todo
+    dependencies:
+      - task-6
+    acceptanceCriteria:
+      - Command tests
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: M
+
+  - id: task-9
+    title: Web actions and section
+    description: >
+      Server actions with a Storybook mock; PrCommentsSection in the feature drawer overview with the comment list, round state and Address comments.
+    state: Todo
+    dependencies:
+      - task-6
+    acceptanceCriteria:
+      - Component tests and stories
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: L
+
+  - id: task-10
+    title: Space settings form and i18n
+    description: >
+      Trigger and resolve options in the space agent settings form; strings in 9 locales.
+    state: Todo
+    dependencies:
+      - task-1
+    acceptanceCriteria:
+      - Form test; locale parity passes
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: S
+
+  - id: task-11
+    title: Docs
+    description: >
+      Guide, architecture note, CLI reference, spaces guide.
+    state: Todo
+    dependencies:
+      - task-8
+      - task-9
+    acceptanceCriteria:
+      - Docs describe the shipped behaviour
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: S
+
+  - id: task-12
+    title: Verification
+    description: >
+      lint, format, typecheck, unit, integration, build, web build, stories.
+    state: Todo
+    dependencies:
+      - task-11
+    acceptanceCriteria:
+      - All green
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: S
+
+totalEstimate: L (12 tasks)
+
+openQuestions: []
+
+content: |
+  Tasks follow the plan phases; each starts with a failing test.

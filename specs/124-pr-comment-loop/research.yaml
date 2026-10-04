@@ -1,0 +1,56 @@
+# Research (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: pr-comment-loop
+summary: Technical decisions for 124 — reading, addressing and answering review comments on shep's PRs.
+
+relatedFeatures:
+  - 012-autonomous-pr-review-loop
+technologies:
+  - gh CLI
+  - GitHub GraphQL
+relatedLinks: []
+
+decisions:
+  - title: A round is one structured agent turn in the worktree, outside the feature graph
+    chosen: IStructuredAgentCaller in feature.worktreePath, returning a reply per comment; the agent commits and pushes
+    rejected:
+      - 'Reject the run at the merge gate: resets lifecycle to Implementation and drops the PR record'
+      - 'A new graph node: needs a resumable run and a gate; comments arrive while the run waits'
+    rationale: >
+      The PR and its run stay as they are; replies are data shep posts itself. The agent pushes
+      so it does so with the space's git credentials, as feature runs do.
+
+  - title: Polling through gh, not webhooks
+    chosen: gh api --paginate for pulls/{n}/comments, issues/{n}/comments and pulls/{n}/reviews; GraphQL reviewThreads for thread ids and resolution
+    rejected:
+      - 'Webhooks: need the public tunnel, which only shep ui starts, and still need polling to catch up'
+    rationale: >
+      shep already talks to GitHub only through gh, which handles auth and GitHub Enterprise;
+      `{owner}/{repo}` placeholders resolve from the worktree.
+
+  - title: Trigger per space, default Mention
+    chosen: SpaceAgentSettings.prCommentTrigger (Off | Mention | All) and prCommentResolveThreads
+    rejected:
+      - 'A global setting: the settings page is already 2,300 lines and teams differ per org'
+      - 'All by default: an unasked push to a reviewed branch surprises people'
+    rationale: >
+      `#shep` mirrors the prototype's `#shepai` opt-in; spaces already hold per-org agent policy.
+
+  - title: shep replies carry a hidden marker
+    chosen: Each reply ends with an HTML comment marker; comments containing it are skipped
+    rejected:
+      - 'Skip comments by the PR author: with gh, the PR author is usually the reviewer too'
+    rationale: >
+      gh posts as the user, so authorship cannot tell shep's replies from the user's comments.
+
+openQuestions: []
+
+content: |
+  ## Findings
+
+  - IGitPrService and IPlatformReviewService have no way to list threads, reply or resolve;
+    GitHubReviewService's retrying gh api helper and the recap publisher's gh GraphQL call are
+    the patterns to follow.
+  - Features waiting at the merge gate are in Review with `pr` set and no running process.
+  - `_serve` (shep start) never started PrSyncWatcher; `shep ui` and the web dev server do.
