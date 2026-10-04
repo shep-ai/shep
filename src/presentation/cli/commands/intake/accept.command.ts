@@ -2,6 +2,7 @@ import { Command } from 'commander';
 import { container } from '@/infrastructure/di/container.js';
 import { AcceptIntakeItemUseCase } from '@/application/use-cases/intake/accept-intake-item.use-case.js';
 import { messages } from '../../ui/index.js';
+import { workItemKey } from '@/domain/shared/work-item-key.js';
 
 export function createAcceptCommand(): Command {
   return new Command('accept')
@@ -19,7 +20,7 @@ export function createAcceptCommand(): Command {
         }
 
         messages.success(
-          `Accepted — created work item ${result.workItem.identifierPrefix}-${result.workItem.sequenceId}: ${result.workItem.title}`
+          `Accepted — created work item ${workItemKey(result.workItem)}: ${result.workItem.title}`
         );
       } catch (error) {
         const err = error instanceof Error ? error : new Error(String(error));

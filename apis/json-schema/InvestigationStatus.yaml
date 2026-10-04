@@ -1,0 +1,9 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: InvestigationStatus.yaml
+type: string
+enum:
+  - Pending
+  - Running
+  - Completed
+  - Failed
+description: Where a work item investigation is in its life

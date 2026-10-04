@@ -49,6 +49,7 @@ import { registerAspm } from '@/infrastructure/di/modules/register-aspm.js';
 import { registerHarness } from '@/infrastructure/di/modules/register-harness.js';
 import { registerSpaces } from '@/infrastructure/di/modules/register-spaces.js';
 import { registerTrackers } from '@/infrastructure/di/modules/register-trackers.js';
+import { registerBugLoop } from '@/infrastructure/di/modules/register-bug-loop.js';
 import { SessionSpaceEnvironment } from '@/infrastructure/services/interactive/lifecycle/session-space-environment.js';
 import { ResolveSpaceEnvironmentUseCase } from '@/application/use-cases/spaces/resolve-space-environment.use-case.js';
 import type { IDeploymentService } from '@/application/ports/output/services/deployment-service.interface.js';
@@ -185,6 +186,9 @@ const WEB_ROUTE_TOKENS: readonly string[] = [
   // Tracker sync (spec 122)
   'ManageTrackerConnectionsUseCase',
   'ManageTrackerSyncRulesUseCase',
+  'InvestigateWorkItemUseCase',
+  'ApproveHypothesisUseCase',
+  'GetWorkItemInvestigationsUseCase',
   'RunTrackerSyncUseCase',
   'SyncTrackerRulesUseCase',
   'GetTrackerIssueLinkUseCase',
@@ -205,6 +209,8 @@ const CRITICAL_INFRA_TOKENS: readonly string[] = [
   'ITrackerConnectionRepository',
   'ITrackerSyncRuleRepository',
   'ITrackerIssueLinkRepository',
+  'IInvestigationRepository',
+  'IInvestigationWorkspace',
   'ITrackerClientFactory',
   // Query-aware harness (spec 119)
   'IHarnessBlobStore',
@@ -361,6 +367,7 @@ describe('DI container bootstrap (integration)', () => {
     registerRepositories(scopedContainer);
     registerSpaces(scopedContainer);
     registerTrackers(scopedContainer);
+    registerBugLoop(scopedContainer);
     registerServices(scopedContainer);
     registerTools(scopedContainer);
     registerAgents(scopedContainer);

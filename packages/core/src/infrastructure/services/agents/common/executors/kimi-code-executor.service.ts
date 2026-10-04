@@ -56,6 +56,7 @@ import {
   writePromptToStdin,
   AGENT_ABORTED_MESSAGE,
   watchAbortSignal,
+  buildSpawnOptions,
 } from './process-stream.js';
 
 /** Binary name on PATH. */
@@ -522,22 +523,12 @@ export class KimiCodeExecutorService implements IAgentExecutor {
   }
 
   private buildSpawnOptions(options?: AgentExecutionOptions): Record<string, unknown> {
-    const spawnOpts: Record<string, unknown> = {
-      stdio: ['pipe', 'pipe', 'pipe'],
-    };
-
-    if (options?.cwd) spawnOpts.cwd = options.cwd;
-    if (process.platform === 'win32') spawnOpts.windowsHide = true;
-
-    // Strip CLAUDECODE so a nested agent does not detect a parent session.
-    const { CLAUDECODE: _ignored, ...cleanEnv } = process.env;
-
-    if (this.authConfig?.authMethod === AgentAuthMethod.Token && this.authConfig.token) {
-      spawnOpts.env = { ...cleanEnv, [KIMI_API_KEY_ENV]: this.authConfig.token };
-    } else {
-      spawnOpts.env = cleanEnv;
-    }
-
-    return spawnOpts;
+    const token =
+      this.authConfig?.authMethod === AgentAuthMethod.Token ? this.authConfig.token : undefined;
+    return buildSpawnOptions({
+      cwd: options?.cwd,
+      environment: options?.environment,
+      ...(token ? { extraEnv: { [KIMI_API_KEY_ENV]: token } } : {}),
+    });
   }
 }

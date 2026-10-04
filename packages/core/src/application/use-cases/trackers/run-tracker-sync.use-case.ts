@@ -19,7 +19,6 @@
 
 import { injectable, inject } from 'tsyringe';
 import {
-  StateGroup,
   TrackerConnectionStatus,
   TrackerSyncDirection,
   type ExternalIssue,
@@ -28,9 +27,9 @@ import {
   type TrackerSyncRule,
   type TrackerSyncRunSummary,
   type WorkItem,
-  type WorkItemState,
 } from '../../../domain/generated/output.js';
 import { planIssueSync, type SyncedFields } from '../../../domain/shared/tracker-sync.js';
+import { ProjectStates } from '../../../domain/shared/project-states.js';
 import type { ITrackerConnectionRepository } from '../../ports/output/repositories/tracker-connection-repository.interface.js';
 import type { ITrackerSyncRuleRepository } from '../../ports/output/repositories/tracker-sync-rule-repository.interface.js';
 import type { ITrackerIssueLinkRepository } from '../../ports/output/repositories/tracker-issue-link-repository.interface.js';
@@ -59,32 +58,6 @@ export interface TrackerSyncOutcome {
   summary: TrackerSyncRunSummary;
   /** Why the run stopped early, when it did. */
   error?: string;
-}
-
-/** The project's states by group, and each state's group. */
-class ProjectStates {
-  private readonly byGroup = new Map<StateGroup, string>();
-  private readonly groupOf = new Map<string, StateGroup>();
-  private readonly fallback: string;
-
-  constructor(states: WorkItemState[]) {
-    const ordered = [...states].sort((a, b) => a.displayOrder - b.displayOrder);
-    for (const state of ordered) {
-      this.groupOf.set(state.id, state.stateGroup);
-      if (!this.byGroup.has(state.stateGroup) || state.isDefault) {
-        this.byGroup.set(state.stateGroup, state.id);
-      }
-    }
-    this.fallback = (ordered.find((state) => state.isDefault) ?? ordered[0]).id;
-  }
-
-  stateFor(group: StateGroup): string {
-    return this.byGroup.get(group) ?? this.fallback;
-  }
-
-  groupFor(stateId: string): StateGroup {
-    return this.groupOf.get(stateId) ?? StateGroup.Unstarted;
-  }
 }
 
 function emptySummary(): TrackerSyncRunSummary {

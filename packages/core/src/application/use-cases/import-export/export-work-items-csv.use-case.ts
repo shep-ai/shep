@@ -5,6 +5,7 @@ import type { IWorkItemRepository } from '../../ports/output/repositories/work-i
 import type { ICycleRepository } from '../../ports/output/repositories/cycle-repository.interface.js';
 import type { IWorkItemStateRepository } from '../../ports/output/repositories/work-item-state-repository.interface.js';
 import type { ILabelRepository } from '../../ports/output/repositories/label-repository.interface.js';
+import { workItemKey } from '../../../domain/shared/work-item-key.js';
 
 export type ExportColumn =
   | 'identifier'
@@ -98,7 +99,7 @@ export class ExportWorkItemsCsvUseCase {
     return columns.map((col) => {
       switch (col) {
         case 'identifier':
-          return `${item.identifierPrefix}-${item.sequenceId}`;
+          return workItemKey(item);
         case 'title':
           return item.title;
         case 'description':

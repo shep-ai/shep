@@ -21,6 +21,7 @@
  * ```
  */
 
+import type { SpaceEnvironment } from '../../../../domain/shared/space-environment.js';
 import type { PromptSection } from '../../../../domain/harness/prompt-sections.js';
 import type {
   AgentEffort,
@@ -141,6 +142,14 @@ export interface AgentExecutionOptions {
   disableMcp?: boolean;
   /** Restrict available built-in tools via --tools flag */
   tools?: string[];
+  /**
+   * The space environment for this call (spec 123): subprocess executors apply
+   * it to the agent process they spawn. Calls made inside the long-lived web
+   * server or daemon use it, since they cannot change that process's
+   * environment; feature workers set their own process environment instead.
+   * Executors that call an HTTP API directly ignore it.
+   */
+  environment?: SpaceEnvironment;
   /**
    * When true, request per-token streaming deltas from the underlying agent
    * (e.g. Claude CLI's --include-partial-messages). Only set this when the

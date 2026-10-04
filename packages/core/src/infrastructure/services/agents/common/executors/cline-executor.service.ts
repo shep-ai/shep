@@ -340,7 +340,7 @@ export class ClineExecutorService implements IAgentExecutor {
     log: ExecutorLogger
   ): ReturnType<SpawnFunction> {
     const args = this.buildArgs(prompt, options);
-    const spawnOpts = buildSpawnOptions({ cwd: options?.cwd });
+    const spawnOpts = buildSpawnOptions({ cwd: options?.cwd, environment: options?.environment });
 
     log(
       `Spawning: ${CLINE_BINARY} ${args.map((a) => (a.length > 80 ? `${a.slice(0, 77)}...` : a)).join(' ')}`

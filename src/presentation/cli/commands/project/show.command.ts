@@ -13,6 +13,7 @@ import { GetPmProjectUseCase } from '@/application/use-cases/pm-projects/get-pm-
 import { ListWorkItemsUseCase } from '@/application/use-cases/work-items/list-work-items.use-case.js';
 import type { IWorkItemStateRepository } from '@/application/ports/output/repositories/work-item-state-repository.interface.js';
 import { colors, messages, renderDetailView, renderListView } from '../../ui/index.js';
+import { workItemKey } from '@/domain/shared/work-item-key.js';
 
 function formatDate(date?: Date | string | null): string | null {
   if (!date) return null;
@@ -73,7 +74,7 @@ export function createShowCommand(): Command {
           const rows = workItems.map((wi) => {
             const state = stateMap.get(wi.stateId);
             return [
-              colors.muted(`${wi.identifierPrefix}-${wi.sequenceId}`),
+              colors.muted(workItemKey(wi)),
               wi.title,
               state?.name ?? colors.muted('—'),
               wi.priority ?? colors.muted('—'),

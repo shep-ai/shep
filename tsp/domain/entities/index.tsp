@@ -66,3 +66,4 @@ import "./plugin.tsp";
 import "./fleet-overview.tsp";
 import "./harness/index.tsp";
 import "./tracker-sync.tsp";
+import "./investigation.tsp";

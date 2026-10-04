@@ -88,6 +88,7 @@ import type { IVersionService } from '../../application/ports/output/services/ve
 import { registerRepositories } from './modules/register-repositories.js';
 import { registerSpaces } from './modules/register-spaces.js';
 import { registerTrackers } from './modules/register-trackers.js';
+import { registerBugLoop } from './modules/register-bug-loop.js';
 import { SessionSpaceEnvironment } from '../services/interactive/lifecycle/session-space-environment.js';
 import { ResolveSpaceEnvironmentUseCase } from '../../application/use-cases/spaces/resolve-space-environment.use-case.js';
 import { registerServices } from './modules/register-services.js';
@@ -135,6 +136,7 @@ export async function initializeContainer(): Promise<typeof container> {
   registerRepositories(container);
   registerSpaces(container);
   registerTrackers(container);
+  registerBugLoop(container);
   registerServices(container);
   registerTools(container);
   registerAgents(container);

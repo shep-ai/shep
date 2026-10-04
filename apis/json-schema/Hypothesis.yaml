@@ -1,0 +1,38 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: Hypothesis.yaml
+type: object
+properties:
+  number:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Rank from 1 (most likely)
+  title:
+    type: string
+    description: Short name of the cause
+  rootCause:
+    type: string
+    description: What goes wrong and why
+  confidence:
+    $ref: HypothesisConfidence.yaml
+    description: How strongly the evidence supports it
+  evidence:
+    type: array
+    items:
+      $ref: HypothesisEvidence.yaml
+    description: Places in the code that support it
+  testPlan:
+    type: string
+    description: The failing test that would prove it
+  fixPlan:
+    type: string
+    description: How to fix it
+required:
+  - number
+  - title
+  - rootCause
+  - confidence
+  - evidence
+  - testPlan
+  - fixPlan
+description: One candidate root cause for a bug, with its evidence and how to fix it

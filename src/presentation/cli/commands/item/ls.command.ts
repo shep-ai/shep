@@ -13,6 +13,7 @@ import { GetPmProjectUseCase } from '@/application/use-cases/pm-projects/get-pm-
 import { ListWorkItemsUseCase } from '@/application/use-cases/work-items/list-work-items.use-case.js';
 import type { IWorkItemStateRepository } from '@/application/ports/output/repositories/work-item-state-repository.interface.js';
 import { colors, messages, renderListView } from '../../ui/index.js';
+import { workItemKey } from '@/domain/shared/work-item-key.js';
 
 export function createLsCommand(): Command {
   return new Command('ls')
@@ -40,7 +41,7 @@ export function createLsCommand(): Command {
         const rows = workItems.map((wi) => {
           const state = stateMap.get(wi.stateId);
           return [
-            colors.muted(`${wi.identifierPrefix}-${wi.sequenceId}`),
+            colors.muted(workItemKey(wi)),
             wi.title,
             state?.name ?? colors.muted('—'),
             wi.priority ?? colors.muted('—'),

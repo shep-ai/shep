@@ -6749,6 +6749,123 @@ export type ExternalIssue = {
 };
 
 /**
+ * A place in the code that supports a hypothesis
+ */
+export type HypothesisEvidence = {
+  /**
+   * Repository-relative path with forward slashes
+   */
+  file: string;
+  /**
+   * 1-based line, when the evidence is a specific line
+   */
+  line?: number;
+  /**
+   * What this place shows
+   */
+  note: string;
+};
+export enum HypothesisConfidence {
+  High = 'High',
+  Medium = 'Medium',
+  Low = 'Low',
+}
+
+/**
+ * One candidate root cause for a bug, with its evidence and how to fix it
+ */
+export type Hypothesis = {
+  /**
+   * Rank from 1 (most likely)
+   */
+  number: number;
+  /**
+   * Short name of the cause
+   */
+  title: string;
+  /**
+   * What goes wrong and why
+   */
+  rootCause: string;
+  /**
+   * How strongly the evidence supports it
+   */
+  confidence: HypothesisConfidence;
+  /**
+   * Places in the code that support it
+   */
+  evidence: HypothesisEvidence[];
+  /**
+   * The failing test that would prove it
+   */
+  testPlan: string;
+  /**
+   * How to fix it
+   */
+  fixPlan: string;
+};
+export enum InvestigationStatus {
+  Pending = 'Pending',
+  Running = 'Running',
+  Completed = 'Completed',
+  Failed = 'Failed',
+}
+
+/**
+ * An agent's investigation of a work item in one repository, and the fix it led to
+ */
+export type WorkItemInvestigation = BaseEntity & {
+  /**
+   * The work item investigated
+   */
+  workItemId: string;
+  /**
+   * The repository read
+   */
+  repositoryPath: string;
+  /**
+   * The commit read
+   */
+  commitSha?: string;
+  /**
+   * Where the investigation is
+   */
+  status: InvestigationStatus;
+  /**
+   * The agent's overall reading of the bug
+   */
+  summary?: string;
+  /**
+   * Candidate root causes, most likely first
+   */
+  hypotheses: Hypothesis[];
+  /**
+   * The agent that investigated
+   */
+  agentType?: AgentType;
+  /**
+   * Why the investigation failed
+   */
+  error?: string;
+  /**
+   * When the agent started
+   */
+  startedAt?: any;
+  /**
+   * When the investigation completed or failed
+   */
+  finishedAt?: any;
+  /**
+   * The hypothesis approved for fixing
+   */
+  approvedHypothesisNumber?: number;
+  /**
+   * The feature created to fix it
+   */
+  featureId?: string;
+};
+
+/**
  * Single installation suggestion for a tool
  */
 export type InstallationSuggestion = {

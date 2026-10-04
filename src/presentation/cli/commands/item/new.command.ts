@@ -17,6 +17,7 @@ import { CreateWorkItemUseCase } from '@/application/use-cases/work-items/create
 import { GetWorkItemUseCase } from '@/application/use-cases/work-items/get-work-item.use-case.js';
 import { Priority } from '@/domain/generated/output.js';
 import { colors, messages } from '../../ui/index.js';
+import { workItemKey } from '@/domain/shared/work-item-key.js';
 
 interface NewOptions {
   title?: string;
@@ -105,7 +106,7 @@ export function createNewCommand(): Command {
         const wi = result.workItem;
         messages.newline();
         messages.success('Work item created');
-        console.log(`  ${colors.muted('ID:')}       ${wi.identifierPrefix}-${wi.sequenceId}`);
+        console.log(`  ${colors.muted('ID:')}       ${workItemKey(wi)}`);
         console.log(`  ${colors.muted('Title:')}    ${wi.title}`);
         console.log(`  ${colors.muted('Priority:')} ${wi.priority}`);
         if (options.parent) {

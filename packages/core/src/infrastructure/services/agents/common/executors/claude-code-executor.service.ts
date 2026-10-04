@@ -439,7 +439,7 @@ export class ClaudeCodeExecutorService implements IAgentExecutor {
     // Use stream-json so we get real-time events in the worker log
     // instead of zero output for minutes with --output-format json
     const args = this.buildStreamArgs(options);
-    const spawnOpts = buildSpawnOptions({ cwd: options?.cwd });
+    const spawnOpts = buildSpawnOptions({ cwd: options?.cwd, environment: options?.environment });
 
     log(
       `Spawning: ${CLAUDE_BINARY} ${args.map((a) => (a.length > 80 ? `${a.slice(0, 77)}...` : a)).join(' ')}`

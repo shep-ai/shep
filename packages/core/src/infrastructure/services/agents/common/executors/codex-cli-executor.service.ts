@@ -586,7 +586,7 @@ export class CodexCliExecutorService implements IAgentExecutor {
     log: ExecutorLogger
   ): ReturnType<SpawnFunction> {
     const args = this.buildArgs(prompt, options, tempSchemaPath);
-    const spawnOpts = this.buildSpawnOptions();
+    const spawnOpts = this.buildSpawnOptions(options);
 
     log(
       `Spawning: ${CODEX_BINARY} ${args.map((a) => (a.length > 80 ? `${a.slice(0, 77)}...` : a)).join(' ')}`
@@ -763,7 +763,7 @@ export class CodexCliExecutorService implements IAgentExecutor {
    * The working directory is passed to the CLI with `--cd` rather than as the
    * child's cwd, so it is deliberately absent here.
    */
-  private buildSpawnOptions(): Record<string, unknown> {
+  private buildSpawnOptions(options?: AgentExecutionOptions): Record<string, unknown> {
     const extraEnv: Record<string, string> = {};
 
     // Inject CODEX_API_KEY when using token auth
@@ -771,7 +771,7 @@ export class CodexCliExecutorService implements IAgentExecutor {
       extraEnv[CODEX_API_KEY_ENV] = this.authConfig.token;
     }
 
-    return buildSpawnOptions({ extraEnv });
+    return buildSpawnOptions({ environment: options?.environment, extraEnv });
   }
 }
 

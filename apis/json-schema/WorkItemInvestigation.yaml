@@ -1,0 +1,54 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: WorkItemInvestigation.yaml
+type: object
+properties:
+  workItemId:
+    type: string
+    description: The work item investigated
+  repositoryPath:
+    type: string
+    description: The repository read
+  commitSha:
+    type: string
+    description: The commit read
+  status:
+    $ref: InvestigationStatus.yaml
+    description: Where the investigation is
+  summary:
+    type: string
+    description: The agent's overall reading of the bug
+  hypotheses:
+    type: array
+    items:
+      $ref: Hypothesis.yaml
+    description: Candidate root causes, most likely first
+  agentType:
+    $ref: AgentType.yaml
+    description: The agent that investigated
+  error:
+    type: string
+    description: Why the investigation failed
+  startedAt:
+    type: string
+    format: date-time
+    description: When the agent started
+  finishedAt:
+    type: string
+    format: date-time
+    description: When the investigation completed or failed
+  approvedHypothesisNumber:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: The hypothesis approved for fixing
+  featureId:
+    type: string
+    description: The feature created to fix it
+required:
+  - workItemId
+  - repositoryPath
+  - status
+  - hypotheses
+allOf:
+  - $ref: BaseEntity.yaml
+description: An agent's investigation of a work item in one repository, and the fix it led to

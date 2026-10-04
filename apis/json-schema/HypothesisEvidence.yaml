@@ -1,0 +1,19 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: HypothesisEvidence.yaml
+type: object
+properties:
+  file:
+    type: string
+    description: Repository-relative path with forward slashes
+  line:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: 1-based line, when the evidence is a specific line
+  note:
+    type: string
+    description: What this place shows
+required:
+  - file
+  - note
+description: A place in the code that supports a hypothesis

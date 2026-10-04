@@ -16,6 +16,7 @@ import type {
   SpaceRuleKind,
 } from '../../../../domain/generated/output.js';
 import { normalizeRepositoryPath } from '../../../../domain/shared/repository-path.js';
+import { millis } from './row-values.js';
 
 export interface SpaceRow {
   id: string;
@@ -64,10 +65,6 @@ export interface RepositorySpaceAssignmentRow {
   product_line_id: string | null;
   created_at: number;
   updated_at: number;
-}
-
-function millis(value: Date | string | number): number {
-  return value instanceof Date ? value.getTime() : new Date(value).getTime();
 }
 
 function withOptional<T extends object, K extends string>(

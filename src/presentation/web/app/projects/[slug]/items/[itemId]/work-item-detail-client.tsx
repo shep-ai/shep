@@ -18,6 +18,7 @@ import { WorkItemRelationsPanel } from '@/components/pm/relations/work-item-rela
 import { SubItemsSection } from '@/components/pm/sub-items/sub-items-section';
 import { AttachmentList } from '@/components/pm/attachments/attachment-list';
 import { TimeEntryList } from '@/components/pm/time-entries/time-entry-list';
+import { workItemKey } from '@shepai/core/domain/shared/work-item-key';
 import { TrackerIssueBadge } from '@/components/features/trackers/tracker-issue-badge';
 
 const PRIORITY_COLORS: Record<string, string> = {
@@ -61,7 +62,7 @@ export function WorkItemDetailClient({
     [allWorkItems]
   );
   const state = stateMap.get(workItem.stateId);
-  const identifier = `${project.identifierPrefix}-${workItem.sequenceId}`;
+  const identifier = workItemKey(workItem);
 
   const handleSubItemClick = (child: WorkItem) => {
     router.push(`/projects/${project.slug}/items/${child.id}`);

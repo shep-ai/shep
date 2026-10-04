@@ -208,7 +208,7 @@ export class CopilotCliExecutorService implements IAgentExecutor {
       preparedPrompt = await this.preparePromptFileIndirection(prompt);
     }
     const args = this.buildArgs(preparedPrompt.promptArg, options, log);
-    const spawnOpts = buildSpawnOptions({ cwd: options?.cwd });
+    const spawnOpts = buildSpawnOptions({ cwd: options?.cwd, environment: options?.environment });
 
     log(
       `Spawning: ${COPILOT_BINARY} ${args.map((a) => (a.length > 80 ? `${a.slice(0, 77)}...` : a)).join(' ')}`
@@ -377,7 +377,7 @@ export class CopilotCliExecutorService implements IAgentExecutor {
       preparedPrompt = await this.preparePromptFileIndirection(prompt);
     }
     const args = this.buildArgs(preparedPrompt.promptArg, options, log);
-    const spawnOpts = buildSpawnOptions({ cwd: options?.cwd });
+    const spawnOpts = buildSpawnOptions({ cwd: options?.cwd, environment: options?.environment });
     let proc: ReturnType<SpawnFunction>;
     try {
       proc = this.spawn(COPILOT_BINARY, args, spawnOpts);

@@ -484,7 +484,7 @@ export class CursorExecutorService implements IAgentExecutor {
     options: AgentExecutionOptions | undefined,
     log: ExecutorLogger
   ): { proc: ReturnType<SpawnFunction>; tmpFile: string | undefined } {
-    const spawnOpts = buildSpawnOptions({ cwd: options?.cwd });
+    const spawnOpts = buildSpawnOptions({ cwd: options?.cwd, environment: options?.environment });
 
     if (IS_WINDOWS) {
       // Write prompt to temp file to bypass cmd.exe argument mangling

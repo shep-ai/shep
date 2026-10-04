@@ -411,7 +411,7 @@ export class GeminiCliExecutorService implements IAgentExecutor {
       extraEnv[GEMINI_API_KEY_ENV] = this.authConfig.token;
     }
 
-    return buildSpawnOptions({ cwd: options?.cwd, extraEnv });
+    return buildSpawnOptions({ cwd: options?.cwd, environment: options?.environment, extraEnv });
   }
 }
 
