@@ -1099,6 +1099,97 @@
         "available": "Available",
         "failed": "Failed to load plugin catalog"
       }
+    },
+    "space": {
+      "description": "Keep bodies of work apart: spaces, product lines and the rules that place repositories",
+      "failed": "Space command failed",
+      "spaceArg": "Space name, slug or id",
+      "pathArg": "Repository path (defaults to the current directory)",
+      "nameArg": "Display name",
+      "lineArg": "Product line name, slug or id",
+      "lineOption": "Product line inside the space",
+      "descriptionOption": "Short description",
+      "colorOption": "Hex colour, for example #3456c4",
+      "ls": {
+        "description": "List spaces with their product lines, repositories and memory",
+        "title": "Spaces",
+        "nameColumn": "Name",
+        "slugColumn": "Slug",
+        "linesColumn": "Product lines",
+        "reposColumn": "Repos",
+        "memoryColumn": "Memory",
+        "defaultMarker": "(default)"
+      },
+      "show": {
+        "description": "Show which space and product line a repository is in, and why",
+        "space": "Space",
+        "productLine": "Product line",
+        "source": "Because",
+        "sourceAssignment": "pinned with shep space assign",
+        "sourceRule": "matched {{kind}} rule {{pattern}}",
+        "sourceDefault": "no rule matched, so the default space applies"
+      },
+      "new": {
+        "description": "Create a space",
+        "defaultOption": "Make it the default space",
+        "success": "Space \"{{name}}\" created ({{slug}})"
+      },
+      "edit": {
+        "description": "Rename a space or change its description or colour",
+        "success": "Space \"{{name}}\" updated"
+      },
+      "rm": {
+        "description": "Delete a space with its rules, assignments and product lines",
+        "success": "Space \"{{space}}\" deleted"
+      },
+      "default": {
+        "description": "Make a space the one unmatched repositories land in",
+        "success": "\"{{name}}\" is now the default space"
+      },
+      "line": {
+        "description": "Manage product lines inside a space",
+        "new": {
+          "description": "Add a product line to a space",
+          "success": "Product line \"{{name}}\" created ({{slug}})"
+        },
+        "rm": {
+          "description": "Remove a product line; its repositories stay in the space",
+          "success": "Product line \"{{line}}\" removed"
+        }
+      },
+      "rule": {
+        "description": "Manage the path and git-remote rules that place repositories",
+        "patternArg": "Absolute path prefix, or remote pattern such as github.com/acme/*",
+        "idArg": "Rule id (see shep space rule ls)",
+        "add": {
+          "description": "Add a rule that places matching repositories in a space",
+          "remoteOption": "Treat the pattern as a git remote even if it looks like a path",
+          "priorityOption": "Tie-breaker between equally specific rules; lower wins (default 100)",
+          "badPriority": "\"{{value}}\" is not a whole number",
+          "success": "{{kind}} rule added for {{pattern}}"
+        },
+        "ls": {
+          "description": "List rules, for one space or all",
+          "title": "Space rules",
+          "idColumn": "Id",
+          "kindColumn": "Kind",
+          "patternColumn": "Pattern",
+          "priorityColumn": "Priority",
+          "empty": "No rules yet. Add one with shep space rule add."
+        },
+        "rm": {
+          "description": "Remove a rule",
+          "success": "Rule removed"
+        }
+      },
+      "assign": {
+        "description": "Pin a repository to a space, overriding every rule",
+        "success": "{{path}} pinned to {{space}}"
+      },
+      "unassign": {
+        "description": "Remove a repository's pin so the rules apply again",
+        "success": "{{path}} follows the space rules again"
+      }
     }
   },
   "ui": {

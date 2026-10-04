@@ -13,6 +13,7 @@
 
 import { SpaceResolutionSource, SpaceRuleKind } from '../generated/output';
 import { normalizePath } from './normalize-path';
+import { isAbsolutePath } from './absolute-path';
 
 /** Fixed id of the space created by migration 152 as "Default". */
 export const DEFAULT_SPACE_ID = '00000000-0000-4000-8000-000000000120';
@@ -103,6 +104,14 @@ export function normalizeRemoteUrlForSpace(url: string): string {
   value = value.replace(/^([^/:]+):(?!\d+\/)/, '$1/');
   value = value.replace(/\/+$/, '').replace(/\.git$/, '');
   return value;
+}
+
+/**
+ * The rule kind a pattern most likely means: an absolute path is a Path rule,
+ * anything else (host/owner, scp or URL form) is a Remote rule.
+ */
+export function inferSpaceRuleKind(pattern: string): SpaceRuleKind {
+  return isAbsolutePath(pattern.trim()) ? SpaceRuleKind.Path : SpaceRuleKind.Remote;
 }
 
 /** Normalise a rule pattern the same way its kind normalises what it matches. */

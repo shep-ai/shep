@@ -444,7 +444,8 @@
     "clusters": "Clusters",
     "plugins": "Plugins",
     "projectMemory": "Project Memory",
-    "harness": "Harness"
+    "harness": "Harness",
+    "spaces": "Espaces"
   },
   "sidebar": {
     "features": "Fonctionnalités",
@@ -1296,6 +1297,65 @@
         "toolOutputRatio": "Sortie d'outils vue",
         "evidenceRecall": "Couverture des preuves"
       }
+    }
+  },
+  "spaces": {
+    "title": "Espaces",
+    "subtitle": "Gardez vos domaines de travail séparés. La mémoire partagée dans un espace n'atteint jamais un autre.",
+    "create": {
+      "title": "Nouvel espace",
+      "name": "Nom",
+      "namePlaceholder": "Acme",
+      "description": "Description",
+      "descriptionPlaceholder": "Travail client pour Acme Corp",
+      "color": "Couleur",
+      "submit": "Créer l'espace"
+    },
+    "card": {
+      "default": "Par défaut",
+      "makeDefault": "Définir par défaut",
+      "delete": "Supprimer l'espace",
+      "counts": "Dépôts : {{repositories}} · Entrées de mémoire : {{memory}}",
+      "edit": "Modifier l'espace",
+      "save": "Enregistrer"
+    },
+    "lines": {
+      "title": "Lignes de produits",
+      "empty": "Aucune ligne de produits pour l'instant.",
+      "placeholder": "Nouvelle ligne de produits",
+      "add": "Ajouter",
+      "remove": "Supprimer {{name}}"
+    },
+    "rules": {
+      "title": "Règles",
+      "empty": "Aucune règle. Les dépôts n'arrivent ici que s'ils sont épinglés.",
+      "placeholder": "/work/acme ou github.com/acme/*",
+      "line": "Ligne de produits des dépôts correspondants",
+      "noLine": "Aucune ligne de produits",
+      "add": "Ajouter une règle",
+      "remove": "Supprimer la règle"
+    },
+    "repositories": {
+      "title": "Dépôts",
+      "empty": "Aucun dépôt pour l'instant. Ajoutez-en un depuis le centre de contrôle.",
+      "repository": "Dépôt",
+      "space": "Espace",
+      "line": "Ligne de produits",
+      "because": "Raison",
+      "sourceAssignment": "Épinglé",
+      "sourceRule": "Règle",
+      "sourceDefault": "Espace par défaut",
+      "pin": "Épingler à un espace…",
+      "unpin": "Désépingler pour appliquer les règles"
+    },
+    "deleteDialog": {
+      "title": "Supprimer {{name}} ?",
+      "description": "Ses règles, épinglages et lignes de produits sont supprimés. Ses dépôts relèvent alors d'autres règles ou de l'espace par défaut.",
+      "confirm": "Supprimer l'espace",
+      "cancel": "Annuler"
+    },
+    "errors": {
+      "actionFailed": "La modification n'a pas pu être enregistrée. Réessayez."
     }
   }
 }

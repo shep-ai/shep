@@ -37,7 +37,7 @@ export function MemorySpaceFilter({ spaces, value, onChange }: MemorySpaceFilter
         <Button
           key={option.id}
           size="xs"
-          variant={value === option.id ? 'secondary' : 'ghost'}
+          variant={value === option.id ? 'default' : 'ghost'}
           aria-pressed={value === option.id}
           onClick={() => onChange(option.id)}
           data-testid={`project-memory-space-filter-${option.id}`}

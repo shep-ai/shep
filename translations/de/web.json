@@ -444,7 +444,8 @@
     "clusters": "Cluster",
     "plugins": "Plugins",
     "projectMemory": "Project Memory",
-    "harness": "Harness"
+    "harness": "Harness",
+    "spaces": "Spaces"
   },
   "sidebar": {
     "features": "Features",
@@ -1296,6 +1297,65 @@
         "toolOutputRatio": "Gesehene Tool-Ausgabe",
         "evidenceRecall": "Evidenz-Abdeckung"
       }
+    }
+  },
+  "spaces": {
+    "title": "Spaces",
+    "subtitle": "Arbeitsbereiche getrennt halten. In einem Space geteiltes Gedächtnis erreicht nie einen anderen.",
+    "create": {
+      "title": "Neuer Space",
+      "name": "Name",
+      "namePlaceholder": "Acme",
+      "description": "Beschreibung",
+      "descriptionPlaceholder": "Kundenarbeit für Acme Corp",
+      "color": "Farbe",
+      "submit": "Space erstellen"
+    },
+    "card": {
+      "default": "Standard",
+      "makeDefault": "Als Standard",
+      "delete": "Space löschen",
+      "counts": "Repositories: {{repositories}} · Gedächtniseinträge: {{memory}}",
+      "edit": "Space bearbeiten",
+      "save": "Speichern"
+    },
+    "lines": {
+      "title": "Produktlinien",
+      "empty": "Noch keine Produktlinien.",
+      "placeholder": "Neue Produktlinie",
+      "add": "Hinzufügen",
+      "remove": "{{name}} entfernen"
+    },
+    "rules": {
+      "title": "Regeln",
+      "empty": "Keine Regeln. Repositories landen hier nur bei fester Zuweisung.",
+      "placeholder": "/work/acme oder github.com/acme/*",
+      "line": "Produktlinie für passende Repositories",
+      "noLine": "Keine Produktlinie",
+      "add": "Regel hinzufügen",
+      "remove": "Regel entfernen"
+    },
+    "repositories": {
+      "title": "Repositories",
+      "empty": "Noch keine Repositories. Füge eines im Kontrollzentrum hinzu.",
+      "repository": "Repository",
+      "space": "Space",
+      "line": "Produktlinie",
+      "because": "Grund",
+      "sourceAssignment": "Fest zugewiesen",
+      "sourceRule": "Regel",
+      "sourceDefault": "Standard-Space",
+      "pin": "An Space anheften…",
+      "unpin": "Lösen, damit die Regeln gelten"
+    },
+    "deleteDialog": {
+      "title": "{{name}} löschen?",
+      "description": "Regeln, Zuweisungen und Produktlinien werden entfernt. Die Repositories fallen auf andere Regeln oder den Standard-Space zurück.",
+      "confirm": "Space löschen",
+      "cancel": "Abbrechen"
+    },
+    "errors": {
+      "actionFailed": "Die Änderung konnte nicht gespeichert werden. Bitte erneut versuchen."
     }
   }
 }

@@ -11,6 +11,7 @@ This directory contains documentation about Shep AI CLI's system architecture an
 | [repository-pattern.md](./repository-pattern.md) | Data persistence and repository pattern                   |
 | [agent-system.md](./agent-system.md)             | LangGraph-based agent system design and implementation    |
 | [settings-service.md](./settings-service.md)     | Global settings service architecture                      |
+| [spaces.md](./spaces.md)                         | Spaces, product lines and memory isolation                |
 
 ## Quick Reference
 

@@ -1099,6 +1099,97 @@
         "available": "Available",
         "failed": "Failed to load plugin catalog"
       }
+    },
+    "space": {
+      "description": "Séparer les domaines de travail : espaces, lignes de produits et règles qui placent les dépôts",
+      "failed": "La commande d'espace a échoué",
+      "spaceArg": "Nom, slug ou id de l'espace",
+      "pathArg": "Chemin du dépôt (par défaut, le répertoire courant)",
+      "nameArg": "Nom affiché",
+      "lineArg": "Nom, slug ou id de la ligne de produits",
+      "lineOption": "Ligne de produits dans l'espace",
+      "descriptionOption": "Brève description",
+      "colorOption": "Couleur hexadécimale, par exemple #3456c4",
+      "ls": {
+        "description": "Lister les espaces avec leurs lignes de produits, dépôts et mémoire",
+        "title": "Espaces",
+        "nameColumn": "Nom",
+        "slugColumn": "Slug",
+        "linesColumn": "Lignes de produits",
+        "reposColumn": "Dépôts",
+        "memoryColumn": "Mémoire",
+        "defaultMarker": "(par défaut)"
+      },
+      "show": {
+        "description": "Afficher l'espace et la ligne de produits d'un dépôt, et pourquoi",
+        "space": "Espace",
+        "productLine": "Ligne de produits",
+        "source": "Raison",
+        "sourceAssignment": "épinglé avec shep space assign",
+        "sourceRule": "correspond à la règle {{kind}} {{pattern}}",
+        "sourceDefault": "aucune règle ne correspond, l'espace par défaut s'applique"
+      },
+      "new": {
+        "description": "Créer un espace",
+        "defaultOption": "En faire l'espace par défaut",
+        "success": "Espace « {{name}} » créé ({{slug}})"
+      },
+      "edit": {
+        "description": "Renommer un espace ou modifier sa description ou sa couleur",
+        "success": "Espace « {{name}} » mis à jour"
+      },
+      "rm": {
+        "description": "Supprimer un espace avec ses règles, affectations et lignes de produits",
+        "success": "Espace « {{space}} » supprimé"
+      },
+      "default": {
+        "description": "Choisir l'espace des dépôts qu'aucune règle ne place",
+        "success": "« {{name}} » est maintenant l'espace par défaut"
+      },
+      "line": {
+        "description": "Gérer les lignes de produits d'un espace",
+        "new": {
+          "description": "Ajouter une ligne de produits à un espace",
+          "success": "Ligne de produits « {{name}} » créée ({{slug}})"
+        },
+        "rm": {
+          "description": "Supprimer une ligne de produits ; ses dépôts restent dans l'espace",
+          "success": "Ligne de produits « {{line}} » supprimée"
+        }
+      },
+      "rule": {
+        "description": "Gérer les règles de chemin et de remote git qui placent les dépôts",
+        "patternArg": "Préfixe de chemin absolu ou motif distant comme github.com/acme/*",
+        "idArg": "Id de la règle (voir shep space rule ls)",
+        "add": {
+          "description": "Ajouter une règle qui place les dépôts correspondants dans un espace",
+          "remoteOption": "Traiter le motif comme un remote git même s'il ressemble à un chemin",
+          "priorityOption": "Départage des règles aussi précises ; la plus basse l'emporte (100 par défaut)",
+          "badPriority": "« {{value}} » n'est pas un nombre entier",
+          "success": "Règle {{kind}} ajoutée pour {{pattern}}"
+        },
+        "ls": {
+          "description": "Lister les règles, d'un espace ou de tous",
+          "title": "Règles d'espace",
+          "idColumn": "Id",
+          "kindColumn": "Type",
+          "patternColumn": "Motif",
+          "priorityColumn": "Priorité",
+          "empty": "Aucune règle pour l'instant. Ajoutez-en une avec shep space rule add."
+        },
+        "rm": {
+          "description": "Supprimer une règle",
+          "success": "Règle supprimée"
+        }
+      },
+      "assign": {
+        "description": "Épingler un dépôt à un espace, au-dessus de toute règle",
+        "success": "{{path}} épinglé à {{space}}"
+      },
+      "unassign": {
+        "description": "Retirer l'épinglage d'un dépôt pour que les règles s'appliquent à nouveau",
+        "success": "{{path}} suit à nouveau les règles d'espace"
+      }
     }
   },
   "ui": {

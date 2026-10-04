@@ -18,6 +18,7 @@ import { isAbsolutePath } from '../../../domain/shared/absolute-path.js';
 import { normalizePath } from '../../../domain/shared/normalize-path.js';
 import {
   DEFAULT_SPACE_RULE_PRIORITY,
+  inferSpaceRuleKind,
   normalizeSpaceRulePattern,
 } from '../../../domain/shared/space-resolution.js';
 import type { ISpaceRepository } from '../../ports/output/repositories/space-repository.interface.js';
@@ -31,7 +32,8 @@ const MIN_REMOTE_SEGMENTS = 2;
 export interface AddSpaceRuleInput {
   /** Space id or slug. */
   space: string;
-  kind: SpaceRuleKind;
+  /** Path or Remote; inferred from the pattern when omitted. */
+  kind?: SpaceRuleKind;
   /** Absolute path prefix, or remote pattern such as `github.com/acme/*`. */
   pattern: string;
   /** Optional product line id or slug inside the space. */
@@ -66,12 +68,13 @@ export class ManageSpaceMembershipUseCase {
     if (!space) return failure(`No space "${input.space}".`);
 
     const raw = input.pattern?.trim() ?? '';
-    if (input.kind === SpaceRuleKind.Path && !isAbsolutePath(normalizePath(raw))) {
+    const kind = input.kind ?? inferSpaceRuleKind(raw);
+    if (kind === SpaceRuleKind.Path && !isAbsolutePath(normalizePath(raw))) {
       return failure(`"${raw}" is not an absolute path.`);
     }
-    const pattern = normalizeSpaceRulePattern(input.kind, raw);
+    const pattern = normalizeSpaceRulePattern(kind, raw);
     if (
-      input.kind === SpaceRuleKind.Remote &&
+      kind === SpaceRuleKind.Remote &&
       pattern.split('/').filter(Boolean).length < MIN_REMOTE_SEGMENTS
     ) {
       return failure(`"${raw}" needs a host and an owner, for example github.com/acme/*.`);
@@ -85,17 +88,18 @@ export class ManageSpaceMembershipUseCase {
     }
 
     const duplicate = (await this.membership.listRules()).find(
-      (rule) => rule.kind === input.kind && rule.pattern === pattern
+      (rule) => rule.kind === kind && rule.pattern === pattern
     );
-    if (duplicate)
-      return failure(`A ${input.kind.toLowerCase()} rule for "${pattern}" already exists.`);
+    if (duplicate) {
+      return failure(`A ${kind.toLowerCase()} rule for "${pattern}" already exists.`);
+    }
 
     const now = new Date();
     const rule: SpaceRule = {
       id: randomUUID(),
       spaceId: space.id,
       ...(productLineId ? { productLineId } : {}),
-      kind: input.kind,
+      kind,
       pattern,
       priority: input.priority ?? DEFAULT_SPACE_RULE_PRIORITY,
       createdAt: now,

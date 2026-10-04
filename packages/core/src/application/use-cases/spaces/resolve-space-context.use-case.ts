@@ -11,6 +11,7 @@ import { injectable, inject } from 'tsyringe';
 import type {
   ProductLine,
   Space,
+  SpaceRule,
   SpaceResolutionSource,
 } from '../../../domain/generated/output.js';
 import { SpaceResolutionSource as Source } from '../../../domain/generated/output.js';
@@ -28,7 +29,7 @@ export interface SpaceContext {
   productLine?: ProductLine;
   source: SpaceResolutionSource;
   /** The deciding rule, when `source` is `Rule`. */
-  ruleId?: string;
+  rule?: SpaceRule;
 }
 
 @injectable()
@@ -58,6 +59,7 @@ export class ResolveSpaceContextUseCase {
       spaces.find((space) => space.isDefault) ?? (await this.spaces.getDefault());
     const spacesById = new Map(spaces.map((space) => [space.id, space]));
     const linesById = new Map(productLines.map((line) => [line.id, line]));
+    const rulesById = new Map(rules.map((rule) => [rule.id, rule]));
     const assignmentsByPath = new Map(assignments.map((a) => [spacePathKey(a.repositoryPath), a]));
     const remotesByPath = new Map(
       repositories.map((repository) => [spacePathKey(repository.path), repository.remoteUrl])
@@ -76,6 +78,7 @@ export class ResolveSpaceContextUseCase {
       const space = spacesById.get(resolved.spaceId);
       if (!space) return { repositoryPath: path, space: defaultSpace, source: Source.Default };
 
+      const rule = resolved.ruleId ? rulesById.get(resolved.ruleId) : undefined;
       const productLine = resolved.productLineId
         ? linesById.get(resolved.productLineId)
         : undefined;
@@ -84,7 +87,7 @@ export class ResolveSpaceContextUseCase {
         space,
         ...(productLine && productLine.spaceId === space.id ? { productLine } : {}),
         source: resolved.source,
-        ...(resolved.ruleId ? { ruleId: resolved.ruleId } : {}),
+        ...(rule ? { rule } : {}),
       };
     });
   }

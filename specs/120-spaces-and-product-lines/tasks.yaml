@@ -21,7 +21,7 @@ tasks:
       SpaceResolutionSource (Assignment, Rule, Default). Extend MemoryScope with Space and
       ProductLine (Organization kept for legacy rows) and ProjectMemory with optional spaceId and
       productLineId. Regenerate with pnpm generate.
-    state: Todo
+    state: Done
     dependencies: []
     acceptanceCriteria:
       - Generated output.ts exports the new models and enums
@@ -44,7 +44,7 @@ tasks:
       remote rules normalise https/ssh/scp forms, case and .git and support * and **.
       Specificity: assignment > longest matching path prefix or most literal remote pattern >
       lower priority > default.
-    state: Todo
+    state: Done
     dependencies:
       - task-1
     acceptanceCriteria:
@@ -68,7 +68,7 @@ tasks:
       default space with DEFAULT_SPACE_ID; add project_memory.space_id and product_line_id and
       backfill space_id to the default space. Additive and guarded so re-running is a no-op;
       Organization rows are not rewritten.
-    state: Todo
+    state: Done
     dependencies:
       - task-2
     acceptanceCriteria:
@@ -89,7 +89,7 @@ tasks:
       ISpaceRepository, IProductLineRepository and ISpaceMembershipRepository with SQLite
       implementations and one mapper module; register in register-spaces.ts under string
       tokens; add the tokens to the container bootstrap test.
-    state: Todo
+    state: Done
     dependencies:
       - task-3
     acceptanceCriteria:
@@ -111,7 +111,7 @@ tasks:
       that space) and listProductLine(productLineId); upsert stamps space ids on insert and keeps
       scope and space ids on conflict; updateScope also writes space ids; listAll accepts a space
       filter. Update every full mock of the port.
-    state: Todo
+    state: Done
     dependencies:
       - task-4
     acceptanceCriteria:
@@ -132,7 +132,7 @@ tasks:
       Loads the default space, the assignment for the normalised path, the rules and the
       repository's remote URL, then calls resolveSpace. Returns the space, the optional line and
       the source.
-    state: Todo
+    state: Done
     dependencies:
       - task-5
     acceptanceCriteria:
@@ -153,7 +153,7 @@ tasks:
       create/delete), ManageSpaceMembershipUseCase (rules add/remove, assign/unassign) and
       GetSpacesOverviewUseCase (spaces with lines, rules, known repositories with their resolved
       space and source, memory counts) with validation returning result objects.
-    state: Todo
+    state: Done
     dependencies:
       - task-6
     acceptanceCriteria:
@@ -173,7 +173,7 @@ tasks:
       loadCandidateMemory takes the resolved context; read and select resolve through
       ResolveSpaceContextUseCase; record stamps space ids; manage.list filters by space and
       setScope accepts Project, ProductLine (only when the repository has a line) and Space.
-    state: Todo
+    state: Done
     dependencies:
       - task-6
     acceptanceCriteria:
@@ -192,7 +192,7 @@ tasks:
     description: >
       The boot prompt resolver stops falling back to the worktree path; without a feature it
       resolves the repository path from the session context.
-    state: Todo
+    state: Done
     dependencies:
       - task-8
     acceptanceCriteria:
@@ -209,9 +209,9 @@ tasks:
   - id: task-10
     title: shep space CLI
     description: >
-      ls, show [path], new, rename, rm, default, line new|rm, rule add|ls|rm, assign, unassign —
+      ls, show [path], new, edit, rm, default, line new|rm, rule add|ls|rm, assign, unassign —
       thin commands over the use cases with the shared ui module.
-    state: Todo
+    state: Done
     dependencies:
       - task-7
     acceptanceCriteria:
@@ -232,7 +232,7 @@ tasks:
       components for spaces, product lines, rules and repository mapping with create, rename,
       default, delete, add/remove rule and assign/unassign; sidebar entry; strings in 9 locales;
       stories for every component.
-    state: Todo
+    state: Done
     dependencies:
       - task-7
     acceptanceCriteria:
@@ -252,7 +252,7 @@ tasks:
     description: >
       The memory page loads per space with a space picker; each entry shows its scope; the scope
       menu offers Project, Product line and Space.
-    state: Todo
+    state: Done
     dependencies:
       - task-8
       - task-11
@@ -273,7 +273,7 @@ tasks:
       docs/cli/commands.md, docs/architecture note on spaces, LESSONS if anything new; run lint,
       format, typecheck, generate diff, unit, integration, build, build:web, build:storybook,
       check:stories and every other CI script that runs locally.
-    state: Todo
+    state: Done
     dependencies:
       - task-10
       - task-11

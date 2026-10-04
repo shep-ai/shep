@@ -33,7 +33,7 @@ import "../../common/base.tsp";
  * an agent never reads another space's entries. `Organization` is the
  * pre-spaces name for space-wide and is read as `Space`.
  */
-@doc("Reach of a project-memory entry: a single project or the whole organization")
+@doc("Reach of a project-memory entry: its repository, its product line, or its whole space")
 enum MemoryScope {
   /** Applies only to the entry's own repository. */
   @doc("Applies only to the entry's own repository")
@@ -167,8 +167,8 @@ model ProjectMemory extends BaseEntity {
 
   /**
    * Reach of this entry. Defaults to `Project` (own repository only) when
-   * absent. `Organization` entries are injected into every project's agents.
-   * Optional so existing rows and fixtures default to project scope.
+   * absent. `ProductLine` and `Space` entries reach the other repositories of
+   * the entry's line or space, never another space (spec 120). Optional so existing rows and fixtures default to project scope.
    */
   @doc("Reach of this entry: Project (default), ProductLine, or Space; Organization is legacy Space")
   scope?: MemoryScope;

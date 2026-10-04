@@ -1099,6 +1099,97 @@
         "available": "Available",
         "failed": "Failed to load plugin catalog"
       }
+    },
+    "space": {
+      "description": "Separa ámbitos de trabajo: espacios, líneas de producto y las reglas que ubican los repositorios",
+      "failed": "El comando de espacio falló",
+      "spaceArg": "Nombre, slug o id del espacio",
+      "pathArg": "Ruta del repositorio (por defecto, el directorio actual)",
+      "nameArg": "Nombre visible",
+      "lineArg": "Nombre, slug o id de la línea de producto",
+      "lineOption": "Línea de producto dentro del espacio",
+      "descriptionOption": "Descripción breve",
+      "colorOption": "Color hexadecimal, por ejemplo #3456c4",
+      "ls": {
+        "description": "Lista los espacios con sus líneas de producto, repositorios y memoria",
+        "title": "Espacios",
+        "nameColumn": "Nombre",
+        "slugColumn": "Slug",
+        "linesColumn": "Líneas de producto",
+        "reposColumn": "Repos",
+        "memoryColumn": "Memoria",
+        "defaultMarker": "(predeterminado)"
+      },
+      "show": {
+        "description": "Muestra en qué espacio y línea de producto está un repositorio, y por qué",
+        "space": "Espacio",
+        "productLine": "Línea de producto",
+        "source": "Motivo",
+        "sourceAssignment": "asignado con shep space assign",
+        "sourceRule": "coincide con la regla {{kind}} {{pattern}}",
+        "sourceDefault": "ninguna regla coincide, se aplica el espacio predeterminado"
+      },
+      "new": {
+        "description": "Crear un espacio",
+        "defaultOption": "Hacerlo el espacio predeterminado",
+        "success": "Espacio \"{{name}}\" creado ({{slug}})"
+      },
+      "edit": {
+        "description": "Renombrar un espacio o cambiar su descripción o color",
+        "success": "Espacio \"{{name}}\" actualizado"
+      },
+      "rm": {
+        "description": "Eliminar un espacio con sus reglas, asignaciones y líneas de producto",
+        "success": "Espacio \"{{space}}\" eliminado"
+      },
+      "default": {
+        "description": "Elegir el espacio al que van los repositorios sin regla",
+        "success": "\"{{name}}\" es ahora el espacio predeterminado"
+      },
+      "line": {
+        "description": "Gestionar líneas de producto dentro de un espacio",
+        "new": {
+          "description": "Añadir una línea de producto a un espacio",
+          "success": "Línea de producto \"{{name}}\" creada ({{slug}})"
+        },
+        "rm": {
+          "description": "Eliminar una línea de producto; sus repositorios siguen en el espacio",
+          "success": "Línea de producto \"{{line}}\" eliminada"
+        }
+      },
+      "rule": {
+        "description": "Gestionar las reglas de ruta y remoto git que ubican los repositorios",
+        "patternArg": "Prefijo de ruta absoluta o patrón remoto como github.com/acme/*",
+        "idArg": "Id de la regla (ver shep space rule ls)",
+        "add": {
+          "description": "Añadir una regla que ubica los repositorios coincidentes en un espacio",
+          "remoteOption": "Tratar el patrón como remoto git aunque parezca una ruta",
+          "priorityOption": "Desempate entre reglas igual de específicas; gana el menor (100 por defecto)",
+          "badPriority": "\"{{value}}\" no es un número entero",
+          "success": "Regla {{kind}} añadida para {{pattern}}"
+        },
+        "ls": {
+          "description": "Listar reglas, de un espacio o de todos",
+          "title": "Reglas de espacio",
+          "idColumn": "Id",
+          "kindColumn": "Tipo",
+          "patternColumn": "Patrón",
+          "priorityColumn": "Prioridad",
+          "empty": "Aún no hay reglas. Añade una con shep space rule add."
+        },
+        "rm": {
+          "description": "Eliminar una regla",
+          "success": "Regla eliminada"
+        }
+      },
+      "assign": {
+        "description": "Fijar un repositorio a un espacio por encima de cualquier regla",
+        "success": "{{path}} fijado a {{space}}"
+      },
+      "unassign": {
+        "description": "Quitar la fijación de un repositorio para que vuelvan a aplicarse las reglas",
+        "success": "{{path}} vuelve a seguir las reglas de espacio"
+      }
     }
   },
   "ui": {

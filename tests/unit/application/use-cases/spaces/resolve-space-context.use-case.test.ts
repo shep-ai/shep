@@ -92,7 +92,8 @@ describe('ResolveSpaceContextUseCase', () => {
     expect(context.space).toEqual(ACME);
     expect(context.productLine?.id).toBe('line-pay');
     expect(context.source).toBe(SpaceResolutionSource.Rule);
-    expect(context.ruleId).toBe('r1');
+    expect(context.rule?.id).toBe('r1');
+    expect(context.rule?.pattern).toBeDefined();
   });
 
   it('drops a product line that belongs to another space', async () => {

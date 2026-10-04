@@ -89,7 +89,7 @@ export class GetSpacesOverviewUseCase {
       spaceId: context.space.id,
       ...(context.productLine ? { productLineId: context.productLine.id } : {}),
       source: context.source,
-      ...(context.ruleId ? { ruleId: context.ruleId } : {}),
+      ...(context.rule ? { ruleId: context.rule.id } : {}),
     }));
 
     const overviews = await Promise.all(

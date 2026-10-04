@@ -25,6 +25,7 @@ import {
   ShieldAlert,
   Bot,
   GraduationCap,
+  Boxes,
   Brain,
   Users,
   Bug,
@@ -237,6 +238,12 @@ export function AppSidebar({
             label={t('navigation.projectMemory')}
             href="/memory"
             active={pathname?.startsWith('/memory') ?? false}
+          />
+          <SidebarNavItem
+            icon={Boxes}
+            label={t('navigation.spaces')}
+            href="/spaces"
+            active={pathname?.startsWith('/spaces') ?? false}
           />
           <SidebarNavItem
             icon={Wrench}

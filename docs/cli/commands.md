@@ -845,6 +845,54 @@ the `collaboration` feature flag. See
 
 ---
 
+## Space Commands
+
+`shep space` keeps bodies of work apart (spec 120). A **space** is a hard wall:
+memory shared inside one space (Space or ProductLine scope) is never read by a
+repository in another. A **product line** groups repositories inside a space.
+
+A repository lands in a space by, in order: an explicit pin (`assign`), the most
+specific matching rule (path prefix or git-remote pattern; between equally
+specific rules the lower `--priority` wins, and the rule id settles any
+remaining tie so the answer never flips), or the default space. Every repository is always
+in exactly one space.
+
+| Command                                             | Description                                             |
+| --------------------------------------------------- | ------------------------------------------------------- |
+| `shep space ls`                                     | Spaces with their product lines, repository and memory counts |
+| `shep space show [path]`                            | Which space and line a repository is in, and why        |
+| `shep space new <name>`                             | Create a space (`-d` description, `-c #hex`, `--default`) |
+| `shep space edit <space>`                           | Rename (`-n`), describe (`-d`) or recolour (`-c`) a space |
+| `shep space rm <space>`                             | Delete a space; refused for the default space or while it holds memory |
+| `shep space default <space>`                        | Make a space the one unmatched repositories land in     |
+| `shep space line new <space> <name>`                | Add a product line                                      |
+| `shep space line rm <space> <line>`                 | Remove a product line; refused while memory is shared with it |
+| `shep space rule add <space> <pattern>`             | Add a rule (`-l` line, `-p` priority, `--remote`)        |
+| `shep space rule ls [space]`                        | List rules                                              |
+| `shep space rule rm <id>`                           | Remove a rule                                           |
+| `shep space assign <space> [path]`                  | Pin a repository to a space (`-l` line)                 |
+| `shep space unassign [path]`                        | Remove a pin so the rules apply again                   |
+
+`<space>` and `<line>` accept a name's slug or an id. `[path]` defaults to the
+current directory and expands a leading `~`. A rule pattern that is an absolute
+path is a path rule; anything else is a git-remote rule matched against the
+repository's normalised remote (`host/owner/repo`, no scheme, no `.git`).
+In remote patterns `*` matches within one segment and `**` across segments.
+
+```bash
+shep space new Acme -c "#3456c4"
+shep space line new acme Payments
+shep space rule add acme "github.com/acme/*"
+shep space rule add acme "github.com/acme/pay-*" -l payments
+shep space rule add acme ~/work/acme
+shep space assign personal ~/oss/acme-fork
+shep space show ~/work/acme/pay-api
+```
+
+**Source**: `src/presentation/cli/commands/space/`
+
+---
+
 ## Scheduled Workflow Commands
 
 `shep workflow` manages scheduled workflows. Gated on the `scheduledWorkflows`

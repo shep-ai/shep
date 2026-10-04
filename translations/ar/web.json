@@ -444,7 +444,8 @@
     "clusters": "المجموعات",
     "plugins": "Plugins",
     "projectMemory": "Project Memory",
-    "harness": "Harness"
+    "harness": "Harness",
+    "spaces": "المساحات"
   },
   "sidebar": {
     "features": "الميزات",
@@ -1296,6 +1297,65 @@
         "toolOutputRatio": "مخرجات الأدوات المعروضة",
         "evidenceRecall": "تغطية الأدلة"
       }
+    }
+  },
+  "spaces": {
+    "title": "المساحات",
+    "subtitle": "افصل بين مجالات العمل. الذاكرة المشتركة داخل مساحة لا تصل أبدًا إلى أخرى.",
+    "create": {
+      "title": "مساحة جديدة",
+      "name": "الاسم",
+      "namePlaceholder": "Acme",
+      "description": "الوصف",
+      "descriptionPlaceholder": "عمل للعميل Acme Corp",
+      "color": "اللون",
+      "submit": "إنشاء مساحة"
+    },
+    "card": {
+      "default": "افتراضي",
+      "makeDefault": "تعيين كافتراضي",
+      "delete": "حذف المساحة",
+      "counts": "المستودعات: {{repositories}} · إدخالات الذاكرة: {{memory}}",
+      "edit": "تعديل المساحة",
+      "save": "حفظ"
+    },
+    "lines": {
+      "title": "خطوط المنتجات",
+      "empty": "لا توجد خطوط منتجات بعد.",
+      "placeholder": "خط منتج جديد",
+      "add": "إضافة",
+      "remove": "إزالة {{name}}"
+    },
+    "rules": {
+      "title": "القواعد",
+      "empty": "لا توجد قواعد. تصل المستودعات إلى هنا فقط عند تثبيتها.",
+      "placeholder": "‎/work/acme أو github.com/acme/*",
+      "line": "خط المنتج للمستودعات المطابقة",
+      "noLine": "بلا خط منتج",
+      "add": "إضافة قاعدة",
+      "remove": "إزالة القاعدة"
+    },
+    "repositories": {
+      "title": "المستودعات",
+      "empty": "لا توجد مستودعات بعد. أضف واحدًا من مركز التحكم.",
+      "repository": "المستودع",
+      "space": "المساحة",
+      "line": "خط المنتج",
+      "because": "السبب",
+      "sourceAssignment": "مثبّت",
+      "sourceRule": "قاعدة",
+      "sourceDefault": "المساحة الافتراضية",
+      "pin": "تثبيت في مساحة…",
+      "unpin": "إلغاء التثبيت لتُطبّق القواعد"
+    },
+    "deleteDialog": {
+      "title": "حذف {{name}}؟",
+      "description": "تُزال قواعدها وتثبيتاتها وخطوط منتجاتها. تعود مستودعاتها إلى قواعد أخرى أو إلى المساحة الافتراضية.",
+      "confirm": "حذف المساحة",
+      "cancel": "إلغاء"
+    },
+    "errors": {
+      "actionFailed": "تعذر حفظ التغيير. حاول مرة أخرى."
     }
   }
 }

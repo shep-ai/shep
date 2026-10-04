@@ -13,6 +13,7 @@ Guides for using Shep AI CLI effectively.
 | [web-ui.md](./web-ui.md)                                             | Web interface usage                     |
 | [langgraph-agents.md](./langgraph-agents.md)                         | LangGraph agent system guide            |
 | [custom-worktree-provisioning.md](./custom-worktree-provisioning.md) | Custom worktree create / setup commands |
+| [spaces.md](./spaces.md)                                             | Keep personal and work knowledge apart  |
 
 ## Quick Start
 
@@ -73,3 +74,7 @@ Monorepo or a repo that needs setup per worktree? See [custom-worktree-provision
 - Use kebab-case
 - Be descriptive (`getting-started.md` not `gs.md`)
 - Match topic names
+
+### Spaces
+
+Working across personal projects, clients or product lines? See [spaces.md](./spaces.md) to keep their project memory apart.

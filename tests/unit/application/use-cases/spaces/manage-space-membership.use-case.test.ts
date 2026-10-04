@@ -88,6 +88,15 @@ describe('ManageSpaceMembershipUseCase', () => {
       );
     });
 
+    it.each([
+      ['/work/acme', SpaceRuleKind.Path],
+      ['git@github.com:acme/*', SpaceRuleKind.Remote],
+    ])('infers the kind of %s when none is given', async (pattern, kind) => {
+      const result = await useCase.addRule({ space: 'acme', pattern });
+      expect(result.ok).toBe(true);
+      expect(membership.createRule).toHaveBeenCalledWith(expect.objectContaining({ kind }));
+    });
+
     it('refuses a relative path pattern', async () => {
       const result = await useCase.addRule({
         space: 'acme',

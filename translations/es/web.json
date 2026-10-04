@@ -444,7 +444,8 @@
     "clusters": "Clústeres",
     "plugins": "Plugins",
     "projectMemory": "Project Memory",
-    "harness": "Harness"
+    "harness": "Harness",
+    "spaces": "Espacios"
   },
   "sidebar": {
     "features": "Funcionalidades",
@@ -1296,6 +1297,65 @@
         "toolOutputRatio": "Salida de herramientas vista",
         "evidenceRecall": "Cobertura de evidencias"
       }
+    }
+  },
+  "spaces": {
+    "title": "Espacios",
+    "subtitle": "Mantén separados tus ámbitos de trabajo. La memoria compartida en un espacio nunca llega a otro.",
+    "create": {
+      "title": "Nuevo espacio",
+      "name": "Nombre",
+      "namePlaceholder": "Acme",
+      "description": "Descripción",
+      "descriptionPlaceholder": "Trabajo para el cliente Acme Corp",
+      "color": "Color",
+      "submit": "Crear espacio"
+    },
+    "card": {
+      "default": "Predeterminado",
+      "makeDefault": "Hacer predeterminado",
+      "delete": "Eliminar espacio",
+      "counts": "Repositorios: {{repositories}} · Entradas de memoria: {{memory}}",
+      "edit": "Editar espacio",
+      "save": "Guardar"
+    },
+    "lines": {
+      "title": "Líneas de producto",
+      "empty": "Aún no hay líneas de producto.",
+      "placeholder": "Nueva línea de producto",
+      "add": "Añadir",
+      "remove": "Eliminar {{name}}"
+    },
+    "rules": {
+      "title": "Reglas",
+      "empty": "Sin reglas. Los repositorios llegan aquí solo si se fijan.",
+      "placeholder": "/work/acme o github.com/acme/*",
+      "line": "Línea de producto de los repositorios coincidentes",
+      "noLine": "Sin línea de producto",
+      "add": "Añadir regla",
+      "remove": "Eliminar regla"
+    },
+    "repositories": {
+      "title": "Repositorios",
+      "empty": "Aún no hay repositorios. Añade uno desde el centro de control.",
+      "repository": "Repositorio",
+      "space": "Espacio",
+      "line": "Línea de producto",
+      "because": "Motivo",
+      "sourceAssignment": "Fijado",
+      "sourceRule": "Regla",
+      "sourceDefault": "Espacio predeterminado",
+      "pin": "Fijar a un espacio…",
+      "unpin": "Desfijar para aplicar las reglas"
+    },
+    "deleteDialog": {
+      "title": "¿Eliminar {{name}}?",
+      "description": "Se eliminan sus reglas, fijaciones y líneas de producto. Sus repositorios pasan a otras reglas o al espacio predeterminado.",
+      "confirm": "Eliminar espacio",
+      "cancel": "Cancelar"
+    },
+    "errors": {
+      "actionFailed": "No se pudo guardar el cambio. Inténtalo de nuevo."
     }
   }
 }

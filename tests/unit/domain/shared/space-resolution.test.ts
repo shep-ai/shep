@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
+  inferSpaceRuleKind,
   DEFAULT_SPACE_ID,
   normalizeRemoteUrlForSpace,
   normalizeSpaceRulePattern,
@@ -20,6 +21,22 @@ function rule(overrides: Partial<SpaceRuleInput>): SpaceRuleInput {
     ...overrides,
   };
 }
+
+describe('inferSpaceRuleKind', () => {
+  it.each(['/work/acme', 'C:\\work\\acme', 'c:/work', '\\\\server\\share'])(
+    'treats the absolute path %s as a Path rule',
+    (pattern) => {
+      expect(inferSpaceRuleKind(pattern)).toBe(SpaceRuleKind.Path);
+    }
+  );
+
+  it.each(['github.com/acme/*', 'git@github.com:acme/api.git', 'https://gitlab.com/acme/**'])(
+    'treats %s as a Remote rule',
+    (pattern) => {
+      expect(inferSpaceRuleKind(pattern)).toBe(SpaceRuleKind.Remote);
+    }
+  );
+});
 
 describe('normalizeRemoteUrlForSpace', () => {
   it.each([

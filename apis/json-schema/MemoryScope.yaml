@@ -6,4 +6,4 @@ enum:
   - Organization
   - Space
   - ProductLine
-description: "Reach of a project-memory entry: a single project or the whole organization"
+description: "Reach of a project-memory entry: its repository, its product line, or its whole space"

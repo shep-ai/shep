@@ -15,8 +15,6 @@
  */
 
 import { Command } from 'commander';
-import { homedir } from 'node:os';
-import { join, resolve as resolvePath } from 'node:path';
 import { checkbox } from '@inquirer/prompts';
 import { container } from '@/infrastructure/di/container.js';
 import { DiscoverImportCandidatesUseCase } from '@/application/use-cases/repositories/discover-import-candidates.use-case.js';
@@ -24,22 +22,11 @@ import { ImportLocalRepositoriesUseCase } from '@/application/use-cases/reposito
 import type { ImportCandidate } from '@/application/use-cases/repositories/discover-import-candidates.use-case.js';
 import { colors, messages, renderListView } from '../../ui/index.js';
 import { getCliI18n } from '../../i18n.js';
+import { resolveCliPath } from '../../paths.js';
 
 interface ImportOptions {
   all?: boolean;
   gitOnly?: boolean;
-}
-
-/**
- * Expand a leading `~` to the user's home directory.
- *
- * Shells expand this before argv, but `shep repo import "~/Code"` (quoted) and
- * non-shell invocations do not, so the command handles it explicitly.
- */
-function expandHome(input: string): string {
-  if (input === '~') return homedir();
-  if (input.startsWith('~/')) return join(homedir(), input.slice(2));
-  return input;
 }
 
 /** Human-readable status label for a candidate. */
@@ -61,7 +48,7 @@ export function createImportCommand(): Command {
         const discover = container.resolve(DiscoverImportCandidatesUseCase);
         const importRepos = container.resolve(ImportLocalRepositoriesUseCase);
 
-        const directoryPath = resolvePath(expandHome(dir));
+        const directoryPath = resolveCliPath(dir);
         const { candidates } = await discover.execute({ directoryPath });
 
         if (candidates.length === 0) {

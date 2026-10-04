@@ -1099,6 +1099,97 @@
         "available": "Available",
         "failed": "Failed to load plugin catalog"
       }
+    },
+    "space": {
+      "description": "Arbeitsbereiche trennen: Spaces, Produktlinien und Regeln, die Repositories zuordnen",
+      "failed": "Space-Befehl fehlgeschlagen",
+      "spaceArg": "Name, Slug oder ID des Space",
+      "pathArg": "Repository-Pfad (Standard: aktuelles Verzeichnis)",
+      "nameArg": "Anzeigename",
+      "lineArg": "Name, Slug oder ID der Produktlinie",
+      "lineOption": "Produktlinie innerhalb des Space",
+      "descriptionOption": "Kurzbeschreibung",
+      "colorOption": "Hex-Farbe, z. B. #3456c4",
+      "ls": {
+        "description": "Spaces mit Produktlinien, Repositories und Gedächtnis auflisten",
+        "title": "Spaces",
+        "nameColumn": "Name",
+        "slugColumn": "Slug",
+        "linesColumn": "Produktlinien",
+        "reposColumn": "Repos",
+        "memoryColumn": "Gedächtnis",
+        "defaultMarker": "(Standard)"
+      },
+      "show": {
+        "description": "Zeigen, in welchem Space und welcher Produktlinie ein Repository liegt und warum",
+        "space": "Space",
+        "productLine": "Produktlinie",
+        "source": "Grund",
+        "sourceAssignment": "fest zugewiesen mit shep space assign",
+        "sourceRule": "{{kind}}-Regel {{pattern}} trifft zu",
+        "sourceDefault": "keine Regel trifft zu, daher gilt der Standard-Space"
+      },
+      "new": {
+        "description": "Space erstellen",
+        "defaultOption": "Als Standard-Space festlegen",
+        "success": "Space \"{{name}}\" erstellt ({{slug}})"
+      },
+      "edit": {
+        "description": "Space umbenennen oder Beschreibung bzw. Farbe ändern",
+        "success": "Space \"{{name}}\" aktualisiert"
+      },
+      "rm": {
+        "description": "Space mit Regeln, Zuweisungen und Produktlinien löschen",
+        "success": "Space \"{{space}}\" gelöscht"
+      },
+      "default": {
+        "description": "Space festlegen, in dem nicht zugeordnete Repositories landen",
+        "success": "\"{{name}}\" ist jetzt der Standard-Space"
+      },
+      "line": {
+        "description": "Produktlinien innerhalb eines Space verwalten",
+        "new": {
+          "description": "Produktlinie zu einem Space hinzufügen",
+          "success": "Produktlinie \"{{name}}\" erstellt ({{slug}})"
+        },
+        "rm": {
+          "description": "Produktlinie entfernen; ihre Repositories bleiben im Space",
+          "success": "Produktlinie \"{{line}}\" entfernt"
+        }
+      },
+      "rule": {
+        "description": "Pfad- und Git-Remote-Regeln zur Zuordnung von Repositories verwalten",
+        "patternArg": "Absoluter Pfadpräfix oder Remote-Muster wie github.com/acme/*",
+        "idArg": "Regel-ID (siehe shep space rule ls)",
+        "add": {
+          "description": "Regel hinzufügen, die passende Repositories einem Space zuordnet",
+          "remoteOption": "Muster als Git-Remote behandeln, auch wenn es wie ein Pfad aussieht",
+          "priorityOption": "Entscheidet zwischen gleich spezifischen Regeln; niedriger gewinnt (Standard 100)",
+          "badPriority": "\"{{value}}\" ist keine ganze Zahl",
+          "success": "{{kind}}-Regel für {{pattern}} hinzugefügt"
+        },
+        "ls": {
+          "description": "Regeln auflisten, für einen oder alle Spaces",
+          "title": "Space-Regeln",
+          "idColumn": "ID",
+          "kindColumn": "Art",
+          "patternColumn": "Muster",
+          "priorityColumn": "Priorität",
+          "empty": "Noch keine Regeln. Mit shep space rule add hinzufügen."
+        },
+        "rm": {
+          "description": "Regel entfernen",
+          "success": "Regel entfernt"
+        }
+      },
+      "assign": {
+        "description": "Repository fest einem Space zuweisen und alle Regeln überstimmen",
+        "success": "{{path}} fest {{space}} zugewiesen"
+      },
+      "unassign": {
+        "description": "Feste Zuweisung entfernen, damit wieder die Regeln gelten",
+        "success": "{{path}} folgt wieder den Space-Regeln"
+      }
     }
   },
   "ui": {

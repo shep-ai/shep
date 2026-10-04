@@ -444,7 +444,8 @@
     "clusters": "אשכולות",
     "plugins": "Plugins",
     "projectMemory": "Project Memory",
-    "harness": "Harness"
+    "harness": "Harness",
+    "spaces": "מרחבים"
   },
   "sidebar": {
     "features": "פיצ'רים",
@@ -1296,6 +1297,65 @@
         "toolOutputRatio": "פלט כלים שהוצג",
         "evidenceRecall": "כיסוי ראיות"
       }
+    }
+  },
+  "spaces": {
+    "title": "מרחבים",
+    "subtitle": "שמרו על הפרדה בין תחומי עבודה. זיכרון שמשותף במרחב אחד לעולם לא מגיע לאחר.",
+    "create": {
+      "title": "מרחב חדש",
+      "name": "שם",
+      "namePlaceholder": "Acme",
+      "description": "תיאור",
+      "descriptionPlaceholder": "עבודה עבור הלקוח Acme Corp",
+      "color": "צבע",
+      "submit": "יצירת מרחב"
+    },
+    "card": {
+      "default": "ברירת מחדל",
+      "makeDefault": "הגדרה כברירת מחדל",
+      "delete": "מחיקת מרחב",
+      "counts": "מאגרים: {{repositories}} · רשומות זיכרון: {{memory}}",
+      "edit": "עריכת מרחב",
+      "save": "שמירה"
+    },
+    "lines": {
+      "title": "קווי מוצר",
+      "empty": "אין עדיין קווי מוצר.",
+      "placeholder": "קו מוצר חדש",
+      "add": "הוספה",
+      "remove": "הסרת {{name}}"
+    },
+    "rules": {
+      "title": "כללים",
+      "empty": "אין כללים. מאגרים מגיעים לכאן רק כשהם מוצמדים.",
+      "placeholder": "‎/work/acme או github.com/acme/*",
+      "line": "קו מוצר למאגרים תואמים",
+      "noLine": "ללא קו מוצר",
+      "add": "הוספת כלל",
+      "remove": "הסרת כלל"
+    },
+    "repositories": {
+      "title": "מאגרים",
+      "empty": "אין עדיין מאגרים. הוסיפו אחד ממרכז הבקרה.",
+      "repository": "מאגר",
+      "space": "מרחב",
+      "line": "קו מוצר",
+      "because": "סיבה",
+      "sourceAssignment": "מוצמד",
+      "sourceRule": "כלל",
+      "sourceDefault": "מרחב ברירת מחדל",
+      "pin": "הצמדה למרחב…",
+      "unpin": "ביטול הצמדה כדי שהכללים יחולו"
+    },
+    "deleteDialog": {
+      "title": "למחוק את {{name}}?",
+      "description": "הכללים, ההצמדות וקווי המוצר שלו יוסרו. המאגרים שלו יעברו לכללים אחרים או למרחב ברירת המחדל.",
+      "confirm": "מחיקת מרחב",
+      "cancel": "ביטול"
+    },
+    "errors": {
+      "actionFailed": "לא ניתן היה לשמור את השינוי. נסו שוב."
     }
   }
 }

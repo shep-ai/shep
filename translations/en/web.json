@@ -444,7 +444,8 @@
     "clusters": "Clusters",
     "plugins": "Plugins",
     "projectMemory": "Project Memory",
-    "harness": "Harness"
+    "harness": "Harness",
+    "spaces": "Spaces"
   },
   "sidebar": {
     "features": "Features",
@@ -1296,6 +1297,65 @@
         "toolOutputRatio": "Tool output seen",
         "evidenceRecall": "Evidence recall"
       }
+    }
+  },
+  "spaces": {
+    "title": "Spaces",
+    "subtitle": "Keep bodies of work apart. Memory shared inside a space never reaches another.",
+    "create": {
+      "title": "New space",
+      "name": "Name",
+      "namePlaceholder": "Acme",
+      "description": "Description",
+      "descriptionPlaceholder": "Client work for Acme Corp",
+      "color": "Colour",
+      "submit": "Create space"
+    },
+    "card": {
+      "default": "Default",
+      "makeDefault": "Make default",
+      "delete": "Delete space",
+      "counts": "Repositories: {{repositories}} · Memory entries: {{memory}}",
+      "edit": "Edit space",
+      "save": "Save"
+    },
+    "lines": {
+      "title": "Product lines",
+      "empty": "No product lines yet.",
+      "placeholder": "New product line",
+      "add": "Add",
+      "remove": "Remove {{name}}"
+    },
+    "rules": {
+      "title": "Rules",
+      "empty": "No rules. Repositories land here only when pinned.",
+      "placeholder": "/work/acme or github.com/acme/*",
+      "line": "Product line for matching repositories",
+      "noLine": "No product line",
+      "add": "Add rule",
+      "remove": "Remove rule"
+    },
+    "repositories": {
+      "title": "Repositories",
+      "empty": "No repositories yet. Add one from the control center.",
+      "repository": "Repository",
+      "space": "Space",
+      "line": "Product line",
+      "because": "Because",
+      "sourceAssignment": "Pinned",
+      "sourceRule": "Rule",
+      "sourceDefault": "Default space",
+      "pin": "Pin to space…",
+      "unpin": "Unpin so the rules apply"
+    },
+    "deleteDialog": {
+      "title": "Delete {{name}}?",
+      "description": "Its rules, pins and product lines are removed. Its repositories fall back to other rules or the default space.",
+      "confirm": "Delete space",
+      "cancel": "Cancel"
+    },
+    "errors": {
+      "actionFailed": "That change could not be saved. Try again."
     }
   }
 }

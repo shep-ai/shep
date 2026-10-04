@@ -1099,6 +1099,97 @@
         "available": "Available",
         "failed": "Failed to load plugin catalog"
       }
+    },
+    "space": {
+      "description": "הפרדה בין תחומי עבודה: מרחבים, קווי מוצר והכללים שממקמים מאגרים",
+      "failed": "פקודת המרחב נכשלה",
+      "spaceArg": "שם, slug או מזהה של המרחב",
+      "pathArg": "נתיב המאגר (ברירת מחדל: התיקייה הנוכחית)",
+      "nameArg": "שם תצוגה",
+      "lineArg": "שם, slug או מזהה של קו המוצר",
+      "lineOption": "קו מוצר בתוך המרחב",
+      "descriptionOption": "תיאור קצר",
+      "colorOption": "צבע הקסדצימלי, למשל ‎#3456c4",
+      "ls": {
+        "description": "הצגת מרחבים עם קווי המוצר, המאגרים והזיכרון שלהם",
+        "title": "מרחבים",
+        "nameColumn": "שם",
+        "slugColumn": "Slug",
+        "linesColumn": "קווי מוצר",
+        "reposColumn": "מאגרים",
+        "memoryColumn": "זיכרון",
+        "defaultMarker": "(ברירת מחדל)"
+      },
+      "show": {
+        "description": "הצגת המרחב וקו המוצר של מאגר, ומדוע",
+        "space": "מרחב",
+        "productLine": "קו מוצר",
+        "source": "סיבה",
+        "sourceAssignment": "הוצמד עם shep space assign",
+        "sourceRule": "תאם לכלל {{kind}} {{pattern}}",
+        "sourceDefault": "אף כלל לא תאם, ולכן חל מרחב ברירת המחדל"
+      },
+      "new": {
+        "description": "יצירת מרחב",
+        "defaultOption": "הגדרה כמרחב ברירת המחדל",
+        "success": "המרחב \"{{name}}\" נוצר ({{slug}})"
+      },
+      "edit": {
+        "description": "שינוי שם, תיאור או צבע של מרחב",
+        "success": "המרחב \"{{name}}\" עודכן"
+      },
+      "rm": {
+        "description": "מחיקת מרחב יחד עם הכללים, ההקצאות וקווי המוצר שלו",
+        "success": "המרחב \"{{space}}\" נמחק"
+      },
+      "default": {
+        "description": "בחירת המרחב שאליו נכנסים מאגרים ללא כלל תואם",
+        "success": "\"{{name}}\" הוא כעת מרחב ברירת המחדל"
+      },
+      "line": {
+        "description": "ניהול קווי מוצר בתוך מרחב",
+        "new": {
+          "description": "הוספת קו מוצר למרחב",
+          "success": "קו המוצר \"{{name}}\" נוצר ({{slug}})"
+        },
+        "rm": {
+          "description": "הסרת קו מוצר; המאגרים שלו נשארים במרחב",
+          "success": "קו המוצר \"{{line}}\" הוסר"
+        }
+      },
+      "rule": {
+        "description": "ניהול כללי נתיב ו-git remote שממקמים מאגרים",
+        "patternArg": "קידומת נתיב מוחלט, או תבנית remote כמו github.com/acme/*",
+        "idArg": "מזהה כלל (ראו shep space rule ls)",
+        "add": {
+          "description": "הוספת כלל שממקם מאגרים תואמים במרחב",
+          "remoteOption": "להתייחס לתבנית כ-git remote גם אם היא נראית כנתיב",
+          "priorityOption": "הכרעה בין כללים ספציפיים באותה מידה; הנמוך גובר (ברירת מחדל 100)",
+          "badPriority": "\"{{value}}\" אינו מספר שלם",
+          "success": "כלל {{kind}} נוסף עבור {{pattern}}"
+        },
+        "ls": {
+          "description": "הצגת כללים, למרחב אחד או לכולם",
+          "title": "כללי מרחב",
+          "idColumn": "מזהה",
+          "kindColumn": "סוג",
+          "patternColumn": "תבנית",
+          "priorityColumn": "עדיפות",
+          "empty": "אין עדיין כללים. הוסיפו עם shep space rule add."
+        },
+        "rm": {
+          "description": "הסרת כלל",
+          "success": "הכלל הוסר"
+        }
+      },
+      "assign": {
+        "description": "הצמדת מאגר למרחב, מעל כל כלל",
+        "success": "{{path}} הוצמד ל-{{space}}"
+      },
+      "unassign": {
+        "description": "הסרת ההצמדה של מאגר כך שהכללים יחולו שוב",
+        "success": "{{path}} פועל שוב לפי כללי המרחב"
+      }
     }
   },
   "ui": {

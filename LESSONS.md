@@ -2929,3 +2929,10 @@ Real-model runs find these; scripted ones did not.
 A demo repo's `node --test test/` failed on Node 22 ("Cannot find module …/test") while my check
 only tailed the summary lines, so a real agent was asked to run tests that could never pass.
 Grep for `# pass N` / `# fail 0` (or the runner's equivalent) before calling a suite green.
+
+## A TypeSpec change also regenerates `apis/json-schema/` — commit it with the model
+
+`pnpm tsp:compile` (run by the pre-commit hook) emits a YAML schema per model and enum into
+`apis/json-schema/`, and those files are tracked. Adding `Space` and two `MemoryScope` members
+left eight untracked/modified schema files behind the commit that changed the `.tsp`. After any
+`tsp/` edit, run `git status apis/` and stage the schemas in the same commit.

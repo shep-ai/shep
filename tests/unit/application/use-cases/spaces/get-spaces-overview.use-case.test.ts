@@ -83,7 +83,7 @@ describe('GetSpacesOverviewUseCase', () => {
                 space: ACME,
                 productLine: PAYMENTS,
                 source: SpaceResolutionSource.Rule,
-                ruleId: 'r1',
+                rule: { id: 'r1', kind: SpaceRuleKind.Remote, pattern: 'github.com/acme/*' },
               }
         )
       ),
