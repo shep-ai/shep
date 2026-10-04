@@ -17,6 +17,7 @@ import {
   encodeClaudeProjectDir,
   shepWorktreeRepoHash,
 } from '../../../../domain/shared/agent-session-paths.js';
+import { getShepHomeDir } from '../../filesystem/shep-directory.service.js';
 
 /** A transcript file candidate, with the mtime used for recency sorting. */
 export interface SessionFileInfo {
@@ -89,7 +90,7 @@ export class ClaudeCodeSessionFileCollector {
     }
 
     const shepWorktreePrefix = encodeClaudeProjectDir(
-      path.join(os.homedir(), '.shep', 'repos', shepWorktreeRepoHash(normalizedPath))
+      path.join(getShepHomeDir(), 'repos', shepWorktreeRepoHash(normalizedPath))
     );
 
     const worktreeDirs = allDirs.filter(

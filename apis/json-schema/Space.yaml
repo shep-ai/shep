@@ -17,6 +17,9 @@ properties:
   isDefault:
     type: boolean
     description: Whether repositories that match nothing fall back to this space; exactly one space is the default
+  agentSettings:
+    $ref: SpaceAgentSettings.yaml
+    description: How agents run for the space's repositories (spec 121); unset inherits the host
 required:
   - name
   - slug

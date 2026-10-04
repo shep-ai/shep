@@ -16,7 +16,7 @@ import { SQLiteSpaceRepository } from '@/infrastructure/repositories/sqlite-spac
 import { SQLiteProductLineRepository } from '@/infrastructure/repositories/sqlite-product-line.repository.js';
 import { SQLiteSpaceMembershipRepository } from '@/infrastructure/repositories/sqlite-space-membership.repository.js';
 import { DEFAULT_SPACE_ID } from '@/domain/shared/space-resolution.js';
-import { SpaceRuleKind } from '@/domain/generated/output.js';
+import { AgentType, SpaceRuleKind, type Space } from '@/domain/generated/output.js';
 
 const T1 = new Date('2026-10-01T10:00:00Z');
 const T2 = new Date('2026-10-02T11:00:00Z');
@@ -79,6 +79,44 @@ describe('space repositories', () => {
         updatedAt: T2,
       });
       expect((await spaces.findBySlug('acme-corp'))?.id).toBe('s-acme');
+    });
+
+    it('round-trips agent settings, then changes and clears them (spec 121)', async () => {
+      const space: Space = {
+        id: 'space-acme',
+        name: 'Acme',
+        slug: 'acme',
+        isDefault: false,
+        agentSettings: {
+          claudeConfigDir: '/home/me/.claude-acme',
+          ghConfigDir: '/home/me/.config/gh-acme',
+          gitAuthorName: 'Me',
+          gitAuthorEmail: 'me@acme.com',
+          awsProfile: 'acme',
+          useBedrock: true,
+          allowedAgentTypes: [AgentType.ClaudeCode, AgentType.CodexCli],
+        },
+        createdAt: T1,
+        updatedAt: T1,
+      };
+      await spaces.create(space);
+      expect((await spaces.findById(space.id))?.agentSettings).toEqual(space.agentSettings);
+
+      const changed = {
+        ...space,
+        agentSettings: {
+          ghConfigDir: '/gh-2',
+          useBedrock: false,
+          allowedAgentTypes: [AgentType.Cursor],
+        },
+        updatedAt: T2,
+      };
+      await spaces.update(changed);
+      expect((await spaces.findById(space.id))?.agentSettings).toEqual(changed.agentSettings);
+
+      const { agentSettings: _cleared, ...withoutSettings } = changed;
+      await spaces.update(withoutSettings);
+      expect((await spaces.findById(space.id))?.agentSettings).toBeUndefined();
     });
 
     it('moves the default flag atomically', async () => {

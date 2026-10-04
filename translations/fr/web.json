@@ -1356,6 +1356,24 @@
     },
     "errors": {
       "actionFailed": "La modification n'a pas pu être enregistrée. Réessayez."
+    },
+    "agent": {
+      "title": "Paramètres des agents",
+      "customised": "Personnalisé",
+      "inherits": "Hérite de l'hôte",
+      "claudeConfigDir": "Répertoire de configuration Claude",
+      "ghConfigDir": "Répertoire de configuration gh",
+      "gitName": "Nom d'auteur git",
+      "gitEmail": "E-mail d'auteur git",
+      "awsProfile": "Profil AWS",
+      "bedrock": "Amazon Bedrock",
+      "bedrockInherit": "Hériter de l'hôte",
+      "bedrockOn": "Faire passer Claude par Bedrock",
+      "bedrockOff": "Ne jamais utiliser Bedrock",
+      "loginHint": "Connectez-vous une fois avec le répertoire défini, par exemple CLAUDE_CONFIG_DIR=~/.claude-acme claude ou GH_CONFIG_DIR=~/.config/gh-acme gh auth login. Shep ne stocke jamais les identifiants.",
+      "allowedAgents": "Agents autorisés",
+      "allowedAgentsHint": "Sans sélection, tous les agents sont autorisés.",
+      "save": "Enregistrer les paramètres des agents"
     }
   }
 }

@@ -1,0 +1,28 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: SpaceAgentSettings.yaml
+type: object
+properties:
+  claudeConfigDir:
+    type: string
+    description: Absolute path used as CLAUDE_CONFIG_DIR, giving the space its own Claude login
+  ghConfigDir:
+    type: string
+    description: Absolute path used as GH_CONFIG_DIR, giving the space its own GitHub CLI login
+  gitAuthorName:
+    type: string
+    description: Git author and committer name for commits made by agents
+  gitAuthorEmail:
+    type: string
+    description: Git author and committer email for commits made by agents
+  awsProfile:
+    type: string
+    description: AWS profile used as AWS_PROFILE, for example for Bedrock
+  useBedrock:
+    type: boolean
+    description: Route Claude Code through Amazon Bedrock (true), never (false), or inherit the host (unset)
+  allowedAgentTypes:
+    type: array
+    items:
+      $ref: AgentType.yaml
+    description: Agent types allowed to run for this space; empty or unset allows every agent
+description: Agent credentials, identity and allowed agents for the repositories of a space

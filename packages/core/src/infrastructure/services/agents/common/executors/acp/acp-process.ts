@@ -22,6 +22,7 @@ import {
   SIGKILL_GRACE_MS,
   terminateWithEscalation,
 } from '../process-stream.js';
+import type { SpaceEnvironment } from '../../../../../../domain/shared/space-environment.js';
 
 /** How long {@link AcpAgentProcess.waitForExit} waits: the SIGTERM grace, then the SIGKILL reap. */
 const EXIT_REAP_BACKSTOP_MS = 2 * SIGKILL_GRACE_MS;
@@ -34,6 +35,8 @@ export interface AcpProcessLaunch {
   cwd: string;
   agentName: string;
   notFoundMessage: string;
+  /** The session's space environment (spec 121). */
+  environment?: SpaceEnvironment;
 }
 
 export class AcpAgentProcess {
@@ -94,7 +97,14 @@ export class AcpAgentProcess {
 
   /** Spawn the agent in `cwd` with no shell and the standard agent env. */
   static start(launch: AcpProcessLaunch): AcpAgentProcess {
-    const proc = launch.spawn(launch.command, launch.args, buildSpawnOptions({ cwd: launch.cwd }));
+    const proc = launch.spawn(
+      launch.command,
+      launch.args,
+      buildSpawnOptions({
+        cwd: launch.cwd,
+        ...(launch.environment ? { environment: launch.environment } : {}),
+      })
+    );
     return new AcpAgentProcess(proc, launch);
   }
 

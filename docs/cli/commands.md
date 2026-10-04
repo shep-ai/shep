@@ -872,6 +872,7 @@ in exactly one space.
 | `shep space rule rm <id>`                           | Remove a rule                                           |
 | `shep space assign <space> [path]`                  | Pin a repository to a space (`-l` line)                 |
 | `shep space unassign [path]`                        | Remove a pin so the rules apply again                   |
+| `shep space config <space>`                         | Show or set the space's agent logins, git identity and allowed agents (spec 121) |
 
 `<space>` and `<line>` accept a name's slug or an id. `[path]` defaults to the
 current directory and expands a leading `~`. A rule pattern that is an absolute
@@ -888,6 +889,15 @@ shep space rule add acme ~/work/acme
 shep space assign personal ~/oss/acme-fork
 shep space show ~/work/acme/pay-api
 ```
+
+`shep space config <space>` with no options shows the settings and the environment they
+produce. Options: `--claude-config-dir <dir>`, `--gh-config-dir <dir>`, `--git-name`,
+`--git-email`, `--aws-profile`, `--bedrock` / `--no-bedrock`, `--agents a,b` and
+`--clear <fields...>` (`claude-config-dir`, `gh-config-dir`, `git-name`, `git-email`,
+`aws-profile`, `bedrock`, `agents`). Feature runs and feature chats in the space's
+repositories run with these settings; host `GH_TOKEN`/`GITHUB_TOKEN` (with a gh dir) and
+`ANTHROPIC_API_KEY`/`ANTHROPIC_AUTH_TOKEN`/`CLAUDE_CODE_OAUTH_TOKEN` (with a Claude dir) are
+removed for them.
 
 **Source**: `src/presentation/cli/commands/space/`
 

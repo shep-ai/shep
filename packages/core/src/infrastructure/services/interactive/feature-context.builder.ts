@@ -7,9 +7,8 @@
  */
 
 import { execFileSync } from 'node:child_process';
-import { homedir } from 'node:os';
-import { join } from 'node:path';
 import type { Feature } from '../../../domain/generated/output.js';
+import { getShepHomeDir } from '../filesystem/shep-directory.service.js';
 
 /** Maximum number of plan tasks to include in the context. */
 const MAX_TASKS = 30;
@@ -81,7 +80,7 @@ export class FeatureContextBuilder {
     openPRs: string[],
     projectMemory?: string
   ): string {
-    const shepHome = process.env.SHEP_HOME ?? join(homedir(), '.shep');
+    const shepHome = getShepHomeDir();
     let version = 'unknown';
     try {
       version = execFileSync('shep', ['--version'], {

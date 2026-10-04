@@ -14,6 +14,7 @@
  * space at any moment.
  */
 import "../../common/base.tsp";
+import "../../common/enums/agent-config.tsp";
 
 /** How a space rule recognises a repository. */
 @doc("How a space rule recognises a repository")
@@ -43,6 +44,38 @@ enum SpaceResolutionSource {
   Default,
 }
 
+/**
+ * How agents run for the repositories of one space (spec 121). Every field is
+ * optional; an unset field inherits the host environment, so a space without
+ * settings behaves exactly as if spaces did not exist.
+ *
+ * Credentials are never stored here: a space points at the config directory
+ * the tool (Claude Code, gh) already manages its own login in.
+ */
+@doc("Agent credentials, identity and allowed agents for the repositories of a space")
+model SpaceAgentSettings {
+  @doc("Absolute path used as CLAUDE_CONFIG_DIR, giving the space its own Claude login")
+  claudeConfigDir?: string;
+
+  @doc("Absolute path used as GH_CONFIG_DIR, giving the space its own GitHub CLI login")
+  ghConfigDir?: string;
+
+  @doc("Git author and committer name for commits made by agents")
+  gitAuthorName?: string;
+
+  @doc("Git author and committer email for commits made by agents")
+  gitAuthorEmail?: string;
+
+  @doc("AWS profile used as AWS_PROFILE, for example for Bedrock")
+  awsProfile?: string;
+
+  @doc("Route Claude Code through Amazon Bedrock (true), never (false), or inherit the host (unset)")
+  useBedrock?: boolean;
+
+  @doc("Agent types allowed to run for this space; empty or unset allows every agent")
+  allowedAgentTypes?: AgentType[];
+}
+
 /** A hard knowledge boundary such as "Acme (work)" or "Personal". */
 @doc("A hard knowledge boundary such as a company or personal context")
 model Space extends BaseEntity {
@@ -60,6 +93,9 @@ model Space extends BaseEntity {
 
   @doc("Whether repositories that match nothing fall back to this space; exactly one space is the default")
   isDefault: boolean;
+
+  @doc("How agents run for the space's repositories (spec 121); unset inherits the host")
+  agentSettings?: SpaceAgentSettings;
 }
 
 /** A group of related repositories inside one space. */

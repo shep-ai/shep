@@ -1189,6 +1189,35 @@
       "unassign": {
         "description": "Retirer l'épinglage d'un dépôt pour que les règles s'appliquent à nouveau",
         "success": "{{path}} suit à nouveau les règles d'espace"
+      },
+      "config": {
+        "description": "Afficher ou modifier les connexions des agents, l'identité git et les agents autorisés d'un espace",
+        "claudeOption": "Répertoire de configuration Claude (CLAUDE_CONFIG_DIR) contenant la connexion de l'espace",
+        "ghOption": "Répertoire de configuration gh (GH_CONFIG_DIR) contenant la connexion GitHub de l'espace",
+        "gitNameOption": "Nom d'auteur git pour les commits des agents",
+        "gitEmailOption": "E-mail d'auteur git pour les commits des agents",
+        "awsProfileOption": "Profil AWS (AWS_PROFILE), par exemple pour Bedrock",
+        "bedrockOption": "Faire passer Claude par Amazon Bedrock",
+        "noBedrockOption": "Ne jamais faire passer Claude par Bedrock, quel que soit l'hôte",
+        "agentsOption": "Types d'agents autorisés, séparés par des virgules",
+        "clearOption": "Champs à effacer pour hériter à nouveau de l'hôte",
+        "badClear": "« {{field}} » n'est pas un champ effaçable",
+        "title": "Paramètres des agents de {{name}}",
+        "claudeConfigDir": "Config. Claude",
+        "ghConfigDir": "Config. gh",
+        "gitAuthorName": "Nom git",
+        "gitAuthorEmail": "E-mail git",
+        "useBedrock": "Bedrock",
+        "awsProfile": "Profil AWS",
+        "allowedAgents": "Agents autorisés",
+        "inherit": "hériter de l'hôte",
+        "on": "activé",
+        "off": "désactivé",
+        "any": "tous",
+        "environment": "Environnement des processus d'agents",
+        "sets": "Définit",
+        "removes": "Supprime",
+        "success": "Paramètres des agents de {{name}} enregistrés"
       }
     }
   },

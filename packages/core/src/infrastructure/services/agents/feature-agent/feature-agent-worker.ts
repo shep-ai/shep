@@ -65,6 +65,8 @@ import { CleanupFeatureWorktreeUseCase } from '@/application/use-cases/features/
 import { startPluginServers, stopPluginServers } from './plugin-startup.js';
 import { SelectProjectMemoryUseCase } from '@/application/use-cases/project-memory/select-project-memory.use-case.js';
 import { RecordProjectMemoryUseCase } from '@/application/use-cases/project-memory/record-project-memory.use-case.js';
+import { ResolveSpaceEnvironmentUseCase } from '@/application/use-cases/spaces/resolve-space-environment.use-case.js';
+import { applyRunSpaceEnvironment } from './apply-space-environment.js';
 
 import type { ApprovalGates } from '@/domain/generated/output.js';
 import { FEATURE_WORKER_HEARTBEAT_INTERVAL_MS } from '@/domain/shared/agent-run-liveness.js';
@@ -299,6 +301,37 @@ export async function runWorker(args: WorkerArgs): Promise<void> {
     log(
       `Run ${args.runId} is not claimable (status: ${current?.status ?? 'not found'}) — ` +
         'it was stopped or finished before this worker booted. Exiting without running the graph.'
+    );
+    return;
+  }
+
+  // Spec 121: give this run its space's logins and identity before any agent,
+  // plugin server, gh or git process exists, and refuse an agent the space
+  // does not allow. Resolved from the repository, never the worktree path.
+  const spaceCheck = await applyRunSpaceEnvironment({
+    resolveEnvironment: (repositoryPath, agentType) =>
+      container.resolve(ResolveSpaceEnvironmentUseCase).execute(repositoryPath, agentType),
+    repositoryPath: args.repo,
+    agentType: args.agentType ?? settings.agent.type,
+    env: process.env,
+    log,
+  });
+  if (spaceCheck.refusal) {
+    log(`Refusing to run: ${spaceCheck.refusal}`);
+    await recordRunFailure(
+      {
+        runRepository,
+        featureRepository: container.resolve<IFeatureRepository>('IFeatureRepository'),
+        recordLifecycleEvent: (event) => recordLifecycleEvent(event),
+        drainCapacityQueue: () => container.resolve(AdmitQueuedFeaturesUseCase).execute(),
+        log,
+      },
+      {
+        runId: args.runId,
+        featureId: args.featureId,
+        message: spaceCheck.refusal,
+        failedAt: new Date(),
+      }
     );
     return;
   }

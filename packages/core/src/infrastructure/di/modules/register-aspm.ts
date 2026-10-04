@@ -120,6 +120,7 @@ import { GraduateAiSignalToFindingUseCase } from '../../../application/use-cases
 import { ListAiSignalsUseCase } from '../../../application/use-cases/aspm/ai-review/list-ai-signals.js';
 import { RecordAiChangeRiskSignalUseCase } from '../../../application/use-cases/aspm/ai-review/record-ai-change-risk-signal.js';
 import { GetComplianceCoverageUseCase } from '../../../application/use-cases/aspm/compliance/get-compliance-coverage.js';
+import { getShepHomeDir } from '../../services/filesystem/shep-directory.service.js';
 
 /**
  * Register ASPM repositories, ports, services, and use cases on the
@@ -375,7 +376,7 @@ function registerPhase11Repositories(container: DependencyContainer): void {
 }
 
 function defaultOsvCacheDir(): string {
-  const home = process.env.SHEP_HOME ?? join(process.env.HOME ?? '.', '.shep');
+  const home = getShepHomeDir();
   return join(home, 'cache', 'osv');
 }
 

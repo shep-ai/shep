@@ -47,3 +47,7 @@ export async function assignRepository(_input: unknown) {
 export async function unassignRepository(_repositoryPath: string) {
   return ok();
 }
+
+export async function configureSpaceAgent(_ref: string, _patch: unknown) {
+  return ok({ space: { id: 'mock' }, environment: { set: {}, unset: [] } });
+}

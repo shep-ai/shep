@@ -11,6 +11,8 @@
  * - No SDK types leak through this boundary
  */
 
+import type { SpaceEnvironment } from '../../../../domain/shared/space-environment.js';
+
 /**
  * Callback invoked when the agent calls AskUserQuestion.
  * The SDK stream is PAUSED until this resolves — the agent waits for the user's answers.
@@ -61,6 +63,12 @@ export interface InteractiveAgentOptions {
    * {@link onUserQuestion} otherwise.
    */
   agentQuestionBridge?: AgentQuestionBridge;
+  /**
+   * The session's space environment (spec 121): variables to set and host
+   * variables to remove for the agent process, so it runs with the space's
+   * logins and identity. Unset leaves the host environment.
+   */
+  environment?: SpaceEnvironment;
 }
 
 /** A single question within an AskUserQuestion tool call. */

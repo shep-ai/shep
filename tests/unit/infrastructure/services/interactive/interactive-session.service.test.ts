@@ -63,6 +63,7 @@ import {
   AgentType,
   BuildMode,
 } from '@/domain/generated/output.js';
+import type { SessionSpaceEnvironment } from '@/infrastructure/services/interactive/lifecycle/session-space-environment.js';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -354,7 +355,8 @@ describe('InteractiveSessionService', () => {
       executorFactory,
       agentConfigResolver,
       interactionCoordinator,
-      fakeLogger
+      fakeLogger,
+      { resolve: vi.fn().mockResolvedValue({}) } as unknown as SessionSpaceEnvironment
     );
     const terminator = new SessionTerminator(
       registry,

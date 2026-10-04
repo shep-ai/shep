@@ -36,6 +36,7 @@ import type {
   ListSessionsOptions,
   GetSessionOptions,
 } from '../../../../application/ports/output/agents/agent-session-repository.interface.js';
+import { claudeConfigDir } from '../common/claude-config-dir.js';
 
 export type { SessionMetadata } from './claude-code-transcript.js';
 
@@ -47,7 +48,7 @@ export class ClaudeCodeSessionRepository implements IAgentSessionRepository {
     () => new ClaudeTranscriptAccumulator(false)
   );
 
-  constructor(private readonly basePath: string = path.join(os.homedir(), '.claude', 'projects')) {
+  constructor(private readonly basePath: string = path.join(claudeConfigDir(), 'projects')) {
     this.files = new ClaudeCodeSessionFileCollector(basePath);
   }
 

@@ -1189,6 +1189,35 @@
       "unassign": {
         "description": "إزالة تثبيت المستودع لتُطبّق القواعد مجددًا",
         "success": "{{path}} يتبع قواعد المساحات مجددًا"
+      },
+      "config": {
+        "description": "عرض أو تغيير تسجيلات دخول الوكلاء وهوية git والوكلاء المسموح بهم لمساحة",
+        "claudeOption": "دليل إعدادات Claude ‏(CLAUDE_CONFIG_DIR) الذي يحوي تسجيل دخول المساحة",
+        "ghOption": "دليل إعدادات gh ‏(GH_CONFIG_DIR) الذي يحوي تسجيل دخول GitHub للمساحة",
+        "gitNameOption": "اسم مؤلف git لعمليات إيداع الوكلاء",
+        "gitEmailOption": "بريد مؤلف git لعمليات إيداع الوكلاء",
+        "awsProfileOption": "ملف AWS ‏(AWS_PROFILE)، مثلًا لـ Bedrock",
+        "bedrockOption": "توجيه Claude عبر Amazon Bedrock",
+        "noBedrockOption": "عدم توجيه Claude عبر Bedrock أبدًا مهما كان إعداد المضيف",
+        "agentsOption": "أنواع الوكلاء المسموح بها مفصولة بفواصل",
+        "clearOption": "حقول تُمسح لتعود إلى الوراثة من المضيف",
+        "badClear": "\"{{field}}\" ليس حقلًا يمكن مسحه",
+        "title": "إعدادات وكلاء {{name}}",
+        "claudeConfigDir": "إعدادات Claude",
+        "ghConfigDir": "إعدادات gh",
+        "gitAuthorName": "اسم git",
+        "gitAuthorEmail": "بريد git",
+        "useBedrock": "Bedrock",
+        "awsProfile": "ملف AWS",
+        "allowedAgents": "الوكلاء المسموح بهم",
+        "inherit": "وراثة من المضيف",
+        "on": "مفعّل",
+        "off": "معطّل",
+        "any": "أي وكيل",
+        "environment": "بيئة عمليات الوكلاء",
+        "sets": "يضبط",
+        "removes": "يزيل",
+        "success": "تم حفظ إعدادات وكلاء {{name}}"
       }
     }
   },

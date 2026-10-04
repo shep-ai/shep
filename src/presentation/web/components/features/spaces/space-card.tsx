@@ -25,6 +25,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { deleteSpace, setDefaultSpace } from '@/app/actions/manage-spaces';
 import { EditSpaceForm } from './edit-space-form';
+import { SpaceAgentSettingsForm } from './space-agent-settings-form';
 import { SpaceProductLines } from './space-product-lines';
 import { SpaceRules } from './space-rules';
 import type { RunSpaceAction } from './spaces-types';
@@ -106,6 +107,7 @@ export function SpaceCard({ overview, run }: SpaceCardProps) {
 
       <SpaceProductLines space={space} productLines={productLines} run={run} />
       <SpaceRules space={space} rules={rules} productLines={productLines} run={run} />
+      <SpaceAgentSettingsForm key={space.updatedAt.toString()} space={space} run={run} />
 
       <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
         <AlertDialogContent>

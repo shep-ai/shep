@@ -56,6 +56,42 @@ shep space ls
 
 The full command list is in the [CLI reference](../cli/commands.md#space-commands).
 
+## Separate logins and git identity per space
+
+A space can also decide **who agents are** when they work on its repositories: which
+Claude login and GitHub account they use, which name and email go on their commits,
+whether Claude runs through Amazon Bedrock, and which agents may run at all. Anything you
+leave empty inherits your machine's setup, so personal projects keep working as before.
+
+Shep never stores a password or token for this. Instead you give each tool its own config
+directory and log in there once:
+
+```bash
+# A separate Claude login for Acme work
+CLAUDE_CONFIG_DIR=~/.claude-acme claude          # log in, then exit
+
+# A separate GitHub account for Acme work
+GH_CONFIG_DIR=~/.config/gh-acme gh auth login
+
+shep space config acme \
+  --claude-config-dir ~/.claude-acme \
+  --gh-config-dir ~/.config/gh-acme \
+  --git-name "Ada Lovelace" --git-email ada@acme.com \
+  --agents claude-code
+```
+
+From then on every feature run in an Acme repository (its agent, and every `gh` and `git`
+command it runs) uses the Acme logins and identity, including the pull request it opens.
+A login exported in your shell (`GH_TOKEN`, `ANTHROPIC_API_KEY`, ...) would normally win over
+a config directory, so Shep removes it for that space's runs. Chat sessions about a feature
+use the same settings.
+
+`shep space config acme` shows the settings and exactly which variables a run gets. In the
+browser, open **Agent settings** on the space's card on the **Spaces** page.
+
+If a space allows only some agents, a run with another agent stops before it starts and says
+why. Change the run's agent or the space's allowed agents.
+
 ## Things to know
 
 - **Deleting is safe.** Shep refuses to delete a space that still holds memory, or a
@@ -69,3 +105,7 @@ The full command list is in the [CLI reference](../cli/commands.md#space-command
 - **Entries from before spaces existed.** Entries that were "organization-wide" now
   read as space-wide, inside the space they were written in, which on an upgraded
   install is the default space.
+- **What agent settings do not cover.** The Shep web server's own GitHub calls, such as
+  listing repositories to import, still use your machine's login. Claude transcripts for a
+  space with its own Claude config directory live in that directory, so the session list
+  in the web UI shows only the transcripts of the default login.

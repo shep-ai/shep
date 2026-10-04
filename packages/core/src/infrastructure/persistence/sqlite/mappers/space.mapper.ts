@@ -7,9 +7,11 @@
  */
 
 import type {
+  AgentType,
   ProductLine,
   RepositorySpaceAssignment,
   Space,
+  SpaceAgentSettings,
   SpaceRule,
   SpaceRuleKind,
 } from '../../../../domain/generated/output.js';
@@ -22,6 +24,15 @@ export interface SpaceRow {
   description: string | null;
   color: string | null;
   is_default: number;
+  claude_config_dir: string | null;
+  gh_config_dir: string | null;
+  git_author_name: string | null;
+  git_author_email: string | null;
+  aws_profile: string | null;
+  /** 1 = on, 0 = off, NULL = inherit the host. */
+  use_bedrock: number | null;
+  /** JSON array of AgentType values. */
+  allowed_agent_types: string | null;
   created_at: number;
   updated_at: number;
 }
@@ -75,9 +86,50 @@ export function spaceToDatabase(space: Space): SpaceRow {
     description: space.description ?? null,
     color: space.color ?? null,
     is_default: space.isDefault ? 1 : 0,
+    ...agentSettingsToColumns(space.agentSettings),
     created_at: millis(space.createdAt),
     updated_at: millis(space.updatedAt),
   };
+}
+
+type AgentSettingsColumns = Pick<
+  SpaceRow,
+  | 'claude_config_dir'
+  | 'gh_config_dir'
+  | 'git_author_name'
+  | 'git_author_email'
+  | 'aws_profile'
+  | 'use_bedrock'
+  | 'allowed_agent_types'
+>;
+
+function agentSettingsToColumns(settings: SpaceAgentSettings | undefined): AgentSettingsColumns {
+  const allowed = settings?.allowedAgentTypes;
+  return {
+    claude_config_dir: settings?.claudeConfigDir ?? null,
+    gh_config_dir: settings?.ghConfigDir ?? null,
+    git_author_name: settings?.gitAuthorName ?? null,
+    git_author_email: settings?.gitAuthorEmail ?? null,
+    aws_profile: settings?.awsProfile ?? null,
+    use_bedrock: settings?.useBedrock === undefined ? null : settings.useBedrock ? 1 : 0,
+    allowed_agent_types: allowed && allowed.length > 0 ? JSON.stringify(allowed) : null,
+  };
+}
+
+/** The settings stored on a row, or undefined when every column is NULL. */
+function agentSettingsFromColumns(row: AgentSettingsColumns): SpaceAgentSettings | undefined {
+  const settings: SpaceAgentSettings = {
+    ...(row.claude_config_dir !== null ? { claudeConfigDir: row.claude_config_dir } : {}),
+    ...(row.gh_config_dir !== null ? { ghConfigDir: row.gh_config_dir } : {}),
+    ...(row.git_author_name !== null ? { gitAuthorName: row.git_author_name } : {}),
+    ...(row.git_author_email !== null ? { gitAuthorEmail: row.git_author_email } : {}),
+    ...(row.aws_profile !== null ? { awsProfile: row.aws_profile } : {}),
+    ...(row.use_bedrock !== null ? { useBedrock: row.use_bedrock === 1 } : {}),
+    ...(row.allowed_agent_types !== null
+      ? { allowedAgentTypes: JSON.parse(row.allowed_agent_types) as AgentType[] }
+      : {}),
+  };
+  return Object.keys(settings).length > 0 ? settings : undefined;
 }
 
 export function spaceFromDatabase(row: SpaceRow): Space {
@@ -89,7 +141,12 @@ export function spaceFromDatabase(row: SpaceRow): Space {
     createdAt: new Date(row.created_at),
     updatedAt: new Date(row.updated_at),
   };
-  return withOptional(withOptional(base, 'description', row.description), 'color', row.color);
+  const agentSettings = agentSettingsFromColumns(row);
+  return withOptional(
+    withOptional(agentSettings ? { ...base, agentSettings } : base, 'description', row.description),
+    'color',
+    row.color
+  );
 }
 
 export function productLineToDatabase(line: ProductLine): ProductLineRow {

@@ -1189,6 +1189,35 @@
       "unassign": {
         "description": "Feste Zuweisung entfernen, damit wieder die Regeln gelten",
         "success": "{{path}} folgt wieder den Space-Regeln"
+      },
+      "config": {
+        "description": "Agent-Logins, Git-Identität und erlaubte Agents eines Space anzeigen oder ändern",
+        "claudeOption": "Claude-Konfigurationsverzeichnis (CLAUDE_CONFIG_DIR) mit dem Claude-Login des Space",
+        "ghOption": "gh-Konfigurationsverzeichnis (GH_CONFIG_DIR) mit dem GitHub-Login des Space",
+        "gitNameOption": "Git-Autorname für Agent-Commits",
+        "gitEmailOption": "Git-Autor-E-Mail für Agent-Commits",
+        "awsProfileOption": "AWS-Profil (AWS_PROFILE), z. B. für Bedrock",
+        "bedrockOption": "Claude über Amazon Bedrock leiten",
+        "noBedrockOption": "Claude nie über Bedrock leiten, egal was der Host setzt",
+        "agentsOption": "Kommagetrennte Agent-Typen, die der Space erlaubt",
+        "clearOption": "Felder, die gelöscht werden und wieder vom Host erben",
+        "badClear": "\"{{field}}\" ist kein Feld, das gelöscht werden kann",
+        "title": "Agent-Einstellungen von {{name}}",
+        "claudeConfigDir": "Claude-Konfig",
+        "ghConfigDir": "gh-Konfig",
+        "gitAuthorName": "Git-Name",
+        "gitAuthorEmail": "Git-E-Mail",
+        "useBedrock": "Bedrock",
+        "awsProfile": "AWS-Profil",
+        "allowedAgents": "Erlaubte Agents",
+        "inherit": "vom Host erben",
+        "on": "an",
+        "off": "aus",
+        "any": "alle",
+        "environment": "Umgebung für Agent-Prozesse",
+        "sets": "Setzt",
+        "removes": "Entfernt",
+        "success": "Agent-Einstellungen für {{name}} gespeichert"
       }
     }
   },

@@ -9,7 +9,7 @@
  */
 
 import 'reflect-metadata';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   AgentRunStatus,
   SdlcLifecycle,
@@ -33,7 +33,9 @@ const {
   mockCreateFeatureAgentGraph,
   mockCreateFastFeatureAgentGraph,
   mockCreateCheckpointer,
+  mockResolveSpaceEnvironment,
 } = vi.hoisted(() => ({
+  mockResolveSpaceEnvironment: vi.fn(),
   mockInitializeContainer: vi.fn(),
   mockResolve: vi.fn(),
   mockGraphInvoke: vi.fn(),
@@ -443,6 +445,7 @@ describe('runWorker', () => {
       const key = typeof token === 'string' ? token : (token as { name?: string })?.name;
       if (key === 'IAgentRunRepository') return mockRunRepo;
       if (key === 'IAgentExecutorProvider') return mockExecutorProvider;
+      if (key === 'ResolveSpaceEnvironmentUseCase') return { execute: mockResolveSpaceEnvironment };
       if (key === 'FeatureAgentLifecyclePublisher') return mockLifecyclePublisher;
       if (key === 'FeatureAgentGateQuestionPublisher') return mockGateQuestionPublisher;
       if (key === 'FeatureAgentSupervisorGateEvaluator') {
@@ -466,6 +469,10 @@ describe('runWorker', () => {
       }
       return mockRunRepo;
     });
+    mockResolveSpaceEnvironment.mockResolvedValue({
+      context: { space: { name: 'Default' }, source: 'Default' },
+      environment: { set: {}, unset: [] },
+    });
     mockGraphInvoke.mockResolvedValue({
       currentNode: 'implement',
       messages: ['[analyze] done', '[implement] done'],
@@ -481,6 +488,45 @@ describe('runWorker', () => {
     });
     mockCreateFastFeatureAgentGraph.mockReturnValue({
       invoke: mockFastGraphInvoke,
+    });
+  });
+
+  describe('space environment (spec 121)', () => {
+    afterEach(() => {
+      delete process.env.SHEP_TEST_SPACE_VAR;
+    });
+
+    it("applies the repository's space environment before the graph runs", async () => {
+      mockResolveSpaceEnvironment.mockResolvedValue({
+        context: { space: { name: 'Acme' }, source: 'Rule' },
+        environment: { set: { SHEP_TEST_SPACE_VAR: '/gh-acme' }, unset: [] },
+      });
+      let seenByGraph: string | undefined;
+      mockGraphInvoke.mockImplementation(async () => {
+        seenByGraph = process.env.SHEP_TEST_SPACE_VAR;
+        return { currentNode: 'implement', messages: [], error: null };
+      });
+
+      await runWorker({ featureId: 'feat-1', runId: 'run-1', repo: '/repo', specDir: '/specs' });
+
+      expect(mockResolveSpaceEnvironment).toHaveBeenCalledWith('/repo', 'claude-code');
+      expect(seenByGraph).toBe('/gh-acme');
+    });
+
+    it('fails the run without building the graph when the space refuses the agent', async () => {
+      mockResolveSpaceEnvironment.mockResolvedValue({
+        context: { space: { name: 'Acme' }, source: 'Rule' },
+        environment: { set: {}, unset: [] },
+        agentRefusal: 'The Acme space allows only cursor agents; this run uses claude-code.',
+      });
+
+      await runWorker({ featureId: 'feat-1', runId: 'run-1', repo: '/repo', specDir: '/specs' });
+
+      expect(mockCreateFeatureAgentGraph).not.toHaveBeenCalled();
+      expect(mockGraphInvoke).not.toHaveBeenCalled();
+      const run = await mockRunRepo.findById('run-1');
+      expect(run?.status).toBe(AgentRunStatus.failed);
+      expect(run?.error).toContain('allows only cursor');
     });
   });
 

@@ -16,8 +16,8 @@
 
 import { randomBytes, timingSafeEqual } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync, chmodSync } from 'node:fs';
-import { homedir } from 'node:os';
 import { join } from 'node:path';
+import { getShepHomeDir } from '../filesystem/shep-directory.service';
 
 /** Filename of the token inside SHEP_HOME. */
 export const WEB_AUTH_TOKEN_FILENAME = 'web-auth-token';
@@ -39,16 +39,11 @@ const SHEP_HOME_DIR_MODE = 0o700;
 let cachedTokenPath: string | null = null;
 let cachedToken: string | null = null;
 
-/** Resolve SHEP_HOME the same way `shep-directory.service.ts` does. */
-function resolveShepHomeDir(): string {
-  return process.env.SHEP_HOME ?? join(homedir(), '.shep');
-}
-
 /**
  * Absolute path of the per-install web auth token.
  */
 export function getWebAuthTokenPath(): string {
-  return join(resolveShepHomeDir(), WEB_AUTH_TOKEN_FILENAME);
+  return join(getShepHomeDir(), WEB_AUTH_TOKEN_FILENAME);
 }
 
 /**
@@ -91,7 +86,7 @@ function readExistingToken(tokenPath: string): string | null {
 function createAndPersistToken(tokenPath: string): string {
   const token = randomBytes(WEB_AUTH_TOKEN_BYTE_LENGTH).toString('hex');
 
-  const shepHome = resolveShepHomeDir();
+  const shepHome = getShepHomeDir();
   if (!existsSync(shepHome)) {
     mkdirSync(shepHome, { recursive: true, mode: SHEP_HOME_DIR_MODE });
   }

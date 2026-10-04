@@ -22,6 +22,10 @@ import type {
   GetSpacesOverviewUseCase,
   SpacesOverview,
 } from '@shepai/core/application/use-cases/spaces/get-spaces-overview.use-case';
+import type {
+  ConfigureSpaceAgentUseCase,
+  SpaceAgentSettingsPatch,
+} from '@shepai/core/application/use-cases/spaces/configure-space-agent.use-case';
 import type { SpaceResult } from '@shepai/core/application/use-cases/spaces/space-refs';
 
 const spaces = () => resolve<ManageSpacesUseCase>('ManageSpacesUseCase');
@@ -88,4 +92,10 @@ export async function assignRepository(input: AssignRepositoryInput) {
 
 export async function unassignRepository(repositoryPath: string) {
   return attempt(() => membership().unassign(repositoryPath));
+}
+
+export async function configureSpaceAgent(ref: string, patch: SpaceAgentSettingsPatch) {
+  return attempt(() =>
+    resolve<ConfigureSpaceAgentUseCase>('ConfigureSpaceAgentUseCase').configure(ref, patch)
+  );
 }

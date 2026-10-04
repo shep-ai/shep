@@ -48,8 +48,12 @@ export class SQLiteSpaceRepository implements ISpaceRepository {
   async create(space: Space): Promise<void> {
     this.db
       .prepare(
-        `INSERT INTO spaces (id, name, slug, description, color, is_default, created_at, updated_at)
-         VALUES (@id, @name, @slug, @description, @color, @is_default, @created_at, @updated_at)`
+        `INSERT INTO spaces (id, name, slug, description, color, is_default,
+           claude_config_dir, gh_config_dir, git_author_name, git_author_email, aws_profile,
+           use_bedrock, allowed_agent_types, created_at, updated_at)
+         VALUES (@id, @name, @slug, @description, @color, @is_default,
+           @claude_config_dir, @gh_config_dir, @git_author_name, @git_author_email, @aws_profile,
+           @use_bedrock, @allowed_agent_types, @created_at, @updated_at)`
       )
       .run(spaceToDatabase(space));
   }
@@ -59,7 +63,10 @@ export class SQLiteSpaceRepository implements ISpaceRepository {
     this.db
       .prepare(
         `UPDATE spaces SET name = @name, slug = @slug, description = @description,
-           color = @color, updated_at = @updated_at
+           color = @color, claude_config_dir = @claude_config_dir, gh_config_dir = @gh_config_dir,
+           git_author_name = @git_author_name, git_author_email = @git_author_email,
+           aws_profile = @aws_profile, use_bedrock = @use_bedrock,
+           allowed_agent_types = @allowed_agent_types, updated_at = @updated_at
          WHERE id = @id`
       )
       .run({
@@ -68,6 +75,13 @@ export class SQLiteSpaceRepository implements ISpaceRepository {
         slug: row.slug,
         description: row.description,
         color: row.color,
+        claude_config_dir: row.claude_config_dir,
+        gh_config_dir: row.gh_config_dir,
+        git_author_name: row.git_author_name,
+        git_author_email: row.git_author_email,
+        aws_profile: row.aws_profile,
+        use_bedrock: row.use_bedrock,
+        allowed_agent_types: row.allowed_agent_types,
         updated_at: row.updated_at,
       });
   }

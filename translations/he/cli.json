@@ -1189,6 +1189,35 @@
       "unassign": {
         "description": "הסרת ההצמדה של מאגר כך שהכללים יחולו שוב",
         "success": "{{path}} פועל שוב לפי כללי המרחב"
+      },
+      "config": {
+        "description": "הצגה או שינוי של התחברויות הסוכנים, זהות git והסוכנים המותרים במרחב",
+        "claudeOption": "תיקיית התצורה של Claude ‏(CLAUDE_CONFIG_DIR) עם ההתחברות של המרחב",
+        "ghOption": "תיקיית התצורה של gh ‏(GH_CONFIG_DIR) עם ההתחברות ל-GitHub של המרחב",
+        "gitNameOption": "שם מחבר git לקומיטים של סוכנים",
+        "gitEmailOption": "דוא\"ל מחבר git לקומיטים של סוכנים",
+        "awsProfileOption": "פרופיל AWS ‏(AWS_PROFILE), למשל עבור Bedrock",
+        "bedrockOption": "ניתוב Claude דרך Amazon Bedrock",
+        "noBedrockOption": "לעולם לא לנתב את Claude דרך Bedrock, ללא קשר למארח",
+        "agentsOption": "סוגי הסוכנים המותרים, מופרדים בפסיקים",
+        "clearOption": "שדות לניקוי כדי שיירשו שוב מהמארח",
+        "badClear": "\"{{field}}\" אינו שדה שניתן לנקות",
+        "title": "הגדרות הסוכנים של {{name}}",
+        "claudeConfigDir": "תצורת Claude",
+        "ghConfigDir": "תצורת gh",
+        "gitAuthorName": "שם git",
+        "gitAuthorEmail": "דוא\"ל git",
+        "useBedrock": "Bedrock",
+        "awsProfile": "פרופיל AWS",
+        "allowedAgents": "סוכנים מותרים",
+        "inherit": "ירושה מהמארח",
+        "on": "מופעל",
+        "off": "כבוי",
+        "any": "כל סוכן",
+        "environment": "סביבה לתהליכי הסוכנים",
+        "sets": "מגדיר",
+        "removes": "מסיר",
+        "success": "הגדרות הסוכנים של {{name}} נשמרו"
       }
     }
   },

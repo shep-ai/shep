@@ -102,6 +102,7 @@ export class AcpInteractiveSession implements InteractiveAgentSessionHandle {
       cwd: options.cwd,
       agentName: profile.agentName,
       notFoundMessage: profile.notFoundMessage,
+      ...(options.environment ? { environment: options.environment } : {}),
     });
     const session = new AcpInteractiveSession(agentProcess, profile, options);
     try {

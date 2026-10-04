@@ -87,6 +87,8 @@ import type { IVersionService } from '../../application/ports/output/services/ve
 // Topic-grouped registration modules
 import { registerRepositories } from './modules/register-repositories.js';
 import { registerSpaces } from './modules/register-spaces.js';
+import { SessionSpaceEnvironment } from '../services/interactive/lifecycle/session-space-environment.js';
+import { ResolveSpaceEnvironmentUseCase } from '../../application/use-cases/spaces/resolve-space-environment.use-case.js';
 import { registerServices } from './modules/register-services.js';
 import { registerTools } from './modules/register-tools.js';
 import { registerAgents } from './modules/register-agents.js';
@@ -306,7 +308,11 @@ export async function initializeContainer(): Promise<typeof container> {
     agentExecutorFactory,
     agentConfigResolver,
     interactionCoordinator,
-    logger
+    logger,
+    new SessionSpaceEnvironment(
+      featureRepository,
+      container.resolve(ResolveSpaceEnvironmentUseCase)
+    )
   );
   const terminator = new SessionTerminator(
     sessionRegistry,

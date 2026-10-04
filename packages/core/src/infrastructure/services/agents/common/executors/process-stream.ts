@@ -21,6 +21,10 @@ import { execFileSync } from 'node:child_process';
 import { StringDecoder } from 'node:string_decoder';
 import type { ChildProcess } from 'node:child_process';
 import { IS_WINDOWS } from '../../../../platform.js';
+import {
+  applySpaceEnvironment,
+  type SpaceEnvironment,
+} from '../../../../../domain/shared/space-environment.js';
 
 /** Node's `spawn` stdio setting: parent owns all three streams. */
 const STDIO_ALL_PIPES = ['pipe', 'pipe', 'pipe'] as const;
@@ -229,6 +233,8 @@ export interface SpawnOptionsInput {
   cwd?: string;
   /** Variables merged over the inherited environment (e.g. an API key). */
   extraEnv?: Record<string, string>;
+  /** A space environment applied to the inherited environment before `extraEnv` (spec 121). */
+  environment?: SpaceEnvironment;
 }
 
 /**
@@ -248,7 +254,8 @@ export function buildSpawnOptions(input?: SpawnOptionsInput): Record<string, unk
   if (process.platform === 'win32') spawnOpts.windowsHide = true;
 
   const { [NESTED_SESSION_ENV_VAR]: _nested, ...cleanEnv } = process.env;
-  spawnOpts.env = input?.extraEnv ? { ...cleanEnv, ...input.extraEnv } : cleanEnv;
+  const env = input?.environment ? applySpaceEnvironment(cleanEnv, input.environment) : cleanEnv;
+  spawnOpts.env = input?.extraEnv ? { ...env, ...input.extraEnv } : env;
 
   return spawnOpts;
 }

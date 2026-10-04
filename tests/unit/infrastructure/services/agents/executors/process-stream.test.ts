@@ -223,6 +223,24 @@ describe('buildSpawnOptions', () => {
     expect(buildSpawnOptions({ cwd: '/work/tree' }).cwd).toBe('/work/tree');
   });
 
+  it('should apply a space environment before extraEnv (spec 121)', () => {
+    const previous = process.env.GH_TOKEN;
+    process.env.GH_TOKEN = 'host-token';
+    try {
+      const env = buildSpawnOptions({
+        environment: { set: { GH_CONFIG_DIR: '/gh-acme', KEY: 'space' }, unset: ['GH_TOKEN'] },
+        extraEnv: { KEY: 'executor' },
+      }).env as Record<string, string | undefined>;
+      expect(env.GH_CONFIG_DIR).toBe('/gh-acme');
+      expect(env).not.toHaveProperty('GH_TOKEN');
+      expect(env.KEY).toBe('executor');
+      expect(process.env.GH_TOKEN).toBe('host-token');
+    } finally {
+      if (previous === undefined) delete process.env.GH_TOKEN;
+      else process.env.GH_TOKEN = previous;
+    }
+  });
+
   it('should never set shell, which mangles arguments on Windows', () => {
     Object.defineProperty(process, 'platform', { value: 'win32', writable: true });
 

@@ -17,7 +17,7 @@ tasks:
     title: SpaceAgentSettings in TypeSpec
     description: >
       SpaceAgentSettings value object (claudeConfigDir, ghConfigDir, gitAuthorName, gitAuthorEmail, awsProfile, useBedrock, allowedAgentTypes) as Space.agentSettings; regenerate.
-    state: Todo
+    state: Done
     dependencies: []
     acceptanceCriteria:
       - pnpm tsp:compile passes
@@ -35,7 +35,7 @@ tasks:
     title: Pure space environment mapping
     description: >
       domain/shared/space-environment.ts: spaceEnvironment(settings) -> {set, unset}, applySpaceEnvironment(base, env), isAgentAllowedInSpace(settings, agentType).
-    state: Todo
+    state: Done
     dependencies:
       - task-1
     acceptanceCriteria:
@@ -54,7 +54,7 @@ tasks:
     title: Migration 153 and space persistence
     description: >
       Seven nullable columns on spaces; mapper and repository read and write agentSettings.
-    state: Todo
+    state: Done
     dependencies:
       - task-1
     acceptanceCriteria:
@@ -72,7 +72,7 @@ tasks:
     title: Configure and resolve use cases
     description: >
       ConfigureSpaceAgentUseCase validates and patches settings (null clears); ResolveSpaceEnvironmentUseCase returns the space context, environment and allowed agents for a repository path; DI registration and string aliases.
-    state: Todo
+    state: Done
     dependencies:
       - task-2
       - task-3
@@ -91,7 +91,7 @@ tasks:
     title: Feature worker applies the space environment
     description: >
       After claiming the run, the worker resolves its repository's space, applies the environment to process.env and fails the run without starting the graph when the agent type is not allowed.
-    state: Todo
+    state: Done
     dependencies:
       - task-4
     acceptanceCriteria:
@@ -109,7 +109,7 @@ tasks:
     title: Interactive sessions carry the space environment
     description: >
       InteractiveAgentOptions.environment; the Claude SDK executor and ACP process apply it; the bootstrapper resolves it from the feature's repository and refuses a disallowed agent type.
-    state: Todo
+    state: Done
     dependencies:
       - task-4
     acceptanceCriteria:
@@ -127,7 +127,7 @@ tasks:
     title: Canonical Shep home and Claude config dir
     description: >
       configure-kubectl, the Claude session file collector and session repository, register-aspm, exploit-intel-adapter and feature-context.builder use getShepHomeDir() and CLAUDE_CONFIG_DIR.
-    state: Todo
+    state: Done
     dependencies: []
     acceptanceCriteria:
       - No homedir()+.shep joins and no HOME-based Shep home lookups remain
@@ -144,7 +144,7 @@ tasks:
     title: shep space config
     description: >
       Show settings with no options; set or clear each field with options; ~ expanded in presentation.
-    state: Todo
+    state: Done
     dependencies:
       - task-4
     acceptanceCriteria:
@@ -162,7 +162,7 @@ tasks:
     title: Agent settings on /spaces
     description: >
       A collapsible agent settings form on each space card with every field and agent checkboxes; server action; strings in 9 locales; stories.
-    state: Todo
+    state: Done
     dependencies:
       - task-4
     acceptanceCriteria:
@@ -180,7 +180,7 @@ tasks:
     title: Docs and full local verification
     description: >
       Guide, CLI reference and architecture note; run every local CI check.
-    state: Todo
+    state: Done
     dependencies:
       - task-5
       - task-6

@@ -14,6 +14,7 @@
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
+import type { SessionSpaceEnvironment } from '@/infrastructure/services/interactive/lifecycle/session-space-environment.js';
 import { SessionBootstrapper } from '@/infrastructure/services/interactive/lifecycle/session-bootstrapper.js';
 import { SessionRegistry } from '@/infrastructure/services/interactive/core/session-registry.js';
 import type { SessionPersistence } from '@/infrastructure/services/interactive/core/session-persistence.js';
@@ -135,6 +136,12 @@ function makeInteractionCoordinator(): UserInteractionCoordinator {
   } as unknown as UserInteractionCoordinator;
 }
 
+function makeSpaceEnvironment(
+  result: Awaited<ReturnType<SessionSpaceEnvironment['resolve']>> = {}
+): SessionSpaceEnvironment {
+  return { resolve: vi.fn().mockResolvedValue(result) } as unknown as SessionSpaceEnvironment;
+}
+
 function makeLogger(): ILogger {
   return { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() };
 }
@@ -167,6 +174,7 @@ describe('SessionBootstrapper', () => {
   let agentConfigResolver: AgentConfigResolver;
   let interactionCoordinator: UserInteractionCoordinator;
   let logger: ILogger;
+  let spaceEnvironment: SessionSpaceEnvironment;
   let bootstrapper: SessionBootstrapper;
   let handle: InteractiveAgentSessionHandle;
 
@@ -183,6 +191,7 @@ describe('SessionBootstrapper', () => {
     agentConfigResolver = makeAgentConfigResolver();
     interactionCoordinator = makeInteractionCoordinator();
     logger = makeLogger();
+    spaceEnvironment = makeSpaceEnvironment();
 
     bootstrapper = new SessionBootstrapper(
       sessionRepo,
@@ -194,7 +203,8 @@ describe('SessionBootstrapper', () => {
       executorFactory,
       agentConfigResolver,
       interactionCoordinator,
-      logger
+      logger,
+      spaceEnvironment
     );
   });
 
@@ -216,7 +226,8 @@ describe('SessionBootstrapper', () => {
         executorFactory,
         agentConfigResolver,
         interactionCoordinator,
-        logger
+        logger,
+        spaceEnvironment
       );
       await expect(bootstrapper.startSession('feat-1', '/wt')).rejects.toBeInstanceOf(
         ConcurrentSessionLimitError
@@ -274,6 +285,37 @@ describe('SessionBootstrapper', () => {
       expect(createdExecutor.createSession).toHaveBeenCalled();
     });
 
+    it("passes the feature's space environment to the agent session", async () => {
+      const environment = { set: { GH_CONFIG_DIR: '/gh-acme' }, unset: ['GH_TOKEN'] };
+      (spaceEnvironment.resolve as ReturnType<typeof vi.fn>).mockResolvedValue({ environment });
+      const executor = executorFactory.createInteractiveExecutor as ReturnType<typeof vi.fn>;
+
+      await bootstrapper.startSession('feat-1', '/wt');
+      await flushPromises();
+
+      expect(spaceEnvironment.resolve).toHaveBeenCalledWith('feat-1', AgentType.ClaudeCode);
+      const createdExecutor = executor.mock.results[0].value as IInteractiveAgentExecutor;
+      expect(createdExecutor.createSession).toHaveBeenCalledWith(
+        expect.objectContaining({ cwd: '/wt', environment })
+      );
+    });
+
+    it('fails the session when the space does not allow the agent', async () => {
+      (spaceEnvironment.resolve as ReturnType<typeof vi.fn>).mockResolvedValue({
+        refusal: 'The Acme space allows only cursor agents; this run uses claude-code.',
+      });
+
+      await bootstrapper.startSession('feat-1', '/wt');
+      await flushPromises();
+
+      expect(executorFactory.createInteractiveExecutor).not.toHaveBeenCalled();
+      expect(persistence.failSessionAndNotify).toHaveBeenCalledWith(
+        expect.any(String),
+        'feat-1',
+        'The Acme space allows only cursor agents; this run uses claude-code.'
+      );
+    });
+
     it('transitions session to ready after boot', async () => {
       await bootstrapper.startSession('feat-1', '/wt');
       await flushPromises();
@@ -310,7 +352,8 @@ describe('SessionBootstrapper', () => {
         executorFactory,
         agentConfigResolver,
         interactionCoordinator,
-        logger
+        logger,
+        spaceEnvironment
       );
 
       await bootstrapper.startSession('feat-1', '/wt');
@@ -374,7 +417,8 @@ describe('SessionBootstrapper', () => {
         executorFactory,
         agentConfigResolver,
         interactionCoordinator,
-        logger
+        logger,
+        spaceEnvironment
       );
 
       await bootstrapper.startSession('feat-1', '/wt');

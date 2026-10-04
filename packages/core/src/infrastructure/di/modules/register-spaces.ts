@@ -20,6 +20,8 @@ import { ResolveSpaceContextUseCase } from '../../../application/use-cases/space
 import { ManageSpacesUseCase } from '../../../application/use-cases/spaces/manage-spaces.use-case.js';
 import { ManageSpaceMembershipUseCase } from '../../../application/use-cases/spaces/manage-space-membership.use-case.js';
 import { GetSpacesOverviewUseCase } from '../../../application/use-cases/spaces/get-spaces-overview.use-case.js';
+import { ConfigureSpaceAgentUseCase } from '../../../application/use-cases/spaces/configure-space-agent.use-case.js';
+import { ResolveSpaceEnvironmentUseCase } from '../../../application/use-cases/spaces/resolve-space-environment.use-case.js';
 
 export function registerSpaces(container: DependencyContainer): void {
   // ─── Repositories ────────────────────────────────────────────────────────
@@ -39,6 +41,8 @@ export function registerSpaces(container: DependencyContainer): void {
   container.registerSingleton(ManageSpacesUseCase);
   container.registerSingleton(ManageSpaceMembershipUseCase);
   container.registerSingleton(GetSpacesOverviewUseCase);
+  container.registerSingleton(ConfigureSpaceAgentUseCase);
+  container.registerSingleton(ResolveSpaceEnvironmentUseCase);
 
   // ─── String-token aliases (for web server actions) ───────────────────────
   container.register('ResolveSpaceContextUseCase', {
@@ -52,5 +56,11 @@ export function registerSpaces(container: DependencyContainer): void {
   });
   container.register('GetSpacesOverviewUseCase', {
     useFactory: (c) => c.resolve(GetSpacesOverviewUseCase),
+  });
+  container.register('ConfigureSpaceAgentUseCase', {
+    useFactory: (c) => c.resolve(ConfigureSpaceAgentUseCase),
+  });
+  container.register('ResolveSpaceEnvironmentUseCase', {
+    useFactory: (c) => c.resolve(ResolveSpaceEnvironmentUseCase),
   });
 }

@@ -52,6 +52,7 @@ import type {
 } from '../../../../../application/ports/output/agents/interactive-agent-executor.interface.js';
 import { claudeInputTokens } from './claude-usage.js';
 import { DEFAULT_MODEL_ID } from '../../../../../domain/shared/default-model.js';
+import { applySpaceEnvironment } from '../../../../../domain/shared/space-environment.js';
 
 /**
  * All standard Claude Code tool names to auto-allow without permission prompts.
@@ -218,7 +219,8 @@ export class ClaudeCodeInteractiveExecutor implements IInteractiveAgentExecutor 
       // other tool not in AUTO_ALLOWED_TOOLS fall through to "allow" rather
       // than being rejected by the SDK's default permission gate.
       canUseTool,
-      env: cleanEnv,
+      // Spec 121: the session's space logins and identity, when it has any.
+      env: options.environment ? applySpaceEnvironment(cleanEnv, options.environment) : cleanEnv,
     };
   }
 

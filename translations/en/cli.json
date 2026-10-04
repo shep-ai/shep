@@ -1189,6 +1189,35 @@
       "unassign": {
         "description": "Remove a repository's pin so the rules apply again",
         "success": "{{path}} follows the space rules again"
+      },
+      "config": {
+        "description": "Show or change a space's agent logins, git identity and allowed agents",
+        "claudeOption": "Claude config directory (CLAUDE_CONFIG_DIR) holding the space's Claude login",
+        "ghOption": "gh config directory (GH_CONFIG_DIR) holding the space's GitHub login",
+        "gitNameOption": "Git author name for agent commits",
+        "gitEmailOption": "Git author email for agent commits",
+        "awsProfileOption": "AWS profile (AWS_PROFILE), for example for Bedrock",
+        "bedrockOption": "Route Claude through Amazon Bedrock",
+        "noBedrockOption": "Never route Claude through Bedrock, whatever the host sets",
+        "agentsOption": "Comma-separated agent types the space allows",
+        "clearOption": "Fields to clear so they inherit the host again",
+        "badClear": "\"{{field}}\" is not a field that can be cleared",
+        "title": "{{name}} agent settings",
+        "claudeConfigDir": "Claude config dir",
+        "ghConfigDir": "gh config dir",
+        "gitAuthorName": "Git name",
+        "gitAuthorEmail": "Git email",
+        "useBedrock": "Bedrock",
+        "awsProfile": "AWS profile",
+        "allowedAgents": "Allowed agents",
+        "inherit": "inherit from host",
+        "on": "on",
+        "off": "off",
+        "any": "any",
+        "environment": "Environment for agent processes",
+        "sets": "Sets",
+        "removes": "Removes",
+        "success": "Agent settings for {{name}} saved"
       }
     }
   },

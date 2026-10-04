@@ -1189,6 +1189,35 @@
       "unassign": {
         "description": "Снять закрепление, чтобы снова применялись правила",
         "success": "{{path}} снова следует правилам пространств"
+      },
+      "config": {
+        "description": "Показать или изменить входы агентов, git-идентичность и разрешённых агентов пространства",
+        "claudeOption": "Каталог конфигурации Claude (CLAUDE_CONFIG_DIR) с входом пространства",
+        "ghOption": "Каталог конфигурации gh (GH_CONFIG_DIR) с входом GitHub пространства",
+        "gitNameOption": "Имя автора git для коммитов агентов",
+        "gitEmailOption": "Email автора git для коммитов агентов",
+        "awsProfileOption": "Профиль AWS (AWS_PROFILE), например для Bedrock",
+        "bedrockOption": "Направлять Claude через Amazon Bedrock",
+        "noBedrockOption": "Никогда не направлять Claude через Bedrock, что бы ни задал хост",
+        "agentsOption": "Разрешённые типы агентов через запятую",
+        "clearOption": "Поля, которые нужно очистить, чтобы снова наследовать от хоста",
+        "badClear": "«{{field}}» — не поле, которое можно очистить",
+        "title": "Настройки агентов {{name}}",
+        "claudeConfigDir": "Конфиг Claude",
+        "ghConfigDir": "Конфиг gh",
+        "gitAuthorName": "Имя git",
+        "gitAuthorEmail": "Email git",
+        "useBedrock": "Bedrock",
+        "awsProfile": "Профиль AWS",
+        "allowedAgents": "Разрешённые агенты",
+        "inherit": "наследовать от хоста",
+        "on": "вкл.",
+        "off": "выкл.",
+        "any": "любые",
+        "environment": "Окружение процессов агентов",
+        "sets": "Задаёт",
+        "removes": "Удаляет",
+        "success": "Настройки агентов {{name}} сохранены"
       }
     }
   },

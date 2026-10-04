@@ -1356,6 +1356,24 @@
     },
     "errors": {
       "actionFailed": "تعذر حفظ التغيير. حاول مرة أخرى."
+    },
+    "agent": {
+      "title": "إعدادات الوكلاء",
+      "customised": "مخصّص",
+      "inherits": "يرث من المضيف",
+      "claudeConfigDir": "دليل إعدادات Claude",
+      "ghConfigDir": "دليل إعدادات gh",
+      "gitName": "اسم مؤلف git",
+      "gitEmail": "بريد مؤلف git",
+      "awsProfile": "ملف AWS",
+      "bedrock": "Amazon Bedrock",
+      "bedrockInherit": "وراثة من المضيف",
+      "bedrockOn": "توجيه Claude عبر Bedrock",
+      "bedrockOff": "عدم استخدام Bedrock أبدًا",
+      "loginHint": "سجّل الدخول مرة واحدة مع تعيين الدليل، مثل CLAUDE_CONFIG_DIR=~/.claude-acme claude أو GH_CONFIG_DIR=~/.config/gh-acme gh auth login. لا يخزّن Shep بيانات الاعتماد أبدًا.",
+      "allowedAgents": "الوكلاء المسموح بهم",
+      "allowedAgentsHint": "عدم التحديد يسمح بكل الوكلاء.",
+      "save": "حفظ إعدادات الوكلاء"
     }
   }
 }

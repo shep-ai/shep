@@ -48,6 +48,8 @@ import { registerInteractive } from '@/infrastructure/di/modules/register-intera
 import { registerAspm } from '@/infrastructure/di/modules/register-aspm.js';
 import { registerHarness } from '@/infrastructure/di/modules/register-harness.js';
 import { registerSpaces } from '@/infrastructure/di/modules/register-spaces.js';
+import { SessionSpaceEnvironment } from '@/infrastructure/services/interactive/lifecycle/session-space-environment.js';
+import { ResolveSpaceEnvironmentUseCase } from '@/application/use-cases/spaces/resolve-space-environment.use-case.js';
 import type { IDeploymentService } from '@/application/ports/output/services/deployment-service.interface.js';
 import { DeploymentService } from '@/infrastructure/services/deployment/deployment.service.js';
 import type { IInteractiveSessionRepository } from '@/application/ports/output/repositories/interactive-session-repository.interface.js';
@@ -176,6 +178,9 @@ const WEB_ROUTE_TOKENS: readonly string[] = [
   'ManageSpacesUseCase',
   'ManageSpaceMembershipUseCase',
   'GetSpacesOverviewUseCase',
+  // Space agent settings (spec 121)
+  'ConfigureSpaceAgentUseCase',
+  'ResolveSpaceEnvironmentUseCase',
 ] as const;
 
 /**
@@ -416,7 +421,11 @@ describe('DI container bootstrap (integration)', () => {
       agentExecutorFactory,
       agentConfigResolver,
       interactionCoordinator,
-      logger
+      logger,
+      new SessionSpaceEnvironment(
+        featureRepository,
+        scopedContainer.resolve(ResolveSpaceEnvironmentUseCase)
+      )
     );
     const terminator = new SessionTerminator(
       sessionRegistry,

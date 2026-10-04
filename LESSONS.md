@@ -2936,3 +2936,11 @@ Grep for `# pass N` / `# fail 0` (or the runner's equivalent) before calling a s
 `apis/json-schema/`, and those files are tracked. Adding `Space` and two `MemoryScope` members
 left eight untracked/modified schema files behind the commit that changed the `.tsp`. After any
 `tsp/` edit, run `git status apis/` and stage the schemas in the same commit.
+
+## A core module the web bundle reaches takes extensionless relative imports
+
+`web-auth-token.service.ts` is imported by the Next middleware, so Turbopack compiles it from
+raw `.ts` and cannot resolve `../filesystem/shep-directory.service.js`.
+`tests/unit/presentation/web/core-bundle-imports.test.ts` caught it. Before adding a relative
+value import to a core file, grep `src/presentation/web` for that file. If web imports it, drop
+the `.js`, as `domain/` files do.

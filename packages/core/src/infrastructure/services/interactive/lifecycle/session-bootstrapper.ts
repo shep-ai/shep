@@ -45,6 +45,7 @@ import { InteractiveSessionStatus } from '../../../../domain/generated/output.js
 import { ConcurrentSessionLimitError } from '../../../../domain/errors/concurrent-session-limit.error.js';
 import { InteractiveAgentUnsupportedError } from '../../../../domain/errors/interactive-agent-unsupported.error.js';
 import { BootWatchdog } from './boot-watchdog.js';
+import type { SessionSpaceEnvironment } from './session-space-environment.js';
 
 export class SessionBootstrapper {
   constructor(
@@ -57,7 +58,8 @@ export class SessionBootstrapper {
     private readonly executorFactory: IAgentExecutorFactory,
     private readonly agentConfigResolver: AgentConfigResolver,
     private readonly interactionCoordinator: UserInteractionCoordinator,
-    private readonly logger: ILogger
+    private readonly logger: ILogger,
+    private readonly spaceEnvironment: SessionSpaceEnvironment
   ) {}
 
   /**
@@ -213,6 +215,11 @@ export class SessionBootstrapper {
       const resolvedAgentType = this.agentConfigResolver.resolveAgentType(state.agentType);
       const authConfig = this.agentConfigResolver.resolveAuthConfig();
 
+      // Spec 121: the session runs with its feature's space logins and
+      // identity, and a space that does not allow this agent fails the boot.
+      const space = await this.spaceEnvironment.resolve(featureId, resolvedAgentType);
+      if (space.refusal) throw new Error(space.refusal);
+
       // Create the interactive executor and session
       const executor = this.executorFactory.createInteractiveExecutor(
         resolvedAgentType,
@@ -232,6 +239,7 @@ export class SessionBootstrapper {
           model: state.model,
           systemPrompt: context,
           onUserQuestion,
+          ...(space.environment ? { environment: space.environment } : {}),
         });
       } else {
         // Create new SDK session
@@ -240,6 +248,7 @@ export class SessionBootstrapper {
           model: state.model,
           systemPrompt: context,
           onUserQuestion,
+          ...(space.environment ? { environment: space.environment } : {}),
         });
       }
 

@@ -16,6 +16,7 @@
  *   shep space rule add|ls|rm                  # Path and git-remote rules
  *   shep space assign <space> [path]           # Pin a repository
  *   shep space unassign [path]                 # Remove a pin
+ *   shep space config <space> [options]        # Agent logins, identity, allowed agents
  */
 
 import { Command } from 'commander';
@@ -29,6 +30,7 @@ import { createDefaultCommand } from './default.command.js';
 import { createLineCommand } from './line.command.js';
 import { createRuleCommand } from './rule.command.js';
 import { createAssignCommand, createUnassignCommand } from './assign.command.js';
+import { createConfigCommand } from './config.command.js';
 
 export function createSpaceCommand(): Command {
   return new Command('space')
@@ -42,5 +44,6 @@ export function createSpaceCommand(): Command {
     .addCommand(createLineCommand())
     .addCommand(createRuleCommand())
     .addCommand(createAssignCommand())
-    .addCommand(createUnassignCommand());
+    .addCommand(createUnassignCommand())
+    .addCommand(createConfigCommand());
 }

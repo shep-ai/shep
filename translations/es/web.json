@@ -1356,6 +1356,24 @@
     },
     "errors": {
       "actionFailed": "No se pudo guardar el cambio. Inténtalo de nuevo."
+    },
+    "agent": {
+      "title": "Ajustes de agentes",
+      "customised": "Personalizado",
+      "inherits": "Hereda del host",
+      "claudeConfigDir": "Directorio de configuración de Claude",
+      "ghConfigDir": "Directorio de configuración de gh",
+      "gitName": "Nombre de autor git",
+      "gitEmail": "Correo de autor git",
+      "awsProfile": "Perfil de AWS",
+      "bedrock": "Amazon Bedrock",
+      "bedrockInherit": "Heredar del host",
+      "bedrockOn": "Usar Bedrock para Claude",
+      "bedrockOff": "No usar nunca Bedrock",
+      "loginHint": "Inicia sesión una vez con el directorio definido, por ejemplo CLAUDE_CONFIG_DIR=~/.claude-acme claude o GH_CONFIG_DIR=~/.config/gh-acme gh auth login. Shep nunca guarda las credenciales.",
+      "allowedAgents": "Agentes permitidos",
+      "allowedAgentsHint": "Sin selección se permite cualquier agente.",
+      "save": "Guardar ajustes de agentes"
     }
   }
 }

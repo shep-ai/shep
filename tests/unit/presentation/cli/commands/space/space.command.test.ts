@@ -11,7 +11,8 @@ import { homedir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { SpaceResolutionSource, SpaceRuleKind } from '@/domain/generated/output.js';
 
-const { spaces, membership, resolveContext, overview } = vi.hoisted(() => ({
+const { spaces, membership, resolveContext, overview, agentConfig } = vi.hoisted(() => ({
+  agentConfig: { show: vi.fn(), configure: vi.fn() },
   spaces: {
     create: vi.fn(),
     update: vi.fn(),
@@ -44,6 +45,8 @@ vi.mock('@/infrastructure/di/container.js', () => ({
           return resolveContext;
         case 'GetSpacesOverviewUseCase':
           return overview;
+        case 'ConfigureSpaceAgentUseCase':
+          return agentConfig;
         default:
           throw new Error(`unexpected token ${name}`);
       }
@@ -267,5 +270,79 @@ describe('shep space', () => {
     const out = await run('default', 'acme');
     expect(spaces.setDefault).toHaveBeenCalledWith('acme');
     expect(out).toContain('Acme');
+  });
+
+  describe('config', () => {
+    const configured = {
+      ok: true,
+      space: {
+        ...ACME,
+        agentSettings: {
+          ghConfigDir: '/gh-acme',
+          gitAuthorEmail: 'me@acme.com',
+          useBedrock: false,
+          allowedAgentTypes: ['claude-code'],
+        },
+      },
+      environment: {
+        set: { GH_CONFIG_DIR: '/gh-acme', GIT_AUTHOR_EMAIL: 'me@acme.com' },
+        unset: ['GH_TOKEN', 'CLAUDE_CODE_USE_BEDROCK'],
+      },
+    };
+
+    it('shows the settings and the environment they produce when given no options', async () => {
+      agentConfig.show.mockResolvedValue(configured);
+      const out = await run('config', 'acme');
+      expect(agentConfig.show).toHaveBeenCalledWith('acme');
+      expect(agentConfig.configure).not.toHaveBeenCalled();
+      expect(out).toContain('/gh-acme');
+      expect(out).toContain('claude-code');
+      expect(out).toContain('GH_TOKEN');
+    });
+
+    it('sets fields, expanding ~ in directories', async () => {
+      agentConfig.configure.mockResolvedValue(configured);
+      await run(
+        'config',
+        'acme',
+        '--gh-config-dir',
+        '~/.config/gh-acme',
+        '--git-email',
+        'me@acme.com',
+        '--no-bedrock',
+        '--agents',
+        'claude-code, cursor'
+      );
+      expect(agentConfig.configure).toHaveBeenCalledWith('acme', {
+        ghConfigDir: join(homedir(), '.config/gh-acme'),
+        gitAuthorEmail: 'me@acme.com',
+        useBedrock: false,
+        allowedAgentTypes: ['claude-code', 'cursor'],
+      });
+    });
+
+    it('clears the named fields', async () => {
+      agentConfig.configure.mockResolvedValue(configured);
+      await run('config', 'acme', '--clear', 'gh-config-dir', 'bedrock', 'agents');
+      expect(agentConfig.configure).toHaveBeenCalledWith('acme', {
+        ghConfigDir: null,
+        useBedrock: null,
+        allowedAgentTypes: null,
+      });
+    });
+
+    it('rejects an unknown field to clear', async () => {
+      const out = await run('config', 'acme', '--clear', 'colour');
+      expect(agentConfig.configure).not.toHaveBeenCalled();
+      expect(out).toContain('colour');
+      expect(process.exitCode).toBe(1);
+    });
+
+    it('prints a refusal and exits 1', async () => {
+      agentConfig.configure.mockResolvedValue({ ok: false, error: '"x" is not an email address.' });
+      const out = await run('config', 'acme', '--git-email', 'x');
+      expect(out).toContain('not an email');
+      expect(process.exitCode).toBe(1);
+    });
   });
 });

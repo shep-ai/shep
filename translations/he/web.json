@@ -1356,6 +1356,24 @@
     },
     "errors": {
       "actionFailed": "לא ניתן היה לשמור את השינוי. נסו שוב."
+    },
+    "agent": {
+      "title": "הגדרות סוכנים",
+      "customised": "מותאם",
+      "inherits": "יורש מהמארח",
+      "claudeConfigDir": "תיקיית התצורה של Claude",
+      "ghConfigDir": "תיקיית התצורה של gh",
+      "gitName": "שם מחבר git",
+      "gitEmail": "דוא\"ל מחבר git",
+      "awsProfile": "פרופיל AWS",
+      "bedrock": "Amazon Bedrock",
+      "bedrockInherit": "ירושה מהמארח",
+      "bedrockOn": "ניתוב Claude דרך Bedrock",
+      "bedrockOff": "לעולם לא להשתמש ב-Bedrock",
+      "loginHint": "התחברו פעם אחת עם התיקייה מוגדרת, למשל CLAUDE_CONFIG_DIR=~/.claude-acme claude או GH_CONFIG_DIR=~/.config/gh-acme gh auth login. ‏Shep לעולם לא שומר את פרטי ההתחברות.",
+      "allowedAgents": "סוכנים מותרים",
+      "allowedAgentsHint": "ללא בחירה, כל הסוכנים מותרים.",
+      "save": "שמירת הגדרות הסוכנים"
     }
   }
 }

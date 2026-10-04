@@ -15,12 +15,14 @@ const membership = {
   unassign: vi.fn(),
 };
 const overview = { execute: vi.fn() };
+const agentConfig = { configure: vi.fn() };
 
 vi.mock('@/lib/server-container', () => ({
   resolve: (token: string) => {
     if (token === 'ManageSpacesUseCase') return spaces;
     if (token === 'ManageSpaceMembershipUseCase') return membership;
     if (token === 'GetSpacesOverviewUseCase') return overview;
+    if (token === 'ConfigureSpaceAgentUseCase') return agentConfig;
     throw new Error(`Unknown token: ${token}`);
   },
 }));
@@ -81,5 +83,14 @@ describe('manage-spaces server actions', () => {
   it('reports an overview that cannot load', async () => {
     overview.execute.mockRejectedValue(new Error('no database'));
     expect(await actions.getSpacesOverview()).toEqual({ error: 'no database' });
+  });
+
+  it('configures a space agent through the use case', async () => {
+    agentConfig.configure.mockResolvedValue({ ok: true });
+    await actions.configureSpaceAgent('acme', { ghConfigDir: '/gh', awsProfile: null });
+    expect(agentConfig.configure).toHaveBeenCalledWith('acme', {
+      ghConfigDir: '/gh',
+      awsProfile: null,
+    });
   });
 });

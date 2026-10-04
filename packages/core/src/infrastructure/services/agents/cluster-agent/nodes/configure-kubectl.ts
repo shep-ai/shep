@@ -2,12 +2,12 @@
  * Configure Kubectl Node
  *
  * Extracts the kubeconfig from the k3d cluster and writes it to a
- * per-cluster directory at ~/.shep/clusters/<clusterId>/kubeconfig.
+ * per-cluster directory at <Shep home>/clusters/<clusterId>/kubeconfig.
  * Sets file permissions to 0600 (NFR-10: security).
  */
 
 import { join } from 'node:path';
-import { homedir } from 'node:os';
+import { getShepHomeDir } from '../../../filesystem/shep-directory.service.js';
 import { mkdirSync, writeFileSync, chmodSync } from 'node:fs';
 import type { ClusterAgentState } from '../cluster-agent-state.js';
 import type { ClusterAgentDeps } from '../cluster-agent-deps.js';
@@ -18,7 +18,7 @@ const KUBECONFIG_PERMISSIONS = 0o600;
 export function createConfigureKubectlNode(deps: ClusterAgentDeps) {
   return async (state: ClusterAgentState): Promise<Partial<ClusterAgentState>> => {
     const k3dName = `shep-${state.clusterName}`;
-    const kubeconfigDir = join(homedir(), '.shep', 'clusters', state.clusterId);
+    const kubeconfigDir = join(getShepHomeDir(), 'clusters', state.clusterId);
     const kubeconfigPath = join(kubeconfigDir, 'kubeconfig');
 
     try {

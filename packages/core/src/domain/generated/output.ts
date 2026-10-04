@@ -4090,6 +4090,40 @@ export type ProjectMemory = BaseEntity & {
 };
 
 /**
+ * Agent credentials, identity and allowed agents for the repositories of a space
+ */
+export type SpaceAgentSettings = {
+  /**
+   * Absolute path used as CLAUDE_CONFIG_DIR, giving the space its own Claude login
+   */
+  claudeConfigDir?: string;
+  /**
+   * Absolute path used as GH_CONFIG_DIR, giving the space its own GitHub CLI login
+   */
+  ghConfigDir?: string;
+  /**
+   * Git author and committer name for commits made by agents
+   */
+  gitAuthorName?: string;
+  /**
+   * Git author and committer email for commits made by agents
+   */
+  gitAuthorEmail?: string;
+  /**
+   * AWS profile used as AWS_PROFILE, for example for Bedrock
+   */
+  awsProfile?: string;
+  /**
+   * Route Claude Code through Amazon Bedrock (true), never (false), or inherit the host (unset)
+   */
+  useBedrock?: boolean;
+  /**
+   * Agent types allowed to run for this space; empty or unset allows every agent
+   */
+  allowedAgentTypes?: AgentType[];
+};
+
+/**
  * A hard knowledge boundary such as a company or personal context
  */
 export type Space = BaseEntity & {
@@ -4113,6 +4147,10 @@ export type Space = BaseEntity & {
    * Whether repositories that match nothing fall back to this space; exactly one space is the default
    */
   isDefault: boolean;
+  /**
+   * How agents run for the space's repositories (spec 121); unset inherits the host
+   */
+  agentSettings?: SpaceAgentSettings;
 };
 
 /**

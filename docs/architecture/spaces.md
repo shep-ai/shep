@@ -65,6 +65,32 @@ Interactive sessions resolve memory by the feature's repository path, never the
 worktree path: worktrees live under `~/.shep/repos/<hash>/wt/`, which would resolve
 into the default space.
 
+## Agent settings (spec 121)
+
+`Space.agentSettings` (`SpaceAgentSettings`: Claude and gh config directories, git author,
+Bedrock, AWS profile, allowed agent types) becomes an environment change in
+`domain/shared/space-environment.ts`: `spaceEnvironment()` returns `{ set, unset }`, where
+`unset` lists host credentials that would otherwise beat the space login (Claude Code
+prefers `ANTHROPIC_API_KEY` over `CLAUDE_CONFIG_DIR`; gh prefers `GH_TOKEN` over
+`GH_CONFIG_DIR`). `ResolveSpaceEnvironmentUseCase` adds the refusal message when the space
+does not allow the agent type about to run.
+
+It reaches agent processes at two choke points:
+
+- **Feature runs.** The forked worker (`feature-agent-worker.ts`) calls
+  `applyRunSpaceEnvironment` right after claiming the run, resolving from `--repo` (never the
+  worktree). A worker serves one run, so it changes its own `process.env`; every agent CLI
+  (`buildSpawnOptions` copies `process.env` at spawn time), `gh` call (`ExecFunction`) and
+  `git` call inherits it. A refused agent fails the run before the graph starts.
+- **Feature chats.** The daemon runs sessions of many spaces at once, so
+  `SessionSpaceEnvironment` resolves per session and the bootstrapper passes
+  `InteractiveAgentOptions.environment`, applied by the Claude SDK executor and by
+  `buildSpawnOptions` for ACP agents.
+
+Anything that reads Claude's directory uses `claudeConfigDir()`, which honours
+`CLAUDE_CONFIG_DIR`. `tests/unit/architecture/shep-home-paths.test.ts` keeps every Shep home
+lookup on `getShepHomeDir()`.
+
 ## Surfaces
 
 | Surface | Entry point                                                       |
@@ -72,3 +98,5 @@ into the default space.
 | CLI     | `src/presentation/cli/commands/space/` (`shep space …`)           |
 | Web     | `/spaces` (`components/features/spaces/`), `/memory` scope menu    |
 | DI      | `infrastructure/di/modules/register-spaces.ts`                     |
+| Worker  | `agents/feature-agent/apply-space-environment.ts`                  |
+| Chat    | `interactive/lifecycle/session-space-environment.ts`               |

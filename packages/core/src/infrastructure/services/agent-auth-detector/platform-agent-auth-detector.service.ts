@@ -28,6 +28,7 @@ import { injectable } from 'tsyringe';
 import { AgentType } from '../../../domain/generated/output.js';
 import type { IAgentAuthDetectorService } from '../../../application/ports/output/services/agent-auth-detector.interface.js';
 import { IS_WINDOWS } from '../../platform.js';
+import { claudeConfigDir } from '../agents/common/claude-config-dir.js';
 
 const IS_MACOS = platform() === 'darwin';
 
@@ -80,7 +81,7 @@ export class PlatformAgentAuthDetectorService implements IAgentAuthDetectorServi
         // macOS: credentials live in Keychain (no .credentials.json on disk).
         if (macKeychainHasClaudeCreds()) return true;
         // Linux / Windows: file-based credentials.
-        const credPath = join(home, '.claude', '.credentials.json');
+        const credPath = join(claudeConfigDir(), '.credentials.json');
         return existsSync(credPath);
       }
       case AgentType.Cursor: {

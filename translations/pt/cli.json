@@ -1189,6 +1189,35 @@
       "unassign": {
         "description": "Remover a fixação de um repositório para que as regras voltem a aplicar-se",
         "success": "{{path}} volta a seguir as regras de espaço"
+      },
+      "config": {
+        "description": "Ver ou alterar os logins dos agentes, a identidade git e os agentes permitidos de um espaço",
+        "claudeOption": "Diretório de configuração do Claude (CLAUDE_CONFIG_DIR) com o login do espaço",
+        "ghOption": "Diretório de configuração do gh (GH_CONFIG_DIR) com o login GitHub do espaço",
+        "gitNameOption": "Nome de autor git para os commits dos agentes",
+        "gitEmailOption": "Email de autor git para os commits dos agentes",
+        "awsProfileOption": "Perfil AWS (AWS_PROFILE), por exemplo para o Bedrock",
+        "bedrockOption": "Encaminhar o Claude pelo Amazon Bedrock",
+        "noBedrockOption": "Nunca usar o Bedrock para o Claude, seja qual for o host",
+        "agentsOption": "Tipos de agente permitidos, separados por vírgulas",
+        "clearOption": "Campos a limpar para voltarem a herdar do host",
+        "badClear": "\"{{field}}\" não é um campo que possa ser limpo",
+        "title": "Definições de agentes de {{name}}",
+        "claudeConfigDir": "Config. do Claude",
+        "ghConfigDir": "Config. do gh",
+        "gitAuthorName": "Nome git",
+        "gitAuthorEmail": "Email git",
+        "useBedrock": "Bedrock",
+        "awsProfile": "Perfil AWS",
+        "allowedAgents": "Agentes permitidos",
+        "inherit": "herdar do host",
+        "on": "ligado",
+        "off": "desligado",
+        "any": "qualquer",
+        "environment": "Ambiente dos processos de agentes",
+        "sets": "Define",
+        "removes": "Remove",
+        "success": "Definições de agentes de {{name}} guardadas"
       }
     }
   },
