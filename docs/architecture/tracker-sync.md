@@ -9,7 +9,7 @@ Spec: [`specs/122-tracker-sync`](../../specs/122-tracker-sync/). User guide:
 
 | Entity | Purpose |
 | ------ | ------- |
-| `TrackerConnection` | A Linear or Jira account owned by a space. Its secret is encrypted in the row (`LocalSecretBox`) and only read through `ITrackerConnectionRepository.getSecret`. |
+| `Connection` | A Linear or Jira account owned by a space. Its secret is encrypted in the row (`LocalSecretBox`) and only read through `IConnectionRepository.getSecret`. |
 | `TrackerSyncRule` | Keeps a scope (Linear team key or Jira JQL) in a project; direction, interval, cursor and last-run summary. |
 | `TrackerIssueLink` | One per synced work item: external id/key/URL plus the title, description, status group and priority both sides had at the last sync. `(connection_id, external_id)` is unique. |
 | `ExternalIssue` | A tracker issue in shep's terms, whichever tracker. |

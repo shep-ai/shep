@@ -8,11 +8,11 @@
 import { injectable, inject } from 'tsyringe';
 import { randomUUID } from 'node:crypto';
 import {
-  TrackerProvider,
+  ConnectionProvider,
   TrackerSyncDirection,
   type TrackerSyncRule,
 } from '../../../domain/generated/output.js';
-import type { ITrackerConnectionRepository } from '../../ports/output/repositories/tracker-connection-repository.interface.js';
+import type { IConnectionRepository } from '../../ports/output/repositories/connection-repository.interface.js';
 import type { ITrackerSyncRuleRepository } from '../../ports/output/repositories/tracker-sync-rule-repository.interface.js';
 import type { ITrackerIssueLinkRepository } from '../../ports/output/repositories/tracker-issue-link-repository.interface.js';
 import type { IPmProjectRepository } from '../../ports/output/repositories/pm-project-repository.interface.js';
@@ -26,7 +26,7 @@ const LINEAR_TEAM_KEY = /^[A-Za-z][A-Za-z0-9]*$/;
 /** A rule with the names a list shows. */
 export interface TrackerSyncRuleView {
   rule: TrackerSyncRule;
-  connection: { name: string; slug: string; provider: TrackerProvider };
+  connection: { name: string; slug: string; provider: ConnectionProvider };
   project: { name: string; slug: string };
 }
 
@@ -45,8 +45,8 @@ export interface CreateTrackerSyncRuleInput {
 export class ManageTrackerSyncRulesUseCase {
   constructor(
     @inject('ITrackerSyncRuleRepository') private readonly rules: ITrackerSyncRuleRepository,
-    @inject('ITrackerConnectionRepository')
-    private readonly connections: ITrackerConnectionRepository,
+    @inject('IConnectionRepository')
+    private readonly connections: IConnectionRepository,
     @inject('ITrackerIssueLinkRepository') private readonly links: ITrackerIssueLinkRepository,
     @inject('IPmProjectRepository') private readonly projects: IPmProjectRepository
   ) {}
@@ -68,7 +68,11 @@ export class ManageTrackerSyncRulesUseCase {
         rule,
         connection: connection
           ? { name: connection.name, slug: connection.slug, provider: connection.provider }
-          : { name: rule.connectionId, slug: rule.connectionId, provider: TrackerProvider.Linear },
+          : {
+              name: rule.connectionId,
+              slug: rule.connectionId,
+              provider: ConnectionProvider.Linear,
+            },
         project: project
           ? { name: project.name, slug: project.slug }
           : { name: rule.projectId, slug: rule.projectId },
@@ -89,7 +93,7 @@ export class ManageTrackerSyncRulesUseCase {
 
     let scope = input.scope?.trim() ?? '';
     if (!scope) return failure('A sync rule needs a scope: a Linear team key or a Jira JQL query.');
-    if (connection.provider === TrackerProvider.Linear) {
+    if (connection.provider === ConnectionProvider.Linear) {
       if (!LINEAR_TEAM_KEY.test(scope)) {
         return failure(`"${scope}" is not a Linear team key such as ENG.`);
       }

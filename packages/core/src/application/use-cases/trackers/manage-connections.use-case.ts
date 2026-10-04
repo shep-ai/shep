@@ -1,5 +1,5 @@
 /**
- * ManageTrackerConnectionsUseCase (spec 122)
+ * ManageConnectionsUseCase (spec 122)
  *
  * Adds, checks, lists and removes Linear and Jira connections. A connection
  * is only saved once its credentials work, so a typo never leaves a broken
@@ -10,12 +10,12 @@
 import { injectable, inject } from 'tsyringe';
 import { randomUUID } from 'node:crypto';
 import {
-  TrackerConnectionStatus,
-  TrackerProvider,
-  type TrackerConnection,
+  ConnectionStatus,
+  ConnectionProvider,
+  type Connection,
 } from '../../../domain/generated/output.js';
 import { cleanDeployName } from '../../../domain/shared/clean-name.js';
-import type { ITrackerConnectionRepository } from '../../ports/output/repositories/tracker-connection-repository.interface.js';
+import type { IConnectionRepository } from '../../ports/output/repositories/connection-repository.interface.js';
 import type { ITrackerSyncRuleRepository } from '../../ports/output/repositories/tracker-sync-rule-repository.interface.js';
 import type { ITrackerIssueLinkRepository } from '../../ports/output/repositories/tracker-issue-link-repository.interface.js';
 import type { ISpaceRepository } from '../../ports/output/repositories/space-repository.interface.js';
@@ -29,8 +29,8 @@ import { errorMessage, failure, findConnection, type TrackerResult } from './tra
 const EMAIL = /^[^\s@]+@[^\s@]+$/;
 const HTTPS = 'https:';
 
-export interface CreateTrackerConnectionInput {
-  provider: TrackerProvider;
+export interface CreateConnectionInput {
+  provider: ConnectionProvider;
   name: string;
   /** Linear API key or Jira API token. */
   secret: string;
@@ -59,23 +59,21 @@ function jiraSite(value: string | undefined): string | { error: string } {
 }
 
 @injectable()
-export class ManageTrackerConnectionsUseCase {
+export class ManageConnectionsUseCase {
   constructor(
-    @inject('ITrackerConnectionRepository')
-    private readonly connections: ITrackerConnectionRepository,
+    @inject('IConnectionRepository')
+    private readonly connections: IConnectionRepository,
     @inject('ITrackerSyncRuleRepository') private readonly rules: ITrackerSyncRuleRepository,
     @inject('ITrackerIssueLinkRepository') private readonly links: ITrackerIssueLinkRepository,
     @inject('ITrackerClientFactory') private readonly clients: ITrackerClientFactory,
     @inject('ISpaceRepository') private readonly spaces: ISpaceRepository
   ) {}
 
-  async list(): Promise<TrackerConnection[]> {
+  async list(): Promise<Connection[]> {
     return this.connections.list();
   }
 
-  async create(
-    input: CreateTrackerConnectionInput
-  ): Promise<TrackerResult<{ connection: TrackerConnection }>> {
+  async create(input: CreateConnectionInput): Promise<TrackerResult<{ connection: Connection }>> {
     const name = input.name?.trim() ?? '';
     const slug = cleanDeployName(name);
     if (!slug) return failure('A connection name needs at least one letter or digit.');
@@ -91,7 +89,7 @@ export class ManageTrackerConnectionsUseCase {
     if (!space) return failure(`No space "${input.space}".`);
 
     let config: TrackerClientConfig = { provider: input.provider, secret };
-    if (input.provider === TrackerProvider.Jira) {
+    if (input.provider === ConnectionProvider.Jira) {
       const site = jiraSite(input.siteUrl);
       if (typeof site !== 'string') return failure(site.error);
       const email = input.accountEmail?.trim() ?? '';
@@ -108,7 +106,7 @@ export class ManageTrackerConnectionsUseCase {
     }
 
     const now = new Date();
-    const connection: TrackerConnection = {
+    const connection: Connection = {
       id: randomUUID(),
       provider: input.provider,
       name,
@@ -117,7 +115,7 @@ export class ManageTrackerConnectionsUseCase {
       ...(config.siteUrl ? { siteUrl: config.siteUrl } : {}),
       ...(config.accountEmail ? { accountEmail: config.accountEmail } : {}),
       accountName,
-      status: TrackerConnectionStatus.Connected,
+      status: ConnectionStatus.Connected,
       lastCheckedAt: now,
       createdAt: now,
       updatedAt: now,
@@ -127,7 +125,7 @@ export class ManageTrackerConnectionsUseCase {
   }
 
   /** Checks the stored credentials again and records the outcome. */
-  async test(ref: string): Promise<TrackerResult<{ connection: TrackerConnection }>> {
+  async test(ref: string): Promise<TrackerResult<{ connection: Connection }>> {
     const connection = await findConnection(this.connections, ref);
     if (!connection) return failure(`No connection "${ref}".`);
     const secret = await this.connections.getSecret(connection.id);
@@ -142,10 +140,10 @@ export class ManageTrackerConnectionsUseCase {
         })
         .testConnection();
       const { lastError: _cleared, ...rest } = connection;
-      const updated: TrackerConnection = {
+      const updated: Connection = {
         ...rest,
         accountName: account.name,
-        status: TrackerConnectionStatus.Connected,
+        status: ConnectionStatus.Connected,
         lastCheckedAt: now,
         updatedAt: now,
       };
@@ -155,7 +153,7 @@ export class ManageTrackerConnectionsUseCase {
       const message = errorMessage(error);
       await this.connections.update({
         ...connection,
-        status: TrackerConnectionStatus.Error,
+        status: ConnectionStatus.Error,
         lastError: message,
         lastCheckedAt: now,
         updatedAt: now,

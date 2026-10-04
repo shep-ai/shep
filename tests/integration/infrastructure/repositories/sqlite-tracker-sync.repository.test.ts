@@ -12,16 +12,16 @@ import { createInMemoryDatabase } from '../../../helpers/database.helper.js';
 import { runSQLiteMigrations } from '@/infrastructure/persistence/sqlite/migrations.js';
 import { up } from '@/infrastructure/persistence/sqlite/migrations/154-create-tracker-sync.js';
 import { LocalSecretBox } from '@/infrastructure/services/crypto/local-secret-box.js';
-import { SQLiteTrackerConnectionRepository } from '@/infrastructure/repositories/sqlite-tracker-connection.repository.js';
+import { SQLiteConnectionRepository } from '@/infrastructure/repositories/sqlite-connection.repository.js';
 import { SQLiteTrackerSyncRuleRepository } from '@/infrastructure/repositories/sqlite-tracker-sync-rule.repository.js';
 import { SQLiteTrackerIssueLinkRepository } from '@/infrastructure/repositories/sqlite-tracker-issue-link.repository.js';
 import {
   Priority,
   StateGroup,
-  TrackerConnectionStatus,
-  TrackerProvider,
+  ConnectionStatus,
+  ConnectionProvider,
   TrackerSyncDirection,
-  type TrackerConnection,
+  type Connection,
   type TrackerIssueLink,
   type TrackerSyncRule,
 } from '@/domain/generated/output.js';
@@ -29,16 +29,16 @@ import {
 const T1 = new Date('2026-10-01T10:00:00Z');
 const T2 = new Date('2026-10-02T11:00:00Z');
 
-const JIRA: TrackerConnection = {
+const JIRA: Connection = {
   id: 'conn-jira',
-  provider: TrackerProvider.Jira,
+  provider: ConnectionProvider.Jira,
   name: 'Acme Jira',
   slug: 'acme-jira',
   spaceId: 'space-acme',
   siteUrl: 'https://acme.atlassian.net',
   accountEmail: 'me@acme.com',
   accountName: 'Me',
-  status: TrackerConnectionStatus.Connected,
+  status: ConnectionStatus.Connected,
   lastCheckedAt: T1,
   createdAt: T1,
   updatedAt: T1,
@@ -77,14 +77,14 @@ const LINK: TrackerIssueLink = {
 
 describe('tracker sync repositories', () => {
   let db: Database.Database;
-  let connections: SQLiteTrackerConnectionRepository;
+  let connections: SQLiteConnectionRepository;
   let rules: SQLiteTrackerSyncRuleRepository;
   let links: SQLiteTrackerIssueLinkRepository;
 
   beforeEach(async () => {
     db = createInMemoryDatabase();
     await runSQLiteMigrations(db);
-    connections = new SQLiteTrackerConnectionRepository(db, new LocalSecretBox(randomBytes(32)));
+    connections = new SQLiteConnectionRepository(db, new LocalSecretBox(randomBytes(32)));
     rules = new SQLiteTrackerSyncRuleRepository(db);
     links = new SQLiteTrackerIssueLinkRepository(db);
   });
@@ -102,13 +102,13 @@ describe('tracker sync repositories', () => {
       expect(await connections.findBySlug('acme-jira')).toEqual(JIRA);
       expect(await connections.getSecret(JIRA.id)).toBe('jira-api-token-123');
 
-      const raw = db.prepare('SELECT * FROM tracker_connections').get() as Record<string, unknown>;
+      const raw = db.prepare('SELECT * FROM connections').get() as Record<string, unknown>;
       expect(JSON.stringify(raw)).not.toContain('jira-api-token-123');
 
-      const changed: TrackerConnection = {
+      const changed: Connection = {
         ...JIRA,
         name: 'Acme Jira Cloud',
-        status: TrackerConnectionStatus.Error,
+        status: ConnectionStatus.Error,
         lastError: 'HTTP 401',
         lastCheckedAt: T2,
         updatedAt: T2,
@@ -119,10 +119,10 @@ describe('tracker sync repositories', () => {
     });
 
     it('stores a Linear connection without site or email', async () => {
-      const linear: TrackerConnection = {
+      const linear: Connection = {
         ...JIRA,
         id: 'conn-linear',
-        provider: TrackerProvider.Linear,
+        provider: ConnectionProvider.Linear,
         slug: 'acme-linear',
         siteUrl: undefined,
         accountEmail: undefined,

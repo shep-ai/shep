@@ -15,8 +15,8 @@ import {
 import {
   Priority,
   StateGroup,
-  TrackerConnectionStatus,
-  TrackerProvider,
+  ConnectionStatus,
+  ConnectionProvider,
   TrackerSyncDirection,
   type ExternalIssue,
   type TrackerSyncRule,
@@ -24,7 +24,7 @@ import {
   type WorkItemState,
 } from '@/domain/generated/output.js';
 import {
-  InMemoryTrackerConnections,
+  InMemoryConnections,
   InMemoryTrackerLinks,
   InMemoryTrackerRules,
 } from '../../../../helpers/tracker-repositories.mock.js';
@@ -138,7 +138,7 @@ class FakeWorkItems {
 }
 
 describe('RunTrackerSyncUseCase', () => {
-  let connections: InMemoryTrackerConnections;
+  let connections: InMemoryConnections;
   let rules: InMemoryTrackerRules;
   let links: InMemoryTrackerLinks;
   let tracker: FakeTracker;
@@ -168,15 +168,15 @@ describe('RunTrackerSyncUseCase', () => {
   }
 
   beforeEach(async () => {
-    connections = new InMemoryTrackerConnections();
+    connections = new InMemoryConnections();
     await connections.create(
       {
         id: 'conn',
-        provider: TrackerProvider.Linear,
+        provider: ConnectionProvider.Linear,
         name: 'L',
         slug: 'l',
         spaceId: 's',
-        status: TrackerConnectionStatus.Connected,
+        status: ConnectionStatus.Connected,
         createdAt: T0,
         updatedAt: T0,
       },
@@ -358,14 +358,14 @@ describe('RunTrackerSyncUseCase', () => {
     tracker.pages = [new TrackerAuthError('Linear: revoked')];
     await run();
     expect(await connections.findById('conn')).toMatchObject({
-      status: TrackerConnectionStatus.Error,
+      status: ConnectionStatus.Error,
       lastError: 'Linear: revoked',
     });
 
     tracker.pages = [{ issues: [] }];
     await run();
     const healed = await connections.findById('conn');
-    expect(healed?.status).toBe(TrackerConnectionStatus.Connected);
+    expect(healed?.status).toBe(ConnectionStatus.Connected);
     expect(healed?.lastError).toBeUndefined();
   });
 

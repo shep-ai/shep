@@ -9,7 +9,7 @@ const overview = { execute: vi.fn() };
 vi.mock('@/lib/server-container', () => ({
   resolve: (token: string) => {
     const map: Record<string, unknown> = {
-      ManageTrackerConnectionsUseCase: connections,
+      ManageConnectionsUseCase: connections,
       ManageTrackerSyncRulesUseCase: rules,
       SyncTrackerRulesUseCase: runner,
       RunTrackerSyncUseCase: runOne,
@@ -28,13 +28,13 @@ describe('manage-trackers server actions', () => {
   it('passes results through and turns throws into failures', async () => {
     connections.create.mockResolvedValue({ ok: false, error: 'Linear: Authentication required' });
     expect(
-      await actions.createTrackerConnection({ provider: 'Linear' as never, name: 'L', secret: 'k' })
+      await actions.createConnection({ provider: 'Linear' as never, name: 'L', secret: 'k' })
     ).toEqual({
       ok: false,
       error: 'Linear: Authentication required',
     });
     connections.remove.mockRejectedValue(new Error('database is locked'));
-    expect(await actions.removeTrackerConnection('l')).toEqual({
+    expect(await actions.removeConnection('l')).toEqual({
       ok: false,
       error: 'database is locked',
     });
@@ -42,7 +42,7 @@ describe('manage-trackers server actions', () => {
 
   it('never returns the secret it was given', async () => {
     connections.create.mockResolvedValue({ ok: true, connection: { id: 'c', name: 'L' } });
-    const result = await actions.createTrackerConnection({
+    const result = await actions.createConnection({
       provider: 'Linear' as never,
       name: 'L',
       secret: 'lin_api_secret',
@@ -53,7 +53,7 @@ describe('manage-trackers server actions', () => {
   it('routes rule actions', async () => {
     for (const fn of [connections.test, rules.create, rules.setEnabled, rules.remove])
       fn.mockResolvedValue({ ok: true });
-    await actions.testTrackerConnection('l');
+    await actions.testConnection('l');
     await actions.createTrackerSyncRule({ connection: 'l', project: 'pay', scope: 'ENG' });
     await actions.setTrackerSyncRuleEnabled('r1', false);
     await actions.removeTrackerSyncRule('r1');

@@ -9,8 +9,8 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { PlugZap, Trash2 } from 'lucide-react';
-import type { TrackerConnectionOverview } from '@shepai/core/application/use-cases/trackers/get-tracker-overview.use-case';
-import { TrackerConnectionStatus } from '@shepai/core/domain/generated/output';
+import type { ConnectionOverview } from '@shepai/core/application/use-cases/trackers/get-tracker-overview.use-case';
+import { ConnectionStatus } from '@shepai/core/domain/generated/output';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -23,13 +23,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { removeTrackerConnection, testTrackerConnection } from '@/app/actions/manage-trackers';
+import { removeConnection, testConnection } from '@/app/actions/manage-trackers';
 import { AddSyncRuleForm } from './add-sync-rule-form';
 import { TrackerRuleRow } from './tracker-rule-row';
 import type { RunTrackerAction } from './trackers-types';
 
 export interface TrackerConnectionCardProps {
-  overview: TrackerConnectionOverview;
+  overview: ConnectionOverview;
   projects: { id: string; name: string }[];
   run: RunTrackerAction;
 }
@@ -38,7 +38,7 @@ export function TrackerConnectionCard({ overview, projects, run }: TrackerConnec
   const { t } = useTranslation('web');
   const { connection, spaceName, rules } = overview;
   const [confirmRemove, setConfirmRemove] = useState(false);
-  const healthy = connection.status === TrackerConnectionStatus.Connected;
+  const healthy = connection.status === ConnectionStatus.Connected;
 
   return (
     <article
@@ -78,7 +78,7 @@ export function TrackerConnectionCard({ overview, projects, run }: TrackerConnec
           <Button
             variant="ghost"
             size="xs"
-            onClick={() => run(() => testTrackerConnection(connection.id))}
+            onClick={() => run(() => testConnection(connection.id))}
             data-testid="tracker-connection-test"
           >
             <PlugZap />
@@ -132,7 +132,7 @@ export function TrackerConnectionCard({ overview, projects, run }: TrackerConnec
             <AlertDialogCancel>{t('trackers.connection.cancel')}</AlertDialogCancel>
             <AlertDialogAction
               variant="destructive"
-              onClick={() => run(() => removeTrackerConnection(connection.id))}
+              onClick={() => run(() => removeConnection(connection.id))}
               data-testid="tracker-connection-remove-confirm"
             >
               {t('trackers.connection.remove')}

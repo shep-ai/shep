@@ -6657,23 +6657,23 @@ export type PermissionGrant = BaseEntity & {
    */
   consumed: boolean;
 };
-export enum TrackerProvider {
+export enum ConnectionProvider {
   Linear = 'Linear',
   Jira = 'Jira',
 }
-export enum TrackerConnectionStatus {
+export enum ConnectionStatus {
   Connected = 'Connected',
   Error = 'Error',
 }
 
 /**
- * A tracker account shep can read and write; the secret is stored encrypted outside the entity
+ * An account in an outside tool shep can read and write; the secret is stored encrypted outside the entity
  */
-export type TrackerConnection = BaseEntity & {
+export type Connection = BaseEntity & {
   /**
-   * Which tracker
+   * Which tool
    */
-  provider: TrackerProvider;
+  provider: ConnectionProvider;
   /**
    * Display name
    */
@@ -6687,21 +6687,21 @@ export type TrackerConnection = BaseEntity & {
    */
   spaceId: string;
   /**
-   * Jira site URL such as https://acme.atlassian.net; unset for Linear
+   * Jira site URL such as https://acme.atlassian.net; unset for other tools
    */
   siteUrl?: string;
   /**
-   * Jira account email used with the API token; unset for Linear
+   * Jira account email used with the API token; unset for other tools
    */
   accountEmail?: string;
   /**
-   * The tracker account name reported by the last successful check
+   * The account name reported by the last successful check
    */
   accountName?: string;
   /**
    * Whether the credentials last worked
    */
-  status: TrackerConnectionStatus;
+  status: ConnectionStatus;
   /**
    * Why the last check or sync failed
    */

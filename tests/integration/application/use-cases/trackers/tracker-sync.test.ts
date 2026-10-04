@@ -20,7 +20,7 @@ import { registerTrackers } from '@/infrastructure/di/modules/register-trackers.
 import { LocalSecretBox } from '@/infrastructure/services/crypto/local-secret-box.js';
 import { CreatePmProjectUseCase } from '@/application/use-cases/pm-projects/create-pm-project.use-case.js';
 import { UpdateWorkItemUseCase } from '@/application/use-cases/work-items/update-work-item.use-case.js';
-import { ManageTrackerConnectionsUseCase } from '@/application/use-cases/trackers/manage-tracker-connections.use-case.js';
+import { ManageConnectionsUseCase } from '@/application/use-cases/trackers/manage-connections.use-case.js';
 import { ManageTrackerSyncRulesUseCase } from '@/application/use-cases/trackers/manage-tracker-sync-rules.use-case.js';
 import { SyncTrackerRulesUseCase } from '@/application/use-cases/trackers/sync-tracker-rules.use-case.js';
 import { GetTrackerIssueLinkUseCase } from '@/application/use-cases/trackers/get-tracker-issue-link.use-case.js';
@@ -34,7 +34,7 @@ import type {
 import {
   Priority,
   StateGroup,
-  TrackerProvider,
+  ConnectionProvider,
   TrackerSyncDirection,
   type ExternalIssue,
 } from '@/domain/generated/output.js';
@@ -107,8 +107,8 @@ describe('Tracker sync (integration)', () => {
     if (!project.ok) throw new Error(project.error);
     projectId = project.project.id;
     const connection = await c
-      .resolve(ManageTrackerConnectionsUseCase)
-      .create({ provider: TrackerProvider.Linear, name: 'Acme Linear', secret: 'lin_api_x' });
+      .resolve(ManageConnectionsUseCase)
+      .create({ provider: ConnectionProvider.Linear, name: 'Acme Linear', secret: 'lin_api_x' });
     expect(connection.ok).toBe(true);
     const rule = await c.resolve(ManageTrackerSyncRulesUseCase).create({
       connection: 'acme-linear',

@@ -7,8 +7,8 @@
 import 'reflect-metadata';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
-  TrackerConnectionStatus,
-  TrackerProvider,
+  ConnectionStatus,
+  ConnectionProvider,
   TrackerSyncDirection,
 } from '@/domain/generated/output.js';
 
@@ -25,7 +25,7 @@ vi.mock('@/infrastructure/di/container.js', () => ({
   container: {
     resolve: vi.fn((token: unknown) => {
       const name = typeof token === 'function' ? token.name : String(token);
-      if (name === 'ManageTrackerConnectionsUseCase') return connections;
+      if (name === 'ManageConnectionsUseCase') return connections;
       if (name === 'ManageTrackerSyncRulesUseCase') return rules;
       if (name === 'SyncTrackerRulesUseCase') return runner;
       if (name === 'RunTrackerSyncUseCase') return { execute: runner.runAll };
@@ -40,14 +40,14 @@ import { createSyncCommand } from '../../../../../../src/presentation/cli/comman
 const T = new Date('2026-10-01T10:00:00Z');
 const CONNECTION = {
   id: 'c1',
-  provider: TrackerProvider.Jira,
+  provider: ConnectionProvider.Jira,
   name: 'Acme Jira',
   slug: 'acme-jira',
   spaceId: 's',
   siteUrl: 'https://acme.atlassian.net',
   accountEmail: 'me@acme.com',
   accountName: 'Ada',
-  status: TrackerConnectionStatus.Connected,
+  status: ConnectionStatus.Connected,
   createdAt: T,
   updatedAt: T,
 };
@@ -106,7 +106,7 @@ describe('shep connection / shep sync', () => {
     );
 
     expect(connections.create).toHaveBeenCalledWith({
-      provider: TrackerProvider.Jira,
+      provider: ConnectionProvider.Jira,
       name: 'Acme Jira',
       space: 'acme',
       siteUrl: 'https://acme.atlassian.net',
@@ -121,12 +121,12 @@ describe('shep connection / shep sync', () => {
     process.env.TEST_JIRA_TOKEN = 'from-env';
     connections.create.mockResolvedValue({
       ok: true,
-      connection: { ...CONNECTION, provider: TrackerProvider.Linear },
+      connection: { ...CONNECTION, provider: ConnectionProvider.Linear },
     });
     await run('connection', 'add', 'linear', '--name', 'L', '--secret-env', 'TEST_JIRA_TOKEN');
     expect(password).not.toHaveBeenCalled();
     expect(connections.create).toHaveBeenCalledWith(
-      expect.objectContaining({ provider: TrackerProvider.Linear, secret: 'from-env' })
+      expect.objectContaining({ provider: ConnectionProvider.Linear, secret: 'from-env' })
     );
   });
 
@@ -208,7 +208,7 @@ describe('shep connection / shep sync', () => {
       rules: [
         {
           rule: RULE,
-          connection: { name: 'Acme Jira', slug: 'acme-jira', provider: TrackerProvider.Jira },
+          connection: { name: 'Acme Jira', slug: 'acme-jira', provider: ConnectionProvider.Jira },
           project: { name: 'Payments', slug: 'pay' },
         },
       ],

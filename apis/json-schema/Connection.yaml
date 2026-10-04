@@ -1,0 +1,44 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: Connection.yaml
+type: object
+properties:
+  provider:
+    $ref: ConnectionProvider.yaml
+    description: Which tool
+  name:
+    type: string
+    description: Display name
+  slug:
+    type: string
+    description: CLI-friendly identifier, unique across connections
+  spaceId:
+    type: string
+    description: The space the connection belongs to
+  siteUrl:
+    type: string
+    description: Jira site URL such as https://acme.atlassian.net; unset for other tools
+  accountEmail:
+    type: string
+    description: Jira account email used with the API token; unset for other tools
+  accountName:
+    type: string
+    description: The account name reported by the last successful check
+  status:
+    $ref: ConnectionStatus.yaml
+    description: Whether the credentials last worked
+  lastError:
+    type: string
+    description: Why the last check or sync failed
+  lastCheckedAt:
+    type: string
+    format: date-time
+    description: When the credentials were last checked
+required:
+  - provider
+  - name
+  - slug
+  - spaceId
+  - status
+allOf:
+  - $ref: BaseEntity.yaml
+description: An account in an outside tool shep can read and write; the secret is stored encrypted outside the entity

@@ -1,6 +1,6 @@
 /** Builds the tracker client for a connection's provider (spec 122). */
 
-import { TrackerProvider } from '../../../domain/generated/output.js';
+import { ConnectionProvider } from '../../../domain/generated/output.js';
 import {
   TrackerRequestError,
   type ITrackerClient,
@@ -16,9 +16,9 @@ export class TrackerClientFactory implements ITrackerClientFactory {
 
   create(config: TrackerClientConfig): ITrackerClient {
     switch (config.provider) {
-      case TrackerProvider.Linear:
+      case ConnectionProvider.Linear:
         return new LinearTrackerClient(config.secret, this.fetchFn);
-      case TrackerProvider.Jira:
+      case ConnectionProvider.Jira:
         if (!config.siteUrl || !config.accountEmail) {
           throw new TrackerRequestError('A Jira client needs the site URL and account email.');
         }

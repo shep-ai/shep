@@ -9,15 +9,15 @@
 import { Command } from 'commander';
 import { password } from '@inquirer/prompts';
 import { container } from '@/infrastructure/di/container.js';
-import { ManageTrackerConnectionsUseCase } from '@/application/use-cases/trackers/manage-tracker-connections.use-case.js';
-import { TrackerProvider } from '@/domain/generated/output.js';
+import { ManageConnectionsUseCase } from '@/application/use-cases/trackers/manage-connections.use-case.js';
+import { ConnectionProvider } from '@/domain/generated/output.js';
 import { messages } from '../../ui/index.js';
 import { getCliI18n } from '../../i18n.js';
 import { report, runCommand } from '../command-result.js';
 
-const PROVIDERS: Record<string, TrackerProvider> = {
-  linear: TrackerProvider.Linear,
-  jira: TrackerProvider.Jira,
+const PROVIDERS: Record<string, ConnectionProvider> = {
+  linear: ConnectionProvider.Linear,
+  jira: ConnectionProvider.Jira,
 };
 
 interface AddOptions {
@@ -67,14 +67,14 @@ Examples:
         } else {
           secret = await password({
             message: t(
-              provider === TrackerProvider.Linear
+              provider === ConnectionProvider.Linear
                 ? 'cli:commands.connection.add.linearPrompt'
                 : 'cli:commands.connection.add.jiraPrompt'
             ),
             mask: '*',
           });
         }
-        const result = await container.resolve(ManageTrackerConnectionsUseCase).create({
+        const result = await container.resolve(ManageConnectionsUseCase).create({
           provider,
           name: options.name,
           ...(options.space ? { space: options.space } : {}),

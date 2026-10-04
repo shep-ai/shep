@@ -8,7 +8,7 @@
 import { useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Plus } from 'lucide-react';
-import { TrackerProvider, TrackerSyncDirection } from '@shepai/core/domain/generated/output';
+import { ConnectionProvider, TrackerSyncDirection } from '@shepai/core/domain/generated/output';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { NATIVE_SELECT_CLASS } from '@/lib/native-select-class';
@@ -19,7 +19,7 @@ const DEFAULT_INTERVAL = '15';
 
 export interface AddSyncRuleFormProps {
   connectionId: string;
-  provider: TrackerProvider;
+  provider: ConnectionProvider;
   projects: { id: string; name: string }[];
   run: RunTrackerAction;
 }
@@ -58,7 +58,9 @@ export function AddSyncRuleForm({ connectionId, provider, projects, run }: AddSy
       <Input
         value={scope}
         onChange={(e) => setScope(e.target.value)}
-        placeholder={provider === TrackerProvider.Linear ? 'ENG' : 'project = PAY AND type = Bug'}
+        placeholder={
+          provider === ConnectionProvider.Linear ? 'ENG' : 'project = PAY AND type = Bug'
+        }
         aria-label={t('trackers.rules.scope')}
         className="h-7 min-w-40 flex-1 font-mono text-xs"
         data-testid="add-rule-scope"

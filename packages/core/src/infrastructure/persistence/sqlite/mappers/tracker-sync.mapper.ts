@@ -8,17 +8,17 @@
 import type {
   Priority,
   StateGroup,
-  TrackerConnection,
-  TrackerConnectionStatus,
+  Connection,
+  ConnectionStatus,
   TrackerIssueLink,
-  TrackerProvider,
+  ConnectionProvider,
   TrackerSyncDirection,
   TrackerSyncRule,
   TrackerSyncRunSummary,
 } from '../../../../domain/generated/output.js';
 import { defined, millis, optionalMillis } from './row-values.js';
 
-export interface TrackerConnectionRow {
+export interface ConnectionRow {
   id: string;
   provider: string;
   name: string;
@@ -66,7 +66,7 @@ export interface TrackerIssueLinkRow {
   updated_at: number;
 }
 
-export function trackerConnectionToDatabase(connection: TrackerConnection): TrackerConnectionRow {
+export function connectionToDatabase(connection: Connection): ConnectionRow {
   return {
     id: connection.id,
     provider: connection.provider,
@@ -84,10 +84,10 @@ export function trackerConnectionToDatabase(connection: TrackerConnection): Trac
   };
 }
 
-export function trackerConnectionFromDatabase(row: TrackerConnectionRow): TrackerConnection {
+export function connectionFromDatabase(row: ConnectionRow): Connection {
   return {
     id: row.id,
-    provider: row.provider as TrackerProvider,
+    provider: row.provider as ConnectionProvider,
     name: row.name,
     slug: row.slug,
     spaceId: row.space_id,
@@ -96,7 +96,7 @@ export function trackerConnectionFromDatabase(row: TrackerConnectionRow): Tracke
       accountEmail: row.account_email,
       accountName: row.account_name,
     }),
-    status: row.status as TrackerConnectionStatus,
+    status: row.status as ConnectionStatus,
     ...defined({ lastError: row.last_error }),
     ...(row.last_checked_at !== null ? { lastCheckedAt: new Date(row.last_checked_at) } : {}),
     createdAt: new Date(row.created_at),

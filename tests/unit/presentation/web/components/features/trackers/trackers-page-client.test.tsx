@@ -2,8 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, within, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import {
-  TrackerConnectionStatus,
-  TrackerProvider,
+  ConnectionStatus,
+  ConnectionProvider,
   TrackerSyncDirection,
 } from '@shepai/core/domain/generated/output';
 import type { TrackerOverview } from '@shepai/core/application/use-cases/trackers/get-tracker-overview.use-case';
@@ -13,9 +13,9 @@ const refresh = vi.fn();
 vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh }) }));
 
 const actions = vi.hoisted(() => ({
-  createTrackerConnection: vi.fn(),
-  testTrackerConnection: vi.fn(),
-  removeTrackerConnection: vi.fn(),
+  createConnection: vi.fn(),
+  testConnection: vi.fn(),
+  removeConnection: vi.fn(),
   createTrackerSyncRule: vi.fn(),
   setTrackerSyncRuleEnabled: vi.fn(),
   removeTrackerSyncRule: vi.fn(),
@@ -36,14 +36,14 @@ const OVERVIEW: TrackerOverview = {
     {
       connection: {
         id: 'c1',
-        provider: TrackerProvider.Jira,
+        provider: ConnectionProvider.Jira,
         name: 'Acme Jira',
         slug: 'acme-jira',
         spaceId: 's-acme',
         siteUrl: 'https://acme.atlassian.net',
         accountEmail: 'me@acme.com',
         accountName: 'Ada',
-        status: TrackerConnectionStatus.Connected,
+        status: ConnectionStatus.Connected,
         createdAt: T,
         updatedAt: T,
       },
@@ -70,7 +70,7 @@ const OVERVIEW: TrackerOverview = {
             createdAt: T,
             updatedAt: T,
           },
-          connection: { name: 'Acme Jira', slug: 'acme-jira', provider: TrackerProvider.Jira },
+          connection: { name: 'Acme Jira', slug: 'acme-jira', provider: ConnectionProvider.Jira },
           project: { name: 'Payments', slug: 'pay' },
         },
       ],
@@ -110,8 +110,8 @@ describe('TrackersPageClient', () => {
     await userEvent.type(screen.getByTestId('add-connection-secret'), 'lin_api_x');
     await userEvent.click(screen.getByTestId('add-connection-submit'));
 
-    expect(actions.createTrackerConnection).toHaveBeenCalledWith({
-      provider: TrackerProvider.Linear,
+    expect(actions.createConnection).toHaveBeenCalledWith({
+      provider: ConnectionProvider.Linear,
       name: 'Me Linear',
       space: 's-me',
       secret: 'lin_api_x',
@@ -124,16 +124,16 @@ describe('TrackersPageClient', () => {
     render(<TrackersPageClient overview={OVERVIEW} />);
     await userEvent.selectOptions(
       screen.getByTestId('add-connection-provider'),
-      TrackerProvider.Jira
+      ConnectionProvider.Jira
     );
     await userEvent.type(screen.getByTestId('add-connection-name'), 'J');
     await userEvent.type(screen.getByTestId('add-connection-site'), 'https://x.atlassian.net');
     await userEvent.type(screen.getByTestId('add-connection-email'), 'a@x.com');
     await userEvent.type(screen.getByTestId('add-connection-secret'), 't');
     await userEvent.click(screen.getByTestId('add-connection-submit'));
-    expect(actions.createTrackerConnection).toHaveBeenCalledWith(
+    expect(actions.createConnection).toHaveBeenCalledWith(
       expect.objectContaining({
-        provider: TrackerProvider.Jira,
+        provider: ConnectionProvider.Jira,
         siteUrl: 'https://x.atlassian.net',
         accountEmail: 'a@x.com',
       })
@@ -141,7 +141,7 @@ describe('TrackersPageClient', () => {
   });
 
   it('shows a refusal and keeps the form', async () => {
-    actions.createTrackerConnection.mockResolvedValue({
+    actions.createConnection.mockResolvedValue({
       ok: false,
       error: 'Linear: Authentication required',
     });
@@ -157,10 +157,10 @@ describe('TrackersPageClient', () => {
   it('tests and removes a connection', async () => {
     render(<TrackersPageClient overview={OVERVIEW} />);
     await userEvent.click(card().getByTestId('tracker-connection-test'));
-    expect(actions.testTrackerConnection).toHaveBeenCalledWith('c1');
+    expect(actions.testConnection).toHaveBeenCalledWith('c1');
     await userEvent.click(card().getByTestId('tracker-connection-remove'));
     await userEvent.click(await screen.findByTestId('tracker-connection-remove-confirm'));
-    expect(actions.removeTrackerConnection).toHaveBeenCalledWith('c1');
+    expect(actions.removeConnection).toHaveBeenCalledWith('c1');
   });
 
   it('adds a two-way rule into a project', async () => {

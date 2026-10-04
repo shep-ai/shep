@@ -1,8 +1,8 @@
 /** Sample connections data for the Connections stories. */
 
 import {
-  TrackerConnectionStatus,
-  TrackerProvider,
+  ConnectionStatus,
+  ConnectionProvider,
   TrackerSyncDirection,
 } from '@shepai/core/domain/generated/output';
 import type { TrackerOverview } from '@shepai/core/application/use-cases/trackers/get-tracker-overview.use-case';
@@ -35,7 +35,7 @@ export const JIRA_RULE: TrackerSyncRuleView = {
     createdAt: T,
     updatedAt: T,
   },
-  connection: { name: 'Acme Jira', slug: 'acme-jira', provider: TrackerProvider.Jira },
+  connection: { name: 'Acme Jira', slug: 'acme-jira', provider: ConnectionProvider.Jira },
   project: { name: 'Payments', slug: 'pay' },
 };
 
@@ -56,14 +56,14 @@ export const OVERVIEW: TrackerOverview = {
     {
       connection: {
         id: 'conn-jira',
-        provider: TrackerProvider.Jira,
+        provider: ConnectionProvider.Jira,
         name: 'Acme Jira',
         slug: 'acme-jira',
         spaceId: 'space-acme',
         siteUrl: 'https://acme.atlassian.net',
         accountEmail: 'dev@acme.com',
         accountName: 'Dev',
-        status: TrackerConnectionStatus.Connected,
+        status: ConnectionStatus.Connected,
         createdAt: T,
         updatedAt: T,
       },
@@ -73,11 +73,11 @@ export const OVERVIEW: TrackerOverview = {
     {
       connection: {
         id: 'conn-linear',
-        provider: TrackerProvider.Linear,
+        provider: ConnectionProvider.Linear,
         name: 'Side projects',
         slug: 'side-projects',
         spaceId: 'space-personal',
-        status: TrackerConnectionStatus.Error,
+        status: ConnectionStatus.Error,
         lastError: 'Linear: Authentication required, not authenticated',
         createdAt: T,
         updatedAt: T,

@@ -4,28 +4,28 @@ import { GetTrackerOverviewUseCase } from '@/application/use-cases/trackers/get-
 import type { ManageTrackerSyncRulesUseCase } from '@/application/use-cases/trackers/manage-tracker-sync-rules.use-case.js';
 import type { IPmProjectRepository } from '@/application/ports/output/repositories/pm-project-repository.interface.js';
 import {
-  TrackerConnectionStatus,
-  TrackerProvider,
+  ConnectionStatus,
+  ConnectionProvider,
   TrackerSyncDirection,
 } from '@/domain/generated/output.js';
 import {
   DEFAULT_SPACE,
   createMockSpaceRepository,
 } from '../../../../helpers/space-repositories.mock.js';
-import { InMemoryTrackerConnections } from '../../../../helpers/tracker-repositories.mock.js';
+import { InMemoryConnections } from '../../../../helpers/tracker-repositories.mock.js';
 
 const T = new Date('2026-10-01T00:00:00Z');
 
 describe('GetTrackerOverviewUseCase', () => {
   it('groups rules under their connection with space and project names', async () => {
-    const connections = new InMemoryTrackerConnections();
+    const connections = new InMemoryConnections();
     const conn = {
       id: 'c1',
-      provider: TrackerProvider.Linear,
+      provider: ConnectionProvider.Linear,
       name: 'Acme Linear',
       slug: 'acme-linear',
       spaceId: DEFAULT_SPACE.id,
-      status: TrackerConnectionStatus.Connected,
+      status: ConnectionStatus.Connected,
       createdAt: T,
       updatedAt: T,
     };

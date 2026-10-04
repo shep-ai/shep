@@ -4,17 +4,13 @@
  * tests exercise real lookups instead of scripted spies.
  */
 
-import type {
-  TrackerConnection,
-  TrackerIssueLink,
-  TrackerSyncRule,
-} from '@/domain/generated/output.js';
-import type { ITrackerConnectionRepository } from '@/application/ports/output/repositories/tracker-connection-repository.interface.js';
+import type { Connection, TrackerIssueLink, TrackerSyncRule } from '@/domain/generated/output.js';
+import type { IConnectionRepository } from '@/application/ports/output/repositories/connection-repository.interface.js';
 import type { ITrackerSyncRuleRepository } from '@/application/ports/output/repositories/tracker-sync-rule-repository.interface.js';
 import type { ITrackerIssueLinkRepository } from '@/application/ports/output/repositories/tracker-issue-link-repository.interface.js';
 
-export class InMemoryTrackerConnections implements ITrackerConnectionRepository {
-  readonly rows = new Map<string, { connection: TrackerConnection; secret: string }>();
+export class InMemoryConnections implements IConnectionRepository {
+  readonly rows = new Map<string, { connection: Connection; secret: string }>();
   async list() {
     return [...this.rows.values()].map((row) => row.connection);
   }
@@ -24,10 +20,10 @@ export class InMemoryTrackerConnections implements ITrackerConnectionRepository 
   async findBySlug(slug: string) {
     return (await this.list()).find((c) => c.slug === slug) ?? null;
   }
-  async create(connection: TrackerConnection, secret: string) {
+  async create(connection: Connection, secret: string) {
     this.rows.set(connection.id, { connection, secret });
   }
-  async update(connection: TrackerConnection) {
+  async update(connection: Connection) {
     const row = this.rows.get(connection.id);
     if (row) this.rows.set(connection.id, { ...row, connection });
   }

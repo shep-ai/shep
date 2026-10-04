@@ -19,10 +19,10 @@
 
 import { injectable, inject } from 'tsyringe';
 import {
-  TrackerConnectionStatus,
+  ConnectionStatus,
   TrackerSyncDirection,
   type ExternalIssue,
-  type TrackerConnection,
+  type Connection,
   type TrackerIssueLink,
   type TrackerSyncRule,
   type TrackerSyncRunSummary,
@@ -30,7 +30,7 @@ import {
 } from '../../../domain/generated/output.js';
 import { planIssueSync, type SyncedFields } from '../../../domain/shared/tracker-sync.js';
 import { ProjectStates } from '../../../domain/shared/project-states.js';
-import type { ITrackerConnectionRepository } from '../../ports/output/repositories/tracker-connection-repository.interface.js';
+import type { IConnectionRepository } from '../../ports/output/repositories/connection-repository.interface.js';
 import type { ITrackerSyncRuleRepository } from '../../ports/output/repositories/tracker-sync-rule-repository.interface.js';
 import type { ITrackerIssueLinkRepository } from '../../ports/output/repositories/tracker-issue-link-repository.interface.js';
 import type { IWorkItemRepository } from '../../ports/output/repositories/work-item-repository.interface.js';
@@ -74,8 +74,8 @@ function isStoppingError(error: unknown): boolean {
 export class RunTrackerSyncUseCase {
   constructor(
     @inject('ITrackerSyncRuleRepository') private readonly rules: ITrackerSyncRuleRepository,
-    @inject('ITrackerConnectionRepository')
-    private readonly connections: ITrackerConnectionRepository,
+    @inject('IConnectionRepository')
+    private readonly connections: IConnectionRepository,
     @inject('ITrackerIssueLinkRepository') private readonly links: ITrackerIssueLinkRepository,
     @inject('ITrackerClientFactory') private readonly clients: ITrackerClientFactory,
     @inject('IWorkItemRepository') private readonly workItems: IWorkItemRepository,
@@ -135,7 +135,7 @@ export class RunTrackerSyncUseCase {
   /** Every page of remote changes: the newest update time seen, the work items synced, and whether every page was read. */
   private async pullRemote(
     rule: TrackerSyncRule,
-    connection: TrackerConnection,
+    connection: Connection,
     client: ITrackerClient,
     states: ProjectStates,
     summary: TrackerSyncRunSummary
@@ -164,7 +164,7 @@ export class RunTrackerSyncUseCase {
   /** Creates or reconciles the work item of one issue; returns its id. */
   private async syncIssue(
     rule: TrackerSyncRule,
-    connection: TrackerConnection,
+    connection: Connection,
     client: ITrackerClient,
     issue: ExternalIssue,
     states: ProjectStates,
@@ -183,7 +183,7 @@ export class RunTrackerSyncUseCase {
 
   private async importIssue(
     rule: TrackerSyncRule,
-    connection: TrackerConnection,
+    connection: Connection,
     issue: ExternalIssue,
     remote: SyncedFields,
     states: ProjectStates,
@@ -262,16 +262,16 @@ export class RunTrackerSyncUseCase {
 
   /** Marks the connection broken when the tracker rejected its credentials, and healthy after a clean run. */
   private async recordConnection(
-    connection: TrackerConnection,
+    connection: Connection,
     error: string | undefined,
     rejected: boolean
   ): Promise<void> {
-    const recovered = error === undefined && connection.status === TrackerConnectionStatus.Error;
+    const recovered = error === undefined && connection.status === ConnectionStatus.Error;
     if (!rejected && !recovered) return;
     const { lastError: _previous, ...rest } = connection;
     await this.connections.update({
       ...rest,
-      status: rejected ? TrackerConnectionStatus.Error : TrackerConnectionStatus.Connected,
+      status: rejected ? ConnectionStatus.Error : ConnectionStatus.Connected,
       ...(rejected && error ? { lastError: error } : {}),
       updatedAt: new Date(),
     });

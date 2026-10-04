@@ -10,11 +10,11 @@
 import { useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Plus } from 'lucide-react';
-import { TrackerProvider } from '@shepai/core/domain/generated/output';
+import { ConnectionProvider } from '@shepai/core/domain/generated/output';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { NATIVE_SELECT_CLASS } from '@/lib/native-select-class';
-import { createTrackerConnection } from '@/app/actions/manage-trackers';
+import { createConnection } from '@/app/actions/manage-trackers';
 import type { RunTrackerAction } from './trackers-types';
 
 export interface AddConnectionFormProps {
@@ -24,18 +24,18 @@ export interface AddConnectionFormProps {
 
 export function AddConnectionForm({ spaces, run }: AddConnectionFormProps) {
   const { t } = useTranslation('web');
-  const [provider, setProvider] = useState<TrackerProvider>(TrackerProvider.Linear);
+  const [provider, setProvider] = useState<ConnectionProvider>(ConnectionProvider.Linear);
   const [name, setName] = useState('');
   const [space, setSpace] = useState(spaces[0]?.id ?? '');
   const [site, setSite] = useState('');
   const [email, setEmail] = useState('');
   const [secret, setSecret] = useState('');
-  const jira = provider === TrackerProvider.Jira;
+  const jira = provider === ConnectionProvider.Jira;
 
   async function submit(event: FormEvent) {
     event.preventDefault();
     const created = await run(() =>
-      createTrackerConnection({
+      createConnection({
         provider,
         name,
         ...(space ? { space } : {}),
@@ -61,12 +61,12 @@ export function AddConnectionForm({ spaces, run }: AddConnectionFormProps) {
         {t('trackers.add.provider')}
         <select
           value={provider}
-          onChange={(e) => setProvider(e.target.value as TrackerProvider)}
+          onChange={(e) => setProvider(e.target.value as ConnectionProvider)}
           className={NATIVE_SELECT_CLASS}
           data-testid="add-connection-provider"
         >
-          <option value={TrackerProvider.Linear}>Linear</option>
-          <option value={TrackerProvider.Jira}>Jira</option>
+          <option value={ConnectionProvider.Linear}>Linear</option>
+          <option value={ConnectionProvider.Jira}>Jira</option>
         </select>
       </label>
       <label className="flex flex-col gap-1 text-xs">

@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { userEvent, within } from '@storybook/test';
-import { TrackerProvider } from '@shepai/core/domain/generated/output';
+import { ConnectionProvider } from '@shepai/core/domain/generated/output';
 import { AddConnectionForm } from './add-connection-form';
 import { SPACES, runInStory } from './trackers-fixtures';
 
@@ -22,7 +22,7 @@ export const Jira: Story = {
   play: async ({ canvasElement }) => {
     await userEvent.selectOptions(
       within(canvasElement).getByTestId('add-connection-provider'),
-      TrackerProvider.Jira
+      ConnectionProvider.Jira
     );
   },
 };

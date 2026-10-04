@@ -7,8 +7,8 @@
  */
 
 import { injectable, inject } from 'tsyringe';
-import type { TrackerConnection } from '../../../domain/generated/output.js';
-import type { ITrackerConnectionRepository } from '../../ports/output/repositories/tracker-connection-repository.interface.js';
+import type { Connection } from '../../../domain/generated/output.js';
+import type { IConnectionRepository } from '../../ports/output/repositories/connection-repository.interface.js';
 import type { ISpaceRepository } from '../../ports/output/repositories/space-repository.interface.js';
 import type { IPmProjectRepository } from '../../ports/output/repositories/pm-project-repository.interface.js';
 import {
@@ -16,14 +16,14 @@ import {
   type TrackerSyncRuleView,
 } from './manage-tracker-sync-rules.use-case.js';
 
-export interface TrackerConnectionOverview {
-  connection: TrackerConnection;
+export interface ConnectionOverview {
+  connection: Connection;
   spaceName: string;
   rules: TrackerSyncRuleView[];
 }
 
 export interface TrackerOverview {
-  connections: TrackerConnectionOverview[];
+  connections: ConnectionOverview[];
   spaces: { id: string; name: string }[];
   projects: { id: string; name: string; slug: string }[];
 }
@@ -31,8 +31,8 @@ export interface TrackerOverview {
 @injectable()
 export class GetTrackerOverviewUseCase {
   constructor(
-    @inject('ITrackerConnectionRepository')
-    private readonly connections: ITrackerConnectionRepository,
+    @inject('IConnectionRepository')
+    private readonly connections: IConnectionRepository,
     @inject(ManageTrackerSyncRulesUseCase) private readonly rules: ManageTrackerSyncRulesUseCase,
     @inject('ISpaceRepository') private readonly spaces: ISpaceRepository,
     @inject('IPmProjectRepository') private readonly projects: IPmProjectRepository

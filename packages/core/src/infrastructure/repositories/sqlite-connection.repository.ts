@@ -4,80 +4,78 @@
  */
 
 import type Database from 'better-sqlite3';
-import type { TrackerConnection } from '../../domain/generated/output.js';
-import type { ITrackerConnectionRepository } from '../../application/ports/output/repositories/tracker-connection-repository.interface.js';
+import type { Connection } from '../../domain/generated/output.js';
+import type { IConnectionRepository } from '../../application/ports/output/repositories/connection-repository.interface.js';
 import type { LocalSecretBox } from '../services/crypto/local-secret-box.js';
 import {
-  trackerConnectionFromDatabase,
-  trackerConnectionToDatabase,
-  type TrackerConnectionRow,
+  connectionFromDatabase,
+  connectionToDatabase,
+  type ConnectionRow,
 } from '../persistence/sqlite/mappers/tracker-sync.mapper.js';
 
 /** Every column except the secret ones. */
 const COLUMNS = `id, provider, name, slug, space_id, site_url, account_email, account_name,
   status, last_error, last_checked_at, created_at, updated_at`;
 
-export class SQLiteTrackerConnectionRepository implements ITrackerConnectionRepository {
+export class SQLiteConnectionRepository implements IConnectionRepository {
   constructor(
     private readonly db: Database.Database,
     private readonly secretBox: LocalSecretBox
   ) {}
 
-  async list(): Promise<TrackerConnection[]> {
+  async list(): Promise<Connection[]> {
     const rows = this.db
-      .prepare(`SELECT ${COLUMNS} FROM tracker_connections ORDER BY created_at ASC`)
-      .all() as TrackerConnectionRow[];
-    return rows.map(trackerConnectionFromDatabase);
+      .prepare(`SELECT ${COLUMNS} FROM connections ORDER BY created_at ASC`)
+      .all() as ConnectionRow[];
+    return rows.map(connectionFromDatabase);
   }
 
-  async findById(id: string): Promise<TrackerConnection | null> {
-    const row = this.db
-      .prepare(`SELECT ${COLUMNS} FROM tracker_connections WHERE id = ?`)
-      .get(id) as TrackerConnectionRow | undefined;
-    return row ? trackerConnectionFromDatabase(row) : null;
+  async findById(id: string): Promise<Connection | null> {
+    const row = this.db.prepare(`SELECT ${COLUMNS} FROM connections WHERE id = ?`).get(id) as
+      | ConnectionRow
+      | undefined;
+    return row ? connectionFromDatabase(row) : null;
   }
 
-  async findBySlug(slug: string): Promise<TrackerConnection | null> {
-    const row = this.db
-      .prepare(`SELECT ${COLUMNS} FROM tracker_connections WHERE slug = ?`)
-      .get(slug) as TrackerConnectionRow | undefined;
-    return row ? trackerConnectionFromDatabase(row) : null;
+  async findBySlug(slug: string): Promise<Connection | null> {
+    const row = this.db.prepare(`SELECT ${COLUMNS} FROM connections WHERE slug = ?`).get(slug) as
+      | ConnectionRow
+      | undefined;
+    return row ? connectionFromDatabase(row) : null;
   }
 
-  async create(connection: TrackerConnection, secret: string): Promise<void> {
+  async create(connection: Connection, secret: string): Promise<void> {
     const blob = this.secretBox.encrypt(secret);
     this.db
       .prepare(
-        `INSERT INTO tracker_connections (${COLUMNS}, secret_ciphertext, secret_iv, secret_tag)
+        `INSERT INTO connections (${COLUMNS}, secret_ciphertext, secret_iv, secret_tag)
          VALUES (@id, @provider, @name, @slug, @space_id, @site_url, @account_email,
            @account_name, @status, @last_error, @last_checked_at, @created_at, @updated_at,
            @secret_ciphertext, @secret_iv, @secret_tag)`
       )
       .run({
-        ...trackerConnectionToDatabase(connection),
+        ...connectionToDatabase(connection),
         secret_ciphertext: blob.ciphertext,
         secret_iv: blob.iv,
         secret_tag: blob.tag,
       });
   }
 
-  async update(connection: TrackerConnection): Promise<void> {
+  async update(connection: Connection): Promise<void> {
     this.db
       .prepare(
-        `UPDATE tracker_connections SET provider = @provider, name = @name, slug = @slug,
+        `UPDATE connections SET provider = @provider, name = @name, slug = @slug,
            space_id = @space_id, site_url = @site_url, account_email = @account_email,
            account_name = @account_name, status = @status, last_error = @last_error,
            last_checked_at = @last_checked_at, updated_at = @updated_at
          WHERE id = @id`
       )
-      .run(trackerConnectionToDatabase(connection));
+      .run(connectionToDatabase(connection));
   }
 
   async getSecret(id: string): Promise<string | null> {
     const row = this.db
-      .prepare(
-        'SELECT secret_ciphertext, secret_iv, secret_tag FROM tracker_connections WHERE id = ?'
-      )
+      .prepare('SELECT secret_ciphertext, secret_iv, secret_tag FROM connections WHERE id = ?')
       .get(id) as { secret_ciphertext: Buffer; secret_iv: Buffer; secret_tag: Buffer } | undefined;
     if (!row) return null;
     return this.secretBox.decrypt({
@@ -88,6 +86,6 @@ export class SQLiteTrackerConnectionRepository implements ITrackerConnectionRepo
   }
 
   async delete(id: string): Promise<void> {
-    this.db.prepare('DELETE FROM tracker_connections WHERE id = ?').run(id);
+    this.db.prepare('DELETE FROM connections WHERE id = ?').run(id);
   }
 }

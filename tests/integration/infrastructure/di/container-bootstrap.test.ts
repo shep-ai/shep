@@ -185,7 +185,7 @@ const WEB_ROUTE_TOKENS: readonly string[] = [
   'ConfigureSpaceAgentUseCase',
   'ResolveSpaceEnvironmentUseCase',
   // Tracker sync (spec 122)
-  'ManageTrackerConnectionsUseCase',
+  'ManageConnectionsUseCase',
   'ManageTrackerSyncRulesUseCase',
   'InvestigateWorkItemUseCase',
   'ApproveHypothesisUseCase',
@@ -211,7 +211,7 @@ const CRITICAL_INFRA_TOKENS: readonly string[] = [
   'IProductLineRepository',
   'ISpaceMembershipRepository',
   // Tracker sync (spec 122)
-  'ITrackerConnectionRepository',
+  'IConnectionRepository',
   'ITrackerSyncRuleRepository',
   'ITrackerIssueLinkRepository',
   'IInvestigationRepository',

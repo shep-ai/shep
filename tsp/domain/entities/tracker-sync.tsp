@@ -1,36 +1,13 @@
 /**
  * @module Shep.Domain.Entities.TrackerSync
  *
- * Tracker sync (spec 122): connections to issue trackers (Linear, Jira), the
- * rules that keep a tracker scope in a shep project, and the links between a
- * work item and the issue it came from.
- *
- * A connection belongs to a space, so a work Jira and a personal Linear stay
- * apart. Its secret (API key or token) is stored encrypted by the repository
- * and is not part of the entity.
+ * Tracker sync (spec 122): the rules that keep an issue tracker scope (Linear
+ * team, Jira query) in a shep project, and the links between a work item and
+ * the issue it came from. The tracker account is a Connection.
  */
 import "../../common/base.tsp";
+import "./connection.tsp";
 import "../../common/enums/work-item-enums.tsp";
-
-/** An issue tracker shep can sync with. */
-@doc("An issue tracker shep can sync with")
-enum TrackerProvider {
-  @doc("Linear (GraphQL API, personal API key)")
-  Linear,
-
-  @doc("Jira Cloud (REST API v3, account email and API token)")
-  Jira,
-}
-
-/** Whether a connection's credentials last worked. */
-@doc("Whether a tracker connection's credentials last worked")
-enum TrackerConnectionStatus {
-  @doc("The last check or sync reached the tracker")
-  Connected,
-
-  @doc("The last check or sync failed; see lastError")
-  Error,
-}
 
 /** Which way a sync rule moves changes. */
 @doc("Which way a tracker sync rule moves changes")
@@ -40,40 +17,6 @@ enum TrackerSyncDirection {
 
   @doc("Changes flow both ways; a field changed on both sides takes the tracker's value")
   TwoWay,
-}
-
-/** A tracker account shep can read and write. */
-@doc("A tracker account shep can read and write; the secret is stored encrypted outside the entity")
-model TrackerConnection extends BaseEntity {
-  @doc("Which tracker")
-  provider: TrackerProvider;
-
-  @doc("Display name")
-  name: string;
-
-  @doc("CLI-friendly identifier, unique across connections")
-  slug: string;
-
-  @doc("The space the connection belongs to")
-  spaceId: string;
-
-  @doc("Jira site URL such as https://acme.atlassian.net; unset for Linear")
-  siteUrl?: string;
-
-  @doc("Jira account email used with the API token; unset for Linear")
-  accountEmail?: string;
-
-  @doc("The tracker account name reported by the last successful check")
-  accountName?: string;
-
-  @doc("Whether the credentials last worked")
-  status: TrackerConnectionStatus;
-
-  @doc("Why the last check or sync failed")
-  lastError?: string;
-
-  @doc("When the credentials were last checked")
-  lastCheckedAt?: utcDateTime;
 }
 
 /** What one run of a sync rule did. */

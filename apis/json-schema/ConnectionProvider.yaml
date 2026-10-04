@@ -1,0 +1,7 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: ConnectionProvider.yaml
+type: string
+enum:
+  - Linear
+  - Jira
+description: An outside tool shep can connect to

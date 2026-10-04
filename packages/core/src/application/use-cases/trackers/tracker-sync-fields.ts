@@ -6,7 +6,7 @@
 
 import type {
   ExternalIssue,
-  TrackerConnection,
+  Connection,
   TrackerIssueLink,
   TrackerSyncRule,
   TrackerSyncRunSummary,
@@ -74,7 +74,7 @@ export function withSnapshot(
 /** The link for a newly imported issue. */
 export function newLink(
   rule: TrackerSyncRule,
-  connection: TrackerConnection,
+  connection: Connection,
   issue: ExternalIssue,
   workItemId: string
 ): TrackerIssueLink {

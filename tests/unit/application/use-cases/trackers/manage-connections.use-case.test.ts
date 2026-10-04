@@ -1,14 +1,14 @@
 import 'reflect-metadata';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { ManageTrackerConnectionsUseCase } from '@/application/use-cases/trackers/manage-tracker-connections.use-case.js';
+import { ManageConnectionsUseCase } from '@/application/use-cases/trackers/manage-connections.use-case.js';
 import {
   TrackerAuthError,
   type ITrackerClient,
   type ITrackerClientFactory,
 } from '@/application/ports/output/services/tracker-client.interface.js';
 import {
-  TrackerConnectionStatus,
-  TrackerProvider,
+  ConnectionStatus,
+  ConnectionProvider,
   TrackerSyncDirection,
 } from '@/domain/generated/output.js';
 import {
@@ -16,21 +16,21 @@ import {
   createMockSpaceRepository,
 } from '../../../../helpers/space-repositories.mock.js';
 import {
-  InMemoryTrackerConnections,
+  InMemoryConnections,
   InMemoryTrackerLinks,
   InMemoryTrackerRules,
 } from '../../../../helpers/tracker-repositories.mock.js';
 
-describe('ManageTrackerConnectionsUseCase', () => {
-  let connections: InMemoryTrackerConnections;
+describe('ManageConnectionsUseCase', () => {
+  let connections: InMemoryConnections;
   let rules: InMemoryTrackerRules;
   let links: InMemoryTrackerLinks;
   let client: { testConnection: ReturnType<typeof vi.fn> };
   let factory: ITrackerClientFactory & { create: ReturnType<typeof vi.fn> };
-  let useCase: ManageTrackerConnectionsUseCase;
+  let useCase: ManageConnectionsUseCase;
 
   beforeEach(() => {
-    connections = new InMemoryTrackerConnections();
+    connections = new InMemoryConnections();
     rules = new InMemoryTrackerRules();
     links = new InMemoryTrackerLinks();
     client = { testConnection: vi.fn().mockResolvedValue({ name: 'Ada' }) };
@@ -39,18 +39,18 @@ describe('ManageTrackerConnectionsUseCase', () => {
       findById: vi.fn(async () => null),
       findBySlug: vi.fn(async (slug: string) => (slug === 'default' ? DEFAULT_SPACE : null)),
     });
-    useCase = new ManageTrackerConnectionsUseCase(connections, rules, links, factory, spaces);
+    useCase = new ManageConnectionsUseCase(connections, rules, links, factory, spaces);
   });
 
   it('tests a Linear key before saving it, in the default space', async () => {
     const result = await useCase.create({
-      provider: TrackerProvider.Linear,
+      provider: ConnectionProvider.Linear,
       name: 'Acme Linear',
       secret: ' lin_api_x ',
     });
     expect(result.ok).toBe(true);
     expect(factory.create).toHaveBeenCalledWith({
-      provider: TrackerProvider.Linear,
+      provider: ConnectionProvider.Linear,
       secret: 'lin_api_x',
     });
     const [saved] = await connections.list();
@@ -59,7 +59,7 @@ describe('ManageTrackerConnectionsUseCase', () => {
       slug: 'acme-linear',
       spaceId: DEFAULT_SPACE.id,
       accountName: 'Ada',
-      status: TrackerConnectionStatus.Connected,
+      status: ConnectionStatus.Connected,
     });
     expect(await connections.getSecret(saved.id)).toBe('lin_api_x');
     if (result.ok) expect(JSON.stringify(result)).not.toContain('lin_api_x');
@@ -67,10 +67,10 @@ describe('ManageTrackerConnectionsUseCase', () => {
 
   it('requires a Jira site URL and email, and normalises the site', async () => {
     expect(
-      (await useCase.create({ provider: TrackerProvider.Jira, name: 'J', secret: 't' })).ok
+      (await useCase.create({ provider: ConnectionProvider.Jira, name: 'J', secret: 't' })).ok
     ).toBe(false);
     const result = await useCase.create({
-      provider: TrackerProvider.Jira,
+      provider: ConnectionProvider.Jira,
       name: 'Acme Jira',
       siteUrl: 'https://acme.atlassian.net/',
       accountEmail: 'me@acme.com',
@@ -79,7 +79,7 @@ describe('ManageTrackerConnectionsUseCase', () => {
     });
     expect(result.ok).toBe(true);
     expect(factory.create).toHaveBeenCalledWith({
-      provider: TrackerProvider.Jira,
+      provider: ConnectionProvider.Jira,
       siteUrl: 'https://acme.atlassian.net',
       accountEmail: 'me@acme.com',
       secret: 't',
@@ -88,7 +88,7 @@ describe('ManageTrackerConnectionsUseCase', () => {
 
   it('refuses a non-https Jira site', async () => {
     const result = await useCase.create({
-      provider: TrackerProvider.Jira,
+      provider: ConnectionProvider.Jira,
       name: 'J',
       siteUrl: 'http://acme.atlassian.net',
       accountEmail: 'me@acme.com',
@@ -102,7 +102,7 @@ describe('ManageTrackerConnectionsUseCase', () => {
       new TrackerAuthError('Linear: Authentication required')
     );
     const result = await useCase.create({
-      provider: TrackerProvider.Linear,
+      provider: ConnectionProvider.Linear,
       name: 'L',
       secret: 'bad',
     });
@@ -111,13 +111,13 @@ describe('ManageTrackerConnectionsUseCase', () => {
   });
 
   it('refuses a duplicate name and an unknown space', async () => {
-    await useCase.create({ provider: TrackerProvider.Linear, name: 'L', secret: 'k' });
+    await useCase.create({ provider: ConnectionProvider.Linear, name: 'L', secret: 'k' });
     expect(
-      (await useCase.create({ provider: TrackerProvider.Linear, name: 'L', secret: 'k' })).ok
+      (await useCase.create({ provider: ConnectionProvider.Linear, name: 'L', secret: 'k' })).ok
     ).toBe(false);
     expect(
       await useCase.create({
-        provider: TrackerProvider.Linear,
+        provider: ConnectionProvider.Linear,
         name: 'M',
         secret: 'k',
         space: 'nope',
@@ -126,20 +126,20 @@ describe('ManageTrackerConnectionsUseCase', () => {
   });
 
   it('re-tests a connection and records the outcome', async () => {
-    await useCase.create({ provider: TrackerProvider.Linear, name: 'L', secret: 'k' });
+    await useCase.create({ provider: ConnectionProvider.Linear, name: 'L', secret: 'k' });
     client.testConnection.mockRejectedValue(new TrackerAuthError('Linear: revoked'));
 
     const result = await useCase.test('l');
 
     expect(result).toEqual({ ok: false, error: 'Linear: revoked' });
     expect(await connections.findBySlug('l')).toMatchObject({
-      status: TrackerConnectionStatus.Error,
+      status: ConnectionStatus.Error,
       lastError: 'Linear: revoked',
     });
   });
 
   it('removes a connection with its rules and links, keeping work items', async () => {
-    await useCase.create({ provider: TrackerProvider.Linear, name: 'L', secret: 'k' });
+    await useCase.create({ provider: ConnectionProvider.Linear, name: 'L', secret: 'k' });
     const [connection] = await connections.list();
     const T = new Date();
     await rules.create({

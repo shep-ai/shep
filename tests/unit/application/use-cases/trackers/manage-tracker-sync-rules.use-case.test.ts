@@ -3,25 +3,25 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ManageTrackerSyncRulesUseCase } from '@/application/use-cases/trackers/manage-tracker-sync-rules.use-case.js';
 import type { IPmProjectRepository } from '@/application/ports/output/repositories/pm-project-repository.interface.js';
 import {
-  TrackerConnectionStatus,
-  TrackerProvider,
+  ConnectionStatus,
+  ConnectionProvider,
   TrackerSyncDirection,
-  type TrackerConnection,
+  type Connection,
 } from '@/domain/generated/output.js';
 import {
-  InMemoryTrackerConnections,
+  InMemoryConnections,
   InMemoryTrackerLinks,
   InMemoryTrackerRules,
 } from '../../../../helpers/tracker-repositories.mock.js';
 
 const T = new Date('2026-10-01T00:00:00Z');
-const conn = (provider: TrackerProvider, slug: string): TrackerConnection => ({
+const conn = (provider: ConnectionProvider, slug: string): Connection => ({
   id: `conn-${slug}`,
   provider,
   name: slug,
   slug,
   spaceId: 's',
-  status: TrackerConnectionStatus.Connected,
+  status: ConnectionStatus.Connected,
   createdAt: T,
   updatedAt: T,
 });
@@ -33,9 +33,9 @@ describe('ManageTrackerSyncRulesUseCase', () => {
   let useCase: ManageTrackerSyncRulesUseCase;
 
   beforeEach(async () => {
-    const connections = new InMemoryTrackerConnections();
-    await connections.create(conn(TrackerProvider.Linear, 'linear'), 'k');
-    await connections.create(conn(TrackerProvider.Jira, 'jira'), 'k');
+    const connections = new InMemoryConnections();
+    await connections.create(conn(ConnectionProvider.Linear, 'linear'), 'k');
+    await connections.create(conn(ConnectionProvider.Jira, 'jira'), 'k');
     rules = new InMemoryTrackerRules();
     links = new InMemoryTrackerLinks();
     const projects = {
@@ -123,7 +123,7 @@ describe('ManageTrackerSyncRulesUseCase', () => {
       rules: [
         {
           rule: expect.objectContaining({ id }),
-          connection: { name: 'linear', slug: 'linear', provider: TrackerProvider.Linear },
+          connection: { name: 'linear', slug: 'linear', provider: ConnectionProvider.Linear },
           project: { name: 'Payments', slug: 'pay' },
         },
       ],

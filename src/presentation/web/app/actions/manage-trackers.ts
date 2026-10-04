@@ -8,9 +8,9 @@
 
 import { resolve } from '@/lib/server-container';
 import type {
-  CreateTrackerConnectionInput,
-  ManageTrackerConnectionsUseCase,
-} from '@shepai/core/application/use-cases/trackers/manage-tracker-connections.use-case';
+  CreateConnectionInput,
+  ManageConnectionsUseCase,
+} from '@shepai/core/application/use-cases/trackers/manage-connections.use-case';
 import type {
   CreateTrackerSyncRuleInput,
   ManageTrackerSyncRulesUseCase,
@@ -24,8 +24,7 @@ import type {
 
 type Outcome = { ok: true } | { ok: false; error: string };
 
-const connections = () =>
-  resolve<ManageTrackerConnectionsUseCase>('ManageTrackerConnectionsUseCase');
+const connections = () => resolve<ManageConnectionsUseCase>('ManageConnectionsUseCase');
 const rules = () => resolve<ManageTrackerSyncRulesUseCase>('ManageTrackerSyncRulesUseCase');
 
 function message(error: unknown): string {
@@ -55,15 +54,15 @@ export async function getTrackerOverview(): Promise<{
   }
 }
 
-export async function createTrackerConnection(input: CreateTrackerConnectionInput) {
+export async function createConnection(input: CreateConnectionInput) {
   return attempt(() => connections().create(input));
 }
 
-export async function testTrackerConnection(ref: string) {
+export async function testConnection(ref: string) {
   return attempt(() => connections().test(ref));
 }
 
-export async function removeTrackerConnection(ref: string) {
+export async function removeConnection(ref: string) {
   return attempt(() => connections().remove(ref));
 }
 

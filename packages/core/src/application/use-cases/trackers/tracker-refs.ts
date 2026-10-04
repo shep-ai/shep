@@ -3,8 +3,8 @@
  * lookups by id or slug, and turning a thrown error into a message.
  */
 
-import type { TrackerConnection } from '../../../domain/generated/output.js';
-import type { ITrackerConnectionRepository } from '../../ports/output/repositories/tracker-connection-repository.interface.js';
+import type { Connection } from '../../../domain/generated/output.js';
+import type { IConnectionRepository } from '../../ports/output/repositories/connection-repository.interface.js';
 
 export type TrackerResult<T extends object = object> =
   | ({ ok: true } & T)
@@ -20,9 +20,9 @@ export function errorMessage(error: unknown): string {
 
 /** A connection by id or slug. */
 export async function findConnection(
-  connections: ITrackerConnectionRepository,
+  connections: IConnectionRepository,
   ref: string
-): Promise<TrackerConnection | null> {
+): Promise<Connection | null> {
   const key = ref.trim();
   if (!key) return null;
   return (await connections.findById(key)) ?? (await connections.findBySlug(key.toLowerCase()));

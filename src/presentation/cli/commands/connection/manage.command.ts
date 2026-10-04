@@ -2,8 +2,8 @@
 
 import { Command } from 'commander';
 import { container } from '@/infrastructure/di/container.js';
-import { ManageTrackerConnectionsUseCase } from '@/application/use-cases/trackers/manage-tracker-connections.use-case.js';
-import { TrackerConnectionStatus } from '@/domain/generated/output.js';
+import { ManageConnectionsUseCase } from '@/application/use-cases/trackers/manage-connections.use-case.js';
+import { ConnectionStatus } from '@/domain/generated/output.js';
 import { colors, messages, renderListView } from '../../ui/index.js';
 import { getCliI18n } from '../../i18n.js';
 import { report, runCommand } from '../command-result.js';
@@ -14,7 +14,7 @@ export function createLsCommand(): Command {
   const t = getCliI18n().t;
   return new Command('ls').description(t('cli:commands.connection.ls.description')).action(() =>
     runCommand(FAILED, async () => {
-      const connections = await container.resolve(ManageTrackerConnectionsUseCase).list();
+      const connections = await container.resolve(ManageConnectionsUseCase).list();
       renderListView({
         title: t('cli:commands.connection.ls.title'),
         columns: [
@@ -29,7 +29,7 @@ export function createLsCommand(): Command {
           colors.muted(connection.slug),
           connection.provider,
           connection.accountName ?? colors.muted('-'),
-          connection.status === TrackerConnectionStatus.Connected
+          connection.status === ConnectionStatus.Connected
             ? colors.success(connection.status)
             : colors.error(`${connection.status}: ${connection.lastError ?? ''}`),
         ]),
@@ -46,7 +46,7 @@ export function createTestCommand(): Command {
     .argument('<connection>', t('cli:commands.connection.connectionArg'))
     .action((ref: string) =>
       runCommand(FAILED, async () => {
-        const result = await container.resolve(ManageTrackerConnectionsUseCase).test(ref);
+        const result = await container.resolve(ManageConnectionsUseCase).test(ref);
         report(result, ({ connection }) =>
           messages.success(
             t('cli:commands.connection.test.success', {
@@ -66,7 +66,7 @@ export function createRmCommand(): Command {
     .argument('<connection>', t('cli:commands.connection.connectionArg'))
     .action((ref: string) =>
       runCommand(FAILED, async () => {
-        const result = await container.resolve(ManageTrackerConnectionsUseCase).remove(ref);
+        const result = await container.resolve(ManageConnectionsUseCase).remove(ref);
         report(result, () => messages.success(t('cli:commands.connection.rm.success', { ref })));
       })
     );

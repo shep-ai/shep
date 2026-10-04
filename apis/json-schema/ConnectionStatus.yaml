@@ -1,0 +1,7 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: ConnectionStatus.yaml
+type: string
+enum:
+  - Connected
+  - Error
+description: Whether a connection's credentials last worked

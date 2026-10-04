@@ -7,12 +7,12 @@ import type {
   ExternalIssue,
   Priority,
   StateGroup,
-  TrackerProvider,
+  ConnectionProvider,
 } from '../../../../domain/generated/output.js';
 
 /** Everything needed to talk to one tracker account. */
 export interface TrackerClientConfig {
-  provider: TrackerProvider;
+  provider: ConnectionProvider;
   /** Jira site URL; unset for Linear. */
   siteUrl?: string;
   /** Jira account email; unset for Linear. */
