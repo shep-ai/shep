@@ -4047,6 +4047,8 @@ export enum MemoryCategory {
 export enum MemoryScope {
   Project = 'Project',
   Organization = 'Organization',
+  Space = 'Space',
+  ProductLine = 'ProductLine',
 }
 
 /**
@@ -4074,9 +4076,121 @@ export type ProjectMemory = BaseEntity & {
    */
   sourceFeatureId?: string;
   /**
-   * Reach of this entry: Project (default) or Organization-wide
+   * Reach of this entry: Project (default), ProductLine, or Space; Organization is legacy Space
    */
   scope?: MemoryScope;
+  /**
+   * Space the entry belongs to, stamped from the repository's resolved space
+   */
+  spaceId?: string;
+  /**
+   * Product line the entry belongs to, when its repository has one
+   */
+  productLineId?: string;
+};
+
+/**
+ * A hard knowledge boundary such as a company or personal context
+ */
+export type Space = BaseEntity & {
+  /**
+   * Display name
+   */
+  name: string;
+  /**
+   * URL- and CLI-friendly identifier, unique across spaces
+   */
+  slug: string;
+  /**
+   * Optional description
+   */
+  description?: string;
+  /**
+   * Optional display colour as a CSS hex value
+   */
+  color?: string;
+  /**
+   * Whether repositories that match nothing fall back to this space; exactly one space is the default
+   */
+  isDefault: boolean;
+};
+
+/**
+ * A group of related repositories inside one space
+ */
+export type ProductLine = BaseEntity & {
+  /**
+   * The space this product line belongs to
+   */
+  spaceId: string;
+  /**
+   * Display name
+   */
+  name: string;
+  /**
+   * Identifier unique within its space
+   */
+  slug: string;
+  /**
+   * Optional description
+   */
+  description?: string;
+};
+export enum SpaceRuleKind {
+  Path = 'Path',
+  Remote = 'Remote',
+}
+
+/**
+ * Maps repositories to a space, and optionally a product line, by path or remote pattern
+ */
+export type SpaceRule = BaseEntity & {
+  /**
+   * Space the matching repositories belong to
+   */
+  spaceId: string;
+  /**
+   * Optional product line inside that space
+   */
+  productLineId?: string;
+  /**
+   * Whether the pattern matches the repository path or its git remote
+   */
+  kind: SpaceRuleKind;
+  /**
+   * Path prefix or remote pattern, stored normalised
+   */
+  pattern: string;
+  /**
+   * Tie-breaker between equally specific rules; lower wins
+   */
+  priority: number;
+};
+
+/**
+ * An explicit repository placement that overrides every space rule
+ */
+export type RepositorySpaceAssignment = {
+  /**
+   * Normalised repository path (forward slashes, no trailing slash)
+   */
+  repositoryPath: string;
+  /**
+   * Space the repository belongs to
+   */
+  spaceId: string;
+  /**
+   * Optional product line inside that space
+   */
+  productLineId?: string;
+  /**
+   * When the assignment was created
+   */
+  createdAt: any;
+  /**
+   * When the assignment was last changed
+   */
+  updatedAt: any;
 };
 
 /**
@@ -7954,6 +8068,11 @@ export enum ApplicationStarter {
 export enum WhatsAppThreadTargetKind {
   Feature = 'feature',
   Application = 'application',
+}
+export enum SpaceResolutionSource {
+  Assignment = 'Assignment',
+  Rule = 'Rule',
+  Default = 'Default',
 }
 export enum BedrockLifecycleAction {
   Init = 'init',

@@ -16,6 +16,7 @@ import { randomUUID } from 'node:crypto';
 import type { MemoryCategory } from '../../../domain/generated/output.js';
 import type { IProjectMemoryRepository } from '../../ports/output/repositories/project-memory-repository.interface.js';
 import { MAX_CONTENT_LENGTH } from './project-memory.constants.js';
+import { ResolveSpaceContextUseCase } from '../spaces/resolve-space-context.use-case.js';
 
 export interface ProjectMemoryEntryInput {
   category: MemoryCategory;
@@ -41,7 +42,9 @@ export interface RecordProjectMemoryResult {
 export class RecordProjectMemoryUseCase {
   constructor(
     @inject('IProjectMemoryRepository')
-    private readonly memoryRepo: IProjectMemoryRepository
+    private readonly memoryRepo: IProjectMemoryRepository,
+    @inject(ResolveSpaceContextUseCase)
+    private readonly resolveSpaceContext: ResolveSpaceContextUseCase
   ) {}
 
   async execute(input: RecordProjectMemoryInput): Promise<RecordProjectMemoryResult> {
@@ -49,6 +52,10 @@ export class RecordProjectMemoryUseCase {
     if (!repositoryPath) {
       return { recorded: 0 };
     }
+
+    // New entries belong to the repository's current space and line (spec 120).
+    // Existing entries keep theirs: the upsert never moves an entry.
+    const context = await this.resolveSpaceContext.execute(repositoryPath);
 
     let recorded = 0;
     for (const entry of input.entries ?? []) {
@@ -63,6 +70,8 @@ export class RecordProjectMemoryUseCase {
         entryKey,
         content: content.slice(0, MAX_CONTENT_LENGTH),
         sourceFeatureId: input.sourceFeatureId,
+        spaceId: context.space.id,
+        ...(context.productLine ? { productLineId: context.productLine.id } : {}),
       });
       recorded += 1;
     }

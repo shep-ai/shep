@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ProjectMemoryPanel } from '@/components/features/project-memory/project-memory-panel';
+import type { MemorySpaceOption } from '@/components/features/project-memory/memory-space-option';
 import {
   MemoryCategory,
   MemoryScope,
@@ -19,6 +20,21 @@ vi.mock('@/app/actions/manage-project-memory', () => ({
 }));
 
 const NOW = new Date('2026-06-01T10:00:00Z');
+
+const SPACES: MemorySpaceOption[] = [
+  { id: 'space-default', name: 'Default', productLines: [] },
+  {
+    id: 'space-acme',
+    name: 'Acme',
+    color: '#3456c4',
+    productLines: [{ id: 'line-pay', name: 'Payments' }],
+  },
+];
+
+async function chooseScope(scope: MemoryScope): Promise<void> {
+  await userEvent.click(screen.getByTestId('project-memory-scope-toggle'));
+  await userEvent.click(await screen.findByTestId(`project-memory-scope-option-${scope}`));
+}
 
 function entry(over: Partial<ProjectMemory>): ProjectMemory {
   return {
@@ -62,9 +78,9 @@ describe('ProjectMemoryPanel', () => {
   it('preserves scope and announces a failed scope change', async () => {
     setProjectMemoryScope.mockRejectedValueOnce(new Error('Connection lost'));
     render(<ProjectMemoryPanel entries={[entry({ scope: MemoryScope.Project })]} />);
-    await userEvent.click(screen.getByTestId('project-memory-scope-toggle'));
+    await chooseScope(MemoryScope.Space);
     expect(await screen.findByRole('alert')).toHaveTextContent('Connection lost');
-    expect(screen.queryByTestId('project-memory-org-badge')).not.toBeInTheDocument();
+    expect(screen.queryByTestId('project-memory-scope-badge')).not.toBeInTheDocument();
   });
 
   it('renders the empty state when there are no entries', () => {
@@ -124,27 +140,107 @@ describe('ProjectMemoryPanel', () => {
     await waitFor(() => expect(screen.queryByText('To be removed.')).not.toBeInTheDocument());
   });
 
-  it('shows an Organization badge for organization-scoped entries', () => {
+  it('names the space on a Space-scoped entry', () => {
     render(
       <ProjectMemoryPanel
-        entries={[entry({ scope: MemoryScope.Organization, content: 'Org-wide rule.' })]}
+        spaces={SPACES}
+        entries={[entry({ scope: MemoryScope.Space, spaceId: 'space-acme', content: 'Rule.' })]}
       />
     );
-    expect(screen.getByTestId('project-memory-org-badge')).toBeInTheDocument();
+    expect(screen.getByTestId('project-memory-scope-badge')).toHaveTextContent('Acme');
   });
 
-  it('promotes a project entry to organization-wide', async () => {
-    const user = userEvent.setup();
+  it('shows legacy Organization entries as space-wide', () => {
+    render(
+      <ProjectMemoryPanel
+        spaces={SPACES}
+        entries={[entry({ scope: MemoryScope.Organization, spaceId: 'space-acme' })]}
+      />
+    );
+    expect(screen.getByTestId('project-memory-scope-badge')).toHaveTextContent('Acme');
+  });
+
+  it('names the product line on a ProductLine-scoped entry', () => {
+    render(
+      <ProjectMemoryPanel
+        spaces={SPACES}
+        entries={[
+          entry({
+            scope: MemoryScope.ProductLine,
+            spaceId: 'space-acme',
+            productLineId: 'line-pay',
+          }),
+        ]}
+      />
+    );
+    expect(screen.getByTestId('project-memory-scope-badge')).toHaveTextContent('Payments');
+  });
+
+  it('shares a project entry with its whole space', async () => {
     setProjectMemoryScope.mockResolvedValue({
-      memory: entry({ scope: MemoryScope.Organization }),
+      memory: entry({ scope: MemoryScope.Space, spaceId: 'space-acme' }),
     });
+    render(
+      <ProjectMemoryPanel
+        spaces={SPACES}
+        entries={[entry({ scope: MemoryScope.Project, spaceId: 'space-acme' })]}
+      />
+    );
 
-    render(<ProjectMemoryPanel entries={[entry({ scope: MemoryScope.Project })]} />);
+    await chooseScope(MemoryScope.Space);
 
-    await user.click(screen.getByTestId('project-memory-scope-toggle'));
+    expect(setProjectMemoryScope).toHaveBeenCalledWith('m-1', MemoryScope.Space);
+    await waitFor(() =>
+      expect(screen.getByTestId('project-memory-scope-badge')).toHaveTextContent('Acme')
+    );
+  });
 
-    expect(setProjectMemoryScope).toHaveBeenCalledWith('m-1', MemoryScope.Organization);
-    await waitFor(() => expect(screen.getByTestId('project-memory-org-badge')).toBeInTheDocument());
+  it('shares a project entry with its product line', async () => {
+    setProjectMemoryScope.mockResolvedValue({
+      memory: entry({
+        scope: MemoryScope.ProductLine,
+        spaceId: 'space-acme',
+        productLineId: 'line-pay',
+      }),
+    });
+    render(
+      <ProjectMemoryPanel
+        spaces={SPACES}
+        entries={[entry({ scope: MemoryScope.Project, spaceId: 'space-acme' })]}
+      />
+    );
+
+    await chooseScope(MemoryScope.ProductLine);
+
+    expect(setProjectMemoryScope).toHaveBeenCalledWith('m-1', MemoryScope.ProductLine);
+    await waitFor(() =>
+      expect(screen.getByTestId('project-memory-scope-badge')).toHaveTextContent('Payments')
+    );
+  });
+
+  it('narrows the list to one space', async () => {
+    render(
+      <ProjectMemoryPanel
+        spaces={SPACES}
+        entries={[
+          entry({ id: 'a', spaceId: 'space-acme', content: 'Acme rule.' }),
+          entry({ id: 'b', spaceId: 'space-default', content: 'Personal rule.' }),
+        ]}
+      />
+    );
+    expect(screen.getByText('Personal rule.')).toBeInTheDocument();
+
+    await userEvent.click(screen.getByTestId('project-memory-space-filter-space-acme'));
+
+    expect(screen.getByText('Acme rule.')).toBeInTheDocument();
+    expect(screen.queryByText('Personal rule.')).not.toBeInTheDocument();
+    await userEvent.click(screen.getByTestId('project-memory-space-filter-all'));
+    expect(screen.getByText('Personal rule.')).toBeInTheDocument();
+  });
+
+  it('hides the space filter when there is only one space', () => {
+    render(<ProjectMemoryPanel spaces={[SPACES[0]]} entries={[entry({})]} />);
+    expect(screen.queryByTestId('project-memory-space-filter-all')).not.toBeInTheDocument();
   });
 
   it('surfaces an error when an edit is saved empty', async () => {

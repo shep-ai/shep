@@ -16,6 +16,7 @@ import type { ProjectMemory } from '../../../domain/generated/output.js';
 import type { IProjectMemoryRepository } from '../../ports/output/repositories/project-memory-repository.interface.js';
 import type { IMemoryRelevanceScorer } from '../../ports/output/services/memory-relevance-scorer.interface.js';
 import { loadCandidateMemory } from './load-candidate-memory.js';
+import { ResolveSpaceContextUseCase } from '../spaces/resolve-space-context.use-case.js';
 import { renderMemoryBlob } from './render-memory-blob.js';
 import { MEMORY_TOKEN_BUDGET, CHARS_PER_TOKEN } from './project-memory.constants.js';
 
@@ -35,7 +36,7 @@ export interface SelectProjectMemoryResult {
   blob: string;
   /** Number of entries included after ranking + budgeting. */
   selectedCount: number;
-  /** Total candidate entries considered (repo + organization). */
+  /** Total candidate entries considered (repository + product line + space). */
   totalCount: number;
 }
 
@@ -45,7 +46,9 @@ export class SelectProjectMemoryUseCase {
     @inject('IProjectMemoryRepository')
     private readonly memoryRepo: IProjectMemoryRepository,
     @inject('IMemoryRelevanceScorer')
-    private readonly scorer: IMemoryRelevanceScorer
+    private readonly scorer: IMemoryRelevanceScorer,
+    @inject(ResolveSpaceContextUseCase)
+    private readonly resolveSpaceContext: ResolveSpaceContextUseCase
   ) {}
 
   async execute(input: SelectProjectMemoryInput): Promise<SelectProjectMemoryResult> {
@@ -54,7 +57,8 @@ export class SelectProjectMemoryUseCase {
       return { blob: '', selectedCount: 0, totalCount: 0 };
     }
 
-    const candidates = await loadCandidateMemory(this.memoryRepo, repositoryPath);
+    const context = await this.resolveSpaceContext.execute(repositoryPath);
+    const candidates = await loadCandidateMemory(this.memoryRepo, context);
     if (candidates.length === 0) {
       return { blob: '', selectedCount: 0, totalCount: 0 };
     }

@@ -1,15 +1,18 @@
 'use server';
 
 import { resolve } from '@/lib/server-container';
-import type { ManageProjectMemoryUseCase } from '@shepai/core/application/use-cases/project-memory/manage-project-memory.use-case';
+import type {
+  ListProjectMemoryFilter,
+  ManageProjectMemoryUseCase,
+} from '@shepai/core/application/use-cases/project-memory/manage-project-memory.use-case';
 import type { ProjectMemory, MemoryScope } from '@shepai/core/domain/generated/output';
 
 export async function listProjectMemory(
-  repositoryPath?: string
+  filter: ListProjectMemoryFilter = {}
 ): Promise<{ entries?: ProjectMemory[]; error?: string }> {
   try {
     const useCase = resolve<ManageProjectMemoryUseCase>('ManageProjectMemoryUseCase');
-    const entries = await useCase.list(repositoryPath);
+    const entries = await useCase.list(filter);
     return { entries };
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Failed to list project memory';

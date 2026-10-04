@@ -86,6 +86,7 @@ import type { IVersionService } from '../../application/ports/output/services/ve
 
 // Topic-grouped registration modules
 import { registerRepositories } from './modules/register-repositories.js';
+import { registerSpaces } from './modules/register-spaces.js';
 import { registerServices } from './modules/register-services.js';
 import { registerTools } from './modules/register-tools.js';
 import { registerAgents } from './modules/register-agents.js';
@@ -129,6 +130,7 @@ export async function initializeContainer(): Promise<typeof container> {
 
   // ─── Topic-grouped registrations (pure, lazy) ────────────────────────────
   registerRepositories(container);
+  registerSpaces(container);
   registerServices(container);
   registerTools(container);
   registerAgents(container);

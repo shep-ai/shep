@@ -998,8 +998,7 @@
       "delete": "Delete",
       "save": "Save",
       "cancel": "Cancel",
-      "makeOrgWide": "Make organization-wide",
-      "makeProjectOnly": "Make project-only"
+      "scope": "Змінити, хто це бачить"
     },
     "deleteDialog": {
       "title": "Delete this memory entry?",
@@ -1007,10 +1006,18 @@
     },
     "errors": {
       "emptyContent": "Memory content cannot be empty.",
-      "updateFailed": "Failed to update the memory entry."
+      "updateFailed": "Failed to update the memory entry.",
+      "scopeFailed": "Не вдалося змінити, хто бачить цей запис."
     },
     "scope": {
-      "organization": "Organization"
+      "project": "Лише цей репозиторій",
+      "productLine": "Його продуктова лінійка",
+      "space": "Увесь його простір",
+      "menuLabel": "Доступно для"
+    },
+    "filter": {
+      "label": "Фільтр за простором",
+      "allSpaces": "Усі простори"
     }
   },
   "sessionTree": {

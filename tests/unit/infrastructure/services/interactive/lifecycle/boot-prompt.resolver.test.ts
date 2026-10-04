@@ -30,8 +30,8 @@ function makeFeatureRepo(pr?: { url: string }): IFeatureRepository {
       .fn()
       .mockResolvedValue(
         pr !== undefined
-          ? { id: 'feat-1', name: 'Test Feature', pr }
-          : { id: 'feat-1', name: 'Test Feature' }
+          ? { id: 'feat-1', name: 'Test Feature', repositoryPath: '/code/app', pr }
+          : { id: 'feat-1', name: 'Test Feature', repositoryPath: '/code/app' }
       ),
     create: vi.fn(),
     findByIdPrefix: vi.fn(),
@@ -133,6 +133,31 @@ describe('BootPromptResolver', () => {
         expect.anything(),
         expect.any(Array),
         '### Conventions\n- Use use-cases.'
+      );
+    });
+
+    it('selects memory by the feature repository, never the worktree path', async () => {
+      const select = makeReadProjectMemory();
+      resolver = new BootPromptResolver(featureRepo, contextBuilder, select);
+      await resolver.resolve('feat-1', '/wt', undefined, undefined);
+      expect(select.execute).toHaveBeenCalledWith(
+        expect.objectContaining({ repositoryPath: '/code/app' })
+      );
+    });
+
+    it('skips memory when the feature is unknown instead of using the worktree path', async () => {
+      // A worktree lives under ~/.shep/repos/<hash>/wt, so it would resolve into
+      // the wrong space (spec 120). Without a repository there is no memory.
+      (featureRepo.findById as ReturnType<typeof vi.fn>).mockResolvedValue(null);
+      const select = makeReadProjectMemory('### Conventions\n- leak');
+      resolver = new BootPromptResolver(featureRepo, contextBuilder, select);
+      await resolver.resolve('feat-unknown', '/wt', undefined, undefined);
+      expect(select.execute).not.toHaveBeenCalled();
+      expect(contextBuilder.buildContext).toHaveBeenCalledWith(
+        expect.anything(),
+        '/wt',
+        [],
+        undefined
       );
     });
 

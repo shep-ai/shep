@@ -47,6 +47,7 @@ import { registerUseCases } from '@/infrastructure/di/modules/register-use-cases
 import { registerInteractive } from '@/infrastructure/di/modules/register-interactive.js';
 import { registerAspm } from '@/infrastructure/di/modules/register-aspm.js';
 import { registerHarness } from '@/infrastructure/di/modules/register-harness.js';
+import { registerSpaces } from '@/infrastructure/di/modules/register-spaces.js';
 import type { IDeploymentService } from '@/application/ports/output/services/deployment-service.interface.js';
 import { DeploymentService } from '@/infrastructure/services/deployment/deployment.service.js';
 import type { IInteractiveSessionRepository } from '@/application/ports/output/repositories/interactive-session-repository.interface.js';
@@ -170,6 +171,11 @@ const WEB_ROUTE_TOKENS: readonly string[] = [
   'ListHarnessEvalRunsUseCase',
   'GetHarnessEvalReportUseCase',
   'SaveHarnessEvalCaseUseCase',
+  // Spaces and product lines (spec 120)
+  'ResolveSpaceContextUseCase',
+  'ManageSpacesUseCase',
+  'ManageSpaceMembershipUseCase',
+  'GetSpacesOverviewUseCase',
 ] as const;
 
 /**
@@ -178,6 +184,10 @@ const WEB_ROUTE_TOKENS: readonly string[] = [
  * if someone deletes a registration.
  */
 const CRITICAL_INFRA_TOKENS: readonly string[] = [
+  // Spaces and product lines (spec 120)
+  'ISpaceRepository',
+  'IProductLineRepository',
+  'ISpaceMembershipRepository',
   // Query-aware harness (spec 119)
   'IHarnessBlobStore',
   'IHarnessEventLog',
@@ -331,6 +341,7 @@ describe('DI container bootstrap (integration)', () => {
     scopedContainer.registerInstance<Database.Database>('Database', db);
 
     registerRepositories(scopedContainer);
+    registerSpaces(scopedContainer);
     registerServices(scopedContainer);
     registerTools(scopedContainer);
     registerAgents(scopedContainer);

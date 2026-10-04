@@ -35,8 +35,21 @@ export interface ProjectMemoryUpsert {
   content: string;
   /** Optional ID of the feature whose merge produced this entry. */
   sourceFeatureId?: string;
-  /** Reach of the entry. Defaults to Project when omitted. */
+  /** Reach of the entry on insert. Defaults to Project; an existing entry keeps its scope. */
   scope?: MemoryScope;
+  /** Space the entry belongs to (spec 120). Stamped on insert; an existing entry keeps its space. */
+  spaceId?: string;
+  /** Product line the entry belongs to, when its repository has one. Stamped on insert. */
+  productLineId?: string;
+}
+
+/**
+ * Where an entry sits after a scope change: the space (and product line) of
+ * the repository it was promoted or demoted in.
+ */
+export interface ProjectMemoryPlacement {
+  spaceId: string;
+  productLineId?: string;
 }
 
 /**
@@ -74,21 +87,32 @@ export interface IProjectMemoryRepository {
   listByRepository(repositoryPath: string): Promise<ProjectMemory[]>;
 
   /**
-   * List every memory entry across all repositories, ordered by repository,
-   * then category, then most-recently-updated first. Backs the management UI.
+   * List memory entries for the management UI, ordered by repository, then
+   * category, then most-recently-updated first.
    *
-   * @returns All persisted memory entries
+   * @param spaceId - When given, only entries of that space
+   * @returns The matching entries
    */
-  listAll(): Promise<ProjectMemory[]>;
+  listAll(spaceId?: string): Promise<ProjectMemory[]>;
 
   /**
-   * List all Organization-scoped entries (across every repository). These are
-   * injected into every project's agents in addition to the project's own
-   * memory.
+   * Entries that reach every repository of one space: `Space` entries and
+   * legacy `Organization` entries whose `spaceId` is the given space. Never
+   * returns another space's entries (spec 120).
    *
-   * @returns All organization-wide entries
+   * @param spaceId - The space to read
    */
-  listOrganization(): Promise<ProjectMemory[]>;
+  listSpaceWide(spaceId: string): Promise<ProjectMemory[]>;
+
+  /**
+   * `ProductLine` entries of one product line.
+   *
+   * @param productLineId - The product line to read
+   */
+  listProductLine(productLineId: string): Promise<ProjectMemory[]>;
+
+  /** How many entries belong to a space, of any scope. */
+  countBySpace(spaceId: string): Promise<number>;
 
   /**
    * Update an existing entry's content (and bump updatedAt).
@@ -99,13 +123,14 @@ export interface IProjectMemoryRepository {
   updateContent(id: string, content: string): Promise<void>;
 
   /**
-   * Update an existing entry's scope (and bump updatedAt). Used to promote a
-   * project learning to organization-wide, or demote it back.
+   * Update an existing entry's scope and placement (and bump updatedAt). Used
+   * to promote a project learning to its product line or space, or demote it.
    *
-   * @param id    - The entry UUID
-   * @param scope - The new scope
+   * @param id        - The entry UUID
+   * @param scope     - The new scope
+   * @param placement - The space and product line the entry now belongs to
    */
-  updateScope(id: string, scope: MemoryScope): Promise<void>;
+  updateScope(id: string, scope: MemoryScope, placement: ProjectMemoryPlacement): Promise<void>;
 
   /**
    * Delete an entry by its unique ID. No-op if it does not exist.
@@ -117,8 +142,10 @@ export interface IProjectMemoryRepository {
   /**
    * Idempotent upsert keyed on (repositoryPath, category, entryKey).
    * Inserts a new row if the key does not exist, otherwise updates the
-   * existing row's `content`, `sourceFeatureId`, and `updatedAt`. Safe to
-   * call repeatedly with the same key — will not duplicate rows.
+   * existing row's `content`, `sourceFeatureId`, and `updatedAt`. An existing
+   * row keeps its scope and space: only updateScope changes those, so
+   * re-recording never demotes a promoted entry. Safe to call repeatedly
+   * with the same key — will not duplicate rows.
    *
    * @param entry - The fields to insert or update
    */

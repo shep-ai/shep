@@ -5,6 +5,7 @@ import {
   type ProjectMemory,
 } from '@shepai/core/domain/generated/output';
 import { ProjectMemoryPanel } from './project-memory-panel';
+import type { MemorySpaceOption } from './memory-space-option';
 
 const meta: Meta<typeof ProjectMemoryPanel> = {
   title: 'Features/ProjectMemoryPanel',
@@ -18,6 +19,16 @@ type Story = StoryObj<typeof meta>;
 
 const NOW = new Date('2026-06-01T10:00:00Z');
 
+const SPACES: MemorySpaceOption[] = [
+  { id: 'space-default', name: 'Personal', productLines: [] },
+  {
+    id: 'space-acme',
+    name: 'Acme',
+    color: '#3456c4',
+    productLines: [{ id: 'line-platform', name: 'Platform' }],
+  },
+];
+
 function entry(over: Partial<ProjectMemory>): ProjectMemory {
   return {
     id: 'm-1',
@@ -26,6 +37,7 @@ function entry(over: Partial<ProjectMemory>): ProjectMemory {
     entryKey: 'k-1',
     content: 'Presentation layers must call core logic through use-case classes.',
     sourceFeatureId: 'feat-102-shep-brain',
+    spaceId: 'space-acme',
     createdAt: NOW,
     updatedAt: NOW,
     ...over,
@@ -39,7 +51,7 @@ const mockEntries: ProjectMemory[] = [
     category: MemoryCategory.ArchitectureDecision,
     entryKey: 'agent-executor-provider',
     content: 'All agent calls flow through IAgentExecutorProvider — never hardcode an agent type.',
-    scope: MemoryScope.Organization,
+    scope: MemoryScope.Space,
   }),
   entry({
     id: 'l1',
@@ -54,11 +66,25 @@ const mockEntries: ProjectMemory[] = [
     entryKey: 'npm-trusted-publish',
     content: 'npm trusted publishing needs npm >= 11.5 on the release runner.',
     repositoryPath: '/home/user/other-repo',
+    spaceId: 'space-default',
+  }),
+  entry({
+    id: 'n1',
+    category: MemoryCategory.NamingPattern,
+    entryKey: 'use-case-suffix',
+    content: 'Use-case classes end in UseCase and live under application/use-cases.',
+    scope: MemoryScope.ProductLine,
+    productLineId: 'line-platform',
   }),
 ];
 
 export const WithEntries: Story = {
-  args: { entries: mockEntries },
+  args: { entries: mockEntries, spaces: SPACES },
+};
+
+/** One space only: no space filter is shown. */
+export const SingleSpace: Story = {
+  args: { entries: mockEntries, spaces: [SPACES[1]] },
 };
 
 export const SingleCategory: Story = {

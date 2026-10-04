@@ -1,5 +1,5 @@
 export async function listProjectMemory(
-  _repositoryPath?: string
+  _filter: { repositoryPath?: string; spaceId?: string } = {}
 ): Promise<{ entries?: unknown[]; error?: string }> {
   return { entries: [] };
 }

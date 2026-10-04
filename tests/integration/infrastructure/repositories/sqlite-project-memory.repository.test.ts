@@ -256,37 +256,137 @@ describe('SQLiteProjectMemoryRepository', () => {
       expect((await repo.findById('org'))!.scope).toBe(MemoryScope.Organization);
     });
 
-    it('listOrganization returns only organization-scoped entries across repos', async () => {
-      await repo.create(makeMemory({ id: 'p', entryKey: 'p' }));
+    it('round-trips space and product line ids through create', async () => {
+      await repo.create(makeMemory({ id: 'm', spaceId: 'space-a', productLineId: 'line-a' }));
+      const found = await repo.findById('m');
+      expect(found!.spaceId).toBe('space-a');
+      expect(found!.productLineId).toBe('line-a');
+    });
+
+    it('listSpaceWide returns Space and legacy Organization entries of one space only', async () => {
+      await repo.create(makeMemory({ id: 'p', entryKey: 'p', spaceId: 'space-a' }));
       await repo.create(
-        makeMemory({
-          id: 'o1',
-          entryKey: 'o1',
-          scope: MemoryScope.Organization,
-          repositoryPath: '/repo-a',
-        })
+        makeMemory({ id: 's-a', entryKey: 's-a', scope: MemoryScope.Space, spaceId: 'space-a' })
       );
       await repo.create(
         makeMemory({
-          id: 'o2',
-          entryKey: 'o2',
+          id: 'o-a',
+          entryKey: 'o-a',
           scope: MemoryScope.Organization,
+          spaceId: 'space-a',
           repositoryPath: '/repo-b',
         })
       );
+      await repo.create(
+        makeMemory({ id: 's-b', entryKey: 's-b', scope: MemoryScope.Space, spaceId: 'space-b' })
+      );
+      await repo.create(
+        makeMemory({
+          id: 'o-b',
+          entryKey: 'o-b',
+          scope: MemoryScope.Organization,
+          spaceId: 'space-b',
+        })
+      );
 
-      const org = await repo.listOrganization();
-      expect(org.map((e) => e.id).sort()).toEqual(['o1', 'o2']);
+      const entries = await repo.listSpaceWide('space-a');
+      expect(entries.map((e) => e.id).sort()).toEqual(['o-a', 's-a']);
     });
 
-    it('updateScope promotes and demotes an entry', async () => {
-      await repo.create(makeMemory({ updatedAt: NOW }));
+    it('listProductLine returns only ProductLine entries of that line', async () => {
+      await repo.create(
+        makeMemory({
+          id: 'l-a',
+          entryKey: 'l-a',
+          scope: MemoryScope.ProductLine,
+          spaceId: 'space-a',
+          productLineId: 'line-a',
+        })
+      );
+      await repo.create(
+        makeMemory({
+          id: 'l-b',
+          entryKey: 'l-b',
+          scope: MemoryScope.ProductLine,
+          spaceId: 'space-a',
+          productLineId: 'line-b',
+        })
+      );
+      await repo.create(
+        makeMemory({ id: 'p-a', entryKey: 'p-a', spaceId: 'space-a', productLineId: 'line-a' })
+      );
 
-      await repo.updateScope('mem-001', MemoryScope.Organization);
-      expect((await repo.findById('mem-001'))!.scope).toBe(MemoryScope.Organization);
+      expect((await repo.listProductLine('line-a')).map((e) => e.id)).toEqual(['l-a']);
+    });
 
-      await repo.updateScope('mem-001', MemoryScope.Project);
-      expect((await repo.findById('mem-001'))!.scope).toBe(MemoryScope.Project);
+    it('updateScope writes the scope and the placement it was promoted in', async () => {
+      await repo.create(makeMemory({ updatedAt: NOW, spaceId: 'space-a' }));
+
+      await repo.updateScope('mem-001', MemoryScope.ProductLine, {
+        spaceId: 'space-a',
+        productLineId: 'line-a',
+      });
+      let found = await repo.findById('mem-001');
+      expect(found!.scope).toBe(MemoryScope.ProductLine);
+      expect(found!.productLineId).toBe('line-a');
+
+      await repo.updateScope('mem-001', MemoryScope.Project, { spaceId: 'space-b' });
+      found = await repo.findById('mem-001');
+      expect(found!.scope).toBe(MemoryScope.Project);
+      expect(found!.spaceId).toBe('space-b');
+      expect(found!.productLineId).toBeUndefined();
+    });
+
+    it('keeps a promoted scope when the same key is recorded again', async () => {
+      await repo.upsert({
+        id: 'first',
+        repositoryPath: '/home/user/shep',
+        category: MemoryCategory.Convention,
+        entryKey: 'k',
+        content: 'v1',
+        spaceId: 'space-a',
+      });
+      await repo.updateScope('first', MemoryScope.Space, { spaceId: 'space-a' });
+
+      await repo.upsert({
+        id: 'second',
+        repositoryPath: '/home/user/shep',
+        category: MemoryCategory.Convention,
+        entryKey: 'k',
+        content: 'v2',
+        spaceId: 'space-a',
+      });
+
+      const found = await repo.findById('first');
+      expect(found!.content).toBe('v2');
+      expect(found!.scope).toBe(MemoryScope.Space);
+      expect(found!.spaceId).toBe('space-a');
+    });
+
+    it('stamps the space on an upserted insert', async () => {
+      await repo.upsert({
+        id: 'new',
+        repositoryPath: '/r',
+        category: MemoryCategory.Library,
+        entryKey: 'k',
+        content: 'c',
+        spaceId: 'space-z',
+        productLineId: 'line-z',
+      });
+      const found = await repo.findById('new');
+      expect(found!.scope).toBe(MemoryScope.Project);
+      expect(found!.spaceId).toBe('space-z');
+      expect(found!.productLineId).toBe('line-z');
+    });
+
+    it('listAll filters by space when given one, and counts per space', async () => {
+      await repo.create(makeMemory({ id: 'a', entryKey: 'a', spaceId: 'space-a' }));
+      await repo.create(makeMemory({ id: 'b', entryKey: 'b', spaceId: 'space-b' }));
+
+      expect((await repo.listAll('space-a')).map((e) => e.id)).toEqual(['a']);
+      expect((await repo.listAll()).length).toBe(2);
+      expect(await repo.countBySpace('space-b')).toBe(1);
+      expect(await repo.countBySpace('space-c')).toBe(0);
     });
   });
 

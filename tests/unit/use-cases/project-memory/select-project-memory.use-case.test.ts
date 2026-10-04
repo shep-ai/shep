@@ -1,7 +1,13 @@
 import 'reflect-metadata';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { SelectProjectMemoryUseCase } from '@/application/use-cases/project-memory/select-project-memory.use-case.js';
-import type { IProjectMemoryRepository } from '@/application/ports/output/repositories/project-memory-repository.interface.js';
+import {
+  createMockProjectMemoryRepository,
+  DEFAULT_SPACE,
+  type MockProjectMemoryRepository,
+} from '../../../helpers/space-repositories.mock.js';
+import type { ResolveSpaceContextUseCase } from '@/application/use-cases/spaces/resolve-space-context.use-case.js';
+import { MemoryScope, SpaceResolutionSource } from '@/domain/generated/output.js';
 import type { IMemoryRelevanceScorer } from '@/application/ports/output/services/memory-relevance-scorer.interface.js';
 import type { ProjectMemory } from '@/domain/generated/output.js';
 import { MemoryCategory } from '@/domain/generated/output.js';
@@ -19,30 +25,42 @@ function entry(over: Partial<ProjectMemory>): ProjectMemory {
   };
 }
 
+function resolverFor(productLineId?: string): ResolveSpaceContextUseCase {
+  return {
+    execute: vi.fn(async (repositoryPath: string) => ({
+      repositoryPath,
+      space: DEFAULT_SPACE,
+      ...(productLineId
+        ? {
+            productLine: {
+              id: productLineId,
+              spaceId: DEFAULT_SPACE.id,
+              name: 'Line',
+              slug: 'line',
+              createdAt: new Date(0),
+              updatedAt: new Date(0),
+            },
+          }
+        : {}),
+      source: SpaceResolutionSource.Default,
+    })),
+  } as unknown as ResolveSpaceContextUseCase;
+}
+
 describe('SelectProjectMemoryUseCase', () => {
-  let repo: IProjectMemoryRepository;
+  let repo: MockProjectMemoryRepository;
   let scorer: IMemoryRelevanceScorer;
   let useCase: SelectProjectMemoryUseCase;
 
   beforeEach(() => {
-    repo = {
-      create: vi.fn(),
-      findById: vi.fn(),
-      listByRepository: vi.fn().mockResolvedValue([]),
-      listAll: vi.fn(),
-      listOrganization: vi.fn().mockResolvedValue([]),
-      upsert: vi.fn(),
-      updateContent: vi.fn(),
-      updateScope: vi.fn(),
-      delete: vi.fn(),
-    };
+    repo = createMockProjectMemoryRepository();
     // Identity scorer: preserves input order with descending scores.
     scorer = {
       score: vi.fn(async (_q, entries: ProjectMemory[]) =>
         entries.map((e, i) => ({ entry: e, score: 1 - i * 0.01 }))
       ),
     };
-    useCase = new SelectProjectMemoryUseCase(repo, scorer);
+    useCase = new SelectProjectMemoryUseCase(repo, scorer, resolverFor());
   });
 
   it('returns an empty blob for a blank repository path without querying', async () => {
@@ -56,9 +74,11 @@ describe('SelectProjectMemoryUseCase', () => {
     expect(result).toEqual({ blob: '', selectedCount: 0, totalCount: 0 });
   });
 
-  it('merges repo + organization candidates and passes them to the scorer', async () => {
-    vi.mocked(repo.listByRepository).mockResolvedValue([entry({ id: 'p', entryKey: 'p' })]);
-    vi.mocked(repo.listOrganization).mockResolvedValue([entry({ id: 'o', entryKey: 'o' })]);
+  it('merges repo + space-wide candidates and passes them to the scorer', async () => {
+    repo.listByRepository.mockResolvedValue([entry({ id: 'p', entryKey: 'p' })]);
+    repo.listSpaceWide.mockResolvedValue([
+      entry({ id: 'o', entryKey: 'o', scope: MemoryScope.Space }),
+    ]);
 
     await useCase.execute({ repositoryPath: '/repo', phase: 'implement', taskText: 'task' });
 
@@ -76,7 +96,7 @@ describe('SelectProjectMemoryUseCase', () => {
     const entries = Array.from({ length: 5 }, (_, i) =>
       entry({ id: `e${i}`, entryKey: `e${i}`, content: 'x'.repeat(80) })
     );
-    vi.mocked(repo.listByRepository).mockResolvedValue(entries);
+    repo.listByRepository.mockResolvedValue(entries);
 
     const result = await useCase.execute({ repositoryPath: '/repo', tokenBudget: 40 }); // 160 chars
     expect(result.totalCount).toBe(5);
@@ -85,9 +105,7 @@ describe('SelectProjectMemoryUseCase', () => {
   });
 
   it('always includes at least the single most relevant entry', async () => {
-    vi.mocked(repo.listByRepository).mockResolvedValue([
-      entry({ id: 'big', content: 'y'.repeat(5000) }),
-    ]);
+    repo.listByRepository.mockResolvedValue([entry({ id: 'big', content: 'y'.repeat(5000) })]);
     const result = await useCase.execute({ repositoryPath: '/repo', tokenBudget: 1 });
     expect(result.selectedCount).toBe(1);
     expect(result.blob).toContain('y'.repeat(50));

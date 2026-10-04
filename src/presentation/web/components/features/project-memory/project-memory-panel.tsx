@@ -4,8 +4,9 @@
  * ProjectMemoryPanel — management UI for persistent project memory ("Shep Brain").
  *
  * Lists every memory entry grouped by category, with inline content editing and
- * confirmed deletion. Entries are repository-scoped, so each row shows a muted
- * repository-path label and (when present) the source feature that taught it.
+ * confirmed deletion. Each entry belongs to a repository and can be shared with
+ * its product line or whole space (spec 120); the page can be narrowed to one
+ * space.
  *
  * Thin presentation: all logic lives in ManageProjectMemoryUseCase, reached via
  * the manage-project-memory server actions. Local state mirrors the server
@@ -14,12 +15,9 @@
 
 import { useCallback, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Brain, Globe, FolderGit2, Pencil, Trash2 } from 'lucide-react';
-import type { ProjectMemory } from '@shepai/core/domain/generated/output';
-import { MemoryCategory, MemoryScope } from '@shepai/core/domain/generated/output';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Textarea } from '@/components/ui/textarea';
+import { Brain } from 'lucide-react';
+import type { MemoryScope, ProjectMemory } from '@shepai/core/domain/generated/output';
+import { MemoryCategory } from '@shepai/core/domain/generated/output';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -35,9 +33,14 @@ import {
   deleteProjectMemory,
   setProjectMemoryScope,
 } from '@/app/actions/manage-project-memory';
+import { MemoryEntryItem } from './memory-entry-item';
+import { ALL_SPACES, MemorySpaceFilter } from './memory-space-filter';
+import type { MemorySpaceOption } from './memory-space-option';
 
 export interface ProjectMemoryPanelProps {
   entries: ProjectMemory[];
+  /** Spaces for scope labels and the space filter (spec 120). */
+  spaces?: MemorySpaceOption[];
 }
 
 /** Fixed render order + UI labels for the memory categories. */
@@ -57,20 +60,26 @@ const CATEGORY_LABEL_KEY: Record<MemoryCategory, string> = {
   [MemoryCategory.CiFixResolution]: 'memory.categories.ciFixResolution',
 };
 
-export function ProjectMemoryPanel({ entries: initialEntries }: ProjectMemoryPanelProps) {
+export function ProjectMemoryPanel({
+  entries: initialEntries,
+  spaces = [],
+}: ProjectMemoryPanelProps) {
   const { t } = useTranslation('web');
   const [entries, setEntries] = useState<ProjectMemory[]>(initialEntries);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draft, setDraft] = useState('');
   const [pendingDelete, setPendingDelete] = useState<ProjectMemory | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [spaceFilter, setSpaceFilter] = useState<string>(ALL_SPACES);
 
   const grouped = useMemo(() => {
+    const visible =
+      spaceFilter === ALL_SPACES ? entries : entries.filter((e) => e.spaceId === spaceFilter);
     return CATEGORY_ORDER.map((category) => ({
       category,
-      items: entries.filter((e) => e.category === category),
+      items: visible.filter((e) => e.category === category),
     })).filter((g) => g.items.length > 0);
-  }, [entries]);
+  }, [entries, spaceFilter]);
 
   const startEdit = useCallback((entry: ProjectMemory) => {
     setError(null);
@@ -122,20 +131,22 @@ export function ProjectMemoryPanel({ entries: initialEntries }: ProjectMemoryPan
     setEntries((prev) => prev.filter((e) => e.id !== id));
   }, [pendingDelete]);
 
-  const toggleScope = useCallback(async (entry: ProjectMemory) => {
-    const next =
-      entry.scope === MemoryScope.Organization ? MemoryScope.Project : MemoryScope.Organization;
-    setError(null);
-    const result = await setProjectMemoryScope(entry.id, next).catch((cause: unknown) => ({
-      memory: undefined,
-      error: cause instanceof Error ? cause.message : 'Unable to update scope. Try again.',
-    }));
-    if (result.error || !result.memory) {
-      setError(result.error ?? 'Failed to update scope.');
-      return;
-    }
-    setEntries((prev) => prev.map((e) => (e.id === entry.id ? { ...e, scope: next } : e)));
-  }, []);
+  const changeScope = useCallback(
+    async (entry: ProjectMemory, scope: MemoryScope) => {
+      setError(null);
+      const result = await setProjectMemoryScope(entry.id, scope).catch((cause: unknown) => ({
+        memory: undefined,
+        error: cause instanceof Error ? cause.message : t('memory.errors.scopeFailed'),
+      }));
+      if (result.error || !result.memory) {
+        setError(result.error ?? t('memory.errors.scopeFailed'));
+        return;
+      }
+      const updated = result.memory;
+      setEntries((prev) => prev.map((e) => (e.id === entry.id ? updated : e)));
+    },
+    [t]
+  );
 
   return (
     <div data-testid="project-memory-panel" className="mx-auto w-full max-w-3xl space-y-6 p-4">
@@ -146,6 +157,8 @@ export function ProjectMemoryPanel({ entries: initialEntries }: ProjectMemoryPan
           <p className="text-muted-foreground text-xs">{t('memory.subtitle')}</p>
         </div>
       </header>
+
+      <MemorySpaceFilter spaces={spaces} value={spaceFilter} onChange={setSpaceFilter} />
 
       {entries.length === 0 ? (
         <div
@@ -173,91 +186,19 @@ export function ProjectMemoryPanel({ entries: initialEntries }: ProjectMemoryPan
           </h2>
           <ul className="space-y-2">
             {items.map((entry) => (
-              <li
+              <MemoryEntryItem
                 key={entry.id}
-                data-testid="project-memory-entry"
-                className="group rounded-md border p-3"
-              >
-                {editingId === entry.id ? (
-                  <div className="space-y-2">
-                    <Textarea
-                      autoFocus
-                      aria-label={t('memory.actions.edit')}
-                      value={draft}
-                      onChange={(e) => setDraft(e.target.value)}
-                      className="min-h-16 text-sm"
-                      data-testid="project-memory-edit-input"
-                    />
-                    <div className="flex justify-end gap-2">
-                      <Button variant="ghost" size="sm" onClick={cancelEdit}>
-                        {t('memory.actions.cancel')}
-                      </Button>
-                      <Button
-                        size="sm"
-                        onClick={() => saveEdit(entry.id)}
-                        data-testid="project-memory-save"
-                      >
-                        {t('memory.actions.save')}
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex items-start gap-2">
-                    <p className="min-w-0 flex-1 text-sm wrap-break-word">{entry.content}</p>
-                    <div className="flex shrink-0 gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon-xs"
-                        title={
-                          entry.scope === MemoryScope.Organization
-                            ? t('memory.actions.makeProjectOnly')
-                            : t('memory.actions.makeOrgWide')
-                        }
-                        onClick={() => toggleScope(entry)}
-                        data-testid="project-memory-scope-toggle"
-                      >
-                        {entry.scope === MemoryScope.Organization ? <FolderGit2 /> : <Globe />}
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon-xs"
-                        title={t('memory.actions.edit')}
-                        onClick={() => startEdit(entry)}
-                        data-testid="project-memory-edit"
-                      >
-                        <Pencil />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon-xs"
-                        title={t('memory.actions.delete')}
-                        onClick={() => setPendingDelete(entry)}
-                        data-testid="project-memory-delete"
-                      >
-                        <Trash2 />
-                      </Button>
-                    </div>
-                  </div>
-                )}
-                <div className="text-muted-foreground mt-2 flex flex-wrap items-center gap-2 text-[10px]">
-                  {entry.scope === MemoryScope.Organization ? (
-                    <Badge
-                      variant="secondary"
-                      className="gap-1 text-[10px]"
-                      data-testid="project-memory-org-badge"
-                    >
-                      <Globe className="size-2.5" />
-                      {t('memory.scope.organization')}
-                    </Badge>
-                  ) : null}
-                  <span className="font-mono break-all">{entry.repositoryPath}</span>
-                  {entry.sourceFeatureId ? (
-                    <Badge variant="outline" className="text-[10px]">
-                      {entry.sourceFeatureId}
-                    </Badge>
-                  ) : null}
-                </div>
-              </li>
+                entry={entry}
+                spaces={spaces}
+                editing={editingId === entry.id}
+                draft={draft}
+                onDraftChange={setDraft}
+                onEdit={() => startEdit(entry)}
+                onCancel={cancelEdit}
+                onSave={() => saveEdit(entry.id)}
+                onDelete={() => setPendingDelete(entry)}
+                onScope={(scope) => changeScope(entry, scope)}
+              />
             ))}
           </ul>
         </section>

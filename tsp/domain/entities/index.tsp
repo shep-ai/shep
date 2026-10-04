@@ -55,6 +55,7 @@ import "./recognition-event.tsp";
 import "./sdlc-task.tsp";
 import "./sdlc-subtask.tsp";
 import "./project-memory.tsp";
+import "./space.tsp";
 import "./aspm/index.tsp";
 import "./cluster.tsp";
 import "./cluster-repository.tsp";

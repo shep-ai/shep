@@ -1,27 +1,45 @@
 import 'reflect-metadata';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { RecordProjectMemoryUseCase } from '@/application/use-cases/project-memory/record-project-memory.use-case.js';
-import type { IProjectMemoryRepository } from '@/application/ports/output/repositories/project-memory-repository.interface.js';
+import {
+  createMockProjectMemoryRepository,
+  DEFAULT_SPACE,
+  type MockProjectMemoryRepository,
+} from '../../../helpers/space-repositories.mock.js';
+import type { ResolveSpaceContextUseCase } from '@/application/use-cases/spaces/resolve-space-context.use-case.js';
+import { SpaceResolutionSource } from '@/domain/generated/output.js';
 import { MemoryCategory } from '@/domain/generated/output.js';
 import { MAX_CONTENT_LENGTH } from '@/application/use-cases/project-memory/project-memory.constants.js';
 
+function resolverFor(productLineId?: string): ResolveSpaceContextUseCase {
+  return {
+    execute: vi.fn(async (repositoryPath: string) => ({
+      repositoryPath,
+      space: DEFAULT_SPACE,
+      ...(productLineId
+        ? {
+            productLine: {
+              id: productLineId,
+              spaceId: DEFAULT_SPACE.id,
+              name: 'Line',
+              slug: 'line',
+              createdAt: new Date(0),
+              updatedAt: new Date(0),
+            },
+          }
+        : {}),
+      source: SpaceResolutionSource.Default,
+    })),
+  } as unknown as ResolveSpaceContextUseCase;
+}
+
 describe('RecordProjectMemoryUseCase', () => {
   let useCase: RecordProjectMemoryUseCase;
-  let repo: IProjectMemoryRepository;
+  let repo: MockProjectMemoryRepository;
 
   beforeEach(() => {
-    repo = {
-      create: vi.fn(),
-      findById: vi.fn(),
-      listByRepository: vi.fn(),
-      listAll: vi.fn(),
-      listOrganization: vi.fn(),
-      upsert: vi.fn().mockResolvedValue(undefined),
-      updateContent: vi.fn(),
-      updateScope: vi.fn(),
-      delete: vi.fn(),
-    };
-    useCase = new RecordProjectMemoryUseCase(repo);
+    repo = createMockProjectMemoryRepository();
+    useCase = new RecordProjectMemoryUseCase(repo, resolverFor('line-1'));
   });
 
   it('upserts each entry and reports the recorded count', async () => {
@@ -43,6 +61,8 @@ describe('RecordProjectMemoryUseCase', () => {
         entryKey: 'k1',
         content: 'A.',
         sourceFeatureId: 'feat-1',
+        spaceId: DEFAULT_SPACE.id,
+        productLineId: 'line-1',
       })
     );
   });
@@ -55,7 +75,7 @@ describe('RecordProjectMemoryUseCase', () => {
         { category: MemoryCategory.Convention, entryKey: 'k2', content: 'B.' },
       ],
     });
-    const ids = vi.mocked(repo.upsert).mock.calls.map(([arg]) => arg.id);
+    const ids = repo.upsert.mock.calls.map(([arg]) => arg.id);
     expect(new Set(ids).size).toBe(2);
     expect(ids[0]).toBeTruthy();
   });
@@ -81,7 +101,7 @@ describe('RecordProjectMemoryUseCase', () => {
       entries: [{ category: MemoryCategory.Library, entryKey: 'k', content: `  ${long}  ` }],
     });
 
-    const [arg] = vi.mocked(repo.upsert).mock.calls[0];
+    const [arg] = repo.upsert.mock.calls[0];
     expect(arg.content.length).toBe(MAX_CONTENT_LENGTH);
   });
 

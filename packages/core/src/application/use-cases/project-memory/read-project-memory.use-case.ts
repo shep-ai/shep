@@ -13,6 +13,7 @@ import { injectable, inject } from 'tsyringe';
 import type { IProjectMemoryRepository } from '../../ports/output/repositories/project-memory-repository.interface.js';
 import { renderMemoryBlob } from './render-memory-blob.js';
 import { loadCandidateMemory } from './load-candidate-memory.js';
+import { ResolveSpaceContextUseCase } from '../spaces/resolve-space-context.use-case.js';
 
 export interface ReadProjectMemoryInput {
   /** Normalised repository path whose memory should be loaded. */
@@ -30,7 +31,9 @@ export interface ReadProjectMemoryResult {
 export class ReadProjectMemoryUseCase {
   constructor(
     @inject('IProjectMemoryRepository')
-    private readonly memoryRepo: IProjectMemoryRepository
+    private readonly memoryRepo: IProjectMemoryRepository,
+    @inject(ResolveSpaceContextUseCase)
+    private readonly resolveSpaceContext: ResolveSpaceContextUseCase
   ) {}
 
   async execute(input: ReadProjectMemoryInput): Promise<ReadProjectMemoryResult> {
@@ -39,9 +42,10 @@ export class ReadProjectMemoryUseCase {
       return { blob: '', entryCount: 0 };
     }
 
-    // The agent sees this project's own memory PLUS every organization-wide
-    // entry (authored once, reused across all related projects).
-    const entries = await loadCandidateMemory(this.memoryRepo, repositoryPath);
+    // The agent sees this project's own memory plus its product line's and its
+    // space's shared entries — never another space's (spec 120).
+    const context = await this.resolveSpaceContext.execute(repositoryPath);
+    const entries = await loadCandidateMemory(this.memoryRepo, context);
     return { blob: renderMemoryBlob(entries), entryCount: entries.length };
   }
 }

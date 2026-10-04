@@ -998,8 +998,7 @@
       "delete": "Delete",
       "save": "Save",
       "cancel": "Cancel",
-      "makeOrgWide": "Make organization-wide",
-      "makeProjectOnly": "Make project-only"
+      "scope": "Alterar quem vê isto"
     },
     "deleteDialog": {
       "title": "Delete this memory entry?",
@@ -1007,10 +1006,18 @@
     },
     "errors": {
       "emptyContent": "Memory content cannot be empty.",
-      "updateFailed": "Failed to update the memory entry."
+      "updateFailed": "Failed to update the memory entry.",
+      "scopeFailed": "Não foi possível alterar quem vê esta entrada."
     },
     "scope": {
-      "organization": "Organization"
+      "project": "Apenas este repositório",
+      "productLine": "A sua linha de produto",
+      "space": "Todo o seu espaço",
+      "menuLabel": "Partilhado com"
+    },
+    "filter": {
+      "label": "Filtrar por espaço",
+      "allSpaces": "Todos os espaços"
     }
   },
   "sessionTree": {

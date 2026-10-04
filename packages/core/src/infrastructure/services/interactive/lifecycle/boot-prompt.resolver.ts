@@ -66,8 +66,10 @@ export class BootPromptResolver {
       // Inject the project memory ("Shep Brain") most relevant to this feature
       // so the interactive agent shares the same durable context as the SDLC
       // agents. Best-effort: a load failure must never block the session boot.
+      // Memory is keyed by the feature's repository, never the worktree path: a
+      // worktree lives under ~/.shep/repos and would resolve into the wrong space.
       let projectMemory: string | undefined;
-      const repositoryPath = feature?.repositoryPath ?? worktreePath;
+      const repositoryPath = feature?.repositoryPath;
       if (repositoryPath) {
         try {
           const taskText = [feature?.name, feature?.description].filter(Boolean).join(' ');
