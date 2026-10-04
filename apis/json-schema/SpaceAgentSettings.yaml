@@ -25,4 +25,10 @@ properties:
     items:
       $ref: AgentType.yaml
     description: Agent types allowed to run for this space; empty or unset allows every agent
+  prCommentTrigger:
+    $ref: PrCommentTrigger.yaml
+    description: Which pull request comments shep addresses without being asked (spec 124); unset means Mention
+  prCommentResolveThreads:
+    type: boolean
+    description: Resolve an inline review thread after changing code for it (spec 124); unset means no
 description: Agent credentials, identity and allowed agents for the repositories of a space

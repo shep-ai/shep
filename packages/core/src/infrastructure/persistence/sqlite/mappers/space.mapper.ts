@@ -8,6 +8,7 @@
 
 import type {
   AgentType,
+  PrCommentTrigger,
   ProductLine,
   RepositorySpaceAssignment,
   Space,
@@ -34,6 +35,10 @@ export interface SpaceRow {
   use_bedrock: number | null;
   /** JSON array of AgentType values. */
   allowed_agent_types: string | null;
+  /** PrCommentTrigger; NULL = the default (Mention). */
+  pr_comment_trigger: string | null;
+  /** 1 = resolve, 0 or NULL = leave threads open. */
+  pr_comment_resolve_threads: number | null;
   created_at: number;
   updated_at: number;
 }
@@ -98,6 +103,8 @@ type AgentSettingsColumns = Pick<
   | 'aws_profile'
   | 'use_bedrock'
   | 'allowed_agent_types'
+  | 'pr_comment_trigger'
+  | 'pr_comment_resolve_threads'
 >;
 
 function agentSettingsToColumns(settings: SpaceAgentSettings | undefined): AgentSettingsColumns {
@@ -110,6 +117,13 @@ function agentSettingsToColumns(settings: SpaceAgentSettings | undefined): Agent
     aws_profile: settings?.awsProfile ?? null,
     use_bedrock: settings?.useBedrock === undefined ? null : settings.useBedrock ? 1 : 0,
     allowed_agent_types: allowed && allowed.length > 0 ? JSON.stringify(allowed) : null,
+    pr_comment_trigger: settings?.prCommentTrigger ?? null,
+    pr_comment_resolve_threads:
+      settings?.prCommentResolveThreads === undefined
+        ? null
+        : settings.prCommentResolveThreads
+          ? 1
+          : 0,
   };
 }
 
@@ -124,6 +138,12 @@ function agentSettingsFromColumns(row: AgentSettingsColumns): SpaceAgentSettings
     ...(row.use_bedrock !== null ? { useBedrock: row.use_bedrock === 1 } : {}),
     ...(row.allowed_agent_types !== null
       ? { allowedAgentTypes: JSON.parse(row.allowed_agent_types) as AgentType[] }
+      : {}),
+    ...(row.pr_comment_trigger !== null
+      ? { prCommentTrigger: row.pr_comment_trigger as PrCommentTrigger }
+      : {}),
+    ...(row.pr_comment_resolve_threads !== null
+      ? { prCommentResolveThreads: row.pr_comment_resolve_threads === 1 }
       : {}),
   };
   return Object.keys(settings).length > 0 ? settings : undefined;

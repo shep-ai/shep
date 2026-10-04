@@ -1,0 +1,67 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: PrComment.yaml
+type: object
+properties:
+  featureId:
+    type: string
+    description: The feature whose pull request it is on
+  githubId:
+    type: string
+    description: GitHub's id for the comment, unique per kind
+  kind:
+    $ref: PrCommentKind.yaml
+    description: Where it was written
+  author:
+    type: string
+    description: GitHub login of the author
+  body:
+    type: string
+    description: Markdown body
+  path:
+    type: string
+    description: File the comment is on (inline comments)
+  line:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Line the comment is on (inline comments)
+  diffHunk:
+    type: string
+    description: The diff around the line (inline comments)
+  threadId:
+    type: string
+    description: GraphQL id of the review thread (inline comments)
+  url:
+    type: string
+    description: Link to the comment
+  writtenAt:
+    type: string
+    format: date-time
+    description: When it was written on GitHub
+  status:
+    $ref: PrCommentStatus.yaml
+    description: What has happened to it
+  reply:
+    type: string
+    description: The reply shep posted
+  replyUrl:
+    type: string
+    description: Link to that reply
+  roundId:
+    type: string
+    description: The round that last handled it
+  error:
+    type: string
+    description: Why the last round could not address it
+required:
+  - featureId
+  - githubId
+  - kind
+  - author
+  - body
+  - url
+  - writtenAt
+  - status
+allOf:
+  - $ref: BaseEntity.yaml
+description: A review comment on the pull request a feature opened

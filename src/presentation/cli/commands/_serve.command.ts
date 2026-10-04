@@ -58,14 +58,11 @@ import type { IRepositoryRepository } from '@/application/ports/output/repositor
 import type { IGitHubRepositoryService } from '@/application/ports/output/services/github-repository-service.interface.js';
 import type { IDesktopNotifier } from '@/application/ports/output/services/i-desktop-notifier.js';
 import type { IDeploymentService } from '@/application/ports/output/services/deployment-service.interface.js';
-import { RetentionScheduler } from '@/infrastructure/services/maintenance/retention-scheduler.js';
-import { createTrackerSyncWatcher } from '@/infrastructure/services/trackers/tracker-sync-watcher.js';
-import type { SyncTrackerRulesUseCase } from '@/application/use-cases/trackers/sync-tracker-rules.use-case.js';
-import { PruneRetainedDataUseCase } from '@/application/use-cases/maintenance/prune-retained-data.use-case.js';
 import { DaemonLogRotator } from '@/infrastructure/services/logging/daemon-log-rotator.js';
 import { getDaemonLogPath } from '@/infrastructure/services/filesystem/shep-directory.service.js';
 import type { IMessagingService } from '@/application/ports/output/services/messaging-service.interface.js';
 import { getCliI18n } from '../i18n.js';
+import { startBackgroundSync } from './background-sync.js';
 import type { IWorkflowRepository } from '@/application/ports/output/repositories/workflow-repository.interface.js';
 import type { IWorkflowExecutionRepository } from '@/application/ports/output/repositories/workflow-execution-repository.interface.js';
 import type { IClock } from '@/application/ports/output/services/clock.interface.js';
@@ -118,22 +115,9 @@ export function createServeCommand(): Command {
         const daemonLogRotator = new DaemonLogRotator(getDaemonLogPath());
         daemonLogRotator.start();
 
-        // Re-run data retention while this long-lived process is up: it
-        // otherwise runs only at process start (spec 116).
-        const retentionScheduler = new RetentionScheduler(
-          () => container.resolve(PruneRetainedDataUseCase).execute(),
-          (error) =>
-            process.stderr.write(`[_serve] data retention prune failed: ${String(error)}\n`)
-        );
-        retentionScheduler.start();
-
-        // Keep Linear and Jira sync rules current while this process is up (spec 122).
-        const trackerSyncWatcher = createTrackerSyncWatcher(
-          (now) =>
-            container.resolve<SyncTrackerRulesUseCase>('SyncTrackerRulesUseCase').runDue(now),
-          (error) => process.stderr.write(`[_serve] tracker sync failed: ${String(error)}\n`)
-        );
-        trackerSyncWatcher.start();
+        // Retention, tracker sync, PR status and PR comment sync (spec 124: the
+        // daemon now tracks PRs as shep ui does).
+        const backgroundSync = startBackgroundSync('_serve');
 
         // Start notification watcher
         const runRepo = container.resolve<IAgentRunRepository>('IAgentRunRepository');
@@ -207,8 +191,7 @@ export function createServeCommand(): Command {
             getWorkflowScheduler().stop();
           }
           daemonLogRotator.stop();
-          retentionScheduler.stop();
-          trackerSyncWatcher.stop();
+          backgroundSync.stop();
           getNotificationWatcher().stop();
           getAutoArchiveWatcher().stop();
           getStaleGoodFirstIssueWatcher().stop();

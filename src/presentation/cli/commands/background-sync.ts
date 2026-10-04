@@ -1,0 +1,78 @@
+/**
+ * The background sync every long-running shep web process keeps going —
+ * the `shep start` daemon (`_serve`) and `shep ui` alike:
+ *
+ * - data retention (spec 116)
+ * - Linear and Jira sync rules (spec 122)
+ * - PR and CI status of features in review
+ * - PR review comments (spec 124)
+ *
+ * PR status sync takes a cross-process lock, so running both processes at
+ * once is safe.
+ */
+
+import { container } from '@/infrastructure/di/container.js';
+import { RetentionScheduler } from '@/infrastructure/services/maintenance/retention-scheduler.js';
+import { createTrackerSyncWatcher } from '@/infrastructure/services/trackers/tracker-sync-watcher.js';
+import { createPrCommentWatcher } from '@/infrastructure/services/pr-sync/pr-comment-watcher.js';
+import {
+  getPrSyncWatcher,
+  initializePrSyncWatcher,
+} from '@/infrastructure/services/pr-sync/pr-sync-watcher.service.js';
+import { getExistingConnection } from '@/infrastructure/persistence/sqlite/connection.js';
+import { PruneRetainedDataUseCase } from '@/application/use-cases/maintenance/prune-retained-data.use-case.js';
+import type { SyncTrackerRulesUseCase } from '@/application/use-cases/trackers/sync-tracker-rules.use-case.js';
+import type { SyncPrCommentsUseCase } from '@/application/use-cases/pr-comments/sync-pr-comments.use-case.js';
+import type { IAgentRunRepository } from '@/application/ports/output/agents/agent-run-repository.interface.js';
+import type { IFeatureRepository } from '@/application/ports/output/repositories/feature-repository.interface.js';
+import type { INotificationService } from '@/application/ports/output/services/notification-service.interface.js';
+import type { IGitPrService } from '@/application/ports/output/services/git-pr-service.interface.js';
+import type { IGitForkService } from '@/application/ports/output/services/git-fork-service.interface.js';
+import type { ILogger } from '@/application/ports/output/services/logger.interface.js';
+
+export interface BackgroundSync {
+  stop(): void;
+}
+
+/** Starts the background sync; `label` prefixes errors written to stderr. */
+export function startBackgroundSync(label: string): BackgroundSync {
+  const report = (what: string) => (error: unknown) =>
+    process.stderr.write(`[${label}] ${what} failed: ${String(error)}\n`);
+
+  const retention = new RetentionScheduler(
+    () => container.resolve(PruneRetainedDataUseCase).execute(),
+    report('data retention prune')
+  );
+  const trackers = createTrackerSyncWatcher(
+    (now) => container.resolve<SyncTrackerRulesUseCase>('SyncTrackerRulesUseCase').runDue(now),
+    report('tracker sync')
+  );
+  const prComments = createPrCommentWatcher(
+    () => container.resolve<SyncPrCommentsUseCase>('SyncPrCommentsUseCase').runDue(),
+    report('PR comment sync')
+  );
+  initializePrSyncWatcher(
+    container.resolve<IFeatureRepository>('IFeatureRepository'),
+    container.resolve<IAgentRunRepository>('IAgentRunRepository'),
+    container.resolve<IGitPrService>('IGitPrService'),
+    container.resolve<INotificationService>('INotificationService'),
+    undefined,
+    getExistingConnection(),
+    container.resolve<IGitForkService>('IGitForkService'),
+    container.resolve<ILogger>('ILogger')
+  );
+
+  retention.start();
+  trackers.start();
+  prComments.start();
+  getPrSyncWatcher().start();
+
+  return {
+    stop() {
+      retention.stop();
+      trackers.stop();
+      prComments.stop();
+      getPrSyncWatcher().stop();
+    },
+  };
+}

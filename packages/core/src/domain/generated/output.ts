@@ -4088,6 +4088,11 @@ export type ProjectMemory = BaseEntity & {
    */
   productLineId?: string;
 };
+export enum PrCommentTrigger {
+  Off = 'Off',
+  Mention = 'Mention',
+  All = 'All',
+}
 
 /**
  * Agent credentials, identity and allowed agents for the repositories of a space
@@ -4121,6 +4126,14 @@ export type SpaceAgentSettings = {
    * Agent types allowed to run for this space; empty or unset allows every agent
    */
   allowedAgentTypes?: AgentType[];
+  /**
+   * Which pull request comments shep addresses without being asked (spec 124); unset means Mention
+   */
+  prCommentTrigger?: PrCommentTrigger;
+  /**
+   * Resolve an inline review thread after changing code for it (spec 124); unset means no
+   */
+  prCommentResolveThreads?: boolean;
 };
 
 /**
@@ -4229,6 +4242,131 @@ export type RepositorySpaceAssignment = {
    * When the assignment was last changed
    */
   updatedAt: any;
+};
+export enum PrCommentKind {
+  Inline = 'Inline',
+  Conversation = 'Conversation',
+  Review = 'Review',
+}
+export enum PrCommentStatus {
+  Pending = 'Pending',
+  Addressing = 'Addressing',
+  Addressed = 'Addressed',
+  Declined = 'Declined',
+  Failed = 'Failed',
+}
+
+/**
+ * A review comment on the pull request a feature opened
+ */
+export type PrComment = BaseEntity & {
+  /**
+   * The feature whose pull request it is on
+   */
+  featureId: string;
+  /**
+   * GitHub's id for the comment, unique per kind
+   */
+  githubId: string;
+  /**
+   * Where it was written
+   */
+  kind: PrCommentKind;
+  /**
+   * GitHub login of the author
+   */
+  author: string;
+  /**
+   * Markdown body
+   */
+  body: string;
+  /**
+   * File the comment is on (inline comments)
+   */
+  path?: string;
+  /**
+   * Line the comment is on (inline comments)
+   */
+  line?: number;
+  /**
+   * The diff around the line (inline comments)
+   */
+  diffHunk?: string;
+  /**
+   * GraphQL id of the review thread (inline comments)
+   */
+  threadId?: string;
+  /**
+   * Link to the comment
+   */
+  url: string;
+  /**
+   * When it was written on GitHub
+   */
+  writtenAt: any;
+  /**
+   * What has happened to it
+   */
+  status: PrCommentStatus;
+  /**
+   * The reply shep posted
+   */
+  reply?: string;
+  /**
+   * Link to that reply
+   */
+  replyUrl?: string;
+  /**
+   * The round that last handled it
+   */
+  roundId?: string;
+  /**
+   * Why the last round could not address it
+   */
+  error?: string;
+};
+export enum PrCommentRoundStatus {
+  Running = 'Running',
+  Completed = 'Completed',
+  Failed = 'Failed',
+}
+
+/**
+ * One agent turn addressing a feature's pending pull request comments
+ */
+export type PrCommentRound = BaseEntity & {
+  /**
+   * The feature
+   */
+  featureId: string;
+  /**
+   * The comments addressed
+   */
+  commentIds: string[];
+  /**
+   * Where the round is
+   */
+  status: PrCommentRoundStatus;
+  /**
+   * The agent used
+   */
+  agentType?: AgentType;
+  /**
+   * The commit pushed, when code changed
+   */
+  commitSha?: string;
+  /**
+   * The agent's summary of what it did
+   */
+  summary?: string;
+  /**
+   * Why the round failed
+   */
+  error?: string;
+  /**
+   * When the round finished
+   */
+  finishedAt?: any;
 };
 
 /**

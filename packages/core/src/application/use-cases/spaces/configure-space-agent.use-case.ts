@@ -3,7 +3,8 @@
  *
  * Shows and changes a space's agent settings: the Claude and gh config
  * directories, the git identity, Bedrock and AWS profile, and the agent types
- * the space allows. A patch sets the fields it gives, clears the ones it sets
+ * the space allows, and which PR comments shep answers on its own (spec 124).
+ * A patch sets the fields it gives, clears the ones it sets
  * to null, and keeps the rest. Credentials are never stored; a space only
  * points at directories the tools manage their own logins in.
  */
@@ -11,6 +12,7 @@
 import { injectable, inject } from 'tsyringe';
 import {
   AgentType,
+  PrCommentTrigger,
   type Space,
   type SpaceAgentSettings,
 } from '../../../domain/generated/output.js';
@@ -31,6 +33,7 @@ export type SpaceAgentSettingsPatch = {
 const EMAIL = /^[^\s@]+@[^\s@]+$/;
 const AWS_PROFILE = /^[\w.+@-]+$/;
 const AGENT_TYPES = new Set<string>(Object.values(AgentType));
+const PR_COMMENT_TRIGGERS = new Set<string>(Object.values(PrCommentTrigger));
 
 type Validated<T> = { ok: true; value: T | undefined } | { ok: false; error: string };
 
@@ -77,6 +80,15 @@ function validateField(
       if (unknown) return { ok: false, error: `"${unknown}" is not an agent type.` };
       return { ok: true, value: types.length > 0 ? types : undefined };
     }
+    case 'prCommentTrigger':
+      return PR_COMMENT_TRIGGERS.has(value as string)
+        ? { ok: true, value: value as PrCommentTrigger }
+        : {
+            ok: false,
+            error: `"${String(value)}" is not a PR comment trigger (${[...PR_COMMENT_TRIGGERS].join(', ')}).`,
+          };
+    case 'prCommentResolveThreads':
+      return { ok: true, value: value as boolean };
   }
 }
 

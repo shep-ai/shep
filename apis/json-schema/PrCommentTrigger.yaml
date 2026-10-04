@@ -1,0 +1,8 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: PrCommentTrigger.yaml
+type: string
+enum:
+  - Off
+  - Mention
+  - All
+description: Which pull request comments shep addresses without being asked

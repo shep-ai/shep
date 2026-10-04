@@ -26,18 +26,12 @@ import type { IAgentRunRepository } from '@/application/ports/output/agents/agen
 import type { IPhaseTimingRepository } from '@/application/ports/output/agents/phase-timing-repository.interface.js';
 import type { IFeatureRepository } from '@/application/ports/output/repositories/feature-repository.interface.js';
 import type { INotificationService } from '@/application/ports/output/services/notification-service.interface.js';
-import type { IGitPrService } from '@/application/ports/output/services/git-pr-service.interface.js';
-import type { IGitForkService } from '@/application/ports/output/services/git-fork-service.interface.js';
 import { setVersionEnvVars } from '@/infrastructure/services/version.service.js';
 import { resolveWebDir } from '@/infrastructure/services/web-server.service.js';
 import {
   initializeNotificationWatcher,
   getNotificationWatcher,
 } from '@/infrastructure/services/notifications/notification-watcher.service.js';
-import {
-  initializePrSyncWatcher,
-  getPrSyncWatcher,
-} from '@/infrastructure/services/pr-sync/pr-sync-watcher.service.js';
 import {
   initializeAutoArchiveWatcher,
   getAutoArchiveWatcher,
@@ -50,14 +44,9 @@ import {
   initializeMonthlyRecapWatcher,
   getMonthlyRecapWatcher,
 } from '@/infrastructure/services/contributors/monthly-recap-watcher.service.js';
-import { RetentionScheduler } from '@/infrastructure/services/maintenance/retention-scheduler.js';
-import { createTrackerSyncWatcher } from '@/infrastructure/services/trackers/tracker-sync-watcher.js';
-import type { SyncTrackerRulesUseCase } from '@/application/use-cases/trackers/sync-tracker-rules.use-case.js';
-import { PruneRetainedDataUseCase } from '@/application/use-cases/maintenance/prune-retained-data.use-case.js';
 import { DetectStaleGoodFirstIssueUseCase } from '@/application/use-cases/contributors/detect-stale-good-first-issue.use-case.js';
 import { GenerateMonthlyRecapUseCase } from '@/application/use-cases/contributors/generate-monthly-recap.use-case.js';
 import { PublishMonthlyRecapUseCase } from '@/application/use-cases/contributors/publish-monthly-recap.use-case.js';
-import { getExistingConnection } from '@/infrastructure/persistence/sqlite/connection.js';
 import type { IBrowserOpener } from '@/application/ports/output/services/i-browser-opener.js';
 import type { IRepositoryRepository } from '@/application/ports/output/repositories/repository-repository.interface.js';
 import type { IGitHubRepositoryService } from '@/application/ports/output/services/github-repository-service.interface.js';
@@ -71,6 +60,7 @@ import {
 } from '@/infrastructure/services/webhook/webhook-manager.service.js';
 import { colors, fmt, messages } from '../ui/index.js';
 import { getCliI18n } from '../i18n.js';
+import { startBackgroundSync } from './background-sync.js';
 
 function parsePort(value: string): number {
   const port = parseInt(value, 10);
@@ -128,37 +118,8 @@ Examples:
         initializeNotificationWatcher(runRepo, phaseTimingRepo, featureRepo, notificationService);
         getNotificationWatcher().start();
 
-        // Start PR sync watcher to detect PR/CI status transitions on GitHub
-        const gitPrService = container.resolve<IGitPrService>('IGitPrService');
-        const gitForkService = container.resolve<IGitForkService>('IGitForkService');
-        const db = getExistingConnection();
-        initializePrSyncWatcher(
-          featureRepo,
-          runRepo,
-          gitPrService,
-          notificationService,
-          undefined,
-          db,
-          gitForkService,
-          container.resolve<ILogger>('ILogger')
-        );
-        getPrSyncWatcher().start();
-
-        // Re-run data retention while this long-lived process is up: it
-        // otherwise runs only at process start (spec 116).
-        const retentionScheduler = new RetentionScheduler(
-          () => container.resolve(PruneRetainedDataUseCase).execute(),
-          (error) => process.stderr.write(`[ui] data retention prune failed: ${String(error)}\n`)
-        );
-        retentionScheduler.start();
-
-        // Keep Linear and Jira sync rules current while this process is up (spec 122).
-        const trackerSyncWatcher = createTrackerSyncWatcher(
-          (now) =>
-            container.resolve<SyncTrackerRulesUseCase>('SyncTrackerRulesUseCase').runDue(now),
-          (error) => process.stderr.write(`[ui] tracker sync failed: ${String(error)}\n`)
-        );
-        trackerSyncWatcher.start();
+        // Retention, tracker sync, PR status and PR comment sync.
+        const backgroundSync = startBackgroundSync('ui');
 
         // Start auto-archive watcher for completed features
         initializeAutoArchiveWatcher(featureRepo);
@@ -234,11 +195,9 @@ Examples:
           if (hasWebhookManager()) {
             await getWebhookManager().stop();
           }
-          getPrSyncWatcher().stop();
+          backgroundSync.stop();
           getNotificationWatcher().stop();
           getAutoArchiveWatcher().stop();
-          retentionScheduler.stop();
-          trackerSyncWatcher.stop();
           getStaleGoodFirstIssueWatcher().stop();
           getMonthlyRecapWatcher().stop();
           void whatsappService.stop();

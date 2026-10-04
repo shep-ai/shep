@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ConfigureSpaceAgentUseCase } from '@/application/use-cases/spaces/configure-space-agent.use-case.js';
-import { AgentType, type Space } from '@/domain/generated/output.js';
+import { AgentType, PrCommentTrigger, type Space } from '@/domain/generated/output.js';
 import {
   createMockSpaceRepository,
   type MockSpaceRepository,
@@ -59,6 +59,18 @@ describe('ConfigureSpaceAgentUseCase', () => {
     expect(saved.agentSettings).toBeUndefined();
   });
 
+  it('sets and clears the PR comment trigger and thread resolution (spec 124)', async () => {
+    await useCase.configure('acme', {
+      prCommentTrigger: PrCommentTrigger.All,
+      prCommentResolveThreads: true,
+    });
+    const saved = spaces.update.mock.calls[0][0] as Space;
+    expect(saved.agentSettings).toMatchObject({
+      prCommentTrigger: PrCommentTrigger.All,
+      prCommentResolveThreads: true,
+    });
+  });
+
   it('clears allowed agents with an empty list', async () => {
     await useCase.configure('acme', { allowedAgentTypes: [] });
     const saved = spaces.update.mock.calls[0][0] as Space;
@@ -71,6 +83,7 @@ describe('ConfigureSpaceAgentUseCase', () => {
     [{ gitAuthorEmail: 'not-an-email' }, 'email'],
     [{ awsProfile: 'two words' }, 'profile'],
     [{ allowedAgentTypes: ['no-such-agent' as AgentType] }, 'no-such-agent'],
+    [{ prCommentTrigger: 'Sometimes' as PrCommentTrigger }, 'Sometimes'],
   ])('refuses %o', async (patch, message) => {
     const result = await useCase.configure('acme', patch);
     expect(result.ok).toBe(false);

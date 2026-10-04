@@ -15,6 +15,7 @@
  */
 import "../../common/base.tsp";
 import "../../common/enums/agent-config.tsp";
+import "./pr-comment.tsp";
 
 /** How a space rule recognises a repository. */
 @doc("How a space rule recognises a repository")
@@ -74,6 +75,12 @@ model SpaceAgentSettings {
 
   @doc("Agent types allowed to run for this space; empty or unset allows every agent")
   allowedAgentTypes?: AgentType[];
+
+  @doc("Which pull request comments shep addresses without being asked (spec 124); unset means Mention")
+  prCommentTrigger?: PrCommentTrigger;
+
+  @doc("Resolve an inline review thread after changing code for it (spec 124); unset means no")
+  prCommentResolveThreads?: boolean;
 }
 
 /** A hard knowledge boundary such as "Acme (work)" or "Personal". */

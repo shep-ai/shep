@@ -52,7 +52,10 @@ vi.mock('@/infrastructure/di/container.js', () => ({
         token === 'IDesktopNotifier' ||
         token === 'IWorkflowRepository' ||
         token === 'IWorkflowExecutionRepository' ||
-        token === 'IClock'
+        token === 'IClock' ||
+        token === 'IGitPrService' ||
+        token === 'IGitForkService' ||
+        token === 'ILogger'
       ) {
         return {};
       }
@@ -78,6 +81,16 @@ vi.mock('@/infrastructure/services/notifications/notification-watcher.service.js
     start: vi.fn(),
     stop: vi.fn(),
   }),
+}));
+
+// Mock PR status sync (spec 124: the daemon tracks PRs as shep ui does)
+const prSyncWatcher = vi.hoisted(() => ({ start: vi.fn(), stop: vi.fn() }));
+vi.mock('@/infrastructure/services/pr-sync/pr-sync-watcher.service.js', () => ({
+  initializePrSyncWatcher: vi.fn(),
+  getPrSyncWatcher: vi.fn(() => prSyncWatcher),
+}));
+vi.mock('@/infrastructure/persistence/sqlite/connection.js', () => ({
+  getExistingConnection: vi.fn(() => ({})),
 }));
 
 // Mock auto-archive watcher
@@ -238,6 +251,28 @@ describe('_serve command', () => {
       await handlers['SIGTERM']?.();
 
       expect(retentionScheduler.stop).toHaveBeenCalled();
+      processSpy.mockRestore();
+      exitSpy.mockRestore();
+    });
+  });
+
+  describe('PR status sync (spec 124)', () => {
+    it('tracks PRs while the daemon runs and stops on shutdown', async () => {
+      const handlers: Record<string, () => Promise<void>> = {};
+      const processSpy = vi
+        .spyOn(process, 'on')
+        .mockImplementation((event: string | symbol, listener: (...args: unknown[]) => void) => {
+          handlers[String(event)] = listener as () => Promise<void>;
+          return process;
+        });
+      const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => undefined as never);
+
+      const cmd = createServeCommand();
+      await cmd.parseAsync(['--port', '4050'], { from: 'user' });
+      expect(prSyncWatcher.start).toHaveBeenCalled();
+      await handlers['SIGTERM']?.();
+      expect(prSyncWatcher.stop).toHaveBeenCalled();
+
       processSpy.mockRestore();
       exitSpy.mockRestore();
     });

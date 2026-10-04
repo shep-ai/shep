@@ -50,10 +50,12 @@ export class SQLiteSpaceRepository implements ISpaceRepository {
       .prepare(
         `INSERT INTO spaces (id, name, slug, description, color, is_default,
            claude_config_dir, gh_config_dir, git_author_name, git_author_email, aws_profile,
-           use_bedrock, allowed_agent_types, created_at, updated_at)
+           use_bedrock, allowed_agent_types, pr_comment_trigger, pr_comment_resolve_threads,
+           created_at, updated_at)
          VALUES (@id, @name, @slug, @description, @color, @is_default,
            @claude_config_dir, @gh_config_dir, @git_author_name, @git_author_email, @aws_profile,
-           @use_bedrock, @allowed_agent_types, @created_at, @updated_at)`
+           @use_bedrock, @allowed_agent_types, @pr_comment_trigger, @pr_comment_resolve_threads,
+           @created_at, @updated_at)`
       )
       .run(spaceToDatabase(space));
   }
@@ -66,7 +68,8 @@ export class SQLiteSpaceRepository implements ISpaceRepository {
            color = @color, claude_config_dir = @claude_config_dir, gh_config_dir = @gh_config_dir,
            git_author_name = @git_author_name, git_author_email = @git_author_email,
            aws_profile = @aws_profile, use_bedrock = @use_bedrock,
-           allowed_agent_types = @allowed_agent_types, updated_at = @updated_at
+           allowed_agent_types = @allowed_agent_types, pr_comment_trigger = @pr_comment_trigger,
+           pr_comment_resolve_threads = @pr_comment_resolve_threads, updated_at = @updated_at
          WHERE id = @id`
       )
       .run({
@@ -82,6 +85,8 @@ export class SQLiteSpaceRepository implements ISpaceRepository {
         aws_profile: row.aws_profile,
         use_bedrock: row.use_bedrock,
         allowed_agent_types: row.allowed_agent_types,
+        pr_comment_trigger: row.pr_comment_trigger,
+        pr_comment_resolve_threads: row.pr_comment_resolve_threads,
         updated_at: row.updated_at,
       });
   }

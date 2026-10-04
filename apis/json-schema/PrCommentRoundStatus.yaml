@@ -1,0 +1,8 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: PrCommentRoundStatus.yaml
+type: string
+enum:
+  - Running
+  - Completed
+  - Failed
+description: Where a round of addressing pull request comments is

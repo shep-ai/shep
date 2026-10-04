@@ -63,13 +63,25 @@ vi.mock('@/infrastructure/di/container.js', () => ({
         token === 'IClock' ||
         token === 'IRepositoryRepository' ||
         token === 'IGitHubRepositoryService' ||
-        token === 'IDesktopNotifier'
+        token === 'IDesktopNotifier' ||
+        token === 'IGitPrService' ||
+        token === 'IGitForkService' ||
+        token === 'ILogger'
       ) {
         return {};
       }
       throw new Error(`Unknown token: ${String(token)}`);
     }),
   },
+}));
+
+// PR status sync runs in the daemon too (spec 124).
+vi.mock('@/infrastructure/services/pr-sync/pr-sync-watcher.service.js', () => ({
+  initializePrSyncWatcher: vi.fn(),
+  getPrSyncWatcher: vi.fn(() => ({ start: vi.fn(), stop: vi.fn() })),
+}));
+vi.mock('@/infrastructure/persistence/sqlite/connection.js', () => ({
+  getExistingConnection: vi.fn(() => ({})),
 }));
 
 vi.mock('@/infrastructure/services/version.service.js', () => ({

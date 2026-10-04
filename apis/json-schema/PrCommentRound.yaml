@@ -1,0 +1,38 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: PrCommentRound.yaml
+type: object
+properties:
+  featureId:
+    type: string
+    description: The feature
+  commentIds:
+    type: array
+    items:
+      type: string
+    description: The comments addressed
+  status:
+    $ref: PrCommentRoundStatus.yaml
+    description: Where the round is
+  agentType:
+    $ref: AgentType.yaml
+    description: The agent used
+  commitSha:
+    type: string
+    description: The commit pushed, when code changed
+  summary:
+    type: string
+    description: The agent's summary of what it did
+  error:
+    type: string
+    description: Why the round failed
+  finishedAt:
+    type: string
+    format: date-time
+    description: When the round finished
+required:
+  - featureId
+  - commentIds
+  - status
+allOf:
+  - $ref: BaseEntity.yaml
+description: One agent turn addressing a feature's pending pull request comments

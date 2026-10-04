@@ -1,0 +1,10 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: PrCommentStatus.yaml
+type: string
+enum:
+  - Pending
+  - Addressing
+  - Addressed
+  - Declined
+  - Failed
+description: What has happened to a pull request review comment

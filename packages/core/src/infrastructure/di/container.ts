@@ -89,6 +89,7 @@ import { registerRepositories } from './modules/register-repositories.js';
 import { registerSpaces } from './modules/register-spaces.js';
 import { registerTrackers } from './modules/register-trackers.js';
 import { registerBugLoop } from './modules/register-bug-loop.js';
+import { registerPrComments } from './modules/register-pr-comments.js';
 import { SessionSpaceEnvironment } from '../services/interactive/lifecycle/session-space-environment.js';
 import { ResolveSpaceEnvironmentUseCase } from '../../application/use-cases/spaces/resolve-space-environment.use-case.js';
 import { registerServices } from './modules/register-services.js';
@@ -137,6 +138,7 @@ export async function initializeContainer(): Promise<typeof container> {
   registerSpaces(container);
   registerTrackers(container);
   registerBugLoop(container);
+  registerPrComments(container);
   registerServices(container);
   registerTools(container);
   registerAgents(container);
