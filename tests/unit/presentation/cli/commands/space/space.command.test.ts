@@ -321,6 +321,20 @@ describe('shep space', () => {
       });
     });
 
+    it('sets which PR comments shep answers and thread resolution (spec 124)', async () => {
+      agentConfig.configure.mockResolvedValue(configured);
+      await run('config', 'acme', '--pr-comments', 'ALL', '--resolve-threads');
+      expect(agentConfig.configure).toHaveBeenCalledWith('acme', {
+        prCommentTrigger: 'All',
+        prCommentResolveThreads: true,
+      });
+    });
+
+    it('shows the default PR comment trigger', async () => {
+      agentConfig.show.mockResolvedValue(configured);
+      expect(await run('config', 'acme')).toContain('Mention (default)');
+    });
+
     it('clears the named fields', async () => {
       agentConfig.configure.mockResolvedValue(configured);
       await run('config', 'acme', '--clear', 'gh-config-dir', 'bedrock', 'agents');

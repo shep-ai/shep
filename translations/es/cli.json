@@ -494,6 +494,22 @@
         "notWaitingForApproval": "La funcionalidad \"{{name}}\" no está esperando aprobación (estado: {{status}})",
         "noFeaturesWaiting": "No hay funcionalidades esperando aprobación en este repositorio",
         "multipleFeaturesWaiting": "Múltiples funcionalidades esperando aprobación. Especifica una:"
+      },
+      "comments": {
+        "description": "Mostrar los comentarios de revisión del pull request de una funcionalidad y qué hizo shep con ellos",
+        "featureArg": "Id de la funcionalidad o prefijo",
+        "noRefreshOption": "Usar los comentarios guardados en lugar de leer GitHub",
+        "failed": "Falló el comando de comentarios del PR",
+        "title": "Comentarios de revisión de {{name}}",
+        "none": "Todavía no hay comentarios de revisión.",
+        "next": "Atiende los pendientes con: shep feat address-comments {{feature}}",
+        "round": "Última ronda: {{status}}, {{count}} comentarios{{commit}}{{error}}",
+        "commit": ", se subió {{sha}}"
+      },
+      "addressComments": {
+        "description": "Hacer que un agente atienda los comentarios pendientes en el worktree de la funcionalidad, haga push y responda a cada uno",
+        "commentsArg": "Ids de comentarios o prefijos (por defecto: todos los pendientes)",
+        "spinner": "Atendiendo {{count}} comentarios"
       }
     },
     "repo": {
@@ -1217,7 +1233,14 @@
         "environment": "Entorno de los procesos de agentes",
         "sets": "Define",
         "removes": "Elimina",
-        "success": "Ajustes de agentes de {{name}} guardados"
+        "success": "Ajustes de agentes de {{name}} guardados",
+        "prCommentsOption": "Qué comentarios de revisión responde shep por su cuenta: off, mention (#shep) o all",
+        "resolveThreadsOption": "Resolver un hilo de revisión tras cambiar código para él",
+        "noResolveThreadsOption": "Dejar que quien revisa resuelva los hilos",
+        "prComments": "Comentarios de PR respondidos",
+        "resolveThreads": "Resolver hilos",
+        "defaultValue": "{{value}} (por defecto)",
+        "badTrigger": "\"{{value}}\" no es un disparador de comentarios de PR. Usa uno de: {{triggers}}"
       }
     },
     "connection": {

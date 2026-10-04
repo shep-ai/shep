@@ -1374,7 +1374,15 @@
       "loginHint": "سجّل الدخول مرة واحدة مع تعيين الدليل، مثل CLAUDE_CONFIG_DIR=~/.claude-acme claude أو GH_CONFIG_DIR=~/.config/gh-acme gh auth login. لا يخزّن Shep بيانات الاعتماد أبدًا.",
       "allowedAgents": "الوكلاء المسموح بهم",
       "allowedAgentsHint": "عدم التحديد يسمح بكل الوكلاء.",
-      "save": "حفظ إعدادات الوكلاء"
+      "save": "حفظ إعدادات الوكلاء",
+      "prComments": "تعليقات طلبات الدمج",
+      "prCommentsHint": "تعليقات المراجعة على طلبات دمج shep التي يُرد عليها دون طلب. يمكن معالجة الباقي من الميزة.",
+      "prTrigger": {
+        "Off": "عند الطلب فقط",
+        "Mention": "التعليقات التي تذكر #shep",
+        "All": "كل التعليقات"
+      },
+      "resolveThreads": "إغلاق السلاسل التي عُدّلت الشيفرة لأجلها"
     }
   },
   "trackers": {
@@ -1461,5 +1469,29 @@
       "fixing": "جارٍ بدء الإصلاح…",
       "approved": "قيد الإصلاح"
     }
+  },
+  "prComments": {
+    "title": "تعليقات المراجعة",
+    "refresh": "قراءة التعليقات من GitHub",
+    "address": "معالجة {{count}} معلّقة",
+    "running": "يعالج وكيل {{count}} تعليقات في مساحة عمل الميزة…",
+    "roundPushed": "دفعت الجولة الأخيرة {{sha}} وردّت.",
+    "roundAnswered": "ردّت الجولة الأخيرة دون تعديل الشيفرة.",
+    "roundFailed": "فشلت الجولة الأخيرة: {{error}}",
+    "empty": "لا توجد تعليقات مراجعة على طلب الدمج بعد.",
+    "openOnGitHub": "فتح في GitHub",
+    "status": {
+      "Pending": "معلّق",
+      "Addressing": "قيد المعالجة",
+      "Addressed": "تمت المعالجة",
+      "Declined": "مرفوض",
+      "Failed": "فشل"
+    },
+    "kind": {
+      "Inline": "على سطر",
+      "Conversation": "محادثة",
+      "Review": "مراجعة"
+    },
+    "addressNone": "لا شيء للمعالجة"
   }
 }

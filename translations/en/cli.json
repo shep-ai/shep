@@ -494,6 +494,22 @@
         "notWaitingForApproval": "Feature \"{{name}}\" is not waiting for approval (status: {{status}})",
         "noFeaturesWaiting": "No features waiting for approval in this repository",
         "multipleFeaturesWaiting": "Multiple features waiting for approval. Specify one:"
+      },
+      "comments": {
+        "description": "Show the review comments on a feature's pull request and what shep did about them",
+        "featureArg": "Feature id or id prefix",
+        "noRefreshOption": "Use the stored comments instead of reading GitHub",
+        "failed": "PR comment command failed",
+        "title": "Review comments on {{name}}",
+        "none": "No review comments yet.",
+        "next": "Address the pending ones with: shep feat address-comments {{feature}}",
+        "round": "Last round: {{status}}, {{count}} comments{{commit}}{{error}}",
+        "commit": ", pushed {{sha}}"
+      },
+      "addressComments": {
+        "description": "Have an agent address pending review comments in the feature's worktree, push, and reply on each",
+        "commentsArg": "Comment ids or id prefixes (default: every pending comment)",
+        "spinner": "Addressing {{count}} comments"
       }
     },
     "repo": {
@@ -1217,7 +1233,14 @@
         "environment": "Environment for agent processes",
         "sets": "Sets",
         "removes": "Removes",
-        "success": "Agent settings for {{name}} saved"
+        "success": "Agent settings for {{name}} saved",
+        "prCommentsOption": "Which PR review comments shep answers on its own: off, mention (#shep) or all",
+        "resolveThreadsOption": "Resolve a review thread after changing code for it",
+        "noResolveThreadsOption": "Leave review threads for the reviewer to resolve",
+        "prComments": "PR comments answered",
+        "resolveThreads": "Resolve threads",
+        "defaultValue": "{{value}} (default)",
+        "badTrigger": "\"{{value}}\" is not a PR comment trigger. Use one of: {{triggers}}"
       }
     },
     "connection": {

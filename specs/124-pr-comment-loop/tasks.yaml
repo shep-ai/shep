@@ -17,7 +17,7 @@ tasks:
     title: PR comment domain model in TypeSpec
     description: >
       Enums PrCommentKind, PrCommentStatus, PrCommentTrigger, PrCommentRoundStatus; entities PrComment and PrCommentRound; SpaceAgentSettings gains prCommentTrigger and prCommentResolveThreads.
-    state: Todo
+    state: Done
     dependencies: []
     acceptanceCriteria:
       - pnpm tsp:compile passes
@@ -35,7 +35,7 @@ tasks:
     title: Pure trigger and reply rules
     description: >
       domain/shared/pr-comments.ts: the reply marker, whether a comment is shep's own, whether a trigger addresses a comment, and reply text with the commit.
-    state: Todo
+    state: Done
     dependencies:
       - task-1
     acceptanceCriteria:
@@ -53,7 +53,7 @@ tasks:
     title: Persistence
     description: >
       Migration 156, mappers and SQLite repositories for comments (upsert by feature and GitHub id) and rounds; spaces columns.
-    state: Todo
+    state: Done
     dependencies:
       - task-1
     acceptanceCriteria:
@@ -71,7 +71,7 @@ tasks:
     title: gh PR comment client
     description: >
       IPullRequestCommentService and its gh implementation: list all three kinds across pages with thread ids, reply on a thread or as a quoted comment, resolve a thread; runs gh with the space environment.
-    state: Todo
+    state: Done
     dependencies: []
     acceptanceCriteria:
       - Argument and parsing tests with a fake exec
@@ -88,7 +88,7 @@ tasks:
     title: FetchPrCommentsUseCase
     description: >
       Reads a feature's PR comments into the store, skipping shep's own replies.
-    state: Todo
+    state: Done
     dependencies:
       - task-2
       - task-3
@@ -108,7 +108,7 @@ tasks:
     title: AddressPrCommentsUseCase
     description: >
       start validates the feature and records a round; run calls the agent in the worktree, checks the push, posts replies, resolves threads and records the outcome.
-    state: Todo
+    state: Done
     dependencies:
       - task-5
     acceptanceCriteria:
@@ -126,7 +126,7 @@ tasks:
     title: Daemon sync
     description: >
       SyncPrCommentsUseCase.runDue fetches comments of features in Review and addresses those the space's trigger selects; shep start and shep ui run it and PR status sync through one shared starter.
-    state: Todo
+    state: Done
     dependencies:
       - task-6
     acceptanceCriteria:
@@ -144,7 +144,7 @@ tasks:
     title: CLI
     description: >
       shep feat comments and address-comments; space config --pr-comments and --resolve-threads.
-    state: Todo
+    state: Done
     dependencies:
       - task-6
     acceptanceCriteria:
@@ -162,7 +162,7 @@ tasks:
     title: Web actions and section
     description: >
       Server actions with a Storybook mock; PrCommentsSection in the feature drawer overview with the comment list, round state and Address comments.
-    state: Todo
+    state: Done
     dependencies:
       - task-6
     acceptanceCriteria:
@@ -180,7 +180,7 @@ tasks:
     title: Space settings form and i18n
     description: >
       Trigger and resolve options in the space agent settings form; strings in 9 locales.
-    state: Todo
+    state: Done
     dependencies:
       - task-1
     acceptanceCriteria:
@@ -198,7 +198,7 @@ tasks:
     title: Docs
     description: >
       Guide, architecture note, CLI reference, spaces guide.
-    state: Todo
+    state: Done
     dependencies:
       - task-8
       - task-9
@@ -217,7 +217,7 @@ tasks:
     title: Verification
     description: >
       lint, format, typecheck, unit, integration, build, web build, stories.
-    state: Todo
+    state: Done
     dependencies:
       - task-11
     acceptanceCriteria:

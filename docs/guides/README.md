@@ -16,6 +16,7 @@ Guides for using Shep AI CLI effectively.
 | [spaces.md](./spaces.md)                                             | Keep personal and work knowledge apart  |
 | [trackers.md](./trackers.md)                                         | Keep Linear and Jira in sync            |
 | [bug-loop.md](./bug-loop.md)                                         | Investigate and fix bugs                |
+| [pr-comments.md](./pr-comments.md)                                   | Review comments on shep's pull requests |
 
 ## Quick Start
 

@@ -275,6 +275,7 @@ export function MergeReview({
   isRejecting = false,
   chatInput,
   onChatInputChange,
+  children,
 }: MergeReviewProps) {
   const { pr, diffSummary, fileDiffs, branch, warning, evidence, hideCiStatus } = data;
   const hasConflicts = pr?.mergeable === false;
@@ -482,6 +483,8 @@ export function MergeReview({
             <p className="text-sm">No file changes in this diff.</p>
           </div>
         ) : null}
+
+        {children}
       </div>
 
       {!readOnly && (

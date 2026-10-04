@@ -8,6 +8,8 @@
  *   shep feat ls                 # List features
  *   shep feat show <id>          # Show feature details
  *   shep feat del <id>           # Delete a feature
+ *   shep feat comments <id>      # PR review comments and what shep did about them
+ *   shep feat address-comments <id>  # Address pending PR review comments
  */
 
 import { Command } from 'commander';
@@ -27,6 +29,8 @@ import { createArchiveCommand } from './archive.command.js';
 import { createUnarchiveCommand } from './unarchive.command.js';
 import { createFeedbackCommand } from './feedback.command.js';
 import { createPromoteCommand } from './promote.command.js';
+import { createCommentsCommand } from './comments.command.js';
+import { createAddressCommentsCommand } from './address-comments.command.js';
 
 /**
  * Create the feat command group
@@ -60,5 +64,7 @@ Examples:
     .addCommand(createArchiveCommand())
     .addCommand(createUnarchiveCommand())
     .addCommand(createFeedbackCommand())
-    .addCommand(createPromoteCommand());
+    .addCommand(createPromoteCommand())
+    .addCommand(createCommentsCommand())
+    .addCommand(createAddressCommentsCommand());
 }

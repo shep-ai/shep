@@ -210,6 +210,14 @@ Reject a feature waiting for review.
 `--reason` is a `requiredOption`: the command fails without it. There is no
 `--feedback` flag.
 
+### `shep feat comments <id>` / `shep feat address-comments <id> [comments...]`
+
+Review comments on the feature's pull request (spec 124). `comments` reads them from GitHub
+and lists each with its state (`--no-refresh` shows the stored ones). `address-comments` has an
+agent address the pending comments (or the ids or id prefixes given) in the feature's
+worktree, push, and reply on each; it exits 1 if the round fails. The feature must be waiting
+for review with an open pull request. See the [PR comments guide](../guides/pr-comments.md).
+
 ### `shep feat logs <id>`
 
 View feature agent logs.
@@ -892,9 +900,11 @@ shep space show ~/work/acme/pay-api
 
 `shep space config <space>` with no options shows the settings and the environment they
 produce. Options: `--claude-config-dir <dir>`, `--gh-config-dir <dir>`, `--git-name`,
-`--git-email`, `--aws-profile`, `--bedrock` / `--no-bedrock`, `--agents a,b` and
-`--clear <fields...>` (`claude-config-dir`, `gh-config-dir`, `git-name`, `git-email`,
-`aws-profile`, `bedrock`, `agents`). Feature runs and feature chats in the space's
+`--git-email`, `--aws-profile`, `--bedrock` / `--no-bedrock`, `--agents a,b`,
+`--pr-comments off|mention|all` (which PR review comments shep answers on its own; default
+mention), `--resolve-threads` / `--no-resolve-threads` and `--clear <fields...>`
+(`claude-config-dir`, `gh-config-dir`, `git-name`, `git-email`, `aws-profile`, `bedrock`,
+`agents`, `pr-comments`, `resolve-threads`). Feature runs and feature chats in the space's
 repositories run with these settings; host `GH_TOKEN`/`GITHUB_TOKEN` (with a gh dir) and
 `ANTHROPIC_API_KEY`/`ANTHROPIC_AUTH_TOKEN`/`CLAUDE_CODE_OAUTH_TOKEN` (with a Claude dir) are
 removed for them.

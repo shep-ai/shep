@@ -47,7 +47,7 @@ import { answerComment, ensurePushed } from './settle-pr-comment-round.js';
 export interface AddressPrCommentsInput {
   /** Feature id or id prefix. */
   feature: string;
-  /** Comments to address; every pending one when omitted. */
+  /** Comments to address, by id or unique id prefix; every pending one when omitted. */
   commentIds?: string[];
 }
 
@@ -210,10 +210,12 @@ export class AddressPrCommentsUseCase {
         .slice(0, MAX_COMMENTS_PER_ROUND);
     }
     const chosen: PrComment[] = [];
-    for (const id of ids) {
-      const comment = all.find((candidate) => candidate.id === id);
+    for (const ref of ids) {
+      const matches = all.filter((candidate) => candidate.id.startsWith(ref));
+      if (matches.length > 1) return { error: `Comment id ${ref} matches more than one comment.` };
+      const comment = matches[0];
       if (!comment || !ADDRESSABLE.has(comment.status)) {
-        return { error: `Comment ${id} is not waiting to be addressed.` };
+        return { error: `Comment ${ref} is not waiting to be addressed.` };
       }
       chosen.push(comment);
     }

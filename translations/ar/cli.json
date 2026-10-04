@@ -494,6 +494,22 @@
         "notWaitingForApproval": "الميزة \"{{name}}\" ليست في انتظار الموافقة (الحالة: {{status}})",
         "noFeaturesWaiting": "لا توجد ميزات في انتظار الموافقة في هذا المستودع",
         "multipleFeaturesWaiting": "ميزات متعددة في انتظار الموافقة. حدد واحدة:"
+      },
+      "comments": {
+        "description": "عرض تعليقات المراجعة على طلب الدمج الخاص بالميزة وما فعله shep بها",
+        "featureArg": "معرّف الميزة أو بادئته",
+        "noRefreshOption": "استخدام التعليقات المحفوظة بدلاً من القراءة من GitHub",
+        "failed": "فشل أمر تعليقات طلب الدمج",
+        "title": "تعليقات المراجعة على {{name}}",
+        "none": "لا توجد تعليقات مراجعة بعد.",
+        "next": "عالج المعلّقة باستخدام: shep feat address-comments {{feature}}",
+        "round": "آخر جولة: {{status}}، {{count}} تعليقات{{commit}}{{error}}",
+        "commit": "، تم دفع {{sha}}"
+      },
+      "addressComments": {
+        "description": "يعالج وكيل تعليقات المراجعة المعلّقة في مساحة عمل الميزة ويدفع التغييرات ويرد على كل تعليق",
+        "commentsArg": "معرّفات التعليقات أو بادئاتها (الافتراضي: كل المعلّقة)",
+        "spinner": "جارٍ معالجة {{count}} تعليقات"
       }
     },
     "repo": {
@@ -1217,7 +1233,14 @@
         "environment": "بيئة عمليات الوكلاء",
         "sets": "يضبط",
         "removes": "يزيل",
-        "success": "تم حفظ إعدادات وكلاء {{name}}"
+        "success": "تم حفظ إعدادات وكلاء {{name}}",
+        "prCommentsOption": "تعليقات المراجعة التي يرد عليها shep من تلقاء نفسه: off أو mention (#shep) أو all",
+        "resolveThreadsOption": "إغلاق سلسلة المراجعة بعد تعديل الشيفرة من أجلها",
+        "noResolveThreadsOption": "ترك إغلاق السلاسل للمراجع",
+        "prComments": "تعليقات طلب الدمج المُجاب عنها",
+        "resolveThreads": "إغلاق السلاسل",
+        "defaultValue": "{{value}} (افتراضي)",
+        "badTrigger": "\"{{value}}\" ليس وضعاً لتعليقات طلب الدمج. استخدم أحد: {{triggers}}"
       }
     },
     "connection": {

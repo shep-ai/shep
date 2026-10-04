@@ -92,6 +92,10 @@ browser, open **Agent settings** on the space's card on the **Spaces** page.
 If a space allows only some agents, a run with another agent stops before it starts and says
 why. Change the run's agent or the space's allowed agents.
 
+A space also decides which review comments on shep's pull requests are answered without
+asking: those mentioning `#shep` (the default), all of them, or none
+(`shep space config acme --pr-comments all`). See [PR comments](./pr-comments.md).
+
 ## Things to know
 
 - **Deleting is safe.** Shep refuses to delete a space that still holds memory, or a

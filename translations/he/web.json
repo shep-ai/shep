@@ -1374,7 +1374,15 @@
       "loginHint": "התחברו פעם אחת עם התיקייה מוגדרת, למשל CLAUDE_CONFIG_DIR=~/.claude-acme claude או GH_CONFIG_DIR=~/.config/gh-acme gh auth login. ‏Shep לעולם לא שומר את פרטי ההתחברות.",
       "allowedAgents": "סוכנים מותרים",
       "allowedAgentsHint": "ללא בחירה, כל הסוכנים מותרים.",
-      "save": "שמירת הגדרות הסוכנים"
+      "save": "שמירת הגדרות הסוכנים",
+      "prComments": "הערות על pull requests",
+      "prCommentsHint": "על אילו הערות סקירה ב-pull requests של shep עונים בלי לבקש. בשאר אפשר לטפל מהפיצ׳ר.",
+      "prTrigger": {
+        "Off": "רק לפי בקשה",
+        "Mention": "הערות שמזכירות #shep",
+        "All": "כל הערה"
+      },
+      "resolveThreads": "סגירת שרשורים שבהם שונה קוד"
     }
   },
   "trackers": {
@@ -1461,5 +1469,29 @@
       "fixing": "מתחילים תיקון…",
       "approved": "בתיקון"
     }
+  },
+  "prComments": {
+    "title": "הערות סקירה",
+    "refresh": "קריאת הערות מ-GitHub",
+    "address": "טיפול ב-{{count}} ממתינות",
+    "running": "סוכן מטפל ב-{{count}} הערות ב-worktree של הפיצ׳ר…",
+    "roundPushed": "הסבב האחרון דחף את {{sha}} והשיב.",
+    "roundAnswered": "הסבב האחרון השיב בלי לשנות קוד.",
+    "roundFailed": "הסבב האחרון נכשל: {{error}}",
+    "empty": "אין עדיין הערות סקירה על ה-pull request.",
+    "openOnGitHub": "פתיחה ב-GitHub",
+    "status": {
+      "Pending": "ממתינה",
+      "Addressing": "בטיפול",
+      "Addressed": "טופלה",
+      "Declined": "נדחתה",
+      "Failed": "נכשלה"
+    },
+    "kind": {
+      "Inline": "על שורה",
+      "Conversation": "שיחה",
+      "Review": "סקירה"
+    },
+    "addressNone": "אין במה לטפל"
   }
 }

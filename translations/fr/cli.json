@@ -494,6 +494,22 @@
         "notWaitingForApproval": "La fonctionnalité \"{{name}}\" n'est pas en attente d'approbation (statut : {{status}})",
         "noFeaturesWaiting": "Aucune fonctionnalité en attente d'approbation dans ce dépôt",
         "multipleFeaturesWaiting": "Plusieurs fonctionnalités en attente d'approbation. Précisez laquelle :"
+      },
+      "comments": {
+        "description": "Afficher les commentaires de revue de la pull request d'une fonctionnalité et ce que shep en a fait",
+        "featureArg": "Identifiant de la fonctionnalité ou préfixe",
+        "noRefreshOption": "Utiliser les commentaires enregistrés au lieu de lire GitHub",
+        "failed": "La commande de commentaires de PR a échoué",
+        "title": "Commentaires de revue sur {{name}}",
+        "none": "Aucun commentaire de revue pour l'instant.",
+        "next": "Traitez ceux en attente avec : shep feat address-comments {{feature}}",
+        "round": "Dernier passage : {{status}}, {{count}} commentaires{{commit}}{{error}}",
+        "commit": ", {{sha}} poussé"
+      },
+      "addressComments": {
+        "description": "Faire traiter par un agent les commentaires en attente dans le worktree de la fonctionnalité, pousser et répondre à chacun",
+        "commentsArg": "Identifiants de commentaires ou préfixes (par défaut : tous ceux en attente)",
+        "spinner": "Traitement de {{count}} commentaires"
       }
     },
     "repo": {
@@ -1217,7 +1233,14 @@
         "environment": "Environnement des processus d'agents",
         "sets": "Définit",
         "removes": "Supprime",
-        "success": "Paramètres des agents de {{name}} enregistrés"
+        "success": "Paramètres des agents de {{name}} enregistrés",
+        "prCommentsOption": "Quels commentaires de revue shep traite de lui-même : off, mention (#shep) ou all",
+        "resolveThreadsOption": "Résoudre un fil de revue après avoir modifié le code pour lui",
+        "noResolveThreadsOption": "Laisser la personne qui relit résoudre les fils",
+        "prComments": "Commentaires de PR traités",
+        "resolveThreads": "Résoudre les fils",
+        "defaultValue": "{{value}} (par défaut)",
+        "badTrigger": "« {{value}} » n'est pas un déclencheur de commentaires de PR. Utilisez l'un de : {{triggers}}"
       }
     },
     "connection": {

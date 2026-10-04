@@ -65,7 +65,22 @@ describe('SpaceAgentSettingsForm', () => {
       awsProfile: null,
       useBedrock: false,
       allowedAgentTypes: [AgentType.ClaudeCode, AgentType.Cursor],
+      prCommentTrigger: 'Mention',
+      prCommentResolveThreads: false,
     });
+  });
+
+  it('saves which PR comments shep answers and thread resolution (spec 124)', async () => {
+    render(<SpaceAgentSettingsForm space={ACME} run={run} />);
+    await userEvent.click(screen.getByTestId('space-agent-settings-toggle'));
+    expect(screen.getByTestId('agent-settings-pr-trigger')).toHaveValue('Mention');
+    await userEvent.selectOptions(screen.getByTestId('agent-settings-pr-trigger'), 'All');
+    await userEvent.click(screen.getByTestId('agent-settings-resolve-threads'));
+    await userEvent.click(screen.getByTestId('agent-settings-submit'));
+    expect(configureSpaceAgent).toHaveBeenCalledWith(
+      ACME.id,
+      expect.objectContaining({ prCommentTrigger: 'All', prCommentResolveThreads: true })
+    );
   });
 
   it('saves inherit for Bedrock as a clear', async () => {

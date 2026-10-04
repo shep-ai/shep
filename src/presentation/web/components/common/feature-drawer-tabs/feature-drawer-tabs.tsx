@@ -58,6 +58,7 @@ import { ActivityTab } from './activity-tab';
 import { LogTab } from './log-tab';
 import { PlanTab } from './plan-tab';
 import { PrototypeTab } from './prototype-tab';
+import { PrCommentsSection } from '@/components/features/pr-comments/pr-comments-section';
 import { ChatTab } from '@/components/features/chat/ChatTab';
 import { useFeatureLogs } from '@/hooks/use-feature-logs';
 import { useTabDataFetch } from './use-tab-data-fetch';
@@ -809,7 +810,12 @@ export function FeatureDrawerTabs({
                 isRejecting={isRejecting}
                 chatInput={chatInput}
                 onChatInputChange={onChatInputChange}
-              />
+              >
+                {/* Review comments on the open PR (spec 124). */}
+                {featureNode.lifecycle === 'review' ? (
+                  <PrCommentsSection featureId={featureId} />
+                ) : null}
+              </MergeReview>
             ) : (
               <div className="flex items-center justify-center p-8">
                 {isMergeLoading ? (

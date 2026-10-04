@@ -135,6 +135,12 @@ describe('AddressPrCommentsUseCase', () => {
       expect(result.ok && result.round.commentIds).toEqual(['c2']);
 
       rounds.rows.clear();
+      expect(await useCase().start({ feature: FEATURE.id, commentIds: ['c'] })).toEqual({
+        ok: false,
+        error: 'Comment id c matches more than one comment.',
+      });
+
+      rounds.rows.clear();
       await comments.update({ ...INLINE, status: PrCommentStatus.Addressed });
       expect(await useCase().start({ feature: FEATURE.id, commentIds: ['c1'] })).toEqual({
         ok: false,

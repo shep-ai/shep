@@ -1374,7 +1374,15 @@
       "loginHint": "Inicia sesión una vez con el directorio definido, por ejemplo CLAUDE_CONFIG_DIR=~/.claude-acme claude o GH_CONFIG_DIR=~/.config/gh-acme gh auth login. Shep nunca guarda las credenciales.",
       "allowedAgents": "Agentes permitidos",
       "allowedAgentsHint": "Sin selección se permite cualquier agente.",
-      "save": "Guardar ajustes de agentes"
+      "save": "Guardar ajustes de agentes",
+      "prComments": "Comentarios de pull requests",
+      "prCommentsHint": "Qué comentarios de revisión en los pull requests de shep se responden sin preguntar. Los demás se pueden atender desde la funcionalidad.",
+      "prTrigger": {
+        "Off": "Solo cuando se pida",
+        "Mention": "Comentarios que mencionan #shep",
+        "All": "Todos los comentarios"
+      },
+      "resolveThreads": "Resolver los hilos en los que cambió código"
     }
   },
   "trackers": {
@@ -1461,5 +1469,29 @@
       "fixing": "Iniciando corrección…",
       "approved": "En corrección"
     }
+  },
+  "prComments": {
+    "title": "Comentarios de revisión",
+    "refresh": "Leer comentarios de GitHub",
+    "address": "Atender {{count}} pendientes",
+    "running": "Un agente está atendiendo {{count}} comentarios en el worktree de la funcionalidad…",
+    "roundPushed": "La última ronda subió {{sha}} y respondió.",
+    "roundAnswered": "La última ronda respondió sin cambiar código.",
+    "roundFailed": "La última ronda falló: {{error}}",
+    "empty": "Todavía no hay comentarios de revisión en el pull request.",
+    "openOnGitHub": "Abrir en GitHub",
+    "status": {
+      "Pending": "Pendiente",
+      "Addressing": "En curso",
+      "Addressed": "Atendido",
+      "Declined": "Rechazado",
+      "Failed": "Fallido"
+    },
+    "kind": {
+      "Inline": "En una línea",
+      "Conversation": "Conversación",
+      "Review": "Revisión"
+    },
+    "addressNone": "Nada que atender"
   }
 }

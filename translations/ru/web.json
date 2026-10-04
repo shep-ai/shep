@@ -1374,7 +1374,15 @@
       "loginHint": "Войдите один раз с заданным каталогом, например CLAUDE_CONFIG_DIR=~/.claude-acme claude или GH_CONFIG_DIR=~/.config/gh-acme gh auth login. Shep никогда не хранит учётные данные.",
       "allowedAgents": "Разрешённые агенты",
       "allowedAgentsHint": "Если ничего не выбрано, разрешены все агенты.",
-      "save": "Сохранить настройки агентов"
+      "save": "Сохранить настройки агентов",
+      "prComments": "Комментарии к pull requests",
+      "prCommentsHint": "На какие комментарии ревью к pull requests shep отвечает без запроса. Остальные можно обработать из функции.",
+      "prTrigger": {
+        "Off": "Только по запросу",
+        "Mention": "Комментарии с #shep",
+        "All": "Все комментарии"
+      },
+      "resolveThreads": "Закрывать ветки, где изменён код"
     }
   },
   "trackers": {
@@ -1461,5 +1469,29 @@
       "fixing": "Запуск исправления…",
       "approved": "Исправляется"
     }
+  },
+  "prComments": {
+    "title": "Комментарии ревью",
+    "refresh": "Прочитать комментарии с GitHub",
+    "address": "Обработать ожидающие: {{count}}",
+    "running": "Агент обрабатывает комментарии ({{count}}) в worktree функции…",
+    "roundPushed": "Последний раунд отправил {{sha}} и ответил.",
+    "roundAnswered": "Последний раунд ответил без изменения кода.",
+    "roundFailed": "Последний раунд завершился ошибкой: {{error}}",
+    "empty": "Комментариев ревью к pull request пока нет.",
+    "openOnGitHub": "Открыть на GitHub",
+    "status": {
+      "Pending": "Ожидает",
+      "Addressing": "В работе",
+      "Addressed": "Обработан",
+      "Declined": "Отклонён",
+      "Failed": "Ошибка"
+    },
+    "kind": {
+      "Inline": "К строке",
+      "Conversation": "Обсуждение",
+      "Review": "Ревью"
+    },
+    "addressNone": "Нечего обрабатывать"
   }
 }

@@ -494,6 +494,22 @@
         "notWaitingForApproval": "Recurso \"{{name}}\" não está aguardando aprovação (status: {{status}})",
         "noFeaturesWaiting": "Nenhum recurso aguardando aprovação neste repositório",
         "multipleFeaturesWaiting": "Múltiplos recursos aguardando aprovação. Especifique um:"
+      },
+      "comments": {
+        "description": "Mostrar os comentários de revisão do pull request de uma funcionalidade e o que o shep fez com eles",
+        "featureArg": "Id da funcionalidade ou prefixo",
+        "noRefreshOption": "Usar os comentários guardados em vez de ler o GitHub",
+        "failed": "O comando de comentários de PR falhou",
+        "title": "Comentários de revisão em {{name}}",
+        "none": "Ainda não há comentários de revisão.",
+        "next": "Trate os pendentes com: shep feat address-comments {{feature}}",
+        "round": "Última rodada: {{status}}, {{count}} comentários{{commit}}{{error}}",
+        "commit": ", {{sha}} enviado"
+      },
+      "addressComments": {
+        "description": "Fazer um agente tratar os comentários pendentes no worktree da funcionalidade, fazer push e responder a cada um",
+        "commentsArg": "Ids de comentários ou prefixos (padrão: todos os pendentes)",
+        "spinner": "Tratando {{count}} comentários"
       }
     },
     "repo": {
@@ -1217,7 +1233,14 @@
         "environment": "Ambiente dos processos de agentes",
         "sets": "Define",
         "removes": "Remove",
-        "success": "Definições de agentes de {{name}} guardadas"
+        "success": "Definições de agentes de {{name}} guardadas",
+        "prCommentsOption": "Quais comentários de revisão o shep responde sozinho: off, mention (#shep) ou all",
+        "resolveThreadsOption": "Resolver uma thread de revisão depois de alterar código para ela",
+        "noResolveThreadsOption": "Deixar quem revisa resolver as threads",
+        "prComments": "Comentários de PR respondidos",
+        "resolveThreads": "Resolver threads",
+        "defaultValue": "{{value}} (padrão)",
+        "badTrigger": "\"{{value}}\" não é um gatilho de comentários de PR. Use um de: {{triggers}}"
       }
     },
     "connection": {

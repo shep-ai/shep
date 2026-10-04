@@ -494,6 +494,22 @@
         "notWaitingForApproval": "הפיצ'ר \"{{name}}\" לא ממתין לאישור (סטטוס: {{status}})",
         "noFeaturesWaiting": "אין פיצ'רים הממתינים לאישור במאגר זה",
         "multipleFeaturesWaiting": "מספר פיצ'רים ממתינים לאישור. ציין אחד:"
+      },
+      "comments": {
+        "description": "הצגת הערות הסקירה על ה-pull request של פיצ׳ר ומה shep עשה איתן",
+        "featureArg": "מזהה הפיצ׳ר או תחילתו",
+        "noRefreshOption": "שימוש בהערות השמורות במקום קריאה מ-GitHub",
+        "failed": "פקודת הערות ה-PR נכשלה",
+        "title": "הערות סקירה על {{name}}",
+        "none": "אין עדיין הערות סקירה.",
+        "next": "טפלו בממתינות עם: shep feat address-comments {{feature}}",
+        "round": "סבב אחרון: {{status}}, {{count}} הערות{{commit}}{{error}}",
+        "commit": ", נדחף {{sha}}"
+      },
+      "addressComments": {
+        "description": "סוכן מטפל בהערות הסקירה הממתינות ב-worktree של הפיצ׳ר, דוחף ומשיב על כל אחת",
+        "commentsArg": "מזהי הערות או תחילתם (ברירת מחדל: כל הממתינות)",
+        "spinner": "מטפלים ב-{{count}} הערות"
       }
     },
     "repo": {
@@ -1217,7 +1233,14 @@
         "environment": "סביבה לתהליכי הסוכנים",
         "sets": "מגדיר",
         "removes": "מסיר",
-        "success": "הגדרות הסוכנים של {{name}} נשמרו"
+        "success": "הגדרות הסוכנים של {{name}} נשמרו",
+        "prCommentsOption": "על אילו הערות סקירה shep משיב בעצמו: off, mention (#shep) או all",
+        "resolveThreadsOption": "סגירת שרשור סקירה אחרי שינוי קוד עבורו",
+        "noResolveThreadsOption": "השארת סגירת השרשורים לסוקר",
+        "prComments": "הערות PR שנענו",
+        "resolveThreads": "סגירת שרשורים",
+        "defaultValue": "{{value}} (ברירת מחדל)",
+        "badTrigger": "\"{{value}}\" אינו מצב הערות PR. השתמשו באחד מאלה: {{triggers}}"
       }
     },
     "connection": {

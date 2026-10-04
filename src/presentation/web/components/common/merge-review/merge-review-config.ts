@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import type { PrStatus, CiStatus } from '@shepai/core/domain/generated/output';
 import type { RejectAttachment } from '@/components/common/drawer-action-bar';
 
@@ -97,6 +98,8 @@ export interface MergeReviewProps {
   chatInput?: string;
   /** Handler for chat input changes. */
   onChatInputChange?: (value: string) => void;
+  /** More sections shown after the diff, inside the scroll area (e.g. review comments). */
+  children?: ReactNode;
 }
 
 /** Props for the merge review drawer (shell wrapper) */

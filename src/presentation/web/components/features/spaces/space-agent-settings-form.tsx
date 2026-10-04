@@ -12,7 +12,13 @@
 import { useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ChevronDown, ChevronRight, KeyRound } from 'lucide-react';
-import type { AgentType, Space, SpaceAgentSettings } from '@shepai/core/domain/generated/output';
+import {
+  PrCommentTrigger,
+  type AgentType,
+  type Space,
+  type SpaceAgentSettings,
+} from '@shepai/core/domain/generated/output';
+import { DEFAULT_PR_COMMENT_TRIGGER } from '@shepai/core/domain/shared/pr-comments';
 import { listAgentDescriptors } from '@shepai/core/domain/shared/agent-catalog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -92,6 +98,10 @@ export function SpaceAgentSettingsForm({ space, run }: SpaceAgentSettingsFormPro
   }));
   const [bedrock, setBedrock] = useState<BedrockChoice>(bedrockChoice(settings.useBedrock));
   const [agents, setAgents] = useState<AgentType[]>(settings.allowedAgentTypes ?? []);
+  const [prTrigger, setPrTrigger] = useState<PrCommentTrigger>(
+    settings.prCommentTrigger ?? DEFAULT_PR_COMMENT_TRIGGER
+  );
+  const [resolveThreads, setResolveThreads] = useState(settings.prCommentResolveThreads === true);
 
   function toggleAgent(type: AgentType) {
     setAgents((current) =>
@@ -111,6 +121,8 @@ export function SpaceAgentSettingsForm({ space, run }: SpaceAgentSettingsFormPro
         awsProfile: clearIfEmpty(text.awsProfile),
         useBedrock: bedrock === '' ? null : bedrock === 'on',
         allowedAgentTypes: agents,
+        prCommentTrigger: prTrigger,
+        prCommentResolveThreads: resolveThreads,
       })
     );
   }
@@ -185,6 +197,35 @@ export function SpaceAgentSettingsForm({ space, run }: SpaceAgentSettingsFormPro
                   {agent.label}
                 </label>
               ))}
+            </div>
+          </fieldset>
+
+          <fieldset className="space-y-1">
+            <legend className="text-xs">{t('spaces.agent.prComments')}</legend>
+            <p className="text-muted-foreground text-[11px]">{t('spaces.agent.prCommentsHint')}</p>
+            <div className="flex flex-wrap items-center gap-3">
+              <select
+                value={prTrigger}
+                onChange={(e) => setPrTrigger(e.target.value as PrCommentTrigger)}
+                className={`${NATIVE_SELECT_CLASS} h-7`}
+                aria-label={t('spaces.agent.prComments')}
+                data-testid="agent-settings-pr-trigger"
+              >
+                {Object.values(PrCommentTrigger).map((trigger) => (
+                  <option key={trigger} value={trigger}>
+                    {t(`spaces.agent.prTrigger.${trigger}`)}
+                  </option>
+                ))}
+              </select>
+              <label className="flex items-center gap-1.5 text-xs">
+                <input
+                  type="checkbox"
+                  checked={resolveThreads}
+                  onChange={(e) => setResolveThreads(e.target.checked)}
+                  data-testid="agent-settings-resolve-threads"
+                />
+                {t('spaces.agent.resolveThreads')}
+              </label>
             </div>
           </fieldset>
 

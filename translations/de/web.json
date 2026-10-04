@@ -1374,7 +1374,15 @@
       "loginHint": "Einmal mit gesetztem Verzeichnis anmelden, z. B. CLAUDE_CONFIG_DIR=~/.claude-acme claude oder GH_CONFIG_DIR=~/.config/gh-acme gh auth login. Shep speichert keine Zugangsdaten.",
       "allowedAgents": "Erlaubte Agents",
       "allowedAgentsHint": "Keine Auswahl erlaubt alle Agents.",
-      "save": "Agent-Einstellungen speichern"
+      "save": "Agent-Einstellungen speichern",
+      "prComments": "Pull-Request-Kommentare",
+      "prCommentsHint": "Welche Review-Kommentare an sheps Pull Requests ohne Nachfrage beantwortet werden. Andere lassen sich am Feature bearbeiten.",
+      "prTrigger": {
+        "Off": "Nur auf Anfrage",
+        "Mention": "Kommentare mit #shep",
+        "All": "Jeder Kommentar"
+      },
+      "resolveThreads": "Threads mit Codeänderung auflösen"
     }
   },
   "trackers": {
@@ -1461,5 +1469,29 @@
       "fixing": "Fix wird gestartet…",
       "approved": "Wird behoben"
     }
+  },
+  "prComments": {
+    "title": "Review-Kommentare",
+    "refresh": "Kommentare von GitHub lesen",
+    "address": "{{count}} offene bearbeiten",
+    "running": "Ein Agent bearbeitet {{count}} Kommentare im Worktree des Features…",
+    "roundPushed": "Letzte Runde hat {{sha}} gepusht und geantwortet.",
+    "roundAnswered": "Letzte Runde hat ohne Codeänderung geantwortet.",
+    "roundFailed": "Letzte Runde fehlgeschlagen: {{error}}",
+    "empty": "Noch keine Review-Kommentare am Pull Request.",
+    "openOnGitHub": "Auf GitHub öffnen",
+    "status": {
+      "Pending": "Offen",
+      "Addressing": "In Arbeit",
+      "Addressed": "Bearbeitet",
+      "Declined": "Abgelehnt",
+      "Failed": "Fehlgeschlagen"
+    },
+    "kind": {
+      "Inline": "An einer Zeile",
+      "Conversation": "Unterhaltung",
+      "Review": "Review"
+    },
+    "addressNone": "Nichts zu bearbeiten"
   }
 }

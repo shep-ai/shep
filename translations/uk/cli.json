@@ -494,6 +494,22 @@
         "modeLabel": "Mode:",
         "promoted": "Exploration promoted: {{name}}",
         "statusLabel": "Status:"
+      },
+      "comments": {
+        "description": "Показати коментарі рев'ю до pull request функції та що shep з ними зробив",
+        "featureArg": "Id функції або його префікс",
+        "noRefreshOption": "Використати збережені коментарі замість читання GitHub",
+        "failed": "Команда коментарів PR завершилася з помилкою",
+        "title": "Коментарі рев'ю до {{name}}",
+        "none": "Коментарів рев'ю поки немає.",
+        "next": "Опрацюйте ті, що очікують: shep feat address-comments {{feature}}",
+        "round": "Останній раунд: {{status}}, коментарів: {{count}}{{commit}}{{error}}",
+        "commit": ", надіслано {{sha}}"
+      },
+      "addressComments": {
+        "description": "Агент опрацьовує коментарі рев'ю, що очікують, у worktree функції, робить push і відповідає на кожен",
+        "commentsArg": "Id коментарів або префікси (типово — усі, що очікують)",
+        "spinner": "Опрацювання коментарів: {{count}}"
       }
     },
     "repo": {
@@ -1217,7 +1233,14 @@
         "environment": "Оточення процесів агентів",
         "sets": "Задає",
         "removes": "Видаляє",
-        "success": "Налаштування агентів {{name}} збережено"
+        "success": "Налаштування агентів {{name}} збережено",
+        "prCommentsOption": "На які коментарі рев'ю shep відповідає сам: off, mention (#shep) або all",
+        "resolveThreadsOption": "Закривати гілку рев'ю після зміни коду за нею",
+        "noResolveThreadsOption": "Залишати закриття гілок рецензенту",
+        "prComments": "Відповіді на коментарі PR",
+        "resolveThreads": "Закривати гілки",
+        "defaultValue": "{{value}} (типово)",
+        "badTrigger": "«{{value}}» — не режим коментарів PR. Використайте один із: {{triggers}}"
       }
     },
     "connection": {

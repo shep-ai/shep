@@ -1,18 +1,20 @@
 /**
  * shep space config <space> — show or change how agents run for a space's
  * repositories (spec 121): Claude and gh config directories, git identity,
- * Bedrock and AWS profile, and the agent types the space allows.
+ * Bedrock and AWS profile, the agent types the space allows, and which PR
+ * review comments shep answers on its own (spec 124).
  *
  * With no options it shows the settings and the environment they produce.
  */
 
-import { Command } from 'commander';
+import { Command, InvalidArgumentError } from 'commander';
 import { container } from '@/infrastructure/di/container.js';
 import {
   ConfigureSpaceAgentUseCase,
   type SpaceAgentSettingsPatch,
 } from '@/application/use-cases/spaces/configure-space-agent.use-case.js';
-import type { AgentType, Space } from '@/domain/generated/output.js';
+import { PrCommentTrigger, type AgentType, type Space } from '@/domain/generated/output.js';
+import { DEFAULT_PR_COMMENT_TRIGGER } from '@/domain/shared/pr-comments.js';
 import type { SpaceEnvironment } from '@/domain/shared/space-environment.js';
 import { colors, messages, renderDetailView } from '../../ui/index.js';
 import { getCliI18n } from '../../i18n.js';
@@ -28,7 +30,25 @@ interface ConfigOptions {
   awsProfile?: string;
   bedrock?: boolean;
   agents?: AgentType[];
+  prComments?: PrCommentTrigger;
+  resolveThreads?: boolean;
   clear?: string[];
+}
+
+/** `--pr-comments off|mention|all`, any case. */
+function parsePrCommentTrigger(value: string): PrCommentTrigger {
+  const trigger = Object.values(PrCommentTrigger).find(
+    (candidate) => candidate.toLowerCase() === value.trim().toLowerCase()
+  );
+  if (!trigger) {
+    throw new InvalidArgumentError(
+      getCliI18n().t('cli:commands.space.config.badTrigger', {
+        value,
+        triggers: Object.values(PrCommentTrigger).join(', ').toLowerCase(),
+      })
+    );
+  }
+  return trigger;
 }
 
 /** `--clear` names and the settings they clear. */
@@ -40,6 +60,8 @@ const CLEARABLE: Record<string, keyof SpaceAgentSettingsPatch> = {
   'aws-profile': 'awsProfile',
   bedrock: 'useBedrock',
   agents: 'allowedAgentTypes',
+  'pr-comments': 'prCommentTrigger',
+  'resolve-threads': 'prCommentResolveThreads',
 };
 
 function buildPatch(options: ConfigOptions): SpaceAgentSettingsPatch {
@@ -58,6 +80,8 @@ function buildPatch(options: ConfigOptions): SpaceAgentSettingsPatch {
   if (options.agents !== undefined) {
     patch.allowedAgentTypes = options.agents;
   }
+  if (options.prComments !== undefined) patch.prCommentTrigger = options.prComments;
+  if (options.resolveThreads !== undefined) patch.prCommentResolveThreads = options.resolveThreads;
   return patch;
 }
 
@@ -103,6 +127,22 @@ function render(space: Space, environment: SpaceEnvironment): void {
               settings.allowedAgentTypes?.join(', ') ??
               colors.muted(t('cli:commands.space.config.any')),
           },
+          {
+            label: t('cli:commands.space.config.prComments'),
+            value:
+              settings.prCommentTrigger ??
+              colors.muted(
+                t('cli:commands.space.config.defaultValue', { value: DEFAULT_PR_COMMENT_TRIGGER })
+              ),
+          },
+          {
+            label: t('cli:commands.space.config.resolveThreads'),
+            value: t(
+              settings.prCommentResolveThreads === true
+                ? 'cli:commands.space.config.on'
+                : 'cli:commands.space.config.off'
+            ),
+          },
         ],
       },
       {
@@ -135,6 +175,13 @@ export function createConfigCommand(): Command {
     .option('--bedrock', t('cli:commands.space.config.bedrockOption'))
     .option('--no-bedrock', t('cli:commands.space.config.noBedrockOption'))
     .option('--agents <list>', t('cli:commands.space.config.agentsOption'), parseAgentTypeList)
+    .option(
+      '--pr-comments <trigger>',
+      t('cli:commands.space.config.prCommentsOption'),
+      parsePrCommentTrigger
+    )
+    .option('--resolve-threads', t('cli:commands.space.config.resolveThreadsOption'))
+    .option('--no-resolve-threads', t('cli:commands.space.config.noResolveThreadsOption'))
     .option('--clear <fields...>', t('cli:commands.space.config.clearOption'))
     .addHelpText(
       'after',
@@ -147,6 +194,7 @@ Examples:
   $ shep space config acme --claude-config-dir ~/.claude-acme  Use the Acme Claude login
   $ shep space config acme --git-email me@acme.com --git-name "Me"
   $ shep space config acme --agents claude-code,cursor         Allow only these agents
+  $ shep space config acme --pr-comments all --resolve-threads Answer every PR review comment
   $ shep space config acme --clear agents bedrock              Back to inheriting the host`
     )
     .action((space: string, options: ConfigOptions) =>

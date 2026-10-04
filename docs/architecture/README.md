@@ -14,6 +14,7 @@ This directory contains documentation about Shep AI CLI's system architecture an
 | [spaces.md](./spaces.md)                         | Spaces, product lines and memory isolation                |
 | [tracker-sync.md](./tracker-sync.md)             | Linear and Jira connections and two-way sync              |
 | [bug-loop.md](./bug-loop.md)                     | Investigations, ranked hypotheses and test-first fixes    |
+| [pr-comment-loop.md](./pr-comment-loop.md)       | Review comments read, addressed and answered              |
 
 ## Quick Reference
 

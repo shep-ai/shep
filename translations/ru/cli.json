@@ -494,6 +494,22 @@
         "notWaitingForApproval": "Функция \"{{name}}\" не ожидает одобрения (статус: {{status}})",
         "noFeaturesWaiting": "Нет функций, ожидающих одобрения, в этом репозитории",
         "multipleFeaturesWaiting": "Несколько функций ожидают одобрения. Укажите одну:"
+      },
+      "comments": {
+        "description": "Показать комментарии ревью к pull request функции и что shep с ними сделал",
+        "featureArg": "Id функции или его префикс",
+        "noRefreshOption": "Использовать сохранённые комментарии вместо чтения GitHub",
+        "failed": "Команда комментариев PR завершилась с ошибкой",
+        "title": "Комментарии ревью к {{name}}",
+        "none": "Комментариев ревью пока нет.",
+        "next": "Обработайте ожидающие: shep feat address-comments {{feature}}",
+        "round": "Последний раунд: {{status}}, комментариев: {{count}}{{commit}}{{error}}",
+        "commit": ", отправлен {{sha}}"
+      },
+      "addressComments": {
+        "description": "Агент обрабатывает ожидающие комментарии ревью в worktree функции, делает push и отвечает на каждый",
+        "commentsArg": "Id комментариев или префиксы (по умолчанию — все ожидающие)",
+        "spinner": "Обработка комментариев: {{count}}"
       }
     },
     "repo": {
@@ -1217,7 +1233,14 @@
         "environment": "Окружение процессов агентов",
         "sets": "Задаёт",
         "removes": "Удаляет",
-        "success": "Настройки агентов {{name}} сохранены"
+        "success": "Настройки агентов {{name}} сохранены",
+        "prCommentsOption": "На какие комментарии ревью shep отвечает сам: off, mention (#shep) или all",
+        "resolveThreadsOption": "Закрывать ветку ревью после изменения кода по ней",
+        "noResolveThreadsOption": "Оставлять закрытие веток ревьюеру",
+        "prComments": "Ответы на комментарии PR",
+        "resolveThreads": "Закрывать ветки",
+        "defaultValue": "{{value}} (по умолчанию)",
+        "badTrigger": "«{{value}}» — не режим комментариев PR. Используйте один из: {{triggers}}"
       }
     },
     "connection": {

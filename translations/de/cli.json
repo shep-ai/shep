@@ -494,6 +494,22 @@
         "notWaitingForApproval": "Feature \"{{name}}\" wartet nicht auf Genehmigung (Status: {{status}})",
         "noFeaturesWaiting": "Keine Features warten auf Genehmigung in diesem Repository",
         "multipleFeaturesWaiting": "Mehrere Features warten auf Genehmigung. Bitte eines angeben:"
+      },
+      "comments": {
+        "description": "Review-Kommentare am Pull Request eines Features anzeigen und was shep damit gemacht hat",
+        "featureArg": "Feature-ID oder ID-Präfix",
+        "noRefreshOption": "Gespeicherte Kommentare verwenden statt GitHub zu lesen",
+        "failed": "PR-Kommentar-Befehl fehlgeschlagen",
+        "title": "Review-Kommentare zu {{name}}",
+        "none": "Noch keine Review-Kommentare.",
+        "next": "Offene bearbeiten mit: shep feat address-comments {{feature}}",
+        "round": "Letzte Runde: {{status}}, {{count}} Kommentare{{commit}}{{error}}",
+        "commit": ", {{sha}} gepusht"
+      },
+      "addressComments": {
+        "description": "Einen Agenten offene Review-Kommentare im Worktree des Features bearbeiten, pushen und auf jeden antworten lassen",
+        "commentsArg": "Kommentar-IDs oder ID-Präfixe (Standard: alle offenen Kommentare)",
+        "spinner": "{{count}} Kommentare werden bearbeitet"
       }
     },
     "repo": {
@@ -1217,7 +1233,14 @@
         "environment": "Umgebung für Agent-Prozesse",
         "sets": "Setzt",
         "removes": "Entfernt",
-        "success": "Agent-Einstellungen für {{name}} gespeichert"
+        "success": "Agent-Einstellungen für {{name}} gespeichert",
+        "prCommentsOption": "Welche PR-Review-Kommentare shep von selbst beantwortet: off, mention (#shep) oder all",
+        "resolveThreadsOption": "Einen Review-Thread nach einer Codeänderung auflösen",
+        "noResolveThreadsOption": "Review-Threads dem Reviewer zum Auflösen überlassen",
+        "prComments": "Beantwortete PR-Kommentare",
+        "resolveThreads": "Threads auflösen",
+        "defaultValue": "{{value}} (Standard)",
+        "badTrigger": "\"{{value}}\" ist kein PR-Kommentar-Auslöser. Verwende einen von: {{triggers}}"
       }
     },
     "connection": {

@@ -1374,7 +1374,15 @@
       "loginHint": "Log in once with the directory set, for example CLAUDE_CONFIG_DIR=~/.claude-acme claude or GH_CONFIG_DIR=~/.config/gh-acme gh auth login. Shep never stores the credentials.",
       "allowedAgents": "Allowed agents",
       "allowedAgentsHint": "None selected allows every agent.",
-      "save": "Save agent settings"
+      "save": "Save agent settings",
+      "prComments": "Pull request comments",
+      "prCommentsHint": "Which review comments on shep's pull requests are answered without asking. Others can be addressed from the feature.",
+      "prTrigger": {
+        "Off": "Only when asked",
+        "Mention": "Comments mentioning #shep",
+        "All": "Every comment"
+      },
+      "resolveThreads": "Resolve threads it changed code for"
     }
   },
   "trackers": {
@@ -1461,5 +1469,29 @@
       "fixing": "Starting fix…",
       "approved": "Being fixed"
     }
+  },
+  "prComments": {
+    "title": "Review comments",
+    "refresh": "Read comments from GitHub",
+    "address": "Address {{count}} pending",
+    "running": "An agent is addressing {{count}} comments in the feature's worktree…",
+    "roundPushed": "Last round pushed {{sha}} and replied.",
+    "roundAnswered": "Last round replied without changing code.",
+    "roundFailed": "Last round failed: {{error}}",
+    "empty": "No review comments on the pull request yet.",
+    "openOnGitHub": "Open on GitHub",
+    "status": {
+      "Pending": "Pending",
+      "Addressing": "Addressing",
+      "Addressed": "Addressed",
+      "Declined": "Declined",
+      "Failed": "Failed"
+    },
+    "kind": {
+      "Inline": "On a line",
+      "Conversation": "Conversation",
+      "Review": "Review"
+    },
+    "addressNone": "Nothing to address"
   }
 }

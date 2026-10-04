@@ -3,6 +3,8 @@ import { fn } from '@storybook/test';
 import { PrStatus, CiStatus } from '@shepai/core/domain/generated/output';
 import { MergeReview } from './merge-review';
 import type { MergeReviewData, MergeReviewFileDiff } from './merge-review-config';
+import { PrCommentsSection } from '@/components/features/pr-comments/pr-comments-section';
+import { PENDING_STATE } from '@/components/features/pr-comments/pr-comments-fixtures';
 
 const fullPr = {
   url: 'https://github.com/shep-ai/shep/pull/42',
@@ -116,6 +118,15 @@ export const Default: Story = {
   args: {
     data: fullData,
     ...defaultActions,
+  },
+};
+
+/** With the PR's review comments below the diff (spec 124). */
+export const WithReviewComments: Story = {
+  args: {
+    data: fullData,
+    ...defaultActions,
+    children: <PrCommentsSection featureId="feature-1" initial={PENDING_STATE} />,
   },
 };
 
