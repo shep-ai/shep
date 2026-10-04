@@ -45,10 +45,13 @@ export const API_PATH_PREFIX = '/api/';
  *  - GitHub verifies `x-hub-signature-256` (HMAC-SHA256 over the raw body).
  *  - WhatsApp Cloud API verifies `x-hub-signature-256` against the app secret,
  *    and its GET is Meta's verify-token handshake.
+ *  - Feedback (spec 127) verifies a per-space feedback key (a bearer token
+ *    compared by its SHA-256 hash).
  */
 export const EXTERNALLY_AUTHENTICATED_PATHS = [
   '/api/webhooks/github',
   '/api/whatsapp/webhook',
+  '/api/feedback',
 ] as const;
 
 /** Methods that must not change state, and so need no CSRF protection. */

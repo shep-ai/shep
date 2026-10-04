@@ -22,11 +22,19 @@ import { SignalInbox } from './signal-inbox';
 import { AddSignalForm } from './add-signal-form';
 import { AddOpportunityForm } from './add-opportunity-form';
 import { OpportunityWeightsForm } from './opportunity-weights-form';
+import { FeedbackThemes } from './feedback-themes';
+import { FeedbackKeysPanel } from './feedback-keys-panel';
 import type { OpportunityPageOptions } from './opportunities-types';
+import type { FeedbackTheme } from '@shepai/core/domain/shared/feedback-themes';
+import type { FeedbackKeyView } from '@shepai/core/application/use-cases/feedback/manage-feedback-keys.use-case';
 
 export interface OpportunitiesPageClientProps {
   board?: OpportunityBoard;
   options: OpportunityPageOptions;
+  /** Themes among the space's unlinked signals (spec 127). */
+  themes?: FeedbackTheme[];
+  /** The space's feedback keys (spec 127). */
+  feedbackKeys?: FeedbackKeyView[];
   /** Set when the board could not be loaded. */
   loadError?: string;
 }
@@ -34,6 +42,8 @@ export interface OpportunitiesPageClientProps {
 export function OpportunitiesPageClient({
   board,
   options,
+  themes = [],
+  feedbackKeys = [],
   loadError,
 }: OpportunitiesPageClientProps) {
   const { t } = useTranslation('web');
@@ -109,6 +119,7 @@ export function OpportunitiesPageClient({
               </ul>
             )}
           </section>
+          <FeedbackThemes spaceId={board.space.id} themes={themes} run={run} />
           <section className="space-y-2">
             <AddSignalForm spaceId={board.space.id} run={run} />
             <SignalInbox
@@ -117,6 +128,7 @@ export function OpportunitiesPageClient({
               run={run}
             />
           </section>
+          <FeedbackKeysPanel spaceId={board.space.id} keys={feedbackKeys} run={run} />
           <OpportunityWeightsForm
             key={JSON.stringify(board.weights)}
             weights={board.weights}

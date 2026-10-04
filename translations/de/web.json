@@ -1609,6 +1609,25 @@
       "strategic": "Strategisch",
       "weeklyReviewHours": "Review-Std./Woche",
       "save": "Speichern"
+    },
+    "themes": {
+      "title": "Themen in unverknüpften Signalen",
+      "empty": "Noch keine Themen: keine zwei unverknüpften Signale teilen genug Wörter.",
+      "promote": "Befördern",
+      "hours": "Review-Stunden"
+    },
+    "feedbackKeys": {
+      "title": "Feedback-Schlüssel",
+      "subtitle": "Tools senden Feedback mit einem Schlüssel: {{endpoint}} mit \"Authorization: Bearer <Schlüssel>\".",
+      "empty": "Noch keine Schlüssel.",
+      "name": "Tool",
+      "namePlaceholder": "Zendesk, Widget, Skript…",
+      "create": "Schlüssel erstellen",
+      "secretOnce": "Diesen Schlüssel jetzt kopieren; er wird nicht erneut angezeigt.",
+      "revoke": "Widerrufen",
+      "revoked": "Widerrufen",
+      "lastUsed": "Zuletzt benutzt {{when}}",
+      "neverUsed": "Nie benutzt"
     }
   }
 }

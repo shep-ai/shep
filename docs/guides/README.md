@@ -17,6 +17,7 @@ Guides for using Shep AI CLI effectively.
 | [trackers.md](./trackers.md)                                         | Keep Linear and Jira in sync            |
 | [knowledge.md](./knowledge.md)                                       | Team knowledge from Notion              |
 | [opportunities.md](./opportunities.md)                               | Decide what to build next               |
+| [feedback.md](./feedback.md)                                         | Customer feedback into shep             |
 | [bug-loop.md](./bug-loop.md)                                         | Investigate and fix bugs                |
 | [pr-comments.md](./pr-comments.md)                                   | Review comments on shep's pull requests |
 

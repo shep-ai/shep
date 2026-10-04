@@ -109,4 +109,18 @@ describe('ManageSignalsUseCase', () => {
     expect(await useCase.remove(recorded.signal.id)).toEqual({ ok: true });
     expect((await useCase.remove(recorded.signal.id)).ok).toBe(false);
   });
+
+  it('returns the signal already recorded under the same external id', async () => {
+    const first = await useCase.record({ space: 'acme', title: 'Export', externalId: 'ticket-9' });
+    const again = await useCase.record({ space: 'acme', title: 'Export!', externalId: 'ticket-9' });
+    const elsewhere = await useCase.record({ title: 'Export', externalId: 'ticket-9' });
+    if (!first.ok || !again.ok || !elsewhere.ok) throw new Error('record failed');
+    expect(first.duplicate).toBe(false);
+    expect(again).toMatchObject({
+      duplicate: true,
+      signal: { id: first.signal.id, title: 'Export' },
+    });
+    expect(elsewhere.duplicate).toBe(false);
+    expect(world.signals.rows.size).toBe(2);
+  });
 });

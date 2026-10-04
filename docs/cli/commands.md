@@ -969,6 +969,24 @@ review capacity (spec 126). See the [opportunities guide](../guides/opportunitie
 
 ---
 
+## Feedback Commands
+
+`shep feedback` manages the keys tools use to post customer feedback into a space through
+`POST /api/feedback`, and groups unlinked signals into themes (spec 127). See the
+[feedback guide](../guides/feedback.md).
+
+| Command | Description |
+| ------- | ----------- |
+| `shep feedback key create --name <tool>` | Create a key for a space (`--space`); the key is printed once |
+| `shep feedback key ls` | Keys by name and prefix, with last use (`--space`) |
+| `shep feedback key revoke <key>` | Refuse posts with the key from now on |
+| `shep feedback themes` | Themes among a space's unlinked signals, with their evidence (`--space`) |
+| `shep feedback promote <theme> --hours <h>` | Create an opportunity with the theme's signals linked (`--confidence`, `--title`, `--space`) |
+
+**Source**: `src/presentation/cli/commands/feedback/`
+
+---
+
 ## Bug Loop Commands
 
 `shep item investigate`, `hypotheses` and `fix` take a bug from report to fix (spec 123). See the

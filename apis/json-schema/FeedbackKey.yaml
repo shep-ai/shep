@@ -1,0 +1,32 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: FeedbackKey.yaml
+type: object
+properties:
+  spaceId:
+    type: string
+    description: The space feedback posted with this key lands in
+  name:
+    type: string
+    description: Which tool or script uses it
+  prefix:
+    type: string
+    description: The first characters of the key, to recognise it
+  keyHash:
+    type: string
+    description: SHA-256 of the key, hex
+  lastUsedAt:
+    type: string
+    format: date-time
+    description: When feedback was last posted with it
+  revokedAt:
+    type: string
+    format: date-time
+    description: When it was revoked; a revoked key is refused
+required:
+  - spaceId
+  - name
+  - prefix
+  - keyHash
+allOf:
+  - $ref: BaseEntity.yaml
+description: A key that lets a tool post feedback into one space; only its hash is stored

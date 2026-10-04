@@ -11,6 +11,8 @@
  * extension.
  */
 
+import { textTerms } from './text-terms';
+
 /** Minutes between automatic syncs of a knowledge source: default and bounds. */
 export const DEFAULT_KNOWLEDGE_INTERVAL_MINUTES = 60;
 export const MIN_KNOWLEDGE_INTERVAL_MINUTES = 15;
@@ -28,82 +30,8 @@ export const MAX_PASSAGE_CHARS = 1_200;
 /** Title and heading terms weigh this much more than body terms. */
 const HEADING_WEIGHT = 1.5;
 
-const MIN_TERM_LENGTH = 3;
 const HEADING = /^(#{1,6})\s+(.*)$/;
 const HEADING_SEPARATOR = ' › ';
-
-const STOPWORDS = new Set([
-  'the',
-  'and',
-  'for',
-  'are',
-  'but',
-  'not',
-  'you',
-  'all',
-  'any',
-  'can',
-  'her',
-  'was',
-  'one',
-  'our',
-  'out',
-  'has',
-  'had',
-  'his',
-  'how',
-  'its',
-  'may',
-  'new',
-  'now',
-  'old',
-  'see',
-  'two',
-  'who',
-  'did',
-  'get',
-  'let',
-  'say',
-  'she',
-  'too',
-  'use',
-  'with',
-  'this',
-  'that',
-  'from',
-  'they',
-  'will',
-  'have',
-  'what',
-  'when',
-  'were',
-  'your',
-  'into',
-  'than',
-  'then',
-  'them',
-  'been',
-  'more',
-  'some',
-  'only',
-  'also',
-  'each',
-  'which',
-  'their',
-  'there',
-  'about',
-  'would',
-  'should',
-  'could',
-  'after',
-  'before',
-  'over',
-  'under',
-  'fails',
-  'fix',
-  'add',
-  'make',
-]);
 
 export interface KnowledgeDocumentText {
   title: string;
@@ -176,23 +104,15 @@ export function splitIntoPassages(document: KnowledgeDocumentText): KnowledgePas
   return passages;
 }
 
-function terms(text: string): Set<string> {
-  return new Set(
-    (text.toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? [])
-      .map((term) => term.replace(/(ies|es|s)$/, (suffix) => (suffix === 'ies' ? 'y' : '')))
-      .filter((term) => term.length >= MIN_TERM_LENGTH && !STOPWORDS.has(term))
-  );
-}
-
 /** Passages sharing terms with the query, best first; none for an empty query. */
 export function rankPassages(query: string, passages: KnowledgePassage[]): KnowledgePassage[] {
-  const queryTerms = terms(query);
+  const queryTerms = textTerms(query);
   if (queryTerms.size === 0 || passages.length === 0) return [];
 
   const indexed = passages.map((passage) => ({
     passage,
-    body: terms(passage.text),
-    heading: terms(`${passage.title} ${passage.heading ?? ''}`),
+    body: textTerms(passage.text),
+    heading: textTerms(`${passage.title} ${passage.heading ?? ''}`),
   }));
   const rarity = new Map<string, number>();
   for (const term of queryTerms) {

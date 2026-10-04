@@ -68,6 +68,7 @@ import "./harness/index.tsp";
 import "./connection.tsp";
 import "./knowledge.tsp";
 import "./opportunity.tsp";
+import "./feedback-key.tsp";
 import "./tracker-sync.tsp";
 import "./investigation.tsp";
 import "./pr-comment.tsp";

@@ -17,7 +17,7 @@ tasks:
     title: Model
     description: >
       FeedbackKey in TypeSpec; Signal.externalId; migration 160 with a unique (space, external id) index.
-    state: Todo
+    state: Done
     dependencies: []
     acceptanceCriteria:
       - Repositories round-trip every field
@@ -34,7 +34,7 @@ tasks:
     title: Terms and themes
     description: >
       domain/shared/text-terms.ts shared with knowledge ranking; feedback-themes.ts groups signals by Jaccard similarity and labels them.
-    state: Todo
+    state: Done
     dependencies:
       - task-1
     acceptanceCriteria:
@@ -52,7 +52,7 @@ tasks:
     title: Feedback keys
     description: >
       ManageFeedbackKeysUseCase creates (secret shown once), lists and revokes keys through an IFeedbackKeyGenerator port.
-    state: Todo
+    state: Done
     dependencies:
       - task-1
     acceptanceCriteria:
@@ -70,7 +70,7 @@ tasks:
     title: Ingestion
     description: >
       IngestFeedbackUseCase verifies a key, validates the payload and records a Feedback signal; externalId makes repeats idempotent.
-    state: Todo
+    state: Done
     dependencies:
       - task-3
     acceptanceCriteria:
@@ -88,7 +88,7 @@ tasks:
     title: Themes and promotion
     description: >
       GetFeedbackThemesUseCase and PromoteThemeUseCase (opportunity plus linked signals).
-    state: Todo
+    state: Done
     dependencies:
       - task-2
     acceptanceCriteria:
@@ -106,7 +106,7 @@ tasks:
     title: Endpoint
     description: >
       POST /api/feedback, exact externally authenticated path, body limit, status codes.
-    state: Todo
+    state: Done
     dependencies:
       - task-4
     acceptanceCriteria:
@@ -124,7 +124,7 @@ tasks:
     title: CLI and web
     description: >
       shep feedback key/themes/promote; themes and keys on the Opportunities page; 9 locales; stories.
-    state: Todo
+    state: Done
     dependencies:
       - task-5
       - task-6
@@ -143,7 +143,7 @@ tasks:
     title: Docs
     description: >
       Feedback guide with a curl example, architecture note, CLI reference.
-    state: Todo
+    state: Done
     dependencies:
       - task-7
     acceptanceCriteria:
@@ -161,7 +161,7 @@ tasks:
     title: Verification
     description: >
       lint, format, typecheck, unit, integration, build, web build, storybook.
-    state: Todo
+    state: Done
     dependencies:
       - task-8
     acceptanceCriteria:

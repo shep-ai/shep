@@ -20,6 +20,8 @@ export interface ISignalRepository {
   /** Newest first. */
   list(filter?: SignalFilter): Promise<Signal[]>;
   findById(id: string): Promise<Signal | null>;
+  /** The signal a sending tool recorded under `externalId` in the space. */
+  findByExternalId(spaceId: string, externalId: string): Promise<Signal | null>;
   create(signal: Signal): Promise<void>;
   update(signal: Signal): Promise<void>;
   delete(id: string): Promise<void>;

@@ -1534,6 +1534,50 @@
         "capacityOption": "Horas de revisão humana por semana",
         "current": "alcance {{reach}} · receita {{revenue}} · urgência {{urgency}} · estratégico {{strategic}} · capacidade {{capacity}} h/semana"
       }
+    },
+    "feedback": {
+      "description": "Chaves que ferramentas usam para enviar feedback, e os temas que ele forma",
+      "failed": "O comando feedback falhou",
+      "spaceOption": "Slug ou id do espaço (padrão se omitido)",
+      "key": {
+        "description": "Gerenciar chaves de feedback",
+        "keyArg": "Id da chave (veja shep feedback key ls)",
+        "create": {
+          "description": "Criar uma chave que uma ferramenta envia para publicar feedback em um espaço",
+          "nameOption": "Qual ferramenta ou script a usa",
+          "success": "Chave de feedback para {{name}} criada. Copie agora; ela não será mostrada de novo:",
+          "once": "Envie como \"Authorization: Bearer <chave>\" em cada POST para {{path}} no seu servidor shep."
+        },
+        "ls": {
+          "description": "Listar chaves de feedback",
+          "title": "Chaves de feedback",
+          "idColumn": "Id",
+          "nameColumn": "Ferramenta",
+          "prefixColumn": "Chave",
+          "usedColumn": "Último uso",
+          "revoked": "revogada",
+          "never": "nunca usada",
+          "empty": "Nenhuma chave ainda. Crie uma com shep feedback key create."
+        },
+        "revoke": {
+          "description": "Revogar uma chave: envios com ela são recusados",
+          "success": "Chave de feedback {{id}} revogada"
+        }
+      },
+      "themes": {
+        "description": "Agrupar em temas os sinais não vinculados de um espaço",
+        "title": "Temas em {{space}}",
+        "keyColumn": "Tema",
+        "themeColumn": "Palavras",
+        "evidenceColumn": "Evidências",
+        "empty": "Nenhum tema: nenhum par de sinais não vinculados compartilha palavras suficientes."
+      },
+      "promote": {
+        "description": "Transformar um tema em oportunidade com seus sinais vinculados",
+        "themeArg": "Chave do tema (veja shep feedback themes)",
+        "titleOption": "Título da oportunidade (as palavras do tema se omitido)",
+        "success": "{{title}} ({{id}}) proposta com {{count}} sinal(is) vinculado(s)"
+      }
     }
   },
   "ui": {

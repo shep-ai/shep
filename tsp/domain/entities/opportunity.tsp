@@ -77,6 +77,9 @@ model Signal extends BaseEntity {
 
   @doc("The opportunity this signal supports, if linked")
   opportunityId?: string;
+
+  @doc("The sending tool's id for it; a second signal with the same id in a space is refused")
+  externalId?: string;
 }
 
 /** A bet worth building, backed by signals. */

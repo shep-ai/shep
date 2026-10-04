@@ -78,5 +78,5 @@ The opportunity moves to **Building**. A dropped opportunity can be accepted aga
 
 - Signals and opportunities belong to a space; a signal links only to an opportunity of its own
   space.
-- Revenue is entered on signals for now; feedback, incident and discovery loops will record
-  signals for you.
+- Revenue is entered on signals; tools can post feedback signals for you (see
+  [Customer feedback](./feedback.md)).

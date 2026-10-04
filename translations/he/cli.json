@@ -1534,6 +1534,50 @@
         "capacityOption": "שעות סקירה אנושית בשבוע",
         "current": "תפוצה {{reach}} · הכנסה {{revenue}} · דחיפות {{urgency}} · אסטרטגי {{strategic}} · קיבולת {{capacity}} שעות בשבוע"
       }
+    },
+    "feedback": {
+      "description": "מפתחות שכלים שולחים איתם משוב, והנושאים שהמשוב יוצר",
+      "failed": "פקודת המשוב נכשלה",
+      "spaceOption": "Slug או מזהה של המרחב (ברירת המחדל אם לא צוין)",
+      "key": {
+        "description": "ניהול מפתחות משוב",
+        "keyArg": "מזהה מפתח משוב (ראו shep feedback key ls)",
+        "create": {
+          "description": "יצירת מפתח שכלי שולח כדי לפרסם משוב במרחב",
+          "nameOption": "איזה כלי או סקריפט משתמש בו",
+          "success": "נוצר מפתח משוב עבור {{name}}. העתיקו אותו עכשיו; הוא לא יוצג שוב:",
+          "once": "שלחו אותו כ-\"Authorization: Bearer <מפתח>\" בכל POST אל {{path}} בשרת ה-shep שלכם."
+        },
+        "ls": {
+          "description": "הצגת מפתחות משוב",
+          "title": "מפתחות משוב",
+          "idColumn": "מזהה",
+          "nameColumn": "כלי",
+          "prefixColumn": "מפתח",
+          "usedColumn": "שימוש אחרון",
+          "revoked": "בוטל",
+          "never": "לא היה בשימוש",
+          "empty": "אין עדיין מפתחות משוב. צרו אחד עם shep feedback key create."
+        },
+        "revoke": {
+          "description": "ביטול מפתח: שליחות איתו נדחות",
+          "success": "מפתח המשוב {{id}} בוטל"
+        }
+      },
+      "themes": {
+        "description": "קיבוץ אותות לא מקושרים של מרחב לנושאים",
+        "title": "נושאים ב-{{space}}",
+        "keyColumn": "נושא",
+        "themeColumn": "מילים",
+        "evidenceColumn": "ראיות",
+        "empty": "אין נושאים: אין שני אותות לא מקושרים שחולקים מספיק מילים."
+      },
+      "promote": {
+        "description": "הפיכת נושא להזדמנות עם האותות שלו מקושרים",
+        "themeArg": "מפתח הנושא (ראו shep feedback themes)",
+        "titleOption": "כותרת ההזדמנות (מילות הנושא אם לא צוין)",
+        "success": "{{title}} ({{id}}) הוצעה, אותות מקושרים: {{count}}"
+      }
     }
   },
   "ui": {

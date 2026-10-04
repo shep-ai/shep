@@ -53,6 +53,7 @@ import { registerBugLoop } from '@/infrastructure/di/modules/register-bug-loop.j
 import { registerPrComments } from '@/infrastructure/di/modules/register-pr-comments.js';
 import { registerKnowledge } from '@/infrastructure/di/modules/register-knowledge.js';
 import { registerOpportunities } from '@/infrastructure/di/modules/register-opportunities.js';
+import { registerFeedback } from '@/infrastructure/di/modules/register-feedback.js';
 import { SessionSpaceEnvironment } from '@/infrastructure/services/interactive/lifecycle/session-space-environment.js';
 import { ResolveSpaceEnvironmentUseCase } from '@/application/use-cases/spaces/resolve-space-environment.use-case.js';
 import type { IDeploymentService } from '@/application/ports/output/services/deployment-service.interface.js';
@@ -205,6 +206,10 @@ const WEB_ROUTE_TOKENS: readonly string[] = [
   'GetOpportunityBoardUseCase',
   'ManageOpportunityWeightsUseCase',
   'BuildOpportunityUseCase',
+  'ManageFeedbackKeysUseCase',
+  'IngestFeedbackUseCase',
+  'GetFeedbackThemesUseCase',
+  'PromoteThemeUseCase',
   'RunTrackerSyncUseCase',
   'SyncTrackerRulesUseCase',
   'GetTrackerIssueLinkUseCase',
@@ -235,6 +240,8 @@ const CRITICAL_INFRA_TOKENS: readonly string[] = [
   'ISignalRepository',
   'IOpportunityRepository',
   'IOpportunityWeightsRepository',
+  'IFeedbackKeyRepository',
+  'IFeedbackKeyGenerator',
   'IPullRequestCommentService',
   'ITrackerClientFactory',
   // Query-aware harness (spec 119)
@@ -394,6 +401,7 @@ describe('DI container bootstrap (integration)', () => {
     registerTrackers(scopedContainer);
     registerKnowledge(scopedContainer);
     registerOpportunities(scopedContainer);
+    registerFeedback(scopedContainer);
     registerBugLoop(scopedContainer);
     registerPrComments(scopedContainer);
     registerServices(scopedContainer);

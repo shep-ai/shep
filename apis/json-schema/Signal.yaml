@@ -32,6 +32,9 @@ properties:
   opportunityId:
     type: string
     description: The opportunity this signal supports, if linked
+  externalId:
+    type: string
+    description: The sending tool's id for it; a second signal with the same id in a space is refused
 required:
   - spaceId
   - kind

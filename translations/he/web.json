@@ -1609,6 +1609,25 @@
       "strategic": "אסטרטגי",
       "weeklyReviewHours": "שעות סקירה בשבוע",
       "save": "שמירה"
+    },
+    "themes": {
+      "title": "נושאים באותות לא מקושרים",
+      "empty": "אין עדיין נושאים: אין שני אותות לא מקושרים שחולקים מספיק מילים.",
+      "promote": "קידום",
+      "hours": "שעות סקירה"
+    },
+    "feedbackKeys": {
+      "title": "מפתחות משוב",
+      "subtitle": "כלים שולחים משוב עם מפתח: {{endpoint}} עם \"Authorization: Bearer <מפתח>\".",
+      "empty": "אין עדיין מפתחות.",
+      "name": "כלי",
+      "namePlaceholder": "Zendesk, ווידג'ט, סקריפט…",
+      "create": "יצירת מפתח",
+      "secretOnce": "העתיקו את המפתח עכשיו; הוא לא יוצג שוב.",
+      "revoke": "ביטול",
+      "revoked": "בוטל",
+      "lastUsed": "שימוש אחרון {{when}}",
+      "neverUsed": "לא היה בשימוש"
     }
   }
 }

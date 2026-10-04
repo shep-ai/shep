@@ -1534,6 +1534,50 @@
         "capacityOption": "Stunden menschlichen Reviews pro Woche",
         "current": "Reichweite {{reach}} · Umsatz {{revenue}} · Dringlichkeit {{urgency}} · strategisch {{strategic}} · Kapazität {{capacity}} Std./Woche"
       }
+    },
+    "feedback": {
+      "description": "Schlüssel, mit denen Tools Feedback senden, und die Themen im Feedback",
+      "failed": "Feedback-Befehl fehlgeschlagen",
+      "spaceOption": "Slug oder ID des Space (sonst der Standard-Space)",
+      "key": {
+        "description": "Feedback-Schlüssel verwalten",
+        "keyArg": "ID des Feedback-Schlüssels (siehe shep feedback key ls)",
+        "create": {
+          "description": "Einen Schlüssel erstellen, mit dem ein Tool Feedback in einen Space sendet",
+          "nameOption": "Welches Tool oder Skript ihn nutzt",
+          "success": "Feedback-Schlüssel für {{name}} erstellt. Jetzt kopieren; er wird nicht erneut angezeigt:",
+          "once": "Als \"Authorization: Bearer <Schlüssel>\" mit jedem POST an {{path}} auf deinem shep-Server senden."
+        },
+        "ls": {
+          "description": "Feedback-Schlüssel auflisten",
+          "title": "Feedback-Schlüssel",
+          "idColumn": "ID",
+          "nameColumn": "Tool",
+          "prefixColumn": "Schlüssel",
+          "usedColumn": "Zuletzt benutzt",
+          "revoked": "widerrufen",
+          "never": "nie benutzt",
+          "empty": "Noch keine Feedback-Schlüssel. Mit shep feedback key create erstellen."
+        },
+        "revoke": {
+          "description": "Einen Schlüssel widerrufen: Sendungen damit werden abgelehnt",
+          "success": "Feedback-Schlüssel {{id}} widerrufen"
+        }
+      },
+      "themes": {
+        "description": "Unverknüpfte Signale eines Space zu Themen gruppieren",
+        "title": "Themen in {{space}}",
+        "keyColumn": "Thema",
+        "themeColumn": "Wörter",
+        "evidenceColumn": "Belege",
+        "empty": "Keine Themen: keine zwei unverknüpften Signale teilen genug Wörter."
+      },
+      "promote": {
+        "description": "Ein Thema zu einer Opportunity mit verknüpften Signalen machen",
+        "themeArg": "Themenschlüssel (siehe shep feedback themes)",
+        "titleOption": "Titel der Opportunity (sonst die Wörter des Themas)",
+        "success": "{{title}} ({{id}}) mit {{count}} verknüpften Signal(en) vorgeschlagen"
+      }
     }
   },
   "ui": {

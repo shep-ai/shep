@@ -22,9 +22,9 @@ import {
 } from '../persistence/sqlite/mappers/opportunity.mapper.js';
 
 const SIGNAL_COLUMNS = `id, space_id, product_line_id, kind, title, detail, customer,
-  monthly_revenue, urgent, url, opportunity_id, created_at, updated_at`;
+  monthly_revenue, urgent, url, opportunity_id, external_id, created_at, updated_at`;
 const SIGNAL_VALUES = `@id, @space_id, @product_line_id, @kind, @title, @detail, @customer,
-  @monthly_revenue, @urgent, @url, @opportunity_id, @created_at, @updated_at`;
+  @monthly_revenue, @urgent, @url, @opportunity_id, @external_id, @created_at, @updated_at`;
 
 export class SQLiteSignalRepository implements ISignalRepository {
   constructor(private readonly db: Database.Database) {}
@@ -52,6 +52,13 @@ export class SQLiteSignalRepository implements ISignalRepository {
     const row = this.db.prepare('SELECT * FROM signals WHERE id = ?').get(id) as
       | SignalRow
       | undefined;
+    return row ? signalFromDatabase(row) : null;
+  }
+
+  async findByExternalId(spaceId: string, externalId: string): Promise<Signal | null> {
+    const row = this.db
+      .prepare('SELECT * FROM signals WHERE space_id = ? AND external_id = ?')
+      .get(spaceId, externalId) as SignalRow | undefined;
     return row ? signalFromDatabase(row) : null;
   }
 

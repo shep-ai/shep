@@ -10,6 +10,8 @@ import type { OpportunityBoard } from '@shepai/core/application/use-cases/opport
 import type { ScoredOpportunity } from '@shepai/core/domain/shared/opportunity-score';
 import type { RunAction } from '@/hooks/use-run-action';
 import type { OpportunityPageOptions } from './opportunities-types';
+import type { FeedbackTheme } from '@shepai/core/domain/shared/feedback-themes';
+import type { FeedbackKeyView } from '@shepai/core/application/use-cases/feedback/manage-feedback-keys.use-case';
 
 const T = new Date('2026-10-05T10:00:00Z');
 
@@ -119,3 +121,37 @@ export const OPTIONS: OpportunityPageOptions = {
 
 /** A RunAction for stories: runs the (mocked) action and reports success. */
 export const runInStory: RunAction = async (action) => (await action()).ok;
+
+export const THEMES: FeedbackTheme[] = [
+  {
+    key: 'sig-timeout-1',
+    label: 'checkout guest timeout',
+    signals: [
+      { ...LOOSE_SIGNALS[0], id: 'sig-timeout-1', title: 'Guest checkout times out' },
+      { ...LOOSE_SIGNALS[0], id: 'sig-timeout-2', title: 'Checkout timeout for guests' },
+      { ...LOOSE_SIGNALS[0], id: 'sig-timeout-3', title: 'Guest checkout timeout again' },
+    ],
+    evidence: { signals: 3, customers: 3, revenueAtStake: 7000, urgentSignals: 1 },
+  },
+];
+
+export const FEEDBACK_KEYS: FeedbackKeyView[] = [
+  {
+    id: 'key-zendesk',
+    spaceId: 'space-acme',
+    name: 'Zendesk',
+    prefix: 'shep_fb_x7Kq',
+    lastUsedAt: T,
+    createdAt: T,
+    updatedAt: T,
+  },
+  {
+    id: 'key-old',
+    spaceId: 'space-acme',
+    name: 'Old widget',
+    prefix: 'shep_fb_P2nm',
+    revokedAt: T,
+    createdAt: T,
+    updatedAt: T,
+  },
+];

@@ -1609,6 +1609,25 @@
       "strategic": "Estratégico",
       "weeklyReviewHours": "h de revisão/semana",
       "save": "Salvar"
+    },
+    "themes": {
+      "title": "Temas nos sinais não vinculados",
+      "empty": "Nenhum tema ainda: nenhum par de sinais não vinculados compartilha palavras suficientes.",
+      "promote": "Promover",
+      "hours": "Horas de revisão"
+    },
+    "feedbackKeys": {
+      "title": "Chaves de feedback",
+      "subtitle": "Ferramentas enviam feedback com uma chave: {{endpoint}} com \"Authorization: Bearer <chave>\".",
+      "empty": "Nenhuma chave ainda.",
+      "name": "Ferramenta",
+      "namePlaceholder": "Zendesk, widget, script…",
+      "create": "Criar chave",
+      "secretOnce": "Copie esta chave agora; ela não será mostrada de novo.",
+      "revoke": "Revogar",
+      "revoked": "Revogada",
+      "lastUsed": "Último uso {{when}}",
+      "neverUsed": "Nunca usada"
     }
   }
 }

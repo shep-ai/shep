@@ -21,6 +21,7 @@ export interface SignalRow {
   urgent: number;
   url: string | null;
   opportunity_id: string | null;
+  external_id: string | null;
   created_at: number;
   updated_at: number;
 }
@@ -64,6 +65,7 @@ export function signalToDatabase(signal: Signal): SignalRow {
     urgent: signal.urgent ? 1 : 0,
     url: signal.url ?? null,
     opportunity_id: signal.opportunityId ?? null,
+    external_id: signal.externalId ?? null,
     created_at: millis(signal.createdAt),
     updated_at: millis(signal.updatedAt),
   };
@@ -83,6 +85,7 @@ export function signalFromDatabase(row: SignalRow): Signal {
       monthlyRevenue: row.monthly_revenue,
       url: row.url,
       opportunityId: row.opportunity_id,
+      externalId: row.external_id,
     }),
     createdAt: new Date(row.created_at),
     updatedAt: new Date(row.updated_at),

@@ -6878,6 +6878,10 @@ export type Signal = BaseEntity & {
    * The opportunity this signal supports, if linked
    */
   opportunityId?: string;
+  /**
+   * The sending tool's id for it; a second signal with the same id in a space is refused
+   */
+  externalId?: string;
 };
 export enum OpportunityStatus {
   Proposed = 'Proposed',
@@ -6965,6 +6969,36 @@ export type OpportunityWeights = {
    * Hours of human review available each week
    */
   weeklyReviewHours: float64;
+};
+
+/**
+ * A key that lets a tool post feedback into one space; only its hash is stored
+ */
+export type FeedbackKey = BaseEntity & {
+  /**
+   * The space feedback posted with this key lands in
+   */
+  spaceId: string;
+  /**
+   * Which tool or script uses it
+   */
+  name: string;
+  /**
+   * The first characters of the key, to recognise it
+   */
+  prefix: string;
+  /**
+   * SHA-256 of the key, hex
+   */
+  keyHash: string;
+  /**
+   * When feedback was last posted with it
+   */
+  lastUsedAt?: any;
+  /**
+   * When it was revoked; a revoked key is refused
+   */
+  revokedAt?: any;
 };
 
 /**
@@ -8853,6 +8887,10 @@ export enum SpaceResolutionSource {
 export enum ConnectionKind {
   Tracker = 'Tracker',
   Knowledge = 'Knowledge',
+}
+export enum FeedbackRejection {
+  Unauthorized = 'Unauthorized',
+  Invalid = 'Invalid',
 }
 export enum BedrockLifecycleAction {
   Init = 'init',

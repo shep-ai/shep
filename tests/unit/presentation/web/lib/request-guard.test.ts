@@ -355,6 +355,19 @@ describe('request guard — externally authenticated webhooks', () => {
     }
   );
 
+  it('exempts the feedback endpoint, which verifies its own key (spec 127)', () => {
+    expect(EXTERNALLY_AUTHENTICATED_PATHS).toContain('/api/feedback');
+    const child = evaluateRequest(
+      makeRequest({
+        method: 'POST',
+        pathname: '/api/feedback/x',
+        host: 'tunnel.trycloudflare.com',
+      }),
+      POLICY
+    );
+    expect(child.kind).toBe('deny');
+  });
+
   it('does not exempt a path that merely starts with a webhook path', () => {
     const decision = evaluateRequest(
       makeRequest({

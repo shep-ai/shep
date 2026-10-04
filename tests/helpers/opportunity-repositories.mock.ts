@@ -21,6 +21,12 @@ export class InMemorySignals implements ISignalRepository {
   async findById(id: string) {
     return this.rows.get(id) ?? null;
   }
+  async findByExternalId(spaceId: string, externalId: string) {
+    return (
+      [...this.rows.values()].find((s) => s.spaceId === spaceId && s.externalId === externalId) ??
+      null
+    );
+  }
   async create(signal: Signal) {
     this.rows.set(signal.id, signal);
   }

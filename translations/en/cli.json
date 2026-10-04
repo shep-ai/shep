@@ -1534,6 +1534,50 @@
         "capacityOption": "Hours of human review each week",
         "current": "reach {{reach}} · revenue {{revenue}} · urgency {{urgency}} · strategic {{strategic}} · capacity {{capacity}} h/week"
       }
+    },
+    "feedback": {
+      "description": "Keys tools use to post feedback, and the themes feedback forms",
+      "failed": "Feedback command failed",
+      "spaceOption": "Space slug or id (default space if omitted)",
+      "key": {
+        "description": "Manage feedback keys",
+        "keyArg": "Feedback key id (see shep feedback key ls)",
+        "create": {
+          "description": "Create a key a tool sends to post feedback into a space",
+          "nameOption": "Which tool or script uses it",
+          "success": "Feedback key for {{name}} created. Copy it now; it is not shown again:",
+          "once": "Send it as \"Authorization: Bearer <key>\" with each POST to {{path}} on your shep server."
+        },
+        "ls": {
+          "description": "List feedback keys",
+          "title": "Feedback keys",
+          "idColumn": "Id",
+          "nameColumn": "Tool",
+          "prefixColumn": "Key",
+          "usedColumn": "Last used",
+          "revoked": "revoked",
+          "never": "never used",
+          "empty": "No feedback keys yet. Create one with shep feedback key create."
+        },
+        "revoke": {
+          "description": "Revoke a key: posts with it are refused",
+          "success": "Feedback key {{id}} revoked"
+        }
+      },
+      "themes": {
+        "description": "Group unlinked signals of a space into themes",
+        "title": "Themes in {{space}}",
+        "keyColumn": "Theme",
+        "themeColumn": "Words",
+        "evidenceColumn": "Evidence",
+        "empty": "No themes: no two unlinked signals share enough words."
+      },
+      "promote": {
+        "description": "Turn a theme into an opportunity with its signals linked",
+        "themeArg": "Theme key (see shep feedback themes)",
+        "titleOption": "Opportunity title (the theme's words if omitted)",
+        "success": "{{title}} ({{id}}) proposed with {{count}} signal(s) linked"
+      }
     }
   },
   "ui": {

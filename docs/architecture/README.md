@@ -15,6 +15,7 @@ This directory contains documentation about Shep AI CLI's system architecture an
 | [tracker-sync.md](./tracker-sync.md)             | Linear and Jira connections and two-way sync              |
 | [knowledge.md](./knowledge.md)                   | Notion knowledge sources and what agents read             |
 | [opportunities.md](./opportunities.md)           | Signals, opportunities, scoring and the capacity line     |
+| [feedback.md](./feedback.md)                     | Keyed feedback intake and lexical themes                  |
 | [bug-loop.md](./bug-loop.md)                     | Investigations, ranked hypotheses and test-first fixes    |
 | [pr-comment-loop.md](./pr-comment-loop.md)       | Review comments read, addressed and answered              |
 

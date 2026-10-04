@@ -1609,6 +1609,25 @@
       "strategic": "Strategic",
       "weeklyReviewHours": "Review h/week",
       "save": "Save"
+    },
+    "themes": {
+      "title": "Themes in unlinked signals",
+      "empty": "No themes yet: no two unlinked signals share enough words.",
+      "promote": "Promote",
+      "hours": "Review hours"
+    },
+    "feedbackKeys": {
+      "title": "Feedback keys",
+      "subtitle": "Tools post feedback with a key: {{endpoint}} with \"Authorization: Bearer <key>\".",
+      "empty": "No keys yet.",
+      "name": "Tool",
+      "namePlaceholder": "Zendesk, widget, script…",
+      "create": "Create key",
+      "secretOnce": "Copy this key now; it is not shown again.",
+      "revoke": "Revoke",
+      "revoked": "Revoked",
+      "lastUsed": "Last used {{when}}",
+      "neverUsed": "Never used"
     }
   }
 }

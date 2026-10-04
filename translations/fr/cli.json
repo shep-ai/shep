@@ -1534,6 +1534,50 @@
         "capacityOption": "Heures de revue humaine par semaine",
         "current": "portée {{reach}} · revenu {{revenue}} · urgence {{urgency}} · stratégique {{strategic}} · capacité {{capacity}} h/semaine"
       }
+    },
+    "feedback": {
+      "description": "Clés que les outils utilisent pour envoyer des retours, et les thèmes qu'ils forment",
+      "failed": "La commande feedback a échoué",
+      "spaceOption": "Slug ou id de l'espace (espace par défaut si omis)",
+      "key": {
+        "description": "Gérer les clés de retours",
+        "keyArg": "Id de la clé (voir shep feedback key ls)",
+        "create": {
+          "description": "Créer une clé qu'un outil envoie pour publier des retours dans un espace",
+          "nameOption": "Quel outil ou script l'utilise",
+          "success": "Clé de retours pour {{name}} créée. Copiez-la maintenant ; elle ne sera plus affichée :",
+          "once": "Envoyez-la en \"Authorization: Bearer <clé>\" avec chaque POST vers {{path}} sur votre serveur shep."
+        },
+        "ls": {
+          "description": "Lister les clés de retours",
+          "title": "Clés de retours",
+          "idColumn": "Id",
+          "nameColumn": "Outil",
+          "prefixColumn": "Clé",
+          "usedColumn": "Dernière utilisation",
+          "revoked": "révoquée",
+          "never": "jamais utilisée",
+          "empty": "Aucune clé. Créez-en une avec shep feedback key create."
+        },
+        "revoke": {
+          "description": "Révoquer une clé : les envois avec elle sont refusés",
+          "success": "Clé de retours {{id}} révoquée"
+        }
+      },
+      "themes": {
+        "description": "Regrouper en thèmes les signaux non liés d'un espace",
+        "title": "Thèmes de {{space}}",
+        "keyColumn": "Thème",
+        "themeColumn": "Mots",
+        "evidenceColumn": "Preuves",
+        "empty": "Aucun thème : aucune paire de signaux non liés ne partage assez de mots."
+      },
+      "promote": {
+        "description": "Transformer un thème en opportunité avec ses signaux liés",
+        "themeArg": "Clé du thème (voir shep feedback themes)",
+        "titleOption": "Titre de l'opportunité (les mots du thème si omis)",
+        "success": "{{title}} ({{id}}) proposée avec {{count}} signal(aux) lié(s)"
+      }
     }
   },
   "ui": {

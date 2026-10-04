@@ -35,6 +35,8 @@ export interface RecordSignalInput extends ScopeRefs {
   url?: string;
   /** Id of an opportunity of the same space to link. */
   opportunity?: string;
+  /** The sending tool's id; a repeat in the same space returns the signal already recorded. */
+  externalId?: string;
 }
 
 export interface ListSignalsInput {
@@ -52,7 +54,9 @@ export class ManageSignalsUseCase {
     @inject('IProductLineRepository') private readonly productLines: IProductLineRepository
   ) {}
 
-  async record(input: RecordSignalInput): Promise<OpportunityResult<{ signal: Signal }>> {
+  async record(
+    input: RecordSignalInput
+  ): Promise<OpportunityResult<{ signal: Signal; duplicate: boolean }>> {
     const title = optionalText(input.title);
     if (!title) return failure('A signal needs a title.');
     const revenue = input.monthlyRevenue;
@@ -61,6 +65,11 @@ export class ManageSignalsUseCase {
     }
     const scope = await resolveScope(this.spaces, this.productLines, input);
     if (!scope.ok) return scope;
+    const externalId = optionalText(input.externalId);
+    if (externalId) {
+      const existing = await this.signals.findByExternalId(scope.space.id, externalId);
+      if (existing) return { ok: true, signal: existing, duplicate: true };
+    }
 
     let opportunityId: string | undefined;
     const opportunityRef = optionalText(input.opportunity);
@@ -80,6 +89,7 @@ export class ManageSignalsUseCase {
       monthlyRevenue: revenue,
       url: optionalText(input.url),
       opportunityId,
+      externalId,
     };
     const signal: Signal = {
       id: randomUUID(),
@@ -92,7 +102,7 @@ export class ManageSignalsUseCase {
       updatedAt: now,
     };
     await this.signals.create(signal);
-    return { ok: true, signal };
+    return { ok: true, signal, duplicate: false };
   }
 
   async list(input: ListSignalsInput = {}): Promise<OpportunityResult<{ signals: Signal[] }>> {

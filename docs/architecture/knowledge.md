@@ -59,7 +59,7 @@ minute on `IntervalTask`, which never overlaps runs.
 
 `domain/shared/knowledge.ts` is pure: `splitIntoPassages` cuts a document at its headings (each
 passage keeps its heading path, "Guests › Limits") and long sections at paragraphs;
-`rankPassages` scores query terms by rarity across the passages, weighting title and heading
+`rankPassages` scores query terms (`text-terms.ts`, shared with feedback themes) by rarity across the passages, weighting title and heading
 terms, ignoring stopwords.
 
 `SelectKnowledgeUseCase` resolves the repository's space and product line
