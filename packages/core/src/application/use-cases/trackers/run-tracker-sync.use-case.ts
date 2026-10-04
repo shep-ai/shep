@@ -42,11 +42,17 @@ import {
   type ITrackerClientFactory,
 } from '../../ports/output/services/tracker-client.interface.js';
 import { CreateWorkItemUseCase } from '../work-items/create-work-item.use-case.js';
-import {
-  UpdateWorkItemUseCase,
-  type UpdateWorkItemInput,
-} from '../work-items/update-work-item.use-case.js';
+import { UpdateWorkItemUseCase } from '../work-items/update-work-item.use-case.js';
 import { errorMessage, failure, type TrackerResult } from './tracker-refs.js';
+import {
+  emptySummary,
+  localFields,
+  newLink,
+  remoteFields,
+  snapshotFields,
+  withSnapshot,
+  workItemUpdate,
+} from './tracker-sync-fields.js';
 
 /** Actor recorded in the work item activity log for synced changes. */
 export const TRACKER_SYNC_ACTOR = 'tracker-sync';
@@ -58,45 +64,6 @@ export interface TrackerSyncOutcome {
   summary: TrackerSyncRunSummary;
   /** Why the run stopped early, when it did. */
   error?: string;
-}
-
-function emptySummary(): TrackerSyncRunSummary {
-  return { created: 0, updated: 0, pushed: 0, conflicts: 0, failed: 0, rateLimited: false };
-}
-
-function remoteFields(issue: ExternalIssue): SyncedFields {
-  return {
-    title: issue.title,
-    ...(issue.description ? { description: issue.description } : {}),
-    stateGroup: issue.stateGroup,
-    priority: issue.priority,
-  };
-}
-
-function snapshotFields(link: TrackerIssueLink): SyncedFields {
-  return {
-    title: link.syncedTitle,
-    ...(link.syncedDescription ? { description: link.syncedDescription } : {}),
-    stateGroup: link.syncedStateGroup,
-    priority: link.syncedPriority,
-  };
-}
-
-function withSnapshot(
-  link: TrackerIssueLink,
-  fields: SyncedFields,
-  remoteUpdatedAt: Date
-): TrackerIssueLink {
-  const { syncedDescription: _previous, ...rest } = link;
-  return {
-    ...rest,
-    syncedTitle: fields.title,
-    ...(fields.description ? { syncedDescription: fields.description } : {}),
-    syncedStateGroup: fields.stateGroup,
-    syncedPriority: fields.priority,
-    remoteUpdatedAt,
-    updatedAt: new Date(),
-  };
 }
 
 function isStoppingError(error: unknown): boolean {
@@ -230,23 +197,7 @@ export class RunTrackerSyncUseCase {
       priority: remote.priority,
     });
     if (!created.ok) throw new Error(created.error);
-    const now = new Date();
-    const link: TrackerIssueLink = {
-      workItemId: created.workItem.id,
-      ruleId: rule.id,
-      connectionId: connection.id,
-      externalId: issue.externalId,
-      externalKey: issue.key,
-      externalUrl: issue.url,
-      syncedTitle: remote.title,
-      ...(remote.description ? { syncedDescription: remote.description } : {}),
-      syncedStateGroup: remote.stateGroup,
-      syncedPriority: remote.priority,
-      remoteUpdatedAt: issue.updatedAt,
-      createdAt: now,
-      updatedAt: now,
-    };
-    await this.links.upsert(link);
+    await this.links.upsert(newLink(rule, connection, issue, created.workItem.id));
     summary.created += 1;
     return created.workItem.id;
   }
@@ -261,25 +212,11 @@ export class RunTrackerSyncUseCase {
     states: ProjectStates,
     summary: TrackerSyncRunSummary
   ): Promise<void> {
-    const local: SyncedFields = {
-      title: workItem.title,
-      ...(workItem.description ? { description: workItem.description } : {}),
-      stateGroup: states.groupFor(workItem.stateId),
-      priority: workItem.priority,
-    };
+    const local = localFields(workItem, states);
     const plan = planIssueSync(rule.direction, snapshotFields(link), local, remote);
 
     if (Object.keys(plan.applyLocal).length > 0) {
-      const input: UpdateWorkItemInput = {
-        ...(plan.applyLocal.title !== undefined ? { title: plan.applyLocal.title } : {}),
-        ...('description' in plan.applyLocal
-          ? { description: plan.applyLocal.description ?? '' }
-          : {}),
-        ...(plan.applyLocal.stateGroup !== undefined
-          ? { stateId: states.stateFor(plan.applyLocal.stateGroup) }
-          : {}),
-        ...(plan.applyLocal.priority !== undefined ? { priority: plan.applyLocal.priority } : {}),
-      };
+      const input = workItemUpdate(plan.applyLocal, states);
       const updated = await this.updateWorkItem.execute(workItem.id, input, TRACKER_SYNC_ACTOR);
       if (!updated.ok) throw new Error(updated.error);
       summary.updated += 1;
