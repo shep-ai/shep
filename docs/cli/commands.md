@@ -902,9 +902,10 @@ shep space show ~/work/acme/pay-api
 produce. Options: `--claude-config-dir <dir>`, `--gh-config-dir <dir>`, `--git-name`,
 `--git-email`, `--aws-profile`, `--bedrock` / `--no-bedrock`, `--agents a,b`,
 `--pr-comments off|mention|all` (which PR review comments shep answers on its own; default
-mention), `--resolve-threads` / `--no-resolve-threads` and `--clear <fields...>`
+mention), `--resolve-threads` / `--no-resolve-threads`, `--auto-actions restart,rollback,scale`
+(runtime actions shep runs on the space's incidents without asking) and `--clear <fields...>`
 (`claude-config-dir`, `gh-config-dir`, `git-name`, `git-email`, `aws-profile`, `bedrock`,
-`agents`, `pr-comments`, `resolve-threads`). Feature runs and feature chats in the space's
+`agents`, `pr-comments`, `resolve-threads`, `auto-actions`). Feature runs and feature chats in the space's
 repositories run with these settings; host `GH_TOKEN`/`GITHUB_TOKEN` (with a gh dir) and
 `ANTHROPIC_API_KEY`/`ANTHROPIC_AUTH_TOKEN`/`CLAUDE_CODE_OAUTH_TOKEN` (with a Claude dir) are
 removed for them.
@@ -999,6 +1000,27 @@ by them (spec 128). See the [discovery guide](../guides/discovery.md).
 | `shep discovery schedule --every <hours>` | Let the daemon run discovery every 1–720 hours (`--space`); `--off` turns it off |
 
 **Source**: `src/presentation/cli/commands/discovery/`
+
+---
+
+## Incident Commands
+
+`shep incident` opens production incidents, triages them with the space's agent and restarts,
+rolls back or scales their Kubernetes deployment (spec 129). Monitoring tools open them through
+`POST /api/alerts`. See the [incidents guide](../guides/incidents.md).
+
+| Command | Description |
+| ------- | ----------- |
+| `shep incident open <title>` | Open an incident (`--space`, `--severity critical\|major\|minor`, `--detail`, `--url`, `--workload`, `--namespace`, `--context`) |
+| `shep incident ls` | Incidents, newest first (`--open` for unresolved only) |
+| `shep incident show <incident>` | The incident with its timeline and runtime actions |
+| `shep incident note <incident> <text>` | Add a note to the timeline |
+| `shep incident triage <incident>` | Read evidence, rank likely causes and propose one action (`--agent <type>`) |
+| `shep incident act <incident> <restart\|rollback\|scale>` | Run an action now (`--replicas` for scale, `--reason`) |
+| `shep incident approve <action>` / `reject <action>` | Run or refuse a proposed action (`--reason` on reject) |
+| `shep incident resolve <incident>` | Resolve with `--postmortem <markdown>`, or a draft from the timeline |
+
+**Source**: `src/presentation/cli/commands/incident/`
 
 ---
 

@@ -86,3 +86,20 @@ export function isAgentAllowedInSpace(
   const allowed = settings?.allowedAgentTypes;
   return !allowed || allowed.length === 0 || allowed.includes(agentType);
 }
+
+/**
+ * The agent a space-scoped run uses: the requested one when the space allows
+ * it, the space's first allowed agent when none is requested, or the default
+ * agent (no type) when the space allows every agent.
+ */
+export function spaceAgent(
+  settings: SpaceAgentSettings | undefined,
+  requested?: AgentType
+): { ok: true; agentType?: AgentType } | { ok: false } {
+  if (requested)
+    return isAgentAllowedInSpace(settings, requested)
+      ? { ok: true, agentType: requested }
+      : { ok: false };
+  const first = settings?.allowedAgentTypes?.[0];
+  return first ? { ok: true, agentType: first } : { ok: true };
+}

@@ -17,7 +17,7 @@ tasks:
     title: Model
     description: >
       Incident, IncidentEvent, RuntimeAction and their enums in TypeSpec; SpaceAgentSettings.autoRuntimeActions; migration 162; repositories.
-    state: Todo
+    state: Done
     dependencies: []
     acceptanceCriteria:
       - Repositories round-trip every field
@@ -34,7 +34,7 @@ tasks:
     title: Domain rules
     description: >
       domain/shared/incidents.ts: policy check, severity to urgency, timeline helpers and the postmortem template.
-    state: Todo
+    state: Done
     dependencies:
       - task-1
     acceptanceCriteria:
@@ -52,7 +52,7 @@ tasks:
     title: Runtime controller
     description: >
       IRuntimeController port and kubectl adapter: evidence, restart, rollback, scale, verify.
-    state: Todo
+    state: Done
     dependencies:
       - task-1
     acceptanceCriteria:
@@ -70,7 +70,7 @@ tasks:
     title: Open incidents
     description: >
       OpenIncidentUseCase records the incident, its Opened event and an urgent Incident signal; alerts dedupe by external id while open.
-    state: Todo
+    state: Done
     dependencies:
       - task-2
     acceptanceCriteria:
@@ -88,7 +88,7 @@ tasks:
     title: Triage
     description: >
       TriageIncidentUseCase gathers evidence, asks the agent for hypotheses and one action, records them, and runs the action when the policy allows.
-    state: Todo
+    state: Done
     dependencies:
       - task-3
       - task-4
@@ -107,7 +107,7 @@ tasks:
     title: Actions
     description: >
       Propose (person), approve, reject; execution with recovery check; status and timeline updates.
-    state: Todo
+    state: Done
     dependencies:
       - task-3
       - task-4
@@ -126,7 +126,7 @@ tasks:
     title: Resolve and read
     description: >
       ResolveIncidentUseCase with the postmortem; list and get with timeline and actions.
-    state: Todo
+    state: Done
     dependencies:
       - task-2
       - task-4
@@ -145,7 +145,7 @@ tasks:
     title: Alerts
     description: >
       Shared intake key verification; POST /api/alerts as an exact externally authenticated path.
-    state: Todo
+    state: Done
     dependencies:
       - task-4
     acceptanceCriteria:
@@ -163,7 +163,7 @@ tasks:
     title: CLI
     description: >
       shep incident open/ls/show/triage/act/approve/reject/resolve; space config --auto-actions; 9 locales.
-    state: Todo
+    state: Done
     dependencies:
       - task-5
       - task-6
@@ -183,7 +183,7 @@ tasks:
     title: Web
     description: >
       /incidents page with timeline, actions and resolve; policy in space agent settings; sidebar link; stories; 9 locales.
-    state: Todo
+    state: Done
     dependencies:
       - task-5
       - task-6
@@ -203,7 +203,7 @@ tasks:
     title: Docs
     description: >
       Incidents guide, architecture note, CLI reference, spaces and feedback guides.
-    state: Todo
+    state: Done
     dependencies:
       - task-9
       - task-10
@@ -222,7 +222,7 @@ tasks:
     title: Verification
     description: >
       lint, format, typecheck, unit, integration, build, web build, storybook.
-    state: Todo
+    state: Done
     dependencies:
       - task-11
     acceptanceCriteria:

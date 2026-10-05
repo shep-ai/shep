@@ -1240,7 +1240,10 @@
         "prComments": "PR comments answered",
         "resolveThreads": "Resolve threads",
         "defaultValue": "{{value}} (default)",
-        "badTrigger": "\"{{value}}\" is not a PR comment trigger. Use one of: {{triggers}}"
+        "badTrigger": "\"{{value}}\" is not a PR comment trigger. Use one of: {{triggers}}",
+        "autoActions": "Runs on incidents unasked",
+        "autoActionsOption": "Runtime actions shep runs on an incident without asking: restart, rollback, scale (comma-separated)",
+        "none": "none"
       }
     },
     "connection": {
@@ -1605,6 +1608,72 @@
         "needEvery": "Give --every <hours> or --off",
         "on": "Discovery runs every {{hours}} hours",
         "off": "Scheduled discovery is off"
+      }
+    },
+    "incident": {
+      "description": "Production incidents: open, triage, act on the workload and resolve",
+      "failed": "Incident command failed",
+      "spaceOption": "Space slug or id (default space if omitted)",
+      "incidentArg": "Incident id (see shep incident ls)",
+      "actionIdArg": "Runtime action id (see shep incident show)",
+      "badSeverity": "\"{{value}}\" is not a severity; use {{severities}}",
+      "badAction": "\"{{value}}\" is not a runtime action; use {{actions}}",
+      "recovered": "recovered",
+      "notRecovered": "not recovered",
+      "awaiting": "Waiting for approval: {{action}} — run shep incident approve {{id}}",
+      "open": {
+        "description": "Open an incident",
+        "titleArg": "One-line summary",
+        "severityOption": "critical, major (default) or minor",
+        "detailOption": "What is happening",
+        "urlOption": "Link to the alert or dashboard",
+        "workloadOption": "The Kubernetes deployment it concerns",
+        "namespaceOption": "Its namespace (default: default)",
+        "contextOption": "Its kubeconfig context (default: current)",
+        "success": "Incident {{id}} opened: {{title}}"
+      },
+      "ls": {
+        "description": "List incidents, newest first",
+        "openOption": "Only unresolved incidents",
+        "title": "Incidents",
+        "idColumn": "Id",
+        "titleColumn": "Incident",
+        "severityColumn": "Severity",
+        "statusColumn": "Status",
+        "workloadColumn": "Workload",
+        "empty": "No incidents."
+      },
+      "show": {
+        "description": "Show an incident with its timeline and actions"
+      },
+      "note": {
+        "description": "Add a note to an incident's timeline",
+        "textArg": "The note",
+        "success": "Note added"
+      },
+      "triage": {
+        "description": "Read the workload and ask an agent for causes and one action",
+        "agentOption": "Agent to use (the space's rules apply)",
+        "started": "Reading the workload and asking the agent; this can take a few minutes…"
+      },
+      "act": {
+        "description": "Restart, roll back or scale the incident's workload now",
+        "actionArg": "restart, rollback or scale",
+        "replicasOption": "Replica count, for scale",
+        "reasonOption": "Why"
+      },
+      "approve": {
+        "description": "Approve a proposed action; it runs at once"
+      },
+      "reject": {
+        "description": "Turn down a proposed action",
+        "reasonOption": "Why",
+        "success": "Action {{id}} rejected"
+      },
+      "resolve": {
+        "description": "Resolve an incident; the postmortem is drafted from the timeline unless given",
+        "postmortemOption": "Your postmortem (Markdown)",
+        "success": "{{title}} resolved"
       }
     }
   },

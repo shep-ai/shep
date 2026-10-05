@@ -1,0 +1,10 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: RuntimeActionStatus.yaml
+type: string
+enum:
+  - Proposed
+  - Approved
+  - Rejected
+  - Succeeded
+  - Failed
+description: Where a runtime action stands

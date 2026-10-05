@@ -70,6 +70,8 @@ links every signal of the theme to it. It is ranked with the others by value per
 
 ## Good to know
 
+- The same key lets a monitoring tool open incidents through `POST /api/alerts`; see
+  [Incidents](./incidents.md).
 - Feedback keys are bearer secrets: anyone holding one can post into that space. Revoke a key
   the moment a tool no longer needs it.
 - Themes are computed from words, not meaning; two requests phrased very differently stay apart.

@@ -447,7 +447,8 @@
     "harness": "Harness",
     "spaces": "Espaços",
     "trackers": "Ligações",
-    "opportunities": "Oportunidades"
+    "opportunities": "Oportunidades",
+    "incidents": "Incidentes"
   },
   "sidebar": {
     "features": "Recursos",
@@ -1383,7 +1384,9 @@
         "Mention": "Comentários que mencionam #shep",
         "All": "Todos os comentários"
       },
-      "resolveThreads": "Resolver as threads em que alterou código"
+      "resolveThreads": "Resolver as threads em que alterou código",
+      "autoActions": "Executadas sem perguntar em incidentes",
+      "autoActionsHint": "O Shep executa estas na carga de trabalho de um incidente sem esperar aprovação. As outras esperam alguém aprovar."
     }
   },
   "trackers": {
@@ -1645,6 +1648,99 @@
       "running": "Descoberta em andamento…",
       "failed": "A última execução falhou: {{error}}",
       "succeeded": "Última execução: {{proposed}} propostas a partir de {{read}} sinais, {{when}}"
+    }
+  },
+  "incidents": {
+    "title": "Incidentes",
+    "subtitle": "Problemas em produção, a triagem, os reinícios, reversões e escalonamentos que os resolvem, e o postmortem.",
+    "space": "Espaço",
+    "list": "Incidentes",
+    "empty": "Nenhum incidente neste espaço.",
+    "timeline": "Linha do tempo",
+    "actions": "Ações em execução",
+    "approve": "Aprovar",
+    "reject": "Rejeitar",
+    "recovered": "Recuperado",
+    "notRecovered": "Não recuperado",
+    "scaleTo": "Escalar para {{replicas}} réplicas",
+    "showEvidence": "Mostrar evidências",
+    "triage": "Triagem",
+    "triaging": "Fazendo triagem…",
+    "workload": "deployment/{{workload}} em {{namespace}} ({{context}})",
+    "currentContext": "contexto atual",
+    "noWorkload": "Sem carga de trabalho — as ações estão desligadas.",
+    "openLink": "Abrir o alerta",
+    "errors": {
+      "actionFailed": "A ação falhou."
+    },
+    "form": {
+      "title": "Abrir um incidente",
+      "incident": "Incidente",
+      "placeholder": "O que está errado?",
+      "severity": "Gravidade",
+      "workload": "Carga de trabalho",
+      "namespace": "Namespace",
+      "context": "Contexto",
+      "submit": "Abrir"
+    },
+    "act": {
+      "title": "Executar uma ação",
+      "kind": "Ação",
+      "replicas": "Réplicas",
+      "reason": "Por quê?",
+      "submit": "Executar",
+      "running": "Executando…"
+    },
+    "note": {
+      "title": "Nota",
+      "placeholder": "Adicionar uma nota à linha do tempo",
+      "submit": "Adicionar"
+    },
+    "resolve": {
+      "title": "Resolver",
+      "postmortem": "Postmortem",
+      "placeholder": "Escreva o postmortem ou deixe vazio para um rascunho da linha do tempo",
+      "submit": "Resolver"
+    },
+    "severity": {
+      "Critical": "Crítico",
+      "Major": "Grave",
+      "Minor": "Leve"
+    },
+    "status": {
+      "Open": "Aberto",
+      "Mitigated": "Mitigado",
+      "Resolved": "Resolvido"
+    },
+    "actionKind": {
+      "Restart": "Reiniciar",
+      "Rollback": "Reverter",
+      "Scale": "Escalar"
+    },
+    "actionStatus": {
+      "Proposed": "Aguardando aprovação",
+      "Approved": "Aprovada",
+      "Rejected": "Rejeitada",
+      "Succeeded": "Feita",
+      "Failed": "Falhou"
+    },
+    "proposedBy": {
+      "Agent": "proposta pelo agente",
+      "Person": "pedida por uma pessoa"
+    },
+    "eventKind": {
+      "Opened": "Aberto",
+      "Note": "Nota",
+      "Evidence": "Evidências",
+      "Hypothesis": "Hipótese",
+      "ActionProposed": "Ação proposta",
+      "ActionApproved": "Ação aprovada",
+      "ActionRejected": "Ação rejeitada",
+      "ActionSucceeded": "Ação feita",
+      "ActionFailed": "Ação falhou",
+      "Recovered": "Recuperado",
+      "NotRecovered": "Não recuperado",
+      "Resolved": "Resolvido"
     }
   }
 }

@@ -357,6 +357,7 @@ describe('request guard — externally authenticated webhooks', () => {
 
   it('exempts the feedback endpoint, which verifies its own key (spec 127)', () => {
     expect(EXTERNALLY_AUTHENTICATED_PATHS).toContain('/api/feedback');
+    expect(EXTERNALLY_AUTHENTICATED_PATHS).toContain('/api/alerts');
     const child = evaluateRequest(
       makeRequest({
         method: 'POST',

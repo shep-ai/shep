@@ -1240,7 +1240,10 @@
         "prComments": "Commentaires de PR traités",
         "resolveThreads": "Résoudre les fils",
         "defaultValue": "{{value}} (par défaut)",
-        "badTrigger": "« {{value}} » n'est pas un déclencheur de commentaires de PR. Utilisez l'un de : {{triggers}}"
+        "badTrigger": "« {{value}} » n'est pas un déclencheur de commentaires de PR. Utilisez l'un de : {{triggers}}",
+        "autoActions": "S'exécute sur incident sans demander",
+        "autoActionsOption": "Actions que shep exécute sur un incident sans demander : restart, rollback, scale (séparées par des virgules)",
+        "none": "aucune"
       }
     },
     "connection": {
@@ -1605,6 +1608,72 @@
         "needEvery": "Indiquez --every <heures> ou --off",
         "on": "La découverte tourne toutes les {{hours}} heures",
         "off": "La découverte planifiée est arrêtée"
+      }
+    },
+    "incident": {
+      "description": "Incidents de production : ouvrir, analyser, agir sur la charge et résoudre",
+      "failed": "La commande incident a échoué",
+      "spaceOption": "Slug ou id de l'espace (espace par défaut si omis)",
+      "incidentArg": "Id de l'incident (voir shep incident ls)",
+      "actionIdArg": "Id de l'action (voir shep incident show)",
+      "badSeverity": "« {{value}} » n'est pas une gravité ; utilisez {{severities}}",
+      "badAction": "« {{value}} » n'est pas une action ; utilisez {{actions}}",
+      "recovered": "rétabli",
+      "notRecovered": "non rétabli",
+      "awaiting": "En attente d'approbation : {{action}} — lancez shep incident approve {{id}}",
+      "open": {
+        "description": "Ouvrir un incident",
+        "titleArg": "Résumé en une ligne",
+        "severityOption": "critical, major (par défaut) ou minor",
+        "detailOption": "Ce qui se passe",
+        "urlOption": "Lien vers l'alerte ou le tableau de bord",
+        "workloadOption": "Le deployment Kubernetes concerné",
+        "namespaceOption": "Son namespace (par défaut : default)",
+        "contextOption": "Son contexte kubeconfig (par défaut : l'actuel)",
+        "success": "Incident {{id}} ouvert : {{title}}"
+      },
+      "ls": {
+        "description": "Lister les incidents, les plus récents d'abord",
+        "openOption": "Seulement les incidents non résolus",
+        "title": "Incidents",
+        "idColumn": "Id",
+        "titleColumn": "Incident",
+        "severityColumn": "Gravité",
+        "statusColumn": "Statut",
+        "workloadColumn": "Charge",
+        "empty": "Aucun incident."
+      },
+      "show": {
+        "description": "Afficher un incident avec sa chronologie et ses actions"
+      },
+      "note": {
+        "description": "Ajouter une note à la chronologie",
+        "textArg": "La note",
+        "success": "Note ajoutée"
+      },
+      "triage": {
+        "description": "Lire la charge et demander à un agent des causes et une action",
+        "agentOption": "Agent à utiliser (les règles de l'espace s'appliquent)",
+        "started": "Lecture de la charge et consultation de l'agent ; cela peut prendre quelques minutes…"
+      },
+      "act": {
+        "description": "Redémarrer, revenir en arrière ou mettre à l'échelle la charge maintenant",
+        "actionArg": "restart, rollback ou scale",
+        "replicasOption": "Nombre de réplicas, pour scale",
+        "reasonOption": "Pourquoi"
+      },
+      "approve": {
+        "description": "Approuver une action proposée ; elle s'exécute aussitôt"
+      },
+      "reject": {
+        "description": "Refuser une action proposée",
+        "reasonOption": "Pourquoi",
+        "success": "Action {{id}} refusée"
+      },
+      "resolve": {
+        "description": "Résoudre un incident ; le postmortem est rédigé à partir de la chronologie s'il n'est pas fourni",
+        "postmortemOption": "Votre postmortem (Markdown)",
+        "success": "{{title}} résolu"
       }
     }
   },

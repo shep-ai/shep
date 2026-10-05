@@ -21,7 +21,7 @@ import {
   GetFeedbackThemesUseCase,
   PromoteThemeUseCase,
 } from '@/application/use-cases/feedback/feedback-themes.use-case.js';
-import { FeedbackRejection } from '@/domain/generated/output.js';
+import { IntakeRejection } from '@/domain/generated/output.js';
 
 describe('Feedback intake (integration)', () => {
   let db: Database.Database;
@@ -67,7 +67,7 @@ describe('Feedback intake (integration)', () => {
     });
     expect(retry.ok && retry.duplicate).toBe(true);
     const wrong = await ingest.execute(`${key.secret}x`, { text: 'x' });
-    expect(wrong.ok || wrong.rejection).toBe(FeedbackRejection.Unauthorized);
+    expect(wrong.ok || wrong.rejection).toBe(IntakeRejection.Unauthorized);
 
     const themes = await c.resolve(GetFeedbackThemesUseCase).execute('acme');
     if (!themes.ok) throw new Error(themes.error);

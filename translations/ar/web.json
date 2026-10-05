@@ -447,7 +447,8 @@
     "harness": "Harness",
     "spaces": "المساحات",
     "trackers": "الاتصالات",
-    "opportunities": "الفرص"
+    "opportunities": "الفرص",
+    "incidents": "الحوادث"
   },
   "sidebar": {
     "features": "الميزات",
@@ -1383,7 +1384,9 @@
         "Mention": "التعليقات التي تذكر #shep",
         "All": "كل التعليقات"
       },
-      "resolveThreads": "إغلاق السلاسل التي عُدّلت الشيفرة لأجلها"
+      "resolveThreads": "إغلاق السلاسل التي عُدّلت الشيفرة لأجلها",
+      "autoActions": "تُنفَّذ دون سؤال عند الحوادث",
+      "autoActionsHint": "ينفّذ Shep هذه على حمل عمل الحادث دون انتظار موافقة. الأخرى تنتظر موافقة أحد."
     }
   },
   "trackers": {
@@ -1645,6 +1648,99 @@
       "running": "الاكتشاف قيد التشغيل…",
       "failed": "فشل التشغيل الأخير: {{error}}",
       "succeeded": "آخر تشغيل: اقتُرحت {{proposed}} من {{read}} إشارة، {{when}}"
+    }
+  },
+  "incidents": {
+    "title": "الحوادث",
+    "subtitle": "مشاكل بيئة الإنتاج وفرزها، وإعادة التشغيل والتراجع وتغيير الحجم التي تصلحها، وتقرير ما بعد الحادث.",
+    "space": "المساحة",
+    "list": "الحوادث",
+    "empty": "لا توجد حوادث في هذه المساحة.",
+    "timeline": "الخط الزمني",
+    "actions": "إجراءات التشغيل",
+    "approve": "موافقة",
+    "reject": "رفض",
+    "recovered": "تعافى",
+    "notRecovered": "لم يتعافَ",
+    "scaleTo": "تغيير الحجم إلى {{replicas}} نسخ",
+    "showEvidence": "عرض الأدلة",
+    "triage": "فرز",
+    "triaging": "جارٍ الفرز…",
+    "workload": "deployment/{{workload}} في {{namespace}} ({{context}})",
+    "currentContext": "السياق الحالي",
+    "noWorkload": "لا يوجد حمل عمل — الإجراءات متوقفة.",
+    "openLink": "فتح التنبيه",
+    "errors": {
+      "actionFailed": "فشل الإجراء."
+    },
+    "form": {
+      "title": "فتح حادث",
+      "incident": "حادث",
+      "placeholder": "ما المشكلة؟",
+      "severity": "الخطورة",
+      "workload": "حمل العمل",
+      "namespace": "Namespace",
+      "context": "السياق",
+      "submit": "فتح"
+    },
+    "act": {
+      "title": "تشغيل إجراء",
+      "kind": "الإجراء",
+      "replicas": "النسخ",
+      "reason": "لماذا؟",
+      "submit": "تشغيل",
+      "running": "جارٍ التشغيل…"
+    },
+    "note": {
+      "title": "ملاحظة",
+      "placeholder": "إضافة ملاحظة إلى الخط الزمني",
+      "submit": "إضافة"
+    },
+    "resolve": {
+      "title": "حل",
+      "postmortem": "تقرير ما بعد الحادث",
+      "placeholder": "اكتب التقرير، أو اتركه فارغًا لمسودة من الخط الزمني",
+      "submit": "حل"
+    },
+    "severity": {
+      "Critical": "حرج",
+      "Major": "كبير",
+      "Minor": "بسيط"
+    },
+    "status": {
+      "Open": "مفتوح",
+      "Mitigated": "مُخفَّف",
+      "Resolved": "محلول"
+    },
+    "actionKind": {
+      "Restart": "إعادة تشغيل",
+      "Rollback": "تراجع",
+      "Scale": "تغيير الحجم"
+    },
+    "actionStatus": {
+      "Proposed": "بانتظار الموافقة",
+      "Approved": "تمت الموافقة",
+      "Rejected": "مرفوض",
+      "Succeeded": "تم",
+      "Failed": "فشل"
+    },
+    "proposedBy": {
+      "Agent": "اقترحه الوكيل",
+      "Person": "طلبه شخص"
+    },
+    "eventKind": {
+      "Opened": "فُتح",
+      "Note": "ملاحظة",
+      "Evidence": "أدلة",
+      "Hypothesis": "فرضية",
+      "ActionProposed": "اقتُرح إجراء",
+      "ActionApproved": "تمت الموافقة على إجراء",
+      "ActionRejected": "رُفض إجراء",
+      "ActionSucceeded": "تم إجراء",
+      "ActionFailed": "فشل إجراء",
+      "Recovered": "تعافى",
+      "NotRecovered": "لم يتعافَ",
+      "Resolved": "حُلّ"
     }
   }
 }

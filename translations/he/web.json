@@ -447,7 +447,8 @@
     "harness": "Harness",
     "spaces": "מרחבים",
     "trackers": "חיבורים",
-    "opportunities": "הזדמנויות"
+    "opportunities": "הזדמנויות",
+    "incidents": "תקלות"
   },
   "sidebar": {
     "features": "פיצ'רים",
@@ -1383,7 +1384,9 @@
         "Mention": "הערות שמזכירות #shep",
         "All": "כל הערה"
       },
-      "resolveThreads": "סגירת שרשורים שבהם שונה קוד"
+      "resolveThreads": "סגירת שרשורים שבהם שונה קוד",
+      "autoActions": "רצות בלי לשאול בתקלות",
+      "autoActionsHint": "Shep מריץ את אלה על עומס העבודה של תקלה בלי לחכות לאישור. האחרות ממתינות שמישהו יאשר."
     }
   },
   "trackers": {
@@ -1645,6 +1648,99 @@
       "running": "הגילוי רץ…",
       "failed": "ההרצה האחרונה נכשלה: {{error}}",
       "succeeded": "הרצה אחרונה: {{proposed}} הוצעו מתוך {{read}} אותות, {{when}}"
+    }
+  },
+  "incidents": {
+    "title": "תקלות",
+    "subtitle": "תקלות בייצור, הניתוח שלהן, ההפעלות מחדש, החזרות לאחור והשינויים בקנה מידה שמתקנים אותן, ותחקיר.",
+    "space": "מרחב",
+    "list": "תקלות",
+    "empty": "אין תקלות במרחב הזה.",
+    "timeline": "ציר זמן",
+    "actions": "פעולות בסביבה",
+    "approve": "אישור",
+    "reject": "דחייה",
+    "recovered": "התאושש",
+    "notRecovered": "לא התאושש",
+    "scaleTo": "שינוי ל-{{replicas}} רפליקות",
+    "showEvidence": "הצגת ראיות",
+    "triage": "ניתוח",
+    "triaging": "מנתח…",
+    "workload": "deployment/{{workload}} ב-{{namespace}} ({{context}})",
+    "currentContext": "הקונטקסט הנוכחי",
+    "noWorkload": "אין עומס עבודה — הפעולות כבויות.",
+    "openLink": "פתיחת ההתראה",
+    "errors": {
+      "actionFailed": "הפעולה נכשלה."
+    },
+    "form": {
+      "title": "פתיחת תקלה",
+      "incident": "תקלה",
+      "placeholder": "מה לא עובד?",
+      "severity": "חומרה",
+      "workload": "עומס עבודה",
+      "namespace": "Namespace",
+      "context": "קונטקסט",
+      "submit": "פתיחה"
+    },
+    "act": {
+      "title": "הרצת פעולה",
+      "kind": "פעולה",
+      "replicas": "רפליקות",
+      "reason": "למה?",
+      "submit": "הרצה",
+      "running": "רץ…"
+    },
+    "note": {
+      "title": "הערה",
+      "placeholder": "הוספת הערה לציר הזמן",
+      "submit": "הוספה"
+    },
+    "resolve": {
+      "title": "סגירה",
+      "postmortem": "תחקיר",
+      "placeholder": "כתבו את התחקיר, או השאירו ריק לטיוטה מציר הזמן",
+      "submit": "סגירה"
+    },
+    "severity": {
+      "Critical": "קריטית",
+      "Major": "חמורה",
+      "Minor": "קלה"
+    },
+    "status": {
+      "Open": "פתוחה",
+      "Mitigated": "מוקלת",
+      "Resolved": "סגורה"
+    },
+    "actionKind": {
+      "Restart": "הפעלה מחדש",
+      "Rollback": "החזרה לאחור",
+      "Scale": "שינוי קנה מידה"
+    },
+    "actionStatus": {
+      "Proposed": "ממתינה לאישור",
+      "Approved": "אושרה",
+      "Rejected": "נדחתה",
+      "Succeeded": "בוצעה",
+      "Failed": "נכשלה"
+    },
+    "proposedBy": {
+      "Agent": "הוצעה על ידי הסוכן",
+      "Person": "התבקשה על ידי אדם"
+    },
+    "eventKind": {
+      "Opened": "נפתחה",
+      "Note": "הערה",
+      "Evidence": "ראיות",
+      "Hypothesis": "השערה",
+      "ActionProposed": "פעולה הוצעה",
+      "ActionApproved": "פעולה אושרה",
+      "ActionRejected": "פעולה נדחתה",
+      "ActionSucceeded": "פעולה בוצעה",
+      "ActionFailed": "פעולה נכשלה",
+      "Recovered": "התאושש",
+      "NotRecovered": "לא התאושש",
+      "Resolved": "נסגרה"
     }
   }
 }

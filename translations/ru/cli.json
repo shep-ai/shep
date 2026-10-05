@@ -1240,7 +1240,10 @@
         "prComments": "Ответы на комментарии PR",
         "resolveThreads": "Закрывать ветки",
         "defaultValue": "{{value}} (по умолчанию)",
-        "badTrigger": "«{{value}}» — не режим комментариев PR. Используйте один из: {{triggers}}"
+        "badTrigger": "«{{value}}» — не режим комментариев PR. Используйте один из: {{triggers}}",
+        "autoActions": "Выполняется при инцидентах без вопроса",
+        "autoActionsOption": "Действия, которые shep выполняет при инциденте без вопроса: restart, rollback, scale (через запятую)",
+        "none": "нет"
       }
     },
     "connection": {
@@ -1605,6 +1608,72 @@
         "needEvery": "Укажите --every <часы> или --off",
         "on": "Поиск запускается каждые {{hours}} ч",
         "off": "Поиск по расписанию выключен"
+      }
+    },
+    "incident": {
+      "description": "Инциденты в продакшене: открыть, разобрать, воздействовать на нагрузку и закрыть",
+      "failed": "Команда incident завершилась с ошибкой",
+      "spaceOption": "Slug или id пространства (по умолчанию, если не указано)",
+      "incidentArg": "Id инцидента (см. shep incident ls)",
+      "actionIdArg": "Id действия (см. shep incident show)",
+      "badSeverity": "«{{value}}» — не уровень серьёзности; используйте {{severities}}",
+      "badAction": "«{{value}}» — не действие; используйте {{actions}}",
+      "recovered": "восстановлено",
+      "notRecovered": "не восстановлено",
+      "awaiting": "Ждёт одобрения: {{action}} — выполните shep incident approve {{id}}",
+      "open": {
+        "description": "Открыть инцидент",
+        "titleArg": "Краткое описание",
+        "severityOption": "critical, major (по умолчанию) или minor",
+        "detailOption": "Что происходит",
+        "urlOption": "Ссылка на алерт или дашборд",
+        "workloadOption": "Затронутый deployment Kubernetes",
+        "namespaceOption": "Его namespace (по умолчанию: default)",
+        "contextOption": "Его контекст kubeconfig (по умолчанию: текущий)",
+        "success": "Инцидент {{id}} открыт: {{title}}"
+      },
+      "ls": {
+        "description": "Список инцидентов, новые сначала",
+        "openOption": "Только незакрытые",
+        "title": "Инциденты",
+        "idColumn": "Id",
+        "titleColumn": "Инцидент",
+        "severityColumn": "Серьёзность",
+        "statusColumn": "Статус",
+        "workloadColumn": "Нагрузка",
+        "empty": "Инцидентов нет."
+      },
+      "show": {
+        "description": "Показать инцидент с хронологией и действиями"
+      },
+      "note": {
+        "description": "Добавить заметку в хронологию",
+        "textArg": "Заметка",
+        "success": "Заметка добавлена"
+      },
+      "triage": {
+        "description": "Прочитать нагрузку и спросить агента о причинах и одном действии",
+        "agentOption": "Агент (действуют правила пространства)",
+        "started": "Читаю нагрузку и спрашиваю агента; это может занять несколько минут…"
+      },
+      "act": {
+        "description": "Перезапустить, откатить или масштабировать нагрузку сейчас",
+        "actionArg": "restart, rollback или scale",
+        "replicasOption": "Число реплик, для scale",
+        "reasonOption": "Почему"
+      },
+      "approve": {
+        "description": "Одобрить предложенное действие; оно выполнится сразу"
+      },
+      "reject": {
+        "description": "Отклонить предложенное действие",
+        "reasonOption": "Почему",
+        "success": "Действие {{id}} отклонено"
+      },
+      "resolve": {
+        "description": "Закрыть инцидент; постмортем составляется по хронологии, если не задан",
+        "postmortemOption": "Ваш постмортем (Markdown)",
+        "success": "{{title}} закрыт"
       }
     }
   },

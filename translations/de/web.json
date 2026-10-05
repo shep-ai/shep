@@ -447,7 +447,8 @@
     "harness": "Harness",
     "spaces": "Spaces",
     "trackers": "Verbindungen",
-    "opportunities": "Opportunities"
+    "opportunities": "Opportunities",
+    "incidents": "Incidents"
   },
   "sidebar": {
     "features": "Features",
@@ -1383,7 +1384,9 @@
         "Mention": "Kommentare mit #shep",
         "All": "Jeder Kommentar"
       },
-      "resolveThreads": "Threads mit Codeänderung auflösen"
+      "resolveThreads": "Threads mit Codeänderung auflösen",
+      "autoActions": "Ohne Rückfrage bei Incidents",
+      "autoActionsHint": "Shep führt diese am Workload eines Incidents ohne Freigabe aus. Andere warten, bis jemand sie freigibt."
     }
   },
   "trackers": {
@@ -1645,6 +1648,99 @@
       "running": "Discovery läuft…",
       "failed": "Der letzte Lauf schlug fehl: {{error}}",
       "succeeded": "Letzter Lauf: {{proposed}} vorgeschlagen aus {{read}} Signalen, {{when}}"
+    }
+  },
+  "incidents": {
+    "title": "Incidents",
+    "subtitle": "Produktionsprobleme, ihre Triage, die Neustarts, Rollbacks und Skalierungen, die sie beheben, und das Postmortem.",
+    "space": "Bereich",
+    "list": "Incidents",
+    "empty": "Keine Incidents in diesem Bereich.",
+    "timeline": "Zeitleiste",
+    "actions": "Laufzeitaktionen",
+    "approve": "Freigeben",
+    "reject": "Ablehnen",
+    "recovered": "Erholt",
+    "notRecovered": "Nicht erholt",
+    "scaleTo": "Auf {{replicas}} Replikas skalieren",
+    "showEvidence": "Belege anzeigen",
+    "triage": "Triage",
+    "triaging": "Triage läuft…",
+    "workload": "deployment/{{workload}} in {{namespace}} ({{context}})",
+    "currentContext": "aktueller Kontext",
+    "noWorkload": "Kein Workload – Laufzeitaktionen sind aus.",
+    "openLink": "Alarm öffnen",
+    "errors": {
+      "actionFailed": "Die Aktion ist fehlgeschlagen."
+    },
+    "form": {
+      "title": "Incident eröffnen",
+      "incident": "Incident",
+      "placeholder": "Was ist kaputt?",
+      "severity": "Schweregrad",
+      "workload": "Workload",
+      "namespace": "Namespace",
+      "context": "Kontext",
+      "submit": "Eröffnen"
+    },
+    "act": {
+      "title": "Laufzeitaktion ausführen",
+      "kind": "Aktion",
+      "replicas": "Replikas",
+      "reason": "Warum?",
+      "submit": "Ausführen",
+      "running": "Läuft…"
+    },
+    "note": {
+      "title": "Notiz",
+      "placeholder": "Notiz zur Zeitleiste hinzufügen",
+      "submit": "Hinzufügen"
+    },
+    "resolve": {
+      "title": "Lösen",
+      "postmortem": "Postmortem",
+      "placeholder": "Postmortem schreiben oder leer lassen für einen Entwurf aus der Zeitleiste",
+      "submit": "Lösen"
+    },
+    "severity": {
+      "Critical": "Kritisch",
+      "Major": "Schwer",
+      "Minor": "Gering"
+    },
+    "status": {
+      "Open": "Offen",
+      "Mitigated": "Entschärft",
+      "Resolved": "Gelöst"
+    },
+    "actionKind": {
+      "Restart": "Neustart",
+      "Rollback": "Zurückrollen",
+      "Scale": "Skalieren"
+    },
+    "actionStatus": {
+      "Proposed": "Wartet auf Freigabe",
+      "Approved": "Freigegeben",
+      "Rejected": "Abgelehnt",
+      "Succeeded": "Erledigt",
+      "Failed": "Fehlgeschlagen"
+    },
+    "proposedBy": {
+      "Agent": "vom Agenten vorgeschlagen",
+      "Person": "von einer Person angefordert"
+    },
+    "eventKind": {
+      "Opened": "Eröffnet",
+      "Note": "Notiz",
+      "Evidence": "Belege",
+      "Hypothesis": "Hypothese",
+      "ActionProposed": "Aktion vorgeschlagen",
+      "ActionApproved": "Aktion freigegeben",
+      "ActionRejected": "Aktion abgelehnt",
+      "ActionSucceeded": "Aktion erledigt",
+      "ActionFailed": "Aktion fehlgeschlagen",
+      "Recovered": "Erholt",
+      "NotRecovered": "Nicht erholt",
+      "Resolved": "Gelöst"
     }
   }
 }

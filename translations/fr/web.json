@@ -447,7 +447,8 @@
     "harness": "Harness",
     "spaces": "Espaces",
     "trackers": "Connexions",
-    "opportunities": "Opportunités"
+    "opportunities": "Opportunités",
+    "incidents": "Incidents"
   },
   "sidebar": {
     "features": "Fonctionnalités",
@@ -1383,7 +1384,9 @@
         "Mention": "Commentaires mentionnant #shep",
         "All": "Tous les commentaires"
       },
-      "resolveThreads": "Résoudre les fils où le code a changé"
+      "resolveThreads": "Résoudre les fils où le code a changé",
+      "autoActions": "Lancées sans demander sur les incidents",
+      "autoActionsHint": "Shep les lance sur la charge de travail d’un incident sans attendre d’approbation. Les autres attendent qu’on les approuve."
     }
   },
   "trackers": {
@@ -1645,6 +1648,99 @@
       "running": "Découverte en cours…",
       "failed": "La dernière découverte a échoué : {{error}}",
       "succeeded": "Dernière découverte : {{proposed}} proposées à partir de {{read}} signaux, {{when}}"
+    }
+  },
+  "incidents": {
+    "title": "Incidents",
+    "subtitle": "Les problèmes en production, leur triage, les redémarrages, retours arrière et mises à l’échelle qui les corrigent, et le postmortem.",
+    "space": "Espace",
+    "list": "Incidents",
+    "empty": "Aucun incident dans cet espace.",
+    "timeline": "Chronologie",
+    "actions": "Actions d’exécution",
+    "approve": "Approuver",
+    "reject": "Refuser",
+    "recovered": "Rétabli",
+    "notRecovered": "Non rétabli",
+    "scaleTo": "Passer à {{replicas}} réplicas",
+    "showEvidence": "Afficher les éléments",
+    "triage": "Triage",
+    "triaging": "Triage en cours…",
+    "workload": "deployment/{{workload}} dans {{namespace}} ({{context}})",
+    "currentContext": "contexte actuel",
+    "noWorkload": "Aucune charge de travail : les actions sont désactivées.",
+    "openLink": "Ouvrir l’alerte",
+    "errors": {
+      "actionFailed": "L’action a échoué."
+    },
+    "form": {
+      "title": "Ouvrir un incident",
+      "incident": "Incident",
+      "placeholder": "Qu’est-ce qui ne va pas ?",
+      "severity": "Gravité",
+      "workload": "Charge de travail",
+      "namespace": "Namespace",
+      "context": "Contexte",
+      "submit": "Ouvrir"
+    },
+    "act": {
+      "title": "Lancer une action",
+      "kind": "Action",
+      "replicas": "Réplicas",
+      "reason": "Pourquoi ?",
+      "submit": "Lancer",
+      "running": "En cours…"
+    },
+    "note": {
+      "title": "Note",
+      "placeholder": "Ajouter une note à la chronologie",
+      "submit": "Ajouter"
+    },
+    "resolve": {
+      "title": "Résoudre",
+      "postmortem": "Postmortem",
+      "placeholder": "Rédigez le postmortem, ou laissez vide pour un brouillon tiré de la chronologie",
+      "submit": "Résoudre"
+    },
+    "severity": {
+      "Critical": "Critique",
+      "Major": "Majeur",
+      "Minor": "Mineur"
+    },
+    "status": {
+      "Open": "Ouvert",
+      "Mitigated": "Atténué",
+      "Resolved": "Résolu"
+    },
+    "actionKind": {
+      "Restart": "Redémarrer",
+      "Rollback": "Revenir en arrière",
+      "Scale": "Mettre à l’échelle"
+    },
+    "actionStatus": {
+      "Proposed": "En attente d’approbation",
+      "Approved": "Approuvée",
+      "Rejected": "Refusée",
+      "Succeeded": "Faite",
+      "Failed": "Échouée"
+    },
+    "proposedBy": {
+      "Agent": "proposée par l’agent",
+      "Person": "demandée par une personne"
+    },
+    "eventKind": {
+      "Opened": "Ouvert",
+      "Note": "Note",
+      "Evidence": "Éléments",
+      "Hypothesis": "Hypothèse",
+      "ActionProposed": "Action proposée",
+      "ActionApproved": "Action approuvée",
+      "ActionRejected": "Action refusée",
+      "ActionSucceeded": "Action faite",
+      "ActionFailed": "Action échouée",
+      "Recovered": "Rétabli",
+      "NotRecovered": "Non rétabli",
+      "Resolved": "Résolu"
     }
   }
 }

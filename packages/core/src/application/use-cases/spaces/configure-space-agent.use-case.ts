@@ -3,7 +3,8 @@
  *
  * Shows and changes a space's agent settings: the Claude and gh config
  * directories, the git identity, Bedrock and AWS profile, and the agent types
- * the space allows, and which PR comments shep answers on its own (spec 124).
+ * the space allows, which PR comments shep answers on its own (spec 124), and
+ * which runtime actions shep runs on an incident without asking (spec 129).
  * A patch sets the fields it gives, clears the ones it sets
  * to null, and keeps the rest. Credentials are never stored; a space only
  * points at directories the tools manage their own logins in.
@@ -13,6 +14,7 @@ import { injectable, inject } from 'tsyringe';
 import {
   AgentType,
   PrCommentTrigger,
+  RuntimeActionKind,
   type Space,
   type SpaceAgentSettings,
 } from '../../../domain/generated/output.js';
@@ -34,6 +36,7 @@ const EMAIL = /^[^\s@]+@[^\s@]+$/;
 const AWS_PROFILE = /^[\w.+@-]+$/;
 const AGENT_TYPES = new Set<string>(Object.values(AgentType));
 const PR_COMMENT_TRIGGERS = new Set<string>(Object.values(PrCommentTrigger));
+const RUNTIME_ACTION_KINDS = new Set<string>(Object.values(RuntimeActionKind));
 
 type Validated<T> = { ok: true; value: T | undefined } | { ok: false; error: string };
 
@@ -89,6 +92,12 @@ function validateField(
           };
     case 'prCommentResolveThreads':
       return { ok: true, value: value as boolean };
+    case 'autoRuntimeActions': {
+      const kinds = [...new Set(value as RuntimeActionKind[])];
+      const unknown = kinds.find((kind) => !RUNTIME_ACTION_KINDS.has(kind));
+      if (unknown) return { ok: false, error: `"${unknown}" is not a runtime action.` };
+      return { ok: true, value: kinds.length > 0 ? kinds : undefined };
+    }
   }
 }
 

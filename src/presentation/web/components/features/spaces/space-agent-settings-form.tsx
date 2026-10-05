@@ -4,7 +4,8 @@
  * SpaceAgentSettingsForm — how agents run for a space's repositories
  * (spec 121): the Claude and gh config directories holding the space's own
  * logins, the git identity for agent commits, Bedrock and the AWS profile,
- * and the agent types the space allows. Empty fields inherit the host.
+ * the agent types the space allows, and the runtime actions shep runs on an
+ * incident without asking (spec 129). Empty fields inherit the host.
  *
  * Collapsed by default; saving sends every field, so an emptied field clears.
  */
@@ -14,6 +15,7 @@ import { useTranslation } from 'react-i18next';
 import { ChevronDown, ChevronRight, KeyRound } from 'lucide-react';
 import {
   PrCommentTrigger,
+  RuntimeActionKind,
   type AgentType,
   type Space,
   type SpaceAgentSettings,
@@ -26,6 +28,7 @@ import { Input } from '@/components/ui/input';
 import { configureSpaceAgent } from '@/app/actions/manage-spaces';
 import { NATIVE_SELECT_CLASS } from '@/lib/native-select-class';
 import type { RunSpaceAction } from './spaces-types';
+import { CheckboxFieldset, toggled } from './checkbox-fieldset';
 
 type TextField =
   | 'claudeConfigDir'
@@ -73,7 +76,9 @@ const TEXT_FIELDS: readonly {
   },
 ];
 
-const AGENTS = listAgentDescriptors().filter((descriptor) => descriptor.supported);
+const AGENT_CHOICES = listAgentDescriptors()
+  .filter((descriptor) => descriptor.supported)
+  .map((descriptor) => ({ value: descriptor.type, label: descriptor.label }));
 
 function bedrockChoice(useBedrock: boolean | undefined): BedrockChoice {
   if (useBedrock === undefined) return '';
@@ -102,12 +107,9 @@ export function SpaceAgentSettingsForm({ space, run }: SpaceAgentSettingsFormPro
     settings.prCommentTrigger ?? DEFAULT_PR_COMMENT_TRIGGER
   );
   const [resolveThreads, setResolveThreads] = useState(settings.prCommentResolveThreads === true);
-
-  function toggleAgent(type: AgentType) {
-    setAgents((current) =>
-      current.includes(type) ? current.filter((a) => a !== type) : [...current, type]
-    );
-  }
+  const [autoActions, setAutoActions] = useState<RuntimeActionKind[]>(
+    settings.autoRuntimeActions ?? []
+  );
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -123,6 +125,7 @@ export function SpaceAgentSettingsForm({ space, run }: SpaceAgentSettingsFormPro
         allowedAgentTypes: agents,
         prCommentTrigger: prTrigger,
         prCommentResolveThreads: resolveThreads,
+        autoRuntimeActions: autoActions,
       })
     );
   }
@@ -180,25 +183,14 @@ export function SpaceAgentSettingsForm({ space, run }: SpaceAgentSettingsFormPro
           </div>
           <p className="text-muted-foreground text-[11px]">{t('spaces.agent.loginHint')}</p>
 
-          <fieldset className="space-y-1">
-            <legend className="text-xs">{t('spaces.agent.allowedAgents')}</legend>
-            <p className="text-muted-foreground text-[11px]">
-              {t('spaces.agent.allowedAgentsHint')}
-            </p>
-            <div className="flex flex-wrap gap-x-3 gap-y-1">
-              {AGENTS.map((agent) => (
-                <label key={agent.type} className="flex items-center gap-1.5 text-xs">
-                  <input
-                    type="checkbox"
-                    checked={agents.includes(agent.type)}
-                    onChange={() => toggleAgent(agent.type)}
-                    data-testid={`agent-settings-agent-${agent.type}`}
-                  />
-                  {agent.label}
-                </label>
-              ))}
-            </div>
-          </fieldset>
+          <CheckboxFieldset
+            legend={t('spaces.agent.allowedAgents')}
+            hint={t('spaces.agent.allowedAgentsHint')}
+            choices={AGENT_CHOICES}
+            selected={agents}
+            onToggle={(type) => setAgents((current) => toggled(current, type))}
+            testIdPrefix="agent-settings-agent"
+          />
 
           <fieldset className="space-y-1">
             <legend className="text-xs">{t('spaces.agent.prComments')}</legend>
@@ -228,6 +220,18 @@ export function SpaceAgentSettingsForm({ space, run }: SpaceAgentSettingsFormPro
               </label>
             </div>
           </fieldset>
+
+          <CheckboxFieldset
+            legend={t('spaces.agent.autoActions')}
+            hint={t('spaces.agent.autoActionsHint')}
+            choices={Object.values(RuntimeActionKind).map((kind) => ({
+              value: kind,
+              label: t(`incidents.actionKind.${kind}`),
+            }))}
+            selected={autoActions}
+            onToggle={(kind) => setAutoActions((current) => toggled(current, kind))}
+            testIdPrefix="agent-settings-auto"
+          />
 
           <Button type="submit" size="xs" data-testid="agent-settings-submit">
             {t('spaces.agent.save')}

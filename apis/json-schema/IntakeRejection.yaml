@@ -1,7 +1,7 @@
 $schema: https://json-schema.org/draft/2020-12/schema
-$id: FeedbackRejection.yaml
+$id: IntakeRejection.yaml
 type: string
 enum:
   - Unauthorized
   - Invalid
-description: Why posted feedback was refused
+description: Why feedback or an alert posted with an intake key was refused

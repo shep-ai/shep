@@ -19,6 +19,7 @@ Guides for using Shep AI CLI effectively.
 | [opportunities.md](./opportunities.md)                               | Decide what to build next               |
 | [feedback.md](./feedback.md)                                         | Customer feedback into shep             |
 | [discovery.md](./discovery.md)                                       | Let an agent shape the next bets        |
+| [incidents.md](./incidents.md)                                       | Triage and fix production problems     |
 | [bug-loop.md](./bug-loop.md)                                         | Investigate and fix bugs                |
 | [pr-comments.md](./pr-comments.md)                                   | Review comments on shep's pull requests |
 

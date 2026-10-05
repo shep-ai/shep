@@ -1,0 +1,17 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: IncidentEventKind.yaml
+type: string
+enum:
+  - Opened
+  - Note
+  - Evidence
+  - Hypothesis
+  - ActionProposed
+  - ActionApproved
+  - ActionRejected
+  - ActionSucceeded
+  - ActionFailed
+  - Recovered
+  - NotRecovered
+  - Resolved
+description: What an incident timeline entry records

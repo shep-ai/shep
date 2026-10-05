@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { AgentType, type Space } from '@shepai/core/domain/generated/output';
+import { AgentType, RuntimeActionKind, type Space } from '@shepai/core/domain/generated/output';
 import { SpaceAgentSettingsForm } from '@/components/features/spaces/space-agent-settings-form';
 
 const configureSpaceAgent = vi.fn();
@@ -67,7 +67,22 @@ describe('SpaceAgentSettingsForm', () => {
       allowedAgentTypes: [AgentType.ClaudeCode, AgentType.Cursor],
       prCommentTrigger: 'Mention',
       prCommentResolveThreads: false,
+      autoRuntimeActions: [],
     });
+  });
+
+  it('saves which runtime actions shep runs on incidents unasked (spec 129)', async () => {
+    const space = { ...ACME, agentSettings: { autoRuntimeActions: [RuntimeActionKind.Restart] } };
+    render(<SpaceAgentSettingsForm space={space} run={run} />);
+    await userEvent.click(screen.getByTestId('space-agent-settings-toggle'));
+    expect(screen.getByTestId(`agent-settings-auto-${RuntimeActionKind.Restart}`)).toBeChecked();
+    await userEvent.click(screen.getByTestId(`agent-settings-auto-${RuntimeActionKind.Scale}`));
+    await userEvent.click(screen.getByTestId(`agent-settings-auto-${RuntimeActionKind.Restart}`));
+    await userEvent.click(screen.getByTestId('agent-settings-submit'));
+    expect(configureSpaceAgent).toHaveBeenCalledWith(
+      ACME.id,
+      expect.objectContaining({ autoRuntimeActions: [RuntimeActionKind.Scale] })
+    );
   });
 
   it('saves which PR comments shep answers and thread resolution (spec 124)', async () => {

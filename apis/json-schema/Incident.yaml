@@ -1,0 +1,60 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: Incident.yaml
+type: object
+properties:
+  spaceId:
+    type: string
+    description: The space the incident belongs to
+  title:
+    type: string
+    description: One-line summary
+  severity:
+    $ref: IncidentSeverity.yaml
+    description: How bad it is
+  status:
+    $ref: IncidentStatus.yaml
+    description: Where it stands
+  source:
+    $ref: IncidentSource.yaml
+    description: Who opened it
+  detail:
+    type: string
+    description: The alert text or a person's description
+  url:
+    type: string
+    description: Link to the alert, dashboard or report
+  externalId:
+    type: string
+    description: The alerting tool's id; a repeat while open adds a note
+  runtimeContext:
+    type: string
+    description: Kubernetes context of the workload; the current context when unset
+  runtimeNamespace:
+    type: string
+    description: Kubernetes namespace of the workload
+  runtimeWorkload:
+    type: string
+    description: The deployment the incident concerns
+  signalId:
+    type: string
+    description: The Incident signal it raised
+  mitigatedAt:
+    type: string
+    format: date-time
+    description: When the workload recovered
+  resolvedAt:
+    type: string
+    format: date-time
+    description: When it was closed
+  postmortem:
+    type: string
+    description: The postmortem, Markdown
+required:
+  - spaceId
+  - title
+  - severity
+  - status
+  - source
+allOf:
+  - $ref: BaseEntity.yaml
+description: Something broke in production

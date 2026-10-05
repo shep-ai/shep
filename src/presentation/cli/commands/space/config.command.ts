@@ -1,8 +1,9 @@
 /**
  * shep space config <space> — show or change how agents run for a space's
  * repositories (spec 121): Claude and gh config directories, git identity,
- * Bedrock and AWS profile, the agent types the space allows, and which PR
- * review comments shep answers on its own (spec 124).
+ * Bedrock and AWS profile, the agent types the space allows, which PR review
+ * comments shep answers on its own (spec 124), and which runtime actions it
+ * runs on incidents without asking (spec 129).
  *
  * With no options it shows the settings and the environment they produce.
  */
@@ -13,7 +14,12 @@ import {
   ConfigureSpaceAgentUseCase,
   type SpaceAgentSettingsPatch,
 } from '@/application/use-cases/spaces/configure-space-agent.use-case.js';
-import { PrCommentTrigger, type AgentType, type Space } from '@/domain/generated/output.js';
+import {
+  PrCommentTrigger,
+  type AgentType,
+  type RuntimeActionKind,
+  type Space,
+} from '@/domain/generated/output.js';
 import { DEFAULT_PR_COMMENT_TRIGGER } from '@/domain/shared/pr-comments.js';
 import type { SpaceEnvironment } from '@/domain/shared/space-environment.js';
 import { colors, messages, renderDetailView } from '../../ui/index.js';
@@ -21,6 +27,7 @@ import { getCliI18n } from '../../i18n.js';
 import { expandHome } from '../../paths.js';
 import { report, runSpaceCommand } from './run-space-command.js';
 import { parseAgentTypeList } from '../agent-option.js';
+import { readRuntimeActionKindList } from '../incident/action-option.js';
 
 interface ConfigOptions {
   claudeConfigDir?: string;
@@ -32,6 +39,7 @@ interface ConfigOptions {
   agents?: AgentType[];
   prComments?: PrCommentTrigger;
   resolveThreads?: boolean;
+  autoActions?: string;
   clear?: string[];
 }
 
@@ -62,9 +70,13 @@ const CLEARABLE: Record<string, keyof SpaceAgentSettingsPatch> = {
   agents: 'allowedAgentTypes',
   'pr-comments': 'prCommentTrigger',
   'resolve-threads': 'prCommentResolveThreads',
+  'auto-actions': 'autoRuntimeActions',
 };
 
-function buildPatch(options: ConfigOptions): SpaceAgentSettingsPatch {
+function buildPatch(
+  options: ConfigOptions,
+  autoActions: RuntimeActionKind[] | undefined
+): SpaceAgentSettingsPatch {
   const patch: SpaceAgentSettingsPatch = {};
   for (const name of options.clear ?? []) {
     (patch as Record<string, null>)[CLEARABLE[name]] = null;
@@ -82,6 +94,7 @@ function buildPatch(options: ConfigOptions): SpaceAgentSettingsPatch {
   }
   if (options.prComments !== undefined) patch.prCommentTrigger = options.prComments;
   if (options.resolveThreads !== undefined) patch.prCommentResolveThreads = options.resolveThreads;
+  if (autoActions !== undefined) patch.autoRuntimeActions = autoActions;
   return patch;
 }
 
@@ -143,6 +156,12 @@ function render(space: Space, environment: SpaceEnvironment): void {
                 : 'cli:commands.space.config.off'
             ),
           },
+          {
+            label: t('cli:commands.space.config.autoActions'),
+            value:
+              settings.autoRuntimeActions?.join(', ') ??
+              colors.muted(t('cli:commands.space.config.none')),
+          },
         ],
       },
       {
@@ -182,6 +201,7 @@ export function createConfigCommand(): Command {
     )
     .option('--resolve-threads', t('cli:commands.space.config.resolveThreadsOption'))
     .option('--no-resolve-threads', t('cli:commands.space.config.noResolveThreadsOption'))
+    .option('--auto-actions <list>', t('cli:commands.space.config.autoActionsOption'))
     .option('--clear <fields...>', t('cli:commands.space.config.clearOption'))
     .addHelpText(
       'after',
@@ -195,6 +215,7 @@ Examples:
   $ shep space config acme --git-email me@acme.com --git-name "Me"
   $ shep space config acme --agents claude-code,cursor         Allow only these agents
   $ shep space config acme --pr-comments all --resolve-threads Answer every PR review comment
+  $ shep space config acme --auto-actions restart              Restart workloads on incidents unasked
   $ shep space config acme --clear agents bedrock              Back to inheriting the host`
     )
     .action((space: string, options: ConfigOptions) =>
@@ -205,7 +226,9 @@ Examples:
           process.exitCode = 1;
           return;
         }
-        const patch = buildPatch(options);
+        const autoActions = readRuntimeActionKindList(options.autoActions);
+        if (!autoActions.ok) return;
+        const patch = buildPatch(options, autoActions.value);
         const useCase = container.resolve(ConfigureSpaceAgentUseCase);
         if (Object.keys(patch).length === 0) {
           report(await useCase.show(space), (result) => render(result.space, result.environment));

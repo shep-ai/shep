@@ -1,0 +1,47 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: RuntimeAction.yaml
+type: object
+properties:
+  incidentId:
+    type: string
+    description: The incident it answers
+  kind:
+    $ref: RuntimeActionKind.yaml
+    description: What it does
+  replicas:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Replica count, for a scale
+  status:
+    $ref: RuntimeActionStatus.yaml
+    description: Where it stands
+  proposedBy:
+    $ref: ActionProposer.yaml
+    description: Who proposed it
+  reason:
+    type: string
+    description: Why
+  output:
+    type: string
+    description: The command's output or error
+  recovered:
+    type: boolean
+    description: Whether the workload's rollout was ready afterwards
+  decidedAt:
+    type: string
+    format: date-time
+    description: When it was approved or rejected
+  executedAt:
+    type: string
+    format: date-time
+    description: When it ran
+required:
+  - incidentId
+  - kind
+  - status
+  - proposedBy
+  - reason
+allOf:
+  - $ref: BaseEntity.yaml
+description: A restart, rollback or scale of an incident's workload

@@ -1,0 +1,8 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: IncidentSeverity.yaml
+type: string
+enum:
+  - Critical
+  - Major
+  - Minor
+description: How bad an incident is

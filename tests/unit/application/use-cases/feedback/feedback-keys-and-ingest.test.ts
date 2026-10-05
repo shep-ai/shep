@@ -2,7 +2,7 @@ import 'reflect-metadata';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { ManageFeedbackKeysUseCase } from '@/application/use-cases/feedback/manage-feedback-keys.use-case.js';
 import { IngestFeedbackUseCase } from '@/application/use-cases/feedback/ingest-feedback.use-case.js';
-import { FeedbackRejection, SignalKind } from '@/domain/generated/output.js';
+import { IntakeRejection, SignalKind } from '@/domain/generated/output.js';
 import { ACME } from '../opportunities/opportunity.fixtures.js';
 import { feedbackWorld } from './feedback.fixtures.js';
 
@@ -70,11 +70,11 @@ describe('Feedback keys and ingestion', () => {
 
   it('refuses unknown and revoked keys', async () => {
     const unknown = await ingest.execute('shep_fb_nope', { text: 'x' });
-    expect(unknown.ok || unknown.rejection).toBe(FeedbackRejection.Unauthorized);
+    expect(unknown.ok || unknown.rejection).toBe(IntakeRejection.Unauthorized);
     expect((await ingest.execute('', { text: 'x' })).ok).toBe(false);
     await keys.revoke(keyId);
     const revoked = await ingest.execute(secret, { text: 'x' });
-    expect(revoked.ok || revoked.rejection).toBe(FeedbackRejection.Unauthorized);
+    expect(revoked.ok || revoked.rejection).toBe(IntakeRejection.Unauthorized);
     expect((await keys.revoke('nope')).ok).toBe(false);
   });
 
@@ -90,7 +90,7 @@ describe('Feedback keys and ingestion', () => {
       { text: 'x', customer: 'c'.repeat(501) },
     ]) {
       const result = await ingest.execute(secret, payload);
-      expect(result.ok || result.rejection).toBe(FeedbackRejection.Invalid);
+      expect(result.ok || result.rejection).toBe(IntakeRejection.Invalid);
     }
     expect(world.signals.rows.size).toBe(0);
   });

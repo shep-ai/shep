@@ -55,6 +55,7 @@ import { registerKnowledge } from '@/infrastructure/di/modules/register-knowledg
 import { registerOpportunities } from '@/infrastructure/di/modules/register-opportunities.js';
 import { registerFeedback } from '@/infrastructure/di/modules/register-feedback.js';
 import { registerDiscovery } from '@/infrastructure/di/modules/register-discovery.js';
+import { registerIncidents } from '@/infrastructure/di/modules/register-incidents.js';
 import { SessionSpaceEnvironment } from '@/infrastructure/services/interactive/lifecycle/session-space-environment.js';
 import { ResolveSpaceEnvironmentUseCase } from '@/application/use-cases/spaces/resolve-space-environment.use-case.js';
 import type { IDeploymentService } from '@/application/ports/output/services/deployment-service.interface.js';
@@ -214,6 +215,12 @@ const WEB_ROUTE_TOKENS: readonly string[] = [
   'RunDiscoveryUseCase',
   'SyncDiscoveryUseCase',
   'ListDiscoveryRunsUseCase',
+  'OpenIncidentUseCase',
+  'ManageIncidentsUseCase',
+  'RuntimeActionsUseCase',
+  'TriageIncidentUseCase',
+  'GetIncidentBoardUseCase',
+  'IngestAlertUseCase',
   'RunTrackerSyncUseCase',
   'SyncTrackerRulesUseCase',
   'GetTrackerIssueLinkUseCase',
@@ -247,6 +254,10 @@ const CRITICAL_INFRA_TOKENS: readonly string[] = [
   'IFeedbackKeyRepository',
   'IFeedbackKeyGenerator',
   'IDiscoveryRunRepository',
+  'IIncidentRepository',
+  'IIncidentEventRepository',
+  'IRuntimeActionRepository',
+  'IRuntimeController',
   'IPullRequestCommentService',
   'ITrackerClientFactory',
   // Query-aware harness (spec 119)
@@ -408,6 +419,7 @@ describe('DI container bootstrap (integration)', () => {
     registerOpportunities(scopedContainer);
     registerFeedback(scopedContainer);
     registerDiscovery(scopedContainer);
+    registerIncidents(scopedContainer);
     registerBugLoop(scopedContainer);
     registerPrComments(scopedContainer);
     registerServices(scopedContainer);

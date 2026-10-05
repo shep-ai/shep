@@ -16,6 +16,7 @@
 import "../../common/base.tsp";
 import "../../common/enums/agent-config.tsp";
 import "./pr-comment.tsp";
+import "./incident.tsp";
 
 /** How a space rule recognises a repository. */
 @doc("How a space rule recognises a repository")
@@ -81,6 +82,9 @@ model SpaceAgentSettings {
 
   @doc("Resolve an inline review thread after changing code for it (spec 124); unset means no")
   prCommentResolveThreads?: boolean;
+
+  @doc("Runtime action kinds shep may run on an incident without asking (spec 129); unset means none")
+  autoRuntimeActions?: RuntimeActionKind[];
 }
 
 /** A hard knowledge boundary such as "Acme (work)" or "Personal". */

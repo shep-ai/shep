@@ -447,7 +447,8 @@
     "harness": "Harness",
     "spaces": "Пространства",
     "trackers": "Подключения",
-    "opportunities": "Возможности"
+    "opportunities": "Возможности",
+    "incidents": "Инциденты"
   },
   "sidebar": {
     "features": "Функции",
@@ -1383,7 +1384,9 @@
         "Mention": "Комментарии с #shep",
         "All": "Все комментарии"
       },
-      "resolveThreads": "Закрывать ветки, где изменён код"
+      "resolveThreads": "Закрывать ветки, где изменён код",
+      "autoActions": "Выполняются без вопросов при инцидентах",
+      "autoActionsHint": "Shep выполняет их на нагрузке инцидента без одобрения. Остальные ждут, пока их кто-то одобрит."
     }
   },
   "trackers": {
@@ -1645,6 +1648,99 @@
       "running": "Идёт поиск…",
       "failed": "Последний запуск завершился ошибкой: {{error}}",
       "succeeded": "Последний запуск: предложено {{proposed}} из {{read}} сигналов, {{when}}"
+    }
+  },
+  "incidents": {
+    "title": "Инциденты",
+    "subtitle": "Проблемы в продакшене, их разбор, перезапуски, откаты и масштабирование, которые их устраняют, и постмортем.",
+    "space": "Пространство",
+    "list": "Инциденты",
+    "empty": "В этом пространстве нет инцидентов.",
+    "timeline": "Хронология",
+    "actions": "Действия в среде",
+    "approve": "Одобрить",
+    "reject": "Отклонить",
+    "recovered": "Восстановлено",
+    "notRecovered": "Не восстановлено",
+    "scaleTo": "Масштабировать до {{replicas}} реплик",
+    "showEvidence": "Показать данные",
+    "triage": "Разобрать",
+    "triaging": "Разбор…",
+    "workload": "deployment/{{workload}} в {{namespace}} ({{context}})",
+    "currentContext": "текущий контекст",
+    "noWorkload": "Нет нагрузки — действия выключены.",
+    "openLink": "Открыть оповещение",
+    "errors": {
+      "actionFailed": "Действие не удалось."
+    },
+    "form": {
+      "title": "Открыть инцидент",
+      "incident": "Инцидент",
+      "placeholder": "Что сломалось?",
+      "severity": "Серьёзность",
+      "workload": "Нагрузка",
+      "namespace": "Namespace",
+      "context": "Контекст",
+      "submit": "Открыть"
+    },
+    "act": {
+      "title": "Выполнить действие",
+      "kind": "Действие",
+      "replicas": "Реплики",
+      "reason": "Почему?",
+      "submit": "Выполнить",
+      "running": "Выполняется…"
+    },
+    "note": {
+      "title": "Заметка",
+      "placeholder": "Добавить заметку в хронологию",
+      "submit": "Добавить"
+    },
+    "resolve": {
+      "title": "Закрыть",
+      "postmortem": "Постмортем",
+      "placeholder": "Напишите постмортем или оставьте пустым для черновика по хронологии",
+      "submit": "Закрыть"
+    },
+    "severity": {
+      "Critical": "Критический",
+      "Major": "Серьёзный",
+      "Minor": "Незначительный"
+    },
+    "status": {
+      "Open": "Открыт",
+      "Mitigated": "Смягчён",
+      "Resolved": "Закрыт"
+    },
+    "actionKind": {
+      "Restart": "Перезапуск",
+      "Rollback": "Откат",
+      "Scale": "Масштабирование"
+    },
+    "actionStatus": {
+      "Proposed": "Ждёт одобрения",
+      "Approved": "Одобрено",
+      "Rejected": "Отклонено",
+      "Succeeded": "Выполнено",
+      "Failed": "Не удалось"
+    },
+    "proposedBy": {
+      "Agent": "предложено агентом",
+      "Person": "запрошено человеком"
+    },
+    "eventKind": {
+      "Opened": "Открыт",
+      "Note": "Заметка",
+      "Evidence": "Данные",
+      "Hypothesis": "Гипотеза",
+      "ActionProposed": "Действие предложено",
+      "ActionApproved": "Действие одобрено",
+      "ActionRejected": "Действие отклонено",
+      "ActionSucceeded": "Действие выполнено",
+      "ActionFailed": "Действие не удалось",
+      "Recovered": "Восстановлено",
+      "NotRecovered": "Не восстановлено",
+      "Resolved": "Закрыт"
     }
   }
 }

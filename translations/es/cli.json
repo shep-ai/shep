@@ -1240,7 +1240,10 @@
         "prComments": "Comentarios de PR respondidos",
         "resolveThreads": "Resolver hilos",
         "defaultValue": "{{value}} (por defecto)",
-        "badTrigger": "\"{{value}}\" no es un disparador de comentarios de PR. Usa uno de: {{triggers}}"
+        "badTrigger": "\"{{value}}\" no es un disparador de comentarios de PR. Usa uno de: {{triggers}}",
+        "autoActions": "Se ejecuta en incidentes sin preguntar",
+        "autoActionsOption": "Acciones que shep ejecuta en un incidente sin preguntar: restart, rollback, scale (separadas por comas)",
+        "none": "ninguna"
       }
     },
     "connection": {
@@ -1605,6 +1608,72 @@
         "needEvery": "Indica --every <horas> o --off",
         "on": "Discovery se ejecuta cada {{hours}} horas",
         "off": "Discovery programado desactivado"
+      }
+    },
+    "incident": {
+      "description": "Incidentes de producción: abrir, analizar, actuar sobre la carga y resolver",
+      "failed": "Falló el comando incident",
+      "spaceOption": "Slug o id del espacio (el predeterminado si se omite)",
+      "incidentArg": "Id del incidente (ver shep incident ls)",
+      "actionIdArg": "Id de la acción (ver shep incident show)",
+      "badSeverity": "\"{{value}}\" no es una severidad; usa {{severities}}",
+      "badAction": "\"{{value}}\" no es una acción; usa {{actions}}",
+      "recovered": "recuperado",
+      "notRecovered": "no recuperado",
+      "awaiting": "Esperando aprobación: {{action}} — ejecuta shep incident approve {{id}}",
+      "open": {
+        "description": "Abre un incidente",
+        "titleArg": "Resumen de una línea",
+        "severityOption": "critical, major (por defecto) o minor",
+        "detailOption": "Qué está pasando",
+        "urlOption": "Enlace a la alerta o al panel",
+        "workloadOption": "El deployment de Kubernetes afectado",
+        "namespaceOption": "Su namespace (por defecto: default)",
+        "contextOption": "Su contexto de kubeconfig (por defecto: el actual)",
+        "success": "Incidente {{id}} abierto: {{title}}"
+      },
+      "ls": {
+        "description": "Lista los incidentes, los más recientes primero",
+        "openOption": "Solo incidentes sin resolver",
+        "title": "Incidentes",
+        "idColumn": "Id",
+        "titleColumn": "Incidente",
+        "severityColumn": "Severidad",
+        "statusColumn": "Estado",
+        "workloadColumn": "Carga",
+        "empty": "No hay incidentes."
+      },
+      "show": {
+        "description": "Muestra un incidente con su cronología y acciones"
+      },
+      "note": {
+        "description": "Añade una nota a la cronología",
+        "textArg": "La nota",
+        "success": "Nota añadida"
+      },
+      "triage": {
+        "description": "Lee la carga y pide a un agente causas y una acción",
+        "agentOption": "Agente a usar (se aplican las reglas del espacio)",
+        "started": "Leyendo la carga y consultando al agente; puede tardar unos minutos…"
+      },
+      "act": {
+        "description": "Reinicia, revierte o escala ahora la carga del incidente",
+        "actionArg": "restart, rollback o scale",
+        "replicasOption": "Número de réplicas, para scale",
+        "reasonOption": "Por qué"
+      },
+      "approve": {
+        "description": "Aprueba una acción propuesta; se ejecuta en el acto"
+      },
+      "reject": {
+        "description": "Rechaza una acción propuesta",
+        "reasonOption": "Por qué",
+        "success": "Acción {{id}} rechazada"
+      },
+      "resolve": {
+        "description": "Resuelve un incidente; el postmortem se redacta de la cronología si no se da uno",
+        "postmortemOption": "Tu postmortem (Markdown)",
+        "success": "{{title}} resuelto"
       }
     }
   },

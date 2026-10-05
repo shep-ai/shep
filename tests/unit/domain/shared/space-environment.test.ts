@@ -3,6 +3,7 @@ import {
   applySpaceEnvironment,
   isAgentAllowedInSpace,
   spaceEnvironment,
+  spaceAgent,
 } from '@/domain/shared/space-environment.js';
 import { AgentType } from '@/domain/generated/output.js';
 
@@ -75,5 +76,24 @@ describe('isAgentAllowedInSpace', () => {
     const settings = { allowedAgentTypes: [AgentType.ClaudeCode] };
     expect(isAgentAllowedInSpace(settings, AgentType.ClaudeCode)).toBe(true);
     expect(isAgentAllowedInSpace(settings, AgentType.CodexCli)).toBe(false);
+  });
+});
+
+describe('spaceAgent', () => {
+  it('uses the named agent when the space allows it, else refuses', () => {
+    const settings = { allowedAgentTypes: [AgentType.CodexCli, AgentType.ClaudeCode] };
+    expect(spaceAgent(settings, AgentType.ClaudeCode)).toEqual({
+      ok: true,
+      agentType: AgentType.ClaudeCode,
+    });
+    expect(spaceAgent(settings, AgentType.Aider)).toEqual({ ok: false });
+  });
+
+  it('picks the first allowed agent, or leaves the default when every agent is allowed', () => {
+    expect(spaceAgent({ allowedAgentTypes: [AgentType.CodexCli] })).toEqual({
+      ok: true,
+      agentType: AgentType.CodexCli,
+    });
+    expect(spaceAgent(undefined)).toEqual({ ok: true });
   });
 });

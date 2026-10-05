@@ -1,0 +1,27 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: IncidentEvent.yaml
+type: object
+properties:
+  id:
+    type: string
+    description: Unique id
+  incidentId:
+    type: string
+    description: The incident
+  kind:
+    $ref: IncidentEventKind.yaml
+    description: What it records
+  text:
+    type: string
+    description: What happened, in words
+  createdAt:
+    type: string
+    format: date-time
+    description: When
+required:
+  - id
+  - incidentId
+  - kind
+  - text
+  - createdAt
+description: One entry on an incident's timeline

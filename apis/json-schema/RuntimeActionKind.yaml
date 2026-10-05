@@ -1,0 +1,8 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: RuntimeActionKind.yaml
+type: string
+enum:
+  - Restart
+  - Rollback
+  - Scale
+description: What a runtime action does to the incident's workload

@@ -24,10 +24,7 @@ import {
 } from '../../../domain/shared/discovery-proposals.js';
 import { groupIntoThemes } from '../../../domain/shared/feedback-themes.js';
 import { OPEN_STATUSES } from '../../../domain/shared/opportunity-score.js';
-import {
-  isAgentAllowedInSpace,
-  spaceEnvironment,
-} from '../../../domain/shared/space-environment.js';
+import { spaceAgent, spaceEnvironment } from '../../../domain/shared/space-environment.js';
 import type { IDiscoveryRunRepository } from '../../ports/output/repositories/discovery-run-repository.interface.js';
 import type {
   IOpportunityRepository,
@@ -86,10 +83,10 @@ export class RunDiscoveryUseCase {
     const { space } = scope;
 
     const settings = space.agentSettings;
-    if (input.agentType && !isAgentAllowedInSpace(settings, input.agentType)) {
+    const agent = spaceAgent(settings, input.agentType);
+    if (!agent.ok)
       return failure(`The ${space.name} space does not allow ${input.agentType} agents.`);
-    }
-    const agentType = input.agentType ?? settings?.allowedAgentTypes?.[0];
+    const { agentType } = agent;
 
     const busy = await this.clearStale(space.id);
     if (busy) return failure(`Discovery is already running in ${space.name}.`);

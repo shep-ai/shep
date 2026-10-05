@@ -330,6 +330,19 @@ describe('shep space', () => {
       });
     });
 
+    it('sets the runtime actions shep runs on incidents without asking (spec 129)', async () => {
+      agentConfig.configure.mockResolvedValue(configured);
+      await run('config', 'acme', '--auto-actions', 'restart,SCALE');
+      expect(agentConfig.configure).toHaveBeenCalledWith('acme', {
+        autoRuntimeActions: ['Restart', 'Scale'],
+      });
+      agentConfig.configure.mockClear();
+      const out = await run('config', 'acme', '--auto-actions', 'delete');
+      expect(out).toContain('delete');
+      expect(agentConfig.configure).not.toHaveBeenCalled();
+      expect(process.exitCode).toBe(1);
+    });
+
     it('shows the default PR comment trigger', async () => {
       agentConfig.show.mockResolvedValue(configured);
       expect(await run('config', 'acme')).toContain('Mention (default)');

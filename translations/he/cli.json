@@ -1240,7 +1240,10 @@
         "prComments": "הערות PR שנענו",
         "resolveThreads": "סגירת שרשורים",
         "defaultValue": "{{value}} (ברירת מחדל)",
-        "badTrigger": "\"{{value}}\" אינו מצב הערות PR. השתמשו באחד מאלה: {{triggers}}"
+        "badTrigger": "\"{{value}}\" אינו מצב הערות PR. השתמשו באחד מאלה: {{triggers}}",
+        "autoActions": "רץ בתקלות בלי לשאול",
+        "autoActionsOption": "פעולות ש-shep מריץ בתקלה בלי לשאול: restart, rollback, scale (מופרדות בפסיקים)",
+        "none": "אין"
       }
     },
     "connection": {
@@ -1605,6 +1608,72 @@
         "needEvery": "ציינו --every <שעות> או --off",
         "on": "הגילוי רץ כל {{hours}} שעות",
         "off": "הגילוי המתוזמן כבוי"
+      }
+    },
+    "incident": {
+      "description": "תקלות בייצור: פתיחה, ניתוח, פעולה על העומס וסגירה",
+      "failed": "פקודת התקלה נכשלה",
+      "spaceOption": "Slug או מזהה של המרחב (ברירת המחדל אם לא צוין)",
+      "incidentArg": "מזהה תקלה (ראו shep incident ls)",
+      "actionIdArg": "מזהה פעולה (ראו shep incident show)",
+      "badSeverity": "\"{{value}}\" אינה רמת חומרה; השתמשו ב-{{severities}}",
+      "badAction": "\"{{value}}\" אינה פעולה; השתמשו ב-{{actions}}",
+      "recovered": "התאושש",
+      "notRecovered": "לא התאושש",
+      "awaiting": "ממתין לאישור: {{action}} — הריצו shep incident approve {{id}}",
+      "open": {
+        "description": "פתיחת תקלה",
+        "titleArg": "תקציר בשורה אחת",
+        "severityOption": "critical, major (ברירת מחדל) או minor",
+        "detailOption": "מה קורה",
+        "urlOption": "קישור להתראה או ללוח",
+        "workloadOption": "ה-deployment ב-Kubernetes שנפגע",
+        "namespaceOption": "ה-namespace שלו (ברירת מחדל: default)",
+        "contextOption": "הקונטקסט שלו ב-kubeconfig (ברירת מחדל: הנוכחי)",
+        "success": "התקלה {{id}} נפתחה: {{title}}"
+      },
+      "ls": {
+        "description": "הצגת תקלות, החדשות קודם",
+        "openOption": "רק תקלות פתוחות",
+        "title": "תקלות",
+        "idColumn": "מזהה",
+        "titleColumn": "תקלה",
+        "severityColumn": "חומרה",
+        "statusColumn": "מצב",
+        "workloadColumn": "עומס",
+        "empty": "אין תקלות."
+      },
+      "show": {
+        "description": "הצגת תקלה עם ציר הזמן והפעולות"
+      },
+      "note": {
+        "description": "הוספת הערה לציר הזמן",
+        "textArg": "ההערה",
+        "success": "ההערה נוספה"
+      },
+      "triage": {
+        "description": "קריאת העומס ושאלת סוכן על סיבות ועל פעולה אחת",
+        "agentOption": "הסוכן לשימוש (כללי המרחב חלים)",
+        "started": "קורא את העומס ושואל את הסוכן; זה עשוי לקחת כמה דקות…"
+      },
+      "act": {
+        "description": "הפעלה מחדש, החזרה לגרסה קודמת או שינוי קנה מידה של העומס עכשיו",
+        "actionArg": "restart, rollback או scale",
+        "replicasOption": "מספר העותקים, עבור scale",
+        "reasonOption": "למה"
+      },
+      "approve": {
+        "description": "אישור פעולה מוצעת; היא רצה מיד"
+      },
+      "reject": {
+        "description": "דחיית פעולה מוצעת",
+        "reasonOption": "למה",
+        "success": "הפעולה {{id}} נדחתה"
+      },
+      "resolve": {
+        "description": "סגירת תקלה; תחקיר נכתב מציר הזמן אם לא סופק",
+        "postmortemOption": "התחקיר שלכם (Markdown)",
+        "success": "{{title}} נסגרה"
       }
     }
   },

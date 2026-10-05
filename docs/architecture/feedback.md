@@ -6,7 +6,7 @@ Spec: [`specs/127-feedback-themes`](../../specs/127-feedback-themes/). User guid
 ## Model
 
 `tsp/domain/entities/feedback-key.tsp` adds `FeedbackKey` (space, name, prefix, SHA-256 hash,
-last used, revoked) and the `FeedbackRejection` enum (`Unauthorized`, `Invalid`). `Signal`
+last used, revoked) and the `IntakeRejection` enum (`Unauthorized`, `Invalid`). `Signal`
 gains `externalId`. Migration `160-create-feedback-keys` creates `feedback_keys` and adds
 `signals.external_id` with a unique `(space_id, external_id)` index for non-null ids.
 
@@ -21,10 +21,13 @@ every other view drops the hash (`FeedbackKeyView`).
 
 `POST /api/feedback` (`app/api/feedback/route.ts`) is listed in `EXTERNALLY_AUTHENTICATED_PATHS`
 (`lib/request-guard.ts`), so the session token and loopback Host checks skip this exact path.
-The route rejects bodies over `MAX_FEEDBACK_BYTES` (`lib/feedback-limits.ts`) before and after
-reading, parses a JSON object and calls `IngestFeedbackUseCase`, which:
+The route hands the request to `handleIntake` (`lib/intake-route.ts`, shared with
+`POST /api/alerts` from [incidents](./incidents.md)), which rejects bodies over
+`MAX_INTAKE_BYTES` before and after reading, parses a JSON object, calls the use case and maps
+each `IntakeRejection` to 401 or 400. `IngestFeedbackUseCase`:
 
-1. hashes the bearer key and looks it up; a missing or revoked key is `Unauthorized`;
+1. hashes the bearer key and looks it up (`verifyIntakeKey` in `feedback/intake-key.ts`); a
+   missing or revoked key is `Unauthorized`;
 2. validates the payload (types, lengths, http(s) URL, non-negative revenue);
 3. records a Feedback signal through `ManageSignalsUseCase.record`, which returns the existing
    signal when the space already has one with the same `externalId`;

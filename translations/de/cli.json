@@ -1240,7 +1240,10 @@
         "prComments": "Beantwortete PR-Kommentare",
         "resolveThreads": "Threads auflösen",
         "defaultValue": "{{value}} (Standard)",
-        "badTrigger": "\"{{value}}\" ist kein PR-Kommentar-Auslöser. Verwende einen von: {{triggers}}"
+        "badTrigger": "\"{{value}}\" ist kein PR-Kommentar-Auslöser. Verwende einen von: {{triggers}}",
+        "autoActions": "Läuft bei Incidents ohne Rückfrage",
+        "autoActionsOption": "Laufzeitaktionen, die shep bei Incidents ohne Rückfrage ausführt: restart, rollback, scale (kommagetrennt)",
+        "none": "keine"
       }
     },
     "connection": {
@@ -1605,6 +1608,72 @@
         "needEvery": "--every <Stunden> oder --off angeben",
         "on": "Discovery läuft alle {{hours}} Stunden",
         "off": "Geplante Discovery ist aus"
+      }
+    },
+    "incident": {
+      "description": "Produktionsvorfälle: öffnen, analysieren, auf den Workload einwirken und abschließen",
+      "failed": "Incident-Befehl fehlgeschlagen",
+      "spaceOption": "Slug oder ID des Space (sonst der Standard-Space)",
+      "incidentArg": "Incident-ID (siehe shep incident ls)",
+      "actionIdArg": "ID der Laufzeitaktion (siehe shep incident show)",
+      "badSeverity": "\"{{value}}\" ist kein Schweregrad; {{severities}} verwenden",
+      "badAction": "\"{{value}}\" ist keine Laufzeitaktion; {{actions}} verwenden",
+      "recovered": "erholt",
+      "notRecovered": "nicht erholt",
+      "awaiting": "Wartet auf Freigabe: {{action}} — shep incident approve {{id}} ausführen",
+      "open": {
+        "description": "Einen Incident öffnen",
+        "titleArg": "Einzeilige Zusammenfassung",
+        "severityOption": "critical, major (Standard) oder minor",
+        "detailOption": "Was passiert",
+        "urlOption": "Link zum Alert oder Dashboard",
+        "workloadOption": "Das betroffene Kubernetes-Deployment",
+        "namespaceOption": "Sein Namespace (Standard: default)",
+        "contextOption": "Sein kubeconfig-Kontext (Standard: aktueller)",
+        "success": "Incident {{id}} geöffnet: {{title}}"
+      },
+      "ls": {
+        "description": "Incidents auflisten, neueste zuerst",
+        "openOption": "Nur ungelöste Incidents",
+        "title": "Incidents",
+        "idColumn": "ID",
+        "titleColumn": "Incident",
+        "severityColumn": "Schwere",
+        "statusColumn": "Status",
+        "workloadColumn": "Workload",
+        "empty": "Keine Incidents."
+      },
+      "show": {
+        "description": "Einen Incident mit Zeitleiste und Aktionen zeigen"
+      },
+      "note": {
+        "description": "Eine Notiz zur Zeitleiste hinzufügen",
+        "textArg": "Die Notiz",
+        "success": "Notiz hinzugefügt"
+      },
+      "triage": {
+        "description": "Den Workload lesen und einen Agenten nach Ursachen und einer Aktion fragen",
+        "agentOption": "Zu verwendender Agent (die Regeln des Space gelten)",
+        "started": "Lese den Workload und frage den Agenten; das kann einige Minuten dauern…"
+      },
+      "act": {
+        "description": "Den Workload des Incidents jetzt neu starten, zurückrollen oder skalieren",
+        "actionArg": "restart, rollback oder scale",
+        "replicasOption": "Anzahl der Replikas, für scale",
+        "reasonOption": "Warum"
+      },
+      "approve": {
+        "description": "Eine vorgeschlagene Aktion freigeben; sie läuft sofort"
+      },
+      "reject": {
+        "description": "Eine vorgeschlagene Aktion ablehnen",
+        "reasonOption": "Warum",
+        "success": "Aktion {{id}} abgelehnt"
+      },
+      "resolve": {
+        "description": "Einen Incident abschließen; das Postmortem wird aus der Zeitleiste entworfen, sofern keines angegeben ist",
+        "postmortemOption": "Dein Postmortem (Markdown)",
+        "success": "{{title}} abgeschlossen"
       }
     }
   },

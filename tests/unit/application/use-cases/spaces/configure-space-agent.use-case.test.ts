@@ -1,7 +1,12 @@
 import 'reflect-metadata';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { ConfigureSpaceAgentUseCase } from '@/application/use-cases/spaces/configure-space-agent.use-case.js';
-import { AgentType, PrCommentTrigger, type Space } from '@/domain/generated/output.js';
+import {
+  AgentType,
+  PrCommentTrigger,
+  RuntimeActionKind,
+  type Space,
+} from '@/domain/generated/output.js';
 import {
   createMockSpaceRepository,
   type MockSpaceRepository,
@@ -71,6 +76,14 @@ describe('ConfigureSpaceAgentUseCase', () => {
     });
   });
 
+  it('sets the runtime actions shep may run without asking (spec 129)', async () => {
+    await useCase.configure('acme', {
+      autoRuntimeActions: [RuntimeActionKind.Restart, RuntimeActionKind.Restart],
+    });
+    const saved = spaces.update.mock.calls[0][0] as Space;
+    expect(saved.agentSettings?.autoRuntimeActions).toEqual([RuntimeActionKind.Restart]);
+  });
+
   it('clears allowed agents with an empty list', async () => {
     await useCase.configure('acme', { allowedAgentTypes: [] });
     const saved = spaces.update.mock.calls[0][0] as Space;
@@ -84,6 +97,7 @@ describe('ConfigureSpaceAgentUseCase', () => {
     [{ awsProfile: 'two words' }, 'profile'],
     [{ allowedAgentTypes: ['no-such-agent' as AgentType] }, 'no-such-agent'],
     [{ prCommentTrigger: 'Sometimes' as PrCommentTrigger }, 'Sometimes'],
+    [{ autoRuntimeActions: ['Delete' as RuntimeActionKind] }, 'Delete'],
   ])('refuses %o', async (patch, message) => {
     const result = await useCase.configure('acme', patch);
     expect(result.ok).toBe(false);

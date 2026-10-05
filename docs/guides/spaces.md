@@ -96,6 +96,10 @@ A space also decides which review comments on shep's pull requests are answered 
 asking: those mentioning `#shep` (the default), all of them, or none
 (`shep space config acme --pr-comments all`). See [PR comments](./pr-comments.md).
 
+It also decides which runtime actions — restart, rollback, scale — shep runs on the space's
+incidents without waiting for approval (`shep space config acme --auto-actions restart`). See
+[Incidents](./incidents.md).
+
 ## Team knowledge
 
 Besides the memory agents write, a space can hold your team's own documents: Notion pages kept

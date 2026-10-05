@@ -4093,6 +4093,11 @@ export enum PrCommentTrigger {
   Mention = 'Mention',
   All = 'All',
 }
+export enum RuntimeActionKind {
+  Restart = 'Restart',
+  Rollback = 'Rollback',
+  Scale = 'Scale',
+}
 
 /**
  * Agent credentials, identity and allowed agents for the repositories of a space
@@ -4134,6 +4139,10 @@ export type SpaceAgentSettings = {
    * Resolve an inline review thread after changing code for it (spec 124); unset means no
    */
   prCommentResolveThreads?: boolean;
+  /**
+   * Runtime action kinds shep may run on an incident without asking (spec 129); unset means none
+   */
+  autoRuntimeActions?: RuntimeActionKind[];
 };
 
 /**
@@ -4367,6 +4376,183 @@ export type PrCommentRound = BaseEntity & {
    * When the round finished
    */
   finishedAt?: any;
+};
+export enum IncidentSeverity {
+  Critical = 'Critical',
+  Major = 'Major',
+  Minor = 'Minor',
+}
+export enum IncidentStatus {
+  Open = 'Open',
+  Mitigated = 'Mitigated',
+  Resolved = 'Resolved',
+}
+export enum IncidentSource {
+  Manual = 'Manual',
+  Alert = 'Alert',
+}
+
+/**
+ * Something broke in production
+ */
+export type Incident = BaseEntity & {
+  /**
+   * The space the incident belongs to
+   */
+  spaceId: string;
+  /**
+   * One-line summary
+   */
+  title: string;
+  /**
+   * How bad it is
+   */
+  severity: IncidentSeverity;
+  /**
+   * Where it stands
+   */
+  status: IncidentStatus;
+  /**
+   * Who opened it
+   */
+  source: IncidentSource;
+  /**
+   * The alert text or a person's description
+   */
+  detail?: string;
+  /**
+   * Link to the alert, dashboard or report
+   */
+  url?: string;
+  /**
+   * The alerting tool's id; a repeat while open adds a note
+   */
+  externalId?: string;
+  /**
+   * Kubernetes context of the workload; the current context when unset
+   */
+  runtimeContext?: string;
+  /**
+   * Kubernetes namespace of the workload
+   */
+  runtimeNamespace?: string;
+  /**
+   * The deployment the incident concerns
+   */
+  runtimeWorkload?: string;
+  /**
+   * The Incident signal it raised
+   */
+  signalId?: string;
+  /**
+   * When the workload recovered
+   */
+  mitigatedAt?: any;
+  /**
+   * When it was closed
+   */
+  resolvedAt?: any;
+  /**
+   * The postmortem, Markdown
+   */
+  postmortem?: string;
+};
+export enum IncidentEventKind {
+  Opened = 'Opened',
+  Note = 'Note',
+  Evidence = 'Evidence',
+  Hypothesis = 'Hypothesis',
+  ActionProposed = 'ActionProposed',
+  ActionApproved = 'ActionApproved',
+  ActionRejected = 'ActionRejected',
+  ActionSucceeded = 'ActionSucceeded',
+  ActionFailed = 'ActionFailed',
+  Recovered = 'Recovered',
+  NotRecovered = 'NotRecovered',
+  Resolved = 'Resolved',
+}
+
+/**
+ * One entry on an incident's timeline
+ */
+export type IncidentEvent = {
+  /**
+   * Unique id
+   */
+  id: string;
+  /**
+   * The incident
+   */
+  incidentId: string;
+  /**
+   * What it records
+   */
+  kind: IncidentEventKind;
+  /**
+   * What happened, in words
+   */
+  text: string;
+  /**
+   * When
+   */
+  createdAt: any;
+};
+export enum RuntimeActionStatus {
+  Proposed = 'Proposed',
+  Approved = 'Approved',
+  Rejected = 'Rejected',
+  Succeeded = 'Succeeded',
+  Failed = 'Failed',
+}
+export enum ActionProposer {
+  Agent = 'Agent',
+  Person = 'Person',
+}
+
+/**
+ * A restart, rollback or scale of an incident's workload
+ */
+export type RuntimeAction = BaseEntity & {
+  /**
+   * The incident it answers
+   */
+  incidentId: string;
+  /**
+   * What it does
+   */
+  kind: RuntimeActionKind;
+  /**
+   * Replica count, for a scale
+   */
+  replicas?: number;
+  /**
+   * Where it stands
+   */
+  status: RuntimeActionStatus;
+  /**
+   * Who proposed it
+   */
+  proposedBy: ActionProposer;
+  /**
+   * Why
+   */
+  reason: string;
+  /**
+   * The command's output or error
+   */
+  output?: string;
+  /**
+   * Whether the workload's rollout was ready afterwards
+   */
+  recovered?: boolean;
+  /**
+   * When it was approved or rejected
+   */
+  decidedAt?: any;
+  /**
+   * When it ran
+   */
+  executedAt?: any;
 };
 
 /**
@@ -8948,7 +9134,7 @@ export enum ConnectionKind {
   Tracker = 'Tracker',
   Knowledge = 'Knowledge',
 }
-export enum FeedbackRejection {
+export enum IntakeRejection {
   Unauthorized = 'Unauthorized',
   Invalid = 'Invalid',
 }

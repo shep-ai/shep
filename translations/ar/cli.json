@@ -1240,7 +1240,10 @@
         "prComments": "تعليقات طلب الدمج المُجاب عنها",
         "resolveThreads": "إغلاق السلاسل",
         "defaultValue": "{{value}} (افتراضي)",
-        "badTrigger": "\"{{value}}\" ليس وضعاً لتعليقات طلب الدمج. استخدم أحد: {{triggers}}"
+        "badTrigger": "\"{{value}}\" ليس وضعاً لتعليقات طلب الدمج. استخدم أحد: {{triggers}}",
+        "autoActions": "يعمل في الحوادث دون سؤال",
+        "autoActionsOption": "إجراءات ينفذها shep في حادث دون سؤال: restart وrollback وscale (مفصولة بفواصل)",
+        "none": "لا شيء"
       }
     },
     "connection": {
@@ -1605,6 +1608,72 @@
         "needEvery": "حدد --every <ساعات> أو --off",
         "on": "يعمل الاكتشاف كل {{hours}} ساعة",
         "off": "الاكتشاف المجدول متوقف"
+      }
+    },
+    "incident": {
+      "description": "حوادث الإنتاج: فتح وتحليل وتنفيذ إجراء على الحمل وإغلاق",
+      "failed": "فشل أمر الحادث",
+      "spaceOption": "المعرّف المختصر أو معرّف المساحة (الافتراضية إن لم تُحدَّد)",
+      "incidentArg": "معرّف الحادث (راجع shep incident ls)",
+      "actionIdArg": "معرّف الإجراء (راجع shep incident show)",
+      "badSeverity": "\"{{value}}\" ليست درجة خطورة؛ استخدم {{severities}}",
+      "badAction": "\"{{value}}\" ليس إجراءً؛ استخدم {{actions}}",
+      "recovered": "تعافى",
+      "notRecovered": "لم يتعافَ",
+      "awaiting": "بانتظار الموافقة: {{action}} — شغّل shep incident approve {{id}}",
+      "open": {
+        "description": "فتح حادث",
+        "titleArg": "ملخص في سطر واحد",
+        "severityOption": "critical أو major (الافتراضي) أو minor",
+        "detailOption": "ما الذي يحدث",
+        "urlOption": "رابط التنبيه أو لوحة المتابعة",
+        "workloadOption": "الـ deployment المعني في Kubernetes",
+        "namespaceOption": "مساحة الأسماء الخاصة به (الافتراضي: default)",
+        "contextOption": "سياق kubeconfig الخاص به (الافتراضي: الحالي)",
+        "success": "فُتح الحادث {{id}}: {{title}}"
+      },
+      "ls": {
+        "description": "عرض الحوادث، الأحدث أولًا",
+        "openOption": "الحوادث غير المحلولة فقط",
+        "title": "الحوادث",
+        "idColumn": "المعرّف",
+        "titleColumn": "الحادث",
+        "severityColumn": "الخطورة",
+        "statusColumn": "الحالة",
+        "workloadColumn": "الحمل",
+        "empty": "لا توجد حوادث."
+      },
+      "show": {
+        "description": "عرض حادث مع خطه الزمني وإجراءاته"
+      },
+      "note": {
+        "description": "إضافة ملاحظة إلى الخط الزمني",
+        "textArg": "الملاحظة",
+        "success": "أُضيفت الملاحظة"
+      },
+      "triage": {
+        "description": "قراءة الحمل وسؤال وكيل عن الأسباب وإجراء واحد",
+        "agentOption": "الوكيل المستخدم (تنطبق قواعد المساحة)",
+        "started": "جارٍ قراءة الحمل وسؤال الوكيل؛ قد يستغرق ذلك بضع دقائق…"
+      },
+      "act": {
+        "description": "إعادة تشغيل الحمل أو التراجع عنه أو تغيير حجمه الآن",
+        "actionArg": "restart أو rollback أو scale",
+        "replicasOption": "عدد النسخ، لـ scale",
+        "reasonOption": "السبب"
+      },
+      "approve": {
+        "description": "الموافقة على إجراء مقترح؛ يعمل فورًا"
+      },
+      "reject": {
+        "description": "رفض إجراء مقترح",
+        "reasonOption": "السبب",
+        "success": "رُفض الإجراء {{id}}"
+      },
+      "resolve": {
+        "description": "حل حادث؛ يُكتب تقرير ما بعد الحادث من الخط الزمني ما لم يُقدَّم",
+        "postmortemOption": "تقريرك (Markdown)",
+        "success": "حُل {{title}}"
       }
     }
   },

@@ -44,13 +44,14 @@ export interface RawInvestigationResult {
   hypotheses: RawHypothesis[];
 }
 
-const CONFIDENCE_ORDER: readonly HypothesisConfidence[] = [
+export const CONFIDENCE_ORDER: readonly HypothesisConfidence[] = [
   HypothesisConfidence.High,
   HypothesisConfidence.Medium,
   HypothesisConfidence.Low,
 ];
 
-function parseConfidence(value: unknown): HypothesisConfidence {
+/** A confidence level from free text; Low when unrecognised. */
+export function parseConfidence(value: unknown): HypothesisConfidence {
   const text = String(value ?? '').toLowerCase();
   return CONFIDENCE_ORDER.find((level) => level.toLowerCase() === text) ?? HypothesisConfidence.Low;
 }

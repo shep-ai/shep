@@ -447,7 +447,8 @@
     "harness": "Harness",
     "spaces": "Spaces",
     "trackers": "Connections",
-    "opportunities": "Opportunities"
+    "opportunities": "Opportunities",
+    "incidents": "Incidents"
   },
   "sidebar": {
     "features": "Features",
@@ -1383,7 +1384,9 @@
         "Mention": "Comments mentioning #shep",
         "All": "Every comment"
       },
-      "resolveThreads": "Resolve threads it changed code for"
+      "resolveThreads": "Resolve threads it changed code for",
+      "autoActions": "Runs without asking on incidents",
+      "autoActionsHint": "Shep runs these on an incident’s workload without waiting for approval. Others wait for someone to approve them."
     }
   },
   "trackers": {
@@ -1645,6 +1648,99 @@
       "running": "Discovery is running…",
       "failed": "The last run failed: {{error}}",
       "succeeded": "Last run: {{proposed}} proposed from {{read}} signals, {{when}}"
+    }
+  },
+  "incidents": {
+    "title": "Incidents",
+    "subtitle": "Production problems, their triage, the restarts, rollbacks and scales that fix them, and the postmortem.",
+    "space": "Space",
+    "list": "Incidents",
+    "empty": "No incidents in this space.",
+    "timeline": "Timeline",
+    "actions": "Runtime actions",
+    "approve": "Approve",
+    "reject": "Reject",
+    "recovered": "Recovered",
+    "notRecovered": "Not recovered",
+    "scaleTo": "Scale to {{replicas}} replicas",
+    "showEvidence": "Show evidence",
+    "triage": "Triage",
+    "triaging": "Triaging…",
+    "workload": "deployment/{{workload}} in {{namespace}} ({{context}})",
+    "currentContext": "current context",
+    "noWorkload": "No workload — runtime actions are off.",
+    "openLink": "Open the alert",
+    "errors": {
+      "actionFailed": "The action failed."
+    },
+    "form": {
+      "title": "Open an incident",
+      "incident": "Incident",
+      "placeholder": "What is wrong?",
+      "severity": "Severity",
+      "workload": "Workload",
+      "namespace": "Namespace",
+      "context": "Context",
+      "submit": "Open"
+    },
+    "act": {
+      "title": "Run a runtime action",
+      "kind": "Action",
+      "replicas": "Replicas",
+      "reason": "Why?",
+      "submit": "Run",
+      "running": "Running…"
+    },
+    "note": {
+      "title": "Note",
+      "placeholder": "Add a note to the timeline",
+      "submit": "Add"
+    },
+    "resolve": {
+      "title": "Resolve",
+      "postmortem": "Postmortem",
+      "placeholder": "Write the postmortem, or leave empty for a draft from the timeline",
+      "submit": "Resolve"
+    },
+    "severity": {
+      "Critical": "Critical",
+      "Major": "Major",
+      "Minor": "Minor"
+    },
+    "status": {
+      "Open": "Open",
+      "Mitigated": "Mitigated",
+      "Resolved": "Resolved"
+    },
+    "actionKind": {
+      "Restart": "Restart",
+      "Rollback": "Roll back",
+      "Scale": "Scale"
+    },
+    "actionStatus": {
+      "Proposed": "Waiting for approval",
+      "Approved": "Approved",
+      "Rejected": "Rejected",
+      "Succeeded": "Done",
+      "Failed": "Failed"
+    },
+    "proposedBy": {
+      "Agent": "proposed by the agent",
+      "Person": "asked by a person"
+    },
+    "eventKind": {
+      "Opened": "Opened",
+      "Note": "Note",
+      "Evidence": "Evidence",
+      "Hypothesis": "Hypothesis",
+      "ActionProposed": "Action proposed",
+      "ActionApproved": "Action approved",
+      "ActionRejected": "Action rejected",
+      "ActionSucceeded": "Action done",
+      "ActionFailed": "Action failed",
+      "Recovered": "Recovered",
+      "NotRecovered": "Not recovered",
+      "Resolved": "Resolved"
     }
   }
 }

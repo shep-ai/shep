@@ -29,6 +29,11 @@ describe('sidebar links', () => {
     expect(hrefs.indexOf('/opportunities')).toBe(hrefs.indexOf('/connections') + 1);
   });
 
+  it('lists Incidents right after Opportunities (spec 129)', () => {
+    const hrefs = SIDEBAR_LINKS.map((link) => link.href);
+    expect(hrefs.indexOf('/incidents')).toBe(hrefs.indexOf('/opportunities') + 1);
+  });
+
   it('hides flagged links until their flag is on', () => {
     expect(visibleSidebarLinks(OFF).map((l) => l.href)).not.toContain('/clusters');
     expect(visibleSidebarLinks({ ...OFF, clusters: true }).map((l) => l.href)).toContain(

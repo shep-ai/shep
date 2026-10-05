@@ -28,9 +28,9 @@ model FeedbackKey extends BaseEntity {
   revokedAt?: utcDateTime;
 }
 
-/** Why posted feedback was refused. */
-@doc("Why posted feedback was refused")
-enum FeedbackRejection {
+/** Why feedback or an alert posted with an intake key was refused. */
+@doc("Why feedback or an alert posted with an intake key was refused")
+enum IntakeRejection {
   @doc("The key is missing, unknown or revoked")
   Unauthorized,
 

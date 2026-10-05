@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { userEvent, within } from '@storybook/test';
-import { AgentType } from '@shepai/core/domain/generated/output';
+import { AgentType, RuntimeActionKind } from '@shepai/core/domain/generated/output';
 import { SpaceAgentSettingsForm } from './space-agent-settings-form';
 import { ACME, PERSONAL, runInStory } from './spaces-fixtures';
 
@@ -32,6 +32,7 @@ const WORK = {
     useBedrock: true,
     awsProfile: 'acme',
     allowedAgentTypes: [AgentType.ClaudeCode],
+    autoRuntimeActions: [RuntimeActionKind.Restart],
   },
 };
 

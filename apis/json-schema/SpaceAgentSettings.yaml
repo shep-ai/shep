@@ -31,4 +31,9 @@ properties:
   prCommentResolveThreads:
     type: boolean
     description: Resolve an inline review thread after changing code for it (spec 124); unset means no
+  autoRuntimeActions:
+    type: array
+    items:
+      $ref: RuntimeActionKind.yaml
+    description: Runtime action kinds shep may run on an incident without asking (spec 129); unset means none
 description: Agent credentials, identity and allowed agents for the repositories of a space

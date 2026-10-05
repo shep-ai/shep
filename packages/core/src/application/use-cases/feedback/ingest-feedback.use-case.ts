@@ -7,16 +7,20 @@
  */
 
 import { injectable, inject } from 'tsyringe';
-import { FeedbackRejection, SignalKind, type Signal } from '../../../domain/generated/output.js';
-import { optionalText } from '../../../domain/shared/defined.js';
+import { IntakeRejection, SignalKind, type Signal } from '../../../domain/generated/output.js';
 import type { IFeedbackKeyRepository } from '../../ports/output/repositories/feedback-key-repository.interface.js';
 import type { IFeedbackKeyGenerator } from '../../ports/output/services/feedback-key-generator.interface.js';
 import { ManageSignalsUseCase } from '../opportunities/manage-signals.use-case.js';
+import {
+  MAX_DETAIL_LENGTH,
+  MAX_FIELD_LENGTH,
+  isHttpLink,
+  markIntakeKeyUsed,
+  payloadText as text,
+  verifyIntakeKey,
+} from './intake-key.js';
 
 export const MAX_TITLE_LENGTH = 200;
-export const MAX_FIELD_LENGTH = 500;
-export const MAX_DETAIL_LENGTH = 5_000;
-const HTTP_URL = /^https?:\/\//i;
 
 /** The JSON a tool posts. Unknown fields are ignored. */
 export interface FeedbackPayload {
@@ -31,16 +35,10 @@ export interface FeedbackPayload {
 
 export type IngestFeedbackResult =
   | { ok: true; signal: Signal; duplicate: boolean }
-  | { ok: false; rejection: FeedbackRejection; error: string };
+  | { ok: false; rejection: IntakeRejection; error: string };
 
-function rejected(rejection: FeedbackRejection, error: string): IngestFeedbackResult {
+function rejected(rejection: IntakeRejection, error: string): IngestFeedbackResult {
   return { ok: false, rejection, error };
-}
-
-function text(value: unknown, max: number): string | undefined | null {
-  if (value === undefined || value === null) return undefined;
-  if (typeof value !== 'string' || value.length > max) return null;
-  return optionalText(value);
 }
 
 @injectable()
@@ -52,13 +50,13 @@ export class IngestFeedbackUseCase {
   ) {}
 
   async execute(secret: string, payload: FeedbackPayload): Promise<IngestFeedbackResult> {
-    const key = secret ? await this.keys.findByHash(this.generator.hash(secret)) : null;
-    if (!key || key.revokedAt) {
-      return rejected(FeedbackRejection.Unauthorized, 'Unknown or revoked feedback key.');
+    const key = await verifyIntakeKey(this.keys, this.generator, secret);
+    if (!key) {
+      return rejected(IntakeRejection.Unauthorized, 'Unknown or revoked feedback key.');
     }
 
     const body = text(payload.text, MAX_DETAIL_LENGTH);
-    if (!body) return rejected(FeedbackRejection.Invalid, '"text" is required.');
+    if (!body) return rejected(IntakeRejection.Invalid, '"text" is required.');
     const [firstLine, ...rest] = body.split('\n');
     const detail = text(payload.detail, MAX_DETAIL_LENGTH);
     const customer = text(payload.customer, MAX_FIELD_LENGTH);
@@ -66,19 +64,19 @@ export class IngestFeedbackUseCase {
     const externalId = text(payload.externalId, MAX_FIELD_LENGTH);
     const revenue = payload.monthlyRevenue;
     if (detail === null || customer === null || url === null || externalId === null) {
-      return rejected(FeedbackRejection.Invalid, 'A text field is not a string or is too long.');
+      return rejected(IntakeRejection.Invalid, 'A text field is not a string or is too long.');
     }
-    if (url !== undefined && !HTTP_URL.test(url)) {
-      return rejected(FeedbackRejection.Invalid, '"url" must be an http(s) link.');
+    if (!isHttpLink(url)) {
+      return rejected(IntakeRejection.Invalid, '"url" must be an http(s) link.');
     }
     if (
       revenue !== undefined &&
       (typeof revenue !== 'number' || !Number.isFinite(revenue) || revenue < 0)
     ) {
-      return rejected(FeedbackRejection.Invalid, '"monthlyRevenue" must be a number, 0 or more.');
+      return rejected(IntakeRejection.Invalid, '"monthlyRevenue" must be a number, 0 or more.');
     }
     if (payload.urgent !== undefined && typeof payload.urgent !== 'boolean') {
-      return rejected(FeedbackRejection.Invalid, '"urgent" must be true or false.');
+      return rejected(IntakeRejection.Invalid, '"urgent" must be true or false.');
     }
 
     const longText = [rest.join('\n').trim(), detail].filter(Boolean).join('\n\n');
@@ -93,10 +91,9 @@ export class IngestFeedbackUseCase {
       ...(payload.urgent === true ? { urgent: true } : {}),
       ...(externalId ? { externalId } : {}),
     });
-    if (!recorded.ok) return rejected(FeedbackRejection.Invalid, recorded.error);
+    if (!recorded.ok) return rejected(IntakeRejection.Invalid, recorded.error);
 
-    const now = new Date();
-    await this.keys.update({ ...key, lastUsedAt: now, updatedAt: now });
+    await markIntakeKeyUsed(this.keys, key);
     return { ok: true, signal: recorded.signal, duplicate: recorded.duplicate };
   }
 }

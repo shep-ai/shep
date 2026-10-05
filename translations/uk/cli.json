@@ -1240,7 +1240,10 @@
         "prComments": "Відповіді на коментарі PR",
         "resolveThreads": "Закривати гілки",
         "defaultValue": "{{value}} (типово)",
-        "badTrigger": "«{{value}}» — не режим коментарів PR. Використайте один із: {{triggers}}"
+        "badTrigger": "«{{value}}» — не режим коментарів PR. Використайте один із: {{triggers}}",
+        "autoActions": "Виконується при інцидентах без питань",
+        "autoActionsOption": "Дії, які shep виконує при інциденті без питань: restart, rollback, scale (через кому)",
+        "none": "немає"
       }
     },
     "connection": {
@@ -1605,6 +1608,72 @@
         "needEvery": "Вкажіть --every <години> або --off",
         "on": "Пошук запускається кожні {{hours}} год",
         "off": "Пошук за розкладом вимкнено"
+      }
+    },
+    "incident": {
+      "description": "Інциденти в продакшені: відкрити, розібрати, вплинути на навантаження й закрити",
+      "failed": "Команда incident завершилася з помилкою",
+      "spaceOption": "Slug або id простору (типовий, якщо не вказано)",
+      "incidentArg": "Id інциденту (див. shep incident ls)",
+      "actionIdArg": "Id дії (див. shep incident show)",
+      "badSeverity": "«{{value}}» — не рівень серйозності; використовуйте {{severities}}",
+      "badAction": "«{{value}}» — не дія; використовуйте {{actions}}",
+      "recovered": "відновлено",
+      "notRecovered": "не відновлено",
+      "awaiting": "Чекає схвалення: {{action}} — виконайте shep incident approve {{id}}",
+      "open": {
+        "description": "Відкрити інцидент",
+        "titleArg": "Короткий опис",
+        "severityOption": "critical, major (типово) або minor",
+        "detailOption": "Що відбувається",
+        "urlOption": "Посилання на алерт або дашборд",
+        "workloadOption": "Зачеплений deployment Kubernetes",
+        "namespaceOption": "Його namespace (типово: default)",
+        "contextOption": "Його контекст kubeconfig (типово: поточний)",
+        "success": "Інцидент {{id}} відкрито: {{title}}"
+      },
+      "ls": {
+        "description": "Список інцидентів, нові спочатку",
+        "openOption": "Лише незакриті",
+        "title": "Інциденти",
+        "idColumn": "Id",
+        "titleColumn": "Інцидент",
+        "severityColumn": "Серйозність",
+        "statusColumn": "Статус",
+        "workloadColumn": "Навантаження",
+        "empty": "Інцидентів немає."
+      },
+      "show": {
+        "description": "Показати інцидент із хронологією та діями"
+      },
+      "note": {
+        "description": "Додати нотатку до хронології",
+        "textArg": "Нотатка",
+        "success": "Нотатку додано"
+      },
+      "triage": {
+        "description": "Прочитати навантаження й запитати агента про причини та одну дію",
+        "agentOption": "Агент (діють правила простору)",
+        "started": "Читаю навантаження й питаю агента; це може тривати кілька хвилин…"
+      },
+      "act": {
+        "description": "Перезапустити, відкотити або масштабувати навантаження зараз",
+        "actionArg": "restart, rollback або scale",
+        "replicasOption": "Кількість реплік, для scale",
+        "reasonOption": "Чому"
+      },
+      "approve": {
+        "description": "Схвалити запропоновану дію; вона виконається одразу"
+      },
+      "reject": {
+        "description": "Відхилити запропоновану дію",
+        "reasonOption": "Чому",
+        "success": "Дію {{id}} відхилено"
+      },
+      "resolve": {
+        "description": "Закрити інцидент; постмортем складається з хронології, якщо не заданий",
+        "postmortemOption": "Ваш постмортем (Markdown)",
+        "success": "{{title}} закрито"
       }
     }
   },

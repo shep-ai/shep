@@ -447,7 +447,8 @@
     "harness": "Harness",
     "spaces": "Простори",
     "trackers": "Підключення",
-    "opportunities": "Можливості"
+    "opportunities": "Можливості",
+    "incidents": "Інциденти"
   },
   "sidebar": {
     "features": "Функції",
@@ -1383,7 +1384,9 @@
         "Mention": "Коментарі з #shep",
         "All": "Усі коментарі"
       },
-      "resolveThreads": "Закривати гілки, де змінено код"
+      "resolveThreads": "Закривати гілки, де змінено код",
+      "autoActions": "Виконуються без питань під час інцидентів",
+      "autoActionsHint": "Shep виконує їх на навантаженні інциденту без схвалення. Інші чекають, доки хтось їх схвалить."
     }
   },
   "trackers": {
@@ -1645,6 +1648,99 @@
       "running": "Триває пошук…",
       "failed": "Останній запуск завершився помилкою: {{error}}",
       "succeeded": "Останній запуск: запропоновано {{proposed}} з {{read}} сигналів, {{when}}"
+    }
+  },
+  "incidents": {
+    "title": "Інциденти",
+    "subtitle": "Проблеми в продакшені, їх розбір, перезапуски, відкати та масштабування, що їх усувають, і постмортем.",
+    "space": "Простір",
+    "list": "Інциденти",
+    "empty": "У цьому просторі немає інцидентів.",
+    "timeline": "Хронологія",
+    "actions": "Дії в середовищі",
+    "approve": "Схвалити",
+    "reject": "Відхилити",
+    "recovered": "Відновлено",
+    "notRecovered": "Не відновлено",
+    "scaleTo": "Масштабувати до {{replicas}} реплік",
+    "showEvidence": "Показати дані",
+    "triage": "Розібрати",
+    "triaging": "Розбір…",
+    "workload": "deployment/{{workload}} у {{namespace}} ({{context}})",
+    "currentContext": "поточний контекст",
+    "noWorkload": "Немає навантаження — дії вимкнено.",
+    "openLink": "Відкрити сповіщення",
+    "errors": {
+      "actionFailed": "Дія не вдалася."
+    },
+    "form": {
+      "title": "Відкрити інцидент",
+      "incident": "Інцидент",
+      "placeholder": "Що зламалося?",
+      "severity": "Серйозність",
+      "workload": "Навантаження",
+      "namespace": "Namespace",
+      "context": "Контекст",
+      "submit": "Відкрити"
+    },
+    "act": {
+      "title": "Виконати дію",
+      "kind": "Дія",
+      "replicas": "Репліки",
+      "reason": "Чому?",
+      "submit": "Виконати",
+      "running": "Виконується…"
+    },
+    "note": {
+      "title": "Нотатка",
+      "placeholder": "Додати нотатку до хронології",
+      "submit": "Додати"
+    },
+    "resolve": {
+      "title": "Закрити",
+      "postmortem": "Постмортем",
+      "placeholder": "Напишіть постмортем або залиште порожнім для чернетки з хронології",
+      "submit": "Закрити"
+    },
+    "severity": {
+      "Critical": "Критичний",
+      "Major": "Серйозний",
+      "Minor": "Незначний"
+    },
+    "status": {
+      "Open": "Відкритий",
+      "Mitigated": "Пом’якшений",
+      "Resolved": "Закритий"
+    },
+    "actionKind": {
+      "Restart": "Перезапуск",
+      "Rollback": "Відкат",
+      "Scale": "Масштабування"
+    },
+    "actionStatus": {
+      "Proposed": "Чекає схвалення",
+      "Approved": "Схвалено",
+      "Rejected": "Відхилено",
+      "Succeeded": "Виконано",
+      "Failed": "Не вдалося"
+    },
+    "proposedBy": {
+      "Agent": "запропоновано агентом",
+      "Person": "запитано людиною"
+    },
+    "eventKind": {
+      "Opened": "Відкрито",
+      "Note": "Нотатка",
+      "Evidence": "Дані",
+      "Hypothesis": "Гіпотеза",
+      "ActionProposed": "Дію запропоновано",
+      "ActionApproved": "Дію схвалено",
+      "ActionRejected": "Дію відхилено",
+      "ActionSucceeded": "Дію виконано",
+      "ActionFailed": "Дія не вдалася",
+      "Recovered": "Відновлено",
+      "NotRecovered": "Не відновлено",
+      "Resolved": "Закрито"
     }
   }
 }

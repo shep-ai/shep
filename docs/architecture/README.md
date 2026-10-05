@@ -17,6 +17,7 @@ This directory contains documentation about Shep AI CLI's system architecture an
 | [opportunities.md](./opportunities.md)           | Signals, opportunities, scoring and the capacity line     |
 | [feedback.md](./feedback.md)                     | Keyed feedback intake and lexical themes                  |
 | [discovery.md](./discovery.md)                   | The agent that proposes evidence-backed opportunities     |
+| [incidents.md](./incidents.md)                   | Incidents, triage, runtime actions and alert intake      |
 | [bug-loop.md](./bug-loop.md)                     | Investigations, ranked hypotheses and test-first fixes    |
 | [pr-comment-loop.md](./pr-comment-loop.md)       | Review comments read, addressed and answered              |
 

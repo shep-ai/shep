@@ -1,7 +1,7 @@
 // @vitest-environment node
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { FeedbackRejection } from '@shepai/core/domain/generated/output';
+import { IntakeRejection } from '@shepai/core/domain/generated/output';
 
 const ingest = { execute: vi.fn() };
 vi.mock('@/lib/server-container', () => ({
@@ -11,8 +11,8 @@ vi.mock('@/lib/server-container', () => ({
   },
 }));
 
-const { MAX_FEEDBACK_BYTES } = await import(
-  '../../../../../src/presentation/web/lib/feedback-limits.js'
+const { MAX_INTAKE_BYTES: MAX_FEEDBACK_BYTES } = await import(
+  '../../../../../src/presentation/web/lib/intake-route.js'
 );
 const { POST } = await import('../../../../../src/presentation/web/app/api/feedback/route.js');
 
@@ -46,7 +46,7 @@ describe('POST /api/feedback', () => {
   it('answers 401 for a bad key and 400 for a bad payload, never echoing the key', async () => {
     ingest.execute.mockResolvedValue({
       ok: false,
-      rejection: FeedbackRejection.Unauthorized,
+      rejection: IntakeRejection.Unauthorized,
       error: 'Unknown or revoked feedback key.',
     });
     const unauthorized = await POST(post('{"text":"x"}', 'shep_fb_wrong'));
@@ -55,7 +55,7 @@ describe('POST /api/feedback', () => {
 
     ingest.execute.mockResolvedValue({
       ok: false,
-      rejection: FeedbackRejection.Invalid,
+      rejection: IntakeRejection.Invalid,
       error: '"text" is required.',
     });
     expect((await POST(post('{}'))).status).toBe(400);
