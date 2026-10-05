@@ -1,0 +1,8 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: OutcomeVerdict.yaml
+type: string
+enum:
+  - Pending
+  - Solved
+  - Persisting
+description: Whether a shipped opportunity solved what it was built for

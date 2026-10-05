@@ -1675,6 +1675,51 @@
         "postmortemOption": "Your postmortem (Markdown)",
         "success": "{{title}} resolved"
       }
+    },
+    "outcome": {
+      "description": "What happened after opportunities shipped: reports before and after, customers to tell, calibration",
+      "failed": "Outcome command failed",
+      "spaceOption": "Space slug or id (default space if omitted)",
+      "opportunityArg": "Opportunity id",
+      "ls": {
+        "description": "List a space's shipped opportunities and their outcomes",
+        "title": "Outcomes — {{space}}",
+        "opportunityColumn": "Opportunity",
+        "shippedColumn": "Shipped",
+        "verdictColumn": "Verdict",
+        "reportsColumn": "Reports",
+        "tellColumn": "To tell",
+        "empty": "Nothing has shipped in this space yet."
+      },
+      "check": {
+        "description": "Ship opportunities whose work item is done and judge outcomes that are due, now",
+        "summary": "Shipped {{shipped}}, reopened {{reopened}}, judged {{judged}}",
+        "shipped": "shipped:",
+        "reopened": "back to accepted:"
+      },
+      "ship": {
+        "description": "Mark an opportunity shipped by hand",
+        "success": "{{title}} shipped; its outcome is judged on {{date}}"
+      },
+      "tell": {
+        "description": "Show the customers to tell that an opportunity shipped, or mark them told",
+        "doneOption": "Mark the customers told",
+        "told": "Customers marked told: {{told}}",
+        "nobody": "Every customer behind it has been told.",
+        "note": "Tell them: “{{title}}” has shipped — thank you for telling us what you needed.",
+        "markHint": "When they know: shep outcome tell {{id}} --done"
+      },
+      "hours": {
+        "description": "Record the hours of human review a shipped opportunity really took",
+        "hoursArg": "Hours, more than 0",
+        "success": "Recorded {{hours}} review hours"
+      },
+      "calibration": {
+        "hours": "Actual review hours are {{ratio}}× the estimates ({{timed}} recorded)",
+        "noHours": "No actual review hours recorded yet",
+        "solved": "{{solved}} of {{judged}} judged outcomes solved",
+        "noVerdicts": "No outcomes judged yet"
+      }
     }
   },
   "ui": {

@@ -7068,6 +7068,10 @@ export type Signal = BaseEntity & {
    * The sending tool's id for it; a second signal with the same id in a space is refused
    */
   externalId?: string;
+  /**
+   * When its customer was told the opportunity it supports shipped
+   */
+  toldAt?: any;
 };
 export enum OpportunityStatus {
   Proposed = 'Proposed',
@@ -7138,6 +7142,10 @@ export type Opportunity = BaseEntity & {
    * What the discovery agent suggested building, and why now
    */
   brief?: string;
+  /**
+   * When it shipped
+   */
+  shippedAt?: any;
 };
 
 /**
@@ -7245,6 +7253,53 @@ export type DiscoveryRun = BaseEntity & {
    * Why the run failed
    */
   error?: string;
+};
+export enum OutcomeVerdict {
+  Pending = 'Pending',
+  Solved = 'Solved',
+  Persisting = 'Persisting',
+}
+
+/**
+ * The outcome of one shipped opportunity
+ */
+export type OpportunityOutcome = BaseEntity & {
+  /**
+   * The opportunity that shipped
+   */
+  opportunityId: string;
+  /**
+   * Its space
+   */
+  spaceId: string;
+  /**
+   * When it shipped
+   */
+  shippedAt: any;
+  /**
+   * When the window after shipping ends and the outcome is judged
+   */
+  reviewAt: any;
+  /**
+   * Where the outcome stands
+   */
+  verdict: OutcomeVerdict;
+  /**
+   * Similar signals in the window before shipping
+   */
+  signalsBefore?: number;
+  /**
+   * Similar signals in the window after shipping
+   */
+  signalsAfter?: number;
+  /**
+   * When it was judged
+   */
+  judgedAt?: any;
+  /**
+   * Hours of human review it really took, when someone recorded them
+   */
+  actualReviewHours?: float64;
 };
 
 /**

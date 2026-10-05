@@ -1572,7 +1572,8 @@
       "cancel": "Cancelar",
       "reason": "Por que descartar?",
       "project": "Projeto",
-      "noProjects": "Crie um projeto primeiro; construir cria um item de trabalho nele."
+      "noProjects": "Crie um projeto primeiro; construir cria um item de trabalho nele.",
+      "ship": "Marcar entregue"
     },
     "inbox": {
       "title": "Sinais a vincular ({{count}})",
@@ -1648,6 +1649,27 @@
       "running": "Descoberta em andamento…",
       "failed": "A última execução falhou: {{error}}",
       "succeeded": "Última execução: {{proposed}} propostas a partir de {{read}} sinais, {{when}}"
+    },
+    "outcomes": {
+      "title": "Resultados",
+      "check": "Verificar agora",
+      "empty": "Nada foi entregue neste espaço ainda.",
+      "judgedOn": "Julgado em {{date}}",
+      "counts": "{{before}} relatos semelhantes antes, {{after}} depois",
+      "hours": "Horas de revisão",
+      "saveHours": "Salvar",
+      "hoursTaken": "Levou {{actual}} h de {{estimated}} h estimadas",
+      "note": "Diga a eles que “{{title}}” foi entregue:",
+      "markTold": "Marcar avisados",
+      "hoursRatio": "As horas reais de revisão são {{ratio}}× as estimativas ({{timed}} registradas)",
+      "noHours": "Nenhuma hora real de revisão registrada ainda",
+      "solvedShare": "{{solved}} de {{judged}} resultados julgados resolvidos",
+      "noVerdicts": "Nenhum resultado julgado ainda",
+      "verdict": {
+        "Pending": "Pendente",
+        "Solved": "Resolvido",
+        "Persisting": "Persiste"
+      }
     }
   },
   "incidents": {

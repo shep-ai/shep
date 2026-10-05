@@ -1572,7 +1572,8 @@
       "cancel": "ביטול",
       "reason": "למה לדחות?",
       "project": "פרויקט",
-      "noProjects": "צרו קודם פרויקט; בנייה יוצרת בו פריט עבודה."
+      "noProjects": "צרו קודם פרויקט; בנייה יוצרת בו פריט עבודה.",
+      "ship": "סימון כמשוחררת"
     },
     "inbox": {
       "title": "אותות לקישור ({{count}})",
@@ -1648,6 +1649,27 @@
       "running": "הגילוי רץ…",
       "failed": "ההרצה האחרונה נכשלה: {{error}}",
       "succeeded": "הרצה אחרונה: {{proposed}} הוצעו מתוך {{read}} אותות, {{when}}"
+    },
+    "outcomes": {
+      "title": "תוצאות",
+      "check": "בדיקה עכשיו",
+      "empty": "עוד לא שוחרר דבר במרחב הזה.",
+      "judgedOn": "תישפט ב-{{date}}",
+      "counts": "{{before}} דיווחים דומים לפני, {{after}} אחרי",
+      "hours": "שעות סקירה",
+      "saveHours": "שמירה",
+      "hoursTaken": "לקח {{actual}} ש׳ מתוך {{estimated}} ש׳ בהערכה",
+      "note": "ספרו להם ש„{{title}}” שוחרר:",
+      "markTold": "סימון כמעודכנים",
+      "hoursRatio": "שעות הסקירה בפועל הן פי {{ratio}} מההערכות ({{timed}} נרשמו)",
+      "noHours": "עוד לא נרשמו שעות סקירה בפועל",
+      "solvedShare": "{{solved}} מתוך {{judged}} תוצאות שנשפטו נפתרו",
+      "noVerdicts": "עוד לא נשפטו תוצאות",
+      "verdict": {
+        "Pending": "ממתינה",
+        "Solved": "נפתרה",
+        "Persisting": "נמשכת"
+      }
     }
   },
   "incidents": {

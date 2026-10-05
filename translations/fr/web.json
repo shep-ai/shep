@@ -1572,7 +1572,8 @@
       "cancel": "Annuler",
       "reason": "Pourquoi l'abandonner ?",
       "project": "Projet",
-      "noProjects": "Créez d'abord un projet ; construire y crée un élément de travail."
+      "noProjects": "Créez d'abord un projet ; construire y crée un élément de travail.",
+      "ship": "Marquer livrée"
     },
     "inbox": {
       "title": "Signaux à lier ({{count}})",
@@ -1648,6 +1649,27 @@
       "running": "Découverte en cours…",
       "failed": "La dernière découverte a échoué : {{error}}",
       "succeeded": "Dernière découverte : {{proposed}} proposées à partir de {{read}} signaux, {{when}}"
+    },
+    "outcomes": {
+      "title": "Résultats",
+      "check": "Vérifier maintenant",
+      "empty": "Rien n’a encore été livré dans cet espace.",
+      "judgedOn": "Jugé le {{date}}",
+      "counts": "{{before}} signalements similaires avant, {{after}} après",
+      "hours": "Heures de revue",
+      "saveHours": "Enregistrer",
+      "hoursTaken": "{{actual}} h pour {{estimated}} h estimées",
+      "note": "Dites-leur que « {{title}} » est livré :",
+      "markTold": "Marquer prévenus",
+      "hoursRatio": "Les heures de revue réelles valent {{ratio}}× les estimations ({{timed}} enregistrées)",
+      "noHours": "Aucune heure de revue réelle enregistrée",
+      "solvedShare": "{{solved}} résultats résolus sur {{judged}} jugés",
+      "noVerdicts": "Aucun résultat jugé pour l’instant",
+      "verdict": {
+        "Pending": "En attente",
+        "Solved": "Résolu",
+        "Persisting": "Persiste"
+      }
     }
   },
   "incidents": {

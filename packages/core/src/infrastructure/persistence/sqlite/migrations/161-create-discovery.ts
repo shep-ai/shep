@@ -11,13 +11,7 @@
 
 import type { MigrationParams } from 'umzug';
 import type Database from 'better-sqlite3';
-
-function addColumn(db: Database.Database, table: string, column: string, type: string): void {
-  const columns = db.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[];
-  if (!columns.some((existing) => existing.name === column)) {
-    db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${type}`);
-  }
-}
+import { addColumn } from '../add-column.js';
 
 export async function up({ context: db }: MigrationParams<Database.Database>): Promise<void> {
   db.exec(`

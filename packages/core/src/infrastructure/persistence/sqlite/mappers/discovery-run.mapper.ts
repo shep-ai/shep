@@ -5,7 +5,7 @@ import type {
   DiscoveryRun,
   DiscoveryRunStatus,
 } from '../../../../domain/generated/output.js';
-import { defined, millis, optionalMillis } from './row-values.js';
+import { defined, millis, optionalDate, optionalMillis } from './row-values.js';
 
 export interface DiscoveryRunRow {
   id: string;
@@ -47,7 +47,7 @@ export function discoveryRunFromDatabase(row: DiscoveryRunRow): DiscoveryRun {
     dropped: row.dropped,
     ...defined({
       agentType: row.agent_type as AgentType | null,
-      finishedAt: row.finished_at === null ? null : new Date(row.finished_at),
+      finishedAt: optionalDate(row.finished_at),
       error: row.error,
     }),
     createdAt: new Date(row.created_at),

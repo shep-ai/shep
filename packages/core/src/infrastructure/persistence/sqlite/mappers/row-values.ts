@@ -13,5 +13,10 @@ export function optionalMillis(value: Date | string | number | undefined): numbe
   return value === undefined ? null : millis(value);
 }
 
+/** The timestamp of an epoch-milliseconds column, or null when it is NULL. */
+export function optionalDate(value: number | null): Date | null {
+  return value === null ? null : new Date(value);
+}
+
 /** Only the non-null entries of `fields`, so optional properties stay absent. */
 export { defined } from '../../../../domain/shared/defined.js';

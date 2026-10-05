@@ -1675,6 +1675,51 @@
         "postmortemOption": "Votre postmortem (Markdown)",
         "success": "{{title}} résolu"
       }
+    },
+    "outcome": {
+      "description": "Ce qui s’est passé après la livraison : signalements avant et après, clients à prévenir, calibrage",
+      "failed": "La commande outcome a échoué",
+      "spaceOption": "Slug ou id de l’espace (l’espace par défaut si omis)",
+      "opportunityArg": "Id de l’opportunité",
+      "ls": {
+        "description": "Lister les opportunités livrées d’un espace et leurs résultats",
+        "title": "Résultats — {{space}}",
+        "opportunityColumn": "Opportunité",
+        "shippedColumn": "Livrée",
+        "verdictColumn": "Verdict",
+        "reportsColumn": "Signalements",
+        "tellColumn": "À prévenir",
+        "empty": "Rien n’a encore été livré dans cet espace."
+      },
+      "check": {
+        "description": "Livrer maintenant les opportunités dont l’élément de travail est terminé et juger les résultats dus",
+        "summary": "Livrées {{shipped}}, rouvertes {{reopened}}, jugés {{judged}}",
+        "shipped": "livrée :",
+        "reopened": "de retour en acceptée :"
+      },
+      "ship": {
+        "description": "Marquer une opportunité comme livrée à la main",
+        "success": "{{title}} livrée ; son résultat sera jugé le {{date}}"
+      },
+      "tell": {
+        "description": "Afficher les clients à prévenir de la livraison, ou les marquer prévenus",
+        "doneOption": "Marquer les clients prévenus",
+        "told": "Clients marqués prévenus : {{told}}",
+        "nobody": "Tous ses clients ont été prévenus.",
+        "note": "Dites-leur : « {{title}} » est livré — merci de nous avoir dit ce dont vous aviez besoin.",
+        "markHint": "Quand ils le savent : shep outcome tell {{id}} --done"
+      },
+      "hours": {
+        "description": "Enregistrer les heures de revue humaine qu’une opportunité livrée a vraiment demandées",
+        "hoursArg": "Heures, plus de 0",
+        "success": "{{hours}} heures de revue enregistrées"
+      },
+      "calibration": {
+        "hours": "Les heures de revue réelles valent {{ratio}}× les estimations ({{timed}} enregistrées)",
+        "noHours": "Aucune heure de revue réelle enregistrée",
+        "solved": "{{solved}} résultats résolus sur {{judged}} jugés",
+        "noVerdicts": "Aucun résultat jugé pour l’instant"
+      }
     }
   },
   "ui": {

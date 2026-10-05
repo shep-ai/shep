@@ -93,6 +93,9 @@ model Signal extends BaseEntity {
 
   @doc("The sending tool's id for it; a second signal with the same id in a space is refused")
   externalId?: string;
+
+  @doc("When its customer was told the opportunity it supports shipped")
+  toldAt?: utcDateTime;
 }
 
 /** A bet worth building, backed by signals. */
@@ -136,6 +139,9 @@ model Opportunity extends BaseEntity {
 
   @doc("What the discovery agent suggested building, and why now")
   brief?: string;
+
+  @doc("When it shipped")
+  shippedAt?: utcDateTime;
 }
 
 /** How a space values evidence and how much review it can give. */

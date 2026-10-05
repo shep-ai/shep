@@ -9,8 +9,8 @@
 - **Ship tracking**: a Building opportunity follows its work item. Completed → Shipped with a
   ship time; Cancelled → Accepted again, unlinked from the work item. An opportunity built
   outside a work item can be marked shipped by hand.
-- **Outcome** (per shipped opportunity): ship time, review time (ship time plus the window,
-  14 days by default), signals in the window before shipping that read like it, signals after,
+- **Outcome** (per shipped opportunity): ship time, review time (ship time plus a 14-day
+  window), signals in the window before shipping that read like it, signals after,
   verdict Pending → Solved or Persisting, the review hours it really took, when it was checked.
 - **Similar signal**: a signal of the space whose words overlap the opportunity's evidence
   (title, problem and its linked signals) as much as feedback themes require.

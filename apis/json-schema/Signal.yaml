@@ -35,6 +35,10 @@ properties:
   externalId:
     type: string
     description: The sending tool's id for it; a second signal with the same id in a space is refused
+  toldAt:
+    type: string
+    format: date-time
+    description: When its customer was told the opportunity it supports shipped
 required:
   - spaceId
   - kind

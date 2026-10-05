@@ -1572,7 +1572,8 @@
       "cancel": "Cancel",
       "reason": "Why drop it?",
       "project": "Project",
-      "noProjects": "Create a project first; building creates a work item in one."
+      "noProjects": "Create a project first; building creates a work item in one.",
+      "ship": "Mark shipped"
     },
     "inbox": {
       "title": "Signals to link ({{count}})",
@@ -1648,6 +1649,27 @@
       "running": "Discovery is running…",
       "failed": "The last run failed: {{error}}",
       "succeeded": "Last run: {{proposed}} proposed from {{read}} signals, {{when}}"
+    },
+    "outcomes": {
+      "title": "Outcomes",
+      "check": "Check now",
+      "empty": "Nothing has shipped in this space yet.",
+      "judgedOn": "Judged on {{date}}",
+      "counts": "{{before}} similar reports before, {{after}} after",
+      "hours": "Review hours",
+      "saveHours": "Save",
+      "hoursTaken": "Took {{actual}} h of {{estimated}} h estimated",
+      "note": "Tell them “{{title}}” shipped:",
+      "markTold": "Mark told",
+      "hoursRatio": "Actual review hours are {{ratio}}× the estimates ({{timed}} recorded)",
+      "noHours": "No actual review hours recorded yet",
+      "solvedShare": "{{solved}} of {{judged}} judged outcomes solved",
+      "noVerdicts": "No outcomes judged yet",
+      "verdict": {
+        "Pending": "Pending",
+        "Solved": "Solved",
+        "Persisting": "Persisting"
+      }
     }
   },
   "incidents": {

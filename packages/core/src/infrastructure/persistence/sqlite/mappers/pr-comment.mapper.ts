@@ -8,7 +8,7 @@ import type {
   PrCommentRoundStatus,
   PrCommentStatus,
 } from '../../../../domain/generated/output.js';
-import { defined, millis, optionalMillis } from './row-values.js';
+import { defined, millis, optionalDate, optionalMillis } from './row-values.js';
 
 export interface PrCommentRow {
   id: string;
@@ -125,7 +125,7 @@ export function prCommentRoundFromDatabase(row: PrCommentRoundRow): PrCommentRou
       commitSha: row.commit_sha,
       summary: row.summary,
       error: row.error,
-      finishedAt: row.finished_at === null ? null : new Date(row.finished_at),
+      finishedAt: optionalDate(row.finished_at),
     }),
     createdAt: new Date(row.created_at),
     updatedAt: new Date(row.updated_at),

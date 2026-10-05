@@ -11,8 +11,8 @@ oneLiner: |-
 summary: |-
   Opportunities are ranked and built, but nothing follows them past the merge. This feature
   closes the loop. A Building opportunity whose work item reaches a Completed state is marked
-  Shipped and gets an outcome; one whose work item is Cancelled goes back to Accepted. After the
-  space's review window the outcome is judged: shep counts the space's new signals that read like
+  Shipped and gets an outcome; one whose work item is Cancelled goes back to Accepted. After a
+  14-day window the outcome is judged: shep counts the space's new signals that read like
   the opportunity's evidence and calls it Solved when they fell by at least half against the same
   window before shipping, Persisting otherwise. The customers behind the opportunity's signals form
   a list to tell, with a short note to send; marking them told stamps the signals. People can
@@ -45,8 +45,8 @@ content: |
   - **Ship tracking**: a Building opportunity follows its work item. Completed → Shipped with a
     ship time; Cancelled → Accepted again, unlinked from the work item. An opportunity built
     outside a work item can be marked shipped by hand.
-  - **Outcome** (per shipped opportunity): ship time, review time (ship time plus the window,
-    14 days by default), signals in the window before shipping that read like it, signals after,
+  - **Outcome** (per shipped opportunity): ship time, review time (ship time plus a 14-day
+    window), signals in the window before shipping that read like it, signals after,
     verdict Pending → Solved or Persisting, the review hours it really took, when it was checked.
   - **Similar signal**: a signal of the space whose words overlap the opportunity's evidence
     (title, problem and its linked signals) as much as feedback themes require.

@@ -11,6 +11,7 @@
 
 import type { MigrationParams } from 'umzug';
 import type Database from 'better-sqlite3';
+import { addColumn } from '../add-column.js';
 
 export async function up({ context: db }: MigrationParams<Database.Database>): Promise<void> {
   db.exec(`
@@ -27,10 +28,7 @@ export async function up({ context: db }: MigrationParams<Database.Database>): P
     );
     CREATE INDEX IF NOT EXISTS idx_feedback_keys_space ON feedback_keys (space_id);
   `);
-  const columns = db.prepare('PRAGMA table_info(signals)').all() as { name: string }[];
-  if (!columns.some((column) => column.name === 'external_id')) {
-    db.exec('ALTER TABLE signals ADD COLUMN external_id TEXT');
-  }
+  addColumn(db, 'signals', 'external_id', 'TEXT');
   db.exec(`
     CREATE UNIQUE INDEX IF NOT EXISTS idx_signals_external
       ON signals (space_id, external_id) WHERE external_id IS NOT NULL;

@@ -2960,3 +2960,17 @@ a rename in slices failed twice: staged `git mv`s without their content, then an
 that imported a module not yet written. Commit a slice only when the working tree type-checks
 as a whole — stage every file the slice touches, and keep work-in-progress files that import
 missing modules out of the tree (or finish them) before `git commit`.
+
+## Read `tsp:compile` warnings, not just its exit code
+
+A duplicated `@doc` on an enum member (spec 129) compiled with exit 0 and four
+`duplicate-decorator` warnings, and was committed. `pnpm tsp:compile` must end with
+"Compilation completed successfully." and no warnings; treat any warning as a failure to fix
+before committing.
+
+## Parse enum options inside the command action, not with a throwing Commander parser
+
+An option parser that throws `InvalidArgumentError` makes Commander call `process.exit(1)`,
+which kills the test runner and skips the command's own error path. Read the raw string and
+validate it in the action (print `messages.error`, set `process.exitCode = 1`, return), like
+`parseNumberOption` and the incident `read*` helpers.

@@ -95,6 +95,7 @@ import { registerOpportunities } from './modules/register-opportunities.js';
 import { registerFeedback } from './modules/register-feedback.js';
 import { registerDiscovery } from './modules/register-discovery.js';
 import { registerIncidents } from './modules/register-incidents.js';
+import { registerOutcomes } from './modules/register-outcomes.js';
 import { SessionSpaceEnvironment } from '../services/interactive/lifecycle/session-space-environment.js';
 import { ResolveSpaceEnvironmentUseCase } from '../../application/use-cases/spaces/resolve-space-environment.use-case.js';
 import { registerServices } from './modules/register-services.js';
@@ -147,6 +148,7 @@ export async function initializeContainer(): Promise<typeof container> {
   registerFeedback(container);
   registerDiscovery(container);
   registerIncidents(container);
+  registerOutcomes(container);
   registerBugLoop(container);
   registerPrComments(container);
   registerServices(container);

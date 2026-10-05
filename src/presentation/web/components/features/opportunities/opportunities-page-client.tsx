@@ -6,6 +6,8 @@
  * capacity, signals waiting to be linked, and the forms and weights behind
  * the ranking.
  *
+ * Shipped bets and their outcomes follow the ranking (spec 130).
+ *
  * Thin presentation: each change is one server action backed by a use case;
  * after a success the page refreshes to re-read the board.
  */
@@ -26,9 +28,12 @@ import { OpportunityWeightsForm } from './opportunity-weights-form';
 import { FeedbackThemes } from './feedback-themes';
 import { FeedbackKeysPanel } from './feedback-keys-panel';
 import { DiscoveryPanel } from './discovery-panel';
+import { OutcomesPanel } from './outcomes-panel';
 import type { OpportunityPageOptions } from './opportunities-types';
 import type { FeedbackTheme } from '@shepai/core/domain/shared/feedback-themes';
 import type { FeedbackKeyView } from '@shepai/core/application/use-cases/feedback/manage-feedback-keys.use-case';
+import type { OutcomeView } from '@shepai/core/application/use-cases/outcomes/manage-outcomes.use-case';
+import type { OutcomeCalibration } from '@shepai/core/domain/shared/outcomes';
 
 export interface OpportunitiesPageClientProps {
   board?: OpportunityBoard;
@@ -39,6 +44,8 @@ export interface OpportunitiesPageClientProps {
   feedbackKeys?: FeedbackKeyView[];
   /** The space's latest discovery run (spec 128). */
   latestDiscovery?: DiscoveryRun;
+  /** Shipped opportunities and the space's calibration (spec 130). */
+  outcomes?: { outcomes: OutcomeView[]; calibration: OutcomeCalibration };
   /** Set when the board could not be loaded. */
   loadError?: string;
 }
@@ -49,6 +56,7 @@ export function OpportunitiesPageClient({
   themes = [],
   feedbackKeys = [],
   latestDiscovery,
+  outcomes,
   loadError,
 }: OpportunitiesPageClientProps) {
   const { t } = useTranslation('web');
@@ -124,6 +132,13 @@ export function OpportunitiesPageClient({
               </ul>
             )}
           </section>
+          {outcomes ? (
+            <OutcomesPanel
+              outcomes={outcomes.outcomes}
+              calibration={outcomes.calibration}
+              run={run}
+            />
+          ) : null}
           <DiscoveryPanel
             spaceId={board.space.id}
             {...(board.weights.discoveryEveryHours === undefined

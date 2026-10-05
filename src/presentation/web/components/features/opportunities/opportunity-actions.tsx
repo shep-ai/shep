@@ -2,12 +2,13 @@
 
 /**
  * OpportunityActions — the decisions on one opportunity (spec 126): accept a
- * proposal, drop it with a reason, or build it into a project.
+ * proposal, drop it with a reason, or build it into a project; and mark one
+ * being built as shipped when its work happened elsewhere (spec 130).
  */
 
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Check, Hammer, X } from 'lucide-react';
+import { Check, Hammer, Rocket, X } from 'lucide-react';
 import { OpportunityStatus, type Opportunity } from '@shepai/core/domain/generated/output';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -18,6 +19,7 @@ import {
   buildOpportunity,
   dropOpportunity,
 } from '@/app/actions/manage-opportunities';
+import { shipOpportunity } from '@/app/actions/outcomes';
 
 type Mode = 'idle' | 'drop' | 'build';
 
@@ -34,6 +36,19 @@ export function OpportunityActions({ opportunity, projects, run }: OpportunityAc
   const [project, setProject] = useState(projects[0]?.id ?? '');
   const { id, status } = opportunity;
   const open = status === OpportunityStatus.Proposed || status === OpportunityStatus.Accepted;
+  if (status === OpportunityStatus.Building) {
+    return (
+      <Button
+        size="xs"
+        variant="ghost"
+        onClick={() => run(() => shipOpportunity(id))}
+        data-testid={`opportunity-ship-${id}`}
+      >
+        <Rocket />
+        {t('opportunities.actions.ship')}
+      </Button>
+    );
+  }
   if (!open) return null;
 
   if (mode === 'drop') {

@@ -74,6 +74,35 @@ shep opportunity build <opportunity> --project pay          # becomes a work ite
 behind the decision and the signals, so the agents that plan and build it know why it matters.
 The opportunity moves to **Building**. A dropped opportunity can be accepted again later.
 
+## After it ships
+
+When the work item behind a **Building** opportunity reaches a done state, shep marks the
+opportunity **Shipped** within the hour; if the work item is cancelled, the opportunity goes
+back to **Accepted**. Work done outside a work item can be marked shipped by hand:
+
+```bash
+shep opportunity ls                       # find the id
+shep outcome ship <opportunity>           # or Mark shipped on the page
+```
+
+Each shipped opportunity has an **outcome**. Fourteen days after shipping, shep counts the
+space's signals that read like it — linked to it, or sharing enough words with its title, problem
+or linked signals — in the 14 days before and the 14 days after shipping. Half as many after, or
+fewer, is **Solved**; more is **Persisting**, a sign the bet missed.
+
+```bash
+shep outcome ls --space acme              # verdicts, before → after, customers to tell
+shep outcome check                        # ship and judge now instead of waiting for the hour
+shep outcome tell <opportunity>           # the customers behind it and a note to send
+shep outcome tell <opportunity> --done    # mark them told
+shep outcome hours <opportunity> 9        # the review hours it really took
+```
+
+The **Outcomes** panel on the Opportunities page shows the same, with **Mark told** and a review
+hours field on each. Its first line is the space's **calibration**: actual review hours against
+the estimates (over outcomes with hours recorded) and how many judged outcomes were solved. If
+your bets take 1.4× the hours you estimate, estimate bigger.
+
 ## Good to know
 
 - Signals and opportunities belong to a space; a signal links only to an opportunity of its own

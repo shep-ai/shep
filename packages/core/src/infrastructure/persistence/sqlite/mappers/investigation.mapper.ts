@@ -7,7 +7,7 @@ import type {
   WorkItemInvestigation,
 } from '../../../../domain/generated/output.js';
 import { normalizeRepositoryPath } from '../../../../domain/shared/repository-path.js';
-import { defined, millis, optionalMillis } from './row-values.js';
+import { defined, millis, optionalDate, optionalMillis } from './row-values.js';
 
 export interface InvestigationRow {
   id: string;
@@ -59,8 +59,8 @@ export function investigationFromDatabase(row: InvestigationRow): WorkItemInvest
       summary: row.summary,
       agentType: row.agent_type as AgentType | null,
       error: row.error,
-      startedAt: row.started_at === null ? null : new Date(row.started_at),
-      finishedAt: row.finished_at === null ? null : new Date(row.finished_at),
+      startedAt: optionalDate(row.started_at),
+      finishedAt: optionalDate(row.finished_at),
       approvedHypothesisNumber: row.approved_hypothesis_number,
       featureId: row.feature_id,
     }),

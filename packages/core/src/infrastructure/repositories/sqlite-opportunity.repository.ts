@@ -22,9 +22,10 @@ import {
 } from '../persistence/sqlite/mappers/opportunity.mapper.js';
 
 const SIGNAL_COLUMNS = `id, space_id, product_line_id, kind, title, detail, customer,
-  monthly_revenue, urgent, url, opportunity_id, external_id, created_at, updated_at`;
+  monthly_revenue, urgent, url, opportunity_id, external_id, told_at, created_at, updated_at`;
 const SIGNAL_VALUES = `@id, @space_id, @product_line_id, @kind, @title, @detail, @customer,
-  @monthly_revenue, @urgent, @url, @opportunity_id, @external_id, @created_at, @updated_at`;
+  @monthly_revenue, @urgent, @url, @opportunity_id, @external_id, @told_at, @created_at,
+  @updated_at`;
 
 export class SQLiteSignalRepository implements ISignalRepository {
   constructor(private readonly db: Database.Database) {}
@@ -80,11 +81,11 @@ export class SQLiteSignalRepository implements ISignalRepository {
 }
 
 const OPPORTUNITY_COLUMNS = `id, space_id, product_line_id, title, problem, status, review_hours,
-  confidence, strategic, work_item_id, decided_at, drop_reason, source, brief, created_at,
-  updated_at`;
+  confidence, strategic, work_item_id, decided_at, drop_reason, source, brief, shipped_at,
+  created_at, updated_at`;
 const OPPORTUNITY_VALUES = `@id, @space_id, @product_line_id, @title, @problem, @status,
   @review_hours, @confidence, @strategic, @work_item_id, @decided_at, @drop_reason, @source,
-  @brief, @created_at, @updated_at`;
+  @brief, @shipped_at, @created_at, @updated_at`;
 
 export class SQLiteOpportunityRepository implements IOpportunityRepository {
   constructor(private readonly db: Database.Database) {}

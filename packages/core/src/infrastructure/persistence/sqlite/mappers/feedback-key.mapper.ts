@@ -1,7 +1,7 @@
 /** Row ⇄ entity conversion for feedback keys (spec 127). */
 
 import type { FeedbackKey } from '../../../../domain/generated/output.js';
-import { defined, millis, optionalMillis } from './row-values.js';
+import { defined, millis, optionalDate, optionalMillis } from './row-values.js';
 
 export interface FeedbackKeyRow {
   id: string;
@@ -37,8 +37,8 @@ export function feedbackKeyFromDatabase(row: FeedbackKeyRow): FeedbackKey {
     prefix: row.prefix,
     keyHash: row.key_hash,
     ...defined({
-      lastUsedAt: row.last_used_at === null ? null : new Date(row.last_used_at),
-      revokedAt: row.revoked_at === null ? null : new Date(row.revoked_at),
+      lastUsedAt: optionalDate(row.last_used_at),
+      revokedAt: optionalDate(row.revoked_at),
     }),
     createdAt: new Date(row.created_at),
     updatedAt: new Date(row.updated_at),

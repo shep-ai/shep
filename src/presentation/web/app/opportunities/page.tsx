@@ -13,6 +13,11 @@ import type {
 import type { FeedbackTheme } from '@shepai/core/domain/shared/feedback-themes';
 import type { ListDiscoveryRunsUseCase } from '@shepai/core/application/use-cases/discovery/list-discovery-runs.use-case';
 import type { DiscoveryRun } from '@shepai/core/domain/generated/output';
+import type {
+  ManageOutcomesUseCase,
+  OutcomeView,
+} from '@shepai/core/application/use-cases/outcomes/manage-outcomes.use-case';
+import type { OutcomeCalibration } from '@shepai/core/domain/shared/outcomes';
 import { OpportunitiesPageClient } from '@/components/features/opportunities/opportunities-page-client';
 import type { OpportunityPageOptions } from '@/components/features/opportunities/opportunities-types';
 
@@ -22,23 +27,29 @@ interface OpportunitiesPageProps {
   searchParams: Promise<{ space?: string }>;
 }
 
-interface FeedbackData {
+/** The panels around the ranking: feedback, discovery and outcomes. */
+interface PanelData {
   themes: FeedbackTheme[];
   feedbackKeys: FeedbackKeyView[];
   latestDiscovery?: DiscoveryRun;
+  outcomes?: { outcomes: OutcomeView[]; calibration: OutcomeCalibration };
 }
 
-async function loadFeedback(spaceId: string): Promise<FeedbackData> {
-  const [themes, keys, runs] = await Promise.all([
+async function loadPanels(spaceId: string): Promise<PanelData> {
+  const [themes, keys, runs, outcomes] = await Promise.all([
     resolve<GetFeedbackThemesUseCase>('GetFeedbackThemesUseCase').execute(spaceId),
     resolve<ManageFeedbackKeysUseCase>('ManageFeedbackKeysUseCase').list(spaceId),
     resolve<ListDiscoveryRunsUseCase>('ListDiscoveryRunsUseCase').execute(spaceId),
+    resolve<ManageOutcomesUseCase>('ManageOutcomesUseCase').list(spaceId),
   ]);
   const latestDiscovery = runs.ok ? runs.runs[0] : undefined;
   return {
     themes: themes.ok ? themes.themes : [],
     feedbackKeys: keys.ok ? keys.keys : [],
     ...(latestDiscovery ? { latestDiscovery } : {}),
+    ...(outcomes.ok
+      ? { outcomes: { outcomes: outcomes.outcomes, calibration: outcomes.calibration } }
+      : {}),
   };
 }
 
@@ -63,7 +74,7 @@ export default async function OpportunitiesPage({ searchParams }: OpportunitiesP
   const { space } = await searchParams;
   let board: OpportunityBoard | undefined;
   let options: OpportunityPageOptions = { spaces: [], productLines: [], projects: [] };
-  let feedback: FeedbackData = {
+  let panels: PanelData = {
     themes: [],
     feedbackKeys: [],
   };
@@ -74,9 +85,9 @@ export default async function OpportunitiesPage({ searchParams }: OpportunitiesP
     );
     if (result.ok) {
       board = result.board;
-      [options, feedback] = await Promise.all([
+      [options, panels] = await Promise.all([
         loadOptions(result.board.space.id),
-        loadFeedback(result.board.space.id),
+        loadPanels(result.board.space.id),
       ]);
     } else {
       error = result.error;
@@ -90,9 +101,10 @@ export default async function OpportunitiesPage({ searchParams }: OpportunitiesP
       <OpportunitiesPageClient
         board={board}
         options={options}
-        themes={feedback.themes}
-        feedbackKeys={feedback.feedbackKeys}
-        {...(feedback.latestDiscovery ? { latestDiscovery: feedback.latestDiscovery } : {})}
+        themes={panels.themes}
+        feedbackKeys={panels.feedbackKeys}
+        {...(panels.latestDiscovery ? { latestDiscovery: panels.latestDiscovery } : {})}
+        {...(panels.outcomes ? { outcomes: panels.outcomes } : {})}
         loadError={error}
       />
     </div>

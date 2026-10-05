@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { OpportunitiesPageClient } from './opportunities-page-client';
 import { BOARD, DISCOVERY_RUN, FEEDBACK_KEYS, OPTIONS, THEMES } from './opportunities-fixtures';
+import { CALIBRATION, PENDING_OUTCOME, SOLVED_OUTCOME } from './outcomes-fixtures';
 
 const meta: Meta<typeof OpportunitiesPageClient> = {
   title: 'Features/Opportunities/OpportunitiesPageClient',
@@ -20,6 +21,7 @@ export const Default: Story = {
     themes: THEMES,
     feedbackKeys: FEEDBACK_KEYS,
     latestDiscovery: DISCOVERY_RUN,
+    outcomes: { outcomes: [PENDING_OUTCOME, SOLVED_OUTCOME], calibration: CALIBRATION },
   },
 };
 

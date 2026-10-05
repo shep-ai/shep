@@ -6,7 +6,7 @@ import type {
   KnowledgeSource,
   KnowledgeSyncSummary,
 } from '../../../../domain/generated/output.js';
-import { defined, millis, optionalMillis } from './row-values.js';
+import { defined, millis, optionalDate, optionalMillis } from './row-values.js';
 
 export interface KnowledgeSourceRow {
   id: string;
@@ -70,7 +70,7 @@ export function knowledgeSourceFromDatabase(row: KnowledgeSourceRow): KnowledgeS
     intervalMinutes: row.interval_minutes,
     enabled: row.enabled === 1,
     ...defined({
-      lastRunAt: row.last_run_at === null ? null : new Date(row.last_run_at),
+      lastRunAt: optionalDate(row.last_run_at),
       lastRun: row.last_run === null ? null : (JSON.parse(row.last_run) as KnowledgeSyncSummary),
       lastError: row.last_error,
     }),

@@ -1,0 +1,47 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: OpportunityOutcome.yaml
+type: object
+properties:
+  opportunityId:
+    type: string
+    description: The opportunity that shipped
+  spaceId:
+    type: string
+    description: Its space
+  shippedAt:
+    type: string
+    format: date-time
+    description: When it shipped
+  reviewAt:
+    type: string
+    format: date-time
+    description: When the window after shipping ends and the outcome is judged
+  verdict:
+    $ref: OutcomeVerdict.yaml
+    description: Where the outcome stands
+  signalsBefore:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Similar signals in the window before shipping
+  signalsAfter:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Similar signals in the window after shipping
+  judgedAt:
+    type: string
+    format: date-time
+    description: When it was judged
+  actualReviewHours:
+    type: number
+    description: Hours of human review it really took, when someone recorded them
+required:
+  - opportunityId
+  - spaceId
+  - shippedAt
+  - reviewAt
+  - verdict
+allOf:
+  - $ref: BaseEntity.yaml
+description: The outcome of one shipped opportunity

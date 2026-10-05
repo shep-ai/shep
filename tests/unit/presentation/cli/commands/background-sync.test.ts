@@ -1,8 +1,8 @@
 /**
  * startBackgroundSync: the daemon (`_serve`) and `shep ui` keep the same
  * background sync running — retention, tracker sync, knowledge sync
- * (spec 125), PR status and PR comments (spec 124) — and stop all of it on
- * shutdown.
+ * (spec 125), PR status, PR comments (spec 124) and outcomes (spec 130) —
+ * and stop all of it on shutdown.
  */
 
 import 'reflect-metadata';
@@ -15,9 +15,10 @@ const { tasks, prSync, resolved } = vi.hoisted(() => ({
     knowledge: { start: vi.fn(), stop: vi.fn() },
     discovery: { start: vi.fn(), stop: vi.fn() },
     comments: { start: vi.fn(), stop: vi.fn() },
+    outcomes: { start: vi.fn(), stop: vi.fn() },
   },
   prSync: { start: vi.fn(), stop: vi.fn() },
-  resolved: { runDue: vi.fn(async () => ({})) },
+  resolved: { runDue: vi.fn(async () => ({})), run: vi.fn(async () => ({})) },
 }));
 
 const jobs: Record<string, () => Promise<unknown>> = {};
@@ -42,6 +43,12 @@ vi.mock('@/infrastructure/services/pr-sync/pr-comment-watcher.js', () => ({
   createPrCommentWatcher: vi.fn((job: () => Promise<unknown>) => {
     jobs.comments = job;
     return tasks.comments;
+  }),
+}));
+vi.mock('@/infrastructure/services/scheduling/outcome-watcher.js', () => ({
+  createOutcomeWatcher: vi.fn((job: () => Promise<unknown>) => {
+    jobs.outcomes = job;
+    return tasks.outcomes;
   }),
 }));
 vi.mock('@/infrastructure/services/pr-sync/pr-sync-watcher.service.js', () => ({
@@ -72,6 +79,7 @@ describe('startBackgroundSync', () => {
       tasks.knowledge,
       tasks.discovery,
       tasks.comments,
+      tasks.outcomes,
       prSync,
     ]) {
       expect(task.start).toHaveBeenCalledTimes(1);
@@ -83,6 +91,7 @@ describe('startBackgroundSync', () => {
       tasks.knowledge,
       tasks.discovery,
       tasks.comments,
+      tasks.outcomes,
       prSync,
     ]) {
       expect(task.stop).toHaveBeenCalledTimes(1);
@@ -94,6 +103,13 @@ describe('startBackgroundSync', () => {
     await jobs.comments();
     expect(container.resolve).toHaveBeenCalledWith('SyncPrCommentsUseCase');
     expect(resolved.runDue).toHaveBeenCalled();
+  });
+
+  it('tracks shipped opportunities and their outcomes through the use case (spec 130)', async () => {
+    startBackgroundSync('test');
+    await jobs.outcomes();
+    expect(container.resolve).toHaveBeenCalledWith('TrackOutcomesUseCase');
+    expect(resolved.run).toHaveBeenCalled();
   });
 
   it('runs due tracker rules, knowledge sources and discovery through their use cases', async () => {

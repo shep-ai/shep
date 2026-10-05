@@ -42,6 +42,10 @@ properties:
   brief:
     type: string
     description: What the discovery agent suggested building, and why now
+  shippedAt:
+    type: string
+    format: date-time
+    description: When it shipped
 required:
   - spaceId
   - title

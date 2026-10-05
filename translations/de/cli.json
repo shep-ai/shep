@@ -1675,6 +1675,51 @@
         "postmortemOption": "Dein Postmortem (Markdown)",
         "success": "{{title}} abgeschlossen"
       }
+    },
+    "outcome": {
+      "description": "Was nach dem Ausliefern geschah: Meldungen davor und danach, zu informierende Kunden, Kalibrierung",
+      "failed": "Outcome-Befehl fehlgeschlagen",
+      "spaceOption": "Slug oder ID des Bereichs (Standardbereich, wenn weggelassen)",
+      "opportunityArg": "ID der Opportunity",
+      "ls": {
+        "description": "Ausgelieferte Opportunities eines Bereichs und ihre Ergebnisse auflisten",
+        "title": "Ergebnisse — {{space}}",
+        "opportunityColumn": "Opportunity",
+        "shippedColumn": "Ausgeliefert",
+        "verdictColumn": "Urteil",
+        "reportsColumn": "Meldungen",
+        "tellColumn": "Zu informieren",
+        "empty": "In diesem Bereich wurde noch nichts ausgeliefert."
+      },
+      "check": {
+        "description": "Opportunities mit erledigtem Work Item jetzt ausliefern und fällige Ergebnisse beurteilen",
+        "summary": "Ausgeliefert {{shipped}}, wieder geöffnet {{reopened}}, beurteilt {{judged}}",
+        "shipped": "ausgeliefert:",
+        "reopened": "zurück zu angenommen:"
+      },
+      "ship": {
+        "description": "Eine Opportunity von Hand als ausgeliefert markieren",
+        "success": "{{title}} ausgeliefert; das Ergebnis wird am {{date}} beurteilt"
+      },
+      "tell": {
+        "description": "Kunden zeigen, die über die Auslieferung informiert werden sollen, oder sie als informiert markieren",
+        "doneOption": "Kunden als informiert markieren",
+        "told": "Als informiert markierte Kunden: {{told}}",
+        "nobody": "Alle Kunden dahinter wurden informiert.",
+        "note": "Sag ihnen: „{{title}}“ ist ausgeliefert – danke, dass ihr uns gesagt habt, was ihr braucht.",
+        "markHint": "Wenn sie es wissen: shep outcome tell {{id}} --done"
+      },
+      "hours": {
+        "description": "Die tatsächlichen Review-Stunden einer ausgelieferten Opportunity erfassen",
+        "hoursArg": "Stunden, mehr als 0",
+        "success": "{{hours}} Review-Stunden erfasst"
+      },
+      "calibration": {
+        "hours": "Tatsächliche Review-Stunden sind {{ratio}}× die Schätzungen ({{timed}} erfasst)",
+        "noHours": "Noch keine tatsächlichen Review-Stunden erfasst",
+        "solved": "{{solved}} von {{judged}} beurteilten Ergebnissen gelöst",
+        "noVerdicts": "Noch keine Ergebnisse beurteilt"
+      }
     }
   },
   "ui": {

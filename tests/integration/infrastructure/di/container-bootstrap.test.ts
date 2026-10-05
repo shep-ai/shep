@@ -56,6 +56,7 @@ import { registerOpportunities } from '@/infrastructure/di/modules/register-oppo
 import { registerFeedback } from '@/infrastructure/di/modules/register-feedback.js';
 import { registerDiscovery } from '@/infrastructure/di/modules/register-discovery.js';
 import { registerIncidents } from '@/infrastructure/di/modules/register-incidents.js';
+import { registerOutcomes } from '@/infrastructure/di/modules/register-outcomes.js';
 import { SessionSpaceEnvironment } from '@/infrastructure/services/interactive/lifecycle/session-space-environment.js';
 import { ResolveSpaceEnvironmentUseCase } from '@/application/use-cases/spaces/resolve-space-environment.use-case.js';
 import type { IDeploymentService } from '@/application/ports/output/services/deployment-service.interface.js';
@@ -220,6 +221,8 @@ const WEB_ROUTE_TOKENS: readonly string[] = [
   'RuntimeActionsUseCase',
   'TriageIncidentUseCase',
   'GetIncidentBoardUseCase',
+  'TrackOutcomesUseCase',
+  'ManageOutcomesUseCase',
   'IngestAlertUseCase',
   'RunTrackerSyncUseCase',
   'SyncTrackerRulesUseCase',
@@ -255,6 +258,7 @@ const CRITICAL_INFRA_TOKENS: readonly string[] = [
   'IFeedbackKeyGenerator',
   'IDiscoveryRunRepository',
   'IIncidentRepository',
+  'IOutcomeRepository',
   'IIncidentEventRepository',
   'IRuntimeActionRepository',
   'IRuntimeController',
@@ -420,6 +424,7 @@ describe('DI container bootstrap (integration)', () => {
     registerFeedback(scopedContainer);
     registerDiscovery(scopedContainer);
     registerIncidents(scopedContainer);
+    registerOutcomes(scopedContainer);
     registerBugLoop(scopedContainer);
     registerPrComments(scopedContainer);
     registerServices(scopedContainer);

@@ -37,6 +37,7 @@ const SIGNAL: Signal = {
   urgent: true,
   url: 'https://support.acme.com/t/1',
   opportunityId: 'opp-1',
+  toldAt: T2,
   createdAt: T1,
   updatedAt: T1,
 };
@@ -56,6 +57,7 @@ const OPPORTUNITY: Opportunity = {
   dropReason: 'Covered elsewhere',
   source: OpportunitySource.Discovery,
   brief: 'Cache the session lookup.',
+  shippedAt: T2,
   createdAt: T1,
   updatedAt: T2,
 };

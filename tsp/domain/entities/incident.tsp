@@ -30,7 +30,6 @@ enum IncidentStatus {
   Mitigated,
 
   @doc("Closed, with a postmortem")
-  @doc("The incident was closed")
   Resolved,
 }
 

@@ -100,3 +100,16 @@ export function textTerms(text: string): Set<string> {
       .filter((term) => term.length >= MIN_TERM_LENGTH && !STOPWORDS.has(term))
   );
 }
+
+/** Jaccard similarity of two term sets: shared terms over all terms; 0 when either is empty. */
+export function termSimilarity(a: ReadonlySet<string>, b: ReadonlySet<string>): number {
+  if (a.size === 0 || b.size === 0) return 0;
+  let shared = 0;
+  for (const term of a) if (b.has(term)) shared += 1;
+  return shared / (a.size + b.size - shared);
+}
+
+/** The terms of a signal's title and detail. */
+export function signalTerms(signal: { title: string; detail?: string }): Set<string> {
+  return textTerms(`${signal.title} ${signal.detail ?? ''}`);
+}

@@ -1572,7 +1572,8 @@
       "cancel": "Abbrechen",
       "reason": "Warum verwerfen?",
       "project": "Projekt",
-      "noProjects": "Zuerst ein Projekt anlegen; Bauen erstellt darin ein Work Item."
+      "noProjects": "Zuerst ein Projekt anlegen; Bauen erstellt darin ein Work Item.",
+      "ship": "Als ausgeliefert markieren"
     },
     "inbox": {
       "title": "Zu verknüpfende Signale ({{count}})",
@@ -1648,6 +1649,27 @@
       "running": "Discovery läuft…",
       "failed": "Der letzte Lauf schlug fehl: {{error}}",
       "succeeded": "Letzter Lauf: {{proposed}} vorgeschlagen aus {{read}} Signalen, {{when}}"
+    },
+    "outcomes": {
+      "title": "Ergebnisse",
+      "check": "Jetzt prüfen",
+      "empty": "In diesem Bereich wurde noch nichts ausgeliefert.",
+      "judgedOn": "Beurteilt am {{date}}",
+      "counts": "{{before}} ähnliche Meldungen davor, {{after}} danach",
+      "hours": "Review-Stunden",
+      "saveHours": "Speichern",
+      "hoursTaken": "{{actual}} h von {{estimated}} h geschätzt",
+      "note": "Sag ihnen, dass „{{title}}“ ausgeliefert ist:",
+      "markTold": "Als informiert markieren",
+      "hoursRatio": "Tatsächliche Review-Stunden sind {{ratio}}× die Schätzungen ({{timed}} erfasst)",
+      "noHours": "Noch keine tatsächlichen Review-Stunden erfasst",
+      "solvedShare": "{{solved}} von {{judged}} beurteilten Ergebnissen gelöst",
+      "noVerdicts": "Noch keine Ergebnisse beurteilt",
+      "verdict": {
+        "Pending": "Ausstehend",
+        "Solved": "Gelöst",
+        "Persisting": "Besteht fort"
+      }
     }
   },
   "incidents": {

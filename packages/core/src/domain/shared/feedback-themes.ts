@@ -14,7 +14,7 @@
 
 import type { Signal } from '../generated/output';
 import { evidenceOf, type OpportunityEvidence } from './opportunity-score';
-import { textTerms } from './text-terms';
+import { signalTerms, termSimilarity } from './text-terms';
 
 export const THEME_SIMILARITY = 0.3;
 export const MIN_THEME_SIGNALS = 2;
@@ -27,13 +27,6 @@ export interface FeedbackTheme {
   label: string;
   signals: Signal[];
   evidence: OpportunityEvidence;
-}
-
-function similarity(a: Set<string>, b: Set<string>): number {
-  if (a.size === 0 || b.size === 0) return 0;
-  let shared = 0;
-  for (const term of a) if (b.has(term)) shared += 1;
-  return shared / (a.size + b.size - shared);
 }
 
 function oldestFirst(a: Signal, b: Signal): number {
@@ -55,9 +48,7 @@ function label(members: Signal[], termsOf: Map<string, Set<string>>): string {
 /** Themes among `signals`, biggest first (then oldest). */
 export function groupIntoThemes(signals: readonly Signal[]): FeedbackTheme[] {
   const ordered = [...signals].sort(oldestFirst);
-  const termsOf = new Map(
-    ordered.map((signal) => [signal.id, textTerms(`${signal.title} ${signal.detail ?? ''}`)])
-  );
+  const termsOf = new Map(ordered.map((signal) => [signal.id, signalTerms(signal)]));
   const parent = ordered.map((_, index) => index);
   const root = (index: number): number => {
     let current = index;
@@ -68,7 +59,7 @@ export function groupIntoThemes(signals: readonly Signal[]): FeedbackTheme[] {
     for (let j = i + 1; j < ordered.length; j += 1) {
       const a = termsOf.get(ordered[i].id) ?? new Set<string>();
       const b = termsOf.get(ordered[j].id) ?? new Set<string>();
-      if (similarity(a, b) >= THEME_SIMILARITY) parent[root(j)] = root(i);
+      if (termSimilarity(a, b) >= THEME_SIMILARITY) parent[root(j)] = root(i);
     }
   }
   const groups = new Map<number, Signal[]>();

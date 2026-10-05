@@ -8,6 +8,7 @@
  * - scheduled discovery runs (spec 128)
  * - PR and CI status of features in review
  * - PR review comments (spec 124)
+ * - shipped opportunities and their outcomes (spec 130)
  *
  * PR status sync takes a cross-process lock, so running both processes at
  * once is safe.
@@ -17,6 +18,7 @@ import { container } from '@/infrastructure/di/container.js';
 import { RetentionScheduler } from '@/infrastructure/services/maintenance/retention-scheduler.js';
 import { createDueWorkWatcher } from '@/infrastructure/services/scheduling/due-work-watcher.js';
 import { createPrCommentWatcher } from '@/infrastructure/services/pr-sync/pr-comment-watcher.js';
+import { createOutcomeWatcher } from '@/infrastructure/services/scheduling/outcome-watcher.js';
 import {
   getPrSyncWatcher,
   initializePrSyncWatcher,
@@ -27,6 +29,7 @@ import type { SyncTrackerRulesUseCase } from '@/application/use-cases/trackers/s
 import type { SyncKnowledgeSourcesUseCase } from '@/application/use-cases/knowledge/sync-knowledge-sources.use-case.js';
 import type { SyncDiscoveryUseCase } from '@/application/use-cases/discovery/sync-discovery.use-case.js';
 import type { SyncPrCommentsUseCase } from '@/application/use-cases/pr-comments/sync-pr-comments.use-case.js';
+import type { TrackOutcomesUseCase } from '@/application/use-cases/outcomes/track-outcomes.use-case.js';
 import type { IAgentRunRepository } from '@/application/ports/output/agents/agent-run-repository.interface.js';
 import type { IFeatureRepository } from '@/application/ports/output/repositories/feature-repository.interface.js';
 import type { INotificationService } from '@/application/ports/output/services/notification-service.interface.js';
@@ -64,6 +67,10 @@ export function startBackgroundSync(label: string): BackgroundSync {
     () => container.resolve<SyncPrCommentsUseCase>('SyncPrCommentsUseCase').runDue(),
     report('PR comment sync')
   );
+  const outcomes = createOutcomeWatcher(
+    () => container.resolve<TrackOutcomesUseCase>('TrackOutcomesUseCase').run(),
+    report('outcome tracking')
+  );
   initializePrSyncWatcher(
     container.resolve<IFeatureRepository>('IFeatureRepository'),
     container.resolve<IAgentRunRepository>('IAgentRunRepository'),
@@ -80,6 +87,7 @@ export function startBackgroundSync(label: string): BackgroundSync {
   knowledge.start();
   discovery.start();
   prComments.start();
+  outcomes.start();
   getPrSyncWatcher().start();
 
   return {
@@ -89,6 +97,7 @@ export function startBackgroundSync(label: string): BackgroundSync {
       knowledge.stop();
       discovery.stop();
       prComments.stop();
+      outcomes.stop();
       getPrSyncWatcher().stop();
     },
   };

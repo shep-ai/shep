@@ -8,7 +8,7 @@ import type {
   Signal,
   SignalKind,
 } from '../../../../domain/generated/output.js';
-import { defined, millis, optionalMillis } from './row-values.js';
+import { defined, millis, optionalDate, optionalMillis } from './row-values.js';
 
 export interface SignalRow {
   id: string;
@@ -23,6 +23,7 @@ export interface SignalRow {
   url: string | null;
   opportunity_id: string | null;
   external_id: string | null;
+  told_at: number | null;
   created_at: number;
   updated_at: number;
 }
@@ -42,6 +43,7 @@ export interface OpportunityRow {
   drop_reason: string | null;
   source: string | null;
   brief: string | null;
+  shipped_at: number | null;
   created_at: number;
   updated_at: number;
 }
@@ -70,6 +72,7 @@ export function signalToDatabase(signal: Signal): SignalRow {
     url: signal.url ?? null,
     opportunity_id: signal.opportunityId ?? null,
     external_id: signal.externalId ?? null,
+    told_at: optionalMillis(signal.toldAt),
     created_at: millis(signal.createdAt),
     updated_at: millis(signal.updatedAt),
   };
@@ -90,6 +93,7 @@ export function signalFromDatabase(row: SignalRow): Signal {
       url: row.url,
       opportunityId: row.opportunity_id,
       externalId: row.external_id,
+      toldAt: optionalDate(row.told_at),
     }),
     createdAt: new Date(row.created_at),
     updatedAt: new Date(row.updated_at),
@@ -112,6 +116,7 @@ export function opportunityToDatabase(opportunity: Opportunity): OpportunityRow 
     drop_reason: opportunity.dropReason ?? null,
     source: opportunity.source ?? null,
     brief: opportunity.brief ?? null,
+    shipped_at: optionalMillis(opportunity.shippedAt),
     created_at: millis(opportunity.createdAt),
     updated_at: millis(opportunity.updatedAt),
   };
@@ -130,10 +135,11 @@ export function opportunityFromDatabase(row: OpportunityRow): Opportunity {
       productLineId: row.product_line_id,
       problem: row.problem,
       workItemId: row.work_item_id,
-      decidedAt: row.decided_at === null ? null : new Date(row.decided_at),
+      decidedAt: optionalDate(row.decided_at),
       dropReason: row.drop_reason,
       source: row.source as OpportunitySource | null,
       brief: row.brief,
+      shippedAt: optionalDate(row.shipped_at),
     }),
     createdAt: new Date(row.created_at),
     updatedAt: new Date(row.updated_at),

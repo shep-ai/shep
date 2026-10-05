@@ -970,6 +970,25 @@ review capacity (spec 126). See the [opportunities guide](../guides/opportunitie
 
 ---
 
+## Outcome Commands
+
+`shep outcome` follows opportunities past the merge: a Building opportunity ships when its work
+item is done, and 14 days later its outcome is judged from the space's similar signals before
+and after (spec 130). The daemon checks every hour. See the
+[opportunities guide](../guides/opportunities.md#after-it-ships).
+
+| Command | Description |
+| ------- | ----------- |
+| `shep outcome ls` | Shipped opportunities with verdict, similar reports before → after and customers to tell, then the space's calibration (`--space`) |
+| `shep outcome check` | Ship opportunities whose work item is done, reopen cancelled ones and judge due outcomes now |
+| `shep outcome ship <opportunity>` | Mark a proposed, accepted or building opportunity shipped by hand |
+| `shep outcome tell <opportunity>` | The customers behind it not yet told, with a note; `--done` marks them told |
+| `shep outcome hours <opportunity> <hours>` | Record the review hours it really took |
+
+**Source**: `src/presentation/cli/commands/outcome/`
+
+---
+
 ## Feedback Commands
 
 `shep feedback` manages the keys tools use to post customer feedback into a space through

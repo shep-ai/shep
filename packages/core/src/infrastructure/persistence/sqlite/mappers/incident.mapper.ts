@@ -12,7 +12,7 @@ import type {
   RuntimeActionKind,
   RuntimeActionStatus,
 } from '../../../../domain/generated/output.js';
-import { defined, millis, optionalMillis } from './row-values.js';
+import { defined, millis, optionalDate, optionalMillis } from './row-values.js';
 
 export interface IncidentRow {
   id: string;
@@ -59,7 +59,7 @@ export interface RuntimeActionRow {
   updated_at: number;
 }
 
-const dateOrNull = (value: number | null) => (value === null ? null : new Date(value));
+const dateOrNull = (value: number | null) => optionalDate(value);
 
 export function incidentToDatabase(incident: Incident): IncidentRow {
   return {

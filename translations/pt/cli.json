@@ -1675,6 +1675,51 @@
         "postmortemOption": "Seu postmortem (Markdown)",
         "success": "{{title}} resolvido"
       }
+    },
+    "outcome": {
+      "description": "O que aconteceu depois da entrega: relatos antes e depois, clientes a avisar, calibração",
+      "failed": "O comando outcome falhou",
+      "spaceOption": "Slug ou id do espaço (o espaço padrão se omitido)",
+      "opportunityArg": "Id da oportunidade",
+      "ls": {
+        "description": "Listar as oportunidades entregues de um espaço e seus resultados",
+        "title": "Resultados — {{space}}",
+        "opportunityColumn": "Oportunidade",
+        "shippedColumn": "Entregue",
+        "verdictColumn": "Veredito",
+        "reportsColumn": "Relatos",
+        "tellColumn": "A avisar",
+        "empty": "Nada foi entregue neste espaço ainda."
+      },
+      "check": {
+        "description": "Entregar agora as oportunidades cujo item de trabalho terminou e julgar os resultados devidos",
+        "summary": "Entregues {{shipped}}, reabertas {{reopened}}, julgados {{judged}}",
+        "shipped": "entregue:",
+        "reopened": "de volta a aceita:"
+      },
+      "ship": {
+        "description": "Marcar uma oportunidade como entregue manualmente",
+        "success": "{{title}} entregue; o resultado será julgado em {{date}}"
+      },
+      "tell": {
+        "description": "Mostrar os clientes a avisar da entrega, ou marcá-los como avisados",
+        "doneOption": "Marcar os clientes como avisados",
+        "told": "Clientes marcados como avisados: {{told}}",
+        "nobody": "Todos os clientes por trás dela foram avisados.",
+        "note": "Diga a eles: “{{title}}” foi entregue — obrigado por nos dizer o que vocês precisavam.",
+        "markHint": "Quando souberem: shep outcome tell {{id}} --done"
+      },
+      "hours": {
+        "description": "Registrar as horas de revisão humana que uma oportunidade entregue realmente levou",
+        "hoursArg": "Horas, mais de 0",
+        "success": "Registradas {{hours}} horas de revisão"
+      },
+      "calibration": {
+        "hours": "As horas reais de revisão são {{ratio}}× as estimativas ({{timed}} registradas)",
+        "noHours": "Nenhuma hora real de revisão registrada ainda",
+        "solved": "{{solved}} de {{judged}} resultados julgados resolvidos",
+        "noVerdicts": "Nenhum resultado julgado ainda"
+      }
     }
   },
   "ui": {
