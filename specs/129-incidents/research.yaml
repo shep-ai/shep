@@ -1,0 +1,53 @@
+# Research (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: incidents
+summary: Technical decisions for 129 — incidents, runtime actions under a space policy, and alerts.
+
+relatedFeatures:
+  - 123-bug-loop
+  - 127-feedback-themes
+technologies:
+  - kubectl
+relatedLinks: []
+
+decisions:
+  - title: A runtime controller port over kubectl rollout
+    chosen: IRuntimeController with evidence, restart (rollout restart), rollback (rollout undo), scale and verify (rollout status --timeout); a kubectl adapter
+    rejected:
+      - 'Extending IKubectlService: it serves cluster provisioning with explicit kubeconfig files, not workloads in the user''s contexts'
+    rationale: >
+      Incidents act on existing deployments in whatever context the team uses; the port keeps the
+      use cases runtime-agnostic.
+
+  - title: Policy as a list of action kinds in space agent settings
+    chosen: SpaceAgentSettings.autoRuntimeActions lists the kinds shep may run without asking
+    rejected:
+      - 'A global switch: a personal sandbox and a production space need different answers'
+    rationale: >
+      What an agent may do already lives in space agent settings next to its accounts and allowed
+      agents.
+
+  - title: Intake keys shared with feedback
+    chosen: The alert endpoint accepts the space's feedback keys; key verification is one helper used by both endpoints
+    rejected:
+      - 'A second key store for alerts: same secret handling twice'
+    rationale: >
+      A key already names a space and a tool; whether the tool posts feedback or alerts is the
+      endpoint's concern.
+
+  - title: Postmortem from the timeline
+    chosen: A pure template over the timeline and actions, editable before resolving
+    rejected:
+      - 'An agent-written postmortem: slower, and the timeline already holds the facts'
+    rationale: >
+      Every line can be traced to a timeline event; teams add judgement on top.
+
+openQuestions: []
+
+content: |
+  ## Findings
+
+  - `ExecFunction` (execFile wrapper) is injectable; `NODE_CLI_TIMEOUT_MS` bounds CLI calls.
+  - `kubectl rollout status deployment/x --timeout=120s` exits 0 when the rollout is complete.
+  - Investigations (spec 123) rank hypotheses with the same likelihood scale.

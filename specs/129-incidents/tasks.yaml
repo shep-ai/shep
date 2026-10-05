@@ -1,0 +1,243 @@
+# Task Breakdown (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: incidents
+summary: Task breakdown for 129 — incidents, runtime actions, alerts and postmortems.
+
+relatedFeatures:
+  - 123-bug-loop
+technologies:
+  - TypeSpec
+  - SQLite
+  - kubectl
+relatedLinks: []
+
+tasks:
+  - id: task-1
+    title: Model
+    description: >
+      Incident, IncidentEvent, RuntimeAction and their enums in TypeSpec; SpaceAgentSettings.autoRuntimeActions; migration 162; repositories.
+    state: Todo
+    dependencies: []
+    acceptanceCriteria:
+      - Repositories round-trip every field
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: M
+
+  - id: task-2
+    title: Domain rules
+    description: >
+      domain/shared/incidents.ts: policy check, severity to urgency, timeline helpers and the postmortem template.
+    state: Todo
+    dependencies:
+      - task-1
+    acceptanceCriteria:
+      - Policy and postmortem tested
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: S
+
+  - id: task-3
+    title: Runtime controller
+    description: >
+      IRuntimeController port and kubectl adapter: evidence, restart, rollback, scale, verify.
+    state: Todo
+    dependencies:
+      - task-1
+    acceptanceCriteria:
+      - Command lines and parsing tested with a fake exec
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: M
+
+  - id: task-4
+    title: Open incidents
+    description: >
+      OpenIncidentUseCase records the incident, its Opened event and an urgent Incident signal; alerts dedupe by external id while open.
+    state: Todo
+    dependencies:
+      - task-2
+    acceptanceCriteria:
+      - One incident per open external id
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: M
+
+  - id: task-5
+    title: Triage
+    description: >
+      TriageIncidentUseCase gathers evidence, asks the agent for hypotheses and one action, records them, and runs the action when the policy allows.
+    state: Todo
+    dependencies:
+      - task-3
+      - task-4
+    acceptanceCriteria:
+      - Agent failure leaves a note
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: M
+
+  - id: task-6
+    title: Actions
+    description: >
+      Propose (person), approve, reject; execution with recovery check; status and timeline updates.
+    state: Todo
+    dependencies:
+      - task-3
+      - task-4
+    acceptanceCriteria:
+      - Rejected actions never run; recovery moves to Mitigated
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: M
+
+  - id: task-7
+    title: Resolve and read
+    description: >
+      ResolveIncidentUseCase with the postmortem; list and get with timeline and actions.
+    state: Todo
+    dependencies:
+      - task-2
+      - task-4
+    acceptanceCriteria:
+      - Postmortem drafted from the timeline
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: S
+
+  - id: task-8
+    title: Alerts
+    description: >
+      Shared intake key verification; POST /api/alerts as an exact externally authenticated path.
+    state: Todo
+    dependencies:
+      - task-4
+    acceptanceCriteria:
+      - Route tests for status codes
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: M
+
+  - id: task-9
+    title: CLI
+    description: >
+      shep incident open/ls/show/triage/act/approve/reject/resolve; space config --auto-actions; 9 locales.
+    state: Todo
+    dependencies:
+      - task-5
+      - task-6
+      - task-7
+    acceptanceCriteria:
+      - Command tests
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: M
+
+  - id: task-10
+    title: Web
+    description: >
+      /incidents page with timeline, actions and resolve; policy in space agent settings; sidebar link; stories; 9 locales.
+    state: Todo
+    dependencies:
+      - task-5
+      - task-6
+      - task-7
+    acceptanceCriteria:
+      - Component tests and stories
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: L
+
+  - id: task-11
+    title: Docs
+    description: >
+      Incidents guide, architecture note, CLI reference, spaces and feedback guides.
+    state: Todo
+    dependencies:
+      - task-9
+      - task-10
+    acceptanceCriteria:
+      - Docs cover the policy and the alert contract
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: S
+
+  - id: task-12
+    title: Verification
+    description: >
+      lint, format, typecheck, unit, integration, build, web build, storybook.
+    state: Todo
+    dependencies:
+      - task-11
+    acceptanceCriteria:
+      - All green
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: S
+
+totalEstimate: L (12 tasks)
+openQuestions: []
+
+content: |
+  Tasks follow the plan phases; each starts with a failing test.

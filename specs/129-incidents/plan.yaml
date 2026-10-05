@@ -1,0 +1,66 @@
+# Implementation Plan (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: incidents
+summary: Implementation plan for 129 — incidents, runtime actions, alerts and postmortems.
+
+relatedFeatures:
+  - 123-bug-loop
+technologies:
+  - TypeSpec
+  - SQLite
+  - kubectl
+  - tsyringe
+  - Commander
+  - Next.js
+relatedLinks: []
+
+phases:
+  - id: phase-1
+    name: 'Model and runtime'
+    parallel: false
+    taskIds: [task-1, task-2, task-3]
+  - id: phase-2
+    name: 'Incident loop'
+    parallel: false
+    taskIds: [task-4, task-5, task-6, task-7]
+  - id: phase-3
+    name: 'Surfaces'
+    parallel: false
+    taskIds: [task-8, task-9, task-10]
+  - id: phase-4
+    name: 'Docs and verification'
+    parallel: false
+    taskIds: [task-11, task-12]
+
+filesToCreate:
+  - tsp/domain/entities/incident.tsp
+  - packages/core/src/domain/shared/incidents.ts
+  - packages/core/src/application/ports/output/services/runtime-controller.interface.ts
+  - packages/core/src/infrastructure/services/runtime/kubectl-runtime.controller.ts
+  - packages/core/src/infrastructure/persistence/sqlite/migrations/162-create-incidents.ts
+  - packages/core/src/application/use-cases/incidents/
+  - src/presentation/cli/commands/incident/
+  - src/presentation/web/app/incidents/page.tsx
+  - src/presentation/web/app/api/alerts/route.ts
+  - src/presentation/web/components/features/incidents/
+
+filesToModify:
+  - tsp/domain/entities/space.tsp
+  - packages/core/src/application/use-cases/feedback/ingest-feedback.use-case.ts
+  - src/presentation/web/lib/request-guard.ts
+
+content: |
+  ## Approach
+
+  TDD throughout: every task begins with a failing test (RED), then the minimal implementation
+  (GREEN), then cleanup (REFACTOR).
+
+  Clean Architecture: policy checks, hypothesis ranking and the postmortem are pure domain code;
+  use cases depend on repository ports, the runtime controller port and the structured agent
+  caller; the kubectl adapter is infrastructure; CLI, web and the alert route call use cases.
+
+  ## Risks
+
+  - Acting on production: nothing runs unless the space allows its kind or a person approves;
+    every command and its output is recorded; actions only touch the incident's own workload.
