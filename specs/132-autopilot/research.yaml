@@ -1,0 +1,45 @@
+# Research (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: autopilot
+summary: Technical decisions for 132 — the autopilot pass, fix gates and factory status.
+
+relatedFeatures:
+  - 123-bug-loop
+  - 126-opportunities
+technologies:
+  - TypeScript
+relatedLinks: []
+
+decisions:
+  - title: Urgent means Urgent priority
+    chosen: Open work items with Priority Urgent in projects whose application repository resolves to the space
+    rejected:
+      - 'Work item type Bug: work items store no type'
+    rationale: >
+      Priority is stored, synced from Linear and Jira, and already means "do this first".
+
+  - title: Fix gates set on the feature
+    chosen: ApproveHypothesisUseCase passes approval gates through to CreateFeatureInput; autopilot approves requirements and plan, and merge only when the policy allows
+    rejected:
+      - 'A supervisor policy per fix feature: needs the collaboration flag and a model call for decisions the policy already makes'
+    rationale: >
+      Gates are decided when a feature is created; the merge gate and the docs-first and CI holds
+      still stop a fix that should not merge.
+
+  - title: Policy in its own table
+    chosen: AutopilotPolicy keyed by space, like opportunity weights
+    rejected:
+      - 'Fields in space agent settings: they describe how agents run, not what shep starts'
+    rationale: >
+      Keeps the policy and its project reference together and listable for the daemon.
+
+openQuestions: []
+
+content: |
+  ## Findings
+
+  - `InvestigateWorkItemUseCase.start` then `run`; `ApproveHypothesisUseCase.execute` starts the
+    fix feature (fast by default) and moves the work item to Started.
+  - `GetOpportunityBoardUseCase` returns the line; `BuildOpportunityUseCase` builds into a project.
+  - Project → application → repository path → `ResolveSpaceContextUseCase` gives the space.

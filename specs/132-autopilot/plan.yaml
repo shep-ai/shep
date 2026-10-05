@@ -1,0 +1,60 @@
+# Implementation Plan (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: autopilot
+summary: Implementation plan for 132 — autopilot policy, passes and factory status.
+
+relatedFeatures:
+  - 123-bug-loop
+  - 126-opportunities
+technologies:
+  - TypeSpec
+  - SQLite
+  - tsyringe
+  - Commander
+  - Next.js
+relatedLinks: []
+
+phases:
+  - id: phase-1
+    name: 'Model'
+    parallel: false
+    taskIds: [task-1, task-2]
+  - id: phase-2
+    name: 'Autopilot pass'
+    parallel: false
+    taskIds: [task-3, task-4, task-5, task-6]
+  - id: phase-3
+    name: 'Status and surfaces'
+    parallel: false
+    taskIds: [task-7, task-8, task-9, task-10]
+  - id: phase-4
+    name: 'Docs and verification'
+    parallel: false
+    taskIds: [task-11, task-12]
+
+filesToCreate:
+  - tsp/domain/entities/autopilot.tsp
+  - packages/core/src/infrastructure/persistence/sqlite/migrations/164-create-autopilot.ts
+  - packages/core/src/application/use-cases/autopilot/
+  - src/presentation/cli/commands/autopilot/
+  - src/presentation/web/app/factory/page.tsx
+  - src/presentation/web/components/features/factory/
+
+filesToModify:
+  - packages/core/src/application/use-cases/bug-loop/approve-hypothesis.use-case.ts
+  - src/presentation/cli/commands/background-sync.ts
+
+content: |
+  ## Approach
+
+  TDD throughout: every task begins with a failing test (RED), then the minimal implementation
+  (GREEN), then cleanup (REFACTOR).
+
+  Clean Architecture: the pass composes existing use cases (investigate, approve hypothesis,
+  board, build) through injection; selection rules are pure domain code.
+
+  ## Risks
+
+  - Starting work nobody wanted: every part is off by default, fixes need High confidence and
+    a budget, and merging stays with people unless allowed.

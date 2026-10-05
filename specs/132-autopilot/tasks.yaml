@@ -1,0 +1,237 @@
+# Task Breakdown (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: autopilot
+summary: Task breakdown for 132 — autopilot policy, passes and factory status.
+
+relatedFeatures:
+  - 123-bug-loop
+technologies:
+  - TypeSpec
+  - SQLite
+relatedLinks: []
+
+tasks:
+  - id: task-1
+    title: Model
+    description: >
+      AutopilotPolicy and AutopilotRun in TypeSpec; migration 164; repositories.
+    state: Todo
+    dependencies: []
+    acceptanceCriteria:
+      - Repositories round-trip every field
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: S
+
+  - id: task-2
+    title: Domain rules
+    description: >
+      Urgent work item, confident hypothesis, fix budget and line selection as pure functions.
+    state: Todo
+    dependencies:
+      - task-1
+    acceptanceCriteria:
+      - Rules cover each refusal
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: S
+
+  - id: task-3
+    title: Fix gates
+    description: >
+      ApproveHypothesisUseCase passes approval gates through to the fix feature.
+    state: Todo
+    dependencies: []
+    acceptanceCriteria:
+      - Gates reach CreateFeatureInput
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: S
+
+  - id: task-4
+    title: Space work
+    description: >
+      Find a space's projects and their open urgent work items.
+    state: Todo
+    dependencies:
+      - task-2
+    acceptanceCriteria:
+      - Only the space's projects
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: M
+
+  - id: task-5
+    title: Autopilot pass
+    description: >
+      Investigate, fix and fill the line per enabled policy; record the pass; errors do not stop the rest.
+    state: Todo
+    dependencies:
+      - task-3
+      - task-4
+    acceptanceCriteria:
+      - Each part only when enabled; each item once
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: L
+
+  - id: task-6
+    title: Policy
+    description: >
+      Show and set a space's autopilot policy, validating the project.
+    state: Todo
+    dependencies:
+      - task-1
+    acceptanceCriteria:
+      - Unknown project refused
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: S
+
+  - id: task-7
+    title: Factory status
+    description: >
+      Per space: line, building, incidents, pending actions, outcomes, customers to tell, policy and last pass.
+    state: Todo
+    dependencies:
+      - task-5
+    acceptanceCriteria:
+      - Counts from each source
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: M
+
+  - id: task-8
+    title: Daemon
+    description: >
+      Run autopilot on the hourly watcher.
+    state: Todo
+    dependencies:
+      - task-5
+    acceptanceCriteria:
+      - The tick calls the use case
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: S
+
+  - id: task-9
+    title: CLI
+    description: >
+      shep autopilot show|set|run|ls and shep factory status.
+    state: Todo
+    dependencies:
+      - task-6
+      - task-7
+    acceptanceCriteria:
+      - Commands print policy, passes and status
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: M
+
+  - id: task-10
+    title: Web
+    description: >
+      /factory page with status and the autopilot policy form; sidebar link; stories; 9 locales.
+    state: Todo
+    dependencies:
+      - task-6
+      - task-7
+    acceptanceCriteria:
+      - Component tests and stories
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: M
+
+  - id: task-11
+    title: Docs
+    description: >
+      Autopilot guide, architecture note, CLI reference.
+    state: Todo
+    dependencies:
+      - task-9
+      - task-10
+    acceptanceCriteria:
+      - Docs explain each part and its limits
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: S
+
+  - id: task-12
+    title: Verification
+    description: >
+      lint, format, typecheck, unit, integration, build, web build, storybook.
+    state: Todo
+    dependencies:
+      - task-11
+    acceptanceCriteria:
+      - All green
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: S
+
+totalEstimate: L (12 tasks)
+openQuestions: []
+
+content: |
+  Tasks follow the plan phases; each starts with a failing test.
