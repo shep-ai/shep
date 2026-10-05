@@ -1578,6 +1578,34 @@
         "titleOption": "Opportunity title (the theme's words if omitted)",
         "success": "{{title}} ({{id}}) proposed with {{count}} signal(s) linked"
       }
+    },
+    "discovery": {
+      "description": "An agent reads a space's loose signals and proposes opportunities",
+      "failed": "Discovery command failed",
+      "spaceOption": "Space slug or id (default space if omitted)",
+      "run": {
+        "description": "Run discovery in a space now",
+        "agentOption": "Agent to use (the space's rules apply)",
+        "started": "Reading the space's evidence; this can take a few minutes…",
+        "success": "Read {{read}} signals: {{proposed}} opportunities proposed, {{dropped}} proposals dropped"
+      },
+      "ls": {
+        "description": "List a space's discovery runs",
+        "title": "Discovery runs",
+        "whenColumn": "Started",
+        "statusColumn": "Status",
+        "resultColumn": "Result",
+        "result": "{{proposed}} proposed from {{read}} signals ({{dropped}} dropped)",
+        "empty": "Discovery has not run in this space."
+      },
+      "schedule": {
+        "description": "Run discovery in a space every N hours, or turn it off",
+        "everyOption": "Hours between runs (1 to 720)",
+        "offOption": "Turn scheduled discovery off",
+        "needEvery": "Give --every <hours> or --off",
+        "on": "Discovery runs every {{hours}} hours",
+        "off": "Scheduled discovery is off"
+      }
     }
   },
   "ui": {

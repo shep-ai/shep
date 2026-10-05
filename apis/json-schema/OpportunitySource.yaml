@@ -1,0 +1,8 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: OpportunitySource.yaml
+type: string
+enum:
+  - Manual
+  - Theme
+  - Discovery
+description: How an opportunity came to be

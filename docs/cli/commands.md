@@ -987,6 +987,21 @@ review capacity (spec 126). See the [opportunities guide](../guides/opportunitie
 
 ---
 
+## Discovery Commands
+
+`shep discovery` asks an agent to read a space's loose signals and propose opportunities backed
+by them (spec 128). See the [discovery guide](../guides/discovery.md).
+
+| Command | Description |
+| ------- | ----------- |
+| `shep discovery run` | Run discovery now (`--space`, `--agent <type>`); proposals become Discovered opportunities |
+| `shep discovery ls` | A space's runs with what each read, proposed and dropped (`--space`) |
+| `shep discovery schedule --every <hours>` | Let the daemon run discovery every 1–720 hours (`--space`); `--off` turns it off |
+
+**Source**: `src/presentation/cli/commands/discovery/`
+
+---
+
 ## Bug Loop Commands
 
 `shep item investigate`, `hypotheses` and `fix` take a bug from report to fix (spec 123). See the

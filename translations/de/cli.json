@@ -1578,6 +1578,34 @@
         "titleOption": "Titel der Opportunity (sonst die Wörter des Themas)",
         "success": "{{title}} ({{id}}) mit {{count}} verknüpften Signal(en) vorgeschlagen"
       }
+    },
+    "discovery": {
+      "description": "Ein Agent liest die losen Signale eines Space und schlägt Opportunities vor",
+      "failed": "Discovery-Befehl fehlgeschlagen",
+      "spaceOption": "Slug oder ID des Space (sonst der Standard-Space)",
+      "run": {
+        "description": "Discovery in einem Space jetzt ausführen",
+        "agentOption": "Zu verwendender Agent (die Regeln des Space gelten)",
+        "started": "Die Belege des Space werden gelesen; das kann einige Minuten dauern…",
+        "success": "{{read}} Signale gelesen: {{proposed}} Opportunities vorgeschlagen, {{dropped}} Vorschläge verworfen"
+      },
+      "ls": {
+        "description": "Discovery-Läufe eines Space auflisten",
+        "title": "Discovery-Läufe",
+        "whenColumn": "Gestartet",
+        "statusColumn": "Status",
+        "resultColumn": "Ergebnis",
+        "result": "{{proposed}} vorgeschlagen aus {{read}} Signalen ({{dropped}} verworfen)",
+        "empty": "Discovery lief in diesem Space noch nicht."
+      },
+      "schedule": {
+        "description": "Discovery in einem Space alle N Stunden ausführen oder ausschalten",
+        "everyOption": "Stunden zwischen Läufen (1 bis 720)",
+        "offOption": "Geplante Discovery ausschalten",
+        "needEvery": "--every <Stunden> oder --off angeben",
+        "on": "Discovery läuft alle {{hours}} Stunden",
+        "off": "Geplante Discovery ist aus"
+      }
     }
   },
   "ui": {

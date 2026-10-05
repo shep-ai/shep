@@ -5,6 +5,7 @@
  * - data retention (spec 116)
  * - Linear and Jira sync rules (spec 122)
  * - Notion knowledge sources (spec 125)
+ * - scheduled discovery runs (spec 128)
  * - PR and CI status of features in review
  * - PR review comments (spec 124)
  *
@@ -24,6 +25,7 @@ import { getExistingConnection } from '@/infrastructure/persistence/sqlite/conne
 import { PruneRetainedDataUseCase } from '@/application/use-cases/maintenance/prune-retained-data.use-case.js';
 import type { SyncTrackerRulesUseCase } from '@/application/use-cases/trackers/sync-tracker-rules.use-case.js';
 import type { SyncKnowledgeSourcesUseCase } from '@/application/use-cases/knowledge/sync-knowledge-sources.use-case.js';
+import type { SyncDiscoveryUseCase } from '@/application/use-cases/discovery/sync-discovery.use-case.js';
 import type { SyncPrCommentsUseCase } from '@/application/use-cases/pr-comments/sync-pr-comments.use-case.js';
 import type { IAgentRunRepository } from '@/application/ports/output/agents/agent-run-repository.interface.js';
 import type { IFeatureRepository } from '@/application/ports/output/repositories/feature-repository.interface.js';
@@ -54,6 +56,10 @@ export function startBackgroundSync(label: string): BackgroundSync {
       container.resolve<SyncKnowledgeSourcesUseCase>('SyncKnowledgeSourcesUseCase').runDue(now),
     report('knowledge sync')
   );
+  const discovery = createDueWorkWatcher(
+    (now) => container.resolve<SyncDiscoveryUseCase>('SyncDiscoveryUseCase').runDue(now),
+    report('discovery')
+  );
   const prComments = createPrCommentWatcher(
     () => container.resolve<SyncPrCommentsUseCase>('SyncPrCommentsUseCase').runDue(),
     report('PR comment sync')
@@ -72,6 +78,7 @@ export function startBackgroundSync(label: string): BackgroundSync {
   retention.start();
   trackers.start();
   knowledge.start();
+  discovery.start();
   prComments.start();
   getPrSyncWatcher().start();
 
@@ -80,6 +87,7 @@ export function startBackgroundSync(label: string): BackgroundSync {
       retention.stop();
       trackers.stop();
       knowledge.stop();
+      discovery.stop();
       prComments.stop();
       getPrSyncWatcher().stop();
     },

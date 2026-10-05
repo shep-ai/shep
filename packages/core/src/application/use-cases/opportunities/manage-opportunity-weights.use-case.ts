@@ -1,6 +1,7 @@
 /**
  * ManageOpportunityWeightsUseCase (spec 126): a space's weights and weekly
- * review capacity — the defaults until the space sets its own.
+ * review capacity — the defaults until the space sets its own — and its
+ * discovery schedule (spec 128).
  */
 
 import { injectable, inject } from 'tsyringe';
@@ -8,9 +9,13 @@ import type { OpportunityWeights } from '../../../domain/generated/output.js';
 import type { ISpaceRepository } from '../../ports/output/repositories/space-repository.interface.js';
 import type { IProductLineRepository } from '../../ports/output/repositories/product-line-repository.interface.js';
 import type { IOpportunityWeightsRepository } from '../../ports/output/repositories/opportunity-repository.interface.js';
+import {
+  MAX_DISCOVERY_EVERY_HOURS,
+  MIN_DISCOVERY_EVERY_HOURS,
+} from '../../../domain/shared/discovery-proposals.js';
 import { failure, resolveScope, weightsFor, type OpportunityResult } from './opportunity-scope.js';
 
-export type WeightsChange = Partial<Omit<OpportunityWeights, 'spaceId'>>;
+export type WeightsChange = Partial<Omit<OpportunityWeights, 'spaceId' | 'discoveryEveryHours'>>;
 
 const WEIGHT_FIELDS = ['reach', 'revenue', 'urgency', 'strategic'] as const;
 
@@ -56,6 +61,30 @@ export class ManageOpportunityWeightsUseCase {
     for (const [field, value] of Object.entries(change)) {
       if (value !== undefined) weights[field as keyof WeightsChange] = value;
     }
+    await this.weights.save(weights);
+    return { ok: true, weights };
+  }
+
+  /** Runs discovery in the space every `everyHours` hours (spec 128), or never when null. */
+  async setDiscovery(
+    space: string | undefined,
+    everyHours: number | null
+  ): Promise<OpportunityResult<{ weights: OpportunityWeights }>> {
+    if (
+      everyHours !== null &&
+      (!Number.isFinite(everyHours) ||
+        everyHours < MIN_DISCOVERY_EVERY_HOURS ||
+        everyHours > MAX_DISCOVERY_EVERY_HOURS)
+    ) {
+      return failure(
+        `Discovery runs every ${MIN_DISCOVERY_EVERY_HOURS} to ${MAX_DISCOVERY_EVERY_HOURS} hours.`
+      );
+    }
+    const current = await this.get(space);
+    if (!current.ok) return current;
+    const { discoveryEveryHours: _previous, ...rest } = current.weights;
+    const weights: OpportunityWeights =
+      everyHours === null ? rest : { ...rest, discoveryEveryHours: everyHours };
     await this.weights.save(weights);
     return { ok: true, weights };
   }

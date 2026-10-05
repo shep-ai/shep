@@ -1,0 +1,44 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: DiscoveryRun.yaml
+type: object
+properties:
+  spaceId:
+    type: string
+    description: The space whose evidence was read
+  status:
+    $ref: DiscoveryRunStatus.yaml
+    description: Where the run stands
+  agentType:
+    $ref: AgentType.yaml
+    description: The agent that read the evidence
+  signalsRead:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Unlinked signals the agent was shown
+  proposed:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Opportunities created from the agent's proposals
+  dropped:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Proposals dropped because they cited no real signal or repeated an open title
+  finishedAt:
+    type: string
+    format: date-time
+    description: When the run ended
+  error:
+    type: string
+    description: Why the run failed
+required:
+  - spaceId
+  - status
+  - signalsRead
+  - proposed
+  - dropped
+allOf:
+  - $ref: BaseEntity.yaml
+description: One discovery pass over a space's evidence

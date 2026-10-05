@@ -13,6 +13,7 @@ const { tasks, prSync, resolved } = vi.hoisted(() => ({
     retention: { start: vi.fn(), stop: vi.fn() },
     trackers: { start: vi.fn(), stop: vi.fn() },
     knowledge: { start: vi.fn(), stop: vi.fn() },
+    discovery: { start: vi.fn(), stop: vi.fn() },
     comments: { start: vi.fn(), stop: vi.fn() },
   },
   prSync: { start: vi.fn(), stop: vi.fn() },
@@ -20,7 +21,7 @@ const { tasks, prSync, resolved } = vi.hoisted(() => ({
 }));
 
 const jobs: Record<string, () => Promise<unknown>> = {};
-/** Due-work jobs in creation order: tracker rules, then knowledge sources. */
+/** Due-work jobs in creation order: tracker rules, knowledge sources, discovery. */
 const dueJobs: ((now: Date) => Promise<unknown>)[] = [];
 
 vi.mock('@/infrastructure/di/container.js', () => ({
@@ -34,7 +35,7 @@ vi.mock('@/infrastructure/services/maintenance/retention-scheduler.js', () => ({
 vi.mock('@/infrastructure/services/scheduling/due-work-watcher.js', () => ({
   createDueWorkWatcher: vi.fn((job: (now: Date) => Promise<unknown>) => {
     dueJobs.push(job);
-    return dueJobs.length === 1 ? tasks.trackers : tasks.knowledge;
+    return [tasks.trackers, tasks.knowledge, tasks.discovery][dueJobs.length - 1];
   }),
 }));
 vi.mock('@/infrastructure/services/pr-sync/pr-comment-watcher.js', () => ({
@@ -65,11 +66,25 @@ describe('startBackgroundSync', () => {
 
   it('starts every sync and stops it all', () => {
     const sync = startBackgroundSync('test');
-    for (const task of [tasks.retention, tasks.trackers, tasks.knowledge, tasks.comments, prSync]) {
+    for (const task of [
+      tasks.retention,
+      tasks.trackers,
+      tasks.knowledge,
+      tasks.discovery,
+      tasks.comments,
+      prSync,
+    ]) {
       expect(task.start).toHaveBeenCalledTimes(1);
     }
     sync.stop();
-    for (const task of [tasks.retention, tasks.trackers, tasks.knowledge, tasks.comments, prSync]) {
+    for (const task of [
+      tasks.retention,
+      tasks.trackers,
+      tasks.knowledge,
+      tasks.discovery,
+      tasks.comments,
+      prSync,
+    ]) {
       expect(task.stop).toHaveBeenCalledTimes(1);
     }
   });
@@ -81,14 +96,16 @@ describe('startBackgroundSync', () => {
     expect(resolved.runDue).toHaveBeenCalled();
   });
 
-  it('runs due tracker rules and due knowledge sources through their use cases', async () => {
+  it('runs due tracker rules, knowledge sources and discovery through their use cases', async () => {
     startBackgroundSync('test');
     const now = new Date('2026-10-04T12:00:00Z');
-    const [trackerJob, knowledgeJob] = dueJobs;
+    const [trackerJob, knowledgeJob, discoveryJob] = dueJobs;
     await trackerJob(now);
     expect(container.resolve).toHaveBeenCalledWith('SyncTrackerRulesUseCase');
     await knowledgeJob(now);
     expect(container.resolve).toHaveBeenCalledWith('SyncKnowledgeSourcesUseCase');
+    await discoveryJob(now);
+    expect(container.resolve).toHaveBeenCalledWith('SyncDiscoveryUseCase');
     expect(resolved.runDue).toHaveBeenCalledWith(now);
   });
 });

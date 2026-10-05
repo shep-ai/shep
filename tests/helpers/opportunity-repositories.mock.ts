@@ -61,6 +61,9 @@ export class InMemoryOpportunityWeights implements IOpportunityWeightsRepository
   async find(spaceId: string) {
     return this.rows.get(spaceId) ?? null;
   }
+  async listScheduled() {
+    return [...this.rows.values()].filter((w) => w.discoveryEveryHours !== undefined);
+  }
   async save(weights: OpportunityWeights) {
     this.rows.set(weights.spaceId, weights);
   }

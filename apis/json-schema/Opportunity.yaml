@@ -36,6 +36,12 @@ properties:
   dropReason:
     type: string
     description: Why it was dropped
+  source:
+    $ref: OpportunitySource.yaml
+    description: How it came to be; Manual when unset
+  brief:
+    type: string
+    description: What the discovery agent suggested building, and why now
 required:
   - spaceId
   - title

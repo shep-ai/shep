@@ -1,6 +1,14 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { OpportunityRow } from './opportunity-row';
-import { BUILDING, CHECKOUT, EXPORT, IDEA, OPTIONS, runInStory } from './opportunities-fixtures';
+import {
+  BUILDING,
+  CHECKOUT,
+  DISCOVERED,
+  EXPORT,
+  IDEA,
+  OPTIONS,
+  runInStory,
+} from './opportunities-fixtures';
 
 const meta: Meta<typeof OpportunityRow> = {
   title: 'Features/Opportunities/OpportunityRow',
@@ -29,3 +37,6 @@ export const Proposed: Story = { args: { scored: IDEA, inLine: false } };
 
 /** Already a work item: no decisions left. */
 export const Building: Story = { args: { scored: BUILDING, inLine: true } };
+
+/** Proposed by the discovery agent, with its outline as the brief. */
+export const Discovered: Story = { args: { scored: DISCOVERED, inLine: false } };

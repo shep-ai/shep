@@ -9,12 +9,14 @@
 import { randomUUID } from 'node:crypto';
 import { injectable, inject } from 'tsyringe';
 import {
+  OpportunitySource,
   OpportunityStatus,
   type Opportunity,
   type Signal,
 } from '../../../domain/generated/output.js';
 import { defined, optionalText } from '../../../domain/shared/defined.js';
 import {
+  MAX_REVIEW_HOURS,
   scoreOpportunity,
   type ScoredOpportunity,
 } from '../../../domain/shared/opportunity-score.js';
@@ -34,7 +36,6 @@ import {
 } from './opportunity-scope.js';
 
 export const DEFAULT_CONFIDENCE = 0.5;
-export const MAX_REVIEW_HOURS = 200;
 
 export interface OpportunityEstimate {
   title?: string;
@@ -49,6 +50,10 @@ export interface OpportunityEstimate {
 export interface CreateOpportunityInput extends ScopeRefs, OpportunityEstimate {
   title: string;
   reviewHours: number;
+  /** How it came to be; Manual when omitted. */
+  source?: OpportunitySource;
+  /** What a discovery agent suggested building. */
+  brief?: string;
 }
 
 export interface OpportunityDetail extends ScoredOpportunity {
@@ -102,7 +107,12 @@ export class ManageOpportunitiesUseCase {
       reviewHours: input.reviewHours,
       confidence: input.confidence ?? DEFAULT_CONFIDENCE,
       strategic: input.strategic ?? false,
-      ...defined({ productLineId: scope.productLine?.id, problem: optionalText(input.problem) }),
+      source: input.source ?? OpportunitySource.Manual,
+      ...defined({
+        productLineId: scope.productLine?.id,
+        problem: optionalText(input.problem),
+        brief: optionalText(input.brief),
+      }),
       createdAt: now,
       updatedAt: now,
     };

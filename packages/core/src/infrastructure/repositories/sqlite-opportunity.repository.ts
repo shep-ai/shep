@@ -80,10 +80,11 @@ export class SQLiteSignalRepository implements ISignalRepository {
 }
 
 const OPPORTUNITY_COLUMNS = `id, space_id, product_line_id, title, problem, status, review_hours,
-  confidence, strategic, work_item_id, decided_at, drop_reason, created_at, updated_at`;
+  confidence, strategic, work_item_id, decided_at, drop_reason, source, brief, created_at,
+  updated_at`;
 const OPPORTUNITY_VALUES = `@id, @space_id, @product_line_id, @title, @problem, @status,
-  @review_hours, @confidence, @strategic, @work_item_id, @decided_at, @drop_reason, @created_at,
-  @updated_at`;
+  @review_hours, @confidence, @strategic, @work_item_id, @decided_at, @drop_reason, @source,
+  @brief, @created_at, @updated_at`;
 
 export class SQLiteOpportunityRepository implements IOpportunityRepository {
   constructor(private readonly db: Database.Database) {}
@@ -140,12 +141,20 @@ export class SQLiteOpportunityWeightsRepository implements IOpportunityWeightsRe
     return row ? weightsFromDatabase(row) : null;
   }
 
+  async listScheduled(): Promise<OpportunityWeights[]> {
+    const rows = this.db
+      .prepare('SELECT * FROM opportunity_weights WHERE discovery_every_hours IS NOT NULL')
+      .all() as OpportunityWeightsRow[];
+    return rows.map(weightsFromDatabase);
+  }
+
   async save(weights: OpportunityWeights): Promise<void> {
     this.db
       .prepare(
         `INSERT OR REPLACE INTO opportunity_weights (space_id, reach, revenue, urgency, strategic,
-           weekly_review_hours)
-         VALUES (@space_id, @reach, @revenue, @urgency, @strategic, @weekly_review_hours)`
+           weekly_review_hours, discovery_every_hours)
+         VALUES (@space_id, @reach, @revenue, @urgency, @strategic, @weekly_review_hours,
+           @discovery_every_hours)`
       )
       .run(weightsToDatabase(weights));
   }

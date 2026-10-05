@@ -15,6 +15,7 @@ import type { Route } from 'next';
 import { useTranslation } from 'react-i18next';
 import { Target } from 'lucide-react';
 import type { OpportunityBoard } from '@shepai/core/application/use-cases/opportunities/get-opportunity-board.use-case';
+import type { DiscoveryRun } from '@shepai/core/domain/generated/output';
 import { useRunAction } from '@/hooks/use-run-action';
 import { CapacityBar } from './capacity-bar';
 import { OpportunityRow } from './opportunity-row';
@@ -24,6 +25,7 @@ import { AddOpportunityForm } from './add-opportunity-form';
 import { OpportunityWeightsForm } from './opportunity-weights-form';
 import { FeedbackThemes } from './feedback-themes';
 import { FeedbackKeysPanel } from './feedback-keys-panel';
+import { DiscoveryPanel } from './discovery-panel';
 import type { OpportunityPageOptions } from './opportunities-types';
 import type { FeedbackTheme } from '@shepai/core/domain/shared/feedback-themes';
 import type { FeedbackKeyView } from '@shepai/core/application/use-cases/feedback/manage-feedback-keys.use-case';
@@ -35,6 +37,8 @@ export interface OpportunitiesPageClientProps {
   themes?: FeedbackTheme[];
   /** The space's feedback keys (spec 127). */
   feedbackKeys?: FeedbackKeyView[];
+  /** The space's latest discovery run (spec 128). */
+  latestDiscovery?: DiscoveryRun;
   /** Set when the board could not be loaded. */
   loadError?: string;
 }
@@ -44,6 +48,7 @@ export function OpportunitiesPageClient({
   options,
   themes = [],
   feedbackKeys = [],
+  latestDiscovery,
   loadError,
 }: OpportunitiesPageClientProps) {
   const { t } = useTranslation('web');
@@ -119,6 +124,14 @@ export function OpportunitiesPageClient({
               </ul>
             )}
           </section>
+          <DiscoveryPanel
+            spaceId={board.space.id}
+            {...(board.weights.discoveryEveryHours === undefined
+              ? {}
+              : { everyHours: board.weights.discoveryEveryHours })}
+            {...(latestDiscovery ? { latest: latestDiscovery } : {})}
+            run={run}
+          />
           <FeedbackThemes spaceId={board.space.id} themes={themes} run={run} />
           <section className="space-y-2">
             <AddSignalForm spaceId={board.space.id} run={run} />

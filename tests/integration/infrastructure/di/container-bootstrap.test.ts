@@ -54,6 +54,7 @@ import { registerPrComments } from '@/infrastructure/di/modules/register-pr-comm
 import { registerKnowledge } from '@/infrastructure/di/modules/register-knowledge.js';
 import { registerOpportunities } from '@/infrastructure/di/modules/register-opportunities.js';
 import { registerFeedback } from '@/infrastructure/di/modules/register-feedback.js';
+import { registerDiscovery } from '@/infrastructure/di/modules/register-discovery.js';
 import { SessionSpaceEnvironment } from '@/infrastructure/services/interactive/lifecycle/session-space-environment.js';
 import { ResolveSpaceEnvironmentUseCase } from '@/application/use-cases/spaces/resolve-space-environment.use-case.js';
 import type { IDeploymentService } from '@/application/ports/output/services/deployment-service.interface.js';
@@ -210,6 +211,9 @@ const WEB_ROUTE_TOKENS: readonly string[] = [
   'IngestFeedbackUseCase',
   'GetFeedbackThemesUseCase',
   'PromoteThemeUseCase',
+  'RunDiscoveryUseCase',
+  'SyncDiscoveryUseCase',
+  'ListDiscoveryRunsUseCase',
   'RunTrackerSyncUseCase',
   'SyncTrackerRulesUseCase',
   'GetTrackerIssueLinkUseCase',
@@ -242,6 +246,7 @@ const CRITICAL_INFRA_TOKENS: readonly string[] = [
   'IOpportunityWeightsRepository',
   'IFeedbackKeyRepository',
   'IFeedbackKeyGenerator',
+  'IDiscoveryRunRepository',
   'IPullRequestCommentService',
   'ITrackerClientFactory',
   // Query-aware harness (spec 119)
@@ -402,6 +407,7 @@ describe('DI container bootstrap (integration)', () => {
     registerKnowledge(scopedContainer);
     registerOpportunities(scopedContainer);
     registerFeedback(scopedContainer);
+    registerDiscovery(scopedContainer);
     registerBugLoop(scopedContainer);
     registerPrComments(scopedContainer);
     registerServices(scopedContainer);

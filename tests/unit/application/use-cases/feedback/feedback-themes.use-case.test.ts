@@ -4,7 +4,7 @@ import {
   GetFeedbackThemesUseCase,
   PromoteThemeUseCase,
 } from '@/application/use-cases/feedback/feedback-themes.use-case.js';
-import { OpportunityStatus } from '@/domain/generated/output.js';
+import { OpportunitySource, OpportunityStatus } from '@/domain/generated/output.js';
 import { feedbackWorld } from './feedback.fixtures.js';
 
 describe('Feedback themes', () => {
@@ -43,6 +43,7 @@ describe('Feedback themes', () => {
     if (!result.ok) throw new Error(result.error);
     expect(result.linked).toBe(3);
     expect(result.opportunity.status).toBe(OpportunityStatus.Proposed);
+    expect(result.opportunity.source).toBe(OpportunitySource.Theme);
     expect(result.opportunity.title.charAt(0)).toBe(
       result.opportunity.title.charAt(0).toUpperCase()
     );

@@ -8,6 +8,7 @@
 
 import { useTranslation } from 'react-i18next';
 import type { ScoredOpportunity } from '@shepai/core/domain/shared/opportunity-score';
+import { OpportunitySource } from '@shepai/core/domain/generated/output';
 import { Badge } from '@/components/ui/badge';
 import type { RunAction } from '@/hooks/use-run-action';
 import { OpportunityActions } from './opportunity-actions';
@@ -40,6 +41,11 @@ export function OpportunityRow({ scored, inLine, projects, run }: OpportunityRow
           <Badge variant="outline" className="text-[10px]">
             {t(`opportunities.status.${opportunity.status}`)}
           </Badge>
+          {opportunity.source && opportunity.source !== OpportunitySource.Manual ? (
+            <Badge variant="secondary" className="text-[10px]">
+              {t(`opportunities.source.${opportunity.source}`)}
+            </Badge>
+          ) : null}
           {opportunity.strategic ? (
             <Badge variant="secondary" className="text-[10px]">
               {t('opportunities.row.strategic')}
@@ -54,6 +60,11 @@ export function OpportunityRow({ scored, inLine, projects, run }: OpportunityRow
             urgent: evidence.urgentSignals,
           })}
         </p>
+        {opportunity.brief ? (
+          <p className="text-muted-foreground mt-0.5 line-clamp-2" title={opportunity.brief}>
+            {opportunity.brief}
+          </p>
+        ) : null}
       </div>
       <div className="text-right">
         <div className="text-sm font-semibold tabular-nums">

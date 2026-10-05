@@ -18,6 +18,7 @@ Guides for using Shep AI CLI effectively.
 | [knowledge.md](./knowledge.md)                                       | Team knowledge from Notion              |
 | [opportunities.md](./opportunities.md)                               | Decide what to build next               |
 | [feedback.md](./feedback.md)                                         | Customer feedback into shep             |
+| [discovery.md](./discovery.md)                                       | Let an agent shape the next bets        |
 | [bug-loop.md](./bug-loop.md)                                         | Investigate and fix bugs                |
 | [pr-comments.md](./pr-comments.md)                                   | Review comments on shep's pull requests |
 

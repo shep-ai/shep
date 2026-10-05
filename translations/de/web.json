@@ -1628,6 +1628,23 @@
       "revoked": "Widerrufen",
       "lastUsed": "Zuletzt benutzt {{when}}",
       "neverUsed": "Nie benutzt"
+    },
+    "source": {
+      "Manual": "Manuell",
+      "Theme": "Aus Thema",
+      "Discovery": "Entdeckt"
+    },
+    "discovery": {
+      "title": "Discovery",
+      "run": "Jetzt entdecken",
+      "discovering": "Entdecke…",
+      "schedule": "Plan",
+      "off": "Aus",
+      "everyHours": "Alle {{hours}} Std.",
+      "never": "Discovery lief in diesem Space noch nicht.",
+      "running": "Discovery läuft…",
+      "failed": "Der letzte Lauf schlug fehl: {{error}}",
+      "succeeded": "Letzter Lauf: {{proposed}} vorgeschlagen aus {{read}} Signalen, {{when}}"
     }
   }
 }

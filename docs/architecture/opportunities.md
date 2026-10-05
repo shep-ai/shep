@@ -10,7 +10,7 @@ Spec: [`specs/126-opportunities`](../../specs/126-opportunities/). User guide:
 | Entity | Purpose |
 | ------ | ------- |
 | `Signal` | Evidence in a space (optionally a product line): kind, title, customer, monthly revenue, urgent, link, and the opportunity it supports. |
-| `Opportunity` | A bet in a space: status (`Proposed`, `Accepted`, `Building`, `Shipped`, `Dropped`), review hours, confidence, strategic, the work item it became, the drop reason. |
+| `Opportunity` | A bet in a space: status (`Proposed`, `Accepted`, `Building`, `Shipped`, `Dropped`), review hours, confidence, strategic, the work item it became, the drop reason; its source (`Manual`, `Theme`, `Discovery`) and, when discovered, the agent's brief. |
 | `OpportunityWeights` | A space's weights and weekly review hours; a space without a row uses `DEFAULT_OPPORTUNITY_WEIGHTS`. |
 
 ## Domain

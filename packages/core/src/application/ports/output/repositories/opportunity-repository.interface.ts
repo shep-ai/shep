@@ -43,5 +43,7 @@ export interface IOpportunityRepository {
 export interface IOpportunityWeightsRepository {
   /** The space's own weights, or null when it uses the defaults. */
   find(spaceId: string): Promise<OpportunityWeights | null>;
+  /** The weights of every space that runs discovery on a schedule. */
+  listScheduled(): Promise<OpportunityWeights[]>;
   save(weights: OpportunityWeights): Promise<void>;
 }

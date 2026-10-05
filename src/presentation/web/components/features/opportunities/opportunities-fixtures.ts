@@ -1,8 +1,11 @@
 /** Sample board data for the Opportunities stories (spec 126). */
 
 import {
+  DiscoveryRunStatus,
+  OpportunitySource,
   OpportunityStatus,
   SignalKind,
+  type DiscoveryRun,
   type Opportunity,
   type Signal,
 } from '@shepai/core/domain/generated/output';
@@ -155,3 +158,27 @@ export const FEEDBACK_KEYS: FeedbackKeyView[] = [
     updatedAt: T,
   },
 ];
+
+export const DISCOVERY_RUN: DiscoveryRun = {
+  id: 'run-1',
+  spaceId: 'space-acme',
+  status: DiscoveryRunStatus.Succeeded,
+  signalsRead: 14,
+  proposed: 2,
+  dropped: 1,
+  finishedAt: T,
+  createdAt: T,
+  updatedAt: T,
+};
+
+export const DISCOVERED: ScoredOpportunity = {
+  opportunity: bet('opp-cache', 'Cache the session lookup', {
+    status: OpportunityStatus.Proposed,
+    source: OpportunitySource.Discovery,
+    brief:
+      'Checkout reads the session three times per request. Cache it per request.\n\nTwo customers and one urgent incident point at checkout latency this week.',
+  }),
+  evidence: { signals: 3, customers: 2, revenueAtStake: 7000, urgentSignals: 1 },
+  value: 20,
+  score: 1.4,
+};

@@ -6890,6 +6890,11 @@ export enum OpportunityStatus {
   Shipped = 'Shipped',
   Dropped = 'Dropped',
 }
+export enum OpportunitySource {
+  Manual = 'Manual',
+  Theme = 'Theme',
+  Discovery = 'Discovery',
+}
 
 /**
  * A bet worth building, backed by signals and scored by value per review hour
@@ -6939,6 +6944,14 @@ export type Opportunity = BaseEntity & {
    * Why it was dropped
    */
   dropReason?: string;
+  /**
+   * How it came to be; Manual when unset
+   */
+  source?: OpportunitySource;
+  /**
+   * What the discovery agent suggested building, and why now
+   */
+  brief?: string;
 };
 
 /**
@@ -6969,6 +6982,10 @@ export type OpportunityWeights = {
    * Hours of human review available each week
    */
   weeklyReviewHours: float64;
+  /**
+   * Hours between automatic discovery runs; unset turns discovery off
+   */
+  discoveryEveryHours?: float64;
 };
 
 /**
@@ -6999,6 +7016,49 @@ export type FeedbackKey = BaseEntity & {
    * When it was revoked; a revoked key is refused
    */
   revokedAt?: any;
+};
+export enum DiscoveryRunStatus {
+  Running = 'Running',
+  Succeeded = 'Succeeded',
+  Failed = 'Failed',
+}
+
+/**
+ * One discovery pass over a space's evidence
+ */
+export type DiscoveryRun = BaseEntity & {
+  /**
+   * The space whose evidence was read
+   */
+  spaceId: string;
+  /**
+   * Where the run stands
+   */
+  status: DiscoveryRunStatus;
+  /**
+   * The agent that read the evidence
+   */
+  agentType?: AgentType;
+  /**
+   * Unlinked signals the agent was shown
+   */
+  signalsRead: number;
+  /**
+   * Opportunities created from the agent's proposals
+   */
+  proposed: number;
+  /**
+   * Proposals dropped because they cited no real signal or repeated an open title
+   */
+  dropped: number;
+  /**
+   * When the run ended
+   */
+  finishedAt?: any;
+  /**
+   * Why the run failed
+   */
+  error?: string;
 };
 
 /**

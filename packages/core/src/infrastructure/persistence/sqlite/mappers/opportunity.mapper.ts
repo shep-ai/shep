@@ -2,6 +2,7 @@
 
 import type {
   Opportunity,
+  OpportunitySource,
   OpportunityStatus,
   OpportunityWeights,
   Signal,
@@ -39,6 +40,8 @@ export interface OpportunityRow {
   work_item_id: string | null;
   decided_at: number | null;
   drop_reason: string | null;
+  source: string | null;
+  brief: string | null;
   created_at: number;
   updated_at: number;
 }
@@ -50,6 +53,7 @@ export interface OpportunityWeightsRow {
   urgency: number;
   strategic: number;
   weekly_review_hours: number;
+  discovery_every_hours: number | null;
 }
 
 export function signalToDatabase(signal: Signal): SignalRow {
@@ -106,6 +110,8 @@ export function opportunityToDatabase(opportunity: Opportunity): OpportunityRow 
     work_item_id: opportunity.workItemId ?? null,
     decided_at: optionalMillis(opportunity.decidedAt),
     drop_reason: opportunity.dropReason ?? null,
+    source: opportunity.source ?? null,
+    brief: opportunity.brief ?? null,
     created_at: millis(opportunity.createdAt),
     updated_at: millis(opportunity.updatedAt),
   };
@@ -126,6 +132,8 @@ export function opportunityFromDatabase(row: OpportunityRow): Opportunity {
       workItemId: row.work_item_id,
       decidedAt: row.decided_at === null ? null : new Date(row.decided_at),
       dropReason: row.drop_reason,
+      source: row.source as OpportunitySource | null,
+      brief: row.brief,
     }),
     createdAt: new Date(row.created_at),
     updatedAt: new Date(row.updated_at),
@@ -140,6 +148,7 @@ export function weightsToDatabase(weights: OpportunityWeights): OpportunityWeigh
     urgency: weights.urgency,
     strategic: weights.strategic,
     weekly_review_hours: weights.weeklyReviewHours,
+    discovery_every_hours: weights.discoveryEveryHours ?? null,
   };
 }
 
@@ -151,5 +160,6 @@ export function weightsFromDatabase(row: OpportunityWeightsRow): OpportunityWeig
     urgency: row.urgency,
     strategic: row.strategic,
     weeklyReviewHours: row.weekly_review_hours,
+    ...defined({ discoveryEveryHours: row.discovery_every_hours }),
   };
 }

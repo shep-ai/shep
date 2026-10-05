@@ -1578,6 +1578,34 @@
         "titleOption": "Título de la oportunidad (las palabras del tema si se omite)",
         "success": "{{title}} ({{id}}) propuesta con {{count}} señal(es) vinculada(s)"
       }
+    },
+    "discovery": {
+      "description": "Un agente lee las señales sueltas de un espacio y propone oportunidades",
+      "failed": "Falló el comando discovery",
+      "spaceOption": "Slug o id del espacio (el predeterminado si se omite)",
+      "run": {
+        "description": "Ejecuta discovery en un espacio ahora",
+        "agentOption": "Agente a usar (se aplican las reglas del espacio)",
+        "started": "Leyendo la evidencia del espacio; puede tardar unos minutos…",
+        "success": "{{read}} señales leídas: {{proposed}} oportunidades propuestas, {{dropped}} propuestas descartadas"
+      },
+      "ls": {
+        "description": "Lista las ejecuciones de discovery de un espacio",
+        "title": "Ejecuciones de discovery",
+        "whenColumn": "Inicio",
+        "statusColumn": "Estado",
+        "resultColumn": "Resultado",
+        "result": "{{proposed}} propuestas de {{read}} señales ({{dropped}} descartadas)",
+        "empty": "Discovery no se ha ejecutado en este espacio."
+      },
+      "schedule": {
+        "description": "Ejecuta discovery en un espacio cada N horas, o desactívalo",
+        "everyOption": "Horas entre ejecuciones (1 a 720)",
+        "offOption": "Desactivar discovery programado",
+        "needEvery": "Indica --every <horas> o --off",
+        "on": "Discovery se ejecuta cada {{hours}} horas",
+        "off": "Discovery programado desactivado"
+      }
     }
   },
   "ui": {

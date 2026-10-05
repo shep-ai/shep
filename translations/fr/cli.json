@@ -1578,6 +1578,34 @@
         "titleOption": "Titre de l'opportunité (les mots du thème si omis)",
         "success": "{{title}} ({{id}}) proposée avec {{count}} signal(aux) lié(s)"
       }
+    },
+    "discovery": {
+      "description": "Un agent lit les signaux isolés d'un espace et propose des opportunités",
+      "failed": "La commande discovery a échoué",
+      "spaceOption": "Slug ou id de l'espace (espace par défaut si omis)",
+      "run": {
+        "description": "Lancer la découverte dans un espace maintenant",
+        "agentOption": "Agent à utiliser (les règles de l'espace s'appliquent)",
+        "started": "Lecture des preuves de l'espace ; cela peut prendre quelques minutes…",
+        "success": "{{read}} signaux lus : {{proposed}} opportunités proposées, {{dropped}} propositions écartées"
+      },
+      "ls": {
+        "description": "Lister les découvertes d'un espace",
+        "title": "Découvertes",
+        "whenColumn": "Début",
+        "statusColumn": "Statut",
+        "resultColumn": "Résultat",
+        "result": "{{proposed}} proposées à partir de {{read}} signaux ({{dropped}} écartées)",
+        "empty": "Aucune découverte n'a encore tourné dans cet espace."
+      },
+      "schedule": {
+        "description": "Lancer la découverte dans un espace toutes les N heures, ou l'arrêter",
+        "everyOption": "Heures entre deux découvertes (1 à 720)",
+        "offOption": "Arrêter la découverte planifiée",
+        "needEvery": "Indiquez --every <heures> ou --off",
+        "on": "La découverte tourne toutes les {{hours}} heures",
+        "off": "La découverte planifiée est arrêtée"
+      }
     }
   },
   "ui": {

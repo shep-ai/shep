@@ -16,7 +16,7 @@ tasks:
     title: Model
     description: >
       DiscoveryRun and OpportunitySource in TypeSpec; Opportunity source and brief; OpportunityWeights discoveryEveryHours; migration 161.
-    state: Todo
+    state: Done
     dependencies: []
     acceptanceCriteria:
       - Repositories round-trip every field
@@ -33,7 +33,7 @@ tasks:
     title: Proposal validation
     description: >
       domain/shared/discovery-proposals.ts keeps proposals citing unlinked signals of the space and new titles, clamps estimates.
-    state: Todo
+    state: Done
     dependencies:
       - task-1
     acceptanceCriteria:
@@ -51,7 +51,7 @@ tasks:
     title: Run discovery
     description: >
       RunDiscoveryUseCase gathers evidence, applies space agent rules, calls the agent, records the run, creates and links proposals.
-    state: Todo
+    state: Done
     dependencies:
       - task-2
     acceptanceCriteria:
@@ -69,7 +69,7 @@ tasks:
     title: Schedule
     description: >
       Discovery interval on opportunity settings; SyncDiscoveryUseCase runs due spaces; due-work watcher in the daemon.
-    state: Todo
+    state: Done
     dependencies:
       - task-3
     acceptanceCriteria:
@@ -87,7 +87,7 @@ tasks:
     title: History
     description: >
       ListDiscoveryRunsUseCase for a space.
-    state: Todo
+    state: Done
     dependencies:
       - task-3
     acceptanceCriteria:
@@ -105,7 +105,7 @@ tasks:
     title: CLI and web
     description: >
       shep discovery run/ls/schedule; Discover button, last run and discovered badge on the Opportunities page; 9 locales; stories.
-    state: Todo
+    state: Done
     dependencies:
       - task-4
       - task-5
@@ -124,7 +124,7 @@ tasks:
     title: Docs
     description: >
       Discovery guide, architecture note, CLI reference.
-    state: Todo
+    state: Done
     dependencies:
       - task-6
     acceptanceCriteria:
@@ -142,7 +142,7 @@ tasks:
     title: Verification
     description: >
       lint, format, typecheck, unit, integration, build, web build, storybook.
-    state: Todo
+    state: Done
     dependencies:
       - task-7
     acceptanceCriteria:

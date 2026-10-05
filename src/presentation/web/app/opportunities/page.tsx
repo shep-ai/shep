@@ -11,6 +11,8 @@ import type {
   ManageFeedbackKeysUseCase,
 } from '@shepai/core/application/use-cases/feedback/manage-feedback-keys.use-case';
 import type { FeedbackTheme } from '@shepai/core/domain/shared/feedback-themes';
+import type { ListDiscoveryRunsUseCase } from '@shepai/core/application/use-cases/discovery/list-discovery-runs.use-case';
+import type { DiscoveryRun } from '@shepai/core/domain/generated/output';
 import { OpportunitiesPageClient } from '@/components/features/opportunities/opportunities-page-client';
 import type { OpportunityPageOptions } from '@/components/features/opportunities/opportunities-types';
 
@@ -20,16 +22,23 @@ interface OpportunitiesPageProps {
   searchParams: Promise<{ space?: string }>;
 }
 
-async function loadFeedback(
-  spaceId: string
-): Promise<{ themes: FeedbackTheme[]; feedbackKeys: FeedbackKeyView[] }> {
-  const [themes, keys] = await Promise.all([
+interface FeedbackData {
+  themes: FeedbackTheme[];
+  feedbackKeys: FeedbackKeyView[];
+  latestDiscovery?: DiscoveryRun;
+}
+
+async function loadFeedback(spaceId: string): Promise<FeedbackData> {
+  const [themes, keys, runs] = await Promise.all([
     resolve<GetFeedbackThemesUseCase>('GetFeedbackThemesUseCase').execute(spaceId),
     resolve<ManageFeedbackKeysUseCase>('ManageFeedbackKeysUseCase').list(spaceId),
+    resolve<ListDiscoveryRunsUseCase>('ListDiscoveryRunsUseCase').execute(spaceId),
   ]);
+  const latestDiscovery = runs.ok ? runs.runs[0] : undefined;
   return {
     themes: themes.ok ? themes.themes : [],
     feedbackKeys: keys.ok ? keys.keys : [],
+    ...(latestDiscovery ? { latestDiscovery } : {}),
   };
 }
 
@@ -54,7 +63,7 @@ export default async function OpportunitiesPage({ searchParams }: OpportunitiesP
   const { space } = await searchParams;
   let board: OpportunityBoard | undefined;
   let options: OpportunityPageOptions = { spaces: [], productLines: [], projects: [] };
-  let feedback: { themes: FeedbackTheme[]; feedbackKeys: FeedbackKeyView[] } = {
+  let feedback: FeedbackData = {
     themes: [],
     feedbackKeys: [],
   };
@@ -83,6 +92,7 @@ export default async function OpportunitiesPage({ searchParams }: OpportunitiesP
         options={options}
         themes={feedback.themes}
         feedbackKeys={feedback.feedbackKeys}
+        {...(feedback.latestDiscovery ? { latestDiscovery: feedback.latestDiscovery } : {})}
         loadError={error}
       />
     </div>

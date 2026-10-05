@@ -26,6 +26,19 @@ enum SignalKind {
   Manual,
 }
 
+/** How an opportunity came to be. */
+@doc("How an opportunity came to be")
+enum OpportunitySource {
+  @doc("Shaped by a person")
+  Manual,
+
+  @doc("Promoted from a feedback theme")
+  Theme,
+
+  @doc("Proposed by the discovery agent")
+  Discovery,
+}
+
 /** Where an opportunity stands. */
 @doc("Where an opportunity stands")
 enum OpportunityStatus {
@@ -117,6 +130,12 @@ model Opportunity extends BaseEntity {
 
   @doc("Why it was dropped")
   dropReason?: string;
+
+  @doc("How it came to be; Manual when unset")
+  source?: OpportunitySource;
+
+  @doc("What the discovery agent suggested building, and why now")
+  brief?: string;
 }
 
 /** How a space values evidence and how much review it can give. */
@@ -139,4 +158,7 @@ model OpportunityWeights {
 
   @doc("Hours of human review available each week")
   weeklyReviewHours: float64;
+
+  @doc("Hours between automatic discovery runs; unset turns discovery off")
+  discoveryEveryHours?: float64;
 }

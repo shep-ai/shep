@@ -1628,6 +1628,23 @@
       "revoked": "Révoquée",
       "lastUsed": "Utilisée {{when}}",
       "neverUsed": "Jamais utilisée"
+    },
+    "source": {
+      "Manual": "Manuelle",
+      "Theme": "Issue d'un thème",
+      "Discovery": "Découverte"
+    },
+    "discovery": {
+      "title": "Découverte",
+      "run": "Découvrir maintenant",
+      "discovering": "Découverte en cours…",
+      "schedule": "Planification",
+      "off": "Arrêtée",
+      "everyHours": "Toutes les {{hours}} h",
+      "never": "Aucune découverte n'a encore tourné dans cet espace.",
+      "running": "Découverte en cours…",
+      "failed": "La dernière découverte a échoué : {{error}}",
+      "succeeded": "Dernière découverte : {{proposed}} proposées à partir de {{read}} signaux, {{when}}"
     }
   }
 }

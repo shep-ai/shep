@@ -15,6 +15,7 @@ import {
   SQLiteSignalRepository,
 } from '@/infrastructure/repositories/sqlite-opportunity.repository.js';
 import {
+  OpportunitySource,
   OpportunityStatus,
   SignalKind,
   type Opportunity,
@@ -53,6 +54,8 @@ const OPPORTUNITY: Opportunity = {
   workItemId: 'wi-1',
   decidedAt: T2,
   dropReason: 'Covered elsewhere',
+  source: OpportunitySource.Discovery,
+  brief: 'Cache the session lookup.',
   createdAt: T1,
   updatedAt: T2,
 };
@@ -141,9 +144,15 @@ describe('SQLite opportunity repositories', () => {
       urgency: 3,
       strategic: 5,
       weeklyReviewHours: 12,
+      discoveryEveryHours: 24,
     };
     await weights.save(own);
     await weights.save({ ...own, reach: 4 });
     expect(await weights.find('space-acme')).toEqual({ ...own, reach: 4 });
+    expect((await weights.listScheduled()).map((w) => w.spaceId)).toEqual(['space-acme']);
+    const { discoveryEveryHours: _off, ...withoutDiscovery } = own;
+    await weights.save(withoutDiscovery);
+    expect(await weights.find('space-acme')).toEqual(withoutDiscovery);
+    expect(await weights.listScheduled()).toEqual([]);
   });
 });

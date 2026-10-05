@@ -1628,6 +1628,23 @@
       "revoked": "Revocada",
       "lastUsed": "Último uso {{when}}",
       "neverUsed": "Nunca usada"
+    },
+    "source": {
+      "Manual": "Manual",
+      "Theme": "De un tema",
+      "Discovery": "Descubierta"
+    },
+    "discovery": {
+      "title": "Discovery",
+      "run": "Descubrir ahora",
+      "discovering": "Descubriendo…",
+      "schedule": "Programación",
+      "off": "Desactivado",
+      "everyHours": "Cada {{hours}} h",
+      "never": "Discovery no se ha ejecutado en este espacio.",
+      "running": "Discovery en curso…",
+      "failed": "La última ejecución falló: {{error}}",
+      "succeeded": "Última ejecución: {{proposed}} propuestas de {{read}} señales, {{when}}"
     }
   }
 }

@@ -20,6 +20,9 @@ properties:
   weeklyReviewHours:
     type: number
     description: Hours of human review available each week
+  discoveryEveryHours:
+    type: number
+    description: Hours between automatic discovery runs; unset turns discovery off
 required:
   - spaceId
   - reach

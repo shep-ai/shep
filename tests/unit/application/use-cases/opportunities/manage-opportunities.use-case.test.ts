@@ -1,7 +1,7 @@
 import 'reflect-metadata';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { ManageOpportunitiesUseCase } from '@/application/use-cases/opportunities/manage-opportunities.use-case.js';
-import { OpportunityStatus, SignalKind } from '@/domain/generated/output.js';
+import { OpportunitySource, OpportunityStatus, SignalKind } from '@/domain/generated/output.js';
 import { ACME, PAYMENTS, opportunityWorld } from './opportunity.fixtures.js';
 
 const T = new Date('2026-10-05T10:00:00Z');
@@ -112,5 +112,21 @@ describe('ManageOpportunitiesUseCase', () => {
     expect(shown.detail.value).toBe(15);
     expect(shown.detail.score).toBeCloseTo((15 * 0.7) / 6);
     expect((await useCase.show('nope')).ok).toBe(false);
+  });
+
+  it('records how an opportunity came to be, Manual unless told otherwise', async () => {
+    const manual = await create();
+    expect(manual.source).toBe(OpportunitySource.Manual);
+    const discovered = await useCase.create({
+      space: 'acme',
+      title: 'Cache sessions',
+      reviewHours: 3,
+      source: OpportunitySource.Discovery,
+      brief: 'Cache the session lookup.',
+    });
+    expect(discovered.ok && discovered.opportunity).toMatchObject({
+      source: OpportunitySource.Discovery,
+      brief: 'Cache the session lookup.',
+    });
   });
 });

@@ -1628,6 +1628,23 @@
       "revoked": "ملغى",
       "lastUsed": "آخر استخدام {{when}}",
       "neverUsed": "لم يُستخدم"
+    },
+    "source": {
+      "Manual": "يدوية",
+      "Theme": "من موضوع",
+      "Discovery": "مكتشفة"
+    },
+    "discovery": {
+      "title": "الاكتشاف",
+      "run": "اكتشف الآن",
+      "discovering": "جارٍ الاكتشاف…",
+      "schedule": "الجدولة",
+      "off": "متوقف",
+      "everyHours": "كل {{hours}} ساعة",
+      "never": "لم يعمل الاكتشاف في هذه المساحة بعد.",
+      "running": "الاكتشاف قيد التشغيل…",
+      "failed": "فشل التشغيل الأخير: {{error}}",
+      "succeeded": "آخر تشغيل: اقتُرحت {{proposed}} من {{read}} إشارة، {{when}}"
     }
   }
 }

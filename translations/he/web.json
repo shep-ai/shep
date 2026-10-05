@@ -1628,6 +1628,23 @@
       "revoked": "בוטל",
       "lastUsed": "שימוש אחרון {{when}}",
       "neverUsed": "לא היה בשימוש"
+    },
+    "source": {
+      "Manual": "ידני",
+      "Theme": "מנושא",
+      "Discovery": "התגלתה"
+    },
+    "discovery": {
+      "title": "גילוי",
+      "run": "גילוי עכשיו",
+      "discovering": "מגלה…",
+      "schedule": "תזמון",
+      "off": "כבוי",
+      "everyHours": "כל {{hours}} שעות",
+      "never": "הגילוי עדיין לא רץ במרחב הזה.",
+      "running": "הגילוי רץ…",
+      "failed": "ההרצה האחרונה נכשלה: {{error}}",
+      "succeeded": "הרצה אחרונה: {{proposed}} הוצעו מתוך {{read}} אותות, {{when}}"
     }
   }
 }

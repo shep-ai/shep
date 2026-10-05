@@ -5,7 +5,11 @@
  */
 
 import { injectable, inject } from 'tsyringe';
-import type { Opportunity, Space } from '../../../domain/generated/output.js';
+import {
+  OpportunitySource,
+  type Opportunity,
+  type Space,
+} from '../../../domain/generated/output.js';
 import { groupIntoThemes, type FeedbackTheme } from '../../../domain/shared/feedback-themes.js';
 import type { ISpaceRepository } from '../../ports/output/repositories/space-repository.interface.js';
 import type { IProductLineRepository } from '../../ports/output/repositories/product-line-repository.interface.js';
@@ -71,6 +75,7 @@ export class PromoteThemeUseCase {
       space: found.space.id,
       title: input.title?.trim() ? input.title : sentence(theme.label),
       reviewHours: input.reviewHours,
+      source: OpportunitySource.Theme,
       ...(input.confidence === undefined ? {} : { confidence: input.confidence }),
     });
     if (!created.ok) return created;

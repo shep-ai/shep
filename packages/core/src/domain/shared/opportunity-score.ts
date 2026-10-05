@@ -24,6 +24,9 @@ export const REVENUE_UNIT = 1_000;
 /** Smallest review estimate a score divides by, so tiny estimates do not explode. */
 export const MIN_REVIEW_HOURS = 0.5;
 
+/** Largest review estimate an opportunity may carry. */
+export const MAX_REVIEW_HOURS = 200;
+
 /** Weights a space uses until it sets its own. */
 export const DEFAULT_OPPORTUNITY_WEIGHTS: Omit<OpportunityWeights, 'spaceId'> = {
   reach: 1,
