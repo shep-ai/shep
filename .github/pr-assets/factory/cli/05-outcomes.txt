@@ -1,0 +1,46 @@
+
+# Build the best bet into the Payments project
+$ shep opportunity build cd0cb908-5869-4caa-b9cc-142dec6865a3 --project payments
+√ Building Faster guest checkout as work item 142e803d-3ee3-4de6-8e7f-dbc677be0488
+
+# When the work item is done, shep ships the opportunity (or by hand)
+$ shep outcome ship cd0cb908-5869-4caa-b9cc-142dec6865a3
+√ Faster guest checkout shipped; its outcome is judged on 2026-10-19
+$ shep outcome ship 3bd51e9b-2adc-44d8-9af3-678a7db44456
+√ PO number on invoices shipped; its outcome is judged on 2026-10-19
+
+# Demo only: pretend the PO number fix shipped 15 days ago, then let shep judge it
+$ node .github/pr-assets/factory/demo/backdate-outcome.mjs 3bd51e9b-2adc-44d8-9af3-678a7db44456 15
+Moved the outcome back 15 days
+$ shep outcome check
+√ Shipped 0, reopened 0, judged 1
+i   Solved 3 → 0 3bd51e9b-2adc-44d8-9af3-678a7db44456
+$ shep outcome ls -s acme
+
+  Outcomes — Acme (2)
+
+  Opportunity                           Shipped       Verdict      Reports    To tell 
+  Faster guest checkout                 2026-10-05    Pending                 2
+  PO number on invoices                 2026-09-20    Solved       3 → 0      3
+
+i No actual review hours recorded yet · 1 of 1 judged outcomes solved
+
+# Tell the customers who asked, then mark them told
+$ shep outcome tell cd0cb908-5869-4caa-b9cc-142dec6865a3
+i Tell them: “Faster guest checkout” has shipped — thank you for telling us what you needed.
+i   Initech 
+i   Globex 
+i When they know: shep outcome tell cd0cb908-5869-4caa-b9cc-142dec6865a3 --done
+$ shep outcome tell cd0cb908-5869-4caa-b9cc-142dec6865a3 --done
+√ Customers marked told: 2
+$ shep outcome hours cd0cb908-5869-4caa-b9cc-142dec6865a3 9
+√ Recorded 9 review hours
+$ shep outcome ls -s acme
+
+  Outcomes — Acme (2)
+
+  Opportunity                           Shipped       Verdict      Reports    To tell 
+  Faster guest checkout                 2026-10-05    Pending                 0
+  PO number on invoices                 2026-09-20    Solved       3 → 0      3
+
+i Actual review hours are 1.5× the estimates (1 recorded) · 1 of 1 judged outcomes solved

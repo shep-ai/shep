@@ -1,0 +1,50 @@
+
+# Evidence of what users need: who asked, revenue at stake, urgency
+$ shep signal add "Guest checkout times out on mobile" -s acme -k feedback -c Globex -r 4000 -u
+√ Signal 91b05e36-666e-4824-a22a-207749125026 recorded
+$ shep signal add "Checkout spinner never ends for guests" -s acme -k feedback -c Initech -r 2500
+√ Signal 496d21d8-d4a5-4f76-bda5-4ad44e7ba57b recorded
+$ shep signal add "Need SSO before the security review" -s acme -k tracker -c Umbrella -r 9000
+√ Signal c8b59e5d-5a8c-4949-844e-98721bbb1481 recorded
+$ shep signal add "p95 checkout latency above 4s" -s acme -k incident -u
+√ Signal e3579182-e6a1-4829-bc09-bdc791ba77b8 recorded
+
+# Bets backed by that evidence
+$ shep opportunity add "Faster guest checkout" -s acme --hours 6 --confidence 0.8 -p "Guests abandon checkout when it hangs"
+√ Opportunity cd0cb908-5869-4caa-b9cc-142dec6865a3 proposed
+$ shep opportunity link 91b05e36-666e-4824-a22a-207749125026 cd0cb908-5869-4caa-b9cc-142dec6865a3
+√ Signal 91b05e36-666e-4824-a22a-207749125026 supports cd0cb908-5869-4caa-b9cc-142dec6865a3
+$ shep opportunity link 496d21d8-d4a5-4f76-bda5-4ad44e7ba57b cd0cb908-5869-4caa-b9cc-142dec6865a3
+√ Signal 496d21d8-d4a5-4f76-bda5-4ad44e7ba57b supports cd0cb908-5869-4caa-b9cc-142dec6865a3
+$ shep opportunity link e3579182-e6a1-4829-bc09-bdc791ba77b8 cd0cb908-5869-4caa-b9cc-142dec6865a3
+√ Signal e3579182-e6a1-4829-bc09-bdc791ba77b8 supports cd0cb908-5869-4caa-b9cc-142dec6865a3
+$ shep opportunity add "SSO for enterprise" -s acme --hours 20 --confidence 0.6 --strategic -p "Deals stall at security review"
+√ Opportunity 7092adf0-04d2-4a32-8d07-ff238ccbb30d proposed
+$ shep opportunity link c8b59e5d-5a8c-4949-844e-98721bbb1481 7092adf0-04d2-4a32-8d07-ff238ccbb30d
+√ Signal c8b59e5d-5a8c-4949-844e-98721bbb1481 supports 7092adf0-04d2-4a32-8d07-ff238ccbb30d
+$ shep opportunity add "Dark mode" -s acme --hours 8 --confidence 0.3
+√ Opportunity a7666495-3f85-47aa-8759-870e7f2bd0e8 proposed
+$ shep opportunity accept cd0cb908-5869-4caa-b9cc-142dec6865a3
+√ Accepted Faster guest checkout
+$ shep opportunity accept 7092adf0-04d2-4a32-8d07-ff238ccbb30d
+√ Accepted SSO for enterprise
+
+# Acme reviews 16 hours a week: the line shows what fits
+$ shep opportunity weights -s acme --capacity 16 --revenue 2
+i reach 1 · revenue 2 · urgency 3 · strategic 5 · capacity 16 h/week
+$ shep opportunity ls -s acme
+
+  Opportunities in Acme — 6 of 16 review hours in the line (3)
+
+      Id                                      Opportunity                       Status      Value/h   Hours   Evidence                                    
+  ▶   cd0cb908-5869-4caa-b9cc-142dec6865a3    Faster guest checkout             Accepted    2.93      6       3 signals, 3 customers, 6500/month, 2 urgent
+      7092adf0-04d2-4a32-8d07-ff238ccbb30d    SSO for enterprise                Accepted    0.72      20      1 signal, 1 customer, 9000/month, 0 urgent
+      a7666495-3f85-47aa-8759-870e7f2bd0e8    Dark mode                         Proposed    0.00      8       0 signals, 0 customers, 0/month, 0 urgent
+$ shep opportunity show cd0cb908-5869-4caa-b9cc-142dec6865a3
+i Faster guest checkout Accepted
+i Guests abandon checkout when it hangs
+i 2.93 value per review hour (value 22, 6 h, confidence 0.8)
+i 3 signals, 3 customers, 6500/month, 2 urgent
+i   - p95 checkout latency above 4s
+i   - Checkout spinner never ends for guests (Initech)
+i   - Guest checkout times out on mobile (Globex)

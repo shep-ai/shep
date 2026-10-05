@@ -1,0 +1,70 @@
+
+# Dark mode is accepted too; at 8 hours it fits the week's line
+$ shep opportunity accept a7666495-3f85-47aa-8759-870e7f2bd0e8
+√ Accepted Dark mode
+
+# Let Acme run on autopilot: investigate urgent bugs, fix confident ones, fill the line
+$ shep autopilot set -s acme --investigate --fix --budget 3 --fill-line --project payments
+√ Autopilot policy saved
+$ shep autopilot run -s acme
+i Running an autopilot pass; investigations can take many minutes…
+i 2026-10-05T07:21:59.382Z  investigated PAY-1 · fixed PAY-1 · built Dark mode
+$ shep autopilot show -s acme
+
+  Autopilot — Acme
+
+  Investigate urgent work items  on
+  Fix confident hypotheses       on
+  Fixes merge without a person   off
+  Fixes a day                    3
+  Build the week's line          on
+  Project for the line           Payments (payments)
+
+i 2026-10-05T07:21:59.382Z  investigated PAY-1 · fixed PAY-1 · built Dark mode
+
+# The investigation autopilot started, and the fix it began
+$ shep item hypotheses PAY-1
+PAY-1 Refund fails for guest orders
+Investigated /tmp/claude-0/demo/work/pay-api @ f7920ce with dev — Completed
+
+PAY-1 reports "Refund fails for guest orders". The behaviour lives in the request handling path, where an edge case is not handled.
+
+1. Unhandled edge case in the request handler  [High]
+   The handler assumes a value that is missing for this case and fails.
+   Evidence:
+     README.md:1  Entry point described here.
+   Failing test: Add a unit test that sends the failing case and expects success.
+   Fix: Guard the missing value and fall back to the default path.
+
+2. Stale cached state  [Medium]
+   A cached value from an earlier request is reused.
+   Evidence:
+     README.md  Caching mentioned in the overview.
+   Failing test: Add a test that runs two requests in a row.
+   Fix: Key the cache by the request owner.
+
+Hypothesis 1 is being fixed by feature eeb78213-5ef8-4211-a9c5-542c26ce0d3d.
+$ shep feat ls
+
+  Features (1)
+
+  NAME                                          STATUS                  R P M ↑     ELAPSED    DONE
+
+  pay-api  /tmp/claude-0/demo/work/pay-api
+  └─ eeb78213  Fix PAY-1: Unhandled edge case...  > Review Merge          ■ ■ □ □     0s         
+
+# Everything that is moving, and everything waiting on people
+$ shep factory status -s acme
+
+  Factory — Acme
+
+  Line                       8/16 review hours, 1 in the line, 1 waiting
+  Building                   1
+  Features                   1 in flight, 1 waiting for approval
+  Open incidents             1
+  Actions awaiting approval  0
+  Outcomes pending           1
+  Customers to tell          3
+  Autopilot                  on
+
+i 2026-10-05T07:21:59.382Z  investigated PAY-1 · fixed PAY-1 · built Dark mode

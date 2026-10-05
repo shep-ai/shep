@@ -1,0 +1,42 @@
+
+# A key for the support tool; shep prints it once
+$ shep feedback key create -s acme --name Zendesk
+√ Feedback key for Zendesk created. Copy it now; it is not shown again:
+i shep_fb_rtwTbB…
+i Send it as "Authorization: Bearer <key>" with each POST to /api/feedback on your shep server.
+
+# The support tool posts feedback over HTTP
+$ curl -s -X POST http://localhost:4050/api/feedback -H 'Authorization: Bearer shep_fb_rtwTbB…' -H 'Content-Type: application/json' -d '{"text":"Invoices are missing the PO number","customer":"Hooli","monthlyRevenue":1200,"externalId":"zd-811"}'
+{"id":"3c1a5f97-e963-4483-95d9-d0994668c5cd","duplicate":false}
+{"id":"4aa4f64f-9340-401c-86e8-0432f52326cc","duplicate":false}
+{"id":"694e1dbf-07d5-4c26-ac0d-20a5f5efaf84","duplicate":false}
+$ curl -s -o /dev/null -w '%{http_code}\n' -X POST http://localhost:4050/api/feedback -H 'Authorization: Bearer shep_fb_fake_key_for_401' -d '{"text":"x"}'
+401
+
+# Similar signals group into themes
+$ shep feedback themes -s acme
+
+  Themes in Acme (1)
+
+  Theme                                   Words                             Evidence                                    
+  3c1a5f97-e963-4483-95d9-d0994668c5cd    invoice number missing            3 signals, 3 customers, 2000/month, 1 urgent
+$ shep feedback promote 3c1a5f97-e963-4483-95d9-d0994668c5cd -s acme --hours 3 --confidence 0.7 --title "PO number on invoices"
+√ PO number on invoices (3bd51e9b-2adc-44d8-9af3-678a7db44456) proposed; signals linked: 3
+
+# Discovery: an agent reads the loose signals and proposes bets
+$ shep signal add "Exports time out for large accounts" -s acme -k feedback -c Globex
+√ Signal f6ff6baa-71ea-404d-b414-4b408b3b275a recorded
+$ shep signal add "CSV export of 50k orders never finishes" -s acme -k feedback -c Hooli
+√ Signal 95c069df-a333-4712-9f7f-614b27c1041f recorded
+$ shep discovery run -s acme
+i Reading the space's evidence; this can take a few minutes…
+√ Signals read: 2 · opportunities proposed: 1 · proposals dropped: 0
+i   Resolve CSV export of 50k orders never finishes 47d11c1d-67cb-46b5-b76b-1ea6a31550ea
+$ shep discovery schedule -s acme --every 24
+√ Discovery runs every 24 hours
+$ shep discovery ls -s acme
+
+  Discovery runs (1)
+
+  Started                     Status      Result                                                      
+  2026-10-05T07:20:24.862Z    Succeeded   1 proposed from 2 signals (0 dropped)

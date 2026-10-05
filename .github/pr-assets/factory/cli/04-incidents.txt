@@ -1,0 +1,113 @@
+
+# A monitoring tool posts an alert with the space's intake key
+$ curl -s -X POST http://localhost:4050/api/alerts -H 'Authorization: Bearer shep_fb_rtwTbB…' -H 'Content-Type: application/json' -d '{"title":"Checkout 5xx above 5%","severity":"Critical","detail":"Error rate on POST /checkout rose from 0.2% to 7% at 09:58.","url":"https://grafana.acme.dev/d/checkout","namespace":"shop","workload":"checkout","context":"prod","externalId":"grafana-812"}'
+{"id":"93ec3451-6512-42eb-9b0e-5db91587527e","duplicate":false}
+
+# The same alert again is a note, not a second incident
+$ curl -s -X POST http://localhost:4050/api/alerts -H 'Authorization: Bearer shep_fb_rtwTbB…' -d '…same alert…'
+{"id":"93ec3451-6512-42eb-9b0e-5db91587527e","duplicate":true}
+$ shep incident ls --open
+
+  Incidents (1)
+
+  Id                                      Incident                            Severity    Status      Workload                
+  93ec3451-6512-42eb-9b0e-5db91587527e    Checkout 5xx above 5%               Critical    Open        shop/checkout
+
+# Triage: evidence from the workload, ranked causes, one proposed action
+$ shep incident triage 93ec3451-6512-42eb-9b0e-5db91587527e
+i Reading the workload and asking the agent; this can take a few minutes…
+i Checkout 5xx above 5%: errors began right after the latest rollout of shop/checkout.
+i   1. The latest release introduced a regression (High)
+i   2. Pods are short of memory under load (Medium)
+i   3. A downstream dependency is slow (Low)
+i Waiting for approval: rollback: Proposed — run shep incident approve 44c1706c-5dbf-40d0-9cc0-92247fed7b83
+$ shep incident show 93ec3451-6512-42eb-9b0e-5db91587527e
+i Checkout 5xx above 5% Critical · Open
+i   2026-10-05T07:20:37.928Z Opened: An alert opened a Critical incident: Checkout 5xx above 5%
+i   2026-10-05T07:20:40.542Z Note: Alert again: Checkout 5xx above 5%
+i   2026-10-05T07:20:47.447Z Evidence: Rollout status:
+      NAME       READY   UP-TO-DATE   AVAILABLE   AGE   CONTAINERS   IMAGES
+      checkout   1/3     3            1           2d    checkout   registry.acme.dev/checkout:4.12.0
+      
+      Recent events:
+      LAST SEEN   TYPE      REASON              OBJECT                  MESSAGE
+      2m          Normal    ScalingReplicaSet   deployment/checkout   Scaled up replica set checkout-7d9 to 3
+      1m          Warning   BackOff             pod/checkout-7d9-x2k   Back-off restarting failed container
+      
+      Recent logs:
+      ERROR TaxClient: unexpected field "jurisdiction" in response (4.12.0)
+      ERROR POST /checkout 502 upstream tax-service
+i   2026-10-05T07:20:47.750Z Note: Checkout 5xx above 5%: errors began right after the latest rollout of shop/checkout.
+i   2026-10-05T07:20:47.751Z Hypothesis: The latest release introduced a regression (High) — Errors start with the newest replica set; earlier pods were healthy.
+i   2026-10-05T07:20:47.751Z Hypothesis: Pods are short of memory under load (Medium) — Restarts cluster around traffic peaks.
+i   2026-10-05T07:20:47.751Z Hypothesis: A downstream dependency is slow (Low) — Some timeouts mention an upstream call.
+i   2026-10-05T07:20:47.752Z ActionProposed: Agent proposed rollback: Errors began with the latest rollout; roll back to the last healthy revision.
+i   44c1706c-5dbf-40d0-9cc0-92247fed7b83 rollback: Proposed
+
+# Acme only lets shep restart on its own, so the rollback waits for a person
+$ shep incident approve 44c1706c-5dbf-40d0-9cc0-92247fed7b83
+√ rollback: Succeeded, recovered
+
+# Restarts are allowed: a person's action runs at once
+$ shep incident act 93ec3451-6512-42eb-9b0e-5db91587527e restart --reason "Clear stuck connections"
+√ restart: Succeeded, recovered
+$ shep incident note 93ec3451-6512-42eb-9b0e-5db91587527e "Tax service vendor confirmed a schema change in 4.12"
+√ Note added
+
+# A second, minor incident opened by hand
+$ shep incident open "Search is slow" -s acme --severity minor --workload search --namespace shop
+√ Incident 9e53051f-1371-4db0-bfaa-80558660ce3a opened: Search is slow
+$ shep incident resolve 93ec3451-6512-42eb-9b0e-5db91587527e
+√ Checkout 5xx above 5% resolved
+i # Postmortem: Checkout 5xx above 5%
+
+- Severity: Critical
+- Workload: shop/checkout (prod)
+- Opened: 2026-10-05T07:20:37.927Z
+- Recovered: 2026-10-05T07:20:54.982Z (less than a minute after opening)
+- Resolved: 2026-10-05T07:21:11.368Z
+
+## Timeline
+
+- 2026-10-05T07:20:37.928Z — Opened: An alert opened a Critical incident: Checkout 5xx above 5%
+- 2026-10-05T07:20:40.542Z — Note: Alert again: Checkout 5xx above 5%
+- 2026-10-05T07:20:47.447Z — Evidence: Rollout status:
+
+  ```
+  NAME       READY   UP-TO-DATE   AVAILABLE   AGE   CONTAINERS   IMAGES
+  checkout   1/3     3            1           2d    checkout   registry.acme.dev/checkout:4.12.0
+
+  Recent events:
+  LAST SEEN   TYPE      REASON              OBJECT                  MESSAGE
+  2m          Normal    ScalingReplicaSet   deployment/checkout   Scaled up replica set checkout-7d9 to 3
+  1m          Warning   BackOff             pod/checkout-7d9-x2k   Back-off restarting failed container
+
+  Recent logs:
+  ERROR TaxClient: unexpected field "jurisdiction" in response (4.12.0)
+  ERROR POST /checkout 502 upstream tax-service
+  ```
+- 2026-10-05T07:20:47.750Z — Note: Checkout 5xx above 5%: errors began right after the latest rollout of shop/checkout.
+- 2026-10-05T07:20:47.751Z — Hypothesis: The latest release introduced a regression (High) — Errors start with the newest replica set; earlier pods were healthy.
+- 2026-10-05T07:20:47.751Z — Hypothesis: Pods are short of memory under load (Medium) — Restarts cluster around traffic peaks.
+- 2026-10-05T07:20:47.751Z — Hypothesis: A downstream dependency is slow (Low) — Some timeouts mention an upstream call.
+- 2026-10-05T07:20:47.752Z — ActionProposed: Agent proposed rollback: Errors began with the latest rollout; roll back to the last healthy revision.
+- 2026-10-05T07:20:54.936Z — ActionApproved: Approved by a person: rollback
+- 2026-10-05T07:20:54.963Z — ActionSucceeded: rollback: deployment.apps/checkout rolled back
+- 2026-10-05T07:20:54.982Z — Recovered: deployment "checkout" successfully rolled out
+- 2026-10-05T07:20:59.416Z — ActionProposed: Person proposed restart: Clear stuck connections
+- 2026-10-05T07:20:59.416Z — ActionApproved: Asked for by a person: restart
+- 2026-10-05T07:20:59.443Z — ActionSucceeded: restart: deployment.apps/checkout restarted
+- 2026-10-05T07:20:59.463Z — Recovered: deployment "checkout" successfully rolled out
+- 2026-10-05T07:21:03.664Z — Note: Tax service vendor confirmed a schema change in 4.12
+- 2026-10-05T07:21:11.368Z — Resolved: Resolved
+
+## Actions
+
+- rollback (Agent): Succeeded, recovered — Errors began with the latest rollout; roll back to the last healthy revision.
+- restart (Person): Succeeded, recovered — Clear stuck connections
+
+## Follow-ups
+
+- Root cause confirmed:
+- What would have caught it earlier:
+- Work items to prevent a repeat:

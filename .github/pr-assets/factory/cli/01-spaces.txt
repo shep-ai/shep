@@ -1,0 +1,77 @@
+
+# Keep client work and personal work apart
+$ shep space new Acme -d "Client work for Acme" -c "#3456c4"
+√ Space "Acme" created (acme)
+$ shep space new Personal -d "Side projects" --default
+√ Space "Personal" created (personal)
+$ shep space line new acme Payments
+√ Product line "Payments" created (payments)
+$ shep space rule add acme /tmp/claude-0/demo/work -l payments
+√ Path rule added for /tmp/claude-0/demo/work
+$ shep repo import /tmp/claude-0/demo/work --all --git-only
+
+  Import candidates (1)
+
+  Name                          Git     Status                Path                                    
+  pay-api                       yes     new                   /tmp/claude-0/demo/work/pay-api
+
+√ Imported: pay-api
+i 1 imported, 0 failed
+$ shep space show /tmp/claude-0/demo/work/pay-api
+
+  /tmp/claude-0/demo/work/pay-api
+
+  Space         Acme
+  Product line  Payments
+  Because       matched Path rule /tmp/claude-0/demo/work
+
+# How agents run in Acme: PR comments, runtime actions on incidents, docs first
+$ shep space config acme --pr-comments all --resolve-threads --auto-actions restart --docs-first --docs-paths docs/,README.md
+√ Agent settings for Acme saved
+
+  Acme agent settings
+
+  Claude config dir          inherit from host
+  gh config dir              inherit from host
+  Git name                   inherit from host
+  Git email                  inherit from host
+  Bedrock                    inherit from host
+  AWS profile                inherit from host
+  Allowed agents             any
+  PR comments answered       All
+  Resolve threads            on
+  Runs on incidents unasked  Restart
+  Docs first                 On (docs/, README.md)
+
+  Environment for agent processes
+  Sets     -
+  Removes  -
+
+# A project whose repository is the Acme payments API, with an urgent bug
+$ shep project new --name Payments --prefix PAY --repo /tmp/claude-0/demo/work/pay-api
+
+√ Project created
+  Name:   Payments
+  Prefix: PAY
+  Slug:   payments
+  Repo:   /tmp/claude-0/demo/work/pay-api
+$ shep item new payments -t "Refund fails for guest orders" -p urgent -d "Refunding a guest order returns 500 since 4.12."
+
+√ Work item created
+  ID:       PAY-1
+  Title:    Refund fails for guest orders
+  Priority: Urgent
+$ shep item new payments -t "Show the PO number on invoices" -p medium
+
+√ Work item created
+  ID:       PAY-2
+  Title:    Show the PO number on invoices
+  Priority: Medium
+$ shep space ls
+
+  Spaces (3)
+
+  Name                    Slug              Product lines                 Repos    Memory 
+  Personal (default)      personal          -                             0        0
+  Acme                    acme              Payments                      1        0
+  Default                 default           -                             0        0
