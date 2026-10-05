@@ -183,6 +183,7 @@ import { GetBranchSyncStatusUseCase } from '../../../application/use-cases/featu
 import { AutoResolveMergedBranchesUseCase } from '../../../application/use-cases/features/auto-resolve-merged-branches.use-case.js';
 import { ReparentFeatureUseCase } from '../../../application/use-cases/features/reparent-feature.use-case.js';
 import { CreateApplicationUseCase } from '../../../application/use-cases/applications/create-application.use-case.js';
+import { AdoptLocalRepositoryUseCase } from '../../../application/use-cases/applications/adopt-local-repository.use-case.js';
 import { ListApplicationsUseCase } from '../../../application/use-cases/applications/list-applications.use-case.js';
 import { GetApplicationUseCase } from '../../../application/use-cases/applications/get-application.use-case.js';
 import { DeleteApplicationUseCase } from '../../../application/use-cases/applications/delete-application.use-case.js';
@@ -378,6 +379,7 @@ export function registerUseCases(container: DependencyContainer): void {
   container.registerSingleton(AutoResolveMergedBranchesUseCase);
   container.registerSingleton(ReparentFeatureUseCase);
   container.registerSingleton(CreateApplicationUseCase);
+  container.registerSingleton(AdoptLocalRepositoryUseCase);
   container.registerSingleton(ListApplicationsUseCase);
   container.registerSingleton(GetApplicationUseCase);
   container.registerSingleton(DeleteApplicationUseCase);
@@ -623,6 +625,9 @@ export function registerUseCases(container: DependencyContainer): void {
   });
   container.register('CreateApplicationUseCase', {
     useFactory: (c) => c.resolve(CreateApplicationUseCase),
+  });
+  container.register('AdoptLocalRepositoryUseCase', {
+    useFactory: (c) => c.resolve(AdoptLocalRepositoryUseCase),
   });
   container.register('ListApplicationsUseCase', {
     useFactory: (c) => c.resolve(ListApplicationsUseCase),

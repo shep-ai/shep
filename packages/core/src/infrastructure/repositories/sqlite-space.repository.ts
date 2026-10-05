@@ -51,11 +51,11 @@ export class SQLiteSpaceRepository implements ISpaceRepository {
         `INSERT INTO spaces (id, name, slug, description, color, is_default,
            claude_config_dir, gh_config_dir, git_author_name, git_author_email, aws_profile,
            use_bedrock, allowed_agent_types, pr_comment_trigger, pr_comment_resolve_threads,
-           created_at, updated_at)
+           auto_runtime_actions, docs_first, docs_paths, created_at, updated_at)
          VALUES (@id, @name, @slug, @description, @color, @is_default,
            @claude_config_dir, @gh_config_dir, @git_author_name, @git_author_email, @aws_profile,
            @use_bedrock, @allowed_agent_types, @pr_comment_trigger, @pr_comment_resolve_threads,
-           @created_at, @updated_at)`
+           @auto_runtime_actions, @docs_first, @docs_paths, @created_at, @updated_at)`
       )
       .run(spaceToDatabase(space));
   }
@@ -69,7 +69,9 @@ export class SQLiteSpaceRepository implements ISpaceRepository {
            git_author_name = @git_author_name, git_author_email = @git_author_email,
            aws_profile = @aws_profile, use_bedrock = @use_bedrock,
            allowed_agent_types = @allowed_agent_types, pr_comment_trigger = @pr_comment_trigger,
-           pr_comment_resolve_threads = @pr_comment_resolve_threads, updated_at = @updated_at
+           pr_comment_resolve_threads = @pr_comment_resolve_threads,
+           auto_runtime_actions = @auto_runtime_actions, docs_first = @docs_first,
+           docs_paths = @docs_paths, updated_at = @updated_at
          WHERE id = @id`
       )
       .run({
@@ -87,6 +89,9 @@ export class SQLiteSpaceRepository implements ISpaceRepository {
         allowed_agent_types: row.allowed_agent_types,
         pr_comment_trigger: row.pr_comment_trigger,
         pr_comment_resolve_threads: row.pr_comment_resolve_threads,
+        auto_runtime_actions: row.auto_runtime_actions,
+        docs_first: row.docs_first,
+        docs_paths: row.docs_paths,
         updated_at: row.updated_at,
       });
   }

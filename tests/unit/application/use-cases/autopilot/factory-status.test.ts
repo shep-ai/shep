@@ -1,9 +1,11 @@
 import 'reflect-metadata';
 import { describe, it, expect, vi } from 'vitest';
 import {
+  AgentRunStatus,
   OpportunityStatus,
   OutcomeVerdict,
   RuntimeActionStatus,
+  SdlcLifecycle,
 } from '@/domain/generated/output.js';
 import { GetFactoryStatusUseCase } from '@/application/use-cases/autopilot/get-factory-status.use-case.js';
 
@@ -52,6 +54,53 @@ function useCase(boardOk = true) {
       runs: [{ id: 'run-2' }, { id: 'run-1' }],
     })),
   };
+  const features = {
+    list: vi.fn(async () => [
+      {
+        id: 'f1',
+        repositoryPath: '/work/pay',
+        lifecycle: SdlcLifecycle.Review,
+        agentRunId: 'run-a',
+      },
+      {
+        id: 'f2',
+        repositoryPath: '/work/pay',
+        lifecycle: SdlcLifecycle.Implementation,
+        agentRunId: 'run-b',
+      },
+      {
+        id: 'f3',
+        repositoryPath: '/work/pay',
+        lifecycle: SdlcLifecycle.Maintain,
+        agentRunId: 'run-c',
+      },
+      {
+        id: 'f4',
+        repositoryPath: '/me/blog',
+        lifecycle: SdlcLifecycle.Review,
+        agentRunId: 'run-d',
+      },
+    ]),
+  };
+  const agentRuns = {
+    findByIds: vi.fn(async (ids: string[]) =>
+      ids.map((id) => ({
+        id,
+        status:
+          id === 'run-a' || id === 'run-d'
+            ? AgentRunStatus.waitingApproval
+            : AgentRunStatus.running,
+      }))
+    ),
+  };
+  const spaceContext = {
+    executeMany: vi.fn(async (paths: string[]) =>
+      paths.map((repositoryPath) => ({
+        repositoryPath,
+        space: { id: repositoryPath.startsWith('/work') ? SPACE.id : 'space-me' },
+      }))
+    ),
+  };
   return {
     incidents,
     status: new GetFactoryStatusUseCase(
@@ -59,7 +108,10 @@ function useCase(boardOk = true) {
       incidents as never,
       actions as never,
       outcomes as never,
-      autopilot as never
+      autopilot as never,
+      features as never,
+      agentRuns as never,
+      spaceContext as never
     ),
   };
 }
@@ -74,6 +126,7 @@ describe('GetFactoryStatusUseCase (spec 132)', () => {
       space: SPACE,
       line: { usedHours: 12, capacityHours: 16, inLine: 2, waiting: 1 },
       building: 1,
+      features: { inFlight: 2, awaitingApproval: 1 },
       openIncidents: 2,
       actionsAwaitingApproval: 1,
       pendingOutcomes: 1,

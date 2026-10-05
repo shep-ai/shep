@@ -7365,7 +7365,7 @@ export type AutopilotRun = BaseEntity & {
    */
   fixed: string[];
   /**
-   * Ids of the opportunities it built
+   * Titles of the opportunities it built
    */
   built: string[];
   /**

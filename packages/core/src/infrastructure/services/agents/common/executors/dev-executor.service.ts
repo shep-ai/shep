@@ -15,6 +15,7 @@ import { SPEC_REQUIREMENTS_FIXTURE } from './fixtures/spec-requirements.fixture.
 import { RESEARCH_FIXTURE } from './fixtures/research.fixture.js';
 import { PLAN_FIXTURE } from './fixtures/plan.fixture.js';
 import { TASKS_FIXTURE } from './fixtures/tasks.fixture.js';
+import { devStructuredAnswer } from './dev-structured-answers.js';
 
 const DEFAULT_DELAY_MS = 2000;
 
@@ -269,6 +270,7 @@ export class DevAgentExecutorService implements IAgentExecutor {
     // CI fix: merge.prompt.ts:28
     if (prompt.includes('fixing a CI failure')) return CI_FIX_RESULT;
 
-    return '{}';
+    // Investigation, discovery and triage (specs 123, 128, 129)
+    return devStructuredAnswer(prompt) ?? '{}';
   }
 }

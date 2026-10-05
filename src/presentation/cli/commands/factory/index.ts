@@ -43,6 +43,13 @@ function createStatusCommand(): Command {
                       value: String(status.building),
                     },
                     {
+                      label: t('cli:commands.factory.status.features'),
+                      value: t('cli:commands.factory.status.featuresValue', {
+                        inFlight: status.features.inFlight,
+                        waiting: status.features.awaitingApproval,
+                      }),
+                    },
+                    {
                       label: t('cli:commands.factory.status.incidents'),
                       value: String(status.openIncidents),
                     },

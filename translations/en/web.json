@@ -1553,8 +1553,22 @@
       "inLine": "In this week’s line",
       "outOfLine": "Not in the line",
       "strategic": "Strategic",
-      "evidence": "{{signals}} signals · {{customers}} customers · {{revenue}}/month · {{urgent}} urgent",
-      "cost": "{{hours}} h · {{confidence}}% confidence"
+      "cost": "{{hours}} h · {{confidence}}% confidence",
+      "evidenceParts": {
+        "signals_one": "{{count}} signal",
+        "signals_few": "{{count}} signals",
+        "signals_many": "{{count}} signals",
+        "signals_other": "{{count}} signals",
+        "customers_one": "{{count}} customer",
+        "customers_few": "{{count}} customers",
+        "customers_many": "{{count}} customers",
+        "customers_other": "{{count}} customers",
+        "urgent_one": "{{count}} urgent",
+        "urgent_few": "{{count}} urgent",
+        "urgent_many": "{{count}} urgent",
+        "urgent_other": "{{count}} urgent",
+        "revenue": "{{revenue}}/month"
+      }
     },
     "status": {
       "Proposed": "Proposed",
@@ -1783,7 +1797,9 @@
       "incidents": "Open incidents",
       "actions": "Actions awaiting approval",
       "outcomes": "Outcomes pending",
-      "customers": "Customers to tell"
+      "customers": "Customers to tell",
+      "features": "Features in flight",
+      "approval": "Waiting for approval"
     },
     "runs": {
       "title": "Autopilot passes",

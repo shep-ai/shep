@@ -71,6 +71,9 @@ describe('TriageIncidentUseCase', () => {
       IncidentEventKind.Hypothesis,
       IncidentEventKind.ActionProposed,
     ]);
+    const recorded = world.events.rows.find((e) => e.kind === IncidentEventKind.Evidence);
+    expect(recorded?.text).toContain('Recent logs');
+    expect(recorded?.text).toContain('java.lang.OutOfMemoryError');
     const [prompt, , options] = call.mock.calls[0];
     expect(prompt).toContain('java.lang.OutOfMemoryError');
     expect(prompt).toContain('Error rate 8%');

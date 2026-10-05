@@ -1553,8 +1553,22 @@
       "inLine": "בקו של השבוע",
       "outOfLine": "מחוץ לקו",
       "strategic": "אסטרטגית",
-      "evidence": "{{signals}} אותות · {{customers}} לקוחות · {{revenue}} לחודש · {{urgent}} דחופים",
-      "cost": "{{hours}} שעות · ביטחון {{confidence}}%"
+      "cost": "{{hours}} שעות · ביטחון {{confidence}}%",
+      "evidenceParts": {
+        "signals_one": "{{count}} אות",
+        "signals_few": "{{count}} אותות",
+        "signals_many": "{{count}} אותות",
+        "signals_other": "{{count}} אותות",
+        "customers_one": "{{count}} לקוח",
+        "customers_few": "{{count}} לקוחות",
+        "customers_many": "{{count}} לקוחות",
+        "customers_other": "{{count}} לקוחות",
+        "urgent_one": "{{count}} דחוף",
+        "urgent_few": "{{count}} דחופים",
+        "urgent_many": "{{count}} דחופים",
+        "urgent_other": "{{count}} דחופים",
+        "revenue": "{{revenue}}/חודש"
+      }
     },
     "status": {
       "Proposed": "הוצעה",
@@ -1783,7 +1797,9 @@
       "incidents": "תקלות פתוחות",
       "actions": "פעולות שממתינות לאישור",
       "outcomes": "תוצאות ממתינות",
-      "customers": "לקוחות לעדכן"
+      "customers": "לקוחות לעדכן",
+      "features": "פיצ'רים בתהליך",
+      "approval": "ממתינים לאישור"
     },
     "runs": {
       "title": "מעברי autopilot",

@@ -17,6 +17,8 @@ Or open **Factory** in the sidebar. For one space:
 | ---- | ------- |
 | Line | Review hours used of the week's capacity, bets in the line and waiting |
 | Building | Opportunities being built |
+| Features in flight | Features of the space's repositories still on their way to merge |
+| Waiting for approval | Those of them stopped at a gate for a person (a fix waiting to merge, a plan to review) |
 | Open incidents | Incidents not resolved |
 | Actions awaiting approval | Restarts, rollbacks and scales triage proposed |
 | Outcomes pending | Shipped opportunities not judged yet |
@@ -53,6 +55,13 @@ Or use the **Autopilot** form on the Factory page. A pass does, for the parts th
 Every pass is recorded with what it investigated, fixed and built, and what failed; one failure
 does not stop the rest. `--no-investigate`, `--no-fix`, `--no-merge-fixes` and `--no-fill-line`
 turn parts off; `--clear-project` stops filling the line.
+
+## Try it without an agent account
+
+Set the agent type to `dev` (`shep settings agent --agent dev`): investigations, discovery and
+incident triage then get fixture answers built from what they are asked, so every loop above
+runs end to end locally. `.github/pr-assets/factory/demo/` replays the whole tour against an
+isolated `SHEP_HOME` with a stub `kubectl`.
 
 ## Good to know
 

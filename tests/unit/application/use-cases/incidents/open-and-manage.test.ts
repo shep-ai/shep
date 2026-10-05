@@ -44,6 +44,7 @@ describe('Opening and managing incidents', () => {
       title: 'Checkout 5xx',
     });
     expect(world.events.rows.map((e) => e.kind)).toEqual([IncidentEventKind.Opened]);
+    expect(world.events.rows[0]?.text).toMatch(/^A person opened a \w+ incident: Checkout 5xx$/);
   });
 
   it('turns a repeat alert into a note while the incident is open', async () => {
@@ -66,6 +67,7 @@ describe('Opening and managing incidents', () => {
       IncidentEventKind.Opened,
       IncidentEventKind.Note,
     ]);
+    expect(world.events.rows[0]?.text).toBe('An alert opened a Major incident: Checkout 5xx');
     expect(first.incident.severity).toBe(IncidentSeverity.Major);
   });
 

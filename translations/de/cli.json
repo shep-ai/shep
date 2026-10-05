@@ -1333,7 +1333,7 @@
       "run": {
         "description": "Eine Sync-Regel oder alle aktiven jetzt ausführen",
         "nothing": "Keine aktiven Sync-Regeln",
-        "conflictsNote": "{{count}} Feld(er) auf beiden Seiten geändert; der Wert des Trackers wurde behalten"
+        "conflictsNote": "Auf beiden Seiten geänderte Felder: {{count}}; der Wert des Trackers wurde behalten"
       }
     },
     "item": {
@@ -1483,7 +1483,6 @@
       "confidenceOption": "Zuversicht, dass sie den Wert liefert, von 0 bis 1 (Standard 0.5)",
       "strategicOption": "Dient einem strategischen Ziel des Space",
       "problemOption": "Das Problem, das sie löst, in Worten der Nutzer",
-      "evidence": "{{signals}} Signale, {{customers}} Kunden, {{revenue}}/Monat, {{urgent}} dringend",
       "add": {
         "description": "Eine neue Opportunity formen",
         "titleArg": "Einzeiliger Name der Wette",
@@ -1526,7 +1525,7 @@
         "hoursColumn": "Std.",
         "evidenceColumn": "Belege",
         "empty": "Keine offenen Opportunities. Mit shep opportunity add eine formen.",
-        "unlinked": "{{count}} Signal(e) noch ohne Opportunity (shep signal ls --unlinked)"
+        "unlinked": "Noch nicht mit einer Opportunity verknüpfte Signale: {{count}} (shep signal ls --unlinked)"
       },
       "show": {
         "description": "Eine Opportunity mit Belegen und Score zeigen",
@@ -1541,6 +1540,21 @@
         "strategicOption": "Zusatzwert für eine strategische Wette",
         "capacityOption": "Stunden menschlichen Reviews pro Woche",
         "current": "Reichweite {{reach}} · Umsatz {{revenue}} · Dringlichkeit {{urgency}} · strategisch {{strategic}} · Kapazität {{capacity}} Std./Woche"
+      },
+      "evidenceParts": {
+        "signals_one": "{{count}} Signal",
+        "signals_few": "{{count}} Signale",
+        "signals_many": "{{count}} Signale",
+        "signals_other": "{{count}} Signale",
+        "customers_one": "{{count}} Kunde",
+        "customers_few": "{{count}} Kunden",
+        "customers_many": "{{count}} Kunden",
+        "customers_other": "{{count}} Kunden",
+        "urgent_one": "{{count}} dringend",
+        "urgent_few": "{{count}} dringend",
+        "urgent_many": "{{count}} dringend",
+        "urgent_other": "{{count}} dringend",
+        "revenue": "{{revenue}}/Monat"
       }
     },
     "feedback": {
@@ -1584,7 +1598,7 @@
         "description": "Ein Thema zu einer Opportunity mit verknüpften Signalen machen",
         "themeArg": "Themenschlüssel (siehe shep feedback themes)",
         "titleOption": "Titel der Opportunity (sonst die Wörter des Themas)",
-        "success": "{{title}} ({{id}}) mit {{count}} verknüpften Signal(en) vorgeschlagen"
+        "success": "{{title}} ({{id}}) vorgeschlagen; verknüpfte Signale: {{count}}"
       }
     },
     "discovery": {
@@ -1595,7 +1609,7 @@
         "description": "Discovery in einem Space jetzt ausführen",
         "agentOption": "Zu verwendender Agent (die Regeln des Space gelten)",
         "started": "Die Belege des Space werden gelesen; das kann einige Minuten dauern…",
-        "success": "{{read}} Signale gelesen: {{proposed}} Opportunities vorgeschlagen, {{dropped}} Vorschläge verworfen"
+        "success": "Gelesene Signale: {{read}} · vorgeschlagene Opportunities: {{proposed}} · verworfene Vorschläge: {{dropped}}"
       },
       "ls": {
         "description": "Discovery-Läufe eines Space auflisten",
@@ -1775,7 +1789,9 @@
         "actions": "Aktionen mit Freigabe",
         "outcomes": "Ausstehende Ergebnisse",
         "customers": "Zu informierende Kunden",
-        "autopilot": "Autopilot"
+        "autopilot": "Autopilot",
+        "features": "Features",
+        "featuresValue": "{{inFlight}} in Arbeit, {{waiting}} warten auf Freigabe"
       }
     }
   },

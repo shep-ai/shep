@@ -96,9 +96,9 @@ export class RuntimeActionsUseCase {
     if (!runsNow) return { ok: true, action };
     const why =
       proposedBy === ActionProposer.Person
-        ? 'proposed by a person'
-        : `the ${space?.name ?? 'space'} space allows ${label}`;
-    return this.run(incident, action, `Approved: ${why}`);
+        ? 'Asked for by a person'
+        : `Allowed by the ${space?.name ?? 'incident'} space`;
+    return this.run(incident, action, why);
   }
 
   async approve(actionId: string): Promise<ActionResult> {

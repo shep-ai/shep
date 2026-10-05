@@ -47,7 +47,7 @@ export function createLsCommand(): Command {
               scored.opportunity.status,
               formatScore(scored),
               String(scored.opportunity.reviewHours),
-              formatEvidence(scored),
+              formatEvidence(scored.evidence),
             ]),
             emptyMessage: t('cli:commands.opportunity.ls.empty'),
           });
@@ -81,7 +81,7 @@ export function createShowCommand(): Command {
               confidence: opportunity.confidence,
             })
           );
-          messages.info(formatEvidence(detail));
+          messages.info(formatEvidence(detail.evidence));
           if (opportunity.dropReason) {
             messages.info(
               t('cli:commands.opportunity.show.dropped', { reason: opportunity.dropReason })

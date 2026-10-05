@@ -1333,7 +1333,7 @@
       "run": {
         "description": "Запустить сейчас одно правило или все включённые",
         "nothing": "Нет включённых правил",
-        "conflictsNote": "{{count}} пол. изменено с обеих сторон; сохранено значение трекера"
+        "conflictsNote": "Полей изменено с обеих сторон: {{count}}; сохранено значение трекера"
       }
     },
     "item": {
@@ -1483,7 +1483,6 @@
       "confidenceOption": "Уверенность, что ценность будет получена, от 0 до 1 (по умолчанию 0.5)",
       "strategicOption": "Продвигает стратегическую цель пространства",
       "problemOption": "Проблема, которую она решает, словами пользователей",
-      "evidence": "{{signals}} сигналов, {{customers}} клиентов, {{revenue}}/мес., {{urgent}} срочных",
       "add": {
         "description": "Сформировать новую возможность",
         "titleArg": "Название ставки в одну строку",
@@ -1541,6 +1540,21 @@
         "strategicOption": "Добавка для стратегической ставки",
         "capacityOption": "Часы человеческого ревью в неделю",
         "current": "охват {{reach}} · выручка {{revenue}} · срочность {{urgency}} · стратегия {{strategic}} · ёмкость {{capacity}} ч/нед."
+      },
+      "evidenceParts": {
+        "signals_one": "{{count}} сигнал",
+        "signals_few": "{{count}} сигнала",
+        "signals_many": "{{count}} сигналов",
+        "signals_other": "{{count}} сигнала",
+        "customers_one": "{{count}} клиент",
+        "customers_few": "{{count}} клиента",
+        "customers_many": "{{count}} клиентов",
+        "customers_other": "{{count}} клиента",
+        "urgent_one": "{{count}} срочный",
+        "urgent_few": "{{count}} срочных",
+        "urgent_many": "{{count}} срочных",
+        "urgent_other": "{{count}} срочных",
+        "revenue": "{{revenue}}/мес."
       }
     },
     "feedback": {
@@ -1584,7 +1598,7 @@
         "description": "Превратить тему в возможность со связанными сигналами",
         "themeArg": "Ключ темы (см. shep feedback themes)",
         "titleOption": "Название возможности (слова темы, если не указано)",
-        "success": "{{title}} ({{id}}) предложена, связано сигналов: {{count}}"
+        "success": "{{title}} ({{id}}) предложено; связано сигналов: {{count}}"
       }
     },
     "discovery": {
@@ -1595,7 +1609,7 @@
         "description": "Запустить поиск возможностей в пространстве сейчас",
         "agentOption": "Агент (действуют правила пространства)",
         "started": "Читаю свидетельства пространства; это может занять несколько минут…",
-        "success": "Прочитано сигналов: {{read}}; предложено возможностей: {{proposed}}, отброшено предложений: {{dropped}}"
+        "success": "Прочитано сигналов: {{read}} · предложено возможностей: {{proposed}} · отброшено предложений: {{dropped}}"
       },
       "ls": {
         "description": "Список запусков поиска в пространстве",
@@ -1775,7 +1789,9 @@
         "actions": "Действия на одобрении",
         "outcomes": "Итоги в ожидании",
         "customers": "Клиенты, которых известить",
-        "autopilot": "Autopilot"
+        "autopilot": "Autopilot",
+        "features": "Фичи",
+        "featuresValue": "в работе: {{inFlight}}, ждут одобрения: {{waiting}}"
       }
     }
   },

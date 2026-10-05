@@ -73,7 +73,7 @@ export function OutcomeRow({ view, run }: OutcomeRowProps) {
             onChange={(e) => setHours(e.target.value)}
             placeholder={t('opportunities.outcomes.hours')}
             aria-label={t('opportunities.outcomes.hours')}
-            className="h-7 w-20 text-xs"
+            className="h-7 w-32 text-xs"
             data-testid={`outcome-hours-${id}`}
           />
           <Button

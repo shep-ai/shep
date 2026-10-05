@@ -6,6 +6,7 @@
  * decisions that can still be made.
  */
 
+import { formatEvidence } from './format-evidence';
 import { useTranslation } from 'react-i18next';
 import type { ScoredOpportunity } from '@shepai/core/domain/shared/opportunity-score';
 import { OpportunitySource } from '@shepai/core/domain/generated/output';
@@ -52,14 +53,7 @@ export function OpportunityRow({ scored, inLine, projects, run }: OpportunityRow
             </Badge>
           ) : null}
         </div>
-        <p className="text-muted-foreground mt-0.5">
-          {t('opportunities.row.evidence', {
-            signals: evidence.signals,
-            customers: evidence.customers,
-            revenue: evidence.revenueAtStake,
-            urgent: evidence.urgentSignals,
-          })}
-        </p>
+        <p className="text-muted-foreground mt-0.5">{formatEvidence(t, evidence)}</p>
         {opportunity.brief ? (
           <p className="text-muted-foreground mt-0.5 line-clamp-2" title={opportunity.brief}>
             {opportunity.brief}

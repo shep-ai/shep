@@ -1333,7 +1333,7 @@
       "run": {
         "description": "تشغيل قاعدة واحدة أو كل القواعد المفعّلة الآن",
         "nothing": "لا توجد قواعد مفعّلة",
-        "conflictsNote": "تغيّر {{count}} حقل في الجهتين؛ أُبقيت قيمة المتتبع"
+        "conflictsNote": "حقول تغيّرت في الجانبين: {{count}}؛ احتُفظ بقيمة المتتبّع"
       }
     },
     "item": {
@@ -1483,7 +1483,6 @@
       "confidenceOption": "الثقة في تحقيق القيمة، من 0 إلى 1 (الافتراضي 0.5)",
       "strategicOption": "تخدم هدفًا استراتيجيًا للمساحة",
       "problemOption": "المشكلة التي تحلها، بكلمات المستخدمين",
-      "evidence": "{{signals}} إشارات، {{customers}} عملاء، {{revenue}} شهريًا، {{urgent}} عاجلة",
       "add": {
         "description": "صياغة فرصة جديدة",
         "titleArg": "اسم الرهان في سطر واحد",
@@ -1526,7 +1525,7 @@
         "hoursColumn": "الساعات",
         "evidenceColumn": "الأدلة",
         "empty": "لا توجد فرص مفتوحة. صغ واحدة باستخدام shep opportunity add.",
-        "unlinked": "إشارات غير مرتبطة بفرصة: {{count}} (shep signal ls --unlinked)"
+        "unlinked": "إشارات غير مرتبطة بفرصة بعد: {{count}} (shep signal ls --unlinked)"
       },
       "show": {
         "description": "عرض فرصة مع أدلتها ودرجتها",
@@ -1541,6 +1540,21 @@
         "strategicOption": "قيمة مضافة للرهان الاستراتيجي",
         "capacityOption": "ساعات المراجعة البشرية أسبوعيًا",
         "current": "الانتشار {{reach}} · الإيراد {{revenue}} · الإلحاح {{urgency}} · استراتيجي {{strategic}} · السعة {{capacity}} ساعة/أسبوع"
+      },
+      "evidenceParts": {
+        "signals_one": "{{count}} إشارة",
+        "signals_few": "{{count}} إشارات",
+        "signals_many": "{{count}} إشارة",
+        "signals_other": "{{count}} إشارة",
+        "customers_one": "{{count}} عميل",
+        "customers_few": "{{count}} عملاء",
+        "customers_many": "{{count}} عميلًا",
+        "customers_other": "{{count}} عميل",
+        "urgent_one": "{{count}} عاجلة",
+        "urgent_few": "{{count}} عاجلة",
+        "urgent_many": "{{count}} عاجلة",
+        "urgent_other": "{{count}} عاجلة",
+        "revenue": "{{revenue}}/شهر"
       }
     },
     "feedback": {
@@ -1584,7 +1598,7 @@
         "description": "تحويل موضوع إلى فرصة مع ربط إشاراته",
         "themeArg": "مفتاح الموضوع (راجع shep feedback themes)",
         "titleOption": "عنوان الفرصة (كلمات الموضوع إن لم يُحدَّد)",
-        "success": "اقتُرحت {{title}} ({{id}}) مع ربط {{count}} إشارة"
+        "success": "اقتُرحت {{title}} ({{id}})؛ الإشارات المرتبطة: {{count}}"
       }
     },
     "discovery": {
@@ -1595,7 +1609,7 @@
         "description": "تشغيل الاكتشاف في مساحة الآن",
         "agentOption": "الوكيل المستخدم (تنطبق قواعد المساحة)",
         "started": "جارٍ قراءة أدلة المساحة؛ قد يستغرق ذلك بضع دقائق…",
-        "success": "قُرئت {{read}} إشارة: اقتُرحت {{proposed}} فرصة، واستُبعد {{dropped}} اقتراح"
+        "success": "الإشارات المقروءة: {{read}} · الفرص المقترحة: {{proposed}} · الاقتراحات المستبعدة: {{dropped}}"
       },
       "ls": {
         "description": "عرض عمليات الاكتشاف في مساحة",
@@ -1775,7 +1789,9 @@
         "actions": "إجراءات بانتظار الموافقة",
         "outcomes": "نتائج معلّقة",
         "customers": "عملاء للإبلاغ",
-        "autopilot": "Autopilot"
+        "autopilot": "Autopilot",
+        "features": "الميزات",
+        "featuresValue": "قيد التنفيذ: {{inFlight}}، بانتظار الموافقة: {{waiting}}"
       }
     }
   },

@@ -28,6 +28,8 @@ describe('Autopilot (spec 132)', () => {
       });
       if (!set.ok) throw new Error(set.error);
       expect(set.policy).toMatchObject({ fillLine: true, projectId: 'p-pay', dailyFixBudget: 5 });
+      const shown = await world.manage.get('acme');
+      expect(shown.ok && shown.project).toMatchObject({ id: 'p-pay', name: 'Payments' });
 
       expect((await world.manage.set('acme', { project: 'nowhere' })).ok).toBe(false);
       expect((await world.manage.set('acme', { dailyFixBudget: 2.5 })).ok).toBe(false);
@@ -87,7 +89,7 @@ describe('Autopilot (spec 132)', () => {
       const [run] = await world.pass.runAll(NOW);
       expect(world.build.execute).toHaveBeenCalledTimes(1);
       expect(world.build.execute).toHaveBeenCalledWith('opp-a', 'p-pay');
-      expect(run.built).toEqual(['opp-a']);
+      expect(run.built).toEqual(['Dark mode']);
     });
 
     it('records failures and keeps going', async () => {
@@ -98,7 +100,7 @@ describe('Autopilot (spec 132)', () => {
       } as never);
       const [run] = await world.pass.runAll(NOW);
       expect(run.errors).toEqual(['PAY-42: Pick the repository to investigate PAY-42 in.']);
-      expect(run.built).toEqual(['opp-a']);
+      expect(run.built).toEqual(['Dark mode']);
       expect(world.runs.rows).toHaveLength(1);
     });
 
@@ -106,7 +108,7 @@ describe('Autopilot (spec 132)', () => {
       expect((await world.pass.run('acme')).ok).toBe(false);
       await world.manage.set('acme', { fillLine: true, project: 'pay' });
       const ran = await world.pass.run('acme');
-      expect(ran.ok && ran.run.built).toEqual(['opp-a']);
+      expect(ran.ok && ran.run.built).toEqual(['Dark mode']);
     });
   });
 });

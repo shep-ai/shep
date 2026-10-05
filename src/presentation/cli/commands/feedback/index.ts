@@ -20,6 +20,7 @@ import {
 } from '@/application/use-cases/feedback/feedback-themes.use-case.js';
 import { colors, messages, renderListView } from '../../ui/index.js';
 import { getCliI18n } from '../../i18n.js';
+import { formatEvidence } from '../opportunity/format-score.js';
 import { report, runCommand } from '../command-result.js';
 import { parseNumberOption } from '../number-option.js';
 import { FAILED, createKeyCommand } from './key.command.js';
@@ -43,12 +44,7 @@ function createThemesCommand(): Command {
             rows: themes.map((theme) => [
               colors.muted(theme.key),
               theme.label,
-              t('cli:commands.opportunity.evidence', {
-                signals: theme.evidence.signals,
-                customers: theme.evidence.customers,
-                revenue: theme.evidence.revenueAtStake,
-                urgent: theme.evidence.urgentSignals,
-              }),
+              formatEvidence(theme.evidence),
             ]),
             emptyMessage: t('cli:commands.feedback.themes.empty'),
           })

@@ -1553,8 +1553,22 @@
       "inLine": "Dans la ligne de la semaine",
       "outOfLine": "Hors de la ligne",
       "strategic": "Stratégique",
-      "evidence": "{{signals}} signaux · {{customers}} clients · {{revenue}}/mois · {{urgent}} urgents",
-      "cost": "{{hours}} h · {{confidence}} % de confiance"
+      "cost": "{{hours}} h · {{confidence}} % de confiance",
+      "evidenceParts": {
+        "signals_one": "{{count}} signal",
+        "signals_few": "{{count}} signaux",
+        "signals_many": "{{count}} signaux",
+        "signals_other": "{{count}} signaux",
+        "customers_one": "{{count}} client",
+        "customers_few": "{{count}} clients",
+        "customers_many": "{{count}} clients",
+        "customers_other": "{{count}} clients",
+        "urgent_one": "{{count}} urgent",
+        "urgent_few": "{{count}} urgents",
+        "urgent_many": "{{count}} urgents",
+        "urgent_other": "{{count}} urgents",
+        "revenue": "{{revenue}}/mois"
+      }
     },
     "status": {
       "Proposed": "Proposée",
@@ -1783,7 +1797,9 @@
       "incidents": "Incidents ouverts",
       "actions": "Actions à approuver",
       "outcomes": "Résultats en attente",
-      "customers": "Clients à prévenir"
+      "customers": "Clients à prévenir",
+      "features": "Fonctionnalités en cours",
+      "approval": "En attente d’approbation"
     },
     "runs": {
       "title": "Passages autopilot",

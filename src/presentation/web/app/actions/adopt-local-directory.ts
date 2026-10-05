@@ -1,59 +1,26 @@
 'use server';
 
-import { randomUUID } from 'node:crypto';
-import path from 'node:path';
 import { resolve } from '@/lib/server-container';
-import type { IApplicationRepository } from '@shepai/core/application/ports/output/repositories/application-repository.interface';
-import { ApplicationStatus } from '@shepai/core/domain/generated/output';
+import { errorMessage } from '@/lib/action-outcome';
+import type { AdoptLocalRepositoryUseCase } from '@shepai/core/application/use-cases/applications/adopt-local-repository.use-case';
 
 /**
- * Create an Application entity pointing at an EXISTING local directory.
+ * Register an EXISTING local directory as an application.
  *
- * Unlike `createApplication` (which scaffolds a brand-new project),
- * this action registers a directory the user already has on disk — e.g.
- * an existing Next.js or Vite repo. No scaffold is run; the folder is
- * used as-is and `setupComplete` is set to `true` so the application
- * page doesn't try to re-scaffold it.
- *
- * The display name is derived from the folder's base name so the card
- * shows something human-readable immediately.
+ * Unlike `createApplication` (which scaffolds a brand-new project), this
+ * uses the folder as it is; `AdoptLocalRepositoryUseCase` names the
+ * application after the folder and returns the one already registered at
+ * that path, if any.
  */
 export async function adoptLocalDirectory(input: {
   repositoryPath: string;
 }): Promise<{ applicationId?: string; error?: string }> {
-  const normalizedPath = input.repositoryPath.replace(/\\/g, '/');
-  const folderName = path.basename(normalizedPath);
-
-  if (!folderName) {
-    return { error: 'Could not determine folder name from path' };
-  }
-
   try {
-    const appRepo = resolve<IApplicationRepository>('IApplicationRepository');
-    const now = new Date();
-    const applicationId = randomUUID();
-
-    await appRepo.create({
-      id: applicationId,
-      name: toTitleCase(folderName),
-      slug: folderName,
-      description: `Local project at ${normalizedPath}`,
-      repositoryPath: normalizedPath,
-      additionalPaths: [],
-      status: ApplicationStatus.Idle,
-      setupComplete: true,
-      bedrockEnabled: false,
-      createdAt: now,
-      updatedAt: now,
-    });
-
-    return { applicationId };
+    const result = await resolve<AdoptLocalRepositoryUseCase>(
+      'AdoptLocalRepositoryUseCase'
+    ).execute(input.repositoryPath);
+    return result.ok ? { applicationId: result.application.id } : { error: result.error };
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Failed to adopt directory';
-    return { error: message };
+    return { error: errorMessage(error) };
   }
-}
-
-function toTitleCase(slug: string): string {
-  return slug.replace(/[-_]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 }

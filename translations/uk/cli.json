@@ -1333,7 +1333,7 @@
       "run": {
         "description": "Запустити зараз одне правило або всі увімкнені",
         "nothing": "Немає увімкнених правил",
-        "conflictsNote": "{{count}} пол. змінено з обох боків; збережено значення трекера"
+        "conflictsNote": "Полів змінено з обох боків: {{count}}; збережено значення трекера"
       }
     },
     "item": {
@@ -1483,7 +1483,6 @@
       "confidenceOption": "Впевненість, що цінність буде отримано, від 0 до 1 (типово 0.5)",
       "strategicOption": "Просуває стратегічну мету простору",
       "problemOption": "Проблема, яку вона розв'язує, словами користувачів",
-      "evidence": "{{signals}} сигналів, {{customers}} клієнтів, {{revenue}}/міс., {{urgent}} термінових",
       "add": {
         "description": "Сформувати нову можливість",
         "titleArg": "Назва ставки в один рядок",
@@ -1541,6 +1540,21 @@
         "strategicOption": "Додаток для стратегічної ставки",
         "capacityOption": "Години людського рев'ю на тиждень",
         "current": "охоплення {{reach}} · дохід {{revenue}} · терміновість {{urgency}} · стратегія {{strategic}} · місткість {{capacity}} год/тижд."
+      },
+      "evidenceParts": {
+        "signals_one": "{{count}} сигнал",
+        "signals_few": "{{count}} сигнали",
+        "signals_many": "{{count}} сигналів",
+        "signals_other": "{{count}} сигналу",
+        "customers_one": "{{count}} клієнт",
+        "customers_few": "{{count}} клієнти",
+        "customers_many": "{{count}} клієнтів",
+        "customers_other": "{{count}} клієнта",
+        "urgent_one": "{{count}} терміновий",
+        "urgent_few": "{{count}} термінові",
+        "urgent_many": "{{count}} термінових",
+        "urgent_other": "{{count}} термінових",
+        "revenue": "{{revenue}}/міс."
       }
     },
     "feedback": {
@@ -1584,7 +1598,7 @@
         "description": "Перетворити тему на можливість із пов'язаними сигналами",
         "themeArg": "Ключ теми (див. shep feedback themes)",
         "titleOption": "Назва можливості (слова теми, якщо не вказано)",
-        "success": "{{title}} ({{id}}) запропоновано, пов'язано сигналів: {{count}}"
+        "success": "{{title}} ({{id}}) запропоновано; пов’язано сигналів: {{count}}"
       }
     },
     "discovery": {
@@ -1595,7 +1609,7 @@
         "description": "Запустити пошук можливостей у просторі зараз",
         "agentOption": "Агент (діють правила простору)",
         "started": "Читаю свідчення простору; це може тривати кілька хвилин…",
-        "success": "Прочитано сигналів: {{read}}; запропоновано можливостей: {{proposed}}, відкинуто пропозицій: {{dropped}}"
+        "success": "Прочитано сигналів: {{read}} · запропоновано можливостей: {{proposed}} · відкинуто пропозицій: {{dropped}}"
       },
       "ls": {
         "description": "Список запусків пошуку в просторі",
@@ -1775,7 +1789,9 @@
         "actions": "Дії на схваленні",
         "outcomes": "Підсумки в очікуванні",
         "customers": "Клієнти, яких сповістити",
-        "autopilot": "Autopilot"
+        "autopilot": "Autopilot",
+        "features": "Фічі",
+        "featuresValue": "у роботі: {{inFlight}}, чекають схвалення: {{waiting}}"
       }
     }
   },

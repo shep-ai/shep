@@ -81,6 +81,13 @@ describe('RuntimeActionsUseCase', () => {
       { namespace: 'shop', workload: 'checkout' },
       6
     );
+    const approvals = world.events.rows
+      .filter((e) => e.kind === IncidentEventKind.ActionApproved)
+      .map((e) => e.text);
+    expect(approvals).toEqual([
+      'Allowed by the Acme space: restart',
+      'Asked for by a person: scale to 6 replicas',
+    ]);
   });
 
   it('never runs a rejected action', async () => {

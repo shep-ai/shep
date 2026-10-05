@@ -12,6 +12,7 @@ import {
   InvestigationStatus,
   OpportunityStatus,
   Priority,
+  SdlcLifecycle,
   StateGroup,
   type ApprovalGates,
   type AutopilotPolicy,
@@ -77,4 +78,15 @@ export function fixGates(policy: AutopilotPolicy): ApprovalGates {
 /** The opportunities of the line that are accepted but not building yet. */
 export function linesToBuild(inLine: readonly ScoredOpportunity[]): ScoredOpportunity[] {
   return inLine.filter(({ opportunity }) => opportunity.status === OpportunityStatus.Accepted);
+}
+
+const FINISHED_LIFECYCLES: readonly SdlcLifecycle[] = [
+  SdlcLifecycle.Maintain,
+  SdlcLifecycle.Deleting,
+  SdlcLifecycle.Archived,
+];
+
+/** A feature still on its way through the pipeline. */
+export function isFeatureInFlight(lifecycle: SdlcLifecycle): boolean {
+  return !FINISHED_LIFECYCLES.includes(lifecycle);
 }

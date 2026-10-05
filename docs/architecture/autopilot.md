@@ -7,7 +7,7 @@ Spec: [`specs/132-autopilot`](../../specs/132-autopilot/). User guide:
 
 `tsp/domain/entities/autopilot.tsp` adds `AutopilotPolicy` (space, `investigateUrgent`,
 `fixConfident`, `mergeFixes`, `fillLine`, `projectId`, `dailyFixBudget`) and `AutopilotRun`
-(space, investigated and fixed work item keys, built opportunity ids, errors). Migration
+(space, investigated and fixed work item keys, built opportunity titles, errors). Migration
 `164-create-autopilot` creates `autopilot_policies` and `autopilot_runs` (arrays as JSON).
 
 ## Rules (`domain/shared/autopilot.ts`)
@@ -25,7 +25,7 @@ in the last 24 hours), `fixGates` (requirements and plan approved, merge per pol
 | `ListUrgentWorkItemsUseCase` | Projects → application repository → `ResolveSpaceContextUseCase.executeMany`; the space's projects' open Urgent work items with their repository |
 | `RunAutopilotUseCase` | `runAll(now)` for every policy that is on (the daemon), `run(space)` now. Per space: `InvestigateWorkItemUseCase.start` + `run` (at most `MAX_INVESTIGATIONS_PER_PASS`), `ApproveHypothesisUseCase.execute` with `approvalGates: fixGates(policy)`, `GetOpportunityBoardUseCase` + `BuildOpportunityUseCase`; records the `AutopilotRun` |
 | `ManageAutopilotUseCase` | `get(space)` (the default when unset, with recent passes), `set(space, change)` — budget 0 to `MAX_DAILY_FIX_BUDGET`, project by id or slug, filling the line needs a project |
-| `GetFactoryStatusUseCase` | The board's line and building count, open incidents and their Proposed runtime actions, pending outcomes and customers to tell, the policy and last pass |
+| `GetFactoryStatusUseCase` | The board's line and building count, the space's features in flight and those whose agent run waits for approval (`countSpaceFeatures`), open incidents and their Proposed runtime actions, pending outcomes and customers to tell, the policy and last pass |
 
 `ApproveHypothesisInput` gains `approvalGates`, passed to `CreateFeatureInput`; without it every
 gate still stops for a person.
@@ -38,3 +38,9 @@ gate still stops for a person.
 | CLI | `shep autopilot show|set|run`, `shep factory status` |
 | Web | `/factory` |
 | DI | `infrastructure/di/modules/register-autopilot.ts` |
+
+## Local runs
+
+The `dev` agent type answers the investigation, discovery and triage prompts with fixtures built
+from the prompt itself (`executors/dev-structured-answers.ts`), so cited ids are real and pass the
+use cases' checks.

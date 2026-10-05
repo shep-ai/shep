@@ -67,7 +67,9 @@ function createShowCommand(): Command {
                   { label: t('cli:commands.autopilot.fillLine'), value: onOff(policy.fillLine) },
                   {
                     label: t('cli:commands.autopilot.project'),
-                    value: policy.projectId ?? colors.muted('-'),
+                    value: view.project
+                      ? `${view.project.name} (${view.project.slug})`
+                      : colors.muted('-'),
                   },
                 ],
               },

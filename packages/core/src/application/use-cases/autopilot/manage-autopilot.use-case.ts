@@ -4,7 +4,12 @@
  */
 
 import { injectable, inject } from 'tsyringe';
-import type { AutopilotPolicy, AutopilotRun, Space } from '../../../domain/generated/output.js';
+import type {
+  AutopilotPolicy,
+  AutopilotRun,
+  PmProject,
+  Space,
+} from '../../../domain/generated/output.js';
 import { MAX_DAILY_FIX_BUDGET, defaultAutopilotPolicy } from '../../../domain/shared/autopilot.js';
 import type {
   IAutopilotPolicyRepository,
@@ -37,6 +42,8 @@ export interface AutopilotView {
   policy: AutopilotPolicy;
   /** The space has never set its own policy. */
   isDefault: boolean;
+  /** The project the line is built into, when it still exists. */
+  project?: PmProject;
   runs: AutopilotRun[];
 }
 
@@ -57,11 +64,13 @@ export class ManageAutopilotUseCase {
     const scope = await resolveScope(this.spaces, this.productLines, space ? { space } : {});
     if (!scope.ok) return scope;
     const own = await this.policies.find(scope.space.id);
+    const project = own?.projectId ? await this.projects.findById(own.projectId) : null;
     return {
       ok: true,
       space: scope.space,
       policy: own ?? defaultAutopilotPolicy(scope.space.id, new Date()),
       isDefault: own === null,
+      ...(project ? { project } : {}),
       runs: await this.runs.listBySpace(scope.space.id, RECENT_RUNS),
     };
   }

@@ -178,7 +178,7 @@ describe('shep signal / shep opportunity', () => {
     expect(out).toContain('1.63');
     expect(out).toContain('4 of 20');
     expect(out).toContain('▶');
-    expect(out).toContain('1 signal(s)');
+    expect(out).toContain('Signals not linked to an opportunity yet: 1');
   });
 
   it('links signals and decides', async () => {

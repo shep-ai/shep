@@ -1333,7 +1333,7 @@
       "run": {
         "description": "Ejecutar ahora una regla o todas las activas",
         "nothing": "No hay reglas activas",
-        "conflictsNote": "{{count}} campo(s) cambiaron en ambos lados; se conservó el valor del gestor"
+        "conflictsNote": "Campos cambiados en ambos lados: {{count}}; se conservó el valor del tracker"
       }
     },
     "item": {
@@ -1483,7 +1483,6 @@
       "confidenceOption": "Confianza en que aporte el valor, de 0 a 1 (0.5 por defecto)",
       "strategicOption": "Avanza un objetivo estratégico del espacio",
       "problemOption": "El problema que resuelve, en palabras de los usuarios",
-      "evidence": "{{signals}} señales, {{customers}} clientes, {{revenue}}/mes, {{urgent}} urgentes",
       "add": {
         "description": "Da forma a una nueva oportunidad",
         "titleArg": "Nombre de una línea de la apuesta",
@@ -1526,7 +1525,7 @@
         "hoursColumn": "Horas",
         "evidenceColumn": "Evidencia",
         "empty": "No hay oportunidades abiertas. Crea una con shep opportunity add.",
-        "unlinked": "{{count}} señal(es) aún sin oportunidad (shep signal ls --unlinked)"
+        "unlinked": "Señales aún sin oportunidad: {{count}} (shep signal ls --unlinked)"
       },
       "show": {
         "description": "Muestra una oportunidad con su evidencia y puntuación",
@@ -1541,6 +1540,21 @@
         "strategicOption": "Valor añadido a una apuesta estratégica",
         "capacityOption": "Horas de revisión humana por semana",
         "current": "alcance {{reach}} · ingresos {{revenue}} · urgencia {{urgency}} · estratégico {{strategic}} · capacidad {{capacity}} h/semana"
+      },
+      "evidenceParts": {
+        "signals_one": "{{count}} señal",
+        "signals_few": "{{count}} señales",
+        "signals_many": "{{count}} señales",
+        "signals_other": "{{count}} señales",
+        "customers_one": "{{count}} cliente",
+        "customers_few": "{{count}} clientes",
+        "customers_many": "{{count}} clientes",
+        "customers_other": "{{count}} clientes",
+        "urgent_one": "{{count}} urgente",
+        "urgent_few": "{{count}} urgentes",
+        "urgent_many": "{{count}} urgentes",
+        "urgent_other": "{{count}} urgentes",
+        "revenue": "{{revenue}}/mes"
       }
     },
     "feedback": {
@@ -1584,7 +1598,7 @@
         "description": "Convierte un tema en una oportunidad con sus señales vinculadas",
         "themeArg": "Clave del tema (ver shep feedback themes)",
         "titleOption": "Título de la oportunidad (las palabras del tema si se omite)",
-        "success": "{{title}} ({{id}}) propuesta con {{count}} señal(es) vinculada(s)"
+        "success": "{{title}} ({{id}}) propuesta; señales vinculadas: {{count}}"
       }
     },
     "discovery": {
@@ -1595,7 +1609,7 @@
         "description": "Ejecuta discovery en un espacio ahora",
         "agentOption": "Agente a usar (se aplican las reglas del espacio)",
         "started": "Leyendo la evidencia del espacio; puede tardar unos minutos…",
-        "success": "{{read}} señales leídas: {{proposed}} oportunidades propuestas, {{dropped}} propuestas descartadas"
+        "success": "Señales leídas: {{read}} · oportunidades propuestas: {{proposed}} · propuestas descartadas: {{dropped}}"
       },
       "ls": {
         "description": "Lista las ejecuciones de discovery de un espacio",
@@ -1775,7 +1789,9 @@
         "actions": "Acciones por aprobar",
         "outcomes": "Resultados pendientes",
         "customers": "Clientes a avisar",
-        "autopilot": "Autopilot"
+        "autopilot": "Autopilot",
+        "features": "Funcionalidades",
+        "featuresValue": "{{inFlight}} en curso, {{waiting}} esperando aprobación"
       }
     }
   },

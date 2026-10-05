@@ -26,6 +26,8 @@ describe('Factory page (spec 132)', () => {
     expect(screen.getByTestId('factory-line')).toHaveTextContent('12/16');
     expect(screen.getByTestId('factory-incidents')).toHaveTextContent('1');
     expect(screen.getByTestId('factory-customers')).toHaveTextContent('2');
+    expect(screen.getByTestId('factory-approval')).toHaveTextContent('1');
+    expect(screen.getByTestId('factory-approval').closest('a')).toHaveAttribute('href', '/');
     expect(screen.getByTestId('factory-incidents').closest('a')).toHaveAttribute(
       'href',
       '/incidents?space=acme'

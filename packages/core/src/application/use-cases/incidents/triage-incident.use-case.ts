@@ -27,7 +27,10 @@ import type {
   IIncidentRepository,
 } from '../../ports/output/repositories/incident-repository.interface.js';
 import type { ISpaceRepository } from '../../ports/output/repositories/space-repository.interface.js';
-import type { IRuntimeController } from '../../ports/output/services/runtime-controller.interface.js';
+import type {
+  IRuntimeController,
+  RuntimeEvidence,
+} from '../../ports/output/services/runtime-controller.interface.js';
 import type { IStructuredAgentCaller } from '../../ports/output/agents/structured-agent-caller.interface.js';
 import { errorMessage } from '../connections/connection-refs.js';
 import { failure, type OpportunityResult } from '../opportunities/opportunity-scope.js';
@@ -38,7 +41,21 @@ import { TRIAGE_SCHEMA, triagePrompt, type TriageAnswer } from './triage-prompt.
 /** The agent's budget for one triage. */
 export const TRIAGE_TIMEOUT_MS = 5 * 60_000;
 const TRIAGE_MAX_TURNS = 3;
-const EVIDENCE_PREVIEW_CHARS = 1_500;
+/** Characters of each evidence section kept on the timeline (the agent reads it all). */
+const EVIDENCE_SECTION_CHARS = 800;
+
+/** Rollout status, recent events and the logs tail, each labelled and bounded. */
+function evidencePreview(evidence: RuntimeEvidence): string {
+  const sections: [string, string][] = [
+    ['Rollout status', evidence.status.slice(0, EVIDENCE_SECTION_CHARS)],
+    ['Recent events', evidence.events.slice(-EVIDENCE_SECTION_CHARS)],
+    ['Recent logs', evidence.logs.slice(-EVIDENCE_SECTION_CHARS)],
+  ];
+  return sections
+    .filter(([, text]) => text.trim() !== '')
+    .map(([title, text]) => `${title}:\n${text.trim()}`)
+    .join('\n\n');
+}
 
 export interface TriageResult {
   summary: string;
@@ -77,7 +94,7 @@ export class TriageIncidentUseCase {
         this.events,
         incident.id,
         IncidentEventKind.Evidence,
-        [evidence.status, evidence.events].join('\n').slice(0, EVIDENCE_PREVIEW_CHARS)
+        evidencePreview(evidence)
       );
     }
 

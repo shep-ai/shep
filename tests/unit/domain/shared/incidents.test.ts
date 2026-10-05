@@ -141,4 +141,46 @@ describe('incident rules', () => {
     expect(text).toContain('OOM after deploy');
     expect(text).toContain('## Follow-ups');
   });
+
+  it('keeps multi-line evidence inside its timeline entry, and says when recovery was quick', () => {
+    const incident: Incident = {
+      id: 'inc-1',
+      spaceId: 'space-acme',
+      title: 'Checkout 5xx',
+      severity: IncidentSeverity.Critical,
+      status: IncidentStatus.Resolved,
+      source: IncidentSource.Manual,
+      createdAt: T1,
+      updatedAt: T1,
+      mitigatedAt: new Date(T1.getTime() + 20_000),
+    };
+    const text = draftPostmortem(
+      incident,
+      [
+        {
+          id: 'e1',
+          incidentId: 'inc-1',
+          kind: IncidentEventKind.Evidence,
+          text: 'Rollout status:\nNAME  READY\ncheckout  1/3\n\nRecent logs:\nERROR boom',
+          createdAt: T1,
+        },
+      ],
+      [],
+      T2
+    );
+    expect(text).toContain('less than a minute after opening');
+    expect(text).toContain(
+      [
+        `- ${T1.toISOString()} — Evidence: Rollout status:`,
+        '',
+        '  ```',
+        '  NAME  READY',
+        '  checkout  1/3',
+        '',
+        '  Recent logs:',
+        '  ERROR boom',
+        '  ```',
+      ].join('\n')
+    );
+  });
 });

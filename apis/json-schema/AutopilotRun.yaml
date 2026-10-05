@@ -19,7 +19,7 @@ properties:
     type: array
     items:
       type: string
-    description: Ids of the opportunities it built
+    description: Titles of the opportunities it built
   errors:
     type: array
     items:

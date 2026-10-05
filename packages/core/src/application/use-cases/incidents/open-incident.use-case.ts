@@ -55,6 +55,12 @@ export interface OpenIncidentInput {
   workload?: string;
 }
 
+/** Who opened an incident, as the first timeline entry says it. */
+const OPENED_BY: Record<IncidentSource, string> = {
+  [IncidentSource.Manual]: 'A person',
+  [IncidentSource.Alert]: 'An alert',
+};
+
 @injectable()
 export class OpenIncidentUseCase {
   constructor(
@@ -136,7 +142,7 @@ export class OpenIncidentUseCase {
       this.events,
       incident.id,
       IncidentEventKind.Opened,
-      `${incident.source} opened a ${severity} incident: ${title}`
+      `${OPENED_BY[incident.source]} opened a ${severity} incident: ${title}`
     );
     return { ok: true, incident, duplicate: false };
   }

@@ -268,6 +268,22 @@ describe('CreateFeatureUseCase', () => {
 
       expect(result.feature.parentId).toBeUndefined();
     });
+
+    it('keeps a name and description the caller gave instead of the generated ones', async () => {
+      const result = await useCase.execute({
+        ...baseInput,
+        name: 'Fix PAY-42: Cache',
+        description: 'The session cache is keyed by user, not order.',
+      });
+
+      expect(result.feature.name).toBe('Fix PAY-42: Cache');
+      expect(result.feature.description).toBe('The session cache is keyed by user, not order.');
+      const updates = vi.mocked(mockFeatureRepo.update).mock.calls;
+      expect(updates.at(-1)?.[0]).toMatchObject({
+        name: 'Fix PAY-42: Cache',
+        slug: 'test-feature',
+      });
+    });
   });
 
   // -------------------------------------------------------------------------

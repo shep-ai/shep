@@ -1553,8 +1553,22 @@
       "inLine": "In der Linie dieser Woche",
       "outOfLine": "Nicht in der Linie",
       "strategic": "Strategisch",
-      "evidence": "{{signals}} Signale · {{customers}} Kunden · {{revenue}}/Monat · {{urgent}} dringend",
-      "cost": "{{hours}} Std. · {{confidence}} % Zuversicht"
+      "cost": "{{hours}} Std. · {{confidence}} % Zuversicht",
+      "evidenceParts": {
+        "signals_one": "{{count}} Signal",
+        "signals_few": "{{count}} Signale",
+        "signals_many": "{{count}} Signale",
+        "signals_other": "{{count}} Signale",
+        "customers_one": "{{count}} Kunde",
+        "customers_few": "{{count}} Kunden",
+        "customers_many": "{{count}} Kunden",
+        "customers_other": "{{count}} Kunden",
+        "urgent_one": "{{count}} dringend",
+        "urgent_few": "{{count}} dringend",
+        "urgent_many": "{{count}} dringend",
+        "urgent_other": "{{count}} dringend",
+        "revenue": "{{revenue}}/Monat"
+      }
     },
     "status": {
       "Proposed": "Vorgeschlagen",
@@ -1783,7 +1797,9 @@
       "incidents": "Offene Incidents",
       "actions": "Aktionen mit Freigabe",
       "outcomes": "Ausstehende Ergebnisse",
-      "customers": "Zu informierende Kunden"
+      "customers": "Zu informierende Kunden",
+      "features": "Features in Arbeit",
+      "approval": "Warten auf Freigabe"
     },
     "runs": {
       "title": "Autopilot-Durchläufe",

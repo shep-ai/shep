@@ -19,6 +19,7 @@ import { DEFAULT_SPACE_ID } from '@/domain/shared/space-resolution.js';
 import {
   AgentType,
   PrCommentTrigger,
+  RuntimeActionKind,
   SpaceRuleKind,
   type Space,
 } from '@/domain/generated/output.js';
@@ -102,6 +103,9 @@ describe('space repositories', () => {
           allowedAgentTypes: [AgentType.ClaudeCode, AgentType.CodexCli],
           prCommentTrigger: PrCommentTrigger.All,
           prCommentResolveThreads: true,
+          autoRuntimeActions: [RuntimeActionKind.Restart, RuntimeActionKind.Scale],
+          docsFirst: true,
+          docsPaths: ['docs/', 'README.md'],
         },
         createdAt: T1,
         updatedAt: T1,
@@ -117,6 +121,7 @@ describe('space repositories', () => {
           allowedAgentTypes: [AgentType.Cursor],
           prCommentTrigger: PrCommentTrigger.Off,
           prCommentResolveThreads: false,
+          docsFirst: false,
         },
         updatedAt: T2,
       };

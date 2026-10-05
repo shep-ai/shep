@@ -31,7 +31,7 @@ const RUN: AutopilotRun = {
   spaceId: 'space-acme',
   investigated: ['PAY-42'],
   fixed: ['PAY-41'],
-  built: ['opp-1'],
+  built: ['Dark mode'],
   errors: ['PAY-40: Pick the repository'],
   createdAt: T1,
   updatedAt: T1,

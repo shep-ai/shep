@@ -91,8 +91,10 @@ export function autopilotWorld() {
       board: {
         line: {
           inLine: [
-            { opportunity: { id: 'opp-a', status: OpportunityStatus.Accepted } },
-            { opportunity: { id: 'opp-b', status: OpportunityStatus.Building } },
+            {
+              opportunity: { id: 'opp-a', title: 'Dark mode', status: OpportunityStatus.Accepted },
+            },
+            { opportunity: { id: 'opp-b', title: 'SSO', status: OpportunityStatus.Building } },
           ],
         },
       },
@@ -100,8 +102,12 @@ export function autopilotWorld() {
   };
   const build = { execute: vi.fn(async () => ({ ok: true })) };
   const projects = {
-    findById: vi.fn(async (id: string) => (id === 'p-pay' ? { id, slug: 'pay' } : null)),
-    findBySlug: vi.fn(async (slug: string) => (slug === 'pay' ? { id: 'p-pay', slug } : null)),
+    findById: vi.fn(async (id: string) =>
+      id === 'p-pay' ? { id, slug: 'pay', name: 'Payments' } : null
+    ),
+    findBySlug: vi.fn(async (slug: string) =>
+      slug === 'pay' ? { id: 'p-pay', slug, name: 'Payments' } : null
+    ),
   } as unknown as IPmProjectRepository;
 
   const manage = new ManageAutopilotUseCase(

@@ -1333,7 +1333,7 @@
       "run": {
         "description": "Exécuter maintenant une règle ou toutes les règles actives",
         "nothing": "Aucune règle active",
-        "conflictsNote": "{{count}} champ(s) modifié(s) des deux côtés ; la valeur de l'outil a été conservée"
+        "conflictsNote": "Champs modifiés des deux côtés : {{count}} ; la valeur du tracker a été conservée"
       }
     },
     "item": {
@@ -1483,7 +1483,6 @@
       "confidenceOption": "Confiance qu'elle apporte la valeur, de 0 à 1 (0.5 par défaut)",
       "strategicOption": "Fait avancer un objectif stratégique de l'espace",
       "problemOption": "Le problème qu'elle résout, dans les mots des utilisateurs",
-      "evidence": "{{signals}} signaux, {{customers}} clients, {{revenue}}/mois, {{urgent}} urgents",
       "add": {
         "description": "Former une nouvelle opportunité",
         "titleArg": "Nom du pari en une ligne",
@@ -1526,7 +1525,7 @@
         "hoursColumn": "Heures",
         "evidenceColumn": "Preuves",
         "empty": "Aucune opportunité ouverte. Formez-en une avec shep opportunity add.",
-        "unlinked": "{{count}} signal(aux) pas encore lié(s) à une opportunité (shep signal ls --unlinked)"
+        "unlinked": "Signaux pas encore liés à une opportunité : {{count}} (shep signal ls --unlinked)"
       },
       "show": {
         "description": "Afficher une opportunité avec ses preuves et son score",
@@ -1541,6 +1540,21 @@
         "strategicOption": "Valeur ajoutée pour un pari stratégique",
         "capacityOption": "Heures de revue humaine par semaine",
         "current": "portée {{reach}} · revenu {{revenue}} · urgence {{urgency}} · stratégique {{strategic}} · capacité {{capacity}} h/semaine"
+      },
+      "evidenceParts": {
+        "signals_one": "{{count}} signal",
+        "signals_few": "{{count}} signaux",
+        "signals_many": "{{count}} signaux",
+        "signals_other": "{{count}} signaux",
+        "customers_one": "{{count}} client",
+        "customers_few": "{{count}} clients",
+        "customers_many": "{{count}} clients",
+        "customers_other": "{{count}} clients",
+        "urgent_one": "{{count}} urgent",
+        "urgent_few": "{{count}} urgents",
+        "urgent_many": "{{count}} urgents",
+        "urgent_other": "{{count}} urgents",
+        "revenue": "{{revenue}}/mois"
       }
     },
     "feedback": {
@@ -1584,7 +1598,7 @@
         "description": "Transformer un thème en opportunité avec ses signaux liés",
         "themeArg": "Clé du thème (voir shep feedback themes)",
         "titleOption": "Titre de l'opportunité (les mots du thème si omis)",
-        "success": "{{title}} ({{id}}) proposée avec {{count}} signal(aux) lié(s)"
+        "success": "{{title}} ({{id}}) proposée ; signaux liés : {{count}}"
       }
     },
     "discovery": {
@@ -1595,7 +1609,7 @@
         "description": "Lancer la découverte dans un espace maintenant",
         "agentOption": "Agent à utiliser (les règles de l'espace s'appliquent)",
         "started": "Lecture des preuves de l'espace ; cela peut prendre quelques minutes…",
-        "success": "{{read}} signaux lus : {{proposed}} opportunités proposées, {{dropped}} propositions écartées"
+        "success": "Signaux lus : {{read}} · opportunités proposées : {{proposed}} · propositions écartées : {{dropped}}"
       },
       "ls": {
         "description": "Lister les découvertes d'un espace",
@@ -1775,7 +1789,9 @@
         "actions": "Actions à approuver",
         "outcomes": "Résultats en attente",
         "customers": "Clients à prévenir",
-        "autopilot": "Autopilot"
+        "autopilot": "Autopilot",
+        "features": "Fonctionnalités",
+        "featuresValue": "{{inFlight}} en cours, {{waiting}} en attente d’approbation"
       }
     }
   },

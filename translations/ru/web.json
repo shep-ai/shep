@@ -1553,8 +1553,22 @@
       "inLine": "В линии этой недели",
       "outOfLine": "Вне линии",
       "strategic": "Стратегическая",
-      "evidence": "Сигналов: {{signals}} · клиентов: {{customers}} · {{revenue}}/мес. · срочных: {{urgent}}",
-      "cost": "{{hours}} ч · уверенность {{confidence}}%"
+      "cost": "{{hours}} ч · уверенность {{confidence}}%",
+      "evidenceParts": {
+        "signals_one": "{{count}} сигнал",
+        "signals_few": "{{count}} сигнала",
+        "signals_many": "{{count}} сигналов",
+        "signals_other": "{{count}} сигнала",
+        "customers_one": "{{count}} клиент",
+        "customers_few": "{{count}} клиента",
+        "customers_many": "{{count}} клиентов",
+        "customers_other": "{{count}} клиента",
+        "urgent_one": "{{count}} срочный",
+        "urgent_few": "{{count}} срочных",
+        "urgent_many": "{{count}} срочных",
+        "urgent_other": "{{count}} срочных",
+        "revenue": "{{revenue}}/мес."
+      }
     },
     "status": {
       "Proposed": "Предложена",
@@ -1783,7 +1797,9 @@
       "incidents": "Открытые инциденты",
       "actions": "Действия на одобрении",
       "outcomes": "Итоги в ожидании",
-      "customers": "Клиенты, которых известить"
+      "customers": "Клиенты, которых известить",
+      "features": "Фичи в работе",
+      "approval": "Ждут одобрения"
     },
     "runs": {
       "title": "Проходы autopilot",

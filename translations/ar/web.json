@@ -1553,8 +1553,22 @@
       "inLine": "في خط هذا الأسبوع",
       "outOfLine": "خارج الخط",
       "strategic": "استراتيجية",
-      "evidence": "{{signals}} إشارات · {{customers}} عملاء · {{revenue}} شهريًا · {{urgent}} عاجلة",
-      "cost": "{{hours}} ساعة · ثقة {{confidence}}٪"
+      "cost": "{{hours}} ساعة · ثقة {{confidence}}٪",
+      "evidenceParts": {
+        "signals_one": "{{count}} إشارة",
+        "signals_few": "{{count}} إشارات",
+        "signals_many": "{{count}} إشارة",
+        "signals_other": "{{count}} إشارة",
+        "customers_one": "{{count}} عميل",
+        "customers_few": "{{count}} عملاء",
+        "customers_many": "{{count}} عميلًا",
+        "customers_other": "{{count}} عميل",
+        "urgent_one": "{{count}} عاجلة",
+        "urgent_few": "{{count}} عاجلة",
+        "urgent_many": "{{count}} عاجلة",
+        "urgent_other": "{{count}} عاجلة",
+        "revenue": "{{revenue}}/شهر"
+      }
     },
     "status": {
       "Proposed": "مقترحة",
@@ -1783,7 +1797,9 @@
       "incidents": "حوادث مفتوحة",
       "actions": "إجراءات بانتظار الموافقة",
       "outcomes": "نتائج معلّقة",
-      "customers": "عملاء للإبلاغ"
+      "customers": "عملاء للإبلاغ",
+      "features": "ميزات قيد التنفيذ",
+      "approval": "بانتظار الموافقة"
     },
     "runs": {
       "title": "جولات autopilot",

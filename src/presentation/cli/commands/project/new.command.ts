@@ -6,18 +6,23 @@
  * Usage:
  *   shep project new
  *   shep project new --name "My Project" --prefix "MP"
+ *   shep project new --name "Payments" --prefix "PAY" --repo ~/work/pay-api
  */
 
 import { Command } from 'commander';
 import { input } from '@inquirer/prompts';
 import { container } from '@/infrastructure/di/container.js';
 import { CreatePmProjectUseCase } from '@/application/use-cases/pm-projects/create-pm-project.use-case.js';
+import { AdoptLocalRepositoryUseCase } from '@/application/use-cases/applications/adopt-local-repository.use-case.js';
+import { expandHome } from '../../paths.js';
+import { resolve as resolvePath } from 'node:path';
 import { colors, messages } from '../../ui/index.js';
 
 interface NewOptions {
   name?: string;
   prefix?: string;
   description?: string;
+  repo?: string;
 }
 
 export function createNewCommand(): Command {
@@ -26,6 +31,10 @@ export function createNewCommand(): Command {
     .option('-n, --name <name>', 'Project name')
     .option('-p, --prefix <prefix>', 'Identifier prefix (1-5 uppercase letters)')
     .option('-d, --description <description>', 'Project description')
+    .option(
+      '-r, --repo <path>',
+      "The project's repository: a local folder, registered as an application if it is not one yet"
+    )
     .action(async (options: NewOptions) => {
       try {
         const name =
@@ -54,8 +63,28 @@ export function createNewCommand(): Command {
           });
         }
 
+        let applicationId: string | undefined;
+        let repositoryPath: string | undefined;
+        if (options.repo) {
+          const adopted = await container
+            .resolve(AdoptLocalRepositoryUseCase)
+            .execute(resolvePath(expandHome(options.repo)));
+          if (!adopted.ok) {
+            messages.error(adopted.error);
+            process.exitCode = 1;
+            return;
+          }
+          applicationId = adopted.application.id;
+          repositoryPath = adopted.application.repositoryPath;
+        }
+
         const useCase = container.resolve(CreatePmProjectUseCase);
-        const result = await useCase.execute({ name, identifierPrefix: prefix, description });
+        const result = await useCase.execute({
+          name,
+          identifierPrefix: prefix,
+          description,
+          ...(applicationId ? { applicationId } : {}),
+        });
 
         if (!result.ok) {
           messages.error(result.error);
@@ -68,6 +97,7 @@ export function createNewCommand(): Command {
         console.log(`  ${colors.muted('Name:')}   ${result.project.name}`);
         console.log(`  ${colors.muted('Prefix:')} ${result.project.identifierPrefix}`);
         console.log(`  ${colors.muted('Slug:')}   ${result.project.slug}`);
+        if (repositoryPath) console.log(`  ${colors.muted('Repo:')}   ${repositoryPath}`);
         messages.newline();
       } catch (error) {
         if (

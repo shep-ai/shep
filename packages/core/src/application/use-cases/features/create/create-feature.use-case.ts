@@ -414,9 +414,11 @@ export class CreateFeatureUseCase {
     // Update feature record with refined metadata, branch, specPath, and attachments
     const updatedFeature: Feature = {
       ...feature,
-      name: metadata.name,
+      // A name or description the caller chose (e.g. "Fix PAY-42: …" from the bug
+      // loop) wins over the generated one.
+      name: input.name ?? metadata.name,
       slug,
-      description: metadata.description,
+      description: input.description ?? metadata.description,
       branch,
       specPath: specDir,
       ...(committedAttachments?.length ? { attachments: committedAttachments } : {}),

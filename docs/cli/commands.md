@@ -753,7 +753,7 @@ Gated on the `projects` feature flag.
 
 | Command              | Description          |
 | -------------------- | -------------------- |
-| `shep project new`   | Create a new project |
+| `shep project new`   | Create a new project (`--repo <path>` links it to the application of a local folder, registering one if needed) |
 | `shep project ls`    | List all projects    |
 | `shep project show`  | Show project details |
 | `shep project del`   | Delete a project     |

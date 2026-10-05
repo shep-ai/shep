@@ -12,6 +12,9 @@ import { readSeverity } from './action-option.js';
 
 export const FAILED = 'cli:commands.incident.failed';
 
+/** Continuation lines of a multi-line timeline entry line up under its text. */
+const TIMELINE_INDENT = ' '.repeat(6);
+
 interface OpenOptions {
   space?: string;
   severity?: string;
@@ -108,7 +111,9 @@ export function createShowCommand(): Command {
           );
           for (const event of events) {
             messages.info(
-              `  ${colors.muted(event.createdAt.toISOString())} ${event.kind}: ${event.text}`
+              `  ${colors.muted(event.createdAt.toISOString())} ${event.kind}: ${event.text
+                .split('\n')
+                .join(`\n${TIMELINE_INDENT}`)}`
             );
           }
           for (const action of actions) {

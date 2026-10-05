@@ -7,6 +7,7 @@
  */
 
 import { useState } from 'react';
+import { formatEvidence } from './format-evidence';
 import { useTranslation } from 'react-i18next';
 import { ArrowUpRight } from 'lucide-react';
 import type { FeedbackTheme } from '@shepai/core/domain/shared/feedback-themes';
@@ -44,14 +45,7 @@ function ThemeCard({
     >
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-sm font-medium">{theme.label}</span>
-        <span className="text-muted-foreground flex-1">
-          {t('opportunities.row.evidence', {
-            signals: evidence.signals,
-            customers: evidence.customers,
-            revenue: evidence.revenueAtStake,
-            urgent: evidence.urgentSignals,
-          })}
-        </span>
+        <span className="text-muted-foreground flex-1">{formatEvidence(t, evidence)}</span>
         <form
           className="flex items-center gap-1"
           onSubmit={async (event) => {

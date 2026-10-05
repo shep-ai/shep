@@ -177,7 +177,7 @@ export class RunAutopilotUseCase {
     }
     for (const { opportunity } of linesToBuild(board.board.line.inLine)) {
       const built = await this.build.execute(opportunity.id, projectId);
-      if (built.ok) pass.built.push(opportunity.id);
+      if (built.ok) pass.built.push(opportunity.title);
       else pass.errors.push(`${opportunity.title}: ${built.error}`);
     }
   }

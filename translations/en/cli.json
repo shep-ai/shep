@@ -1333,7 +1333,7 @@
       "run": {
         "description": "Run one sync rule, or every enabled rule, now",
         "nothing": "No enabled sync rules",
-        "conflictsNote": "{{count}} field(s) changed on both sides; the tracker's value was kept"
+        "conflictsNote": "Fields changed on both sides: {{count}}; the tracker's value was kept"
       }
     },
     "item": {
@@ -1483,7 +1483,6 @@
       "confidenceOption": "Confidence it delivers the value, from 0 to 1 (default 0.5)",
       "strategicOption": "It advances a strategic goal of the space",
       "problemOption": "The problem it solves, in the users' terms",
-      "evidence": "{{signals}} signals, {{customers}} customers, {{revenue}}/month, {{urgent}} urgent",
       "add": {
         "description": "Shape a new opportunity",
         "titleArg": "One-line name of the bet",
@@ -1526,7 +1525,7 @@
         "hoursColumn": "Hours",
         "evidenceColumn": "Evidence",
         "empty": "No open opportunities. Shape one with shep opportunity add.",
-        "unlinked": "{{count}} signal(s) are not linked to an opportunity yet (shep signal ls --unlinked)"
+        "unlinked": "Signals not linked to an opportunity yet: {{count}} (shep signal ls --unlinked)"
       },
       "show": {
         "description": "Show an opportunity with its evidence and score",
@@ -1541,6 +1540,21 @@
         "strategicOption": "Value added for a strategic bet",
         "capacityOption": "Hours of human review each week",
         "current": "reach {{reach}} · revenue {{revenue}} · urgency {{urgency}} · strategic {{strategic}} · capacity {{capacity}} h/week"
+      },
+      "evidenceParts": {
+        "signals_one": "{{count}} signal",
+        "signals_few": "{{count}} signals",
+        "signals_many": "{{count}} signals",
+        "signals_other": "{{count}} signals",
+        "customers_one": "{{count}} customer",
+        "customers_few": "{{count}} customers",
+        "customers_many": "{{count}} customers",
+        "customers_other": "{{count}} customers",
+        "urgent_one": "{{count}} urgent",
+        "urgent_few": "{{count}} urgent",
+        "urgent_many": "{{count}} urgent",
+        "urgent_other": "{{count}} urgent",
+        "revenue": "{{revenue}}/month"
       }
     },
     "feedback": {
@@ -1584,7 +1598,7 @@
         "description": "Turn a theme into an opportunity with its signals linked",
         "themeArg": "Theme key (see shep feedback themes)",
         "titleOption": "Opportunity title (the theme's words if omitted)",
-        "success": "{{title}} ({{id}}) proposed with {{count}} signal(s) linked"
+        "success": "{{title}} ({{id}}) proposed; signals linked: {{count}}"
       }
     },
     "discovery": {
@@ -1595,7 +1609,7 @@
         "description": "Run discovery in a space now",
         "agentOption": "Agent to use (the space's rules apply)",
         "started": "Reading the space's evidence; this can take a few minutes…",
-        "success": "Read {{read}} signals: {{proposed}} opportunities proposed, {{dropped}} proposals dropped"
+        "success": "Signals read: {{read}} · opportunities proposed: {{proposed}} · proposals dropped: {{dropped}}"
       },
       "ls": {
         "description": "List a space's discovery runs",
@@ -1775,7 +1789,9 @@
         "actions": "Actions awaiting approval",
         "outcomes": "Outcomes pending",
         "customers": "Customers to tell",
-        "autopilot": "Autopilot"
+        "autopilot": "Autopilot",
+        "features": "Features",
+        "featuresValue": "{{inFlight}} in flight, {{waiting}} waiting for approval"
       }
     }
   },

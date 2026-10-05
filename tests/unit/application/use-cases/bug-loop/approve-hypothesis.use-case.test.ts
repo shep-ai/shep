@@ -144,6 +144,11 @@ describe('ApproveHypothesisUseCase', () => {
     });
   });
 
+  it('describes the fix feature by the root cause it fixes', async () => {
+    await useCase().execute({ workItem: 'PAY-42', hypothesis: 1 });
+    expect(createFeature.createRecord.mock.calls[0][0].description).toBeTruthy();
+  });
+
   it('passes approval gates on to the fix feature (spec 132)', async () => {
     const approvalGates = { allowPrd: true, allowPlan: true, allowMerge: false };
     await useCase().execute({ workItem: 'PAY-42', hypothesis: 1, approvalGates });

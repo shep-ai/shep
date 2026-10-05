@@ -227,6 +227,7 @@ const WEB_ROUTE_TOKENS: readonly string[] = [
   'ManageAutopilotUseCase',
   'RunAutopilotUseCase',
   'GetFactoryStatusUseCase',
+  'AdoptLocalRepositoryUseCase',
   'IngestAlertUseCase',
   'RunTrackerSyncUseCase',
   'SyncTrackerRulesUseCase',

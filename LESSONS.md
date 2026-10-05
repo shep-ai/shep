@@ -2974,3 +2974,29 @@ An option parser that throws `InvalidArgumentError` makes Commander call `proces
 which kills the test runner and skips the command's own error path. Read the raw string and
 validate it in the action (print `messages.error`, set `process.exitCode = 1`, return), like
 `parseNumberOption` and the incident `read*` helpers.
+
+## A new field on a persisted entity is not done until it round-trips the database
+
+`SpaceAgentSettings.autoRuntimeActions` (spec 129) and `docsFirst`/`docsPaths` (spec 131) were
+validated, shown by the CLI and unit-tested — but the space mapper and SQL never stored them,
+so the policies vanished on the next read. The CLI echoed the in-memory result, which hid it;
+only the web page, which re-reads the space, showed the truth. For every field added to an
+entity a repository stores: add the column (migration), the mapper both ways, the INSERT and
+UPDATE SQL, and a repository integration test that writes and reads the field back.
+
+## Read every user-facing string a feature produces from a real run before calling it done
+
+A scripted end-to-end run of specs 120–132 (dev agent, stub kubectl) found a dozen defects that
+green unit tests had missed: enum values used as sentences ("Manual opened a Minor incident"),
+a label printed twice ("the Acme space allows restart: restart"), "about 0 minutes",
+"1 signals", UUIDs where titles belonged, multi-line evidence breaking a Markdown list, and a
+caller's feature name overwritten by generated metadata. Tests asserted kinds and counts, never
+the text a person reads. For timeline, summary and postmortem text: assert the exact sentence in
+a test, and never interpolate a raw enum value into prose — map it through a `Record` of words.
+
+## `pnpm tsp:compile` rewrites the generated output unformatted — run `pnpm generate` last
+
+`tsp compile tsp/` also runs the TypeScript emitter, so after a compile check the committed
+`output.ts` comes back with double quotes and `format:check` fails on 750 lines. Always finish
+with `pnpm generate` (which runs prettier) and confirm `git diff --stat` on the generated folder
+shows only the intended change.

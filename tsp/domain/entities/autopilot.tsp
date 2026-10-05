@@ -47,7 +47,7 @@ model AutopilotRun extends BaseEntity {
   @doc("Keys of the work items it started fixing")
   fixed: string[];
 
-  @doc("Ids of the opportunities it built")
+  @doc("Titles of the opportunities it built")
   built: string[];
 
   @doc("What failed, one line each")

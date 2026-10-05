@@ -44,7 +44,7 @@ const RUN = {
   spaceId: SPACE.id,
   investigated: ['PAY-42'],
   fixed: ['PAY-42'],
-  built: ['opp-1'],
+  built: ['Dark mode'],
   errors: ['PAY-40: no repository'],
   createdAt: T,
   updatedAt: T,
@@ -77,11 +77,12 @@ describe('shep autopilot', () => {
       space: SPACE,
       policy: POLICY,
       isDefault: false,
+      project: { id: 'p-pay', name: 'Payments', slug: 'payments' },
       runs: [RUN],
     });
     const out = await cli('autopilot', 'show', '--space', 'acme');
     expect(manage.get).toHaveBeenCalledWith('acme');
-    expect(out).toContain('p-pay');
+    expect(out).toContain('Payments (payments)');
     expect(out).toContain('PAY-42');
     expect(out).toContain('no repository');
   });
@@ -126,7 +127,7 @@ describe('shep autopilot', () => {
     const out = await cli('autopilot', 'run', '--space', 'acme');
     expect(pass.run).toHaveBeenCalledWith('acme');
     expect(out).toContain('PAY-42');
-    expect(out).toContain('opp-1');
+    expect(out).toContain('Dark mode');
   });
 
   it('prints the factory status of a space', async () => {
@@ -136,6 +137,7 @@ describe('shep autopilot', () => {
         space: SPACE,
         line: { usedHours: 12, capacityHours: 16, inLine: 2, waiting: 1 },
         building: 2,
+        features: { inFlight: 3, awaitingApproval: 1 },
         openIncidents: 1,
         actionsAwaitingApproval: 1,
         pendingOutcomes: 3,
@@ -146,6 +148,7 @@ describe('shep autopilot', () => {
     const out = await cli('factory', 'status', '--space', 'acme');
     expect(status.execute).toHaveBeenCalledWith('acme');
     expect(out).toContain('12/16');
+    expect(out).toContain('3 in flight, 1 waiting for approval');
     expect(out).toContain('Acme');
   });
 });

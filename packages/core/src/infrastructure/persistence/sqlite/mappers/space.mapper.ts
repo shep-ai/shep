@@ -12,6 +12,7 @@ import type {
   ProductLine,
   RepositorySpaceAssignment,
   Space,
+  RuntimeActionKind,
   SpaceAgentSettings,
   SpaceRule,
   SpaceRuleKind,
@@ -39,6 +40,12 @@ export interface SpaceRow {
   pr_comment_trigger: string | null;
   /** 1 = resolve, 0 or NULL = leave threads open. */
   pr_comment_resolve_threads: number | null;
+  /** JSON array of RuntimeActionKind run on incidents without asking (spec 129). */
+  auto_runtime_actions: string | null;
+  /** 1 = docs first, 0 = off, NULL = unset (spec 131). */
+  docs_first: number | null;
+  /** JSON array of documentation path prefixes (spec 131). */
+  docs_paths: string | null;
   created_at: number;
   updated_at: number;
 }
@@ -105,25 +112,36 @@ type AgentSettingsColumns = Pick<
   | 'allowed_agent_types'
   | 'pr_comment_trigger'
   | 'pr_comment_resolve_threads'
+  | 'auto_runtime_actions'
+  | 'docs_first'
+  | 'docs_paths'
 >;
 
+/** A JSON array column, or NULL for an unset or empty list. */
+function listColumn(values: readonly string[] | undefined): string | null {
+  return values && values.length > 0 ? JSON.stringify(values) : null;
+}
+
+/** 1 / 0 for a set flag, NULL when unset. */
+function flagColumn(value: boolean | undefined): number | null {
+  if (value === undefined) return null;
+  return value ? 1 : 0;
+}
+
 function agentSettingsToColumns(settings: SpaceAgentSettings | undefined): AgentSettingsColumns {
-  const allowed = settings?.allowedAgentTypes;
   return {
     claude_config_dir: settings?.claudeConfigDir ?? null,
     gh_config_dir: settings?.ghConfigDir ?? null,
     git_author_name: settings?.gitAuthorName ?? null,
     git_author_email: settings?.gitAuthorEmail ?? null,
     aws_profile: settings?.awsProfile ?? null,
-    use_bedrock: settings?.useBedrock === undefined ? null : settings.useBedrock ? 1 : 0,
-    allowed_agent_types: allowed && allowed.length > 0 ? JSON.stringify(allowed) : null,
+    use_bedrock: flagColumn(settings?.useBedrock),
+    allowed_agent_types: listColumn(settings?.allowedAgentTypes),
     pr_comment_trigger: settings?.prCommentTrigger ?? null,
-    pr_comment_resolve_threads:
-      settings?.prCommentResolveThreads === undefined
-        ? null
-        : settings.prCommentResolveThreads
-          ? 1
-          : 0,
+    pr_comment_resolve_threads: flagColumn(settings?.prCommentResolveThreads),
+    auto_runtime_actions: listColumn(settings?.autoRuntimeActions),
+    docs_first: flagColumn(settings?.docsFirst),
+    docs_paths: listColumn(settings?.docsPaths),
   };
 }
 
@@ -145,6 +163,11 @@ function agentSettingsFromColumns(row: AgentSettingsColumns): SpaceAgentSettings
     ...(row.pr_comment_resolve_threads !== null
       ? { prCommentResolveThreads: row.pr_comment_resolve_threads === 1 }
       : {}),
+    ...(row.auto_runtime_actions !== null
+      ? { autoRuntimeActions: JSON.parse(row.auto_runtime_actions) as RuntimeActionKind[] }
+      : {}),
+    ...(row.docs_first !== null ? { docsFirst: row.docs_first === 1 } : {}),
+    ...(row.docs_paths !== null ? { docsPaths: JSON.parse(row.docs_paths) as string[] } : {}),
   };
   return Object.keys(settings).length > 0 ? settings : undefined;
 }

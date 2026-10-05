@@ -1333,7 +1333,7 @@
       "run": {
         "description": "הרצה עכשיו של כלל אחד או של כל הכללים הפעילים",
         "nothing": "אין כללים פעילים",
-        "conflictsNote": "{{count}} שדות שונו בשני הצדדים; נשמר הערך של מערכת המעקב"
+        "conflictsNote": "שדות ששונו בשני הצדדים: {{count}}; ערך הטרקר נשמר"
       }
     },
     "item": {
@@ -1483,7 +1483,6 @@
       "confidenceOption": "ביטחון שתספק את הערך, מ-0 עד 1 (ברירת מחדל 0.5)",
       "strategicOption": "מקדמת מטרה אסטרטגית של המרחב",
       "problemOption": "הבעיה שהיא פותרת, במילים של המשתמשים",
-      "evidence": "{{signals}} אותות, {{customers}} לקוחות, {{revenue}} לחודש, {{urgent}} דחופים",
       "add": {
         "description": "עיצוב הזדמנות חדשה",
         "titleArg": "שם ההימור בשורה אחת",
@@ -1526,7 +1525,7 @@
         "hoursColumn": "שעות",
         "evidenceColumn": "ראיות",
         "empty": "אין הזדמנויות פתוחות. עצבו אחת עם shep opportunity add.",
-        "unlinked": "אותות ללא הזדמנות: {{count}} (shep signal ls --unlinked)"
+        "unlinked": "אותות שעוד לא מקושרים להזדמנות: {{count}} (shep signal ls --unlinked)"
       },
       "show": {
         "description": "הצגת הזדמנות עם הראיות והציון שלה",
@@ -1541,6 +1540,21 @@
         "strategicOption": "תוספת להימור אסטרטגי",
         "capacityOption": "שעות סקירה אנושית בשבוע",
         "current": "תפוצה {{reach}} · הכנסה {{revenue}} · דחיפות {{urgency}} · אסטרטגי {{strategic}} · קיבולת {{capacity}} שעות בשבוע"
+      },
+      "evidenceParts": {
+        "signals_one": "{{count}} אות",
+        "signals_few": "{{count}} אותות",
+        "signals_many": "{{count}} אותות",
+        "signals_other": "{{count}} אותות",
+        "customers_one": "{{count}} לקוח",
+        "customers_few": "{{count}} לקוחות",
+        "customers_many": "{{count}} לקוחות",
+        "customers_other": "{{count}} לקוחות",
+        "urgent_one": "{{count}} דחוף",
+        "urgent_few": "{{count}} דחופים",
+        "urgent_many": "{{count}} דחופים",
+        "urgent_other": "{{count}} דחופים",
+        "revenue": "{{revenue}}/חודש"
       }
     },
     "feedback": {
@@ -1584,7 +1598,7 @@
         "description": "הפיכת נושא להזדמנות עם האותות שלו מקושרים",
         "themeArg": "מפתח הנושא (ראו shep feedback themes)",
         "titleOption": "כותרת ההזדמנות (מילות הנושא אם לא צוין)",
-        "success": "{{title}} ({{id}}) הוצעה, אותות מקושרים: {{count}}"
+        "success": "{{title}} ({{id}}) הוצעה; אותות מקושרים: {{count}}"
       }
     },
     "discovery": {
@@ -1595,7 +1609,7 @@
         "description": "הרצת גילוי במרחב עכשיו",
         "agentOption": "הסוכן לשימוש (כללי המרחב חלים)",
         "started": "קורא את הראיות של המרחב; זה עשוי לקחת כמה דקות…",
-        "success": "נקראו {{read}} אותות: הוצעו {{proposed}} הזדמנויות, {{dropped}} הצעות נדחו"
+        "success": "אותות שנקראו: {{read}} · הזדמנויות שהוצעו: {{proposed}} · הצעות שנדחו: {{dropped}}"
       },
       "ls": {
         "description": "הצגת הרצות הגילוי של מרחב",
@@ -1775,7 +1789,9 @@
         "actions": "פעולות שממתינות לאישור",
         "outcomes": "תוצאות ממתינות",
         "customers": "לקוחות לעדכן",
-        "autopilot": "Autopilot"
+        "autopilot": "Autopilot",
+        "features": "פיצ'רים",
+        "featuresValue": "בתהליך: {{inFlight}}, ממתינים לאישור: {{waiting}}"
       }
     }
   },

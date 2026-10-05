@@ -117,6 +117,31 @@ function workload(incident: Incident): string {
   return `${namespace}/${incident.runtimeWorkload}${incident.runtimeContext ? ` (${incident.runtimeContext})` : ''}`;
 }
 
+const CODE_FENCE = '```';
+const LIST_INDENT = '  ';
+
+function recoveryDelay(minutes: number): string {
+  if (minutes === 0) return 'less than a minute after opening';
+  return `about ${minutes} minute${minutes === 1 ? '' : 's'} after opening`;
+}
+
+/**
+ * One timeline entry. Multi-line text (kubectl evidence) goes in a code block
+ * indented under its bullet, so Markdown keeps it inside the entry.
+ */
+function timelineEntry(event: IncidentEvent): string[] {
+  const [first, ...rest] = event.text.split('\n');
+  const bullet = `- ${event.createdAt.toISOString()} — ${event.kind}: ${first}`;
+  if (rest.length === 0) return [bullet];
+  return [
+    bullet,
+    '',
+    `${LIST_INDENT}${CODE_FENCE}`,
+    ...rest.map((line) => (line ? `${LIST_INDENT}${line}` : '')),
+    `${LIST_INDENT}${CODE_FENCE}`,
+  ];
+}
+
 /** A Markdown postmortem from the incident, its timeline and its actions. */
 export function draftPostmortem(
   incident: Incident,
@@ -137,12 +162,12 @@ export function draftPostmortem(
     `- Severity: ${incident.severity}`,
     `- Workload: ${workload(incident)}`,
     `- Opened: ${incident.createdAt.toISOString()}`,
-    `- Recovered: ${recoveredAt.toISOString()} (about ${impact} minutes after opening)`,
+    `- Recovered: ${recoveredAt.toISOString()} (${recoveryDelay(impact)})`,
     `- Resolved: ${resolvedAt.toISOString()}`,
     '',
     '## Timeline',
     '',
-    ...events.map((event) => `- ${event.createdAt.toISOString()} — ${event.kind}: ${event.text}`),
+    ...events.flatMap(timelineEntry),
     '',
     '## Actions',
     '',

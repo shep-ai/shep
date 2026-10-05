@@ -2,8 +2,9 @@
 
 /**
  * FactoryStatusCards — one space's factory at a glance (spec 132): the line,
- * what is building, incidents and actions waiting for approval, outcomes and
- * customers to tell. Each card opens the page behind it.
+ * what is building, features in flight and those waiting for approval,
+ * incidents and actions waiting for approval, outcomes and customers to
+ * tell. Each card opens the page behind it.
  */
 
 import Link from 'next/link';
@@ -15,7 +16,8 @@ interface Card {
   key: string;
   labelKey: string;
   value: string;
-  page: 'opportunities' | 'incidents';
+  /** The page behind the card; Control Center shows features. */
+  href: string;
   /** Highlight when it waits on people. */
   attention: boolean;
 }
@@ -27,52 +29,66 @@ export function FactoryStatusCards({ status }: { status: FactoryStatus }) {
       key: 'line',
       labelKey: 'factory.cards.line',
       value: `${status.line.usedHours}/${status.line.capacityHours}`,
-      page: 'opportunities',
+      href: `/opportunities?space=${status.space.slug}`,
       attention: false,
     },
     {
       key: 'building',
       labelKey: 'factory.cards.building',
       value: String(status.building),
-      page: 'opportunities',
+      href: `/opportunities?space=${status.space.slug}`,
       attention: false,
+    },
+    {
+      key: 'features',
+      labelKey: 'factory.cards.features',
+      value: String(status.features.inFlight),
+      href: '/',
+      attention: false,
+    },
+    {
+      key: 'approval',
+      labelKey: 'factory.cards.approval',
+      value: String(status.features.awaitingApproval),
+      href: '/',
+      attention: status.features.awaitingApproval > 0,
     },
     {
       key: 'incidents',
       labelKey: 'factory.cards.incidents',
       value: String(status.openIncidents),
-      page: 'incidents',
+      href: `/incidents?space=${status.space.slug}`,
       attention: status.openIncidents > 0,
     },
     {
       key: 'actions',
       labelKey: 'factory.cards.actions',
       value: String(status.actionsAwaitingApproval),
-      page: 'incidents',
+      href: `/incidents?space=${status.space.slug}`,
       attention: status.actionsAwaitingApproval > 0,
     },
     {
       key: 'outcomes',
       labelKey: 'factory.cards.outcomes',
       value: String(status.pendingOutcomes),
-      page: 'opportunities',
+      href: `/opportunities?space=${status.space.slug}`,
       attention: false,
     },
     {
       key: 'customers',
       labelKey: 'factory.cards.customers',
       value: String(status.customersToTell),
-      page: 'opportunities',
+      href: `/opportunities?space=${status.space.slug}`,
       attention: status.customersToTell > 0,
     },
   ];
   return (
-    <ul className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
+    <ul className="grid grid-cols-2 gap-2 sm:grid-cols-4 lg:grid-cols-8">
       {cards.map((card) => (
         <li key={card.key}>
           <Link
-            href={`/${card.page}?space=${status.space.slug}` as Route}
-            className={`bg-card hover:bg-muted/50 flex flex-col gap-1 rounded-lg border p-3 ${
+            href={card.href as Route}
+            className={`bg-card hover:bg-muted/50 flex h-full flex-col justify-between gap-1 rounded-lg border p-3 ${
               card.attention ? 'border-amber-500/60' : ''
             }`}
           >

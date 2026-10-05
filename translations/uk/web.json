@@ -1553,8 +1553,22 @@
       "inLine": "У лінії цього тижня",
       "outOfLine": "Поза лінією",
       "strategic": "Стратегічна",
-      "evidence": "Сигналів: {{signals}} · клієнтів: {{customers}} · {{revenue}}/міс. · термінових: {{urgent}}",
-      "cost": "{{hours}} год · впевненість {{confidence}}%"
+      "cost": "{{hours}} год · впевненість {{confidence}}%",
+      "evidenceParts": {
+        "signals_one": "{{count}} сигнал",
+        "signals_few": "{{count}} сигнали",
+        "signals_many": "{{count}} сигналів",
+        "signals_other": "{{count}} сигналу",
+        "customers_one": "{{count}} клієнт",
+        "customers_few": "{{count}} клієнти",
+        "customers_many": "{{count}} клієнтів",
+        "customers_other": "{{count}} клієнта",
+        "urgent_one": "{{count}} терміновий",
+        "urgent_few": "{{count}} термінові",
+        "urgent_many": "{{count}} термінових",
+        "urgent_other": "{{count}} термінових",
+        "revenue": "{{revenue}}/міс."
+      }
     },
     "status": {
       "Proposed": "Запропонована",
@@ -1783,7 +1797,9 @@
       "incidents": "Відкриті інциденти",
       "actions": "Дії на схваленні",
       "outcomes": "Підсумки в очікуванні",
-      "customers": "Клієнти, яких сповістити"
+      "customers": "Клієнти, яких сповістити",
+      "features": "Фічі в роботі",
+      "approval": "Чекають схвалення"
     },
     "runs": {
       "title": "Проходи autopilot",
