@@ -4,7 +4,8 @@
  * Shows and changes a space's agent settings: the Claude and gh config
  * directories, the git identity, Bedrock and AWS profile, and the agent types
  * the space allows, which PR comments shep answers on its own (spec 124), and
- * which runtime actions shep runs on an incident without asking (spec 129).
+ * which runtime actions shep runs on an incident without asking (spec 129),
+ * and docs first with its documentation paths (spec 131).
  * A patch sets the fields it gives, clears the ones it sets
  * to null, and keeps the rest. Credentials are never stored; a space only
  * points at directories the tools manage their own logins in.
@@ -20,6 +21,7 @@ import {
 } from '../../../domain/generated/output.js';
 import { isAbsolutePath } from '../../../domain/shared/absolute-path.js';
 import { normalizePath } from '../../../domain/shared/normalize-path.js';
+import { normalizeDocsPath } from '../../../domain/shared/docs-first.js';
 import {
   spaceEnvironment,
   type SpaceEnvironment,
@@ -97,6 +99,19 @@ function validateField(
       const unknown = kinds.find((kind) => !RUNTIME_ACTION_KINDS.has(kind));
       if (unknown) return { ok: false, error: `"${unknown}" is not a runtime action.` };
       return { ok: true, value: kinds.length > 0 ? kinds : undefined };
+    }
+    case 'docsFirst':
+      return { ok: true, value: value as boolean };
+    case 'docsPaths': {
+      const paths: string[] = [];
+      for (const raw of value as string[]) {
+        const path = normalizeDocsPath(raw);
+        if (path === undefined) {
+          return { ok: false, error: `"${raw}" is not a path inside the repository.` };
+        }
+        if (!paths.includes(path)) paths.push(path);
+      }
+      return { ok: true, value: paths.length > 0 ? paths : undefined };
     }
   }
 }

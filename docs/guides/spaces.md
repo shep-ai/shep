@@ -100,6 +100,29 @@ It also decides which runtime actions — restart, rollback, scale — shep runs
 incidents without waiting for approval (`shep space config acme --auto-actions restart`). See
 [Incidents](./incidents.md).
 
+## Docs first
+
+A space can require that features are documented before they are built:
+
+```bash
+shep space config acme --docs-first                          # docs/ and README.md
+shep space config acme --docs-first --docs-paths docs/,CHANGES.md
+```
+
+Or tick **Require docs first** under **Agent settings** on the Spaces page. In a docs-first space:
+
+- while **planning**, the agent writes or updates the user-facing documentation for the feature
+  under the documentation paths first, as if it had shipped, and lists those files in the plan;
+- while **implementing**, the agent treats that documentation as the contract and changes it in
+  the same change when the build has to differ;
+- before **merging**, shep looks at the changed files. When none is under the documentation
+  paths, the run does not merge on its own even if merges are automatic: the merge gate opens
+  and says why. Approve it to merge anyway.
+
+A path ending in `/` covers everything under it; any other path covers that one file. Paths are
+relative to the repository. `--no-docs-first` turns it off; `--clear docs-paths` returns to the
+defaults.
+
 ## Team knowledge
 
 Besides the memory agents write, a space can hold your team's own documents: Notion pages kept

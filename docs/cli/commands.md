@@ -903,9 +903,11 @@ produce. Options: `--claude-config-dir <dir>`, `--gh-config-dir <dir>`, `--git-n
 `--git-email`, `--aws-profile`, `--bedrock` / `--no-bedrock`, `--agents a,b`,
 `--pr-comments off|mention|all` (which PR review comments shep answers on its own; default
 mention), `--resolve-threads` / `--no-resolve-threads`, `--auto-actions restart,rollback,scale`
-(runtime actions shep runs on the space's incidents without asking) and `--clear <fields...>`
-(`claude-config-dir`, `gh-config-dir`, `git-name`, `git-email`, `aws-profile`, `bedrock`,
-`agents`, `pr-comments`, `resolve-threads`, `auto-actions`). Feature runs and feature chats in the space's
+(runtime actions shep runs on the space's incidents without asking), `--docs-first` /
+`--no-docs-first` with `--docs-paths docs/,README.md` (docs first, spec 131) and
+`--clear <fields...>` (`claude-config-dir`, `gh-config-dir`, `git-name`, `git-email`,
+`aws-profile`, `bedrock`, `agents`, `pr-comments`, `resolve-threads`, `auto-actions`,
+`docs-first`, `docs-paths`). Feature runs and feature chats in the space's
 repositories run with these settings; host `GH_TOKEN`/`GITHUB_TOKEN` (with a gh dir) and
 `ANTHROPIC_API_KEY`/`ANTHROPIC_AUTH_TOKEN`/`CLAUDE_CODE_OAUTH_TOKEN` (with a Claude dir) are
 removed for them.

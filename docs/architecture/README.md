@@ -19,6 +19,7 @@ This directory contains documentation about Shep AI CLI's system architecture an
 | [discovery.md](./discovery.md)                   | The agent that proposes evidence-backed opportunities     |
 | [incidents.md](./incidents.md)                   | Incidents, triage, runtime actions and alert intake      |
 | [outcomes.md](./outcomes.md)                     | Ship tracking, outcome verdicts, telling customers       |
+| [docs-first.md](./docs-first.md)                 | Docs-first policy, phase instructions and the merge gate |
 | [bug-loop.md](./bug-loop.md)                     | Investigations, ranked hypotheses and test-first fixes    |
 | [pr-comment-loop.md](./pr-comment-loop.md)       | Review comments read, addressed and answered              |
 

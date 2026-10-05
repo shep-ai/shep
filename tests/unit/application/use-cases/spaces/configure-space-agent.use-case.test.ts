@@ -84,6 +84,22 @@ describe('ConfigureSpaceAgentUseCase', () => {
     expect(saved.agentSettings?.autoRuntimeActions).toEqual([RuntimeActionKind.Restart]);
   });
 
+  it('sets docs first and its documentation paths (spec 131)', async () => {
+    const result = await useCase.configure('acme', {
+      docsFirst: true,
+      docsPaths: ['docs\\guides/', './README.md', 'docs/guides/'],
+    });
+    if (!result.ok) throw new Error(result.error);
+    expect(result.space.agentSettings).toMatchObject({
+      docsFirst: true,
+      docsPaths: ['docs/guides/', 'README.md'],
+    });
+    const refused = await useCase.configure('acme', { docsPaths: ['../secrets/'] });
+    expect(refused.ok).toBe(false);
+    const cleared = await useCase.configure('acme', { docsPaths: [] });
+    expect(cleared.ok && cleared.space.agentSettings?.docsPaths).toBeUndefined();
+  });
+
   it('clears allowed agents with an empty list', async () => {
     await useCase.configure('acme', { allowedAgentTypes: [] });
     const saved = spaces.update.mock.calls[0][0] as Space;

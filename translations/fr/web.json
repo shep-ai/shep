@@ -1386,7 +1386,11 @@
       },
       "resolveThreads": "Résoudre les fils où le code a changé",
       "autoActions": "Lancées sans demander sur les incidents",
-      "autoActionsHint": "Shep les lance sur la charge de travail d’un incident sans attendre d’approbation. Les autres attendent qu’on les approuve."
+      "autoActionsHint": "Shep les lance sur la charge de travail d’un incident sans attendre d’approbation. Les autres attendent qu’on les approuve.",
+      "docsFirst": "Docs first",
+      "docsFirstHint": "Les agents écrivent la documentation utilisateur en planifiant et construisent d’après elle. Un changement qui ne touche aucune documentation attend une personne avant la fusion.",
+      "docsFirstOn": "Exiger docs first",
+      "docsPaths": "Chemins de documentation"
     }
   },
   "trackers": {

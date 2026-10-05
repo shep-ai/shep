@@ -1243,7 +1243,12 @@
         "badTrigger": "«{{value}}» — не режим комментариев PR. Используйте один из: {{triggers}}",
         "autoActions": "Выполняется при инцидентах без вопроса",
         "autoActionsOption": "Действия, которые shep выполняет при инциденте без вопроса: restart, rollback, scale (через запятую)",
-        "none": "нет"
+        "none": "нет",
+        "docsFirstOption": "Агенты пишут пользовательскую документацию при планировании; изменение без документации ждёт человека перед слиянием",
+        "noDocsFirstOption": "Выключить docs first",
+        "docsPathsOption": "Префиксы путей документации через запятую (по умолчанию docs/,README.md)",
+        "docsFirst": "Docs first",
+        "docsFirstOn": "Вкл. ({{paths}})"
       }
     },
     "connection": {

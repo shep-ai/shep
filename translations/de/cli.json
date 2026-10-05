@@ -1243,7 +1243,12 @@
         "badTrigger": "\"{{value}}\" ist kein PR-Kommentar-Auslöser. Verwende einen von: {{triggers}}",
         "autoActions": "Läuft bei Incidents ohne Rückfrage",
         "autoActionsOption": "Laufzeitaktionen, die shep bei Incidents ohne Rückfrage ausführt: restart, rollback, scale (kommagetrennt)",
-        "none": "keine"
+        "none": "keine",
+        "docsFirstOption": "Agenten schreiben Nutzerdokumentation beim Planen; eine Änderung ohne Doku wartet vor dem Merge auf eine Person",
+        "noDocsFirstOption": "Docs first ausschalten",
+        "docsPathsOption": "Pfadpräfixe der Dokumentation, kommagetrennt (Standard docs/,README.md)",
+        "docsFirst": "Docs first",
+        "docsFirstOn": "An ({{paths}})"
       }
     },
     "connection": {

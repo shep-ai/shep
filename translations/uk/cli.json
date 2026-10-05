@@ -1243,7 +1243,12 @@
         "badTrigger": "«{{value}}» — не режим коментарів PR. Використайте один із: {{triggers}}",
         "autoActions": "Виконується при інцидентах без питань",
         "autoActionsOption": "Дії, які shep виконує при інциденті без питань: restart, rollback, scale (через кому)",
-        "none": "немає"
+        "none": "немає",
+        "docsFirstOption": "Агенти пишуть документацію для користувачів під час планування; зміна без документації чекає людину перед злиттям",
+        "noDocsFirstOption": "Вимкнути docs first",
+        "docsPathsOption": "Префікси шляхів документації через кому (типово docs/,README.md)",
+        "docsFirst": "Docs first",
+        "docsFirstOn": "Увімк. ({{paths}})"
       }
     },
     "connection": {

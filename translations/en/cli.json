@@ -1243,7 +1243,12 @@
         "badTrigger": "\"{{value}}\" is not a PR comment trigger. Use one of: {{triggers}}",
         "autoActions": "Runs on incidents unasked",
         "autoActionsOption": "Runtime actions shep runs on an incident without asking: restart, rollback, scale (comma-separated)",
-        "none": "none"
+        "none": "none",
+        "docsFirstOption": "Agents write user-facing docs while planning; a change without docs waits for a person before merging",
+        "noDocsFirstOption": "Turn docs first off",
+        "docsPathsOption": "Documentation path prefixes, comma-separated (default docs/,README.md)",
+        "docsFirst": "Docs first",
+        "docsFirstOn": "On ({{paths}})"
       }
     },
     "connection": {

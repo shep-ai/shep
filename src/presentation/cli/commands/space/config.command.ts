@@ -2,8 +2,9 @@
  * shep space config <space> — show or change how agents run for a space's
  * repositories (spec 121): Claude and gh config directories, git identity,
  * Bedrock and AWS profile, the agent types the space allows, which PR review
- * comments shep answers on its own (spec 124), and which runtime actions it
- * runs on incidents without asking (spec 129).
+ * comments shep answers on its own (spec 124), which runtime actions it
+ * runs on incidents without asking (spec 129), and docs first with its
+ * documentation paths (spec 131).
  *
  * With no options it shows the settings and the environment they produce.
  */
@@ -18,16 +19,14 @@ import {
   PrCommentTrigger,
   type AgentType,
   type RuntimeActionKind,
-  type Space,
 } from '@/domain/generated/output.js';
-import { DEFAULT_PR_COMMENT_TRIGGER } from '@/domain/shared/pr-comments.js';
-import type { SpaceEnvironment } from '@/domain/shared/space-environment.js';
-import { colors, messages, renderDetailView } from '../../ui/index.js';
+import { messages } from '../../ui/index.js';
 import { getCliI18n } from '../../i18n.js';
 import { expandHome } from '../../paths.js';
 import { report, runSpaceCommand } from './run-space-command.js';
 import { parseAgentTypeList } from '../agent-option.js';
 import { readRuntimeActionKindList } from '../incident/action-option.js';
+import { renderSpaceConfig } from './config-view.js';
 
 interface ConfigOptions {
   claudeConfigDir?: string;
@@ -40,6 +39,8 @@ interface ConfigOptions {
   prComments?: PrCommentTrigger;
   resolveThreads?: boolean;
   autoActions?: string;
+  docsFirst?: boolean;
+  docsPaths?: string;
   clear?: string[];
 }
 
@@ -71,6 +72,8 @@ const CLEARABLE: Record<string, keyof SpaceAgentSettingsPatch> = {
   'pr-comments': 'prCommentTrigger',
   'resolve-threads': 'prCommentResolveThreads',
   'auto-actions': 'autoRuntimeActions',
+  'docs-first': 'docsFirst',
+  'docs-paths': 'docsPaths',
 };
 
 function buildPatch(
@@ -95,90 +98,14 @@ function buildPatch(
   if (options.prComments !== undefined) patch.prCommentTrigger = options.prComments;
   if (options.resolveThreads !== undefined) patch.prCommentResolveThreads = options.resolveThreads;
   if (autoActions !== undefined) patch.autoRuntimeActions = autoActions;
+  if (options.docsFirst !== undefined) patch.docsFirst = options.docsFirst;
+  if (options.docsPaths !== undefined) {
+    patch.docsPaths = options.docsPaths
+      .split(',')
+      .map((path) => path.trim())
+      .filter(Boolean);
+  }
   return patch;
-}
-
-function render(space: Space, environment: SpaceEnvironment): void {
-  const t = getCliI18n().t;
-  const settings = space.agentSettings ?? {};
-  const inherit = colors.muted(t('cli:commands.space.config.inherit'));
-  const bedrock =
-    settings.useBedrock === undefined
-      ? inherit
-      : t(settings.useBedrock ? 'cli:commands.space.config.on' : 'cli:commands.space.config.off');
-  const set = Object.entries(environment.set).map(([name, value]) => `${name}=${value}`);
-
-  renderDetailView({
-    title: t('cli:commands.space.config.title', { name: space.name }),
-    sections: [
-      {
-        fields: [
-          {
-            label: t('cli:commands.space.config.claudeConfigDir'),
-            value: settings.claudeConfigDir ?? inherit,
-          },
-          {
-            label: t('cli:commands.space.config.ghConfigDir'),
-            value: settings.ghConfigDir ?? inherit,
-          },
-          {
-            label: t('cli:commands.space.config.gitAuthorName'),
-            value: settings.gitAuthorName ?? inherit,
-          },
-          {
-            label: t('cli:commands.space.config.gitAuthorEmail'),
-            value: settings.gitAuthorEmail ?? inherit,
-          },
-          { label: t('cli:commands.space.config.useBedrock'), value: bedrock },
-          {
-            label: t('cli:commands.space.config.awsProfile'),
-            value: settings.awsProfile ?? inherit,
-          },
-          {
-            label: t('cli:commands.space.config.allowedAgents'),
-            value:
-              settings.allowedAgentTypes?.join(', ') ??
-              colors.muted(t('cli:commands.space.config.any')),
-          },
-          {
-            label: t('cli:commands.space.config.prComments'),
-            value:
-              settings.prCommentTrigger ??
-              colors.muted(
-                t('cli:commands.space.config.defaultValue', { value: DEFAULT_PR_COMMENT_TRIGGER })
-              ),
-          },
-          {
-            label: t('cli:commands.space.config.resolveThreads'),
-            value: t(
-              settings.prCommentResolveThreads === true
-                ? 'cli:commands.space.config.on'
-                : 'cli:commands.space.config.off'
-            ),
-          },
-          {
-            label: t('cli:commands.space.config.autoActions'),
-            value:
-              settings.autoRuntimeActions?.join(', ') ??
-              colors.muted(t('cli:commands.space.config.none')),
-          },
-        ],
-      },
-      {
-        title: t('cli:commands.space.config.environment'),
-        fields: [
-          {
-            label: t('cli:commands.space.config.sets'),
-            value: set.join('  ') || colors.muted('-'),
-          },
-          {
-            label: t('cli:commands.space.config.removes'),
-            value: environment.unset.join(', ') || colors.muted('-'),
-          },
-        ],
-      },
-    ],
-  });
 }
 
 export function createConfigCommand(): Command {
@@ -202,6 +129,9 @@ export function createConfigCommand(): Command {
     .option('--resolve-threads', t('cli:commands.space.config.resolveThreadsOption'))
     .option('--no-resolve-threads', t('cli:commands.space.config.noResolveThreadsOption'))
     .option('--auto-actions <list>', t('cli:commands.space.config.autoActionsOption'))
+    .option('--docs-first', t('cli:commands.space.config.docsFirstOption'))
+    .option('--no-docs-first', t('cli:commands.space.config.noDocsFirstOption'))
+    .option('--docs-paths <list>', t('cli:commands.space.config.docsPathsOption'))
     .option('--clear <fields...>', t('cli:commands.space.config.clearOption'))
     .addHelpText(
       'after',
@@ -216,6 +146,7 @@ Examples:
   $ shep space config acme --agents claude-code,cursor         Allow only these agents
   $ shep space config acme --pr-comments all --resolve-threads Answer every PR review comment
   $ shep space config acme --auto-actions restart              Restart workloads on incidents unasked
+  $ shep space config acme --docs-first --docs-paths docs/,README.md  Write docs before code
   $ shep space config acme --clear agents bedrock              Back to inheriting the host`
     )
     .action((space: string, options: ConfigOptions) =>
@@ -231,12 +162,14 @@ Examples:
         const patch = buildPatch(options, autoActions.value);
         const useCase = container.resolve(ConfigureSpaceAgentUseCase);
         if (Object.keys(patch).length === 0) {
-          report(await useCase.show(space), (result) => render(result.space, result.environment));
+          report(await useCase.show(space), (result) =>
+            renderSpaceConfig(result.space, result.environment)
+          );
           return;
         }
         report(await useCase.configure(space, patch), (result) => {
           messages.success(t('cli:commands.space.config.success', { name: result.space.name }));
-          render(result.space, result.environment);
+          renderSpaceConfig(result.space, result.environment);
         });
       })
     );

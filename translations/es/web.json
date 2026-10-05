@@ -1386,7 +1386,11 @@
       },
       "resolveThreads": "Resolver los hilos en los que cambió código",
       "autoActions": "Se ejecutan sin preguntar en incidentes",
-      "autoActionsHint": "Shep ejecuta estas en la carga de trabajo de un incidente sin esperar aprobación. Las demás esperan a que alguien las apruebe."
+      "autoActionsHint": "Shep ejecuta estas en la carga de trabajo de un incidente sin esperar aprobación. Las demás esperan a que alguien las apruebe.",
+      "docsFirst": "Docs first",
+      "docsFirstHint": "Los agentes escriben la documentación para usuarios al planificar y construyen según ella. Un cambio que no toca la documentación espera a una persona antes de fusionarse.",
+      "docsFirstOn": "Exigir docs first",
+      "docsPaths": "Rutas de documentación"
     }
   },
   "trackers": {

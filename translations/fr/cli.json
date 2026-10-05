@@ -1243,7 +1243,12 @@
         "badTrigger": "« {{value}} » n'est pas un déclencheur de commentaires de PR. Utilisez l'un de : {{triggers}}",
         "autoActions": "S'exécute sur incident sans demander",
         "autoActionsOption": "Actions que shep exécute sur un incident sans demander : restart, rollback, scale (séparées par des virgules)",
-        "none": "aucune"
+        "none": "aucune",
+        "docsFirstOption": "Les agents écrivent la documentation en planifiant ; un changement sans documentation attend une personne avant la fusion",
+        "noDocsFirstOption": "Désactiver docs first",
+        "docsPathsOption": "Préfixes des chemins de documentation, séparés par des virgules (par défaut docs/,README.md)",
+        "docsFirst": "Docs first",
+        "docsFirstOn": "Activé ({{paths}})"
       }
     },
     "connection": {

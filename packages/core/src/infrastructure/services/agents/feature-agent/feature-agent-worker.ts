@@ -64,6 +64,7 @@ import { AdmitQueuedFeaturesUseCase } from '@/application/use-cases/features/cap
 import { CleanupFeatureWorktreeUseCase } from '@/application/use-cases/features/cleanup-feature-worktree.use-case.js';
 import { startPluginServers, stopPluginServers } from './plugin-startup.js';
 import { SelectProjectMemoryUseCase } from '@/application/use-cases/project-memory/select-project-memory.use-case.js';
+import { CheckDocsGateUseCase } from '@/application/use-cases/docs-first/check-docs-gate.use-case.js';
 import { RecordProjectMemoryUseCase } from '@/application/use-cases/project-memory/record-project-memory.use-case.js';
 import { ResolveSpaceEnvironmentUseCase } from '@/application/use-cases/spaces/resolve-space-environment.use-case.js';
 import { applyRunSpaceEnvironment } from './apply-space-environment.js';
@@ -398,6 +399,8 @@ export async function runWorker(args: WorkerArgs): Promise<void> {
       gitPrService,
       gitForkService: container.resolve<IGitForkService>('IGitForkService'),
       cleanupFeatureWorktreeUseCase,
+      checkDocsGate: (repositoryPath: string, changedFiles: readonly string[]) =>
+        container.resolve(CheckDocsGateUseCase).execute(repositoryPath, changedFiles),
     },
     extractMemoryDeps: {
       recordProjectMemory: container.resolve(RecordProjectMemoryUseCase),

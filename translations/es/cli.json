@@ -1243,7 +1243,12 @@
         "badTrigger": "\"{{value}}\" no es un disparador de comentarios de PR. Usa uno de: {{triggers}}",
         "autoActions": "Se ejecuta en incidentes sin preguntar",
         "autoActionsOption": "Acciones que shep ejecuta en un incidente sin preguntar: restart, rollback, scale (separadas por comas)",
-        "none": "ninguna"
+        "none": "ninguna",
+        "docsFirstOption": "Los agentes escriben la documentación al planificar; un cambio sin documentación espera a una persona antes de fusionarse",
+        "noDocsFirstOption": "Desactivar docs first",
+        "docsPathsOption": "Prefijos de rutas de documentación, separados por comas (por defecto docs/,README.md)",
+        "docsFirst": "Docs first",
+        "docsFirstOn": "Activado ({{paths}})"
       }
     },
     "connection": {

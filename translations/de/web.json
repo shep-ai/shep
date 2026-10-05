@@ -1386,7 +1386,11 @@
       },
       "resolveThreads": "Threads mit Codeänderung auflösen",
       "autoActions": "Ohne Rückfrage bei Incidents",
-      "autoActionsHint": "Shep führt diese am Workload eines Incidents ohne Freigabe aus. Andere warten, bis jemand sie freigibt."
+      "autoActionsHint": "Shep führt diese am Workload eines Incidents ohne Freigabe aus. Andere warten, bis jemand sie freigibt.",
+      "docsFirst": "Docs first",
+      "docsFirstHint": "Agenten schreiben die Nutzerdokumentation beim Planen und bauen danach. Eine Änderung ohne Dokumentation wartet vor dem Merge auf eine Person.",
+      "docsFirstOn": "Docs first verlangen",
+      "docsPaths": "Dokumentationspfade"
     }
   },
   "trackers": {

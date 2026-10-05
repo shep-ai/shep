@@ -33,6 +33,8 @@ const WORK = {
     awsProfile: 'acme',
     allowedAgentTypes: [AgentType.ClaudeCode],
     autoRuntimeActions: [RuntimeActionKind.Restart],
+    docsFirst: true,
+    docsPaths: ['docs/', 'CHANGES.md'],
   },
 };
 

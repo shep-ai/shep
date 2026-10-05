@@ -1243,7 +1243,12 @@
         "badTrigger": "\"{{value}}\" não é um gatilho de comentários de PR. Use um de: {{triggers}}",
         "autoActions": "Roda em incidentes sem perguntar",
         "autoActionsOption": "Ações que o shep roda em um incidente sem perguntar: restart, rollback, scale (separadas por vírgula)",
-        "none": "nenhuma"
+        "none": "nenhuma",
+        "docsFirstOption": "Os agentes escrevem a documentação ao planejar; uma mudança sem documentação espera uma pessoa antes do merge",
+        "noDocsFirstOption": "Desligar docs first",
+        "docsPathsOption": "Prefixos de caminhos de documentação, separados por vírgula (padrão docs/,README.md)",
+        "docsFirst": "Docs first",
+        "docsFirstOn": "Ligado ({{paths}})"
       }
     },
     "connection": {

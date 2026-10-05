@@ -1386,7 +1386,11 @@
       },
       "resolveThreads": "Resolver as threads em que alterou código",
       "autoActions": "Executadas sem perguntar em incidentes",
-      "autoActionsHint": "O Shep executa estas na carga de trabalho de um incidente sem esperar aprovação. As outras esperam alguém aprovar."
+      "autoActionsHint": "O Shep executa estas na carga de trabalho de um incidente sem esperar aprovação. As outras esperam alguém aprovar.",
+      "docsFirst": "Docs first",
+      "docsFirstHint": "Os agentes escrevem a documentação para usuários ao planejar e constroem a partir dela. Uma mudança que não toca a documentação espera uma pessoa antes do merge.",
+      "docsFirstOn": "Exigir docs first",
+      "docsPaths": "Caminhos de documentação"
     }
   },
   "trackers": {

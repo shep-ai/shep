@@ -1243,7 +1243,12 @@
         "badTrigger": "\"{{value}}\" ليس وضعاً لتعليقات طلب الدمج. استخدم أحد: {{triggers}}",
         "autoActions": "يعمل في الحوادث دون سؤال",
         "autoActionsOption": "إجراءات ينفذها shep في حادث دون سؤال: restart وrollback وscale (مفصولة بفواصل)",
-        "none": "لا شيء"
+        "none": "لا شيء",
+        "docsFirstOption": "يكتب الوكلاء توثيق المستخدم أثناء التخطيط؛ ينتظر التغيير بلا توثيق شخصًا قبل الدمج",
+        "noDocsFirstOption": "إيقاف docs first",
+        "docsPathsOption": "بادئات مسارات التوثيق مفصولة بفواصل (الافتراضي docs/,README.md)",
+        "docsFirst": "Docs first",
+        "docsFirstOn": "مفعّل ({{paths}})"
       }
     },
     "connection": {

@@ -330,6 +330,26 @@ describe('shep space', () => {
       });
     });
 
+    it('turns docs first on with its documentation paths, and shows them (spec 131)', async () => {
+      agentConfig.configure.mockResolvedValue({
+        ...configured,
+        space: {
+          ...configured.space,
+          agentSettings: { docsFirst: true, docsPaths: ['docs/', 'CHANGES.md'] },
+        },
+      });
+      const out = await run('config', 'acme', '--docs-first', '--docs-paths', 'docs/, CHANGES.md');
+      expect(agentConfig.configure).toHaveBeenCalledWith('acme', {
+        docsFirst: true,
+        docsPaths: ['docs/', 'CHANGES.md'],
+      });
+      expect(out).toContain('docs/, CHANGES.md');
+      await run('config', 'acme', '--no-docs-first');
+      expect(agentConfig.configure).toHaveBeenLastCalledWith('acme', { docsFirst: false });
+      await run('config', 'acme', '--clear', 'docs-paths');
+      expect(agentConfig.configure).toHaveBeenLastCalledWith('acme', { docsPaths: null });
+    });
+
     it('sets the runtime actions shep runs on incidents without asking (spec 129)', async () => {
       agentConfig.configure.mockResolvedValue(configured);
       await run('config', 'acme', '--auto-actions', 'restart,SCALE');

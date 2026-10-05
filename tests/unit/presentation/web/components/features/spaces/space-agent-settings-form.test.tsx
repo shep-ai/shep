@@ -68,7 +68,22 @@ describe('SpaceAgentSettingsForm', () => {
       prCommentTrigger: 'Mention',
       prCommentResolveThreads: false,
       autoRuntimeActions: [],
+      docsFirst: false,
+      docsPaths: null,
     });
+  });
+
+  it('saves docs first with its documentation paths (spec 131)', async () => {
+    render(<SpaceAgentSettingsForm space={ACME} run={run} />);
+    await userEvent.click(screen.getByTestId('space-agent-settings-toggle'));
+    expect(screen.getByTestId('agent-settings-docs-paths')).toBeDisabled();
+    await userEvent.click(screen.getByTestId('agent-settings-docs-first'));
+    await userEvent.type(screen.getByTestId('agent-settings-docs-paths'), 'docs/, CHANGES.md');
+    await userEvent.click(screen.getByTestId('agent-settings-submit'));
+    expect(configureSpaceAgent).toHaveBeenCalledWith(
+      ACME.id,
+      expect.objectContaining({ docsFirst: true, docsPaths: ['docs/', 'CHANGES.md'] })
+    );
   });
 
   it('saves which runtime actions shep runs on incidents unasked (spec 129)', async () => {

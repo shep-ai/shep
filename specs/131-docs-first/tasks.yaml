@@ -15,7 +15,7 @@ tasks:
     title: Policy
     description: >
       SpaceAgentSettings.docsFirst and docsPaths in TypeSpec; configure-space-agent validates paths.
-    state: Todo
+    state: Done
     dependencies: []
     acceptanceCriteria:
       - Settings round-trip; bad paths refused
@@ -32,7 +32,7 @@ tasks:
     title: Domain rules
     description: >
       Documentation path matching and the plan and implement instructions.
-    state: Todo
+    state: Done
     dependencies:
       - task-1
     acceptanceCriteria:
@@ -50,7 +50,7 @@ tasks:
     title: Instructions
     description: >
       SelectProjectMemoryUseCase adds the docs-first section for plan and implement when the space has it on.
-    state: Todo
+    state: Done
     dependencies:
       - task-2
     acceptanceCriteria:
@@ -68,7 +68,7 @@ tasks:
     title: Gate use case
     description: >
       CheckDocsGateUseCase: the space policy and the changed paths decide required, passed and the reason.
-    state: Todo
+    state: Done
     dependencies:
       - task-2
     acceptanceCriteria:
@@ -86,7 +86,7 @@ tasks:
     title: Merge gate
     description: >
       The merge node asks the gate and opens the human merge gate when it blocks.
-    state: Todo
+    state: Done
     dependencies:
       - task-4
     acceptanceCriteria:
@@ -104,7 +104,7 @@ tasks:
     title: CLI
     description: >
       shep space config --docs-first / --no-docs-first, --docs-paths, clear names, render.
-    state: Todo
+    state: Done
     dependencies:
       - task-1
     acceptanceCriteria:
@@ -122,7 +122,7 @@ tasks:
     title: Web
     description: >
       Docs first and documentation paths in the space agent settings form; 9 locales.
-    state: Todo
+    state: Done
     dependencies:
       - task-1
     acceptanceCriteria:
@@ -140,7 +140,7 @@ tasks:
     title: Docs
     description: >
       Spaces guide section, architecture note, CLI reference.
-    state: Todo
+    state: Done
     dependencies:
       - task-6
       - task-7
@@ -159,7 +159,7 @@ tasks:
     title: Verification
     description: >
       lint, format, typecheck, unit, integration, build, web build, storybook.
-    state: Todo
+    state: Done
     dependencies:
       - task-8
     acceptanceCriteria:

@@ -1386,7 +1386,11 @@
       },
       "resolveThreads": "Resolve threads it changed code for",
       "autoActions": "Runs without asking on incidents",
-      "autoActionsHint": "Shep runs these on an incident’s workload without waiting for approval. Others wait for someone to approve them."
+      "autoActionsHint": "Shep runs these on an incident’s workload without waiting for approval. Others wait for someone to approve them.",
+      "docsFirst": "Docs first",
+      "docsFirstHint": "Agents write the user-facing docs while planning and build to them. A change that touches no documentation waits for a person before it merges.",
+      "docsFirstOn": "Require docs first",
+      "docsPaths": "Documentation paths"
     }
   },
   "trackers": {

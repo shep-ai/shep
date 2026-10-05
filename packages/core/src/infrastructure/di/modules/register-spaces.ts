@@ -17,6 +17,7 @@ import { SQLiteProductLineRepository } from '../../repositories/sqlite-product-l
 import { SQLiteSpaceMembershipRepository } from '../../repositories/sqlite-space-membership.repository.js';
 
 import { ResolveSpaceContextUseCase } from '../../../application/use-cases/spaces/resolve-space-context.use-case.js';
+import { CheckDocsGateUseCase } from '../../../application/use-cases/docs-first/check-docs-gate.use-case.js';
 import { ManageSpacesUseCase } from '../../../application/use-cases/spaces/manage-spaces.use-case.js';
 import { ManageSpaceMembershipUseCase } from '../../../application/use-cases/spaces/manage-space-membership.use-case.js';
 import { GetSpacesOverviewUseCase } from '../../../application/use-cases/spaces/get-spaces-overview.use-case.js';
@@ -43,6 +44,7 @@ export function registerSpaces(container: DependencyContainer): void {
   container.registerSingleton(GetSpacesOverviewUseCase);
   container.registerSingleton(ConfigureSpaceAgentUseCase);
   container.registerSingleton(ResolveSpaceEnvironmentUseCase);
+  container.registerSingleton(CheckDocsGateUseCase);
 
   // ─── String-token aliases (for web server actions) ───────────────────────
   container.register('ResolveSpaceContextUseCase', {

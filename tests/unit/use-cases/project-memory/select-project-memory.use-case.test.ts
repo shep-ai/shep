@@ -10,7 +10,7 @@ import type { SelectKnowledgeUseCase } from '@/application/use-cases/knowledge/s
 import type { ResolveSpaceContextUseCase } from '@/application/use-cases/spaces/resolve-space-context.use-case.js';
 import { MemoryScope, SpaceResolutionSource } from '@/domain/generated/output.js';
 import type { IMemoryRelevanceScorer } from '@/application/ports/output/services/memory-relevance-scorer.interface.js';
-import type { ProjectMemory } from '@/domain/generated/output.js';
+import type { ProjectMemory, Space } from '@/domain/generated/output.js';
 import { MemoryCategory } from '@/domain/generated/output.js';
 
 function entry(over: Partial<ProjectMemory>): ProjectMemory {
@@ -26,11 +26,14 @@ function entry(over: Partial<ProjectMemory>): ProjectMemory {
   };
 }
 
-function resolverFor(productLineId?: string): ResolveSpaceContextUseCase {
+function resolverFor(
+  productLineId?: string,
+  space: Space = DEFAULT_SPACE
+): ResolveSpaceContextUseCase {
   return {
     execute: vi.fn(async (repositoryPath: string) => ({
       repositoryPath,
-      space: DEFAULT_SPACE,
+      space,
       ...(productLineId
         ? {
             productLine: {
@@ -145,5 +148,32 @@ describe('SelectProjectMemoryUseCase', () => {
       totalCount: 0,
       knowledgeCount: 1,
     });
+  });
+
+  it('tells the plan and implement phases to write docs first in a docs-first space (spec 131)', async () => {
+    const docsFirst: Space = {
+      ...DEFAULT_SPACE,
+      agentSettings: { docsFirst: true, docsPaths: ['guide/'] },
+    };
+    useCase = new SelectProjectMemoryUseCase(
+      repo,
+      scorer,
+      resolverFor(undefined, docsFirst),
+      knowledge as unknown as SelectKnowledgeUseCase
+    );
+    const plan = await useCase.execute({ repositoryPath: '/repo', phase: 'plan', taskText: 't' });
+    expect(plan.blob).toContain('### Docs first');
+    expect(plan.blob).toContain('guide/');
+    const research = await useCase.execute({
+      repositoryPath: '/repo',
+      phase: 'research',
+      taskText: 't',
+    });
+    expect(research.blob).toBe('');
+  });
+
+  it('adds nothing about docs where the space does not ask for it', async () => {
+    const result = await useCase.execute({ repositoryPath: '/repo', phase: 'plan', taskText: 't' });
+    expect(result.blob).not.toContain('Docs first');
   });
 });

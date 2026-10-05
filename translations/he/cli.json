@@ -1243,7 +1243,12 @@
         "badTrigger": "\"{{value}}\" אינו מצב הערות PR. השתמשו באחד מאלה: {{triggers}}",
         "autoActions": "רץ בתקלות בלי לשאול",
         "autoActionsOption": "פעולות ש-shep מריץ בתקלה בלי לשאול: restart, rollback, scale (מופרדות בפסיקים)",
-        "none": "אין"
+        "none": "אין",
+        "docsFirstOption": "הסוכנים כותבים תיעוד למשתמשים בזמן התכנון; שינוי בלי תיעוד ממתין לאדם לפני המיזוג",
+        "noDocsFirstOption": "כיבוי docs first",
+        "docsPathsOption": "קידומות נתיבי תיעוד, מופרדות בפסיקים (ברירת מחדל docs/,README.md)",
+        "docsFirst": "Docs first",
+        "docsFirstOn": "פעיל ({{paths}})"
       }
     },
     "connection": {

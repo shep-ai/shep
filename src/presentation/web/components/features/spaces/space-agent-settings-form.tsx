@@ -5,7 +5,8 @@
  * (spec 121): the Claude and gh config directories holding the space's own
  * logins, the git identity for agent commits, Bedrock and the AWS profile,
  * the agent types the space allows, and the runtime actions shep runs on an
- * incident without asking (spec 129). Empty fields inherit the host.
+ * incident without asking (spec 129), and docs first (spec 131). Empty fields
+ * inherit the host.
  *
  * Collapsed by default; saving sends every field, so an emptied field clears.
  */
@@ -22,6 +23,7 @@ import {
 } from '@shepai/core/domain/generated/output';
 import { DEFAULT_PR_COMMENT_TRIGGER } from '@shepai/core/domain/shared/pr-comments';
 import { listAgentDescriptors } from '@shepai/core/domain/shared/agent-catalog';
+import { DEFAULT_DOCS_PATHS } from '@shepai/core/domain/shared/docs-first';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,6 +31,7 @@ import { configureSpaceAgent } from '@/app/actions/manage-spaces';
 import { NATIVE_SELECT_CLASS } from '@/lib/native-select-class';
 import type { RunSpaceAction } from './spaces-types';
 import { CheckboxFieldset, toggled } from './checkbox-fieldset';
+import { DocsFirstFieldset } from './docs-first-fieldset';
 
 type TextField =
   | 'claudeConfigDir'
@@ -80,6 +83,15 @@ const AGENT_CHOICES = listAgentDescriptors()
   .filter((descriptor) => descriptor.supported)
   .map((descriptor) => ({ value: descriptor.type, label: descriptor.label }));
 
+/** The entries of a comma-separated list, or null to clear it when there are none. */
+function splitList(value: string): string[] | null {
+  const entries = value
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+  return entries.length > 0 ? entries : null;
+}
+
 function bedrockChoice(useBedrock: boolean | undefined): BedrockChoice {
   if (useBedrock === undefined) return '';
   return useBedrock ? 'on' : 'off';
@@ -110,6 +122,8 @@ export function SpaceAgentSettingsForm({ space, run }: SpaceAgentSettingsFormPro
   const [autoActions, setAutoActions] = useState<RuntimeActionKind[]>(
     settings.autoRuntimeActions ?? []
   );
+  const [docsFirst, setDocsFirst] = useState(settings.docsFirst === true);
+  const [docsPaths, setDocsPaths] = useState((settings.docsPaths ?? []).join(', '));
 
   async function submit(event: FormEvent) {
     event.preventDefault();
@@ -126,6 +140,8 @@ export function SpaceAgentSettingsForm({ space, run }: SpaceAgentSettingsFormPro
         prCommentTrigger: prTrigger,
         prCommentResolveThreads: resolveThreads,
         autoRuntimeActions: autoActions,
+        docsFirst,
+        docsPaths: splitList(docsPaths),
       })
     );
   }
@@ -231,6 +247,14 @@ export function SpaceAgentSettingsForm({ space, run }: SpaceAgentSettingsFormPro
             selected={autoActions}
             onToggle={(kind) => setAutoActions((current) => toggled(current, kind))}
             testIdPrefix="agent-settings-auto"
+          />
+
+          <DocsFirstFieldset
+            enabled={docsFirst}
+            paths={docsPaths}
+            defaultPaths={DEFAULT_DOCS_PATHS}
+            onEnabledChange={setDocsFirst}
+            onPathsChange={setDocsPaths}
           />
 
           <Button type="submit" size="xs" data-testid="agent-settings-submit">

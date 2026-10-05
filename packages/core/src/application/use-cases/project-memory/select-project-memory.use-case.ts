@@ -12,7 +12,9 @@
  *
  * The team knowledge most relevant to the task (synced documents of the
  * repository's space, spec 125) follows the memory, within its own budget, so
- * every consumer of project memory reads both.
+ * every consumer of project memory reads both. In a docs-first space
+ * (spec 131) the plan and implement phases also get the docs-first
+ * instructions.
  */
 
 import { injectable, inject } from 'tsyringe';
@@ -20,10 +22,14 @@ import type { ProjectMemory } from '../../../domain/generated/output.js';
 import type { IProjectMemoryRepository } from '../../ports/output/repositories/project-memory-repository.interface.js';
 import type { IMemoryRelevanceScorer } from '../../ports/output/services/memory-relevance-scorer.interface.js';
 import { loadCandidateMemory } from './load-candidate-memory.js';
-import { ResolveSpaceContextUseCase } from '../spaces/resolve-space-context.use-case.js';
+import {
+  ResolveSpaceContextUseCase,
+  type SpaceContext,
+} from '../spaces/resolve-space-context.use-case.js';
 import { renderMemoryBlob } from './render-memory-blob.js';
 import { MEMORY_TOKEN_BUDGET, CHARS_PER_TOKEN } from './project-memory.constants.js';
 import { SelectKnowledgeUseCase } from '../knowledge/select-knowledge.use-case.js';
+import { docsFirstInstructions, docsPathsOf } from '../../../domain/shared/docs-first.js';
 
 export interface SelectProjectMemoryInput {
   /** Normalised repository path whose memory should be considered. */
@@ -65,13 +71,19 @@ export class SelectProjectMemoryUseCase {
       return { blob: '', selectedCount: 0, totalCount: 0, knowledgeCount: 0 };
     }
 
-    const memory = await this.selectMemory(repositoryPath, input);
+    const context = await this.resolveSpaceContext.execute(repositoryPath);
+    const memory = await this.selectMemory(context, input);
     const knowledge = await this.selectKnowledge.execute({
       repositoryPath,
       taskText: input.taskText ?? '',
     });
+    const settings = context.space.agentSettings;
+    const docsFirst =
+      settings?.docsFirst && input.phase
+        ? docsFirstInstructions(input.phase, docsPathsOf(settings))
+        : '';
     return {
-      blob: [memory.blob, knowledge.blob].filter((part) => part !== '').join('\n\n'),
+      blob: [memory.blob, knowledge.blob, docsFirst].filter((part) => part !== '').join('\n\n'),
       selectedCount: memory.selectedCount,
       totalCount: memory.totalCount,
       knowledgeCount: knowledge.passages.length,
@@ -79,10 +91,9 @@ export class SelectProjectMemoryUseCase {
   }
 
   private async selectMemory(
-    repositoryPath: string,
+    context: SpaceContext,
     input: SelectProjectMemoryInput
   ): Promise<{ blob: string; selectedCount: number; totalCount: number }> {
-    const context = await this.resolveSpaceContext.execute(repositoryPath);
     const candidates = await loadCandidateMemory(this.memoryRepo, context);
     if (candidates.length === 0) {
       return { blob: '', selectedCount: 0, totalCount: 0 };

@@ -53,6 +53,7 @@ import { truncateCommitTitle } from '@/infrastructure/services/git/pr-branding.j
 import { parseCommitHash, parsePrUrl } from './merge-output-parser.js';
 import { runCiWatchFixLoop } from './ci-watch-fix-loop.js';
 import { ciStatusBlocksAutoMerge } from './ci-helpers.js';
+import { docsBlockAutoMerge, type CheckDocsGate } from './docs-gate.js';
 import { getSettings } from '@/infrastructure/services/settings.service.js';
 import type { CleanupFeatureWorktreeUseCase } from '@/application/use-cases/features/cleanup-feature-worktree.use-case.js';
 import type { IGitForkService } from '@/application/ports/output/services/git-fork-service.interface.js';
@@ -104,6 +105,11 @@ export interface MergeNodeDeps {
   gitPrService: IGitPrService;
   gitForkService?: IGitForkService;
   cleanupFeatureWorktreeUseCase: Pick<CleanupFeatureWorktreeUseCase, 'execute'>;
+  /**
+   * The docs-first gate (spec 131): whether a change in the repository may
+   * auto-merge as far as documentation goes. Optional — absent, no gate.
+   */
+  checkDocsGate?: CheckDocsGate;
 }
 
 /**
@@ -185,6 +191,8 @@ export function createMergeNode(deps: MergeNodeDeps) {
       // (e.g. rate-limited, or CI is configured but no run was observed).
       // Such a run must never auto-merge — it escalates to the human gate.
       let ciBlocksAutoMerge = false;
+      // Set when a docs-first space's change touched no documentation (spec 131).
+      let docsBlocksAutoMerge = false;
 
       let ciFixAttempts = state.ciFixAttempts ?? 0;
       let ciFixHistory = state.ciFixHistory ?? [];
@@ -313,6 +321,16 @@ export function createMergeNode(deps: MergeNodeDeps) {
           ciFixStatus = ciResult.ciFixStatus;
         }
 
+        docsBlocksAutoMerge = await docsBlockAutoMerge({
+          ...(deps.checkDocsGate ? { checkDocsGate: deps.checkDocsGate } : {}),
+          gitPrService: deps.gitPrService,
+          repositoryPath: state.repositoryPath,
+          cwd,
+          baseBranch,
+          messages,
+          log,
+        });
+
         // --- Persist lifecycle + PR data before approval gate ---
         // Setting lifecycle to Review serves as the resume detection marker
         // (replaces feature.yaml completedPhases which dirtied the worktree).
@@ -341,7 +359,11 @@ export function createMergeNode(deps: MergeNodeDeps) {
         // --- Merge approval gate ---
         // An unverified CI result forces the gate open even when allowMerge
         // would otherwise auto-merge: no CI evidence, no automated merge.
-        if (shouldInterrupt('merge', state.approvalGates) || ciBlocksAutoMerge) {
+        if (
+          shouldInterrupt('merge', state.approvalGates) ||
+          ciBlocksAutoMerge ||
+          docsBlocksAutoMerge
+        ) {
           if (ciBlocksAutoMerge) {
             log.info(`CI status is ${ciStatus} — escalating to the human merge gate`);
             messages.push(`[merge] CI status ${ciStatus} — human approval required`);
@@ -516,7 +538,10 @@ export function createMergeNode(deps: MergeNodeDeps) {
       };
 
       const userApprovedMerge = isResumeAfterInterrupt && state._approvalAction !== 'rejected';
-      if ((state.approvalGates?.allowMerge && !ciBlocksAutoMerge) || userApprovedMerge) {
+      if (
+        (state.approvalGates?.allowMerge && !ciBlocksAutoMerge && !docsBlocksAutoMerge) ||
+        userApprovedMerge
+      ) {
         if (prUrl && prNumber) {
           // PR exists: merge via GitHub API directly — no agent or local merge needed.
           // This will fail if the PR is not in a mergeable state (checks pending, reviews needed).

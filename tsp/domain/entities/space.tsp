@@ -85,6 +85,12 @@ model SpaceAgentSettings {
 
   @doc("Runtime action kinds shep may run on an incident without asking (spec 129); unset means none")
   autoRuntimeActions?: RuntimeActionKind[];
+
+  @doc("Agents write user-facing docs while planning and a change without docs waits for a person before merging (spec 131)")
+  docsFirst?: boolean;
+
+  @doc("Repository path prefixes that hold documentation, such as docs/ or README.md; docs/ and README.md when unset")
+  docsPaths?: string[];
 }
 
 /** A hard knowledge boundary such as "Acme (work)" or "Personal". */

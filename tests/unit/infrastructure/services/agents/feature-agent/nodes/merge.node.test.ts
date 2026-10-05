@@ -521,6 +521,52 @@ describe('createMergeNode (agent-driven)', () => {
 
   // --- Approval gate behavior ---
   describe('approval gate (interrupt)', () => {
+    it('holds a docs-first change without documentation at the merge gate (spec 131)', async () => {
+      deps.gitPrService.getFileDiffs = vi.fn().mockResolvedValue([{ path: 'src/a.ts' }]);
+      const checkDocsGate = vi.fn().mockResolvedValue({
+        required: true,
+        passed: false,
+        docsPaths: ['docs/', 'README.md'],
+        documentation: [],
+      });
+      const node = createMergeNode({ ...deps, checkDocsGate });
+      const result = await node(
+        baseState({
+          openPr: true,
+          prUrl: 'https://github.com/test/repo/pull/42',
+          prNumber: 42,
+          approvalGates: { allowPrd: false, allowPlan: false, allowMerge: true },
+        })
+      );
+
+      expect(checkDocsGate).toHaveBeenCalledWith('/tmp/repo', ['src/a.ts']);
+      expect(mockInterrupt).toHaveBeenCalledWith(expect.objectContaining({ node: 'merge' }));
+      expect(deps.gitPrService.mergePr).not.toHaveBeenCalled();
+      expect(result.messages?.join('\n') ?? '').toContain('docs/, README.md');
+    });
+
+    it('merges a docs-first change that touched documentation as before (spec 131)', async () => {
+      deps.gitPrService.getFileDiffs = vi.fn().mockResolvedValue([{ path: 'docs/a.md' }]);
+      const checkDocsGate = vi.fn().mockResolvedValue({
+        required: true,
+        passed: true,
+        docsPaths: ['docs/'],
+        documentation: ['docs/a.md'],
+      });
+      const node = createMergeNode({ ...deps, checkDocsGate });
+      await node(
+        baseState({
+          openPr: true,
+          prUrl: 'https://github.com/test/repo/pull/42',
+          prNumber: 42,
+          approvalGates: { allowPrd: false, allowPlan: false, allowMerge: true },
+        })
+      );
+
+      expect(mockInterrupt).not.toHaveBeenCalled();
+      expect(deps.gitPrService.mergePr).toHaveBeenCalledWith('/tmp/worktree', 42, 'squash');
+    });
+
     it('should interrupt with diff summary when shouldInterrupt returns true', async () => {
       mockShouldInterrupt.mockReturnValueOnce(true);
       const node = createMergeNode(deps);
