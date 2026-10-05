@@ -1,0 +1,42 @@
+feature:
+  id: '130-outcomes'
+  name: 'outcomes'
+  number: 130
+  branch: 'claude/wonderful-keller-g4wgaf'
+  lifecycle: 'implementation'
+  createdAt: '2026-10-06T03:00:00Z'
+
+status:
+  phase: 'implementation'
+  progress:
+    completed: 0
+    total: 10
+    percentage: 0
+  currentTask: null
+  lastUpdated: '2026-10-06T03:10:00Z'
+  lastUpdatedBy: 'shep-kit:implement'
+
+validation:
+  lastRun: null
+  gatesPassed: []
+  autoFixesApplied: []
+
+tasks:
+  current: null
+  blocked: []
+  failed: []
+
+checkpoints:
+  - phase: 'feature-created'
+    completedAt: '2026-10-06T03:00:00Z'
+    completedBy: 'shep-kit:new-feature-fast'
+  - phase: 'research-complete'
+    completedAt: '2026-10-06T03:10:00Z'
+    completedBy: 'shep-kit:new-feature-fast'
+  - phase: 'plan-complete'
+    completedAt: '2026-10-06T03:10:00Z'
+    completedBy: 'shep-kit:new-feature-fast'
+
+errors:
+  current: null
+  history: []

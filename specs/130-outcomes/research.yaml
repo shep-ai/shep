@@ -1,0 +1,47 @@
+# Research (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: outcomes
+summary: Technical decisions for 130 — ship tracking, outcome verdicts, telling customers and calibration.
+
+relatedFeatures:
+  - 126-opportunities
+  - 127-feedback-themes
+technologies:
+  - TypeScript
+relatedLinks: []
+
+decisions:
+  - title: Ship from the work item's state group
+    chosen: Completed and Cancelled state groups decide, read through the work item and work item state repositories
+    rejected:
+      - 'Watching merged pull requests: an opportunity can span several features and repositories'
+    rationale: >
+      The work item is the one link an opportunity already has; its state group is the project's
+      own notion of done, whatever the state is called.
+
+  - title: Verdict from similar signals over equal windows
+    chosen: Count the space's signals whose terms overlap the opportunity's evidence (Jaccard at the themes threshold) in the window before and after shipping; Solved when after is at most half of before
+    rejected:
+      - 'Asking an agent: slow, costly and hard to audit'
+      - 'Only linked signals: nobody links new reports to a shipped opportunity'
+    rationale: >
+      The same term rules already group feedback into themes, and the counts are explainable on
+      the page.
+
+  - title: Outcomes in their own table
+    chosen: OpportunityOutcome keyed by opportunity, created on ship
+    rejected:
+      - 'Fields on Opportunity: most opportunities never ship'
+    rationale: >
+      Keeps the opportunity row lean and the outcome lifecycle separate.
+
+openQuestions: []
+
+content: |
+  ## Findings
+
+  - `WorkItem.stateId` → `WorkItemState.group` (`StateGroup`: Backlog, Unstarted, Started,
+    Completed, Cancelled).
+  - `feedback-themes.ts` exposes the similarity threshold and term sets.
+  - The daemon already runs discovery on a schedule; outcome checks can share that tick.

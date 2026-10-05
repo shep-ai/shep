@@ -1,0 +1,199 @@
+# Task Breakdown (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: outcomes
+summary: Task breakdown for 130 — ship tracking, outcomes, telling customers and calibration.
+
+relatedFeatures:
+  - 126-opportunities
+technologies:
+  - TypeSpec
+  - SQLite
+relatedLinks: []
+
+tasks:
+  - id: task-1
+    title: Model
+    description: >
+      OpportunityOutcome and OutcomeVerdict in TypeSpec; Opportunity.shippedAt; Signal.toldAt; migration 163; outcome repository.
+    state: Todo
+    dependencies: []
+    acceptanceCriteria:
+      - Repositories round-trip every field
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: S
+
+  - id: task-2
+    title: Domain rules
+    description: >
+      Similar signals, verdict over equal windows, customers to tell, the customer note and calibration as pure functions.
+    state: Todo
+    dependencies:
+      - task-1
+    acceptanceCriteria:
+      - Rules cover ties, empty windows and missing hours
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: S
+
+  - id: task-3
+    title: Track ships
+    description: >
+      A use case ships Building opportunities whose work item is Completed and returns Cancelled ones to Accepted; manual ship.
+    state: Todo
+    dependencies:
+      - task-2
+    acceptanceCriteria:
+      - Each ship creates one Pending outcome
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: M
+
+  - id: task-4
+    title: Judge outcomes
+    description: >
+      Judge Pending outcomes past their window from the space's similar signals.
+    state: Todo
+    dependencies:
+      - task-3
+    acceptanceCriteria:
+      - Solved and Persisting both reachable; nothing judged early
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: M
+
+  - id: task-5
+    title: Tell and hours
+    description: >
+      List outcomes with customers to tell; mark them told; record actual review hours; space calibration.
+    state: Todo
+    dependencies:
+      - task-3
+    acceptanceCriteria:
+      - Only untold signals with a customer are stamped
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: S
+
+  - id: task-6
+    title: Daemon
+    description: >
+      Run ship tracking and judging on the daemon's hourly tick.
+    state: Todo
+    dependencies:
+      - task-4
+    acceptanceCriteria:
+      - The tick calls the use case and survives its failure
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: S
+
+  - id: task-7
+    title: CLI
+    description: >
+      shep outcome ls, check, ship, tell [--done], hours.
+    state: Todo
+    dependencies:
+      - task-5
+    acceptanceCriteria:
+      - Commands print outcomes, notes and calibration
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: S
+
+  - id: task-8
+    title: Web
+    description: >
+      Outcomes panel on the Opportunities page: verdicts, similar counts, customers to tell, hours, calibration; stories; 9 locales.
+    state: Todo
+    dependencies:
+      - task-5
+    acceptanceCriteria:
+      - Component tests and stories
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: M
+
+  - id: task-9
+    title: Docs
+    description: >
+      Outcomes guide section, architecture note, CLI reference.
+    state: Todo
+    dependencies:
+      - task-7
+      - task-8
+    acceptanceCriteria:
+      - Docs explain verdicts and calibration
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: S
+
+  - id: task-10
+    title: Verification
+    description: >
+      lint, format, typecheck, unit, integration, build, web build, storybook.
+    state: Todo
+    dependencies:
+      - task-9
+    acceptanceCriteria:
+      - All green
+    tdd:
+      red:
+        - Failing test for the acceptance criteria
+      green:
+        - Minimal implementation
+      refactor:
+        - Remove duplication
+    estimatedEffort: S
+
+totalEstimate: M (10 tasks)
+openQuestions: []
+
+content: |
+  Tasks follow the plan phases; each starts with a failing test.

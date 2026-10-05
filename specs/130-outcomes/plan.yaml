@@ -1,0 +1,59 @@
+# Implementation Plan (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: outcomes
+summary: Implementation plan for 130 — ship tracking, outcomes, telling customers and calibration.
+
+relatedFeatures:
+  - 126-opportunities
+technologies:
+  - TypeSpec
+  - SQLite
+  - tsyringe
+  - Commander
+  - Next.js
+relatedLinks: []
+
+phases:
+  - id: phase-1
+    name: 'Model and rules'
+    parallel: false
+    taskIds: [task-1, task-2]
+  - id: phase-2
+    name: 'Outcome loop'
+    parallel: false
+    taskIds: [task-3, task-4, task-5]
+  - id: phase-3
+    name: 'Surfaces'
+    parallel: false
+    taskIds: [task-6, task-7, task-8]
+  - id: phase-4
+    name: 'Docs and verification'
+    parallel: false
+    taskIds: [task-9, task-10]
+
+filesToCreate:
+  - tsp/domain/entities/outcome.tsp
+  - packages/core/src/domain/shared/outcomes.ts
+  - packages/core/src/infrastructure/persistence/sqlite/migrations/163-create-outcomes.ts
+  - packages/core/src/application/use-cases/outcomes/
+  - src/presentation/cli/commands/outcome/
+  - src/presentation/web/components/features/opportunities/outcomes-panel.tsx
+
+filesToModify:
+  - tsp/domain/entities/opportunity.tsp
+  - src/presentation/web/app/opportunities/page.tsx
+
+content: |
+  ## Approach
+
+  TDD throughout: every task begins with a failing test (RED), then the minimal implementation
+  (GREEN), then cleanup (REFACTOR).
+
+  Clean Architecture: similarity, verdicts, the customer note and calibration are pure domain
+  code; use cases depend on repository ports; CLI, web and the daemon call use cases.
+
+  ## Risks
+
+  - A wrong verdict misleads: the page shows the counts behind each verdict and the similar
+    signals, so a person can judge.
