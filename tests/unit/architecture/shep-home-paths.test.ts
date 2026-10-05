@@ -19,6 +19,11 @@ const HOMEDIR_SHEP = /homedir\(\)\s*,\s*['"]\.shep['"]/;
 /** A Shep-home fallback built from the HOME variable. */
 const HOME_ENV_SHEP = /process\.env\.HOME\b[^\n]*['"]\.shep['"]/;
 
+/** Repository-relative path with forward slashes, on every platform. */
+function repoPath(file: string): string {
+  return relative(ROOT, file).replace(/\\/g, '/');
+}
+
 function files(dir: string): string[] {
   return readdirSync(dir).flatMap((name) => {
     if (name === 'node_modules' || name === '.next') return [];
@@ -31,12 +36,12 @@ function files(dir: string): string[] {
 describe('Shep home resolution', () => {
   it('no source file builds the Shep home from homedir() or HOME', () => {
     const offenders = SOURCES.flatMap(files)
-      .filter((file) => relative(ROOT, file) !== CANONICAL)
+      .filter((file) => repoPath(file) !== CANONICAL)
       .filter((file) => {
         const text = readFileSync(file, 'utf8');
         return HOMEDIR_SHEP.test(text) || HOME_ENV_SHEP.test(text);
       })
-      .map((file) => relative(ROOT, file));
+      .map(repoPath);
     expect(offenders).toEqual([]);
   });
 });
