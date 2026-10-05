@@ -3000,3 +3000,19 @@ a test, and never interpolate a raw enum value into prose — map it through a `
 `output.ts` comes back with double quotes and `format:check` fails on 750 lines. Always finish
 with `pnpm generate` (which runs prettier) and confirm `git diff --stat` on the generated folder
 shows only the intended change.
+
+## Fake credentials in demos and transcripts must contain an allowlisted word
+
+Gitleaks' `curl-auth-header` rule flagged `-H 'Authorization: Bearer shep_fb_wrong'` in a demo
+script and its recorded transcript, and CI scans the full git history, so fixing the file in a
+later commit is not enough. Name every deliberately fake token with a word `.gitleaks.toml`
+allowlists (`fake`, `placeholder`, `dummy`, `example`), run
+`gitleaks detect --log-opts "origin/main..HEAD"` before pushing, and if a flagged value was
+already committed on an unmerged branch, replace that commit rather than adding a fingerprint
+that a squash merge would invalidate.
+
+## Normalize `path.relative()` output before comparing it with a literal path
+
+`relative(ROOT, file)` returns backslashes on Windows, so a test comparing it with
+`'packages/core/src/...'` passed on Linux and failed on `windows-latest`. Always
+`.replace(/\\/g, '/')` a computed path before comparing or printing it in a test.
