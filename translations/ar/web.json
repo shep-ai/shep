@@ -448,7 +448,8 @@
     "spaces": "المساحات",
     "trackers": "الاتصالات",
     "opportunities": "الفرص",
-    "incidents": "الحوادث"
+    "incidents": "الحوادث",
+    "factory": "المصنع"
   },
   "sidebar": {
     "features": "الميزات",
@@ -1767,6 +1768,41 @@
       "Recovered": "تعافى",
       "NotRecovered": "لم يتعافَ",
       "Resolved": "حُلّ"
+    }
+  },
+  "factory": {
+    "title": "المصنع",
+    "subtitle": "ما يفعله مصنع البرمجيات في المساحة وما ينتظر الأشخاص.",
+    "space": "المساحة",
+    "errors": {
+      "actionFailed": "فشل الإجراء."
+    },
+    "cards": {
+      "line": "ساعات المراجعة هذا الأسبوع",
+      "building": "قيد البناء",
+      "incidents": "حوادث مفتوحة",
+      "actions": "إجراءات بانتظار الموافقة",
+      "outcomes": "نتائج معلّقة",
+      "customers": "عملاء للإبلاغ"
+    },
+    "runs": {
+      "title": "جولات autopilot",
+      "none": "لم يعمل autopilot في هذه المساحة بعد.",
+      "pass": "حُقّق في {{investigated}} · أُصلح {{fixed}} · بُني {{built}}"
+    },
+    "autopilot": {
+      "title": "Autopilot",
+      "hint": "ما يبدؤه shep هنا بنفسه كل ساعة. كل شيء متوقف حتى تشغّله.",
+      "investigate": "التحقيق في العناصر العاجلة المفتوحة",
+      "fix": "الإصلاح عندما تكون الفرضية الأولى High",
+      "mergeFixes": "السماح بدمج هذه الإصلاحات دون شخص",
+      "fillLine": "بناء الفرص المقبولة في الخط",
+      "budget": "إصلاحات في اليوم",
+      "project": "البناء في",
+      "noProject": "بلا مشروع",
+      "save": "حفظ",
+      "run": "تشغيل الآن",
+      "running": "جارٍ التشغيل…"
     }
   }
 }

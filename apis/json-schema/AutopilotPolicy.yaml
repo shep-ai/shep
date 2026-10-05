@@ -1,0 +1,40 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: AutopilotPolicy.yaml
+type: object
+properties:
+  spaceId:
+    type: string
+    description: The space
+  investigateUrgent:
+    type: boolean
+    description: Investigate open Urgent work items of the space's projects that have no investigation
+  fixConfident:
+    type: boolean
+    description: Start the fix when an investigation's most likely hypothesis has High confidence
+  mergeFixes:
+    type: boolean
+    description: Let fixes started by autopilot merge without a person
+  fillLine:
+    type: boolean
+    description: Build the accepted opportunities inside the week's line
+  projectId:
+    type: string
+    description: The project the line is built into
+  dailyFixBudget:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Most fixes autopilot starts in the space in 24 hours
+  updatedAt:
+    type: string
+    format: date-time
+    description: When the policy last changed
+required:
+  - spaceId
+  - investigateUrgent
+  - fixConfident
+  - mergeFixes
+  - fillLine
+  - dailyFixBudget
+  - updatedAt
+description: What shep starts on its own in a space; everything is off by default

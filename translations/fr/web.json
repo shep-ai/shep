@@ -448,7 +448,8 @@
     "spaces": "Espaces",
     "trackers": "Connexions",
     "opportunities": "Opportunités",
-    "incidents": "Incidents"
+    "incidents": "Incidents",
+    "factory": "Usine"
   },
   "sidebar": {
     "features": "Fonctionnalités",
@@ -1767,6 +1768,41 @@
       "Recovered": "Rétabli",
       "NotRecovered": "Non rétabli",
       "Resolved": "Résolu"
+    }
+  },
+  "factory": {
+    "title": "Usine",
+    "subtitle": "Ce que fait l’usine logicielle de l’espace, et ce qui attend des personnes.",
+    "space": "Espace",
+    "errors": {
+      "actionFailed": "L’action a échoué."
+    },
+    "cards": {
+      "line": "Heures de revue cette semaine",
+      "building": "En construction",
+      "incidents": "Incidents ouverts",
+      "actions": "Actions à approuver",
+      "outcomes": "Résultats en attente",
+      "customers": "Clients à prévenir"
+    },
+    "runs": {
+      "title": "Passages autopilot",
+      "none": "Autopilot n’a pas encore tourné dans cet espace.",
+      "pass": "investigués {{investigated}} · corrigés {{fixed}} · construits {{built}}"
+    },
+    "autopilot": {
+      "title": "Autopilot",
+      "hint": "Ce que shep lance seul ici, chaque heure. Tout est désactivé tant que vous ne l’activez pas.",
+      "investigate": "Investiguer les éléments urgents ouverts",
+      "fix": "Corriger quand l’hypothèse principale est High",
+      "mergeFixes": "Laisser ces correctifs fusionner sans personne",
+      "fillLine": "Construire les opportunités acceptées de la ligne",
+      "budget": "Correctifs par jour",
+      "project": "Construire dans",
+      "noProject": "Aucun projet",
+      "save": "Enregistrer",
+      "run": "Lancer maintenant",
+      "running": "En cours…"
     }
   }
 }

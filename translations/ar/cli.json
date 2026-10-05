@@ -1725,6 +1725,58 @@
         "solved": "حُلّت {{solved}} من {{judged}} نتيجة محكوم عليها",
         "noVerdicts": "لم يُحكم على أي نتيجة بعد"
       }
+    },
+    "autopilot": {
+      "description": "ما يبدؤه shep بنفسه في مساحة: التحقيقات والإصلاحات وخط الأسبوع",
+      "failed": "فشل أمر autopilot",
+      "spaceOption": "المعرّف المختصر للمساحة أو معرّفها (المساحة الافتراضية إن لم يُحدَّد)",
+      "on": "مفعّل",
+      "off": "متوقف",
+      "investigate": "التحقيق في العناصر العاجلة",
+      "fix": "إصلاح الفرضيات الموثوقة",
+      "mergeFixes": "تُدمج الإصلاحات دون شخص",
+      "budget": "إصلاحات في اليوم",
+      "fillLine": "بناء خط الأسبوع",
+      "project": "مشروع الخط",
+      "pass": "حُقّق في {{investigated}} · أُصلح {{fixed}} · بُني {{built}}",
+      "show": {
+        "description": "عرض سياسة autopilot لمساحة وآخر الجولات",
+        "title": "Autopilot — {{space}}",
+        "noRuns": "لا جولات بعد."
+      },
+      "set": {
+        "description": "تغيير سياسة autopilot لمساحة",
+        "investigateOption": "التحقيق في العناصر العاجلة المفتوحة بلا تحقيق",
+        "fixOption": "بدء الإصلاح عندما تكون الفرضية الأولى High",
+        "mergeFixesOption": "السماح بدمج هذه الإصلاحات دون شخص",
+        "fillLineOption": "بناء الفرص المقبولة داخل خط الأسبوع",
+        "offOption": "إيقاف هذا الجزء",
+        "projectOption": "المشروع الذي يُبنى فيه الخط (معرّف أو معرّف مختصر)",
+        "clearProjectOption": "التوقف عن بناء الخط في مشروع",
+        "budgetOption": "الحد الأقصى للإصلاحات خلال 24 ساعة (0 إلى 20)",
+        "success": "حُفظت سياسة autopilot"
+      },
+      "run": {
+        "description": "تشغيل جولة autopilot في مساحة الآن",
+        "started": "جارٍ تشغيل جولة autopilot؛ قد تستغرق التحقيقات دقائق كثيرة…"
+      }
+    },
+    "factory": {
+      "description": "مصنع البرمجيات في لمحة",
+      "failed": "فشل أمر factory",
+      "spaceOption": "المعرّف المختصر للمساحة أو معرّفها (المساحة الافتراضية إن لم يُحدَّد)",
+      "status": {
+        "description": "ما يفعله مصنع المساحة وما ينتظر الأشخاص",
+        "title": "المصنع — {{space}}",
+        "line": "الخط",
+        "lineValue": "{{used}}/{{capacity}} ساعة مراجعة، {{inLine}} في الخط، {{waiting}} منتظرة",
+        "building": "قيد البناء",
+        "incidents": "حوادث مفتوحة",
+        "actions": "إجراءات بانتظار الموافقة",
+        "outcomes": "نتائج معلّقة",
+        "customers": "عملاء للإبلاغ",
+        "autopilot": "Autopilot"
+      }
     }
   },
   "ui": {

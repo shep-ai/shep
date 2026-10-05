@@ -34,6 +34,11 @@ describe('sidebar links', () => {
     expect(hrefs.indexOf('/incidents')).toBe(hrefs.indexOf('/opportunities') + 1);
   });
 
+  it('lists the Factory right after Incidents (spec 132)', () => {
+    const hrefs = SIDEBAR_LINKS.map((link) => link.href);
+    expect(hrefs.indexOf('/factory')).toBe(hrefs.indexOf('/incidents') + 1);
+  });
+
   it('hides flagged links until their flag is on', () => {
     expect(visibleSidebarLinks(OFF).map((l) => l.href)).not.toContain('/clusters');
     expect(visibleSidebarLinks({ ...OFF, clusters: true }).map((l) => l.href)).toContain(

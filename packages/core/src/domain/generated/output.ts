@@ -7311,6 +7311,70 @@ export type OpportunityOutcome = BaseEntity & {
 };
 
 /**
+ * What shep starts on its own in a space; everything is off by default
+ */
+export type AutopilotPolicy = {
+  /**
+   * The space
+   */
+  spaceId: string;
+  /**
+   * Investigate open Urgent work items of the space's projects that have no investigation
+   */
+  investigateUrgent: boolean;
+  /**
+   * Start the fix when an investigation's most likely hypothesis has High confidence
+   */
+  fixConfident: boolean;
+  /**
+   * Let fixes started by autopilot merge without a person
+   */
+  mergeFixes: boolean;
+  /**
+   * Build the accepted opportunities inside the week's line
+   */
+  fillLine: boolean;
+  /**
+   * The project the line is built into
+   */
+  projectId?: string;
+  /**
+   * Most fixes autopilot starts in the space in 24 hours
+   */
+  dailyFixBudget: number;
+  /**
+   * When the policy last changed
+   */
+  updatedAt: any;
+};
+
+/**
+ * One autopilot pass over a space: what it started and what failed
+ */
+export type AutopilotRun = BaseEntity & {
+  /**
+   * The space
+   */
+  spaceId: string;
+  /**
+   * Keys of the work items it started investigating
+   */
+  investigated: string[];
+  /**
+   * Keys of the work items it started fixing
+   */
+  fixed: string[];
+  /**
+   * Ids of the opportunities it built
+   */
+  built: string[];
+  /**
+   * What failed, one line each
+   */
+  errors: string[];
+};
+
+/**
  * What one run of a tracker sync rule did
  */
 export type TrackerSyncRunSummary = {

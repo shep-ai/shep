@@ -9,6 +9,7 @@
  * - PR and CI status of features in review
  * - PR review comments (spec 124)
  * - shipped opportunities and their outcomes (spec 130)
+ * - autopilot passes (spec 132)
  *
  * PR status sync takes a cross-process lock, so running both processes at
  * once is safe.
@@ -18,7 +19,7 @@ import { container } from '@/infrastructure/di/container.js';
 import { RetentionScheduler } from '@/infrastructure/services/maintenance/retention-scheduler.js';
 import { createDueWorkWatcher } from '@/infrastructure/services/scheduling/due-work-watcher.js';
 import { createPrCommentWatcher } from '@/infrastructure/services/pr-sync/pr-comment-watcher.js';
-import { createOutcomeWatcher } from '@/infrastructure/services/scheduling/outcome-watcher.js';
+import { createHourlyWatcher } from '@/infrastructure/services/scheduling/hourly-watcher.js';
 import {
   getPrSyncWatcher,
   initializePrSyncWatcher,
@@ -30,6 +31,7 @@ import type { SyncKnowledgeSourcesUseCase } from '@/application/use-cases/knowle
 import type { SyncDiscoveryUseCase } from '@/application/use-cases/discovery/sync-discovery.use-case.js';
 import type { SyncPrCommentsUseCase } from '@/application/use-cases/pr-comments/sync-pr-comments.use-case.js';
 import type { TrackOutcomesUseCase } from '@/application/use-cases/outcomes/track-outcomes.use-case.js';
+import type { RunAutopilotUseCase } from '@/application/use-cases/autopilot/run-autopilot.use-case.js';
 import type { IAgentRunRepository } from '@/application/ports/output/agents/agent-run-repository.interface.js';
 import type { IFeatureRepository } from '@/application/ports/output/repositories/feature-repository.interface.js';
 import type { INotificationService } from '@/application/ports/output/services/notification-service.interface.js';
@@ -67,9 +69,13 @@ export function startBackgroundSync(label: string): BackgroundSync {
     () => container.resolve<SyncPrCommentsUseCase>('SyncPrCommentsUseCase').runDue(),
     report('PR comment sync')
   );
-  const outcomes = createOutcomeWatcher(
+  const outcomes = createHourlyWatcher(
     () => container.resolve<TrackOutcomesUseCase>('TrackOutcomesUseCase').run(),
     report('outcome tracking')
+  );
+  const autopilot = createHourlyWatcher(
+    () => container.resolve<RunAutopilotUseCase>('RunAutopilotUseCase').runAll(),
+    report('autopilot')
   );
   initializePrSyncWatcher(
     container.resolve<IFeatureRepository>('IFeatureRepository'),
@@ -88,6 +94,7 @@ export function startBackgroundSync(label: string): BackgroundSync {
   discovery.start();
   prComments.start();
   outcomes.start();
+  autopilot.start();
   getPrSyncWatcher().start();
 
   return {
@@ -98,6 +105,7 @@ export function startBackgroundSync(label: string): BackgroundSync {
       discovery.stop();
       prComments.stop();
       outcomes.stop();
+      autopilot.stop();
       getPrSyncWatcher().stop();
     },
   };

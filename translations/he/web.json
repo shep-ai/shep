@@ -448,7 +448,8 @@
     "spaces": "מרחבים",
     "trackers": "חיבורים",
     "opportunities": "הזדמנויות",
-    "incidents": "תקלות"
+    "incidents": "תקלות",
+    "factory": "מפעל"
   },
   "sidebar": {
     "features": "פיצ'רים",
@@ -1767,6 +1768,41 @@
       "Recovered": "התאושש",
       "NotRecovered": "לא התאושש",
       "Resolved": "נסגרה"
+    }
+  },
+  "factory": {
+    "title": "מפעל",
+    "subtitle": "מה מפעל התוכנה של המרחב עושה ומה ממתין לאנשים.",
+    "space": "מרחב",
+    "errors": {
+      "actionFailed": "הפעולה נכשלה."
+    },
+    "cards": {
+      "line": "שעות סקירה השבוע",
+      "building": "בבנייה",
+      "incidents": "תקלות פתוחות",
+      "actions": "פעולות שממתינות לאישור",
+      "outcomes": "תוצאות ממתינות",
+      "customers": "לקוחות לעדכן"
+    },
+    "runs": {
+      "title": "מעברי autopilot",
+      "none": "Autopilot עוד לא רץ במרחב הזה.",
+      "pass": "נחקרו {{investigated}} · תוקנו {{fixed}} · נבנו {{built}}"
+    },
+    "autopilot": {
+      "title": "Autopilot",
+      "hint": "מה shep מתחיל כאן לבד, כל שעה. הכול כבוי עד שתפעילו.",
+      "investigate": "לחקור פריטים דחופים פתוחים",
+      "fix": "לתקן כשההשערה המובילה היא High",
+      "mergeFixes": "לאפשר לתיקונים האלה להתמזג בלי אדם",
+      "fillLine": "לבנות את ההזדמנויות המאושרות שבקו",
+      "budget": "תיקונים ביום",
+      "project": "לבנות אל",
+      "noProject": "בלי פרויקט",
+      "save": "שמירה",
+      "run": "הרצה עכשיו",
+      "running": "רץ…"
     }
   }
 }

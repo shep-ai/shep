@@ -448,7 +448,8 @@
     "spaces": "Spaces",
     "trackers": "Connections",
     "opportunities": "Opportunities",
-    "incidents": "Incidents"
+    "incidents": "Incidents",
+    "factory": "Factory"
   },
   "sidebar": {
     "features": "Features",
@@ -1767,6 +1768,41 @@
       "Recovered": "Recovered",
       "NotRecovered": "Not recovered",
       "Resolved": "Resolved"
+    }
+  },
+  "factory": {
+    "title": "Factory",
+    "subtitle": "What the space's software factory is doing, and what waits on people.",
+    "space": "Space",
+    "errors": {
+      "actionFailed": "The action failed."
+    },
+    "cards": {
+      "line": "Review hours this week",
+      "building": "Building",
+      "incidents": "Open incidents",
+      "actions": "Actions awaiting approval",
+      "outcomes": "Outcomes pending",
+      "customers": "Customers to tell"
+    },
+    "runs": {
+      "title": "Autopilot passes",
+      "none": "Autopilot has not run in this space.",
+      "pass": "investigated {{investigated}} · fixed {{fixed}} · built {{built}}"
+    },
+    "autopilot": {
+      "title": "Autopilot",
+      "hint": "What shep starts on its own here, every hour. Everything is off until you turn it on.",
+      "investigate": "Investigate open Urgent work items",
+      "fix": "Fix when the top hypothesis is High",
+      "mergeFixes": "Let those fixes merge without a person",
+      "fillLine": "Build the accepted opportunities in the line",
+      "budget": "Fixes a day",
+      "project": "Build into",
+      "noProject": "No project",
+      "save": "Save",
+      "run": "Run now",
+      "running": "Running…"
     }
   }
 }

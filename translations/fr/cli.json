@@ -1725,6 +1725,58 @@
         "solved": "{{solved}} résultats résolus sur {{judged}} jugés",
         "noVerdicts": "Aucun résultat jugé pour l’instant"
       }
+    },
+    "autopilot": {
+      "description": "Ce que shep lance seul dans un espace : investigations, correctifs et la ligne de la semaine",
+      "failed": "La commande autopilot a échoué",
+      "spaceOption": "Slug ou id de l’espace (l’espace par défaut si omis)",
+      "on": "activé",
+      "off": "désactivé",
+      "investigate": "Investiguer les éléments urgents",
+      "fix": "Corriger les hypothèses sûres",
+      "mergeFixes": "Les correctifs fusionnent sans personne",
+      "budget": "Correctifs par jour",
+      "fillLine": "Construire la ligne de la semaine",
+      "project": "Projet de la ligne",
+      "pass": "investigués {{investigated}} · corrigés {{fixed}} · construits {{built}}",
+      "show": {
+        "description": "Afficher la politique autopilot d’un espace et ses passages récents",
+        "title": "Autopilot — {{space}}",
+        "noRuns": "Aucun passage pour l’instant."
+      },
+      "set": {
+        "description": "Modifier la politique autopilot d’un espace",
+        "investigateOption": "Investiguer les éléments urgents ouverts sans investigation",
+        "fixOption": "Lancer le correctif quand l’hypothèse principale est High",
+        "mergeFixesOption": "Laisser ces correctifs fusionner sans personne",
+        "fillLineOption": "Construire les opportunités acceptées dans la ligne",
+        "offOption": "Désactiver cette partie",
+        "projectOption": "Projet où construire la ligne (id ou slug)",
+        "clearProjectOption": "Ne plus construire la ligne dans un projet",
+        "budgetOption": "Correctifs au plus en 24 heures (0 à 20)",
+        "success": "Politique autopilot enregistrée"
+      },
+      "run": {
+        "description": "Lancer maintenant un passage autopilot dans un espace",
+        "started": "Passage autopilot en cours ; les investigations peuvent prendre de longues minutes…"
+      }
+    },
+    "factory": {
+      "description": "L’usine logicielle en un coup d’œil",
+      "failed": "La commande factory a échoué",
+      "spaceOption": "Slug ou id de l’espace (l’espace par défaut si omis)",
+      "status": {
+        "description": "Ce que fait l’usine d’un espace et ce qui attend des personnes",
+        "title": "Usine — {{space}}",
+        "line": "Ligne",
+        "lineValue": "{{used}}/{{capacity}} heures de revue, {{inLine}} dans la ligne, {{waiting}} en attente",
+        "building": "En construction",
+        "incidents": "Incidents ouverts",
+        "actions": "Actions à approuver",
+        "outcomes": "Résultats en attente",
+        "customers": "Clients à prévenir",
+        "autopilot": "Autopilot"
+      }
     }
   },
   "ui": {

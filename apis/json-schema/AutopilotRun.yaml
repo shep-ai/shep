@@ -1,0 +1,36 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: AutopilotRun.yaml
+type: object
+properties:
+  spaceId:
+    type: string
+    description: The space
+  investigated:
+    type: array
+    items:
+      type: string
+    description: Keys of the work items it started investigating
+  fixed:
+    type: array
+    items:
+      type: string
+    description: Keys of the work items it started fixing
+  built:
+    type: array
+    items:
+      type: string
+    description: Ids of the opportunities it built
+  errors:
+    type: array
+    items:
+      type: string
+    description: What failed, one line each
+required:
+  - spaceId
+  - investigated
+  - fixed
+  - built
+  - errors
+allOf:
+  - $ref: BaseEntity.yaml
+description: "One autopilot pass over a space: what it started and what failed"

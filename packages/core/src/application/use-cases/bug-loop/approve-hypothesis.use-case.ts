@@ -15,6 +15,7 @@ import {
   InvestigationStatus,
   StateGroup,
   type AgentType,
+  type ApprovalGates,
   type Feature,
   type WorkItem,
   type WorkItemInvestigation,
@@ -41,6 +42,8 @@ export interface ApproveHypothesisInput {
   fullSpec?: boolean;
   /** Agent for the fix; defaults to the investigating agent. */
   agentType?: AgentType;
+  /** Gates the fix may pass without a person (spec 132); every gate stops when unset. */
+  approvalGates?: ApprovalGates;
 }
 
 /** How the background part of feature creation went. */
@@ -101,6 +104,7 @@ export class ApproveHypothesisUseCase {
       description: hypothesis.rootCause,
       buildMode: input.fullSpec ? BuildMode.Application : BuildMode.Fast,
       ...(agentType ? { agentType } : {}),
+      ...(input.approvalGates ? { approvalGates: input.approvalGates } : {}),
     };
     const { feature, shouldSpawn } = await this.createFeature.createRecord(featureInput);
 

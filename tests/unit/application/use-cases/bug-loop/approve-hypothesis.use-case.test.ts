@@ -144,6 +144,12 @@ describe('ApproveHypothesisUseCase', () => {
     });
   });
 
+  it('passes approval gates on to the fix feature (spec 132)', async () => {
+    const approvalGates = { allowPrd: true, allowPlan: true, allowMerge: false };
+    await useCase().execute({ workItem: 'PAY-42', hypothesis: 1, approvalGates });
+    expect(createFeature.createRecord.mock.calls[0][0]).toMatchObject({ approvalGates });
+  });
+
   it('reports a failed start through `started` without rejecting', async () => {
     createFeature.initializeAndSpawn.mockRejectedValue(new Error('worktree exists'));
     const result = await useCase().execute({ workItem: 'PAY-42', hypothesis: 1 });

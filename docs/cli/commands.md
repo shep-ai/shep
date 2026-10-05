@@ -1045,6 +1045,23 @@ rolls back or scales their Kubernetes deployment (spec 129). Monitoring tools op
 
 ---
 
+## Autopilot and Factory Commands
+
+`shep autopilot` sets what shep starts on its own in a space every hour — investigating urgent
+work items, fixing confident hypotheses, building the week's line — and `shep factory status`
+shows a space's factory at a glance (spec 132). See the [autopilot guide](../guides/autopilot.md).
+
+| Command | Description |
+| ------- | ----------- |
+| `shep autopilot show` | The policy and recent passes (`--space`) |
+| `shep autopilot set` | `--investigate`, `--fix`, `--merge-fixes`, `--fill-line` (each with `--no-…`), `--project <p>` / `--clear-project`, `--budget <fixes a day>` (`--space`) |
+| `shep autopilot run` | A pass now, printing what it investigated, fixed and built (`--space`) |
+| `shep factory status` | Line, building, incidents, actions awaiting approval, outcomes, customers to tell and autopilot (`--space`) |
+
+**Source**: `src/presentation/cli/commands/autopilot/`, `src/presentation/cli/commands/factory/`
+
+---
+
 ## Bug Loop Commands
 
 `shep item investigate`, `hypotheses` and `fix` take a bug from report to fix (spec 123). See the

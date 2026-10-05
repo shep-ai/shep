@@ -1725,6 +1725,58 @@
         "solved": "{{solved}} de {{judged}} resultados julgados resolvidos",
         "noVerdicts": "Nenhum resultado julgado ainda"
       }
+    },
+    "autopilot": {
+      "description": "O que o shep inicia sozinho num espaço: investigações, correções e a linha da semana",
+      "failed": "O comando autopilot falhou",
+      "spaceOption": "Slug ou id do espaço (o espaço padrão se omitido)",
+      "on": "ligado",
+      "off": "desligado",
+      "investigate": "Investigar itens urgentes",
+      "fix": "Corrigir hipóteses confiáveis",
+      "mergeFixes": "As correções fazem merge sem uma pessoa",
+      "budget": "Correções por dia",
+      "fillLine": "Construir a linha da semana",
+      "project": "Projeto da linha",
+      "pass": "investigados {{investigated}} · corrigidos {{fixed}} · construídos {{built}}",
+      "show": {
+        "description": "Mostrar a política de autopilot de um espaço e as passagens recentes",
+        "title": "Autopilot — {{space}}",
+        "noRuns": "Nenhuma passagem ainda."
+      },
+      "set": {
+        "description": "Alterar a política de autopilot de um espaço",
+        "investigateOption": "Investigar itens urgentes abertos sem investigação",
+        "fixOption": "Iniciar a correção quando a hipótese principal for High",
+        "mergeFixesOption": "Deixar essas correções fazerem merge sem uma pessoa",
+        "fillLineOption": "Construir as oportunidades aceitas dentro da linha",
+        "offOption": "Desligar esta parte",
+        "projectOption": "Projeto onde construir a linha (id ou slug)",
+        "clearProjectOption": "Parar de construir a linha num projeto",
+        "budgetOption": "No máximo estas correções em 24 horas (0 a 20)",
+        "success": "Política de autopilot salva"
+      },
+      "run": {
+        "description": "Executar agora uma passagem de autopilot num espaço",
+        "started": "Executando uma passagem de autopilot; investigações podem levar muitos minutos…"
+      }
+    },
+    "factory": {
+      "description": "A fábrica de software num relance",
+      "failed": "O comando factory falhou",
+      "spaceOption": "Slug ou id do espaço (o espaço padrão se omitido)",
+      "status": {
+        "description": "O que a fábrica de um espaço está fazendo e o que espera por pessoas",
+        "title": "Fábrica — {{space}}",
+        "line": "Linha",
+        "lineValue": "{{used}}/{{capacity}} horas de revisão, {{inLine}} na linha, {{waiting}} esperando",
+        "building": "Em construção",
+        "incidents": "Incidentes abertos",
+        "actions": "Ações aguardando aprovação",
+        "outcomes": "Resultados pendentes",
+        "customers": "Clientes a avisar",
+        "autopilot": "Autopilot"
+      }
     }
   },
   "ui": {

@@ -1725,6 +1725,58 @@
         "solved": "{{solved}} von {{judged}} beurteilten Ergebnissen gelöst",
         "noVerdicts": "Noch keine Ergebnisse beurteilt"
       }
+    },
+    "autopilot": {
+      "description": "Was shep in einem Bereich selbst startet: Untersuchungen, Fixes und die Wochenlinie",
+      "failed": "Autopilot-Befehl fehlgeschlagen",
+      "spaceOption": "Slug oder ID des Bereichs (Standardbereich, wenn weggelassen)",
+      "on": "an",
+      "off": "aus",
+      "investigate": "Dringende Work Items untersuchen",
+      "fix": "Sichere Hypothesen fixen",
+      "mergeFixes": "Fixes ohne Person mergen",
+      "budget": "Fixes pro Tag",
+      "fillLine": "Wochenlinie bauen",
+      "project": "Projekt für die Linie",
+      "pass": "untersucht {{investigated}} · gefixt {{fixed}} · gebaut {{built}}",
+      "show": {
+        "description": "Autopilot-Richtlinie und letzte Durchläufe eines Bereichs zeigen",
+        "title": "Autopilot — {{space}}",
+        "noRuns": "Noch keine Durchläufe."
+      },
+      "set": {
+        "description": "Autopilot-Richtlinie eines Bereichs ändern",
+        "investigateOption": "Offene dringende Work Items ohne Untersuchung untersuchen",
+        "fixOption": "Den Fix starten, wenn die wahrscheinlichste Hypothese High ist",
+        "mergeFixesOption": "Diese Fixes ohne Person mergen lassen",
+        "fillLineOption": "Angenommene Opportunities innerhalb der Wochenlinie bauen",
+        "offOption": "Diesen Teil ausschalten",
+        "projectOption": "Projekt, in das die Linie gebaut wird (ID oder Slug)",
+        "clearProjectOption": "Die Linie nicht mehr in ein Projekt bauen",
+        "budgetOption": "Höchstens so viele Fixes in 24 Stunden (0 bis 20)",
+        "success": "Autopilot-Richtlinie gespeichert"
+      },
+      "run": {
+        "description": "Jetzt einen Autopilot-Durchlauf in einem Bereich starten",
+        "started": "Autopilot-Durchlauf läuft; Untersuchungen können viele Minuten dauern…"
+      }
+    },
+    "factory": {
+      "description": "Die Software-Fabrik auf einen Blick",
+      "failed": "Factory-Befehl fehlgeschlagen",
+      "spaceOption": "Slug oder ID des Bereichs (Standardbereich, wenn weggelassen)",
+      "status": {
+        "description": "Was die Fabrik eines Bereichs tut und was auf Menschen wartet",
+        "title": "Fabrik — {{space}}",
+        "line": "Linie",
+        "lineValue": "{{used}}/{{capacity}} Review-Stunden, {{inLine}} in der Linie, {{waiting}} wartend",
+        "building": "Im Bau",
+        "incidents": "Offene Incidents",
+        "actions": "Aktionen mit Freigabe",
+        "outcomes": "Ausstehende Ergebnisse",
+        "customers": "Zu informierende Kunden",
+        "autopilot": "Autopilot"
+      }
     }
   },
   "ui": {

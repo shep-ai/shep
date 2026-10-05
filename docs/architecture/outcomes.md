@@ -38,7 +38,7 @@ migration).
 
 | Surface | Entry point |
 | ------- | ----------- |
-| Daemon | `createOutcomeWatcher` (`infrastructure/services/scheduling/outcome-watcher.ts`), hourly, started by `startBackgroundSync` |
+| Daemon | `createHourlyWatcher` (`infrastructure/services/scheduling/hourly-watcher.ts`), hourly, started by `startBackgroundSync` |
 | CLI | `shep outcome ls|check|ship|tell|hours` |
 | Web | Outcomes panel and Mark shipped on `/opportunities` |
 | DI | `infrastructure/di/modules/register-outcomes.ts` |

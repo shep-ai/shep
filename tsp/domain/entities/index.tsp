@@ -72,6 +72,7 @@ import "./feedback-key.tsp";
 import "./discovery.tsp";
 import "./incident.tsp";
 import "./outcome.tsp";
+import "./autopilot.tsp";
 import "./tracker-sync.tsp";
 import "./investigation.tsp";
 import "./pr-comment.tsp";

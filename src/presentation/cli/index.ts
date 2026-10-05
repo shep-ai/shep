@@ -81,6 +81,8 @@ import { createFeedbackCommand } from './commands/feedback/index.js';
 import { createDiscoveryCommand } from './commands/discovery/index.js';
 import { createIncidentCommand } from './commands/incident/index.js';
 import { createOutcomeCommand } from './commands/outcome/index.js';
+import { createAutopilotCommand } from './commands/autopilot/index.js';
+import { createFactoryCommand } from './commands/factory/index.js';
 import { createMcpCommand } from './commands/mcp.command.js';
 import { createFleetCommand } from './commands/fleet/index.js';
 import { createLogsCommand } from './commands/logs/index.js';
@@ -216,6 +218,8 @@ async function bootstrap() {
     program.addCommand(createDiscoveryCommand());
     program.addCommand(createIncidentCommand());
     program.addCommand(createOutcomeCommand());
+    program.addCommand(createAutopilotCommand());
+    program.addCommand(createFactoryCommand());
     program.addCommand(createUpgradeCommand());
     program.addCommand(createWorkflowCommand());
     program.addCommand(createMcpCommand());

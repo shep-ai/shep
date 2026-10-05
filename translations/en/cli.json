@@ -1725,6 +1725,58 @@
         "solved": "{{solved}} of {{judged}} judged outcomes solved",
         "noVerdicts": "No outcomes judged yet"
       }
+    },
+    "autopilot": {
+      "description": "What shep starts on its own in a space: investigations, fixes and the week's line",
+      "failed": "Autopilot command failed",
+      "spaceOption": "Space slug or id (default space if omitted)",
+      "on": "on",
+      "off": "off",
+      "investigate": "Investigate urgent work items",
+      "fix": "Fix confident hypotheses",
+      "mergeFixes": "Fixes merge without a person",
+      "budget": "Fixes a day",
+      "fillLine": "Build the week's line",
+      "project": "Project for the line",
+      "pass": "investigated {{investigated}} · fixed {{fixed}} · built {{built}}",
+      "show": {
+        "description": "Show a space's autopilot policy and recent passes",
+        "title": "Autopilot — {{space}}",
+        "noRuns": "No passes yet."
+      },
+      "set": {
+        "description": "Change a space's autopilot policy",
+        "investigateOption": "Investigate open Urgent work items with no investigation",
+        "fixOption": "Start the fix when the top hypothesis has High confidence",
+        "mergeFixesOption": "Let those fixes merge without a person",
+        "fillLineOption": "Build accepted opportunities inside the week's line",
+        "offOption": "Turn this part off",
+        "projectOption": "Project to build the line into (id or slug)",
+        "clearProjectOption": "Stop building the line into a project",
+        "budgetOption": "Most fixes autopilot starts in 24 hours (0 to 20)",
+        "success": "Autopilot policy saved"
+      },
+      "run": {
+        "description": "Run an autopilot pass in a space now",
+        "started": "Running an autopilot pass; investigations can take many minutes…"
+      }
+    },
+    "factory": {
+      "description": "The software factory at a glance",
+      "failed": "Factory command failed",
+      "spaceOption": "Space slug or id (default space if omitted)",
+      "status": {
+        "description": "What a space's factory is doing and what waits on people",
+        "title": "Factory — {{space}}",
+        "line": "Line",
+        "lineValue": "{{used}}/{{capacity}} review hours, {{inLine}} in the line, {{waiting}} waiting",
+        "building": "Building",
+        "incidents": "Open incidents",
+        "actions": "Actions awaiting approval",
+        "outcomes": "Outcomes pending",
+        "customers": "Customers to tell",
+        "autopilot": "Autopilot"
+      }
     }
   },
   "ui": {

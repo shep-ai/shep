@@ -448,7 +448,8 @@
     "spaces": "Espaços",
     "trackers": "Ligações",
     "opportunities": "Oportunidades",
-    "incidents": "Incidentes"
+    "incidents": "Incidentes",
+    "factory": "Fábrica"
   },
   "sidebar": {
     "features": "Recursos",
@@ -1767,6 +1768,41 @@
       "Recovered": "Recuperado",
       "NotRecovered": "Não recuperado",
       "Resolved": "Resolvido"
+    }
+  },
+  "factory": {
+    "title": "Fábrica",
+    "subtitle": "O que a fábrica de software do espaço está fazendo e o que espera por pessoas.",
+    "space": "Espaço",
+    "errors": {
+      "actionFailed": "A ação falhou."
+    },
+    "cards": {
+      "line": "Horas de revisão nesta semana",
+      "building": "Em construção",
+      "incidents": "Incidentes abertos",
+      "actions": "Ações aguardando aprovação",
+      "outcomes": "Resultados pendentes",
+      "customers": "Clientes a avisar"
+    },
+    "runs": {
+      "title": "Passagens de autopilot",
+      "none": "O autopilot não rodou neste espaço.",
+      "pass": "investigados {{investigated}} · corrigidos {{fixed}} · construídos {{built}}"
+    },
+    "autopilot": {
+      "title": "Autopilot",
+      "hint": "O que o shep inicia sozinho aqui, a cada hora. Tudo fica desligado até você ligar.",
+      "investigate": "Investigar itens urgentes abertos",
+      "fix": "Corrigir quando a hipótese principal for High",
+      "mergeFixes": "Deixar essas correções fazerem merge sem uma pessoa",
+      "fillLine": "Construir as oportunidades aceitas da linha",
+      "budget": "Correções por dia",
+      "project": "Construir em",
+      "noProject": "Sem projeto",
+      "save": "Salvar",
+      "run": "Executar agora",
+      "running": "Executando…"
     }
   }
 }

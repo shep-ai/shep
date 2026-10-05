@@ -16,9 +16,14 @@ const { tasks, prSync, resolved } = vi.hoisted(() => ({
     discovery: { start: vi.fn(), stop: vi.fn() },
     comments: { start: vi.fn(), stop: vi.fn() },
     outcomes: { start: vi.fn(), stop: vi.fn() },
+    autopilot: { start: vi.fn(), stop: vi.fn() },
   },
   prSync: { start: vi.fn(), stop: vi.fn() },
-  resolved: { runDue: vi.fn(async () => ({})), run: vi.fn(async () => ({})) },
+  resolved: {
+    runDue: vi.fn(async () => ({})),
+    run: vi.fn(async () => ({})),
+    runAll: vi.fn(async () => []),
+  },
 }));
 
 const jobs: Record<string, () => Promise<unknown>> = {};
@@ -45,10 +50,12 @@ vi.mock('@/infrastructure/services/pr-sync/pr-comment-watcher.js', () => ({
     return tasks.comments;
   }),
 }));
-vi.mock('@/infrastructure/services/scheduling/outcome-watcher.js', () => ({
-  createOutcomeWatcher: vi.fn((job: () => Promise<unknown>) => {
-    jobs.outcomes = job;
-    return tasks.outcomes;
+/** Hourly jobs in creation order: outcomes (spec 130), autopilot (spec 132). */
+const hourlyJobs: (() => Promise<unknown>)[] = [];
+vi.mock('@/infrastructure/services/scheduling/hourly-watcher.js', () => ({
+  createHourlyWatcher: vi.fn((job: () => Promise<unknown>) => {
+    hourlyJobs.push(job);
+    return [tasks.outcomes, tasks.autopilot][hourlyJobs.length - 1];
   }),
 }));
 vi.mock('@/infrastructure/services/pr-sync/pr-sync-watcher.service.js', () => ({
@@ -69,6 +76,7 @@ describe('startBackgroundSync', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     dueJobs.length = 0;
+    hourlyJobs.length = 0;
   });
 
   it('starts every sync and stops it all', () => {
@@ -80,6 +88,7 @@ describe('startBackgroundSync', () => {
       tasks.discovery,
       tasks.comments,
       tasks.outcomes,
+      tasks.autopilot,
       prSync,
     ]) {
       expect(task.start).toHaveBeenCalledTimes(1);
@@ -92,6 +101,7 @@ describe('startBackgroundSync', () => {
       tasks.discovery,
       tasks.comments,
       tasks.outcomes,
+      tasks.autopilot,
       prSync,
     ]) {
       expect(task.stop).toHaveBeenCalledTimes(1);
@@ -105,11 +115,15 @@ describe('startBackgroundSync', () => {
     expect(resolved.runDue).toHaveBeenCalled();
   });
 
-  it('tracks shipped opportunities and their outcomes through the use case (spec 130)', async () => {
+  it('runs outcome tracking (spec 130) and autopilot (spec 132) hourly through their use cases', async () => {
     startBackgroundSync('test');
-    await jobs.outcomes();
+    const [outcomeJob, autopilotJob] = hourlyJobs;
+    await outcomeJob();
     expect(container.resolve).toHaveBeenCalledWith('TrackOutcomesUseCase');
     expect(resolved.run).toHaveBeenCalled();
+    await autopilotJob();
+    expect(container.resolve).toHaveBeenCalledWith('RunAutopilotUseCase');
+    expect(resolved.runAll).toHaveBeenCalled();
   });
 
   it('runs due tracker rules, knowledge sources and discovery through their use cases', async () => {

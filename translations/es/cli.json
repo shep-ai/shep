@@ -1725,6 +1725,58 @@
         "solved": "{{solved}} de {{judged}} resultados juzgados resueltos",
         "noVerdicts": "Aún no se ha juzgado ningún resultado"
       }
+    },
+    "autopilot": {
+      "description": "Lo que shep inicia por sí solo en un espacio: investigaciones, arreglos y la línea de la semana",
+      "failed": "Falló el comando autopilot",
+      "spaceOption": "Slug o id del espacio (el espacio por defecto si se omite)",
+      "on": "activado",
+      "off": "desactivado",
+      "investigate": "Investigar elementos urgentes",
+      "fix": "Arreglar hipótesis seguras",
+      "mergeFixes": "Los arreglos se fusionan sin una persona",
+      "budget": "Arreglos por día",
+      "fillLine": "Construir la línea de la semana",
+      "project": "Proyecto para la línea",
+      "pass": "investigados {{investigated}} · arreglados {{fixed}} · construidos {{built}}",
+      "show": {
+        "description": "Mostrar la política de autopilot de un espacio y sus pasadas recientes",
+        "title": "Autopilot — {{space}}",
+        "noRuns": "Aún no hay pasadas."
+      },
+      "set": {
+        "description": "Cambiar la política de autopilot de un espacio",
+        "investigateOption": "Investigar elementos urgentes abiertos sin investigación",
+        "fixOption": "Iniciar el arreglo cuando la hipótesis principal es High",
+        "mergeFixesOption": "Dejar que esos arreglos se fusionen sin una persona",
+        "fillLineOption": "Construir las oportunidades aceptadas dentro de la línea",
+        "offOption": "Desactivar esta parte",
+        "projectOption": "Proyecto donde construir la línea (id o slug)",
+        "clearProjectOption": "Dejar de construir la línea en un proyecto",
+        "budgetOption": "Máximo de arreglos en 24 horas (0 a 20)",
+        "success": "Política de autopilot guardada"
+      },
+      "run": {
+        "description": "Ejecutar ahora una pasada de autopilot en un espacio",
+        "started": "Ejecutando una pasada de autopilot; las investigaciones pueden tardar muchos minutos…"
+      }
+    },
+    "factory": {
+      "description": "La fábrica de software de un vistazo",
+      "failed": "Falló el comando factory",
+      "spaceOption": "Slug o id del espacio (el espacio por defecto si se omite)",
+      "status": {
+        "description": "Qué hace la fábrica de un espacio y qué espera a las personas",
+        "title": "Fábrica — {{space}}",
+        "line": "Línea",
+        "lineValue": "{{used}}/{{capacity}} horas de revisión, {{inLine}} en la línea, {{waiting}} esperando",
+        "building": "En construcción",
+        "incidents": "Incidentes abiertos",
+        "actions": "Acciones por aprobar",
+        "outcomes": "Resultados pendientes",
+        "customers": "Clientes a avisar",
+        "autopilot": "Autopilot"
+      }
     }
   },
   "ui": {

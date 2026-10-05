@@ -448,7 +448,8 @@
     "spaces": "Spaces",
     "trackers": "Verbindungen",
     "opportunities": "Opportunities",
-    "incidents": "Incidents"
+    "incidents": "Incidents",
+    "factory": "Fabrik"
   },
   "sidebar": {
     "features": "Features",
@@ -1767,6 +1768,41 @@
       "Recovered": "Erholt",
       "NotRecovered": "Nicht erholt",
       "Resolved": "Gelöst"
+    }
+  },
+  "factory": {
+    "title": "Fabrik",
+    "subtitle": "Was die Software-Fabrik des Bereichs tut und was auf Menschen wartet.",
+    "space": "Bereich",
+    "errors": {
+      "actionFailed": "Die Aktion ist fehlgeschlagen."
+    },
+    "cards": {
+      "line": "Review-Stunden diese Woche",
+      "building": "Im Bau",
+      "incidents": "Offene Incidents",
+      "actions": "Aktionen mit Freigabe",
+      "outcomes": "Ausstehende Ergebnisse",
+      "customers": "Zu informierende Kunden"
+    },
+    "runs": {
+      "title": "Autopilot-Durchläufe",
+      "none": "Autopilot ist in diesem Bereich noch nicht gelaufen.",
+      "pass": "untersucht {{investigated}} · gefixt {{fixed}} · gebaut {{built}}"
+    },
+    "autopilot": {
+      "title": "Autopilot",
+      "hint": "Was shep hier stündlich selbst startet. Alles ist aus, bis du es einschaltest.",
+      "investigate": "Offene dringende Work Items untersuchen",
+      "fix": "Fixen, wenn die wahrscheinlichste Hypothese High ist",
+      "mergeFixes": "Diese Fixes ohne Person mergen lassen",
+      "fillLine": "Angenommene Opportunities der Linie bauen",
+      "budget": "Fixes pro Tag",
+      "project": "Bauen in",
+      "noProject": "Kein Projekt",
+      "save": "Speichern",
+      "run": "Jetzt ausführen",
+      "running": "Läuft…"
     }
   }
 }

@@ -1725,6 +1725,58 @@
         "solved": "{{solved}} מתוך {{judged}} תוצאות שנשפטו נפתרו",
         "noVerdicts": "עוד לא נשפטו תוצאות"
       }
+    },
+    "autopilot": {
+      "description": "מה shep מתחיל לבד במרחב: חקירות, תיקונים והקו של השבוע",
+      "failed": "פקודת autopilot נכשלה",
+      "spaceOption": "Slug או מזהה של המרחב (מרחב ברירת המחדל אם לא צוין)",
+      "on": "פעיל",
+      "off": "כבוי",
+      "investigate": "לחקור פריטים דחופים",
+      "fix": "לתקן השערות בטוחות",
+      "mergeFixes": "תיקונים ממוזגים בלי אדם",
+      "budget": "תיקונים ביום",
+      "fillLine": "לבנות את הקו של השבוע",
+      "project": "פרויקט לקו",
+      "pass": "נחקרו {{investigated}} · תוקנו {{fixed}} · נבנו {{built}}",
+      "show": {
+        "description": "הצגת מדיניות autopilot של מרחב והמעברים האחרונים",
+        "title": "Autopilot — {{space}}",
+        "noRuns": "עוד אין מעברים."
+      },
+      "set": {
+        "description": "שינוי מדיניות autopilot של מרחב",
+        "investigateOption": "לחקור פריטים דחופים פתוחים בלי חקירה",
+        "fixOption": "להתחיל תיקון כשההשערה המובילה היא High",
+        "mergeFixesOption": "לאפשר לתיקונים האלה להתמזג בלי אדם",
+        "fillLineOption": "לבנות הזדמנויות מאושרות בתוך הקו של השבוע",
+        "offOption": "כיבוי החלק הזה",
+        "projectOption": "הפרויקט שאליו נבנה הקו (מזהה או slug)",
+        "clearProjectOption": "להפסיק לבנות את הקו לפרויקט",
+        "budgetOption": "לכל היותר תיקונים ב-24 שעות (0 עד 20)",
+        "success": "מדיניות autopilot נשמרה"
+      },
+      "run": {
+        "description": "הרצת מעבר autopilot במרחב עכשיו",
+        "started": "מריץ מעבר autopilot; חקירות יכולות לקחת דקות רבות…"
+      }
+    },
+    "factory": {
+      "description": "מפעל התוכנה במבט אחד",
+      "failed": "פקודת factory נכשלה",
+      "spaceOption": "Slug או מזהה של המרחב (מרחב ברירת המחדל אם לא צוין)",
+      "status": {
+        "description": "מה המפעל של מרחב עושה ומה ממתין לאנשים",
+        "title": "מפעל — {{space}}",
+        "line": "קו",
+        "lineValue": "{{used}}/{{capacity}} שעות סקירה, {{inLine}} בקו, {{waiting}} ממתינות",
+        "building": "בבנייה",
+        "incidents": "תקלות פתוחות",
+        "actions": "פעולות שממתינות לאישור",
+        "outcomes": "תוצאות ממתינות",
+        "customers": "לקוחות לעדכן",
+        "autopilot": "Autopilot"
+      }
     }
   },
   "ui": {
