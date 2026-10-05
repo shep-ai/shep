@@ -1,0 +1,44 @@
+# Research (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: docs-first
+summary: Technical decisions for 131 — docs-first policy, instructions by phase and the merge gate.
+
+relatedFeatures:
+  - 121-space-settings
+  - 125-knowledge
+technologies:
+  - TypeScript
+relatedLinks: []
+
+decisions:
+  - title: Instructions travel with project memory
+    chosen: SelectProjectMemoryUseCase appends the docs-first section for the plan and implement phases when the repository's space has docs first on
+    rejected:
+      - 'A new docs phase in the graph: a new lifecycle state, approval gate and UI for what a prompt section does'
+    rationale: >
+      Every phase already receives the memory blob selected for it, and team knowledge (spec 125)
+      reaches agents the same way.
+
+  - title: The gate escalates to the merge gate
+    chosen: No documentation change in a docs-first space turns auto-merge off for the run, like unverified CI
+    rejected:
+      - 'Failing the run: a person may rightly decide a change needs no docs'
+    rationale: >
+      The merge gate is where people already decide; the gate only makes sure they do.
+
+  - title: Path prefixes, not globs
+    chosen: A changed file is documentation when its path equals a prefix or starts with it (prefixes ending in /)
+    rejected:
+      - 'Any Markdown file: shep writes its own specs as Markdown inside the worktree'
+    rationale: >
+      Prefixes are easy to read in settings and need no glob dependency.
+
+openQuestions: []
+
+content: |
+  ## Findings
+
+  - `MemorySelector` is called with the node name as `phase`.
+  - The merge node already forces the human gate when CI is unverified (`ciBlocksAutoMerge`).
+  - `IGitPrService.getFileDiffs(cwd, baseBranch)` lists the changed paths.

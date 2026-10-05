@@ -1,0 +1,56 @@
+# Implementation Plan (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: docs-first
+summary: Implementation plan for 131 — docs-first policy, instructions and merge gate.
+
+relatedFeatures:
+  - 121-space-settings
+technologies:
+  - TypeSpec
+  - tsyringe
+  - Commander
+  - Next.js
+relatedLinks: []
+
+phases:
+  - id: phase-1
+    name: 'Policy and rules'
+    parallel: false
+    taskIds: [task-1, task-2]
+  - id: phase-2
+    name: 'Instructions and gate'
+    parallel: false
+    taskIds: [task-3, task-4, task-5]
+  - id: phase-3
+    name: 'Surfaces'
+    parallel: false
+    taskIds: [task-6, task-7]
+  - id: phase-4
+    name: 'Docs and verification'
+    parallel: false
+    taskIds: [task-8, task-9]
+
+filesToCreate:
+  - packages/core/src/domain/shared/docs-first.ts
+  - packages/core/src/application/use-cases/docs-first/check-docs-gate.use-case.ts
+
+filesToModify:
+  - tsp/domain/entities/space.tsp
+  - packages/core/src/application/use-cases/project-memory/select-project-memory.use-case.ts
+  - packages/core/src/infrastructure/services/agents/feature-agent/nodes/merge/merge.node.ts
+  - src/presentation/cli/commands/space/config.command.ts
+  - src/presentation/web/components/features/spaces/space-agent-settings-form.tsx
+
+content: |
+  ## Approach
+
+  TDD throughout: every task begins with a failing test (RED), then the minimal implementation
+  (GREEN), then cleanup (REFACTOR).
+
+  Clean Architecture: path matching and instructions are pure domain code; the gate is a use
+  case over the space context; the merge node receives it as a dependency.
+
+  ## Risks
+
+  - Blocking merges by mistake: the gate never fails a run, it only asks a person.

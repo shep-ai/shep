@@ -1,0 +1,61 @@
+## Problem Statement
+
+- Agents write code first and docs last, if at all; reviewers learn what changed from the diff.
+- Nothing tells the planning agent that the docs are the contract, and nothing notices a change
+  that ships without them.
+
+## Product Shape
+
+- **Policy** (space agent settings): docs first on or off (off by default), and documentation
+  paths — path prefixes such as `docs/` or `README.md` (default `docs/` and `README.md`).
+- **Instructions**: with docs first on, the plan phase is told to write the user-facing docs
+  for the feature under the documentation paths first and to list them in the plan; the
+  implement phase is told the docs are the contract. They reach the agent with the project
+  memory and team knowledge.
+- **Gate**: before merge, the feature's changed files are compared with the documentation
+  paths. With docs first on and no documentation changed, auto-merge is off for that run:
+  the merge gate opens with the reason. Approving it merges as usual.
+
+## User Flows
+
+**F1. Turn it on.** `shep space config acme --docs-first --docs-paths docs/,README.md` (or
+Agent settings on the Spaces page).
+
+**F2. Plan.** A feature in an Acme repository plans with docs: the plan lists
+`docs/guides/refunds.md`, written before any code.
+
+**F3. Gate.** A run that changed only code stops at the merge gate: "Docs first: no file under
+docs/, README.md changed." The reviewer asks for docs or approves anyway.
+
+## Success Criteria
+
+- [ ] With docs first off nothing changes: no extra instructions, no gate.
+- [ ] With docs first on, plan and implement prompts carry the instructions and the paths;
+      other phases do not.
+- [ ] A run with no documentation change cannot auto-merge in a docs-first space; one with a
+      documentation change merges as before.
+- [ ] CLI and web set the policy and paths; strings in 9 locales; stories for changed
+      components.
+
+## Affected Areas
+
+| Area | Impact | Reasoning |
+| --- | --- | --- |
+| TypeSpec | Low | SpaceAgentSettings.docsFirst and docsPaths |
+| Domain | Low | Path matching and phase instructions |
+| Application | Medium | Docs gate use case; instructions with project memory |
+| Infrastructure | Medium | Merge node consults the gate |
+| Presentation | Low | `shep space config` flags, space agent settings form |
+
+## Dependencies
+
+- Specs 121 (space agent settings) and 125 (memory and knowledge reach the agent by phase).
+
+## Out of Scope
+
+- Judging whether the docs match the code; the gate checks that docs moved, people judge.
+- Publishing docs sites.
+
+## Size Estimate
+
+**M**: 9 tasks.
