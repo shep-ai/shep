@@ -29,12 +29,15 @@ export function createMockFeatureCapacityService(
 ): MockFeatureCapacityService {
   return {
     getLimit: vi.fn().mockResolvedValue(UNLIMITED_PARALLEL_FEATURES),
+    getConfiguredLimit: vi.fn().mockResolvedValue(UNLIMITED_PARALLEL_FEATURES),
+    isPaused: vi.fn().mockResolvedValue(false),
     getRunningCount: vi.fn().mockResolvedValue(0),
     hasCapacity: vi.fn().mockResolvedValue(true),
     claimSlot: vi.fn().mockResolvedValue(true),
     snapshot: vi.fn().mockResolvedValue({
       limit: UNLIMITED_PARALLEL_FEATURES,
       unlimited: true,
+      paused: false,
       running: 0,
       available: null,
       queue: [],

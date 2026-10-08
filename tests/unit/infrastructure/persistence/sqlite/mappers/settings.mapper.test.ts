@@ -154,6 +154,8 @@ function createTestRow(overrides: Partial<SettingsRow> = {}): SettingsRow {
     default_mode: 'Fast',
     ci_watch_enabled: 1,
     workflow_max_parallel_features: 0,
+    workflow_queue_pause: null,
+    workflow_breaker_acknowledged_at: null,
     ci_max_fix_attempts: null,
     ci_watch_timeout_ms: null,
     ci_log_max_chars: null,

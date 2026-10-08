@@ -489,5 +489,88 @@ describe('SQLiteFleetRepository', () => {
 
       expect(rate).toEqual({ totalCompleted: 0, failedCount: 0, failureRatePercent: 0 });
     });
+
+    /**
+     * `interrupted` is written by StopAgentRunUseCase when the user stops an
+     * agent, and by crash/liveness reconciliation after a daemon restart. It
+     * belongs in the triage feed — it is a real thing to show and offer to retry
+     * — but it must not trip the breaker now that a trip PARKS THE WHOLE FLEET.
+     * Otherwise stopping four agents in a row, or restarting the daemon with
+     * four running, parks every repo by doing something deliberate.
+     */
+    it('should not count interrupted runs as breaker failures', async () => {
+      seedRun({ id: 'r-int-1', status: AgentRunStatus.interrupted, completedAt: NOW - 3 * MINUTE });
+      seedRun({ id: 'r-int-2', status: AgentRunStatus.interrupted, completedAt: NOW - 2 * MINUTE });
+      seedRun({ id: 'r-int-3', status: AgentRunStatus.interrupted, completedAt: NOW - 1 * MINUTE });
+
+      expect(await repo.getConsecutiveFailures(undefined, 15)).toBe(0);
+
+      const rate = await repo.getRollingFailureRate(undefined, 15);
+      expect(rate.totalCompleted).toBe(3);
+      expect(rate.failedCount).toBe(0);
+      expect(rate.failureRatePercent).toBe(0);
+    });
+
+    it('should still count interrupted runs in the triage feed', async () => {
+      // The breaker's narrower definition must not narrow the feed: a stopped
+      // run is something the user may well want to retry. Triage reaches a run
+      // through `features.agent_run_id`, so the feature must point at it.
+      seedFeature({ id: 'f-int', agentRunId: 'r-int' });
+      seedRun({
+        id: 'r-int',
+        featureId: 'f-int',
+        status: AgentRunStatus.interrupted,
+        completedAt: NOW - MINUTE,
+      });
+
+      const items = await repo.listTriageItems();
+
+      expect(items.some((item) => item.featureId === 'f-int')).toBe(true);
+    });
+
+    /**
+     * The maintainer's finding: nothing recorded that the user had already
+     * looked at the failures, so `fleet resume` was undone by the very next read
+     * while the same runs were still inside the window.
+     */
+    it('should ignore runs that finished before the acknowledgement', async () => {
+      seedRun({ id: 'r-old-1', status: AgentRunStatus.failed, completedAt: NOW - 10 * MINUTE });
+      seedRun({ id: 'r-old-2', status: AgentRunStatus.failed, completedAt: NOW - 8 * MINUTE });
+      seedRun({ id: 'r-new', status: AgentRunStatus.failed, completedAt: NOW - 1 * MINUTE });
+
+      const acknowledgedAt = new Date(NOW - 5 * MINUTE);
+
+      // The two acknowledged failures are invisible; only the later one counts.
+      expect(await repo.getConsecutiveFailures(undefined, 15, { since: acknowledgedAt })).toBe(1);
+
+      const rate = await repo.getRollingFailureRate(undefined, 15, { since: acknowledgedAt });
+      expect(rate.totalCompleted).toBe(1);
+      expect(rate.failedCount).toBe(1);
+    });
+
+    it('should let a fresh failure trip again after an acknowledgement', async () => {
+      // Resume clears the pause, and the NEXT failure must still be caught —
+      // otherwise acknowledging once would disarm the breaker forever.
+      seedRun({ id: 'r-old', status: AgentRunStatus.failed, completedAt: NOW - 10 * MINUTE });
+      const acknowledgedAt = new Date(NOW - 5 * MINUTE);
+      expect(await repo.getConsecutiveFailures(undefined, 15, { since: acknowledgedAt })).toBe(0);
+
+      seedRun({ id: 'r-new', status: AgentRunStatus.failed, completedAt: NOW - MINUTE });
+      expect(await repo.getConsecutiveFailures(undefined, 15, { since: acknowledgedAt })).toBe(1);
+    });
+
+    it('should never let the acknowledgement widen the window', async () => {
+      // An acknowledgement older than the window start (or one from a machine
+      // with a fast clock) must not make the breaker look further back than the
+      // window it advertises.
+      seedRun({ id: 'r-old', status: AgentRunStatus.failed, completedAt: NOW - 40 * MINUTE });
+      seedRun({ id: 'r-new', status: AgentRunStatus.failed, completedAt: NOW - MINUTE });
+
+      const longAgo = new Date(NOW - 24 * 60 * MINUTE);
+      expect(await repo.getConsecutiveFailures(undefined, 15, { since: longAgo })).toBe(1);
+
+      const future = new Date(NOW + 60 * MINUTE);
+      expect(await repo.getConsecutiveFailures(undefined, 15, { since: future })).toBe(0);
+    });
   });
 });

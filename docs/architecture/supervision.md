@@ -241,6 +241,129 @@ Three properties are deliberate:
 
 ---
 
+## Circuit breaker → admission queue (spec 111)
+
+The breaker watches agent-run failures in a rolling 15-minute window and trips on **4
+consecutive failed runs**, or on a failure rate above **25%** across at least **4** finished runs
+(the sample floor exists so one failure out of one run cannot park a fleet).
+
+A trip does two things:
+
+1. **Reports** — `circuitBreakerTripped` and its reason surface in `shep fleet status` and on the
+   dashboard, as before.
+2. **Acts** — when `FleetCircuitBreakerSettings.autoPauseQueue` is set, the trip **parks the
+   admission queue**: no queued feature starts, and no manual start is admitted either, until the
+   queue is released.
+
+This closes the gap the original RFC described as *"auto-pauses the feature admission queue when
+consecutive failures exceed threshold"*. It was weakened to a status signal only because
+admission control did not exist yet when the breaker was written; `maxParallelFeatures` and
+`AdmitQueuedFeaturesUseCase` landed in #847, so the pause now has something to stop.
+
+### The pause is a separate record, never `maxParallelFeatures = 0`
+
+`WorkflowConfig.maxParallelFeatures` is the user's own ceiling, and **`0` there means
+unlimited**. Writing the pause as `maxParallelFeatures = 0` would therefore remove the cap and
+admit everything — the opposite of pausing — and would destroy the ceiling the user configured,
+so a resume could not restore it.
+
+The pause is its own field, `WorkflowConfig.queuePaused` (`FleetQueuePause`: `pausedAt` +
+`reason`, `settings.workflow_queue_pause`, migration 166). It is an **override laid over** the
+ceiling, not a replacement for it:
+
+| Question | Read |
+|---|---|
+| May another feature start? | `resolveMaxParallelFeatures()` → `0` while paused |
+| Is that `0` "paused" or "unlimited"? | `isFleetQueuePaused()` — the number alone cannot tell them apart |
+| What ceiling did the user configure? | `resolveConfiguredMaxParallelFeatures()` — persistence and the UI |
+
+Admission is decided in exactly two places, `FeatureCapacityService.hasCapacity()` and
+`claimSlot()`, and both consult `isFleetQueuePaused` **before** the limit. `claimSlot` refuses
+while paused even for a caller passing `bypassLimit`: that flag is the user's "start anyway"
+against the ceiling, and a fleet parked because everything is failing must not restart on the
+strength of one forced start.
+
+### The breaker cannot resume itself
+
+`SetFleetQueuePauseUseCase` is the single writer. The breaker only ever **sets** the pause;
+clearing it is an explicit user act (`shep fleet resume`). A fleet that tripped while the user
+was asleep must not silently restart into the same failing conditions the moment the rolling
+window happens to look healthy again.
+
+Pausing is **idempotent and preserves the original `pausedAt`** — the breaker is re-evaluated on
+every status read, so re-stamping would make a queue parked for an hour read as "paused just
+now", forever. Resuming drains the queue, because clearing the pause opens admission without any
+feature changing lifecycle.
+
+Neither direction touches running agents. Like the cap, the pause governs **admission only**.
+
+### Resuming has to *stick*: the acknowledgement timestamp
+
+The breaker's metrics read a rolling window of `agent_runs`, and nothing in that history records
+that a human has already looked at the failures. So a resume alone was not enough: the next
+status read saw the same failing runs still inside the 15-minute window, tripped again, and
+re-parked the queue with a fresh `pausedAt`. On the web that read happens on every dashboard
+render and on **every SSE agent event**, so a resume was undone within seconds — the user was
+locked out of their own lever for the rest of the window.
+
+`WorkflowConfig.breakerAcknowledgedAt` (migration 167) records when the user last acknowledged a
+trip, written in the same update that releases the queue. The breaker then judges only runs that
+finished **after** that moment, so a trip means *"failures since you last looked"* — which is what
+an operator expects a breaker to mean. A new failure after an acknowledgement trips again, so
+acknowledging once cannot disarm the breaker.
+
+The bound only ever **narrows** the window: a timestamp older than the window start (or one from a
+machine with a fast clock) cannot make the breaker look further back than the window it
+advertises, and an unparseable value is treated as absent so the breaker still trips rather than
+silently going blind.
+
+### Two failure definitions, deliberately
+
+| Set | Statuses | Used by |
+|---|---|---|
+| `FAILURE_STATUSES` | `failed`, `interrupted` | the triage feed |
+| `BREAKER_FAILURE_STATUSES` | `failed` | the breaker metrics |
+
+`interrupted` is written by `StopAgentRunUseCase` when the user stops an agent, and by
+crash/liveness reconciliation after a daemon restart. Counting it was harmless while the breaker
+only reported a badge; now that a trip parks the whole fleet, a user who stops four agents in a
+row — or restarts the daemon with four running — would park every repo by doing something
+deliberate. The feed still shows interrupted runs, because a stopped run is a real thing to offer
+a retry for.
+
+### A scoped read reports, but never parks
+
+`shep fleet status --repo <path>` evaluates the breaker over **one repository**, but the pause it
+would write is **global**. Letting a scoped read trip it meant one repo's failures stopped work in
+every other repo. A scoped read now reports the trip and leaves the lever to the fleet-wide read
+(and to `shep fleet pause`).
+
+### The pause only refuses work that takes a slot
+
+`claimSlot` refuses while paused only when the target lifecycle **occupies a slot**.
+`ResumeFeatureUseCase` passes `bypassLimit` for lifecycles outside the running set — resuming a
+failed merge sitting in `Review`, for example — and those are not asking for capacity at all.
+Refusing them would turn "stop starting new work" into "stop finishing work already in flight".
+
+### The tripping read reports the pause it wrote
+
+`overview.queuePaused` is taken from the **return value** of the pause, not from the settings read
+at the top of `execute()`. That earlier read happened before the write, so the read that parked
+the queue used to report TRIPPED with no PAUSED line — the user only found out on some later read,
+and the `fleet status` example in `docs/cli/commands.md` documented a state the tripping read
+could never produce.
+
+| Fact | Where |
+|---|---|
+| `FleetQueuePause` | `tsp/domain/entities/fleet-overview.tsp` |
+| Pause rule (`isFleetQueuePaused`, configured vs effective limit) | `packages/core/src/domain/shared/parallel-feature-limit.ts` |
+| Single writer | `packages/core/src/application/use-cases/fleet/set-fleet-queue-pause.use-case.ts` |
+| Trip → pause | `packages/core/src/application/use-cases/fleet/get-fleet-overview.use-case.ts` |
+| Admission gate | `packages/core/src/application/use-cases/features/capacity/feature-capacity.service.ts` |
+| Storage | `settings.workflow_queue_pause` (166), `settings.workflow_breaker_acknowledged_at` (167) |
+
+---
+
 ## Unified question pipeline
 
 `AgentQuestion` is the single surface for **every** agent-to-human ask, no

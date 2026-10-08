@@ -20,6 +20,8 @@ import {
   resolveMaxParallelFeatures,
   isQueuedForCapacity,
   markQueuedForCapacity,
+  isFleetQueuePaused,
+  resolveFleetQueuePause,
 } from '@/domain/shared/parallel-feature-limit.js';
 import type { Feature } from '@/domain/generated/output.js';
 
@@ -129,6 +131,64 @@ describe('parallel-feature-limit', () => {
       expect(resolveMaxParallelFeatures({ workflow: { maxParallelFeatures: -5 } })).toBe(
         UNLIMITED_PARALLEL_FEATURES
       );
+    });
+  });
+
+  describe('fleet queue pause', () => {
+    const paused = {
+      workflow: {
+        maxParallelFeatures: 4,
+        queuePaused: { pausedAt: '2026-03-01T12:00:00Z', reason: 'Circuit breaker tripped' },
+      },
+    };
+
+    it('reports a queue paused only when a pause record is present', () => {
+      expect(isFleetQueuePaused(paused)).toBe(true);
+      expect(isFleetQueuePaused({ workflow: { maxParallelFeatures: 4 } })).toBe(false);
+      expect(isFleetQueuePaused(undefined)).toBe(false);
+      expect(isFleetQueuePaused(null)).toBe(false);
+    });
+
+    it('surfaces the recorded reason and timestamp', () => {
+      expect(resolveFleetQueuePause(paused)).toEqual({
+        pausedAt: '2026-03-01T12:00:00Z',
+        reason: 'Circuit breaker tripped',
+      });
+      expect(resolveFleetQueuePause({ workflow: {} })).toBeUndefined();
+    });
+
+    // The whole reason the pause is a separate record: 0 already means
+    // UNLIMITED, so writing the pause as `maxParallelFeatures = 0` would remove
+    // the cap and admit everything — the exact opposite of pausing.
+    it('admits nothing while paused, even with a generous configured limit', () => {
+      expect(resolveMaxParallelFeatures(paused)).toBe(0);
+    });
+
+    it('admits nothing while paused when no ceiling was ever configured', () => {
+      const unlimitedButPaused = {
+        workflow: { queuePaused: { pausedAt: '2026-03-01T12:00:00Z', reason: 'tripped' } },
+      };
+
+      expect(resolveMaxParallelFeatures(unlimitedButPaused)).toBe(0);
+      // ...and the pause, not the absent ceiling, is what closed admission.
+      expect(isFleetQueuePaused(unlimitedButPaused)).toBe(true);
+    });
+
+    it('is not fooled by a pause record that is explicitly undefined', () => {
+      expect(resolveMaxParallelFeatures({ workflow: { queuePaused: undefined } })).toBe(
+        UNLIMITED_PARALLEL_FEATURES
+      );
+    });
+
+    it('keeps the pause distinguishable from "unlimited", which is also 0', () => {
+      // A paused queue and an uncapped one both resolve to 0, so the number
+      // alone cannot tell them apart — `hasCapacity(0, 0)` is TRUE. That is why
+      // the gate (`FeatureCapacityService.hasCapacity`/`claimSlot`) consults
+      // `isFleetQueuePaused` rather than testing the limit, and why this pair of
+      // assertions is the contract: pause wins, and it is still visible.
+      expect(resolveMaxParallelFeatures(paused)).toBe(UNLIMITED_PARALLEL_FEATURES);
+      expect(isFleetQueuePaused(paused)).toBe(true);
+      expect(isFleetQueuePaused({ workflow: { maxParallelFeatures: 0 } })).toBe(false);
     });
   });
 

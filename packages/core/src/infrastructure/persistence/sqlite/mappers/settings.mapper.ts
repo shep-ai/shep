@@ -20,15 +20,13 @@ import type {
   WorktreeConfig,
   AdaptiveModelConfig,
   HarnessConfig,
+  FleetQueuePause,
 } from '../../../../domain/generated/output.js';
 import { createDefaultSettings } from '../../../../domain/factories/settings-defaults.factory.js';
 import { normalizeWorktreeConfig } from '../../../../domain/shared/worktree-config.js';
 import { parseAgentEffort } from '../../../../domain/shared/agent-effort.js';
 import { resolveHarnessConfig } from '../../../../domain/harness/harness-config.js';
-import {
-  clampMaxParallelFeatures,
-  resolveMaxParallelFeatures,
-} from '../../../../domain/shared/parallel-feature-limit.js';
+import { resolveConfiguredMaxParallelFeatures } from '../../../../domain/shared/parallel-feature-limit.js';
 import {
   type AgentType,
   type AgentAuthMethod,
@@ -119,6 +117,12 @@ export interface SettingsRow {
 
   // WorkflowConfig parallel-feature cap (workflow.maxParallelFeatures; 0 = unlimited)
   workflow_max_parallel_features: number;
+
+  // WorkflowConfig admission-queue pause (workflow.queuePaused; NULL = draining)
+  workflow_queue_pause: string | null;
+
+  // WorkflowConfig breaker acknowledgement (workflow.breakerAcknowledgedAt; NULL = never)
+  workflow_breaker_acknowledged_at: string | null;
 
   // WorkflowConfig per-stage timeouts (workflow.stageTimeouts.*)
   stage_timeout_analyze_ms: number | null;
@@ -309,7 +313,26 @@ export function toDatabase(settings: Settings): SettingsRow {
     ci_watch_timeout_ms: settings.workflow.ciWatchTimeoutMs ?? null,
     ci_log_max_chars: settings.workflow.ciLogMaxChars ?? null,
     ci_watch_enabled: settings.workflow.ciWatchEnabled !== false ? 1 : 0,
-    workflow_max_parallel_features: resolveMaxParallelFeatures(settings),
+    // The user's own ceiling, stored exactly as configured. Deliberately NOT
+    // resolveMaxParallelFeatures: that applies the pause and yields 0, which
+    // would overwrite the user's choice with "unlimited" and leave `fleet
+    // resume` with nothing to restore.
+    workflow_max_parallel_features: resolveConfiguredMaxParallelFeatures(settings),
+
+    // The pause record, as JSON. Deliberately NOT derived from
+    // resolveMaxParallelFeatures: the user's ceiling is stored untouched beside
+    // it, so resuming restores the number they configured.
+    workflow_queue_pause: settings.workflow.queuePaused
+      ? JSON.stringify({
+          ...settings.workflow.queuePaused,
+          pausedAt: serializeIsoLike(settings.workflow.queuePaused.pausedAt),
+        })
+      : null,
+
+    // When the user last acknowledged a trip. NULL (never) means the breaker
+    // judges the whole rolling window, which is how it behaved before this
+    // column existed.
+    workflow_breaker_acknowledged_at: serializeIsoLike(settings.workflow.breakerAcknowledgedAt),
 
     // WorkflowConfig per-stage timeouts (optional number → INTEGER | null)
     stage_timeout_analyze_ms: settings.workflow.stageTimeouts?.analyzeMs ?? null,
@@ -698,6 +721,38 @@ function buildSkillInjectionFromRow(
 }
 
 /**
+ * Build the queuePaused spread from the DB row column.
+ *
+ * Returns `{ queuePaused: { ... } }` while the admission queue is parked, or an
+ * empty object `{}` when the column is NULL — absence IS "draining", so there is
+ * no boolean to fall out of sync with the reason it carries.
+ *
+ * A column that cannot be parsed is treated as NOT paused, and that direction is
+ * deliberate: a corrupt value must not leave a fleet permanently parked with no
+ * way for the user to see why.
+ */
+function buildQueuePauseFromRow(
+  row: SettingsRow
+): { queuePaused: FleetQueuePause } | Record<string, never> {
+  const raw = row.workflow_queue_pause;
+  if (raw === null || raw === undefined || raw === '') return {};
+
+  try {
+    const parsed = JSON.parse(raw) as Partial<FleetQueuePause> | null;
+    if (!parsed || typeof parsed !== 'object') return {};
+
+    return {
+      queuePaused: {
+        pausedAt: parsed.pausedAt ?? new Date(0).toISOString(),
+        reason: parsed.reason ?? 'Admission queue paused',
+      },
+    };
+  } catch {
+    return {};
+  }
+}
+
+/**
  * Maps database row to Settings domain object.
  * Reconstructs nested objects and converts types from SQL.
  *
@@ -789,8 +844,16 @@ export function fromDatabase(row: SettingsRow): Settings {
       ...buildStageTimeoutsFromRow(row),
       ...buildAnalyzeRepoTimeoutsFromRow(row),
       ...buildSkillInjectionFromRow(row),
+      ...buildQueuePauseFromRow(row),
+      ...(row.workflow_breaker_acknowledged_at !== null && {
+        breakerAcknowledgedAt: row.workflow_breaker_acknowledged_at,
+      }),
       ciWatchEnabled: row.ci_watch_enabled !== 0,
-      maxParallelFeatures: clampMaxParallelFeatures(row.workflow_max_parallel_features),
+      // The user's ceiling, NOT the paused 0 — a paused fleet that displayed
+      // "unlimited" would also leave resume with nothing to restore.
+      maxParallelFeatures: resolveConfiguredMaxParallelFeatures({
+        workflow: { maxParallelFeatures: row.workflow_max_parallel_features },
+      }),
       enableEvidence: row.workflow_enable_evidence === 1,
       commitEvidence: row.workflow_commit_evidence === 1,
       hideCiStatus: row.hide_ci_status === 1,

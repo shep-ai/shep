@@ -83,6 +83,8 @@ tasks:
     acceptanceCriteria:
       - "Returns accurate counts for running, queued, cruising, attentionNeeded, and failed"
       - "Calculates fleet health percentage and circuit breaker state"
+      - "A trip with autoPauseQueue set parks the admission queue (idempotent; the trip is reported even if the pause write fails)"
+      - "Reports workflow.queuePaused on the overview so status can show a parked queue"
     tdd:
       red:
         - "Write unit tests with mocked IFleetRepository"
@@ -227,6 +229,8 @@ tasks:
     acceptanceCriteria:
       - "shep fleet approve --all batch approves waiting features"
       - "shep fleet pause / resume toggles admission queue"
+      - "shep fleet pause --reason records why; shep fleet status reports the paused queue"
+      - "shep fleet retry [--ci | --failed] is NOT implemented yet"
     tdd: null
     estimatedEffort: "1.5h"
 

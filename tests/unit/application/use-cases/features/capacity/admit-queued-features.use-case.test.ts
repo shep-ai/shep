@@ -57,6 +57,7 @@ describe('AdmitQueuedFeaturesUseCase', () => {
     getLimit: ReturnType<typeof vi.fn>;
     getRunningCount: ReturnType<typeof vi.fn>;
     claimSlot: ReturnType<typeof vi.fn>;
+    isPaused: ReturnType<typeof vi.fn>;
   };
   let spawnFeatureAgent: { execute: ReturnType<typeof vi.fn> };
   let useCase: AdmitQueuedFeaturesUseCase;
@@ -68,6 +69,7 @@ describe('AdmitQueuedFeaturesUseCase', () => {
       getRunningCount: vi.fn().mockResolvedValue(0),
       // Winning the claim is the normal case; the races below override it.
       claimSlot: vi.fn().mockResolvedValue(true),
+      isPaused: vi.fn().mockResolvedValue(false),
     };
     spawnFeatureAgent = { execute: vi.fn().mockResolvedValue({ spawned: true }) };
     useCase = new AdmitQueuedFeaturesUseCase(
@@ -82,6 +84,43 @@ describe('AdmitQueuedFeaturesUseCase', () => {
 
     expect(result.admittedFeatureIds).toEqual([]);
     expect(spawnFeatureAgent.execute).not.toHaveBeenCalled();
+  });
+
+  /**
+   * The circuit breaker's pause reaches the drain as "the gate is shut". A
+   * paused queue must admit nothing even though the ceiling itself is untouched,
+   * and the queued features must KEEP their place — a pause parks work, it does
+   * not discard it.
+   */
+  it('admits nothing while the fleet queue is paused, and leaves the queue intact', async () => {
+    capacity.isPaused = vi.fn().mockResolvedValue(true);
+    featureRepo.listQueued.mockResolvedValue([queuedFeature('first', 30)]);
+
+    const result = await useCase.execute();
+
+    expect(result.admittedFeatureIds).toEqual([]);
+    expect(spawnFeatureAgent.execute).not.toHaveBeenCalled();
+    expect(capacity.claimSlot).not.toHaveBeenCalled();
+  });
+
+  it('does not even read the running count while paused', async () => {
+    // A paused fleet has nothing to admit, so the drain should cost one
+    // settings read and one queue read — not a count query per sweep.
+    capacity.isPaused = vi.fn().mockResolvedValue(true);
+    featureRepo.listQueued.mockResolvedValue([queuedFeature('first', 30)]);
+
+    await useCase.execute();
+
+    expect(capacity.getRunningCount).not.toHaveBeenCalled();
+  });
+
+  it('drains normally again once the pause is lifted', async () => {
+    capacity.isPaused = vi.fn().mockResolvedValue(false);
+    featureRepo.listQueued.mockResolvedValue([queuedFeature('first', 30)]);
+
+    const result = await useCase.execute();
+
+    expect(result.admittedFeatureIds).toEqual(['first']);
   });
 
   it('admits queued features in FIFO order', async () => {

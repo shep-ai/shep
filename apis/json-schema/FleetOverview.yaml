@@ -11,6 +11,9 @@ properties:
   circuitBreakerReason:
     type: string
     description: Reason why circuit breaker was tripped if active
+  queuePaused:
+    $ref: FleetQueuePause.yaml
+    description: Present while the fleet admission queue is parked, absent while it is draining
   activeTriageCount:
     type: integer
     minimum: -2147483648

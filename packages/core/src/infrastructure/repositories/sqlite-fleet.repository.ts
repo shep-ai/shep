@@ -18,6 +18,7 @@ import { normalizeRepositoryPath } from '../../domain/shared/repository-path.js'
 import type {
   IFleetRepository,
   FleetTriageFilters,
+  FleetMetricWindow,
 } from '../../application/ports/output/repositories/fleet-repository.interface.js';
 import {
   type FleetOverview,
@@ -47,8 +48,27 @@ const INTERRUPT_NODE_PREFIX = 'node:';
 
 const MILLIS_PER_MINUTE = 60_000;
 
-/** Statuses that represent a terminal, unsuccessful run. */
+/**
+ * Statuses that represent a terminal, unsuccessful run, for the TRIAGE feed.
+ *
+ * `interrupted` belongs here: a run the user stopped, or one a daemon restart
+ * reconciled, is a real thing to show them and offer to retry.
+ */
 const FAILURE_STATUSES: AgentRunStatus[] = [AgentRunStatus.failed, AgentRunStatus.interrupted];
+
+/**
+ * Statuses the CIRCUIT BREAKER counts as failures.
+ *
+ * Deliberately narrower than {@link FAILURE_STATUSES}: it excludes
+ * `interrupted`. That status is written by `StopAgentRunUseCase` when the user
+ * stops an agent, and by crash/liveness reconciliation after a daemon restart.
+ * Counting it was harmless while the breaker only reported a badge; now that a
+ * trip PARKS THE WHOLE FLEET, a user who stops four agents in a row — or
+ * restarts the daemon with four running — would park every repo by doing
+ * something deliberate. The breaker exists to catch a fleet that is *failing*,
+ * not one a human is steering.
+ */
+const BREAKER_FAILURE_STATUSES: AgentRunStatus[] = [AgentRunStatus.failed];
 
 /** Lifecycles that are still part of the active fleet. */
 const EXCLUDED_LIFECYCLES: SdlcLifecycle[] = [SdlcLifecycle.Archived];
@@ -425,12 +445,29 @@ export class SQLiteFleetRepository implements IFleetRepository {
     return typeof filters?.limit === 'number' ? filtered.slice(0, filters.limit) : filtered;
   }
 
+  /**
+   * The lower bound a breaker metric reads from: the start of the rolling
+   * window, narrowed by the user's last acknowledgement.
+   *
+   * Only ever narrows. A `since` older than the window start (or a future one)
+   * cannot widen the window or push it into the future, so a clock skew or a
+   * stale acknowledgement can never make the breaker blind for longer than the
+   * window it advertises.
+   */
+  private metricSince(windowMinutes: number, window?: FleetMetricWindow): number {
+    const windowStart = Date.now() - windowMinutes * MILLIS_PER_MINUTE;
+    const acknowledged = window?.since?.getTime();
+    if (acknowledged === undefined || Number.isNaN(acknowledged)) return windowStart;
+    return Math.max(windowStart, Math.min(acknowledged, Date.now()));
+  }
+
   async getConsecutiveFailures(
     repositoryPath?: string,
-    windowMinutes = DEFAULT_WINDOW_MINUTES
+    windowMinutes = DEFAULT_WINDOW_MINUTES,
+    window?: FleetMetricWindow
   ): Promise<number> {
     const scope = repositoryPath ? normalizeRepositoryPath(repositoryPath) : undefined;
-    const since = Date.now() - windowMinutes * MILLIS_PER_MINUTE;
+    const since = this.metricSince(windowMinutes, window);
     const rows = this.db
       .prepare(
         `
@@ -445,7 +482,7 @@ export class SQLiteFleetRepository implements IFleetRepository {
 
     let consecutive = 0;
     for (const row of rows) {
-      if (!FAILURE_STATUSES.includes(row.status)) break;
+      if (!BREAKER_FAILURE_STATUSES.includes(row.status)) break;
       consecutive++;
     }
     return consecutive;
@@ -453,21 +490,26 @@ export class SQLiteFleetRepository implements IFleetRepository {
 
   async getRollingFailureRate(
     repositoryPath?: string,
-    windowMinutes = DEFAULT_WINDOW_MINUTES
+    windowMinutes = DEFAULT_WINDOW_MINUTES,
+    window?: FleetMetricWindow
   ): Promise<{ totalCompleted: number; failedCount: number; failureRatePercent: number }> {
     const scope = repositoryPath ? normalizeRepositoryPath(repositoryPath) : undefined;
-    const since = Date.now() - windowMinutes * MILLIS_PER_MINUTE;
+    const since = this.metricSince(windowMinutes, window);
     const row = this.db
       .prepare(
         `
         SELECT
           COUNT(*) AS total_completed,
-          SUM(CASE WHEN status IN (${FAILURE_STATUSES.map(() => '?').join(', ')}) THEN 1 ELSE 0 END) AS failed_count
+          SUM(CASE WHEN status IN (${BREAKER_FAILURE_STATUSES.map(() => '?').join(', ')}) THEN 1 ELSE 0 END) AS failed_count
         FROM agent_runs
         WHERE completed_at IS NOT NULL AND completed_at >= ?${scope ? SCOPED_RUN_PREDICATE : ''}
       `
       )
-      .get(...FAILURE_STATUSES, since, ...(scope ? [...EXCLUDED_LIFECYCLES, scope] : [])) as {
+      .get(
+        ...BREAKER_FAILURE_STATUSES,
+        since,
+        ...(scope ? [...EXCLUDED_LIFECYCLES, scope] : [])
+      ) as {
       total_completed: number;
       failed_count: number | null;
     };

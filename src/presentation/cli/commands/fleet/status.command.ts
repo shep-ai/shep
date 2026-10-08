@@ -43,6 +43,17 @@ export function createStatusCommand(): Command {
         );
 
         messages.newline();
+        if (overview.queuePaused) {
+          console.log(
+            `  ${colors.warning(symbols.warning)} ${fmt.bold('Admission Queue:')} ${colors.warning('PAUSED')}`
+          );
+          console.log(`    ${colors.muted(overview.queuePaused.reason)}`);
+          console.log(
+            `    ${colors.muted('New work is parked; running agents continue. Run `shep fleet resume` to admit again.')}`
+          );
+          messages.newline();
+        }
+
         if (overview.circuitBreakerTripped) {
           console.log(
             `  ${colors.error(symbols.error)} ${fmt.bold('Circuit Breaker:')} ${colors.error('TRIPPED')}`

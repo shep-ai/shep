@@ -444,6 +444,36 @@ model WorkflowConfig {
   @doc("Maximum concurrently running features (default: 0 = unlimited)")
   maxParallelFeatures?: int32;
 
+  /**
+   * Set while the fleet admission queue is parked. Absent means the queue is
+   * draining normally.
+   *
+   * A separate field from `maxParallelFeatures` on purpose — see
+   * `FleetQueuePause` in fleet-overview.tsp. The pause is an override laid over
+   * the user's ceiling, not a replacement for it, so raising or lowering the
+   * ceiling later still works and `fleet resume` restores exactly what the user
+   * configured.
+   */
+  @doc("Present while the fleet admission queue is paused (absent = draining)")
+  queuePaused?: FleetQueuePause;
+
+  /**
+   * When the user last acknowledged a circuit-breaker trip.
+   *
+   * The breaker's metrics read a rolling window of `agent_runs`, and nothing in
+   * that history records that a human has already looked at the failures. So
+   * without this, `shep fleet resume` cannot stick: the next status read — and
+   * on the web that is every dashboard render and every SSE agent event — sees
+   * the same failing runs still inside the 15-minute window and trips again,
+   * re-parking the queue with a fresh `pausedAt`. The user is locked out of
+   * their own resume for the rest of the window.
+   *
+   * With it, a trip means "failures since you last looked", which is what an
+   * operator expects the breaker to mean.
+   */
+  @doc("When the user last acknowledged a breaker trip; failures before this do not re-trip")
+  breakerAcknowledgedAt?: utcDateTime;
+
   @doc("Maximum number of CI fix/push/watch iterations before giving up (default: 3)")
   ciMaxFixAttempts?: int32;
 

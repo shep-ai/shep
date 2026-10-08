@@ -26,6 +26,9 @@ import {
   SLOT_RELEASING_RUN_STATUSES,
   UNLIMITED_PARALLEL_FEATURES,
   hasCapacity,
+  isFleetQueuePaused,
+  isRunningLifecycle,
+  resolveConfiguredMaxParallelFeatures,
   resolveMaxParallelFeatures,
 } from '../../../../domain/shared/parallel-feature-limit.js';
 
@@ -66,6 +69,12 @@ export interface ParallelCapacitySnapshot {
   limit: number;
   /** True when no cap is configured. */
   unlimited: boolean;
+  /**
+   * True while the fleet admission queue is parked (circuit breaker, or
+   * `shep fleet pause`). Independent of `limit`: a pause overrides the ceiling
+   * without replacing it, so the configured number survives a resume.
+   */
+  paused: boolean;
   /** Features currently holding a slot. */
   running: number;
   /**
@@ -87,9 +96,29 @@ export class FeatureCapacityService {
     private readonly settingsRepository: ISettingsRepository
   ) {}
 
-  /** The configured limit, clamped. 0 means unlimited. */
+  /**
+   * The limit admission is governed by right now. 0 means "admit nothing" while
+   * the queue is paused, and "unlimited" otherwise — which is why gating
+   * callers must also read {@link isPaused} rather than testing this number.
+   */
   async getLimit(): Promise<number> {
     return resolveMaxParallelFeatures(await this.settingsRepository.load());
+  }
+
+  /**
+   * The ceiling the user configured, ignoring any pause.
+   *
+   * Read by persistence and the UI, which must show the number the user chose
+   * and not the pause's 0 — otherwise a paused fleet displays "unlimited" and a
+   * resume has no ceiling left to restore.
+   */
+  async getConfiguredLimit(): Promise<number> {
+    return resolveConfiguredMaxParallelFeatures(await this.settingsRepository.load());
+  }
+
+  /** Is the fleet admission queue parked? */
+  async isPaused(): Promise<boolean> {
+    return isFleetQueuePaused(await this.settingsRepository.load());
   }
 
   /** Features currently holding a slot. */
@@ -113,7 +142,14 @@ export class FeatureCapacityService {
    * not care who else is waiting.
    */
   async hasCapacity(): Promise<boolean> {
-    const limit = await this.getLimit();
+    const settings = await this.settingsRepository.load();
+    // Checked before the limit: a paused queue resolves to a limit of 0, and 0
+    // already means UNLIMITED, so a limit-only test would report plenty of room
+    // for a fleet the user parked.
+    if (isFleetQueuePaused(settings)) {
+      return false;
+    }
+    const limit = resolveMaxParallelFeatures(settings);
     if (limit === UNLIMITED_PARALLEL_FEATURES) {
       return true;
     }
@@ -138,7 +174,27 @@ export class FeatureCapacityService {
    * @returns True when this call took the slot and may spawn
    */
   async claimSlot(input: ClaimSlotInput): Promise<boolean> {
-    const limit = input.bypassLimit === true ? UNLIMITED_PARALLEL_FEATURES : await this.getLimit();
+    const settings = await this.settingsRepository.load();
+
+    // The pause governs ADMISSION, so it only refuses work that would occupy a
+    // slot. A caller resuming a lifecycle outside the running set — a failed
+    // merge sitting in Review, for example — is not asking for capacity at all:
+    // `ResumeFeatureUseCase` passes `bypassLimit` for exactly those, and
+    // refusing them would go beyond "stop starting new work" to "stop finishing
+    // work already in flight".
+    const occupiesSlot = isRunningLifecycle(input.targetLifecycle);
+    if (occupiesSlot && isFleetQueuePaused(settings)) {
+      return false;
+    }
+
+    // The pause outranks `bypassLimit` for work that DOES take a slot. That flag
+    // is the user's "start anyway" against the CEILING; a fleet parked because
+    // everything is failing must not restart on the strength of one forced
+    // start.
+    const limit =
+      input.bypassLimit === true || !occupiesSlot
+        ? UNLIMITED_PARALLEL_FEATURES
+        : resolveMaxParallelFeatures(settings);
 
     return this.featureRepo.claimForStart({
       featureId: input.featureId,
@@ -160,7 +216,11 @@ export class FeatureCapacityService {
 
   /** Full read model: limit, running count, remaining slots, and the queue. */
   async snapshot(): Promise<ParallelCapacitySnapshot> {
-    const limit = await this.getLimit();
+    const settings = await this.settingsRepository.load();
+    const paused = isFleetQueuePaused(settings);
+    // Deliberately the CONFIGURED ceiling, not the paused 0: the snapshot is
+    // what the UI renders, and "unlimited" is a lie for a parked fleet.
+    const limit = resolveConfiguredMaxParallelFeatures(settings);
     const running = await this.getRunningCount();
     const queued = await this.featureRepo.listQueued();
 
@@ -169,8 +229,9 @@ export class FeatureCapacityService {
     return {
       limit,
       unlimited,
+      paused,
       running,
-      available: unlimited ? null : Math.max(0, limit - running),
+      available: paused ? 0 : unlimited ? null : Math.max(0, limit - running),
       queue: queued.map((feature, index) => ({
         featureId: feature.id,
         position: index + 1,

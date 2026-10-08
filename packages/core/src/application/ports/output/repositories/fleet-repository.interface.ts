@@ -20,6 +20,18 @@ export interface FleetTriageFilters {
   limit?: number;
 }
 
+/**
+ * Optional lower bound on the run history a breaker metric inspects.
+ *
+ * `since` is how a breaker metric is told "the user already looked at everything
+ * before this moment". It only ever NARROWS the window — a timestamp older than
+ * the window's own start has no effect.
+ */
+export interface FleetMetricWindow {
+  /** Ignore runs that finished before this moment. */
+  since?: Date;
+}
+
 export interface IFleetRepository {
   /**
    * Get the aggregate status counts and circuit breaker health for all active/queued features.
@@ -40,18 +52,25 @@ export interface IFleetRepository {
    *
    * @param repositoryPath Optional repository path to filter the run history
    * @param windowMinutes Rolling window duration in minutes (default: 15)
+   * @param window Optional lower bound; a run that finished before `since` does not count
    */
-  getConsecutiveFailures(repositoryPath?: string, windowMinutes?: number): Promise<number>;
+  getConsecutiveFailures(
+    repositoryPath?: string,
+    windowMinutes?: number,
+    window?: FleetMetricWindow
+  ): Promise<number>;
 
   /**
    * Calculate the rolling failure percentage of runs finished in the window.
    *
    * @param repositoryPath Optional repository path to filter the run history
    * @param windowMinutes Rolling window duration in minutes (default: 15)
+   * @param window Optional lower bound; a run that finished before `since` does not count
    */
   getRollingFailureRate(
     repositoryPath?: string,
-    windowMinutes?: number
+    windowMinutes?: number,
+    window?: FleetMetricWindow
   ): Promise<{
     totalCompleted: number;
     failedCount: number;

@@ -85,6 +85,9 @@ describe('Fleet Control Plane DI registrations', () => {
     const { BatchApproveFeaturesUseCase } = await import(
       '../../../../packages/core/src/application/use-cases/fleet/batch-approve-features.use-case.js'
     );
+    const { SetFleetQueuePauseUseCase } = await import(
+      '../../../../packages/core/src/application/use-cases/fleet/set-fleet-queue-pause.use-case.js'
+    );
 
     const container = await initializeContainer();
 
@@ -95,6 +98,32 @@ describe('Fleet Control Plane DI registrations', () => {
     expect(container.resolve(BatchApproveFeaturesUseCase)).toBeInstanceOf(
       BatchApproveFeaturesUseCase
     );
+    expect(container.resolve(SetFleetQueuePauseUseCase)).toBeInstanceOf(SetFleetQueuePauseUseCase);
+  });
+
+  it('registers the queue-pause use case as a class token', async () => {
+    // NOT "container.resolve(X) is an instance of X": tsyringe auto-constructs
+    // any @injectable class, so that assertion passes with no registration at
+    // all — proven by deleting the `registerSingleton` call and watching it stay
+    // green. The registration is what puts the class into the container's token
+    // registry, and `hollow-dependency-guard` only sweeps REGISTERED class
+    // tokens; an unregistered use case escapes that guard entirely.
+    const { initializeContainer } = await import(
+      '../../../../packages/core/src/infrastructure/di/container.js'
+    );
+    const { SetFleetQueuePauseUseCase } = await import(
+      '../../../../packages/core/src/application/use-cases/fleet/set-fleet-queue-pause.use-case.js'
+    );
+
+    const container = await initializeContainer();
+    const registry = (
+      container as unknown as { _registry: { entries(): Iterable<[unknown, unknown]> } }
+    )._registry;
+    const classTokens = [...registry.entries()]
+      .map(([token]) => token)
+      .filter((token): token is object => typeof token === 'function');
+
+    expect(classTokens).toContain(SetFleetQueuePauseUseCase);
   });
 
   it('exposes stable string tokens matching the use-case names', async () => {

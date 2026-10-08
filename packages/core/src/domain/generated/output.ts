@@ -477,6 +477,20 @@ export type SkillInjectionConfig = {
 };
 
 /**
+ * Reason the fleet admission queue is paused, and when it was paused
+ */
+export type FleetQueuePause = {
+  /**
+   * Timestamp the queue was paused
+   */
+  pausedAt: any;
+  /**
+   * Human-readable reason the queue was paused
+   */
+  reason: string;
+};
+
+/**
  * Global workflow configuration defaults
  */
 export type WorkflowConfig = {
@@ -496,6 +510,14 @@ export type WorkflowConfig = {
    * Maximum concurrently running features (default: 0 = unlimited)
    */
   maxParallelFeatures?: number;
+  /**
+   * Present while the fleet admission queue is paused (absent = draining)
+   */
+  queuePaused?: FleetQueuePause;
+  /**
+   * When the user last acknowledged a breaker trip; failures before this do not re-trip
+   */
+  breakerAcknowledgedAt?: any;
   /**
    * Maximum number of CI fix/push/watch iterations before giving up (default: 3)
    */
@@ -5665,6 +5687,10 @@ export type FleetOverview = {
    */
   circuitBreakerReason?: string;
   /**
+   * Present while the fleet admission queue is parked, absent while it is draining
+   */
+  queuePaused?: FleetQueuePause;
+  /**
    * Number of unresolved triage items
    */
   activeTriageCount: number;
@@ -5695,7 +5721,7 @@ export type FleetCircuitBreakerSettings = {
    */
   failureRateThresholdPercent: number;
   /**
-   * Reserved: whether admission should be paused when tripped. Not acted on yet — admission control (PR #847) is not on main, so the trip is reported as a status signal only.
+   * Whether tripping the breaker pauses the admission queue. When true, a tripped breaker parks new work instead of only reporting a status signal.
    */
   autoPauseQueue: boolean;
 };

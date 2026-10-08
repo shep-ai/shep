@@ -17,13 +17,14 @@ This RFC describes the full target. What actually exists in this branch today:
 | `SQLiteFleetRepository` (derived read model) + indexes (migration 143) | Implemented |
 | Circuit breaker evaluation (consecutive failures / rolling rate) | Implemented as a reported status signal |
 | Guardrail rule evaluator + `SupervisorPolicy` configuration + pre-LLM wiring | Implemented (slice 2) |
-| `--low-risk`, `fleet retry`, `fleet pause` / `resume` | Not implemented |
+| `--low-risk`, `fleet retry` | Not implemented |
+| `fleet pause` / `resume` | Implemented |
 | Web status bar + triage drawer + Storybook stories | Implemented (slice 3) |
 
-PR #847 is **not merged** — it is open, conflicts with `main`, and has no
-`specs/110-max-parallel-features/` directory in this tree. Nothing in this spec imports
-from it, and the circuit breaker therefore reports a trip signal rather than pausing a
-queue that does not exist on `main` yet.
+PR #847 **has merged** since this RFC was written, so `workflow.maxParallelFeatures` and
+`AdmitQueuedFeaturesUseCase` exist on `main`. The circuit breaker therefore now **pauses that
+admission queue** on a trip instead of only reporting a signal — the promise this RFC originally
+had to weaken.
 
 ---
 
@@ -32,7 +33,10 @@ queue that does not exist on `main` yet.
 Shep’s core value proposition is:
 > *"Run a fleet of coding agents. Merge real PRs. One agent session is fine; five is chaos. Shep is the part that keeps it from being chaos."*
 
-PR #847 by @arielshad proposes `workflow.maxParallelFeatures`, an admission control mechanism that would prevent local machines from getting crushed when queuing dozens of features. It is currently **open and unmerged**, so this RFC treats admission control as a future dependency rather than an existing foundation.
+PR #847 by @arielshad added `workflow.maxParallelFeatures`, an admission control mechanism that
+prevents local machines from getting crushed when queuing dozens of features. It has since
+**merged**, so admission control is now a foundation this feature builds on rather than a future
+dependency.
 
 However, once users actually try to operate a fleet of **50+ features**, a new bottleneck arises: **the human attention and operational safety limit**.
 
@@ -88,7 +92,7 @@ Extends `SupervisorPolicy` (which already has `policyRulesJson`) with measurable
 - **Execution**: Evaluated in pure TypeScript before LLM invocation. If all criteria pass, the gate is auto-approved with reason: `"Auto-approved: diff 38 lines, CI passed, 0 sensitive files"`. If violated, it immediately surfaces in the triage feed with the exact breach detail.
 
 ### Pillar 3: Fleet Circuit Breaker & Batch Actions
-- **Fleet Circuit Breaker**: If 4 consecutive runs fail or the rolling failure rate exceeds 25% across at least 4 finished runs in a 15-minute window, `shep fleet status` reports the fleet as tripped so the operator can act before starting more work. Once PR #847 lands, the same signal can drive automatic admission-queue pausing; it deliberately does not promise that today.
+- **Fleet Circuit Breaker**: If 4 consecutive runs fail or the rolling failure rate exceeds 25% across at least 4 finished runs in a 15-minute window, `shep fleet status` reports the fleet as tripped **and parks the admission queue** so no further work starts until an operator looks. The pause is stored as its own record beside `maxParallelFeatures` — never as `maxParallelFeatures = 0`, which means *unlimited* — so the configured ceiling survives and `shep fleet resume` restores it.
 - **Batch Actions**:
   - `shep fleet approve [--all | --low-risk | --gate <type>]`
   - `shep fleet retry [--ci | --failed]`

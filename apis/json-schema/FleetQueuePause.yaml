@@ -1,0 +1,15 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: FleetQueuePause.yaml
+type: object
+properties:
+  pausedAt:
+    type: string
+    format: date-time
+    description: Timestamp the queue was paused
+  reason:
+    type: string
+    description: Human-readable reason the queue was paused
+required:
+  - pausedAt
+  - reason
+description: Reason the fleet admission queue is paused, and when it was paused

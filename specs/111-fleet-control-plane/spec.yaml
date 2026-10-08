@@ -7,21 +7,20 @@ branch: "feat/111-fleet-control-plane"
 oneLiner: "Scale to 50+ parallel agents with exception-based triage, deterministic guardrail auto-approvals, and fleet circuit breaker"
 summary: >
   Extends Shep's parallel agent orchestration to large fleets (50+ active/queued features).
-  PR #847 ("limit the maximum number of parallel running features", spec 110) proposes
-  admission queuing via workflow.maxParallelFeatures, but that PR is still OPEN and unmerged
-  at the time of writing, so nothing in this spec may assume it is present on main. This
-  feature therefore stands alone and solves the human attention bottleneck and operational
-  safety via: (1) Exception-Based Fleet Triage which filters out the 80% cruising features
-  to surface only items needing human action; (2) Guardrailed Auto-Approval rules allowing
-  deterministic, criteria-based gate auto-approvals without blind autonomy; and (3) Fleet
-  Circuit Breaker & Batch Actions to prevent runaway loops, cascade failures, and repetitive
-  manual operations.
+  PR #847 ("limit the maximum number of parallel running features", spec 110) added admission
+  queuing via workflow.maxParallelFeatures. It has since MERGED, so the admission queue this
+  spec was written to stand apart from now exists on main and the circuit breaker can drive it.
+  This feature solves the human attention bottleneck and operational safety via: (1)
+  Exception-Based Fleet Triage which filters out the 80% cruising features to surface only items
+  needing human action; (2) Guardrailed Auto-Approval rules allowing deterministic,
+  criteria-based gate auto-approvals without blind autonomy; and (3) Fleet Circuit Breaker &
+  Batch Actions to prevent runaway loops, cascade failures, and repetitive manual operations.
 
 phase: "Requirements"
 sizeEstimate: "L"
 
 relatedFeatures:
-  - "110-max-parallel-features (admission queue and maxParallelFeatures setting — OPEN PR #847, not on main; this spec must not depend on it landing)"
+  - "110-max-parallel-features (admission queue and maxParallelFeatures setting — MERGED as #847; the circuit breaker now pauses this queue on a trip)"
   - "093-agent-collaboration-supervision (SupervisorPolicy, SupervisorDecision, AgentQuestion)"
   - "013-feature-agent (background execution and approval gates)"
   - "068-git-rebase-sync (auto-rebase and conflict handling)"
@@ -72,18 +71,18 @@ openQuestions:
     resolved: true
     options:
       - option: "Consecutive failures or error spike threshold"
-        description: "Trips if 4 consecutive feature runs fail or > 25% of runs fail within a rolling 15-minute window. Surfaces a tripped signal that the fleet status surface reports to the operator."
+        description: "Trips if 4 consecutive feature runs fail or > 25% of runs fail within a rolling 15-minute window. Parks the admission queue and reports the tripped signal to the operator."
         selected: true
       - option: "Token / dollar cost ceiling only"
         description: "Trips only when token consumption reaches a limit. Cons: slow to catch environment failures (like a broken main branch)."
         selected: false
-    selectionRationale: "Early failure detection saves token cost and human remediation time by flagging a shared failure pattern as soon as it appears. Automatic admission pausing is deliberately NOT promised here because admission control (PR #847) is not on main."
+    selectionRationale: "Early failure detection saves token cost and human remediation time by flagging a shared failure pattern as soon as it appears. Automatic admission pausing was deferred only because admission control (PR #847) had not landed; #847 has since merged, so a trip now parks the queue and the user releases it with `shep fleet resume`."
     answer: "Consecutive failures threshold (default: 4) and rolling failure rate (default: 25% in 15m)"
 
 content: |
   ## Problem Statement
 
-  Shep already runs many features in parallel worktrees. PR #847 proposes a cap (`workflow.maxParallelFeatures`) that queues features past a configurable limit, but that PR is **open and unmerged**, so on `main` today there is no admission queue at all — every started feature runs immediately. Managing a large fleet already introduces severe operational friction, and it gets worse the more features a user starts:
+  Shep already runs many features in parallel worktrees. PR #847 added a cap (`workflow.maxParallelFeatures`) that queues features past a configurable limit; it has since **merged**, so an admission queue now exists on `main` and the circuit breaker can pause it. Managing a large fleet already introduces severe operational friction, and it gets worse the more features a user starts:
 
   1. **Attention Overload**: An operator running 50 features cannot track 50 canvas nodes. At any given moment, 40 features are progressing normally, but 10 require intervention (blocking questions, merge conflicts, failed CI, approval gates). Users need an exception-first triage interface.
   2. **Coarse Autonomy**: Currently, users must choose between approving every single gate manually or turning on `--allow-all` / `autonomous` supervisor mode without safety guardrails. Users need deterministic bounds (e.g. auto-approve if diff < 200 lines and CI green, but escalate if auth files touched).
@@ -110,9 +109,9 @@ content: |
   - [x] **Batch Approval**: `shep fleet approve [--all | --gate <type>]` approves waiting gates sequentially with per-item error isolation.
   - [x] **Deterministic Guardrail Rules**: `SupervisorPolicy.guardrailRulesJson` holds `GuardrailRule`s that are evaluated in pure TypeScript before the LLM evaluator. All matching rules must pass; a breach, unreadable rules, or missing diff/CI metrics escalate to a human without consulting the model.
   - [ ] **Guardrail rule authoring UX**: rules are settable through `ConfigureSupervisorUseCase` (and therefore the programmatic API) but there is no `shep supervisor configure --guardrail` flag yet.
-  - [x] **Fleet Circuit Breaker**: consecutive-failure and rolling-failure-rate thresholds trip a reported signal in `shep fleet status`. Automatic admission pausing is out of scope until admission control exists on `main`.
+  - [x] **Fleet Circuit Breaker**: consecutive-failure and rolling-failure-rate thresholds trip a signal in `shep fleet status` **and park the admission queue** while `FleetCircuitBreakerSettings.autoPauseQueue` is set. Running agents are untouched; `shep fleet resume` is the only way to release a breaker pause, so a fleet that tripped unattended cannot restart itself into the same failing conditions.
   - [x] **Breaker metrics share the fleet scope**: when a repository path is supplied, both breaker metrics are restricted to runs belonging to that repository, matching the definition of scope used by the overview counts. A scoped view must never trip because of another repository's failures.
-  - [ ] **Batch Operations (remaining)**: `shep fleet retry [--ci | --failed]` and `shep fleet pause / resume` are not implemented; `--low-risk` is not implemented (it requires guardrail rule configuration, which is itself not wired).
+  - [ ] **Batch Operations (remaining)**: `shep fleet retry [--ci | --failed]` is not implemented; `--low-risk` is not implemented (it requires guardrail rule configuration, which is itself not wired). `shep fleet pause / resume` IS implemented.
   - [x] **Web UI**: `FleetStatusBar`, `FleetTriageDrawer` and the `FleetControl` container mounted in the dashboard layout, with colocated Storybook stories covering Default / All-clear / Tripped / Empty / Loading / Error.
   - [ ] **Full integration tests**: unit tests cover all four use cases; the repository has real-SQLite integration coverage. The 50-agent end-to-end simulation (task-18) is not written.
 

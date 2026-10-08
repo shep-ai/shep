@@ -3016,3 +3016,50 @@ that a squash merge would invalidate.
 `relative(ROOT, file)` returns backslashes on Windows, so a test comparing it with
 `'packages/core/src/...'` passed on Linux and failed on `windows-latest`. Always
 `.replace(/\\/g, '/')` a computed path before comparing or printing it in a test.
+
+## A "pause" must not be encoded as `0` in a field where `0` already means "off/unlimited"
+
+The circuit breaker needed to stop new work. The one-field fix — set
+`workflow.maxParallelFeatures = 0` — was backwards twice over. In that field `0` means
+**UNLIMITED**, so it would have removed the cap and admitted *everything*; and it would have
+overwritten the ceiling the user chose, leaving `resume` with nothing to restore.
+`hasCapacity(0, 0)` is literally `true`, so the pause would have silently done nothing.
+
+The pause became its own record (`workflow.queuePaused`) beside the untouched ceiling, and
+`resolveMaxParallelFeatures` returns `0` while paused — which means the returned `0` now has TWO
+meanings depending on a second field. That is only safe because the gate reads
+`isFleetQueuePaused` first, and because a separate `resolveConfiguredMaxParallelFeatures` exists
+for the callers that persist or display the user's own number.
+
+**Rules:**
+
+1. Before overloading a sentinel value, grep the field for what it already means. `0`/`-1`/`''`
+   are almost never free, and the failure is silent because the code still runs.
+2. When one value must carry two meanings, add a second field that discriminates them and make
+   the GATE read the discriminator — never the number. Write the pair of assertions down as the
+   contract: `resolveMaxParallelFeatures(paused) === 0` **and** `isFleetQueuePaused(paused)`.
+3. Give the persistence/display path its own resolver. A mapper that reuses the effective limit
+   writes the override over the user's setting, and the only symptom appears at `resume` time.
+   The round-trip test ("leaves the user ceiling intact while paused") caught exactly this.
+4. A pause that is re-evaluated on every read must be idempotent and keep the ORIGINAL
+   `pausedAt`; re-stamping makes "parked for an hour" read as "paused just now", forever.
+
+## `container.resolve(X)` is not a DI registration test — tsyringe auto-constructs `@injectable`
+
+A test asserting `expect(container.resolve(SetFleetQueuePauseUseCase)).toBeInstanceOf(...)`
+proves nothing about registration: tsyringe constructs any `@injectable` class on demand. I
+deleted the `registerSingleton` call and the test stayed green.
+
+The registration's real job here was to put the class into the container's token registry,
+because `hollow-dependency-guard` only sweeps **registered class tokens** — so an unregistered
+use case escapes that guard entirely while still resolving fine.
+
+**Rules:**
+
+1. Assert the class token is present in `container._registry` (`entries()`), not that
+   `resolve()` returns an instance.
+2. Delete the registration and watch the test go red before trusting it. A registration test
+   that passes both ways is decoration.
+3. Keep the `.js` extension in a same-package import unless a sibling in that exact directory
+   omits it: `domain/` files must omit it (the web bundles that directory as raw source), and
+   `grep`ping the sibling beats guessing.

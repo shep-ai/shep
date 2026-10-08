@@ -54,6 +54,15 @@ export class AdmitQueuedFeaturesUseCase {
       return { admittedFeatureIds: [] };
     }
 
+    // A parked fleet admits nothing, however much room the ceiling has. Checked
+    // before the limit because the paused limit is 0, which means UNLIMITED
+    // everywhere else — reading only the number would drain the whole queue.
+    // Queued features keep their `queuedAt` place; a pause parks work, it does
+    // not discard it.
+    if (await this.capacity.isPaused()) {
+      return { admittedFeatureIds: [] };
+    }
+
     const limit = await this.capacity.getLimit();
     const unlimited = limit === UNLIMITED_PARALLEL_FEATURES;
 

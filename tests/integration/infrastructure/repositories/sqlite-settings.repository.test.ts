@@ -1137,6 +1137,138 @@ describe('SQLiteSettingsRepository', () => {
     });
   });
 
+  describe('workflow.queuePaused', () => {
+    // Same rule as the cap above: non-default values, written twice, because
+    // only the SECOND write exercises UPDATE. A pause is the one field where a
+    // dropped write is silent AND dangerous — the fleet would look parked while
+    // admission stayed open.
+
+    it('persists a pause record through initialize()', async () => {
+      const settings = createTestSettings();
+      settings.workflow.queuePaused = {
+        pausedAt: '2026-03-01T12:00:00.000Z',
+        reason: 'Consecutive failure threshold reached (4/4 runs failed in the last 15m)',
+      };
+
+      await repository.initialize(settings);
+
+      const loaded = await repository.load();
+      expect(loaded?.workflow.queuePaused).toEqual({
+        pausedAt: '2026-03-01T12:00:00.000Z',
+        reason: 'Consecutive failure threshold reached (4/4 runs failed in the last 15m)',
+      });
+    });
+
+    it('persists a changed pause record through update()', async () => {
+      const settings = createTestSettings();
+      settings.workflow.queuePaused = {
+        pausedAt: '2026-03-01T12:00:00.000Z',
+        reason: 'first trip',
+      };
+      await repository.initialize(settings);
+
+      settings.workflow.queuePaused = {
+        pausedAt: '2026-03-02T09:30:00.000Z',
+        reason: 'second trip',
+      };
+      settings.updatedAt = new Date('2025-02-07T00:00:00Z');
+      await repository.update(settings);
+
+      expect((await repository.load())?.workflow.queuePaused).toEqual({
+        pausedAt: '2026-03-02T09:30:00.000Z',
+        reason: 'second trip',
+      });
+    });
+
+    it('clears the pause back to absent on update()', async () => {
+      // The resume path. `undefined` must land as SQL NULL, not as the string
+      // "undefined" or a stale record the next load would resurrect.
+      const settings = createTestSettings();
+      settings.workflow.queuePaused = { pausedAt: '2026-03-01T12:00:00.000Z', reason: 'tripped' };
+      await repository.initialize(settings);
+
+      const { queuePaused: _cleared, ...workflow } = settings.workflow;
+      settings.workflow = workflow as typeof settings.workflow;
+      settings.updatedAt = new Date('2025-02-08T00:00:00Z');
+      await repository.update(settings);
+
+      expect((await repository.load())?.workflow.queuePaused).toBeUndefined();
+    });
+
+    it('leaves the user ceiling intact while paused', async () => {
+      // The whole reason the pause is a separate column: resume must have a
+      // ceiling to restore, and 0 in that column would mean UNLIMITED.
+      const settings = createTestSettings();
+      settings.workflow.maxParallelFeatures = 6;
+      settings.workflow.queuePaused = { pausedAt: '2026-03-01T12:00:00.000Z', reason: 'tripped' };
+
+      await repository.initialize(settings);
+
+      const loaded = await repository.load();
+      expect(loaded?.workflow.maxParallelFeatures).toBe(6);
+      expect(loaded?.workflow.queuePaused?.reason).toBe('tripped');
+    });
+
+    it('treats an absent pause as not paused', async () => {
+      await repository.initialize(createTestSettings());
+
+      expect((await repository.load())?.workflow.queuePaused).toBeUndefined();
+    });
+  });
+
+  describe('workflow.breakerAcknowledgedAt', () => {
+    // Without this surviving a round trip, `shep fleet resume` cannot stick: the
+    // breaker would keep judging the same failing runs and re-park the queue on
+    // the very next status read.
+
+    it('persists an acknowledgement through initialize()', async () => {
+      const settings = createTestSettings();
+      settings.workflow.breakerAcknowledgedAt = new Date('2026-03-01T12:30:00Z');
+
+      await repository.initialize(settings);
+
+      expect((await repository.load())?.workflow.breakerAcknowledgedAt).toBe(
+        '2026-03-01T12:30:00.000Z'
+      );
+    });
+
+    it('moves the acknowledgement forward through update()', async () => {
+      const settings = createTestSettings();
+      settings.workflow.breakerAcknowledgedAt = new Date('2026-03-01T12:30:00Z');
+      await repository.initialize(settings);
+
+      settings.workflow.breakerAcknowledgedAt = new Date('2026-03-02T09:00:00Z');
+      settings.updatedAt = new Date('2025-02-09T00:00:00Z');
+      await repository.update(settings);
+
+      expect((await repository.load())?.workflow.breakerAcknowledgedAt).toBe(
+        '2026-03-02T09:00:00.000Z'
+      );
+    });
+
+    it('is absent when the user has never acknowledged a trip', async () => {
+      // Absent must read as absent, not as an epoch date that would make the
+      // breaker judge the whole window — or go blind.
+      await repository.initialize(createTestSettings());
+
+      expect((await repository.load())?.workflow.breakerAcknowledgedAt).toBeUndefined();
+    });
+
+    it('coexists with a pause record and the ceiling', async () => {
+      const settings = createTestSettings();
+      settings.workflow.maxParallelFeatures = 6;
+      settings.workflow.queuePaused = { pausedAt: '2026-03-01T12:00:00.000Z', reason: 'tripped' };
+      settings.workflow.breakerAcknowledgedAt = new Date('2026-02-01T00:00:00Z');
+
+      await repository.initialize(settings);
+
+      const loaded = await repository.load();
+      expect(loaded?.workflow.queuePaused?.reason).toBe('tripped');
+      expect(loaded?.workflow.breakerAcknowledgedAt).toBe('2026-02-01T00:00:00.000Z');
+      expect(loaded?.workflow.maxParallelFeatures).toBe(6);
+    });
+  });
+
   describe('workflow.ciWatchEnabled', () => {
     it('persists a disabled CI watch through initialize()', async () => {
       const settings = createTestSettings();

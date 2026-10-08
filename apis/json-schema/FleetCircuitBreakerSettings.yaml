@@ -17,7 +17,7 @@ properties:
     description: Percentage failure rate in rolling 15m window that trips the circuit breaker
   autoPauseQueue:
     type: boolean
-    description: "Reserved: whether admission should be paused when tripped. Not acted on yet — admission control (PR #847) is not on main, so the trip is reported as a status signal only."
+    description: Whether tripping the breaker pauses the admission queue. When true, a tripped breaker parks new work instead of only reporting a status signal.
 required:
   - enabled
   - consecutiveFailureThreshold

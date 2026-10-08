@@ -105,6 +105,9 @@ model FleetOverview {
   @doc("Reason why circuit breaker was tripped if active")
   circuitBreakerReason?: string;
 
+  @doc("Present while the fleet admission queue is parked, absent while it is draining")
+  queuePaused?: FleetQueuePause;
+
   @doc("Number of unresolved triage items")
   activeTriageCount: int32;
 
@@ -129,6 +132,28 @@ model FleetCircuitBreakerSettings {
   @doc("Percentage failure rate in rolling 15m window that trips the circuit breaker")
   failureRateThresholdPercent: int32;
 
-  @doc("Reserved: whether admission should be paused when tripped. Not acted on yet — admission control (PR #847) is not on main, so the trip is reported as a status signal only.")
+  @doc("Whether tripping the breaker pauses the admission queue. When true, a tripped breaker parks new work instead of only reporting a status signal.")
   autoPauseQueue: boolean;
+}
+
+/**
+ * Why the admission queue is parked, and since when.
+ *
+ * Deliberately a SEPARATE record from `WorkflowConfig.maxParallelFeatures`: that
+ * field is the user's own ceiling, and 0 there means UNLIMITED. Expressing
+ * "paused" as `maxParallelFeatures = 0` would remove the cap and admit
+ * everything — the opposite of pausing — and would also destroy the ceiling the
+ * user configured, so `fleet resume` could not restore it.
+ *
+ * The breaker only ever SETS this record. Clearing it is an explicit user act
+ * (`shep fleet resume`), so a fleet that tripped while the user was asleep does
+ * not silently restart into the same failing conditions.
+ */
+@doc("Reason the fleet admission queue is paused, and when it was paused")
+model FleetQueuePause {
+  @doc("Timestamp the queue was paused")
+  pausedAt: utcDateTime;
+
+  @doc("Human-readable reason the queue was paused")
+  reason: string;
 }
