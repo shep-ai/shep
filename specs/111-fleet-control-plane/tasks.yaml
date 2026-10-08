@@ -226,7 +226,9 @@ tasks:
     dependencies: [task-11]
     acceptanceCriteria:
       - "shep fleet approve --all batch approves waiting features"
-      - "shep fleet pause / resume toggles admission queue"
+      - "shep fleet pause / resume toggles admission queue (delivered in a separate PR)"
+      - "shep fleet retry --ci restarts features whose CI failed; --failed restarts crashed runs"
+      - "shep fleet retry requires exactly one scope, and retries each selected feature once"
     tdd: null
     estimatedEffort: "1.5h"
 

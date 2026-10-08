@@ -610,8 +610,44 @@ conflicted feature cannot block the rest of the batch; the summary reports per-f
 At least one of `--all` or `--gate` is required, so a bare `shep fleet approve` can never
 approve anything by accident.
 
-> **Not implemented yet**: `shep fleet retry`, `shep fleet pause` / `resume`, and the
-> `--low-risk` filter. See `specs/111-fleet-control-plane/tasks.yaml` for the remaining work.
+### `shep fleet retry`
+
+Restart the agents behind failures the triage feed has already surfaced — "retry the 3 that
+failed CI" as one command instead of three.
+
+**Source**: `src/presentation/cli/commands/fleet/retry.command.ts`
+
+| Option           | Description                                                        |
+| ---------------- | ------------------------------------------------------------------ |
+| `--ci`           | Retry features whose CI checks failed (`ci_failed` triage category) |
+| `--failed`       | Retry features whose agent run crashed or failed (`crash`)          |
+| `--repo <path>`  | Restrict the batch to one repository path                           |
+
+```
+$ shep fleet retry --ci
+✓ Retried 3 of 3 CI-failed features.
+  ✓ feat-a1b2
+  ✓ feat-c3d4
+  ✓ feat-e5f6
+```
+
+Exactly one of `--ci` or `--failed` is required, for the same reason `fleet approve` requires a
+scope: a bare `shep fleet retry` must never be able to restart the whole fleet by accident.
+
+Retry is a **projection of the triage feed**, not a second resume path — each selected feature
+goes through the same `ResumeFeatureUseCase` that `shep feat resume` and the web Resume action
+use, so agent identity, worktree sync and capacity accounting stay in one place. Two
+consequences worth knowing:
+
+- **Each feature is retried once**, even if the feed lists it several times (a crashed run *and* a
+  failing CI check on its PR). Retrying twice would put two agents in one worktree on one branch.
+- **Gates and questions are never retried**, whatever the scope. Those are decisions for a human;
+  re-running them would bypass the gate. Approving them is `shep fleet approve`.
+- **One refusal does not strand the batch.** The summary reports per-feature reasons, taken
+  verbatim from the resume path.
+
+> **Not implemented yet**: `shep fleet pause` / `resume` and the `--low-risk` filter. See
+> `specs/111-fleet-control-plane/tasks.yaml` for the remaining work.
 
 ---
 
