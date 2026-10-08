@@ -1,9 +1,10 @@
-import type { SupervisorPolicy } from '@shepai/core/domain/generated/output';
+import type { GuardrailRule, SupervisorPolicy } from '@shepai/core/domain/generated/output';
 
 interface ConfigureSupervisorActionInput {
   scopeType: string;
   scopeId?: string;
   featureId?: string;
+  guardrailRules?: GuardrailRule[];
 }
 
 interface ConfigureSupervisorActionResult {

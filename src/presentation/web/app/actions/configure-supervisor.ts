@@ -7,6 +7,7 @@ import type { EnableSupervisorUseCase } from '@shepai/core/application/use-cases
 import type { DisableSupervisorUseCase } from '@shepai/core/application/use-cases/agents/disable-supervisor.use-case';
 import { requireFeatureFlag } from '@/lib/feature-flags';
 import type {
+  GuardrailRule,
   SupervisorAutonomy,
   SupervisorPolicy,
   SupervisorScopeType,
@@ -20,6 +21,11 @@ export interface ConfigureSupervisorActionInput {
   modelId?: string;
   promptVersion?: string;
   gateAuthority?: Partial<Record<'prd' | 'plan' | 'merge', SupervisorAutonomy>>;
+  /**
+   * Deterministic guardrail rules evaluated before the LLM evaluator.
+   * When supplied, this replaces the previously stored rule set.
+   */
+  guardrailRules?: GuardrailRule[];
 }
 
 export interface ConfigureSupervisorActionResult {

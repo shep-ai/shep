@@ -101,6 +101,11 @@ yarn.lock
 node_modules/.cache/prettier/
 .temp/
 .tmp/
+# Scratch dirs the documented test/storybook recipes create in the repo root
+# (`SHEP_HOME=.tmp-run`, `HOME=.tmp-sbhome`). Untracked noise, and `format:check`
+# walks them — a nested pnpm store brings hundreds of unformatted files with it.
+.tmp-run/
+.tmp-sbhome/
 *.bak
 storybook-static/
 .worktrees/
