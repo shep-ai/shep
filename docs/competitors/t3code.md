@@ -385,3 +385,62 @@ README, the FAQ and `CLAUDE.md` ("There is no Shep server") updated in the same 
 
 **Next step.** Per `CLAUDE.md`, start this with `/shep-kit:new-feature` as two specs: *telemetry*
 and *unified decisions*. Then take the "cut or hide now" table as a separate cleanup PR.
+
+---
+
+## Decisions (product owner review, 2026-10-09)
+
+The verdicts on every recommendation above, as reviewed on the review page.
+
+### In progress (three parallel workstreams)
+
+| Workstream | Covers |
+| --- | --- |
+| Usage metrics | M1 (on by default with a first-run notice), M3, M4, M5, and identity per M2 below |
+| Unified inline decisions | T1, T2, with the renderer built as one block type in an extensible inline-UI registry (see N1) |
+| Cleanup PR | C1, C2 (flags for each software-factory area plus a feature-flags view, defaults unchanged), C3, C4, C5, C7 |
+
+**Metrics identity (M2, changed from the proposal).** The owner wants to know who uses Shep. Collect:
+
+- a random install ID
+- a hash of the agent account ID
+- the GitHub username, read automatically
+- the GitHub org names from git remotes
+- an onboarding opt-in for "the Shep team may contact me"
+
+The first-run notice lists every field, and a separate toggle keeps a user anonymous. Collecting usernames and orgs automatically under an opt-out model still needs a privacy-policy and GDPR check.
+
+### Agreed, not started
+
+| Item | What |
+| --- | --- |
+| T3 | Capture Claude's plan via `ExitPlanMode` for the plan gate; Refine / Implement |
+| T4 | Hidden-ref git checkpoint after each pipeline step |
+| T5 | Agent capability record; side-effect-free health probes |
+| T6 | Codex app-server and ACP structured protocols |
+| T7 | Phone access without a native app (pairing link, Tailscale, web push) |
+| T8 | Undo toasts, settle-on-merge guards, process-safety rules in AGENTS.md |
+| N3 | Borrow the transactional outbox for agent runs; full Effect-TS rewrite to be evaluated in [shep-ai/shep#921](https://github.com/shep-ai/shep/issues/921) |
+| K1 | Merge the three memory systems into one |
+| D1 | Judge Electron, the in-browser IDE, webhooks, PM pages and factory pages on usage after 30–60 days |
+
+### Reversed: the owner wants these
+
+| Item | Owner's direction |
+| --- | --- |
+| N1 | A new **chat-first surface**, since the industry is used to it, with advanced inline UI: the agent renders real components to look at, answers questions, and reviews the PRD inside the chat |
+| N2 | Native mobile app, hosted relay, trial-and-rollback desktop updates |
+| N4 | In-app browser, device simulators, HTML visual replies, MCP Apps (fits N1) |
+| N5 | Richer telemetry identity than the anonymous proposal (see M2) |
+
+### Discuss
+
+| Item | Owner's note |
+| --- | --- |
+| C2 | Add a flag for each feature, and possibly a dedicated view showing what is on and off (started in the cleanup PR) |
+| K2 | Three feature lists: not decided |
+| K3 | Integrate with Linear and Jira **and** keep a local view, for people without those tools or who use both |
+
+### Keep as is
+
+C6 (WhatsApp via Baileys), K4 (clusters, harness and workflows stay in core), K5 (9 locales), D2 (no default-off rule for new areas).
