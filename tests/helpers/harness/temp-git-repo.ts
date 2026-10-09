@@ -9,9 +9,17 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
+/**
+ * An empty config file stands in for the global and system configs. `NUL` is
+ * refused by newer Git for Windows ("unable to access 'NUL'"), and an empty
+ * file reads the same on every platform and git version.
+ */
+const EMPTY_GIT_CONFIG = join(mkdtempSync(join(tmpdir(), 'shep-git-config-')), 'empty.gitconfig');
+writeFileSync(EMPTY_GIT_CONFIG, '');
+
 export const ISOLATED_GIT_ENV = {
-  GIT_CONFIG_GLOBAL: process.platform === 'win32' ? 'NUL' : '/dev/null',
-  GIT_CONFIG_SYSTEM: process.platform === 'win32' ? 'NUL' : '/dev/null',
+  GIT_CONFIG_GLOBAL: EMPTY_GIT_CONFIG,
+  GIT_CONFIG_SYSTEM: EMPTY_GIT_CONFIG,
 };
 
 /** Apply the isolated git env to this process; returns a restore function. */
