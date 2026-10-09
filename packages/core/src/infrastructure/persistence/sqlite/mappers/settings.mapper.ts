@@ -24,6 +24,7 @@ import type {
 import { createDefaultSettings } from '../../../../domain/factories/settings-defaults.factory.js';
 import { normalizeWorktreeConfig } from '../../../../domain/shared/worktree-config.js';
 import { parseAgentEffort } from '../../../../domain/shared/agent-effort.js';
+import { getAgentDescriptor } from '../../../../domain/shared/agent-catalog.js';
 import { resolveHarnessConfig } from '../../../../domain/harness/harness-config.js';
 import {
   clampMaxParallelFeatures,
@@ -41,6 +42,13 @@ import {
   type WhatsAppAdapterKind,
   type WhatsAppConnectionStatus,
 } from '../../../../domain/generated/output.js';
+
+/**
+ * Value written to the legacy `sys_auto_update` column (NOT NULL, no default).
+ * 1 matches what the removed `autoUpdate` setting defaulted to, so older builds
+ * reading the column see their usual value.
+ */
+const LEGACY_SYS_AUTO_UPDATE = 1;
 
 /**
  * Database row type matching the settings table schema.
@@ -81,7 +89,11 @@ export interface SettingsRow {
   env_terminal_preference: string;
 
   // SystemConfig (system.*)
-  sys_auto_update: number; // Boolean stored as INTEGER
+  /**
+   * Legacy NOT NULL column of the removed `system.autoUpdate` setting (spec 135).
+   * Always written as LEGACY_SYS_AUTO_UPDATE and never read.
+   */
+  sys_auto_update: number;
   sys_log_level: string;
 
   // AgentConfig (agent.*)
@@ -158,11 +170,23 @@ export interface SettingsRow {
   feature_flag_whatsapp_dispatch: number;
   feature_flag_aspm: number;
   feature_flag_clusters: number;
-  feature_flag_supply_chain_security: number;
   feature_flag_scheduled_workflows: number;
   feature_flag_github_import?: number;
   // Query-aware harness flag (migration 151)
   feature_flag_query_aware_harness?: number;
+  // Software-factory area flags (spec 135, migration 166)
+  feature_flag_spaces: number;
+  feature_flag_trackers: number;
+  feature_flag_knowledge: number;
+  feature_flag_signals: number;
+  feature_flag_opportunities: number;
+  feature_flag_feedback: number;
+  feature_flag_discovery: number;
+  feature_flag_incidents: number;
+  feature_flag_outcomes: number;
+  feature_flag_docs_first: number;
+  feature_flag_autopilot: number;
+  feature_flag_factory: number;
   // Interactive agent config (added in migration 046)
   interactive_agent_enabled: number;
   interactive_agent_auto_timeout_minutes: number;
@@ -274,7 +298,7 @@ export function toDatabase(settings: Settings): SettingsRow {
     env_terminal_preference: settings.environment.terminalPreference,
 
     // SystemConfig
-    sys_auto_update: settings.system.autoUpdate ? 1 : 0,
+    sys_auto_update: LEGACY_SYS_AUTO_UPDATE,
     sys_log_level: settings.system.logLevel,
 
     // AgentConfig (optional token → NULL)
@@ -352,10 +376,21 @@ export function toDatabase(settings: Settings): SettingsRow {
     feature_flag_whatsapp_dispatch: settings.featureFlags?.whatsappDispatch ? 1 : 0,
     feature_flag_aspm: settings.featureFlags?.aspm ? 1 : 0,
     feature_flag_clusters: settings.featureFlags?.clusters ? 1 : 0,
-    feature_flag_supply_chain_security: settings.featureFlags?.supplyChainSecurity ? 1 : 0,
     feature_flag_scheduled_workflows: settings.featureFlags?.scheduledWorkflows ? 1 : 0,
     feature_flag_github_import: settings.featureFlags?.githubImport !== false ? 1 : 0,
     feature_flag_query_aware_harness: settings.featureFlags?.queryAwareHarness ? 1 : 0,
+    feature_flag_spaces: settings.featureFlags?.spaces ? 1 : 0,
+    feature_flag_trackers: settings.featureFlags?.trackers ? 1 : 0,
+    feature_flag_knowledge: settings.featureFlags?.knowledge ? 1 : 0,
+    feature_flag_signals: settings.featureFlags?.signals ? 1 : 0,
+    feature_flag_opportunities: settings.featureFlags?.opportunities ? 1 : 0,
+    feature_flag_feedback: settings.featureFlags?.feedback ? 1 : 0,
+    feature_flag_discovery: settings.featureFlags?.discovery ? 1 : 0,
+    feature_flag_incidents: settings.featureFlags?.incidents ? 1 : 0,
+    feature_flag_outcomes: settings.featureFlags?.outcomes ? 1 : 0,
+    feature_flag_docs_first: settings.featureFlags?.docsFirst ? 1 : 0,
+    feature_flag_autopilot: settings.featureFlags?.autopilot ? 1 : 0,
+    feature_flag_factory: settings.featureFlags?.factory ? 1 : 0,
 
     // InteractiveAgentConfig (boolean → 0/1, integer fields; defaults applied here)
     interactive_agent_enabled: (settings.interactiveAgent?.enabled ?? true) ? 1 : 0,
@@ -738,15 +773,16 @@ export function fromDatabase(row: SettingsRow): Settings {
       terminalPreference: (row.env_terminal_preference ?? 'system') as TerminalType,
     },
 
-    // SystemConfig (INTEGER → boolean)
     system: {
-      autoUpdate: row.sys_auto_update === 1,
       logLevel: row.sys_log_level,
     },
 
     // AgentConfig (NULL → undefined for optional token)
     agent: {
-      type: row.agent_type as AgentType,
+      // A removed agent type (aider, continue — spec 135) reads back as the default.
+      type: getAgentDescriptor(row.agent_type)
+        ? (row.agent_type as AgentType)
+        : createDefaultSettings().agent.type,
       authMethod: row.agent_auth_method as AgentAuthMethod,
       ...(row.agent_token !== null && { token: row.agent_token }),
     },
@@ -814,11 +850,22 @@ export function fromDatabase(row: SettingsRow): Settings {
       aspm: row.feature_flag_aspm === 1,
       clusters: row.feature_flag_clusters === 1,
       // Default true when column is missing/null (pre-migration upgrades)
-      supplyChainSecurity: (row.feature_flag_supply_chain_security ?? 1) !== 0,
       scheduledWorkflows: row.feature_flag_scheduled_workflows === 1,
       // Default true when column is missing/null (pre-migration upgrades)
       githubImport: (row.feature_flag_github_import ?? 1) !== 0,
       queryAwareHarness: row.feature_flag_query_aware_harness === 1,
+      spaces: row.feature_flag_spaces === 1,
+      trackers: row.feature_flag_trackers === 1,
+      knowledge: row.feature_flag_knowledge === 1,
+      signals: row.feature_flag_signals === 1,
+      opportunities: row.feature_flag_opportunities === 1,
+      feedback: row.feature_flag_feedback === 1,
+      discovery: row.feature_flag_discovery === 1,
+      incidents: row.feature_flag_incidents === 1,
+      outcomes: row.feature_flag_outcomes === 1,
+      docsFirst: row.feature_flag_docs_first === 1,
+      autopilot: row.feature_flag_autopilot === 1,
+      factory: row.feature_flag_factory === 1,
     },
 
     // InteractiveAgentConfig (INTEGER 0/1 → boolean, integer → number)

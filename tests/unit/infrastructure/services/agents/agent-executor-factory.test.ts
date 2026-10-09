@@ -94,14 +94,14 @@ describe('AgentExecutorFactory', () => {
       expect(executor1).toBe(executor2);
     });
 
-    it('should throw for aider agent type', () => {
-      const aiderConfig: AgentConfig = {
-        type: AgentType.Aider,
+    it('should throw for an unknown agent type', () => {
+      const unknownConfig: AgentConfig = {
+        type: 'not-an-agent' as AgentType,
         authMethod: AgentAuthMethod.Session,
       };
 
-      expect(() => factory.createExecutor(AgentType.Aider, aiderConfig)).toThrow(
-        'Unsupported agent type: aider'
+      expect(() => factory.createExecutor('not-an-agent' as AgentType, unknownConfig)).toThrow(
+        'Unsupported agent type: not-an-agent'
       );
     });
 

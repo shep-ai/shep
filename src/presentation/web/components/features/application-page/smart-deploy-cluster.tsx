@@ -14,8 +14,8 @@ import { ScrollText } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   ApplicationStatus,
-  CloudDeploymentProvider,
   type Application,
+  type CloudDeploymentProvider,
 } from '@shepai/core/domain/generated/output';
 import type { useCloudDeployAction } from '@/hooks/use-cloud-deploy-action';
 import { useGitStatus } from '@/hooks/use-git-status';
@@ -26,21 +26,7 @@ import { DeployPanel } from './deploy-panel';
 import { SmartDeployLogsDrawer } from './smart-deploy-logs-drawer';
 import { ConnectProviderModal } from './connect-provider-modal';
 import { PublishToGitHubModal, type PublishOwner } from './publish-to-github-modal';
-
-const PROVIDER_DISPLAY_NAMES: Record<CloudDeploymentProvider, string> = {
-  [CloudDeploymentProvider.CloudflarePages]: 'Cloudflare Pages',
-  [CloudDeploymentProvider.Vercel]: 'Vercel',
-  [CloudDeploymentProvider.Netlify]: 'Netlify',
-  [CloudDeploymentProvider.AwsAmplify]: 'AWS Amplify',
-  [CloudDeploymentProvider.GcpCloudRun]: 'Google Cloud Run',
-};
-
-interface ProviderListEntry {
-  id: CloudDeploymentProvider;
-  displayName: string;
-  enabled: boolean;
-  connected: boolean;
-}
+import { CLOUD_PROVIDER_DISPLAY_NAMES, type CloudProviderListEntry } from './cloud-providers';
 
 export interface SmartDeployClusterProps {
   application: Application;
@@ -65,13 +51,13 @@ export function SmartDeployCluster({
 
   // Cloud provider list — needed for the panel's "switch service" affordance
   // and for the smart-state hook's hasConnectedCloudProvider input.
-  const [providers, setProviders] = useState<ProviderListEntry[]>([]);
+  const [providers, setProviders] = useState<CloudProviderListEntry[]>([]);
   const [providersLoaded, setProvidersLoaded] = useState(false);
   const refreshProviders = useCallback(async () => {
     try {
       const res = await fetch('/api/cloud-providers');
       if (!res.ok) return;
-      const body = (await res.json()) as { providers: ProviderListEntry[] };
+      const body = (await res.json()) as { providers: CloudProviderListEntry[] };
       setProviders(body.providers);
       setProvidersLoaded(true);
     } catch {
@@ -83,7 +69,7 @@ export function SmartDeployCluster({
   }, [refreshProviders]);
 
   const hasConnectedCloudProvider = providersLoaded
-    ? providers.some((p) => p.enabled && p.connected)
+    ? providers.some((p) => p.connected)
     : Boolean(application.cloudDeploymentProvider);
 
   // GitHub owner list — populated lazily when the user opens the
@@ -144,8 +130,8 @@ export function SmartDeployCluster({
   // "Working…" while a cloud deploy is in flight.
   const cloudProviderName: string | null = (() => {
     const selectedId = cloudDeploy.state.provider;
-    if (selectedId) return PROVIDER_DISPLAY_NAMES[selectedId];
-    const firstConnected = providers.find((p) => p.connected && p.enabled);
+    if (selectedId) return CLOUD_PROVIDER_DISPLAY_NAMES[selectedId];
+    const firstConnected = providers.find((p) => p.connected);
     if (firstConnected) return firstConnected.displayName;
     return null;
   })();
@@ -220,7 +206,7 @@ export function SmartDeployCluster({
     [cloudDeploy]
   );
 
-  // onConnectProvider — an enabled-but-not-connected provider was
+  // onConnectProvider — a not-yet-connected provider was
   // clicked (or the user clicked "Connect hosting" with nothing set up).
   // Opens the token-paste modal for that provider.
   const handleConnectProvider = useCallback((provider: CloudDeploymentProvider) => {
@@ -301,14 +287,13 @@ export function SmartDeployCluster({
         return;
       }
 
-      // 2. Cloud provider token gate. Pick the first enabled
-      //    provider; if none of them are connected we need a token.
-      //    Default target = first enabled provider (typically
-      //    Cloudflare Pages). The panel chevron still lets the
+      // 2. Cloud provider token gate. If no provider is connected
+      //    we need a token. Default target = the first provider
+      //    (Cloudflare Pages). The panel chevron still lets the
       //    user pick a different one if they prefer.
-      const connectedProvider = providers.find((p) => p.enabled && p.connected);
+      const connectedProvider = providers.find((p) => p.connected);
       if (!connectedProvider) {
-        const defaultProvider = providers.find((p) => p.enabled) ?? null;
+        const defaultProvider = providers[0] ?? null;
         if (defaultProvider) {
           setConnectMode('connect');
           setConnectingProvider(defaultProvider.id);
@@ -422,10 +407,10 @@ export function SmartDeployCluster({
         return;
       case 'connectCloud': {
         // No cloud provider connected yet. Open the connect modal with
-        // the first enabled provider preselected so the user's single
+        // the first provider preselected so the user's single
         // next action is "paste token and hit Connect". After a
         // successful connect, the panel kicks off a deploy.
-        const defaultProvider = providers.find((p) => p.enabled) ?? null;
+        const defaultProvider = providers[0] ?? null;
         if (defaultProvider) {
           setConnectMode('connect');
           setConnectingProvider(defaultProvider.id);

@@ -118,23 +118,14 @@ describe('AgentValidatorService', () => {
   });
 
   describe('isAvailable - unsupported agents', () => {
-    it('should return not available for aider', async () => {
+    it('should return not available for an unknown agent type', async () => {
       // Act
-      const result = await service.isAvailable(AgentType.Aider);
+      const result = await service.isAvailable('not-an-agent' as AgentType);
 
       // Assert
       expect(result.available).toBe(false);
       expect(result.error).toContain('not supported yet');
       expect(mockExec).not.toHaveBeenCalled();
-    });
-
-    it('should return not available for continue', async () => {
-      // Act
-      const result = await service.isAvailable(AgentType.Continue);
-
-      // Assert
-      expect(result.available).toBe(false);
-      expect(result.error).toContain('not supported yet');
     });
   });
 

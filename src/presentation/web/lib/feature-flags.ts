@@ -26,6 +26,18 @@ export interface FeatureFlagsState {
   scheduledWorkflows: boolean;
   githubImport: boolean;
   queryAwareHarness: boolean;
+  spaces: boolean;
+  trackers: boolean;
+  knowledge: boolean;
+  signals: boolean;
+  opportunities: boolean;
+  feedback: boolean;
+  discovery: boolean;
+  incidents: boolean;
+  outcomes: boolean;
+  docsFirst: boolean;
+  autopilot: boolean;
+  factory: boolean;
 }
 
 export function getFeatureFlags(): FeatureFlagsState {
@@ -47,6 +59,18 @@ export function getFeatureFlags(): FeatureFlagsState {
           scheduledWorkflows: flags.scheduledWorkflows,
           githubImport: flags.githubImport ?? true,
           queryAwareHarness: flags.queryAwareHarness ?? false,
+          spaces: flags.spaces ?? true,
+          trackers: flags.trackers ?? true,
+          knowledge: flags.knowledge ?? true,
+          signals: flags.signals ?? true,
+          opportunities: flags.opportunities ?? true,
+          feedback: flags.feedback ?? true,
+          discovery: flags.discovery ?? true,
+          incidents: flags.incidents ?? true,
+          outcomes: flags.outcomes ?? true,
+          docsFirst: flags.docsFirst ?? true,
+          autopilot: flags.autopilot ?? true,
+          factory: flags.factory ?? true,
         };
       }
     }
@@ -73,16 +97,26 @@ export function getFeatureFlags(): FeatureFlagsState {
       process.env.NEXT_PUBLIC_FLAG_COLLABORATION !== undefined
         ? isEnabled(process.env.NEXT_PUBLIC_FLAG_COLLABORATION)
         : true,
-    aspm:
-      process.env.NEXT_PUBLIC_FLAG_ASPM !== undefined
-        ? isEnabled(process.env.NEXT_PUBLIC_FLAG_ASPM)
-        : true,
+    aspm: isEnabled(process.env.NEXT_PUBLIC_FLAG_ASPM),
     bedrockIntegration: isEnabled(process.env.NEXT_PUBLIC_FLAG_BEDROCK_INTEGRATION),
     whatsappDispatch: isEnabled(process.env.NEXT_PUBLIC_FLAG_WHATSAPP_DISPATCH),
     clusters: false,
     scheduledWorkflows: false,
     githubImport: true,
     queryAwareHarness: isEnabled(process.env.NEXT_PUBLIC_FLAG_QUERY_AWARE_HARNESS),
+    // Software-factory areas (spec 135) default on, like the settings defaults.
+    spaces: true,
+    trackers: true,
+    knowledge: true,
+    signals: true,
+    opportunities: true,
+    feedback: true,
+    discovery: true,
+    incidents: true,
+    outcomes: true,
+    docsFirst: true,
+    autopilot: true,
+    factory: true,
   };
 }
 

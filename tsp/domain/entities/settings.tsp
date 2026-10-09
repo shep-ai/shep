@@ -244,13 +244,6 @@ model EnvironmentConfig {
 @doc("System configuration")
 model SystemConfig {
   /**
-   * Whether to check for and prompt for CLI updates.
-   * When false, users must manually upgrade.
-   */
-  @doc("CLI auto-update preference")
-  autoUpdate: boolean = true;
-
-  /**
    * Log level for CLI output.
    * Valid values: debug, info, warn, error
    */
@@ -269,8 +262,7 @@ model SystemConfig {
  * Users select their preferred agent via `shep settings agent`. Twelve agents
  * are fully supported — Claude Code, Kimi Code, Codex CLI, Copilot CLI, Cursor,
  * Gemini CLI, Cline, OpenRouter, Together AI, Ollama, LLMProxy and the `dev`
- * mock. Aider and Continue are listed for future extensibility and appear as
- * "Coming Soon". `packages/core/src/domain/shared/agent-catalog.ts` is the
+ * mock. `packages/core/src/domain/shared/agent-catalog.ts` is the
  * single source of truth for each agent's binary, tool id and model list.
  *
  * ## Authentication
@@ -716,14 +708,11 @@ model FeatureFlags {
   @doc("Enable WhatsApp-native task dispatch and interactive control (spec 101)")
   whatsappDispatch: boolean = false;
 
-  @doc("Enable the Application Security Posture Management (ASPM) module — /aspm web routes, `shep aspm` CLI command tree, and the posture SSE stream (spec 098)")
-  aspm: boolean = true;
+  @doc("Enable the Application Security Posture Management (ASPM) module — /aspm web routes, `shep aspm` CLI command tree, and the posture SSE stream (spec 098). Off by default: ASPM is a separate product category users opt into (spec 135).")
+  aspm: boolean = false;
 
   @doc("Enable Clusters navigation and Kubernetes cluster management in the web UI")
   clusters: boolean = false;
-
-  @doc("Enable the supply chain security feature (policy engine, badges, settings, CLI, CI gate). When false, the feature is inert regardless of SecurityMode.")
-  supplyChainSecurity: boolean = true;
 
   @doc("Enable scheduled workflows feature — workflow creation, scheduling, and execution")
   scheduledWorkflows: boolean = false;
@@ -733,6 +722,42 @@ model FeatureFlags {
 
   @doc("Enable the experimental query-aware agent harness: the Shep Harness agent, /harness pages, the feature Context tab and `shep harness` commands (spec 119)")
   queryAwareHarness: boolean = false;
+
+  @doc("Software factory: spaces and product lines — /spaces and `shep space` (spec 120)")
+  spaces: boolean = true;
+
+  @doc("Software factory: Linear and Jira tracker sync — /connections, `shep connection`, `shep sync` and the daemon sync loop (spec 122)")
+  trackers: boolean = true;
+
+  @doc("Software factory: Notion knowledge sources — `shep knowledge` and the daemon knowledge sync (spec 125)")
+  knowledge: boolean = true;
+
+  @doc("Software factory: customer and incident signals — `shep signal` (spec 126)")
+  signals: boolean = true;
+
+  @doc("Software factory: ranked opportunities — /opportunities and `shep opportunity` (spec 126)")
+  opportunities: boolean = true;
+
+  @doc("Software factory: feedback intake and themes — POST /api/feedback and `shep feedback` (spec 127)")
+  feedback: boolean = true;
+
+  @doc("Software factory: agent discovery of opportunities — `shep discovery` and its daemon schedule (spec 128)")
+  discovery: boolean = true;
+
+  @doc("Software factory: incident triage — /incidents, POST /api/alerts and `shep incident` (spec 129)")
+  incidents: boolean = true;
+
+  @doc("Software factory: shipped-work outcomes — `shep outcome` and the daemon outcome tracker (spec 130)")
+  outcomes: boolean = true;
+
+  @doc("Software factory: docs-first spaces — the docs-first space policy, planning instructions and merge gate (spec 131)")
+  docsFirst: boolean = true;
+
+  @doc("Software factory: autopilot — `shep autopilot` and the daemon autopilot pass (spec 132)")
+  autopilot: boolean = true;
+
+  @doc("Software factory: factory status — /factory and `shep factory` (spec 132)")
+  factory: boolean = true;
 }
 
 /**
@@ -1120,7 +1145,6 @@ model WorktreeConfig {
  *     "terminalPreference": "system"
  *   },
  *   "system": {
- *     "autoUpdate": true,
  *     "logLevel": "info"
  *   },
  *   "agent": {

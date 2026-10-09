@@ -116,6 +116,8 @@ import { InitializeSettingsUseCase } from '../../../application/use-cases/settin
 import { LoadSettingsUseCase } from '../../../application/use-cases/settings/load-settings.use-case.js';
 import { UpdateSettingsUseCase } from '../../../application/use-cases/settings/update-settings.use-case.js';
 import { SetDefaultEffortUseCase } from '../../../application/use-cases/settings/set-default-effort.use-case.js';
+import { ListFeatureFlagsUseCase } from '../../../application/use-cases/settings/list-feature-flags.use-case.js';
+import { SetFeatureFlagUseCase } from '../../../application/use-cases/settings/set-feature-flag.use-case.js';
 import { GetAdaptiveModelPlanUseCase } from '../../../application/use-cases/settings/get-adaptive-model-plan.use-case.js';
 import { CompleteOnboardingUseCase } from '../../../application/use-cases/settings/complete-onboarding.use-case.js';
 import { CompleteWebOnboardingUseCase } from '../../../application/use-cases/settings/complete-web-onboarding.use-case.js';
@@ -300,6 +302,8 @@ export function registerUseCases(container: DependencyContainer): void {
   container.registerSingleton(LoadSettingsUseCase);
   container.registerSingleton(UpdateSettingsUseCase);
   container.registerSingleton(SetDefaultEffortUseCase);
+  container.registerSingleton(ListFeatureFlagsUseCase);
+  container.registerSingleton(SetFeatureFlagUseCase);
   container.registerSingleton(GetAdaptiveModelPlanUseCase);
   container.registerSingleton(CompleteOnboardingUseCase);
   container.registerSingleton(CompleteWebOnboardingUseCase);
@@ -586,6 +590,12 @@ export function registerUseCases(container: DependencyContainer): void {
   });
   container.register('SetDefaultEffortUseCase', {
     useFactory: (c) => c.resolve(SetDefaultEffortUseCase),
+  });
+  container.register('ListFeatureFlagsUseCase', {
+    useFactory: (c) => c.resolve(ListFeatureFlagsUseCase),
+  });
+  container.register('SetFeatureFlagUseCase', {
+    useFactory: (c) => c.resolve(SetFeatureFlagUseCase),
   });
   container.register('CompleteWebOnboardingUseCase', {
     useFactory: (c) => c.resolve(CompleteWebOnboardingUseCase),

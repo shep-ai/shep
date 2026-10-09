@@ -341,7 +341,7 @@ const fullSpectrumFeatures: FeatureNodeType[] = [
       progress: 71,
       repositoryPath: '/home/user/acme/infra',
       branch: 'feat/terraform-modules',
-      agentType: 'aider',
+      agentType: 'cline',
       startedAt: Date.now() - 22 * 60_000,
       showHandles: true,
       onDelete: noop,

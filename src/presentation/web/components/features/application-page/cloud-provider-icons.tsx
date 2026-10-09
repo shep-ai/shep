@@ -8,7 +8,7 @@
  * `className` + standard SVG props so the provider list can size them
  * uniformly. Brand hex colors are exposed via `CLOUD_PROVIDER_BRAND_HEX`
  * so the list can colorize the icon per provider without baking a `fill`
- * into the SVG (lets callers force a neutral tint in disabled states).
+ * into the SVG (lets callers keep a neutral tint where they need one).
  *
  * Adding a new provider: drop a new component + map it in
  * `CLOUD_PROVIDER_ICONS` below and add its hex to `CLOUD_PROVIDER_BRAND_HEX`.
@@ -45,45 +45,6 @@ export function CloudflareIcon(props: IconProps) {
   );
 }
 
-/** Vercel — simple-icons `vercel`. Solid triangle. */
-export function VercelIcon(props: IconProps) {
-  return <BrandSvg d="m12 1.608 12 20.784H0Z" {...props} />;
-}
-
-/** Netlify — simple-icons `netlify`. */
-export function NetlifyIcon(props: IconProps) {
-  return (
-    <BrandSvg
-      d="M6.49 19.04h-.23L5.13 17.9v-.23l1.73-1.71h1.2l.15.15v1.2L6.5 19.04ZM5.13 6.31V6.1l1.13-1.13h.23L8.2 6.68v1.2l-.15.15h-1.2L5.13 6.31Zm9.96 9.09h-1.65l-.14-.13v-3.83c0-.68-.27-1.2-1.1-1.23-.42 0-.9 0-1.43.02l-.07.08v4.96l-.14.14H8.9l-.13-.14V8.73l.13-.14h3.7a2.6 2.6 0 0 1 2.61 2.6v4.08l-.13.14Zm-8.37-2.44H.14L0 12.82v-1.64l.14-.14h6.58l.14.14v1.64l-.14.14Zm17.14 0h-6.58l-.14-.14v-1.64l.14-.14h6.58l.14.14v1.64l-.14.14ZM11.05 6.55V1.64l.14-.14h1.65l.14.14v4.9l-.14.14h-1.65l-.14-.13Zm0 15.81v-4.9l.14-.14h1.65l.14.13v4.91l-.14.14h-1.65l-.14-.14Z"
-      {...props}
-    />
-  );
-}
-
-/** AWS Amplify — simple-icons does NOT ship an AWS Amplify brand mark
- *  (AWS trademark restrictions), so we fall back to a stylised "A" chevron
- *  that reads as "AWS-ish" without infringing. Users never deploy here in
- *  v1 — it's a "Coming soon" row — so a perfect brand match isn't worth
- *  the legal headache. */
-export function AwsAmplifyIcon(props: IconProps) {
-  return (
-    <BrandSvg
-      d="M11.58 2.1 1.15 20.87h4.33l1.9-3.5h9.24l1.9 3.5h4.33L12.42 2.1h-.84Zm.42 5.6 3.12 5.73H8.88L12 7.7Z"
-      {...props}
-    />
-  );
-}
-
-/** Google Cloud — simple-icons `googlecloud`. */
-export function GcpCloudRunIcon(props: IconProps) {
-  return (
-    <BrandSvg
-      d="M12.19 2.38a9.344 9.344 0 0 0-9.234 6.893c.053-.02-.055.013 0 0-3.875 2.551-3.922 8.11-.247 10.941l.006-.007-.007.03a6.717 6.717 0 0 0 4.077 1.356h5.173l.03.03h5.192c6.687.053 9.376-8.605 3.835-12.35a9.365 9.365 0 0 0-2.821-4.552l-.043.043.006-.05A9.344 9.344 0 0 0 12.19 2.38zm-.358 4.146c1.244-.04 2.518.368 3.486 1.15a5.186 5.186 0 0 1 1.862 4.078v.518c3.53-.07 3.53 5.262 0 5.193h-5.193l-.008.009v-.04H6.785a2.59 2.59 0 0 1-1.067-.23h.001a2.597 2.597 0 1 1 3.437-3.437l3.013-3.012A6.747 6.747 0 0 0 8.11 8.24c.018-.01.04-.026.054-.023a5.186 5.186 0 0 1 3.67-1.69z"
-      {...props}
-    />
-  );
-}
-
 /** GitHub — simple-icons `github`. */
 export function GitHubIcon(props: IconProps) {
   return (
@@ -99,19 +60,11 @@ export const CLOUD_PROVIDER_ICONS: Record<
   (props: IconProps) => ReactElement
 > = {
   [CloudDeploymentProvider.CloudflarePages]: CloudflareIcon,
-  [CloudDeploymentProvider.Vercel]: VercelIcon,
-  [CloudDeploymentProvider.Netlify]: NetlifyIcon,
-  [CloudDeploymentProvider.AwsAmplify]: AwsAmplifyIcon,
-  [CloudDeploymentProvider.GcpCloudRun]: GcpCloudRunIcon,
 };
 
-/** Brand hex colors from the simple-icons metadata (minus the leading `#`).
- *  Used by ProviderList so each row's icon renders in the real brand color
- *  when enabled, and falls back to the muted token when disabled. */
+/** Brand hex colors from the simple-icons metadata.
+ *  Used by ProviderList and DeployPanel so each provider icon renders in
+ *  its real brand color. */
 export const CLOUD_PROVIDER_BRAND_HEX: Record<CloudDeploymentProvider, string> = {
   [CloudDeploymentProvider.CloudflarePages]: '#F38020',
-  [CloudDeploymentProvider.Vercel]: '#000000',
-  [CloudDeploymentProvider.Netlify]: '#00C7B7',
-  [CloudDeploymentProvider.AwsAmplify]: '#FF9900',
-  [CloudDeploymentProvider.GcpCloudRun]: '#4285F4',
 };

@@ -37,26 +37,12 @@ import {
   initializeAutoArchiveWatcher,
   getAutoArchiveWatcher,
 } from '@/infrastructure/services/auto-archive/auto-archive-watcher.service.js';
-import {
-  initializeStaleGoodFirstIssueWatcher,
-  getStaleGoodFirstIssueWatcher,
-} from '@/infrastructure/services/contributors/stale-good-first-issue-watcher.service.js';
-import {
-  initializeMonthlyRecapWatcher,
-  getMonthlyRecapWatcher,
-} from '@/infrastructure/services/contributors/monthly-recap-watcher.service.js';
-import { DetectStaleGoodFirstIssueUseCase } from '@/application/use-cases/contributors/detect-stale-good-first-issue.use-case.js';
-import { GenerateMonthlyRecapUseCase } from '@/application/use-cases/contributors/generate-monthly-recap.use-case.js';
-import { PublishMonthlyRecapUseCase } from '@/application/use-cases/contributors/publish-monthly-recap.use-case.js';
 import type { IVersionService } from '@/application/ports/output/services/version-service.interface.js';
 import type { IWebServerService } from '@/application/ports/output/services/web-server-service.interface.js';
 import type { IAgentRunRepository } from '@/application/ports/output/agents/agent-run-repository.interface.js';
 import type { IPhaseTimingRepository } from '@/application/ports/output/agents/phase-timing-repository.interface.js';
 import type { INotificationService } from '@/application/ports/output/services/notification-service.interface.js';
 import type { IFeatureRepository } from '@/application/ports/output/repositories/feature-repository.interface.js';
-import type { IRepositoryRepository } from '@/application/ports/output/repositories/repository-repository.interface.js';
-import type { IGitHubRepositoryService } from '@/application/ports/output/services/github-repository-service.interface.js';
-import type { IDesktopNotifier } from '@/application/ports/output/services/i-desktop-notifier.js';
 import type { IDeploymentService } from '@/application/ports/output/services/deployment-service.interface.js';
 import { DaemonLogRotator } from '@/infrastructure/services/logging/daemon-log-rotator.js';
 import { getDaemonLogPath } from '@/infrastructure/services/filesystem/shep-directory.service.js';
@@ -131,25 +117,6 @@ export function createServeCommand(): Command {
         initializeAutoArchiveWatcher(featureRepo);
         getAutoArchiveWatcher().start();
 
-        // Start contributor pipeline watchers (spec 097, FR-42)
-        const repositoryRepo = container.resolve<IRepositoryRepository>('IRepositoryRepository');
-        const githubRepoService = container.resolve<IGitHubRepositoryService>(
-          'IGitHubRepositoryService'
-        );
-        const desktopNotifier = container.resolve<IDesktopNotifier>('IDesktopNotifier');
-        initializeStaleGoodFirstIssueWatcher(
-          container.resolve(DetectStaleGoodFirstIssueUseCase),
-          repositoryRepo,
-          githubRepoService,
-          desktopNotifier
-        );
-        getStaleGoodFirstIssueWatcher().start();
-        initializeMonthlyRecapWatcher({
-          generate: container.resolve(GenerateMonthlyRecapUseCase),
-          publish: container.resolve(PublishMonthlyRecapUseCase),
-        });
-        getMonthlyRecapWatcher().start();
-
         // Start WhatsApp connection service (spec 101) — no-op unless the
         // whatsappDispatch flag is on AND the integration is enabled.
         const whatsappService = container.resolve<{
@@ -194,8 +161,6 @@ export function createServeCommand(): Command {
           backgroundSync.stop();
           getNotificationWatcher().stop();
           getAutoArchiveWatcher().stop();
-          getStaleGoodFirstIssueWatcher().stop();
-          getMonthlyRecapWatcher().stop();
           void whatsappService.stop();
           await messagingService.stop();
           const deploymentService = container.resolve<IDeploymentService>('IDeploymentService');

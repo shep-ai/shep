@@ -43,7 +43,7 @@ vi.mock('@/infrastructure/services/settings.service.js', () => ({
     agent: { type: AgentType.ClaudeCode, authMethod: AgentAuthMethod.Session },
     user: {},
     environment: { defaultEditor: 'vscode', shellPreference: 'bash' },
-    system: { autoUpdate: true, logLevel: 'info' },
+    system: { logLevel: 'info' },
     workflow: {
       openPrOnImplementationComplete: false,
       approvalGateDefaults: {

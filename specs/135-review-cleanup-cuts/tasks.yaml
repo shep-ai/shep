@@ -1,0 +1,201 @@
+# Task Breakdown (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: review-cleanup-cuts
+summary: "Task breakdown for 135 \u2014 six cleanup items from the T3 Code review."
+relatedFeatures:
+- 097-contributor-pipeline
+- 098-aspm
+technologies:
+- TypeSpec
+- SQLite
+- GitHub Actions
+relatedLinks: []
+tasks:
+- id: task-1
+  title: Move contributor watchers to a scheduled GitHub Action
+  description: Remove the stale good-first-issue and monthly recap watchers from _serve and delete the
+    watcher services; add `shep contributors stale-issues` and `shep contributors recap` subcommands and
+    a scheduled workflow; remove /onboarding from the sidebar.
+  state: Done
+  dependencies: []
+  acceptanceCriteria:
+  - _serve starts neither watcher
+  - contributor-maintenance.yml runs both subcommands on a cron
+  - Sidebar has no Get started entry
+  tdd:
+    red:
+    - Test that stale-issues prints stale issues for --repo and exits 0
+    - Test that recap generates the previous month and publishes to the file channel
+    - Sidebar test asserts no /onboarding link
+    green:
+    - Subcommands calling the existing use cases
+    - Workflow file
+    - Remove watcher wiring and sidebar item
+    refactor:
+    - Remove duplication and dead imports
+  estimatedEffort: M
+- id: task-2
+  title: Default the ASPM flag to off
+  description: Set aspm to false in TypeSpec, the defaults factory and the web env fallback; leave persisted
+    values alone; update ROADMAP.md.
+  state: Done
+  dependencies: []
+  acceptanceCriteria:
+  - createDefaultSettings().featureFlags.aspm is false
+  - A persisted aspm=1 row still reads true
+  - ROADMAP states ASPM is off by default
+  tdd:
+    red:
+    - Defaults factory test expects aspm false
+    - Repository round-trip keeps persisted true
+    green:
+    - Flip the defaults
+    refactor:
+    - Remove duplication and dead imports
+  estimatedEffort: S
+- id: task-3
+  title: Fold supply-chain security into ASPM
+  description: Remove the supplyChainSecurity flag; derive supply-chain enablement from aspm via a domain
+    helper; move the CLI to `shep aspm supply-chain enforce` with a hidden `shep security` alias; CI enables
+    aspm before enforcing.
+  state: Done
+  dependencies:
+  - task-2
+  acceptanceCriteria:
+  - No supplyChainSecurity in TypeSpec or code outside the legacy migration
+  - Agent pre-check, canvas badge, settings section and CLI follow aspm
+  - Column feature_flag_supply_chain_security still exists
+  tdd:
+    red:
+    - 'Helper test: aspm on/off'
+    - security pre-check test uses the helper
+    - 'CLI test: enforce under aspm supply-chain is a no-op when aspm is off'
+    green:
+    - Helper + call-site swap
+    - CLI move and alias
+    refactor:
+    - Remove duplication and dead imports
+  estimatedEffort: M
+- id: task-4
+  title: Remove cloud-deploy stub providers
+  description: Delete the four *.provider.stub.ts files, the base stub, their DI registrations, enum members,
+    icons and coming-soon UI.
+  state: Done
+  dependencies: []
+  acceptanceCriteria:
+  - Only CloudflarePages remains in CloudDeploymentProvider
+  - No coming-soon provider UI
+  - Cloudflare deploy tests still pass
+  tdd:
+    red:
+    - Provider list tests expect only Cloudflare
+    green:
+    - Delete stubs and UI
+    refactor:
+    - Remove duplication and dead imports
+  estimatedEffort: S
+- id: task-5
+  title: Remove dead settings and placeholder agents
+  description: Remove system.autoUpdate and the Aider/Continue agent types; keep sys_auto_update; map
+    unknown persisted agent types to the default.
+  state: Done
+  dependencies: []
+  acceptanceCriteria:
+  - No autoUpdate in TypeSpec/defaults/mapper
+  - No Aider/Continue in AgentType or the catalog
+  - A settings row with agent_type 'aider' reads back as the default agent
+  tdd:
+    red:
+    - Mapper test for legacy agent type fallback
+    - Defaults test has no autoUpdate
+    green:
+    - Remove fields and members
+    refactor:
+    - Remove duplication and dead imports
+  estimatedEffort: S
+- id: task-6
+  title: Add per-area software-factory flags
+  description: Twelve flags in TypeSpec, defaults (true), migration 166 (DEFAULT 1), mapper, repository
+    SQL and web flags state.
+  state: Done
+  dependencies: []
+  acceptanceCriteria:
+  - Round-trip persists false for every new flag
+  - Fresh install has every new flag true
+  tdd:
+    red:
+    - Repository round-trip with all twelve false
+    - Migration 166 idempotency test
+    green:
+    - Wire the flags
+    refactor:
+    - Remove duplication and dead imports
+  estimatedEffort: S
+- id: task-7
+  title: Gate software-factory surfaces
+  description: Sidebar links, pages, API routes, CLI groups and background-sync loops check their flag.
+  state: Done
+  dependencies:
+  - task-6
+  acceptanceCriteria:
+  - Each area's nav link hides when its flag is off
+  - Each page 404s when its flag is off
+  - Each CLI group is hidden and refuses to run when its flag is off
+  - Daemon loops skip disabled areas
+  tdd:
+    red:
+    - Sidebar visibility test per flag
+    - gateByFeatureFlag test
+    - background-sync gating test
+    green:
+    - Add flag to links, pages, commands and loops
+    refactor:
+    - Remove duplication and dead imports
+  estimatedEffort: M
+- id: task-8
+  title: Feature-flags view and CLI
+  description: Domain catalog, ListFeatureFlagsUseCase/SetFeatureFlagUseCase, /settings/feature-flags
+    page, FeatureFlagsList component (also used in the settings page), `shep settings flags [enable|disable
+    <flag>]`.
+  state: Done
+  dependencies:
+  - task-6
+  acceptanceCriteria:
+  - Every FeatureFlags key has a catalog entry (compile-time)
+  - The page lists every flag with a description and toggle and is linked from Settings
+  - shep settings flags lists and toggles flags
+  tdd:
+    red:
+    - Use case tests
+    - CLI command test
+    - Component test for toggling
+    green:
+    - Implement view, component, action, CLI
+    refactor:
+    - Remove duplication and dead imports
+  estimatedEffort: M
+- id: task-9
+  title: Docs and full verification
+  description: Update docs that mention removed surfaces; run validate, unit, int, build, storybook and
+    check:stories.
+  state: Done
+  dependencies:
+  - task-1
+  - task-2
+  - task-3
+  - task-4
+  - task-5
+  - task-6
+  - task-7
+  - task-8
+  acceptanceCriteria:
+  - All local CI checks pass
+  - Docs no longer reference removed providers, flags or settings
+  tdd: null
+  estimatedEffort: S
+totalEstimate: L
+openQuestions: []
+content: "## Summary\n\nNine tasks; tasks 6\u20138 form the C2 commit, every other item is its own commit.\n\
+  \n## Acceptance Checklist\n\n- [ ] C1, C3, C4, C5, C7, C2 each land as one commit\n- [ ] pnpm validate,\
+  \ unit, int, build and storybook build pass\n"

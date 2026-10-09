@@ -1,0 +1,97 @@
+# Feature Specification (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: review-cleanup-cuts
+number: 135
+branch: feat/133-review-cleanup-cuts
+oneLiner: >-
+  Cut what the T3 Code product review flagged: maintainer automation leaves users' daemons,
+  ASPM defaults off and absorbs supply-chain security, cloud-deploy stubs and dead settings go,
+  and every software-factory area gets its own flag in a dedicated feature-flags view
+summary: >
+  One cleanup PR with the items the product owner agreed to after the T3 Code review
+  (docs/competitors/t3code.md, "Where Shep Is Today and What to Cut"). Each item is one commit:
+  C1 contributor watchers move to a scheduled GitHub Action, C3 the ASPM flag defaults off,
+  C4 supply-chain security folds into ASPM, C5 the four cloud-deploy stub providers are removed,
+  C7 dead settings and placeholder agents are removed, and C2 adds a flag per software-factory
+  area plus a web view and CLI that list and toggle every flag.
+phase: Requirements
+sizeEstimate: L
+
+relatedFeatures:
+  - 097-contributor-pipeline
+  - 098-aspm
+  - 120-spaces-and-product-lines
+  - 122-tracker-sync
+  - 125-knowledge-sources
+  - 126-opportunities
+  - 127-feedback-themes
+  - 128-discovery
+  - 129-incidents
+  - 130-outcomes
+  - 131-docs-first
+  - 132-autopilot
+
+technologies:
+  - TypeSpec
+  - SQLite
+  - tsyringe
+  - Commander
+  - Next.js
+  - GitHub Actions
+
+relatedLinks:
+  - title: T3 Code vs Shep review
+    url: https://github.com/shep-ai/shep/blob/claude/gifted-bardeen-os90j0/docs/competitors/t3code.md
+
+openQuestions: []
+
+content: |
+  ## Problem Statement
+
+  The product review found Shep shipping things users did not ask for and cannot see or turn
+  off: maintainer dogfooding (stale good-first-issue and monthly recap watchers) runs inside
+  every user's daemon, ASPM is "behind a flag" that defaults on, supply-chain security
+  duplicates ASPM, four of five cloud-deploy providers are "coming soon" stubs, dead settings
+  and placeholder agents linger, and the twelve software-factory areas from specs 120–132
+  landed with no flag at all. There is also no single place to see which flags exist.
+
+  ## Success Criteria
+
+  - [ ] `shep _serve` no longer starts the stale good-first-issue or monthly recap watcher; a
+        scheduled workflow in `.github/workflows/` runs both through `shep contributors`
+        subcommands that reuse the existing use cases. `/onboarding` leaves the end-user sidebar.
+  - [ ] A fresh install has `featureFlags.aspm === false`; persisted values are not rewritten;
+        ROADMAP.md says ASPM is off by default.
+  - [ ] Supply-chain security has no flag of its own: every surface follows `featureFlags.aspm`,
+        the CLI lives under `shep aspm supply-chain` (with `shep security` kept as a hidden
+        alias), and no migration drops data.
+  - [ ] The Vercel, Netlify, AWS Amplify and GCP Cloud Run stubs, enum members and
+        "coming soon" UI are gone; Cloudflare Pages still deploys.
+  - [ ] `system.autoUpdate` and the Aider/Continue agent types are gone from TypeSpec and code;
+        their DB columns stay; persisted `aider`/`continue` values read back as the default agent.
+  - [ ] Twelve new flags (spaces, trackers, knowledge, signals, opportunities, feedback,
+        discovery, incidents, outcomes, docsFirst, autopilot, factory), default on, gate their
+        nav entries, pages, API routes, CLI groups and daemon loops; `/settings/feature-flags`
+        and `shep settings flags` list every flag with a one-line description and toggle it.
+
+  ## Affected Areas
+
+  | Area | Impact | Reasoning |
+  | ---- | ------ | --------- |
+  | `tsp/domain/entities/settings.tsp`, `tsp/common/enums/*` | High | Flags added and removed, enum members removed |
+  | Settings persistence (mapper, repository, migrations) | High | New flag columns; removed fields stay as read-ignored columns |
+  | `src/presentation/cli` | Medium | `_serve`, contributors, aspm, settings flags, factory group gating |
+  | `src/presentation/web` | Medium | Sidebar, factory pages, settings page, new flags view, deploy UI |
+  | `packages/core` cloud-deploy, agent catalog, feature agent | Medium | Stub removal, catalog entries, supply-chain gate |
+  | `.github/workflows` | Low | New contributor maintenance workflow; CI security gate path |
+
+  ## Dependencies
+
+  None blocking. Two parallel workstreams (telemetry, unified decisions) may add migrations;
+  migration numbers are re-checked against `main` before merge.
+
+  ## Size Estimate
+
+  **L** — six independent items touching TypeSpec, persistence, CLI, web and CI, each small to
+  medium, with the flag work fanning out across every settings fixture.

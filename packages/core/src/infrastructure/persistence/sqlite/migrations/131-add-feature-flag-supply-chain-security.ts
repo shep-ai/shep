@@ -8,6 +8,9 @@
  * When this flag is 0, the entire feature goes inert: no badge on the canvas,
  * no Settings section, no agent pre-check, no CLI enforce, no CI gate —
  * regardless of the SecurityMode value in the security config.
+ *
+ * Read-ignored since spec 135: supply-chain security folded into ASPM and
+ * follows `feature_flag_aspm`. The column stays so older builds still work.
  */
 
 import type { MigrationParams } from 'umzug';

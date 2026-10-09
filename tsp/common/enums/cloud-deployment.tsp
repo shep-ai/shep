@@ -7,26 +7,13 @@
 /**
  * Supported cloud deployment providers for generated applications.
  *
- * Only CloudflarePages ships with a live adapter in v1. The remaining
- * providers are UI-visible but disabled ("Coming soon") so the domain
- * model and provider registry are pluggable from day one.
+ * Cloudflare Pages is the only provider. Adding one means adding a member
+ * here and registering its ICloudDeploymentProvider adapter.
  */
 @doc("Supported cloud deployment providers for generated applications")
 enum CloudDeploymentProvider {
-  @doc("Cloudflare Pages — live in v1")
+  @doc("Cloudflare Pages")
   CloudflarePages: "CloudflarePages",
-
-  @doc("Vercel — placeholder, not yet wired")
-  Vercel: "Vercel",
-
-  @doc("Netlify — placeholder, not yet wired")
-  Netlify: "Netlify",
-
-  @doc("AWS Amplify — placeholder, not yet wired")
-  AwsAmplify: "AwsAmplify",
-
-  @doc("Google Cloud Run — placeholder, not yet wired")
-  GcpCloudRun: "GcpCloudRun",
 }
 
 /**

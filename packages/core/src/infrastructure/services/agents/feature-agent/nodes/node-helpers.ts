@@ -17,6 +17,7 @@ import type {
 import type { ApprovalGates, Evidence } from '@/domain/generated/output.js';
 import { hasSettings, getSettings } from '@/infrastructure/services/settings.service.js';
 import { SecurityViolationError } from '@/domain/errors/security-violation.error.js';
+import { isSupplyChainSecurityEnabled } from '@/domain/shared/supply-chain-security.js';
 import { checkSecurityDisposition, resolveEffectiveSecurityMode } from './security-pre-check.js';
 import type { FeatureAgentState } from '../state.js';
 import { reportNodeStart } from '../heartbeat.js';
@@ -620,12 +621,11 @@ export function executeNode(
     }
 
     // Security pre-check: evaluate policy before executing the agent.
-    // Master kill switch — when the supplyChainSecurity feature flag is off,
-    // resolveEffectiveSecurityMode forces the mode to Disabled so
+    // Supply-chain security is part of ASPM — when the aspm feature flag is
+    // off, resolveEffectiveSecurityMode forces the mode to Disabled so
     // checkSecurityDisposition returns a skip and no security logic runs.
-    const supplyChainSecurityEnabled = hasSettings()
-      ? (getSettings().featureFlags?.supplyChainSecurity ?? true)
-      : true;
+    const supplyChainSecurityEnabled =
+      hasSettings() && isSupplyChainSecurityEnabled(getSettings().featureFlags);
     const effectiveSecurityMode = resolveEffectiveSecurityMode(
       state.securityMode,
       supplyChainSecurityEnabled

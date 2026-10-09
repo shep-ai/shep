@@ -13,21 +13,18 @@ import type { ICloudDeploymentProvider } from './cloud-deployment-provider.inter
 export interface CloudDeploymentProviderDescriptor {
   id: CloudDeploymentProvider;
   displayName: string;
-  enabled: boolean;
 }
 
 export interface ICloudDeploymentProviderRegistry {
   /**
-   * Return a descriptor for every provider known to the system — both live
-   * and disabled stubs. Used by the UI dropdown + ListCloudProvidersUseCase.
+   * Return a descriptor for every provider that has a registered adapter.
+   * Used by the UI provider list + ListCloudProvidersUseCase.
    */
   listAll(): CloudDeploymentProviderDescriptor[];
 
   /**
    * Return the concrete provider instance for the given id.
-   * Throws if the id is unknown. Disabled providers may be returned by this
-   * method; callers that want to enforce enabled-only should check the
-   * `enabled` flag before calling deploy()/validateToken().
+   * Throws if no adapter is registered for the id.
    */
   get(id: CloudDeploymentProvider): ICloudDeploymentProvider;
 }

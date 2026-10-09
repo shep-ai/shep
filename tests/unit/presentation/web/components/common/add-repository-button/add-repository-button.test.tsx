@@ -62,6 +62,18 @@ vi.mock('@/hooks/feature-flags-context', () => ({
     scheduledWorkflows: false,
     githubImport: true,
     queryAwareHarness: false,
+    spaces: true,
+    trackers: true,
+    knowledge: true,
+    signals: true,
+    opportunities: true,
+    feedback: true,
+    discovery: true,
+    incidents: true,
+    outcomes: true,
+    docsFirst: true,
+    autopilot: true,
+    factory: true,
   })),
 }));
 
@@ -89,6 +101,18 @@ describe('AddRepositoryButton', () => {
       scheduledWorkflows: false,
       githubImport: true,
       queryAwareHarness: false,
+      spaces: true,
+      trackers: true,
+      knowledge: true,
+      signals: true,
+      opportunities: true,
+      feedback: true,
+      discovery: true,
+      incidents: true,
+      outcomes: true,
+      docsFirst: true,
+      autopilot: true,
+      factory: true,
     });
   });
 
@@ -191,6 +215,18 @@ describe('AddRepositoryButton', () => {
         scheduledWorkflows: false,
         githubImport: true,
         queryAwareHarness: false,
+        spaces: true,
+        trackers: true,
+        knowledge: true,
+        signals: true,
+        opportunities: true,
+        feedback: true,
+        discovery: true,
+        incidents: true,
+        outcomes: true,
+        docsFirst: true,
+        autopilot: true,
+        factory: true,
       });
     });
 
@@ -326,6 +362,18 @@ describe('AddRepositoryButton', () => {
         scheduledWorkflows: false,
         githubImport: true,
         queryAwareHarness: false,
+        spaces: true,
+        trackers: true,
+        knowledge: true,
+        signals: true,
+        opportunities: true,
+        feedback: true,
+        discovery: true,
+        incidents: true,
+        outcomes: true,
+        docsFirst: true,
+        autopilot: true,
+        factory: true,
       });
     });
 
@@ -403,6 +451,18 @@ describe('AddRepositoryButton', () => {
         scheduledWorkflows: false,
         githubImport: true,
         queryAwareHarness: false,
+        spaces: true,
+        trackers: true,
+        knowledge: true,
+        signals: true,
+        opportunities: true,
+        feedback: true,
+        discovery: true,
+        incidents: true,
+        outcomes: true,
+        docsFirst: true,
+        autopilot: true,
+        factory: true,
       });
       const user = userEvent.setup();
       render(<AddRepositoryButton />);

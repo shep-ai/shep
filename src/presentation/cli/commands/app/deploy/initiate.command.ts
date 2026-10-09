@@ -11,21 +11,10 @@ import { container } from '@/infrastructure/di/container.js';
 import { InitiateCloudDeploymentUseCase } from '@/application/use-cases/cloud-deploy/initiate-cloud-deployment.use-case.js';
 import { SelectCloudProviderUseCase } from '@/application/use-cases/cloud-deploy/select-cloud-provider.use-case.js';
 import type { ICloudDeploymentEventBus } from '@/application/ports/output/services/cloud-deployment-event-bus.interface.js';
-import {
-  CloudDeploymentProvider,
-  CloudDeploymentStatus,
-  type CloudDeploymentProvider as CloudDeploymentProviderType,
-} from '@/domain/generated/output.js';
+import { CloudDeploymentStatus } from '@/domain/generated/output.js';
+import { parseCloudDeploymentProvider } from '@/domain/shared/cloud-deployment-provider.js';
 import { messages, colors } from '../../../ui/index.js';
 import { resolveApplication } from '../resolve-application.js';
-
-function parseProvider(raw: string): CloudDeploymentProviderType | null {
-  const lower = raw.toLowerCase();
-  for (const id of Object.values(CloudDeploymentProvider)) {
-    if (id.toLowerCase() === lower) return id;
-  }
-  return null;
-}
 
 function labelForStatus(status: CloudDeploymentStatus): string {
   switch (status) {
@@ -60,7 +49,7 @@ export function createDeployInitiateCommand(): Command {
         // Optional provider override — select first so the use case picks
         // the right adapter, matching the web flow.
         if (options.provider) {
-          const provider = parseProvider(options.provider);
+          const provider = parseCloudDeploymentProvider(options.provider, { ignoreCase: true });
           if (!provider) {
             messages.error(`Unknown provider: ${options.provider}`);
             process.exitCode = 1;

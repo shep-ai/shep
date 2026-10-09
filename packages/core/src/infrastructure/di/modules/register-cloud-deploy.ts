@@ -1,4 +1,4 @@
-import type { DependencyContainer } from 'tsyringe';
+import { instanceCachingFactory, type DependencyContainer } from 'tsyringe';
 import type Database from 'better-sqlite3';
 
 import type { ICloudProviderTokensRepository } from '../../../application/ports/output/repositories/cloud-provider-tokens.repository.interface.js';
@@ -15,10 +15,6 @@ import {
   CLOUD_DEPLOYMENT_PROVIDER_TOKEN,
 } from '../../services/cloud-deploy/cloud-deployment-provider.registry.js';
 import { CloudflarePagesProvider } from '../../services/cloud-deploy/cloudflare-pages.provider.js';
-import { VercelProviderStub } from '../../services/cloud-deploy/vercel.provider.stub.js';
-import { NetlifyProviderStub } from '../../services/cloud-deploy/netlify.provider.stub.js';
-import { AwsAmplifyProviderStub } from '../../services/cloud-deploy/aws-amplify.provider.stub.js';
-import { GcpCloudRunProviderStub } from '../../services/cloud-deploy/gcp-cloud-run.provider.stub.js';
 import { InMemoryCloudDeploymentEventBus } from '../../services/events/in-memory-cloud-deployment-event-bus.js';
 import { GitRemoteService } from '../../services/git/git-remote.service.js';
 import { CloudDeploymentProvider } from '../../../domain/generated/output.js';
@@ -36,7 +32,7 @@ import { SyncRepoUseCase } from '../../../application/use-cases/cloud-deploy/syn
 /**
  * Cloud deployment registrations (spec 089).
  *
- * Registers the secret box, per-provider adapters, provider registry, event bus,
+ * Registers the secret box, the Cloudflare Pages adapter, provider registry, event bus,
  * git-remote service, token repository, and the cloud-deploy use cases.
  */
 export function registerCloudDeploy(container: DependencyContainer): void {
@@ -65,32 +61,18 @@ export function registerCloudDeploy(container: DependencyContainer): void {
     },
   });
 
-  // Per-provider registrations (mirrors AgentSessionRepositoryRegistry pattern).
+  // One registration per CloudDeploymentProvider member, keyed by
+  // CLOUD_DEPLOYMENT_PROVIDER_TOKEN. Cloudflare Pages is the only one.
   container.registerSingleton<ICloudDeploymentProvider>(
     CLOUD_DEPLOYMENT_PROVIDER_TOKEN(CloudDeploymentProvider.CloudflarePages),
     CloudflarePagesProvider
   );
-  container.registerSingleton<ICloudDeploymentProvider>(
-    CLOUD_DEPLOYMENT_PROVIDER_TOKEN(CloudDeploymentProvider.Vercel),
-    VercelProviderStub
-  );
-  container.registerSingleton<ICloudDeploymentProvider>(
-    CLOUD_DEPLOYMENT_PROVIDER_TOKEN(CloudDeploymentProvider.Netlify),
-    NetlifyProviderStub
-  );
-  container.registerSingleton<ICloudDeploymentProvider>(
-    CLOUD_DEPLOYMENT_PROVIDER_TOKEN(CloudDeploymentProvider.AwsAmplify),
-    AwsAmplifyProviderStub
-  );
-  container.registerSingleton<ICloudDeploymentProvider>(
-    CLOUD_DEPLOYMENT_PROVIDER_TOKEN(CloudDeploymentProvider.GcpCloudRun),
-    GcpCloudRunProviderStub
-  );
 
-  container.registerSingleton<ICloudDeploymentProviderRegistry>(
-    'ICloudDeploymentProviderRegistry',
-    CloudDeploymentProviderRegistry
-  );
+  // The factory hands the registry the container that resolves it, so the
+  // provider tokens above are looked up there rather than in the global root.
+  container.register<ICloudDeploymentProviderRegistry>('ICloudDeploymentProviderRegistry', {
+    useFactory: instanceCachingFactory((c) => new CloudDeploymentProviderRegistry(c)),
+  });
   container.registerSingleton<ICloudDeploymentEventBus>(
     'ICloudDeploymentEventBus',
     InMemoryCloudDeploymentEventBus

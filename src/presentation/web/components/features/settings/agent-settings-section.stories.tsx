@@ -42,15 +42,6 @@ export const CodexCli: Story = {
   },
 };
 
-export const AiderSession: Story = {
-  args: {
-    agent: {
-      type: AgentType.Aider,
-      authMethod: AgentAuthMethod.Session,
-    },
-  },
-};
-
 export const CopilotCli: Story = {
   args: {
     agent: {

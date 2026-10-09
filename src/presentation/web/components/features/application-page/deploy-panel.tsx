@@ -35,7 +35,8 @@ import { cn } from '@/lib/utils';
 import type { GitStatusDto } from '@/hooks/use-git-status';
 import type { SmartDeployState } from '@/hooks/use-smart-deploy-state';
 import type { CloudDeployActionApi } from '@/hooks/use-cloud-deploy-action';
-import { ProviderList, type ProviderListEntry } from './provider-list';
+import { ProviderList } from './provider-list';
+import type { CloudProviderListEntry } from './cloud-providers';
 import { CLOUD_PROVIDER_BRAND_HEX, CLOUD_PROVIDER_ICONS, GitHubIcon } from './cloud-provider-icons';
 import { PublishToGitHubForm, type PublishOwner } from './publish-to-github-modal';
 
@@ -47,11 +48,10 @@ export interface DeployPanelProps {
   cloudProviderName: string | null;
   /** Time-ago string for the last successful deploy ("2 minutes ago"). */
   lastDeployedAgo: string | null;
-  /** Full list of providers for the inline switcher (all 5 including
-   *  the "Coming soon" stubs). Drives the list inside the "Live
-   *  website" section so the user can see + pick any provider without
-   *  needing a nested popover. */
-  providers: readonly ProviderListEntry[];
+  /** Full list of providers for the inline switcher. Drives the list
+   *  inside the "Live website" section so the user can pick any provider
+   *  without needing a nested popover. */
+  providers: readonly CloudProviderListEntry[];
   providersLoading?: boolean;
   providersError?: string | null;
   /** GitHub owner list for the inline publish subpanel. Null when the
@@ -436,8 +436,8 @@ export function DeployPanel({
               icon={Cloud}
               label="Connect hosting"
               onClick={() => {
-                const firstEnabled = providers.find((p) => p.enabled);
-                if (firstEnabled) onConnectProvider(firstEnabled.id);
+                const firstProvider = providers[0];
+                if (firstProvider) onConnectProvider(firstProvider.id);
               }}
               variant="primary"
               disabled={isWorking}
@@ -456,8 +456,8 @@ export function DeployPanel({
               // the provider list to hide it so we don't render two
               // "Cloudflare Pages" rows stacked on top of each other —
               // the user just sees a "Change provider" chevron that
-              // reveals the alternatives (and "Coming soon" stubs)
-              // when clicked.
+              // reveals the alternatives when clicked (and nothing at
+              // all while Cloudflare Pages is the only provider).
               hideSelected
               onSelectConnected={onSelectProvider}
               onSelectDisconnected={onConnectProvider}

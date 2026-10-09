@@ -30,11 +30,13 @@ import {
   Plug,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { cn } from '@/lib/utils';
-import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
+import Link from 'next/link';
+import { SettingsRow, SwitchRow } from './settings-rows';
+import { FeatureFlagsList } from './feature-flags-list';
+import { listFeatureFlagDescriptors } from '@shepai/core/domain/shared/feature-flag-catalog';
+import { createDefaultSettings } from '@shepai/core/domain/factories/settings-defaults.factory';
 import {
   Select,
   SelectContent,
@@ -92,6 +94,7 @@ import {
 import type { AvailableTerminal } from '@/app/actions/get-available-terminals';
 import type { SettingsSecretPresence } from '@shepai/core/application/use-cases/settings/load-settings.use-case';
 import { secretPlaceholder, secretUpdateValue } from '@/lib/secret-placeholder';
+import { isSupplyChainSecurityEnabled } from '@shepai/core/domain/shared/supply-chain-security';
 
 const EDITOR_OPTIONS = [
   { value: EditorType.VsCode, label: 'VS Code' },
@@ -152,69 +155,6 @@ export interface SettingsPageClientProps {
   shepHome: string;
   dbFileSize: string;
   availableTerminals?: AvailableTerminal[];
-}
-
-/* ── Reusable row components ── */
-
-function SettingsRow({
-  label,
-  description,
-  htmlFor,
-  children,
-}: {
-  label: string;
-  description?: string;
-  htmlFor?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b py-2.5 last:border-b-0">
-      <div className="min-w-0">
-        <Label
-          id={htmlFor ? `${htmlFor}-label` : undefined}
-          htmlFor={htmlFor}
-          className="cursor-pointer text-sm font-normal"
-        >
-          {label}
-        </Label>
-        {description ? (
-          <p className="text-muted-foreground text-[11px] leading-tight">{description}</p>
-        ) : null}
-      </div>
-      <div className="flex max-w-full min-w-0 flex-wrap items-center gap-2">{children}</div>
-    </div>
-  );
-}
-
-function SwitchRow({
-  label,
-  description,
-  id,
-  testId,
-  checked,
-  onChange,
-  disabled,
-}: {
-  label: string;
-  description?: string;
-  id: string;
-  testId: string;
-  checked: boolean;
-  onChange: (value: boolean) => void;
-  disabled?: boolean;
-}) {
-  return (
-    <SettingsRow label={label} description={description} htmlFor={id}>
-      <Switch
-        id={id}
-        data-testid={testId}
-        checked={checked}
-        onCheckedChange={onChange}
-        disabled={disabled}
-        className={cn('cursor-pointer', disabled && 'cursor-not-allowed opacity-50')}
-      />
-    </SettingsRow>
-  );
 }
 
 /* ── Section card wrapper ── */
@@ -389,22 +329,7 @@ export function SettingsPageClient({
   const { t, i18n: i18nInstance } = useTranslation('web');
   const { showSaving, showSaved, save } = useSettingsSave();
   const hydrated = useHydrated();
-  const featureFlags = settings.featureFlags ?? {
-    envDeploy: false,
-    debug: false,
-    reactFileManager: false,
-    projects: false,
-    codeReview: false,
-    collaboration: false,
-    aspm: false,
-    bedrockIntegration: true,
-    whatsappDispatch: false,
-    clusters: false,
-    supplyChainSecurity: true,
-    scheduledWorkflows: false,
-    githubImport: true,
-    queryAwareHarness: false,
-  };
+  const featureFlags = settings.featureFlags ?? createDefaultSettings().featureFlags!;
 
   // Language state
   const [language, setLanguage] = useState(settings.user?.preferredLanguage ?? Language.English);
@@ -696,16 +621,16 @@ export function SettingsPageClient({
 
   const [activeSection, setActiveSection] = useState<string>('agent');
 
-  // Filter sections based on feature flags. When supplyChainSecurity is off,
-  // hide the Security nav tab AND the section below so the feature is fully inert.
+  // Filter sections based on feature flags. Supply-chain security is part of
+  // ASPM: with aspm off, hide the Security nav tab AND the section below.
   const visibleSections = useMemo<readonly (typeof SECTIONS)[number][]>(
     () =>
       SECTIONS.filter(
         (s: (typeof SECTIONS)[number]) =>
-          (s.id !== 'security' || flags.supplyChainSecurity) &&
+          (s.id !== 'security' || isSupplyChainSecurityEnabled(flags)) &&
           (s.id !== 'harness' || flags.queryAwareHarness)
       ),
-    [flags.supplyChainSecurity, flags.queryAwareHarness]
+    [flags]
   );
 
   // Track which section is in view via IntersectionObserver
@@ -1359,8 +1284,8 @@ export function SettingsPageClient({
           </SectionHint>
         </div>
 
-        {/* ── Security ── (hidden when supplyChainSecurity feature flag is off) */}
-        {flags.supplyChainSecurity ? (
+        {/* ── Security ── (supply chain, part of ASPM: hidden when aspm is off) */}
+        {isSupplyChainSecurityEnabled(flags) ? (
           <div
             id="section-security"
             className="grid scroll-mt-32 grid-cols-1 gap-x-5 rounded-lg lg:grid-cols-[minmax(0,1fr)_280px]"
@@ -1912,150 +1837,27 @@ export function SettingsPageClient({
             badge={t('settings.featureFlags.badge')}
             testId="feature-flags-settings-section"
           >
-            <SwitchRow
-              label={t('settings.featureFlags.deployments')}
-              description={t('settings.featureFlags.deploymentsDescription')}
-              id="flag-envDeploy"
-              testId="switch-flag-envDeploy"
-              checked={flags.envDeploy}
-              onChange={(v) => {
-                const newFlags = { ...flags, envDeploy: v };
+            <FeatureFlagsList
+              items={listFeatureFlagDescriptors().map(({ key, group }) => ({
+                key,
+                group,
+                enabled: flags[key],
+              }))}
+              onToggle={(key, enabled) => {
+                const newFlags = { ...flags, [key]: enabled };
                 setFlags(newFlags);
                 save({ featureFlags: newFlags });
               }}
             />
-            <SwitchRow
-              label={t('settings.featureFlags.debug')}
-              description={t('settings.featureFlags.debugDescription')}
-              id="flag-debug"
-              testId="switch-flag-debug"
-              checked={flags.debug}
-              onChange={(v) => {
-                const newFlags = { ...flags, debug: v };
-                setFlags(newFlags);
-                save({ featureFlags: newFlags });
-              }}
-            />
-            <SwitchRow
-              label={t('settings.featureFlags.reactFileManager')}
-              description={t('settings.featureFlags.reactFileManagerDescription')}
-              id="flag-reactFileManager"
-              testId="switch-flag-reactFileManager"
-              checked={flags.reactFileManager}
-              onChange={(v) => {
-                const newFlags = { ...flags, reactFileManager: v };
-                setFlags(newFlags);
-                save({ featureFlags: newFlags });
-              }}
-            />
-            <SwitchRow
-              label={t('settings.featureFlags.projects')}
-              description={t('settings.featureFlags.projectsDescription')}
-              id="flag-projects"
-              testId="switch-flag-projects"
-              checked={flags.projects}
-              onChange={(v) => {
-                const newFlags = { ...flags, projects: v };
-                setFlags(newFlags);
-                save({ featureFlags: newFlags });
-              }}
-            />
-            <SwitchRow
-              label={t('settings.featureFlags.codeReview')}
-              description={t('settings.featureFlags.codeReviewDescription')}
-              id="flag-code-review"
-              testId="switch-flag-code-review"
-              checked={flags.codeReview}
-              onChange={(v) => {
-                const newFlags = { ...flags, codeReview: v };
-                setFlags(newFlags);
-                save({ featureFlags: newFlags });
-              }}
-            />
-            <SwitchRow
-              label={t('settings.featureFlags.collaboration')}
-              description={t('settings.featureFlags.collaborationDescription')}
-              id="flag-collaboration"
-              testId="switch-flag-collaboration"
-              checked={flags.collaboration}
-              onChange={(v) => {
-                const newFlags = { ...flags, collaboration: v };
-                setFlags(newFlags);
-                save({ featureFlags: newFlags });
-              }}
-            />
-            <SwitchRow
-              label={t('settings.featureFlags.aspm')}
-              description={t('settings.featureFlags.aspmDescription')}
-              id="flag-aspm"
-              testId="switch-flag-aspm"
-              checked={flags.aspm}
-              onChange={(v) => {
-                const newFlags = { ...flags, aspm: v };
-                setFlags(newFlags);
-                save({ featureFlags: newFlags });
-              }}
-            />
-            <SwitchRow
-              label={t('settings.featureFlags.bedrockIntegration')}
-              description={t('settings.featureFlags.bedrockIntegrationDescription')}
-              id="flag-bedrock-integration"
-              testId="switch-flag-bedrock-integration"
-              checked={flags.bedrockIntegration}
-              onChange={(v) => {
-                const newFlags = { ...flags, bedrockIntegration: v };
-                setFlags(newFlags);
-                save({ featureFlags: newFlags });
-              }}
-            />
-            <SwitchRow
-              label={t('settings.featureFlags.whatsappDispatch')}
-              description={t('settings.featureFlags.whatsappDispatchDescription')}
-              id="flag-whatsapp-dispatch"
-              testId="switch-flag-whatsapp-dispatch"
-              checked={flags.whatsappDispatch}
-              onChange={(v) => {
-                const newFlags = { ...flags, whatsappDispatch: v };
-                setFlags(newFlags);
-                save({ featureFlags: newFlags });
-              }}
-            />
-            <SwitchRow
-              label={t('settings.featureFlags.clusters')}
-              description={t('settings.featureFlags.clustersDescription')}
-              id="flag-clusters"
-              testId="switch-flag-clusters"
-              checked={flags.clusters}
-              onChange={(v) => {
-                const newFlags = { ...flags, clusters: v };
-                setFlags(newFlags);
-                save({ featureFlags: newFlags });
-              }}
-            />
-            <SwitchRow
-              label="Scheduled Workflows"
-              description="Enable scheduled workflows — create, schedule, and execute automated workflows on a cron schedule"
-              id="flag-scheduledWorkflows"
-              testId="switch-flag-scheduledWorkflows"
-              checked={flags.scheduledWorkflows}
-              onChange={(v) => {
-                const newFlags = { ...flags, scheduledWorkflows: v };
-                setFlags(newFlags);
-                save({ featureFlags: newFlags });
-              }}
-            />
-            <SwitchRow
-              label={t('settings.featureFlags.queryAwareHarness')}
-              description={t('settings.featureFlags.queryAwareHarnessDescription')}
-              id="flag-queryAwareHarness"
-              testId="switch-flag-queryAwareHarness"
-              checked={flags.queryAwareHarness}
-              onChange={(v) => {
-                const newFlags = { ...flags, queryAwareHarness: v };
-                setFlags(newFlags);
-                save({ featureFlags: newFlags });
-              }}
-            />
+            <div className="border-t py-2.5">
+              <Link
+                href="/settings/feature-flags"
+                className="text-primary text-xs underline-offset-2 hover:underline"
+                data-testid="open-feature-flags-view"
+              >
+                {t('settings.featureFlags.openView')}
+              </Link>
+            </div>
           </SettingsSection>
           <SectionHint>{t('settings.featureFlags.hint')}</SectionHint>
         </div>

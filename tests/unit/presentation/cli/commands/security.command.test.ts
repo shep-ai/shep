@@ -13,7 +13,7 @@ const { getSettingsMock, useCaseExecuteMock, messagesInfoMock } = vi.hoisted(() 
   messagesInfoMock: vi.fn(),
 }));
 
-// Mock settings service — allow per-test overrides of featureFlags.supplyChainSecurity
+// Mock settings service — allow per-test overrides of featureFlags.aspm
 vi.mock('@/infrastructure/services/settings.service.js', () => ({
   getSettings: () => getSettingsMock(),
 }));
@@ -95,7 +95,7 @@ describe('createSecurityCommand', () => {
     expect(repoOpt!.defaultValue).toBe(process.cwd());
   });
 
-  describe('supplyChainSecurity feature flag gate', () => {
+  describe('ASPM feature flag gate (supply chain is part of ASPM)', () => {
     const originalEnv = process.env.SHEP_SUPPLY_CHAIN_SECURITY;
 
     beforeEach(() => {
@@ -119,8 +119,8 @@ describe('createSecurityCommand', () => {
       await cmd.parseAsync(['enforce', '--repo', '/tmp/repo'], { from: 'user' });
     }
 
-    it('becomes a no-op and skips the use case when featureFlags.supplyChainSecurity is false', async () => {
-      getSettingsMock.mockReturnValue({ featureFlags: { supplyChainSecurity: false } });
+    it('becomes a no-op and skips the use case when featureFlags.aspm is false', async () => {
+      getSettingsMock.mockReturnValue({ featureFlags: { aspm: false } });
 
       await runEnforce();
 
@@ -130,9 +130,9 @@ describe('createSecurityCommand', () => {
       );
     });
 
-    it('becomes a no-op when SHEP_SUPPLY_CHAIN_SECURITY=false even if the settings flag is true', async () => {
+    it('becomes a no-op when SHEP_SUPPLY_CHAIN_SECURITY=false even if aspm is on', async () => {
       process.env.SHEP_SUPPLY_CHAIN_SECURITY = 'false';
-      getSettingsMock.mockReturnValue({ featureFlags: { supplyChainSecurity: true } });
+      getSettingsMock.mockReturnValue({ featureFlags: { aspm: true } });
 
       await runEnforce();
 
@@ -144,7 +144,7 @@ describe('createSecurityCommand', () => {
 
     it('also honors SHEP_SUPPLY_CHAIN_SECURITY=0 as a disable value', async () => {
       process.env.SHEP_SUPPLY_CHAIN_SECURITY = '0';
-      getSettingsMock.mockReturnValue({ featureFlags: { supplyChainSecurity: true } });
+      getSettingsMock.mockReturnValue({ featureFlags: { aspm: true } });
 
       await runEnforce();
 
@@ -152,7 +152,7 @@ describe('createSecurityCommand', () => {
     });
 
     it('runs the use case when the flag is true and no env override is set', async () => {
-      getSettingsMock.mockReturnValue({ featureFlags: { supplyChainSecurity: true } });
+      getSettingsMock.mockReturnValue({ featureFlags: { aspm: true } });
       useCaseExecuteMock.mockResolvedValue({
         mode: 'Advisory',
         policy: { source: 'settings-default' },
@@ -168,8 +168,17 @@ describe('createSecurityCommand', () => {
       expect(useCaseExecuteMock).toHaveBeenCalledWith({ repositoryPath: '/tmp/repo' });
     });
 
-    it('runs the use case when featureFlags is absent (defaults to enabled)', async () => {
+    it('is a no-op when featureFlags is absent (ASPM is off by default)', async () => {
       getSettingsMock.mockReturnValue({});
+
+      await runEnforce();
+
+      expect(useCaseExecuteMock).not.toHaveBeenCalled();
+    });
+
+    it('runs with ASPM off when SHEP_SUPPLY_CHAIN_SECURITY=true opts in (Shep CI)', async () => {
+      process.env.SHEP_SUPPLY_CHAIN_SECURITY = 'true';
+      getSettingsMock.mockReturnValue({ featureFlags: { aspm: false } });
       useCaseExecuteMock.mockResolvedValue({
         mode: 'Advisory',
         policy: { source: 'settings-default' },

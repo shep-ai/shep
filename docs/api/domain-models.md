@@ -272,7 +272,6 @@ export type EnvironmentConfig = {
 
 ```typescript
 export type SystemConfig = {
-  autoUpdate: boolean;
   logLevel: string;
 };
 ```
@@ -393,15 +392,28 @@ export type FeatureFlags = {
   whatsappDispatch: boolean;
   aspm: boolean;
   clusters: boolean;
-  supplyChainSecurity: boolean;
   scheduledWorkflows: boolean;
   githubImport: boolean;
+  queryAwareHarness: boolean;
+  // Software-factory areas (spec 135), all on by default
+  spaces: boolean;
+  trackers: boolean;
+  knowledge: boolean;
+  signals: boolean;
+  opportunities: boolean;
+  feedback: boolean;
+  discovery: boolean;
+  incidents: boolean;
+  outcomes: boolean;
+  docsFirst: boolean;
+  autopilot: boolean;
+  factory: boolean;
 };
 ```
 
 Several command groups are gated on these flags — for example `shep aspm` on
 `aspm`, `shep supervisor` on `collaboration`, and `shep security enforce` on
-`supplyChainSecurity`.
+`aspm` too: supply-chain security is part of ASPM.
 
 ### GanttViewData
 
@@ -535,8 +547,6 @@ enum AgentType {
   CodexCli = 'codex-cli',
   CopilotCli = 'copilot-cli',
   GeminiCli = 'gemini-cli',
-  Aider = 'aider', // Coming Soon — not executable
-  Continue = 'continue', // Coming Soon — not executable
   Cursor = 'cursor',
   Cline = 'cline',
   OpenRouter = 'openrouter',
@@ -547,10 +557,9 @@ enum AgentType {
 }
 ```
 
-Twelve of the fourteen members are supported today. `aider` and `continue` are
-declared for future extensibility only: they have `supported: false` in the
-agent catalog, no binary and no executor, and are surfaced in pickers as
-"Coming Soon". Per-agent facts (label, kind, binary, tool id, supported flag,
+Every member is supported. (The `aider` and `continue` placeholders were removed in
+spec 135; a settings row still holding either reads back as the default agent.)
+Per-agent facts (label, kind, binary, tool id, supported flag,
 model list) live in one place —
 `packages/core/src/domain/shared/agent-catalog.ts`, a total
 `Record<AgentType, AgentDescriptor>`, so adding a member here is a compile error

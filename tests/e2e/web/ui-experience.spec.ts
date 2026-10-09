@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { expectAccessible } from './helpers/ui-accessibility';
+import { enableFeatureFlag } from './helpers/feature-flag-toggle';
 
 // These checks invoke no installed agent. Workflow coverage temporarily enables
 // its feature flag through the UI and restores the previous value afterward.
@@ -21,10 +22,17 @@ test.describe('web experience regressions', () => {
     await expect(search).not.toBeVisible();
   });
 
+  // Routes behind a default-off flag, enabled for the test and restored after.
+  const ROUTE_FLAGS: Record<string, string> = {
+    '/workflows': 'scheduledWorkflows',
+    '/aspm/compliance': 'aspm',
+  };
+
   for (const route of [
     '/features',
     '/tools',
     '/settings',
+    '/settings/feature-flags',
     '/sdlc',
     '/webhooks',
     '/onboarding',
@@ -33,17 +41,8 @@ test.describe('web experience regressions', () => {
   ]) {
     test(`${route} has no automated accessibility violations in dark mode`, async ({ page }) => {
       await page.addInitScript(() => localStorage.setItem('shep-theme', 'dark'));
-      let restoreWorkflows = false;
-      if (route === '/workflows') {
-        await page.goto('/settings');
-        const toggle = page.getByTestId('switch-flag-scheduledWorkflows');
-        await expect(toggle).toBeEnabled();
-        if ((await toggle.getAttribute('data-state')) === 'unchecked') {
-          restoreWorkflows = true;
-          await toggle.click();
-          await expect(page.getByRole('status').filter({ hasText: 'Saved' })).toBeVisible();
-        }
-      }
+      const flag = ROUTE_FLAGS[route];
+      const restoreFlag = flag ? await enableFeatureFlag(page, flag) : null;
       try {
         await page.goto(route);
         expect(new URL(page.url()).pathname).toBe(route);
@@ -55,11 +54,7 @@ test.describe('web experience regressions', () => {
         }
         await expectAccessible(page);
       } finally {
-        if (restoreWorkflows) {
-          await page.goto('/settings');
-          await page.getByTestId('switch-flag-scheduledWorkflows').click();
-          await expect(page.getByRole('status').filter({ hasText: 'Saved' })).toBeVisible();
-        }
+        await restoreFlag?.();
       }
     });
   }
@@ -91,15 +86,22 @@ test.describe('web experience regressions', () => {
     context,
     baseURL,
   }) => {
-    await context.addCookies([{ name: 'shep-sidebar-open', value: 'false', url: baseURL! }]);
-    await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto('/applications');
-    await page.getByRole('button', { name: 'Toggle Sidebar', exact: true }).click();
-    const navigation = page.getByRole('navigation', { name: 'Shep', exact: true });
-    await navigation.getByRole('button', { name: 'Security', exact: true }).click();
-    await navigation.getByRole('link', { name: 'Findings', exact: true }).click();
-    await expect(page).toHaveURL(/\/aspm\/findings$/);
-    await expect(navigation).not.toBeVisible();
+    // The Security group is ASPM's, which is off by default (spec 135).
+    const restoreAspm = await enableFeatureFlag(page, 'aspm');
+    try {
+      await context.addCookies([{ name: 'shep-sidebar-open', value: 'false', url: baseURL! }]);
+      await page.setViewportSize({ width: 390, height: 844 });
+      await page.goto('/applications');
+      await page.getByRole('button', { name: 'Toggle Sidebar', exact: true }).click();
+      const navigation = page.getByRole('navigation', { name: 'Shep', exact: true });
+      await navigation.getByRole('button', { name: 'Security', exact: true }).click();
+      await navigation.getByRole('link', { name: 'Findings', exact: true }).click();
+      await expect(page).toHaveURL(/\/aspm\/findings$/);
+      await expect(navigation).not.toBeVisible();
+    } finally {
+      await page.setViewportSize({ width: 1280, height: 900 });
+      await restoreAspm();
+    }
   });
 
   for (const width of [390, 1440]) {

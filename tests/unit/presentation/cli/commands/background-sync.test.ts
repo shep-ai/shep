@@ -65,6 +65,10 @@ vi.mock('@/infrastructure/services/pr-sync/pr-sync-watcher.service.js', () => ({
 vi.mock('@/infrastructure/persistence/sqlite/connection.js', () => ({
   getExistingConnection: vi.fn(() => ({})),
 }));
+const flagState = vi.hoisted(() => ({ off: new Set<string>() }));
+vi.mock('../../../../../src/presentation/cli/commands/feature-flag-gate.js', () => ({
+  isFeatureFlagOn: (flag: string) => !flagState.off.has(flag),
+}));
 vi.mock('@/application/use-cases/maintenance/prune-retained-data.use-case.js', () => ({
   PruneRetainedDataUseCase: vi.fn(),
 }));
@@ -77,6 +81,17 @@ describe('startBackgroundSync', () => {
     vi.clearAllMocks();
     dueJobs.length = 0;
     hourlyJobs.length = 0;
+    flagState.off.clear();
+  });
+
+  it('skips the passes of software-factory areas whose flag is off (spec 135)', async () => {
+    flagState.off = new Set(['trackers', 'knowledge', 'discovery', 'outcomes', 'autopilot']);
+    startBackgroundSync('test');
+    vi.mocked(container.resolve).mockClear();
+    const now = new Date('2026-10-04T12:00:00Z');
+    for (const job of dueJobs) await job(now);
+    for (const job of hourlyJobs) await job();
+    expect(container.resolve).not.toHaveBeenCalled();
   });
 
   it('starts every sync and stops it all', () => {

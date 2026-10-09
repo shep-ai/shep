@@ -298,7 +298,7 @@ export interface SettingsRow {
   created_at: string; // ISO 8601 string (SQLite TEXT)
   updated_at: string;
   model_default: string; // Flattened from models.default
-  sys_auto_update: number; // Boolean -> Integer (SQLite limitation)
+  sys_log_level: string;
   agent_type: string;
   // ... many more flattened columns
 }
@@ -308,7 +308,7 @@ export function toDatabase(settings: Settings): SettingsRow {
     id: settings.id,
     created_at: settings.createdAt.toISOString(),
     model_default: settings.models.default,
-    sys_auto_update: settings.system.autoUpdate ? 1 : 0,
+    sys_log_level: settings.system.logLevel,
     agent_type: settings.agent.type,
     // ...
   };
@@ -322,7 +322,7 @@ export function fromDatabase(row: SettingsRow): Settings {
       default: row.model_default,
     },
     system: {
-      autoUpdate: row.sys_auto_update === 1,
+      logLevel: row.sys_log_level,
       // ...
     },
     agent: {

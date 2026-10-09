@@ -2,11 +2,17 @@
  * CheckDocsGateUseCase (spec 131): whether a change in a repository may merge
  * on its own as far as documentation goes. In a docs-first space a change
  * passes only when one of its files is under the space's documentation
- * paths; elsewhere the gate asks nothing.
+ * paths; elsewhere — or with the docsFirst feature flag off — the gate asks
+ * nothing.
  */
 
 import { injectable, inject } from 'tsyringe';
-import { docsPathsOf, documentationChanges } from '../../../domain/shared/docs-first.js';
+import {
+  docsPathsOf,
+  documentationChanges,
+  isDocsFirstActive,
+} from '../../../domain/shared/docs-first.js';
+import type { ISettingsRepository } from '../../ports/output/repositories/settings.repository.interface.js';
 import { ResolveSpaceContextUseCase } from '../spaces/resolve-space-context.use-case.js';
 
 export interface DocsGate {
@@ -24,12 +30,15 @@ export interface DocsGate {
 export class CheckDocsGateUseCase {
   constructor(
     @inject(ResolveSpaceContextUseCase)
-    private readonly resolveSpaceContext: ResolveSpaceContextUseCase
+    private readonly resolveSpaceContext: ResolveSpaceContextUseCase,
+    @inject('ISettingsRepository')
+    private readonly settingsRepository: ISettingsRepository
   ) {}
 
   async execute(repositoryPath: string, changedFiles: readonly string[]): Promise<DocsGate> {
     const { space } = await this.resolveSpaceContext.execute(repositoryPath);
-    if (!space.agentSettings?.docsFirst) {
+    const flags = (await this.settingsRepository.load())?.featureFlags;
+    if (!space.agentSettings || !isDocsFirstActive(space.agentSettings, flags)) {
       return { required: false, passed: true, docsPaths: [], documentation: [] };
     }
     const docsPaths = docsPathsOf(space.agentSettings);

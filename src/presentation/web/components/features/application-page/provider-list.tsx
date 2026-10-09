@@ -5,10 +5,9 @@
  * inside the DeployPanel's "Live website" section.
  *
  * Collapsed-by-default surface: shows ONLY the currently-selected
- * provider (or the first enabled+connected one, or the first enabled
- * one as a last resort) with a "Change" chevron button. Clicking the
- * chevron expands the full list so the user can see which other
- * providers exist + which are still "Coming soon". This keeps the
+ * provider (or the first connected one, or the first one as a last
+ * resort) with a "Change" chevron button. Clicking the chevron expands
+ * the full list so the user can switch providers. This keeps the
  * panel skimmable — the 80% case is "click Publish on the one provider
  * I'm using" — without hiding the switcher from power users.
  *
@@ -17,9 +16,8 @@
  *   - Connected   → click deploys immediately (via onSelectConnected).
  *                   Pencil icon on the right opens the update-token
  *                   modal via onEditConnection.
- *   - Enabled but not connected → click opens the connect-token modal
+ *   - Not connected → click opens the connect-token modal
  *                   via onSelectDisconnected.
- *   - Coming soon (enabled=false) → row is disabled, cursor-not-allowed.
  */
 
 import { useMemo, useState } from 'react';
@@ -27,16 +25,10 @@ import { ChevronDown, ChevronUp, Pencil } from 'lucide-react';
 import type { CloudDeploymentProvider } from '@shepai/core/domain/generated/output';
 import { cn } from '@/lib/utils';
 import { CLOUD_PROVIDER_BRAND_HEX, CLOUD_PROVIDER_ICONS } from './cloud-provider-icons';
-
-export interface ProviderListEntry {
-  id: CloudDeploymentProvider;
-  displayName: string;
-  enabled: boolean;
-  connected: boolean;
-}
+import type { CloudProviderListEntry } from './cloud-providers';
 
 export interface ProviderListProps {
-  providers: readonly ProviderListEntry[];
+  providers: readonly CloudProviderListEntry[];
   selectedProvider: CloudDeploymentProvider | null;
   loading?: boolean;
   loadError?: string | null;
@@ -86,8 +78,7 @@ export function ProviderList({
     [effectiveProviders, selectedProvider, hideSelected]
   );
 
-  // Collapsed by default — user can expand to see the "Coming soon" lineup
-  // and switch providers. Local state; not persisted across opens of the
+  // Collapsed by default — user can expand to switch providers. Local state; not persisted across opens of the
   // popover because the collapsed view is always the right default.
   const [expanded, setExpanded] = useState(false);
 
@@ -173,7 +164,7 @@ function ProviderRow({
   onSelectDisconnected,
   onEditConnection,
 }: {
-  provider: ProviderListEntry;
+  provider: CloudProviderListEntry;
   isSelected: boolean;
   onSelectConnected(provider: CloudDeploymentProvider): void;
   onSelectDisconnected(provider: CloudDeploymentProvider): void;
@@ -181,22 +172,17 @@ function ProviderRow({
 }) {
   const Icon = CLOUD_PROVIDER_ICONS[provider.id];
   const brandHex = CLOUD_PROVIDER_BRAND_HEX[provider.id];
-  const disabled = !provider.enabled;
 
-  const badgeLabel = disabled ? 'Coming soon' : provider.connected ? 'Connected' : 'Not connected';
-  const badgeClass = disabled
-    ? 'text-muted-foreground'
-    : provider.connected
-      ? 'text-emerald-600 dark:text-emerald-400'
-      : 'text-amber-600 dark:text-amber-400';
+  const badgeLabel = provider.connected ? 'Connected' : 'Not connected';
+  const badgeClass = provider.connected
+    ? 'text-emerald-600 dark:text-emerald-400'
+    : 'text-amber-600 dark:text-amber-400';
 
   return (
     <li>
       <button
         type="button"
-        disabled={disabled}
         onClick={() => {
-          if (disabled) return;
           if (provider.connected) {
             onSelectConnected(provider.id);
           } else {
@@ -204,21 +190,14 @@ function ProviderRow({
           }
         }}
         className={cn(
-          'group flex w-full items-center gap-2 px-2.5 py-2 text-left text-[12px] transition-colors',
-          disabled && 'text-muted-foreground cursor-not-allowed',
-          !disabled && 'hover:bg-accent cursor-pointer',
+          'group hover:bg-accent flex w-full cursor-pointer items-center gap-2 px-2.5 py-2 text-left text-[12px] transition-colors',
           // Subtle highlight on the currently-selected provider so the
           // user can see at a glance which one will deploy when they
           // click "Publish to web" below.
-          !disabled && isSelected && 'bg-primary/5'
+          isSelected && 'bg-primary/5'
         )}
       >
-        <Icon
-          className={cn('size-4 shrink-0', disabled && 'opacity-50')}
-          // Render in the real brand color only when enabled. Disabled
-          // (Coming soon) rows stay monochrome so they visually recede.
-          style={disabled ? undefined : { color: brandHex }}
-        />
+        <Icon className="size-4 shrink-0" style={{ color: brandHex }} />
         <span className="min-w-0 flex-1 truncate font-medium">{provider.displayName}</span>
         <span
           className={cn(
@@ -228,12 +207,12 @@ function ProviderRow({
         >
           {badgeLabel}
         </span>
-        {isSelected && !disabled ? (
+        {isSelected ? (
           <span className="text-primary ml-1 text-[10px]" aria-label="Selected">
             ●
           </span>
         ) : null}
-        {provider.enabled && provider.connected && onEditConnection ? (
+        {provider.connected && onEditConnection ? (
           // Nested button inside the row; stopPropagation prevents
           // the outer row click from also firing a deploy.
           <span
@@ -265,16 +244,12 @@ function ProviderRow({
 
 /** Pick the single provider to show in the collapsed view. */
 function pickPrimary(
-  providers: readonly ProviderListEntry[],
+  providers: readonly CloudProviderListEntry[],
   selected: CloudDeploymentProvider | null
-): ProviderListEntry | null {
+): CloudProviderListEntry | null {
   if (selected) {
     const match = providers.find((p) => p.id === selected);
     if (match) return match;
   }
-  const firstConnected = providers.find((p) => p.enabled && p.connected);
-  if (firstConnected) return firstConnected;
-  const firstEnabled = providers.find((p) => p.enabled);
-  if (firstEnabled) return firstEnabled;
-  return providers[0] ?? null;
+  return providers.find((p) => p.connected) ?? providers[0] ?? null;
 }

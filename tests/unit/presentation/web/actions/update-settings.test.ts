@@ -76,7 +76,7 @@ describe('updateSettingsAction server action', () => {
   });
 
   it('calls revalidatePath on root layout after success', async () => {
-    await updateSettingsAction({ system: { autoUpdate: false } });
+    await updateSettingsAction({ system: { logLevel: 'warn' } });
 
     expect(mockRevalidatePath).toHaveBeenCalledWith('/', 'layout');
   });

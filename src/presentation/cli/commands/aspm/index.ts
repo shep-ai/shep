@@ -7,16 +7,13 @@
  * container — the command modules themselves stay thin (parse →
  * use-case-call → formatted output).
  *
- * The entire surface is gated behind the `aspm` feature flag. When the
- * flag is off the command is registered but hidden from `--help` and
- * any invocation prints a one-liner pointing to `shep settings`. Mirrors
- * the supervisor command's collaboration-flag pattern so byte-identical
- * default CLI output is preserved unless the user opts in.
+ * The entire surface is gated behind the `aspm` feature flag (off by
+ * default): while it is off the command is hidden from `--help` and any
+ * invocation says how to turn it on (see feature-flag-gate.ts).
  */
 
 import { Command } from 'commander';
-import { getSettings, hasSettings } from '@/infrastructure/services/settings.service.js';
-import { messages } from '../../ui/index.js';
+import { gateByFeatureFlag } from '../feature-flag-gate.js';
 import { createAspmIngestCommand } from './aspm-ingest-command.js';
 import { createAspmFindingsCommand } from './aspm-findings-command.js';
 import { createAspmCampaignsCommand } from './aspm-campaigns-command.js';
@@ -24,20 +21,6 @@ import { createAspmPostureCommand } from './aspm-posture-command.js';
 import { createAspmExceptionsCommand } from './aspm-exceptions-command.js';
 import { createAspmAiReviewCommand } from './aspm-ai-review-command.js';
 import { createAspmScanCommand, createAspmRescanCommand } from './aspm-scan-command.js';
-
-function isAspmEnabled(): boolean {
-  if (!hasSettings()) return false;
-  return getSettings().featureFlags?.aspm === true;
-}
-
-/** Printed for any `shep aspm` invocation while the feature flag is off. */
-const ASPM_DISABLED_MESSAGE =
-  'The ASPM module is disabled. Enable the "aspm" feature flag in settings to use `shep aspm`.';
-
-function blockAspm(): never {
-  messages.error(ASPM_DISABLED_MESSAGE);
-  process.exit(1);
-}
 
 export function createAspmCommand(): Command {
   const cmd = new Command('aspm').description(
@@ -53,18 +36,5 @@ export function createAspmCommand(): Command {
   cmd.addCommand(createAspmExceptionsCommand());
   cmd.addCommand(createAspmAiReviewCommand());
 
-  if (!isAspmEnabled()) {
-    // Hide the surface from --help and short-circuit any invocation so
-    // the default CLI output is unchanged for users who haven't opted in.
-    (cmd as unknown as { _hidden: boolean })._hidden = true;
-
-    // `preAction` only fires once a subcommand's own action runs, so a bare
-    // `shep aspm` used to fall through to Commander's default help — which
-    // lists every subcommand and defeats the flag entirely. Giving the parent
-    // its own action puts the no-subcommand invocation on the same blocked path.
-    cmd.hook('preAction', blockAspm);
-    cmd.action(blockAspm);
-  }
-
-  return cmd;
+  return gateByFeatureFlag(cmd, 'aspm');
 }

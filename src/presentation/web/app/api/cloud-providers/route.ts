@@ -1,8 +1,7 @@
 /**
  * GET /api/cloud-providers
  *
- * List every known cloud deployment provider with its enabled + connected
- * flags. Powers the Deploy dropdown on the application page.
+ * List every cloud deployment provider with its connected flag. Powers the Deploy dropdown on the application page.
  */
 
 import { NextResponse } from 'next/server';

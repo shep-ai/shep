@@ -198,24 +198,6 @@ describe('UpdateSettingsUseCase', () => {
   });
 
   describe('system configuration updates', () => {
-    it('should update autoUpdate flag', async () => {
-      // Arrange
-      const settings = createDefaultSettings();
-      const updatedSettings: Settings = {
-        ...settings,
-        system: {
-          ...settings.system,
-          autoUpdate: false,
-        },
-      };
-
-      // Act
-      const result = await useCase.execute(updatedSettings);
-
-      // Assert
-      expect(result.system.autoUpdate).toBe(false);
-    });
-
     it('should update log level', async () => {
       // Arrange
       const settings = createDefaultSettings();

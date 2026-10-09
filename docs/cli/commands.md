@@ -543,6 +543,18 @@ Override how worktrees are created.
 
 **Source**: `src/presentation/cli/commands/settings/worktree.command.ts`
 
+### `shep settings flags`
+
+List every feature flag with its state, default and a one-line description, grouped into
+Platform, Software factory and Experimental. `shep settings flags enable <flag>` and
+`shep settings flags disable <flag>` turn one on or off; an unknown flag exits 1. The web UI's
+`/settings/feature-flags` view shows the same list.
+
+A command group whose flag is off (for example `shep space` with `spaces` off, or `shep aspm`
+with `aspm` off) is hidden from `--help`, and running it prints the `enable` command to use.
+
+**Source**: `src/presentation/cli/commands/settings/flags.command.ts`
+
 | Option                       | Description                                        |
 | ---------------------------- | -------------------------------------------------- |
 | `--create-command <cmd>`     | Command that replaces `git worktree add`            |
@@ -1106,16 +1118,17 @@ feature flag.
 
 ### `shep security enforce`
 
-Evaluate repository security posture and enforce policy. Gated on the
-`supplyChainSecurity` feature flag; when the flag is off the command is a no-op
-that exits 0.
+Evaluate repository security posture and enforce policy. Supply-chain security
+is part of ASPM, so the command is gated on the `aspm` feature flag; when the
+flag is off the command is a no-op that exits 0.
 
 | Option                  | Description                                | Default |
 | ----------------------- | ------------------------------------------ | ------- |
 | `-r, --repo <path>`     | Repository to evaluate                     | cwd     |
 | `-o, --output <format>` | Output format (`table` or `json`)          | `table` |
 
-`SHEP_SUPPLY_CHAIN_SECURITY=false` is the CI kill-switch.
+`SHEP_SUPPLY_CHAIN_SECURITY` overrides the flag for CI: `false` (or `0`) turns
+enforcement off, `true` (or `1`) turns it on even while `aspm` is off.
 
 **Source**: `src/presentation/cli/commands/security.command.ts`
 

@@ -174,14 +174,14 @@ describe('createDefaultSettings', () => {
   });
 
   describe('SystemConfig defaults', () => {
-    it('should set autoUpdate to true', () => {
+    it('has no autoUpdate setting — nothing ever read it (spec 135)', () => {
       // Act
       const settings = createDefaultSettings();
       const system: SystemConfig = settings.system;
 
       // Assert
       expect(system).toBeDefined();
-      expect(system.autoUpdate).toBe(true);
+      expect(system).not.toHaveProperty('autoUpdate');
     });
 
     it('should set logLevel to "info"', () => {
@@ -198,7 +198,6 @@ describe('createDefaultSettings', () => {
 
       // Assert
       expect(settings.system).toEqual({
-        autoUpdate: true,
         logLevel: 'info',
       });
     });
@@ -319,7 +318,7 @@ describe('createDefaultSettings', () => {
       expect(settings.featureFlags).toBeDefined();
     });
 
-    it('should default feature flags with envDeploy / projects / codeReview / collaboration / aspm / supplyChainSecurity enabled', () => {
+    it('should default feature flags with envDeploy / projects / codeReview / collaboration enabled and aspm off', () => {
       const settings = createDefaultSettings();
       expect(settings.featureFlags).toEqual({
         envDeploy: true,
@@ -328,16 +327,27 @@ describe('createDefaultSettings', () => {
         projects: true,
         codeReview: true,
         collaboration: true,
-        aspm: true,
+        // ASPM is a separate product category; users opt in (spec 135).
+        aspm: false,
         bedrockIntegration: true,
         whatsappDispatch: false,
         clusters: false,
-        // Master kill switch for the supply chain security feature —
-        // defaults to true so existing users keep the feature they already see.
-        supplyChainSecurity: true,
         scheduledWorkflows: false,
         githubImport: true,
         queryAwareHarness: false,
+        // Software-factory areas (spec 135) start on so nothing changes for users.
+        spaces: true,
+        trackers: true,
+        knowledge: true,
+        signals: true,
+        opportunities: true,
+        feedback: true,
+        discovery: true,
+        incidents: true,
+        outcomes: true,
+        docsFirst: true,
+        autopilot: true,
+        factory: true,
       });
     });
 
@@ -551,7 +561,6 @@ describe('createDefaultSettings', () => {
         defaultCloneDirectory: '~/repos',
       });
       expect(settings.system).toEqual({
-        autoUpdate: true,
         logLevel: 'info',
       });
       expect(settings.agent).toEqual({

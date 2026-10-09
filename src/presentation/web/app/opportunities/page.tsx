@@ -1,4 +1,5 @@
 import { resolve } from '@/lib/server-container';
+import { requireFeaturePage } from '@/lib/require-feature-page';
 import type {
   GetOpportunityBoardUseCase,
   OpportunityBoard,
@@ -71,6 +72,7 @@ async function loadOptions(spaceId: string): Promise<OpportunityPageOptions> {
 }
 
 export default async function OpportunitiesPage({ searchParams }: OpportunitiesPageProps) {
+  requireFeaturePage('opportunities');
   const { space } = await searchParams;
   let board: OpportunityBoard | undefined;
   let options: OpportunityPageOptions = { spaces: [], productLines: [], projects: [] };
