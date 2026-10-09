@@ -43,6 +43,13 @@ describe('FeatureFlagsPageClient (spec 135)', () => {
     expect(screen.getByTestId('feature-flags-count')).toHaveTextContent('1 of 2 on');
   });
 
+  it('keeps the heading order valid: group headings sit right under the page h1', () => {
+    render(<FeatureFlagsPageClient initialFlags={FLAGS} />);
+
+    expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: 'Platform' })).toBeInTheDocument();
+  });
+
   it('saves a toggle through the server action', async () => {
     setFeatureFlagMock.mockResolvedValue({ ok: true });
     render(<FeatureFlagsPageClient initialFlags={FLAGS} />);

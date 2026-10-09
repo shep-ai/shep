@@ -79,7 +79,7 @@ export function FeatureFlagsPageClient({ initialFlags }: FeatureFlagsPageClientP
       </header>
       <p className="text-muted-foreground text-xs">{t('settings.featureFlags.pageDescription')}</p>
       <div className="bg-background rounded-lg border px-4 py-2">
-        <FeatureFlagsList items={flags} onToggle={toggle} />
+        <FeatureFlagsList items={flags} onToggle={toggle} headingLevel={2} />
       </div>
     </div>
   );

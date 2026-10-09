@@ -86,15 +86,22 @@ test.describe('web experience regressions', () => {
     context,
     baseURL,
   }) => {
-    await context.addCookies([{ name: 'shep-sidebar-open', value: 'false', url: baseURL! }]);
-    await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto('/applications');
-    await page.getByRole('button', { name: 'Toggle Sidebar', exact: true }).click();
-    const navigation = page.getByRole('navigation', { name: 'Shep', exact: true });
-    await navigation.getByRole('button', { name: 'Security', exact: true }).click();
-    await navigation.getByRole('link', { name: 'Findings', exact: true }).click();
-    await expect(page).toHaveURL(/\/aspm\/findings$/);
-    await expect(navigation).not.toBeVisible();
+    // The Security group is ASPM's, which is off by default (spec 135).
+    const restoreAspm = await enableFeatureFlag(page, 'aspm');
+    try {
+      await context.addCookies([{ name: 'shep-sidebar-open', value: 'false', url: baseURL! }]);
+      await page.setViewportSize({ width: 390, height: 844 });
+      await page.goto('/applications');
+      await page.getByRole('button', { name: 'Toggle Sidebar', exact: true }).click();
+      const navigation = page.getByRole('navigation', { name: 'Shep', exact: true });
+      await navigation.getByRole('button', { name: 'Security', exact: true }).click();
+      await navigation.getByRole('link', { name: 'Findings', exact: true }).click();
+      await expect(page).toHaveURL(/\/aspm\/findings$/);
+      await expect(navigation).not.toBeVisible();
+    } finally {
+      await page.setViewportSize({ width: 1280, height: 900 });
+      await restoreAspm();
+    }
   });
 
   for (const width of [390, 1440]) {

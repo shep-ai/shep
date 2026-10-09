@@ -26,6 +26,8 @@ export interface FeatureFlagsListProps {
   items: readonly FeatureFlagListItem[];
   onToggle: (key: FeatureFlagKey, enabled: boolean) => void;
   disabled?: boolean;
+  /** Level of the group headings: 3 inside a Settings section, 2 on a page of its own. */
+  headingLevel?: 2 | 3;
 }
 
 const GROUP_TITLE_KEYS: Record<FeatureFlagGroup, string> = {
@@ -34,8 +36,14 @@ const GROUP_TITLE_KEYS: Record<FeatureFlagGroup, string> = {
   [FeatureFlagGroup.Experimental]: 'settings.featureFlags.groupExperimental',
 };
 
-export function FeatureFlagsList({ items, onToggle, disabled = false }: FeatureFlagsListProps) {
+export function FeatureFlagsList({
+  items,
+  onToggle,
+  disabled = false,
+  headingLevel = 3,
+}: FeatureFlagsListProps) {
   const { t } = useTranslation('web');
+  const GroupHeading = `h${headingLevel}` as const;
   return (
     <div className="flex flex-col gap-3" data-testid="feature-flags-list">
       {Object.values(FeatureFlagGroup).map((group) => {
@@ -43,12 +51,12 @@ export function FeatureFlagsList({ items, onToggle, disabled = false }: FeatureF
         if (inGroup.length === 0) return null;
         return (
           <section key={group} aria-labelledby={`feature-flags-group-${group}`}>
-            <h3
+            <GroupHeading
               id={`feature-flags-group-${group}`}
               className="text-muted-foreground pt-1 text-[11px] font-semibold tracking-wide uppercase"
             >
               {t(GROUP_TITLE_KEYS[group])}
-            </h3>
+            </GroupHeading>
             {inGroup.map((item) => (
               <SettingsRow
                 key={item.key}
