@@ -161,6 +161,10 @@ Rules:
    process and then deletes files is a Windows-only failure waiting for main.
 4. **One retry budget, one home.** Six suites had each inlined their own
    `{ maxRetries, retryDelay }`; that is `@tests/helpers/remove-dir.helper.ts` now.
+5. **The shell's exit is not the ConPTY host's exit.** On Windows node-pty's `conhost.exe`
+   inherits the shell's cwd and can outlive the exit event (CI killed it as an orphan at job
+   end), so even exit-wait + retries can still hit `EBUSY`. A test whose temp dir served only as
+   the shell's cwd may leave it to the OS on that one Windows error; every other error fails.
 
 ## A one-shot download inside a build step is an unguarded failure
 
