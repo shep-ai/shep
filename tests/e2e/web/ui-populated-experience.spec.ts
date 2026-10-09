@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { expectAccessible } from './helpers/ui-accessibility';
+import { enableFeatureFlag } from './helpers/feature-flag-toggle';
 import { seedUiExperience } from './helpers/ui-experience-data';
 
 test.describe('populated page accessibility', () => {
@@ -154,44 +155,51 @@ test.describe('populated page accessibility', () => {
           localStorage.setItem('shep-theme', value);
           localStorage.setItem('shep:collaboration-onboarding-dismissed', 'true');
         }, theme);
-        await page.goto(routes[surface]);
-        await expect(page.getByRole('main')).toBeVisible();
-        await expect(page.getByRole('main')).not.toHaveText('');
-        if (surface === 'repository')
-          await expect(page.getByTestId('repository-drawer')).toBeVisible();
-        if (surface === 'feature')
-          await expect(page.getByTestId('feature-drawer-actions')).toBeVisible();
-        if (surface === 'application') {
-          await expect(page.getByText('No file open', { exact: true })).toBeVisible();
-          await expect(page.getByRole('combobox', { name: 'Agent and model' })).toBeEnabled();
-        }
-        if (surface === 'agent-editor')
-          await expect(page.getByTestId('prompt-textarea-implement.system')).toBeVisible();
-        if (surface === 'security-inventory')
-          await expect(page.getByText('Never', { exact: true }).first()).toBeVisible();
-        if (surface === 'control-center') {
-          await expect(page.getByTestId('feature-node-title').first()).toBeVisible();
-          const repository = page.getByTestId('repository-node-card').filter({
-            has: page
-              .getByTestId('repository-node-name')
-              .filter({ hasText: 'UI review standalone repository' }),
-          });
-          await expect(repository).toBeVisible();
-          for (const name of ['Chat with agent', 'View sessions', 'New feature']) {
-            const control = repository.getByRole('button', { name, exact: true });
-            await expect(control).toBeVisible();
-            const bounds = (await control.boundingBox())!;
-            expect(
-              bounds.width,
-              `${name} target width after canvas scaling`
-            ).toBeGreaterThanOrEqual(24);
-            expect(
-              bounds.height,
-              `${name} target height after canvas scaling`
-            ).toBeGreaterThanOrEqual(24);
+        // ASPM is off by default (spec 133); turn it on for its surface.
+        const restoreFlag =
+          surface === 'security-inventory' ? await enableFeatureFlag(page, 'aspm') : null;
+        try {
+          await page.goto(routes[surface]);
+          await expect(page.getByRole('main')).toBeVisible();
+          await expect(page.getByRole('main')).not.toHaveText('');
+          if (surface === 'repository')
+            await expect(page.getByTestId('repository-drawer')).toBeVisible();
+          if (surface === 'feature')
+            await expect(page.getByTestId('feature-drawer-actions')).toBeVisible();
+          if (surface === 'application') {
+            await expect(page.getByText('No file open', { exact: true })).toBeVisible();
+            await expect(page.getByRole('combobox', { name: 'Agent and model' })).toBeEnabled();
           }
+          if (surface === 'agent-editor')
+            await expect(page.getByTestId('prompt-textarea-implement.system')).toBeVisible();
+          if (surface === 'security-inventory')
+            await expect(page.getByText('Never', { exact: true }).first()).toBeVisible();
+          if (surface === 'control-center') {
+            await expect(page.getByTestId('feature-node-title').first()).toBeVisible();
+            const repository = page.getByTestId('repository-node-card').filter({
+              has: page
+                .getByTestId('repository-node-name')
+                .filter({ hasText: 'UI review standalone repository' }),
+            });
+            await expect(repository).toBeVisible();
+            for (const name of ['Chat with agent', 'View sessions', 'New feature']) {
+              const control = repository.getByRole('button', { name, exact: true });
+              await expect(control).toBeVisible();
+              const bounds = (await control.boundingBox())!;
+              expect(
+                bounds.width,
+                `${name} target width after canvas scaling`
+              ).toBeGreaterThanOrEqual(24);
+              expect(
+                bounds.height,
+                `${name} target height after canvas scaling`
+              ).toBeGreaterThanOrEqual(24);
+            }
+          }
+          await expectAccessible(page);
+        } finally {
+          await restoreFlag?.();
         }
-        await expectAccessible(page);
       });
     }
   }

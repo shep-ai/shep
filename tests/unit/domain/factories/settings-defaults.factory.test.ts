@@ -319,7 +319,7 @@ describe('createDefaultSettings', () => {
       expect(settings.featureFlags).toBeDefined();
     });
 
-    it('should default feature flags with envDeploy / projects / codeReview / collaboration / aspm / supplyChainSecurity enabled', () => {
+    it('should default feature flags with envDeploy / projects / codeReview / collaboration / supplyChainSecurity enabled and aspm off', () => {
       const settings = createDefaultSettings();
       expect(settings.featureFlags).toEqual({
         envDeploy: true,
@@ -328,7 +328,8 @@ describe('createDefaultSettings', () => {
         projects: true,
         codeReview: true,
         collaboration: true,
-        aspm: true,
+        // ASPM is a separate product category; users opt in (spec 133).
+        aspm: false,
         bedrockIntegration: true,
         whatsappDispatch: false,
         clusters: false,

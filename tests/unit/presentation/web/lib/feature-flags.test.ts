@@ -243,14 +243,22 @@ describe('requireFeatureFlag', () => {
   });
 
   it('returns silently when settings is not initialized and the flag defaults to true', () => {
-    // collaboration / projects / codeReview / aspm all default to TRUE in the
+    // collaboration / projects / codeReview all default to TRUE in the
     // env-var fallback (see feature-flags.ts) — they're enabled by default so
     // a fresh install without a DB-persisted settings row still shows them.
     mockHasSettings.mockReturnValue(false);
     expect(() => requireFeatureFlag('collaboration')).not.toThrow();
     expect(() => requireFeatureFlag('projects')).not.toThrow();
     expect(() => requireFeatureFlag('codeReview')).not.toThrow();
+  });
+
+  it('keeps ASPM off without settings unless NEXT_PUBLIC_FLAG_ASPM turns it on', () => {
+    mockHasSettings.mockReturnValue(false);
+    delete process.env.NEXT_PUBLIC_FLAG_ASPM;
+    expect(() => requireFeatureFlag('aspm')).toThrow(FeatureFlagDisabledError);
+    process.env.NEXT_PUBLIC_FLAG_ASPM = 'true';
     expect(() => requireFeatureFlag('aspm')).not.toThrow();
+    delete process.env.NEXT_PUBLIC_FLAG_ASPM;
   });
 
   it('throws when settings is not initialized and the flag defaults to false', () => {

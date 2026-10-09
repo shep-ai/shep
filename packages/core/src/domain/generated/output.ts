@@ -756,7 +756,7 @@ export type FeatureFlags = {
    */
   whatsappDispatch: boolean;
   /**
-   * Enable the Application Security Posture Management (ASPM) module — /aspm web routes, `shep aspm` CLI command tree, and the posture SSE stream (spec 098)
+   * Enable the Application Security Posture Management (ASPM) module — /aspm web routes, `shep aspm` CLI command tree, and the posture SSE stream (spec 098). Off by default: ASPM is a separate product category users opt into (spec 133).
    */
   aspm: boolean;
   /**

@@ -16,6 +16,7 @@ import { createInMemoryDatabase, tableExists } from '../../../helpers/database.h
 import { runSQLiteMigrations } from '@/infrastructure/persistence/sqlite/migrations.js';
 import { SQLiteSettingsRepository } from '@/infrastructure/repositories/sqlite-settings.repository.js';
 import type { Settings } from '@/domain/generated/output.js';
+import { createDefaultSettings } from '@/domain/factories/settings-defaults.factory.js';
 import {
   AgentType,
   AgentEffort,
@@ -533,6 +534,17 @@ describe('SQLiteSettingsRepository', () => {
   });
 
   describe('feature flags', () => {
+    it('keeps an ASPM flag a user already turned on now that the default is off', async () => {
+      const settings = createTestSettings();
+      settings.featureFlags = { ...createDefaultSettings().featureFlags!, aspm: true };
+
+      await repository.initialize(settings);
+      const loaded = await repository.load();
+
+      expect(createDefaultSettings().featureFlags?.aspm).toBe(false);
+      expect(loaded?.featureFlags?.aspm).toBe(true);
+    });
+
     it('should initialize settings with featureFlags and load them back', async () => {
       const settings = createTestSettings();
       settings.featureFlags = {

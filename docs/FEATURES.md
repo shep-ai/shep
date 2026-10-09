@@ -369,7 +369,7 @@ Toggle experimental features. Several of them gate whole command groups:
 | `collaboration`       | Supervisor agent, agent questions and messages |
 | `bedrockIntegration`  | `shep bedrock`                                 |
 | `whatsappDispatch`    | `shep whatsapp`                                |
-| `aspm`                | `shep aspm`                                    |
+| `aspm`                | `shep aspm`, `/aspm` — off by default          |
 | `clusters`            | `shep cluster`                                 |
 | `supplyChainSecurity` | `shep security enforce`                        |
 | `scheduledWorkflows`  | `shep workflow`                                |

@@ -73,10 +73,7 @@ export function getFeatureFlags(): FeatureFlagsState {
       process.env.NEXT_PUBLIC_FLAG_COLLABORATION !== undefined
         ? isEnabled(process.env.NEXT_PUBLIC_FLAG_COLLABORATION)
         : true,
-    aspm:
-      process.env.NEXT_PUBLIC_FLAG_ASPM !== undefined
-        ? isEnabled(process.env.NEXT_PUBLIC_FLAG_ASPM)
-        : true,
+    aspm: isEnabled(process.env.NEXT_PUBLIC_FLAG_ASPM),
     bedrockIntegration: isEnabled(process.env.NEXT_PUBLIC_FLAG_BEDROCK_INTEGRATION),
     whatsappDispatch: isEnabled(process.env.NEXT_PUBLIC_FLAG_WHATSAPP_DISPATCH),
     clusters: false,

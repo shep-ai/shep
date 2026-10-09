@@ -21,6 +21,7 @@ import { test, expect, type Page } from '@playwright/test';
 import type Database from 'better-sqlite3';
 import { randomUUID } from 'node:crypto';
 import { openShepDb } from './helpers/collaboration-flag';
+import { enableFeatureFlag } from './helpers/feature-flag-toggle';
 
 const TEST_APP_ID = `aspm-e2e-app-${randomUUID().slice(0, 8)}`;
 const TEST_APP_SLUG = `aspm-e2e-${randomUUID().slice(0, 8)}`;
@@ -105,8 +106,17 @@ test.describe('ASPM dashboard happy path', () => {
     }
   });
 
+  let restoreAspm: (() => Promise<void>) | null = null;
+
+  test.afterEach(async () => {
+    await restoreAspm?.();
+    restoreAspm = null;
+  });
+
   test('dashboard → findings → detail → declare exception', async ({ page }) => {
     await mockDeclareExceptionRoute(page);
+    // ASPM is off by default (spec 133); turn it on for this test.
+    restoreAspm = await enableFeatureFlag(page, 'aspm');
 
     // Step 1: open the dashboard and see the posture cards.
     await page.goto('/aspm');

@@ -238,7 +238,7 @@ export function createDefaultSettings(): Settings {
     projects: true,
     codeReview: true,
     collaboration: true,
-    aspm: true,
+    aspm: false,
     bedrockIntegration: true,
     whatsappDispatch: false,
     clusters: false,

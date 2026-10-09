@@ -11,7 +11,7 @@ Want to influence the roadmap? Open a [feature request](./.github/ISSUE_TEMPLATE
 Specs being implemented or about to merge.
 
 - [111 — Fleet control plane](./specs/111-fleet-control-plane/) — fleet status bar and triage drawer for running many agents at once. **11 of 19 tasks done**; the first slice merged in #868.
-- [098 — ASPM platform](./specs/098-aspm-platform/) — application security posture management: ownership import, scanners, findings surface. **82 of 84 tasks done**, merged behind a feature flag in #628, with the SSE scan stream deferred.
+- [098 — ASPM platform](./specs/098-aspm-platform/) — application security posture management: ownership import, scanners, findings surface. **82 of 84 tasks done**, merged in #628 behind the `aspm` feature flag, which is **off by default** (turn it on in Settings → Feature Flags), with the SSE scan stream deferred.
 
 ## Next — designed, queued
 
