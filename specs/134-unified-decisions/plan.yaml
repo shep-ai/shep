@@ -2,43 +2,97 @@
 # This is the source of truth. Markdown is auto-generated from this file.
 
 name: unified-decisions
-summary: Implementation plan for 134-unified-decisions
+summary: Implementation plan for 134 — Decision model, DecisionPanel, CLI renderer, producer routing (PR 1) and agent-asked decisions with deadlines (PR 2).
 
-# Relationships
-relatedFeatures: []
-technologies: []
+relatedFeatures:
+  - 093-agent-collaboration-supervision
+technologies:
+  - TypeSpec
+  - TypeScript
+  - React / Next.js / Storybook
+  - '@inquirer/prompts'
+  - '@modelcontextprotocol/sdk'
 relatedLinks: []
 
-# Structured implementation phases
 phases:
   - id: phase-1
-    name: 'Foundation'
+    name: 'Model and persistence (PR 1)'
     parallel: false
     taskIds:
       - task-1
       - task-2
-  # Additional phases are added by `/shep-kit:plan` alongside their tasks in
-  # tasks.yaml. Do not reference task ids here before they exist — spec:validate
-  # fails the consistency gate on dangling taskIds.
+      - task-3
   - id: phase-2
-    name: 'Core Implementation'
+    name: 'Use cases and producers (PR 1)'
     parallel: false
-    taskIds: []
+    taskIds:
+      - task-4
+      - task-5
+      - task-6
+  - id: phase-3
+    name: 'Renderers (PR 1)'
+    parallel: true
+    taskIds:
+      - task-7
+      - task-8
+      - task-9
+      - task-10
+      - task-11
+  - id: phase-4
+    name: 'Agent-asked decisions (PR 2)'
+    parallel: false
+    taskIds:
+      - task-12
+      - task-13
+      - task-14
+      - task-15
 
-# File change tracking
 filesToCreate:
-  - src/domain/entities/{{ENTITY_NAME}}.ts
-  - tests/unit/domain/entities/{{ENTITY_NAME}}.test.ts
+  - tsp/agents/decision.tsp
+  - tsp/ui/inline-block.tsp
+  - packages/core/src/domain/shared/decision.ts
+  - packages/core/src/domain/shared/decision-builders.ts
+  - packages/core/src/infrastructure/persistence/sqlite/migrations/166-add-agent-question-decision.ts
+  - packages/core/src/infrastructure/services/agents/agent-question-service/agent-question-bridge.factory.ts
+  - src/presentation/web/components/common/decision-panel/decision-draft.ts
+  - src/presentation/web/components/common/decision-panel/decision-panel.tsx
+  - src/presentation/web/components/common/decision-panel/decision-panel.stories.tsx
+  - src/presentation/web/components/common/decision-panel/answered-decision-row.tsx
+  - src/presentation/web/components/common/decision-panel/answered-decision-row.stories.tsx
+  - src/presentation/web/components/common/inline-blocks/inline-block.tsx
+  - src/presentation/web/components/common/inline-blocks/inline-block.stories.tsx
+  - src/presentation/cli/commands/agent/questions/decision-renderer.ts
+  - packages/core/src/application/use-cases/agents/ask-agent-decision.use-case.ts
+  - packages/core/src/infrastructure/services/mcp/tools/decision-tools.ts
 
 filesToModify:
-  - src/infrastructure/di/container.ts
-  - package.json
+  - tsp/agents/agent-question.tsp
+  - packages/core/src/application/ports/output/agents/agent-question-service.interface.ts
+  - packages/core/src/application/use-cases/agents/ask-agent-question.use-case.ts
+  - packages/core/src/application/use-cases/agents/answer-agent-question.use-case.ts
+  - packages/core/src/application/use-cases/agents/agent-question-supervisor-router.ts
+  - packages/core/src/infrastructure/persistence/sqlite/mappers/agent-question.mapper.ts
+  - packages/core/src/infrastructure/repositories/sqlite-agent-question.repository.ts
+  - packages/core/src/infrastructure/services/agents/agent-question-service/agent-question-executor-bridge.ts
+  - packages/core/src/infrastructure/services/agents/feature-agent/feature-agent-gate-question-publisher.ts
+  - packages/core/src/infrastructure/services/interactive/lifecycle/session-bootstrapper.ts
+  - packages/core/src/infrastructure/services/interactive/runtime/user-interaction.coordinator.ts
+  - src/presentation/web/components/features/chat/ChatTab.tsx
+  - src/presentation/web/components/features/chat/turn-group-list.tsx
+  - src/presentation/web/components/assistant-ui/thread.tsx
+  - src/presentation/web/components/common/prd-questionnaire/prd-questionnaire.tsx
+  - src/presentation/web/components/agent-questions/agent-questions-inbox.tsx
+  - src/presentation/web/app/agent-questions/page.tsx
+  - src/presentation/web/app/actions/agent-questions.ts
+  - src/presentation/cli/commands/agent/questions/ls.command.ts
+  - src/presentation/cli/commands/agent/questions/answer.command.ts
+  - packages/core/src/infrastructure/services/agents/feature-agent/nodes/prompts/fast-implement.prompt.ts
+  - packages/core/src/infrastructure/services/agents/feature-agent/nodes/prompts/prototype-generate.prompt.ts
+  - translations/*/web.json
+  - translations/*/cli.json
 
-# Open questions (should all be resolved before implementation)
 openQuestions: []
 
-# Markdown content — architecture, strategy, and risks only.
-# Task-level detail lives in tasks.yaml (no duplication).
 content: |
   ## Status
 
@@ -48,50 +102,70 @@ content: |
   ## Architecture Overview
 
   ```
-  {{ARCHITECTURE_DIAGRAM}}
+                    producers                                   renderers
+   ┌───────────────────────────────┐                ┌──────────────────────────────┐
+   │ chat AskUserQuestion (Claude, │  UserQuestion  │ web: InlineBlock{decision}   │
+   │ Cursor) ──► AgentQuestion-    │──┐             │   └─ DecisionPanel           │
+   │ ExecutorBridge (wired)        │  │ builders    │      (chat turn, inbox,      │
+   │ PRD questionnaire             │──┤ (domain/    │       PRD questionnaire)     │
+   │ approval gates (publisher)    │──┼─► Decision ─┤ CLI: renderDecisionText +    │
+   │ supervisor (answers by id)    │  │  shared)    │      promptDecision          │
+   │ ask_decision MCP tool (PR 2)  │──┘             │ notifications / WhatsApp:    │
+   └───────────────────────────────┘                │      Decision title/summary  │
+                                                    └──────────────────────────────┘
+          AskAgentQuestionUseCase ──► agent_questions (decision_json, responses_json)
+          AnswerAgentQuestionUseCase ◄── DecisionResponse[] | answer text
+               └─ resolves deferred awaiter, forwards gate verdicts by option id
   ```
 
   ## Implementation Strategy
 
-  **MANDATORY TDD**: All phases with executable code follow RED-GREEN-REFACTOR cycles.
+  **MANDATORY TDD**: every code task is RED → GREEN → REFACTOR.
 
-  High-level walkthrough of how the phases connect and why they are ordered
-  this way. Focus on architectural decisions and data flow — not individual
-  task descriptions (see tasks.yaml for the detailed breakdown).
+  1. The model comes first (TypeSpec, then `pnpm generate`), because every other layer imports
+     it. Persistence follows so use-case tests can run against the real repository.
+  2. Pure domain helpers (`decision.ts`: resolve, validate, summarise, picked-recommended;
+     `decision-builders.ts`: from UserQuestion[], PRD questionnaire, approval gate, legacy
+     string[]) are the single place where answer semantics live. Web, CLI, the bridge, the
+     supervisor and the MCP tool all call them.
+  3. Use cases accept a `Decision` and `DecisionResponse[]`; legacy `options: string[]` callers keep
+     working because a Decision is built from them.
+  4. Producers are migrated one at a time: gate publisher (readable gate decision), bridge wiring
+     (chat ↔ inbox race), supervisor router (gate detection by decision kind).
+  5. Renderers: the pure web draft reducer, then `DecisionPanel`, `AnsweredDecisionRow` and the
+     `InlineBlock` registry, then the hosts (chat turn, inbox, PRD questionnaire), then the CLI.
+  6. PR 2 adds the settings default deadline, `AskAgentDecisionUseCase`, the `ask_decision` MCP tool,
+     its injection into headless runs, the timeout → recommended → activity-entry path, and the
+     prompt changes.
 
-  ## Files to Create/Modify
+  ## Clean Architecture
 
-  ### New Files
+  Domain (`domain/shared/decision*.ts`, generated types) has no dependencies; application use
+  cases depend only on domain and port interfaces; infrastructure (repository, bridge, MCP tool,
+  gate publisher) implements ports and is registered by string token; presentation (web, CLI)
+  reaches core only through use cases resolved from the container.
 
-  | File | Purpose |
-  | ---- | ------- |
-  | {{FILE_PATH}} | {{PURPOSE}} |
+  ## Testing Strategy
 
-  ### Modified Files
+  - Unit: domain helpers (every resolution branch: id, label, custom, outranking, multi-select,
+    not allowed), use cases with mocks, bridge race (chat first / inbox first / flag off),
+    gate publisher, supervisor router, draft reducer, DecisionPanel (keys, 200 ms advance with
+    fake timers, paging, custom outranks, displaced text, answered row, not-resumable), CLI
+    renderer, MCP tool handler, prompt wording.
+  - Integration: repository round-trip of decision + responses with non-default values (create,
+    then settle — exercises INSERT and UPDATE), DI resolution of every new token.
+  - Storybook: DecisionPanel (single, multi, paging, preview, recommended, answered,
+    not-resumable), AnsweredDecisionRow, InlineBlock.
 
-  | File | Changes |
-  | ---- | ------- |
-  | {{FILE_PATH}} | {{CHANGES}} |
-
-  ## Testing Strategy (TDD: Tests FIRST)
-
-  **CRITICAL:** Tests are written FIRST in each TDD cycle.
-
-  ### Unit Tests (RED -> GREEN -> REFACTOR)
-
-  - {{TEST_AREA_1}}
-  - {{TEST_AREA_2}}
-
-  ### Integration Tests
-
-  - {{INTEGRATION_TEST_1}}
-
-  ## Risk Mitigation
+  ## Risks
 
   | Risk | Mitigation |
-  | ---- | ---------- |
-  | {{RISK}} | {{MITIGATION}} |
+  | --- | --- |
+  | Chat and inbox both answer the same question | One conditional write (`settlePending`) decides; the loser only resolves its local surface |
+  | Legacy pending rows without decision_json | `decisionFromLegacyQuestion` builds one at read time |
+  | Turbopack + `.js` imports from domain | Domain files use extensionless imports; `smoke-imports` test |
+  | Headless agent stuck waiting | Deadline always set (default 30 min); registry timer + DB poll; timeout settles with the recommendation |
 
-  ---
+  ## Rollback
 
-  _Updated by `/shep-kit:plan` — see tasks.yaml for detailed task breakdown_
+  The migration is additive. Reverting the code leaves two unused nullable columns.

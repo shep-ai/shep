@@ -3,18 +3,18 @@ feature:
   name: 'unified-decisions'
   number: 134
   branch: 'feat/134-unified-decisions'
-  lifecycle: 'planning'
+  lifecycle: 'implementation'
   createdAt: '2026-10-09T09:35:32Z'
 
 status:
-  phase: 'planning'
+  phase: 'ready-to-implement'
   progress:
     completed: 0
-    total: 0
+    total: 15
     percentage: 0
   currentTask: null
   lastUpdated: '2026-10-09T09:35:32Z'
-  lastUpdatedBy: 'shep-kit:research'
+  lastUpdatedBy: 'shep-kit:plan'
 
 validation:
   lastRun: null
@@ -30,10 +30,13 @@ checkpoints:
   - phase: 'feature-created'
     completedAt: '2026-10-09T09:35:32Z'
     completedBy: 'shep-kit:new-feature'
+  - phase: 'research-complete'
+    completedAt: '2026-10-09T10:10:00Z'
+    completedBy: 'shep-kit:research'
+  - phase: 'plan-complete'
+    completedAt: '2026-10-09T10:30:00Z'
+    completedBy: 'shep-kit:plan'
 
 errors:
   current: null
   history: []
-  - phase: 'research-complete'
-    completedAt: '2026-10-09T10:10:00Z'
-    completedBy: 'shep-kit:research'

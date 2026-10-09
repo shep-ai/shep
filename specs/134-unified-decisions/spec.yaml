@@ -22,7 +22,7 @@ summary: |-
   headless agent ask through an `ask_decision` MCP tool, always with a recommended option and a
   deadline; when nobody answers in time the agent proceeds with the recommendation and the
   feature's activity log says so.
-phase: Research
+phase: Planning
 sizeEstimate: XL
 relatedFeatures:
   - 093-agent-collaboration-supervision

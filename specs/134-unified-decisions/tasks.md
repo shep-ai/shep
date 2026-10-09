@@ -1,18 +1,11 @@
 ## Summary
 
-{{BRIEF_DESCRIPTION_OF_SCOPE}} — {{TASK_COUNT}} tasks across {{PHASE_COUNT}} phases.
+15 tasks. PR 1 = tasks 1–11 (one Decision primitive, its renderers and producers). PR 2 =
+tasks 12–15 (agent-asked decisions with deadlines).
 
 ## Acceptance Checklist
 
-Before marking feature complete:
-
-- [ ] All tasks completed
-- [ ] Tests passing (`pnpm test`)
-- [ ] Linting clean (`pnpm lint`)
-- [ ] Types valid (`pnpm typecheck`)
-- [ ] TypeSpec compiles (`pnpm tsp:compile`)
-- [ ] PR created and reviewed
-
----
-
-_Task details are in the tasks[] array of tasks.yaml_
+- [ ] pnpm validate, test:unit, test:int, build, build:storybook, check:stories green locally
+- [ ] 9 locales updated for every new key
+- [ ] Every new component has a colocated story
+- [ ] CI fully green on both PRs
