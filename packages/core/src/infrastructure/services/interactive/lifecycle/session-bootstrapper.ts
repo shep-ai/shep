@@ -46,6 +46,7 @@ import { ConcurrentSessionLimitError } from '../../../../domain/errors/concurren
 import { InteractiveAgentUnsupportedError } from '../../../../domain/errors/interactive-agent-unsupported.error.js';
 import { BootWatchdog } from './boot-watchdog.js';
 import type { SessionSpaceEnvironment } from './session-space-environment.js';
+import type { AgentQuestionBridgeFactory } from '../../agents/agent-question-service/agent-question-bridge.factory.js';
 
 export class SessionBootstrapper {
   constructor(
@@ -59,7 +60,12 @@ export class SessionBootstrapper {
     private readonly agentConfigResolver: AgentConfigResolver,
     private readonly interactionCoordinator: UserInteractionCoordinator,
     private readonly logger: ILogger,
-    private readonly spaceEnvironment: SessionSpaceEnvironment
+    private readonly spaceEnvironment: SessionSpaceEnvironment,
+    /**
+     * Builds the per-session bridge that records chat questions in the
+     * unified inbox (spec 134). Absent in tests that do not exercise it.
+     */
+    private readonly questionBridges?: Pick<AgentQuestionBridgeFactory, 'create'>
   ) {}
 
   /**
@@ -229,6 +235,14 @@ export class SessionBootstrapper {
       // Build the onUserQuestion callback that pauses the SDK stream
       // and waits for user input via the UI.
       const onUserQuestion = this.interactionCoordinator.buildOnUserQuestionCallback(state);
+      // Spec 134: the same question is also recorded in the inbox and
+      // notifications; whichever surface answers first settles both. The
+      // bridge returns null with the collaboration flag off, and the
+      // executor then uses onUserQuestion alone.
+      const agentQuestionBridge = await this.questionBridges?.create(
+        { scopeKey: featureId, worktreePath, sessionId: state.sessionId },
+        this.interactionCoordinator.buildLiveSurface(state)
+      );
 
       const previousAgentSessionId = state.agentSessionId;
       let handle;
@@ -239,6 +253,7 @@ export class SessionBootstrapper {
           model: state.model,
           systemPrompt: context,
           onUserQuestion,
+          ...(agentQuestionBridge ? { agentQuestionBridge } : {}),
           ...(space.environment ? { environment: space.environment } : {}),
         });
       } else {
@@ -248,6 +263,7 @@ export class SessionBootstrapper {
           model: state.model,
           systemPrompt: context,
           onUserQuestion,
+          ...(agentQuestionBridge ? { agentQuestionBridge } : {}),
           ...(space.environment ? { environment: space.environment } : {}),
         });
       }

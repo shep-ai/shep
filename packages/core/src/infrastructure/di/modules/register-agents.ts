@@ -36,6 +36,7 @@ import { CursorSessionRepository } from '../../services/agents/sessions/cursor-s
 import { AgentSessionRepositoryRegistry } from '../../services/agents/agent-session-repository.registry.js';
 import { AgentType } from '../../../domain/generated/output.js';
 import { FeatureAgentLifecyclePublisher } from '../../services/agents/feature-agent/feature-agent-lifecycle-publisher.js';
+import { AgentQuestionBridgeFactory } from '../../services/agents/agent-question-service/agent-question-bridge.factory.js';
 import { FeatureAgentGateQuestionPublisher } from '../../services/agents/feature-agent/feature-agent-gate-question-publisher.js';
 import { FeatureAgentSupervisorGateEvaluator } from '../../services/agents/feature-agent/feature-agent-supervisor-gate-evaluator.js';
 import { LangGraphSupervisorAgent } from '../../services/agents/supervisor-agent/langgraph-supervisor-agent.js';
@@ -167,6 +168,8 @@ export function registerAgents(container: DependencyContainer): void {
   // on every waiting_approval transition so the unified inbox covers
   // background-mode gates (spec 093, task 20).
   container.registerSingleton(FeatureAgentGateQuestionPublisher);
+  // Spec 134: builds each chat session's AgentQuestionExecutorBridge.
+  container.registerSingleton(AgentQuestionBridgeFactory);
 
   // Feature-agent worker consults the configured supervisor on every
   // waiting_approval transition (spec 093, task 29). In autonomous

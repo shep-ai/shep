@@ -108,6 +108,16 @@ export function resolveResponsesFromText(decision: Decision, text: string): Deci
   return decision.questions.map((question) => resolveQuestionFromText(question, text));
 }
 
+/** Read the AskUserQuestion answer map (question text → label text) back into responses. */
+export function responsesFromAnswersByQuestionText(
+  decision: Decision,
+  answers: Record<string, string>
+): DecisionResponse[] {
+  return decision.questions.map((question) =>
+    resolveQuestionFromText(question, answers[question.question] ?? '')
+  );
+}
+
 function unique(values: string[]): string[] {
   return Array.from(new Set(values));
 }

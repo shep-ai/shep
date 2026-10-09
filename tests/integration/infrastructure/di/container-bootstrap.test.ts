@@ -30,6 +30,7 @@
  * eagerly resolves this way, add the class here too.
  */
 
+import { AgentQuestionBridgeFactory } from '@/infrastructure/services/agents/agent-question-service/agent-question-bridge.factory.js';
 import 'reflect-metadata';
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { container as rootContainer, type DependencyContainer } from 'tsyringe';
@@ -513,7 +514,11 @@ describe('DI container bootstrap (integration)', () => {
       new SessionSpaceEnvironment(
         featureRepository,
         scopedContainer.resolve(ResolveSpaceEnvironmentUseCase)
-      )
+      ),
+      {
+        create: (session, surface) =>
+          scopedContainer.resolve(AgentQuestionBridgeFactory).create(session, surface),
+      }
     );
     const terminator = new SessionTerminator(
       sessionRegistry,

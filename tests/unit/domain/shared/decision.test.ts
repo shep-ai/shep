@@ -14,6 +14,7 @@ import {
   normalizeResponses,
   recommendedResponses,
   resolveResponsesFromText,
+  responsesFromAnswersByQuestionText,
   responsesPickedRecommended,
   summariseResponses,
   validateResponses,
@@ -260,5 +261,19 @@ describe('isDecisionAnswerable', () => {
     expect(
       isDecisionAnswerable(singleSelect({ responseMode: DecisionResponseMode.NotResumable }))
     ).toBe(false);
+  });
+});
+
+describe('responsesFromAnswersByQuestionText', () => {
+  it('reads the AskUserQuestion answer map back into responses', () => {
+    expect(
+      responsesFromAnswersByQuestionText(multiSelect(), {
+        'Which platforms?': 'Web, iOS',
+        'Which auth?': 'Passkeys',
+      })
+    ).toEqual([
+      { questionId: 'q1', optionIds: ['web', 'ios'] },
+      { questionId: 'q2', optionIds: [], customText: 'Passkeys' },
+    ]);
   });
 });
