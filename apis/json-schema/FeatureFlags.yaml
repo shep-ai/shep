@@ -42,10 +42,6 @@ properties:
     type: boolean
     default: false
     description: Enable Clusters navigation and Kubernetes cluster management in the web UI
-  supplyChainSecurity:
-    type: boolean
-    default: true
-    description: Enable the supply chain security feature (policy engine, badges, settings, CLI, CI gate). When false, the feature is inert regardless of SecurityMode.
   scheduledWorkflows:
     type: boolean
     default: false
@@ -69,7 +65,6 @@ required:
   - whatsappDispatch
   - aspm
   - clusters
-  - supplyChainSecurity
   - scheduledWorkflows
   - githubImport
   - queryAwareHarness

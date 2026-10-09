@@ -31,7 +31,6 @@ const defaultFlags = {
   whatsappDispatch: false,
   aspm: false,
   clusters: false,
-  supplyChainSecurity: false,
   scheduledWorkflows: false,
   githubImport: true,
   queryAwareHarness: false,

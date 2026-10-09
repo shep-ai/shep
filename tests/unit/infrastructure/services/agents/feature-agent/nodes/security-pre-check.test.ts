@@ -142,7 +142,7 @@ describe('checkSecurityDisposition', () => {
   });
 });
 
-describe('resolveEffectiveSecurityMode — supplyChainSecurity feature flag gate', () => {
+describe('resolveEffectiveSecurityMode — supply-chain (ASPM) gate', () => {
   it('forces Disabled when the feature flag is false, regardless of state mode', () => {
     expect(resolveEffectiveSecurityMode(SecurityMode.Enforce, false)).toBe(SecurityMode.Disabled);
     expect(resolveEffectiveSecurityMode(SecurityMode.Advisory, false)).toBe(SecurityMode.Disabled);
@@ -161,7 +161,7 @@ describe('resolveEffectiveSecurityMode — supplyChainSecurity feature flag gate
   });
 
   it('composes with checkSecurityDisposition to skip all checks when flag is false', () => {
-    // Even an Enforce/Denied state collapses to a skip when supplyChainSecurity is off.
+    // Even an Enforce/Denied state collapses to a skip when supply-chain security is off.
     const effective = resolveEffectiveSecurityMode(SecurityMode.Enforce, false);
     const result = checkSecurityDisposition('implement', effective, {
       [SecurityActionCategory.PackageScriptExec]: SecurityActionDisposition.Denied,

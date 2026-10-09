@@ -369,9 +369,8 @@ Toggle experimental features. Several of them gate whole command groups:
 | `collaboration`       | Supervisor agent, agent questions and messages |
 | `bedrockIntegration`  | `shep bedrock`                                 |
 | `whatsappDispatch`    | `shep whatsapp`                                |
-| `aspm`                | `shep aspm`, `/aspm` — off by default          |
+| `aspm`                | `shep aspm`, `/aspm`, `shep security enforce` — off by default |
 | `clusters`            | `shep cluster`                                 |
-| `supplyChainSecurity` | `shep security enforce`                        |
 | `scheduledWorkflows`  | `shep workflow`                                |
 | `githubImport`        | GitHub repository import                       |
 

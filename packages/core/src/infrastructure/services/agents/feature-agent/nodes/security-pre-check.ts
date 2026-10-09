@@ -35,14 +35,14 @@ export function classifyNodeAction(nodeName: string): SecurityActionCategory | n
 
 /**
  * Resolve the effective SecurityMode for a node execution, honoring the
- * supplyChainSecurity master kill switch. When the feature flag is false,
+ * supply-chain kill switch (the aspm feature flag, spec 133). When it is off,
  * the mode is forced to Disabled regardless of the mode stored in state.
  *
  * Extracted as a pure function so the gate can be unit-tested without
  * spinning up the full node-helpers infrastructure.
  *
  * @param stateMode - The security mode carried in FeatureAgentState (or undefined)
- * @param supplyChainSecurityEnabled - Value of the supplyChainSecurity feature flag
+ * @param supplyChainSecurityEnabled - Whether supply-chain security is on (isSupplyChainSecurityEnabled)
  * @returns SecurityMode.Disabled when the flag is off, otherwise the state mode
  *          (or Disabled when state has no mode set).
  */

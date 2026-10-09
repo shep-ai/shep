@@ -1106,16 +1106,17 @@ feature flag.
 
 ### `shep security enforce`
 
-Evaluate repository security posture and enforce policy. Gated on the
-`supplyChainSecurity` feature flag; when the flag is off the command is a no-op
-that exits 0.
+Evaluate repository security posture and enforce policy. Supply-chain security
+is part of ASPM, so the command is gated on the `aspm` feature flag; when the
+flag is off the command is a no-op that exits 0.
 
 | Option                  | Description                                | Default |
 | ----------------------- | ------------------------------------------ | ------- |
 | `-r, --repo <path>`     | Repository to evaluate                     | cwd     |
 | `-o, --output <format>` | Output format (`table` or `json`)          | `table` |
 
-`SHEP_SUPPLY_CHAIN_SECURITY=false` is the CI kill-switch.
+`SHEP_SUPPLY_CHAIN_SECURITY` overrides the flag for CI: `false` (or `0`) turns
+enforcement off, `true` (or `1`) turns it on even while `aspm` is off.
 
 **Source**: `src/presentation/cli/commands/security.command.ts`
 

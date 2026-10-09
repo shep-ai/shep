@@ -92,6 +92,7 @@ import {
 import type { AvailableTerminal } from '@/app/actions/get-available-terminals';
 import type { SettingsSecretPresence } from '@shepai/core/application/use-cases/settings/load-settings.use-case';
 import { secretPlaceholder, secretUpdateValue } from '@/lib/secret-placeholder';
+import { isSupplyChainSecurityEnabled } from '@shepai/core/domain/shared/supply-chain-security';
 
 const EDITOR_OPTIONS = [
   { value: EditorType.VsCode, label: 'VS Code' },
@@ -400,7 +401,6 @@ export function SettingsPageClient({
     bedrockIntegration: true,
     whatsappDispatch: false,
     clusters: false,
-    supplyChainSecurity: true,
     scheduledWorkflows: false,
     githubImport: true,
     queryAwareHarness: false,
@@ -696,16 +696,16 @@ export function SettingsPageClient({
 
   const [activeSection, setActiveSection] = useState<string>('agent');
 
-  // Filter sections based on feature flags. When supplyChainSecurity is off,
-  // hide the Security nav tab AND the section below so the feature is fully inert.
+  // Filter sections based on feature flags. Supply-chain security is part of
+  // ASPM: with aspm off, hide the Security nav tab AND the section below.
   const visibleSections = useMemo<readonly (typeof SECTIONS)[number][]>(
     () =>
       SECTIONS.filter(
         (s: (typeof SECTIONS)[number]) =>
-          (s.id !== 'security' || flags.supplyChainSecurity) &&
+          (s.id !== 'security' || isSupplyChainSecurityEnabled(flags)) &&
           (s.id !== 'harness' || flags.queryAwareHarness)
       ),
-    [flags.supplyChainSecurity, flags.queryAwareHarness]
+    [flags]
   );
 
   // Track which section is in view via IntersectionObserver
@@ -1359,8 +1359,8 @@ export function SettingsPageClient({
           </SectionHint>
         </div>
 
-        {/* ── Security ── (hidden when supplyChainSecurity feature flag is off) */}
-        {flags.supplyChainSecurity ? (
+        {/* ── Security ── (supply chain, part of ASPM: hidden when aspm is off) */}
+        {isSupplyChainSecurityEnabled(flags) ? (
           <div
             id="section-security"
             className="grid scroll-mt-32 grid-cols-1 gap-x-5 rounded-lg lg:grid-cols-[minmax(0,1fr)_280px]"

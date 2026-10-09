@@ -319,7 +319,7 @@ describe('createDefaultSettings', () => {
       expect(settings.featureFlags).toBeDefined();
     });
 
-    it('should default feature flags with envDeploy / projects / codeReview / collaboration / supplyChainSecurity enabled and aspm off', () => {
+    it('should default feature flags with envDeploy / projects / codeReview / collaboration enabled and aspm off', () => {
       const settings = createDefaultSettings();
       expect(settings.featureFlags).toEqual({
         envDeploy: true,
@@ -333,9 +333,6 @@ describe('createDefaultSettings', () => {
         bedrockIntegration: true,
         whatsappDispatch: false,
         clusters: false,
-        // Master kill switch for the supply chain security feature —
-        // defaults to true so existing users keep the feature they already see.
-        supplyChainSecurity: true,
         scheduledWorkflows: false,
         githubImport: true,
         queryAwareHarness: false,

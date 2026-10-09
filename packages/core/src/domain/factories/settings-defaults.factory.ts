@@ -242,7 +242,6 @@ export function createDefaultSettings(): Settings {
     bedrockIntegration: true,
     whatsappDispatch: false,
     clusters: false,
-    supplyChainSecurity: true,
     scheduledWorkflows: false,
     githubImport: true,
     queryAwareHarness: false,

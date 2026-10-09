@@ -180,7 +180,6 @@ function createTestRow(overrides: Partial<SettingsRow> = {}): SettingsRow {
     feature_flag_whatsapp_dispatch: 0,
     feature_flag_aspm: 0,
     feature_flag_clusters: 0,
-    feature_flag_supply_chain_security: 1,
     feature_flag_scheduled_workflows: 0,
     interactive_agent_enabled: 1,
     interactive_agent_auto_timeout_minutes: 15,
@@ -1474,87 +1473,18 @@ describe('Settings Mapper', () => {
     });
   });
 
-  describe('supplyChainSecurity feature flag (migration 056)', () => {
-    it('maps featureFlags.supplyChainSecurity=true to feature_flag_supply_chain_security=1', () => {
-      const settings = createTestSettings({
-        featureFlags: {
-          envDeploy: false,
-          debug: false,
-          reactFileManager: false,
-          projects: false,
-          codeReview: false,
-          collaboration: false,
-          bedrockIntegration: false,
-          whatsappDispatch: false,
-          aspm: false,
-          clusters: false,
-          supplyChainSecurity: true,
-          scheduledWorkflows: false,
-          githubImport: true,
-          queryAwareHarness: false,
-        },
-      });
-      const row = toDatabase(settings);
-      expect(row.feature_flag_supply_chain_security).toBe(1);
+  describe('legacy supply-chain flag column (folded into ASPM, spec 133)', () => {
+    it('no longer writes feature_flag_supply_chain_security', () => {
+      const row = toDatabase(createTestSettings()) as unknown as Record<string, unknown>;
+      expect(row).not.toHaveProperty('feature_flag_supply_chain_security');
     });
 
-    it('maps featureFlags.supplyChainSecurity=false to feature_flag_supply_chain_security=0', () => {
-      const settings = createTestSettings({
-        featureFlags: {
-          envDeploy: false,
-          debug: false,
-          reactFileManager: false,
-          projects: false,
-          codeReview: false,
-          collaboration: false,
-          bedrockIntegration: false,
-          whatsappDispatch: false,
-          aspm: false,
-          clusters: false,
-          supplyChainSecurity: false,
-          scheduledWorkflows: false,
-          githubImport: true,
-          queryAwareHarness: false,
-        },
-      });
-      const row = toDatabase(settings);
-      expect(row.feature_flag_supply_chain_security).toBe(0);
-    });
-
-    it('reconstructs supplyChainSecurity=true from feature_flag_supply_chain_security=1', () => {
-      const row = createTestRow({ feature_flag_supply_chain_security: 1 });
-      const settings = fromDatabase(row);
-      expect(settings.featureFlags?.supplyChainSecurity).toBe(true);
-    });
-
-    it('reconstructs supplyChainSecurity=false from feature_flag_supply_chain_security=0', () => {
-      const row = createTestRow({ feature_flag_supply_chain_security: 0 });
-      const settings = fromDatabase(row);
-      expect(settings.featureFlags?.supplyChainSecurity).toBe(false);
-    });
-
-    it('round-trips supplyChainSecurity through toDatabase → fromDatabase', () => {
-      const settings = createTestSettings({
-        featureFlags: {
-          envDeploy: true,
-          debug: true,
-          reactFileManager: true,
-          projects: true,
-          codeReview: true,
-          collaboration: true,
-          bedrockIntegration: true,
-          whatsappDispatch: true,
-          aspm: true,
-          clusters: true,
-          supplyChainSecurity: false,
-          scheduledWorkflows: false,
-          githubImport: true,
-          queryAwareHarness: false,
-        },
-      });
-      const row = toDatabase(settings);
-      const restored = fromDatabase(row);
-      expect(restored.featureFlags).toEqual(settings.featureFlags);
+    it('ignores the column on read', () => {
+      const row = {
+        ...createTestRow(),
+        feature_flag_supply_chain_security: 0,
+      } as Parameters<typeof fromDatabase>[0];
+      expect(fromDatabase(row).featureFlags).not.toHaveProperty('supplyChainSecurity');
     });
   });
 

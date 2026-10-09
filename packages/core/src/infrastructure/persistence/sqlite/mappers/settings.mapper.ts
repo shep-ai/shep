@@ -158,7 +158,6 @@ export interface SettingsRow {
   feature_flag_whatsapp_dispatch: number;
   feature_flag_aspm: number;
   feature_flag_clusters: number;
-  feature_flag_supply_chain_security: number;
   feature_flag_scheduled_workflows: number;
   feature_flag_github_import?: number;
   // Query-aware harness flag (migration 151)
@@ -352,7 +351,6 @@ export function toDatabase(settings: Settings): SettingsRow {
     feature_flag_whatsapp_dispatch: settings.featureFlags?.whatsappDispatch ? 1 : 0,
     feature_flag_aspm: settings.featureFlags?.aspm ? 1 : 0,
     feature_flag_clusters: settings.featureFlags?.clusters ? 1 : 0,
-    feature_flag_supply_chain_security: settings.featureFlags?.supplyChainSecurity ? 1 : 0,
     feature_flag_scheduled_workflows: settings.featureFlags?.scheduledWorkflows ? 1 : 0,
     feature_flag_github_import: settings.featureFlags?.githubImport !== false ? 1 : 0,
     feature_flag_query_aware_harness: settings.featureFlags?.queryAwareHarness ? 1 : 0,
@@ -814,7 +812,6 @@ export function fromDatabase(row: SettingsRow): Settings {
       aspm: row.feature_flag_aspm === 1,
       clusters: row.feature_flag_clusters === 1,
       // Default true when column is missing/null (pre-migration upgrades)
-      supplyChainSecurity: (row.feature_flag_supply_chain_security ?? 1) !== 0,
       scheduledWorkflows: row.feature_flag_scheduled_workflows === 1,
       // Default true when column is missing/null (pre-migration upgrades)
       githubImport: (row.feature_flag_github_import ?? 1) !== 0,

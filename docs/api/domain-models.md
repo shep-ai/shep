@@ -393,7 +393,6 @@ export type FeatureFlags = {
   whatsappDispatch: boolean;
   aspm: boolean;
   clusters: boolean;
-  supplyChainSecurity: boolean;
   scheduledWorkflows: boolean;
   githubImport: boolean;
 };
@@ -401,7 +400,7 @@ export type FeatureFlags = {
 
 Several command groups are gated on these flags — for example `shep aspm` on
 `aspm`, `shep supervisor` on `collaboration`, and `shep security enforce` on
-`supplyChainSecurity`.
+`aspm` too: supply-chain security is part of ASPM.
 
 ### GanttViewData
 

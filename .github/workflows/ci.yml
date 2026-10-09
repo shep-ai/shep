@@ -351,9 +351,10 @@ jobs:
   # Runs shep security enforce to validate dependency risk, release integrity,
   # and governance posture. Gates release and dev-release jobs.
   #
-  # Master kill switch: set the repository variable or workflow env
-  # SHEP_SUPPLY_CHAIN_SECURITY=false to make this job a no-op.
-  # The CLI honors the env var and exits 0 with a "flag disabled" note.
+  # Supply-chain security is part of ASPM, which is off on a fresh install,
+  # so SHEP_SUPPLY_CHAIN_SECURITY=true opts this job in explicitly. Set the
+  # repository variable to false to make it a no-op: the CLI then exits 0
+  # with a "flag disabled" note.
   # ===========================================================================
   security-enforce:
     name: Security Enforce

@@ -764,10 +764,6 @@ export type FeatureFlags = {
    */
   clusters: boolean;
   /**
-   * Enable the supply chain security feature (policy engine, badges, settings, CLI, CI gate). When false, the feature is inert regardless of SecurityMode.
-   */
-  supplyChainSecurity: boolean;
-  /**
    * Enable scheduled workflows feature — workflow creation, scheduling, and execution
    */
   scheduledWorkflows: boolean;

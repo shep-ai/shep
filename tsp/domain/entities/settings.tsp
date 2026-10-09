@@ -722,9 +722,6 @@ model FeatureFlags {
   @doc("Enable Clusters navigation and Kubernetes cluster management in the web UI")
   clusters: boolean = false;
 
-  @doc("Enable the supply chain security feature (policy engine, badges, settings, CLI, CI gate). When false, the feature is inert regardless of SecurityMode.")
-  supplyChainSecurity: boolean = true;
-
   @doc("Enable scheduled workflows feature — workflow creation, scheduling, and execution")
   scheduledWorkflows: boolean = false;
 

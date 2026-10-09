@@ -79,7 +79,6 @@ describe('updateSettings', () => {
         whatsappDispatch: false,
         aspm: false,
         clusters: false,
-        supplyChainSecurity: true,
         scheduledWorkflows: false,
         githubImport: true,
         queryAwareHarness: false,
