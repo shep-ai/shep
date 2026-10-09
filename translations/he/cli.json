@@ -1793,6 +1793,61 @@
         "features": "פיצ'רים",
         "featuresValue": "בתהליך: {{inFlight}}, ממתינים לאישור: {{waiting}}"
       }
+    },
+    "telemetry": {
+      "description": "נהל מדדי שימוש (טלמטריה עם אפשרות ביטול)",
+      "stateArgument": "on או off",
+      "invalidState": "צפוי \"on\" או \"off\", התקבל \"{{value}}\"",
+      "failed": "עדכון הגדרות מדדי השימוש נכשל",
+      "forcedOff": "מדדי השימוש נשארים כבויים בסביבה זו: {{reason}}.",
+      "on": {
+        "description": "הפעל מדדי שימוש",
+        "done": "מדדי השימוש מופעלים."
+      },
+      "off": {
+        "description": "כבה מדדי שימוש ומחק אירועים בתור",
+        "done": "מדדי השימוש כבויים. האירועים בתור נמחקו."
+      },
+      "identity": {
+        "description": "כלול או השמט את הזהות שלך (שם משתמש ובעלים ב-GitHub, גיבוב חשבון הסוכן)",
+        "on": "הזהות שלך תיכלל במדדי השימוש.",
+        "off": "הזהות שלך תושמט. מדדי השימוש נשארים אנונימיים."
+      },
+      "contact": {
+        "description": "אפשר או סרב ליצירת קשר מצוות Shep ב-GitHub",
+        "on": "צוות Shep רשאי ליצור איתך קשר ב-GitHub.",
+        "off": "צוות Shep לא ייצור איתך קשר."
+      },
+      "status": {
+        "description": "הצג אם מדדי השימוש מופעלים ומה ממתין בתור",
+        "metrics": "מדדי שימוש",
+        "on": "מופעלים",
+        "off": "כבויים ({{reason}})",
+        "identity": "זהות",
+        "included": "נכללת",
+        "excluded": "מושמטת",
+        "contact": "יצירת קשר ב-GitHub",
+        "yes": "מותרת",
+        "no": "לא מותרת",
+        "installId": "מזהה התקנה",
+        "queued": "אירועים בתור",
+        "destination": "נשלח אל",
+        "notConfigured": "לשום מקום — לא הוגדר מפתח פרויקט"
+      },
+      "show": {
+        "description": "הצג בדיוק מה יישלח",
+        "header": "האצווה הבאה עבור {{destination}} ({{queued}} אירועים בתור):",
+        "empty": "אין דבר בתור.",
+        "notConfigured": "לא הוגדר מפתח פרויקט, לכן עדיין לא נשלח דבר.",
+        "disabled": "מדדי השימוש כבויים; האירועים בתור יימחקו בשליחה הבאה."
+      },
+      "reasons": {
+        "ci": "משתנה הסביבה CI מוגדר",
+        "do-not-track": "DO_NOT_TRACK מוגדר",
+        "env-disabled": "SHEP_TELEMETRY_DISABLED מוגדר",
+        "test": "רץ תחת מריץ בדיקות",
+        "user-opt-out": "כיבית אותם"
+      }
     }
   },
   "ui": {
@@ -1830,7 +1885,23 @@
     "failedDatabase": "אתחול מסד הנתונים נכשל",
     "failedSettings": "אתחול ההגדרות נכשל",
     "unexpectedError": "אירעה שגיאה בלתי צפויה",
-    "unhandledRejection": "דחיית הבטחה שלא טופלה"
+    "unhandledRejection": "דחיית הבטחה שלא טופלה",
+    "telemetryNotice": {
+      "title": "Shep אוסף מדדי שימוש",
+      "intro": "כדי לדעת באילו תכונות משתמשים, Shep שולח אירועי שימוש לצוות Shep (PostHog, אזור האיחוד האירופי). הוא לעולם אינו שולח פרומפטים, קוד, נתיבי קבצים, שמות מאגרים או ענפים, כותרות פיצ'רים או הודעות שגיאה.",
+      "fieldsHeading": "מה נשלח:",
+      "fields": {
+        "installId": "מזהה התקנה אקראי",
+        "usage": "באילו פקודות, דפים ותכונות אתה משתמש, ואיך הרצות מסתיימות",
+        "platform": "גרסת Shep, מערכת ההפעלה וגרסת Node.js",
+        "agentAccountHash": "גיבוב SHA-256 של מזהה חשבון Claude או Codex שלך",
+        "githubUsername": "שם המשתמש שלך ב-GitHub (נקרא באמצעות gh)",
+        "githubOwners": "הבעלים ב-GitHub (משתמשים או ארגונים) של המאגרים שבהם אתה משתמש עם Shep",
+        "contactConsent": "האם צוות Shep רשאי ליצור איתך קשר ב-GitHub (לא, אלא אם תאפשר זאת)"
+      },
+      "identityNote": "גיבוב החשבון, שם המשתמש ב-GitHub והבעלים מזהים אותך. כדי לשמור את המדדים אך להשמיט אותם: shep telemetry identity off",
+      "optOut": "כיבוי המדדים: shep telemetry off (או הגדר DO_NOT_TRACK=1). הצגת מה נשלח: shep telemetry show"
+    }
   },
   "features": {
     "queued": "בתור",

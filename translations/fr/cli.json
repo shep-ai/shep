@@ -1793,6 +1793,61 @@
         "features": "Fonctionnalités",
         "featuresValue": "{{inFlight}} en cours, {{waiting}} en attente d’approbation"
       }
+    },
+    "telemetry": {
+      "description": "Gérer les métriques d'utilisation (télémétrie désactivable)",
+      "stateArgument": "on ou off",
+      "invalidState": "\"on\" ou \"off\" attendu, reçu \"{{value}}\"",
+      "failed": "Échec de la mise à jour des paramètres des métriques d'utilisation",
+      "forcedOff": "Les métriques d'utilisation restent désactivées dans cet environnement : {{reason}}.",
+      "on": {
+        "description": "Activer les métriques d'utilisation",
+        "done": "Les métriques d'utilisation sont activées."
+      },
+      "off": {
+        "description": "Désactiver les métriques d'utilisation et supprimer les événements en file d'attente",
+        "done": "Les métriques d'utilisation sont désactivées. Les événements en file d'attente ont été supprimés."
+      },
+      "identity": {
+        "description": "Inclure ou exclure votre identité (nom d'utilisateur et propriétaires GitHub, hachage du compte de l'agent)",
+        "on": "Votre identité sera incluse dans les métriques d'utilisation.",
+        "off": "Votre identité sera exclue. Les métriques d'utilisation restent anonymes."
+      },
+      "contact": {
+        "description": "Autoriser ou refuser d'être contacté par l'équipe Shep sur GitHub",
+        "on": "L'équipe Shep peut vous contacter sur GitHub.",
+        "off": "L'équipe Shep ne vous contactera pas."
+      },
+      "status": {
+        "description": "Indiquer si les métriques d'utilisation sont activées et ce qui est en file d'attente",
+        "metrics": "Métriques d'utilisation",
+        "on": "activées",
+        "off": "désactivées ({{reason}})",
+        "identity": "Identité",
+        "included": "incluse",
+        "excluded": "exclue",
+        "contact": "Contact sur GitHub",
+        "yes": "autorisé",
+        "no": "non autorisé",
+        "installId": "ID d'installation",
+        "queued": "Événements en file d'attente",
+        "destination": "Envoyé à",
+        "notConfigured": "nulle part — aucune clé de projet n'est configurée"
+      },
+      "show": {
+        "description": "Afficher exactement ce qui sera envoyé",
+        "header": "Prochain lot pour {{destination}} ({{queued}} événements en file d'attente) :",
+        "empty": "Rien n'est en file d'attente.",
+        "notConfigured": "Aucune clé de projet n'est configurée, donc rien n'est encore envoyé.",
+        "disabled": "Les métriques d'utilisation sont désactivées ; les événements en file d'attente seront supprimés au prochain envoi."
+      },
+      "reasons": {
+        "ci": "la variable d'environnement CI est définie",
+        "do-not-track": "DO_NOT_TRACK est défini",
+        "env-disabled": "SHEP_TELEMETRY_DISABLED est défini",
+        "test": "exécution dans un lanceur de tests",
+        "user-opt-out": "vous les avez désactivées"
+      }
     }
   },
   "ui": {
@@ -1830,7 +1885,23 @@
     "failedDatabase": "Échec de l'initialisation de la base de données",
     "failedSettings": "Échec de l'initialisation des paramètres",
     "unexpectedError": "Une erreur inattendue s'est produite",
-    "unhandledRejection": "Rejet de promesse non géré"
+    "unhandledRejection": "Rejet de promesse non géré",
+    "telemetryNotice": {
+      "title": "Shep collecte des métriques d'utilisation",
+      "intro": "Pour savoir quelles fonctionnalités sont utilisées, Shep envoie des événements d'utilisation à l'équipe Shep (PostHog, région UE). Il n'envoie jamais de prompts, de code, de chemins de fichiers, de noms de dépôts ou de branches, de titres de fonctionnalités ni de messages d'erreur.",
+      "fieldsHeading": "Ce qui est envoyé :",
+      "fields": {
+        "installId": "un ID d'installation aléatoire",
+        "usage": "les commandes, pages et fonctionnalités que vous utilisez, et la façon dont les exécutions se terminent",
+        "platform": "la version de Shep, le système d'exploitation et la version de Node.js",
+        "agentAccountHash": "un hachage SHA-256 de l'ID de votre compte Claude ou Codex",
+        "githubUsername": "votre nom d'utilisateur GitHub (lu avec gh)",
+        "githubOwners": "les propriétaires GitHub (utilisateurs ou organisations) des dépôts que vous utilisez avec Shep",
+        "contactConsent": "si l'équipe Shep peut vous contacter sur GitHub (non, sauf si vous l'autorisez)"
+      },
+      "identityNote": "Le hachage du compte, le nom d'utilisateur GitHub et les propriétaires vous identifient. Pour conserver les métriques sans ces données : shep telemetry identity off",
+      "optOut": "Désactiver les métriques : shep telemetry off (ou définir DO_NOT_TRACK=1). Voir ce qui est envoyé : shep telemetry show"
+    }
   },
   "features": {
     "queued": "En file d'attente",

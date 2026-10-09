@@ -1793,6 +1793,61 @@
         "features": "Features",
         "featuresValue": "{{inFlight}} in Arbeit, {{waiting}} warten auf Freigabe"
       }
+    },
+    "telemetry": {
+      "description": "Nutzungsmetriken verwalten (Opt-out-Telemetrie)",
+      "stateArgument": "on oder off",
+      "invalidState": "Erwartet \"on\" oder \"off\", erhalten: \"{{value}}\"",
+      "failed": "Einstellungen für Nutzungsmetriken konnten nicht aktualisiert werden",
+      "forcedOff": "Nutzungsmetriken bleiben in dieser Umgebung deaktiviert: {{reason}}.",
+      "on": {
+        "description": "Nutzungsmetriken aktivieren",
+        "done": "Nutzungsmetriken sind aktiviert."
+      },
+      "off": {
+        "description": "Nutzungsmetriken deaktivieren und Ereignisse in der Warteschlange löschen",
+        "done": "Nutzungsmetriken sind deaktiviert. Ereignisse in der Warteschlange wurden gelöscht."
+      },
+      "identity": {
+        "description": "Ihre Identität einbeziehen oder weglassen (GitHub-Benutzername und -Owner, Agent-Konto-Hash)",
+        "on": "Ihre Identität wird mit den Nutzungsmetriken übermittelt.",
+        "off": "Ihre Identität wird weggelassen. Nutzungsmetriken bleiben anonym."
+      },
+      "contact": {
+        "description": "Kontaktaufnahme durch das Shep-Team auf GitHub erlauben oder ablehnen",
+        "on": "Das Shep-Team darf Sie auf GitHub kontaktieren.",
+        "off": "Das Shep-Team wird Sie nicht kontaktieren."
+      },
+      "status": {
+        "description": "Anzeigen, ob Nutzungsmetriken aktiviert sind und was in der Warteschlange liegt",
+        "metrics": "Nutzungsmetriken",
+        "on": "aktiviert",
+        "off": "deaktiviert ({{reason}})",
+        "identity": "Identität",
+        "included": "einbezogen",
+        "excluded": "weggelassen",
+        "contact": "Kontakt auf GitHub",
+        "yes": "erlaubt",
+        "no": "nicht erlaubt",
+        "installId": "Installations-ID",
+        "queued": "Ereignisse in der Warteschlange",
+        "destination": "Gesendet an",
+        "notConfigured": "nirgendwohin – kein Projektschlüssel konfiguriert"
+      },
+      "show": {
+        "description": "Genau anzeigen, was gesendet wird",
+        "header": "Nächster Batch für {{destination}} ({{queued}} Ereignisse in der Warteschlange):",
+        "empty": "Die Warteschlange ist leer.",
+        "notConfigured": "Kein Projektschlüssel konfiguriert, daher wird noch nichts gesendet.",
+        "disabled": "Nutzungsmetriken sind deaktiviert; Ereignisse in der Warteschlange werden beim nächsten Flush gelöscht."
+      },
+      "reasons": {
+        "ci": "die Umgebungsvariable CI ist gesetzt",
+        "do-not-track": "DO_NOT_TRACK ist gesetzt",
+        "env-disabled": "SHEP_TELEMETRY_DISABLED ist gesetzt",
+        "test": "Ausführung in einem Test-Runner",
+        "user-opt-out": "Sie haben sie deaktiviert"
+      }
     }
   },
   "ui": {
@@ -1830,7 +1885,23 @@
     "failedDatabase": "Datenbank konnte nicht initialisiert werden",
     "failedSettings": "Einstellungen konnten nicht initialisiert werden",
     "unexpectedError": "Ein unerwarteter Fehler ist aufgetreten",
-    "unhandledRejection": "Nicht behandelte Promise-Ablehnung"
+    "unhandledRejection": "Nicht behandelte Promise-Ablehnung",
+    "telemetryNotice": {
+      "title": "Shep erfasst Nutzungsmetriken",
+      "intro": "Um zu erfahren, welche Funktionen genutzt werden, sendet Shep Nutzungsereignisse an das Shep-Team (PostHog, EU-Region). Es werden niemals Prompts, Code, Dateipfade, Repository- oder Branch-Namen, Feature-Titel oder Fehlermeldungen gesendet.",
+      "fieldsHeading": "Was gesendet wird:",
+      "fields": {
+        "installId": "eine zufällige Installations-ID",
+        "usage": "welche Befehle, Seiten und Funktionen Sie nutzen und wie Ausführungen enden",
+        "platform": "Shep-Version, Betriebssystem und Node.js-Version",
+        "agentAccountHash": "ein SHA-256-Hash Ihrer Claude- oder Codex-Konto-ID",
+        "githubUsername": "Ihr GitHub-Benutzername (mit gh ausgelesen)",
+        "githubOwners": "die GitHub-Owner (Benutzer oder Organisationen) der Repositorys, die Sie mit Shep verwenden",
+        "contactConsent": "ob das Shep-Team Sie auf GitHub kontaktieren darf (nein, sofern Sie es nicht erlauben)"
+      },
+      "identityNote": "Der Konto-Hash, der GitHub-Benutzername und die Owner identifizieren Sie. Metriken behalten, diese aber weglassen: shep telemetry identity off",
+      "optOut": "Metriken deaktivieren: shep telemetry off (oder DO_NOT_TRACK=1 setzen). Anzeigen, was gesendet wird: shep telemetry show"
+    }
   },
   "features": {
     "queued": "In Warteschlange",

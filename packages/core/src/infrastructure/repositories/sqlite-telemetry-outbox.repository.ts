@@ -66,11 +66,20 @@ export class SQLiteTelemetryOutboxRepository implements ITelemetryOutboxReposito
       .immediate();
   }
 
-  listDue(now: Date, limit: number): TelemetryOutboxEntry[] {
-    const rows = this.db
-      .prepare(`${SELECT_ORDERED} WHERE next_attempt_at <= ? ${OLDEST_FIRST} LIMIT ?`)
-      .all(now.getTime(), limit) as TelemetryOutboxRow[];
-    return rows.map(fromRow);
+  claimDue(now: Date, limit: number, leaseUntil: Date): TelemetryOutboxEntry[] {
+    const lease = this.db.prepare(
+      'UPDATE telemetry_outbox SET next_attempt_at = ? WHERE id = ? AND next_attempt_at <= ?'
+    );
+    return this.db
+      .transaction((): TelemetryOutboxEntry[] => {
+        const rows = this.db
+          .prepare(`${SELECT_ORDERED} WHERE next_attempt_at <= ? ${OLDEST_FIRST} LIMIT ?`)
+          .all(now.getTime(), limit) as TelemetryOutboxRow[];
+        return rows
+          .filter((row) => lease.run(leaseUntil.getTime(), row.id, now.getTime()).changes === 1)
+          .map((row) => fromRow({ ...row, next_attempt_at: leaseUntil.getTime() }));
+      })
+      .immediate();
   }
 
   list(limit: number): TelemetryOutboxEntry[] {

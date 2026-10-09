@@ -58,14 +58,25 @@ describe('SQLiteTelemetryOutboxRepository', () => {
     expect(outbox.list(10).map((e) => e.id)).toEqual(['e3']);
   });
 
-  it('lists due entries oldest first and skips those backing off', () => {
+  it('claims due entries oldest first and skips those backing off', () => {
     outbox.enqueue(entry('late', T2), { cap: CAP });
     outbox.enqueue(entry('early', T1), { cap: CAP });
     outbox.enqueue(entry('waiting', T1), { cap: CAP });
     outbox.recordFailure(['waiting'], T3);
 
-    expect(outbox.listDue(T2, 10).map((e) => e.id)).toEqual(['early', 'late']);
-    expect(outbox.listDue(T3, 1).map((e) => e.id)).toEqual(['early']);
+    expect(outbox.claimDue(T2, 1, T3).map((e) => e.id)).toEqual(['early']);
+    expect(outbox.claimDue(T2, 10, T3).map((e) => e.id)).toEqual(['late']);
+  });
+
+  it('leases a claimed batch so a second sender cannot take it until the lease ends', () => {
+    outbox.enqueue(entry('e1', T1), { cap: CAP });
+    const lease = new Date(T2.getTime() + 120_000);
+
+    expect(outbox.claimDue(T2, 10, lease)).toEqual([
+      { ...entry('e1', T1), attempts: 0, nextAttemptAt: lease },
+    ]);
+    expect(outbox.claimDue(T2, 10, lease)).toEqual([]);
+    expect(outbox.claimDue(lease, 10, T3).map((e) => e.id)).toEqual(['e1']);
   });
 
   it('counts failed attempts per entry', () => {

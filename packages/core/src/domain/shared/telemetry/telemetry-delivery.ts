@@ -9,6 +9,8 @@ export const TELEMETRY_MAX_SEND_ATTEMPTS = 5;
 export const TELEMETRY_BATCH_SIZE = 20;
 /** The outbox keeps at most this many events; the oldest are trimmed first. */
 export const TELEMETRY_OUTBOX_CAP = 5_000;
+/** How long a claimed batch is reserved for its sender before it is due again. */
+export const TELEMETRY_SEND_LEASE_MS = 2 * 60_000;
 /** The install heartbeat is recorded at most once per this interval. */
 export const TELEMETRY_HEARTBEAT_INTERVAL_MS = 24 * 60 * 60 * 1000;
 

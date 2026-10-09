@@ -43,8 +43,13 @@ export interface ITelemetryOutboxRepository {
     options: EnqueueTelemetryOptions
   ): boolean;
 
-  /** Entries whose next attempt is due, oldest first. */
-  listDue(now: Date, limit: number): TelemetryOutboxEntry[];
+  /**
+   * Claim up to `limit` due entries, oldest first, by moving their next attempt
+   * to `leaseUntil` in the same transaction. A second sender running at the
+   * same time (daemon and `shep ui`) cannot claim them; if the claimant dies
+   * mid-send they become due again when the lease expires.
+   */
+  claimDue(now: Date, limit: number, leaseUntil: Date): TelemetryOutboxEntry[];
 
   /** Queued entries, oldest first. */
   list(limit: number): TelemetryOutboxEntry[];

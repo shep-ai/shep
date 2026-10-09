@@ -43,10 +43,12 @@ export class InMemoryTelemetryOutbox implements ITelemetryOutboxRepository {
     return true;
   }
 
-  listDue(now: Date, limit: number): TelemetryOutboxEntry[] {
-    return this.sorted()
+  claimDue(now: Date, limit: number, leaseUntil: Date): TelemetryOutboxEntry[] {
+    const claimed = this.sorted()
       .filter((e) => e.nextAttemptAt.getTime() <= now.getTime())
       .slice(0, limit);
+    for (const e of claimed) e.nextAttemptAt = leaseUntil;
+    return claimed.map((e) => ({ ...e }));
   }
 
   list(limit: number): TelemetryOutboxEntry[] {

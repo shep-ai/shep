@@ -1,12 +1,15 @@
 /**
  * Flush Telemetry Use Case (spec 133)
  *
- * Runs only in the daemon. Sends due outbox entries in batches through the
+ * Runs in the long-lived server processes (the daemon, or `shep ui`), never in
+ * a CLI invocation or worker. Sends due outbox entries in batches through the
  * transport and owns the delivery rules:
  * - re-reads the opt-out state from the database first, so an opt-out made in
  *   any process takes effect here: when off, the outbox is cleared, not sent;
  * - with no project key configured nothing is sent and entries wait (capped);
  * - a failed batch backs off with jitter and is dropped on its fifth failure;
+ * - a batch is claimed with a lease, so two server processes never send the
+ *   same events, and a sender that dies mid-send releases them on expiry;
  * - each event keeps its uuid across retries, so the backend can tell a
  *   retried copy from a new event.
  */
@@ -21,6 +24,7 @@ import { resolveTelemetryState } from '../../../domain/shared/telemetry/telemetr
 import {
   TELEMETRY_BATCH_SIZE,
   TELEMETRY_MAX_SEND_ATTEMPTS,
+  TELEMETRY_SEND_LEASE_MS,
   telemetryRetryDelayMs,
 } from '../../../domain/shared/telemetry/telemetry-delivery.js';
 import { TelemetryEnvelopeBuilder } from './telemetry-envelope-builder.js';
@@ -68,7 +72,8 @@ export class FlushTelemetryUseCase {
 
     for (let batchNumber = 0; batchNumber < MAX_BATCHES_PER_FLUSH; batchNumber++) {
       const now = this.clock.now();
-      const batch = this.outbox.listDue(now, TELEMETRY_BATCH_SIZE);
+      const leaseUntil = new Date(now.getTime() + TELEMETRY_SEND_LEASE_MS);
+      const batch = this.outbox.claimDue(now, TELEMETRY_BATCH_SIZE, leaseUntil);
       if (batch.length === 0) break;
       const ids = batch.map((entry) => entry.id);
 
