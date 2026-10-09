@@ -4,67 +4,227 @@
 name: telemetry
 summary: Task breakdown for 133-telemetry
 
-# Relationships
 relatedFeatures: []
-technologies: []
+technologies:
+  - TypeScript
+  - TypeSpec
 relatedLinks: []
 
-# Structured task list — this is the single source of truth for tasks.
-# The content field below is a summary only; it does NOT duplicate task details.
 tasks:
   - id: task-1
-    title: { { TASK_1_TITLE } }
-    description: { { TASK_1_DESCRIPTION } }
+    title: TypeSpec telemetry enums and TelemetryConfig on Settings
+    description: TelemetryEvent, TelemetryDisabledReason, TelemetryProcessKind, OnboardingStep enums; TelemetryConfig model; regenerate
     state: Todo
     dependencies: []
     acceptanceCriteria:
-      - { { CRITERION_1 } }
-      - { { CRITERION_2 } }
+      - pnpm generate leaves a clean diff and tsp:compile has no warnings
+      - Settings defaults include telemetry (enabled, includeIdentity on; contactConsent off)
     tdd:
       red:
-        - Write tests for {{FEATURE_1}}
+        - Defaults factory test expects telemetry defaults
       green:
-        - Implement {{FEATURE_1}} to pass tests
+        - Add the tsp models and defaults
       refactor:
-        - Extract helpers, improve naming
-    estimatedEffort: { { EFFORT_1 } }
+        - None
+    estimatedEffort: S
 
   - id: task-2
-    title: { { TASK_2_TITLE } }
-    description: { { TASK_2_DESCRIPTION } }
+    title: Pure domain rules
+    description: resolveTelemetryState, duration buckets, topStackFrame, notice field list, github-remote owner parser (moved from merge-prompts), catalog accountIdSource
     state: Todo
     dependencies:
       - task-1
     acceptanceCriteria:
-      - { { CRITERION_1 } }
-      - { { CRITERION_2 } }
-    tdd: null # No TDD for foundational/doc tasks
-    estimatedEffort: { { EFFORT_2 } }
+      - Each env override forces off with its reason
+      - Windows and POSIX stack frames reduce to basename
+    tdd:
+      red:
+        - Unit tests for each helper
+      green:
+        - Implement helpers
+      refactor:
+        - Re-point merge-prompts importers to domain parser
+    estimatedEffort: M
 
-# Total effort estimate
-totalEstimate: { { TOTAL_EFFORT } }
+  - id: task-3
+    title: Migration, outbox repository, settings columns
+    description: 166-create-telemetry (outbox, once table, settings columns); SQLiteTelemetryOutboxRepository; settings-telemetry mapper wired into settings mapper and repository SQL
+    state: Todo
+    dependencies:
+      - task-1
+    acceptanceCriteria:
+      - Repository round-trips every telemetry column with two different non-default writes
+      - Outbox once-key claim, due ordering, failure bookkeeping and cap are covered against real SQLite
+    tdd:
+      red:
+        - Integration tests for outbox repo and settings round-trip
+      green:
+        - Migration, repo, mapper
+      refactor:
+        - Keep mapper code in its own module
+    estimatedEffort: M
 
-# Open questions
+  - id: task-4
+    title: Ports and typed event properties
+    description: ITelemetry, ITelemetryOutboxRepository, ITelemetryTransport, ITelemetryIdentityProvider, ITelemetryRuntime; TelemetryEventProperties map
+    state: Todo
+    dependencies:
+      - task-2
+    acceptanceCriteria:
+      - Every TelemetryEvent has a property type (Record over the enum)
+    tdd: null
+    estimatedEffort: S
+
+  - id: task-5
+    title: Infrastructure adapters
+    description: OutboxTelemetry, NoopTelemetry, PostHogTelemetryTransport, NoopTelemetryTransport, CatalogTelemetryIdentityProvider, NodeTelemetryRuntime
+    state: Todo
+    dependencies:
+      - task-3
+      - task-4
+    acceptanceCriteria:
+      - No key → isConfigured false and no fetch
+      - Disabled state → nothing written
+      - Identity reader hashes, never returns raw ids
+    tdd:
+      red:
+        - Adapter unit tests with stubbed fetch and temp homes
+      green:
+        - Implement adapters
+      refactor:
+        - Share hashing helper
+    estimatedEffort: M
+
+  - id: task-6
+    title: Telemetry use cases
+    description: GetTelemetryStatus, SetTelemetryPreferences, PreviewTelemetry, FlushTelemetry, RecordInstallHeartbeat, AcknowledgeTelemetryNotice, RecordTelemetryEvent, TelemetryEnvelopeBuilder
+    state: Todo
+    dependencies:
+      - task-4
+    acceptanceCriteria:
+      - Backoff with jitter, drop after 5 attempts, opt-out clears, identity toggle strips identity from queued events
+    tdd:
+      red:
+        - Use case unit tests with doubles
+      green:
+        - Implement use cases
+      refactor:
+        - Extract retry delay as a domain function
+    estimatedEffort: L
+
+  - id: task-7
+    title: DI wiring
+    description: register-telemetry module; container and bootstrap test token lists
+    state: Todo
+    dependencies:
+      - task-5
+      - task-6
+    acceptanceCriteria:
+      - Bootstrap test resolves every new token; fails without the registration
+    tdd:
+      red:
+        - Add tokens to CRITICAL_INFRA_TOKENS and WEB_ROUTE_TOKENS
+      green:
+        - Register
+      refactor:
+        - None
+    estimatedEffort: S
+
+  - id: task-8
+    title: CLI command, notice and hooks
+    description: shep telemetry on|off|status|show; first-run notice to stderr; cli.command preAction; error.unhandled in CLI handlers; 9 locales
+    state: Todo
+    dependencies:
+      - task-7
+    acceptanceCriteria:
+      - show prints the wire body without the key
+      - Notice prints once
+    tdd:
+      red:
+        - Command unit tests
+      green:
+        - Implement commands
+      refactor:
+        - None
+    estimatedEffort: M
+
+  - id: task-9
+    title: Daemon flush watcher
+    description: TelemetryFlushWatcher (flush + daily heartbeat) started and stopped in _serve; daemon uncaughtException records error.unhandled
+    state: Todo
+    dependencies:
+      - task-7
+    acceptanceCriteria:
+      - Watcher start/stop/isRunning; one tick runs flush and heartbeat; errors swallowed
+    tdd:
+      red:
+        - Watcher unit test
+      green:
+        - Implement watcher and wire _serve
+      refactor:
+        - None
+    estimatedEffort: S
+
+  - id: task-10
+    title: Web onboarding, settings and route tracking
+    description: TelemetryNoticeCard in onboarding (turn off, identity, contact consent); TelemetrySettingsSection; RouteViewTracker in AppShell; server actions + Storybook mocks + stories; 9 locales
+    state: Todo
+    dependencies:
+      - task-7
+    acceptanceCriteria:
+      - Components have stories; build:storybook and build:web pass
+    tdd:
+      red:
+        - Component and route-template tests
+      green:
+        - Implement components and actions
+      refactor:
+        - None
+    estimatedEffort: L
+
+  - id: task-11
+    title: Lifecycle emit points
+    description: feature.created, feature.run.finished, pr.opened, pr.merged (merge node, PR sync both paths, webhook) with once-keys
+    state: Todo
+    dependencies:
+      - task-7
+    acceptanceCriteria:
+      - Each site records exactly one typed event; tests assert the call
+    tdd:
+      red:
+        - Extend site tests to expect record calls
+      green:
+        - Add the calls
+      refactor:
+        - None
+    estimatedEffort: M
+
+  - id: task-12
+    title: Trust promise and docs
+    description: README Trust and safety + FAQ, CLAUDE.md Data Storage, docs/telemetry.md
+    state: Todo
+    dependencies:
+      - task-8
+      - task-9
+      - task-10
+      - task-11
+    acceptanceCriteria:
+      - Docs list exactly the fields and events the code sends
+    tdd: null
+    estimatedEffort: S
+
+totalEstimate: XL
+
 openQuestions: []
 
-# Markdown content — summary and acceptance checklist only.
-# Individual task details live in the tasks[] array above (no duplication).
 content: |
   ## Summary
 
-  {{BRIEF_DESCRIPTION_OF_SCOPE}} — {{TASK_COUNT}} tasks across {{PHASE_COUNT}} phases.
+  Opt-out telemetry from TypeSpec to web — 12 tasks across 5 phases.
 
   ## Acceptance Checklist
 
-  Before marking feature complete:
-
-  - [ ] All tasks completed
-  - [ ] Tests passing (`pnpm test`)
-  - [ ] Linting clean (`pnpm lint`)
-  - [ ] Types valid (`pnpm typecheck`)
-  - [ ] TypeSpec compiles (`pnpm tsp:compile`)
-  - [ ] PR created and reviewed
-
-  ---
-
-  _Task details are in the tasks[] array of tasks.yaml_
+  - [ ] pnpm validate, test:unit, test:int, build, build:web, build:storybook, check:stories pass
+  - [ ] All new strings in 9 locales
+  - [ ] Every new web component has a story
+  - [ ] README, FAQ and CLAUDE.md updated

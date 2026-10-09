@@ -3,11 +3,11 @@ feature:
   name: 'telemetry'
   number: 133
   branch: 'feat/133-telemetry'
-  lifecycle: 'research'
+  lifecycle: 'implementation'
   createdAt: '2026-10-09T09:33:43Z'
 
 status:
-  phase: 'research'
+  phase: 'implementation'
   progress:
     completed: 0
     total: 0

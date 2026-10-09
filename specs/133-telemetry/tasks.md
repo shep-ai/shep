@@ -1,18 +1,10 @@
 ## Summary
 
-{{BRIEF_DESCRIPTION_OF_SCOPE}} — {{TASK_COUNT}} tasks across {{PHASE_COUNT}} phases.
+Opt-out telemetry from TypeSpec to web — 12 tasks across 5 phases.
 
 ## Acceptance Checklist
 
-Before marking feature complete:
-
-- [ ] All tasks completed
-- [ ] Tests passing (`pnpm test`)
-- [ ] Linting clean (`pnpm lint`)
-- [ ] Types valid (`pnpm typecheck`)
-- [ ] TypeSpec compiles (`pnpm tsp:compile`)
-- [ ] PR created and reviewed
-
----
-
-_Task details are in the tasks[] array of tasks.yaml_
+- [ ] pnpm validate, test:unit, test:int, build, build:web, build:storybook, check:stories pass
+- [ ] All new strings in 9 locales
+- [ ] Every new web component has a story
+- [ ] README, FAQ and CLAUDE.md updated
