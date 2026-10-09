@@ -145,6 +145,11 @@ export const FeatureAgentAnnotation = Annotation.Root({
     reducer: (_prev, next) => next ?? _prev,
     default: () => undefined,
   }),
+  // --- ask_decision (spec 134): the run's agent may ask the user via MCP ---
+  decisionToolAvailable: Annotation<boolean>({
+    reducer: (_prev, next) => next ?? _prev,
+    default: () => false,
+  }),
   // --- CI watch/fix loop state ---
   ciFixAttempts: Annotation<number>({
     reducer: (_prev, next) => next,

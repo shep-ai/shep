@@ -1,6 +1,7 @@
 import 'reflect-metadata';
 import { describe, it, expect, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
+import { updateSettingsAction } from '@/app/actions/update-settings';
 import { SettingsPageClient } from '@/components/features/settings/settings-page-client';
 import { createDefaultSettings } from '@shepai/core/domain/factories/settings-defaults.factory';
 
@@ -103,5 +104,22 @@ describe('SettingsPageClient', () => {
     );
     expect(screen.getByTestId('switch-event-mergeReviewReady')).toBeDefined();
     expect(screen.getByText('Merge review ready')).toBeDefined();
+  });
+
+  it('shows the 30-minute question deadline and saves a change within bounds (spec 134)', async () => {
+    render(
+      <SettingsPageClient settings={settings} shepHome="/home/user/.shep" dbFileSize="2.4 MB" />
+    );
+    const input = screen.getByTestId('input-decision-timeout') as HTMLInputElement;
+    expect(input.value).toBe('30');
+
+    fireEvent.change(input, { target: { value: '99999' } });
+    fireEvent.blur(input);
+
+    await vi.waitFor(() => {
+      expect(updateSettingsAction).toHaveBeenCalledWith(
+        expect.objectContaining({ workflow: { decisionDefaultTimeoutMinutes: 1440 } })
+      );
+    });
   });
 });

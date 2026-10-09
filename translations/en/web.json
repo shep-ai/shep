@@ -83,6 +83,8 @@
       "defaultModeDescription": "Default mode for new features created via CLI or Web UI",
       "maxParallelFeatures": "Max parallel features",
       "maxParallelFeaturesDescription": "Maximum features running an agent at the same time. 0 means unlimited. Extra features are queued and start automatically as slots free up.",
+      "decisionTimeout": "Question deadline",
+      "decisionTimeoutDescription": "How long a background agent waits for your answer before it proceeds with its recommended option.",
       "modeRegular": "Regular",
       "modeFast": "Fast",
       "modeExploration": "Exploration",
@@ -779,7 +781,14 @@
     "wait": "Wait",
     "cost": "Cost",
     "modelUsed": "Ran on {{model}}",
-    "noActivityRecorded": "No activity recorded yet"
+    "noActivityRecorded": "No activity recorded yet",
+    "decisions": {
+      "title": "Decisions",
+      "pending": "Waiting for an answer",
+      "answered": "{{actor}} answered: {{answer}}",
+      "defaulted": "No answer by the deadline — proceeded with the recommended option: {{answer}}",
+      "cancelled": "Cancelled without an answer"
+    }
   },
   "logTab": {
     "structuredView": "Structured view",
@@ -1820,5 +1829,21 @@
       "run": "Run now",
       "running": "Running…"
     }
+  },
+  "decision": {
+    "answeredQuestions": "Answered questions",
+    "recommended": "Recommended",
+    "selectMany": "Select one or more options.",
+    "otherPlaceholder": "Type your own answer, or leave this blank to use the selected option",
+    "composerHint": "Type in the message box to answer in your own words.",
+    "restoreText": "Restore typed text",
+    "notResumable": "This question can no longer be answered — the agent that asked it is no longer waiting.",
+    "defaultsAt": "If nobody answers by {{time}}, the agent continues with the recommended option.",
+    "preview": "Preview",
+    "previous": "Previous",
+    "next": "Next",
+    "submit": "Submit",
+    "submitting": "Submitting…",
+    "new": "New"
   }
 }

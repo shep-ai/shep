@@ -335,6 +335,7 @@ export function makeState(overrides: Partial<FeatureAgentState>): FeatureAgentSt
     securityMode: SecurityMode.Disabled,
     securityActionDispositions: {},
     mcpConfigPath: undefined,
+    decisionToolAvailable: false,
     iterationCount: 0,
     maxIterations: 10,
     feedbackHistory: [],

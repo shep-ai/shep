@@ -9,4 +9,5 @@ enum:
   - system-prompt
   - session-listing
   - effort
+  - mcp-config
 description: Agent executor capability declarations

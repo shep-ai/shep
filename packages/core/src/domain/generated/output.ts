@@ -497,6 +497,10 @@ export type WorkflowConfig = {
    */
   maxParallelFeatures?: number;
   /**
+   * Minutes a background agent's question waits before the agent proceeds with its recommended option (spec 134; default: 30)
+   */
+  decisionDefaultTimeoutMinutes?: number;
+  /**
    * Maximum number of CI fix/push/watch iterations before giving up (default: 3)
    */
   ciMaxFixAttempts?: number;
@@ -8840,6 +8844,126 @@ export type AgentMessage = BaseEntity & {
    */
   deliveredAt?: any;
 };
+
+/**
+ * A selectable option within a decision question
+ */
+export type DecisionOption = {
+  /**
+   * Stable identifier, unique within its question
+   */
+  id: string;
+  /**
+   * Short label shown in bold
+   */
+  label: string;
+  /**
+   * One-line explanation shown under the label
+   */
+  description: string;
+  /**
+   * Optional preformatted preview (code, mockup, diff) shown when the option is focused
+   */
+  preview?: string;
+  /**
+   * True for the option the asker recommends; it is preselected and used when a deadline passes
+   */
+  recommended?: boolean;
+  /**
+   * True when the option was added since the user last saw this decision (e.g. after a refinement)
+   */
+  isNew?: boolean;
+};
+
+/**
+ * One question within a decision
+ */
+export type DecisionQuestion = {
+  /**
+   * Stable identifier, unique within its decision
+   */
+  id: string;
+  /**
+   * Short chip label (e.g. 'Auth method')
+   */
+  header: string;
+  /**
+   * The full question text
+   */
+  question: string;
+  /**
+   * Options in display order (1–9 are keyboard shortcuts)
+   */
+  options: DecisionOption[];
+  /**
+   * Whether more than one option may be selected
+   */
+  multiSelect: boolean;
+  /**
+   * Whether a typed answer is accepted instead of (or with) an option
+   */
+  allowCustom: boolean;
+};
+export enum DecisionKind {
+  ChatQuestion = 'chat_question',
+  PrdQuestionnaire = 'prd_questionnaire',
+  ApprovalGate = 'approval_gate',
+  AgentAsk = 'agent_ask',
+  Legacy = 'legacy',
+}
+export enum DecisionResponseMode {
+  Live = 'live',
+  Async = 'async',
+  NotResumable = 'not_resumable',
+}
+
+/**
+ * A request for a person to choose, made of one or more questions
+ */
+export type Decision = {
+  /**
+   * Stable identifier
+   */
+  id: string;
+  /**
+   * Which producer raised the decision
+   */
+  kind: DecisionKind;
+  /**
+   * Optional one-line title shown above the questions
+   */
+  title?: string;
+  /**
+   * Questions answered together (paged n/N)
+   */
+  questions: DecisionQuestion[];
+  /**
+   * How the answer reaches the asker
+   */
+  responseMode: DecisionResponseMode;
+  /**
+   * When set, the recommended options are applied if nobody answers before this time
+   */
+  defaultAfter?: any;
+};
+
+/**
+ * The answer to one decision question
+ */
+export type DecisionResponse = {
+  /**
+   * Question this response answers
+   */
+  questionId: string;
+  /**
+   * Selected option ids (empty when only custom text was given)
+   */
+  optionIds: string[];
+  /**
+   * Typed answer; when non-empty it outranks the selected options
+   */
+  customText?: string;
+};
 export enum AgentQuestionKind {
   info = 'info',
   question = 'question',
@@ -8917,6 +9041,14 @@ export type AgentQuestion = BaseEntity & {
    * Auto-resolution deadline (optional, used with defaultAnswer)
    */
   expiresAt?: any;
+  /**
+   * Structured questions and options; when set, it is what every surface renders (spec 134)
+   */
+  decision?: Decision;
+  /**
+   * Structured answer to `decision`, set when status becomes answered or expired (spec 134)
+   */
+  responses?: DecisionResponse[];
 };
 export enum SupervisorVerdict {
   approve = 'approve',
@@ -9304,6 +9436,16 @@ export enum AgentFeature {
   systemPrompt = 'system-prompt',
   sessionListing = 'session-listing',
   effort = 'effort',
+  mcpConfig = 'mcp-config',
+}
+export enum DecisionOutcome {
+  Pending = 'pending',
+  Answered = 'answered',
+  Defaulted = 'defaulted',
+  Cancelled = 'cancelled',
+}
+export enum InlineBlockType {
+  Decision = 'decision',
 }
 export type DeployTarget = DeployTargetActionItem | DeployTargetTask | DeployTargetTasks;
 

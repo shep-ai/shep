@@ -673,6 +673,24 @@ describe('SQLiteSettingsRepository', () => {
     });
   });
 
+  describe('decision default timeout (spec 134)', () => {
+    it('round-trips decisionDefaultTimeoutMinutes through INSERT and UPDATE', async () => {
+      const settings = createTestSettings();
+      settings.workflow.decisionDefaultTimeoutMinutes = 45;
+      await repository.initialize(settings);
+      expect((await repository.load())?.workflow.decisionDefaultTimeoutMinutes).toBe(45);
+
+      settings.workflow.decisionDefaultTimeoutMinutes = 5;
+      await repository.update(settings);
+      expect((await repository.load())?.workflow.decisionDefaultTimeoutMinutes).toBe(5);
+    });
+
+    it('leaves it unset when not configured', async () => {
+      await repository.initialize(createTestSettings());
+      expect((await repository.load())?.workflow.decisionDefaultTimeoutMinutes).toBeUndefined();
+    });
+  });
+
   describe('CI workflow fields', () => {
     it('should initialize settings with CI fields and load them back', async () => {
       const settings = createTestSettings();

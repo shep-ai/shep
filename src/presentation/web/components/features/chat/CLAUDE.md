@@ -119,7 +119,7 @@ layer has one responsibility and does not leak into the others.
   adding a second rendering surface for chat content (another
   drawer, a secondary list, a parallel component), STOP — it is a
   Layer 3 card that belongs inside the existing timeline.
-- `OperationBubble`, `InteractionBubble`, `StepTracker`, and
+- `OperationBubble`, `ChatPendingDecision`, `StepTracker`, and
   `TurnGroupCard` are all Layer 3 card types. Their order in the
   column is chronological.
 
@@ -134,6 +134,12 @@ layer has one responsibility and does not leak into the others.
   about messages; takes pre-baked props (`title`, `status`, children).
 - `StepTracker.tsx` — Layer 3 card for the setup workflow.
 - `operation-bubble.tsx` — Layer 3 card for publish/deploy operations.
+- `ChatPendingDecision.tsx` — Layer 3 card for an agent question (spec 134):
+  the shared `DecisionPanel`, rendered INSIDE the in-progress turn card that
+  asked it (via `SingleTurnCard`'s `decision` slot), with the composer as
+  "Other". An answered question (`{{interaction}}` record, parsed only by
+  `domain/shared/interaction-answer.ts`) stays in its turn and renders as an
+  `AnsweredDecisionRow`.
 - `ChatTab.tsx` — Composes the timeline. Calls `useChatRuntime` once
   with `hideAllMessages: turnGroupsEnabled`, calls `useTurnGroupsView`
   over `rawMessages`, and renders all Layer 3 cards in chronological

@@ -6,7 +6,7 @@
  */
 
 import 'reflect-metadata';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   AgentQuestionAnswerer,
   AgentQuestionKind,
@@ -14,12 +14,23 @@ import {
   type AgentQuestion,
 } from '@/domain/generated/output.js';
 
-const { mockResolve, listExecute, answerExecute, cancelExecute } = vi.hoisted(() => ({
-  mockResolve: vi.fn(),
-  listExecute: vi.fn(),
-  answerExecute: vi.fn(),
-  cancelExecute: vi.fn(),
-}));
+const { mockResolve, listExecute, answerExecute, cancelExecute, promptDecision } = vi.hoisted(
+  () => ({
+    mockResolve: vi.fn(),
+    listExecute: vi.fn(),
+    answerExecute: vi.fn(),
+    cancelExecute: vi.fn(),
+    promptDecision: vi.fn(),
+  })
+);
+
+vi.mock(
+  '../../../../../../../src/presentation/cli/commands/agent/questions/decision-renderer.js',
+  async (importOriginal) => ({
+    ...(await importOriginal<object>()),
+    promptDecision: (...args: unknown[]) => promptDecision(...args),
+  })
+);
 
 vi.mock('@/infrastructure/di/container.js', () => ({
   container: {
@@ -179,6 +190,65 @@ describe('shep agent questions commands', () => {
       questionId: 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee',
       reason: 'no longer needed',
       cancelledBy: 'user:alice',
+    });
+  });
+
+  describe('decisions (spec 134)', () => {
+    const originalIsTTY = process.stdin.isTTY;
+    afterEach(() => {
+      process.stdin.isTTY = originalIsTTY;
+    });
+
+    it('ls shows a gate question as a sentence, not JSON', async () => {
+      const log = vi.spyOn(console, 'log');
+      listExecute.mockResolvedValue([
+        question({
+          prompt: JSON.stringify({ event: 'waiting_approval', node: 'plan' }),
+          optionsJson: '["approve","reject"]',
+        }),
+      ]);
+      await createListCommand().parseAsync(['--app', 'app-1'], { from: 'user' });
+      const output = log.mock.calls.flat().join('\n');
+      expect(output).toContain('The implementation plan is ready for review');
+      expect(output).not.toContain('waiting_approval');
+    });
+
+    it('answer without --answer renders the decision and records the chosen responses', async () => {
+      process.stdin.isTTY = true;
+      listExecute.mockResolvedValue([question({ optionsJson: '["yes","no"]' })]);
+      promptDecision.mockResolvedValue([{ questionId: 'q1', optionIds: ['yes'] }]);
+      answerExecute.mockResolvedValue({
+        enabled: true,
+        forwardedToGate: false,
+        question: question({ status: AgentQuestionStatus.answered }),
+      });
+
+      await createAnswerCommand().parseAsync(
+        ['aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee', '--app', 'app-1'],
+        {
+          from: 'user',
+        }
+      );
+
+      expect(promptDecision).toHaveBeenCalled();
+      expect(answerExecute).toHaveBeenCalledWith({
+        appId: 'app-1',
+        questionId: 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee',
+        responses: [{ questionId: 'q1', optionIds: ['yes'] }],
+        answeredBy: 'user:cli',
+      });
+    });
+
+    it('answer without --answer fails when stdin is not interactive', async () => {
+      process.stdin.isTTY = false;
+      await createAnswerCommand().parseAsync(
+        ['aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee', '--app', 'app-1'],
+        {
+          from: 'user',
+        }
+      );
+      expect(process.exitCode).toBe(1);
+      expect(answerExecute).not.toHaveBeenCalled();
     });
   });
 });

@@ -26,6 +26,7 @@ import { inject, injectable } from 'tsyringe';
 import type { IApplicationRepository } from '@/application/ports/output/repositories/application-repository.interface.js';
 import { AskAgentQuestionUseCase } from '@/application/use-cases/agents/ask-agent-question.use-case.js';
 import { AgentQuestionAnswerer, AgentQuestionKind } from '@/domain/generated/output.js';
+import { buildApprovalGateDecision } from '@/domain/shared/decision-builders.js';
 
 export interface GateQuestionInput {
   runId: string;
@@ -47,19 +48,16 @@ export class FeatureAgentGateQuestionPublisher {
   async publishWaitingApproval(input: GateQuestionInput): Promise<void> {
     try {
       const appId = await this.resolveAppId(input.repositoryPath);
-      const promptObject = {
-        event: 'waiting_approval',
-        node: input.interruptNode,
-        runId: input.runId,
-        featureId: input.featureId,
-      };
+      // Spec 134: a readable approval decision (Approve / Reject / typed
+      // feedback) that every surface renders, instead of a JSON prompt.
+      const decision = buildApprovalGateDecision(input.runId, input.interruptNode);
       const result = await this.askAgentQuestion.execute({
         appId,
         featureId: input.featureId,
         agentRunId: input.runId,
         kind: AgentQuestionKind.blocking,
-        prompt: JSON.stringify(promptObject),
-        options: ['approve', 'reject'],
+        prompt: decision.title ?? decision.questions[0].question,
+        decision,
         answerer: AgentQuestionAnswerer.either,
       });
       // The blocking AskAgentQuestion registers a Deferred awaiter. The

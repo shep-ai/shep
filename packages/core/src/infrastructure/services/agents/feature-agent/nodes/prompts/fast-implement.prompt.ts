@@ -14,6 +14,7 @@ import { join } from 'node:path';
 import yaml from 'js-yaml';
 import { readSpecFile, getPhaseRejectionFeedback } from '../node-helpers.js';
 import { buildProjectMemorySection } from './project-memory-section.js';
+import { askingPolicyLine } from './asking-policy.js';
 import type { FeatureAgentState } from '../../state.js';
 import { COMMIT_CO_AUTHOR } from '../../../../git/pr-branding.js';
 
@@ -202,7 +203,10 @@ ${dirListing}
 - Do NOT modify any spec YAML files
 - Keep changes focused and minimal
 - Do NOT enter plan mode — implement directly without planning phases
-- Do NOT ask the user questions or use AskUserQuestion — make reasonable decisions and proceed
+${askingPolicyLine(
+  state.decisionToolAvailable === true,
+  '- Do NOT ask the user questions or use AskUserQuestion — make reasonable decisions and proceed'
+)}
 - You MUST create or modify actual code files — a plan or summary alone is not acceptable output`);
 
   return sections.join('\n\n');

@@ -622,6 +622,8 @@ describe('runWorker', () => {
         repositoryPath: '/repo',
         worktreePath: '/wt/path',
         specDir: '/specs',
+        // Spec 134: no collaboration flag in these settings → no ask_decision.
+        decisionToolAvailable: false,
         push: false,
         openPr: false,
         forkAndPr: false,

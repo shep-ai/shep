@@ -444,6 +444,9 @@ model WorkflowConfig {
   @doc("Maximum concurrently running features (default: 0 = unlimited)")
   maxParallelFeatures?: int32;
 
+  @doc("Minutes a background agent's question waits before the agent proceeds with its recommended option (spec 134; default: 30)")
+  decisionDefaultTimeoutMinutes?: int32;
+
   @doc("Maximum number of CI fix/push/watch iterations before giving up (default: 3)")
   ciMaxFixAttempts?: int32;
 

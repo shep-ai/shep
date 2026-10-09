@@ -113,6 +113,7 @@ export interface SettingsRow {
 
   // WorkflowConfig CI settings (workflow.ci*)
   ci_max_fix_attempts: number | null;
+  workflow_decision_default_timeout_minutes: number | null;
   ci_watch_timeout_ms: number | null;
   ci_log_max_chars: number | null;
   ci_watch_enabled: number;
@@ -306,6 +307,8 @@ export function toDatabase(settings: Settings): SettingsRow {
 
     // WorkflowConfig CI settings (optional number → INTEGER | null)
     ci_max_fix_attempts: settings.workflow.ciMaxFixAttempts ?? null,
+    workflow_decision_default_timeout_minutes:
+      settings.workflow.decisionDefaultTimeoutMinutes ?? null,
     ci_watch_timeout_ms: settings.workflow.ciWatchTimeoutMs ?? null,
     ci_log_max_chars: settings.workflow.ciLogMaxChars ?? null,
     ci_watch_enabled: settings.workflow.ciWatchEnabled !== false ? 1 : 0,
@@ -784,6 +787,9 @@ export function fromDatabase(row: SettingsRow): Settings {
         pushOnImplementationComplete: row.approval_gate_push_on_impl_complete === 1,
       },
       ...(row.ci_max_fix_attempts !== null && { ciMaxFixAttempts: row.ci_max_fix_attempts }),
+      ...(row.workflow_decision_default_timeout_minutes != null && {
+        decisionDefaultTimeoutMinutes: row.workflow_decision_default_timeout_minutes,
+      }),
       ...(row.ci_watch_timeout_ms !== null && { ciWatchTimeoutMs: row.ci_watch_timeout_ms }),
       ...(row.ci_log_max_chars !== null && { ciLogMaxChars: row.ci_log_max_chars }),
       ...buildStageTimeoutsFromRow(row),

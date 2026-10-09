@@ -42,6 +42,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  DEFAULT_DECISION_TIMEOUT_MINUTES,
+  MAX_DECISION_TIMEOUT_MINUTES,
+  resolveDecisionTimeoutMinutes,
+} from '@shepai/core/domain/shared/decision-deadline';
 import { useSettingsSave } from '@/hooks/use-settings-save';
 import {
   AgentType,
@@ -463,6 +468,11 @@ export function SettingsPageClient({
   // 0 is a real, meaningful value here (unlimited), so it must not be coalesced away.
   const [maxParallelFeatures, setMaxParallelFeatures] = useState(
     String(clampMaxParallelFeatures(settings.workflow.maxParallelFeatures))
+  );
+  const [decisionTimeout, setDecisionTimeout] = useState(
+    String(
+      resolveDecisionTimeoutMinutes(undefined, settings.workflow.decisionDefaultTimeoutMinutes)
+    )
   );
   // Auto-archive state
   const [autoArchiveEnabled, setAutoArchiveEnabled] = useState(
@@ -1200,6 +1210,29 @@ export function SettingsPageClient({
                   const clamped = clampMaxParallelFeatures(Number(maxParallelFeatures));
                   setMaxParallelFeatures(String(clamped));
                   save(buildWorkflowPayload({ maxParallelFeatures: clamped }));
+                }}
+              />
+            </SettingsRow>
+            <SettingsRow
+              label={t('settings.workflow.decisionTimeout')}
+              description={t('settings.workflow.decisionTimeoutDescription')}
+              htmlFor="decision-timeout"
+            >
+              <NumberStepper
+                id="decision-timeout"
+                testId="input-decision-timeout"
+                value={decisionTimeout}
+                placeholder={String(DEFAULT_DECISION_TIMEOUT_MINUTES)}
+                min={1}
+                max={MAX_DECISION_TIMEOUT_MINUTES}
+                step={5}
+                suffix="min"
+                onChange={setDecisionTimeout}
+                onBlur={() => {
+                  // Spec 134: the domain owns the default and the bounds.
+                  const minutes = resolveDecisionTimeoutMinutes(Number(decisionTimeout), undefined);
+                  setDecisionTimeout(String(minutes));
+                  save({ workflow: { decisionDefaultTimeoutMinutes: minutes } });
                 }}
               />
             </SettingsRow>

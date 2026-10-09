@@ -1,0 +1,6 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: InlineBlockType.yaml
+type: string
+enum:
+  - decision
+description: Kind of rich inline block rendered by the inline-UI-block registry

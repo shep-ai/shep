@@ -239,6 +239,7 @@ function baseState(overrides: Partial<FeatureAgentState> = {}): FeatureAgentStat
     securityMode: 'Disabled',
     securityActionDispositions: {},
     mcpConfigPath: undefined,
+    decisionToolAvailable: false,
     ...overrides,
   } as FeatureAgentState;
 }

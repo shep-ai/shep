@@ -1,0 +1,292 @@
+# Task Breakdown (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: unified-decisions
+summary: Task breakdown for 134 — PR 1 (tasks 1–11) unified Decision primitive; PR 2 (tasks 12–15) agent-asked decisions.
+
+relatedFeatures:
+  - 093-agent-collaboration-supervision
+technologies:
+  - TypeSpec
+  - TypeScript
+  - React
+relatedLinks: []
+
+tasks:
+  - id: task-1
+    title: Decision model in TypeSpec
+    description: >
+      decision.tsp (Decision, DecisionQuestion, DecisionOption, DecisionResponse, DecisionKind,
+      DecisionResponseMode), inline-block.tsp (InlineBlockType), AgentQuestion.decision and
+      AgentQuestion.responses; regenerate output.ts and apis/json-schema.
+    state: Done
+    dependencies: []
+    acceptanceCriteria:
+      - pnpm tsp:compile has no warnings; pnpm generate output committed
+    tdd: null
+    estimatedEffort: S
+
+  - id: task-2
+    title: Domain decision helpers
+    description: >
+      domain/shared/decision.ts (resolveResponsesFromText, validateResponses, summariseResponses,
+      responsesPickedRecommended, recommendedResponses, isDecisionAnswerable) and
+      decision-builders.ts (from UserQuestion[], PRD questionnaire, approval gate, legacy options).
+    state: Done
+    dependencies:
+      - task-1
+    acceptanceCriteria:
+      - Text answers resolve by id, then label, then custom text; custom outranks selection
+      - Invalid responses (unknown option, two options on single-select, custom not allowed) throw
+    tdd:
+      red:
+        - Unit tests per resolution and validation branch
+      green:
+        - Pure functions with extensionless imports
+      refactor:
+        - Share option lookup between resolve and validate
+    estimatedEffort: M
+
+  - id: task-3
+    title: Persist decision and responses
+    description: Migration adding decision_json / responses_json; mapper both ways; INSERT and settlePending SQL; listScopes for the inbox.
+    state: Done
+    dependencies:
+      - task-1
+    acceptanceCriteria:
+      - Repository round-trip writes a decision on create and responses on settle and reads both back
+    tdd:
+      red:
+        - Integration test against a real SQLite database
+      green:
+        - Migration, mapper, SQL
+      refactor:
+        - none
+    estimatedEffort: S
+
+  - id: task-4
+    title: Ask/Answer use cases speak Decision
+    description: >
+      AskAgentQuestionInput.decision (built from options when absent); AnswerAgentQuestionInput.responses
+      (resolved from answer text when absent), validated, summarised into `answer`; gate forwarding by
+      option id, custom text = reject with feedback.
+    state: Done
+    dependencies:
+      - task-2
+      - task-3
+    acceptanceCriteria:
+      - Existing ask/answer tests stay green; new tests cover decision paths
+    tdd:
+      red:
+        - Unit tests for decision persistence, response validation and gate forwarding
+      green:
+        - Minimal use-case changes
+      refactor:
+        - Remove string[] option validation duplicate
+    estimatedEffort: M
+
+  - id: task-5
+    title: Readable gate decisions and supervisor routing
+    description: Gate publisher writes buildApprovalGateDecision; router detects gates by decision kind and answers by option id.
+    state: Done
+    dependencies:
+      - task-4
+    acceptanceCriteria:
+      - Gate question prompt is a sentence, never JSON
+    tdd:
+      red:
+        - Publisher and router tests
+      green:
+        - Implementation
+      refactor:
+        - Drop isGateLinkedPrompt JSON parsing (keep legacy rows working)
+    estimatedEffort: S
+
+  - id: task-6
+    title: Wire AgentQuestionExecutorBridge into chat sessions
+    description: >
+      Bridge factory registered in DI; session bootstrapper passes agentQuestionBridge; bridge races the
+      chat live surface against the inbox awaiter and settles the other side.
+    state: Done
+    dependencies:
+      - task-4
+    acceptanceCriteria:
+      - Chat answer settles the inbox row; inbox answer resolves the chat interaction; flag off keeps today's path
+    tdd:
+      red:
+        - Bridge race tests; bootstrapper passes a bridge
+      green:
+        - Implementation
+      refactor:
+        - none
+    estimatedEffort: M
+
+  - id: task-7
+    title: Web decision draft reducer
+    description: Pure functions mirroring T3 pendingUserInput.ts over Decision.
+    state: Done
+    dependencies:
+      - task-2
+    acceptanceCriteria:
+      - Custom text outranks selection; displaced text is returned to the host; progress n/N
+    tdd:
+      red:
+        - Unit tests
+      green:
+        - Implementation
+      refactor:
+        - none
+    estimatedEffort: S
+
+  - id: task-8
+    title: DecisionPanel, AnsweredDecisionRow and InlineBlock registry
+    description: Component with T3 interaction model, stories, translations in 9 locales.
+    state: Done
+    dependencies:
+      - task-7
+    acceptanceCriteria:
+      - Number keys, 200 ms auto-advance, paging, composer-as-Other, preview, recommended, answered row, not-resumable
+    tdd:
+      red:
+        - Component tests with fake timers
+      green:
+        - Implementation
+      refactor:
+        - Extract option row
+    estimatedEffort: L
+
+  - id: task-9
+    title: Chat renders the decision inline in its turn
+    description: Pending decision inside the in-progress turn card; composer sends answer the decision; {{interaction}} renders as AnsweredDecisionRow; InteractionBubble removed.
+    state: Done
+    dependencies:
+      - task-8
+    acceptanceCriteria:
+      - Nothing rendered in afterMessages for grouped chats
+    tdd:
+      red:
+        - ChatTab / turn card tests
+      green:
+        - Implementation
+      refactor:
+        - Delete InteractionBubble and its story
+    estimatedEffort: M
+
+  - id: task-10
+    title: Inbox and PRD questionnaire render DecisionPanel
+    description: Inbox renders every question via InlineBlock and answers with responses; page lists all question scopes; PRD questionnaire pages use DecisionPanel.
+    state: Done
+    dependencies:
+      - task-8
+    acceptanceCriteria:
+      - No JSON in the inbox; PRD questionnaire behaviour (selection, approve, reject) preserved
+    tdd:
+      red:
+        - Inbox and questionnaire tests
+      green:
+        - Implementation
+      refactor:
+        - none
+    estimatedEffort: M
+
+  - id: task-11
+    title: CLI decision renderer
+    description: renderDecisionText in ls; interactive promptDecision in answer when --answer is omitted.
+    state: Done
+    dependencies:
+      - task-4
+    acceptanceCriteria:
+      - Recommended option is the default; answers sent as responses
+    tdd:
+      red:
+        - Renderer and command tests
+      green:
+        - Implementation
+      refactor:
+        - none
+    estimatedEffort: S
+
+  - id: task-12
+    title: Default decision deadline setting
+    description: workflow.decisionDefaultTimeoutMinutes (default 30) through tsp, migration, mapper, repository SQL, defaults, settings UI.
+    state: Done
+    dependencies:
+      - task-11
+    acceptanceCriteria:
+      - Round-trips the database with a non-default value
+    tdd:
+      red:
+        - Repository round-trip test
+      green:
+        - Implementation
+      refactor:
+        - none
+    estimatedEffort: S
+
+  - id: task-13
+    title: AskAgentDecisionUseCase
+    description: Validates one recommended option, applies the deadline, records an Async decision, waits, and on timeout settles the question as expired with the recommendation (answeredBy system:deadline), which the feature's activity tab lists as a defaulted decision.
+    state: Done
+    dependencies:
+      - task-12
+    acceptanceCriteria:
+      - Answered, timed-out and flag-off paths covered
+    tdd:
+      red:
+        - Unit tests with fake timers
+      green:
+        - Implementation
+      refactor:
+        - none
+    estimatedEffort: M
+
+  - id: task-14
+    title: ask_decision MCP tool and headless injection
+    description: decision-tools.ts; the worker adds Shep's MCP server (scoped by env) to the per-feature mcp config.
+    state: Done
+    dependencies:
+      - task-13
+    acceptanceCriteria:
+      - Tool listed and callable; scope comes from env, not the model
+    tdd:
+      red:
+        - Tool handler and config tests
+      green:
+        - Implementation
+      refactor:
+        - none
+    estimatedEffort: M
+
+  - id: task-15
+    title: Headless prompts may ask
+    description: fast-implement and prototype-generate prompts say "ask only via ask_decision when truly blocked; always include a recommendation" when the tool is available.
+    state: Done
+    dependencies:
+      - task-14
+    acceptanceCriteria:
+      - Prompt tests assert both wordings
+    tdd:
+      red:
+        - Prompt tests
+      green:
+        - Implementation
+      refactor:
+        - none
+    estimatedEffort: S
+
+totalEstimate: XL
+
+openQuestions: []
+
+content: |
+  ## Summary
+
+  15 tasks. PR 1 = tasks 1–11 (one Decision primitive, its renderers and producers). PR 2 =
+  tasks 12–15 (agent-asked decisions with deadlines).
+
+  ## Acceptance Checklist
+
+  - [x] pnpm validate, test:unit, test:int, build, build:storybook, check:stories green locally
+  - [x] 9 locales updated for every new key
+  - [x] Every new component has a colocated story
+  - [ ] CI fully green on both PRs

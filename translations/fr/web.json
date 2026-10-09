@@ -83,6 +83,8 @@
       "defaultModeDescription": "Mode par défaut pour les nouvelles fonctionnalités créées via CLI ou interface web",
       "maxParallelFeatures": "Fonctionnalités parallèles maximum",
       "maxParallelFeaturesDescription": "Nombre maximum de fonctionnalités exécutant un agent en même temps. 0 signifie illimité. Les fonctionnalités supplémentaires sont mises en file d'attente et démarrent automatiquement dès qu'une place se libère.",
+      "decisionTimeout": "Délai des questions",
+      "decisionTimeoutDescription": "Durée pendant laquelle un agent en arrière-plan attend votre réponse avant de poursuivre avec l’option recommandée.",
       "modeRegular": "Standard",
       "modeFast": "Rapide",
       "modeExploration": "Exploration",
@@ -779,7 +781,14 @@
     "wait": "Attente",
     "cost": "Coût",
     "modelUsed": "Exécuté sur {{model}}",
-    "noActivityRecorded": "Aucune activité enregistrée"
+    "noActivityRecorded": "Aucune activité enregistrée",
+    "decisions": {
+      "title": "Décisions",
+      "pending": "En attente d’une réponse",
+      "answered": "{{actor}} a répondu : {{answer}}",
+      "defaulted": "Pas de réponse avant l’échéance — poursuite avec l’option recommandée : {{answer}}",
+      "cancelled": "Annulée sans réponse"
+    }
   },
   "logTab": {
     "structuredView": "Vue structurée",
@@ -1820,5 +1829,21 @@
       "run": "Lancer maintenant",
       "running": "En cours…"
     }
+  },
+  "decision": {
+    "answeredQuestions": "Questions répondues",
+    "recommended": "Recommandé",
+    "selectMany": "Sélectionnez une ou plusieurs options.",
+    "otherPlaceholder": "Saisissez votre propre réponse, ou laissez vide pour utiliser l’option sélectionnée",
+    "composerHint": "Écrivez dans la zone de message pour répondre avec vos propres mots.",
+    "restoreText": "Restaurer le texte saisi",
+    "notResumable": "Cette question ne peut plus recevoir de réponse : l’agent qui l’a posée n’attend plus.",
+    "defaultsAt": "Sans réponse avant {{time}}, l’agent continue avec l’option recommandée.",
+    "preview": "Aperçu",
+    "previous": "Précédent",
+    "next": "Suivant",
+    "submit": "Envoyer",
+    "submitting": "Envoi…",
+    "new": "Nouveau"
   }
 }

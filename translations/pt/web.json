@@ -83,6 +83,8 @@
       "defaultModeDescription": "Modo padrão para novos recursos criados via CLI ou interface web",
       "maxParallelFeatures": "Máximo de recursos paralelos",
       "maxParallelFeaturesDescription": "Número máximo de recursos executando um agente ao mesmo tempo. 0 significa ilimitado. Recursos extras entram na fila e iniciam automaticamente quando uma vaga é liberada.",
+      "decisionTimeout": "Prazo das perguntas",
+      "decisionTimeoutDescription": "Quanto tempo um agente em segundo plano espera sua resposta antes de seguir com a opção recomendada.",
       "modeRegular": "Regular",
       "modeFast": "Rápido",
       "modeExploration": "Exploração",
@@ -779,7 +781,14 @@
     "wait": "Espera",
     "cost": "Custo",
     "modelUsed": "Executado em {{model}}",
-    "noActivityRecorded": "Nenhuma atividade registrada"
+    "noActivityRecorded": "Nenhuma atividade registrada",
+    "decisions": {
+      "title": "Decisões",
+      "pending": "Aguardando uma resposta",
+      "answered": "{{actor}} respondeu: {{answer}}",
+      "defaulted": "Sem resposta até o prazo — seguiu com a opção recomendada: {{answer}}",
+      "cancelled": "Cancelada sem resposta"
+    }
   },
   "logTab": {
     "structuredView": "Vista estruturada",
@@ -1820,5 +1829,21 @@
       "run": "Executar agora",
       "running": "Executando…"
     }
+  },
+  "decision": {
+    "answeredQuestions": "Perguntas respondidas",
+    "recommended": "Recomendada",
+    "selectMany": "Selecione uma ou mais opções.",
+    "otherPlaceholder": "Digite sua própria resposta ou deixe em branco para usar a opção selecionada",
+    "composerHint": "Escreva na caixa de mensagem para responder com suas palavras.",
+    "restoreText": "Restaurar texto digitado",
+    "notResumable": "Esta pergunta não pode mais ser respondida — o agente que a fez não está mais esperando.",
+    "defaultsAt": "Se ninguém responder até {{time}}, o agente continua com a opção recomendada.",
+    "preview": "Pré-visualização",
+    "previous": "Anterior",
+    "next": "Próxima",
+    "submit": "Enviar",
+    "submitting": "Enviando…",
+    "new": "Nova"
   }
 }
