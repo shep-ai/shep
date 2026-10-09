@@ -9,9 +9,11 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
+// `/dev/null` on every platform: Git for Windows maps it to its null device,
+// while git 2.56 rejects `NUL` ("unable to access 'NUL': Invalid argument").
 export const ISOLATED_GIT_ENV = {
-  GIT_CONFIG_GLOBAL: process.platform === 'win32' ? 'NUL' : '/dev/null',
-  GIT_CONFIG_SYSTEM: process.platform === 'win32' ? 'NUL' : '/dev/null',
+  GIT_CONFIG_GLOBAL: '/dev/null',
+  GIT_CONFIG_SYSTEM: '/dev/null',
 };
 
 /** Apply the isolated git env to this process; returns a restore function. */

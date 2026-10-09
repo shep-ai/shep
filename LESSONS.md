@@ -3023,3 +3023,10 @@ A subagent started with worktree isolation checks out under `.claude/worktrees/<
 main clone, and `.gitignore` does not cover that path, so `git add -A` or `git status`-driven lint
 and prettier runs pick up the whole second checkout. Add `.claude/worktrees/` to
 `.git/info/exclude` before starting one, and stage with `git add -u` plus explicit new paths.
+
+## Use `/dev/null`, not `NUL`, to isolate git config on Windows
+
+`GIT_CONFIG_GLOBAL=NUL` worked until the Windows runner moved to git 2.56, which fails every
+command with `fatal: unable to access 'NUL': Invalid argument`. Git for Windows maps `/dev/null`
+to its null device, so `GIT_CONFIG_GLOBAL=/dev/null` is right on every platform — never branch
+on `process.platform` for it.
