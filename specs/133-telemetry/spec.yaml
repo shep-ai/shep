@@ -20,7 +20,7 @@ summary: |-
   username and the GitHub owners of the repos Shep runs in. `shep telemetry on|off|status|show`
   and a settings section control it, and the trust promise in the README, FAQ and CLAUDE.md is
   rewritten to say exactly what is sent.
-phase: Requirements
+phase: Complete
 sizeEstimate: XL
 relatedFeatures: []
 technologies:

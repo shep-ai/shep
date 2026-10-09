@@ -3,15 +3,15 @@ feature:
   name: 'telemetry'
   number: 133
   branch: 'feat/133-telemetry'
-  lifecycle: 'implementation'
+  lifecycle: 'review'
   createdAt: '2026-10-09T09:33:43Z'
 
 status:
-  phase: 'implementation'
+  phase: 'review'
   progress:
-    completed: 0
-    total: 0
-    percentage: 0
+    completed: 12
+    total: 12
+    percentage: 100
   currentTask: null
   lastUpdated: '2026-10-09T09:33:43Z'
   lastUpdatedBy: 'shep-kit:new-feature'

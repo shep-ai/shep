@@ -14,7 +14,7 @@ tasks:
   - id: task-1
     title: TypeSpec telemetry enums and TelemetryConfig on Settings
     description: TelemetryEvent, TelemetryDisabledReason, TelemetryProcessKind, OnboardingStep enums; TelemetryConfig model; regenerate
-    state: Todo
+    state: Done
     dependencies: []
     acceptanceCriteria:
       - pnpm generate leaves a clean diff and tsp:compile has no warnings
@@ -31,7 +31,7 @@ tasks:
   - id: task-2
     title: Pure domain rules
     description: resolveTelemetryState, duration buckets, topStackFrame, notice field list, github-remote owner parser (moved from merge-prompts), catalog accountIdSource
-    state: Todo
+    state: Done
     dependencies:
       - task-1
     acceptanceCriteria:
@@ -49,7 +49,7 @@ tasks:
   - id: task-3
     title: Migration, outbox repository, settings columns
     description: 166-create-telemetry (outbox, once table, settings columns); SQLiteTelemetryOutboxRepository; settings-telemetry mapper wired into settings mapper and repository SQL
-    state: Todo
+    state: Done
     dependencies:
       - task-1
     acceptanceCriteria:
@@ -67,7 +67,7 @@ tasks:
   - id: task-4
     title: Ports and typed event properties
     description: ITelemetry, ITelemetryOutboxRepository, ITelemetryTransport, ITelemetryIdentityProvider, ITelemetryRuntime; TelemetryEventProperties map
-    state: Todo
+    state: Done
     dependencies:
       - task-2
     acceptanceCriteria:
@@ -78,7 +78,7 @@ tasks:
   - id: task-5
     title: Infrastructure adapters
     description: OutboxTelemetry, NoopTelemetry, PostHogTelemetryTransport, NoopTelemetryTransport, CatalogTelemetryIdentityProvider, NodeTelemetryRuntime
-    state: Todo
+    state: Done
     dependencies:
       - task-3
       - task-4
@@ -98,7 +98,7 @@ tasks:
   - id: task-6
     title: Telemetry use cases
     description: GetTelemetryStatus, SetTelemetryPreferences, PreviewTelemetry, FlushTelemetry, RecordInstallHeartbeat, AcknowledgeTelemetryNotice, RecordTelemetryEvent, TelemetryEnvelopeBuilder
-    state: Todo
+    state: Done
     dependencies:
       - task-4
     acceptanceCriteria:
@@ -115,7 +115,7 @@ tasks:
   - id: task-7
     title: DI wiring
     description: register-telemetry module; container and bootstrap test token lists
-    state: Todo
+    state: Done
     dependencies:
       - task-5
       - task-6
@@ -133,7 +133,7 @@ tasks:
   - id: task-8
     title: CLI command, notice and hooks
     description: shep telemetry on|off|status|show; first-run notice to stderr; cli.command preAction; error.unhandled in CLI handlers; 9 locales
-    state: Todo
+    state: Done
     dependencies:
       - task-7
     acceptanceCriteria:
@@ -151,7 +151,7 @@ tasks:
   - id: task-9
     title: Daemon flush watcher
     description: TelemetryFlushWatcher (flush + daily heartbeat) started and stopped in _serve; daemon uncaughtException records error.unhandled
-    state: Todo
+    state: Done
     dependencies:
       - task-7
     acceptanceCriteria:
@@ -168,7 +168,7 @@ tasks:
   - id: task-10
     title: Web onboarding, settings and route tracking
     description: TelemetryNoticeCard in onboarding (turn off, identity, contact consent); TelemetrySettingsSection; RouteViewTracker in AppShell; server actions + Storybook mocks + stories; 9 locales
-    state: Todo
+    state: Done
     dependencies:
       - task-7
     acceptanceCriteria:
@@ -185,7 +185,7 @@ tasks:
   - id: task-11
     title: Lifecycle emit points
     description: feature.created, feature.run.finished, pr.opened, pr.merged (merge node, PR sync both paths, webhook) with once-keys
-    state: Todo
+    state: Done
     dependencies:
       - task-7
     acceptanceCriteria:
@@ -202,7 +202,7 @@ tasks:
   - id: task-12
     title: Trust promise and docs
     description: README Trust and safety + FAQ, CLAUDE.md Data Storage, docs/telemetry.md
-    state: Todo
+    state: Done
     dependencies:
       - task-8
       - task-9
