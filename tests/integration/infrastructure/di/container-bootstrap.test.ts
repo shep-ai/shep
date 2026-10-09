@@ -30,7 +30,6 @@
  * eagerly resolves this way, add the class here too.
  */
 
-import { AgentQuestionBridgeFactory } from '@/infrastructure/services/agents/agent-question-service/agent-question-bridge.factory.js';
 import 'reflect-metadata';
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { container as rootContainer, type DependencyContainer } from 'tsyringe';
@@ -42,6 +41,7 @@ import { registerServices } from '@/infrastructure/di/modules/register-services.
 import { registerTools } from '@/infrastructure/di/modules/register-tools.js';
 import { registerAgents } from '@/infrastructure/di/modules/register-agents.js';
 import { registerDecisions } from '@/infrastructure/di/modules/register-decisions.js';
+import { AgentQuestionBridgeFactory } from '@/infrastructure/services/agents/agent-question-service/agent-question-bridge.factory.js';
 import { registerCloudDeploy } from '@/infrastructure/di/modules/register-cloud-deploy.js';
 import { registerIntegrations } from '@/infrastructure/di/modules/register-integrations.js';
 import { registerDeployment } from '@/infrastructure/di/modules/register-deployment.js';

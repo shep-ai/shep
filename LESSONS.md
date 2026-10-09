@@ -3016,3 +3016,12 @@ that a squash merge would invalidate.
 `relative(ROOT, file)` returns backslashes on Windows, so a test comparing it with
 `'packages/core/src/...'` passed on Linux and failed on `windows-latest`. Always
 `.replace(/\\/g, '/')` a computed path before comparing or printing it in a test.
+
+## A scripted "insert before the first import" can land above `import 'reflect-metadata'`
+
+Adding an import to `container-bootstrap.test.ts` with a script that inserted it before the
+file's first `import` put a tsyringe-decorated module above `import 'reflect-metadata'`. The DI
+suite still passed when run together with other files (another file had loaded the polyfill in
+the same worker) and failed alone in `test:int` with "tsyringe requires a reflect polyfill".
+When inserting imports programmatically, anchor on a sibling import of the same kind, never on
+"the first import", and run the touched test file on its own.
