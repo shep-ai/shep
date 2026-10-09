@@ -28,6 +28,7 @@ vi.mock('sonner', () => ({
 }));
 
 vi.mock('next/navigation', () => ({
+  useParams: () => ({}),
   usePathname: () => '/control-center',
   useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
 }));

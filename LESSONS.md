@@ -3016,3 +3016,20 @@ that a squash merge would invalidate.
 `relative(ROOT, file)` returns backslashes on Windows, so a test comparing it with
 `'packages/core/src/...'` passed on Linux and failed on `windows-latest`. Always
 `.replace(/\\/g, '/')` a computed path before comparing or printing it in a test.
+
+## A new hook in a shared shell is a change to every test that renders the shell
+
+Adding `useRouteViewTelemetry()` to `AppShell` (it calls `useParams`) failed four AppShell suites
+whose `vi.mock('next/navigation')` only returned `usePathname`/`useRouter`, and a new
+`container.resolve('ITelemetry')` in `startBackgroundSync` failed the `ui` and `_serve` command
+tests whose stubs throw on unknown tokens. Before mounting a hook in a layout, grep the tests that
+mock its imports; before adding a resolve to a shared starter, grep the stubs of every command that
+calls it. The web test setup replaces `localStorage` with `vi.fn()` mocks (`getItem` returns
+`undefined`), so drive it with `vi.mocked(localStorage.getItem)` and treat "missing" as falsy, not
+`!== null`.
+
+## PostHog `/batch/` answers 200 for any project key
+
+A live probe returned `200 {"status":"Ok"}` for a fake key and `400` for a malformed body. A
+successful send proves the wire format, not that events reach a project — check the project's
+event stream after configuring a real key.

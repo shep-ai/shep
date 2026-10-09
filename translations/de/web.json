@@ -23,7 +23,8 @@
       "security": "Security",
       "messaging": "Messaging",
       "mcp": "MCP",
-      "harness": "Agent-Harness"
+      "harness": "Agent-Harness",
+      "telemetry": "Nutzungsmetriken"
     },
     "language": {
       "title": "Sprache",
@@ -1819,6 +1820,53 @@
       "save": "Speichern",
       "run": "Jetzt ausführen",
       "running": "Läuft…"
+    }
+  },
+  "telemetry": {
+    "fieldsHeading": "Was gesendet wird",
+    "fields": {
+      "installId": "Eine zufällige Installations-ID",
+      "usage": "Welche Befehle, Seiten und Funktionen Sie nutzen und wie Ausführungen enden",
+      "platform": "Shep-Version, Betriebssystem und Node.js-Version",
+      "agentAccountHash": "Ein SHA-256-Hash Ihrer Claude- oder Codex-Konto-ID",
+      "githubUsername": "Ihr GitHub-Benutzername (mit gh ausgelesen)",
+      "githubOwners": "Die GitHub-Owner (Benutzer oder Organisationen) der Repositorys, die Sie mit Shep verwenden",
+      "contactConsent": "Ob das Shep-Team Sie auf GitHub kontaktieren darf"
+    },
+    "neverSent": "Niemals gesendet: Prompts, Code, Dateipfade, Repository- oder Branch-Namen, Feature-Titel oder Fehlermeldungen.",
+    "reasons": {
+      "ci": "die Umgebungsvariable CI ist gesetzt",
+      "do-not-track": "DO_NOT_TRACK ist gesetzt",
+      "env-disabled": "SHEP_TELEMETRY_DISABLED ist gesetzt",
+      "test": "Ausführung in einem Test-Runner",
+      "user-opt-out": "Sie haben sie deaktiviert"
+    },
+    "notice": {
+      "title": "Shep erfasst Nutzungsmetriken",
+      "intro": "Um zu erfahren, welche Funktionen genutzt werden, sendet Shep Nutzungsereignisse an das Shep-Team (PostHog, EU-Region). Sie können dies jederzeit deaktivieren.",
+      "turnOff": "Deaktivieren",
+      "turnedOff": "Nutzungsmetriken sind deaktiviert. Ereignisse in der Warteschlange wurden gelöscht.",
+      "dismiss": "Verstanden",
+      "failed": "Nutzungsmetriken konnten nicht aktualisiert werden. Versuchen Sie es erneut in den Einstellungen."
+    },
+    "controls": {
+      "enabled": "Nutzungsmetriken senden",
+      "enabledDescription": "Beim Deaktivieren werden auch noch nicht gesendete Ereignisse gelöscht.",
+      "identity": "Meine Identität einbeziehen (GitHub-Benutzername, Organisation, Konto-Hash)",
+      "identityDescription": "Lassen Sie dies deaktiviert, um weiterhin anonyme Nutzungsmetriken zu senden.",
+      "contact": "Das Shep-Team darf mich auf GitHub kontaktieren",
+      "contactDescription": "Deaktiviert, sofern Sie es nicht aktivieren."
+    },
+    "settings": {
+      "title": "Nutzungsmetriken",
+      "description": "Helfen Sie bei der Entscheidung, was als Nächstes entwickelt wird, indem Sie Nutzungsereignisse an das Shep-Team senden.",
+      "forcedOff": "In dieser Umgebung deaktiviert: {{reason}}.",
+      "queued": "{{count}} Ereignisse warten auf den Versand",
+      "destination": "Gesendet an {{destination}}",
+      "notConfigured": "In diesem Build ist kein Projektschlüssel konfiguriert, daher wird nichts gesendet.",
+      "hint": "Führen Sie `shep telemetry show` aus, um genau zu sehen, was gesendet würde.",
+      "loading": "Einstellungen für Nutzungsmetriken werden geladen…",
+      "loadFailed": "Einstellungen für Nutzungsmetriken konnten nicht geladen werden."
     }
   }
 }

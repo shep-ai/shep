@@ -23,7 +23,8 @@
       "security": "Security",
       "messaging": "Messaging",
       "mcp": "MCP",
-      "harness": "Harness do agente"
+      "harness": "Harness do agente",
+      "telemetry": "Métricas de uso"
     },
     "language": {
       "title": "Idioma",
@@ -1819,6 +1820,53 @@
       "save": "Salvar",
       "run": "Executar agora",
       "running": "Executando…"
+    }
+  },
+  "telemetry": {
+    "fieldsHeading": "O que é enviado",
+    "fields": {
+      "installId": "Um ID de instalação aleatório",
+      "usage": "Quais comandos, páginas e recursos você usa e como as execuções terminam",
+      "platform": "Versão do Shep, sistema operacional e versão do Node.js",
+      "agentAccountHash": "Um hash SHA-256 do ID da sua conta Claude ou Codex",
+      "githubUsername": "Seu usuário do GitHub (lido com gh)",
+      "githubOwners": "Os proprietários no GitHub (usuários ou organizações) dos repositórios que você usa com o Shep",
+      "contactConsent": "Se a equipe do Shep pode entrar em contato com você no GitHub"
+    },
+    "neverSent": "Nunca enviados: prompts, código, caminhos de arquivos, nomes de repositórios ou branches, títulos de features ou mensagens de erro.",
+    "reasons": {
+      "ci": "a variável de ambiente CI está definida",
+      "do-not-track": "DO_NOT_TRACK está definida",
+      "env-disabled": "SHEP_TELEMETRY_DISABLED está definida",
+      "test": "executando em um executor de testes",
+      "user-opt-out": "você as desativou"
+    },
+    "notice": {
+      "title": "O Shep coleta métricas de uso",
+      "intro": "Para saber quais recursos são usados, o Shep envia eventos de uso para a equipe do Shep (PostHog, região da UE). Você pode desativar isso a qualquer momento.",
+      "turnOff": "Desativar",
+      "turnedOff": "As métricas de uso estão desativadas. Os eventos na fila foram excluídos.",
+      "dismiss": "Entendi",
+      "failed": "Não foi possível atualizar as métricas de uso. Tente novamente em Configurações."
+    },
+    "controls": {
+      "enabled": "Enviar métricas de uso",
+      "enabledDescription": "Desativar isso também exclui os eventos que ainda não foram enviados.",
+      "identity": "Incluir minha identidade (usuário do GitHub, organização, hash da conta)",
+      "identityDescription": "Deixe desativado para continuar enviando métricas de uso anônimas.",
+      "contact": "A equipe do Shep pode entrar em contato comigo no GitHub",
+      "contactDescription": "Desativado, a menos que você ative."
+    },
+    "settings": {
+      "title": "Métricas de uso",
+      "description": "Ajude a decidir o que construir a seguir enviando eventos de uso para a equipe do Shep.",
+      "forcedOff": "Desativado neste ambiente: {{reason}}.",
+      "queued": "{{count}} eventos aguardando envio",
+      "destination": "Enviado para {{destination}}",
+      "notConfigured": "Nenhuma chave de projeto está configurada neste build, então nada é enviado.",
+      "hint": "Execute `shep telemetry show` para ver exatamente o que seria enviado.",
+      "loading": "Carregando configurações de métricas de uso…",
+      "loadFailed": "Não foi possível carregar as configurações de métricas de uso."
     }
   }
 }

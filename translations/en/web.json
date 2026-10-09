@@ -23,7 +23,8 @@
       "security": "Security",
       "messaging": "Messaging",
       "mcp": "MCP",
-      "harness": "Agent Harness"
+      "harness": "Agent Harness",
+      "telemetry": "Usage metrics"
     },
     "language": {
       "title": "Language",
@@ -1819,6 +1820,53 @@
       "save": "Save",
       "run": "Run now",
       "running": "Running…"
+    }
+  },
+  "telemetry": {
+    "fieldsHeading": "What is sent",
+    "fields": {
+      "installId": "A random install id",
+      "usage": "Which commands, pages and features you use, and how runs end",
+      "platform": "Shep version, operating system and Node.js version",
+      "agentAccountHash": "A SHA-256 hash of your Claude or Codex account id",
+      "githubUsername": "Your GitHub username (read with gh)",
+      "githubOwners": "The GitHub owners (users or organisations) of the repositories you use with Shep",
+      "contactConsent": "Whether the Shep team may contact you on GitHub"
+    },
+    "neverSent": "Never sent: prompts, code, file paths, repository or branch names, feature titles or error messages.",
+    "reasons": {
+      "ci": "the CI environment variable is set",
+      "do-not-track": "DO_NOT_TRACK is set",
+      "env-disabled": "SHEP_TELEMETRY_DISABLED is set",
+      "test": "running under a test runner",
+      "user-opt-out": "you turned them off"
+    },
+    "notice": {
+      "title": "Shep collects usage metrics",
+      "intro": "To learn which features are used, Shep sends usage events to the Shep team (PostHog, EU region). You can turn this off at any time.",
+      "turnOff": "Turn off",
+      "turnedOff": "Usage metrics are off. Queued events were deleted.",
+      "dismiss": "Got it",
+      "failed": "Could not update usage metrics. Try again from Settings."
+    },
+    "controls": {
+      "enabled": "Send usage metrics",
+      "enabledDescription": "Turning this off also deletes events that have not been sent yet.",
+      "identity": "Include my identity (GitHub username, org, account hash)",
+      "identityDescription": "Leave this off to keep sending anonymous usage metrics.",
+      "contact": "The Shep team may contact me on GitHub",
+      "contactDescription": "Off unless you turn it on."
+    },
+    "settings": {
+      "title": "Usage metrics",
+      "description": "Help decide what to build next by sending usage events to the Shep team.",
+      "forcedOff": "Off in this environment: {{reason}}.",
+      "queued": "{{count}} events waiting to be sent",
+      "destination": "Sent to {{destination}}",
+      "notConfigured": "No project key is configured in this build, so nothing is sent.",
+      "hint": "Run `shep telemetry show` to see exactly what would be sent.",
+      "loading": "Loading usage metrics settings…",
+      "loadFailed": "Could not load usage metrics settings."
     }
   }
 }

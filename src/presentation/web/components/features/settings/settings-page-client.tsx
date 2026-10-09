@@ -11,6 +11,7 @@ import {
   Bell,
   Flag,
   Database,
+  BarChart3,
   Globe,
   Minus,
   Plus,
@@ -30,11 +31,10 @@ import {
   Plug,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { cn } from '@/lib/utils';
-import { Label } from '@/components/ui/label';
+import { SettingsRow, SwitchRow } from './settings-rows';
+import { TelemetrySettingsSection } from '../telemetry/telemetry-settings-section';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
 import {
   Select,
   SelectContent,
@@ -137,6 +137,7 @@ const SECTIONS = [
   { id: 'home-page', labelKey: 'settings.sections.homePage', icon: Home },
   { id: 'fab-layout', labelKey: 'settings.sections.layout', icon: LayoutGrid },
   { id: 'integrations', labelKey: 'settings.sections.integrations', icon: Github },
+  { id: 'telemetry', labelKey: 'settings.sections.telemetry', icon: BarChart3 },
   { id: 'database', labelKey: 'settings.sections.database', icon: Database },
 ] as const;
 
@@ -155,67 +156,6 @@ export interface SettingsPageClientProps {
 }
 
 /* ── Reusable row components ── */
-
-function SettingsRow({
-  label,
-  description,
-  htmlFor,
-  children,
-}: {
-  label: string;
-  description?: string;
-  htmlFor?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b py-2.5 last:border-b-0">
-      <div className="min-w-0">
-        <Label
-          id={htmlFor ? `${htmlFor}-label` : undefined}
-          htmlFor={htmlFor}
-          className="cursor-pointer text-sm font-normal"
-        >
-          {label}
-        </Label>
-        {description ? (
-          <p className="text-muted-foreground text-[11px] leading-tight">{description}</p>
-        ) : null}
-      </div>
-      <div className="flex max-w-full min-w-0 flex-wrap items-center gap-2">{children}</div>
-    </div>
-  );
-}
-
-function SwitchRow({
-  label,
-  description,
-  id,
-  testId,
-  checked,
-  onChange,
-  disabled,
-}: {
-  label: string;
-  description?: string;
-  id: string;
-  testId: string;
-  checked: boolean;
-  onChange: (value: boolean) => void;
-  disabled?: boolean;
-}) {
-  return (
-    <SettingsRow label={label} description={description} htmlFor={id}>
-      <Switch
-        id={id}
-        data-testid={testId}
-        checked={checked}
-        onCheckedChange={onChange}
-        disabled={disabled}
-        className={cn('cursor-pointer', disabled && 'cursor-not-allowed opacity-50')}
-      />
-    </SettingsRow>
-  );
-}
 
 /* ── Section card wrapper ── */
 
@@ -2259,6 +2199,22 @@ export function SettingsPageClient({
             <SectionHint>{t('settings.whatsapp.hint')}</SectionHint>
           </div>
         ) : null}
+
+        {/* ── Usage metrics (spec 133) ── */}
+        <div
+          id="section-telemetry"
+          className="grid scroll-mt-32 grid-cols-1 gap-x-5 rounded-lg lg:grid-cols-[minmax(0,1fr)_280px]"
+        >
+          <SettingsSection
+            icon={BarChart3}
+            title={t('telemetry.settings.title')}
+            description={t('telemetry.settings.description')}
+            testId="telemetry-settings-card"
+          >
+            <TelemetrySettingsSection />
+          </SettingsSection>
+          <SectionHint>{t('telemetry.settings.hint')}</SectionHint>
+        </div>
 
         {/* ── Database ── */}
         <div

@@ -163,7 +163,7 @@ Full reference: [docs/cli/commands.md](./docs/cli/commands.md) — every command
 <details>
 <summary><strong>Trust and safety</strong> — what runs where, and what protects you</summary>
 
-Shep runs entirely on your machine. All data lives in `~/.shep/` as SQLite; your code is sent only to whichever agent you configure, under that agent's own terms. Nothing is sent to Shep servers — there are none.
+Shep runs entirely on your machine. All data lives in `~/.shep/` as SQLite; your code is sent only to whichever agent you configure, under that agent's own terms. The one thing Shep itself sends is **usage metrics** (below), and you can turn them off.
 
 | Concern | How Shep handles it |
 |---------|---------------------|
@@ -173,6 +173,7 @@ Shep runs entirely on your machine. All data lives in `~/.shep/` as SQLite; your
 | Credentials | With session auth (the default) Shep never touches your agent credentials — the agent uses its own login. If you choose token auth, the key you hand `shep settings agent --token` is stored in your local settings database (`~/.shep/data`, as plain text) and passed only to the provider you selected. |
 | Audit trail | Every action and state transition is logged — `shep feat logs <id>`. |
 | Emergency stop | `shep agent stop <id>` or the dashboard stop button. The worktree is preserved. |
+| Usage metrics | On by default, announced on first run. About ten kinds of usage event go to the Shep team's PostHog project (EU region), with a random install id and — unless you turn identity off — a SHA-256 hash of your Claude/Codex account id, your GitHub username and the GitHub owners of repositories you use. Never prompts, code, file paths, repository or branch names, feature titles or error messages. `shep telemetry off` (or `DO_NOT_TRACK=1`) stops it; it is always off under `CI`. See [docs/telemetry.md](./docs/telemetry.md). |
 
 **Agent permissions:** Shep runs your agent non-interactively, so by default it passes permission-bypass flags (e.g. `--dangerously-skip-permissions` for Claude Code — each agent has an equivalent). Your safety net is three layers deep: worktree isolation, draft PRs, and your CI pipeline. The bypass flag is a default, not a requirement — configure your agent's permission model independently for tighter control. Note that some agents sandbox network access by default; if `npm install` fails inside a feature, allow the hosts in your agent's settings.
 
@@ -200,6 +201,9 @@ Shep runs locally per developer. Features are just branches and PRs — your exi
 
 **Is my code sent anywhere?**
 Not by Shep. It goes only to the agent you configure, under that agent's privacy terms. Shep stores everything locally.
+
+**Does Shep collect anything?**
+Usage metrics, on by default: which commands, pages and features are used, how runs end, and whether PRs merge — never content. Identity fields (an account-id hash, GitHub username and owners) can be turned off on their own with `shep telemetry identity off`. `shep telemetry show` prints exactly what will be sent; `shep telemetry off` turns it all off. Details in [docs/telemetry.md](./docs/telemetry.md).
 
 **Not in a git repo yet?**
 Shep initializes one for you — `git init`, a branch, and off it goes.
