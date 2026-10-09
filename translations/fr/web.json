@@ -1834,6 +1834,7 @@
     "previous": "Précédent",
     "next": "Suivant",
     "submit": "Envoyer",
-    "submitting": "Envoi…"
+    "submitting": "Envoi…",
+    "new": "Nouveau"
   }
 }

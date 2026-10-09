@@ -43,19 +43,28 @@ export function DecisionOptionRow({
       className={cn(
         'focus-visible:ring-primary/25 flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-start transition-colors duration-150 outline-none focus-visible:ring-1',
         selected ? 'bg-muted/60 text-foreground' : 'text-foreground/85 hover:bg-muted/30',
+        option.isNew && 'animate-option-highlight',
         disabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'
       )}
     >
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className="flex items-center gap-1.5 text-sm font-medium">
+        <span className="flex flex-wrap items-center gap-1.5 text-sm font-medium wrap-break-word">
           {option.label}
           {option.recommended ? (
             <Badge
               data-testid={`${testId}-recommended`}
               variant="secondary"
-              className="px-1.5 py-0 text-[10px]"
+              className="px-1.5 py-0 text-[10px] whitespace-nowrap"
             >
               {t('decision.recommended')}
+            </Badge>
+          ) : null}
+          {option.isNew ? (
+            <Badge
+              data-testid={`${testId}-new`}
+              className="border-transparent bg-emerald-600 px-1.5 py-0 text-[10px] whitespace-nowrap text-white hover:bg-emerald-600/80"
+            >
+              {t('decision.new')}
             </Badge>
           ) : null}
         </span>

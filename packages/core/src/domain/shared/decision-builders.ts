@@ -85,7 +85,6 @@ export function decisionFromPrdQuestionnaire(id: string, data: PrdQuestionnaireD
     id,
     kind: DecisionKind.PrdQuestionnaire,
     responseMode: DecisionResponseMode.Async,
-    title: data.question,
     questions: data.questions.map((q) => ({
       id: q.id,
       header: q.question,
@@ -97,6 +96,7 @@ export function decisionFromPrdQuestionnaire(id: string, data: PrdQuestionnaireD
         label: o.label,
         description: o.rationale,
         ...(o.recommended ? { recommended: true } : {}),
+        ...(o.isNew ? { isNew: true } : {}),
       })),
     })),
   };

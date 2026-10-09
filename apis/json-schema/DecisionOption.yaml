@@ -17,6 +17,9 @@ properties:
   recommended:
     type: boolean
     description: True for the option the asker recommends; it is preselected and used when a deadline passes
+  isNew:
+    type: boolean
+    description: True when the option was added since the user last saw this decision (e.g. after a refinement)
 required:
   - id
   - label

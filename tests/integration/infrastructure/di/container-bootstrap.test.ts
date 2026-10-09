@@ -41,6 +41,7 @@ import { registerRepositories } from '@/infrastructure/di/modules/register-repos
 import { registerServices } from '@/infrastructure/di/modules/register-services.js';
 import { registerTools } from '@/infrastructure/di/modules/register-tools.js';
 import { registerAgents } from '@/infrastructure/di/modules/register-agents.js';
+import { registerDecisions } from '@/infrastructure/di/modules/register-decisions.js';
 import { registerCloudDeploy } from '@/infrastructure/di/modules/register-cloud-deploy.js';
 import { registerIntegrations } from '@/infrastructure/di/modules/register-integrations.js';
 import { registerDeployment } from '@/infrastructure/di/modules/register-deployment.js';
@@ -108,6 +109,8 @@ import type { IRunPlanStalenessProbe } from '@/application/ports/output/services
  * failing with the offending token name on any missing registration.
  */
 const WEB_ROUTE_TOKENS: readonly string[] = [
+  // Spec 134: the unified decisions inbox.
+  'ListAgentQuestionInboxUseCase',
   'AttachmentStorageService',
   'ConnectCloudProviderUseCase',
   'CreateGitRemoteUseCase',
@@ -439,6 +442,7 @@ describe('DI container bootstrap (integration)', () => {
     registerServices(scopedContainer);
     registerTools(scopedContainer);
     registerAgents(scopedContainer);
+    registerDecisions(scopedContainer);
     registerCloudDeploy(scopedContainer);
     registerIntegrations(scopedContainer);
     registerDeployment(scopedContainer);

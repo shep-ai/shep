@@ -231,4 +231,40 @@ describe('DecisionPanel', () => {
     unmount();
     expect(vi.getTimerCount()).toBe(0);
   });
+
+  describe('selection mode (no onSubmit) — used by the PRD questionnaire', () => {
+    it('reports every selection, starts from the given selections, and never submits', () => {
+      const onSelect = vi.fn();
+      render(
+        <DecisionPanel
+          decision={makeDecision()}
+          onSelect={onSelect}
+          initialSelections={{ q1: ['memory'] }}
+        />
+      );
+      expect(screen.getByTestId('decision-option-memory-check')).toBeInTheDocument();
+      fireEvent.click(screen.getByTestId('decision-option-redis'));
+      expect(onSelect).toHaveBeenCalledWith('q1', ['redis']);
+      act(() => vi.advanceTimersByTime(DECISION_AUTO_ADVANCE_MS));
+      expect(screen.getByText('Which platforms?')).toBeInTheDocument();
+      expect(screen.queryByTestId('decision-panel-submit')).not.toBeInTheDocument();
+    });
+
+    it('lets the user skip a question and reports navigation', () => {
+      const onNavigate = vi.fn();
+      render(
+        <DecisionPanel decision={makeDecision()} onSelect={vi.fn()} onNavigate={onNavigate} />
+      );
+      fireEvent.click(screen.getByTestId('decision-panel-next'));
+      expect(screen.getByText('Which platforms?')).toBeInTheDocument();
+      expect(onNavigate).toHaveBeenCalledWith(1);
+    });
+
+    it('marks a newly added option', () => {
+      const d = singleQuestion();
+      d.questions[0].options[1].isNew = true;
+      render(<DecisionPanel decision={d} onSelect={vi.fn()} />);
+      expect(screen.getByTestId('decision-option-memory-new')).toBeInTheDocument();
+    });
+  });
 });

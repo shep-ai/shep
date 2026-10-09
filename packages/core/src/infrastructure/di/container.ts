@@ -103,6 +103,7 @@ import { ResolveSpaceEnvironmentUseCase } from '../../application/use-cases/spac
 import { registerServices } from './modules/register-services.js';
 import { registerTools } from './modules/register-tools.js';
 import { registerAgents } from './modules/register-agents.js';
+import { registerDecisions } from './modules/register-decisions.js';
 import { registerCloudDeploy } from './modules/register-cloud-deploy.js';
 import { registerIntegrations } from './modules/register-integrations.js';
 import { registerDeployment } from './modules/register-deployment.js';
@@ -157,6 +158,7 @@ export async function initializeContainer(): Promise<typeof container> {
   registerServices(container);
   registerTools(container);
   registerAgents(container);
+  registerDecisions(container);
   registerCloudDeploy(container);
   registerIntegrations(container);
   registerDeployment(container);

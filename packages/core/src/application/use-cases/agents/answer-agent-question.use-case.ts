@@ -43,6 +43,7 @@ import {
 import {
   decisionForQuestion,
   gateVerdictFromResponses,
+  isGateQuestion,
   type GateVerdict,
 } from '../../../domain/shared/decision-builders.js';
 import { ApproveAgentRunUseCase } from './approve-agent-run.use-case.js';
@@ -220,6 +221,8 @@ function gateVerdictFor(
       ? gateVerdictFromResponses(responses)
       : undefined;
   }
+  // A pre-134 gate row (JSON prompt) answered through the decision UI.
+  if (responses && isGateQuestion(question)) return gateVerdictFromResponses(responses);
   const normalized = answer.trim().toLowerCase();
   if (GATE_APPROVE_ANSWERS.has(normalized)) return { verdict: 'approve' };
   if (GATE_REJECT_ANSWERS.has(normalized)) return { verdict: 'reject' };

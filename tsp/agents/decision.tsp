@@ -75,6 +75,9 @@ model DecisionOption {
 
   @doc("True for the option the asker recommends; it is preselected and used when a deadline passes")
   recommended?: boolean;
+
+  @doc("True when the option was added since the user last saw this decision (e.g. after a refinement)")
+  isNew?: boolean;
 }
 
 @doc("One question within a decision")

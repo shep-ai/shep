@@ -39,6 +39,16 @@ export interface DecisionPanelProps {
   responses?: DecisionResponse[];
   /** Called with one response per question. Absent = read-only. */
   onSubmit?: (responses: DecisionResponse[]) => void;
+  /**
+   * Selection mode: called on every selection change. Without `onSubmit` the
+   * panel has no Submit and every question may be skipped (the host owns the
+   * final action — e.g. the PRD questionnaire's Approve).
+   */
+  onSelect?: (questionId: string, optionIds: string[]) => void;
+  /** Start from these selections instead of the recommended options. */
+  initialSelections?: Record<string, string[]>;
+  /** Called with the new question index on every page change. */
+  onNavigate?: (index: number) => void;
   /** Use a host text box as "Other" instead of the panel's own field. */
   composer?: DecisionComposer;
   disabled?: boolean;
@@ -73,28 +83,49 @@ export function DecisionPanel(props: DecisionPanelProps) {
   return <PendingDecisionPanel {...props} />;
 }
 
+function initialDraftFor(
+  decision: Decision,
+  initialSelections: Record<string, string[]> | undefined
+): DecisionDraft {
+  if (!initialSelections) return initialDecisionDraft(decision);
+  return Object.fromEntries(
+    Object.entries(initialSelections).map(([id, optionIds]) => [
+      id,
+      { selectedOptionIds: optionIds },
+    ])
+  );
+}
+
 function PendingDecisionPanel({
   decision,
   onSubmit,
+  onSelect,
+  initialSelections,
+  onNavigate,
   composer,
   disabled = false,
   isSubmitting = false,
   className,
 }: DecisionPanelProps) {
   const { t } = useTranslation('web');
-  const [draft, setDraft] = useState<DecisionDraft>(() => initialDecisionDraft(decision));
+  const [draft, setDraft] = useState<DecisionDraft>(() =>
+    initialDraftFor(decision, initialSelections)
+  );
   const [index, setIndex] = useState(0);
   const [stashedText, setStashedText] = useState('');
   const [focusedOptionId, setFocusedOptionId] = useState<string | null>(null);
   const advanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const answerable = isDecisionAnswerable(decision) && onSubmit !== undefined;
+  const answerable =
+    isDecisionAnswerable(decision) && (onSubmit !== undefined || onSelect !== undefined);
+  // In selection mode every question is optional.
+  const requireAnswerToAdvance = onSubmit !== undefined;
   const locked = !answerable || disabled || isSubmitting;
   const progress = deriveDecisionProgress(decision, draft, index);
   const question = progress.question;
 
-  const latest = useRef({ draft, index, composer, onSubmit, locked });
-  latest.current = { draft, index, composer, onSubmit, locked };
+  const latest = useRef({ draft, index, composer, onSubmit, onSelect, onNavigate, locked });
+  latest.current = { draft, index, composer, onSubmit, onSelect, onNavigate, locked };
 
   const cancelAdvance = useCallback(() => {
     if (advanceTimer.current !== null) {
@@ -127,6 +158,7 @@ function PendingDecisionPanel({
       if (!target) return;
       setIndex(next);
       host?.setText(current[target.id]?.customText ?? '');
+      latest.current.onNavigate?.(next);
     },
     [cancelAdvance, decision.questions]
   );
@@ -164,6 +196,7 @@ function PendingDecisionPanel({
         }
       }
       setDraft({ ...current, [question.id]: answer });
+      latest.current.onSelect?.(question.id, answer.selectedOptionIds ?? []);
       if (question.multiSelect) return;
       cancelAdvance();
       advanceTimer.current = setTimeout(() => {
@@ -205,7 +238,9 @@ function PendingDecisionPanel({
     >
       <header className="flex items-center gap-2 border-b px-3 py-2">
         <MessageCircleQuestion className="size-4 shrink-0 text-violet-600 dark:text-violet-400" />
-        <span className="text-muted-foreground shrink-0 font-medium">{question.header}</span>
+        {question.header !== question.question ? (
+          <span className="text-muted-foreground shrink-0 font-medium">{question.header}</span>
+        ) : null}
         {decision.title ? (
           <span className="text-muted-foreground min-w-0 flex-1 truncate text-xs">
             {decision.title}
@@ -314,7 +349,9 @@ function PendingDecisionPanel({
             <ChevronLeft className="me-1 size-4" />
             {t('decision.previous')}
           </Button>
-          {progress.isLast ? (
+          {progress.isLast && !onSubmit ? (
+            <span />
+          ) : progress.isLast ? (
             <Button
               type="button"
               size="sm"
@@ -330,7 +367,7 @@ function PendingDecisionPanel({
               variant="ghost"
               size="sm"
               data-testid="decision-panel-next"
-              disabled={locked || !progress.canAdvance}
+              disabled={locked || (requireAnswerToAdvance && !progress.canAdvance)}
               onClick={() => goTo(progress.index + 1)}
             >
               {t('decision.next')}

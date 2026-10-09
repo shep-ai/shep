@@ -6,6 +6,8 @@ import {
   AgentQuestionStatus,
   type AgentQuestion,
 } from '@shepai/core/domain/generated/output';
+import { buildApprovalGateDecision } from '@shepai/core/domain/shared/decision-builders';
+import { agentAskDecision, chatDecision } from '../common/decision-panel/decision-fixtures';
 
 const meta: Meta<typeof AgentQuestionsInbox> = {
   title: 'AgentQuestions/AgentQuestionsInbox',
@@ -82,5 +84,43 @@ export const Error: Story = {
   args: {
     initialQuestions: [question()],
     errorMessage: 'Failed to submit answer — server returned 500',
+  },
+};
+
+/** Spec 134: every producer renders through the same decision panel. */
+export const Decisions: Story = {
+  args: {
+    initialStatusFilter: 'all',
+    initialQuestions: [
+      question({
+        id: 'q-gate',
+        kind: AgentQuestionKind.blocking,
+        prompt: 'The pull request is ready to merge',
+        decision: buildApprovalGateDecision('q-gate', 'merge'),
+      }),
+      question({
+        id: 'q-ask',
+        prompt: agentAskDecision.questions[0].question,
+        decision: agentAskDecision,
+      }),
+      question({
+        id: 'q-chat',
+        kind: AgentQuestionKind.blocking,
+        prompt: chatDecision.questions[0].question,
+        decision: chatDecision,
+      }),
+      question({
+        id: 'q-answered',
+        status: AgentQuestionStatus.answered,
+        prompt: chatDecision.questions[0].question,
+        decision: chatDecision,
+        answer: 'Layout: Grid; Platforms: Web, iOS',
+        answeredBy: 'user:chat',
+        responses: [
+          { questionId: 'q1', optionIds: ['grid'] },
+          { questionId: 'q2', optionIds: ['web', 'ios'] },
+        ],
+      }),
+    ],
   },
 };

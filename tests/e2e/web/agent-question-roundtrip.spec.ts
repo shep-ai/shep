@@ -144,17 +144,17 @@ test.describe('Agent question round-trip — answer a blocking question (spec 09
     await expect(page.getByRole('heading', { name: 'Agent questions' })).toBeVisible();
     await expect(page.getByTestId('agent-questions-inbox')).toBeVisible();
 
-    // The seeded question is rendered with the prompt text.
-    const promptCell = page.getByTestId(`question-prompt-${TEST_QUESTION_ID}`);
-    await expect(promptCell).toBeVisible();
-    await expect(promptCell).toContainText(TEST_PROMPT);
+    // The seeded question is rendered through the decision panel (spec 134).
+    const row = page.getByTestId(`question-row-${TEST_QUESTION_ID}`);
+    await expect(row).toBeVisible();
+    await expect(row).toContainText(TEST_PROMPT);
 
     // Type an answer and submit.
-    const answerInput = page.getByTestId(`question-input-${TEST_QUESTION_ID}`);
+    const answerInput = row.getByTestId('decision-panel-other-input');
     await expect(answerInput).toBeVisible();
     await answerInput.fill('proceed');
 
-    await page.getByTestId(`question-submit-${TEST_QUESTION_ID}`).click();
+    await row.getByTestId('decision-panel-submit').click();
 
     // The status filter is "pending" — once answered the question is filtered
     // out. Switch to "All" so the answered row remains visible.

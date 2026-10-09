@@ -80,7 +80,8 @@ describe('decisionFromPrdQuestionnaire', () => {
       ],
     });
     expect(decision.kind).toBe(DecisionKind.PrdQuestionnaire);
-    expect(decision.title).toBe('Refine requirements');
+    // The questionnaire shows its own header; the decision carries no title.
+    expect(decision.title).toBeUndefined();
     expect(decision.questions[0]).toEqual({
       id: 'scope',
       header: 'Scope?',

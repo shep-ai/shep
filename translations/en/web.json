@@ -1834,6 +1834,7 @@
     "previous": "Previous",
     "next": "Next",
     "submit": "Submit",
-    "submitting": "Submitting…"
+    "submitting": "Submitting…",
+    "new": "New"
   }
 }

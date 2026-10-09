@@ -1,4 +1,4 @@
-import type { AgentQuestion } from '@shepai/core/domain/generated/output';
+import type { AgentQuestion, DecisionResponse } from '@shepai/core/domain/generated/output';
 
 export async function listAgentQuestions(_input: {
   appId: string;
@@ -9,7 +9,8 @@ export async function listAgentQuestions(_input: {
 export async function answerAgentQuestion(_input: {
   appId: string;
   questionId: string;
-  answer: string;
+  answer?: string;
+  responses?: DecisionResponse[];
   answeredBy: string;
 }): Promise<{ ok: boolean; error?: string }> {
   return { ok: true };

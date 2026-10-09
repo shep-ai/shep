@@ -83,45 +83,45 @@ describe('PrdQuestionnaire', () => {
   });
 
   describe('question rendering', () => {
-    it('renders the current question with number prefix and step dots', () => {
+    it('renders the current question through the shared DecisionPanel with n/N progress', () => {
       render(<PrdQuestionnaire {...defaultProps} />);
 
-      // First question visible on step 1, with number prefix
-      expect(screen.getByText('1. What problem does this solve?')).toBeInTheDocument();
-      // Step dots (one per question)
-      const stepDots = screen.getAllByRole('button', { name: /Go to question/ });
-      expect(stepDots).toHaveLength(2);
+      expect(screen.getByTestId('decision-panel')).toBeInTheDocument();
+      expect(screen.getByText('What problem does this solve?')).toBeInTheDocument();
+      expect(screen.getByTestId('decision-panel-progress')).toHaveTextContent('1/2');
     });
 
-    it('renders options as button elements with letter prefixes', () => {
+    it('renders options as buttons with 1–9 key hints', () => {
       render(<PrdQuestionnaire {...defaultProps} />);
 
       const buttons = screen.getAllByRole('button', {
         name: /Pain Point|Feature Gap|Technical Debt/i,
       });
       expect(buttons.length).toBeGreaterThanOrEqual(2);
+      expect(screen.getByTestId('decision-option-opt-b-key')).toHaveTextContent('2');
+    });
 
-      // Check letter prefix exists
-      expect(screen.getAllByText('A.').length).toBeGreaterThanOrEqual(1);
-      expect(screen.getAllByText('B.').length).toBeGreaterThanOrEqual(1);
+    it('shows the rationale as the option description', () => {
+      render(<PrdQuestionnaire {...defaultProps} />);
+      expect(screen.getAllByText('Rationale for option A').length).toBeGreaterThanOrEqual(1);
     });
   });
 
   describe('badge rendering', () => {
-    it('renders AI Recommended badge when recommended=true', () => {
+    it('renders the Recommended badge when recommended=true', () => {
       render(<PrdQuestionnaire {...defaultProps} />);
 
-      const badges = screen.getAllByText('AI Recommended');
-      expect(badges.length).toBeGreaterThanOrEqual(1);
+      expect(screen.getByTestId('decision-option-opt-a-recommended')).toHaveTextContent(
+        'Recommended'
+      );
     });
 
-    it('AI Recommended badge has whitespace-nowrap class and is in a shrink-0 wrapper', () => {
+    it('the Recommended badge never wraps', () => {
       render(<PrdQuestionnaire {...defaultProps} />);
 
-      const badge = screen.getAllByText('AI Recommended')[0];
-      expect(badge).toHaveClass('whitespace-nowrap');
-      // badge sits inside a shrink-0 flex wrapper so it never shrinks
-      expect(badge.closest('.shrink-0')).toBeInTheDocument();
+      expect(screen.getByTestId('decision-option-opt-a-recommended')).toHaveClass(
+        'whitespace-nowrap'
+      );
     });
 
     it('option label has wrap-break-word class to wrap long labels', () => {
@@ -150,15 +150,11 @@ describe('PrdQuestionnaire', () => {
   });
 
   describe('selection state', () => {
-    it('highlights selected option with border-primary', () => {
-      render(<PrdQuestionnaire {...defaultProps} selections={{ 'q-1': 'opt-a' }} />);
+    it('marks the selected option', () => {
+      render(<PrdQuestionnaire {...defaultProps} selections={{ 'q-1': 'opt-b' }} />);
 
-      // Find the button for "Pain Point" in q-1
-      const buttons = screen
-        .getAllByRole('button')
-        .filter((btn) => btn.textContent?.includes('Pain Point'));
-      const selectedButton = buttons[0];
-      expect(selectedButton).toHaveClass('border-primary');
+      expect(screen.getByTestId('decision-option-opt-b')).toHaveAttribute('aria-pressed', 'true');
+      expect(screen.getByTestId('decision-option-opt-b-check')).toBeInTheDocument();
     });
   });
 
@@ -260,8 +256,7 @@ describe('PrdQuestionnaire', () => {
       const allSelections = { 'q-1': 'opt-a', 'q-2': 'opt-a' };
       render(<PrdQuestionnaire {...defaultProps} selections={allSelections} />);
 
-      const stepDots = screen.getAllByRole('button', { name: /Go to question/ });
-      fireEvent.click(stepDots[stepDots.length - 1]);
+      fireEvent.click(screen.getByTestId('decision-panel-next'));
 
       expect(screen.queryByLabelText('Ask AI to refine requirements...')).not.toBeInTheDocument();
     });
@@ -271,8 +266,7 @@ describe('PrdQuestionnaire', () => {
       const allSelections = { 'q-1': 'opt-a', 'q-2': 'opt-a' };
       render(<PrdQuestionnaire {...defaultProps} onReject={onReject} selections={allSelections} />);
 
-      const stepDots = screen.getAllByRole('button', { name: /Go to question/ });
-      fireEvent.click(stepDots[stepDots.length - 1]);
+      fireEvent.click(screen.getByTestId('decision-panel-next'));
 
       expect(screen.getByLabelText('Ask AI to refine requirements...')).toBeInTheDocument();
     });
@@ -296,8 +290,7 @@ describe('PrdQuestionnaire', () => {
         />
       );
 
-      const stepDots = screen.getAllByRole('button', { name: /Go to question/ });
-      fireEvent.click(stepDots[stepDots.length - 1]);
+      fireEvent.click(screen.getByTestId('decision-panel-next'));
 
       expect(screen.getByLabelText('Ask AI to refine requirements...')).toBeDisabled();
     });
@@ -314,8 +307,7 @@ describe('PrdQuestionnaire', () => {
         />
       );
 
-      const stepDots = screen.getAllByRole('button', { name: /Go to question/ });
-      fireEvent.click(stepDots[stepDots.length - 1]);
+      fireEvent.click(screen.getByTestId('decision-panel-next'));
 
       expect(screen.getByLabelText('Ask AI to refine requirements...')).toBeDisabled();
     });
@@ -325,8 +317,7 @@ describe('PrdQuestionnaire', () => {
       const allSelections = { 'q-1': 'opt-a', 'q-2': 'opt-a' };
       render(<PrdQuestionnaire {...defaultProps} onReject={onReject} selections={allSelections} />);
 
-      const stepDots = screen.getAllByRole('button', { name: /Go to question/ });
-      fireEvent.click(stepDots[stepDots.length - 1]);
+      fireEvent.click(screen.getByTestId('decision-panel-next'));
 
       const input = screen.getByLabelText('Ask AI to refine requirements...');
       fireEvent.change(input, { target: { value: 'Needs more detail' } });
@@ -376,8 +367,7 @@ describe('PrdQuestionnaire', () => {
         fireEvent.click(option!);
 
         // Jump straight to the last question before the auto-advance fires.
-        const stepDots = screen.getAllByRole('button', { name: /Go to question/ });
-        fireEvent.click(stepDots[stepDots.length - 1]);
+        fireEvent.click(screen.getByTestId('decision-panel-next'));
         act(() => {
           vi.runAllTimers();
         });
