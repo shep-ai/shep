@@ -361,10 +361,6 @@ export type EnvironmentConfig = {
  */
 export type SystemConfig = {
   /**
-   * CLI auto-update preference
-   */
-  autoUpdate: boolean;
-  /**
    * Log level for CLI output
    */
   logLevel: string;
@@ -559,8 +555,6 @@ export enum AgentType {
   CodexCli = 'codex-cli',
   CopilotCli = 'copilot-cli',
   GeminiCli = 'gemini-cli',
-  Aider = 'aider',
-  Continue = 'continue',
   Cursor = 'cursor',
   Cline = 'cline',
   OpenRouter = 'openrouter',

@@ -17,6 +17,7 @@ import {
 } from '@/infrastructure/persistence/sqlite/mappers/settings.mapper.js';
 import type { Settings } from '@/domain/generated/output.js';
 import { AgentEffort } from '@/domain/generated/output.js';
+import { createDefaultSettings } from '@/domain/factories/settings-defaults.factory.js';
 import {
   AgentType,
   AgentAuthMethod,
@@ -50,7 +51,6 @@ function createTestSettings(overrides: Partial<Settings> = {}): Settings {
       terminalPreference: TerminalType.System,
     },
     system: {
-      autoUpdate: true,
       logLevel: 'info',
     },
     agent: {
@@ -491,6 +491,31 @@ describe('Settings Mapper', () => {
     });
   });
 
+  describe('fromDatabase() - removed agent types (spec 133)', () => {
+    it.each(['aider', 'continue'])(
+      'reads a persisted %s agent type back as the default agent',
+      (legacyType) => {
+        const settings = fromDatabase(createTestRow({ agent_type: legacyType }));
+        expect(settings.agent.type).toBe(createDefaultSettings().agent.type);
+      }
+    );
+
+    it('keeps a known agent type', () => {
+      const settings = fromDatabase(createTestRow({ agent_type: AgentType.CodexCli }));
+      expect(settings.agent.type).toBe(AgentType.CodexCli);
+    });
+  });
+
+  describe('legacy sys_auto_update column (spec 133)', () => {
+    it('still writes the NOT NULL column so inserts and older builds keep working', () => {
+      expect(toDatabase(createTestSettings()).sys_auto_update).toBe(1);
+    });
+
+    it('does not surface autoUpdate on read', () => {
+      expect(fromDatabase(createTestRow()).system).not.toHaveProperty('autoUpdate');
+    });
+  });
+
   describe('fromDatabase() - preserves existing field mappings', () => {
     it('should still reconstruct all pre-existing fields correctly', () => {
       const row = createTestRow();
@@ -501,7 +526,6 @@ describe('Settings Mapper', () => {
       expect(settings.models.default).toBe('claude-opus-4');
       expect(settings.user.name).toBe('Test User');
       expect(settings.environment.defaultEditor).toBe('vscode');
-      expect(settings.system.autoUpdate).toBe(true);
       expect(settings.agent.type).toBe('claude-code');
     });
   });

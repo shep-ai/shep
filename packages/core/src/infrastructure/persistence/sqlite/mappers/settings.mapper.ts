@@ -24,6 +24,7 @@ import type {
 import { createDefaultSettings } from '../../../../domain/factories/settings-defaults.factory.js';
 import { normalizeWorktreeConfig } from '../../../../domain/shared/worktree-config.js';
 import { parseAgentEffort } from '../../../../domain/shared/agent-effort.js';
+import { getAgentDescriptor } from '../../../../domain/shared/agent-catalog.js';
 import { resolveHarnessConfig } from '../../../../domain/harness/harness-config.js';
 import {
   clampMaxParallelFeatures,
@@ -41,6 +42,13 @@ import {
   type WhatsAppAdapterKind,
   type WhatsAppConnectionStatus,
 } from '../../../../domain/generated/output.js';
+
+/**
+ * Value written to the legacy `sys_auto_update` column (NOT NULL, no default).
+ * 1 matches what the removed `autoUpdate` setting defaulted to, so older builds
+ * reading the column see their usual value.
+ */
+const LEGACY_SYS_AUTO_UPDATE = 1;
 
 /**
  * Database row type matching the settings table schema.
@@ -81,7 +89,11 @@ export interface SettingsRow {
   env_terminal_preference: string;
 
   // SystemConfig (system.*)
-  sys_auto_update: number; // Boolean stored as INTEGER
+  /**
+   * Legacy NOT NULL column of the removed `system.autoUpdate` setting (spec 133).
+   * Always written as LEGACY_SYS_AUTO_UPDATE and never read.
+   */
+  sys_auto_update: number;
   sys_log_level: string;
 
   // AgentConfig (agent.*)
@@ -273,7 +285,7 @@ export function toDatabase(settings: Settings): SettingsRow {
     env_terminal_preference: settings.environment.terminalPreference,
 
     // SystemConfig
-    sys_auto_update: settings.system.autoUpdate ? 1 : 0,
+    sys_auto_update: LEGACY_SYS_AUTO_UPDATE,
     sys_log_level: settings.system.logLevel,
 
     // AgentConfig (optional token → NULL)
@@ -736,15 +748,16 @@ export function fromDatabase(row: SettingsRow): Settings {
       terminalPreference: (row.env_terminal_preference ?? 'system') as TerminalType,
     },
 
-    // SystemConfig (INTEGER → boolean)
     system: {
-      autoUpdate: row.sys_auto_update === 1,
       logLevel: row.sys_log_level,
     },
 
     // AgentConfig (NULL → undefined for optional token)
     agent: {
-      type: row.agent_type as AgentType,
+      // A removed agent type (aider, continue — spec 133) reads back as the default.
+      type: getAgentDescriptor(row.agent_type)
+        ? (row.agent_type as AgentType)
+        : createDefaultSettings().agent.type,
       authMethod: row.agent_auth_method as AgentAuthMethod,
       ...(row.agent_token !== null && { token: row.agent_token }),
     },

@@ -90,7 +90,7 @@ describe('ResumeAgentSessionUseCase', () => {
 
   it('fails without spawning anything for an unsupported provider', async () => {
     await expect(
-      useCase.execute({ sessionId: SESSION_ID, agentType: AgentType.Aider, cwd: CWD })
+      useCase.execute({ sessionId: SESSION_ID, agentType: 'not-an-agent' as AgentType, cwd: CWD })
     ).rejects.toThrow(AgentResumeUnsupportedError);
 
     expect(createTerminal.execute).not.toHaveBeenCalled();

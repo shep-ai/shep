@@ -134,15 +134,17 @@ describe('known drift regressions', () => {
     expect(isSupportedAgentType(AgentType.GeminiCli)).toBe(true);
   });
 
-  it('should treat aider and continue as unsupported', () => {
-    expect(isSupportedAgentType(AgentType.Aider)).toBe(false);
-    expect(isSupportedAgentType(AgentType.Continue)).toBe(false);
+  it('has no coming-soon placeholder agents (Aider and Continue were removed, spec 133)', () => {
+    const types: string[] = Object.values(AgentType);
+    expect(types).not.toContain('aider');
+    expect(types).not.toContain('continue');
+    expect(getAgentDescriptor('aider')).toBeUndefined();
+    expect(isSupportedAgentType('continue')).toBe(false);
   });
 
-  it('should exclude unsupported agents from the supported list', () => {
-    const supported = listSupportedAgentTypes();
-    expect(supported).not.toContain(AgentType.Aider);
-    expect(supported).not.toContain(AgentType.Continue);
+  it('lists no unsupported agents', () => {
+    expect(listAgentDescriptors().filter((d) => !d.supported)).toEqual([]);
+    expect(listSupportedAgentTypes()).toHaveLength(listAgentDescriptors().length);
   });
 });
 

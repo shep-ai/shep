@@ -338,9 +338,9 @@ factory picks one from `settings.agent.type`; nothing else may.
 | `llmproxy`    | `llmproxy-executor.service.ts`             | sdk  |
 | `dev`         | `dev-executor.service.ts`                  | mock |
 
-**`aider` and `continue` have no executor.** They are `supported: false` in the
-agent catalog, with `binary: null` and `toolId: null`, and must never reach the
-executor factory. There is no `aider-executor.service.ts`.
+Every `AgentType` has an executor. A catalog entry marked `supported: false`
+would be shown as "Coming Soon" and must never reach the executor factory; none
+exist today (the `aider` and `continue` placeholders were removed in spec 133).
 
 Supporting files in the same directory:
 

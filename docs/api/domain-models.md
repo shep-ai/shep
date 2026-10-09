@@ -272,7 +272,6 @@ export type EnvironmentConfig = {
 
 ```typescript
 export type SystemConfig = {
-  autoUpdate: boolean;
   logLevel: string;
 };
 ```
@@ -534,8 +533,6 @@ enum AgentType {
   CodexCli = 'codex-cli',
   CopilotCli = 'copilot-cli',
   GeminiCli = 'gemini-cli',
-  Aider = 'aider', // Coming Soon — not executable
-  Continue = 'continue', // Coming Soon — not executable
   Cursor = 'cursor',
   Cline = 'cline',
   OpenRouter = 'openrouter',
@@ -546,10 +543,9 @@ enum AgentType {
 }
 ```
 
-Twelve of the fourteen members are supported today. `aider` and `continue` are
-declared for future extensibility only: they have `supported: false` in the
-agent catalog, no binary and no executor, and are surfaced in pickers as
-"Coming Soon". Per-agent facts (label, kind, binary, tool id, supported flag,
+Every member is supported. (The `aider` and `continue` placeholders were removed in
+spec 133; a settings row still holding either reads back as the default agent.)
+Per-agent facts (label, kind, binary, tool id, supported flag,
 model list) live in one place —
 `packages/core/src/domain/shared/agent-catalog.ts`, a total
 `Record<AgentType, AgentDescriptor>`, so adding a member here is a compile error

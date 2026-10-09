@@ -112,7 +112,7 @@ export class PlatformAgentAuthDetectorService implements IAgentAuthDetectorServi
       case AgentType.Ollama:
       // falls through
       default:
-        // dev, aider, continue, codex-cli — assume no auth needed
+        // dev, codex-cli — assume no auth needed
         return true;
     }
   }

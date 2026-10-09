@@ -244,13 +244,6 @@ model EnvironmentConfig {
 @doc("System configuration")
 model SystemConfig {
   /**
-   * Whether to check for and prompt for CLI updates.
-   * When false, users must manually upgrade.
-   */
-  @doc("CLI auto-update preference")
-  autoUpdate: boolean = true;
-
-  /**
    * Log level for CLI output.
    * Valid values: debug, info, warn, error
    */
@@ -269,8 +262,7 @@ model SystemConfig {
  * Users select their preferred agent via `shep settings agent`. Twelve agents
  * are fully supported — Claude Code, Kimi Code, Codex CLI, Copilot CLI, Cursor,
  * Gemini CLI, Cline, OpenRouter, Together AI, Ollama, LLMProxy and the `dev`
- * mock. Aider and Continue are listed for future extensibility and appear as
- * "Coming Soon". `packages/core/src/domain/shared/agent-catalog.ts` is the
+ * mock. `packages/core/src/domain/shared/agent-catalog.ts` is the
  * single source of truth for each agent's binary, tool id and model list.
  *
  * ## Authentication
@@ -1117,7 +1109,6 @@ model WorktreeConfig {
  *     "terminalPreference": "system"
  *   },
  *   "system": {
- *     "autoUpdate": true,
  *     "logLevel": "info"
  *   },
  *   "agent": {

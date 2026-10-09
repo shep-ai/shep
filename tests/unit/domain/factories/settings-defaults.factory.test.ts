@@ -174,14 +174,14 @@ describe('createDefaultSettings', () => {
   });
 
   describe('SystemConfig defaults', () => {
-    it('should set autoUpdate to true', () => {
+    it('has no autoUpdate setting — nothing ever read it (spec 133)', () => {
       // Act
       const settings = createDefaultSettings();
       const system: SystemConfig = settings.system;
 
       // Assert
       expect(system).toBeDefined();
-      expect(system.autoUpdate).toBe(true);
+      expect(system).not.toHaveProperty('autoUpdate');
     });
 
     it('should set logLevel to "info"', () => {
@@ -198,7 +198,6 @@ describe('createDefaultSettings', () => {
 
       // Assert
       expect(settings.system).toEqual({
-        autoUpdate: true,
         logLevel: 'info',
       });
     });
@@ -549,7 +548,6 @@ describe('createDefaultSettings', () => {
         defaultCloneDirectory: '~/repos',
       });
       expect(settings.system).toEqual({
-        autoUpdate: true,
         logLevel: 'info',
       });
       expect(settings.agent).toEqual({

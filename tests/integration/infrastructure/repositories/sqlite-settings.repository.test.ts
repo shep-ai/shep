@@ -51,7 +51,6 @@ describe('SQLiteSettingsRepository', () => {
       terminalPreference: TerminalType.System,
     },
     system: {
-      autoUpdate: true,
       logLevel: 'info',
     },
     agent: {
@@ -348,23 +347,16 @@ describe('SQLiteSettingsRepository', () => {
 
       // Assert
       expect(loaded?.system).toEqual({
-        autoUpdate: true,
         logLevel: 'info',
       });
     });
 
-    it('should convert integer back to boolean for autoUpdate', async () => {
-      // Arrange - create with autoUpdate = false
-      const settings = createTestSettings();
-      settings.system.autoUpdate = false;
-      await repository.initialize(settings);
+    it('does not surface the removed autoUpdate setting (spec 133)', async () => {
+      await repository.initialize(createTestSettings());
 
-      // Act
       const loaded = await repository.load();
 
-      // Assert
-      expect(loaded?.system.autoUpdate).toBe(false);
-      expect(typeof loaded?.system.autoUpdate).toBe('boolean');
+      expect(loaded?.system).not.toHaveProperty('autoUpdate');
     });
 
     it('should parse ISO 8601 timestamps back to Date objects', async () => {
@@ -502,7 +494,6 @@ describe('SQLiteSettingsRepository', () => {
 
       // Modify system config
       settings.system = {
-        autoUpdate: false,
         logLevel: 'error',
       };
 
@@ -903,17 +894,9 @@ describe('SQLiteSettingsRepository', () => {
       expect(row.sys_auto_update).toBeDefined();
     });
 
-    it('should correctly convert boolean to integer for storage', async () => {
-      // Arrange
-      const settingsTrue = createTestSettings();
-      settingsTrue.system.autoUpdate = true;
-
-      const settingsFalse = createTestSettings();
-      settingsFalse.id = 'test-false';
-      settingsFalse.system.autoUpdate = false;
-
+    it('keeps writing the legacy NOT NULL sys_auto_update column (spec 133)', async () => {
       // Act
-      await repository.initialize(settingsTrue);
+      await repository.initialize(createTestSettings());
 
       // Assert
       const rowTrue = db
@@ -922,7 +905,7 @@ describe('SQLiteSettingsRepository', () => {
       expect(rowTrue.sys_auto_update).toBe(1);
     });
 
-    it('should correctly convert integer back to boolean when loading', async () => {
+    it('loads a row written by an older build that stored sys_auto_update = 0', async () => {
       // Arrange - manually insert with integer value
       db.prepare(
         `INSERT INTO settings (
@@ -949,8 +932,7 @@ describe('SQLiteSettingsRepository', () => {
       const loaded = await repository.load();
 
       // Assert
-      expect(loaded?.system.autoUpdate).toBe(false);
-      expect(typeof loaded?.system.autoUpdate).toBe('boolean');
+      expect(loaded?.system).toEqual({ logLevel: 'info' });
     });
   });
 

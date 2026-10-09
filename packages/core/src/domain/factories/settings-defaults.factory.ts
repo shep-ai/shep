@@ -114,7 +114,6 @@ export function createDefaultSettings(): Settings {
   };
 
   const system: SystemConfig = {
-    autoUpdate: true,
     logLevel: DEFAULT_LOG_LEVEL,
   };
 

@@ -88,7 +88,7 @@ describe('IDE Command', () => {
     },
     user: {},
     environment: { defaultEditor: 'vscode', shellPreference: 'bash' },
-    system: { autoUpdate: true, logLevel: 'info' },
+    system: { logLevel: 'info' },
     agent: { type: 'claude-code', authMethod: 'session' },
     createdAt: new Date(),
     updatedAt: new Date(),
