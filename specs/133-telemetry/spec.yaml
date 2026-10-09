@@ -1,0 +1,135 @@
+# Feature Specification (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: telemetry
+number: 133
+branch: feat/133-telemetry
+oneLiner: |-
+  Opt-out usage metrics: every Shep process records about ten content-free events to a local
+  SQLite outbox, and the daemon sends them to PostHog so we can measure merged PRs per
+  weekly-active install
+summary: |-
+  Shep sends nothing today, so nobody can tell whether a page, a command or an agent is used.
+  This adds opt-out telemetry in the dev-CLI style (Next.js, Astro). It is on by default with a
+  first-run notice in the CLI and in web onboarding, and it is always off under CI,
+  DO_NOT_TRACK=1, SHEP_TELEMETRY_DISABLED=1 and tests. Events are a TypeSpec enum and never
+  carry content. Every process writes them to a local telemetry_outbox table. Only the daemon
+  sends, in batches to PostHog's EU /batch/ endpoint over plain fetch, with a uuid per event,
+  jittered backoff, a drop after 5 attempts and a table-size cap. Identity is an install UUID
+  plus, unless the user turns identity off, a SHA-256 hash of the agent account id, the GitHub
+  username and the GitHub owners of the repos Shep runs in. `shep telemetry on|off|status|show`
+  and a settings section control it, and the trust promise in the README, FAQ and CLAUDE.md is
+  rewritten to say exactly what is sent.
+phase: Requirements
+sizeEstimate: XL
+relatedFeatures: []
+technologies:
+  - TypeScript
+  - TypeSpec
+  - SQLite (better-sqlite3, umzug migrations)
+  - tsyringe
+  - Commander
+  - Next.js App Router, shadcn/ui
+  - PostHog capture API (/batch/, plain fetch)
+relatedLinks:
+  - title: PostHog batch capture API
+    url: https://posthog.com/docs/api/capture
+  - title: T3 Code product analytics (delivery reference)
+    url: https://github.com/pingdotgg/t3code/blob/main/docs/internals/product-analytics.md
+  - title: Console Do Not Track
+    url: https://consoledonottrack.com/
+openQuestions:
+  - question: >-
+      Automatic collection of GitHub usernames and organisation names under an opt-out model:
+      is it lawful under GDPR, and what must the privacy policy say?
+    resolved: true
+    answer: >-
+      Deferred to the product owner, who must run a GDPR / privacy-policy check before the first
+      release that carries a PostHog key. It does not block implementation: nothing is sent until
+      a key is configured, the identity fields can be turned off on their own
+      ("Include my identity"), and the first-run notice names every field. Recorded again in the
+      PR description as an owner action.
+content: |
+  ## Problem Statement
+
+  - Shep has no usage data. We cannot tell which of its many areas (canvas, ASPM, PM pages,
+    clusters, the IDE tab, Electron) anyone opens, which agents people run, or whether a run
+    ends in a merged PR.
+  - Product decisions in the T3 Code review ("cut or hide now", "decide with data") need 30–60
+    days of real numbers.
+  - The README promises "Nothing is sent to Shep servers — there are none". Adding telemetry is a
+    trust change and must be visible, explained and easy to turn off.
+
+  ## Product Decisions (fixed by the owner)
+
+  - **Consent: on by default.** A notice prints once on the first CLI run and appears in web
+    onboarding with a one-click "turn off". Telemetry is always off when `CI` is set,
+    `DO_NOT_TRACK=1`, `SHEP_TELEMETRY_DISABLED=1`, or under tests.
+  - **Identity.** Always a random `installId` (UUID). Unless "Include my identity" is off, also:
+    a SHA-256 hash of the agent account id (read through the agent catalog: Claude
+    `~/.claude.json` `userID`, Codex `~/.codex/auth.json` `tokens.account_id`), the GitHub
+    username from `gh api user`, and the GitHub owner names from the git remotes of repos Shep
+    runs in. An onboarding checkbox "The Shep team may contact me on GitHub" sends a
+    contact-consent flag. The notice lists exactly these fields.
+  - **Delivery.** Every process (CLI, daemon, feature-agent workers) writes to a local SQLite
+    `telemetry_outbox`; only the daemon sends, from a flush watcher started in
+    `_serve.command.ts`. PostHog EU `/batch/` over plain `fetch`, no SDK. The project key comes
+    from `SHEP_POSTHOG_KEY` or a build-time constant; with no key, sending is a no-op. A uuid per
+    event, jittered backoff, a drop after 5 attempts, and a table-size cap.
+  - **Events (~10), never content.** No prompts, code, paths, repo or branch names, feature
+    titles or error messages. `install.heartbeat` (daily), `cli.command` (command path only),
+    `web.area.viewed` (route template, never ids), `feature.created`, `feature.run.finished`,
+    `pr.opened`, `pr.merged`, `decision.answered` (defined here, emitted by the unified-decisions
+    workstream), `onboarding.step`, `error.unhandled` (error class + source hash, no message).
+    North star: merged PRs per weekly-active install.
+  - **Controls.** `shep telemetry on|off|status|show` (`show` prints exactly what will be sent)
+    and a Settings section with telemetry, identity and contact toggles.
+  - **Trust promise** in README "Trust and safety", the FAQ and CLAUDE.md is rewritten in the
+    same PR.
+
+  ## Success Criteria
+
+  - [ ] `TelemetryEvent` is a TypeSpec enum with the ten event names; no raw event strings in code
+  - [ ] `ITelemetry` output port injected by string token; outbox-backed adapter in production, `NoopTelemetry` in tests
+  - [ ] `ITelemetryTransport` port with a PostHog adapter (EU host, `/batch/`, plain fetch) and a Noop adapter; no key → no network call
+  - [ ] Every process writes events to `telemetry_outbox`; only the daemon's flush watcher sends
+  - [ ] Each event has a uuid; a failed batch backs off with jitter and is dropped after 5 attempts; the table is capped
+  - [ ] Telemetry resolves to off under `CI`, `DO_NOT_TRACK=1`, `SHEP_TELEMETRY_DISABLED=1` and tests, and when the user turns it off; nothing is written to the outbox then
+  - [ ] Turning identity off removes the account hash, GitHub username and owners from every envelope, including ones already queued
+  - [ ] The agent account id source lives on the agent catalog; core has no `if (agentType === …)` for identity
+  - [ ] First CLI run prints the notice once (stderr), listing exactly the collected fields
+  - [ ] Web onboarding shows the notice with one-click "turn off", the identity toggle and the contact-consent checkbox; Settings has the same three toggles
+  - [ ] `shep telemetry on|off|status|show` work; `show` prints the exact wire body minus the API key
+  - [ ] The ten events are emitted from their owning places (decision.answered is defined only)
+  - [ ] No property carries prompts, code, paths, repo/branch names, titles, ids or error messages (typed per-event property map + tests)
+  - [ ] README, FAQ and CLAUDE.md describe what is sent; all new strings exist in all 9 locales; every new web component has a story
+
+  ## Affected Areas
+
+  | Area | Impact | Reasoning |
+  | ---- | ------ | --------- |
+  | `tsp/` (enum, settings model) | Medium | `TelemetryEvent`, `TelemetrySource` enums; `TelemetryConfig` on Settings |
+  | `domain/shared/` | Medium | Pure resolution of enabled state, notice fields, route templates, error source hash, duration buckets |
+  | `domain/shared/agent-catalog.ts` | Low | Account-id source descriptor per agent |
+  | `application/ports/output/` | Medium | `ITelemetry`, `ITelemetryOutboxRepository`, `ITelemetryTransport`, `ITelemetryIdentityProvider` |
+  | `application/use-cases/telemetry/` | High | status / set / show / flush / heartbeat / notice / record use cases |
+  | `infrastructure/` (migration, repo, adapters, DI) | High | Outbox table, PostHog + Noop transports, identity reader, `gh api user`, git owner parsing |
+  | `presentation/cli` | Medium | `shep telemetry` command, first-run notice, `cli.command` + `error.unhandled` hooks, daemon flush watcher |
+  | `presentation/web` | Medium | Onboarding notice card, settings section, route-view tracking, server actions + Storybook mocks |
+  | Feature/PR/run lifecycle use cases | Low | One `record()` call each |
+  | `translations/*` | Medium | New cli + web keys in 9 locales |
+  | README, CLAUDE.md, docs | Low | Trust promise and a telemetry doc |
+
+  ## Dependencies
+
+  None. The unified-decisions workstream will emit `decision.answered` through `ITelemetry`.
+
+  ## Size Estimate
+
+  **XL** - New persistence table, four ports with adapters, ~8 use cases, a CLI command, a daemon
+  watcher, web onboarding + settings UI in 9 locales, and emit points across CLI, daemon,
+  workers and web.
+
+  ---
+
+  _Generated by `/shep-kit:new-feature` — proceed with `/shep-kit:research`_
