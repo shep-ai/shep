@@ -1853,7 +1853,7 @@
       "enabled": "Nutzungsmetriken senden",
       "enabledDescription": "Beim Deaktivieren werden auch noch nicht gesendete Ereignisse gelöscht.",
       "identity": "Meine Identität einbeziehen (GitHub-Benutzername, Organisation, Konto-Hash)",
-      "identityDescription": "Lassen Sie dies deaktiviert, um weiterhin anonyme Nutzungsmetriken zu senden.",
+      "identityDescription": "Deaktivieren Sie dies, um anonym zu bleiben und weiterhin Nutzungsmetriken zu senden.",
       "contact": "Das Shep-Team darf mich auf GitHub kontaktieren",
       "contactDescription": "Deaktiviert, sofern Sie es nicht aktivieren."
     },

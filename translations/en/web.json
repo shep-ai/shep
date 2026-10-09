@@ -1853,7 +1853,7 @@
       "enabled": "Send usage metrics",
       "enabledDescription": "Turning this off also deletes events that have not been sent yet.",
       "identity": "Include my identity (GitHub username, org, account hash)",
-      "identityDescription": "Leave this off to keep sending anonymous usage metrics.",
+      "identityDescription": "Turn this off to stay anonymous and keep sending usage metrics.",
       "contact": "The Shep team may contact me on GitHub",
       "contactDescription": "Off unless you turn it on."
     },

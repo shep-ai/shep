@@ -1853,7 +1853,7 @@
       "enabled": "Enviar métricas de uso",
       "enabledDescription": "Desativar isso também exclui os eventos que ainda não foram enviados.",
       "identity": "Incluir minha identidade (usuário do GitHub, organização, hash da conta)",
-      "identityDescription": "Deixe desativado para continuar enviando métricas de uso anônimas.",
+      "identityDescription": "Desative para continuar anônimo e seguir enviando métricas de uso.",
       "contact": "A equipe do Shep pode entrar em contato comigo no GitHub",
       "contactDescription": "Desativado, a menos que você ative."
     },
