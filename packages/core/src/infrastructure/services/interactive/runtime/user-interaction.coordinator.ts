@@ -26,6 +26,7 @@ import type { StreamEventDispatcher } from '../core/stream-event-dispatcher.js';
 import type { SessionRegistry, SessionState } from '../core/session-registry.js';
 import type { ILogger } from '../../../../application/ports/output/services/logger.interface.js';
 import type { UserInteractionData } from '../../../../application/ports/output/agents/interactive-agent-executor.interface.js';
+import { formatInteractionAnswerMessage } from '../../../../domain/shared/interaction-answer.js';
 import type { LiveQuestionSurface } from '../../agents/agent-question-service/agent-question-executor-bridge.js';
 import {
   InteractiveMessageRole,
@@ -149,7 +150,7 @@ export class UserInteractionCoordinator {
       featureId: state.featureId,
       sessionId: state.sessionId,
       role: InteractiveMessageRole.user,
-      content: `{{interaction}}${JSON.stringify(interactionPayload)}`,
+      content: formatInteractionAnswerMessage(interactionPayload),
       createdAt: now,
       updatedAt: now,
     };

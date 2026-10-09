@@ -32,6 +32,7 @@ import { inject, injectable } from 'tsyringe';
 import type { IInteractiveMessageRepository } from '../../ports/output/repositories/interactive-message-repository.interface.js';
 import type { InteractiveMessage } from '../../../domain/generated/output.js';
 import { InteractiveMessageRole } from '../../../domain/generated/output.js';
+import { isInteractionAnswerMessage } from '../../../domain/shared/interaction-answer.js';
 
 /** One user-turn group, ready for the client to render as a card. */
 export interface ChatTurnGroup {
@@ -139,7 +140,8 @@ export class GetChatTurnGroupsUseCase {
     const turns: Turn[] = [];
     let current: Turn | null = null;
     for (const m of flat) {
-      if (m.role === InteractiveMessageRole.user) {
+      // An answered-question record belongs to the turn that asked (spec 134).
+      if (m.role === InteractiveMessageRole.user && !isInteractionAnswerMessage(m.content)) {
         current = { user: m, items: [m] };
         turns.push(current);
       } else if (current) {

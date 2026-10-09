@@ -16,11 +16,17 @@
  * here only to avoid the network round-trip for its own render.
  */
 
-import { useMemo } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import { Loader2 } from 'lucide-react';
 import type { InteractiveMessage } from '@shepai/core/domain/generated/output';
 import { InteractiveMessageRole } from '@shepai/core/domain/generated/output';
 import { TurnGroupCard } from './turn-group-card';
+import {
+  isInteractionAnswerMessage,
+  parseInteractionAnswerMessage,
+  decisionFromInteractionAnswer,
+} from '@shepai/core/domain/shared/interaction-answer';
+import { AnsweredDecisionRow } from '@/components/common/decision-panel';
 
 export interface TurnGroupView {
   id: string;
@@ -98,7 +104,8 @@ export function computeTurnGroupsFromMessages(
   const turns: Turn[] = [];
   let current: Turn | null = null;
   for (const m of flat) {
-    if (m.role === InteractiveMessageRole.user) {
+    // An answered-question record belongs to the turn that asked (spec 134).
+    if (m.role === InteractiveMessageRole.user && !isInteractionAnswerMessage(m.content)) {
       current = { user: m, items: [m] };
       turns.push(current);
     } else if (current) {
@@ -266,10 +273,16 @@ export function SingleTurnCard({
   group,
   allMessages,
   streaming,
+  decision,
 }: {
   group: TurnGroupView;
   allMessages: readonly InteractiveMessage[];
   streaming?: TurnStreamingState;
+  /**
+   * A question the agent is waiting on in this turn (spec 134). Shown in the
+   * default view — the user must not have to expand the card to answer.
+   */
+  decision?: ReactNode;
 }) {
   const byId = new Map<string, InteractiveMessage>();
   for (const m of allMessages) byId.set(m.id, m);
@@ -305,6 +318,7 @@ export function SingleTurnCard({
         </div>
       ) : null}
       {streaming ? <CondensedStreamingIndicator streaming={streaming} /> : null}
+      {decision}
     </div>
   );
   const details = (
@@ -380,6 +394,18 @@ function TurnChildMessages({
             <div key={mid} className="text-muted-foreground/50 text-[11px] italic">
               …
             </div>
+          );
+        }
+        const answered = parseInteractionAnswerMessage(msg.content);
+        if (answered) {
+          const { decision, responses } = decisionFromInteractionAnswer(answered);
+          return (
+            <AnsweredDecisionRow
+              key={mid}
+              decision={decision}
+              responses={responses}
+              className="pl-2"
+            />
           );
         }
         const isUser = msg.role === InteractiveMessageRole.user;
