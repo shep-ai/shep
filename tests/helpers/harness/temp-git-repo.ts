@@ -9,9 +9,16 @@ import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
+/**
+ * `/dev/null` on every platform: Git for Windows maps it itself, while git
+ * 2.56+ rejects the Windows device name `NUL` ("unable to access 'NUL'").
+ * merge-step-real-git/setup.ts isolates the same way.
+ */
+const EMPTY_GIT_CONFIG = '/dev/null';
+
 export const ISOLATED_GIT_ENV = {
-  GIT_CONFIG_GLOBAL: process.platform === 'win32' ? 'NUL' : '/dev/null',
-  GIT_CONFIG_SYSTEM: process.platform === 'win32' ? 'NUL' : '/dev/null',
+  GIT_CONFIG_GLOBAL: EMPTY_GIT_CONFIG,
+  GIT_CONFIG_SYSTEM: EMPTY_GIT_CONFIG,
 };
 
 /** Apply the isolated git env to this process; returns a restore function. */
