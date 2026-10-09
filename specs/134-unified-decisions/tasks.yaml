@@ -209,7 +209,7 @@ tasks:
   - id: task-12
     title: Default decision deadline setting
     description: workflow.decisionDefaultTimeoutMinutes (default 30) through tsp, migration, mapper, repository SQL, defaults, settings UI.
-    state: Todo
+    state: Done
     dependencies:
       - task-11
     acceptanceCriteria:
@@ -225,8 +225,8 @@ tasks:
 
   - id: task-13
     title: AskAgentDecisionUseCase
-    description: Validates one recommended option, applies the deadline, records an Async decision, waits, and on timeout settles as expired with the recommendation and appends an activity entry.
-    state: Todo
+    description: Validates one recommended option, applies the deadline, records an Async decision, waits, and on timeout settles the question as expired with the recommendation (answeredBy system:deadline), which the feature's activity tab lists as a defaulted decision.
+    state: Done
     dependencies:
       - task-12
     acceptanceCriteria:
@@ -243,7 +243,7 @@ tasks:
   - id: task-14
     title: ask_decision MCP tool and headless injection
     description: decision-tools.ts; the worker adds Shep's MCP server (scoped by env) to the per-feature mcp config.
-    state: Todo
+    state: Done
     dependencies:
       - task-13
     acceptanceCriteria:
@@ -260,7 +260,7 @@ tasks:
   - id: task-15
     title: Headless prompts may ask
     description: fast-implement and prototype-generate prompts say "ask only via ask_decision when truly blocked; always include a recommendation" when the tool is available.
-    state: Todo
+    state: Done
     dependencies:
       - task-14
     acceptanceCriteria:
