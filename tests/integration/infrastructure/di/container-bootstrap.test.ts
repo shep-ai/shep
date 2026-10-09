@@ -113,6 +113,8 @@ const WEB_ROUTE_TOKENS: readonly string[] = [
   'CreateTerminalSessionUseCase',
   'EnsureGhAuthenticatedUseCase',
   'GetAdaptiveModelPlanUseCase',
+  'ListFeatureFlagsUseCase',
+  'SetFeatureFlagUseCase',
   'GetApplicationUseCase',
   'GetCloudDeploymentStatusUseCase',
   'GetGitStatusUseCase',

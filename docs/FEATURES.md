@@ -357,22 +357,39 @@ Three channels with granular event control:
 
 #### Feature Flags
 
-Toggle experimental features. Several of them gate whole command groups:
+Every flag is listed, with a one-line description, its default and a switch, at
+**Settings → Feature Flags → Open the feature flags view** (`/settings/feature-flags`), and from
+the CLI with `shep settings flags` (`shep settings flags enable|disable <flag>`). A flag that is
+off hides its pages and navigation, 404s its URLs, and hides its CLI group (running it prints how
+to turn the flag on).
 
-| Flag                  | Gates                                          |
-| --------------------- | ---------------------------------------------- |
-| `envDeploy`           | Environment deployment workflows               |
-| `debug`               | Verbose logging and debug panels               |
-| `reactFileManager`    | The in-app file manager                        |
-| `projects`            | `shep project` / `item` / `cycle` / `intake`   |
-| `codeReview`          | `shep review`                                  |
-| `collaboration`       | Supervisor agent, agent questions and messages |
-| `bedrockIntegration`  | `shep bedrock`                                 |
-| `whatsappDispatch`    | `shep whatsapp`                                |
-| `aspm`                | `shep aspm`, `/aspm`, `shep security enforce` — off by default |
-| `clusters`            | `shep cluster`                                 |
-| `scheduledWorkflows`  | `shep workflow`                                |
-| `githubImport`        | GitHub repository import                       |
+| Flag                 | Default | Gates                                                            |
+| -------------------- | ------- | ---------------------------------------------------------------- |
+| `envDeploy`          | on      | Environment deployment workflows                                 |
+| `projects`           | on      | `shep project` / `item` / `cycle` / `intake`                     |
+| `codeReview`         | on      | `shep review`                                                    |
+| `collaboration`      | on      | Supervisor agent, agent questions and messages                   |
+| `githubImport`       | on      | GitHub repository import                                         |
+| `bedrockIntegration` | on      | `shep bedrock`                                                   |
+| `aspm`               | off     | `shep aspm`, `/aspm`, supply-chain enforcement (`shep security`) |
+| `spaces`             | on      | `/spaces`, `shep space`                                          |
+| `trackers`           | on      | `/connections`, `shep connection`, `shep sync`, tracker sync     |
+| `knowledge`          | on      | `shep knowledge`, Notion sync                                    |
+| `signals`            | on      | `shep signal`, the signal inbox                                  |
+| `opportunities`      | on      | `/opportunities`, `shep opportunity`                             |
+| `feedback`           | on      | `POST /api/feedback`, `shep feedback`, feedback themes and keys  |
+| `discovery`          | on      | `shep discovery`, scheduled discovery                            |
+| `incidents`          | on      | `/incidents`, `POST /api/alerts`, `shep incident`                |
+| `outcomes`           | on      | `shep outcome`, outcome tracking                                 |
+| `docsFirst`          | on      | Docs-first space policy, planning instructions and merge gate    |
+| `autopilot`          | on      | `shep autopilot`, autopilot passes                               |
+| `factory`            | on      | `/factory`, `shep factory`                                       |
+| `clusters`           | off     | `shep cluster`                                                   |
+| `scheduledWorkflows` | off     | `shep workflow`                                                  |
+| `queryAwareHarness`  | off     | `shep harness`, `/harness`                                       |
+| `whatsappDispatch`   | off     | `shep whatsapp`                                                  |
+| `reactFileManager`   | off     | The in-app file manager                                          |
+| `debug`              | off     | Verbose logging and debug panels                                 |
 
 #### Database
 

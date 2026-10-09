@@ -1,4 +1,5 @@
 import { resolve } from '@/lib/server-container';
+import { requireFeaturePage } from '@/lib/require-feature-page';
 import { errorMessage } from '@/lib/action-outcome';
 import type {
   FactoryStatus,
@@ -21,6 +22,7 @@ interface FactoryPageProps {
 }
 
 export default async function FactoryPage({ searchParams }: FactoryPageProps) {
+  requireFeaturePage('factory');
   const { space } = await searchParams;
   let spaces: FactorySpaceOption[] = [];
   let projects: FactoryProject[] = [];

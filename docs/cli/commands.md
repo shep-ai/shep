@@ -543,6 +543,18 @@ Override how worktrees are created.
 
 **Source**: `src/presentation/cli/commands/settings/worktree.command.ts`
 
+### `shep settings flags`
+
+List every feature flag with its state, default and a one-line description, grouped into
+Platform, Software factory and Experimental. `shep settings flags enable <flag>` and
+`shep settings flags disable <flag>` turn one on or off; an unknown flag exits 1. The web UI's
+`/settings/feature-flags` view shows the same list.
+
+A command group whose flag is off (for example `shep space` with `spaces` off, or `shep aspm`
+with `aspm` off) is hidden from `--help`, and running it prints the `enable` command to use.
+
+**Source**: `src/presentation/cli/commands/settings/flags.command.ts`
+
 | Option                       | Description                                        |
 | ---------------------------- | -------------------------------------------------- |
 | `--create-command <cmd>`     | Command that replaces `git worktree add`            |

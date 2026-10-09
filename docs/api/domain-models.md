@@ -394,6 +394,20 @@ export type FeatureFlags = {
   clusters: boolean;
   scheduledWorkflows: boolean;
   githubImport: boolean;
+  queryAwareHarness: boolean;
+  // Software-factory areas (spec 133), all on by default
+  spaces: boolean;
+  trackers: boolean;
+  knowledge: boolean;
+  signals: boolean;
+  opportunities: boolean;
+  feedback: boolean;
+  discovery: boolean;
+  incidents: boolean;
+  outcomes: boolean;
+  docsFirst: boolean;
+  autopilot: boolean;
+  factory: boolean;
 };
 ```
 

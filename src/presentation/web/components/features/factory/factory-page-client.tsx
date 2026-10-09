@@ -15,6 +15,7 @@ import { Factory } from 'lucide-react';
 import type { AutopilotRun } from '@shepai/core/domain/generated/output';
 import type { FactoryStatus } from '@shepai/core/application/use-cases/autopilot/get-factory-status.use-case';
 import { useRunAction } from '@/hooks/use-run-action';
+import { useFeatureFlags } from '@/hooks/feature-flags-context';
 import { FactoryStatusCards } from './factory-status-cards';
 import { AutopilotForm } from './autopilot-form';
 import { AutopilotRuns } from './autopilot-runs';
@@ -37,6 +38,8 @@ export function FactoryPageClient({
   loadError,
 }: FactoryPageClientProps) {
   const { t } = useTranslation('web');
+  // The autopilot policy and passes have their own flag (spec 133).
+  const flags = useFeatureFlags();
   const { run, error } = useRunAction({
     fallbackError: t('factory.errors.actionFailed'),
     ...(loadError ? { initialError: loadError } : {}),
@@ -77,17 +80,21 @@ export function FactoryPageClient({
       {status ? (
         <>
           <FactoryStatusCards status={status} />
-          <AutopilotForm
-            key={JSON.stringify(status.autopilot.policy)}
-            space={status.space.id}
-            policy={status.autopilot.policy}
-            projects={projects}
-            run={run}
-          />
-          <section className="space-y-1.5">
-            <h2 className="text-sm font-medium">{t('factory.runs.title')}</h2>
-            <AutopilotRuns runs={runs} />
-          </section>
+          {flags.autopilot ? (
+            <>
+              <AutopilotForm
+                key={JSON.stringify(status.autopilot.policy)}
+                space={status.space.id}
+                policy={status.autopilot.policy}
+                projects={projects}
+                run={run}
+              />
+              <section className="space-y-1.5">
+                <h2 className="text-sm font-medium">{t('factory.runs.title')}</h2>
+                <AutopilotRuns runs={runs} />
+              </section>
+            </>
+          ) : null}
         </>
       ) : null}
     </div>

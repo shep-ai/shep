@@ -525,6 +525,36 @@ describe('SQLiteSettingsRepository', () => {
   });
 
   describe('feature flags', () => {
+    const FACTORY_FLAGS = [
+      'spaces',
+      'trackers',
+      'knowledge',
+      'signals',
+      'opportunities',
+      'feedback',
+      'discovery',
+      'incidents',
+      'outcomes',
+      'docsFirst',
+      'autopilot',
+      'factory',
+    ] as const;
+
+    it('round-trips every software-factory flag through initialize and update (spec 133)', async () => {
+      const settings = createTestSettings();
+      const off = Object.fromEntries(FACTORY_FLAGS.map((flag) => [flag, false]));
+      settings.featureFlags = { ...createDefaultSettings().featureFlags!, ...off };
+
+      await repository.initialize(settings);
+      const loaded = await repository.load();
+      for (const flag of FACTORY_FLAGS) expect(loaded?.featureFlags?.[flag], flag).toBe(false);
+
+      const on = Object.fromEntries(FACTORY_FLAGS.map((flag) => [flag, true]));
+      await repository.update({ ...loaded!, featureFlags: { ...loaded!.featureFlags!, ...on } });
+      const updated = await repository.load();
+      for (const flag of FACTORY_FLAGS) expect(updated?.featureFlags?.[flag], flag).toBe(true);
+    });
+
     it('keeps an ASPM flag a user already turned on now that the default is off', async () => {
       const settings = createTestSettings();
       settings.featureFlags = { ...createDefaultSettings().featureFlags!, aspm: true };
@@ -552,6 +582,18 @@ describe('SQLiteSettingsRepository', () => {
         scheduledWorkflows: false,
         githubImport: true,
         queryAwareHarness: false,
+        spaces: false,
+        trackers: false,
+        knowledge: false,
+        signals: false,
+        opportunities: false,
+        feedback: false,
+        discovery: false,
+        incidents: false,
+        outcomes: false,
+        docsFirst: false,
+        autopilot: false,
+        factory: false,
       };
 
       await repository.initialize(settings);
@@ -571,6 +613,18 @@ describe('SQLiteSettingsRepository', () => {
         scheduledWorkflows: false,
         githubImport: true,
         queryAwareHarness: false,
+        spaces: false,
+        trackers: false,
+        knowledge: false,
+        signals: false,
+        opportunities: false,
+        feedback: false,
+        discovery: false,
+        incidents: false,
+        outcomes: false,
+        docsFirst: false,
+        autopilot: false,
+        factory: false,
       });
     });
 
@@ -596,6 +650,18 @@ describe('SQLiteSettingsRepository', () => {
         scheduledWorkflows: false,
         githubImport: true,
         queryAwareHarness: false,
+        spaces: false,
+        trackers: false,
+        knowledge: false,
+        signals: false,
+        opportunities: false,
+        feedback: false,
+        discovery: false,
+        incidents: false,
+        outcomes: false,
+        docsFirst: false,
+        autopilot: false,
+        factory: false,
       });
     });
 
@@ -617,6 +683,18 @@ describe('SQLiteSettingsRepository', () => {
         scheduledWorkflows: false,
         githubImport: true,
         queryAwareHarness: false,
+        spaces: false,
+        trackers: false,
+        knowledge: false,
+        signals: false,
+        opportunities: false,
+        feedback: false,
+        discovery: false,
+        incidents: false,
+        outcomes: false,
+        docsFirst: false,
+        autopilot: false,
+        factory: false,
       };
       settings.updatedAt = new Date('2025-01-02T00:00:00Z');
       await repository.update(settings);
@@ -636,6 +714,18 @@ describe('SQLiteSettingsRepository', () => {
         scheduledWorkflows: false,
         githubImport: true,
         queryAwareHarness: false,
+        spaces: false,
+        trackers: false,
+        knowledge: false,
+        signals: false,
+        opportunities: false,
+        feedback: false,
+        discovery: false,
+        incidents: false,
+        outcomes: false,
+        docsFirst: false,
+        autopilot: false,
+        factory: false,
       });
     });
 
@@ -655,6 +745,18 @@ describe('SQLiteSettingsRepository', () => {
         scheduledWorkflows: false,
         githubImport: true,
         queryAwareHarness: false,
+        spaces: false,
+        trackers: false,
+        knowledge: false,
+        signals: false,
+        opportunities: false,
+        feedback: false,
+        discovery: false,
+        incidents: false,
+        outcomes: false,
+        docsFirst: false,
+        autopilot: false,
+        factory: false,
       };
 
       await repository.initialize(settings);
@@ -1006,6 +1108,18 @@ describe('SQLiteSettingsRepository', () => {
         scheduledWorkflows: false,
         githubImport: true,
         queryAwareHarness: false,
+        spaces: false,
+        trackers: false,
+        knowledge: false,
+        signals: false,
+        opportunities: false,
+        feedback: false,
+        discovery: false,
+        incidents: false,
+        outcomes: false,
+        docsFirst: false,
+        autopilot: false,
+        factory: false,
       };
       await repository.initialize(settings);
 

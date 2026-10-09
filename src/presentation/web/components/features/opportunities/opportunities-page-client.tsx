@@ -29,6 +29,7 @@ import { FeedbackThemes } from './feedback-themes';
 import { FeedbackKeysPanel } from './feedback-keys-panel';
 import { DiscoveryPanel } from './discovery-panel';
 import { OutcomesPanel } from './outcomes-panel';
+import { useFeatureFlags } from '@/hooks/feature-flags-context';
 import type { OpportunityPageOptions } from './opportunities-types';
 import type { FeedbackTheme } from '@shepai/core/domain/shared/feedback-themes';
 import type { FeedbackKeyView } from '@shepai/core/application/use-cases/feedback/manage-feedback-keys.use-case';
@@ -60,6 +61,8 @@ export function OpportunitiesPageClient({
   loadError,
 }: OpportunitiesPageClientProps) {
   const { t } = useTranslation('web');
+  // Signals, feedback, discovery and outcomes each have their own flag (spec 133).
+  const flags = useFeatureFlags();
   const { run, error } = useRunAction({
     fallbackError: t('opportunities.errors.actionFailed'),
     ...(loadError ? { initialError: loadError } : {}),
@@ -132,31 +135,39 @@ export function OpportunitiesPageClient({
               </ul>
             )}
           </section>
-          {outcomes ? (
+          {flags.outcomes && outcomes ? (
             <OutcomesPanel
               outcomes={outcomes.outcomes}
               calibration={outcomes.calibration}
               run={run}
             />
           ) : null}
-          <DiscoveryPanel
-            spaceId={board.space.id}
-            {...(board.weights.discoveryEveryHours === undefined
-              ? {}
-              : { everyHours: board.weights.discoveryEveryHours })}
-            {...(latestDiscovery ? { latest: latestDiscovery } : {})}
-            run={run}
-          />
-          <FeedbackThemes spaceId={board.space.id} themes={themes} run={run} />
-          <section className="space-y-2">
-            <AddSignalForm spaceId={board.space.id} run={run} />
-            <SignalInbox
-              signals={board.unlinkedSignals}
-              opportunities={board.ranked.map(({ opportunity }) => opportunity)}
+          {flags.discovery ? (
+            <DiscoveryPanel
+              spaceId={board.space.id}
+              {...(board.weights.discoveryEveryHours === undefined
+                ? {}
+                : { everyHours: board.weights.discoveryEveryHours })}
+              {...(latestDiscovery ? { latest: latestDiscovery } : {})}
               run={run}
             />
-          </section>
-          <FeedbackKeysPanel spaceId={board.space.id} keys={feedbackKeys} run={run} />
+          ) : null}
+          {flags.feedback ? (
+            <FeedbackThemes spaceId={board.space.id} themes={themes} run={run} />
+          ) : null}
+          {flags.signals ? (
+            <section className="space-y-2">
+              <AddSignalForm spaceId={board.space.id} run={run} />
+              <SignalInbox
+                signals={board.unlinkedSignals}
+                opportunities={board.ranked.map(({ opportunity }) => opportunity)}
+                run={run}
+              />
+            </section>
+          ) : null}
+          {flags.feedback ? (
+            <FeedbackKeysPanel spaceId={board.space.id} keys={feedbackKeys} run={run} />
+          ) : null}
           <OpportunityWeightsForm
             key={JSON.stringify(board.weights)}
             weights={board.weights}

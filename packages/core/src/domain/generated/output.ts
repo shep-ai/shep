@@ -769,6 +769,54 @@ export type FeatureFlags = {
    * Enable the experimental query-aware agent harness: the Shep Harness agent, /harness pages, the feature Context tab and `shep harness` commands (spec 119)
    */
   queryAwareHarness: boolean;
+  /**
+   * Software factory: spaces and product lines — /spaces and `shep space` (spec 120)
+   */
+  spaces: boolean;
+  /**
+   * Software factory: Linear and Jira tracker sync — /connections, `shep connection`, `shep sync` and the daemon sync loop (spec 122)
+   */
+  trackers: boolean;
+  /**
+   * Software factory: Notion knowledge sources — `shep knowledge` and the daemon knowledge sync (spec 125)
+   */
+  knowledge: boolean;
+  /**
+   * Software factory: customer and incident signals — `shep signal` (spec 126)
+   */
+  signals: boolean;
+  /**
+   * Software factory: ranked opportunities — /opportunities and `shep opportunity` (spec 126)
+   */
+  opportunities: boolean;
+  /**
+   * Software factory: feedback intake and themes — POST /api/feedback and `shep feedback` (spec 127)
+   */
+  feedback: boolean;
+  /**
+   * Software factory: agent discovery of opportunities — `shep discovery` and its daemon schedule (spec 128)
+   */
+  discovery: boolean;
+  /**
+   * Software factory: incident triage — /incidents, POST /api/alerts and `shep incident` (spec 129)
+   */
+  incidents: boolean;
+  /**
+   * Software factory: shipped-work outcomes — `shep outcome` and the daemon outcome tracker (spec 130)
+   */
+  outcomes: boolean;
+  /**
+   * Software factory: docs-first spaces — the docs-first space policy, planning instructions and merge gate (spec 131)
+   */
+  docsFirst: boolean;
+  /**
+   * Software factory: autopilot — `shep autopilot` and the daemon autopilot pass (spec 132)
+   */
+  autopilot: boolean;
+  /**
+   * Software factory: factory status — /factory and `shep factory` (spec 132)
+   */
+  factory: boolean;
 };
 export enum WhatsAppAdapterKind {
   Baileys = 'baileys',
@@ -9241,6 +9289,11 @@ export enum ApplicationStarter {
 export enum WhatsAppThreadTargetKind {
   Feature = 'feature',
   Application = 'application',
+}
+export enum FeatureFlagGroup {
+  Platform = 'platform',
+  SoftwareFactory = 'software-factory',
+  Experimental = 'experimental',
 }
 export enum SpaceResolutionSource {
   Assignment = 'Assignment',

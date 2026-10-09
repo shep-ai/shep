@@ -1,4 +1,5 @@
 import { resolve } from '@/lib/server-container';
+import { requireFeaturePage } from '@/lib/require-feature-page';
 import { errorMessage } from '@/lib/action-outcome';
 import type {
   GetIncidentBoardUseCase,
@@ -20,6 +21,7 @@ async function loadSpaces(): Promise<IncidentSpaceOption[]> {
 }
 
 export default async function IncidentsPage({ searchParams }: IncidentsPageProps) {
+  requireFeaturePage('incidents');
   const { space, incident } = await searchParams;
   let spaces: IncidentSpaceOption[] = [];
   let board: IncidentBoard | undefined;

@@ -82,6 +82,18 @@ describe('updateSettings', () => {
         scheduledWorkflows: false,
         githubImport: true,
         queryAwareHarness: false,
+        spaces: false,
+        trackers: false,
+        knowledge: false,
+        signals: false,
+        opportunities: false,
+        feedback: false,
+        discovery: false,
+        incidents: false,
+        outcomes: false,
+        docsFirst: false,
+        autopilot: false,
+        factory: false,
       },
     };
     updateSettings(updated);

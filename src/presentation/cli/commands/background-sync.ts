@@ -3,6 +3,8 @@
  * the `shep start` daemon (`_serve`) and `shep ui` alike:
  *
  * - data retention (spec 116)
+ * Software-factory passes skip themselves while their feature flag is off.
+ *
  * - Linear and Jira sync rules (spec 122)
  * - Notion knowledge sources (spec 125)
  * - scheduled discovery runs (spec 128)
@@ -38,6 +40,19 @@ import type { INotificationService } from '@/application/ports/output/services/n
 import type { IGitPrService } from '@/application/ports/output/services/git-pr-service.interface.js';
 import type { IGitForkService } from '@/application/ports/output/services/git-fork-service.interface.js';
 import type { ILogger } from '@/application/ports/output/services/logger.interface.js';
+import type { FeatureFlagKey } from '@/domain/shared/feature-flag-catalog.js';
+import { isFeatureFlagOn } from './feature-flag-gate.js';
+
+/**
+ * Runs `job` only while `flag` is on. Checked on every pass, so turning an
+ * area off in the web UI stops its pass without a restart (spec 133).
+ */
+function whenOn<Args extends unknown[]>(
+  flag: FeatureFlagKey,
+  job: (...args: Args) => Promise<unknown>
+): (...args: Args) => Promise<unknown> {
+  return (...args) => (isFeatureFlagOn(flag) ? job(...args) : Promise.resolve());
+}
 
 export interface BackgroundSync {
   stop(): void;
@@ -53,16 +68,21 @@ export function startBackgroundSync(label: string): BackgroundSync {
     report('data retention prune')
   );
   const trackers = createDueWorkWatcher(
-    (now) => container.resolve<SyncTrackerRulesUseCase>('SyncTrackerRulesUseCase').runDue(now),
+    whenOn('trackers', (now: Date) =>
+      container.resolve<SyncTrackerRulesUseCase>('SyncTrackerRulesUseCase').runDue(now)
+    ),
     report('tracker sync')
   );
   const knowledge = createDueWorkWatcher(
-    (now) =>
-      container.resolve<SyncKnowledgeSourcesUseCase>('SyncKnowledgeSourcesUseCase').runDue(now),
+    whenOn('knowledge', (now: Date) =>
+      container.resolve<SyncKnowledgeSourcesUseCase>('SyncKnowledgeSourcesUseCase').runDue(now)
+    ),
     report('knowledge sync')
   );
   const discovery = createDueWorkWatcher(
-    (now) => container.resolve<SyncDiscoveryUseCase>('SyncDiscoveryUseCase').runDue(now),
+    whenOn('discovery', (now: Date) =>
+      container.resolve<SyncDiscoveryUseCase>('SyncDiscoveryUseCase').runDue(now)
+    ),
     report('discovery')
   );
   const prComments = createPrCommentWatcher(
@@ -70,11 +90,13 @@ export function startBackgroundSync(label: string): BackgroundSync {
     report('PR comment sync')
   );
   const outcomes = createHourlyWatcher(
-    () => container.resolve<TrackOutcomesUseCase>('TrackOutcomesUseCase').run(),
+    whenOn('outcomes', () => container.resolve<TrackOutcomesUseCase>('TrackOutcomesUseCase').run()),
     report('outcome tracking')
   );
   const autopilot = createHourlyWatcher(
-    () => container.resolve<RunAutopilotUseCase>('RunAutopilotUseCase').runAll(),
+    whenOn('autopilot', () =>
+      container.resolve<RunAutopilotUseCase>('RunAutopilotUseCase').runAll()
+    ),
     report('autopilot')
   );
   initializePrSyncWatcher(

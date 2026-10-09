@@ -16,3 +16,7 @@ export { CompleteOnboardingUseCase } from './complete-onboarding.use-case.js';
 export type { CompleteOnboardingInput } from './complete-onboarding.use-case.js';
 export { CompleteWebOnboardingUseCase } from './complete-web-onboarding.use-case.js';
 export type { CompleteWebOnboardingInput } from './complete-web-onboarding.use-case.js';
+export { ListFeatureFlagsUseCase } from './list-feature-flags.use-case.js';
+export type { FeatureFlagState } from './list-feature-flags.use-case.js';
+export { SetFeatureFlagUseCase } from './set-feature-flag.use-case.js';
+export type { SetFeatureFlagInput } from './set-feature-flag.use-case.js';

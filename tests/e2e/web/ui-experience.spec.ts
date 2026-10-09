@@ -32,6 +32,7 @@ test.describe('web experience regressions', () => {
     '/features',
     '/tools',
     '/settings',
+    '/settings/feature-flags',
     '/sdlc',
     '/webhooks',
     '/onboarding',

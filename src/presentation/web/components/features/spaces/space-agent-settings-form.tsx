@@ -32,6 +32,7 @@ import { NATIVE_SELECT_CLASS } from '@/lib/native-select-class';
 import type { RunSpaceAction } from './spaces-types';
 import { CheckboxFieldset, toggled } from './checkbox-fieldset';
 import { DocsFirstFieldset } from './docs-first-fieldset';
+import { useFeatureFlags } from '@/hooks/feature-flags-context';
 
 type TextField =
   | 'claudeConfigDir'
@@ -104,6 +105,7 @@ export interface SpaceAgentSettingsFormProps {
 
 export function SpaceAgentSettingsForm({ space, run }: SpaceAgentSettingsFormProps) {
   const { t } = useTranslation('web');
+  const flags = useFeatureFlags();
   const settings: SpaceAgentSettings = space.agentSettings ?? {};
   const [open, setOpen] = useState(false);
   const [text, setText] = useState<Record<TextField, string>>(() => ({
@@ -237,25 +239,29 @@ export function SpaceAgentSettingsForm({ space, run }: SpaceAgentSettingsFormPro
             </div>
           </fieldset>
 
-          <CheckboxFieldset
-            legend={t('spaces.agent.autoActions')}
-            hint={t('spaces.agent.autoActionsHint')}
-            choices={Object.values(RuntimeActionKind).map((kind) => ({
-              value: kind,
-              label: t(`incidents.actionKind.${kind}`),
-            }))}
-            selected={autoActions}
-            onToggle={(kind) => setAutoActions((current) => toggled(current, kind))}
-            testIdPrefix="agent-settings-auto"
-          />
+          {flags.incidents ? (
+            <CheckboxFieldset
+              legend={t('spaces.agent.autoActions')}
+              hint={t('spaces.agent.autoActionsHint')}
+              choices={Object.values(RuntimeActionKind).map((kind) => ({
+                value: kind,
+                label: t(`incidents.actionKind.${kind}`),
+              }))}
+              selected={autoActions}
+              onToggle={(kind) => setAutoActions((current) => toggled(current, kind))}
+              testIdPrefix="agent-settings-auto"
+            />
+          ) : null}
 
-          <DocsFirstFieldset
-            enabled={docsFirst}
-            paths={docsPaths}
-            defaultPaths={DEFAULT_DOCS_PATHS}
-            onEnabledChange={setDocsFirst}
-            onPathsChange={setDocsPaths}
-          />
+          {flags.docsFirst ? (
+            <DocsFirstFieldset
+              enabled={docsFirst}
+              paths={docsPaths}
+              defaultPaths={DEFAULT_DOCS_PATHS}
+              onEnabledChange={setDocsFirst}
+              onPathsChange={setDocsPaths}
+            />
+          ) : null}
 
           <Button type="submit" size="xs" data-testid="agent-settings-submit">
             {t('spaces.agent.save')}

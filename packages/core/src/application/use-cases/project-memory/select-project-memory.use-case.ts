@@ -29,7 +29,12 @@ import {
 import { renderMemoryBlob } from './render-memory-blob.js';
 import { MEMORY_TOKEN_BUDGET, CHARS_PER_TOKEN } from './project-memory.constants.js';
 import { SelectKnowledgeUseCase } from '../knowledge/select-knowledge.use-case.js';
-import { docsFirstInstructions, docsPathsOf } from '../../../domain/shared/docs-first.js';
+import {
+  docsFirstInstructions,
+  docsPathsOf,
+  isDocsFirstActive,
+} from '../../../domain/shared/docs-first.js';
+import type { ISettingsRepository } from '../../ports/output/repositories/settings.repository.interface.js';
 
 export interface SelectProjectMemoryInput {
   /** Normalised repository path whose memory should be considered. */
@@ -62,7 +67,8 @@ export class SelectProjectMemoryUseCase {
     private readonly scorer: IMemoryRelevanceScorer,
     @inject(ResolveSpaceContextUseCase)
     private readonly resolveSpaceContext: ResolveSpaceContextUseCase,
-    @inject(SelectKnowledgeUseCase) private readonly selectKnowledge: SelectKnowledgeUseCase
+    @inject(SelectKnowledgeUseCase) private readonly selectKnowledge: SelectKnowledgeUseCase,
+    @inject('ISettingsRepository') private readonly settingsRepository: ISettingsRepository
   ) {}
 
   async execute(input: SelectProjectMemoryInput): Promise<SelectProjectMemoryResult> {
@@ -78,8 +84,9 @@ export class SelectProjectMemoryUseCase {
       taskText: input.taskText ?? '',
     });
     const settings = context.space.agentSettings;
+    const flags = (await this.settingsRepository.load())?.featureFlags;
     const docsFirst =
-      settings?.docsFirst && input.phase
+      isDocsFirstActive(settings, flags) && input.phase
         ? docsFirstInstructions(input.phase, docsPathsOf(settings))
         : '';
     return {

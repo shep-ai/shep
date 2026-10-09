@@ -181,6 +181,18 @@ function createTestRow(overrides: Partial<SettingsRow> = {}): SettingsRow {
     feature_flag_aspm: 0,
     feature_flag_clusters: 0,
     feature_flag_scheduled_workflows: 0,
+    feature_flag_spaces: 1,
+    feature_flag_trackers: 1,
+    feature_flag_knowledge: 1,
+    feature_flag_signals: 1,
+    feature_flag_opportunities: 1,
+    feature_flag_feedback: 1,
+    feature_flag_discovery: 1,
+    feature_flag_incidents: 1,
+    feature_flag_outcomes: 1,
+    feature_flag_docs_first: 1,
+    feature_flag_autopilot: 1,
+    feature_flag_factory: 1,
     interactive_agent_enabled: 1,
     interactive_agent_auto_timeout_minutes: 15,
     interactive_agent_max_concurrent_sessions: 3,
@@ -1494,6 +1506,30 @@ describe('Settings Mapper', () => {
       expect(restored.security?.mode).toBe(SecurityMode.Disabled);
       expect(restored.security?.lastEvaluationAt).toBeUndefined();
       expect(restored.security?.policySource).toBeUndefined();
+    });
+  });
+
+  describe('software-factory flags (spec 133)', () => {
+    it.each([
+      ['spaces', 'feature_flag_spaces'],
+      ['trackers', 'feature_flag_trackers'],
+      ['knowledge', 'feature_flag_knowledge'],
+      ['signals', 'feature_flag_signals'],
+      ['opportunities', 'feature_flag_opportunities'],
+      ['feedback', 'feature_flag_feedback'],
+      ['discovery', 'feature_flag_discovery'],
+      ['incidents', 'feature_flag_incidents'],
+      ['outcomes', 'feature_flag_outcomes'],
+      ['docsFirst', 'feature_flag_docs_first'],
+      ['autopilot', 'feature_flag_autopilot'],
+      ['factory', 'feature_flag_factory'],
+    ] as const)('maps %s to %s both ways', (flag, column) => {
+      const base = createDefaultSettings().featureFlags!;
+      for (const value of [true, false]) {
+        const row = toDatabase(createTestSettings({ featureFlags: { ...base, [flag]: value } }));
+        expect(row[column]).toBe(value ? 1 : 0);
+        expect(fromDatabase(row).featureFlags?.[flag]).toBe(value);
+      }
     });
   });
 
