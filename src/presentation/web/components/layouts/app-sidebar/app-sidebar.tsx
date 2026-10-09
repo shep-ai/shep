@@ -17,7 +17,6 @@ import {
   ShieldCheck,
   ShieldAlert,
   Bot,
-  GraduationCap,
   Users,
   Bug,
   Package,
@@ -222,12 +221,6 @@ export function AppSidebar({
                   label: 'Agents',
                   href: '/agents',
                   active: pathname?.startsWith('/agents') ?? false,
-                },
-                {
-                  icon: GraduationCap,
-                  label: 'Get started',
-                  href: '/onboarding',
-                  active: pathname?.startsWith('/onboarding') ?? false,
                 },
               ]}
             />

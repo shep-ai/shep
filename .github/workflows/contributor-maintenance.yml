@@ -1,0 +1,106 @@
+# =============================================================================
+# Contributor maintenance (scheduled)
+# =============================================================================
+# Time-driven half of the contributor pipeline (spec 097, FR-31/FR-42).
+# These used to run as watchers inside every user's `shep` daemon; they are
+# maintainer automation for shep-ai/shep, so they run here instead (spec 133).
+#
+#   stale-issues  daily     `shep contributors stale-issues` — good-first-issues
+#                           with no activity for 30+ days, listed in the run's
+#                           step summary
+#   recap         monthly   `shep contributors recap` — the previous month's
+#                           recap, written to recaps/YYYY-MM.md and attached to
+#                           the run as an artifact
+#
+# Both jobs can also be dispatched by hand from the Actions tab.
+
+name: Contributor maintenance
+
+on:
+  schedule:
+    # Daily stale-issue sweep at 06:17 UTC.
+    - cron: '17 6 * * *'
+    # Monthly recap at 07:23 UTC on the 1st.
+    - cron: '23 7 1 * *'
+  workflow_dispatch:
+    inputs:
+      task:
+        description: 'Which task to run'
+        type: choice
+        options: [stale-issues, recap]
+        default: stale-issues
+
+permissions:
+  contents: read
+  issues: read
+
+concurrency:
+  group: contributor-maintenance-${{ github.event.schedule || inputs.task }}
+  cancel-in-progress: false
+
+jobs:
+  stale-issues:
+    name: Stale good-first-issues
+    if: github.event.schedule == '17 6 * * *' || inputs.task == 'stale-issues'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: List stale good-first-issues
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -o pipefail
+          pnpm --silent dev:cli contributors stale-issues --repo "$GITHUB_REPOSITORY" | tee stale.txt
+          { echo '## Stale good-first-issues'; echo; cat stale.txt; } >> "$GITHUB_STEP_SUMMARY"
+
+  recap:
+    name: Monthly contributor recap
+    if: github.event.schedule == '23 7 1 * *' || inputs.task == 'recap'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate and publish the recap
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: pnpm --silent dev:cli contributors recap
+
+      - name: Add the recap to the step summary
+        run: cat "recaps/$(date -u -d "$(date -u +%Y-%m-01) -1 month" +%Y-%m).md" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload the recap
+        uses: actions/upload-artifact@v4
+        with:
+          name: contributor-recap
+          path: recaps/
+          if-no-files-found: warn

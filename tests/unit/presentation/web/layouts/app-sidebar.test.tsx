@@ -101,6 +101,18 @@ const mockFeatures = [
 ];
 
 describe('AppSidebar', () => {
+  it('keeps the contributor onboarding page out of the end-user sidebar', async () => {
+    const { container } = renderWithSidebar(
+      <AppSidebar features={mockFeatures} featureFlags={{ ...defaultFlags, collaboration: true }} />
+    );
+
+    await userEvent.click(screen.getByText('Collaboration'));
+    expect(container.querySelector('a[href="/agent-questions"]')).not.toBeNull();
+    expect(container.querySelector('a[href="/onboarding"]')).toBeNull();
+    expect(container.querySelector('a[href="/contributors"]')).toBeNull();
+    expect(screen.queryByText('Get started')).toBeNull();
+  });
+
   it('renders Control Center nav item in header', () => {
     renderWithSidebar(<AppSidebar features={mockFeatures} featureFlags={defaultFlags} />);
 

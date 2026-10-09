@@ -102,33 +102,6 @@ vi.mock('@/infrastructure/services/auto-archive/auto-archive-watcher.service.js'
   }),
 }));
 
-// Mock contributor pipeline watchers (spec 097, FR-42)
-vi.mock('@/infrastructure/services/contributors/stale-good-first-issue-watcher.service.js', () => ({
-  initializeStaleGoodFirstIssueWatcher: vi.fn(),
-  getStaleGoodFirstIssueWatcher: vi.fn().mockReturnValue({
-    start: vi.fn(),
-    stop: vi.fn(),
-  }),
-}));
-vi.mock('@/infrastructure/services/contributors/monthly-recap-watcher.service.js', () => ({
-  initializeMonthlyRecapWatcher: vi.fn(),
-  getMonthlyRecapWatcher: vi.fn().mockReturnValue({
-    start: vi.fn(),
-    stop: vi.fn(),
-  }),
-}));
-
-// Mock contributor pipeline use cases (resolved via class tokens)
-vi.mock('@/application/use-cases/contributors/detect-stale-good-first-issue.use-case.js', () => ({
-  DetectStaleGoodFirstIssueUseCase: vi.fn(),
-}));
-vi.mock('@/application/use-cases/contributors/generate-monthly-recap.use-case.js', () => ({
-  GenerateMonthlyRecapUseCase: vi.fn(),
-}));
-vi.mock('@/application/use-cases/contributors/publish-monthly-recap.use-case.js', () => ({
-  PublishMonthlyRecapUseCase: vi.fn(),
-}));
-
 // Mock data-retention scheduling (spec 116)
 const retentionScheduler = vi.hoisted(() => ({ start: vi.fn(), stop: vi.fn() }));
 vi.mock('@/infrastructure/services/maintenance/retention-scheduler.js', () => ({
@@ -165,6 +138,7 @@ const mockMessagingService = {
   stop: vi.fn().mockResolvedValue(undefined),
 };
 
+import { container } from '@/infrastructure/di/container.js';
 import { getNotificationWatcher } from '@/infrastructure/services/notifications/notification-watcher.service.js';
 import { createServeCommand } from '../../../src/presentation/cli/commands/_serve.command.js';
 
@@ -226,6 +200,19 @@ describe('_serve command', () => {
       await cmd.parseAsync(['--port', '4050'], { from: 'user' });
       const watcher = getNotificationWatcher();
       expect(watcher.start).toHaveBeenCalled();
+    });
+
+    it('does not run maintainer contributor automation in the user daemon', async () => {
+      const cmd = createServeCommand();
+      await cmd.parseAsync(['--port', '4050'], { from: 'user' });
+      const resolved = vi
+        .mocked(container.resolve)
+        .mock.calls.map(([token]) =>
+          typeof token === 'function' ? (token as { name: string }).name : String(token)
+        );
+      expect(resolved).not.toContain('DetectStaleGoodFirstIssueUseCase');
+      expect(resolved).not.toContain('GenerateMonthlyRecapUseCase');
+      expect(resolved).not.toContain('PublishMonthlyRecapUseCase');
     });
   });
 
