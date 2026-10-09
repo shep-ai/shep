@@ -122,6 +122,8 @@
       "defaultModeDescription": "Default mode for new features created via CLI or Web UI",
       "maxParallelFeatures": "Максимум паралельних функцій",
       "maxParallelFeaturesDescription": "Максимальна кількість функцій, які одночасно виконують агента. 0 означає без обмежень. Решта функцій стають у чергу та запускаються автоматично, щойно звільниться місце.",
+      "decisionTimeout": "Термін відповіді на питання",
+      "decisionTimeoutDescription": "Скільки фоновий агент чекає на вашу відповідь, перш ніж продовжити з рекомендованим варіантом.",
       "modeExploration": "Exploration",
       "modeFast": "Fast",
       "modeRegular": "Regular"
@@ -779,7 +781,14 @@
     "wait": "Очікування",
     "cost": "Вартість",
     "modelUsed": "Виконано на {{model}}",
-    "noActivityRecorded": "Активності поки не зафіксовано"
+    "noActivityRecorded": "Активності поки не зафіксовано",
+    "decisions": {
+      "title": "Рішення",
+      "pending": "Очікує на відповідь",
+      "answered": "{{actor}} відповів: {{answer}}",
+      "defaulted": "Відповіді до терміну не було — продовжено з рекомендованим варіантом: {{answer}}",
+      "cancelled": "Скасовано без відповіді"
+    }
   },
   "logTab": {
     "structuredView": "Структурований вигляд",

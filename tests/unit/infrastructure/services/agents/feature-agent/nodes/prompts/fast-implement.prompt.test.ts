@@ -70,3 +70,20 @@ describe('buildFastImplementPrompt — co-author branding', () => {
     expect(prompt).toContain(COMMIT_CO_AUTHOR);
   });
 });
+
+describe('buildFastImplementPrompt — asking the user (spec 134)', () => {
+  it('forbids asking when the run has no ask_decision tool', () => {
+    const prompt = buildFastImplementPrompt(baseState());
+    expect(prompt).toContain('Do NOT ask the user questions');
+    expect(prompt).not.toContain('ask_decision');
+  });
+
+  it('allows asking only via ask_decision, with a recommendation, when the tool is available', () => {
+    const prompt = buildFastImplementPrompt(baseState({ decisionToolAvailable: true }));
+    expect(prompt).not.toContain('Do NOT ask the user questions');
+    expect(prompt).toContain('ask_decision');
+    expect(prompt).toMatch(/genuinely blocked/);
+    expect(prompt).toMatch(/exactly one as recommended/);
+    expect(prompt).toContain('Do NOT use AskUserQuestion');
+  });
+});

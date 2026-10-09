@@ -83,6 +83,8 @@
       "defaultModeDescription": "מצב ברירת מחדל לפיצ'רים חדשים שנוצרים דרך CLI או ממשק ה-Web",
       "maxParallelFeatures": "מקסימום פיצ'רים במקביל",
       "maxParallelFeaturesDescription": "מספר הפיצ'רים המקסימלי שמריצים סוכן בו-זמנית. 0 פירושו ללא הגבלה. פיצ'רים נוספים ממתינים בתור ומתחילים אוטומטית כשמתפנה מקום.",
+      "decisionTimeout": "מועד אחרון לשאלות",
+      "decisionTimeoutDescription": "כמה זמן סוכן ברקע ממתין לתשובה שלכם לפני שהוא ממשיך עם האפשרות המומלצת.",
       "modeRegular": "רגיל",
       "modeFast": "מהיר",
       "modeExploration": "חקירה",
@@ -779,7 +781,14 @@
     "wait": "המתנה",
     "cost": "עלות",
     "modelUsed": "רץ על {{model}}",
-    "noActivityRecorded": "לא נרשמה פעילות עדיין"
+    "noActivityRecorded": "לא נרשמה פעילות עדיין",
+    "decisions": {
+      "title": "החלטות",
+      "pending": "ממתין לתשובה",
+      "answered": "{{actor}} ענה: {{answer}}",
+      "defaulted": "לא התקבלה תשובה עד המועד — הסוכן המשיך עם האפשרות המומלצת: {{answer}}",
+      "cancelled": "בוטל ללא תשובה"
+    }
   },
   "logTab": {
     "structuredView": "תצוגה מובנית",

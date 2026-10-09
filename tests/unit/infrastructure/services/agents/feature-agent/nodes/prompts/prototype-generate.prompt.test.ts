@@ -86,6 +86,7 @@ function createState(overrides?: Partial<FeatureAgentState>): FeatureAgentState 
     securityMode: 'Disabled' as FeatureAgentState['securityMode'],
     securityActionDispositions: {},
     mcpConfigPath: undefined,
+    decisionToolAvailable: false,
     iterationCount: 0,
     maxIterations: 10,
     feedbackHistory: [],
@@ -276,5 +277,22 @@ describe('buildFeedbackHistorySection', () => {
     expect(result).toContain('recent-1');
     expect(result).toContain('recent-2');
     expect(result).toContain('recent-3');
+  });
+});
+
+describe('buildPrototypeGeneratePrompt — asking the user (spec 134)', () => {
+  beforeEach(() => {
+    mockReadFileSync.mockReset();
+    mockReaddirSync.mockReset();
+    mockStatSync.mockReset();
+  });
+
+  it('forbids questions without ask_decision and allows them through it', () => {
+    setupFileMocks();
+    expect(buildPrototypeGeneratePrompt(createState())).toContain('Do NOT ask questions');
+    setupFileMocks();
+    const withTool = buildPrototypeGeneratePrompt(createState({ decisionToolAvailable: true }));
+    expect(withTool).toContain('ask_decision');
+    expect(withTool).not.toContain('Do NOT ask questions');
   });
 });

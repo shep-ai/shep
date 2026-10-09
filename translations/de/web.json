@@ -83,6 +83,8 @@
       "defaultModeDescription": "Standardmodus für neue Features, die über CLI oder Web-UI erstellt werden",
       "maxParallelFeatures": "Maximal parallele Features",
       "maxParallelFeaturesDescription": "Maximale Anzahl Features, die gleichzeitig einen Agenten ausführen. 0 bedeutet unbegrenzt. Weitere Features werden eingereiht und starten automatisch, sobald ein Platz frei wird.",
+      "decisionTimeout": "Frist für Fragen",
+      "decisionTimeoutDescription": "Wie lange ein Hintergrund-Agent auf deine Antwort wartet, bevor er mit seiner empfohlenen Option fortfährt.",
       "modeRegular": "Standard",
       "modeFast": "Schnell",
       "modeExploration": "Erkundung",
@@ -779,7 +781,14 @@
     "wait": "Wartezeit",
     "cost": "Kosten",
     "modelUsed": "Ausgeführt auf {{model}}",
-    "noActivityRecorded": "Noch keine Aktivität aufgezeichnet"
+    "noActivityRecorded": "Noch keine Aktivität aufgezeichnet",
+    "decisions": {
+      "title": "Entscheidungen",
+      "pending": "Wartet auf eine Antwort",
+      "answered": "{{actor}} hat geantwortet: {{answer}}",
+      "defaulted": "Keine Antwort bis zur Frist – mit der empfohlenen Option fortgefahren: {{answer}}",
+      "cancelled": "Ohne Antwort abgebrochen"
+    }
   },
   "logTab": {
     "structuredView": "Strukturierte Ansicht",

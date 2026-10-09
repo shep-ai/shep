@@ -28,6 +28,8 @@ import type {
 } from '@/app/actions/get-feature-phase-timings';
 import { InlineAttachments } from '@/components/common/inline-attachments';
 import { formatDuration } from '@/lib/format-duration';
+import type { AgentQuestion } from '@shepai/core/domain/generated/output';
+import { FeatureDecisionsLog } from './feature-decisions-log';
 
 /**
  * Computes the effective duration for a phase timing entry.
@@ -97,6 +99,8 @@ export interface ActivityTabProps {
   loading: boolean;
   error: string | null;
   rejectionFeedback?: RejectionFeedbackData[];
+  /** Questions the feature's agents asked (spec 134). */
+  decisions?: AgentQuestion[];
 }
 
 const NODE_TO_PHASE: Record<string, string> = {
@@ -294,7 +298,13 @@ function getIterationOutcome(
  * Component
  * ------------------------------------------------------------------------- */
 
-export function ActivityTab({ timings, loading, error, rejectionFeedback }: ActivityTabProps) {
+export function ActivityTab({
+  timings,
+  loading,
+  error,
+  rejectionFeedback,
+  decisions = [],
+}: ActivityTabProps) {
   const { t } = useTranslation('web');
   const now = useTickingNow(timings);
 
@@ -317,9 +327,12 @@ export function ActivityTab({ timings, loading, error, rejectionFeedback }: Acti
 
   if (!timings || timings.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center gap-2 p-8">
-        <Clock className="text-muted-foreground h-8 w-8" />
-        <p className="text-muted-foreground text-base">{t('activityTab.noActivityRecorded')}</p>
+      <div className="flex flex-col gap-3 p-4">
+        <FeatureDecisionsLog decisions={decisions} />
+        <div className="flex flex-col items-center justify-center gap-2 p-8">
+          <Clock className="text-muted-foreground h-8 w-8" />
+          <p className="text-muted-foreground text-base">{t('activityTab.noActivityRecorded')}</p>
+        </div>
       </div>
     );
   }
@@ -342,6 +355,7 @@ export function ActivityTab({ timings, loading, error, rejectionFeedback }: Acti
 
   return (
     <div className="flex flex-col gap-3 p-4">
+      <FeatureDecisionsLog decisions={decisions} />
       <div data-testid="activity-timings" className="flex flex-col gap-3">
         {iterations.map((iteration) => (
           <IterationGroup

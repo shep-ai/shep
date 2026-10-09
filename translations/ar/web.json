@@ -83,6 +83,8 @@
       "defaultModeDescription": "الوضع الافتراضي للميزات الجديدة المنشأة عبر CLI أو واجهة الويب",
       "maxParallelFeatures": "الحد الأقصى للميزات المتوازية",
       "maxParallelFeaturesDescription": "أقصى عدد من الميزات التي تشغّل وكيلاً في الوقت نفسه. القيمة 0 تعني بلا حد. تُوضع الميزات الإضافية في قائمة انتظار وتبدأ تلقائياً عند توفر مكان.",
+      "decisionTimeout": "مهلة الأسئلة",
+      "decisionTimeoutDescription": "المدة التي ينتظر فيها وكيل الخلفية إجابتك قبل أن يتابع بالخيار الموصى به.",
       "modeRegular": "عادي",
       "modeFast": "سريع",
       "modeExploration": "استكشاف",
@@ -779,7 +781,14 @@
     "wait": "الانتظار",
     "cost": "التكلفة",
     "modelUsed": "شُغّل على {{model}}",
-    "noActivityRecorded": "لم يتم تسجيل أي نشاط بعد"
+    "noActivityRecorded": "لم يتم تسجيل أي نشاط بعد",
+    "decisions": {
+      "title": "القرارات",
+      "pending": "بانتظار إجابة",
+      "answered": "أجاب {{actor}}: {{answer}}",
+      "defaulted": "لا إجابة قبل المهلة — تمت المتابعة بالخيار الموصى به: {{answer}}",
+      "cancelled": "أُلغي دون إجابة"
+    }
   },
   "logTab": {
     "structuredView": "عرض منظم",

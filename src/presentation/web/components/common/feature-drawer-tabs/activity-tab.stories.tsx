@@ -1,6 +1,11 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { ActivityTab } from './activity-tab';
 import type { PhaseTimingData } from '@/app/actions/get-feature-phase-timings';
+import {
+  AgentQuestionAnswerer,
+  AgentQuestionKind,
+  AgentQuestionStatus,
+} from '@shepai/core/domain/generated/output';
 
 const meta: Meta<typeof ActivityTab> = {
   title: 'Drawers/Feature/Tabs/ActivityTab',
@@ -592,5 +597,29 @@ export const FullLifecycle: Story = {
     ],
     loading: false,
     error: null,
+  },
+};
+
+/** Spec 134: an agent asked and, with nobody answering in time, used its recommendation. */
+export const WithDecisions: Story = {
+  args: {
+    timings: singleRunTimings,
+    loading: false,
+    error: null,
+    decisions: [
+      {
+        id: 'q-defaulted',
+        agentRunId: 'run-001',
+        featureId: 'feat-1',
+        kind: AgentQuestionKind.blocking,
+        prompt: 'The users table has 40M rows. How should the new column be added?',
+        answerer: AgentQuestionAnswerer.either,
+        status: AgentQuestionStatus.expired,
+        answer: 'Online, nullable column',
+        answeredBy: 'system:deadline',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    ],
   },
 };

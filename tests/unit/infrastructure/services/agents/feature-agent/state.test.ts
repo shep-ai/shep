@@ -62,6 +62,7 @@ describe('FeatureAgentAnnotation', () => {
       expect(channelNames).toContain('securityMode');
       expect(channelNames).toContain('securityActionDispositions');
       expect(channelNames).toContain('mcpConfigPath');
+      expect(channelNames).toContain('decisionToolAvailable');
       expect(channelNames).toContain('iterationCount');
       expect(channelNames).toContain('maxIterations');
       expect(channelNames).toContain('feedbackHistory');
@@ -69,7 +70,7 @@ describe('FeatureAgentAnnotation', () => {
       expect(channelNames).toContain('projectMemory');
       expect(channelNames).toContain('merged');
       expect(channelNames).toContain('effort');
-      expect(channelNames.length).toBe(42);
+      expect(channelNames.length).toBe(43);
     });
   });
 

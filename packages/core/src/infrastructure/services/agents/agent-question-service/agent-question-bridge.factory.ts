@@ -20,7 +20,7 @@ import { AskAgentQuestionUseCase } from '@/application/use-cases/agents/ask-agen
 import { AnswerAgentQuestionUseCase } from '@/application/use-cases/agents/answer-agent-question.use-case.js';
 import { CancelAgentQuestionUseCase } from '@/application/use-cases/agents/cancel-agent-question.use-case.js';
 import { applicationIdFromFeatureId } from '@/domain/shared/feature-id.js';
-import { normalizeRepositoryPath } from '@/domain/shared/repository-path.js';
+import { questionScopeForPath } from '@/application/use-cases/agents/question-scope.js';
 import {
   AgentQuestionExecutorBridge,
   type AgentQuestionExecutorBridgeScope,
@@ -78,8 +78,7 @@ export class AgentQuestionBridgeFactory {
     return { appId: await this.appIdForPath(session.worktreePath), agentRunId };
   }
 
-  private async appIdForPath(path: string): Promise<string> {
-    const app = await this.applications.findByPath(path).catch(() => null);
-    return app?.id ?? normalizeRepositoryPath(path);
+  private appIdForPath(path: string): Promise<string> {
+    return questionScopeForPath(this.applications, path);
   }
 }
