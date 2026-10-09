@@ -232,6 +232,12 @@ function createTestRow(overrides: Partial<SettingsRow> = {}): SettingsRow {
     messaging_whatsapp_bot_token: null,
     messaging_whatsapp_pending_code: null,
     messaging_whatsapp_pending_expires_at: null,
+    telemetry_enabled: 1,
+    telemetry_include_identity: 1,
+    telemetry_contact_consent: 0,
+    telemetry_install_id: null,
+    telemetry_notice_shown_at: null,
+    telemetry_last_heartbeat_at: null,
     ...overrides,
   };
 }

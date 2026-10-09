@@ -1,0 +1,32 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: TelemetryConfig.yaml
+type: object
+properties:
+  enabled:
+    type: boolean
+    default: true
+    description: Whether usage metrics are recorded and sent
+  includeIdentity:
+    type: boolean
+    default: true
+    description: Whether identity (agent account hash, GitHub username and owners) is attached
+  contactConsent:
+    type: boolean
+    default: false
+    description: Whether the Shep team may contact the user on GitHub
+  installId:
+    type: string
+    description: Random install identifier (UUID), assigned on first use
+  noticeShownAt:
+    type: string
+    format: date-time
+    description: When the first-run notice was shown
+  lastHeartbeatAt:
+    type: string
+    format: date-time
+    description: When the last install.heartbeat event was recorded
+required:
+  - enabled
+  - includeIdentity
+  - contactConsent
+description: Opt-out usage metrics preferences (spec 133)

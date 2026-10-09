@@ -33,6 +33,23 @@ export type AgentKind =
   /** The local mock — no binary, no network. */
   | 'mock';
 
+/**
+ * Where an agent stores the id of the signed-in account, as data. Telemetry
+ * (spec 133) reads it to send a SHA-256 hash of the id, never the id itself.
+ * An agent opts in by declaring this on its catalog entry, so no code anywhere
+ * branches on the agent type to find it.
+ */
+export interface AgentAccountIdSource {
+  /** Env var that relocates the agent's config directory, when the agent honours one. */
+  readonly configDirEnv?: string;
+  /** Home-relative directory used when `configDirEnv` is unset (`[]` = the home itself). */
+  readonly defaultDirSegments: readonly string[];
+  /** JSON file inside that directory. */
+  readonly fileName: string;
+  /** Property path to the account id inside the JSON file. */
+  readonly jsonPath: readonly string[];
+}
+
 /** Everything Shep needs to know about one agent type. */
 export interface AgentDescriptor {
   /** The enum value, repeated so a descriptor is self-describing once detached. */
@@ -78,6 +95,8 @@ export interface AgentDescriptor {
    * would invalidate nine locale files.
    */
   readonly i18nKey: string;
+  /** Where the signed-in account id lives, for agents that expose one. */
+  readonly accountIdSource?: AgentAccountIdSource;
 }
 
 /**
@@ -496,6 +515,12 @@ export const AGENT_CATALOG: Record<AgentType, AgentDescriptor> = {
     requiresToken: false,
     docsUrl: 'https://docs.claude.com/en/docs/claude-code',
     i18nKey: 'claudeCode',
+    accountIdSource: {
+      configDirEnv: 'CLAUDE_CONFIG_DIR',
+      defaultDirSegments: [],
+      fileName: '.claude.json',
+      jsonPath: ['userID'],
+    },
   },
   [AgentType.KimiCode]: {
     type: AgentType.KimiCode,
@@ -527,6 +552,12 @@ export const AGENT_CATALOG: Record<AgentType, AgentDescriptor> = {
     requiresToken: false,
     docsUrl: 'https://developers.openai.com/codex/cli/',
     i18nKey: 'codexCli',
+    accountIdSource: {
+      configDirEnv: 'CODEX_HOME',
+      defaultDirSegments: ['.codex'],
+      fileName: 'auth.json',
+      jsonPath: ['tokens', 'account_id'],
+    },
   },
   [AgentType.CopilotCli]: {
     type: AgentType.CopilotCli,
@@ -753,4 +784,20 @@ export function isSupportedAgentType(agentType: string): boolean {
 /** Static model list for an agent type; empty for unknown or model-less agents. */
 export function getModelsForAgent(agentType: string): string[] {
   return [...(getAgentDescriptor(agentType)?.models ?? NO_MODELS)];
+}
+
+/**
+ * Agents that declare where their account id lives, with `preferred` (the
+ * configured agent) first and the rest in catalog order.
+ */
+export function listAgentAccountIdSources(
+  preferred?: AgentType
+): [AgentType, AgentAccountIdSource][] {
+  const sources = listAgentDescriptors()
+    .filter((descriptor) => descriptor.accountIdSource !== undefined)
+    .map((descriptor): [AgentType, AgentAccountIdSource] => [
+      descriptor.type,
+      descriptor.accountIdSource as AgentAccountIdSource,
+    ]);
+  return sources.sort(([a], [b]) => Number(b === preferred) - Number(a === preferred));
 }

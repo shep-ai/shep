@@ -11,8 +11,6 @@ import type { IWorkflowRepository } from '../../../application/ports/output/repo
 import { SQLiteWorkflowRepository } from '../../repositories/sqlite-workflow.repository.js';
 import type { IWorkflowExecutionRepository } from '../../../application/ports/output/repositories/workflow-execution-repository.interface.js';
 import { SQLiteWorkflowExecutionRepository } from '../../repositories/sqlite-workflow-execution.repository.js';
-import type { IClock } from '../../../application/ports/output/services/clock.interface.js';
-import { RealClock } from '../../services/clock.js';
 
 import { CreateScheduledWorkflowUseCase } from '../../../application/use-cases/scheduled-workflows/create-scheduled-workflow.use-case.js';
 import { UpdateScheduledWorkflowUseCase } from '../../../application/use-cases/scheduled-workflows/update-scheduled-workflow.use-case.js';
@@ -39,9 +37,6 @@ export function registerScheduledWorkflows(c: DependencyContainer): void {
       return new SQLiteWorkflowExecutionRepository(database);
     },
   });
-
-  // Clock service
-  c.registerInstance<IClock>('IClock', new RealClock());
 
   // Use cases
   c.registerSingleton(CreateScheduledWorkflowUseCase);

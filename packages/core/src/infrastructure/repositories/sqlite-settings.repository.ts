@@ -10,6 +10,7 @@ import type Database from 'better-sqlite3';
 import { injectable } from 'tsyringe';
 import type { ISettingsRepository } from '../../application/ports/output/repositories/settings.repository.interface.js';
 import type { Settings } from '../../domain/generated/output.js';
+import { SETTINGS_TELEMETRY_COLUMNS } from '../persistence/sqlite/mappers/settings-telemetry.mapper.js';
 import {
   toDatabase,
   fromDatabase,
@@ -20,6 +21,13 @@ import {
  * SQLite implementation of ISettingsRepository.
  * Manages Settings persistence with singleton constraint.
  */
+// Telemetry columns (migration 166) come from one list so INSERT and UPDATE cannot drift.
+const TELEMETRY_INSERT_COLUMNS = SETTINGS_TELEMETRY_COLUMNS.join(', ');
+const TELEMETRY_INSERT_PARAMS = SETTINGS_TELEMETRY_COLUMNS.map((c) => `@${c}`).join(', ');
+const TELEMETRY_UPDATE_ASSIGNMENTS = SETTINGS_TELEMETRY_COLUMNS.map((c) => `${c} = @${c}`).join(
+  ', '
+);
+
 @injectable()
 export class SQLiteSettingsRepository implements ISettingsRepository {
   constructor(private readonly db: Database.Database) {}
@@ -95,7 +103,8 @@ export class SQLiteSettingsRepository implements ISettingsRepository {
         messaging_telegram_bot_token, messaging_telegram_pending_code, messaging_telegram_pending_expires_at,
         messaging_whatsapp_enabled, messaging_whatsapp_paired, messaging_whatsapp_chat_id,
         messaging_whatsapp_route_id, messaging_whatsapp_route_token, messaging_whatsapp_public_url,
-        messaging_whatsapp_bot_token, messaging_whatsapp_pending_code, messaging_whatsapp_pending_expires_at
+        messaging_whatsapp_bot_token, messaging_whatsapp_pending_code, messaging_whatsapp_pending_expires_at,
+        ${TELEMETRY_INSERT_COLUMNS}
       ) VALUES (
         @id, @created_at, @updated_at,
         @model_analyze, @model_requirements, @model_plan, @model_implement, @model_default,
@@ -154,7 +163,8 @@ export class SQLiteSettingsRepository implements ISettingsRepository {
         @messaging_telegram_bot_token, @messaging_telegram_pending_code, @messaging_telegram_pending_expires_at,
         @messaging_whatsapp_enabled, @messaging_whatsapp_paired, @messaging_whatsapp_chat_id,
         @messaging_whatsapp_route_id, @messaging_whatsapp_route_token, @messaging_whatsapp_public_url,
-        @messaging_whatsapp_bot_token, @messaging_whatsapp_pending_code, @messaging_whatsapp_pending_expires_at
+        @messaging_whatsapp_bot_token, @messaging_whatsapp_pending_code, @messaging_whatsapp_pending_expires_at,
+        ${TELEMETRY_INSERT_PARAMS}
       )
     `);
 
@@ -330,7 +340,8 @@ export class SQLiteSettingsRepository implements ISettingsRepository {
         messaging_whatsapp_public_url = @messaging_whatsapp_public_url,
         messaging_whatsapp_bot_token = @messaging_whatsapp_bot_token,
         messaging_whatsapp_pending_code = @messaging_whatsapp_pending_code,
-        messaging_whatsapp_pending_expires_at = @messaging_whatsapp_pending_expires_at
+        messaging_whatsapp_pending_expires_at = @messaging_whatsapp_pending_expires_at,
+        ${TELEMETRY_UPDATE_ASSIGNMENTS}
       WHERE id = @id
     `);
 

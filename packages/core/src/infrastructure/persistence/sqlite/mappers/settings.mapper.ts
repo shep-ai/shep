@@ -46,7 +46,13 @@ import {
  * Database row type matching the settings table schema.
  * Uses snake_case column names with flattened nested objects.
  */
-export interface SettingsRow {
+import {
+  telemetryFromRow,
+  telemetryToRow,
+  type SettingsTelemetryRow,
+} from './settings-telemetry.mapper.js';
+
+export interface SettingsRow extends SettingsTelemetryRow {
   // Base entity
   id: string;
   created_at: string;
@@ -408,6 +414,9 @@ export function toDatabase(settings: Settings): SettingsRow {
 
     // Messaging remote control (migration 056)
     ...messagingToRow(settings.messaging),
+
+    // Telemetry preferences (migration 166)
+    ...telemetryToRow(settings.telemetry),
   };
 }
 
@@ -863,6 +872,9 @@ export function fromDatabase(row: SettingsRow): Settings {
 
     // HarnessConfig (migration 151) — undefined when never configured
     ...(harness !== undefined && { harness }),
+
+    // Telemetry preferences (migration 166) — always present, defaults on
+    telemetry: telemetryFromRow(row),
 
     // Onboarding (INTEGER → boolean)
     onboardingComplete: row.onboarding_complete === 1,
