@@ -32,6 +32,9 @@ import type { IGitForkService } from '../../../application/ports/output/services
 import type Database from 'better-sqlite3';
 import type { ILogger } from '../../../application/ports/output/services/logger.interface.js';
 import { ConsoleLogger } from '../logging/console-logger.js';
+import type { ITelemetry } from '../../../application/ports/output/services/telemetry.interface.js';
+import { NoopTelemetry } from '../telemetry/noop-telemetry.js';
+import { recordPrMerged } from '../telemetry/pr-telemetry.js';
 
 const DEFAULT_POLL_INTERVAL_MS = 30_000;
 const LOCK_TTL_MS = 60_000;
@@ -59,6 +62,7 @@ export class PrSyncWatcherService {
   private readonly notificationService: INotificationService;
   private readonly gitForkService: IGitForkService | null;
   private readonly logger: ILogger;
+  private readonly telemetry: ITelemetry;
   private readonly pollIntervalMs: number;
   private readonly trackedFeatures = new Map<string, PrWatcherState>();
   private readonly skippedRepos = new Set<string>();
@@ -83,8 +87,11 @@ export class PrSyncWatcherService {
      * redacted. Defaults to a ConsoleLogger so existing callers are
      * unaffected; DI passes the container's ILogger.
      */
-    logger: ILogger = new ConsoleLogger()
+    logger: ILogger = new ConsoleLogger(),
+    /** Records pr.merged (spec 133); once-keyed, so other detectors cannot double-count. */
+    telemetry: ITelemetry = new NoopTelemetry()
   ) {
+    this.telemetry = telemetry;
     this.featureRepo = featureRepo;
     this.agentRunRepo = agentRunRepo;
     this.gitPrService = gitPrService;
@@ -338,6 +345,7 @@ export class PrSyncWatcherService {
       feature.pr = { ...pr, status: newPrStatus };
 
       if (newPrStatus === PrStatus.Merged) {
+        recordPrMerged(this.telemetry, feature, true);
         // Re-fetch to avoid racing with the merge node which may have already
         // transitioned this feature to Maintain and performed cleanup.
         const freshFeature = await this.featureRepo.findById(feature.id);
@@ -528,6 +536,7 @@ export class PrSyncWatcherService {
     tracked.unchangedCycles = 0;
 
     if (upstreamStatus === PrStatus.Merged) {
+      recordPrMerged(this.telemetry, feature, true);
       feature.lifecycle = SdlcLifecycle.Maintain;
       feature.pr = { ...feature.pr, upstreamPrStatus: PrStatus.Merged };
       feature.updatedAt = new Date();
@@ -609,7 +618,8 @@ export function initializePrSyncWatcher(
   pollIntervalMs?: number,
   db?: Database.Database | null,
   gitForkService?: IGitForkService | null,
-  logger?: ILogger
+  logger?: ILogger,
+  telemetry?: ITelemetry
 ): void {
   if (watcherInstance !== null) {
     throw new Error('PR sync watcher already initialized. Cannot re-initialize.');
@@ -623,7 +633,8 @@ export function initializePrSyncWatcher(
     pollIntervalMs,
     db ?? null,
     gitForkService ?? null,
-    logger ?? new ConsoleLogger()
+    logger ?? new ConsoleLogger(),
+    telemetry ?? new NoopTelemetry()
   );
 }
 

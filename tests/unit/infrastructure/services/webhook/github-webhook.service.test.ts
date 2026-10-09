@@ -6,6 +6,8 @@
  * TDD Phase: GREEN
  */
 
+import { createTelemetryDouble } from '../../../../helpers/telemetry.helper.js';
+import { TelemetryEvent } from '@/domain/generated/output.js';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createHmac } from 'node:crypto';
 import { GitHubWebhookService } from '@/infrastructure/services/webhook/github-webhook.service.js';
@@ -144,6 +146,42 @@ describe('GitHubWebhookService', () => {
         expect.objectContaining({
           message: expect.stringContaining('merged'),
         })
+      );
+    });
+
+    it('records pr.merged once-keyed by feature (spec 133)', async () => {
+      const telemetry = createTelemetryDouble();
+      const tracked = new GitHubWebhookService(
+        mockFeatureRepo,
+        mockGitPrService,
+        mockNotificationService,
+        mockExecFn,
+        undefined,
+        undefined,
+        telemetry
+      );
+      const feature = createMockFeature();
+      vi.mocked(mockFeatureRepo.list).mockResolvedValue([feature]);
+
+      await tracked.handleEvent({
+        source: 'github',
+        eventType: 'pull_request',
+        deliveryId: 'del-t',
+        payload: {
+          action: 'closed',
+          pull_request: {
+            number: 42,
+            html_url: 'https://github.com/owner/repo/pull/42',
+            merged: true,
+            head: { ref: 'feat/test' },
+          },
+        },
+      });
+
+      expect(telemetry.record).toHaveBeenCalledWith(
+        TelemetryEvent.PrMerged,
+        expect.objectContaining({ viaPullRequest: true }),
+        { onceKey: `pr.merged:${feature.id}` }
       );
     });
 

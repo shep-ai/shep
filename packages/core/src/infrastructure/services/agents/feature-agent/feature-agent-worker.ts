@@ -30,6 +30,7 @@ import { type GitRemoteListService } from '@/infrastructure/services/git/git-rem
 import type { IGitForkService } from '@/application/ports/output/services/git-fork-service.interface.js';
 import {
   AgentRunStatus,
+  TelemetryProcessKind,
   SecurityMode,
   type AgentEffort,
   type AgentType,
@@ -49,6 +50,9 @@ import {
   WORKER_CLAIMABLE_STATUSES,
 } from './worker-run-status.js';
 import { setPhaseTimingContext, recordLifecycleEvent } from './phase-timing-context.js';
+import { createRunFinishedRecorder, type RunFinishedRecorder } from './worker-telemetry.js';
+import { setTelemetryProcessKind } from '../../telemetry/node-telemetry-runtime.js';
+import type { ITelemetry } from '../../../../application/ports/output/services/telemetry.interface.js';
 import { setLifecycleContext } from './lifecycle-context.js';
 import { setSdlcBoardContext } from './sdlc-board-context.js';
 import type { ISdlcBoardTracker } from '@/application/ports/output/agents/sdlc-board-tracker.interface.js';
@@ -280,6 +284,7 @@ export async function runWorker(args: WorkerArgs): Promise<void> {
   log(`  ${cmdParts.join(' ')}`);
 
   log('Initializing container...');
+  setTelemetryProcessKind(TelemetryProcessKind.Worker);
   await initializeContainer();
 
   // Initialize settings in the worker process
@@ -297,6 +302,12 @@ export async function runWorker(args: WorkerArgs): Promise<void> {
   const bootedAt = new Date();
   log(`Claiming run as running (PID ${process.pid})...`);
   const claimed = await claimRunForWorker(runRepository, args.runId, process.pid, bootedAt);
+  const recordRunFinished = createRunFinishedRecorder(
+    container.resolve<ITelemetry>('ITelemetry'),
+    args.agentType ?? settings.agent.type,
+    bootedAt
+  );
+  recordRunFinishedForSignal = recordRunFinished;
   if (!claimed) {
     const current = await runRepository.findById(args.runId);
     log(
@@ -399,6 +410,7 @@ export async function runWorker(args: WorkerArgs): Promise<void> {
       gitPrService,
       gitForkService: container.resolve<IGitForkService>('IGitForkService'),
       cleanupFeatureWorktreeUseCase,
+      telemetry: container.resolve<ITelemetry>('ITelemetry'),
       checkDocsGate: (repositoryPath: string, changedFiles: readonly string[]) =>
         container.resolve(CheckDocsGateUseCase).execute(repositoryPath, changedFiles),
     },
@@ -693,6 +705,7 @@ export async function runWorker(args: WorkerArgs): Promise<void> {
         return;
       }
       await recordLifecycleEvent('run:failed');
+      recordRunFinished(AgentRunStatus.failed);
       log(`Run marked as failed: ${result.error}`);
       await drainCapacityQueueAfterFailure(drainCapacityQueue, log);
       return;
@@ -711,6 +724,7 @@ export async function runWorker(args: WorkerArgs): Promise<void> {
       return;
     }
     await recordLifecycleEvent('run:completed');
+    recordRunFinished(AgentRunStatus.completed);
     await lifecyclePublisher.publishCompleted(lifecycleScope);
     log('Run marked as completed');
   } catch (error: unknown) {
@@ -728,6 +742,7 @@ export async function runWorker(args: WorkerArgs): Promise<void> {
       },
       { runId: args.runId, featureId: args.featureId, message, failedAt }
     );
+    recordRunFinished(AgentRunStatus.failed);
   } finally {
     // Stop MCP plugin servers regardless of success/failure/interrupt
     await stopPluginServers(args.featureId, mcpServerManager, log);
@@ -754,6 +769,7 @@ process.on('disconnect', () => {
 let runIdForSignal: string | undefined;
 let runRepoForSignal: IAgentRunRepository | undefined;
 let timingRepoForSignal: IPhaseTimingRepository | undefined;
+let recordRunFinishedForSignal: RunFinishedRecorder | undefined;
 
 process.on('SIGTERM', async () => {
   log('Received SIGTERM, shutting down...');
@@ -768,6 +784,7 @@ process.on('SIGTERM', async () => {
       { allowedFrom: WORKER_CLAIMABLE_STATUSES }
     );
     await recordLifecycleEvent('run:stopped', runIdForSignal, timingRepoForSignal);
+    recordRunFinishedForSignal?.(AgentRunStatus.interrupted);
   }
   process.exit(0);
 });

@@ -57,6 +57,11 @@ import { docsBlockAutoMerge, type CheckDocsGate } from './docs-gate.js';
 import { getSettings } from '@/infrastructure/services/settings.service.js';
 import type { CleanupFeatureWorktreeUseCase } from '@/application/use-cases/features/cleanup-feature-worktree.use-case.js';
 import type { IGitForkService } from '@/application/ports/output/services/git-fork-service.interface.js';
+import type { ITelemetry } from '@/application/ports/output/services/telemetry.interface.js';
+import {
+  recordPrMerged,
+  recordPrOpened,
+} from '@/infrastructure/services/telemetry/pr-telemetry.js';
 
 export interface MergeNodeDeps {
   executor: IAgentExecutor;
@@ -110,6 +115,8 @@ export interface MergeNodeDeps {
    * auto-merge as far as documentation goes. Optional — absent, no gate.
    */
   checkDocsGate?: CheckDocsGate;
+  /** Records pr.opened / pr.merged (spec 133). */
+  telemetry: ITelemetry;
 }
 
 /**
@@ -354,6 +361,8 @@ export function createMergeNode(deps: MergeNodeDeps) {
             updatedAt: new Date(),
           });
           log.info('Persisted lifecycle=Review and PR data to feature record');
+          // Recorded here too: the merge gate may pause the run with the PR already open.
+          if (prUrl && prNumber) recordPrOpened(deps.telemetry, feature);
         }
 
         // --- Merge approval gate ---
@@ -622,6 +631,9 @@ export function createMergeNode(deps: MergeNodeDeps) {
       // --- Update feature lifecycle ---
       const newLifecycle = merged ? SdlcLifecycle.Maintain : SdlcLifecycle.Review;
       if (feature) {
+        // Once-keyed per feature: the PR sync watcher and the webhook may see the same PR.
+        if (prUrl) recordPrOpened(deps.telemetry, feature);
+        if (merged) recordPrMerged(deps.telemetry, feature, Boolean(prUrl));
         await deps.featureRepository.update({
           ...feature,
           lifecycle: newLifecycle,

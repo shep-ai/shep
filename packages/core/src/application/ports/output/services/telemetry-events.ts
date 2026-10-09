@@ -44,6 +44,7 @@ export interface TelemetryEventPropertyMap {
   };
   [TelemetryEvent.FeatureCreated]: {
     buildMode: BuildMode;
+    agentType: AgentType;
   };
   [TelemetryEvent.FeatureRunFinished]: {
     status: AgentRunStatus;
@@ -55,6 +56,8 @@ export interface TelemetryEventPropertyMap {
   };
   [TelemetryEvent.PrMerged]: {
     buildMode: BuildMode;
+    /** False when Shep merged the branch locally without a pull request. */
+    viaPullRequest: boolean;
   };
   [TelemetryEvent.DecisionAnswered]: {
     kind: string;

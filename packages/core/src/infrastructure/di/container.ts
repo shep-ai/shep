@@ -115,6 +115,7 @@ import { registerSecurity } from './modules/register-security.js';
 import { registerScheduledWorkflows } from './modules/register-scheduled-workflows.js';
 import { registerPlugins } from './modules/register-plugins.js';
 import { registerHarness } from './modules/register-harness.js';
+import type { ITelemetry } from '../../application/ports/output/services/telemetry.interface.js';
 import { registerTelemetry } from './modules/register-telemetry.js';
 import { PruneRetainedDataUseCase } from '../../application/use-cases/maintenance/prune-retained-data.use-case.js';
 
@@ -245,7 +246,8 @@ export async function initializeContainer(): Promise<typeof container> {
         notifService,
         execFnResolved,
         webhookLogger,
-        identity
+        identity,
+        c.resolve<ITelemetry>('ITelemetry')
       );
     },
   });

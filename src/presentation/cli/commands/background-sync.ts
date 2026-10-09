@@ -44,6 +44,7 @@ import type { INotificationService } from '@/application/ports/output/services/n
 import type { IGitPrService } from '@/application/ports/output/services/git-pr-service.interface.js';
 import type { IGitForkService } from '@/application/ports/output/services/git-fork-service.interface.js';
 import type { ILogger } from '@/application/ports/output/services/logger.interface.js';
+import type { ITelemetry } from '@/application/ports/output/services/telemetry.interface.js';
 
 export interface BackgroundSync {
   stop(): void;
@@ -102,7 +103,8 @@ export function startBackgroundSync(label: string): BackgroundSync {
     undefined,
     getExistingConnection(),
     container.resolve<IGitForkService>('IGitForkService'),
-    container.resolve<ILogger>('ILogger')
+    container.resolve<ILogger>('ILogger'),
+    container.resolve<ITelemetry>('ITelemetry')
   );
 
   retention.start();

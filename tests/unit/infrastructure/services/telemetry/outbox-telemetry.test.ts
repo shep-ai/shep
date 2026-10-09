@@ -59,12 +59,12 @@ describe('OutboxTelemetry', () => {
     const { outbox, telemetry } = build();
     telemetry.record(
       TelemetryEvent.PrMerged,
-      { buildMode: BuildMode.Spec },
+      { buildMode: BuildMode.Spec, viaPullRequest: true },
       { onceKey: 'pr.merged:f1' }
     );
     telemetry.record(
       TelemetryEvent.PrMerged,
-      { buildMode: BuildMode.Spec },
+      { buildMode: BuildMode.Spec, viaPullRequest: true },
       { onceKey: 'pr.merged:f1' }
     );
 

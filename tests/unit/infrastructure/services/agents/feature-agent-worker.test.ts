@@ -19,6 +19,8 @@ import {
 } from '@/domain/generated/output.js';
 import type { AgentRun } from '@/domain/generated/output.js';
 import { createFakeAgentRunRepository } from '../../../../helpers/agent-run-repository.fake.js';
+import { createTelemetryDouble } from '../../../../helpers/telemetry.helper.js';
+import { TelemetryEvent } from '@/domain/generated/output.js';
 import {
   WORKER_CLAIMABLE_STATUSES,
   WORKER_OWNED_STATUSES,
@@ -432,6 +434,7 @@ describe('runWorker', () => {
   let mockRunRepo: ReturnType<typeof makeMockRunRepository>;
   let mockExecutorProvider: ReturnType<typeof makeMockExecutorProvider>;
   let mockLifecyclePublisher: ReturnType<typeof makeMockLifecyclePublisher>;
+  let mockTelemetry: ReturnType<typeof createTelemetryDouble>;
   let mockGateQuestionPublisher: ReturnType<typeof makeMockGateQuestionPublisher>;
 
   beforeEach(() => {
@@ -439,11 +442,13 @@ describe('runWorker', () => {
     mockRunRepo = makeMockRunRepository();
     mockExecutorProvider = makeMockExecutorProvider();
     mockLifecyclePublisher = makeMockLifecyclePublisher();
+    mockTelemetry = createTelemetryDouble();
     mockGateQuestionPublisher = makeMockGateQuestionPublisher();
     mockInitializeContainer.mockResolvedValue({ resolve: mockResolve });
     mockResolve.mockImplementation((token: unknown) => {
       const key = typeof token === 'string' ? token : (token as { name?: string })?.name;
       if (key === 'IAgentRunRepository') return mockRunRepo;
+      if (key === 'ITelemetry') return mockTelemetry;
       if (key === 'IAgentExecutorProvider') return mockExecutorProvider;
       if (key === 'ResolveSpaceEnvironmentUseCase') return { execute: mockResolveSpaceEnvironment };
       if (key === 'FeatureAgentLifecyclePublisher') return mockLifecyclePublisher;
@@ -666,6 +671,27 @@ describe('runWorker', () => {
       }),
       { allowedFrom: WORKER_OWNED_STATUSES }
     );
+  });
+
+  it('records feature.run.finished once with the outcome (spec 133)', async () => {
+    await runWorker({ featureId: 'feat-1', runId: 'run-1', repo: '/repo', specDir: '/specs' });
+
+    expect(mockTelemetry.record).toHaveBeenCalledTimes(1);
+    expect(mockTelemetry.record).toHaveBeenCalledWith(
+      TelemetryEvent.FeatureRunFinished,
+      expect.objectContaining({ status: AgentRunStatus.completed, agentType: 'claude-code' })
+    );
+  });
+
+  it('records feature.run.finished as failed when the graph throws (spec 133)', async () => {
+    mockGraphInvoke.mockRejectedValue(new Error('secret failure text'));
+    await runWorker({ featureId: 'feat-1', runId: 'run-1', repo: '/repo', specDir: '/specs' });
+
+    expect(mockTelemetry.record).toHaveBeenCalledWith(
+      TelemetryEvent.FeatureRunFinished,
+      expect.objectContaining({ status: AgentRunStatus.failed })
+    );
+    expect(JSON.stringify(mockTelemetry.record.mock.calls)).not.toContain('secret');
   });
 
   it('should update agent run status to failed on error', async () => {
