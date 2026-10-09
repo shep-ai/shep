@@ -84,11 +84,13 @@ async function approvePrd(page: Page) {
   // Click through recommended options until the approve button is enabled
   let attempts = 0;
   while ((await approveBtn.isDisabled()) && attempts < 20) {
-    const recommended = page.getByText('AI Recommended').first();
+    // Spec 134: the questionnaire renders through DecisionPanel, which marks
+    // the recommended option with a `…-recommended` badge inside its button.
+    const recommended = page.locator('[data-testid$="-recommended"]').first();
     const isVisible = await recommended.isVisible().catch(() => false);
     if (isVisible) {
-      // Click the option card containing the recommendation
-      await recommended.locator('..').click();
+      // Click the option containing the recommendation
+      await recommended.locator('xpath=ancestor::button[1]').click();
       await page.waitForTimeout(600);
     } else {
       // No more recommended options — try Next/Skip or break

@@ -9,6 +9,7 @@ import type Database from 'better-sqlite3';
 import { injectable } from 'tsyringe';
 import type {
   AgentQuestionListFilters,
+  AgentQuestionSettlementFields,
   IAgentQuestionRepository,
 } from '../../application/ports/output/repositories/agent-question-repository.interface.js';
 import type { AgentQuestion, AgentQuestionStatus } from '../../domain/generated/output.js';
@@ -30,11 +31,13 @@ export class SQLiteAgentQuestionRepository implements IAgentQuestionRepository {
         id, app_id, feature_id, agent_run_id, kind, prompt,
         options_json, default_answer, answerer, status,
         answer, answered_by, answered_at, expires_at,
+        decision_json, responses_json,
         created_at, updated_at
       ) VALUES (
         @id, @app_id, @feature_id, @agent_run_id, @kind, @prompt,
         @options_json, @default_answer, @answerer, @status,
         @answer, @answered_by, @answered_at, @expires_at,
+        @decision_json, @responses_json,
         @created_at, @updated_at
       )
     `);
@@ -86,7 +89,7 @@ export class SQLiteAgentQuestionRepository implements IAgentQuestionRepository {
     appId: string,
     id: string,
     status: AgentQuestionStatus,
-    fields: Partial<Pick<AgentQuestion, 'answer' | 'answeredBy' | 'answeredAt'>> = {}
+    fields: AgentQuestionSettlementFields = {}
   ): Promise<void> {
     this.writeStatus(appId, id, status, fields, false);
   }
@@ -95,7 +98,7 @@ export class SQLiteAgentQuestionRepository implements IAgentQuestionRepository {
     appId: string,
     id: string,
     status: AgentQuestionStatus,
-    fields: Partial<Pick<AgentQuestion, 'answer' | 'answeredBy' | 'answeredAt'>> = {}
+    fields: AgentQuestionSettlementFields = {}
   ): Promise<boolean> {
     return this.writeStatus(appId, id, status, fields, true);
   }
@@ -105,7 +108,7 @@ export class SQLiteAgentQuestionRepository implements IAgentQuestionRepository {
     appId: string,
     id: string,
     status: AgentQuestionStatus,
-    fields: Partial<Pick<AgentQuestion, 'answer' | 'answeredBy' | 'answeredAt'>>,
+    fields: AgentQuestionSettlementFields,
     onlyIfPending: boolean
   ): boolean {
     const now = Date.now();
@@ -127,6 +130,11 @@ export class SQLiteAgentQuestionRepository implements IAgentQuestionRepository {
       );
     }
 
+    if (fields.responses !== undefined) {
+      setClauses.push('responses_json = ?');
+      values.push(JSON.stringify(fields.responses));
+    }
+
     values.push(id, appId);
     let where = 'id = ? AND app_id = ?';
     if (onlyIfPending) {
@@ -137,6 +145,13 @@ export class SQLiteAgentQuestionRepository implements IAgentQuestionRepository {
       `UPDATE agent_questions SET ${setClauses.join(', ')} WHERE ${where}`
     );
     return stmt.run(...values).changes > 0;
+  }
+
+  async listAppIds(): Promise<string[]> {
+    const rows = this.db.prepare('SELECT DISTINCT app_id FROM agent_questions').all() as {
+      app_id: string;
+    }[];
+    return rows.map((r) => r.app_id);
   }
 
   async findExpired(cutoff: Date, limit?: number): Promise<AgentQuestion[]> {

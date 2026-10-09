@@ -47,6 +47,14 @@ export {
   type RepositoryNodeData,
   type RepositoryNodeType,
 } from './repository-node';
+export {
+  AnsweredDecisionRow,
+  DecisionPanel,
+  type AnsweredDecisionRowProps,
+  type DecisionComposer,
+  type DecisionPanelProps,
+} from './decision-panel';
+export { InlineBlockView, type InlineBlock, type InlineBlockViewProps } from './inline-blocks';
 export { PageHeader } from './page-header';
 export {
   PrdQuestionnaire,

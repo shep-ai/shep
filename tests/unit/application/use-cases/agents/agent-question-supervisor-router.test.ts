@@ -36,13 +36,17 @@ import {
   AgentQuestionAnswerer,
   AgentQuestionKind,
   AgentQuestionStatus,
+  DecisionKind,
+  DecisionResponseMode,
   SupervisorAutonomy,
   SupervisorScopeType,
   SupervisorVerdict,
   type ActivityEntry,
   type AgentQuestion,
+  type Decision,
   type Settings,
 } from '@/domain/generated/output.js';
+import { buildApprovalGateDecision } from '@/domain/shared/decision-builders.js';
 import type { IActivityLogRepository } from '@/application/ports/output/repositories/activity-log-repository.interface.js';
 import type { IAgentRunRepository } from '@/application/ports/output/agents/agent-run-repository.interface.js';
 import type { ISettingsRepository } from '@/application/ports/output/repositories/settings.repository.interface.js';
@@ -245,6 +249,63 @@ describe('AgentQuestionSupervisorRouter', () => {
       // Verdict was recorded but the answer can't fit the question's
       // option set so we leave it pending for the user.
       expect(result.evaluated).toBe(true);
+      expect(result.answered).toBe(false);
+      expect(bundle.answerSpy).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('decisions (spec 134)', () => {
+    beforeEach(async () => {
+      bundle = buildRouter({ collaboration: true, verdict: SupervisorVerdict.approve });
+      await configurePolicy(bundle.policyRepo, SupervisorAutonomy.autonomous);
+    });
+
+    function decisionWith(optionIds: string[]): Decision {
+      return {
+        id: 'q-1',
+        kind: DecisionKind.AgentAsk,
+        responseMode: DecisionResponseMode.Async,
+        questions: [
+          {
+            id: 'q1',
+            header: 'Go?',
+            question: 'Go ahead?',
+            multiSelect: false,
+            allowCustom: true,
+            options: optionIds.map((id) => ({ id, label: id, description: '' })),
+          },
+        ],
+      };
+    }
+
+    it('skips an approval-gate decision (the worker evaluates the gate itself)', async () => {
+      const question = makeQuestion({ decision: buildApprovalGateDecision('q-1', 'plan') });
+      await bundle.questionRepo.create(question);
+
+      const result = await bundle.router.routeIfApplicable(question);
+
+      expect(result.evaluated).toBe(false);
+      expect(bundle.answerSpy).not.toHaveBeenCalled();
+    });
+
+    it('answers by option id when the verdict matches an option', async () => {
+      const question = makeQuestion({ decision: decisionWith(['approve', 'reject']) });
+      await bundle.questionRepo.create(question);
+
+      const result = await bundle.router.routeIfApplicable(question);
+
+      expect(result.answered).toBe(true);
+      expect(bundle.answerSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ responses: [{ questionId: 'q1', optionIds: ['approve'] }] })
+      );
+    });
+
+    it('never answers with the verdict as typed text', async () => {
+      const question = makeQuestion({ decision: decisionWith(['lib-a', 'lib-b']) });
+      await bundle.questionRepo.create(question);
+
+      const result = await bundle.router.routeIfApplicable(question);
+
       expect(result.answered).toBe(false);
       expect(bundle.answerSpy).not.toHaveBeenCalled();
     });

@@ -1,0 +1,197 @@
+# Research Artifact (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: unified-decisions
+summary: Technical decisions for 134 — one Decision model, one panel, one CLI renderer, wired producers, and agent-asked decisions with deadlines.
+
+relatedFeatures:
+  - 093-agent-collaboration-supervision
+technologies:
+  - TypeScript
+  - TypeSpec
+  - React 19 / Next.js
+  - '@inquirer/prompts'
+  - '@modelcontextprotocol/sdk'
+relatedLinks:
+  - title: T3 Code pendingUserInput.ts (answer resolution rules)
+    url: https://github.com/pingdotgg/t3code/blob/main/apps/web/src/pendingUserInput.ts
+  - title: T3 Code providerRuntime.ts (UserInputQuestion)
+    url: https://github.com/pingdotgg/t3code/blob/main/packages/contracts/src/providerRuntime.ts
+
+decisions:
+  - title: A Decision is a request of one or more questions
+    chosen: >-
+      Decision { id, kind: DecisionKind, title?, questions: DecisionQuestion[], responseMode,
+      defaultAfter? } with DecisionQuestion { id, header, question, options: DecisionOption[],
+      multiSelect, allowCustom } and DecisionOption { id, label, description, preview?,
+      recommended? }
+    rejected:
+      - 'One question per Decision: AskUserQuestion and the PRD questionnaire ask several at once and must page (n/N) as one answerable unit'
+      - 'Keep three shapes behind adapters in the UI only: the inbox, CLI and supervisor would still see string[]'
+    rationale: >-
+      Mirrors T3's RuntimeRequest { questions[] } + responseCapability. Option ids are stable keys
+      (labels can repeat across questions and change wording); recommended lives on the option so
+      every surface can preselect it.
+
+  - title: Answers are DecisionResponse[] plus a readable summary
+    chosen: >-
+      DecisionResponse { questionId, optionIds: string[], customText? }. AgentQuestion keeps its
+      string `answer` (a readable summary, so CLI/WhatsApp/notifications keep working) and gains
+      `responses`. Text answers from the CLI, the supervisor or WhatsApp are resolved by a pure
+      domain helper — option id, then label (case-insensitive), then custom text when allowed.
+    rejected:
+      - 'JSON in the answer column: every existing reader of `answer` would print JSON'
+      - 'Answer = Record<questionText, string> (the SDK shape): question text is not a key, and loses option ids'
+    rationale: >-
+      Responses carry ids for gate forwarding and telemetry (picked-recommended); the string stays
+      human-readable. T3's rule "non-empty custom text outranks selected options" is applied in one
+      domain function, shared by web and CLI.
+
+  - title: Persist decision and responses as JSON columns on agent_questions
+    chosen: One additive migration adding decision_json and responses_json (nullable TEXT)
+    rejected:
+      - 'A decisions table with option rows: nothing queries options relationally; a join per inbox read for no gain'
+    rationale: >-
+      Same pattern as options_json. Legacy rows (decision NULL) are rendered by building a Decision
+      from options_json at read time (decisionFromLegacyQuestion), so old pending questions keep
+      working.
+
+  - title: Wire the bridge by composing the chat and the inbox, not by replacing the chat
+    chosen: >-
+      AgentQuestionExecutorBridge is constructed per interactive session (via an injected factory)
+      and passed to the executor as `agentQuestionBridge`. Its ask() records a Live decision (so
+      the inbox and notifications see it) AND shows it in chat through a live-surface callback;
+      whichever answers first settles the other (chat answer → AnswerAgentQuestion; inbox answer →
+      the chat coordinator resolves its pending interaction). With the collaboration flag off it
+      returns null and the executor keeps today's onUserQuestion path.
+    rejected:
+      - 'Pass the bridge as-is: the executor would stop calling onUserQuestion, so the chat would lose its inline question'
+      - 'Delete the bridge: leaves chat questions invisible to the inbox and notifications'
+    rationale: >-
+      Both Claude and Cursor interactive executors already prefer the bridge and fall back to
+      onUserQuestion, so the wiring is one construction site in the session bootstrapper.
+
+  - title: Gate questions become readable approval decisions
+    chosen: >-
+      buildApprovalGateDecision(node) — Approve (recommended) / Reject options with allowCustom
+      (a typed note rejects with that feedback); the prompt is a sentence ("Requirements are ready
+      for review"). The supervisor router recognises gates by decision kind instead of parsing the
+      prompt as JSON.
+    rejected:
+      - 'Keep JSON prompt and pretty-print in the inbox: every other surface (CLI, WhatsApp, notifications) still prints JSON'
+    rationale: Fixes the raw-JSON defect at the source.
+
+  - title: Web component — controlled panel + pure reducer
+    chosen: >-
+      decision-draft.ts (pure: toggle, set custom text, resolve, progress, displaced-text carry) +
+      DecisionPanel (presentation, timers, keyboard) + InlineBlock registry. The panel accepts an
+      external composer (customText/onCustomTextChange) — the chat composer — and renders its own
+      "Other" field when hosted without one (inbox, drawers).
+    rejected:
+      - 'Port T3 file-for-file: its state lives in a global composer store we do not have'
+    rationale: >-
+      Pure draft logic is unit-testable without React (same split as T3's pendingUserInput.ts). The
+      auto-advance timer is owned by a ref and cleared on unmount and on manual navigation
+      (LESSONS: an uncleaned setTimeout fails the suite).
+
+  - title: Inline-UI-block registry
+    chosen: >-
+      InlineBlock { type: InlineBlockType; ... } discriminated union with a Record<InlineBlockType,
+      renderer> registry; InlineBlockType is a TypeSpec enum with one member (decision) today.
+    rejected:
+      - 'A string-keyed plugin map: a missing renderer would be a runtime blank instead of a compile error'
+    rationale: >-
+      A total Record turns "added a block type, forgot its renderer" into a compile error, which is
+      the repo's documented way to grow an enum.
+
+  - title: Chat placement
+    chosen: >-
+      The pending decision renders inside the in-progress turn card (the turn that asked); the
+      persisted {{interaction}} answer renders as a collapsed "Answered questions" row in its turn.
+      While a decision is pending, sending from the composer answers it with the typed text.
+    rejected:
+      - 'Keep afterMessages: violates features/chat/CLAUDE.md rule 1 (single chronological timeline)'
+    rationale: Matches the chat architecture rules and T3's composer-as-Other.
+
+  - title: CLI renderer
+    chosen: >-
+      renderDecisionText (pure formatter used by `ls`) + promptDecision using @inquirer/prompts
+      select/checkbox/input with the recommended option as default; `answer <id>` without --answer
+      prompts when stdin is a TTY.
+    rejected:
+      - 'A new TUI screen: the inquirer stack is already a dependency and used by other commands'
+    rationale: Same model, same defaults, no new dependency.
+
+  - title: Agent-asked decisions (Part 2) go through Shep's MCP server
+    chosen: >-
+      An ask_decision MCP tool in infrastructure/services/mcp/tools, backed by a new
+      AskAgentDecisionUseCase (validates exactly one recommended option, applies the default
+      deadline, records an Async decision, waits via the deferred registry, and on timeout settles
+      the question as expired with the recommended response and appends an activity entry). The
+      feature-agent worker adds a `shep` entry (with SHEP_FEATURE_ID / SHEP_AGENT_RUN_ID env) to the
+      per-feature MCP config it already passes as `mcpConfigPath`.
+    rejected:
+      - 'Parse a marker out of agent stdout: provider-specific and unreliable'
+      - 'Per-provider AskUserQuestion interception in headless CLIs: the CLIs run with -p and cannot pause'
+    rationale: >-
+      Agent-agnostic: any executor that honours mcpConfigPath gets the tool; prompts mention it only
+      when the run was given it.
+
+openQuestions: []
+
+content: |
+  ## Status
+
+  - **Phase:** Research
+  - **Updated:** 2026-10-09
+
+  ## Findings
+
+  - `AgentQuestion` (spec 093) already models urgency, answerer, status, `defaultAnswer` and
+    `expiresAt`; the deferred registry already polls the DB so answers from another process
+    settle an awaiter. The unified pipeline is gated on `featureFlags.collaboration`.
+  - Both interactive executors (`claude-code-interactive-executor.service.ts`,
+    `cursor-interactive-executor.service.ts`) call `options.agentQuestionBridge.ask()` first and
+    fall back to `onUserQuestion` when it returns null. `session-bootstrapper.ts` never passes a
+    bridge, so the bridge is dead code in production.
+  - `FeatureAgentGateQuestionPublisher` writes `JSON.stringify({event:'waiting_approval', ...})`
+    as the prompt; the supervisor router uses that JSON as its gate discriminator.
+  - The inbox page lists questions per Application id. Gate questions for a repository without an
+    Application are scoped by repository path and never appear — the page must also list the
+    scopes that questions were actually written under.
+  - `ChatTab` renders `InteractionBubble` in `afterMessages`, contrary to
+    `features/chat/CLAUDE.md` rule 1.
+  - Headless prompts (`fast-implement.prompt.ts`, `prototype-generate.prompt.ts`) forbid asking.
+  - Only executors that honour `mcpConfigPath` (Claude Code today) can be given the MCP tool.
+
+  ## T3 Code reference behaviour (adopted)
+
+  - Option rows: bold label, muted description, `1`–`9` key hint that becomes a check when
+    selected; number keys ignored while focus is in an editable field.
+  - Single-select: optimistic check, auto-advance after 200 ms; multi-select toggles in place.
+  - Custom text outranks the selection; clicking an option moves typed text back into the
+    composer draft (`carryDisplacedCustomAnswerIntoPrompt`).
+  - Multi-question requests page with `n/N`, Previous / Next / Submit; Enter advances.
+  - `not_resumable` requests are shown but cannot be answered.
+
+  ## Security Considerations
+
+  - `ask_decision` input is model-supplied: lengths are bounded, option ids are generated by Shep
+    (not taken from the model), and nothing reaches a shell.
+  - The MCP server process inherits the worker's scope only through env vars it sets itself; a
+    tool call cannot address another feature's questions.
+  - Option `preview` is rendered as text in a `<pre>`, never as HTML.
+
+  ## Performance Implications
+
+  - Two JSON columns, parsed in the mapper; inbox queries are unchanged.
+  - The deferred registry's 2 s DB poll already exists; the MCP server reuses it (one awaiter per
+    open agent-asked decision).
+
+  ## Open Questions
+
+  All questions resolved.
+
+  ---
+
+  _Updated by `/shep-kit:research` — proceed with `/shep-kit:plan`_

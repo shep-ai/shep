@@ -3,7 +3,6 @@
 import { useMemo, useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
@@ -16,8 +15,13 @@ import {
 import {
   AgentQuestionKind,
   AgentQuestionStatus,
+  InlineBlockType,
   type AgentQuestion,
+  type DecisionResponse,
 } from '@shepai/core/domain/generated/output';
+import { summariseResponses } from '@shepai/core/domain/shared/decision';
+import { decisionForQuestion } from '@shepai/core/domain/shared/decision-builders';
+import { InlineBlockView } from '@/components/common/inline-blocks';
 import { answerAgentQuestion, cancelAgentQuestion } from '@/app/actions/agent-questions';
 
 const KIND_VARIANT: Record<AgentQuestionKind, 'default' | 'destructive' | 'secondary'> = {
@@ -49,7 +53,7 @@ export interface AgentQuestionsInboxProps {
   answerOverride?: (input: {
     appId: string;
     questionId: string;
-    answer: string;
+    responses: DecisionResponse[];
     answeredBy: string;
   }) => Promise<{ ok: boolean; error?: string }>;
   cancelOverride?: (input: {
@@ -60,17 +64,6 @@ export interface AgentQuestionsInboxProps {
   }) => Promise<{ ok: boolean; error?: string }>;
   /** Identity of the current user — used as `answeredBy`/`cancelledBy`. */
   currentActor?: string;
-}
-
-function parseOptions(json: string | undefined): string[] {
-  if (!json) return [];
-  try {
-    const parsed = JSON.parse(json);
-    if (Array.isArray(parsed)) return parsed.filter((v): v is string => typeof v === 'string');
-    return [];
-  } catch {
-    return [];
-  }
 }
 
 export function AgentQuestionsInbox({
@@ -87,7 +80,6 @@ export function AgentQuestionsInbox({
   );
   const [kindFilter, setKindFilter] = useState<AgentQuestionKind | 'all'>(initialKindFilter);
   const [pendingId, setPendingId] = useState<string | null>(null);
-  const [draftAnswers, setDraftAnswers] = useState<Record<string, string>>({});
   const [error, setError] = useState<string | null>(errorMessage);
   const [questions, setQuestions] = useState<AgentQuestion[]>(initialQuestions);
 
@@ -99,11 +91,7 @@ export function AgentQuestionsInbox({
     });
   }, [questions, statusFilter, kindFilter]);
 
-  const submitAnswer = async (q: AgentQuestion, answer: string) => {
-    if (!answer.trim()) {
-      setError('Answer cannot be empty');
-      return;
-    }
+  const submitAnswer = async (q: AgentQuestion, responses: DecisionResponse[]) => {
     setError(null);
     setPendingId(q.id);
     try {
@@ -111,7 +99,7 @@ export function AgentQuestionsInbox({
       const result = await handler({
         appId: q.appId ?? '',
         questionId: q.id,
-        answer,
+        responses,
         answeredBy: currentActor,
       });
       if (!result.ok) {
@@ -124,7 +112,8 @@ export function AgentQuestionsInbox({
             ? {
                 ...row,
                 status: AgentQuestionStatus.answered,
-                answer,
+                answer: summariseResponses(decisionForQuestion(row), responses),
+                responses,
                 answeredBy: currentActor,
                 answeredAt: new Date(),
               }
@@ -226,9 +215,7 @@ export function AgentQuestionsInbox({
               key={q.id}
               question={q}
               busy={pendingId === q.id}
-              draftAnswer={draftAnswers[q.id] ?? ''}
-              onDraftChange={(value) => setDraftAnswers((prev) => ({ ...prev, [q.id]: value }))}
-              onSubmitAnswer={(answer) => submitAnswer(q, answer)}
+              onSubmitAnswer={(responses) => submitAnswer(q, responses)}
               onCancel={() => submitCancel(q)}
             />
           ))}
@@ -241,22 +228,19 @@ export function AgentQuestionsInbox({
 interface QuestionRowProps {
   question: AgentQuestion;
   busy: boolean;
-  draftAnswer: string;
-  onDraftChange: (value: string) => void;
-  onSubmitAnswer: (answer: string) => void;
+  onSubmitAnswer: (responses: DecisionResponse[]) => void;
   onCancel: () => void;
 }
 
-function QuestionRow({
-  question,
-  busy,
-  draftAnswer,
-  onDraftChange,
-  onSubmitAnswer,
-  onCancel,
-}: QuestionRowProps) {
-  const options = parseOptions(question.optionsJson);
+function QuestionRow({ question, busy, onSubmitAnswer, onCancel }: QuestionRowProps) {
+  const decision = decisionForQuestion(question);
   const isPending = question.status === AgentQuestionStatus.pending;
+  const settledLabel =
+    question.status === AgentQuestionStatus.answered
+      ? 'Answered'
+      : question.status === AgentQuestionStatus.cancelled
+        ? 'Cancelled'
+        : 'Resolved';
 
   return (
     <li
@@ -282,71 +266,56 @@ function QuestionRow({
         ) : null}
       </header>
 
-      <p className="text-sm whitespace-pre-wrap" data-testid={`question-prompt-${question.id}`}>
-        {question.prompt}
-      </p>
-
-      {!isPending && question.answer ? (
-        <p className="text-muted-foreground text-xs" data-testid={`question-answer-${question.id}`}>
-          {question.status === AgentQuestionStatus.answered
-            ? 'Answered'
-            : question.status === AgentQuestionStatus.cancelled
-              ? 'Cancelled'
-              : 'Resolved'}
-          {question.answeredBy ? ` by ${question.answeredBy}` : ''}: {question.answer}
-        </p>
-      ) : null}
+      {isPending ? (
+        <InlineBlockView
+          block={{
+            type: InlineBlockType.Decision,
+            props: { decision, onSubmit: onSubmitAnswer, isSubmitting: busy },
+          }}
+        />
+      ) : question.responses ? (
+        <div data-testid={`question-answer-${question.id}`}>
+          <InlineBlockView
+            block={{
+              type: InlineBlockType.Decision,
+              props: { decision, responses: question.responses },
+            }}
+          />
+          {question.answeredBy ? (
+            <p className="text-muted-foreground mt-1 text-xs">
+              {settledLabel} by {question.answeredBy}
+            </p>
+          ) : null}
+        </div>
+      ) : (
+        <div className="flex flex-col gap-1">
+          <p className="text-sm whitespace-pre-wrap" data-testid={`question-prompt-${question.id}`}>
+            {decision.title ?? decision.questions[0]?.question}
+          </p>
+          {question.answer ? (
+            <p
+              className="text-muted-foreground text-xs"
+              data-testid={`question-answer-${question.id}`}
+            >
+              {settledLabel}
+              {question.answeredBy ? ` by ${question.answeredBy}` : ''}: {question.answer}
+            </p>
+          ) : null}
+        </div>
+      )}
 
       {isPending ? (
-        <div className="flex flex-col gap-2">
-          {options.length > 0 ? (
-            <div className="flex flex-wrap gap-2" data-testid={`question-options-${question.id}`}>
-              {options.map((opt) => (
-                <Button
-                  key={opt}
-                  type="button"
-                  variant="default"
-                  size="sm"
-                  disabled={busy}
-                  onClick={() => onSubmitAnswer(opt)}
-                  data-testid={`question-option-${question.id}-${opt}`}
-                >
-                  {opt}
-                </Button>
-              ))}
-            </div>
-          ) : (
-            <div className="flex items-center gap-2">
-              <Input
-                value={draftAnswer}
-                onChange={(e) => onDraftChange(e.target.value)}
-                placeholder="Type an answer…"
-                disabled={busy}
-                data-testid={`question-input-${question.id}`}
-              />
-              <Button
-                type="button"
-                size="sm"
-                disabled={busy}
-                onClick={() => onSubmitAnswer(draftAnswer)}
-                data-testid={`question-submit-${question.id}`}
-              >
-                Submit
-              </Button>
-            </div>
-          )}
-          <div>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              disabled={busy}
-              onClick={onCancel}
-              data-testid={`question-cancel-${question.id}`}
-            >
-              Cancel question
-            </Button>
-          </div>
+        <div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            disabled={busy}
+            onClick={onCancel}
+            data-testid={`question-cancel-${question.id}`}
+          >
+            Cancel question
+          </Button>
         </div>
       ) : null}
     </li>

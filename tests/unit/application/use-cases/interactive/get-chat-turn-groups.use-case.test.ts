@@ -96,6 +96,23 @@ describe('GetChatTurnGroupsUseCase', () => {
     expect(result.hiddenMessageIds).toEqual(['m1', 'm2']);
   });
 
+  it('keeps an answered-question message in the turn that asked (spec 134)', async () => {
+    repo.messages = [
+      msg('m1', InteractiveMessageRole.user, 'Build a dashboard', 1000),
+      msg('m2', InteractiveMessageRole.assistant, 'Which layout?', 2000),
+      msg(
+        'm3',
+        InteractiveMessageRole.user,
+        '{{interaction}}{"questions":[{"header":"Layout","question":"Which layout?"}],"answers":{"Which layout?":"Grid"}}',
+        3000
+      ),
+      msg('m4', InteractiveMessageRole.assistant, 'Building the grid', 4000),
+    ];
+    const result = await useCase.execute({ featureId: 'feat-1' });
+    expect(result.groups).toEqual([]);
+    expect(result.currentTurn?.messageIds).toEqual(['m1', 'm2', 'm3', 'm4']);
+  });
+
   it('groups every completed turn and promotes the latest to currentTurn', async () => {
     repo.messages = [
       // completed turn

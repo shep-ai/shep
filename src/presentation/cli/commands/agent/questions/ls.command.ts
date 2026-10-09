@@ -10,7 +10,9 @@ import { Command, Option } from 'commander';
 import { container } from '@/infrastructure/di/container.js';
 import { ListAgentQuestionsUseCase } from '@/application/use-cases/agents/list-agent-questions.use-case.js';
 import { AgentQuestionStatus } from '@/domain/generated/output.js';
+import { decisionForQuestion } from '@/domain/shared/decision-builders.js';
 import { colors, messages, renderListView } from '../../../ui/index.js';
+import { decisionHeadline } from './decision-renderer.js';
 
 interface LsOptions {
   app: string;
@@ -20,6 +22,11 @@ interface LsOptions {
 }
 
 const STATUS_VALUES = Object.values(AgentQuestionStatus) as string[];
+const PROMPT_WIDTH = 60;
+
+function truncate(text: string, max: number): string {
+  return text.length > max ? `${text.slice(0, max - 3)}…` : text;
+}
 
 export function createListCommand(): Command {
   return new Command('ls')
@@ -43,7 +50,7 @@ export function createListCommand(): Command {
           q.kind,
           q.status,
           q.agentRunId.substring(0, 8),
-          q.prompt.length > 60 ? `${q.prompt.slice(0, 57)}…` : q.prompt,
+          truncate(decisionHeadline(decisionForQuestion(q)), PROMPT_WIDTH),
           q.answer ? colors.muted(q.answer.slice(0, 30)) : colors.muted('-'),
         ]);
 
@@ -54,7 +61,7 @@ export function createListCommand(): Command {
             { label: 'Kind', width: 10 },
             { label: 'Status', width: 12 },
             { label: 'Run', width: 10 },
-            { label: 'Prompt', width: 60 },
+            { label: 'Question', width: PROMPT_WIDTH },
             { label: 'Answer', width: 32 },
           ],
           rows,

@@ -107,7 +107,14 @@ export class EscalateToUserUseCase {
       createdAt: now,
       updatedAt: now,
     };
-    await this.activityLog.create(entry);
+    try {
+      await this.activityLog.create(entry);
+    } catch {
+      // Best effort, like the approval gates' audit writes: activity_log rows
+      // reference work_items, so an escalation keyed by an agent question or
+      // run can be refused. The user has already been notified; a refused audit
+      // row must not fail the question that raised it.
+    }
 
     return { escalated: true };
   }

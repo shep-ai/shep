@@ -45,7 +45,7 @@ describe('AgentQuestionsInbox', () => {
     expect(screen.queryByTestId('question-row-q-answered')).not.toBeInTheDocument();
   });
 
-  it('invokes the answer handler when an option is chosen', async () => {
+  it('answers through the decision panel with responses', async () => {
     const onAnswer = vi.fn().mockResolvedValue({ ok: true });
     const user = userEvent.setup();
 
@@ -61,7 +61,7 @@ describe('AgentQuestionsInbox', () => {
       />
     );
 
-    await user.click(screen.getByTestId('question-option-q-options-approve'));
+    await user.click(screen.getByTestId('decision-option-approve'));
 
     await waitFor(() => {
       expect(onAnswer).toHaveBeenCalledOnce();
@@ -70,12 +70,12 @@ describe('AgentQuestionsInbox', () => {
       expect.objectContaining({
         appId: 'app-1',
         questionId: 'q-options',
-        answer: 'approve',
+        responses: [{ questionId: 'q1', optionIds: ['approve'] }],
       })
     );
   });
 
-  it('submits a free-form answer when no options are present', async () => {
+  it('submits a typed answer when there are no options', async () => {
     const onAnswer = vi.fn().mockResolvedValue({ ok: true });
     const user = userEvent.setup();
 
@@ -86,17 +86,53 @@ describe('AgentQuestionsInbox', () => {
       />
     );
 
-    await user.type(screen.getByTestId('question-input-q-free'), 'use react-flow');
-    await user.click(screen.getByTestId('question-submit-q-free'));
+    await user.type(screen.getByTestId('decision-panel-other-input'), 'use react-flow');
+    await user.click(screen.getByTestId('decision-panel-submit'));
 
     await waitFor(() => {
       expect(onAnswer).toHaveBeenCalledWith(
         expect.objectContaining({
           questionId: 'q-free',
-          answer: 'use react-flow',
+          responses: [{ questionId: 'q1', optionIds: [], customText: 'use react-flow' }],
         })
       );
     });
+  });
+
+  it('renders a gate question as a readable decision, never JSON (spec 134)', () => {
+    render(
+      <AgentQuestionsInbox
+        initialQuestions={[
+          question({
+            id: 'q-gate',
+            prompt: JSON.stringify({ event: 'waiting_approval', node: 'merge', runId: 'r' }),
+            optionsJson: JSON.stringify(['approve', 'reject']),
+          }),
+        ]}
+      />
+    );
+    const row = screen.getByTestId('question-row-q-gate');
+    expect(row).toHaveTextContent('The pull request is ready to merge');
+    expect(row).not.toHaveTextContent('waiting_approval');
+    expect(screen.getByTestId('decision-option-approve-recommended')).toBeInTheDocument();
+  });
+
+  it('shows an answered decision as an answered row', () => {
+    render(
+      <AgentQuestionsInbox
+        initialStatusFilter="all"
+        initialQuestions={[
+          question({
+            id: 'q-done',
+            status: AgentQuestionStatus.answered,
+            optionsJson: JSON.stringify(['yes', 'no']),
+            answer: 'yes',
+            responses: [{ questionId: 'q1', optionIds: ['yes'] }],
+          }),
+        ]}
+      />
+    );
+    expect(screen.getByTestId('question-answer-q-done')).toHaveTextContent('Answered questions');
   });
 
   it('renders an inline error when the answer handler fails', async () => {
@@ -115,7 +151,7 @@ describe('AgentQuestionsInbox', () => {
       />
     );
 
-    await user.click(screen.getByTestId('question-option-q-err-ok'));
+    await user.click(screen.getByTestId('decision-option-ok'));
     expect(await screen.findByTestId('inbox-error')).toHaveTextContent('boom');
   });
 
