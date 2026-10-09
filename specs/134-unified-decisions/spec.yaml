@@ -1,0 +1,152 @@
+# Feature Specification (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: unified-decisions
+number: 134
+branch: feat/134-unified-decisions
+oneLiner: |-
+  One Decision primitive — a TypeSpec model, one web component, one CLI renderer — that every
+  "agent asks, user picks" moment goes through, and that lets background agents ask with a
+  recommended answer and a deadline instead of guessing
+summary: |-
+  Shep has three renderers and three option shapes for the same moment: the chat bubble
+  (`{label, description, preview}`), the PRD questionnaire (`{id, label, rationale, recommended}`)
+  and the agent-questions inbox (`string[]`). The bridge that should send chat questions to the
+  inbox is never constructed, gate questions show up in the inbox as a raw JSON blob, the chat
+  bubble sits below the timeline instead of inside the turn that asked, `preview` is never
+  rendered, and headless agents are told never to ask. This feature introduces one `Decision`
+  model (questions with options `{id, label, description, preview?, recommended?}`,
+  `multiSelect`, `allowCustom`, a `responseMode` of Live | Async | NotResumable and an optional
+  `defaultAfter` deadline), one web `DecisionPanel` that follows T3 Code's inline-options
+  interaction model, one CLI renderer, and routes every producer through them. Part 2 lets a
+  headless agent ask through an `ask_decision` MCP tool, always with a recommended option and a
+  deadline; when nobody answers in time the agent proceeds with the recommendation and the
+  feature's activity log says so.
+phase: Requirements
+sizeEstimate: XL
+relatedFeatures:
+  - 093-agent-collaboration-supervision
+technologies:
+  - TypeScript
+  - TypeSpec
+  - SQLite (better-sqlite3, umzug migrations)
+  - tsyringe
+  - Commander + @inquirer/prompts
+  - Next.js App Router, shadcn/ui, Storybook
+  - Model Context Protocol (@modelcontextprotocol/sdk)
+relatedLinks:
+  - title: T3 Code product review (docs/competitors/t3code.md on claude/gifted-bardeen-os90j0)
+    url: https://github.com/shep-ai/shep/blob/claude/gifted-bardeen-os90j0/docs/competitors/t3code.md
+  - title: T3 Code ComposerPendingUserInputPanel (reference UI)
+    url: https://github.com/pingdotgg/t3code/blob/main/apps/web/src/components/chat/ComposerPendingUserInputPanel.tsx
+openQuestions: []
+content: |
+  ## Problem Statement
+
+  In an autopilot the few moments when a person is asked something are the product. Each should
+  take one keystroke, from any surface, with a recommended answer already chosen. Shep has three
+  half-built versions of that moment, and none of them works end to end:
+
+  | Renderer | Option shape | Defect |
+  | --- | --- | --- |
+  | `InteractionBubble` (chat) | `{label, description, preview}` | Rendered in `afterMessages`, below the timeline, not in the turn that asked; `preview` never shown |
+  | `PrdQuestionnaire` (spec gate) | `{id, label, rationale, recommended}` | Its own paging/keyboard rules, not shared |
+  | Agent-questions inbox | `string[]` | Gate questions printed as `JSON.stringify` output |
+
+  `AgentQuestionExecutorBridge` exists and is unit-tested but is never constructed in production,
+  so a chat `AskUserQuestion` never reaches the inbox or a notification. Headless prompts say
+  "Do NOT ask the user questions", so a background agent that is genuinely unsure guesses.
+
+  ## Success Criteria
+
+  ### Part 1 — one Decision primitive (T1)
+
+  - [ ] `tsp/` defines `Decision`, `DecisionQuestion`, `DecisionOption`, `DecisionResponse`, a
+        `DecisionResponseMode` enum (Live | Async | NotResumable) and a `DecisionKind` enum (the
+        producer); `AgentQuestion` carries an optional `decision` and `responses`
+  - [ ] `agent_questions` stores both (one additive migration); a repository test round-trips them
+  - [ ] Pure domain helpers convert each producer's shape into a `Decision` and resolve answers:
+        chat `AskUserQuestion`, PRD questionnaire, approval gates (requirements / plan / merge),
+        and legacy `string[]` options; answer text (CLI, supervisor, WhatsApp) resolves to
+        responses by option id or label, else custom text when allowed
+  - [ ] `AskAgentQuestionUseCase` accepts a `Decision`; `AnswerAgentQuestionUseCase` accepts
+        responses, validates them against the decision, and forwards gate verdicts from the
+        selected option (custom text on a gate = reject with that feedback)
+  - [ ] Web `DecisionPanel` follows T3's interaction model: number keys 1–9; an optimistic check
+        then auto-advance after 200 ms for single-select; multi-select toggles; the composer acts
+        as "Other" (typed text outranks the selection, and text displaced by a click is never
+        lost); paging with n/N and Previous / Next / Submit; once answered it collapses to an
+        "Answered questions" row; a NotResumable decision says it can no longer be answered;
+        option `preview` and `recommended` are rendered
+  - [ ] `DecisionPanel` is registered as the first block type of an inline-UI-block registry
+        (`InlineBlock` renderer keyed by block type) so later block types can be added without
+        touching hosts
+  - [ ] Every producer renders through it: the chat question appears inline in the turn that
+        asked; the PRD questionnaire pages are `DecisionPanel`; the inbox renders every question
+        (chat, gate, supervisor-routed, agent-asked) as a `DecisionPanel`, never raw JSON
+  - [ ] The chat `AskUserQuestion` (Claude and Cursor) goes through the wired
+        `AgentQuestionExecutorBridge`: it is shown inline in chat AND recorded in the inbox and
+        notifications; whichever surface answers first settles both
+  - [ ] Gate questions are written as a readable `Decision` (Approve / Reject, plus a typed note)
+        and the supervisor answers them through the same option ids
+  - [ ] CLI: `shep agent questions ls` prints decisions readably and
+        `shep agent questions answer <id>` without `--answer` renders the decision interactively
+        (same model, same recommended default)
+  - [ ] Every new string is translated in all 9 locales; every new component has a story
+
+  ### Part 2 — background agents may ask (T2)
+
+  - [ ] A configurable default deadline (`workflow.decisionDefaultTimeoutMinutes`, default 30)
+  - [ ] Shep's MCP server exposes `ask_decision` (question, options with exactly one
+        `recommended`, optional deadline); it records an Async decision, notifies, waits, and
+        returns the answer or — at the deadline — the recommended option with `timedOut: true`
+  - [ ] Headless feature-agent runs get Shep's MCP server injected (agent-agnostic: through the
+        existing `mcpConfigPath` executor option, scoped to the feature and run)
+  - [ ] On timeout the question becomes `expired` with the recommended answer, and the
+        feature's activity log records "proceeded with the recommended option"
+  - [ ] Headless prompts change from "do not ask" to "ask only via `ask_decision` when truly
+        blocked; always include a recommendation"
+
+  ## Affected Areas
+
+  | Area | Impact | Reasoning |
+  | --- | --- | --- |
+  | `tsp/agents/` (new `decision.tsp`, `agent-question.tsp`) | High | New domain model + enums |
+  | `domain/shared/decision*.ts` | High | Pure builders, answer resolution, validation |
+  | `application/use-cases/agents/` (ask / answer / router) | High | Accept and validate decisions |
+  | `persistence/sqlite` (migration, mapper, repository) | Medium | Two JSON columns |
+  | `infrastructure/services/agents/agent-question-service/` | High | Bridge wired into chat sessions |
+  | `infrastructure/services/interactive/` | Medium | Chat question mirrored to inbox |
+  | `feature-agent-gate-question-publisher.ts` | Medium | Readable gate decisions |
+  | `web/components/common/decision-panel/` + `inline-blocks/` | High | New component + registry |
+  | `web/components/features/chat/` | Medium | Inline placement, composer as Other |
+  | `web/components/common/prd-questionnaire/` | Medium | Pages render through `DecisionPanel` |
+  | `web/components/agent-questions/` | Medium | Inbox renders decisions |
+  | `cli/commands/agent/questions/` | Medium | CLI renderer |
+  | `infrastructure/services/mcp/tools/` + feature-agent prompts (Part 2) | High | `ask_decision` |
+  | `translations/*` | Low | New strings × 9 locales |
+
+  ## Scope Notes
+
+  - Approval gates whose screen is a review document (tech decisions, merge review) keep their
+    review content and their existing action bar in the drawer — the bar already implements
+    T3's approval mode (typed note = Reject with feedback, empty = Approve). Their gate is a
+    `Decision` everywhere else (inbox, CLI, notifications, supervisor).
+  - The inline-UI-block registry ships with one block type (`decision`). Component previews and
+    inline PRD review are future block types and are not built here.
+  - Telemetry: if the telemetry workstream's `ITelemetry` port is on `main` when this lands, emit
+    `decision.answered` (kind, surface, latency bucket, picked-recommended); otherwise the PR
+    leaves a follow-up note.
+
+  ## Dependencies
+
+  - Spec 093 (agent collaboration & supervision): `AgentQuestion`, the inbox, the deferred
+    question registry and the supervisor router are extended, not replaced. The unified pipeline
+    stays behind `featureFlags.collaboration`; with the flag off the chat keeps its in-process
+    path and headless agents are not offered `ask_decision`.
+
+  ## Size Estimate
+
+  **XL** — a new TypeSpec model with persistence, use-case changes, a new web component with a
+  T3-grade interaction model, a CLI renderer, four producer migrations, an MCP tool and
+  headless-run injection. Delivered as two PRs: Part 1 (T1), then Part 2 (T2).

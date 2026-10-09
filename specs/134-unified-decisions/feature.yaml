@@ -1,0 +1,36 @@
+feature:
+  id: '134-unified-decisions'
+  name: 'unified-decisions'
+  number: 134
+  branch: 'feat/134-unified-decisions'
+  lifecycle: 'research'
+  createdAt: '2026-10-09T09:35:32Z'
+
+status:
+  phase: 'research'
+  progress:
+    completed: 0
+    total: 0
+    percentage: 0
+  currentTask: null
+  lastUpdated: '2026-10-09T09:35:32Z'
+  lastUpdatedBy: 'shep-kit:new-feature'
+
+validation:
+  lastRun: null
+  gatesPassed: []
+  autoFixesApplied: []
+
+tasks:
+  current: null
+  blocked: []
+  failed: []
+
+checkpoints:
+  - phase: 'feature-created'
+    completedAt: '2026-10-09T09:35:32Z'
+    completedBy: 'shep-kit:new-feature'
+
+errors:
+  current: null
+  history: []
