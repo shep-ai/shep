@@ -659,31 +659,28 @@ describe('DI container bootstrap (integration)', () => {
   });
 
   interface RegistryShape {
-    listAll(): readonly { id: string; displayName: string; enabled: boolean }[];
+    listAll(): readonly { id: string; displayName: string }[];
   }
 
   interface ListUseCaseShape {
-    execute(): Promise<readonly { id: string; enabled: boolean; connected: boolean }[]>;
+    execute(): Promise<readonly { id: string; connected: boolean }[]>;
   }
 
   describe('cloud-deploy registry constructs every provider end-to-end', () => {
-    it('resolves ICloudDeploymentProviderRegistry and lists all 5 providers without DI errors', () => {
+    it('resolves ICloudDeploymentProviderRegistry and lists only Cloudflare Pages', () => {
       const registry = scopedContainer.resolve<RegistryShape>('ICloudDeploymentProviderRegistry');
-      const providers = registry.listAll();
-      expect(providers.length).toBe(5);
-      expect(providers.map((p) => p.id).sort()).toEqual(
-        ['AwsAmplify', 'CloudflarePages', 'GcpCloudRun', 'Netlify', 'Vercel'].sort()
-      );
+      expect(registry.listAll()).toEqual([
+        { id: 'CloudflarePages', displayName: 'Cloudflare Pages' },
+      ]);
     });
   });
 
   describe('ListCloudProvidersUseCase end-to-end', () => {
-    it('produces the 5 known providers when called via DI', async () => {
+    it('produces only Cloudflare Pages when called via DI', async () => {
       const useCase = scopedContainer.resolve<ListUseCaseShape>('ListCloudProvidersUseCase');
       const providers = await useCase.execute();
-      expect(providers.length).toBe(5);
-      const ids = providers.map((p) => p.id);
-      expect(ids).toContain('CloudflarePages');
+      expect(providers.map((p) => p.id)).toEqual(['CloudflarePages']);
+      expect(providers[0]).not.toHaveProperty('enabled');
     });
   });
 });

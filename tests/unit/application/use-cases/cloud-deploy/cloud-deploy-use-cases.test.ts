@@ -20,7 +20,6 @@ import { InitiateCloudDeploymentUseCase } from '@/application/use-cases/cloud-de
 import { NoProviderSelectedError } from '@/domain/errors/no-provider-selected.error.js';
 import { BuildOutputNotFoundError } from '@/domain/errors/build-output-not-found.error.js';
 import { CloudProviderNotConnectedError } from '@/domain/errors/cloud-provider-not-connected.error.js';
-import { ProviderNotImplementedError } from '@/domain/errors/provider-not-implemented.error.js';
 import type { ICloudDeploymentProvider } from '@/application/ports/output/services/cloud-deployment-provider.interface.js';
 import type { ICloudDeploymentProviderRegistry } from '@/application/ports/output/services/cloud-deployment-provider-registry.interface.js';
 import type { ICloudProviderTokensRepository } from '@/application/ports/output/repositories/cloud-provider-tokens.repository.interface.js';
@@ -92,7 +91,6 @@ class FakeRegistry implements ICloudDeploymentProviderRegistry {
     return [...this.providers.values()].map((p) => ({
       id: p.providerId,
       displayName: p.displayName,
-      enabled: p.enabled,
     }));
   }
   get(id: CloudDeploymentProvider) {
@@ -216,7 +214,6 @@ function makeLiveProvider(
   return {
     providerId: CloudDeploymentProvider.CloudflarePages,
     displayName: 'Cloudflare Pages',
-    enabled: true,
     isConnected: async () => behaviour.isConnected ?? true,
     validateToken: async () => {
       if (behaviour.validateTokenThrows) throw behaviour.validateTokenThrows;
@@ -235,42 +232,25 @@ function makeLiveProvider(
   };
 }
 
-function makeDisabledProvider(id: CloudDeploymentProvider): ICloudDeploymentProvider {
-  return {
-    providerId: id,
-    displayName: id,
-    enabled: false,
-    isConnected: async () => false,
-    validateToken: async () => {
-      throw new ProviderNotImplementedError(id);
-    },
-    deploy: async () => {
-      throw new ProviderNotImplementedError(id);
-    },
-    getStatus: async () => ({ status: CloudDeploymentStatus.NotDeployed }),
-  };
-}
-
 // ─────────────────────────────── Tests ───────────────────────────────
 
 describe('ListCloudProvidersUseCase', () => {
-  it('returns every provider with enabled + connected flags', async () => {
+  it('lists Cloudflare Pages with its connected flag and no enabled flag', async () => {
     const registry = new FakeRegistry(
       new Map<CloudDeploymentProvider, ICloudDeploymentProvider>([
         [CloudDeploymentProvider.CloudflarePages, makeLiveProvider()],
-        [CloudDeploymentProvider.Vercel, makeDisabledProvider(CloudDeploymentProvider.Vercel)],
       ])
     );
     const tokens = new FakeTokensRepo();
     await tokens.set(CloudDeploymentProvider.CloudflarePages, 't');
     const useCase = new ListCloudProvidersUseCase(registry, tokens);
-    const result = await useCase.execute();
-    const cf = result.find((r) => r.id === CloudDeploymentProvider.CloudflarePages)!;
-    const vercel = result.find((r) => r.id === CloudDeploymentProvider.Vercel)!;
-    expect(cf.enabled).toBe(true);
-    expect(cf.connected).toBe(true);
-    expect(vercel.enabled).toBe(false);
-    expect(vercel.connected).toBe(false);
+    expect(await useCase.execute()).toEqual([
+      {
+        id: CloudDeploymentProvider.CloudflarePages,
+        displayName: 'Cloudflare Pages',
+        connected: true,
+      },
+    ]);
   });
 });
 
@@ -300,19 +280,6 @@ describe('ConnectCloudProviderUseCase', () => {
       useCase.execute({ provider: CloudDeploymentProvider.CloudflarePages, token: 'abc' })
     ).rejects.toThrow(/bad token/);
     expect(await tokens.get(CloudDeploymentProvider.CloudflarePages)).toBeNull();
-  });
-
-  it('rejects disabled providers', async () => {
-    const registry = new FakeRegistry(
-      new Map([
-        [CloudDeploymentProvider.Vercel, makeDisabledProvider(CloudDeploymentProvider.Vercel)],
-      ])
-    );
-    const tokens = new FakeTokensRepo();
-    const useCase = new ConnectCloudProviderUseCase(registry, tokens);
-    await expect(
-      useCase.execute({ provider: CloudDeploymentProvider.Vercel, token: 'x' })
-    ).rejects.toBeInstanceOf(ProviderNotImplementedError);
   });
 });
 

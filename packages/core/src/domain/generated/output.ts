@@ -2468,10 +2468,6 @@ export enum ApplicationStatus {
 }
 export enum CloudDeploymentProvider {
   CloudflarePages = 'CloudflarePages',
-  Vercel = 'Vercel',
-  Netlify = 'Netlify',
-  AwsAmplify = 'AwsAmplify',
-  GcpCloudRun = 'GcpCloudRun',
 }
 
 /**

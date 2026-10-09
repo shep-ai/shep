@@ -14,10 +14,10 @@ import type { Page, Route } from '@playwright/test';
  *   1. The smart deploy split-button renders in the application top bar.
  *   2. Clicking the chevron opens the DeployPanel popover.
  *   3. The panel shows two rows (GitHub backup + cloud host).
- *   4. The cloud row's "Change provider" button expands the full
- *      provider list including enabled + disabled providers.
- *   5. Disabled stubs show "Coming soon" and enabled-but-disconnected
- *      Cloudflare Pages shows "Not connected".
+ *   4. The cloud row's "Change provider" button expands the provider
+ *      list, which holds only Cloudflare Pages (spec 133 removed the
+ *      "Coming soon" placeholder providers).
+ *   5. Cloudflare Pages without a token shows "Not connected".
  *   6. Clicking Cloudflare Pages opens the ConnectProviderModal dialog.
  */
 
@@ -37,11 +37,7 @@ const STUB_APPLICATION = {
 };
 
 const STUB_PROVIDERS = [
-  { id: 'CloudflarePages', displayName: 'Cloudflare Pages', enabled: true, connected: false },
-  { id: 'Vercel', displayName: 'Vercel', enabled: false, connected: false },
-  { id: 'Netlify', displayName: 'Netlify', enabled: false, connected: false },
-  { id: 'AwsAmplify', displayName: 'AWS Amplify', enabled: false, connected: false },
-  { id: 'GcpCloudRun', displayName: 'Google Cloud Run', enabled: false, connected: false },
+  { id: 'CloudflarePages', displayName: 'Cloudflare Pages', connected: false },
 ];
 
 function fulfillJson(route: Route, body: unknown, status = 200): Promise<void> {
@@ -115,7 +111,7 @@ test.describe('Cloud Deploy — application page smoke (spec 089)', () => {
     await changeProviderButton.click();
   }
 
-  test('deploy button renders and provider list shows every provider', async ({ page }) => {
+  test('deploy button renders and provider list shows only Cloudflare Pages', async ({ page }) => {
     await page.goto(`/application/${APP_ID}`);
 
     // Smart deploy split-button is mounted.
@@ -126,39 +122,16 @@ test.describe('Cloud Deploy — application page smoke (spec 089)', () => {
     await openDeployPanel(page);
     await expandProviderList(page);
 
-    // Every known provider surfaces as a row in the expanded list.
     // Rows are plain <button> elements so we match by accessible name
     // instead of the old Radix menuitem role.
-    await expect(
-      page.getByRole('button', { name: /Cloudflare Pages.*Not connected/i })
-    ).toBeVisible();
-    await expect(page.getByRole('button', { name: /Vercel.*Coming soon/i })).toBeVisible();
-    await expect(page.getByRole('button', { name: /Netlify.*Coming soon/i })).toBeVisible();
-    await expect(page.getByRole('button', { name: /AWS Amplify.*Coming soon/i })).toBeVisible();
-    await expect(
-      page.getByRole('button', { name: /Google Cloud Run.*Coming soon/i })
-    ).toBeVisible();
-  });
-
-  test('stub providers show "Coming soon" and Cloudflare shows "Not connected"', async ({
-    page,
-  }) => {
-    await page.goto(`/application/${APP_ID}`);
-    await openDeployPanel(page);
-    await expandProviderList(page);
-
-    // Cloudflare is enabled but has no stored token.
-    const cloudflareRow = page.getByRole('button', { name: /Cloudflare Pages/i });
-    await expect(cloudflareRow).toContainText(/Not connected/i);
+    const cloudflareRow = page.getByRole('button', { name: /Cloudflare Pages.*Not connected/i });
+    await expect(cloudflareRow).toBeVisible();
     await expect(cloudflareRow).toBeEnabled();
 
-    // Every disabled stub row renders as "Coming soon" and is
-    // not clickable.
-    const comingSoonProviders = [/Vercel/i, /Netlify/i, /AWS Amplify/i, /Google Cloud Run/i];
-    for (const label of comingSoonProviders) {
-      const row = page.getByRole('button', { name: label });
-      await expect(row).toContainText(/Coming soon/i);
-      await expect(row).toBeDisabled();
+    // No placeholder providers and no "Coming soon" badge anywhere.
+    await expect(page.getByText(/Coming soon/i)).toHaveCount(0);
+    for (const removed of [/Vercel/i, /Netlify/i, /AWS Amplify/i, /Google Cloud Run/i]) {
+      await expect(page.getByRole('button', { name: removed })).toHaveCount(0);
     }
   });
 
@@ -167,7 +140,7 @@ test.describe('Cloud Deploy — application page smoke (spec 089)', () => {
     await openDeployPanel(page);
     await expandProviderList(page);
 
-    // Cloudflare is enabled-but-not-connected => clicking should open
+    // Cloudflare has no stored token => clicking should open
     // the ConnectProviderModal (Radix Dialog).
     await page.getByRole('button', { name: /Cloudflare Pages.*Not connected/i }).click();
 

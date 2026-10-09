@@ -41,9 +41,6 @@ export async function POST(_request: NextRequest, { params }: RouteParams): Prom
     ) {
       return NextResponse.json({ error: message, code }, { status: 409 });
     }
-    if (code === 'PROVIDER_NOT_IMPLEMENTED') {
-      return NextResponse.json({ error: message, code }, { status: 501 });
-    }
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

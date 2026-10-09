@@ -22,9 +22,10 @@ export const Cloudflare: Story = {
   },
 };
 
-export const Vercel: Story = {
+export const UpdateToken: Story = {
   args: {
-    provider: CloudDeploymentProvider.Vercel,
+    provider: CloudDeploymentProvider.CloudflarePages,
+    mode: 'update',
     onClose: noopClose,
     onSubmit: noopSubmit,
   },
@@ -40,7 +41,7 @@ export const Closed: Story = {
 
 export const SubmitError: Story = {
   args: {
-    provider: CloudDeploymentProvider.Netlify,
+    provider: CloudDeploymentProvider.CloudflarePages,
     onClose: noopClose,
     onSubmit: async () => {
       throw new Error('Invalid API token');

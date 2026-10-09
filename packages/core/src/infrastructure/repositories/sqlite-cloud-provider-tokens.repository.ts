@@ -10,6 +10,7 @@ import { injectable } from 'tsyringe';
 
 import type { ICloudProviderTokensRepository } from '../../application/ports/output/repositories/cloud-provider-tokens.repository.interface.js';
 import type { CloudDeploymentProvider } from '../../domain/generated/output.js';
+import { parseCloudDeploymentProvider } from '../../domain/shared/cloud-deployment-provider.js';
 import { LocalSecretBox } from '../services/crypto/local-secret-box.js';
 
 interface CloudProviderTokenRow {
@@ -76,6 +77,11 @@ export class SQLiteCloudProviderTokensRepository implements ICloudProviderTokens
     const rows = this.db
       .prepare<[], { provider: string }>('SELECT provider FROM cloud_provider_tokens')
       .all();
-    return rows.map((r) => r.provider as CloudDeploymentProvider);
+    // Skip rows for provider ids that no longer exist (see spec 133) — nothing
+    // can deploy to them, so they must not count as connected.
+    return rows.flatMap((r) => {
+      const provider = parseCloudDeploymentProvider(r.provider);
+      return provider ? [provider] : [];
+    });
   }
 }

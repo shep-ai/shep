@@ -11,13 +11,13 @@
 
 import type {
   Application,
-  CloudDeploymentProvider,
   CloudDeploymentStatus,
   Criticality,
   DataClassification,
   Exposure,
   ScannerProfile,
 } from '../../../../domain/generated/output.js';
+import { parseCloudDeploymentProvider } from '../../../../domain/shared/cloud-deployment-provider.js';
 
 /**
  * Database row type matching the applications table schema.
@@ -133,8 +133,9 @@ export function fromDatabase(row: ApplicationRow): Application {
     setupComplete: row.setup_complete === 1,
     agentSessionId: row.agent_session_id ?? undefined,
     gitRemoteUrl: row.git_remote_url ?? undefined,
-    cloudDeploymentProvider:
-      (row.cloud_deployment_provider as CloudDeploymentProvider | null) ?? undefined,
+    // Unknown ids (e.g. the Vercel/Netlify/AwsAmplify/GcpCloudRun placeholders
+    // removed in spec 133, selectable before then) read back as no selection.
+    cloudDeploymentProvider: parseCloudDeploymentProvider(row.cloud_deployment_provider),
     cloudDeploymentStatus:
       (row.cloud_deployment_status as CloudDeploymentStatus | null) ?? undefined,
     cloudDeploymentId: row.cloud_deployment_id ?? undefined,
