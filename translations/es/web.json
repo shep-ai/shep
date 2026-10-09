@@ -1820,5 +1820,20 @@
       "run": "Ejecutar ahora",
       "running": "Ejecutando…"
     }
+  },
+  "decision": {
+    "answeredQuestions": "Preguntas respondidas",
+    "recommended": "Recomendada",
+    "selectMany": "Selecciona una o más opciones.",
+    "otherPlaceholder": "Escribe tu propia respuesta o déjalo en blanco para usar la opción seleccionada",
+    "composerHint": "Escribe en el cuadro de mensaje para responder con tus palabras.",
+    "restoreText": "Restaurar el texto escrito",
+    "notResumable": "Esta pregunta ya no se puede responder: el agente que la hizo ya no está esperando.",
+    "defaultsAt": "Si nadie responde antes de las {{time}}, el agente continúa con la opción recomendada.",
+    "preview": "Vista previa",
+    "previous": "Anterior",
+    "next": "Siguiente",
+    "submit": "Enviar",
+    "submitting": "Enviando…"
   }
 }

@@ -1820,5 +1820,20 @@
       "run": "Jetzt ausführen",
       "running": "Läuft…"
     }
+  },
+  "decision": {
+    "answeredQuestions": "Beantwortete Fragen",
+    "recommended": "Empfohlen",
+    "selectMany": "Wähle eine oder mehrere Optionen.",
+    "otherPlaceholder": "Gib eine eigene Antwort ein oder lass das Feld leer, um die gewählte Option zu verwenden",
+    "composerHint": "Schreibe ins Nachrichtenfeld, um in eigenen Worten zu antworten.",
+    "restoreText": "Eingegebenen Text wiederherstellen",
+    "notResumable": "Diese Frage kann nicht mehr beantwortet werden – der Agent, der sie gestellt hat, wartet nicht mehr.",
+    "defaultsAt": "Antwortet bis {{time}} niemand, fährt der Agent mit der empfohlenen Option fort.",
+    "preview": "Vorschau",
+    "previous": "Zurück",
+    "next": "Weiter",
+    "submit": "Absenden",
+    "submitting": "Wird gesendet…"
   }
 }
