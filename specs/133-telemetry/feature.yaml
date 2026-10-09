@@ -1,0 +1,36 @@
+feature:
+  id: '133-telemetry'
+  name: 'telemetry'
+  number: 133
+  branch: 'feat/133-telemetry'
+  lifecycle: 'review'
+  createdAt: '2026-10-09T09:33:43Z'
+
+status:
+  phase: 'review'
+  progress:
+    completed: 12
+    total: 12
+    percentage: 100
+  currentTask: null
+  lastUpdated: '2026-10-09T09:33:43Z'
+  lastUpdatedBy: 'shep-kit:new-feature'
+
+validation:
+  lastRun: null
+  gatesPassed: []
+  autoFixesApplied: []
+
+tasks:
+  current: null
+  blocked: []
+  failed: []
+
+checkpoints:
+  - phase: 'feature-created'
+    completedAt: '2026-10-09T09:33:43Z'
+    completedBy: 'shep-kit:new-feature'
+
+errors:
+  current: null
+  history: []

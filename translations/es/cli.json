@@ -1793,6 +1793,61 @@
         "features": "Funcionalidades",
         "featuresValue": "{{inFlight}} en curso, {{waiting}} esperando aprobación"
       }
+    },
+    "telemetry": {
+      "description": "Administrar las métricas de uso (telemetría opcional)",
+      "stateArgument": "on u off",
+      "invalidState": "Se esperaba \"on\" u \"off\", se recibió \"{{value}}\"",
+      "failed": "Error al actualizar la configuración de las métricas de uso",
+      "forcedOff": "Las métricas de uso permanecen desactivadas en este entorno: {{reason}}.",
+      "on": {
+        "description": "Activar las métricas de uso",
+        "done": "Las métricas de uso están activadas."
+      },
+      "off": {
+        "description": "Desactivar las métricas de uso y eliminar los eventos en cola",
+        "done": "Las métricas de uso están desactivadas. Se eliminaron los eventos en cola."
+      },
+      "identity": {
+        "description": "Incluir u omitir tu identidad (usuario y propietarios de GitHub, hash de la cuenta del agente)",
+        "on": "Tu identidad se incluirá en las métricas de uso.",
+        "off": "Tu identidad se omitirá. Las métricas de uso seguirán siendo anónimas."
+      },
+      "contact": {
+        "description": "Permitir o rechazar que el equipo de Shep te contacte en GitHub",
+        "on": "El equipo de Shep puede contactarte en GitHub.",
+        "off": "El equipo de Shep no te contactará."
+      },
+      "status": {
+        "description": "Mostrar si las métricas de uso están activadas y qué hay en cola",
+        "metrics": "Métricas de uso",
+        "on": "activadas",
+        "off": "desactivadas ({{reason}})",
+        "identity": "Identidad",
+        "included": "incluida",
+        "excluded": "omitida",
+        "contact": "Contacto en GitHub",
+        "yes": "permitido",
+        "no": "no permitido",
+        "installId": "ID de instalación",
+        "queued": "Eventos en cola",
+        "destination": "Enviado a",
+        "notConfigured": "ningún destino: no hay ninguna clave de proyecto configurada"
+      },
+      "show": {
+        "description": "Mostrar exactamente lo que se enviará",
+        "header": "Próximo lote para {{destination}} ({{queued}} eventos en cola):",
+        "empty": "No hay nada en cola.",
+        "notConfigured": "No hay ninguna clave de proyecto configurada, así que todavía no se envía nada.",
+        "disabled": "Las métricas de uso están desactivadas; los eventos en cola se eliminarán en el próximo envío."
+      },
+      "reasons": {
+        "ci": "la variable de entorno CI está definida",
+        "do-not-track": "DO_NOT_TRACK está definida",
+        "env-disabled": "SHEP_TELEMETRY_DISABLED está definida",
+        "test": "se está ejecutando en un ejecutor de pruebas",
+        "user-opt-out": "las desactivaste"
+      }
     }
   },
   "ui": {
@@ -1830,7 +1885,23 @@
     "failedDatabase": "Error al inicializar la base de datos",
     "failedSettings": "Error al inicializar la configuración",
     "unexpectedError": "Ocurrió un error inesperado",
-    "unhandledRejection": "Rechazo de promesa no manejado"
+    "unhandledRejection": "Rechazo de promesa no manejado",
+    "telemetryNotice": {
+      "title": "Shep recopila métricas de uso",
+      "intro": "Para saber qué funciones se usan, Shep envía eventos de uso al equipo de Shep (PostHog, región de la UE). Nunca envía prompts, código, rutas de archivos, nombres de repositorios o ramas, títulos de funcionalidades ni mensajes de error.",
+      "fieldsHeading": "Qué se envía:",
+      "fields": {
+        "installId": "un ID de instalación aleatorio",
+        "usage": "qué comandos, páginas y funciones usas, y cómo terminan las ejecuciones",
+        "platform": "la versión de Shep, el sistema operativo y la versión de Node.js",
+        "agentAccountHash": "un hash SHA-256 del ID de tu cuenta de Claude o Codex",
+        "githubUsername": "tu usuario de GitHub (obtenido con gh)",
+        "githubOwners": "los propietarios de GitHub (usuarios u organizaciones) de los repositorios que usas con Shep",
+        "contactConsent": "si el equipo de Shep puede contactarte en GitHub (no, a menos que lo permitas)"
+      },
+      "identityNote": "El hash de la cuenta, el usuario de GitHub y los propietarios te identifican. Para mantener las métricas sin estos datos: shep telemetry identity off",
+      "optOut": "Desactivar las métricas: shep telemetry off (o define DO_NOT_TRACK=1). Ver qué se envía: shep telemetry show"
+    }
   },
   "features": {
     "queued": "En cola",

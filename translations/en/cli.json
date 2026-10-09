@@ -1793,6 +1793,61 @@
         "features": "Features",
         "featuresValue": "{{inFlight}} in flight, {{waiting}} waiting for approval"
       }
+    },
+    "telemetry": {
+      "description": "Manage usage metrics (opt-out telemetry)",
+      "stateArgument": "on or off",
+      "invalidState": "Expected \"on\" or \"off\", got \"{{value}}\"",
+      "failed": "Failed to update usage metrics settings",
+      "forcedOff": "Usage metrics stay off in this environment: {{reason}}.",
+      "on": {
+        "description": "Turn usage metrics on",
+        "done": "Usage metrics are on."
+      },
+      "off": {
+        "description": "Turn usage metrics off and delete queued events",
+        "done": "Usage metrics are off. Queued events were deleted."
+      },
+      "identity": {
+        "description": "Include or leave out your identity (GitHub username and owners, agent account hash)",
+        "on": "Your identity will be included with usage metrics.",
+        "off": "Your identity will be left out. Usage metrics stay anonymous."
+      },
+      "contact": {
+        "description": "Allow or refuse contact from the Shep team on GitHub",
+        "on": "The Shep team may contact you on GitHub.",
+        "off": "The Shep team will not contact you."
+      },
+      "status": {
+        "description": "Show whether usage metrics are on and what is queued",
+        "metrics": "Usage metrics",
+        "on": "on",
+        "off": "off ({{reason}})",
+        "identity": "Identity",
+        "included": "included",
+        "excluded": "left out",
+        "contact": "Contact on GitHub",
+        "yes": "allowed",
+        "no": "not allowed",
+        "installId": "Install id",
+        "queued": "Queued events",
+        "destination": "Sent to",
+        "notConfigured": "nowhere — no project key is configured"
+      },
+      "show": {
+        "description": "Print exactly what will be sent",
+        "header": "Next batch for {{destination}} ({{queued}} events queued):",
+        "empty": "Nothing is queued.",
+        "notConfigured": "No project key is configured, so nothing is sent yet.",
+        "disabled": "Usage metrics are off; queued events are deleted at the next flush."
+      },
+      "reasons": {
+        "ci": "the CI environment variable is set",
+        "do-not-track": "DO_NOT_TRACK is set",
+        "env-disabled": "SHEP_TELEMETRY_DISABLED is set",
+        "test": "running under a test runner",
+        "user-opt-out": "you turned them off"
+      }
     }
   },
   "ui": {
@@ -1830,7 +1885,23 @@
     "failedDatabase": "Failed to initialize database",
     "failedSettings": "Failed to initialize settings",
     "unexpectedError": "An unexpected error occurred",
-    "unhandledRejection": "Unhandled promise rejection"
+    "unhandledRejection": "Unhandled promise rejection",
+    "telemetryNotice": {
+      "title": "Shep collects usage metrics",
+      "intro": "To learn which features are used, Shep sends usage events to the Shep team (PostHog, EU region). It never sends prompts, code, file paths, repository or branch names, feature titles or error messages.",
+      "fieldsHeading": "What is sent:",
+      "fields": {
+        "installId": "a random install id",
+        "usage": "which commands, pages and features you use, and how runs end",
+        "platform": "Shep version, operating system and Node.js version",
+        "agentAccountHash": "a SHA-256 hash of your Claude or Codex account id",
+        "githubUsername": "your GitHub username (read with gh)",
+        "githubOwners": "the GitHub owners (users or organisations) of the repositories you use with Shep",
+        "contactConsent": "whether the Shep team may contact you on GitHub (no, unless you allow it)"
+      },
+      "identityNote": "The account hash, GitHub username and owners identify you. Keep metrics but leave them out: shep telemetry identity off",
+      "optOut": "Turn metrics off: shep telemetry off (or set DO_NOT_TRACK=1). See what is sent: shep telemetry show"
+    }
   },
   "features": {
     "queued": "Queued",

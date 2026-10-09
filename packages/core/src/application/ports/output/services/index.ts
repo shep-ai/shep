@@ -127,3 +127,15 @@ export type {
   WebhookEvent,
   WebhookValidationResult,
 } from './webhook-service.interface.js';
+export type { ITelemetry, TelemetryRecordOptions } from './telemetry.interface.js';
+export type {
+  TelemetryEventPropertyMap,
+  TelemetryProperties,
+  TelemetryPropertyValue,
+} from './telemetry-events.js';
+export type { ITelemetryTransport, TelemetryEnvelope } from './telemetry-transport.interface.js';
+export type {
+  ITelemetryIdentityProvider,
+  TelemetryIdentity,
+} from './telemetry-identity-provider.interface.js';
+export type { ITelemetryRuntime, TelemetryPlatform } from './telemetry-runtime.interface.js';

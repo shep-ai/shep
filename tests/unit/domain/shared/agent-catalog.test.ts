@@ -17,6 +17,7 @@ import {
   getAgentDescriptor,
   getModelsForAgent,
   isSupportedAgentType,
+  listAgentAccountIdSources,
   listAgentDescriptors,
   listSupportedAgentTypes,
 } from '@/domain/shared/agent-catalog.js';
@@ -196,5 +197,33 @@ describe('isAgentOffered (spec 119)', () => {
     expect(isAgentOffered(harness, undefined)).toBe(false);
     expect(isAgentOffered(harness, { queryAwareHarness: true })).toBe(true);
     expect(isAgentOffered(claude, undefined)).toBe(true);
+  });
+});
+
+describe('listAgentAccountIdSources', () => {
+  it('describes where Claude Code and Codex keep their account id', () => {
+    const sources = new Map(listAgentAccountIdSources());
+    expect(sources.get(AgentType.ClaudeCode)).toEqual({
+      configDirEnv: 'CLAUDE_CONFIG_DIR',
+      defaultDirSegments: [],
+      fileName: '.claude.json',
+      jsonPath: ['userID'],
+    });
+    expect(sources.get(AgentType.CodexCli)).toEqual({
+      configDirEnv: 'CODEX_HOME',
+      defaultDirSegments: ['.codex'],
+      fileName: 'auth.json',
+      jsonPath: ['tokens', 'account_id'],
+    });
+  });
+
+  it('lists the preferred agent first', () => {
+    expect(listAgentAccountIdSources(AgentType.CodexCli)[0][0]).toBe(AgentType.CodexCli);
+    expect(listAgentAccountIdSources(AgentType.ClaudeCode)[0][0]).toBe(AgentType.ClaudeCode);
+  });
+
+  it('omits agents without an account id source', () => {
+    const types = listAgentAccountIdSources().map(([type]) => type);
+    expect(types).not.toContain(AgentType.Dev);
   });
 });

@@ -15,22 +15,7 @@ import { buildProjectMemorySection, renderProjectMemoryBlock } from './project-m
 import type { FeatureAgentState } from '../../state.js';
 import { PR_BRANDING, COMMIT_CO_AUTHOR } from './pr-branding.js';
 import type { PrTarget } from '@/application/services/pr-target-resolution.js';
-
-/**
- * Parse a GitHub remote URL (HTTPS or SSH) into owner/repo.
- * Returns null if the URL does not match a known GitHub format.
- */
-export function parseGitHubOwnerRepo(remoteUrl: string): { owner: string; repo: string } | null {
-  // HTTPS: https://github.com/owner/repo.git or https://github.com/owner/repo
-  const httpsMatch = remoteUrl.match(/github\.com\/([^/]+)\/([^/.]+?)(?:\.git)?$/);
-  if (httpsMatch) return { owner: httpsMatch[1], repo: httpsMatch[2] };
-
-  // SSH: git@github.com:owner/repo.git or git@github.com:owner/repo
-  const sshMatch = remoteUrl.match(/github\.com:([^/]+)\/([^/.]+?)(?:\.git)?$/);
-  if (sshMatch) return { owner: sshMatch[1], repo: sshMatch[2] };
-
-  return null;
-}
+import { parseGitHubOwnerRepo } from '@/domain/shared/github-remote.js';
 
 /**
  * Convert a relative evidence path to an absolute GitHub raw URL.

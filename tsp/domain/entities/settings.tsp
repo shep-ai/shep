@@ -863,6 +863,33 @@ model SupervisorConfig {
 }
 
 /**
+ * Telemetry Configuration (spec 133)
+ *
+ * Opt-out usage metrics. On by default; always off under CI, DO_NOT_TRACK,
+ * SHEP_TELEMETRY_DISABLED and tests regardless of these values.
+ */
+@doc("Opt-out usage metrics preferences (spec 133)")
+model TelemetryConfig {
+  @doc("Whether usage metrics are recorded and sent")
+  enabled: boolean = true;
+
+  @doc("Whether identity (agent account hash, GitHub username and owners) is attached")
+  includeIdentity: boolean = true;
+
+  @doc("Whether the Shep team may contact the user on GitHub")
+  contactConsent: boolean = false;
+
+  @doc("Random install identifier (UUID), assigned on first use")
+  installId?: string;
+
+  @doc("When the first-run notice was shown")
+  noticeShownAt?: utcDateTime;
+
+  @doc("When the last install.heartbeat event was recorded")
+  lastHeartbeatAt?: utcDateTime;
+}
+
+/**
  * FAB Layout Configuration
  *
  * Controls the horizontal placement of the two floating action buttons (FABs)
@@ -1285,4 +1312,11 @@ model Settings extends BaseEntity {
    */
   @doc("Query-aware agent harness configuration (optional, defaults applied at runtime)")
   harness?: HarnessConfig;
+
+  /**
+   * Opt-out usage metrics (spec 133).
+   * Optional for backward compatibility — defaults applied at runtime.
+   */
+  @doc("Usage metrics preferences (optional, defaults applied at runtime)")
+  telemetry?: TelemetryConfig;
 }

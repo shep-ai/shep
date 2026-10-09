@@ -6,6 +6,8 @@
  * events via INotificationService.
  */
 
+import { createTelemetryDouble } from '../../../../helpers/telemetry.helper.js';
+import { TelemetryEvent } from '@/domain/generated/output.js';
 import 'reflect-metadata';
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import type { Feature, NotificationEvent } from '@/domain/generated/output.js';
@@ -282,6 +284,47 @@ describe('PrSyncWatcherService', () => {
 
       // Agent run should be marked as completed
       expect(agentRunRepo.updateStatus).toHaveBeenCalledWith('run-1', AgentRunStatus.completed);
+    });
+
+    it('records pr.merged keyed by feature when it sees the merge (spec 133)', async () => {
+      const telemetry = createTelemetryDouble();
+      const tracked = new PrSyncWatcherService(
+        featureRepo,
+        agentRunRepo,
+        gitPrService,
+        notificationService,
+        undefined,
+        null,
+        null,
+        undefined,
+        telemetry
+      );
+      const feature = createMockFeature({
+        id: 'feat-1',
+        repositoryPath: '/repo/path',
+        branch: 'feat/test',
+        pr: { url: 'https://github.com/org/repo/pull/1', number: 1, status: PrStatus.Open },
+      });
+      vi.mocked(featureRepo.list).mockResolvedValue([feature]);
+      vi.mocked(gitPrService.listPrStatuses).mockResolvedValue([
+        {
+          number: 1,
+          state: PrStatus.Merged,
+          url: 'https://github.com/org/repo/pull/1',
+          headRefName: 'feat/test',
+        },
+      ]);
+      vi.mocked(gitPrService.getCiStatus).mockResolvedValue({ status: 'pending' });
+
+      tracked.start();
+      await vi.advanceTimersByTimeAsync(0);
+      tracked.stop();
+
+      expect(telemetry.record).toHaveBeenCalledWith(
+        TelemetryEvent.PrMerged,
+        { buildMode: feature.buildMode, viaPullRequest: true },
+        { onceKey: 'pr.merged:feat-1' }
+      );
     });
 
     it('should skip duplicate Maintain transition when merge node already handled it (#354)', async () => {

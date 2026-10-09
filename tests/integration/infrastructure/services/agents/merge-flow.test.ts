@@ -150,6 +150,7 @@ describe('Merge Flow (Graph-level)', () => {
         featureRepository: featureRepo,
         gitPrService: createMockGitPrService(),
         cleanupFeatureWorktreeUseCase: { execute: vi.fn().mockResolvedValue(undefined) } as any,
+        telemetry: { record: vi.fn() },
       },
     };
     return { deps, getDiffSummary, featureRepo };

@@ -208,6 +208,7 @@ function baseDeps(overrides?: Partial<MergeNodeDeps>): MergeNodeDeps {
     localMergeSquash: vi.fn().mockResolvedValue(undefined),
     gitPrService: createMockGitPrService(),
     cleanupFeatureWorktreeUseCase: { execute: vi.fn().mockResolvedValue(undefined) } as any,
+    telemetry: { record: vi.fn() },
     ...overrides,
   };
 }

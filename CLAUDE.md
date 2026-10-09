@@ -117,7 +117,12 @@ See [docs/architecture/repository-pattern.md](./docs/architecture/repository-pat
 
 ## Data Storage
 
-Everything Shep knows lives locally. There is no Shep server.
+Everything Shep knows lives locally. There is no Shep server; the only outbound data Shep
+itself produces is opt-out **usage metrics** (spec 133): every process writes content-free
+events to the `telemetry_outbox` table and only the daemon / `shep ui` sends them to PostHog
+(EU, `/batch/`). Record events through the `ITelemetry` port with a typed property map
+(`TelemetryEventPropertyMap`) — never prompts, code, paths, repo/branch names, titles, ids or
+error messages. See [docs/telemetry.md](./docs/telemetry.md).
 
 | Path | What |
 | ---- | ---- |
@@ -133,6 +138,8 @@ turns on verbose CLI/deployment logging. The web daemon's port comes from `shep 
 `shep ui --port`, not an env var — `SHEP_WEB_PORT` is *written* by the server and read only by
 the middleware's Host-header check. `SHEP_BIND_HOST`, `SHEP_ALLOW_PUBLIC_BIND`,
 `SHEP_ALLOWED_HOSTS` and `SHEP_WEB_REQUIRE_TOKEN` gate non-localhost access.
+`SHEP_TELEMETRY_DISABLED=1`, `DO_NOT_TRACK=1` and `CI` force usage metrics off;
+`SHEP_POSTHOG_KEY` / `SHEP_POSTHOG_HOST` override the PostHog project key and host.
 
 - Engine: `better-sqlite3`, opened as a process-wide singleton in
   `packages/core/src/infrastructure/persistence/sqlite/connection.ts`.

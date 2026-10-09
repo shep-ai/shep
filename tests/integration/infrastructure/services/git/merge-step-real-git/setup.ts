@@ -282,6 +282,7 @@ export function buildDeps(opts: BuildDepsOptions = {}): BuiltDeps {
       gitPrService.localMergeSquash(cwd, featureBranch, baseBranch, commitMessage, hasRemote),
     gitPrService,
     cleanupFeatureWorktreeUseCase: { execute: vi.fn().mockResolvedValue(undefined) } as any,
+    telemetry: { record: vi.fn() },
   };
 
   return { deps, featureRepository, executor };

@@ -26,7 +26,9 @@ import type {
   SkillInjectionConfig,
   WhatsAppConfig,
   SecurityConfig,
+  TelemetryConfig,
 } from '../generated/output';
+import { DEFAULT_TELEMETRY_PREFERENCES } from '../shared/telemetry/telemetry-state';
 import {
   AgentType,
   AgentAuthMethod,
@@ -257,6 +259,11 @@ export function createDefaultSettings(): Settings {
     mode: SecurityMode.Advisory,
   };
 
+  const telemetry: TelemetryConfig = {
+    ...DEFAULT_TELEMETRY_PREFERENCES,
+    installId: globalThis.crypto.randomUUID(),
+  };
+
   return {
     id: globalThis.crypto.randomUUID(),
     models,
@@ -270,6 +277,7 @@ export function createDefaultSettings(): Settings {
     whatsapp,
     defaultHomePage: DefaultHomePage.ControlCenter,
     security,
+    telemetry,
     onboardingComplete: false,
     createdAt: now,
     updatedAt: now,

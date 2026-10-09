@@ -1,0 +1,150 @@
+# Research (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: telemetry
+summary: Technical decisions for 133 — outbox, delivery, identity, emit points and surfaces.
+
+relatedFeatures: []
+technologies:
+  - TypeScript
+  - TypeSpec
+  - SQLite (better-sqlite3)
+  - PostHog capture API
+relatedLinks:
+  - title: PostHog batch capture
+    url: https://posthog.com/docs/api/capture
+  - title: T3 Code AnalyticsService (delivery reference)
+    url: https://github.com/pingdotgg/t3code/blob/main/apps/server/src/telemetry/AnalyticsService.ts
+
+decisions:
+  - title: Outbox in SQLite, sender only in the daemon
+    chosen: Every process inserts into telemetry_outbox; the daemon's TelemetryFlushWatcher sends due rows every 60s
+    rejected:
+      - 'In-memory buffer per process (T3 style): CLI invocations and workers exit before a flush, and three processes would each need a sender'
+      - 'Send from every process: multiplies network calls and retry state across short-lived processes'
+    rationale: >
+      Shep is multi-process and already shares one SQLite file. The outbox doubles as the
+      transparency surface (`shep telemetry show` reads it), and a daemon that is not running
+      simply leaves events waiting.
+
+  - title: Retry state per row
+    chosen: attempts and next_attempt_at columns; a failed batch gets attempts+1 and a jittered delay (ceiling doubles from 2s to 5min, random point in its upper half); rows reaching 5 attempts are deleted
+    rejected:
+      - 'One in-memory failed batch (T3): lost when the daemon restarts, and a restart loop would resend forever'
+    rationale: >
+      Persisted retry state survives daemon restarts, and the drop rule holds across them.
+
+  - title: Dedupe with a once-key claimed in the same statement
+    chosen: ITelemetry.record accepts an optional onceKey; the outbox stores its SHA-256 in telemetry_once with INSERT OR IGNORE and only enqueues when the claim succeeds, in one transaction
+    rejected:
+      - 'Emit pr.merged from one place only: merges are observed by the merge node, the PR sync watcher (two paths) and the GitHub webhook, and any one can be the first'
+      - 'Deterministic uuid and rely on PostHog dedup: PostHog dedups only identical (uuid, timestamp) pairs'
+    rationale: >
+      LESSONS: a read that authorises a write must live in the same statement. The key holds a
+      local feature id but is hashed and never sent.
+
+  - title: Event names and property shapes
+    chosen: TelemetryEvent TypeSpec enum; an application-layer TelemetryEventProperties map types each event's properties (enums, booleans, counts, buckets only)
+    rejected:
+      - 'Free-form Record<string, unknown> properties: nothing would stop a title or path from slipping in'
+    rationale: >
+      The compiler then refuses a content property at every emit site, which is the content
+      boundary made structural.
+
+  - title: Settings own the preferences
+    chosen: TelemetryConfig on Settings (enabled=true, includeIdentity=true, contactConsent=false, installId, noticeShownAt, lastHeartbeatAt), persisted as telemetry_* columns mapped in a dedicated settings-telemetry mapper module
+    rejected:
+      - 'A separate telemetry_state table: a second settings store for what the Settings page edits'
+    rationale: >
+      Follows the four-touch settings checklist; the mapper code goes in its own module because
+      settings.mapper.ts is already 957 lines.
+
+  - title: Enabled-state resolution is pure domain logic
+    chosen: resolveTelemetryState(env, config) returns { enabled, reason } with reasons ci, do-not-track, env-disabled, test, user-opt-out; env read through an ITelemetryRuntime port
+    rejected:
+      - 'Reading process.env inside use cases: untestable without patching globals'
+    rationale: >
+      CI (any non-empty CI except "false"/"0"), DO_NOT_TRACK=1|true, SHEP_TELEMETRY_DISABLED=1|true,
+      and VITEST / NODE_ENV=test all force off, ahead of the user's choice.
+
+  - title: Opt-out takes effect everywhere within one flush
+    chosen: The flush re-reads settings from the repository and env before sending; when disabled it clears the outbox instead of sending. Turning telemetry off through the use case also clears the outbox immediately
+    rejected:
+      - 'Trust each process’s cached settings: a CLI `telemetry off` would not reach the running daemon'
+    rationale: >
+      Long-lived processes may still enqueue for a minute after an opt-out elsewhere, but nothing
+      queued is ever sent once the flush sees the opt-out.
+
+  - title: Identity applied at send time
+    chosen: The daemon attaches identity when building envelopes, so the identity toggle covers events already queued; distinct_id is always the installId
+    rejected:
+      - 'Stamp identity at record time: every CLI invocation would run gh and read agent files, and a later identity opt-out would not cover queued events'
+    rationale: >
+      Identity lookups run once per daemon, cached for 24h.
+
+  - title: Agent account id source on the catalog
+    chosen: AgentDescriptor gains an optional accountIdSource { configDirEnv?, defaultDir, fileName, jsonPath }; Claude = CLAUDE_CONFIG_DIR or ~ / .claude.json / userID, Codex = CODEX_HOME or ~/.codex / auth.json / tokens.account_id. An infrastructure reader walks the catalog, preferring the configured agent
+    rejected:
+      - 'if (agentType === ClaudeCode) in core: forbidden by the agent-resolution rule'
+    rationale: >
+      A new agent opts in by adding data to its catalog entry. The value is SHA-256 hashed as
+      "<agentType>:<id>" and never sent raw.
+
+  - title: GitHub username and owners
+    chosen: Username via the existing IGitHubRepositoryService.getAuthenticatedUser (gh api user); owners parsed from Repository.remoteUrl with parseGitHubOwnerRepo moved to domain/shared/github-remote.ts
+    rejected:
+      - 'A new gh wrapper: the port already exists'
+    rationale: >
+      Owners only — repository names are never sent. The parser moves to domain because it is pure
+      and now has two consumers.
+
+  - title: PostHog wire format
+    chosen: POST {host}/batch/ with { api_key, batch[{ uuid, event, distinct_id, timestamp, properties }] }, host https://eu.i.posthog.com (SHEP_POSTHOG_HOST overrides), key from SHEP_POSTHOG_KEY or the build-time BUILT_IN_POSTHOG_KEY constant (empty); $geoip_disable=true always; $process_person_profile=false unless identity is on, then $set carries github_username
+    rejected:
+      - 'posthog-node SDK: a dependency for one POST, and its own buffering duplicates the outbox'
+    rationale: >
+      With no key the transport reports unconfigured and the flush leaves events queued (capped),
+      so a later key still delivers recent history and nothing leaves the machine before then.
+
+  - title: Web route template from Next params
+    chosen: A client tracker in AppShell replaces every path segment equal to a value of useParams() with [param] and records web.area.viewed with the template and area (first segment)
+    rejected:
+      - 'Heuristics (looks like a uuid): slugs such as feature or repo names would leak'
+    rationale: >
+      Dynamic segments are exactly the ids; static segments are route names.
+
+  - title: Unhandled error source hash
+    chosen: Domain topStackFrame(stack) keeps the first frame's function and file basename with line; infrastructure hashes it (SHA-256, 16 hex chars); the event carries errorClass (constructor name) and sourceHash only
+    rejected:
+      - 'Send the message or stack: both can contain paths and user content'
+    rationale: >
+      Enough to group crashes per version without content.
+
+openQuestions: []
+
+content: |
+  ## Findings
+
+  - Daemon watchers follow one shape (`auto-archive-watcher.service.ts`): a class with
+    `start()/stop()/isRunning()`, `setInterval`, and module-level `initialize*/get*/reset*`
+    functions; `_serve.command.ts` starts and stops them.
+  - Migrations are discovered by `readdirSync`; the highest is 165. `addColumn()` keeps ALTERs
+    idempotent.
+  - `settings.mapper.ts` (957 lines) and `settings-page-client.tsx` (2309 lines) already exceed the
+    file-length rule. New telemetry code goes in separate modules beside them instead of growing
+    them; a full split of those files is out of scope and flagged in the PR.
+  - `IGitHubRepositoryService.getAuthenticatedUser()` already wraps `gh api user --jq .login`.
+  - `parseGitHubOwnerRepo` lives in a prompt module under infrastructure; it moves to domain.
+  - Merge is observed in `merge.node.ts`, both paths of `pr-sync-watcher.service.ts`, and
+    `github-webhook.service.ts` — hence the once-key.
+  - Feature runs reach a terminal status in `feature-agent-worker.ts` via `finishRun`.
+  - CLI and the feature worker have `uncaughtException` handlers; the daemon has none.
+
+  ## Content Boundary Checklist
+
+  | Never sent | How it is prevented |
+  | ---------- | ------------------- |
+  | Prompts, code, titles | Typed per-event property map has no string fields for them |
+  | Paths, repo and branch names | Owners only; route templates replace dynamic params |
+  | Error messages | errorClass + hashed top frame only |
+  | Local ids | onceKey is hashed and stays local |

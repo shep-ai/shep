@@ -28,6 +28,14 @@ import { checkToolStatus } from '@/app/actions/check-tool-status';
 import type { ToolStatusResult, ToolStatusEntry } from '@/app/actions/check-tool-status';
 import { WelcomeAgentSetup } from './welcome-agent-setup';
 import { NewProjectDialog } from './new-project-dialog';
+import { TelemetryNoticeCard } from '../telemetry/telemetry-notice-card';
+import { recordOnboardingStep } from '@/app/actions/telemetry';
+import { OnboardingStep } from '@shepai/core/domain/generated/output';
+
+/** Onboarding funnel step (spec 133). Best effort: never blocks the flow. */
+function reportStep(step: OnboardingStep, completed: boolean): void {
+  recordOnboardingStep(step, completed).catch(() => undefined);
+}
 
 export interface ControlCenterOnboardingProps {
   onRepositorySelect?: (path: string) => void;
@@ -61,6 +69,11 @@ export function ControlCenterOnboarding({
       .then((done) => setAgentReady(done))
       .catch(() => setAgentReady(false));
   }, []);
+
+  useEffect(() => {
+    if (agentReady === false) reportStep(OnboardingStep.AgentSetup, false);
+    if (agentReady) reportStep(OnboardingStep.AddProject, false);
+  }, [agentReady]);
 
   useEffect(() => {
     if (!agentReady) return;
@@ -99,6 +112,7 @@ export function ControlCenterOnboarding({
     try {
       const path = await pickFolder();
       if (path) {
+        reportStep(OnboardingStep.ProjectAdded, true);
         onRepositorySelect?.(path);
       }
     } catch {
@@ -110,6 +124,7 @@ export function ControlCenterOnboarding({
 
   function handleReactPickerSelect(path: string | null) {
     if (path) {
+      reportStep(OnboardingStep.ProjectAdded, true);
       onRepositorySelect?.(path);
     }
     setShowReactPicker(false);
@@ -122,6 +137,7 @@ export function ControlCenterOnboarding({
   }, []);
 
   const handleAgentSetupComplete = useCallback(() => {
+    reportStep(OnboardingStep.AgentSetup, true);
     setAgentReady(true);
   }, []);
 
@@ -224,7 +240,10 @@ export function ControlCenterOnboarding({
             <button
               type="button"
               data-testid="empty-state-start-from-prompt"
-              onClick={onStartFromPrompt}
+              onClick={() => {
+                reportStep(OnboardingStep.StartFromPrompt, true);
+                onStartFromPrompt?.();
+              }}
               disabled={loading}
               className="border-foreground/15 text-foreground/80 hover:bg-foreground/5 hover:border-foreground/25 mt-3 flex w-full cursor-pointer items-center justify-center gap-2.5 rounded-xl border px-6 py-3.5 text-sm font-medium transition-all duration-200 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
             >
@@ -307,6 +326,9 @@ export function ControlCenterOnboarding({
         </div>
       ) : null}
 
+      {/* Usage metrics notice with one-click turn off (spec 133). */}
+      <TelemetryNoticeCard className="mx-auto mt-8 max-w-md" />
+
       <ReactFileManagerDialog
         open={showReactPicker}
         onOpenChange={(open) => {
@@ -317,7 +339,10 @@ export function ControlCenterOnboarding({
       <NewProjectDialog
         open={newProjectOpen}
         onOpenChange={setNewProjectOpen}
-        onCreated={(path) => onRepositorySelect?.(path)}
+        onCreated={(path) => {
+          reportStep(OnboardingStep.ProjectAdded, true);
+          onRepositorySelect?.(path);
+        }}
       />
     </div>
   );

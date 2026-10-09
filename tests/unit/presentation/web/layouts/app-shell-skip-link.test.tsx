@@ -12,6 +12,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi } from 'vitest';
 
 vi.mock('next/navigation', () => ({
+  useParams: () => ({}),
   usePathname: () => '/control-center',
   useRouter: () => ({ push: vi.fn(), refresh: vi.fn() }),
 }));

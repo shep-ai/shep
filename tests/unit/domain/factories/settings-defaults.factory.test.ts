@@ -534,6 +534,26 @@ describe('createDefaultSettings', () => {
     });
   });
 
+  describe('TelemetryConfig defaults', () => {
+    it('turns usage metrics and identity on, contact consent off', () => {
+      const settings = createDefaultSettings();
+      expect(settings.telemetry).toMatchObject({
+        enabled: true,
+        includeIdentity: true,
+        contactConsent: false,
+      });
+    });
+
+    it('assigns a random install id and no notice or heartbeat timestamps', () => {
+      const first = createDefaultSettings().telemetry;
+      const second = createDefaultSettings().telemetry;
+      expect(first?.installId).toMatch(/^[0-9a-f-]{36}$/);
+      expect(first?.installId).not.toBe(second?.installId);
+      expect(first?.noticeShownAt).toBeUndefined();
+      expect(first?.lastHeartbeatAt).toBeUndefined();
+    });
+  });
+
   describe('complete default object', () => {
     it('should return complete Settings object matching all TypeSpec defaults', () => {
       // Act

@@ -51,3 +51,8 @@ export type { IWorkflowExecutionRepository } from './workflow-execution-reposito
 export type { IPluginRepository } from './plugin-repository.interface.js';
 export type { IDevServerRunPlanRepository } from './dev-server-run-plan-repository.interface.js';
 export type { IFleetRepository, FleetTriageFilters } from './fleet-repository.interface.js';
+export type {
+  ITelemetryOutboxRepository,
+  TelemetryOutboxEntry,
+  EnqueueTelemetryOptions,
+} from './telemetry-outbox.repository.interface.js';

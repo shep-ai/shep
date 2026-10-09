@@ -23,7 +23,8 @@
       "security": "Security",
       "messaging": "Messaging",
       "mcp": "MCP",
-      "harness": "Harness לסוכן"
+      "harness": "Harness לסוכן",
+      "telemetry": "מדדי שימוש"
     },
     "language": {
       "title": "שפה",
@@ -1819,6 +1820,53 @@
       "save": "שמירה",
       "run": "הרצה עכשיו",
       "running": "רץ…"
+    }
+  },
+  "telemetry": {
+    "fieldsHeading": "מה נשלח",
+    "fields": {
+      "installId": "מזהה התקנה אקראי",
+      "usage": "באילו פקודות, דפים ותכונות אתה משתמש, ואיך הרצות מסתיימות",
+      "platform": "גרסת Shep, מערכת ההפעלה וגרסת Node.js",
+      "agentAccountHash": "גיבוב SHA-256 של מזהה חשבון Claude או Codex שלך",
+      "githubUsername": "שם המשתמש שלך ב-GitHub (נקרא באמצעות gh)",
+      "githubOwners": "הבעלים ב-GitHub (משתמשים או ארגונים) של המאגרים שבהם אתה משתמש עם Shep",
+      "contactConsent": "האם צוות Shep רשאי ליצור איתך קשר ב-GitHub"
+    },
+    "neverSent": "לעולם לא נשלחים: פרומפטים, קוד, נתיבי קבצים, שמות מאגרים או ענפים, כותרות פיצ'רים או הודעות שגיאה.",
+    "reasons": {
+      "ci": "משתנה הסביבה CI מוגדר",
+      "do-not-track": "DO_NOT_TRACK מוגדר",
+      "env-disabled": "SHEP_TELEMETRY_DISABLED מוגדר",
+      "test": "רץ תחת מריץ בדיקות",
+      "user-opt-out": "כיבית אותם"
+    },
+    "notice": {
+      "title": "Shep אוסף מדדי שימוש",
+      "intro": "כדי לדעת באילו תכונות משתמשים, Shep שולח אירועי שימוש לצוות Shep (PostHog, אזור האיחוד האירופי). אפשר לכבות זאת בכל עת.",
+      "turnOff": "כיבוי",
+      "turnedOff": "מדדי השימוש כבויים. האירועים בתור נמחקו.",
+      "dismiss": "הבנתי",
+      "failed": "לא ניתן לעדכן את מדדי השימוש. נסה שוב מההגדרות."
+    },
+    "controls": {
+      "enabled": "שליחת מדדי שימוש",
+      "enabledDescription": "כיבוי האפשרות מוחק גם אירועים שעדיין לא נשלחו.",
+      "identity": "לכלול את הזהות שלי (שם משתמש ב-GitHub, ארגון, גיבוב חשבון)",
+      "identityDescription": "כבה כדי להישאר אנונימי ולהמשיך לשלוח מדדי שימוש.",
+      "contact": "צוות Shep רשאי ליצור איתי קשר ב-GitHub",
+      "contactDescription": "כבוי, אלא אם תפעיל אותו."
+    },
+    "settings": {
+      "title": "מדדי שימוש",
+      "description": "עזור להחליט מה לבנות בהמשך על ידי שליחת אירועי שימוש לצוות Shep.",
+      "forcedOff": "כבוי בסביבה זו: {{reason}}.",
+      "queued": "{{count}} אירועים ממתינים לשליחה",
+      "destination": "נשלח אל {{destination}}",
+      "notConfigured": "לא הוגדר מפתח פרויקט בבנייה זו, לכן דבר אינו נשלח.",
+      "hint": "הרץ `shep telemetry show` כדי לראות בדיוק מה יישלח.",
+      "loading": "טוען את הגדרות מדדי השימוש…",
+      "loadFailed": "לא ניתן לטעון את הגדרות מדדי השימוש."
     }
   }
 }

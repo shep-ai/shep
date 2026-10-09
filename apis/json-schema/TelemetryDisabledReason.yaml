@@ -1,0 +1,10 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: TelemetryDisabledReason.yaml
+type: string
+enum:
+  - ci
+  - do-not-track
+  - env-disabled
+  - test
+  - user-opt-out
+description: Reason telemetry is disabled

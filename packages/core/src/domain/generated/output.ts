@@ -880,6 +880,36 @@ export type SupervisorConfig = {
 };
 
 /**
+ * Opt-out usage metrics preferences (spec 133)
+ */
+export type TelemetryConfig = {
+  /**
+   * Whether usage metrics are recorded and sent
+   */
+  enabled: boolean;
+  /**
+   * Whether identity (agent account hash, GitHub username and owners) is attached
+   */
+  includeIdentity: boolean;
+  /**
+   * Whether the Shep team may contact the user on GitHub
+   */
+  contactConsent: boolean;
+  /**
+   * Random install identifier (UUID), assigned on first use
+   */
+  installId?: string;
+  /**
+   * When the first-run notice was shown
+   */
+  noticeShownAt?: any;
+  /**
+   * When the last install.heartbeat event was recorded
+   */
+  lastHeartbeatAt?: any;
+};
+
+/**
  * FAB (floating action button) layout configuration
  */
 export type FabLayoutConfig = {
@@ -1314,6 +1344,10 @@ export type Settings = BaseEntity & {
    * Query-aware agent harness configuration (optional, defaults applied at runtime)
    */
   harness?: HarnessConfig;
+  /**
+   * Usage metrics preferences (optional, defaults applied at runtime)
+   */
+  telemetry?: TelemetryConfig;
 };
 export enum HarnessEvalRunStatus {
   Pending = 'pending',
@@ -9251,6 +9285,37 @@ export enum ApplicationStarter {
 export enum WhatsAppThreadTargetKind {
   Feature = 'feature',
   Application = 'application',
+}
+export enum TelemetryEvent {
+  InstallHeartbeat = 'install.heartbeat',
+  CliCommand = 'cli.command',
+  WebAreaViewed = 'web.area.viewed',
+  FeatureCreated = 'feature.created',
+  FeatureRunFinished = 'feature.run.finished',
+  PrOpened = 'pr.opened',
+  PrMerged = 'pr.merged',
+  DecisionAnswered = 'decision.answered',
+  OnboardingStep = 'onboarding.step',
+  ErrorUnhandled = 'error.unhandled',
+}
+export enum TelemetryDisabledReason {
+  Ci = 'ci',
+  DoNotTrack = 'do-not-track',
+  EnvDisabled = 'env-disabled',
+  Test = 'test',
+  UserOptOut = 'user-opt-out',
+}
+export enum TelemetryProcessKind {
+  Cli = 'cli',
+  Daemon = 'daemon',
+  Worker = 'worker',
+}
+export enum OnboardingStep {
+  AgentSetup = 'agent-setup',
+  AddProject = 'add-project',
+  ProjectAdded = 'project-added',
+  StartFromPrompt = 'start-from-prompt',
+  TelemetryNotice = 'telemetry-notice',
 }
 export enum SpaceResolutionSource {
   Assignment = 'Assignment',
