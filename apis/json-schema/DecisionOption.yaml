@@ -1,0 +1,24 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: DecisionOption.yaml
+type: object
+properties:
+  id:
+    type: string
+    description: Stable identifier, unique within its question
+  label:
+    type: string
+    description: Short label shown in bold
+  description:
+    type: string
+    description: One-line explanation shown under the label
+  preview:
+    type: string
+    description: Optional preformatted preview (code, mockup, diff) shown when the option is focused
+  recommended:
+    type: boolean
+    description: True for the option the asker recommends; it is preselected and used when a deadline passes
+required:
+  - id
+  - label
+  - description
+description: A selectable option within a decision question

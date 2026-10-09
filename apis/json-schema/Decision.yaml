@@ -1,0 +1,31 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: Decision.yaml
+type: object
+properties:
+  id:
+    type: string
+    description: Stable identifier
+  kind:
+    $ref: DecisionKind.yaml
+    description: Which producer raised the decision
+  title:
+    type: string
+    description: Optional one-line title shown above the questions
+  questions:
+    type: array
+    items:
+      $ref: DecisionQuestion.yaml
+    description: Questions answered together (paged n/N)
+  responseMode:
+    $ref: DecisionResponseMode.yaml
+    description: How the answer reaches the asker
+  defaultAfter:
+    type: string
+    format: date-time
+    description: When set, the recommended options are applied if nobody answers before this time
+required:
+  - id
+  - kind
+  - questions
+  - responseMode
+description: A request for a person to choose, made of one or more questions

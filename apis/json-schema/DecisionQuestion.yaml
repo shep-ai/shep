@@ -1,0 +1,32 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: DecisionQuestion.yaml
+type: object
+properties:
+  id:
+    type: string
+    description: Stable identifier, unique within its decision
+  header:
+    type: string
+    description: Short chip label (e.g. 'Auth method')
+  question:
+    type: string
+    description: The full question text
+  options:
+    type: array
+    items:
+      $ref: DecisionOption.yaml
+    description: Options in display order (1–9 are keyboard shortcuts)
+  multiSelect:
+    type: boolean
+    description: Whether more than one option may be selected
+  allowCustom:
+    type: boolean
+    description: Whether a typed answer is accepted instead of (or with) an option
+required:
+  - id
+  - header
+  - question
+  - options
+  - multiSelect
+  - allowCustom
+description: One question within a decision

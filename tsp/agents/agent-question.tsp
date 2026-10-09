@@ -9,6 +9,7 @@
  * @see specs/093-agent-collaboration-supervision/research.yaml
  */
 import "../common/base.tsp";
+import "./decision.tsp";
 
 /**
  * Agent Question Kind
@@ -110,6 +111,8 @@ enum AgentQuestionStatus {
  * | answeredBy     | string                 | No       | Actor namespace of the answerer                   |
  * | answeredAt     | utcDateTime            | No       | When the answer was recorded                      |
  * | expiresAt      | utcDateTime            | No       | Auto-resolution deadline (optional)               |
+ * | decision       | Decision               | No       | Structured questions and options (spec 134)       |
+ * | responses      | DecisionResponse[]     | No       | Structured answer to `decision` (spec 134)        |
  * | createdAt      | utcDateTime            | Yes      | From BaseEntity                                   |
  * | updatedAt      | utcDateTime            | Yes      | From BaseEntity                                   |
  */
@@ -156,4 +159,10 @@ model AgentQuestion extends BaseEntity {
 
   @doc("Auto-resolution deadline (optional, used with defaultAnswer)")
   expiresAt?: utcDateTime;
+
+  @doc("Structured questions and options; when set, it is what every surface renders (spec 134)")
+  decision?: Decision;
+
+  @doc("Structured answer to `decision`, set when status becomes answered or expired (spec 134)")
+  responses?: DecisionResponse[];
 }

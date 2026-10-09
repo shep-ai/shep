@@ -8,6 +8,7 @@
 import { injectable } from 'tsyringe';
 import type {
   AgentQuestionListFilters,
+  AgentQuestionSettlementFields,
   IAgentQuestionRepository,
 } from '@/application/ports/output/repositories/agent-question-repository.interface.js';
 import type { AgentQuestion, AgentQuestionStatus } from '@/domain/generated/output.js';
@@ -68,7 +69,7 @@ export class InMemoryAgentQuestionRepository implements IAgentQuestionRepository
     appId: string,
     id: string,
     status: AgentQuestionStatus,
-    fields: Partial<Pick<AgentQuestion, 'answer' | 'answeredBy' | 'answeredAt'>> = {}
+    fields: AgentQuestionSettlementFields = {}
   ): Promise<void> {
     const row = this.questions.get(id);
     if (!row || row.appId !== appId) return;
@@ -79,6 +80,7 @@ export class InMemoryAgentQuestionRepository implements IAgentQuestionRepository
       ...(fields.answer !== undefined ? { answer: fields.answer } : {}),
       ...(fields.answeredBy !== undefined ? { answeredBy: fields.answeredBy } : {}),
       ...(fields.answeredAt !== undefined ? { answeredAt: fields.answeredAt } : {}),
+      ...(fields.responses !== undefined ? { responses: fields.responses } : {}),
       updatedAt: now,
     });
   }
@@ -87,7 +89,7 @@ export class InMemoryAgentQuestionRepository implements IAgentQuestionRepository
     appId: string,
     id: string,
     status: AgentQuestionStatus,
-    fields: Partial<Pick<AgentQuestion, 'answer' | 'answeredBy' | 'answeredAt'>> = {}
+    fields: AgentQuestionSettlementFields = {}
   ): Promise<boolean> {
     // Check and write with no await between them, like the SQL WHERE clause.
     const row = this.questions.get(id);
@@ -96,6 +98,10 @@ export class InMemoryAgentQuestionRepository implements IAgentQuestionRepository
     }
     await this.updateStatus(appId, id, status, fields);
     return true;
+  }
+
+  async listAppIds(): Promise<string[]> {
+    return Array.from(new Set(Array.from(this.questions.values()).map((q) => q.appId ?? '')));
   }
 
   async findExpired(cutoff: Date, limit?: number): Promise<AgentQuestion[]> {

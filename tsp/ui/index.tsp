@@ -8,3 +8,4 @@
  * @module ui
  */
 import "./prd-questionnaire.tsp";
+import "./inline-block.tsp";
