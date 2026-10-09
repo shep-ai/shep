@@ -38,6 +38,7 @@ import {
   NotificationSeverity,
   type AgentQuestion,
 } from '../../../domain/generated/output.js';
+import { recommendedResponses, summariseResponses } from '../../../domain/shared/decision.js';
 
 export interface AskAgentQuestionResult {
   /** True when the collaboration feature flag is on and the question was persisted. */
@@ -73,8 +74,11 @@ export class AskAgentQuestionUseCase {
     if (!flagOn) return { enabled: false };
 
     const now = new Date();
+    const id = randomUUID();
+    const decision = input.decision ? { ...input.decision, id } : undefined;
+    const recommended = decision ? recommendedResponses(decision) : undefined;
     const question: AgentQuestion = {
-      id: randomUUID(),
+      id,
       appId: input.appId,
       featureId: input.featureId,
       agentRunId: input.agentRunId,
@@ -82,13 +86,17 @@ export class AskAgentQuestionUseCase {
       prompt: input.prompt,
       optionsJson:
         input.options && input.options.length > 0 ? JSON.stringify(input.options) : undefined,
-      defaultAnswer: input.defaultAnswer,
+      defaultAnswer:
+        input.defaultAnswer ??
+        (decision && recommended ? summariseResponses(decision, recommended) : undefined),
       answerer: input.answerer,
       status: AgentQuestionStatus.pending,
       answer: undefined,
       answeredBy: undefined,
       answeredAt: undefined,
-      expiresAt: input.expiresAt,
+      expiresAt: input.expiresAt ?? decision?.defaultAfter,
+      decision,
+      responses: undefined,
       createdAt: now,
       updatedAt: now,
     };
@@ -98,8 +106,8 @@ export class AskAgentQuestionUseCase {
     const result: AskAgentQuestionResult = { enabled: true, question };
     if (input.kind === AgentQuestionKind.blocking) {
       const timeoutMs =
-        input.expiresAt instanceof Date
-          ? Math.max(input.expiresAt.getTime() - now.getTime(), 1)
+        question.expiresAt instanceof Date
+          ? Math.max(question.expiresAt.getTime() - now.getTime(), 1)
           : undefined;
       result.awaiter = this.deferredRegistry.register(
         question.id,
