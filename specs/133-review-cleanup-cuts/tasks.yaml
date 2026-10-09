@@ -17,7 +17,7 @@ tasks:
   description: Remove the stale good-first-issue and monthly recap watchers from _serve and delete the
     watcher services; add `shep contributors stale-issues` and `shep contributors recap` subcommands and
     a scheduled workflow; remove /onboarding from the sidebar.
-  state: Todo
+  state: Done
   dependencies: []
   acceptanceCriteria:
   - _serve starts neither watcher
@@ -39,7 +39,7 @@ tasks:
   title: Default the ASPM flag to off
   description: Set aspm to false in TypeSpec, the defaults factory and the web env fallback; leave persisted
     values alone; update ROADMAP.md.
-  state: Todo
+  state: Done
   dependencies: []
   acceptanceCriteria:
   - createDefaultSettings().featureFlags.aspm is false
@@ -59,7 +59,7 @@ tasks:
   description: Remove the supplyChainSecurity flag; derive supply-chain enablement from aspm via a domain
     helper; move the CLI to `shep aspm supply-chain enforce` with a hidden `shep security` alias; CI enables
     aspm before enforcing.
-  state: Todo
+  state: Done
   dependencies:
   - task-2
   acceptanceCriteria:
@@ -81,7 +81,7 @@ tasks:
   title: Remove cloud-deploy stub providers
   description: Delete the four *.provider.stub.ts files, the base stub, their DI registrations, enum members,
     icons and coming-soon UI.
-  state: Todo
+  state: Done
   dependencies: []
   acceptanceCriteria:
   - Only CloudflarePages remains in CloudDeploymentProvider
@@ -99,7 +99,7 @@ tasks:
   title: Remove dead settings and placeholder agents
   description: Remove system.autoUpdate and the Aider/Continue agent types; keep sys_auto_update; map
     unknown persisted agent types to the default.
-  state: Todo
+  state: Done
   dependencies: []
   acceptanceCriteria:
   - No autoUpdate in TypeSpec/defaults/mapper
@@ -118,7 +118,7 @@ tasks:
   title: Add per-area software-factory flags
   description: Twelve flags in TypeSpec, defaults (true), migration 166 (DEFAULT 1), mapper, repository
     SQL and web flags state.
-  state: Todo
+  state: Done
   dependencies: []
   acceptanceCriteria:
   - Round-trip persists false for every new flag
@@ -135,7 +135,7 @@ tasks:
 - id: task-7
   title: Gate software-factory surfaces
   description: Sidebar links, pages, API routes, CLI groups and background-sync loops check their flag.
-  state: Todo
+  state: Done
   dependencies:
   - task-6
   acceptanceCriteria:
@@ -158,7 +158,7 @@ tasks:
   description: Domain catalog, ListFeatureFlagsUseCase/SetFeatureFlagUseCase, /settings/feature-flags
     page, FeatureFlagsList component (also used in the settings page), `shep settings flags [enable|disable
     <flag>]`.
-  state: Todo
+  state: Done
   dependencies:
   - task-6
   acceptanceCriteria:
@@ -179,7 +179,7 @@ tasks:
   title: Docs and full verification
   description: Update docs that mention removed surfaces; run validate, unit, int, build, storybook and
     check:stories.
-  state: Todo
+  state: Done
   dependencies:
   - task-1
   - task-2
