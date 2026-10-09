@@ -24,7 +24,7 @@ function group(): { cmd: Command; leaf: ReturnType<typeof vi.fn> } {
   return { cmd, leaf };
 }
 
-describe('gateByFeatureFlag (spec 133)', () => {
+describe('gateByFeatureFlag (spec 135)', () => {
   let exitSpy: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {

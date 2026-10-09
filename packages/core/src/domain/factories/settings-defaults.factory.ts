@@ -244,7 +244,7 @@ export function createDefaultSettings(): Settings {
     scheduledWorkflows: false,
     githubImport: true,
     queryAwareHarness: false,
-    // Software-factory areas (spec 133): on, so nothing changes for users.
+    // Software-factory areas (spec 135): on, so nothing changes for users.
     spaces: true,
     trackers: true,
     knowledge: true,

@@ -1,7 +1,7 @@
 feature:
-  id: '133-review-cleanup-cuts'
+  id: '135-review-cleanup-cuts'
   name: 'review-cleanup-cuts'
-  number: 133
+  number: 135
   branch: 'feat/133-review-cleanup-cuts'
   lifecycle: 'review'
   createdAt: '2026-10-09T09:35:49Z'

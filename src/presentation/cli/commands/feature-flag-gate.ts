@@ -1,5 +1,5 @@
 /**
- * Gates a command group behind feature flags (spec 133).
+ * Gates a command group behind feature flags (spec 135).
  *
  * While none of the flags is on, the group is hidden from `--help` and any
  * invocation — a subcommand or the bare group — prints how to turn the flag

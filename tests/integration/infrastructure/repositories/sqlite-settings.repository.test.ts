@@ -351,7 +351,7 @@ describe('SQLiteSettingsRepository', () => {
       });
     });
 
-    it('does not surface the removed autoUpdate setting (spec 133)', async () => {
+    it('does not surface the removed autoUpdate setting (spec 135)', async () => {
       await repository.initialize(createTestSettings());
 
       const loaded = await repository.load();
@@ -540,7 +540,7 @@ describe('SQLiteSettingsRepository', () => {
       'factory',
     ] as const;
 
-    it('round-trips every software-factory flag through initialize and update (spec 133)', async () => {
+    it('round-trips every software-factory flag through initialize and update (spec 135)', async () => {
       const settings = createTestSettings();
       const off = Object.fromEntries(FACTORY_FLAGS.map((flag) => [flag, false]));
       settings.featureFlags = { ...createDefaultSettings().featureFlags!, ...off };
@@ -996,7 +996,7 @@ describe('SQLiteSettingsRepository', () => {
       expect(row.sys_auto_update).toBeDefined();
     });
 
-    it('keeps writing the legacy NOT NULL sys_auto_update column (spec 133)', async () => {
+    it('keeps writing the legacy NOT NULL sys_auto_update column (spec 135)', async () => {
       // Act
       await repository.initialize(createTestSettings());
 

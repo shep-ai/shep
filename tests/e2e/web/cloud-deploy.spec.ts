@@ -15,7 +15,7 @@ import type { Page, Route } from '@playwright/test';
  *   2. Clicking the chevron opens the DeployPanel popover.
  *   3. The panel shows two rows (GitHub backup + cloud host).
  *   4. The cloud row's "Change provider" button expands the provider
- *      list, which holds only Cloudflare Pages (spec 133 removed the
+ *      list, which holds only Cloudflare Pages (spec 135 removed the
  *      "Coming soon" placeholder providers).
  *   5. Cloudflare Pages without a token shows "Not connected".
  *   6. Clicking Cloudflare Pages opens the ConnectProviderModal dialog.

@@ -26,7 +26,7 @@ export type IntakeOutcome =
   | { ok: true; id: string; duplicate: boolean }
   | { ok: false; rejection: IntakeRejection; error: string };
 
-/** What an intake endpoint answers while its feature flag is off (spec 133). */
+/** What an intake endpoint answers while its feature flag is off (spec 135). */
 export function intakeDisabled(): Response {
   return Response.json({ error: 'Not found.' }, { status: 404 });
 }

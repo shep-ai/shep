@@ -19,7 +19,7 @@ const { setFeatureFlag } = await import(
   '../../../../../src/presentation/web/app/actions/set-feature-flag.js'
 );
 
-describe('setFeatureFlag server action (spec 133)', () => {
+describe('setFeatureFlag server action (spec 135)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockResolve.mockReturnValue({ execute: mockExecute });

@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { isSupplyChainSecurityEnabled } from '@/domain/shared/supply-chain-security.js';
 
 describe('isSupplyChainSecurityEnabled', () => {
-  it('follows the ASPM flag — supply-chain security is part of ASPM (spec 133)', () => {
+  it('follows the ASPM flag — supply-chain security is part of ASPM (spec 135)', () => {
     expect(isSupplyChainSecurityEnabled({ aspm: true })).toBe(true);
     expect(isSupplyChainSecurityEnabled({ aspm: false })).toBe(false);
   });

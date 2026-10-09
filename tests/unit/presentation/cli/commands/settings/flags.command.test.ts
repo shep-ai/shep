@@ -1,6 +1,6 @@
 /**
  * `shep settings flags` — lists every feature flag and turns one on or off
- * (spec 133). Logic lives in the List/SetFeatureFlag use cases.
+ * (spec 135). Logic lives in the List/SetFeatureFlag use cases.
  */
 
 import 'reflect-metadata';

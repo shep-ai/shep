@@ -45,7 +45,7 @@ import { isFeatureFlagOn } from './feature-flag-gate.js';
 
 /**
  * Runs `job` only while `flag` is on. Checked on every pass, so turning an
- * area off in the web UI stops its pass without a restart (spec 133).
+ * area off in the web UI stops its pass without a restart (spec 135).
  */
 function whenOn<Args extends unknown[]>(
   flag: FeatureFlagKey,

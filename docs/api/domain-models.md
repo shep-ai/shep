@@ -395,7 +395,7 @@ export type FeatureFlags = {
   scheduledWorkflows: boolean;
   githubImport: boolean;
   queryAwareHarness: boolean;
-  // Software-factory areas (spec 133), all on by default
+  // Software-factory areas (spec 135), all on by default
   spaces: boolean;
   trackers: boolean;
   knowledge: boolean;
@@ -558,7 +558,7 @@ enum AgentType {
 ```
 
 Every member is supported. (The `aider` and `continue` placeholders were removed in
-spec 133; a settings row still holding either reads back as the default agent.)
+spec 135; a settings row still holding either reads back as the default agent.)
 Per-agent facts (label, kind, binary, tool id, supported flag,
 model list) live in one place —
 `packages/core/src/domain/shared/agent-catalog.ts`, a total

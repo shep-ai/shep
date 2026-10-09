@@ -155,7 +155,7 @@ test.describe('populated page accessibility', () => {
           localStorage.setItem('shep-theme', value);
           localStorage.setItem('shep:collaboration-onboarding-dismissed', 'true');
         }, theme);
-        // ASPM is off by default (spec 133); turn it on for its surface.
+        // ASPM is off by default (spec 135); turn it on for its surface.
         const restoreFlag =
           surface === 'security-inventory' ? await enableFeatureFlag(page, 'aspm') : null;
         try {

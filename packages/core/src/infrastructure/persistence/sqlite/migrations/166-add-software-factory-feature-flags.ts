@@ -1,5 +1,5 @@
 /**
- * Migration 166: one feature flag per software-factory area (spec 133).
+ * Migration 166: one feature flag per software-factory area (spec 135).
  *
  * Specs 120–132 shipped with no flag. Each area — spaces, trackers, knowledge,
  * signals, opportunities, feedback, discovery, incidents, outcomes, docs

@@ -104,7 +104,7 @@ export function getFeatureFlags(): FeatureFlagsState {
     scheduledWorkflows: false,
     githubImport: true,
     queryAwareHarness: isEnabled(process.env.NEXT_PUBLIC_FLAG_QUERY_AWARE_HARNESS),
-    // Software-factory areas (spec 133) default on, like the settings defaults.
+    // Software-factory areas (spec 135) default on, like the settings defaults.
     spaces: true,
     trackers: true,
     knowledge: true,

@@ -115,7 +115,7 @@ test.describe('ASPM dashboard happy path', () => {
 
   test('dashboard → findings → detail → declare exception', async ({ page }) => {
     await mockDeclareExceptionRoute(page);
-    // ASPM is off by default (spec 133); turn it on for this test.
+    // ASPM is off by default (spec 135); turn it on for this test.
     restoreAspm = await enableFeatureFlag(page, 'aspm');
 
     // Step 1: open the dashboard and see the posture cards.

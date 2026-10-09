@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * Every feature flag as a switch, grouped by section (spec 133). Used by the
+ * Every feature flag as a switch, grouped by section (spec 135). Used by the
  * Feature Flags section of the Settings page and by /settings/feature-flags.
  * The list and its order come from the domain catalog, so a new flag shows up
  * here without touching this component.

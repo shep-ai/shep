@@ -64,7 +64,7 @@ describe('sidebar links', () => {
     ['opportunities', '/opportunities'],
     ['incidents', '/incidents'],
     ['factory', '/factory'],
-  ] as const)('shows the %s area at %s only while its flag is on (spec 133)', (flag, href) => {
+  ] as const)('shows the %s area at %s only while its flag is on (spec 135)', (flag, href) => {
     expect(visibleSidebarLinks(OFF).map((l) => l.href)).not.toContain(href);
     expect(visibleSidebarLinks({ ...OFF, [flag]: true }).map((l) => l.href)).toContain(href);
   });

@@ -9,7 +9,7 @@
  * no Settings section, no agent pre-check, no CLI enforce, no CI gate —
  * regardless of the SecurityMode value in the security config.
  *
- * Read-ignored since spec 133: supply-chain security folded into ASPM and
+ * Read-ignored since spec 135: supply-chain security folded into ASPM and
  * follows `feature_flag_aspm`. The column stays so older builds still work.
  */
 

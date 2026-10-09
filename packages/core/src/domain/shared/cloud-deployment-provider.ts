@@ -1,7 +1,7 @@
 /**
  * Narrow an untrusted value (a request body, a CLI argument, a persisted
  * column) to a CloudDeploymentProvider. Unknown ids — including the
- * placeholder providers removed in spec 133 (Vercel, Netlify, AwsAmplify,
+ * placeholder providers removed in spec 135 (Vercel, Netlify, AwsAmplify,
  * GcpCloudRun), which older databases may still hold — yield undefined.
  *
  * Pure: no I/O. Per the domain/ convention, relative imports carry no

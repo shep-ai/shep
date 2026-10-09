@@ -5,7 +5,7 @@ import { FeatureFlagsPageClient } from '@/components/features/feature-flags/feat
 /** Skip static pre-rendering since we need runtime DI container and server context. */
 export const dynamic = 'force-dynamic';
 
-/** Every feature flag with a description, its default and a switch (spec 133). */
+/** Every feature flag with a description, its default and a switch (spec 135). */
 export default async function FeatureFlagsPage() {
   try {
     const flags = await resolve<ListFeatureFlagsUseCase>('ListFeatureFlagsUseCase').execute();

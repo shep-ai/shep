@@ -2,7 +2,7 @@
  * `shep app cloud-providers ls` unit tests.
  *
  * Only Cloudflare Pages is listed, and the command never prints a
- * "coming soon" row (the placeholder providers were removed in spec 133).
+ * "coming soon" row (the placeholder providers were removed in spec 135).
  */
 
 import 'reflect-metadata';

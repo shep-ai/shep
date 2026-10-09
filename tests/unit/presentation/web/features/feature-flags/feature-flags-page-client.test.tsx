@@ -30,7 +30,7 @@ const FLAGS: FeatureFlagState[] = [
   },
 ];
 
-describe('FeatureFlagsPageClient (spec 133)', () => {
+describe('FeatureFlagsPageClient (spec 135)', () => {
   beforeEach(() => vi.clearAllMocks());
 
   it('lists every flag with a switch, its default and how many are on', () => {

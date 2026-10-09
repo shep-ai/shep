@@ -1,7 +1,7 @@
 /**
  * Security Command Group
  *
- * Supply-chain security enforcement, part of ASPM (spec 133): it runs only
+ * Supply-chain security enforcement, part of ASPM (spec 135): it runs only
  * while the `aspm` feature flag is on, or when SHEP_SUPPLY_CHAIN_SECURITY=true
  * opts in explicitly (Shep's own CI does this).
  *

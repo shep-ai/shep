@@ -35,7 +35,7 @@ export function classifyNodeAction(nodeName: string): SecurityActionCategory | n
 
 /**
  * Resolve the effective SecurityMode for a node execution, honoring the
- * supply-chain kill switch (the aspm feature flag, spec 133). When it is off,
+ * supply-chain kill switch (the aspm feature flag, spec 135). When it is off,
  * the mode is forced to Disabled regardless of the mode stored in state.
  *
  * Extracted as a pure function so the gate can be unit-tested without

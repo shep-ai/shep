@@ -6,7 +6,7 @@ import type { ISettingsRepository } from '@/application/ports/output/repositorie
 import { createDefaultSettings } from '@/domain/factories/settings-defaults.factory.js';
 import { FeatureFlagGroup, type Settings } from '@/domain/generated/output.js';
 
-describe('feature flag use cases (spec 133)', () => {
+describe('feature flag use cases (spec 135)', () => {
   let stored: Settings | null;
   let repository: ISettingsRepository;
 

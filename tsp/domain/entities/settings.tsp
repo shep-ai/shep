@@ -708,7 +708,7 @@ model FeatureFlags {
   @doc("Enable WhatsApp-native task dispatch and interactive control (spec 101)")
   whatsappDispatch: boolean = false;
 
-  @doc("Enable the Application Security Posture Management (ASPM) module — /aspm web routes, `shep aspm` CLI command tree, and the posture SSE stream (spec 098). Off by default: ASPM is a separate product category users opt into (spec 133).")
+  @doc("Enable the Application Security Posture Management (ASPM) module — /aspm web routes, `shep aspm` CLI command tree, and the posture SSE stream (spec 098). Off by default: ASPM is a separate product category users opt into (spec 135).")
   aspm: boolean = false;
 
   @doc("Enable Clusters navigation and Kubernetes cluster management in the web UI")

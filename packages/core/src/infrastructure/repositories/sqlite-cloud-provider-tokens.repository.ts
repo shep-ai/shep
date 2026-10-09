@@ -77,7 +77,7 @@ export class SQLiteCloudProviderTokensRepository implements ICloudProviderTokens
     const rows = this.db
       .prepare<[], { provider: string }>('SELECT provider FROM cloud_provider_tokens')
       .all();
-    // Skip rows for provider ids that no longer exist (see spec 133) — nothing
+    // Skip rows for provider ids that no longer exist (see spec 135) — nothing
     // can deploy to them, so they must not count as connected.
     return rows.flatMap((r) => {
       const provider = parseCloudDeploymentProvider(r.provider);

@@ -84,7 +84,7 @@ describe('startBackgroundSync', () => {
     flagState.off.clear();
   });
 
-  it('skips the passes of software-factory areas whose flag is off (spec 133)', async () => {
+  it('skips the passes of software-factory areas whose flag is off (spec 135)', async () => {
     flagState.off = new Set(['trackers', 'knowledge', 'discovery', 'outcomes', 'autopilot']);
     startBackgroundSync('test');
     vi.mocked(container.resolve).mockClear();

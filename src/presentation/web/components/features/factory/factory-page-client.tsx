@@ -38,7 +38,7 @@ export function FactoryPageClient({
   loadError,
 }: FactoryPageClientProps) {
   const { t } = useTranslation('web');
-  // The autopilot policy and passes have their own flag (spec 133).
+  // The autopilot policy and passes have their own flag (spec 135).
   const flags = useFeatureFlags();
   const { run, error } = useRunAction({
     fallbackError: t('factory.errors.actionFailed'),

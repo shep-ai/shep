@@ -21,7 +21,7 @@ const CURRENT_DIR_PREFIX = /^(\.\/)+/;
 
 /**
  * Whether docs first applies: the space asks for it and the `docsFirst`
- * feature flag is on (spec 133). Missing flags count as on, the default.
+ * feature flag is on (spec 135). Missing flags count as on, the default.
  */
 export function isDocsFirstActive(
   settings: SpaceAgentSettings | undefined,

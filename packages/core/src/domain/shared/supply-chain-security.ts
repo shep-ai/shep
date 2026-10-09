@@ -1,5 +1,5 @@
 /**
- * Supply-chain security is part of ASPM (spec 133): it has no flag of its
+ * Supply-chain security is part of ASPM (spec 135): it has no flag of its
  * own and is on exactly when the `aspm` feature flag is on.
  *
  * `override` is the `SHEP_SUPPLY_CHAIN_SECURITY` environment value, read by

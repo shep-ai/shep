@@ -1,5 +1,5 @@
 /**
- * Set Feature Flag Use Case (spec 133)
+ * Set Feature Flag Use Case (spec 135)
  *
  * Turns one feature flag on or off. The web feature-flags view, the Settings
  * page and `shep settings flags` all go through here, so an unknown flag is

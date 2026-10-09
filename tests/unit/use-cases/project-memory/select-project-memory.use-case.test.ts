@@ -182,7 +182,7 @@ describe('SelectProjectMemoryUseCase', () => {
     expect(research.blob).toBe('');
   });
 
-  it('adds nothing about docs while the docsFirst feature flag is off (spec 133)', async () => {
+  it('adds nothing about docs while the docsFirst feature flag is off (spec 135)', async () => {
     const docsFirst: Space = { ...DEFAULT_SPACE, agentSettings: { docsFirst: true } };
     useCase = new SelectProjectMemoryUseCase(
       repo,

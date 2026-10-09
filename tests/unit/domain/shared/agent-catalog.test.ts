@@ -134,7 +134,7 @@ describe('known drift regressions', () => {
     expect(isSupportedAgentType(AgentType.GeminiCli)).toBe(true);
   });
 
-  it('has no coming-soon placeholder agents (Aider and Continue were removed, spec 133)', () => {
+  it('has no coming-soon placeholder agents (Aider and Continue were removed, spec 135)', () => {
     const types: string[] = Object.values(AgentType);
     expect(types).not.toContain('aider');
     expect(types).not.toContain('continue');

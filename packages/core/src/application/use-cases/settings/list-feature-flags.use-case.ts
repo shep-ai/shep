@@ -1,5 +1,5 @@
 /**
- * List Feature Flags Use Case (spec 133)
+ * List Feature Flags Use Case (spec 135)
  *
  * Every feature flag with its group, one-line description, current value and
  * default — what the feature-flags view and `shep settings flags` show.

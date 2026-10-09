@@ -1,7 +1,7 @@
 /**
  * ProviderList — the cloud-provider switcher inside the Deploy panel.
  *
- * Spec 133 removed the placeholder providers, so every listed provider is
+ * Spec 135 removed the placeholder providers, so every listed provider is
  * actionable: no row is disabled and no "Coming soon" badge renders.
  */
 

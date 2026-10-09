@@ -90,7 +90,7 @@ export interface SettingsRow {
 
   // SystemConfig (system.*)
   /**
-   * Legacy NOT NULL column of the removed `system.autoUpdate` setting (spec 133).
+   * Legacy NOT NULL column of the removed `system.autoUpdate` setting (spec 135).
    * Always written as LEGACY_SYS_AUTO_UPDATE and never read.
    */
   sys_auto_update: number;
@@ -174,7 +174,7 @@ export interface SettingsRow {
   feature_flag_github_import?: number;
   // Query-aware harness flag (migration 151)
   feature_flag_query_aware_harness?: number;
-  // Software-factory area flags (spec 133, migration 166)
+  // Software-factory area flags (spec 135, migration 166)
   feature_flag_spaces: number;
   feature_flag_trackers: number;
   feature_flag_knowledge: number;
@@ -779,7 +779,7 @@ export function fromDatabase(row: SettingsRow): Settings {
 
     // AgentConfig (NULL → undefined for optional token)
     agent: {
-      // A removed agent type (aider, continue — spec 133) reads back as the default.
+      // A removed agent type (aider, continue — spec 135) reads back as the default.
       type: getAgentDescriptor(row.agent_type)
         ? (row.agent_type as AgentType)
         : createDefaultSettings().agent.type,

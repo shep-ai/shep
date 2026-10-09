@@ -134,7 +134,7 @@ export function fromDatabase(row: ApplicationRow): Application {
     agentSessionId: row.agent_session_id ?? undefined,
     gitRemoteUrl: row.git_remote_url ?? undefined,
     // Unknown ids (e.g. the Vercel/Netlify/AwsAmplify/GcpCloudRun placeholders
-    // removed in spec 133, selectable before then) read back as no selection.
+    // removed in spec 135, selectable before then) read back as no selection.
     cloudDeploymentProvider: parseCloudDeploymentProvider(row.cloud_deployment_provider),
     cloudDeploymentStatus:
       (row.cloud_deployment_status as CloudDeploymentStatus | null) ?? undefined,

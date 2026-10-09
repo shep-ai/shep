@@ -26,7 +26,7 @@ function post(body: string, key = 'shep_fb_secret'): Request {
 describe('POST /api/alerts', () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it('answers 404 without reading the request while the incidents flag is off (spec 133)', async () => {
+  it('answers 404 without reading the request while the incidents flag is off (spec 135)', async () => {
     flags.value = { incidents: false };
     const response = await POST(post('{"text":"x"}'));
     flags.value = { incidents: true };

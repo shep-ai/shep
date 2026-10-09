@@ -61,7 +61,7 @@ export function OpportunitiesPageClient({
   loadError,
 }: OpportunitiesPageClientProps) {
   const { t } = useTranslation('web');
-  // Signals, feedback, discovery and outcomes each have their own flag (spec 133).
+  // Signals, feedback, discovery and outcomes each have their own flag (spec 135).
   const flags = useFeatureFlags();
   const { run, error } = useRunAction({
     fallbackError: t('opportunities.errors.actionFailed'),

@@ -2,7 +2,7 @@
  * @module Shep.Common.Enums.FeatureFlag
  *
  * Groups the feature flags into the sections the feature-flags view and
- * `shep settings flags` show (spec 133).
+ * `shep settings flags` show (spec 135).
  */
 @doc("Section a feature flag is listed under")
 enum FeatureFlagGroup {

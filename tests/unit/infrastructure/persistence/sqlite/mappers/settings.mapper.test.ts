@@ -503,7 +503,7 @@ describe('Settings Mapper', () => {
     });
   });
 
-  describe('fromDatabase() - removed agent types (spec 133)', () => {
+  describe('fromDatabase() - removed agent types (spec 135)', () => {
     it.each(['aider', 'continue'])(
       'reads a persisted %s agent type back as the default agent',
       (legacyType) => {
@@ -518,7 +518,7 @@ describe('Settings Mapper', () => {
     });
   });
 
-  describe('legacy sys_auto_update column (spec 133)', () => {
+  describe('legacy sys_auto_update column (spec 135)', () => {
     it('still writes the NOT NULL column so inserts and older builds keep working', () => {
       expect(toDatabase(createTestSettings()).sys_auto_update).toBe(1);
     });
@@ -1509,7 +1509,7 @@ describe('Settings Mapper', () => {
     });
   });
 
-  describe('software-factory flags (spec 133)', () => {
+  describe('software-factory flags (spec 135)', () => {
     it.each([
       ['spaces', 'feature_flag_spaces'],
       ['trackers', 'feature_flag_trackers'],
@@ -1533,7 +1533,7 @@ describe('Settings Mapper', () => {
     });
   });
 
-  describe('legacy supply-chain flag column (folded into ASPM, spec 133)', () => {
+  describe('legacy supply-chain flag column (folded into ASPM, spec 135)', () => {
     it('no longer writes feature_flag_supply_chain_security', () => {
       const row = toDatabase(createTestSettings()) as unknown as Record<string, unknown>;
       expect(row).not.toHaveProperty('feature_flag_supply_chain_security');

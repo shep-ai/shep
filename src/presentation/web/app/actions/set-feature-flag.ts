@@ -9,7 +9,7 @@ import {
 import type { SetFeatureFlagUseCase } from '@shepai/core/application/use-cases/settings/set-feature-flag.use-case';
 
 /**
- * Turns one feature flag on or off (spec 133).
+ * Turns one feature flag on or off (spec 135).
  *
  * Validation lives in SetFeatureFlagUseCase; this action refreshes the
  * in-memory settings singleton and the layout so the sidebar follows.

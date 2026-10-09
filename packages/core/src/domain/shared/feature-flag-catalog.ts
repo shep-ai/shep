@@ -1,6 +1,6 @@
 /**
  * Every feature flag with the section it is listed under and a one-line
- * description (spec 133). The feature-flags view and `shep settings flags`
+ * description (spec 135). The feature-flags view and `shep settings flags`
  * both render this list.
  *
  * `FEATURE_FLAG_CATALOG` is a total Record over the FeatureFlags keys, so a

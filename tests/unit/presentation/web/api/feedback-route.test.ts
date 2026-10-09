@@ -29,7 +29,7 @@ function post(body: string, key = 'shep_fb_secret'): Request {
 describe('POST /api/feedback', () => {
   beforeEach(() => vi.clearAllMocks());
 
-  it('answers 404 without reading the request while the feedback flag is off (spec 133)', async () => {
+  it('answers 404 without reading the request while the feedback flag is off (spec 135)', async () => {
     flags.value = { feedback: false };
     const response = await POST(post('{"text":"x"}'));
     flags.value = { feedback: true };

@@ -3,7 +3,7 @@
 # =============================================================================
 # Time-driven half of the contributor pipeline (spec 097, FR-31/FR-42).
 # These used to run as watchers inside every user's `shep` daemon; they are
-# maintainer automation for shep-ai/shep, so they run here instead (spec 133).
+# maintainer automation for shep-ai/shep, so they run here instead (spec 135).
 #
 #   stale-issues  daily     `shep contributors stale-issues` — good-first-issues
 #                           with no activity for 30+ days, listed in the run's

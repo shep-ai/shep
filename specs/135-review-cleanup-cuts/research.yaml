@@ -2,7 +2,7 @@
 # This is the source of truth. Markdown is auto-generated from this file.
 
 name: review-cleanup-cuts
-summary: Decisions for 133 — where maintainer automation runs, how supply chain folds into ASPM, and how flags are catalogued.
+summary: Decisions for 135 — where maintainer automation runs, how supply chain folds into ASPM, and how flags are catalogued.
 
 relatedFeatures:
   - 097-contributor-pipeline

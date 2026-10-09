@@ -1,5 +1,5 @@
 /**
- * Migration 166 Integration Tests (spec 133)
+ * Migration 166 Integration Tests (spec 135)
  *
  * Adds one feature-flag column per software-factory area, defaulting to on
  * so existing installs keep every area; re-running is a no-op.

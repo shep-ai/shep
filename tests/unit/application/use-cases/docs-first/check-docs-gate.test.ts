@@ -42,7 +42,7 @@ describe('CheckDocsGateUseCase (spec 131)', () => {
     });
   });
 
-  it('asks nothing while the docsFirst feature flag is off (spec 133)', async () => {
+  it('asks nothing while the docsFirst feature flag is off (spec 135)', async () => {
     const gate = await gateFor(DOCS_FIRST, false).execute('/repo', ['src/a.ts']);
     expect(gate).toEqual({ required: false, passed: true, docsPaths: [], documentation: [] });
   });

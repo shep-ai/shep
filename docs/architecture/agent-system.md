@@ -340,7 +340,7 @@ factory picks one from `settings.agent.type`; nothing else may.
 
 Every `AgentType` has an executor. A catalog entry marked `supported: false`
 would be shown as "Coming Soon" and must never reach the executor factory; none
-exist today (the `aider` and `continue` placeholders were removed in spec 133).
+exist today (the `aider` and `continue` placeholders were removed in spec 135).
 
 Supporting files in the same directory:
 

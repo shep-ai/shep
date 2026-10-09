@@ -174,7 +174,7 @@ describe('createDefaultSettings', () => {
   });
 
   describe('SystemConfig defaults', () => {
-    it('has no autoUpdate setting — nothing ever read it (spec 133)', () => {
+    it('has no autoUpdate setting — nothing ever read it (spec 135)', () => {
       // Act
       const settings = createDefaultSettings();
       const system: SystemConfig = settings.system;
@@ -327,7 +327,7 @@ describe('createDefaultSettings', () => {
         projects: true,
         codeReview: true,
         collaboration: true,
-        // ASPM is a separate product category; users opt in (spec 133).
+        // ASPM is a separate product category; users opt in (spec 135).
         aspm: false,
         bedrockIntegration: true,
         whatsappDispatch: false,
@@ -335,7 +335,7 @@ describe('createDefaultSettings', () => {
         scheduledWorkflows: false,
         githubImport: true,
         queryAwareHarness: false,
-        // Software-factory areas (spec 133) start on so nothing changes for users.
+        // Software-factory areas (spec 135) start on so nothing changes for users.
         spaces: true,
         trackers: true,
         knowledge: true,
