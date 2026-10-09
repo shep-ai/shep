@@ -10,12 +10,34 @@ import { Command } from 'commander';
 import { container } from '@/infrastructure/di/container.js';
 import { questionAlreadySettledMessage } from '@/domain/shared/agent-question-settlement.js';
 import { AnswerAgentQuestionUseCase } from '@/application/use-cases/agents/answer-agent-question.use-case.js';
+import { ListAgentQuestionsUseCase } from '@/application/use-cases/agents/list-agent-questions.use-case.js';
+import type { DecisionResponse } from '@/domain/generated/output.js';
+import { decisionForQuestion } from '@/domain/shared/decision-builders.js';
 import { colors, messages } from '../../../ui/index.js';
+import { promptDecision, renderDecisionLines } from './decision-renderer.js';
 
 interface AnswerOptions {
   app: string;
-  answer: string;
+  answer?: string;
   answeredBy?: string;
+}
+
+/**
+ * Without `--answer`, show the question's decision and ask it interactively
+ * (spec 134) — the same model and recommended defaults the web panel uses.
+ */
+async function promptForResponses(appId: string, questionId: string): Promise<DecisionResponse[]> {
+  if (!process.stdin.isTTY) {
+    throw new Error('--answer is required when the terminal is not interactive');
+  }
+  const questions = await container.resolve(ListAgentQuestionsUseCase).execute({ appId });
+  const question = questions.find((q) => q.id === questionId);
+  if (!question) throw new Error(`Question ${questionId} not found in app ${appId}`);
+  const decision = decisionForQuestion(question);
+  messages.newline();
+  for (const line of renderDecisionLines(decision)) console.log(`  ${line}`);
+  messages.newline();
+  return promptDecision(decision);
 }
 
 export function createAnswerCommand(): Command {
@@ -23,15 +45,19 @@ export function createAnswerCommand(): Command {
     .description('Submit an answer for a pending agent question')
     .argument('<questionId>', 'Question id (full uuid)')
     .requiredOption('--app <id>', 'Application id (required for scope isolation)')
-    .requiredOption('--answer <text>', 'The answer to record')
+    .option('--answer <text>', 'The answer to record (omit to choose interactively)')
     .option('--answered-by <actor>', 'Actor id (e.g. user:alice)', 'user:cli')
     .action(async (questionId: string, options: AnswerOptions) => {
       try {
+        const answer =
+          options.answer !== undefined
+            ? { answer: options.answer }
+            : { responses: await promptForResponses(options.app, questionId) };
         const useCase = container.resolve(AnswerAgentQuestionUseCase);
         const result = await useCase.execute({
           appId: options.app,
           questionId,
-          answer: options.answer,
+          ...answer,
           answeredBy: options.answeredBy ?? 'user:cli',
         });
 
