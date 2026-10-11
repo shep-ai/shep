@@ -80,7 +80,7 @@ export const fixtureCheckpointDiff: FeatureCheckpointDiff = {
       ],
     },
     {
-      path: 'specs/135-login/research.yaml',
+      path: 'specs/042-login/research.yaml',
       status: 'modified',
       additions: 1,
       deletions: 1,

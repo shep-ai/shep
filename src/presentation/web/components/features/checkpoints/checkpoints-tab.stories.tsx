@@ -7,7 +7,7 @@ const meta: Meta<typeof CheckpointsTab> = {
   tags: ['autodocs'],
   decorators: [
     (Story) => (
-      <div className="max-w-3xl p-4">
+      <div className="bg-background text-foreground w-[720px] p-4">
         <Story />
       </div>
     ),
