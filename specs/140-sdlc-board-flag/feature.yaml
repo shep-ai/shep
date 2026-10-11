@@ -1,0 +1,42 @@
+feature:
+  id: '140-sdlc-board-flag'
+  name: 'sdlc-board-flag'
+  number: 140
+  branch: 'feat/140-sdlc-board-flag'
+  lifecycle: 'implementation'
+  createdAt: '2026-10-11T11:36:24Z'
+
+status:
+  phase: 'ready-to-implement'
+  progress:
+    completed: 0
+    total: 4
+    percentage: 0
+  currentTask: null
+  lastUpdated: '2026-10-11T11:37:55Z'
+  lastUpdatedBy: 'shep-kit:new-feature-fast'
+
+validation:
+  lastRun: null
+  gatesPassed: []
+  autoFixesApplied: []
+
+tasks:
+  current: null
+  blocked: []
+  failed: []
+
+checkpoints:
+  - phase: 'feature-created'
+    completedAt: '2026-10-11T11:36:24Z'
+    completedBy: 'shep-kit:new-feature-fast'
+  - phase: 'research-complete'
+    completedAt: '2026-10-11T11:37:55Z'
+    completedBy: 'shep-kit:new-feature-fast'
+  - phase: 'plan-complete'
+    completedAt: '2026-10-11T11:37:55Z'
+    completedBy: 'shep-kit:new-feature-fast'
+
+errors:
+  current: null
+  history: []

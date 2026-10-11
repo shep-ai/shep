@@ -1,0 +1,128 @@
+# Implementation Plan (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: sdlc-board-flag
+summary: Add the sdlcBoard flag end to end, then gate the board's web surfaces on it
+
+# Relationships
+relatedFeatures:
+  - '135-review-cleanup-cuts'
+technologies:
+  - TypeSpec
+  - TypeScript
+  - SQLite
+  - Next.js
+relatedLinks: []
+
+# Structured implementation phases
+phases:
+  - id: phase-1
+    name: 'Flag foundation'
+    parallel: false
+    taskIds:
+      - task-1
+  - id: phase-2
+    name: 'Gate the board'
+    parallel: false
+    taskIds:
+      - task-2
+      - task-3
+      - task-4
+
+# File change tracking
+filesToCreate:
+  - packages/core/src/infrastructure/persistence/sqlite/migrations/170-add-sdlc-board-feature-flag.ts
+  - tests/integration/infrastructure/persistence/sqlite/migration-170-sdlc-board-flag.test.ts
+  - src/presentation/web/lib/feature-gate.ts
+  - tests/unit/presentation/web/lib/feature-gate.test.ts
+  - tests/unit/presentation/web/app/sdlc-board-gating.test.ts
+
+filesToModify:
+  - tsp/domain/entities/settings.tsp
+  - packages/core/src/domain/generated/output.ts
+  - packages/core/src/domain/factories/settings-defaults.factory.ts
+  - packages/core/src/domain/shared/feature-flag-catalog.ts
+  - packages/core/src/infrastructure/persistence/sqlite/mappers/settings.mapper.ts
+  - packages/core/src/infrastructure/repositories/sqlite-settings.repository.ts
+  - src/presentation/web/lib/feature-flags.ts
+  - src/presentation/web/lib/require-feature-page.ts
+  - src/presentation/web/lib/intake-route.ts
+  - src/presentation/web/app/api/feedback/route.ts
+  - src/presentation/web/app/api/alerts/route.ts
+  - src/presentation/web/app/api/sdlc-events/route.ts
+  - src/presentation/web/app/sdlc/page.tsx
+  - src/presentation/web/app/actions/list-sdlc-board.ts
+  - src/presentation/web/app/actions/reorder-sdlc-task.ts
+  - src/presentation/web/app/actions/update-sdlc-task-status.ts
+  - src/presentation/web/app/actions/update-sdlc-subtask-status.ts
+  - src/presentation/web/components/layouts/app-sidebar/sidebar-links.ts
+  - translations/*/web.json
+  - tests/e2e/web/ui-experience.spec.ts
+  - docs/api/domain-models.md
+
+# Open questions (should be resolved before implementation)
+openQuestions: []
+
+# Markdown content (the full implementation plan)
+content: |
+  ## Architecture Overview
+
+  ```
+  tsp FeatureFlags.sdlcBoard (= false)
+     └─ generated output.ts ─┬─ settings-defaults.factory (false)
+                             ├─ settings.mapper ⇄ feature_flag_sdlc_board (migration 170, DEFAULT 0)
+                             ├─ sqlite-settings.repository (INSERT/UPDATE)
+                             └─ FEATURE_FLAG_CATALOG (Platform) → /settings/feature-flags, `shep settings flags`
+
+  web getFeatureFlags().sdlcBoard
+     ├─ sidebar-links.ts       flag: 'sdlcBoard'          → link hidden
+     ├─ app/sdlc/page.tsx      requireFeaturePage()       → 404
+     ├─ api/sdlc-events        featureNotFound()          → 404
+     └─ 4 board actions        { error: FEATURE_OFF_ERROR } before resolving the use case
+  ```
+
+  ## Implementation Strategy
+
+  Phase 1 threads the flag through the LESSONS "Adding a Web Feature Flag" checklist so it
+  persists and shows on the flags view. Phase 2 extracts the shared feature gate (`isFeatureOn`,
+  `featureNotFound`, `FEATURE_OFF_ERROR`) from spec 135's helpers, then gates the page, the
+  sidebar link, the SSE route and the actions, and finally updates the e2e accessibility spec and
+  docs.
+
+  ## Files to Create/Modify
+
+  | File | Change |
+  | ---- | ------ |
+  | migration `170-add-sdlc-board-feature-flag.ts` | New guarded column, DEFAULT 0 |
+  | `lib/feature-gate.ts` | `isFeatureOn`, `featureNotFound`, `FEATURE_OFF_ERROR` |
+  | `lib/require-feature-page.ts`, `lib/intake-route.ts`, feedback/alerts routes | Use the shared gate |
+  | `app/sdlc/page.tsx`, `api/sdlc-events/route.ts`, 4 actions, `sidebar-links.ts` | Gate on `sdlcBoard` |
+  | TypeSpec, defaults, catalog, mapper, repository, web flags, translations | The flag itself |
+
+  Clean Architecture layering is unchanged: the flag lives in the domain (TypeSpec, defaults,
+  catalog), persistence stays in infrastructure (migration, mapper, repository), and the gates are
+  presentation-only checks in front of the existing sdlc-board use cases.
+
+  ## Testing Strategy (TDD: Tests FIRST)
+
+  Every task with code runs RED-GREEN-REFACTOR: write the failing test, make it pass with the
+  smallest change, then tidy.
+
+  - **Unit (RED first):** defaults factory has `sdlcBoard: false`; mapper round-trips
+    `feature_flag_sdlc_board`; catalog lists `sdlcBoard`; `isFeatureOn`/`featureNotFound`;
+    sidebar hides the link while off; the SSE route returns 404 while off; each action returns
+    the error and does not resolve its use case while off, and delegates while on; /sdlc page
+    calls `notFound()` while off.
+  - **Integration:** migration 170 adds the column with DEFAULT 0 and is idempotent; the
+    settings repository round-trips the flag.
+  - **E2E:** the /sdlc accessibility case turns `sdlcBoard` on for its run via
+    `enableFeatureFlag`.
+
+  ## Risk Mitigation
+
+  | Risk | Mitigation |
+  | ---- | ---------- |
+  | Mapper and repository SQL drift, silently dropping the flag | Repository round-trip test |
+  | A fixture missing the new flag | `pnpm typecheck` plus the defaults `toEqual` test |
+  | Migration number collides with another workstream | Merge `main` before merging and renumber |
+  | E2E /sdlc case 404s now that the flag is off | Turn the flag on in that case |
