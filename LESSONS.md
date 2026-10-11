@@ -3106,3 +3106,12 @@ repository-wide replace would have rewritten that PR's references. Instead, take
 added lines (`git diff -U0 <merge-base> <your-last-commit>`) and replace only those. Grep
 afterwards for anything a later reformat moved. Ask which number to use before
 `/shep-kit:new-feature` when workstreams run in parallel.
+
+## Files under `.storybook/mocks/` cannot import `@shepai/core/*`
+
+A Storybook action mock that imported `@shepai/core/domain/shared/git-checkpoint` failed the
+Storybook build with `Rollup failed to resolve import`. Web components can import that path, but
+the mock lives outside the web package, where the alias does not resolve. Mocks may import from
+`@/…` (fixtures, `lib/`) only; derive anything else from the fixture data. The commit had been
+pushed while the local `build:storybook` was still running. Wait for the build's exit code before
+pushing any change to a story or a mock.
