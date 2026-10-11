@@ -1,0 +1,47 @@
+name: agent-owned-conflict-coordination
+summary: Existing first-party coordination primitives and autonomy boundary for Shep S2
+relatedFeatures: [041-feature-dependencies, 084-feature-dependency-rebase, 110-max-parallel-features]
+technologies: [TypeScript, Vitest]
+relatedLinks: []
+decisions:
+  - title: Ownership belongs to agent, enforcement remains runtime-owned
+    chosen: Bounded LLM decision between defer and continue; ReparentFeatureUseCase enforces only a chosen defer
+    rejected:
+      - Automatically reparent every overlapping feature
+      - Treat queue ordering or Git conflict repair alone as S2 agent ownership
+    rationale: >-
+      Deterministic overlap does not own a discretionary coordination response.
+      Existing runtime already has feature blocking, stop, sync and rebase.
+  - title: Conservative Git overlap evidence
+    chosen: Committed branch diffs, same-repository peers, shared changed paths and revalidation
+    rejected:
+      - Speculative semantic conflict invented from feature names
+      - Whole-fleet priority decision
+    rationale: >-
+      Structurally evidenced integration risk is reproducible and bounded.
+      Multiple overlapping peers or missing evidence cannot safely be resolved in v1.
+  - title: Preserve standard behavior
+    chosen: Explicit SHEP_AGENT_COORDINATION=1 opt-in
+    rejected:
+      - Enable AI coordination unconditionally
+    rationale: >-
+      Production behavior must remain backward compatible until broader integration
+      and race-safety testing has passed.
+openQuestions: []
+content: |
+  ## Inspected seams
+  - CheckAndUnblockFeaturesUseCase blocks children until parent Maintain,
+    rebases child and spawns through SpawnFeatureAgentUseCase.
+  - ReparentFeatureUseCase performs cycle and repository validation, lifecycle
+    transition and worker stop.
+  - SyncFeatureBranchUseCase delegates merge-conflict editing to the agent,
+    but editing an already conflicted file is not alone agent-owned S2 scheduling.
+  - FeatureCapacityService claims slots atomically; resource cap ownership is
+    distinct from the inter-feature dependency choice.
+  - IAgentExecutorProvider resolves the configured executor per call.
+
+  ## Limitations
+  Path overlap is a potential disturbance, not proof of semantic conflict.
+  Uncommitted work is outside the current evidence. Worktree/lifecycle changes
+  between the last revalidation and non-atomic reparenting remain a race-risk
+  until guarded integration tests establish safe application.

@@ -184,6 +184,7 @@ import { SyncFeatureBranchUseCase } from '../../../application/use-cases/feature
 import { GetBranchSyncStatusUseCase } from '../../../application/use-cases/features/get-branch-sync-status.use-case.js';
 import { AutoResolveMergedBranchesUseCase } from '../../../application/use-cases/features/auto-resolve-merged-branches.use-case.js';
 import { ReparentFeatureUseCase } from '../../../application/use-cases/features/reparent-feature.use-case.js';
+import { CoordinateFeatureConflictsUseCase } from '../../../application/use-cases/features/coordinate-feature-conflicts.use-case.js';
 import { CreateApplicationUseCase } from '../../../application/use-cases/applications/create-application.use-case.js';
 import { AdoptLocalRepositoryUseCase } from '../../../application/use-cases/applications/adopt-local-repository.use-case.js';
 import { ListApplicationsUseCase } from '../../../application/use-cases/applications/list-applications.use-case.js';
@@ -382,6 +383,8 @@ export function registerUseCases(container: DependencyContainer): void {
   container.registerSingleton(GetBranchSyncStatusUseCase);
   container.registerSingleton(AutoResolveMergedBranchesUseCase);
   container.registerSingleton(ReparentFeatureUseCase);
+  container.registerSingleton(CoordinateFeatureConflictsUseCase);
+  container.registerInstance('S2CoordinationEnabled', process.env.SHEP_AGENT_COORDINATION === '1');
   container.registerSingleton(CreateApplicationUseCase);
   container.registerSingleton(AdoptLocalRepositoryUseCase);
   container.registerSingleton(ListApplicationsUseCase);
