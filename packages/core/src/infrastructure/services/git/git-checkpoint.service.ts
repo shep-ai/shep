@@ -53,6 +53,9 @@ const DIFF_CACHE_SIZE = 32;
 /** Full or abbreviated object ids only — never an option or a revision expression. */
 const OBJECT_ID_PATTERN = /^[0-9a-f]{4,64}$/;
 
+/** Where git keeps the private git-dir of each linked worktree. */
+const LINKED_WORKTREES_DIR = 'worktrees';
+
 /** `--numstat` marks a binary file with `-` instead of a line count. */
 const BINARY_NUMSTAT = '-';
 
@@ -174,6 +177,13 @@ export class GitCheckpointService implements IGitCheckpointService {
     await this.git(cwd, ['reset', '-q']);
   }
 
+  /**
+   * Fails closed: only positive evidence makes a directory a linked worktree.
+   * git keeps a linked worktree's git-dir at `<common-dir>/worktrees/<name>`.
+   * Both sides are resolved through `realpathSync.native`, because git prints
+   * long paths while a cwd can be an 8.3 short path on Windows (`RUNNER~1`).
+   * A comparison that cannot be resolved therefore answers "not linked".
+   */
   async isLinkedWorktree(cwd: string): Promise<boolean> {
     const [gitDir, commonDir] = (
       await this.git(cwd, ['rev-parse', '--absolute-git-dir', '--git-common-dir'])
@@ -181,8 +191,11 @@ export class GitCheckpointService implements IGitCheckpointService {
       .split('\n')
       .map((line) => line.trim());
     if (!gitDir || !commonDir) return false;
-    const common = isAbsolute(commonDir) ? commonDir : resolve(cwd, commonDir);
-    return comparablePath(gitDir) !== comparablePath(common);
+    const common = comparablePath(
+      realpathSync.native(isAbsolute(commonDir) ? commonDir : resolve(cwd, commonDir))
+    );
+    const own = comparablePath(realpathSync.native(gitDir));
+    return own !== common && own.startsWith(`${common}/${LINKED_WORKTREES_DIR}/`);
   }
 
   async deleteRefs(cwd: string, refPrefix: string): Promise<number> {

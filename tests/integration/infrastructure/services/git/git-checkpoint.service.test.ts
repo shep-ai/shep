@@ -9,7 +9,14 @@
 
 import 'reflect-metadata';
 import { describe, it, expect, beforeAll, afterAll, beforeEach, afterEach } from 'vitest';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  symlinkSync,
+  unlinkSync,
+  writeFileSync,
+} from 'node:fs';
 import { join } from 'node:path';
 import {
   createTempGitRepo,
@@ -161,6 +168,28 @@ describe('GitCheckpointService (real git)', () => {
     expect(await service.isLinkedWorktree(worktree)).toBe(true);
     expect(await service.isLinkedWorktree(repo.root)).toBe(false);
   });
+
+  // A Windows 8.3 short path (C:\\Users\\RUNNER~1) and a symlink both reach the
+  // same directory under a second name; git answers with the long, real one.
+  it.skipIf(process.platform === 'win32')(
+    'does not mistake the main checkout for a linked worktree when reached under another name',
+    async () => {
+      const alias = `${repo.root}-alias`;
+      symlinkSync(repo.root, alias, 'dir');
+      try {
+        expect(await service.isLinkedWorktree(alias)).toBe(false);
+        const worktreeAlias = `${worktree}-alias`;
+        symlinkSync(worktree, worktreeAlias, 'dir');
+        try {
+          expect(await service.isLinkedWorktree(worktreeAlias)).toBe(true);
+        } finally {
+          unlinkSync(worktreeAlias);
+        }
+      } finally {
+        unlinkSync(alias);
+      }
+    }
+  );
 
   it("deletes only the feature's refs", async () => {
     await capture(0, 'baseline');
