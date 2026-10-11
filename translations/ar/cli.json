@@ -1848,6 +1848,23 @@
         "test": "يعمل ضمن مشغّل اختبارات",
         "user-opt-out": "قمت بإيقافها"
       }
+    },
+    "chat": {
+      "description": "أدوات محادثات الدردشة",
+      "block": {
+        "description": "عرض كتلة غنية في الدردشة: مواصفات للمراجعة أو معاينة HTML أو خطة",
+        "kindArgument": "نوع الكتلة: {{kinds}}",
+        "titleOption": "العنوان المعروض في رأس الكتلة",
+        "fileOption": "قراءة المحتوى (Markdown، أو HTML للمعاينة) من هذا الملف",
+        "contentOption": "المحتوى (Markdown، أو HTML للمعاينة)",
+        "scopeOption": "المحادثة التي يُنشر فيها (الافتراضي: ${{variable}})",
+        "posted": "تم نشر \"{{title}}\" في الدردشة (الكتلة {{id}}).",
+        "unknownKind": "نوع كتلة غير معروف \"{{kind}}\". استخدم أحد: {{kinds}}.",
+        "noScope": "لا توجد محادثة: مرّر --scope أو شغّل الأمر داخل دردشة Shep (فهي تضبط {{variable}}).",
+        "oneSource": "مرّر --file أو --content (واحدًا فقط).",
+        "unreadable": "تعذّرت قراءة {{file}}.",
+        "failed": "تعذّر نشر الكتلة"
+      }
     }
   },
   "ui": {

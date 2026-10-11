@@ -3063,3 +3063,16 @@ owners). The owner reversed it before merge: anonymous usage events may be opt-o
 that identifies a person defaults to off and the notice offers to turn it on. Keep one source for
 the default (`DEFAULT_TELEMETRY_PREFERENCES`) and make the migration's column default, the mapper's
 fallback and every `?? default` read it — the first version had `?? true` in three places.
+
+## Trace "the agent is told X" to the bytes the agent receives
+
+Spec 137 added a "Rich replies" section to the interactive agent's context and the unit test
+for `FeatureContextBuilder` passed — but the Claude Agent SDK V2 session drops `systemPrompt`,
+and a chat booted by the user's first message sent only that message. So no Shep context had
+ever reached a Claude chat started that way; only chats opened without a message (where the
+context doubles as the boot prompt) saw it. Rules: when a change depends on an agent knowing
+something, follow it to the first turn the executor actually sends (`BootPromptResolver`
+output), not to the string that builds it; and check an SDK's option type before passing an
+option — a field the type does not declare is silently ignored. The same SDK also hard-codes
+`mcpServers: {}` for V2 sessions, which is why chat tools go through the shell
+(`shep chat block`) rather than MCP.

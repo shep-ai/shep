@@ -264,7 +264,8 @@ describe('SessionBootstrapper', () => {
         'feat-1',
         '/wt',
         'hi agent',
-        undefined
+        undefined,
+        false
       );
     });
 
@@ -338,7 +339,27 @@ describe('SessionBootstrapper', () => {
       expect(spaceEnvironment.resolve).toHaveBeenCalledWith('feat-1', AgentType.ClaudeCode);
       const createdExecutor = executor.mock.results[0].value as IInteractiveAgentExecutor;
       expect(createdExecutor.createSession).toHaveBeenCalledWith(
-        expect.objectContaining({ cwd: '/wt', environment })
+        expect.objectContaining({
+          cwd: '/wt',
+          environment: {
+            set: { GH_CONFIG_DIR: '/gh-acme', SHEP_CHAT_SCOPE: 'feat-1' },
+            unset: ['GH_TOKEN'],
+          },
+        })
+      );
+    });
+
+    it('tells every session which chat conversation it is in (spec 137)', async () => {
+      const executor = executorFactory.createInteractiveExecutor as ReturnType<typeof vi.fn>;
+
+      await bootstrapper.startSession('repo-r1', '/repo');
+      await flushPromises();
+
+      const createdExecutor = executor.mock.results[0].value as IInteractiveAgentExecutor;
+      expect(createdExecutor.createSession).toHaveBeenCalledWith(
+        expect.objectContaining({
+          environment: { set: { SHEP_CHAT_SCOPE: 'repo-r1' }, unset: [] },
+        })
       );
     });
 
@@ -374,6 +395,21 @@ describe('SessionBootstrapper', () => {
       expect(sessionRepo.updateAgentSessionId).toHaveBeenCalledWith(
         expect.any(String),
         'agent-sid-1'
+      );
+    });
+
+    it('tells the boot prompt resolver when the agent session is resumed', async () => {
+      registry.cacheStoppedAgentSessionId('feat-1', 'old-sid');
+
+      await bootstrapper.startSession('feat-1', '/wt', undefined, undefined, undefined, 'again');
+      await flushPromises();
+
+      expect(bootPromptResolver.resolve).toHaveBeenCalledWith(
+        'feat-1',
+        '/wt',
+        'again',
+        undefined,
+        true
       );
     });
 

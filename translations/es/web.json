@@ -452,7 +452,8 @@
     "trackers": "Conexiones",
     "opportunities": "Oportunidades",
     "incidents": "Incidentes",
-    "factory": "Fábrica"
+    "factory": "Fábrica",
+    "chat": "Chat"
   },
   "sidebar": {
     "features": "Funcionalidades",
@@ -1893,6 +1894,64 @@
       "hint": "Ejecuta `shep telemetry show` para ver exactamente qué se enviaría.",
       "loading": "Cargando la configuración de las métricas de uso…",
       "loadFailed": "No se pudo cargar la configuración de las métricas de uso."
+    }
+  },
+  "chatBlocks": {
+    "kinds": {
+      "spec_review": "Revisión de especificación",
+      "html_preview": "Vista previa",
+      "plan_card": "Plan"
+    },
+    "actions": {
+      "approve": "Aprobar",
+      "request_changes": "Pedir cambios",
+      "implement": "Implementar",
+      "refine": "Refinar"
+    },
+    "resolved": {
+      "approve": "Aprobado",
+      "request_changes": "Cambios pedidos",
+      "implement": "Implementando",
+      "refine": "Refinamiento pedido"
+    },
+    "notePlaceholder": "¿Qué debería cambiar?",
+    "send": "Enviar",
+    "cancel": "Cancelar",
+    "preview": "Vista previa",
+    "source": "Código",
+    "openFullScreen": "Abrir a pantalla completa",
+    "sandboxNote": "Se ejecuta en un sandbox sin acceso a la red.",
+    "answerFailed": "Tu respuesta no se entregó",
+    "answerFailedDescription": "El bloque sigue abierto. Inténtalo de nuevo.",
+    "retry": "Reintentar"
+  },
+  "chats": {
+    "title": "Chat",
+    "conversations": "Conversaciones",
+    "conversation": "Conversación",
+    "groups": {
+      "global": "Shep",
+      "repository": "Repositorios",
+      "feature": "Funcionalidades",
+      "application": "Aplicaciones"
+    },
+    "openOnCanvas": "Abrir en el lienzo",
+    "openApplication": "Abrir aplicación",
+    "lifecycle": {
+      "Started": "Iniciada",
+      "Analyze": "Analizando",
+      "Requirements": "Requisitos",
+      "Research": "Investigación",
+      "Planning": "Planificación",
+      "Implementation": "Implementación",
+      "Review": "Revisión",
+      "Maintain": "Fusionada",
+      "Blocked": "Bloqueada",
+      "Pending": "Pendiente",
+      "Exploring": "Explorando",
+      "Deleting": "Eliminando",
+      "AwaitingUpstream": "Esperando upstream",
+      "Archived": "Archivada"
     }
   }
 }

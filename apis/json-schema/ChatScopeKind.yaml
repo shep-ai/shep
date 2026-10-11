@@ -1,0 +1,9 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: ChatScopeKind.yaml
+type: string
+enum:
+  - global
+  - repository
+  - feature
+  - application
+description: What a chat conversation is attached to

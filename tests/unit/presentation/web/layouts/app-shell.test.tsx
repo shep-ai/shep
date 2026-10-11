@@ -183,6 +183,19 @@ describe('AppShell', () => {
       expect(screen.getByText('Shep Chat')).toBeInTheDocument();
     });
 
+    it('hides the floating chat on the chat-first page, which is the chat (spec 137)', () => {
+      mockPathname = '/chats/global';
+      render(
+        <FeatureFlagsProvider flags={defaultFlags}>
+          <AppShell>
+            <ContextPublisher features={[]} hasRepositories={true} />
+            <div>Content</div>
+          </AppShell>
+        </FeatureFlagsProvider>
+      );
+      expect(screen.queryByText('Shep Chat')).not.toBeInTheDocument();
+    });
+
     it('hides the chat toggle button during onboarding', () => {
       renderShell(<div>Content</div>);
       expect(screen.queryByText('Shep Chat')).not.toBeInTheDocument();

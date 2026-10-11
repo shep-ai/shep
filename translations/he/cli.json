@@ -1848,6 +1848,23 @@
         "test": "רץ תחת מריץ בדיקות",
         "user-opt-out": "כיבית אותם"
       }
+    },
+    "chat": {
+      "description": "כלים לשיחות צ׳אט",
+      "block": {
+        "description": "הצגת בלוק עשיר בצ׳אט: מפרט לסקירה, תצוגה מקדימה של HTML או תוכנית",
+        "kindArgument": "סוג הבלוק: {{kinds}}",
+        "titleOption": "הכותרת שמוצגת בראש הבלוק",
+        "fileOption": "קריאת התוכן (Markdown, או HTML לתצוגה מקדימה) מהקובץ הזה",
+        "contentOption": "התוכן (Markdown, או HTML לתצוגה מקדימה)",
+        "scopeOption": "השיחה שאליה מפרסמים (ברירת מחדל: ${{variable}})",
+        "posted": "\"{{title}}\" פורסם בצ׳אט (בלוק {{id}}).",
+        "unknownKind": "סוג בלוק לא מוכר \"{{kind}}\". השתמשו באחד מאלה: {{kinds}}.",
+        "noScope": "אין שיחת צ׳אט: העבירו --scope או הריצו בתוך צ׳אט של Shep (הוא מגדיר את {{variable}}).",
+        "oneSource": "העבירו --file או --content (רק אחד).",
+        "unreadable": "לא ניתן לקרוא את {{file}}.",
+        "failed": "פרסום הבלוק נכשל"
+      }
     }
   },
   "ui": {

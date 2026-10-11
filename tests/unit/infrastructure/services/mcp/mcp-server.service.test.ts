@@ -100,6 +100,7 @@ describe('McpServerService', () => {
       'create_work_item',
       'update_work_item',
       'delete_work_item',
+      'post_chat_block',
     ];
 
     let containerService: McpServerService;
@@ -122,11 +123,11 @@ describe('McpServerService', () => {
       await containerService.server.close();
     });
 
-    it('registers all 17 tools when container is provided', async () => {
+    it('registers all 18 tools when container is provided', async () => {
       const { tools } = await client.listTools();
       const toolNames = tools.map((t) => t.name);
 
-      expect(tools).toHaveLength(17);
+      expect(tools).toHaveLength(expectedTools.length);
       for (const name of expectedTools) {
         expect(toolNames).toContain(name);
       }

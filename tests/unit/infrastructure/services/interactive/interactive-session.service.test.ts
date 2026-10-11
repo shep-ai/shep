@@ -264,6 +264,7 @@ describe('InteractiveSessionService', () => {
     messageRepo = {
       create: vi.fn().mockResolvedValue(undefined),
       findByFeatureId: vi.fn().mockResolvedValue([]),
+      findByFeatureIdSince: vi.fn().mockResolvedValue([]),
       findBySessionId: vi.fn().mockResolvedValue([]),
       deleteByFeatureId: vi.fn().mockResolvedValue(undefined),
     };

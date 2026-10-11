@@ -1848,6 +1848,23 @@
         "test": "executando em um executor de testes",
         "user-opt-out": "você as desativou"
       }
+    },
+    "chat": {
+      "description": "Ferramentas de conversas de chat",
+      "block": {
+        "description": "Mostrar um bloco rico no chat: uma especificação para revisar, uma prévia HTML ou um plano",
+        "kindArgument": "Tipo de bloco: {{kinds}}",
+        "titleOption": "Título exibido no cabeçalho do bloco",
+        "fileOption": "Ler o conteúdo (Markdown, ou HTML para uma prévia) deste arquivo",
+        "contentOption": "Conteúdo (Markdown, ou HTML para uma prévia)",
+        "scopeOption": "Conversa onde publicar (padrão: ${{variable}})",
+        "posted": "\"{{title}}\" publicado no chat (bloco {{id}}).",
+        "unknownKind": "Tipo de bloco desconhecido \"{{kind}}\". Use um de: {{kinds}}.",
+        "noScope": "Nenhuma conversa de chat: passe --scope ou execute dentro de um chat do Shep (ele define {{variable}}).",
+        "oneSource": "Passe --file ou --content (apenas um).",
+        "unreadable": "Não foi possível ler {{file}}.",
+        "failed": "Falha ao publicar o bloco"
+      }
     }
   },
   "ui": {

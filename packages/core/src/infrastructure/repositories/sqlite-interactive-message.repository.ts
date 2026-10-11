@@ -48,6 +48,17 @@ export class SQLiteInteractiveMessageRepository implements IInteractiveMessageRe
     return rows.map(fromDatabase);
   }
 
+  async findByFeatureIdSince(featureId: string, since: Date): Promise<InteractiveMessage[]> {
+    const rows = this.db
+      .prepare(
+        `SELECT * FROM interactive_messages
+         WHERE feature_id = ? AND created_at > ?
+         ORDER BY created_at ASC, rowid ASC`
+      )
+      .all(featureId, since.getTime()) as InteractiveMessageRow[];
+    return rows.map(fromDatabase);
+  }
+
   async findBySessionId(sessionId: string): Promise<InteractiveMessage[]> {
     const rows = this.db
       .prepare(

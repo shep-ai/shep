@@ -40,6 +40,12 @@ export interface TurnGroupCardProps {
   details?: ReactNode;
   /** Legacy slot used by completed cards — equivalent to `details`. */
   children?: ReactNode;
+  /**
+   * Shown under the header whether or not the card is expanded: rich blocks
+   * the agent posted in this turn (spec 137), which the user must be able to
+   * see and answer without opening the card.
+   */
+  pinned?: ReactNode;
 }
 
 export function TurnGroupCard({
@@ -50,6 +56,7 @@ export function TurnGroupCard({
   condensed,
   details,
   children,
+  pinned,
 }: TurnGroupCardProps) {
   const isInProgress = status === 'in-progress';
   // Start OPEN for in-progress (user wants to see live progress),
@@ -122,6 +129,12 @@ export function TurnGroupCard({
           )}
         />
       </button>
+
+      {pinned ? (
+        <div data-testid="turn-group-card-pinned" className="border-t px-3 py-2">
+          {pinned}
+        </div>
+      ) : null}
 
       {open && body ? (
         <div

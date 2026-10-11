@@ -452,7 +452,8 @@
     "trackers": "Ligações",
     "opportunities": "Oportunidades",
     "incidents": "Incidentes",
-    "factory": "Fábrica"
+    "factory": "Fábrica",
+    "chat": "Chat"
   },
   "sidebar": {
     "features": "Recursos",
@@ -1893,6 +1894,64 @@
       "hint": "Execute `shep telemetry show` para ver exatamente o que seria enviado.",
       "loading": "Carregando configurações de métricas de uso…",
       "loadFailed": "Não foi possível carregar as configurações de métricas de uso."
+    }
+  },
+  "chatBlocks": {
+    "kinds": {
+      "spec_review": "Revisão de especificação",
+      "html_preview": "Prévia",
+      "plan_card": "Plano"
+    },
+    "actions": {
+      "approve": "Aprovar",
+      "request_changes": "Pedir alterações",
+      "implement": "Implementar",
+      "refine": "Refinar"
+    },
+    "resolved": {
+      "approve": "Aprovado",
+      "request_changes": "Alterações pedidas",
+      "implement": "Implementando",
+      "refine": "Refinamento pedido"
+    },
+    "notePlaceholder": "O que deve mudar?",
+    "send": "Enviar",
+    "cancel": "Cancelar",
+    "preview": "Prévia",
+    "source": "Código",
+    "openFullScreen": "Abrir em tela cheia",
+    "sandboxNote": "Executa em um sandbox sem acesso à rede.",
+    "answerFailed": "Sua resposta não foi entregue",
+    "answerFailedDescription": "O bloco continua aberto. Tente de novo.",
+    "retry": "Tentar de novo"
+  },
+  "chats": {
+    "title": "Chat",
+    "conversations": "Conversas",
+    "conversation": "Conversa",
+    "groups": {
+      "global": "Shep",
+      "repository": "Repositórios",
+      "feature": "Funcionalidades",
+      "application": "Aplicações"
+    },
+    "openOnCanvas": "Abrir no canvas",
+    "openApplication": "Abrir aplicação",
+    "lifecycle": {
+      "Started": "Iniciada",
+      "Analyze": "Analisando",
+      "Requirements": "Requisitos",
+      "Research": "Pesquisa",
+      "Planning": "Planejamento",
+      "Implementation": "Implementação",
+      "Review": "Revisão",
+      "Maintain": "Mesclada",
+      "Blocked": "Bloqueada",
+      "Pending": "Pendente",
+      "Exploring": "Explorando",
+      "Deleting": "Excluindo",
+      "AwaitingUpstream": "Aguardando upstream",
+      "Archived": "Arquivada"
     }
   }
 }

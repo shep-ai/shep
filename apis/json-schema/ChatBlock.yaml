@@ -1,0 +1,24 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: ChatBlock.yaml
+type: object
+properties:
+  id:
+    type: string
+    description: Stable identifier, unique within the conversation
+  type:
+    $ref: ChatBlockType.yaml
+    description: Kind of block
+  title:
+    type: string
+    description: Short title shown in the block header
+  markdown:
+    type: string
+    description: Markdown body (spec reviews and plan cards)
+  html:
+    type: string
+    description: Self-contained HTML document (HTML previews)
+required:
+  - id
+  - type
+  - title
+description: A rich block posted into a chat conversation

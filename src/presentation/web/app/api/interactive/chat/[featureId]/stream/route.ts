@@ -17,11 +17,17 @@
  *
  * `featureId` is a polymorphic scope key: a feature UUID, `app-<id>`,
  * `repo-<id>`, or `global`.
+ *
+ * Messages written by another process (an agent's `shep chat block`, an MCP
+ * server — spec 137) never reach the in-process subscribers, so the stream
+ * also relays newer database rows as `message` events (lib/chat-message-relay).
  */
 
 import type { NextRequest } from 'next/server';
 import { resolve } from '@/lib/server-container';
 import type { IInteractiveSessionService } from '@shepai/core/application/ports/output/services/interactive-session-service.interface';
+import type { ListChatMessagesSinceUseCase } from '@shepai/core/application/use-cases/interactive/list-chat-messages-since.use-case';
+import { startChatMessageRelay } from '@/lib/chat-message-relay';
 
 export const dynamic = 'force-dynamic';
 
@@ -101,10 +107,18 @@ export async function GET(request: NextRequest, { params }: RouteParams): Promis
           }
         });
 
+        const listSince = resolve<ListChatMessagesSinceUseCase>('ListChatMessagesSinceUseCase');
+        const stopRelay = startChatMessageRelay({
+          listSince: (since) => listSince.execute({ scope: featureId, since }),
+          emit: (message) =>
+            enqueue(`event: message\ndata: ${JSON.stringify({ message, featureId })}\n\n`),
+        });
+
         function cleanup() {
           if (closed) return;
           closed = true;
           clearInterval(heartbeat);
+          stopRelay();
           unsubscribe();
           try {
             controller.close();

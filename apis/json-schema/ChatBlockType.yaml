@@ -1,0 +1,8 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: ChatBlockType.yaml
+type: string
+enum:
+  - spec_review
+  - html_preview
+  - plan_card
+description: Kind of rich block an agent posts into a chat

@@ -9,4 +9,13 @@
 enum InlineBlockType {
   @doc("A Decision: questions with options the user answers inline")
   Decision: "decision",
+
+  @doc("A spec or PRD to approve or send back (spec 137)")
+  SpecReview: "spec_review",
+
+  @doc("A self-contained HTML page in a sandboxed frame (spec 137)")
+  HtmlPreview: "html_preview",
+
+  @doc("A plan to implement or refine (spec 137)")
+  PlanCard: "plan_card",
 }

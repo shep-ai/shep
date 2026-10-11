@@ -22,6 +22,13 @@ import { AnsweredDecisionRow } from '@/components/common/decision-panel';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { ToolBubble, parseToolEvent } from '@/components/features/chat/tool-bubble';
 import {
+  isChatBlockMessage,
+  isChatBlockResponseMessage,
+} from '@shepai/core/domain/shared/chat-block';
+import { ChatBlockMessage } from '@/components/features/chat/ChatBlockMessage';
+import { ChatBlockResponseRow } from '@/components/features/chat/ChatBlockResponseRow';
+import { SandboxedHtmlFrame } from '@/components/common/sandboxed-html-frame';
+import {
   SendHorizontal,
   CircleStop,
   Copy,
@@ -172,6 +179,13 @@ const UserMessage: FC = () => {
   if (isInteractionAnswerMessage(text)) {
     return <InteractionResponseMessage text={text} />;
   }
+  if (isChatBlockResponseMessage(text)) {
+    return (
+      <MessagePrimitive.Root className="group animate-in fade-in-0 slide-in-from-bottom-1 flex w-full items-start gap-2.5 px-4 py-0.5 duration-300 ease-out">
+        <ChatBlockResponseRow content={text} className="min-w-0 flex-1" />
+      </MessagePrimitive.Root>
+    );
+  }
 
   return (
     <MessagePrimitive.Root className="group animate-in fade-in-0 slide-in-from-bottom-1 flex w-full items-start gap-2.5 px-4 py-0.5 duration-300 ease-out">
@@ -237,6 +251,18 @@ const AssistantMessage: FC = () => {
   const firstPart = message?.content?.[0];
   const rawText = firstPart && 'text' in firstPart ? firstPart.text : '';
   const toolEvent = rawText ? parseToolEvent(rawText) : null;
+
+  // A rich block the agent posted (spec 137) renders as its inline block.
+  if (isChatBlockMessage(rawText)) {
+    return (
+      <MessagePrimitive.Root className="group animate-in fade-in-0 slide-in-from-bottom-1 flex w-full items-start gap-2.5 px-4 py-1 duration-300 ease-out">
+        <div className="bg-muted flex h-6 w-6 shrink-0 items-center justify-center rounded-full">
+          <Bot className="text-muted-foreground h-3.5 w-3.5" />
+        </div>
+        <ChatBlockMessage content={rawText} className="max-w-[85%] min-w-0 flex-1" />
+      </MessagePrimitive.Root>
+    );
+  }
 
   if (toolEvent) {
     return (
@@ -399,11 +425,11 @@ export function HtmlPreviewBlock({ code, language }: { code: string; language: s
         </div>
         <div style={{ height: 'min(55vh, 450px)' }}>
           {showPreview ? (
-            <iframe
-              srcDoc={code}
-              sandbox="allow-scripts"
-              className="h-full w-full border-0 bg-white"
+            <SandboxedHtmlFrame
+              html={code}
               title={t('chat.htmlPreview')}
+              autoHeight={false}
+              className="h-full"
             />
           ) : (
             <pre className="h-full overflow-auto p-3 font-mono text-xs leading-relaxed">
@@ -469,11 +495,11 @@ export function HtmlPreviewBlock({ code, language }: { code: string; language: s
               <code>{code}</code>
             </pre>
           ) : (
-            <iframe
-              srcDoc={code}
-              sandbox="allow-scripts"
-              className="flex-1 border-0 bg-white dark:bg-neutral-900"
+            <SandboxedHtmlFrame
+              html={code}
               title={t('chat.htmlPreviewFullscreen')}
+              autoHeight={false}
+              className="flex-1 dark:bg-neutral-900"
             />
           )}
         </DialogContent>

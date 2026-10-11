@@ -51,6 +51,7 @@ function makeMessageRepo(messages: InteractiveMessage[] = []): IInteractiveMessa
   return {
     create: vi.fn().mockResolvedValue(undefined),
     findByFeatureId: vi.fn().mockResolvedValue(messages),
+    findByFeatureIdSince: vi.fn().mockResolvedValue([]),
     findBySessionId: vi.fn().mockResolvedValue([]),
     deleteByFeatureId: vi.fn().mockResolvedValue(undefined),
   };

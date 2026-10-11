@@ -452,7 +452,8 @@
     "trackers": "Підключення",
     "opportunities": "Можливості",
     "incidents": "Інциденти",
-    "factory": "Фабрика"
+    "factory": "Фабрика",
+    "chat": "Чат"
   },
   "sidebar": {
     "features": "Функції",
@@ -1893,6 +1894,64 @@
       "hint": "Виконайте `shep telemetry show`, щоб побачити, що саме буде надіслано.",
       "loading": "Завантаження налаштувань метрик використання…",
       "loadFailed": "Не вдалося завантажити налаштування метрик використання."
+    }
+  },
+  "chatBlocks": {
+    "kinds": {
+      "spec_review": "Перевірка специфікації",
+      "html_preview": "Превʼю",
+      "plan_card": "План"
+    },
+    "actions": {
+      "approve": "Схвалити",
+      "request_changes": "Запросити зміни",
+      "implement": "Реалізувати",
+      "refine": "Уточнити"
+    },
+    "resolved": {
+      "approve": "Схвалено",
+      "request_changes": "Запитано зміни",
+      "implement": "Реалізується",
+      "refine": "Запитано уточнення"
+    },
+    "notePlaceholder": "Що потрібно змінити?",
+    "send": "Надіслати",
+    "cancel": "Скасувати",
+    "preview": "Превʼю",
+    "source": "Вихідний код",
+    "openFullScreen": "Відкрити на весь екран",
+    "sandboxNote": "Працює в пісочниці без доступу до мережі.",
+    "answerFailed": "Вашу відповідь не доставлено",
+    "answerFailedDescription": "Блок досі відкритий. Спробуйте ще раз.",
+    "retry": "Повторити"
+  },
+  "chats": {
+    "title": "Чат",
+    "conversations": "Розмови",
+    "conversation": "Розмова",
+    "groups": {
+      "global": "Shep",
+      "repository": "Репозиторії",
+      "feature": "Фічі",
+      "application": "Застосунки"
+    },
+    "openOnCanvas": "Відкрити на полотні",
+    "openApplication": "Відкрити застосунок",
+    "lifecycle": {
+      "Started": "Розпочато",
+      "Analyze": "Аналіз",
+      "Requirements": "Вимоги",
+      "Research": "Дослідження",
+      "Planning": "Планування",
+      "Implementation": "Реалізація",
+      "Review": "Ревʼю",
+      "Maintain": "Злито",
+      "Blocked": "Заблоковано",
+      "Pending": "Очікує",
+      "Exploring": "Дослідження",
+      "Deleting": "Видаляється",
+      "AwaitingUpstream": "Чекає upstream",
+      "Archived": "В архіві"
     }
   }
 }

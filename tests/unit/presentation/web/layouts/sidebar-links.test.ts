@@ -29,6 +29,15 @@ describe('sidebar links', () => {
     expect(hrefs.indexOf('/opportunities')).toBe(hrefs.indexOf('/connections') + 1);
   });
 
+  it('lists Chat right under Home and keeps it active on every conversation (spec 137)', () => {
+    const hrefs = SIDEBAR_LINKS.map((l) => l.href);
+    expect(hrefs.indexOf('/chats')).toBe(1);
+    const chat = SIDEBAR_LINKS.find((l) => l.href === '/chats')!;
+    expect(chat.labelKey).toBe('chat');
+    expect(chat.flag).toBeUndefined();
+    expect(isSidebarLinkActive(chat, '/chats/repo-r1')).toBe(true);
+  });
+
   it('lists Incidents right after Opportunities (spec 129)', () => {
     const hrefs = SIDEBAR_LINKS.map((link) => link.href);
     expect(hrefs.indexOf('/incidents')).toBe(hrefs.indexOf('/opportunities') + 1);

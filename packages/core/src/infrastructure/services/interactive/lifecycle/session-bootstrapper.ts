@@ -46,6 +46,8 @@ import { ConcurrentSessionLimitError } from '../../../../domain/errors/concurren
 import { InteractiveAgentUnsupportedError } from '../../../../domain/errors/interactive-agent-unsupported.error.js';
 import { BootWatchdog } from './boot-watchdog.js';
 import type { SessionSpaceEnvironment } from './session-space-environment.js';
+import { combineSpaceEnvironments } from '../../../../domain/shared/space-environment.js';
+import { chatScopeEnvironment } from '../../../../domain/shared/chat-scope.js';
 import type { AgentQuestionBridgeFactory } from '../../agents/agent-question-service/agent-question-bridge.factory.js';
 
 export class SessionBootstrapper {
@@ -209,7 +211,8 @@ export class SessionBootstrapper {
         featureId,
         worktreePath,
         pendingContent,
-        state.systemPrompt
+        state.systemPrompt,
+        Boolean(state.agentSessionId)
       );
 
       // If we consumed pendingUserContent, clear it on state now
@@ -244,6 +247,13 @@ export class SessionBootstrapper {
         this.interactionCoordinator.buildLiveSurface(state)
       );
 
+      // Spec 137: the session's tools (`shep chat block`) post into this
+      // conversation without the agent having to know its scope key.
+      const environment = combineSpaceEnvironments(
+        space.environment,
+        chatScopeEnvironment(featureId)
+      );
+
       const previousAgentSessionId = state.agentSessionId;
       let handle;
       if (previousAgentSessionId) {
@@ -254,7 +264,7 @@ export class SessionBootstrapper {
           systemPrompt: context,
           onUserQuestion,
           ...(agentQuestionBridge ? { agentQuestionBridge } : {}),
-          ...(space.environment ? { environment: space.environment } : {}),
+          environment,
         });
       } else {
         // Create new SDK session
@@ -264,7 +274,7 @@ export class SessionBootstrapper {
           systemPrompt: context,
           onUserQuestion,
           ...(agentQuestionBridge ? { agentQuestionBridge } : {}),
-          ...(space.environment ? { environment: space.environment } : {}),
+          environment,
         });
       }
 

@@ -41,6 +41,7 @@ import { registerServices } from '@/infrastructure/di/modules/register-services.
 import { registerTools } from '@/infrastructure/di/modules/register-tools.js';
 import { registerAgents } from '@/infrastructure/di/modules/register-agents.js';
 import { registerDecisions } from '@/infrastructure/di/modules/register-decisions.js';
+import { registerChatBlocks } from '@/infrastructure/di/modules/register-chat-blocks.js';
 import { AgentQuestionBridgeFactory } from '@/infrastructure/services/agents/agent-question-service/agent-question-bridge.factory.js';
 import { registerCloudDeploy } from '@/infrastructure/di/modules/register-cloud-deploy.js';
 import { registerIntegrations } from '@/infrastructure/di/modules/register-integrations.js';
@@ -117,6 +118,11 @@ const WEB_ROUTE_TOKENS: readonly string[] = [
   'RecordTelemetryEventUseCase',
   // Spec 134: the unified decisions inbox.
   'ListAgentQuestionInboxUseCase',
+  // Spec 137: chat blocks and the chat-first page
+  'PostChatBlockUseCase',
+  'RespondToChatBlockUseCase',
+  'ListChatMessagesSinceUseCase',
+  'ListChatConversationsUseCase',
   'AskAgentDecisionUseCase',
   'AttachmentStorageService',
   'ConnectCloudProviderUseCase',
@@ -461,6 +467,7 @@ describe('DI container bootstrap (integration)', () => {
     registerTools(scopedContainer);
     registerAgents(scopedContainer);
     registerDecisions(scopedContainer);
+    registerChatBlocks(scopedContainer);
     registerCloudDeploy(scopedContainer);
     registerIntegrations(scopedContainer);
     registerDeployment(scopedContainer);

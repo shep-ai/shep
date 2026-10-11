@@ -452,7 +452,8 @@
     "trackers": "Connexions",
     "opportunities": "Opportunités",
     "incidents": "Incidents",
-    "factory": "Usine"
+    "factory": "Usine",
+    "chat": "Chat"
   },
   "sidebar": {
     "features": "Fonctionnalités",
@@ -1893,6 +1894,64 @@
       "hint": "Exécutez `shep telemetry show` pour voir exactement ce qui serait envoyé.",
       "loading": "Chargement des paramètres des métriques d'utilisation…",
       "loadFailed": "Impossible de charger les paramètres des métriques d'utilisation."
+    }
+  },
+  "chatBlocks": {
+    "kinds": {
+      "spec_review": "Revue de spécification",
+      "html_preview": "Aperçu",
+      "plan_card": "Plan"
+    },
+    "actions": {
+      "approve": "Approuver",
+      "request_changes": "Demander des modifications",
+      "implement": "Implémenter",
+      "refine": "Affiner"
+    },
+    "resolved": {
+      "approve": "Approuvé",
+      "request_changes": "Modifications demandées",
+      "implement": "En cours d'implémentation",
+      "refine": "Affinage demandé"
+    },
+    "notePlaceholder": "Que faut-il changer ?",
+    "send": "Envoyer",
+    "cancel": "Annuler",
+    "preview": "Aperçu",
+    "source": "Source",
+    "openFullScreen": "Ouvrir en plein écran",
+    "sandboxNote": "S'exécute dans un bac à sable sans accès réseau.",
+    "answerFailed": "Votre réponse n'a pas été transmise",
+    "answerFailedDescription": "Le bloc est toujours ouvert. Réessayez.",
+    "retry": "Réessayer"
+  },
+  "chats": {
+    "title": "Chat",
+    "conversations": "Conversations",
+    "conversation": "Conversation",
+    "groups": {
+      "global": "Shep",
+      "repository": "Dépôts",
+      "feature": "Fonctionnalités",
+      "application": "Applications"
+    },
+    "openOnCanvas": "Ouvrir sur le canevas",
+    "openApplication": "Ouvrir l'application",
+    "lifecycle": {
+      "Started": "Démarrée",
+      "Analyze": "Analyse",
+      "Requirements": "Exigences",
+      "Research": "Recherche",
+      "Planning": "Planification",
+      "Implementation": "Implémentation",
+      "Review": "Revue",
+      "Maintain": "Fusionnée",
+      "Blocked": "Bloquée",
+      "Pending": "En attente",
+      "Exploring": "Exploration",
+      "Deleting": "Suppression",
+      "AwaitingUpstream": "En attente de l'amont",
+      "Archived": "Archivée"
     }
   }
 }

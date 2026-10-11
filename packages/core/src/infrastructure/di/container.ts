@@ -104,6 +104,7 @@ import { registerServices } from './modules/register-services.js';
 import { registerTools } from './modules/register-tools.js';
 import { registerAgents } from './modules/register-agents.js';
 import { registerDecisions } from './modules/register-decisions.js';
+import { registerChatBlocks } from './modules/register-chat-blocks.js';
 import { registerCloudDeploy } from './modules/register-cloud-deploy.js';
 import { registerIntegrations } from './modules/register-integrations.js';
 import { registerDeployment } from './modules/register-deployment.js';
@@ -161,6 +162,7 @@ export async function initializeContainer(): Promise<typeof container> {
   registerTools(container);
   registerAgents(container);
   registerDecisions(container);
+  registerChatBlocks(container);
   registerCloudDeploy(container);
   registerIntegrations(container);
   registerDeployment(container);

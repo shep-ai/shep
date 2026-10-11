@@ -30,6 +30,13 @@ export interface IInteractiveMessageRepository {
   findByFeatureId(featureId: string, limit?: number): Promise<InteractiveMessage[]>;
 
   /**
+   * Messages of a scope created strictly after `since`, ordered by created_at ASC.
+   * Lets an open chat stream pick up rows written by another process — an
+   * agent's `shep chat block` call or an MCP server (spec 137).
+   */
+  findByFeatureIdSince(featureId: string, since: Date): Promise<InteractiveMessage[]>;
+
+  /**
    * Find all messages for a specific session, ordered by created_at ASC.
    */
   findBySessionId(sessionId: string): Promise<InteractiveMessage[]>;

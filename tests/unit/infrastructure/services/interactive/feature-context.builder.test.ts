@@ -191,4 +191,13 @@ describe('FeatureContextBuilder', () => {
     const ctx = builder.buildContext(feature, '/wt', []);
     expect(ctx).toContain('Enable users to pay via card');
   });
+
+  it('tells the agent how to show rich blocks in the chat (spec 137)', () => {
+    const ctx = builder.buildContext(makeFeature(), '/wt', []);
+    expect(ctx).toContain('## Rich replies');
+    for (const kind of ['spec-review', 'preview', 'plan']) {
+      expect(ctx).toContain(`shep chat block ${kind}`);
+    }
+    expect(ctx).toContain('SHEP_CHAT_SCOPE');
+  });
 });

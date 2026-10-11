@@ -1848,6 +1848,23 @@
         "test": "running under a test runner",
         "user-opt-out": "you turned them off"
       }
+    },
+    "chat": {
+      "description": "Chat conversation tools",
+      "block": {
+        "description": "Show a rich block in the chat: a spec to review, an HTML preview, or a plan",
+        "kindArgument": "Block kind: {{kinds}}",
+        "titleOption": "Title shown in the block header",
+        "fileOption": "Read the body (Markdown, or HTML for a preview) from this file",
+        "contentOption": "Body text (Markdown, or HTML for a preview)",
+        "scopeOption": "Conversation to post into (default: ${{variable}})",
+        "posted": "Posted \"{{title}}\" to the chat (block {{id}}).",
+        "unknownKind": "Unknown block kind \"{{kind}}\". Use one of: {{kinds}}.",
+        "noScope": "No chat conversation: pass --scope or run inside a Shep chat (it sets {{variable}}).",
+        "oneSource": "Pass --file or --content (exactly one).",
+        "unreadable": "Could not read {{file}}.",
+        "failed": "Failed to post the block"
+      }
     }
   },
   "ui": {

@@ -1848,6 +1848,23 @@
         "test": "Ausführung in einem Test-Runner",
         "user-opt-out": "Sie haben sie deaktiviert"
       }
+    },
+    "chat": {
+      "description": "Werkzeuge für Chat-Unterhaltungen",
+      "block": {
+        "description": "Einen Rich-Block im Chat anzeigen: eine Spezifikation zur Prüfung, eine HTML-Vorschau oder einen Plan",
+        "kindArgument": "Blockart: {{kinds}}",
+        "titleOption": "Titel in der Kopfzeile des Blocks",
+        "fileOption": "Inhalt (Markdown, bei einer Vorschau HTML) aus dieser Datei lesen",
+        "contentOption": "Inhalt (Markdown, bei einer Vorschau HTML)",
+        "scopeOption": "Unterhaltung, in die gepostet wird (Standard: ${{variable}})",
+        "posted": "\"{{title}}\" im Chat gepostet (Block {{id}}).",
+        "unknownKind": "Unbekannte Blockart \"{{kind}}\". Verwende eine von: {{kinds}}.",
+        "noScope": "Keine Chat-Unterhaltung: --scope angeben oder in einem Shep-Chat ausführen (er setzt {{variable}}).",
+        "oneSource": "--file oder --content angeben (genau eines).",
+        "unreadable": "{{file}} konnte nicht gelesen werden.",
+        "failed": "Block konnte nicht gepostet werden"
+      }
     }
   },
   "ui": {

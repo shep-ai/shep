@@ -140,6 +140,14 @@ layer has one responsibility and does not leak into the others.
   "Other". An answered question (`{{interaction}}` record, parsed only by
   `domain/shared/interaction-answer.ts`) stays in its turn and renders as an
   `AnsweredDecisionRow`.
+- `ChatBlockMessage.tsx` / `ChatBlockResponseRow.tsx` — rich blocks an agent posts
+  (spec 137: spec review, HTML preview, plan card) and the user's answer to one. A block is a
+  `{{block}}` assistant message and its answer a `{{block-response}}` user message, parsed only
+  by `domain/shared/chat-block.ts`. Blocks render through the inline block registry. In turn
+  cards they are PINNED (`TurnGroupCard`'s `pinned` slot) so a collapsed card never hides
+  something the user must answer; they are not repeated among the expanded raw messages.
+  `ChatBlocksProvider` (`chat-blocks-context.tsx`, mounted by `ChatTab`) gives every renderer
+  the conversation's blocks, their answers and the responder.
 - `ChatTab.tsx` — Composes the timeline. Calls `useChatRuntime` once
   with `hideAllMessages: turnGroupsEnabled`, calls `useTurnGroupsView`
   over `rawMessages`, and renders all Layer 3 cards in chronological

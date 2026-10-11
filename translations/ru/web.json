@@ -452,7 +452,8 @@
     "trackers": "Подключения",
     "opportunities": "Возможности",
     "incidents": "Инциденты",
-    "factory": "Фабрика"
+    "factory": "Фабрика",
+    "chat": "Чат"
   },
   "sidebar": {
     "features": "Функции",
@@ -1893,6 +1894,64 @@
       "hint": "Выполните `shep telemetry show`, чтобы увидеть, что именно будет отправлено.",
       "loading": "Загрузка настроек метрик использования…",
       "loadFailed": "Не удалось загрузить настройки метрик использования."
+    }
+  },
+  "chatBlocks": {
+    "kinds": {
+      "spec_review": "Проверка спецификации",
+      "html_preview": "Превью",
+      "plan_card": "План"
+    },
+    "actions": {
+      "approve": "Одобрить",
+      "request_changes": "Запросить изменения",
+      "implement": "Реализовать",
+      "refine": "Уточнить"
+    },
+    "resolved": {
+      "approve": "Одобрено",
+      "request_changes": "Запрошены изменения",
+      "implement": "Реализуется",
+      "refine": "Запрошено уточнение"
+    },
+    "notePlaceholder": "Что нужно изменить?",
+    "send": "Отправить",
+    "cancel": "Отмена",
+    "preview": "Превью",
+    "source": "Исходный код",
+    "openFullScreen": "Открыть на весь экран",
+    "sandboxNote": "Работает в песочнице без доступа к сети.",
+    "answerFailed": "Ваш ответ не доставлен",
+    "answerFailedDescription": "Блок всё ещё открыт. Попробуйте ещё раз.",
+    "retry": "Повторить"
+  },
+  "chats": {
+    "title": "Чат",
+    "conversations": "Беседы",
+    "conversation": "Беседа",
+    "groups": {
+      "global": "Shep",
+      "repository": "Репозитории",
+      "feature": "Фичи",
+      "application": "Приложения"
+    },
+    "openOnCanvas": "Открыть на холсте",
+    "openApplication": "Открыть приложение",
+    "lifecycle": {
+      "Started": "Начата",
+      "Analyze": "Анализ",
+      "Requirements": "Требования",
+      "Research": "Исследование",
+      "Planning": "Планирование",
+      "Implementation": "Реализация",
+      "Review": "Ревью",
+      "Maintain": "Слита",
+      "Blocked": "Заблокирована",
+      "Pending": "Ожидает",
+      "Exploring": "Исследуется",
+      "Deleting": "Удаляется",
+      "AwaitingUpstream": "Ждёт upstream",
+      "Archived": "В архиве"
     }
   }
 }

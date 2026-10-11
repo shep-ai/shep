@@ -90,6 +90,9 @@ import "./agent-session.tsp";
 import "./interactive-session.tsp";
 import "./interactive-message.tsp";
 
+// Rich blocks agents post into chat conversations (spec 137)
+import "./chat-block.tsp";
+
 // Persistent workflow step tracking
 import "./workflow-step.tsp";
 

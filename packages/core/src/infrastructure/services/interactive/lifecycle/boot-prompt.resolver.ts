@@ -7,7 +7,12 @@
  * 1. `pendingUserContent` defined  → that content IS the boot prompt
  *    (user-initiated boot: Application chat, or any scope that calls
  *    `sendUserMessage` cold). The context is the system prompt override
- *    if set, otherwise the built feature context.
+ *    if set, otherwise the built feature context. For a NEW agent session
+ *    with a built context, the context goes first in the same turn: the
+ *    Claude Agent SDK V2 session drops `systemPrompt`, so without this the
+ *    agent never sees the Shep context (identity, CLI, rich replies — spec
+ *    135). Application scopes are left alone; their kickoff carries its own
+ *    brief.
  *
  * 2. No pending content AND no `systemPromptOverride` → feature-chat path:
  *    the feature context doubles as the boot prompt so the agent greets the
@@ -25,6 +30,10 @@
 import type { IFeatureRepository } from '../../../../application/ports/output/repositories/feature-repository.interface.js';
 import type { SelectProjectMemoryUseCase } from '../../../../application/use-cases/project-memory/select-project-memory.use-case.js';
 import type { FeatureContextBuilder } from '../feature-context.builder.js';
+import { isApplicationFeatureId } from '../../../../domain/shared/feature-id.js';
+
+/** Separates the Shep context from the user's first message in one turn. */
+const FIRST_MESSAGE_SEPARATOR = '\n\n---\n\nUser message:\n';
 
 export interface BootPromptResult {
   /** System prompt / context string to pass to the agent SDK. */
@@ -47,12 +56,15 @@ export class BootPromptResolver {
    * @param worktreePath        Absolute path to the checked-out worktree.
    * @param pendingUserContent  User message that triggered the boot, if any.
    * @param systemPromptOverride Caller-supplied system prompt; overrides feature-context build.
+   * @param resuming            True when the agent's previous session is resumed (it already
+   *                            has the context).
    */
   async resolve(
     featureId: string,
     worktreePath: string,
     pendingUserContent: string | undefined,
-    systemPromptOverride: string | undefined
+    systemPromptOverride: string | undefined,
+    resuming = false
   ): Promise<BootPromptResult> {
     // Resolve the context string (= system prompt passed to the SDK session).
     // When the caller supplied one, use it verbatim — no feature lookup needed.
@@ -98,8 +110,13 @@ export class BootPromptResolver {
     // Decide what to send as the first turn (three cases — see file header).
     let bootPrompt: string;
     if (pendingUserContent !== undefined) {
-      // Case 1: user-initiated boot — send their message as the first turn.
-      bootPrompt = pendingUserContent;
+      // Case 1: user-initiated boot — send their message as the first turn,
+      // preceded by the built context when the agent has never seen it.
+      const deliverContext =
+        !resuming && systemPromptOverride === undefined && !isApplicationFeatureId(featureId);
+      bootPrompt = deliverContext
+        ? `${context}${FIRST_MESSAGE_SEPARATOR}${pendingUserContent}`
+        : pendingUserContent;
     } else if (systemPromptOverride === undefined) {
       // Case 2: classic feature-chat — context IS the greeting prompt.
       bootPrompt = context;

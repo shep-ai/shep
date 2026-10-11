@@ -452,7 +452,8 @@
     "trackers": "الاتصالات",
     "opportunities": "الفرص",
     "incidents": "الحوادث",
-    "factory": "المصنع"
+    "factory": "المصنع",
+    "chat": "الدردشة"
   },
   "sidebar": {
     "features": "الميزات",
@@ -1893,6 +1894,64 @@
       "hint": "شغّل `shep telemetry show` لترى بالضبط ما سيتم إرساله.",
       "loading": "جارٍ تحميل إعدادات مقاييس الاستخدام…",
       "loadFailed": "تعذّر تحميل إعدادات مقاييس الاستخدام."
+    }
+  },
+  "chatBlocks": {
+    "kinds": {
+      "spec_review": "مراجعة المواصفات",
+      "html_preview": "معاينة",
+      "plan_card": "خطة"
+    },
+    "actions": {
+      "approve": "موافقة",
+      "request_changes": "طلب تعديلات",
+      "implement": "تنفيذ",
+      "refine": "تحسين"
+    },
+    "resolved": {
+      "approve": "تمت الموافقة",
+      "request_changes": "طُلبت تعديلات",
+      "implement": "قيد التنفيذ",
+      "refine": "طُلب تحسين"
+    },
+    "notePlaceholder": "ما الذي يجب تغييره؟",
+    "send": "إرسال",
+    "cancel": "إلغاء",
+    "preview": "معاينة",
+    "source": "المصدر",
+    "openFullScreen": "فتح بملء الشاشة",
+    "sandboxNote": "يعمل في بيئة معزولة بلا وصول إلى الشبكة.",
+    "answerFailed": "لم يتم تسليم إجابتك",
+    "answerFailedDescription": "ما زالت الكتلة مفتوحة. حاول مرة أخرى.",
+    "retry": "إعادة المحاولة"
+  },
+  "chats": {
+    "title": "الدردشة",
+    "conversations": "المحادثات",
+    "conversation": "المحادثة",
+    "groups": {
+      "global": "Shep",
+      "repository": "المستودعات",
+      "feature": "الميزات",
+      "application": "التطبيقات"
+    },
+    "openOnCanvas": "فتح على اللوحة",
+    "openApplication": "فتح التطبيق",
+    "lifecycle": {
+      "Started": "بدأت",
+      "Analyze": "تحليل",
+      "Requirements": "المتطلبات",
+      "Research": "البحث",
+      "Planning": "التخطيط",
+      "Implementation": "التنفيذ",
+      "Review": "المراجعة",
+      "Maintain": "مدمجة",
+      "Blocked": "محظورة",
+      "Pending": "قيد الانتظار",
+      "Exploring": "استكشاف",
+      "Deleting": "قيد الحذف",
+      "AwaitingUpstream": "بانتظار المصدر",
+      "Archived": "مؤرشفة"
     }
   }
 }

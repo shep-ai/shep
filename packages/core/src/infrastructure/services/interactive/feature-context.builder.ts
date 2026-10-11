@@ -9,6 +9,7 @@
 import { execFileSync } from 'node:child_process';
 import type { Feature } from '../../../domain/generated/output.js';
 import { getShepHomeDir } from '../filesystem/shep-directory.service.js';
+import { buildRichRepliesSection } from './rich-replies-context.js';
 
 /** Maximum number of plan tasks to include in the context. */
 const MAX_TASKS = 30;
@@ -130,6 +131,9 @@ ${memoryBlob}`);
 - You know the Shep CLI inside out. Help users with any shep command.
 - When working on this feature, stay focused on the feature context below.
 - If the user asks about Shep itself, answer from your knowledge of the CLI.`);
+
+    // ── Rich replies (spec 137) ───────────────────────────────────────────
+    sections.push(buildRichRepliesSection());
 
     // ── CLI Reference ─────────────────────────────────────────────────────
     sections.push(`## Shep CLI Reference

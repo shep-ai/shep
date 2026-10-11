@@ -1,0 +1,9 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: ChatBlockAction.yaml
+type: string
+enum:
+  - approve
+  - request_changes
+  - implement
+  - refine
+description: What the user did with a chat block

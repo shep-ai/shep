@@ -33,6 +33,7 @@ import type { IInteractiveMessageRepository } from '../../ports/output/repositor
 import type { InteractiveMessage } from '../../../domain/generated/output.js';
 import { InteractiveMessageRole } from '../../../domain/generated/output.js';
 import { isInteractionAnswerMessage } from '../../../domain/shared/interaction-answer.js';
+import { chatMessageDisplayText } from '../../../domain/shared/chat-block.js';
 
 /** One user-turn group, ready for the client to render as a card. */
 export interface ChatTurnGroup {
@@ -164,8 +165,8 @@ export class GetChatTurnGroupsUseCase {
     const completed = turns.slice(0, -1);
     const latest = turns[turns.length - 1];
 
-    const completedGroups: ChatTurnGroup[] = completed.map((t) => buildGroup(t, 'completed'));
-    const currentTurn: ChatTurnGroup = buildGroup(latest, 'in-progress');
+    const completedGroups: ChatTurnGroup[] = completed.map((t) => buildGroup(t, 'completed', flat));
+    const currentTurn: ChatTurnGroup = buildGroup(latest, 'in-progress', flat);
 
     const hiddenMessageIds = [
       ...completedGroups.flatMap((g) => g.messageIds),
@@ -177,11 +178,13 @@ export class GetChatTurnGroupsUseCase {
 
 function buildGroup(
   t: { user: InteractiveMessage; items: InteractiveMessage[] },
-  status: 'completed' | 'in-progress'
+  status: 'completed' | 'in-progress',
+  messages: readonly InteractiveMessage[]
 ): ChatTurnGroup {
   const first = t.items[0];
   const last = t.items[t.items.length - 1];
-  const userText = t.user.content ?? '';
+  // An answer to a chat block (spec 137) is titled in words, not raw JSON.
+  const userText = chatMessageDisplayText(t.user.content ?? '', messages);
   const assistantMessageCount = t.items.filter(
     (m) => m.role === InteractiveMessageRole.assistant
   ).length;

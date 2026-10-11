@@ -80,11 +80,13 @@ function AppShellInner({ children, sidebarOpen, variant = 'full' }: AppShellProp
   // deploy split-button in the top bar, create FAB on the list page)
   // so the global chat FAB is redundant there and was colliding with
   // the page-level FAB. Hide it entirely on /applications (list) and
-  // /application/[id] (individual app page).
+  // /application/[id] (individual app page). The chat-first page (spec
+  // 135) IS the chat, so a floating copy of it there would be a duplicate.
   const hideGlobalChat =
     pathname === '/applications' ||
     pathname?.startsWith('/applications/') ||
-    pathname?.startsWith('/application/');
+    pathname?.startsWith('/application/') ||
+    pathname?.startsWith('/chats');
 
   // Subscribe to agent lifecycle events and dispatch toast/browser
   // notifications. The apps-only desktop surface suppresses toasts

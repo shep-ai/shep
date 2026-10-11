@@ -452,7 +452,8 @@
     "trackers": "חיבורים",
     "opportunities": "הזדמנויות",
     "incidents": "תקלות",
-    "factory": "מפעל"
+    "factory": "מפעל",
+    "chat": "צ׳אט"
   },
   "sidebar": {
     "features": "פיצ'רים",
@@ -1893,6 +1894,64 @@
       "hint": "הרץ `shep telemetry show` כדי לראות בדיוק מה יישלח.",
       "loading": "טוען את הגדרות מדדי השימוש…",
       "loadFailed": "לא ניתן לטעון את הגדרות מדדי השימוש."
+    }
+  },
+  "chatBlocks": {
+    "kinds": {
+      "spec_review": "סקירת מפרט",
+      "html_preview": "תצוגה מקדימה",
+      "plan_card": "תוכנית"
+    },
+    "actions": {
+      "approve": "אישור",
+      "request_changes": "בקשת שינויים",
+      "implement": "ביצוע",
+      "refine": "חידוד"
+    },
+    "resolved": {
+      "approve": "אושר",
+      "request_changes": "התבקשו שינויים",
+      "implement": "בביצוע",
+      "refine": "התבקש חידוד"
+    },
+    "notePlaceholder": "מה צריך לשנות?",
+    "send": "שליחה",
+    "cancel": "ביטול",
+    "preview": "תצוגה מקדימה",
+    "source": "קוד מקור",
+    "openFullScreen": "פתיחה במסך מלא",
+    "sandboxNote": "רץ בארגז חול ללא גישה לרשת.",
+    "answerFailed": "התשובה שלך לא נמסרה",
+    "answerFailedDescription": "הבלוק עדיין פתוח. נסו שוב.",
+    "retry": "ניסיון חוזר"
+  },
+  "chats": {
+    "title": "צ׳אט",
+    "conversations": "שיחות",
+    "conversation": "שיחה",
+    "groups": {
+      "global": "Shep",
+      "repository": "מאגרים",
+      "feature": "פיצ׳רים",
+      "application": "אפליקציות"
+    },
+    "openOnCanvas": "פתיחה בקנבס",
+    "openApplication": "פתיחת האפליקציה",
+    "lifecycle": {
+      "Started": "התחיל",
+      "Analyze": "ניתוח",
+      "Requirements": "דרישות",
+      "Research": "מחקר",
+      "Planning": "תכנון",
+      "Implementation": "מימוש",
+      "Review": "סקירה",
+      "Maintain": "מוזג",
+      "Blocked": "חסום",
+      "Pending": "ממתין",
+      "Exploring": "חקירה",
+      "Deleting": "נמחק",
+      "AwaitingUpstream": "ממתין ל-upstream",
+      "Archived": "בארכיון"
     }
   }
 }

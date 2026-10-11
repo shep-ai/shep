@@ -157,4 +157,23 @@ describe('SQLiteInteractiveMessageRepository', () => {
       expect(result.map((m) => m.id)).toEqual(['msg-1', 'msg-2']);
     });
   });
+  describe('findByFeatureIdSince() (spec 137)', () => {
+    it('returns only newer rows of that scope, oldest first', async () => {
+      await repository.create(createTestMessage({ id: 'old', createdAt: T1, updatedAt: T1 }));
+      await repository.create(createTestMessage({ id: 'newer', createdAt: T3, updatedAt: T3 }));
+      await repository.create(createTestMessage({ id: 'new', createdAt: T2, updatedAt: T2 }));
+      await repository.create(
+        createTestMessage({ id: 'other-scope', featureId: 'repo-r1', createdAt: T3, updatedAt: T3 })
+      );
+
+      const rows = await repository.findByFeatureIdSince('feature-abc', T1);
+
+      expect(rows.map((m) => m.id)).toEqual(['new', 'newer']);
+    });
+
+    it('returns nothing when no row is newer', async () => {
+      await repository.create(createTestMessage({ id: 'only', createdAt: T2, updatedAt: T2 }));
+      expect(await repository.findByFeatureIdSince('feature-abc', T2)).toEqual([]);
+    });
+  });
 });

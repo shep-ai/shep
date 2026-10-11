@@ -64,9 +64,32 @@ describe('BootPromptResolver', () => {
 
   // Case 1: pendingUserContent is defined
   describe('case 1 — pendingUserContent defined', () => {
-    it('uses pendingUserContent as bootPrompt', async () => {
-      const result = await resolver.resolve('feat-1', '/wt', 'user msg', undefined);
+    it('uses pendingUserContent as bootPrompt when the agent session is resumed', async () => {
+      const result = await resolver.resolve('feat-1', '/wt', 'user msg', undefined, true);
       expect(result.bootPrompt).toBe('user msg');
+    });
+
+    it('sends the built context ahead of the first message of a new agent session (spec 137)', async () => {
+      // The Claude Agent SDK V2 session drops systemPrompt, so the first turn
+      // is the only way the agent learns the Shep context (and rich replies).
+      const result = await resolver.resolve('repo-r1', '/wt', 'user msg', undefined, false);
+      expect(result.bootPrompt).toBe(`${result.context}\n\n---\n\nUser message:\nuser msg`);
+    });
+
+    it('leaves the first message alone when the caller supplied its own context', async () => {
+      const result = await resolver.resolve('feat-1', '/wt', 'user msg', 'sys override', false);
+      expect(result.bootPrompt).toBe('user msg');
+    });
+
+    it('leaves application kickoffs alone (they carry their own brief)', async () => {
+      const result = await resolver.resolve(
+        'app-a1',
+        '/wt',
+        'read SHEP_BRIEF.md',
+        undefined,
+        false
+      );
+      expect(result.bootPrompt).toBe('read SHEP_BRIEF.md');
     });
 
     it('builds feature context when no systemPromptOverride', async () => {

@@ -99,6 +99,7 @@ import { createRestartCommand } from './commands/restart.command.js';
 import { createServeCommand } from './commands/_serve.command.js';
 import { startDaemon } from './commands/daemon/start-daemon.js';
 import { createTelemetryCommand } from './commands/telemetry/index.js';
+import { createChatCommand } from './commands/chat/index.js';
 import { recordUnhandledError, registerTelemetryHooks } from './telemetry-hooks.js';
 
 // DI container and settings
@@ -231,6 +232,7 @@ async function bootstrap() {
     program.addCommand(createLogsCommand());
     program.addCommand(createUsageCommand());
     program.addCommand(createTelemetryCommand());
+    program.addCommand(createChatCommand());
     // Experimental (spec 119): hidden from --help until the flag is on.
     program.addCommand(createHarnessCommand(), {
       hidden: !(getSettings().featureFlags?.queryAwareHarness ?? false),

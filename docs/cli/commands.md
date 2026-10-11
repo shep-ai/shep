@@ -379,6 +379,33 @@ Show details of a specific session.
 
 ---
 
+## Chat Commands
+
+### `shep chat block <spec-review|preview|plan>`
+
+Post a rich block into a chat conversation (spec 137): a spec or PRD to approve or send back
+(`spec-review`), a self-contained HTML page shown in a sandboxed, network-less frame
+(`preview`), or a plan to implement or refine (`plan`). Chat agents run it to show something
+inline; the user's answer arrives as their next message.
+
+```bash
+shep chat block plan --title "Add dark mode" --file plan.md
+shep chat block preview --title "Pricing card" --file card.html
+shep chat block spec-review --scope global --title "Login PRD" --content "# Login"
+```
+
+| Option | Description |
+| ------ | ----------- |
+| `--title <title>` | Title shown in the block header (required) |
+| `--file <path>` / `--content <text>` | The body: Markdown, or HTML for `preview` (exactly one) |
+| `--scope <conversation>` | `global`, `repo-<id>`, `app-<id>` or a feature id. Defaults to `$SHEP_CHAT_SCOPE`, which every chat session sets |
+
+The same block can be posted by any MCP client through the `post_chat_block` tool of `shep mcp`.
+
+**Source**: `src/presentation/cli/commands/chat/index.ts`
+
+---
+
 ## Settings Commands
 
 ### `shep settings`

@@ -68,6 +68,24 @@ export function spaceEnvironment(settings: SpaceAgentSettings | undefined): Spac
   return { set, unset };
 }
 
+/**
+ * One environment change made of several, applied left to right: a later
+ * `set` wins, and every `unset` name is listed once. Missing entries are
+ * skipped (e.g. a session whose feature has no space).
+ */
+export function combineSpaceEnvironments(
+  ...environments: (SpaceEnvironment | undefined)[]
+): SpaceEnvironment {
+  const set: Record<string, string> = {};
+  const unset = new Set<string>();
+  for (const environment of environments) {
+    if (!environment) continue;
+    Object.assign(set, environment.set);
+    for (const name of environment.unset) unset.add(name);
+  }
+  return { set, unset: [...unset] };
+}
+
 /** A copy of `base` with the space environment applied; `base` is not modified. */
 export function applySpaceEnvironment<T extends Record<string, string | undefined>>(
   base: T,

@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   applySpaceEnvironment,
+  combineSpaceEnvironments,
   isAgentAllowedInSpace,
   spaceEnvironment,
   spaceAgent,
@@ -63,6 +64,24 @@ describe('applySpaceEnvironment', () => {
     const result = applySpaceEnvironment(base, spaceEnvironment({ ghConfigDir: '/gh' }));
     expect(result).toEqual({ PATH: '/bin', HOME: '/home/me', GH_CONFIG_DIR: '/gh' });
     expect(base.GH_TOKEN).toBe('host-token');
+  });
+});
+
+describe('combineSpaceEnvironments', () => {
+  it('sets every variable, later environments winning, and unsets each name once', () => {
+    expect(
+      combineSpaceEnvironments(
+        { set: { A: '1', B: '1' }, unset: ['X'] },
+        { set: { B: '2', SHEP_CHAT_SCOPE: 'global' }, unset: ['X', 'Y'] }
+      )
+    ).toEqual({ set: { A: '1', B: '2', SHEP_CHAT_SCOPE: 'global' }, unset: ['X', 'Y'] });
+  });
+
+  it('skips missing environments', () => {
+    expect(combineSpaceEnvironments(undefined, { set: { A: '1' }, unset: [] })).toEqual({
+      set: { A: '1' },
+      unset: [],
+    });
   });
 });
 

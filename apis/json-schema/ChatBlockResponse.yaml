@@ -1,0 +1,17 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: ChatBlockResponse.yaml
+type: object
+properties:
+  blockId:
+    type: string
+    description: Block this response answers
+  action:
+    $ref: ChatBlockAction.yaml
+    description: What the user did
+  note:
+    type: string
+    description: Optional note, e.g. the changes requested or what to refine
+required:
+  - blockId
+  - action
+description: The user's answer to a chat block

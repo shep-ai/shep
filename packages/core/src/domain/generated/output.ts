@@ -8764,6 +8764,61 @@ export type InteractiveMessage = BaseEntity & {
    */
   stepId?: string;
 };
+export enum ChatBlockType {
+  SpecReview = 'spec_review',
+  HtmlPreview = 'html_preview',
+  PlanCard = 'plan_card',
+}
+
+/**
+ * A rich block posted into a chat conversation
+ */
+export type ChatBlock = {
+  /**
+   * Stable identifier, unique within the conversation
+   */
+  id: string;
+  /**
+   * Kind of block
+   */
+  type: ChatBlockType;
+  /**
+   * Short title shown in the block header
+   */
+  title: string;
+  /**
+   * Markdown body (spec reviews and plan cards)
+   */
+  markdown?: string;
+  /**
+   * Self-contained HTML document (HTML previews)
+   */
+  html?: string;
+};
+export enum ChatBlockAction {
+  Approve = 'approve',
+  RequestChanges = 'request_changes',
+  Implement = 'implement',
+  Refine = 'refine',
+}
+
+/**
+ * The user's answer to a chat block
+ */
+export type ChatBlockResponse = {
+  /**
+   * Block this response answers
+   */
+  blockId: string;
+  /**
+   * What the user did
+   */
+  action: ChatBlockAction;
+  /**
+   * Optional note, e.g. the changes requested or what to refine
+   */
+  note?: string;
+};
 export enum WorkflowStepStatus {
   pending = 'pending',
   running = 'running',
@@ -9503,6 +9558,12 @@ export enum AgentFeature {
   effort = 'effort',
   mcpConfig = 'mcp-config',
 }
+export enum ChatScopeKind {
+  Global = 'global',
+  Repository = 'repository',
+  Feature = 'feature',
+  Application = 'application',
+}
 export enum DecisionOutcome {
   Pending = 'pending',
   Answered = 'answered',
@@ -9511,6 +9572,9 @@ export enum DecisionOutcome {
 }
 export enum InlineBlockType {
   Decision = 'decision',
+  SpecReview = 'spec_review',
+  HtmlPreview = 'html_preview',
+  PlanCard = 'plan_card',
 }
 export type DeployTarget = DeployTargetActionItem | DeployTargetTask | DeployTargetTasks;
 

@@ -452,7 +452,8 @@
     "trackers": "Connections",
     "opportunities": "Opportunities",
     "incidents": "Incidents",
-    "factory": "Factory"
+    "factory": "Factory",
+    "chat": "Chat"
   },
   "sidebar": {
     "features": "Features",
@@ -1893,6 +1894,64 @@
       "hint": "Run `shep telemetry show` to see exactly what would be sent.",
       "loading": "Loading usage metrics settings…",
       "loadFailed": "Could not load usage metrics settings."
+    }
+  },
+  "chatBlocks": {
+    "kinds": {
+      "spec_review": "Spec review",
+      "html_preview": "Preview",
+      "plan_card": "Plan"
+    },
+    "actions": {
+      "approve": "Approve",
+      "request_changes": "Request changes",
+      "implement": "Implement",
+      "refine": "Refine"
+    },
+    "resolved": {
+      "approve": "Approved",
+      "request_changes": "Changes requested",
+      "implement": "Implementing",
+      "refine": "Refinement requested"
+    },
+    "notePlaceholder": "What should change?",
+    "send": "Send",
+    "cancel": "Cancel",
+    "preview": "Preview",
+    "source": "Source",
+    "openFullScreen": "Open full screen",
+    "sandboxNote": "Runs in a sandbox with no network access.",
+    "answerFailed": "Your answer was not delivered",
+    "answerFailedDescription": "The block is still open. Try again.",
+    "retry": "Retry"
+  },
+  "chats": {
+    "title": "Chat",
+    "conversations": "Conversations",
+    "conversation": "Conversation",
+    "groups": {
+      "global": "Shep",
+      "repository": "Repositories",
+      "feature": "Features",
+      "application": "Applications"
+    },
+    "openOnCanvas": "Open on canvas",
+    "openApplication": "Open application",
+    "lifecycle": {
+      "Started": "Started",
+      "Analyze": "Analyzing",
+      "Requirements": "Requirements",
+      "Research": "Research",
+      "Planning": "Planning",
+      "Implementation": "Implementation",
+      "Review": "Review",
+      "Maintain": "Merged",
+      "Blocked": "Blocked",
+      "Pending": "Pending",
+      "Exploring": "Exploring",
+      "Deleting": "Deleting",
+      "AwaitingUpstream": "Awaiting upstream",
+      "Archived": "Archived"
     }
   }
 }

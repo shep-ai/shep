@@ -16,6 +16,7 @@ import { ChatComposer } from './ChatComposer';
 import { ThreadPendingDecision } from './ChatPendingDecision';
 import { StepTracker } from './StepTracker';
 import { SingleTurnCard, useTurnGroupsView, type TurnGroupView } from './turn-group-list';
+import { ChatBlocksProvider } from './chat-blocks-context';
 import { OperationRunCard, useOperationRuns, type OperationRun } from './operation-bubble';
 import type { PlaceholderStep } from './workflow-placeholder';
 import { SCAFFOLD_STEP_KEY } from './workflow-placeholder';
@@ -507,31 +508,32 @@ export function ChatTab({
   );
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
-      {/* Header bar — session info + stop/clear.
-       *  Hidden when the hosting page wants a flush layout (e.g.
-       *  ApplicationPage surfaces session info in its own top bar). */}
-      {hideHeader ? null : (
-        <ChatHeader
-          sessionInfo={sessionInfo}
-          isAgentActive={status.isRunning}
-          onClear={clearChat}
-          debugMode={debugMode}
-          onDebugToggle={IS_DEV ? setDebugMode : undefined}
-        />
-      )}
-      <div className="flex min-h-0 flex-1 flex-col dark:bg-neutral-900/40">
-        {isChatLoading ? (
-          <ChatSkeleton />
-        ) : (
-          <AssistantRuntimeProvider runtime={runtime}>
-            <Thread
-              composer={composer}
-              hideEmpty={showTracker}
-              hideMessages={turnGroupsEnabled}
-              beforeMessages={
-                <>
-                  {/* Single chronological column. Top to bottom:
+    <ChatBlocksProvider scope={featureId} worktreePath={worktreePath} messages={rawMessages}>
+      <div className="flex h-full min-h-0 flex-col">
+        {/* Header bar — session info + stop/clear.
+         *  Hidden when the hosting page wants a flush layout (e.g.
+         *  ApplicationPage surfaces session info in its own top bar). */}
+        {hideHeader ? null : (
+          <ChatHeader
+            sessionInfo={sessionInfo}
+            isAgentActive={status.isRunning}
+            onClear={clearChat}
+            debugMode={debugMode}
+            onDebugToggle={IS_DEV ? setDebugMode : undefined}
+          />
+        )}
+        <div className="flex min-h-0 flex-1 flex-col dark:bg-neutral-900/40">
+          {isChatLoading ? (
+            <ChatSkeleton />
+          ) : (
+            <AssistantRuntimeProvider runtime={runtime}>
+              <Thread
+                composer={composer}
+                hideEmpty={showTracker}
+                hideMessages={turnGroupsEnabled}
+                beforeMessages={
+                  <>
+                    {/* Single chronological column. Top to bottom:
                         1. Error recovery banner (when broken)
                         2. Setup workflow (StepTracker)
                         3. Merged timeline of user turns +
@@ -548,60 +550,61 @@ export function ChatTab({
                      thread below is dead — `hideAllMessages` zeroes
                      the persisted bubble list when turn groups are on,
                      so the overlay owns the entire visible surface. */}
-                  {applicationError ? (
-                    <ErrorRecoveryBanner state={applicationError} onRetry={onResumeWorkflow} />
-                  ) : null}
-                  {showTracker ? (
-                    <StepTracker
-                      steps={trackerSteps}
-                      collapsedSummary={
-                        stepProgress.hasPlan === true && stepProgress.allDone === true
-                      }
-                      activeStepId={stepProgress.activeStepId}
-                      liveStatus={stepProgress.liveStatus}
-                      onRetry={onResumeWorkflow}
-                      onForceStop={handleForceStopStep}
-                    />
-                  ) : null}
-                  {turnGroupsEnabled
-                    ? timelineItems.map((item, idx) => {
-                        if (item.kind === 'turn' && item.turn) {
-                          const isInProgress = item.turn.status === 'in-progress';
-                          return (
-                            <SingleTurnCard
-                              key={item.id}
-                              group={item.turn}
-                              allMessages={rawMessages}
-                              streaming={isInProgress ? streamingState : undefined}
-                              decision={isInProgress ? pendingDecision : undefined}
-                            />
-                          );
+                    {applicationError ? (
+                      <ErrorRecoveryBanner state={applicationError} onRetry={onResumeWorkflow} />
+                    ) : null}
+                    {showTracker ? (
+                      <StepTracker
+                        steps={trackerSteps}
+                        collapsedSummary={
+                          stepProgress.hasPlan === true && stepProgress.allDone === true
                         }
-                        if (item.kind === 'operation' && item.run && applicationId) {
-                          return (
-                            <OperationRunCard
-                              key={item.id}
-                              applicationId={applicationId}
-                              kind={item.run.kind}
-                              entries={item.run.entries}
-                              runIndex={idx}
-                            />
-                          );
-                        }
-                        return null;
-                      })
-                    : null}
-                  {/* A question asked before any turn exists (e.g. during
+                        activeStepId={stepProgress.activeStepId}
+                        liveStatus={stepProgress.liveStatus}
+                        onRetry={onResumeWorkflow}
+                        onForceStop={handleForceStopStep}
+                      />
+                    ) : null}
+                    {turnGroupsEnabled
+                      ? timelineItems.map((item, idx) => {
+                          if (item.kind === 'turn' && item.turn) {
+                            const isInProgress = item.turn.status === 'in-progress';
+                            return (
+                              <SingleTurnCard
+                                key={item.id}
+                                group={item.turn}
+                                allMessages={rawMessages}
+                                streaming={isInProgress ? streamingState : undefined}
+                                decision={isInProgress ? pendingDecision : undefined}
+                              />
+                            );
+                          }
+                          if (item.kind === 'operation' && item.run && applicationId) {
+                            return (
+                              <OperationRunCard
+                                key={item.id}
+                                applicationId={applicationId}
+                                kind={item.run.kind}
+                                entries={item.run.entries}
+                                runIndex={idx}
+                              />
+                            );
+                          }
+                          return null;
+                        })
+                      : null}
+                    {/* A question asked before any turn exists (e.g. during
                       boot) sits at the chronological tail of the timeline. */}
-                  {turnGroupsEnabled && !hasInProgressTurn ? pendingDecision : null}
-                </>
-              }
-              afterMessages={turnGroupsEnabled ? null : pendingDecision}
-            />
-          </AssistantRuntimeProvider>
-        )}
+                    {turnGroupsEnabled && !hasInProgressTurn ? pendingDecision : null}
+                  </>
+                }
+                afterMessages={turnGroupsEnabled ? null : pendingDecision}
+              />
+            </AssistantRuntimeProvider>
+          )}
+        </div>
       </div>
-    </div>
+    </ChatBlocksProvider>
   );
 }
 
