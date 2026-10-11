@@ -9,6 +9,7 @@
 
 import 'reflect-metadata';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { DeleteFeatureCheckpointsUseCase } from '@/application/use-cases/features/checkpoints/delete-feature-checkpoints.use-case.js';
 import { CleanupFeatureWorktreeUseCase } from '@/application/use-cases/features/cleanup-feature-worktree.use-case.js';
 import type { IFeatureRepository } from '@/application/ports/output/repositories/feature-repository.interface.js';
 import type { IWorktreeService } from '@/application/ports/output/services/worktree-service.interface.js';
@@ -54,6 +55,7 @@ describe('CleanupFeatureWorktreeUseCase', () => {
   let mockWorktreeService: IWorktreeService;
   let mockGitPrService: IGitPrService;
   let mockLogger: ILogger;
+  let deleteCheckpoints: DeleteFeatureCheckpointsUseCase;
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -120,11 +122,15 @@ describe('CleanupFeatureWorktreeUseCase', () => {
       error: vi.fn(),
     };
 
+    deleteCheckpoints = {
+      executeBestEffort: vi.fn().mockResolvedValue(0),
+    } as unknown as DeleteFeatureCheckpointsUseCase;
     useCase = new CleanupFeatureWorktreeUseCase(
       mockFeatureRepo,
       mockWorktreeService,
       mockGitPrService,
-      mockLogger
+      mockLogger,
+      deleteCheckpoints
     );
   });
 
@@ -356,5 +362,13 @@ describe('CleanupFeatureWorktreeUseCase', () => {
       expect.stringContaining('specPath update failed'),
       expect.anything()
     );
+  });
+
+  it("deletes the feature's git checkpoints with the worktree (spec 135)", async () => {
+    await useCase.execute('feat-123-full-uuid');
+    expect(deleteCheckpoints.executeBestEffort).toHaveBeenCalledWith({
+      featureId: 'feat-123-full-uuid',
+      repositoryPath: '/repo',
+    });
   });
 });

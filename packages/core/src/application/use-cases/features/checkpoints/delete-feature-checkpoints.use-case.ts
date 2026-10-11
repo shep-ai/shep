@@ -10,6 +10,7 @@ import { inject, injectable } from 'tsyringe';
 import { featureCheckpointRefPrefix } from '../../../../domain/shared/git-checkpoint.js';
 import type { IGitCheckpointRepository } from '../../../ports/output/repositories/git-checkpoint-repository.interface.js';
 import type { IGitCheckpointService } from '../../../ports/output/services/git-checkpoint-service.interface.js';
+import type { ILogger } from '../../../ports/output/services/logger.interface.js';
 
 export interface DeleteFeatureCheckpointsInput {
   featureId: string;
@@ -20,7 +21,8 @@ export interface DeleteFeatureCheckpointsInput {
 export class DeleteFeatureCheckpointsUseCase {
   constructor(
     @inject('IGitCheckpointRepository') private readonly checkpoints: IGitCheckpointRepository,
-    @inject('IGitCheckpointService') private readonly git: IGitCheckpointService
+    @inject('IGitCheckpointService') private readonly git: IGitCheckpointService,
+    @inject('ILogger') private readonly logger: ILogger
   ) {}
 
   /** Returns how many refs were deleted. */
@@ -33,6 +35,22 @@ export class DeleteFeatureCheckpointsUseCase {
       // through the rows, and a row for a deleted ref would list a step that
       // cannot be diffed.
       await this.checkpoints.deleteByFeatureId(input.featureId);
+    }
+  }
+
+  /**
+   * For callers whose own work (removing a worktree, archiving) must not fail
+   * because of checkpoints: a failure is logged and reported as 0 refs.
+   */
+  async executeBestEffort(input: DeleteFeatureCheckpointsInput): Promise<number> {
+    try {
+      return await this.execute(input);
+    } catch (err) {
+      this.logger.warn('[DeleteFeatureCheckpointsUseCase] checkpoint cleanup failed', {
+        featureId: input.featureId,
+        err: err instanceof Error ? err.message : String(err),
+      });
+      return 0;
     }
   }
 }

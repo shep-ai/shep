@@ -5,6 +5,7 @@
  * - Unlinks the git worktree (preserving directory contents on disk)
  * - Deletes the local feature branch
  * - Deletes the remote feature branch (if it still exists)
+ * - Deletes the feature's git checkpoints (spec 135)
  *
  * All cleanup steps are non-fatal: errors are caught and logged as warnings
  * so that a cleanup failure never surfaces as a feature run failure.
@@ -17,6 +18,7 @@ import type { IFeatureRepository } from '../../ports/output/repositories/feature
 import type { IWorktreeService } from '../../ports/output/services/worktree-service.interface.js';
 import type { IGitPrService } from '../../ports/output/services/git-pr-service.interface.js';
 import type { ILogger } from '../../ports/output/services/logger.interface.js';
+import { DeleteFeatureCheckpointsUseCase } from './checkpoints/delete-feature-checkpoints.use-case.js';
 
 @injectable()
 export class CleanupFeatureWorktreeUseCase {
@@ -24,7 +26,9 @@ export class CleanupFeatureWorktreeUseCase {
     @inject('IFeatureRepository') private readonly featureRepo: IFeatureRepository,
     @inject('IWorktreeService') private readonly worktreeService: IWorktreeService,
     @inject('IGitPrService') private readonly gitPrService: IGitPrService,
-    @inject('ILogger') private readonly logger: ILogger
+    @inject('ILogger') private readonly logger: ILogger,
+    @inject(DeleteFeatureCheckpointsUseCase)
+    private readonly deleteCheckpoints: DeleteFeatureCheckpointsUseCase
   ) {}
 
   async execute(featureId: string): Promise<void> {
@@ -54,6 +58,12 @@ export class CleanupFeatureWorktreeUseCase {
         });
       }
     }
+
+    // Step 1b: Delete the step checkpoints recorded in this worktree
+    await this.deleteCheckpoints.executeBestEffort({
+      featureId: feature.id,
+      repositoryPath: feature.repositoryPath,
+    });
 
     // Step 2: Delete the local feature branch
     try {

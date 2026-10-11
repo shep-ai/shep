@@ -15,6 +15,8 @@ import {
 } from '@/infrastructure/services/auto-archive/auto-archive-watcher.service.js';
 import type { IFeatureRepository } from '@/application/ports/output/repositories/feature-repository.interface.js';
 import { createMockFeatureRepository } from '../../../../helpers/feature-repository.mock.js';
+import type { DeleteFeatureCheckpointsUseCase } from '@/application/use-cases/features/checkpoints/delete-feature-checkpoints.use-case.js';
+import { SdlcLifecycle, type Feature } from '@/domain/generated/output.js';
 
 vi.mock('@/infrastructure/services/settings.service.js', () => ({
   getSettings: vi.fn().mockReturnValue({
@@ -31,6 +33,12 @@ vi.mock('@/infrastructure/services/settings.service.js', () => ({
 
 function createMockFeatureRepo(): IFeatureRepository {
   return createMockFeatureRepository();
+}
+
+function fakeDeleteCheckpoints() {
+  return {
+    executeBestEffort: vi.fn().mockResolvedValue(0),
+  } as unknown as DeleteFeatureCheckpointsUseCase;
 }
 
 describe('AutoArchiveWatcherService', () => {
@@ -79,7 +87,7 @@ describe('AutoArchiveWatcherService', () => {
   });
 
   it('should poll on start and at interval', async () => {
-    const watcher = new AutoArchiveWatcherService(mockFeatureRepo, 1000);
+    const watcher = new AutoArchiveWatcherService(mockFeatureRepo, 1000, fakeDeleteCheckpoints());
     watcher.start();
 
     // First poll happens immediately on start
@@ -91,6 +99,29 @@ describe('AutoArchiveWatcherService', () => {
     expect(mockFeatureRepo.list).toHaveBeenCalledTimes(2);
 
     watcher.stop();
+  });
+
+  it("deletes an auto-archived feature's git checkpoints (spec 135)", async () => {
+    const completed = {
+      id: 'feat-done',
+      name: 'Done',
+      repositoryPath: '/repo',
+      lifecycle: SdlcLifecycle.Maintain,
+      updatedAt: new Date(Date.now() - 60 * 60_000),
+    } as Feature;
+    vi.mocked(mockFeatureRepo.list).mockResolvedValue([completed]);
+    vi.mocked(mockFeatureRepo.findById).mockResolvedValue(completed);
+    const deleteCheckpoints = fakeDeleteCheckpoints();
+    const watcher = new AutoArchiveWatcherService(mockFeatureRepo, 1000, deleteCheckpoints);
+
+    watcher.start();
+    await vi.advanceTimersByTimeAsync(0);
+    watcher.stop();
+
+    expect(deleteCheckpoints.executeBestEffort).toHaveBeenCalledWith({
+      featureId: 'feat-done',
+      repositoryPath: '/repo',
+    });
   });
 });
 

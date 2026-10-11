@@ -7,6 +7,7 @@
 
 import 'reflect-metadata';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { DeleteFeatureCheckpointsUseCase } from '@/application/use-cases/features/checkpoints/delete-feature-checkpoints.use-case.js';
 import { AutoArchiveCompletedUseCase } from '@/application/use-cases/features/auto-archive-completed.use-case.js';
 import { ArchiveFeatureUseCase } from '@/application/use-cases/features/archive-feature.use-case.js';
 import type { IFeatureRepository } from '@/application/ports/output/repositories/feature-repository.interface.js';
@@ -51,7 +52,9 @@ describe('AutoArchiveCompletedUseCase', () => {
   beforeEach(() => {
     mockFeatureRepo = createMockFeatureRepository();
 
-    archiveFeature = new ArchiveFeatureUseCase(mockFeatureRepo);
+    archiveFeature = new ArchiveFeatureUseCase(mockFeatureRepo, {
+      executeBestEffort: vi.fn().mockResolvedValue(0),
+    } as unknown as DeleteFeatureCheckpointsUseCase);
     useCase = new AutoArchiveCompletedUseCase(mockFeatureRepo, archiveFeature);
   });
 

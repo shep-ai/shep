@@ -13,6 +13,8 @@
 import type { IFeatureRepository } from '../../../application/ports/output/repositories/feature-repository.interface.js';
 import { AutoArchiveCompletedUseCase } from '../../../application/use-cases/features/auto-archive-completed.use-case.js';
 import { ArchiveFeatureUseCase } from '../../../application/use-cases/features/archive-feature.use-case.js';
+import { DeleteFeatureCheckpointsUseCase } from '../../../application/use-cases/features/checkpoints/delete-feature-checkpoints.use-case.js';
+import { container } from 'tsyringe';
 import { getSettings } from '../settings.service.js';
 
 const DEFAULT_POLL_INTERVAL_MS = 60_000;
@@ -23,7 +25,15 @@ export class AutoArchiveWatcherService {
   private readonly pollIntervalMs: number;
   private intervalId: ReturnType<typeof setInterval> | null = null;
 
-  constructor(featureRepo: IFeatureRepository, pollIntervalMs: number = DEFAULT_POLL_INTERVAL_MS) {
+  /**
+   * @param deleteCheckpoints - archiving deletes the feature's git checkpoints
+   *   (spec 135); resolved from the container at poll time when not given.
+   */
+  constructor(
+    featureRepo: IFeatureRepository,
+    pollIntervalMs: number = DEFAULT_POLL_INTERVAL_MS,
+    private readonly deleteCheckpoints?: DeleteFeatureCheckpointsUseCase
+  ) {
     this.featureRepo = featureRepo;
     this.pollIntervalMs = pollIntervalMs;
   }
@@ -57,7 +67,10 @@ export class AutoArchiveWatcherService {
 
       if (delayMinutes <= 0) return;
 
-      const archiveFeature = new ArchiveFeatureUseCase(this.featureRepo);
+      const archiveFeature = new ArchiveFeatureUseCase(
+        this.featureRepo,
+        this.deleteCheckpoints ?? container.resolve(DeleteFeatureCheckpointsUseCase)
+      );
       const useCase = new AutoArchiveCompletedUseCase(this.featureRepo, archiveFeature);
       await useCase.execute(delayMinutes);
     } catch {
