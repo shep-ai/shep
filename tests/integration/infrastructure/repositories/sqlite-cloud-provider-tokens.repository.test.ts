@@ -39,7 +39,7 @@ describe('SQLiteCloudProviderTokensRepository', () => {
   });
 
   it('returns null when no token is stored', async () => {
-    expect(await repo.get(CloudDeploymentProvider.Vercel)).toBeNull();
+    expect(await repo.get(CloudDeploymentProvider.CloudflarePages)).toBeNull();
   });
 
   it('stores ciphertext, not the plaintext, on disk', async () => {
@@ -70,17 +70,26 @@ describe('SQLiteCloudProviderTokensRepository', () => {
   });
 
   it('remove is a no-op when the provider has no token', async () => {
-    await expect(repo.remove(CloudDeploymentProvider.Vercel)).resolves.not.toThrow();
+    await expect(repo.remove(CloudDeploymentProvider.CloudflarePages)).resolves.not.toThrow();
   });
 
   it('listConnected returns only providers that currently have a token', async () => {
+    expect(await repo.listConnected()).toEqual([]);
     await repo.set(CloudDeploymentProvider.CloudflarePages, 't1');
-    await repo.set(CloudDeploymentProvider.Vercel, 't2');
-    const connected = await repo.listConnected();
-    expect(new Set(connected)).toEqual(
-      new Set([CloudDeploymentProvider.CloudflarePages, CloudDeploymentProvider.Vercel])
-    );
-    await repo.remove(CloudDeploymentProvider.Vercel);
+    expect(await repo.listConnected()).toEqual([CloudDeploymentProvider.CloudflarePages]);
+    await repo.remove(CloudDeploymentProvider.CloudflarePages);
+    expect(await repo.listConnected()).toEqual([]);
+  });
+
+  it('listConnected skips rows for provider ids that no longer exist', async () => {
+    // A row written for a removed provider (e.g. the old Vercel stub) must not
+    // surface as a connected provider — nothing can deploy to it.
+    db.prepare(
+      `INSERT INTO cloud_provider_tokens
+         (provider, token_ciphertext, token_iv, token_tag, created_at, updated_at)
+       VALUES ('Vercel', x'00', x'00', x'00', 0, 0)`
+    ).run();
+    await repo.set(CloudDeploymentProvider.CloudflarePages, 't1');
     expect(await repo.listConnected()).toEqual([CloudDeploymentProvider.CloudflarePages]);
   });
 });

@@ -7,8 +7,6 @@ enum:
   - codex-cli
   - copilot-cli
   - gemini-cli
-  - aider
-  - continue
   - cursor
   - cline
   - openrouter

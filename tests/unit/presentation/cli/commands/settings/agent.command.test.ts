@@ -45,7 +45,7 @@ describe('Agent Command', () => {
     },
     user: {},
     environment: { defaultEditor: 'vscode', shellPreference: 'bash' },
-    system: { autoUpdate: true, logLevel: 'info' },
+    system: { logLevel: 'info' },
     agent: { type: AgentType.ClaudeCode, authMethod: AgentAuthMethod.Session },
     createdAt: new Date(),
     updatedAt: new Date(),

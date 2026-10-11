@@ -33,4 +33,5 @@ import "./scheduled-workflow.tsp";
 import "./plugin.tsp";
 import "./agent-effort.tsp";
 import "./harness.tsp";
+import "./feature-flag.tsp";
 import "./telemetry.tsp";

@@ -3,8 +3,8 @@
 /**
  * ConnectProviderModal — token paste dialog for cloud deploy providers.
  *
- * Opens when the user selects an enabled-but-not-connected provider from
- * the Deploy dropdown. Shows the provider icon, a "Get a token" external
+ * Opens when the user selects a not-yet-connected provider from the
+ * Deploy dropdown. Shows the provider icon, a "Get a token" external
  * link, a textarea for the token, and a Connect button that submits to
  * POST /api/cloud-providers/:provider/connect via the useCloudDeployAction
  * hook.
@@ -24,23 +24,10 @@ import {
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { CLOUD_PROVIDER_ICONS } from './cloud-provider-icons';
+import { CLOUD_PROVIDER_DISPLAY_NAMES } from './cloud-providers';
 
 const PROVIDER_TOKEN_PAGES: Record<CloudDeploymentProvider, string> = {
   [CloudDeploymentProvider.CloudflarePages]: 'https://dash.cloudflare.com/profile/api-tokens',
-  [CloudDeploymentProvider.Vercel]: 'https://vercel.com/account/tokens',
-  [CloudDeploymentProvider.Netlify]:
-    'https://app.netlify.com/user/applications#personal-access-tokens',
-  [CloudDeploymentProvider.AwsAmplify]:
-    'https://us-east-1.console.aws.amazon.com/iam/home#/security_credentials',
-  [CloudDeploymentProvider.GcpCloudRun]: 'https://console.cloud.google.com/apis/credentials',
-};
-
-const PROVIDER_DISPLAY_NAMES: Record<CloudDeploymentProvider, string> = {
-  [CloudDeploymentProvider.CloudflarePages]: 'Cloudflare Pages',
-  [CloudDeploymentProvider.Vercel]: 'Vercel',
-  [CloudDeploymentProvider.Netlify]: 'Netlify',
-  [CloudDeploymentProvider.AwsAmplify]: 'AWS Amplify',
-  [CloudDeploymentProvider.GcpCloudRun]: 'Google Cloud Run',
 };
 
 export type ConnectProviderModalMode = 'connect' | 'update';
@@ -64,7 +51,7 @@ export function ConnectProviderModal({
 
   const Icon = provider ? CLOUD_PROVIDER_ICONS[provider] : null;
   const tokenUrl = provider ? PROVIDER_TOKEN_PAGES[provider] : '';
-  const displayName = provider ? PROVIDER_DISPLAY_NAMES[provider] : '';
+  const displayName = provider ? CLOUD_PROVIDER_DISPLAY_NAMES[provider] : '';
 
   async function handleSubmit() {
     if (!provider || token.trim().length === 0) return;

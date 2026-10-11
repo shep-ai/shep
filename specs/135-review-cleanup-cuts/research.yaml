@@ -1,0 +1,82 @@
+# Research (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: review-cleanup-cuts
+summary: Decisions for 135 — where maintainer automation runs, how supply chain folds into ASPM, and how flags are catalogued.
+
+relatedFeatures:
+  - 097-contributor-pipeline
+  - 098-aspm
+technologies:
+  - TypeSpec
+  - SQLite
+  - GitHub Actions
+relatedLinks: []
+
+decisions:
+  - title: Maintainer automation runs as CLI subcommands driven by a scheduled workflow
+    chosen: >-
+      `shep contributors stale-issues` and `shep contributors recap` call the existing
+      DetectStaleGoodFirstIssueUseCase / GenerateMonthlyRecapUseCase / PublishMonthlyRecapUseCase;
+      `.github/workflows/contributor-maintenance.yml` runs them on a cron
+    rejected:
+      - 'A standalone Node script under scripts/: would need its own DI bootstrap, duplicating the CLI entry'
+      - 'Keep the watchers but behind a flag: still ships maintainer code paths into every daemon'
+    rationale: >
+      welcome-first-time-contributor.yml already runs `pnpm dev:cli contributors welcome-pr`, so
+      the same pattern needs no new bootstrap and the use cases stay the single implementation.
+
+  - title: Fold supply-chain security into ASPM rather than remove it
+    chosen: >-
+      Drop the separate `supplyChainSecurity` flag; a domain helper derives "supply chain on"
+      from `featureFlags.aspm`; the CLI moves to `shep aspm supply-chain enforce`
+    rejected:
+      - 'Remove it: the security mode threads through executors, the feature-agent pre-check, spawn and CI (≈40 files), far from cheap'
+      - 'Keep both flags: leaves two overlapping security products'
+    rationale: >
+      Folding is a handful of call sites; the subsystem keeps working for users who use ASPM, and
+      users who never opted into ASPM stop paying for it.
+
+  - title: Removed settings keep their DB columns
+    chosen: Stop reading and writing `sys_auto_update` and `feature_flag_supply_chain_security`; leave the columns (NOT NULL with defaults)
+    rejected:
+      - 'DROP COLUMN: breaks older branches and rollbacks (LESSONS: migrations must be backward compatible)'
+    rationale: Columns with defaults let INSERTs omit them and older builds still read them.
+
+  - title: Persisted removed enum values fall back at the mapper
+    chosen: The settings mapper maps an unknown persisted agent type (`aider`, `continue`) to the default agent
+    rejected:
+      - 'A data migration rewriting the values: mutates user data for agents nobody could select'
+    rationale: Fallbacks belong at the lowest level (LESSONS) and leave the DB untouched.
+
+  - title: One domain catalog drives the flags view and CLI
+    chosen: '`FEATURE_FLAG_CATALOG: Record<keyof FeatureFlags, …>` in domain/shared with group and one-line description'
+    rejected:
+      - 'Hand-written SwitchRows per flag: the settings page already has 13 and is 2.3k lines'
+    rationale: >
+      A total Record makes a missing catalog entry a compile error, and the web view, the settings
+      section and `shep settings flags` all render the same list through ListFeatureFlagsUseCase.
+
+  - title: CLI groups gated by hiding plus a pre-action guard
+    chosen: A shared `gateByFeatureFlag(command, flag)` hides the group from help and refuses to run it with an "enable it with shep settings flags enable" hint
+    rejected:
+      - 'Not registering the command: users get "unknown command" with no hint'
+    rationale: Same visibility pattern as the harness group, with an actionable error.
+
+openQuestions: []
+
+content: |
+  ## Technology Decisions
+
+  See `decisions` above. Everything uses the existing stack; no new libraries.
+
+  ## Security Considerations
+
+  - The contributor workflow uses only `GITHUB_TOKEN` with `issues: read`/`contents: write`
+    scoped to the job; it never runs on pull_request events.
+  - Supply-chain enforcement in Shep's own CI enables the ASPM flag explicitly before running,
+    so the release gate does not go inert when ASPM defaults off.
+
+  ## Performance Implications
+
+  Removing two daily daemon watchers and gating the factory loops slightly reduces daemon work.

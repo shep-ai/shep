@@ -7,7 +7,6 @@ import type { CloudDeploymentProvider } from '../../../domain/generated/output.j
 export interface ListedCloudProvider {
   id: CloudDeploymentProvider;
   displayName: string;
-  enabled: boolean;
   connected: boolean;
 }
 
@@ -26,7 +25,6 @@ export class ListCloudProvidersUseCase {
     return descriptors.map((d) => ({
       id: d.id,
       displayName: d.displayName,
-      enabled: d.enabled,
       connected: connectedSet.has(d.id),
     }));
   }

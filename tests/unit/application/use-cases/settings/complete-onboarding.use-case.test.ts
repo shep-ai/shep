@@ -19,7 +19,7 @@ function createTestSettings(overrides: Partial<Settings> = {}): Settings {
       shellPreference: 'bash',
       terminalPreference: TerminalType.System,
     },
-    system: { autoUpdate: true, logLevel: 'info' },
+    system: { logLevel: 'info' },
     agent: {
       type: AgentType.ClaudeCode,
       authMethod: AgentAuthMethod.Session,

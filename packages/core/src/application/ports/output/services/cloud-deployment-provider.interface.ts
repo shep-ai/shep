@@ -1,9 +1,8 @@
 /**
  * Cloud Deployment Provider (port)
  *
- * One implementation per cloud (CloudflarePages, Vercel, ...). Only a subset
- * is live in v1 — stubs expose `enabled = false` and throw on deploy() so the
- * UI and registry can list them uniformly.
+ * One implementation per CloudDeploymentProvider member. Cloudflare Pages
+ * is the only one today.
  *
  * Spec 089 — one-click-cloud-deploy.
  */
@@ -59,18 +58,15 @@ export interface ICloudDeploymentProvider {
   readonly providerId: CloudDeploymentProvider;
   /** Human-friendly label shown in the UI dropdown. */
   readonly displayName: string;
-  /** Whether this provider is live in v1 (false = "Coming soon"). */
-  readonly enabled: boolean;
 
   /**
    * Returns true if a token is stored and passes a cheap remote validation call.
-   * Stubs always return false.
    */
   isConnected(): Promise<boolean>;
 
   /**
    * Validate a raw token (pre-persistence). Called by ConnectCloudProviderUseCase.
-   * Throws if invalid. Stubs throw ProviderNotImplementedError.
+   * Throws if invalid.
    */
   validateToken(token: string): Promise<void>;
 
@@ -79,8 +75,7 @@ export interface ICloudDeploymentProvider {
    * Invokes onProgress for each status transition. Optionally invokes
    * onLog for every meaningful internal step (HTTP call, subprocess, error)
    * — the orchestrating use case captures these and persists them as
-   * OperationLogEntry rows. Stubs throw ProviderNotImplementedError
-   * immediately.
+   * OperationLogEntry rows.
    */
   deploy(
     input: CloudDeployInput,

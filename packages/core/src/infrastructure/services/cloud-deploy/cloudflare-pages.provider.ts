@@ -78,7 +78,6 @@ interface CloudflarePagesDeployment {
 export class CloudflarePagesProvider implements ICloudDeploymentProvider {
   readonly providerId = CloudDeploymentProvider.CloudflarePages;
   readonly displayName = 'Cloudflare Pages';
-  readonly enabled = true;
 
   constructor(
     @inject('ICloudProviderTokensRepository')

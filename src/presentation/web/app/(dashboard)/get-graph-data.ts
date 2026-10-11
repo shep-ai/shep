@@ -24,6 +24,7 @@ import { getLanguagePreference } from '@/lib/language';
 import { buildGraphNodes } from '@/app/build-graph-nodes';
 import type { CanvasNodeType } from '@/components/features/features-canvas';
 import type { Edge } from '@xyflow/react';
+import { isSupplyChainSecurityEnabled } from '@shepai/core/domain/shared/supply-chain-security';
 
 const execFileAsync = promisify(execFileCb);
 
@@ -272,9 +273,9 @@ export async function getGraphData(): Promise<{
   }
 
   const { workflow, security, featureFlags } = getSettings();
-  // Master kill switch: when the supplyChainSecurity feature flag is off, skip
+  // Supply-chain security is part of ASPM: with the aspm flag off, skip
   // passing securityMode so no feature card renders the SecurityBadge.
-  const supplyChainSecurityEnabled = featureFlags?.supplyChainSecurity ?? true;
+  const supplyChainSecurityEnabled = isSupplyChainSecurityEnabled(featureFlags);
   const { nodes, edges } = buildGraphNodes(repositories, featuresWithRuns, {
     enableEvidence: workflow.enableEvidence,
     commitEvidence: workflow.commitEvidence,

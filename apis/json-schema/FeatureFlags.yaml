@@ -36,16 +36,12 @@ properties:
     description: Enable WhatsApp-native task dispatch and interactive control (spec 101)
   aspm:
     type: boolean
-    default: true
-    description: Enable the Application Security Posture Management (ASPM) module — /aspm web routes, `shep aspm` CLI command tree, and the posture SSE stream (spec 098)
+    default: false
+    description: "Enable the Application Security Posture Management (ASPM) module — /aspm web routes, `shep aspm` CLI command tree, and the posture SSE stream (spec 098). Off by default: ASPM is a separate product category users opt into (spec 135)."
   clusters:
     type: boolean
     default: false
     description: Enable Clusters navigation and Kubernetes cluster management in the web UI
-  supplyChainSecurity:
-    type: boolean
-    default: true
-    description: Enable the supply chain security feature (policy engine, badges, settings, CLI, CI gate). When false, the feature is inert regardless of SecurityMode.
   scheduledWorkflows:
     type: boolean
     default: false
@@ -58,6 +54,54 @@ properties:
     type: boolean
     default: false
     description: "Enable the experimental query-aware agent harness: the Shep Harness agent, /harness pages, the feature Context tab and `shep harness` commands (spec 119)"
+  spaces:
+    type: boolean
+    default: true
+    description: "Software factory: spaces and product lines — /spaces and `shep space` (spec 120)"
+  trackers:
+    type: boolean
+    default: true
+    description: "Software factory: Linear and Jira tracker sync — /connections, `shep connection`, `shep sync` and the daemon sync loop (spec 122)"
+  knowledge:
+    type: boolean
+    default: true
+    description: "Software factory: Notion knowledge sources — `shep knowledge` and the daemon knowledge sync (spec 125)"
+  signals:
+    type: boolean
+    default: true
+    description: "Software factory: customer and incident signals — `shep signal` (spec 126)"
+  opportunities:
+    type: boolean
+    default: true
+    description: "Software factory: ranked opportunities — /opportunities and `shep opportunity` (spec 126)"
+  feedback:
+    type: boolean
+    default: true
+    description: "Software factory: feedback intake and themes — POST /api/feedback and `shep feedback` (spec 127)"
+  discovery:
+    type: boolean
+    default: true
+    description: "Software factory: agent discovery of opportunities — `shep discovery` and its daemon schedule (spec 128)"
+  incidents:
+    type: boolean
+    default: true
+    description: "Software factory: incident triage — /incidents, POST /api/alerts and `shep incident` (spec 129)"
+  outcomes:
+    type: boolean
+    default: true
+    description: "Software factory: shipped-work outcomes — `shep outcome` and the daemon outcome tracker (spec 130)"
+  docsFirst:
+    type: boolean
+    default: true
+    description: "Software factory: docs-first spaces — the docs-first space policy, planning instructions and merge gate (spec 131)"
+  autopilot:
+    type: boolean
+    default: true
+    description: "Software factory: autopilot — `shep autopilot` and the daemon autopilot pass (spec 132)"
+  factory:
+    type: boolean
+    default: true
+    description: "Software factory: factory status — /factory and `shep factory` (spec 132)"
 required:
   - envDeploy
   - debug
@@ -69,8 +113,19 @@ required:
   - whatsappDispatch
   - aspm
   - clusters
-  - supplyChainSecurity
   - scheduledWorkflows
   - githubImport
   - queryAwareHarness
+  - spaces
+  - trackers
+  - knowledge
+  - signals
+  - opportunities
+  - feedback
+  - discovery
+  - incidents
+  - outcomes
+  - docsFirst
+  - autopilot
+  - factory
 description: Feature flag toggles for runtime feature control

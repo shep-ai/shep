@@ -4,8 +4,16 @@ import { SpaceResolutionSource, type Space } from '@/domain/generated/output.js'
 import { CheckDocsGateUseCase } from '@/application/use-cases/docs-first/check-docs-gate.use-case.js';
 import type { ResolveSpaceContextUseCase } from '@/application/use-cases/spaces/resolve-space-context.use-case.js';
 import { DEFAULT_SPACE } from '../../../../helpers/space-repositories.mock.js';
+import type { ISettingsRepository } from '@/application/ports/output/repositories/settings.repository.interface.js';
+import { createDefaultSettings } from '@/domain/factories/settings-defaults.factory.js';
 
-function gateFor(space: Space): CheckDocsGateUseCase {
+function settingsWith(docsFirst: boolean): ISettingsRepository {
+  const settings = createDefaultSettings();
+  settings.featureFlags = { ...settings.featureFlags!, docsFirst };
+  return { initialize: vi.fn(), update: vi.fn(), load: vi.fn(async () => settings) };
+}
+
+function gateFor(space: Space, docsFirstFlag = true): CheckDocsGateUseCase {
   const resolver = {
     execute: vi.fn(async (repositoryPath: string) => ({
       repositoryPath,
@@ -13,7 +21,7 @@ function gateFor(space: Space): CheckDocsGateUseCase {
       source: SpaceResolutionSource.Default,
     })),
   } as unknown as ResolveSpaceContextUseCase;
-  return new CheckDocsGateUseCase(resolver);
+  return new CheckDocsGateUseCase(resolver, settingsWith(docsFirstFlag));
 }
 
 const DOCS_FIRST: Space = { ...DEFAULT_SPACE, agentSettings: { docsFirst: true } };
@@ -32,6 +40,11 @@ describe('CheckDocsGateUseCase (spec 131)', () => {
       docsPaths: ['docs/', 'README.md'],
       documentation: ['docs/refunds.md'],
     });
+  });
+
+  it('asks nothing while the docsFirst feature flag is off (spec 135)', async () => {
+    const gate = await gateFor(DOCS_FIRST, false).execute('/repo', ['src/a.ts']);
+    expect(gate).toEqual({ required: false, passed: true, docsPaths: [], documentation: [] });
   });
 
   it('holds a docs-first change that touched no documentation', async () => {

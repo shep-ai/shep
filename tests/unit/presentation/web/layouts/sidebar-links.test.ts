@@ -20,6 +20,18 @@ const OFF = {
   scheduledWorkflows: false,
   githubImport: false,
   queryAwareHarness: false,
+  spaces: false,
+  trackers: false,
+  knowledge: false,
+  signals: false,
+  opportunities: false,
+  feedback: false,
+  discovery: false,
+  incidents: false,
+  outcomes: false,
+  docsFirst: false,
+  autopilot: false,
+  factory: false,
 } satisfies FeatureFlagsState;
 
 describe('sidebar links', () => {
@@ -43,6 +55,23 @@ describe('sidebar links', () => {
     expect(visibleSidebarLinks(OFF).map((l) => l.href)).not.toContain('/clusters');
     expect(visibleSidebarLinks({ ...OFF, clusters: true }).map((l) => l.href)).toContain(
       '/clusters'
+    );
+  });
+
+  it.each([
+    ['spaces', '/spaces'],
+    ['trackers', '/connections'],
+    ['opportunities', '/opportunities'],
+    ['incidents', '/incidents'],
+    ['factory', '/factory'],
+  ] as const)('shows the %s area at %s only while its flag is on (spec 135)', (flag, href) => {
+    expect(visibleSidebarLinks(OFF).map((l) => l.href)).not.toContain(href);
+    expect(visibleSidebarLinks({ ...OFF, [flag]: true }).map((l) => l.href)).toContain(href);
+  });
+
+  it('shows /connections for either trackers or Notion knowledge', () => {
+    expect(visibleSidebarLinks({ ...OFF, knowledge: true }).map((l) => l.href)).toContain(
+      '/connections'
     );
   });
 
