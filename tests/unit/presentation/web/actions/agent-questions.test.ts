@@ -41,7 +41,7 @@ describe('agent-questions server actions', () => {
     await expect(answerAgentQuestion(ANSWER_INPUT)).resolves.toEqual({ ok: true });
   });
 
-  it('answer records the web surface, whatever the client sends (spec 135)', async () => {
+  it('answer records the web surface, whatever the client sends (spec 136)', async () => {
     mockAnswerExecute.mockResolvedValue({ enabled: true, forwardedToGate: false, question: {} });
 
     await answerAgentQuestion({ ...ANSWER_INPUT, surface: DecisionSurface.Cli } as never);

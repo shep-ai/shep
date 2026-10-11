@@ -2,7 +2,7 @@
 # This is the source of truth. Markdown is auto-generated from this file.
 
 name: decision-telemetry
-summary: Implementation plan for 135 — typed decision telemetry events emitted from the settling use cases.
+summary: Implementation plan for 136 — typed decision telemetry events emitted from the settling use cases.
 
 relatedFeatures:
   - 133-telemetry

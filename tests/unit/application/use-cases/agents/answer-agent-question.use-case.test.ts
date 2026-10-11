@@ -639,7 +639,7 @@ describe('AnswerAgentQuestionUseCase', () => {
     });
   });
 
-  describe('decision.answered telemetry (spec 135)', () => {
+  describe('decision.answered telemetry (spec 136)', () => {
     const MINUTE_MS = 60_000;
     const decision: Decision = {
       id: 'x',

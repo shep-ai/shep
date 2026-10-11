@@ -131,7 +131,7 @@ export class AnswerAgentQuestionUseCase {
     return { enabled: true, question: updated ?? existing, forwardedToGate };
   }
 
-  /** One `decision.answered` per recorded answer (spec 135). Never throws. */
+  /** One `decision.answered` per recorded answer (spec 136). Never throws. */
   private recordAnswered(
     question: AgentQuestion,
     surface: DecisionSurface | undefined,

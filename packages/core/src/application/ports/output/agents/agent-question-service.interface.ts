@@ -73,7 +73,7 @@ export interface AnswerAgentQuestionInput {
   responses?: DecisionResponse[];
   /** Actor namespace, e.g. `user:abc` or `supervisor:42`. */
   answeredBy: string;
-  /** Where the answer was given, for usage telemetry (spec 135). Defaults to `other`. */
+  /** Where the answer was given, for usage telemetry (spec 136). Defaults to `other`. */
   surface?: DecisionSurface;
 }
 

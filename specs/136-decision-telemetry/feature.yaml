@@ -1,7 +1,7 @@
 feature:
-  id: '135-decision-telemetry'
+  id: '136-decision-telemetry'
   name: 'decision-telemetry'
-  number: 135
+  number: 136
   branch: 'feat/135-decision-telemetry'
   lifecycle: 'implementation'
   createdAt: '2026-10-11T10:52:04Z'

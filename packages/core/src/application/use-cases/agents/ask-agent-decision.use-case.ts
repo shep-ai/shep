@@ -12,7 +12,7 @@
  *  - cancelled → the recommended option (the agent must not wait forever);
  *  - collaboration off → nobody can answer, so the recommendation applies now.
  *
- * A deadline default records the `decision.defaulted` usage event (spec 135).
+ * A deadline default records the `decision.defaulted` usage event (spec 136).
  */
 
 import { inject, injectable } from 'tsyringe';

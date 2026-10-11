@@ -159,7 +159,7 @@ enum DecisionOutcome {
 
 /**
  * Where a decision was answered. Set by the caller that records the answer,
- * never parsed from the free-form answeredBy actor (spec 135).
+ * never parsed from the free-form answeredBy actor (spec 136).
  */
 @doc("Surface a decision was answered on")
 enum DecisionSurface {

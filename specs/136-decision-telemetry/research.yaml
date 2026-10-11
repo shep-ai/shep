@@ -2,7 +2,7 @@
 # This is the source of truth. Markdown is auto-generated from this file.
 
 name: decision-telemetry
-summary: Technical decisions for 135 — where to emit decision telemetry and how to type it.
+summary: Technical decisions for 136 — where to emit decision telemetry and how to type it.
 
 relatedFeatures:
   - 133-telemetry

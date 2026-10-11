@@ -155,7 +155,7 @@ describe('AskAgentDecisionUseCase', () => {
     ]);
   });
 
-  it('records no default when a person answered at the deadline (spec 135)', async () => {
+  it('records no default when a person answered at the deadline (spec 136)', async () => {
     const { useCase, telemetry } = build(true);
     const settle = repo.settlePending.bind(repo);
     vi.spyOn(repo, 'settlePending').mockImplementationOnce(async (appId, questionId) => {
