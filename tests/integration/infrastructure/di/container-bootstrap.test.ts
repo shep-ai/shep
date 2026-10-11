@@ -50,6 +50,7 @@ import { registerInteractive } from '@/infrastructure/di/modules/register-intera
 import { registerAspm } from '@/infrastructure/di/modules/register-aspm.js';
 import { registerHarness } from '@/infrastructure/di/modules/register-harness.js';
 import { registerTelemetry } from '@/infrastructure/di/modules/register-telemetry.js';
+import { registerGitCheckpoints } from '@/infrastructure/di/modules/register-git-checkpoints.js';
 import { registerSpaces } from '@/infrastructure/di/modules/register-spaces.js';
 import { registerTrackers } from '@/infrastructure/di/modules/register-trackers.js';
 import { registerBugLoop } from '@/infrastructure/di/modules/register-bug-loop.js';
@@ -150,6 +151,9 @@ const WEB_ROUTE_TOKENS: readonly string[] = [
   'ListApplicationsUseCase',
   'ListCloudProvidersUseCase',
   'ListFeaturesUseCase',
+  'ListFeatureCheckpointsUseCase',
+  'GetFeatureCheckpointDiffUseCase',
+  'RestoreFeatureCheckpointUseCase',
   'ReconcileAgentRunLivenessUseCase',
   'ListOperationLogEntriesUseCase',
   'ListRepositoriesUseCase',
@@ -317,6 +321,8 @@ const CRITICAL_INFRA_TOKENS: readonly string[] = [
   'IHarnessEvalWorkspaceFactory',
   'IApplicationRepository',
   'IPhaseTimingRepository',
+  'IGitCheckpointRepository',
+  'IGitCheckpointService',
   'IInteractiveSessionRepository',
   'IInteractiveMessageRepository',
   'IWorkflowStepRepository',
@@ -469,6 +475,7 @@ describe('DI container bootstrap (integration)', () => {
     registerAspm(scopedContainer);
     registerHarness(scopedContainer);
     registerTelemetry(scopedContainer);
+    registerGitCheckpoints(scopedContainer);
 
     // Replicate the eager bootstrap done by initializeContainer() so the
     // test exercises the SAME container shape that web routes see at runtime.
