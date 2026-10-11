@@ -38,6 +38,7 @@ import {
   AgentQuestionStatus,
   DecisionKind,
   DecisionResponseMode,
+  DecisionSurface,
   SupervisorAutonomy,
   SupervisorScopeType,
   SupervisorVerdict,
@@ -151,7 +152,8 @@ function buildRouter(opts: { collaboration: boolean; verdict: SupervisorVerdict 
     } as any,
     {
       execute: vi.fn().mockResolvedValue({ rejected: true, reason: 'ok' }),
-    } as any
+    } as any,
+    { record: vi.fn() }
   );
   const answerSpy = vi.spyOn(answer, 'execute');
   const router = new AgentQuestionSupervisorRouter(getPolicy, evaluateDecision, answer);
@@ -217,6 +219,7 @@ describe('AgentQuestionSupervisorRouter', () => {
           questionId: question.id,
           answer: 'approve',
           answeredBy: expect.stringMatching(/^supervisor:/),
+          surface: DecisionSurface.Supervisor,
         })
       );
     });

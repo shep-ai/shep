@@ -1,7 +1,7 @@
 /**
  * E2E: Contributor onboarding view smoke test (spec 097, task-48).
  *
- * Verifies that GET /onboarding renders the contributor view when the
+ * Verifies that GET /contributors renders the contributor view when the
  * `collaboration` feature flag is on (flipped by global-setup):
  *  - the four primary surfaces are present (lane chooser, leaderboard,
  *    doctor summary, pick-issue prompt)
@@ -17,7 +17,7 @@ import { test, expect } from '@playwright/test';
 
 test.describe('Contributor onboarding view (spec 097)', () => {
   test('renders contributor view, lane selection updates curated issues', async ({ page }) => {
-    await page.goto('/onboarding');
+    await page.goto('/contributors');
 
     const isNotFound = await page
       .getByRole('heading', { name: 'Not Found' })

@@ -38,8 +38,9 @@ describe('SettingsPageClient', () => {
   });
 
   it('renders all section components', () => {
+    const withAspm = { ...settings, featureFlags: { ...settings.featureFlags!, aspm: true } };
     render(
-      <SettingsPageClient settings={settings} shepHome="/home/user/.shep" dbFileSize="2.4 MB" />
+      <SettingsPageClient settings={withAspm} shepHome="/home/user/.shep" dbFileSize="2.4 MB" />
     );
     expect(screen.getByTestId('agent-settings-section')).toBeDefined();
     expect(screen.getByTestId('environment-settings-section')).toBeDefined();
@@ -48,6 +49,14 @@ describe('SettingsPageClient', () => {
     expect(screen.getByTestId('notification-settings-section')).toBeDefined();
     expect(screen.getByTestId('feature-flags-settings-section')).toBeDefined();
     expect(screen.getByTestId('database-settings-section')).toBeDefined();
+  });
+
+  it('hides the supply-chain security section while ASPM is off', () => {
+    render(
+      <SettingsPageClient settings={settings} shepHome="/home/user/.shep" dbFileSize="2.4 MB" />
+    );
+    expect(settings.featureFlags?.aspm).toBe(false);
+    expect(screen.queryByTestId('security-settings-section')).toBeNull();
   });
 
   it('passes shepHome and dbFileSize to database section', () => {

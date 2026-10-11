@@ -52,6 +52,18 @@ const defaultFlags = {
   scheduledWorkflows: false,
   githubImport: true,
   queryAwareHarness: false,
+  spaces: true,
+  trackers: true,
+  knowledge: true,
+  signals: true,
+  opportunities: true,
+  feedback: true,
+  discovery: true,
+  incidents: true,
+  outcomes: true,
+  docsFirst: true,
+  autopilot: true,
+  factory: true,
 };
 
 function renderWithSidebar(ui: React.ReactElement) {
@@ -101,6 +113,18 @@ const mockFeatures = [
 ];
 
 describe('AppSidebar', () => {
+  it('keeps the contributor onboarding page out of the end-user sidebar', async () => {
+    const { container } = renderWithSidebar(
+      <AppSidebar features={mockFeatures} featureFlags={{ ...defaultFlags, collaboration: true }} />
+    );
+
+    await userEvent.click(screen.getByText('Collaboration'));
+    expect(container.querySelector('a[href="/agent-questions"]')).not.toBeNull();
+    expect(container.querySelector('a[href="/onboarding"]')).toBeNull();
+    expect(container.querySelector('a[href="/contributors"]')).toBeNull();
+    expect(screen.queryByText('Get started')).toBeNull();
+  });
+
   it('renders Control Center nav item in header', () => {
     renderWithSidebar(<AppSidebar features={mockFeatures} featureFlags={defaultFlags} />);
 

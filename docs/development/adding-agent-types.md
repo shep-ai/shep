@@ -508,8 +508,8 @@ So for Kimi (`i18nKey: 'kimiCode'`), each locale's `tui.json` gains:
 }
 ```
 
-Unsupported ("Coming Soon") agents carry `name` + `disabled` instead of `name` + `description` —
-see the `aider` entry.
+An unsupported ("Coming Soon") agent would carry `name` + `disabled` instead of `name` +
+`description`; no current agent does.
 
 **The picker itself is generated from the catalog.** You add translations, not picker entries:
 

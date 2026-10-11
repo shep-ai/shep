@@ -24,6 +24,7 @@ import type {
   AgentQuestionStatus,
   Decision,
   DecisionResponse,
+  DecisionSurface,
 } from '../../../../domain/generated/output.js';
 
 /**
@@ -72,6 +73,8 @@ export interface AnswerAgentQuestionInput {
   responses?: DecisionResponse[];
   /** Actor namespace, e.g. `user:abc` or `supervisor:42`. */
   answeredBy: string;
+  /** Where the answer was given, for usage telemetry (spec 136). Defaults to `other`. */
+  surface?: DecisionSurface;
 }
 
 /** Inputs accepted by {@link IAgentQuestionService.cancel}. */

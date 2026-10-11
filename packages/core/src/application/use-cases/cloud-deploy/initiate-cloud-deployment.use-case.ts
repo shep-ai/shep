@@ -18,7 +18,6 @@ import { ApplicationNotFoundError } from '../../../domain/errors/application-not
 import { NoProviderSelectedError } from '../../../domain/errors/no-provider-selected.error.js';
 import { BuildOutputNotFoundError } from '../../../domain/errors/build-output-not-found.error.js';
 import { CloudProviderNotConnectedError } from '../../../domain/errors/cloud-provider-not-connected.error.js';
-import { ProviderNotImplementedError } from '../../../domain/errors/provider-not-implemented.error.js';
 
 export interface InitiateCloudDeploymentInput {
   applicationId: string;
@@ -120,10 +119,6 @@ export class InitiateCloudDeploymentUseCase {
     await this.opLog.info(opKind, opId, `Starting deploy to ${providerId}`);
 
     const provider = this.registry.get(providerId);
-    if (!provider.enabled) {
-      await this.opLog.error(opKind, opId, `Provider ${providerId} is not enabled in this build`);
-      throw new ProviderNotImplementedError(providerId);
-    }
     if (!(await provider.isConnected())) {
       await this.opLog.error(
         opKind,
@@ -255,7 +250,7 @@ export class InitiateCloudDeploymentUseCase {
 
   /**
    * Walk the provider registry in declared order and return the first
-   * provider that is both `enabled` AND `isConnected()`. Used to pick
+   * provider that reports `isConnected()`. Used to pick
    * a sensible default when a deploy is initiated on an application
    * that has no explicit `cloudDeploymentProvider` yet.
    *
@@ -266,7 +261,6 @@ export class InitiateCloudDeploymentUseCase {
   private async findFirstConnectedProvider(): Promise<CloudDeploymentProvider | null> {
     const descriptors = this.registry.listAll();
     for (const descriptor of descriptors) {
-      if (!descriptor.enabled) continue;
       const provider = this.registry.get(descriptor.id);
       try {
         if (await provider.isConnected()) return descriptor.id;

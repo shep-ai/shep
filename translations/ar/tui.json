@@ -43,14 +43,6 @@
           "name": "Ollama",
           "description": "تشغيل نماذج LLM محلية عبر Ollama (لا يتطلب مفتاح API، يعمل على localhost)"
         },
-        "aider": {
-          "name": "Aider",
-          "disabled": "(قريبًا)"
-        },
-        "continue": {
-          "name": "Continue",
-          "disabled": "(قريبًا)"
-        },
         "kimiCode": {
           "name": "Kimi Code",
           "description": "وكيل طرفية Kimi Code CLI من Moonshot AI (نماذج Kimi K)"

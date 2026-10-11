@@ -137,7 +137,7 @@ describe('Graph State Transitions › Resume After Error', () => {
         models: { default: 'claude-sonnet-4' },
         user: {},
         environment: { defaultEditor: 'vscode', shellPreference: 'bash' },
-        system: { autoUpdate: false, logLevel: 'error' },
+        system: { logLevel: 'error' },
         agent: { type: 'claude-code', authMethod: 'session' },
         notifications: {
           inApp: { enabled: false },

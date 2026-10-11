@@ -1,9 +1,11 @@
 import { getTrackerOverview } from '@/app/actions/manage-trackers';
+import { requireFeaturePage } from '@/lib/require-feature-page';
 import { TrackersPageClient } from '@/components/features/trackers/trackers-page-client';
 
 export const dynamic = 'force-dynamic';
 
 export default async function ConnectionsPage() {
+  requireFeaturePage('trackers', 'knowledge');
   const { overview, error } = await getTrackerOverview();
 
   return (

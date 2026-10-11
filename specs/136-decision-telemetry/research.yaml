@@ -1,0 +1,58 @@
+# Research Artifact (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: decision-telemetry
+summary: Technical decisions for 136 — where to emit decision telemetry and how to type it.
+
+relatedFeatures:
+  - 133-telemetry
+  - 134-unified-decisions
+technologies:
+  - TypeSpec
+  - TypeScript
+relatedLinks: []
+
+decisions:
+  - title: Emit from the use cases that settle a decision
+    chosen: >-
+      AnswerAgentQuestionUseCase emits decision.answered after settlePending succeeds;
+      AskAgentDecisionUseCase emits decision.defaulted after its deadline settle succeeds.
+    rejected:
+      - 'Emit from each surface (web action, CLI, bridge, supervisor): four copies, and a missed caller loses data'
+      - 'Emit from the repository: infrastructure would need to know about decisions and telemetry semantics'
+    rationale: >-
+      Every answer flows through one use case and settlePending is the single atomic point that
+      decides who won a race, so emitting there counts each decision exactly once without onceKey.
+
+  - title: Surface is an explicit enum passed by the caller
+    chosen: 'DecisionSurface { web, cli, chat, supervisor, other } on AnswerAgentQuestionInput.surface (optional, default other)'
+    rejected:
+      - 'Parse answeredBy ("user:cli", "supervisor:42"): free-form actor strings; a raw-string branch the rules forbid'
+    rationale: The caller knows its surface; an enum keeps the property bounded and typed.
+
+  - title: Defaults are a separate event
+    chosen: 'TelemetryEvent.DecisionDefaulted "decision.defaulted" { kind, timeout }'
+    rejected:
+      - 'decision.answered with surface=deadline: inflates answer counts and latency with non-human answers'
+    rationale: >-
+      decision.answered is documented as a person (or the supervisor) answering. A deadline
+      default answers a different question: how often agents proceed without a human.
+
+  - title: AskAgentDecisionOutcome becomes the DecisionOutcome enum
+    chosen: 'Add DecisionOutcome.Disabled "disabled" and use the enum; wire values are unchanged'
+    rejected:
+      - 'Keep the string union: a raw-string domain concept in a file this feature touches'
+    rationale: Code-quality rule — refactor before extending; the MCP tool output stays identical.
+
+openQuestions: []
+
+content: |
+  ## Summary
+
+  Two emit points (answer, deadline default), typed with DecisionKind / DecisionSurface /
+  DurationBucket. No new ports: ITelemetry and toDurationBucket come from spec 133.
+
+  ## Security and Privacy
+
+  Only enums, a boolean and a duration bucket are sent — no question text, answers, actors or
+  ids. The typed property map rejects content properties at compile time.

@@ -47,7 +47,7 @@ vi.mock('@/presentation/cli/commands/aspm/aspm-ai-review-command.js', () => ({
 
 import { createAspmCommand } from '@/presentation/cli/commands/aspm/index.js';
 
-const DISABLED_NOTICE = 'The ASPM module is disabled.';
+const DISABLED_NOTICE = '`shep aspm` is turned off.';
 
 describe('createAspmCommand feature-flag gating', () => {
   let errorSpy: ReturnType<typeof vi.spyOn>;

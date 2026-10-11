@@ -9,10 +9,7 @@ import { NextResponse } from 'next/server';
 import { resolve } from '@/lib/server-container';
 import { errorCode, errorMessage } from '@/lib/error-code';
 import type { SelectCloudProviderUseCase } from '@shepai/core/application/use-cases/cloud-deploy/select-cloud-provider.use-case';
-import {
-  CloudDeploymentProvider,
-  type CloudDeploymentProvider as CloudDeploymentProviderType,
-} from '@shepai/core/domain/generated/output';
+import { parseCloudDeploymentProvider } from '@shepai/core/domain/shared/cloud-deployment-provider';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,17 +17,11 @@ interface RouteParams {
   params: Promise<{ id: string }>;
 }
 
-function parseProvider(raw: unknown): CloudDeploymentProviderType | null {
-  if (typeof raw !== 'string') return null;
-  const allowed = Object.values(CloudDeploymentProvider) as string[];
-  return allowed.includes(raw) ? (raw as CloudDeploymentProviderType) : null;
-}
-
 export async function POST(request: NextRequest, { params }: RouteParams): Promise<NextResponse> {
   try {
     const { id } = await params;
     const body = (await request.json()) as { provider?: unknown };
-    const provider = parseProvider(body.provider);
+    const provider = parseCloudDeploymentProvider(body.provider);
     if (!provider) {
       return NextResponse.json({ error: 'Invalid provider' }, { status: 400 });
     }

@@ -4,6 +4,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { IntakeRejection } from '@shepai/core/domain/generated/output';
 
 const ingest = { execute: vi.fn() };
+const flags = vi.hoisted(() => ({ value: { incidents: true } }));
+vi.mock('@/lib/feature-flags', () => ({ getFeatureFlags: () => flags.value }));
 vi.mock('@/lib/server-container', () => ({
   resolve: (token: string) => {
     if (token !== 'IngestAlertUseCase') throw new Error(`Unknown token: ${token}`);
@@ -23,6 +25,14 @@ function post(body: string, key = 'shep_fb_secret'): Request {
 
 describe('POST /api/alerts', () => {
   beforeEach(() => vi.clearAllMocks());
+
+  it('answers 404 without reading the request while the incidents flag is off (spec 135)', async () => {
+    flags.value = { incidents: false };
+    const response = await POST(post('{"text":"x"}'));
+    flags.value = { incidents: true };
+    expect(response.status).toBe(404);
+    expect(ingest.execute).not.toHaveBeenCalled();
+  });
 
   it('opens an incident (201) and notes a repeat (200)', async () => {
     ingest.execute.mockResolvedValue({ ok: true, incident: { id: 'inc-1' }, duplicate: false });

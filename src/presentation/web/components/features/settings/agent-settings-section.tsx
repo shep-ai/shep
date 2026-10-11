@@ -24,10 +24,9 @@ import type { AgentConfig } from '@shepai/core/domain/generated/output';
 /**
  * Selectable agents, derived from the domain catalog.
  *
- * This list used to be hand-maintained here and had drifted twice over: it
- * never learned about `kimi-code`, and it offered Aider and Continue as plain
- * enabled options even though both are `supported: false` and have no executor
- * — picking either threw inside `AgentExecutorFactory.createExecutor()`.
+ * This list used to be hand-maintained here and drifted: it never learned
+ * about `kimi-code`. A catalog entry marked `supported: false` renders as a
+ * disabled "Coming Soon" option.
  */
 const AGENT_TYPE_OPTIONS = listAgentDescriptors().map((descriptor) => ({
   value: descriptor.type,

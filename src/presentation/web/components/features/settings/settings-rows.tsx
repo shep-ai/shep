@@ -19,7 +19,8 @@ export interface SettingsRowProps {
 export function SettingsRow({ label, description, htmlFor, children }: SettingsRowProps) {
   return (
     <div className="flex min-w-0 flex-wrap items-center justify-between gap-x-4 gap-y-2 border-b py-2.5 last:border-b-0">
-      <div className="min-w-0">
+      {/* Grows and shrinks so the controls stay beside a long description; wraps below 16rem. */}
+      <div className="min-w-0 flex-[1_1_16rem]">
         <Label
           id={htmlFor ? `${htmlFor}-label` : undefined}
           htmlFor={htmlFor}
