@@ -36,7 +36,7 @@ describe('InitializeSettingsUseCase', () => {
       expect(result).toBeDefined();
       expect(result.models.default).toBe(DEFAULT_MODEL_ID);
       expect(result.environment.defaultEditor).toBe('vscode');
-      expect(result.system.autoUpdate).toBe(true);
+      expect(result.system.logLevel).toBe('info');
     });
 
     it('should call repository.initialize() with new settings', async () => {

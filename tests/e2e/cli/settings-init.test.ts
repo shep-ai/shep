@@ -42,7 +42,7 @@ describe('CLI: settings init', () => {
     const settings = JSON.parse(afterResult.stdout);
     expect(settings.models.default).toBe('claude-opus-5-5');
     expect(settings.environment.defaultEditor).toBe('vscode');
-    expect(settings.system.autoUpdate).toBe(true);
+    expect(settings.system).toEqual({ logLevel: 'info' });
   }, 30_000);
 
   it('should not silently modify settings without --force', () => {

@@ -12,6 +12,14 @@ import { MemoryScope, SpaceResolutionSource } from '@/domain/generated/output.js
 import type { IMemoryRelevanceScorer } from '@/application/ports/output/services/memory-relevance-scorer.interface.js';
 import type { ProjectMemory, Space } from '@/domain/generated/output.js';
 import { MemoryCategory } from '@/domain/generated/output.js';
+import type { ISettingsRepository } from '@/application/ports/output/repositories/settings.repository.interface.js';
+import { createDefaultSettings } from '@/domain/factories/settings-defaults.factory.js';
+
+function settingsWith(docsFirst: boolean): ISettingsRepository {
+  const settings = createDefaultSettings();
+  settings.featureFlags = { ...settings.featureFlags!, docsFirst };
+  return { initialize: vi.fn(), update: vi.fn(), load: vi.fn(async () => settings) };
+}
 
 function entry(over: Partial<ProjectMemory>): ProjectMemory {
   return {
@@ -70,7 +78,8 @@ describe('SelectProjectMemoryUseCase', () => {
       repo,
       scorer,
       resolverFor(),
-      knowledge as unknown as SelectKnowledgeUseCase
+      knowledge as unknown as SelectKnowledgeUseCase,
+      settingsWith(true)
     );
   });
 
@@ -159,7 +168,8 @@ describe('SelectProjectMemoryUseCase', () => {
       repo,
       scorer,
       resolverFor(undefined, docsFirst),
-      knowledge as unknown as SelectKnowledgeUseCase
+      knowledge as unknown as SelectKnowledgeUseCase,
+      settingsWith(true)
     );
     const plan = await useCase.execute({ repositoryPath: '/repo', phase: 'plan', taskText: 't' });
     expect(plan.blob).toContain('### Docs first');
@@ -170,6 +180,19 @@ describe('SelectProjectMemoryUseCase', () => {
       taskText: 't',
     });
     expect(research.blob).toBe('');
+  });
+
+  it('adds nothing about docs while the docsFirst feature flag is off (spec 135)', async () => {
+    const docsFirst: Space = { ...DEFAULT_SPACE, agentSettings: { docsFirst: true } };
+    useCase = new SelectProjectMemoryUseCase(
+      repo,
+      scorer,
+      resolverFor(undefined, docsFirst),
+      knowledge as unknown as SelectKnowledgeUseCase,
+      settingsWith(false)
+    );
+    const plan = await useCase.execute({ repositoryPath: '/repo', phase: 'plan', taskText: 't' });
+    expect(plan.blob).not.toContain('Docs first');
   });
 
   it('adds nothing about docs where the space does not ask for it', async () => {

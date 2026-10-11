@@ -8,7 +8,7 @@
  * extension.
  */
 
-import type { SpaceAgentSettings } from '../generated/output';
+import type { FeatureFlags, SpaceAgentSettings } from '../generated/output';
 import { isAbsolutePath } from './absolute-path';
 import { normalizePath } from './normalize-path';
 
@@ -18,6 +18,17 @@ export const DEFAULT_DOCS_PATHS: readonly string[] = ['docs/', 'README.md'];
 export const DOCS_FIRST_PHASES = { plan: 'plan', implement: 'implement' } as const;
 
 const CURRENT_DIR_PREFIX = /^(\.\/)+/;
+
+/**
+ * Whether docs first applies: the space asks for it and the `docsFirst`
+ * feature flag is on (spec 135). Missing flags count as on, the default.
+ */
+export function isDocsFirstActive(
+  settings: SpaceAgentSettings | undefined,
+  flags: Pick<FeatureFlags, 'docsFirst'> | undefined
+): boolean {
+  return settings?.docsFirst === true && flags?.docsFirst !== false;
+}
 
 /** The space's documentation path prefixes. */
 export function docsPathsOf(settings: SpaceAgentSettings | undefined): readonly string[] {

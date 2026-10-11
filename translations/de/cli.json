@@ -225,7 +225,7 @@
         "governanceFindingsLabel": "GitHub Governance (audit-only)",
         "noFindings": "No findings",
         "failedToEnforce": "Failed to evaluate security posture",
-        "flagDisabledNote": "Supply chain security feature flag is off — enforce is a no-op"
+        "flagDisabledNote": "Supply-chain security is part of ASPM and the aspm feature flag is off — enforce is a no-op"
       }
     },
     "feat": {

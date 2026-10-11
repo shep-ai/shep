@@ -1,0 +1,45 @@
+feature:
+  id: '135-review-cleanup-cuts'
+  name: 'review-cleanup-cuts'
+  number: 135
+  branch: 'feat/133-review-cleanup-cuts'
+  lifecycle: 'review'
+  createdAt: '2026-10-09T09:35:49Z'
+
+status:
+  phase: 'implementation-complete'
+  progress:
+    completed: 9
+    total: 9
+    percentage: 100
+  currentTask: null
+  lastUpdated: '2026-10-09T10:00:00Z'
+  lastUpdatedBy: 'shep-kit:implement'
+
+validation:
+  lastRun: null
+  gatesPassed: []
+  autoFixesApplied: []
+
+tasks:
+  current: null
+  blocked: []
+  failed: []
+
+checkpoints:
+  - phase: 'feature-created'
+    completedAt: '2026-10-09T09:35:49Z'
+    completedBy: 'shep-kit:new-feature-fast'
+  - phase: 'research-complete'
+    completedAt: '2026-10-09T10:00:00Z'
+    completedBy: 'shep-kit:new-feature-fast'
+  - phase: 'plan-complete'
+    completedAt: '2026-10-09T10:00:00Z'
+    completedBy: 'shep-kit:new-feature-fast'
+  - phase: 'implementation-complete'
+    completedAt: '2026-10-09T12:30:00Z'
+    completedBy: 'shep-kit:implement'
+
+errors:
+  current: null
+  history: []

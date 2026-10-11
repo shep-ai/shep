@@ -128,6 +128,10 @@ When you **open** your first PR — not when it merges — [`.github/workflows/w
 
 Recognition itself is not automated yet — see the note under [Contributor Ladder](#contributor-ladder). Monthly recaps go to `recaps/YYYY-MM.md`, GitHub Discussions, and Discord via the publishers in `packages/core/src/infrastructure/services/recap/`.
 
+Cadence-driven maintenance runs in [`.github/workflows/contributor-maintenance.yml`](./.github/workflows/contributor-maintenance.yml), never on users' machines: `pnpm dev:cli contributors stale-issues` lists good-first-issues with no activity for 30 days (daily), and `pnpm dev:cli contributors recap` writes the previous month's recap (monthly). Both read the same use cases you can run locally.
+
+With the web UI running (`pnpm dev:web`) and the Collaboration flag on, `/contributors` shows the lane chooser, the contributor leaderboard and the doctor summary. It is not in the sidebar — it is tooling for working on Shep, not for using it.
+
 ---
 
 ## Quick Contributions (no spec workflow needed)

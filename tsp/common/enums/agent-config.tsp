@@ -8,8 +8,7 @@
  * ## Supported Agents
  *
  * Claude Code, Kimi Code, Codex CLI, Copilot CLI, Gemini CLI, Cursor, Cline, OpenRouter,
- * Together AI, Ollama and LLMProxy are fully supported. Aider and Continue are listed for
- * future extensibility and appear as "Coming Soon" in the TUI wizard.
+ * Together AI and Ollama are fully supported, and so is LLMProxy.
  */
 /**
  * The AI coding agent tool used by Shep for all LLM-powered operations.
@@ -27,8 +26,6 @@
  * ollama       ← Currently supported (SDK-based, local inference)
  * llmproxy     ← Currently supported (SDK-based, local proxy)
  * dev          ← Currently supported (no binary — local mock)
- * aider        ← Coming Soon
- * continue     ← Coming Soon
  * ```
  */
 @doc("AI coding agent tool selection")
@@ -69,20 +66,6 @@ enum AgentType {
    */
   @doc("Gemini CLI by Google")
   GeminiCli: "gemini-cli",
-
-  /**
-   * Aider AI coding assistant.
-   * Not yet supported — listed for future extensibility.
-   */
-  @doc("Aider AI coding assistant (coming soon)")
-  Aider: "aider",
-
-  /**
-   * Continue IDE extension.
-   * Not yet supported — listed for future extensibility.
-   */
-  @doc("Continue IDE extension (coming soon)")
-  Continue: "continue",
 
   /**
    * Cursor AI coding agent.

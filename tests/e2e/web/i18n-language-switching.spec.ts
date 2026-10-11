@@ -9,26 +9,30 @@ import { test, expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { COLD_ROUTE_READY_TIMEOUT_MS, COLD_ROUTE_TEST_TIMEOUT_MS } from './helpers/timeouts';
 
+/** The settings field the language save posts. */
+const PREFERRED_LANGUAGE_FIELD = '"preferredLanguage"';
+
 async function selectLanguage(page: Page, name: string) {
   const select = page.getByTestId('language-select');
   await expect(select).toBeEnabled({ timeout: COLD_ROUTE_READY_TIMEOUT_MS });
   if ((await select.textContent())?.trim() === name) return;
   await select.click();
-  // Wait for the language save itself. The page fires other server actions
-  // while it loads (status reads, the route-view usage event), and resolving
-  // on whichever answered first let the reload below abort the real save.
+  // Match the language save itself: the page fires other server actions while
+  // it loads (model catalog, routing plan, the route-view usage event) that can
+  // answer first. The action has run and persisted once its response headers
+  // arrive, so do not wait on `finished()` — the re-rendered page streams in
+  // its body, and that stream can stay open past the test timeout.
   const saved = page.waitForResponse((response) => {
     const request = response.request();
     return (
       request.method() === 'POST' &&
       !!request.headers()['next-action'] &&
-      (request.postData() ?? '').includes('preferredLanguage')
+      (request.postData() ?? '').includes(PREFERRED_LANGUAGE_FIELD)
     );
   });
   await page.getByRole('option', { name, exact: true }).click();
   const response = await saved;
   expect(response.ok()).toBe(true);
-  await response.finished();
 }
 
 test.describe('i18n: language switching', () => {

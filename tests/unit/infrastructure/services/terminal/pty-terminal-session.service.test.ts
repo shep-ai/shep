@@ -47,6 +47,26 @@ function closeAndWaitForExit(service: PtyTerminalSessionService, sessionId: stri
   });
 }
 
+/**
+ * Remove the directory a shell ran in, after {@link closeAndWaitForExit}.
+ *
+ * On Windows the ConPTY host (`conhost.exe`) that node-pty starts alongside the
+ * shell inherits its working directory and can outlive the shell's exit event
+ * — CI has seen it still running when the job ended, so no wait inside the test
+ * releases the handle. When removal still reports `EBUSY` after the exit wait
+ * and the retry budget, the directory is left in the OS temp folder: it holds
+ * nothing the assertions depend on. Any other error still fails the test.
+ */
+function removeShellCwd(dir: string): void {
+  try {
+    removeDirWithRetry(dir);
+  } catch (error) {
+    const lingeringConptyHost =
+      process.platform === 'win32' && (error as NodeJS.ErrnoException).code === 'EBUSY';
+    if (!lingeringConptyHost) throw error;
+  }
+}
+
 describe('PtyTerminalSessionService', () => {
   it('rejects non-existent working directory with ENOENT error', () => {
     const service = new PtyTerminalSessionService();
@@ -93,7 +113,7 @@ describe('PtyTerminalSessionService', () => {
       // tempDir before the `finally` below tries to remove it.
       await closeAndWaitForExit(service, result.id);
     } finally {
-      removeDirWithRetry(tempDir);
+      removeShellCwd(tempDir);
     }
   });
 });

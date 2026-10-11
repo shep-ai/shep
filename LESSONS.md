@@ -161,6 +161,10 @@ Rules:
    process and then deletes files is a Windows-only failure waiting for main.
 4. **One retry budget, one home.** Six suites had each inlined their own
    `{ maxRetries, retryDelay }`; that is `@tests/helpers/remove-dir.helper.ts` now.
+5. **The shell's exit is not the ConPTY host's exit.** On Windows node-pty's `conhost.exe`
+   inherits the shell's cwd and can outlive the exit event (CI killed it as an orphan at job
+   end), so even exit-wait + retries can still hit `EBUSY`. A test whose temp dir served only as
+   the shell's cwd may leave it to the OS on that one Windows error; every other error fails.
 
 ## A one-shot download inside a build step is an unguarded failure
 
@@ -797,9 +801,9 @@ Feature flags are persisted in the Settings singleton and toggled via the Settin
    - UPDATE SET clause
 6. `packages/core/src/domain/factories/settings-defaults.factory.ts` — add `<name>: false` to the `FeatureFlags` defaults object
 7. `src/presentation/web/lib/feature-flags.ts` — add field to `FeatureFlagsState` interface, to the DB-primary branch, and to the env-var fallback branch (+ optional deprecated accessor)
-8. `src/presentation/web/components/features/settings/settings-page-client.tsx` — add `<SwitchRow>` inside the Feature Flags `SettingsSection` and add the key to the fallback object at the top (`const featureFlags = settings.featureFlags ?? { ... }`).
-9. Translation strings in EVERY locale — `translations/<lang>/web.json` → `settings.featureFlags.<name>` and `settings.featureFlags.<name>Description`. Missing keys render as the raw key path on-screen. Locales: `en, ar, es, de, fr, he, pt, uk, ru`.
-10. Gate the UI on `featureFlags.<name>` wherever the feature is exposed (sidebar, routes, search, FAB actions). **If the feature ships any pages under `src/presentation/web/app/<name>/`, you MUST also ADD a `SidebarNavItem` in `app-sidebar.tsx` gated on the flag — "gate the existing sidebar entry" silently passes when there is no entry to gate. See the "New Feature Pages Must Be Reachable" lesson below.**
+8. `packages/core/src/domain/shared/feature-flag-catalog.ts` — add the flag to `FEATURE_FLAG_CATALOG` with its group and a one-line description (a missing entry is a compile error). The Settings page's Feature Flags section, `/settings/feature-flags` and `shep settings flags` all render from it (spec 135) — do not hand-write a `<SwitchRow>`.
+9. Translation strings in EVERY locale — `translations/<lang>/web.json` → `settings.featureFlags.<name>` and `settings.featureFlags.<name>Description`, named exactly after the flag key (the list builds the key from it). Missing keys render as the raw key path on-screen. Locales: `en, ar, es, de, fr, he, pt, uk, ru`.
+10. Gate the UI on `featureFlags.<name>` wherever the feature is exposed (sidebar `flag` in `sidebar-links.ts`, `requireFeaturePage()` in pages, `requireFeatureFlag`/404 in API routes, `gateByFeatureFlag()` for CLI groups, search, FAB actions). **If the feature ships any pages under `src/presentation/web/app/<name>/`, you MUST also ADD a `SidebarNavItem` in `app-sidebar.tsx` gated on the flag — "gate the existing sidebar entry" silently passes when there is no entry to gate. See the "New Feature Pages Must Be Reachable" lesson below.**
 11. Update hardcoded `FeatureFlags` / `FeatureFlagsState` fixtures across stories, tests, and hooks. `tsc --noEmit` will surface every one — run `pnpm typecheck` BEFORE committing so the pre-commit hook doesn't bounce. Known fixture locations (grow this list when a new one shows up):
     - `src/presentation/web/hooks/feature-flags-context.tsx`
     - `src/presentation/web/components/features/settings/settings-page-client.tsx` (fallback object)
@@ -3055,6 +3059,29 @@ best-effort (the approval use cases already wrap theirs); a use case that writes
 needs at least one test against the migrated SQLite schema; and a new process entry point
 (an MCP server, a worker) gets one real spawn-and-call smoke before it is called done — that run
 also caught the entry skipping `initializeSettings()`.
+
+## Agent worktrees under `.claude/worktrees/` are not gitignored
+
+A subagent started with worktree isolation checks out under `.claude/worktrees/<id>/` inside the
+main clone, and `.gitignore` does not cover that path, so `git add -A` or `git status`-driven lint
+and prettier runs pick up the whole second checkout. Add `.claude/worktrees/` to
+`.git/info/exclude` before starting one, and stage with `git add -u` plus explicit new paths.
+
+## Never isolate git config with `NUL` on Windows
+
+`GIT_CONFIG_GLOBAL=NUL` worked until the Windows runner moved to git 2.56, which fails every
+command with `fatal: unable to access 'NUL': Invalid argument`. Point `GIT_CONFIG_GLOBAL` and
+`GIT_CONFIG_SYSTEM` at an empty temp file (as `tests/helpers/harness/temp-git-repo.ts` does) — it
+reads the same on every platform and git version, so never branch on `process.platform` for it.
+
+## Wait for a specific server action in e2e, never "the first `next-action` POST"
+
+The i18n spec waited for any server-action response, then called `response.finished()` to stop the
+page closing mid-save. Pages fire several actions on load (model catalog, routing plan), so the wait
+could match the wrong one, and a server action's response streams the re-rendered page, so
+`finished()` can hang past the test timeout even after the action has persisted. Match the action
+by its request body (`request.postData()` contains the field it saves), treat its response headers
+as "persisted", and verify through a reload rather than `finished()`.
 
 ## Fields that identify a person are opt-in, even when usage metrics are opt-out
 

@@ -43,14 +43,6 @@
           "name": "Ollama",
           "description": "Запуск локальних LLM через Ollama (API-ключ не потрібен, працює на localhost)"
         },
-        "aider": {
-          "name": "Aider",
-          "disabled": "(Незабаром)"
-        },
-        "continue": {
-          "name": "Continue",
-          "disabled": "(Незабаром)"
-        },
         "kimiCode": {
           "name": "Kimi Code",
           "description": "Термінальний агент Kimi Code CLI від Moonshot AI (моделі Kimi K)"

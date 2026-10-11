@@ -4,7 +4,12 @@ import {
   fromDatabase,
   type ApplicationRow,
 } from '@/infrastructure/persistence/sqlite/mappers/application.mapper.js';
-import { ApplicationStatus, ScanStageName, type Application } from '@/domain/generated/output.js';
+import {
+  ApplicationStatus,
+  CloudDeploymentProvider,
+  ScanStageName,
+  type Application,
+} from '@/domain/generated/output.js';
 
 function createTestApplication(overrides: Partial<Application> = {}): Application {
   return {
@@ -197,6 +202,23 @@ describe('Application Mapper', () => {
 
       expect(app.modelOverride).toBe('claude-opus-4');
     });
+  });
+
+  describe('cloudDeploymentProvider', () => {
+    it('maps a known cloud_deployment_provider to cloudDeploymentProvider', () => {
+      const app = fromDatabase(createTestRow({ cloud_deployment_provider: 'CloudflarePages' }));
+
+      expect(app.cloudDeploymentProvider).toBe(CloudDeploymentProvider.CloudflarePages);
+    });
+
+    it.each(['Vercel', 'Netlify', 'AwsAmplify', 'GcpCloudRun'])(
+      'reads a removed provider value %s back as no selection',
+      (removed) => {
+        const app = fromDatabase(createTestRow({ cloud_deployment_provider: removed }));
+
+        expect(app.cloudDeploymentProvider).toBeUndefined();
+      }
+    );
   });
 
   describe('bedrockEnabled (project-bedrock integration)', () => {
