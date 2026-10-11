@@ -32,6 +32,7 @@ const OFF = {
   docsFirst: false,
   autopilot: false,
   factory: false,
+  sdlcBoard: false,
 } satisfies FeatureFlagsState;
 
 describe('sidebar links', () => {

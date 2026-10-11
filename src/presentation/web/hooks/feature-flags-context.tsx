@@ -29,6 +29,7 @@ const defaultFlags: FeatureFlagsState = {
   docsFirst: true,
   autopilot: true,
   factory: true,
+  sdlcBoard: false,
 };
 
 const FeatureFlagsContext = createContext<FeatureFlagsState>(defaultFlags);

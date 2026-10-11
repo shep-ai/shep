@@ -38,6 +38,7 @@ export interface FeatureFlagsState {
   docsFirst: boolean;
   autopilot: boolean;
   factory: boolean;
+  sdlcBoard: boolean;
 }
 
 export function getFeatureFlags(): FeatureFlagsState {
@@ -71,6 +72,7 @@ export function getFeatureFlags(): FeatureFlagsState {
           docsFirst: flags.docsFirst ?? true,
           autopilot: flags.autopilot ?? true,
           factory: flags.factory ?? true,
+          sdlcBoard: flags.sdlcBoard ?? false,
         };
       }
     }
@@ -117,6 +119,8 @@ export function getFeatureFlags(): FeatureFlagsState {
     docsFirst: true,
     autopilot: true,
     factory: true,
+    // The SDLC board is opt-in (spec 140).
+    sdlcBoard: false,
   };
 }
 

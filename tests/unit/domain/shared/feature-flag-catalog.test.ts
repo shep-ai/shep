@@ -39,6 +39,10 @@ describe('feature flag catalog', () => {
     expect(factory).toEqual(SOFTWARE_FACTORY);
   });
 
+  it('lists the SDLC board under Platform (spec 140)', () => {
+    expect(FEATURE_FLAG_CATALOG.sdlcBoard.group).toBe(FeatureFlagGroup.Platform);
+  });
+
   it('lists flags grouped in group order', () => {
     const groups = listFeatureFlagDescriptors().map((d) => d.group);
     const order = Object.values(FeatureFlagGroup);

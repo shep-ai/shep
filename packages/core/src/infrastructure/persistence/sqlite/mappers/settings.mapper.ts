@@ -181,7 +181,7 @@ export interface SettingsRow extends SettingsTelemetryRow {
   feature_flag_github_import?: number;
   // Query-aware harness flag (migration 151)
   feature_flag_query_aware_harness?: number;
-  // Software-factory area flags (spec 135, migration 166)
+  // Software-factory area flags (spec 135, migration 169)
   feature_flag_spaces: number;
   feature_flag_trackers: number;
   feature_flag_knowledge: number;
@@ -194,6 +194,8 @@ export interface SettingsRow extends SettingsTelemetryRow {
   feature_flag_docs_first: number;
   feature_flag_autopilot: number;
   feature_flag_factory: number;
+  // SDLC board flag (spec 140, migration 170)
+  feature_flag_sdlc_board: number;
   // Interactive agent config (added in migration 046)
   interactive_agent_enabled: number;
   interactive_agent_auto_timeout_minutes: number;
@@ -400,6 +402,7 @@ export function toDatabase(settings: Settings): SettingsRow {
     feature_flag_docs_first: settings.featureFlags?.docsFirst ? 1 : 0,
     feature_flag_autopilot: settings.featureFlags?.autopilot ? 1 : 0,
     feature_flag_factory: settings.featureFlags?.factory ? 1 : 0,
+    feature_flag_sdlc_board: settings.featureFlags?.sdlcBoard ? 1 : 0,
 
     // InteractiveAgentConfig (boolean → 0/1, integer fields; defaults applied here)
     interactive_agent_enabled: (settings.interactiveAgent?.enabled ?? true) ? 1 : 0,
@@ -881,6 +884,7 @@ export function fromDatabase(row: SettingsRow): Settings {
       docsFirst: row.feature_flag_docs_first === 1,
       autopilot: row.feature_flag_autopilot === 1,
       factory: row.feature_flag_factory === 1,
+      sdlcBoard: row.feature_flag_sdlc_board === 1,
     },
 
     // InteractiveAgentConfig (INTEGER 0/1 → boolean, integer → number)

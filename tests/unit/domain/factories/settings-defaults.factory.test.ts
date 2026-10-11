@@ -348,6 +348,8 @@ describe('createDefaultSettings', () => {
         docsFirst: true,
         autopilot: true,
         factory: true,
+        // The SDLC board is opt-in (spec 140).
+        sdlcBoard: false,
       });
     });
 

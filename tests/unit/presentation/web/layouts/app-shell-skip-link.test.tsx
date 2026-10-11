@@ -55,6 +55,7 @@ const defaultFlags = {
   docsFirst: true,
   autopilot: true,
   factory: true,
+  sdlcBoard: false,
 };
 
 function renderShell() {

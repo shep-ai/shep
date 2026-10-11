@@ -94,6 +94,7 @@ describe('updateSettings', () => {
         docsFirst: false,
         autopilot: false,
         factory: false,
+        sdlcBoard: false,
       },
     };
     updateSettings(updated);

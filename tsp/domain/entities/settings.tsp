@@ -761,6 +761,9 @@ model FeatureFlags {
 
   @doc("Software factory: factory status — /factory and `shep factory` (spec 132)")
   factory: boolean = true;
+
+  @doc("SDLC board — /sdlc, its live task stream and board actions; off by default (spec 140)")
+  sdlcBoard: boolean = false;
 }
 
 /**

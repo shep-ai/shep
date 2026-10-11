@@ -821,6 +821,10 @@ export type FeatureFlags = {
    * Software factory: factory status — /factory and `shep factory` (spec 132)
    */
   factory: boolean;
+  /**
+   * SDLC board — /sdlc, its live task stream and board actions; off by default (spec 140)
+   */
+  sdlcBoard: boolean;
 };
 export enum WhatsAppAdapterKind {
   Baileys = 'baileys',
