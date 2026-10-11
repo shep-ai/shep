@@ -10,6 +10,7 @@
 
 import { injectable, inject } from 'tsyringe';
 import type { ExecFunction } from '../git/worktree.service.js';
+import { parseDiffHunks } from '../git/unified-diff.parser.js';
 import type {
   IPlatformReviewService,
   PrMetadata,
@@ -21,11 +22,7 @@ import {
   PlatformReviewError,
   PlatformReviewErrorCode,
 } from '../../../application/ports/output/services/platform-review-service.interface.js';
-import type {
-  FileDiff,
-  DiffHunk,
-  DiffLine,
-} from '../../../application/ports/output/services/git-pr-service.interface.js';
+import type { FileDiff } from '../../../application/ports/output/services/git-pr-service.interface.js';
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -71,73 +68,6 @@ function classifyError(error: unknown): PlatformReviewErrorCode {
   if (RETRYABLE_STATUS_CODES.some((code) => msg.includes(`${code}`)))
     return PlatformReviewErrorCode.NETWORK_ERROR;
   return PlatformReviewErrorCode.UNKNOWN;
-}
-
-/**
- * Parse a GitHub API patch string into DiffHunk[]/DiffLine[] structures.
- * Reuses the same parsing logic as GitPrService.parseUnifiedDiff.
- */
-function parsePatch(patch: string): {
-  hunks: DiffHunk[];
-  additions: number;
-  deletions: number;
-} {
-  if (!patch?.trim()) {
-    return { hunks: [], additions: 0, deletions: 0 };
-  }
-
-  const hunks: DiffHunk[] = [];
-  let currentHunk: DiffHunk | null = null;
-  let oldLineNum = 0;
-  let newLineNum = 0;
-  let additions = 0;
-  let deletions = 0;
-
-  for (const line of patch.split('\n')) {
-    const hunkHeaderMatch = line.match(/^@@\s+-(\d+)(?:,\d+)?\s+\+(\d+)(?:,\d+)?\s+@@(.*)$/);
-    if (hunkHeaderMatch) {
-      currentHunk = { header: line, lines: [] };
-      hunks.push(currentHunk);
-      oldLineNum = parseInt(hunkHeaderMatch[1], 10);
-      newLineNum = parseInt(hunkHeaderMatch[2], 10);
-      continue;
-    }
-
-    if (!currentHunk) continue;
-
-    if (line.startsWith('+')) {
-      const diffLine: DiffLine = {
-        type: 'added',
-        content: line.slice(1),
-        newNumber: newLineNum,
-      };
-      currentHunk.lines.push(diffLine);
-      newLineNum++;
-      additions++;
-    } else if (line.startsWith('-')) {
-      const diffLine: DiffLine = {
-        type: 'removed',
-        content: line.slice(1),
-        oldNumber: oldLineNum,
-      };
-      currentHunk.lines.push(diffLine);
-      oldLineNum++;
-      deletions++;
-    } else if (line.startsWith(' ')) {
-      const diffLine: DiffLine = {
-        type: 'context',
-        content: line.slice(1),
-        oldNumber: oldLineNum,
-        newNumber: newLineNum,
-      };
-      currentHunk.lines.push(diffLine);
-      oldLineNum++;
-      newLineNum++;
-    }
-    // Skip lines like "\ No newline at end of file"
-  }
-
-  return { hunks, additions, deletions };
 }
 
 /**
@@ -202,7 +132,7 @@ export class GitHubReviewService implements IPlatformReviewService {
 
       for (const file of files) {
         const status = this.mapGitHubFileStatus(file.status);
-        const { hunks, additions, deletions } = parsePatch(file.patch ?? '');
+        const { hunks, additions, deletions } = parseDiffHunks(file.patch ?? '');
 
         allFiles.push({
           path: file.filename,
