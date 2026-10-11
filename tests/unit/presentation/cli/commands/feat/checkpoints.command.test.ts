@@ -195,7 +195,7 @@ describe('shep feat restore', () => {
 
   it('prints why a restore was refused', async () => {
     mockRestore.mockRejectedValue(
-      new CheckpointRestoreRefusedError('an agent is running on this feature.')
+      new CheckpointRestoreRefusedError('AgentRunning', 'an agent is running on this feature.')
     );
     await createRestoreCommand().parseAsync(['feat-0', '1', '--force'], { from: 'user' });
     expect(process.exitCode).toBe(1);

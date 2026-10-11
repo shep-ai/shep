@@ -11,6 +11,7 @@ import 'reflect-metadata';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { RestoreFeatureCheckpointUseCase } from '@/application/use-cases/features/checkpoints/restore-feature-checkpoint.use-case.js';
 import { CaptureFeatureCheckpointUseCase } from '@/application/use-cases/features/checkpoints/capture-feature-checkpoint.use-case.js';
+import { CheckpointRestorePolicy } from '@/application/use-cases/features/checkpoints/checkpoint-restore-policy.js';
 import {
   CheckpointRestoreRefusedError,
   GitCheckpointNotFoundError,
@@ -68,7 +69,13 @@ describe('RestoreFeatureCheckpointUseCase', () => {
     git = createMockGitCheckpointService();
     runs = createFakeAgentRunRepository();
     capture = new CaptureFeatureCheckpointUseCase(git, repo, { now: () => new Date() });
-    useCase = new RestoreFeatureCheckpointUseCase(features, repo, git, runs, capture);
+    useCase = new RestoreFeatureCheckpointUseCase(
+      features,
+      repo,
+      git,
+      new CheckpointRestorePolicy(git, runs),
+      capture
+    );
 
     await capture.ensureBaseline({ featureId: FEATURE_ID, worktreePath: WORKTREE });
     git.setTree('bbbb0002');

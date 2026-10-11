@@ -9562,6 +9562,12 @@ export enum AgentFeature {
   effort = 'effort',
   mcpConfig = 'mcp-config',
 }
+export enum CheckpointRestoreBlocker {
+  NoOwnWorktree = 'NoOwnWorktree',
+  NotLinkedWorktree = 'NotLinkedWorktree',
+  WorktreeUnavailable = 'WorktreeUnavailable',
+  AgentRunning = 'AgentRunning',
+}
 export enum DecisionOutcome {
   Pending = 'pending',
   Answered = 'answered',

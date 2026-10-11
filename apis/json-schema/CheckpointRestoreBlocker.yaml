@@ -1,0 +1,9 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: CheckpointRestoreBlocker.yaml
+type: string
+enum:
+  - NoOwnWorktree
+  - NotLinkedWorktree
+  - WorktreeUnavailable
+  - AgentRunning
+description: Why a feature's worktree cannot be restored to a checkpoint right now

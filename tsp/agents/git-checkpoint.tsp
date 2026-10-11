@@ -24,6 +24,26 @@ enum GitCheckpointKind {
   PreRestore,
 }
 
+/**
+ * Why a feature's worktree cannot be restored to a checkpoint right now.
+ * Restore writes to a working tree, so it is refused whenever it could touch
+ * the user's own checkout or race a running agent.
+ */
+@doc("Why a feature's worktree cannot be restored to a checkpoint right now")
+enum CheckpointRestoreBlocker {
+  @doc("The feature has no worktree of its own (it runs in the repository checkout)")
+  NoOwnWorktree,
+
+  @doc("git does not report the directory as a linked worktree")
+  NotLinkedWorktree,
+
+  @doc("The worktree cannot be read (removed from disk, or not a git directory)")
+  WorktreeUnavailable,
+
+  @doc("The feature's latest agent run is pending or running")
+  AgentRunning,
+}
+
 @doc("A hidden-ref snapshot of a feature's worktree after one feature-agent step")
 model GitCheckpoint extends BaseEntity {
   @doc("Feature this checkpoint belongs to")

@@ -6,9 +6,16 @@ import 'reflect-metadata';
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { GetFeatureCheckpointDiffUseCase } from '@/application/use-cases/features/checkpoints/get-feature-checkpoint-diff.use-case.js';
 import { ListFeatureCheckpointsUseCase } from '@/application/use-cases/features/checkpoints/list-feature-checkpoints.use-case.js';
+import { CheckpointRestorePolicy } from '@/application/use-cases/features/checkpoints/checkpoint-restore-policy.js';
+import { createFakeAgentRunRepository } from '../../../../../helpers/agent-run-repository.fake.js';
 import { CaptureFeatureCheckpointUseCase } from '@/application/use-cases/features/checkpoints/capture-feature-checkpoint.use-case.js';
 import { GitCheckpointNotFoundError } from '@/domain/errors/git-checkpoint-errors.js';
-import type { Feature } from '@/domain/generated/output.js';
+import {
+  AgentRunStatus,
+  CheckpointRestoreBlocker,
+  type AgentRun,
+  type Feature,
+} from '@/domain/generated/output.js';
 import type { FileDiff } from '@/application/ports/output/services/git-pr-service.interface.js';
 import {
   createMockFeatureRepository,
@@ -61,8 +68,32 @@ describe('checkpoint read use cases', () => {
   });
 
   describe('ListFeatureCheckpointsUseCase', () => {
+    let runs: ReturnType<typeof createFakeAgentRunRepository>;
+    const listUseCase = () =>
+      new ListFeatureCheckpointsUseCase(features, repo, new CheckpointRestorePolicy(git, runs));
+    beforeEach(() => {
+      runs = createFakeAgentRunRepository();
+    });
+
+    it('reports no restore blocker when a restore would be allowed', async () => {
+      const result = await listUseCase().execute(FEATURE_ID);
+      expect(result.restoreBlocker).toBeUndefined();
+    });
+
+    it('reports why restore is blocked, so every surface can say so before asking', async () => {
+      runs.seed({
+        id: 'run-1',
+        featureId: FEATURE_ID,
+        status: AgentRunStatus.running,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      } as AgentRun);
+      const result = await listUseCase().execute(FEATURE_ID);
+      expect(result.restoreBlocker).toBe(CheckpointRestoreBlocker.AgentRunning);
+    });
+
     it('returns the feature and its checkpoints in order', async () => {
-      const result = await new ListFeatureCheckpointsUseCase(features, repo).execute(FEATURE_ID);
+      const result = await listUseCase().execute(FEATURE_ID);
       expect(result.featureId).toBe(FEATURE_ID);
       expect(result.featureName).toBe('Feature X');
       expect(result.checkpoints.map((c) => c.node)).toEqual([
@@ -75,9 +106,7 @@ describe('checkpoint read use cases', () => {
 
     it('throws for an unknown feature', async () => {
       features.findById.mockResolvedValue(null);
-      await expect(new ListFeatureCheckpointsUseCase(features, repo).execute('x')).rejects.toThrow(
-        /not found/
-      );
+      await expect(listUseCase().execute('x')).rejects.toThrow(/not found/);
     });
   });
 

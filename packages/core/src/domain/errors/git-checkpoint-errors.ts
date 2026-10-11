@@ -28,7 +28,15 @@ export class GitCheckpointNotFoundError extends Error {
 
 /** A restore was refused because it could touch something it must not. */
 export class CheckpointRestoreRefusedError extends Error {
-  constructor(reason: string) {
+  /**
+   * @param blocker - Why, as a CheckpointRestoreBlocker value (a string, so
+   *   this module stays free of the generated types).
+   * @param reason - The sentence shown to the user.
+   */
+  constructor(
+    readonly blocker: string,
+    reason: string
+  ) {
     super(`Cannot restore checkpoint: ${reason}`);
     this.name = 'CheckpointRestoreRefusedError';
     Object.setPrototypeOf(this, new.target.prototype);
