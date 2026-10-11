@@ -86,7 +86,13 @@ export function createFakeAgentRunRepository(initial: AgentRun[] = []): FakeAgen
     findByThreadId: vi.fn(
       async (threadId: string) => [...rows.values()].find((r) => r.threadId === threadId) ?? null
     ),
-    findLatestByFeatureId: vi.fn(async () => null),
+    findLatestByFeatureId: vi.fn(async (featureId: string) => {
+      const forFeature = [...rows.values()].filter((run) => run.featureId === featureId);
+      if (forFeature.length === 0) return null;
+      return forFeature.reduce((latest, run) =>
+        timestampOf(run.createdAt) > timestampOf(latest.createdAt) ? run : latest
+      );
+    }),
     updateStatus: vi.fn(
       async (
         id: string,
