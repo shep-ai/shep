@@ -22,6 +22,7 @@ import type { IAgentExecutor } from '@/application/ports/output/agents/agent-exe
 import { FeatureAgentAnnotation, type FeatureAgentState } from './state.js';
 import { createPrototypeGenerateNode } from './nodes/prototype-generate.node.js';
 import { createApplyFeedbackNode } from './nodes/apply-feedback.node.js';
+import { withCheckpoint, type CheckpointRecorder } from './nodes/with-checkpoint.js';
 
 // Re-export for consumers
 export { FeatureAgentAnnotation, type FeatureAgentState } from './state.js';
@@ -32,6 +33,8 @@ export { FeatureAgentAnnotation, type FeatureAgentState } from './state.js';
  */
 export interface ExplorationAgentGraphDeps {
   executor: IAgentExecutor;
+  /** Snapshots the worktree around each prototype generation (spec 135). */
+  checkpoints?: CheckpointRecorder;
 }
 
 /**
@@ -75,10 +78,13 @@ export function createExplorationAgentGraph(
   // Support legacy signature: createExplorationAgentGraph(executor, checkpointer)
   const deps: ExplorationAgentGraphDeps =
     'execute' in depsOrExecutor ? { executor: depsOrExecutor } : depsOrExecutor;
-  const { executor } = deps;
+  const { executor, checkpoints } = deps;
 
   const graph = new StateGraph(FeatureAgentAnnotation)
-    .addNode('prototype-generate', createPrototypeGenerateNode(executor))
+    .addNode(
+      'prototype-generate',
+      withCheckpoint('prototype-generate', createPrototypeGenerateNode(executor), checkpoints)
+    )
     .addNode('apply-feedback', createApplyFeedbackNode());
 
   // START → prototype-generate

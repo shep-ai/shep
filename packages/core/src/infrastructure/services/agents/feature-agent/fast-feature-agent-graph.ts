@@ -21,6 +21,7 @@ import {
   type ExtractMemoryNodeDeps,
 } from './nodes/extract-memory.node.js';
 import type { MemorySelector } from './nodes/node-helpers.js';
+import { withCheckpoint, type CheckpointRecorder } from './nodes/with-checkpoint.js';
 
 // Re-export for consumers
 export { FeatureAgentAnnotation, type FeatureAgentState } from './state.js';
@@ -39,6 +40,8 @@ export interface FastFeatureAgentGraphDeps {
   extractMemoryDeps?: Omit<ExtractMemoryNodeDeps, 'executor'>;
   /** Selects the relevant project-memory subset per phase/task. */
   selectProjectMemory?: MemorySelector;
+  /** Snapshots the worktree around file-changing nodes (spec 135). */
+  checkpoints?: CheckpointRecorder;
 }
 
 /**
@@ -78,11 +81,15 @@ export function createFastFeatureAgentGraph(
   // Support legacy signature: createFastFeatureAgentGraph(executor, checkpointer)
   const deps: FastFeatureAgentGraphDeps =
     'execute' in depsOrExecutor ? { executor: depsOrExecutor } : depsOrExecutor;
-  const { executor, selectProjectMemory } = deps;
+  const { executor, selectProjectMemory, checkpoints } = deps;
 
   const graph = new StateGraph(FeatureAgentAnnotation).addNode(
     'fast-implement',
-    createFastImplementNode(executor, selectProjectMemory)
+    withCheckpoint(
+      'fast-implement',
+      createFastImplementNode(executor, selectProjectMemory),
+      checkpoints
+    )
   );
 
   graph.addEdge(START, 'fast-implement');
@@ -96,14 +103,14 @@ export function createFastFeatureAgentGraph(
     // Post-merge extraction: merge → extract_memory → END (self-guards on merged)
     if (deps.extractMemoryDeps) {
       graph
-        .addNode('merge', createMergeNode(mergeNodeDeps))
+        .addNode('merge', withCheckpoint('merge', createMergeNode(mergeNodeDeps), checkpoints))
         .addNode('extract_memory', createExtractMemoryNode({ executor, ...deps.extractMemoryDeps }))
         .addEdge('fast-implement', 'merge')
         .addConditionalEdges('merge', routeReexecution('fast-implement', 'extract_memory'))
         .addEdge('extract_memory', END);
     } else {
       graph
-        .addNode('merge', createMergeNode(mergeNodeDeps))
+        .addNode('merge', withCheckpoint('merge', createMergeNode(mergeNodeDeps), checkpoints))
         .addEdge('fast-implement', 'merge')
         .addConditionalEdges('merge', routeReexecution('fast-implement', END));
     }

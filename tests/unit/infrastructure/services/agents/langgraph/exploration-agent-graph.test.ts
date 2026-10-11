@@ -414,3 +414,29 @@ describe('createExplorationAgentGraph', () => {
     });
   });
 });
+
+describe('createExplorationAgentGraph — checkpoints (spec 135)', () => {
+  it('captures the prototype before the graph waits for feedback', async () => {
+    setupFileMocks();
+    const afterNode = vi.fn().mockResolvedValue(undefined);
+    const compiled = createExplorationAgentGraph(
+      {
+        executor: createMockExecutor(),
+        checkpoints: { beforeNode: vi.fn().mockResolvedValue(undefined), afterNode },
+      },
+      new MemorySaver()
+    );
+
+    await compiled.invoke(
+      {
+        featureId: 'feat-explore-ckpt',
+        repositoryPath: '/test/repo',
+        worktreePath: '/test/repo',
+        specDir: '/test/specs/001-test',
+      },
+      { configurable: { thread_id: 'explore-ckpt-thread' } }
+    );
+
+    expect(afterNode.mock.calls.map(([node]) => node)).toEqual(['prototype-generate']);
+  });
+});

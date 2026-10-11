@@ -14,6 +14,7 @@ import {
 import type { MemorySelector } from './nodes/node-helpers.js';
 import { createValidateNode } from './nodes/validate.node.js';
 import { createRepairNode } from './nodes/repair.node.js';
+import { withCheckpoint, type CheckpointRecorder } from './nodes/with-checkpoint.js';
 import { validateSpecAnalyze, validateSpecRequirements } from './nodes/schemas/spec.schema.js';
 import { validateResearch } from './nodes/schemas/research.schema.js';
 import { validatePlan, validateTasks } from './nodes/schemas/plan.schema.js';
@@ -45,6 +46,11 @@ export interface FeatureAgentGraphDeps {
    * every producer node injects only on-topic memory instead of the whole store.
    */
   selectProjectMemory?: MemorySelector;
+  /**
+   * When provided, the worktree is snapshotted into a hidden git ref around
+   * every node that can change files (spec 135).
+   */
+  checkpoints?: CheckpointRecorder;
 }
 
 /**
@@ -217,15 +223,27 @@ export function createFeatureAgentGraph(
   // Support legacy signature: createFeatureAgentGraph(executor, checkpointer)
   const deps: FeatureAgentGraphDeps =
     'execute' in depsOrExecutor ? { executor: depsOrExecutor } : depsOrExecutor;
-  const { executor, selectProjectMemory } = deps;
+  const { executor, selectProjectMemory, checkpoints } = deps;
+  // Nodes that can change the worktree; validate nodes only read it.
+  const checkpointed = (node: string, fn: Parameters<typeof withCheckpoint>[1]) =>
+    withCheckpoint(node, fn, checkpoints);
 
   const graph = new StateGraph(FeatureAgentAnnotation)
     // --- Producer nodes ---
-    .addNode('analyze', createAnalyzeNode(executor, selectProjectMemory))
-    .addNode('requirements', createRequirementsNode(executor, selectProjectMemory))
-    .addNode('research', createResearchNode(executor, selectProjectMemory))
-    .addNode('plan', createPlanNode(executor, selectProjectMemory))
-    .addNode('implement', createImplementNode(executor, selectProjectMemory))
+    .addNode('analyze', checkpointed('analyze', createAnalyzeNode(executor, selectProjectMemory)))
+    .addNode(
+      'requirements',
+      checkpointed('requirements', createRequirementsNode(executor, selectProjectMemory))
+    )
+    .addNode(
+      'research',
+      checkpointed('research', createResearchNode(executor, selectProjectMemory))
+    )
+    .addNode('plan', checkpointed('plan', createPlanNode(executor, selectProjectMemory)))
+    .addNode(
+      'implement',
+      checkpointed('implement', createImplementNode(executor, selectProjectMemory))
+    )
 
     // --- Validate nodes ---
     // Each validate node receives its SUCCESSOR phase name (the phase that runs
@@ -245,10 +263,22 @@ export function createFeatureAgentGraph(
     .addNode('validate_plan_tasks', createPlanTasksValidator())
 
     // --- Repair nodes ---
-    .addNode('repair_spec_analyze', createRepairNode('spec.yaml', executor))
-    .addNode('repair_spec_requirements', createRepairNode('spec.yaml', executor))
-    .addNode('repair_research', createRepairNode('research.yaml', executor))
-    .addNode('repair_plan_tasks', createRepairNode(['plan.yaml', 'tasks.yaml'], executor))
+    .addNode(
+      'repair_spec_analyze',
+      checkpointed('repair_spec_analyze', createRepairNode('spec.yaml', executor))
+    )
+    .addNode(
+      'repair_spec_requirements',
+      checkpointed('repair_spec_requirements', createRepairNode('spec.yaml', executor))
+    )
+    .addNode(
+      'repair_research',
+      checkpointed('repair_research', createRepairNode('research.yaml', executor))
+    )
+    .addNode(
+      'repair_plan_tasks',
+      checkpointed('repair_plan_tasks', createRepairNode(['plan.yaml', 'tasks.yaml'], executor))
+    )
 
     // --- Edges: linear flow with validation gates ---
     .addEdge(START, 'analyze')
@@ -294,14 +324,14 @@ export function createFeatureAgentGraph(
     // it self-guards on state.merged so re-execution semantics are preserved).
     if (deps.extractMemoryDeps) {
       graph
-        .addNode('merge', createMergeNode(mergeNodeDeps))
+        .addNode('merge', checkpointed('merge', createMergeNode(mergeNodeDeps)))
         .addNode('extract_memory', createExtractMemoryNode({ executor, ...deps.extractMemoryDeps }))
         .addEdge('implement', 'merge')
         .addConditionalEdges('merge', routeReexecution('implement', 'extract_memory'))
         .addEdge('extract_memory', END);
     } else {
       graph
-        .addNode('merge', createMergeNode(mergeNodeDeps))
+        .addNode('merge', checkpointed('merge', createMergeNode(mergeNodeDeps)))
         .addEdge('implement', 'merge')
         .addConditionalEdges('merge', routeReexecution('implement', END));
     }

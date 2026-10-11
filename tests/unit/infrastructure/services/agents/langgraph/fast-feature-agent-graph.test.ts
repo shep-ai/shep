@@ -326,3 +326,32 @@ describe('createFastFeatureAgentGraph', () => {
     });
   });
 });
+
+describe('createFastFeatureAgentGraph — checkpoints (spec 135)', () => {
+  it('captures after fast-implement', async () => {
+    setupFileMocks();
+    mockExecSync.mockReturnValue('M  src/index.ts\n');
+    const afterNode = vi.fn().mockResolvedValue(undefined);
+    const compiled = createFastFeatureAgentGraph(
+      {
+        executor: createMockExecutor(),
+        checkpoints: { beforeNode: vi.fn().mockResolvedValue(undefined), afterNode },
+      },
+      new MemorySaver()
+    );
+
+    await compiled.invoke(
+      {
+        featureId: 'feat-fast-ckpt',
+        repositoryPath: '/test/repo',
+        worktreePath: '/test/repo',
+        specDir: '/test/specs/001-test',
+        enableEvidence: false,
+        commitEvidence: false,
+      },
+      { configurable: { thread_id: 'fast-ckpt-thread' } }
+    );
+
+    expect(afterNode.mock.calls.map(([node]) => node)).toEqual(['fast-implement']);
+  });
+});
