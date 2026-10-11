@@ -14,6 +14,7 @@ import {
   AgentQuestionKind,
   AgentQuestionStatus,
 } from '@/domain/generated/output.js';
+import { buildApprovalGateDecision } from '@/domain/shared/decision-builders.js';
 
 function makeQuestion(overrides: Partial<AgentQuestion> = {}): AgentQuestion {
   const now = new Date();
@@ -152,5 +153,39 @@ describe('SQLiteAgentQuestionRepository', () => {
 
     const result = await repo.findExpired(new Date(2026, 0, 2));
     expect(result.map((q) => q.id).sort()).toEqual(['expired-1', 'expired-2']);
+  });
+
+  it('round-trips a decision on create and its responses on settle (spec 134)', async () => {
+    const decision = {
+      ...buildApprovalGateDecision('q-dec', 'merge'),
+      defaultAfter: new Date(2026, 5, 1),
+    };
+    await repo.create(makeQuestion({ id: 'q-dec', decision }));
+
+    const created = await repo.findById('app-1', 'q-dec');
+    expect(created?.decision).toEqual(decision);
+    expect(created?.responses).toBeUndefined();
+
+    const responses = [{ questionId: 'gate', optionIds: [], customText: 'Split the PR' }];
+    expect(
+      await repo.settlePending('app-1', 'q-dec', AgentQuestionStatus.answered, {
+        answer: 'Split the PR',
+        answeredBy: 'user:web',
+        answeredAt: new Date(),
+        responses,
+      })
+    ).toBe(true);
+    expect((await repo.findById('app-1', 'q-dec'))?.responses).toEqual(responses);
+
+    const second = [{ questionId: 'gate', optionIds: ['approve'] }];
+    await repo.updateStatus('app-1', 'q-dec', AgentQuestionStatus.answered, { responses: second });
+    expect((await repo.findById('app-1', 'q-dec'))?.responses).toEqual(second);
+  });
+
+  it('listAppIds returns every scope questions were written under', async () => {
+    await repo.create(makeQuestion({ id: 'a', appId: 'app-1' }));
+    await repo.create(makeQuestion({ id: 'b', appId: '/repos/no-app' }));
+    await repo.create(makeQuestion({ id: 'c', appId: 'app-1' }));
+    expect((await repo.listAppIds()).sort()).toEqual(['/repos/no-app', 'app-1']);
   });
 });

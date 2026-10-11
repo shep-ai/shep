@@ -74,6 +74,7 @@ import { AgentConfigResolver } from '../services/interactive/lifecycle/agent-con
 import { AgentStreamConsumer } from '../services/interactive/runtime/agent-stream.consumer.js';
 import { BootPromptResolver } from '../services/interactive/lifecycle/boot-prompt.resolver.js';
 import { SelectProjectMemoryUseCase } from '../../application/use-cases/project-memory/select-project-memory.use-case.js';
+import { AgentQuestionBridgeFactory } from '../services/agents/agent-question-service/agent-question-bridge.factory.js';
 import { SessionBootstrapper } from '../services/interactive/lifecycle/session-bootstrapper.js';
 import { SessionTerminator } from '../services/interactive/lifecycle/session-terminator.js';
 import { TurnExecutor } from '../services/interactive/runtime/turn.executor.js';
@@ -102,6 +103,7 @@ import { ResolveSpaceEnvironmentUseCase } from '../../application/use-cases/spac
 import { registerServices } from './modules/register-services.js';
 import { registerTools } from './modules/register-tools.js';
 import { registerAgents } from './modules/register-agents.js';
+import { registerDecisions } from './modules/register-decisions.js';
 import { registerCloudDeploy } from './modules/register-cloud-deploy.js';
 import { registerIntegrations } from './modules/register-integrations.js';
 import { registerDeployment } from './modules/register-deployment.js';
@@ -156,6 +158,7 @@ export async function initializeContainer(): Promise<typeof container> {
   registerServices(container);
   registerTools(container);
   registerAgents(container);
+  registerDecisions(container);
   registerCloudDeploy(container);
   registerIntegrations(container);
   registerDeployment(container);
@@ -332,7 +335,14 @@ export async function initializeContainer(): Promise<typeof container> {
     new SessionSpaceEnvironment(
       featureRepository,
       container.resolve(ResolveSpaceEnvironmentUseCase)
-    )
+    ),
+    // Spec 134: chat AskUserQuestion is also recorded in the unified inbox.
+    // Resolved per boot, not here: its use cases reach IInteractiveSessionService,
+    // which is registered below.
+    {
+      create: (session, surface) =>
+        container.resolve(AgentQuestionBridgeFactory).create(session, surface),
+    }
   );
   const terminator = new SessionTerminator(
     sessionRegistry,

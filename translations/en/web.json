@@ -1820,5 +1820,21 @@
       "run": "Run now",
       "running": "Running…"
     }
+  },
+  "decision": {
+    "answeredQuestions": "Answered questions",
+    "recommended": "Recommended",
+    "selectMany": "Select one or more options.",
+    "otherPlaceholder": "Type your own answer, or leave this blank to use the selected option",
+    "composerHint": "Type in the message box to answer in your own words.",
+    "restoreText": "Restore typed text",
+    "notResumable": "This question can no longer be answered — the agent that asked it is no longer waiting.",
+    "defaultsAt": "If nobody answers by {{time}}, the agent continues with the recommended option.",
+    "preview": "Preview",
+    "previous": "Previous",
+    "next": "Next",
+    "submit": "Submit",
+    "submitting": "Submitting…",
+    "new": "New"
   }
 }

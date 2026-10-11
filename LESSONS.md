@@ -3016,3 +3016,25 @@ that a squash merge would invalidate.
 `relative(ROOT, file)` returns backslashes on Windows, so a test comparing it with
 `'packages/core/src/...'` passed on Linux and failed on `windows-latest`. Always
 `.replace(/\\/g, '/')` a computed path before comparing or printing it in a test.
+
+## A scripted "insert before the first import" can land above `import 'reflect-metadata'`
+
+Adding an import to `container-bootstrap.test.ts` with a script that inserted it before the
+file's first `import` put a tsyringe-decorated module above `import 'reflect-metadata'`. The DI
+suite still passed when run together with other files (another file had loaded the polyfill in
+the same worker) and failed alone in `test:int` with "tsyringe requires a reflect polyfill".
+When inserting imports programmatically, anchor on a sibling import of the same kind, never on
+"the first import", and run the touched test file on its own.
+
+## In-memory repositories have no foreign keys — smoke the real process before trusting a wired path
+
+`EscalateToUserUseCase` wrote its audit row with `work_item_id` = the agent question's id, but
+`activity_log.work_item_id` references `work_items(id)`. With collaboration on, every non-info
+`AskAgentQuestionUseCase` call threw `FOREIGN KEY constraint failed` after storing the question
+and sending the notification. The gate publisher swallowed it, and every unit test used
+in-memory repositories, so it stayed hidden until spec 134 ran the `ask_decision` MCP server as a
+real process against a real database. Rules: an audit write that is not the point of the call is
+best-effort (the approval use cases already wrap theirs); a use case that writes several tables
+needs at least one test against the migrated SQLite schema; and a new process entry point
+(an MCP server, a worker) gets one real spawn-and-call smoke before it is called done — that run
+also caught the entry skipping `initializeSettings()`.

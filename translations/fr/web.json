@@ -1820,5 +1820,21 @@
       "run": "Lancer maintenant",
       "running": "En cours…"
     }
+  },
+  "decision": {
+    "answeredQuestions": "Questions répondues",
+    "recommended": "Recommandé",
+    "selectMany": "Sélectionnez une ou plusieurs options.",
+    "otherPlaceholder": "Saisissez votre propre réponse, ou laissez vide pour utiliser l’option sélectionnée",
+    "composerHint": "Écrivez dans la zone de message pour répondre avec vos propres mots.",
+    "restoreText": "Restaurer le texte saisi",
+    "notResumable": "Cette question ne peut plus recevoir de réponse : l’agent qui l’a posée n’attend plus.",
+    "defaultsAt": "Sans réponse avant {{time}}, l’agent continue avec l’option recommandée.",
+    "preview": "Aperçu",
+    "previous": "Précédent",
+    "next": "Suivant",
+    "submit": "Envoyer",
+    "submitting": "Envoi…",
+    "new": "Nouveau"
   }
 }

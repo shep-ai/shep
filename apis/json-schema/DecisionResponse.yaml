@@ -1,0 +1,19 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: DecisionResponse.yaml
+type: object
+properties:
+  questionId:
+    type: string
+    description: Question this response answers
+  optionIds:
+    type: array
+    items:
+      type: string
+    description: Selected option ids (empty when only custom text was given)
+  customText:
+    type: string
+    description: Typed answer; when non-empty it outranks the selected options
+required:
+  - questionId
+  - optionIds
+description: The answer to one decision question

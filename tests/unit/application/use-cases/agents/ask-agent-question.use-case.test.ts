@@ -22,6 +22,7 @@ import {
   AgentQuestionStatus,
   type Settings,
 } from '@/domain/generated/output.js';
+import { buildApprovalGateDecision } from '@/domain/shared/decision-builders.js';
 
 function makeSettingsRepo(collaboration: boolean): ISettingsRepository {
   return {
@@ -202,5 +203,34 @@ describe('AskAgentQuestionUseCase', () => {
     });
 
     expect(escalate.execute).not.toHaveBeenCalled();
+  });
+
+  it('stores a decision and takes its deadline and recommended answer (spec 134)', async () => {
+    const useCase = new AskAgentQuestionUseCase(
+      repo,
+      registry,
+      makeSettingsRepo(true),
+      {
+        routeIfApplicable: vi.fn().mockResolvedValue({ evaluated: false, answered: false }),
+      } as any,
+      makeEscalateToUserStub()
+    );
+    const defaultAfter = new Date(Date.now() + 60_000);
+    const decision = { ...buildApprovalGateDecision('ignored', 'plan'), defaultAfter };
+
+    const result = await useCase.execute({
+      appId: 'app-1',
+      agentRunId: 'run-1',
+      kind: AgentQuestionKind.question,
+      prompt: decision.title!,
+      decision,
+      answerer: AgentQuestionAnswerer.user,
+    });
+
+    const stored = await repo.findById('app-1', result.question!.id);
+    expect(stored?.decision).toEqual({ ...decision, id: result.question!.id });
+    expect(stored?.expiresAt).toEqual(defaultAfter);
+    expect(stored?.defaultAnswer).toBe('Approve');
+    expect(stored?.optionsJson).toBeUndefined();
   });
 });

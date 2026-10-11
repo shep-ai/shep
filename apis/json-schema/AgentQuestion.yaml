@@ -46,6 +46,14 @@ properties:
     type: string
     format: date-time
     description: Auto-resolution deadline (optional, used with defaultAnswer)
+  decision:
+    $ref: Decision.yaml
+    description: Structured questions and options; when set, it is what every surface renders (spec 134)
+  responses:
+    type: array
+    items:
+      $ref: DecisionResponse.yaml
+    description: Structured answer to `decision`, set when status becomes answered or expired (spec 134)
 required:
   - agentRunId
   - kind

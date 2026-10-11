@@ -26,6 +26,8 @@ import type { StreamEventDispatcher } from '../core/stream-event-dispatcher.js';
 import type { SessionRegistry, SessionState } from '../core/session-registry.js';
 import type { ILogger } from '../../../../application/ports/output/services/logger.interface.js';
 import type { UserInteractionData } from '../../../../application/ports/output/agents/interactive-agent-executor.interface.js';
+import { formatInteractionAnswerMessage } from '../../../../domain/shared/interaction-answer.js';
+import type { LiveQuestionSurface } from '../../agents/agent-question-service/agent-question-executor-bridge.js';
 import {
   InteractiveMessageRole,
   type InteractiveMessage,
@@ -89,6 +91,21 @@ export class UserInteractionCoordinator {
   }
 
   /**
+   * The chat side of a question the inbox also shows (spec 134): `ask` shows it
+   * in the chat, `settleFromElsewhere` closes it with answers given on another
+   * surface (web inbox, CLI) — a no-op when the chat question is already closed.
+   */
+  buildLiveSurface(state: SessionState): LiveQuestionSurface {
+    return {
+      ask: this.buildOnUserQuestionCallback(state),
+      settleFromElsewhere: async (answers) => {
+        if (!state.pendingInteraction || !state.pendingInteractionResolver) return;
+        await this.respondToInteraction(state, answers);
+      },
+    };
+  }
+
+  /**
    * Feature-scoped entry point: looks up the active session state for
    * `featureId` and delegates to `respondToInteraction`. Throws when there
    * is no pending interaction for that feature scope.
@@ -133,7 +150,7 @@ export class UserInteractionCoordinator {
       featureId: state.featureId,
       sessionId: state.sessionId,
       role: InteractiveMessageRole.user,
-      content: `{{interaction}}${JSON.stringify(interactionPayload)}`,
+      content: formatInteractionAnswerMessage(interactionPayload),
       createdAt: now,
       updatedAt: now,
     };

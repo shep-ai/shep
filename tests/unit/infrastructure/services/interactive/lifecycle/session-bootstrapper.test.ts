@@ -132,6 +132,10 @@ function makeAgentConfigResolver(cap = 3): AgentConfigResolver {
 function makeInteractionCoordinator(): UserInteractionCoordinator {
   return {
     buildOnUserQuestionCallback: vi.fn().mockReturnValue(() => Promise.resolve({})),
+    buildLiveSurface: vi.fn().mockReturnValue({
+      ask: () => Promise.resolve({}),
+      settleFromElsewhere: () => Promise.resolve(),
+    }),
     respondToInteraction: vi.fn().mockResolvedValue(undefined),
   } as unknown as UserInteractionCoordinator;
 }
@@ -283,6 +287,44 @@ describe('SessionBootstrapper', () => {
 
       const createdExecutor = executor.mock.results[0].value as IInteractiveAgentExecutor;
       expect(createdExecutor.createSession).toHaveBeenCalled();
+    });
+
+    it('passes a question bridge scoped to the session so chat questions reach the inbox (spec 134)', async () => {
+      const bridge = { ask: vi.fn() };
+      const questionBridges = { create: vi.fn().mockResolvedValue(bridge) };
+      bootstrapper = new SessionBootstrapper(
+        sessionRepo,
+        registry,
+        persistence,
+        dispatcher,
+        bootPromptResolver,
+        streamConsumer,
+        executorFactory,
+        agentConfigResolver,
+        interactionCoordinator,
+        logger,
+        spaceEnvironment,
+        questionBridges
+      );
+      const executor = executorFactory.createInteractiveExecutor as ReturnType<typeof vi.fn>;
+
+      const session = await bootstrapper.startSession('feat-1', '/wt');
+      await flushPromises();
+
+      expect(questionBridges.create).toHaveBeenCalledWith(
+        { scopeKey: 'feat-1', worktreePath: '/wt', sessionId: session.id },
+        expect.objectContaining({
+          ask: expect.any(Function),
+          settleFromElsewhere: expect.any(Function),
+        })
+      );
+      const createdExecutor = executor.mock.results[0].value as IInteractiveAgentExecutor;
+      expect(createdExecutor.createSession).toHaveBeenCalledWith(
+        expect.objectContaining({
+          agentQuestionBridge: bridge,
+          onUserQuestion: expect.any(Function),
+        })
+      );
     });
 
     it("passes the feature's space environment to the agent session", async () => {

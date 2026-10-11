@@ -28,6 +28,11 @@ export interface AgentQuestionListFilters {
  * - Persist the row's full state (status transitions are recorded by the
  *   use case via {@link updateStatus}).
  */
+/** Fields written together with a status transition. */
+export type AgentQuestionSettlementFields = Partial<
+  Pick<AgentQuestion, 'answer' | 'answeredBy' | 'answeredAt' | 'responses'>
+>;
+
 export interface IAgentQuestionRepository {
   /** Create a new question. Throws on duplicate id. */
   create(question: AgentQuestion): Promise<void>;
@@ -60,7 +65,7 @@ export interface IAgentQuestionRepository {
     appId: string,
     id: string,
     status: AgentQuestionStatus,
-    fields?: Partial<Pick<AgentQuestion, 'answer' | 'answeredBy' | 'answeredAt'>>
+    fields?: AgentQuestionSettlementFields
   ): Promise<void>;
 
   /**
@@ -74,7 +79,7 @@ export interface IAgentQuestionRepository {
     appId: string,
     id: string,
     status: AgentQuestionStatus,
-    fields?: Partial<Pick<AgentQuestion, 'answer' | 'answeredBy' | 'answeredAt'>>
+    fields?: AgentQuestionSettlementFields
   ): Promise<boolean>;
 
   /**
@@ -82,4 +87,11 @@ export interface IAgentQuestionRepository {
    * Used by the auto-expiry sweep.
    */
   findExpired(cutoff: Date, limit?: number): Promise<AgentQuestion[]>;
+
+  /**
+   * Every scope id (`appId`) questions have been written under. The inbox reads
+   * each scope separately (NFR-7) — including scopes that are a repository path
+   * because the repository has no Application.
+   */
+  listAppIds(): Promise<string[]>;
 }

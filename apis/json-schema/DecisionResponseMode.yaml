@@ -1,0 +1,8 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: DecisionResponseMode.yaml
+type: string
+enum:
+  - live
+  - async
+  - not_resumable
+description: How an answer reaches the agent that asked
