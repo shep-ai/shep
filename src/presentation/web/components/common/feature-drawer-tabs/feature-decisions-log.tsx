@@ -5,7 +5,10 @@ import type { LucideIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { DecisionOutcome, type AgentQuestion } from '@shepai/core/domain/generated/output';
 import { decisionForQuestion } from '@shepai/core/domain/shared/decision-builders';
-import { decisionOutcomeOf } from '@shepai/core/domain/shared/decision-deadline';
+import {
+  decisionOutcomeOf,
+  type RecordedDecisionOutcome,
+} from '@shepai/core/domain/shared/decision-deadline';
 import { cn } from '@/lib/utils';
 
 export interface FeatureDecisionsLogProps {
@@ -14,7 +17,7 @@ export interface FeatureDecisionsLogProps {
   className?: string;
 }
 
-const OUTCOME_ICON: Record<DecisionOutcome, LucideIcon> = {
+const OUTCOME_ICON: Record<RecordedDecisionOutcome, LucideIcon> = {
   [DecisionOutcome.Pending]: CircleDashed,
   [DecisionOutcome.Answered]: CircleCheck,
   [DecisionOutcome.Defaulted]: MessageCircleQuestion,
@@ -29,7 +32,7 @@ export function FeatureDecisionsLog({ decisions, className }: FeatureDecisionsLo
   const { t } = useTranslation('web');
   if (decisions.length === 0) return null;
 
-  const outcomeText = (question: AgentQuestion, outcome: DecisionOutcome): string => {
+  const outcomeText = (question: AgentQuestion, outcome: RecordedDecisionOutcome): string => {
     switch (outcome) {
       case DecisionOutcome.Pending:
         return t('activityTab.decisions.pending');

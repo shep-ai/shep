@@ -1,0 +1,10 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: DecisionSurface.yaml
+type: string
+enum:
+  - web
+  - cli
+  - chat
+  - supervisor
+  - other
+description: Surface a decision was answered on

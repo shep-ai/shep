@@ -32,8 +32,11 @@ enum TelemetryEvent {
   @doc("A feature's pull request was merged")
   PrMerged: "pr.merged",
 
-  @doc("A user answered an agent decision (emitted by the unified-decisions work)")
+  @doc("An agent decision was answered by a person or the supervisor")
   DecisionAnswered: "decision.answered",
+
+  @doc("An agent-asked decision reached its deadline and the recommendation was applied")
+  DecisionDefaulted: "decision.defaulted",
 
   @doc("A web onboarding step was shown or completed")
   OnboardingStep: "onboarding.step",

@@ -10,6 +10,7 @@ enum:
   - pr.opened
   - pr.merged
   - decision.answered
+  - decision.defaulted
   - onboarding.step
   - error.unhandled
 description: Usage event recorded by Shep's opt-out telemetry
