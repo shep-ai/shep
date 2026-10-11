@@ -1,13 +1,14 @@
 /**
  * Fleet Command Group
  *
- * shep fleet <status|triage|approve>
+ * shep fleet <status|triage|approve|retry>
  */
 
 import { Command } from 'commander';
 import { createStatusCommand } from './status.command.js';
 import { createTriageCommand } from './triage.command.js';
 import { createApproveCommand } from './approve.command.js';
+import { createRetryCommand } from './retry.command.js';
 
 export function createFleetCommand(): Command {
   const fleet = new Command('fleet').description(
@@ -17,6 +18,7 @@ export function createFleetCommand(): Command {
   fleet.addCommand(createStatusCommand());
   fleet.addCommand(createTriageCommand());
   fleet.addCommand(createApproveCommand());
+  fleet.addCommand(createRetryCommand());
 
   return fleet;
 }

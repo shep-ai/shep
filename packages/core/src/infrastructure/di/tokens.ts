@@ -54,3 +54,6 @@ export const ListFleetTriageItemsUseCaseToken = 'ListFleetTriageItemsUseCase' as
 
 /** Resolves to `BatchApproveFeaturesUseCase`. */
 export const BatchApproveFeaturesUseCaseToken = 'BatchApproveFeaturesUseCase' as const;
+
+/** Resolves to `RetryFailedFleetFeaturesUseCase`. */
+export const RetryFailedFleetFeaturesUseCaseToken = 'RetryFailedFleetFeaturesUseCase' as const;
