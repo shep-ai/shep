@@ -23,6 +23,7 @@ import type { IAgentCheckpointService } from '../../ports/output/agents/agent-ch
 import type { IAgentRunRepository } from '../../ports/output/agents/agent-run-repository.interface.js';
 import type { IGitPrService } from '../../ports/output/services/git-pr-service.interface.js';
 import { AdmitQueuedFeaturesUseCase } from './capacity/admit-queued-features.use-case.js';
+import { DeleteFeatureCheckpointsUseCase } from './checkpoints/delete-feature-checkpoints.use-case.js';
 
 export interface DeleteFeatureOptions {
   cleanup?: boolean;
@@ -42,7 +43,9 @@ export class DeleteFeatureUseCase {
     @inject('IAgentRunRepository') private readonly runRepo: IAgentRunRepository,
     @inject('IGitPrService') private readonly gitPrService: IGitPrService,
     @inject(AdmitQueuedFeaturesUseCase)
-    private readonly admitQueued: AdmitQueuedFeaturesUseCase
+    private readonly admitQueued: AdmitQueuedFeaturesUseCase,
+    @inject(DeleteFeatureCheckpointsUseCase)
+    private readonly deleteCheckpoints: DeleteFeatureCheckpointsUseCase
   ) {}
 
   async execute(featureId: string, options?: DeleteFeatureOptions): Promise<Feature> {
@@ -174,6 +177,12 @@ export class DeleteFeatureUseCase {
     } catch {
       // Worktree might already be removed - that's fine
     }
+
+    // Step snapshots of the removed worktree (spec 138).
+    await this.deleteCheckpoints.executeBestEffort({
+      featureId: feature.id,
+      repositoryPath: feature.repositoryPath,
+    });
 
     const cleanup = options?.cleanup !== false;
     if (cleanup) {

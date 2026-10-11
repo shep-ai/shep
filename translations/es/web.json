@@ -1935,6 +1935,38 @@
       "loadFailed": "No se pudo cargar la configuración de las métricas de uso."
     }
   },
+  "checkpoints": {
+    "loading": "Cargando checkpoints…",
+    "empty": "Aún no hay checkpoints. Shep guarda el worktree tras cada paso cuando se ejecuta el agente.",
+    "modeStep": "Por paso",
+    "modeCompare": "Comparar",
+    "kindBaseline": "inicio",
+    "kindPreRestore": "antes de restaurar",
+    "files_one": "{{count}} archivo",
+    "files_few": "{{count}} archivos",
+    "files_many": "{{count}} archivos",
+    "files_other": "{{count}} archivos",
+    "from": "Desde",
+    "to": "Hasta",
+    "selectStep": "Selecciona un paso para ver qué cambió.",
+    "baselineSelected": "Es el punto de partida: no hay nada antes.",
+    "diffLoading": "Cargando diff…",
+    "noChanges": "No hay cambios entre estos pasos.",
+    "restore": "Restaurar",
+    "restoreAria": "Restaurar el worktree a {{step}}",
+    "restoreTitle": "¿Restaurar el worktree a {{step}}?",
+    "restoreDescription": "Los archivos del worktree se sustituyen por este checkpoint. Antes se guarda el estado actual como un nuevo checkpoint; la rama y sus commits no cambian.",
+    "restoreConfirm": "Restaurar",
+    "cancel": "Cancelar",
+    "restored": "Worktree restaurado a {{step}}",
+    "restoreFailed": "Error al restaurar",
+    "blocked": {
+      "NoOwnWorktree": "Solo se puede restaurar una funcionalidad que tiene su propio worktree.",
+      "NotLinkedWorktree": "No se puede restaurar: la carpeta no es un worktree de git vinculado.",
+      "WorktreeUnavailable": "No se puede restaurar: no se puede leer el worktree.",
+      "AgentRunning": "No se puede restaurar mientras el agente se ejecuta."
+    }
+  },
   "chatBlocks": {
     "kinds": {
       "spec_review": "Revisión de especificación",

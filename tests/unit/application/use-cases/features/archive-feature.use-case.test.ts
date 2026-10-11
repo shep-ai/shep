@@ -9,6 +9,7 @@
 
 import 'reflect-metadata';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { DeleteFeatureCheckpointsUseCase } from '@/application/use-cases/features/checkpoints/delete-feature-checkpoints.use-case.js';
 import { ArchiveFeatureUseCase } from '@/application/use-cases/features/archive-feature.use-case.js';
 import type { IFeatureRepository } from '@/application/ports/output/repositories/feature-repository.interface.js';
 import { SdlcLifecycle, BuildMode } from '@/domain/generated/output.js';
@@ -47,13 +48,17 @@ function createMockFeature(overrides?: Partial<Feature>): Feature {
 describe('ArchiveFeatureUseCase', () => {
   let useCase: ArchiveFeatureUseCase;
   let mockFeatureRepo: IFeatureRepository;
+  let deleteCheckpoints: DeleteFeatureCheckpointsUseCase;
 
   beforeEach(() => {
     mockFeatureRepo = createMockFeatureRepository({
       findById: vi.fn().mockResolvedValue(createMockFeature()),
     });
 
-    useCase = new ArchiveFeatureUseCase(mockFeatureRepo);
+    deleteCheckpoints = {
+      executeBestEffort: vi.fn().mockResolvedValue(0),
+    } as unknown as DeleteFeatureCheckpointsUseCase;
+    useCase = new ArchiveFeatureUseCase(mockFeatureRepo, deleteCheckpoints);
   });
 
   it('should throw when feature not found', async () => {
@@ -246,5 +251,13 @@ describe('ArchiveFeatureUseCase', () => {
     expect(result.name).toBe('My Feature');
     expect(result.id).toBe('feat-123-full-uuid');
     expect(result.lifecycle).toBe(SdlcLifecycle.Archived);
+  });
+
+  it("deletes the feature's git checkpoints (spec 138)", async () => {
+    const feature = await useCase.execute('feat-123');
+    expect(deleteCheckpoints.executeBestEffort).toHaveBeenCalledWith({
+      featureId: feature.id,
+      repositoryPath: feature.repositoryPath,
+    });
   });
 });

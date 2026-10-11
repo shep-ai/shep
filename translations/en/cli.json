@@ -510,6 +510,41 @@
         "description": "Have an agent address pending review comments in the feature's worktree, push, and reply on each",
         "commentsArg": "Comment ids or id prefixes (default: every pending comment)",
         "spinner": "Addressing {{count}} comments"
+      },
+      "checkpoints": {
+        "description": "List the git checkpoints taken after each step of a feature",
+        "idArgument": "Feature ID or prefix",
+        "title": "Checkpoints — {{name}}",
+        "stepColumn": "Step",
+        "timeColumn": "Taken",
+        "changesColumn": "Changes",
+        "commitColumn": "Commit",
+        "files_one": "{{count}} file",
+        "files_few": "{{count}} files",
+        "files_many": "{{count}} files",
+        "files_other": "{{count}} files",
+        "empty": "No checkpoints yet. They are recorded after each step once the feature's agent runs.",
+        "failed": "Failed to list checkpoints"
+      },
+      "diff": {
+        "description": "Show what a step changed, or compare two steps",
+        "idArgument": "Feature ID or prefix",
+        "toOption": "Step to show: sequence number, step name or label (e.g. 3, implement, 0003-implement)",
+        "fromOption": "Step to compare against (default: the step before --to)",
+        "statOption": "Only list the changed files",
+        "noChanges": "No changes between these steps.",
+        "failed": "Failed to diff checkpoints"
+      },
+      "restore": {
+        "description": "Roll a feature's worktree back to a checkpoint",
+        "idArgument": "Feature ID or prefix",
+        "stepArgument": "Checkpoint to restore: sequence number, step name or label",
+        "forceOption": "Skip confirmation prompt",
+        "confirm": "Restore the worktree to \"{{step}}\"? Changes made after it are kept as a checkpoint, the branch is not moved.",
+        "cancelled": "Cancelled",
+        "restored": "Worktree restored to {{step}}",
+        "undoHint": "To undo:",
+        "failed": "Failed to restore checkpoint"
       }
     },
     "repo": {

@@ -1,0 +1,45 @@
+feature:
+  id: '138-git-checkpoints'
+  name: 'git-checkpoints'
+  number: 138
+  branch: 'feat/138-git-checkpoints'
+  lifecycle: 'implementation'
+  createdAt: '2026-10-11T10:52:20Z'
+
+status:
+  phase: 'ready-for-review'
+  progress:
+    completed: 12
+    total: 12
+    percentage: 100
+  currentTask: null
+  lastUpdated: '2026-10-11T14:00:00Z'
+  lastUpdatedBy: 'shep-kit:implement'
+
+validation:
+  lastRun: null
+  gatesPassed: []
+  autoFixesApplied: []
+
+tasks:
+  current: null
+  blocked: []
+  failed: []
+
+checkpoints:
+  - phase: 'feature-created'
+    completedAt: '2026-10-11T10:52:20Z'
+    completedBy: 'shep-kit:new-feature'
+  - phase: 'research-complete'
+    completedAt: '2026-10-11T11:30:00Z'
+    completedBy: 'shep-kit:research'
+  - phase: 'plan-complete'
+    completedAt: '2026-10-11T12:00:00Z'
+    completedBy: 'shep-kit:plan'
+  - phase: 'implementation-complete'
+    completedAt: '2026-10-11T14:00:00Z'
+    completedBy: 'shep-kit:implement'
+
+errors:
+  current: null
+  history: []

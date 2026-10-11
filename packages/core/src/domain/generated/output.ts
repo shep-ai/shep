@@ -8590,6 +8590,65 @@ export type PhaseTiming = BaseEntity & {
    */
   errorMessage?: string;
 };
+export enum GitCheckpointKind {
+  Baseline = 'Baseline',
+  Step = 'Step',
+  PreRestore = 'PreRestore',
+}
+
+/**
+ * A hidden-ref snapshot of a feature's worktree after one feature-agent step
+ */
+export type GitCheckpoint = BaseEntity & {
+  /**
+   * Feature this checkpoint belongs to
+   */
+  featureId: string;
+  /**
+   * Agent run that produced the step, when one was running
+   */
+  agentRunId?: string;
+  /**
+   * Position within the feature's checkpoints; the baseline is 0
+   */
+  sequence: number;
+  /**
+   * Why the checkpoint was taken
+   */
+  kind: GitCheckpointKind;
+  /**
+   * Graph node name (implement, repair_research, merge, ...) or baseline / pre-restore
+   */
+  node: string;
+  /**
+   * Full hidden ref name, e.g. refs/shep/checkpoints/<featureId>/0003-implement
+   */
+  ref: string;
+  /**
+   * Checkpoint commit the ref points at
+   */
+  commitSha: string;
+  /**
+   * Tree of the checkpoint commit: the worktree content at capture time
+   */
+  treeSha: string;
+  /**
+   * Branch HEAD at capture time (absent on an unborn branch)
+   */
+  headSha?: string;
+  /**
+   * Files changed versus the previous checkpoint
+   */
+  filesChanged: number;
+  /**
+   * Lines added versus the previous checkpoint
+   */
+  additions: number;
+  /**
+   * Lines deleted versus the previous checkpoint
+   */
+  deletions: number;
+};
 
 /**
  * Change to a question's selected option during PRD review
@@ -9601,6 +9660,12 @@ export enum AgentFeature {
   sessionListing = 'session-listing',
   effort = 'effort',
   mcpConfig = 'mcp-config',
+}
+export enum CheckpointRestoreBlocker {
+  NoOwnWorktree = 'NoOwnWorktree',
+  NotLinkedWorktree = 'NotLinkedWorktree',
+  WorktreeUnavailable = 'WorktreeUnavailable',
+  AgentRunning = 'AgentRunning',
 }
 export enum ChatScopeKind {
   Global = 'global',

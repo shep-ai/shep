@@ -56,3 +56,4 @@ export type {
   TelemetryOutboxEntry,
   EnqueueTelemetryOptions,
 } from './telemetry-outbox.repository.interface.js';
+export type { IGitCheckpointRepository } from './git-checkpoint-repository.interface.js';

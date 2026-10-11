@@ -1,0 +1,187 @@
+# Research Artifact (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: git-checkpoints
+summary: >-
+  Hidden-ref checkpoints are built with git plumbing through a temporary index, recorded in a
+  new git_checkpoints table, captured by a node wrapper the worker wires into every graph, and
+  exposed through one set of use cases shared by the CLI and the web drawer.
+
+relatedFeatures:
+  - 116-agent-harness-reliability
+technologies:
+  - git plumbing
+  - TypeSpec
+  - SQLite
+  - tsyringe
+relatedLinks:
+  - title: git-worktree — refs shared between worktrees
+    url: https://git-scm.com/docs/git-worktree#_refs
+  - title: git-config core.fsync
+    url: https://git-scm.com/docs/git-config#Documentation/git-config.txt-corefsync
+
+decisions:
+  - title: How to snapshot the worktree without touching the user's branch or index
+    chosen: >-
+      Temporary GIT_INDEX_FILE: read-tree HEAD, add -A, write-tree, commit-tree -p HEAD,
+      update-ref, all with core.fsync=objects,reference
+    rejected:
+      - git stash create (ignores untracked files unless -u, and -u stores them in a third parent)
+      - A real commit on a side branch (moves HEAD or needs a second worktree)
+      - Copying files into a content-addressed store of our own (reinvents git objects)
+    rationale: >-
+      Plumbing through a private index writes only objects and one ref. A prototype against git
+      2.43 confirmed `git status` is byte-identical before and after capture, .gitignore is
+      respected, and a ref written from a linked worktree lands in the common ref store, so it
+      survives the worktree.
+  - title: Where the capture hook lives
+    chosen: >-
+      A `withCheckpoint(node, fn, capture)` wrapper applied in the three graph factories to the
+      nodes that can change files, with the capture callback supplied by the worker from the
+      DI-resolved CaptureFeatureCheckpointUseCase
+    rejected:
+      - Inside executeNode() (implement, fast-implement and merge do not use it)
+      - A LangGraph stream listener in the worker (no reliable "node finished" hook with the
+        updated worktree, and it would also see validate nodes)
+      - Module-level context like phase-timing-context (new global state is banned)
+    rationale: >-
+      Wrapping at the graph edge covers custom-execution nodes, keeps the nodes unchanged, and
+      passes the dependency explicitly instead of through a module singleton. The wrapper runs
+      the capture in `finally`, so a node that fails or interrupts at an approval gate still
+      leaves its partial work as a checkpoint.
+  - title: Which steps record a checkpoint
+    chosen: Every wrapped node, skipping a capture whose tree equals the latest checkpoint's tree
+    rejected:
+      - Always record (a merge that only polled CI adds an empty step)
+      - Hard-code a list of "writing" nodes and trust it (repair and merge write only sometimes)
+    rationale: Tree hashes are content addresses, so equality is exact and costs nothing extra.
+  - title: Restore semantics
+    chosen: >-
+      Capture a pre-restore checkpoint, then `git clean -fd`, `git read-tree --reset -u <tree>`,
+      `git reset -q` — the working tree equals the checkpoint, the index equals HEAD, the branch
+      does not move
+    rejected:
+      - git reset --hard to the checkpoint's HEAD (rewrites a branch the agent has pushed; next
+        push is non-fast-forward)
+      - git checkout <tree> -- . (does not delete files created after the checkpoint)
+    rationale: >-
+      The rollback becomes an ordinary change the next agent step commits, nothing pushed is
+      rewritten, ignored files (node_modules, .env) survive, and the pre-restore checkpoint makes
+      the restore itself reversible. Verified in a prototype.
+  - title: Restore safety
+    chosen: >-
+      Refuse unless the feature has a worktreePath that differs from repositoryPath AND git
+      reports it as a linked worktree (git-dir differs from git-common-dir), and the latest agent
+      run is not pending/running
+    rejected:
+      - Path comparison only (a symlink or case difference could alias the main checkout)
+    rationale: >-
+      The main checkout is the user's; two independent checks, one of them asked of git itself,
+      make it impossible to point restore at it by a stored path quirk.
+  - title: Diff source and caching
+    chosen: >-
+      `git diff --find-renames --unified=3 <fromTree> <toTree>` parsed by a unified-diff parser
+      extracted from GitPrService (GitHub review keeps its own copy today), cached in a bounded
+      in-process LRU keyed by the two commit ids
+    rejected:
+      - Persisting diffs in SQLite (large, and derivable from immutable objects at any time)
+    rationale: >-
+      Checkpoint objects never change, so the cache needs no invalidation; extracting the parser
+      removes an existing duplication instead of adding a third copy.
+  - title: Sequence allocation
+    chosen: >-
+      Next sequence computed from the feature's rows, protected by UNIQUE(feature_id, sequence);
+      the ref name embeds the sequence
+    rejected:
+      - Global counters
+    rationale: >-
+      One worker owns a feature at a time and restore is refused while it runs, so contention is
+      only theoretical; the unique constraint turns a violation into a failed (best-effort)
+      capture instead of two rows claiming one ref.
+
+openQuestions: []
+
+content: |
+  ## Status
+
+  - **Phase:** Research
+  - **Updated:** 2026-10-11
+
+  ## Technology Decisions
+
+  ### Snapshot mechanism
+
+  **Options considered:** temporary index + plumbing (T3's approach), `git stash create`,
+  a real side-branch commit, a home-grown file store.
+
+  **Decision:** temporary `GIT_INDEX_FILE` → `read-tree HEAD` → `add -A` → `write-tree` →
+  `commit-tree -p HEAD` → `update-ref refs/shep/checkpoints/<featureId>/<seq>-<node>`, each with
+  `-c core.fsync=objects,reference`. Author/committer are fixed through environment variables
+  (`Shep <shep@localhost>`) and `--no-gpg-sign` is passed, so capture never depends on the
+  user's identity or signing configuration. On an unborn HEAD `read-tree --empty` is used and
+  the commit has no parent.
+
+  A prototype against git 2.43 confirmed: `git status --porcelain` is identical before and after
+  capture (staged, modified and untracked files all intact); ignored directories are not
+  captured; a ref written from a linked worktree is visible from the main repository, because
+  only `HEAD`, `refs/worktree/*`, `refs/bisect/*` and `refs/rewritten/*` are per-worktree.
+
+  ### Hook point
+
+  The three graph factories (full, fast, exploration) wrap file-changing nodes with
+  `withCheckpoint`. The callback is an optional graph dependency, so every existing graph test
+  keeps compiling and behaves as before. Before the wrapped node runs, the callback ensures a
+  `baseline` exists; after it (in `finally`) it captures the node's result. Capture failures are
+  logged and swallowed — a checkpoint is never worth failing a feature run.
+
+  Wrapped nodes — full graph: analyze, requirements, research, plan, implement, the four repair
+  nodes, merge. Fast graph: fast-implement, merge. Exploration graph: prototype-generate.
+  Validate nodes and extract_memory only read files and are not wrapped.
+
+  ### Restore
+
+  `pre-restore` capture, then `git clean -fd` → `git read-tree --reset -u <tree>` →
+  `git reset -q`. Result (prototype-verified): worktree content equals the checkpoint tree,
+  ignored files are untouched, the index equals HEAD, the branch and its history are unchanged.
+
+  ### Cleanup
+
+  `git for-each-ref --format=%(refname) refs/shep/checkpoints/<featureId>/` then
+  `git update-ref --stdin` with one `delete` per ref, run from `repositoryPath` (the worktree may
+  already be gone), then delete the rows. Called from CleanupFeatureWorktreeUseCase,
+  DeleteFeatureUseCase and ArchiveFeatureUseCase, best-effort.
+
+  ## Library Analysis
+
+  | Library | Version | Purpose | Pros | Cons |
+  | ------- | ------- | ------- | ---- | ---- |
+  | git CLI (via injected `ExecFunction`) | ≥ 2.25 | plumbing | already the only git dependency; Windows-safe spawn | none |
+
+  No new third-party dependency.
+
+  ## Security Considerations
+
+  - Every ref component is validated: the feature id is a UUID and the node name must match
+    `^[a-z0-9][a-z0-9_-]*$`; `assertSafeGitRef` is applied to the full ref before any git call.
+  - Step selectors from the CLI/web are resolved against the feature's own rows, never passed to
+    git, so a user cannot read an arbitrary ref or another feature's checkpoint.
+  - Restore runs only inside a verified linked worktree with no running agent (see decisions).
+  - Diff output is bounded by the existing `DIFF_MAX_BUFFER_BYTES` maxBuffer.
+
+  ## Performance Implications
+
+  - `add -A` hashes changed files only (git reuses stat data from the index read from HEAD), so
+    a capture costs about as much as `git status` plus writing new blobs; typically well under a
+    second, and at most ~12 captures per full run.
+  - Objects are shared with the branch, so a checkpoint whose files were then committed costs no
+    extra disk.
+  - Diffs are computed on demand and cached (LRU of 32 entries) in the long-lived web/daemon
+    process.
+
+  ## Open Questions
+
+  All questions resolved.
+
+  ---
+
+  _Updated by `/shep-kit:research` — proceed with `/shep-kit:plan`_

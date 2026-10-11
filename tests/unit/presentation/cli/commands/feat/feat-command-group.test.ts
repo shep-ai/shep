@@ -68,6 +68,9 @@ describe('Feat Command Group', () => {
       expect(subcommands).toContain('del');
       expect(subcommands).toContain('start');
       expect(subcommands).toContain('resume');
+      expect(subcommands).toContain('checkpoints');
+      expect(subcommands).toContain('diff');
+      expect(subcommands).toContain('restore');
       expect(subcommands).toContain('logs');
       expect(subcommands).toContain('approve');
       expect(subcommands).toContain('reject');

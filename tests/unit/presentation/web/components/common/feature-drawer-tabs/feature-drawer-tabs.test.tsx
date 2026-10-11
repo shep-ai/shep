@@ -55,6 +55,15 @@ vi.mock('@/app/actions/bedrock.action', () => ({
   getBedrockMemorySnapshot: vi.fn().mockResolvedValue(null),
 }));
 
+vi.mock('@/app/actions/feature-checkpoints', () => ({
+  listFeatureCheckpoints: vi.fn().mockResolvedValue({
+    ok: true,
+    data: { featureId: 'feat-1', featureName: 'F', checkpoints: [] },
+  }),
+  getFeatureCheckpointDiff: vi.fn(),
+  restoreFeatureCheckpoint: vi.fn(),
+}));
+
 vi.mock('@/app/actions/harness-queries', () => ({
   getHarnessSessionForFeature: vi.fn().mockResolvedValue({ ok: true, data: null }),
   listHarnessPermissions: vi
@@ -169,6 +178,17 @@ describe('FeatureDrawerTabs', () => {
       expect(screen.getByRole('tab', { name: 'Overview' })).toBeInTheDocument();
       expect(screen.getByRole('tab', { name: 'Activity' })).toBeInTheDocument();
       expect(screen.queryByRole('tab', { name: 'Log' })).not.toBeInTheDocument();
+    });
+
+    it('shows the Checkpoints tab once the feature has an agent run (spec 138)', () => {
+      renderTabs();
+      expect(screen.getByRole('tab', { name: 'Checkpoints' })).toBeInTheDocument();
+    });
+
+    it('hides the Checkpoints tab when no agent ever ran', () => {
+      const { hasAgentRun: _, ...nodeWithoutRun } = defaultFeatureNode;
+      renderTabs({ featureNode: nodeWithoutRun as FeatureNodeData });
+      expect(screen.queryByRole('tab', { name: 'Checkpoints' })).not.toBeInTheDocument();
     });
 
     it('hides Plan tab when hasPlan is false', () => {
@@ -1017,13 +1037,13 @@ describe('FeatureDrawerTabs', () => {
         interactiveAgentEnabled: true,
       });
 
-      // Get the Bedrock tab (last visible tab in the 8-tab set)
-      const bedrockTab = screen.getByRole('tab', { name: 'Bedrock' });
-      bedrockTab.focus();
+      // Get the Checkpoints tab (last visible tab in the 9-tab set)
+      const lastTab = screen.getByRole('tab', { name: 'Checkpoints' });
+      lastTab.focus();
 
-      // Make sure Bedrock is active
-      await user.click(bedrockTab);
-      expect(bedrockTab).toHaveAttribute('data-state', 'active');
+      // Make sure Checkpoints is active
+      await user.click(lastTab);
+      expect(lastTab).toHaveAttribute('data-state', 'active');
 
       // Press Arrow Right from the last tab (should wrap to first)
       await user.keyboard('{ArrowRight}');
@@ -1053,9 +1073,9 @@ describe('FeatureDrawerTabs', () => {
       // Press Arrow Left from the first tab (should wrap to last)
       await user.keyboard('{ArrowLeft}');
 
-      // Bedrock tab (last in the 8-tab set) should now be active
-      const bedrockTab = screen.getByRole('tab', { name: 'Bedrock' });
-      expect(bedrockTab).toHaveAttribute('data-state', 'active');
+      // Checkpoints tab (last in the 9-tab set) should now be active
+      const lastTab = screen.getByRole('tab', { name: 'Checkpoints' });
+      expect(lastTab).toHaveAttribute('data-state', 'active');
     });
 
     it('keyboard navigation works with 8+ tabs in scrollable container', async () => {

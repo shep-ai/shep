@@ -9,6 +9,7 @@
 
 import 'reflect-metadata';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { DeleteFeatureCheckpointsUseCase } from '@/application/use-cases/features/checkpoints/delete-feature-checkpoints.use-case.js';
 import { DeleteFeatureUseCase } from '@/application/use-cases/features/delete-feature.use-case.js';
 import type { IFeatureRepository } from '@/application/ports/output/repositories/feature-repository.interface.js';
 import type { IWorktreeService } from '@/application/ports/output/services/worktree-service.interface.js';
@@ -77,6 +78,7 @@ describe('DeleteFeatureUseCase', () => {
   let mockCheckpointService: IAgentCheckpointService;
   let mockRunRepo: IAgentRunRepository;
   let mockGitPrService: IGitPrService;
+  let deleteCheckpoints: DeleteFeatureCheckpointsUseCase;
 
   beforeEach(() => {
     mockFeatureRepo = createMockFeatureRepository({
@@ -135,6 +137,9 @@ describe('DeleteFeatureUseCase', () => {
       getMergeableStatus: vi.fn().mockResolvedValue(undefined),
     } as unknown as IGitPrService;
 
+    deleteCheckpoints = {
+      executeBestEffort: vi.fn().mockResolvedValue(0),
+    } as unknown as DeleteFeatureCheckpointsUseCase;
     useCase = new DeleteFeatureUseCase(
       mockFeatureRepo,
       mockWorktreeService,
@@ -142,7 +147,8 @@ describe('DeleteFeatureUseCase', () => {
       mockCheckpointService,
       mockRunRepo,
       mockGitPrService,
-      { execute: vi.fn().mockResolvedValue({ admittedFeatureIds: [] }) } as any
+      { execute: vi.fn().mockResolvedValue({ admittedFeatureIds: [] }) } as any,
+      deleteCheckpoints
     );
   });
 
@@ -777,6 +783,14 @@ describe('DeleteFeatureUseCase', () => {
         (call: unknown[]) => (call[0] as Feature)?.pr?.status === PrStatus.Closed
       );
       expect(prUpdateCall).toBeUndefined();
+    });
+  });
+
+  it("deletes the feature's git checkpoints with the worktree (spec 138)", async () => {
+    await useCase.execute('feat-123-full-uuid');
+    expect(deleteCheckpoints.executeBestEffort).toHaveBeenCalledWith({
+      featureId: 'feat-123-full-uuid',
+      repositoryPath: '/repo',
     });
   });
 });

@@ -103,6 +103,9 @@ A frequently-used selection. The full surface — 36 top-level commands and grou
 | `shep feat approve`          | Approve a feature                                         |
 | `shep feat reject`           | Reject a feature                                          |
 | `shep feat logs`             | View feature logs                                         |
+| `shep feat checkpoints`      | List the git checkpoint taken after each step             |
+| `shep feat diff`             | Show what a step changed, or compare two steps            |
+| `shep feat restore`          | Roll the feature's worktree back to a checkpoint          |
 | `shep agent ls`              | List agent runs                                           |
 | `shep agent show`            | Show agent run details                                    |
 | `shep agent stop`            | Stop an agent                                             |

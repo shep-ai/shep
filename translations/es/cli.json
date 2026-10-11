@@ -510,6 +510,41 @@
         "description": "Hacer que un agente atienda los comentarios pendientes en el worktree de la funcionalidad, haga push y responda a cada uno",
         "commentsArg": "Ids de comentarios o prefijos (por defecto: todos los pendientes)",
         "spinner": "Atendiendo {{count}} comentarios"
+      },
+      "checkpoints": {
+        "description": "Listar los checkpoints de git tomados tras cada paso de una funcionalidad",
+        "idArgument": "ID de la funcionalidad o prefijo",
+        "title": "Checkpoints — {{name}}",
+        "stepColumn": "Paso",
+        "timeColumn": "Tomado",
+        "changesColumn": "Cambios",
+        "commitColumn": "Commit",
+        "files_one": "{{count}} archivo",
+        "files_few": "{{count}} archivos",
+        "files_many": "{{count}} archivos",
+        "files_other": "{{count}} archivos",
+        "empty": "Aún no hay checkpoints. Se registran tras cada paso cuando se ejecuta el agente de la funcionalidad.",
+        "failed": "No se pudieron listar los checkpoints"
+      },
+      "diff": {
+        "description": "Mostrar lo que cambió un paso o comparar dos pasos",
+        "idArgument": "ID de la funcionalidad o prefijo",
+        "toOption": "Paso a mostrar: número, nombre o etiqueta (p. ej. 3, implement, 0003-implement)",
+        "fromOption": "Paso con el que comparar (por defecto: el paso anterior a --to)",
+        "statOption": "Listar solo los archivos cambiados",
+        "noChanges": "No hay cambios entre estos pasos.",
+        "failed": "No se pudieron comparar los checkpoints"
+      },
+      "restore": {
+        "description": "Devolver el worktree de una funcionalidad a un checkpoint",
+        "idArgument": "ID de la funcionalidad o prefijo",
+        "stepArgument": "Checkpoint a restaurar: número, nombre del paso o etiqueta",
+        "forceOption": "Omitir la confirmación",
+        "confirm": "¿Restaurar el worktree a \"{{step}}\"? Los cambios posteriores se guardan como checkpoint y la rama no se mueve.",
+        "cancelled": "Cancelado",
+        "restored": "Worktree restaurado a {{step}}",
+        "undoHint": "Para deshacer:",
+        "failed": "No se pudo restaurar el checkpoint"
       }
     },
     "repo": {

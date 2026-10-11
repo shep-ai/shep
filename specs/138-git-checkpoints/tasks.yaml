@@ -1,0 +1,268 @@
+# Task Breakdown (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: git-checkpoints
+summary: Task breakdown for 138 — hidden-ref checkpoints per feature-agent step.
+
+relatedFeatures:
+  - 116-agent-harness-reliability
+technologies:
+  - TypeSpec
+  - TypeScript
+  - git
+  - React
+relatedLinks: []
+
+tasks:
+  - id: task-1
+    title: GitCheckpoint model in TypeSpec
+    description: >
+      tsp/agents/git-checkpoint.tsp with GitCheckpoint (featureId, agentRunId?, sequence, kind,
+      node, ref, commitSha, treeSha, headSha?, filesChanged, additions, deletions) and the
+      GitCheckpointKind enum (Baseline, Step, PreRestore); regenerate output.ts and json-schema.
+    state: Done
+    dependencies: []
+    acceptanceCriteria:
+      - pnpm tsp:compile ends with no warnings; pnpm generate output committed unchanged by a rerun
+    tdd: null
+    estimatedEffort: S
+
+  - id: task-2
+    title: Domain checkpoint helpers and errors
+    description: >
+      domain/shared/git-checkpoint.ts (ref prefix, buildCheckpointRef, featureCheckpointRefPrefix,
+      assertCheckpointNodeName, checkpointLabel, resolveCheckpointSelector, previousCheckpoint) and
+      isAgentRunExecuting in agent-run-status.ts; domain/errors/git-checkpoint-errors.ts.
+    state: Done
+    dependencies:
+      - task-1
+    acceptanceCriteria:
+      - Unsafe node names and feature ids are rejected before any git call
+      - Selector resolves "3", "implement" (latest of that node) and "0003-implement"
+    tdd:
+      red:
+        - Unit tests per helper branch, including ambiguity and not-found
+      green:
+        - Pure functions, extensionless imports
+      refactor:
+        - none
+    estimatedEffort: S
+
+  - id: task-3
+    title: Extract the unified-diff parser
+    description: >
+      Move GitPrService.parseUnifiedDiff/parseFileDiff into services/git/unified-diff.parser.ts and
+      point the GitHub review service's copied hunk parser at the same module.
+    state: Done
+    dependencies: []
+    acceptanceCriteria:
+      - Existing git-pr and github-review tests stay green; parser has its own unit test
+    tdd:
+      red:
+        - Parser unit tests (added, deleted, renamed, multi-hunk, "\ No newline")
+      green:
+        - Move the code; call it from both services
+      refactor:
+        - Delete the duplicate
+    estimatedEffort: S
+
+  - id: task-4
+    title: IGitCheckpointService port and GitCheckpointService adapter
+    description: >
+      writeWorktreeTree (temp GIT_INDEX_FILE: read-tree HEAD, add -A, write-tree), commitCheckpoint
+      (commit-tree -p HEAD --no-gpg-sign with fixed identity, update-ref, core.fsync), diffStat,
+      diff (LRU cached), restoreWorktree (clean -fd, read-tree --reset -u, reset -q),
+      isLinkedWorktree, deleteRefs (for-each-ref + update-ref --stdin).
+    state: Done
+    dependencies:
+      - task-2
+      - task-3
+    acceptanceCriteria:
+      - Real-git integration test proves capture leaves status, HEAD, branch and index unchanged
+      - Restore result equals the checkpoint tree, ignored files survive, branch unchanged
+      - Worktree path containing a space works
+    tdd:
+      red:
+        - Integration tests against real git with isolated global/system config
+      green:
+        - Adapter over the injected ExecFunction
+      refactor:
+        - Share the env/config-flag builder between commands
+    estimatedEffort: L
+
+  - id: task-5
+    title: Persistence — migration 170, mapper, repository
+    description: >
+      git_checkpoints table (UNIQUE(feature_id, sequence), index on feature_id); mapper both ways;
+      IGitCheckpointRepository (create, listByFeatureId, deleteByFeatureId) and SQLite adapter.
+    state: Done
+    dependencies:
+      - task-1
+    acceptanceCriteria:
+      - Round-trip on the migrated schema with non-default values; list ordered by sequence
+    tdd:
+      red:
+        - Repository integration test
+      green:
+        - Migration, mapper, repository
+      refactor:
+        - none
+    estimatedEffort: M
+
+  - id: task-6
+    title: Checkpoint use cases
+    description: >
+      Capture (with ensureBaseline), List, GetDiff, Restore, Delete in
+      application/use-cases/features/checkpoints/.
+    state: Done
+    dependencies:
+      - task-4
+      - task-5
+    acceptanceCriteria:
+      - Capture skips an unchanged tree and numbers steps after the baseline
+      - Restore refuses outside a linked worktree and while an agent is pending/running
+    tdd:
+      red:
+        - Unit tests with fake ports for every branch
+      green:
+        - Use cases injecting ports by string token
+      refactor:
+        - Shared feature lookup (id or prefix)
+    estimatedEffort: M
+
+  - id: task-7
+    title: DI wiring
+    description: >
+      register-git-checkpoints.ts (service, repository, use cases with string aliases), called
+      from container.ts and the bootstrap test; tokens added to CRITICAL_INFRA_TOKENS and
+      WEB_ROUTE_TOKENS.
+    state: Done
+    dependencies:
+      - task-6
+    acceptanceCriteria:
+      - Bootstrap test resolves every new token and fails without the registration
+    tdd:
+      red:
+        - Add tokens to the bootstrap test first
+      green:
+        - Registration module
+      refactor:
+        - none
+    estimatedEffort: S
+
+  - id: task-8
+    title: Capture after every worktree-changing node
+    description: >
+      nodes/with-checkpoint.ts; optional `checkpoints` dependency on the full, fast and exploration
+      graph factories; the worker builds it from CaptureFeatureCheckpointUseCase via
+      checkpoint-capture.ts.
+    state: Done
+    dependencies:
+      - task-7
+    acceptanceCriteria:
+      - Baseline before the first wrapped node, capture after each (also on throw/interrupt)
+      - A capture failure is logged and never fails the node
+    tdd:
+      red:
+        - Unit tests for withCheckpoint and the worker capture adapter
+      green:
+        - Wrapper and wiring
+      refactor:
+        - none
+    estimatedEffort: M
+
+  - id: task-9
+    title: Delete checkpoints on worktree removal and archive
+    description: >
+      CleanupFeatureWorktreeUseCase, DeleteFeatureUseCase and ArchiveFeatureUseCase call
+      DeleteFeatureCheckpointsUseCase best-effort.
+    state: Done
+    dependencies:
+      - task-7
+    acceptanceCriteria:
+      - Each caller deletes checkpoints; a failure is logged and the outer operation succeeds
+    tdd:
+      red:
+        - Extend each use case's unit tests
+      green:
+        - Inject and call
+      refactor:
+        - none
+    estimatedEffort: S
+
+  - id: task-10
+    title: CLI — feat checkpoints, feat diff, feat restore
+    description: >
+      Three commands registered under `shep feat`, with i18n keys in all 9 cli.json locales.
+    state: Done
+    dependencies:
+      - task-7
+    acceptanceCriteria:
+      - Errors print a message and set exit code 1 without throwing
+    tdd:
+      red:
+        - Command unit tests with mocked use cases
+      green:
+        - Commands
+      refactor:
+        - Shared diff renderer for the terminal
+    estimatedEffort: M
+
+  - id: task-11
+    title: Web — Checkpoints tab in the feature drawer
+    description: >
+      Server actions (list, diff, restore) + Storybook mock; CheckpointsTab, CheckpointList and
+      CheckpointCompareBar components with stories; tab key and visibility; web.json in 9 locales.
+    state: Done
+    dependencies:
+      - task-7
+    acceptanceCriteria:
+      - Per-step diff on selection, compare any two steps, restore with confirmation
+      - pnpm build:storybook and pnpm build:web pass
+    tdd:
+      red:
+        - Component tests and tab visibility test
+      green:
+        - Components and actions
+      refactor:
+        - none
+    estimatedEffort: L
+
+  - id: task-12
+    title: Docs
+    description: >
+      docs/architecture/git-checkpoints.md, links from agent-system.md and the CLI docs.
+    state: Done
+    dependencies:
+      - task-10
+      - task-11
+    acceptanceCriteria:
+      - Every command and surface described exists
+    tdd: null
+    estimatedEffort: S
+
+totalEstimate: L
+
+openQuestions: []
+
+content: |
+  ## Summary
+
+  Hidden-ref checkpoints per feature-agent step, with per-step and cross-step diffs and a safe
+  restore in CLI and web — 12 tasks across 5 phases.
+
+  ## Acceptance Checklist
+
+  Before marking feature complete:
+
+  - [ ] All tasks completed
+  - [ ] Tests passing (`pnpm test:unit`, `pnpm test:int`)
+  - [ ] Linting clean (`pnpm lint`), formatting clean (`pnpm format:check`)
+  - [ ] Types valid (`pnpm typecheck`)
+  - [ ] TypeSpec compiles without warnings (`pnpm tsp:compile`), `pnpm generate` committed
+  - [ ] `pnpm build`, `pnpm build:web`, `pnpm build:storybook`, `pnpm check:stories` pass
+  - [ ] PR created, CI green
+
+  ---
+
+  _Task details are in the tasks[] array of tasks.yaml_

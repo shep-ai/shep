@@ -10,13 +10,15 @@
  *   the repository on the canvas but the parent-child relationship is preserved
  *   in the database and restored when "Show Archived" is enabled
  * - The current lifecycle is preserved in previousLifecycle for unarchive restoration
- * - No git operations or agent cancellations are triggered (archive is non-destructive)
+ * - No agent cancellations are triggered and the branch and worktree are kept; the
+ *   feature's git checkpoints (spec 138) are deleted
  */
 
 import { injectable, inject } from 'tsyringe';
 import type { Feature } from '../../../domain/generated/output.js';
 import { SdlcLifecycle } from '../../../domain/generated/output.js';
 import type { IFeatureRepository } from '../../ports/output/repositories/feature-repository.interface.js';
+import { DeleteFeatureCheckpointsUseCase } from './checkpoints/delete-feature-checkpoints.use-case.js';
 
 /** Lifecycle states that cannot be archived. */
 const NON_ARCHIVABLE_STATES = new Set<SdlcLifecycle>([
@@ -26,7 +28,11 @@ const NON_ARCHIVABLE_STATES = new Set<SdlcLifecycle>([
 
 @injectable()
 export class ArchiveFeatureUseCase {
-  constructor(@inject('IFeatureRepository') private readonly featureRepo: IFeatureRepository) {}
+  constructor(
+    @inject('IFeatureRepository') private readonly featureRepo: IFeatureRepository,
+    @inject(DeleteFeatureCheckpointsUseCase)
+    private readonly deleteCheckpoints: DeleteFeatureCheckpointsUseCase
+  ) {}
 
   async execute(featureId: string): Promise<Feature> {
     // 1. Find feature (exact or prefix match)
@@ -54,6 +60,12 @@ export class ArchiveFeatureUseCase {
     };
 
     await this.featureRepo.update(updatedFeature);
+
+    // 4. Archived work keeps its branch; its step snapshots are dropped.
+    await this.deleteCheckpoints.executeBestEffort({
+      featureId: feature.id,
+      repositoryPath: feature.repositoryPath,
+    });
 
     return updatedFeature;
   }

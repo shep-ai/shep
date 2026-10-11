@@ -1,0 +1,8 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: GitCheckpointKind.yaml
+type: string
+enum:
+  - Baseline
+  - Step
+  - PreRestore
+description: Why a git checkpoint was taken

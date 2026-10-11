@@ -1935,6 +1935,38 @@
       "loadFailed": "Could not load usage metrics settings."
     }
   },
+  "checkpoints": {
+    "loading": "Loading checkpoints…",
+    "empty": "No checkpoints yet. Shep snapshots the worktree after each step once the agent runs.",
+    "modeStep": "Per step",
+    "modeCompare": "Compare",
+    "kindBaseline": "start",
+    "kindPreRestore": "before restore",
+    "files_one": "{{count}} file",
+    "files_few": "{{count}} files",
+    "files_many": "{{count}} files",
+    "files_other": "{{count}} files",
+    "from": "From",
+    "to": "To",
+    "selectStep": "Select a step to see what it changed.",
+    "baselineSelected": "This is the starting point: nothing came before it.",
+    "diffLoading": "Loading diff…",
+    "noChanges": "No changes between these steps.",
+    "restore": "Restore",
+    "restoreAria": "Restore the worktree to {{step}}",
+    "restoreTitle": "Restore the worktree to {{step}}?",
+    "restoreDescription": "The worktree's files are replaced with this checkpoint. The current state is saved as a new checkpoint first, and the branch and its commits are not changed.",
+    "restoreConfirm": "Restore",
+    "cancel": "Cancel",
+    "restored": "Worktree restored to {{step}}",
+    "restoreFailed": "Restore failed",
+    "blocked": {
+      "NoOwnWorktree": "Restore is only available for a feature that runs in its own worktree.",
+      "NotLinkedWorktree": "Restore is unavailable: the folder is not a linked git worktree.",
+      "WorktreeUnavailable": "Restore is unavailable: the worktree can't be read.",
+      "AgentRunning": "Restore is unavailable while the agent is running."
+    }
+  },
   "chatBlocks": {
     "kinds": {
       "spec_review": "Spec review",

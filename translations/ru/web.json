@@ -1935,6 +1935,38 @@
       "loadFailed": "Не удалось загрузить настройки метрик использования."
     }
   },
+  "checkpoints": {
+    "loading": "Загрузка чекпоинтов…",
+    "empty": "Чекпоинтов пока нет. Shep сохраняет worktree после каждого шага, когда работает агент.",
+    "modeStep": "По шагам",
+    "modeCompare": "Сравнить",
+    "kindBaseline": "начало",
+    "kindPreRestore": "перед восстановлением",
+    "files_one": "{{count}} файл",
+    "files_few": "{{count}} файла",
+    "files_many": "{{count}} файлов",
+    "files_other": "{{count}} файла",
+    "from": "С",
+    "to": "По",
+    "selectStep": "Выберите шаг, чтобы увидеть его изменения.",
+    "baselineSelected": "Это начальная точка: до неё ничего нет.",
+    "diffLoading": "Загрузка изменений…",
+    "noChanges": "Между этими шагами нет изменений.",
+    "restore": "Восстановить",
+    "restoreAria": "Вернуть worktree к {{step}}",
+    "restoreTitle": "Вернуть worktree к {{step}}?",
+    "restoreDescription": "Файлы worktree заменяются этим чекпоинтом. Текущее состояние сначала сохраняется новым чекпоинтом; ветка и её коммиты не меняются.",
+    "restoreConfirm": "Восстановить",
+    "cancel": "Отмена",
+    "restored": "Worktree возвращён к {{step}}",
+    "restoreFailed": "Не удалось восстановить",
+    "blocked": {
+      "NoOwnWorktree": "Восстановление доступно только для фичи с собственным worktree.",
+      "NotLinkedWorktree": "Восстановление недоступно: папка не является связанным git worktree.",
+      "WorktreeUnavailable": "Восстановление недоступно: worktree не удаётся прочитать.",
+      "AgentRunning": "Восстановление недоступно, пока работает агент."
+    }
+  },
   "chatBlocks": {
     "kinds": {
       "spec_review": "Проверка спецификации",

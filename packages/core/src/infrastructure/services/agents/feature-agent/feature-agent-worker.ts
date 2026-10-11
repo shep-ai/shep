@@ -18,6 +18,8 @@ import type { FeatureAgentGraphDeps } from './feature-agent-graph.js';
 import { createFastFeatureAgentGraph } from './fast-feature-agent-graph.js';
 import type { FastFeatureAgentGraphDeps } from './fast-feature-agent-graph.js';
 import { createExplorationAgentGraph } from './exploration-agent-graph.js';
+import { createCheckpointRecorder } from './checkpoint-capture.js';
+import { CaptureFeatureCheckpointUseCase } from '@/application/use-cases/features/checkpoints/capture-feature-checkpoint.use-case.js';
 import type { ExplorationAgentGraphDeps } from './exploration-agent-graph.js';
 import { createCheckpointer } from '../common/checkpointer.js';
 import type { IAgentCheckpointService } from '@/application/ports/output/agents/agent-checkpoint-service.interface.js';
@@ -382,9 +384,17 @@ export async function runWorker(args: WorkerArgs): Promise<void> {
     taskText: string;
   }) => selectProjectMemoryUseCase.execute(input);
 
+  // Hidden-ref checkpoint after every file-changing node (spec 138).
+  const checkpoints = createCheckpointRecorder({
+    capture: container.resolve(CaptureFeatureCheckpointUseCase),
+    agentRunId: args.runId,
+    log,
+  });
+
   const graphDeps: FeatureAgentGraphDeps = {
     executor,
     selectProjectMemory,
+    checkpoints,
     mergeNodeDeps: {
       selectMemory: selectProjectMemory,
       getDiffSummary: (cwd: string, baseBranch: string) =>
@@ -433,7 +443,7 @@ export async function runWorker(args: WorkerArgs): Promise<void> {
   let graph: ReturnType<typeof createFeatureAgentGraph>;
   if (args.exploration) {
     graph = createExplorationAgentGraph(
-      { executor } as ExplorationAgentGraphDeps,
+      { executor, checkpoints } as ExplorationAgentGraphDeps,
       checkpointer
     ) as unknown as ReturnType<typeof createFeatureAgentGraph>;
   } else if (args.fast) {

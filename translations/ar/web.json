@@ -1935,6 +1935,38 @@
       "loadFailed": "تعذّر تحميل إعدادات مقاييس الاستخدام."
     }
   },
+  "checkpoints": {
+    "loading": "جارٍ تحميل نقاط الحفظ…",
+    "empty": "لا توجد نقاط حفظ بعد. يحفظ Shep شجرة العمل بعد كل خطوة عند تشغيل الوكيل.",
+    "modeStep": "لكل خطوة",
+    "modeCompare": "مقارنة",
+    "kindBaseline": "البداية",
+    "kindPreRestore": "قبل الاستعادة",
+    "files_one": "{{count}} ملف",
+    "files_few": "{{count}} ملفات",
+    "files_many": "{{count}} ملفًا",
+    "files_other": "{{count}} ملف",
+    "from": "من",
+    "to": "إلى",
+    "selectStep": "اختر خطوة لرؤية ما غيّرته.",
+    "baselineSelected": "هذه نقطة البداية: لا شيء قبلها.",
+    "diffLoading": "جارٍ تحميل الفروق…",
+    "noChanges": "لا توجد تغييرات بين هاتين الخطوتين.",
+    "restore": "استعادة",
+    "restoreAria": "استعادة شجرة العمل إلى {{step}}",
+    "restoreTitle": "استعادة شجرة العمل إلى {{step}}؟",
+    "restoreDescription": "تُستبدل ملفات شجرة العمل بنقطة الحفظ هذه. تُحفظ الحالة الحالية أولًا كنقطة حفظ جديدة، ولا يتغير الفرع ولا إيداعاته.",
+    "restoreConfirm": "استعادة",
+    "cancel": "إلغاء",
+    "restored": "استُعيدت شجرة العمل إلى {{step}}",
+    "restoreFailed": "فشلت الاستعادة",
+    "blocked": {
+      "NoOwnWorktree": "الاستعادة متاحة فقط لميزة لها شجرة عمل خاصة بها.",
+      "NotLinkedWorktree": "الاستعادة غير متاحة: المجلد ليس شجرة عمل git مرتبطة.",
+      "WorktreeUnavailable": "الاستعادة غير متاحة: تعذّرت قراءة شجرة العمل.",
+      "AgentRunning": "الاستعادة غير متاحة أثناء تشغيل الوكيل."
+    }
+  },
   "chatBlocks": {
     "kinds": {
       "spec_review": "مراجعة المواصفات",

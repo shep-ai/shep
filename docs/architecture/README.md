@@ -10,6 +10,7 @@ This directory contains documentation about Shep AI CLI's system architecture an
 | [clean-architecture.md](./clean-architecture.md) | Clean Architecture implementation details                 |
 | [repository-pattern.md](./repository-pattern.md) | Data persistence and repository pattern                   |
 | [agent-system.md](./agent-system.md)             | LangGraph-based agent system design and implementation    |
+| [git-checkpoints.md](./git-checkpoints.md)       | Hidden-ref worktree snapshots per agent step, diff, restore |
 | [settings-service.md](./settings-service.md)     | Global settings service architecture                      |
 | [spaces.md](./spaces.md)                         | Spaces, product lines and memory isolation                |
 | [tracker-sync.md](./tracker-sync.md)             | Linear and Jira connections and two-way sync              |

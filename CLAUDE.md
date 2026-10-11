@@ -132,6 +132,7 @@ error messages. Identity fields (agent account hash, GitHub username, GitHub own
 | `~/.shep/daemon.log` | Daemon log |
 | `~/.shep/logs/` | Feature-agent process logs |
 | `~/.shep/repos/<repo-hash>/wt/<branch>` | Per-feature git worktrees |
+| `<repo>/.git/refs/shep/checkpoints/<featureId>/` | Hidden-ref worktree snapshots per agent step ([git-checkpoints](./docs/architecture/git-checkpoints.md)) |
 
 `SHEP_HOME` overrides `~/.shep` (used for test isolation); `DEBUG_SQL` makes better-sqlite3 log
 every statement; `DEBUG` (any truthy value — it is a plain truthy check, not a namespace filter)

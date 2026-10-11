@@ -1935,6 +1935,38 @@
       "loadFailed": "Impossible de charger les paramètres des métriques d'utilisation."
     }
   },
+  "checkpoints": {
+    "loading": "Chargement des checkpoints…",
+    "empty": "Aucun checkpoint pour l'instant. Shep enregistre le worktree après chaque étape dès que l'agent s'exécute.",
+    "modeStep": "Par étape",
+    "modeCompare": "Comparer",
+    "kindBaseline": "départ",
+    "kindPreRestore": "avant restauration",
+    "files_one": "{{count}} fichier",
+    "files_few": "{{count}} fichiers",
+    "files_many": "{{count}} fichiers",
+    "files_other": "{{count}} fichiers",
+    "from": "De",
+    "to": "À",
+    "selectStep": "Sélectionnez une étape pour voir ce qu'elle a modifié.",
+    "baselineSelected": "C'est le point de départ : rien ne la précède.",
+    "diffLoading": "Chargement du diff…",
+    "noChanges": "Aucune modification entre ces étapes.",
+    "restore": "Restaurer",
+    "restoreAria": "Restaurer le worktree à {{step}}",
+    "restoreTitle": "Restaurer le worktree à {{step}} ?",
+    "restoreDescription": "Les fichiers du worktree sont remplacés par ce checkpoint. L'état actuel est d'abord enregistré dans un nouveau checkpoint ; la branche et ses commits ne changent pas.",
+    "restoreConfirm": "Restaurer",
+    "cancel": "Annuler",
+    "restored": "Worktree restauré à {{step}}",
+    "restoreFailed": "Échec de la restauration",
+    "blocked": {
+      "NoOwnWorktree": "La restauration n'est possible que pour une fonctionnalité qui a son propre worktree.",
+      "NotLinkedWorktree": "Restauration impossible : le dossier n'est pas un worktree git lié.",
+      "WorktreeUnavailable": "Restauration impossible : le worktree est illisible.",
+      "AgentRunning": "Restauration impossible pendant que l'agent s'exécute."
+    }
+  },
   "chatBlocks": {
     "kinds": {
       "spec_review": "Revue de spécification",

@@ -1935,6 +1935,38 @@
       "loadFailed": "Не вдалося завантажити налаштування метрик використання."
     }
   },
+  "checkpoints": {
+    "loading": "Завантаження чекпоінтів…",
+    "empty": "Чекпоінтів ще немає. Shep зберігає worktree після кожного кроку, коли працює агент.",
+    "modeStep": "По кроках",
+    "modeCompare": "Порівняти",
+    "kindBaseline": "початок",
+    "kindPreRestore": "перед відновленням",
+    "files_one": "{{count}} файл",
+    "files_few": "{{count}} файли",
+    "files_many": "{{count}} файлів",
+    "files_other": "{{count}} файлу",
+    "from": "Від",
+    "to": "До",
+    "selectStep": "Виберіть крок, щоб побачити його зміни.",
+    "baselineSelected": "Це початкова точка: до неї нічого немає.",
+    "diffLoading": "Завантаження змін…",
+    "noChanges": "Між цими кроками немає змін.",
+    "restore": "Відновити",
+    "restoreAria": "Повернути worktree до {{step}}",
+    "restoreTitle": "Повернути worktree до {{step}}?",
+    "restoreDescription": "Файли worktree замінюються цим чекпоінтом. Поточний стан спершу зберігається новим чекпоінтом; гілка та її коміти не змінюються.",
+    "restoreConfirm": "Відновити",
+    "cancel": "Скасувати",
+    "restored": "Worktree повернуто до {{step}}",
+    "restoreFailed": "Не вдалося відновити",
+    "blocked": {
+      "NoOwnWorktree": "Відновлення доступне лише для фічі з власним worktree.",
+      "NotLinkedWorktree": "Відновлення недоступне: тека не є пов'язаним git worktree.",
+      "WorktreeUnavailable": "Відновлення недоступне: worktree не вдається прочитати.",
+      "AgentRunning": "Відновлення недоступне, поки працює агент."
+    }
+  },
   "chatBlocks": {
     "kinds": {
       "spec_review": "Перевірка специфікації",

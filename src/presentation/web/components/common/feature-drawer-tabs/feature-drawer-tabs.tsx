@@ -21,6 +21,7 @@ import {
   RotateCcw,
   Zap,
   Layers,
+  History,
   FlaskConical,
 } from 'lucide-react';
 import type { AgentQuestion, NotificationEvent } from '@shepai/core/domain/generated/output';
@@ -54,6 +55,7 @@ import type { RejectAttachment } from '@/components/common/drawer-action-bar';
 import type { BuildMode } from '@shepai/core/domain/generated/output';
 import { OverviewTab } from './overview-tab';
 import { HarnessContextTab } from '@/components/features/harness/harness-context-tab';
+import { CheckpointsTab } from '@/components/features/checkpoints/checkpoints-tab';
 import { HarnessPermissionBanner } from '@/components/features/harness/harness-permission-banner';
 import { ActivityTab } from './activity-tab';
 import { LogTab } from './log-tab';
@@ -92,6 +94,7 @@ const ALL_TABS: TabDef[] = [
   { key: 'chat', label: 'Chat', icon: MessageSquare },
   { key: 'bedrock', label: 'Bedrock', icon: Database },
   { key: 'context', label: 'Context', icon: Layers },
+  { key: 'checkpoints', label: 'Checkpoints', icon: History },
 ];
 
 /** Compute which tabs are visible based on feature lifecycle + state. */
@@ -108,6 +111,7 @@ function computeVisibleTabs(
     tabs.push('prototype', 'activity');
     if (node.hasAgentRun) tabs.push('log');
     if (interactiveAgentEnabled) tabs.push('chat');
+    if (node.hasAgentRun) tabs.push('checkpoints');
     return tabs;
   }
 
@@ -156,6 +160,11 @@ function computeVisibleTabs(
   // Context tab (spec 119): what the model saw, for features run on the Shep Harness.
   if (queryAwareHarnessEnabled && node.hasAgentRun && node.agentType === AgentType.ShepHarness) {
     tabs.push('context');
+  }
+
+  // Checkpoints tab (spec 138): worktree snapshots taken after each agent step.
+  if (node.hasAgentRun) {
+    tabs.push('checkpoints');
   }
 
   return tabs;
@@ -870,6 +879,11 @@ export function FeatureDrawerTabs({
               targetLabel={featureNode.name ?? featureId}
               initialEnabled={false}
             />
+          </TabsContent>
+        ) : null}
+        {visibleTabs.includes('checkpoints') ? (
+          <TabsContent value="checkpoints" className="mt-0 flex-1 overflow-y-auto p-4">
+            <CheckpointsTab featureId={featureId} />
           </TabsContent>
         ) : null}
         {visibleTabs.includes('context') ? (

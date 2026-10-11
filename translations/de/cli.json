@@ -510,6 +510,41 @@
         "description": "Einen Agenten offene Review-Kommentare im Worktree des Features bearbeiten, pushen und auf jeden antworten lassen",
         "commentsArg": "Kommentar-IDs oder ID-Präfixe (Standard: alle offenen Kommentare)",
         "spinner": "{{count}} Kommentare werden bearbeitet"
+      },
+      "checkpoints": {
+        "description": "Git-Checkpoints nach jedem Schritt eines Features auflisten",
+        "idArgument": "Feature-ID oder Präfix",
+        "title": "Checkpoints — {{name}}",
+        "stepColumn": "Schritt",
+        "timeColumn": "Erstellt",
+        "changesColumn": "Änderungen",
+        "commitColumn": "Commit",
+        "files_one": "{{count}} Datei",
+        "files_few": "{{count}} Dateien",
+        "files_many": "{{count}} Dateien",
+        "files_other": "{{count}} Dateien",
+        "empty": "Noch keine Checkpoints. Sie werden nach jedem Schritt erstellt, sobald der Agent des Features läuft.",
+        "failed": "Checkpoints konnten nicht aufgelistet werden"
+      },
+      "diff": {
+        "description": "Zeigen, was ein Schritt geändert hat, oder zwei Schritte vergleichen",
+        "idArgument": "Feature-ID oder Präfix",
+        "toOption": "Anzuzeigender Schritt: Nummer, Schrittname oder Bezeichnung (z. B. 3, implement, 0003-implement)",
+        "fromOption": "Vergleichsschritt (Standard: der Schritt vor --to)",
+        "statOption": "Nur die geänderten Dateien auflisten",
+        "noChanges": "Keine Änderungen zwischen diesen Schritten.",
+        "failed": "Checkpoints konnten nicht verglichen werden"
+      },
+      "restore": {
+        "description": "Den Worktree eines Features auf einen Checkpoint zurücksetzen",
+        "idArgument": "Feature-ID oder Präfix",
+        "stepArgument": "Wiederherzustellender Checkpoint: Nummer, Schrittname oder Bezeichnung",
+        "forceOption": "Bestätigung überspringen",
+        "confirm": "Worktree auf \"{{step}}\" zurücksetzen? Spätere Änderungen bleiben als Checkpoint erhalten, der Branch wird nicht verschoben.",
+        "cancelled": "Abgebrochen",
+        "restored": "Worktree auf {{step}} zurückgesetzt",
+        "undoHint": "Rückgängig machen:",
+        "failed": "Checkpoint konnte nicht wiederhergestellt werden"
       }
     },
     "repo": {
