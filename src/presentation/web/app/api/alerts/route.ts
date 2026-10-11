@@ -9,14 +9,14 @@
  */
 
 import { resolve } from '@/lib/server-container';
-import { handleIntake, intakeDisabled } from '@/lib/intake-route';
-import { getFeatureFlags } from '@/lib/feature-flags';
+import { handleIntake } from '@/lib/intake-route';
+import { featureNotFound, isFeatureOn } from '@/lib/feature-gate';
 import type { IngestAlertUseCase } from '@shepai/core/application/use-cases/incidents/ingest-alert.use-case';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request): Promise<Response> {
-  if (!getFeatureFlags().incidents) return intakeDisabled();
+  if (!isFeatureOn('incidents')) return featureNotFound();
   return handleIntake(request, async (secret, payload) => {
     const result = await resolve<IngestAlertUseCase>('IngestAlertUseCase').execute(secret, payload);
     return result.ok ? { ok: true, id: result.incident.id, duplicate: result.duplicate } : result;

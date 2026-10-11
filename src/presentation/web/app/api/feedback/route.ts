@@ -9,14 +9,14 @@
  */
 
 import { resolve } from '@/lib/server-container';
-import { handleIntake, intakeDisabled } from '@/lib/intake-route';
-import { getFeatureFlags } from '@/lib/feature-flags';
+import { handleIntake } from '@/lib/intake-route';
+import { featureNotFound, isFeatureOn } from '@/lib/feature-gate';
 import type { IngestFeedbackUseCase } from '@shepai/core/application/use-cases/feedback/ingest-feedback.use-case';
 
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request): Promise<Response> {
-  if (!getFeatureFlags().feedback) return intakeDisabled();
+  if (!isFeatureOn('feedback')) return featureNotFound();
   return handleIntake(request, async (secret, payload) => {
     const result = await resolve<IngestFeedbackUseCase>('IngestFeedbackUseCase').execute(
       secret,
