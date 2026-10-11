@@ -42,6 +42,7 @@ import { EvaluateSupervisorDecisionUseCase } from './evaluate-supervisor-decisio
 import { GetSupervisorPolicyUseCase } from './get-supervisor-policy.use-case.js';
 import {
   AgentQuestionAnswerer,
+  DecisionSurface,
   SupervisorAutonomy,
   SupervisorVerdict,
   type AgentQuestion,
@@ -179,6 +180,7 @@ export class AgentQuestionSupervisorRouter {
         questionId: question.id,
         ...(responses ? { responses } : { answer }),
         answeredBy: `supervisor:${supervisorRunId}`,
+        surface: DecisionSurface.Supervisor,
       });
       return true;
     } catch {

@@ -11,7 +11,7 @@ import { container } from '@/infrastructure/di/container.js';
 import { questionAlreadySettledMessage } from '@/domain/shared/agent-question-settlement.js';
 import { AnswerAgentQuestionUseCase } from '@/application/use-cases/agents/answer-agent-question.use-case.js';
 import { ListAgentQuestionsUseCase } from '@/application/use-cases/agents/list-agent-questions.use-case.js';
-import type { DecisionResponse } from '@/domain/generated/output.js';
+import { DecisionSurface, type DecisionResponse } from '@/domain/generated/output.js';
 import { decisionForQuestion } from '@/domain/shared/decision-builders.js';
 import { colors, messages } from '../../../ui/index.js';
 import { promptDecision, renderDecisionLines } from './decision-renderer.js';
@@ -59,6 +59,7 @@ export function createAnswerCommand(): Command {
           questionId,
           ...answer,
           answeredBy: options.answeredBy ?? 'user:cli',
+          surface: DecisionSurface.Cli,
         });
 
         if (!result.enabled) {

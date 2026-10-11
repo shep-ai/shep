@@ -72,6 +72,7 @@ describe('AskAgentDecisionUseCase', () => {
     const applications = {
       findByPath: vi.fn().mockResolvedValue({ id: 'app-1' }),
     } as unknown as IApplicationRepository;
+    const telemetry = { record: vi.fn() };
     const useCase = new AskAgentDecisionUseCase(ask, repo, settings, features, applications);
     const answer = new AnswerAgentQuestionUseCase(
       repo,
@@ -79,9 +80,10 @@ describe('AskAgentDecisionUseCase', () => {
       settings,
       { findById: vi.fn().mockResolvedValue(null) } as unknown as IAgentRunRepository,
       { execute: vi.fn() } as any,
-      { execute: vi.fn() } as any
+      { execute: vi.fn() } as any,
+      telemetry
     );
-    return { useCase, answer };
+    return { useCase, answer, telemetry };
   }
 
   it('records an agent-ask decision with a deadline from the setting and returns the answer', async () => {

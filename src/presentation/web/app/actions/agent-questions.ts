@@ -4,10 +4,11 @@ import { resolve } from '@/lib/server-container';
 import type { ListAgentQuestionsUseCase } from '@shepai/core/application/use-cases/agents/list-agent-questions.use-case';
 import type { AnswerAgentQuestionUseCase } from '@shepai/core/application/use-cases/agents/answer-agent-question.use-case';
 import type { CancelAgentQuestionUseCase } from '@shepai/core/application/use-cases/agents/cancel-agent-question.use-case';
-import type {
-  AgentQuestion,
-  AgentQuestionStatus,
-  DecisionResponse,
+import {
+  DecisionSurface,
+  type AgentQuestion,
+  type AgentQuestionStatus,
+  type DecisionResponse,
 } from '@shepai/core/domain/generated/output';
 import { requireFeatureFlag } from '@/lib/feature-flags';
 import { questionAlreadySettledMessage } from '@shepai/core/domain/shared/agent-question-settlement';
@@ -53,7 +54,7 @@ export async function answerAgentQuestion(
   try {
     requireFeatureFlag('collaboration');
     const useCase = resolve<AnswerAgentQuestionUseCase>('AnswerAgentQuestionUseCase');
-    const result = await useCase.execute(input);
+    const result = await useCase.execute({ ...input, surface: DecisionSurface.Web });
     if (!result.enabled) {
       return { ok: false, error: 'Collaboration feature flag is off' };
     }

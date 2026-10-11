@@ -29,6 +29,7 @@ import {
   AgentQuestionAnswerer,
   AgentQuestionKind,
   DecisionResponseMode,
+  DecisionSurface,
   type Decision,
 } from '@/domain/generated/output.js';
 import {
@@ -138,6 +139,7 @@ export class AgentQuestionExecutorBridge implements AgentQuestionBridge {
         questionId,
         responses: responsesFromAnswersByQuestionText(decision, answers),
         answeredBy: CHAT_ANSWER_ACTOR,
+        surface: DecisionSurface.Chat,
       });
     } catch {
       // The chat answer already reached the agent; an inbox row that cannot

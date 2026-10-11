@@ -23,6 +23,7 @@ import { inject, injectable } from 'tsyringe';
 import type { IAgentQuestionRepository } from '../../ports/output/repositories/agent-question-repository.interface.js';
 import type { ISettingsRepository } from '../../ports/output/repositories/settings.repository.interface.js';
 import type { IAgentRunRepository } from '../../ports/output/agents/agent-run-repository.interface.js';
+import type { ITelemetry } from '../../ports/output/services/telemetry.interface.js';
 import type {
   AnswerAgentQuestionInput,
   IDeferredQuestionRegistry,
@@ -31,15 +32,19 @@ import {
   AgentQuestionStatus,
   AgentRunStatus,
   DecisionKind,
+  DecisionSurface,
+  TelemetryEvent,
   type AgentQuestion,
   type DecisionResponse,
 } from '../../../domain/generated/output.js';
 import {
   normalizeResponses,
   resolveResponsesFromText,
+  responsesPickedRecommended,
   summariseResponses,
   validateResponses,
 } from '../../../domain/shared/decision.js';
+import { toDurationBucket } from '../../../domain/shared/telemetry/telemetry-delivery.js';
 import {
   decisionForQuestion,
   gateVerdictFromResponses,
@@ -81,7 +86,9 @@ export class AnswerAgentQuestionUseCase {
     @inject(ApproveAgentRunUseCase)
     private readonly approveAgentRun: ApproveAgentRunUseCase,
     @inject(RejectAgentRunUseCase)
-    private readonly rejectAgentRun: RejectAgentRunUseCase
+    private readonly rejectAgentRun: RejectAgentRunUseCase,
+    @inject('ITelemetry')
+    private readonly telemetry: ITelemetry
   ) {}
 
   async execute(input: AnswerAgentQuestionInput): Promise<AnswerAgentQuestionResult> {
@@ -110,6 +117,7 @@ export class AnswerAgentQuestionUseCase {
     );
     // Another caller (CLI vs web) settled it between our read and our write.
     if (!settled) return this.alreadySettled(input, existing);
+    this.recordAnswered(existing, input.surface, now, responses);
 
     // Resolve any in-process awaiter so the SDK callback returns.
     if (this.deferredRegistry.has(input.questionId)) {
@@ -121,6 +129,22 @@ export class AnswerAgentQuestionUseCase {
 
     const updated = await this.questionRepository.findById(input.appId, input.questionId);
     return { enabled: true, question: updated ?? existing, forwardedToGate };
+  }
+
+  /** One `decision.answered` per recorded answer (spec 135). Never throws. */
+  private recordAnswered(
+    question: AgentQuestion,
+    surface: DecisionSurface | undefined,
+    answeredAt: Date,
+    responses: DecisionResponse[] | undefined
+  ): void {
+    const decision = question.decision ?? decisionForQuestion(question);
+    this.telemetry.record(TelemetryEvent.DecisionAnswered, {
+      kind: decision.kind,
+      surface: surface ?? DecisionSurface.Other,
+      latency: toDurationBucket(answeredAt.getTime() - new Date(question.createdAt).getTime()),
+      pickedRecommended: responses ? responsesPickedRecommended(decision, responses) : false,
+    });
   }
 
   private async alreadySettled(
