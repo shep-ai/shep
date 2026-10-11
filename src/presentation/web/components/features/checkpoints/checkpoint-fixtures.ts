@@ -1,5 +1,5 @@
 /**
- * Fixture data for the checkpoint components (spec 135): stories, the
+ * Fixture data for the checkpoint components (spec 138): stories, the
  * Storybook action mock and unit tests share it.
  */
 

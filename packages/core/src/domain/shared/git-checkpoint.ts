@@ -1,5 +1,5 @@
 /**
- * Git checkpoint naming and selection (spec 135).
+ * Git checkpoint naming and selection (spec 138).
  *
  * A checkpoint lives at `refs/shep/checkpoints/<featureId>/<seq>-<node>`.
  * Every component is validated here, before it can reach a git argument: the

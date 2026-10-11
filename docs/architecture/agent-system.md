@@ -275,7 +275,7 @@ Key files:
 - `nodes/` -- `analyze`, `ensure-infra`, `install-deps`, `start-server`, `verify`, `remediate` node factories (+ `prompts/` for the analysis and remediation prompts)
 - `schemas/run-plan-analysis.schema.ts` -- `RUN_PLAN_ANALYSIS_SCHEMA` / `DevServerAnalysis`
 
-### Git checkpoints per step (spec 135)
+### Git checkpoints per step (spec 138)
 
 The full, fast and exploration graphs wrap every file-changing node with `withCheckpoint`. Each one
 snapshots the worktree into `refs/shep/checkpoints/<featureId>/<seq>-<node>` without touching the

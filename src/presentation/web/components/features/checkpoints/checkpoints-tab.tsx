@@ -42,7 +42,7 @@ const BLOCKER_MESSAGE_KEY: Record<CheckpointRestoreBlocker, string> = {
 };
 
 /**
- * Feature drawer → Checkpoints (spec 135): the worktree snapshot after each
+ * Feature drawer → Checkpoints (spec 138): the worktree snapshot after each
  * agent step, what each step changed, a diff between any two steps, and
  * restore. Whether a restore is allowed comes from core (`restoreBlocker`).
  */

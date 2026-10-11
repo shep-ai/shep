@@ -1,5 +1,5 @@
 /**
- * GitCheckpointService (spec 135)
+ * GitCheckpointService (spec 138)
  *
  * Snapshots a worktree into a hidden ref without touching the branch, HEAD,
  * the real index or any file — the approach T3 Code uses for its per-turn
@@ -18,7 +18,7 @@
  */
 
 import { copyFile, mkdtemp, rm } from 'node:fs/promises';
-import { existsSync } from 'node:fs';
+import { existsSync, realpathSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { isAbsolute, join, resolve } from 'node:path';
 import { inject, injectable } from 'tsyringe';
@@ -74,6 +74,7 @@ export class GitCheckpointService implements IGitCheckpointService {
   constructor(@inject('ExecFunction') private readonly execFile: ExecFunction) {}
 
   async snapshotWorktree(cwd: string): Promise<WorktreeSnapshot> {
+    await this.assertWorkTreeRoot(cwd);
     const headSha = await this.resolveHead(cwd);
     const indexDir = await mkdtemp(join(tmpdir(), 'shep-checkpoint-'));
     const indexFile = join(indexDir, 'index');
@@ -194,6 +195,21 @@ export class GitCheckpointService implements IGitCheckpointService {
       await this.git(cwd, ['update-ref', '-d', ref]);
     }
     return refs.length;
+  }
+
+  /**
+   * A worktree removed by post-merge cleanup can leave its directory behind.
+   * If that directory sits inside another repository, git walks up and would
+   * snapshot the parent checkout under this feature's name — so only the top
+   * of a work tree is ever snapshotted.
+   */
+  private async assertWorkTreeRoot(cwd: string): Promise<void> {
+    const toplevel = (await this.git(cwd, ['rev-parse', '--show-toplevel'])).trim();
+    if (
+      comparablePath(realpathSync.native(toplevel)) !== comparablePath(realpathSync.native(cwd))
+    ) {
+      throw new Error(`${cwd} is not the top of a git work tree (git resolved ${toplevel})`);
+    }
   }
 
   private async resolveHead(cwd: string): Promise<string | undefined> {

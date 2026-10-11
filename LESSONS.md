@@ -3090,3 +3090,19 @@ owners). The owner reversed it before merge: anonymous usage events may be opt-o
 that identifies a person defaults to off and the notice offers to turn it on. Keep one source for
 the default (`DEFAULT_TELEMETRY_PREFERENCES`) and make the migration's column default, the mapper's
 fallback and every `?? default` read it — the first version had `?? true` in three places.
+
+## A shared fake must answer from its own rows, not a constant
+
+`createFakeAgentRunRepository().findLatestByFeatureId` always returned `null`, even after `seed()`.
+So every test of "refuse while an agent runs" would have passed, because there was never a run to
+refuse on. Spec 138 fixed it to answer from the seeded rows. When a shared fake has a `seed`, every
+read method must use it. When adding a guard that depends on a read, first watch the guard's test
+fail against the fake.
+
+## Renaming a spec number: change only the lines you added
+
+T4 started as spec 135 while another merged PR also used "spec 135" in its comments, so a
+repository-wide replace would have rewritten that PR's references. Instead, take your branch's
+added lines (`git diff -U0 <merge-base> <your-last-commit>`) and replace only those. Grep
+afterwards for anything a later reformat moved. Ask which number to use before
+`/shep-kit:new-feature` when workstreams run in parallel.

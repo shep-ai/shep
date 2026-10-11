@@ -3,7 +3,7 @@
 /**
  * Agent-run status groupings.
  *
- * `isAgentRunExecuting` gates checkpoint restore (spec 135): a run that is
+ * `isAgentRunExecuting` gates checkpoint restore (spec 138): a run that is
  * pending or running may still write to the worktree, a run parked at an
  * approval gate or finished does not.
  */

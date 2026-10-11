@@ -1,5 +1,5 @@
 /**
- * Git Checkpoint Repository Port (spec 135)
+ * Git Checkpoint Repository Port (spec 138)
  *
  * Persists the record of each hidden-ref checkpoint. The git objects and refs
  * themselves are managed by IGitCheckpointService.

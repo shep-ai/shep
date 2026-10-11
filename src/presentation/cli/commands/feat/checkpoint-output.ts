@@ -1,5 +1,5 @@
 /**
- * Terminal rendering shared by `shep feat checkpoints | diff | restore` (spec 135).
+ * Terminal rendering shared by `shep feat checkpoints | diff | restore` (spec 138).
  */
 
 import type { FileDiff } from '@/application/ports/output/services/git-pr-service.interface.js';

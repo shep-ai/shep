@@ -1,5 +1,5 @@
 /**
- * Feature Restore Command (spec 135)
+ * Feature Restore Command (spec 138)
  *
  * Rolls a feature's worktree back to one of its checkpoints. Only the
  * feature's own worktree, only while no agent is running; the branch is not

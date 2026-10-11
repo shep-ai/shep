@@ -1,6 +1,6 @@
 // @vitest-environment node
 
-/** DeleteFeatureCheckpointsUseCase (spec 135). */
+/** DeleteFeatureCheckpointsUseCase (spec 138). */
 
 import 'reflect-metadata';
 import { describe, it, expect, vi } from 'vitest';

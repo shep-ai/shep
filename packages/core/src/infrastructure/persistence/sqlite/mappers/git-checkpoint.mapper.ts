@@ -1,5 +1,5 @@
 /**
- * GitCheckpoint ⇄ git_checkpoints row (spec 135).
+ * GitCheckpoint ⇄ git_checkpoints row (spec 138).
  */
 
 import { GitCheckpointKind, type GitCheckpoint } from '../../../../domain/generated/output.js';

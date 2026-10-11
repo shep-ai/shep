@@ -1,4 +1,4 @@
-/** Git checkpoints (spec 135): migration 170 and every field through the repository. */
+/** Git checkpoints (spec 138): migration 170 and every field through the repository. */
 
 import 'reflect-metadata';
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';

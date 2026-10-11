@@ -1,7 +1,7 @@
 // @vitest-environment node
 
 /**
- * withCheckpoint (spec 135): a graph node wrapper that snapshots the worktree
+ * withCheckpoint (spec 138): a graph node wrapper that snapshots the worktree
  * around a node without ever changing the node's outcome.
  */
 

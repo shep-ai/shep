@@ -1,7 +1,7 @@
 // @vitest-environment node
 
 /**
- * CaptureFeatureCheckpointUseCase (spec 135).
+ * CaptureFeatureCheckpointUseCase (spec 138).
  *
  * TDD Phase: RED → GREEN
  */

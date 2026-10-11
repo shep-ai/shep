@@ -1,5 +1,5 @@
 /**
- * SQLite Git Checkpoint Repository (spec 135)
+ * SQLite Git Checkpoint Repository (spec 138)
  *
  * Implements IGitCheckpointRepository over the git_checkpoints table.
  */

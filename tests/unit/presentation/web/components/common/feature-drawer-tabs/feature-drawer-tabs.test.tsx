@@ -180,7 +180,7 @@ describe('FeatureDrawerTabs', () => {
       expect(screen.queryByRole('tab', { name: 'Log' })).not.toBeInTheDocument();
     });
 
-    it('shows the Checkpoints tab once the feature has an agent run (spec 135)', () => {
+    it('shows the Checkpoints tab once the feature has an agent run (spec 138)', () => {
       renderTabs();
       expect(screen.getByRole('tab', { name: 'Checkpoints' })).toBeInTheDocument();
     });

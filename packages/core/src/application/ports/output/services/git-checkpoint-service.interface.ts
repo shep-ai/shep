@@ -1,5 +1,5 @@
 /**
- * Git Checkpoint Service Port (spec 135)
+ * Git Checkpoint Service Port (spec 138)
  *
  * Git plumbing behind feature checkpoints. Implementations must never move a
  * branch or HEAD and never touch the real index while capturing; only

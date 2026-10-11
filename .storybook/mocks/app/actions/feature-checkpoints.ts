@@ -1,4 +1,4 @@
-/** Storybook mock of app/actions/feature-checkpoints (spec 135): fixture data, no DI. */
+/** Storybook mock of app/actions/feature-checkpoints (spec 138): fixture data, no DI. */
 import type { ActionResult } from '@/lib/action-outcome';
 import {
   fixtureCheckpointDiff,

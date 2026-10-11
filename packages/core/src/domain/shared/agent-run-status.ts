@@ -43,7 +43,7 @@ const EXECUTING_AGENT_RUN_STATUSES: ReadonlySet<AgentRunStatus> = new Set([
 /**
  * True while the run's agent may be changing files — narrower than
  * {@link isActiveAgentRunStatus}: a run parked at an approval gate is active
- * but not executing. Gates checkpoint restore (spec 135).
+ * but not executing. Gates checkpoint restore (spec 138).
  */
 export function isAgentRunExecuting(status: AgentRunStatus): boolean {
   return EXECUTING_AGENT_RUN_STATUSES.has(status);

@@ -1,7 +1,7 @@
 // @vitest-environment node
 
 /**
- * The worker's CheckpointRecorder (spec 135): routes graph-node events to the
+ * The worker's CheckpointRecorder (spec 138): routes graph-node events to the
  * capture use case and turns every failure into a log line.
  */
 

@@ -2,8 +2,8 @@
 # This is the source of truth. Markdown is auto-generated from this file.
 
 name: git-checkpoints
-number: 135
-branch: feat/135-git-checkpoints
+number: 138
+branch: feat/138-git-checkpoints
 oneLiner: |-
   A hidden-ref git checkpoint after every feature-agent step, so each step's changes can be
   diffed, compared with any other step, and rolled back in the feature's own worktree

@@ -1,5 +1,5 @@
 /**
- * Checkpoint Restore Policy (spec 135)
+ * Checkpoint Restore Policy (spec 138)
  *
  * Decides whether a feature's worktree may be restored to a checkpoint. Used
  * by RestoreFeatureCheckpointUseCase (to refuse) and by

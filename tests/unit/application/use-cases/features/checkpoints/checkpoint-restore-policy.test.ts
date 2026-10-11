@@ -1,7 +1,7 @@
 // @vitest-environment node
 
 /**
- * CheckpointRestorePolicy (spec 135): the one place that decides whether a
+ * CheckpointRestorePolicy (spec 138): the one place that decides whether a
  * feature's worktree may be restored, shared by restore and list.
  */
 

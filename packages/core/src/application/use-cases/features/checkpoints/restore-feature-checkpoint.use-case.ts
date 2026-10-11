@@ -1,5 +1,5 @@
 /**
- * Restore Feature Checkpoint Use Case (spec 135)
+ * Restore Feature Checkpoint Use Case (spec 138)
  *
  * Makes a feature's worktree match one of its checkpoints, when
  * CheckpointRestorePolicy allows it. A pre-restore checkpoint is captured

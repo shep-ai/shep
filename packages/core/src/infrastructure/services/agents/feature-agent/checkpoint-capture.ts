@@ -1,5 +1,5 @@
 /**
- * The worker's CheckpointRecorder (spec 135).
+ * The worker's CheckpointRecorder (spec 138).
  *
  * Bridges graph-node events to CaptureFeatureCheckpointUseCase, so the graph
  * factories stay free of DI. Every failure becomes a log line: a missing git,

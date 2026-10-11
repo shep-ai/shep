@@ -1,5 +1,5 @@
 /**
- * Git checkpoints (spec 135): the plumbing service, the repository and the
+ * Git checkpoints (spec 138): the plumbing service, the repository and the
  * use cases, plus string-token aliases for web server actions.
  */
 

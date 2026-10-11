@@ -5,7 +5,7 @@
  * - Unlinks the git worktree (preserving directory contents on disk)
  * - Deletes the local feature branch
  * - Deletes the remote feature branch (if it still exists)
- * - Deletes the feature's git checkpoints (spec 135)
+ * - Deletes the feature's git checkpoints (spec 138)
  *
  * All cleanup steps are non-fatal: errors are caught and logged as warnings
  * so that a cleanup failure never surfaces as a feature run failure.

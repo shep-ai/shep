@@ -1,5 +1,5 @@
 /**
- * Capture Feature Checkpoint Use Case (spec 135)
+ * Capture Feature Checkpoint Use Case (spec 138)
  *
  * Snapshots a feature's worktree into `refs/shep/checkpoints/<featureId>/<seq>-<node>`
  * and records it. A snapshot whose tree equals the latest checkpoint's is not

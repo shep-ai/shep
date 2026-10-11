@@ -1,5 +1,5 @@
 /**
- * Feature Diff Command (spec 135)
+ * Feature Diff Command (spec 138)
  *
  * What one step changed (`--to` alone), or the difference between any two
  * steps (`--from` and `--to`). A step is a sequence number, a step name

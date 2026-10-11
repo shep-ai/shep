@@ -1,7 +1,7 @@
 // @vitest-environment node
 
 /**
- * RestoreFeatureCheckpointUseCase (spec 135).
+ * RestoreFeatureCheckpointUseCase (spec 138).
  *
  * Restore writes to a working tree, so every refusal is tested: it must never
  * run against the repository's main checkout or while an agent may be writing.

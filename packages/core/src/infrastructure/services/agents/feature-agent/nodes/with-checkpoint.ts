@@ -1,5 +1,5 @@
 /**
- * Checkpoint wrapper for graph nodes (spec 135).
+ * Checkpoint wrapper for graph nodes (spec 138).
  *
  * Wraps a node that can change the feature's worktree so the worktree is
  * snapshotted into a hidden git ref around it: a baseline before the first

@@ -1,5 +1,5 @@
 /**
- * Migration 170: git_checkpoints (spec 135).
+ * Migration 170: git_checkpoints (spec 138).
  *
  * One row per hidden-ref checkpoint of a feature's worktree. The sequence is
  * unique per feature because the ref name embeds it.

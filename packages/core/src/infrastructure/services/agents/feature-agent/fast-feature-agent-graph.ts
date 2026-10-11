@@ -40,7 +40,7 @@ export interface FastFeatureAgentGraphDeps {
   extractMemoryDeps?: Omit<ExtractMemoryNodeDeps, 'executor'>;
   /** Selects the relevant project-memory subset per phase/task. */
   selectProjectMemory?: MemorySelector;
-  /** Snapshots the worktree around file-changing nodes (spec 135). */
+  /** Snapshots the worktree around file-changing nodes (spec 138). */
   checkpoints?: CheckpointRecorder;
 }
 

@@ -1,6 +1,6 @@
 // @vitest-environment node
 
-/** GetFeatureCheckpointDiffUseCase and ListFeatureCheckpointsUseCase (spec 135). */
+/** GetFeatureCheckpointDiffUseCase and ListFeatureCheckpointsUseCase (spec 138). */
 
 import 'reflect-metadata';
 import { describe, it, expect, beforeEach, vi } from 'vitest';

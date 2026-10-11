@@ -1,5 +1,5 @@
 /**
- * Test doubles for the two git checkpoint ports (spec 135).
+ * Test doubles for the two git checkpoint ports (spec 138).
  *
  * The repository fake keeps rows in memory and enforces UNIQUE(feature_id,
  * sequence) like the SQL does. The service double returns whatever tree the

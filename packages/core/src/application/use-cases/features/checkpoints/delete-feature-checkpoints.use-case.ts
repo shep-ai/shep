@@ -1,5 +1,5 @@
 /**
- * Delete Feature Checkpoints Use Case (spec 135)
+ * Delete Feature Checkpoints Use Case (spec 138)
  *
  * Removes a feature's hidden refs and their rows. Called when the feature's
  * worktree is removed or the feature is archived. Runs git from the

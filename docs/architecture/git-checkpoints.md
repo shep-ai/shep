@@ -1,7 +1,7 @@
 # Git Checkpoints
 
 After each feature-agent step that can change files, Shep snapshots the feature's worktree into a
-hidden git ref (spec 135). Each step's changes can then be diffed on their own, any two steps can
+hidden git ref (spec 138). Each step's changes can then be diffed on their own, any two steps can
 be compared, and the worktree can be rolled back to a step. These are not the LangGraph
 checkpoints (`IAgentCheckpointService`), which store the graph's state, not files.
 

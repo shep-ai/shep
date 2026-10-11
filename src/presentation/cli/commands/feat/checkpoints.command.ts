@@ -1,5 +1,5 @@
 /**
- * Feature Checkpoints Command (spec 135)
+ * Feature Checkpoints Command (spec 138)
  *
  * Lists the hidden-ref snapshots taken after each step of a feature's run.
  *

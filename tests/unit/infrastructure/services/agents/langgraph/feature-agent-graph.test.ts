@@ -652,7 +652,7 @@ describe('createFeatureAgentGraph', () => {
   });
 });
 
-describe('createFeatureAgentGraph — checkpoints (spec 135)', () => {
+describe('createFeatureAgentGraph — checkpoints (spec 138)', () => {
   it('captures after every producer node and never after a validate node', async () => {
     setupSpecFileMocks();
     const afterNode = vi.fn().mockResolvedValue(undefined);

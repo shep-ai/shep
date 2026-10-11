@@ -1,7 +1,7 @@
 'use server';
 
 /**
- * Server actions for feature checkpoints (spec 135). Each resolves one use
+ * Server actions for feature checkpoints (spec 138). Each resolves one use
  * case by string token; the guards (which worktree, agent running) live in core.
  */
 

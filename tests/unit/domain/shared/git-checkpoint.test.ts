@@ -1,7 +1,7 @@
 // @vitest-environment node
 
 /**
- * Git checkpoint domain helpers (spec 135).
+ * Git checkpoint domain helpers (spec 138).
  *
  * Every hidden ref name is built here, so these tests are the guard that a
  * node name or feature id can never smuggle an option, a path separator or a

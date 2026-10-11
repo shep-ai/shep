@@ -253,7 +253,7 @@ describe('ArchiveFeatureUseCase', () => {
     expect(result.lifecycle).toBe(SdlcLifecycle.Archived);
   });
 
-  it("deletes the feature's git checkpoints (spec 135)", async () => {
+  it("deletes the feature's git checkpoints (spec 138)", async () => {
     const feature = await useCase.execute('feat-123');
     expect(deleteCheckpoints.executeBestEffort).toHaveBeenCalledWith({
       featureId: feature.id,

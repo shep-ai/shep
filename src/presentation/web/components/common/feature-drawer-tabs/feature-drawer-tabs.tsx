@@ -162,7 +162,7 @@ function computeVisibleTabs(
     tabs.push('context');
   }
 
-  // Checkpoints tab (spec 135): worktree snapshots taken after each agent step.
+  // Checkpoints tab (spec 138): worktree snapshots taken after each agent step.
   if (node.hasAgentRun) {
     tabs.push('checkpoints');
   }

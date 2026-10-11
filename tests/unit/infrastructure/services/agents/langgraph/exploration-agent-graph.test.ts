@@ -415,7 +415,7 @@ describe('createExplorationAgentGraph', () => {
   });
 });
 
-describe('createExplorationAgentGraph — checkpoints (spec 135)', () => {
+describe('createExplorationAgentGraph — checkpoints (spec 138)', () => {
   it('captures the prototype before the graph waits for feedback', async () => {
     setupFileMocks();
     const afterNode = vi.fn().mockResolvedValue(undefined);

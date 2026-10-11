@@ -48,7 +48,7 @@ export interface FeatureAgentGraphDeps {
   selectProjectMemory?: MemorySelector;
   /**
    * When provided, the worktree is snapshotted into a hidden git ref around
-   * every node that can change files (spec 135).
+   * every node that can change files (spec 138).
    */
   checkpoints?: CheckpointRecorder;
 }

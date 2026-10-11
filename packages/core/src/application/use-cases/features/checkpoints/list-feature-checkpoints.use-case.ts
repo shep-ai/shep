@@ -1,5 +1,5 @@
 /**
- * List Feature Checkpoints Use Case (spec 135)
+ * List Feature Checkpoints Use Case (spec 138)
  *
  * The steps a feature's run recorded, oldest first, and whether the worktree
  * can be restored to one of them right now.

@@ -101,7 +101,7 @@ describe('AutoArchiveWatcherService', () => {
     watcher.stop();
   });
 
-  it("deletes an auto-archived feature's git checkpoints (spec 135)", async () => {
+  it("deletes an auto-archived feature's git checkpoints (spec 138)", async () => {
     const completed = {
       id: 'feat-done',
       name: 'Done',

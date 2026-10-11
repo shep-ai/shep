@@ -1,5 +1,5 @@
 /**
- * shep feat checkpoints / diff / restore (spec 135).
+ * shep feat checkpoints / diff / restore (spec 138).
  *
  * TDD Phase: RED-GREEN
  */

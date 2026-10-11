@@ -11,7 +11,7 @@
  *   in the database and restored when "Show Archived" is enabled
  * - The current lifecycle is preserved in previousLifecycle for unarchive restoration
  * - No agent cancellations are triggered and the branch and worktree are kept; the
- *   feature's git checkpoints (spec 135) are deleted
+ *   feature's git checkpoints (spec 138) are deleted
  */
 
 import { injectable, inject } from 'tsyringe';

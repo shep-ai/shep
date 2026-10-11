@@ -364,7 +364,7 @@ describe('CleanupFeatureWorktreeUseCase', () => {
     );
   });
 
-  it("deletes the feature's git checkpoints with the worktree (spec 135)", async () => {
+  it("deletes the feature's git checkpoints with the worktree (spec 138)", async () => {
     await useCase.execute('feat-123-full-uuid');
     expect(deleteCheckpoints.executeBestEffort).toHaveBeenCalledWith({
       featureId: 'feat-123-full-uuid',

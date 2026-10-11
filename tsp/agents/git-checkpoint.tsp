@@ -2,7 +2,7 @@
  * @module Shep.Agents.GitCheckpoint
  *
  * A snapshot of a feature's worktree taken after a feature-agent graph step
- * (spec 135). The snapshot is a git commit stored under a hidden ref,
+ * (spec 138). The snapshot is a git commit stored under a hidden ref,
  * `refs/shep/checkpoints/<featureId>/<sequence>-<node>`, built through a
  * temporary index so the feature branch, HEAD and the real index are never
  * touched. Rows are stored in the git_checkpoints table.

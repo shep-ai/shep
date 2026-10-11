@@ -1,5 +1,5 @@
 /**
- * GitCheckpointService against real git (spec 135).
+ * GitCheckpointService against real git (spec 138).
  *
  * The contract that matters most — "capture never touches the user's branch,
  * HEAD, index or files" — can only be proven by real git. The global/system
@@ -179,6 +179,18 @@ describe('GitCheckpointService (real git)', () => {
       'refs/shep/checkpoints/feat-10/0000-baseline'
     );
     expect(await service.deleteRefs(repo.root, PREFIX)).toBe(0);
+  });
+
+  it('refuses to snapshot a directory that is not the top of its own work tree', async () => {
+    // A worktree removed by post-merge cleanup can leave its directory behind;
+    // when that directory sits inside another repository, git would otherwise
+    // walk up and snapshot the parent checkout.
+    const nested = join(repo.root, 'leftover-worktree');
+    mkdirSync(nested);
+    writeFileSync(join(nested, 'stray.txt'), 'stray\n');
+    await expect(service.snapshotWorktree(nested)).rejects.toThrow(
+      /not the top of a git work tree/
+    );
   });
 
   it('captures on an unborn branch', async () => {

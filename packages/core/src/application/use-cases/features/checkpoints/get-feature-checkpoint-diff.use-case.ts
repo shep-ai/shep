@@ -1,5 +1,5 @@
 /**
- * Get Feature Checkpoint Diff Use Case (spec 135)
+ * Get Feature Checkpoint Diff Use Case (spec 138)
  *
  * What one step changed (`to` alone: diffed against the step before it), or
  * the difference between any two steps (`from` and `to`). Steps are selected

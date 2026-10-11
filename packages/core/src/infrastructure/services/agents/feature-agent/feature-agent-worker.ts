@@ -384,7 +384,7 @@ export async function runWorker(args: WorkerArgs): Promise<void> {
     taskText: string;
   }) => selectProjectMemoryUseCase.execute(input);
 
-  // Hidden-ref checkpoint after every file-changing node (spec 135).
+  // Hidden-ref checkpoint after every file-changing node (spec 138).
   const checkpoints = createCheckpointRecorder({
     capture: container.resolve(CaptureFeatureCheckpointUseCase),
     agentRunId: args.runId,

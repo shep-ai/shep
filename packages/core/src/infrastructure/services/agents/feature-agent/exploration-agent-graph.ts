@@ -33,7 +33,7 @@ export { FeatureAgentAnnotation, type FeatureAgentState } from './state.js';
  */
 export interface ExplorationAgentGraphDeps {
   executor: IAgentExecutor;
-  /** Snapshots the worktree around each prototype generation (spec 135). */
+  /** Snapshots the worktree around each prototype generation (spec 138). */
   checkpoints?: CheckpointRecorder;
 }
 

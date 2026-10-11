@@ -27,7 +27,7 @@ export class AutoArchiveWatcherService {
 
   /**
    * @param deleteCheckpoints - archiving deletes the feature's git checkpoints
-   *   (spec 135); resolved from the container at poll time when not given.
+   *   (spec 138); resolved from the container at poll time when not given.
    */
   constructor(
     featureRepo: IFeatureRepository,

@@ -327,7 +327,7 @@ describe('createFastFeatureAgentGraph', () => {
   });
 });
 
-describe('createFastFeatureAgentGraph — checkpoints (spec 135)', () => {
+describe('createFastFeatureAgentGraph — checkpoints (spec 138)', () => {
   it('captures after fast-implement', async () => {
     setupFileMocks();
     mockExecSync.mockReturnValue('M  src/index.ts\n');

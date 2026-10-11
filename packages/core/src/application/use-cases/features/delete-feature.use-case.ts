@@ -178,7 +178,7 @@ export class DeleteFeatureUseCase {
       // Worktree might already be removed - that's fine
     }
 
-    // Step snapshots of the removed worktree (spec 135).
+    // Step snapshots of the removed worktree (spec 138).
     await this.deleteCheckpoints.executeBestEffort({
       featureId: feature.id,
       repositoryPath: feature.repositoryPath,

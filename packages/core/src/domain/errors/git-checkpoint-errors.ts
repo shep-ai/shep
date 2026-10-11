@@ -1,5 +1,5 @@
 /**
- * Git checkpoint errors (spec 135).
+ * Git checkpoint errors (spec 138).
  *
  * Thrown by the checkpoint domain helpers and use cases. Presentation layers
  * match on the class to print the message instead of a stack.

@@ -2,7 +2,7 @@
 # This is the source of truth. Markdown is auto-generated from this file.
 
 name: git-checkpoints
-summary: Task breakdown for 135 — hidden-ref checkpoints per feature-agent step.
+summary: Task breakdown for 138 — hidden-ref checkpoints per feature-agent step.
 
 relatedFeatures:
   - 116-agent-harness-reliability
