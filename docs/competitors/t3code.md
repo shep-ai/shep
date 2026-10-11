@@ -444,3 +444,15 @@ The first-run notice lists every field, and a separate toggle keeps a user anony
 ### Keep as is
 
 C6 (WhatsApp via Baileys), K4 (clusters, harness and workflows stay in core), K5 (9 locales), D2 (no default-off rule for new areas).
+
+### Delegated decisions (2026-10-11)
+
+The owner asked Claude to settle the remaining open questions:
+
+| Question | Decision |
+| --- | --- |
+| Metrics identity | Usage events stay on by default with the first-run notice. The agent account hash, GitHub username and GitHub orgs become **opt-in** (off by default), which removes the GDPR concern of collecting personal data without consent. |
+| K2, three feature lists | Keep the control-center canvas and the `/features` table. Put the SDLC board behind a feature flag, off by default, and revisit once usage data exists. |
+| C2, software-factory flag defaults | Leave all 12 on until 30–60 days of usage data, then turn off what nobody uses. |
+| `conhost.exe` outliving closed terminals on Windows | Fix it; tracked as an issue. |
+| Next work after the current PRs merge | N1 (chat-first surface with rich inline UI, built on the Decision block registry from #922) and T4 (hidden-ref checkpoint after each pipeline step). |
