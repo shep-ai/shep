@@ -13,6 +13,7 @@
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import yaml from 'js-yaml';
+import { askingPolicyLine } from './asking-policy.js';
 import { readSpecFile } from '../node-helpers.js';
 import type { FeatureAgentState } from '../../state.js';
 
@@ -250,7 +251,10 @@ ${dirListing}
 - Keep changes minimal and focused on demonstrating the concept
 - Do NOT modify any spec YAML files
 - Do NOT enter plan mode — implement directly
-- Do NOT ask questions — make reasonable assumptions and proceed
+${askingPolicyLine(
+  state.decisionToolAvailable === true,
+  '- Do NOT ask questions — make reasonable assumptions and proceed'
+)}
 - You MUST create or modify actual code files — a plan or summary alone is not acceptable`);
 
   return sections.join('\n\n');

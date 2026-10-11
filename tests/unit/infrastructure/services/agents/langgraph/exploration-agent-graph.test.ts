@@ -142,6 +142,7 @@ describe('routeAfterPrototypeGenerate', () => {
       securityMode: 'Disabled' as FeatureAgentState['securityMode'],
       securityActionDispositions: {},
       mcpConfigPath: undefined,
+      decisionToolAvailable: false,
       iterationCount: 1,
       maxIterations: 10,
       feedbackHistory: [],

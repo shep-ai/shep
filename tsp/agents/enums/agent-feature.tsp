@@ -27,4 +27,7 @@ enum AgentFeature {
 
   @doc("Supports a reasoning effort level (AgentExecutionOptions.effort)")
   effort: "effort",
+
+  @doc("Honours AgentExecutionOptions.mcpConfigPath, so Shep can give the run MCP tools (spec 134)")
+  mcpConfig: "mcp-config",
 }

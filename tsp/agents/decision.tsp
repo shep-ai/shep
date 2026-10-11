@@ -133,3 +133,23 @@ model DecisionResponse {
   @doc("Typed answer; when non-empty it outranks the selected options")
   customText?: string;
 }
+
+/**
+ * Decision Outcome
+ *
+ * What became of an asked decision, as the feature's activity shows it.
+ */
+@doc("What became of an asked decision")
+enum DecisionOutcome {
+  @doc("Still waiting for an answer")
+  Pending: "pending",
+
+  @doc("A person (or the supervisor) answered")
+  Answered: "answered",
+
+  @doc("Nobody answered by the deadline; the agent proceeded with its recommended option")
+  Defaulted: "defaulted",
+
+  @doc("Cancelled without an answer")
+  Cancelled: "cancelled",
+}

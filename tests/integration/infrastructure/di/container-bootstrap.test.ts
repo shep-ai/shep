@@ -117,6 +117,7 @@ const WEB_ROUTE_TOKENS: readonly string[] = [
   'RecordTelemetryEventUseCase',
   // Spec 134: the unified decisions inbox.
   'ListAgentQuestionInboxUseCase',
+  'AskAgentDecisionUseCase',
   'AttachmentStorageService',
   'ConnectCloudProviderUseCase',
   'CreateGitRemoteUseCase',
