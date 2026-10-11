@@ -95,6 +95,7 @@ import "./workflow-step.tsp";
 
 // Agent collaboration & supervision (spec 093)
 import "./agent-message.tsp";
+import "./decision.tsp";
 import "./agent-question.tsp";
 import "./supervisor-policy.tsp";
 import "./supervisor-decision.tsp";

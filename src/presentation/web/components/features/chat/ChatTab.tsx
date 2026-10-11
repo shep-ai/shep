@@ -13,7 +13,7 @@ import { getDefaultAgentAndModel } from '@/app/actions/get-default-agent-and-mod
 import { AgentModelPicker } from '@/components/features/settings/AgentModelPicker';
 import { useChatRuntime } from './useChatRuntime';
 import { ChatComposer } from './ChatComposer';
-import { InteractionBubble } from './InteractionBubble';
+import { ThreadPendingDecision } from './ChatPendingDecision';
 import { StepTracker } from './StepTracker';
 import { SingleTurnCard, useTurnGroupsView, type TurnGroupView } from './turn-group-list';
 import { OperationRunCard, useOperationRuns, type OperationRun } from './operation-bubble';
@@ -465,6 +465,15 @@ export function ChatTab({
     void stopAgent();
   }, [stopAgent]);
 
+  // Spec 134: the agent's pending question renders inside the turn that
+  // asked it, through the shared DecisionPanel; the composer is its "Other".
+  const pendingDecision = pendingInteraction ? (
+    <ThreadPendingDecision interaction={pendingInteraction} onRespond={respondToInteraction} />
+  ) : null;
+  const hasInProgressTurn = timelineItems.some(
+    (item) => item.kind === 'turn' && item.turn?.status === 'in-progress'
+  );
+
   const composer = (
     <ChatComposer
       disabled={workflowInFlight}
@@ -533,7 +542,8 @@ export function ChatTab({
                            same item flips to `completed` status
                            and the card updates in place (same
                            React key, no remount).
-                        4. Pending interaction (awaiting user input)
+                        4. A pending agent question, inside the
+                           in-progress turn that asked it
                      All rendered in `beforeMessages` because the flat
                      thread below is dead — `hideAllMessages` zeroes
                      the persisted bubble list when turn groups are on,
@@ -556,14 +566,14 @@ export function ChatTab({
                   {turnGroupsEnabled
                     ? timelineItems.map((item, idx) => {
                         if (item.kind === 'turn' && item.turn) {
+                          const isInProgress = item.turn.status === 'in-progress';
                           return (
                             <SingleTurnCard
                               key={item.id}
                               group={item.turn}
                               allMessages={rawMessages}
-                              streaming={
-                                item.turn.status === 'in-progress' ? streamingState : undefined
-                              }
+                              streaming={isInProgress ? streamingState : undefined}
+                              decision={isInProgress ? pendingDecision : undefined}
                             />
                           );
                         }
@@ -581,23 +591,12 @@ export function ChatTab({
                         return null;
                       })
                     : null}
+                  {/* A question asked before any turn exists (e.g. during
+                      boot) sits at the chronological tail of the timeline. */}
+                  {turnGroupsEnabled && !hasInProgressTurn ? pendingDecision : null}
                 </>
               }
-              afterMessages={
-                turnGroupsEnabled ? (
-                  pendingInteraction ? (
-                    <InteractionBubble
-                      interaction={pendingInteraction}
-                      onSubmit={respondToInteraction}
-                    />
-                  ) : null
-                ) : pendingInteraction ? (
-                  <InteractionBubble
-                    interaction={pendingInteraction}
-                    onSubmit={respondToInteraction}
-                  />
-                ) : null
-              }
+              afterMessages={turnGroupsEnabled ? null : pendingDecision}
             />
           </AssistantRuntimeProvider>
         )}

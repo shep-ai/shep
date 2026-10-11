@@ -4,7 +4,11 @@ import { resolve } from '@/lib/server-container';
 import type { ListAgentQuestionsUseCase } from '@shepai/core/application/use-cases/agents/list-agent-questions.use-case';
 import type { AnswerAgentQuestionUseCase } from '@shepai/core/application/use-cases/agents/answer-agent-question.use-case';
 import type { CancelAgentQuestionUseCase } from '@shepai/core/application/use-cases/agents/cancel-agent-question.use-case';
-import type { AgentQuestion, AgentQuestionStatus } from '@shepai/core/domain/generated/output';
+import type {
+  AgentQuestion,
+  AgentQuestionStatus,
+  DecisionResponse,
+} from '@shepai/core/domain/generated/output';
 import { requireFeatureFlag } from '@/lib/feature-flags';
 import { questionAlreadySettledMessage } from '@shepai/core/domain/shared/agent-question-settlement';
 
@@ -36,7 +40,10 @@ export async function listAgentQuestions(
 export interface AnswerAgentQuestionActionInput {
   appId: string;
   questionId: string;
-  answer: string;
+  /** Typed answer (resolved against the question's decision). */
+  answer?: string;
+  /** Structured answer from the decision panel (spec 134). */
+  responses?: DecisionResponse[];
   answeredBy: string;
 }
 

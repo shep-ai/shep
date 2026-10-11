@@ -30,9 +30,13 @@ import {
   AgentQuestionKind,
   AgentQuestionStatus,
   AgentRunStatus,
+  DecisionKind,
+  DecisionResponseMode,
   type AgentRun,
+  type Decision,
   type Settings,
 } from '@/domain/generated/output.js';
+import { buildApprovalGateDecision } from '@/domain/shared/decision-builders.js';
 
 function makeSettingsRepo(collaboration: boolean): ISettingsRepository {
   return {
@@ -470,5 +474,150 @@ describe('AnswerAgentQuestionUseCase', () => {
     expect(result.forwardedToGate).toBe(false);
     expect(approve.execute).not.toHaveBeenCalled();
     expect(reject.execute).not.toHaveBeenCalled();
+  });
+
+  describe('decisions (spec 134)', () => {
+    const chatDecision: Decision = {
+      id: 'x',
+      kind: DecisionKind.ChatQuestion,
+      responseMode: DecisionResponseMode.Live,
+      questions: [
+        {
+          id: 'q1',
+          header: 'Store',
+          question: 'Which store?',
+          multiSelect: false,
+          allowCustom: true,
+          options: [
+            { id: 'o1', label: 'Redis', description: '' },
+            { id: 'o2', label: 'Memory', description: '' },
+          ],
+        },
+      ],
+    };
+
+    async function askWith(decision: Decision, runStatus = AgentRunStatus.running) {
+      const settings = makeSettingsRepo(true);
+      const ask = new AskAgentQuestionUseCase(
+        repo,
+        registry,
+        settings,
+        {
+          routeIfApplicable: vi.fn().mockResolvedValue({ evaluated: false, answered: false }),
+        } as any,
+        { execute: vi.fn().mockResolvedValue({ escalated: false }) } as any
+      );
+      const { question, awaiter } = await ask.execute({
+        appId: 'app-1',
+        agentRunId: 'run-1',
+        kind: AgentQuestionKind.blocking,
+        prompt: 'Which store?',
+        decision,
+        answerer: AgentQuestionAnswerer.either,
+      });
+      awaiter?.catch(() => undefined);
+      const approve = makeApproveUseCase();
+      const reject = makeRejectUseCase();
+      const useCase = new AnswerAgentQuestionUseCase(
+        repo,
+        registry,
+        settings,
+        makeAgentRunRepo({ id: 'run-1', status: runStatus }),
+        approve,
+        reject
+      );
+      return { question: question!, awaiter, useCase, approve, reject };
+    }
+
+    it('records responses and a readable summary as the answer', async () => {
+      const { question, awaiter, useCase } = await askWith(chatDecision);
+      const result = await useCase.execute({
+        appId: 'app-1',
+        questionId: question.id,
+        responses: [{ questionId: 'q1', optionIds: ['o1'] }],
+        answeredBy: 'user:web',
+      });
+      expect(result.question?.answer).toBe('Redis');
+      expect(result.question?.responses).toEqual([{ questionId: 'q1', optionIds: ['o1'] }]);
+      await expect(awaiter).resolves.toBe('Redis');
+    });
+
+    it('resolves a typed answer against the decision options', async () => {
+      const { question, useCase } = await askWith(chatDecision);
+      const result = await useCase.execute({
+        appId: 'app-1',
+        questionId: question.id,
+        answer: 'memory',
+        answeredBy: 'user:cli',
+      });
+      expect(result.question?.responses).toEqual([{ questionId: 'q1', optionIds: ['o2'] }]);
+      expect(result.question?.answer).toBe('Memory');
+    });
+
+    it('refuses responses that do not fit the decision and records nothing', async () => {
+      const { question, useCase } = await askWith(chatDecision);
+      await expect(
+        useCase.execute({
+          appId: 'app-1',
+          questionId: question.id,
+          responses: [{ questionId: 'q1', optionIds: ['o1', 'o2'] }],
+          answeredBy: 'user:web',
+        })
+      ).rejects.toThrow(/single option/);
+      expect((await repo.findById('app-1', question.id))?.status).toBe(AgentQuestionStatus.pending);
+    });
+
+    it('never forwards a non-gate decision to the approval gate, even when it says approve', async () => {
+      const decision: Decision = {
+        ...chatDecision,
+        questions: [
+          {
+            ...chatDecision.questions[0],
+            options: [{ id: 'approve', label: 'approve', description: '' }],
+          },
+        ],
+      };
+      const { question, useCase, approve } = await askWith(
+        decision,
+        AgentRunStatus.waitingApproval
+      );
+      const result = await useCase.execute({
+        appId: 'app-1',
+        questionId: question.id,
+        responses: [{ questionId: 'q1', optionIds: ['approve'] }],
+        answeredBy: 'user:web',
+      });
+      expect(result.forwardedToGate).toBe(false);
+      expect(approve.execute).not.toHaveBeenCalled();
+    });
+
+    it('forwards a gate decision by the selected option id', async () => {
+      const { question, useCase, approve } = await askWith(
+        buildApprovalGateDecision('g', 'plan'),
+        AgentRunStatus.waitingApproval
+      );
+      const result = await useCase.execute({
+        appId: 'app-1',
+        questionId: question.id,
+        responses: [{ questionId: 'gate', optionIds: ['approve'] }],
+        answeredBy: 'user:web',
+      });
+      expect(result.forwardedToGate).toBe(true);
+      expect(approve.execute).toHaveBeenCalledWith('run-1');
+    });
+
+    it('treats a typed note on a gate as a rejection carrying that feedback', async () => {
+      const { question, useCase, reject } = await askWith(
+        buildApprovalGateDecision('g', 'merge'),
+        AgentRunStatus.waitingApproval
+      );
+      await useCase.execute({
+        appId: 'app-1',
+        questionId: question.id,
+        responses: [{ questionId: 'gate', optionIds: ['approve'], customText: 'Split the PR' }],
+        answeredBy: 'user:web',
+      });
+      expect(reject.execute).toHaveBeenCalledWith('run-1', 'Split the PR');
+    });
   });
 });

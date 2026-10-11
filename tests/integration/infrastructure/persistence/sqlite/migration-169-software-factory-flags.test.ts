@@ -1,5 +1,5 @@
 /**
- * Migration 166 Integration Tests (spec 135)
+ * Migration 169 Integration Tests (spec 135)
  *
  * Adds one feature-flag column per software-factory area, defaulting to on
  * so existing installs keep every area; re-running is a no-op.
@@ -10,7 +10,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import type Database from 'better-sqlite3';
 import { createInMemoryDatabase } from '../../../../helpers/database.helper.js';
 import { runSQLiteMigrations } from '@/infrastructure/persistence/sqlite/migrations.js';
-import { up } from '@/infrastructure/persistence/sqlite/migrations/166-add-software-factory-feature-flags.js';
+import { up } from '@/infrastructure/persistence/sqlite/migrations/169-add-software-factory-feature-flags.js';
 
 const COLUMNS = [
   'feature_flag_spaces',
@@ -27,7 +27,7 @@ const COLUMNS = [
   'feature_flag_factory',
 ];
 
-describe('Migration 166 — software factory feature flags', () => {
+describe('Migration 169 — software factory feature flags', () => {
   let db: Database.Database;
 
   beforeEach(async () => {

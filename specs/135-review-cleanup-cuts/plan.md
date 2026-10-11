@@ -31,7 +31,7 @@ then cleanup.
   catalog completeness, list/set use cases, supply-chain helper, flag gate helper, sidebar
   link visibility, CLI commands (contributors stale-issues/recap, settings flags, gated group).
 - Integration: settings repository round-trip with non-default values for every new column;
-  migration 166 is idempotent and defaults to 1; legacy `aider` agent type reads back as the
+  migration 169 is idempotent and defaults to 1; legacy `aider` agent type reads back as the
   default; DI bootstrap resolves the new use cases.
 - Storybook: FeatureFlagsList stories; existing stories updated for removed props.
 

@@ -45,7 +45,10 @@ import {
   SupervisorAutonomy,
   SupervisorVerdict,
   type AgentQuestion,
+  type Decision,
+  type DecisionResponse,
 } from '../../../domain/generated/output.js';
+import { isGateQuestion } from '../../../domain/shared/decision-builders.js';
 
 const SUPERVISOR_QUESTION_PROMPT_PREFIX = 'gate.';
 const APPROVE_ANSWER = 'approve';
@@ -84,7 +87,7 @@ export class AgentQuestionSupervisorRouter {
       return { evaluated: false, answered: false };
     }
 
-    if (isGateLinkedPrompt(question.prompt)) {
+    if (isGateQuestion(question) || isGateLinkedPrompt(question.prompt)) {
       // Gate-emitted question: the worker already routes the
       // corresponding gate event through the supervisor, so routing
       // here would double-evaluate.
@@ -115,7 +118,9 @@ export class AgentQuestionSupervisorRouter {
           questionId: question.id,
           questionKind: question.kind,
           prompt: question.prompt,
-          options: parseOptions(question.optionsJson),
+          options: question.decision
+            ? question.decision.questions.flatMap((q) => q.options.map((o) => o.label))
+            : parseOptions(question.optionsJson),
           sourceEventId: question.id,
         },
         supervisorRunId,
@@ -156,16 +161,23 @@ export class AgentQuestionSupervisorRouter {
     const answer = mapVerdictToAnswer(verdict);
     if (!answer) return false;
 
+    // A decision is answered only by an option the verdict names — never by
+    // the verdict word as typed text (spec 134).
+    const responses = question.decision
+      ? responsesForVerdict(question.decision, answer)
+      : undefined;
+    if (question.decision && !responses) return false;
+
     // Respect the question's option set when present — refuse to write
     // an answer that would fail validation in AnswerAgentQuestion.
     const options = parseOptions(question.optionsJson);
-    if (options && !options.includes(answer)) return false;
+    if (!question.decision && options && !options.includes(answer)) return false;
 
     try {
       await this.answerAgentQuestion.execute({
         appId: question.appId ?? '',
         questionId: question.id,
-        answer,
+        ...(responses ? { responses } : { answer }),
         answeredBy: `supervisor:${supervisorRunId}`,
       });
       return true;
@@ -186,6 +198,19 @@ function parseOptions(optionsJson: string | undefined): string[] | undefined {
     // Malformed JSON — treat as no options.
   }
   return undefined;
+}
+
+/** Select, in every question, the option whose id or label is the verdict word. */
+function responsesForVerdict(decision: Decision, verdict: string): DecisionResponse[] | undefined {
+  const responses: DecisionResponse[] = [];
+  for (const q of decision.questions) {
+    const option = q.options.find(
+      (o) => o.id.toLowerCase() === verdict || o.label.trim().toLowerCase() === verdict
+    );
+    if (!option) return undefined;
+    responses.push({ questionId: q.id, optionIds: [option.id] });
+  }
+  return responses;
 }
 
 function mapVerdictToAnswer(verdict: SupervisorVerdict): string | null {

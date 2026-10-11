@@ -47,7 +47,7 @@ filesToCreate:
   - packages/core/src/domain/shared/supply-chain-security.ts
   - packages/core/src/application/use-cases/settings/list-feature-flags.use-case.ts
   - packages/core/src/application/use-cases/settings/set-feature-flag.use-case.ts
-  - packages/core/src/infrastructure/persistence/sqlite/migrations/166-add-software-factory-feature-flags.ts
+  - packages/core/src/infrastructure/persistence/sqlite/migrations/169-add-software-factory-feature-flags.ts
   - src/presentation/cli/commands/settings/flags.command.ts
   - src/presentation/cli/commands/feature-flag-gate.ts
   - src/presentation/web/app/settings/feature-flags/page.tsx
@@ -109,7 +109,7 @@ content: |
     catalog completeness, list/set use cases, supply-chain helper, flag gate helper, sidebar
     link visibility, CLI commands (contributors stale-issues/recap, settings flags, gated group).
   - Integration: settings repository round-trip with non-default values for every new column;
-    migration 166 is idempotent and defaults to 1; legacy `aider` agent type reads back as the
+    migration 169 is idempotent and defaults to 1; legacy `aider` agent type reads back as the
     default; DI bootstrap resolves the new use cases.
   - Storybook: FeatureFlagsList stories; existing stories updated for removed props.
 

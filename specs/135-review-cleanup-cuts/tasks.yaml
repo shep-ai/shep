@@ -116,7 +116,7 @@ tasks:
   estimatedEffort: S
 - id: task-6
   title: Add per-area software-factory flags
-  description: Twelve flags in TypeSpec, defaults (true), migration 166 (DEFAULT 1), mapper, repository
+  description: Twelve flags in TypeSpec, defaults (true), migration 169 (DEFAULT 1), mapper, repository
     SQL and web flags state.
   state: Done
   dependencies: []
@@ -126,7 +126,7 @@ tasks:
   tdd:
     red:
     - Repository round-trip with all twelve false
-    - Migration 166 idempotency test
+    - Migration 169 idempotency test
     green:
     - Wire the flags
     refactor:
