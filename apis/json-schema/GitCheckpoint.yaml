@@ -1,0 +1,62 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: GitCheckpoint.yaml
+type: object
+properties:
+  featureId:
+    type: string
+    description: Feature this checkpoint belongs to
+  agentRunId:
+    type: string
+    description: Agent run that produced the step, when one was running
+  sequence:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Position within the feature's checkpoints; the baseline is 0
+  kind:
+    $ref: GitCheckpointKind.yaml
+    description: Why the checkpoint was taken
+  node:
+    type: string
+    description: Graph node name (implement, repair_research, merge, ...) or baseline / pre-restore
+  ref:
+    type: string
+    description: Full hidden ref name, e.g. refs/shep/checkpoints/<featureId>/0003-implement
+  commitSha:
+    type: string
+    description: Checkpoint commit the ref points at
+  treeSha:
+    type: string
+    description: "Tree of the checkpoint commit: the worktree content at capture time"
+  headSha:
+    type: string
+    description: Branch HEAD at capture time (absent on an unborn branch)
+  filesChanged:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Files changed versus the previous checkpoint
+  additions:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Lines added versus the previous checkpoint
+  deletions:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Lines deleted versus the previous checkpoint
+required:
+  - featureId
+  - sequence
+  - kind
+  - node
+  - ref
+  - commitSha
+  - treeSha
+  - filesChanged
+  - additions
+  - deletions
+allOf:
+  - $ref: BaseEntity.yaml
+description: A hidden-ref snapshot of a feature's worktree after one feature-agent step
