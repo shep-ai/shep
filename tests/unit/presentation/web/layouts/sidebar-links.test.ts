@@ -32,6 +32,7 @@ const OFF = {
   docsFirst: false,
   autopilot: false,
   factory: false,
+  sdlcBoard: false,
 } satisfies FeatureFlagsState;
 
 describe('sidebar links', () => {
@@ -76,6 +77,11 @@ describe('sidebar links', () => {
   ] as const)('shows the %s area at %s only while its flag is on (spec 135)', (flag, href) => {
     expect(visibleSidebarLinks(OFF).map((l) => l.href)).not.toContain(href);
     expect(visibleSidebarLinks({ ...OFF, [flag]: true }).map((l) => l.href)).toContain(href);
+  });
+
+  it('shows the SDLC Board only while sdlcBoard is on (spec 140)', () => {
+    expect(visibleSidebarLinks(OFF).map((l) => l.href)).not.toContain('/sdlc');
+    expect(visibleSidebarLinks({ ...OFF, sdlcBoard: true }).map((l) => l.href)).toContain('/sdlc');
   });
 
   it('shows /connections for either trackers or Notion knowledge', () => {

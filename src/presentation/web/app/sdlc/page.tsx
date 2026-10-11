@@ -1,4 +1,5 @@
 import { resolve } from '@/lib/server-container';
+import { requireFeaturePage } from '@/lib/require-feature-page';
 import type { ListSdlcBoardUseCase } from '@shepai/core/application/use-cases/sdlc-board/list-sdlc-board.use-case';
 import { SdlcBoardClient } from '@/components/features/sdlc-board/sdlc-board-client';
 
@@ -6,6 +7,7 @@ import { SdlcBoardClient } from '@/components/features/sdlc-board/sdlc-board-cli
 export const dynamic = 'force-dynamic';
 
 export default async function SdlcPage() {
+  requireFeaturePage('sdlcBoard');
   const useCase = resolve<ListSdlcBoardUseCase>('ListSdlcBoardUseCase');
   const board = await useCase.execute();
 

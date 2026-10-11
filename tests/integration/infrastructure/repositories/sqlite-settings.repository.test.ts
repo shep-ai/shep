@@ -555,6 +555,21 @@ describe('SQLiteSettingsRepository', () => {
       for (const flag of FACTORY_FLAGS) expect(updated?.featureFlags?.[flag], flag).toBe(true);
     });
 
+    it('round-trips the SDLC board flag, off by default (spec 140)', async () => {
+      const settings = createTestSettings();
+      settings.featureFlags = createDefaultSettings().featureFlags!;
+
+      await repository.initialize(settings);
+      const loaded = await repository.load();
+      expect(loaded?.featureFlags?.sdlcBoard).toBe(false);
+
+      await repository.update({
+        ...loaded!,
+        featureFlags: { ...loaded!.featureFlags!, sdlcBoard: true },
+      });
+      expect((await repository.load())?.featureFlags?.sdlcBoard).toBe(true);
+    });
+
     it('keeps an ASPM flag a user already turned on now that the default is off', async () => {
       const settings = createTestSettings();
       settings.featureFlags = { ...createDefaultSettings().featureFlags!, aspm: true };
@@ -594,6 +609,7 @@ describe('SQLiteSettingsRepository', () => {
         docsFirst: false,
         autopilot: false,
         factory: false,
+        sdlcBoard: false,
       };
 
       await repository.initialize(settings);
@@ -625,6 +641,7 @@ describe('SQLiteSettingsRepository', () => {
         docsFirst: false,
         autopilot: false,
         factory: false,
+        sdlcBoard: false,
       });
     });
 
@@ -662,6 +679,7 @@ describe('SQLiteSettingsRepository', () => {
         docsFirst: false,
         autopilot: false,
         factory: false,
+        sdlcBoard: false,
       });
     });
 
@@ -695,6 +713,7 @@ describe('SQLiteSettingsRepository', () => {
         docsFirst: false,
         autopilot: false,
         factory: false,
+        sdlcBoard: false,
       };
       settings.updatedAt = new Date('2025-01-02T00:00:00Z');
       await repository.update(settings);
@@ -726,6 +745,7 @@ describe('SQLiteSettingsRepository', () => {
         docsFirst: false,
         autopilot: false,
         factory: false,
+        sdlcBoard: false,
       });
     });
 
@@ -757,6 +777,7 @@ describe('SQLiteSettingsRepository', () => {
         docsFirst: false,
         autopilot: false,
         factory: false,
+        sdlcBoard: false,
       };
 
       await repository.initialize(settings);
@@ -1138,6 +1159,7 @@ describe('SQLiteSettingsRepository', () => {
         docsFirst: false,
         autopilot: false,
         factory: false,
+        sdlcBoard: false,
       };
       await repository.initialize(settings);
 

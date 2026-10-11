@@ -10,8 +10,7 @@
 import { injectable } from 'tsyringe';
 import { randomUUID } from 'node:crypto';
 import { createRequire } from 'node:module';
-import { statSync } from 'node:fs';
-import { dirname } from 'node:path';
+import { dirname, win32 } from 'node:path';
 import type {
   CreatedTerminalSession,
   CreateTerminalSessionInput,
@@ -21,6 +20,8 @@ import type {
 } from '../../../application/ports/output/services/terminal-session-service.interface.js';
 import { IS_WINDOWS } from '../../platform.js';
 import { ensureSpawnHelperExecutable, explainSpawnError } from './pty-spawn-helper.js';
+import { assertUsableCwd } from './terminal-cwd.js';
+import { ConptyHostReaper, type SessionProcess } from './conpty-host-reaper.js';
 import type * as NodePty from 'node-pty';
 
 // node-pty is a native CJS module — keep it behind a lazy-resolved handle
@@ -40,16 +41,37 @@ interface SessionEntry {
   exitListeners: Set<TerminalExitListener>;
   exited: boolean;
   exitCode: number | null;
+  /** Resolves when the shell has exited (the pty's exit event fired). */
+  exitPromise: Promise<void>;
+  /**
+   * Windows: the ConPTY host serving this shell, captured while it was alive
+   * so close() can terminate exactly that process if it outlives the shell.
+   */
+  consoleHost: Promise<SessionProcess | null>;
 }
 
 const MAX_SCROLLBACK_BYTES = 256 * 1024; // 256 KB per session
+
+/**
+ * How long close() waits for the shell to exit after the pty is killed. The
+ * exit event normally lands within a second; the ceiling only matters when
+ * the pty never reports one, and the Windows reaper still runs after it.
+ */
+const SHELL_EXIT_TIMEOUT_MS = 5_000;
+
+/** Delay before an exited session's entry is dropped, for late unsubscribes. */
+const EXITED_SESSION_RETENTION_MS = 5_000;
 
 const requireCjs = createRequire(import.meta.url);
 
 @injectable()
 export class PtyTerminalSessionService implements ITerminalSessionService {
   private readonly sessions = new Map<string, SessionEntry>();
+  /** Teardowns in flight, so a repeated close() awaits the same one. */
+  private readonly closing = new Map<string, Promise<void>>();
   private ptyModule: PtyModule | null = null;
+
+  constructor(private readonly hostReaper: ConptyHostReaper = new ConptyHostReaper()) {}
 
   private loadPty(): PtyModule {
     if (this.ptyModule) return this.ptyModule;
@@ -75,27 +97,7 @@ export class PtyTerminalSessionService implements ITerminalSessionService {
     const cols = input.cols && input.cols > 0 ? input.cols : 80;
     const rows = input.rows && input.rows > 0 ? input.rows : 24;
 
-    // Validate cwd exists and is accessible before spawning to prevent posix_spawn errors.
-    // Only the stat call is guarded — putting the isDirectory check inside the try would
-    // make its own throw fall through to the generic "Cannot access" branch below.
-    let stat;
-    try {
-      stat = statSync(input.cwd);
-    } catch (error: unknown) {
-      if (error instanceof Error && 'code' in error) {
-        const code = (error as NodeJS.ErrnoException).code;
-        if (code === 'ENOENT') {
-          throw new Error(`Working directory does not exist: ${input.cwd}`);
-        }
-        if (code === 'EACCES') {
-          throw new Error(`Permission denied accessing working directory: ${input.cwd}`);
-        }
-      }
-      throw new Error(`Cannot access working directory: ${input.cwd}`);
-    }
-    if (!stat.isDirectory()) {
-      throw new Error(`Working directory is not a directory: ${input.cwd}`);
-    }
+    assertUsableCwd(input.cwd);
 
     let proc: NodePty.IPty;
     try {
@@ -118,6 +120,10 @@ export class PtyTerminalSessionService implements ITerminalSessionService {
     }
 
     const id = randomUUID();
+    let markExited!: () => void;
+    const exitPromise = new Promise<void>((resolve) => {
+      markExited = resolve;
+    });
     const entry: SessionEntry = {
       id,
       pty: proc,
@@ -129,6 +135,9 @@ export class PtyTerminalSessionService implements ITerminalSessionService {
       exitListeners: new Set(),
       exited: false,
       exitCode: null,
+      exitPromise,
+      // Must start now: the query needs the shell alive to find its host.
+      consoleHost: IS_WINDOWS ? this.hostReaper.captureHost(proc.pid) : Promise.resolve(null),
     };
     this.sessions.set(id, entry);
 
@@ -152,6 +161,11 @@ export class PtyTerminalSessionService implements ITerminalSessionService {
     proc.onExit(({ exitCode }) => {
       entry.exited = true;
       entry.exitCode = exitCode;
+      markExited();
+      // A shell that exits on its own (`exit`) can leave its host behind too.
+      if (!this.closing.has(id)) {
+        void entry.consoleHost.then((host) => this.reapWindowsSession(entry, host));
+      }
       for (const listener of entry.exitListeners) {
         try {
           listener(exitCode);
@@ -162,7 +176,7 @@ export class PtyTerminalSessionService implements ITerminalSessionService {
       // Keep entry briefly so late SSE unsubscribes still work, then drop.
       setTimeout(() => {
         this.sessions.delete(id);
-      }, 5_000);
+      }, EXITED_SESSION_RETENTION_MS).unref();
     });
 
     return { id, shell, cwd: input.cwd };
@@ -232,14 +246,60 @@ export class PtyTerminalSessionService implements ITerminalSessionService {
     return this.sessions.has(sessionId);
   }
 
-  close(sessionId: string): void {
+  close(sessionId: string): Promise<void> {
+    const pending = this.closing.get(sessionId);
+    if (pending) return pending;
     const entry = this.sessions.get(sessionId);
-    if (!entry) return;
+    if (!entry) return Promise.resolve();
+    this.sessions.delete(sessionId);
+    const teardown = this.teardown(entry).finally(() => this.closing.delete(sessionId));
+    this.closing.set(sessionId, teardown);
+    return teardown;
+  }
+
+  /**
+   * Kill the pty and wait until its processes are actually gone.
+   *
+   * `pty.kill()` only signals: the shell exits asynchronously and keeps its
+   * cwd locked until it does (EBUSY on Windows). On Windows the ConPTY host
+   * is a separate child of ours that can outlive the shell (#927), so after
+   * the exit event both are terminated by their captured PIDs if still alive.
+   */
+  private async teardown(entry: SessionEntry): Promise<void> {
+    // The host must be captured before the kill: the query reads it from
+    // the live shell. It normally finished long before the user closes.
+    const consoleHost = await entry.consoleHost;
     try {
       entry.pty.kill();
     } catch {
-      // ignore
+      // Already exited.
     }
-    this.sessions.delete(sessionId);
+    await this.waitForExit(entry);
+    await this.reapWindowsSession(entry, consoleHost);
+  }
+
+  /** Windows: terminate the shell and its ConPTY host if either survived. */
+  private async reapWindowsSession(
+    entry: SessionEntry,
+    consoleHost: SessionProcess | null
+  ): Promise<void> {
+    if (!IS_WINDOWS) return;
+    const processes: SessionProcess[] = [
+      { pid: entry.pty.pid, image: win32.basename(entry.shell) },
+    ];
+    if (consoleHost) processes.push(consoleHost);
+    await this.hostReaper.reap(processes);
+  }
+
+  private waitForExit(entry: SessionEntry): Promise<void> {
+    if (entry.exited) return Promise.resolve();
+    return new Promise<void>((resolve) => {
+      const timer = setTimeout(resolve, SHELL_EXIT_TIMEOUT_MS);
+      timer.unref();
+      void entry.exitPromise.then(() => {
+        clearTimeout(timer);
+        resolve();
+      });
+    });
   }
 }

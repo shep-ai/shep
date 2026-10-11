@@ -47,7 +47,7 @@ export const SIDEBAR_LINKS: readonly SidebarLink[] = [
   { icon: LayoutGrid, labelKey: 'applications', href: '/applications' },
   { icon: Server, labelKey: 'clusters', href: '/clusters', prefix: true, flag: 'clusters' },
   { icon: TableProperties, labelKey: 'inventory', href: '/features' },
-  { icon: KanbanSquare, label: 'SDLC Board', href: '/sdlc', prefix: true },
+  { icon: KanbanSquare, label: 'SDLC Board', href: '/sdlc', prefix: true, flag: 'sdlcBoard' },
   { icon: Brain, labelKey: 'projectMemory', href: '/memory', prefix: true },
   { icon: Boxes, labelKey: 'spaces', href: '/spaces', prefix: true, flag: 'spaces' },
   {

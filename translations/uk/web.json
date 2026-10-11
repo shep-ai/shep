@@ -297,6 +297,8 @@
       "autopilotDescription": "Дозволити простору самостійно досліджувати, виправляти й будувати в межах своєї політики",
       "factory": "Фабрика",
       "factoryDescription": "Показувати сторінку стану фабрики кожного простору",
+      "sdlcBoard": "Дошка SDLC",
+      "sdlcBoardDescription": "Показувати дошку SDLC: живу дошку завдань агентів у всіх активних функціях",
       "groupPlatform": "Платформа",
       "groupSoftwareFactory": "Програмна фабрика",
       "groupExperimental": "Експериментальні",

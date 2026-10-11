@@ -1,0 +1,87 @@
+# Research Artifact (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: sdlc-board-flag
+summary: Gate the SDLC board with a catalog feature flag, reusing spec 135's gating helpers
+
+# Relationships
+relatedFeatures:
+  - '135-review-cleanup-cuts'
+technologies:
+  - TypeSpec
+  - Next.js
+relatedLinks: []
+
+# Structured technology decisions
+decisions:
+  - title: Default value and storage of the flag
+    chosen: '`sdlcBoard = false` in TypeSpec and defaults, migration 171 column DEFAULT 0'
+    rejected:
+      - 'Default on, flipped later — contradicts the owner decision'
+      - 'Env-var only flag — would not show on the flags view and would not persist'
+    rationale: >
+      Every catalog flag is a persisted settings column. DEFAULT 0 turns the board off for
+      existing installs too, which is the owner's decision; users who want it turn it on.
+  - title: Where the flag is listed
+    chosen: Platform group of FEATURE_FLAG_CATALOG
+    rejected:
+      - 'SoftwareFactory — the board is not part of the software-factory areas'
+      - 'Experimental — the board is a finished view, not an experiment'
+    rationale: The board is a cross-feature product view like Projects or code review.
+  - title: How API routes answer while a flag is off
+    chosen: A shared `featureNotFound()` 404 helper in `lib/feature-gate.ts`, used by
+      /api/sdlc-events and the existing feedback/alerts intake routes
+    rejected:
+      - 'Reuse `intakeDisabled()` from the intake module — wrong module for an SSE route'
+      - 'A second copy of the 404 response — duplication'
+    rationale: >
+      Spec 135 added `intakeDisabled()` for two intake routes; a third gated route makes it a
+      shared concern, so it moves to a feature-gate module that `requireFeaturePage` also uses.
+  - title: How server actions refuse while the flag is off
+    chosen: Return `{ error }` with a shared message before resolving the use case
+    rejected:
+      - 'Throw — the board client already handles the `{ error }` result shape'
+      - 'Leave actions ungated — they stay callable by action id even when the page is gone'
+    rationale: Matches the actions' existing result contract.
+  - title: Agent-side board tracking
+    chosen: Keep recording board tasks regardless of the flag
+    rejected:
+      - 'Stop the tracker while the flag is off — turning the flag on would show a partial board'
+    rationale: The flag hides a view; it does not change what the agent records.
+
+# Open questions (should be resolved by end of research)
+openQuestions: []
+
+# Markdown content (the full research document)
+content: |
+  ## Technology Decisions
+
+  ### Flag default and storage
+  `sdlcBoard` defaults to `false` and is stored in `feature_flag_sdlc_board INTEGER NOT NULL
+  DEFAULT 0` (migration 171). Existing installs read 0, so the board is off after upgrade.
+
+  ### Catalog group
+  Platform — the board is a product view across features, like Projects.
+
+  ### Shared 404 for gated API routes
+  `intakeDisabled()` moves to `lib/feature-gate.ts` as `featureNotFound()`, next to
+  `isFeatureOn()`, which `requireFeaturePage()` now uses too.
+
+  ### Server actions
+  The four board actions return `{ error: FEATURE_OFF_ERROR }` while the flag is off.
+
+  ### Board tracker
+  Unchanged; the agent keeps writing `sdlc_tasks` rows.
+
+  ## Library Analysis
+
+  No new libraries.
+
+  ## Security Considerations
+
+  Gating the API route and server actions keeps the board's data and mutations unreachable while
+  the view is off, not just unlinked.
+
+  ## Performance Implications
+
+  While the flag is off no client opens the 2-second polling SSE stream. No other effect.

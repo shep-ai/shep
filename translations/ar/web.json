@@ -297,6 +297,8 @@
       "autopilotDescription": "السماح لمساحة بالتحقيق والإصلاح والبناء بنفسها ضمن سياستها",
       "factory": "المصنع",
       "factoryDescription": "عرض صفحة حالة المصنع لكل مساحة",
+      "sdlcBoard": "لوحة SDLC",
+      "sdlcBoardDescription": "عرض لوحة SDLC: لوحة مباشرة لمهام الوكلاء عبر الميزات النشطة",
       "groupPlatform": "المنصة",
       "groupSoftwareFactory": "مصنع البرمجيات",
       "groupExperimental": "تجريبي",

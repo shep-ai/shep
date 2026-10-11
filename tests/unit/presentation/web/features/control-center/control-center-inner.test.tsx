@@ -166,6 +166,7 @@ const flagsWithCollaboration: FeatureFlagsState = {
   docsFirst: true,
   autopilot: true,
   factory: true,
+  sdlcBoard: false,
 };
 
 const repoNode = {

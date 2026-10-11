@@ -15,6 +15,7 @@
  */
 
 import { resolve } from '@/lib/server-container';
+import { featureNotFound, isFeatureOn } from '@/lib/feature-gate';
 import type { ISdlcTaskRepository } from '@shepai/core/application/ports/output/repositories/sdlc-task-repository.interface';
 import type { ISdlcSubTaskRepository } from '@shepai/core/application/ports/output/repositories/sdlc-subtask-repository.interface';
 import type { SdlcTask, SdlcSubTask } from '@shepai/core/domain/generated/output';
@@ -79,6 +80,7 @@ function toSubTaskCache(s: SdlcSubTask): CachedSdlcSubTask {
 }
 
 export async function GET(request: Request) {
+  if (!isFeatureOn('sdlcBoard')) return featureNotFound();
   const url = new URL(request.url);
   const featureIdParam = url.searchParams.get('featureId');
 

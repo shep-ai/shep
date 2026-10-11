@@ -297,6 +297,8 @@
       "autopilotDescription": "מרחב חוקר, מתקן ובונה בעצמו במסגרת המדיניות שלו",
       "factory": "מפעל",
       "factoryDescription": "הצגת דף מצב המפעל של כל מרחב",
+      "sdlcBoard": "לוח SDLC",
+      "sdlcBoardDescription": "הצגת לוח ה-SDLC: לוח חי של משימות הסוכנים בכל הפיצ׳רים הפעילים",
       "groupPlatform": "פלטפורמה",
       "groupSoftwareFactory": "מפעל תוכנה",
       "groupExperimental": "ניסיוני",

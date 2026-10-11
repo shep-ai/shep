@@ -49,6 +49,10 @@ export const FEATURE_FLAG_CATALOG: Readonly<
     group: FeatureFlagGroup.Platform,
     description: 'Security posture management (/aspm, `shep aspm`) and supply-chain enforcement',
   },
+  sdlcBoard: {
+    group: FeatureFlagGroup.Platform,
+    description: 'SDLC board: /sdlc, a live board of agent tasks across active features',
+  },
   spaces: {
     group: FeatureFlagGroup.SoftwareFactory,
     description: 'Spaces and product lines: /spaces and `shep space`',

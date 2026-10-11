@@ -102,6 +102,10 @@ properties:
     type: boolean
     default: true
     description: "Software factory: factory status — /factory and `shep factory` (spec 132)"
+  sdlcBoard:
+    type: boolean
+    default: false
+    description: SDLC board — /sdlc, its live task stream and board actions; off by default (spec 140)
 required:
   - envDeploy
   - debug
@@ -128,4 +132,5 @@ required:
   - docsFirst
   - autopilot
   - factory
+  - sdlcBoard
 description: Feature flag toggles for runtime feature control

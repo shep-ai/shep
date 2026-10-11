@@ -372,6 +372,7 @@ to turn the flag on).
 | `githubImport`       | on      | GitHub repository import                                         |
 | `bedrockIntegration` | on      | `shep bedrock`                                                   |
 | `aspm`               | off     | `shep aspm`, `/aspm`, supply-chain enforcement (`shep security`) |
+| `sdlcBoard`          | off     | `/sdlc`, its live task stream and board actions                  |
 | `spaces`             | on      | `/spaces`, `shep space`                                          |
 | `trackers`           | on      | `/connections`, `shep connection`, `shep sync`, tracker sync     |
 | `knowledge`          | on      | `shep knowledge`, Notion sync                                    |

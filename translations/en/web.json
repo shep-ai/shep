@@ -297,6 +297,8 @@
       "autopilotDescription": "Let a space investigate, fix and build on its own within its policy",
       "factory": "Factory",
       "factoryDescription": "Show each space's factory status page",
+      "sdlcBoard": "SDLC board",
+      "sdlcBoardDescription": "Show the SDLC board: a live board of agent tasks across active features",
       "groupPlatform": "Platform",
       "groupSoftwareFactory": "Software factory",
       "groupExperimental": "Experimental",
