@@ -1,5 +1,5 @@
 /**
- * Migration 170: the SDLC board feature flag (spec 140).
+ * Migration 171: the SDLC board feature flag (spec 140).
  *
  * The SDLC board (/sdlc) moves behind `feature_flag_sdlc_board`. It defaults
  * to 0, so the board is hidden on existing installs too until a user turns it

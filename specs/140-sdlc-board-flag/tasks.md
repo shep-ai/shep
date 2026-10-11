@@ -5,7 +5,7 @@ web surfaces, then update e2e coverage and docs.
 
 ## Acceptance Checklist
 
-- [ ] Flag defaults off and persists (migration 170)
+- [ ] Flag defaults off and persists (migration 171)
 - [ ] Flag listed on /settings/feature-flags and in `shep settings flags`
 - [ ] Sidebar link, /sdlc, /api/sdlc-events and the 4 actions gated
 - [ ] Canvas, /features and the board tracker unchanged

@@ -1,5 +1,5 @@
 /**
- * Migration 170 Integration Tests (spec 140)
+ * Migration 171 Integration Tests (spec 140)
  *
  * Adds the SDLC board feature-flag column, defaulting to off so the board is
  * hidden until a user turns it on; re-running is a no-op.
@@ -10,9 +10,9 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import type Database from 'better-sqlite3';
 import { createInMemoryDatabase } from '../../../../helpers/database.helper.js';
 import { runSQLiteMigrations } from '@/infrastructure/persistence/sqlite/migrations.js';
-import { up } from '@/infrastructure/persistence/sqlite/migrations/170-add-sdlc-board-feature-flag.js';
+import { up } from '@/infrastructure/persistence/sqlite/migrations/171-add-sdlc-board-feature-flag.js';
 
-describe('Migration 170 — SDLC board feature flag', () => {
+describe('Migration 171 — SDLC board feature flag', () => {
   let db: Database.Database;
 
   beforeEach(async () => {

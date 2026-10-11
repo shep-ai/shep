@@ -3,7 +3,7 @@
 ```
 tsp FeatureFlags.sdlcBoard (= false)
    └─ generated output.ts ─┬─ settings-defaults.factory (false)
-                           ├─ settings.mapper ⇄ feature_flag_sdlc_board (migration 170, DEFAULT 0)
+                           ├─ settings.mapper ⇄ feature_flag_sdlc_board (migration 171, DEFAULT 0)
                            ├─ sqlite-settings.repository (INSERT/UPDATE)
                            └─ FEATURE_FLAG_CATALOG (Platform) → /settings/feature-flags, `shep settings flags`
 
@@ -26,7 +26,7 @@ docs.
 
 | File | Change |
 | ---- | ------ |
-| migration `170-add-sdlc-board-feature-flag.ts` | New guarded column, DEFAULT 0 |
+| migration `171-add-sdlc-board-feature-flag.ts` | New guarded column, DEFAULT 0 |
 | `lib/feature-gate.ts` | `isFeatureOn`, `featureNotFound`, `FEATURE_OFF_ERROR` |
 | `lib/require-feature-page.ts`, `lib/intake-route.ts`, feedback/alerts routes | Use the shared gate |
 | `app/sdlc/page.tsx`, `api/sdlc-events/route.ts`, 4 actions, `sidebar-links.ts` | Gate on `sdlcBoard` |
@@ -46,7 +46,7 @@ smallest change, then tidy.
   sidebar hides the link while off; the SSE route returns 404 while off; each action returns
   the error and does not resolve its use case while off, and delegates while on; /sdlc page
   calls `notFound()` while off.
-- **Integration:** migration 170 adds the column with DEFAULT 0 and is idempotent; the
+- **Integration:** migration 171 adds the column with DEFAULT 0 and is idempotent; the
   settings repository round-trips the flag.
 - **E2E:** the /sdlc accessibility case turns `sdlcBoard` on for its run via
   `enableFeatureFlag`.

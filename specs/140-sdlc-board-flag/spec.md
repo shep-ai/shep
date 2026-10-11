@@ -8,7 +8,7 @@ one more catalog flag — off by default, togglable from /settings/feature-flags
 ## Success Criteria
 
 - [ ] `featureFlags.sdlcBoard` exists in TypeSpec, defaults to `false`, persists through
-      migration 170 (`feature_flag_sdlc_board INTEGER NOT NULL DEFAULT 0`), the mapper and the
+      migration 171 (`feature_flag_sdlc_board INTEGER NOT NULL DEFAULT 0`), the mapper and the
       repository SQL, and round-trips through the settings repository.
 - [ ] The flag is in `FEATURE_FLAG_CATALOG` (Platform group) with a description, so it shows on
       /settings/feature-flags and in `shep settings flags`, with labels in all 9 locales.
@@ -23,7 +23,7 @@ one more catalog flag — off by default, togglable from /settings/feature-flags
 | Area | Impact | Reasoning |
 | ---- | ------ | --------- |
 | `tsp/domain/entities/settings.tsp` + generated output | Low | One new boolean flag |
-| SQLite migration 170, settings mapper, settings repository | Low | Persist the flag |
+| SQLite migration 171, settings mapper, settings repository | Low | Persist the flag |
 | Domain defaults + feature-flag catalog | Low | Default off, listed in the flags view |
 | Web: sidebar links, /sdlc page, /api/sdlc-events, 4 server actions | Medium | The gated surfaces |
 | Web: shared feature-gate helper, intake routes | Low | One 404 helper shared by gated API routes |

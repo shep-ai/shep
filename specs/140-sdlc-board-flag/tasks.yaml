@@ -18,12 +18,12 @@ tasks:
     title: Add the sdlcBoard flag, off by default, end to end
     description: >
       Follow the LESSONS flag checklist: TypeSpec field, generated output, defaults, migration
-      170, mapper, repository SQL, web flags state, catalog entry and translations in 9 locales.
+      171, mapper, repository SQL, web flags state, catalog entry and translations in 9 locales.
     state: Done
     dependencies: []
     acceptanceCriteria:
       - '`createDefaultSettings().featureFlags.sdlcBoard` is false'
-      - Migration 170 adds `feature_flag_sdlc_board INTEGER NOT NULL DEFAULT 0` and is idempotent
+      - Migration 171 adds `feature_flag_sdlc_board INTEGER NOT NULL DEFAULT 0` and is idempotent
       - The settings repository round-trips `sdlcBoard` true and false
       - '`listFeatureFlagDescriptors()` includes `sdlcBoard` in the Platform group'
       - Every locale has `settings.featureFlags.sdlcBoard` and `sdlcBoardDescription`
@@ -31,7 +31,7 @@ tasks:
       red:
         - Defaults factory test expects `sdlcBoard false`
         - Mapper test maps `feature_flag_sdlc_board` both ways
-        - Migration 170 integration test (column, default 0, idempotent)
+        - Migration 171 integration test (column, default 0, idempotent)
         - Repository round-trip test for `sdlcBoard`
       green:
         - Add the TypeSpec field and regenerate; wire defaults, migration, mapper, repository,
@@ -112,7 +112,7 @@ content: |
 
   ## Acceptance Checklist
 
-  - [ ] Flag defaults off and persists (migration 170)
+  - [ ] Flag defaults off and persists (migration 171)
   - [ ] Flag listed on /settings/feature-flags and in `shep settings flags`
   - [ ] Sidebar link, /sdlc, /api/sdlc-events and the 4 actions gated
   - [ ] Canvas, /features and the board tracker unchanged

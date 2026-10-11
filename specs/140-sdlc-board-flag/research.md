@@ -2,7 +2,7 @@
 
 ### Flag default and storage
 `sdlcBoard` defaults to `false` and is stored in `feature_flag_sdlc_board INTEGER NOT NULL
-DEFAULT 0` (migration 170). Existing installs read 0, so the board is off after upgrade.
+DEFAULT 0` (migration 171). Existing installs read 0, so the board is off after upgrade.
 
 ### Catalog group
 Platform — the board is a product view across features, like Projects.

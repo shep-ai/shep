@@ -194,7 +194,7 @@ export interface SettingsRow extends SettingsTelemetryRow {
   feature_flag_docs_first: number;
   feature_flag_autopilot: number;
   feature_flag_factory: number;
-  // SDLC board flag (spec 140, migration 170)
+  // SDLC board flag (spec 140, migration 171)
   feature_flag_sdlc_board: number;
   // Interactive agent config (added in migration 046)
   interactive_agent_enabled: number;
