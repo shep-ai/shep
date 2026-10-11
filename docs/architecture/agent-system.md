@@ -275,6 +275,12 @@ Key files:
 - `nodes/` -- `analyze`, `ensure-infra`, `install-deps`, `start-server`, `verify`, `remediate` node factories (+ `prompts/` for the analysis and remediation prompts)
 - `schemas/run-plan-analysis.schema.ts` -- `RUN_PLAN_ANALYSIS_SCHEMA` / `DevServerAnalysis`
 
+### Git checkpoints per step (spec 135)
+
+The full, fast and exploration graphs wrap every file-changing node with `withCheckpoint`. Each one
+snapshots the worktree into `refs/shep/checkpoints/<featureId>/<seq>-<node>` without touching the
+branch or index. See [git-checkpoints.md](./git-checkpoints.md).
+
 ## Collaboration & Question Pipeline (spec 093, flag-gated)
 
 Three new domain entities — defined in `tsp/agents/` — extend the agent system
