@@ -1,6 +1,7 @@
 import 'reflect-metadata';
 import { describe, it, expect } from 'vitest';
-import { mkdtempSync, writeFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { removeDirWithRetry } from '@tests/helpers/remove-dir.helper.js';
@@ -45,6 +46,47 @@ function closeAndWaitForExit(service: PtyTerminalSessionService, sessionId: stri
 
     service.close(sessionId);
   });
+}
+
+const IS_WINDOWS = process.platform === 'win32';
+
+/** Upper bound for the shell to print its first prompt. */
+const SHELL_READY_TIMEOUT_MS = 15_000;
+
+/** Resolve once the session has produced output, i.e. the shell is up. */
+function waitForFirstOutput(service: PtyTerminalSessionService, sessionId: string): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
+    const timer = setTimeout(
+      () => reject(new Error('shell printed nothing')),
+      SHELL_READY_TIMEOUT_MS
+    );
+    const unsubscribe = service.subscribe(sessionId, () => {
+      clearTimeout(timer);
+      unsubscribe();
+      resolve();
+    });
+  });
+}
+
+/**
+ * Child processes of this test process, for the failure message: when the cwd
+ * stays locked, the list names whatever survived the close.
+ */
+function describeChildProcesses(): string {
+  try {
+    return execFileSync(
+      'powershell.exe',
+      [
+        '-NoProfile',
+        '-Command',
+        `Get-CimInstance Win32_Process -Filter "ParentProcessId=${process.pid}" | ` +
+          'Select-Object ProcessId,Name,CommandLine | Format-List | Out-String -Width 400',
+      ],
+      { encoding: 'utf8' }
+    );
+  } catch (error) {
+    return `(process listing failed: ${String(error)})`;
+  }
 }
 
 describe('PtyTerminalSessionService', () => {
@@ -96,4 +138,34 @@ describe('PtyTerminalSessionService', () => {
       removeDirWithRetry(tempDir);
     }
   });
+
+  it.runIf(IS_WINDOWS)(
+    'releases the session cwd once close resolves (#927)',
+    async () => {
+      const service = new PtyTerminalSessionService();
+      const tempDir = mkdtempSync(join(tmpdir(), 'shep-test-'));
+
+      try {
+        const { id, shell } = service.create({ cwd: tempDir });
+        await waitForFirstOutput(service, id);
+
+        await service.close(id);
+
+        // No retry budget: once close resolves, nothing may still hold the cwd.
+        let removalError: unknown = null;
+        try {
+          rmSync(tempDir, { recursive: true });
+        } catch (error) {
+          removalError = error;
+        }
+        expect(
+          removalError,
+          `shell ${shell}; children after close:\n${describeChildProcesses()}`
+        ).toBeNull();
+      } finally {
+        removeDirWithRetry(tempDir);
+      }
+    },
+    30_000
+  );
 });
