@@ -70,6 +70,11 @@ describe('sidebar links', () => {
     expect(visibleSidebarLinks({ ...OFF, [flag]: true }).map((l) => l.href)).toContain(href);
   });
 
+  it('shows the SDLC Board only while sdlcBoard is on (spec 140)', () => {
+    expect(visibleSidebarLinks(OFF).map((l) => l.href)).not.toContain('/sdlc');
+    expect(visibleSidebarLinks({ ...OFF, sdlcBoard: true }).map((l) => l.href)).toContain('/sdlc');
+  });
+
   it('shows /connections for either trackers or Notion knowledge', () => {
     expect(visibleSidebarLinks({ ...OFF, knowledge: true }).map((l) => l.href)).toContain(
       '/connections'
