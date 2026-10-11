@@ -139,3 +139,9 @@ export type {
   TelemetryIdentity,
 } from './telemetry-identity-provider.interface.js';
 export type { ITelemetryRuntime, TelemetryPlatform } from './telemetry-runtime.interface.js';
+export type {
+  IGitCheckpointService,
+  WorktreeSnapshot,
+  CommitCheckpointInput,
+  CheckpointDiffStat,
+} from './git-checkpoint-service.interface.js';
