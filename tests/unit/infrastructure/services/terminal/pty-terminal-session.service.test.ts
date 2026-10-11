@@ -139,15 +139,14 @@ describe('PtyTerminalSessionService', () => {
     }
   });
 
-  it.runIf(IS_WINDOWS)(
-    'releases the session cwd once close resolves (#927)',
-    async () => {
+  describe.runIf(IS_WINDOWS)('releases the session cwd once close resolves (#927)', () => {
+    async function expectCwdRemovableAfterClose(waitForShell: boolean): Promise<void> {
       const service = new PtyTerminalSessionService();
       const tempDir = mkdtempSync(join(tmpdir(), 'shep-test-'));
 
       try {
         const { id, shell } = service.create({ cwd: tempDir });
-        await waitForFirstOutput(service, id);
+        if (waitForShell) await waitForFirstOutput(service, id);
 
         await service.close(id);
 
@@ -165,7 +164,10 @@ describe('PtyTerminalSessionService', () => {
       } finally {
         removeDirWithRetry(tempDir);
       }
-    },
-    30_000
-  );
+    }
+
+    it('when closed right after create', () => expectCwdRemovableAfterClose(false), 30_000);
+
+    it('when closed after the shell is ready', () => expectCwdRemovableAfterClose(true), 30_000);
+  });
 });

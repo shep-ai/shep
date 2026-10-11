@@ -29,6 +29,32 @@ function allProcs(): Proc[] {
   return JSON.parse(out) as Proc[];
 }
 
+const HOST_PS = `Add-Type -TypeDefinition @'
+using System; using System.Runtime.InteropServices;
+public static class Cph {
+  [DllImport("ntdll.dll")] public static extern int NtQueryInformationProcess(IntPtr h, int cls, out IntPtr info, int len, out int ret);
+  [DllImport("kernel32.dll")] public static extern IntPtr OpenProcess(int access, bool inherit, int pid);
+  public static long Host(int pid){ IntPtr h=OpenProcess(0x1000,false,pid); if (h==IntPtr.Zero) return -1; IntPtr v; int r; int st=NtQueryInformationProcess(h,49,out v,IntPtr.Size,out r); return st==0 ? (v.ToInt64() & ~3L) : -(long)(uint)st; }
+}
+'@
+`;
+
+function hostPid(pid: number): string {
+  const t = Date.now();
+  try {
+    const out = execFileSync(
+      'powershell.exe',
+      ['-NoProfile', '-Command', `${HOST_PS}[Cph]::Host(${pid})`],
+      {
+        encoding: 'utf8',
+      }
+    );
+    return `${out.trim()} (${Date.now() - t}ms)`;
+  } catch (e) {
+    return `err ${String(e).slice(0, 300)}`;
+  }
+}
+
 function alive(pid: number): boolean {
   try {
     process.kill(pid, 0);
@@ -49,7 +75,10 @@ function tryRm(dir: string): string {
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-async function scenario(useConptyDll: boolean): Promise<Record<string, unknown>> {
+async function scenario(
+  useConptyDll: boolean,
+  waitReady: boolean
+): Promise<Record<string, unknown>> {
   const pty = requireCjs('node-pty') as typeof NodePty;
   const dir = mkdtempSync(join(tmpdir(), 'shep-probe-'));
   const before = new Set(allProcs().map((p) => p.ProcessId));
@@ -65,20 +94,31 @@ async function scenario(useConptyDll: boolean): Promise<Record<string, unknown>>
   term.onExit(() => {
     exited = Date.now() - t0;
   });
-  await new Promise<void>((r) => {
-    const d = term.onData(() => {
-      d.dispose();
-      r();
-    });
-    setTimeout(r, 10_000);
-  });
-  const procs = allProcs();
-  const fresh = procs.filter((p) => !before.has(p.ProcessId));
   const shellPid = term.pid;
-  log.push({ shellPid, nodePid: process.pid, fresh });
+  const host = waitReady ? hostPid(shellPid) : 'skipped';
+  if (waitReady) {
+    await new Promise<void>((r) => {
+      const d = term.onData(() => {
+        d.dispose();
+        r();
+      });
+      setTimeout(r, 10_000);
+    });
+  }
+  const procs = allProcs();
+  const fresh = procs.filter(
+    (p) =>
+      !before.has(p.ProcessId) && p.ParentProcessId === process.pid && p.Name !== 'powershell.exe'
+  );
+  log.push({
+    shellPid,
+    host,
+    nodePid: process.pid,
+    fresh: fresh.filter((p) => p.ParentProcessId === process.pid),
+  });
   const killAt = Date.now();
   term.kill();
-  for (let i = 0; i < 40; i++) {
+  for (let i = 0; i < 32; i++) {
     log.push({
       t: Date.now() - killAt,
       exitEventAt: exited < 0 ? null : exited - (killAt - t0),
@@ -101,13 +141,46 @@ async function scenario(useConptyDll: boolean): Promise<Record<string, unknown>>
   }
   await sleep(500);
   log.push({ afterKillingSurvivors: tryRm(dir) });
-  return { useConptyDll, log };
+  return { useConptyDll, waitReady, log };
+}
+
+async function immediate(): Promise<Record<string, unknown>> {
+  const pty = requireCjs('node-pty') as typeof NodePty;
+  const dir = mkdtempSync(join(tmpdir(), 'shep-probe-'));
+  const before = new Set(allProcs().map((p) => p.ProcessId));
+  const term = pty.spawn(process.env.COMSPEC ?? 'cmd.exe', [], { cwd: dir, cols: 80, rows: 24 });
+  const shellPid = term.pid;
+  const t0 = Date.now();
+  let exitAt: number | null = null;
+  term.onExit(() => {
+    exitAt = Date.now() - t0;
+  });
+  term.kill();
+  const log: unknown[] = [{ shellPid }];
+  for (let i = 0; i < 6; i++) {
+    const kids = allProcs().filter(
+      (p) =>
+        !before.has(p.ProcessId) && p.ParentProcessId === process.pid && p.Name !== 'powershell.exe'
+    );
+    log.push({
+      t: Date.now() - t0,
+      exitAt,
+      shellAlive: alive(shellPid),
+      kids: kids.map((k) => `${k.Name}:${k.ProcessId}`),
+      rm: tryRm(dir),
+    });
+    if (kids.length === 0 && exitAt !== null) break;
+    await sleep(1000);
+  }
+  return { immediate: true, log };
 }
 
 describe.runIf(process.platform === 'win32')('conpty probe', () => {
   it('records teardown', async () => {
-    for (const dll of [false, true]) {
-      console.log(`PROBE ${JSON.stringify(await scenario(dll))}`);
+    // Mirrors the #925 test: close straight after create, several times.
+    for (let i = 0; i < 4; i++) {
+      console.log(`PROBE ${JSON.stringify(await immediate())}`);
     }
-  }, 120_000);
+    console.log(`PROBE ${JSON.stringify(await scenario(false, true))}`);
+  }, 240_000);
 });
