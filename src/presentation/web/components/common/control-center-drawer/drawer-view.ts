@@ -16,7 +16,8 @@ export type FeatureTabKey =
   | 'prototype'
   | 'chat'
   | 'bedrock'
-  | 'context';
+  | 'context'
+  | 'checkpoints';
 
 /** All valid tab key values — used for URL param validation. */
 export const VALID_TAB_KEYS: ReadonlySet<string> = new Set<FeatureTabKey>([
@@ -32,6 +33,7 @@ export const VALID_TAB_KEYS: ReadonlySet<string> = new Set<FeatureTabKey>([
   'chat',
   'bedrock',
   'context',
+  'checkpoints',
 ]);
 
 /** Type-guard: returns the value as FeatureTabKey if valid, otherwise undefined. */

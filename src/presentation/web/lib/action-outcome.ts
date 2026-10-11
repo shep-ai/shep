@@ -6,9 +6,21 @@
 
 export type ActionOutcome = { ok: true } | { ok: false; error: string };
 
+/** The value of a use-case call, or the message of what it threw. */
+export type ActionResult<T> = { ok: true; data: T } | { ok: false; error: string };
+
 /** The message of anything thrown. */
 export function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
+}
+
+/** Run one use-case call; a throw becomes `{ ok: false, error }`. */
+export async function attemptResult<T>(body: () => Promise<T>): Promise<ActionResult<T>> {
+  try {
+    return { ok: true, data: await body() };
+  } catch (error: unknown) {
+    return { ok: false, error: errorMessage(error) };
+  }
 }
 
 /** Only success or the error of a use-case result; a throw becomes a failure. */

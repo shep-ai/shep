@@ -1894,5 +1894,37 @@
       "loading": "טוען את הגדרות מדדי השימוש…",
       "loadFailed": "לא ניתן לטעון את הגדרות מדדי השימוש."
     }
+  },
+  "checkpoints": {
+    "loading": "טוען נקודות שמירה…",
+    "empty": "אין עדיין נקודות שמירה. Shep שומר את ה-worktree אחרי כל שלב כשהסוכן רץ.",
+    "modeStep": "לפי שלב",
+    "modeCompare": "השוואה",
+    "kindBaseline": "התחלה",
+    "kindPreRestore": "לפני שחזור",
+    "files_one": "{{count}} קובץ",
+    "files_few": "{{count}} קבצים",
+    "files_many": "{{count}} קבצים",
+    "files_other": "{{count}} קבצים",
+    "from": "מ-",
+    "to": "עד",
+    "selectStep": "בחרו שלב כדי לראות מה הוא שינה.",
+    "baselineSelected": "זו נקודת ההתחלה: אין דבר לפניה.",
+    "diffLoading": "טוען הבדלים…",
+    "noChanges": "אין שינויים בין השלבים האלה.",
+    "restore": "שחזור",
+    "restoreAria": "שחזור ה-worktree ל-{{step}}",
+    "restoreTitle": "לשחזר את ה-worktree ל-{{step}}?",
+    "restoreDescription": "קבצי ה-worktree יוחלפו בנקודת השמירה הזו. המצב הנוכחי נשמר קודם כנקודת שמירה חדשה, והענף והקומיטים שלו לא משתנים.",
+    "restoreConfirm": "שחזור",
+    "cancel": "ביטול",
+    "restored": "ה-worktree שוחזר ל-{{step}}",
+    "restoreFailed": "השחזור נכשל",
+    "blocked": {
+      "NoOwnWorktree": "שחזור זמין רק לפיצ'ר שרץ ב-worktree משלו.",
+      "NotLinkedWorktree": "שחזור לא זמין: התיקייה אינה worktree מקושר של git.",
+      "WorktreeUnavailable": "שחזור לא זמין: לא ניתן לקרוא את ה-worktree.",
+      "AgentRunning": "שחזור לא זמין בזמן שהסוכן רץ."
+    }
   }
 }

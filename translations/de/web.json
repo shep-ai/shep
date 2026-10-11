@@ -1894,5 +1894,37 @@
       "loading": "Einstellungen für Nutzungsmetriken werden geladen…",
       "loadFailed": "Einstellungen für Nutzungsmetriken konnten nicht geladen werden."
     }
+  },
+  "checkpoints": {
+    "loading": "Checkpoints werden geladen…",
+    "empty": "Noch keine Checkpoints. Shep sichert den Worktree nach jedem Schritt, sobald der Agent läuft.",
+    "modeStep": "Pro Schritt",
+    "modeCompare": "Vergleichen",
+    "kindBaseline": "Start",
+    "kindPreRestore": "vor Wiederherstellung",
+    "files_one": "{{count}} Datei",
+    "files_few": "{{count}} Dateien",
+    "files_many": "{{count}} Dateien",
+    "files_other": "{{count}} Dateien",
+    "from": "Von",
+    "to": "Bis",
+    "selectStep": "Wähle einen Schritt, um zu sehen, was er geändert hat.",
+    "baselineSelected": "Das ist der Startpunkt: Davor gab es nichts.",
+    "diffLoading": "Diff wird geladen…",
+    "noChanges": "Keine Änderungen zwischen diesen Schritten.",
+    "restore": "Wiederherstellen",
+    "restoreAria": "Worktree auf {{step}} zurücksetzen",
+    "restoreTitle": "Worktree auf {{step}} zurücksetzen?",
+    "restoreDescription": "Die Dateien des Worktrees werden durch diesen Checkpoint ersetzt. Der aktuelle Stand wird vorher als neuer Checkpoint gesichert; Branch und Commits bleiben unverändert.",
+    "restoreConfirm": "Wiederherstellen",
+    "cancel": "Abbrechen",
+    "restored": "Worktree auf {{step}} zurückgesetzt",
+    "restoreFailed": "Wiederherstellung fehlgeschlagen",
+    "blocked": {
+      "NoOwnWorktree": "Wiederherstellen ist nur für Features mit eigenem Worktree möglich.",
+      "NotLinkedWorktree": "Wiederherstellen nicht möglich: Der Ordner ist kein verknüpfter Git-Worktree.",
+      "WorktreeUnavailable": "Wiederherstellen nicht möglich: Der Worktree kann nicht gelesen werden.",
+      "AgentRunning": "Wiederherstellen ist nicht möglich, solange der Agent läuft."
+    }
   }
 }
