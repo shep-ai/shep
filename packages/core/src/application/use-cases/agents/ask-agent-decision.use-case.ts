@@ -11,6 +11,8 @@
  *    recommended option";
  *  - cancelled → the recommended option (the agent must not wait forever);
  *  - collaboration off → nobody can answer, so the recommendation applies now.
+ *
+ * A deadline default records the `decision.defaulted` usage event (spec 135).
  */
 
 import { inject, injectable } from 'tsyringe';
@@ -21,10 +23,13 @@ import type { ISettingsRepository } from '../../ports/output/repositories/settin
 import type { IFeatureRepository } from '../../ports/output/repositories/feature-repository.interface.js';
 import type { IApplicationRepository } from '../../ports/output/repositories/application-repository.interface.js';
 import { AgentQuestionTimeoutError } from '../../ports/output/agents/agent-question-service.interface.js';
+import type { ITelemetry } from '../../ports/output/services/telemetry.interface.js';
 import {
   AgentQuestionAnswerer,
   AgentQuestionKind,
   AgentQuestionStatus,
+  DecisionOutcome,
+  TelemetryEvent,
   type Decision,
   type DecisionResponse,
 } from '../../../domain/generated/output.js';
@@ -40,6 +45,7 @@ import {
   resolveDecisionTimeoutMinutes,
   type AgentAskOption,
 } from '../../../domain/shared/decision-deadline.js';
+import { toDurationBucket } from '../../../domain/shared/telemetry/telemetry-delivery.js';
 import { AskAgentQuestionUseCase } from './ask-agent-question.use-case.js';
 import { questionScopeForPath } from './question-scope.js';
 
@@ -55,7 +61,10 @@ export interface AskAgentDecisionInput {
   timeoutMinutes?: number;
 }
 
-export type AskAgentDecisionOutcome = 'answered' | 'defaulted' | 'cancelled' | 'disabled';
+/** What the asking agent gets back — never `pending`: the call waits until it is settled. */
+export type AskAgentDecisionOutcome = Exclude<DecisionOutcome, DecisionOutcome.Pending>;
+
+const MINUTE_MS = 60_000;
 
 export interface AskAgentDecisionResult {
   outcome: AskAgentDecisionOutcome;
@@ -74,7 +83,8 @@ export class AskAgentDecisionUseCase {
     @inject('IAgentQuestionRepository') private readonly questions: IAgentQuestionRepository,
     @inject('ISettingsRepository') private readonly settings: ISettingsRepository,
     @inject('IFeatureRepository') private readonly features: IFeatureRepository,
-    @inject('IApplicationRepository') private readonly applications: IApplicationRepository
+    @inject('IApplicationRepository') private readonly applications: IApplicationRepository,
+    @inject('ITelemetry') private readonly telemetry: ITelemetry
   ) {}
 
   async execute(input: AskAgentDecisionInput): Promise<AskAgentDecisionResult> {
@@ -105,7 +115,7 @@ export class AskAgentDecisionUseCase {
       answerer: AgentQuestionAnswerer.either,
     });
     if (!asked.enabled || !asked.question || !asked.awaiter) {
-      return this.result('disabled', draft, recommended);
+      return this.result(DecisionOutcome.Disabled, draft, recommended);
     }
     const question = asked.question;
     const decision = question.decision ?? draft;
@@ -114,15 +124,18 @@ export class AskAgentDecisionUseCase {
       await asked.awaiter;
     } catch (error) {
       if (error instanceof AgentQuestionTimeoutError) {
-        return this.applyRecommendation(appId, input.featureId, question.id, decision, recommended);
+        return this.applyRecommendation(appId, question.id, decision, recommended, minutes);
       }
-      return { ...this.result('cancelled', decision, recommended), questionId: question.id };
+      return {
+        ...this.result(DecisionOutcome.Cancelled, decision, recommended),
+        questionId: question.id,
+      };
     }
 
     const answered = await this.questions.findById(appId, question.id);
     const responses = answered?.responses ?? recommended;
     return {
-      outcome: 'answered',
+      outcome: DecisionOutcome.Answered,
       answer: answered?.answer ?? summariseResponses(decision, responses),
       responses,
       pickedRecommended: responsesPickedRecommended(decision, responses),
@@ -134,10 +147,10 @@ export class AskAgentDecisionUseCase {
   /** Deadline passed: settle the question with the recommendation. */
   private async applyRecommendation(
     appId: string,
-    featureId: string,
     questionId: string,
     decision: Decision,
-    recommended: DecisionResponse[]
+    recommended: DecisionResponse[],
+    timeoutMinutes: number
   ): Promise<AskAgentDecisionResult> {
     const answer = summariseResponses(decision, recommended);
     const now = new Date();
@@ -147,12 +160,17 @@ export class AskAgentDecisionUseCase {
       AgentQuestionStatus.expired,
       { answer, responses: recommended, answeredBy: DECISION_DEADLINE_ACTOR, answeredAt: now }
     );
-    if (!settled) {
+    if (settled) {
+      this.telemetry.record(TelemetryEvent.DecisionDefaulted, {
+        kind: decision.kind,
+        timeout: toDurationBucket(timeoutMinutes * MINUTE_MS),
+      });
+    } else {
       // Someone answered at the deadline — their answer wins.
       const current = await this.questions.findById(appId, questionId);
       if (current?.status === AgentQuestionStatus.answered && current.responses) {
         return {
-          outcome: 'answered',
+          outcome: DecisionOutcome.Answered,
           answer: current.answer ?? summariseResponses(decision, current.responses),
           responses: current.responses,
           pickedRecommended: responsesPickedRecommended(decision, current.responses),
@@ -162,7 +180,7 @@ export class AskAgentDecisionUseCase {
       }
     }
     return {
-      ...this.result('defaulted', decision, recommended),
+      ...this.result(DecisionOutcome.Defaulted, decision, recommended),
       answeredBy: DECISION_DEADLINE_ACTOR,
       questionId,
     };

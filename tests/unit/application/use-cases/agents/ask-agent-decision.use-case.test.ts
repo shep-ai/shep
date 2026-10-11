@@ -16,10 +16,23 @@ import type { ISettingsRepository } from '@/application/ports/output/repositorie
 import type { IFeatureRepository } from '@/application/ports/output/repositories/feature-repository.interface.js';
 import type { IApplicationRepository } from '@/application/ports/output/repositories/application-repository.interface.js';
 import type { IAgentRunRepository } from '@/application/ports/output/agents/agent-run-repository.interface.js';
-import { AgentQuestionStatus, DecisionKind, type Settings } from '@/domain/generated/output.js';
+import {
+  AgentQuestionStatus,
+  DecisionKind,
+  DecisionOutcome,
+  TelemetryEvent,
+  type Settings,
+} from '@/domain/generated/output.js';
 import { DECISION_DEADLINE_ACTOR } from '@/domain/shared/decision-deadline.js';
+import { toDurationBucket } from '@/domain/shared/telemetry/telemetry-delivery.js';
 
 const MINUTE = 60_000;
+
+function defaultedEvents(telemetry: { record: ReturnType<typeof vi.fn> }): unknown[][] {
+  return telemetry.record.mock.calls.filter(
+    ([event]) => event === TelemetryEvent.DecisionDefaulted
+  );
+}
 
 function settingsRepo(collaboration: boolean, timeoutMinutes?: number): ISettingsRepository {
   return {
@@ -73,7 +86,14 @@ describe('AskAgentDecisionUseCase', () => {
       findByPath: vi.fn().mockResolvedValue({ id: 'app-1' }),
     } as unknown as IApplicationRepository;
     const telemetry = { record: vi.fn() };
-    const useCase = new AskAgentDecisionUseCase(ask, repo, settings, features, applications);
+    const useCase = new AskAgentDecisionUseCase(
+      ask,
+      repo,
+      settings,
+      features,
+      applications,
+      telemetry
+    );
     const answer = new AnswerAgentQuestionUseCase(
       repo,
       registry,
@@ -104,7 +124,7 @@ describe('AskAgentDecisionUseCase', () => {
     });
 
     await expect(pending).resolves.toMatchObject({
-      outcome: 'answered',
+      outcome: DecisionOutcome.Answered,
       answer: 'Column with a default',
       answeredBy: 'user:web',
       pickedRecommended: false,
@@ -112,12 +132,12 @@ describe('AskAgentDecisionUseCase', () => {
   });
 
   it('proceeds with the recommendation at the deadline and records that it did', async () => {
-    const { useCase } = build(true);
+    const { useCase, telemetry } = build(true);
     const pending = useCase.execute({ ...ASK, timeoutMinutes: 10 });
     await vi.advanceTimersByTimeAsync(10 * MINUTE);
 
     await expect(pending).resolves.toMatchObject({
-      outcome: 'defaulted',
+      outcome: DecisionOutcome.Defaulted,
       answer: 'Online, nullable column',
       pickedRecommended: true,
     });
@@ -127,25 +147,54 @@ describe('AskAgentDecisionUseCase', () => {
     expect(stored.answeredBy).toBe(DECISION_DEADLINE_ACTOR);
     expect(stored.answer).toBe('Online, nullable column');
     expect(vi.getTimerCount()).toBe(0);
+    expect(defaultedEvents(telemetry)).toEqual([
+      [
+        TelemetryEvent.DecisionDefaulted,
+        { kind: DecisionKind.AgentAsk, timeout: toDurationBucket(10 * MINUTE) },
+      ],
+    ]);
+  });
+
+  it('records no default when a person answered at the deadline (spec 135)', async () => {
+    const { useCase, telemetry } = build(true);
+    const settle = repo.settlePending.bind(repo);
+    vi.spyOn(repo, 'settlePending').mockImplementationOnce(async (appId, questionId) => {
+      await settle(appId, questionId, AgentQuestionStatus.answered, {
+        answer: 'Column with a default',
+        responses: [{ questionId: 'q1', optionIds: ['o2'] }],
+        answeredBy: 'user:web',
+        answeredAt: new Date(),
+      });
+      return false;
+    });
+    const pending = useCase.execute({ ...ASK, timeoutMinutes: 10 });
+    await vi.advanceTimersByTimeAsync(10 * MINUTE);
+
+    await expect(pending).resolves.toMatchObject({
+      outcome: DecisionOutcome.Answered,
+      answeredBy: 'user:web',
+    });
+    expect(defaultedEvents(telemetry)).toEqual([]);
   });
 
   it('a cancelled question also proceeds with the recommendation', async () => {
-    const { useCase } = build(true);
+    const { useCase, telemetry } = build(true);
     const pending = useCase.execute(ASK);
     await vi.advanceTimersByTimeAsync(0);
     const [stored] = await repo.listByScope('app-1', 'feat-1');
     registry.reject(stored.id, 'stopped');
 
     await expect(pending).resolves.toMatchObject({
-      outcome: 'cancelled',
+      outcome: DecisionOutcome.Cancelled,
       answer: 'Online, nullable column',
     });
+    expect(defaultedEvents(telemetry)).toEqual([]);
   });
 
   it('with collaboration off nobody is asked and the recommendation applies at once', async () => {
     const { useCase } = build(false);
     await expect(useCase.execute(ASK)).resolves.toMatchObject({
-      outcome: 'disabled',
+      outcome: DecisionOutcome.Disabled,
       answer: 'Online, nullable column',
     });
     expect(await repo.listAppIds()).toEqual([]);

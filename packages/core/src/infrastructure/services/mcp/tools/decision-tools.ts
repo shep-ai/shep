@@ -20,6 +20,7 @@ import {
   type AskAgentDecisionOutcome,
   type AskAgentDecisionResult,
 } from '../../../../application/use-cases/agents/ask-agent-decision.use-case.js';
+import { DecisionOutcome } from '../../../../domain/generated/output.js';
 import {
   readAgentRunEnvironment,
   type EnvironmentVariables,
@@ -35,12 +36,12 @@ export const ASK_DECISION_TOOL = ASK_DECISION_TOOL_NAME;
 const MAX_OPTIONS = 9;
 
 const OUTCOME_GUIDANCE: Record<AskAgentDecisionOutcome, (answer: string) => string> = {
-  answered: (answer) => `The user answered: ${answer}. Act on this answer.`,
-  defaulted: (answer) =>
+  [DecisionOutcome.Answered]: (answer) => `The user answered: ${answer}. Act on this answer.`,
+  [DecisionOutcome.Defaulted]: (answer) =>
     `Nobody answered before the deadline. Proceed with your recommended option: ${answer}.`,
-  cancelled: (answer) =>
+  [DecisionOutcome.Cancelled]: (answer) =>
     `The question was cancelled. Proceed with your recommended option: ${answer}.`,
-  disabled: (answer) =>
+  [DecisionOutcome.Disabled]: (answer) =>
     `Questions are turned off for this workspace. Proceed with your recommended option: ${answer}.`,
 };
 
