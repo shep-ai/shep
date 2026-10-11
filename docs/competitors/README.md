@@ -65,6 +65,7 @@ Idea → Requirements → Research → Plan → Code → Tests → PR → CI →
 | Tool                            | What It Does                                           | Profile                   |
 | ------------------------------- | ------------------------------------------------------ | ------------------------- |
 | [Auto-Claude](./auto-claude.md) | Multi-session Claude orchestrator with parallel agents | Closest UX overlap        |
+| [T3 Code](./t3code.md)          | Open-source GUI over your agent CLIs — web, desktop, mobile | Best-in-class agent UX |
 | [Spec Kitty](./spec-kitty.md)   | Spec-driven development CLI with kanban dashboard      | Closest workflow overlap  |
 | [Gas Town](./gastown.md)        | Steve Yegge's multi-agent fleet orchestrator           | Frontier experimentation  |
 | [OpenHands](./openhands.md)     | Composable AI agent platform (formerly OpenDevin)      | Largest open-source agent |

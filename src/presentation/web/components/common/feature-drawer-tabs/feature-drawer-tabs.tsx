@@ -23,13 +23,14 @@ import {
   Layers,
   FlaskConical,
 } from 'lucide-react';
-import type { NotificationEvent } from '@shepai/core/domain/generated/output';
+import type { AgentQuestion, NotificationEvent } from '@shepai/core/domain/generated/output';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { BedrockMemorySection } from '@/components/bedrock-memory-section';
 import { AgentType, BedrockTargetKind } from '@shepai/core/domain/generated/output';
 import { useFeatureFlags } from '@/hooks/feature-flags-context';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { getFeaturePhaseTimings } from '@/app/actions/get-feature-phase-timings';
+import { getFeatureDecisions } from '@/app/actions/get-feature-decisions';
 import type {
   PhaseTimingData,
   RejectionFeedbackData,
@@ -232,12 +233,22 @@ export interface FeatureDrawerTabsProps {
 interface ActivityData {
   timings: PhaseTimingData[];
   rejectionFeedback: RejectionFeedbackData[];
+  decisions: AgentQuestion[];
 }
 
 async function fetchActivity(featureId: string): Promise<ActivityData> {
-  const result = await getFeaturePhaseTimings(featureId);
+  const [result, decided] = await Promise.all([
+    getFeaturePhaseTimings(featureId),
+    getFeatureDecisions(featureId),
+  ]);
   if ('error' in result) throw new Error(result.error);
-  return { timings: result.timings, rejectionFeedback: result.rejectionFeedback };
+  return {
+    timings: result.timings,
+    rejectionFeedback: result.rejectionFeedback,
+    // Spec 134: the decisions this feature's agents asked. Optional context —
+    // a failure to load them must not hide the timings.
+    decisions: 'error' in decided ? [] : decided.decisions,
+  };
 }
 
 async function fetchPlan(featureId: string): Promise<PlanData | undefined> {
@@ -706,6 +717,7 @@ export function FeatureDrawerTabs({
             loading={tabs.activity.loading}
             error={tabs.activity.error}
             rejectionFeedback={(tabs.activity.data as ActivityData | null)?.rejectionFeedback}
+            decisions={(tabs.activity.data as ActivityData | null)?.decisions}
           />
         </TabsContent>
 

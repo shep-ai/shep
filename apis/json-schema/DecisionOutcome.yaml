@@ -1,0 +1,9 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: DecisionOutcome.yaml
+type: string
+enum:
+  - pending
+  - answered
+  - defaulted
+  - cancelled
+description: What became of an asked decision

@@ -98,6 +98,10 @@ describe('ClaudeCodeExecutorService', () => {
   });
 
   describe('supportsFeature', () => {
+    it('declares mcpConfig — it honours mcpConfigPath (spec 134)', () => {
+      expect(executor.supportsFeature(AgentFeature.mcpConfig)).toBe(true);
+    });
+
     it('should support session-resume feature', () => {
       expect(executor.supportsFeature(AgentFeature.sessionResume)).toBe(true);
     });
@@ -682,6 +686,23 @@ describe('ClaudeCodeExecutorService', () => {
 
       // Assert
       expect(result.metadata).toEqual(expect.objectContaining({ cost_usd: 0.01, num_turns: 1 }));
+    });
+
+    describe('mcpConfigPath option (spec 134)', () => {
+      it('passes the config and gives MCP tools room for a decision deadline', async () => {
+        const mockProc = createMockChildProcess();
+        vi.mocked(mockSpawn).mockReturnValue(mockProc as any);
+        const executePromise = executor.execute('Test', { mcpConfigPath: '/tmp/mcp.json' });
+        emitStreamData(mockProc, [buildStreamResult({ result: 'Done' })], null, 0);
+        await executePromise;
+        const [, args, opts] = vi.mocked(mockSpawn).mock.calls[0] as [
+          string,
+          string[],
+          { env: Record<string, string> },
+        ];
+        expect(args).toEqual(expect.arrayContaining(['--mcp-config', '/tmp/mcp.json']));
+        expect(Number(opts.env.MCP_TOOL_TIMEOUT)).toBeGreaterThanOrEqual(24 * 60 * 60 * 1000);
+      });
     });
 
     describe('disableMcp option', () => {

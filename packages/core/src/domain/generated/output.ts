@@ -493,6 +493,10 @@ export type WorkflowConfig = {
    */
   maxParallelFeatures?: number;
   /**
+   * Minutes a background agent's question waits before the agent proceeds with its recommended option (spec 134; default: 30)
+   */
+  decisionDefaultTimeoutMinutes?: number;
+  /**
    * Maximum number of CI fix/push/watch iterations before giving up (default: 3)
    */
   ciMaxFixAttempts?: number;
@@ -9471,6 +9475,13 @@ export enum AgentFeature {
   systemPrompt = 'system-prompt',
   sessionListing = 'session-listing',
   effort = 'effort',
+  mcpConfig = 'mcp-config',
+}
+export enum DecisionOutcome {
+  Pending = 'pending',
+  Answered = 'answered',
+  Defaulted = 'defaulted',
+  Cancelled = 'cancelled',
 }
 export enum InlineBlockType {
   Decision = 'decision',

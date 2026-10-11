@@ -9,6 +9,7 @@
  * to enable testability without mocking node:child_process directly.
  */
 
+import { MAX_DECISION_TIMEOUT_MINUTES } from '../../../../../domain/shared/decision-deadline.js';
 import type { AgentType, AgentFeature } from '../../../../../domain/generated/output.js';
 import type {
   IAgentExecutor,
@@ -58,7 +59,32 @@ const SUPPORTED_FEATURES = new Set<string>([
   'structured-output',
   'session-listing',
   'effort',
+  'mcp-config',
 ]);
+
+/**
+ * MCP tool-call timeout given to `claude` when the run has an MCP config: an
+ * `ask_decision` call (spec 134) waits up to a day for its answer, so the CLI
+ * must not abandon it first. A shorter value inherited from the host would
+ * silently cut every question short, so it is raised; a longer one is kept.
+ */
+const MCP_TOOL_TIMEOUT_ENV = 'MCP_TOOL_TIMEOUT';
+const MCP_TOOL_TIMEOUT_MS = (MAX_DECISION_TIMEOUT_MINUTES + 60) * 60 * 1000;
+
+function withMcpToolTimeout(
+  options: AgentExecutionOptions | undefined
+): AgentExecutionOptions['environment'] {
+  const environment = options?.environment;
+  if (!options?.mcpConfigPath) return environment;
+  const current = Number(
+    environment?.set[MCP_TOOL_TIMEOUT_ENV] ?? process.env[MCP_TOOL_TIMEOUT_ENV] ?? 0
+  );
+  if (Number.isFinite(current) && current >= MCP_TOOL_TIMEOUT_MS) return environment;
+  return {
+    set: { ...environment?.set, [MCP_TOOL_TIMEOUT_ENV]: String(MCP_TOOL_TIMEOUT_MS) },
+    unset: (environment?.unset ?? []).filter((name) => name !== MCP_TOOL_TIMEOUT_ENV),
+  };
+}
 
 /**
  * Maximum time to wait for the `claude` subprocess to exit on its own
@@ -439,7 +465,10 @@ export class ClaudeCodeExecutorService implements IAgentExecutor {
     // Use stream-json so we get real-time events in the worker log
     // instead of zero output for minutes with --output-format json
     const args = this.buildStreamArgs(options);
-    const spawnOpts = buildSpawnOptions({ cwd: options?.cwd, environment: options?.environment });
+    const spawnOpts = buildSpawnOptions({
+      cwd: options?.cwd,
+      environment: withMcpToolTimeout(options),
+    });
 
     log(
       `Spawning: ${CLAUDE_BINARY} ${args.map((a) => (a.length > 80 ? `${a.slice(0, 77)}...` : a)).join(' ')}`

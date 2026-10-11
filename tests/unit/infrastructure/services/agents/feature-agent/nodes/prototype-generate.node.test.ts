@@ -130,6 +130,7 @@ function createMockState(overrides?: Partial<FeatureAgentState>): FeatureAgentSt
     securityMode: 'Disabled' as FeatureAgentState['securityMode'],
     securityActionDispositions: {},
     mcpConfigPath: undefined,
+    decisionToolAvailable: false,
     iterationCount: 0,
     maxIterations: 10,
     feedbackHistory: [],

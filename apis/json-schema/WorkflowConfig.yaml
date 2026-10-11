@@ -18,6 +18,11 @@ properties:
     minimum: -2147483648
     maximum: 2147483647
     description: "Maximum concurrently running features (default: 0 = unlimited)"
+  decisionDefaultTimeoutMinutes:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: "Minutes a background agent's question waits before the agent proceeds with its recommended option (spec 134; default: 30)"
   ciMaxFixAttempts:
     type: integer
     minimum: -2147483648

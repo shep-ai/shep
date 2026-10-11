@@ -63,6 +63,7 @@ import { UpdateFeatureLifecycleUseCase } from '@/application/use-cases/features/
 import { AdmitQueuedFeaturesUseCase } from '@/application/use-cases/features/capacity/admit-queued-features.use-case.js';
 import { CleanupFeatureWorktreeUseCase } from '@/application/use-cases/features/cleanup-feature-worktree.use-case.js';
 import { startPluginServers, stopPluginServers } from './plugin-startup.js';
+import { startDecisionTool, stopDecisionTool } from './decision-tool-startup.js';
 import { SelectProjectMemoryUseCase } from '@/application/use-cases/project-memory/select-project-memory.use-case.js';
 import { CheckDocsGateUseCase } from '@/application/use-cases/docs-first/check-docs-gate.use-case.js';
 import { RecordProjectMemoryUseCase } from '@/application/use-cases/project-memory/record-project-memory.use-case.js';
@@ -488,12 +489,25 @@ export async function runWorker(args: WorkerArgs): Promise<void> {
   await lifecyclePublisher.publishStarted(lifecycleScope);
 
   // Start MCP servers for enabled plugins (degrades gracefully on failure)
-  const mcpConfigPath = await startPluginServers(
+  const pluginMcpConfigPath = await startPluginServers(
     args.featureId,
     pluginRepository,
     mcpServerManager,
     log
   );
+  // Spec 134: a run whose executor takes an MCP config may ask the user
+  // through ask_decision (recommended option + deadline) instead of guessing.
+  const decisionMcpConfigPath = startDecisionTool({
+    collaborationEnabled: settings.featureFlags?.collaboration === true,
+    executor,
+    runId: args.runId,
+    featureId: args.featureId,
+    pluginConfigPath: pluginMcpConfigPath,
+    env: process.env,
+    log,
+  });
+  const mcpConfigPath = decisionMcpConfigPath ?? pluginMcpConfigPath;
+  const decisionToolAvailable = decisionMcpConfigPath !== undefined;
 
   try {
     const graphConfig = { configurable: { thread_id: checkpointId } };
@@ -527,6 +541,10 @@ export async function runWorker(args: WorkerArgs): Promise<void> {
         stateUpdate._approvalAction = 'approved';
         stateUpdate._rejectionFeedback = null;
       }
+
+      // The checkpoint holds the previous worker's (deleted) config path.
+      stateUpdate.mcpConfigPath = mcpConfigPath;
+      stateUpdate.decisionToolAvailable = decisionToolAvailable;
 
       log('Resuming graph from interrupt checkpoint...');
       result = await graph.invoke(
@@ -575,6 +593,7 @@ export async function runWorker(args: WorkerArgs): Promise<void> {
           ...(args.effort ? { effort: args.effort } : {}),
           ...(args.resumeReason ? { resumeReason: args.resumeReason } : {}),
           ...(mcpConfigPath ? { mcpConfigPath } : {}),
+          decisionToolAvailable,
           push: args.push ?? false,
           openPr: args.openPr ?? false,
           forkAndPr: args.forkAndPr ?? false,
@@ -605,6 +624,7 @@ export async function runWorker(args: WorkerArgs): Promise<void> {
           ...(args.model ? { model: args.model } : {}),
           ...(args.effort ? { effort: args.effort } : {}),
           ...(mcpConfigPath ? { mcpConfigPath } : {}),
+          decisionToolAvailable,
           push: args.push ?? false,
           openPr: args.openPr ?? false,
           forkAndPr: args.forkAndPr ?? false,
@@ -731,6 +751,7 @@ export async function runWorker(args: WorkerArgs): Promise<void> {
   } finally {
     // Stop MCP plugin servers regardless of success/failure/interrupt
     await stopPluginServers(args.featureId, mcpServerManager, log);
+    stopDecisionTool(decisionMcpConfigPath);
   }
 }
 
