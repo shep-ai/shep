@@ -1,0 +1,101 @@
+# Task Breakdown (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: decision-telemetry
+summary: Task breakdown for 136 — typed decision.answered and decision.defaulted events.
+
+relatedFeatures:
+  - 133-telemetry
+  - 134-unified-decisions
+technologies:
+  - TypeSpec
+  - TypeScript
+relatedLinks: []
+
+tasks:
+  - id: task-1
+    title: DecisionSurface, DecisionOutcome.Disabled and TelemetryEvent.DecisionDefaulted
+    description: TypeSpec enums plus enum-typed decision.answered / decision.defaulted properties in the telemetry property map; regenerate.
+    state: Done
+    dependencies: []
+    acceptanceCriteria:
+      - pnpm generate output committed; decision.answered kind/surface are enums
+    tdd: null
+    estimatedEffort: S
+
+  - id: task-2
+    title: AnswerAgentQuestionUseCase emits decision.answered
+    description: Inject ITelemetry; after a successful settle record kind, surface (input.surface ?? other), latency bucket and pickedRecommended.
+    state: Done
+    dependencies:
+      - task-1
+    acceptanceCriteria:
+      - Exactly one event per recorded answer; none when nothing was written
+    tdd:
+      red:
+        - Use-case tests for decision, legacy and lost-race paths
+      green:
+        - Emit after settlePending
+      refactor:
+        - none
+    estimatedEffort: S
+
+  - id: task-3
+    title: Callers pass their surface
+    description: Web action (web), CLI answer (cli), chat bridge (chat), supervisor router (supervisor).
+    state: Done
+    dependencies:
+      - task-2
+    acceptanceCriteria:
+      - Each caller's test asserts the surface it passes
+    tdd:
+      red:
+        - Caller tests
+      green:
+        - Pass surface
+      refactor:
+        - none
+    estimatedEffort: S
+
+  - id: task-4
+    title: AskAgentDecisionUseCase emits decision.defaulted
+    description: Inject ITelemetry; emit kind and timeout bucket when the deadline settle wins; outcome type becomes DecisionOutcome.
+    state: Done
+    dependencies:
+      - task-1
+    acceptanceCriteria:
+      - Event on timeout default; none when a human answered at the deadline
+    tdd:
+      red:
+        - Use-case tests with fake timers
+      green:
+        - Emit after the expired settle
+      refactor:
+        - AskAgentDecisionOutcome string union replaced by DecisionOutcome
+    estimatedEffort: S
+
+  - id: task-5
+    title: Document the events
+    description: docs/telemetry.md event table.
+    state: Done
+    dependencies:
+      - task-2
+      - task-4
+    acceptanceCriteria:
+      - Both events listed with properties and emit points
+    tdd: null
+    estimatedEffort: S
+
+totalEstimate: S
+
+openQuestions: []
+
+content: |
+  ## Summary
+
+  5 tasks, one PR.
+
+  ## Acceptance Checklist
+
+  - [ ] lint, format:check, typecheck, test:unit, test:int, build green locally
+  - [ ] CI green

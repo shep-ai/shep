@@ -1,0 +1,80 @@
+# Implementation Plan (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: decision-telemetry
+summary: Implementation plan for 136 — typed decision telemetry events emitted from the settling use cases.
+
+relatedFeatures:
+  - 133-telemetry
+  - 134-unified-decisions
+technologies:
+  - TypeSpec
+  - TypeScript
+relatedLinks: []
+
+phases:
+  - id: phase-1
+    name: 'Model'
+    parallel: false
+    taskIds:
+      - task-1
+  - id: phase-2
+    name: 'Emit points and callers'
+    parallel: false
+    taskIds:
+      - task-2
+      - task-3
+      - task-4
+  - id: phase-3
+    name: 'Docs'
+    parallel: false
+    taskIds:
+      - task-5
+
+filesToCreate: []
+
+filesToModify:
+  - tsp/agents/decision.tsp
+  - tsp/common/enums/telemetry.tsp
+  - packages/core/src/application/ports/output/services/telemetry-events.ts
+  - packages/core/src/application/ports/output/agents/agent-question-service.interface.ts
+  - packages/core/src/application/use-cases/agents/answer-agent-question.use-case.ts
+  - packages/core/src/application/use-cases/agents/ask-agent-decision.use-case.ts
+  - packages/core/src/infrastructure/services/mcp/tools/decision-tools.ts
+  - packages/core/src/infrastructure/services/agents/agent-question-service/agent-question-executor-bridge.ts
+  - packages/core/src/application/use-cases/agents/agent-question-supervisor-router.ts
+  - src/presentation/web/app/actions/agent-questions.ts
+  - src/presentation/cli/commands/agent/questions/answer.command.ts
+  - docs/telemetry.md
+
+openQuestions: []
+
+content: |
+  ## Architecture
+
+  ```
+  web action / CLI / chat bridge / supervisor --(surface)--> AnswerAgentQuestionUseCase
+        settlePending ok --> ITelemetry.record(decision.answered, {kind, surface, latency, pickedRecommended})
+  AskAgentDecisionUseCase deadline --> settlePending(expired) ok --> ITelemetry.record(decision.defaulted, {kind, timeout})
+  ```
+
+  Clean Architecture: enums live in TypeSpec (domain), the emit points are application use
+  cases that depend only on the `ITelemetry` output port, and presentation callers only pass a
+  `DecisionSurface` value — no infrastructure import moves outward.
+
+  Both use cases receive `ITelemetry` by string token. `kind` comes from the stored decision (or
+  `decisionForQuestion` for legacy rows), latency is `toDurationBucket(answeredAt - createdAt)`,
+  `pickedRecommended` is `responsesPickedRecommended` (false without responses).
+
+  ## TDD
+
+  - RED: answer use-case tests assert one `decision.answered` with the expected properties per
+    surface, none on flag-off / missing / already-settled / lost race; ask-decision tests assert
+    `decision.defaulted` on timeout and none when a human wins the deadline race; caller tests
+    assert the surface they pass.
+  - GREEN: inject ITelemetry, emit after the settle, pass surfaces.
+  - REFACTOR: AskAgentDecisionOutcome → DecisionOutcome enum.
+
+  ## Risks
+
+  Telemetry must never break an answer: ITelemetry.record never throws by contract (spec 133).

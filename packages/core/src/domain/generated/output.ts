@@ -9470,6 +9470,7 @@ export enum TelemetryEvent {
   PrOpened = 'pr.opened',
   PrMerged = 'pr.merged',
   DecisionAnswered = 'decision.answered',
+  DecisionDefaulted = 'decision.defaulted',
   OnboardingStep = 'onboarding.step',
   ErrorUnhandled = 'error.unhandled',
 }
@@ -9551,6 +9552,14 @@ export enum DecisionOutcome {
   Answered = 'answered',
   Defaulted = 'defaulted',
   Cancelled = 'cancelled',
+  Disabled = 'disabled',
+}
+export enum DecisionSurface {
+  Web = 'web',
+  Cli = 'cli',
+  Chat = 'chat',
+  Supervisor = 'supervisor',
+  Other = 'other',
 }
 export enum InlineBlockType {
   Decision = 'decision',

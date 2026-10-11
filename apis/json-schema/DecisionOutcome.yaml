@@ -6,4 +6,5 @@ enum:
   - answered
   - defaulted
   - cancelled
+  - disabled
 description: What became of an asked decision

@@ -11,6 +11,8 @@ import type {
   AgentRunStatus,
   AgentType,
   BuildMode,
+  DecisionKind,
+  DecisionSurface,
   OnboardingStep,
   TelemetryEvent,
 } from '../../../../domain/generated/output.js';
@@ -60,10 +62,17 @@ export interface TelemetryEventPropertyMap {
     viaPullRequest: boolean;
   };
   [TelemetryEvent.DecisionAnswered]: {
-    kind: string;
-    surface: string;
+    kind: DecisionKind;
+    surface: DecisionSurface;
+    /** From the question being asked to it being answered. */
     latency: DurationBucket;
+    /** Every question was answered with exactly its recommended option(s). */
     pickedRecommended: boolean;
+  };
+  [TelemetryEvent.DecisionDefaulted]: {
+    kind: DecisionKind;
+    /** The deadline the agent gave the question. */
+    timeout: DurationBucket;
   };
   [TelemetryEvent.OnboardingStep]: {
     step: OnboardingStep;
