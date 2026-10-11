@@ -31,6 +31,9 @@ import { createFeedbackCommand } from './feedback.command.js';
 import { createPromoteCommand } from './promote.command.js';
 import { createCommentsCommand } from './comments.command.js';
 import { createAddressCommentsCommand } from './address-comments.command.js';
+import { createCheckpointsCommand } from './checkpoints.command.js';
+import { createDiffCommand } from './diff.command.js';
+import { createRestoreCommand } from './restore.command.js';
 
 /**
  * Create the feat command group
@@ -66,5 +69,8 @@ Examples:
     .addCommand(createFeedbackCommand())
     .addCommand(createPromoteCommand())
     .addCommand(createCommentsCommand())
-    .addCommand(createAddressCommentsCommand());
+    .addCommand(createAddressCommentsCommand())
+    .addCommand(createCheckpointsCommand())
+    .addCommand(createDiffCommand())
+    .addCommand(createRestoreCommand());
 }

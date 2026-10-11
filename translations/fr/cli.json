@@ -510,6 +510,41 @@
         "description": "Faire traiter par un agent les commentaires en attente dans le worktree de la fonctionnalité, pousser et répondre à chacun",
         "commentsArg": "Identifiants de commentaires ou préfixes (par défaut : tous ceux en attente)",
         "spinner": "Traitement de {{count}} commentaires"
+      },
+      "checkpoints": {
+        "description": "Lister les checkpoints git pris après chaque étape d'une fonctionnalité",
+        "idArgument": "ID de la fonctionnalité ou préfixe",
+        "title": "Checkpoints — {{name}}",
+        "stepColumn": "Étape",
+        "timeColumn": "Pris le",
+        "changesColumn": "Modifications",
+        "commitColumn": "Commit",
+        "files_one": "{{count}} fichier",
+        "files_few": "{{count}} fichiers",
+        "files_many": "{{count}} fichiers",
+        "files_other": "{{count}} fichiers",
+        "empty": "Aucun checkpoint pour l'instant. Ils sont enregistrés après chaque étape dès que l'agent de la fonctionnalité s'exécute.",
+        "failed": "Impossible de lister les checkpoints"
+      },
+      "diff": {
+        "description": "Afficher ce qu'une étape a modifié, ou comparer deux étapes",
+        "idArgument": "ID de la fonctionnalité ou préfixe",
+        "toOption": "Étape à afficher : numéro, nom ou libellé (ex. 3, implement, 0003-implement)",
+        "fromOption": "Étape de comparaison (par défaut : l'étape avant --to)",
+        "statOption": "Lister seulement les fichiers modifiés",
+        "noChanges": "Aucune modification entre ces étapes.",
+        "failed": "Impossible de comparer les checkpoints"
+      },
+      "restore": {
+        "description": "Ramener le worktree d'une fonctionnalité à un checkpoint",
+        "idArgument": "ID de la fonctionnalité ou préfixe",
+        "stepArgument": "Checkpoint à restaurer : numéro, nom d'étape ou libellé",
+        "forceOption": "Ignorer la confirmation",
+        "confirm": "Restaurer le worktree à « {{step}} » ? Les modifications ultérieures sont conservées dans un checkpoint, la branche n'est pas déplacée.",
+        "cancelled": "Annulé",
+        "restored": "Worktree restauré à {{step}}",
+        "undoHint": "Pour annuler :",
+        "failed": "Impossible de restaurer le checkpoint"
       }
     },
     "repo": {
