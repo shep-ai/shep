@@ -1750,4 +1750,21 @@ describe('Settings Mapper', () => {
       expect(fromDatabase(row).models.adaptive).toEqual(adaptive);
     });
   });
+
+  describe('telemetry identity default (identity is opt-in)', () => {
+    it('writes identity off when settings carry no telemetry', () => {
+      const row = toDatabase(createTestSettings({ telemetry: undefined }));
+
+      expect(row.telemetry_enabled).toBe(1);
+      expect(row.telemetry_include_identity).toBe(0);
+    });
+
+    it('reads identity off from a row without a stored value', () => {
+      const row = createTestRow({
+        telemetry_include_identity: null as unknown as number,
+      });
+
+      expect(fromDatabase(row).telemetry?.includeIdentity).toBe(false);
+    });
+  });
 });

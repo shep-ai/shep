@@ -10,11 +10,12 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
 /**
- * `/dev/null` on every platform: Git for Windows maps it itself, while git
- * 2.56+ rejects the Windows device name `NUL` ("unable to access 'NUL'").
- * merge-step-real-git/setup.ts isolates the same way.
+ * An empty config file stands in for the global and system configs. `NUL` is
+ * refused by newer Git for Windows ("unable to access 'NUL'"), and an empty
+ * file reads the same on every platform and git version.
  */
-const EMPTY_GIT_CONFIG = '/dev/null';
+const EMPTY_GIT_CONFIG = join(mkdtempSync(join(tmpdir(), 'shep-git-config-')), 'empty.gitconfig');
+writeFileSync(EMPTY_GIT_CONFIG, '');
 
 export const ISOLATED_GIT_ENV = {
   GIT_CONFIG_GLOBAL: EMPTY_GIT_CONFIG,

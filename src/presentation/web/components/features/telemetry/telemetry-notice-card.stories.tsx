@@ -5,7 +5,8 @@ import { TelemetryNoticeCard, TelemetryNoticeCardView } from './telemetry-notice
 const ON = {
   enabled: true,
   reason: null,
-  includeIdentity: true,
+  // Identity is opt-in, so the default state leaves it out.
+  includeIdentity: false,
   contactConsent: false,
   queuedEvents: 3,
   configured: true,
@@ -33,8 +34,8 @@ type Story = StoryObj<typeof TelemetryNoticeCardView>;
 
 export const Default: Story = {};
 
-export const Anonymous: Story = {
-  args: { status: { ...ON, includeIdentity: false } },
+export const IdentityIncluded: Story = {
+  args: { status: { ...ON, includeIdentity: true } },
 };
 
 export const Saving: Story = { args: { pending: true } };

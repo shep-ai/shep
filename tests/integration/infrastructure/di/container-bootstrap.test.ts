@@ -40,6 +40,8 @@ import { registerRepositories } from '@/infrastructure/di/modules/register-repos
 import { registerServices } from '@/infrastructure/di/modules/register-services.js';
 import { registerTools } from '@/infrastructure/di/modules/register-tools.js';
 import { registerAgents } from '@/infrastructure/di/modules/register-agents.js';
+import { registerDecisions } from '@/infrastructure/di/modules/register-decisions.js';
+import { AgentQuestionBridgeFactory } from '@/infrastructure/services/agents/agent-question-service/agent-question-bridge.factory.js';
 import { registerCloudDeploy } from '@/infrastructure/di/modules/register-cloud-deploy.js';
 import { registerIntegrations } from '@/infrastructure/di/modules/register-integrations.js';
 import { registerDeployment } from '@/infrastructure/di/modules/register-deployment.js';
@@ -113,6 +115,8 @@ const WEB_ROUTE_TOKENS: readonly string[] = [
   'SetTelemetryPreferencesUseCase',
   'AcknowledgeTelemetryNoticeUseCase',
   'RecordTelemetryEventUseCase',
+  // Spec 134: the unified decisions inbox.
+  'ListAgentQuestionInboxUseCase',
   'AttachmentStorageService',
   'ConnectCloudProviderUseCase',
   'CreateGitRemoteUseCase',
@@ -455,6 +459,7 @@ describe('DI container bootstrap (integration)', () => {
     registerServices(scopedContainer);
     registerTools(scopedContainer);
     registerAgents(scopedContainer);
+    registerDecisions(scopedContainer);
     registerCloudDeploy(scopedContainer);
     registerIntegrations(scopedContainer);
     registerDeployment(scopedContainer);
@@ -531,7 +536,11 @@ describe('DI container bootstrap (integration)', () => {
       new SessionSpaceEnvironment(
         featureRepository,
         scopedContainer.resolve(ResolveSpaceEnvironmentUseCase)
-      )
+      ),
+      {
+        create: (session, surface) =>
+          scopedContainer.resolve(AgentQuestionBridgeFactory).create(session, surface),
+      }
     );
     const terminator = new SessionTerminator(
       sessionRegistry,

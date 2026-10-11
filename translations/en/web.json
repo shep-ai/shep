@@ -1822,6 +1822,22 @@
       "running": "Running…"
     }
   },
+  "decision": {
+    "answeredQuestions": "Answered questions",
+    "recommended": "Recommended",
+    "selectMany": "Select one or more options.",
+    "otherPlaceholder": "Type your own answer, or leave this blank to use the selected option",
+    "composerHint": "Type in the message box to answer in your own words.",
+    "restoreText": "Restore typed text",
+    "notResumable": "This question can no longer be answered — the agent that asked it is no longer waiting.",
+    "defaultsAt": "If nobody answers by {{time}}, the agent continues with the recommended option.",
+    "preview": "Preview",
+    "previous": "Previous",
+    "next": "Next",
+    "submit": "Submit",
+    "submitting": "Submitting…",
+    "new": "New"
+  },
   "telemetry": {
     "fieldsHeading": "What is sent",
     "fields": {
@@ -1833,6 +1849,7 @@
       "githubOwners": "The GitHub owners (users or organisations) of the repositories you use with Shep",
       "contactConsent": "Whether the Shep team may contact you on GitHub"
     },
+    "identityHeading": "Sent only if you turn on “Include my identity” (off by default)",
     "neverSent": "Never sent: prompts, code, file paths, repository or branch names, feature titles or error messages.",
     "reasons": {
       "ci": "the CI environment variable is set",
@@ -1853,7 +1870,7 @@
       "enabled": "Send usage metrics",
       "enabledDescription": "Turning this off also deletes events that have not been sent yet.",
       "identity": "Include my identity (GitHub username, org, account hash)",
-      "identityDescription": "Turn this off to stay anonymous and keep sending usage metrics.",
+      "identityDescription": "Off unless you turn it on. While it is off, usage metrics stay anonymous.",
       "contact": "The Shep team may contact me on GitHub",
       "contactDescription": "Off unless you turn it on."
     },

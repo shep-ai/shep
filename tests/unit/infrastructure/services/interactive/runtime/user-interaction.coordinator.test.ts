@@ -201,6 +201,32 @@ describe('UserInteractionCoordinator', () => {
   // respondToInteraction
   // ---------------------------------------------------------------------------
 
+  describe('buildLiveSurface (spec 134)', () => {
+    it('closes the pending chat question with answers given in the inbox', async () => {
+      const resolver = vi.fn();
+      const state = makeState({
+        pendingInteraction: makeInteraction(),
+        pendingInteractionResolver: resolver,
+      });
+
+      await coordinator.buildLiveSurface(state).settleFromElsewhere({ Q1: 'Alice' });
+
+      expect(resolver).toHaveBeenCalledWith({ Q1: 'Alice' });
+      expect(persistence.persistMessage).toHaveBeenCalledWith(
+        expect.objectContaining({ content: expect.stringContaining('{{interaction}}') })
+      );
+      expect(state.pendingInteraction).toBeNull();
+    });
+
+    it('does nothing when the chat question is already closed', async () => {
+      const state = makeState({ pendingInteraction: null, pendingInteractionResolver: null });
+      await expect(
+        coordinator.buildLiveSurface(state).settleFromElsewhere({ Q1: 'Alice' })
+      ).resolves.toBeUndefined();
+      expect(persistence.persistMessage).not.toHaveBeenCalled();
+    });
+  });
+
   describe('respondToInteraction', () => {
     it('throws when no pending interaction', async () => {
       const state = makeState({ pendingInteraction: null, pendingInteractionResolver: null });

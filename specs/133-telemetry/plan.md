@@ -69,4 +69,4 @@ emit points in lifecycle code. Docs land after the capability they describe.
 | Sends from CI or tests | Domain state forces off; Noop transport in tests; no key by default |
 | Double-counted merges | once-key claim in one transaction |
 | Migration number collides with parallel workstreams | Renumber after merging main |
-| Legal (GDPR) for identity | Owner check recorded; identity toggle; nothing sent without a key |
+| Legal (GDPR) for identity | Identity is opt-in (off by default); nothing sent without a key |

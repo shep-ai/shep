@@ -30,8 +30,22 @@ import type {
 import {
   AgentQuestionStatus,
   AgentRunStatus,
+  DecisionKind,
   type AgentQuestion,
+  type DecisionResponse,
 } from '../../../domain/generated/output.js';
+import {
+  normalizeResponses,
+  resolveResponsesFromText,
+  summariseResponses,
+  validateResponses,
+} from '../../../domain/shared/decision.js';
+import {
+  decisionForQuestion,
+  gateVerdictFromResponses,
+  isGateQuestion,
+  type GateVerdict,
+} from '../../../domain/shared/decision-builders.js';
 import { ApproveAgentRunUseCase } from './approve-agent-run.use-case.js';
 import { RejectAgentRunUseCase } from './reject-agent-run.use-case.js';
 
@@ -80,7 +94,7 @@ export class AnswerAgentQuestionUseCase {
       return this.alreadySettled(input, existing);
     }
 
-    validateAnswerAgainstOptions(existing, input.answer);
+    const { answer, responses } = resolveAnswer(existing, input);
 
     const now = new Date();
     const settled = await this.questionRepository.settlePending(
@@ -88,9 +102,10 @@ export class AnswerAgentQuestionUseCase {
       input.questionId,
       AgentQuestionStatus.answered,
       {
-        answer: input.answer,
+        answer,
         answeredBy: input.answeredBy,
         answeredAt: now,
+        ...(responses ? { responses } : {}),
       }
     );
     // Another caller (CLI vs web) settled it between our read and our write.
@@ -98,11 +113,11 @@ export class AnswerAgentQuestionUseCase {
 
     // Resolve any in-process awaiter so the SDK callback returns.
     if (this.deferredRegistry.has(input.questionId)) {
-      this.deferredRegistry.resolve(input.questionId, input.answer);
+      this.deferredRegistry.resolve(input.questionId, answer);
     }
 
     // Forward to the approval-gate use case when the question is gate-linked.
-    const forwardedToGate = await this.maybeForwardToGate(existing, input);
+    const forwardedToGate = await this.maybeForwardToGate(existing, answer, responses);
 
     const updated = await this.questionRepository.findById(input.appId, input.questionId);
     return { enabled: true, question: updated ?? existing, forwardedToGate };
@@ -124,18 +139,19 @@ export class AnswerAgentQuestionUseCase {
 
   private async maybeForwardToGate(
     question: AgentQuestion,
-    input: AnswerAgentQuestionInput
+    answer: string,
+    responses: DecisionResponse[] | undefined
   ): Promise<boolean> {
-    const verdict = mapAnswerToGateVerdict(input.answer);
-    if (!verdict) return false;
+    const gate = gateVerdictFor(question, answer, responses);
+    if (!gate) return false;
 
     const run = await this.agentRunRepository.findById(question.agentRunId);
     if (!run || run.status !== AgentRunStatus.waitingApproval) return false;
 
-    if (verdict === 'approve') {
+    if (gate.verdict === 'approve') {
       await this.approveAgentRun.execute(run.id);
     } else {
-      await this.rejectAgentRun.execute(run.id, input.answer);
+      await this.rejectAgentRun.execute(run.id, gate.feedback ?? answer);
     }
     return true;
   }
@@ -144,6 +160,34 @@ export class AnswerAgentQuestionUseCase {
     const settings = await this.settings.load();
     return settings?.featureFlags?.collaboration === true;
   }
+}
+
+/**
+ * The answer text and responses to record. A question with a stored decision
+ * (spec 134) is answered by validated responses — given, or resolved from the
+ * text — and its answer text is their readable summary. A pre-134 question
+ * keeps its plain-string rules.
+ */
+function resolveAnswer(
+  question: AgentQuestion,
+  input: AnswerAgentQuestionInput
+): { answer: string; responses?: DecisionResponse[] } {
+  if (question.decision) {
+    const responses = normalizeResponses(
+      input.responses ?? resolveResponsesFromText(question.decision, input.answer ?? '')
+    );
+    validateResponses(question.decision, responses);
+    return { answer: summariseResponses(question.decision, responses), responses };
+  }
+  if (input.responses) {
+    const decision = decisionForQuestion(question);
+    const responses = normalizeResponses(input.responses);
+    validateResponses(decision, responses);
+    return { answer: summariseResponses(decision, responses), responses };
+  }
+  const answer = input.answer ?? '';
+  validateAnswerAgainstOptions(question, answer);
+  return { answer };
 }
 
 function validateAnswerAgainstOptions(question: AgentQuestion, answer: string): void {
@@ -162,9 +206,25 @@ function validateAnswerAgainstOptions(question: AgentQuestion, answer: string): 
   }
 }
 
-function mapAnswerToGateVerdict(answer: string): 'approve' | 'reject' | null {
+/**
+ * The gate verdict an answer carries: by option id for an approval-gate
+ * decision; never for any other decision; by approve/reject vocabulary for a
+ * pre-134 question.
+ */
+function gateVerdictFor(
+  question: AgentQuestion,
+  answer: string,
+  responses: DecisionResponse[] | undefined
+): GateVerdict | undefined {
+  if (question.decision) {
+    return question.decision.kind === DecisionKind.ApprovalGate && responses
+      ? gateVerdictFromResponses(responses)
+      : undefined;
+  }
+  // A pre-134 gate row (JSON prompt) answered through the decision UI.
+  if (responses && isGateQuestion(question)) return gateVerdictFromResponses(responses);
   const normalized = answer.trim().toLowerCase();
-  if (GATE_APPROVE_ANSWERS.has(normalized)) return 'approve';
-  if (GATE_REJECT_ANSWERS.has(normalized)) return 'reject';
-  return null;
+  if (GATE_APPROVE_ANSWERS.has(normalized)) return { verdict: 'approve' };
+  if (GATE_REJECT_ANSWERS.has(normalized)) return { verdict: 'reject' };
+  return undefined;
 }

@@ -1,5 +1,5 @@
 /**
- * Telemetry outbox (spec 133): migration 166, once-key claims, due ordering,
+ * Telemetry outbox (spec 133): migration 168, once-key claims, due ordering,
  * failure bookkeeping, the size cap, and the settings telemetry columns.
  */
 
@@ -8,7 +8,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import type Database from 'better-sqlite3';
 import { createInMemoryDatabase } from '../../../helpers/database.helper.js';
 import { runSQLiteMigrations } from '@/infrastructure/persistence/sqlite/migrations.js';
-import { up } from '@/infrastructure/persistence/sqlite/migrations/166-create-telemetry.js';
+import { up } from '@/infrastructure/persistence/sqlite/migrations/168-create-telemetry.js';
 import { SQLiteTelemetryOutboxRepository } from '@/infrastructure/repositories/sqlite-telemetry-outbox.repository.js';
 import { SQLiteSettingsRepository } from '@/infrastructure/repositories/sqlite-settings.repository.js';
 import { createDefaultSettings } from '@/domain/factories/settings-defaults.factory.js';
@@ -114,6 +114,19 @@ describe('settings telemetry columns', () => {
   });
 
   afterEach(() => db.close());
+
+  it('leaves identity off for rows that predate the columns (identity is opt-in)', () => {
+    const columns = db.prepare('PRAGMA table_info(settings)').all() as {
+      name: string;
+      dflt_value: string | null;
+    }[];
+    const defaults = Object.fromEntries(columns.map((c) => [c.name, c.dflt_value]));
+    expect(defaults).toMatchObject({
+      telemetry_enabled: '1',
+      telemetry_include_identity: '0',
+      telemetry_contact_consent: '0',
+    });
+  });
 
   it('reads back the defaults for a fresh install', async () => {
     const settings = createDefaultSettings();

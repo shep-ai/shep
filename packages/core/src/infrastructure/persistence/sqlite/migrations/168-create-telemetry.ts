@@ -1,5 +1,5 @@
 /**
- * Migration 166: Telemetry outbox and preferences (spec 133).
+ * Migration 168: Telemetry outbox and preferences (spec 133).
  *
  * - telemetry_outbox: usage events waiting to be sent by the daemon, with
  *   per-entry retry state.
@@ -33,7 +33,7 @@ export async function up({ context: db }: MigrationParams<Database.Database>): P
     );
   `);
   addColumn(db, 'settings', 'telemetry_enabled', 'INTEGER NOT NULL DEFAULT 1');
-  addColumn(db, 'settings', 'telemetry_include_identity', 'INTEGER NOT NULL DEFAULT 1');
+  addColumn(db, 'settings', 'telemetry_include_identity', 'INTEGER NOT NULL DEFAULT 0');
   addColumn(db, 'settings', 'telemetry_contact_consent', 'INTEGER NOT NULL DEFAULT 0');
   addColumn(db, 'settings', 'telemetry_install_id', 'TEXT');
   addColumn(db, 'settings', 'telemetry_notice_shown_at', 'TEXT');

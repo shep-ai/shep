@@ -122,7 +122,8 @@ itself produces is opt-out **usage metrics** (spec 133): every process writes co
 events to the `telemetry_outbox` table and only the daemon / `shep ui` sends them to PostHog
 (EU, `/batch/`). Record events through the `ITelemetry` port with a typed property map
 (`TelemetryEventPropertyMap`) — never prompts, code, paths, repo/branch names, titles, ids or
-error messages. See [docs/telemetry.md](./docs/telemetry.md).
+error messages. Identity fields (agent account hash, GitHub username, GitHub owners) are
+**opt-in** — `includeIdentity` defaults to `false`. See [docs/telemetry.md](./docs/telemetry.md).
 
 | Path | What |
 | ---- | ---- |

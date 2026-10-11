@@ -866,15 +866,16 @@ model SupervisorConfig {
  * Telemetry Configuration (spec 133)
  *
  * Opt-out usage metrics. On by default; always off under CI, DO_NOT_TRACK,
- * SHEP_TELEMETRY_DISABLED and tests regardless of these values.
+ * SHEP_TELEMETRY_DISABLED and tests regardless of these values. Identity is
+ * opt-in: off until the user turns it on.
  */
 @doc("Opt-out usage metrics preferences (spec 133)")
 model TelemetryConfig {
   @doc("Whether usage metrics are recorded and sent")
   enabled: boolean = true;
 
-  @doc("Whether identity (agent account hash, GitHub username and owners) is attached")
-  includeIdentity: boolean = true;
+  @doc("Whether identity (agent account hash, GitHub username and owners) is attached; opt-in")
+  includeIdentity: boolean = false;
 
   @doc("Whether the Shep team may contact the user on GitHub")
   contactConsent: boolean = false;

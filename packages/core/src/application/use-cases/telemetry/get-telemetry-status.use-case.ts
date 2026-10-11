@@ -12,7 +12,10 @@ import type { ISettingsRepository } from '../../ports/output/repositories/settin
 import type { ITelemetryOutboxRepository } from '../../ports/output/repositories/telemetry-outbox.repository.interface.js';
 import type { ITelemetryTransport } from '../../ports/output/services/telemetry-transport.interface.js';
 import type { ITelemetryRuntime } from '../../ports/output/services/telemetry-runtime.interface.js';
-import { resolveTelemetryState } from '../../../domain/shared/telemetry/telemetry-state.js';
+import {
+  resolveTelemetryState,
+  telemetryConfigOf,
+} from '../../../domain/shared/telemetry/telemetry-state.js';
 
 export interface TelemetryStatus {
   enabled: boolean;
@@ -40,14 +43,15 @@ export class GetTelemetryStatusUseCase {
   ) {}
 
   async execute(): Promise<TelemetryStatus> {
-    const telemetry = (await this.settingsRepository.load())?.telemetry;
+    const settings = await this.settingsRepository.load();
+    const telemetry = telemetryConfigOf(settings ?? {});
     const state = resolveTelemetryState(this.runtime.env(), telemetry);
     return {
       enabled: state.enabled,
       reason: state.reason,
-      includeIdentity: telemetry?.includeIdentity ?? true,
-      contactConsent: telemetry?.contactConsent ?? false,
-      installId: telemetry?.installId ?? null,
+      includeIdentity: telemetry.includeIdentity,
+      contactConsent: telemetry.contactConsent,
+      installId: telemetry.installId ?? null,
       queuedEvents: this.outbox.count(),
       configured: this.transport.isConfigured(),
       destination: this.transport.destination(),

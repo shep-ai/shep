@@ -59,7 +59,7 @@ filesToCreate:
   - packages/core/src/application/ports/output/services/telemetry-runtime.interface.ts
   - packages/core/src/application/ports/output/repositories/telemetry-outbox.repository.interface.ts
   - packages/core/src/application/use-cases/telemetry/
-  - packages/core/src/infrastructure/persistence/sqlite/migrations/166-create-telemetry.ts
+  - packages/core/src/infrastructure/persistence/sqlite/migrations/168-create-telemetry.ts
   - packages/core/src/infrastructure/persistence/sqlite/mappers/settings-telemetry.mapper.ts
   - packages/core/src/infrastructure/repositories/sqlite-telemetry-outbox.repository.ts
   - packages/core/src/infrastructure/services/telemetry/
@@ -167,4 +167,4 @@ content: |
   | Sends from CI or tests | Domain state forces off; Noop transport in tests; no key by default |
   | Double-counted merges | once-key claim in one transaction |
   | Migration number collides with parallel workstreams | Renumber after merging main |
-  | Legal (GDPR) for identity | Owner check recorded; identity toggle; nothing sent without a key |
+  | Legal (GDPR) for identity | Identity is opt-in (off by default); nothing sent without a key |

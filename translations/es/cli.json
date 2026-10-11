@@ -1899,7 +1899,8 @@
         "githubOwners": "los propietarios de GitHub (usuarios u organizaciones) de los repositorios que usas con Shep",
         "contactConsent": "si el equipo de Shep puede contactarte en GitHub (no, a menos que lo permitas)"
       },
-      "identityNote": "El hash de la cuenta, el usuario de GitHub y los propietarios te identifican. Para mantener las métricas sin estos datos: shep telemetry identity off",
+      "identityHeading": "Solo se envía si activas la identidad (desactivada por defecto):",
+      "identityNote": "Estos datos te identifican, así que siguen desactivados hasta que los actives: shep telemetry identity on",
       "optOut": "Desactivar las métricas: shep telemetry off (o define DO_NOT_TRACK=1). Ver qué se envía: shep telemetry show"
     }
   },

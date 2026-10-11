@@ -1822,6 +1822,22 @@
       "running": "Executando…"
     }
   },
+  "decision": {
+    "answeredQuestions": "Perguntas respondidas",
+    "recommended": "Recomendada",
+    "selectMany": "Selecione uma ou mais opções.",
+    "otherPlaceholder": "Digite sua própria resposta ou deixe em branco para usar a opção selecionada",
+    "composerHint": "Escreva na caixa de mensagem para responder com suas palavras.",
+    "restoreText": "Restaurar texto digitado",
+    "notResumable": "Esta pergunta não pode mais ser respondida — o agente que a fez não está mais esperando.",
+    "defaultsAt": "Se ninguém responder até {{time}}, o agente continua com a opção recomendada.",
+    "preview": "Pré-visualização",
+    "previous": "Anterior",
+    "next": "Próxima",
+    "submit": "Enviar",
+    "submitting": "Enviando…",
+    "new": "Nova"
+  },
   "telemetry": {
     "fieldsHeading": "O que é enviado",
     "fields": {
@@ -1833,6 +1849,7 @@
       "githubOwners": "Os proprietários no GitHub (usuários ou organizações) dos repositórios que você usa com o Shep",
       "contactConsent": "Se a equipe do Shep pode entrar em contato com você no GitHub"
     },
+    "identityHeading": "Enviado apenas se você ativar “Incluir minha identidade” (desativado por padrão)",
     "neverSent": "Nunca enviados: prompts, código, caminhos de arquivos, nomes de repositórios ou branches, títulos de features ou mensagens de erro.",
     "reasons": {
       "ci": "a variável de ambiente CI está definida",
@@ -1853,7 +1870,7 @@
       "enabled": "Enviar métricas de uso",
       "enabledDescription": "Desativar isso também exclui os eventos que ainda não foram enviados.",
       "identity": "Incluir minha identidade (usuário do GitHub, organização, hash da conta)",
-      "identityDescription": "Desative para continuar anônimo e seguir enviando métricas de uso.",
+      "identityDescription": "Desativado até você ativar. Enquanto estiver desativado, as métricas de uso são anônimas.",
       "contact": "A equipe do Shep pode entrar em contato comigo no GitHub",
       "contactDescription": "Desativado, a menos que você ative."
     },

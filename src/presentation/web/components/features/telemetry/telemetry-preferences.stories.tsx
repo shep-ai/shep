@@ -5,7 +5,8 @@ import { TelemetryPreferences } from './telemetry-preferences';
 const ON = {
   enabled: true,
   reason: null,
-  includeIdentity: true,
+  // Identity is opt-in, so the default state leaves it out.
+  includeIdentity: false,
   contactConsent: false,
   queuedEvents: 12,
   configured: true,
@@ -25,8 +26,8 @@ type Story = StoryObj<typeof TelemetryPreferences>;
 
 export const Default: Story = {};
 
-export const Anonymous: Story = {
-  args: { status: { ...ON, includeIdentity: false } },
+export const IdentityIncluded: Story = {
+  args: { status: { ...ON, includeIdentity: true } },
 };
 
 export const ContactAllowed: Story = {

@@ -1899,7 +1899,8 @@
         "githubOwners": "مالكو المستودعات على GitHub (مستخدمون أو مؤسسات) التي تستخدمها مع Shep",
         "contactConsent": "ما إذا كان يمكن لفريق Shep التواصل معك على GitHub (لا، ما لم تسمح بذلك)"
       },
-      "identityNote": "تجزئة الحساب واسم المستخدم على GitHub والمالكون تحدد هويتك. للإبقاء على المقاييس مع استبعادها: shep telemetry identity off",
+      "identityHeading": "يُرسل فقط إذا فعّلت الهوية (معطّلة افتراضيًا):",
+      "identityNote": "هذه البيانات تحدد هويتك، لذا تبقى معطّلة حتى تفعّلها: shep telemetry identity on",
       "optOut": "إيقاف المقاييس: shep telemetry off (أو عيّن DO_NOT_TRACK=1). عرض ما يتم إرساله: shep telemetry show"
     }
   },

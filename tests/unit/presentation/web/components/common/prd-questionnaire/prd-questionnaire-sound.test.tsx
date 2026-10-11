@@ -66,36 +66,20 @@ describe('PrdQuestionnaire — sound effects', () => {
   });
 
   it('plays navigate sound when Previous button is clicked', () => {
-    // Start on step 2 by clicking step dot
     render(<PrdQuestionnaire {...defaultProps} />);
-
-    // Navigate to step 2 via step dot
-    const stepDots = screen.getAllByRole('button', { name: /Go to question/ });
-    fireEvent.click(stepDots[1]);
+    fireEvent.click(screen.getByTestId('decision-panel-next'));
 
     vi.clearAllMocks();
 
-    // Click Previous
-    const prevButton = screen.getByRole('button', { name: /previous/i });
-    fireEvent.click(prevButton);
+    fireEvent.click(screen.getByRole('button', { name: /previous/i }));
 
     expect(mockNavigatePlay).toHaveBeenCalledOnce();
   });
 
-  it('plays navigate sound when Next/Skip button is clicked', () => {
+  it('plays navigate sound when Next is clicked', () => {
     render(<PrdQuestionnaire {...defaultProps} />);
 
-    const skipButton = screen.getByRole('button', { name: /skip/i });
-    fireEvent.click(skipButton);
-
-    expect(mockNavigatePlay).toHaveBeenCalledOnce();
-  });
-
-  it('plays navigate sound when step dot is clicked', () => {
-    render(<PrdQuestionnaire {...defaultProps} />);
-
-    const stepDots = screen.getAllByRole('button', { name: /Go to question/ });
-    fireEvent.click(stepDots[1]);
+    fireEvent.click(screen.getByTestId('decision-panel-next'));
 
     expect(mockNavigatePlay).toHaveBeenCalledOnce();
   });

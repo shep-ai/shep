@@ -7,6 +7,8 @@
 
 import type {
   AgentQuestion,
+  Decision,
+  DecisionResponse,
   AgentQuestionAnswerer,
   AgentQuestionKind,
   AgentQuestionStatus,
@@ -27,6 +29,8 @@ export interface AgentQuestionRow {
   answered_by: string | null;
   answered_at: number | null;
   expires_at: number | null;
+  decision_json: string | null;
+  responses_json: string | null;
   created_at: number;
   updated_at: number;
 }
@@ -54,6 +58,8 @@ export function toDatabase(question: AgentQuestion): AgentQuestionRow {
     answered_by: question.answeredBy ?? null,
     answered_at: question.answeredAt ? toMillis(question.answeredAt) : null,
     expires_at: question.expiresAt ? toMillis(question.expiresAt) : null,
+    decision_json: question.decision ? JSON.stringify(question.decision) : null,
+    responses_json: question.responses ? JSON.stringify(question.responses) : null,
     created_at: toMillis(question.createdAt),
     updated_at: toMillis(question.updatedAt),
   };
@@ -75,7 +81,28 @@ export function fromDatabase(row: AgentQuestionRow): AgentQuestion {
     answeredBy: row.answered_by ?? undefined,
     answeredAt: row.answered_at ? new Date(row.answered_at) : undefined,
     expiresAt: row.expires_at ? new Date(row.expires_at) : undefined,
+    decision: parseDecision(row.decision_json),
+    responses: parseJson<DecisionResponse[]>(row.responses_json),
     createdAt: new Date(row.created_at),
     updatedAt: new Date(row.updated_at),
   } as AgentQuestion;
+}
+
+/** A malformed JSON column reads as absent rather than failing the whole row. */
+function parseJson<T>(value: string | null): T | undefined {
+  if (!value) return undefined;
+  try {
+    return JSON.parse(value) as T;
+  } catch {
+    return undefined;
+  }
+}
+
+/** JSON has no dates: `defaultAfter` is revived from its ISO string. */
+function parseDecision(value: string | null): Decision | undefined {
+  const decision = parseJson<Decision>(value);
+  if (decision?.defaultAfter !== undefined) {
+    decision.defaultAfter = new Date(decision.defaultAfter);
+  }
+  return decision;
 }

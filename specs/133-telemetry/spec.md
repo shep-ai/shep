@@ -13,12 +13,14 @@
 - **Consent: on by default.** A notice prints once on the first CLI run and appears in web
   onboarding with a one-click "turn off". Telemetry is always off when `CI` is set,
   `DO_NOT_TRACK=1`, `SHEP_TELEMETRY_DISABLED=1`, or under tests.
-- **Identity.** Always a random `installId` (UUID). Unless "Include my identity" is off, also:
+- **Identity (opt-in, owner decision after review).** Always a random `installId` (UUID).
+  Only after the user turns "Include my identity" on (off by default), also:
   a SHA-256 hash of the agent account id (read through the agent catalog: Claude
   `~/.claude.json` `userID`, Codex `~/.codex/auth.json` `tokens.account_id`), the GitHub
   username from `gh api user`, and the GitHub owner names from the git remotes of repos Shep
   runs in. An onboarding checkbox "The Shep team may contact me on GitHub" sends a
-  contact-consent flag. The notice lists exactly these fields.
+  contact-consent flag. The notice lists exactly these fields, with the identity fields under
+  their own heading and the way to turn them on.
 - **Delivery.** Every process (CLI, daemon, feature-agent workers) writes to a local SQLite
   `telemetry_outbox`; only the daemon sends, from a flush watcher started in
   `_serve.command.ts`. PostHog EU `/batch/` over plain `fetch`, no SDK. The project key comes
@@ -43,6 +45,7 @@
 - [ ] Every process writes events to `telemetry_outbox`; only the daemon's flush watcher sends
 - [ ] Each event has a uuid; a failed batch backs off with jitter and is dropped after 5 attempts; the table is capped
 - [ ] Telemetry resolves to off under `CI`, `DO_NOT_TRACK=1`, `SHEP_TELEMETRY_DISABLED=1` and tests, and when the user turns it off; nothing is written to the outbox then
+- [ ] Identity defaults to off (settings default, migration column default, mapper fallback)
 - [ ] Turning identity off removes the account hash, GitHub username and owners from every envelope, including ones already queued
 - [ ] The agent account id source lives on the agent catalog; core has no `if (agentType === …)` for identity
 - [ ] First CLI run prints the notice once (stderr), listing exactly the collected fields

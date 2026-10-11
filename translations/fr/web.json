@@ -1822,6 +1822,22 @@
       "running": "En cours…"
     }
   },
+  "decision": {
+    "answeredQuestions": "Questions répondues",
+    "recommended": "Recommandé",
+    "selectMany": "Sélectionnez une ou plusieurs options.",
+    "otherPlaceholder": "Saisissez votre propre réponse, ou laissez vide pour utiliser l’option sélectionnée",
+    "composerHint": "Écrivez dans la zone de message pour répondre avec vos propres mots.",
+    "restoreText": "Restaurer le texte saisi",
+    "notResumable": "Cette question ne peut plus recevoir de réponse : l’agent qui l’a posée n’attend plus.",
+    "defaultsAt": "Sans réponse avant {{time}}, l’agent continue avec l’option recommandée.",
+    "preview": "Aperçu",
+    "previous": "Précédent",
+    "next": "Suivant",
+    "submit": "Envoyer",
+    "submitting": "Envoi…",
+    "new": "Nouveau"
+  },
   "telemetry": {
     "fieldsHeading": "Ce qui est envoyé",
     "fields": {
@@ -1833,6 +1849,7 @@
       "githubOwners": "Les propriétaires GitHub (utilisateurs ou organisations) des dépôts que vous utilisez avec Shep",
       "contactConsent": "Si l'équipe Shep peut vous contacter sur GitHub"
     },
+    "identityHeading": "Envoyé uniquement si vous activez « Inclure mon identité » (désactivé par défaut)",
     "neverSent": "Jamais envoyés : prompts, code, chemins de fichiers, noms de dépôts ou de branches, titres de fonctionnalités et messages d'erreur.",
     "reasons": {
       "ci": "la variable d'environnement CI est définie",
@@ -1853,7 +1870,7 @@
       "enabled": "Envoyer les métriques d'utilisation",
       "enabledDescription": "La désactivation supprime aussi les événements qui n'ont pas encore été envoyés.",
       "identity": "Inclure mon identité (nom d'utilisateur GitHub, organisation, hachage du compte)",
-      "identityDescription": "Désactivez cette option pour rester anonyme tout en continuant à envoyer des métriques d'utilisation.",
+      "identityDescription": "Désactivé tant que vous ne l'activez pas. Tant qu'il est désactivé, les métriques d'utilisation restent anonymes.",
       "contact": "L'équipe Shep peut me contacter sur GitHub",
       "contactDescription": "Désactivé, sauf si vous l'activez."
     },

@@ -535,11 +535,11 @@ describe('createDefaultSettings', () => {
   });
 
   describe('TelemetryConfig defaults', () => {
-    it('turns usage metrics and identity on, contact consent off', () => {
+    it('turns usage metrics on, identity and contact consent off', () => {
       const settings = createDefaultSettings();
       expect(settings.telemetry).toMatchObject({
         enabled: true,
-        includeIdentity: true,
+        includeIdentity: false,
         contactConsent: false,
       });
     });

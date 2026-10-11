@@ -33,14 +33,17 @@ export function commandPath(command: Command): string {
   return names.join(' ');
 }
 
-function writeNotice(fields: readonly string[]): void {
+function writeNotice(fields: readonly string[], identityFields: readonly string[]): void {
   const t = getCliI18n().t.bind(getCliI18n());
+  const bullet = (field: string) => `  - ${t(`${NOTICE_KEY}.fields.${field}`)}`;
   const lines = [
     '',
     t(`${NOTICE_KEY}.title`),
     t(`${NOTICE_KEY}.intro`),
     t(`${NOTICE_KEY}.fieldsHeading`),
-    ...fields.map((field) => `  - ${t(`${NOTICE_KEY}.fields.${field}`)}`),
+    ...fields.map(bullet),
+    t(`${NOTICE_KEY}.identityHeading`),
+    ...identityFields.map(bullet),
     t(`${NOTICE_KEY}.identityNote`),
     t(`${NOTICE_KEY}.optOut`),
     '',
@@ -51,7 +54,7 @@ function writeNotice(fields: readonly string[]): void {
 async function showNoticeOnce(): Promise<void> {
   try {
     const notice = await container.resolve(AcknowledgeTelemetryNoticeUseCase).execute();
-    if (notice.show) writeNotice(notice.fields);
+    if (notice.show) writeNotice(notice.fields, notice.identityFields);
   } catch {
     // The notice is retried on the next run.
   }

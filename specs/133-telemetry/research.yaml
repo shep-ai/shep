@@ -52,7 +52,7 @@ decisions:
       boundary made structural.
 
   - title: Settings own the preferences
-    chosen: TelemetryConfig on Settings (enabled=true, includeIdentity=true, contactConsent=false, installId, noticeShownAt, lastHeartbeatAt), persisted as telemetry_* columns mapped in a dedicated settings-telemetry mapper module
+    chosen: TelemetryConfig on Settings (enabled=true, includeIdentity=false (opt-in, owner decision), contactConsent=false, installId, noticeShownAt, lastHeartbeatAt), persisted as telemetry_* columns mapped in a dedicated settings-telemetry mapper module
     rejected:
       - 'A separate telemetry_state table: a second settings store for what the Settings page edits'
     rationale: >

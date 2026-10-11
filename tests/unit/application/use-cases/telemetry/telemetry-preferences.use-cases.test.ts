@@ -11,7 +11,10 @@ import { SetTelemetryPreferencesUseCase } from '@/application/use-cases/telemetr
 import { PreviewTelemetryUseCase } from '@/application/use-cases/telemetry/preview-telemetry.use-case.js';
 import { AcknowledgeTelemetryNoticeUseCase } from '@/application/use-cases/telemetry/acknowledge-telemetry-notice.use-case.js';
 import { TelemetryEnvelopeBuilder } from '@/application/use-cases/telemetry/telemetry-envelope-builder.js';
-import { TELEMETRY_NOTICE_FIELDS } from '@/domain/shared/telemetry/telemetry-notice.js';
+import {
+  TELEMETRY_ANONYMOUS_FIELDS,
+  TELEMETRY_IDENTITY_FIELDS,
+} from '@/domain/shared/telemetry/telemetry-notice.js';
 import {
   InMemoryTelemetryOutbox,
   RecordingTelemetryTransport,
@@ -60,6 +63,21 @@ describe('GetTelemetryStatusUseCase', () => {
       queuedEvents: 1,
       configured: true,
       destination: 'https://analytics.example/batch/',
+    });
+  });
+
+  it('reports identity off for settings that never stored telemetry (identity is opt-in)', async () => {
+    const useCase = new GetTelemetryStatusUseCase(
+      createSettingsRepositoryDouble({ telemetry: undefined }),
+      new InMemoryTelemetryOutbox(),
+      new RecordingTelemetryTransport(),
+      createFakeTelemetryRuntime()
+    );
+
+    expect(await useCase.execute()).toMatchObject({
+      enabled: true,
+      includeIdentity: false,
+      contactConsent: false,
     });
   });
 
@@ -175,9 +193,13 @@ describe('AcknowledgeTelemetryNoticeUseCase', () => {
       createFakeClock(NOW)
     );
 
-    expect(await useCase.execute()).toEqual({ show: true, fields: TELEMETRY_NOTICE_FIELDS });
+    const fields = {
+      fields: TELEMETRY_ANONYMOUS_FIELDS,
+      identityFields: TELEMETRY_IDENTITY_FIELDS,
+    };
+    expect(await useCase.execute()).toEqual({ show: true, ...fields });
     expect(settingsRepo.current.telemetry?.noticeShownAt).toEqual(NOW);
-    expect(await useCase.execute()).toEqual({ show: false, fields: TELEMETRY_NOTICE_FIELDS });
+    expect(await useCase.execute()).toEqual({ show: false, ...fields });
   });
 
   it('does not show the notice while telemetry is off', async () => {

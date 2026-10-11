@@ -2,7 +2,8 @@
 
 Shep sends a small set of **usage events** to the Shep team so we can tell which parts of Shep
 are used and whether runs end in merged pull requests. It is on by default, announced the first
-time you run Shep, and easy to turn off. This page lists everything that is sent.
+time you run Shep, and easy to turn off. Fields that identify you are **opt-in**: they are sent
+only after you turn on *Include my identity*. This page lists everything that is sent.
 
 Spec: [`specs/133-telemetry`](../specs/133-telemetry/spec.md).
 
@@ -17,7 +18,9 @@ Spec: [`specs/133-telemetry`](../specs/133-telemetry/spec.md).
 | `CI` set (any value except `0`/`false`) | Always off |
 | Running under a test runner (`VITEST`, `NODE_ENV=test`) | Always off |
 
-`shep telemetry identity off` keeps metrics but leaves out every identity field.
+Identity is off by default. `shep telemetry identity on` (or *Include my identity* in Settings or
+the onboarding notice) adds the identity fields below; `shep telemetry identity off` removes them
+again, including from events already queued.
 `shep telemetry contact on|off` sets whether the Shep team may contact you on GitHub.
 `shep telemetry status` shows the current state; `shep telemetry show` prints the exact request
 body the next send would post (with the project key replaced by a placeholder).
@@ -35,7 +38,7 @@ Every event carries:
 | `contactConsent` | `false` | Whether the Shep team may contact you on GitHub (off unless you allow it). |
 | `$geoip_disable` | `true` | PostHog's GeoIP enrichment is always off. |
 
-Unless **Include my identity** is off, events also carry:
+Only after you turn **Include my identity** on (it is off by default), events also carry:
 
 | Field | Source |
 | ----- | ------ |
@@ -44,7 +47,8 @@ Unless **Include my identity** is off, events also carry:
 | `githubOwners` | The GitHub owners (users or organisations) parsed from the remotes of repositories added to Shep. Repository names are dropped. |
 
 With identity on, PostHog creates a person profile for the install with `githubUsername`,
-`githubOwners` and `contactConsent`; with identity off, person profiles are not processed.
+`githubOwners` and `contactConsent`; with identity off (the default), person profiles are not
+processed.
 
 ### Events
 
@@ -106,6 +110,6 @@ otherwise records the sender's IP address.
 | Domain | `packages/core/src/domain/shared/telemetry/` |
 | Ports | `ITelemetry`, `ITelemetryTransport`, `ITelemetryIdentityProvider`, `ITelemetryRuntime`, `ITelemetryOutboxRepository` |
 | Use cases | `packages/core/src/application/use-cases/telemetry/` |
-| Adapters | `packages/core/src/infrastructure/services/telemetry/`, migration `166-create-telemetry.ts` |
+| Adapters | `packages/core/src/infrastructure/services/telemetry/`, migration `168-create-telemetry.ts` |
 | CLI | `src/presentation/cli/commands/telemetry/`, `src/presentation/cli/telemetry-hooks.ts` |
 | Web | `src/presentation/web/components/features/telemetry/`, `app/actions/telemetry.ts`, `hooks/use-route-view-telemetry.ts` |

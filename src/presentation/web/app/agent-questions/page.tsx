@@ -1,7 +1,6 @@
 import { notFound } from 'next/navigation';
 import { resolve } from '@/lib/server-container';
-import type { ListAgentQuestionsUseCase } from '@shepai/core/application/use-cases/agents/list-agent-questions.use-case';
-import type { ListApplicationsUseCase } from '@shepai/core/application/use-cases/applications/list-applications.use-case';
+import type { ListAgentQuestionInboxUseCase } from '@shepai/core/application/use-cases/agents/list-agent-question-inbox.use-case';
 import { AgentQuestionStatus, type AgentQuestion } from '@shepai/core/domain/generated/output';
 import { getFeatureFlags } from '@/lib/feature-flags';
 import { AgentQuestionsInbox } from '@/components/agent-questions/agent-questions-inbox';
@@ -28,23 +27,11 @@ export default async function AgentQuestionsRoute({ searchParams }: RouteProps) 
   const featureFilter = search.feature?.trim() ? search.feature : undefined;
   const statusFilter = parseStatus(search.status);
 
-  const apps = await resolve<ListApplicationsUseCase>('ListApplicationsUseCase').execute();
-  const appIds = requestedApp ? [requestedApp] : apps.map((a) => a.id);
-
-  const useCase = resolve<ListAgentQuestionsUseCase>('ListAgentQuestionsUseCase');
-  const lists = await Promise.all(
-    appIds.map((appId) =>
-      useCase
-        .execute({
-          appId,
-          featureId: featureFilter,
-          status: statusFilter,
-        })
-        .catch(() => [] as AgentQuestion[])
-    )
-  );
-  const questions = lists.flat();
-  questions.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  // Every scope a question was written under — including repositories with
+  // no Application, where gate and chat questions fall back to the path.
+  const questions = await resolve<ListAgentQuestionInboxUseCase>('ListAgentQuestionInboxUseCase')
+    .execute({ appId: requestedApp, featureId: featureFilter, status: statusFilter })
+    .catch(() => [] as AgentQuestion[]);
 
   return (
     <div className="flex h-full flex-col gap-6 p-6">

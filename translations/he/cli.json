@@ -1899,7 +1899,8 @@
         "githubOwners": "הבעלים ב-GitHub (משתמשים או ארגונים) של המאגרים שבהם אתה משתמש עם Shep",
         "contactConsent": "האם צוות Shep רשאי ליצור איתך קשר ב-GitHub (לא, אלא אם תאפשר זאת)"
       },
-      "identityNote": "גיבוב החשבון, שם המשתמש ב-GitHub והבעלים מזהים אותך. כדי לשמור את המדדים אך להשמיט אותם: shep telemetry identity off",
+      "identityHeading": "נשלח רק אם תפעיל את הזהות (כבוי כברירת מחדל):",
+      "identityNote": "פרטים אלה מזהים אותך, ולכן הם כבויים עד שתפעיל אותם: shep telemetry identity on",
       "optOut": "כיבוי המדדים: shep telemetry off (או הגדר DO_NOT_TRACK=1). הצגת מה נשלח: shep telemetry show"
     }
   },

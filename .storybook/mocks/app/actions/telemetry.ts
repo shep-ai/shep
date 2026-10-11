@@ -19,7 +19,7 @@ export interface SetTelemetryPreferencesResult {
 let status: TelemetryStatusView = {
   enabled: true,
   reason: null,
-  includeIdentity: true,
+  includeIdentity: false,
   contactConsent: false,
   queuedEvents: 12,
   configured: true,

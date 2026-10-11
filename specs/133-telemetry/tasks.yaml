@@ -18,7 +18,7 @@ tasks:
     dependencies: []
     acceptanceCriteria:
       - pnpm generate leaves a clean diff and tsp:compile has no warnings
-      - Settings defaults include telemetry (enabled, includeIdentity on; contactConsent off)
+      - Settings defaults include telemetry (enabled on; includeIdentity and contactConsent off)
     tdd:
       red:
         - Defaults factory test expects telemetry defaults
@@ -48,7 +48,7 @@ tasks:
 
   - id: task-3
     title: Migration, outbox repository, settings columns
-    description: 166-create-telemetry (outbox, once table, settings columns); SQLiteTelemetryOutboxRepository; settings-telemetry mapper wired into settings mapper and repository SQL
+    description: 168-create-telemetry (outbox, once table, settings columns); SQLiteTelemetryOutboxRepository; settings-telemetry mapper wired into settings mapper and repository SQL
     state: Done
     dependencies:
       - task-1

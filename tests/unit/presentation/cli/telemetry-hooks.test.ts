@@ -2,7 +2,15 @@ import 'reflect-metadata';
 import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest';
 import { Command } from 'commander';
 import { TelemetryEvent } from '@/domain/generated/output.js';
-import { TELEMETRY_NOTICE_FIELDS } from '@/domain/shared/telemetry/telemetry-notice.js';
+import {
+  TELEMETRY_ANONYMOUS_FIELDS,
+  TELEMETRY_IDENTITY_FIELDS,
+} from '@/domain/shared/telemetry/telemetry-notice.js';
+
+const NOTICE_FIELDS = {
+  fields: TELEMETRY_ANONYMOUS_FIELDS,
+  identityFields: TELEMETRY_IDENTITY_FIELDS,
+};
 
 const { mockResolve } = vi.hoisted(() => ({ mockResolve: vi.fn() }));
 
@@ -34,7 +42,7 @@ describe('CLI telemetry hooks', () => {
       stderr += String(chunk);
       return true;
     });
-    acknowledge.mockResolvedValue({ show: false, fields: TELEMETRY_NOTICE_FIELDS });
+    acknowledge.mockResolvedValue({ show: false, ...NOTICE_FIELDS });
     mockResolve.mockImplementation((token: { name?: string }) => {
       switch (token.name) {
         case 'RecordTelemetryEventUseCase':
@@ -88,16 +96,23 @@ describe('CLI telemetry hooks', () => {
   });
 
   it('prints the first-run notice to stderr, listing every field', async () => {
-    acknowledge.mockResolvedValue({ show: true, fields: TELEMETRY_NOTICE_FIELDS });
+    acknowledge.mockResolvedValue({ show: true, ...NOTICE_FIELDS });
     await program().parseAsync(['feat', 'new'], { from: 'user' });
 
     expect(stderr).toContain('Shep collects usage metrics');
     expect(stderr).toContain('a random install id');
-    expect(stderr).toContain('a SHA-256 hash of your Claude or Codex account id');
-    expect(stderr).toContain('your GitHub username');
-    expect(stderr).toContain('GitHub owners');
     expect(stderr).toContain('contact you on GitHub');
     expect(stderr).toContain('shep telemetry off');
+
+    // Identity is opt-in: listed after its own heading, with the command to turn it on.
+    const identityAt = stderr.indexOf('Sent only if you turn identity on');
+    expect(identityAt).toBeGreaterThan(stderr.indexOf('a random install id'));
+    expect(stderr.indexOf('a SHA-256 hash of your Claude or Codex account id')).toBeGreaterThan(
+      identityAt
+    );
+    expect(stderr.indexOf('your GitHub username')).toBeGreaterThan(identityAt);
+    expect(stderr.indexOf('GitHub owners')).toBeGreaterThan(identityAt);
+    expect(stderr).toContain('shep telemetry identity on');
   });
 
   it('never lets telemetry break the command', async () => {

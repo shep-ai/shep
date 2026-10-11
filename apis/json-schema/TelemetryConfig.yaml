@@ -8,8 +8,8 @@ properties:
     description: Whether usage metrics are recorded and sent
   includeIdentity:
     type: boolean
-    default: true
-    description: Whether identity (agent account hash, GitHub username and owners) is attached
+    default: false
+    description: Whether identity (agent account hash, GitHub username and owners) is attached; opt-in
   contactConsent:
     type: boolean
     default: false

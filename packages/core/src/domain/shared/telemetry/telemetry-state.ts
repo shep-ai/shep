@@ -63,12 +63,16 @@ export function resolveTelemetryState(
   return { enabled: true, reason: null };
 }
 
-/** Preferences of an install that never changed them: on, with identity, no contact consent. */
+/**
+ * Preferences of an install that never changed them: usage metrics on, identity
+ * and contact consent off. Identity (account hash, GitHub username and owners)
+ * is opt-in.
+ */
 export const DEFAULT_TELEMETRY_PREFERENCES: Readonly<
   Pick<TelemetryConfig, 'enabled' | 'includeIdentity' | 'contactConsent'>
 > = {
   enabled: true,
-  includeIdentity: true,
+  includeIdentity: false,
   contactConsent: false,
 };
 

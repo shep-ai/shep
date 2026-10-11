@@ -19,7 +19,12 @@ import { InMemoryAgentQuestionRepository } from '@/infrastructure/adapters/in-me
 import { DeferredQuestionRegistry } from '@/infrastructure/services/agents/agent-question-service/deferred-question-registry.js';
 import type { ISettingsRepository } from '@/application/ports/output/repositories/settings.repository.interface.js';
 import type { IApplicationRepository } from '@/application/ports/output/repositories/application-repository.interface.js';
-import { AgentQuestionKind, type Application, type Settings } from '@/domain/generated/output.js';
+import {
+  AgentQuestionKind,
+  DecisionKind,
+  type Application,
+  type Settings,
+} from '@/domain/generated/output.js';
 
 function makeSettingsRepo(collaboration: boolean): ISettingsRepository {
   return {
@@ -69,6 +74,13 @@ describe('FeatureAgentGateQuestionPublisher', () => {
     expect(stored[0].kind).toBe(AgentQuestionKind.blocking);
     expect(stored[0].agentRunId).toBe('run-1');
     expect(stored[0].appId).toBe('app-1');
+    // Spec 134: a readable sentence and an approval-gate decision, never JSON.
+    expect(stored[0].prompt).toBe('The implementation plan is ready for review');
+    expect(stored[0].decision?.kind).toBe(DecisionKind.ApprovalGate);
+    expect(stored[0].decision?.questions[0].options.map((o) => o.id)).toEqual([
+      'approve',
+      'reject',
+    ]);
     // The awaiter is registered by AskAgentQuestion but the publisher
     // attaches a no-op catch so the test does not see an unhandled
     // rejection when the registry is torn down.

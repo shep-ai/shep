@@ -87,8 +87,14 @@ describe('TelemetrySettingsSection', () => {
     expect(screen.getByTestId('telemetry-settings-destination')).toHaveTextContent(
       'https://eu.i.posthog.com/batch/'
     );
-    for (const field of ['installId', 'agentAccountHash', 'githubUsername', 'githubOwners']) {
+    for (const field of ['installId', 'usage', 'platform', 'contactConsent']) {
       expect(screen.getByTestId(`telemetry-field-${field}`)).toBeInTheDocument();
+    }
+    // Identity is opt-in, so its fields are listed under their own heading.
+    const identity = screen.getByTestId('telemetry-identity-fields');
+    expect(identity).toHaveTextContent('Sent only if you turn on');
+    for (const field of ['agentAccountHash', 'githubUsername', 'githubOwners']) {
+      expect(identity).toContainElement(screen.getByTestId(`telemetry-field-${field}`));
     }
   });
 

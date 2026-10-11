@@ -16,14 +16,23 @@ import {
   telemetryConfigOf,
 } from '../../../domain/shared/telemetry/telemetry-state.js';
 import {
-  TELEMETRY_NOTICE_FIELDS,
+  TELEMETRY_ANONYMOUS_FIELDS,
+  TELEMETRY_IDENTITY_FIELDS,
   type TelemetryNoticeField,
 } from '../../../domain/shared/telemetry/telemetry-notice.js';
 
 export interface TelemetryNotice {
   show: boolean;
+  /** Always sent while usage metrics are on. */
   fields: readonly TelemetryNoticeField[];
+  /** Sent only after the user turns identity on (opt-in). */
+  identityFields: readonly TelemetryNoticeField[];
 }
+
+const NOTICE_FIELDS = {
+  fields: TELEMETRY_ANONYMOUS_FIELDS,
+  identityFields: TELEMETRY_IDENTITY_FIELDS,
+} as const;
 
 @injectable()
 export class AcknowledgeTelemetryNoticeUseCase {
@@ -37,7 +46,7 @@ export class AcknowledgeTelemetryNoticeUseCase {
   ) {}
 
   async execute(): Promise<TelemetryNotice> {
-    const hidden: TelemetryNotice = { show: false, fields: TELEMETRY_NOTICE_FIELDS };
+    const hidden: TelemetryNotice = { show: false, ...NOTICE_FIELDS };
     const settings = await this.settingsRepository.load();
     if (!settings) return hidden;
     const telemetry = settings.telemetry;
@@ -48,6 +57,6 @@ export class AcknowledgeTelemetryNoticeUseCase {
       ...settings,
       telemetry: { ...telemetryConfigOf(settings), noticeShownAt: this.clock.now() },
     });
-    return { show: true, fields: TELEMETRY_NOTICE_FIELDS };
+    return { show: true, ...NOTICE_FIELDS };
   }
 }

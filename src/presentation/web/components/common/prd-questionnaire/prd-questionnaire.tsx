@@ -1,16 +1,15 @@
 'use client';
 
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo } from 'react';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { decisionFromPrdQuestionnaire } from '@shepai/core/domain/shared/decision-builders';
+import { DecisionPanel } from '@/components/common/decision-panel';
 import { DrawerActionBar } from '@/components/common/drawer-action-bar';
 import { useSoundAction } from '@/hooks/use-sound-action';
 import type { PrdQuestionnaireProps } from './prd-questionnaire-config';
 
-/** How long a chosen option stays highlighted before the questionnaire auto-advances. */
-const AUTO_ADVANCE_DELAY_MS = 250;
+/** Decision id for the requirements questionnaire (it is answered locally, not stored). */
+const PRD_DECISION_ID = 'prd-questionnaire';
 
 export function PrdQuestionnaire({
   data,
@@ -25,54 +24,33 @@ export function PrdQuestionnaire({
   onChatInputChange,
 }: PrdQuestionnaireProps) {
   const { question, context, questions, finalAction } = data;
-  const [currentStep, setCurrentStep] = useState(0);
   const selectSound = useSoundAction('select');
   const navigateSound = useSoundAction('navigate');
-  const autoAdvanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const cancelAutoAdvance = useCallback(() => {
-    if (autoAdvanceTimer.current !== null) {
-      clearTimeout(autoAdvanceTimer.current);
-      autoAdvanceTimer.current = null;
-    }
-  }, []);
+  // Spec 134: the questions render through the shared DecisionPanel.
+  const decision = useMemo(() => decisionFromPrdQuestionnaire(PRD_DECISION_ID, data), [data]);
+  const initialSelections = useMemo(
+    () => Object.fromEntries(Object.entries(selections).map(([id, opt]) => [id, [opt]])),
+    // Only the first render seeds the panel; later selections flow from it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    []
+  );
+  // Remount only when the set of questions changes — a refinement that adds
+  // options keeps the user on the question they were reading.
+  const questionKey = questions.map((q) => q.id).join('|');
 
-  // A pending auto-advance outliving the component would call setCurrentStep on a
-  // torn-down tree, so it is cancelled on unmount.
-  useEffect(() => cancelAutoAdvance, [cancelAutoAdvance]);
-
-  /** Manual navigation wins over a pending auto-advance, which would otherwise overshoot. */
-  const goToStep = useCallback(
-    (nextStep: number | ((current: number) => number)) => {
-      cancelAutoAdvance();
-      navigateSound.play();
-      setCurrentStep(nextStep);
+  const handleSelect = useCallback(
+    (questionId: string, optionIds: string[]) => {
+      const optionId = optionIds[0];
+      if (!optionId) return;
+      selectSound.play();
+      onSelect(questionId, optionId);
     },
-    [cancelAutoAdvance, navigateSound]
+    [onSelect, selectSound]
   );
 
   const total = questions.length;
-  const isFirstStep = currentStep === 0;
-  const isLastStep = currentStep === total - 1;
-  const currentQuestion = questions[currentStep];
-
-  const answeredCount = useMemo(() => Object.keys(selections).length, [selections]);
-
-  const handleSelect = useCallback(
-    (questionId: string, optionId: string) => {
-      selectSound.play();
-      onSelect(questionId, optionId);
-      // Auto-advance to the next step after selection (unless last step)
-      if (!isLastStep) {
-        cancelAutoAdvance();
-        autoAdvanceTimer.current = setTimeout(() => {
-          autoAdvanceTimer.current = null;
-          setCurrentStep((s) => s + 1);
-        }, AUTO_ADVANCE_DELAY_MS);
-      }
-    },
-    [onSelect, isLastStep, selectSound, cancelAutoAdvance]
-  );
+  const answeredCount = Object.keys(selections).length;
 
   if (total === 0) return null;
 
@@ -90,104 +68,14 @@ export function PrdQuestionnaire({
           </div>
         ) : null}
 
-        {/* Question + step indicator */}
-        <div className="space-y-3">
-          <div className="flex items-start gap-3">
-            <label className="text-foreground min-w-0 flex-1 text-sm font-semibold">
-              {currentStep + 1}. {currentQuestion.question}
-            </label>
-            <div className="mt-1.5 flex shrink-0 gap-1">
-              {questions.map((q, idx) => (
-                <button
-                  key={q.id}
-                  type="button"
-                  aria-label={`Go to question ${idx + 1}`}
-                  className={cn(
-                    'h-1.5 rounded-full transition-all duration-200',
-                    idx === currentStep ? 'bg-primary w-4' : 'w-1.5',
-                    idx !== currentStep && selections[q.id] ? 'bg-primary/50' : '',
-                    idx !== currentStep && !selections[q.id] ? 'bg-muted-foreground/25' : ''
-                  )}
-                  onClick={() => goToStep(idx)}
-                />
-              ))}
-            </div>
-          </div>
-          <div className="space-y-2">
-            {currentQuestion.options.map((opt, optIdx) => {
-              const selected = selections[currentQuestion.id] === opt.id;
-              const letter = String.fromCharCode(65 + optIdx);
-              return (
-                <button
-                  key={opt.id}
-                  type="button"
-                  className={cn(
-                    'border-border w-full overflow-hidden rounded-md border px-3 py-3 text-start text-xs transition-all',
-                    'hover:border-primary/70 hover:bg-primary/5 group',
-                    selected && 'border-primary bg-primary/5',
-                    opt.isNew && 'animate-option-highlight'
-                  )}
-                  disabled={isProcessing}
-                  onClick={() => handleSelect(currentQuestion.id, opt.id)}
-                >
-                  <div className="flex items-start gap-2">
-                    <span className="text-muted-foreground mt-0.5 font-mono text-xs">
-                      {letter}.
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <div className="text-foreground mb-0.5 text-xs font-semibold wrap-break-word">
-                        {opt.label}
-                      </div>
-                      <div className="text-muted-foreground text-xs leading-snug">
-                        {opt.rationale}
-                      </div>
-                    </div>
-                    {opt.recommended || opt.isNew ? (
-                      <div className="shrink-0 pt-0.5">
-                        {opt.recommended ? (
-                          <Badge className="px-1.5 py-0 text-[10px] whitespace-nowrap">
-                            AI Recommended
-                          </Badge>
-                        ) : (
-                          <Badge className="border-transparent bg-emerald-600 px-1.5 py-0 text-[10px] whitespace-nowrap text-white hover:bg-emerald-600/80">
-                            New
-                          </Badge>
-                        )}
-                      </div>
-                    ) : null}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Step navigation */}
-        <div className="flex items-center justify-between pt-2">
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            disabled={isFirstStep || isProcessing}
-            onClick={() => goToStep((s) => s - 1)}
-          >
-            <ChevronLeft className="me-1 h-4 w-4" />
-            Previous
-          </Button>
-
-          {!isLastStep ? (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              disabled={isProcessing}
-              onClick={() => goToStep((s) => s + 1)}
-            >
-              {selections[currentQuestion.id] ? 'Next' : 'Skip'}
-              <ChevronRight className="ms-1 h-4 w-4" />
-            </Button>
-          ) : null}
-        </div>
+        <DecisionPanel
+          key={questionKey}
+          decision={decision}
+          initialSelections={initialSelections}
+          onSelect={handleSelect}
+          onNavigate={() => navigateSound.play()}
+          disabled={isProcessing}
+        />
       </div>
 
       <DrawerActionBar

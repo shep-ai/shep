@@ -16,7 +16,7 @@ summary: |-
   carry content. Every process writes them to a local telemetry_outbox table. Only the daemon
   sends, in batches to PostHog's EU /batch/ endpoint over plain fetch, with a uuid per event,
   jittered backoff, a drop after 5 attempts and a table-size cap. Identity is an install UUID
-  plus, unless the user turns identity off, a SHA-256 hash of the agent account id, the GitHub
+  plus, only if the user turns identity on (it is opt-in), a SHA-256 hash of the agent account id, the GitHub
   username and the GitHub owners of the repos Shep runs in. `shep telemetry on|off|status|show`
   and a settings section control it, and the trust promise in the README, FAQ and CLAUDE.md is
   rewritten to say exactly what is sent.
@@ -44,11 +44,11 @@ openQuestions:
       is it lawful under GDPR, and what must the privacy policy say?
     resolved: true
     answer: >-
-      Deferred to the product owner, who must run a GDPR / privacy-policy check before the first
-      release that carries a PostHog key. It does not block implementation: nothing is sent until
-      a key is configured, the identity fields can be turned off on their own
-      ("Include my identity"), and the first-run notice names every field. Recorded again in the
-      PR description as an owner action.
+      The owner decided that identity is opt-in. "Include my identity" defaults to off, so the
+      agent account hash, GitHub username and GitHub owners are sent only after the user turns it
+      on (`shep telemetry identity on`, Settings, or the onboarding notice). Usage events stay on
+      by default with the first-run notice, which lists the identity fields under their own
+      heading. Nothing is sent until a PostHog key is configured.
 content: |
   ## Problem Statement
 
@@ -65,12 +65,14 @@ content: |
   - **Consent: on by default.** A notice prints once on the first CLI run and appears in web
     onboarding with a one-click "turn off". Telemetry is always off when `CI` is set,
     `DO_NOT_TRACK=1`, `SHEP_TELEMETRY_DISABLED=1`, or under tests.
-  - **Identity.** Always a random `installId` (UUID). Unless "Include my identity" is off, also:
+  - **Identity (opt-in, owner decision after review).** Always a random `installId` (UUID).
+    Only after the user turns "Include my identity" on (off by default), also:
     a SHA-256 hash of the agent account id (read through the agent catalog: Claude
     `~/.claude.json` `userID`, Codex `~/.codex/auth.json` `tokens.account_id`), the GitHub
     username from `gh api user`, and the GitHub owner names from the git remotes of repos Shep
     runs in. An onboarding checkbox "The Shep team may contact me on GitHub" sends a
-    contact-consent flag. The notice lists exactly these fields.
+    contact-consent flag. The notice lists exactly these fields, with the identity fields under
+    their own heading and the way to turn them on.
   - **Delivery.** Every process (CLI, daemon, feature-agent workers) writes to a local SQLite
     `telemetry_outbox`; only the daemon sends, from a flush watcher started in
     `_serve.command.ts`. PostHog EU `/batch/` over plain `fetch`, no SDK. The project key comes
@@ -95,6 +97,7 @@ content: |
   - [ ] Every process writes events to `telemetry_outbox`; only the daemon's flush watcher sends
   - [ ] Each event has a uuid; a failed batch backs off with jitter and is dropped after 5 attempts; the table is capped
   - [ ] Telemetry resolves to off under `CI`, `DO_NOT_TRACK=1`, `SHEP_TELEMETRY_DISABLED=1` and tests, and when the user turns it off; nothing is written to the outbox then
+  - [ ] Identity defaults to off (settings default, migration column default, mapper fallback)
   - [ ] Turning identity off removes the account hash, GitHub username and owners from every envelope, including ones already queued
   - [ ] The agent account id source lives on the agent catalog; core has no `if (agentType === …)` for identity
   - [ ] First CLI run prints the notice once (stderr), listing exactly the collected fields
