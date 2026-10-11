@@ -4,6 +4,45 @@
   </a>
 </p>
 
+# 🚀 Shep [v1.240.0](/compare/v1.239.0...v1.240.0) · _2026-10-11_
+
+> Your organization does not have access to Claude. Please login again or contact your administrator.
+
+
+
+### ✨ Features
+
+* **web:** review cleanup — per-area feature flags, ASPM off by default ([#925](https://github.com/shep-ai/shep/issues/925)) ([58df74f](https://github.com/shep-ai/shep/commit/58df74f86eb98c0b38df40f1deb992da77244fea)), closes [#923](https://github.com/shep-ai/shep/issues/923) [922/#924](https://github.com/shep-ai/shep/issues/924)
+
+  ![notice light](https://raw.githubusercontent.com/shep-ai/shep/v1.240.0/specs/133-telemetry/evidence/notice-card-light.png)
+  ![settings light](https://raw.githubusercontent.com/shep-ai/shep/v1.240.0/specs/133-telemetry/evidence/settings-section-light.png)
+  ![notice dark](https://raw.githubusercontent.com/shep-ai/shep/v1.240.0/specs/133-telemetry/evidence/notice-card-dark.png)
+  ![settings dark](https://raw.githubusercontent.com/shep-ai/shep/v1.240.0/specs/133-telemetry/evidence/settings-section-dark.png)
+
+## 📦 Install or update
+
+```bash
+# upgrade an existing install
+npm i -g @shepai/cli@1.240.0
+
+# or run instantly without installing
+npx @shepai/cli@latest
+```
+
+## 💬 Join the community
+
+[💬 **Discord**](https://discord.gg/ES6tdVFfur) · [📖 **Docs**](https://github.com/shep-ai/shep#readme) · [⭐ **Star on GitHub**](https://github.com/shep-ai/shep) · [🐛 **Report an issue**](https://github.com/shep-ai/shep/issues)
+
+---
+
+<sub>🤖 Released autonomously by Shep — built by parallel AI agents working in isolated git worktrees. Try it: `npx @shepai/cli`</sub>
+
+<p align="center">
+  <a href="https://github.com/shep-ai/shep">
+    <img src="https://raw.githubusercontent.com/shep-ai/shep/main/docs/screenshots/shep-card.jpg" alt="Shep — run multiple AI agents in parallel" width="720" />
+  </a>
+</p>
+
 # 🚀 Shep [v1.239.0](/compare/v1.238.0...v1.239.0) · _2026-10-11_
 
 > Your organization does not have access to Claude. Please login again or contact your administrator.

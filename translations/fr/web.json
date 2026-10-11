@@ -297,6 +297,8 @@
       "autopilotDescription": "Laisser un espace enquêter, corriger et construire seul dans le cadre de sa politique",
       "factory": "Usine",
       "factoryDescription": "Afficher la page d'état de l'usine de chaque espace",
+      "sdlcBoard": "Tableau SDLC",
+      "sdlcBoardDescription": "Afficher le tableau SDLC : un tableau en direct des tâches des agents sur les fonctionnalités actives",
       "groupPlatform": "Plateforme",
       "groupSoftwareFactory": "Usine logicielle",
       "groupExperimental": "Expérimental",

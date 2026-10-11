@@ -74,6 +74,7 @@ vi.mock('@/hooks/feature-flags-context', () => ({
     docsFirst: true,
     autopilot: true,
     factory: true,
+    sdlcBoard: false,
   })),
 }));
 
@@ -113,6 +114,7 @@ describe('AddRepositoryButton', () => {
       docsFirst: true,
       autopilot: true,
       factory: true,
+      sdlcBoard: false,
     });
   });
 
@@ -227,6 +229,7 @@ describe('AddRepositoryButton', () => {
         docsFirst: true,
         autopilot: true,
         factory: true,
+        sdlcBoard: false,
       });
     });
 
@@ -374,6 +377,7 @@ describe('AddRepositoryButton', () => {
         docsFirst: true,
         autopilot: true,
         factory: true,
+        sdlcBoard: false,
       });
     });
 
@@ -463,6 +467,7 @@ describe('AddRepositoryButton', () => {
         docsFirst: true,
         autopilot: true,
         factory: true,
+        sdlcBoard: false,
       });
       const user = userEvent.setup();
       render(<AddRepositoryButton />);

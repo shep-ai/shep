@@ -1,0 +1,119 @@
+# Task Breakdown (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: sdlc-board-flag
+summary: Task breakdown for 140-sdlc-board-flag
+
+# Relationships
+relatedFeatures:
+  - '135-review-cleanup-cuts'
+technologies:
+  - TypeSpec
+  - TypeScript
+  - Next.js
+relatedLinks: []
+
+tasks:
+  - id: task-1
+    title: Add the sdlcBoard flag, off by default, end to end
+    description: >
+      Follow the LESSONS flag checklist: TypeSpec field, generated output, defaults, migration
+      171, mapper, repository SQL, web flags state, catalog entry and translations in 9 locales.
+    state: Done
+    dependencies: []
+    acceptanceCriteria:
+      - '`createDefaultSettings().featureFlags.sdlcBoard` is false'
+      - Migration 171 adds `feature_flag_sdlc_board INTEGER NOT NULL DEFAULT 0` and is idempotent
+      - The settings repository round-trips `sdlcBoard` true and false
+      - '`listFeatureFlagDescriptors()` includes `sdlcBoard` in the Platform group'
+      - Every locale has `settings.featureFlags.sdlcBoard` and `sdlcBoardDescription`
+    tdd:
+      red:
+        - Defaults factory test expects `sdlcBoard false`
+        - Mapper test maps `feature_flag_sdlc_board` both ways
+        - Migration 171 integration test (column, default 0, idempotent)
+        - Repository round-trip test for `sdlcBoard`
+      green:
+        - Add the TypeSpec field and regenerate; wire defaults, migration, mapper, repository,
+          web flags, catalog and translations
+      refactor:
+        - Keep the catalog description to one line, matching its neighbours
+    estimatedEffort: M
+
+  - id: task-2
+    title: Extract the shared web feature gate
+    description: >
+      Move the 404 response and the flag check into `lib/feature-gate.ts` (`isFeatureOn`,
+      `featureNotFound`, `FEATURE_OFF_ERROR`); `requireFeaturePage` and the feedback/alerts
+      routes use it.
+    state: Done
+    dependencies: []
+    acceptanceCriteria:
+      - '`isFeatureOn(...flags)` is true when any listed flag is on'
+      - '`featureNotFound()` answers 404 with `{ error: "Not found." }`'
+      - Feedback and alerts still return 404 while their flag is off
+    tdd:
+      red:
+        - feature-gate unit tests for `isFeatureOn` and `featureNotFound`
+      green:
+        - Implement the module and switch the existing callers over
+      refactor:
+        - Remove `intakeDisabled()`
+    estimatedEffort: S
+
+  - id: task-3
+    title: Gate the SDLC board surfaces on sdlcBoard
+    description: >
+      Hide the sidebar link, 404 the /sdlc page and /api/sdlc-events, and make the four board
+      server actions refuse while the flag is off.
+    state: Done
+    dependencies:
+      - task-1
+      - task-2
+    acceptanceCriteria:
+      - The SDLC Board link shows only while `sdlcBoard` is on
+      - /sdlc calls `notFound()` while off
+      - GET /api/sdlc-events returns 404 while off
+      - Each board action returns `{ error }` without resolving its use case while off
+      - All surfaces behave as before while on
+    tdd:
+      red:
+        - Sidebar test for the link hidden/shown by `sdlcBoard`
+        - Gating tests for the page, the SSE route and each action, off and on
+      green:
+        - "Add `flag: 'sdlcBoard'`, `requireFeaturePage('sdlcBoard')`, the route check and the
+          action guards"
+      refactor:
+        - One guard shape across the four actions
+    estimatedEffort: S
+
+  - id: task-4
+    title: Update e2e coverage and docs
+    description: >
+      The /sdlc accessibility case turns the flag on for its run; domain-models documents the flag.
+    state: Done
+    dependencies:
+      - task-3
+    acceptanceCriteria:
+      - '`ui-experience.spec.ts` maps `/sdlc` to `sdlcBoard` in `ROUTE_FLAGS`'
+      - docs/api/domain-models.md lists `sdlcBoard` with its default
+    tdd: null
+    estimatedEffort: S
+
+totalEstimate: S
+
+openQuestions: []
+
+content: |
+  ## Summary
+
+  Four tasks: add the flag end to end, extract the shared web feature gate, gate the board's
+  web surfaces, then update e2e coverage and docs.
+
+  ## Acceptance Checklist
+
+  - [ ] Flag defaults off and persists (migration 171)
+  - [ ] Flag listed on /settings/feature-flags and in `shep settings flags`
+  - [ ] Sidebar link, /sdlc, /api/sdlc-events and the 4 actions gated
+  - [ ] Canvas, /features and the board tracker unchanged
+  - [ ] Local checks green

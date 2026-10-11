@@ -59,6 +59,7 @@ export const AllSections: Story = {
         docsFirst: true,
         autopilot: true,
         factory: true,
+        sdlcBoard: false,
       },
     },
     shepHome: '/opt/shep',

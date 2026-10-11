@@ -148,7 +148,13 @@ export function decisionFromAgentAsk(id: string, ask: AgentAsk): Decision {
   };
 }
 
-const OUTCOME_BY_STATUS: Record<AgentQuestionStatus, DecisionOutcome> = {
+/**
+ * An outcome a stored question can have. `Disabled` never reaches storage: with
+ * agent questions off, nothing is asked and no question row is written.
+ */
+export type RecordedDecisionOutcome = Exclude<DecisionOutcome, DecisionOutcome.Disabled>;
+
+const OUTCOME_BY_STATUS: Record<AgentQuestionStatus, RecordedDecisionOutcome> = {
   [AgentQuestionStatus.pending]: DecisionOutcome.Pending,
   [AgentQuestionStatus.answered]: DecisionOutcome.Answered,
   // An expired question was settled with its default — the recommendation.
@@ -157,6 +163,6 @@ const OUTCOME_BY_STATUS: Record<AgentQuestionStatus, DecisionOutcome> = {
 };
 
 /** What became of a question, for the feature's activity. */
-export function decisionOutcomeOf(question: AgentQuestion): DecisionOutcome {
+export function decisionOutcomeOf(question: AgentQuestion): RecordedDecisionOutcome {
   return OUTCOME_BY_STATUS[question.status];
 }

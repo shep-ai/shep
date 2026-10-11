@@ -26,6 +26,7 @@ test.describe('web experience regressions', () => {
   const ROUTE_FLAGS: Record<string, string> = {
     '/workflows': 'scheduledWorkflows',
     '/aspm/compliance': 'aspm',
+    '/sdlc': 'sdlcBoard',
   };
 
   for (const route of [

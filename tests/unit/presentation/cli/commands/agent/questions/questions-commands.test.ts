@@ -12,6 +12,7 @@ import {
   AgentQuestionKind,
   AgentQuestionStatus,
   type AgentQuestion,
+  DecisionSurface,
 } from '@/domain/generated/output.js';
 
 const { mockResolve, listExecute, answerExecute, cancelExecute, promptDecision } = vi.hoisted(
@@ -125,6 +126,7 @@ describe('shep agent questions commands', () => {
       questionId: 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee',
       answer: 'use react-flow',
       answeredBy: 'user:cli',
+      surface: DecisionSurface.Cli,
     });
   });
 
@@ -236,6 +238,7 @@ describe('shep agent questions commands', () => {
         questionId: 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee',
         responses: [{ questionId: 'q1', optionIds: ['yes'] }],
         answeredBy: 'user:cli',
+        surface: DecisionSurface.Cli,
       });
     });
 

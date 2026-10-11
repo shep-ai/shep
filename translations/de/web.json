@@ -297,6 +297,8 @@
       "autopilotDescription": "Einen Space im Rahmen seiner Richtlinie selbstständig untersuchen, beheben und bauen lassen",
       "factory": "Fabrik",
       "factoryDescription": "Die Fabrik-Statusseite jedes Spaces anzeigen",
+      "sdlcBoard": "SDLC-Board",
+      "sdlcBoardDescription": "Das SDLC-Board anzeigen: eine Live-Ansicht der Agentenaufgaben über alle aktiven Features",
       "groupPlatform": "Plattform",
       "groupSoftwareFactory": "Software-Fabrik",
       "groupExperimental": "Experimentell",

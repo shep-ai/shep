@@ -8,6 +8,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { DecisionSurface } from '@shepai/core/domain/generated/output';
 
 const mockAnswerExecute = vi.fn();
 const mockCancelExecute = vi.fn();
@@ -38,6 +39,17 @@ describe('agent-questions server actions', () => {
     mockAnswerExecute.mockResolvedValue({ enabled: true, forwardedToGate: false, question: {} });
 
     await expect(answerAgentQuestion(ANSWER_INPUT)).resolves.toEqual({ ok: true });
+  });
+
+  it('answer records the web surface, whatever the client sends (spec 136)', async () => {
+    mockAnswerExecute.mockResolvedValue({ enabled: true, forwardedToGate: false, question: {} });
+
+    await answerAgentQuestion({ ...ANSWER_INPUT, surface: DecisionSurface.Cli } as never);
+
+    expect(mockAnswerExecute).toHaveBeenCalledWith({
+      ...ANSWER_INPUT,
+      surface: DecisionSurface.Web,
+    });
   });
 
   it('answer reports failure when the question was already settled', async () => {

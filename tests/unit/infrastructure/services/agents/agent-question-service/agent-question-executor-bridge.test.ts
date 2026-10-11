@@ -24,11 +24,14 @@ import type { IAgentRunRepository } from '@/application/ports/output/agents/agen
 import type { ApproveAgentRunUseCase } from '@/application/use-cases/agents/approve-agent-run.use-case.js';
 import type { RejectAgentRunUseCase } from '@/application/use-cases/agents/reject-agent-run.use-case.js';
 import type { UserInteractionData } from '@/application/ports/output/agents/interactive-agent-executor.interface.js';
+import type { ITelemetry } from '@/application/ports/output/services/telemetry.interface.js';
 import {
   AgentQuestionKind,
   AgentQuestionStatus,
   DecisionKind,
   DecisionResponseMode,
+  DecisionSurface,
+  TelemetryEvent,
   type Settings,
 } from '@/domain/generated/output.js';
 
@@ -89,10 +92,12 @@ async function flush(): Promise<void> {
 describe('AgentQuestionExecutorBridge', () => {
   let repo: InMemoryAgentQuestionRepository;
   let registry: DeferredQuestionRegistry;
+  let telemetry: ITelemetry & { record: ReturnType<typeof vi.fn> };
 
   beforeEach(() => {
     repo = new InMemoryAgentQuestionRepository();
     registry = new DeferredQuestionRegistry();
+    telemetry = { record: vi.fn() } as ITelemetry & { record: ReturnType<typeof vi.fn> };
   });
 
   function build(collaboration: boolean, surface?: LiveQuestionSurface) {
@@ -112,7 +117,8 @@ describe('AgentQuestionExecutorBridge', () => {
       settings,
       noopAgentRunRepo,
       noopApprove,
-      noopReject
+      noopReject,
+      telemetry
     );
     const cancel = new CancelAgentQuestionUseCase(repo, registry, settings);
     const bridge = new AgentQuestionExecutorBridge(
@@ -152,6 +158,10 @@ describe('AgentQuestionExecutorBridge', () => {
     expect(stored.status).toBe(AgentQuestionStatus.answered);
     expect(stored.responses).toEqual([{ questionId: 'q1', optionIds: ['o2'] }]);
     expect(stored.answeredBy).toBe('user:chat');
+    expect(telemetry.record).toHaveBeenCalledWith(
+      TelemetryEvent.DecisionAnswered,
+      expect.objectContaining({ kind: DecisionKind.ChatQuestion, surface: DecisionSurface.Chat })
+    );
   });
 
   it('an inbox answer is returned to the agent and closes the chat question', async () => {

@@ -59,6 +59,9 @@ export interface ITerminalSessionService {
   /** Whether a session id currently exists. */
   exists(sessionId: string): boolean;
 
-  /** Kill and remove a session. Idempotent. */
-  close(sessionId: string): void;
+  /**
+   * Kill and remove a session. Resolves once the session's processes have
+   * exited, so its working directory is no longer held open. Idempotent.
+   */
+  close(sessionId: string): Promise<void>;
 }

@@ -33,6 +33,7 @@ const defaultFeatureFlags = {
   docsFirst: true,
   autopilot: true,
   factory: true,
+  sdlcBoard: false,
 };
 
 const meta: Meta<typeof AppSidebar> = {

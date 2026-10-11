@@ -194,6 +194,7 @@ function createTestRow(overrides: Partial<SettingsRow> = {}): SettingsRow {
     feature_flag_docs_first: 1,
     feature_flag_autopilot: 1,
     feature_flag_factory: 1,
+    feature_flag_sdlc_board: 0,
     interactive_agent_enabled: 1,
     interactive_agent_auto_timeout_minutes: 15,
     interactive_agent_max_concurrent_sessions: 3,
@@ -1536,6 +1537,17 @@ describe('Settings Mapper', () => {
         const row = toDatabase(createTestSettings({ featureFlags: { ...base, [flag]: value } }));
         expect(row[column]).toBe(value ? 1 : 0);
         expect(fromDatabase(row).featureFlags?.[flag]).toBe(value);
+      }
+    });
+  });
+
+  describe('SDLC board flag (spec 140)', () => {
+    it('maps sdlcBoard to feature_flag_sdlc_board both ways', () => {
+      const base = createDefaultSettings().featureFlags!;
+      for (const value of [true, false]) {
+        const row = toDatabase(createTestSettings({ featureFlags: { ...base, sdlcBoard: value } }));
+        expect(row.feature_flag_sdlc_board).toBe(value ? 1 : 0);
+        expect(fromDatabase(row).featureFlags?.sdlcBoard).toBe(value);
       }
     });
   });

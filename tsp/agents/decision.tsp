@@ -152,4 +152,29 @@ enum DecisionOutcome {
 
   @doc("Cancelled without an answer")
   Cancelled: "cancelled",
+
+  @doc("Agent questions are turned off, so the recommendation was used without asking")
+  Disabled: "disabled",
+}
+
+/**
+ * Where a decision was answered. Set by the caller that records the answer,
+ * never parsed from the free-form answeredBy actor (spec 136).
+ */
+@doc("Surface a decision was answered on")
+enum DecisionSurface {
+  @doc("The web UI (inbox, feature drawer)")
+  Web: "web",
+
+  @doc("The CLI (shep agent questions answer)")
+  Cli: "cli",
+
+  @doc("A chat session's inline decision panel")
+  Chat: "chat",
+
+  @doc("The supervisor agent")
+  Supervisor: "supervisor",
+
+  @doc("The caller did not say")
+  Other: "other",
 }

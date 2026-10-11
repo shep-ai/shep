@@ -821,6 +821,10 @@ export type FeatureFlags = {
    * Software factory: factory status — /factory and `shep factory` (spec 132)
    */
   factory: boolean;
+  /**
+   * SDLC board — /sdlc, its live task stream and board actions; off by default (spec 140)
+   */
+  sdlcBoard: boolean;
 };
 export enum WhatsAppAdapterKind {
   Baileys = 'baileys',
@@ -9525,6 +9529,7 @@ export enum TelemetryEvent {
   PrOpened = 'pr.opened',
   PrMerged = 'pr.merged',
   DecisionAnswered = 'decision.answered',
+  DecisionDefaulted = 'decision.defaulted',
   OnboardingStep = 'onboarding.step',
   ErrorUnhandled = 'error.unhandled',
 }
@@ -9612,6 +9617,14 @@ export enum DecisionOutcome {
   Answered = 'answered',
   Defaulted = 'defaulted',
   Cancelled = 'cancelled',
+  Disabled = 'disabled',
+}
+export enum DecisionSurface {
+  Web = 'web',
+  Cli = 'cli',
+  Chat = 'chat',
+  Supervisor = 'supervisor',
+  Other = 'other',
 }
 export enum InlineBlockType {
   Decision = 'decision',

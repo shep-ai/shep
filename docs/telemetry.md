@@ -61,7 +61,8 @@ processed.
 | `feature.run.finished` | `status`, `agentType`, `duration` (bucket: `under-1m` … `over-4h`) | Feature-agent worker |
 | `pr.opened` | `buildMode` | Merge node (once per feature) |
 | `pr.merged` | `buildMode`, `viaPullRequest` | Merge node, PR sync, GitHub webhook (once per feature) |
-| `decision.answered` | `kind`, `surface`, `latency` (bucket), `pickedRecommended` | Defined for the unified-decisions work |
+| `decision.answered` | `kind` (chat question, PRD questionnaire, approval gate, agent ask, legacy), `surface` (`web`, `cli`, `chat`, `supervisor`, `other`), `latency` (bucket from asked to answered), `pickedRecommended` | `AnswerAgentQuestionUseCase`, once per recorded answer |
+| `decision.defaulted` | `kind`, `timeout` (bucket of the deadline the agent set) | `AskAgentDecisionUseCase`, when a background agent proceeds with its recommendation at the deadline |
 | `onboarding.step` | `step`, `completed` | Web onboarding |
 | `error.unhandled` | `errorClass`, `sourceHash` (truncated SHA-256 of the top stack frame's `function@file:line`) | CLI, daemon, worker crash handlers |
 

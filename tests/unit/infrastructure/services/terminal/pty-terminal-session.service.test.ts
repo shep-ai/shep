@@ -1,70 +1,59 @@
 import 'reflect-metadata';
 import { describe, it, expect } from 'vitest';
-import { mkdtempSync, writeFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { removeDirWithRetry } from '@tests/helpers/remove-dir.helper.js';
 import { PtyTerminalSessionService } from '../../../../../packages/core/src/infrastructure/services/terminal/pty-terminal-session.service.js';
 
-/**
- * How long to wait for a closed shell to actually exit before falling back to
- * the retrying removal. Generous because ConPTY teardown on a loaded Windows
- * runner is slow; the wait resolves as soon as the exit event lands, so the
- * ceiling is only ever paid when something has genuinely gone wrong.
- */
-const SHELL_EXIT_TIMEOUT_MS = 5_000;
+const IS_WINDOWS = process.platform === 'win32';
 
-/**
- * Close a session and wait for the shell process to actually die.
- *
- * `close()` only *signals* the pty — the child exits asynchronously and keeps
- * a handle on its working directory until it does, so removing that directory
- * straight after `close()` fails with `EBUSY` on Windows.
- *
- * Subscribing BEFORE closing is what makes the wait reliable: `close()` drops
- * the session from the registry, so a listener attached afterwards would never
- * be reached.
- */
-function closeAndWaitForExit(service: PtyTerminalSessionService, sessionId: string): Promise<void> {
-  return new Promise<void>((resolve) => {
-    // Never let a missed exit event hang the suite — the caller's removal is
-    // retried anyway, so a timeout degrades to the old behaviour, not a fail.
-    const timer = setTimeout(resolve, SHELL_EXIT_TIMEOUT_MS);
-    timer.unref();
+/** Upper bound for the shell to print its first prompt. */
+const SHELL_READY_TIMEOUT_MS = 15_000;
 
-    service.subscribe(
-      sessionId,
-      () => {
-        /* output is irrelevant here — only the exit matters */
-      },
-      () => {
-        clearTimeout(timer);
-        resolve();
-      }
+/** Ceiling for the Windows teardown tests: host capture + close + listings. */
+const WINDOWS_TEARDOWN_TEST_TIMEOUT_MS = 60_000;
+
+/** Resolve once the session has produced output, i.e. the shell is up. */
+function waitForFirstOutput(service: PtyTerminalSessionService, sessionId: string): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
+    const timer = setTimeout(
+      () => reject(new Error('shell printed nothing')),
+      SHELL_READY_TIMEOUT_MS
     );
-
-    service.close(sessionId);
+    const unsubscribe = service.subscribe(sessionId, () => {
+      clearTimeout(timer);
+      unsubscribe();
+      resolve();
+    });
   });
 }
 
+interface ChildProcess {
+  ProcessId: number;
+  Name: string;
+}
+
 /**
- * Remove the directory a shell ran in, after {@link closeAndWaitForExit}.
- *
- * On Windows the ConPTY host (`conhost.exe`) that node-pty starts alongside the
- * shell inherits its working directory and can outlive the shell's exit event
- * — CI has seen it still running when the job ended, so no wait inside the test
- * releases the handle. When removal still reports `EBUSY` after the exit wait
- * and the retry budget, the directory is left in the OS temp folder: it holds
- * nothing the assertions depend on. Any other error still fails the test.
+ * Live direct children of this test process (Windows). node-pty starts both
+ * the shell and its ConPTY host (`conhost.exe`) as children of the caller, so
+ * diffing this list around a session names every process the session owns.
  */
-function removeShellCwd(dir: string): void {
-  try {
-    removeDirWithRetry(dir);
-  } catch (error) {
-    const lingeringConptyHost =
-      process.platform === 'win32' && (error as NodeJS.ErrnoException).code === 'EBUSY';
-    if (!lingeringConptyHost) throw error;
-  }
+function listChildProcesses(): ChildProcess[] {
+  const json = execFileSync(
+    'powershell.exe',
+    [
+      '-NoProfile',
+      '-Command',
+      `Get-CimInstance Win32_Process -Filter "ParentProcessId=${process.pid}" | ` +
+        'Select-Object ProcessId,Name | ConvertTo-Json -Compress',
+    ],
+    { encoding: 'utf8' }
+  ).trim();
+  if (!json) return [];
+  const parsed = JSON.parse(json) as ChildProcess | ChildProcess[];
+  return Array.isArray(parsed) ? parsed : [parsed];
 }
 
 describe('PtyTerminalSessionService', () => {
@@ -109,11 +98,79 @@ describe('PtyTerminalSessionService', () => {
       expect(result.shell).toBeDefined();
       expect(result.cwd).toBe(tempDir);
 
-      // Clean up the terminal session — and wait for the shell to release
-      // tempDir before the `finally` below tries to remove it.
-      await closeAndWaitForExit(service, result.id);
+      // close() resolves once the shell has exited and released tempDir.
+      await service.close(result.id);
     } finally {
-      removeShellCwd(tempDir);
+      removeDirWithRetry(tempDir);
     }
+  });
+
+  it('resolves close only after the shell has exited', async () => {
+    const service = new PtyTerminalSessionService();
+    const tempDir = mkdtempSync(join(tmpdir(), 'shep-test-'));
+
+    try {
+      const { id } = service.create({ cwd: tempDir });
+      let exited = false;
+      service.subscribe(
+        id,
+        () => {
+          /* output is irrelevant here — only the exit matters */
+        },
+        () => {
+          exited = true;
+        }
+      );
+
+      await service.close(id);
+
+      expect(exited).toBe(true);
+      expect(service.exists(id)).toBe(false);
+    } finally {
+      removeDirWithRetry(tempDir);
+    }
+  });
+
+  it('treats closing an unknown session as a no-op', async () => {
+    const service = new PtyTerminalSessionService();
+    await expect(service.close('no-such-session')).resolves.toBeUndefined();
+  });
+
+  // #927: the ConPTY host (`conhost.exe`) must not outlive a closed session,
+  // and nothing may still hold the session's cwd once close() resolves.
+  describe.runIf(IS_WINDOWS)('leaves no session process behind on Windows (#927)', () => {
+    async function expectCleanTeardown(waitForShell: boolean): Promise<void> {
+      const service = new PtyTerminalSessionService();
+      const tempDir = mkdtempSync(join(tmpdir(), 'shep-test-'));
+
+      try {
+        const before = new Set(listChildProcesses().map((p) => p.ProcessId));
+        const { id } = service.create({ cwd: tempDir });
+        if (waitForShell) await waitForFirstOutput(service, id);
+
+        await service.close(id);
+
+        const survivors = listChildProcesses().filter(
+          (p) => !before.has(p.ProcessId) && p.Name.toLowerCase() !== 'powershell.exe'
+        );
+        expect(survivors).toEqual([]);
+        // No retry budget: once close resolves, nothing may still hold the cwd.
+        expect(() => rmSync(tempDir, { recursive: true })).not.toThrow();
+      } finally {
+        removeDirWithRetry(tempDir);
+      }
+    }
+
+    it(
+      'when closed right after create',
+      () => expectCleanTeardown(false),
+      WINDOWS_TEARDOWN_TEST_TIMEOUT_MS
+    );
+
+    it(
+      'when closed after the shell is ready',
+      () => expectCleanTeardown(true),
+      WINDOWS_TEARDOWN_TEST_TIMEOUT_MS
+    );
   });
 });
