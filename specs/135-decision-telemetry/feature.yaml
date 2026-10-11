@@ -1,0 +1,42 @@
+feature:
+  id: '135-decision-telemetry'
+  name: 'decision-telemetry'
+  number: 135
+  branch: 'feat/135-decision-telemetry'
+  lifecycle: 'implementation'
+  createdAt: '2026-10-11T10:52:04Z'
+
+status:
+  phase: 'implementation'
+  progress:
+    completed: 0
+    total: 5
+    percentage: 0
+  currentTask: 'task-1'
+  lastUpdated: '2026-10-11T10:52:04Z'
+  lastUpdatedBy: 'shep-kit:plan'
+
+validation:
+  lastRun: null
+  gatesPassed: []
+  autoFixesApplied: []
+
+tasks:
+  current: null
+  blocked: []
+  failed: []
+
+checkpoints:
+  - phase: 'feature-created'
+    completedAt: '2026-10-11T10:52:04Z'
+    completedBy: 'shep-kit:new-feature'
+  - phase: 'research-complete'
+    completedAt: '2026-10-11T11:00:00Z'
+    completedBy: 'shep-kit:research'
+  - phase: 'plan-complete'
+    completedAt: '2026-10-11T11:05:00Z'
+    completedBy: 'shep-kit:plan'
+
+errors:
+  current: null
+  history: []

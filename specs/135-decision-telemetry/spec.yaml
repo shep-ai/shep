@@ -1,0 +1,65 @@
+# Feature Specification (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: decision-telemetry
+number: 135
+branch: feat/135-decision-telemetry
+oneLiner: Emit decision.answered and decision.defaulted usage events for the unified decisions of spec 134
+summary: >
+  Spec 133 defined a `decision.answered` event and left emitting it to the unified-decisions work
+  (spec 134). This feature emits it wherever a decision is answered, with enum-typed `kind` and
+  `surface`, a latency bucket and whether the recommended option was picked, and adds a
+  `decision.defaulted` event for a background agent's question that hit its deadline.
+phase: Implementation
+sizeEstimate: S
+
+relatedFeatures:
+  - 133-telemetry
+  - 134-unified-decisions
+
+technologies:
+  - TypeSpec
+  - TypeScript
+
+relatedLinks: []
+
+openQuestions: []
+
+content: |
+  ## Problem Statement
+
+  The T3 Code review asks product questions that need data: do people answer agent questions,
+  where (web, CLI, chat), how fast, and do they take the recommendation? Spec 133 shipped the
+  telemetry pipeline and a `decision.answered` event with untyped `kind` / `surface` strings;
+  nothing emits it. Spec 134 shipped deadlines for agent-asked decisions, but a decision that
+  defaulted at its deadline is invisible.
+
+  ## Success Criteria
+
+  - [ ] Every successfully recorded answer emits `decision.answered` once, with `kind`
+        (DecisionKind), `surface` (new DecisionSurface enum), `latency` (DurationBucket from the
+        question's creation) and `pickedRecommended`
+  - [ ] The surface is set by the caller (web action, CLI command, chat bridge, supervisor), never
+        parsed from the free-form `answeredBy` actor
+  - [ ] A question that loses a race (already settled) emits nothing
+  - [ ] A background agent's decision that defaults at its deadline emits `decision.defaulted` with
+        `kind` and the `timeout` bucket; a deadline race lost to a human answer emits nothing
+  - [ ] No property carries question text, answers, ids or actors
+  - [ ] `docs/telemetry.md` lists both events and their properties
+
+  ## Affected Areas
+
+  | Area | Impact | Reasoning |
+  | ---- | ------ | --------- |
+  | `tsp/` | Low | `DecisionSurface` enum, `DecisionOutcome.Disabled`, `TelemetryEvent.DecisionDefaulted` |
+  | Answer / ask-decision use cases | Medium | Inject `ITelemetry` and emit after a successful settle |
+  | Callers of answer | Low | Pass `surface` |
+  | Telemetry property map + docs | Low | Enum-typed properties; new event row |
+
+  ## Dependencies
+
+  133-telemetry (ITelemetry, DurationBucket) and 134-unified-decisions (Decision, deadlines).
+
+  ## Size Estimate
+
+  **S** - Two emit points, one enum, one event member, four callers, docs.
