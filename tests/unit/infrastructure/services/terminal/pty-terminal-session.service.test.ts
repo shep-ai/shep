@@ -7,51 +7,13 @@ import { tmpdir } from 'node:os';
 import { removeDirWithRetry } from '@tests/helpers/remove-dir.helper.js';
 import { PtyTerminalSessionService } from '../../../../../packages/core/src/infrastructure/services/terminal/pty-terminal-session.service.js';
 
-/**
- * How long to wait for a closed shell to actually exit before falling back to
- * the retrying removal. Generous because ConPTY teardown on a loaded Windows
- * runner is slow; the wait resolves as soon as the exit event lands, so the
- * ceiling is only ever paid when something has genuinely gone wrong.
- */
-const SHELL_EXIT_TIMEOUT_MS = 5_000;
-
-/**
- * Close a session and wait for the shell process to actually die.
- *
- * `close()` only *signals* the pty — the child exits asynchronously and keeps
- * a handle on its working directory until it does, so removing that directory
- * straight after `close()` fails with `EBUSY` on Windows.
- *
- * Subscribing BEFORE closing is what makes the wait reliable: `close()` drops
- * the session from the registry, so a listener attached afterwards would never
- * be reached.
- */
-function closeAndWaitForExit(service: PtyTerminalSessionService, sessionId: string): Promise<void> {
-  return new Promise<void>((resolve) => {
-    // Never let a missed exit event hang the suite — the caller's removal is
-    // retried anyway, so a timeout degrades to the old behaviour, not a fail.
-    const timer = setTimeout(resolve, SHELL_EXIT_TIMEOUT_MS);
-    timer.unref();
-
-    service.subscribe(
-      sessionId,
-      () => {
-        /* output is irrelevant here — only the exit matters */
-      },
-      () => {
-        clearTimeout(timer);
-        resolve();
-      }
-    );
-
-    service.close(sessionId);
-  });
-}
-
 const IS_WINDOWS = process.platform === 'win32';
 
 /** Upper bound for the shell to print its first prompt. */
 const SHELL_READY_TIMEOUT_MS = 15_000;
+
+/** Ceiling for the Windows teardown tests: host capture + close + listings. */
+const WINDOWS_TEARDOWN_TEST_TIMEOUT_MS = 60_000;
 
 /** Resolve once the session has produced output, i.e. the shell is up. */
 function waitForFirstOutput(service: PtyTerminalSessionService, sessionId: string): Promise<void> {
@@ -68,25 +30,30 @@ function waitForFirstOutput(service: PtyTerminalSessionService, sessionId: strin
   });
 }
 
+interface ChildProcess {
+  ProcessId: number;
+  Name: string;
+}
+
 /**
- * Child processes of this test process, for the failure message: when the cwd
- * stays locked, the list names whatever survived the close.
+ * Live direct children of this test process (Windows). node-pty starts both
+ * the shell and its ConPTY host (`conhost.exe`) as children of the caller, so
+ * diffing this list around a session names every process the session owns.
  */
-function describeChildProcesses(): string {
-  try {
-    return execFileSync(
-      'powershell.exe',
-      [
-        '-NoProfile',
-        '-Command',
-        `Get-CimInstance Win32_Process -Filter "ParentProcessId=${process.pid}" | ` +
-          'Select-Object ProcessId,Name,CommandLine | Format-List | Out-String -Width 400',
-      ],
-      { encoding: 'utf8' }
-    );
-  } catch (error) {
-    return `(process listing failed: ${String(error)})`;
-  }
+function listChildProcesses(): ChildProcess[] {
+  const json = execFileSync(
+    'powershell.exe',
+    [
+      '-NoProfile',
+      '-Command',
+      `Get-CimInstance Win32_Process -Filter "ParentProcessId=${process.pid}" | ` +
+        'Select-Object ProcessId,Name | ConvertTo-Json -Compress',
+    ],
+    { encoding: 'utf8' }
+  ).trim();
+  if (!json) return [];
+  const parsed = JSON.parse(json) as ChildProcess | ChildProcess[];
+  return Array.isArray(parsed) ? parsed : [parsed];
 }
 
 describe('PtyTerminalSessionService', () => {
@@ -131,43 +98,79 @@ describe('PtyTerminalSessionService', () => {
       expect(result.shell).toBeDefined();
       expect(result.cwd).toBe(tempDir);
 
-      // Clean up the terminal session — and wait for the shell to release
-      // tempDir before the `finally` below tries to remove it.
-      await closeAndWaitForExit(service, result.id);
+      // close() resolves once the shell has exited and released tempDir.
+      await service.close(result.id);
     } finally {
       removeDirWithRetry(tempDir);
     }
   });
 
-  describe.runIf(IS_WINDOWS)('releases the session cwd once close resolves (#927)', () => {
-    async function expectCwdRemovableAfterClose(waitForShell: boolean): Promise<void> {
+  it('resolves close only after the shell has exited', async () => {
+    const service = new PtyTerminalSessionService();
+    const tempDir = mkdtempSync(join(tmpdir(), 'shep-test-'));
+
+    try {
+      const { id } = service.create({ cwd: tempDir });
+      let exited = false;
+      service.subscribe(
+        id,
+        () => {
+          /* output is irrelevant here — only the exit matters */
+        },
+        () => {
+          exited = true;
+        }
+      );
+
+      await service.close(id);
+
+      expect(exited).toBe(true);
+      expect(service.exists(id)).toBe(false);
+    } finally {
+      removeDirWithRetry(tempDir);
+    }
+  });
+
+  it('treats closing an unknown session as a no-op', async () => {
+    const service = new PtyTerminalSessionService();
+    await expect(service.close('no-such-session')).resolves.toBeUndefined();
+  });
+
+  // #927: the ConPTY host (`conhost.exe`) must not outlive a closed session,
+  // and nothing may still hold the session's cwd once close() resolves.
+  describe.runIf(IS_WINDOWS)('leaves no session process behind on Windows (#927)', () => {
+    async function expectCleanTeardown(waitForShell: boolean): Promise<void> {
       const service = new PtyTerminalSessionService();
       const tempDir = mkdtempSync(join(tmpdir(), 'shep-test-'));
 
       try {
-        const { id, shell } = service.create({ cwd: tempDir });
+        const before = new Set(listChildProcesses().map((p) => p.ProcessId));
+        const { id } = service.create({ cwd: tempDir });
         if (waitForShell) await waitForFirstOutput(service, id);
 
         await service.close(id);
 
+        const survivors = listChildProcesses().filter(
+          (p) => !before.has(p.ProcessId) && p.Name.toLowerCase() !== 'powershell.exe'
+        );
+        expect(survivors).toEqual([]);
         // No retry budget: once close resolves, nothing may still hold the cwd.
-        let removalError: unknown = null;
-        try {
-          rmSync(tempDir, { recursive: true });
-        } catch (error) {
-          removalError = error;
-        }
-        expect(
-          removalError,
-          `shell ${shell}; children after close:\n${describeChildProcesses()}`
-        ).toBeNull();
+        expect(() => rmSync(tempDir, { recursive: true })).not.toThrow();
       } finally {
         removeDirWithRetry(tempDir);
       }
     }
 
-    it('when closed right after create', () => expectCwdRemovableAfterClose(false), 30_000);
+    it(
+      'when closed right after create',
+      () => expectCleanTeardown(false),
+      WINDOWS_TEARDOWN_TEST_TIMEOUT_MS
+    );
 
-    it('when closed after the shell is ready', () => expectCwdRemovableAfterClose(true), 30_000);
+    it(
+      'when closed after the shell is ready',
+      () => expectCleanTeardown(true),
+      WINDOWS_TEARDOWN_TEST_TIMEOUT_MS
+    );
   });
 });

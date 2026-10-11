@@ -162,6 +162,30 @@ Rules:
 4. **One retry budget, one home.** Six suites had each inlined their own
    `{ maxRetries, retryDelay }`; that is `@tests/helpers/remove-dir.helper.ts` now.
 
+## A ConPTY session is two processes — and an exit event is not proof either died
+
+On Windows node-pty starts the shell *and* its pseudo-console host (`conhost.exe`, or
+`OpenConsole.exe` with `useConptyDll`) as siblings, both children of our process. A probe on
+windows-2022 (#927) showed that a terminal closed right after `create()` left both alive for about
+0.7 s, with the cwd `EBUSY` that whole time, and that `useConptyDll: true` left `OpenConsole.exe`
+running for seconds *after* the exit event.
+
+Rules:
+
+1. **`close()` returns a promise that settles when the processes are gone.** Kill, await the exit
+   event (bounded), then terminate any survivor by its PID.
+2. **Capture the host PID while the shell is alive.** `NtQueryInformationProcess(
+   ProcessConsoleHostProcess)` on the shell returns its exact host; the query fails once the
+   shell is dead. `ConptyHostReaper` owns this.
+3. **Never kill by image name.** An image name only confirms that a captured PID was not
+   recycled before the kill.
+4. **An immediate `rmSync` is a weak RED signal on Windows.** Removing a dir held by a dying
+   process can succeed or fail depending on timing. Assert on the processes themselves (diff
+   the parent's children around the session), then on the removal.
+5. **Probe on the real runner before designing.** A temporary Windows-only test that logs JSON
+   to stdout took two CI rounds and replaced guesses ("conhost holds the cwd") with facts
+   (the shell holds it; the host is a separate leak).
+
 ## A one-shot download inside a build step is an unguarded failure
 
 `electron-builder` fetches the Electron runtime from GitHub releases at package time.

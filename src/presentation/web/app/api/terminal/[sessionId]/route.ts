@@ -1,7 +1,8 @@
 /**
  * DELETE /api/terminal/[sessionId]
  *
- * Kills and removes a terminal session. Idempotent.
+ * Kills and removes a terminal session, responding once its processes have
+ * exited. Idempotent.
  */
 
 import type { NextRequest } from 'next/server';
@@ -18,7 +19,7 @@ export async function DELETE(_request: NextRequest, { params }: RouteParams): Pr
   const { sessionId } = await params;
   try {
     const service = resolve<ITerminalSessionService>('ITerminalSessionService');
-    service.close(sessionId);
+    await service.close(sessionId);
     return Response.json({ ok: true });
   } catch (error) {
     // eslint-disable-next-line no-console
