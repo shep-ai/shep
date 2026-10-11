@@ -19,7 +19,7 @@ tasks:
     description: >
       Follow the LESSONS flag checklist: TypeSpec field, generated output, defaults, migration
       170, mapper, repository SQL, web flags state, catalog entry and translations in 9 locales.
-    state: Todo
+    state: Done
     dependencies: []
     acceptanceCriteria:
       - '`createDefaultSettings().featureFlags.sdlcBoard` is false'
@@ -46,7 +46,7 @@ tasks:
       Move the 404 response and the flag check into `lib/feature-gate.ts` (`isFeatureOn`,
       `featureNotFound`, `FEATURE_OFF_ERROR`); `requireFeaturePage` and the feedback/alerts
       routes use it.
-    state: Todo
+    state: Done
     dependencies: []
     acceptanceCriteria:
       - '`isFeatureOn(...flags)` is true when any listed flag is on'
@@ -66,7 +66,7 @@ tasks:
     description: >
       Hide the sidebar link, 404 the /sdlc page and /api/sdlc-events, and make the four board
       server actions refuse while the flag is off.
-    state: Todo
+    state: Done
     dependencies:
       - task-1
       - task-2
@@ -91,7 +91,7 @@ tasks:
     title: Update e2e coverage and docs
     description: >
       The /sdlc accessibility case turns the flag on for its run; domain-models documents the flag.
-    state: Todo
+    state: Done
     dependencies:
       - task-3
     acceptanceCriteria:

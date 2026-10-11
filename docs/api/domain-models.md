@@ -408,6 +408,8 @@ export type FeatureFlags = {
   docsFirst: boolean;
   autopilot: boolean;
   factory: boolean;
+  // The SDLC board (/sdlc), off by default (spec 140)
+  sdlcBoard: boolean;
 };
 ```
 
