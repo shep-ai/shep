@@ -8,9 +8,8 @@
  *     Uploading/Deploying → Deploying…, Deployed → live-URL chip,
  *     Failed → Retry).
  *   - Right half: chevron that opens the provider dropdown. The
- *     dropdown lists every known provider (enabled + disabled stubs).
- *     Selecting an enabled-but-not-connected provider opens the
- *     ConnectProviderModal before running Deploy.
+ *     dropdown lists every provider. Selecting a not-yet-connected
+ *     provider opens the ConnectProviderModal before running Deploy.
  *
  * This component is purely presentational over the `useCloudDeployAction`
  * hook and the `/api/cloud-providers` list — no business logic lives here.
@@ -24,7 +23,8 @@ import {
 } from '@shepai/core/domain/generated/output';
 import { cn } from '@/lib/utils';
 import { CLOUD_PROVIDER_ICONS } from './cloud-provider-icons';
-import { ProviderDropdown, type CloudProviderListEntry } from './provider-dropdown';
+import { ProviderDropdown } from './provider-dropdown';
+import { CLOUD_PROVIDER_DISPLAY_NAMES, type CloudProviderListEntry } from './cloud-providers';
 import { ConnectProviderModal } from './connect-provider-modal';
 import { OperationLogsDrawer } from './operation-logs-drawer';
 import { OperationLogsIconButton, type OperationLogsIconState } from './operation-logs-icon-button';
@@ -42,22 +42,10 @@ export interface DeployButtonProps {
 
 const DEFAULT_PROVIDER: CloudDeploymentProvider = CloudDeploymentProvider.CloudflarePages;
 
-const PROVIDER_FALLBACK_NAMES: Record<CloudDeploymentProvider, string> = {
-  [CloudDeploymentProvider.CloudflarePages]: 'Cloudflare Pages',
-  [CloudDeploymentProvider.Vercel]: 'Vercel',
-  [CloudDeploymentProvider.Netlify]: 'Netlify',
-  [CloudDeploymentProvider.AwsAmplify]: 'AWS Amplify',
-  [CloudDeploymentProvider.GcpCloudRun]: 'Google Cloud Run',
-};
-
 /** Compact names used in the top-bar Deploy button so it doesn't blow out
  *  the row. The dropdown still uses the full displayName. */
 const PROVIDER_SHORT_NAMES: Record<CloudDeploymentProvider, string> = {
   [CloudDeploymentProvider.CloudflarePages]: 'Cloudflare',
-  [CloudDeploymentProvider.Vercel]: 'Vercel',
-  [CloudDeploymentProvider.Netlify]: 'Netlify',
-  [CloudDeploymentProvider.AwsAmplify]: 'Amplify',
-  [CloudDeploymentProvider.GcpCloudRun]: 'Cloud Run',
 };
 
 function statusLabel(status: CloudDeploymentStatus, providerShortName: string): string {
@@ -128,7 +116,6 @@ export function DeployButton({
     // If there's no provider selected yet, default to Cloudflare Pages.
     const providerToUse = deploy.state.provider ?? DEFAULT_PROVIDER;
     const info = providers.find((p) => p.id === providerToUse);
-    if (info && !info.enabled) return;
     if (info && !info.connected) {
       setConnectMode('connect');
       setConnectingProvider(providerToUse);
@@ -146,7 +133,7 @@ export function DeployButton({
     await deploy.initiate();
   }
 
-  async function handleSelectEnabled(provider: CloudDeploymentProvider) {
+  async function handleSelectConnected(provider: CloudDeploymentProvider) {
     // Just update the selection — the user clicks the main Deploy button to
     // actually run a deployment. Selecting a provider should never side-effect
     // a deploy, otherwise users can't change provider without committing to
@@ -173,11 +160,11 @@ export function DeployButton({
   // Tooltip uses the full display name for clarity; the visible label uses
   // the compact short name so the top-bar button stays narrow.
   const selectedProviderFullName =
-    selectedProviderInfo?.displayName ?? PROVIDER_FALLBACK_NAMES[selectedProvider];
+    selectedProviderInfo?.displayName ?? CLOUD_PROVIDER_DISPLAY_NAMES[selectedProvider];
   const selectedProviderShortName = PROVIDER_SHORT_NAMES[selectedProvider];
   const label = statusLabel(status, selectedProviderShortName);
   const isDeployed = status === CloudDeploymentStatus.Deployed && url;
-  const hasConnectedProvider = providers.some((p) => p.enabled && p.connected);
+  const hasConnectedProvider = providers.some((p) => p.connected);
   // The action button is gated until at least one provider is connected.
   // The chevron stays interactive so users can connect a provider from the
   // dropdown — that's the only way out of the gated state.
@@ -265,7 +252,7 @@ export function DeployButton({
         selectedProvider={selectedProvider}
         loading={providersLoading}
         loadError={providersError}
-        onSelectEnabled={handleSelectEnabled}
+        onSelectConnected={handleSelectConnected}
         onSelectDisconnected={(p) => {
           setConnectMode('connect');
           setConnectingProvider(p);

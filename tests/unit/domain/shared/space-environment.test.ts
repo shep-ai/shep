@@ -86,7 +86,7 @@ describe('spaceAgent', () => {
       ok: true,
       agentType: AgentType.ClaudeCode,
     });
-    expect(spaceAgent(settings, AgentType.Aider)).toEqual({ ok: false });
+    expect(spaceAgent(settings, AgentType.Cursor)).toEqual({ ok: false });
   });
 
   it('picks the first allowed agent, or leaves the default when every agent is allowed', () => {

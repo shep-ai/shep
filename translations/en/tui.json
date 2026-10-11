@@ -43,14 +43,6 @@
           "name": "Ollama",
           "description": "Run local LLMs via Ollama (no API key required, runs on localhost)"
         },
-        "aider": {
-          "name": "Aider",
-          "disabled": "(Coming Soon)"
-        },
-        "continue": {
-          "name": "Continue",
-          "disabled": "(Coming Soon)"
-        },
         "kimiCode": {
           "name": "Kimi Code",
           "description": "Moonshot AI's Kimi Code CLI terminal agent (Kimi K-series models)"

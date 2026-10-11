@@ -49,7 +49,7 @@ Three jobs in [`.github/workflows/ci.yml`](./.github/workflows/ci.yml) run on ev
 | --- | ------------ |
 | **Gitleaks** (`security-gitleaks`) | Installs the gitleaks CLI (pinned to 8.30.1) and runs `gitleaks detect --source . --verbose --redact --config .gitleaks.toml --gitleaks-ignore-path .gitleaksignore` over the **full history** (`fetch-depth: 0`). Add a rule to [`.gitleaks.toml`](./.gitleaks.toml) or a fingerprint to [`.gitleaksignore`](./.gitleaksignore) for a verified false positive — never by deleting the finding. |
 | **Semgrep** (`security-semgrep`) | SAST via `returntocorp/semgrep-action@v1` with the `p/typescript`, `p/javascript` and `p/security-audit` rule packs. Has `security-events: write` so results can surface in the Security tab. |
-| **Security Enforce** (`security-enforce`) | Shep scanning itself: `pnpm dev:cli security enforce --output json`, which validates dependency risk, release integrity and governance posture. Gated by `SHEP_SUPPLY_CHAIN_SECURITY` (repository variable, default `true`); setting it to `false` makes the CLI exit 0 with a "flag disabled" note. |
+| **Security Enforce** (`security-enforce`) | Shep scanning itself: `pnpm dev:cli security enforce --output json`, which validates dependency risk, release integrity and governance posture. Gated by `SHEP_SUPPLY_CHAIN_SECURITY` (repository variable, default `true`, which opts in even though the `aspm` flag that owns supply-chain security is off on a fresh install); setting it to `false` makes the CLI exit 0 with a "flag disabled" note. |
 
 A fourth job, **Security Summary** (`security-summary`), posts an aggregated comment on the PR — but only when Gitleaks or Semgrep actually failed.
 

@@ -2,14 +2,13 @@
  * CloudDeploymentProviderRegistry
  *
  * Resolves ICloudDeploymentProvider instances from the tsyringe container
- * using a per-provider string token. Mirrors the
- * AgentSessionRepositoryRegistry pattern already in container.ts.
+ * it was registered in, using a per-provider string token. Only ids with a
+ * registered adapter are listed.
  *
  * String-token format: `ICloudDeploymentProvider:${providerId}`.
  */
 
-import { injectable } from 'tsyringe';
-import { container } from 'tsyringe';
+import type { DependencyContainer } from 'tsyringe';
 
 import type {
   CloudDeploymentProviderDescriptor,
@@ -21,16 +20,15 @@ import { CloudDeploymentProvider } from '../../../domain/generated/output.js';
 export const CLOUD_DEPLOYMENT_PROVIDER_TOKEN = (provider: CloudDeploymentProvider): string =>
   `ICloudDeploymentProvider:${provider}`;
 
-@injectable()
 export class CloudDeploymentProviderRegistry implements ICloudDeploymentProviderRegistry {
+  /** The container holding the per-provider registrations (a child container in tests). */
+  constructor(private readonly container: DependencyContainer) {}
+
   listAll(): CloudDeploymentProviderDescriptor[] {
-    return Object.values(CloudDeploymentProvider).map((id) => {
+    return Object.values(CloudDeploymentProvider).flatMap((id) => {
       const instance = this.tryGet(id);
-      return {
-        id,
-        displayName: instance?.displayName ?? id,
-        enabled: instance?.enabled ?? false,
-      };
+      // An id with no registered adapter cannot deploy, so it is not listed.
+      return instance ? [{ id, displayName: instance.displayName }] : [];
     });
   }
 
@@ -46,7 +44,7 @@ export class CloudDeploymentProviderRegistry implements ICloudDeploymentProvider
 
   private tryGet(id: CloudDeploymentProvider): ICloudDeploymentProvider | null {
     const token = CLOUD_DEPLOYMENT_PROVIDER_TOKEN(id);
-    if (!container.isRegistered(token)) return null;
-    return container.resolve<ICloudDeploymentProvider>(token);
+    if (!this.container.isRegistered(token, true)) return null;
+    return this.container.resolve<ICloudDeploymentProvider>(token);
   }
 }

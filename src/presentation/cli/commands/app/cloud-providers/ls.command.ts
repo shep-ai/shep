@@ -25,13 +25,10 @@ export function createCloudProvidersLsCommand(): Command {
 
         process.stdout.write('\nCloud deployment providers:\n\n');
         for (const provider of providers) {
-          const status = !provider.enabled
-            ? colors.muted('coming soon')
-            : provider.connected
-              ? colors.success('connected')
-              : colors.warning('not connected');
-          const marker = provider.enabled ? '●' : '○';
-          process.stdout.write(`  ${marker} ${provider.displayName.padEnd(20)} ${status}\n`);
+          const status = provider.connected
+            ? colors.success('connected')
+            : colors.warning('not connected');
+          process.stdout.write(`  ● ${provider.displayName.padEnd(20)} ${status}\n`);
         }
         process.stdout.write('\n');
       } catch (error) {

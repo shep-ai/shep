@@ -28,8 +28,6 @@ const EXPECTED_BINARIES: Record<AgentType, string | null> = {
   [AgentType.KimiCode]: 'kimi',
   [AgentType.CopilotCli]: null,
   [AgentType.GeminiCli]: null,
-  [AgentType.Aider]: null,
-  [AgentType.Continue]: null,
   [AgentType.Cline]: null,
   [AgentType.OpenRouter]: null,
   [AgentType.TogetherAi]: null,

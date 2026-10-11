@@ -4,6 +4,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { IntakeRejection } from '@shepai/core/domain/generated/output';
 
 const ingest = { execute: vi.fn() };
+const flags = vi.hoisted(() => ({ value: { feedback: true } }));
+vi.mock('@/lib/feature-flags', () => ({ getFeatureFlags: () => flags.value }));
 vi.mock('@/lib/server-container', () => ({
   resolve: (token: string) => {
     if (token !== 'IngestFeedbackUseCase') throw new Error(`Unknown token: ${token}`);
@@ -26,6 +28,14 @@ function post(body: string, key = 'shep_fb_secret'): Request {
 
 describe('POST /api/feedback', () => {
   beforeEach(() => vi.clearAllMocks());
+
+  it('answers 404 without reading the request while the feedback flag is off (spec 135)', async () => {
+    flags.value = { feedback: false };
+    const response = await POST(post('{"text":"x"}'));
+    flags.value = { feedback: true };
+    expect(response.status).toBe(404);
+    expect(ingest.execute).not.toHaveBeenCalled();
+  });
 
   it('records feedback with the bearer key and answers 201', async () => {
     ingest.execute.mockResolvedValue({ ok: true, signal: { id: 'sig-1' }, duplicate: false });
