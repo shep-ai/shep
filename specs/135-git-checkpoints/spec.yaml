@@ -20,7 +20,7 @@ summary: |-
   `shep feat restore <id> <step>`. Restore only runs in the feature's own linked worktree while
   no agent is running, and never rewrites branch history. Refs and rows are deleted when the
   worktree is removed or the feature is archived.
-phase: Planning
+phase: Implementation
 sizeEstimate: L
 
 relatedFeatures:

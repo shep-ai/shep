@@ -20,7 +20,7 @@ tasks:
       tsp/agents/git-checkpoint.tsp with GitCheckpoint (featureId, agentRunId?, sequence, kind,
       node, ref, commitSha, treeSha, headSha?, filesChanged, additions, deletions) and the
       GitCheckpointKind enum (Baseline, Step, PreRestore); regenerate output.ts and json-schema.
-    state: Todo
+    state: Done
     dependencies: []
     acceptanceCriteria:
       - pnpm tsp:compile ends with no warnings; pnpm generate output committed unchanged by a rerun
@@ -33,7 +33,7 @@ tasks:
       domain/shared/git-checkpoint.ts (ref prefix, buildCheckpointRef, featureCheckpointRefPrefix,
       assertCheckpointNodeName, checkpointLabel, resolveCheckpointSelector, previousCheckpoint) and
       isAgentRunExecuting in agent-run-status.ts; domain/errors/git-checkpoint-errors.ts.
-    state: Todo
+    state: Done
     dependencies:
       - task-1
     acceptanceCriteria:
@@ -53,7 +53,7 @@ tasks:
     description: >
       Move GitPrService.parseUnifiedDiff/parseFileDiff into services/git/unified-diff.parser.ts and
       point the GitHub review service's copied hunk parser at the same module.
-    state: Todo
+    state: Done
     dependencies: []
     acceptanceCriteria:
       - Existing git-pr and github-review tests stay green; parser has its own unit test
@@ -73,7 +73,7 @@ tasks:
       (commit-tree -p HEAD --no-gpg-sign with fixed identity, update-ref, core.fsync), diffStat,
       diff (LRU cached), restoreWorktree (clean -fd, read-tree --reset -u, reset -q),
       isLinkedWorktree, deleteRefs (for-each-ref + update-ref --stdin).
-    state: Todo
+    state: Done
     dependencies:
       - task-2
       - task-3
@@ -95,7 +95,7 @@ tasks:
     description: >
       git_checkpoints table (UNIQUE(feature_id, sequence), index on feature_id); mapper both ways;
       IGitCheckpointRepository (create, listByFeatureId, deleteByFeatureId) and SQLite adapter.
-    state: Todo
+    state: Done
     dependencies:
       - task-1
     acceptanceCriteria:
@@ -114,7 +114,7 @@ tasks:
     description: >
       Capture (with ensureBaseline), List, GetDiff, Restore, Delete in
       application/use-cases/features/checkpoints/.
-    state: Todo
+    state: Done
     dependencies:
       - task-4
       - task-5
@@ -136,7 +136,7 @@ tasks:
       register-git-checkpoints.ts (service, repository, use cases with string aliases), called
       from container.ts and the bootstrap test; tokens added to CRITICAL_INFRA_TOKENS and
       WEB_ROUTE_TOKENS.
-    state: Todo
+    state: Done
     dependencies:
       - task-6
     acceptanceCriteria:
@@ -156,7 +156,7 @@ tasks:
       nodes/with-checkpoint.ts; optional `checkpoints` dependency on the full, fast and exploration
       graph factories; the worker builds it from CaptureFeatureCheckpointUseCase via
       checkpoint-capture.ts.
-    state: Todo
+    state: Done
     dependencies:
       - task-7
     acceptanceCriteria:
@@ -176,7 +176,7 @@ tasks:
     description: >
       CleanupFeatureWorktreeUseCase, DeleteFeatureUseCase and ArchiveFeatureUseCase call
       DeleteFeatureCheckpointsUseCase best-effort.
-    state: Todo
+    state: Done
     dependencies:
       - task-7
     acceptanceCriteria:
@@ -194,7 +194,7 @@ tasks:
     title: CLI — feat checkpoints, feat diff, feat restore
     description: >
       Three commands registered under `shep feat`, with i18n keys in all 9 cli.json locales.
-    state: Todo
+    state: Done
     dependencies:
       - task-7
     acceptanceCriteria:
@@ -213,7 +213,7 @@ tasks:
     description: >
       Server actions (list, diff, restore) + Storybook mock; CheckpointsTab, CheckpointList and
       CheckpointCompareBar components with stories; tab key and visibility; web.json in 9 locales.
-    state: Todo
+    state: Done
     dependencies:
       - task-7
     acceptanceCriteria:
@@ -232,7 +232,7 @@ tasks:
     title: Docs
     description: >
       docs/architecture/git-checkpoints.md, links from agent-system.md and the CLI docs.
-    state: Todo
+    state: Done
     dependencies:
       - task-10
       - task-11
