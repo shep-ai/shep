@@ -65,6 +65,10 @@ vi.mock('@/infrastructure/di/container.js', () => ({
       if (token === 'ILogger') {
         return { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() };
       }
+      // Usage metrics (spec 133): the PR sync watcher records pr.merged.
+      if (token === 'ITelemetry') {
+        return { record: vi.fn() };
+      }
       // Class-token resolution (container.resolve(SomeClass))
       if (typeof token === 'function') {
         return { execute: vi.fn().mockResolvedValue({}) };

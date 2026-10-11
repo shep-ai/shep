@@ -37,6 +37,8 @@ import type { SlugResolver } from '@/application/use-cases/features/create/slug-
 import type { CreateFeatureInput } from '@/application/use-cases/features/create/types.js';
 import type { Repository } from '@/domain/generated/output.js';
 import { createMockFeatureRepository } from '../../../../helpers/feature-repository.mock.js';
+import { createTelemetryDouble } from '../../../../helpers/telemetry.helper.js';
+import { TelemetryEvent } from '@/domain/generated/output.js';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -99,6 +101,7 @@ describe('CreateFeatureUseCase', () => {
   let mockSettingsRepository: ISettingsRepository;
   let mockLoadSettings: ReturnType<typeof vi.fn>;
   let mockLogger: ILogger;
+  let mockTelemetry: ReturnType<typeof createTelemetryDouble>;
   let mockApplicationRepo: Pick<IApplicationRepository, 'findByPath'>;
 
   const baseInput: CreateFeatureInput = {
@@ -226,6 +229,8 @@ describe('CreateFeatureUseCase', () => {
       error: vi.fn(),
     };
 
+    mockTelemetry = createTelemetryDouble();
+
     useCase = new CreateFeatureUseCase(
       mockFeatureRepo,
       mockWorktreeService,
@@ -245,7 +250,8 @@ describe('CreateFeatureUseCase', () => {
         hasCapacity: vi.fn().mockResolvedValue(true),
         getQueuePosition: vi.fn().mockResolvedValue(1),
       } as never,
-      mockApplicationRepo as IApplicationRepository
+      mockApplicationRepo as IApplicationRepository,
+      mockTelemetry
     );
   });
 
@@ -254,6 +260,15 @@ describe('CreateFeatureUseCase', () => {
   // -------------------------------------------------------------------------
 
   describe('without parentId (baseline)', () => {
+    it('records feature.created with the build mode and agent type only (spec 133)', async () => {
+      await useCase.execute(baseInput);
+
+      expect(mockTelemetry.record).toHaveBeenCalledTimes(1);
+      const [event, properties] = mockTelemetry.record.mock.calls[0];
+      expect(event).toBe(TelemetryEvent.FeatureCreated);
+      expect(Object.keys(properties).sort()).toEqual(['agentType', 'buildMode']);
+    });
+
     it('should create a feature and spawn the agent', async () => {
       const result = await useCase.execute(baseInput);
 

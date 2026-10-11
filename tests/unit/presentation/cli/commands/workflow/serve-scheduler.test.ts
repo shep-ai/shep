@@ -66,7 +66,8 @@ vi.mock('@/infrastructure/di/container.js', () => ({
         token === 'IDesktopNotifier' ||
         token === 'IGitPrService' ||
         token === 'IGitForkService' ||
-        token === 'ILogger'
+        token === 'ILogger' ||
+        token === 'ITelemetry'
       ) {
         return {};
       }

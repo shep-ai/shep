@@ -99,6 +99,8 @@ import { createStatusCommand } from './commands/status.command.js';
 import { createRestartCommand } from './commands/restart.command.js';
 import { createServeCommand } from './commands/_serve.command.js';
 import { startDaemon } from './commands/daemon/start-daemon.js';
+import { createTelemetryCommand } from './commands/telemetry/index.js';
+import { recordUnhandledError, registerTelemetryHooks } from './telemetry-hooks.js';
 
 // DI container and settings
 import { initializeContainer, container } from '@/infrastructure/di/container.js';
@@ -169,6 +171,8 @@ async function bootstrap() {
     // inherits them; the preAction hook writes SHEP_LOG_LEVEL before any
     // action runs, and ConsoleLogger re-reads it per line.
     registerGlobalVerbosityOptions(program);
+    // Usage metrics (spec 133): first-run notice and `cli.command`.
+    registerTelemetryHooks(program);
 
     program
       // task-10: Default action starts the daemon (or shows already-running URL).
@@ -227,6 +231,7 @@ async function bootstrap() {
     program.addCommand(createFleetCommand());
     program.addCommand(createLogsCommand());
     program.addCommand(createUsageCommand());
+    program.addCommand(createTelemetryCommand());
     // Experimental (spec 119): hidden from --help until the flag is on.
     program.addCommand(createHarnessCommand(), {
       hidden: !(getSettings().featureFlags?.queryAwareHarness ?? false),
@@ -242,6 +247,7 @@ async function bootstrap() {
     // Parse arguments (parseAsync needed for async command actions like init)
     await program.parseAsync();
   } catch (error) {
+    recordUnhandledError(error);
     if (!errorReported) {
       messages.error(
         'Failed to start CLI',
@@ -254,11 +260,13 @@ async function bootstrap() {
 
 // Global error handlers
 process.on('uncaughtException', (error) => {
+  recordUnhandledError(error);
   messages.error('An unexpected error occurred', error);
   process.exit(1);
 });
 
 process.on('unhandledRejection', (reason) => {
+  recordUnhandledError(reason);
   const error = reason instanceof Error ? reason : new Error(String(reason));
   messages.error('Unhandled promise rejection', error);
   process.exit(1);

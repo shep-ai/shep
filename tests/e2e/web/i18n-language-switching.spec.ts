@@ -17,11 +17,11 @@ async function selectLanguage(page: Page, name: string) {
   await expect(select).toBeEnabled({ timeout: COLD_ROUTE_READY_TIMEOUT_MS });
   if ((await select.textContent())?.trim() === name) return;
   await select.click();
-  // Match the language save itself: the settings page fires other server
-  // actions (model catalog, routing plan) that can answer first. The action
-  // has run and persisted once its response headers arrive, so do not wait
-  // on `finished()` — the re-rendered page streams in its body, and that
-  // stream can stay open past the test timeout.
+  // Match the language save itself: the page fires other server actions while
+  // it loads (model catalog, routing plan, the route-view usage event) that can
+  // answer first. The action has run and persisted once its response headers
+  // arrive, so do not wait on `finished()` — the re-rendered page streams in
+  // its body, and that stream can stay open past the test timeout.
   const saved = page.waitForResponse((response) => {
     const request = response.request();
     return (

@@ -30,6 +30,9 @@ import { ConsoleLogger } from '../logging/console-logger.js';
 import { SdlcLifecycle, PrStatus, CiStatus } from '../../../domain/generated/output.js';
 import { NotificationEventType, NotificationSeverity } from '../../../domain/generated/output.js';
 import type { NotificationEvent, Feature } from '../../../domain/generated/output.js';
+import type { ITelemetry } from '../../../application/ports/output/services/telemetry.interface.js';
+import { NoopTelemetry } from '../telemetry/noop-telemetry.js';
+import { recordPrMerged } from '../telemetry/pr-telemetry.js';
 
 const TAG = '[GitHubWebhook]';
 const WEBHOOK_EVENTS = ['pull_request', 'check_suite', 'check_run'] as const;
@@ -86,6 +89,7 @@ export interface WebhookDeliveryRecord {
 }
 
 export class GitHubWebhookService implements IWebhookService {
+  private readonly telemetry: ITelemetry;
   private readonly featureRepo: IFeatureRepository;
   private readonly gitPrService: IGitPrService;
   private readonly notificationService: INotificationService;
@@ -116,8 +120,11 @@ export class GitHubWebhookService implements IWebhookService {
      * previous run validating; the instance id limits stale-hook cleanup to
      * hooks this installation created. Defaults to a throwaway identity.
      */
-    identity: WebhookInstanceIdentity = createWebhookIdentity()
+    identity: WebhookInstanceIdentity = createWebhookIdentity(),
+    /** Records pr.merged (spec 133); once-keyed, so other detectors cannot double-count. */
+    telemetry: ITelemetry = new NoopTelemetry()
   ) {
+    this.telemetry = telemetry;
     this.featureRepo = featureRepo;
     this.gitPrService = gitPrService;
     this.notificationService = notificationService;
@@ -454,6 +461,7 @@ export class GitHubWebhookService implements IWebhookService {
 
     if (status === PrStatus.Merged) {
       feature.lifecycle = SdlcLifecycle.Maintain;
+      recordPrMerged(this.telemetry, feature, true);
     }
 
     await this.featureRepo.update(feature);

@@ -1,0 +1,8 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: TelemetryProcessKind.yaml
+type: string
+enum:
+  - cli
+  - daemon
+  - worker
+description: Process that recorded a telemetry event

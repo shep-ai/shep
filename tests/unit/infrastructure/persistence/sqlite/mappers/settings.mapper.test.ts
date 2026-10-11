@@ -244,6 +244,12 @@ function createTestRow(overrides: Partial<SettingsRow> = {}): SettingsRow {
     messaging_whatsapp_bot_token: null,
     messaging_whatsapp_pending_code: null,
     messaging_whatsapp_pending_expires_at: null,
+    telemetry_enabled: 1,
+    telemetry_include_identity: 1,
+    telemetry_contact_consent: 0,
+    telemetry_install_id: null,
+    telemetry_notice_shown_at: null,
+    telemetry_last_heartbeat_at: null,
     ...overrides,
   };
 }
@@ -1733,6 +1739,23 @@ describe('Settings Mapper', () => {
         createTestSettings({ models: { default: 'claude-opus-5', adaptive } })
       );
       expect(fromDatabase(row).models.adaptive).toEqual(adaptive);
+    });
+  });
+
+  describe('telemetry identity default (identity is opt-in)', () => {
+    it('writes identity off when settings carry no telemetry', () => {
+      const row = toDatabase(createTestSettings({ telemetry: undefined }));
+
+      expect(row.telemetry_enabled).toBe(1);
+      expect(row.telemetry_include_identity).toBe(0);
+    });
+
+    it('reads identity off from a row without a stored value', () => {
+      const row = createTestRow({
+        telemetry_include_identity: null as unknown as number,
+      });
+
+      expect(fromDatabase(row).telemetry?.includeIdentity).toBe(false);
     });
   });
 });

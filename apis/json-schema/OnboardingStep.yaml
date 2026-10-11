@@ -1,0 +1,10 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: OnboardingStep.yaml
+type: string
+enum:
+  - agent-setup
+  - add-project
+  - project-added
+  - start-from-prompt
+  - telemetry-notice
+description: Web onboarding step

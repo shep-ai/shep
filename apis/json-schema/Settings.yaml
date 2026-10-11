@@ -57,6 +57,9 @@ properties:
   harness:
     $ref: HarnessConfig.yaml
     description: Query-aware agent harness configuration (optional, defaults applied at runtime)
+  telemetry:
+    $ref: TelemetryConfig.yaml
+    description: Usage metrics preferences (optional, defaults applied at runtime)
 required:
   - models
   - user

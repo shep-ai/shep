@@ -149,6 +149,8 @@ import type { IDaemonHealthProbe } from '../../../application/ports/output/servi
 import { DaemonHealthProbeService } from '../../services/diagnostics/daemon-health-probe.service.js';
 import type { IDaemonService } from '../../../application/ports/output/services/daemon-service.interface.js';
 import { RecapChannel } from '../../../domain/generated/output.js';
+import type { IClock } from '../../../application/ports/output/services/clock.interface.js';
+import { RealClock } from '../../services/clock.js';
 
 /**
  * Register core infrastructure services: validators, filesystem, git, notifications,
@@ -166,6 +168,8 @@ export function registerServices(container: DependencyContainer): void {
   // The optional environment/readGitSha options are test seams, not DI tokens.
   // Construct explicitly so tsc's Object metadata is never resolved as a service.
   container.registerInstance<IVersionService>('IVersionService', new VersionService());
+  // Wall clock for every time-dependent use case (scheduled workflows, telemetry)
+  container.registerInstance<IClock>('IClock', new RealClock());
 
   // IWebServerService is registered as a lazy proxy to avoid importing `next`
   // (~80ms) for non-web commands. The actual service is loaded on first method call.

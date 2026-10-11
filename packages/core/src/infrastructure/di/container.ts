@@ -117,6 +117,8 @@ import { registerSecurity } from './modules/register-security.js';
 import { registerScheduledWorkflows } from './modules/register-scheduled-workflows.js';
 import { registerPlugins } from './modules/register-plugins.js';
 import { registerHarness } from './modules/register-harness.js';
+import type { ITelemetry } from '../../application/ports/output/services/telemetry.interface.js';
+import { registerTelemetry } from './modules/register-telemetry.js';
 import { PruneRetainedDataUseCase } from '../../application/use-cases/maintenance/prune-retained-data.use-case.js';
 
 let _initialized = false;
@@ -172,6 +174,7 @@ export async function initializeContainer(): Promise<typeof container> {
   registerScheduledWorkflows(container);
   registerPlugins(container);
   registerHarness(container);
+  registerTelemetry(container);
 
   // ─── Retention housekeeping ──────────────────────────────────────────────
   // The daemon may never have been started, so history (and worker log files)
@@ -246,7 +249,8 @@ export async function initializeContainer(): Promise<typeof container> {
         notifService,
         execFnResolved,
         webhookLogger,
-        identity
+        identity,
+        c.resolve<ITelemetry>('ITelemetry')
       );
     },
   });

@@ -11,6 +11,7 @@ import {
   Bell,
   Flag,
   Database,
+  BarChart3,
   Globe,
   Minus,
   Plus,
@@ -37,6 +38,7 @@ import { SettingsRow, SwitchRow } from './settings-rows';
 import { FeatureFlagsList } from './feature-flags-list';
 import { listFeatureFlagDescriptors } from '@shepai/core/domain/shared/feature-flag-catalog';
 import { createDefaultSettings } from '@shepai/core/domain/factories/settings-defaults.factory';
+import { TelemetrySettingsSection } from '../telemetry/telemetry-settings-section';
 import {
   Select,
   SelectContent,
@@ -145,6 +147,7 @@ const SECTIONS = [
   { id: 'home-page', labelKey: 'settings.sections.homePage', icon: Home },
   { id: 'fab-layout', labelKey: 'settings.sections.layout', icon: LayoutGrid },
   { id: 'integrations', labelKey: 'settings.sections.integrations', icon: Github },
+  { id: 'telemetry', labelKey: 'settings.sections.telemetry', icon: BarChart3 },
   { id: 'database', labelKey: 'settings.sections.database', icon: Database },
 ] as const;
 
@@ -2094,6 +2097,22 @@ export function SettingsPageClient({
             <SectionHint>{t('settings.whatsapp.hint')}</SectionHint>
           </div>
         ) : null}
+
+        {/* ── Usage metrics (spec 133) ── */}
+        <div
+          id="section-telemetry"
+          className="grid scroll-mt-32 grid-cols-1 gap-x-5 rounded-lg lg:grid-cols-[minmax(0,1fr)_280px]"
+        >
+          <SettingsSection
+            icon={BarChart3}
+            title={t('telemetry.settings.title')}
+            description={t('telemetry.settings.description')}
+            testId="telemetry-settings-card"
+          >
+            <TelemetrySettingsSection />
+          </SettingsSection>
+          <SectionHint>{t('telemetry.settings.hint')}</SectionHint>
+        </div>
 
         {/* ── Database ── */}
         <div

@@ -1,50 +1,38 @@
-import { useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react';
-import { Input } from '@/components/ui/input';
+import { fn } from '@storybook/test';
 import { SettingsRow, SwitchRow } from './settings-rows';
 
 const meta: Meta<typeof SwitchRow> = {
-  title: 'Settings/SettingsRows',
+  title: 'Features/Settings/SettingsRows',
   component: SwitchRow,
+  parameters: { layout: 'padded' },
   tags: ['autodocs'],
-  decorators: [
-    (Story) => (
-      <div className="max-w-xl rounded-lg border px-4">
-        <Story />
-      </div>
-    ),
-  ],
+  args: {
+    label: 'Send usage metrics',
+    description: 'Turning this off also deletes events that have not been sent yet.',
+    id: 'story-switch',
+    testId: 'story-switch',
+    checked: true,
+    onChange: fn(),
+  },
 };
 
 export default meta;
 type Story = StoryObj<typeof SwitchRow>;
 
-function ToggleDemo({ disabled = false }: { disabled?: boolean }) {
-  const [checked, setChecked] = useState(true);
-  return (
-    <SwitchRow
-      label="Spaces"
-      description="Spaces and product lines: /spaces and `shep space`"
-      id="demo-spaces"
-      testId="switch-demo-spaces"
-      checked={checked}
-      onChange={setChecked}
-      disabled={disabled}
-    />
-  );
-}
+export const Default: Story = {};
 
-/** A switch row the user can toggle. */
-export const Default: Story = { render: () => <ToggleDemo /> };
+export const Off: Story = { args: { checked: false } };
 
-/** A disabled switch row. */
-export const Disabled: Story = { render: () => <ToggleDemo disabled /> };
+export const Disabled: Story = { args: { disabled: true } };
 
-/** A plain row wrapping any control. */
-export const WithInput: Story = {
+export const WithoutDescription: Story = { args: { description: undefined } };
+
+/** A plain row holding any control. */
+export const PlainRow: Story = {
   render: () => (
-    <SettingsRow label="Default clone directory" description="Where new repositories go">
-      <Input defaultValue="~/repos" className="w-48" />
+    <SettingsRow label="Database location" description="Where Shep keeps its data.">
+      <span className="text-muted-foreground font-mono text-xs">~/.shep</span>
     </SettingsRow>
   ),
 };

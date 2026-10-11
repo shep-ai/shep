@@ -130,6 +130,7 @@ import {
   type MergeNodeDeps,
 } from '@/infrastructure/services/agents/feature-agent/nodes/merge/merge.node.js';
 import type { FeatureAgentState } from '@/infrastructure/services/agents/feature-agent/state.js';
+import { TelemetryEvent } from '@/domain/generated/output.js';
 import type { IAgentExecutor } from '@/application/ports/output/agents/agent-executor.interface.js';
 import {
   GitPrError,
@@ -196,6 +197,7 @@ function baseDeps(overrides?: Partial<MergeNodeDeps>): MergeNodeDeps {
       getMergeableStatus: vi.fn().mockResolvedValue(undefined),
     } as any,
     cleanupFeatureWorktreeUseCase: { execute: mockCleanupExecute } as any,
+    telemetry: { record: vi.fn() },
     ...overrides,
   };
 }
@@ -833,6 +835,51 @@ describe('createMergeNode (agent-driven)', () => {
 
       expect(deps.localMergeSquash).not.toHaveBeenCalled();
       expect(deps.gitPrService.mergePr).toHaveBeenCalledWith('/tmp/worktree', 99, 'squash');
+    });
+  });
+
+  // --- Usage metrics (spec 133) ---
+  describe('telemetry', () => {
+    it('records pr.opened and pr.merged via a pull request, once-keyed by feature', async () => {
+      const node = createMergeNode(deps);
+      await node(
+        baseState({
+          prUrl: 'https://github.com/test/repo/pull/99',
+          prNumber: 99,
+          approvalGates: { allowPrd: false, allowPlan: false, allowMerge: true },
+        })
+      );
+
+      const calls = vi.mocked(deps.telemetry.record).mock.calls;
+      expect(calls).toContainEqual([
+        TelemetryEvent.PrOpened,
+        expect.any(Object),
+        { onceKey: 'pr.opened:feat-001' },
+      ]);
+      expect(calls).toContainEqual([
+        TelemetryEvent.PrMerged,
+        expect.objectContaining({ viaPullRequest: true }),
+        { onceKey: 'pr.merged:feat-001' },
+      ]);
+    });
+
+    it('records a local squash merge as pr.merged without a pull request, and no pr.opened', async () => {
+      const node = createMergeNode(deps);
+      await node(
+        baseState({ approvalGates: { allowPrd: false, allowPlan: false, allowMerge: true } })
+      );
+
+      const events = vi.mocked(deps.telemetry.record).mock.calls.map(([event]) => event);
+      expect(events).toEqual([TelemetryEvent.PrMerged]);
+      expect(vi.mocked(deps.telemetry.record).mock.calls[0][1]).toMatchObject({
+        viaPullRequest: false,
+      });
+    });
+
+    it('records nothing when the branch is neither pushed as a PR nor merged', async () => {
+      const node = createMergeNode(deps);
+      await node(baseState());
+      expect(deps.telemetry.record).not.toHaveBeenCalled();
     });
   });
 

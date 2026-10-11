@@ -557,6 +557,7 @@ describe('createFeatureAgentGraph', () => {
             revParse: vi.fn().mockResolvedValue('abc1234'),
             gitPrService: {} as never,
             cleanupFeatureWorktreeUseCase: { execute: vi.fn() },
+            telemetry: { record: vi.fn() },
           },
         },
         checkpointer

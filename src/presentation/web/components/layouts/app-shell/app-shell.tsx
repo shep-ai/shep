@@ -48,6 +48,7 @@ import {
 import { TurnStatusesProvider } from '@/hooks/turn-statuses-provider';
 
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useRouteViewTelemetry } from '@/hooks/use-route-view-telemetry';
 import { useNotifications } from '@/hooks/use-notifications';
 import { useFeatureFlags } from '@/hooks/feature-flags-context';
 import type { ShellVariant } from '@/lib/shell-variant';
@@ -91,6 +92,9 @@ function AppShellInner({ children, sidebarOpen, variant = 'full' }: AppShellProp
   // the story inside the app, and a stack of toasts over the preview
   // pane just adds noise.
   useNotifications(variant !== 'apps-only');
+
+  // Usage metrics (spec 133): which areas are visited, as route templates.
+  useRouteViewTelemetry();
 
   const { features } = useSidebarFeaturesContext();
 

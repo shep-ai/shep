@@ -207,6 +207,7 @@ export function createStubMergeNodeDeps(featureId?: string): Omit<MergeNodeDeps,
       stashDrop: vi.fn().mockResolvedValue(undefined),
     },
     cleanupFeatureWorktreeUseCase: { execute: vi.fn().mockResolvedValue(undefined) } as any,
+    telemetry: { record: vi.fn() },
   };
 }
 

@@ -22,6 +22,7 @@ import type { Feature } from '../../../../domain/generated/output.js';
 import {
   SdlcLifecycle,
   AgentRunStatus,
+  TelemetryEvent,
   BuildMode,
   type AgentType,
 } from '../../../../domain/generated/output.js';
@@ -36,6 +37,7 @@ import type { IAgentValidator } from '../../../ports/output/agents/agent-validat
 import type { ISkillInjectorService } from '../../../ports/output/services/skill-injector.interface.js';
 import type { ISettingsRepository } from '../../../ports/output/repositories/settings.repository.interface.js';
 import type { ILogger } from '../../../ports/output/services/logger.interface.js';
+import type { ITelemetry } from '../../../ports/output/services/telemetry.interface.js';
 import { createDefaultSettings } from '../../../../domain/factories/settings-defaults.factory.js';
 import { satisfiesDependencyGate } from '../../../../domain/lifecycle-gates.js';
 import { effortField } from '../../../../domain/shared/agent-effort.js';
@@ -80,7 +82,9 @@ export class CreateFeatureUseCase {
     @inject(FeatureCapacityService)
     private readonly capacity: FeatureCapacityService,
     @inject('IApplicationRepository')
-    private readonly applicationRepo: IApplicationRepository
+    private readonly applicationRepo: IApplicationRepository,
+    @inject('ITelemetry')
+    private readonly telemetry: ITelemetry
   ) {}
 
   /**
@@ -298,6 +302,10 @@ export class CreateFeatureUseCase {
       updatedAt: now.toISOString(),
     };
     await this.runRepository.create(agentRun);
+    this.telemetry.record(TelemetryEvent.FeatureCreated, {
+      buildMode: feature.buildMode,
+      agentType: agentRun.agentType,
+    });
 
     return { feature, shouldSpawn, queued: queuedAt !== undefined };
   }

@@ -1,0 +1,15 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: TelemetryEvent.yaml
+type: string
+enum:
+  - install.heartbeat
+  - cli.command
+  - web.area.viewed
+  - feature.created
+  - feature.run.finished
+  - pr.opened
+  - pr.merged
+  - decision.answered
+  - onboarding.step
+  - error.unhandled
+description: Usage event recorded by Shep's opt-out telemetry
