@@ -3056,3 +3056,12 @@ and prettier runs pick up the whole second checkout. Add `.claude/worktrees/` to
 command with `fatal: unable to access 'NUL': Invalid argument`. Point `GIT_CONFIG_GLOBAL` and
 `GIT_CONFIG_SYSTEM` at an empty temp file (as `tests/helpers/harness/temp-git-repo.ts` does) — it
 reads the same on every platform and git version, so never branch on `process.platform` for it.
+
+## Wait for a specific server action in e2e, never "the first `next-action` POST"
+
+The i18n spec waited for any server-action response, then called `response.finished()` to stop the
+page closing mid-save. Pages fire several actions on load (model catalog, routing plan), so the wait
+could match the wrong one, and a server action's response streams the re-rendered page, so
+`finished()` can hang past the test timeout even after the action has persisted. Match the action
+by its request body (`request.postData()` contains the field it saves), treat its response headers
+as "persisted", and verify through a reload rather than `finished()`.

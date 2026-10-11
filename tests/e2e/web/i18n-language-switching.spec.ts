@@ -9,19 +9,30 @@ import { test, expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { COLD_ROUTE_READY_TIMEOUT_MS, COLD_ROUTE_TEST_TIMEOUT_MS } from './helpers/timeouts';
 
+/** The settings field the language save posts. */
+const PREFERRED_LANGUAGE_FIELD = '"preferredLanguage"';
+
 async function selectLanguage(page: Page, name: string) {
   const select = page.getByTestId('language-select');
   await expect(select).toBeEnabled({ timeout: COLD_ROUTE_READY_TIMEOUT_MS });
   if ((await select.textContent())?.trim() === name) return;
   await select.click();
-  const saved = page.waitForResponse(
-    (response) =>
-      response.request().method() === 'POST' && !!response.request().headers()['next-action']
-  );
+  // Match the language save itself: the settings page fires other server
+  // actions (model catalog, routing plan) that can answer first. The action
+  // has run and persisted once its response headers arrive, so do not wait
+  // on `finished()` — the re-rendered page streams in its body, and that
+  // stream can stay open past the test timeout.
+  const saved = page.waitForResponse((response) => {
+    const request = response.request();
+    return (
+      request.method() === 'POST' &&
+      !!request.headers()['next-action'] &&
+      (request.postData() ?? '').includes(PREFERRED_LANGUAGE_FIELD)
+    );
+  });
   await page.getByRole('option', { name, exact: true }).click();
   const response = await saved;
   expect(response.ok()).toBe(true);
-  await response.finished();
 }
 
 test.describe('i18n: language switching', () => {
@@ -31,12 +42,10 @@ test.describe('i18n: language switching', () => {
   // Language is a persisted singleton setting, so every case must restore it
   // before handing the server to another browser context or spec.
   //
-  // Check the PERSISTED value, not the client: `selectLanguage` resolves on
-  // the first server-action response, which can belong to another action, and
-  // the client flips `html[lang]` optimistically. When the page then closed,
-  // the English save was aborted mid-flight and every later spec ran in
-  // Spanish. A reload renders `lang` from the stored setting, so retry the
-  // selection until the server agrees.
+  // Check the PERSISTED value, not the client: the client flips `html[lang]`
+  // optimistically, and an English save aborted mid-flight once left every
+  // later spec running in Spanish. A reload renders `lang` from the stored
+  // setting, so retry the selection until the server agrees.
   async function resetLanguage(page: Page) {
     await expect
       .poll(
