@@ -33,3 +33,18 @@ export function isActiveAgentRunStatus(status: AgentRunStatus): boolean {
 export const NON_TERMINAL_AGENT_RUN_STATUSES: readonly AgentRunStatus[] = Object.values(
   AgentRunStatus
 ).filter((status) => !TERMINAL_AGENT_RUN_STATUSES.has(status));
+
+/** Statuses in which the run's process may still be writing to the worktree. */
+const EXECUTING_AGENT_RUN_STATUSES: ReadonlySet<AgentRunStatus> = new Set([
+  AgentRunStatus.pending,
+  AgentRunStatus.running,
+]);
+
+/**
+ * True while the run's agent may be changing files — narrower than
+ * {@link isActiveAgentRunStatus}: a run parked at an approval gate is active
+ * but not executing. Gates checkpoint restore (spec 135).
+ */
+export function isAgentRunExecuting(status: AgentRunStatus): boolean {
+  return EXECUTING_AGENT_RUN_STATUSES.has(status);
+}
