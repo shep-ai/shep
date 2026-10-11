@@ -1,13 +1,13 @@
 /** Storybook mock of app/actions/feature-checkpoints (spec 138): fixture data, no DI. */
 import type { ActionResult } from '@/lib/action-outcome';
-import { checkpointLabel } from '@shepai/core/domain/shared/git-checkpoint';
 import {
   fixtureCheckpointDiff,
   fixtureCheckpointList,
 } from '@/components/features/checkpoints/checkpoint-fixtures';
 
+/** A checkpoint's label is the last component of its ref (`0003-implement`). */
 const byLabel = (label: string) =>
-  fixtureCheckpointList.checkpoints.find((c) => checkpointLabel(c) === label);
+  fixtureCheckpointList.checkpoints.find((c) => c.ref.endsWith(`/${label}`));
 
 const ok = <T>(data: T): ActionResult<T> => ({ ok: true, data });
 
