@@ -1,17 +1,19 @@
 ## Summary
 
-{{BRIEF_DESCRIPTION_OF_SCOPE}} — {{TASK_COUNT}} tasks across {{PHASE_COUNT}} phases.
+Hidden-ref checkpoints per feature-agent step, with per-step and cross-step diffs and a safe
+restore in CLI and web — 12 tasks across 5 phases.
 
 ## Acceptance Checklist
 
 Before marking feature complete:
 
 - [ ] All tasks completed
-- [ ] Tests passing (`pnpm test`)
-- [ ] Linting clean (`pnpm lint`)
+- [ ] Tests passing (`pnpm test:unit`, `pnpm test:int`)
+- [ ] Linting clean (`pnpm lint`), formatting clean (`pnpm format:check`)
 - [ ] Types valid (`pnpm typecheck`)
-- [ ] TypeSpec compiles (`pnpm tsp:compile`)
-- [ ] PR created and reviewed
+- [ ] TypeSpec compiles without warnings (`pnpm tsp:compile`), `pnpm generate` committed
+- [ ] `pnpm build`, `pnpm build:web`, `pnpm build:storybook`, `pnpm check:stories` pass
+- [ ] PR created, CI green
 
 ---
 

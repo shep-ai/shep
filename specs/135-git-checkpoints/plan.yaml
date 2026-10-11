@@ -2,43 +2,101 @@
 # This is the source of truth. Markdown is auto-generated from this file.
 
 name: git-checkpoints
-summary: Implementation plan for 135-git-checkpoints
+summary: >-
+  TypeSpec entity → domain helpers → ports → use cases → git adapter + SQLite → graph wrapper and
+  worker wiring → cleanup hooks → CLI → web drawer tab, each layer test-first.
 
-# Relationships
-relatedFeatures: []
-technologies: []
+relatedFeatures:
+  - 116-agent-harness-reliability
+technologies:
+  - TypeSpec
+  - TypeScript
+  - git plumbing
+  - SQLite
+  - Next.js / React
 relatedLinks: []
 
-# Structured implementation phases
 phases:
   - id: phase-1
-    name: 'Foundation'
+    name: 'Model and domain'
     parallel: false
     taskIds:
       - task-1
       - task-2
-  # Additional phases are added by `/shep-kit:plan` alongside their tasks in
-  # tasks.yaml. Do not reference task ids here before they exist — spec:validate
-  # fails the consistency gate on dangling taskIds.
   - id: phase-2
-    name: 'Core Implementation'
+    name: 'Ports, adapters and persistence'
+    parallel: true
+    taskIds:
+      - task-3
+      - task-4
+      - task-5
+  - id: phase-3
+    name: 'Use cases and DI'
     parallel: false
-    taskIds: []
+    taskIds:
+      - task-6
+      - task-7
+  - id: phase-4
+    name: 'Capture in the pipeline and cleanup'
+    parallel: true
+    taskIds:
+      - task-8
+      - task-9
+  - id: phase-5
+    name: 'Surfaces'
+    parallel: true
+    taskIds:
+      - task-10
+      - task-11
+      - task-12
 
-# File change tracking
 filesToCreate:
-  - src/domain/entities/{{ENTITY_NAME}}.ts
-  - tests/unit/domain/entities/{{ENTITY_NAME}}.test.ts
+  - tsp/agents/git-checkpoint.tsp
+  - packages/core/src/domain/shared/git-checkpoint.ts
+  - packages/core/src/domain/errors/git-checkpoint-errors.ts
+  - packages/core/src/application/ports/output/services/git-checkpoint-service.interface.ts
+  - packages/core/src/application/ports/output/repositories/git-checkpoint-repository.interface.ts
+  - packages/core/src/application/use-cases/features/checkpoints/capture-feature-checkpoint.use-case.ts
+  - packages/core/src/application/use-cases/features/checkpoints/list-feature-checkpoints.use-case.ts
+  - packages/core/src/application/use-cases/features/checkpoints/get-feature-checkpoint-diff.use-case.ts
+  - packages/core/src/application/use-cases/features/checkpoints/restore-feature-checkpoint.use-case.ts
+  - packages/core/src/application/use-cases/features/checkpoints/delete-feature-checkpoints.use-case.ts
+  - packages/core/src/infrastructure/services/git/unified-diff.parser.ts
+  - packages/core/src/infrastructure/services/git/git-checkpoint.service.ts
+  - packages/core/src/infrastructure/persistence/sqlite/migrations/170-create-git-checkpoints.ts
+  - packages/core/src/infrastructure/persistence/sqlite/mappers/git-checkpoint.mapper.ts
+  - packages/core/src/infrastructure/repositories/sqlite-git-checkpoint.repository.ts
+  - packages/core/src/infrastructure/di/modules/register-git-checkpoints.ts
+  - packages/core/src/infrastructure/services/agents/feature-agent/nodes/with-checkpoint.ts
+  - packages/core/src/infrastructure/services/agents/feature-agent/checkpoint-capture.ts
+  - src/presentation/cli/commands/feat/checkpoints.command.ts
+  - src/presentation/cli/commands/feat/diff.command.ts
+  - src/presentation/cli/commands/feat/restore.command.ts
+  - src/presentation/web/app/actions/feature-checkpoints.ts
+  - .storybook/mocks/app/actions/feature-checkpoints.ts
+  - src/presentation/web/components/features/checkpoints/ (tab, list, compare bar + stories)
+  - tests (unit, integration with real git, DI)
 
 filesToModify:
-  - src/infrastructure/di/container.ts
-  - package.json
+  - packages/core/src/infrastructure/services/git/git-pr.service.ts
+  - packages/core/src/infrastructure/services/code-review/github-review.service.ts
+  - packages/core/src/infrastructure/services/agents/feature-agent/feature-agent-graph.ts
+  - packages/core/src/infrastructure/services/agents/feature-agent/fast-feature-agent-graph.ts
+  - packages/core/src/infrastructure/services/agents/feature-agent/exploration-agent-graph.ts
+  - packages/core/src/infrastructure/services/agents/feature-agent/feature-agent-worker.ts
+  - packages/core/src/application/use-cases/features/cleanup-feature-worktree.use-case.ts
+  - packages/core/src/application/use-cases/features/delete-feature.use-case.ts
+  - packages/core/src/application/use-cases/features/archive-feature.use-case.ts
+  - packages/core/src/domain/shared/agent-run-status.ts
+  - packages/core/src/infrastructure/di/container.ts
+  - src/presentation/cli/commands/feat/index.ts
+  - src/presentation/web/components/common/feature-drawer-tabs/feature-drawer-tabs.tsx
+  - src/presentation/web/components/common/control-center-drawer/drawer-view.ts
+  - translations/*/cli.json and translations/*/web.json (9 locales)
+  - tests/integration/infrastructure/di/container-bootstrap.test.ts
 
-# Open questions (should all be resolved before implementation)
 openQuestions: []
 
-# Markdown content — architecture, strategy, and risks only.
-# Task-level detail lives in tasks.yaml (no duplication).
 content: |
   ## Status
 
@@ -48,49 +106,79 @@ content: |
   ## Architecture Overview
 
   ```
-  {{ARCHITECTURE_DIAGRAM}}
+   feature-agent worker ──resolves──▶ CaptureFeatureCheckpointUseCase
+        │ graph deps.checkpoints (CheckpointCapture)          │
+        ▼                                                     ▼
+   withCheckpoint(node) ── ensureBaseline / capture ──▶ IGitCheckpointService ──▶ git plumbing
+                                                       IGitCheckpointRepository ─▶ git_checkpoints
+
+   CLI feat checkpoints|diff|restore ─┐
+   web Checkpoints tab (server actions)├─▶ List / GetDiff / Restore use cases ─▶ same two ports
+                                      ┘
+   Cleanup / Delete / Archive use cases ─▶ DeleteFeatureCheckpointsUseCase ─▶ update-ref -d + rows
   ```
+
+  Layers follow Clean Architecture (dependencies point inward):
+
+  - **Domain** (`domain/shared/git-checkpoint.ts`): ref naming, node-name validation, step
+    selector resolution, "previous checkpoint". Pure, extensionless imports (web consumes it).
+  - **Application**: two ports and five use cases. Use cases never touch git or SQL directly.
+  - **Infrastructure**: `GitCheckpointService` (plumbing through the injected `ExecFunction`,
+    LRU diff cache), the SQLite repository, migration 170, DI module.
+  - **Pipeline**: `withCheckpoint` wraps file-changing nodes in all three graph factories; the
+    callback is an optional dependency the worker supplies, so graphs stay testable without git.
 
   ## Implementation Strategy
 
   **MANDATORY TDD**: All phases with executable code follow RED-GREEN-REFACTOR cycles.
 
-  High-level walkthrough of how the phases connect and why they are ordered
-  this way. Focus on architectural decisions and data flow — not individual
-  task descriptions (see tasks.yaml for the detailed breakdown).
+  The model comes first because every layer types against it. Domain helpers come next because
+  both the use cases and the web package use them. The git adapter is proven against real git
+  before any caller depends on it — the plumbing is the riskiest part, and the real-git
+  integration test is the only test that can fail for the right reasons. Use cases are tested
+  with in-memory doubles of the two ports, then DI wiring is proven by resolving every new token
+  in the bootstrap test. Pipeline wiring and cleanup hooks come after the use cases exist; CLI
+  and web are thin shells over the same three read/restore use cases and can be built in
+  parallel.
 
-  ## Files to Create/Modify
-
-  ### New Files
-
-  | File | Purpose |
-  | ---- | ------- |
-  | {{FILE_PATH}} | {{PURPOSE}} |
-
-  ### Modified Files
-
-  | File | Changes |
-  | ---- | ------- |
-  | {{FILE_PATH}} | {{CHANGES}} |
+  The unified-diff parser is extracted from `GitPrService` before the adapter needs it, and the
+  GitHub review service's hand-copied hunk parser is pointed at it in the same change, so the
+  feature removes a duplication instead of adding a third copy.
 
   ## Testing Strategy (TDD: Tests FIRST)
 
-  **CRITICAL:** Tests are written FIRST in each TDD cycle.
+  ### Unit Tests
 
-  ### Unit Tests (RED -> GREEN -> REFACTOR)
+  - Domain: ref building/validation (rejects `..`, spaces, uppercase, path separators), selector
+    resolution by sequence / node / label, ambiguity and not-found errors, previous checkpoint.
+  - Use cases with fake ports: capture skips unchanged trees, baseline only when empty,
+    sequence numbering, stats against the previous tree; diff defaults `from` to the previous
+    step; restore refuses (no worktree, worktree == repo, not linked, agent pending/running) and
+    captures pre-restore before restoring; delete removes refs then rows.
+  - `withCheckpoint`: baseline before, capture after, capture after a throwing node, no-op
+    without a callback, capture errors swallowed.
+  - CLI commands: output for list/diff/restore and error paths (exit code 1, no throw).
+  - Web components via Testing Library; tab visibility.
 
-  - {{TEST_AREA_1}}
-  - {{TEST_AREA_2}}
+  ### Integration Tests (real git, isolated config)
 
-  ### Integration Tests
-
-  - {{INTEGRATION_TEST_1}}
+  - `GitCheckpointService`: capture leaves `git status`, HEAD, branch and real index unchanged;
+    untracked files captured, ignored files not; ref visible from the main repository; diff and
+    stat between two checkpoints; restore makes the tree equal and keeps ignored files and the
+    branch; `isLinkedWorktree` true for a linked worktree and false for the main checkout;
+    deleteRefs removes only the feature's refs. Worktree path contains a space.
+  - Repository round-trip on the migrated SQLite schema (non-default values, ordering, delete).
+  - DI bootstrap resolves every new token.
 
   ## Risk Mitigation
 
   | Risk | Mitigation |
   | ---- | ---------- |
-  | {{RISK}} | {{MITIGATION}} |
+  | Capture slows or breaks a run | Best-effort with logging; skip when unchanged; a failure never propagates |
+  | Restore hits the user's checkout | Path inequality + git linked-worktree check + no running agent; integration test on the main checkout refuses |
+  | Ambient git config (signing, identity, global remotes) changes behaviour | `--no-gpg-sign`, fixed author env, tests isolate global/system config |
+  | Windows paths | Paths compared after normalisation; temp index under `os.tmpdir()`; integration test runs on windows-latest |
+  | Migration number collides with an open PR | 170 now; re-check `main` before merge |
 
   ---
 
