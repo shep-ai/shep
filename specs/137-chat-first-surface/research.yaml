@@ -1,0 +1,167 @@
+# Research Artifact (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: chat-first-surface
+summary: >-
+  Technical decisions for 137 — how agents emit inline blocks without provider-specific code, how
+  blocks are stored and answered, how out-of-process blocks reach an open chat, how HTML previews
+  are sandboxed, and how the chat-first page is organised.
+
+relatedFeatures:
+  - 134-unified-decisions
+technologies:
+  - TypeScript
+  - TypeSpec
+  - React 19 / Next.js
+  - '@modelcontextprotocol/sdk'
+  - '@anthropic-ai/claude-agent-sdk 0.2.81'
+  - Commander
+relatedLinks:
+  - title: T3 Code HtmlRenderFrame
+    url: https://github.com/pingdotgg/t3code/blob/main/apps/web/src/components/chat/HtmlRenderFrame.tsx
+  - title: T3 Code BrowserDocumentFrame (sandbox attributes)
+    url: https://github.com/pingdotgg/t3code/blob/main/apps/web/src/components/files/BrowserDocumentFrame.tsx
+  - title: T3 Code HTML renders (user docs)
+    url: https://github.com/pingdotgg/t3code/blob/main/docs/user/html-renders.md
+
+decisions:
+  - title: Agents emit blocks through one use case exposed as a CLI command and an MCP tool
+    chosen: >-
+      PostChatBlockUseCase, reached through `shep chat block <type>` (any agent with a shell; the
+      scope defaults to SHEP_CHAT_SCOPE, which the session bootstrapper sets for every interactive
+      session) and through `post_chat_block` on the existing `shep mcp` server (any MCP client,
+      scope passed explicitly). The chat context gains a "Rich replies" section that tells the
+      agent when to use each block and the exact command.
+    rejected:
+      - >-
+        MCP-only: interactive sessions mount no MCP servers. Claude Agent SDK 0.2.81 V2 sessions
+        hard-code mcpServers {}, settingSources [] and extraArgs {}; SDK 0.3.x removes the V2
+        session API entirely, so an upgrade is a rewrite of the interactive executor. Cursor's ACP
+        session sends mcpServers [].
+      - >-
+        Wrapping the Claude executable to inject --mcp-config: a provider-specific hack inside the
+        SDK's spawn path, exactly what the brief rules out.
+      - >-
+        A fenced-text protocol (```shep-block JSON```) parsed out of assistant prose: no schema at
+        call time, streaming half-blocks, and the model's own Markdown can collide with it.
+    rationale: >-
+      Both adapters are thin presentation layers over one use case, so validation and storage are
+      written once. The CLI path works for Claude, Cursor and every future interactive agent today
+      because they all have a shell and already receive Shep's CLI reference; the MCP path covers
+      outside agents and is the seam for mounting the tool in sessions later (part 2).
+
+  - title: A block is a chat message, and so is its answer
+    chosen: >-
+      An assistant row whose content is `{{block}}` + JSON ChatBlock, and a user row
+      `{{block-response}}` + JSON ChatBlockResponse — the same convention as spec 134's
+      `{{interaction}}`. A pure domain codec formats, parses and validates both, and folds a
+      message list into "which blocks are answered" (latest response wins).
+    rejected:
+      - >-
+        A chat_blocks table: a migration (and a number to coordinate with the cleanup workstream),
+        plus a second source of ordering next to the message timeline, for data that is only ever
+        read with its conversation. Clearing a chat would also have to clear it.
+    rationale: >-
+      Blocks appear in timeline order with no extra query, survive restarts, are cleared with the
+      chat, and replay correctly on reload. Answers are derived from the timeline, so there is no
+      status column to keep in sync.
+
+  - title: Answers go to the agent as a plain user message (response capability "message")
+    chosen: >-
+      RespondToChatBlockUseCase checks the block exists, accepts the action for its type and is
+      not already answered; stores the `{{block-response}}` row; then sends the agent a readable
+      sentence ("The user approved the spec \"…\". Continue.") through the existing
+      sendUserMessage path without persisting it a second time.
+    rejected:
+      - >-
+        A blocking tool that waits for the click (like ask_decision): holds the agent's turn and a
+        process for minutes, and the CLI path cannot block reliably across a shell call.
+    rationale: >-
+      T3 calls this the `message` response capability: the answer survives restarts and works
+      for every provider, because every provider can read a user message.
+
+  - title: Out-of-process blocks reach an open chat through a light DB relay on the SSE route
+    chosen: >-
+      The per-scope SSE route remembers the newest createdAt it has seen and every 1.5 s asks
+      ListChatMessagesSinceUseCase for newer rows (one indexed query on
+      interactive_messages(feature_id, created_at)); each is emitted as a normal `message` event.
+      The client already de-duplicates by id, so rows that also arrive through the in-process
+      subscriber are harmless.
+    rejected:
+      - 'CLI posts to the daemon over HTTP: new client machinery, token handling, and nothing to fall back to when the daemon is down'
+      - 'Re-sync after every agent tool call: misses MCP posts from outside agents'
+    rationale: >-
+      `/api/agent-events` already relays cross-process state by polling SQLite every 500 ms; this
+      follows the same pattern at a lower rate, only while a chat is open.
+
+  - title: HTML previews run in a sandboxed, network-less frame shared with the Markdown preview
+    chosen: >-
+      One SandboxedHtmlFrame component: iframe srcdoc with sandbox="allow-scripts" (never
+      allow-same-origin, so the page has an opaque origin and cannot reach the app's cookies or
+      APIs); a CSP meta prepended to the document (default-src 'none'; script-src and style-src
+      'unsafe-inline'; img-src and font-src data: blob:; form-action 'none') so the page cannot
+      load or send anything over the network; a small injected script that reports its height
+      via postMessage, accepted only when event.source is that frame. The existing ```html
+      Markdown preview in thread.tsx is moved onto it, which closes its missing network block.
+    rejected:
+      - 'T3-style hosted asset URL: needs a server-side asset store; srcdoc keeps the page in the message'
+      - 'allow-same-origin for theme access: gives agent HTML the app origin'
+    rationale: >-
+      Matches T3's frame (opaque origin, height via postMessage) without its asset service. An
+      injected CSP can only tighten a policy, so agent HTML cannot loosen it.
+
+  - title: Size caps are enforced in the domain
+    chosen: 'Title 200 chars; Markdown body 64 KiB; HTML 256 KiB; response note 4 KiB'
+    rejected:
+      - 'No caps: every chat-state read returns all message content'
+    rationale: >-
+      Chat state is fetched whole, so a cap per block keeps one runaway page from making every
+      reload slow. The CLI and MCP adapters report the domain error verbatim.
+
+  - title: The chat-first page is a top-level route with a conversation rail
+    chosen: >-
+      `/chats` (redirects to `/chats/global`) and `/chats/[scope]`, outside the (dashboard) canvas
+      group, with a sidebar "Chat" item under Home. Left: ListChatConversationsUseCase returns
+      Shep, repositories, live features and applications with their scope keys; rows show the
+      existing turn-status dot. Right: the existing ChatTab, full height.
+    rejected:
+      - 'Reuse (dashboard)/chat: every page in that group renders over the canvas, which is the opposite of chat-first'
+      - 'A new chat runtime for the page: two implementations of the same chat would drift'
+    rationale: >-
+      The rail answers "how does a chat map to features, repos and apps" with the scope keys the
+      chat already uses, so every existing conversation shows up with no data change.
+
+openQuestions: []
+
+content: |
+  ## Technology Decisions
+
+  See `decisions` above. In short:
+
+  1. **Emission** — `PostChatBlockUseCase` behind `shep chat block` (CLI, works in every
+     interactive session today) and `post_chat_block` (MCP on `shep mcp`). Interactive sessions
+     cannot mount MCP: the Claude Agent SDK V2 session (0.2.81) hard-codes `mcpServers: {}`, and
+     0.3.x drops the V2 API.
+  2. **Storage** — blocks and answers are chat messages with `{{block}}` / `{{block-response}}`
+     markers; no migration.
+  3. **Answer path** — a readable user message to the agent (T3's `message` capability).
+  4. **Cross-process delivery** — SSE route relays newer rows every 1.5 s; client dedupes by id.
+  5. **HTML sandbox** — opaque-origin iframe + injected network-blocking CSP + height via
+     source-checked `postMessage`; shared with the existing Markdown ```html preview.
+  6. **Page** — `/chats/[scope]` with a conversation rail.
+
+  ## Security Considerations
+
+  - Agent HTML never shares the app origin (`sandbox` without `allow-same-origin`), cannot open
+    popups or submit forms to the app, and cannot reach the network (CSP `default-src 'none'`).
+  - The height message is accepted only from the frame's own `contentWindow` and is clamped.
+  - Block content is rendered as Markdown through `react-markdown` (no raw HTML), as chat prose is.
+  - `post_chat_block` and the CLI validate scope keys against the known shapes and cap sizes;
+    the response route checks the action is allowed for the block type and that the block
+    exists in that scope.
+
+  ## Performance Implications
+
+  - One indexed SQLite read per open chat every 1.5 s; nothing when no chat is open.
+  - Size caps bound the chat-state payload.
+  - The conversation rail is a single server read on navigation.

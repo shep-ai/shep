@@ -1,0 +1,45 @@
+feature:
+  id: '137-chat-first-surface'
+  name: 'chat-first-surface'
+  number: 137
+  branch: 'feat/137-chat-first-surface'
+  lifecycle: 'implementation'
+  createdAt: '2026-10-11T10:59:03Z'
+
+status:
+  phase: 'ready-for-review'
+  progress:
+    completed: 15
+    total: 15
+    percentage: 100
+  currentTask: null
+  lastUpdated: '2026-10-11T16:00:00Z'
+  lastUpdatedBy: 'shep-kit:implement'
+
+validation:
+  lastRun: null
+  gatesPassed: []
+  autoFixesApplied: []
+
+tasks:
+  current: null
+  blocked: []
+  failed: []
+
+checkpoints:
+  - phase: 'feature-created'
+    completedAt: '2026-10-11T10:59:03Z'
+    completedBy: 'shep-kit:new-feature'
+  - phase: 'research-complete'
+    completedAt: '2026-10-11T11:20:00Z'
+    completedBy: 'shep-kit:research'
+  - phase: 'plan-complete'
+    completedAt: '2026-10-11T11:40:00Z'
+    completedBy: 'shep-kit:plan'
+  - phase: 'implementation-complete'
+    completedAt: '2026-10-11T16:00:00Z'
+    completedBy: 'shep-kit:implement'
+
+errors:
+  current: null
+  history: []

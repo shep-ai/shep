@@ -1,0 +1,256 @@
+# Task Breakdown (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: chat-first-surface
+summary: >-
+  15 tasks in 8 phases: model, domain codec, use cases, agent adapters, web transport, inline
+  blocks, page and nav, verification.
+
+relatedFeatures:
+  - 134-unified-decisions
+technologies:
+  - TypeScript
+  - TypeSpec
+  - React 19 / Next.js
+relatedLinks: []
+
+tasks:
+  - id: task-1
+    title: TypeSpec block model
+    description: >
+      tsp/agents/chat-block.tsp (ChatBlockType, ChatBlockAction, ChatBlock, ChatBlockResponse);
+      InlineBlockType gains SpecReview, HtmlPreview, PlanCard. Regenerate output.ts and
+      apis/json-schema with pnpm generate.
+    state: Done
+    dependencies: []
+    acceptanceCriteria:
+      - pnpm tsp:compile has no warnings; generated output committed exactly as pnpm generate writes it
+    tdd: null
+    estimatedEffort: S
+
+  - id: task-2
+    title: Domain chat-block codec and chat scope
+    description: >
+      domain/shared/chat-block.ts — chatBlockFromInput (caps, required fields per type),
+      format/parse for block and response messages, allowedChatBlockActions,
+      chatBlockResponseSentence, resolveChatBlockResponses. domain/shared/chat-scope.ts —
+      scope shapes, isChatScopeKey, CHAT_SCOPE_ENV_VAR.
+    state: Done
+    dependencies: [task-1]
+    acceptanceCriteria:
+      - Round trips are lossless; malformed JSON parses to null, never throws
+      - HTML only on html_preview, Markdown required on spec_review and plan_card
+      - Caps reject oversize title, body, html and note
+    tdd:
+      red: [Unit tests per codec, validation and folding branch]
+      green: [Pure functions, extensionless imports]
+      refactor: [Share marker parsing with interaction-answer]
+    estimatedEffort: M
+
+  - id: task-3
+    title: Message repository findByFeatureIdSince
+    description: Port method plus SQLite implementation (indexed on feature_id, created_at); update full mocks.
+    state: Done
+    dependencies: []
+    acceptanceCriteria:
+      - Returns only rows strictly newer than the given time, oldest first, for that scope only
+    tdd:
+      red: [Integration test against migrated SQLite]
+      green: [Prepared statement]
+      refactor: []
+    estimatedEffort: S
+
+  - id: task-4
+    title: Post, respond and list-since use cases
+    description: >
+      PostChatBlockUseCase (validate, persist assistant row), RespondToChatBlockUseCase (block
+      exists in scope, action allowed, not already answered, persist response row, send agent
+      sentence without persisting it twice), ListChatMessagesSinceUseCase.
+    state: Done
+    dependencies: [task-2, task-3]
+    acceptanceCriteria:
+      - Unknown scope shape, unknown block, wrong action or a second answer are typed errors
+      - The agent receives the readable sentence; the timeline holds only the marker row
+    tdd:
+      red: [Unit tests with in-memory doubles]
+      green: [Use cases injecting ports by string token]
+      refactor: []
+    estimatedEffort: M
+
+  - id: task-5
+    title: ListChatConversationsUseCase and DI module
+    description: >
+      Conversations grouped global / repositories / live features / applications with scope
+      keys and labels. register-chat-blocks.ts registers class and string tokens; added to
+      container.ts and container-bootstrap.test.ts.
+    state: Done
+    dependencies: [task-4]
+    acceptanceCriteria:
+      - Archived and deleted features are excluded
+      - Every new string token resolves in the bootstrap test
+    tdd:
+      red: [Unit test for grouping; bootstrap test lists tokens]
+      green: [Use case + module]
+      refactor: []
+    estimatedEffort: S
+
+  - id: task-6
+    title: shep chat block CLI command
+    description: >
+      `shep chat block <spec-review|preview|plan> --title <t> (--file <path> | --content <text>)
+      [--scope <key>]`; scope from SHEP_CHAT_SCOPE by default; errors set exitCode 1. CLI strings
+      in all 9 cli.json locales.
+    state: Done
+    dependencies: [task-4]
+    acceptanceCriteria:
+      - Missing scope, unreadable file and domain validation errors print a message and exit 1
+    tdd:
+      red: [Command unit tests with a stubbed use case]
+      green: [Commander group registered in cli/index.ts]
+      refactor: []
+    estimatedEffort: S
+
+  - id: task-7
+    title: post_chat_block MCP tool
+    description: Tool on the shep MCP server delegating to PostChatBlockUseCase; error result on validation failure.
+    state: Done
+    dependencies: [task-4]
+    acceptanceCriteria:
+      - Registered by registerAllTools; returns the block id
+    tdd:
+      red: [Tool unit test with a fake server]
+      green: [chat-block-tools.ts]
+      refactor: []
+    estimatedEffort: S
+
+  - id: task-8
+    title: Session scope env and context section
+    description: >
+      Session bootstrapper merges SHEP_CHAT_SCOPE into every session's environment (with the space
+      environment); FeatureContextBuilder adds a "Rich replies" section describing the three blocks
+      and the command.
+    state: Done
+    dependencies: [task-2]
+    acceptanceCriteria:
+      - createSession and resumeSession both receive the scope variable
+    tdd:
+      red: [Bootstrapper and context builder unit tests]
+      green: [Wiring]
+      refactor: []
+    estimatedEffort: S
+
+  - id: task-9
+    title: Web transport — relay, respond route, runtime
+    description: >
+      Stream route relays newer rows every 1.5 s; POST blocks/[blockId]/respond route resolving
+      RespondToChatBlockUseCase by token; useChatRuntime.respondToBlock.
+    state: Done
+    dependencies: [task-4]
+    acceptanceCriteria:
+      - Relay emits rows written by another process; route maps typed errors to 400/404/409
+    tdd:
+      red: [Route unit tests]
+      green: [Routes and hook]
+      refactor: []
+    estimatedEffort: M
+
+  - id: task-10
+    title: SandboxedHtmlFrame
+    description: >
+      srcdoc iframe, sandbox="allow-scripts", injected CSP and height reporter, source-checked
+      height messages; the Markdown ```html preview in thread.tsx moves onto it.
+    state: Done
+    dependencies: []
+    acceptanceCriteria:
+      - Never allow-same-origin; CSP present; foreign postMessage ignored
+    tdd:
+      red: [Component and srcdoc builder tests]
+      green: [Component + story]
+      refactor: [Replace the inline iframe in thread.tsx]
+    estimatedEffort: M
+
+  - id: task-11
+    title: Spec review, HTML preview and plan card blocks
+    description: >
+      Three components with open and resolved states, note input for Request changes / Refine,
+      expand and source views for previews; registered in INLINE_BLOCK_RENDERERS.
+    state: Done
+    dependencies: [task-2, task-10]
+    acceptanceCriteria:
+      - Actions call onRespond with the right action and note; resolved blocks show no actions
+    tdd:
+      red: [Component tests]
+      green: [Components + stories]
+      refactor: []
+    estimatedEffort: M
+
+  - id: task-12
+    title: Render blocks in both chat renderers
+    description: >
+      Flat thread and turn-group cards render `{{block}}` rows through InlineBlockView and
+      `{{block-response}}` rows as compact resolution rows; i18n in 9 locales.
+    state: Done
+    dependencies: [task-9, task-11]
+    acceptanceCriteria:
+      - An answer row reads as words (title and turn header), never as the raw marker
+      - Blocks stay visible on collapsed turn cards (pinned) and are not repeated inside them
+    tdd:
+      red: [Turn grouping and thread rendering tests]
+      green: [Wiring]
+      refactor: []
+    estimatedEffort: M
+
+  - id: task-13
+    title: /chats page
+    description: >
+      /chats redirects to /chats/global; /chats/[scope] loads conversations and renders
+      ChatsPage (ConversationRail + ChatTab full height, feature header with canvas link).
+    state: Done
+    dependencies: [task-5, task-12]
+    acceptanceCriteria:
+      - Every conversation group renders; selecting a row navigates; unknown scope 404s
+    tdd:
+      red: [Component tests]
+      green: [Page, client, stories]
+      refactor: []
+    estimatedEffort: M
+
+  - id: task-14
+    title: Sidebar nav entry
+    description: Chat link under Home in SIDEBAR_LINKS, navigation.chat in 9 locales.
+    state: Done
+    dependencies: [task-13]
+    acceptanceCriteria:
+      - Link active for every /chats path
+    tdd:
+      red: [sidebar-links test]
+      green: [Link]
+      refactor: []
+    estimatedEffort: S
+
+  - id: task-15
+    title: Docs, evidence, full verification
+    description: >
+      Chat CLAUDE.md, CLI docs, Storybook evidence screenshots, and the local CI sequence
+      (lint, format, typecheck, unit, int, build, build:web, build:storybook, check:stories).
+    state: Done
+    dependencies: [task-14]
+    acceptanceCriteria:
+      - Every local check green before push
+    tdd: null
+    estimatedEffort: M
+
+totalEstimate: XL
+openQuestions: []
+
+content: |
+  ## Summary
+
+  15 tasks across 8 phases (see `tasks[]`). No migration.
+
+  ## Acceptance Checklist
+
+  - [ ] Agents post blocks with `shep chat block` and `post_chat_block`
+  - [ ] Three new block types render and resolve in both chat renderers
+  - [ ] `/chats` reachable from the sidebar; all conversations listed
+  - [ ] All 9 locales; stories for every new component; local CI sequence green
