@@ -1,0 +1,36 @@
+feature:
+  id: '135-git-checkpoints'
+  name: 'git-checkpoints'
+  number: 135
+  branch: 'feat/135-git-checkpoints'
+  lifecycle: 'research'
+  createdAt: '2026-10-11T10:52:20Z'
+
+status:
+  phase: 'research'
+  progress:
+    completed: 0
+    total: 0
+    percentage: 0
+  currentTask: null
+  lastUpdated: '2026-10-11T10:52:20Z'
+  lastUpdatedBy: 'shep-kit:new-feature'
+
+validation:
+  lastRun: null
+  gatesPassed: []
+  autoFixesApplied: []
+
+tasks:
+  current: null
+  blocked: []
+  failed: []
+
+checkpoints:
+  - phase: 'feature-created'
+    completedAt: '2026-10-11T10:52:20Z'
+    completedBy: 'shep-kit:new-feature'
+
+errors:
+  current: null
+  history: []
