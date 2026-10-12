@@ -34,6 +34,7 @@ const defaultFeatureFlags = {
   autopilot: true,
   factory: true,
   sdlcBoard: false,
+  agentCoordination: false,
 };
 
 const meta: Meta<typeof AppSidebar> = {

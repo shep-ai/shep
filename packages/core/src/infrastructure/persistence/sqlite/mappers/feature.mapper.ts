@@ -14,7 +14,7 @@
  * - allowMerge also written to auto_merge for backward compatibility
  */
 
-import type { Feature } from '../../../../domain/generated/output.js';
+import type { Feature, FeatureCoordination } from '../../../../domain/generated/output.js';
 import { normalizeRepositoryPath } from '../../../../domain/shared/repository-path.js';
 import {
   BuildMode,
@@ -85,6 +85,8 @@ export interface FeatureRow {
   upstream_pr_status: string | null;
   // Feature dependency
   parent_id: string | null;
+  // Agent coordination decision (JSON, spec 141, migration 173)
+  coordination?: string | null;
   // Archive state
   previous_lifecycle: string | null;
   // User attachments (JSON array)
@@ -168,6 +170,7 @@ export function toDatabase(feature: Feature): FeatureRow {
     upstream_pr_status: feature.pr?.upstreamPrStatus ?? null,
     // Feature dependency
     parent_id: feature.parentId ?? null,
+    coordination: feature.coordination ? JSON.stringify(feature.coordination) : null,
     // Archive state
     previous_lifecycle: feature.previousLifecycle ?? null,
     // User attachments
@@ -267,6 +270,7 @@ export function fromDatabase(row: FeatureRow): Feature {
     }),
     // Feature dependency
     ...(row.parent_id != null && { parentId: row.parent_id }),
+    ...(row.coordination != null && { coordination: coordinationFromJson(row.coordination) }),
     // Archive state
     ...(row.previous_lifecycle != null && {
       previousLifecycle: row.previous_lifecycle as SdlcLifecycle,
@@ -297,4 +301,10 @@ export function fromDatabase(row: FeatureRow): Feature {
     // Soft delete
     ...(row.deleted_at != null && { deletedAt: new Date(row.deleted_at) }),
   };
+}
+
+/** JSON keeps `decidedAt` as an ISO string; the entity carries a Date. */
+function coordinationFromJson(json: string): FeatureCoordination {
+  const stored = JSON.parse(json) as Omit<FeatureCoordination, 'decidedAt'> & { decidedAt: string };
+  return { ...stored, decidedAt: new Date(stored.decidedAt) };
 }

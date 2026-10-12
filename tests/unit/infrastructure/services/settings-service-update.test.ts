@@ -95,6 +95,7 @@ describe('updateSettings', () => {
         autopilot: false,
         factory: false,
         sdlcBoard: false,
+        agentCoordination: false,
       },
     };
     updateSettings(updated);

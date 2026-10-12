@@ -1,6 +1,6 @@
 import 'reflect-metadata';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { SdlcLifecycle } from '@/domain/generated/output.js';
+import { CoordinationAction, SdlcLifecycle } from '@/domain/generated/output.js';
 import type { IFeatureRepository } from '@/application/ports/output/repositories/feature-repository.interface.js';
 import type { Feature } from '@/domain/generated/output.js';
 import { ReparentFeatureUseCase } from '@/application/use-cases/features/reparent-feature.use-case.js';
@@ -75,6 +75,48 @@ describe('ReparentFeatureUseCase', () => {
         parentId: 'parent-1',
       })
     );
+  });
+
+  // --- Spec 141: agent coordination record travels with the edge ---
+
+  const coordination = {
+    action: CoordinationAction.Defer,
+    rationale: 'Both rewrite the session refresh path.',
+    peerFeatureId: 'parent-1',
+    overlappingPaths: ['src/auth/session.ts'],
+    decidedAt: new Date('2026-10-12T10:00:00Z'),
+  };
+
+  it('writes a coordination record in the same update as the new edge', async () => {
+    const child = makeFeature({ id: 'child-1' });
+    const parent = makeFeature({ id: 'parent-1', lifecycle: SdlcLifecycle.Implementation });
+    vi.mocked(mockFeatureRepo.findById).mockResolvedValueOnce(child).mockResolvedValueOnce(parent);
+
+    await useCase.execute({ featureId: 'child-1', parentId: 'parent-1', coordination });
+
+    expect(mockFeatureRepo.update).toHaveBeenCalledOnce();
+    expect(mockFeatureRepo.update).toHaveBeenCalledWith(
+      expect.objectContaining({ parentId: 'parent-1', coordination })
+    );
+  });
+
+  it('clears an earlier coordination record when the edge is changed by hand', async () => {
+    const child = makeFeature({ id: 'child-1', parentId: 'parent-1', coordination });
+    const other = makeFeature({ id: 'other-1', lifecycle: SdlcLifecycle.Implementation });
+    vi.mocked(mockFeatureRepo.findById).mockResolvedValueOnce(child).mockResolvedValueOnce(other);
+
+    await useCase.execute({ featureId: 'child-1', parentId: 'other-1' });
+
+    expect(vi.mocked(mockFeatureRepo.update).mock.calls[0][0].coordination).toBeUndefined();
+  });
+
+  it('clears the coordination record on unparent', async () => {
+    const child = makeFeature({ id: 'child-1', parentId: 'parent-1', coordination });
+    vi.mocked(mockFeatureRepo.findById).mockResolvedValueOnce(child);
+
+    await useCase.execute({ featureId: 'child-1', parentId: null });
+
+    expect(vi.mocked(mockFeatureRepo.update).mock.calls[0][0].coordination).toBeUndefined();
   });
 
   it('should reject self-reparent', async () => {

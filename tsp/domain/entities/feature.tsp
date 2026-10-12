@@ -122,6 +122,7 @@ import "./artifact.tsp";
 import "../../agents/approval-gates.tsp";
 import "../value-objects/pull-request.tsp";
 import "../value-objects/attachment.tsp";
+import "../value-objects/feature-coordination.tsp";
 
 /**
  * Feature Entity (Aggregate Root)
@@ -471,6 +472,16 @@ model Feature extends SoftDeletableEntity {
    */
   @doc("Parent feature ID for dependency tracking (optional)")
   parentId?: UUID;
+
+  /**
+   * The last agent coordination decision for this feature (spec 141).
+   *
+   * Set on the designated dependent when the opt-in coordinator judged an
+   * overlap with another active feature. Cleared whenever the parent
+   * dependency changes by any other path.
+   */
+  @doc("Last agent coordination decision with an overlapping feature (optional)")
+  coordination?: FeatureCoordination;
 
   // ── Archive State ──────────────────────────────────────────
 

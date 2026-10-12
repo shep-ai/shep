@@ -299,6 +299,8 @@
       "factoryDescription": "Показувати сторінку стану фабрики кожного простору",
       "sdlcBoard": "Дошка SDLC",
       "sdlcBoardDescription": "Показувати дошку SDLC: живу дошку завдань агентів у всіх активних функціях",
+      "agentCoordination": "Координація агентів",
+      "agentCoordinationDescription": "Коли дві активні функції змінюють ті самі файли, агент вирішує, чи має одна чекати на іншу",
       "groupPlatform": "Платформа",
       "groupSoftwareFactory": "Програмна фабрика",
       "groupExperimental": "Експериментальні",

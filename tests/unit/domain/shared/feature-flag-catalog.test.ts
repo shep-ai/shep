@@ -43,6 +43,10 @@ describe('feature flag catalog', () => {
     expect(FEATURE_FLAG_CATALOG.sdlcBoard.group).toBe(FeatureFlagGroup.Platform);
   });
 
+  it('lists agent coordination under Experimental (spec 141)', () => {
+    expect(FEATURE_FLAG_CATALOG.agentCoordination.group).toBe(FeatureFlagGroup.Experimental);
+  });
+
   it('lists flags grouped in group order', () => {
     const groups = listFeatureFlagDescriptors().map((d) => d.group);
     const order = Object.values(FeatureFlagGroup);

@@ -299,6 +299,8 @@
       "factoryDescription": "Show each space's factory status page",
       "sdlcBoard": "SDLC board",
       "sdlcBoardDescription": "Show the SDLC board: a live board of agent tasks across active features",
+      "agentCoordination": "Agent coordination",
+      "agentCoordinationDescription": "When two active features change the same files, let an agent decide whether one should wait for the other",
       "groupPlatform": "Platform",
       "groupSoftwareFactory": "Software factory",
       "groupExperimental": "Experimental",

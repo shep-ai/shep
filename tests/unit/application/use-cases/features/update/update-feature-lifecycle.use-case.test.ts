@@ -14,10 +14,11 @@ import 'reflect-metadata';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { UpdateFeatureLifecycleUseCase } from '@/application/use-cases/features/update/update-feature-lifecycle.use-case.js';
 import type { IFeatureRepository } from '@/application/ports/output/repositories/feature-repository.interface.js';
+import type { CoordinateFeatureConflictsUseCase } from '@/application/use-cases/features/coordinate-feature-conflicts.use-case.js';
 import type { CheckAndUnblockFeaturesUseCase } from '@/application/use-cases/features/check-and-unblock-features.use-case.js';
 import type { AdmitQueuedFeaturesUseCase } from '@/application/use-cases/features/capacity/admit-queued-features.use-case.js';
 import type { ILogger } from '@/application/ports/output/services/logger.interface.js';
-import { SdlcLifecycle, BuildMode } from '@/domain/generated/output.js';
+import { SdlcLifecycle, BuildMode, CoordinationOutcome } from '@/domain/generated/output.js';
 import type { Feature } from '@/domain/generated/output.js';
 import { createMockFeatureRepository } from '../../../../../helpers/feature-repository.mock.js';
 
@@ -89,7 +90,11 @@ describe('UpdateFeatureLifecycleUseCase', () => {
       mockFeatureRepo,
       mockCheckAndUnblock,
       mockAdmitQueued,
-      mockLogger
+      mockLogger,
+      // Default product behaviour: the agentCoordination flag is off (spec 141).
+      {
+        execute: vi.fn().mockResolvedValue(CoordinationOutcome.Disabled),
+      } as unknown as CoordinateFeatureConflictsUseCase
     );
   });
 

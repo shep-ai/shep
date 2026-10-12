@@ -261,6 +261,8 @@ export function createDefaultSettings(): Settings {
     factory: true,
     // The SDLC board is opt-in (spec 140).
     sdlcBoard: false,
+    // Agent coordination of overlapping features is opt-in (spec 141).
+    agentCoordination: false,
   };
 
   const whatsapp: WhatsAppConfig = {

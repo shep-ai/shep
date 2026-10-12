@@ -1,0 +1,11 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: CoordinationOutcome.yaml
+type: string
+enum:
+  - disabled
+  - no-conflict
+  - continued
+  - deferred
+  - unavailable
+  - stale
+description: What became of one coordination attempt

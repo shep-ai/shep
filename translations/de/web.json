@@ -299,6 +299,8 @@
       "factoryDescription": "Die Fabrik-Statusseite jedes Spaces anzeigen",
       "sdlcBoard": "SDLC-Board",
       "sdlcBoardDescription": "Das SDLC-Board anzeigen: eine Live-Ansicht der Agentenaufgaben über alle aktiven Features",
+      "agentCoordination": "Agenten-Koordination",
+      "agentCoordinationDescription": "Wenn zwei aktive Features dieselben Dateien ändern, entscheidet ein Agent, ob eines auf das andere wartet",
       "groupPlatform": "Plattform",
       "groupSoftwareFactory": "Software-Fabrik",
       "groupExperimental": "Experimentell",

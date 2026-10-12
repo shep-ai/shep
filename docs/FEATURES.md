@@ -389,6 +389,7 @@ to turn the flag on).
 | `scheduledWorkflows` | off     | `shep workflow`                                                  |
 | `queryAwareHarness`  | off     | `shep harness`, `/harness`                                       |
 | `whatsappDispatch`   | off     | `shep whatsapp`                                                  |
+| `agentCoordination`  | off     | An agent decides whether overlapping features wait (spec 141)    |
 | `reactFileManager`   | off     | The in-app file manager                                          |
 | `debug`              | off     | Verbose logging and debug panels                                 |
 

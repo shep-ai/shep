@@ -113,6 +113,9 @@ properties:
   parentId:
     $ref: UUID.yaml
     description: Parent feature ID for dependency tracking (optional)
+  coordination:
+    $ref: FeatureCoordination.yaml
+    description: Last agent coordination decision with an overlapping feature (optional)
   previousLifecycle:
     $ref: SdlcLifecycle.yaml
     description: Lifecycle state prior to archiving, used to restore on unarchive (only set when lifecycle is Archived)

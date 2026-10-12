@@ -350,6 +350,8 @@ describe('createDefaultSettings', () => {
         factory: true,
         // The SDLC board is opt-in (spec 140).
         sdlcBoard: false,
+        // Agent coordination of overlapping features is opt-in (spec 141).
+        agentCoordination: false,
       });
     });
 

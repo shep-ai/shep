@@ -299,6 +299,8 @@
       "factoryDescription": "عرض صفحة حالة المصنع لكل مساحة",
       "sdlcBoard": "لوحة SDLC",
       "sdlcBoardDescription": "عرض لوحة SDLC: لوحة مباشرة لمهام الوكلاء عبر الميزات النشطة",
+      "agentCoordination": "تنسيق الوكلاء",
+      "agentCoordinationDescription": "عندما تغيّر ميزتان نشطتان الملفات نفسها، دع وكيلًا يقرر ما إذا كان على إحداهما انتظار الأخرى",
       "groupPlatform": "المنصة",
       "groupSoftwareFactory": "مصنع البرمجيات",
       "groupExperimental": "تجريبي",

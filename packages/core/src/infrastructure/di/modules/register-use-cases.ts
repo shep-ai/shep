@@ -384,7 +384,6 @@ export function registerUseCases(container: DependencyContainer): void {
   container.registerSingleton(AutoResolveMergedBranchesUseCase);
   container.registerSingleton(ReparentFeatureUseCase);
   container.registerSingleton(CoordinateFeatureConflictsUseCase);
-  container.registerInstance('S2CoordinationEnabled', process.env.SHEP_AGENT_COORDINATION === '1');
   container.registerSingleton(CreateApplicationUseCase);
   container.registerSingleton(AdoptLocalRepositoryUseCase);
   container.registerSingleton(ListApplicationsUseCase);

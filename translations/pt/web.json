@@ -299,6 +299,8 @@
       "factoryDescription": "Mostrar a página de estado da fábrica de cada espaço",
       "sdlcBoard": "Quadro SDLC",
       "sdlcBoardDescription": "Mostrar o quadro SDLC: um quadro ao vivo das tarefas dos agentes nas funcionalidades ativas",
+      "agentCoordination": "Coordenação de agentes",
+      "agentCoordinationDescription": "Quando duas funcionalidades ativas alteram os mesmos arquivos, um agente decide se uma deve esperar pela outra",
       "groupPlatform": "Plataforma",
       "groupSoftwareFactory": "Fábrica de software",
       "groupExperimental": "Experimental",

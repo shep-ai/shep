@@ -60,6 +60,7 @@ export const AllSections: Story = {
         autopilot: true,
         factory: true,
         sdlcBoard: false,
+        agentCoordination: false,
       },
     },
     shepHome: '/opt/shep',
