@@ -21,6 +21,7 @@ import type {
   PhaseTiming,
   RejectionFeedbackEntry,
 } from '@/domain/generated/output.js';
+import { renderCoordination } from './coordination-output.js';
 import { colors, symbols, messages, renderDetailView } from '../../ui/index.js';
 import { getCliI18n } from '../../i18n.js';
 import { computeWorktreePath } from '@/infrastructure/services/ide-launchers/compute-worktree-path.js';
@@ -471,6 +472,11 @@ Examples:
             title: t('cli:commands.feat.show.phaseTimingTitle'),
             content: lines.join('\n'),
           });
+        }
+
+        if (feature.coordination) {
+          const peer = await useCase.execute(feature.coordination.peerFeatureId).catch(() => null);
+          textBlocks.push(renderCoordination(feature.coordination, peer?.name));
         }
 
         if (feature.pr?.ciFixHistory && feature.pr.ciFixHistory.length > 0) {

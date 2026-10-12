@@ -800,6 +800,14 @@
     "approvePlan": "Approuver le plan",
     "sendRevisionFeedback": "Envoyer le feedback de révision"
   },
+  "coordinationNote": {
+    "waitsFor": "Attend {{peer}}",
+    "runsAlongside": "Avance en parallèle de {{peer}}",
+    "anotherFeature": "une autre fonctionnalité",
+    "sharedFiles": "Fichiers partagés ({{count}})",
+    "decidedBy": "Décidé par l’agent de coordination · {{when}}",
+    "title": "Coordination des agents"
+  },
   "overviewTab": {
     "created": "Créé",
     "runtime": "Durée d'exécution",

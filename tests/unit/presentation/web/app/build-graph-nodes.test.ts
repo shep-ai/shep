@@ -1,7 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { buildGraphNodes } from '@/app/build-graph-nodes';
 import { layoutWithDagre, CANVAS_LAYOUT_DEFAULTS } from '@/lib/layout-with-dagre';
-import { SdlcLifecycle, SecurityMode } from '@shepai/core/domain/generated/output';
+import {
+  CoordinationAction,
+  SdlcLifecycle,
+  SecurityMode,
+} from '@shepai/core/domain/generated/output';
 import type { Feature, Repository } from '@shepai/core/domain/generated/output';
 import type { ApplicationWithStatus } from '@shepai/core/application/use-cases/applications/list-applications.use-case';
 
@@ -524,6 +528,51 @@ describe('buildGraphNodes', () => {
 
       expect(dataOf(nodes)).toMatchObject({ queued: true });
       expect(dataOf(nodes).queuePosition).toBeUndefined();
+    });
+  });
+
+  describe('agent coordination (spec 141)', () => {
+    const decidedAt = new Date('2026-10-12T10:00:00.000Z');
+
+    it('passes the decision to the node with the peer name and a serialisable time', () => {
+      const prerequisite = makeFeature({ id: 'feat-a', name: 'Rotate refresh tokens' });
+      const dependent = makeFeature({
+        id: 'feat-b',
+        name: 'Sliding session expiry',
+        branch: 'feat/b',
+        parentId: 'feat-a',
+        lifecycle: SdlcLifecycle.Blocked,
+        coordination: {
+          action: CoordinationAction.Defer,
+          rationale: 'Both rewrite the session refresh path.',
+          peerFeatureId: 'feat-a',
+          overlappingPaths: ['src/auth/session.ts'],
+          decidedAt,
+        },
+      });
+      const { nodes } = buildGraphNodes(
+        [],
+        [
+          { feature: prerequisite, run: null },
+          { feature: dependent, run: null },
+        ]
+      );
+
+      const data = nodes.find((n) => n.id === 'feat-feat-b')?.data as Record<string, unknown>;
+      expect(data.blockedBy).toBe('Rotate refresh tokens');
+      expect(data.coordination).toEqual({
+        action: CoordinationAction.Defer,
+        rationale: 'Both rewrite the session refresh path.',
+        peerName: 'Rotate refresh tokens',
+        overlappingPaths: ['src/auth/session.ts'],
+        decidedAt: decidedAt.getTime(),
+      });
+    });
+
+    it('leaves coordination off nodes no agent has judged', () => {
+      const { nodes } = buildGraphNodes([], [{ feature: makeFeature(), run: null }]);
+      const data = nodes.find((n) => n.id === 'feat-feat-1')?.data as Record<string, unknown>;
+      expect(data.coordination).toBeUndefined();
     });
   });
 });

@@ -800,6 +800,14 @@
     "approvePlan": "Одобрить план",
     "sendRevisionFeedback": "Отправить отзыв для доработки"
   },
+  "coordinationNote": {
+    "waitsFor": "Ждёт {{peer}}",
+    "runsAlongside": "Идёт параллельно с {{peer}}",
+    "anotherFeature": "другую функцию",
+    "sharedFiles": "Общие файлы ({{count}})",
+    "decidedBy": "Решение агента-координатора · {{when}}",
+    "title": "Координация агентов"
+  },
   "overviewTab": {
     "created": "Создано",
     "runtime": "Время выполнения",
