@@ -21,7 +21,7 @@ decisions:
       Structurally evidenced integration risk is reproducible and bounded.
       Multiple overlapping peers or missing evidence cannot safely be resolved in v1.
   - title: Preserve standard behavior
-    chosen: Explicit SHEP_AGENT_COORDINATION=1 opt-in
+    chosen: agentCoordination feature flag, off by default (was an env var; moved to Settings so it has a web and CLI toggle)
     rejected:
       - Enable AI coordination unconditionally
     rationale: >-

@@ -45,8 +45,8 @@ content: |
     worker and enforce the dependency gate.
   - Never bypass the user's selected capacity limit, an existing dependency,
     a pause, approval authority, or protected merge gates.
-  - No silent alteration to the default mode; opt in with environment flag
-    SHEP_AGENT_COORDINATION=1.
+  - No silent alteration to the default mode; opt in with
+    the agentCoordination feature flag.
 
   ## Non-goals
   - This does not add a fleet-wide autonomous S3 manager, multi-parent DAG,
