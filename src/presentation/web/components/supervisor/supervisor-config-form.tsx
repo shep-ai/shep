@@ -14,8 +14,9 @@ import {
 import { Switch } from '@/components/ui/switch';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { SupervisorAutonomy } from '@shepai/core/domain/generated/output';
-import type { SupervisorPolicy } from '@shepai/core/domain/generated/output';
+import type { GuardrailRule, SupervisorPolicy } from '@shepai/core/domain/generated/output';
 import { configureSupervisor } from '@/app/actions/configure-supervisor';
+import { SupervisorGuardrailRules, parseGuardrailRules } from './supervisor-guardrail-rules';
 
 const AUTONOMY_OPTIONS: { value: SupervisorAutonomy; label: string; description: string }[] = [
   {
@@ -58,6 +59,7 @@ interface SubmitInput {
   modelId?: string;
   promptVersion?: string;
   gateAuthority?: Partial<Record<GateKey, SupervisorAutonomy>>;
+  guardrailRules?: GuardrailRule[];
 }
 
 interface SubmitResult {
@@ -86,12 +88,14 @@ export function SupervisorConfigForm({
 }: SupervisorConfigFormProps) {
   const initialAutonomy = initialPolicy?.autonomyLevel ?? SupervisorAutonomy.advisory;
   const initialGate = parseGateAuthority(initialPolicy?.gateAuthorityJson);
+  const initialGuardrails = parseGuardrailRules(initialPolicy?.guardrailRulesJson);
 
   const [autonomyLevel, setAutonomyLevel] = useState<SupervisorAutonomy>(initialAutonomy);
   const [modelId, setModelId] = useState<string>(initialPolicy?.modelId ?? '');
   const [promptVersion, setPromptVersion] = useState<string>(initialPolicy?.promptVersion ?? '');
   const [gateAuthority, setGateAuthority] =
     useState<Partial<Record<GateKey, SupervisorAutonomy>>>(initialGate);
+  const [guardrailRules, setGuardrailRules] = useState<GuardrailRule[]>(initialGuardrails);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(
@@ -114,6 +118,7 @@ export function SupervisorConfigForm({
       modelId: modelId.trim() || undefined,
       promptVersion: promptVersion.trim() || undefined,
       gateAuthority: Object.keys(gateAuthority).length > 0 ? gateAuthority : undefined,
+      guardrailRules: guardrailRules.length > 0 ? guardrailRules : undefined,
     };
 
     try {
@@ -246,6 +251,12 @@ export function SupervisorConfigForm({
           );
         })}
       </fieldset>
+
+      <SupervisorGuardrailRules
+        rules={guardrailRules}
+        onChange={setGuardrailRules}
+        disabled={loading}
+      />
 
       {initialPolicy ? (
         <div className="flex items-center justify-between rounded border px-3 py-2">
