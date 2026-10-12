@@ -814,7 +814,7 @@ describe('ClaudeCodeExecutorService', () => {
         expect(args).not.toContain('--tools');
       });
 
-      it('should NOT add --tools when tools array is empty', async () => {
+      it('should disable every built-in tool when tools is an empty array', async () => {
         const mockProc = createMockChildProcess();
         vi.mocked(mockSpawn).mockReturnValue(mockProc as any);
         const resultLine = buildStreamResult({ result: 'Done' });
@@ -822,7 +822,8 @@ describe('ClaudeCodeExecutorService', () => {
         emitStreamData(mockProc, [resultLine], null, 0);
         await executePromise;
         const args = vi.mocked(mockSpawn).mock.calls[0][1] as string[];
-        expect(args).not.toContain('--tools');
+        // `--tools ""` is the CLI's "no tools"; omitting the flag grants all of them.
+        expect(args[args.indexOf('--tools') + 1]).toBe('');
       });
     });
 

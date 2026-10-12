@@ -140,7 +140,10 @@ export interface AgentExecutionOptions {
   silent?: boolean;
   /** When true, adds --strict-mcp-config to disable all MCP tools */
   disableMcp?: boolean;
-  /** Restrict available built-in tools via --tools flag */
+  /**
+   * Restrict available built-in tools via --tools flag. An empty list means no
+   * tools at all; leave it unset for the agent's default tool set.
+   */
   tools?: string[];
   /**
    * The space environment for this call (spec 123): subprocess executors apply
