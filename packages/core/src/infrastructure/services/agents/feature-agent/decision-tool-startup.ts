@@ -8,10 +8,14 @@
  */
 
 import { existsSync, unlinkSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { AgentFeature } from '../../../../domain/generated/output.js';
 import type { EnvironmentVariables } from '../../../../domain/shared/agent-run-environment.js';
 import { writeDecisionMcpConfig } from './decision-mcp-config.js';
+
+// The package is ESM: `__dirname` only exists where a test runner injects it.
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 /** Built location of the decision server, relative to this module. */
 export function defaultDecisionServerEntryPath(): string {
