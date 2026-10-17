@@ -65,6 +65,7 @@ const defaultFlags = {
   autopilot: true,
   factory: true,
   sdlcBoard: false,
+  agentCoordination: false,
 };
 
 function renderWithSidebar(ui: React.ReactElement) {

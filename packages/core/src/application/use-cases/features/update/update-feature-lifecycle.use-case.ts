@@ -33,6 +33,7 @@ import type { ILogger } from '../../../ports/output/services/logger.interface.js
 import { allowsLifecycleWrite } from '../../../../domain/lifecycle-gates.js';
 import { CheckAndUnblockFeaturesUseCase } from '../check-and-unblock-features.use-case.js';
 import { AdmitQueuedFeaturesUseCase } from '../capacity/admit-queued-features.use-case.js';
+import { CoordinateFeatureConflictsUseCase } from '../coordinate-feature-conflicts.use-case.js';
 
 export interface UpdateFeatureLifecycleInput {
   featureId: string;
@@ -47,7 +48,9 @@ export class UpdateFeatureLifecycleUseCase {
     private readonly checkAndUnblock: CheckAndUnblockFeaturesUseCase,
     @inject(AdmitQueuedFeaturesUseCase)
     private readonly admitQueued: AdmitQueuedFeaturesUseCase,
-    @inject('ILogger') private readonly logger: ILogger
+    @inject('ILogger') private readonly logger: ILogger,
+    @inject(CoordinateFeatureConflictsUseCase)
+    private readonly coordinator: CoordinateFeatureConflictsUseCase
   ) {}
 
   async execute(input: UpdateFeatureLifecycleInput): Promise<void> {
@@ -77,11 +80,36 @@ export class UpdateFeatureLifecycleUseCase {
       return;
     }
 
+    const previousLifecycle = feature.lifecycle;
     feature.lifecycle = input.lifecycle;
     feature.updatedAt = new Date();
     await this.featureRepo.update(feature);
 
     await this.checkAndUnblock.execute(input.featureId);
+
+    // Opt-in agent coordination (spec 141, `agentCoordination` flag — the
+    // coordinator reads it): only phase transitions into code-producing work or
+    // review can reveal new committed inter-workcell interference. The
+    // coordinator owns the choice; existing gates enforce it. An absent model,
+    // stale evidence or a failed coordinator must never fail an otherwise
+    // successful lifecycle update.
+    if (
+      previousLifecycle !== input.lifecycle &&
+      (input.lifecycle === SdlcLifecycle.Implementation || input.lifecycle === SdlcLifecycle.Review)
+    ) {
+      try {
+        const outcome = await this.coordinator.execute(input.featureId);
+        this.logger.info('[UpdateFeatureLifecycleUseCase] S2 coordination result', {
+          featureId: input.featureId,
+          outcome,
+        });
+      } catch (error) {
+        this.logger.warn('[UpdateFeatureLifecycleUseCase] S2 coordination unavailable', {
+          featureId: input.featureId,
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+    }
 
     // Isolated: a queue drain that fails must not turn a successful lifecycle
     // transition into an error for the agent node that reported it.

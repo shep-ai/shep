@@ -1,0 +1,29 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: FeatureCoordination.yaml
+type: object
+properties:
+  action:
+    $ref: CoordinationAction.yaml
+    description: What the agent chose
+  rationale:
+    type: string
+    description: The agent's one-paragraph reason, shown to the user
+  peerFeatureId:
+    $ref: UUID.yaml
+    description: The other feature whose committed changes overlap this one
+  overlappingPaths:
+    type: array
+    items:
+      type: string
+    description: Repository-relative paths both features changed
+  decidedAt:
+    type: string
+    format: date-time
+    description: When the decision was applied
+required:
+  - action
+  - rationale
+  - peerFeatureId
+  - overlappingPaths
+  - decidedAt
+description: The last agent coordination decision about a feature and one overlapping peer (spec 141)

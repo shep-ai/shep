@@ -1,0 +1,64 @@
+# Source of truth; generated Markdown is intentionally deferred until tooling is available.
+name: agent-owned-conflict-coordination
+number: 141
+branch: feat/s2-agent-conflict-coordination
+oneLiner: Coordinate confirmed overlapping feature work through an agent-owned decision
+summary: >-
+  Add an opt-in first-party coordination loop for pairs of feature workcells
+  whose committed Git changes overlap. A model chooses whether the currently
+  transitioning feature should defer behind one eligible conflicting peer or
+  continue concurrently. The existing reparent/stop/gate/rebase/spawn machinery
+  enforces deferral; it does not make the coordination choice.
+phase: Planning
+sizeEstimate: M
+relatedFeatures:
+  - '041-feature-dependencies'
+  - '084-feature-dependency-rebase'
+  - '110-max-parallel-features'
+  - '111-fleet-control-plane'
+technologies:
+  - TypeScript
+  - tsyringe
+  - Vitest
+openQuestions: []
+content: |
+  ## Problem
+  The current dependency relation is manually supplied. Runtime gate and rebase
+  are real inter-feature interference attenuation but do not own the decision
+  to coordinate two otherwise independent feature workcells.
+
+  ## Bounded v1
+  - In an explicit opt-in mode, on entry into Implementation inspect committed
+    branch diffs for the transitioning feature and eligible active peers in
+    the same repository.
+  - Only identical changed paths (including rename old paths) are evidence of
+    potential integration interference. This is a conservative heuristic:
+    overlap is not proof of a semantic conflict, and lack of overlap is not
+    proof of independence.
+  - Ask a configured model to choose `defer` behind ONE eligible peer or
+    `continue`, using a bounded structured prompt and without tool access.
+  - Fail closed on missing Git evidence, invalid output, stale feature state,
+    changed candidate set, missing worktrees, or provider failures. Never
+    mutate dependencies based on a guess.
+  - Before applying a defer decision, recheck overlap and both participant
+    lifecycles; call the existing ReparentFeatureUseCase to stop the current
+    worker and enforce the dependency gate.
+  - Never bypass the user's selected capacity limit, an existing dependency,
+    a pause, approval authority, or protected merge gates.
+  - No silent alteration to the default mode; opt in with
+    the agentCoordination feature flag.
+
+  ## Non-goals
+  - This does not add a fleet-wide autonomous S3 manager, multi-parent DAG,
+    semantic task-conflict classifier, autonomous merge authority, or policy
+    evolution. No automatic Index reassessment or automatic S2=A claim.
+
+  ## Acceptance
+  - Unit tests show model-owned defer and continue decisions for two S1
+    workcells, no action for disjoint diffs, and invalid/stale cases failing
+    closed.
+  - The transition hook only fires on entry to Implementation with opt-in.
+  - Evidence is rechecked before runtime enforcement.
+  - Reparent/stop/unblock/sync/spawn remain the single existing code paths.
+  - Existing default behavior is unchanged, including when the model is down.
+  - Typecheck, lint, format and relevant tests pass before upstream PR.

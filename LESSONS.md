@@ -3152,3 +3152,28 @@ the mock lives outside the web package, where the alias does not resolve. Mocks 
 `@/…` (fixtures, `lib/`) only; derive anything else from the fixture data. The commit had been
 pushed while the local `build:storybook` was still running. Wait for the build's exit code before
 pushing any change to a story or a mock.
+
+## Vitest injects `__dirname`; the built ESM CLI does not
+
+`decision-tool-startup.ts` used a bare `__dirname`. Every test passed (vitest and tsx provide it),
+and 1.238.0–1.242.0 shipped a worker that died at boot — "`__dirname is not defined`" — whenever
+collaboration was on and the agent took an MCP config: the defaults. Only a real spawned worker
+showed it. Rules: in `packages/core` and `src`, derive it with
+`dirname(fileURLToPath(import.meta.url))`; `tests/unit/infrastructure/esm-dirname-guard.test.ts`
+fails for any module that reads it bare. A change to a worker's boot path gets one real spawn of
+the built worker before it is called done.
+
+## An empty restriction list can mean "no restriction" — check the argv
+
+The S2 coordinator passed `tools: []` meaning "no tools"; the Claude Code executor only emitted
+`--tools` for a non-empty list, so the call ran with every tool under
+`--dangerously-skip-permissions`. A security restriction is proven by the argument the agent
+receives (`--tools ""`), not by the option object. When a caller relies on "empty = nothing",
+test the executor with the empty value.
+
+## The feature drawer has its own node-data builder
+
+`buildGraphNodes` feeds the canvas, but the drawer route and `useDrawerSync` refresh use
+`buildFeatureNodeData`. A field added to only the first appears when you click a node and
+vanishes on the drawer's first sync (or never shows from a `/feature/<id>` URL). Map a new
+field once (e.g. `lib/coordination-note-data.ts`) and call it from both builders.

@@ -20,7 +20,7 @@
  */
 
 import { injectable, inject } from 'tsyringe';
-import { SdlcLifecycle } from '../../../domain/generated/output.js';
+import { SdlcLifecycle, type FeatureCoordination } from '../../../domain/generated/output.js';
 import type { IFeatureRepository } from '../../ports/output/repositories/feature-repository.interface.js';
 import { satisfiesDependencyGate } from '../../../domain/lifecycle-gates.js';
 import { StopAgentRunUseCase } from '../agents/stop-agent-run.use-case.js';
@@ -36,6 +36,12 @@ const NON_REPARENTABLE_STATES = new Set<SdlcLifecycle>([
 export interface ReparentFeatureInput {
   featureId: string;
   parentId: string | null;
+  /**
+   * The agent decision that drew this edge (spec 141), written in the same
+   * update as the edge. Any reparent without one clears the previous record,
+   * so a reason never outlives the edge it explained.
+   */
+  coordination?: FeatureCoordination;
 }
 
 @injectable()
@@ -78,6 +84,7 @@ export class ReparentFeatureUseCase {
       await this.featureRepo.update({
         ...child,
         parentId: undefined,
+        coordination: undefined,
         lifecycle: newLifecycle,
         updatedAt: new Date(),
       });
@@ -111,6 +118,7 @@ export class ReparentFeatureUseCase {
     await this.featureRepo.update({
       ...child,
       parentId,
+      coordination: input.coordination,
       lifecycle: newLifecycle,
       updatedAt: new Date(),
     });

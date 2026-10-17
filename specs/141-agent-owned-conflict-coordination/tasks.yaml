@@ -1,0 +1,54 @@
+name: agent-owned-conflict-coordination
+summary: Bounded implementation and verification tasks
+relatedFeatures: [041-feature-dependencies, 084-feature-dependency-rebase]
+technologies: [TypeScript, Vitest]
+relatedLinks: []
+tasks:
+  - id: task-1
+    title: Detect genuine inter-feature integration risk
+    description: Compare committed changed paths for two eligible active workcells
+    state: Done
+    dependencies: []
+    acceptanceCriteria: [Disjoint diffs produce no model call, Missing evidence fails closed]
+    estimatedEffort: S
+  - id: task-2
+    title: Agent owns defer or continue choice
+    description: Restrict tools and decision schema, record model-directed result
+    state: Done
+    dependencies: [task-1]
+    acceptanceCriteria: [Distinct defer and continue tests, Invalid output rejected]
+    estimatedEffort: S
+  - id: task-3
+    title: Apply decision through existing dependency gate
+    description: Revalidate evidence before invoking reparent and stop/rebase path
+    state: Done
+    dependencies: [task-2]
+    acceptanceCriteria: [Decision leads to existing reparent use case, Stale evidence rejected]
+    estimatedEffort: S
+  - id: task-4
+    title: Add opt-in lifecycle integration
+    description: Preserve default behavior and isolate unavailable model
+    state: Done
+    dependencies: [task-3]
+    acceptanceCriteria: [Default off, Existing lifecycle remains successful on model failure]
+    estimatedEffort: S
+  - id: task-5
+    title: Run project checks
+    description: Validate TypeScript, focused tests, ESLint, Prettier and spec contract
+    state: InProgress
+    dependencies: [task-4]
+    acceptanceCriteria: [All targeted checks pass]
+    estimatedEffort: S
+  - id: task-6
+    title: Integration evidence and independent reassessment
+    description: Prove two-workcell closure before any upstream grade claim
+    state: Todo
+    dependencies: [task-5]
+    acceptanceCriteria: [Reproducible two-workcell execution trace, No premature S2=A publication]
+    estimatedEffort: M
+totalEstimate: M
+content: |
+  Completion must be evidence-based. Existing unit tests establish a bounded
+  constructor and decision path; do not claim an S2=A upgrade before end-to-end
+  runtime evidence shows two S1 agents, specific integration interference,
+  agent-owned response, and feedback changing subsequent operation.

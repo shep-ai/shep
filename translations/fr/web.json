@@ -299,6 +299,8 @@
       "factoryDescription": "Afficher la page d'état de l'usine de chaque espace",
       "sdlcBoard": "Tableau SDLC",
       "sdlcBoardDescription": "Afficher le tableau SDLC : un tableau en direct des tâches des agents sur les fonctionnalités actives",
+      "agentCoordination": "Coordination des agents",
+      "agentCoordinationDescription": "Quand deux fonctionnalités actives modifient les mêmes fichiers, un agent décide si l’une doit attendre l’autre",
       "groupPlatform": "Plateforme",
       "groupSoftwareFactory": "Usine logicielle",
       "groupExperimental": "Expérimental",
@@ -797,6 +799,14 @@
     "featureStarted": "Fonctionnalité démarrée",
     "approvePlan": "Approuver le plan",
     "sendRevisionFeedback": "Envoyer le feedback de révision"
+  },
+  "coordinationNote": {
+    "waitsFor": "Attend {{peer}}",
+    "runsAlongside": "Avance en parallèle de {{peer}}",
+    "anotherFeature": "une autre fonctionnalité",
+    "sharedFiles": "Fichiers partagés ({{count}})",
+    "decidedBy": "Décidé par l’agent de coordination · {{when}}",
+    "title": "Coordination des agents"
   },
   "overviewTab": {
     "created": "Créé",

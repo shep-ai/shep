@@ -16,6 +16,7 @@ import { isQueuedForCapacity } from '@shepai/core/domain/shared/parallel-feature
 import { computeWorktreePath } from '@shepai/core/infrastructure/services/ide-launchers/compute-worktree-path';
 import type { CanvasNodeType } from '@/components/features/features-canvas';
 import type { Edge } from '@xyflow/react';
+import { toCoordinationNoteData } from '@/lib/coordination-note-data';
 import type { FeatureNodeData } from '@/components/common/feature-node';
 import type { ApplicationNodeData } from '@/components/common/application-node/application-node-config';
 import type { ApplicationWithStatus } from '@shepai/core/application/use-cases/applications/list-applications.use-case';
@@ -283,6 +284,15 @@ function appendFeatureNodes(
       }
     }
 
+    // The agent's coordination decision, with the peer resolved to a name
+    const coordination =
+      feature.coordination &&
+      toCoordinationNoteData(
+        feature.coordination,
+        allFeaturesWithRuns.find((e) => e.feature.id === feature.coordination?.peerFeatureId)
+          ?.feature.name
+      );
+
     // Detect crashed agents: DB says running/pending but PID is dead
     const isActive =
       run?.status === AgentRunStatus.running || run?.status === AgentRunStatus.pending;
@@ -323,6 +333,7 @@ function appendFeatureNodes(
       ...(run?.modelId && { modelId: run.modelId }),
       ...(run?.error && { errorMessage: run.error }),
       ...(blockedBy && { blockedBy }),
+      ...(coordination && { coordination }),
       ...(feature.agentRunId != null && { hasAgentRun: true }),
       ...(feature.plan != null && { hasPlan: true }),
       ...(feature.pr && {

@@ -30,6 +30,7 @@ const defaultFlags: FeatureFlagsState = {
   autopilot: true,
   factory: true,
   sdlcBoard: false,
+  agentCoordination: false,
 };
 
 const FeatureFlagsContext = createContext<FeatureFlagsState>(defaultFlags);

@@ -33,6 +33,7 @@ const OFF = {
   autopilot: false,
   factory: false,
   sdlcBoard: false,
+  agentCoordination: false,
 } satisfies FeatureFlagsState;
 
 describe('sidebar links', () => {

@@ -570,6 +570,21 @@ describe('SQLiteSettingsRepository', () => {
       expect((await repository.load())?.featureFlags?.sdlcBoard).toBe(true);
     });
 
+    it('round-trips the agent coordination flag, off by default (spec 141)', async () => {
+      const settings = createTestSettings();
+      settings.featureFlags = createDefaultSettings().featureFlags!;
+
+      await repository.initialize(settings);
+      const loaded = await repository.load();
+      expect(loaded?.featureFlags?.agentCoordination).toBe(false);
+
+      await repository.update({
+        ...loaded!,
+        featureFlags: { ...loaded!.featureFlags!, agentCoordination: true },
+      });
+      expect((await repository.load())?.featureFlags?.agentCoordination).toBe(true);
+    });
+
     it('keeps an ASPM flag a user already turned on now that the default is off', async () => {
       const settings = createTestSettings();
       settings.featureFlags = { ...createDefaultSettings().featureFlags!, aspm: true };
@@ -610,6 +625,7 @@ describe('SQLiteSettingsRepository', () => {
         autopilot: false,
         factory: false,
         sdlcBoard: false,
+        agentCoordination: false,
       };
 
       await repository.initialize(settings);
@@ -642,6 +658,7 @@ describe('SQLiteSettingsRepository', () => {
         autopilot: false,
         factory: false,
         sdlcBoard: false,
+        agentCoordination: false,
       });
     });
 
@@ -680,6 +697,7 @@ describe('SQLiteSettingsRepository', () => {
         autopilot: false,
         factory: false,
         sdlcBoard: false,
+        agentCoordination: false,
       });
     });
 
@@ -714,6 +732,7 @@ describe('SQLiteSettingsRepository', () => {
         autopilot: false,
         factory: false,
         sdlcBoard: false,
+        agentCoordination: false,
       };
       settings.updatedAt = new Date('2025-01-02T00:00:00Z');
       await repository.update(settings);
@@ -746,6 +765,7 @@ describe('SQLiteSettingsRepository', () => {
         autopilot: false,
         factory: false,
         sdlcBoard: false,
+        agentCoordination: false,
       });
     });
 
@@ -778,6 +798,7 @@ describe('SQLiteSettingsRepository', () => {
         autopilot: false,
         factory: false,
         sdlcBoard: false,
+        agentCoordination: false,
       };
 
       await repository.initialize(settings);
@@ -1160,6 +1181,7 @@ describe('SQLiteSettingsRepository', () => {
         autopilot: false,
         factory: false,
         sdlcBoard: false,
+        agentCoordination: false,
       };
       await repository.initialize(settings);
 

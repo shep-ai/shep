@@ -16,6 +16,11 @@ export {
   selectValueFromEffort,
   type EffortSelectProps,
 } from './effort-select';
+export {
+  CoordinationNote,
+  type CoordinationNoteProps,
+  type CoordinationNoteData,
+} from './coordination-note';
 export { ElapsedTime, formatElapsed } from './elapsed-time';
 export { EmptyState, type EmptyStateProps } from './empty-state';
 export {

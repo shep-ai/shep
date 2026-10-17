@@ -1,0 +1,7 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: CoordinationAction.yaml
+type: string
+enum:
+  - defer
+  - continue
+description: What the coordinating agent chose for an overlapping pair of features

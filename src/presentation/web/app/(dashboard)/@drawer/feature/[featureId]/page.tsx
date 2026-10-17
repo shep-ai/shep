@@ -34,12 +34,16 @@ export default async function FeatureDrawerPage({ params }: FeatureDrawerPagePro
   if (!feature) notFound();
 
   const run = feature.agentRunId ? await agentRunRepo.findById(feature.agentRunId) : null;
+  const coordinationPeer = feature.coordination
+    ? await featureRepo.findById(feature.coordination.peerFeatureId)
+    : null;
 
   const { workflow, interactiveAgent } = getSettings();
   const nodeData = buildFeatureNodeData(feature, run, {
     enableEvidence: workflow.enableEvidence,
     commitEvidence: workflow.commitEvidence,
     ciWatchEnabled: workflow.ciWatchEnabled,
+    coordinationPeerName: coordinationPeer?.name,
   });
 
   const view = computeDrawerView({

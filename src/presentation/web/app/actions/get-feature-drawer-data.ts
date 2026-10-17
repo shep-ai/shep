@@ -34,11 +34,14 @@ export async function getFeatureDrawerData(featureId: string): Promise<FeatureNo
     // CI status and mergeable status are read from the feature record (updated by
     // PrSyncWatcherService every 30s) — no duplicate GitHub API calls needed.
     // Only getDefaultBranch and getRemoteUrl are kept as they are local git operations.
-    const [repo, baseBranch, artifact, remoteUrl] = await Promise.all([
+    const [repo, baseBranch, artifact, remoteUrl, coordinationPeer] = await Promise.all([
       repoRepo.findByPath(feature.repositoryPath).catch(() => null),
       gitPrService.getDefaultBranch(feature.repositoryPath).catch(() => 'main'),
       getArtifact.execute(featureId).catch(() => null),
       gitPrService.getRemoteUrl(feature.repositoryPath).catch(() => null),
+      feature.coordination
+        ? featureRepo.findById(feature.coordination.peerFeatureId).catch(() => null)
+        : null,
     ]);
 
     const { workflow } = getSettings();
@@ -51,6 +54,7 @@ export async function getFeatureDrawerData(featureId: string): Promise<FeatureNo
       enableEvidence: workflow.enableEvidence,
       commitEvidence: workflow.commitEvidence,
       hideCiStatus: workflow.hideCiStatus,
+      coordinationPeerName: coordinationPeer?.name,
     });
   } catch {
     return null;

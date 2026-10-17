@@ -60,6 +60,8 @@ export type Feature = SoftDeletableEntity & {
   maxIterations?: integer;
   pr?: PullRequest;
   parentId?: UUID;
+  // Last agent coordination decision with an overlapping feature (spec 141)
+  coordination?: FeatureCoordination;
   previousLifecycle?: SdlcLifecycle;
   attachments?: Attachment[];
   bedrockEnabled?: boolean;
@@ -410,6 +412,8 @@ export type FeatureFlags = {
   factory: boolean;
   // The SDLC board (/sdlc), off by default (spec 140)
   sdlcBoard: boolean;
+  // Agent coordination of overlapping features, off by default (spec 141)
+  agentCoordination: boolean;
 };
 ```
 
