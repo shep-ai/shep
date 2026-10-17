@@ -1,3 +1,4 @@
+import type { CoordinationNoteData } from '../coordination-note';
 import {
   Loader2,
   CircleAlert,
@@ -222,6 +223,8 @@ export interface FeatureNodeData {
   runtime?: string;
   /** Feature name this node is blocked by */
   blockedBy?: string;
+  /** The agent's last coordination decision with an overlapping feature (spec 141) */
+  coordination?: CoordinationNoteData;
   /**
    * Whether the parallel-feature limit is holding this feature back.
    *

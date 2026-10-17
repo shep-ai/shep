@@ -39,6 +39,7 @@ export interface FeatureFlagsState {
   autopilot: boolean;
   factory: boolean;
   sdlcBoard: boolean;
+  agentCoordination: boolean;
 }
 
 export function getFeatureFlags(): FeatureFlagsState {
@@ -73,6 +74,7 @@ export function getFeatureFlags(): FeatureFlagsState {
           autopilot: flags.autopilot ?? true,
           factory: flags.factory ?? true,
           sdlcBoard: flags.sdlcBoard ?? false,
+          agentCoordination: flags.agentCoordination ?? false,
         };
       }
     }
@@ -121,6 +123,8 @@ export function getFeatureFlags(): FeatureFlagsState {
     factory: true,
     // The SDLC board is opt-in (spec 140).
     sdlcBoard: false,
+    // Agent coordination of overlapping features is opt-in (spec 141).
+    agentCoordination: false,
   };
 }
 

@@ -8,6 +8,7 @@ import {
 import { isProcessAlive } from '@shepai/core/infrastructure/services/process/is-process-alive';
 import { computeWorktreePath } from '@shepai/core/infrastructure/services/ide-launchers/compute-worktree-path';
 import type { FeatureNodeData } from '@/components/common/feature-node';
+import { toCoordinationNoteData } from '@/lib/coordination-note-data';
 
 export interface BuildFeatureNodeDataOptions {
   baseBranch?: string;
@@ -24,6 +25,8 @@ export interface BuildFeatureNodeDataOptions {
   ciWatchEnabled?: boolean;
   /** Whether to hide CI status badges from UI (global workflow setting) */
   hideCiStatus?: boolean;
+  /** Name of the feature `feature.coordination` points at (spec 141) */
+  coordinationPeerName?: string;
 }
 
 /**
@@ -78,6 +81,9 @@ export function buildFeatureNodeData(
     ...(run?.modelId && { modelId: run.modelId }),
     ...(run?.effort && { effort: run.effort }),
     ...(run?.error && { errorMessage: run.error }),
+    ...(feature.coordination && {
+      coordination: toCoordinationNoteData(feature.coordination, options?.coordinationPeerName),
+    }),
     ...(feature.agentRunId != null && { hasAgentRun: true }),
     ...(feature.plan != null && { hasPlan: true }),
     ...(feature.injectSkills && { injectSkills: true }),

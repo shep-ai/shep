@@ -96,6 +96,26 @@ describe('getFeatureDrawerData server action', () => {
     expect(mockFindRunById).toHaveBeenCalledWith('run-1');
   });
 
+  it('resolves the coordination peer name for the drawer (spec 141)', async () => {
+    const withDecision = {
+      ...baseFeature,
+      coordination: {
+        action: 'defer',
+        peerFeatureId: 'feat-a',
+        rationale: 'r',
+        overlappingPaths: [],
+      },
+    };
+    mockFindById.mockImplementation(async (id: string) =>
+      id === 'feat-a' ? { id: 'feat-a', name: 'Rotate refresh tokens' } : withDecision
+    );
+
+    const result = await getFeatureDrawerData('feat-123');
+
+    expect(mockFindById).toHaveBeenCalledWith('feat-a');
+    expect(result).toMatchObject({ coordinationPeerName: 'Rotate refresh tokens' });
+  });
+
   it('handles feature without agentRunId', async () => {
     mockFindById.mockResolvedValue({ ...baseFeature, agentRunId: null });
 

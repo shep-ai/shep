@@ -21,8 +21,10 @@ import {
   ShieldCheck,
   X,
   Zap,
+  Waypoints,
 } from 'lucide-react';
 import { InlineAttachments } from '@/components/common/inline-attachments';
+import { CoordinationNote } from '@/components/common/coordination-note';
 import { PrStatus } from '@shepai/core/domain/generated/output';
 import type { CodeReview } from '@shepai/core/domain/generated/output';
 import { cn } from '@/lib/utils';
@@ -415,6 +417,15 @@ export function OverviewTab({
                 <span className="text-destructive">{data.errorMessage}</span>
               </KV>
             ) : null}
+          </Card>
+        </Section>
+      ) : null}
+
+      {/* ── Agent coordination (spec 141) ── */}
+      {data.coordination ? (
+        <Section icon={Waypoints} title={t('coordinationNote.title')}>
+          <Card>
+            <CoordinationNote coordination={data.coordination} />
           </Card>
         </Section>
       ) : null}

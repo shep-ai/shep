@@ -196,6 +196,8 @@ export interface SettingsRow extends SettingsTelemetryRow {
   feature_flag_factory: number;
   // SDLC board flag (spec 140, migration 171)
   feature_flag_sdlc_board: number;
+  // Agent coordination flag (spec 141, migration 172)
+  feature_flag_agent_coordination: number;
   // Interactive agent config (added in migration 046)
   interactive_agent_enabled: number;
   interactive_agent_auto_timeout_minutes: number;
@@ -403,6 +405,7 @@ export function toDatabase(settings: Settings): SettingsRow {
     feature_flag_autopilot: settings.featureFlags?.autopilot ? 1 : 0,
     feature_flag_factory: settings.featureFlags?.factory ? 1 : 0,
     feature_flag_sdlc_board: settings.featureFlags?.sdlcBoard ? 1 : 0,
+    feature_flag_agent_coordination: settings.featureFlags?.agentCoordination ? 1 : 0,
 
     // InteractiveAgentConfig (boolean → 0/1, integer fields; defaults applied here)
     interactive_agent_enabled: (settings.interactiveAgent?.enabled ?? true) ? 1 : 0,
@@ -885,6 +888,7 @@ export function fromDatabase(row: SettingsRow): Settings {
       autopilot: row.feature_flag_autopilot === 1,
       factory: row.feature_flag_factory === 1,
       sdlcBoard: row.feature_flag_sdlc_board === 1,
+      agentCoordination: row.feature_flag_agent_coordination === 1,
     },
 
     // InteractiveAgentConfig (INTEGER 0/1 → boolean, integer → number)

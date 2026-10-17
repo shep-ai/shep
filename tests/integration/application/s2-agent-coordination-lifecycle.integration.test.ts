@@ -16,7 +16,14 @@ import type { SpawnFeatureAgentUseCase } from '@/application/use-cases/features/
 import type { FeatureCapacityService } from '@/application/use-cases/features/capacity/feature-capacity.service.js';
 import type { IAgentRunRepository } from '@/application/ports/output/agents/agent-run-repository.interface.js';
 import type { IPhaseTimingRepository } from '@/application/ports/output/agents/phase-timing-repository.interface.js';
-import { BuildMode, SdlcLifecycle, type Feature } from '@/domain/generated/output.js';
+import type { ISettingsRepository } from '@/application/ports/output/repositories/settings.repository.interface.js';
+import {
+  BuildMode,
+  CoordinationAction,
+  CoordinationOutcome,
+  SdlcLifecycle,
+  type Feature,
+} from '@/domain/generated/output.js';
 
 function workcell(id: string, runId?: string): Feature {
   return {
@@ -122,13 +129,17 @@ describe('S2 coordination: real application use-case closure', () => {
       git,
       worktrees,
       agent,
-      reparent
+      reparent,
+      {
+        load: vi.fn().mockResolvedValue({ featureFlags: { agentCoordination: true } }),
+      } as unknown as ISettingsRepository
     );
 
-    expect(await coordinator.execute(first.id)).toBe('deferred');
+    expect(await coordinator.execute(first.id)).toBe(CoordinationOutcome.Deferred);
     expect(store.get(second.id)).toMatchObject({
       parentId: first.id,
       lifecycle: SdlcLifecycle.Blocked,
+      coordination: { action: CoordinationAction.Defer, peerFeatureId: first.id },
     });
     expect(stop.execute).toHaveBeenCalledWith('run-b');
     expect(spawn.execute).not.toHaveBeenCalled();

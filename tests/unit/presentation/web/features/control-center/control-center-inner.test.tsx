@@ -167,6 +167,7 @@ const flagsWithCollaboration: FeatureFlagsState = {
   autopilot: true,
   factory: true,
   sdlcBoard: false,
+  agentCoordination: false,
 };
 
 const repoNode = {

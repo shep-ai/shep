@@ -9,7 +9,15 @@ import type {
 } from '@/application/ports/output/services/git-pr-service.interface.js';
 import type { IWorktreeService } from '@/application/ports/output/services/worktree-service.interface.js';
 import type { IAgentExecutorProvider } from '@/application/ports/output/agents/agent-executor-provider.interface.js';
-import { BuildMode, SdlcLifecycle, type Feature } from '@/domain/generated/output.js';
+import type { ISettingsRepository } from '@/application/ports/output/repositories/settings.repository.interface.js';
+import {
+  BuildMode,
+  CoordinationAction,
+  CoordinationOutcome,
+  SdlcLifecycle,
+  type Feature,
+  type Settings,
+} from '@/domain/generated/output.js';
 
 function makeFeature(id: string, branch: string, overrides: Partial<Feature> = {}): Feature {
   return {
@@ -60,6 +68,7 @@ describe('CoordinateFeatureConflictsUseCase', () => {
   let executor: { execute: ReturnType<typeof vi.fn> };
   let agentProvider: IAgentExecutorProvider;
   let reparent: ReparentFeatureUseCase;
+  let settings: ISettingsRepository;
   let useCase: CoordinateFeatureConflictsUseCase;
 
   beforeEach(() => {
@@ -82,7 +91,13 @@ describe('CoordinateFeatureConflictsUseCase', () => {
     features = {
       findById: vi.fn().mockResolvedValue(current),
       list: vi.fn().mockResolvedValue([current, peer]),
+      update: vi.fn().mockResolvedValue(undefined),
     } as unknown as IFeatureRepository;
+    settings = {
+      load: vi
+        .fn()
+        .mockResolvedValue({ featureFlags: { agentCoordination: true } } as unknown as Settings),
+    } as unknown as ISettingsRepository;
     executor = {
       execute: vi.fn().mockResolvedValue({
         result: JSON.stringify({ action: 'defer', rationale: 'Preserve the shared API change.' }),
@@ -100,8 +115,50 @@ describe('CoordinateFeatureConflictsUseCase', () => {
       git,
       worktrees,
       agentProvider,
-      reparent
+      reparent,
+      settings
     );
+  });
+
+  it('does nothing at all while the agentCoordination flag is off', async () => {
+    vi.mocked(settings.load).mockResolvedValue({
+      featureFlags: { agentCoordination: false },
+    } as unknown as Settings);
+    expect(await useCase.execute('current')).toBe(CoordinationOutcome.Disabled);
+    expect(features.findById).not.toHaveBeenCalled();
+    expect(git.getFileDiffs).not.toHaveBeenCalled();
+    expect(agentProvider.getExecutor).not.toHaveBeenCalled();
+  });
+
+  it('stores the deferral and its reason on the dependent, with the edge', async () => {
+    expect(await useCase.execute('current')).toBe(CoordinationOutcome.Deferred);
+    expect(reparent.execute).toHaveBeenCalledWith({
+      featureId: 'peer',
+      parentId: 'current',
+      coordination: expect.objectContaining({
+        action: CoordinationAction.Defer,
+        rationale: 'Preserve the shared API change.',
+        peerFeatureId: 'current',
+        overlappingPaths: ['src/shared.ts'],
+        decidedAt: expect.any(Date),
+      }),
+    });
+  });
+
+  it('stores a continue decision on the dependent without drawing an edge', async () => {
+    executor.execute.mockResolvedValue({
+      result: '{"action":"continue","rationale":"Independent additive changes."}',
+    });
+    expect(await useCase.execute('current')).toBe(CoordinationOutcome.Continued);
+    expect(features.update).toHaveBeenCalledOnce();
+    const written = vi.mocked(features.update).mock.calls[0][0];
+    expect(written.id).toBe('peer');
+    expect(written.parentId).toBeUndefined();
+    expect(written.coordination).toMatchObject({
+      action: CoordinationAction.Continue,
+      rationale: 'Independent additive changes.',
+      peerFeatureId: 'current',
+    });
   });
 
   it('lets the model defer one workcell behind the interfering peer', async () => {
@@ -112,10 +169,9 @@ describe('CoordinateFeatureConflictsUseCase', () => {
       expect.objectContaining({ maxTurns: 1, disableMcp: true, tools: [] })
     );
     // Stable direction: higher ID waits for lower ID, whoever triggers first.
-    expect(reparent.execute).toHaveBeenCalledWith({
-      featureId: 'peer',
-      parentId: 'current',
-    });
+    expect(reparent.execute).toHaveBeenCalledWith(
+      expect.objectContaining({ featureId: 'peer', parentId: 'current' })
+    );
   });
 
   it('lets the model deliberately continue after seeing an overlap', async () => {
@@ -195,10 +251,9 @@ describe('CoordinateFeatureConflictsUseCase', () => {
       id === 'peer' ? peer : current
     );
     expect(await useCase.execute('peer')).toBe('deferred');
-    expect(reparent.execute).toHaveBeenCalledWith({
-      featureId: 'peer',
-      parentId: 'current',
-    });
+    expect(reparent.execute).toHaveBeenCalledWith(
+      expect.objectContaining({ featureId: 'peer', parentId: 'current' })
+    );
   });
 
   it('does not delegate authority to a model when its executor fails', async () => {

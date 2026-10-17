@@ -299,6 +299,8 @@
       "factoryDescription": "عرض صفحة حالة المصنع لكل مساحة",
       "sdlcBoard": "لوحة SDLC",
       "sdlcBoardDescription": "عرض لوحة SDLC: لوحة مباشرة لمهام الوكلاء عبر الميزات النشطة",
+      "agentCoordination": "تنسيق الوكلاء",
+      "agentCoordinationDescription": "عندما تغيّر ميزتان نشطتان الملفات نفسها، دع وكيلًا يقرر ما إذا كان على إحداهما انتظار الأخرى",
       "groupPlatform": "المنصة",
       "groupSoftwareFactory": "مصنع البرمجيات",
       "groupExperimental": "تجريبي",
@@ -797,6 +799,14 @@
     "featureStarted": "تم بدء الميزة",
     "approvePlan": "الموافقة على الخطة",
     "sendRevisionFeedback": "إرسال ملاحظات المراجعة"
+  },
+  "coordinationNote": {
+    "waitsFor": "ينتظر {{peer}}",
+    "runsAlongside": "يعمل بالتوازي مع {{peer}}",
+    "anotherFeature": "ميزة أخرى",
+    "sharedFiles": "ملفات مشتركة ({{count}})",
+    "decidedBy": "قرّره وكيل التنسيق · {{when}}",
+    "title": "تنسيق الوكلاء"
   },
   "overviewTab": {
     "created": "تم الإنشاء",

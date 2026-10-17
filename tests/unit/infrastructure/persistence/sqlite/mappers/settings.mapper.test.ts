@@ -195,6 +195,7 @@ function createTestRow(overrides: Partial<SettingsRow> = {}): SettingsRow {
     feature_flag_autopilot: 1,
     feature_flag_factory: 1,
     feature_flag_sdlc_board: 0,
+    feature_flag_agent_coordination: 0,
     interactive_agent_enabled: 1,
     interactive_agent_auto_timeout_minutes: 15,
     interactive_agent_max_concurrent_sessions: 3,
@@ -1548,6 +1549,19 @@ describe('Settings Mapper', () => {
         const row = toDatabase(createTestSettings({ featureFlags: { ...base, sdlcBoard: value } }));
         expect(row.feature_flag_sdlc_board).toBe(value ? 1 : 0);
         expect(fromDatabase(row).featureFlags?.sdlcBoard).toBe(value);
+      }
+    });
+  });
+
+  describe('agent coordination flag (spec 141)', () => {
+    it('maps agentCoordination to feature_flag_agent_coordination both ways', () => {
+      const base = createDefaultSettings().featureFlags!;
+      for (const value of [true, false]) {
+        const row = toDatabase(
+          createTestSettings({ featureFlags: { ...base, agentCoordination: value } })
+        );
+        expect(row.feature_flag_agent_coordination).toBe(value ? 1 : 0);
+        expect(fromDatabase(row).featureFlags?.agentCoordination).toBe(value);
       }
     });
   });

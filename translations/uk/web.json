@@ -299,6 +299,8 @@
       "factoryDescription": "Показувати сторінку стану фабрики кожного простору",
       "sdlcBoard": "Дошка SDLC",
       "sdlcBoardDescription": "Показувати дошку SDLC: живу дошку завдань агентів у всіх активних функціях",
+      "agentCoordination": "Координація агентів",
+      "agentCoordinationDescription": "Коли дві активні функції змінюють ті самі файли, агент вирішує, чи має одна чекати на іншу",
       "groupPlatform": "Платформа",
       "groupSoftwareFactory": "Програмна фабрика",
       "groupExperimental": "Експериментальні",
@@ -797,6 +799,14 @@
     "featureStarted": "Функцію запущено",
     "approvePlan": "Затвердити план",
     "sendRevisionFeedback": "Надіслати відгук для доопрацювання"
+  },
+  "coordinationNote": {
+    "waitsFor": "Чекає на {{peer}}",
+    "runsAlongside": "Іде паралельно з {{peer}}",
+    "anotherFeature": "іншу функцію",
+    "sharedFiles": "Спільні файли ({{count}})",
+    "decidedBy": "Рішення агента-координатора · {{when}}",
+    "title": "Координація агентів"
   },
   "overviewTab": {
     "created": "Створено",

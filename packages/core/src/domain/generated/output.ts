@@ -825,6 +825,10 @@ export type FeatureFlags = {
    * SDLC board — /sdlc, its live task stream and board actions; off by default (spec 140)
    */
   sdlcBoard: boolean;
+  /**
+   * Agent coordination of overlapping features — an agent decides whether one waits for the other; off by default (spec 141)
+   */
+  agentCoordination: boolean;
 };
 export enum WhatsAppAdapterKind {
   Baileys = 'baileys',
@@ -1789,6 +1793,36 @@ export type PullRequest = {
    */
   upstreamPrStatus?: PrStatus;
 };
+export enum CoordinationAction {
+  Defer = 'defer',
+  Continue = 'continue',
+}
+
+/**
+ * The last agent coordination decision about a feature and one overlapping peer (spec 141)
+ */
+export type FeatureCoordination = {
+  /**
+   * What the agent chose
+   */
+  action: CoordinationAction;
+  /**
+   * The agent's one-paragraph reason, shown to the user
+   */
+  rationale: string;
+  /**
+   * The other feature whose committed changes overlap this one
+   */
+  peerFeatureId: UUID;
+  /**
+   * Repository-relative paths both features changed
+   */
+  overlappingPaths: string[];
+  /**
+   * When the decision was applied
+   */
+  decidedAt: any;
+};
 
 /**
  * File attachment metadata for a feature (value object, embedded in Feature)
@@ -1956,6 +1990,10 @@ export type Feature = SoftDeletableEntity & {
    * Parent feature ID for dependency tracking (optional)
    */
   parentId?: UUID;
+  /**
+   * Last agent coordination decision with an overlapping feature (optional)
+   */
+  coordination?: FeatureCoordination;
   /**
    * Lifecycle state prior to archiving, used to restore on unarchive (only set when lifecycle is Archived)
    */
@@ -9606,6 +9644,14 @@ export enum OnboardingStep {
   ProjectAdded = 'project-added',
   StartFromPrompt = 'start-from-prompt',
   TelemetryNotice = 'telemetry-notice',
+}
+export enum CoordinationOutcome {
+  Disabled = 'disabled',
+  NoConflict = 'no-conflict',
+  Continued = 'continued',
+  Deferred = 'deferred',
+  Unavailable = 'unavailable',
+  Stale = 'stale',
 }
 export enum SpaceResolutionSource {
   Assignment = 'Assignment',

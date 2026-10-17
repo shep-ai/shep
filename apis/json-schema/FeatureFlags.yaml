@@ -106,6 +106,10 @@ properties:
     type: boolean
     default: false
     description: SDLC board — /sdlc, its live task stream and board actions; off by default (spec 140)
+  agentCoordination:
+    type: boolean
+    default: false
+    description: Agent coordination of overlapping features — an agent decides whether one waits for the other; off by default (spec 141)
 required:
   - envDeploy
   - debug
@@ -133,4 +137,5 @@ required:
   - autopilot
   - factory
   - sdlcBoard
+  - agentCoordination
 description: Feature flag toggles for runtime feature control

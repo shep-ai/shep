@@ -16,7 +16,7 @@ import { createInMemoryDatabase, tableExists } from '../../../helpers/database.h
 import { runSQLiteMigrations } from '@/infrastructure/persistence/sqlite/migrations.js';
 import { SQLiteFeatureRepository } from '@/infrastructure/repositories/sqlite-feature.repository.js';
 import type { Feature } from '@/domain/generated/output.js';
-import { SdlcLifecycle, BuildMode } from '@/domain/generated/output.js';
+import { SdlcLifecycle, BuildMode, CoordinationAction } from '@/domain/generated/output.js';
 
 describe('SQLiteFeatureRepository', () => {
   let db: Database.Database;
@@ -328,6 +328,33 @@ describe('SQLiteFeatureRepository', () => {
       const found = await repository.findById('feat-1');
       expect(found?.name).toBe('Updated Feature');
       expect(found?.description).toBe('Updated description');
+    });
+  });
+
+  describe('coordination (spec 141)', () => {
+    const coordination = {
+      action: CoordinationAction.Defer,
+      rationale: 'Both rewrite the session refresh path.',
+      peerFeatureId: 'feat-0',
+      overlappingPaths: ['src/auth/session.ts', 'src/auth/token.ts'],
+      decidedAt: new Date('2026-10-12T10:00:00.000Z'),
+    };
+
+    it('round-trips the coordination record through create and update', async () => {
+      await repository.create(createTestFeature());
+      expect((await repository.findById('feat-1'))?.coordination).toBeUndefined();
+
+      const stored = (await repository.findById('feat-1'))!;
+      await repository.update({ ...stored, coordination });
+      expect((await repository.findById('feat-1'))?.coordination).toEqual(coordination);
+
+      await repository.update({ ...stored, coordination: undefined });
+      expect((await repository.findById('feat-1'))?.coordination).toBeUndefined();
+    });
+
+    it('stores the coordination record on create', async () => {
+      await repository.create(createTestFeature({ coordination }));
+      expect((await repository.findById('feat-1'))?.coordination).toEqual(coordination);
     });
   });
 

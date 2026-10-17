@@ -8,8 +8,11 @@ the lexically greater ID may defer behind the lesser ID. This prevents a pair of
 concurrent invocations from proposing opposite dependency edges; it does **not**
 make reparenting atomic against other processes or manual dependency writes.
 
-Enable with `SHEP_AGENT_COORDINATION=1` for the Shep runtime process.
-It is disabled by default. Eligibility is limited to committed-path overlap
+Enable with the `agentCoordination` feature flag (Experimental) on
+/settings/feature-flags or `shep settings flags enable agentCoordination`.
+It is disabled by default and read on every decision, so no restart is needed.
+The applied decision and its rationale are stored on the dependent feature and
+shown in the web drawer's Overview tab and in `shep feat show`. Eligibility is limited to committed-path overlap
 between unparented workcells in Implementation or Review. The coordinator runs
 on entry to either lifecycle phase; it does not continuously watch Git HEADs.
 A path collision is an integration-risk witness, not proof of semantic conflict.
@@ -22,10 +25,15 @@ unblock/rebase/spawn machinery remain responsible for enforcement and recovery.
 ## Validation frontier
 
 Unit tests validate decision ownership, deterministic direction, the opt-in
-lifecycle hook, and refusals. Before claiming fully operational S2=A or merging,
-run a reproducible real two-workcell opt-in scenario exercising both
-`defer` and `continue`, worker stop, blocked lifecycle, parent completion,
-rebase and child resume. Exercise concurrent external writers and dynamic Git
-updates separately: the evidence check and reparent transaction are not atomic.
+lifecycle hook, and refusals. A real two-workcell run against the built CLI
+(temporary SHEP_HOME, real SQLite, real git worktrees with a bare origin, a
+Claude Code model making the decision) has exercised: flag off (`disabled`, no
+change); `defer` (dependent Blocked, its live process stopped, run interrupted,
+gate refusing its next phase write, parent landing, rebase onto the landed work
+and a resumed worker booting); `continue` (both keep running, decision
+recorded); and self-deferral (the worker whose own transition triggered the
+decision is stopped by it, leaving consistent state). Concurrent external
+writers and dynamic Git updates are still unexercised: the evidence check and
+reparent transaction are not atomic.
 A disabled-by-default implementation or a green unit suite alone does not
 justify changing the canonical OpenSiro assessment.

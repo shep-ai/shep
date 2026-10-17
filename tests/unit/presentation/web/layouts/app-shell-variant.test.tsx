@@ -48,6 +48,7 @@ const defaultFlags = {
   autopilot: true,
   factory: true,
   sdlcBoard: false,
+  agentCoordination: false,
 };
 
 /**

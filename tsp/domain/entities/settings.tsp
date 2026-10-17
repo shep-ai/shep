@@ -764,6 +764,9 @@ model FeatureFlags {
 
   @doc("SDLC board — /sdlc, its live task stream and board actions; off by default (spec 140)")
   sdlcBoard: boolean = false;
+
+  @doc("Agent coordination of overlapping features — an agent decides whether one waits for the other; off by default (spec 141)")
+  agentCoordination: boolean = false;
 }
 
 /**

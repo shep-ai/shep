@@ -35,3 +35,4 @@ import "./agent-effort.tsp";
 import "./harness.tsp";
 import "./feature-flag.tsp";
 import "./telemetry.tsp";
+import "./feature-coordination.tsp";

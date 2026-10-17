@@ -117,6 +117,7 @@ function WithGitOpsTemplate({ data }: { data: RepositoryNodeData }) {
     autopilot: true,
     factory: true,
     sdlcBoard: false,
+    agentCoordination: false,
   };
 
   return (

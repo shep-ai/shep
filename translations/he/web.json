@@ -299,6 +299,8 @@
       "factoryDescription": "הצגת דף מצב המפעל של כל מרחב",
       "sdlcBoard": "לוח SDLC",
       "sdlcBoardDescription": "הצגת לוח ה-SDLC: לוח חי של משימות הסוכנים בכל הפיצ׳רים הפעילים",
+      "agentCoordination": "תיאום סוכנים",
+      "agentCoordinationDescription": "כששני פיצ׳רים פעילים משנים את אותם קבצים, סוכן מחליט אם אחד מהם צריך לחכות לשני",
       "groupPlatform": "פלטפורמה",
       "groupSoftwareFactory": "מפעל תוכנה",
       "groupExperimental": "ניסיוני",
@@ -797,6 +799,14 @@
     "featureStarted": "הפיצ'ר הופעל",
     "approvePlan": "אישור תוכנית",
     "sendRevisionFeedback": "שליחת משוב לתיקון"
+  },
+  "coordinationNote": {
+    "waitsFor": "ממתין ל-{{peer}}",
+    "runsAlongside": "רץ במקביל ל-{{peer}}",
+    "anotherFeature": "פיצ׳ר אחר",
+    "sharedFiles": "קבצים משותפים ({{count}})",
+    "decidedBy": "הוחלט על ידי סוכן התיאום · {{when}}",
+    "title": "תיאום סוכנים"
   },
   "overviewTab": {
     "created": "נוצר",

@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react';
 import { fn } from '@storybook/test';
-import { PrStatus, CiStatus } from '@shepai/core/domain/generated/output';
+import { PrStatus, CiStatus, CoordinationAction } from '@shepai/core/domain/generated/output';
 import { OverviewTab } from './overview-tab';
 import type { FeatureNodeData } from '@/components/common/feature-node';
 
@@ -157,6 +157,39 @@ export const DoneWithMergedPr: Story = {
 /** Blocked feature showing blocked-by detail. */
 export const Blocked: Story = {
   args: { data: blockedData },
+};
+
+/** Blocked because the coordinating agent deferred it behind an overlapping feature (spec 141). */
+export const BlockedByAgentCoordination: Story = {
+  args: {
+    data: {
+      ...blockedData,
+      coordination: {
+        action: CoordinationAction.Defer,
+        rationale:
+          'Both features rewrite the session refresh path in session.ts; letting Auth Module land first avoids a conflicting rebase.',
+        peerName: 'Auth Module',
+        overlappingPaths: ['src/auth/session.ts', 'src/auth/token-store.ts'],
+        decidedAt: Date.UTC(2026, 9, 12, 10, 0),
+      },
+    },
+  },
+};
+
+/** Running alongside an overlapping feature because the agent judged it safe (spec 141). */
+export const RunningAlongsideByAgentCoordination: Story = {
+  args: {
+    data: {
+      ...fullData,
+      coordination: {
+        action: CoordinationAction.Continue,
+        rationale: 'Both only append separate entries to CHANGELOG.md; the edits are independent.',
+        peerName: 'Payments API',
+        overlappingPaths: ['CHANGELOG.md'],
+        decidedAt: Date.UTC(2026, 9, 12, 10, 0),
+      },
+    },
+  },
 };
 
 /** Error state showing error message detail. */

@@ -8,7 +8,7 @@
 
 import 'reflect-metadata';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { AgentRunStatus, BuildMode } from '@/domain/generated/output.js';
+import { AgentRunStatus, BuildMode, CoordinationAction } from '@/domain/generated/output.js';
 import type { Feature, AgentRun, PhaseTiming } from '@/domain/generated/output.js';
 
 const { mockResolve, mockShowExecute, mockFindById, mockFindByRunId, mockFindByFeatureId } =
@@ -120,6 +120,45 @@ describe('createShowCommand - phase timing & approval', () => {
       }
       // Class token (ShowFeatureUseCase)
       return { execute: mockShowExecute };
+    });
+  });
+
+  describe('agent coordination (spec 141)', () => {
+    it('explains why an agent made the feature wait, naming the peer and shared files', async () => {
+      const feature = makeFeature({
+        parentId: 'feat-000',
+        lifecycle: 'Blocked' as any,
+        coordination: {
+          action: CoordinationAction.Defer,
+          rationale: 'Both rewrite the session refresh path.',
+          peerFeatureId: 'feat-000',
+          overlappingPaths: ['src/auth/session.ts'],
+          decidedAt: new Date('2026-10-12T10:00:00Z'),
+        },
+      });
+      mockShowExecute.mockImplementation(async (id: string) =>
+        id === 'feat-000' ? makeFeature({ id: 'feat-000', name: 'Rotate refresh tokens' }) : feature
+      );
+      mockFindById.mockResolvedValue(null);
+      mockFindByFeatureId.mockResolvedValue([]);
+
+      await createShowCommand().parseAsync(['feat-001'], { from: 'user' });
+
+      const output = logOutput.join('\n');
+      expect(output).toContain('Agent Coordination');
+      expect(output).toContain('Waits for Rotate refresh tokens');
+      expect(output).toContain('Both rewrite the session refresh path.');
+      expect(output).toContain('src/auth/session.ts');
+    });
+
+    it('prints no coordination block for a feature no agent has judged', async () => {
+      mockShowExecute.mockResolvedValue(makeFeature());
+      mockFindById.mockResolvedValue(null);
+      mockFindByFeatureId.mockResolvedValue([]);
+
+      await createShowCommand().parseAsync(['feat-001'], { from: 'user' });
+
+      expect(logOutput.join('\n')).not.toContain('Agent Coordination');
     });
   });
 

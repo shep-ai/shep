@@ -75,6 +75,7 @@ vi.mock('@/hooks/feature-flags-context', () => ({
     autopilot: true,
     factory: true,
     sdlcBoard: false,
+    agentCoordination: false,
   })),
 }));
 
@@ -115,6 +116,7 @@ describe('AddRepositoryButton', () => {
       autopilot: true,
       factory: true,
       sdlcBoard: false,
+      agentCoordination: false,
     });
   });
 
@@ -230,6 +232,7 @@ describe('AddRepositoryButton', () => {
         autopilot: true,
         factory: true,
         sdlcBoard: false,
+        agentCoordination: false,
       });
     });
 
@@ -378,6 +381,7 @@ describe('AddRepositoryButton', () => {
         autopilot: true,
         factory: true,
         sdlcBoard: false,
+        agentCoordination: false,
       });
     });
 
@@ -468,6 +472,7 @@ describe('AddRepositoryButton', () => {
         autopilot: true,
         factory: true,
         sdlcBoard: false,
+        agentCoordination: false,
       });
       const user = userEvent.setup();
       render(<AddRepositoryButton />);
