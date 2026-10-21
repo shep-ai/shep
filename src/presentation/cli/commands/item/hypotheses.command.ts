@@ -12,6 +12,12 @@ export function createHypothesesCommand(): Command {
   return new Command('hypotheses')
     .description(t('cli:commands.item.hypotheses.description'))
     .argument('<item>', t('cli:commands.item.itemArg'))
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep item hypotheses PAY-42`
+    )
     .action((item: string) =>
       runCommand('cli:commands.item.failed', async () => {
         const result = await container.resolve(GetWorkItemInvestigationsUseCase).execute(item);

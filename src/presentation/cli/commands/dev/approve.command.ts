@@ -19,6 +19,13 @@ export function createDevApproveCommand(): Command {
     new Command('approve').description(t('cli:commands.dev.approve.description'))
   )
     .option('--fingerprint <hash>', t('cli:commands.dev.approve.fingerprintOption'))
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep dev approve                       Review the commands and approve them
+  $ shep dev approve --fingerprint <hash>  Approve only the commands you reviewed`
+    )
     .action(async (options: ApproveOptions) => {
       try {
         const resolved = await resolveDevTarget(options);

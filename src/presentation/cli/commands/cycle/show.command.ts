@@ -29,6 +29,12 @@ export function createShowCommand(): Command {
   return new Command('show')
     .description('Show cycle details')
     .argument('<cycle-id>', 'Cycle ID')
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep cycle show <cycle-id>`
+    )
     .action(async (cycleId: string) => {
       try {
         const getCycle = container.resolve(GetCycleUseCase);

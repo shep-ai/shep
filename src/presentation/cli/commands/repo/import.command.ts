@@ -43,6 +43,14 @@ export function createImportCommand(): Command {
     .argument('<dir>', t('cli:commands.repo.import.dirArgument'))
     .option('--all', t('cli:commands.repo.import.allOption'))
     .option('--git-only', t('cli:commands.repo.import.gitOnlyOption'))
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep repo import ~/src             Choose which subfolders to import
+  $ shep repo import ~/src --git-only  Only offer git repositories
+  $ shep repo import ~/src --all       Import everything without prompting`
+    )
     .action(async (dir: string, options: ImportOptions) => {
       try {
         const discover = container.resolve(DiscoverImportCandidatesUseCase);

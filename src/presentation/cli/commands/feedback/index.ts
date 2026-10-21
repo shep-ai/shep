@@ -30,6 +30,13 @@ function createThemesCommand(): Command {
   return new Command('themes')
     .description(t('cli:commands.feedback.themes.description'))
     .option('-s, --space <space>', t('cli:commands.feedback.spaceOption'))
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep feedback themes
+  $ shep feedback themes --space acme`
+    )
     .action((options: { space?: string }) =>
       runCommand(FAILED, async () => {
         const result = await container.resolve(GetFeedbackThemesUseCase).execute(options.space);
@@ -69,6 +76,13 @@ function createPromoteCommand(): Command {
     .option('-c, --confidence <0-1>', t('cli:commands.opportunity.confidenceOption'))
     .option('-t, --title <title>', t('cli:commands.feedback.promote.titleOption'))
     .option('-s, --space <space>', t('cli:commands.feedback.spaceOption'))
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep feedback promote <theme-key> --hours 4
+  $ shep feedback promote <theme-key> -h 8 -c 0.7 --title "Faster checkout"`
+    )
     .action((theme: string, options: PromoteOptions) =>
       runCommand(FAILED, async () => {
         const hours = parseNumberOption('--hours', options.hours);

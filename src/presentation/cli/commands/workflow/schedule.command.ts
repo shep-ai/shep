@@ -30,10 +30,10 @@ export function createScheduleCommand(): Command {
       'after',
       `
 Examples:
-  shep workflow schedule my-workflow --cron "0 9 * * MON"           Every Monday at 9am
-  shep workflow schedule my-workflow --cron "0 */6 * * *"           Every 6 hours
-  shep workflow schedule my-workflow --cron "30 2 * * *" -z UTC     Daily at 2:30 AM UTC
-  shep workflow schedule my-workflow --remove                        Remove schedule
+  $ shep workflow schedule my-workflow --cron "0 9 * * MON"        Every Monday at 9am
+  $ shep workflow schedule my-workflow --cron "0 */6 * * *"        Every 6 hours
+  $ shep workflow schedule my-workflow --cron "30 2 * * *" -z UTC  Daily at 2:30 AM UTC
+  $ shep workflow schedule my-workflow --remove                    Remove schedule
 
 Cron format: minute hour day-of-month month day-of-week
   minute:        0-59

@@ -28,6 +28,13 @@ export function createShowCommand(): Command {
   return new Command('show')
     .description(t('cli:commands.cluster.show.description'))
     .argument('<id>', t('cli:commands.cluster.show.idArgument'))
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep cluster show prod-eu   Show a cluster by slug
+  $ shep cluster show 3f2a9c1b  Show a cluster by id prefix`
+    )
     .action(async (id: string) => {
       try {
         const resolved = await resolveCluster(id);

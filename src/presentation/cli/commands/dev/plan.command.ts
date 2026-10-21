@@ -92,6 +92,13 @@ function createPlanShowCommand(): Command {
     new Command('show').description(t('cli:commands.dev.plan.show.description'))
   )
     .option('--json', t('cli:commands.dev.options.json'))
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep dev plan show
+  $ shep dev plan show --repo ~/src/shop --json`
+    )
     .action(async (options: PlanShowOptions) => {
       const resolved = await resolveDevTarget(options);
       if ('error' in resolved) {
@@ -154,6 +161,14 @@ function createPlanSetCommand(): Command {
     .option('--package-manager <manager>', t('cli:commands.dev.plan.set.packageManagerOption'))
     .option('--setup <command...>', t('cli:commands.dev.plan.set.setupOption'))
     .option('--clear-setup', t('cli:commands.dev.plan.set.clearSetupOption'))
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep dev plan set --command "pnpm dev" --port 5173       Pin the command and port
+  $ shep dev plan set --setup "pnpm install" --cwd apps/web  Run setup first, in a subfolder
+  $ shep dev plan set --port none --clear-setup              Clear the port and setup commands`
+    )
     .action(async (options: PlanSetOptions) => {
       const resolved = await resolveDevTarget(options);
       if ('error' in resolved) {
@@ -207,7 +222,13 @@ function createPlanClearCommand(): Command {
   const t = getCliI18n().t;
 
   return withTargetOptions(
-    new Command('clear').description(t('cli:commands.dev.plan.clear.description'))
+    new Command('clear').description(t('cli:commands.dev.plan.clear.description')).addHelpText(
+      'after',
+      `
+Examples:
+  $ shep dev plan clear
+  $ shep dev plan clear --app <app-id>`
+    )
   ).action(async (options: DevTargetOptions) => {
     const resolved = await resolveDevTarget(options);
     if ('error' in resolved) {

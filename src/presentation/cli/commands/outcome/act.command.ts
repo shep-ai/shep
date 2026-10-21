@@ -14,6 +14,12 @@ export function createShipCommand(): Command {
   return new Command('ship')
     .description(t('cli:commands.outcome.ship.description'))
     .argument('<opportunity>', t('cli:commands.outcome.opportunityArg'))
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep outcome ship <opportunity-id>`
+    )
     .action((id: string) =>
       runCommand(FAILED, async () => {
         report(
@@ -36,6 +42,13 @@ export function createTellCommand(): Command {
     .description(t('cli:commands.outcome.tell.description'))
     .argument('<opportunity>', t('cli:commands.outcome.opportunityArg'))
     .option('--done', t('cli:commands.outcome.tell.doneOption'))
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep outcome tell <opportunity-id>         Show who to tell
+  $ shep outcome tell <opportunity-id> --done  Mark them told`
+    )
     .action((id: string, options: { done?: boolean }) =>
       runCommand(FAILED, async () => {
         const outcomes = container.resolve(ManageOutcomesUseCase);
@@ -66,6 +79,13 @@ export function createHoursCommand(): Command {
     .description(t('cli:commands.outcome.hours.description'))
     .argument('<opportunity>', t('cli:commands.outcome.opportunityArg'))
     .argument('<hours>', t('cli:commands.outcome.hours.hoursArg'))
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep outcome hours <opportunity-id> 3
+  $ shep outcome hours <opportunity-id> 1.5`
+    )
     .action((id: string, hours: string) =>
       runCommand(FAILED, async () => {
         const parsed = parseNumberOption('<hours>', hours);

@@ -13,33 +13,41 @@ import { ListPmProjectsUseCase } from '@/application/use-cases/pm-projects/list-
 import { colors, messages, renderListView } from '../../ui/index.js';
 
 export function createLsCommand(): Command {
-  return new Command('ls').description('List all projects').action(async () => {
-    try {
-      const useCase = container.resolve(ListPmProjectsUseCase);
-      const projects = await useCase.execute();
+  return new Command('ls')
+    .description('List all projects')
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep project ls`
+    )
+    .action(async () => {
+      try {
+        const useCase = container.resolve(ListPmProjectsUseCase);
+        const projects = await useCase.execute();
 
-      const rows = projects.map((p) => [
-        p.identifierPrefix,
-        p.name,
-        String(p.workItemCounter),
-        p.description ?? colors.muted('—'),
-      ]);
+        const rows = projects.map((p) => [
+          p.identifierPrefix,
+          p.name,
+          String(p.workItemCounter),
+          p.description ?? colors.muted('—'),
+        ]);
 
-      renderListView({
-        title: 'Projects',
-        columns: [
-          { label: 'Prefix', width: 8 },
-          { label: 'Name', width: 28 },
-          { label: 'Items', width: 8 },
-          { label: 'Description', width: 40 },
-        ],
-        rows,
-        emptyMessage: 'No projects found. Create one with: shep project new',
-      });
-    } catch (error) {
-      const err = error instanceof Error ? error : new Error(String(error));
-      messages.error('Failed to list projects', err);
-      process.exitCode = 1;
-    }
-  });
+        renderListView({
+          title: 'Projects',
+          columns: [
+            { label: 'Prefix', width: 8 },
+            { label: 'Name', width: 28 },
+            { label: 'Items', width: 8 },
+            { label: 'Description', width: 40 },
+          ],
+          rows,
+          emptyMessage: 'No projects found. Create one with: shep project new',
+        });
+      } catch (error) {
+        const err = error instanceof Error ? error : new Error(String(error));
+        messages.error('Failed to list projects', err);
+        process.exitCode = 1;
+      }
+    });
 }

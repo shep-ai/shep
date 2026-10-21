@@ -19,6 +19,13 @@ export function createStatusCommand(): Command {
   return new Command('status')
     .description('Display aggregate health and status across the agent fleet')
     .option('--repo <path>', 'Filter fleet to a specific repository path')
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep fleet status
+  $ shep fleet status --repo ~/src/shop`
+    )
     .action(async (options: { repo?: string }) => {
       try {
         const useCase = container.resolve(GetFleetOverviewUseCase);

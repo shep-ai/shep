@@ -49,7 +49,14 @@ export function createDevStartCommand(): Command {
   const t = getCliI18n().t;
 
   return withTargetOptions(
-    new Command('start').description(t('cli:commands.dev.start.description'))
+    new Command('start').description(t('cli:commands.dev.start.description')).addHelpText(
+      'after',
+      `
+Examples:
+  $ shep dev start                         Start the dev server for the current folder
+  $ shep dev start --feature <feature-id>  Run a feature's worktree
+  $ shep dev start --repo ~/src/shop       Run a repository by path`
+    )
   ).action(async (options: DevTargetOptions) => {
     const resolved = await resolveDevTarget(options);
     if ('error' in resolved) {

@@ -31,6 +31,14 @@ export function createShowCommand(): Command {
     .option('--cursor-cli', t('cli:commands.session.show.cursorCliOption'))
     .option('--gemini-cli', t('cli:commands.session.show.geminiCliOption'))
     .option('-m, --messages <n>', t('cli:commands.session.show.messagesOption'), '20')
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep session show <session-id>
+  $ shep session show <session-id> --messages 50
+  $ shep session show <session-id> --cursor-cli`
+    )
     .action(async (id: string, opts) => {
       try {
         // Validate mutual exclusivity of provider flags

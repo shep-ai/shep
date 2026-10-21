@@ -22,6 +22,13 @@ export function createUnlinkCommand(): Command {
     .description(t('cli:commands.cluster.unlink.description'))
     .argument('<cluster>', t('cli:commands.cluster.unlink.clusterArgument'))
     .argument('<entity>', t('cli:commands.cluster.unlink.entityArgument'))
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep cluster unlink prod-eu <repository-id>
+  $ shep cluster unlink prod-eu <application-id>`
+    )
     .action(async (clusterId: string, entityId: string) => {
       try {
         const resolved = await resolveCluster(clusterId);

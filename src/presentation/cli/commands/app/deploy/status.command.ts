@@ -15,6 +15,13 @@ export function createDeployStatusCommand(): Command {
     .description('Show the latest cloud deployment status for an application')
     .argument('<id>', 'Application id or slug')
     .option('--json', 'Output as JSON')
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep app deploy status a1b2c3d4
+  $ shep app deploy status my-app --json`
+    )
     .action(async (id: string, options: { json?: boolean }) => {
       try {
         const resolved = await resolveApplication(id);

@@ -22,6 +22,13 @@ export function createLinkCommand(): Command {
     .description(t('cli:commands.cluster.link.description'))
     .argument('<cluster>', t('cli:commands.cluster.link.clusterArgument'))
     .argument('<entity>', t('cli:commands.cluster.link.entityArgument'))
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep cluster link prod-eu <repository-id>   Deploy a repository to the cluster
+  $ shep cluster link prod-eu <application-id>  Deploy an application to the cluster`
+    )
     .action(async (clusterId: string, entityId: string) => {
       try {
         const resolved = await resolveCluster(clusterId);

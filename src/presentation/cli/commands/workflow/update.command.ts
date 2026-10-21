@@ -34,6 +34,14 @@ export function createUpdateCommand(): Command {
       []
     )
     .option('-r, --repo <path>', 'Repository path (defaults to current directory)')
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep workflow update triage --prompt "Label new issues by area"
+  $ shep workflow update triage --name issue-triage
+  $ shep workflow update triage -t git -t github                     Replace the allowed tools`
+    )
     .action(
       async (
         nameOrId: string,

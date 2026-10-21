@@ -18,6 +18,13 @@ export function createCloudProvidersConnectCommand(): Command {
     .description('Connect a cloud deployment provider with an API token')
     .argument('<provider>', 'Provider id (e.g. CloudflarePages)')
     .option('--token <token>', 'API token (if omitted, prompts securely)')
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep app cloud-providers connect CloudflarePages
+  $ shep app cloud-providers connect CloudflarePages --token <api-token>`
+    )
     .action(async (providerArg: string, options: { token?: string }) => {
       try {
         const provider = parseCloudDeploymentProvider(providerArg, { ignoreCase: true });

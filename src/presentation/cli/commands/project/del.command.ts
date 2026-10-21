@@ -24,6 +24,13 @@ export function createDelCommand(): Command {
     .description('Delete a project')
     .argument('<slug>', 'Project slug or ID')
     .option('-f, --force', 'Skip confirmation prompt')
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep project del my-project
+  $ shep project del my-project --force`
+    )
     .action(async (slug: string, options: DelOptions) => {
       try {
         const getProject = container.resolve(GetPmProjectUseCase);

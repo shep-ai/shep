@@ -35,6 +35,15 @@ export function createNewCommand(): Command {
       '-r, --repo <path>',
       "The project's repository: a local folder, registered as an application if it is not one yet"
     )
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep project new
+  $ shep project new --name "My Project" --prefix MP --description "A sample project"
+  $ shep project new -n "My Project" -p MP -d "A sample project"
+  $ shep project new --name "Payments" --repo ~/src/pay`
+    )
     .action(async (options: NewOptions) => {
       try {
         const name =

@@ -35,6 +35,14 @@ export function createListCommand(): Command {
     .option('--feature <id>', 'Feature id to narrow the list')
     .addOption(new Option('--status <status>', 'Filter by status').choices(STATUS_VALUES))
     .option('--limit <n>', 'Maximum rows to return')
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep agent questions ls --app <app-id>                   List all questions for an app
+  $ shep agent questions ls --app <app-id> --status pending  Show only pending questions
+  $ shep agent questions ls --app <app-id> --limit 10        Limit to 10 results`
+    )
     .action(async (options: LsOptions) => {
       try {
         const useCase = container.resolve(ListAgentQuestionsUseCase);

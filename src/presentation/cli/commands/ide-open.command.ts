@@ -46,6 +46,14 @@ export function createIdeOpenCommand(): Command {
     cmd.option(`--${id}`, t('cli:commands.ide.openInOption', { name: meta.name }));
   }
 
+  cmd.addHelpText(
+    'after',
+    `
+Examples:
+  $ shep ide abc12345           Open the configured default editor
+  $ shep ide abc12345 --vscode  Force VS Code
+  $ shep ide abc12345 --cursor  Force Cursor`
+  );
   cmd.action(async (featId: string, options: Record<string, boolean | undefined>) => {
     try {
       const editorId = resolveEditorId(options, ideIds);

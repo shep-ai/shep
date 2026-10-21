@@ -31,6 +31,14 @@ export function createLsCommand(): Command {
     .option('--gemini-cli', t('cli:commands.session.ls.geminiCliOption'))
     .option('-n, --limit <n>', t('cli:commands.session.ls.limitOption'), '20')
     .option('--flat', t('cli:commands.session.ls.flatOption'))
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep session ls                      Recent sessions from every provider
+  $ shep session ls --claude-code -n 50  The last 50 Claude Code sessions
+  $ shep session ls --flat -n 0          Every session, ungrouped`
+    )
     .action(async (opts) => {
       try {
         // Validate mutual exclusivity of provider flags

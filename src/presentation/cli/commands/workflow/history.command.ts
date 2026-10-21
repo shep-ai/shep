@@ -20,6 +20,13 @@ export function createHistoryCommand(): Command {
     .argument('<name>', 'Workflow name or ID')
     .option('-l, --limit <number>', 'Max results (default: 20)', parseInt)
     .option('-r, --repo <path>', 'Repository path (defaults to current directory)')
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep workflow history triage
+  $ shep workflow history triage --limit 5`
+    )
     .action(async (nameOrId: string, options: { limit?: number; repo?: string }) => {
       try {
         const repositoryPath = options.repo ?? process.cwd();

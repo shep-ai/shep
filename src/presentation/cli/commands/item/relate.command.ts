@@ -47,6 +47,14 @@ export function createRelateCommand(): Command {
       '-t, --type <type>',
       'Relation type (blocking, relates-to, duplicate, starts-before, finishes-before)'
     )
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep item relate PAY-1 PAY-2 --type blocking
+  $ shep item relate PAY-1 PAY-7 --type duplicate
+  $ shep item relate PAY-3 PAY-4                   Pick the relation type interactively`
+    )
     .action(async (sourceId: string, targetId: string, options: RelateOptions) => {
       try {
         const getItem = container.resolve(GetWorkItemUseCase);

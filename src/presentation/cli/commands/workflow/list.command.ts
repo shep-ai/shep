@@ -19,6 +19,13 @@ export function createListCommand(): Command {
     .alias('ls')
     .description('List all workflows')
     .option('-r, --repo <path>', 'Repository path (defaults to current directory)')
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep workflow list
+  $ shep workflow list --repo ~/src/shop`
+    )
     .action(async (options: { repo?: string }) => {
       try {
         const repositoryPath = options.repo ?? process.cwd();

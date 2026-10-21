@@ -35,6 +35,14 @@ export function createNewCommand(): Command {
     .option('-d, --description <description>', 'Cycle description')
     .option('-s, --start <date>', 'Start date (YYYY-MM-DD)')
     .option('-e, --end <date>', 'End date (YYYY-MM-DD)')
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep cycle new my-project
+  $ shep cycle new my-project --name "Sprint 12" --start 2026-11-02 --end 2026-11-13
+  $ shep cycle new my-project -n "Sprint 12" -d "Checkout polish"`
+    )
     .action(async (projectSlug: string, options: NewOptions) => {
       try {
         const getProject = container.resolve(GetPmProjectUseCase);

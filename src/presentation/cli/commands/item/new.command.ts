@@ -42,6 +42,14 @@ export function createNewCommand(): Command {
     .option('-p, --priority <priority>', 'Priority (none, low, medium, high, urgent)')
     .option('-d, --description <description>', 'Work item description')
     .option('--parent <identifier>', 'Parent work item identifier (e.g. PROJ-42)')
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep item new my-project                                          Prompt for the title and priority
+  $ shep item new my-project --title "Fix login bug" --priority high
+  $ shep item new PAY -t "Retry failed webhooks" --parent PAY-42`
+    )
     .action(async (projectSlug: string, options: NewOptions) => {
       try {
         const getProject = container.resolve(GetPmProjectUseCase);

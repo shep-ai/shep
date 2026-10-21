@@ -25,8 +25,8 @@ export function createFeedbackCommand(): Command {
       'after',
       `
 Examples:
-  $ shep feat feedback <id> <feedback-text>                              Send feedback on an exploration prototype
-  $ shep feat feedback feat-123 "Make the sidebar collapsible on mobile" Iterate on a design with concrete feedback`
+  $ shep feat feedback <id> <feedback-text>                               Send feedback on an exploration prototype
+  $ shep feat feedback feat-123 "Make the sidebar collapsible on mobile"  Iterate on a design with concrete feedback`
     )
     .argument('<id>', t('cli:commands.feat.feedback.idArgument'))
     .argument('<feedback>', t('cli:commands.feat.feedback.feedbackArgument'))

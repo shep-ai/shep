@@ -20,6 +20,13 @@ export function createStatusCommand(): Command {
   return new Command('status')
     .description(t('cli:commands.cluster.status.description'))
     .argument('<id>', t('cli:commands.cluster.status.idArgument'))
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep cluster status prod-eu
+  $ shep cluster status 3f2a9c1b`
+    )
     .action(async (id: string) => {
       try {
         const resolved = await resolveCluster(id);

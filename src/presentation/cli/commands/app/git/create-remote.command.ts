@@ -18,6 +18,13 @@ export function createGitCreateRemoteCommand(): Command {
   return new Command('create-remote')
     .description('Create a GitHub repository for the application and push')
     .argument('<id>', 'Application id or slug')
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep app git create-remote a1b2c3d4
+  $ shep app git create-remote my-app`
+    )
     .action(async (id: string) => {
       try {
         const resolved = await resolveApplication(id);

@@ -35,6 +35,12 @@ export function createLsCommand(): Command {
   const t = getCliI18n().t;
   return new Command('ls')
     .description(t('cli:commands.cluster.ls.description'))
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep cluster ls`
+    )
     .action(async () => {
       try {
         const useCase = container.resolve(ListClustersUseCase);

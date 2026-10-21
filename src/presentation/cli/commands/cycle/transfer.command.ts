@@ -25,6 +25,14 @@ export function createTransferCommand(): Command {
     .argument('<source>', 'Source cycle ID')
     .argument('[target]', 'Target cycle ID (omit to remove items from cycle)')
     .option('-f, --force', 'Skip confirmation prompt')
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep cycle transfer <source-cycle-id> <target-cycle-id>          Move unfinished items to the next cycle
+  $ shep cycle transfer <source-cycle-id>                            Take unfinished items out of the cycle
+  $ shep cycle transfer <source-cycle-id> <target-cycle-id> --force  Skip the confirmation prompt`
+    )
     .action(async (source: string, target: string | undefined, options: TransferOptions) => {
       try {
         const getCycle = container.resolve(GetCycleUseCase);

@@ -23,6 +23,13 @@ export function createRejectCommand(): Command {
     .description(t('cli:commands.feat.reject.description'))
     .argument('[id]', t('cli:commands.feat.reject.idArgument'))
     .requiredOption('--reason <text>', t('cli:commands.feat.reject.reasonOption'))
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep feat reject --reason "Needs more detail"      Reject the waiting feature
+  $ shep feat reject abc12345 --reason "Fix the plan"  Reject a specific feature by id`
+    )
     .action(async (featureId: string | undefined, options: { reason: string }) => {
       try {
         const featureRepo = container.resolve<IFeatureRepository>('IFeatureRepository');

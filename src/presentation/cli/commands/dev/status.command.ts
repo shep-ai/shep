@@ -38,6 +38,14 @@ export function createDevStatusCommand(): Command {
     new Command('status').description(t('cli:commands.dev.status.description'))
   )
     .option('--json', t('cli:commands.dev.options.json'))
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep dev status
+  $ shep dev status --feature <feature-id>
+  $ shep dev status --json`
+    )
     .action(async (options: DevStatusOptions) => {
       const resolved = await resolveDevTarget(options);
       if ('error' in resolved) {

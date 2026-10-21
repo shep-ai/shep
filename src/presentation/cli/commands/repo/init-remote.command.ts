@@ -24,6 +24,14 @@ export function createInitRemoteCommand(): Command {
     .argument('[name]', t('cli:commands.repo.initRemote.nameArgument'))
     .option('--public', t('cli:commands.repo.initRemote.publicOption'))
     .option('--org <name>', t('cli:commands.repo.initRemote.orgOption'))
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep repo init-remote                  Private repo named after the folder
+  $ shep repo init-remote shop --public
+  $ shep repo init-remote shop --org acme`
+    )
     .action(async (name: string | undefined, options: { public?: boolean; org?: string }) => {
       try {
         const useCase = container.resolve(InitRemoteRepositoryUseCase);

@@ -31,6 +31,14 @@ export function createAddCommand(): Command {
     .description(t('cli:commands.repo.add.description'))
     .option('--url <url>', t('cli:commands.repo.add.urlOption'))
     .option('--dest <path>', t('cli:commands.repo.add.destOption'))
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep repo add
+  $ shep repo add --url acme/shop
+  $ shep repo add --url https://github.com/acme/shop --dest ~/src/shop`
+    )
     .action(async (options: { url?: string; dest?: string }) => {
       try {
         const importUseCase = container.resolve(ImportGitHubRepositoryUseCase);

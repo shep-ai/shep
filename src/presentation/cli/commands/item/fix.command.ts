@@ -32,6 +32,14 @@ export function createFixCommand(): Command {
     .argument('<number>', t('cli:commands.item.fix.numberArg'), parseNumber)
     .option('--spec', t('cli:commands.item.fix.specOption'))
     .option('--agent <type>', t('cli:commands.item.fix.agentOption'), parseAgentType)
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep item fix PAY-42 1                    Fix the most likely root cause
+  $ shep item fix PAY-42 2 --spec             Run the full spec pipeline instead
+  $ shep item fix PAY-42 1 --agent codex-cli`
+    )
     .action((item: string, number: number, options: FixOptions) =>
       runCommand('cli:commands.item.failed', async () => {
         const result = await container.resolve(ApproveHypothesisUseCase).execute({

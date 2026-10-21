@@ -20,6 +20,13 @@ export function createPauseCommand(): Command {
   return new Command('pause')
     .description('Pause the fleet admission queue — new work is parked, running agents continue')
     .option('--reason <text>', 'Why the queue is being paused, recorded and shown by fleet status')
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep fleet pause
+  $ shep fleet pause --reason "Release freeze"`
+    )
     .action(async (options: { reason?: string }) => {
       try {
         const useCase = container.resolve(SetFleetQueuePauseUseCase);
@@ -46,6 +53,12 @@ export function createPauseCommand(): Command {
 export function createResumeCommand(): Command {
   return new Command('resume')
     .description('Resume the fleet admission queue and admit whatever now has room')
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep fleet resume`
+    )
     .action(async () => {
       try {
         const useCase = container.resolve(SetFleetQueuePauseUseCase);

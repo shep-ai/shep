@@ -22,6 +22,13 @@ export function createApproveCommand(): Command {
   return new Command('approve')
     .description(t('cli:commands.feat.approve.description'))
     .argument('[id]', t('cli:commands.feat.approve.idArgument'))
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep feat approve           Approve the waiting feature (auto-pick)
+  $ shep feat approve abc12345  Approve a specific feature by id`
+    )
     .action(async (featureId?: string) => {
       try {
         const featureRepo = container.resolve<IFeatureRepository>('IFeatureRepository');

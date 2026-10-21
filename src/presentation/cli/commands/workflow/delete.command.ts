@@ -20,6 +20,13 @@ export function createDeleteCommand(): Command {
     .argument('<name>', 'Workflow name or ID')
     .option('--force', 'Skip confirmation')
     .option('-r, --repo <path>', 'Repository path (defaults to current directory)')
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep workflow delete triage
+  $ shep workflow delete triage --force`
+    )
     .action(async (nameOrId: string, options: { force?: boolean; repo?: string }) => {
       try {
         // Confirmation prompt (skip with --force or non-interactive)

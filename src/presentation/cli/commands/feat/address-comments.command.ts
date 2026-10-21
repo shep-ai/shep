@@ -22,6 +22,13 @@ export function createAddressCommentsCommand(): Command {
     .argument('<feature>', t('cli:commands.feat.comments.featureArg'))
     .argument('[comments...]', t('cli:commands.feat.addressComments.commentsArg'))
     .option('--no-refresh', t('cli:commands.feat.comments.noRefreshOption'))
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep feat address-comments abc12345                Address every pending comment
+  $ shep feat address-comments abc12345 c1a2b3 d4e5f6  Address only these comments`
+    )
     .action((feature: string, commentIds: string[], options: { refresh: boolean }) =>
       runCommand('cli:commands.feat.comments.failed', async () => {
         if (options.refresh) {

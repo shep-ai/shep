@@ -28,6 +28,13 @@ export function createDelCommand(): Command {
     .description(t('cli:commands.cluster.del.description'))
     .argument('<id>', t('cli:commands.cluster.del.idArgument'))
     .option('-f, --force', t('cli:commands.cluster.del.forceOption'))
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep cluster del staging          Delete after a confirmation prompt
+  $ shep cluster del staging --force  Delete without asking`
+    )
     .action(async (id: string, options: DelOptions) => {
       try {
         const resolved = await resolveCluster(id);

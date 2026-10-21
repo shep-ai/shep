@@ -17,6 +17,13 @@ export function createRunCommand(): Command {
     .description('Manually trigger a workflow')
     .argument('<name>', 'Workflow name or ID')
     .option('-r, --repo <path>', 'Repository path (defaults to current directory)')
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep workflow run triage
+  $ shep workflow run triage --repo ~/src/shop`
+    )
     .action(async (nameOrId: string, options: { repo?: string }) => {
       try {
         const repositoryPath = options.repo ?? process.cwd();

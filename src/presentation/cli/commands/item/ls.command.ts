@@ -19,6 +19,13 @@ export function createLsCommand(): Command {
   return new Command('ls')
     .description('List work items in a project')
     .argument('<project>', 'Project slug or identifier prefix')
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep item ls my-project  List by project slug
+  $ shep item ls PAY         List by identifier prefix`
+    )
     .action(async (projectSlug: string) => {
       try {
         const getProject = container.resolve(GetPmProjectUseCase);

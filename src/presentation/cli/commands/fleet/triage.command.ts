@@ -15,6 +15,13 @@ export function createTriageCommand(): Command {
   return new Command('triage')
     .description('List actionable exceptions across the fleet requiring human decision')
     .option('--repo <path>', 'Filter triage items to a specific repository path')
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep fleet triage
+  $ shep fleet triage --repo ~/src/shop`
+    )
     .action(async (options: { repo?: string }) => {
       try {
         const useCase = container.resolve(ListFleetTriageItemsUseCase);

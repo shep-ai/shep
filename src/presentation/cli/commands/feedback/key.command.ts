@@ -16,6 +16,13 @@ function createCreateCommand(): Command {
     .description(t('cli:commands.feedback.key.create.description'))
     .requiredOption('-n, --name <name>', t('cli:commands.feedback.key.create.nameOption'))
     .option('-s, --space <space>', t('cli:commands.feedback.spaceOption'))
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep feedback key create --name "Support widget"
+  $ shep feedback key create -n zendesk-sync --space acme`
+    )
     .action((options: { name: string; space?: string }) =>
       runCommand(FAILED, async () => {
         const result = await container.resolve(ManageFeedbackKeysUseCase).create({
@@ -36,6 +43,13 @@ function createLsCommand(): Command {
   return new Command('ls')
     .description(t('cli:commands.feedback.key.ls.description'))
     .option('-s, --space <space>', t('cli:commands.feedback.spaceOption'))
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep feedback key ls
+  $ shep feedback key ls --space acme`
+    )
     .action((options: { space?: string }) =>
       runCommand(FAILED, async () => {
         const result = await container.resolve(ManageFeedbackKeysUseCase).list(options.space);
@@ -69,6 +83,12 @@ function createRevokeCommand(): Command {
   return new Command('revoke')
     .description(t('cli:commands.feedback.key.revoke.description'))
     .argument('<key>', t('cli:commands.feedback.key.keyArg'))
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep feedback key revoke <key-id>`
+    )
     .action((id: string) =>
       runCommand(FAILED, async () => {
         const result = await container.resolve(ManageFeedbackKeysUseCase).revoke(id);

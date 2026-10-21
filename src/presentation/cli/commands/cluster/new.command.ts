@@ -32,6 +32,14 @@ export function createNewCommand(): Command {
     .argument('<name>', t('cli:commands.cluster.new.nameArgument'))
     .option('--argocd', t('cli:commands.cluster.new.argocdOption'))
     .option('--provision', t('cli:commands.cluster.new.provisionOption'))
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep cluster new staging                       Register a cluster
+  $ shep cluster new prod-eu --argocd              Enable ArgoCD for GitOps delivery
+  $ shep cluster new prod-eu --argocd --provision  Create it and start provisioning now`
+    )
     .action(async (name: string, options: NewOptions) => {
       try {
         const createUseCase = container.resolve(CreateClusterUseCase);

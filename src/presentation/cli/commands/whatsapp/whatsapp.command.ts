@@ -25,6 +25,12 @@ export function createWhatsappCommand(): Command {
   command
     .command('status')
     .description('Show the WhatsApp integration configuration')
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep whatsapp status`
+    )
     .action(async () => {
       const settingsRepo = container.resolve<ISettingsRepository>('ISettingsRepository');
       const settings = await settingsRepo.load();

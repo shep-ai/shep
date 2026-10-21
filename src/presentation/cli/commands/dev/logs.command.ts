@@ -40,6 +40,14 @@ export function createDevLogsCommand(): Command {
   return withTargetOptions(new Command('logs').description(t('cli:commands.dev.logs.description')))
     .option('-F, --follow', t('cli:commands.dev.logs.followOption'))
     .option('-n, --lines <count>', t('cli:commands.dev.logs.linesOption'))
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep dev logs           Print the captured output
+  $ shep dev logs -n 50     Show the last 50 lines
+  $ shep dev logs --follow  Keep printing new output`
+    )
     .action(async (options: DevLogsOptions) => {
       const resolved = await resolveDevTarget(options);
       if ('error' in resolved) {

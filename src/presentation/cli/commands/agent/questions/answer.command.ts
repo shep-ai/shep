@@ -47,6 +47,14 @@ export function createAnswerCommand(): Command {
     .requiredOption('--app <id>', 'Application id (required for scope isolation)')
     .option('--answer <text>', 'The answer to record (omit to choose interactively)')
     .option('--answered-by <actor>', 'Actor id (e.g. user:alice)', 'user:cli')
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep agent questions answer <question-id> --app <app-id>
+  $ shep agent questions answer <question-id> --app <app-id> --answer "yes"
+  $ shep agent questions answer <question-id> --app <app-id> --answer "approve" --answered-by user:alice`
+    )
     .action(async (questionId: string, options: AnswerOptions) => {
       try {
         const answer =

@@ -18,6 +18,13 @@ export function createCommentsCommand(): Command {
     .description(t('cli:commands.feat.comments.description'))
     .argument('<feature>', t('cli:commands.feat.comments.featureArg'))
     .option('--no-refresh', t('cli:commands.feat.comments.noRefreshOption'))
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep feat comments abc12345               Read the latest review comments from GitHub
+  $ shep feat comments abc12345 --no-refresh  Use the stored comments`
+    )
     .action((feature: string, options: { refresh: boolean }) =>
       runCommand('cli:commands.feat.comments.failed', async () => {
         if (options.refresh) {

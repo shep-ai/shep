@@ -17,6 +17,13 @@ export function createAddItemsCommand(): Command {
     .description('Add work items to a cycle')
     .argument('<cycle-id>', 'Cycle ID')
     .argument('<item-ids...>', 'Work item IDs to add')
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep cycle add-items <cycle-id> <item-id>            Add one work item
+  $ shep cycle add-items <cycle-id> <item-id> <item-id>  Add several at once`
+    )
     .action(async (cycleId: string, itemIds: string[]) => {
       try {
         const useCase = container.resolve(AddItemsToCycleUseCase);

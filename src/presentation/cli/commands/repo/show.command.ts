@@ -49,6 +49,12 @@ export function createShowCommand(): Command {
   return new Command('show')
     .description(t('cli:commands.repo.show.description'))
     .argument('<id>', t('cli:commands.repo.show.idArgument'))
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep repo show abc12345`
+    )
     .action(async (id: string) => {
       try {
         const resolved = await resolveRepository(id);

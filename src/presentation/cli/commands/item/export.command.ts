@@ -24,6 +24,14 @@ export function createExportCommand(): Command {
       DEFAULT_COLUMNS.join(',')
     )
     .option('-o, --output <file>', 'Write to file instead of stdout')
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep item export my-project
+  $ shep item export my-project -o items.csv
+  $ shep item export my-project --columns identifier,title,state,labels`
+    )
     .action(async (projectSlug: string, opts: { columns: string; output?: string }) => {
       try {
         const getProject = container.resolve(GetPmProjectUseCase);

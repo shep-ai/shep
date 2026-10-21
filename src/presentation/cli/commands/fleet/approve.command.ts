@@ -15,6 +15,13 @@ export function createApproveCommand(): Command {
     .description('Batch-approve features waiting on approval gates')
     .option('--all', 'Approve all features currently waiting at approval gates')
     .option('--gate <type>', 'Filter approval to a specific gate: prd, plan, or merge')
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep fleet approve --gate plan  Approve every feature waiting on plan review
+  $ shep fleet approve --all        Approve every waiting gate`
+    )
     .action(async (options: { all?: boolean; gate?: string }) => {
       try {
         if (!options.all && !options.gate) {

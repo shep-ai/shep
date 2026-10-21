@@ -36,6 +36,14 @@ export function createCreateCommand(): Command {
     .option('--template <name>', 'Create from built-in template (issue-triage, branch-rebase)')
     .option('-r, --repo <path>', 'Repository path (defaults to current directory)')
     .option('--disabled', 'Create in disabled state')
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep workflow create triage --template issue-triage
+  $ shep workflow create audit -p "Run npm audit and open issues" -t git -t github
+  $ shep workflow create rebase --template branch-rebase --disabled`
+    )
     .action(
       async (
         name: string,

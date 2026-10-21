@@ -22,6 +22,13 @@ export function createStopCommand(): Command {
     .description(t('cli:commands.agent.stop.description'))
     .argument('<id>', t('cli:commands.agent.stop.idArgument'))
     .option('--force', t('cli:ui.agentGuard.forceOption'))
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep agent stop abc12345          Stop a running agent
+  $ shep agent stop abc12345 --force  Stop it even from inside a Shep agent run`
+    )
     .action(async (id: string, options: { force?: boolean }) => {
       try {
         const resolved = await resolveAgentRun(id);

@@ -26,6 +26,12 @@ export function createLsCommand(): Command {
   return new Command('ls')
     .description('List cycles in a project')
     .argument('<project>', 'Project slug or ID')
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep cycle ls my-project`
+    )
     .action(async (projectSlug: string) => {
       try {
         const getProject = container.resolve(GetPmProjectUseCase);

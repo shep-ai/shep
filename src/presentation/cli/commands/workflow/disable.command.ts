@@ -17,6 +17,12 @@ export function createDisableCommand(): Command {
     .description('Disable a workflow schedule')
     .argument('<name>', 'Workflow name or ID')
     .option('-r, --repo <path>', 'Repository path (defaults to current directory)')
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep workflow disable triage`
+    )
     .action(async (nameOrId: string, options: { repo?: string }) => {
       try {
         const repositoryPath = options.repo ?? process.cwd();

@@ -16,6 +16,13 @@ export function createLsCommand(): Command {
   return new Command('ls')
     .description(t('cli:commands.outcome.ls.description'))
     .option('-s, --space <space>', t('cli:commands.outcome.spaceOption'))
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep outcome ls
+  $ shep outcome ls --space acme`
+    )
     .action((options: { space?: string }) =>
       runCommand(FAILED, async () => {
         const result = await container.resolve(ManageOutcomesUseCase).list(options.space);
@@ -46,27 +53,35 @@ export function createLsCommand(): Command {
 
 export function createCheckCommand(): Command {
   const t = getCliI18n().t;
-  return new Command('check').description(t('cli:commands.outcome.check.description')).action(() =>
-    runCommand(FAILED, async () => {
-      const sweep = await container.resolve(TrackOutcomesUseCase).run();
-      messages.success(
-        t('cli:commands.outcome.check.summary', {
-          shipped: sweep.shipped.length,
-          reopened: sweep.reopened.length,
-          judged: sweep.judged.length,
-        })
-      );
-      for (const opportunity of sweep.shipped) {
-        messages.info(`  ${t('cli:commands.outcome.check.shipped')} ${opportunity.title}`);
-      }
-      for (const opportunity of sweep.reopened) {
-        messages.info(`  ${t('cli:commands.outcome.check.reopened')} ${opportunity.title}`);
-      }
-      for (const outcome of sweep.judged) {
-        messages.info(
-          `  ${outcome.verdict} ${formatCounts(outcome)} ${colors.muted(outcome.opportunityId)}`
+  return new Command('check')
+    .description(t('cli:commands.outcome.check.description'))
+    .addHelpText(
+      'after',
+      `
+Examples:
+  $ shep outcome check`
+    )
+    .action(() =>
+      runCommand(FAILED, async () => {
+        const sweep = await container.resolve(TrackOutcomesUseCase).run();
+        messages.success(
+          t('cli:commands.outcome.check.summary', {
+            shipped: sweep.shipped.length,
+            reopened: sweep.reopened.length,
+            judged: sweep.judged.length,
+          })
         );
-      }
-    })
-  );
+        for (const opportunity of sweep.shipped) {
+          messages.info(`  ${t('cli:commands.outcome.check.shipped')} ${opportunity.title}`);
+        }
+        for (const opportunity of sweep.reopened) {
+          messages.info(`  ${t('cli:commands.outcome.check.reopened')} ${opportunity.title}`);
+        }
+        for (const outcome of sweep.judged) {
+          messages.info(
+            `  ${outcome.verdict} ${formatCounts(outcome)} ${colors.muted(outcome.opportunityId)}`
+          );
+        }
+      })
+    );
 }

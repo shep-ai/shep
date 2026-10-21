@@ -20,7 +20,13 @@ export function createDevStopCommand(): Command {
   const t = getCliI18n().t;
 
   return withTargetOptions(
-    new Command('stop').description(t('cli:commands.dev.stop.description'))
+    new Command('stop').description(t('cli:commands.dev.stop.description')).addHelpText(
+      'after',
+      `
+Examples:
+  $ shep dev stop
+  $ shep dev stop --app <app-id>`
+    )
   ).action(async (options: DevTargetOptions) => {
     const resolved = await resolveDevTarget(options);
     if ('error' in resolved) {
