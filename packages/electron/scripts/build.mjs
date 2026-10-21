@@ -11,17 +11,10 @@
  */
 
 import { build } from 'esbuild';
-import {
-  copyFileSync,
-  existsSync,
-  mkdirSync,
-  readdirSync,
-  readFileSync,
-  statSync,
-  writeFileSync,
-} from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { compileMigrations } from './compile-migrations.mjs';
 
 /**
  * Recursively copy a directory tree. Used to stage runtime assets
@@ -185,44 +178,15 @@ async function main() {
     console.log('Copied entry.cjs to dist/');
   }
 
-  // Compile each SQLite migration .ts file into dist/migrations/*.js
-  // alongside the main bundle. `getMigrationsDir()` in the core package
-  // resolves the directory as a sibling of the compiled file via
-  // `import.meta.url` — in the Electron bundle that lands on
-  // `dist/main.cjs`, so the runtime discovery looks for
-  // `dist/migrations/`. Node 22 can't `import('./foo.ts')` so we pre-
-  // compile each file to CJS .js. Without this, migrations 035+
-  // (including the workflow_steps table) never run and startup crashes
-  // the first time a fresh SHEP_HOME is used.
+  // Compile each SQLite migration into a self-contained dist/migrations/*.js
+  // (see compile-migrations.mjs for why the directory must sit next to main.cjs).
   const migrationsSrc = path.join(coreDir, 'infrastructure', 'persistence', 'sqlite', 'migrations');
-  const migrationsDst = path.join(distDir, 'migrations');
   if (existsSync(migrationsSrc)) {
-    const entries = readdirSync(migrationsSrc)
-      .filter((f) => f.endsWith('.ts') && !f.endsWith('.d.ts'))
-      .map((f) => path.join(migrationsSrc, f));
-    if (entries.length > 0) {
-      await build({
-        entryPoints: entries,
-        bundle: false, // one-file-in/one-file-out — no bundling
-        platform: 'node',
-        target: 'node22',
-        format: 'cjs',
-        outdir: migrationsDst,
-        sourcemap: true,
-        logLevel: 'info',
-      });
-      // Electron's package.json declares "type": "module", so Node
-      // treats plain .js files as ESM and refuses `module.exports`.
-      // Drop a directory-local package.json that pins CJS for every
-      // .js file in dist/migrations/ — overrides the parent without
-      // changing migration file extensions (keeping the discovery
-      // logic in core untouched).
-      writeFileSync(
-        path.join(migrationsDst, 'package.json'),
-        JSON.stringify({ type: 'commonjs' }, null, 2)
-      );
-      console.log(`Compiled ${entries.length} migrations to dist/migrations/`);
-    }
+    const count = await compileMigrations({
+      srcDir: migrationsSrc,
+      outDir: path.join(distDir, 'migrations'),
+    });
+    console.log(`Compiled ${count} migrations to dist/migrations/`);
   }
 
   // Copy scaffolding templates next to the bundle. The template-overlay
