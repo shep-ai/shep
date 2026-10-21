@@ -18,6 +18,8 @@ import type { NotificationBus } from '@shepai/core/infrastructure/services/notif
 
 interface NotificationLike {
   show(): void;
+  /** Electron emits `failed` (macOS/Windows) when the OS refuses to show it. */
+  on?(event: 'failed', listener: (event: unknown, error: string) => void): unknown;
 }
 
 /** Injectable dependencies for the Electron desktop notifier. */
@@ -47,6 +49,11 @@ export class ElectronDesktopNotifier implements IDesktopNotifier {
 
     try {
       const notification = this.deps.createNotification({ title, body });
+      // macOS refuses notifications from unsigned builds (Electron 42+) by emitting
+      // `failed` rather than throwing, so surface it instead of failing silently.
+      notification.on?.('failed', (_event, error) => {
+        this.deps.warn('Electron notification failed:', error);
+      });
       notification.show();
     } catch (error) {
       this.deps.warn('Electron notification failed:', error);

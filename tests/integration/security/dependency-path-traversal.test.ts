@@ -1,22 +1,30 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { mkdtemp, mkdir, readFile, writeFile, symlink, lstat } from 'node:fs/promises';
+import {
+  mkdtemp,
+  mkdir,
+  readFile,
+  readdir,
+  readlink,
+  writeFile,
+  symlink,
+  lstat,
+} from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { dirname, join, relative, resolve, isAbsolute, sep } from 'node:path';
 import { createRequire } from 'node:module';
+import { pathToFileURL } from 'node:url';
+import { crc32 } from 'node:zlib';
 import { createTestHost, createTestLibrary, resolveVirtualPath } from '@typespec/compiler/testing';
 import { removeDirWithRetry } from '../../helpers/remove-dir.helper.js';
 
 const require = createRequire(import.meta.url);
 const electronRequire = createRequire(require.resolve('../../../packages/electron/package.json'));
-const extractRequire = createRequire(electronRequire.resolve('electron'));
-const extract = extractRequire('extract-zip') as (
-  path: string,
-  options: { dir: string }
-) => Promise<void>;
-const zipRequire = createRequire(extractRequire.resolve('extract-zip'));
-const crc32 = createRequire(zipRequire.resolve('yauzl'))('buffer-crc32') as {
-  unsigned(data: Buffer): number;
-};
+// Electron's installer unpacks its runtime with this extractor, so it is the one that must
+// contain hostile archives (GHSA-jmr9-qjv8-65gv, GHSA-7pqw-9j4j-h8q3 in extract-zip@2.0.1).
+const extractorRequire = createRequire(electronRequire.resolve('electron'));
+const { extract } = (await import(
+  pathToFileURL(extractorRequire.resolve('@electron-internal/extract-zip')).href
+)) as { extract: (path: string, options: { dir: string }) => Promise<void> };
 
 // Stored ZIP entries preserve duplicates and Unix symlink attributes, which
 // common archive builders normalize away. All writes stay in throwaway dirs.
@@ -30,7 +38,7 @@ function zip(entries: { name: string; body: string; mode?: number }[]): Buffer {
     const header = Buffer.alloc(30);
     header.writeUInt32LE(0x04034b50);
     header.writeUInt16LE(20, 4);
-    header.writeUInt32LE(crc32.unsigned(body), 14);
+    header.writeUInt32LE(crc32(body), 14);
     header.writeUInt32LE(body.length, 18);
     header.writeUInt32LE(body.length, 22);
     header.writeUInt16LE(name.length, 26);
@@ -38,7 +46,7 @@ function zip(entries: { name: string; body: string; mode?: number }[]): Buffer {
     central.writeUInt32LE(0x02014b50);
     central.writeUInt16LE(0x0314, 4);
     central.writeUInt16LE(20, 6);
-    central.writeUInt32LE(crc32.unsigned(body), 16);
+    central.writeUInt32LE(crc32(body), 16);
     central.writeUInt32LE(body.length, 20);
     central.writeUInt32LE(body.length, 24);
     central.writeUInt16LE(name.length, 28);
@@ -75,7 +83,7 @@ describe('dependency archive containment', () => {
     return { root, dir, archive, victim };
   }
 
-  it.each(['../outside.txt', '/tmp/shep-outside', '..\\outside.txt'])(
+  it.each(['../outside.txt', '/tmp/shep-outside'])(
     'rejects an escaping symlink target %s',
     async (target) => {
       const { dir, archive, victim } = await fixture();
@@ -86,25 +94,48 @@ describe('dependency archive containment', () => {
     }
   );
 
-  it('does not overwrite an existing symlink destination', async () => {
-    const { dir, archive, victim } = await fixture();
-    await symlink(victim, join(dir, 'link'));
-    await writeFile(archive, zip([{ name: 'link', body: 'overwritten' }]));
-    await expect(extract(archive, { dir })).rejects.toThrow();
+  // The extractor may reject these archives or replace the destination with a regular
+  // file. Either is safe; what matters is that nothing outside the output dir changes
+  // and no extracted link points outside it.
+  async function expectContained(
+    run: Promise<void>,
+    { dir, victim }: { dir: string; victim: string }
+  ) {
+    await run.catch(() => undefined);
     await expect(readFile(victim, 'utf8')).resolves.toBe('original');
+    for (const entry of await readdir(dir, { recursive: true })) {
+      const entryPath = join(dir, entry);
+      if (!(await lstat(entryPath)).isSymbolicLink()) continue;
+      const target = relative(dir, resolve(dirname(entryPath), await readlink(entryPath)));
+      const escapes = target === '..' || target.startsWith(`..${sep}`) || isAbsolute(target);
+      expect(escapes, `${entry} -> ${target}`).toBe(false);
+    }
+  }
+
+  it('never links outside the output dir through a backslash target', async () => {
+    // A separator on Windows, a plain file-name character elsewhere.
+    const fx = await fixture();
+    await writeFile(fx.archive, zip([{ name: 'link', body: '..\\outside.txt', mode: 0o120777 }]));
+    await expectContained(extract(fx.archive, { dir: fx.dir }), fx);
   });
 
-  it('rejects a symlink followed by a file at the same path', async () => {
-    const { dir, archive, victim } = await fixture();
+  it('does not write through an existing symlink destination', async () => {
+    const fx = await fixture();
+    await symlink(fx.victim, join(fx.dir, 'link'));
+    await writeFile(fx.archive, zip([{ name: 'link', body: 'overwritten' }]));
+    await expectContained(extract(fx.archive, { dir: fx.dir }), fx);
+  });
+
+  it('does not write through a symlink followed by a file at the same path', async () => {
+    const fx = await fixture();
     await writeFile(
-      archive,
+      fx.archive,
       zip([
         { name: 'link', body: '../outside.txt', mode: 0o120777 },
         { name: 'link', body: 'overwritten' },
       ])
     );
-    await expect(extract(archive, { dir })).rejects.toThrow();
-    await expect(readFile(victim, 'utf8')).resolves.toBe('original');
+    await expectContained(extract(fx.archive, { dir: fx.dir }), fx);
   });
 
   it('rejects a target that escapes through a dangling existing symlink', async () => {

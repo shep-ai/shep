@@ -71,6 +71,26 @@ describe('ElectronDesktopNotifier', () => {
       expect(() => notifier.send('Title', 'Body')).not.toThrow();
       expect(deps.warn).toHaveBeenCalled();
     });
+
+    it('logs a warning when the OS reports the notification failed', () => {
+      // Electron 42+ shows macOS notifications through UNNotification, which emits
+      // `failed` for unsigned builds instead of throwing.
+      const listeners = new Map<string, (...args: unknown[]) => void>();
+      deps.createNotification = vi.fn(() => ({
+        show: vi.fn(),
+        on: vi.fn((event: string, listener: (...args: unknown[]) => void) => {
+          listeners.set(event, listener);
+        }),
+      }));
+
+      notifier.send('Title', 'Body');
+      listeners.get('failed')?.({}, 'Notifications are not allowed for this application');
+
+      expect(deps.warn).toHaveBeenCalledWith(
+        expect.stringContaining('Electron notification failed'),
+        'Notifications are not allowed for this application'
+      );
+    });
   });
 
   describe('startListening', () => {
