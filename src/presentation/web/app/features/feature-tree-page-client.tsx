@@ -82,6 +82,8 @@ import type { FeatureStatus } from '@/components/common/feature-status-config';
 import type { InventoryCreateData } from './get-feature-tree-data';
 import { useSidebar } from '@/components/ui/sidebar';
 import { useFabLayout } from '@/hooks/fab-layout-context';
+import { useAgentEventRefresh } from '@/hooks/use-agent-event-refresh';
+import { INVENTORY_REFRESH_EVENT_TYPES } from './inventory-refresh-events';
 
 export interface FeatureTreePageClientProps {
   /** Combined feature + application rows shown in the inventory table. */
@@ -164,6 +166,15 @@ export function FeatureTreePageClient({
   const features = useMemo(() => rows.filter((r) => !r._isApplication), [rows]);
   const router = useRouter();
   const { t } = useTranslation('web');
+
+  // Keep the inventory live while agents run: re-read the server data when the
+  // shared SSE stream reports a change a row shows (AgentEventsProvider wraps
+  // the root layout's AppShell, so it is an ancestor of this page).
+  const refreshInventory = useCallback(() => router.refresh(), [router]);
+  useAgentEventRefresh({
+    eventTypes: INVENTORY_REFRESH_EVENT_TYPES,
+    onRefresh: refreshInventory,
+  });
 
   // Filter state
   const [searchQuery, setSearchQuery] = useState('');

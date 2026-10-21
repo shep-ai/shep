@@ -1,5 +1,13 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import {
+  NotificationEventType,
+  NotificationSeverity,
+  type NotificationEvent,
+} from '@shepai/core/domain/generated/output';
+import { AgentEventsContext } from '@/hooks/agent-events-provider';
+import type { UseAgentEventsResult } from '@/hooks/use-agent-events';
+import { AGENT_EVENT_REFRESH_DEBOUNCE_MS } from '@/hooks/use-agent-event-refresh';
 import { FeatureTreePageClient } from '@/app/features/feature-tree-page-client';
 import type { FeatureTreeRow } from '@/components/features/feature-tree-table/feature-tree-table';
 import type { InventoryCreateData } from '@/app/features/get-feature-tree-data';
@@ -235,5 +243,87 @@ describe('FeatureTreePageClient — Archive Dialog Integration', () => {
     );
     // The archive dialog should not be visible initially
     expect(screen.queryByText('Archive feature?')).not.toBeInTheDocument();
+  });
+});
+
+describe('FeatureTreePageClient — live refresh from agent events', () => {
+  function agentEvent(eventType: NotificationEventType): NotificationEvent {
+    return {
+      eventType,
+      agentRunId: 'run-1',
+      featureId: 'feat-2',
+      featureName: 'OAuth Provider',
+      message: 'message',
+      severity: NotificationSeverity.Info,
+      timestamp: '2026-10-21T10:00:00Z',
+    };
+  }
+
+  function eventsContext(events: NotificationEvent[]): UseAgentEventsResult {
+    return {
+      events,
+      lastEvent: events.at(-1) ?? null,
+      agentMessages: [],
+      lastAgentMessage: null,
+      agentQuestions: [],
+      lastAgentQuestion: null,
+      supervisorDecisions: [],
+      lastSupervisorDecision: null,
+      connectionStatus: 'connected',
+    };
+  }
+
+  function page(events: NotificationEvent[]) {
+    return (
+      <AgentEventsContext.Provider value={eventsContext(events)}>
+        <FeatureTreePageClient rows={defaultFeatures} repos={[]} createData={defaultCreateData} />
+      </AgentEventsContext.Provider>
+    );
+  }
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('refreshes the inventory once when an agent finishes', () => {
+    const { rerender } = render(page([]));
+    const started = agentEvent(NotificationEventType.AgentStarted);
+
+    rerender(page([started]));
+    rerender(page([started, agentEvent(NotificationEventType.AgentCompleted)]));
+    vi.advanceTimersByTime(AGENT_EVENT_REFRESH_DEBOUNCE_MS);
+
+    expect(mockRefresh).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not refresh for events the inventory does not show', () => {
+    const { rerender } = render(page([]));
+
+    rerender(page([agentEvent(NotificationEventType.OperationLogAppended)]));
+    vi.advanceTimersByTime(AGENT_EVENT_REFRESH_DEBOUNCE_MS * 2);
+
+    expect(mockRefresh).not.toHaveBeenCalled();
+  });
+
+  it('does not refresh on mount for events delivered before the page opened', () => {
+    render(page([agentEvent(NotificationEventType.AgentCompleted)]));
+    vi.advanceTimersByTime(AGENT_EVENT_REFRESH_DEBOUNCE_MS * 2);
+
+    expect(mockRefresh).not.toHaveBeenCalled();
+  });
+
+  it('cancels a pending refresh when the page unmounts', () => {
+    const { rerender, unmount } = render(page([]));
+
+    rerender(page([agentEvent(NotificationEventType.PrMerged)]));
+    unmount();
+    vi.advanceTimersByTime(AGENT_EVENT_REFRESH_DEBOUNCE_MS * 2);
+
+    expect(mockRefresh).not.toHaveBeenCalled();
   });
 });
