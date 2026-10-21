@@ -19,6 +19,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { createRequestListener } from '@/infrastructure/services/http-request-listener.js';
+import { createUpgradeListener } from '@/infrastructure/services/http-upgrade-listener.js';
 import { initializeContainer, container } from '@/infrastructure/di/container.js';
 import { warmAgentModelCatalogs } from '@/infrastructure/services/agents/common/model-catalogs/warm-agent-model-catalogs.js';
 import type { IDeploymentService } from '@/application/ports/output/services/deployment-service.interface.js';
@@ -246,10 +247,9 @@ async function main() {
 
   const server = http.createServer(createRequestListener(handle));
 
-  // Forward WebSocket upgrades to Next.js for HMR/Fast Refresh
-  server.on('upgrade', (req, socket, head) => {
-    app.getUpgradeHandler()(req, socket, head);
-  });
+  // Forward WebSocket upgrades to Next.js for HMR/Fast Refresh. Upgrades never
+  // reach middleware.ts, so the listener applies the same request guard.
+  server.on('upgrade', createUpgradeListener(app.getUpgradeHandler()));
 
   await new Promise<void>((resolve, reject) => {
     server.on('error', reject);

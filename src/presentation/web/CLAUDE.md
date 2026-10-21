@@ -34,7 +34,7 @@ pnpm dev:cli ui
 | Entry point        | `dev-server.ts`                                         | `cli/index.ts` -> `ui.command.ts` -> `WebServerService` |
 | Port               | 3000                                                    | 4050                                                    |
 | DI container       | Set on `globalThis.__shepContainer` in dev-server.ts:73 | Set in cli/index.ts:76                                  |
-| WebSocket upgrades | Forwarded (HMR works)                                   | NOT forwarded in `WebServerService`                     |
+| WebSocket upgrades | Guarded, then forwarded (`createUpgradeListener`)       | Guarded and forwarded in dev only (none in prod)        |
 | Next.js mode       | Always dev                                              | dev when run from source, prod when installed           |
 
 ## Graph State Architecture (Domain-Model-Driven)

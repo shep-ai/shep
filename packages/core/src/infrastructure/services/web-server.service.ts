@@ -17,6 +17,9 @@ import fs from 'node:fs';
 import type { IWebServerService } from '../../application/ports/output/services/web-server-service.interface.js';
 import { IS_WINDOWS } from '../platform.js';
 import { createRequestListener } from './http-request-listener.js';
+import { createUpgradeListener } from './http-upgrade-listener.js';
+import { readGuardPolicy } from './web-auth/guard-policy.js';
+import type { GuardPolicy } from './web-auth/request-guard.js';
 
 type NextApp = ReturnType<typeof next>;
 
@@ -90,11 +93,14 @@ export function resolveBindHost(
 export interface WebServerDeps {
   createNextApp: typeof next;
   createHttpServer: typeof http.createServer;
+  /** Guard policy applied to WebSocket upgrades (they bypass the middleware). */
+  readUpgradePolicy: () => GuardPolicy;
 }
 
 const defaultDeps: WebServerDeps = {
   createNextApp: next,
   createHttpServer: http.createServer,
+  readUpgradePolicy: readGuardPolicy,
 };
 
 /**
@@ -236,6 +242,18 @@ export class WebServerService implements IWebServerService {
       const server = this.deps.createHttpServer(createRequestListener(handle));
 
       server.on('error', reject);
+
+      // Forward WebSocket upgrades to Next.js for HMR/Fast Refresh. Only dev
+      // mode has an HMR socket, and an upgrade never reaches the middleware,
+      // so the listener re-applies its Host/Origin/token guard itself.
+      if (dev) {
+        server.on(
+          'upgrade',
+          createUpgradeListener(app.getUpgradeHandler(), {
+            readPolicy: this.deps.readUpgradePolicy,
+          })
+        );
+      }
 
       server.listen(port, bindHost, () => {
         this.server = server;

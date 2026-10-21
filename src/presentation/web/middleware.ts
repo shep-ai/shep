@@ -11,20 +11,14 @@
  */
 
 import { NextResponse, type NextRequest } from 'next/server';
-import {
-  getOrCreateWebAuthToken,
-  timingSafeTokenEquals,
-} from '@shepai/core/infrastructure/services/web-auth/web-auth-token.service';
+import { timingSafeTokenEquals } from '@shepai/core/infrastructure/services/web-auth/web-auth-token.service';
+import { readGuardPolicy } from '@shepai/core/infrastructure/services/web-auth/guard-policy';
 import {
   ALLOWED_HOSTS_ENV,
-  ENV_FLAG_ON,
-  REQUIRE_TOKEN_FOR_PAGES_ENV,
   SESSION_COOKIE_NAME,
   TOKEN_HEADER_NAME,
   TOKEN_QUERY_PARAM,
-  WEB_PORT_ENV,
   evaluateRequest,
-  parseAllowedHostsEnv,
   type GuardPolicy,
 } from '@/lib/request-guard';
 
@@ -46,25 +40,13 @@ const DENY_MESSAGES: Record<string, string> = {
   origin_not_allowed: 'Request origin is not allowed.',
 };
 
-function readPolicy(): GuardPolicy {
-  const rawPort = process.env[WEB_PORT_ENV];
-  const parsedPort = rawPort === undefined ? Number.NaN : Number(rawPort);
-
-  return {
-    token: getOrCreateWebAuthToken(),
-    port: Number.isInteger(parsedPort) ? parsedPort : null,
-    extraHosts: parseAllowedHostsEnv(process.env[ALLOWED_HOSTS_ENV]),
-    requireTokenForPages: process.env[REQUIRE_TOKEN_FOR_PAGES_ENV] === ENV_FLAG_ON,
-  };
-}
-
 /** Status returned when the gate itself cannot run. */
 const HTTP_SERVICE_UNAVAILABLE = 503;
 
 export function middleware(request: NextRequest): NextResponse {
   let policy: GuardPolicy;
   try {
-    policy = readPolicy();
+    policy = readGuardPolicy();
   } catch (error) {
     // The token lives in SHEP_HOME; if it cannot be read or created, the gate
     // cannot run. Fail CLOSED and say why, rather than throwing an opaque 500

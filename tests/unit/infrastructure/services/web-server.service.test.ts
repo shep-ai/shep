@@ -27,13 +27,23 @@ import {
   resolveBindHost,
   type WebServerDeps,
 } from '@/infrastructure/services/web-server.service.js';
+import type { GuardPolicy } from '@/infrastructure/services/web-auth/request-guard.js';
+
+const UPGRADE_POLICY: GuardPolicy = {
+  token: 'd'.repeat(64),
+  port: 4050,
+  extraHosts: [],
+  requireTokenForPages: false,
+};
 
 function createMockDeps() {
   const mockHandle = vi.fn();
+  const mockUpgradeHandle = vi.fn();
   const mockApp = {
     prepare: vi.fn().mockResolvedValue(undefined),
     close: vi.fn().mockResolvedValue(undefined),
     getRequestHandler: vi.fn().mockReturnValue(mockHandle),
+    getUpgradeHandler: vi.fn().mockReturnValue(mockUpgradeHandle),
   };
 
   const mockServer = {
@@ -58,9 +68,24 @@ function createMockDeps() {
   const deps: WebServerDeps = {
     createNextApp: vi.fn().mockReturnValue(mockApp) as any,
     createHttpServer: vi.fn().mockReturnValue(mockServer) as any,
+    readUpgradePolicy: () => UPGRADE_POLICY,
   };
 
-  return { deps, mockApp, mockServer, mockHandle };
+  return { deps, mockApp, mockServer, mockHandle, mockUpgradeHandle };
+}
+
+/** The listener the service registered for `event`, if any. */
+function registeredListener(
+  mockServer: ReturnType<typeof createMockDeps>['mockServer'],
+  event: string
+): ((...args: unknown[]) => void) | undefined {
+  return mockServer.on.mock.calls.find(([name]) => name === event)?.[1];
+}
+
+function upgradeHandshake(host: string) {
+  const req = { url: '/_next/hmr', headers: { host, origin: `http://${host}` } };
+  const socket = { end: vi.fn(), destroy: vi.fn() };
+  return { req, socket, head: Buffer.alloc(0) };
 }
 
 describe('WebServerService', () => {
@@ -110,6 +135,35 @@ describe('WebServerService', () => {
       await service.start(4050, '/path/to/web');
 
       expect(mocks.mockServer.listen).toHaveBeenCalledWith(4050, 'localhost', expect.any(Function));
+    });
+  });
+
+  describe('WebSocket upgrades', () => {
+    it('forwards an HMR upgrade to Next.js in dev mode', async () => {
+      await service.start(4050, '/path/to/web', true);
+
+      const onUpgrade = registeredListener(mocks.mockServer, 'upgrade');
+      expect(onUpgrade).toBeDefined();
+      const { req, socket, head } = upgradeHandshake('localhost:4050');
+      onUpgrade!(req, socket, head);
+
+      expect(mocks.mockUpgradeHandle).toHaveBeenCalledWith(req, socket, head);
+    });
+
+    it('refuses an upgrade whose Host the request guard would refuse', async () => {
+      await service.start(4050, '/path/to/web', true);
+
+      const { req, socket, head } = upgradeHandshake('attacker.example:4050');
+      registeredListener(mocks.mockServer, 'upgrade')!(req, socket, head);
+
+      expect(mocks.mockUpgradeHandle).not.toHaveBeenCalled();
+      expect(socket.end).toHaveBeenCalledWith(expect.stringContaining('403'), expect.any(Function));
+    });
+
+    it('accepts no upgrades in production mode, which has no HMR socket', async () => {
+      await service.start(4050, '/path/to/web', false);
+
+      expect(registeredListener(mocks.mockServer, 'upgrade')).toBeUndefined();
     });
   });
 
