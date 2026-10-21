@@ -25,6 +25,7 @@ import {
   resumeAgentSession,
   describeResumeCommand,
 } from '@/app/actions/adopt-agent-session';
+import { openIde } from '@/app/actions/open-ide';
 import type { SessionSummary } from './session-summary';
 import { formatRelativeTime, isSessionActive, truncatePreview } from './session-summary';
 
@@ -37,6 +38,9 @@ export interface SessionRowProps {
   /** Called after a session is resumed in the embedded terminal */
   onResumed?: (terminalId: string) => void;
 }
+
+/** Shown when the IDE launch fails without a reason from the server. */
+const IDE_LAUNCH_FALLBACK_ERROR = 'Could not open the IDE';
 
 async function copyToClipboard(text: string) {
   try {
@@ -64,7 +68,7 @@ async function copyToClipboard(text: string) {
 export function SessionRow({ session, repositoryPath, onAdopted, onResumed }: SessionRowProps) {
   const sessionActive = isSessionActive(session);
   const AgentIcon = getAgentTypeIcon(session.agentType);
-  const [busy, setBusy] = useState<'adopt' | 'resume' | null>(null);
+  const [busy, setBusy] = useState<'adopt' | 'resume' | 'ide' | null>(null);
   const [error, setError] = useState('');
 
   const agentType = session.agentType ?? '';
@@ -101,6 +105,23 @@ export function SessionRow({ session, repositoryPath, onAdopted, onResumed }: Se
       return;
     }
     if (result.terminalId) onResumed?.(result.terminalId);
+  }
+
+  /**
+   * Opens the repository in the editor chosen in Settings. The server action
+   * resolves the configured IDE — a hard-coded `vscode://` URL ignored it.
+   */
+  async function handleOpenIde() {
+    setBusy('ide');
+    setError('');
+    try {
+      const result = await openIde({ repositoryPath });
+      if (!result.success) setError(result.error ?? IDE_LAUNCH_FALLBACK_ERROR);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : IDE_LAUNCH_FALLBACK_ERROR);
+    } finally {
+      setBusy(null);
+    }
   }
 
   async function handleCopyCommand() {
@@ -198,12 +219,18 @@ export function SessionRow({ session, repositoryPath, onAdopted, onResumed }: Se
 
           <DropdownMenuItem
             className="gap-2 text-xs"
-            onSelect={() => {
-              window.open(`vscode://file${repositoryPath}`, '_blank');
+            disabled={busy !== null}
+            onSelect={(e) => {
+              e.preventDefault();
+              void handleOpenIde();
             }}
             data-testid="session-action-ide"
           >
-            <ExternalLink className="h-3.5 w-3.5" />
+            {busy === 'ide' ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <ExternalLink className="h-3.5 w-3.5" />
+            )}
             Open in IDE
           </DropdownMenuItem>
 

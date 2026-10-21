@@ -5,11 +5,16 @@ import userEvent from '@testing-library/user-event';
 const mockAdopt = vi.fn();
 const mockResume = vi.fn();
 const mockDescribe = vi.fn();
+const mockOpenIde = vi.fn();
 
 vi.mock('@/app/actions/adopt-agent-session', () => ({
   adoptAgentSession: (...args: unknown[]) => mockAdopt(...args),
   resumeAgentSession: (...args: unknown[]) => mockResume(...args),
   describeResumeCommand: (...args: unknown[]) => mockDescribe(...args),
+}));
+
+vi.mock('@/app/actions/open-ide', () => ({
+  openIde: (...args: unknown[]) => mockOpenIde(...args),
 }));
 
 import {
@@ -64,6 +69,7 @@ describe('SessionRow', () => {
     mockDescribe.mockResolvedValue({
       command: `cd '${REPO_PATH}' && claude --resume sess-abc`,
     });
+    mockOpenIde.mockResolvedValue({ success: true, editor: 'Cursor', path: REPO_PATH });
     Object.assign(navigator, { clipboard: { writeText: vi.fn().mockResolvedValue(undefined) } });
   });
 
@@ -167,5 +173,58 @@ describe('SessionRow', () => {
     await openActions();
 
     expect(screen.getByTestId('session-action-ide')).toBeInTheDocument();
+  });
+
+  it('opens the configured IDE through the server action, not a vscode:// URL', async () => {
+    const windowOpen = vi.spyOn(window, 'open').mockImplementation(() => null);
+    renderRow();
+
+    await openActions();
+    await userEvent.click(screen.getByTestId('session-action-ide'));
+
+    await waitFor(() => expect(mockOpenIde).toHaveBeenCalledWith({ repositoryPath: REPO_PATH }));
+    expect(windowOpen).not.toHaveBeenCalled();
+    windowOpen.mockRestore();
+  });
+
+  it('disables the IDE action while the editor is launching', async () => {
+    let finish: (value: { success: boolean }) => void = () => undefined;
+    mockOpenIde.mockReturnValue(
+      new Promise((resolve) => {
+        finish = resolve;
+      })
+    );
+    renderRow();
+
+    await openActions();
+    await userEvent.click(screen.getByTestId('session-action-ide'));
+
+    await waitFor(() =>
+      expect(screen.getByTestId('session-action-ide')).toHaveAttribute('data-disabled')
+    );
+    finish({ success: true });
+    await waitFor(() =>
+      expect(screen.getByTestId('session-action-ide')).not.toHaveAttribute('data-disabled')
+    );
+  });
+
+  it('surfaces an IDE launch error inline', async () => {
+    mockOpenIde.mockResolvedValue({ success: false, error: 'Cursor is not installed' });
+    renderRow();
+
+    await openActions();
+    await userEvent.click(screen.getByTestId('session-action-ide'));
+
+    await waitFor(() => expect(screen.getByText('Cursor is not installed')).toBeInTheDocument());
+  });
+
+  it('surfaces a thrown IDE launch failure inline', async () => {
+    mockOpenIde.mockRejectedValue(new Error('server action failed'));
+    renderRow();
+
+    await openActions();
+    await userEvent.click(screen.getByTestId('session-action-ide'));
+
+    await waitFor(() => expect(screen.getByText('server action failed')).toBeInTheDocument());
   });
 });

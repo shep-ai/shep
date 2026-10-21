@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { fn } from '@storybook/test';
+import { expect, fn, userEvent, waitFor, within } from '@storybook/test';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,11 +10,12 @@ import { SessionRow } from './session-row';
 import type { SessionSummary } from './session-summary';
 
 const REPO_PATH = '/Users/dev/Code/shep';
+const PREVIEW = 'Refactor the billing module onto the new tax service';
 
 const baseSession: SessionSummary = {
   id: '3f1a9c40-1d2b-4e77-9c11-2a5b6d8e0f34',
   agentType: 'claude-code',
-  preview: 'Refactor the billing module onto the new tax service',
+  preview: PREVIEW,
   messageCount: 24,
   firstMessageAt: '2026-08-01T10:00:00Z',
   lastMessageAt: '2026-08-02T16:30:00Z',
@@ -87,4 +88,20 @@ export const LongPreview: Story = {
       }}
     />
   ),
+};
+
+/**
+ * Open in IDE — launches the editor chosen in Settings through the `openIde`
+ * server action (no hard-coded `vscode://` URL). Storybook's action mock always
+ * fails, so this story shows the inline error a failed launch leaves on the row.
+ */
+export const OpenInIdeError: Story = {
+  render: () => <RowInMenu session={baseSession} />,
+  play: async ({ canvasElement }) => {
+    const page = within(canvasElement.ownerDocument.body);
+    await userEvent.hover(await page.findByText(PREVIEW));
+    const ideAction = await waitFor(() => page.getByTestId('session-action-ide'));
+    await userEvent.click(ideAction);
+    await waitFor(() => expect(page.getByText('Not available in Storybook')).toBeInTheDocument());
+  },
 };
