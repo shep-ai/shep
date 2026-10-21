@@ -19,6 +19,9 @@ export interface ToolStatusResult {
   gh: ToolStatusEntry;
 }
 
+/** errno code execFile reports when the command is not on PATH. */
+const BINARY_NOT_FOUND_CODE = 'ENOENT';
+
 function getVersion(
   command: string,
   args: string[]
@@ -28,7 +31,11 @@ function getVersion(
       const opts = IS_WINDOWS ? { timeout: 5000, windowsHide: true } : { timeout: 5000 };
       execFile(command, args, opts, (error, stdout) => {
         if (error) {
-          resolve({ installed: false, version: null });
+          // Only a missing binary means "not installed". A binary that exists but
+          // fails (unreadable config dir in Docker, non-zero exit, timeout) is
+          // installed — its version is just unknown.
+          const installed = (error as NodeJS.ErrnoException).code !== BINARY_NOT_FOUND_CODE;
+          resolve({ installed, version: null });
           return;
         }
         // Extract version number from output like "git version 2.43.0" or "gh version 2.40.1"
