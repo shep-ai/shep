@@ -2937,8 +2937,7 @@ schema and the executor, and pin it with a test of shell metacharacters.
 
 A merge bumped `next` to 16.3.6 but `node_modules` still linked 16.3.5, so 473 web tests failed
 locally (mocks of `next/navigation` missed the stale copy) while CI was green. Run
-`pnpm install --frozen-lockfile` after every merge that touches a lockfile; in the sandbox add
-`--filter '!@shepai/electron'` (its git dependency cannot be downloaded here).
+`pnpm install --frozen-lockfile` after every merge that touches a lockfile.
 
 ## `rg` drops the file name when its scope is a single file
 
@@ -3225,12 +3224,23 @@ test the executor with the empty value.
 vanishes on the drawer's first sync (or never shows from a `/feature/<id>` URL). Map a new
 field once (e.g. `lib/coordination-note-data.ts`) and call it from both builders.
 
-## In the sandbox, `--lockfile-only` rewrites the electron node-gyp entry
+## A version pinned in two places drifts — derive it from the one that is installed
 
-`codeload.github.com` returns 403 here, so a `pnpm install --lockfile-only` silently rewrites
-`@electron/node-gyp` from its codeload tarball to `git+https://git@github.com:…`, a diff no
-dependency bump intends. After relocking, `git diff pnpm-lock.yaml | grep node-gyp` must be
-empty; restore the tarball form if not. `--filter '!@shepai/electron'` then leaves `electron`
-uninstalled and `pnpm typecheck` fails on `packages/electron`. For a full local install, swap the
-entry to `git+https://github.com/electron/node-gyp.git#<sha>` (`type: git`), run
-`pnpm install --frozen-lockfile` (git clones work), then copy the committed lockfile back.
+`electron-builder.yml` pinned `electronVersion: '36.9.5'` while `packages/electron` depended on
+`^39.8.10`, so every shipped installer ran an Electron three majors older than dev and tests, and
+Dependabot (which reads only package.json) never saw it. Packaging now passes the installed
+version (`scripts/electron-version.mjs`) and a test fails if either YAML pins one again. When a
+tool cannot detect a version, compute it from the lockfile-installed package, never copy it.
+
+## Launch the packaged desktop app before calling an Electron change done
+
+The Electron 44 upgrade passed every test and `node scripts/build.mjs`, yet three things only
+showed up when packaging and launching the app: a stale `node-abi` could not rebuild
+better-sqlite3 for the new ABI, a `global-agent` 4 override silently stopped `@electron/get`
+from honouring proxies, and the shipped app crashed on start because migrations were compiled
+without their relative imports (`./data/*`, `../add-column`). Rules: run
+`node scripts/package.mjs full linux` and start `release/linux-unpacked/shep` under `xvfb-run`
+with a fresh `SHEP_HOME`; an override of a transitive dependency must be exercised on the code
+path that uses it, not just installed. In the sandbox, unset `GH_TOKEN`/`GITHUB_TOKEN` (they make
+electron-builder add a GitHub publish target and crash on `null.channel`) and pass
+`ELECTRON_GET_USE_PROXY=1 GLOBAL_AGENT_HTTPS_PROXY=$HTTPS_PROXY`.
