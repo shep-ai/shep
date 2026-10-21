@@ -14,13 +14,16 @@
 # =============================================================================
 FROM node:22-alpine AS deps
 
-# Enable pnpm via corepack
-RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
+# Enable pnpm via corepack. The version is not pinned here: `corepack install`
+# reads the root package.json `packageManager` field, so the image always uses
+# the same pnpm as local dev and CI.
+RUN corepack enable
 
 WORKDIR /app
 
 # Copy only dependency files first (maximizes cache hits)
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+RUN corepack install
 COPY patches/ ./patches/
 COPY src/presentation/web/package.json ./src/presentation/web/package.json
 COPY packages/core/package.json ./packages/core/package.json
@@ -37,12 +40,14 @@ RUN pnpm install --frozen-lockfile --prod --ignore-scripts && \
 # =============================================================================
 FROM node:22-alpine AS builder
 
-RUN corepack enable && corepack prepare pnpm@9.15.0 --activate
+# pnpm version comes from package.json `packageManager` (see the deps stage).
+RUN corepack enable
 
 WORKDIR /app
 
 # Copy dependency and config files (workspace config + all package.json files first for cache)
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml tsconfig.json tsconfig.build.json tspconfig.yaml ./
+RUN corepack install
 COPY patches/ ./patches/
 COPY src/presentation/web/package.json ./src/presentation/web/package.json
 COPY packages/core/package.json ./packages/core/package.json
