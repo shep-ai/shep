@@ -1256,15 +1256,15 @@ describe('Settings Mapper', () => {
       expect(row.skill_injection_skills).toBe(JSON.stringify(skills));
     });
 
-    it('should map empty skills array to null', () => {
+    it('should map an explicitly emptied skills array to "[]", not null', () => {
       const settings = createTestSettings({
         workflow: {
           ...createTestSettings().workflow,
-          skillInjection: { enabled: false, skills: [] },
+          skillInjection: { enabled: true, skills: [] },
         },
       });
       const row = toDatabase(settings);
-      expect(row.skill_injection_skills).toBeNull();
+      expect(row.skill_injection_skills).toBe('[]');
     });
 
     it('should map undefined skillInjection to null skills', () => {
@@ -1308,6 +1308,15 @@ describe('Settings Mapper', () => {
       });
       const settings = fromDatabase(row);
       expect(settings.workflow.skillInjection).toBeUndefined();
+    });
+
+    it('should keep an explicitly empty skills list when enabled=1 and skills is "[]"', () => {
+      const row = createTestRow({
+        skill_injection_enabled: 1,
+        skill_injection_skills: '[]',
+      });
+      const settings = fromDatabase(row);
+      expect(settings.workflow.skillInjection).toEqual({ enabled: true, skills: [] });
     });
 
     it('should fall back to default skills when enabled=1 but skills is null', () => {

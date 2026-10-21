@@ -23,6 +23,7 @@ import {
   AgentAuthMethod,
   EditorType,
   Language,
+  SkillSourceType,
   TerminalType,
   WhatsAppAdapterKind,
   WhatsAppConnectionStatus,
@@ -1497,6 +1498,56 @@ describe('SQLiteSettingsRepository', () => {
       await repository.update(settings);
 
       expect((await repository.load())?.workflow.ciWatchEnabled).toBe(true);
+    });
+  });
+
+  describe('workflow.skillInjection', () => {
+    const skillA = {
+      name: 'brainstorming',
+      type: SkillSourceType.Local,
+      source: '.claude/skills/brainstorming',
+    };
+    const skillB = {
+      name: 'remote-docs',
+      type: SkillSourceType.Remote,
+      source: '@acme/skills',
+      remoteSkillName: 'docs-helper',
+    };
+
+    it('keeps a skills list shrunk and then emptied through update()', async () => {
+      const settings = createTestSettings();
+      settings.workflow.skillInjection = { enabled: true, skills: [skillA, skillB] };
+      await repository.initialize(settings);
+
+      settings.workflow.skillInjection = { enabled: true, skills: [skillB] };
+      await repository.update(settings);
+      expect((await repository.load())?.workflow.skillInjection).toEqual({
+        enabled: true,
+        skills: [skillB],
+      });
+
+      // Removing the last injected skill must stay empty, not resurrect the defaults.
+      settings.workflow.skillInjection = { enabled: true, skills: [] };
+      await repository.update(settings);
+      expect((await repository.load())?.workflow.skillInjection).toEqual({
+        enabled: true,
+        skills: [],
+      });
+    });
+
+    it('still falls back to the default skills when enabled but never persisted', async () => {
+      const settings = createTestSettings();
+      await repository.initialize(settings);
+      db.prepare(
+        'UPDATE settings SET skill_injection_enabled = 1, skill_injection_skills = NULL'
+      ).run();
+
+      const loaded = await repository.load();
+
+      expect(loaded?.workflow.skillInjection).toEqual({
+        enabled: true,
+        skills: createDefaultSettings().workflow.skillInjection!.skills,
+      });
     });
   });
 

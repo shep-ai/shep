@@ -459,11 +459,14 @@ export function toDatabase(settings: Settings): SettingsRow {
     // Exploration max iterations (default: 10)
     exploration_max_iterations: settings.workflow.explorationMaxIterations ?? null,
 
-    // Skill injection config (default: disabled, no skills)
+    // Skill injection config (default: disabled, no skills).
+    // An explicitly emptied list is stored as '[]': NULL is reserved for "never
+    // persisted", which fromDatabase answers with the default skill list.
     skill_injection_enabled: settings.workflow.skillInjection?.enabled ? 1 : 0,
-    skill_injection_skills: settings.workflow.skillInjection?.skills?.length
-      ? JSON.stringify(settings.workflow.skillInjection.skills)
-      : null,
+    skill_injection_skills:
+      settings.workflow.skillInjection?.skills != null
+        ? JSON.stringify(settings.workflow.skillInjection.skills)
+        : null,
 
     // Default home page (default: control-center)
     default_home_page: settings.defaultHomePage ?? 'control-center',
