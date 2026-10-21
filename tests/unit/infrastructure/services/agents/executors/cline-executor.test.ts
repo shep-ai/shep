@@ -153,16 +153,23 @@ describe('ClineExecutorService', () => {
     });
 
     it('should pass prompt as the last positional argument', async () => {
-      const mockProc = createMockChildProcess();
-      vi.mocked(mockSpawn).mockReturnValue(mockProc as any);
+      // Off Windows the prompt is an argv value; on win32 it always goes through a file.
+      const originalPlatform = Object.getOwnPropertyDescriptor(process, 'platform');
+      Object.defineProperty(process, 'platform', { value: 'linux' });
+      try {
+        const mockProc = createMockChildProcess();
+        vi.mocked(mockSpawn).mockReturnValue(mockProc as any);
 
-      const executePromise = executor.execute('My prompt text', { silent: true });
-      emitJsonlLines(mockProc, [sayEvent('OK')], null, 0);
+        const executePromise = executor.execute('My prompt text', { silent: true });
+        emitJsonlLines(mockProc, [sayEvent('OK')], null, 0);
 
-      await executePromise;
+        await executePromise;
 
-      const spawnArgs = vi.mocked(mockSpawn).mock.calls[0][1] as string[];
-      expect(spawnArgs[spawnArgs.length - 1]).toBe('My prompt text');
+        const spawnArgs = vi.mocked(mockSpawn).mock.calls[0][1] as string[];
+        expect(spawnArgs[spawnArgs.length - 1]).toBe('My prompt text');
+      } finally {
+        if (originalPlatform) Object.defineProperty(process, 'platform', originalPlatform);
+      }
     });
 
     it('should spawn the cline binary', async () => {

@@ -143,17 +143,24 @@ describe('CopilotCliExecutorService', () => {
 
   describe('execute', () => {
     it('should spawn copilot with the prompt via -p flag', async () => {
-      const mockProc = createMockChildProcess();
-      vi.mocked(mockSpawn).mockReturnValue(mockProc as any);
+      // Off Windows the prompt is an argv value; on win32 it always goes through a file.
+      const originalPlatform = Object.getOwnPropertyDescriptor(process, 'platform');
+      Object.defineProperty(process, 'platform', { value: 'linux' });
+      try {
+        const mockProc = createMockChildProcess();
+        vi.mocked(mockSpawn).mockReturnValue(mockProc as any);
 
-      const executePromise = executor.execute('Hello copilot', { silent: true });
-      emitJsonlLines(mockProc, [assistantMessage('Hi there'), resultEvent('session-1')], null, 0);
+        const executePromise = executor.execute('Hello copilot', { silent: true });
+        emitJsonlLines(mockProc, [assistantMessage('Hi there'), resultEvent('session-1')], null, 0);
 
-      await executePromise;
+        await executePromise;
 
-      const spawnArgs = vi.mocked(mockSpawn).mock.calls[0][1] as string[];
-      expect(spawnArgs[0]).toBe('-p');
-      expect(spawnArgs[1]).toBe('Hello copilot');
+        const spawnArgs = vi.mocked(mockSpawn).mock.calls[0][1] as string[];
+        expect(spawnArgs[0]).toBe('-p');
+        expect(spawnArgs[1]).toBe('Hello copilot');
+      } finally {
+        if (originalPlatform) Object.defineProperty(process, 'platform', originalPlatform);
+      }
     });
 
     it('should include all base flags in every invocation', async () => {
