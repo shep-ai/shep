@@ -3238,3 +3238,13 @@ test the executor with the empty value.
 `buildFeatureNodeData`. A field added to only the first appears when you click a node and
 vanishes on the drawer's first sync (or never shows from a `/feature/<id>` URL). Map a new
 field once (e.g. `lib/coordination-note-data.ts`) and call it from both builders.
+
+## In the sandbox, `--lockfile-only` rewrites the electron node-gyp entry
+
+`codeload.github.com` returns 403 here, so a `pnpm install --lockfile-only` silently rewrites
+`@electron/node-gyp` from its codeload tarball to `git+https://git@github.com:…`, a diff no
+dependency bump intends. After relocking, `git diff pnpm-lock.yaml | grep node-gyp` must be
+empty; restore the tarball form if not. `--filter '!@shepai/electron'` then leaves `electron`
+uninstalled and `pnpm typecheck` fails on `packages/electron`. For a full local install, swap the
+entry to `git+https://github.com/electron/node-gyp.git#<sha>` (`type: git`), run
+`pnpm install --frozen-lockfile` (git clones work), then copy the committed lockfile back.
