@@ -81,6 +81,9 @@ const MODEL_TIERS: Readonly<Record<string, ModelTierInfo>> = {
   'gemini-2-5-flash-lite': { family: 'gemini', tier: TaskComplexity.Low },
 
   // --- OpenAI GPT / Codex ---
+  'gpt-5-6-sol': { family: 'gpt', tier: TaskComplexity.High },
+  'gpt-5-6-terra': { family: 'gpt', tier: TaskComplexity.Medium },
+  'gpt-5-6-luna': { family: 'gpt', tier: TaskComplexity.Low },
   'gpt-5-4-high': { family: 'gpt', tier: TaskComplexity.High },
   'gpt-5-4': { family: 'gpt', tier: TaskComplexity.High },
   'gpt-5-3-codex': { family: 'gpt', tier: TaskComplexity.High },

@@ -34,8 +34,14 @@ const MODEL_METADATA: Record<string, ModelMeta> = {
   },
 
   // OpenAI models
-  'gpt-5.4-high': { displayName: 'GPT-5.4', description: 'Latest reasoning model' },
-  'gpt-5.4': { displayName: 'GPT-5.4', description: 'Codex flagship' },
+  'gpt-5.6-sol': { displayName: 'GPT-5.6 Sol', description: 'Flagship for complex coding work' },
+  'gpt-5.6-terra': {
+    displayName: 'GPT-5.6 Terra',
+    description: 'Balanced capability, speed & cost',
+  },
+  'gpt-5.6-luna': { displayName: 'GPT-5.6 Luna', description: 'Fastest GPT-5.6 option' },
+  'gpt-5.4-high': { displayName: 'GPT-5.4', description: 'High-effort reasoning' },
+  'gpt-5.4': { displayName: 'GPT-5.4', description: 'Previous-generation Codex model' },
   'gpt-5.4-mini': { displayName: 'GPT-5.4 Mini', description: 'Fast, lower cost' },
   'gpt-5.3-codex': { displayName: 'GPT-5.3 Codex', description: 'Code specialist' },
   'gpt-5.3-codex-spark': {

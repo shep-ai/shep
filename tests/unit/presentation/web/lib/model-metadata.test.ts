@@ -58,3 +58,20 @@ describe('getModelMeta curated Claude entries', () => {
     expect(meta.description).not.toBe('');
   });
 });
+
+describe('getModelMeta GPT-5.6 Codex entries', () => {
+  it.each([
+    ['gpt-5.6-sol', 'GPT-5.6 Sol'],
+    ['gpt-5.6-terra', 'GPT-5.6 Terra'],
+    ['gpt-5.6-luna', 'GPT-5.6 Luna'],
+  ])('has a curated description for %s', (id, displayName) => {
+    const meta = getModelMeta(id);
+
+    expect(meta.displayName).toBe(displayName);
+    expect(meta.description).not.toBe('');
+  });
+
+  it('no longer calls GPT-5.4 the Codex flagship', () => {
+    expect(getModelMeta('gpt-5.4').description).not.toMatch(/flagship/i);
+  });
+});

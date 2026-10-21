@@ -160,6 +160,14 @@ describe('getModelTierInfo', () => {
     expect(getModelTierInfo('nvidia/nemotron-3-super-120b-a12b:free')).toBeUndefined();
   });
 
+  it.each([
+    ['gpt-5.6-sol', TaskComplexity.High],
+    ['gpt-5.6-terra', TaskComplexity.Medium],
+    ['gpt-5.6-luna', TaskComplexity.Low],
+  ])('classifies the GPT-5.6 Codex model %s', (id, tier) => {
+    expect(getModelTierInfo(id)).toEqual({ family: 'gpt', tier });
+  });
+
   describe('Claude ids missing from the table (discovered at runtime)', () => {
     it.each([
       ['claude-opus-5-5', TaskComplexity.High],

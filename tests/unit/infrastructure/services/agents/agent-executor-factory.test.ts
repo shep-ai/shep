@@ -396,11 +396,14 @@ describe('AgentExecutorFactory', () => {
       expect(models).not.toContain('claude-opus-4-6');
     });
 
-    it('should return codex-cli model list with 12 models', () => {
+    it('should return codex-cli model list with 15 models', () => {
       const models = factory.getSupportedModels(AgentType.CodexCli);
 
-      expect(models).toHaveLength(12);
+      expect(models).toHaveLength(15);
       expect(models).toEqual([
+        'gpt-5.6-sol',
+        'gpt-5.6-terra',
+        'gpt-5.6-luna',
         'gpt-5.4',
         'gpt-5.4-mini',
         'gpt-5.3-codex',
