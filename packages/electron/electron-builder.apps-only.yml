@@ -14,10 +14,9 @@ appId: 'ai.shep.apps'
 productName: 'Shep Apps'
 copyright: 'Copyright © 2024-2026 Shep AI'
 
-# Electron runtime version. Pinned so packaging from the staged tree
-# (produced by `pnpm deploy --prod`) doesn't need to auto-detect it
-# from the electron devDependency that `--prod` intentionally strips.
-electronVersion: '36.9.5'
+# Electron runtime version: not pinned here. scripts/package.mjs passes the
+# version installed in the workspace (`--config.electronVersion`), because the
+# staged `--omit=dev` tree has no electron devDependency to detect it from.
 
 directories:
   buildResources: 'resources'

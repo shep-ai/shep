@@ -99,6 +99,7 @@ Each attempt records: what was tried, what result I saw, what it proved or dispr
 **Reason:** `pnpm deploy --prod` (and `npm install --omit=dev`) strip the `electron` devDep from the staged tree. Without a pinned version electron-builder bails with `Cannot compute electron version from installed node modules`.
 **Result:** Build proceeds through packaging. Post-build metadata still logs `Cannot read properties of null (reading 'provider')` because there's no `publish` config, but the `.AppImage` is produced on disk before the error.
 **Status:** ✅ Working. The `null provider` error is cosmetic / auto-update-only.
+**Superseded:** the pin drifted (it shipped 36.9.5 while the devDependency was 39.x). `scripts/package.mjs` now passes the installed version via `--config.electronVersion` (`scripts/electron-version.mjs`), and neither YAML pins it.
 
 ### Attempt 8 — Reroute `extraResources` paths from `../../web` → `web`
 **Change:** Both builder YMLs now reference local `./web`; `scripts/package.mjs` copies `<root>/web` into `staged-<variant>/web` during staging.
@@ -151,7 +152,7 @@ if (app.isPackaged) {
 | `packages/electron/package.json` | +10 direct deps (transitives of core that the bundle references); new `build:apps-only:*` scripts that go through `scripts/package.mjs` |
 | `packages/electron/scripts/build.mjs` | Reads `SHEP_SHELL_VARIANT` env at build time; bakes value into bundle via esbuild `define`; `checkBundledRequires()` sanity check post-build |
 | `packages/electron/scripts/package.mjs` | NEW — stages electron package + `dist/` + `resources/` + `web/` into `staged-<variant>/`, runs `npm install --omit=dev`, then electron-builder. Copies the right builder YAML into place so `-c` is not needed. |
-| `packages/electron/electron-builder.yml` | `extraResources.from` → `./web`; `electronVersion: '36.9.5'` pinned; explicit `node_modules/**/*` in `files:` |
+| `packages/electron/electron-builder.yml` | `extraResources.from` → `./web`; Electron version passed by `package.mjs` (no pin); explicit `node_modules/**/*` in `files:` |
 | `packages/electron/electron-builder.apps-only.yml` | NEW — slim variant with `appId: ai.shep.apps`, `productName: Shep Apps`, output dir `release-apps-only/`, variant-aware `artifactName` |
 | `packages/electron/src/main.ts` | `NODE_PATH` bridge in packaged mode (Attempt 9; present but INSUFFICIENT for the remaining Turbopack issue) |
 | `packages/electron/.gitignore` | Ignore `staged-*/`, `release-apps-only/` |

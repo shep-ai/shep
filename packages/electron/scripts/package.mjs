@@ -35,6 +35,7 @@ import {
 } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { resolveInstalledElectronVersion } from './electron-version.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const electronRoot = path.resolve(__dirname, '..');
@@ -104,6 +105,9 @@ if (!['mac', 'win', 'linux'].includes(target)) {
   console.error(`Unknown target: ${target} (expected 'mac' | 'win' | 'linux')`);
   process.exit(1);
 }
+
+// Resolve before staging so a missing install fails fast, not after npm install.
+const electronVersion = resolveInstalledElectronVersion(electronRoot);
 
 const builderConfigSrc =
   variant === 'apps-only' ? 'electron-builder.apps-only.yml' : 'electron-builder.yml';
@@ -202,7 +206,9 @@ writeFileSync(stagedPkgPath, JSON.stringify(stagedPkg, null, 2));
 //    The output directory is set absolutely so artifacts land next to
 //    the source tree (not inside stagedDir, which is ephemeral).
 const outputAbs = path.join(electronRoot, outputDir);
-console.log(`[build:${variant}] electron-builder --${target} (output → ${outputAbs})`);
+console.log(
+  `[build:${variant}] electron-builder --${target} on Electron ${electronVersion} (output → ${outputAbs})`
+);
 execWithRetry(
   npxBin,
   [
@@ -212,6 +218,8 @@ execWithRetry(
     'never',
     '--config.directories.output',
     outputAbs,
+    '--config.electronVersion',
+    electronVersion,
   ],
   { ...spawnOpts, cwd: stagedDir },
   BUILDER_MAX_ATTEMPTS
