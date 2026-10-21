@@ -10,6 +10,7 @@ const mockGetRemoteUrl = vi.fn();
 const mockGetMergeableStatus = vi.fn();
 const mockGetCiStatus = vi.fn();
 const mockGetArtifactExecute = vi.fn();
+const mockGetResearchExecute = vi.fn();
 const mockFeatureUpdate = vi.fn();
 
 vi.mock('@/lib/server-container', () => ({
@@ -26,6 +27,7 @@ vi.mock('@/lib/server-container', () => ({
         getCiStatus: mockGetCiStatus,
       };
     if (token === 'GetFeatureArtifactUseCase') return { execute: mockGetArtifactExecute };
+    if (token === 'GetResearchArtifactUseCase') return { execute: mockGetResearchExecute };
     throw new Error(`Unknown token: ${token}`);
   },
 }));
@@ -71,7 +73,8 @@ describe('getFeatureDrawerData server action', () => {
     mockFindRunById.mockResolvedValue({ id: 'run-1', status: 'running' });
     mockFindByPath.mockResolvedValue({ name: 'my-repo' });
     mockGetDefaultBranch.mockResolvedValue('main');
-    mockGetArtifactExecute.mockResolvedValue({ oneLiner: 'A test feature' });
+    mockGetArtifactExecute.mockResolvedValue({ oneLiner: 'A test feature', openQuestions: [] });
+    mockGetResearchExecute.mockResolvedValue({ decisions: [] });
     mockGetRemoteUrl.mockResolvedValue('https://github.com/user/repo');
     mockGetMergeableStatus.mockResolvedValue(undefined);
     mockGetCiStatus.mockResolvedValue(undefined);
@@ -170,5 +173,43 @@ describe('getFeatureDrawerData server action', () => {
     const result = await getFeatureDrawerData('feat-123');
 
     expect(result).not.toBeNull();
+  });
+  it('tells the drawer which decision tabs have content (research + spec artifacts)', async () => {
+    const { buildFeatureNodeData } = await import('@/app/build-feature-node-data');
+    mockGetResearchExecute.mockResolvedValue({
+      decisions: [{ title: 'Bundler', chosen: 'Vite', rejected: [], rationale: 'fast' }],
+    });
+    mockGetArtifactExecute.mockResolvedValue({
+      oneLiner: 'A test feature',
+      openQuestions: [{ question: 'Auth?', resolved: false }],
+    });
+
+    await getFeatureDrawerData('feat-123');
+
+    expect(mockGetResearchExecute).toHaveBeenCalledWith('feat-123');
+    expect(buildFeatureNodeData).toHaveBeenCalledWith(
+      baseFeature,
+      expect.anything(),
+      expect.objectContaining({
+        decisionTabs: { hasTechDecisions: true, hasProductDecisions: false },
+      })
+    );
+  });
+
+  it('reports no decisions when the artifacts cannot be read', async () => {
+    const { buildFeatureNodeData } = await import('@/app/build-feature-node-data');
+    mockGetResearchExecute.mockRejectedValue(new Error('ENOENT research.yaml'));
+    mockGetArtifactExecute.mockRejectedValue(new Error('ENOENT spec.yaml'));
+
+    const result = await getFeatureDrawerData('feat-123');
+
+    expect(result).not.toBeNull();
+    expect(buildFeatureNodeData).toHaveBeenCalledWith(
+      baseFeature,
+      expect.anything(),
+      expect.objectContaining({
+        decisionTabs: { hasTechDecisions: false, hasProductDecisions: false },
+      })
+    );
   });
 });

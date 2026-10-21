@@ -6,9 +6,11 @@ import type { IAgentRunRepository } from '@shepai/core/application/ports/output/
 import type { IRepositoryRepository } from '@shepai/core/application/ports/output/repositories/repository-repository.interface';
 import type { IGitPrService } from '@shepai/core/application/ports/output/services/git-pr-service.interface';
 import type { GetFeatureArtifactUseCase } from '@shepai/core/application/use-cases/features/get-feature-artifact.use-case';
+import type { GetResearchArtifactUseCase } from '@shepai/core/application/use-cases/features/get-research-artifact.use-case';
 import { buildFeatureNodeData } from '@/app/build-feature-node-data';
 import { getSettings } from '@shepai/core/infrastructure/services/settings.service';
 import type { FeatureNodeData } from '@/components/common/feature-node';
+import { toDecisionTabAvailability } from '@/lib/decision-tab-availability';
 
 /**
  * Fetches full FeatureNodeData for a given feature ID.
@@ -25,6 +27,7 @@ export async function getFeatureDrawerData(featureId: string): Promise<FeatureNo
     const repoRepo = resolve<IRepositoryRepository>('IRepositoryRepository');
     const gitPrService = resolve<IGitPrService>('IGitPrService');
     const getArtifact = resolve<GetFeatureArtifactUseCase>('GetFeatureArtifactUseCase');
+    const getResearch = resolve<GetResearchArtifactUseCase>('GetResearchArtifactUseCase');
 
     const feature = await featureRepo.findById(featureId);
     if (!feature) return null;
@@ -34,10 +37,11 @@ export async function getFeatureDrawerData(featureId: string): Promise<FeatureNo
     // CI status and mergeable status are read from the feature record (updated by
     // PrSyncWatcherService every 30s) — no duplicate GitHub API calls needed.
     // Only getDefaultBranch and getRemoteUrl are kept as they are local git operations.
-    const [repo, baseBranch, artifact, remoteUrl, coordinationPeer] = await Promise.all([
+    const [repo, baseBranch, artifact, research, remoteUrl, coordinationPeer] = await Promise.all([
       repoRepo.findByPath(feature.repositoryPath).catch(() => null),
       gitPrService.getDefaultBranch(feature.repositoryPath).catch(() => 'main'),
       getArtifact.execute(featureId).catch(() => null),
+      getResearch.execute(featureId).catch(() => null),
       gitPrService.getRemoteUrl(feature.repositoryPath).catch(() => null),
       feature.coordination
         ? featureRepo.findById(feature.coordination.peerFeatureId).catch(() => null)
@@ -55,6 +59,7 @@ export async function getFeatureDrawerData(featureId: string): Promise<FeatureNo
       commitEvidence: workflow.commitEvidence,
       hideCiStatus: workflow.hideCiStatus,
       coordinationPeerName: coordinationPeer?.name,
+      decisionTabs: toDecisionTabAvailability(research, artifact),
     });
   } catch {
     return null;

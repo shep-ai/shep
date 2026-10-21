@@ -399,6 +399,31 @@ export const ProductSpecsDuringImplementation: Story = {
   },
 };
 
+/**
+ * research.yaml has no technical decisions — the server sets
+ * `hasTechDecisions: false`, so the Tech Decisions tab is hidden instead of
+ * showing an empty "No technical decisions available." panel. Product stays.
+ */
+export const NoTechDecisions: Story = {
+  args: {
+    featureNode: { ...runningFeature, hasTechDecisions: false, hasProductDecisions: true },
+    featureId: runningFeature.featureId,
+    productData: productFixture,
+  },
+};
+
+/**
+ * Neither spec artifact holds decisions — both the Tech Decisions and Product
+ * tabs are hidden. The flags come from the drawer loaders, so the tab bar does
+ * not change while the artifacts are (re)fetched.
+ */
+export const NoSpecDecisions: Story = {
+  args: {
+    featureNode: { ...runningFeature, hasTechDecisions: false, hasProductDecisions: false },
+    featureId: runningFeature.featureId,
+  },
+};
+
 /** Merge Review tab active — review lifecycle, action-required state. */
 export const MergeReviewActive: Story = {
   args: {

@@ -732,6 +732,79 @@ describe('FeatureDrawerTabs', () => {
       }
     });
 
+    it('hides the tech-decisions tab when the server found no technical decisions', () => {
+      renderTabs({
+        featureNode: {
+          ...defaultFeatureNode,
+          lifecycle: 'maintain',
+          state: 'done',
+          hasTechDecisions: false,
+          hasProductDecisions: true,
+        },
+        productData: sampleProductData,
+      });
+      expect(screen.queryByRole('tab', { name: 'Tech Decisions' })).not.toBeInTheDocument();
+      expect(screen.getByRole('tab', { name: 'Product' })).toBeInTheDocument();
+    });
+
+    it('hides the product-decisions tab when the server found no product decisions', () => {
+      renderTabs({
+        featureNode: {
+          ...defaultFeatureNode,
+          lifecycle: 'review',
+          state: 'running',
+          hasTechDecisions: true,
+          hasProductDecisions: false,
+        },
+        techData: sampleTechData,
+      });
+      expect(screen.getByRole('tab', { name: 'Tech Decisions' })).toBeInTheDocument();
+      expect(screen.queryByRole('tab', { name: 'Product' })).not.toBeInTheDocument();
+    });
+
+    it('keeps the tech-decisions tab while plan approval is pending — it hosts the approve bar', () => {
+      renderTabs({
+        featureNode: {
+          ...defaultFeatureNode,
+          lifecycle: 'implementation',
+          state: 'action-required',
+          hasTechDecisions: false,
+        },
+      });
+      expect(screen.getByRole('tab', { name: 'Tech Decisions' })).toBeInTheDocument();
+    });
+
+    it('opens a tech-decisions deep link before the artifact fetch has produced data', () => {
+      // Visibility comes from the server flag, not fetch state, so the URL tab
+      // survives the first render where techData is still undefined.
+      renderTabs({
+        urlTab: 'tech-decisions',
+        featureNode: {
+          ...defaultFeatureNode,
+          lifecycle: 'maintain',
+          state: 'done',
+          hasTechDecisions: true,
+        },
+      });
+      expect(screen.getByRole('tab', { name: 'Tech Decisions' })).toHaveAttribute(
+        'data-state',
+        'active'
+      );
+    });
+
+    it('falls back to overview for a deep link to a tab the feature has no data for', () => {
+      renderTabs({
+        urlTab: 'tech-decisions',
+        featureNode: {
+          ...defaultFeatureNode,
+          lifecycle: 'maintain',
+          state: 'done',
+          hasTechDecisions: false,
+        },
+      });
+      expect(screen.getByRole('tab', { name: 'Overview' })).toHaveAttribute('data-state', 'active');
+    });
+
     it('does not render the action bar in review/maintain even when tech data is present', async () => {
       const user = userEvent.setup();
       renderTabs({

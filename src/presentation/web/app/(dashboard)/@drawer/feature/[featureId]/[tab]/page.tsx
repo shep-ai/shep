@@ -4,8 +4,10 @@ import type { IAgentRunRepository } from '@shepai/core/application/ports/output/
 import type { IRepositoryRepository } from '@shepai/core/application/ports/output/repositories/repository-repository.interface';
 import type { IGitPrService } from '@shepai/core/application/ports/output/services/git-pr-service.interface';
 import type { GetFeatureArtifactUseCase } from '@shepai/core/application/use-cases/features/get-feature-artifact.use-case';
+import type { GetResearchArtifactUseCase } from '@shepai/core/application/use-cases/features/get-research-artifact.use-case';
 import { buildFeatureNodeData } from '@/app/build-feature-node-data';
 import { getSettings } from '@shepai/core/infrastructure/services/settings.service';
+import { toDecisionTabAvailability } from '@/lib/decision-tab-availability';
 import {
   computeDrawerView,
   parseTabKey,
@@ -35,10 +37,14 @@ export default async function FeatureDrawerTabPage({ params }: FeatureDrawerTabP
     const run = feature.agentRunId ? await agentRunRepo.findById(feature.agentRunId) : null;
 
     const getArtifact = resolve<GetFeatureArtifactUseCase>('GetFeatureArtifactUseCase');
-    const [repo, baseBranch, artifact, remoteUrl] = await Promise.all([
+    const getResearch = resolve<GetResearchArtifactUseCase>('GetResearchArtifactUseCase');
+    // Research is read here (not deferred to useDrawerSync) so a deep link to a
+    // decisions tab knows server-side whether that tab exists.
+    const [repo, baseBranch, artifact, research, remoteUrl] = await Promise.all([
       repoRepo.findByPath(feature.repositoryPath).catch(() => null),
       gitPrService.getDefaultBranch(feature.repositoryPath).catch(() => 'main'),
       getArtifact.execute(featureId).catch(() => null),
+      getResearch.execute(featureId).catch(() => null),
       gitPrService.getRemoteUrl(feature.repositoryPath).catch(() => null),
     ]);
 
@@ -51,6 +57,7 @@ export default async function FeatureDrawerTabPage({ params }: FeatureDrawerTabP
       enableEvidence: workflow.enableEvidence,
       commitEvidence: workflow.commitEvidence,
       ciWatchEnabled: workflow.ciWatchEnabled,
+      decisionTabs: toDecisionTabAvailability(research, artifact),
     });
 
     const view = computeDrawerView({

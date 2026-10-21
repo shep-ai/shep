@@ -50,3 +50,20 @@ describe('buildFeatureNodeData — agent coordination (spec 141)', () => {
     expect(data.coordination).toBeUndefined();
   });
 });
+
+describe('buildFeatureNodeData — decision tab availability', () => {
+  it('carries the decision-tab flags the loader computed', () => {
+    const data = buildFeatureNodeData(feature, null, {
+      decisionTabs: { hasTechDecisions: false, hasProductDecisions: true },
+    });
+    expect(data.hasTechDecisions).toBe(false);
+    expect(data.hasProductDecisions).toBe(true);
+  });
+
+  it('leaves the flags unset when the loader did not read the artifacts', () => {
+    // Unset means "unknown" — a drawer sync merge must not overwrite real values.
+    const data = buildFeatureNodeData(feature, null);
+    expect(data).not.toHaveProperty('hasTechDecisions');
+    expect(data).not.toHaveProperty('hasProductDecisions');
+  });
+});

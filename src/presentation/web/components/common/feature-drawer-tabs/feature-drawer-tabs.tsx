@@ -131,14 +131,21 @@ function computeVisibleTabs(
   // users can review the locked-in decisions while the agent works, while
   // a PR is open in review, and after the feature is merged in maintain.
   // Fast-mode features skip the spec phases entirely, so these tabs would
-  // always be empty — hide them.
+  // always be empty — hide them. A tab whose artifact the server read and found
+  // empty (`has*Decisions === false`) is hidden too; the flags come from the
+  // drawer loaders, not from client fetch state, so deep links and refetches
+  // never toggle the tab bar. Pending plan approval keeps the Tech tab: it
+  // hosts the approve / reject bar.
   if (
     !node.fastMode &&
     (node.lifecycle === 'implementation' ||
       node.lifecycle === 'review' ||
       node.lifecycle === 'maintain')
   ) {
-    tabs.push('tech-decisions', 'product-decisions');
+    const techApprovalPending =
+      node.lifecycle === 'implementation' && node.state === 'action-required';
+    if (node.hasTechDecisions !== false || techApprovalPending) tabs.push('tech-decisions');
+    if (node.hasProductDecisions !== false) tabs.push('product-decisions');
   }
   if (node.lifecycle === 'review' && (node.state === 'action-required' || node.state === 'error')) {
     tabs.push('merge-review');

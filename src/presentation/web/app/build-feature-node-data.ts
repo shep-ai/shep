@@ -9,6 +9,7 @@ import { isProcessAlive } from '@shepai/core/infrastructure/services/process/is-
 import { computeWorktreePath } from '@shepai/core/infrastructure/services/ide-launchers/compute-worktree-path';
 import type { FeatureNodeData } from '@/components/common/feature-node';
 import { toCoordinationNoteData } from '@/lib/coordination-note-data';
+import type { DecisionTabAvailability } from '@/lib/decision-tab-availability';
 
 export interface BuildFeatureNodeDataOptions {
   baseBranch?: string;
@@ -27,6 +28,12 @@ export interface BuildFeatureNodeDataOptions {
   hideCiStatus?: boolean;
   /** Name of the feature `feature.coordination` points at (spec 141) */
   coordinationPeerName?: string;
+  /**
+   * Which spec-decisions tabs have content — only loaders that read the spec
+   * artifacts pass it. Omitted, the node carries no flags ("unknown"), so a
+   * merge onto an earlier node keeps the values a fuller load computed.
+   */
+  decisionTabs?: DecisionTabAvailability;
 }
 
 /**
@@ -86,6 +93,7 @@ export function buildFeatureNodeData(
     }),
     ...(feature.agentRunId != null && { hasAgentRun: true }),
     ...(feature.plan != null && { hasPlan: true }),
+    ...options?.decisionTabs,
     ...(feature.injectSkills && { injectSkills: true }),
     ...(feature.injectedSkills?.length && { injectedSkills: feature.injectedSkills }),
     ...(feature.pr && {

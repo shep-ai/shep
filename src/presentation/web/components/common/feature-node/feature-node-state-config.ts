@@ -303,6 +303,14 @@ export interface FeatureNodeData {
   hasAgentRun?: boolean;
   /** Whether the feature has plan data available */
   hasPlan?: boolean;
+  /**
+   * Whether research.yaml holds technical decisions the Tech Decisions tab can
+   * render. `undefined` means not read yet (the tab stays visible); only an
+   * explicit `false` hides it. Set by the drawer loaders, never by fetch state.
+   */
+  hasTechDecisions?: boolean;
+  /** Same tri-state for spec.yaml's resolved questions and the Product tab. */
+  hasProductDecisions?: boolean;
   /** Deployment status for features with an active deployment */
   deployment?: {
     status: DeploymentState;
