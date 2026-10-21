@@ -32,6 +32,8 @@ import { SessionPersistence } from '@/infrastructure/services/interactive/core/s
 import { AgentConfigResolver } from '@/infrastructure/services/interactive/lifecycle/agent-config.resolver.js';
 import { AgentStreamConsumer } from '@/infrastructure/services/interactive/runtime/agent-stream.consumer.js';
 import { SessionBootstrapper } from '@/infrastructure/services/interactive/lifecycle/session-bootstrapper.js';
+import { SessionBootAttempt } from '@/infrastructure/services/interactive/lifecycle/session-boot-attempt.js';
+import { DeadAgentSessionRecovery } from '@/infrastructure/services/interactive/lifecycle/dead-agent-session.recovery.js';
 import { SessionTerminator } from '@/infrastructure/services/interactive/lifecycle/session-terminator.js';
 import { TurnExecutor } from '@/infrastructure/services/interactive/runtime/turn.executor.js';
 import { UserInteractionCoordinator } from '@/infrastructure/services/interactive/runtime/user-interaction.coordinator.js';
@@ -44,6 +46,7 @@ import type { ISettingsProvider } from '@/application/ports/output/services/sett
 import type { ILogger } from '@/application/ports/output/services/logger.interface.js';
 import { ConcurrentSessionLimitError } from '@/domain/errors/concurrent-session-limit.error.js';
 import type { IInteractiveSessionRepository } from '@/application/ports/output/repositories/interactive-session-repository.interface.js';
+import { createMockInteractiveSessionRepository } from '../../../../helpers/interactive-session-repository.mock.js';
 import type { IInteractiveMessageRepository } from '@/application/ports/output/repositories/interactive-message-repository.interface.js';
 import type { IWorkflowStepRepository } from '@/application/ports/output/repositories/workflow-step-repository.interface.js';
 import type { IAgentExecutorFactory } from '@/application/ports/output/agents/agent-executor-factory.interface.js';
@@ -231,8 +234,7 @@ describe('InteractiveSessionService', () => {
 
     fakeHandles = [];
 
-    sessionRepo = {
-      create: vi.fn().mockResolvedValue(undefined),
+    sessionRepo = createMockInteractiveSessionRepository({
       findById: vi.fn().mockImplementation((id: string) =>
         Promise.resolve({
           id,
@@ -244,22 +246,7 @@ describe('InteractiveSessionService', () => {
           updatedAt: new Date(),
         } as InteractiveSession)
       ),
-      findByFeatureId: vi.fn().mockResolvedValue(null),
-      findAllActive: vi.fn().mockResolvedValue([]),
-      updateStatus: vi.fn().mockResolvedValue(undefined),
-      updateLastActivity: vi.fn().mockResolvedValue(undefined),
-      markAllActiveStopped: vi.fn().mockResolvedValue(undefined),
-      markStoppedIfActive: vi.fn().mockResolvedValue(false),
-      countActiveSessions: vi.fn().mockResolvedValue(0),
-      updateAgentSessionId: vi.fn().mockResolvedValue(undefined),
-      getAgentSessionId: vi.fn().mockResolvedValue(null),
-      findLatestAgentSessionIdForFeature: vi.fn().mockResolvedValue(null),
-      updateTurnStatus: vi.fn().mockResolvedValue(undefined),
-      getTurnStatuses: vi.fn().mockResolvedValue(new Map()),
-      getAllActiveTurnStatuses: vi.fn().mockResolvedValue(new Map()),
-      accumulateUsage: vi.fn().mockResolvedValue(undefined),
-      getUsage: vi.fn().mockResolvedValue(null),
-    };
+    });
 
     messageRepo = {
       create: vi.fn().mockResolvedValue(undefined),
@@ -346,9 +333,8 @@ describe('InteractiveSessionService', () => {
       fakeLogger,
       registry
     );
-    const bootstrapper = new SessionBootstrapper(
+    const bootAttempt = new SessionBootAttempt(
       sessionRepo,
-      registry,
       persistence,
       dispatcher,
       bootPromptResolver,
@@ -358,6 +344,17 @@ describe('InteractiveSessionService', () => {
       interactionCoordinator,
       fakeLogger,
       { resolve: vi.fn().mockResolvedValue({}) } as unknown as SessionSpaceEnvironment
+    );
+    const bootstrapper = new SessionBootstrapper(
+      sessionRepo,
+      registry,
+      persistence,
+      dispatcher,
+      executorFactory,
+      agentConfigResolver,
+      fakeLogger,
+      bootAttempt,
+      new DeadAgentSessionRecovery(sessionRepo, registry, dispatcher, fakeLogger)
     );
     const terminator = new SessionTerminator(
       registry,

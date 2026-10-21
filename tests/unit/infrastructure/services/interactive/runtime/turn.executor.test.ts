@@ -83,6 +83,7 @@ function makeSessionRepo(): IInteractiveSessionRepository {
     updateAgentSessionId: vi.fn(),
     getAgentSessionId: vi.fn(),
     findLatestAgentSessionIdForFeature: vi.fn(),
+    clearAgentSessionIdsForFeature: vi.fn().mockResolvedValue(undefined),
     updateTurnStatus: vi.fn(),
     getTurnStatuses: vi.fn(),
     getAllActiveTurnStatuses: vi.fn(),

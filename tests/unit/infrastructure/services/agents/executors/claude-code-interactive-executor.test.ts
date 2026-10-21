@@ -20,6 +20,7 @@ vi.mock('@anthropic-ai/claude-agent-sdk', () => ({
 
 import { ClaudeCodeInteractiveExecutor } from '@/infrastructure/services/agents/common/executors/claude-code-interactive-executor.service.js';
 import { DEFAULT_MODEL_ID } from '@/domain/shared/default-model.js';
+import { AgentSessionNotFoundError } from '@/application/ports/output/agents/agent-session-not-found.error.js';
 
 function createMockSdkSession() {
   return {
@@ -379,6 +380,68 @@ describe('ClaudeCodeInteractiveExecutor', () => {
 
       expect(event.type).toBe('error');
       expect(event.usage?.inputTokens).toBe(12 + 300 + 5_000);
+    });
+  });
+
+  describe('a resumed conversation the CLI no longer has', () => {
+    // What the Claude CLI writes (stream-json) and then exits 1 when
+    // `--resume <id>` names a conversation it has no transcript for.
+    const notFoundResult = {
+      type: 'result',
+      subtype: 'error_during_execution',
+      is_error: true,
+      session_id: 'fresh-random-id',
+      num_turns: 0,
+      total_cost_usd: 0,
+      errors: ['No conversation found with session ID: dead-sid'],
+    };
+
+    function sdkSessionYielding(messages: Record<string, unknown>[]) {
+      return {
+        ...createMockSdkSession(),
+        stream: () =>
+          (async function* () {
+            yield* messages;
+          })(),
+      };
+    }
+
+    async function drain(stream: AsyncIterable<unknown>): Promise<unknown[]> {
+      const events: unknown[] = [];
+      for await (const event of stream) events.push(event);
+      return events;
+    }
+
+    it('rejects the stream with AgentSessionNotFoundError naming the dead id', async () => {
+      mockResumeSession.mockReturnValue(sdkSessionYielding([notFoundResult]));
+      const handle = await executor.resumeSession('dead-sid', { cwd: process.cwd() });
+
+      const failure = await drain(handle.stream()).catch((error: unknown) => error);
+
+      expect(failure).toBeInstanceOf(AgentSessionNotFoundError);
+      expect((failure as AgentSessionNotFoundError).agentSessionId).toBe('dead-sid');
+    });
+
+    it('keeps any other execution error a plain error event', async () => {
+      mockResumeSession.mockReturnValue(
+        sdkSessionYielding([{ ...notFoundResult, errors: ['API Error: 500'] }])
+      );
+      const handle = await executor.resumeSession('live-sid', { cwd: process.cwd() });
+
+      const events = await drain(handle.stream());
+
+      expect(events).toEqual([
+        expect.objectContaining({ type: 'error', content: 'API Error: 500' }),
+      ]);
+    });
+
+    it('does not translate on a new session, which resumed nothing', async () => {
+      mockCreateSession.mockReturnValue(sdkSessionYielding([notFoundResult]));
+      const handle = await executor.createSession({ cwd: process.cwd() });
+
+      const events = await drain(handle.stream());
+
+      expect(events).toEqual([expect.objectContaining({ type: 'error' })]);
     });
   });
 

@@ -23,6 +23,7 @@ export type {
   StructuredCallOptions,
 } from './structured-agent-caller.interface.js';
 export { StructuredCallError } from './structured-call-error.js';
+export { AgentSessionNotFoundError } from './agent-session-not-found.error.js';
 export type {
   IAgentSessionRepository,
   ListSessionsOptions,

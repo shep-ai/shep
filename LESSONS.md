@@ -1,5 +1,19 @@
 # Lessons Learned
 
+## Persisted retry state needs a "this will never work" branch
+
+A chat boot that failed re-cached its agent session id, and the DB kept it too,
+so a conversation the agent CLI had deleted was resumed again on every boot —
+even after restarts. Rules:
+
+1. When the agent says the resumed conversation is gone, forget the id
+   everywhere a later boot reads it (in-memory stopped cache AND
+   `clearAgentSessionIdsForFeature`) and boot fresh; keep the id only for
+   transient failures.
+2. The adapter translates its provider's wording ("No conversation found…")
+   into `AgentSessionNotFoundError`; shared services branch on `instanceof`,
+   never on a provider string.
+
 ## Fetch main before reporting what the code does or lacks
 
 Before an audit or status report says a model, flag or fix is missing, run
@@ -1253,7 +1267,7 @@ const args = rest.map(t => t.replace('{dir}', actualPath));
 
 The `claude` CLI emits a final `result` event over stream-json and is supposed to tear down its MCP servers and exit — but in practice it can hang for hours. Confirmed offenders, all spawned by the agent itself: `npm exec @playwright/mcp`, `npm exec @upstash/context7-mcp`, `typescript-language-server --stdio`, and any backgrounded `pnpm dev:web` / shell the agent forgot to kill. They keep stdio open and the parent claude process never closes. A worker that resolves only on `proc.on('close')` then sleeps forever — feature 92701aa8 was stuck `fast-implement` for 3+ hours after the agent had finished, committed, and pushed.
 
-**Rule:** any executor that depends on a subprocess emitting a final event must enforce a grace timer once that event is observed and SIGKILL the subprocess if it fails to exit. Don't trust the child to clean up its own children. Implemented in `claude-code-executor.service.ts` via `RESULT_TO_CLOSE_GRACE_MS = 30_000`: after seeing `type: 'result'` in stream-json, schedule a SIGKILL; the existing `proc.on('close')` handler then resolves with the already-captured result data.
+**Rule:** any executor that depends on a subprocess emitting a final event must enforce a grace timer once that event is observed and SIGKILL the subprocess if it fails to exit. Don't trust the child to clean up its own children. Use the shared guard `watchPostResultExit(proc, log)` in `executors/post-result-exit.ts` (`RESULT_TO_CLOSE_GRACE_MS = 30_000`), and do not hand-roll a timer. Create it after spawn and `arm()` it on the terminal event, in both `execute()` and `executeStream()`. It tree-kills a lingering process with SIGKILL escalation and disarms on `close`. Read the exit code through `guard.exitCode(code)`, because taskkill makes a killed Windows process exit 1. Claude, Copilot, Cursor, Codex (`turn.completed`/`turn.failed`) and Gemini use it. Kimi and Cline have no terminal event.
 
 ## Canvas Node Wiring Has TWO Halves — Server Loader AND Client Deriver
 

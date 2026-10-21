@@ -148,6 +148,13 @@ export interface InteractiveAgentSessionHandle {
 /** Executor interface for interactive agent sessions. */
 export interface IInteractiveAgentExecutor {
   createSession(options: InteractiveAgentOptions): Promise<InteractiveAgentSessionHandle>;
+  /**
+   * Resume the agent conversation `sessionId`. When the agent reports that
+   * conversation no longer exists, the executor raises
+   * `AgentSessionNotFoundError` — from this call, or from the handle's
+   * `stream()` for an agent that only says so once it runs — so callers can
+   * start a new conversation instead of retrying a dead id.
+   */
   resumeSession(
     sessionId: string,
     options: InteractiveAgentOptions

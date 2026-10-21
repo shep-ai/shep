@@ -148,6 +148,18 @@ export class SQLiteInteractiveSessionRepository implements IInteractiveSessionRe
     return row?.agent_session_id ?? null;
   }
 
+  async clearAgentSessionIdsForFeature(featureId: string): Promise<void> {
+    // Guarded on IS NOT NULL so rows that never held an id keep their updated_at.
+    this.db
+      .prepare(
+        `UPDATE interactive_sessions
+         SET agent_session_id = NULL, updated_at = ?
+         WHERE feature_id = ?
+           AND agent_session_id IS NOT NULL`
+      )
+      .run(Date.now(), featureId);
+  }
+
   async updateTurnStatus(id: string, turnStatus: string): Promise<void> {
     this.db
       .prepare(

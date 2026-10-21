@@ -42,6 +42,7 @@ function makeSessionRepo(
     updateAgentSessionId: vi.fn().mockResolvedValue(undefined),
     getAgentSessionId: vi.fn().mockResolvedValue(null),
     findLatestAgentSessionIdForFeature: vi.fn().mockResolvedValue(null),
+    clearAgentSessionIdsForFeature: vi.fn().mockResolvedValue(undefined),
     updateTurnStatus: vi.fn().mockResolvedValue(undefined),
     getTurnStatuses: vi.fn().mockResolvedValue(new Map()),
     getAllActiveTurnStatuses: vi.fn().mockResolvedValue(new Map()),

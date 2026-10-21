@@ -53,6 +53,23 @@ import type {
 import { claudeInputTokens } from './claude-usage.js';
 import { DEFAULT_MODEL_ID } from '../../../../../domain/shared/default-model.js';
 import { applySpaceEnvironment } from '../../../../../domain/shared/space-environment.js';
+import { AgentSessionNotFoundError } from '../../../../../application/ports/output/agents/agent-session-not-found.error.js';
+
+/**
+ * How the Claude CLI reports a `--resume` id it has no transcript for: an
+ * `error_during_execution` result carrying this message, then exit code 1.
+ */
+const CONVERSATION_NOT_FOUND_PREFIX = 'No conversation found with session ID';
+
+/** The CLI's "no such conversation" message in a result, if that is what it reports. */
+function conversationNotFoundMessage(msg: SDKMessage): string | undefined {
+  if (msg.type !== 'result' || msg.subtype === 'success') return undefined;
+  const errors: unknown[] = 'errors' in msg && Array.isArray(msg.errors) ? msg.errors : [];
+  return errors.find(
+    (error): error is string =>
+      typeof error === 'string' && error.startsWith(CONVERSATION_NOT_FOUND_PREFIX)
+  );
+}
 
 /**
  * All standard Claude Code tool names to auto-allow without permission prompts.
@@ -118,7 +135,7 @@ export class ClaudeCodeInteractiveExecutor implements IInteractiveAgentExecutor 
     const sdkSession = await this.withCwd(options.cwd, () =>
       unstable_v2_resumeSession(sessionId, this.buildSdkOptions(options))
     );
-    return this.wrapSession(sdkSession);
+    return this.wrapSession(sdkSession, sessionId);
   }
 
   /**
@@ -224,7 +241,11 @@ export class ClaudeCodeInteractiveExecutor implements IInteractiveAgentExecutor 
     };
   }
 
-  private wrapSession(sdkSession: SDKSession): InteractiveAgentSessionHandle {
+  /** `resumedSessionId` is set when the handle resumes an existing conversation. */
+  private wrapSession(
+    sdkSession: SDKSession,
+    resumedSessionId?: string
+  ): InteractiveAgentSessionHandle {
     // SDK session ID is not available until after the first message exchange.
     // Track it via a mutable variable updated by the stream mapper.
     let resolvedSessionId = '';
@@ -251,7 +272,7 @@ export class ClaudeCodeInteractiveExecutor implements IInteractiveAgentExecutor 
             ],
           },
         } as Parameters<SDKSession['send']>[0]),
-      stream: () => this.mapStream(sdkSession, (id) => (resolvedSessionId = id)),
+      stream: () => this.mapStream(sdkSession, (id) => (resolvedSessionId = id), resumedSessionId),
       close: async () => sdkSession.close(),
       abort: () => {
         // V2 SDKSession.close() synchronously kills the agent process.
@@ -267,14 +288,23 @@ export class ClaudeCodeInteractiveExecutor implements IInteractiveAgentExecutor 
    * Tracks whether streaming deltas (`stream_event`) have been emitted for
    * the current turn. When deltas are available, the `assistant` message's
    * text blocks are skipped to prevent double-emission of the same content.
+   *
+   * A resumed conversation the CLI no longer has ends the stream with
+   * {@link AgentSessionNotFoundError} rather than a generic error event.
    */
   private async *mapStream(
     sdkSession: SDKSession,
-    onSessionId: (id: string) => void
+    onSessionId: (id: string) => void,
+    resumedSessionId?: string
   ): AsyncIterable<InteractiveAgentEvent> {
     let hasStreamedDeltas = false;
 
     for await (const msg of sdkSession.stream()) {
+      if (resumedSessionId) {
+        const notFound = conversationNotFoundMessage(msg);
+        if (notFound) throw new AgentSessionNotFoundError(resumedSessionId, notFound);
+      }
+
       // Capture sessionId from messages that carry it
       if ('session_id' in msg && typeof msg.session_id === 'string' && msg.session_id) {
         onSessionId(msg.session_id);

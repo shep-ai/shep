@@ -76,6 +76,8 @@ import { BootPromptResolver } from '../services/interactive/lifecycle/boot-promp
 import { SelectProjectMemoryUseCase } from '../../application/use-cases/project-memory/select-project-memory.use-case.js';
 import { AgentQuestionBridgeFactory } from '../services/agents/agent-question-service/agent-question-bridge.factory.js';
 import { SessionBootstrapper } from '../services/interactive/lifecycle/session-bootstrapper.js';
+import { SessionBootAttempt } from '../services/interactive/lifecycle/session-boot-attempt.js';
+import { DeadAgentSessionRecovery } from '../services/interactive/lifecycle/dead-agent-session.recovery.js';
 import { SessionTerminator } from '../services/interactive/lifecycle/session-terminator.js';
 import { TurnExecutor } from '../services/interactive/runtime/turn.executor.js';
 import { UserInteractionCoordinator } from '../services/interactive/runtime/user-interaction.coordinator.js';
@@ -329,9 +331,8 @@ export async function initializeContainer(): Promise<typeof container> {
     logger,
     sessionRegistry
   );
-  const bootstrapper = new SessionBootstrapper(
+  const bootAttempt = new SessionBootAttempt(
     interactiveSessionRepo,
-    sessionRegistry,
     sessionPersistence,
     streamEventDispatcher,
     bootPromptResolver,
@@ -351,6 +352,22 @@ export async function initializeContainer(): Promise<typeof container> {
       create: (session, surface) =>
         container.resolve(AgentQuestionBridgeFactory).create(session, surface),
     }
+  );
+  const bootstrapper = new SessionBootstrapper(
+    interactiveSessionRepo,
+    sessionRegistry,
+    sessionPersistence,
+    streamEventDispatcher,
+    agentExecutorFactory,
+    agentConfigResolver,
+    logger,
+    bootAttempt,
+    new DeadAgentSessionRecovery(
+      interactiveSessionRepo,
+      sessionRegistry,
+      streamEventDispatcher,
+      logger
+    )
   );
   const terminator = new SessionTerminator(
     sessionRegistry,

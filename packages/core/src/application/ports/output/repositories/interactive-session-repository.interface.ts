@@ -98,6 +98,15 @@ export interface IInteractiveSessionRepository {
   findLatestAgentSessionIdForFeature(featureId: string): Promise<string | null>;
 
   /**
+   * Forget every stored `agent_session_id` for this feature, across all of
+   * its session rows. Called when the agent reports the conversation no
+   * longer exists on its side, so the next boot starts a new conversation
+   * instead of resuming the dead one again (which would also make
+   * {@link findLatestAgentSessionIdForFeature} fall back to an older id).
+   */
+  clearAgentSessionIdsForFeature(featureId: string): Promise<void>;
+
+  /**
    * Update the turn status for a session.
    * Values: 'idle' | 'processing' | 'unread'
    */

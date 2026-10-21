@@ -1,182 +1,58 @@
 /**
  * SessionBootstrapper Unit Tests
  *
- * Covers the startSession / completeBootAsync lifecycle.
+ * Covers the startSession / completeBootAsync lifecycle, with the real
+ * `SessionBootAttempt` and `DeadAgentSessionRecovery` over test doubles —
+ * the same shape the container builds. Each collaborator has its own unit
+ * tests (`session-boot-attempt.test.ts`, `dead-agent-session.recovery.test.ts`).
  *
  * Key invariants:
  * - Cap check throws ConcurrentSessionLimitError when at limit
  * - pendingUserContent is set BEFORE completeBootAsync runs (no race)
- * - SDK session is created (or resumed) with the resolved context
- * - Session is transitioned to 'ready' after boot completes
- * - CWD-mismatch resumption is logged via ILogger.warn
+ * - A previous agent session id is found and the boot resumes it
  * - Boot failures mark the session as 'error'
+ * - A dead resumed conversation is forgotten and the boot runs fresh once
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
-import type { SessionSpaceEnvironment } from '@/infrastructure/services/interactive/lifecycle/session-space-environment.js';
-import { SessionBootstrapper } from '@/infrastructure/services/interactive/lifecycle/session-bootstrapper.js';
-import { SessionRegistry } from '@/infrastructure/services/interactive/core/session-registry.js';
+import type { SessionBootstrapper } from '@/infrastructure/services/interactive/lifecycle/session-bootstrapper.js';
+import type { SessionRegistry } from '@/infrastructure/services/interactive/core/session-registry.js';
 import type { SessionPersistence } from '@/infrastructure/services/interactive/core/session-persistence.js';
 import type { StreamEventDispatcher } from '@/infrastructure/services/interactive/core/stream-event-dispatcher.js';
 import type { BootPromptResolver } from '@/infrastructure/services/interactive/lifecycle/boot-prompt.resolver.js';
 import type { AgentStreamConsumer } from '@/infrastructure/services/interactive/runtime/agent-stream.consumer.js';
 import type { IAgentExecutorFactory } from '@/application/ports/output/agents/agent-executor-factory.interface.js';
 import type { AgentConfigResolver } from '@/infrastructure/services/interactive/lifecycle/agent-config.resolver.js';
-import type { UserInteractionCoordinator } from '@/infrastructure/services/interactive/runtime/user-interaction.coordinator.js';
 import type { ILogger } from '@/application/ports/output/services/logger.interface.js';
-import type { IInteractiveSessionRepository } from '@/application/ports/output/repositories/interactive-session-repository.interface.js';
+import type { SessionSpaceEnvironment } from '@/infrastructure/services/interactive/lifecycle/session-space-environment.js';
+import type { MockInteractiveSessionRepository } from '../../../../../helpers/interactive-session-repository.mock.js';
 import type {
   IInteractiveAgentExecutor,
   InteractiveAgentSessionHandle,
-  InteractiveAgentEvent,
 } from '@/application/ports/output/agents/interactive-agent-executor.interface.js';
 import { InteractiveSessionStatus, AgentType } from '@/domain/generated/output.js';
 import { ConcurrentSessionLimitError } from '@/domain/errors/concurrent-session-limit.error.js';
 import { InteractiveAgentUnsupportedError } from '@/domain/errors/interactive-agent-unsupported.error.js';
-
-async function flushPromises(rounds = 15): Promise<void> {
-  for (let i = 0; i < rounds; i++) {
-    await Promise.resolve();
-  }
-}
-
-function makeHandle(
-  events: InteractiveAgentEvent[] = [{ type: 'done', content: 'hello' }],
-  sessionId = 'agent-sid-1'
-): InteractiveAgentSessionHandle {
-  return {
-    get sessionId() {
-      return sessionId;
-    },
-    send: vi.fn().mockResolvedValue(undefined),
-    sendToolResult: vi.fn().mockResolvedValue(undefined),
-    close: vi.fn().mockResolvedValue(undefined),
-    abort: vi.fn(),
-    stream: () =>
-      (async function* () {
-        for (const ev of events) yield ev;
-      })(),
-  };
-}
-
-function makeSessionRepo(activeCount = 0): IInteractiveSessionRepository {
-  return {
-    create: vi.fn().mockResolvedValue(undefined),
-    findById: vi.fn().mockResolvedValue(null),
-    findByFeatureId: vi.fn().mockResolvedValue(null),
-    findAllActive: vi.fn().mockResolvedValue([]),
-    updateStatus: vi.fn().mockResolvedValue(undefined),
-    updateLastActivity: vi.fn().mockResolvedValue(undefined),
-    markAllActiveStopped: vi.fn().mockResolvedValue(undefined),
-    markStoppedIfActive: vi.fn().mockResolvedValue(false),
-    countActiveSessions: vi.fn().mockResolvedValue(activeCount),
-    updateAgentSessionId: vi.fn().mockResolvedValue(undefined),
-    getAgentSessionId: vi.fn().mockResolvedValue(null),
-    findLatestAgentSessionIdForFeature: vi.fn().mockResolvedValue(null),
-    updateTurnStatus: vi.fn().mockResolvedValue(undefined),
-    getTurnStatuses: vi.fn().mockResolvedValue(new Map()),
-    getAllActiveTurnStatuses: vi.fn().mockResolvedValue(new Map()),
-    accumulateUsage: vi.fn().mockResolvedValue(undefined),
-    getUsage: vi.fn().mockResolvedValue(null),
-  } as unknown as IInteractiveSessionRepository;
-}
-
-function makePersistence(): SessionPersistence {
-  return {
-    updateTurnStatusAndNotify: vi.fn().mockResolvedValue(undefined),
-    updateSessionStatusAndNotify: vi.fn().mockResolvedValue(undefined),
-    failSessionAndNotify: vi.fn().mockResolvedValue(undefined),
-    persistMessage: vi.fn().mockResolvedValue(undefined),
-    flushAssistantBuffer: vi.fn().mockResolvedValue(undefined),
-  } as unknown as SessionPersistence;
-}
-
-function makeDispatcher(): StreamEventDispatcher {
-  return {
-    notify: vi.fn(),
-    notifyByFeatureId: vi.fn(),
-  } as unknown as StreamEventDispatcher;
-}
-
-function makeBootPromptResolver(
-  result: { context: string; bootPrompt: string } = {
-    context: 'feature context',
-    bootPrompt: 'boot greeting',
-  }
-): BootPromptResolver {
-  return {
-    resolve: vi.fn().mockResolvedValue(result),
-  } as unknown as BootPromptResolver;
-}
-
-function makeStreamConsumer(
-  result: Awaited<ReturnType<AgentStreamConsumer['consume']>> = {
-    completed: 'done',
-    agentSessionIdFromHandle: 'agent-sid-1',
-  }
-): AgentStreamConsumer {
-  return {
-    consume: vi.fn().mockResolvedValue(result),
-  } as unknown as AgentStreamConsumer;
-}
-
-function makeAgentConfigResolver(cap = 3): AgentConfigResolver {
-  return {
-    getCap: vi.fn().mockReturnValue(cap),
-    resolveAgentType: vi.fn().mockReturnValue(AgentType.ClaudeCode),
-    resolveAuthConfig: vi.fn().mockReturnValue({ type: AgentType.ClaudeCode }),
-  } as unknown as AgentConfigResolver;
-}
-
-function makeInteractionCoordinator(): UserInteractionCoordinator {
-  return {
-    buildOnUserQuestionCallback: vi.fn().mockReturnValue(() => Promise.resolve({})),
-    buildLiveSurface: vi.fn().mockReturnValue({
-      ask: () => Promise.resolve({}),
-      settleFromElsewhere: () => Promise.resolve(),
-    }),
-    respondToInteraction: vi.fn().mockResolvedValue(undefined),
-  } as unknown as UserInteractionCoordinator;
-}
-
-function makeSpaceEnvironment(
-  result: Awaited<ReturnType<SessionSpaceEnvironment['resolve']>> = {}
-): SessionSpaceEnvironment {
-  return { resolve: vi.fn().mockResolvedValue(result) } as unknown as SessionSpaceEnvironment;
-}
-
-function makeLogger(): ILogger {
-  return { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() };
-}
-
-function makeExecutorFactory(handle: InteractiveAgentSessionHandle): IAgentExecutorFactory {
-  const executor: IInteractiveAgentExecutor = {
-    createSession: vi.fn().mockResolvedValue(handle),
-    resumeSession: vi.fn().mockResolvedValue(handle),
-  };
-  return {
-    createInteractiveExecutor: vi.fn().mockReturnValue(executor),
-    createExecutor: vi.fn(),
-    getSupportedAgents: vi.fn().mockReturnValue([AgentType.ClaudeCode]),
-    getCliInfo: vi.fn().mockReturnValue([]),
-    getSupportedModels: vi.fn().mockReturnValue([]),
-    listAvailableModels: vi.fn().mockResolvedValue([]),
-    warmModelCatalogs: vi.fn().mockResolvedValue(undefined),
-    supportsInteractive: vi.fn().mockReturnValue(true),
-  } as unknown as IAgentExecutorFactory;
-}
+import { AgentSessionNotFoundError } from '@/application/ports/output/agents/agent-session-not-found.error.js';
+import {
+  type BootDeps,
+  buildBootstrapper,
+  flushPromises,
+  makeBootDeps,
+  makeSessionRepo,
+} from './session-boot.fixture.js';
 
 describe('SessionBootstrapper', () => {
+  let deps: BootDeps;
   let registry: SessionRegistry;
-  let sessionRepo: IInteractiveSessionRepository;
+  let sessionRepo: MockInteractiveSessionRepository;
   let persistence: SessionPersistence;
   let dispatcher: StreamEventDispatcher;
   let bootPromptResolver: BootPromptResolver;
   let streamConsumer: AgentStreamConsumer;
   let executorFactory: IAgentExecutorFactory;
   let agentConfigResolver: AgentConfigResolver;
-  let interactionCoordinator: UserInteractionCoordinator;
   let logger: ILogger;
   let spaceEnvironment: SessionSpaceEnvironment;
   let bootstrapper: SessionBootstrapper;
@@ -184,32 +60,21 @@ describe('SessionBootstrapper', () => {
 
   beforeEach(() => {
     vi.useFakeTimers();
-    registry = new SessionRegistry();
-    sessionRepo = makeSessionRepo();
-    persistence = makePersistence();
-    dispatcher = makeDispatcher();
-    bootPromptResolver = makeBootPromptResolver();
-    streamConsumer = makeStreamConsumer();
-    handle = makeHandle();
-    executorFactory = makeExecutorFactory(handle);
-    agentConfigResolver = makeAgentConfigResolver();
-    interactionCoordinator = makeInteractionCoordinator();
-    logger = makeLogger();
-    spaceEnvironment = makeSpaceEnvironment();
-
-    bootstrapper = new SessionBootstrapper(
-      sessionRepo,
+    deps = makeBootDeps();
+    ({
       registry,
+      sessionRepo,
       persistence,
       dispatcher,
       bootPromptResolver,
       streamConsumer,
+      handle,
       executorFactory,
       agentConfigResolver,
-      interactionCoordinator,
       logger,
-      spaceEnvironment
-    );
+      spaceEnvironment,
+    } = deps);
+    bootstrapper = buildBootstrapper(deps);
   });
 
   afterEach(() => {
@@ -219,20 +84,8 @@ describe('SessionBootstrapper', () => {
 
   describe('startSession', () => {
     it('throws ConcurrentSessionLimitError when at cap', async () => {
-      sessionRepo = makeSessionRepo(3);
-      bootstrapper = new SessionBootstrapper(
-        sessionRepo,
-        registry,
-        persistence,
-        dispatcher,
-        bootPromptResolver,
-        streamConsumer,
-        executorFactory,
-        agentConfigResolver,
-        interactionCoordinator,
-        logger,
-        spaceEnvironment
-      );
+      deps.sessionRepo = makeSessionRepo(3);
+      bootstrapper = buildBootstrapper(deps);
       await expect(bootstrapper.startSession('feat-1', '/wt')).rejects.toBeInstanceOf(
         ConcurrentSessionLimitError
       );
@@ -281,85 +134,18 @@ describe('SessionBootstrapper', () => {
   });
 
   describe('completeBootAsync', () => {
-    it('calls createSession on the executor when no previous session', async () => {
-      const executor = executorFactory.createInteractiveExecutor as ReturnType<typeof vi.fn>;
-      await bootstrapper.startSession('feat-1', '/wt');
+    it('tells the boot prompt resolver when the agent session is resumed', async () => {
+      registry.cacheStoppedAgentSessionId('feat-1', 'old-sid');
+
+      await bootstrapper.startSession('feat-1', '/wt', undefined, undefined, undefined, 'again');
       await flushPromises();
 
-      const createdExecutor = executor.mock.results[0].value as IInteractiveAgentExecutor;
-      expect(createdExecutor.createSession).toHaveBeenCalled();
-    });
-
-    it('passes a question bridge scoped to the session so chat questions reach the inbox (spec 134)', async () => {
-      const bridge = { ask: vi.fn() };
-      const questionBridges = { create: vi.fn().mockResolvedValue(bridge) };
-      bootstrapper = new SessionBootstrapper(
-        sessionRepo,
-        registry,
-        persistence,
-        dispatcher,
-        bootPromptResolver,
-        streamConsumer,
-        executorFactory,
-        agentConfigResolver,
-        interactionCoordinator,
-        logger,
-        spaceEnvironment,
-        questionBridges
-      );
-      const executor = executorFactory.createInteractiveExecutor as ReturnType<typeof vi.fn>;
-
-      const session = await bootstrapper.startSession('feat-1', '/wt');
-      await flushPromises();
-
-      expect(questionBridges.create).toHaveBeenCalledWith(
-        { scopeKey: 'feat-1', worktreePath: '/wt', sessionId: session.id },
-        expect.objectContaining({
-          ask: expect.any(Function),
-          settleFromElsewhere: expect.any(Function),
-        })
-      );
-      const createdExecutor = executor.mock.results[0].value as IInteractiveAgentExecutor;
-      expect(createdExecutor.createSession).toHaveBeenCalledWith(
-        expect.objectContaining({
-          agentQuestionBridge: bridge,
-          onUserQuestion: expect.any(Function),
-        })
-      );
-    });
-
-    it("passes the feature's space environment to the agent session", async () => {
-      const environment = { set: { GH_CONFIG_DIR: '/gh-acme' }, unset: ['GH_TOKEN'] };
-      (spaceEnvironment.resolve as ReturnType<typeof vi.fn>).mockResolvedValue({ environment });
-      const executor = executorFactory.createInteractiveExecutor as ReturnType<typeof vi.fn>;
-
-      await bootstrapper.startSession('feat-1', '/wt');
-      await flushPromises();
-
-      expect(spaceEnvironment.resolve).toHaveBeenCalledWith('feat-1', AgentType.ClaudeCode);
-      const createdExecutor = executor.mock.results[0].value as IInteractiveAgentExecutor;
-      expect(createdExecutor.createSession).toHaveBeenCalledWith(
-        expect.objectContaining({
-          cwd: '/wt',
-          environment: {
-            set: { GH_CONFIG_DIR: '/gh-acme', SHEP_CHAT_SCOPE: 'feat-1' },
-            unset: ['GH_TOKEN'],
-          },
-        })
-      );
-    });
-
-    it('tells every session which chat conversation it is in (spec 137)', async () => {
-      const executor = executorFactory.createInteractiveExecutor as ReturnType<typeof vi.fn>;
-
-      await bootstrapper.startSession('repo-r1', '/repo');
-      await flushPromises();
-
-      const createdExecutor = executor.mock.results[0].value as IInteractiveAgentExecutor;
-      expect(createdExecutor.createSession).toHaveBeenCalledWith(
-        expect.objectContaining({
-          environment: { set: { SHEP_CHAT_SCOPE: 'repo-r1' }, unset: [] },
-        })
+      expect(bootPromptResolver.resolve).toHaveBeenCalledWith(
+        'feat-1',
+        '/wt',
+        'again',
+        undefined,
+        true
       );
     });
 
@@ -377,66 +163,6 @@ describe('SessionBootstrapper', () => {
         'feat-1',
         'The Acme space allows only cursor agents; this run uses claude-code.'
       );
-    });
-
-    it('transitions session to ready after boot', async () => {
-      await bootstrapper.startSession('feat-1', '/wt');
-      await flushPromises();
-      expect(persistence.updateSessionStatusAndNotify).toHaveBeenCalledWith(
-        expect.any(String),
-        'feat-1',
-        InteractiveSessionStatus.ready
-      );
-    });
-
-    it('persists the SDK session id to the DB', async () => {
-      await bootstrapper.startSession('feat-1', '/wt');
-      await flushPromises();
-      expect(sessionRepo.updateAgentSessionId).toHaveBeenCalledWith(
-        expect.any(String),
-        'agent-sid-1'
-      );
-    });
-
-    it('tells the boot prompt resolver when the agent session is resumed', async () => {
-      registry.cacheStoppedAgentSessionId('feat-1', 'old-sid');
-
-      await bootstrapper.startSession('feat-1', '/wt', undefined, undefined, undefined, 'again');
-      await flushPromises();
-
-      expect(bootPromptResolver.resolve).toHaveBeenCalledWith(
-        'feat-1',
-        '/wt',
-        'again',
-        undefined,
-        true
-      );
-    });
-
-    it('logs warn on CWD-mismatch resumption', async () => {
-      // Pre-seed a previous session id
-      registry.cacheStoppedAgentSessionId('feat-1', 'old-sid');
-      streamConsumer = makeStreamConsumer({
-        completed: 'done',
-        agentSessionIdFromHandle: 'new-sid-different',
-      });
-      bootstrapper = new SessionBootstrapper(
-        sessionRepo,
-        registry,
-        persistence,
-        dispatcher,
-        bootPromptResolver,
-        streamConsumer,
-        executorFactory,
-        agentConfigResolver,
-        interactionCoordinator,
-        logger,
-        spaceEnvironment
-      );
-
-      await bootstrapper.startSession('feat-1', '/wt');
-      await flushPromises();
-      expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('resume mismatch'));
     });
 
     it('marks session as error when boot throws', async () => {
@@ -471,6 +197,132 @@ describe('SessionBootstrapper', () => {
       expect(calls.at(-1)).toEqual([expect.any(String), 'feat-1', 'idle']);
     });
 
+    // The agent CLI deleted or expired the conversation the feature last used.
+    // Resuming it again can never work, so the id must go everywhere it is
+    // kept (stopped cache AND DB) and the chat must come up on a fresh session
+    // — otherwise every boot, even after a restart, retries the same dead id.
+    describe('when the agent no longer has the resumed conversation', () => {
+      const deadSessionError = () =>
+        new AgentSessionNotFoundError(
+          'stale-agent-sid',
+          'No conversation found with session ID: stale-agent-sid'
+        );
+
+      function createdExecutor(): IInteractiveAgentExecutor {
+        const factory = executorFactory.createInteractiveExecutor as ReturnType<typeof vi.fn>;
+        return factory.mock.results.at(-1)!.value as IInteractiveAgentExecutor;
+      }
+
+      beforeEach(() => {
+        sessionRepo.findLatestAgentSessionIdForFeature.mockResolvedValue('stale-agent-sid');
+        (streamConsumer.consume as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+          deadSessionError()
+        );
+      });
+
+      it('forgets the dead id in the DB and boots a fresh session instead of failing', async () => {
+        await bootstrapper.startSession('feat-1', '/wt', undefined, undefined, undefined, 'hello');
+        await flushPromises(40);
+
+        expect(createdExecutor().resumeSession).toHaveBeenCalledWith(
+          'stale-agent-sid',
+          expect.anything()
+        );
+        expect(sessionRepo.clearAgentSessionIdsForFeature).toHaveBeenCalledWith('feat-1');
+        expect(createdExecutor().createSession).toHaveBeenCalledTimes(1);
+        expect(persistence.failSessionAndNotify).not.toHaveBeenCalled();
+        expect(persistence.updateSessionStatusAndNotify).toHaveBeenCalledWith(
+          expect.any(String),
+          'feat-1',
+          InteractiveSessionStatus.ready
+        );
+        expect(sessionRepo.updateAgentSessionId).toHaveBeenCalledWith(
+          expect.any(String),
+          'agent-sid-1'
+        );
+      });
+
+      it('sends the first turn again, with context, to the fresh session', async () => {
+        await bootstrapper.startSession('feat-1', '/wt', undefined, undefined, undefined, 'hello');
+        await flushPromises(40);
+
+        const resolveCalls = (bootPromptResolver.resolve as ReturnType<typeof vi.fn>).mock.calls;
+        expect(resolveCalls).toEqual([
+          ['feat-1', '/wt', 'hello', undefined, true],
+          ['feat-1', '/wt', 'hello', undefined, false],
+        ]);
+      });
+
+      it('closes the dead handle and logs why a new conversation started', async () => {
+        await bootstrapper.startSession('feat-1', '/wt');
+        await flushPromises(40);
+
+        expect(handle.close).toHaveBeenCalled();
+        expect(logger.warn).toHaveBeenCalledWith(
+          expect.stringContaining('stale-agent-sid'),
+          expect.anything()
+        );
+      });
+
+      it('evicts the dead id from the stopped-session cache', async () => {
+        sessionRepo.findLatestAgentSessionIdForFeature.mockResolvedValue(null);
+        registry.cacheStoppedAgentSessionId('feat-1', 'stale-agent-sid');
+
+        await bootstrapper.startSession('feat-1', '/wt');
+        await flushPromises(40);
+
+        expect(createdExecutor().resumeSession).toHaveBeenCalledWith(
+          'stale-agent-sid',
+          expect.anything()
+        );
+        expect(registry.takeStoppedAgentSessionId('feat-1')).toBeUndefined();
+        expect(sessionRepo.clearAgentSessionIdsForFeature).toHaveBeenCalledWith('feat-1');
+      });
+
+      it('does not re-cache the dead id when the fresh boot fails too', async () => {
+        (streamConsumer.consume as ReturnType<typeof vi.fn>).mockRejectedValueOnce(
+          new Error('Network timeout')
+        );
+
+        await bootstrapper.startSession('feat-1', '/wt');
+        await flushPromises(40);
+
+        expect(persistence.failSessionAndNotify).toHaveBeenCalledWith(
+          expect.any(String),
+          'feat-1',
+          'Network timeout'
+        );
+        expect(registry.takeStoppedAgentSessionId('feat-1')).toBeUndefined();
+      });
+
+      it('still boots fresh when clearing the DB fails', async () => {
+        sessionRepo.clearAgentSessionIdsForFeature.mockRejectedValue(new Error('db locked'));
+
+        await bootstrapper.startSession('feat-1', '/wt');
+        await flushPromises(40);
+
+        expect(createdExecutor().createSession).toHaveBeenCalledTimes(1);
+        expect(persistence.failSessionAndNotify).not.toHaveBeenCalled();
+      });
+    });
+
+    it('keeps the agent session id for a retry when boot fails for any other reason', async () => {
+      sessionRepo.findLatestAgentSessionIdForFeature.mockResolvedValue('valid-agent-sid');
+      (streamConsumer.consume as ReturnType<typeof vi.fn>).mockRejectedValue(
+        new Error('Network timeout')
+      );
+
+      await bootstrapper.startSession('feat-1', '/wt');
+      await flushPromises(40);
+
+      const factory = executorFactory.createInteractiveExecutor as ReturnType<typeof vi.fn>;
+      const executor = factory.mock.results[0].value as IInteractiveAgentExecutor;
+      expect(executor.createSession).not.toHaveBeenCalled();
+      expect(sessionRepo.clearAgentSessionIdsForFeature).not.toHaveBeenCalled();
+      expect(persistence.failSessionAndNotify).toHaveBeenCalled();
+      expect(registry.takeStoppedAgentSessionId('feat-1')).toBe('valid-agent-sid');
+    });
+
     it('rejects an agent without interactive support before creating a session', async () => {
       (executorFactory.supportsInteractive as ReturnType<typeof vi.fn>).mockReturnValue(false);
       (agentConfigResolver.resolveAgentType as ReturnType<typeof vi.fn>).mockReturnValue(
@@ -481,34 +333,6 @@ describe('SessionBootstrapper', () => {
         bootstrapper.startSession('feat-1', '/wt', undefined, AgentType.GeminiCli)
       ).rejects.toThrow(InteractiveAgentUnsupportedError);
       expect(sessionRepo.create).not.toHaveBeenCalled();
-    });
-
-    it('skips sending boot prompt and goes to ready when bootPrompt is empty (silent boot)', async () => {
-      bootPromptResolver = makeBootPromptResolver({ context: 'ctx', bootPrompt: '' });
-      bootstrapper = new SessionBootstrapper(
-        sessionRepo,
-        registry,
-        persistence,
-        dispatcher,
-        bootPromptResolver,
-        streamConsumer,
-        executorFactory,
-        agentConfigResolver,
-        interactionCoordinator,
-        logger,
-        spaceEnvironment
-      );
-
-      await bootstrapper.startSession('feat-1', '/wt');
-      await flushPromises();
-
-      // stream consume should NOT have been called (no bootPrompt to send)
-      expect(streamConsumer.consume).not.toHaveBeenCalled();
-      expect(persistence.updateSessionStatusAndNotify).toHaveBeenCalledWith(
-        expect.any(String),
-        'feat-1',
-        InteractiveSessionStatus.ready
-      );
     });
   });
 });
