@@ -22,24 +22,47 @@
  *     CommandLineToArgvW, and to cmd it is quote-off immediately followed by
  *     quote-on, so nothing between them is ever exposed;
  *   - double a run of backslashes when it precedes a quote (including the
- *     closing one), which is the CommandLineToArgvW rule.
+ *     closing one), which is the CommandLineToArgvW rule;
+ *   - replace every `%` with `%%cd:~,%`. cmd.exe expands `%VAR%` even inside
+ *     quotes and before it scans them, so an argument naming a variable whose
+ *     value holds a `"` could reopen command syntax. `%cd:~,%` is a
+ *     zero-length substring of `%cd%`: it expands to nothing, leaves the
+ *     literal `%` in front of it, and consumes the `%` that a following
+ *     `NAME%` would have paired with. This needs command extensions, so the
+ *     launcher passes `/e:on` (and `/v:off` so `!VAR!` is never expanded);
+ *   - refuse CR, LF and NUL. cmd.exe ends the command line at a line break,
+ *     so the rest would be silently dropped, and no quoting can carry one.
  *
- * Known residual: cmd.exe expands `%VAR%` even inside double quotes, and no
- * escape for it exists on a command line (`%%` is batch-file syntax). That
- * substitutes an environment value; it does not introduce a command
- * separator on its own. Rust's implementation carries the same caveat.
+ * Arguments that need a line break (a prompt) must travel over stdin or a
+ * file instead — every one-shot agent executor except Copilot and Cline
+ * already pipes its prompt.
  *
  * NOT VERIFIED ON A WINDOWS HOST — there is none in this environment. The
  * unit tests assert the exact strings produced and run them through an
- * explicit model of cmd.exe's quote state, so the claim is checkable.
+ * explicit model of cmd.exe's quote state and percent expansion, so the
+ * claim is checkable.
  */
+
+/** Characters no cmd.exe command line can carry inside an argument. */
+const UNREPRESENTABLE_CHARACTERS = /[\r\n\0]/;
+
+/** `%` followed by an empty `%cd%` substring, so it can never open `%VAR%`. */
+const ESCAPED_PERCENT = '%%cd:~,%';
 
 /**
  * Quote one argument for a cmd.exe command line.
  *
  * @param arg - The argument, exactly as the caller wants the program to see it.
+ * @throws Error when the argument holds a character cmd.exe cannot carry.
  */
 export function quoteWindowsShellArgument(arg: string): string {
+  if (UNREPRESENTABLE_CHARACTERS.test(arg)) {
+    throw new Error(
+      'Cannot pass an argument containing a newline or NUL through cmd.exe: ' +
+        'cmd ends the command line there. Pass it over stdin or a file instead.'
+    );
+  }
+
   let quoted = '"';
   let backslashes = 0;
 
@@ -59,7 +82,7 @@ export function quoteWindowsShellArgument(arg: string): string {
     }
 
     quoted += '\\'.repeat(backslashes);
-    quoted += char;
+    quoted += char === '%' ? ESCAPED_PERCENT : char;
     backslashes = 0;
   }
 

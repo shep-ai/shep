@@ -25,6 +25,10 @@ All code under `packages/` MUST work correctly on **Windows, macOS, and Linux**.
 - Use `windowsHide: true` on Windows to prevent blank console windows from flashing.
 - Always explicitly set `stdio: ['pipe', 'pipe', 'pipe']` when the parent process may disconnect (detached workers, daemon processes).
 - Native executables (`.exe`) on Windows are found by `spawn()` on PATH without `shell: true`.
+- npm-installed CLIs are `.cmd` shims on Windows, which `spawn()` cannot launch. Spawn agent CLIs
+  through `createSpawnFunction()` / `createExecFunction()` (`infrastructure/services/process/`),
+  which resolve PATHEXT and run shims via cmd.exe with safe quoting. Arguments containing line
+  breaks cannot pass through cmd.exe — send long or multi-line input over stdin.
 
 ### Line Endings
 

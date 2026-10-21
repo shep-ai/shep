@@ -22,6 +22,11 @@ import type {
   AgentExecutionStreamEvent,
 } from '../../../../../application/ports/output/agents/agent-executor.interface.js';
 import type { SpawnFunction } from '../types.js';
+import {
+  preparePromptArgument,
+  type PreparedPrompt,
+  type PromptArgumentPolicy,
+} from './prompt-argument.js';
 import { EventChannel } from '../../streaming/event-channel.js';
 import { createExecutorLogger, type ExecutorLogger } from './executor-logger.js';
 import { describeSubprocessFailure } from './subprocess-failure-message.js';
@@ -51,6 +56,16 @@ const CLINE_NOT_FOUND_MESSAGE =
 
 /** Milliseconds per second, for the CLI's seconds-based --timeout flag. */
 const MS_PER_SECOND = 1000;
+
+/**
+ * Cline takes its task as a positional argument. On Windows (`cline.cmd`,
+ * launched through cmd.exe) every task goes through a temp file; elsewhere
+ * argv carries it unless it is this long.
+ */
+const PROMPT_POLICY: PromptArgumentPolicy = {
+  maxInlineChars: 100_000,
+  filePrefix: 'shep-cline-prompt-',
+};
 
 /** Longest agent text logged verbatim before truncation. */
 const LOG_PREVIEW_CHARS = 200;
@@ -91,9 +106,10 @@ export class ClineExecutorService implements IAgentExecutor {
 
   async execute(prompt: string, options?: AgentExecutionOptions): Promise<AgentExecutionResult> {
     const log = this.startRun(options);
-    const proc = this.spawnCline(prompt, options, log);
+    const preparedPrompt = preparePromptArgument(prompt, PROMPT_POLICY);
+    const proc = this.spawnCline(prompt, preparedPrompt, options, log);
 
-    return new Promise<AgentExecutionResult>((resolve, reject) => {
+    const run = new Promise<AgentExecutionResult>((resolve, reject) => {
       const stderr = createStderrTail();
       /** Text carried by structured `say` events — the agent's actual answer. */
       let resultText = '';
@@ -206,6 +222,7 @@ export class ClineExecutorService implements IAgentExecutor {
         });
       });
     });
+    return run.finally(() => preparedPrompt.cleanup());
   }
 
   async *executeStream(
@@ -213,7 +230,8 @@ export class ClineExecutorService implements IAgentExecutor {
     options?: AgentExecutionOptions
   ): AsyncIterable<AgentExecutionStreamEvent> {
     const log = this.startRun(options);
-    const proc = this.spawnCline(prompt, options, log);
+    const preparedPrompt = preparePromptArgument(prompt, PROMPT_POLICY);
+    const proc = this.spawnCline(prompt, preparedPrompt, options, log);
 
     const channel = new EventChannel<AgentExecutionStreamEvent>();
     const stderr = createStderrTail();
@@ -320,6 +338,7 @@ export class ClineExecutorService implements IAgentExecutor {
       if (timeoutId) clearTimeout(timeoutId);
       abortWatch.stop();
       if (!processClosed) terminateWithEscalation(proc);
+      preparedPrompt.cleanup();
     }
   }
 
@@ -334,12 +353,14 @@ export class ClineExecutorService implements IAgentExecutor {
     return log;
   }
 
+  /** Spawn `cline`; the prompt file is removed here if the spawn throws. */
   private spawnCline(
     prompt: string,
+    preparedPrompt: PreparedPrompt,
     options: AgentExecutionOptions | undefined,
     log: ExecutorLogger
   ): ReturnType<SpawnFunction> {
-    const args = this.buildArgs(prompt, options);
+    const args = this.buildArgs(preparedPrompt.promptArg, options);
     const spawnOpts = buildSpawnOptions({ cwd: options?.cwd, environment: options?.environment });
 
     log(
@@ -347,9 +368,17 @@ export class ClineExecutorService implements IAgentExecutor {
     );
     log(`Spawn cwd: ${(spawnOpts.cwd as string) ?? '(inherited)'}`);
 
-    const proc = this.spawn(CLINE_BINARY, args, spawnOpts);
+    let proc: ReturnType<SpawnFunction>;
+    try {
+      proc = this.spawn(CLINE_BINARY, args, spawnOpts);
+    } catch (error) {
+      preparedPrompt.cleanup();
+      throw error;
+    }
     log(`Subprocess PID: ${proc.pid ?? 'undefined (spawn may have failed)'}`);
-    log(`Prompt length: ${prompt.length} chars`);
+    log(
+      `Prompt length: ${prompt.length} chars (${preparedPrompt.usedFileIndirection ? 'delivered via temp prompt file' : 'positional argument'})`
+    );
     return proc;
   }
 

@@ -5,6 +5,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   ClaudeCodeModelCatalogService,
+  createClaudeListModels,
   mergeClaudeCatalogWithHardcoded,
   parseClaudeModelHelpOutput,
 } from '@/infrastructure/services/agents/common/model-catalogs/claude-code-model-catalog.service.js';
@@ -180,5 +181,31 @@ describe('ClaudeCodeModelCatalogService discovery order', () => {
     expect(listings.find((l) => l.id === 'claude-haiku-4-5')?.displayName).toBe('Haiku 4.5');
     // A snapshot with no undated catalog counterpart stays as served.
     expect(ids).toContain('claude-3-haiku-20240307');
+  });
+});
+
+describe('createClaudeListModels', () => {
+  it('runs the `/model` probe through the injected ExecFunction', async () => {
+    const exec = vi.fn().mockResolvedValue({ stdout: SAMPLE, stderr: '' });
+
+    await expect(createClaudeListModels(exec)()).resolves.toContain('Available: sonnet');
+    expect(exec).toHaveBeenCalledWith(
+      'claude',
+      ['-p', '--restricted', '--safe-mode', '/model'],
+      expect.objectContaining({ windowsHide: true })
+    );
+  });
+
+  it('keeps the output of a probe that exits non-zero', async () => {
+    const failure = Object.assign(new Error('exit 1'), { stdout: '', stderr: SAMPLE });
+    const exec = vi.fn().mockRejectedValue(failure);
+
+    await expect(createClaudeListModels(exec)()).resolves.toContain('Available: sonnet');
+  });
+
+  it('rethrows a failure that produced no output', async () => {
+    const exec = vi.fn().mockRejectedValue('boom');
+
+    await expect(createClaudeListModels(exec)()).rejects.toBe('boom');
   });
 });

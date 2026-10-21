@@ -6,14 +6,13 @@
  * Caching lives in {@link TtlModelCatalog}.
  */
 
-import { execFile } from 'node:child_process';
-import { promisify } from 'node:util';
 import type { AgentConfig } from '../../../../../domain/generated/output.js';
 import type { AgentModelListing } from '../../../../../application/ports/output/agents/agent-executor-factory.interface.js';
 import { MODEL_CATALOG_FETCH_TIMEOUT_MS } from './catalog-fetch.js';
 import { TtlModelCatalog } from './ttl-model-catalog.js';
+import type { ExecFunction } from '../../../git/worktree.service.js';
+import { createExecFunction } from '../../../process/exec-function.js';
 
-const execFileAsync = promisify(execFile);
 const CODEX_BINARY = 'codex';
 
 /** Injectable runner for `codex debug models` stdout. */
@@ -60,19 +59,28 @@ export function parseCodexDebugModelsOutput(stdout: string): AgentModelListing[]
   return listings;
 }
 
-async function defaultCodexListModels(): Promise<string> {
-  const { stdout } = await execFileAsync(CODEX_BINARY, ['debug', 'models'], {
-    timeout: MODEL_CATALOG_FETCH_TIMEOUT_MS,
-    encoding: 'utf8',
-    windowsHide: true,
-    maxBuffer: 8 * 1024 * 1024,
-    env: { ...process.env, TERM: process.env.TERM ?? 'xterm-256color' },
-  });
-  return typeof stdout === 'string' ? stdout : String(stdout);
+/**
+ * Run `codex debug models` through `exec` — the shared, Windows-aware
+ * {@link ExecFunction}, which finds npm's `codex.cmd` where a bare
+ * `execFile('codex')` cannot.
+ */
+export function createCodexListModels(exec: ExecFunction): CodexListModelsFn {
+  return async () => {
+    const { stdout } = await exec(CODEX_BINARY, ['debug', 'models'], {
+      timeout: MODEL_CATALOG_FETCH_TIMEOUT_MS,
+      encoding: 'utf8',
+      windowsHide: true,
+      maxBuffer: 8 * 1024 * 1024,
+      env: { ...process.env, TERM: process.env.TERM ?? 'xterm-256color' },
+    });
+    return typeof stdout === 'string' ? stdout : String(stdout);
+  };
 }
 
 export class CodexCliModelCatalogService extends TtlModelCatalog {
-  constructor(private readonly listModelsFn: CodexListModelsFn = defaultCodexListModels) {
+  constructor(
+    private readonly listModelsFn: CodexListModelsFn = createCodexListModels(createExecFunction())
+  ) {
     super();
   }
 

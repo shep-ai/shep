@@ -11,12 +11,13 @@ import 'reflect-metadata';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { EventEmitter } from 'node:events';
 import { PassThrough } from 'node:stream';
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { CopilotCliExecutorService } from '@/infrastructure/services/agents/common/executors/copilot-cli-executor.service.js';
 import type { SpawnFunction } from '@/infrastructure/services/agents/common/types.js';
 import { AgentType, AgentFeature, SecurityMode } from '@/domain/generated/output.js';
 import { SecurityViolationError } from '@/domain/errors/security-violation.error.js';
 import { strictConstraints } from './security-constraints.fixture.js';
+import { exitOnKill, KILLED_BY_TASKKILL, type ExitReport } from '@tests/helpers/exit-on-kill.js';
 import type { AgentConfig } from '@/domain/generated/output.js';
 
 /**
@@ -80,6 +81,13 @@ function emitJsonlLines(
     proc.stderr.end();
     proc.emit('close', exitCode);
   });
+}
+
+/** The temp prompt file a one-line pointer argument names. */
+function pointedPromptFile(promptArg: string): string {
+  const match = /stored in this file: (.+?\.txt)\./.exec(promptArg);
+  if (!match) throw new Error(`no prompt file named in: ${promptArg}`);
+  return match[1];
 }
 
 describe('CopilotCliExecutorService', () => {
@@ -214,7 +222,9 @@ describe('CopilotCliExecutorService', () => {
 
       const spawnArgs = vi.mocked(mockSpawn).mock.calls[0][1] as string[];
       const wrapperPrompt = spawnArgs[1] ?? '';
-      const match = wrapperPrompt.match(/stored in this file:\n(.+)\nRead that file completely/);
+      const match = wrapperPrompt.match(
+        /stored in this file: (.+?\.txt)\. Read that file completely/
+      );
 
       expect(match?.[1]).toBeDefined();
       expect(existsSync(match![1])).toBe(false);
@@ -691,6 +701,51 @@ describe('CopilotCliExecutorService', () => {
 
       if (originalPlatform) {
         Object.defineProperty(process, 'platform', originalPlatform);
+      }
+    });
+
+    // copilot.cmd runs through cmd.exe, which cannot carry a line break —
+    // the prompt must reach Copilot through a file and a one-line pointer.
+    it('sends a multi-line prompt through a one-line file pointer on Windows', async () => {
+      const originalPlatform = Object.getOwnPropertyDescriptor(process, 'platform');
+      Object.defineProperty(process, 'platform', { value: 'win32' });
+      try {
+        const mockProc = createMockChildProcess();
+        let promptFileAtSpawn: string | undefined;
+        vi.mocked(mockSpawn).mockImplementation(((_command: string, args: string[]) => {
+          promptFileAtSpawn = readFileSync(pointedPromptFile(args[1]), 'utf8');
+          return mockProc;
+        }) as unknown as SpawnFunction);
+
+        const executePromise = executor.execute('line one\nline "two" & 100%', { silent: true });
+        emitJsonlLines(mockProc, [assistantMessage('OK'), resultEvent('s-1')], null, 0);
+        await executePromise;
+
+        const args = vi.mocked(mockSpawn).mock.calls[0][1] as string[];
+        expect(args.filter((arg) => /[\r\n]/.test(arg))).toEqual([]);
+        expect(promptFileAtSpawn).toBe('line one\nline "two" & 100%');
+        expect(existsSync(pointedPromptFile(args[1]))).toBe(false);
+      } finally {
+        if (originalPlatform) Object.defineProperty(process, 'platform', originalPlatform);
+      }
+    });
+
+    it('removes the Windows prompt file when spawn throws', async () => {
+      const originalPlatform = Object.getOwnPropertyDescriptor(process, 'platform');
+      Object.defineProperty(process, 'platform', { value: 'win32' });
+      try {
+        let pointer = '';
+        vi.mocked(mockSpawn).mockImplementation(((_command: string, args: string[]) => {
+          pointer = args[1];
+          throw new Error('spawn EINVAL');
+        }) as unknown as SpawnFunction);
+
+        await expect(executor.execute('line one\nline two', { silent: true })).rejects.toThrow(
+          'spawn EINVAL'
+        );
+        expect(existsSync(pointedPromptFile(pointer))).toBe(false);
+      } finally {
+        if (originalPlatform) Object.defineProperty(process, 'platform', originalPlatform);
       }
     });
   });
@@ -1218,5 +1273,103 @@ describe('CopilotCliExecutorService — idle timeout', () => {
       content: 'Agent execution timed out: no output for 0.02s',
     });
     expect(proc.kill).toHaveBeenCalled();
+  });
+});
+
+describe('CopilotCliExecutorService — post-result grace period', () => {
+  // Copilot routinely lingers after its terminal `result` event — MCP children
+  // and backgrounded dev servers keep it alive — and the idle guard stands down
+  // once the result is in. Without a bound on that teardown a finished run hung
+  // until the total timeout, or forever when none was set.
+  const GRACE_MS = 30_000;
+  let mockSpawn: SpawnFunction;
+  let executor: CopilotCliExecutorService;
+
+  beforeEach(() => {
+    mockSpawn = vi.fn();
+    executor = new CopilotCliExecutorService(mockSpawn);
+    vi.useFakeTimers();
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  /** A fake child that lingers after its result until it is killed. */
+  function lingeringProcess(report?: ExitReport) {
+    const proc = exitOnKill(createMockChildProcess(), report);
+    vi.mocked(mockSpawn).mockReturnValue(proc as any);
+    return proc;
+  }
+
+  it('execute(): kills a process that never exits after its result and resolves with it', async () => {
+    const proc = lingeringProcess();
+
+    const executePromise = executor.execute('Prompt', { silent: true });
+    proc.stdout.write(`${assistantMessage('Implementation complete')}\n`);
+    proc.stdout.write(`${resultEvent('sess-linger', { inputTokens: 10, outputTokens: 5 })}\n`);
+
+    await vi.advanceTimersByTimeAsync(GRACE_MS - 1);
+    expect(proc.kill).not.toHaveBeenCalled();
+
+    await vi.advanceTimersByTimeAsync(1);
+    expect(proc.kill).toHaveBeenCalled();
+
+    const result = await executePromise;
+    expect(result.result).toBe('Implementation complete');
+    expect(result.sessionId).toBe('sess-linger');
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('execute(): still resolves when the killed process reports a non-zero exit', async () => {
+    // A Windows taskkill exits the process with 1; a CLI trapping SIGTERM may
+    // too. Either is our own teardown, not the agent failing its turn.
+    const proc = lingeringProcess(KILLED_BY_TASKKILL);
+
+    const executePromise = executor.execute('Prompt', { silent: true });
+    proc.stdout.write(`${assistantMessage('done')}\n`);
+    proc.stdout.write(`${resultEvent('sess-1')}\n`);
+    await vi.advanceTimersByTimeAsync(GRACE_MS);
+
+    expect((await executePromise).result).toBe('done');
+  });
+
+  it('execute(): never kills a process that exits on its own after the result', async () => {
+    const proc = createMockChildProcess();
+    vi.mocked(mockSpawn).mockReturnValue(proc as any);
+
+    const executePromise = executor.execute('Prompt', { silent: true });
+    proc.stdout.write(`${assistantMessage('quick')}\n`);
+    proc.stdout.write(`${resultEvent('sess-2')}\n`);
+    proc.stdout.end();
+    proc.stderr.end();
+    proc.emit('close', 0, null);
+
+    expect((await executePromise).result).toBe('quick');
+    await vi.advanceTimersByTimeAsync(GRACE_MS * 2);
+    expect(proc.kill).not.toHaveBeenCalled();
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('executeStream(): kills a process lingering after its result and ends the stream cleanly', async () => {
+    const proc = lingeringProcess();
+
+    const events: { type: string; content: string }[] = [];
+    const collect = (async () => {
+      for await (const event of executor.executeStream('Prompt', { silent: true })) {
+        events.push({ type: event.type, content: event.content });
+      }
+    })();
+    await vi.advanceTimersByTimeAsync(0);
+    proc.stdout.write(`${assistantMessage('streamed answer')}\n`);
+    proc.stdout.write(`${resultEvent('sess-3')}\n`);
+
+    await vi.advanceTimersByTimeAsync(GRACE_MS - 1);
+    expect(proc.kill).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(1);
+    await collect;
+
+    expect(proc.kill).toHaveBeenCalled();
+    expect(events).toEqual([{ type: 'result', content: 'streamed answer' }]);
+    expect(vi.getTimerCount()).toBe(0);
   });
 });

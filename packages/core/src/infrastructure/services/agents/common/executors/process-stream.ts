@@ -241,8 +241,10 @@ export interface SpawnOptionsInput {
  * Build the `spawn` options every CLI agent executor needs.
  *
  * `shell` is deliberately never set: it triggers DEP0190 argument escaping on
- * Windows and mangles prompts containing special characters. Every agent CLI
- * shep spawns is a native binary or a `.cmd` resolved by `spawn` itself.
+ * Windows and mangles prompts containing special characters. `spawn` cannot
+ * launch a Windows `.cmd` shim on its own; executors get the spawn function
+ * from `createSpawnFunction()` (`services/process/spawn-function.ts`), which
+ * resolves PATHEXT and routes shims through cmd.exe with safe quoting.
  *
  * `process.platform` is read per call rather than at module load so a test can
  * exercise the Windows branch on Linux.

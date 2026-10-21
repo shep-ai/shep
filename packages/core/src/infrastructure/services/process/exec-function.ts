@@ -13,16 +13,20 @@
  * with no escaping of its own, so the adapter's hand-rolled quoting was the
  * only thing standing between raw LLM output and a command separator.
  *
- * So the extension is resolved explicitly instead, with the `which` package
- * already used by `binary-exists.ts` (it implements PATHEXT lookup):
+ * So shims are found explicitly instead, by `windows-shim-resolver.ts`,
+ * which only reports one when libuv could not have launched the command
+ * itself, and never from the working directory:
  *
- *   - a real executable (`git.exe`) is spawned with its argv array and NO
- *     shell — Node's own CreateProcess quoting applies and there is nothing
- *     left to get wrong;
+ *   - a real executable (`git.exe`) is spawned by name with its argv array
+ *     and NO shell — Node's own CreateProcess quoting applies and there is
+ *     nothing left to get wrong;
  *   - a `.cmd` / `.bat` shim must go through cmd.exe, so it is spawned as
- *     `cmd.exe /d /s /c "<command line>"` with `windowsVerbatimArguments`,
- *     where the command line is built by `windows-command-line.ts` rather
- *     than by string concatenation.
+ *     `cmd.exe /d /e:on /v:off /s /c "<command line>"` with
+ *     `windowsVerbatimArguments`, where the command line is built by
+ *     `windows-command-line.ts` rather than by string concatenation.
+ *
+ * That decision lives in `windows-launch.ts`, shared with the agent-CLI
+ * `SpawnFunction` (`spawn-function.ts`).
  *
  * Resolution is cached per executable name: this function is called for every
  * git invocation and a PATH walk per call would be a real cost.
@@ -30,19 +34,10 @@
 
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import which from 'which';
 import { IS_WINDOWS } from '../../platform.js';
-import { buildWindowsCommandLine } from './windows-command-line.js';
+import { planWindowsLaunch, resolveComspec } from './windows-launch.js';
+import { findWindowsShim, isRegularFile } from './windows-shim-resolver.js';
 import type { ExecFunction } from '../git/worktree.service.js';
-
-/** Extensions that cmd.exe must interpret; everything else runs directly. */
-const SHELL_SCRIPT_EXTENSIONS = ['.cmd', '.bat'];
-
-/** cmd.exe flags: no AutoRun, take the rest of the line as-is, then run it. */
-const CMD_FLAGS = ['/d', '/s', '/c'];
-
-/** Fallback when COMSPEC is unset. */
-const DEFAULT_COMSPEC = 'cmd.exe';
 
 type ExecFileAsync = (
   file: string,
@@ -55,7 +50,7 @@ export interface ExecFunctionDeps {
   isWindows: boolean;
   /** Promisified `child_process.execFile`. */
   execFileAsync: ExecFileAsync;
-  /** PATH + PATHEXT lookup; resolves to an absolute path or null. */
+  /** The `.cmd` / `.bat` to run through cmd.exe, or null to run the name as is. */
   resolveExecutable: (file: string) => Promise<string | null>;
   /** Path to cmd.exe. */
   comspec: string;
@@ -63,18 +58,10 @@ export interface ExecFunctionDeps {
 
 const defaultExecFileAsync = promisify(execFile) as unknown as ExecFileAsync;
 
-const defaultResolveExecutable = async (file: string): Promise<string | null> => {
-  try {
-    return await which(file, { nothrow: true });
-  } catch {
-    return null;
-  }
-};
-
-function isShellScript(resolvedPath: string): boolean {
-  const lower = resolvedPath.toLowerCase();
-  return SHELL_SCRIPT_EXTENSIONS.some((extension) => lower.endsWith(extension));
-}
+const defaultResolveExecutable = (file: string): Promise<string | null> =>
+  Promise.resolve(
+    findWindowsShim(file, { env: process.env, cwd: process.cwd(), isFile: isRegularFile })
+  );
 
 /**
  * Build the `ExecFunction` registered under the `ExecFunction` token.
@@ -86,7 +73,7 @@ export function createExecFunction(overrides: Partial<ExecFunctionDeps> = {}): E
     isWindows: IS_WINDOWS,
     execFileAsync: defaultExecFileAsync,
     resolveExecutable: defaultResolveExecutable,
-    comspec: process.env['ComSpec'] ?? process.env['COMSPEC'] ?? DEFAULT_COMSPEC,
+    comspec: resolveComspec(),
     ...overrides,
   };
 
@@ -105,19 +92,11 @@ export function createExecFunction(overrides: Partial<ExecFunctionDeps> = {}): E
 
   return async (file, args, options) => {
     const resolved = await resolveOnce(file);
-
-    if (resolved !== null && isShellScript(resolved)) {
-      // cmd.exe with /s strips the outermost pair of quotes and runs the rest
-      // verbatim — the same shape Node uses internally for `shell: true`,
-      // but with a command line we escaped correctly.
-      const commandLine = buildWindowsCommandLine(resolved, args);
-      return deps.execFileAsync(deps.comspec, [...CMD_FLAGS, `"${commandLine}"`], {
-        ...options,
-        windowsVerbatimArguments: true,
-        windowsHide: true,
-      });
-    }
-
-    return deps.execFileAsync(resolved ?? file, args, { ...options, windowsHide: true });
+    const launch = planWindowsLaunch(file, args, resolved, deps.comspec);
+    return deps.execFileAsync(launch.file, launch.args, {
+      ...options,
+      ...(launch.verbatim ? { windowsVerbatimArguments: true } : {}),
+      windowsHide: true,
+    });
   };
 }

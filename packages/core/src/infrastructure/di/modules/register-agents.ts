@@ -1,6 +1,5 @@
 import type { DependencyContainer } from 'tsyringe';
 import { instanceCachingFactory } from 'tsyringe';
-import { spawn } from 'node:child_process';
 
 import type { IAgentExecutorFactory } from '../../../application/ports/output/agents/agent-executor-factory.interface.js';
 import type { IAgentExecutorProvider } from '../../../application/ports/output/agents/agent-executor-provider.interface.js';
@@ -41,6 +40,7 @@ import { FeatureAgentSupervisorGateEvaluator } from '../../services/agents/featu
 import { LangGraphSupervisorAgent } from '../../services/agents/supervisor-agent/langgraph-supervisor-agent.js';
 import { SdlcBoardTracker } from '../../services/agents/sdlc-board-tracker.js';
 import { HarnessAgentExecutor } from '../../services/harness/harness-agent-executor.js';
+import { createSpawnFunction } from '../../services/process/spawn-function.js';
 import { HARNESS_TOKENS } from '../../../application/ports/output/harness/index.js';
 import type { HarnessTaskService } from '../../../application/services/harness/harness-task-service.js';
 
@@ -66,10 +66,13 @@ export function registerAgents(container: DependencyContainer): void {
       // on each picker open.
       useFactory: instanceCachingFactory((c) => {
         // Wrap spawn with sensible defaults: stdio piped and windowsHide on Win32.
-        // Each executor controls its own `shell` option — cursor needs shell: true
-        // for .cmd scripts, but claude-code must NOT use shell (DEP0190 / prompt mangling).
+        // No executor sets `shell` (DEP0190 / prompt mangling). On Windows the
+        // shared spawner resolves npm `.cmd` shims (codex.cmd, gemini.cmd, …)
+        // and launches them through cmd.exe with escaped arguments; elsewhere
+        // it is plain `child_process.spawn`.
+        const agentCliSpawn = createSpawnFunction();
         const spawnWithPipe = (command: string, args: string[], options?: object) => {
-          return spawn(command, args, {
+          return agentCliSpawn(command, args, {
             stdio: 'pipe',
             ...(process.platform === 'win32' ? { windowsHide: true } : {}),
             ...options,

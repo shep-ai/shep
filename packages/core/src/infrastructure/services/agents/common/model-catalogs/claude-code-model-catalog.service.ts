@@ -16,8 +16,6 @@
  * Caching lives in {@link TtlModelCatalog}.
  */
 
-import { execFile } from 'node:child_process';
-import { promisify } from 'node:util';
 import { AgentType } from '../../../../../domain/generated/output.js';
 import type { AgentConfig } from '../../../../../domain/generated/output.js';
 import type { AgentModelListing } from '../../../../../application/ports/output/agents/agent-executor-factory.interface.js';
@@ -25,8 +23,9 @@ import { AGENT_CATALOG } from '../../../../../domain/shared/agent-catalog.js';
 import { MODEL_CATALOG_FETCH_TIMEOUT_MS } from './catalog-fetch.js';
 import { TtlModelCatalog } from './ttl-model-catalog.js';
 import { listAnthropicModels } from './anthropic-models-api.js';
+import type { ExecFunction } from '../../../git/worktree.service.js';
+import { createExecFunction } from '../../../process/exec-function.js';
 
-const execFileAsync = promisify(execFile);
 const CLAUDE_BINARY = 'claude';
 
 /**
@@ -129,27 +128,33 @@ export function mergeClaudeCatalogWithHardcoded(live: AgentModelListing[]): Agen
   return merged;
 }
 
-async function defaultClaudeListModels(): Promise<string> {
-  try {
-    const { stdout, stderr } = await execFileAsync(
-      CLAUDE_BINARY,
-      ['-p', '--restricted', '--safe-mode', '/model'],
-      {
-        timeout: MODEL_CATALOG_FETCH_TIMEOUT_MS,
-        encoding: 'utf8',
-        windowsHide: true,
-        maxBuffer: 1024 * 1024,
+/**
+ * Run the `/model` probe through `exec` — the shared, Windows-aware
+ * {@link ExecFunction}, which finds npm's `claude.cmd` on Windows.
+ */
+export function createClaudeListModels(exec: ExecFunction): ClaudeListModelsFn {
+  return async () => {
+    try {
+      const { stdout, stderr } = await exec(
+        CLAUDE_BINARY,
+        ['-p', '--restricted', '--safe-mode', '/model'],
+        {
+          timeout: MODEL_CATALOG_FETCH_TIMEOUT_MS,
+          encoding: 'utf8',
+          windowsHide: true,
+          maxBuffer: 1024 * 1024,
+        }
+      );
+      return `${stdout ?? ''}\n${stderr ?? ''}`;
+    } catch (error: unknown) {
+      // Claude often exits non-zero while still printing the Available: line.
+      if (error && typeof error === 'object' && 'stdout' in error) {
+        const e = error as { stdout?: string; stderr?: string };
+        return `${e.stdout ?? ''}\n${e.stderr ?? ''}`;
       }
-    );
-    return `${stdout ?? ''}\n${stderr ?? ''}`;
-  } catch (error: unknown) {
-    // Claude often exits non-zero while still printing the Available: line.
-    if (error && typeof error === 'object' && 'stdout' in error) {
-      const e = error as { stdout?: string; stderr?: string };
-      return `${e.stdout ?? ''}\n${e.stderr ?? ''}`;
+      throw error;
     }
-    throw error;
-  }
+  };
 }
 
 export interface ClaudeCodeModelCatalogSources {
@@ -166,7 +171,7 @@ export class ClaudeCodeModelCatalogService extends TtlModelCatalog {
   constructor(sources: ClaudeCodeModelCatalogSources = {}) {
     super();
     this.listApiModels = sources.listApiModels ?? (() => listAnthropicModels());
-    this.listCliModels = sources.listCliModels ?? defaultClaudeListModels;
+    this.listCliModels = sources.listCliModels ?? createClaudeListModels(createExecFunction());
   }
 
   protected async fetchModels(_authConfig?: AgentConfig): Promise<AgentModelListing[]> {

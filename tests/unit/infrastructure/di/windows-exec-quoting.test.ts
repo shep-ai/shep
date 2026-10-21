@@ -59,6 +59,52 @@ function metacharactersOutsideQuotes(commandLine: string): string[] {
   return found;
 }
 
+/** Environment for the percent-expansion model. */
+const ENV: Record<string, string> = {
+  PATH: 'C:\\Windows',
+  SECRET: 'hunter2',
+  INJECT: '"&calc&"',
+  cd: 'C:\\repo',
+};
+
+/**
+ * Model of cmd.exe's command-line (not batch-file) percent expansion, which
+ * runs BEFORE the quote scan and ignores quotes entirely: at each `%`, take
+ * the text up to the next `%` as a variable name. A defined name — or a
+ * `name:~start,length` substring of one — is replaced and scanning resumes
+ * after the closing `%`. Anything else is left as a literal `%` and scanning
+ * resumes AT the closing `%`, which may start the next reference.
+ */
+function expandCommandLinePercents(line: string, env: Record<string, string>): string {
+  let out = '';
+  let i = 0;
+  while (i < line.length) {
+    const ch = line[i];
+    const close = ch === '%' ? line.indexOf('%', i + 1) : -1;
+    if (close < 0) {
+      out += ch;
+      i += 1;
+      continue;
+    }
+    const name = line.slice(i + 1, close);
+    const substring = /^([^:]+):~(-?\d*),(-?\d*)$/.exec(name);
+    if (substring && substring[1] in env) {
+      const value = env[substring[1]];
+      const start = Number(substring[2] || 0);
+      const length = substring[3] === '' ? 0 : Number(substring[3]);
+      out += value.slice(start, start + length);
+      i = close + 1;
+    } else if (name in env) {
+      out += env[name];
+      i = close + 1;
+    } else {
+      out += '%';
+      i = close;
+    }
+  }
+  return out;
+}
+
 describe('quoteWindowsShellArgument', () => {
   it('keeps the injection payload inside quotes', () => {
     const quoted = quoteWindowsShellArgument('a"&whoami&"b');
@@ -86,6 +132,30 @@ describe('quoteWindowsShellArgument', () => {
     expect(quoteWindowsShellArgument('C:\\Users\\My User')).toBe('"C:\\Users\\My User"');
     expect(quoteWindowsShellArgument('C:\\path\\')).toBe('"C:\\path\\\\"');
     expect(quoteWindowsShellArgument('')).toBe('""');
+  });
+
+  it('escapes % so an argument cannot name an environment variable', () => {
+    // `%cd:~,%` is a zero-length substring of %cd%, so cmd expands it to
+    // nothing — and the `%` before it can no longer pair with a later one.
+    // This is the encoding Rust's std uses for the same reason.
+    expect(quoteWindowsShellArgument('%PATH%')).toBe('"%%cd:~,%PATH%%cd:~,%"');
+    expect(expandCommandLinePercents(quoteWindowsShellArgument('%SECRET%'), ENV)).toBe(
+      '"%SECRET%"'
+    );
+    expect(expandCommandLinePercents(quoteWindowsShellArgument('%INJECT%'), ENV)).not.toContain(
+      '&calc&'
+    );
+    expect(expandCommandLinePercents(quoteWindowsShellArgument('100% done'), ENV)).toBe(
+      '"100% done"'
+    );
+  });
+
+  it.each([
+    ['a line feed', 'line one\nline two'],
+    ['a carriage return', 'line one\rline two'],
+    ['a NUL', 'a\u0000b'],
+  ])('refuses %s, which cmd.exe cannot carry inside an argument', (_label, arg) => {
+    expect(() => quoteWindowsShellArgument(arg)).toThrow(/cmd\.exe/);
   });
 
   it('quotes ordinary arguments rather than leaving them bare', () => {
@@ -171,11 +241,23 @@ describe('createExecFunction', () => {
 
     const [file, args, options] = execFileAsync.mock.calls[0];
     expect(file).toBe('C:\\Windows\\System32\\cmd.exe');
-    expect(args.slice(0, 3)).toEqual(['/d', '/s', '/c']);
+    // /e:on keeps the `%cd:~,%` escape working; /v:off stops `!VAR!` expansion
+    // even when DelayedExpansion is switched on in the registry.
+    expect(args.slice(0, -1)).toEqual(['/d', '/e:on', '/v:off', '/s', '/c']);
     expect(options).toMatchObject({ windowsVerbatimArguments: true, windowsHide: true });
     expect(options).not.toHaveProperty('shell', true);
-    expect(args[3]).toMatch(/^".*"$/);
-    expect(metacharactersOutsideQuotes(stripOuterQuotesForCmdS(args[3]))).toEqual([]);
+    expect(args.at(-1)).toMatch(/^".*"$/);
+    expect(metacharactersOutsideQuotes(stripOuterQuotesForCmdS(args.at(-1)))).toEqual([]);
+  });
+
+  it('rejects a multi-line argument to a .cmd shim instead of letting cmd truncate it', async () => {
+    const execFileAsync = vi.fn().mockResolvedValue(result);
+    const resolveExecutable = vi.fn().mockResolvedValue('C:\\bin\\tool.cmd');
+
+    const exec = createExecFunction({ isWindows: true, execFileAsync, resolveExecutable });
+
+    await expect(exec('tool', ['--body', 'one\ntwo'])).rejects.toThrow(/newline/);
+    expect(execFileAsync).not.toHaveBeenCalled();
   });
 
   it('falls back to the bare name when the executable is not on PATH', async () => {

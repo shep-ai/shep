@@ -6,7 +6,8 @@
  *
  * Key differences from other executors:
  * - Prompt is delivered via the -p flag (not stdin piping)
- * - Large prompts use temp-file indirection to avoid Windows ENAMETOOLONG spawn failures
+ * - Large prompts — and every prompt on Windows, where `copilot.cmd` runs through cmd.exe —
+ *   use temp-file indirection (`prompt-argument.ts`)
  * - Auth is GitHub OAuth only — no API key injection is possible or supported
  * - --resume=<sessionId> format (with equals sign) for session resume
  *
@@ -27,10 +28,7 @@ import type {
   AgentExecutionStreamEvent,
 } from '../../../../../application/ports/output/agents/agent-executor.interface.js';
 import type { SpawnFunction } from '../types.js';
-import { randomUUID } from 'node:crypto';
-import { unlink, writeFile } from 'node:fs/promises';
-import { join } from 'node:path';
-import { tmpdir } from 'node:os';
+import { preparePromptArgument, type PromptArgumentPolicy } from './prompt-argument.js';
 import { EventChannel } from '../../streaming/event-channel.js';
 import { createExecutorLogger, type ExecutorLogger } from './executor-logger.js';
 import {
@@ -46,6 +44,7 @@ import {
   AGENT_ABORTED_MESSAGE,
   watchAbortSignal,
 } from './process-stream.js';
+import { watchPostResultExit } from './post-result-exit.js';
 import {
   validateSecurityConstraints,
   type ExecutorCapabilities,
@@ -103,6 +102,12 @@ const MAX_PROMPT_ARG_CHARS = 12_000;
 /** Prefix for temporary prompt files used by large prompt indirection mode. */
 const PROMPT_FILE_PREFIX = 'shep-copilot-prompt-';
 
+/** Large prompts — and on Windows every prompt — go through a temp file. */
+const PROMPT_POLICY: PromptArgumentPolicy = {
+  maxInlineChars: MAX_PROMPT_ARG_CHARS,
+  filePrefix: PROMPT_FILE_PREFIX,
+};
+
 /**
  * Legacy model aliases that appeared in older settings payloads.
  * Copilot CLI expects dotted model versions (e.g. 4.5), not hyphenated (4-5).
@@ -122,12 +127,6 @@ const LEGACY_MODEL_ALIASES: Record<string, string> = {
   'gpt-5-4': 'gpt-5.4',
   'gpt-5-4-mini': 'gpt-5.4-mini',
 };
-
-interface PreparedPrompt {
-  promptArg: string;
-  usedFileIndirection: boolean;
-  cleanup: () => Promise<void>;
-}
 
 /**
  * Flatten Copilot message content into plain text.
@@ -203,10 +202,7 @@ export class CopilotCliExecutorService implements IAgentExecutor {
       throw new Error(TOKEN_AUTH_UNSUPPORTED_MESSAGE);
     }
 
-    let preparedPrompt = this.prepareDirectPrompt(prompt);
-    if (this.shouldUsePromptFile(prompt)) {
-      preparedPrompt = await this.preparePromptFileIndirection(prompt);
-    }
+    const preparedPrompt = preparePromptArgument(prompt, PROMPT_POLICY);
     const args = this.buildArgs(preparedPrompt.promptArg, options, log);
     const spawnOpts = buildSpawnOptions({ cwd: options?.cwd, environment: options?.environment });
 
@@ -219,7 +215,7 @@ export class CopilotCliExecutorService implements IAgentExecutor {
     try {
       proc = this.spawn(COPILOT_BINARY, args, spawnOpts);
     } catch (error) {
-      await preparedPrompt.cleanup();
+      preparedPrompt.cleanup();
       throw error;
     }
     log(`Subprocess PID: ${proc.pid ?? 'undefined (spawn may have failed)'}`);
@@ -244,6 +240,7 @@ export class CopilotCliExecutorService implements IAgentExecutor {
         if (settled) return;
         settled = true;
         abortWatch.stop();
+        postResultExit.stop();
         if (timeoutId) clearTimeout(timeoutId);
         cancelEscalation?.();
         outcome();
@@ -261,9 +258,11 @@ export class CopilotCliExecutorService implements IAgentExecutor {
       if (timeoutMs) {
         timeoutId = setTimeout(() => expire(agentTimeoutMessage(timeoutMs)), timeoutMs);
       }
+      // Output after the result is teardown, which the post-result guard bounds.
       watchProcessIdle(proc, options?.idleTimeout, (message) => {
         if (!resultSeen) expire(message);
       });
+      const postResultExit = watchPostResultExit(proc, log);
       // The caller's cancel: like a timeout, 'close' reports it, so awaiting
       // this call awaits the teardown.
       const abortWatch = watchAbortSignal(proc, options?.abortSignal, {
@@ -282,6 +281,7 @@ export class CopilotCliExecutorService implements IAgentExecutor {
             resultSeen = true;
             if (typeof parsed.sessionId === 'string') sessionId = parsed.sessionId;
             if (parsed.usage) usage = extractUsage(parsed.usage as Record<string, unknown>);
+            postResultExit.arm();
           }
         },
         {
@@ -301,9 +301,10 @@ export class CopilotCliExecutorService implements IAgentExecutor {
         settle(() => reject(classifySpawnError(error, COPILOT_NOT_FOUND_MESSAGE)));
       });
 
-      proc.on('close', (code: number | null, signal: NodeJS.Signals | null) => {
+      proc.on('close', (exitCode: number | null, signal: NodeJS.Signals | null) => {
         accumulator.flush();
-        log(`Process closed with code ${code}, result=${resultText.length} chars`);
+        log(`Process closed with code ${exitCode}, result=${resultText.length} chars`);
+        const code = postResultExit.exitCode(exitCode);
 
         settle(() => {
           if (timeoutError) {
@@ -351,9 +352,7 @@ export class CopilotCliExecutorService implements IAgentExecutor {
       });
     });
 
-    return executionPromise.finally(async () => {
-      await preparedPrompt.cleanup();
-    });
+    return executionPromise.finally(() => preparedPrompt.cleanup());
   }
 
   async *executeStream(
@@ -372,17 +371,14 @@ export class CopilotCliExecutorService implements IAgentExecutor {
       return;
     }
 
-    let preparedPrompt = this.prepareDirectPrompt(prompt);
-    if (this.shouldUsePromptFile(prompt)) {
-      preparedPrompt = await this.preparePromptFileIndirection(prompt);
-    }
+    const preparedPrompt = preparePromptArgument(prompt, PROMPT_POLICY);
     const args = this.buildArgs(preparedPrompt.promptArg, options, log);
     const spawnOpts = buildSpawnOptions({ cwd: options?.cwd, environment: options?.environment });
     let proc: ReturnType<SpawnFunction>;
     try {
       proc = this.spawn(COPILOT_BINARY, args, spawnOpts);
     } catch (error) {
-      await preparedPrompt.cleanup();
+      preparedPrompt.cleanup();
       yield {
         type: 'error',
         content: (error as Error).message,
@@ -419,6 +415,8 @@ export class CopilotCliExecutorService implements IAgentExecutor {
     watchProcessIdle(proc, options?.idleTimeout, (message) => {
       if (!resultSeen) expire(message);
     });
+    // Same bound on a process lingering after its result as execute().
+    const postResultExit = watchPostResultExit(proc, log);
     // The caller's cancel ends the stream the way a timeout does.
     const abortWatch = watchAbortSignal(proc, options?.abortSignal, {
       onAbort: () => expire(AGENT_ABORTED_MESSAGE),
@@ -449,6 +447,7 @@ export class CopilotCliExecutorService implements IAgentExecutor {
 
       if (parsed.type === EVENT_TYPE_RESULT) {
         resultSeen = true;
+        postResultExit.arm();
         // Final event — yield result with accumulated text
         const event: AgentExecutionStreamEvent = {
           type: 'result',
@@ -485,12 +484,13 @@ export class CopilotCliExecutorService implements IAgentExecutor {
       channel.close();
     });
 
-    proc.on('close', (code: number | null, signal: NodeJS.Signals | null) => {
+    proc.on('close', (exitCode: number | null, signal: NodeJS.Signals | null) => {
       processClosed = true;
       if (timeoutId) clearTimeout(timeoutId);
       if (timedOut) return; // already reported by the timeout callback
 
       accumulator.flush();
+      const code = postResultExit.exitCode(exitCode);
 
       if (code !== 0 && code !== null) {
         const authError = detectAuthError(stderr.text());
@@ -524,10 +524,11 @@ export class CopilotCliExecutorService implements IAgentExecutor {
     } finally {
       if (timeoutId) clearTimeout(timeoutId);
       abortWatch.stop();
+      postResultExit.stop();
       // A consumer that breaks out of the loop would otherwise leave the agent
       // running until it finished on its own.
       if (!processClosed) terminateWithEscalation(proc);
-      await preparedPrompt.cleanup();
+      preparedPrompt.cleanup();
     }
   }
 
@@ -590,47 +591,6 @@ export class CopilotCliExecutorService implements IAgentExecutor {
     }
 
     return model;
-  }
-
-  /**
-   * Prepare prompt delivery for Copilot CLI.
-   * Uses temporary file indirection for large prompts to avoid ENAMETOOLONG.
-   */
-  private shouldUsePromptFile(prompt: string): boolean {
-    return prompt.length > MAX_PROMPT_ARG_CHARS;
-  }
-
-  private prepareDirectPrompt(prompt: string): PreparedPrompt {
-    return {
-      promptArg: prompt,
-      usedFileIndirection: false,
-      cleanup: async () => {
-        // No temp file created for short prompts.
-      },
-    };
-  }
-
-  private async preparePromptFileIndirection(prompt: string): Promise<PreparedPrompt> {
-    const promptFilePath = join(tmpdir(), `${PROMPT_FILE_PREFIX}${randomUUID()}.txt`);
-    await writeFile(promptFilePath, prompt, 'utf8');
-
-    const promptArg =
-      'The full original user prompt is stored in this file:\n' +
-      `${promptFilePath}\n` +
-      'Read that file completely, then execute its instructions exactly as if its content was passed directly as the prompt. ' +
-      'Do not summarize or reinterpret the instructions before executing them.';
-
-    return {
-      promptArg,
-      usedFileIndirection: true,
-      cleanup: async () => {
-        try {
-          await unlink(promptFilePath);
-        } catch {
-          // Ignore cleanup failures (file may already be gone).
-        }
-      },
-    };
   }
 }
 

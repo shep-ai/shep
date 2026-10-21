@@ -11,6 +11,7 @@ import 'reflect-metadata';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { EventEmitter } from 'node:events';
 import { PassThrough } from 'node:stream';
+import { existsSync, readFileSync } from 'node:fs';
 import { ClineExecutorService } from '@/infrastructure/services/agents/common/executors/cline-executor.service.js';
 import type { SpawnFunction } from '@/infrastructure/services/agents/common/types.js';
 import { AgentType, AgentFeature, SecurityMode } from '@/domain/generated/output.js';
@@ -76,6 +77,13 @@ function emitJsonlLines(
     proc.stderr.end();
     proc.emit('close', exitCode);
   });
+}
+
+/** The temp prompt file a one-line pointer argument names. */
+function pointedPromptFile(promptArg: string): string {
+  const match = /stored in this file: (.+?\.txt)\./.exec(promptArg);
+  if (!match) throw new Error(`no prompt file named in: ${promptArg}`);
+  return match[1];
 }
 
 describe('ClineExecutorService', () => {
@@ -475,6 +483,74 @@ describe('ClineExecutorService', () => {
 
       if (originalPlatform) {
         Object.defineProperty(process, 'platform', originalPlatform);
+      }
+    });
+
+    // cline.cmd runs through cmd.exe, which cannot carry a line break — the
+    // task must reach Cline through a file and a one-line pointer.
+    it('sends a multi-line prompt through a one-line file pointer on Windows', async () => {
+      const originalPlatform = Object.getOwnPropertyDescriptor(process, 'platform');
+      Object.defineProperty(process, 'platform', { value: 'win32' });
+      try {
+        const mockProc = createMockChildProcess();
+        let promptFileAtSpawn: string | undefined;
+        vi.mocked(mockSpawn).mockImplementation(((_command: string, args: string[]) => {
+          promptFileAtSpawn = readFileSync(pointedPromptFile(args.at(-1) ?? ''), 'utf8');
+          return mockProc;
+        }) as unknown as SpawnFunction);
+
+        const executePromise = executor.execute('line one\nline two', { silent: true });
+        emitJsonlLines(mockProc, [sayEvent('OK')], null, 0);
+        await executePromise;
+
+        const args = vi.mocked(mockSpawn).mock.calls[0][1] as string[];
+        expect(args.filter((arg) => /[\r\n]/.test(arg))).toEqual([]);
+        expect(promptFileAtSpawn).toBe('line one\nline two');
+        expect(existsSync(pointedPromptFile(args.at(-1) ?? ''))).toBe(false);
+      } finally {
+        if (originalPlatform) Object.defineProperty(process, 'platform', originalPlatform);
+      }
+    });
+
+    it('removes the Windows prompt file when spawn throws', async () => {
+      const originalPlatform = Object.getOwnPropertyDescriptor(process, 'platform');
+      Object.defineProperty(process, 'platform', { value: 'win32' });
+      try {
+        let pointer = '';
+        vi.mocked(mockSpawn).mockImplementation(((_command: string, args: string[]) => {
+          pointer = args.at(-1) ?? '';
+          throw new Error('spawn EINVAL');
+        }) as unknown as SpawnFunction);
+
+        await expect(executor.execute('line one\nline two', { silent: true })).rejects.toThrow(
+          'spawn EINVAL'
+        );
+        expect(existsSync(pointedPromptFile(pointer))).toBe(false);
+      } finally {
+        if (originalPlatform) Object.defineProperty(process, 'platform', originalPlatform);
+      }
+    });
+
+    it('removes the Windows prompt file when a stream ends', async () => {
+      const originalPlatform = Object.getOwnPropertyDescriptor(process, 'platform');
+      Object.defineProperty(process, 'platform', { value: 'win32' });
+      try {
+        const mockProc = createMockChildProcess();
+        vi.mocked(mockSpawn).mockReturnValue(mockProc as any);
+
+        const stream = executor.executeStream('line one\nline two', { silent: true });
+        const iterator = stream[Symbol.asyncIterator]();
+        const first = iterator.next();
+        emitJsonlLines(mockProc, [sayEvent('OK')], null, 0);
+        await first;
+        while (!(await iterator.next()).done) {
+          // drain
+        }
+
+        const args = vi.mocked(mockSpawn).mock.calls[0][1] as string[];
+        expect(existsSync(pointedPromptFile(args.at(-1) ?? ''))).toBe(false);
+      } finally {
+        if (originalPlatform) Object.defineProperty(process, 'platform', originalPlatform);
       }
     });
   });

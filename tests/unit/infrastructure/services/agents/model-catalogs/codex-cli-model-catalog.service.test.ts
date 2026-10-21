@@ -5,9 +5,13 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   CodexCliModelCatalogService,
+  createCodexListModels,
   parseCodexDebugModelsOutput,
 } from '@/infrastructure/services/agents/common/model-catalogs/codex-cli-model-catalog.service.js';
-import { MODEL_CATALOG_TTL_MS } from '@/infrastructure/services/agents/common/model-catalogs/catalog-fetch.js';
+import {
+  MODEL_CATALOG_FETCH_TIMEOUT_MS,
+  MODEL_CATALOG_TTL_MS,
+} from '@/infrastructure/services/agents/common/model-catalogs/catalog-fetch.js';
 
 const FIXTURE = JSON.stringify({
   models: [
@@ -82,5 +86,20 @@ describe('CodexCliModelCatalogService', () => {
     const catalog = new CodexCliModelCatalogService(run);
 
     await expect(catalog.listModels()).resolves.toEqual([]);
+  });
+});
+
+describe('createCodexListModels', () => {
+  it('runs `codex debug models` through the injected ExecFunction', async () => {
+    // The ExecFunction resolves `codex.cmd` on Windows; a bare execFile
+    // cannot, which left Windows users with the static fallback list.
+    const exec = vi.fn().mockResolvedValue({ stdout: FIXTURE, stderr: '' });
+
+    await expect(createCodexListModels(exec)()).resolves.toBe(FIXTURE);
+    expect(exec).toHaveBeenCalledWith(
+      'codex',
+      ['debug', 'models'],
+      expect.objectContaining({ timeout: MODEL_CATALOG_FETCH_TIMEOUT_MS, windowsHide: true })
+    );
   });
 });

@@ -11,9 +11,13 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   CursorModelCatalogService,
+  createCursorListModels,
   parseCursorListModelsOutput,
 } from '@/infrastructure/services/agents/common/model-catalogs/cursor-model-catalog.service.js';
-import { MODEL_CATALOG_TTL_MS } from '@/infrastructure/services/agents/common/model-catalogs/catalog-fetch.js';
+import {
+  MODEL_CATALOG_FETCH_TIMEOUT_MS,
+  MODEL_CATALOG_TTL_MS,
+} from '@/infrastructure/services/agents/common/model-catalogs/catalog-fetch.js';
 
 const FIXTURE = readFileSync(join(__dirname, 'fixtures', 'cursor-list-models.txt'), 'utf8');
 
@@ -108,5 +112,18 @@ describe('CursorModelCatalogService', () => {
     const catalog = new CursorModelCatalogService(run);
 
     await expect(catalog.listModels()).resolves.toEqual([]);
+  });
+});
+
+describe('createCursorListModels', () => {
+  it('runs `cursor-agent --list-models` through the injected ExecFunction', async () => {
+    const exec = vi.fn().mockResolvedValue({ stdout: FIXTURE, stderr: '' });
+
+    await expect(createCursorListModels(exec)()).resolves.toBe(FIXTURE);
+    expect(exec).toHaveBeenCalledWith(
+      'cursor-agent',
+      ['--list-models'],
+      expect.objectContaining({ timeout: MODEL_CATALOG_FETCH_TIMEOUT_MS, windowsHide: true })
+    );
   });
 });

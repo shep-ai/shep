@@ -5,14 +5,13 @@
  * {@link TtlModelCatalog}.
  */
 
-import { execFile } from 'node:child_process';
-import { promisify } from 'node:util';
 import type { AgentConfig } from '../../../../../domain/generated/output.js';
 import type { AgentModelListing } from '../../../../../application/ports/output/agents/agent-executor-factory.interface.js';
 import { MODEL_CATALOG_FETCH_TIMEOUT_MS } from './catalog-fetch.js';
 import { TtlModelCatalog } from './ttl-model-catalog.js';
+import type { ExecFunction } from '../../../git/worktree.service.js';
+import { createExecFunction } from '../../../process/exec-function.js';
 
-const execFileAsync = promisify(execFile);
 const CURSOR_BINARY = 'cursor-agent';
 
 /** Injectable runner for `cursor-agent --list-models` stdout. */
@@ -41,18 +40,26 @@ export function parseCursorListModelsOutput(stdout: string): AgentModelListing[]
   return listings;
 }
 
-async function defaultCursorListModels(): Promise<string> {
-  const { stdout } = await execFileAsync(CURSOR_BINARY, ['--list-models'], {
-    timeout: MODEL_CATALOG_FETCH_TIMEOUT_MS,
-    encoding: 'utf8',
-    windowsHide: true,
-    maxBuffer: 2 * 1024 * 1024,
-  });
-  return typeof stdout === 'string' ? stdout : String(stdout);
+/**
+ * Run `cursor-agent --list-models` through `exec` — the shared, Windows-aware
+ * {@link ExecFunction}, which finds `cursor-agent.cmd` on Windows.
+ */
+export function createCursorListModels(exec: ExecFunction): CursorListModelsFn {
+  return async () => {
+    const { stdout } = await exec(CURSOR_BINARY, ['--list-models'], {
+      timeout: MODEL_CATALOG_FETCH_TIMEOUT_MS,
+      encoding: 'utf8',
+      windowsHide: true,
+      maxBuffer: 2 * 1024 * 1024,
+    });
+    return typeof stdout === 'string' ? stdout : String(stdout);
+  };
 }
 
 export class CursorModelCatalogService extends TtlModelCatalog {
-  constructor(private readonly listModelsFn: CursorListModelsFn = defaultCursorListModels) {
+  constructor(
+    private readonly listModelsFn: CursorListModelsFn = createCursorListModels(createExecFunction())
+  ) {
     super();
   }
 
