@@ -224,6 +224,52 @@ describe('SQLiteApplicationRepository', () => {
     });
   });
 
+  describe('updateStatus()', () => {
+    it('writes the status and returns true while the row is in an allowed status', async () => {
+      await repository.create(createTestApplication({ status: ApplicationStatus.Error }));
+
+      const claimed = await repository.updateStatus('app-001', ApplicationStatus.Idle, {
+        allowedFrom: [ApplicationStatus.Error],
+      });
+
+      expect(claimed).toBe(true);
+      expect((await repository.findById('app-001'))!.status).toBe(ApplicationStatus.Idle);
+    });
+
+    it('refuses and returns false when the row has already left the allowed statuses', async () => {
+      await repository.create(createTestApplication({ status: ApplicationStatus.Idle }));
+
+      const claimed = await repository.updateStatus('app-001', ApplicationStatus.Idle, {
+        allowedFrom: [ApplicationStatus.Error],
+      });
+
+      expect(claimed).toBe(false);
+    });
+
+    it('lets exactly one of two racing claims win', async () => {
+      await repository.create(createTestApplication({ status: ApplicationStatus.Error }));
+      const claim = () =>
+        repository.updateStatus('app-001', ApplicationStatus.Idle, {
+          allowedFrom: [ApplicationStatus.Error],
+        });
+
+      const results = await Promise.all([claim(), claim()]);
+
+      expect(results.filter(Boolean)).toHaveLength(1);
+    });
+
+    it('refuses a soft-deleted application', async () => {
+      await repository.create(createTestApplication({ status: ApplicationStatus.Error }));
+      await repository.softDelete('app-001');
+
+      const claimed = await repository.updateStatus('app-001', ApplicationStatus.Idle, {
+        allowedFrom: [ApplicationStatus.Error],
+      });
+
+      expect(claimed).toBe(false);
+    });
+  });
+
   describe('softDelete()', () => {
     it('sets deleted_at so the record is no longer returned by findById', async () => {
       await repository.create(createTestApplication());

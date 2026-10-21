@@ -88,10 +88,12 @@ describe('DI container string tokens', () => {
     );
     const container = await initializeContainer();
 
+    // Creation (and Resume) run setup through RunApplicationSetupUseCase, which
+    // holds the orchestrator.
     const createApplication = container.resolve(CreateApplicationUseCase) as unknown as {
-      runWorkflow: unknown;
+      runSetup: { runWorkflow: unknown };
     };
-    expect(createApplication.runWorkflow).toBeInstanceOf(RunWorkflowUseCase);
+    expect(createApplication.runSetup.runWorkflow).toBeInstanceOf(RunWorkflowUseCase);
     expect(container.resolve('RunWorkflowUseCase')).toBeInstanceOf(RunWorkflowUseCase);
     expect(container.resolve('RunScheduledWorkflowUseCase')).toBeInstanceOf(
       RunScheduledWorkflowUseCase

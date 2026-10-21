@@ -4,9 +4,10 @@
  * Not to be confused with `run-workflow.use-case.test.ts`, which covers
  * `RunScheduledWorkflowUseCase`.
  *
- * Its caller, `CreateApplicationUseCase`, treats a normal return as "setup
- * complete" and only marks the Application `Error` when this throws, so a
- * failed step must reject.
+ * Its caller, `RunApplicationSetupUseCase`, marks setup complete only on
+ * `{ completed: true }` and marks the Application `Error` when this throws, so a
+ * failed step must reject — and a step another walker claimed must stop the
+ * walk without claiming completion.
  */
 
 import 'reflect-metadata';
@@ -50,10 +51,20 @@ function makeStepRepo(): IWorkflowStepRepository {
         return row;
       });
     }),
-    updateStatus: vi.fn(async (stepId: string, status: WorkflowStepStatus) => {
-      const row = rows.get(stepId);
-      if (row) rows.set(stepId, { ...row, status });
-    }),
+    // Honours the guard like the SQLite repository: refuse once the row left `allowedFrom`.
+    updateStatus: vi.fn(
+      async (
+        stepId: string,
+        status: WorkflowStepStatus,
+        _metadata?: Record<string, unknown>,
+        guard?: { allowedFrom: readonly WorkflowStepStatus[] }
+      ) => {
+        const row = rows.get(stepId);
+        if (!row || (guard && !guard.allowedFrom.includes(row.status))) return false;
+        rows.set(stepId, { ...row, status });
+        return true;
+      }
+    ),
     findById: vi.fn(async (stepId: string) => rows.get(stepId) ?? null),
   } as unknown as IWorkflowStepRepository;
 }
@@ -112,7 +123,7 @@ describe('RunWorkflowUseCase', () => {
     await flush();
     turns[1].resolve();
 
-    await expect(run).resolves.toBeUndefined();
+    await expect(run).resolves.toEqual({ completed: true });
     expect(sendMessage.execute).toHaveBeenCalledTimes(2);
     expect(stepRepo.updateStatus).toHaveBeenCalledWith(
       'step-two',
@@ -153,6 +164,36 @@ describe('RunWorkflowUseCase', () => {
       expect(unhandled).not.toHaveBeenCalled();
     } finally {
       process.off('unhandledRejection', unhandled);
+    }
+  });
+
+  it('stops without claiming completion when another walker claimed the next step', async () => {
+    const { session, turns } = makeSession();
+    const run = makeUseCase(session).execute(INPUT);
+
+    await flush();
+    // A resume took step two while step one's turn was still running.
+    await stepRepo.updateStatus('step-two', WorkflowStepStatus.running);
+    turns[0].resolve();
+
+    await expect(run).resolves.toEqual({ completed: false });
+    expect(sendMessage.execute).toHaveBeenCalledTimes(1);
+  });
+
+  it('rejects instead of reporting success when the session never started', async () => {
+    vi.useFakeTimers();
+    try {
+      const { session } = makeSession();
+      vi.mocked(session.getChatState).mockResolvedValue({ sessionInfo: null } as never);
+      const run = makeUseCase(session).execute(INPUT);
+      const settled = expect(run).rejects.toThrow(/session/i);
+
+      await vi.advanceTimersByTimeAsync(5000);
+
+      await settled;
+      expect(stepRepo.ensureSteps).not.toHaveBeenCalled();
+    } finally {
+      vi.useRealTimers();
     }
   });
 

@@ -6,8 +6,11 @@
 
 import type Database from 'better-sqlite3';
 import { injectable } from 'tsyringe';
-import type { IApplicationRepository } from '../../application/ports/output/repositories/application-repository.interface.js';
-import type { Application } from '../../domain/generated/output.js';
+import type {
+  ApplicationStatusUpdateOptions,
+  IApplicationRepository,
+} from '../../application/ports/output/repositories/application-repository.interface.js';
+import type { Application, ApplicationStatus } from '../../domain/generated/output.js';
 import {
   toDatabase,
   fromDatabase,
@@ -203,6 +206,22 @@ export class SQLiteApplicationRepository implements IApplicationRepository {
       `UPDATE applications SET ${setClauses.join(', ')} WHERE id = ? AND deleted_at IS NULL`
     );
     stmt.run(...values);
+  }
+
+  async updateStatus(
+    id: string,
+    status: ApplicationStatus,
+    options: ApplicationStatusUpdateOptions
+  ): Promise<boolean> {
+    if (options.allowedFrom.length === 0) return false;
+    const placeholders = options.allowedFrom.map(() => '?').join(', ');
+    const result = this.db
+      .prepare(
+        `UPDATE applications SET status = ?, updated_at = ?
+         WHERE id = ? AND deleted_at IS NULL AND status IN (${placeholders})`
+      )
+      .run(status, Date.now(), id, ...options.allowedFrom);
+    return result.changes > 0;
   }
 
   async softDelete(id: string): Promise<void> {

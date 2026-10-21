@@ -3,7 +3,7 @@
  */
 
 import 'reflect-metadata';
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { randomUUID } from 'node:crypto';
 import { RecordAiChangeRiskSignalUseCase } from '@/application/use-cases/aspm/ai-review/record-ai-change-risk-signal.js';
 import {
@@ -15,6 +15,7 @@ import {
 } from '@/domain/generated/output.js';
 import type { IAiChangeRiskSignalRepository } from '@/application/ports/output/repositories/ai-change-risk-signal-repository.interface.js';
 import type { IApplicationRepository } from '@/application/ports/output/repositories/application-repository.interface.js';
+import { createMockApplicationRepository } from '../../../helpers/application-repository.mock.js';
 import { ApplicationNotFoundError } from '@/domain/aspm/errors/application-not-found.error.js';
 import { FakeSlaClock } from '../../../helpers/aspm/fake-sla-clock.js';
 
@@ -47,19 +48,13 @@ class FakeSignalRepo implements IAiChangeRiskSignalRepository {
 }
 
 function fakeAppRepo(existingId?: string): IApplicationRepository {
-  return {
-    create: async () => undefined,
-    findById: async (id: string) =>
+  return createMockApplicationRepository({
+    findById: vi.fn(async (id: string) =>
       id === existingId
         ? ({ id, name: 'demo', slug: 'demo', path: '/demo' } as unknown as Application)
-        : null,
-    findBySlug: async () => null,
-    findByPath: async () => null,
-    list: async () => [],
-    update: async () => undefined,
-    softDelete: async () => undefined,
-    restore: async () => undefined,
-  };
+        : null
+    ),
+  });
 }
 
 describe('RecordAiChangeRiskSignalUseCase', () => {

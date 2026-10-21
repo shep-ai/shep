@@ -2,6 +2,7 @@ import 'reflect-metadata';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { RunBedrockLifecycleUseCase } from '@/application/use-cases/applications/run-bedrock-lifecycle.use-case.js';
 import type { IApplicationRepository } from '@/application/ports/output/repositories/application-repository.interface.js';
+import { createMockApplicationRepository } from '../../../../helpers/application-repository.mock.js';
 import type {
   IBedrockIntegrationService,
   BedrockLifecycleResult,
@@ -36,16 +37,7 @@ function makeResult(action: BedrockLifecycleAction): BedrockLifecycleResult {
 }
 
 function createMockAppRepo(app: Application | null): IApplicationRepository {
-  return {
-    create: vi.fn().mockResolvedValue(undefined),
-    findById: vi.fn().mockResolvedValue(app),
-    findBySlug: vi.fn().mockResolvedValue(null),
-    findByPath: vi.fn().mockResolvedValue(null),
-    list: vi.fn().mockResolvedValue([]),
-    update: vi.fn().mockResolvedValue(undefined),
-    softDelete: vi.fn().mockResolvedValue(undefined),
-    restore: vi.fn().mockResolvedValue(undefined),
-  };
+  return createMockApplicationRepository({ findById: vi.fn().mockResolvedValue(app) });
 }
 
 function createMockBedrockService(): IBedrockIntegrationService {

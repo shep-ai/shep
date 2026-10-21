@@ -75,6 +75,16 @@ class FakeApplicationRepo implements IApplicationRepository {
     if (!app) return;
     this.apps.set(id, { ...app, ...fields });
   }
+  async updateStatus(
+    id: string,
+    status: ApplicationStatus,
+    options: { allowedFrom: readonly ApplicationStatus[] }
+  ) {
+    const app = this.apps.get(id);
+    if (!app || !options.allowedFrom.includes(app.status)) return false;
+    this.apps.set(id, { ...app, status });
+    return true;
+  }
   async softDelete(id: string) {
     this.apps.delete(id);
   }

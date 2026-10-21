@@ -11,6 +11,11 @@
 
 import type { WorkflowStep, WorkflowStepStatus } from '../../../../domain/generated/output.js';
 
+/** Statuses a guarded step write may leave. */
+export interface WorkflowStepStatusGuard {
+  allowedFrom: readonly WorkflowStepStatus[];
+}
+
 export interface IWorkflowStepRepository {
   /** Insert a single step row (used by `ensureSteps`). */
   create(step: WorkflowStep): Promise<void>;
@@ -42,12 +47,19 @@ export interface IWorkflowStepRepository {
    * Update the status of a step. When transitioning to `running`,
    * also stamps `startedAt`; to any terminal state, also stamps
    * `finishedAt`. Atomic single-row UPDATE.
+   *
+   * With `guard`, the write applies ONLY while the step is still in one of
+   * `guard.allowedFrom`, and the returned boolean says whether it did. A
+   * guarded `pending → running` is the claim that lets exactly one walker
+   * (the creation orchestrator or a resume) send that step's prompt.
+   * Unguarded writes always apply and return true when the row exists.
    */
   updateStatus(
     stepId: string,
     status: WorkflowStepStatus,
-    metadata?: Record<string, unknown>
-  ): Promise<void>;
+    metadata?: Record<string, unknown>,
+    guard?: WorkflowStepStatusGuard
+  ): Promise<boolean>;
 
   /**
    * Recovery sweep — marks every row currently in `running` status

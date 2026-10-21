@@ -4,32 +4,22 @@ import {
   CreateApplicationUseCase,
   randomSlugTag,
 } from '@/application/use-cases/applications/create-application.use-case.js';
-import type { IApplicationRepository } from '@/application/ports/output/repositories/application-repository.interface.js';
 import type { IApplicationCreationPromptBuilder } from '@/application/ports/output/services/application-creation-prompt-builder.interface.js';
 import type { IApplicationBriefStore } from '@/application/ports/output/services/application-brief-store.interface.js';
 import type { IApplicationScaffolder } from '@/application/ports/output/services/application-scaffolder.interface.js';
 import type { IInteractiveMessageRepository } from '@/application/ports/output/repositories/interactive-message-repository.interface.js';
 import type { IOperationLogRepository } from '@/application/ports/output/repositories/operation-log.repository.interface.js';
 import type { CreateProjectUseCase } from '@/application/use-cases/projects/create-project.use-case.js';
-import type { SendInteractiveMessageUseCase } from '@/application/use-cases/interactive/send-interactive-message.use-case.js';
+import { RunApplicationSetupUseCase } from '@/application/use-cases/applications/run-application-setup.use-case.js';
 import type { RunWorkflowUseCase } from '@/application/use-cases/workflows/run-workflow.use-case.js';
 import type { IInteractiveSessionRepository } from '@/application/ports/output/repositories/interactive-session-repository.interface.js';
 import type { ILogger } from '@/application/ports/output/services/logger.interface.js';
 import type { ISettingsProvider } from '@/application/ports/output/services/settings-provider.interface.js';
 import { ApplicationStatus } from '@/domain/generated/output.js';
-
-function createMockAppRepo(): IApplicationRepository {
-  return {
-    create: vi.fn(),
-    findById: vi.fn().mockResolvedValue(null),
-    findBySlug: vi.fn().mockResolvedValue(null),
-    findByPath: vi.fn().mockResolvedValue(null),
-    list: vi.fn().mockResolvedValue([]),
-    update: vi.fn(),
-    softDelete: vi.fn(),
-    restore: vi.fn(),
-  };
-}
+import {
+  createMockApplicationRepository,
+  type MockApplicationRepository,
+} from '../../../../helpers/application-repository.mock.js';
 
 function createMockCreateProject(): CreateProjectUseCase {
   return {
@@ -50,19 +40,6 @@ function createMockPromptBuilder(): IApplicationCreationPromptBuilder {
   };
 }
 
-function createMockSendMessage(): SendInteractiveMessageUseCase {
-  return {
-    execute: vi.fn().mockResolvedValue({
-      id: 'msg-1',
-      featureId: 'app-test',
-      role: 'user',
-      content: '',
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    }),
-  } as unknown as SendInteractiveMessageUseCase;
-}
-
 function createMockBriefStore(): IApplicationBriefStore {
   return {
     write: vi
@@ -75,6 +52,7 @@ function createMockBriefStore(): IApplicationBriefStore {
 
 function createMockScaffolder(): IApplicationScaffolder {
   return {
+    hasExistingContent: vi.fn().mockResolvedValue(false),
     scaffold: vi.fn().mockImplementation(({ repositoryPath }: { repositoryPath: string }) =>
       Promise.resolve({
         repositoryPath,
@@ -105,10 +83,9 @@ function createMockOperationLogRepo(): IOperationLogRepository {
 
 describe('CreateApplicationUseCase', () => {
   let useCase: CreateApplicationUseCase;
-  let mockAppRepo: IApplicationRepository;
+  let mockAppRepo: MockApplicationRepository;
   let mockCreateProject: CreateProjectUseCase;
   let mockPromptBuilder: IApplicationCreationPromptBuilder;
-  let mockSendMessage: SendInteractiveMessageUseCase;
   let mockBriefStore: IApplicationBriefStore;
   let mockRunWorkflow: RunWorkflowUseCase;
   let mockSessionRepo: IInteractiveSessionRepository;
@@ -119,16 +96,16 @@ describe('CreateApplicationUseCase', () => {
   let mockSettingsProvider: ISettingsProvider;
 
   beforeEach(() => {
-    mockAppRepo = createMockAppRepo();
+    mockAppRepo = createMockApplicationRepository();
     mockCreateProject = createMockCreateProject();
     mockPromptBuilder = createMockPromptBuilder();
-    mockSendMessage = createMockSendMessage();
     mockBriefStore = createMockBriefStore();
     mockRunWorkflow = {
       execute: vi.fn().mockResolvedValue(undefined),
     } as unknown as RunWorkflowUseCase;
     mockSessionRepo = {
       findLatestAgentSessionIdForFeature: vi.fn().mockResolvedValue(null),
+      clearAgentSessionIdsForFeature: vi.fn().mockResolvedValue(undefined),
     } as unknown as IInteractiveSessionRepository;
     mockScaffolder = createMockScaffolder();
     mockMessageRepo = createMockMessageRepo();
@@ -145,17 +122,23 @@ describe('CreateApplicationUseCase', () => {
       has: vi.fn().mockReturnValue(false),
       get: vi.fn(),
     };
-    useCase = new CreateApplicationUseCase(
+    // The real setup pipeline, so these tests keep covering the scaffold +
+    // workflow dispatch that creation kicks off in the background.
+    const runSetup = new RunApplicationSetupUseCase(
       mockAppRepo,
-      mockCreateProject,
       mockPromptBuilder,
-      mockSendMessage,
       mockBriefStore,
       mockRunWorkflow,
       mockSessionRepo,
       mockScaffolder,
-      mockMessageRepo,
       mockOperationLogRepo,
+      mockLogger
+    );
+    useCase = new CreateApplicationUseCase(
+      mockAppRepo,
+      mockCreateProject,
+      runSetup,
+      mockMessageRepo,
       mockLogger,
       mockSettingsProvider
     );
@@ -240,14 +223,33 @@ describe('CreateApplicationUseCase', () => {
     // the failure.
     expect(mockScaffolder.scaffold).toHaveBeenCalledTimes(1);
     expect(mockRunWorkflow.execute).not.toHaveBeenCalled();
-    expect(mockAppRepo.update).toHaveBeenCalledWith(
+    expect(mockAppRepo.updateStatus).toHaveBeenCalledWith(
       result.application.id,
-      expect.objectContaining({ status: ApplicationStatus.Error })
+      ApplicationStatus.Error,
+      { allowedFrom: [ApplicationStatus.Idle, ApplicationStatus.Active] }
     );
 
     expect(mockLogger.error).toHaveBeenCalledWith(
-      '[create-application] scaffold failed',
+      '[run-application-setup] scaffold failed',
       expect.objectContaining({ err: 'bun bootstrap failed' })
+    );
+  });
+
+  it('flips status to Error, and never marks setup complete, when the workflow fails', async () => {
+    vi.mocked(mockRunWorkflow.execute).mockRejectedValueOnce(new Error('agent not logged in'));
+
+    const result = await useCase.execute({ description: 'An app', initialPrompt: 'build it' });
+    await vi.waitFor(() =>
+      expect(mockAppRepo.updateStatus).toHaveBeenCalledWith(
+        result.application.id,
+        ApplicationStatus.Error,
+        { allowedFrom: [ApplicationStatus.Idle, ApplicationStatus.Active] }
+      )
+    );
+
+    expect(mockAppRepo.update).not.toHaveBeenCalledWith(
+      result.application.id,
+      expect.objectContaining({ setupComplete: true })
     );
   });
 

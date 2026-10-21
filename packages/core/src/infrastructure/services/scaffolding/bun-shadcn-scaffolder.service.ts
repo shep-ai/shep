@@ -73,6 +73,7 @@ import type {
 } from '../../../application/ports/output/services/application-scaffolder.interface.js';
 import { flattenSingleChildProject } from './flatten-subdirectory.js';
 import { applyTemplateOverlay } from './template-overlay.js';
+import { hasExistingContent } from './existing-content.js';
 
 /**
  * Strip ANSI escape sequences from a byte slice coming out of a child
@@ -170,6 +171,10 @@ const CACHE_SKIP = new Set(['.git', 'node_modules']);
 
 @injectable()
 export class BunShadcnScaffolder implements IApplicationScaffolder {
+  async hasExistingContent(repositoryPath: string): Promise<boolean> {
+    return hasExistingContent(repositoryPath);
+  }
+
   async scaffold(options: ScaffoldOptions): Promise<ScaffoldResult> {
     const { repositoryPath, onLog } = options;
     const emit = (level: 'Info' | 'Warn' | 'Error', message: string, detail?: string): void => {

@@ -92,6 +92,8 @@ import { FeatureAgentLifecyclePublisher } from '@/infrastructure/services/agents
 import { FeatureAgentGateQuestionPublisher } from '@/infrastructure/services/agents/feature-agent/feature-agent-gate-question-publisher.js';
 import { FeatureAgentSupervisorGateEvaluator } from '@/infrastructure/services/agents/feature-agent/feature-agent-supervisor-gate-evaluator.js';
 import { SessionBootstrapper } from '@/infrastructure/services/interactive/lifecycle/session-bootstrapper.js';
+import { SessionBootAttempt } from '@/infrastructure/services/interactive/lifecycle/session-boot-attempt.js';
+import { DeadAgentSessionRecovery } from '@/infrastructure/services/interactive/lifecycle/dead-agent-session.recovery.js';
 import { SessionTerminator } from '@/infrastructure/services/interactive/lifecycle/session-terminator.js';
 import { TurnExecutor } from '@/infrastructure/services/interactive/runtime/turn.executor.js';
 import { UserInteractionCoordinator } from '@/infrastructure/services/interactive/runtime/user-interaction.coordinator.js';
@@ -170,6 +172,7 @@ const WEB_ROUTE_TOKENS: readonly string[] = [
   'ReadApplicationFileUseCase',
   'RespondToInteractionUseCase',
   'ResumeApplicationWorkflowUseCase',
+  'RunApplicationSetupUseCase',
   'SelectCloudProviderUseCase',
   'SendInteractiveMessageUseCase',
   'StartInteractiveSessionUseCase',
@@ -539,9 +542,8 @@ describe('DI container bootstrap (integration)', () => {
       logger,
       sessionRegistry
     );
-    const bootstrapper = new SessionBootstrapper(
+    const bootAttempt = new SessionBootAttempt(
       interactiveSessionRepo,
-      sessionRegistry,
       sessionPersistence,
       streamEventDispatcher,
       bootPromptResolver,
@@ -558,6 +560,22 @@ describe('DI container bootstrap (integration)', () => {
         create: (session, surface) =>
           scopedContainer.resolve(AgentQuestionBridgeFactory).create(session, surface),
       }
+    );
+    const bootstrapper = new SessionBootstrapper(
+      interactiveSessionRepo,
+      sessionRegistry,
+      sessionPersistence,
+      streamEventDispatcher,
+      agentExecutorFactory,
+      agentConfigResolver,
+      logger,
+      bootAttempt,
+      new DeadAgentSessionRecovery(
+        interactiveSessionRepo,
+        sessionRegistry,
+        streamEventDispatcher,
+        logger
+      )
     );
     const terminator = new SessionTerminator(
       sessionRegistry,

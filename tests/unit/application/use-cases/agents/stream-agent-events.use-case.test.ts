@@ -16,8 +16,8 @@ import { StreamAgentEventsUseCase } from '@/application/use-cases/agents/stream-
 import type { ListFeaturesUseCase } from '@/application/use-cases/features/list-features.use-case.js';
 import type { IAgentRunRepository } from '@/application/ports/output/agents/agent-run-repository.interface.js';
 import type { IPhaseTimingRepository } from '@/application/ports/output/agents/phase-timing-repository.interface.js';
-import type { IInteractiveSessionRepository } from '@/application/ports/output/repositories/interactive-session-repository.interface.js';
-import type { IApplicationRepository } from '@/application/ports/output/repositories/application-repository.interface.js';
+import { createMockInteractiveSessionRepository } from '../../../../helpers/interactive-session-repository.mock.js';
+import { createMockApplicationRepository } from '../../../../helpers/application-repository.mock.js';
 import type { ICloudDeploymentEventBus } from '@/application/ports/output/services/cloud-deployment-event-bus.interface.js';
 import type { ILogger } from '@/application/ports/output/services/logger.interface.js';
 import type { IOperationLogEventBus } from '@/application/ports/output/services/operation-log-event-bus.interface.js';
@@ -104,25 +104,7 @@ function createUseCase(args: {
     findByFeatureId: vi.fn().mockResolvedValue([]),
   };
 
-  const sessionRepo: IInteractiveSessionRepository = {
-    create: vi.fn(),
-    findById: vi.fn().mockResolvedValue(null),
-    findByFeatureId: vi.fn().mockResolvedValue(null),
-    findAllActive: vi.fn().mockResolvedValue([]),
-    updateStatus: vi.fn(),
-    updateLastActivity: vi.fn(),
-    markAllActiveStopped: vi.fn(),
-    markStoppedIfActive: vi.fn(),
-    countActiveSessions: vi.fn().mockResolvedValue(0),
-    updateAgentSessionId: vi.fn(),
-    getAgentSessionId: vi.fn().mockResolvedValue(null),
-    findLatestAgentSessionIdForFeature: vi.fn().mockResolvedValue(null),
-    updateTurnStatus: vi.fn(),
-    getTurnStatuses: vi.fn().mockResolvedValue(new Map()),
-    getAllActiveTurnStatuses: vi.fn().mockResolvedValue(new Map()),
-    accumulateUsage: vi.fn(),
-    getUsage: vi.fn().mockResolvedValue(null),
-  };
+  const sessionRepo = createMockInteractiveSessionRepository();
 
   const processLiveness: IProcessLivenessProbe = {
     isProcessAlive: vi.fn().mockReturnValue(args.processAlive ?? true),
@@ -133,16 +115,7 @@ function createUseCase(args: {
     subscribe: vi.fn().mockReturnValue(() => undefined),
   };
 
-  const applicationRepo: IApplicationRepository = {
-    create: vi.fn(),
-    findById: vi.fn().mockResolvedValue(null),
-    findBySlug: vi.fn().mockResolvedValue(null),
-    findByPath: vi.fn().mockResolvedValue(null),
-    list: vi.fn().mockResolvedValue([]),
-    update: vi.fn(),
-    softDelete: vi.fn(),
-    restore: vi.fn(),
-  };
+  const applicationRepo = createMockApplicationRepository();
 
   const operationLogEventBus: IOperationLogEventBus = {
     publish: vi.fn(),
@@ -255,25 +228,7 @@ describe('StreamAgentEventsUseCase', () => {
       findByFeatureId: vi.fn().mockResolvedValue([]),
     };
 
-    const sessionRepo: IInteractiveSessionRepository = {
-      create: vi.fn(),
-      findById: vi.fn().mockResolvedValue(null),
-      findByFeatureId: vi.fn().mockResolvedValue(null),
-      findAllActive: vi.fn().mockResolvedValue([]),
-      updateStatus: vi.fn(),
-      updateLastActivity: vi.fn(),
-      markAllActiveStopped: vi.fn(),
-      markStoppedIfActive: vi.fn(),
-      countActiveSessions: vi.fn().mockResolvedValue(0),
-      updateAgentSessionId: vi.fn(),
-      getAgentSessionId: vi.fn().mockResolvedValue(null),
-      findLatestAgentSessionIdForFeature: vi.fn().mockResolvedValue(null),
-      updateTurnStatus: vi.fn(),
-      getTurnStatuses: vi.fn().mockResolvedValue(new Map()),
-      getAllActiveTurnStatuses: vi.fn().mockResolvedValue(new Map()),
-      accumulateUsage: vi.fn(),
-      getUsage: vi.fn().mockResolvedValue(null),
-    };
+    const sessionRepo = createMockInteractiveSessionRepository();
 
     const processLiveness: IProcessLivenessProbe = {
       isProcessAlive: vi.fn().mockReturnValue(true),
@@ -282,16 +237,7 @@ describe('StreamAgentEventsUseCase', () => {
       publish: vi.fn(),
       subscribe: vi.fn().mockReturnValue(() => undefined),
     };
-    const applicationRepo: IApplicationRepository = {
-      create: vi.fn(),
-      findById: vi.fn().mockResolvedValue(null),
-      findBySlug: vi.fn().mockResolvedValue(null),
-      findByPath: vi.fn().mockResolvedValue(null),
-      list: vi.fn().mockResolvedValue([]),
-      update: vi.fn(),
-      softDelete: vi.fn(),
-      restore: vi.fn(),
-    };
+    const applicationRepo = createMockApplicationRepository();
     const operationLogEventBus: IOperationLogEventBus = {
       publish: vi.fn(),
       subscribe: vi.fn().mockReturnValue(() => undefined),
@@ -370,25 +316,7 @@ describe('StreamAgentEventsUseCase', () => {
       findByRunIds: vi.fn().mockResolvedValue([]),
       findByFeatureId: vi.fn().mockResolvedValue([]),
     };
-    const sessionRepo: IInteractiveSessionRepository = {
-      create: vi.fn(),
-      findById: vi.fn().mockResolvedValue(null),
-      findByFeatureId: vi.fn().mockResolvedValue(null),
-      findAllActive: vi.fn().mockResolvedValue([]),
-      updateStatus: vi.fn(),
-      updateLastActivity: vi.fn(),
-      markAllActiveStopped: vi.fn(),
-      markStoppedIfActive: vi.fn(),
-      countActiveSessions: vi.fn().mockResolvedValue(0),
-      updateAgentSessionId: vi.fn(),
-      getAgentSessionId: vi.fn().mockResolvedValue(null),
-      findLatestAgentSessionIdForFeature: vi.fn().mockResolvedValue(null),
-      updateTurnStatus: vi.fn(),
-      getTurnStatuses: vi.fn().mockResolvedValue(new Map()),
-      getAllActiveTurnStatuses: vi.fn().mockResolvedValue(new Map()),
-      accumulateUsage: vi.fn(),
-      getUsage: vi.fn().mockResolvedValue(null),
-    };
+    const sessionRepo = createMockInteractiveSessionRepository();
     const processLiveness: IProcessLivenessProbe = {
       isProcessAlive: vi.fn().mockReturnValue(true),
     };
@@ -396,16 +324,7 @@ describe('StreamAgentEventsUseCase', () => {
       publish: vi.fn(),
       subscribe: vi.fn().mockReturnValue(() => undefined),
     };
-    const applicationRepo: IApplicationRepository = {
-      create: vi.fn(),
-      findById: vi.fn().mockResolvedValue(null),
-      findBySlug: vi.fn().mockResolvedValue(null),
-      findByPath: vi.fn().mockResolvedValue(null),
-      list: vi.fn().mockResolvedValue([]),
-      update: vi.fn(),
-      softDelete: vi.fn(),
-      restore: vi.fn(),
-    };
+    const applicationRepo = createMockApplicationRepository();
     const operationLogEventBus: IOperationLogEventBus = {
       publish: vi.fn(),
       subscribe: vi.fn().mockReturnValue(() => undefined),

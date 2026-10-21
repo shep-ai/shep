@@ -14,59 +14,17 @@
 import { injectable, inject } from 'tsyringe';
 import { randomUUID } from 'node:crypto';
 import type { Application, InteractiveMessage } from '../../../domain/generated/output.js';
-import {
-  ApplicationStatus,
-  InteractiveMessageRole,
-  OperationLogKind,
-  OperationLogLevel,
-} from '../../../domain/generated/output.js';
+import { ApplicationStatus, InteractiveMessageRole } from '../../../domain/generated/output.js';
 import type { IApplicationRepository } from '../../ports/output/repositories/application-repository.interface.js';
-import type { IOperationLogRepository } from '../../ports/output/repositories/operation-log.repository.interface.js';
-import type { IApplicationCreationPromptBuilder } from '../../ports/output/services/application-creation-prompt-builder.interface.js';
-import type { IApplicationBriefStore } from '../../ports/output/services/application-brief-store.interface.js';
-import type { IApplicationScaffolder } from '../../ports/output/services/application-scaffolder.interface.js';
 import type { IInteractiveMessageRepository } from '../../ports/output/repositories/interactive-message-repository.interface.js';
 import type { ILogger } from '../../ports/output/services/logger.interface.js';
 import type { ISettingsProvider } from '../../ports/output/services/settings-provider.interface.js';
 import type { CreateProjectUseCase } from '../projects/create-project.use-case.js';
-import type { SendInteractiveMessageUseCase } from '../interactive/send-interactive-message.use-case.js';
-import type { RunWorkflowUseCase } from '../workflows/run-workflow.use-case.js';
-import type { IInteractiveSessionRepository } from '../../ports/output/repositories/interactive-session-repository.interface.js';
+import type { RunApplicationSetupUseCase } from './run-application-setup.use-case.js';
 import { featureIdForApplication } from '../../../domain/shared/feature-id.js';
-import { APPLICATION_CREATION_WORKFLOW } from './application-creation.workflow.js';
 import { ApplicationProjectAllocator } from './application-project-allocator.js';
 
-/**
- * Build the very first message the agent sees on turn 1. Carries the
- * user's verbatim request AND a hard directive to read the brief
- * BEFORE any other action. Kept short so the agent doesn't skim past
- * the directive — the real content lives in the brief file.
- *
- * Note that this string is NOT persisted to the chat UI — the user
- * only sees their raw request in the first bubble. This is the
- * agent-side kickoff text, injected via `agentKickoffOverride`.
- *
- * @param briefPath  Absolute path to the brief file. Lives OUTSIDE
- *                   the user's project (under `~/.shep/application-briefs/`)
- *                   so we don't pollute the scaffolded repo.
- * @param userMessage The user's verbatim request.
- */
-export function buildKickoffDirective(args: { briefPath: string; userMessage: string }): string {
-  return [
-    `Before you take ANY other action, use the Read tool to read \`${args.briefPath}\` in full.`,
-    `That file is your complete operating brief — persona (Shep), environment facts, workflow, tech stack, quality bar, and definition of done. Treat it as your system prompt for this entire session.`,
-    ``,
-    `The brief lives OUTSIDE your working directory on purpose — do NOT copy it into the project and do NOT mention it to the user.`,
-    ``,
-    `After you have read the brief, begin executing Workflow step 1 immediately. Do not run \`ls\`, \`pwd\`, or any other discovery command — the brief's Environment section already told you everything about your working directory.`,
-    ``,
-    `---`,
-    ``,
-    `# User's request`,
-    ``,
-    args.userMessage,
-  ].join('\n');
-}
+export { buildKickoffDirective } from './run-application-setup.use-case.js';
 
 export interface CreateApplicationInput {
   description: string;
@@ -96,22 +54,10 @@ export class CreateApplicationUseCase {
     private readonly appRepo: IApplicationRepository,
     @inject('CreateProjectUseCase')
     private readonly createProject: CreateProjectUseCase,
-    @inject('IApplicationCreationPromptBuilder')
-    private readonly promptBuilder: IApplicationCreationPromptBuilder,
-    @inject('SendInteractiveMessageUseCase')
-    private readonly sendMessage: SendInteractiveMessageUseCase,
-    @inject('IApplicationBriefStore')
-    private readonly briefStore: IApplicationBriefStore,
-    @inject('RunWorkflowUseCase')
-    private readonly runWorkflow: RunWorkflowUseCase,
-    @inject('IInteractiveSessionRepository')
-    private readonly sessionRepo: IInteractiveSessionRepository,
-    @inject('IApplicationScaffolder')
-    private readonly scaffolder: IApplicationScaffolder,
+    @inject('RunApplicationSetupUseCase')
+    private readonly runSetup: RunApplicationSetupUseCase,
     @inject('IInteractiveMessageRepository')
     private readonly messageRepo: IInteractiveMessageRepository,
-    @inject('IOperationLogRepository')
-    private readonly operationLogRepo: IOperationLogRepository,
     @inject('ILogger')
     private readonly logger: ILogger,
     @inject('ISettingsProvider')
@@ -270,144 +216,17 @@ export class CreateApplicationUseCase {
     //    via a kickoff directive. Building the brief and writing it
     //    also runs in the background so the request handler stays
     //    fast.
-    void this.dispatchScaffoldAndWorkflow({
+    //
+    //    The pipeline itself lives in RunApplicationSetupUseCase so
+    //    "Try again" on a setup that failed before any workflow step
+    //    existed re-runs exactly this path. It never throws.
+    void this.runSetup.execute({
       application,
-      projectPath,
       initialPrompt: input.initialPrompt?.trim() ? input.initialPrompt.trim() : undefined,
-      agentType: resolved.agentType,
-      modelOverride: resolved.modelOverride,
+      // The folder was created moments ago for this scaffold.
+      keepExistingFiles: false,
     });
 
     return { application, repositoryPath: projectPath };
-  }
-
-  /**
-   * Background pipeline that runs AFTER the Application row is
-   * already persisted and the caller has returned. Owns the long-
-   * running side effects (scaffold, optional workflow) so no
-   * presentation layer has to block on them.
-   *
-   * Errors at any stage are caught and flip the Application row to
-   * Error + setupComplete=false — never re-thrown, because there is
-   * no caller left to receive them.
-   */
-  private async dispatchScaffoldAndWorkflow(args: {
-    application: Application;
-    projectPath: string;
-    initialPrompt: string | undefined;
-    agentType: string | undefined;
-    modelOverride: string | undefined;
-  }): Promise<void> {
-    // Phase A — scaffold the project tree.
-    //
-    // Wire an `onLog` sink that forwards every scaffolder event into
-    // the shared operation_log_entries table under the ApplicationSetup
-    // kind so the Smart Deploy Activity drawer can stream CLI output
-    // (create-vite, bun install, bun add, template overlay) in real
-    // time. Append failures are intentionally swallowed — a broken
-    // log sink must never abort a successful scaffold.
-    const appId = args.application.id;
-    const onScaffoldLog = (entry: {
-      level: 'Debug' | 'Info' | 'Warn' | 'Error';
-      message: string;
-      detail?: string;
-    }): void => {
-      void this.operationLogRepo
-        .append({
-          operationKind: OperationLogKind.ApplicationSetup,
-          operationId: appId,
-          level: entry.level as OperationLogLevel,
-          message: entry.message,
-          detail: entry.detail,
-        })
-        .catch(() => {
-          // Log-sink errors are non-fatal.
-        });
-    };
-
-    try {
-      await this.scaffolder.scaffold({
-        repositoryPath: args.projectPath,
-        projectName: args.application.name,
-        applicationId: args.application.id,
-        onLog: onScaffoldLog,
-      });
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      this.logger.error('[create-application] scaffold failed', { err: message });
-      onScaffoldLog({
-        level: 'Error',
-        message: 'Application setup failed',
-        detail: message,
-      });
-      try {
-        await this.appRepo.update(args.application.id, {
-          status: ApplicationStatus.Error,
-        });
-      } catch {
-        // Best-effort — surface the original error first.
-      }
-      return;
-    }
-
-    // Phase B — optional workflow orchestration. Skipped when no
-    // initialPrompt is provided (e.g. `shep app new` without a
-    // kickoff). The scaffold alone is enough to hand the user a
-    // ready-to-code project.
-    if (!args.initialPrompt) return;
-
-    try {
-      const { systemPrompt, userMessage } = this.promptBuilder.build({
-        description: args.initialPrompt,
-        workspace: {
-          workingDirectory: args.projectPath,
-          platform: process.platform === 'win32' ? 'windows' : 'posix',
-        },
-      });
-
-      // Materialize the brief on disk. The brief holds persona /
-      // environment / quality bar only — the workflow steps live in
-      // core code, not the brief, because the orchestrator drives
-      // them step by step.
-      const briefPath = await this.briefStore.write(args.application.id, systemPrompt);
-
-      const featureId = featureIdForApplication(args.application.id);
-      await this.runWorkflow.execute({
-        featureId,
-        worktreePath: args.projectPath,
-        workflow: APPLICATION_CREATION_WORKFLOW,
-        model: args.modelOverride,
-        agentType: args.agentType,
-        firstStepPromptWrapper: (stepPrompt) =>
-          buildKickoffDirective({
-            briefPath,
-            userMessage: `${userMessage}\n\n---\n\n${stepPrompt}`,
-          }),
-        visibleFirstMessage: userMessage,
-        // The user's first bubble was pre-persisted in execute()
-        // before this background dispatch ran — don't let run-workflow
-        // write a duplicate row.
-        firstUserMessageAlreadyPersisted: true,
-      });
-
-      // All steps completed — mark the application as setup complete
-      // and persist the agent session ID for future resumption.
-      const agentSessionId = await this.sessionRepo.findLatestAgentSessionIdForFeature(featureId);
-      await this.appRepo.update(args.application.id, {
-        setupComplete: true,
-        ...(agentSessionId ? { agentSessionId } : {}),
-      });
-    } catch (err) {
-      this.logger.error('[create-application] workflow dispatch failed', {
-        err: err instanceof Error ? err.message : String(err),
-      });
-      try {
-        await this.appRepo.update(args.application.id, {
-          status: ApplicationStatus.Error,
-        });
-      } catch {
-        // Best-effort status update — original error already logged.
-      }
-    }
   }
 }

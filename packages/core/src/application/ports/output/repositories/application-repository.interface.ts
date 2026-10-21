@@ -4,7 +4,13 @@
  * Defines the contract for Application entity persistence operations.
  */
 
-import type { Application } from '../../../../domain/generated/output.js';
+import type { Application, ApplicationStatus } from '../../../../domain/generated/output.js';
+
+/** Guard for a status write: the statuses the row may leave. */
+export interface ApplicationStatusUpdateOptions {
+  /** Apply the write only while the application is in one of these statuses. */
+  allowedFrom: readonly ApplicationStatus[];
+}
 
 export interface IApplicationRepository {
   create(application: Application): Promise<void>;
@@ -37,6 +43,18 @@ export interface IApplicationRepository {
       >
     >
   ): Promise<void>;
+  /**
+   * Guarded status write. Moves the application to `status` ONLY while it is
+   * still in one of `options.allowedFrom`, in a single conditional UPDATE, and
+   * returns whether it did. The returned boolean is the claim: of two callers
+   * racing to leave the same status (two "Try again" clicks), exactly one gets
+   * `true`, and only that one may start work.
+   */
+  updateStatus(
+    id: string,
+    status: ApplicationStatus,
+    options: ApplicationStatusUpdateOptions
+  ): Promise<boolean>;
   softDelete(id: string): Promise<void>;
   restore(id: string): Promise<void>;
 }

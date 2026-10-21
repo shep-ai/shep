@@ -24,8 +24,13 @@
  *      between them leaves the row `running` — which boot-time
  *      recovery flips to `interrupted`.
  *   2. `ensureSteps` is idempotent; resuming just skips already-done
- *      steps and fails fast on any `running`/`interrupted`/`failed`
- *      row (user retry flow can reset them to `pending`).
+ *      steps and stops at any `running`/`interrupted`/`failed` row
+ *      (the user retry flow can reset them to `pending`).
+ *   3. Each step is CLAIMED with a guarded `pending → running` write.
+ *      A resume (`ResumeApplicationWorkflowUseCase`) claims the same
+ *      way, so only one walker ever sends a step's prompt; the walker
+ *      that loses stops and reports `{ completed: false }` instead of
+ *      claiming the workflow finished.
  */
 
 import { injectable, inject } from 'tsyringe';
@@ -91,6 +96,17 @@ export interface RunWorkflowInput {
   firstUserMessageAlreadyPersisted?: boolean;
 }
 
+export interface RunWorkflowResult {
+  /**
+   * True only when every step ran to `done` in this call. False when the
+   * walk stopped at a step it could not claim — another walker owns it, or
+   * it needs a retry — so the caller must not mark the workflow complete.
+   */
+  completed: boolean;
+}
+
+const CLAIMABLE = { allowedFrom: [WorkflowStepStatus.pending] } as const;
+
 @injectable()
 export class RunWorkflowUseCase {
   constructor(
@@ -106,7 +122,7 @@ export class RunWorkflowUseCase {
     private readonly logger: ILogger
   ) {}
 
-  async execute(input: RunWorkflowInput): Promise<void> {
+  async execute(input: RunWorkflowInput): Promise<RunWorkflowResult> {
     // 1. Boot the session by sending the first step's prompt. The
     //    very first `sendMessage.execute` causes the session
     //    service to create the interactive session row in SQLite
@@ -121,7 +137,7 @@ export class RunWorkflowUseCase {
     //    bubble. The agent sees `firstStepPromptWrapper(step.prompt)`
     //    via `agentKickoffOverride`.
     const firstStepDef = input.workflow.steps[0];
-    if (!firstStepDef) return;
+    if (!firstStepDef) return { completed: true };
 
     // Subscribe before sending to avoid racing a fast first turn. It is only
     // awaited after the session id is resolved, so mark it handled: a boot
@@ -150,10 +166,11 @@ export class RunWorkflowUseCase {
     // Resolve the session id — newly booted, so poll briefly.
     const sessionId = await this.resolveSessionId(input.featureId);
     if (!sessionId) {
-      this.logger.warn('[run-workflow] no session id for feature', {
-        featureId: input.featureId,
-      });
-      return;
+      // No session, so no steps were seeded: this is a failure, not a
+      // finished workflow — returning normally would mark setup complete.
+      throw new Error(
+        `The interactive session for ${input.featureId} did not start, so no workflow step ran`
+      );
     }
 
     // 2. Idempotent step bootstrap. The user-facing tracker now
@@ -177,7 +194,7 @@ export class RunWorkflowUseCase {
     // 3. Mark step 1 running, tag the in-flight first turn's
     //    messages with its id, then wait for turn completion.
     const firstStep = steps[0];
-    await this.stepRepo.updateStatus(firstStep.id, WorkflowStepStatus.running);
+    if (!(await this.claim(firstStep.id))) return this.stopUnclaimed(input.featureId, firstStep.id);
     this.session.notifyWorkflowStep(input.featureId, await this.refreshStep(firstStep.id));
     this.session.setActiveStep(input.featureId, firstStep.id);
 
@@ -202,7 +219,7 @@ export class RunWorkflowUseCase {
       });
       this.session.notifyWorkflowStep(input.featureId, await this.refreshStep(firstStep.id));
       this.session.clearActiveStep(input.featureId);
-      // Rethrow: the caller treats a normal return as "workflow complete".
+      // Rethrow: a failed step is a failed workflow, never `{ completed: true }`.
       throw err;
     }
     this.session.clearActiveStep(input.featureId);
@@ -213,9 +230,7 @@ export class RunWorkflowUseCase {
       const definition = input.workflow.steps[i];
 
       if (step.status === WorkflowStepStatus.done) continue;
-      if (step.status !== WorkflowStepStatus.pending) return;
-
-      await this.stepRepo.updateStatus(step.id, WorkflowStepStatus.running);
+      if (!(await this.claim(step.id))) return this.stopUnclaimed(input.featureId, step.id);
       this.session.notifyWorkflowStep(input.featureId, await this.refreshStep(step.id));
       this.session.setActiveStep(input.featureId, step.id);
 
@@ -249,6 +264,21 @@ export class RunWorkflowUseCase {
         this.session.clearActiveStep(input.featureId);
       }
     }
+    return { completed: true };
+  }
+
+  /** Guarded `pending → running`: true only for the walker that moved the step. */
+  private claim(stepId: string): Promise<boolean> {
+    return this.stepRepo.updateStatus(stepId, WorkflowStepStatus.running, undefined, CLAIMABLE);
+  }
+
+  /** The step was no longer `pending`: another walker owns it, or it needs a retry. */
+  private stopUnclaimed(featureId: string, stepId: string): RunWorkflowResult {
+    this.logger.info('[run-workflow] step not claimable; leaving the rest to its owner', {
+      featureId,
+      stepId,
+    });
+    return { completed: false };
   }
 
   /**

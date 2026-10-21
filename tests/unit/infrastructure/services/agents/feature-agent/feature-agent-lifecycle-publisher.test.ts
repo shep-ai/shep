@@ -12,20 +12,12 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { FeatureAgentLifecyclePublisher } from '@/infrastructure/services/agents/feature-agent/feature-agent-lifecycle-publisher.js';
 import type { SendAgentMessageUseCase } from '@/application/use-cases/agents/send-agent-message.use-case.js';
 import type { IApplicationRepository } from '@/application/ports/output/repositories/application-repository.interface.js';
+import { createMockApplicationRepository } from '../../../../../helpers/application-repository.mock.js';
 import type { Application } from '@/domain/generated/output.js';
 import { AgentMessageKind } from '@/domain/generated/output.js';
 
 function makeApplicationRepo(app: Application | null = null): IApplicationRepository {
-  return {
-    create: vi.fn(),
-    findById: vi.fn().mockResolvedValue(null),
-    findBySlug: vi.fn().mockResolvedValue(null),
-    findByPath: vi.fn().mockResolvedValue(app),
-    list: vi.fn().mockResolvedValue([]),
-    update: vi.fn(),
-    softDelete: vi.fn(),
-    restore: vi.fn(),
-  };
+  return createMockApplicationRepository({ findByPath: vi.fn().mockResolvedValue(app) });
 }
 
 function makeSendUseCase(): SendAgentMessageUseCase & { execute: ReturnType<typeof vi.fn> } {

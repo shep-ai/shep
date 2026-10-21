@@ -186,6 +186,7 @@ import { AutoResolveMergedBranchesUseCase } from '../../../application/use-cases
 import { ReparentFeatureUseCase } from '../../../application/use-cases/features/reparent-feature.use-case.js';
 import { CoordinateFeatureConflictsUseCase } from '../../../application/use-cases/features/coordinate-feature-conflicts.use-case.js';
 import { CreateApplicationUseCase } from '../../../application/use-cases/applications/create-application.use-case.js';
+import { RunApplicationSetupUseCase } from '../../../application/use-cases/applications/run-application-setup.use-case.js';
 import { AdoptLocalRepositoryUseCase } from '../../../application/use-cases/applications/adopt-local-repository.use-case.js';
 import { ListApplicationsUseCase } from '../../../application/use-cases/applications/list-applications.use-case.js';
 import { GetApplicationUseCase } from '../../../application/use-cases/applications/get-application.use-case.js';
@@ -385,6 +386,7 @@ export function registerUseCases(container: DependencyContainer): void {
   container.registerSingleton(AutoResolveMergedBranchesUseCase);
   container.registerSingleton(ReparentFeatureUseCase);
   container.registerSingleton(CoordinateFeatureConflictsUseCase);
+  container.registerSingleton(RunApplicationSetupUseCase);
   container.registerSingleton(CreateApplicationUseCase);
   container.registerSingleton(AdoptLocalRepositoryUseCase);
   container.registerSingleton(ListApplicationsUseCase);
@@ -635,6 +637,9 @@ export function registerUseCases(container: DependencyContainer): void {
   });
   container.register('ReconcileAgentRunLivenessUseCase', {
     useFactory: (c) => c.resolve(ReconcileAgentRunLivenessUseCase),
+  });
+  container.register('RunApplicationSetupUseCase', {
+    useFactory: (c) => c.resolve(RunApplicationSetupUseCase),
   });
   container.register('CreateApplicationUseCase', {
     useFactory: (c) => c.resolve(CreateApplicationUseCase),

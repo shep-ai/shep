@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { LinkApplicationUseCase } from '@/application/use-cases/clusters/link-application.use-case.js';
 import type { IClusterRepository } from '@/application/ports/output/repositories/cluster-repository.interface.js';
 import type { IApplicationRepository } from '@/application/ports/output/repositories/application-repository.interface.js';
+import { createMockApplicationRepository } from '../../../../helpers/application-repository.mock.js';
 import type { Cluster, Application, ClusterApplication } from '@/domain/generated/output.js';
 import { ClusterStatus } from '@/domain/generated/output.js';
 
@@ -24,16 +25,7 @@ function createMockClusterRepo(): IClusterRepository {
 }
 
 function createMockAppRepo(): IApplicationRepository {
-  return {
-    create: vi.fn(),
-    findById: vi.fn().mockResolvedValue(null),
-    findBySlug: vi.fn().mockResolvedValue(null),
-    findByPath: vi.fn().mockResolvedValue(null),
-    list: vi.fn().mockResolvedValue([]),
-    update: vi.fn(),
-    softDelete: vi.fn(),
-    restore: vi.fn(),
-  };
+  return createMockApplicationRepository();
 }
 
 const sampleCluster: Cluster = {

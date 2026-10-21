@@ -3,7 +3,7 @@
  */
 
 import 'reflect-metadata';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { GetApplicationPostureUseCase } from '@/application/use-cases/aspm/posture/get-application-posture.js';
 import { ApplicationNotFoundError } from '@/domain/aspm/errors/application-not-found.error.js';
@@ -15,6 +15,7 @@ import type {
 } from '@/application/ports/output/repositories/finding-repository.interface.js';
 import type { FindingFilter } from '@/domain/generated/output.js';
 import type { IApplicationRepository } from '@/application/ports/output/repositories/application-repository.interface.js';
+import { createMockApplicationRepository } from '../../../helpers/application-repository.mock.js';
 import { FakeSlaClock } from '../../../helpers/aspm/fake-sla-clock.js';
 
 const FIXED_NOW = new Date('2026-05-19T00:00:00.000Z');
@@ -61,16 +62,12 @@ function fakeFindingRepo(): IFindingRepository {
 }
 
 function fakeAppRepo(app: Application | null): IApplicationRepository {
-  return {
-    create: async () => undefined,
-    findById: async () => app,
-    findBySlug: async () => app,
-    findByPath: async () => app,
-    list: async () => (app ? [app] : []),
-    update: async () => undefined,
-    softDelete: async () => undefined,
-    restore: async () => undefined,
-  };
+  return createMockApplicationRepository({
+    findById: vi.fn().mockResolvedValue(app),
+    findBySlug: vi.fn().mockResolvedValue(app),
+    findByPath: vi.fn().mockResolvedValue(app),
+    list: vi.fn().mockResolvedValue(app ? [app] : []),
+  });
 }
 
 describe('GetApplicationPostureUseCase', () => {

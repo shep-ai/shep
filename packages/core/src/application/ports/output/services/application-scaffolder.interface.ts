@@ -111,4 +111,16 @@ export interface IApplicationScaffolder {
    * create.
    */
   scaffold(options: ScaffoldOptions): Promise<ScaffoldResult>;
+
+  /**
+   * Whether `repositoryPath` holds anything `scaffold()` would destroy.
+   *
+   * `scaffold()` empties its target first, `.git` included. This answers
+   * true for any entry other than `.git`, and for a `.git` carrying more
+   * than the fresh repository project creation makes (`git init` plus one
+   * empty commit) — or one it cannot read. False only for a missing or
+   * empty directory, or one holding nothing but that fresh repository.
+   * It never decides whether to scaffold; the caller does.
+   */
+  hasExistingContent(repositoryPath: string): Promise<boolean>;
 }

@@ -18,6 +18,7 @@ import { injectable } from 'tsyringe';
 import type {
   IWorkflowStepRepository,
   StepSeed,
+  WorkflowStepStatusGuard,
 } from '../../application/ports/output/repositories/workflow-step-repository.interface.js';
 import { type WorkflowStep, WorkflowStepStatus } from '../../domain/generated/output.js';
 import {
@@ -133,49 +134,37 @@ export class SQLiteWorkflowStepRepository implements IWorkflowStepRepository {
   async updateStatus(
     stepId: string,
     status: WorkflowStepStatus,
-    metadata?: Record<string, unknown>
-  ): Promise<void> {
+    metadata?: Record<string, unknown>,
+    guard?: WorkflowStepStatusGuard
+  ): Promise<boolean> {
+    if (guard?.allowedFrom.length === 0) return false;
     const now = Date.now();
     const metadataJson = metadata ? JSON.stringify(metadata) : null;
 
-    if (status === WorkflowStepStatus.running) {
-      this.db
-        .prepare(
-          `UPDATE workflow_steps
-              SET status = ?, started_at = ?, updated_at = ?,
-                  metadata = COALESCE(?, metadata)
-            WHERE id = ?`
-        )
-        .run(status, now, now, metadataJson, stepId);
-      return;
-    }
-
+    // `running` stamps started_at; a terminal status stamps finished_at; any
+    // other transition (e.g. resetting to pending for retry) stamps neither.
     const isTerminal =
       status === WorkflowStepStatus.done ||
       status === WorkflowStepStatus.failed ||
       status === WorkflowStepStatus.interrupted;
+    const stamp =
+      status === WorkflowStepStatus.running
+        ? { sql: 'started_at = ?, ', values: [now] }
+        : isTerminal
+          ? { sql: 'finished_at = ?, ', values: [now] }
+          : { sql: '', values: [] };
+    const allowedFrom = guard ? [...guard.allowedFrom] : [];
+    const guardSql = guard ? ` AND status IN (${allowedFrom.map(() => '?').join(', ')})` : '';
 
-    if (isTerminal) {
-      this.db
-        .prepare(
-          `UPDATE workflow_steps
-              SET status = ?, finished_at = ?, updated_at = ?,
-                  metadata = COALESCE(?, metadata)
-            WHERE id = ?`
-        )
-        .run(status, now, now, metadataJson, stepId);
-      return;
-    }
-
-    // Any other transition (e.g. resetting to pending for retry)
-    this.db
+    const result = this.db
       .prepare(
         `UPDATE workflow_steps
-            SET status = ?, updated_at = ?,
+            SET status = ?, ${stamp.sql}updated_at = ?,
                 metadata = COALESCE(?, metadata)
-          WHERE id = ?`
+          WHERE id = ?${guardSql}`
       )
-      .run(status, now, metadataJson, stepId);
+      .run(status, ...stamp.values, now, metadataJson, stepId, ...allowedFrom);
+    return result.changes > 0;
   }
 
   async markAllRunningAsInterrupted(): Promise<number> {
