@@ -35,7 +35,7 @@ import { applyPrBranding, applyCommitBranding } from './pr-branding.js';
  * so large diffs don't silently fail (see worktree-hook-runner.ts for the
  * same pattern).
  */
-const DIFF_MAX_BUFFER_BYTES = 10 * 1024 * 1024;
+export const DIFF_MAX_BUFFER_BYTES = 10 * 1024 * 1024;
 
 @injectable()
 export class GitPrService implements IGitPrService {
@@ -625,15 +625,16 @@ export class GitPrService implements IGitPrService {
     // the only available defence.
     assertSafeGitRef(baseBranch, 'baseBranch');
 
+    // Both outputs scale with the changeset, like getFileDiffs below.
     const { stdout: diffStat } = await this.execFile(
       'git',
       ['diff', '--stat', `${baseBranch}...HEAD`],
-      { cwd }
+      { cwd, maxBuffer: DIFF_MAX_BUFFER_BYTES }
     );
     const { stdout: logOutput } = await this.execFile(
       'git',
       ['log', '--oneline', `${baseBranch}...HEAD`],
-      { cwd }
+      { cwd, maxBuffer: DIFF_MAX_BUFFER_BYTES }
     );
 
     return this.parseDiffStat(diffStat, logOutput);

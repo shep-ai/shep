@@ -6,7 +6,7 @@
 
 import 'reflect-metadata';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { GitPrService } from '@/infrastructure/services/git/git-pr.service';
+import { DIFF_MAX_BUFFER_BYTES, GitPrService } from '@/infrastructure/services/git/git-pr.service';
 import {
   GitPrError,
   GitPrErrorCode,
@@ -1054,11 +1054,15 @@ describe('GitPrService', () => {
 
       const result = await service.getPrDiffSummary('/repo', 'main');
 
+      // Both outputs grow with the changeset, so they get the same raised
+      // buffer as getFileDiffs instead of execFile's 1 MB default.
       expect(mockExec).toHaveBeenNthCalledWith(1, 'git', ['diff', '--stat', 'main...HEAD'], {
         cwd: '/repo',
+        maxBuffer: DIFF_MAX_BUFFER_BYTES,
       });
       expect(mockExec).toHaveBeenNthCalledWith(2, 'git', ['log', '--oneline', 'main...HEAD'], {
         cwd: '/repo',
+        maxBuffer: DIFF_MAX_BUFFER_BYTES,
       });
       expect(result.filesChanged).toBe(2);
       expect(result.additions).toBe(8);
