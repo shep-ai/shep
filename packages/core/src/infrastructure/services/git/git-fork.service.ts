@@ -18,6 +18,7 @@ import { PrStatus } from '../../../domain/generated/output.js';
 import { assertSafeGitRef } from '../../../domain/shared/git-ref-argument.js';
 import type { ExecFunction } from './worktree.service.js';
 import { applyPrBranding } from './pr-branding.js';
+import { setupGhGitCredentials } from './gh-credential-helper.js';
 
 @injectable()
 export class GitForkService implements IGitForkService {
@@ -111,6 +112,9 @@ export class GitForkService implements IGitForkService {
 
   async pushToFork(cwd: string, branch: string): Promise<void> {
     assertSafeGitRef(branch, 'branch');
+
+    // Without gh's credential helper an HTTPS fork remote has no credentials.
+    await setupGhGitCredentials(this.execFile, cwd);
 
     try {
       await this.execFile('git', ['push', '-u', 'origin', '--', branch], { cwd });

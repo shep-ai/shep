@@ -211,11 +211,50 @@ describe('GitForkService', () => {
     });
 
     it('should throw PUSH_FAILED on error', async () => {
-      vi.mocked(mockExec).mockRejectedValueOnce(new Error('push rejected'));
+      vi.mocked(mockExec).mockImplementation(async (cmd) => {
+        if (cmd === 'git') throw new Error('push rejected');
+        return { stdout: '', stderr: '' };
+      });
 
       const error = await service.pushToFork('/repo', 'feat/my-branch').catch((e) => e);
       expect(error).toBeInstanceOf(GitForkError);
       expect(error.code).toBe(GitForkErrorCode.PUSH_FAILED);
+    });
+
+    it('should wire gh as the git credential helper before pushing', async () => {
+      vi.mocked(mockExec).mockResolvedValue({ stdout: '', stderr: '' });
+
+      await service.pushToFork('/repo', 'feat/my-branch');
+
+      expect(vi.mocked(mockExec).mock.calls).toEqual([
+        ['gh', ['auth', 'setup-git'], { cwd: '/repo' }],
+        ['git', ['push', '-u', 'origin', '--', 'feat/my-branch'], { cwd: '/repo' }],
+      ]);
+    });
+
+    it('should still push when gh auth setup-git fails (best-effort)', async () => {
+      vi.mocked(mockExec).mockImplementation(async (cmd) => {
+        if (cmd === 'gh') throw new Error('gh: not logged in');
+        return { stdout: '', stderr: '' };
+      });
+
+      await expect(service.pushToFork('/repo', 'feat/my-branch')).resolves.toBeUndefined();
+      expect(mockExec).toHaveBeenCalledWith(
+        'git',
+        ['push', '-u', 'origin', '--', 'feat/my-branch'],
+        { cwd: '/repo' }
+      );
+    });
+
+    it('should not rewrite the origin remote URL', async () => {
+      vi.mocked(mockExec).mockResolvedValue({ stdout: '', stderr: '' });
+
+      await service.pushToFork('/repo', 'feat/my-branch');
+
+      const remoteCalls = vi
+        .mocked(mockExec)
+        .mock.calls.filter(([cmd, args]) => cmd === 'git' && args[0] === 'remote');
+      expect(remoteCalls).toEqual([]);
     });
   });
 

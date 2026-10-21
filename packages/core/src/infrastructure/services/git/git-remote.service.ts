@@ -22,6 +22,7 @@ import { GhNotAuthenticatedError } from '../../../domain/errors/gh-not-authentic
 import { GitHubRepoNameTakenError } from '../../../domain/errors/github-repo-name-taken.error.js';
 import { GitRemoteCreationError } from '../../../domain/errors/git-remote-creation.error.js';
 import { assertSafeGitRef } from '../../../domain/shared/git-ref-argument.js';
+import { setupGhGitCredentials } from './gh-credential-helper.js';
 
 const NOOP_LOG: GitRemoteLogEmitter = () => undefined;
 
@@ -59,17 +60,11 @@ export class GitRemoteService implements IGitRemoteService {
       await this.ensureGitInitialized(cwd, log);
       await this.ensureInitialCommit(cwd, log);
       // Make sure git itself uses gh's credentials when pushing over https.
-      // Idempotent — gh auth setup-git is safe to call repeatedly.
-      try {
-        await this.execFile('gh', ['auth', 'setup-git'], { cwd });
+      const credentials = await setupGhGitCredentials(this.execFile, cwd);
+      if (credentials.ok) {
         log('debug', 'gh auth setup-git completed');
-      } catch (err) {
-        // best-effort; the push below will fail with a clearer error if creds are wrong
-        log(
-          'warn',
-          'gh auth setup-git failed (best-effort)',
-          err instanceof Error ? err.message : String(err)
-        );
+      } else {
+        log('warn', 'gh auth setup-git failed (best-effort)', credentials.error);
       }
       // Drop any stale origin before creating. A leftover origin from a
       // previous failed attempt would break `gh repo create --remote=origin`
@@ -343,12 +338,8 @@ export class GitRemoteService implements IGitRemoteService {
       }
     }
 
-    // Make sure git uses gh's stored credentials over https. Idempotent.
-    try {
-      await this.execFile('gh', ['auth', 'setup-git'], { cwd });
-    } catch {
-      // best-effort; the push below will fail with a clearer error if creds are wrong
-    }
+    // Make sure git uses gh's stored credentials over https.
+    await setupGhGitCredentials(this.execFile, cwd);
 
     log('info', 'Pushing to origin');
     try {
