@@ -36,6 +36,7 @@ import {
   writePromptToStdin,
   toolInputLogPreview,
 } from './process-stream.js';
+import { watchPostResultExit } from './post-result-exit.js';
 import {
   validateSecurityConstraints,
   type ExecutorCapabilities,
@@ -85,17 +86,6 @@ function withMcpToolTimeout(
     unset: (environment?.unset ?? []).filter((name) => name !== MCP_TOOL_TIMEOUT_ENV),
   };
 }
-
-/**
- * Maximum time to wait for the `claude` subprocess to exit on its own
- * after it has emitted its final `result` event. The CLI is supposed to
- * tear down its MCP servers and exit, but in practice it can hang
- * indefinitely if MCP children (e.g. Playwright) or background bash tools
- * (e.g. `pnpm dev:web`) keep stdio open. After this grace period we send
- * SIGKILL so the close handler fires and execute() resolves with the
- * captured result instead of leaving the worker stuck for hours.
- */
-const RESULT_TO_CLOSE_GRACE_MS = 30_000;
 
 /** Agent name used in failure messages. */
 const AGENT_NAME = 'Claude Code';
@@ -159,7 +149,6 @@ export class ClaudeCodeExecutorService implements IAgentExecutor {
       const stderr = createStderrTail();
       let settled = false;
       let timeoutId: ReturnType<typeof setTimeout> | undefined;
-      let postResultKillTimer: ReturnType<typeof setTimeout> | undefined;
       let cancelEscalation: (() => void) | undefined;
 
       // Collected from the stream — only the final result line matters
@@ -184,7 +173,7 @@ export class ClaudeCodeExecutorService implements IAgentExecutor {
         if (timeoutId) clearTimeout(timeoutId);
         idleWatchdog.stop();
         abortWatch.stop();
-        if (postResultKillTimer) clearTimeout(postResultKillTimer);
+        postResultExit.stop();
         cancelEscalation?.();
         outcome();
       };
@@ -236,6 +225,11 @@ export class ClaudeCodeExecutorService implements IAgentExecutor {
         onUnreaped: () => settle(() => reject(new Error(AGENT_ABORTED_MESSAGE))),
       });
 
+      // The CLI is supposed to exit after its result, but leaked MCP or
+      // background children can keep it alive for hours (feature 92701aa8);
+      // this bounds the teardown so the close handler resolves the result.
+      const postResultExit = watchPostResultExit(proc, log);
+
       const accumulator = createLineAccumulator(
         (line) => {
           this.logStreamEvent(line, log);
@@ -251,17 +245,7 @@ export class ClaudeCodeExecutorService implements IAgentExecutor {
           const { type: _t, result: _r, session_id: _s, usage: _u, ...rest } = parsed;
           if (Object.keys(rest).length > 0) metadata = rest;
 
-          // The CLI emitted its final result. Give it a grace period to tear
-          // down MCP servers and exit on its own; if it still hasn't closed,
-          // kill it so the close handler runs and we resolve. Without this,
-          // leaked MCP/background children (issue: feature 92701aa8 hung 3+
-          // hours after [result]) trap the worker forever.
-          postResultKillTimer ??= setTimeout(() => {
-            log(
-              `Subprocess did not exit within ${RESULT_TO_CLOSE_GRACE_MS / 1000}s of [result] — terminating`
-            );
-            cancelEscalation = terminateWithEscalation(proc);
-          }, RESULT_TO_CLOSE_GRACE_MS);
+          postResultExit.arm();
         },
         {
           onOverflow: (dropped) => log(`[warn] discarded ${dropped} bytes of un-terminated output`),
@@ -280,9 +264,10 @@ export class ClaudeCodeExecutorService implements IAgentExecutor {
         settle(() => reject(classifySpawnError(error, CLAUDE_NOT_FOUND_MESSAGE)));
       });
 
-      proc.on('close', (code: number | null, signal: NodeJS.Signals | null) => {
+      proc.on('close', (exitCode: number | null, signal: NodeJS.Signals | null) => {
         accumulator.flush();
-        log(`Process closed with code ${code}, result=${resultText.length} chars`);
+        log(`Process closed with code ${exitCode}, result=${resultText.length} chars`);
+        const code = postResultExit.exitCode(exitCode);
 
         settle(() => {
           if (abortWatch.aborted) {
@@ -371,6 +356,9 @@ export class ClaudeCodeExecutorService implements IAgentExecutor {
       channel.close();
     });
 
+    // Same bound on a process lingering after its result as execute().
+    const postResultExit = watchPostResultExit(proc, log);
+
     // The caller's cancel: terminate the agent and end the stream with it.
     const abortWatch = watchAbortSignal(proc, options?.abortSignal, {
       onAbort: () => {
@@ -386,7 +374,10 @@ export class ClaudeCodeExecutorService implements IAgentExecutor {
 
     const accumulator = createLineAccumulator((line) => {
       const parsed = parseJsonLine(line);
-      if (parsed?.type === EVENT_TYPE_RESULT) resultSeen = true;
+      if (parsed?.type === EVENT_TYPE_RESULT) {
+        resultSeen = true;
+        postResultExit.arm();
+      }
       const event = parseStreamLine(line, parsed);
       if (event) channel.push(event);
     });
@@ -405,12 +396,13 @@ export class ClaudeCodeExecutorService implements IAgentExecutor {
       channel.close();
     });
 
-    proc.on('close', (code: number | null, signal: NodeJS.Signals | null) => {
+    proc.on('close', (exitCode: number | null, signal: NodeJS.Signals | null) => {
       processClosed = true;
       if (timeoutId) clearTimeout(timeoutId);
       if (timedOut) return; // already reported by the timeout callback
 
       accumulator.flush();
+      const code = postResultExit.exitCode(exitCode);
 
       // Same outcome rule as execute(): a non-zero exit always fails, a signal
       // or a clean exit before the terminal `result` event means the turn was
@@ -440,6 +432,7 @@ export class ClaudeCodeExecutorService implements IAgentExecutor {
       if (timeoutId) clearTimeout(timeoutId);
       idleWatchdog.stop();
       abortWatch.stop();
+      postResultExit.stop();
       // A consumer that breaks out of the loop would otherwise leave the agent
       // running — holding a worktree, burning tokens — until it exits on its own.
       if (!processClosed) terminateWithEscalation(proc);

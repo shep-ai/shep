@@ -25,6 +25,8 @@ import type { SpawnFunction } from '@/infrastructure/services/agents/common/type
 import { AgentType, AgentFeature, SecurityMode } from '@/domain/generated/output.js';
 import { SecurityViolationError } from '@/domain/errors/security-violation.error.js';
 import { strictConstraints } from './security-constraints.fixture.js';
+import { RESULT_TO_CLOSE_GRACE_MS } from '@/infrastructure/services/agents/common/executors/post-result-exit.js';
+import { exitOnKill, KILLED_BY_TASKKILL } from '@tests/helpers/exit-on-kill.js';
 
 /**
  * Creates a mock ChildProcess-like object that can emit events and provide
@@ -1252,5 +1254,89 @@ describe('CursorExecutorService — idle timeout', () => {
       content: 'Agent execution timed out: no output for 0.02s',
     });
     expect(proc.kill).toHaveBeenCalled();
+  });
+});
+
+describe('CursorExecutorService — post-result grace period', () => {
+  // An agent CLI lingers after its terminal event when MCP children or a
+  // backgrounded dev server keep it alive. The run must still finish, with the
+  // answer it already has, once the grace period runs out.
+  let mockSpawn: SpawnFunction;
+  let executor: CursorExecutorService;
+  const originalPlatform = process.platform;
+
+  beforeEach(() => {
+    Object.defineProperty(process, 'platform', { value: 'linux', writable: true });
+    mockSpawn = vi.fn();
+    executor = new CursorExecutorService(mockSpawn);
+    vi.useFakeTimers();
+  });
+  afterEach(() => {
+    Object.defineProperty(process, 'platform', { value: originalPlatform, writable: true });
+    vi.useRealTimers();
+  });
+
+  it('execute(): kills a process lingering after its terminal event and resolves with the answer', async () => {
+    // KILLED_BY_TASKKILL: the kill's own non-zero exit must not fail the run.
+    const proc = exitOnKill(createMockChildProcess(), KILLED_BY_TASKKILL);
+    vi.mocked(mockSpawn).mockReturnValue(proc as any);
+
+    const executePromise = executor.execute('Prompt', { silent: true });
+    await vi.advanceTimersByTimeAsync(0);
+    proc.stdout.write(
+      `${buildCursorResultEvent('sess-linger', 10, { result: 'Implementation complete' })}\n`
+    );
+    await vi.advanceTimersByTimeAsync(RESULT_TO_CLOSE_GRACE_MS - 1);
+    expect(proc.kill).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(1);
+
+    expect(proc.kill).toHaveBeenCalled();
+    expect((await executePromise).result).toBe('Implementation complete');
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('execute(): never kills a process that exits on its own after its terminal event', async () => {
+    const proc = createMockChildProcess();
+    vi.mocked(mockSpawn).mockReturnValue(proc as any);
+
+    const executePromise = executor.execute('Prompt', { silent: true });
+    await vi.advanceTimersByTimeAsync(0);
+    proc.stdout.write(
+      `${buildCursorResultEvent('sess-linger', 10, { result: 'Implementation complete' })}\n`
+    );
+    proc.stdout.end();
+    proc.stderr.end();
+    proc.emit('close', 0, null);
+
+    expect((await executePromise).result).toBe('Implementation complete');
+    await vi.advanceTimersByTimeAsync(RESULT_TO_CLOSE_GRACE_MS * 2);
+    expect(proc.kill).not.toHaveBeenCalled();
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('executeStream(): kills a process lingering after its terminal event and ends cleanly', async () => {
+    const proc = exitOnKill(createMockChildProcess());
+    vi.mocked(mockSpawn).mockReturnValue(proc as any);
+
+    const events: { type: string; content: string }[] = [];
+    const collect = (async () => {
+      for await (const event of executor.executeStream('Prompt', { silent: true })) {
+        events.push({ type: event.type, content: event.content });
+      }
+    })();
+    await vi.advanceTimersByTimeAsync(0);
+    proc.stdout.write(`${buildCursorAssistantEvent('streamed answer')}\n`);
+    proc.stdout.write(
+      `${buildCursorResultEvent('sess-linger', 10, { result: 'streamed answer' })}\n`
+    );
+    await vi.advanceTimersByTimeAsync(RESULT_TO_CLOSE_GRACE_MS - 1);
+    expect(proc.kill).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(1);
+    await collect;
+
+    expect(proc.kill).toHaveBeenCalled();
+    expect(events.filter((e) => e.type === 'error')).toEqual([]);
+    expect(events).toContainEqual({ type: 'result', content: 'streamed answer' });
+    expect(vi.getTimerCount()).toBe(0);
   });
 });

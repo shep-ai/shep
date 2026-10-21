@@ -35,6 +35,7 @@ import {
   AGENT_ABORTED_MESSAGE,
   watchAbortSignal,
 } from './process-stream.js';
+import { watchPostResultExit } from './post-result-exit.js';
 import {
   validateSecurityConstraints,
   type ExecutorCapabilities,
@@ -73,6 +74,12 @@ const EVENT_TYPE_TOOL_USE = 'tool_use';
 const EVENT_TYPE_TOOL_RESULT = 'tool_result';
 const EVENT_TYPE_RESULT = 'result';
 const EVENT_TYPE_ERROR = 'error';
+
+/** What `--output-format json` ends a turn with, named in the post-result log. */
+const JSON_DOCUMENT_EVENT = 'json document';
+
+/** Last character of a line that can complete the json document. */
+const JSON_OBJECT_END = '}';
 
 /** Render a value that should have been text but may be a structured payload. */
 function asText(value: unknown): string {
@@ -120,6 +127,7 @@ export class GeminiCliExecutorService implements IAgentExecutor {
         if (settled) return;
         settled = true;
         abortWatch.stop();
+        postResultExit.stop();
         if (timeoutId) clearTimeout(timeoutId);
         cancelEscalation?.();
         outcome();
@@ -146,14 +154,28 @@ export class GeminiCliExecutorService implements IAgentExecutor {
         },
         onUnreaped: () => settle(() => reject(new Error(AGENT_ABORTED_MESSAGE))),
       });
+      // The json document IS this mode's terminal event: once it is complete
+      // the turn is over, and a CLI lingering on MCP children must not hang it.
+      const postResultExit = watchPostResultExit(proc, log, {
+        terminalEvent: JSON_DOCUMENT_EVENT,
+      });
 
       // A single JSON document, read through the decoder so a multi-byte
       // character straddling two reads is reassembled rather than corrupted.
       // JSON never contains a raw newline inside a string, so rejoining the
       // lines reproduces the document exactly as far as a parser cares.
-      const accumulator = createLineAccumulator((line) => stdoutLines.push(line), {
-        onOverflow: (dropped) => log(`[warn] discarded ${dropped} bytes of un-terminated output`),
-      });
+      const accumulator = createLineAccumulator(
+        (line) => {
+          stdoutLines.push(line);
+          // Only a line closing an object can complete the document.
+          if (line.endsWith(JSON_OBJECT_END) && parseJsonDocument(stdoutLines.join('\n'))) {
+            postResultExit.arm();
+          }
+        },
+        {
+          onOverflow: (dropped) => log(`[warn] discarded ${dropped} bytes of un-terminated output`),
+        }
+      );
 
       proc.stdout?.on('data', (chunk: Buffer | string) => accumulator.push(chunk));
 
@@ -167,10 +189,11 @@ export class GeminiCliExecutorService implements IAgentExecutor {
         settle(() => reject(classifySpawnError(error, GEMINI_NOT_FOUND_MESSAGE)));
       });
 
-      proc.on('close', (code: number | null, signal: NodeJS.Signals | null) => {
+      proc.on('close', (exitCode: number | null, signal: NodeJS.Signals | null) => {
         accumulator.flush();
         const stdout = stdoutLines.join('\n');
-        log(`Process closed with code ${code}, stdout=${stdout.length} chars`);
+        log(`Process closed with code ${exitCode}, stdout=${stdout.length} chars`);
+        const code = postResultExit.exitCode(exitCode);
 
         settle(() => {
           if (timeoutError) {
@@ -272,11 +295,16 @@ export class GeminiCliExecutorService implements IAgentExecutor {
     const abortWatch = watchAbortSignal(proc, options?.abortSignal, {
       onAbort: () => expire(AGENT_ABORTED_MESSAGE),
     });
+    // Same bound on a process lingering after its result as execute().
+    const postResultExit = watchPostResultExit(proc, log);
 
     const accumulator = createLineAccumulator((line) => {
       const event = parseStreamEvent(line);
       if (!event) return;
-      if (event.type === 'result') sawResult = true;
+      if (event.type === 'result') {
+        sawResult = true;
+        postResultExit.arm();
+      }
       channel.push(event);
     });
 
@@ -294,12 +322,13 @@ export class GeminiCliExecutorService implements IAgentExecutor {
       channel.close();
     });
 
-    proc.on('close', (code: number | null, signal: NodeJS.Signals | null) => {
+    proc.on('close', (exitCode: number | null, signal: NodeJS.Signals | null) => {
       processClosed = true;
       if (timeoutId) clearTimeout(timeoutId);
       if (timedOut) return; // already reported by the timeout callback
 
       accumulator.flush();
+      const code = postResultExit.exitCode(exitCode);
 
       if (code !== 0 && code !== null) {
         const detail = stderr.text().trim();
@@ -332,6 +361,7 @@ export class GeminiCliExecutorService implements IAgentExecutor {
     } finally {
       if (timeoutId) clearTimeout(timeoutId);
       abortWatch.stop();
+      postResultExit.stop();
       // A consumer that breaks out of the loop would otherwise leave the agent
       // running until it finished on its own.
       if (!processClosed) terminateWithEscalation(proc);

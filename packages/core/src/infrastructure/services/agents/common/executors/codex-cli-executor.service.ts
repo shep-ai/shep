@@ -42,6 +42,7 @@ import {
   AGENT_ABORTED_MESSAGE,
   watchAbortSignal,
 } from './process-stream.js';
+import { watchPostResultExit } from './post-result-exit.js';
 import {
   validateSecurityConstraints,
   type ExecutorCapabilities,
@@ -82,6 +83,9 @@ const EVENT_TYPE_ITEM_COMPLETED = 'item.completed';
 const EVENT_TYPE_TURN_COMPLETED = 'turn.completed';
 const EVENT_TYPE_TURN_FAILED = 'turn.failed';
 const EVENT_TYPE_ERROR = 'error';
+
+/** Either event ends a Codex turn; named in the post-result log. */
+const TURN_END_EVENTS = `${EVENT_TYPE_TURN_COMPLETED}/${EVENT_TYPE_TURN_FAILED}`;
 
 /** Agent name used in failure messages. */
 const AGENT_NAME = 'Codex CLI';
@@ -206,6 +210,7 @@ export class CodexCliExecutorService implements IAgentExecutor {
           settled = true;
           if (timeoutId) clearTimeout(timeoutId);
           abortWatch.stop();
+          postResultExit.stop();
           cancelEscalation?.();
           outcome();
         };
@@ -231,6 +236,9 @@ export class CodexCliExecutorService implements IAgentExecutor {
           onAbort: () => expire(AGENT_ABORTED_MESSAGE),
           onUnreaped: () => settle(() => reject(new Error(AGENT_ABORTED_MESSAGE))),
         });
+        // Codex can linger after the turn ends (MCP children, background
+        // shells); this bounds the teardown so 'close' settles the turn.
+        const postResultExit = watchPostResultExit(proc, log, { terminalEvent: TURN_END_EVENTS });
 
         const accumulator = createLineAccumulator(
           (line) => {
@@ -246,9 +254,11 @@ export class CodexCliExecutorService implements IAgentExecutor {
               if (text) resultText += text;
             } else if (parsed.type === EVENT_TYPE_TURN_COMPLETED) {
               turnCompleted = true;
+              postResultExit.arm();
               if (parsed.usage) usage = extractUsage(parsed.usage as Record<string, number>);
             } else if (parsed.type === EVENT_TYPE_TURN_FAILED) {
               turnFailure = turnFailedMessage(parsed);
+              postResultExit.arm();
             }
           },
           {
@@ -269,9 +279,10 @@ export class CodexCliExecutorService implements IAgentExecutor {
           settle(() => reject(classifySpawnError(error, CODEX_NOT_FOUND_MESSAGE)));
         });
 
-        proc.on('close', (code: number | null, signal: NodeJS.Signals | null) => {
+        proc.on('close', (exitCode: number | null, signal: NodeJS.Signals | null) => {
           accumulator.flush();
-          log(`Process closed with code ${code}, result=${resultText.length} chars`);
+          log(`Process closed with code ${exitCode}, result=${resultText.length} chars`);
+          const code = postResultExit.exitCode(exitCode);
 
           settle(() => {
             if (timeoutError) {
@@ -393,6 +404,8 @@ export class CodexCliExecutorService implements IAgentExecutor {
       const abortWatch = watchAbortSignal(proc, options?.abortSignal, {
         onAbort: () => expire(AGENT_ABORTED_MESSAGE),
       });
+      // Same bound on a process lingering after its turn as execute().
+      const postResultExit = watchPostResultExit(proc, log, { terminalEvent: TURN_END_EVENTS });
 
       const accumulator = createLineAccumulator((line) => {
         this.logStreamEvent(line, log);
@@ -468,6 +481,7 @@ export class CodexCliExecutorService implements IAgentExecutor {
 
         if (type === EVENT_TYPE_TURN_COMPLETED) {
           turnCompleted = true;
+          postResultExit.arm();
           const event: AgentExecutionStreamEvent = {
             type: 'result',
             content: resultText,
@@ -479,6 +493,7 @@ export class CodexCliExecutorService implements IAgentExecutor {
         }
 
         if (type === EVENT_TYPE_TURN_FAILED) {
+          postResultExit.arm();
           channel.push({
             type: 'error',
             content: turnFailedMessage(parsed),
@@ -514,12 +529,13 @@ export class CodexCliExecutorService implements IAgentExecutor {
         channel.close();
       });
 
-      proc.on('close', (code: number | null, signal: NodeJS.Signals | null) => {
+      proc.on('close', (exitCode: number | null, signal: NodeJS.Signals | null) => {
         processClosed = true;
         if (timeoutId) clearTimeout(timeoutId);
         if (timedOut) return; // already reported by the timeout callback
 
         accumulator.flush();
+        const code = postResultExit.exitCode(exitCode);
 
         if (code !== 0 && code !== null) {
           channel.push({
@@ -559,6 +575,7 @@ export class CodexCliExecutorService implements IAgentExecutor {
       } finally {
         if (timeoutId) clearTimeout(timeoutId);
         abortWatch.stop();
+        postResultExit.stop();
         // A consumer that breaks out of the loop would otherwise leave the
         // agent running until it finished on its own.
         if (!processClosed) terminateWithEscalation(proc);

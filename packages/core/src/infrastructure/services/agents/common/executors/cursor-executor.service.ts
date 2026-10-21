@@ -37,6 +37,7 @@ import {
   AGENT_ABORTED_MESSAGE,
   watchAbortSignal,
 } from './process-stream.js';
+import { watchPostResultExit } from './post-result-exit.js';
 import {
   validateSecurityConstraints,
   type ExecutorCapabilities,
@@ -148,6 +149,7 @@ export class CursorExecutorService implements IAgentExecutor {
         if (settled) return;
         settled = true;
         abortWatch.stop();
+        postResultExit.stop();
         if (timeoutId) clearTimeout(timeoutId);
         cancelEscalation?.();
         removeTempFile(tmpFile);
@@ -175,6 +177,9 @@ export class CursorExecutorService implements IAgentExecutor {
         },
         onUnreaped: () => settle(() => reject(new Error(AGENT_ABORTED_MESSAGE))),
       });
+      // The CLI can linger after its result (MCP children, background shells);
+      // this bounds the teardown so 'close' settles with the captured answer.
+      const postResultExit = watchPostResultExit(proc, log);
 
       const accumulator = createLineAccumulator(
         (line) => {
@@ -189,6 +194,7 @@ export class CursorExecutorService implements IAgentExecutor {
             resultText += assistantText(parsed);
           } else if (parsed.type === EVENT_TYPE_RESULT) {
             resultSeen = true;
+            postResultExit.arm();
             resultError = resultEventError(parsed);
             // json format puts the full result text in parsed.result
             if (typeof parsed.result === 'string' && parsed.result) resultText = parsed.result;
@@ -223,11 +229,12 @@ export class CursorExecutorService implements IAgentExecutor {
         settle(() => reject(classifySpawnError(error, CURSOR_NOT_FOUND_MESSAGE)));
       });
 
-      proc.on('close', (code: number | null, signal: NodeJS.Signals | null) => {
+      proc.on('close', (exitCode: number | null, signal: NodeJS.Signals | null) => {
         accumulator.flush();
         // Use raw text as fallback when no JSON result was captured
         const finalText = resultText || rawText.trim();
-        log(`Process closed with code ${code}, result=${finalText.length} chars`);
+        log(`Process closed with code ${exitCode}, result=${finalText.length} chars`);
+        const code = postResultExit.exitCode(exitCode);
 
         settle(() => {
           if (timeoutError) {
@@ -315,6 +322,8 @@ export class CursorExecutorService implements IAgentExecutor {
     const abortWatch = watchAbortSignal(proc, options?.abortSignal, {
       onAbort: () => expire(AGENT_ABORTED_MESSAGE),
     });
+    // Same bound on a process lingering after its result as execute().
+    const postResultExit = watchPostResultExit(proc, log);
 
     const accumulator = createLineAccumulator((line) => {
       const parsed = parseJsonLine(line);
@@ -334,6 +343,7 @@ export class CursorExecutorService implements IAgentExecutor {
 
       if (parsed.type === EVENT_TYPE_RESULT) {
         resultSeen = true;
+        postResultExit.arm();
         // The session id identifies the conversation; it is NOT the answer.
         // Returning it as `content` handed every downstream graph node a UUID.
         const content =
@@ -375,10 +385,11 @@ export class CursorExecutorService implements IAgentExecutor {
       channel.close();
     });
 
-    proc.on('close', (code: number | null, signal: NodeJS.Signals | null) => {
+    proc.on('close', (exitCode: number | null, signal: NodeJS.Signals | null) => {
       processClosed = true;
       accumulator.flush();
       if (timeoutId) clearTimeout(timeoutId);
+      const code = postResultExit.exitCode(exitCode);
 
       if (code !== 0 && code !== null) {
         channel.push({
@@ -401,6 +412,7 @@ export class CursorExecutorService implements IAgentExecutor {
     } finally {
       if (timeoutId) clearTimeout(timeoutId);
       abortWatch.stop();
+      postResultExit.stop();
       // A consumer that breaks out of the loop would otherwise leave the agent
       // running until it finished on its own.
       if (!processClosed) terminateWithEscalation(proc);

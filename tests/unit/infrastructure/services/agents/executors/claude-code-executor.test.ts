@@ -13,6 +13,8 @@ import { EventEmitter } from 'node:events';
 import { PassThrough } from 'node:stream';
 import { ClaudeCodeExecutorService } from '@/infrastructure/services/agents/common/executors/claude-code-executor.service.js';
 import type { SpawnFunction } from '@/infrastructure/services/agents/common/types.js';
+import { RESULT_TO_CLOSE_GRACE_MS } from '@/infrastructure/services/agents/common/executors/post-result-exit.js';
+import { exitOnKill, KILLED_BY_TASKKILL } from '@tests/helpers/exit-on-kill.js';
 import { AgentType, AgentFeature, AgentEffort } from '@/domain/generated/output.js';
 
 /**
@@ -1162,6 +1164,47 @@ describe('ClaudeCodeExecutorService', () => {
       } finally {
         vi.useRealTimers();
       }
+    });
+
+    it('should resolve with the result when its own kill makes the process exit non-zero', async () => {
+      // taskkill exits a Windows process with 1; a CLI trapping SIGTERM may
+      // too. That is our teardown, not the agent failing its turn.
+      vi.useFakeTimers();
+      const mockProc = exitOnKill(createMockChildProcess(), KILLED_BY_TASKKILL);
+      vi.mocked(mockSpawn).mockReturnValue(mockProc as any);
+
+      const executePromise = executor.execute('Prompt', { silent: true });
+      mockProc.stdout.write(`${buildStreamResult({ result: 'Implementation complete' })}\n`);
+      await vi.advanceTimersByTimeAsync(RESULT_TO_CLOSE_GRACE_MS);
+
+      expect(mockProc.kill).toHaveBeenCalled();
+      expect((await executePromise).result).toBe('Implementation complete');
+      expect(vi.getTimerCount()).toBe(0);
+    });
+
+    it('should end a stream whose process lingers after its result', async () => {
+      vi.useFakeTimers();
+      const mockProc = exitOnKill(createMockChildProcess());
+      vi.mocked(mockSpawn).mockReturnValue(mockProc as any);
+
+      const events: { type: string; content: string }[] = [];
+      const collect = (async () => {
+        for await (const event of executor.executeStream('Prompt', { silent: true })) {
+          events.push({ type: event.type, content: event.content });
+        }
+      })();
+      await vi.advanceTimersByTimeAsync(0);
+      mockProc.stdout.write(`${buildStreamResult({ result: 'streamed answer' })}\n`);
+
+      await vi.advanceTimersByTimeAsync(RESULT_TO_CLOSE_GRACE_MS - 1);
+      expect(mockProc.kill).not.toHaveBeenCalled();
+      await vi.advanceTimersByTimeAsync(1);
+      await collect;
+
+      expect(mockProc.kill).toHaveBeenCalled();
+      expect(events.filter((e) => e.type === 'error')).toEqual([]);
+      expect(events).toContainEqual({ type: 'result', content: 'streamed answer' });
+      expect(vi.getTimerCount()).toBe(0);
     });
   });
 
