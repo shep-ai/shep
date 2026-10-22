@@ -59,19 +59,86 @@ import "../../agents/supervisor-policy.tsp";
  *
  * ## Supported Models
  *
- * Valid model IDs depend on the configured agent executor:
- * - claude-code: claude-opus-4-6, claude-sonnet-4-6, claude-haiku-4-5
- * - gemini-cli: gemini-3.1-pro, gemini-3-flash, gemini-2.5-pro, gemini-2.5-flash
- * - cursor: claude-opus-4-6, claude-sonnet-4-6, gpt-5.4, gpt-5, gpt-5.3-codex, gemini-3.1-pro, composer-1.5, grok-code
+ * Valid model IDs depend on the configured agent executor. Models are fetched
+ * dynamically from the Anthropic API when available, with fallback to static
+ * catalog in agent-model-catalog.ts.
+ *
+ * ### Claude Code Executor
+ * - claude-fable-5
+ * - claude-opus-4-8, claude-opus-4-7, claude-opus-4-6
+ * - claude-sonnet-5, claude-sonnet-4-6
+ * - claude-haiku-4-5
+ * - glm-5.2, glm-5.1
+ *
+ * ### Cursor Executor
+ * - claude-opus-4-8, claude-opus-4-7, claude-opus-4-6
+ * - claude-sonnet-5, claude-sonnet-4-6
+ * - gpt-5.4-high, gpt-5.2, gpt-5.3-codex
+ * - gemini-3.1-pro-preview
+ * - composer-1.5
+ * - grok-code
+ *
+ * ### Gemini CLI Executor
+ * - gemini-3.1-pro-preview
+ * - gemini-3-flash-preview
+ * - gemini-2.5-pro, gemini-2.5-flash, gemini-2.5-flash-lite
+ *
+ * ### Copilot CLI Executor
+ * - claude-opus-4-8, claude-opus-4-7, claude-opus-4-6
+ * - claude-sonnet-5, claude-sonnet-4-6
+ * - claude-haiku-4.5
+ * - gpt-5.4, gpt-5.4-mini, gpt-5.3-codex, gpt-5.2, gpt-5-mini, gpt-4.1
+ *
+ * ### Cline Executor
+ * - claude-sonnet-4-20250514
+ * - claude-haiku-4-5-20251001
+ * - gpt-4.1, gpt-4.1-mini
+ * - deepseek-chat
+ * - llama3.2
+ *
+ * ### Codex CLI Executor
+ * - gpt-5.4, gpt-5.4-mini
+ * - gpt-5.3-codex, gpt-5.3-codex-spark
+ * - gpt-5.2, gpt-5.2-codex
+ * - gpt-5.1, gpt-5.1-codex, gpt-5.1-codex-max
+ * - gpt-5, gpt-5-codex, gpt-5-codex-mini
+ *
+ * ### OpenRouter Executor
+ * - anthropic/claude-sonnet-4.5, anthropic/claude-haiku-4.5
+ * - openai/gpt-5.4, openai/gpt-5.2
+ * - meta-llama/llama-4-maverick, meta-llama/llama-4-scout
+ * - google/gemini-3-flash-preview, google/gemini-3.1-pro-preview
+ * - deepseek/deepseek-chat-v3-0324
+ * - mistralai/mistral-large-latest
+ *
+ * ### Together AI Executor
+ * - meta-llama/Llama-4-Maverick-17B-128E-Instruct-FP8
+ * - meta-llama/Meta-Llama-3.3-70B-Instruct-Turbo
+ * - Qwen/Qwen2.5-Coder-32B-Instruct
+ * - deepseek-ai/DeepSeek-V3, deepseek-ai/DeepSeek-R1
+ * - mistralai/Mistral-Small-24B-Instruct-2501
+ * - google/gemma-2-27b-it
+ * - codellama/CodeLlama-70b-Instruct-hf
+ *
+ * ### Ollama Executor
+ * - llama3.2, llama3.1
+ * - codellama
+ * - deepseek-coder-v2
+ * - qwen2.5-coder
+ * - mistral
+ * - gemma2
+ * - phi3
+ * - starcoder2
  */
 @doc("AI model configuration for the SDLC agent")
 model ModelConfiguration {
   /**
    * Default model identifier used for all SDLC agents.
    * Can be overridden per-invocation via the --model CLI flag.
+   * Default is claude-sonnet-5 (recommended stable model as of Feb 2025).
    */
-  @doc("Default model identifier for all agents")
-  default: string = "claude-sonnet-4-6";
+  @doc("Default model identifier for all agents (default: claude-sonnet-5)")
+  default: string = "claude-sonnet-5";
 }
 
 /**
