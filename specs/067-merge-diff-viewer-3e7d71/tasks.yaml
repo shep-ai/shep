@@ -1,0 +1,34 @@
+# Task Breakdown (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: merge-diff-viewer-3e7d71
+summary: Task breakdown for 067-merge-diff-viewer-3e7d71
+
+# Relationships
+relatedFeatures: []
+technologies: []
+relatedLinks: []
+
+# Structured task list
+tasks: []
+
+# Total effort estimate
+totalEstimate: TBD
+
+# Open questions
+openQuestions: []
+
+# Markdown content (the full tasks document)
+content: |
+  ## Status
+
+  - **Phase:** Implementation
+  - **Updated:** 2026-03-15
+
+  ## Task List
+
+  TBD
+
+  ---
+
+  _Task breakdown for implementation tracking_

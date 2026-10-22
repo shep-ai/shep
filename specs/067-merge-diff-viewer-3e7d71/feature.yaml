@@ -1,0 +1,36 @@
+feature:
+  id: '067-merge-diff-viewer-3e7d71'
+  name: 'merge-diff-viewer-3e7d71'
+  number: 67
+  branch: 'feat/067-merge-diff-viewer-3e7d71'
+  lifecycle: 'research'
+  createdAt: '2026-03-15T21:47:35Z'
+
+status:
+  phase: 'research'
+  progress:
+    completed: 0
+    total: 0
+    percentage: 0
+  currentTask: null
+  lastUpdated: '2026-03-15T21:47:35Z'
+  lastUpdatedBy: 'feature-agent'
+
+validation:
+  lastRun: null
+  gatesPassed: []
+  autoFixesApplied: []
+
+tasks:
+  current: null
+  blocked: []
+  failed: []
+
+checkpoints:
+  - phase: 'feature-created'
+    completedAt: '2026-03-15T21:47:35Z'
+    completedBy: 'feature-agent'
+
+errors:
+  current: null
+  history: []
