@@ -1,36 +1,33 @@
 feature:
-  id: '062-app-evidence-capture'
-  name: 'app-evidence-capture'
+  id: 062-app-evidence-capture
+  name: app-evidence-capture
   number: 62
-  branch: 'feat/062-app-evidence-capture'
-  lifecycle: 'research'
+  branch: feat/062-app-evidence-capture
+  lifecycle: research
   createdAt: '2026-03-12T10:24:44Z'
-
 status:
-  phase: 'research'
+  phase: research
   progress:
     completed: 0
     total: 0
     percentage: 0
-  currentTask: null
+  currentTask: 
   lastUpdated: '2026-03-12T10:24:44Z'
-  lastUpdatedBy: 'feature-agent'
-
+  lastUpdatedBy: feature-agent
+  completedPhases:
+    - requirements
 validation:
-  lastRun: null
+  lastRun: 
   gatesPassed: []
   autoFixesApplied: []
-
 tasks:
-  current: null
+  current: 
   blocked: []
   failed: []
-
 checkpoints:
-  - phase: 'feature-created'
+  - phase: feature-created
     completedAt: '2026-03-12T10:24:44Z'
-    completedBy: 'feature-agent'
-
+    completedBy: feature-agent
 errors:
-  current: null
+  current: 
   history: []
