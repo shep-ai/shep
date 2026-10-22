@@ -104,6 +104,18 @@ function HookTestHarness({
         Delete Feature
       </button>
       <button
+        data-testid="delete-feature-cascade"
+        onClick={() => state.handleDeleteFeature('1', true, true)}
+      >
+        Delete Feature (Cascade)
+      </button>
+      <button
+        data-testid="delete-feature-no-cascade"
+        onClick={() => state.handleDeleteFeature('1', true, false)}
+      >
+        Delete Feature (No Cascade)
+      </button>
+      <button
         data-testid="add-to-feature-creating"
         onClick={() =>
           state.createFeatureNode('repo-1', {
@@ -738,8 +750,14 @@ describe('useControlCenterState', () => {
       expect(screen.getByTestId('edge-count')).toHaveTextContent('1');
     });
 
-    it('navigates to root on successful deletion', async () => {
+    it('navigates to root on successful deletion when on a feature page', async () => {
       mockDeleteFeature.mockResolvedValue({ feature: { id: 'f1' } });
+
+      // Simulate being on a feature detail page so the push('/') fires
+      Object.defineProperty(window, 'location', {
+        value: { ...window.location, pathname: '/feature/f1' },
+        writable: true,
+      });
 
       renderHook([featureNode] as CanvasNodeType[]);
 
@@ -748,6 +766,30 @@ describe('useControlCenterState', () => {
       });
 
       expect(mockPush).toHaveBeenCalledWith('/');
+
+      // Restore default pathname
+      Object.defineProperty(window, 'location', {
+        value: { ...window.location, pathname: '/' },
+        writable: true,
+      });
+    });
+
+    it('skips navigation when already on root', async () => {
+      mockDeleteFeature.mockResolvedValue({ feature: { id: 'f1' } });
+
+      // Ensure pathname is '/' (jsdom default)
+      Object.defineProperty(window, 'location', {
+        value: { ...window.location, pathname: '/' },
+        writable: true,
+      });
+
+      renderHook([featureNode] as CanvasNodeType[]);
+
+      await act(async () => {
+        fireEvent.click(screen.getByTestId('delete-feature'));
+      });
+
+      expect(mockPush).not.toHaveBeenCalledWith('/');
     });
 
     it('shows error toast with server action error message', async () => {
@@ -972,6 +1014,355 @@ describe('useControlCenterState', () => {
 
         // Only repo→feat-2 edge remains
         expect(capturedState!.edges).toHaveLength(1);
+      });
+    });
+
+    describe('cascade delete', () => {
+      // Hierarchy: repo → feat-1 → feat-2 → feat-3 (chain)
+      const cascadeRepo: RepositoryNodeType = {
+        id: 'repo-1',
+        type: 'repositoryNode',
+        position: { x: 0, y: 0 },
+        data: { name: 'my-repo', repositoryPath: '/home/user/my-repo' },
+      };
+
+      const parentFeat: FeatureNodeType = {
+        id: 'feat-1',
+        type: 'featureNode',
+        position: { x: 200, y: 100 },
+        data: {
+          name: 'Parent Feature',
+          featureId: '#f1',
+          lifecycle: 'implementation',
+          state: 'running',
+          progress: 45,
+          repositoryPath: '/home/user/my-repo',
+          branch: 'feat/parent',
+        },
+      };
+
+      const childFeat: FeatureNodeType = {
+        id: 'feat-2',
+        type: 'featureNode',
+        position: { x: 400, y: 100 },
+        data: {
+          name: 'Child Feature',
+          featureId: '#f2',
+          lifecycle: 'requirements',
+          state: 'done',
+          progress: 0,
+          repositoryPath: '/home/user/my-repo',
+          branch: 'feat/child',
+        },
+      };
+
+      const grandchildFeat: FeatureNodeType = {
+        id: 'feat-3',
+        type: 'featureNode',
+        position: { x: 600, y: 100 },
+        data: {
+          name: 'Grandchild Feature',
+          featureId: '#f3',
+          lifecycle: 'requirements',
+          state: 'running',
+          progress: 0,
+          repositoryPath: '/home/user/my-repo',
+          branch: 'feat/grandchild',
+        },
+      };
+
+      const edgeRepoToParent: Edge = {
+        id: 'edge-repo-1-feat-1',
+        source: 'repo-1',
+        target: 'feat-1',
+      };
+
+      const depEdgeParentToChild: Edge = {
+        id: 'dep-feat-1-feat-2',
+        source: 'feat-1',
+        target: 'feat-2',
+        type: 'dependencyEdge',
+      };
+
+      const depEdgeChildToGrandchild: Edge = {
+        id: 'dep-feat-2-feat-3',
+        source: 'feat-2',
+        target: 'feat-3',
+        type: 'dependencyEdge',
+      };
+
+      it('removes all descendants when cascadeDelete=true', async () => {
+        mockDeleteFeature.mockResolvedValue({ feature: { id: 'f1' } });
+
+        let capturedState: ControlCenterState | null = null;
+
+        render(
+          <HookTestHarness
+            initialNodes={[cascadeRepo, parentFeat, childFeat, grandchildFeat] as CanvasNodeType[]}
+            initialEdges={[edgeRepoToParent, depEdgeParentToChild, depEdgeChildToGrandchild]}
+            onStateChange={(state) => {
+              capturedState = state;
+            }}
+          />
+        );
+
+        // Before: 4 nodes (repo + 3 features)
+        expect(capturedState!.nodes).toHaveLength(4);
+
+        await act(async () => {
+          capturedState!.handleDeleteFeature('1', true, true);
+        });
+
+        // After cascade: parent + child + grandchild all removed, only repo remains
+        expect(capturedState!.nodes).toHaveLength(1);
+        expect(capturedState!.nodes[0].id).toBe('repo-1');
+      });
+
+      it('passes cascadeDelete=true to server action', async () => {
+        mockDeleteFeature.mockResolvedValue({ feature: { id: 'f1' } });
+
+        renderHook([cascadeRepo, parentFeat, childFeat] as CanvasNodeType[], [
+          edgeRepoToParent,
+          depEdgeParentToChild,
+        ]);
+
+        await act(async () => {
+          fireEvent.click(screen.getByTestId('delete-feature-cascade'));
+        });
+
+        expect(mockDeleteFeature).toHaveBeenCalledWith('1', true, true);
+      });
+
+      it('rolls back all descendants on server action error', async () => {
+        mockDeleteFeature.mockResolvedValue({ error: 'Cascade failed' });
+
+        let capturedState: ControlCenterState | null = null;
+
+        render(
+          <HookTestHarness
+            initialNodes={[cascadeRepo, parentFeat, childFeat, grandchildFeat] as CanvasNodeType[]}
+            initialEdges={[edgeRepoToParent, depEdgeParentToChild, depEdgeChildToGrandchild]}
+            onStateChange={(state) => {
+              capturedState = state;
+            }}
+          />
+        );
+
+        await act(async () => {
+          capturedState!.handleDeleteFeature('1', true, true);
+        });
+
+        // All nodes should be restored on error
+        expect(capturedState!.nodes).toHaveLength(4);
+        expect(capturedState!.nodes.map((n) => n.id).sort()).toEqual([
+          'feat-1',
+          'feat-2',
+          'feat-3',
+          'repo-1',
+        ]);
+      });
+    });
+
+    describe('non-cascade delete (reparent children)', () => {
+      const ncRepo: RepositoryNodeType = {
+        id: 'repo-1',
+        type: 'repositoryNode',
+        position: { x: 0, y: 0 },
+        data: { name: 'my-repo', repositoryPath: '/home/user/my-repo' },
+      };
+
+      const ncParent: FeatureNodeType = {
+        id: 'feat-1',
+        type: 'featureNode',
+        position: { x: 200, y: 100 },
+        data: {
+          name: 'Parent Feature',
+          featureId: '#f1',
+          lifecycle: 'implementation',
+          state: 'running',
+          progress: 45,
+          repositoryPath: '/home/user/my-repo',
+          branch: 'feat/parent',
+        },
+      };
+
+      const ncChild: FeatureNodeType = {
+        id: 'feat-2',
+        type: 'featureNode',
+        position: { x: 400, y: 100 },
+        data: {
+          name: 'Child Feature',
+          featureId: '#f2',
+          lifecycle: 'requirements',
+          state: 'done',
+          progress: 0,
+          repositoryPath: '/home/user/my-repo',
+          branch: 'feat/child',
+        },
+      };
+
+      const ncEdgeRepoToParent: Edge = {
+        id: 'edge-repo-1-feat-1',
+        source: 'repo-1',
+        target: 'feat-1',
+      };
+
+      const ncDepEdge: Edge = {
+        id: 'dep-feat-1-feat-2',
+        source: 'feat-1',
+        target: 'feat-2',
+        type: 'dependencyEdge',
+      };
+
+      it('preserves children and reparents them when cascadeDelete=false', async () => {
+        mockDeleteFeature.mockResolvedValue({ feature: { id: 'f1' } });
+
+        let capturedState: ControlCenterState | null = null;
+
+        render(
+          <HookTestHarness
+            initialNodes={[ncRepo, ncParent, ncChild] as CanvasNodeType[]}
+            initialEdges={[ncEdgeRepoToParent, ncDepEdge]}
+            onStateChange={(state) => {
+              capturedState = state;
+            }}
+          />
+        );
+
+        // Before: 3 nodes (repo + parent + child)
+        expect(capturedState!.nodes).toHaveLength(3);
+
+        await act(async () => {
+          capturedState!.handleDeleteFeature('1', true, false);
+        });
+
+        // After non-cascade: only parent removed, child + repo remain
+        expect(capturedState!.nodes).toHaveLength(2);
+        expect(capturedState!.nodes.map((n) => n.id).sort()).toEqual(['feat-2', 'repo-1']);
+
+        // Child should now have a repo→child edge (reparented from parent to root)
+        const childEdge = capturedState!.edges.find((e) => e.target === 'feat-2');
+        expect(childEdge).toBeDefined();
+        expect(childEdge?.source).toBe('repo-1');
+      });
+
+      it('passes cascadeDelete=false to server action', async () => {
+        mockDeleteFeature.mockResolvedValue({ feature: { id: 'f1' } });
+
+        renderHook([ncRepo, ncParent, ncChild] as CanvasNodeType[], [
+          ncEdgeRepoToParent,
+          ncDepEdge,
+        ]);
+
+        await act(async () => {
+          fireEvent.click(screen.getByTestId('delete-feature-no-cascade'));
+        });
+
+        expect(mockDeleteFeature).toHaveBeenCalledWith('1', true, false);
+      });
+
+      it('reparents child to grandparent when deleting middle node', async () => {
+        mockDeleteFeature.mockResolvedValue({ feature: { id: 'f1' } });
+
+        const grandparent: FeatureNodeType = {
+          id: 'feat-0',
+          type: 'featureNode',
+          position: { x: 100, y: 100 },
+          data: {
+            name: 'Grandparent',
+            featureId: '#f0',
+            lifecycle: 'implementation',
+            state: 'done',
+            progress: 0,
+            repositoryPath: '/home/user/my-repo',
+            branch: 'feat/grandparent',
+          },
+        };
+
+        const depGpToParent: Edge = {
+          id: 'dep-feat-0-feat-1',
+          source: 'feat-0',
+          target: 'feat-1',
+          type: 'dependencyEdge',
+        };
+
+        let capturedState: ControlCenterState | null = null;
+
+        render(
+          <HookTestHarness
+            initialNodes={[ncRepo, grandparent, ncParent, ncChild] as CanvasNodeType[]}
+            initialEdges={[
+              { id: 'edge-repo-1-feat-0', source: 'repo-1', target: 'feat-0' },
+              depGpToParent,
+              ncDepEdge,
+            ]}
+            onStateChange={(state) => {
+              capturedState = state;
+            }}
+          />
+        );
+
+        await act(async () => {
+          capturedState!.handleDeleteFeature('1', true, false);
+        });
+
+        // Parent removed; grandparent, child, repo remain
+        expect(capturedState!.nodes).toHaveLength(3);
+        expect(capturedState!.nodes.find((n) => n.id === 'feat-1')).toBeUndefined();
+
+        // Child should be reparented to grandparent (dependency edge)
+        const childEdge = capturedState!.edges.find(
+          (e) => e.type === 'dependencyEdge' && e.target === 'feat-2'
+        );
+        expect(childEdge).toBeDefined();
+        expect(childEdge?.source).toBe('feat-0');
+      });
+
+      it('unblocks child feature when deleting parent non-cascade', async () => {
+        mockDeleteFeature.mockResolvedValue({ feature: { id: 'f1' } });
+
+        const blockedChild: FeatureNodeType = {
+          id: 'feat-2',
+          type: 'featureNode',
+          position: { x: 400, y: 100 },
+          data: {
+            name: 'Child Feature',
+            featureId: '#f2',
+            lifecycle: 'requirements',
+            state: 'blocked',
+            progress: 0,
+            repositoryPath: '/home/user/my-repo',
+            branch: 'feat/child',
+            blockedBy: 'Parent Feature',
+          },
+        };
+
+        let capturedState: ControlCenterState | null = null;
+
+        render(
+          <HookTestHarness
+            initialNodes={[ncRepo, ncParent, blockedChild] as CanvasNodeType[]}
+            initialEdges={[ncEdgeRepoToParent, ncDepEdge]}
+            onStateChange={(state) => {
+              capturedState = state;
+            }}
+          />
+        );
+
+        await act(async () => {
+          capturedState!.handleDeleteFeature('1', true, false);
+        });
+
+        // Child should be unblocked after parent deletion
+        const childNode = capturedState!.nodes.find((n) => n.id === 'feat-2');
+        expect(childNode).toBeDefined();
+        expect((childNode!.data as FeatureNodeData).state).not.toBe('blocked');
+        expect((childNode!.data as FeatureNodeData).blockedBy).toBeUndefined();
+
+        // Child should be reparented to repo
+        const childEdge = capturedState!.edges.find((e) => e.target === 'feat-2');
+        expect(childEdge).toBeDefined();
+        expect(childEdge?.source).toBe('repo-1');
       });
     });
   });

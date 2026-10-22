@@ -755,6 +755,283 @@ describe('useGraphState', () => {
     });
   });
 
+  describe('relocateChildren', () => {
+    it('reparents direct children to a new parent', () => {
+      const repoNode = makeRepoNode('repo-1', '/repo');
+      const parentFeature = makeFeatureNode('feat-parent', '/repo');
+      const childFeature = makeFeatureNode('feat-child', '/repo');
+      const grandparentFeature = makeFeatureNode('feat-grandparent', '/repo');
+      const depEdgeGpToParent: Edge = {
+        id: 'dep-feat-grandparent-feat-parent',
+        source: 'feat-grandparent',
+        target: 'feat-parent',
+        type: 'dependencyEdge',
+      };
+      const depEdgeParentToChild: Edge = {
+        id: 'dep-feat-parent-feat-child',
+        source: 'feat-parent',
+        target: 'feat-child',
+        type: 'dependencyEdge',
+      };
+
+      let capturedState: UseGraphStateReturn | null = null;
+      renderHook(
+        [repoNode, grandparentFeature, parentFeature, childFeature],
+        [depEdgeGpToParent, depEdgeParentToChild],
+        (s) => {
+          capturedState = s;
+        }
+      );
+
+      // Before: child has dependency edge from parent
+      const depBefore = capturedState!.edges.find(
+        (e) => e.type === 'dependencyEdge' && e.target === 'feat-child'
+      );
+      expect(depBefore?.source).toBe('feat-parent');
+
+      // Relocate children of feat-parent to feat-grandparent
+      act(() => {
+        capturedState!.relocateChildren('feat-parent', 'feat-grandparent');
+      });
+
+      // After: child should have dependency edge from grandparent
+      const depAfter = capturedState!.edges.find(
+        (e) => e.type === 'dependencyEdge' && e.target === 'feat-child'
+      );
+      expect(depAfter?.source).toBe('feat-grandparent');
+    });
+
+    it('makes children root-level when new parent is undefined', () => {
+      const repoNode = makeRepoNode('repo-1', '/repo');
+      const parentFeature = makeFeatureNode('feat-parent', '/repo');
+      const childFeature = makeFeatureNode('feat-child', '/repo');
+      const depEdge: Edge = {
+        id: 'dep-feat-parent-feat-child',
+        source: 'feat-parent',
+        target: 'feat-child',
+        type: 'dependencyEdge',
+      };
+
+      let capturedState: UseGraphStateReturn | null = null;
+      renderHook([repoNode, parentFeature, childFeature], [depEdge], (s) => {
+        capturedState = s;
+      });
+
+      // Before: child has dependency edge from parent
+      const depBefore = capturedState!.edges.find(
+        (e) => e.type === 'dependencyEdge' && e.target === 'feat-child'
+      );
+      expect(depBefore).toBeDefined();
+
+      // Relocate children of feat-parent to no parent (root level)
+      act(() => {
+        capturedState!.relocateChildren('feat-parent');
+      });
+
+      // After: no dependency edge for child; should have repo→child edge instead
+      const depAfter = capturedState!.edges.find(
+        (e) => e.type === 'dependencyEdge' && e.target === 'feat-child'
+      );
+      expect(depAfter).toBeUndefined();
+
+      const repoEdge = capturedState!.edges.find(
+        (e) => e.source === 'repo-1' && e.target === 'feat-child'
+      );
+      expect(repoEdge).toBeDefined();
+    });
+
+    it('does not affect grandchildren (only direct children)', () => {
+      const repoNode = makeRepoNode('repo-1', '/repo');
+      const parentFeature = makeFeatureNode('feat-parent', '/repo');
+      const childFeature = makeFeatureNode('feat-child', '/repo');
+      const grandchildFeature = makeFeatureNode('feat-grandchild', '/repo');
+      const depEdgeParentToChild: Edge = {
+        id: 'dep-feat-parent-feat-child',
+        source: 'feat-parent',
+        target: 'feat-child',
+        type: 'dependencyEdge',
+      };
+      const depEdgeChildToGrandchild: Edge = {
+        id: 'dep-feat-child-feat-grandchild',
+        source: 'feat-child',
+        target: 'feat-grandchild',
+        type: 'dependencyEdge',
+      };
+
+      let capturedState: UseGraphStateReturn | null = null;
+      renderHook(
+        [repoNode, parentFeature, childFeature, grandchildFeature],
+        [depEdgeParentToChild, depEdgeChildToGrandchild],
+        (s) => {
+          capturedState = s;
+        }
+      );
+
+      // Relocate children of feat-parent to no parent
+      act(() => {
+        capturedState!.relocateChildren('feat-parent');
+      });
+
+      // Grandchild should still be under child
+      const gcEdge = capturedState!.edges.find(
+        (e) => e.type === 'dependencyEdge' && e.target === 'feat-grandchild'
+      );
+      expect(gcEdge?.source).toBe('feat-child');
+    });
+
+    it('removeFeatureAndRelocateChildren atomically removes parent and reparents children', () => {
+      const repoNode = makeRepoNode('repo-1', '/repo');
+      const parentFeature = makeFeatureNode('feat-parent', '/repo');
+      const childFeature = makeFeatureNode('feat-child', '/repo');
+      const depEdge: Edge = {
+        id: 'dep-feat-parent-feat-child',
+        source: 'feat-parent',
+        target: 'feat-child',
+        type: 'dependencyEdge',
+      };
+
+      let capturedState: UseGraphStateReturn | null = null;
+      renderHook([repoNode, parentFeature, childFeature], [depEdge], (s) => {
+        capturedState = s;
+      });
+
+      // Before: 3 nodes, child has dependency edge from parent
+      expect(screen.getByTestId('node-count')).toHaveTextContent('3');
+
+      act(() => {
+        capturedState!.removeFeatureAndRelocateChildren('feat-parent');
+      });
+
+      // After: parent removed, child reparented to repo (no parentNodeId → repositoryPath match)
+      expect(screen.getByTestId('node-count')).toHaveTextContent('2');
+      expect(capturedState!.nodes.find((n) => n.id === 'feat-parent')).toBeUndefined();
+
+      // Child should have repo→child edge (not dependency edge)
+      const depAfter = capturedState!.edges.find(
+        (e) => e.type === 'dependencyEdge' && e.target === 'feat-child'
+      );
+      expect(depAfter).toBeUndefined();
+
+      const repoEdge = capturedState!.edges.find(
+        (e) => e.source === 'repo-1' && e.target === 'feat-child'
+      );
+      expect(repoEdge).toBeDefined();
+    });
+
+    it('removeFeatureAndRelocateChildren reparents to a specific new parent', () => {
+      const repoNode = makeRepoNode('repo-1', '/repo');
+      const grandparentFeature = makeFeatureNode('feat-grandparent', '/repo');
+      const parentFeature = makeFeatureNode('feat-parent', '/repo');
+      const childFeature = makeFeatureNode('feat-child', '/repo');
+      const depEdgeGpToParent: Edge = {
+        id: 'dep-feat-grandparent-feat-parent',
+        source: 'feat-grandparent',
+        target: 'feat-parent',
+        type: 'dependencyEdge',
+      };
+      const depEdgeParentToChild: Edge = {
+        id: 'dep-feat-parent-feat-child',
+        source: 'feat-parent',
+        target: 'feat-child',
+        type: 'dependencyEdge',
+      };
+
+      let capturedState: UseGraphStateReturn | null = null;
+      renderHook(
+        [repoNode, grandparentFeature, parentFeature, childFeature],
+        [depEdgeGpToParent, depEdgeParentToChild],
+        (s) => {
+          capturedState = s;
+        }
+      );
+
+      act(() => {
+        capturedState!.removeFeatureAndRelocateChildren('feat-parent', 'feat-grandparent');
+      });
+
+      // Parent removed, child reparented to grandparent
+      expect(capturedState!.nodes.find((n) => n.id === 'feat-parent')).toBeUndefined();
+      const depAfter = capturedState!.edges.find(
+        (e) => e.type === 'dependencyEdge' && e.target === 'feat-child'
+      );
+      expect(depAfter?.source).toBe('feat-grandparent');
+    });
+
+    it('removeFeatureAndRelocateChildren clears blockedBy and resets blocked state', () => {
+      const repoNode = makeRepoNode('repo-1', '/repo');
+      const parentFeature = makeFeatureNode('feat-parent', '/repo');
+      const childFeature = makeFeatureNode('feat-child', '/repo', {
+        state: 'blocked',
+        blockedBy: 'Parent Feature',
+      });
+      const depEdge: Edge = {
+        id: 'dep-feat-parent-feat-child',
+        source: 'feat-parent',
+        target: 'feat-child',
+        type: 'dependencyEdge',
+      };
+
+      let capturedState: UseGraphStateReturn | null = null;
+      renderHook([repoNode, parentFeature, childFeature], [depEdge], (s) => {
+        capturedState = s;
+      });
+
+      // Before: child is blocked
+      const childBefore = capturedState!.nodes.find((n) => n.id === 'feat-child');
+      expect((childBefore?.data as FeatureNodeData).state).toBe('blocked');
+      expect((childBefore?.data as FeatureNodeData).blockedBy).toBe('Parent Feature');
+
+      act(() => {
+        capturedState!.removeFeatureAndRelocateChildren('feat-parent');
+      });
+
+      // After: child should be unblocked (blockedBy cleared, state reset)
+      const childAfter = capturedState!.nodes.find((n) => n.id === 'feat-child');
+      expect((childAfter?.data as FeatureNodeData).state).not.toBe('blocked');
+      expect((childAfter?.data as FeatureNodeData).blockedBy).toBeUndefined();
+    });
+
+    it('getFeatureParentNodeId returns correct parent', () => {
+      const repoNode = makeRepoNode('repo-1', '/repo');
+      const parentFeature = makeFeatureNode('feat-parent', '/repo');
+      const childFeature = makeFeatureNode('feat-child', '/repo');
+      const depEdge: Edge = {
+        id: 'dep-feat-parent-feat-child',
+        source: 'feat-parent',
+        target: 'feat-child',
+        type: 'dependencyEdge',
+      };
+
+      let capturedState: UseGraphStateReturn | null = null;
+      renderHook([repoNode, parentFeature, childFeature], [depEdge], (s) => {
+        capturedState = s;
+      });
+
+      expect(capturedState!.getFeatureParentNodeId('feat-child')).toBe('feat-parent');
+      expect(capturedState!.getFeatureParentNodeId('feat-parent')).toBeUndefined();
+      expect(capturedState!.getFeatureParentNodeId('feat-unknown')).toBeUndefined();
+    });
+
+    it('no-ops when parent has no children', () => {
+      const repoNode = makeRepoNode('repo-1', '/repo');
+      const featureNode = makeFeatureNode('feat-abc', '/repo');
+
+      let capturedState: UseGraphStateReturn | null = null;
+      renderHook([repoNode, featureNode], [], (s) => {
+        capturedState = s;
+      });
+
+      const nodesBefore = capturedState!.nodes;
+
+      act(() => {
+        capturedState!.relocateChildren('feat-abc', 'feat-other');
+      });
+
+      // Should be reference-equal (no state change)
+      expect(capturedState!.nodes).toBe(nodesBefore);
+    });
+  });
+
   describe('stable references', () => {
     it('nodes/edges have stable references when Maps do not change', () => {
       const repoNode = makeRepoNode('repo-1');

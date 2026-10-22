@@ -65,6 +65,9 @@ export default tseslint.config(
       '*.config.mjs',
       '*.config.cjs',
       '*.config.ts',
+
+      // Standalone scripts
+      'capture-screenshots.mjs',
     ],
   },
 

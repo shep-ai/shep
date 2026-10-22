@@ -85,3 +85,10 @@ rejectionFeedback:
       2. the subfeature stays as blocked, it should be unblocked
     phase: merge
     timestamp: '2026-03-12T16:00:14.317Z'
+  - iteration: 4
+    message: >-
+      There is still issues, after delete the optimistic rendering is wrong it
+      disconnect it from the graph instead of recalcualting the right place,
+      after refresh it fixed.
+    phase: merge
+    timestamp: '2026-03-12T18:47:37.118Z'

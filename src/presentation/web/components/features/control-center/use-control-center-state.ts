@@ -75,10 +75,12 @@ export function useControlCenterState(
     updateFeature,
     addPendingFeature,
     removeFeature,
+    removeFeatureAndRelocateChildren,
     restoreFeature,
     addRepository: addRepositoryToMap,
     removeRepository,
     replaceRepository,
+    getFeatureParentNodeId,
     getFeatureRepositoryPath,
     getRepositoryData,
     getRepoMapSize,
@@ -332,19 +334,31 @@ export function useControlCenterState(
       const nodeId = `feat-${featureId}`;
       const shouldCascade = cascadeDelete === true;
 
+      // Snapshot edges NOW — edgesRef may change after state updates & route push
+      const currentEdges = edgesRef.current;
+
       // Collect all descendant feature node IDs (children, grandchildren, etc.)
       const descendants: string[] = [];
       if (shouldCascade) {
         const queue = [nodeId];
         while (queue.length > 0) {
           const current = queue.shift()!;
-          for (const edge of edgesRef.current) {
+          for (const edge of currentEdges) {
             if (edge.type === 'dependencyEdge' && edge.source === current) {
               descendants.push(edge.target);
               queue.push(edge.target);
             }
           }
         }
+      }
+
+      // For non-cascade deletes, capture the deleted node's parent BEFORE any
+      // state mutations or route changes.  Read directly from the domain Map
+      // (via getFeatureParentNodeId) instead of derived edges — the Map is the
+      // source of truth and avoids any timing issues with edge derivation.
+      let deletedNodeParentId: string | undefined;
+      if (!shouldCascade) {
+        deletedNodeParentId = getFeatureParentNodeId(nodeId);
       }
 
       // Snapshot current states for rollback (parent + descendants)
@@ -356,42 +370,117 @@ export function useControlCenterState(
         }
       }
 
-      // Optimistic: show "deleting" state on parent (and descendants if cascading)
       beginMutation();
-      updateFeature(nodeId, { state: 'deleting' });
-      for (const childId of descendants) {
-        updateFeature(childId, { state: 'deleting' });
-      }
       deleteSound.play();
-      router.push('/');
 
-      deleteFeature(featureId, cleanup, cascadeDelete)
-        .then((result) => {
-          if (result.error) {
-            // Rollback all to previous states
+      if (!shouldCascade) {
+        // Non-cascade: optimistically remove the parent and reparent children
+        // IMMEDIATELY, so the graph recalculates layout before navigation or
+        // any server re-render can interfere.
+        //
+        // Snapshot the deleted feature's full entry AND the direct children so
+        // we can rollback atomically on error.
+        const deletedEntry: FeatureEntry | undefined = (() => {
+          const node = nodesRef.current.find((n) => n.id === nodeId);
+          if (!node) return undefined;
+          return {
+            nodeId,
+            data: node.data as FeatureNodeData,
+            parentNodeId: deletedNodeParentId,
+          };
+        })();
+
+        // Snapshot children BEFORE reparenting (children that reference nodeId
+        // as their parent) — needed for accurate rollback.
+        const childSnapshots: FeatureEntry[] = [];
+        for (const edge of currentEdges) {
+          if (edge.type === 'dependencyEdge' && edge.source === nodeId) {
+            const childNode = nodesRef.current.find((n) => n.id === edge.target);
+            if (childNode) {
+              childSnapshots.push({
+                nodeId: edge.target,
+                data: childNode.data as FeatureNodeData,
+                parentNodeId: nodeId,
+              });
+            }
+          }
+        }
+
+        removeFeatureAndRelocateChildren(nodeId, deletedNodeParentId);
+
+        // Only navigate when not already on '/' — avoids triggering a redundant
+        // server layout re-render (force-dynamic) that causes a visible "refresh".
+        if (window.location.pathname !== '/') {
+          router.push('/');
+        }
+
+        const rollbackNonCascade = () => {
+          if (deletedEntry) restoreFeature(nodeId, deletedEntry);
+          for (const snap of childSnapshots) {
+            restoreFeature(snap.nodeId, snap);
+          }
+        };
+
+        deleteFeature(featureId, cleanup, cascadeDelete)
+          .then((result) => {
+            if (result.error) {
+              rollbackNonCascade();
+              toast.error(result.error);
+            }
+          })
+          .catch(() => {
+            rollbackNonCascade();
+            toast.error('Failed to delete feature');
+          })
+          .finally(() => endMutation());
+      } else {
+        // Cascade: show "deleting" state on parent + all descendants
+        updateFeature(nodeId, { state: 'deleting' });
+        for (const childId of descendants) {
+          updateFeature(childId, { state: 'deleting' });
+        }
+
+        // Only navigate when not already on '/'
+        if (window.location.pathname !== '/') {
+          router.push('/');
+        }
+
+        deleteFeature(featureId, cleanup, cascadeDelete)
+          .then((result) => {
+            if (result.error) {
+              // Rollback all to previous states
+              for (const [nid, prevState] of prevStates) {
+                if (prevState) updateFeature(nid, { state: prevState });
+              }
+              toast.error(result.error);
+            } else {
+              // Delete succeeded — remove all from the canvas
+              removeFeature(nodeId);
+              for (const childId of descendants) {
+                removeFeature(childId);
+              }
+            }
+          })
+          .catch(() => {
             for (const [nid, prevState] of prevStates) {
               if (prevState) updateFeature(nid, { state: prevState });
             }
-            toast.error(result.error);
-          } else {
-            // Delete succeeded — remove features from the canvas.  The polling
-            // reconcile would eventually clean them up, but we remove them
-            // explicitly so the user sees them disappear promptly.
-            removeFeature(nodeId);
-            for (const childId of descendants) {
-              removeFeature(childId);
-            }
-          }
-        })
-        .catch(() => {
-          for (const [nid, prevState] of prevStates) {
-            if (prevState) updateFeature(nid, { state: prevState });
-          }
-          toast.error('Failed to delete feature');
-        })
-        .finally(() => endMutation());
+            toast.error('Failed to delete feature');
+          })
+          .finally(() => endMutation());
+      }
     },
-    [router, deleteSound, updateFeature, removeFeature, beginMutation, endMutation]
+    [
+      router,
+      deleteSound,
+      updateFeature,
+      removeFeature,
+      removeFeatureAndRelocateChildren,
+      restoreFeature,
+      getFeatureParentNodeId,
+      beginMutation,
+      endMutation,
+    ]
   );
 
   const handleDeleteRepository = useCallback(

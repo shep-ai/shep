@@ -1,0 +1,41 @@
+Optional Cascade Delete — Unit Test Results
+============================================
+Date: 2026-03-14
+Branch: feat/optional-cascade-delete
+
+Feature-specific test files:
+  - delete-feature-dialog.test.tsx (20 tests) — PASSED
+  - use-control-center-state.test.tsx (41 tests) — PASSED
+  - use-graph-state.test.tsx (30 tests) — PASSED
+  - delete-feature.use-case.test.ts (25 tests) — PASSED
+
+Full test suite:
+  Test Files: 306 passed (306)
+  Tests:      3860 passed (3860)
+  Duration:   ~20s
+
+Key test scenarios covered:
+  DeleteFeatureDialog:
+    - Cascade checkbox only shown when hasChildren=true
+    - Cleanup checkbox checked by default
+    - Delete sub-features checkbox unchecked by default
+    - onConfirm receives both cleanup and cascadeDelete boolean values
+    - Checkbox states reset when dialog reopens
+    - All controls disabled during deletion
+
+  useControlCenterState (cascade delete):
+    - Cascade delete removes parent + all descendants
+    - Non-cascade delete removes parent but reparents children to grandparent
+    - Reparenting to repo root when deleting top-level feature
+    - Rollback restores all nodes on server action error
+    - Correct server action parameters (cascadeDelete=true/false)
+
+  useGraphState:
+    - removeFeatureAndRelocateChildren atomic operation
+    - relocateChildren reparents direct children only
+    - Grandchildren preserved (not affected by relocation)
+
+  DeleteFeatureUseCase:
+    - cascadeDelete parameter passed through to repository
+    - Cleanup worktree when cleanup=true
+    - Skip cleanup when cleanup=false

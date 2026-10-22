@@ -34,6 +34,14 @@ export interface UseGraphStateReturn {
   removePendingFeature: (nodeId: string) => void;
   /** Remove a real feature node from the domain Map. */
   removeFeature: (nodeId: string) => void;
+  /** Reparent direct children of a node to a new parent (or no parent). */
+  relocateChildren: (parentNodeId: string, newParentNodeId?: string) => void;
+  /**
+   * Atomically remove a feature AND reparent its direct children in a single
+   * state update.  Prevents intermediate renders where children still reference
+   * a deleted parent, which causes them to disconnect from the graph.
+   */
+  removeFeatureAndRelocateChildren: (nodeId: string, newParentNodeId?: string) => void;
   /** Restore a previously removed feature (rollback). */
   restoreFeature: (nodeId: string, entry: FeatureEntry) => void;
   /** Add a repository node (may use a temp ID initially). */
@@ -42,6 +50,8 @@ export interface UseGraphStateReturn {
   removeRepository: (nodeId: string) => void;
   /** Replace a temp repo ID with the real one (atomic). */
   replaceRepository: (tempId: string, realId: string, data: RepositoryNodeData) => void;
+  /** Stable lookup: get the parentNodeId for a feature node. */
+  getFeatureParentNodeId: (featureNodeId: string) => string | undefined;
   /** Stable lookup: get the repositoryPath for a feature node. */
   getFeatureRepositoryPath: (featureNodeId: string) => string | undefined;
   /** Stable lookup: get repository node data by nodeId. */
@@ -447,6 +457,47 @@ export function useGraphState(
     });
   }, []);
 
+  const relocateChildren = useCallback((parentNodeId: string, newParentNodeId?: string) => {
+    setFeatureMap((prev) => {
+      let changed = false;
+      const next = new Map(prev);
+      for (const [id, entry] of prev) {
+        if (entry.parentNodeId === parentNodeId) {
+          next.set(id, { ...entry, parentNodeId: newParentNodeId });
+          changed = true;
+        }
+      }
+      return changed ? next : prev;
+    });
+  }, []);
+
+  const removeFeatureAndRelocateChildren = useCallback(
+    (nodeId: string, newParentNodeId?: string) => {
+      setFeatureMap((prev) => {
+        const next = new Map(prev);
+        // Reparent direct children first, clearing any blocked-by state
+        // that referenced the deleted parent.
+        for (const [id, entry] of prev) {
+          if (entry.parentNodeId === nodeId) {
+            const updatedData = { ...entry.data };
+            // If the child was blocked by the deleted parent, unblock it
+            if (updatedData.blockedBy) {
+              delete updatedData.blockedBy;
+              if (updatedData.state === 'blocked') {
+                updatedData.state = 'done';
+              }
+            }
+            next.set(id, { ...entry, parentNodeId: newParentNodeId, data: updatedData });
+          }
+        }
+        // Then remove the feature itself
+        next.delete(nodeId);
+        return next;
+      });
+    },
+    []
+  );
+
   const restoreFeature = useCallback((nodeId: string, entry: FeatureEntry) => {
     setFeatureMap((prev) => {
       const next = new Map(prev);
@@ -488,6 +539,10 @@ export function useGraphState(
     },
     []
   );
+
+  const getFeatureParentNodeId = useCallback((featureNodeId: string): string | undefined => {
+    return featureMapRef.current.get(featureNodeId)?.parentNodeId;
+  }, []);
 
   const getFeatureRepositoryPath = useCallback((featureNodeId: string): string | undefined => {
     return featureMapRef.current.get(featureNodeId)?.data.repositoryPath;
@@ -538,10 +593,13 @@ export function useGraphState(
     addPendingFeature,
     removePendingFeature,
     removeFeature,
+    relocateChildren,
+    removeFeatureAndRelocateChildren,
     restoreFeature,
     addRepository,
     removeRepository,
     replaceRepository,
+    getFeatureParentNodeId,
     getFeatureRepositoryPath,
     getRepositoryData,
     getRepoMapSize,
