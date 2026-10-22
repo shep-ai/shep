@@ -1,0 +1,36 @@
+feature:
+  id: '062-unknown-request'
+  name: 'unknown-request'
+  number: 62
+  branch: 'feat/062-unknown-request'
+  lifecycle: 'research'
+  createdAt: '2026-03-12T10:59:03Z'
+
+status:
+  phase: 'research'
+  progress:
+    completed: 0
+    total: 0
+    percentage: 0
+  currentTask: null
+  lastUpdated: '2026-03-12T10:59:03Z'
+  lastUpdatedBy: 'feature-agent'
+
+validation:
+  lastRun: null
+  gatesPassed: []
+  autoFixesApplied: []
+
+tasks:
+  current: null
+  blocked: []
+  failed: []
+
+checkpoints:
+  - phase: 'feature-created'
+    completedAt: '2026-03-12T10:59:03Z'
+    completedBy: 'feature-agent'
+
+errors:
+  current: null
+  history: []
