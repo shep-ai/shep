@@ -30,6 +30,9 @@ const BUILD_TIMEOUT_MS = 30_000;
 /** Timeout for all other coast CLI commands. */
 const DEFAULT_TIMEOUT_MS = 10_000;
 
+/** Max attempts for the generate → build → fix loop. */
+const MAX_BUILD_RETRIES = 3;
+
 /** JSON schema for Coastfile generation via structured agent caller. */
 const COASTFILE_SCHEMA = {
   type: 'object',
@@ -115,7 +118,19 @@ export class CoastsService implements ICoastsService {
   }
 
   async build(workDir: string): Promise<void> {
-    await this.execCoast(['build'], workDir, BUILD_TIMEOUT_MS);
+    try {
+      await this.execCoast(['build'], workDir, BUILD_TIMEOUT_MS);
+    } catch (error: unknown) {
+      const stderr =
+        error instanceof Error && 'stderr' in error ? (error as { stderr: string }).stderr : '';
+      const stdout =
+        error instanceof Error && 'stdout' in error ? (error as { stdout: string }).stdout : '';
+      const logs = [stderr, stdout].filter(Boolean).join('\n').trim();
+      const message = logs
+        ? `coast build failed:\n${logs}`
+        : `coast build failed: ${error instanceof Error ? error.message : String(error)}`;
+      throw new Error(message);
+    }
   }
 
   async run(workDir: string): Promise<CoastInstance> {
@@ -150,23 +165,44 @@ export class CoastsService implements ICoastsService {
   }
 
   async generateCoastfile(workDir: string): Promise<string> {
-    const prompt = `${COASTFILE_GENERATION_PROMPT}\n\nAnalyze the project at the working directory and generate a Coastfile.\nReturn the complete Coastfile content as valid TOML in the "content" field.`;
-
-    const result = await this.structuredCaller.call<CoastfileGenerationResult>(
-      prompt,
-      COASTFILE_SCHEMA,
-      {
-        cwd: workDir,
-        allowedTools: [],
-        silent: true,
-        maxTurns: 10,
-      }
-    );
-
     const coastfilePath = path.join(workDir, 'Coastfile');
-    writeFileSync(coastfilePath, result.content, 'utf-8');
+    let buildError: string | null = null;
 
-    return coastfilePath;
+    for (let attempt = 0; attempt < MAX_BUILD_RETRIES; attempt++) {
+      const prompt = buildError
+        ? `${COASTFILE_GENERATION_PROMPT}\n\nThe previous Coastfile failed \`coast build\` with this error:\n\`\`\`\n${buildError}\n\`\`\`\n\nFix the Coastfile to resolve this error. Return the corrected Coastfile content as valid TOML in the "content" field.`
+        : `${COASTFILE_GENERATION_PROMPT}\n\nAnalyze the project at the working directory and generate a Coastfile.\nReturn the complete Coastfile content as valid TOML in the "content" field.`;
+
+      const result = await this.structuredCaller.call<CoastfileGenerationResult>(
+        prompt,
+        COASTFILE_SCHEMA,
+        {
+          cwd: workDir,
+          allowedTools: [],
+          silent: true,
+          maxTurns: 10,
+        }
+      );
+
+      writeFileSync(coastfilePath, result.content, 'utf-8');
+
+      try {
+        await this.execCoast(['build'], workDir, BUILD_TIMEOUT_MS);
+        return coastfilePath;
+      } catch (error: unknown) {
+        const stderr =
+          error instanceof Error && 'stderr' in error ? (error as { stderr: string }).stderr : '';
+        const stdout =
+          error instanceof Error && 'stdout' in error ? (error as { stdout: string }).stdout : '';
+        buildError = [stderr, stdout].filter(Boolean).join('\n').trim();
+
+        if (!buildError) {
+          buildError = error instanceof Error ? error.message : String(error);
+        }
+      }
+    }
+
+    throw new Error(`coast build failed after ${MAX_BUILD_RETRIES} attempts:\n${buildError}`);
   }
 
   async hasCoastfile(workDir: string): Promise<boolean> {

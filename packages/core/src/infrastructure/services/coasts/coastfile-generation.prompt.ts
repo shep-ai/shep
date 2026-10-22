@@ -78,6 +78,8 @@ packages = ["nodejs", "npm", "git"]   # Alpine packages to install
 run = ["npm install -g pnpm"]         # Arbitrary setup commands
 \`\`\`
 
+**Important:** The base Coast DinD image is Alpine-based (\`docker:dind\`). \`corepack\` is NOT available. To install pnpm, use \`npm install -g pnpm@<version>\` in the \`run\` array. Never use \`corepack enable\` or \`corepack prepare\` — they will fail.
+
 ### \`[ports]\` — Required (at least one). Logical name to port number.
 
 \`\`\`toml

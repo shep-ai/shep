@@ -73,7 +73,9 @@ export function useCoastsActions(input: CoastsActionsInput | null): CoastsAction
       if (result.success) {
         setCoastfileExists(true);
       } else {
-        setError(result.error ?? 'Failed to generate Coastfile');
+        const errorMsg = result.error ?? 'Failed to generate Coastfile';
+        console.error('[coasts:generate:client]', errorMsg);
+        setError(errorMsg);
         errorTimerRef.current = setTimeout(() => setError(null), ERROR_CLEAR_DELAY);
       }
     } catch (err: unknown) {

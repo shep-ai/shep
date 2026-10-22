@@ -29,16 +29,15 @@ export async function generateCoastfileAction(
 
   try {
     const coastsService = resolve<ICoastsService>('ICoastsService');
-    console.log('[coasts:generate] Generating Coastfile...');
+    console.log('[coasts:generate] Generating Coastfile (with build validation)...');
     const coastfilePath = await coastsService.generateCoastfile(repositoryPath);
-    console.log(`[coasts:generate] Coastfile generated at ${coastfilePath}`);
-    console.log('[coasts:generate] Building coast container...');
-    await coastsService.build(repositoryPath);
-    console.log('[coasts:generate] Build complete.');
+    console.log(`[coasts:generate] Coastfile generated and built at ${coastfilePath}`);
     return { success: true, coastfilePath };
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : 'Failed to generate Coastfile';
-    console.error('[coasts:generate] Failed:', message);
+    const fullMessage = error instanceof Error ? error.message : 'Failed to generate Coastfile';
+    console.error('[coasts:generate] Failed:', fullMessage);
+    // Truncate for client serialization — full logs are in server console
+    const message = fullMessage.length > 500 ? fullMessage.slice(0, 500) + '…' : fullMessage;
     return { success: false, error: message };
   }
 }
