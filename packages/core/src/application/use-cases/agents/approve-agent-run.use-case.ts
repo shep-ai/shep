@@ -126,6 +126,7 @@ export class ApproveAgentRunUseCase {
         ...(payload ? { resumePayload: JSON.stringify(payload) } : {}),
         agentType: run.agentType,
         ...(run.modelId ? { model: run.modelId } : {}),
+        ...(feature?.fast ? { fast: true } : {}),
       }
     );
 

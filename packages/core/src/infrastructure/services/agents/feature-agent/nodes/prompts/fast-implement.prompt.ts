@@ -109,6 +109,47 @@ function extractUserQuery(specDir: string): string {
 }
 
 /**
+ * Extract rejection feedback from spec.yaml for merge-phase rejections.
+ * Returns a formatted prompt section if feedback exists, empty string otherwise.
+ */
+function getRejectionFeedback(specDir: string): string {
+  try {
+    const specContent = readSpecFile(specDir, 'spec.yaml');
+    if (!specContent) return '';
+
+    const specData = yaml.load(specContent) as Record<string, unknown> | null;
+    const rejectionFeedback = specData?.rejectionFeedback as
+      | { iteration: number; message: string; phase?: string; timestamp: string }[]
+      | undefined;
+    if (rejectionFeedback && rejectionFeedback.length > 0) {
+      const mergeRejections = rejectionFeedback.filter((e) => e.phase === 'merge');
+      if (mergeRejections.length > 0) {
+        const latest = mergeRejections[mergeRejections.length - 1];
+        const older = mergeRejections.slice(0, -1);
+        const olderSection =
+          older.length > 0
+            ? `\n### Earlier feedback (for context only)\n${older.map((e) => `- Iteration ${e.iteration}: ${e.message}`).join('\n')}\n`
+            : '';
+        return `
+## CRITICAL — User Rejection Feedback (MUST ADDRESS)
+
+**YOUR PRIMARY TASK: The user rejected the previous result and gave this feedback. You MUST act on it:**
+
+> ${latest.message}
+
+(Iteration ${latest.iteration}, ${latest.timestamp})
+
+Do NOT just record this feedback — you must actually make the changes the user requested.
+${olderSection}`;
+      }
+    }
+  } catch {
+    // Continue without rejection feedback
+  }
+  return '';
+}
+
+/**
  * Build the fast-implement prompt from user query + codebase context.
  *
  * The prompt includes:
@@ -129,18 +170,21 @@ export function buildFastImplementPrompt(state: FeatureAgentState): string {
   const packageJson = readWorktreeFile(cwd, 'package.json');
   const dirListing = buildDirectoryListing(cwd);
 
+  // Check for rejection feedback from prior merge rejection
+  const rejectionSection = getRejectionFeedback(state.specDir);
+
   // Build sections conditionally
   const sections: string[] = [];
 
   sections.push(`You are a senior software engineer implementing a change directly from a user request.
-
+${rejectionSection}
 ## User Request
 
 ${userQuery}
 
 ## Implementation Instructions
 
-1. Implement the requested changes in the codebase
+1. ${rejectionSection ? 'Address the rejection feedback above by modifying the existing implementation' : 'Implement the requested changes in the codebase'}
 2. Write tests for your changes where appropriate
 3. Run the test suite and fix any failures
 4. Run the linter and fix any issues

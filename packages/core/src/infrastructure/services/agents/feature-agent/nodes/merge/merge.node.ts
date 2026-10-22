@@ -105,6 +105,7 @@ export function createMergeNode(deps: MergeNodeDeps) {
       return {
         currentNode: 'merge',
         messages: [`[merge] Rejected — will re-execute`],
+        error: null,
         _approvalAction: null,
         _rejectionFeedback: null,
         _needsReexecution: true,

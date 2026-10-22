@@ -377,8 +377,13 @@ export async function runWorker(args: WorkerArgs): Promise<void> {
     const interruptPayload = result.__interrupt__ as { value: unknown }[] | undefined;
     if (interruptPayload && interruptPayload.length > 0) {
       const now = new Date();
+      // Extract the node name from the interrupt payload so the rejection
+      // use case can tag feedback with the correct phase (e.g. "merge").
+      const interruptValue = interruptPayload[0]?.value as Record<string, unknown> | undefined;
+      const interruptNode = typeof interruptValue?.node === 'string' ? interruptValue.node : undefined;
       await runRepository.updateStatus(args.runId, AgentRunStatus.waitingApproval, {
         updatedAt: now,
+        ...(interruptNode ? { result: `node:${interruptNode}` } : {}),
       });
       log('Run paused — waiting for human approval');
       return;

@@ -152,6 +152,7 @@ export class RejectAgentRunUseCase {
         push: feature?.push ?? false,
         openPr: feature?.openPr ?? false,
         resumePayload: JSON.stringify(rejectionPayload),
+        ...(feature.fast ? { fast: true } : {}),
       }
     );
 
