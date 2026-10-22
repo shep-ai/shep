@@ -1,6 +1,9 @@
 {
   "permissions": {
-    "allow": ["mcp__plugin_playwright_playwright__browser_take_screenshot"]
+    "allow": [
+      "mcp__plugin_playwright_playwright__browser_take_screenshot",
+      "Edit(~/.claude/skills/discord-admin/**)"
+    ]
   },
   "hooks": {
     "PostToolUse": [
