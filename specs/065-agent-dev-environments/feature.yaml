@@ -1,0 +1,34 @@
+feature:
+  id: 065-agent-dev-environments
+  name: agent-dev-environments
+  number: 65
+  branch: feat/065-agent-dev-environments
+  lifecycle: research
+  createdAt: '2026-03-13T17:31:06Z'
+status:
+  phase: research
+  progress:
+    completed: 0
+    total: 0
+    percentage: 0
+  currentTask: null
+  lastUpdated: '2026-03-13T17:31:06Z'
+  lastUpdatedBy: feature-agent
+  completedPhases:
+    - analyze
+    - requirements
+validation:
+  lastRun: null
+  gatesPassed: []
+  autoFixesApplied: []
+tasks:
+  current: null
+  blocked: []
+  failed: []
+checkpoints:
+  - phase: feature-created
+    completedAt: '2026-03-13T17:31:06Z'
+    completedBy: feature-agent
+errors:
+  current: null
+  history: []

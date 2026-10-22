@@ -1,0 +1,34 @@
+# Task Breakdown (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: agent-dev-environments
+summary: Task breakdown for 065-agent-dev-environments
+
+# Relationships
+relatedFeatures: []
+technologies: []
+relatedLinks: []
+
+# Structured task list
+tasks: []
+
+# Total effort estimate
+totalEstimate: TBD
+
+# Open questions
+openQuestions: []
+
+# Markdown content (the full tasks document)
+content: |
+  ## Status
+
+  - **Phase:** Implementation
+  - **Updated:** 2026-03-13
+
+  ## Task List
+
+  TBD
+
+  ---
+
+  _Task breakdown for implementation tracking_

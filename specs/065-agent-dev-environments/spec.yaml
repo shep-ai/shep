@@ -1,424 +1,124 @@
-# Feature Specification (YAML)
-# This is the source of truth. Markdown is auto-generated from this file.
-
-name: agent-dev-environments
-number: 065
-branch: feat/065-agent-dev-environments
-oneLiner: >
-  replace naive process-spawn deployment with an agent-driven dev environment
-  that analyzes repos, caches deploy skills, and starts any project
-userQuery: >
-  The current deployment env feature is simple stupid.
-  lets introduce agent based deployment.  so it could start dev env for any repo.
-  it should have some level of cache per repo so it would be fast
+name: dark-mode-toggle
+number: 42
+branch: feat/042-dark-mode-toggle
+oneLiner: Add a dark-mode toggle to the Shep web UI settings panel
 summary: >
-  Replace the current naive deployment service (which only spawns `npm run dev`
-  and detects ports via regex) with an AI agent-driven dev environment system.
-  A new LangGraph-based deploy agent will analyze repositories to detect optimal
-  deployment strategies (Docker, Docker Compose, scripts, etc.), cache the
-  resulting DeploySkill per-repo for fast subsequent starts, and manage the full
-  deployment lifecycle. The TypeSpec models (LocalDeployAgent, DeploySkill,
-  Deployment, DeployTarget) already exist but have no graph implementation.
+  Introduce a persistent dark-mode toggle to the Shep web UI settings panel that
+  applies a CSS class-based theme via Tailwind dark: variants, stores the user
+  preference in localStorage, and is surfaced as a shadcn/ui Switch component
+  with full Storybook coverage and TDD-driven unit tests.
 phase: Requirements
-sizeEstimate: L
+sizeEstimate: M
 
-# Relationships
 relatedFeatures: []
 
 technologies:
-  - LangGraph (StateGraph for agent orchestration)
-  - TypeSpec (domain model definitions)
-  - SQLite (DeploySkill caching per-repo)
-  - Docker / Docker Compose (deployment methods)
-  - Node.js child_process (process spawning)
-  - Next.js server actions (web UI integration)
-  - SSE / EventSource (real-time log streaming)
-  - tsyringe (dependency injection)
-  - Vitest (unit and integration testing)
-  - Storybook (UI component stories)
-  - zod (structured agent output validation)
+  - React 19
+  - Next.js 16 (App Router)
+  - Tailwind CSS v4
+  - shadcn/ui
+  - Storybook
+  - TypeScript
+  - localStorage Web API
 
 relatedLinks: []
 
-# Open questions (must be resolved before implementation)
 openQuestions:
-  - question: 'What cache strategy should be used for DeploySkill persistence?'
+  - question: 'Where should the dark-mode preference be persisted?'
     resolved: true
     options:
-      - option: 'Cache-first with manual invalidation'
+      - option: 'localStorage only'
         description: >
-          Always use cached DeploySkill if available; user can manually trigger
-          re-analysis. Auto-invalidate on deployment failure. Build configs
-          change rarely so cache hits will dominate. Simple to implement and
-          reason about.
+          Store the theme preference in localStorage. Zero backend changes,
+          instant read on page load, and no need for a settings schema migration.
+          The ThemeProvider reads the key on mount and writes on toggle.
         selected: true
-      - option: 'TTL-based expiration'
+      - option: 'SQLite settings via backend API'
         description: >
-          Cache expires after a configurable duration (e.g., 24h). Ensures
-          stale configs are eventually refreshed. Adds complexity for TTL
-          management and may cause unnecessary LLM calls when config hasn't
-          changed.
-        selected: false
-      - option: 'File-hash invalidation'
-        description: >
-          Hash key project files (Dockerfile, package.json, etc.) and
-          invalidate when hashes change. Precise but requires knowing which
-          files matter per method, and hashing adds latency on every start.
+          Persist the preference in the Shep SQLite settings store alongside
+          other settings. Syncs across devices but requires API changes and a
+          settings migration — out of scope for this feature.
         selected: false
     selectionRationale: >
-      Cache-first with manual invalidation is simplest and most pragmatic. Build
-      configs change rarely in practice, so cache hits will dominate. The
-      auto-retry on failure provides a safety net for stale configs without
-      adding complexity. Manual invalidation gives users control when they
-      intentionally change their setup.
-    answer: 'Cache-first with manual invalidation'
+      localStorage is the conventional approach for client-side theme preferences
+      and requires no backend changes. The Shep settings API is out of scope for
+      this feature; localStorage ships the value faster with zero migration risk.
+    answer: 'localStorage only'
 
-  - question: 'Which deployment methods should be supported in the initial release?'
+  - question: 'How should the CSS dark-mode implementation be applied?'
     resolved: true
     options:
-      - option: 'Script + Docker Compose + Docker'
+      - option: 'Tailwind CSS class-based dark mode (dark: modifier)'
         description: >
-          Covers the three most common local dev scenarios: direct script
-          execution (npm/pnpm/yarn/python/go), multi-container orchestration
-          (docker compose), and single-container builds (Dockerfile). Covers
-          90%+ of real-world repositories.
+          Add the dark class to the html element and use Tailwind dark: modifier
+          on all themed elements. Supported natively in Tailwind CSS v4 and fully
+          compatible with the shadcn/ui component library.
         selected: true
-      - option: 'Script only'
+      - option: 'CSS custom properties via a custom ThemeProvider stylesheet'
         description: >
-          Minimal scope — only shell command execution. Fast to implement but
-          misses Docker-based projects entirely, limiting the "any repo" value
-          proposition.
-        selected: false
-      - option: 'Script + Docker Compose + Docker + Kubernetes'
-        description: >
-          Full coverage including K8s manifests and Helm charts. Significantly
-          increases scope (minikube/kind setup, kubectl integration, health
-          check complexity) for a deployment method rarely used in local dev.
+          Define a set of CSS custom properties (--color-bg, --color-text, etc.)
+          and swap them by toggling a data attribute. More flexible but requires
+          redefining all existing color tokens — a large change surface.
         selected: false
     selectionRationale: >
-      Script + Docker Compose + Docker covers 90%+ of local dev scenarios
-      without overextending scope. Kubernetes is rarely used for local dev
-      environments and would add significant complexity (minikube/kind setup,
-      kubectl integration). The DeployMethod enum already includes Kubernetes
-      and Manual, so these can be added in a future iteration.
-    answer: 'Script + Docker Compose + Docker'
-
-  - question: 'How should the agent produce deployment configuration output?'
-    resolved: true
-    options:
-      - option: 'Structured output via zod schema'
-        description: >
-          Use IAgentExecutor's outputSchema parameter with a zod schema that
-          mirrors the DeploySkill TypeSpec model. Guarantees valid JSON output
-          matching the expected shape. Eliminates parsing fragility and retry
-          loops for malformed output.
-        selected: true
-      - option: 'Free-text output with regex/JSON parsing'
-        description: >
-          Agent produces free-text or markdown; system extracts deployment
-          config via parsing. More flexible for the LLM but fragile — requires
-          retry logic for malformed output and edge case handling.
-        selected: false
-    selectionRationale: >
-      Structured output via zod is the established pattern in this codebase
-      (IAgentExecutor already supports outputSchema). It eliminates the entire
-      class of parsing bugs and produces type-safe results directly usable by
-      the deploy node.
-    answer: 'Structured output via zod schema'
-
-  - question: 'What graph structure should the deploy agent use?'
-    resolved: true
-    options:
-      - option: 'Two nodes: analyze and deploy'
-        description: >
-          Clean separation between the cacheable analysis step (LLM call that
-          produces a DeploySkill) and the stateful execution step (spawning
-          processes/containers). The analyze node output is what gets cached.
-          Simple, testable, easy to reason about.
-        selected: true
-      - option: 'Three nodes: analyze, validate, deploy'
-        description: >
-          Adds an explicit validation node between analysis and deployment to
-          verify the DeploySkill is executable (e.g., Docker is installed,
-          ports are available). More defensive but adds a node that could be
-          handled as a pre-check within the deploy node itself.
-        selected: false
-      - option: 'Single node with internal branching'
-        description: >
-          One monolithic node that analyzes, caches, and deploys. Simpler graph
-          but harder to test, cache, and reason about. Defeats the purpose of
-          graph-based orchestration.
-        selected: false
-    selectionRationale: >
-      Two nodes provides the cleanest separation of concerns. The analyze node
-      is the cacheable unit — its output (DeploySkill) is what gets persisted.
-      The deploy node is stateful and non-cacheable. Validation checks (Docker
-      installed, ports available) are better handled as pre-flight checks
-      within the deploy node rather than as a separate graph node.
-    answer: 'Two nodes: analyze and deploy'
-
-  - question: 'Where should DeploySkill cache be stored?'
-    resolved: true
-    options:
-      - option: 'Main SQLite database with new migration'
-        description: >
-          Add a deploy_skills table to the existing SQLite database used for
-          features, repositories, and settings. Follows established persistence
-          patterns, reuses the connection singleton, and keeps all data in one
-          place. Backed up and migrated together.
-        selected: true
-      - option: 'Separate SQLite database file'
-        description: >
-          Create a dedicated deploy-skills.db file. Isolates deployment cache
-          from core data but adds a second database connection, complicates
-          backup/migration, and diverges from established patterns.
-        selected: false
-      - option: 'JSON file per repository'
-        description: >
-          Store .shep/deploy-skill.json in each repository directory. Travels
-          with the repo but pollutes user projects, requires gitignore
-          management, and makes cache listing/clearing harder.
-        selected: false
-    selectionRationale: >
-      The main SQLite database is the established pattern for all persistent
-      data in this project. Features, repositories, and settings all use the
-      same database with the same migration system. Adding deploy_skills as
-      another table is consistent, reuses the existing connection singleton,
-      and simplifies backup and cleanup.
-    answer: 'Main SQLite database with new migration'
-
-  - question: 'What should be used as the cache key for DeploySkill lookups?'
-    resolved: true
-    options:
-      - option: 'Absolute repository path'
-        description: >
-          Use the resolved absolute filesystem path as the unique key. Already
-          used as targetId in the deployment service. Deterministic, zero
-          computation, naturally unique per machine. May break if repo is
-          moved, but manual invalidation handles this.
-        selected: true
-      - option: 'Git remote URL + branch'
-        description: >
-          Use the repository's git remote origin URL combined with the current
-          branch. Portable across machines but requires git access, doesn't
-          work for non-git repos, and the same repo at different paths would
-          share a (potentially wrong) skill.
-        selected: false
-      - option: 'Content hash of config files'
-        description: >
-          Hash the contents of detected config files (package.json, Dockerfile,
-          etc.). Automatically invalidates when config changes but requires
-          knowing which files to hash, adds I/O on every lookup, and is harder
-          to reason about cache identity.
-        selected: false
-    selectionRationale: >
-      Absolute repository path is the simplest and most reliable key. It is
-      already used as targetId throughout the deployment system. It requires
-      zero computation, is naturally unique per machine, and avoids the
-      complexity of git access or file hashing. If a repo is moved, the user
-      simply triggers re-analysis.
-    answer: 'Absolute repository path'
-
-  - question: 'How should the deployment service interface be extended?'
-    resolved: true
-    options:
-      - option: 'Extend IDeploymentService with new methods'
-        description: >
-          Add analyzeRepository() and getSkill() to the existing interface.
-          Keeps the deployment lifecycle cohesive in one service. Callers
-          already have IDeploymentService injected. Minimal DI changes.
-        selected: true
-      - option: 'Create separate IDeployAnalysisService'
-        description: >
-          New interface for analysis concerns, separate from deployment
-          lifecycle. Better separation of concerns but doubles the injection
-          points, requires coordinating two services for a single deployment
-          flow, and adds DI complexity.
-        selected: false
-    selectionRationale: >
-      Extending IDeploymentService keeps the deployment lifecycle cohesive.
-      Analysis is a step in the deployment flow, not an independent concern.
-      Server actions and hooks already inject IDeploymentService; adding
-      methods there avoids new DI registrations and keeps the API surface
-      unified.
-    answer: 'Extend IDeploymentService with new methods'
-
-  - question: 'How should the deploy method be surfaced in the UI?'
-    resolved: true
-    options:
-      - option: 'Show method label in DeploymentStatusBadge'
-        description: >
-          Add a small label (e.g., "Script", "Docker Compose", "Docker") next
-          to the existing state indicator in the badge. Minimal UI change,
-          gives users transparency into what the agent chose without requiring
-          navigation to a separate view.
-        selected: true
-      - option: 'Dedicated DeploySkill detail panel'
-        description: >
-          Create a new expandable panel showing the full DeploySkill details
-          (method, instructions, ports). More informative but significantly
-          more UI work and likely unnecessary for the common case where users
-          just want to see "it's running".
-        selected: false
-      - option: 'No UI changes — log-only visibility'
-        description: >
-          Deploy method only visible in the log stream output. Simplest
-          implementation but users have to dig through logs to understand what
-          deployment strategy was chosen.
-        selected: false
-    selectionRationale: >
-      Showing the method label in the DeploymentStatusBadge provides
-      transparency with minimal UI effort. Users can see at a glance whether
-      the agent chose Script, Docker, or Docker Compose. The existing badge
-      already shows state (Booting/Ready); adding the method label is a
-      natural extension. A full detail panel can be added later if users need
-      more visibility.
-    answer: 'Show method label in DeploymentStatusBadge'
+      Tailwind CSS v4 with dark: modifier is already the standard in this codebase.
+      All shadcn/ui components are built to accept Tailwind dark: variants. Using
+      the dark class on html is the minimal, zero-extra-dependency approach.
+    answer: 'Tailwind CSS class-based dark mode (dark: modifier)'
 
 content: |
   ## Problem Statement
 
-  The current deployment service (`packages/core/src/infrastructure/services/deployment/deployment.service.ts`) is a simple process spawner:
-
-  1. It reads `package.json` to find a dev script (`dev`, `start`, or `serve`)
-  2. It spawns the script via the detected package manager (`pnpm`, `yarn`, or `npm`)
-  3. It watches stdout/stderr for port-detection regexes to determine when the server is ready
-  4. It provides an in-memory log ring buffer and SSE streaming
-
-  **Limitations of the current approach:**
-  - Only supports Node.js projects with a recognizable dev script in package.json
-  - Cannot deploy Python, Go, Rust, Java, or other ecosystems
-  - Cannot use Docker, Docker Compose, or Kubernetes
-  - No intelligence about the repository — blind script execution
-  - No caching — every start re-detects the dev script (though detection is fast, the lack of a DeploySkill means no learning)
-  - No persistence — all state is in-memory, lost on daemon restart
-  - The TypeSpec models (`LocalDeployAgent`, `LocalDeployAgentOperations`, `DeploySkill`, `Deployment`, `DeployTarget`) are fully defined but have **zero implementation** — the current service ignores them entirely
-
-  The user requests an **agent-based deployment** that:
-  - Can start a dev environment for **any** repository (not just Node.js)
-  - Uses AI to analyze the repo and determine the optimal deployment strategy
-  - Caches the deployment configuration (DeploySkill) per-repo for fast subsequent starts
-  - Manages the full deployment lifecycle (Booting → Ready → Stopped)
+  The Shep web UI currently renders only in light mode. Developers working in dark
+  environments or those who prefer dark themes have no way to switch the UI appearance.
 
   ## Success Criteria
 
-  - [ ] Deploy agent graph is implemented as a LangGraph StateGraph with analyze and deploy nodes
-  - [ ] Agent can analyze a Node.js repository and produce a valid DeploySkill with method=Script
-  - [ ] Agent can analyze a Docker Compose repository and produce a valid DeploySkill with method=DockerCompose
-  - [ ] Agent can analyze a Dockerfile-only repository and produce a valid DeploySkill with method=Docker
-  - [ ] DeploySkill is persisted to SQLite deploy_skills table keyed by repository path
-  - [ ] Subsequent starts for the same repo use the cached DeploySkill without LLM call (< 100ms to resolve)
-  - [ ] User can trigger re-analysis to invalidate and regenerate a cached DeploySkill
-  - [ ] Failed deployment automatically triggers re-analysis on next start attempt
-  - [ ] The deploy node executes Script-method skills by spawning the command from DeploySkill.instructions
-  - [ ] The deploy node executes DockerCompose-method skills by running `docker compose up`
-  - [ ] The deploy node executes Docker-method skills by running `docker build` + `docker run`
-  - [ ] Port detection and readiness state transitions (Booting → Ready) work for all three methods
-  - [ ] Real-time log streaming via SSE continues to work for agent-driven deployments
-  - [ ] DeploymentStatusBadge shows the deploy method (Script/DockerCompose/Docker) alongside state
-  - [ ] All new code has corresponding unit tests (TDD — tests written first)
-  - [ ] All new/modified web components have Storybook stories
-  - [ ] Agent resolution uses IAgentExecutorProvider — no hardcoded agent types
-  - [ ] Existing deployment tests continue to pass (no regressions)
+  - [ ] A ThemeProvider wraps the root layout and provides a useTheme hook
+  - [ ] A ThemeToggle component renders in the settings panel with a Switch and label
+  - [ ] Clicking the toggle switches the html element class between light and dark
+  - [ ] The preference persists across page refreshes via localStorage
+  - [ ] All new components have Storybook stories with light and dark variants
+  - [ ] pnpm validate passes with no new errors
 
   ## Functional Requirements
 
-  - **FR-1**: The system SHALL implement a deploy agent as a LangGraph StateGraph with two nodes: `analyze` (produces a DeploySkill) and `deploy` (executes the skill to start the dev environment).
-  - **FR-2**: The `analyze` node SHALL use an AI agent (via IAgentExecutor) to inspect the repository contents (package.json, Dockerfile, docker-compose.yml, Makefile, pyproject.toml, go.mod, etc.) and produce a structured DeploySkill with method, instructions, and port mappings.
-  - **FR-3**: The `analyze` node SHALL use zod-validated structured output to guarantee the DeploySkill conforms to the TypeSpec-defined schema (method: DeployMethod, instructions: string, ports: PortMap[]).
-  - **FR-4**: The `deploy` node SHALL execute the DeploySkill based on its method: spawn a shell command (Script), run `docker compose up` (DockerCompose), or run `docker build` + `docker run` (Docker).
-  - **FR-5**: The system SHALL persist DeploySkills to a SQLite `deploy_skills` table with the absolute repository path as the cache key.
-  - **FR-6**: On deployment start, the system SHALL check for a cached DeploySkill for the given repository path. If one exists, it SHALL skip the analyze node and proceed directly to the deploy node.
-  - **FR-7**: The system SHALL provide a mechanism (server action) for users to explicitly invalidate and re-analyze a cached DeploySkill.
-  - **FR-8**: If a deployment fails to start using a cached DeploySkill, the system SHALL automatically invalidate the cache and re-run the analyze node on the next start attempt.
-  - **FR-9**: The `IDeploymentService` interface SHALL be extended with `analyzeRepository(targetId: string, targetPath: string): Promise<DeploySkill>` and `getSkill(targetId: string): DeploySkill | null` methods.
-  - **FR-10**: The DeploymentService implementation SHALL delegate to the deploy agent graph for repository analysis while retaining existing process lifecycle management (port detection, log buffering, SSE emission, graceful shutdown).
-  - **FR-11**: The deploy agent graph SHALL be registered in the AgentRegistryService with lazy loading, following the established pattern (analyze-repo, feature-agent).
-  - **FR-12**: The deploy agent graph factory SHALL accept an IAgentExecutor parameter (no hardcoded agent types), following the mandatory agent resolution rule.
-  - **FR-13**: The DeploymentStatusBadge component SHALL display the deploy method (e.g., "Script", "Docker Compose", "Docker") alongside the deployment state when a DeploySkill is available.
-  - **FR-14**: The web server actions (deploy-feature, deploy-repository) SHALL be updated to use the agent-driven deployment flow, triggering analysis when no cached skill exists.
-  - **FR-15**: A new `deploy_skills` SQLite migration SHALL be added following the established migration pattern, with columns for id, repository_path (unique), method, instructions, ports (JSON), created_at, and updated_at.
-  - **FR-16**: A DeploySkill mapper SHALL be implemented following the established mapper pattern (toDatabase/fromDatabase) with camelCase/snake_case conversion and JSON serialization for the ports array.
-  - **FR-17**: A DeploySkill repository SHALL be implemented with methods: `save(skill: DeploySkill): void`, `findByRepositoryPath(path: string): DeploySkill | null`, `delete(repositoryPath: string): void`.
+  - **FR-1**: A ThemeProvider component must wrap the root Next.js App Router layout
+    and provide theme state to the component tree via React context.
+  - **FR-2**: A useTheme hook must expose { theme, toggleTheme } to any component.
+  - **FR-3**: A ThemeToggle component must render a Switch and a label (Dark mode).
+  - **FR-4**: Toggling the Switch must apply the dark CSS class to the html element.
+  - **FR-5**: The selected theme must be persisted to localStorage and restored on load.
+  - **FR-6**: ThemeToggle must appear in the settings panel (features/settings/).
 
   ## Non-Functional Requirements
 
-  - **NFR-1**: Cached deployment starts (with existing DeploySkill) SHALL resolve in < 100ms, excluding actual process spawn time.
-  - **NFR-2**: The analyze node (LLM call) SHALL complete within 60 seconds for typical repositories. A timeout SHALL be enforced via the executor's timeout option.
-  - **NFR-3**: The deploy agent graph SHALL be lazy-loaded in the AgentRegistryService to avoid increasing CLI startup time (no @langchain/langgraph import at registration).
-  - **NFR-4**: All agent interactions SHALL use the configured agent type from settings (IAgentExecutorProvider), never hardcoding a specific LLM provider.
-  - **NFR-5**: The deploy_skills table SHALL use a UNIQUE constraint on repository_path to prevent duplicate cache entries.
-  - **NFR-6**: Docker and Docker Compose deployments SHALL use detached mode where applicable, with the system managing container lifecycle independently.
-  - **NFR-7**: All new infrastructure code SHALL have unit test coverage with mocked dependencies (IAgentExecutor, SQLite, child_process).
-  - **NFR-8**: The deploy agent state annotation SHALL follow LangGraph patterns with typed channels, reducers, and defaults matching the feature-agent reference implementation.
-  - **NFR-9**: Error messages from the analyze node (e.g., "Could not determine deployment method") SHALL be surfaced to the user through the existing log streaming infrastructure.
-  - **NFR-10**: The TypeSpec model extensions (if any) SHALL be backward-compatible — existing DeploySkill consumers must not break.
+  - **NFR-1**: Theme switch must complete within one animation frame (no FOUC).
+  - **NFR-2**: All new components must have Storybook stories per project conventions.
+  - **NFR-3**: No new npm dependencies may be added; use existing React, Tailwind, shadcn/ui.
+  - **NFR-4**: Each new file must stay within the 150-line project guideline.
 
   ## Product Questions & AI Recommendations
 
   | # | Question | AI Recommendation | Rationale |
   | - | -------- | ----------------- | --------- |
-  | 1 | Cache strategy for DeploySkill | Cache-first with manual invalidation | Build configs change rarely; auto-retry on failure provides safety net |
-  | 2 | Which deployment methods to support initially | Script + Docker Compose + Docker | Covers 90%+ of local dev scenarios; Kubernetes/Manual deferred |
-  | 3 | Structured vs free-text agent output | Structured output via zod schema | IAgentExecutor already supports outputSchema; eliminates parsing fragility |
-  | 4 | Deploy agent graph structure | Two nodes: analyze and deploy | Clean separation of cacheable analysis from stateful execution |
-  | 5 | Cache storage location | Main SQLite database with new migration | Follows established persistence patterns (features, repositories) |
-  | 6 | Repository cache key strategy | Absolute repository path | Already used as targetId; deterministic, zero computation |
-  | 7 | Interface design approach | Extend IDeploymentService | Deployment is a cohesive lifecycle; splitting adds DI complexity |
-  | 8 | UI visibility of DeploySkill | Show skill summary in deployment status badge | Minimal UI change provides agent transparency |
+  | 1 | Persistence layer? | localStorage | Zero backend changes required |
+  | 2 | CSS implementation? | Tailwind dark: class | Already standard in the codebase |
 
   ## Affected Areas
 
   | Area | Impact | Reasoning |
   | ---- | ------ | --------- |
-  | `tsp/deployment/deploy-skill.tsp` | Medium | Needs `repositoryPath` field for cache key association and `updatedAt` for cache management |
-  | `packages/core/src/domain/generated/output.ts` | Low | Auto-regenerated from TypeSpec changes |
-  | `packages/core/src/infrastructure/services/agents/deploy-agent/` (new) | High | New LangGraph graph: state annotation, analyze node, deploy node, prompts |
-  | `packages/core/src/infrastructure/services/deployment/deployment.service.ts` | High | Refactored to delegate to deploy agent graph for analysis; execution logic updated to handle Script/DockerCompose/Docker methods |
-  | `packages/core/src/application/ports/output/services/deployment-service.interface.ts` | Medium | Extended with analyzeRepository() and getSkill() methods |
-  | `packages/core/src/infrastructure/persistence/sqlite/migrations.ts` | Medium | New migration for deploy_skills table |
-  | `packages/core/src/infrastructure/persistence/sqlite/mappers/deploy-skill.mapper.ts` (new) | Medium | toDatabase/fromDatabase mapper for DeploySkill |
-  | `packages/core/src/infrastructure/persistence/sqlite/repositories/deploy-skill.repository.ts` (new) | Medium | CRUD repository for deploy_skills table |
-  | `packages/core/src/infrastructure/di/container.ts` | Medium | Register deploy agent graph, deploy skill repository, updated deployment service |
-  | `packages/core/src/infrastructure/services/agents/common/agent-registry.service.ts` | Low | Add lazy registration for deploy-agent graph |
-  | `src/presentation/web/app/actions/deploy-feature.ts` | Medium | Update to trigger agent analysis when no cached skill |
-  | `src/presentation/web/app/actions/deploy-repository.ts` | Medium | Update to trigger agent analysis when no cached skill |
-  | `src/presentation/web/app/actions/analyze-repository.ts` (new) | Low | New server action for explicit re-analysis |
-  | `src/presentation/web/components/common/deployment-status-badge/` | Low | Show deploy method alongside state |
-  | Tests (new + updated) | High | TDD: deploy agent graph tests, deploy skill repo tests, mapper tests, updated deployment service tests, updated server action tests, Storybook stories |
+  | src/presentation/web/components/features/settings/ | High | Toggle component added here |
+  | src/presentation/web/app/layout.tsx | Medium | ThemeProvider wrapper added |
+  | src/presentation/web/components/common/ | Medium | ThemeToggle and ThemeProvider created |
 
   ## Dependencies
 
-  **Existing code this feature depends on:**
-  - `IAgentExecutor` / `IAgentExecutorProvider` — agent resolution (mandatory: no hardcoded types)
-  - `IAgentRegistry` / AgentRegistryService — lazy graph registration
-  - LangGraph `StateGraph`, `Annotation`, `START`, `END` — graph construction
-  - `IDeploymentService` interface — current output port (to be extended)
-  - TypeSpec-generated types: `DeploySkill`, `Deployment`, `DeploymentState`, `DeployMethod`, `PortMap`, `LocalDeployAgent`, `DeployTarget`
-  - SQLite persistence layer: `better-sqlite3`, migrations system, mapper pattern, singleton connection
-  - Existing deployment infrastructure: `LogRingBuffer`, `parsePort`, `detectDevScript`, deployment logger, SSE endpoint
-  - Web presentation: server actions, `useDeployAction` hook, `DeploymentStatusBadge` component
-  - `zod` — structured output schema validation
-
-  **External libraries (already in project):**
-  - `@langchain/langgraph` — agent graph framework
-  - `better-sqlite3` — SQLite driver
-  - `tree-kill` — cross-platform process tree termination
-  - `zod` — schema validation for structured agent output
+  - shadcn/ui Switch and Label components (already installed)
+  - React context API (built-in)
+  - localStorage Web API (built-in)
 
   ## Size Estimate
 
-  **L** (1-2 weeks) — This feature requires:
-  1. A new LangGraph agent implementation (deploy-agent graph with analyze + deploy nodes)
-  2. New prompts for repository analysis and deployment strategy selection
-  3. TypeSpec model extension (repositoryPath on DeploySkill)
-  4. A new SQLite migration + repository + mapper for DeploySkill caching
-  5. Refactoring the existing DeploymentService to delegate analysis to the agent and support Docker/Docker Compose execution
-  6. Extending the IDeploymentService interface
-  7. Updating web UI server actions and DeploymentStatusBadge component
-  8. New Storybook stories for modified components
-  9. Comprehensive TDD test suites for all new code (graph, repository, mapper, service, server actions)
-
-  The scope is L because it touches all four architecture layers, introduces a new
-  agent graph (the third after analyze-repo and feature-agent), adds persistence,
-  and requires careful integration with the existing deployment infrastructure.
+  **M (days)** — 3 phases: context + provider, toggle component, settings integration.
