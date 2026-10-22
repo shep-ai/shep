@@ -1,0 +1,36 @@
+feature:
+  id: '083-pull-request-creation'
+  name: 'pull-request-creation'
+  number: 83
+  branch: 'feat/083-pull-request-creation'
+  lifecycle: 'research'
+  createdAt: '2026-04-04T08:48:51Z'
+
+status:
+  phase: 'research'
+  progress:
+    completed: 0
+    total: 0
+    percentage: 0
+  currentTask: null
+  lastUpdated: '2026-04-04T08:48:51Z'
+  lastUpdatedBy: 'feature-agent'
+
+validation:
+  lastRun: null
+  gatesPassed: []
+  autoFixesApplied: []
+
+tasks:
+  current: null
+  blocked: []
+  failed: []
+
+checkpoints:
+  - phase: 'feature-created'
+    completedAt: '2026-04-04T08:48:51Z'
+    completedBy: 'feature-agent'
+
+errors:
+  current: null
+  history: []
