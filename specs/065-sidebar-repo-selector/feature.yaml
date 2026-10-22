@@ -1,0 +1,38 @@
+feature:
+  id: 065-sidebar-repo-selector
+  name: sidebar-repo-selector
+  number: 65
+  branch: feat/065-sidebar-repo-selector
+  lifecycle: research
+  createdAt: '2026-03-13T17:32:13Z'
+status:
+  phase: implementing-phase-3
+  progress:
+    completed: 10
+    total: 11
+    percentage: 91
+  currentTask: task-11
+  lastUpdated: '2026-03-14T16:09:53.634Z'
+  lastUpdatedBy: feature-agent:implement
+  completedPhases:
+    - analyze
+    - requirements
+    - research
+    - plan
+    - phase-1
+    - phase-2
+validation:
+  lastRun: null
+  gatesPassed: []
+  autoFixesApplied: []
+tasks:
+  current: null
+  blocked: []
+  failed: []
+checkpoints:
+  - phase: feature-created
+    completedAt: '2026-03-13T17:32:13Z'
+    completedBy: feature-agent
+errors:
+  current: null
+  history: []

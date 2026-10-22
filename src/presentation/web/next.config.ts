@@ -65,6 +65,11 @@ const nextConfig: NextConfig = {
   // Enable typed routes (moved from experimental in Next.js 16)
   typedRoutes: true,
 
+  // Move Next.js dev indicator to bottom-right (away from sidebar)
+  devIndicators: {
+    position: 'bottom-right',
+  },
+
   // Configure the output directory
   distDir: '.next',
 
