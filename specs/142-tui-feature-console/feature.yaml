@@ -1,0 +1,42 @@
+feature:
+  id: '142-tui-feature-console'
+  name: 'tui-feature-console'
+  number: 142
+  branch: 'claude/nifty-knuth-adhvx0'
+  lifecycle: 'implementation'
+  createdAt: '2026-10-24T08:56:58Z'
+
+status:
+  phase: 'ready-to-implement'
+  progress:
+    completed: 0
+    total: 10
+    percentage: 0
+  currentTask: null
+  lastUpdated: '2026-10-24T09:10:00Z'
+  lastUpdatedBy: 'shep-kit:new-feature-fast'
+
+validation:
+  lastRun: null
+  gatesPassed: []
+  autoFixesApplied: []
+
+tasks:
+  current: null
+  blocked: []
+  failed: []
+
+checkpoints:
+  - phase: 'feature-created'
+    completedAt: '2026-10-24T08:56:58Z'
+    completedBy: 'shep-kit:new-feature-fast'
+  - phase: 'research-complete'
+    completedAt: '2026-10-24T09:10:00Z'
+    completedBy: 'shep-kit:new-feature-fast'
+  - phase: 'plan-complete'
+    completedAt: '2026-10-24T09:10:00Z'
+    completedBy: 'shep-kit:new-feature-fast'
+
+errors:
+  current: null
+  history: []
