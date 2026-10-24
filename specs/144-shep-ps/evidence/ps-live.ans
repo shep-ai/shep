@@ -1,0 +1,7 @@
+
+  [1m[36mShep processes (1)[39m[22m
+
+  [90mKIND          [39m  [90mPID     [39m  [90mFEATURE                       [39m  [90mAGENT         [39m  [90mSTATUS                      [39m  [90mUP      [39m  [90mCPU    [39m  [90mMEM      [39m
+  daemon          8334      http://localhost:39831          —               [34m* running[39m                     5s        35.3%    256.4 MB
+
+  [90m1 running · 0 crashed · 0 exited[39m

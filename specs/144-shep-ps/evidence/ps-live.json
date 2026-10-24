@@ -1,0 +1,20 @@
+{
+  "generatedAt": "2026-10-24T20:04:26.461Z",
+  "processes": [
+    {
+      "kind": "daemon",
+      "pid": 8334,
+      "startedAt": "2026-10-24T20:04:19.998Z",
+      "url": "http://localhost:39831",
+      "state": "running",
+      "cpuPercent": 30.5,
+      "rssBytes": 268804096,
+      "uptimeMs": 6463
+    }
+  ],
+  "summary": {
+    "running": 1,
+    "crashed": 0,
+    "exited": 0
+  }
+}

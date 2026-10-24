@@ -1,0 +1,7 @@
+
+  Shep processes (1)
+
+  KIND            PID       FEATURE                         AGENT           STATUS                        UP        CPU      MEM      
+  daemon          8334      http://localhost:39831          —               * running                     4s        42.0%    256.4 MB
+
+  1 running · 0 crashed · 0 exited
