@@ -1,0 +1,85 @@
+name: shep-ps
+summary: Implementation plan for 144-shep-ps
+
+relatedFeatures:
+  - 142-tui-feature-console
+technologies:
+  - TypeScript
+  - TypeSpec
+relatedLinks: []
+
+phases:
+  - id: phase-1
+    name: 'Core: enums, stats probe, use cases'
+    parallel: false
+    taskIds:
+      - task-1
+      - task-2
+      - task-3
+  - id: phase-2
+    name: 'Presentation: shep ps and shep status'
+    parallel: false
+    taskIds:
+      - task-4
+      - task-5
+  - id: phase-3
+    name: 'E2E, docs and evidence'
+    parallel: false
+    taskIds:
+      - task-6
+
+filesToCreate:
+  - tsp/common/enums/shep-process.tsp
+  - packages/core/src/application/ports/output/services/process-stats-probe.interface.ts
+  - packages/core/src/infrastructure/services/process/ps-process-stats-probe.ts
+  - packages/core/src/application/use-cases/processes/shep-process.types.ts
+  - packages/core/src/application/use-cases/processes/list-shep-processes.use-case.ts
+  - packages/core/src/application/use-cases/processes/sample-process-stats.use-case.ts
+  - packages/core/src/application/use-cases/processes/stop-shep-process.use-case.ts
+  - packages/core/src/infrastructure/di/modules/register-processes.ts
+  - src/presentation/cli/commands/ps/ps.command.ts
+  - src/presentation/cli/commands/ps/ps-render.ts
+  - tests/e2e/cli/ps.test.ts
+
+filesToModify:
+  - tsp/common/enums/index.tsp
+  - packages/core/src/infrastructure/di/container.ts
+  - src/presentation/cli/index.ts
+  - src/presentation/cli/commands/status.command.ts
+  - translations/*/cli.json
+  - docs/cli/commands.md
+
+architecture: |
+  ListShepProcessesUseCase reads IDaemonService and ListAgentRunsUseCase, checks liveness with
+  IProcessLivenessProbe, samples CPU and memory for live PIDs with one IProcessStatsProbe call,
+  joins feature names, and returns sorted rows with a ShepProcessState. StopShepProcessUseCase
+  resolves a run or feature id (or prefix) and delegates to StopAgentRunUseCase. The command
+  renders rows as a table, JSON or a redrawn table.
+
+risks:
+  - ps output differs between procps and BSD ps; the parser takes whitespace-separated columns and skips malformed lines
+
+content: |
+  ## Status
+
+  - **Phase:** Planning
+  - **Updated:** 2026-10-24
+
+  ## Architecture Overview (Clean Architecture)
+
+  ```
+  shep ps ──► ListShepProcessesUseCase (application)
+                 ├─ IDaemonService.read()             daemon.json
+                 ├─ ListAgentRunsUseCase              runs (crashed runs reconciled first)
+                 ├─ IFeatureRepository.list()         feature names
+                 ├─ IProcessLivenessProbe             alive?
+                 ├─ IProcessStatsProbe.sample(pids)   one ps call (infrastructure)
+                 └─ GetWorkerLogPathUseCase           log path of feature workers
+  shep ps stop ──► StopShepProcessUseCase ──► StopAgentRunUseCase
+  shep status  ──► SampleProcessStatsUseCase ──► IProcessStatsProbe
+  ```
+
+  ## TDD
+
+  Each core unit gets a failing test first (RED), then the implementation (GREEN), then
+  refactoring. The command is tested through seams; the e2e runs the built CLI.

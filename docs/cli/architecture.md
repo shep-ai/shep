@@ -86,6 +86,7 @@ commands/
   stop.command.ts                 # shep stop (daemon)
   restart.command.ts              # shep restart (daemon)
   status.command.ts               # shep status (daemon)
+  ps/ps.command.ts                # shep ps, shep ps stop (spec 144)
   _serve.command.ts               # shep _serve (hidden, internal daemon child)
   upgrade.command.ts              # shep upgrade
   install.command.ts              # shep install

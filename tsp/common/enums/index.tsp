@@ -39,3 +39,4 @@ import "./feature-coordination.tsp";
 import "./feature-console.tsp";
 import "./terminal-pane.tsp";
 import "./feature-chat.tsp";
+import "./shep-process.tsp";

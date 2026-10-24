@@ -1912,6 +1912,45 @@
         "unreadable": "Could not read {{file}}.",
         "failed": "Failed to post the block"
       }
+    },
+    "ps": {
+      "description": "List the processes Shep runs: the web daemon and agent workers",
+      "allOption": "Include runs whose process has exited",
+      "jsonOption": "Print the processes as JSON",
+      "watchOption": "Redraw every 2 seconds until ctrl+c",
+      "title": "Shep processes",
+      "columns": {
+        "kind": "KIND",
+        "pid": "PID",
+        "feature": "FEATURE",
+        "agent": "AGENT",
+        "status": "STATUS",
+        "up": "UP",
+        "cpu": "CPU",
+        "mem": "MEM"
+      },
+      "kind": {
+        "daemon": "daemon",
+        "featureAgent": "feature agent",
+        "agentRun": "agent run"
+      },
+      "state": {
+        "running": "running",
+        "crashed": "crashed",
+        "exited": "exited"
+      },
+      "empty": "No Shep processes are running. Add --all to include runs that have exited.",
+      "summary": "{{running}} running · {{crashed}} crashed · {{exited}} exited",
+      "statsUnavailable": "CPU and memory are not available on this platform.",
+      "watchNotTty": "--watch needs an interactive terminal. In scripts, use shep ps --json.",
+      "watchHint": "Refreshing every 2s · ctrl+c to stop",
+      "failed": "Could not list Shep processes",
+      "crashedHint": "Resume a crashed feature with: shep feat resume <feature id>",
+      "stop": {
+        "description": "Stop an agent run by run id, feature id, or a prefix of either",
+        "idArgument": "Run id, feature id, or a prefix",
+        "stopped": "Stopped {{id}}: {{reason}}"
+      }
     }
   },
   "ui": {

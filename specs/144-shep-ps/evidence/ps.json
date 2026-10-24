@@ -1,0 +1,55 @@
+{
+  "generatedAt": "2026-10-24T19:25:03.198Z",
+  "processes": [
+    {
+      "kind": "feature-agent",
+      "pid": 15437,
+      "startedAt": "2026-10-24T19:24:35.326Z",
+      "runId": "51072ddb-fe3e-467b-9ac8-438aeeeba708",
+      "runShortId": "51072ddb",
+      "runStatus": "waiting_approval",
+      "agentType": "claude-code",
+      "agentName": "feature-agent",
+      "featureId": "dd55ab75-344b-4883-a556-16833f51f422",
+      "featureShortId": "dd55ab75",
+      "logPath": "/tmp/claude-0/ps-ev2-home-nOf2/logs/worker-51072ddb-fe3e-467b-9ac8-438aeeeba708.log",
+      "featureName": "Dark Mode Toggle",
+      "state": "exited"
+    },
+    {
+      "kind": "feature-agent",
+      "pid": 15355,
+      "startedAt": "2026-10-24T19:24:33.960Z",
+      "runId": "4089b9a8-cf07-4060-8c00-a7306efab41e",
+      "runShortId": "4089b9a8",
+      "runStatus": "waiting_approval",
+      "agentType": "claude-code",
+      "agentName": "feature-agent",
+      "featureId": "a1e80a57-c22d-432b-a10f-04a47a40697c",
+      "featureShortId": "a1e80a57",
+      "logPath": "/tmp/claude-0/ps-ev2-home-nOf2/logs/worker-4089b9a8-cf07-4060-8c00-a7306efab41e.log",
+      "featureName": "Rate Limit The Public API With Per-Key Quotas",
+      "state": "exited"
+    },
+    {
+      "kind": "feature-agent",
+      "pid": 15282,
+      "startedAt": "2026-10-24T19:24:32.513Z",
+      "runId": "d5caa471-5a69-482c-a823-8d8a69e83d3a",
+      "runShortId": "d5caa471",
+      "runStatus": "waiting_approval",
+      "agentType": "claude-code",
+      "agentName": "feature-agent",
+      "featureId": "dc8ebc68-df14-4332-828f-394001723113",
+      "featureShortId": "dc8ebc68",
+      "logPath": "/tmp/claude-0/ps-ev2-home-nOf2/logs/worker-d5caa471-5a69-482c-a823-8d8a69e83d3a.log",
+      "featureName": "Billing Dashboard Charts",
+      "state": "exited"
+    }
+  ],
+  "summary": {
+    "running": 0,
+    "crashed": 0,
+    "exited": 3
+  }
+}

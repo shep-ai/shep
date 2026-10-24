@@ -1,0 +1,2 @@
+× The web daemon is not an agent run. Stop it with: shep stop
+exit 1

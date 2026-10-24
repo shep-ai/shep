@@ -1,0 +1,55 @@
+name: shep-ps
+summary: >
+  Read processes from what Shep already records (daemon.json and agent run PIDs), sample CPU and
+  memory with one batched ps call behind a port, and keep the command a thin renderer.
+
+relatedFeatures:
+  - 142-tui-feature-console
+technologies:
+  - TypeScript
+relatedLinks:
+  - title: docs/competitors/agent-harness-tui.md
+    url: ../../docs/competitors/agent-harness-tui.md
+
+decisions:
+  - title: Source of processes
+    chosen: daemon.json (IDaemonService) plus agent runs with a PID (ListAgentRunsUseCase, which reconciles crashed runs first)
+    rejected:
+      - Scanning the OS process table for shep command lines (platform-specific, matches unrelated node processes)
+    rationale: >
+      Shep records every process it owns. Reading those records works on every OS and names the
+      feature each process serves.
+  - title: CPU and memory
+    chosen: One `ps -o pid=,pcpu=,rss= -p <pid,pid,...>` call behind IProcessStatsProbe; empty on Windows
+    rejected:
+      - pidusage or systeminformation (a new dependency for two numbers)
+      - One ps call per PID (N process spawns per refresh in watch mode)
+      - wmic / Get-Process on Windows (wmic is deprecated; PowerShell start-up costs about a second per refresh)
+    rationale: >
+      `shep status` already used ps for the daemon. One argv-only call per refresh covers every
+      row; a failure or timeout yields no numbers rather than an error.
+  - title: Process state
+    chosen: ShepProcessState enum (running, crashed, exited) derived in core
+    rejected:
+      - Reusing AgentRunStatus (a waiting-approval run has no process; status and process are different questions)
+    rationale: >
+      A run waiting at a gate has exited on purpose; a running run whose PID is gone has crashed.
+      The monitor shows processes, so it needs its own state.
+  - title: Watch mode
+    chosen: Clear the screen and redraw the same table every 2 seconds
+    rejected:
+      - A pi-tui full-screen view (shep tui already is the live full-screen surface)
+    rationale: Same renderer as one-shot output, no new UI code to maintain.
+
+content: |
+  ## Status
+
+  - **Phase:** Research
+  - **Updated:** 2026-10-24
+
+  ## Prior art
+
+  - **oh-my-pi `omp ps`**: list, info, logs, stop, kill, restart, `--json`, `--plain`.
+  - **Claude Code `claude agents --json`**: background sessions as JSON for scripts.
+  - Shep today: `shep agent ls` lists runs (no resource use), `shep status` covers only the
+    daemon.

@@ -1912,6 +1912,45 @@
         "unreadable": "{{file}} konnte nicht gelesen werden.",
         "failed": "Block konnte nicht gepostet werden"
       }
+    },
+    "ps": {
+      "description": "Prozesse auflisten, die Shep ausführt: den Web-Daemon und Agent-Worker",
+      "allOption": "Auch Läufe zeigen, deren Prozess beendet ist",
+      "jsonOption": "Prozesse als JSON ausgeben",
+      "watchOption": "Alle 2 Sekunden neu zeichnen, bis Strg+C",
+      "title": "Shep-Prozesse",
+      "columns": {
+        "kind": "ART",
+        "pid": "PID",
+        "feature": "FEATURE",
+        "agent": "AGENT",
+        "status": "STATUS",
+        "up": "LAUFZEIT",
+        "cpu": "CPU",
+        "mem": "RAM"
+      },
+      "kind": {
+        "daemon": "Daemon",
+        "featureAgent": "Feature-Agent",
+        "agentRun": "Agent-Lauf"
+      },
+      "state": {
+        "running": "läuft",
+        "crashed": "abgestürzt",
+        "exited": "beendet"
+      },
+      "empty": "Keine Shep-Prozesse laufen. Mit --all auch beendete Läufe anzeigen.",
+      "summary": "{{running}} laufen · {{crashed}} abgestürzt · {{exited}} beendet",
+      "statsUnavailable": "CPU und Speicher sind auf dieser Plattform nicht verfügbar.",
+      "watchNotTty": "--watch braucht ein interaktives Terminal. In Skripten: shep ps --json.",
+      "watchHint": "Aktualisierung alle 2 s · Strg+C beendet",
+      "failed": "Shep-Prozesse konnten nicht aufgelistet werden",
+      "crashedHint": "Abgestürztes Feature fortsetzen mit: shep feat resume <Feature-ID>",
+      "stop": {
+        "description": "Einen Agent-Lauf über Lauf-ID, Feature-ID oder ein Präfix davon stoppen",
+        "idArgument": "Lauf-ID, Feature-ID oder ein Präfix",
+        "stopped": "{{id}} gestoppt: {{reason}}"
+      }
     }
   },
   "ui": {

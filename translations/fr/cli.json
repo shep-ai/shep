@@ -1912,6 +1912,45 @@
         "unreadable": "Impossible de lire {{file}}.",
         "failed": "Impossible de publier le bloc"
       }
+    },
+    "ps": {
+      "description": "Lister les processus lancés par Shep : le démon web et les workers d’agents",
+      "allOption": "Inclure les exécutions dont le processus est terminé",
+      "jsonOption": "Afficher les processus en JSON",
+      "watchOption": "Redessiner toutes les 2 secondes jusqu’à ctrl+c",
+      "title": "Processus Shep",
+      "columns": {
+        "kind": "TYPE",
+        "pid": "PID",
+        "feature": "FONCTIONNALITÉ",
+        "agent": "AGENT",
+        "status": "ÉTAT",
+        "up": "DURÉE",
+        "cpu": "CPU",
+        "mem": "MÉM"
+      },
+      "kind": {
+        "daemon": "démon",
+        "featureAgent": "agent de fonctionnalité",
+        "agentRun": "exécution d’agent"
+      },
+      "state": {
+        "running": "en cours",
+        "crashed": "planté",
+        "exited": "terminé"
+      },
+      "empty": "Aucun processus Shep en cours. Ajoutez --all pour inclure les exécutions terminées.",
+      "summary": "{{running}} en cours · {{crashed}} plantés · {{exited}} terminés",
+      "statsUnavailable": "CPU et mémoire ne sont pas disponibles sur cette plateforme.",
+      "watchNotTty": "--watch nécessite un terminal interactif. Dans les scripts, utilisez shep ps --json.",
+      "watchHint": "Actualisation toutes les 2 s · ctrl+c pour arrêter",
+      "failed": "Impossible de lister les processus Shep",
+      "crashedHint": "Reprenez une fonctionnalité plantée avec : shep feat resume <id de fonctionnalité>",
+      "stop": {
+        "description": "Arrêter une exécution d’agent par id d’exécution, id de fonctionnalité ou un préfixe",
+        "idArgument": "Id d’exécution, id de fonctionnalité ou un préfixe",
+        "stopped": "{{id}} arrêté : {{reason}}"
+      }
     }
   },
   "ui": {

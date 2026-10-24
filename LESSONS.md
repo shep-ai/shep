@@ -1,5 +1,13 @@
 # Lessons Learned
 
+## `kill(pid, 0)` says a zombie is alive
+
+`process.kill(pid, 0)` succeeds for a zombie: a process that exited but has not been reaped by its
+parent. The first real run of `shep ps` showed a finished worker as running with 109% CPU and
+0 MB, and `ps -o stat=` read `Zs`. Liveness alone cannot tell "running" from "exited, unreaped";
+when it matters, read the process state (`stat` starting with `Z`) in the same `ps` call. And look
+at real output before calling a monitor done: green unit tests fed it only live and dead PIDs.
+
 ## Drive tmux like a user: UTF-8 client, escape-time, printable -F fields
 
 Three tmux behaviours faked bugs while testing `shep tui` panes (spec 143), none of them in the

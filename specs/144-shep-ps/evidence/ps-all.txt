@@ -1,0 +1,9 @@
+
+  Shep processes (3)
+
+  KIND            PID       FEATURE                         AGENT           STATUS                        UP        CPU      MEM      
+  feature agent   15437     Dark Mode Toggle dd55ab75       Claude Code     o exited · waiting_approval   —         —        —
+  feature agent   15355     Rate Limit The Publi… a1e80a57  Claude Code     o exited · waiting_approval   —         —        —
+  feature agent   15282     Billing Dashboard Ch… dc8ebc68  Claude Code     o exited · waiting_approval   —         —        —
+
+  0 running · 0 crashed · 3 exited

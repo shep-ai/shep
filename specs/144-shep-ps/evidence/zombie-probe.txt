@@ -1,0 +1,10 @@
+Probe: create a mock feature, then every 0.7s run `shep ps --json --all` (build before the fix)
+and sample the worker PID with `ps -o pid=,stat=,pcpu=,rss=,etimes=`.
+
+i  shep ps state  cpuPercent  rssBytes  ps (pid stat pcpu rss etimes)
+0  running        110         0         "12071 Zs    108     0       1"
+1  exited         -           -         ""
+2  exited         -           -         ""
+
+The first sample is a zombie (stat Z): exited, not yet reaped, still answering kill(pid, 0).
+After the fix, `shep ps` reports it as exited.

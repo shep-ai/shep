@@ -1912,6 +1912,45 @@
         "unreadable": "Não foi possível ler {{file}}.",
         "failed": "Falha ao publicar o bloco"
       }
+    },
+    "ps": {
+      "description": "Lista os processos que o Shep executa: o daemon web e os workers de agentes",
+      "allOption": "Incluir execuções cujo processo terminou",
+      "jsonOption": "Imprimir os processos como JSON",
+      "watchOption": "Redesenhar a cada 2 segundos até ctrl+c",
+      "title": "Processos do Shep",
+      "columns": {
+        "kind": "TIPO",
+        "pid": "PID",
+        "feature": "FUNCIONALIDADE",
+        "agent": "AGENTE",
+        "status": "ESTADO",
+        "up": "ATIVO",
+        "cpu": "CPU",
+        "mem": "MEM"
+      },
+      "kind": {
+        "daemon": "daemon",
+        "featureAgent": "agente de funcionalidade",
+        "agentRun": "execução de agente"
+      },
+      "state": {
+        "running": "em execução",
+        "crashed": "travado",
+        "exited": "encerrado"
+      },
+      "empty": "Nenhum processo do Shep em execução. Adicione --all para incluir execuções encerradas.",
+      "summary": "{{running}} em execução · {{crashed}} travados · {{exited}} encerrados",
+      "statsUnavailable": "CPU e memória não estão disponíveis nesta plataforma.",
+      "watchNotTty": "--watch precisa de um terminal interativo. Em scripts, use shep ps --json.",
+      "watchHint": "Atualizando a cada 2 s · ctrl+c para sair",
+      "failed": "Não foi possível listar os processos do Shep",
+      "crashedHint": "Retome uma funcionalidade travada com: shep feat resume <id da funcionalidade>",
+      "stop": {
+        "description": "Parar uma execução de agente pelo id da execução, id da funcionalidade ou um prefixo",
+        "idArgument": "Id da execução, id da funcionalidade ou um prefixo",
+        "stopped": "{{id}} parado: {{reason}}"
+      }
     }
   },
   "ui": {

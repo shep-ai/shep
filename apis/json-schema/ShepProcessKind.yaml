@@ -1,0 +1,8 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: ShepProcessKind.yaml
+type: string
+enum:
+  - daemon
+  - feature-agent
+  - agent-run
+description: What a process Shep runs is for

@@ -1,0 +1,18 @@
+Local verification for spec 144 (2026-10-24, Node 22.22.0, procps-ng 4.0.4)
+
+pnpm lint                      exit 0 (0 warnings)
+pnpm format:check              exit 0
+pnpm typecheck                 exit 0
+pnpm generate                  exit 0, output.ts identical to the committed file
+pnpm tsp:compile               exit 0, no warnings
+pnpm test:unit                 1419 files, 16169 passed, 5 skipped, 0 failed
+pnpm test:int                  206 files, 2209 passed, 0 failed
+pnpm build                     exit 0
+tests/e2e/cli/ps.test.ts       4 passed (SHEP_E2E_USE_DIST=1, built CLI)
+pnpm spec:validate specs/144   completeness, architecture, consistency: PASS
+
+Re-run after the last test-typing fix: touched unit suites (presentation/cli, processes,
+process services, shep-process domain, DI, commands): 150 files, 1798 passed.
+
+Manual runs of the built CLI: see README.md (ps, ps --all, ps --json --all, ps stop daemon,
+ps stop nope) and zombie-probe.txt, which found the zombie bug fixed in this spec.

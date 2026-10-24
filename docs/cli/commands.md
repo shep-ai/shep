@@ -57,6 +57,47 @@ Show status and metrics of the running daemon.
 
 **Source**: `src/presentation/cli/commands/status.command.ts`
 
+### `shep ps`
+
+List the processes Shep runs on this machine (spec 144): the web daemon and every agent worker,
+with the feature it serves, its agent, status, uptime, CPU and memory.
+
+**Source**: `src/presentation/cli/commands/ps/ps.command.ts` (rows: `ListShepProcessesUseCase`)
+
+**Options**:
+
+| Option        | Description                                                         | Default |
+| ------------- | ------------------------------------------------------------------- | ------- |
+| `--all`       | Include runs whose process has exited (finished, failed, at a gate) | —       |
+| `--json`      | Print the rows as JSON, without colour                              | —       |
+| `-w, --watch` | Redraw every 2 seconds until `ctrl+c` (interactive terminals only)  | —       |
+
+**Subcommands**:
+
+| Command                        | Description                                                            |
+| ------------------------------ | ---------------------------------------------------------------------- |
+| `shep ps stop <id> [--force]`  | Stop an agent run by run id, feature id, or a prefix of either; a feature id stops that feature's running agent. The daemon is refused: use `shep stop`. |
+
+**Examples**:
+
+```bash
+shep ps                 # live Shep processes
+shep ps --all           # include exited runs
+shep ps --json | jq '.processes[] | select(.state == "crashed")'
+shep ps -w              # redraw every 2 seconds
+shep ps stop feat-abc1  # stop a feature's running agent
+```
+
+**Behavior**:
+
+- **State** is `running` (the process is alive), `crashed` (its run is still marked running or
+  pending but the process is gone; resume it with `shep feat resume`), or `exited` (finished,
+  failed, or paused at an approval gate). A zombie — exited but not yet reaped, so it still
+  answers `kill(pid, 0)` — counts as exited.
+- **CPU and memory** come from one `ps -o pid=,stat=,pcpu=,rss=` call for every row. They are not
+  available on Windows, where the columns show `—`.
+- Refuses to stop the agent run it is called from (inside a Shep agent) unless `--force`.
+
 ### `shep ui`
 
 Start the web UI in foreground (interactive, non-daemon mode).

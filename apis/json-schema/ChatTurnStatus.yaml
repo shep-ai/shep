@@ -1,0 +1,9 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: ChatTurnStatus.yaml
+type: string
+enum:
+  - idle
+  - processing
+  - unread
+  - awaiting_input
+description: What an interactive chat's agent is doing (ChatState.turnStatus)

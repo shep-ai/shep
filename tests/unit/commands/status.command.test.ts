@@ -2,7 +2,7 @@
  * status command unit tests
  *
  * Tests for the `shep status` CLI command.
- * Covers: not-running path, running path with metrics parsing, ps timeout fallback,
+ * Covers: not-running path, running path with metrics formatting, metrics fallback,
  * environment section, --logs flag.
  */
 
@@ -12,13 +12,14 @@ import { Command } from 'commander';
 
 // Hoist mocks so factory closures can reference them
 const {
-  mockExecFile,
+  mockSampleStats,
   mockDaemonService,
   mockRenderDetailView,
   mockVersionService,
   mockCheckDaemonHealth,
 } = vi.hoisted(() => {
-  const mockExecFile = vi.fn();
+  // CPU and memory come through SampleProcessStatsUseCase (spec 144).
+  const mockSampleStats = { execute: vi.fn() };
   const mockDaemonService = {
     read: vi.fn(),
     write: vi.fn(),
@@ -55,7 +56,7 @@ const {
     }),
   };
   return {
-    mockExecFile,
+    mockSampleStats,
     mockDaemonService,
     mockRenderDetailView,
     mockVersionService,
@@ -70,6 +71,9 @@ vi.mock('@/infrastructure/di/container.js', () => ({
       if (token === 'IVersionService') return mockVersionService;
       if (typeof token === 'function' && token.name === 'CheckDaemonHealthUseCase') {
         return mockCheckDaemonHealth;
+      }
+      if (typeof token === 'function' && token.name === 'SampleProcessStatsUseCase') {
+        return mockSampleStats;
       }
       throw new Error(`Unknown token: ${String(token)}`);
     }),
@@ -87,10 +91,6 @@ vi.mock('../../../src/presentation/cli/ui/index.js', () => ({
   },
   colors: { muted: (s: string) => s, success: (s: string) => s },
   fmt: { code: (s: string) => s, heading: (s: string) => s },
-}));
-
-vi.mock('node:child_process', () => ({
-  execFile: mockExecFile,
 }));
 
 vi.mock('@/infrastructure/services/filesystem/shep-directory.service.js', () => ({
@@ -115,18 +115,8 @@ describe('status command', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.useFakeTimers();
-    // Default: execFile returns ps output
-    mockExecFile.mockImplementation(
-      (
-        _cmd: string,
-        _args: string[],
-        _opts: unknown,
-        callback: (err: Error | null, stdout: string) => void
-      ) => {
-        callback(null, '12345  1.5  102400\n');
-        return { kill: vi.fn() };
-      }
-    );
+    // Default: 1.5% CPU, 102400 KiB resident
+    mockSampleStats.execute.mockResolvedValue({ cpuPercent: 1.5, rssBytes: 102400 * 1024 });
   });
 
   afterEach(() => {
@@ -155,13 +145,13 @@ describe('status command', () => {
       expect(mockRenderDetailView).not.toHaveBeenCalled();
     });
 
-    it('does not call execFile (ps) when no daemon running', async () => {
+    it('does not sample CPU and memory when no daemon running', async () => {
       mockDaemonService.read.mockResolvedValue(null);
 
       const cmd = createStatusCommand();
       await cmd.parseAsync([], { from: 'user' });
 
-      expect(mockExecFile).not.toHaveBeenCalled();
+      expect(mockSampleStats.execute).not.toHaveBeenCalled();
     });
 
     it('does not call renderDetailView when PID is not alive', async () => {
@@ -179,7 +169,7 @@ describe('status command', () => {
     });
   });
 
-  describe('daemon running — ps metrics', () => {
+  describe('daemon running — process metrics', () => {
     const startedAt = '2026-02-25T00:00:00.000Z';
 
     beforeEach(() => {
@@ -187,38 +177,17 @@ describe('status command', () => {
       mockDaemonService.isAlive.mockReturnValue(true);
     });
 
-    it('calls ps with the PID as a separate array argument (injection-safe)', async () => {
+    it("samples the daemon's PID through the stats use case", async () => {
       const cmd = createStatusCommand();
       const parsePromise = cmd.parseAsync([], { from: 'user' });
       await vi.runAllTimersAsync();
       await parsePromise;
 
-      // Find the ps call specifically
-      const psCall = mockExecFile.mock.calls.find((call: unknown[]) => call[0] === 'ps');
-      expect(psCall).toBeDefined();
-      expect(psCall![1]).toEqual(expect.arrayContaining(['12345']));
-
-      // PID must be passed as a separate element
-      const pidArg = psCall![1][psCall![1].length - 1];
-      expect(pidArg).toBe('12345');
+      expect(mockSampleStats.execute).toHaveBeenCalledWith(12345);
     });
 
-    it('parses CPU% from ps output index 1', async () => {
-      mockExecFile.mockImplementation(
-        (
-          cmd: string,
-          _args: string[],
-          _opts: unknown,
-          callback: (err: Error | null, stdout: string) => void
-        ) => {
-          if (cmd === 'ps') {
-            callback(null, '12345  2.3  51200\n');
-          } else {
-            callback(new Error('not found'), '');
-          }
-          return { kill: vi.fn() };
-        }
-      );
+    it('shows CPU% with one decimal', async () => {
+      mockSampleStats.execute.mockResolvedValue({ cpuPercent: 2.3, rssBytes: 51200 * 1024 });
 
       const cmd = createStatusCommand();
       const parsePromise = cmd.parseAsync([], { from: 'user' });
@@ -230,7 +199,7 @@ describe('status command', () => {
         (s: { fields: { label: string; value: string }[] }) => s.fields
       );
       const cpuField = fields.find((f) => f.label.toLowerCase().includes('cpu'));
-      expect(cpuField?.value).toContain('2.3');
+      expect(cpuField?.value).toBe('2.3%');
     });
 
     it('converts RSS from KB to MB (102400 KB = 100 MB)', async () => {
@@ -313,7 +282,7 @@ describe('status command', () => {
     });
   });
 
-  describe('ps timeout fallback', () => {
+  describe('metrics fallback', () => {
     beforeEach(() => {
       mockDaemonService.read.mockResolvedValue({
         pid: 12345,
@@ -323,35 +292,23 @@ describe('status command', () => {
       mockDaemonService.isAlive.mockReturnValue(true);
     });
 
-    it('shows metrics unavailable gracefully when ps times out', async () => {
-      // Simulate ps timeout — never calls callback
-      mockExecFile.mockImplementation(
-        (
-          _cmd: string,
-          _args: string[],
-          _opts: unknown,
-          _callback: (err: Error | null, stdout: string) => void
-        ) => {
-          // ps never calls back — simulates timeout
-          return { kill: vi.fn() };
-        }
-      );
+    it('shows metrics unavailable when the OS gives no numbers (Windows, ps timeout)', async () => {
+      mockSampleStats.execute.mockResolvedValue(undefined);
 
       const cmd = createStatusCommand();
       const parsePromise = cmd.parseAsync([], { from: 'user' });
-
-      // Advance past the 2s ps timeout
-      await vi.advanceTimersByTimeAsync(3000);
+      await vi.runAllTimersAsync();
       await parsePromise;
 
-      // Should still call renderDetailView but with metrics unavailable
       expect(mockRenderDetailView).toHaveBeenCalledTimes(1);
       const callArgs = mockRenderDetailView.mock.calls[0][0];
       const fields: { label: string; value: string }[] = callArgs.sections.flatMap(
         (s: { fields: { label: string; value: string }[] }) => s.fields
       );
       const cpuField = fields.find((f) => f.label.toLowerCase().includes('cpu'));
-      expect(cpuField?.value).toContain('unavailable');
+      expect(cpuField?.value).toBe('unavailable');
+      const memField = fields.find((f) => f.label.toLowerCase().includes('mem'));
+      expect(memField?.value).toBe('unavailable');
     });
   });
 

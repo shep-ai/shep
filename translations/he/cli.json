@@ -1912,6 +1912,45 @@
         "unreadable": "לא ניתן לקרוא את {{file}}.",
         "failed": "פרסום הבלוק נכשל"
       }
+    },
+    "ps": {
+      "description": "הצגת התהליכים ש-Shep מריץ: דמון הווב ו-workers של סוכנים",
+      "allOption": "לכלול הרצות שהתהליך שלהן הסתיים",
+      "jsonOption": "הדפסת התהליכים כ-JSON",
+      "watchOption": "ציור מחדש כל 2 שניות עד ctrl+c",
+      "title": "תהליכי Shep",
+      "columns": {
+        "kind": "סוג",
+        "pid": "PID",
+        "feature": "פיצ'ר",
+        "agent": "סוכן",
+        "status": "סטטוס",
+        "up": "פעיל",
+        "cpu": "CPU",
+        "mem": "זיכרון"
+      },
+      "kind": {
+        "daemon": "דמון",
+        "featureAgent": "סוכן פיצ'ר",
+        "agentRun": "הרצת סוכן"
+      },
+      "state": {
+        "running": "רץ",
+        "crashed": "קרס",
+        "exited": "הסתיים"
+      },
+      "empty": "אין תהליכי Shep שרצים. הוסף --all כדי לכלול הרצות שהסתיימו.",
+      "summary": "{{running}} רצים · {{crashed}} קרסו · {{exited}} הסתיימו",
+      "statsUnavailable": "CPU וזיכרון אינם זמינים בפלטפורמה זו.",
+      "watchNotTty": "--watch דורש טרמינל אינטראקטיבי. בסקריפטים השתמש ב-shep ps --json.",
+      "watchHint": "מתרענן כל 2 שניות · ctrl+c לעצירה",
+      "failed": "לא ניתן להציג את תהליכי Shep",
+      "crashedHint": "המשך פיצ'ר שקרס עם: shep feat resume <מזהה פיצ'ר>",
+      "stop": {
+        "description": "עצירת הרצת סוכן לפי מזהה הרצה, מזהה פיצ'ר או תחילית של אחד מהם",
+        "idArgument": "מזהה הרצה, מזהה פיצ'ר או תחילית",
+        "stopped": "{{id}} נעצר: {{reason}}"
+      }
     }
   },
   "ui": {

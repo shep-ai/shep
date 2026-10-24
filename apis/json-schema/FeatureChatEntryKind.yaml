@@ -1,0 +1,10 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: FeatureChatEntryKind.yaml
+type: string
+enum:
+  - user
+  - assistant
+  - tool
+  - block
+  - answer
+description: What a transcript entry of a feature's agent chat is

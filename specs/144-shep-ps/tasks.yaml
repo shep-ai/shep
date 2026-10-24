@@ -1,0 +1,102 @@
+name: shep-ps
+summary: Task breakdown for 144-shep-ps
+
+relatedFeatures:
+  - 142-tui-feature-console
+technologies:
+  - TypeScript
+  - TypeSpec
+relatedLinks: []
+
+tasks:
+  - id: task-1
+    title: ShepProcessKind and ShepProcessState TypeSpec enums
+    description: tsp/common/enums/shep-process.tsp, regenerate output.ts.
+    state: Done
+    dependencies: []
+    acceptanceCriteria:
+      - Kind is daemon, feature-agent or agent-run; state is running, crashed or exited
+    tdd: null
+    estimatedEffort: S
+
+  - id: task-2
+    title: IProcessStatsProbe and the ps adapter
+    description: One batched ps call; pure parser; Windows and failures return an empty map.
+    state: Done
+    dependencies: []
+    acceptanceCriteria:
+      - argv is ps -o pid=,pcpu=,rss= -p <comma-separated pids>
+      - rss is converted from KiB to bytes; malformed lines are skipped
+    tdd:
+      red:
+        - ps-process-stats-probe.test.ts for parsing, batching, failure and Windows
+      green:
+        - Implement and register under 'IProcessStatsProbe'
+      refactor: []
+    estimatedEffort: S
+
+  - id: task-3
+    title: List, sample and stop use cases
+    description: >
+      ListShepProcessesUseCase builds sorted rows; SampleProcessStatsUseCase serves shep status;
+      StopShepProcessUseCase resolves ids and delegates to StopAgentRunUseCase.
+    state: Done
+    dependencies:
+      - task-1
+      - task-2
+    acceptanceCriteria:
+      - Live processes and crashed runs by default; exited runs only with includeAll
+      - Daemon first, then running, crashed, exited; newest first within each
+      - Stop refuses the daemon and ambiguous prefixes
+    tdd:
+      red:
+        - list-shep-processes.use-case.test.ts, stop-shep-process.use-case.test.ts, sample-process-stats.use-case.test.ts
+      green:
+        - Implement and register by class and string token
+      refactor: []
+    estimatedEffort: M
+
+  - id: task-4
+    title: shep ps command
+    description: Table, --all, --json, --watch, and the stop subcommand; nine locales.
+    state: Done
+    dependencies:
+      - task-3
+    acceptanceCriteria:
+      - JSON has no colour; watch refuses a non-interactive terminal
+    tdd:
+      red:
+        - ps.command.test.ts with seams for use cases and output
+      green:
+        - Implement and register in the CLI
+      refactor: []
+    estimatedEffort: M
+
+  - id: task-5
+    title: shep status through the probe
+    description: Remove the command's own ps shell-out; output unchanged.
+    state: Done
+    dependencies:
+      - task-3
+    acceptanceCriteria:
+      - status.command.test.ts passes with the use case mocked instead of child_process
+    tdd: null
+    estimatedEffort: S
+
+  - id: task-6
+    title: E2E, docs and evidence
+    description: tests/e2e/cli/ps.test.ts against mock-executor features; docs; evidence.
+    state: Done
+    dependencies:
+      - task-4
+    acceptanceCriteria:
+      - Passes on Linux and Windows
+    tdd: null
+    estimatedEffort: S
+
+totalEstimate: M
+
+content: |
+  ## Summary
+
+  Six tasks in three phases. Every code task follows RED-GREEN-REFACTOR.

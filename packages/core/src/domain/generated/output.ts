@@ -9732,6 +9732,16 @@ export enum ChatTurnStatus {
   Unread = 'unread',
   AwaitingInput = 'awaiting_input',
 }
+export enum ShepProcessKind {
+  Daemon = 'daemon',
+  FeatureAgent = 'feature-agent',
+  AgentRun = 'agent-run',
+}
+export enum ShepProcessState {
+  Running = 'running',
+  Crashed = 'crashed',
+  Exited = 'exited',
+}
 export enum SpaceResolutionSource {
   Assignment = 'Assignment',
   Rule = 'Rule',

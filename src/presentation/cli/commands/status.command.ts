@@ -6,7 +6,7 @@
  * Metrics collected:
  *   - PID, port, URL (from daemon.json)
  *   - Uptime (computed from startedAt)
- *   - CPU%, RSS memory (from ps shell-out via execFile — injection-safe)
+ *   - CPU%, RSS memory (SampleProcessStatsUseCase, the probe `shep ps` uses)
  *   - Readiness, by calling the daemon's own health endpoint through
  *     CheckDaemonHealthUseCase. daemon.json plus `ps` only prove a process
  *     exists; they say nothing about whether it can serve a request, which
@@ -17,7 +17,7 @@
  *   --logs [N]   Show last N lines of daemon.log (default 50)
  *   -f, --follow  Follow daemon.log in real-time (like tail -f)
  *
- * Gracefully degrades if ps is unavailable (timeout or error).
+ * Gracefully degrades when CPU and memory are unavailable (Windows, timeout).
  *
  * Usage: shep status
  *        shep status --logs
@@ -25,7 +25,6 @@
  */
 
 import { Command } from 'commander';
-import { execFile } from 'node:child_process';
 import { createReadStream, existsSync, statSync } from 'node:fs';
 import { createInterface } from 'node:readline';
 import { watch } from 'node:fs';
@@ -33,6 +32,7 @@ import { container } from '@/infrastructure/di/container.js';
 import type { IDaemonService } from '@/application/ports/output/services/daemon-service.interface.js';
 import type { IVersionService } from '@/application/ports/output/services/version-service.interface.js';
 import { CheckDaemonHealthUseCase } from '@/application/use-cases/daemon/check-daemon-health.use-case.js';
+import { SampleProcessStatsUseCase } from '@/application/use-cases/processes/sample-process-stats.use-case.js';
 import { GIT_SHA_UNAVAILABLE } from '@/domain/value-objects/build-identity.js';
 import {
   getShepHomeDir,
@@ -43,7 +43,6 @@ import {
 import { renderDetailView, messages, colors } from '../ui/index.js';
 import { getCliI18n } from '../i18n.js';
 
-const PS_TIMEOUT_MS = 2000;
 const DEFAULT_LOG_LINES = 50;
 
 /** Rendered when a metric could not be collected. */
@@ -51,22 +50,13 @@ const UNAVAILABLE_VALUE = 'unavailable';
 /** Rendered when a value could not be determined at all. */
 const UNKNOWN_VALUE = 'unknown';
 
-interface PsMetrics {
+interface ProcessMetrics {
   cpu: string;
   rssMb: string;
 }
 
-/**
- * Parse ps output: "pid  cpu%  rss_kb\n"
- * Returns formatted strings for display.
- */
-function parsePs(output: string): PsMetrics {
-  const parts = output.trim().split(/\s+/);
-  const cpu = parts[1] ?? '?';
-  const rssKb = parseFloat(parts[2] ?? '0');
-  const rssMb = (rssKb / 1024).toFixed(1);
-  return { cpu, rssMb };
-}
+const BYTES_PER_MB = 1024 * 1024;
+const METRIC_DECIMALS = 1;
 
 /**
  * Human-readable uptime string, e.g. "2h 14m 3s".
@@ -85,41 +75,16 @@ function humanizeUptime(ms: number): string {
 }
 
 /**
- * Shell out to ps for CPU% and RSS, with a timeout guard.
- * Uses execFile (not exec) — the PID is a separate array argument,
- * preventing any possibility of shell injection.
+ * CPU% and RSS of the daemon, through the same stats probe as `shep ps`
+ * (spec 144). "unavailable" when the OS gives no numbers (Windows, timeout).
  */
-function fetchPsMetrics(pid: number): Promise<PsMetrics> {
-  return new Promise((resolve) => {
-    const pidStr = String(pid);
-    let settled = false;
-
-    const fallback = (): PsMetrics => ({ cpu: UNAVAILABLE_VALUE, rssMb: UNAVAILABLE_VALUE });
-
-    const timer = setTimeout(() => {
-      if (!settled) {
-        settled = true;
-        child.kill();
-        resolve(fallback());
-      }
-    }, PS_TIMEOUT_MS);
-
-    const child = execFile(
-      'ps',
-      ['-o', 'pid=,pcpu=,rss=', '-p', pidStr],
-      { timeout: PS_TIMEOUT_MS },
-      (err, stdout) => {
-        if (settled) return;
-        settled = true;
-        clearTimeout(timer);
-        if (err || !stdout.trim()) {
-          resolve(fallback());
-        } else {
-          resolve(parsePs(stdout));
-        }
-      }
-    );
-  });
+async function fetchProcessMetrics(pid: number): Promise<ProcessMetrics> {
+  const stats = await container.resolve(SampleProcessStatsUseCase).execute(pid);
+  if (!stats) return { cpu: UNAVAILABLE_VALUE, rssMb: UNAVAILABLE_VALUE };
+  return {
+    cpu: stats.cpuPercent.toFixed(METRIC_DECIMALS),
+    rssMb: (stats.rssBytes / BYTES_PER_MB).toFixed(METRIC_DECIMALS),
+  };
 }
 
 /**
@@ -265,7 +230,7 @@ Examples:
       const uptimeMs = Date.now() - Date.parse(startedAt);
       const uptime = humanizeUptime(uptimeMs);
 
-      const { cpu, rssMb } = await fetchPsMetrics(pid);
+      const { cpu, rssMb } = await fetchProcessMetrics(pid);
 
       // Get CLI version + build identity (OS, git SHA)
       let cliVersion = UNKNOWN_VALUE;

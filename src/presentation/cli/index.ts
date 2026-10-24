@@ -87,6 +87,7 @@ import { createFactoryCommand } from './commands/factory/index.js';
 import { createMcpCommand } from './commands/mcp.command.js';
 import { createFleetCommand } from './commands/fleet/index.js';
 import { createTuiCommand } from './commands/tui.command.js';
+import { createPsCommand } from './commands/ps/ps.command.js';
 import { createLogsCommand } from './commands/logs/index.js';
 import { createUsageCommand } from './commands/usage.command.js';
 import { createHarnessCommand } from './commands/harness/index.js';
@@ -191,6 +192,7 @@ async function bootstrap() {
     program.addCommand(createSettingsCommand());
     program.addCommand(createUiCommand());
     program.addCommand(createTuiCommand());
+    program.addCommand(createPsCommand());
     program.addCommand(createRunCommand());
     program.addCommand(createAgentCommand());
     program.addCommand(createFeatCommand());
