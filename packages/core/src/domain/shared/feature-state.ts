@@ -172,3 +172,15 @@ export function compareConsoleRows(a: ConsoleOrderable, b: ConsoleOrderable): nu
   if (byRank !== 0) return byRank;
   return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
 }
+
+/** States that end a feature's work: nothing more will happen without the user. */
+const SETTLED_STATES: ReadonlySet<FeatureState> = new Set([
+  FeatureState.Done,
+  FeatureState.Archived,
+  FeatureState.Deleting,
+]);
+
+/** True while a feature's state can still change on its own or needs the user (spec 146). */
+export function isActiveFeatureState(state: FeatureState): boolean {
+  return !SETTLED_STATES.has(state);
+}

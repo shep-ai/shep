@@ -155,7 +155,9 @@
       "description": "Ouvrir la console de terminal en direct de toutes les features",
       "repoOption": "Afficher uniquement les features de ce dépôt",
       "allOption": "Inclure les features archivées",
-      "noNotifyOption": "Ne pas sonner ni envoyer de notification de terminal quand une fonctionnalité a besoin de vous"
+      "noNotifyOption": "Ne pas sonner ni envoyer de notification de terminal quand une fonctionnalité a besoin de vous",
+      "statusOption": "Afficher un résumé d’une ligne pour les barres d’état (plain ou tmux) et quitter",
+      "unknownStatusStyle": "Style d’état inconnu « {{style}} ». Utilisez : {{styles}}."
     },
     "run": {
       "description": "Exécuter un workflow d'agent IA",

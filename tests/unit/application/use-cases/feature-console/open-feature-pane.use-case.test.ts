@@ -31,7 +31,7 @@ describe('OpenFeaturePaneUseCase', () => {
   let featureRepo: { findById: ReturnType<typeof vi.fn>; findByIdPrefix: ReturnType<typeof vi.fn> };
   let launcher: {
     detect: ReturnType<typeof vi.fn>;
-    open: ReturnType<typeof vi.fn<(request: TerminalPaneRequest) => Promise<void>>>;
+    open: ReturnType<typeof vi.fn<(request: TerminalPaneRequest) => Promise<{ id?: string }>>>;
     defaultShell: ReturnType<typeof vi.fn>;
   };
   let useCase: OpenFeaturePaneUseCase;
@@ -61,7 +61,7 @@ describe('OpenFeaturePaneUseCase', () => {
     };
     launcher = {
       detect: vi.fn(() => multiplexer),
-      open: vi.fn(async () => undefined),
+      open: vi.fn(async () => ({})),
       defaultShell: vi.fn(() => ['/bin/zsh']),
     };
     useCase = new OpenFeaturePaneUseCase(
@@ -161,5 +161,20 @@ describe('OpenFeaturePaneUseCase', () => {
       outcome: FeaturePaneOutcome.Failed,
       message: 'Feature not found: feat-1234',
     });
+  });
+
+  it('names the window when asked and returns its id (spec 146)', async () => {
+    launcher.open.mockResolvedValue({ id: '@7' });
+
+    const result = await useCase.execute({
+      featureId: 'feat-1234',
+      content: FeaturePaneContent.Log,
+      placement: FeaturePanePlacement.Window,
+      shepCommand: SHEP,
+      title: '● Login page',
+    });
+
+    expect(launcher.open.mock.calls[0][0].title).toBe('● Login page');
+    expect(result).toMatchObject({ outcome: FeaturePaneOutcome.Opened, windowId: '@7' });
   });
 });

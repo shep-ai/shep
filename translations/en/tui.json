@@ -271,7 +271,8 @@
       "follow": "f / F   follow the agent log (split / new window)",
       "filter": "/   filter the features (esc clears)",
       "palette": ":/ctrl+p   command palette",
-      "copyId": "c   copy the feature id"
+      "copyId": "c   copy the feature id",
+      "controlCenter": "C   a window per active feature (control center)"
     },
     "notTty": "shep tui needs an interactive terminal. In scripts and pipes, use \"shep feat ls\".",
     "filter": {
@@ -310,9 +311,13 @@
         "filter": "Filter the features",
         "clear-filter": "Clear the filter",
         "help": "Show keys",
-        "quit": "Quit"
+        "quit": "Quit",
+        "control-center": "Open a window for every active feature"
       }
     },
-    "copied": "Copied the id of {{name}}: {{id}}"
+    "copied": "Copied the id of {{name}}: {{id}}",
+    "controlCenter": {
+      "none": "Every active feature already has a window"
+    }
   }
 }

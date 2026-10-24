@@ -114,4 +114,38 @@ describe('TerminalPaneLauncherService', () => {
     ).toEqual(['C:\\Windows\\system32\\cmd.exe']);
     expect(new TerminalPaneLauncherService(exec, {}, true).defaultShell()).toEqual(['cmd.exe']);
   });
+
+  it('returns the id the multiplexer printed for the new pane or window (spec 146)', async () => {
+    const exec = vi.fn<ExecFunction>(async () => ({ stdout: '@12\n', stderr: '' }));
+    const launcher = new TerminalPaneLauncherService(exec, { TMUX: 'x' }, false);
+
+    expect(await launcher.open(request())).toEqual({ id: '@12' });
+    exec.mockResolvedValue({ stdout: '', stderr: '' });
+    expect(await launcher.open(request())).toEqual({});
+  });
+
+  it('renames a window, and does nothing where renaming is unsupported (spec 146)', async () => {
+    const exec = vi.fn<ExecFunction>(async () => ({ stdout: '', stderr: '' }));
+    const launcher = new TerminalPaneLauncherService(exec, { TMUX: 'x' }, false);
+
+    await launcher.renameWindow(TerminalMultiplexer.Tmux, '@3', '◆ Billing');
+    expect(exec).toHaveBeenCalledWith('tmux', ['rename-window', '-t', '@3', '◆ Billing'], {
+      windowsHide: true,
+    });
+    await launcher.renameWindow(TerminalMultiplexer.Zellij, 'x', 'y');
+    expect(exec).toHaveBeenCalledTimes(1);
+  });
+
+  it('publishes status options, and reports a refusal (spec 146)', async () => {
+    const exec = vi.fn<ExecFunction>(async () => ({ stdout: '', stderr: '' }));
+    const launcher = new TerminalPaneLauncherService(exec, { TMUX: 'x' }, false);
+
+    await launcher.publishStatus(TerminalMultiplexer.Tmux, { '@shep_needs_you': '1' });
+    expect(exec.mock.calls[0][1]).toEqual(['set-option', '-g', '@shep_needs_you', '1']);
+
+    exec.mockRejectedValue(Object.assign(new Error('x'), { stderr: "can't find window: @9" }));
+    await expect(launcher.renameWindow(TerminalMultiplexer.Tmux, '@9', 'y')).rejects.toThrow(
+      "tmux: can't find window: @9"
+    );
+  });
 });

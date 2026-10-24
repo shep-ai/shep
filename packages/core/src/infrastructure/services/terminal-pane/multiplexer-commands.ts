@@ -151,3 +151,53 @@ const BUILDERS: Record<TerminalMultiplexer, (context: PaneCommandContext) => Pan
 export function buildPaneInvocation(context: PaneCommandContext): PaneInvocation {
   return BUILDERS[context.request.multiplexer](context);
 }
+
+// ── spec 146: window names and status ────────────────────────────────────────
+
+const RENAMERS: Partial<
+  Record<TerminalMultiplexer, (id: string, title: string) => PaneInvocation>
+> = {
+  [TerminalMultiplexer.Tmux]: (id, title) => ({
+    file: 'tmux',
+    args: ['rename-window', '-t', id, title],
+  }),
+  [TerminalMultiplexer.WezTerm]: (id, title) => ({
+    file: 'wezterm',
+    args: ['cli', 'set-tab-title', '--pane-id', id, title],
+  }),
+  // `kitten @ launch` prints a window id; this renames the tab holding it.
+  [TerminalMultiplexer.Kitty]: (id, title) => ({
+    file: 'kitten',
+    args: ['@', 'set-tab-title', '--match', `window_id:${id}`, title],
+  }),
+  // Zellij can rename only the focused tab, so it has no entry.
+};
+
+/** The command that renames a window or tab by id, or undefined where unsupported. */
+export function buildRenameInvocation(
+  multiplexer: TerminalMultiplexer,
+  id: string,
+  title: string
+): PaneInvocation | undefined {
+  return RENAMERS[multiplexer]?.(id, title);
+}
+
+/** tmux runs a lone `;` argument as a command separator: one call sets every option. */
+const TMUX_COMMAND_SEPARATOR = ';';
+
+/** The command that sets status values, or undefined where the multiplexer has none. */
+export function buildStatusInvocation(
+  multiplexer: TerminalMultiplexer,
+  values: Readonly<Record<string, string>>
+): PaneInvocation | undefined {
+  const entries = Object.entries(values);
+  if (multiplexer !== TerminalMultiplexer.Tmux || entries.length === 0) return undefined;
+  const args = entries.flatMap(([name, value], i) => [
+    ...(i > 0 ? [TMUX_COMMAND_SEPARATOR] : []),
+    'set-option',
+    '-g',
+    name,
+    value,
+  ]);
+  return { file: 'tmux', args };
+}

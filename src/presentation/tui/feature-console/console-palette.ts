@@ -55,6 +55,7 @@ const COMMANDS: readonly { key: ConsoleKey; chord: string; when: Availability }[
   { key: ConsoleKey.Details, chord: 'enter', when: hasRow },
   { key: ConsoleKey.Log, chord: 'l', when: hasRow },
   { key: ConsoleKey.CopyId, chord: 'c', when: hasRow },
+  { key: ConsoleKey.ControlCenter, chord: 'C', when: always },
   { key: ConsoleKey.Filter, chord: '/', when: always },
   { key: ConsoleKey.ClearFilter, chord: '', when: ({ filterActive }) => filterActive },
   { key: ConsoleKey.Help, chord: '?', when: always },

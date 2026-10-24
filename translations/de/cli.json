@@ -155,7 +155,9 @@
       "description": "Die Live-Terminalkonsole aller Features öffnen",
       "repoOption": "Nur Features dieses Repositorys zeigen",
       "allOption": "Archivierte Features einbeziehen",
-      "noNotifyOption": "Keine Glocke und keine Terminal-Benachrichtigung, wenn ein Feature dich braucht"
+      "noNotifyOption": "Keine Glocke und keine Terminal-Benachrichtigung, wenn ein Feature dich braucht",
+      "statusOption": "Eine Zusammenfassung in einer Zeile für Statusleisten ausgeben (plain oder tmux) und beenden",
+      "unknownStatusStyle": "Unbekannter Status-Stil \"{{style}}\". Erlaubt: {{styles}}."
     },
     "run": {
       "description": "Einen KI-Agenten-Workflow ausführen",

@@ -33,10 +33,18 @@ export interface OpenFeaturePaneInput {
   shepCommand: readonly string[];
   /** Variables the pane must share with the caller, such as SHEP_HOME. */
   environment?: Readonly<Record<string, string>>;
+  /** Name for the pane or window; defaults to `shep <short id>` (plus `log`). */
+  title?: string;
 }
 
 export type OpenFeaturePaneResult =
-  | { outcome: FeaturePaneOutcome.Opened; multiplexer: TerminalMultiplexer; message: string }
+  | {
+      outcome: FeaturePaneOutcome.Opened;
+      multiplexer: TerminalMultiplexer;
+      /** The new pane or window id, where the multiplexer prints one (spec 146). */
+      windowId?: string;
+      message: string;
+    }
   | { outcome: FeaturePaneOutcome.Inline; cwd: string; command: string[]; message: string }
   | { outcome: FeaturePaneOutcome.Failed; message: string };
 
@@ -85,11 +93,13 @@ export class OpenFeaturePaneUseCase {
       }
 
       const shortId = feature.id.slice(0, FEATURE_SHORT_ID_LENGTH);
-      await this.launcher.open({
+      const opened = await this.launcher.open({
         multiplexer,
         placement: input.placement,
         cwd,
-        title: [PANE_TITLE_PREFIX, shortId, ...(isLog ? [LOG_TITLE_SUFFIX] : [])].join(' '),
+        title:
+          input.title ??
+          [PANE_TITLE_PREFIX, shortId, ...(isLog ? [LOG_TITLE_SUFFIX] : [])].join(' '),
         ...(command && { command }),
         environment: input.environment ?? {},
         // A shell is for typing in; a log is for watching beside the console.
@@ -98,6 +108,7 @@ export class OpenFeaturePaneUseCase {
       return {
         outcome: FeaturePaneOutcome.Opened,
         multiplexer,
+        ...(opened.id && { windowId: opened.id }),
         message: `Opened ${what} in ${multiplexer}`,
       };
     } catch (error) {

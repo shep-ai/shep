@@ -271,7 +271,8 @@
       "follow": "f / F   dem Agent-Log folgen (geteilt / neues Fenster)",
       "filter": "/   Features filtern (Esc löscht)",
       "palette": ":/Strg+P   Befehlspalette",
-      "copyId": "c   Feature-ID kopieren"
+      "copyId": "c   Feature-ID kopieren",
+      "controlCenter": "C   ein Fenster pro aktivem Feature (Kontrollzentrum)"
     },
     "notTty": "shep tui braucht ein interaktives Terminal. In Skripten und Pipes nutze \"shep feat ls\".",
     "filter": {
@@ -310,9 +311,13 @@
         "filter": "Features filtern",
         "clear-filter": "Filter löschen",
         "help": "Tasten anzeigen",
-        "quit": "Beenden"
+        "quit": "Beenden",
+        "control-center": "Ein Fenster für jedes aktive Feature öffnen"
       }
     },
-    "copied": "ID von {{name}} kopiert: {{id}}"
+    "copied": "ID von {{name}} kopiert: {{id}}",
+    "controlCenter": {
+      "none": "Jedes aktive Feature hat schon ein Fenster"
+    }
   }
 }

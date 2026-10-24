@@ -1,5 +1,5 @@
 /**
- * Feature console app (specs 142, 143, 145).
+ * Feature console app (specs 142, 143, 145, 146).
  *
  * Wires the view to the core: polls the snapshot, runs actions, keeps the log
  * pane fresh, opens terminal panes (stepping aside for an inline command when
@@ -25,6 +25,7 @@ import type {
 } from '@/application/use-cases/feature-console/feature-console.types.js';
 import { FeatureConsoleView, type FeatureConsoleIntents } from './feature-console-view.js';
 import { clipboardSequence } from './terminal-clipboard.js';
+import { ControlCenter, type ControlCenterDeps } from './control-center.js';
 
 /** How often the console re-reads every feature. */
 export const DEFAULT_REFRESH_INTERVAL_MS = 2000;
@@ -51,6 +52,8 @@ export interface FeatureConsoleAppDeps {
   runInline: (plan: InlineCommand) => Promise<void>;
   /** Alert the user (bell, terminal notification); undefined turns alerts off. */
   notify?: (message: string) => void;
+  openControlCenter: ControlCenterDeps['openControlCenter'];
+  updateMultiplexer: ControlCenterDeps['updateMultiplexer'];
   refreshIntervalMs?: number;
 }
 
@@ -73,6 +76,8 @@ export function runFeatureConsole(deps: FeatureConsoleAppDeps): Promise<void> {
     /** Features needing the user at the last snapshot; undefined before the first. */
     let needingUser: Set<string> | undefined;
     let title: string | undefined;
+    let latest: FeatureConsoleSnapshot | undefined;
+    const controlCenter = new ControlCenter(deps);
 
     const intents: FeatureConsoleIntents = {
       runAction: (row, action, feedback) => void runAction(row, action, feedback),
@@ -89,6 +94,7 @@ export function runFeatureConsole(deps: FeatureConsoleAppDeps): Promise<void> {
         });
         render();
       },
+      openControlCenter: () => void openControlCenter(),
       quit: () => finish(),
       requestRender: () => tui.requestRender(),
     };
@@ -104,8 +110,10 @@ export function runFeatureConsole(deps: FeatureConsoleAppDeps): Promise<void> {
       refreshing = true;
       try {
         const snapshot = await deps.loadSnapshot();
+        latest = snapshot;
         view.setSnapshot(snapshot);
         noticeAttention(snapshot);
+        await controlCenter.sync(snapshot).catch(() => undefined);
       } catch (error) {
         view.setRefreshError(messageOf(error));
       } finally {
@@ -143,6 +151,11 @@ export function runFeatureConsole(deps: FeatureConsoleAppDeps): Promise<void> {
         view.setBusy(undefined);
       }
       await refresh();
+    }
+
+    async function openControlCenter(): Promise<void> {
+      view.setStatus(await controlCenter.open(latest?.rows ?? []));
+      render();
     }
 
     async function openPane(

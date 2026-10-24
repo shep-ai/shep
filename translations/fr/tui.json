@@ -271,7 +271,8 @@
       "follow": "f / F   suivre le log de l’agent (scindé / nouvelle fenêtre)",
       "filter": "/   filtrer les fonctionnalités (échap efface)",
       "palette": ":/ctrl+p   palette de commandes",
-      "copyId": "c   copier l’id de la fonctionnalité"
+      "copyId": "c   copier l’id de la fonctionnalité",
+      "controlCenter": "C   une fenêtre par fonctionnalité active (centre de contrôle)"
     },
     "notTty": "shep tui a besoin d'un terminal interactif. Dans les scripts et les pipes, utilise \"shep feat ls\".",
     "filter": {
@@ -310,9 +311,13 @@
         "filter": "Filtrer les fonctionnalités",
         "clear-filter": "Effacer le filtre",
         "help": "Afficher les touches",
-        "quit": "Quitter"
+        "quit": "Quitter",
+        "control-center": "Ouvrir une fenêtre pour chaque fonctionnalité active"
       }
     },
-    "copied": "Id de {{name}} copié : {{id}}"
+    "copied": "Id de {{name}} copié : {{id}}",
+    "controlCenter": {
+      "none": "Chaque fonctionnalité active a déjà une fenêtre"
+    }
   }
 }

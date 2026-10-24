@@ -99,6 +99,7 @@ const HELP_KEYS = [
   'follow',
   'filter',
   'copyId',
+  'controlCenter',
   'palette',
   'help',
   'quit',

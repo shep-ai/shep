@@ -215,6 +215,23 @@ the view's browse handler, so the palette runs the same guarded path as the key 
 offer an action the core did not put in `row.actions`. Adding a console command is one row in
 the palette table. `c` copies the feature id over OSC 52 (works over ssh and through tmux).
 
+### Control center and tmux status (spec 146)
+
+```
+C → ControlCenter.open (control-center.ts)
+      candidates: active features (isActiveFeatureState) with a run and no window yet
+      └─ OpenControlCenterUseCase → OpenFeaturePaneUseCase per feature (Log, Window, title)
+                                    → launcher.open returns the window id the multiplexer printed
+every snapshot → ControlCenter.sync
+      renames: tracked windows whose state symbol changed
+      status:  tmuxStatusOptions(summary) when it changed (@shep_status, @shep_needs_you)
+      └─ UpdateMultiplexerStatusUseCase → launcher.renameWindow / publishStatus
+           (detects the multiplexer itself; outside one it does nothing)
+```
+
+A window the user closed fails its next rename; the console forgets it, and `C` can open it
+again. `shep tui --status [plain|tmux]` prints `formatStatusSegment(summary)` once.
+
 The tools this follows (workmux, oh-my-pi, claude-squad, Claude Code agent teams) are compared in
 [docs/competitors/agent-harness-tui.md](../competitors/agent-harness-tui.md).
 

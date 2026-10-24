@@ -155,7 +155,9 @@
       "description": "Abrir o console de terminal ao vivo de todas as features",
       "repoOption": "Mostrar só as features deste repositório",
       "allOption": "Incluir features arquivadas",
-      "noNotifyOption": "Não tocar o sino nem enviar notificação do terminal quando uma funcionalidade precisar de você"
+      "noNotifyOption": "Não tocar o sino nem enviar notificação do terminal quando uma funcionalidade precisar de você",
+      "statusOption": "Imprimir um resumo de uma linha para barras de status (plain ou tmux) e sair",
+      "unknownStatusStyle": "Estilo de status desconhecido \"{{style}}\". Use um de: {{styles}}."
     },
     "run": {
       "description": "Executar um fluxo de trabalho de agente AI",

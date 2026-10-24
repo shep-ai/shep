@@ -12,6 +12,8 @@ import { FeaturePanePlacement, TerminalMultiplexer } from '@/domain/generated/ou
 import type { TerminalPaneRequest } from '@/application/ports/output/services/terminal-pane-launcher.interface.js';
 import {
   buildPaneInvocation,
+  buildRenameInvocation,
+  buildStatusInvocation,
   type PaneCommandContext,
 } from '@/infrastructure/services/terminal-pane/multiplexer-commands.js';
 
@@ -280,5 +282,55 @@ describe('buildPaneInvocation', () => {
         'shep abc12345',
       ]);
     });
+  });
+});
+
+describe('buildRenameInvocation (spec 146)', () => {
+  it('renames a tmux window, a WezTerm tab and a kitty tab by id', () => {
+    expect(buildRenameInvocation(TerminalMultiplexer.Tmux, '@4', '◆ Billing')).toEqual({
+      file: 'tmux',
+      args: ['rename-window', '-t', '@4', '◆ Billing'],
+    });
+    expect(buildRenameInvocation(TerminalMultiplexer.WezTerm, '12', '● Billing')).toEqual({
+      file: 'wezterm',
+      args: ['cli', 'set-tab-title', '--pane-id', '12', '● Billing'],
+    });
+    expect(buildRenameInvocation(TerminalMultiplexer.Kitty, '7', '✓ Billing')).toEqual({
+      file: 'kitten',
+      args: ['@', 'set-tab-title', '--match', 'window_id:7', '✓ Billing'],
+    });
+  });
+
+  it('has no rename for Zellij, which renames only the focused tab', () => {
+    expect(buildRenameInvocation(TerminalMultiplexer.Zellij, 'x', 'y')).toBeUndefined();
+  });
+});
+
+describe('buildStatusInvocation (spec 146)', () => {
+  it('sets every tmux user option in one tmux call', () => {
+    expect(
+      buildStatusInvocation(TerminalMultiplexer.Tmux, {
+        '@shep_status': '#[fg=yellow]◆ 2#[default]',
+        '@shep_needs_you': '2',
+      })
+    ).toEqual({
+      file: 'tmux',
+      args: [
+        'set-option',
+        '-g',
+        '@shep_status',
+        '#[fg=yellow]◆ 2#[default]',
+        ';',
+        'set-option',
+        '-g',
+        '@shep_needs_you',
+        '2',
+      ],
+    });
+  });
+
+  it('publishes nothing elsewhere, or with nothing to set', () => {
+    expect(buildStatusInvocation(TerminalMultiplexer.Kitty, { '@a': '1' })).toBeUndefined();
+    expect(buildStatusInvocation(TerminalMultiplexer.Tmux, {})).toBeUndefined();
   });
 });

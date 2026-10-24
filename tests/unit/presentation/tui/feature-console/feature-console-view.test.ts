@@ -120,6 +120,7 @@ describe('FeatureConsoleView', () => {
       showLog: vi.fn(),
       openPane: vi.fn(),
       copyId: vi.fn(),
+      openControlCenter: vi.fn(),
       quit: vi.fn(),
       requestRender: vi.fn(),
     };
@@ -616,6 +617,13 @@ describe('FeatureConsoleView', () => {
       expect(screen().at(-2)).toContain('1 of 2');
       press(':', 'c', 'l', 'e', 'a', 'r', KEY.enter);
       expect(screen().at(-2)).not.toContain('1 of 2');
+    });
+
+    it('opens the control center with C, or from the palette (spec 146)', () => {
+      view.setSnapshot(snapshot([row('aaaa1111')]));
+      press('C');
+      press(':', 'w', 'i', 'n', 'd', 'o', 'w', ' ', 'e', 'v', 'e', 'r', 'y', KEY.enter);
+      expect(intents.openControlCenter).toHaveBeenCalledTimes(2);
     });
 
     it('copies the selected feature id with c', () => {

@@ -1,0 +1,106 @@
+name: tui-control-center
+summary: Task breakdown for 146-tui-control-center
+
+relatedFeatures:
+  - 143-tui-multiplexer-panes
+technologies:
+  - TypeScript
+  - tmux
+relatedLinks: []
+
+tasks:
+  - id: task-1
+    title: Window ids, rename and status in the launcher
+    description: open returns the printed id; renameWindow and publishStatus builders and adapter methods.
+    state: Done
+    dependencies: []
+    acceptanceCriteria:
+      - tmux rename-window -t, wezterm set-tab-title, kitty set-tab-title; zellij unsupported
+      - tmux set-option -g for both options in one call
+    tdd:
+      red:
+        - multiplexer-commands and launcher tests
+      green:
+        - Implement
+      refactor: []
+    estimatedEffort: M
+  - id: task-2
+    title: OpenControlCenterUseCase
+    description: Opens a titled log window per feature, reports each window id or failure.
+    state: Done
+    dependencies:
+      - task-1
+    acceptanceCriteria:
+      - No multiplexer returns one failure message and opens nothing
+    tdd:
+      red:
+        - open-control-center.use-case.test.ts
+      green:
+        - Implement over OpenFeaturePaneUseCase
+      refactor: []
+    estimatedEffort: S
+  - id: task-3
+    title: UpdateMultiplexerStatusUseCase and isActiveFeatureState
+    description: Renames windows and publishes status; reports which windows are gone.
+    state: Done
+    dependencies:
+      - task-1
+    acceptanceCriteria:
+      - Never throws; failed renames are returned
+    tdd:
+      red:
+        - update-multiplexer-status.use-case.test.ts, feature-state.test.ts
+      green:
+        - Implement
+      refactor: []
+    estimatedEffort: S
+  - id: task-4
+    title: Console control center and status publishing
+    description: C opens windows for untracked active features; each snapshot renames changed windows and publishes status.
+    state: Done
+    dependencies:
+      - task-2
+      - task-3
+    acceptanceCriteria:
+      - Only changed names are sent; status published only on change
+    tdd:
+      red:
+        - control-center.test.ts, app tests
+      green:
+        - Implement
+      refactor: []
+    estimatedEffort: M
+  - id: task-5
+    title: shep tui --status
+    description: One-line summary, plain or tmux styled, no TTY needed.
+    state: Done
+    dependencies:
+      - task-4
+    acceptanceCriteria:
+      - Exits 0 without a TTY
+    tdd:
+      red:
+        - status-segment.test.ts, tui.command.test.ts
+      green:
+        - Implement
+      refactor: []
+    estimatedEffort: S
+  - id: task-6
+    title: tmux e2e, docs, translations
+    description: Real tmux server; docs with a tmux.conf snippet; nine locales.
+    state: Done
+    dependencies:
+      - task-4
+      - task-5
+    acceptanceCriteria:
+      - Windows named with state symbols; @shep_needs_you set
+    tdd: null
+    estimatedEffort: M
+
+totalEstimate: L
+
+content: |
+  ## Summary
+
+  Six tasks: launcher extension, two use cases, console wiring, the one-shot status command, then
+  the tmux e2e and docs. Each code task is RED-GREEN-REFACTOR.

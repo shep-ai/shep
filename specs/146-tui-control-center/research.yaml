@@ -1,0 +1,42 @@
+name: tui-control-center
+summary: >
+  Use the multiplexer's own window list as the multi-feature dashboard, and tmux user options
+  for a zero-cost status segment.
+
+relatedFeatures:
+  - 143-tui-multiplexer-panes
+technologies:
+  - tmux
+relatedLinks:
+  - title: docs/competitors/agent-harness-tui.md
+    url: ../../docs/competitors/agent-harness-tui.md
+
+decisions:
+  - title: Status segment transport
+    chosen: The running console sets tmux user options (@shep_status, @shep_needs_you); `shep tui --status` for everything else
+    rejected:
+      - Only `#(shep tui --status)` in status-right (boots the CLI and opens the database every status-interval)
+      - Writing a status file for status-right to cat (another file to own and clean up)
+    rationale: >
+      User options cost nothing to read and update the moment the console sees a change. The
+      one-shot command covers shells, prompts and status bars outside tmux.
+  - title: Window names
+    chosen: The console renames windows it opened, using the id the open command printed
+    rejected:
+      - Agent hooks writing window names (workmux) — Shep's agents run headless, outside any pane
+    rationale: tmux `-P -F '#{window_id}'`, `wezterm cli spawn` and `kitten @ launch` all print the new id.
+  - title: Rename commands
+    chosen: tmux `rename-window -t <id>`, WezTerm `cli set-tab-title --pane-id <id>`, kitty `@ set-tab-title --match id:<id>`
+    rejected:
+      - Zellij `action rename-tab` (renames only the focused tab)
+    rationale: Each targets a window by id without changing focus.
+
+content: |
+  ## Status
+
+  - **Phase:** Research
+  - **Updated:** 2026-10-24
+
+  `par control-center` opens every session as a tmux window; workmux renames windows with
+  🤖 / 💬 / ✅; agent-deck injects waiting sessions into the tmux status bar. Shep's console
+  already knows every feature's state every two seconds, so it can drive all three.

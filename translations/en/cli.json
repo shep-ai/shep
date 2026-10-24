@@ -155,7 +155,9 @@
       "description": "Open the live terminal console of every feature",
       "repoOption": "Only show features of this repository",
       "allOption": "Include archived features",
-      "noNotifyOption": "Do not ring the bell or send a terminal notification when a feature needs you"
+      "noNotifyOption": "Do not ring the bell or send a terminal notification when a feature needs you",
+      "statusOption": "Print a one-line summary for status bars (plain or tmux) and exit",
+      "unknownStatusStyle": "Unknown status style \"{{style}}\". Use one of: {{styles}}."
     },
     "run": {
       "description": "Run an AI agent workflow",

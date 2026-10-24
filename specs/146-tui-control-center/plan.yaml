@@ -1,0 +1,71 @@
+name: tui-control-center
+summary: Implementation plan for 146-tui-control-center
+
+relatedFeatures:
+  - 143-tui-multiplexer-panes
+technologies:
+  - TypeScript
+  - tmux
+relatedLinks: []
+
+phases:
+  - id: phase-1
+    name: 'Core: window ids, rename, status, control center'
+    parallel: false
+    taskIds:
+      - task-1
+      - task-2
+      - task-3
+  - id: phase-2
+    name: 'Console and CLI'
+    parallel: false
+    taskIds:
+      - task-4
+      - task-5
+  - id: phase-3
+    name: 'E2E, docs'
+    parallel: false
+    taskIds:
+      - task-6
+
+filesToCreate:
+  - packages/core/src/application/use-cases/feature-console/open-control-center.use-case.ts
+  - packages/core/src/application/use-cases/feature-console/update-multiplexer-status.use-case.ts
+  - src/presentation/tui/feature-console/status-segment.ts
+  - src/presentation/tui/feature-console/control-center.ts
+  - tests/e2e/tui/control-center-tmux.test.ts
+
+filesToModify:
+  - packages/core/src/application/ports/output/services/terminal-pane-launcher.interface.ts
+  - packages/core/src/infrastructure/services/terminal-pane/multiplexer-commands.ts
+  - packages/core/src/infrastructure/services/terminal-pane/terminal-pane-launcher.service.ts
+  - packages/core/src/application/use-cases/feature-console/open-feature-pane.use-case.ts
+  - packages/core/src/domain/shared/feature-state.ts
+  - src/presentation/tui/feature-console/feature-console.app.ts
+  - src/presentation/cli/commands/tui.command.ts
+
+architecture: |
+  Clean Architecture: the port gains `renameWindow` and `publishStatus`, and `open` returns the
+  id the multiplexer printed. OpenControlCenterUseCase opens a log window per requested feature
+  through OpenFeaturePaneUseCase. UpdateMultiplexerStatusUseCase renames windows and publishes
+  status, never throwing. The console decides which features are active (domain
+  isActiveFeatureState), names windows with its state symbols, and calls both use cases.
+
+risks:
+  - A user may close a window shep opened; renaming a closed window fails and is dropped from tracking
+
+content: |
+  ## Status
+
+  - **Phase:** Planning
+  - **Updated:** 2026-10-24
+
+  ## Clean Architecture
+
+  Commands to the multiplexer stay behind the port in infrastructure; the use cases orchestrate;
+  the console only decides what to show and when to ask.
+
+  ## TDD
+
+  Builders (rename, status) and adapter first, then the two use cases, then the console's
+  window tracker and status segment, each RED-GREEN-REFACTOR. The tmux e2e closes the loop.

@@ -271,7 +271,8 @@
       "follow": "f / F   seguir o log do agente (dividido / nova janela)",
       "filter": "/   filtrar as funcionalidades (esc limpa)",
       "palette": ":/ctrl+p   paleta de comandos",
-      "copyId": "c   copiar o id da funcionalidade"
+      "copyId": "c   copiar o id da funcionalidade",
+      "controlCenter": "C   uma janela por funcionalidade ativa (centro de controle)"
     },
     "notTty": "shep tui precisa de um terminal interativo. Em scripts e pipes, use \"shep feat ls\".",
     "filter": {
@@ -310,9 +311,13 @@
         "filter": "Filtrar funcionalidades",
         "clear-filter": "Limpar o filtro",
         "help": "Mostrar teclas",
-        "quit": "Sair"
+        "quit": "Sair",
+        "control-center": "Abrir uma janela para cada funcionalidade ativa"
       }
     },
-    "copied": "Id de {{name}} copiado: {{id}}"
+    "copied": "Id de {{name}} copiado: {{id}}",
+    "controlCenter": {
+      "none": "Cada funcionalidade ativa já tem uma janela"
+    }
   }
 }

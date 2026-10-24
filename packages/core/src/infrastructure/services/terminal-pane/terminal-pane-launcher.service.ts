@@ -1,5 +1,5 @@
 /**
- * Terminal pane launcher (spec 143).
+ * Terminal pane launcher (specs 143, 146).
  *
  * Implements ITerminalPaneLauncher: detects the multiplexer from the process
  * environment, runs the argv `multiplexer-commands.ts` builds through the
@@ -14,10 +14,16 @@ import {
 } from '../../../domain/shared/terminal-multiplexer.js';
 import type {
   ITerminalPaneLauncher,
+  OpenedPane,
   TerminalPaneRequest,
 } from '../../../application/ports/output/services/terminal-pane-launcher.interface.js';
 import type { ExecFunction } from '../git/worktree.service.js';
-import { buildPaneInvocation } from './multiplexer-commands.js';
+import {
+  buildPaneInvocation,
+  buildRenameInvocation,
+  buildStatusInvocation,
+  type PaneInvocation,
+} from './multiplexer-commands.js';
 
 const POSIX_FALLBACK_SHELL = '/bin/sh';
 const WINDOWS_FALLBACK_SHELL = 'cmd.exe';
@@ -43,16 +49,39 @@ export class TerminalPaneLauncherService implements ITerminalPaneLauncher {
     return detectTerminalMultiplexer(this.env);
   }
 
-  async open(request: TerminalPaneRequest): Promise<void> {
+  async open(request: TerminalPaneRequest): Promise<OpenedPane> {
     const variable = PANE_ID_VARIABLE[request.multiplexer];
-    const { file, args } = buildPaneInvocation({
+    const invocation = buildPaneInvocation({
       request,
       paneId: variable ? nonEmpty(this.env[variable]) : undefined,
       shell: this.defaultShell(),
       isWindows: this.isWindows,
     });
+    const stdout = await this.run(invocation, request.cwd);
+    const id = nonEmpty(stdout.split(/\r?\n/)[0]?.trim());
+    return id ? { id } : {};
+  }
+
+  async renameWindow(multiplexer: TerminalMultiplexer, id: string, title: string): Promise<void> {
+    const invocation = buildRenameInvocation(multiplexer, id, title);
+    if (invocation) await this.run(invocation);
+  }
+
+  async publishStatus(
+    multiplexer: TerminalMultiplexer,
+    values: Readonly<Record<string, string>>
+  ): Promise<void> {
+    const invocation = buildStatusInvocation(multiplexer, values);
+    if (invocation) await this.run(invocation);
+  }
+
+  private async run({ file, args }: PaneInvocation, cwd?: string): Promise<string> {
     try {
-      await this.exec(file, args, { cwd: request.cwd, windowsHide: true });
+      const { stdout } = await this.exec(file, args, {
+        ...(cwd !== undefined && { cwd }),
+        windowsHide: true,
+      });
+      return stdout;
     } catch (error) {
       throw new Error(describeFailure(file, error));
     }

@@ -105,6 +105,7 @@ a feature's shell or followed agent log in a split pane.
 | `--repo <path>` | Only show features of this repository  | —       |
 | `--all`         | Include archived features              | —       |
 | `--no-notify`   | No bell or terminal notification when a feature starts needing you | notify on |
+| `--status [style]` | Print a one-line summary and exit (`plain`, or `tmux` with styles); needs no TTY | — |
 
 **Keys**:
 
@@ -123,6 +124,7 @@ a feature's shell or followed agent log in a split pane.
 | `/`               | Filter the roster by every word typed; `enter` keeps it, `esc` clears it |
 | `ctrl+p` / `:`    | Command palette: every command that applies, fuzzy search, `enter` runs it |
 | `c`               | Copy the selected feature's full id to the clipboard (OSC 52) |
+| `C`               | Control center: a window per active feature, following its log, named with its state |
 | `?`               | Help                                               |
 | `q` / `ctrl+c`    | Quit and restore the terminal                      |
 
@@ -142,6 +144,19 @@ Action keys appear in the key bar only when the selected feature's run accepts t
   console. Each split halves the console's pane, so use `T` / `F` for several at once.
 - **No multiplexer.** `t` and `f` run in this terminal: the console steps aside, and comes back
   when the shell exits or `ctrl+c` ends the log.
+- **Control center.** `C` opens a window (tmux window, WezTerm or kitty tab, Zellij floating pane)
+  for every active feature that has a run and no window yet, each following that feature's log.
+  The console renames each window as its state changes (`◆` needs you, `●` running, `✗` failed,
+  `✓` done); Zellij cannot rename an unfocused pane, so its names stay as opened.
+- **tmux status.** Inside tmux the console publishes `@shep_status` (styled) and
+  `@shep_needs_you` (a number) whenever they change:
+
+  ```tmux
+  set -g status-right '#{@shep_status}  %H:%M'
+  ```
+
+  Outside the console, `shep tui --status tmux` prints the same segment (it opens the database,
+  so prefer the option while the console runs).
 - **Alerts.** When a feature starts needing you, the console sends the terminal's own
   notification (OSC 9 in iTerm2, OSC 777 in WezTerm and Ghostty, OSC 99 in kitty) or a bell. In
   tmux it uses passthrough (set `allow-passthrough on`) plus a bell; in Zellij a bell. The window

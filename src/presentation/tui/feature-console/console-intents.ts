@@ -1,6 +1,6 @@
 /**
  * What the feature console view asks of the app, and what it is built with
- * (specs 142, 143, 145). Every intent is carried out through a use case.
+ * (specs 142, 143, 145, 146). Every intent is carried out through a use case.
  */
 
 import type { TFunction } from 'i18next';
@@ -24,6 +24,8 @@ export interface FeatureConsoleIntents {
   ): void;
   /** Put the feature's full id on the clipboard. */
   copyId(row: FeatureConsoleRow): void;
+  /** Open a multiplexer window for every active feature that has none (spec 146). */
+  openControlCenter(): void;
   quit(): void;
   requestRender(): void;
 }

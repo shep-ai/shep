@@ -15,6 +15,7 @@ import {
   compareConsoleRows,
   deriveFeatureState,
   featurePhaseOf,
+  isActiveFeatureState,
   needsUserAttention,
 } from '@/domain/shared/feature-state.js';
 
@@ -225,5 +226,21 @@ describe('compareConsoleRows', () => {
       'done',
       'archived',
     ]);
+  });
+});
+
+describe('isActiveFeatureState (spec 146)', () => {
+  it('counts every state that can still change as active', () => {
+    const active = Object.values(FeatureState).filter(isActiveFeatureState);
+    expect(active.sort()).toEqual(
+      [
+        FeatureState.ActionRequired,
+        FeatureState.Blocked,
+        FeatureState.Error,
+        FeatureState.Pending,
+        FeatureState.Queued,
+        FeatureState.Running,
+      ].sort()
+    );
   });
 });

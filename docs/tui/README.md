@@ -46,6 +46,8 @@ src/presentation/tui/
     console-palette.ts              # ctrl+p command palette (spec 145)
     console-intents.ts              # What the view asks the app to do
     terminal-clipboard.ts           # OSC 52 copy
+    control-center.ts               # C: a window per feature; renames; tmux status (spec 146)
+    status-segment.ts               # One-line summary: plain or tmux-styled
     terminal-notification.ts        # OSC 9 / 777 / 99 or bell, tmux passthrough
     run-inline.ts                   # Lend the terminal to a shell or log (no multiplexer)
     fullscreen-terminal.ts          # Alternate-screen Terminal decorator

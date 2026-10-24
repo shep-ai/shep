@@ -1,5 +1,5 @@
 /**
- * runFeatureConsole Unit Tests (specs 142, 143, 145)
+ * runFeatureConsole Unit Tests (specs 142, 143, 145, 146)
  *
  * The app wires the view to the use cases: it polls the snapshot (never two
  * reads at once), runs actions and shows their result, keeps the log pane
@@ -82,6 +82,8 @@ describe('runFeatureConsole', () => {
   let openPane: ReturnType<typeof vi.fn<FeatureConsoleAppDeps['openPane']>>;
   let runInline: ReturnType<typeof vi.fn<FeatureConsoleAppDeps['runInline']>>;
   let notify: ReturnType<typeof vi.fn<(message: string) => void>> | undefined;
+  let openControlCenter: ReturnType<typeof vi.fn<FeatureConsoleAppDeps['openControlCenter']>>;
+  let updateMultiplexer: ReturnType<typeof vi.fn<FeatureConsoleAppDeps['updateMultiplexer']>>;
   let done: Promise<void> | undefined;
 
   beforeAll(async () => {
@@ -108,6 +110,15 @@ describe('runFeatureConsole', () => {
     }));
     runInline = vi.fn<FeatureConsoleAppDeps['runInline']>(async () => undefined);
     notify = vi.fn<(message: string) => void>();
+    openControlCenter = vi.fn<FeatureConsoleAppDeps['openControlCenter']>(async (features) => ({
+      outcome: FeaturePaneOutcome.Opened,
+      multiplexer: TerminalMultiplexer.Tmux,
+      windows: features.map((f, i) => ({ featureId: f.featureId, windowId: `@${i + 1}` })),
+      message: `Opened ${features.length} windows in tmux`,
+    }));
+    updateMultiplexer = vi.fn<FeatureConsoleAppDeps['updateMultiplexer']>(async () => ({
+      goneWindowIds: [],
+    }));
   });
 
   afterEach(async () => {
@@ -128,6 +139,8 @@ describe('runFeatureConsole', () => {
       openPane,
       runInline,
       notify,
+      openControlCenter,
+      updateMultiplexer,
       refreshIntervalMs: REFRESH_MS,
     });
     return done;
@@ -310,6 +323,73 @@ describe('runFeatureConsole', () => {
       await vi.waitFor(() => expect(loadSnapshot.mock.calls.length).toBeGreaterThan(1));
       loadSnapshot.mockResolvedValue(snapshotOf(gate('Billing UI')));
       await vi.waitFor(() => expect(screenText()).toContain('Billing UI'));
+    });
+  });
+
+  describe('control center and tmux status (spec 146)', () => {
+    it('opens a window per active feature with C, named with its state', async () => {
+      void start();
+      await vi.waitFor(() => expect(screenText()).toContain('Billing UI'));
+
+      terminal.type('C');
+
+      await vi.waitFor(() => expect(screenText()).toContain('Opened 1 windows in tmux'));
+      expect(openControlCenter).toHaveBeenCalledWith([
+        { featureId: 'Billing UI-id', title: '◆ Billing UI' },
+      ]);
+    });
+
+    it('opens no second window for the same feature', async () => {
+      void start();
+      await vi.waitFor(() => expect(screenText()).toContain('Billing UI'));
+      terminal.type('C');
+      await vi.waitFor(() => expect(openControlCenter).toHaveBeenCalledTimes(1));
+
+      terminal.type('C');
+
+      await vi.waitFor(() =>
+        expect(screenText()).toContain('Every active feature already has a window')
+      );
+      expect(openControlCenter).toHaveBeenCalledTimes(1);
+    });
+
+    it("renames a feature's window when its state changes", async () => {
+      void start();
+      await vi.waitFor(() => expect(screenText()).toContain('Billing UI'));
+      terminal.type('C');
+      await vi.waitFor(() => expect(openControlCenter).toHaveBeenCalled());
+
+      loadSnapshot.mockResolvedValue(
+        snapshotOf({ ...gate('Billing UI'), state: FeatureState.Running, needsAttention: false })
+      );
+
+      await vi.waitFor(() =>
+        expect(updateMultiplexer).toHaveBeenCalledWith(
+          expect.objectContaining({ renames: [{ windowId: '@1', title: '● Billing UI' }] })
+        )
+      );
+    });
+
+    it('publishes the status segment when it changes, and only then', async () => {
+      void start();
+      await vi.waitFor(() =>
+        expect(updateMultiplexer).toHaveBeenCalledWith({
+          renames: [],
+          status: {
+            '@shep_status': '#[fg=yellow,bold]◆ 1 needs you#[default]',
+            '@shep_needs_you': '1',
+          },
+        })
+      );
+      await new Promise((r) => setTimeout(r, REFRESH_MS * 4));
+      expect(updateMultiplexer).toHaveBeenCalledTimes(1);
+
+      loadSnapshot.mockResolvedValue(snapshotOf());
+      await vi.waitFor(() =>
+        expect(updateMultiplexer).toHaveBeenLastCalledWith(
+          expect.objectContaining({ status: expect.objectContaining({ '@shep_needs_you': '0' }) })
+        )
+      );
     });
   });
 

@@ -1,5 +1,5 @@
 /**
- * Feature console view (specs 142, 143, 145).
+ * Feature console view (specs 142, 143, 145, 146).
  *
  * A pi-tui Component that draws one full screen: header, needs-you strip,
  * roster, a details or log pane, a status line and a key bar. It holds only
@@ -185,6 +185,7 @@ export class FeatureConsoleView implements Component {
     if (action) return this.act(action);
     const row = this.selectedRow;
     if (key === ConsoleKey.CopyId && row) return this.deps.intents.copyId(row);
+    if (key === ConsoleKey.ControlCenter) return this.deps.intents.openControlCenter();
     const pane = PANE_KEYS[key];
     if (!pane || !row) return;
     const [content, placement] = pane;

@@ -1,12 +1,13 @@
 /**
- * TUI Command (specs 142, 143)
+ * TUI Command (specs 142, 143, 146)
  *
  * Opens the full-screen terminal feature console: every feature, live, with a
- * needs-you strip and keys to approve, reject, stop, resume and read logs, and
- * to open a feature's shell or followed log in a tmux / Zellij / WezTerm /
- * kitty pane.
+ * needs-you strip and keys to approve, reject, stop, resume and read logs, to
+ * open a feature's shell or followed log in a tmux / Zellij / WezTerm / kitty
+ * pane, and a window per active feature (the control center). `--status`
+ * prints the one-line summary for status bars instead.
  *
- * Usage: shep tui [--repo <path>] [--all] [--no-notify]
+ * Usage: shep tui [--repo <path>] [--all] [--no-notify] [--status [plain|tmux]]
  */
 
 import { resolve as resolvePath } from 'node:path';
@@ -17,6 +18,8 @@ import { GetFeatureConsoleSnapshotUseCase } from '@/application/use-cases/featur
 import { RunFeatureConsoleActionUseCase } from '@/application/use-cases/feature-console/run-feature-console-action.use-case.js';
 import { GetFeatureLogTailUseCase } from '@/application/use-cases/feature-console/get-feature-log-tail.use-case.js';
 import { OpenFeaturePaneUseCase } from '@/application/use-cases/feature-console/open-feature-pane.use-case.js';
+import { OpenControlCenterUseCase } from '@/application/use-cases/feature-console/open-control-center.use-case.js';
+import { UpdateMultiplexerStatusUseCase } from '@/application/use-cases/feature-console/update-multiplexer-status.use-case.js';
 import type { GetFeatureConsoleSnapshotInput } from '@/application/use-cases/feature-console/feature-console.types.js';
 import { normalizeRepositoryPath } from '@/domain/shared/repository-path.js';
 import {
@@ -26,6 +29,10 @@ import {
 import { FullscreenTerminal } from '../../tui/feature-console/fullscreen-terminal.js';
 import { runInline } from '../../tui/feature-console/run-inline.js';
 import { terminalNotification } from '../../tui/feature-console/terminal-notification.js';
+import {
+  StatusSegmentStyle,
+  formatStatusSegment,
+} from '../../tui/feature-console/status-segment.js';
 import { getTuiI18n } from '../../tui/i18n.js';
 import { getCliI18n } from '../i18n.js';
 import { messages } from '../ui/index.js';
@@ -35,7 +42,11 @@ interface TuiOptions {
   all?: boolean;
   /** Commander sets this to false for --no-notify. */
   notify: boolean;
+  /** `true` for a bare --status, else the style named. */
+  status?: string | true;
 }
+
+const STATUS_STYLES = Object.values(StatusSegmentStyle) as string[];
 
 /** Variables a pane must share with the console so its shep commands read the same data. */
 const PANE_ENVIRONMENT_VARIABLES = ['SHEP_HOME'] as const;
@@ -46,6 +57,8 @@ interface ConsoleUseCases {
   action: Pick<RunFeatureConsoleActionUseCase, 'execute'>;
   logTail: Pick<GetFeatureLogTailUseCase, 'execute'>;
   pane: Pick<OpenFeaturePaneUseCase, 'execute'>;
+  controlCenter: Pick<OpenControlCenterUseCase, 'execute'>;
+  multiplexerStatus: Pick<UpdateMultiplexerStatusUseCase, 'execute'>;
 }
 
 /** Seams for tests; production uses the defaults. */
@@ -59,6 +72,7 @@ export interface TuiCommandOptions {
   shepCommand?: () => string[];
   environment?: () => Readonly<Record<string, string | undefined>>;
   runInline?: FeatureConsoleAppDeps['runInline'];
+  out?: (line: string) => void;
 }
 
 const defaults: Required<TuiCommandOptions> = {
@@ -68,6 +82,8 @@ const defaults: Required<TuiCommandOptions> = {
     action: container.resolve(RunFeatureConsoleActionUseCase),
     logTail: container.resolve(GetFeatureLogTailUseCase),
     pane: container.resolve(OpenFeaturePaneUseCase),
+    controlCenter: container.resolve(OpenControlCenterUseCase),
+    multiplexerStatus: container.resolve(UpdateMultiplexerStatusUseCase),
   }),
   runConsole: runFeatureConsole,
   createTerminal: () => new FullscreenTerminal(new ProcessTerminal()),
@@ -75,6 +91,7 @@ const defaults: Required<TuiCommandOptions> = {
   shepCommand: () => [process.execPath, ...process.execArgv, process.argv[1]],
   environment: () => process.env,
   runInline: (plan) => runInline(plan),
+  out: (line) => process.stdout.write(`${line}\n`),
 };
 
 export function createTuiCommand(overrides: TuiCommandOptions = {}): Command {
@@ -85,6 +102,7 @@ export function createTuiCommand(overrides: TuiCommandOptions = {}): Command {
     .option('--repo <path>', t('cli:commands.tui.repoOption'))
     .option('--all', t('cli:commands.tui.allOption'))
     .option('--no-notify', t('cli:commands.tui.noNotifyOption'))
+    .option('--status [style]', t('cli:commands.tui.statusOption'))
     .addHelpText(
       'after',
       `
@@ -93,19 +111,16 @@ Examples:
   $ shep tui --repo .        Only features of the current repository
   $ shep tui --all           Include archived features
   $ shep tui --no-notify     No bell or terminal notification when a feature needs you
+  $ shep tui --status tmux   One line for tmux's status-right, then exit
 
 Inside tmux, Zellij, WezTerm or kitty, t opens a shell and f follows the agent
 log in a split pane (T / F: a new window). Set SHEP_MULTIPLEXER=none to run
-them in this terminal instead.`
+them in this terminal instead. C opens a window per active feature, named with
+its state. Inside tmux the console sets @shep_status for status-right:
+  set -g status-right '#{@shep_status}'`
     )
     .action(async (options: TuiOptions) => {
       const tuiT = getTuiI18n().t;
-      if (!deps.isInteractive()) {
-        deps.err(tuiT('tui:console.notTty'));
-        process.exitCode = 1;
-        return;
-      }
-
       const useCases = deps.resolveUseCases();
       const scope: GetFeatureConsoleSnapshotInput = {
         ...(options.repo && {
@@ -113,6 +128,26 @@ them in this terminal instead.`
         }),
         ...(options.all && { includeArchived: true }),
       };
+
+      if (options.status !== undefined) {
+        const style = options.status === true ? StatusSegmentStyle.Plain : options.status;
+        if (!STATUS_STYLES.includes(style)) {
+          deps.err(
+            t('cli:commands.tui.unknownStatusStyle', { style, styles: STATUS_STYLES.join(', ') })
+          );
+          process.exitCode = 1;
+          return;
+        }
+        const { summary } = await useCases.snapshot.execute(scope);
+        deps.out(formatStatusSegment(summary, tuiT, style as StatusSegmentStyle));
+        return;
+      }
+
+      if (!deps.isInteractive()) {
+        deps.err(tuiT('tui:console.notTty'));
+        process.exitCode = 1;
+        return;
+      }
 
       const env = deps.environment();
       const paneEnvironment = Object.fromEntries(
@@ -136,6 +171,13 @@ them in this terminal instead.`
             environment: paneEnvironment,
           }),
         runInline: deps.runInline,
+        openControlCenter: (features) =>
+          useCases.controlCenter.execute({
+            features,
+            shepCommand: deps.shepCommand(),
+            environment: paneEnvironment,
+          }),
+        updateMultiplexer: (input) => useCases.multiplexerStatus.execute(input),
         ...(options.notify && {
           notify: (message: string) =>
             terminal.write(terminalNotification(env, NOTIFICATION_TITLE, message)),

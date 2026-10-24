@@ -63,6 +63,10 @@ const CONSOLE_USE_CASE_PATHS = {
     '../../../../packages/core/src/application/use-cases/feature-console/get-feature-log-tail.use-case.js',
   OpenFeaturePaneUseCase:
     '../../../../packages/core/src/application/use-cases/feature-console/open-feature-pane.use-case.js',
+  OpenControlCenterUseCase:
+    '../../../../packages/core/src/application/use-cases/feature-console/open-control-center.use-case.js',
+  UpdateMultiplexerStatusUseCase:
+    '../../../../packages/core/src/application/use-cases/feature-console/update-multiplexer-status.use-case.js',
 } as const;
 
 describe('Feature console DI registrations', () => {
