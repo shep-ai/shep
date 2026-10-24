@@ -1,5 +1,5 @@
 /**
- * runFeatureConsole Unit Tests (specs 142, 143)
+ * runFeatureConsole Unit Tests (specs 142, 143, 145)
  *
  * The app wires the view to the use cases: it polls the snapshot (never two
  * reads at once), runs actions and shows their result, keeps the log pane
@@ -265,6 +265,20 @@ describe('runFeatureConsole', () => {
       await vi.waitFor(() => expect(terminal.started).toBe(true));
       await vi.waitFor(() => expect(terminal.output.length).toBeGreaterThan(written));
     });
+  });
+
+  it('copies the selected feature id to the clipboard over OSC 52 (spec 145)', async () => {
+    void start();
+    await vi.waitFor(() => expect(screenText()).toContain('Billing UI'));
+
+    terminal.type('c');
+
+    await vi.waitFor(() =>
+      expect(screenText()).toContain('Copied the id of Billing UI: Billing UI-id')
+    );
+    expect(terminal.output).toContain(
+      `\x1b]52;c;${Buffer.from('Billing UI-id').toString('base64')}\x07`
+    );
   });
 
   describe('needs-you notifications (spec 143)', () => {

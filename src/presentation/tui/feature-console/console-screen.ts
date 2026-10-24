@@ -23,6 +23,7 @@ import {
   renderLog,
 } from './console-panes.js';
 import { renderHeader, renderStrip } from './console-render.js';
+import type { CommandPalette } from './console-palette.js';
 import type { ConsoleRoster } from './console-roster.js';
 import { renderStatusLine } from './console-status.js';
 
@@ -32,6 +33,7 @@ export enum ConsoleMode {
   Reject = 'reject',
   ConfirmStop = 'confirm-stop',
   Filter = 'filter',
+  Palette = 'palette',
 }
 
 export enum ConsolePane {
@@ -50,6 +52,7 @@ export interface ConsoleFrame {
   log: FeatureLogTail | undefined;
   feedback: Input;
   filter: Input;
+  palette: CommandPalette;
   busy: string | undefined;
   refreshError: string | undefined;
   result: FeatureConsoleActionResult | undefined;
@@ -74,6 +77,7 @@ export function renderConsoleFrame(
 
 function renderBody(frame: ConsoleFrame, t: TFunction, width: number, height: number): string[] {
   if (frame.mode === ConsoleMode.Help) return renderHelp(t);
+  if (frame.mode === ConsoleMode.Palette) return frame.palette.render(width, height, t);
   if (frame.roster.allRows.length === 0 && frame.snapshot) return renderEmpty(t);
   const selected = frame.roster.selected;
   return composeBody(
@@ -95,7 +99,9 @@ function renderStatus(frame: ConsoleFrame, t: TFunction, width: number): string 
       ? { label: t(`${NS}.reject.prompt`, { name }), input: frame.feedback }
       : frame.mode === ConsoleMode.Filter
         ? { label: '/', input: frame.filter }
-        : undefined;
+        : frame.mode === ConsoleMode.Palette
+          ? { label: ':', input: frame.palette.input }
+          : undefined;
   return renderStatusLine(
     {
       prompt,
@@ -118,5 +124,6 @@ function renderStatus(frame: ConsoleFrame, t: TFunction, width: number): string 
 function renderHint(frame: ConsoleFrame, t: TFunction): string {
   if (frame.mode === ConsoleMode.Reject) return paint.muted(` ${t(`${NS}.reject.hint`)}`);
   if (frame.mode === ConsoleMode.Filter) return paint.muted(` ${t(`${NS}.filter.hint`)}`);
+  if (frame.mode === ConsoleMode.Palette) return paint.muted(` ${t(`${NS}.palette.hint`)}`);
   return renderKeyBar(frame.roster.selected, t);
 }

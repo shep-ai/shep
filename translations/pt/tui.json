@@ -233,7 +233,9 @@
       "quit": "sair",
       "shell": "shell",
       "follow": "seguir log",
-      "filter": "filtrar"
+      "filter": "filtrar",
+      "palette": "comandos",
+      "copyId": "copiar id"
     },
     "reject": {
       "prompt": "Feedback para {{name}}:",
@@ -267,7 +269,9 @@
       "quit": "q / ctrl+c   sair",
       "shell": "t / T   shell no worktree (dividido / nova janela)",
       "follow": "f / F   seguir o log do agente (dividido / nova janela)",
-      "filter": "/   filtrar as funcionalidades (esc limpa)"
+      "filter": "/   filtrar as funcionalidades (esc limpa)",
+      "palette": ":/ctrl+p   paleta de comandos",
+      "copyId": "c   copiar o id da funcionalidade"
     },
     "notTty": "shep tui precisa de um terminal interativo. Em scripts e pipes, use \"shep feat ls\".",
     "filter": {
@@ -285,6 +289,30 @@
     "windowTitle": {
       "attention": "shep · precisam de você: {{count}}",
       "idle": "shep tui"
-    }
+    },
+    "palette": {
+      "title": "Comandos",
+      "count": "{{count}} disponíveis",
+      "noMatch": "Nenhum comando corresponde",
+      "hint": "digite para buscar · ↑↓ escolher · enter executar · esc fechar",
+      "commands": {
+        "approve": "Aprovar o portão",
+        "reject": "Rejeitar o portão com feedback",
+        "stop": "Parar a execução",
+        "resume": "Retomar a execução",
+        "shell": "Abrir um shell ao lado do console",
+        "shell-window": "Abrir um shell em nova janela",
+        "follow-log": "Seguir o log do agente ao lado do console",
+        "follow-log-window": "Seguir o log do agente em nova janela",
+        "details": "Mostrar detalhes",
+        "log": "Mostrar o log",
+        "copy-id": "Copiar o id da funcionalidade",
+        "filter": "Filtrar funcionalidades",
+        "clear-filter": "Limpar o filtro",
+        "help": "Mostrar teclas",
+        "quit": "Sair"
+      }
+    },
+    "copied": "Id de {{name}} copiado: {{id}}"
   }
 }

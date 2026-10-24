@@ -98,6 +98,8 @@ const HELP_KEYS = [
   'shell',
   'follow',
   'filter',
+  'copyId',
+  'palette',
   'help',
   'quit',
 ] as const;
@@ -138,6 +140,7 @@ export function renderKeyBar(row: FeatureConsoleRow | undefined, t: TFunction): 
     ...(row ? [item('t', t(`${NS}.keys.shell`))] : []),
     ...(row?.runId ? [item('f', t(`${NS}.keys.follow`))] : []),
     item('/', t(`${NS}.keys.filter`)),
+    item('ctrl+p', t(`${NS}.keys.palette`)),
     item('?', t(`${NS}.keys.help`)),
     item('q', t(`${NS}.keys.quit`)),
   ];

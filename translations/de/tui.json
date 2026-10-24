@@ -233,7 +233,9 @@
       "quit": "beenden",
       "shell": "Shell",
       "follow": "Log folgen",
-      "filter": "filtern"
+      "filter": "filtern",
+      "palette": "Befehle",
+      "copyId": "ID kopieren"
     },
     "reject": {
       "prompt": "Feedback für {{name}}:",
@@ -267,7 +269,9 @@
       "quit": "q / Strg+C   beenden",
       "shell": "t / T   Shell im Worktree (geteilt / neues Fenster)",
       "follow": "f / F   dem Agent-Log folgen (geteilt / neues Fenster)",
-      "filter": "/   Features filtern (Esc löscht)"
+      "filter": "/   Features filtern (Esc löscht)",
+      "palette": ":/Strg+P   Befehlspalette",
+      "copyId": "c   Feature-ID kopieren"
     },
     "notTty": "shep tui braucht ein interaktives Terminal. In Skripten und Pipes nutze \"shep feat ls\".",
     "filter": {
@@ -285,6 +289,30 @@
     "windowTitle": {
       "attention": "shep · braucht dich: {{count}}",
       "idle": "shep tui"
-    }
+    },
+    "palette": {
+      "title": "Befehle",
+      "count": "{{count}} verfügbar",
+      "noMatch": "Kein Befehl passt",
+      "hint": "tippen zum Suchen · ↑↓ wählen · Enter ausführen · Esc schließen",
+      "commands": {
+        "approve": "Gate freigeben",
+        "reject": "Gate mit Feedback ablehnen",
+        "stop": "Lauf stoppen",
+        "resume": "Lauf fortsetzen",
+        "shell": "Shell neben der Konsole öffnen",
+        "shell-window": "Shell in neuem Fenster öffnen",
+        "follow-log": "Agent-Log neben der Konsole verfolgen",
+        "follow-log-window": "Agent-Log in neuem Fenster verfolgen",
+        "details": "Details anzeigen",
+        "log": "Log anzeigen",
+        "copy-id": "Feature-ID kopieren",
+        "filter": "Features filtern",
+        "clear-filter": "Filter löschen",
+        "help": "Tasten anzeigen",
+        "quit": "Beenden"
+      }
+    },
+    "copied": "ID von {{name}} kopiert: {{id}}"
   }
 }

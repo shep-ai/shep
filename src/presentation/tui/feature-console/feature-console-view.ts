@@ -1,5 +1,5 @@
 /**
- * Feature console view (specs 142, 143).
+ * Feature console view (specs 142, 143, 145).
  *
  * A pi-tui Component that draws one full screen: header, needs-you strip,
  * roster, a details or log pane, a status line and a key bar. It holds only
@@ -8,13 +8,8 @@
  * changes something becomes an intent the app carries out through a use case.
  */
 
-import type { TFunction } from 'i18next';
 import { Input, matchesKey, type Component } from '@mariozechner/pi-tui';
-import {
-  FeatureConsoleAction,
-  FeaturePaneContent,
-  type FeaturePanePlacement,
-} from '@/domain/generated/output.js';
+import { FeatureConsoleAction, FeaturePaneContent } from '@/domain/generated/output.js';
 import type {
   FeatureConsoleActionResult,
   FeatureConsoleRow,
@@ -22,30 +17,12 @@ import type {
   FeatureLogTail,
 } from '@/application/use-cases/feature-console/feature-console.types.js';
 import { ConsoleKey, DIRECT_ACTIONS, PANE_KEYS, resolveConsoleKey } from './console-keys.js';
+import type { FeatureConsoleViewDeps } from './console-intents.js';
+import { CommandPalette, paletteEntries } from './console-palette.js';
 import { ConsoleRoster } from './console-roster.js';
 import { CHROME_LINES, ConsoleMode, ConsolePane, renderConsoleFrame } from './console-screen.js';
 
-/** What the view asks the app to do. */
-export interface FeatureConsoleIntents {
-  runAction(row: FeatureConsoleRow, action: FeatureConsoleAction, feedback?: string): void;
-  /** Load (and keep refreshing) the log of this feature; undefined stops it. */
-  showLog(row: FeatureConsoleRow | undefined): void;
-  /** Open a shell or the followed log of this feature in a terminal pane. */
-  openPane(
-    row: FeatureConsoleRow,
-    content: FeaturePaneContent,
-    placement: FeaturePanePlacement
-  ): void;
-  quit(): void;
-  requestRender(): void;
-}
-
-export interface FeatureConsoleViewDeps {
-  t: TFunction;
-  /** Terminal height; the view always renders exactly this many lines. */
-  rows: () => number;
-  intents: FeatureConsoleIntents;
-}
+export type { FeatureConsoleIntents, FeatureConsoleViewDeps } from './console-intents.js';
 
 export class FeatureConsoleView implements Component {
   private snapshot: FeatureConsoleSnapshot | undefined;
@@ -58,6 +35,7 @@ export class FeatureConsoleView implements Component {
   private refreshError: string | undefined;
   private readonly feedback = new Input();
   private readonly filter = new Input();
+  private readonly palette = new CommandPalette();
 
   constructor(private readonly deps: FeatureConsoleViewDeps) {
     this.feedback.onSubmit = (value) => this.submitReject(value);
@@ -107,6 +85,7 @@ export class FeatureConsoleView implements Component {
 
   handleInput(data: string): void {
     const key = resolveConsoleKey(data);
+    if (this.mode === ConsoleMode.Palette) return this.handlePaletteInput(data, key);
     const prompt =
       this.mode === ConsoleMode.Reject
         ? this.feedback
@@ -136,8 +115,30 @@ export class FeatureConsoleView implements Component {
     this.handleBrowseKey(key);
   }
 
+  private handlePaletteInput(data: string, key: ConsoleKey | undefined): void {
+    if (key === ConsoleKey.Quit && matchesKey(data, 'ctrl+c')) return this.deps.intents.quit();
+    const result = this.palette.handleInput(data);
+    if (!result.close && !result.run) return;
+    this.palette.close();
+    this.mode = ConsoleMode.Browse;
+    // The palette replays the key: one path per command, with the key's own guards.
+    if (result.run) this.handleBrowseKey(result.run);
+  }
+
   private handleBrowseKey(key: ConsoleKey): void {
     switch (key) {
+      case ConsoleKey.Palette:
+        this.palette.open(
+          paletteEntries(
+            { row: this.selectedRow, filterActive: this.roster.query.trim() !== '' },
+            this.deps.t
+          )
+        );
+        this.mode = ConsoleMode.Palette;
+        return;
+      case ConsoleKey.ClearFilter:
+        this.filter.setValue('');
+        return this.applyFilter();
       case ConsoleKey.Up:
         return this.moveSelection(-1);
       case ConsoleKey.Down:
@@ -182,8 +183,9 @@ export class FeatureConsoleView implements Component {
   private runKey(key: ConsoleKey): void {
     const action = DIRECT_ACTIONS[key];
     if (action) return this.act(action);
-    const pane = PANE_KEYS[key];
     const row = this.selectedRow;
+    if (key === ConsoleKey.CopyId && row) return this.deps.intents.copyId(row);
+    const pane = PANE_KEYS[key];
     if (!pane || !row) return;
     const [content, placement] = pane;
     if (content === FeaturePaneContent.Log && !row.runId) return;
@@ -258,6 +260,7 @@ export class FeatureConsoleView implements Component {
         log: this.log,
         feedback: this.feedback,
         filter: this.filter,
+        palette: this.palette,
         busy: this.busy,
         refreshError: this.refreshError,
         result: this.status,

@@ -207,6 +207,14 @@ alerts → terminal-notification.ts for features that start needing the user
   already uses: the terminal knows whether it is focused and which tab rang. The first snapshot
   never rings.
 
+### Command palette (spec 145)
+
+`ctrl+p` or `:` lists every console command that applies to the selected feature
+(`console-palette.ts`), with its key. An entry *is* a `ConsoleKey`: enter replays that key through
+the view's browse handler, so the palette runs the same guarded path as the key and can never
+offer an action the core did not put in `row.actions`. Adding a console command is one row in
+the palette table. `c` copies the feature id over OSC 52 (works over ssh and through tmux).
+
 The tools this follows (workmux, oh-my-pi, claude-squad, Claude Code agent teams) are compared in
 [docs/competitors/agent-harness-tui.md](../competitors/agent-harness-tui.md).
 

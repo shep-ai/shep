@@ -1,0 +1,42 @@
+name: tui-command-palette
+summary: >
+  A palette is a list of console keys with labels. Running an entry replays its key, so there is
+  one code path per command.
+
+relatedFeatures:
+  - 142-tui-feature-console
+technologies:
+  - '@mariozechner/pi-tui'
+relatedLinks:
+  - title: docs/competitors/agent-harness-tui.md
+    url: ../../docs/competitors/agent-harness-tui.md
+
+decisions:
+  - title: What a palette entry runs
+    chosen: The ConsoleKey the entry stands for, through the view's browse-key handler
+    rejected:
+      - A second set of handlers for the palette (two paths that can disagree about what is allowed)
+    rationale: >
+      The view already guards every key (offers(), runId for logs). Replaying the key keeps those
+      guards the single source of truth.
+  - title: Matching
+    chosen: pi-tui fuzzyFilter over "label key"
+    rejected:
+      - Substring matching (filterConsoleRows style; "apr" would not find "approve the gate")
+    rationale: Subsequence matching with a score is what command palettes do; pi-tui ships it.
+  - title: Clipboard
+    chosen: OSC 52 written to the terminal
+    rejected:
+      - pbcopy / xclip / clip.exe (per-OS binaries, absent over ssh)
+    rationale: >
+      OSC 52 works over ssh and through tmux (set-clipboard), in iTerm2, WezTerm, kitty,
+      Ghostty, Windows Terminal and Alacritty.
+
+content: |
+  ## Status
+
+  - **Phase:** Research
+  - **Updated:** 2026-10-24
+
+  Crush opens its palette with ctrl+p; agent-deck filters with `/` and status sigils. Shep
+  already uses `/` for the roster filter, so the palette takes ctrl+p and vim's `:`.

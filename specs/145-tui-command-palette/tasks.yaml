@@ -1,0 +1,73 @@
+name: tui-command-palette
+summary: Task breakdown for 145-tui-command-palette
+
+relatedFeatures:
+  - 142-tui-feature-console
+technologies:
+  - TypeScript
+relatedLinks: []
+
+tasks:
+  - id: task-1
+    title: Palette entries, availability and fuzzy filter
+    description: console-palette.ts with the entry table and a CommandPalette that filters, moves and renders.
+    state: Done
+    dependencies: []
+    acceptanceCriteria:
+      - Only applicable entries listed; fuzzy filter best first; selection clamps
+    tdd:
+      red:
+        - console-palette.test.ts
+      green:
+        - Implement
+      refactor: []
+    estimatedEffort: S
+  - id: task-2
+    title: OSC 52 clipboard
+    description: terminal-clipboard.ts encodes text as OSC 52.
+    state: Done
+    dependencies: []
+    acceptanceCriteria:
+      - Base64 payload, BEL terminator
+    tdd:
+      red:
+        - terminal-clipboard.test.ts
+      green:
+        - Implement
+      refactor: []
+    estimatedEffort: S
+  - id: task-3
+    title: Palette mode in the view, copy in the app
+    description: ctrl+p and ':' open the palette; enter replays the entry's key; c copies the id.
+    state: Done
+    dependencies:
+      - task-1
+      - task-2
+    acceptanceCriteria:
+      - Running an entry equals pressing its key
+    tdd:
+      red:
+        - view and app tests
+      green:
+        - Implement
+      refactor:
+        - Keep the view under 300 lines
+    estimatedEffort: M
+  - id: task-4
+    title: Translations and docs
+    description: Nine locales, CLI reference keys table, e2e palette check.
+    state: Done
+    dependencies:
+      - task-3
+    acceptanceCriteria:
+      - i18n completeness passes
+    tdd: null
+    estimatedEffort: S
+
+totalEstimate: M
+
+content: |
+  ## Summary
+
+  Four tasks: palette module, clipboard, view and app wiring, then translations and docs, each
+  RED-GREEN-REFACTOR.

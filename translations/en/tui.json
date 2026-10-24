@@ -233,7 +233,9 @@
       "quit": "quit",
       "shell": "shell",
       "follow": "follow log",
-      "filter": "filter"
+      "filter": "filter",
+      "palette": "palette",
+      "copyId": "copy id"
     },
     "reject": {
       "prompt": "Feedback for {{name}}:",
@@ -267,7 +269,9 @@
       "quit": "q / ctrl+c   quit",
       "shell": "t / T   shell in the worktree (split / new window)",
       "follow": "f / F   follow the agent log (split / new window)",
-      "filter": "/   filter the features (esc clears)"
+      "filter": "/   filter the features (esc clears)",
+      "palette": ":/ctrl+p   command palette",
+      "copyId": "c   copy the feature id"
     },
     "notTty": "shep tui needs an interactive terminal. In scripts and pipes, use \"shep feat ls\".",
     "filter": {
@@ -285,6 +289,30 @@
     "windowTitle": {
       "attention": "shep · needs you: {{count}}",
       "idle": "shep tui"
-    }
+    },
+    "palette": {
+      "title": "Commands",
+      "count": "{{count}} available",
+      "noMatch": "No command matches",
+      "hint": "type to search · ↑↓ choose · enter run · esc close",
+      "commands": {
+        "approve": "Approve the gate",
+        "reject": "Reject the gate with feedback",
+        "stop": "Stop the run",
+        "resume": "Resume the run",
+        "shell": "Open a shell beside the console",
+        "shell-window": "Open a shell in a new window",
+        "follow-log": "Follow the agent log beside the console",
+        "follow-log-window": "Follow the agent log in a new window",
+        "details": "Show details",
+        "log": "Show the log",
+        "copy-id": "Copy the feature id",
+        "filter": "Filter the features",
+        "clear-filter": "Clear the filter",
+        "help": "Show keys",
+        "quit": "Quit"
+      }
+    },
+    "copied": "Copied the id of {{name}}: {{id}}"
   }
 }

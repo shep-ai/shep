@@ -1,5 +1,5 @@
 /**
- * Feature console app (specs 142, 143).
+ * Feature console app (specs 142, 143, 145).
  *
  * Wires the view to the core: polls the snapshot, runs actions, keeps the log
  * pane fresh, opens terminal panes (stepping aside for an inline command when
@@ -24,6 +24,7 @@ import type {
   FeatureLogTail,
 } from '@/application/use-cases/feature-console/feature-console.types.js';
 import { FeatureConsoleView, type FeatureConsoleIntents } from './feature-console-view.js';
+import { clipboardSequence } from './terminal-clipboard.js';
 
 /** How often the console re-reads every feature. */
 export const DEFAULT_REFRESH_INTERVAL_MS = 2000;
@@ -80,6 +81,14 @@ export function runFeatureConsole(deps: FeatureConsoleAppDeps): Promise<void> {
         if (row) void refreshLog();
       },
       openPane: (row, content, placement) => void openPane(row, content, placement),
+      copyId: (row) => {
+        deps.terminal.write(clipboardSequence(row.featureId));
+        view.setStatus({
+          ok: true,
+          message: deps.t('tui:console.copied', { name: row.name, id: row.featureId }),
+        });
+        render();
+      },
       quit: () => finish(),
       requestRender: () => tui.requestRender(),
     };

@@ -1,5 +1,5 @@
 /**
- * FeatureConsoleView Unit Tests (specs 142, 143)
+ * FeatureConsoleView Unit Tests (specs 142, 143, 145)
  *
  * The view is a pi-tui Component: render(width) must return exactly one screen
  * of lines (the console runs on the alternate screen), never wider than the
@@ -45,6 +45,7 @@ const KEY = {
   enter: '\r',
   escape: ESC,
   ctrlC: '\x03',
+  ctrlP: '\x10',
 } as const;
 
 // eslint-disable-next-line no-control-regex
@@ -118,6 +119,7 @@ describe('FeatureConsoleView', () => {
       runAction: vi.fn(),
       showLog: vi.fn(),
       openPane: vi.fn(),
+      copyId: vi.fn(),
       quit: vi.fn(),
       requestRender: vi.fn(),
     };
@@ -560,6 +562,73 @@ describe('FeatureConsoleView', () => {
     it('still quits on ctrl+c while filtering', () => {
       press('/', KEY.ctrlC);
       expect(intents.quit).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('command palette (spec 145)', () => {
+    it('opens with ctrl+p or :, listing the commands the feature allows with their keys', () => {
+      view.setSnapshot(snapshot([gateRow('aaaa1111')]));
+      for (const key of [KEY.ctrlP, ':']) {
+        press(key);
+        const text = screen().join('\n');
+        expect(text).toContain('Commands');
+        expect(text).toContain('Approve the gate');
+        expect(text).not.toContain('Stop the run');
+        press(KEY.escape);
+        expect(screen().join('\n')).not.toContain('Approve the gate');
+      }
+    });
+
+    it('runs the chosen command exactly as its key would', () => {
+      view.setSnapshot(snapshot([gateRow('aaaa1111')]));
+      press(':', 'a', 'p', 'p', 'r', KEY.enter);
+      expect(intents.runAction).toHaveBeenCalledWith(
+        expect.objectContaining({ shortId: 'aaaa1111' }),
+        FeatureConsoleAction.Approve,
+        undefined
+      );
+
+      press(':', 's', 'h', 'e', 'l', 'l', KEY.enter);
+      expect(intents.openPane).toHaveBeenCalledWith(
+        expect.objectContaining({ shortId: 'aaaa1111' }),
+        FeaturePaneContent.Shell,
+        FeaturePanePlacement.Split
+      );
+    });
+
+    it('opens the reject prompt from the palette like r does', () => {
+      view.setSnapshot(snapshot([gateRow('aaaa1111')]));
+      press(':', 'r', 'e', 'j', 'e', 'c', 't', KEY.enter);
+      expect(screen().at(-2)).toContain('Feedback for Feature aaaa1111');
+    });
+
+    it('treats letters as the query, and ctrl+c still quits', () => {
+      view.setSnapshot(snapshot([gateRow('aaaa1111')]));
+      press(':', 'q');
+      expect(intents.quit).not.toHaveBeenCalled();
+      press(KEY.ctrlC);
+      expect(intents.quit).toHaveBeenCalledTimes(1);
+    });
+
+    it('clears an active filter from the palette', () => {
+      view.setSnapshot(snapshot([row('aaaa1111', { name: 'Dark mode' }), row('bbbb2222')]));
+      press('/', 'd', 'a', 'r', 'k', KEY.enter);
+      expect(screen().at(-2)).toContain('1 of 2');
+      press(':', 'c', 'l', 'e', 'a', 'r', KEY.enter);
+      expect(screen().at(-2)).not.toContain('1 of 2');
+    });
+
+    it('copies the selected feature id with c', () => {
+      view.setSnapshot(snapshot([row('aaaa1111')]));
+      press('c');
+      expect(intents.copyId).toHaveBeenCalledWith(expect.objectContaining({ shortId: 'aaaa1111' }));
+    });
+
+    it('lists the palette in the key bar and in help', () => {
+      view.setSnapshot(snapshot([row('aaaa1111')]));
+      expect(screen(220).at(-1)).toContain('ctrl+p palette');
+      press('?');
+      expect(screen().join('\n')).toContain('command palette');
     });
   });
 

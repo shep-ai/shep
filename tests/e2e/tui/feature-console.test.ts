@@ -1,5 +1,5 @@
 /**
- * TUI E2E: the terminal feature console (specs 142, 143)
+ * TUI E2E: the terminal feature console (specs 142, 143, 145)
  *
  * Drives the real `shep tui` in a pseudo-terminal and reads the screen
  * through a headless xterm, exactly as a user's terminal would show it.
@@ -165,6 +165,27 @@ describe('TUI: feature console', { timeout: MULTI_STEP_TEST_TIMEOUT_MS * 3 }, ()
         !text.includes('No feature matches') &&
         FEATURE_NAME.test(text.split('\n').slice(2).join('\n')),
       'the roster back',
+      STEP_TIMEOUT_MS
+    );
+    screen.press('q');
+    expect((await screen.exited).exitCode).toBe(0);
+  });
+
+  it('opens the command palette with ctrl+p and runs a command from it (spec 145)', async () => {
+    screen = spawnTui(shepHome);
+    await screen.waitForText('No features yet', START_TIMEOUT_MS);
+
+    screen.press('\x10');
+    await screen.waitForText('Commands', STEP_TIMEOUT_MS);
+    for (const ch of 'keys') screen.press(ch);
+    await screen.waitForText('Show keys', STEP_TIMEOUT_MS);
+    screen.press('\r');
+    await screen.waitForText('reject the gate with feedback', STEP_TIMEOUT_MS);
+
+    screen.press('\x1b');
+    await screen.waitFor(
+      (text) => !text.includes('reject the gate with feedback'),
+      'help to close',
       STEP_TIMEOUT_MS
     );
     screen.press('q');

@@ -1,0 +1,61 @@
+name: tui-command-palette
+summary: Implementation plan for 145-tui-command-palette
+
+relatedFeatures:
+  - 142-tui-feature-console
+technologies:
+  - TypeScript
+relatedLinks: []
+
+phases:
+  - id: phase-1
+    name: 'Palette module and keys'
+    parallel: false
+    taskIds:
+      - task-1
+      - task-2
+  - id: phase-2
+    name: 'View, app and docs'
+    parallel: false
+    taskIds:
+      - task-3
+      - task-4
+
+filesToCreate:
+  - src/presentation/tui/feature-console/console-palette.ts
+  - src/presentation/tui/feature-console/terminal-clipboard.ts
+  - tests/unit/presentation/tui/feature-console/console-palette.test.ts
+  - tests/unit/presentation/tui/feature-console/terminal-clipboard.test.ts
+
+filesToModify:
+  - src/presentation/tui/feature-console/console-keys.ts
+  - src/presentation/tui/feature-console/feature-console-view.ts
+  - src/presentation/tui/feature-console/console-screen.ts
+  - src/presentation/tui/feature-console/feature-console.app.ts
+  - translations/*/tui.json
+  - docs/cli/commands.md
+
+architecture: |
+  Presentation only (Clean Architecture: no core change). The palette module owns the entry
+  table (key, chord, label), availability against the selected row, fuzzy filtering and
+  rendering. The view gains a Palette mode; enter closes it and calls the same handler a key
+  press does.
+
+risks:
+  - The palette grows with each later spec; entries are data, so adding one is one line
+
+content: |
+  ## Status
+
+  - **Phase:** Planning
+  - **Updated:** 2026-10-24
+
+  ## Clean Architecture
+
+  Presentation layer only. Which actions a feature allows still comes from the core snapshot
+  (`row.actions`); the palette only reads it.
+
+  ## TDD
+
+  RED first: palette availability and filtering, OSC 52 encoding, view palette mode (open,
+  filter, run, close, ctrl+c), app copy. Then GREEN, then REFACTOR (files under 300 lines).

@@ -121,6 +121,8 @@ a feature's shell or followed agent log in a split pane.
 | `t` / `T`         | Shell in the feature's worktree: split pane / new window |
 | `f` / `F`         | Follow the agent log (`shep feat logs -f`): split pane / new window |
 | `/`               | Filter the roster by every word typed; `enter` keeps it, `esc` clears it |
+| `ctrl+p` / `:`    | Command palette: every command that applies, fuzzy search, `enter` runs it |
+| `c`               | Copy the selected feature's full id to the clipboard (OSC 52) |
 | `?`               | Help                                               |
 | `q` / `ctrl+c`    | Quit and restore the terminal                      |
 

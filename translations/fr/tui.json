@@ -233,7 +233,9 @@
       "quit": "quitter",
       "shell": "shell",
       "follow": "suivre le log",
-      "filter": "filtrer"
+      "filter": "filtrer",
+      "palette": "commandes",
+      "copyId": "copier l’id"
     },
     "reject": {
       "prompt": "Retour pour {{name}} :",
@@ -267,7 +269,9 @@
       "quit": "q / ctrl+c   quitter",
       "shell": "t / T   shell dans le worktree (scindé / nouvelle fenêtre)",
       "follow": "f / F   suivre le log de l’agent (scindé / nouvelle fenêtre)",
-      "filter": "/   filtrer les fonctionnalités (échap efface)"
+      "filter": "/   filtrer les fonctionnalités (échap efface)",
+      "palette": ":/ctrl+p   palette de commandes",
+      "copyId": "c   copier l’id de la fonctionnalité"
     },
     "notTty": "shep tui a besoin d'un terminal interactif. Dans les scripts et les pipes, utilise \"shep feat ls\".",
     "filter": {
@@ -285,6 +289,30 @@
     "windowTitle": {
       "attention": "shep · vous attendent : {{count}}",
       "idle": "shep tui"
-    }
+    },
+    "palette": {
+      "title": "Commandes",
+      "count": "{{count}} disponibles",
+      "noMatch": "Aucune commande ne correspond",
+      "hint": "tapez pour chercher · ↑↓ choisir · entrée exécuter · échap fermer",
+      "commands": {
+        "approve": "Approuver la porte",
+        "reject": "Rejeter la porte avec un retour",
+        "stop": "Arrêter l’exécution",
+        "resume": "Reprendre l’exécution",
+        "shell": "Ouvrir un shell à côté de la console",
+        "shell-window": "Ouvrir un shell dans une nouvelle fenêtre",
+        "follow-log": "Suivre le log de l’agent à côté de la console",
+        "follow-log-window": "Suivre le log de l’agent dans une nouvelle fenêtre",
+        "details": "Afficher les détails",
+        "log": "Afficher le log",
+        "copy-id": "Copier l’id de la fonctionnalité",
+        "filter": "Filtrer les fonctionnalités",
+        "clear-filter": "Effacer le filtre",
+        "help": "Afficher les touches",
+        "quit": "Quitter"
+      }
+    },
+    "copied": "Id de {{name}} copié : {{id}}"
   }
 }

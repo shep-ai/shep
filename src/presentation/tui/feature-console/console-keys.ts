@@ -1,5 +1,5 @@
 /**
- * Feature console key map (specs 142, 143).
+ * Feature console key map (specs 142, 143, 145).
  *
  * Turns raw terminal input into the console's own key vocabulary. pi-tui
  * parses special keys in both legacy and Kitty keyboard protocol forms;
@@ -32,6 +32,9 @@ export enum ConsoleKey {
   FollowLog = 'follow-log',
   FollowLogWindow = 'follow-log-window',
   Filter = 'filter',
+  ClearFilter = 'clear-filter',
+  CopyId = 'copy-id',
+  Palette = 'palette',
   Help = 'help',
   Quit = 'quit',
   Escape = 'escape',
@@ -55,6 +58,8 @@ const PRINTABLE_KEYS: Readonly<Record<string, ConsoleKey>> = {
   f: ConsoleKey.FollowLog,
   F: ConsoleKey.FollowLogWindow,
   '/': ConsoleKey.Filter,
+  ':': ConsoleKey.Palette,
+  c: ConsoleKey.CopyId,
   '?': ConsoleKey.Help,
   q: ConsoleKey.Quit,
   y: ConsoleKey.Confirm,
@@ -71,6 +76,7 @@ const SPECIAL_KEYS: readonly [Parameters<typeof matchesKey>[1], ConsoleKey][] = 
   ['enter', ConsoleKey.Details],
   ['escape', ConsoleKey.Escape],
   ['ctrl+c', ConsoleKey.Quit],
+  ['ctrl+p', ConsoleKey.Palette],
 ];
 
 /** The console key for one input event, if it is one the console uses. */

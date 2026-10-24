@@ -1,0 +1,72 @@
+# Feature Specification (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: tui-command-palette
+number: 145
+branch: claude/nifty-knuth-adhvx0
+oneLiner: A ctrl+p command palette in shep tui that lists every console command with its key and runs it
+summary: >
+  `ctrl+p` or `:` in `shep tui` opens a palette of every command the selected feature allows
+  (approve, reject, stop, resume, open a shell or log pane, filter, copy the feature id, help,
+  quit, and the commands later specs add). Typing narrows it with fuzzy matching; enter runs the
+  command through exactly the path its key takes, so the palette can never do something the key
+  would refuse. `c` copies the selected feature's id to the clipboard over OSC 52.
+
+phase: Requirements
+sizeEstimate: M
+
+relatedFeatures:
+  - 142-tui-feature-console
+  - 143-tui-multiplexer-panes
+
+technologies:
+  - TypeScript
+  - '@mariozechner/pi-tui'
+  - Vitest
+
+relatedLinks:
+  - title: Agent harness TUI survey (item 6, command palette)
+    url: ../../docs/competitors/agent-harness-tui.md
+
+openQuestions: []
+
+content: |
+  ## Problem Statement
+
+  The console has more than fifteen keys and the key bar can show only a few at a time. Crush
+  (ctrl+p), Amp and agent-deck all answer this with a palette: one key that lists every command,
+  filterable by name, showing the key for next time.
+
+  ## Success Criteria
+
+  - [ ] `ctrl+p` and `:` open the palette; `esc` closes it; `ctrl+c` still quits
+  - [ ] The palette lists only commands that apply to the selected feature (actions the core
+        offers, a log only with a run, clear filter only with a filter)
+  - [ ] Typing filters with fuzzy matching (every word, best match first); ↑↓ choose; enter runs
+  - [ ] Running a palette entry takes the same path as pressing its key
+  - [ ] Each entry shows its key
+  - [ ] `c` (and the palette) copies the selected feature's full id via OSC 52 and says so
+  - [ ] All strings in nine locales; help and key bar list the palette key
+
+  ## Affected Areas
+
+  | Area | Impact | Reasoning |
+  | ---- | ------ | --------- |
+  | `src/presentation/tui/feature-console/console-palette.ts` | High | Entries, availability, fuzzy filter, rendering |
+  | `console-keys.ts`, `feature-console-view.ts`, `console-screen.ts` | Medium | Palette mode, new keys |
+  | `feature-console.app.ts`, `terminal-clipboard.ts` | Low | Copy over OSC 52 |
+  | `translations/*/tui.json` | Low | Labels in nine locales |
+
+  ## Dependencies
+
+  - pi-tui `fuzzyFilter` and `Input`
+  - Spec 142/143 console
+
+  ## Out of Scope
+
+  A keybindings file (rebinding keys). Settings are stored in the database, so a rebinding
+  feature needs its own TypeSpec model; the palette's entry list is the registry it would use.
+
+  ## Size Estimate
+
+  **M** - presentation only: one new module, a mode in the view, a clipboard helper, nine locales.
