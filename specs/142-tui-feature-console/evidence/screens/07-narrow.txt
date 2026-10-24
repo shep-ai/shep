@@ -1,0 +1,30 @@
+ shep · Features   3 needs you · 0 running · 0 waiting · 0 failed · 1 done
+ NEEDS YOU  ◆ Rate Limit The Public API · review merge   ◆ Billing Dashboard Charts · review me…
+  STATE        FEATURE                 REPO           PHASE         AGENT           TIME    COST
+▸ ◆ Needs you  Rate Limit The Public … acme-web       merge         Claude Code       0s       —
+  ◆ Needs you  Billing Dashboard Char… acme-web       merge         Claude Code       0s       —
+  ◆ Needs you  Add Password Reset Flow acme-web       merge         Claude Code       0s       —
+  ✓ Done       Dark Mode Toggle        acme-web       maintain      Claude Code       0s       —
+
+
+
+
+
+
+
+
+
+
+
+────────────────────────────────────────────────────────────────────────────────────────────────
+Rate Limit The Public API  ae315e71
+Repo      acme-web
+Branch    feat/rate-limit-the-public-api
+State     Needs you · merge
+Agent     Claude Code · claude-opus-5-5
+Time      0s
+Cost      —
+Tokens    0 in · 0 out
+
+
+ ↑↓ select  enter details  l log  a approve  r reject  ? help  q quit

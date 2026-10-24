@@ -1,0 +1,34 @@
+ shep · Features   2 needs you · 1 running · 0 waiting · 0 failed · 1 done
+ NEEDS YOU  ◆ Billing Dashboard Charts · review merge   ◆ Add Password Reset Flow · review merge
+  STATE        FEATURE           REPO           PHASE         AGENT           TIME    COST │ Rate Limit The Public API  ae315e71
+  ◆ Needs you  Billing Dashboar… acme-web       merge         Claude Code       0s       — │ Repo      acme-web
+  ◆ Needs you  Add Password Res… acme-web       merge         Claude Code       0s       — │ Branch    feat/rate-limit-the-public-api
+▸ ● Running    Rate Limit The P… acme-web       merge         Claude Code       0s       — │ State     Running · merge
+  ✓ Done       Dark Mode Toggle  acme-web       maintain      Claude Code       0s       — │ Agent     Claude Code · claude-opus-5-5
+                                                                                           │ Time      0s
+                                                                                           │ Cost      —
+                                                                                           │ Tokens    0 in · 0 out
+                                                                                           │
+                                                                                           │
+                                                                                           │
+                                                                                           │
+                                                                                           │
+                                                                                           │
+                                                                                           │
+                                                                                           │
+                                                                                           │
+                                                                                           │
+                                                                                           │
+                                                                                           │
+                                                                                           │
+                                                                                           │
+                                                                                           │
+                                                                                           │
+                                                                                           │
+                                                                                           │
+                                                                                           │
+                                                                                           │
+                                                                                           │
+                                                                                           │
+ ✓ Rejected and iterating
+ ↑↓ select  enter details  l log  s stop  ? help  q quit
