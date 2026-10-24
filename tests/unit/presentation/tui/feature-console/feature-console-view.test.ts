@@ -1,5 +1,5 @@
 /**
- * FeatureConsoleView Unit Tests (specs 142, 143, 145)
+ * FeatureConsoleView Unit Tests (specs 142, 143, 145, 146, 147)
  *
  * The view is a pi-tui Component: render(width) must return exactly one screen
  * of lines (the console runs on the alternate screen), never wider than the
@@ -121,6 +121,10 @@ describe('FeatureConsoleView', () => {
       openPane: vi.fn(),
       copyId: vi.fn(),
       openControlCenter: vi.fn(),
+      openChat: vi.fn(),
+      closeChat: vi.fn(),
+      sendChat: vi.fn(),
+      answerChat: vi.fn(),
       quit: vi.fn(),
       requestRender: vi.fn(),
     };
@@ -637,6 +641,74 @@ describe('FeatureConsoleView', () => {
       expect(screen(220).at(-1)).toContain('ctrl+p palette');
       press('?');
       expect(screen().join('\n')).toContain('command palette');
+    });
+  });
+
+  describe('chat (spec 147)', () => {
+    const chat = {
+      featureId: 'aaaa1111-0000-0000',
+      name: 'Feature aaaa1111',
+      directory: '/wt/a',
+      available: true,
+      busy: false,
+      entries: [],
+      questions: [],
+    };
+
+    it('attaches with o: the chat fills the screen and typing goes to the message line', () => {
+      view.setSnapshot(snapshot([row('aaaa1111')]));
+      press('o');
+      expect(intents.openChat).toHaveBeenCalledWith(
+        expect.objectContaining({ shortId: 'aaaa1111' })
+      );
+      view.setChat(chat);
+      for (const ch of 'hello q') press(ch);
+      const text = screen();
+      expect(text.join('\n')).toContain('Chat · Feature aaaa1111');
+      expect(text.at(-2)).toContain('> hello q');
+      expect(intents.quit).not.toHaveBeenCalled();
+
+      press(KEY.enter);
+      expect(intents.sendChat).toHaveBeenCalledWith(
+        expect.objectContaining({ shortId: 'aaaa1111' }),
+        'hello q'
+      );
+    });
+
+    it('answers the agent question through the app', () => {
+      view.setSnapshot(snapshot([row('aaaa1111')]));
+      press('o');
+      view.setChat({
+        ...chat,
+        questions: [
+          { header: 'Scope', question: 'Which?', options: [{ label: 'A' }], multiSelect: false },
+        ],
+      });
+      press('1');
+      expect(intents.answerChat).toHaveBeenCalledWith(
+        expect.objectContaining({ shortId: 'aaaa1111' }),
+        { 'Which?': 'A' }
+      );
+    });
+
+    it('detaches with esc back to the roster', () => {
+      view.setSnapshot(snapshot([row('aaaa1111')]));
+      press('o');
+      view.setChat(chat);
+      press(KEY.escape);
+      expect(intents.closeChat).toHaveBeenCalled();
+      expect(screen().join('\n')).not.toContain('Chat · Feature');
+      expect(intents.quit).not.toHaveBeenCalled();
+    });
+
+    it('is in the palette and the key bar, and needs a selected feature', () => {
+      view.setSnapshot(snapshot([]));
+      press('o');
+      expect(intents.openChat).not.toHaveBeenCalled();
+      view.setSnapshot(snapshot([row('aaaa1111')]));
+      expect(screen(240).at(-1)).toContain('o chat');
+      press(':', 'c', 'h', 'a', 't', KEY.enter);
+      expect(intents.openChat).toHaveBeenCalledTimes(1);
     });
   });
 

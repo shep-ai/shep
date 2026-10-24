@@ -1,6 +1,6 @@
 /**
  * What the feature console view asks of the app, and what it is built with
- * (specs 142, 143, 145, 146). Every intent is carried out through a use case.
+ * (specs 142, 143, 145, 146, 147). Every intent is carried out through a use case.
  */
 
 import type { TFunction } from 'i18next';
@@ -26,6 +26,12 @@ export interface FeatureConsoleIntents {
   copyId(row: FeatureConsoleRow): void;
   /** Open a multiplexer window for every active feature that has none (spec 146). */
   openControlCenter(): void;
+  /** Attach to this feature's agent chat and keep it fresh until closeChat (spec 147). */
+  openChat(row: FeatureConsoleRow): void;
+  closeChat(): void;
+  sendChat(row: FeatureConsoleRow, text: string): void;
+  /** Answers to the chat agent's question(s), keyed by question text. */
+  answerChat(row: FeatureConsoleRow, answers: Record<string, string>): void;
   quit(): void;
   requestRender(): void;
 }

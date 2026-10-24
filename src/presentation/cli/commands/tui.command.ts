@@ -1,5 +1,5 @@
 /**
- * TUI Command (specs 142, 143, 146)
+ * TUI Command (specs 142, 143, 146, 147)
  *
  * Opens the full-screen terminal feature console: every feature, live, with a
  * needs-you strip and keys to approve, reject, stop, resume and read logs, to
@@ -20,6 +20,10 @@ import { GetFeatureLogTailUseCase } from '@/application/use-cases/feature-consol
 import { OpenFeaturePaneUseCase } from '@/application/use-cases/feature-console/open-feature-pane.use-case.js';
 import { OpenControlCenterUseCase } from '@/application/use-cases/feature-console/open-control-center.use-case.js';
 import { UpdateMultiplexerStatusUseCase } from '@/application/use-cases/feature-console/update-multiplexer-status.use-case.js';
+import { GetFeatureChatUseCase } from '@/application/use-cases/feature-console/get-feature-chat.use-case.js';
+import { SendFeatureChatMessageUseCase } from '@/application/use-cases/feature-console/send-feature-chat-message.use-case.js';
+import { AnswerFeatureChatQuestionUseCase } from '@/application/use-cases/feature-console/answer-feature-chat-question.use-case.js';
+import { StopFeatureChatsUseCase } from '@/application/use-cases/feature-console/stop-feature-chats.use-case.js';
 import type { GetFeatureConsoleSnapshotInput } from '@/application/use-cases/feature-console/feature-console.types.js';
 import { normalizeRepositoryPath } from '@/domain/shared/repository-path.js';
 import {
@@ -59,6 +63,10 @@ interface ConsoleUseCases {
   pane: Pick<OpenFeaturePaneUseCase, 'execute'>;
   controlCenter: Pick<OpenControlCenterUseCase, 'execute'>;
   multiplexerStatus: Pick<UpdateMultiplexerStatusUseCase, 'execute'>;
+  chat: Pick<GetFeatureChatUseCase, 'execute'>;
+  sendChat: Pick<SendFeatureChatMessageUseCase, 'execute'>;
+  answerChat: Pick<AnswerFeatureChatQuestionUseCase, 'execute'>;
+  stopChats: Pick<StopFeatureChatsUseCase, 'execute'>;
 }
 
 /** Seams for tests; production uses the defaults. */
@@ -84,6 +92,10 @@ const defaults: Required<TuiCommandOptions> = {
     pane: container.resolve(OpenFeaturePaneUseCase),
     controlCenter: container.resolve(OpenControlCenterUseCase),
     multiplexerStatus: container.resolve(UpdateMultiplexerStatusUseCase),
+    chat: container.resolve(GetFeatureChatUseCase),
+    sendChat: container.resolve(SendFeatureChatMessageUseCase),
+    answerChat: container.resolve(AnswerFeatureChatQuestionUseCase),
+    stopChats: container.resolve(StopFeatureChatsUseCase),
   }),
   runConsole: runFeatureConsole,
   createTerminal: () => new FullscreenTerminal(new ProcessTerminal()),
@@ -116,7 +128,8 @@ Examples:
 Inside tmux, Zellij, WezTerm or kitty, t opens a shell and f follows the agent
 log in a split pane (T / F: a new window). Set SHEP_MULTIPLEXER=none to run
 them in this terminal instead. C opens a window per active feature, named with
-its state. Inside tmux the console sets @shep_status for status-right:
+its state. o attaches to a feature's agent chat (esc returns). Inside tmux the
+console sets @shep_status for status-right:
   set -g status-right '#{@shep_status}'`
     )
     .action(async (options: TuiOptions) => {
@@ -178,6 +191,11 @@ its state. Inside tmux the console sets @shep_status for status-right:
             environment: paneEnvironment,
           }),
         updateMultiplexer: (input) => useCases.multiplexerStatus.execute(input),
+        loadChat: (featureId, maxEntries) => useCases.chat.execute({ featureId, maxEntries }),
+        sendChatMessage: (featureId, content) => useCases.sendChat.execute({ featureId, content }),
+        answerChatQuestion: (featureId, answers) =>
+          useCases.answerChat.execute({ featureId, answers }),
+        stopChats: (featureIds) => useCases.stopChats.execute(featureIds),
         ...(options.notify && {
           notify: (message: string) =>
             terminal.write(terminalNotification(env, NOTIFICATION_TITLE, message)),

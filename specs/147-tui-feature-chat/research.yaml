@@ -1,0 +1,50 @@
+name: tui-feature-chat
+summary: >
+  Reuse the interactive chat sessions the web UI runs per feature, polled from the console, with
+  the console owning (and stopping) the sessions it boots.
+
+relatedFeatures:
+  - 137-chat-first-surface
+technologies:
+  - '@mariozechner/pi-tui'
+relatedLinks:
+  - title: docs/competitors/agent-harness-tui.md
+    url: ../../docs/competitors/agent-harness-tui.md
+
+decisions:
+  - title: What "attach" talks to
+    chosen: The feature's interactive chat session (the web Chat tab's conversation)
+    rejected:
+      - Running agents in tmux sessions and attaching to their PTY (claude-squad) — Shep's worker is headless and the web would lose the transcript
+      - Injecting messages into the running feature worker — it never reads them
+    rationale: >
+      One conversation per feature, the same on every surface: messages persist in the database,
+      so the web shows what the terminal sent and the other way round.
+  - title: Live updates
+    chosen: Poll GetInteractiveChatStateUseCase every 750 ms while attached
+    rejected:
+      - subscribeByFeature (works only in the process that owns the session)
+      - The daemon's SSE endpoint (the console runs without the daemon)
+    rationale: >
+      Chat state carries messages, turn status, the pending question and, for sessions this
+      process owns, the streaming text. A fast poll only while attached costs little.
+  - title: Session lifetime
+    chosen: Sessions booted by the console live in its process; quitting stops them
+    rejected:
+      - Leaving them running (their agent subprocesses would be orphaned)
+    rationale: The interactive session registry is in-process by design.
+  - title: Ready-to-render transcript
+    chosen: Core maps messages to entries (kind user / assistant / tool / block) with display text
+    rejected:
+      - Parsing `**label** \`detail\`` tool rows and `{{block}}` prefixes in the terminal
+    rationale: Presentation stays thin; any other surface gets the same entries.
+
+content: |
+  ## Status
+
+  - **Phase:** Research
+  - **Updated:** 2026-10-24
+
+  Tool calls are persisted as assistant rows `**label** \`detail\`` and chat blocks with a
+  `{{block}}` prefix (`chatMessageDisplayText` turns them into titles). Answers to the agent's
+  AskUserQuestion are keyed by question text, as the web's `answersByQuestionText` does.

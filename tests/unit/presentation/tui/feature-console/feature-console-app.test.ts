@@ -1,5 +1,5 @@
 /**
- * runFeatureConsole Unit Tests (specs 142, 143, 145, 146)
+ * runFeatureConsole Unit Tests (specs 142, 143, 145, 146, 147)
  *
  * The app wires the view to the use cases: it polls the snapshot (never two
  * reads at once), runs actions and shows their result, keeps the log pane
@@ -18,6 +18,7 @@ import {
 } from '@/presentation/tui/feature-console/feature-console.app.js';
 import {
   AgentRunStatus,
+  FeatureChatEntryKind,
   FeatureConsoleAction,
   FeaturePaneContent,
   FeaturePaneOutcome,
@@ -84,6 +85,10 @@ describe('runFeatureConsole', () => {
   let notify: ReturnType<typeof vi.fn<(message: string) => void>> | undefined;
   let openControlCenter: ReturnType<typeof vi.fn<FeatureConsoleAppDeps['openControlCenter']>>;
   let updateMultiplexer: ReturnType<typeof vi.fn<FeatureConsoleAppDeps['updateMultiplexer']>>;
+  let loadChat: ReturnType<typeof vi.fn<FeatureConsoleAppDeps['loadChat']>>;
+  let sendChatMessage: ReturnType<typeof vi.fn<FeatureConsoleAppDeps['sendChatMessage']>>;
+  let answerChatQuestion: ReturnType<typeof vi.fn<FeatureConsoleAppDeps['answerChatQuestion']>>;
+  let stopChats: ReturnType<typeof vi.fn<FeatureConsoleAppDeps['stopChats']>>;
   let done: Promise<void> | undefined;
 
   beforeAll(async () => {
@@ -119,11 +124,37 @@ describe('runFeatureConsole', () => {
     updateMultiplexer = vi.fn<FeatureConsoleAppDeps['updateMultiplexer']>(async () => ({
       goneWindowIds: [],
     }));
+    loadChat = vi.fn<FeatureConsoleAppDeps['loadChat']>(async (featureId) => ({
+      featureId,
+      name: 'Billing UI',
+      directory: '/wt/billing',
+      available: true,
+      busy: false,
+      entries: [
+        {
+          id: '1',
+          kind: FeatureChatEntryKind.Assistant,
+          text: 'Hello from the agent',
+          createdAt: new Date(),
+        },
+      ],
+      questions: [],
+    }));
+    sendChatMessage = vi.fn<FeatureConsoleAppDeps['sendChatMessage']>(async () => ({
+      ok: true,
+      message: 'Sent',
+    }));
+    answerChatQuestion = vi.fn<FeatureConsoleAppDeps['answerChatQuestion']>(async () => ({
+      ok: true,
+      message: 'Answered',
+    }));
+    stopChats = vi.fn<FeatureConsoleAppDeps['stopChats']>(async () => undefined);
   });
 
   afterEach(async () => {
     if (done && terminal.started) {
-      terminal.type('q');
+      // ctrl+c quits from every mode (q is text in a prompt or the chat).
+      terminal.type('\x03');
       await done;
     }
     done = undefined;
@@ -141,7 +172,12 @@ describe('runFeatureConsole', () => {
       notify,
       openControlCenter,
       updateMultiplexer,
+      loadChat,
+      sendChatMessage,
+      answerChatQuestion,
+      stopChats,
       refreshIntervalMs: REFRESH_MS,
+      chatRefreshIntervalMs: REFRESH_MS,
     });
     return done;
   };
@@ -390,6 +426,78 @@ describe('runFeatureConsole', () => {
           expect.objectContaining({ status: expect.objectContaining({ '@shep_needs_you': '0' }) })
         )
       );
+    });
+  });
+
+  describe('chat (spec 147)', () => {
+    it('attaches with o and keeps the transcript fresh until esc', async () => {
+      void start();
+      await vi.waitFor(() => expect(screenText()).toContain('Billing UI'));
+
+      terminal.type('o');
+
+      await vi.waitFor(() => expect(screenText()).toContain('Hello from the agent'));
+      expect(loadChat).toHaveBeenCalledWith('Billing UI-id', expect.any(Number));
+      await vi.waitFor(() => expect(loadChat.mock.calls.length).toBeGreaterThan(2));
+
+      terminal.type('\x1b');
+      await new Promise((r) => setTimeout(r, REFRESH_MS * 2));
+      const calls = loadChat.mock.calls.length;
+      await new Promise((r) => setTimeout(r, REFRESH_MS * 4));
+      expect(loadChat.mock.calls.length).toBe(calls);
+    });
+
+    it('sends a message, shows a failure, and answers a question', async () => {
+      void start();
+      await vi.waitFor(() => expect(screenText()).toContain('Billing UI'));
+      terminal.type('o');
+      await vi.waitFor(() => expect(screenText()).toContain('Hello from the agent'));
+
+      terminal.type('h', 'i', '\r');
+      await vi.waitFor(() => expect(sendChatMessage).toHaveBeenCalledWith('Billing UI-id', 'hi'));
+
+      sendChatMessage.mockResolvedValue({ ok: false, message: 'No interactive mode' });
+      terminal.type('x', '\r');
+      await vi.waitFor(() => expect(screenText()).toContain('No interactive mode'));
+
+      loadChat.mockResolvedValue({
+        featureId: 'Billing UI-id',
+        name: 'Billing UI',
+        directory: '/wt',
+        available: true,
+        busy: false,
+        entries: [],
+        questions: [
+          { header: 'Q', question: 'Which?', options: [{ label: 'A' }], multiSelect: false },
+        ],
+      });
+      await vi.waitFor(() => expect(screenText()).toContain('Which?'));
+      terminal.type('1');
+      await vi.waitFor(() =>
+        expect(answerChatQuestion).toHaveBeenCalledWith('Billing UI-id', { 'Which?': 'A' })
+      );
+    });
+
+    it('stops the chat sessions it started when it quits', async () => {
+      const finished = start();
+      await vi.waitFor(() => expect(screenText()).toContain('Billing UI'));
+      terminal.type('o');
+      await vi.waitFor(() => expect(screenText()).toContain('Hello from the agent'));
+      terminal.type('h', 'i', '\r');
+      await vi.waitFor(() => expect(sendChatMessage).toHaveBeenCalled());
+
+      terminal.type('\x03');
+      await finished;
+
+      expect(stopChats).toHaveBeenCalledWith(['Billing UI-id']);
+    });
+
+    it('stops nothing when no chat was used', async () => {
+      const finished = start();
+      await vi.waitFor(() => expect(screenText()).toContain('Billing UI'));
+      terminal.type('q');
+      await finished;
+      expect(stopChats).not.toHaveBeenCalled();
     });
   });
 

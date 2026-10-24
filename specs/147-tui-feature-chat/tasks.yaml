@@ -1,0 +1,104 @@
+name: tui-feature-chat
+summary: Task breakdown for 147-tui-feature-chat
+
+relatedFeatures:
+  - 137-chat-first-surface
+technologies:
+  - TypeScript
+relatedLinks: []
+
+tasks:
+  - id: task-1
+    title: FeatureChatEntryKind enum and GetFeatureChatUseCase
+    description: Ready-to-render chat (entries, streaming text, busy, pending question, availability).
+    state: Done
+    dependencies: []
+    acceptanceCriteria:
+      - Tool rows and blocks mapped; newest entries kept; settings off reported
+    tdd:
+      red:
+        - get-feature-chat.use-case.test.ts
+      green:
+        - Implement over GetInteractiveChatStateUseCase
+      refactor:
+        - Extract resolveFeatureDirectory shared with OpenFeaturePaneUseCase
+    estimatedEffort: M
+  - id: task-2
+    title: Send and answer use cases
+    description: Send through SendInteractiveMessageUseCase in the feature directory; answer by question text.
+    state: Done
+    dependencies:
+      - task-1
+    acceptanceCriteria:
+      - Errors become results; settings off refuses
+    tdd:
+      red:
+        - send and answer tests
+      green:
+        - Implement
+      refactor: []
+    estimatedEffort: S
+  - id: task-3
+    title: StopFeatureChatsUseCase
+    description: Stop the sessions the console started.
+    state: Done
+    dependencies: []
+    acceptanceCriteria:
+      - Never throws
+    tdd:
+      red:
+        - stop-feature-chats.use-case.test.ts
+      green:
+        - Implement
+      refactor: []
+    estimatedEffort: S
+  - id: task-4
+    title: Chat view
+    description: Transcript, streaming text, question options, input, keys.
+    state: Done
+    dependencies:
+      - task-1
+    acceptanceCriteria:
+      - Exactly the given height; newest lines; escapes stripped
+    tdd:
+      red:
+        - chat-view.test.ts
+      green:
+        - Implement
+      refactor: []
+    estimatedEffort: M
+  - id: task-5
+    title: Console wiring
+    description: o and palette attach; app polls while attached, stops sessions on quit.
+    state: Done
+    dependencies:
+      - task-2
+      - task-3
+      - task-4
+    acceptanceCriteria:
+      - Esc detaches; ctrl+c quits and stops sessions
+    tdd:
+      red:
+        - view and app tests
+      green:
+        - Implement
+      refactor: []
+    estimatedEffort: M
+  - id: task-6
+    title: E2E, docs, translations
+    description: PTY e2e for attach, transcript and settings-off; docs; nine locales.
+    state: Done
+    dependencies:
+      - task-5
+    acceptanceCriteria:
+      - i18n completeness passes
+    tdd: null
+    estimatedEffort: S
+
+totalEstimate: L
+
+content: |
+  ## Summary
+
+  Six tasks: chat use cases, the chat view, console wiring, then e2e and docs. Each code task is
+  RED-GREEN-REFACTOR.

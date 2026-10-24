@@ -67,6 +67,14 @@ const CONSOLE_USE_CASE_PATHS = {
     '../../../../packages/core/src/application/use-cases/feature-console/open-control-center.use-case.js',
   UpdateMultiplexerStatusUseCase:
     '../../../../packages/core/src/application/use-cases/feature-console/update-multiplexer-status.use-case.js',
+  GetFeatureChatUseCase:
+    '../../../../packages/core/src/application/use-cases/feature-console/get-feature-chat.use-case.js',
+  SendFeatureChatMessageUseCase:
+    '../../../../packages/core/src/application/use-cases/feature-console/send-feature-chat-message.use-case.js',
+  AnswerFeatureChatQuestionUseCase:
+    '../../../../packages/core/src/application/use-cases/feature-console/answer-feature-chat-question.use-case.js',
+  StopFeatureChatsUseCase:
+    '../../../../packages/core/src/application/use-cases/feature-console/stop-feature-chats.use-case.js',
 } as const;
 
 describe('Feature console DI registrations', () => {

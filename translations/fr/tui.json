@@ -235,7 +235,8 @@
       "follow": "suivre le log",
       "filter": "filtrer",
       "palette": "commandes",
-      "copyId": "copier l’id"
+      "copyId": "copier l’id",
+      "chat": "chat"
     },
     "reject": {
       "prompt": "Retour pour {{name}} :",
@@ -272,7 +273,8 @@
       "filter": "/   filtrer les fonctionnalités (échap efface)",
       "palette": ":/ctrl+p   palette de commandes",
       "copyId": "c   copier l’id de la fonctionnalité",
-      "controlCenter": "C   une fenêtre par fonctionnalité active (centre de contrôle)"
+      "controlCenter": "C   une fenêtre par fonctionnalité active (centre de contrôle)",
+      "chat": "o   discuter avec l’agent de la fonctionnalité (échap revient)"
     },
     "notTty": "shep tui a besoin d'un terminal interactif. Dans les scripts et les pipes, utilise \"shep feat ls\".",
     "filter": {
@@ -312,12 +314,23 @@
         "clear-filter": "Effacer le filtre",
         "help": "Afficher les touches",
         "quit": "Quitter",
-        "control-center": "Ouvrir une fenêtre pour chaque fonctionnalité active"
+        "control-center": "Ouvrir une fenêtre pour chaque fonctionnalité active",
+        "chat": "Discuter avec l’agent de la fonctionnalité"
       }
     },
     "copied": "Id de {{name}} copié : {{id}}",
     "controlCenter": {
       "none": "Chaque fonctionnalité active a déjà une fenêtre"
+    },
+    "chat": {
+      "title": "Chat",
+      "you": "vous",
+      "working": "au travail…",
+      "loading": "Chargement du chat…",
+      "empty": "Aucun message. Écrivez ci-dessous pour parler à l’agent de cette fonctionnalité ; il s’exécute dans {{directory}}.",
+      "answerPrompt": "réponse",
+      "hint": "entrée envoyer · échap revenir aux fonctionnalités",
+      "hintQuestion": "1–9 choisir une option · ou tapez une réponse puis entrée · échap revenir"
     }
   }
 }

@@ -17,18 +17,14 @@ import {
   MULTI_STEP_TEST_TIMEOUT_MS,
   createCliRunner,
 } from '../../helpers/cli/index.js';
-import { PtyScreen } from '../../helpers/tui/pty-screen.js';
+import { type PtyScreen } from '../../helpers/tui/pty-screen.js';
 import {
-  PROJECT_ROOT,
   createConsoleFixture,
   isWindows,
-  shepArgv,
+  spawnConsole,
   type ConsoleFixture,
 } from '../../helpers/tui/console-e2e.js';
 
-const COLS = 140;
-const ROWS = 36;
-/** The mock worker reaches its first gate in seconds; Windows CI is several times slower. */
 const GATE_TIMEOUT_MS = isWindows ? 120_000 : 60_000;
 /** Opening the console boots the CLI (DB, migrations, DI) once. */
 const START_TIMEOUT_MS = isWindows ? 60_000 : 30_000;
@@ -37,23 +33,7 @@ const FEATURE_TITLE = 'Console approval check';
 /** The mock executor title-cases the name it derives from the prompt. */
 const FEATURE_NAME = /console approval check/i;
 
-function spawnTui(shepHome: string, env: Record<string, string> = {}): PtyScreen {
-  // From the project root: tsx resolves the `@/` aliases from the cwd's
-  // tsconfig. The console itself does not depend on the working directory.
-  return PtyScreen.spawn(process.execPath, shepArgv('tui'), {
-    cols: COLS,
-    rows: ROWS,
-    cwd: PROJECT_ROOT,
-    env: {
-      ...process.env,
-      SHEP_HOME: shepHome,
-      SHEP_MOCK_EXECUTOR: '1',
-      SHEP_TELEMETRY_DISABLED: '1',
-      TERM: 'xterm-256color',
-      ...env,
-    },
-  });
-}
+const spawnTui = spawnConsole;
 
 describe('TUI: feature console', { timeout: MULTI_STEP_TEST_TIMEOUT_MS * 3 }, () => {
   let fixture: ConsoleFixture;

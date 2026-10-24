@@ -25,6 +25,7 @@
 
 import * as crypto from 'node:crypto';
 
+import { formatToolEventMessage } from '../../../../domain/shared/chat-tool-event.js';
 import type { IInteractiveMessageRepository } from '../../../../application/ports/output/repositories/interactive-message-repository.interface.js';
 import type { IInteractiveSessionRepository } from '../../../../application/ports/output/repositories/interactive-session-repository.interface.js';
 import type {
@@ -117,7 +118,7 @@ export class SessionPersistence {
   async persistToolEvent(state: SessionState, label: string, detail?: string): Promise<void> {
     try {
       await this.flushAssistantBuffer(state);
-      const content = detail ? `**${label}** \`${detail}\`` : `**${label}**`;
+      const content = formatToolEventMessage(label, detail);
       const now = this.nextMessageDate();
       const msg: InteractiveMessage = {
         id: crypto.randomUUID(),

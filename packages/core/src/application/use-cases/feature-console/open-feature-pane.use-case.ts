@@ -14,7 +14,6 @@ import {
   FeaturePaneContent,
   FeaturePaneOutcome,
   FeaturePanePlacement,
-  type Feature,
   type TerminalMultiplexer,
 } from '../../../domain/generated/output.js';
 import type { IFeatureRepository } from '../../ports/output/repositories/feature-repository.interface.js';
@@ -23,6 +22,7 @@ import type { ITerminalPaneLauncher } from '../../ports/output/services/terminal
 import type { IWorktreePathProvider } from '../../ports/output/services/worktree-path-provider.interface.js';
 import { FEATURE_SHORT_ID_LENGTH } from './feature-console.types.js';
 import { findFeatureByIdOrPrefix } from './find-feature.js';
+import { resolveFeatureDirectory } from './feature-directory.js';
 
 export interface OpenFeaturePaneInput {
   /** Feature id or id prefix. */
@@ -78,7 +78,7 @@ export class OpenFeaturePaneUseCase {
       const isLog = input.content === FeaturePaneContent.Log;
       if (isLog && !feature.agentRunId) return failed(`${feature.name} has no agent run yet.`);
 
-      const cwd = this.directoryOf(feature);
+      const cwd = resolveFeatureDirectory(feature, this.worktreePaths, this.fileSystem);
       const command = isLog ? [...input.shepCommand, ...FOLLOW_LOG_ARGS, feature.id] : undefined;
       const what = CONTENT_PHRASE[input.content](feature.name);
 
@@ -114,19 +114,6 @@ export class OpenFeaturePaneUseCase {
     } catch (error) {
       return failed(error instanceof Error ? error.message : String(error));
     }
-  }
-
-  private directoryOf(feature: Feature): string {
-    const candidates = [
-      feature.worktreePath,
-      feature.branch
-        ? this.worktreePaths.getWorktreePath(feature.repositoryPath, feature.branch)
-        : undefined,
-    ];
-    return (
-      candidates.find((path): path is string => !!path && this.fileSystem.pathExists(path)) ??
-      feature.repositoryPath
-    );
   }
 }
 

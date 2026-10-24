@@ -235,7 +235,8 @@
       "follow": "Log folgen",
       "filter": "filtern",
       "palette": "Befehle",
-      "copyId": "ID kopieren"
+      "copyId": "ID kopieren",
+      "chat": "Chat"
     },
     "reject": {
       "prompt": "Feedback für {{name}}:",
@@ -272,7 +273,8 @@
       "filter": "/   Features filtern (Esc löscht)",
       "palette": ":/Strg+P   Befehlspalette",
       "copyId": "c   Feature-ID kopieren",
-      "controlCenter": "C   ein Fenster pro aktivem Feature (Kontrollzentrum)"
+      "controlCenter": "C   ein Fenster pro aktivem Feature (Kontrollzentrum)",
+      "chat": "o   mit dem Agenten des Features chatten (Esc zurück)"
     },
     "notTty": "shep tui braucht ein interaktives Terminal. In Skripten und Pipes nutze \"shep feat ls\".",
     "filter": {
@@ -312,12 +314,23 @@
         "clear-filter": "Filter löschen",
         "help": "Tasten anzeigen",
         "quit": "Beenden",
-        "control-center": "Ein Fenster für jedes aktive Feature öffnen"
+        "control-center": "Ein Fenster für jedes aktive Feature öffnen",
+        "chat": "Mit dem Agenten des Features chatten"
       }
     },
     "copied": "ID von {{name}} kopiert: {{id}}",
     "controlCenter": {
       "none": "Jedes aktive Feature hat schon ein Fenster"
+    },
+    "chat": {
+      "title": "Chat",
+      "you": "du",
+      "working": "arbeitet…",
+      "loading": "Chat wird geladen…",
+      "empty": "Noch keine Nachrichten. Schreib unten, um mit dem Agenten dieses Features zu sprechen; er läuft in {{directory}}.",
+      "answerPrompt": "Antwort",
+      "hint": "Enter senden · Esc zurück zu den Features",
+      "hintQuestion": "1–9 Option wählen · oder Antwort tippen und Enter · Esc zurück"
     }
   }
 }

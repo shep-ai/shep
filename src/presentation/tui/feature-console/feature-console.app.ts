@@ -1,5 +1,5 @@
 /**
- * Feature console app (specs 142, 143, 145, 146).
+ * Feature console app (specs 142, 143, 145, 146, 147).
  *
  * Wires the view to the core: polls the snapshot, runs actions, keeps the log
  * pane fresh, opens terminal panes (stepping aside for an inline command when
@@ -26,6 +26,7 @@ import type {
 import { FeatureConsoleView, type FeatureConsoleIntents } from './feature-console-view.js';
 import { clipboardSequence } from './terminal-clipboard.js';
 import { ControlCenter, type ControlCenterDeps } from './control-center.js';
+import { ConsoleChat, type ConsoleChatDeps } from './console-chat.js';
 
 /** How often the console re-reads every feature. */
 export const DEFAULT_REFRESH_INTERVAL_MS = 2000;
@@ -33,7 +34,7 @@ export const DEFAULT_REFRESH_INTERVAL_MS = 2000;
 const LOG_TAIL_LINES = 200;
 const TERMINATION_SIGNALS = ['SIGTERM', 'SIGHUP'] as const;
 
-export interface FeatureConsoleAppDeps {
+export interface FeatureConsoleAppDeps extends ConsoleChatDeps {
   t: TFunction;
   terminal: Terminal;
   loadSnapshot: () => Promise<FeatureConsoleSnapshot>;
@@ -95,6 +96,10 @@ export function runFeatureConsole(deps: FeatureConsoleAppDeps): Promise<void> {
         render();
       },
       openControlCenter: () => void openControlCenter(),
+      openChat: (row) => chat.attach(row.featureId),
+      closeChat: () => chat.detach(),
+      sendChat: (row, text) => void chat.send(row.featureId, text),
+      answerChat: (row, answers) => void chat.answer(row.featureId, answers),
       quit: () => finish(),
       requestRender: () => tui.requestRender(),
     };
@@ -103,6 +108,11 @@ export function runFeatureConsole(deps: FeatureConsoleAppDeps): Promise<void> {
       t: deps.t,
       rows: () => deps.terminal.rows,
       intents,
+    });
+    const chat = new ConsoleChat(deps, {
+      chat: (c) => view.setChat(c),
+      notice: (n) => view.setChatNotice(n),
+      render: () => render(),
     });
 
     async function refresh(): Promise<void> {
@@ -232,7 +242,11 @@ export function runFeatureConsole(deps: FeatureConsoleAppDeps): Promise<void> {
       clearInterval(interval);
       for (const signal of TERMINATION_SIGNALS) process.off(signal, finish);
       if (!suspended) tui.stop();
-      resolve();
+      // Chat agents run in this process: stop them before handing control back.
+      void chat
+        .stopAll()
+        .catch(() => undefined)
+        .finally(resolve);
     }
 
     for (const signal of TERMINATION_SIGNALS) process.once(signal, finish);

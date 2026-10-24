@@ -1,0 +1,70 @@
+name: tui-feature-chat
+summary: Implementation plan for 147-tui-feature-chat
+
+relatedFeatures:
+  - 137-chat-first-surface
+technologies:
+  - TypeScript
+  - TypeSpec
+relatedLinks: []
+
+phases:
+  - id: phase-1
+    name: 'Core: chat use cases'
+    parallel: false
+    taskIds:
+      - task-1
+      - task-2
+      - task-3
+  - id: phase-2
+    name: 'Console chat mode'
+    parallel: false
+    taskIds:
+      - task-4
+      - task-5
+  - id: phase-3
+    name: 'E2E and docs'
+    parallel: false
+    taskIds:
+      - task-6
+
+filesToCreate:
+  - tsp/common/enums/feature-chat.tsp
+  - packages/core/src/application/use-cases/feature-console/feature-chat.types.ts
+  - packages/core/src/application/use-cases/feature-console/get-feature-chat.use-case.ts
+  - packages/core/src/application/use-cases/feature-console/send-feature-chat-message.use-case.ts
+  - packages/core/src/application/use-cases/feature-console/answer-feature-chat-question.use-case.ts
+  - packages/core/src/application/use-cases/feature-console/stop-feature-chats.use-case.ts
+  - packages/core/src/application/use-cases/feature-console/feature-directory.ts
+  - src/presentation/tui/feature-console/chat-view.ts
+
+filesToModify:
+  - packages/core/src/application/use-cases/feature-console/open-feature-pane.use-case.ts
+  - src/presentation/tui/feature-console/feature-console-view.ts
+  - src/presentation/tui/feature-console/feature-console.app.ts
+  - src/presentation/cli/commands/tui.command.ts
+
+architecture: |
+  The four use cases wrap the interactive use cases and return render-ready data; they never
+  throw. The chat view is a pi-tui-style component owned by the console view, active in Chat
+  mode; the app polls the chat while attached and stops started sessions on quit.
+
+risks:
+  - Booting a session needs a real Claude Code or Cursor CLI; the e2e test therefore covers the
+    attach, transcript and "unavailable" paths, and unit tests cover sending and answering
+
+content: |
+  ## Status
+
+  - **Phase:** Planning
+  - **Updated:** 2026-10-24
+
+  ## Clean Architecture
+
+  Presentation reaches the interactive session service only through use cases. Transcript
+  shaping (tool rows, blocks, question extraction) is core logic.
+
+  ## TDD
+
+  RED-GREEN-REFACTOR: failing tests first for every use case (mapping, errors, settings off), the chat view (render, input,
+  answers), and the app (polling while attached, stop on quit).

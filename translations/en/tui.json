@@ -235,7 +235,8 @@
       "follow": "follow log",
       "filter": "filter",
       "palette": "palette",
-      "copyId": "copy id"
+      "copyId": "copy id",
+      "chat": "chat"
     },
     "reject": {
       "prompt": "Feedback for {{name}}:",
@@ -272,7 +273,8 @@
       "filter": "/   filter the features (esc clears)",
       "palette": ":/ctrl+p   command palette",
       "copyId": "c   copy the feature id",
-      "controlCenter": "C   a window per active feature (control center)"
+      "controlCenter": "C   a window per active feature (control center)",
+      "chat": "o   chat with the feature's agent (esc returns)"
     },
     "notTty": "shep tui needs an interactive terminal. In scripts and pipes, use \"shep feat ls\".",
     "filter": {
@@ -312,12 +314,23 @@
         "clear-filter": "Clear the filter",
         "help": "Show keys",
         "quit": "Quit",
-        "control-center": "Open a window for every active feature"
+        "control-center": "Open a window for every active feature",
+        "chat": "Chat with the feature's agent"
       }
     },
     "copied": "Copied the id of {{name}}: {{id}}",
     "controlCenter": {
       "none": "Every active feature already has a window"
+    },
+    "chat": {
+      "title": "Chat",
+      "you": "you",
+      "working": "working…",
+      "loading": "Loading the chat…",
+      "empty": "No messages yet. Type below to talk to this feature's agent; it runs in {{directory}}.",
+      "answerPrompt": "answer",
+      "hint": "enter send · esc back to the features",
+      "hintQuestion": "1–9 pick an option · or type an answer and press enter · esc back"
     }
   }
 }

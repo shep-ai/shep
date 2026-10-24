@@ -48,6 +48,7 @@ const COMMANDS: readonly { key: ConsoleKey; chord: string; when: Availability }[
   { key: ConsoleKey.Reject, chord: 'r', when: offers(FeatureConsoleAction.Reject) },
   { key: ConsoleKey.Stop, chord: 's', when: offers(FeatureConsoleAction.Stop) },
   { key: ConsoleKey.Resume, chord: 'R', when: offers(FeatureConsoleAction.Resume) },
+  { key: ConsoleKey.Chat, chord: 'o', when: hasRow },
   { key: ConsoleKey.Shell, chord: 't', when: hasRow },
   { key: ConsoleKey.ShellWindow, chord: 'T', when: hasRow },
   { key: ConsoleKey.FollowLog, chord: 'f', when: hasRun },

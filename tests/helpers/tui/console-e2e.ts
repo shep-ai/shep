@@ -12,6 +12,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { execSync, spawnSync } from 'node:child_process';
 import { removeDirWithRetry } from '../remove-dir.helper.js';
+import { PtyScreen } from './pty-screen.js';
 
 export const isWindows = process.platform === 'win32';
 export const PROJECT_ROOT = resolve(__dirname, '../../..');
@@ -25,6 +26,28 @@ const CLEANUP_SETTLE_MS = 200;
 /** argv (after the node binary) that runs `shep <args>`. */
 export function shepArgv(...args: string[]): string[] {
   return USE_DIST ? [CLI_ENTRY, ...args] : [TSX_CLI, CLI_ENTRY, ...args];
+}
+
+const CONSOLE_COLS = 140;
+const CONSOLE_ROWS = 36;
+
+/** `shep tui` in a pseudo-terminal with the mock executor and this SHEP_HOME. */
+export function spawnConsole(shepHome: string, env: Record<string, string> = {}): PtyScreen {
+  // From the project root: tsx resolves the `@/` aliases from the cwd's
+  // tsconfig. The console itself does not depend on the working directory.
+  return PtyScreen.spawn(process.execPath, shepArgv('tui'), {
+    cols: CONSOLE_COLS,
+    rows: CONSOLE_ROWS,
+    cwd: PROJECT_ROOT,
+    env: {
+      ...process.env,
+      SHEP_HOME: shepHome,
+      SHEP_MOCK_EXECUTOR: '1',
+      SHEP_TELEMETRY_DISABLED: '1',
+      TERM: 'xterm-256color',
+      ...env,
+    },
+  });
 }
 
 export interface ConsoleFixture {

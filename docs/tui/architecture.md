@@ -232,6 +232,25 @@ every snapshot → ControlCenter.sync
 A window the user closed fails its next rename; the console forgets it, and `C` can open it
 again. `shep tui --status [plain|tmux]` prints `formatStatusSegment(summary)` once.
 
+### Attach and steer (spec 147)
+
+```
+o → ChatView (chat-view.ts) fills the body; the message line is the status line
+      ConsoleChat (console-chat.ts) polls while attached, every 750 ms
+        └─ GetFeatureChatUseCase → GetInteractiveChatStateUseCase
+             entries: user / assistant / tool / block / answer (FeatureChatEntryKind), newest last
+             busy (ChatTurnStatus.Processing or booting), streamingText, the open question(s)
+enter → SendFeatureChatMessageUseCase → SendInteractiveMessageUseCase (worktree, else repository)
+1-9 / typed answer → AnswerFeatureChatQuestionUseCase → RespondToInteractionUseCase (by question text)
+quit → StopFeatureChatsUseCase for every chat this process started
+```
+
+"Attach" talks to the feature's **interactive chat**, not the headless background worker: one
+conversation per feature, persisted, shown identically by the web Chat tab. Interactive sessions
+live in the process that boots them, so the console stops the ones it started before it exits.
+With `SHEP_MOCK_EXECUTOR=1` the mock interactive executor answers deterministically (one tool
+call, a quote of the message; "ask me" asks a two-option question), which the e2e test drives.
+
 The tools this follows (workmux, oh-my-pi, claude-squad, Claude Code agent teams) are compared in
 [docs/competitors/agent-harness-tui.md](../competitors/agent-harness-tui.md).
 

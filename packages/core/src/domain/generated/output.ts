@@ -9719,6 +9719,19 @@ export enum FeaturePaneOutcome {
   Inline = 'inline',
   Failed = 'failed',
 }
+export enum FeatureChatEntryKind {
+  User = 'user',
+  Assistant = 'assistant',
+  Tool = 'tool',
+  Block = 'block',
+  Answer = 'answer',
+}
+export enum ChatTurnStatus {
+  Idle = 'idle',
+  Processing = 'processing',
+  Unread = 'unread',
+  AwaitingInput = 'awaiting_input',
+}
 export enum SpaceResolutionSource {
   Assignment = 'Assignment',
   Rule = 'Rule',

@@ -48,6 +48,9 @@ src/presentation/tui/
     terminal-clipboard.ts           # OSC 52 copy
     control-center.ts               # C: a window per feature; renames; tmux status (spec 146)
     status-segment.ts               # One-line summary: plain or tmux-styled
+    chat-view.ts                    # o: attach to a feature's agent chat (spec 147)
+    console-chat.ts                 # Polls the attached chat; stops started sessions on quit
+    console-prompts.ts              # Reject-feedback and filter lines
     terminal-notification.ts        # OSC 9 / 777 / 99 or bell, tmux passthrough
     run-inline.ts                   # Lend the terminal to a shell or log (no multiplexer)
     fullscreen-terminal.ts          # Alternate-screen Terminal decorator

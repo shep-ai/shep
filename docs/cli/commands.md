@@ -119,6 +119,7 @@ a feature's shell or followed agent log in a split pane.
 | `r`               | Reject the gate; type feedback, `enter` sends      |
 | `s`               | Stop the run, after `y` to confirm (stays resumable) |
 | `R`               | Resume an interrupted or failed run                |
+| `o`               | Attach: chat with the feature's agent (the web Chat tab's conversation); `esc` returns |
 | `t` / `T`         | Shell in the feature's worktree: split pane / new window |
 | `f` / `F`         | Follow the agent log (`shep feat logs -f`): split pane / new window |
 | `/`               | Filter the roster by every word typed; `enter` keeps it, `esc` clears it |
@@ -144,6 +145,13 @@ Action keys appear in the key bar only when the selected feature's run accepts t
   console. Each split halves the console's pane, so use `T` / `F` for several at once.
 - **No multiplexer.** `t` and `f` run in this terminal: the console steps aside, and comes back
   when the shell exits or `ctrl+c` ends the log.
+- **Attach (`o`).** A full-screen transcript of the feature's agent chat — the same conversation
+  the web UI's Chat tab shows, with an interactive agent (Claude Code or Cursor) running in the
+  feature's worktree. Text streams in as the agent writes, each tool call is one muted line, and
+  `enter` sends what you type. When the agent asks a question, its options are numbered: a digit
+  on an empty line picks one, or type an answer in your own words. Chat sessions the console
+  starts run inside it and stop when you quit. The background feature worker is not affected:
+  steer it at its gates with `a` / `r`.
 - **Control center.** `C` opens a window (tmux window, WezTerm or kitty tab, Zellij floating pane)
   for every active feature that has a run and no window yet, each following that feature's log.
   The console renames each window as its state changes (`◆` needs you, `●` running, `✗` failed,

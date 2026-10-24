@@ -38,3 +38,4 @@ import "./telemetry.tsp";
 import "./feature-coordination.tsp";
 import "./feature-console.tsp";
 import "./terminal-pane.tsp";
+import "./feature-chat.tsp";

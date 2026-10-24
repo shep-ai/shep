@@ -235,7 +235,8 @@
       "follow": "seguir log",
       "filter": "filtrar",
       "palette": "comandos",
-      "copyId": "copiar id"
+      "copyId": "copiar id",
+      "chat": "chat"
     },
     "reject": {
       "prompt": "Comentarios para {{name}}:",
@@ -272,7 +273,8 @@
       "filter": "/   filtrar las funcionalidades (esc borra)",
       "palette": ":/ctrl+p   paleta de comandos",
       "copyId": "c   copiar el id de la funcionalidad",
-      "controlCenter": "C   una ventana por funcionalidad activa (centro de control)"
+      "controlCenter": "C   una ventana por funcionalidad activa (centro de control)",
+      "chat": "o   chatear con el agente de la funcionalidad (esc vuelve)"
     },
     "notTty": "shep tui necesita una terminal interactiva. En scripts y pipes, usa \"shep feat ls\".",
     "filter": {
@@ -312,12 +314,23 @@
         "clear-filter": "Borrar el filtro",
         "help": "Mostrar teclas",
         "quit": "Salir",
-        "control-center": "Abrir una ventana para cada funcionalidad activa"
+        "control-center": "Abrir una ventana para cada funcionalidad activa",
+        "chat": "Chatear con el agente de la funcionalidad"
       }
     },
     "copied": "Id de {{name}} copiado: {{id}}",
     "controlCenter": {
       "none": "Cada funcionalidad activa ya tiene una ventana"
+    },
+    "chat": {
+      "title": "Chat",
+      "you": "tú",
+      "working": "trabajando…",
+      "loading": "Cargando el chat…",
+      "empty": "Aún no hay mensajes. Escribe abajo para hablar con el agente de esta funcionalidad; se ejecuta en {{directory}}.",
+      "answerPrompt": "respuesta",
+      "hint": "enter enviar · esc volver a las funcionalidades",
+      "hintQuestion": "1–9 elegir una opción · o escribe una respuesta y pulsa enter · esc volver"
     }
   }
 }

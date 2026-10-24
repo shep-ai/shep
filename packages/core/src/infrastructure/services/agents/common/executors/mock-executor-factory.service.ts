@@ -15,9 +15,11 @@ import type {
 } from '../../../../../application/ports/output/agents/agent-executor-factory.interface.js';
 import type { AdaptiveTierPlan, TierOverrides } from '../../../../../domain/shared/model-tier.js';
 import { MockAgentExecutorService } from './mock-executor.service.js';
+import { MockInteractiveExecutor } from './mock-interactive-executor.service.js';
 
 export class MockAgentExecutorFactory implements IAgentExecutorFactory {
   private readonly executor = new MockAgentExecutorService();
+  private readonly interactive = new MockInteractiveExecutor();
 
   createExecutor(_agentType: AgentType, _authConfig: AgentConfig): IAgentExecutor {
     return this.executor;
@@ -62,10 +64,10 @@ export class MockAgentExecutorFactory implements IAgentExecutorFactory {
     _agentType: AgentType,
     _authConfig: AgentConfig
   ): IInteractiveAgentExecutor {
-    throw new Error('Interactive sessions are not supported in mock executor');
+    return this.interactive;
   }
 
   supportsInteractive(_agentType: AgentType): boolean {
-    return false;
+    return true;
   }
 }
