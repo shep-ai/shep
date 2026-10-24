@@ -16,7 +16,7 @@ tasks:
     description: >
       Define the feature states every surface shows and the actions the console offers, in
       tsp/common/enums/feature-console.tsp, and regenerate output.ts.
-    state: Todo
+    state: Done
     dependencies: []
     acceptanceCriteria:
       - FeatureState has running, action-required, blocked, pending, queued, done, error, deleting, archived
@@ -31,7 +31,7 @@ tasks:
       domain/shared/feature-state.ts holds the one derivation (web rules plus queued), the
       action rules and the console ordering. The web's deriveNodeState delegates through a
       total Record mapping.
-    state: Todo
+    state: Done
     dependencies:
       - task-1
     acceptanceCriteria:
@@ -54,7 +54,7 @@ tasks:
     description: >
       Returns rows ready to render (state, phase, agent, model, cost, tokens, elapsed, PR,
       pending questions, needs-you, actions) plus totals, from five batched reads.
-    state: Todo
+    state: Done
     dependencies:
       - task-2
     acceptanceCriteria:
@@ -77,7 +77,7 @@ tasks:
       One entry point for console actions. Resolves the feature and its current run, refuses
       actions the domain does not offer, and dispatches to the existing approve, reject, stop
       and resume use cases.
-    state: Todo
+    state: Done
     dependencies:
       - task-2
     acceptanceCriteria:
@@ -98,7 +98,7 @@ tasks:
     description: >
       Read the last N lines of the feature's current run log through the log store port, and
       register all three use cases in register-feature-console.ts.
-    state: Todo
+    state: Done
     dependencies:
       - task-3
       - task-4
@@ -121,7 +121,7 @@ tasks:
     description: >
       A pi-tui Terminal decorator for the alternate screen, plus pure formatters for duration,
       cost, state badges and column fitting.
-    state: Todo
+    state: Done
     dependencies: []
     acceptanceCriteria:
       - start() writes CSI ?1049h before delegating; stop() delegates then writes CSI ?1049l
@@ -140,7 +140,7 @@ tasks:
     description: >
       Renders header, needs-you strip, roster, inspector or log pane, status line and key bar
       in exactly terminal.rows lines; handles navigation, mode switches and action keys.
-    state: Todo
+    state: Done
     dependencies:
       - task-3
       - task-6
@@ -163,7 +163,7 @@ tasks:
     description: >
       runFeatureConsole wires the TUI, the 2s poll with an in-flight guard, action dispatch and
       clean exit; shep tui resolves the use cases and refuses to run without a TTY.
-    state: Todo
+    state: Done
     dependencies:
       - task-5
       - task-7
@@ -187,7 +187,7 @@ tasks:
     description: >
       Replace tests/e2e/tui/placeholder.test.ts with a test that drives the built CLI in
       node-pty and reads the screen through @xterm/headless.
-    state: Todo
+    state: Done
     dependencies:
       - task-8
     acceptanceCriteria:
@@ -209,7 +209,7 @@ tasks:
     description: >
       Update docs/tui and docs/cli/commands.md; capture terminal screenshots and test output
       into specs/142-tui-feature-console/evidence for the PR.
-    state: Todo
+    state: Done
     dependencies:
       - task-9
     acceptanceCriteria:
