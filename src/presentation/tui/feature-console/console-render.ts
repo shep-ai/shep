@@ -24,6 +24,7 @@ import {
   formatTokens,
   paint,
   sanitizeText,
+  stripStyles,
   type StateStyle,
 } from './console-format.js';
 
@@ -163,15 +164,14 @@ export function renderRosterRow(
     [Column.Repo]: row.repositoryName,
     [Column.Agent]: agentLabel(row),
   };
-  const marker = selected ? paint.key('▸ ') : '  ';
-  const state = style.paint(fit(`${style.symbol} ${stateLabel(row, t)}`, STATE_WIDTH));
-  const name = fit(row.name, layout.nameWidth);
-  const line = [
-    marker + state,
-    selected ? paint.heading(name) : name,
-    ...layout.columns.map((c) => cell(c, values[c])),
-  ].join(' ');
-  return selected ? paint.selected(line) : line;
+  const stateText = fit(`${style.symbol} ${stateLabel(row, t)}`, STATE_WIDTH);
+  const cells = [fit(row.name, layout.nameWidth), ...layout.columns.map((c) => cell(c, values[c]))];
+  if (selected) {
+    // One plain highlight bar: colours inside an inverse bar turn into blocks,
+    // and the reset truncation appends after "…" would end the bar early.
+    return paint.key('▸ ') + paint.selected(stripStyles([stateText, ...cells].join(' ')));
+  }
+  return `  ${[style.paint(stateText), ...cells].join(' ')}`;
 }
 
 // ── details, log, help, empty ────────────────────────────────────────────────
@@ -223,6 +223,7 @@ export function renderLog(
   row: FeatureConsoleRow | undefined,
   tail: FeatureLogTail | undefined,
   t: TFunction,
+  width: number,
   height: number
 ): string[] {
   const fileName = tail?.logPath?.split(/[\\/]/).pop();
@@ -231,7 +232,12 @@ export function renderLog(
   );
   if (!row?.runId) return [title, paint.muted(t(`${NS}.log.noRun`))];
   if (!tail || tail.lines.length === 0) return [title, paint.muted(t(`${NS}.log.empty`))];
-  return [title, ...tail.lines.slice(-(height - 1)).map(sanitizeText)];
+  // Wrap, then keep the newest rows: log lines carry long prefixes, and
+  // truncating would hide the message that follows them.
+  const rows = tail.lines.flatMap((line) =>
+    wrapTextWithAnsi(sanitizeText(line), Math.max(1, width))
+  );
+  return [title, ...rows.slice(-(height - 1))];
 }
 
 const HELP_KEYS = [

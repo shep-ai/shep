@@ -64,6 +64,14 @@ export function sanitizeText(text: string): string {
     .replace(CONTROL_CHARACTER, '');
 }
 
+// eslint-disable-next-line no-control-regex
+const STYLE_SEQUENCE = /\x1b\[[0-9;]*m/g;
+
+/** The text without colour or style codes (truncation adds resets of its own). */
+export function stripStyles(text: string): string {
+  return text.replace(STYLE_SEQUENCE, '');
+}
+
 /** Exactly `width` columns: truncated with an ellipsis, or padded on the right. */
 export function fit(text: string, width: number): string {
   if (width <= 0) return '';

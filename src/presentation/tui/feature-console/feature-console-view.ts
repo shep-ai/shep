@@ -327,7 +327,7 @@ export class FeatureConsoleView implements Component {
   private renderPane(width: number, height: number): string[] {
     const lines =
       this.pane === Pane.Log
-        ? renderLog(this.selectedRow, this.log, this.deps.t, height)
+        ? renderLog(this.selectedRow, this.log, this.deps.t, width, height)
         : renderDetails(this.selectedRow, this.deps.t, width);
     return lines.slice(0, height);
   }

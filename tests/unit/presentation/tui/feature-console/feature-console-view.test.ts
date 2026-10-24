@@ -10,6 +10,11 @@
  */
 
 import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest';
+
+// Render with colours, as a real terminal would: picocolors decides at import.
+vi.hoisted(() => {
+  process.env.FORCE_COLOR = '1';
+});
 import type { TFunction } from 'i18next';
 import { visibleWidth } from '@mariozechner/pi-tui';
 
@@ -214,6 +219,31 @@ describe('FeatureConsoleView', () => {
       expect(view.selectedRow?.shortId).toBe('aaaa1111');
     });
 
+    it('highlights the whole selected row, even after a truncated name', () => {
+      view.setSnapshot(
+        snapshot([row('aaaa1111', { name: 'A feature name far too long to fit its column' })])
+      );
+      const line = view.render(160).find((l) => l.includes('▸'))!;
+      // Every visible cell after the marker must sit inside an inverse (7)
+      // span: a full reset (0) from truncation must not end the highlight.
+      // The roster part of the line: from the marker to the pane divider.
+      const rosterPart = line.slice(line.indexOf('▸') + 1, line.indexOf('│'));
+      // eslint-disable-next-line no-control-regex
+      const segments = rosterPart.split(/(\x1b\[[0-9;]*m)/);
+      let inverse = false;
+      for (const segment of segments) {
+        // eslint-disable-next-line no-control-regex
+        const sgr = segment.match(/^\x1b\[([0-9;]*)m$/);
+        if (sgr) {
+          const codes = sgr[1].split(';');
+          if (codes.includes('7')) inverse = true;
+          if (codes.includes('27') || codes.includes('0') || sgr[1] === '') inverse = false;
+          continue;
+        }
+        if (segment.trim()) expect(inverse, `"${segment}" is outside the highlight`).toBe(true);
+      }
+    });
+
     it('keeps the same feature selected when a refresh reorders the rows', () => {
       view.setSnapshot(snapshot([row('aaaa1111'), row('bbbb2222')]));
       press('j');
@@ -266,6 +296,18 @@ describe('FeatureConsoleView', () => {
 
       press('i');
       expect(screen(160).join('\n')).not.toContain('[text] planning the change');
+    });
+
+    it('wraps long log lines so the end of each line stays readable', () => {
+      view.setSnapshot(snapshot([row('aaaa1111')]));
+      press('l');
+      view.setLog({
+        lines: [
+          '[2026-10-24T09:43:07.744Z] [claude-code|claude-opus-5-5] [WORKER] Spawned the merge step with the final summary',
+        ],
+      });
+      const text = screen(160).join('\n');
+      expect(text).toContain('final summary');
     });
 
     it('asks for the new feature log when the selection moves while the log is open', () => {
