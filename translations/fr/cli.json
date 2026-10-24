@@ -151,6 +151,11 @@
       "shuttingDown": "Arrêt en cours...",
       "failedToStart": "Échec du démarrage de l'interface web"
     },
+    "tui": {
+      "description": "Ouvrir la console de terminal en direct de toutes les features",
+      "repoOption": "Afficher uniquement les features de ce dépôt",
+      "allOption": "Inclure les features archivées"
+    },
     "run": {
       "description": "Exécuter un workflow d'agent IA",
       "agentArgument": "Nom de l'agent à exécuter (par ex. analyze-repository)",

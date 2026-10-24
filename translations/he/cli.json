@@ -151,6 +151,11 @@
       "shuttingDown": "מכבה...",
       "failedToStart": "הפעלת ממשק ה-Web נכשלה"
     },
+    "tui": {
+      "description": "פתיחת קונסולת הטרמינל החיה של כל הפיצ'רים",
+      "repoOption": "להציג רק פיצ'רים של הריפו הזה",
+      "allOption": "לכלול פיצ'רים בארכיון"
+    },
     "run": {
       "description": "הרץ תהליך עבודה של סוכן AI",
       "agentArgument": "שם הסוכן להרצה (לדוגמה, analyze-repository)",

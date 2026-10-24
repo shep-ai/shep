@@ -150,5 +150,119 @@
       "createPr": "Criar PR",
       "createPrDescription": "Abrir pull request quando a implementação for concluída"
     }
+  },
+  "console": {
+    "title": "Features",
+    "summary": {
+      "needsYou": "precisam de você",
+      "running": "em execução",
+      "waiting": "aguardando",
+      "failed": "com falha",
+      "done": "concluídas"
+    },
+    "strip": {
+      "label": "PRECISA DE VOCÊ",
+      "empty": "Nada precisa de você agora",
+      "questions": "perguntas: {{count}}",
+      "gate": "revisar {{phase}}"
+    },
+    "columns": {
+      "state": "ESTADO",
+      "feature": "FEATURE",
+      "repo": "REPO",
+      "phase": "FASE",
+      "agent": "AGENTE",
+      "elapsed": "TEMPO",
+      "cost": "CUSTO"
+    },
+    "state": {
+      "running": "Em execução",
+      "action-required": "Precisa de você",
+      "blocked": "Bloqueada",
+      "pending": "Pendente",
+      "queued": "Na fila",
+      "done": "Concluída",
+      "error": "Com falha",
+      "deleting": "Excluindo",
+      "archived": "Arquivada",
+      "question": "Pergunta"
+    },
+    "phase": {
+      "analyze": "análise",
+      "requirements": "requisitos",
+      "research": "pesquisa",
+      "plan": "plano",
+      "implement": "implementação",
+      "merge": "merge",
+      "maintain": "manutenção",
+      "blocked": "bloqueada",
+      "pending": "pendente",
+      "archived": "arquivada",
+      "prototype-generate": "protótipo"
+    },
+    "inspector": {
+      "repo": "Repo",
+      "branch": "Branch",
+      "worktree": "Worktree",
+      "state": "Estado",
+      "agent": "Agente",
+      "elapsed": "Tempo",
+      "cost": "Custo",
+      "tokens": "Tokens",
+      "tokensValue": "{{input}} entrada · {{output}} saída",
+      "pr": "PR",
+      "questions": "Perguntas",
+      "questionsHint": "{{count}} abertas · responda com: shep agent questions ls",
+      "error": "Erro",
+      "noSelection": "Nenhuma feature selecionada"
+    },
+    "log": {
+      "title": "Log",
+      "empty": "Ainda sem saída",
+      "noRun": "Esta feature ainda não tem execução de agente"
+    },
+    "keys": {
+      "select": "selecionar",
+      "details": "detalhes",
+      "log": "log",
+      "approve": "aprovar",
+      "reject": "rejeitar",
+      "stop": "parar",
+      "resume": "retomar",
+      "help": "ajuda",
+      "quit": "sair"
+    },
+    "reject": {
+      "prompt": "Feedback para {{name}}:",
+      "hint": "enter enviar · esc cancelar"
+    },
+    "stop": {
+      "confirm": "Parar {{name}}? A execução poderá ser retomada. (y/n)"
+    },
+    "progress": {
+      "approve": "Aprovando {{name}}…",
+      "reject": "Rejeitando {{name}}…",
+      "stop": "Parando {{name}}…",
+      "resume": "Retomando {{name}}…"
+    },
+    "refreshFailed": "Falha ao atualizar: {{message}}",
+    "empty": {
+      "title": "Ainda não há features",
+      "hint": "Crie uma com: shep feat new \"<o que construir>\""
+    },
+    "help": {
+      "title": "Teclas",
+      "navigate": "↑ ↓ / j k   mover",
+      "pages": "PgUp PgDn / g G   página, primeira, última",
+      "details": "enter / i   painel de detalhes",
+      "log": "l   painel de log",
+      "approve": "a   aprovar a etapa",
+      "reject": "r   rejeitar a etapa com feedback",
+      "stop": "s   parar a execução (pergunta antes)",
+      "resume": "R   retomar uma execução interrompida ou com falha",
+      "help": "?   esta ajuda (esc fecha)",
+      "quit": "q / ctrl+c   sair"
+    },
+    "notTty": "shep tui precisa de um terminal interativo. Em scripts e pipes, use \"shep feat ls\"."
   }
 }

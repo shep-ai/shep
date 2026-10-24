@@ -150,5 +150,119 @@
       "createPr": "Создать PR",
       "createPrDescription": "Открыть запрос на слияние после завершения реализации"
     }
+  },
+  "console": {
+    "title": "Фичи",
+    "summary": {
+      "needsYou": "ждут вас",
+      "running": "в работе",
+      "waiting": "ожидают",
+      "failed": "с ошибкой",
+      "done": "готово"
+    },
+    "strip": {
+      "label": "ЖДУТ ВАС",
+      "empty": "Сейчас ничего не ждёт вас",
+      "questions": "вопросов: {{count}}",
+      "gate": "проверить: {{phase}}"
+    },
+    "columns": {
+      "state": "СТАТУС",
+      "feature": "ФИЧА",
+      "repo": "РЕПО",
+      "phase": "ФАЗА",
+      "agent": "АГЕНТ",
+      "elapsed": "ВРЕМЯ",
+      "cost": "ЦЕНА"
+    },
+    "state": {
+      "running": "В работе",
+      "action-required": "Ждёт вас",
+      "blocked": "Заблокирована",
+      "pending": "Отложена",
+      "queued": "В очереди",
+      "done": "Готово",
+      "error": "Ошибка",
+      "deleting": "Удаляется",
+      "archived": "В архиве",
+      "question": "Вопрос"
+    },
+    "phase": {
+      "analyze": "анализ",
+      "requirements": "требования",
+      "research": "исследование",
+      "plan": "план",
+      "implement": "реализация",
+      "merge": "слияние",
+      "maintain": "поддержка",
+      "blocked": "заблокирована",
+      "pending": "отложена",
+      "archived": "в архиве",
+      "prototype-generate": "прототип"
+    },
+    "inspector": {
+      "repo": "Репо",
+      "branch": "Ветка",
+      "worktree": "Worktree",
+      "state": "Статус",
+      "agent": "Агент",
+      "elapsed": "Время",
+      "cost": "Цена",
+      "tokens": "Токены",
+      "tokensValue": "{{input}} вход · {{output}} выход",
+      "pr": "PR",
+      "questions": "Вопросы",
+      "questionsHint": "открыто: {{count}} · ответить: shep agent questions ls",
+      "error": "Ошибка",
+      "noSelection": "Фича не выбрана"
+    },
+    "log": {
+      "title": "Лог",
+      "empty": "Пока нет вывода",
+      "noRun": "У этой фичи ещё нет запуска агента"
+    },
+    "keys": {
+      "select": "выбор",
+      "details": "подробности",
+      "log": "лог",
+      "approve": "одобрить",
+      "reject": "отклонить",
+      "stop": "остановить",
+      "resume": "продолжить",
+      "help": "справка",
+      "quit": "выход"
+    },
+    "reject": {
+      "prompt": "Отзыв для {{name}}:",
+      "hint": "enter отправить · esc отмена"
+    },
+    "stop": {
+      "confirm": "Остановить {{name}}? Запуск можно будет продолжить. (y/n)"
+    },
+    "progress": {
+      "approve": "Одобряем {{name}}…",
+      "reject": "Отклоняем {{name}}…",
+      "stop": "Останавливаем {{name}}…",
+      "resume": "Продолжаем {{name}}…"
+    },
+    "refreshFailed": "Не удалось обновить: {{message}}",
+    "empty": {
+      "title": "Фич пока нет",
+      "hint": "Создайте фичу: shep feat new \"<что построить>\""
+    },
+    "help": {
+      "title": "Клавиши",
+      "navigate": "↑ ↓ / j k   перемещение",
+      "pages": "PgUp PgDn / g G   страница, первая, последняя",
+      "details": "enter / i   панель подробностей",
+      "log": "l   панель лога",
+      "approve": "a   одобрить этап",
+      "reject": "r   отклонить этап с отзывом",
+      "stop": "s   остановить запуск (с подтверждением)",
+      "resume": "R   продолжить прерванный или упавший запуск",
+      "help": "?   эта справка (esc закрывает)",
+      "quit": "q / ctrl+c   выход"
+    },
+    "notTty": "shep tui нужен интерактивный терминал. В скриптах и конвейерах используйте \"shep feat ls\"."
   }
 }

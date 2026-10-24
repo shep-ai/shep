@@ -20,6 +20,7 @@ import {
   needsUserAttention,
 } from '../../../domain/shared/feature-state.js';
 import { normalizeRepositoryPath } from '../../../domain/shared/repository-path.js';
+import { isGateQuestion } from '../../../domain/shared/decision-builders.js';
 import type { IAgentRunRepository } from '../../ports/output/agents/agent-run-repository.interface.js';
 import type { IPhaseTimingRepository } from '../../ports/output/agents/phase-timing-repository.interface.js';
 import type { IRepositoryRepository } from '../../ports/output/repositories/repository-repository.interface.js';
@@ -72,7 +73,12 @@ export class GetFeatureConsoleSnapshotUseCase {
 
     const runById = new Map(runs.map((r) => [r.id, r]));
     const timingsByRun = groupBy(timings, (t) => t.agentRunId);
-    const questionsByFeature = countBy(questions, (q) => q.featureId);
+    // A gate files an inbox question mirroring itself; the run status already
+    // says "at a gate", so only the agent's own questions count here.
+    const questionsByFeature = countBy(
+      questions.filter((q) => !isGateQuestion(q)),
+      (q) => q.featureId
+    );
     const repoNameByPath = new Map(
       repositories.map((r) => [normalizeRepositoryPath(r.path), r.name])
     );

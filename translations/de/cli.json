@@ -151,6 +151,11 @@
       "shuttingDown": "Wird heruntergefahren...",
       "failedToStart": "Web-UI konnte nicht gestartet werden"
     },
+    "tui": {
+      "description": "Die Live-Terminalkonsole aller Features öffnen",
+      "repoOption": "Nur Features dieses Repositorys zeigen",
+      "allOption": "Archivierte Features einbeziehen"
+    },
     "run": {
       "description": "Einen KI-Agenten-Workflow ausführen",
       "agentArgument": "Name des auszuführenden Agenten (z.B. analyze-repository)",

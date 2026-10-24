@@ -17,6 +17,7 @@ import {
   AgentRunStatus,
   AgentType,
   BuildMode,
+  DecisionKind,
   FeatureConsoleAction,
   FeatureState,
   PrStatus,
@@ -208,6 +209,26 @@ describe('GetFeatureConsoleSnapshotUseCase', () => {
     expect(row.pendingQuestions).toBe(2);
     expect(row.needsAttention).toBe(true);
     expect(questionInbox.execute).toHaveBeenCalledWith({ status: AgentQuestionStatus.pending });
+  });
+
+  it('does not count the question an approval gate files for itself', async () => {
+    // Every gate also files a blocking inbox question mirroring it (spec 093).
+    // The run status already says "at a gate"; counting the mirror would call
+    // a feature that moved past its gate a "question" until the mirror expires.
+    features = [feature('f1', { agentRunId: 'r1' })];
+    runs = [run('r1', AgentRunStatus.running)];
+    questions = [
+      {
+        ...question('f1'),
+        decision: { id: 'r1', kind: DecisionKind.ApprovalGate, questions: [] },
+      } as unknown as AgentQuestion,
+    ];
+
+    const [row] = (await useCase.execute()).rows;
+
+    expect(row.pendingQuestions).toBe(0);
+    expect(row.needsAttention).toBe(false);
+    expect(row.state).toBe(FeatureState.Running);
   });
 
   it('orders rows needing the user first, then running, then done, and totals them', async () => {
