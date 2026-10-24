@@ -28,10 +28,11 @@ import { GetSupervisorPolicyUseCase } from '@/application/use-cases/agents/get-s
 import { RejectAgentRunUseCase } from '@/application/use-cases/agents/reject-agent-run.use-case.js';
 import {
   FeatureAgentSupervisorGateEvaluator,
-  parseGuardrailRules,
   resolveEffectiveAutonomy,
 } from '@/infrastructure/services/agents/feature-agent/feature-agent-supervisor-gate-evaluator.js';
+import { CollectGateMetricsUseCase } from '@/application/use-cases/fleet/collect-gate-metrics.use-case.js';
 import { EvaluateGateGuardrailsUseCase } from '@/application/use-cases/fleet/evaluate-gate-guardrails.use-case.js';
+import { parseGuardrailRules } from '@/domain/shared/guardrail-rules.js';
 import { InMemorySupervisorAgent } from '@/infrastructure/adapters/in-memory/in-memory-supervisor-agent.js';
 import { InMemorySupervisorDecisionRepository } from '@/infrastructure/adapters/in-memory/in-memory-supervisor-decision-repository.js';
 import { InMemorySupervisorPolicyRepository } from '@/infrastructure/adapters/in-memory/in-memory-supervisor-policy-repository.js';
@@ -279,8 +280,7 @@ function buildEvaluator(opts: {
     approve,
     reject,
     new EvaluateGateGuardrailsUseCase(),
-    featureRepo as never,
-    gitPrService as never,
+    new CollectGateMetricsUseCase(featureRepo as never, gitPrService as never),
     settingsRepo(opts.collaboration)
   );
 

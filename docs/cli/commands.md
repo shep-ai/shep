@@ -673,7 +673,8 @@ are omitted.
 ### `shep fleet approve`
 
 Batch-approve features waiting on approval gates. Candidates are approved sequentially so one
-conflicted feature cannot block the rest of the batch; the summary reports per-feature failures.
+conflicted feature cannot block the rest of the batch; the summary reports per-feature failures and
+the features the `--low-risk` filter deliberately left for a human.
 
 **Source**: `src/presentation/cli/commands/fleet/approve.command.ts`
 
@@ -681,9 +682,23 @@ conflicted feature cannot block the rest of the batch; the summary reports per-f
 | ---------------- | ---------------------------------------------------- |
 | `--all`          | Approve every feature currently waiting at a gate     |
 | `--gate <type>`  | Restrict approval to one gate: `prd`, `plan`, `merge` |
+| `--low-risk`     | Approve only the gates the guardrail rules prove safe |
 
-At least one of `--all` or `--gate` is required, so a bare `shep fleet approve` can never
-approve anything by accident.
+At least one of `--all`, `--gate` or `--low-risk` is required, so a bare `shep fleet approve` can
+never approve anything by accident.
+
+**`--low-risk` approves only what is provably safe.** Each candidate is judged against the
+`GuardrailRule`s stored on its supervisor policy — the same deterministic pass the supervisor runs
+before the LLM. A gate is approved only when **every** matching rule passes *and* permits
+auto-approval. A breached rule, an advise-only rule, unreadable rules, a disabled supervisor
+policy, or a diff/CI fact that cannot be computed all leave the gate for a human, with the reason.
+
+**No guardrail rules means no approvals.** That is deliberate: a flag that approved everything when
+nothing is configured would be a synonym for `--all`. The summary says so, and the exit code is 1.
+
+**Exit code.** `0` only when every selected gate was approved. Any failure, or a gate the low-risk
+filter skipped, exits `1`, so `shep fleet approve --low-risk && …` does not read a partial batch as
+a cleared fleet.
 
 ### `shep fleet pause` / `shep fleet resume`
 
@@ -787,9 +802,6 @@ any selected feature was not restarted — a partial batch or a paused queue —
 
 The same action is in the web triage drawer: **Retry** on a failed row, and **Retry all failed**
 in the footer behind a confirmation.
-
-> **Not implemented yet**: the `--low-risk` filter. See
-> `specs/111-fleet-control-plane/tasks.yaml` for the remaining work.
 
 ---
 

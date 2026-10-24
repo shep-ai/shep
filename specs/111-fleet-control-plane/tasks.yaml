@@ -133,11 +133,13 @@ tasks:
   - id: task-8
     title: "TDD: BatchApproveFeaturesUseCase"
     description: "Batch approves features waiting on gates with optional filter criteria (--low-risk, --gate)."
-    state: Partial
+    state: Done
     dependencies: [task-6, task-7]
     acceptanceCriteria:
       - "Approves target features sequentially with error isolation"
       - "Returns batch summary of approved, skipped, and failed count"
+      - "An empty `featureIds` array selects nothing; only an omitted list means 'no filter'"
+      - "`--low-risk` approves only candidates whose guardrail rules pass and permit auto-approval; with no rules configured it approves nothing and reports every candidate as skipped with its reason"
       - "Records actor namespace correctly"
     tdd:
       red:
@@ -225,10 +227,12 @@ tasks:
   - id: task-14
     title: "Implement CLI command: shep fleet approve / pause / retry"
     description: "Create batch action CLI subcommands under shep fleet with interactive confirmation prompts."
-    state: Partial
+    state: Done
     dependencies: [task-11]
     acceptanceCriteria:
       - "shep fleet approve --all batch approves waiting features"
+      - "shep fleet approve --low-risk approves only the gates the guardrail rules prove safe; no rules configured approves nothing and prints the reason"
+      - "shep fleet approve exits 1 when any selected gate was not approved, whether it failed or was skipped as not low-risk"
       - "shep fleet pause / resume toggles admission queue"
       - "shep fleet pause --reason records why; shep fleet status reports the paused queue"
       - "shep fleet retry --failed restarts the runs that crashed, failed or were stopped, and requires an explicit scope"

@@ -282,6 +282,8 @@ import { GetFleetOverviewUseCase } from '../../../application/use-cases/fleet/ge
 import { BatchApproveFeaturesUseCase } from '../../../application/use-cases/fleet/batch-approve-features.use-case.js';
 import { EvaluateGateGuardrailsUseCase } from '../../../application/use-cases/fleet/evaluate-gate-guardrails.use-case.js';
 import { RetryFailedFleetFeaturesUseCase } from '../../../application/use-cases/fleet/retry-failed-fleet-features.use-case.js';
+import { CollectGateMetricsUseCase } from '../../../application/use-cases/fleet/collect-gate-metrics.use-case.js';
+import { EvaluateFeatureLowRiskUseCase } from '../../../application/use-cases/fleet/evaluate-feature-low-risk.use-case.js';
 import { SetFleetQueuePauseUseCase } from '../../../application/use-cases/fleet/set-fleet-queue-pause.use-case.js';
 import { PruneRetainedDataUseCase } from '../../../application/use-cases/maintenance/prune-retained-data.use-case.js';
 import {
@@ -291,6 +293,8 @@ import {
   GetFleetOverviewUseCaseToken,
   BatchApproveFeaturesUseCaseToken,
   RetryFailedFleetFeaturesUseCaseToken,
+  CollectGateMetricsUseCaseToken,
+  EvaluateFeatureLowRiskUseCaseToken,
 } from '../tokens.js';
 
 /**
@@ -1140,6 +1144,14 @@ export function registerUseCases(container: DependencyContainer): void {
   container.registerSingleton(RetryFailedFleetFeaturesUseCase);
   container.register(RetryFailedFleetFeaturesUseCaseToken, {
     useFactory: (c) => c.resolve(RetryFailedFleetFeaturesUseCase),
+  });
+  container.registerSingleton(CollectGateMetricsUseCase);
+  container.register(CollectGateMetricsUseCaseToken, {
+    useFactory: (c) => c.resolve(CollectGateMetricsUseCase),
+  });
+  container.registerSingleton(EvaluateFeatureLowRiskUseCase);
+  container.register(EvaluateFeatureLowRiskUseCaseToken, {
+    useFactory: (c) => c.resolve(EvaluateFeatureLowRiskUseCase),
   });
   container.registerSingleton(SetFleetQueuePauseUseCase);
   container.register(SetFleetQueuePauseUseCaseToken, {

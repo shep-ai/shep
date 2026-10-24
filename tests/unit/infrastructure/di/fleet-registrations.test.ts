@@ -88,6 +88,12 @@ describe('Fleet Control Plane DI registrations', () => {
     const { SetFleetQueuePauseUseCase } = await import(
       '../../../../packages/core/src/application/use-cases/fleet/set-fleet-queue-pause.use-case.js'
     );
+    const { CollectGateMetricsUseCase } = await import(
+      '../../../../packages/core/src/application/use-cases/fleet/collect-gate-metrics.use-case.js'
+    );
+    const { EvaluateFeatureLowRiskUseCase } = await import(
+      '../../../../packages/core/src/application/use-cases/fleet/evaluate-feature-low-risk.use-case.js'
+    );
 
     const container = await initializeContainer();
 
@@ -99,6 +105,10 @@ describe('Fleet Control Plane DI registrations', () => {
       BatchApproveFeaturesUseCase
     );
     expect(container.resolve(SetFleetQueuePauseUseCase)).toBeInstanceOf(SetFleetQueuePauseUseCase);
+    expect(container.resolve(CollectGateMetricsUseCase)).toBeInstanceOf(CollectGateMetricsUseCase);
+    expect(container.resolve(EvaluateFeatureLowRiskUseCase)).toBeInstanceOf(
+      EvaluateFeatureLowRiskUseCase
+    );
   });
 
   it('registers the queue-pause use case as a class token', async () => {
@@ -155,6 +165,8 @@ describe('Fleet Control Plane DI registrations', () => {
     expect(tokens.ListFleetTriageItemsUseCaseToken).toBe('ListFleetTriageItemsUseCase');
     expect(tokens.BatchApproveFeaturesUseCaseToken).toBe('BatchApproveFeaturesUseCase');
     expect(tokens.RetryFailedFleetFeaturesUseCaseToken).toBe('RetryFailedFleetFeaturesUseCase');
+    expect(tokens.CollectGateMetricsUseCaseToken).toBe('CollectGateMetricsUseCase');
+    expect(tokens.EvaluateFeatureLowRiskUseCaseToken).toBe('EvaluateFeatureLowRiskUseCase');
   });
 
   /**

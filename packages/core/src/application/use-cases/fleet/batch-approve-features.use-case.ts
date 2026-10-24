@@ -6,14 +6,23 @@
  * worktree filesystem race conditions — one conflicted feature must never block
  * the rest of the batch.
  *
+ * With `lowRisk`, every candidate is first judged against the configured
+ * guardrails and only the provably safe ones are approved. Everything else is
+ * reported as **skipped** with the reason, never silently dropped and never
+ * approved: an empty guardrail configuration must not turn the flag into
+ * `--all`.
+ *
  * Following Clean Architecture:
  * - Application layer use case
- * - Port dependencies: IFleetRepository, ApproveAgentRunUseCase
+ * - Port dependencies: IFleetRepository, ApproveAgentRunUseCase,
+ *   EvaluateFeatureLowRiskUseCase
  */
 
 import { injectable, inject } from 'tsyringe';
 import { ApproveAgentRunUseCase } from '../agents/approve-agent-run.use-case.js';
+import { EvaluateFeatureLowRiskUseCase } from './evaluate-feature-low-risk.use-case.js';
 import type { IFleetRepository } from '../../ports/output/repositories/fleet-repository.interface.js';
+import { isGuardrailGateType } from '../../../domain/shared/guardrail-rules.js';
 import {
   FleetTriagePriority,
   FleetTriageCategory,
@@ -22,10 +31,18 @@ import {
 } from '../../../domain/generated/output.js';
 
 export interface BatchApproveFeaturesInput {
-  /** When supplied, only these feature IDs are considered. */
+  /**
+   * When supplied, only these feature IDs are considered. An **empty array
+   * selects nothing** — it must never widen into "the whole fleet".
+   */
   featureIds?: string[];
   /** When supplied (and not `all`), only this gate type is considered. */
   gateType?: GuardrailGateType;
+  /**
+   * Approve only candidates that the guardrails prove low-risk. No guardrail
+   * rules means no approvals.
+   */
+  lowRisk?: boolean;
 }
 
 export interface BatchApproveResult {
@@ -35,6 +52,9 @@ export interface BatchApproveResult {
   approvedFeatureIds: string[];
   failedCount: number;
   failures: { featureId: string; reason: string }[];
+  /** Candidates deliberately left for a human by the `--low-risk` filter. */
+  skippedCount: number;
+  skipped: { featureId: string; reason: string }[];
 }
 
 /** Gate triage items always carry the run ID that must be approved. */
@@ -50,7 +70,9 @@ export class BatchApproveFeaturesUseCase {
     @inject('IFleetRepository')
     private readonly fleetRepo: IFleetRepository,
     @inject(ApproveAgentRunUseCase)
-    private readonly approveUseCase: ApproveAgentRunUseCase
+    private readonly approveUseCase: ApproveAgentRunUseCase,
+    @inject(EvaluateFeatureLowRiskUseCase)
+    private readonly lowRisk: EvaluateFeatureLowRiskUseCase
   ) {}
 
   /**
@@ -63,7 +85,9 @@ export class BatchApproveFeaturesUseCase {
 
     let candidates = triageItems.filter(isGateCandidate);
 
-    if (input.featureIds && input.featureIds.length > 0) {
+    // `!== undefined`, not `.length > 0`: a stale or emptied selection must
+    // select nothing, never act on the whole fleet.
+    if (input.featureIds !== undefined) {
       const allowed = new Set(input.featureIds);
       candidates = candidates.filter((item) => allowed.has(item.featureId));
     }
@@ -74,8 +98,35 @@ export class BatchApproveFeaturesUseCase {
 
     const approvedFeatureIds: string[] = [];
     const failures: { featureId: string; reason: string }[] = [];
+    const skipped: { featureId: string; reason: string }[] = [];
 
     for (const item of candidates) {
+      if (input.lowRisk) {
+        const gate =
+          item.gateType && isGuardrailGateType(item.gateType) ? item.gateType : undefined;
+        if (!gate) {
+          skipped.push({
+            featureId: item.featureId,
+            reason: 'Unknown gate type — cannot prove this gate is low-risk',
+          });
+          continue;
+        }
+
+        try {
+          const assessment = await this.lowRisk.execute({ featureId: item.featureId, gate });
+          if (!assessment.lowRisk) {
+            skipped.push({ featureId: item.featureId, reason: assessment.reason });
+            continue;
+          }
+        } catch (err) {
+          skipped.push({
+            featureId: item.featureId,
+            reason: err instanceof Error ? err.message : String(err),
+          });
+          continue;
+        }
+      }
+
       try {
         const result = await this.approveUseCase.execute(item.runId);
         if (result.approved) {
@@ -97,6 +148,8 @@ export class BatchApproveFeaturesUseCase {
       approvedFeatureIds,
       failedCount: failures.length,
       failures,
+      skippedCount: skipped.length,
+      skipped,
     };
   }
 }

@@ -36,22 +36,19 @@ import { inject, injectable } from 'tsyringe';
 import { randomUUID } from 'node:crypto';
 
 import type { IApplicationRepository } from '@/application/ports/output/repositories/application-repository.interface.js';
-import type { IFeatureRepository } from '@/application/ports/output/repositories/feature-repository.interface.js';
 import type { ISettingsRepository } from '@/application/ports/output/repositories/settings.repository.interface.js';
-import type { IGitPrService } from '@/application/ports/output/services/git-pr-service.interface.js';
 import { ApproveAgentRunUseCase } from '@/application/use-cases/agents/approve-agent-run.use-case.js';
 import { EvaluateSupervisorDecisionUseCase } from '@/application/use-cases/agents/evaluate-supervisor-decision.use-case.js';
 import { GetSupervisorPolicyUseCase } from '@/application/use-cases/agents/get-supervisor-policy.use-case.js';
 import { RejectAgentRunUseCase } from '@/application/use-cases/agents/reject-agent-run.use-case.js';
+import { CollectGateMetricsUseCase } from '@/application/use-cases/fleet/collect-gate-metrics.use-case.js';
 import { EvaluateGateGuardrailsUseCase } from '@/application/use-cases/fleet/evaluate-gate-guardrails.use-case.js';
 import {
-  CiStatus,
-  GuardrailGateType,
   SupervisorAutonomy,
   SupervisorVerdict,
-  type GuardrailRule,
   type SupervisorPolicy,
 } from '@/domain/generated/output.js';
+import { isGuardrailGateType, parseGuardrailRules } from '@/domain/shared/guardrail-rules.js';
 import { supervisorActor } from '@/domain/value-objects/supervisor-actor.js';
 
 const DEFAULT_GATE_ID = 'gate';
@@ -103,10 +100,8 @@ export class FeatureAgentSupervisorGateEvaluator {
     private readonly rejectAgentRun: RejectAgentRunUseCase,
     @inject(EvaluateGateGuardrailsUseCase)
     private readonly evaluateGuardrails: EvaluateGateGuardrailsUseCase,
-    @inject('IFeatureRepository')
-    private readonly featureRepo: IFeatureRepository,
-    @inject('IGitPrService')
-    private readonly gitPrService: IGitPrService,
+    @inject(CollectGateMetricsUseCase)
+    private readonly collectMetrics: CollectGateMetricsUseCase,
     @inject('ISettingsRepository')
     private readonly settings: ISettingsRepository
   ) {}
@@ -253,39 +248,17 @@ export class FeatureAgentSupervisorGateEvaluator {
   /**
    * Gathers the measurable gate context guardrails are evaluated against.
    *
-   * Returns `undefined` when any piece cannot be established, so callers treat
-   * "unknown" as "not provably within bounds" rather than as zero.
+   * The probe itself is shared with `shep fleet approve --low-risk`
+   * ({@link CollectGateMetricsUseCase}); a second copy here could resolve the
+   * worktree differently and let the two judge paths disagree about what "the
+   * diff" is. `undefined` means any piece could not be established, so callers
+   * treat "unknown" as "not provably within bounds" rather than as zero.
    */
-  private async collectGateMetrics(input: SupervisorGateEvaluationInput): Promise<
-    | {
-        diffLines: number;
-        filesChanged: number;
-        modifiedFiles: string[];
-        ciPassed: boolean;
-      }
-    | undefined
-  > {
-    try {
-      const feature = await this.featureRepo.findById(input.featureId);
-      if (!feature) return undefined;
-
-      const cwd = feature.worktreePath ?? input.repositoryPath;
-      const baseBranch = await this.gitPrService.getDefaultBranch(cwd);
-      const [summary, fileDiffs] = await Promise.all([
-        this.gitPrService.getPrDiffSummary(cwd, baseBranch),
-        this.gitPrService.getFileDiffs(cwd, baseBranch),
-      ]);
-
-      return {
-        diffLines: summary.additions + summary.deletions,
-        filesChanged: summary.filesChanged,
-        modifiedFiles: fileDiffs.map((diff) => diff.path),
-        // No PR yet (prd/plan gates) means CI has demonstrably not passed.
-        ciPassed: feature.pr?.ciStatus === CiStatus.Success,
-      };
-    } catch {
-      return undefined;
-    }
+  private async collectGateMetrics(input: SupervisorGateEvaluationInput) {
+    return this.collectMetrics.execute({
+      featureId: input.featureId,
+      repositoryPath: input.repositoryPath,
+    });
   }
 
   private async isCollaborationEnabled(): Promise<boolean> {
@@ -360,43 +333,5 @@ function isSupervisorAutonomy(value: string): value is SupervisorAutonomy {
     value === SupervisorAutonomy.advisory ||
     value === SupervisorAutonomy.cosign ||
     value === SupervisorAutonomy.autonomous
-  );
-}
-
-/** True when a LangGraph interrupt node maps onto a guardrail-governed gate. */
-export function isGuardrailGateType(value: string): value is GuardrailGateType {
-  return (Object.values(GuardrailGateType) as string[]).includes(value);
-}
-
-/**
- * Parses {@link SupervisorPolicy.guardrailRulesJson}.
- *
- * Returns `null` — never an empty list — when the stored value is unreadable or
- * holds even one malformed rule. Callers treat `null` as "cannot prove
- * compliance" and fail closed; silently dropping a broken rule would disable a
- * safety bound without anyone noticing.
- *
- * Exported so the unit test can exercise the parsing rules directly.
- */
-export function parseGuardrailRules(json: string | undefined): GuardrailRule[] | null {
-  if (!json) return [];
-  try {
-    const parsed: unknown = JSON.parse(json);
-    if (!Array.isArray(parsed)) return null;
-    return parsed.every(isGuardrailRule) ? parsed : null;
-  } catch {
-    return null;
-  }
-}
-
-function isGuardrailRule(value: unknown): value is GuardrailRule {
-  if (!value || typeof value !== 'object') return false;
-  const rule = value as Partial<GuardrailRule>;
-  return (
-    typeof rule.id === 'string' &&
-    rule.id.trim().length > 0 &&
-    typeof rule.gate === 'string' &&
-    isGuardrailGateType(rule.gate) &&
-    typeof rule.autoApprove === 'boolean'
   );
 }

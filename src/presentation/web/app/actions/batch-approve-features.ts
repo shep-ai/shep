@@ -37,6 +37,8 @@ const NOTHING_ATTEMPTED: BatchApproveResult = {
   approvedFeatureIds: [],
   failedCount: 0,
   failures: [],
+  skippedCount: 0,
+  skipped: [],
 };
 
 /**

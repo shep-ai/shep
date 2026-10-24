@@ -89,6 +89,8 @@ describe('batchApproveFeatures server action', () => {
       approvedFeatureIds: [],
       failedCount: 0,
       failures: [],
+      skippedCount: 0,
+      skipped: [],
       error: 'DI container not available',
     });
   });

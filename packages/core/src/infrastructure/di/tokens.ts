@@ -60,3 +60,9 @@ export const BatchApproveFeaturesUseCaseToken = 'BatchApproveFeaturesUseCase' as
 
 /** Resolves to `RetryFailedFleetFeaturesUseCase`. */
 export const RetryFailedFleetFeaturesUseCaseToken = 'RetryFailedFleetFeaturesUseCase' as const;
+
+/** Resolves to `CollectGateMetricsUseCase`. */
+export const CollectGateMetricsUseCaseToken = 'CollectGateMetricsUseCase' as const;
+
+/** Resolves to `EvaluateFeatureLowRiskUseCase`. */
+export const EvaluateFeatureLowRiskUseCaseToken = 'EvaluateFeatureLowRiskUseCase' as const;
