@@ -1,0 +1,7 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: FeaturePanePlacement.yaml
+type: string
+enum:
+  - split
+  - window
+description: Where a feature pane opens

@@ -1,0 +1,95 @@
+name: tui-multiplexer-panes
+summary: >
+  Follow workmux and oh-my-pi: detect the multiplexer from its session variables, open panes with
+  argv-only commands, and fall back to handing the terminal over when there is no multiplexer.
+
+relatedFeatures:
+  - 142-tui-feature-console
+technologies:
+  - tmux
+  - Zellij
+  - WezTerm
+  - kitty
+relatedLinks:
+  - title: docs/competitors/agent-harness-tui.md
+    url: ../../docs/competitors/agent-harness-tui.md
+  - title: workmux multiplexer backends
+    url: https://github.com/raine/workmux/tree/main/src/multiplexer
+  - title: oh-my-pi terminal launch
+    url: https://github.com/can1357/oh-my-pi/tree/main/packages/coding-agent/src/subprocess/terminal-launch
+  - title: claude-squad tmux session
+    url: https://github.com/smtg-ai/claude-squad/blob/main/session/tmux/tmux.go
+  - title: Claude Code agent teams (teammateMode)
+    url: https://code.claude.com/docs/en/agent-teams
+
+decisions:
+  - title: Multiplexer detection
+    chosen: Session variables in workmux's order (TMUX, ZELLIJ, WEZTERM_PANE, KITTY_WINDOW_ID), overridable with SHEP_MULTIPLEXER
+    rejected:
+      - TERM / TERM_PROGRAM (oh-my-pi uses TERM only as a hint; it survives into nested shells and ssh sessions with no live multiplexer)
+      - Probing binaries on PATH (an installed tmux says nothing about whether we run inside it)
+    rationale: >
+      A session variable proves a live session that can take a split command. The override
+      covers nested setups and lets a user turn panes off.
+  - title: Pane commands
+    chosen: One pure argv builder per multiplexer, executed through the shared ExecFunction
+    rejected:
+      - Shell strings (quoting differs per shell and per OS; injection risk from branch names)
+    rationale: >
+      tmux split-window/new-window with -c, -e, -P -F and --; zellij run / action new-pane /
+      new-tab; wezterm cli split-pane / spawn; kitten @ launch. Builders are pure and unit
+      tested against exact argv; the adapter only runs them. tmux format-expands -c, so # is
+      doubled (oh-my-pi does the same).
+  - title: Environment for the pane
+    chosen: Pass SHEP_HOME through (tmux -e, kitty --env, `env K=V` prefix for Zellij and WezTerm)
+    rejected:
+      - Relying on the multiplexer's global environment (a console started with SHEP_HOME=... would open panes reading the default home)
+    rationale: The log pane runs `shep feat logs -f`; it must read the same database as the console.
+  - title: No multiplexer
+    chosen: Stop the TUI, run the shell or log with inherited stdio, ignore SIGINT while it runs, then restart and fully redraw
+    rejected:
+      - Refusing with an error (oh-my-pi does this for /fork; a console user without tmux would lose the feature)
+      - Opening a new OS terminal window (no portable way; differs per desktop)
+    rationale: Works on every OS, including Windows terminals with no multiplexer.
+  - title: Notifications
+    chosen: Terminal escape sequences from the console (OSC 9 iTerm2, OSC 777 WezTerm/Ghostty, OSC 99 kitty, else BEL), tmux DCS passthrough, BEL only in Zellij
+    rejected:
+      - node-notifier desktop notifications from the console (the daemon already sends those; a second channel would double them)
+    rationale: >
+      The terminal knows whether it is focused and routes the alert to the right tab or pane.
+      Codex (`notification_method = osc9|bel`) and Claude Code (terminal bell channel) do the
+      same. Only features that start needing the user while the console runs ring; the first
+      snapshot never does.
+  - title: Roster filter
+    chosen: A pure filterConsoleRows(rows, query) in core, applied by the view on each keystroke
+    rejected:
+      - A query parameter on the snapshot use case (each keystroke would wait for a DB round trip)
+    rationale: Instant filtering, and the web or any other surface can import the same matcher.
+
+content: |
+  ## Status
+
+  - **Phase:** Research
+  - **Updated:** 2026-10-24
+
+  ## What the surveyed tools do
+
+  The full survey is in `docs/competitors/agent-harness-tui.md`. In short:
+
+  - **workmux** detects its backend from `$TMUX`, then `$WEZTERM_PANE`, then `$ZELLIJ*`, then
+    `$KITTY_WINDOW_ID`, and drives each one through its own CLI (`tmux split-window`,
+    `wezterm cli split-pane`, `zellij action`, `kitten @ launch`).
+  - **oh-my-pi** `/fork pane|window|tab` builds argv arrays only. It doubles `#` in tmux's
+    `-c`, reads the pane id back with `-P -F '#{pane_id}'`, and wraps OSC notifications in tmux
+    DCS passthrough (a bare BEL in Zellij).
+  - **claude-squad** and **agent-deck** run each agent in a detached tmux session and attach to
+    it. Shep's agents are headless workers with a log, so the log pane is the closest
+    equivalent.
+  - **Claude Code** agent teams: `teammateMode` is `in-process | auto | tmux | iterm2`, and
+    `auto` splits only when already inside tmux or iTerm2. That is the same "use a
+    multiplexer when one is live, else stay in-process" rule this spec follows.
+
+  ## Decisions
+
+  See `decisions` above: session-variable detection, pure argv builders, environment
+  passthrough, an inline fallback, and terminal-native notifications.

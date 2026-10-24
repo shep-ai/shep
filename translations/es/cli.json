@@ -154,7 +154,8 @@
     "tui": {
       "description": "Abrir la consola de terminal en vivo de todas las features",
       "repoOption": "Mostrar solo las features de este repositorio",
-      "allOption": "Incluir features archivadas"
+      "allOption": "Incluir features archivadas",
+      "noNotifyOption": "No sonar la campana ni enviar una notificación de terminal cuando una funcionalidad te necesite"
     },
     "run": {
       "description": "Ejecutar un flujo de trabajo de agente AI",

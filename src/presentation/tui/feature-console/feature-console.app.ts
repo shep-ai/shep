@@ -1,14 +1,22 @@
 /**
- * Feature console app (spec 142).
+ * Feature console app (specs 142, 143).
  *
  * Wires the view to the core: polls the snapshot, runs actions, keeps the log
- * pane fresh, and restores the terminal on the way out. It takes the use
- * cases as plain functions so it carries no DI or infrastructure knowledge.
+ * pane fresh, opens terminal panes (stepping aside for an inline command when
+ * there is no multiplexer), alerts when a feature starts needing the user, and
+ * restores the terminal on the way out. It takes the use cases as plain
+ * functions so it carries no DI or infrastructure knowledge.
  */
 
 import type { TFunction } from 'i18next';
 import { TUI, type Terminal } from '@mariozechner/pi-tui';
-import type { FeatureConsoleAction } from '@/domain/generated/output.js';
+import {
+  FeaturePaneContent,
+  FeaturePaneOutcome,
+  type FeatureConsoleAction,
+  type FeaturePanePlacement,
+} from '@/domain/generated/output.js';
+import type { OpenFeaturePaneResult } from '@/application/use-cases/feature-console/open-feature-pane.use-case.js';
 import type {
   FeatureConsoleActionResult,
   FeatureConsoleRow,
@@ -33,7 +41,23 @@ export interface FeatureConsoleAppDeps {
     feedback?: string
   ) => Promise<FeatureConsoleActionResult>;
   loadLogTail: (featureId: string, maxLines: number) => Promise<FeatureLogTail>;
+  openPane: (
+    featureId: string,
+    content: FeaturePaneContent,
+    placement: FeaturePanePlacement
+  ) => Promise<OpenFeaturePaneResult>;
+  /** Run a command in this terminal while the console is stopped; resolves when it exits. */
+  runInline: (plan: InlineCommand) => Promise<void>;
+  /** Alert the user (bell, terminal notification); undefined turns alerts off. */
+  notify?: (message: string) => void;
   refreshIntervalMs?: number;
+}
+
+export interface InlineCommand {
+  cwd: string;
+  command: string[];
+  /** One line printed before the command runs: what it is and how to come back. */
+  banner: string;
 }
 
 /** Runs the console until the user quits. Always restores the terminal. */
@@ -43,6 +67,11 @@ export function runFeatureConsole(deps: FeatureConsoleAppDeps): Promise<void> {
     let refreshing = false;
     let logFeatureId: string | undefined;
     let finished = false;
+    /** True while an inline command owns the terminal. */
+    let suspended = false;
+    /** Features needing the user at the last snapshot; undefined before the first. */
+    let needingUser: Set<string> | undefined;
+    let title: string | undefined;
 
     const intents: FeatureConsoleIntents = {
       runAction: (row, action, feedback) => void runAction(row, action, feedback),
@@ -50,6 +79,7 @@ export function runFeatureConsole(deps: FeatureConsoleAppDeps): Promise<void> {
         logFeatureId = row?.featureId;
         if (row) void refreshLog();
       },
+      openPane: (row, content, placement) => void openPane(row, content, placement),
       quit: () => finish(),
       requestRender: () => tui.requestRender(),
     };
@@ -64,7 +94,9 @@ export function runFeatureConsole(deps: FeatureConsoleAppDeps): Promise<void> {
       if (refreshing || finished) return;
       refreshing = true;
       try {
-        view.setSnapshot(await deps.loadSnapshot());
+        const snapshot = await deps.loadSnapshot();
+        view.setSnapshot(snapshot);
+        noticeAttention(snapshot);
       } catch (error) {
         view.setRefreshError(messageOf(error));
       } finally {
@@ -104,8 +136,67 @@ export function runFeatureConsole(deps: FeatureConsoleAppDeps): Promise<void> {
       await refresh();
     }
 
+    async function openPane(
+      row: FeatureConsoleRow,
+      content: FeaturePaneContent,
+      placement: FeaturePanePlacement
+    ): Promise<void> {
+      let result: OpenFeaturePaneResult;
+      try {
+        result = await deps.openPane(row.featureId, content, placement);
+      } catch (error) {
+        result = { outcome: FeaturePaneOutcome.Failed, message: messageOf(error) };
+      }
+      if (result.outcome !== FeaturePaneOutcome.Inline) {
+        view.setStatus({
+          ok: result.outcome === FeaturePaneOutcome.Opened,
+          message: result.message,
+        });
+        return render();
+      }
+      const banner = deps.t(
+        content === FeaturePaneContent.Log ? 'tui:console.inline.log' : 'tui:console.inline.shell',
+        { cwd: result.cwd, name: row.name }
+      );
+      await stepAside({ cwd: result.cwd, command: result.command, banner });
+    }
+
+    /** Hand the terminal to a command, then take it back and redraw everything. */
+    async function stepAside(plan: InlineCommand): Promise<void> {
+      if (finished || suspended) return;
+      suspended = true;
+      tui.stop();
+      try {
+        await deps.runInline(plan);
+      } catch (error) {
+        view.setStatus({ ok: false, message: messageOf(error) });
+      } finally {
+        suspended = false;
+      }
+      if (finished) return;
+      tui.start();
+      tui.requestRender(true);
+    }
+
+    /** Alert for features that started needing the user; keep the title's count current. */
+    function noticeAttention(snapshot: FeatureConsoleSnapshot): void {
+      const needing = snapshot.rows.filter((r) => r.needsAttention);
+      const newly = needing.filter((r) => needingUser && !needingUser.has(r.featureId));
+      needingUser = new Set(needing.map((r) => r.featureId));
+      for (const row of newly) deps.notify?.(deps.t('tui:console.notify.body', { name: row.name }));
+
+      const next =
+        needing.length > 0
+          ? deps.t('tui:console.windowTitle.attention', { count: needing.length })
+          : deps.t('tui:console.windowTitle.idle');
+      if (next !== title && !suspended) {
+        title = next;
+        deps.terminal.setTitle(next);
+      }
+    }
+
     function render(): void {
-      if (!finished) tui.requestRender();
+      if (!finished && !suspended) tui.requestRender();
     }
 
     const interval = setInterval(
@@ -118,7 +209,7 @@ export function runFeatureConsole(deps: FeatureConsoleAppDeps): Promise<void> {
       finished = true;
       clearInterval(interval);
       for (const signal of TERMINATION_SIGNALS) process.off(signal, finish);
-      tui.stop();
+      if (!suspended) tui.stop();
       resolve();
     }
 

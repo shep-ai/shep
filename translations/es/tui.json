@@ -230,7 +230,10 @@
       "stop": "detener",
       "resume": "reanudar",
       "help": "ayuda",
-      "quit": "salir"
+      "quit": "salir",
+      "shell": "shell",
+      "follow": "seguir log",
+      "filter": "filtrar"
     },
     "reject": {
       "prompt": "Comentarios para {{name}}:",
@@ -261,8 +264,27 @@
       "stop": "s   detener la ejecución (pregunta antes)",
       "resume": "R   reanudar una ejecución interrumpida o fallida",
       "help": "?   esta ayuda (esc la cierra)",
-      "quit": "q / ctrl+c   salir"
+      "quit": "q / ctrl+c   salir",
+      "shell": "t / T   shell en el worktree (dividido / nueva ventana)",
+      "follow": "f / F   seguir el log del agente (dividido / nueva ventana)",
+      "filter": "/   filtrar las funcionalidades (esc borra)"
     },
-    "notTty": "shep tui necesita una terminal interactiva. En scripts y pipes, usa \"shep feat ls\"."
+    "notTty": "shep tui necesita una terminal interactiva. En scripts y pipes, usa \"shep feat ls\".",
+    "filter": {
+      "hint": "escribe para filtrar · enter mantener · esc borrar",
+      "active": "filtro «{{query}}» · {{shown}} de {{total}}",
+      "noMatch": "Ninguna funcionalidad coincide con «{{query}}»"
+    },
+    "inline": {
+      "shell": "Shell en {{cwd}}. Escribe exit para volver a shep tui.",
+      "log": "Siguiendo el log de {{name}}. Pulsa ctrl+c para volver a shep tui."
+    },
+    "notify": {
+      "body": "{{name}} te necesita"
+    },
+    "windowTitle": {
+      "attention": "shep · te necesitan: {{count}}",
+      "idle": "shep tui"
+    }
   }
 }

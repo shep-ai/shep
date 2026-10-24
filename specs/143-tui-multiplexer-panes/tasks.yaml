@@ -1,0 +1,182 @@
+name: tui-multiplexer-panes
+summary: Task breakdown for 143-tui-multiplexer-panes
+
+relatedFeatures:
+  - 142-tui-feature-console
+technologies:
+  - TypeScript
+  - TypeSpec
+  - tmux
+relatedLinks: []
+
+tasks:
+  - id: task-1
+    title: Add terminal pane TypeSpec enums and multiplexer detection
+    description: >
+      TerminalMultiplexer, FeaturePaneContent, FeaturePanePlacement and FeaturePaneOutcome in
+      tsp/common/enums/terminal-pane.tsp; detectTerminalMultiplexer(env) in domain/shared.
+    state: Done
+    dependencies: []
+    acceptanceCriteria:
+      - TMUX, ZELLIJ, WEZTERM_PANE, KITTY_WINDOW_ID detected in that order
+      - SHEP_MULTIPLEXER overrides; none disables; an unknown value is ignored
+      - Empty variables do not count
+    tdd:
+      red:
+        - terminal-multiplexer.test.ts for each variable, the order, the override and empties
+      green:
+        - Implement the detector over a Readonly<Record<string, string | undefined>>
+      refactor:
+        - Keep the domain import extensionless
+    estimatedEffort: S
+
+  - id: task-2
+    title: Multiplexer argv builders and the launcher adapter
+    description: >
+      Pure builders for tmux, Zellij, WezTerm and kitty (split and window, with and without a
+      command, with environment), and TerminalPaneLauncherService running them via ExecFunction.
+    state: Done
+    dependencies:
+      - task-1
+    acceptanceCriteria:
+      - tmux doubles # in -c, targets TMUX_PANE, passes -e, -d when not focusing, -- before the command
+      - Zellij uses run / action new-pane / new-tab; a window with a command becomes a floating pane
+      - WezTerm and Zellij carry environment with an env prefix; kitty with --env
+      - A failing command surfaces stderr; kitty failures mention allow_remote_control
+    tdd:
+      red:
+        - multiplexer-commands.test.ts asserting exact argv for every combination
+        - terminal-pane-launcher.service.test.ts with a fake ExecFunction
+      green:
+        - Implement builders and adapter; register under 'ITerminalPaneLauncher'
+      refactor:
+        - One builder per multiplexer in a Record keyed by the enum
+    estimatedEffort: M
+
+  - id: task-3
+    title: OpenFeaturePaneUseCase
+    description: >
+      Resolve the feature by id or prefix, choose the directory, build the command, and open a
+      pane or return an inline plan. Never throws.
+    state: Done
+    dependencies:
+      - task-2
+    acceptanceCriteria:
+      - Worktree when it exists, else the repository
+      - Log requires an agent run; command is the shep command + feat logs -f <id>
+      - No multiplexer returns Inline with the user's shell or the log command
+      - Launcher errors return Failed with the message
+    tdd:
+      red:
+        - open-feature-pane.use-case.test.ts for every outcome and directory rule
+      green:
+        - Implement; extract findFeatureByIdOrPrefix shared with RunFeatureConsoleActionUseCase
+      refactor:
+        - Register in register-feature-console.ts
+    estimatedEffort: M
+
+  - id: task-4
+    title: filterConsoleRows
+    description: Every whitespace-separated word must match name, short id, repository, branch, state, phase or agent.
+    state: Done
+    dependencies: []
+    acceptanceCriteria:
+      - Case-insensitive; empty query returns all rows; order is kept
+    tdd:
+      red:
+        - filter-console-rows.test.ts
+      green:
+        - Implement as a pure function
+      refactor: []
+    estimatedEffort: S
+
+  - id: task-5
+    title: Split the oversized console files
+    description: >
+      console-render.ts (316 lines) and feature-console-view.ts (368) exceed the 300-line rule.
+      Move labels, panes and layout to their own modules with no behaviour change.
+    state: Done
+    dependencies: []
+    acceptanceCriteria:
+      - All spec 142 console tests pass unchanged
+    tdd: null
+    estimatedEffort: S
+
+  - id: task-6
+    title: Pane keys, filter prompt and inline hand-off
+    description: >
+      t/T/f/F call an openPane intent; / opens a filter Input; the app runs inline plans with the
+      TUI stopped and SIGINT ignored, then restarts with a full redraw.
+    state: Done
+    dependencies:
+      - task-3
+      - task-4
+      - task-5
+    acceptanceCriteria:
+      - Pane keys need a selected row; f/F only with a run
+      - The key bar and help list the new keys
+      - The filter narrows the roster live, Enter keeps it, Esc clears it
+    tdd:
+      red:
+        - view tests for each key, the filter and the key bar
+        - app tests for opened, inline and failed outcomes
+      green:
+        - Implement in the view, a filter helper and the app
+      refactor:
+        - Keep every file under 300 lines
+    estimatedEffort: M
+
+  - id: task-7
+    title: Needs-you notifications and terminal title
+    description: >
+      terminalNotification(env, title, body) picks OSC 9/777/99 or BEL, wraps for tmux, and the
+      app rings for features that newly need the user. --no-notify turns it off.
+    state: Done
+    dependencies:
+      - task-6
+    acceptanceCriteria:
+      - First snapshot never rings; a feature already needing the user does not ring again
+      - Title shows the count of features needing the user
+    tdd:
+      red:
+        - terminal-notification.test.ts per terminal and multiplexer
+        - app test for the transition rule and --no-notify
+      green:
+        - Implement
+      refactor: []
+    estimatedEffort: S
+
+  - id: task-8
+    title: tmux e2e and evidence
+    description: >
+      Start an isolated tmux server, run the built CLI's tui in it, press t and f, and assert the
+      new panes' directory and command. Capture screenshots.
+    state: Done
+    dependencies:
+      - task-6
+    acceptanceCriteria:
+      - Test skips with a reason when tmux is not installed
+      - Shell pane opens in the repository; log pane runs shep feat logs
+    tdd: null
+    estimatedEffort: M
+
+  - id: task-9
+    title: Docs and translations
+    description: TUI docs, CLI reference, the harness survey, nine locales.
+    state: Done
+    dependencies:
+      - task-6
+      - task-7
+    acceptanceCriteria:
+      - i18n completeness test passes
+    tdd: null
+    estimatedEffort: S
+
+totalEstimate: L
+
+content: |
+  ## Summary
+
+  Nine tasks in three phases: core detection, launcher and use case; presentation refactor,
+  keys, filter and notifications; then the tmux e2e, evidence and docs. Each code task follows
+  RED-GREEN-REFACTOR.

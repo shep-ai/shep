@@ -1,0 +1,30 @@
+ shep · Features   4 needs you · 0 running · 0 waiting · 0 failed · 0 done                                              
+ NEEDS YOU  ◆ Dark Mode Toggle · review merge   ◆ Rate Limit The Public API · review merge   ◆ Billing Dashboard Charts…
+  STATE        FEATURE                     PHASE            TIME    COST │ Dark Mode Toggle  9507d8b6                   
+▸ ◆ Needs you  Dark Mode Toggle            merge              0s       — │ Repo      acme-web                           
+  ◆ Needs you  Rate Limit The Public API   merge              0s       — │ Branch    feat/dark-mode-toggle              
+  ◆ Needs you  Billing Dashboard Charts    merge              0s       — │ State     Needs you · merge                  
+  ◆ Needs you  Add Password Reset Flow     merge              0s       — │ Agent     Claude Code · claude-opus-5-5      
+                                                                         │ Time      0s                                 
+                                                                         │ Cost      —                                  
+                                                                         │ Tokens    0 in · 0 out                       
+                                                                         │                                              
+                                                                         │                                              
+                                                                         │                                              
+                                                                         │                                              
+                                                                         │                                              
+                                                                         │                                              
+                                                                         │                                              
+                                                                         │                                              
+                                                                         │                                              
+                                                                         │                                              
+                                                                         │                                              
+                                                                         │                                              
+                                                                         │                                              
+                                                                         │                                              
+                                                                         │                                              
+                                                                         │                                              
+                                                                         │                                              
+                                                                         │                                              
+                                                                                                                        
+ ↑↓ select  enter details  l log  a approve  r reject  t shell  f follow log  / filter  ? help  q quit                  

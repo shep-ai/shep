@@ -1,0 +1,112 @@
+name: tui-multiplexer-panes
+summary: Implementation plan for 143-tui-multiplexer-panes
+
+relatedFeatures:
+  - 142-tui-feature-console
+technologies:
+  - TypeScript
+  - TypeSpec
+  - tmux
+relatedLinks: []
+
+phases:
+  - id: phase-1
+    name: 'Core: detection, launcher port and pane use case'
+    parallel: false
+    taskIds:
+      - task-1
+      - task-2
+      - task-3
+      - task-4
+  - id: phase-2
+    name: 'Presentation: refactor, keys, filter, notifications'
+    parallel: false
+    taskIds:
+      - task-5
+      - task-6
+      - task-7
+  - id: phase-3
+    name: 'E2E, docs and evidence'
+    parallel: false
+    taskIds:
+      - task-8
+      - task-9
+
+filesToCreate:
+  - tsp/common/enums/terminal-pane.tsp
+  - packages/core/src/domain/shared/terminal-multiplexer.ts
+  - packages/core/src/application/ports/output/services/terminal-pane-launcher.interface.ts
+  - packages/core/src/application/use-cases/feature-console/open-feature-pane.use-case.ts
+  - packages/core/src/application/use-cases/feature-console/filter-console-rows.ts
+  - packages/core/src/application/use-cases/feature-console/find-feature.ts
+  - packages/core/src/infrastructure/services/terminal-pane/multiplexer-commands.ts
+  - packages/core/src/infrastructure/services/terminal-pane/terminal-pane-launcher.service.ts
+  - src/presentation/tui/feature-console/console-labels.ts
+  - src/presentation/tui/feature-console/console-panes.ts
+  - src/presentation/tui/feature-console/console-layout.ts
+  - src/presentation/tui/feature-console/terminal-notification.ts
+  - src/presentation/tui/feature-console/run-inline.ts
+  - tests/e2e/tui/feature-console-tmux.test.ts
+  - docs/competitors/agent-harness-tui.md
+
+filesToModify:
+  - tsp/common/enums/index.tsp
+  - packages/core/src/infrastructure/di/modules/register-feature-console.ts
+  - packages/core/src/application/use-cases/feature-console/run-feature-console-action.use-case.ts
+  - src/presentation/tui/feature-console/console-render.ts
+  - src/presentation/tui/feature-console/console-keys.ts
+  - src/presentation/tui/feature-console/feature-console-view.ts
+  - src/presentation/tui/feature-console/feature-console.app.ts
+  - src/presentation/cli/commands/tui.command.ts
+  - translations/*/tui.json
+  - translations/*/cli.json
+  - docs/tui/README.md
+  - docs/tui/architecture.md
+  - docs/cli/commands.md
+
+architecture: |
+  Detection is a pure domain function over an environment record. The application layer
+  defines ITerminalPaneLauncher (detect, open, defaultShell) and OpenFeaturePaneUseCase, which
+  resolves the feature, picks the directory (worktree on disk, else repository), builds the
+  command (none for a shell, `shep feat logs -f <id>` for the log) and either opens a pane or
+  returns an inline plan when no multiplexer is present. Infrastructure holds one pure argv
+  builder per multiplexer and an adapter that runs it through ExecFunction.
+
+  The console maps t/T/f/F to the use case. On an inline plan the app stops the TUI, runs the
+  command with inherited stdio while ignoring SIGINT, then restarts and redraws. The filter is a
+  core pure function; notifications are escape sequences chosen from the terminal environment.
+
+risks:
+  - Zellij's new-tab takes no command; a window with a command opens as a floating pane instead
+  - kitty needs allow_remote_control; the error says so
+  - Ctrl+C during an inline log reaches the console's process group; the console ignores SIGINT until the child exits
+
+content: |
+  ## Status
+
+  - **Phase:** Planning
+  - **Updated:** 2026-10-24
+
+  ## Architecture Overview (Clean Architecture)
+
+  ```
+  shep tui ── t/T/f/F ──► OpenFeaturePaneUseCase (application)
+                              ├─ IFeatureRepository (find by id or prefix)
+                              ├─ IWorktreePathProvider + IFileSystemService (directory)
+                              └─ ITerminalPaneLauncher (port)
+                                    ├─ detect()  → domain detectTerminalMultiplexer(env)
+                                    └─ open()    → infrastructure argv builders → ExecFunction
+           ◄── Opened | Inline{cwd, command} | Failed
+  Inline → app stops the TUI, runs the command with inherited stdio, restarts
+  / ──► filterConsoleRows (application, pure)
+  snapshot diff ──► terminalNotification(env) → BEL / OSC, tmux passthrough
+  ```
+
+  Dependencies point inward: the presentation layer reaches the launcher only through the use
+  case, and the use case only through its port.
+
+  ## TDD
+
+  Every core task starts RED: detector, argv builders, adapter, use case and filter each get a
+  failing test first, then GREEN, then REFACTOR. The view and app are driven by the existing
+  fake terminal. The tmux e2e runs the built CLI in a real tmux server.

@@ -1,7 +1,7 @@
 // @vitest-environment node
 
 /**
- * `shep tui` command Unit Tests (spec 142)
+ * `shep tui` command Unit Tests (specs 142, 143)
  *
  * The command only wires: it refuses to run without an interactive terminal,
  * and otherwise hands the console app the three use cases as functions.
@@ -14,7 +14,11 @@ import { resolve } from 'node:path';
 import { createTuiCommand } from '../../../../../src/presentation/cli/commands/tui.command.js';
 import { initI18n as initCliI18n } from '@/presentation/cli/i18n.js';
 import { initI18n as initTuiI18n } from '@/presentation/tui/i18n.js';
-import { FeatureConsoleAction } from '@/domain/generated/output.js';
+import {
+  FeatureConsoleAction,
+  FeaturePaneContent,
+  FeaturePanePlacement,
+} from '@/domain/generated/output.js';
 import type { FeatureConsoleAppDeps } from '@/presentation/tui/feature-console/feature-console.app.js';
 
 describe('createTuiCommand', () => {
@@ -24,7 +28,9 @@ describe('createTuiCommand', () => {
     snapshot: { execute: ReturnType<typeof vi.fn> };
     action: { execute: ReturnType<typeof vi.fn> };
     logTail: { execute: ReturnType<typeof vi.fn> };
+    pane: { execute: ReturnType<typeof vi.fn> };
   };
+  let written: string[];
   let runConsole: ReturnType<typeof vi.fn<(deps: FeatureConsoleAppDeps) => Promise<void>>>;
 
   beforeAll(async () => {
@@ -39,7 +45,9 @@ describe('createTuiCommand', () => {
       snapshot: { execute: vi.fn(async () => ({ rows: [] })) },
       action: { execute: vi.fn(async () => ({ ok: true, message: 'done' })) },
       logTail: { execute: vi.fn(async () => ({ lines: [] })) },
+      pane: { execute: vi.fn(async () => ({ outcome: 'opened', message: 'ok' })) },
     };
+    written = [];
     runConsole = vi.fn(async () => undefined);
   });
 
@@ -52,8 +60,10 @@ describe('createTuiCommand', () => {
       isInteractive: () => interactive,
       resolveUseCases: () => useCases as never,
       runConsole,
-      createTerminal: () => ({}) as never,
+      createTerminal: () => ({ write: (data: string) => written.push(data) }) as never,
       err: (line) => errors.push(line),
+      shepCommand: () => ['/usr/bin/node', '/opt/shep/cli.js'],
+      environment: () => ({ SHEP_HOME: '/tmp/shep-home', TERM_PROGRAM: 'iTerm.app', PATH: '/bin' }),
     });
 
   it('refuses to start without an interactive terminal', async () => {
@@ -92,5 +102,31 @@ describe('createTuiCommand', () => {
       repositoryPath: resolve('some/repo').replace(/\\/g, '/'),
       includeArchived: true,
     });
+  });
+
+  it('opens panes with the command that runs this CLI and the SHEP_HOME it uses (spec 143)', async () => {
+    await command(true).parseAsync(['node', 'shep']);
+
+    await runConsole.mock.calls[0][0].openPane(
+      'feat-1',
+      FeaturePaneContent.Log,
+      FeaturePanePlacement.Split
+    );
+    expect(useCases.pane.execute).toHaveBeenCalledWith({
+      featureId: 'feat-1',
+      content: FeaturePaneContent.Log,
+      placement: FeaturePanePlacement.Split,
+      shepCommand: ['/usr/bin/node', '/opt/shep/cli.js'],
+      environment: { SHEP_HOME: '/tmp/shep-home' },
+    });
+  });
+
+  it('alerts through the terminal, unless --no-notify', async () => {
+    await command(true).parseAsync(['node', 'shep']);
+    runConsole.mock.calls[0][0].notify?.('Billing needs you');
+    expect(written).toEqual(['\x1b]9;shep: Billing needs you\x07']);
+
+    await command(true).parseAsync(['node', 'shep', '--no-notify']);
+    expect(runConsole.mock.calls[1][0].notify).toBeUndefined();
   });
 });

@@ -1,5 +1,15 @@
 # Lessons Learned
 
+## Drive tmux like a user: UTF-8 client, escape-time, printable -F fields
+
+Three tmux behaviours faked bugs while testing `shep tui` panes (spec 143), none of them in the
+console: a tmux client started without a UTF-8 locale draws every `◆`/`·` as `_` (start it with
+`tmux -u` or `LANG=C.UTF-8`); tmux holds a lone ESC for `escape-time` (500 ms) and merges it with
+the next key into alt+key, so a scripted `esc` then `q` never quits (wait past it); and
+`list-panes -F` rewrites tab characters to `_` (split fields on a printable marker). Run
+e2e tmux servers on their own socket (`tmux -L <name>`) and ask tmux for pane facts
+(`#{pane_current_path}`, `#{pane_start_command}`) instead of parsing the screen.
+
 ## A gate files an inbox question that nothing closes — count gates from the run
 
 Every approval gate also files a `blocking` agent question mirroring it (spec 093), and approving

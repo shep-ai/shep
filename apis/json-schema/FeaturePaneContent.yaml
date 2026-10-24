@@ -1,0 +1,7 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: FeaturePaneContent.yaml
+type: string
+enum:
+  - shell
+  - log
+description: What a feature pane shows

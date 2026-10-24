@@ -1,0 +1,9 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: TerminalMultiplexer.yaml
+type: string
+enum:
+  - tmux
+  - zellij
+  - wezterm
+  - kitty
+description: A terminal multiplexer shep can open panes in

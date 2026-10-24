@@ -1,5 +1,5 @@
 /**
- * FeatureConsoleView Unit Tests (spec 142)
+ * FeatureConsoleView Unit Tests (specs 142, 143)
  *
  * The view is a pi-tui Component: render(width) must return exactly one screen
  * of lines (the console runs on the alternate screen), never wider than the
@@ -27,6 +27,8 @@ import {
   AgentRunStatus,
   AgentType,
   FeatureConsoleAction,
+  FeaturePaneContent,
+  FeaturePanePlacement,
   FeatureState,
   PrStatus,
   SdlcLifecycle,
@@ -115,6 +117,7 @@ describe('FeatureConsoleView', () => {
     intents = {
       runAction: vi.fn(),
       showLog: vi.fn(),
+      openPane: vi.fn(),
       quit: vi.fn(),
       requestRender: vi.fn(),
     };
@@ -433,6 +436,130 @@ describe('FeatureConsoleView', () => {
       const text = screen().join('\n');
       expect(text).toContain('Refresh failed: database is locked');
       expect(text).toContain('Feature aaaa1111');
+    });
+  });
+
+  describe('terminal panes (spec 143)', () => {
+    it.each([
+      ['t', FeaturePaneContent.Shell, FeaturePanePlacement.Split],
+      ['T', FeaturePaneContent.Shell, FeaturePanePlacement.Window],
+      ['f', FeaturePaneContent.Log, FeaturePanePlacement.Split],
+      ['F', FeaturePaneContent.Log, FeaturePanePlacement.Window],
+    ])('%s opens a %s pane (%s) for the selected feature', (key, content, placement) => {
+      view.setSnapshot(snapshot([row('aaaa1111'), row('bbbb2222')]));
+      press('j', key);
+      expect(intents.openPane).toHaveBeenCalledWith(
+        expect.objectContaining({ shortId: 'bbbb2222' }),
+        content,
+        placement
+      );
+    });
+
+    it('follows a log only for a feature that has a run', () => {
+      view.setSnapshot(snapshot([row('aaaa1111', { runId: undefined })]));
+      press('f', 'F');
+      expect(intents.openPane).not.toHaveBeenCalled();
+      press('t');
+      expect(intents.openPane).toHaveBeenCalledTimes(1);
+    });
+
+    it('does nothing without a selected feature', () => {
+      view.setSnapshot(snapshot([]));
+      press('t', 'f');
+      expect(intents.openPane).not.toHaveBeenCalled();
+    });
+
+    it('offers the pane keys in the key bar', () => {
+      view.setSnapshot(snapshot([row('aaaa1111')]));
+      const keyBar = screen(200).at(-1) ?? '';
+      expect(keyBar).toContain('t shell');
+      expect(keyBar).toContain('f follow log');
+      expect(keyBar).toContain('/ filter');
+    });
+
+    it('lists the pane keys and the filter in help', () => {
+      view.setSnapshot(snapshot([row('aaaa1111')]));
+      press('?');
+      const text = screen().join('\n');
+      expect(text).toContain('shell in the worktree');
+      expect(text).toContain('follow the agent log');
+      expect(text).toContain('filter the features');
+    });
+  });
+
+  describe('filter (spec 143)', () => {
+    const rows = () => [
+      gateRow('aaaa1111'),
+      row('bbbb2222', { name: 'Billing charts' }),
+      row('cccc3333', { name: 'Dark mode' }),
+    ];
+    // At 160 columns the details pane sits on the right: read the roster column only.
+    const rosterColumn = () =>
+      screen(160)
+        .slice(2, -2)
+        .map((l) => l.slice(0, 96));
+    const rosterNames = () =>
+      rosterColumn().filter((l) => /Feature aaaa1111|Billing charts|Dark mode/.test(l));
+
+    it('narrows the roster as the user types, without touching the strip', () => {
+      view.setSnapshot(snapshot(rows()));
+      press('/', 'b', 'i', 'l', 'l');
+      const text = screen(160);
+      expect(rosterNames().some((l) => l.includes('Billing charts'))).toBe(true);
+      expect(rosterNames().some((l) => l.includes('Dark mode'))).toBe(false);
+      expect(text[1]).toContain('Feature aaaa1111');
+      expect(text.at(-2)).toContain('bill');
+    });
+
+    it('types letters into the filter instead of running their keys', () => {
+      view.setSnapshot(snapshot(rows()));
+      press('/', 'q', 'a', 't');
+      expect(intents.quit).not.toHaveBeenCalled();
+      expect(intents.runAction).not.toHaveBeenCalled();
+      expect(intents.openPane).not.toHaveBeenCalled();
+    });
+
+    it('keeps the filter on enter, and selects within it', () => {
+      view.setSnapshot(snapshot(rows()));
+      press('/', 'd', 'a', 'r', 'k', KEY.enter);
+      expect(view.selectedRow?.name).toBe('Dark mode');
+      press('t');
+      expect(intents.openPane).toHaveBeenCalledWith(
+        expect.objectContaining({ name: 'Dark mode' }),
+        FeaturePaneContent.Shell,
+        FeaturePanePlacement.Split
+      );
+      expect(rosterNames()).toHaveLength(1);
+      expect(screen(160).at(-2)).toContain('dark');
+    });
+
+    it('clears the filter with esc and keeps the selection', () => {
+      view.setSnapshot(snapshot(rows()));
+      press('/', 'd', 'a', 'r', 'k', KEY.enter);
+      press('/', KEY.escape);
+      expect(rosterNames()).toHaveLength(3);
+      expect(view.selectedRow?.name).toBe('Dark mode');
+    });
+
+    it('says when nothing matches', () => {
+      view.setSnapshot(snapshot(rows()));
+      press('/', 'z', 'z', 'z');
+      expect(screen().join('\n')).toContain('No feature matches');
+      expect(view.selectedRow).toBeUndefined();
+    });
+
+    it('applies the filter to rows from later refreshes', () => {
+      view.setSnapshot(snapshot(rows()));
+      press('/', 'd', 'a', 'r', 'k', KEY.enter);
+      view.setSnapshot(snapshot([...rows(), row('dddd4444', { name: 'Dark charts' })]));
+      const shown = rosterColumn().filter((l) => /Dark mode|Dark charts|Billing/.test(l));
+      expect(shown).toHaveLength(2);
+      expect(shown.some((l) => l.includes('Dark charts'))).toBe(true);
+    });
+
+    it('still quits on ctrl+c while filtering', () => {
+      press('/', KEY.ctrlC);
+      expect(intents.quit).toHaveBeenCalledTimes(1);
     });
   });
 

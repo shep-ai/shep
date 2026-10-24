@@ -1,0 +1,105 @@
+# Feature Specification (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: tui-multiplexer-panes
+number: 143
+branch: claude/nifty-knuth-adhvx0
+oneLiner: Open a feature in a tmux, Zellij, WezTerm or kitty split pane from shep tui, plus a roster filter and needs-you notifications
+summary: >
+  From the feature console, `t` opens a shell in the selected feature's worktree and `f` follows
+  its agent log, each in a split pane beside the console (`T` / `F` open a new window or tab
+  instead). The console detects tmux, Zellij, WezTerm and kitty from their session variables;
+  with none of them it hands the terminal to the shell or log and comes back when it exits. `/`
+  filters the roster, and a feature that starts needing the user rings the terminal (an OSC
+  notification where the terminal supports one, passed through tmux).
+
+phase: Requirements
+sizeEstimate: L
+
+relatedFeatures:
+  - 142-tui-feature-console
+
+technologies:
+  - TypeScript
+  - TypeSpec
+  - '@mariozechner/pi-tui'
+  - tmux
+  - Vitest
+
+relatedLinks:
+  - title: Agent harness TUI survey (multiplexers and controls)
+    url: ../../docs/competitors/agent-harness-tui.md
+  - title: oh-my-pi competitor analysis (item 7, open in a pane)
+    url: ../../docs/competitors/oh-my-pi.md
+
+openQuestions: []
+
+content: |
+  ## Problem Statement
+
+  `shep tui` (spec 142) shows every feature and acts on gates, but to look inside one the user
+  leaves the console: they copy the worktree path into another terminal, or run
+  `shep feat logs -f <id>` in a second window they arranged themselves. Every tmux-based agent
+  manager surveyed (claude-squad, workmux, agent-deck, oh-my-pi's `/fork pane`, Claude Code's
+  agent teams) opens that second view for the user, in a pane next to the dashboard.
+
+  The console is also silent: a feature that reaches a gate while the user works in another
+  pane changes one row and nothing else. And with many features there is no way to narrow the
+  roster.
+
+  ## Success Criteria
+
+  - [ ] `t` opens a shell in the selected feature's worktree in a split pane; `T` in a new
+        window or tab
+  - [ ] `f` follows the selected feature's agent log (`shep feat logs -f`) in a split pane
+        without taking focus from the console; `F` in a new window or tab
+  - [ ] tmux, Zellij, WezTerm and kitty are detected from their session variables
+        (`TMUX`, `ZELLIJ`, `WEZTERM_PANE`, `KITTY_WINDOW_ID`); `SHEP_MULTIPLEXER` overrides
+        detection, `none` turns it off
+  - [ ] Every multiplexer command is an argv array (no shell string); paths containing `#`
+        survive tmux's format expansion
+  - [ ] Without a multiplexer the console steps aside, runs the shell or log in the same
+        terminal, and returns when it exits (Ctrl+C ends a log, not the console)
+  - [ ] A pane inherits the console's `SHEP_HOME`, so its `shep` commands see the same data
+  - [ ] The worktree is used when it exists on disk, else the repository
+  - [ ] `/` filters the roster by every word typed (name, id, repository, branch, state,
+        phase, agent); Esc clears it; the needs-you strip ignores the filter
+  - [ ] A feature that starts needing the user while the console is open rings the terminal:
+        OSC 9 / 777 / 99 where the terminal supports one, wrapped for tmux passthrough, a bare
+        bell in Zellij; `--no-notify` turns it off; the terminal title counts features needing
+        the user
+  - [ ] An e2e test runs `shep tui` inside a real tmux server and opens both pane kinds
+
+  ## Affected Areas
+
+  | Area | Impact | Reasoning |
+  | ---- | ------ | --------- |
+  | `tsp/common/enums/terminal-pane.tsp` | Low | `TerminalMultiplexer`, `FeaturePaneContent`, `FeaturePanePlacement`, `FeaturePaneOutcome` |
+  | `packages/core/src/domain/shared/terminal-multiplexer.ts` | Low | Detection from environment variables |
+  | `ITerminalPaneLauncher` port + adapter | Medium | Per-multiplexer argv builders, run through `ExecFunction` |
+  | `OpenFeaturePaneUseCase` | Medium | Feature, directory and command for a pane, or an inline plan |
+  | `filterConsoleRows` | Low | The roster filter, in core so every surface matches the same way |
+  | `src/presentation/tui/feature-console/` | High | Keys, filter prompt, inline hand-off, notifications; split oversized files first |
+  | `tui.command.ts` | Low | `--no-notify`, the shep command and pane environment |
+  | `translations/*/tui.json`, `cli.json` | Low | Strings in all nine locales |
+  | `docs/tui/`, `docs/cli/commands.md`, `docs/competitors/` | Low | Panes, filter, notifications, the harness survey |
+
+  ## Dependencies
+
+  - Spec 142's console, use cases and PTY e2e harness
+  - Existing ports: `IFeatureRepository`, `IWorktreePathProvider`, `IFileSystemService`, `ExecFunction`
+
+  ## Out of Scope
+
+  - Persistent attachable agent sessions (agents run as headless workers; there is no PTY to
+    attach to). The log pane is the attach view for now.
+  - A tmux status-line segment, a control-center layout of one window per feature, `shep ps`,
+    a keybindings file, shell completions, plan/PRD review overlays and diff review. Each is
+    listed in the harness survey as a follow-up.
+  - iTerm2 native panes (needs the third-party `it2` CLI and the Python API).
+
+  ## Size Estimate
+
+  **L** - four TypeSpec enums, a domain detector, a port with four multiplexer adapters, one use
+  case, a filter, terminal notifications, a refactor of two oversized presentation files, nine
+  locales and a tmux e2e test.

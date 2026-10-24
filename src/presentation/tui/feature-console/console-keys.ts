@@ -1,5 +1,5 @@
 /**
- * Feature console key map (spec 142).
+ * Feature console key map (specs 142, 143).
  *
  * Turns raw terminal input into the console's own key vocabulary. pi-tui
  * parses special keys in both legacy and Kitty keyboard protocol forms;
@@ -8,6 +8,11 @@
  */
 
 import { decodeKittyPrintable, matchesKey } from '@mariozechner/pi-tui';
+import {
+  FeatureConsoleAction,
+  FeaturePaneContent,
+  FeaturePanePlacement,
+} from '@/domain/generated/output.js';
 
 export enum ConsoleKey {
   Up = 'up',
@@ -22,6 +27,11 @@ export enum ConsoleKey {
   Reject = 'reject',
   Stop = 'stop',
   Resume = 'resume',
+  Shell = 'shell',
+  ShellWindow = 'shell-window',
+  FollowLog = 'follow-log',
+  FollowLogWindow = 'follow-log-window',
+  Filter = 'filter',
   Help = 'help',
   Quit = 'quit',
   Escape = 'escape',
@@ -40,6 +50,11 @@ const PRINTABLE_KEYS: Readonly<Record<string, ConsoleKey>> = {
   r: ConsoleKey.Reject,
   s: ConsoleKey.Stop,
   R: ConsoleKey.Resume,
+  t: ConsoleKey.Shell,
+  T: ConsoleKey.ShellWindow,
+  f: ConsoleKey.FollowLog,
+  F: ConsoleKey.FollowLogWindow,
+  '/': ConsoleKey.Filter,
   '?': ConsoleKey.Help,
   q: ConsoleKey.Quit,
   y: ConsoleKey.Confirm,
@@ -66,3 +81,17 @@ export function resolveConsoleKey(data: string): ConsoleKey | undefined {
   const printable = decodeKittyPrintable(data) ?? (data.length === 1 ? data : undefined);
   return printable === undefined ? undefined : PRINTABLE_KEYS[printable];
 }
+
+/** Keys that run an action directly (reject and stop open a prompt first). */
+export const DIRECT_ACTIONS: Partial<Record<ConsoleKey, FeatureConsoleAction>> = {
+  [ConsoleKey.Approve]: FeatureConsoleAction.Approve,
+  [ConsoleKey.Resume]: FeatureConsoleAction.Resume,
+};
+
+/** Keys that open a terminal pane (spec 143): what it shows and where. */
+export const PANE_KEYS: Partial<Record<ConsoleKey, [FeaturePaneContent, FeaturePanePlacement]>> = {
+  [ConsoleKey.Shell]: [FeaturePaneContent.Shell, FeaturePanePlacement.Split],
+  [ConsoleKey.ShellWindow]: [FeaturePaneContent.Shell, FeaturePanePlacement.Window],
+  [ConsoleKey.FollowLog]: [FeaturePaneContent.Log, FeaturePanePlacement.Split],
+  [ConsoleKey.FollowLogWindow]: [FeaturePaneContent.Log, FeaturePanePlacement.Window],
+};

@@ -230,7 +230,10 @@
       "stop": "إيقاف",
       "resume": "استئناف",
       "help": "مساعدة",
-      "quit": "خروج"
+      "quit": "خروج",
+      "shell": "الصدفة",
+      "follow": "متابعة السجل",
+      "filter": "تصفية"
     },
     "reject": {
       "prompt": "ملاحظات لـ {{name}}:",
@@ -261,8 +264,27 @@
       "stop": "s   إيقاف التشغيل (يسأل أولًا)",
       "resume": "R   استئناف تشغيل متوقف أو فاشل",
       "help": "?   هذه المساعدة (esc للإغلاق)",
-      "quit": "q / ctrl+c   خروج"
+      "quit": "q / ctrl+c   خروج",
+      "shell": "t / T   صدفة في الـ worktree (تقسيم / نافذة جديدة)",
+      "follow": "f / F   متابعة سجل الوكيل (تقسيم / نافذة جديدة)",
+      "filter": "/   تصفية الميزات (esc يمسح)"
     },
-    "notTty": "يحتاج shep tui إلى طرفية تفاعلية. في السكربتات والأنابيب استخدم \"shep feat ls\"."
+    "notTty": "يحتاج shep tui إلى طرفية تفاعلية. في السكربتات والأنابيب استخدم \"shep feat ls\".",
+    "filter": {
+      "hint": "اكتب للتصفية · enter إبقاء · esc مسح",
+      "active": "تصفية «{{query}}» · {{shown}} من {{total}}",
+      "noMatch": "لا توجد ميزة تطابق «{{query}}»"
+    },
+    "inline": {
+      "shell": "صدفة في {{cwd}}. اكتب exit للعودة إلى shep tui.",
+      "log": "متابعة سجل {{name}}. اضغط ctrl+c للعودة إلى shep tui."
+    },
+    "notify": {
+      "body": "{{name}} بحاجة إليك"
+    },
+    "windowTitle": {
+      "attention": "shep · بحاجة إليك: {{count}}",
+      "idle": "shep tui"
+    }
   }
 }

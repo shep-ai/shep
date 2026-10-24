@@ -230,7 +230,10 @@
       "stop": "stop",
       "resume": "resume",
       "help": "help",
-      "quit": "quit"
+      "quit": "quit",
+      "shell": "shell",
+      "follow": "follow log",
+      "filter": "filter"
     },
     "reject": {
       "prompt": "Feedback for {{name}}:",
@@ -261,8 +264,27 @@
       "stop": "s   stop the run (asks first)",
       "resume": "R   resume an interrupted or failed run",
       "help": "?   this help (esc closes)",
-      "quit": "q / ctrl+c   quit"
+      "quit": "q / ctrl+c   quit",
+      "shell": "t / T   shell in the worktree (split / new window)",
+      "follow": "f / F   follow the agent log (split / new window)",
+      "filter": "/   filter the features (esc clears)"
     },
-    "notTty": "shep tui needs an interactive terminal. In scripts and pipes, use \"shep feat ls\"."
+    "notTty": "shep tui needs an interactive terminal. In scripts and pipes, use \"shep feat ls\".",
+    "filter": {
+      "hint": "type to filter · enter keep · esc clear",
+      "active": "filter “{{query}}” · {{shown}} of {{total}}",
+      "noMatch": "No feature matches “{{query}}”"
+    },
+    "inline": {
+      "shell": "Shell in {{cwd}}. Type exit to return to shep tui.",
+      "log": "Following the log of {{name}}. Press ctrl+c to return to shep tui."
+    },
+    "notify": {
+      "body": "{{name}} needs you"
+    },
+    "windowTitle": {
+      "attention": "shep · needs you: {{count}}",
+      "idle": "shep tui"
+    }
   }
 }

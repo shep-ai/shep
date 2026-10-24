@@ -1,0 +1,1 @@
+inline run: exit code 0, alternate screen after exit: false

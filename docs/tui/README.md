@@ -9,9 +9,11 @@ The TUI layer has two kinds of surface:
 1. **Wizards** — one-shot interactive prompts built on [@inquirer/prompts](https://github.com/SBoudrias/Inquirer.js),
    invoked from CLI commands when multi-step input is needed (agent configuration, onboarding,
    plan/PRD review flows).
-2. **The feature console** (`shep tui`, spec 142) — a full-screen, live view of every feature built
-   on [`@mariozechner/pi-tui`](https://github.com/badlogic/pi-mono/tree/main/packages/tui): a
-   needs-you strip, a roster, a details or log pane, and keys to approve, reject, stop and resume.
+2. **The feature console** (`shep tui`, specs 142 and 143) — a full-screen, live view of every
+   feature built on [`@mariozechner/pi-tui`](https://github.com/badlogic/pi-mono/tree/main/packages/tui):
+   a needs-you strip, a filterable roster, a details or log pane, keys to approve, reject, stop and
+   resume, and keys that open a feature's shell or followed log in a tmux, Zellij, WezTerm or kitty
+   pane.
 
 Both are entered from a CLI command and reach the core only through use cases.
 
@@ -29,12 +31,20 @@ Both are entered from a CLI command and reach the core only through use cases.
 ```
 src/presentation/tui/
   index.ts                          # Barrel export
-  feature-console/                  # `shep tui` (spec 142)
-    feature-console.app.ts          # Polling, actions, log refresh, clean exit
-    feature-console-view.ts         # pi-tui Component: selection, modes, one full screen
-    console-render.ts               # Pure render helpers (header, strip, roster, panes)
+  feature-console/                  # `shep tui` (specs 142, 143)
+    feature-console.app.ts          # Polling, actions, log refresh, panes, alerts, clean exit
+    feature-console-view.ts         # pi-tui Component: modes, prompts, keys -> intents
+    console-roster.ts               # Filtered rows, selection, scrolling
+    console-screen.ts               # One full frame from the view's state
+    console-render.ts               # Header, needs-you strip, roster rows
+    console-panes.ts                # Details, log, help, empty state, key bar
+    console-status.ts               # The status line
+    console-layout.ts               # Roster beside or above the pane
+    console-labels.ts               # State, phase and agent labels
     console-format.ts               # Durations, cost, sanitising, state palette
     console-keys.ts                 # Raw input -> console keys (legacy + Kitty protocol)
+    terminal-notification.ts        # OSC 9 / 777 / 99 or bell, tmux passthrough
+    run-inline.ts                   # Lend the terminal to a shell or log (no multiplexer)
     fullscreen-terminal.ts          # Alternate-screen Terminal decorator
   wizards/
     agent-config.wizard.ts          # Agent selection + auth wizard

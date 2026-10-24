@@ -1,0 +1,44 @@
+ shep · Features   4 needs you · 0 running · 0 waiting · 0 failed · 0 done                                                                                                          
+ NEEDS YOU  ◆ Dark Mode Toggle · review merge   ◆ Rate Limit The Public API · review merge   ◆ Billing Dashboard Charts · review merge   ◆ Add Password Reset Flow · review merge   
+  STATE        FEATURE                             REPO           PHASE         AGENT           TIME    COST │ Dark Mode Toggle  9507d8b6                                           
+▸ ◆ Needs you  Dark Mode Toggle                    acme-web       merge         Claude Code       0s       — │ Repo      acme-web                                                   
+  ◆ Needs you  Rate Limit The Public API           acme-web       merge         Claude Code       0s       — │ Branch    feat/dark-mode-toggle                                      
+  ◆ Needs you  Billing Dashboard Charts            acme-web       merge         Claude Code       0s       — │ State     Needs you · merge                                          
+  ◆ Needs you  Add Password Reset Flow             acme-web       merge         Claude Code       0s       — │ Agent     Claude Code · claude-opus-5-5                              
+                                                                                                             │ Time      0s                                                         
+                                                                                                             │ Cost      —                                                          
+                                                                                                             │ Tokens    0 in · 0 out                                               
+                                                                                                             │                                                                      
+                                                                                                             │                                                                      
+                                                                                                             │                                                                      
+                                                                                                             │                                                                      
+                                                                                                             │                                                                      
+                                                                                                             │                                                                      
+                                                                                                             │                                                                      
+                                                                                                             │                                                                      
+                                                                                                             │                                                                      
+                                                                                                             │                                                                      
+                                                                                                             │                                                                      
+                                                                                                             │                                                                      
+                                                                                                             │                                                                      
+                                                                                                             │                                                                      
+                                                                                                             │                                                                      
+                                                                                                             │                                                                      
+                                                                                                             │                                                                      
+                                                                                                             │                                                                      
+                                                                                                             │                                                                      
+                                                                                                             │                                                                      
+                                                                                                             │                                                                      
+                                                                                                             │                                                                      
+                                                                                                             │                                                                      
+                                                                                                             │                                                                      
+                                                                                                             │                                                                      
+                                                                                                             │                                                                      
+                                                                                                             │                                                                      
+                                                                                                             │                                                                      
+                                                                                                             │                                                                      
+                                                                                                             │                                                                      
+                                                                                                             │                                                                      
+                                                                                                                                                                                    
+ ↑↓ select  enter details  l log  a approve  r reject  t shell  f follow log  / filter  ? help  q quit                                                                              
+[shep] 0:shep*                                                                                                                                 "shep · needs you: 4" 17:51 24-Oct-26

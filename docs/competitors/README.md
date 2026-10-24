@@ -71,6 +71,7 @@ Idea → Requirements → Research → Plan → Code → Tests → PR → CI →
 | [OpenHands](./openhands.md)     | Composable AI agent platform (formerly OpenDevin)      | Largest open-source agent |
 | [OpenCode](./opencode.md)       | Terminal AI coding agent with 120K+ stars              | Biggest community         |
 | [oh-my-pi](./oh-my-pi.md)       | Pi fork with a full-screen TUI and a live Agent Hub    | Best terminal multi-agent UX |
+| [Agent harness TUIs](./agent-harness-tui.md) | Survey: tmux/Zellij panes, attach, alerts across 10+ harnesses | Multiplexer patterns |
 | [MiMo Code](./mimo-code.md)     | Xiaomi's terminal coding agent, OpenCode fork with cross-session memory | OpenCode-shaped, MIT |
 | [Aider](./aider.md)             | AI pair programming in the terminal                    | Git-first pioneer         |
 | [Cline](./cline.md)             | VS Code agent with plan/act modes                      | 4M+ installs              |

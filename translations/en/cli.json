@@ -154,7 +154,8 @@
     "tui": {
       "description": "Open the live terminal console of every feature",
       "repoOption": "Only show features of this repository",
-      "allOption": "Include archived features"
+      "allOption": "Include archived features",
+      "noNotifyOption": "Do not ring the bell or send a terminal notification when a feature needs you"
     },
     "run": {
       "description": "Run an AI agent workflow",

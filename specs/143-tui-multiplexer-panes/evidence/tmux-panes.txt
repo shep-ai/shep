@@ -1,0 +1,2 @@
+%2 sh 
+%1 node /opt/node22/bin/node /home/user/shep/dist/src/presentation/cli/index.js feat logs -f 3acabccf-7d80-4fe1-a98a-2d362b7099e5

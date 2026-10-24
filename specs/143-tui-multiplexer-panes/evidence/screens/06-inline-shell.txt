@@ -1,0 +1,30 @@
+
+Shell in /tmp/shep-ev-home-slfBWk/repos/f9280a9269554984/wt/feat-dark-mode-toggle. Type exit to return to shep tui.
+
+$ pwd
+/tmp/shep-ev-home-slfBWk/repos/f9280a9269554984/wt/feat-dark-mode-toggle
+$ 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

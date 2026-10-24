@@ -1,5 +1,5 @@
 /**
- * runFeatureConsole Unit Tests (spec 142)
+ * runFeatureConsole Unit Tests (specs 142, 143)
  *
  * The app wires the view to the use cases: it polls the snapshot (never two
  * reads at once), runs actions and shows their result, keeps the log pane
@@ -19,6 +19,10 @@ import {
 import {
   AgentRunStatus,
   FeatureConsoleAction,
+  FeaturePaneContent,
+  FeaturePaneOutcome,
+  FeaturePanePlacement,
+  TerminalMultiplexer,
   FeatureState,
   SdlcLifecycle,
 } from '@/domain/generated/output.js';
@@ -75,6 +79,9 @@ describe('runFeatureConsole', () => {
   let loadSnapshot: ReturnType<typeof vi.fn<FeatureConsoleAppDeps['loadSnapshot']>>;
   let runAction: ReturnType<typeof vi.fn<FeatureConsoleAppDeps['runAction']>>;
   let loadLogTail: ReturnType<typeof vi.fn<FeatureConsoleAppDeps['loadLogTail']>>;
+  let openPane: ReturnType<typeof vi.fn<FeatureConsoleAppDeps['openPane']>>;
+  let runInline: ReturnType<typeof vi.fn<FeatureConsoleAppDeps['runInline']>>;
+  let notify: ReturnType<typeof vi.fn<(message: string) => void>> | undefined;
   let done: Promise<void> | undefined;
 
   beforeAll(async () => {
@@ -94,6 +101,13 @@ describe('runFeatureConsole', () => {
       logPath: '/logs/worker-run-1.log',
       lines: ['[text] hello'],
     }));
+    openPane = vi.fn<FeatureConsoleAppDeps['openPane']>(async () => ({
+      outcome: FeaturePaneOutcome.Opened,
+      multiplexer: TerminalMultiplexer.Tmux,
+      message: 'Opened a shell for Billing UI in tmux',
+    }));
+    runInline = vi.fn<FeatureConsoleAppDeps['runInline']>(async () => undefined);
+    notify = vi.fn<(message: string) => void>();
   });
 
   afterEach(async () => {
@@ -111,6 +125,9 @@ describe('runFeatureConsole', () => {
       loadSnapshot,
       runAction,
       loadLogTail,
+      openPane,
+      runInline,
+      notify,
       refreshIntervalMs: REFRESH_MS,
     });
     return done;
@@ -173,6 +190,113 @@ describe('runFeatureConsole', () => {
     expect(loadLogTail).toHaveBeenCalledWith('Billing UI-id', expect.any(Number));
     loadLogTail.mockResolvedValue({ logPath: '/logs/worker-run-1.log', lines: ['[text] later'] });
     await vi.waitFor(() => expect(screenText()).toContain('[text] later'));
+  });
+
+  describe('terminal panes (spec 143)', () => {
+    it('opens a pane for the selected feature and shows the result', async () => {
+      void start();
+      await vi.waitFor(() => expect(screenText()).toContain('Billing UI'));
+
+      terminal.type('t');
+
+      await vi.waitFor(() =>
+        expect(screenText()).toContain('Opened a shell for Billing UI in tmux')
+      );
+      expect(openPane).toHaveBeenCalledWith(
+        'Billing UI-id',
+        FeaturePaneContent.Shell,
+        FeaturePanePlacement.Split
+      );
+      expect(runInline).not.toHaveBeenCalled();
+    });
+
+    it('shows a refusal as an error', async () => {
+      openPane.mockResolvedValue({
+        outcome: FeaturePaneOutcome.Failed,
+        message: 'kitten: remote control is disabled',
+      });
+      void start();
+      await vi.waitFor(() => expect(screenText()).toContain('Billing UI'));
+
+      terminal.type('F');
+
+      await vi.waitFor(() =>
+        expect(screenText()).toContain('✗ kitten: remote control is disabled')
+      );
+      expect(openPane).toHaveBeenCalledWith(
+        'Billing UI-id',
+        FeaturePaneContent.Log,
+        FeaturePanePlacement.Window
+      );
+    });
+
+    it('without a multiplexer, steps aside for the command and comes back', async () => {
+      openPane.mockResolvedValue({
+        outcome: FeaturePaneOutcome.Inline,
+        cwd: '/wt/billing',
+        command: ['/bin/zsh'],
+        message: 'No terminal multiplexer: running a shell for Billing UI here',
+      });
+      let release: (() => void) | undefined;
+      runInline.mockImplementation(
+        () =>
+          new Promise<void>((resolve) => {
+            release = resolve;
+          })
+      );
+      void start();
+      await vi.waitFor(() => expect(screenText()).toContain('Billing UI'));
+
+      terminal.type('t');
+
+      await vi.waitFor(() => expect(runInline).toHaveBeenCalled());
+      expect(runInline).toHaveBeenCalledWith({
+        cwd: '/wt/billing',
+        command: ['/bin/zsh'],
+        banner: 'Shell in /wt/billing. Type exit to return to shep tui.',
+      });
+      expect(terminal.started).toBe(false);
+      // Polling goes on while the shell runs, but draws nothing over it.
+      const written = terminal.output.length;
+      await new Promise((r) => setTimeout(r, REFRESH_MS * 3));
+      expect(terminal.output.length).toBe(written);
+
+      release?.();
+      await vi.waitFor(() => expect(terminal.started).toBe(true));
+      await vi.waitFor(() => expect(terminal.output.length).toBeGreaterThan(written));
+    });
+  });
+
+  describe('needs-you notifications (spec 143)', () => {
+    it('alerts once when a feature starts needing the user, never for the first snapshot', async () => {
+      const running = { ...gate('Dark mode'), state: FeatureState.Running, needsAttention: false };
+      loadSnapshot.mockResolvedValue(snapshotOf(gate('Billing UI'), running));
+      void start();
+      await vi.waitFor(() => expect(loadSnapshot.mock.calls.length).toBeGreaterThan(1));
+      expect(notify).not.toHaveBeenCalled();
+
+      loadSnapshot.mockResolvedValue(snapshotOf(gate('Billing UI'), gate('Dark mode')));
+      await vi.waitFor(() => expect(notify).toHaveBeenCalledWith('Dark mode needs you'));
+      const calls = notify!.mock.calls.length;
+      await new Promise((r) => setTimeout(r, REFRESH_MS * 3));
+      expect(notify!.mock.calls.length).toBe(calls);
+    });
+
+    it('counts features needing the user in the terminal title', async () => {
+      void start();
+      await vi.waitFor(() => expect(terminal.calls).toContain('setTitle:shep · needs you: 1'));
+      loadSnapshot.mockResolvedValue(snapshotOf());
+      await vi.waitFor(() => expect(terminal.calls).toContain('setTitle:shep tui'));
+    });
+
+    it('stays quiet when notifications are off', async () => {
+      notify = undefined;
+      loadSnapshot.mockResolvedValue(snapshotOf());
+      void start();
+      await vi.waitFor(() => expect(loadSnapshot.mock.calls.length).toBeGreaterThan(1));
+      loadSnapshot.mockResolvedValue(snapshotOf(gate('Billing UI')));
+      await vi.waitFor(() => expect(screenText()).toContain('Billing UI'));
+    });
   });
 
   it('quits on q: stops polling and stops the terminal', async () => {

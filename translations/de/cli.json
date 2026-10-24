@@ -154,7 +154,8 @@
     "tui": {
       "description": "Die Live-Terminalkonsole aller Features öffnen",
       "repoOption": "Nur Features dieses Repositorys zeigen",
-      "allOption": "Archivierte Features einbeziehen"
+      "allOption": "Archivierte Features einbeziehen",
+      "noNotifyOption": "Keine Glocke und keine Terminal-Benachrichtigung, wenn ein Feature dich braucht"
     },
     "run": {
       "description": "Einen KI-Agenten-Workflow ausführen",

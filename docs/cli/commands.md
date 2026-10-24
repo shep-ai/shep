@@ -91,9 +91,10 @@ shep ui --no-open
 
 ### `shep tui`
 
-Open the live terminal console of every feature (spec 142). It runs full screen and refreshes
-every 2 seconds. Features waiting on you (an approval gate or an open agent question) are pinned
-in a strip at the top and sorted first.
+Open the live terminal console of every feature (specs 142, 143). It runs full screen and
+refreshes every 2 seconds. Features waiting on you (an approval gate or an open agent question)
+are pinned in a strip at the top and sorted first. Inside tmux, Zellij, WezTerm or kitty it opens
+a feature's shell or followed agent log in a split pane.
 
 **Source**: `src/presentation/cli/commands/tui.command.ts` (view: `src/presentation/tui/feature-console/`)
 
@@ -103,6 +104,7 @@ in a strip at the top and sorted first.
 | --------------- | -------------------------------------- | ------- |
 | `--repo <path>` | Only show features of this repository  | —       |
 | `--all`         | Include archived features              | —       |
+| `--no-notify`   | No bell or terminal notification when a feature starts needing you | notify on |
 
 **Keys**:
 
@@ -116,6 +118,9 @@ in a strip at the top and sorted first.
 | `r`               | Reject the gate; type feedback, `enter` sends      |
 | `s`               | Stop the run, after `y` to confirm (stays resumable) |
 | `R`               | Resume an interrupted or failed run                |
+| `t` / `T`         | Shell in the feature's worktree: split pane / new window |
+| `f` / `F`         | Follow the agent log (`shep feat logs -f`): split pane / new window |
+| `/`               | Filter the roster by every word typed; `enter` keeps it, `esc` clears it |
 | `?`               | Help                                               |
 | `q` / `ctrl+c`    | Quit and restore the terminal                      |
 
@@ -127,6 +132,18 @@ Action keys appear in the key bar only when the selected feature's run accepts t
 - Works without the web daemon: it reads the database and runs actions through the same use
   cases as `shep feat approve` / `reject` / `resume` and `shep agent stop`.
 - Uses the terminal's alternate screen, so your scrollback is untouched when you quit.
+- **Panes.** The multiplexer is detected from its session variable: `TMUX`, `ZELLIJ`,
+  `WEZTERM_PANE`, then `KITTY_WINDOW_ID` (kitty needs `allow_remote_control yes`).
+  `SHEP_MULTIPLEXER=tmux|zellij|wezterm|kitty` picks one, and `SHEP_MULTIPLEXER=none` turns panes
+  off. A pane starts in the worktree, or in the repository before the worktree exists, and
+  inherits the console's `SHEP_HOME`. A shell pane takes focus; a log pane leaves it on the
+  console. Each split halves the console's pane, so use `T` / `F` for several at once.
+- **No multiplexer.** `t` and `f` run in this terminal: the console steps aside, and comes back
+  when the shell exits or `ctrl+c` ends the log.
+- **Alerts.** When a feature starts needing you, the console sends the terminal's own
+  notification (OSC 9 in iTerm2, OSC 777 in WezTerm and Ghostty, OSC 99 in kitty) or a bell. In
+  tmux it uses passthrough (set `allow-passthrough on`) plus a bell; in Zellij a bell. The window
+  title shows how many features need you.
 
 ### `shep _serve` (internal, hidden)
 

@@ -224,10 +224,12 @@ replaces four commands.
 - **Terminal notifications:** Shep already sends OS notifications through `node-notifier`
   (`DesktopNotifier`). omp also emits OSC 9/777 and BEL (`desktop-notify.ts`, 193 LoC), which reach
   the user over SSH and inside tmux where `node-notifier` cannot. Add that as a second
-  `IDesktopNotifier` channel.
+  `IDesktopNotifier` channel. (`shep tui` sends these itself since spec 143.)
 - **Open in a pane:** `/fork pane|window|tab` detects tmux, Zellij and others and opens a new pane
   with the right command (`terminal-multiplexer.ts`). For Shep: open a feature's worktree, or its
-  agent's resumed session, in a new pane.
+  agent's resumed session, in a new pane. **Shipped in spec 143** for the worktree shell and the
+  followed log (`t` / `f` in `shep tui`, tmux, Zellij, WezTerm and kitty); see
+  [agent-harness-tui.md](./agent-harness-tui.md).
 - **Keybindings file:** action id → chord(s), `[]` to disable, plus a `?` help overlay generated
   from it (`keybindings.ts`, `docs/keybindings.md`).
 - **Feature picker:** fuzzy multi-token search with current-repo / all-repos scopes and pinning

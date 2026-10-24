@@ -9700,6 +9700,25 @@ export enum FeatureConsoleAction {
   Stop = 'stop',
   Resume = 'resume',
 }
+export enum TerminalMultiplexer {
+  Tmux = 'tmux',
+  Zellij = 'zellij',
+  WezTerm = 'wezterm',
+  Kitty = 'kitty',
+}
+export enum FeaturePaneContent {
+  Shell = 'shell',
+  Log = 'log',
+}
+export enum FeaturePanePlacement {
+  Split = 'split',
+  Window = 'window',
+}
+export enum FeaturePaneOutcome {
+  Opened = 'opened',
+  Inline = 'inline',
+  Failed = 'failed',
+}
 export enum SpaceResolutionSource {
   Assignment = 'Assignment',
   Rule = 'Rule',

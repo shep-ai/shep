@@ -18,6 +18,7 @@ import { ApproveAgentRunUseCase } from '../agents/approve-agent-run.use-case.js'
 import { RejectAgentRunUseCase } from '../agents/reject-agent-run.use-case.js';
 import { StopAgentRunUseCase } from '../agents/stop-agent-run.use-case.js';
 import { ResumeFeatureUseCase } from '../features/resume-feature.use-case.js';
+import { findFeatureByIdOrPrefix } from './find-feature.js';
 import {
   FEATURE_SHORT_ID_LENGTH,
   type FeatureConsoleActionResult,
@@ -58,9 +59,7 @@ export class RunFeatureConsoleActionUseCase {
 
   async execute(input: RunFeatureConsoleActionInput): Promise<FeatureConsoleActionResult> {
     try {
-      const feature =
-        (await this.featureRepo.findById(input.featureId)) ??
-        (await this.featureRepo.findByIdPrefix(input.featureId));
+      const feature = await findFeatureByIdOrPrefix(this.featureRepo, input.featureId);
       if (!feature) {
         return failed(`Feature not found: ${input.featureId}`);
       }

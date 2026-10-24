@@ -146,7 +146,7 @@ src/presentation/tui/
     └── shep.theme.ts
 ```
 
-## Feature Console (`shep tui`, spec 142)
+## Feature Console (`shep tui`, specs 142 and 143)
 
 A full-screen, live view of every feature, modelled on oh-my-pi's Agent Hub
 (`docs/competitors/oh-my-pi.md`). It is the first TUI surface that is not a wizard.
@@ -178,6 +178,38 @@ Rules the console follows:
 pi-tui (MIT, Node >= 20) was chosen over oh-my-pi's fork, which needs Bun and a Rust addon, and
 over Ink, which needs React >= 19.3. See `specs/142-tui-feature-console/research.yaml`.
 
+### Terminal panes, filter and alerts (spec 143)
+
+```
+t / T / f / F → OpenFeaturePaneUseCase                 application/use-cases/feature-console/
+                  ├─ feature by id or prefix, directory: worktree on disk, else repository
+                  ├─ command: none (the user's shell) or <shep> feat logs -f <id>
+                  └─ ITerminalPaneLauncher (port)
+                       detect()  domain/shared/terminal-multiplexer.ts
+                                 TMUX → ZELLIJ → WEZTERM_PANE → KITTY_WINDOW_ID, SHEP_MULTIPLEXER overrides
+                       open()    infrastructure/services/terminal-pane/
+                                 multiplexer-commands.ts: one pure argv builder per multiplexer
+                                 terminal-pane-launcher.service.ts: runs it through ExecFunction
+              ◄── Opened | Inline { cwd, command } | Failed
+Inline → the app stops pi-tui, run-inline.ts runs the command on this terminal
+         (ctrl+c ignored by the console until the child exits), then restarts and redraws
+/      → filterConsoleRows (core, pure) applied by ConsoleRoster on every keystroke
+alerts → terminal-notification.ts for features that start needing the user
+```
+
+- **Argv only.** Every multiplexer command is an array; no shell string is built, so a branch
+  name or path cannot become a command. tmux format-expands `-c`, so `#` is doubled.
+- **Same data in the pane.** The console passes `SHEP_HOME` to the pane (tmux `-e`, kitty
+  `--env`, an `env K=V` prefix for Zellij and WezTerm on POSIX).
+- **Session variables, not `TERM`.** `TERM` and `TERM_PROGRAM` survive into nested shells and
+  ssh sessions with no multiplexer to talk to, so they never enable panes.
+- **Alerts reach the right tab.** Terminal escape sequences, not the desktop notifier the daemon
+  already uses: the terminal knows whether it is focused and which tab rang. The first snapshot
+  never rings.
+
+The tools this follows (workmux, oh-my-pi, claude-squad, Claude Code agent teams) are compared in
+[docs/competitors/agent-harness-tui.md](../competitors/agent-harness-tui.md).
+
 ## Testing Strategy
 
 - **Unit tests**: Mock `@inquirer/prompts` imports, test wizard logic and result mapping
@@ -187,3 +219,6 @@ over Ink, which needs React >= 19.3. See `specs/142-tui-feature-console/research
   condition-based with a deadline, never fixed sleeps.
 - **Console unit tests**: the view renders against a fake terminal size; the app runs against
   `tests/helpers/tui/fake-terminal.ts` with fake use cases.
+- **Pane e2e**: `tests/e2e/tui/feature-console-tmux.test.ts` runs the console as the only pane
+  of a private tmux server (`tmux -L`), presses keys with `send-keys`, and asks tmux which panes
+  opened, where, and running what.

@@ -230,7 +230,10 @@
       "stop": "stoppen",
       "resume": "fortsetzen",
       "help": "Hilfe",
-      "quit": "beenden"
+      "quit": "beenden",
+      "shell": "Shell",
+      "follow": "Log folgen",
+      "filter": "filtern"
     },
     "reject": {
       "prompt": "Feedback für {{name}}:",
@@ -261,8 +264,27 @@
       "stop": "s   Lauf stoppen (fragt vorher)",
       "resume": "R   unterbrochenen oder fehlgeschlagenen Lauf fortsetzen",
       "help": "?   diese Hilfe (Esc schließt)",
-      "quit": "q / Strg+C   beenden"
+      "quit": "q / Strg+C   beenden",
+      "shell": "t / T   Shell im Worktree (geteilt / neues Fenster)",
+      "follow": "f / F   dem Agent-Log folgen (geteilt / neues Fenster)",
+      "filter": "/   Features filtern (Esc löscht)"
     },
-    "notTty": "shep tui braucht ein interaktives Terminal. In Skripten und Pipes nutze \"shep feat ls\"."
+    "notTty": "shep tui braucht ein interaktives Terminal. In Skripten und Pipes nutze \"shep feat ls\".",
+    "filter": {
+      "hint": "tippen zum Filtern · Enter behalten · Esc löschen",
+      "active": "Filter „{{query}}“ · {{shown}} von {{total}}",
+      "noMatch": "Kein Feature passt zu „{{query}}“"
+    },
+    "inline": {
+      "shell": "Shell in {{cwd}}. Mit exit zurück zu shep tui.",
+      "log": "Log von {{name}} wird verfolgt. Strg+C kehrt zu shep tui zurück."
+    },
+    "notify": {
+      "body": "{{name}} braucht dich"
+    },
+    "windowTitle": {
+      "attention": "shep · braucht dich: {{count}}",
+      "idle": "shep tui"
+    }
   }
 }

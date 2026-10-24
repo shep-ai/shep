@@ -230,7 +230,10 @@
       "stop": "עצירה",
       "resume": "המשך",
       "help": "עזרה",
-      "quit": "יציאה"
+      "quit": "יציאה",
+      "shell": "מעטפת",
+      "follow": "מעקב אחר הלוג",
+      "filter": "סינון"
     },
     "reject": {
       "prompt": "משוב עבור {{name}}:",
@@ -261,8 +264,27 @@
       "stop": "s   עצירת ההרצה (שואל קודם)",
       "resume": "R   המשך הרצה שנקטעה או נכשלה",
       "help": "?   העזרה הזו (esc סוגר)",
-      "quit": "q / ctrl+c   יציאה"
+      "quit": "q / ctrl+c   יציאה",
+      "shell": "t / T   מעטפת ב-worktree (פיצול / חלון חדש)",
+      "follow": "f / F   מעקב אחר לוג הסוכן (פיצול / חלון חדש)",
+      "filter": "/   סינון הפיצ'רים (esc מנקה)"
     },
-    "notTty": "shep tui צריך טרמינל אינטראקטיבי. בסקריפטים ובצינורות, השתמש ב-\"shep feat ls\"."
+    "notTty": "shep tui צריך טרמינל אינטראקטיבי. בסקריפטים ובצינורות, השתמש ב-\"shep feat ls\".",
+    "filter": {
+      "hint": "הקלד לסינון · enter שמירה · esc ניקוי",
+      "active": "סינון “{{query}}” · {{shown}} מתוך {{total}}",
+      "noMatch": "אין פיצ'ר שתואם ל-“{{query}}”"
+    },
+    "inline": {
+      "shell": "מעטפת ב-{{cwd}}. הקלד exit כדי לחזור ל-shep tui.",
+      "log": "עוקב אחר הלוג של {{name}}. לחץ ctrl+c כדי לחזור ל-shep tui."
+    },
+    "notify": {
+      "body": "{{name}} צריך אותך"
+    },
+    "windowTitle": {
+      "attention": "shep · מחכים לך: {{count}}",
+      "idle": "shep tui"
+    }
   }
 }

@@ -1,5 +1,5 @@
 /**
- * DI registrations for the terminal feature console (spec 142).
+ * DI registrations for the terminal feature console (specs 142, 143).
  *
  * `shep tui` resolves its three use cases by class; any future web surface
  * would resolve them by string token. Both must be registered — and a class
@@ -61,6 +61,8 @@ const CONSOLE_USE_CASE_PATHS = {
     '../../../../packages/core/src/application/use-cases/feature-console/run-feature-console-action.use-case.js',
   GetFeatureLogTailUseCase:
     '../../../../packages/core/src/application/use-cases/feature-console/get-feature-log-tail.use-case.js',
+  OpenFeaturePaneUseCase:
+    '../../../../packages/core/src/application/use-cases/feature-console/open-feature-pane.use-case.js',
 } as const;
 
 describe('Feature console DI registrations', () => {
@@ -96,5 +98,17 @@ describe('Feature console DI registrations', () => {
       const module = (await import(path)) as Record<string, new (...args: never[]) => unknown>;
       expect(container.resolve(name), name).toBeInstanceOf(module[name]);
     }
+  });
+
+  it('registers the terminal pane launcher behind its port (spec 143)', async () => {
+    const { initializeContainer } = await import(
+      '../../../../packages/core/src/infrastructure/di/container.js'
+    );
+    const { TerminalPaneLauncherService } = await import(
+      '../../../../packages/core/src/infrastructure/services/terminal-pane/terminal-pane-launcher.service.js'
+    );
+    const container = await initializeContainer();
+
+    expect(container.resolve('ITerminalPaneLauncher')).toBeInstanceOf(TerminalPaneLauncherService);
   });
 });

@@ -1,0 +1,16 @@
+Local verification for spec 143 (2026-10-24, Node 22.22.0, tmux 3.4)
+
+pnpm lint                      exit 0 (0 warnings)
+pnpm format:check              exit 0
+pnpm typecheck                 exit 0
+pnpm generate                  exit 0, output.ts identical to the committed file
+pnpm tsp:compile               exit 0, no warnings
+pnpm test:unit                 1412 files, 16122 passed, 5 skipped, 0 failed
+pnpm test:int                  206 files, 2209 passed, 0 failed
+pnpm build:release             exit 0
+pnpm test:e2e:tui              6 passed (tmux panes, inline shell, filter, gate approve, empty, non-TTY)
+pnpm spec:validate specs/143   completeness, architecture, consistency: PASS
+
+Manual run in tmux 3.4: t opened a shell pane in the feature worktree on its branch (focused),
+f opened `shep feat logs -f <id>` (focus kept on the console), the shell pane saw the console's
+SHEP_HOME, and q closed the console while both panes kept running.

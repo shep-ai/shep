@@ -1,42 +1,41 @@
 /**
- * Feature console view (spec 142).
+ * Feature console view (specs 142, 143).
  *
  * A pi-tui Component that draws one full screen: header, needs-you strip,
  * roster, a details or log pane, a status line and a key bar. It holds only
- * UI state (selection, mode, pane); everything about the features comes from
- * the snapshot, and every key that changes something becomes an intent the
- * app carries out through a use case.
+ * UI state (mode, pane, prompts); the roster holds selection and the filter.
+ * Everything about the features comes from the snapshot, and every key that
+ * changes something becomes an intent the app carries out through a use case.
  */
 
 import type { TFunction } from 'i18next';
 import { Input, matchesKey, type Component } from '@mariozechner/pi-tui';
-import { FeatureConsoleAction } from '@/domain/generated/output.js';
+import {
+  FeatureConsoleAction,
+  FeaturePaneContent,
+  type FeaturePanePlacement,
+} from '@/domain/generated/output.js';
 import type {
   FeatureConsoleActionResult,
   FeatureConsoleRow,
   FeatureConsoleSnapshot,
   FeatureLogTail,
 } from '@/application/use-cases/feature-console/feature-console.types.js';
-import { ConsoleKey, resolveConsoleKey } from './console-keys.js';
-import { fit, paint, sanitizeText } from './console-format.js';
-import {
-  renderDetails,
-  renderEmpty,
-  renderHeader,
-  renderHelp,
-  renderKeyBar,
-  renderLog,
-  renderRosterHeader,
-  renderRosterRow,
-  renderStrip,
-  rosterLayout,
-} from './console-render.js';
+import { ConsoleKey, DIRECT_ACTIONS, PANE_KEYS, resolveConsoleKey } from './console-keys.js';
+import { ConsoleRoster } from './console-roster.js';
+import { CHROME_LINES, ConsoleMode, ConsolePane, renderConsoleFrame } from './console-screen.js';
 
 /** What the view asks the app to do. */
 export interface FeatureConsoleIntents {
   runAction(row: FeatureConsoleRow, action: FeatureConsoleAction, feedback?: string): void;
   /** Load (and keep refreshing) the log of this feature; undefined stops it. */
   showLog(row: FeatureConsoleRow | undefined): void;
+  /** Open a shell or the followed log of this feature in a terminal pane. */
+  openPane(
+    row: FeatureConsoleRow,
+    content: FeaturePaneContent,
+    placement: FeaturePanePlacement
+  ): void;
   quit(): void;
   requestRender(): void;
 }
@@ -48,59 +47,34 @@ export interface FeatureConsoleViewDeps {
   intents: FeatureConsoleIntents;
 }
 
-enum Mode {
-  Browse = 'browse',
-  Help = 'help',
-  Reject = 'reject',
-  ConfirmStop = 'confirm-stop',
-}
-
-enum Pane {
-  Details = 'details',
-  Log = 'log',
-}
-
-const NS = 'tui:console';
-/** Header, strip, status line, key bar. */
-const CHROME_LINES = 4;
-/** At or above this width the pane sits beside the roster instead of below it. */
-const SPLIT_MIN_WIDTH = 110;
-const SPLIT_ROSTER_SHARE = 0.6;
-const SPLIT_DIVIDER = ' │ ';
-const STACKED_PANE_SHARE = 0.45;
-const STACKED_PANE_MAX = 9;
-/** Below this body height there is no room for a pane at all. */
-const MIN_BODY_FOR_PANE = 6;
-
-/** Keys that run an action directly (reject and stop open a prompt first). */
-const DIRECT_ACTIONS: Partial<Record<ConsoleKey, FeatureConsoleAction>> = {
-  [ConsoleKey.Approve]: FeatureConsoleAction.Approve,
-  [ConsoleKey.Resume]: FeatureConsoleAction.Resume,
-};
-
 export class FeatureConsoleView implements Component {
   private snapshot: FeatureConsoleSnapshot | undefined;
-  private selectedId: string | undefined;
-  private scrollOffset = 0;
-  private mode = Mode.Browse;
-  private pane = Pane.Details;
+  private readonly roster = new ConsoleRoster();
+  private mode = ConsoleMode.Browse;
+  private pane = ConsolePane.Details;
   private log: FeatureLogTail | undefined;
   private busy: string | undefined;
   private status: FeatureConsoleActionResult | undefined;
   private refreshError: string | undefined;
   private readonly feedback = new Input();
+  private readonly filter = new Input();
 
   constructor(private readonly deps: FeatureConsoleViewDeps) {
     this.feedback.onSubmit = (value) => this.submitReject(value);
-    this.feedback.onEscape = () => this.closePrompt();
+    this.feedback.onEscape = () => this.closePrompt(this.feedback);
+    this.filter.onSubmit = () => this.closePrompt(this.filter);
+    this.filter.onEscape = () => {
+      this.filter.setValue('');
+      this.applyFilter();
+      this.closePrompt(this.filter);
+    };
   }
 
   // ── state from the app ─────────────────────────────────────────────────────
 
   setSnapshot(snapshot: FeatureConsoleSnapshot): void {
     this.snapshot = snapshot;
-    const stillThere = snapshot.rows.some((r) => r.featureId === this.selectedId);
-    if (!stillThere) this.selectedId = snapshot.rows[0]?.featureId;
+    this.roster.setRows(snapshot.rows);
     this.refreshError = undefined;
   }
 
@@ -122,38 +96,41 @@ export class FeatureConsoleView implements Component {
   }
 
   get selectedRow(): FeatureConsoleRow | undefined {
-    return this.rows.find((r) => r.featureId === this.selectedId);
+    return this.roster.selected;
   }
 
   get logOpen(): boolean {
-    return this.pane === Pane.Log;
-  }
-
-  private get rows(): readonly FeatureConsoleRow[] {
-    return this.snapshot?.rows ?? [];
+    return this.pane === ConsolePane.Log;
   }
 
   // ── input ──────────────────────────────────────────────────────────────────
 
   handleInput(data: string): void {
     const key = resolveConsoleKey(data);
-    if (this.mode === Mode.Reject) {
-      // Letters are feedback text here; only ctrl+c still means quit.
-      if (key === ConsoleKey.Quit && matchesKey(data, 'ctrl+c')) this.deps.intents.quit();
-      else this.feedback.handleInput(data);
+    const prompt =
+      this.mode === ConsoleMode.Reject
+        ? this.feedback
+        : this.mode === ConsoleMode.Filter
+          ? this.filter
+          : undefined;
+    if (prompt) {
+      // Letters are text here; only ctrl+c still means quit.
+      if (key === ConsoleKey.Quit && matchesKey(data, 'ctrl+c')) return this.deps.intents.quit();
+      prompt.handleInput(data);
+      if (prompt === this.filter && this.mode === ConsoleMode.Filter) this.applyFilter();
       return;
     }
     if (key === undefined) return;
 
-    if (this.mode === Mode.ConfirmStop) {
+    if (this.mode === ConsoleMode.ConfirmStop) {
       if (key === ConsoleKey.Confirm) this.act(FeatureConsoleAction.Stop);
       if (key === ConsoleKey.Quit) this.deps.intents.quit();
-      this.mode = Mode.Browse;
+      this.mode = ConsoleMode.Browse;
       return;
     }
-    if (this.mode === Mode.Help) {
+    if (this.mode === ConsoleMode.Help) {
       if (key === ConsoleKey.Quit) this.deps.intents.quit();
-      this.mode = Mode.Browse;
+      this.mode = ConsoleMode.Browse;
       return;
     }
     this.handleBrowseKey(key);
@@ -170,53 +147,65 @@ export class FeatureConsoleView implements Component {
       case ConsoleKey.PageDown:
         return this.moveSelection(this.rosterCapacity());
       case ConsoleKey.First:
-        return this.moveSelection(-this.rows.length);
+        return this.moveSelection(-this.roster.rows.length);
       case ConsoleKey.Last:
-        return this.moveSelection(this.rows.length);
+        return this.moveSelection(this.roster.rows.length);
       case ConsoleKey.Details:
-        this.pane = Pane.Details;
+        this.pane = ConsolePane.Details;
         this.deps.intents.showLog(undefined);
         return;
       case ConsoleKey.Log:
-        this.pane = Pane.Log;
+        this.pane = ConsolePane.Log;
         this.log = undefined;
         this.deps.intents.showLog(this.selectedRow);
         return;
+      case ConsoleKey.Filter:
+        return this.openPrompt(ConsoleMode.Filter);
       case ConsoleKey.Help:
-        this.mode = Mode.Help;
+        this.mode = ConsoleMode.Help;
         return;
       case ConsoleKey.Quit:
       case ConsoleKey.Escape:
         this.deps.intents.quit();
         return;
       case ConsoleKey.Reject:
-        if (this.offers(FeatureConsoleAction.Reject)) this.openPrompt(Mode.Reject);
+        if (this.offers(FeatureConsoleAction.Reject)) this.openPrompt(ConsoleMode.Reject);
         return;
       case ConsoleKey.Stop:
-        if (this.offers(FeatureConsoleAction.Stop)) this.openPrompt(Mode.ConfirmStop);
+        if (this.offers(FeatureConsoleAction.Stop)) this.openPrompt(ConsoleMode.ConfirmStop);
         return;
-      default: {
-        const action = DIRECT_ACTIONS[key];
-        if (action) this.act(action);
-      }
+      default:
+        return this.runKey(key);
     }
   }
 
+  private runKey(key: ConsoleKey): void {
+    const action = DIRECT_ACTIONS[key];
+    if (action) return this.act(action);
+    const pane = PANE_KEYS[key];
+    const row = this.selectedRow;
+    if (!pane || !row) return;
+    const [content, placement] = pane;
+    if (content === FeaturePaneContent.Log && !row.runId) return;
+    this.deps.intents.openPane(row, content, placement);
+  }
+
   private moveSelection(delta: number): void {
-    const rows = this.rows;
-    if (rows.length === 0) return;
-    const current = Math.max(
-      0,
-      rows.findIndex((r) => r.featureId === this.selectedId)
-    );
-    const next = Math.min(rows.length - 1, Math.max(0, current + delta));
-    if (rows[next].featureId === this.selectedId) return;
-    this.selectedId = rows[next].featureId;
+    if (this.roster.move(delta)) this.selectionChanged();
+  }
+
+  private applyFilter(): void {
+    const before = this.selectedRow?.featureId;
+    this.roster.setQuery(this.filter.getValue());
+    if (this.selectedRow?.featureId !== before) this.selectionChanged();
+  }
+
+  private selectionChanged(): void {
     // The last action's result belongs to the feature it was run on.
     this.status = undefined;
-    if (this.pane === Pane.Log) {
+    if (this.pane === ConsolePane.Log) {
       this.log = undefined;
-      this.deps.intents.showLog(rows[next]);
+      this.deps.intents.showLog(this.selectedRow);
     }
   }
 
@@ -231,24 +220,25 @@ export class FeatureConsoleView implements Component {
     this.deps.intents.runAction(row, action, feedback);
   }
 
-  private openPrompt(mode: Mode.Reject | Mode.ConfirmStop): void {
+  private openPrompt(
+    mode: ConsoleMode.Reject | ConsoleMode.ConfirmStop | ConsoleMode.Filter
+  ): void {
     this.mode = mode;
-    if (mode === Mode.Reject) {
-      this.feedback.setValue('');
-      this.feedback.focused = true;
-    }
+    if (mode === ConsoleMode.Reject) this.feedback.setValue('');
+    if (mode === ConsoleMode.Reject) this.feedback.focused = true;
+    if (mode === ConsoleMode.Filter) this.filter.focused = true;
   }
 
-  private closePrompt(): void {
-    this.feedback.focused = false;
-    this.mode = Mode.Browse;
+  private closePrompt(prompt: Input): void {
+    prompt.focused = false;
+    this.mode = ConsoleMode.Browse;
     this.deps.intents.requestRender();
   }
 
   private submitReject(value: string): void {
     const feedback = value.trim();
     if (!feedback) return;
-    this.closePrompt();
+    this.closePrompt(this.feedback);
     this.act(FeatureConsoleAction.Reject, feedback);
   }
 
@@ -259,110 +249,27 @@ export class FeatureConsoleView implements Component {
   }
 
   render(width: number): string[] {
-    const height = this.deps.rows();
-    const { t } = this.deps;
-    const bodyHeight = Math.max(0, height - CHROME_LINES);
-    const body =
-      this.mode === Mode.Help
-        ? renderHelp(t)
-        : this.rows.length === 0 && this.snapshot
-          ? renderEmpty(t)
-          : this.renderBody(width, bodyHeight);
-
-    const lines = [
-      renderHeader(this.snapshot, t),
-      renderStrip(this.rows, t),
-      ...padTo(body, bodyHeight),
-      this.renderStatusLine(width),
-      this.mode === Mode.Reject
-        ? paint.muted(` ${t(`${NS}.reject.hint`)}`)
-        : renderKeyBar(this.selectedRow, t),
-    ];
-    return padTo(lines, height).map((line) => fit(line, width));
-  }
-
-  private renderBody(width: number, height: number): string[] {
-    if (width >= SPLIT_MIN_WIDTH) {
-      const rosterWidth = Math.floor(width * SPLIT_ROSTER_SHARE);
-      const paneWidth = width - rosterWidth - SPLIT_DIVIDER.length;
-      const roster = this.renderRoster(rosterWidth, height);
-      const pane = padTo(this.renderPane(paneWidth, height), height);
-      return roster.map(
-        (line, i) => fit(line, rosterWidth) + paint.border(SPLIT_DIVIDER) + fit(pane[i], paneWidth)
-      );
-    }
-    if (height < MIN_BODY_FOR_PANE) return this.renderRoster(width, height);
-    const paneHeight = Math.min(STACKED_PANE_MAX, Math.floor(height * STACKED_PANE_SHARE));
-    const rosterHeight = height - paneHeight - 1;
-    return [
-      ...this.renderRoster(width, rosterHeight),
-      paint.border('─'.repeat(width)),
-      ...padTo(this.renderPane(width, paneHeight), paneHeight),
-    ];
-  }
-
-  private renderRoster(width: number, height: number): string[] {
-    const layout = rosterLayout(width);
-    const visible = Math.max(1, height - 1);
-    const index = Math.max(
-      0,
-      this.rows.findIndex((r) => r.featureId === this.selectedId)
+    return renderConsoleFrame(
+      {
+        mode: this.mode,
+        pane: this.pane,
+        snapshot: this.snapshot,
+        roster: this.roster,
+        log: this.log,
+        feedback: this.feedback,
+        filter: this.filter,
+        busy: this.busy,
+        refreshError: this.refreshError,
+        result: this.status,
+      },
+      this.deps.t,
+      width,
+      this.deps.rows()
     );
-    if (index < this.scrollOffset) this.scrollOffset = index;
-    if (index >= this.scrollOffset + visible) this.scrollOffset = index - visible + 1;
-    this.scrollOffset = Math.min(this.scrollOffset, Math.max(0, this.rows.length - visible));
-
-    const shown = this.rows.slice(this.scrollOffset, this.scrollOffset + visible);
-    return padTo(
-      [
-        renderRosterHeader(layout, this.deps.t),
-        ...shown.map((r) =>
-          renderRosterRow(r, layout, this.deps.t, r.featureId === this.selectedId)
-        ),
-      ],
-      height
-    );
-  }
-
-  private renderPane(width: number, height: number): string[] {
-    const lines =
-      this.pane === Pane.Log
-        ? renderLog(this.selectedRow, this.log, this.deps.t, width, height)
-        : renderDetails(this.selectedRow, this.deps.t, width);
-    return lines.slice(0, height);
   }
 
   /** Lines this roster can show at the current height, for paging. */
   private rosterCapacity(): number {
     return Math.max(1, this.deps.rows() - CHROME_LINES - 1);
   }
-
-  private renderStatusLine(width: number): string {
-    const { t } = this.deps;
-    const name = this.selectedRow?.name ?? '';
-    if (this.mode === Mode.Reject) {
-      const prompt = ` ${t(`${NS}.reject.prompt`, { name })} `;
-      const [input] = this.feedback.render(Math.max(1, width - prompt.length));
-      return paint.attention(prompt) + input;
-    }
-    if (this.mode === Mode.ConfirmStop) {
-      return paint.attention(` ${t(`${NS}.stop.confirm`, { name })}`);
-    }
-    if (this.busy) return paint.muted(` ${this.busy}`);
-    if (this.refreshError) {
-      return paint.error(
-        ` ${t(`${NS}.refreshFailed`, { message: sanitizeText(this.refreshError) })}`
-      );
-    }
-    if (this.status) {
-      const message = sanitizeText(this.status.message);
-      return this.status.ok ? paint.ok(` ✓ ${message}`) : paint.error(` ✗ ${message}`);
-    }
-    return '';
-  }
-}
-
-function padTo(lines: string[], height: number): string[] {
-  if (lines.length >= height) return lines.slice(0, height);
-  return [...lines, ...Array.from({ length: height - lines.length }, () => '')];
 }
