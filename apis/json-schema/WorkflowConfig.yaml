@@ -27,7 +27,7 @@ properties:
     description: When the user last acknowledged a breaker trip; failures before this do not re-trip
   circuitBreakerAutoPauseQueue:
     type: boolean
-    description: "Whether a tripped circuit breaker parks the admission queue (default: false)"
+    description: "Whether a tripped circuit breaker parks the admission queue (default: true)"
   decisionDefaultTimeoutMinutes:
     type: integer
     minimum: -2147483648

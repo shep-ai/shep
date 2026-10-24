@@ -1434,7 +1434,7 @@ describe('SQLiteSettingsRepository', () => {
   });
 
   describe('workflow.circuitBreakerAutoPauseQueue', () => {
-    // The switch that decides whether a trip parks the fleet. It ships off, so
+    // The switch that decides whether a trip parks the fleet. It ships on, so
     // the cases that matter are "absent stays absent", "an explicit choice
     // survives UPDATE", and "an explicit false is not read back as unset".
 

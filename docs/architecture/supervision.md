@@ -251,24 +251,27 @@ A trip does two things:
 
 1. **Reports** — `circuitBreakerTripped` and its reason surface in `shep fleet status` and on the
    dashboard, as before.
-2. **Acts** — when `WorkflowConfig.circuitBreakerAutoPauseQueue` is set, the trip **parks the
-   admission queue**: no queued feature starts, and no manual start is admitted either, until the
-   queue is released.
+2. **Acts** — unless the install explicitly opted out with
+   `WorkflowConfig.circuitBreakerAutoPauseQueue: false`, the trip **parks the admission queue**:
+   no queued feature starts, and no manual start is admitted either, until the queue is released.
 
 This closes the gap the original RFC described as *"auto-pauses the feature admission queue when
 consecutive failures exceed threshold"*. It was weakened to a status signal only because
 admission control did not exist yet when the breaker was written; `maxParallelFeatures` and
 `AdmitQueuedFeaturesUseCase` landed in #847, so the pause now has something to stop.
 
-**The switch ships off.** A trip is reported either way, and while it is off `shep fleet pause` /
-`shep fleet resume` is the lever. It was kept off because the dashboard's own reads are the most
-common thing that trips the breaker, so a default that parked the queue would have stranded a web
-user with no way out (`LESSONS.md`, "No CLI-Only Flows in the Web UI").
+**The switch ships on.** A trip parks the queue, and a person releases it. It stayed off until the
+dashboard could show a pause and release it, because the dashboard's own reads are the most common
+thing that trips the breaker — a default that parked would have stranded a web user with no way
+out (`LESSONS.md`, "No CLI-Only Flows in the Web UI"). The fleet status bar now shows any pause in
+force, with its reason, and its **Resume** action releases it through the same
+`SetFleetQueuePauseUseCase` as `shep fleet resume` (a server action resolving the use case by its
+string token). With that surface shipped, the default flipped to on.
 
-The dashboard now closes that gap: the fleet status bar shows any pause in force, with its reason,
-and its **Resume** action releases it through the same `SetFleetQueuePauseUseCase` as
-`shep fleet resume` (a server action resolving the use case by its string token). That is the
-precondition for turning the switch on by default; flipping the default is a separate change.
+An install that explicitly set `workflow.circuitBreakerAutoPauseQueue` to `false` keeps its
+choice: the trip is still reported, and `shep fleet pause` / `shep fleet resume` remains the
+lever. An install that never chose (`NULL`) follows the default, so it starts parking on a trip
+after upgrade — that is the point of the flip, and the release notes call it out.
 
 ### The pause is a separate record, never `maxParallelFeatures = 0`
 

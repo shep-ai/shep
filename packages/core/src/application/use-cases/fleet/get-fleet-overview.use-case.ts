@@ -43,19 +43,23 @@ export const CIRCUIT_BREAKER_MIN_SAMPLE_SIZE = 4;
  * migration and a settings-mapper round-trip; that is tracked as follow-up
  * work in `specs/111-fleet-control-plane/tasks.yaml` rather than half-wired here.
  *
- * `autoPauseQueue` ships **off**, and is the one field here a user can choose
- * (`workflow.circuitBreakerAutoPauseQueue`). A trip is reported either way;
- * while this is off, `shep fleet pause` / `shep fleet resume` is the lever. It
- * stays off until the web dashboard can both show a pause and release it — the
- * dashboard's own reads are the most common thing that trips the breaker, so
- * turning this on first would strand a web user with no way out (`LESSONS.md`,
- * "No CLI-Only Flows in the Web UI").
+ * `autoPauseQueue` ships **on**, and is the one field here a user can choose
+ * (`workflow.circuitBreakerAutoPauseQueue`). A trip is reported either way; with
+ * this on, the trip also parks the admission queue, and `shep fleet resume` (or
+ * Resume on the fleet status bar) is how a person releases it. It stayed off
+ * only until the dashboard could both show a pause and release it — the
+ * dashboard's own reads are the most common thing that trips the breaker, so an
+ * earlier default would have stranded a web user with no way out (`LESSONS.md`,
+ * "No CLI-Only Flows in the Web UI"). That surface shipped in #937.
+ *
+ * An install that never chose (`NULL`) follows this default, so an upgrade
+ * starts parking on a trip. An explicit `false` keeps opting out.
  */
 export const DEFAULT_CIRCUIT_BREAKER_SETTINGS: FleetCircuitBreakerSettings = {
   enabled: true,
   consecutiveFailureThreshold: 4,
   failureRateThresholdPercent: 25,
-  autoPauseQueue: false,
+  autoPauseQueue: true,
 };
 
 /**
@@ -63,9 +67,9 @@ export const DEFAULT_CIRCUIT_BREAKER_SETTINGS: FleetCircuitBreakerSettings = {
  * field a user can currently choose layered over them.
  *
  * An install that has never chosen (`undefined`, NULL in the column) keeps the
- * default rather than being read as an explicit `false`, so "never asked" and
- * "asked for no" stay distinguishable in the settings model even though the
- * breaker treats them the same.
+ * default rather than being read as an explicit `false`. That distinction still
+ * matters after the default flip: "never asked" follows the product default when
+ * it changes, while "asked for no" stays off across upgrades.
  */
 export function resolveCircuitBreakerSettings(
   settings: Settings | null
@@ -90,12 +94,11 @@ export class GetFleetOverviewUseCase {
   /**
    * Retrieves fleet overview and evaluates circuit breaker state.
    *
-   * When the breaker trips and `autoPauseQueue` is set, this also parks the
-   * admission queue — the behaviour the spec's RFC promised, which was weakened
-   * to a status signal only while admission control was still unmerged. That
-   * switch ships off, so by default the trip is reported and the pause is left
-   * to `shep fleet pause`. Either way the trip is reported: a pause that cannot
-   * be written must not turn a readable status into an error.
+   * When the breaker trips and `autoPauseQueue` is on — the default — this also
+   * parks the admission queue, the behaviour the spec's RFC promised. An install
+   * that explicitly opted out gets the trip reported and the pause left to
+   * `shep fleet pause`. Either way the trip is reported: a pause that cannot be
+   * written must not turn a readable status into an error.
    *
    * @param repositoryPath Optional repository path to scope the fleet
    */

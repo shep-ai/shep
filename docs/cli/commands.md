@@ -692,10 +692,11 @@ start. Pausing stops new work from starting; it never stops a running agent, bec
 the pause both govern admission only. Queued features keep their place and drain in FIFO order
 once the queue is released.
 
-When an install has opted in via `workflow.circuitBreakerAutoPauseQueue`, the circuit breaker
-pauses the queue on its own (see `shep fleet status` above) as soon as consecutive failures or the
-rolling failure rate cross the threshold. **That switch ships off**: by default a trip is reported
-and the pause is yours to make with `shep fleet pause`. A breaker pause **cannot clear itself**: a
+The circuit breaker pauses the queue on its own (see `shep fleet status` above) as soon as
+consecutive failures or the rolling failure rate cross the threshold. **That is the default**: an
+install that never chose follows it, and one that explicitly set
+`workflow.circuitBreakerAutoPauseQueue` to `false` opts out — then a trip is reported and the pause
+is yours to make with `shep fleet pause`. A breaker pause **cannot clear itself**: a
 fleet that tripped overnight would otherwise restart into the same failing conditions as soon as
 the window looked healthy. A person releases it — with `shep fleet resume`, or with **Resume** on
 the dashboard's fleet status bar, which shows any pause in force with its reason and calls the

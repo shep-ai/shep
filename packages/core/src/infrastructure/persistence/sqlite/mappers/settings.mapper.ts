@@ -144,7 +144,7 @@ export interface SettingsRow extends SettingsTelemetryRow {
   workflow_breaker_acknowledged_at: string | null;
 
   // WorkflowConfig breaker auto-pause switch (workflow.circuitBreakerAutoPauseQueue;
-  // NULL = never chosen, which reads as off)
+  // NULL = never chosen, which reads as the default, on)
   workflow_circuit_breaker_auto_pause_queue: number | null;
 
   // WorkflowConfig per-stage timeouts (workflow.stageTimeouts.*)
@@ -376,8 +376,8 @@ export function toDatabase(settings: Settings): SettingsRow {
     workflow_breaker_acknowledged_at: serializeIsoLike(settings.workflow.breakerAcknowledgedAt),
 
     // Whether a trip parks the admission queue. NULL when the install has never
-    // chosen; the default is off, so NULL and 0 behave identically and an
-    // install that never touches this parks nothing.
+    // chosen; the use case reads NULL as the default (on), so NULL and 1 both
+    // park and only an explicit 0 opts out.
     workflow_circuit_breaker_auto_pause_queue:
       settings.workflow.circuitBreakerAutoPauseQueue === undefined
         ? null

@@ -53,10 +53,10 @@ describe('GetFleetOverviewUseCase', () => {
   });
 
   /**
-   * The auto-pause ships OFF, so a trip only parks the queue on an install that
-   * has opted in. Every suite that exercises the pause asks for it explicitly,
-   * exactly as an opted-in install would — a suite that leaned on the default
-   * would quietly stop testing the pause the moment the default changed.
+   * The switch ships ON, so a trip parks the queue unless the install opted out.
+   * Suites that exercise the pause still opt in explicitly: a suite that leaned
+   * on the default would quietly stop testing the pause the moment the default
+   * changed again.
    */
   const withAutoPauseQueue = () => {
     settingsRepo.load.mockResolvedValue({ workflow: { circuitBreakerAutoPauseQueue: true } });
@@ -194,7 +194,7 @@ describe('GetFleetOverviewUseCase', () => {
    * as a badge and nothing stopped.
    */
   describe('auto-pausing the admission queue on trip', () => {
-    // Opted in explicitly: parking on a trip is no longer the shipped default.
+    // Opted in explicitly, so this suite tests the write rather than the default.
     beforeEach(withAutoPauseQueue);
 
     const tripByConsecutiveFailures = () => {
@@ -282,13 +282,14 @@ describe('GetFleetOverviewUseCase', () => {
   });
 
   /**
-   * The shipped default, and the reason the switch exists. The web dashboard's
-   * own reads are the most common thing that trips the breaker, and it has no
-   * way to release a pause — so a default that parked the queue would strand a
-   * web user with no way out (`LESSONS.md`, "No CLI-Only Flows in the Web UI").
-   * The switch stays off until the web resume surface lands.
+   * The shipped default, and the precondition it waited on. Parking on a trip
+   * was withheld while the dashboard could not show or release a pause: the
+   * dashboard's own reads are the most common thing that trips the breaker, so a
+   * default that parked would have stranded a web user with no way out
+   * (`LESSONS.md`, "No CLI-Only Flows in the Web UI"). #937 shipped the Resume
+   * surface, so the default now does what the spec's breaker always promised.
    */
-  describe('the auto-pause switch ships off', () => {
+  describe('the auto-pause switch ships on', () => {
     const trip = () => {
       vi.mocked(mockFleetRepo.getOverview).mockResolvedValue(overview());
       vi.mocked(mockFleetRepo.getConsecutiveFailures).mockResolvedValue(4);
@@ -299,8 +300,36 @@ describe('GetFleetOverviewUseCase', () => {
       });
     };
 
-    it('reports the trip without parking when the install has never chosen', async () => {
+    it('parks the queue when the install has never chosen', async () => {
+      // The `beforeEach` settings — `{ workflow: {} }` — are an install that
+      // upgraded without ever touching the switch. It must park on its first
+      // trip, not stay silently signal-only.
       trip();
+
+      const result = await useCase.execute();
+
+      expect(result.circuitBreakerTripped).toBe(true);
+      expect(queuePause.execute).toHaveBeenCalledWith({
+        paused: true,
+        reason: expect.stringContaining('Consecutive failure threshold reached (4/4'),
+      });
+    });
+
+    it('parks the queue when there are no settings at all', async () => {
+      // `load()` returns null before initialization; the breaker must not read
+      // that as "opted out" and downgrade the default.
+      trip();
+      settingsRepo.load.mockResolvedValue(null);
+
+      const result = await useCase.execute();
+
+      expect(result.circuitBreakerTripped).toBe(true);
+      expect(queuePause.execute).toHaveBeenCalledOnce();
+    });
+
+    it('does not park when the install explicitly opted out', async () => {
+      trip();
+      settingsRepo.load.mockResolvedValue({ workflow: { circuitBreakerAutoPauseQueue: false } });
 
       const result = await useCase.execute();
 
@@ -309,17 +338,7 @@ describe('GetFleetOverviewUseCase', () => {
       expect(queuePause.execute).not.toHaveBeenCalled();
     });
 
-    it('treats an explicit false exactly like never having chosen', async () => {
-      trip();
-      settingsRepo.load.mockResolvedValue({ workflow: { circuitBreakerAutoPauseQueue: false } });
-
-      const result = await useCase.execute();
-
-      expect(result.circuitBreakerTripped).toBe(true);
-      expect(queuePause.execute).not.toHaveBeenCalled();
-    });
-
-    it('parks the queue once an install opts in', async () => {
+    it('parks the queue when an install opts back in', async () => {
       trip();
       withAutoPauseQueue();
 
