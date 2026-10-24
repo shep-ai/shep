@@ -32,6 +32,7 @@ function store(files: LogFileInfo[], remove = vi.fn().mockResolvedValue(undefine
     getLogsDirectory: () => '/home/u/.shep/logs',
     list: async () => files,
     remove,
+    readTail: async () => [],
   };
 }
 

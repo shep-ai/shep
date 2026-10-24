@@ -2,98 +2,48 @@
  * Feature State Derivation
  *
  * Derives UI node state and progress from the Feature domain model
- * and its associated AgentRun status (mirrors CLI feat ls logic).
+ * and its associated AgentRun status. State rules live in core (spec 142).
  */
 
 import {
   SdlcLifecycle,
-  AgentRunStatus,
   TaskState,
   NotificationEventType,
+  FeatureState,
 } from '@shepai/core/domain/generated';
+import { deriveFeatureState } from '@shepai/core/domain/shared/feature-state';
 import type { Feature, AgentRun } from '@shepai/core/domain/generated';
 import type { FeatureNodeState, FeatureLifecyclePhase } from './feature-node-state-config';
 
 /**
+ * Core feature state → canvas node state. Total, so a new `FeatureState`
+ * member is a compile error here until the canvas decides how to show it.
+ * The canvas has no separate "queued" look: a queued feature is a pending one.
+ */
+const FEATURE_STATE_TO_NODE_STATE: Record<FeatureState, FeatureNodeState> = {
+  [FeatureState.Running]: 'running',
+  [FeatureState.ActionRequired]: 'action-required',
+  [FeatureState.Blocked]: 'blocked',
+  [FeatureState.Pending]: 'pending',
+  [FeatureState.Queued]: 'pending',
+  [FeatureState.Done]: 'done',
+  [FeatureState.Error]: 'error',
+  [FeatureState.Deleting]: 'deleting',
+  [FeatureState.Archived]: 'archived',
+};
+
+/**
  * Derives the visual node state from a Feature and its optional AgentRun.
  *
- * Priority (mirrors CLI formatStatus):
- * 1. Agent waiting_approval → action-required
- * 2. Agent failed → error
- * 3. Agent interrupted/cancelled → error
- * 4. Agent completed + Maintain lifecycle → done
- * 5. Agent running/pending → running
- * 6. No agent run → fall back to plan tasks / lifecycle
+ * The rules live in core (`deriveFeatureState`, spec 142) so the canvas, the
+ * feature tree and the terminal console agree; this only maps the result.
  */
 export function deriveNodeState(
   feature: Feature,
   agentRun?: AgentRun | null,
   options?: { isPidAlive?: boolean }
 ): FeatureNodeState {
-  // Deleting lifecycle takes top priority — feature is being removed
-  if (feature.lifecycle === SdlcLifecycle.Deleting) {
-    return 'deleting';
-  }
-
-  // Archived lifecycle — feature is hidden/dormant, takes priority over agent run
-  if (feature.lifecycle === SdlcLifecycle.Archived) {
-    return 'archived';
-  }
-
-  // Pending lifecycle — user-deferred, agent not yet spawned
-  if (feature.lifecycle === SdlcLifecycle.Pending) {
-    return 'pending';
-  }
-
-  // Blocked lifecycle takes priority — child waiting on parent regardless of agent run
-  if (feature.lifecycle === SdlcLifecycle.Blocked) {
-    return 'blocked';
-  }
-
-  if (agentRun) {
-    switch (agentRun.status) {
-      case AgentRunStatus.waitingApproval:
-        return 'action-required';
-      case AgentRunStatus.failed:
-        return 'error';
-      case AgentRunStatus.interrupted:
-      case AgentRunStatus.cancelled:
-        return 'error';
-      case AgentRunStatus.completed:
-        return 'done';
-      case AgentRunStatus.running:
-      case AgentRunStatus.pending:
-        if (options?.isPidAlive === false) return 'error';
-        return 'running';
-    }
-  }
-
-  // No agent run — fall back to plan tasks
-  if (feature.lifecycle === SdlcLifecycle.Maintain) {
-    return 'done';
-  }
-
-  // Adopted branch with an open PR — needs user review/merge action
-  if (feature.lifecycle === SdlcLifecycle.Review && !agentRun) {
-    return 'action-required';
-  }
-
-  const tasks = feature.plan?.tasks;
-  if (!tasks || tasks.length === 0) {
-    return 'running';
-  }
-
-  if (tasks.some((t) => t.state === TaskState.Review)) {
-    return 'action-required';
-  }
-  if (tasks.some((t) => t.state === TaskState.WIP)) {
-    return 'running';
-  }
-  if (tasks.every((t) => t.state === TaskState.Done)) {
-    return 'done';
-  }
-
-  return 'running';
+  return FEATURE_STATE_TO_NODE_STATE[deriveFeatureState(feature, agentRun, options)];
 }
 
 /**

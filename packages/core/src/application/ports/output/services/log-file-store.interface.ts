@@ -26,4 +26,11 @@ export interface ILogFileStore {
 
   /** Delete one log file. Rejects when the file cannot be removed. */
   remove(path: string): Promise<void>;
+
+  /**
+   * The last `maxLines` complete lines of a log file, oldest first, without
+   * line terminators. Reads only the end of a large file. Empty when the file
+   * does not exist yet (a run that has not written anything).
+   */
+  readTail(path: string, maxLines: number): Promise<string[]>;
 }

@@ -1,0 +1,14 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: FeatureState.yaml
+type: string
+enum:
+  - running
+  - action-required
+  - blocked
+  - pending
+  - queued
+  - done
+  - error
+  - deleting
+  - archived
+description: What a feature is doing right now, as every surface shows it

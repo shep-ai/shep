@@ -66,4 +66,40 @@ describe('LogFileStoreService', () => {
       new LogFileStoreService().remove(join(home, 'logs', 'missing.log'))
     ).rejects.toThrow();
   });
+
+  describe('readTail', () => {
+    function writeLog(content: string): string {
+      const logs = join(home, 'logs');
+      mkdirSync(logs, { recursive: true });
+      const path = join(logs, 'worker-tail.log');
+      writeFileSync(path, content);
+      return path;
+    }
+
+    it('returns the last N lines without the trailing empty line', async () => {
+      const path = writeLog('one\ntwo\nthree\nfour\n');
+      expect(await new LogFileStoreService().readTail(path, 2)).toEqual(['three', 'four']);
+    });
+
+    it('returns every line when the file is shorter than N, and splits CRLF', async () => {
+      const path = writeLog('one\r\ntwo');
+      expect(await new LogFileStoreService().readTail(path, 10)).toEqual(['one', 'two']);
+    });
+
+    it('returns an empty list for a missing file', async () => {
+      expect(await new LogFileStoreService().readTail(join(home, 'logs', 'absent.log'), 5)).toEqual(
+        []
+      );
+    });
+
+    it('reads only the end of a large file and never returns a partial first line', async () => {
+      const line = 'x'.repeat(99);
+      const lines = Array.from({ length: 5000 }, (_, i) => `${i}:${line}`);
+      const path = writeLog(`${lines.join('\n')}\n`);
+
+      const tail = await new LogFileStoreService().readTail(path, 3);
+
+      expect(tail).toEqual(lines.slice(-3));
+    });
+  });
 });
