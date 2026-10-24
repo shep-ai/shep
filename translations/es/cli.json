@@ -151,6 +151,11 @@
       "shuttingDown": "Apagando...",
       "failedToStart": "Error al iniciar la interfaz web"
     },
+    "tui": {
+      "description": "Abrir la consola de terminal en vivo de todas las features",
+      "repoOption": "Mostrar solo las features de este repositorio",
+      "allOption": "Incluir features archivadas"
+    },
     "run": {
       "description": "Ejecutar un flujo de trabajo de agente AI",
       "agentArgument": "Nombre del agente a ejecutar (ej., analyze-repository)",

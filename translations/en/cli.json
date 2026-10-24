@@ -151,6 +151,11 @@
       "shuttingDown": "Shutting down...",
       "failedToStart": "Failed to start web UI"
     },
+    "tui": {
+      "description": "Open the live terminal console of every feature",
+      "repoOption": "Only show features of this repository",
+      "allOption": "Include archived features"
+    },
     "run": {
       "description": "Run an AI agent workflow",
       "agentArgument": "Name of the agent to run (e.g., analyze-repository)",

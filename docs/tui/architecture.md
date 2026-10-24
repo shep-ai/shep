@@ -146,8 +146,44 @@ src/presentation/tui/
     └── shep.theme.ts
 ```
 
+## Feature Console (`shep tui`, spec 142)
+
+A full-screen, live view of every feature, modelled on oh-my-pi's Agent Hub
+(`docs/competitors/oh-my-pi.md`). It is the first TUI surface that is not a wizard.
+
+```
+shep tui (tui.command.ts)          checks for a TTY, resolves three use cases
+  └─ runFeatureConsole              feature-console.app.ts
+       ├─ TUI(FullscreenTerminal(ProcessTerminal))   pi-tui diff renderer on the alternate screen
+       ├─ FeatureConsoleView                          UI state only: selection, mode, pane
+       ├─ every 2s → GetFeatureConsoleSnapshotUseCase (never two reads at once)
+       ├─ a / r / s / R → RunFeatureConsoleActionUseCase
+       └─ l → GetFeatureLogTailUseCase (refreshed with the snapshot while the pane is open)
+```
+
+Rules the console follows:
+
+- **No decisions in the view.** State, phase, needs-you, which actions a row offers and the
+  row order all arrive in the snapshot. The view shows an action key only when the row's
+  `actions` contains it, and the action use case refuses anything else again.
+- **One feature state.** `deriveFeatureState` (`domain/shared/feature-state.ts`) is shared with
+  the web canvas and feature tree, so every surface agrees.
+- **Exactly one screen.** `render(width)` returns `terminal.rows` lines, none wider than `width`.
+  With the alternate screen this makes pi-tui's inline diff renderer a full-screen one.
+- **Outside text is sanitised.** Log lines and error messages pass through `sanitizeText`, so an
+  agent's output can never move the cursor or change colours inside the console.
+- **The terminal is always restored.** `q`, `ctrl+c`, `SIGTERM` and `SIGHUP` all go through one
+  `finish()` that stops polling, stops pi-tui and leaves the alternate screen.
+
+pi-tui (MIT, Node >= 20) was chosen over oh-my-pi's fork, which needs Bun and a Rust addon, and
+over Ink, which needs React >= 19.3. See `specs/142-tui-feature-console/research.yaml`.
+
 ## Testing Strategy
 
 - **Unit tests**: Mock `@inquirer/prompts` imports, test wizard logic and result mapping
 - **Integration tests**: Test CLI command with `--flag` bypass (non-interactive)
-- **E2E tests**: Use expect/spawn patterns for interactive terminal testing (future)
+- **E2E tests**: `tests/e2e/tui/` drives the real CLI in a pseudo-terminal (`node-pty`) and reads
+  the screen through `@xterm/headless` (`tests/helpers/tui/pty-screen.ts`). Waits are
+  condition-based with a deadline, never fixed sleeps.
+- **Console unit tests**: the view renders against a fake terminal size; the app runs against
+  `tests/helpers/tui/fake-terminal.ts` with fake use cases.

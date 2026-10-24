@@ -4,15 +4,22 @@ Reference documentation for the Shep AI TUI (Terminal UI) presentation layer.
 
 ## Overview
 
-The TUI layer provides interactive terminal wizards using [@inquirer/prompts](https://github.com/SBoudrias/Inquirer.js). Wizards are invoked from CLI commands when multi-step interactive input is needed (e.g., agent configuration, onboarding, plan/PRD review flows).
+The TUI layer has two kinds of surface:
 
-The TUI is not a standalone presentation layer but integrates with CLI commands -- a command determines when a wizard is needed and delegates to the TUI layer for interactive prompts.
+1. **Wizards** — one-shot interactive prompts built on [@inquirer/prompts](https://github.com/SBoudrias/Inquirer.js),
+   invoked from CLI commands when multi-step input is needed (agent configuration, onboarding,
+   plan/PRD review flows).
+2. **The feature console** (`shep tui`, spec 142) — a full-screen, live view of every feature built
+   on [`@mariozechner/pi-tui`](https://github.com/badlogic/pi-mono/tree/main/packages/tui): a
+   needs-you strip, a roster, a details or log pane, and keys to approve, reject, stop and resume.
+
+Both are entered from a CLI command and reach the core only through use cases.
 
 ## Documents
 
 | Document                               | Description                                             |
 | -------------------------------------- | ------------------------------------------------------- |
-| [architecture.md](./architecture.md)   | Wizard structure, prompt patterns, integration with CLI |
+| [architecture.md](./architecture.md)   | Wizards, the feature console, integration with CLI      |
 | [design-system.md](./design-system.md) | Prompt styling, themes, consistent UX patterns          |
 
 ## Quick Reference
@@ -22,6 +29,13 @@ The TUI is not a standalone presentation layer but integrates with CLI commands 
 ```
 src/presentation/tui/
   index.ts                          # Barrel export
+  feature-console/                  # `shep tui` (spec 142)
+    feature-console.app.ts          # Polling, actions, log refresh, clean exit
+    feature-console-view.ts         # pi-tui Component: selection, modes, one full screen
+    console-render.ts               # Pure render helpers (header, strip, roster, panes)
+    console-format.ts               # Durations, cost, sanitising, state palette
+    console-keys.ts                 # Raw input -> console keys (legacy + Kitty protocol)
+    fullscreen-terminal.ts          # Alternate-screen Terminal decorator
   wizards/
     agent-config.wizard.ts          # Agent selection + auth wizard
     merge-review.wizard.ts          # Merge/PR review flow

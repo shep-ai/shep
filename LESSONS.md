@@ -1,5 +1,22 @@
 # Lessons Learned
 
+## A gate files an inbox question that nothing closes — count gates from the run
+
+Every approval gate also files a `blocking` agent question mirroring it (spec 093), and approving
+or rejecting the gate leaves that question `pending`. The first real run of `shep tui` showed a
+finished feature as "Question" because the snapshot counted it. Represent a gate by
+`AgentRunStatus.waitingApproval`; when counting a feature's open questions, drop
+`isGateQuestion(...)` rows. (Closing the mirror on approve/reject is a separate core fix.)
+
+## Look at a TUI in a real terminal, not only in unit tests
+
+Green view tests missed two things a real PTY run of `shep tui` showed at once: pi-tui's
+`truncateToWidth` appends `\x1b[0m` after the ellipsis, which ended the inverse selection bar
+mid-row, and log lines were unreadable because truncation kept only their long prefix. Drive the
+built CLI through `tests/helpers/tui/pty-screen.ts`, read `screen.text()`, and render a frame
+before calling a terminal UI done. When inspecting dumps, never `cut -c` UTF-8 text: it counts
+bytes and fakes truncation and `�` glyphs that are not in the output.
+
 ## Persisted retry state needs a "this will never work" branch
 
 A chat boot that failed re-cached its agent session id, and the DB kept it too,

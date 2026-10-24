@@ -151,6 +151,11 @@
       "shuttingDown": "جارٍ الإيقاف...",
       "failedToStart": "فشل بدء واجهة الويب"
     },
+    "tui": {
+      "description": "فتح لوحة الطرفية الحية لكل الميزات",
+      "repoOption": "عرض ميزات هذا المستودع فقط",
+      "allOption": "تضمين الميزات المؤرشفة"
+    },
     "run": {
       "description": "تشغيل سير عمل وكيل الذكاء الاصطناعي",
       "agentArgument": "اسم الوكيل المراد تشغيله (مثال: analyze-repository)",

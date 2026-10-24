@@ -1,0 +1,133 @@
+name: tui-feature-console
+summary: >
+  Build the console on the Node upstream of oh-my-pi's renderer (pi-tui), derive feature state
+  once in core, and verify it end to end in a real PTY through a headless xterm.
+
+relatedFeatures:
+  - 093-agent-collaboration-supervision
+  - 111-fleet-control-plane
+technologies:
+  - '@mariozechner/pi-tui'
+  - '@xterm/headless'
+  - node-pty
+relatedLinks:
+  - title: docs/competitors/oh-my-pi.md (library question)
+    url: ../../docs/competitors/oh-my-pi.md
+
+decisions:
+  - title: Terminal UI library
+    chosen: '@mariozechner/pi-tui 0.73.1'
+    rejected:
+      - '@oh-my-pi/pi-tui (Bun-only, ships .ts source, needs the pi-natives Rust addon)'
+      - 'Ink 8 (needs React >= 19.3; the web pins 19.2.4, and a React bump is its own change)'
+      - 'A hand-written renderer (re-solves width, key parsing and diffing)'
+    rationale: >
+      MIT, Node >= 20, compiled dist, four small dependencies. A spike rendered Text, Markdown
+      and a focused SelectList correctly under Node 22.22 in a real PTY. It is the library
+      oh-my-pi's Agent Hub grew from, so its patterns port directly.
+  - title: Full-screen mode
+    chosen: Alternate screen through a Terminal decorator; the view renders exactly one screen
+    rejected:
+      - Inline rendering into scrollback (a dashboard redrawn every 2s would flood scrollback)
+    rationale: >
+      pi-tui renders inline and diffs changed lines. Wrapping its Terminal so start() enters
+      the alternate screen (CSI ?1049h) and stop() leaves it, and rendering exactly
+      terminal.rows lines, gives a stable full-screen view while keeping the diff renderer.
+  - title: Where feature state is derived
+    chosen: Core domain function deriveFeatureState returning a new FeatureState TypeSpec enum
+    rejected:
+      - A third presentation-layer copy in the console
+      - Moving the web FeatureNodeState union wholesale into TypeSpec (touches dozens of web files)
+    rationale: >
+      The CLI and the web each derive state; a third copy is the point where the rules require
+      extraction. The enum's values reuse the web's strings, so the web's deriveNodeState
+      becomes a total Record mapping (queued -> pending) with no behaviour change.
+  - title: Live updates
+    chosen: Poll a snapshot use case every 2s with an in-flight guard
+    rejected:
+      - StreamAgentEventsUseCase as the only source (emits deltas only; elapsed time and cost
+        still need a full read)
+      - Daemon SSE (the console must work without the web daemon running)
+    rationale: >
+      One batched read (features, runs by id, phase timings by run id, pending questions,
+      repositories) is cheap at console scale and always consistent. ListFeaturesUseCase
+      already reconciles crashed runs first, so no PID probe is needed in the presentation.
+  - title: E2E harness
+    chosen: node-pty spawning the built CLI, output fed to @xterm/headless, assertions on the screen buffer
+    rejected:
+      - Asserting on raw ANSI output (diff rendering makes byte streams unreadable)
+    rationale: >
+      node-pty is already a dependency. A headless xterm reproduces exactly what a user sees,
+      and its buffer also feeds the evidence screenshots.
+
+openQuestions: []
+
+content: |
+  ## Status
+
+  - **Phase:** Research
+  - **Updated:** 2026-10-24
+
+  ## Technology Decisions
+
+  ### 1. Terminal UI library
+
+  **Options considered:**
+
+  1. `@oh-my-pi/pi-tui`: Bun-only (`bun:ffi`, `Bun.stringWidth` x34), exports `./src/index.ts`,
+     needs the Rust `pi-natives` addon, entangled with omp's agent packages.
+  2. Ink 8: React for CLIs with flexbox, but requires React >= 19.3.
+  3. `@mariozechner/pi-tui` 0.73.1: Node >= 20, compiled `dist/`, MIT.
+
+  **Decision:** `@mariozechner/pi-tui`.
+
+  **Rationale:** Runs on Node today (spike verified), small, and the Agent Hub design it carries
+  ports directly. Its `Terminal` interface also makes a fake terminal trivial in unit tests.
+
+  ### 2. Full-screen rendering
+
+  A `FullscreenTerminal` decorator enters the alternate screen on `start()` and leaves it on
+  `stop()`. The console view renders exactly `rows` lines, so the inline diff renderer behaves
+  as a full-screen one and the user's scrollback is untouched.
+
+  ### 3. One feature-state derivation
+
+  `deriveFeatureState(feature, run, { isPidAlive })` moves the web's rules into
+  `domain/shared/feature-state.ts` and adds `queued` (a Pending feature waiting on a capacity
+  slot). `FeatureState` values match the web's strings; the web maps through a total `Record`.
+
+  ### 4. Live updates
+
+  A 2-second poll of `GetFeatureConsoleSnapshotUseCase`. Elapsed time ticks between polls from
+  the snapshot's timestamps.
+
+  ### 5. E2E harness
+
+  `node-pty` + `@xterm/headless`, against the built CLI with `SHEP_MOCK_EXECUTOR=1` and an
+  isolated `SHEP_HOME`.
+
+  ## Library Analysis
+
+  | Library | Version | Purpose | Pros | Cons |
+  | ------- | ------- | ------- | ---- | ---- |
+  | @mariozechner/pi-tui | 0.73.1 | Renderer, keys, Input | Node-native, MIT, diff rendering, Kitty keys | Inline-first; full screen needs a wrapper |
+  | @xterm/headless | 6.0.0 | E2E screen buffer | Same engine as the web terminal | Dev-only dependency |
+
+  ## Security Considerations
+
+  The console runs locally against the user's own database and calls existing use cases with
+  their existing authorization. Reject feedback is passed as data, never through a shell. Log
+  tails are read from shep's own log directory by run id, not from a user-supplied path.
+
+  ## Performance Implications
+
+  Each refresh is five batched reads (no per-feature queries). The renderer repaints only
+  changed lines, and a refresh never overlaps the previous one.
+
+  ## Open Questions
+
+  All questions resolved.
+
+  ---
+
+  _Updated by `/shep-kit:new-feature-fast`_

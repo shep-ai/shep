@@ -9683,6 +9683,23 @@ export enum CoordinationOutcome {
   Unavailable = 'unavailable',
   Stale = 'stale',
 }
+export enum FeatureState {
+  Running = 'running',
+  ActionRequired = 'action-required',
+  Blocked = 'blocked',
+  Pending = 'pending',
+  Queued = 'queued',
+  Done = 'done',
+  Error = 'error',
+  Deleting = 'deleting',
+  Archived = 'archived',
+}
+export enum FeatureConsoleAction {
+  Approve = 'approve',
+  Reject = 'reject',
+  Stop = 'stop',
+  Resume = 'resume',
+}
 export enum SpaceResolutionSource {
   Assignment = 'Assignment',
   Rule = 'Rule',

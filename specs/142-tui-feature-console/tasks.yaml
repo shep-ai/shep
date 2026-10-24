@@ -1,0 +1,244 @@
+name: tui-feature-console
+summary: Task breakdown for 142-tui-feature-console
+
+relatedFeatures:
+  - 093-agent-collaboration-supervision
+  - 111-fleet-control-plane
+technologies:
+  - TypeScript
+  - TypeSpec
+  - '@mariozechner/pi-tui'
+relatedLinks: []
+
+tasks:
+  - id: task-1
+    title: Add FeatureState and FeatureConsoleAction TypeSpec enums
+    description: >
+      Define the feature states every surface shows and the actions the console offers, in
+      tsp/common/enums/feature-console.tsp, and regenerate output.ts.
+    state: Done
+    dependencies: []
+    acceptanceCriteria:
+      - FeatureState has running, action-required, blocked, pending, queued, done, error, deleting, archived
+      - FeatureConsoleAction has approve, reject, stop, resume
+      - pnpm generate leaves no diff after commit
+    tdd: null
+    estimatedEffort: S
+
+  - id: task-2
+    title: Extract deriveFeatureState into the domain and move the web onto it
+    description: >
+      domain/shared/feature-state.ts holds the one derivation (web rules plus queued), the
+      action rules and the console ordering. The web's deriveNodeState delegates through a
+      total Record mapping.
+    state: Done
+    dependencies:
+      - task-1
+    acceptanceCriteria:
+      - Every lifecycle and run status maps as the web did before; Queued only for capacity-queued Pending features
+      - availableFeatureActions offers approve/reject at a gate, stop while executing, resume after interrupt or failure
+      - tests/unit/presentation/web/common/feature-node/derive-feature-state.test.ts passes unchanged
+    tdd:
+      red:
+        - feature-state.test.ts covering each lifecycle, each run status, queued vs pending, dead PID, task fallback
+        - action rules per run status; ordering puts needs-you first, then running, then the rest, then done
+      green:
+        - Implement deriveFeatureState, availableFeatureActions, compareConsoleRows
+        - Replace the body of the web deriveNodeState with the core call and a Record mapping
+      refactor:
+        - Keep domain imports extensionless (web consumes domain as raw TS)
+    estimatedEffort: M
+
+  - id: task-3
+    title: GetFeatureConsoleSnapshotUseCase
+    description: >
+      Returns rows ready to render (state, phase, agent, model, cost, tokens, elapsed, PR,
+      pending questions, needs-you, actions) plus totals, from five batched reads.
+    state: Done
+    dependencies:
+      - task-2
+    acceptanceCriteria:
+      - A gate or a pending question marks a row as needs-you
+      - Rows are sorted by the domain ordering; archived rows are hidden unless asked for
+      - Cost and tokens sum the current run's phase timings; elapsed uses the injected clock
+      - Repository name falls back to the path's last segment
+    tdd:
+      red:
+        - Snapshot test with in-memory fakes for features, runs, timings, questions, repositories and clock
+      green:
+        - Implement the use case with batched findByIds / findByRunIds
+      refactor:
+        - Move row and snapshot types to feature-console.types.ts
+    estimatedEffort: M
+
+  - id: task-4
+    title: RunFeatureConsoleActionUseCase
+    description: >
+      One entry point for console actions. Resolves the feature and its current run, refuses
+      actions the domain does not offer, and dispatches to the existing approve, reject, stop
+      and resume use cases.
+    state: Done
+    dependencies:
+      - task-2
+    acceptanceCriteria:
+      - Returns ok=false with a reason for an unknown feature, a missing run or an unavailable action
+      - Reject without feedback is refused before reaching RejectAgentRunUseCase
+      - A thrown error from a delegate becomes ok=false, never an exception
+    tdd:
+      red:
+        - One test per action plus the refusal paths, with stubbed delegate use cases
+      green:
+        - Implement the dispatcher
+      refactor:
+        - Share the run-resolution helper with the log tail use case
+    estimatedEffort: S
+
+  - id: task-5
+    title: GetFeatureLogTailUseCase and ILogFileStore.readTail, DI module
+    description: >
+      Read the last N lines of the feature's current run log through the log store port, and
+      register all three use cases in register-feature-console.ts.
+    state: Done
+    dependencies:
+      - task-3
+      - task-4
+    acceptanceCriteria:
+      - readTail returns at most N lines and handles CRLF, a missing file and a large file
+      - The use case returns an empty tail when the feature has no run
+      - All three use cases resolve from the container by class and by string token
+    tdd:
+      red:
+        - Log tail use-case test with a fake store; readTail test on a temp file
+        - DI test resolving the three use cases
+      green:
+        - Implement readTail in FileSystemLogFileStore and the use case; add the module
+      refactor:
+        - Name the tail byte budget as a constant
+    estimatedEffort: S
+
+  - id: task-6
+    title: FullscreenTerminal and console formatters
+    description: >
+      A pi-tui Terminal decorator for the alternate screen, plus pure formatters for duration,
+      cost, state badges and column fitting.
+    state: Done
+    dependencies: []
+    acceptanceCriteria:
+      - start() writes CSI ?1049h before delegating; stop() delegates then writes CSI ?1049l
+      - Formatters never exceed the requested visible width
+    tdd:
+      red:
+        - Fake-terminal test for enter/leave order; formatter width tests
+      green:
+        - Implement the decorator and formatters
+      refactor:
+        - Reuse the CLI colour palette
+    estimatedEffort: S
+
+  - id: task-7
+    title: FeatureConsoleView component
+    description: >
+      Renders header, needs-you strip, roster, inspector or log pane, status line and key bar
+      in exactly terminal.rows lines; handles navigation, mode switches and action keys.
+    state: Done
+    dependencies:
+      - task-3
+      - task-6
+    acceptanceCriteria:
+      - Output is exactly rows lines and no line exceeds width, at 60 to 200 columns
+      - Up/down/j/k move the selection; Enter or Tab toggles the inspector; l toggles the log
+      - a/r/s/R only act when the row offers the action; s asks for y confirmation; r opens a feedback input
+      - Empty state explains how to create a feature
+    tdd:
+      red:
+        - View tests against snapshots of fake rows and a fake terminal size
+      green:
+        - Implement the component and render helpers
+      refactor:
+        - Split rendering helpers to keep each file under 300 lines
+    estimatedEffort: L
+
+  - id: task-8
+    title: Console app and shep tui command
+    description: >
+      runFeatureConsole wires the TUI, the 2s poll with an in-flight guard, action dispatch and
+      clean exit; shep tui resolves the use cases and refuses to run without a TTY.
+    state: Done
+    dependencies:
+      - task-5
+      - task-7
+    acceptanceCriteria:
+      - q, Esc at top level and Ctrl+C exit with code 0 and restore the terminal
+      - A failed refresh shows an error line and keeps the last snapshot
+      - Without a TTY the command prints a hint to use shep feat ls and exits 1
+      - Strings come from tui.json in all nine locales
+    tdd:
+      red:
+        - App test with a fake terminal and fake use cases (refresh, action, exit, failure)
+        - Command test for the non-TTY path
+      green:
+        - Implement the app, the command and the translations
+      refactor:
+        - Keep the command free of logic beyond wiring
+    estimatedEffort: M
+
+  - id: task-9
+    title: PTY e2e test
+    description: >
+      Replace tests/e2e/tui/placeholder.test.ts with a test that drives the built CLI in
+      node-pty and reads the screen through @xterm/headless.
+    state: Done
+    dependencies:
+      - task-8
+    acceptanceCriteria:
+      - Shows a mock-executor feature waiting at its gate in the needs-you strip
+      - Pressing a approves it and the row leaves the gate
+      - Pressing q exits 0 and leaves the alternate screen
+      - Non-TTY invocation exits 1
+    tdd:
+      red:
+        - Write the e2e test before wiring the command into index.ts
+      green:
+        - Register the command; make the test pass
+      refactor:
+        - Extract a reusable PTY screen helper under tests/helpers/tui
+    estimatedEffort: M
+
+  - id: task-10
+    title: Docs and evidence
+    description: >
+      Update docs/tui and docs/cli/commands.md; capture terminal screenshots and test output
+      into specs/142-tui-feature-console/evidence for the PR.
+    state: Done
+    dependencies:
+      - task-9
+    acceptanceCriteria:
+      - docs/tui describes the console alongside the wizards
+      - Evidence has screenshots of the roster, the inspector, the log pane and the reject input
+    tdd: null
+    estimatedEffort: S
+
+totalEstimate: L
+
+openQuestions: []
+
+content: |
+  ## Summary
+
+  A live full-screen terminal console for every feature (`shep tui`), built on pi-tui, with
+  feature state derived once in core — 10 tasks across 4 phases.
+
+  ## Acceptance Checklist
+
+  Before marking feature complete:
+
+  - [ ] All tasks completed
+  - [ ] Tests passing (`pnpm test:unit`, `pnpm test:int`, `pnpm test:e2e:tui`)
+  - [ ] Linting clean (`pnpm lint`)
+  - [ ] Types valid (`pnpm typecheck`)
+  - [ ] TypeSpec compiles (`pnpm tsp:compile`)
+  - [ ] PR created with evidence
+
+  ---
+
+  _Task details are in the tasks[] array of tasks.yaml_

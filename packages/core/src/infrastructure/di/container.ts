@@ -123,6 +123,7 @@ import { registerHarness } from './modules/register-harness.js';
 import type { ITelemetry } from '../../application/ports/output/services/telemetry.interface.js';
 import { registerTelemetry } from './modules/register-telemetry.js';
 import { registerGitCheckpoints } from './modules/register-git-checkpoints.js';
+import { registerFeatureConsole } from './modules/register-feature-console.js';
 import { PruneRetainedDataUseCase } from '../../application/use-cases/maintenance/prune-retained-data.use-case.js';
 
 let _initialized = false;
@@ -181,6 +182,7 @@ export async function initializeContainer(): Promise<typeof container> {
   registerHarness(container);
   registerTelemetry(container);
   registerGitCheckpoints(container);
+  registerFeatureConsole(container);
 
   // ─── Retention housekeeping ──────────────────────────────────────────────
   // The daemon may never have been started, so history (and worker log files)

@@ -150,5 +150,119 @@
       "createPr": "Create PR",
       "createPrDescription": "Open pull request when implementation completes"
     }
+  },
+  "console": {
+    "title": "Features",
+    "summary": {
+      "needsYou": "needs you",
+      "running": "running",
+      "waiting": "waiting",
+      "failed": "failed",
+      "done": "done"
+    },
+    "strip": {
+      "label": "NEEDS YOU",
+      "empty": "Nothing needs you right now",
+      "questions": "questions: {{count}}",
+      "gate": "review {{phase}}"
+    },
+    "columns": {
+      "state": "STATE",
+      "feature": "FEATURE",
+      "repo": "REPO",
+      "phase": "PHASE",
+      "agent": "AGENT",
+      "elapsed": "TIME",
+      "cost": "COST"
+    },
+    "state": {
+      "running": "Running",
+      "action-required": "Needs you",
+      "blocked": "Blocked",
+      "pending": "Pending",
+      "queued": "Queued",
+      "done": "Done",
+      "error": "Failed",
+      "deleting": "Deleting",
+      "archived": "Archived",
+      "question": "Question"
+    },
+    "phase": {
+      "analyze": "analyze",
+      "requirements": "requirements",
+      "research": "research",
+      "plan": "plan",
+      "implement": "implement",
+      "merge": "merge",
+      "maintain": "maintain",
+      "blocked": "blocked",
+      "pending": "pending",
+      "archived": "archived",
+      "prototype-generate": "prototype"
+    },
+    "inspector": {
+      "repo": "Repo",
+      "branch": "Branch",
+      "worktree": "Worktree",
+      "state": "State",
+      "agent": "Agent",
+      "elapsed": "Time",
+      "cost": "Cost",
+      "tokens": "Tokens",
+      "tokensValue": "{{input}} in · {{output}} out",
+      "pr": "PR",
+      "questions": "Questions",
+      "questionsHint": "{{count}} open · answer with: shep agent questions ls",
+      "error": "Error",
+      "noSelection": "No feature selected"
+    },
+    "log": {
+      "title": "Log",
+      "empty": "No output yet",
+      "noRun": "This feature has no agent run yet"
+    },
+    "keys": {
+      "select": "select",
+      "details": "details",
+      "log": "log",
+      "approve": "approve",
+      "reject": "reject",
+      "stop": "stop",
+      "resume": "resume",
+      "help": "help",
+      "quit": "quit"
+    },
+    "reject": {
+      "prompt": "Feedback for {{name}}:",
+      "hint": "enter send · esc cancel"
+    },
+    "stop": {
+      "confirm": "Stop {{name}}? The run stays resumable. (y/n)"
+    },
+    "progress": {
+      "approve": "Approving {{name}}…",
+      "reject": "Rejecting {{name}}…",
+      "stop": "Stopping {{name}}…",
+      "resume": "Resuming {{name}}…"
+    },
+    "refreshFailed": "Refresh failed: {{message}}",
+    "empty": {
+      "title": "No features yet",
+      "hint": "Create one with: shep feat new \"<what to build>\""
+    },
+    "help": {
+      "title": "Keys",
+      "navigate": "↑ ↓ / j k   move",
+      "pages": "PgUp PgDn / g G   page, first, last",
+      "details": "enter / i   details pane",
+      "log": "l   log pane",
+      "approve": "a   approve the gate",
+      "reject": "r   reject the gate with feedback",
+      "stop": "s   stop the run (asks first)",
+      "resume": "R   resume an interrupted or failed run",
+      "help": "?   this help (esc closes)",
+      "quit": "q / ctrl+c   quit"
+    },
+    "notTty": "shep tui needs an interactive terminal. In scripts and pipes, use \"shep feat ls\"."
   }
 }

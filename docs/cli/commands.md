@@ -89,6 +89,45 @@ shep ui --no-open
 - Auto-increments port if the requested port is already occupied.
 - Graceful shutdown on Ctrl+C.
 
+### `shep tui`
+
+Open the live terminal console of every feature (spec 142). It runs full screen and refreshes
+every 2 seconds. Features waiting on you (an approval gate or an open agent question) are pinned
+in a strip at the top and sorted first.
+
+**Source**: `src/presentation/cli/commands/tui.command.ts` (view: `src/presentation/tui/feature-console/`)
+
+**Options**:
+
+| Option          | Description                            | Default |
+| --------------- | -------------------------------------- | ------- |
+| `--repo <path>` | Only show features of this repository  | —       |
+| `--all`         | Include archived features              | —       |
+
+**Keys**:
+
+| Key               | Action                                             |
+| ----------------- | -------------------------------------------------- |
+| `↑` `↓` / `j` `k` | Move the selection                                 |
+| `PgUp` `PgDn`, `g` `G` | Page, first, last                             |
+| `enter` / `i`     | Details pane                                       |
+| `l`               | Log pane (tail of the current run, kept fresh)     |
+| `a`               | Approve the gate                                   |
+| `r`               | Reject the gate; type feedback, `enter` sends      |
+| `s`               | Stop the run, after `y` to confirm (stays resumable) |
+| `R`               | Resume an interrupted or failed run                |
+| `?`               | Help                                               |
+| `q` / `ctrl+c`    | Quit and restore the terminal                      |
+
+Action keys appear in the key bar only when the selected feature's run accepts them.
+
+**Behavior**:
+
+- Needs an interactive terminal; in scripts and pipes it exits 1 and points to `shep feat ls`.
+- Works without the web daemon: it reads the database and runs actions through the same use
+  cases as `shep feat approve` / `reject` / `resume` and `shep agent stop`.
+- Uses the terminal's alternate screen, so your scrollback is untouched when you quit.
+
 ### `shep _serve` (internal, hidden)
 
 > **Not a user-facing command.** The name is `_serve`, with the leading

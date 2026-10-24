@@ -150,5 +150,119 @@
       "createPr": "Створити PR",
       "createPrDescription": "Відкрити запит на злиття після завершення реалізації"
     }
+  },
+  "console": {
+    "title": "Фічі",
+    "summary": {
+      "needsYou": "чекають на вас",
+      "running": "у роботі",
+      "waiting": "очікують",
+      "failed": "з помилкою",
+      "done": "готово"
+    },
+    "strip": {
+      "label": "ЧЕКАЮТЬ НА ВАС",
+      "empty": "Зараз ніщо не чекає на вас",
+      "questions": "питань: {{count}}",
+      "gate": "перевірити: {{phase}}"
+    },
+    "columns": {
+      "state": "СТАТУС",
+      "feature": "ФІЧА",
+      "repo": "РЕПО",
+      "phase": "ФАЗА",
+      "agent": "АГЕНТ",
+      "elapsed": "ЧАС",
+      "cost": "ВАРТІСТЬ"
+    },
+    "state": {
+      "running": "У роботі",
+      "action-required": "Чекає на вас",
+      "blocked": "Заблокована",
+      "pending": "Відкладена",
+      "queued": "У черзі",
+      "done": "Готово",
+      "error": "Помилка",
+      "deleting": "Видаляється",
+      "archived": "В архіві",
+      "question": "Питання"
+    },
+    "phase": {
+      "analyze": "аналіз",
+      "requirements": "вимоги",
+      "research": "дослідження",
+      "plan": "план",
+      "implement": "реалізація",
+      "merge": "злиття",
+      "maintain": "підтримка",
+      "blocked": "заблокована",
+      "pending": "відкладена",
+      "archived": "в архіві",
+      "prototype-generate": "прототип"
+    },
+    "inspector": {
+      "repo": "Репо",
+      "branch": "Гілка",
+      "worktree": "Worktree",
+      "state": "Статус",
+      "agent": "Агент",
+      "elapsed": "Час",
+      "cost": "Вартість",
+      "tokens": "Токени",
+      "tokensValue": "{{input}} вхід · {{output}} вихід",
+      "pr": "PR",
+      "questions": "Питання",
+      "questionsHint": "відкрито: {{count}} · відповісти: shep agent questions ls",
+      "error": "Помилка",
+      "noSelection": "Фічу не вибрано"
+    },
+    "log": {
+      "title": "Лог",
+      "empty": "Поки немає виводу",
+      "noRun": "У цієї фічі ще немає запуску агента"
+    },
+    "keys": {
+      "select": "вибір",
+      "details": "деталі",
+      "log": "лог",
+      "approve": "схвалити",
+      "reject": "відхилити",
+      "stop": "зупинити",
+      "resume": "продовжити",
+      "help": "довідка",
+      "quit": "вихід"
+    },
+    "reject": {
+      "prompt": "Відгук для {{name}}:",
+      "hint": "enter надіслати · esc скасувати"
+    },
+    "stop": {
+      "confirm": "Зупинити {{name}}? Запуск можна буде продовжити. (y/n)"
+    },
+    "progress": {
+      "approve": "Схвалюємо {{name}}…",
+      "reject": "Відхиляємо {{name}}…",
+      "stop": "Зупиняємо {{name}}…",
+      "resume": "Продовжуємо {{name}}…"
+    },
+    "refreshFailed": "Не вдалося оновити: {{message}}",
+    "empty": {
+      "title": "Фіч поки немає",
+      "hint": "Створіть фічу: shep feat new \"<що побудувати>\""
+    },
+    "help": {
+      "title": "Клавіші",
+      "navigate": "↑ ↓ / j k   переміщення",
+      "pages": "PgUp PgDn / g G   сторінка, перша, остання",
+      "details": "enter / i   панель деталей",
+      "log": "l   панель логу",
+      "approve": "a   схвалити етап",
+      "reject": "r   відхилити етап з відгуком",
+      "stop": "s   зупинити запуск (з підтвердженням)",
+      "resume": "R   продовжити перерваний або невдалий запуск",
+      "help": "?   ця довідка (esc закриває)",
+      "quit": "q / ctrl+c   вихід"
+    },
+    "notTty": "shep tui потрібен інтерактивний термінал. У скриптах і конвеєрах використовуйте \"shep feat ls\"."
   }
 }

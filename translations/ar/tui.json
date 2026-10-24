@@ -150,5 +150,119 @@
       "createPr": "إنشاء PR",
       "createPrDescription": "فتح طلب سحب عند اكتمال التنفيذ"
     }
+  },
+  "console": {
+    "title": "الميزات",
+    "summary": {
+      "needsYou": "بانتظارك",
+      "running": "قيد التشغيل",
+      "waiting": "منتظرة",
+      "failed": "فشلت",
+      "done": "مكتملة"
+    },
+    "strip": {
+      "label": "بانتظارك",
+      "empty": "لا شيء بانتظارك الآن",
+      "questions": "أسئلة: {{count}}",
+      "gate": "مراجعة {{phase}}"
+    },
+    "columns": {
+      "state": "الحالة",
+      "feature": "الميزة",
+      "repo": "المستودع",
+      "phase": "المرحلة",
+      "agent": "الوكيل",
+      "elapsed": "الوقت",
+      "cost": "التكلفة"
+    },
+    "state": {
+      "running": "قيد التشغيل",
+      "action-required": "بانتظارك",
+      "blocked": "محظورة",
+      "pending": "مؤجلة",
+      "queued": "في الطابور",
+      "done": "مكتملة",
+      "error": "فشلت",
+      "deleting": "قيد الحذف",
+      "archived": "مؤرشفة",
+      "question": "سؤال"
+    },
+    "phase": {
+      "analyze": "تحليل",
+      "requirements": "المتطلبات",
+      "research": "بحث",
+      "plan": "خطة",
+      "implement": "تنفيذ",
+      "merge": "دمج",
+      "maintain": "صيانة",
+      "blocked": "محظورة",
+      "pending": "مؤجلة",
+      "archived": "مؤرشفة",
+      "prototype-generate": "نموذج أولي"
+    },
+    "inspector": {
+      "repo": "المستودع",
+      "branch": "الفرع",
+      "worktree": "Worktree",
+      "state": "الحالة",
+      "agent": "الوكيل",
+      "elapsed": "الوقت",
+      "cost": "التكلفة",
+      "tokens": "الرموز",
+      "tokensValue": "{{input}} داخل · {{output}} خارج",
+      "pr": "PR",
+      "questions": "الأسئلة",
+      "questionsHint": "{{count}} مفتوحة · أجب عبر: shep agent questions ls",
+      "error": "خطأ",
+      "noSelection": "لم يتم اختيار ميزة"
+    },
+    "log": {
+      "title": "السجل",
+      "empty": "لا مخرجات بعد",
+      "noRun": "لا يوجد تشغيل وكيل لهذه الميزة بعد"
+    },
+    "keys": {
+      "select": "اختيار",
+      "details": "التفاصيل",
+      "log": "السجل",
+      "approve": "موافقة",
+      "reject": "رفض",
+      "stop": "إيقاف",
+      "resume": "استئناف",
+      "help": "مساعدة",
+      "quit": "خروج"
+    },
+    "reject": {
+      "prompt": "ملاحظات لـ {{name}}:",
+      "hint": "enter إرسال · esc إلغاء"
+    },
+    "stop": {
+      "confirm": "إيقاف {{name}}؟ يمكن استئناف التشغيل لاحقًا. (y/n)"
+    },
+    "progress": {
+      "approve": "جارٍ الموافقة على {{name}}…",
+      "reject": "جارٍ رفض {{name}}…",
+      "stop": "جارٍ إيقاف {{name}}…",
+      "resume": "جارٍ استئناف {{name}}…"
+    },
+    "refreshFailed": "فشل التحديث: {{message}}",
+    "empty": {
+      "title": "لا توجد ميزات بعد",
+      "hint": "أنشئ واحدة عبر: shep feat new \"<ما الذي تريد بناءه>\""
+    },
+    "help": {
+      "title": "المفاتيح",
+      "navigate": "↑ ↓ / j k   تنقل",
+      "pages": "PgUp PgDn / g G   صفحة، الأول، الأخير",
+      "details": "enter / i   لوحة التفاصيل",
+      "log": "l   لوحة السجل",
+      "approve": "a   الموافقة على البوابة",
+      "reject": "r   رفض البوابة مع ملاحظات",
+      "stop": "s   إيقاف التشغيل (يسأل أولًا)",
+      "resume": "R   استئناف تشغيل متوقف أو فاشل",
+      "help": "?   هذه المساعدة (esc للإغلاق)",
+      "quit": "q / ctrl+c   خروج"
+    },
+    "notTty": "يحتاج shep tui إلى طرفية تفاعلية. في السكربتات والأنابيب استخدم \"shep feat ls\"."
   }
 }

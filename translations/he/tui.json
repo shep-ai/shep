@@ -150,5 +150,119 @@
       "createPr": "צור PR",
       "createPrDescription": "פתח בקשת משיכה כאשר המימוש מסתיים"
     }
+  },
+  "console": {
+    "title": "פיצ'רים",
+    "summary": {
+      "needsYou": "ממתינים לך",
+      "running": "רצים",
+      "waiting": "ממתינים",
+      "failed": "נכשלו",
+      "done": "הושלמו"
+    },
+    "strip": {
+      "label": "ממתין לך",
+      "empty": "כרגע שום דבר לא ממתין לך",
+      "questions": "שאלות: {{count}}",
+      "gate": "לבדוק {{phase}}"
+    },
+    "columns": {
+      "state": "מצב",
+      "feature": "פיצ'ר",
+      "repo": "ריפו",
+      "phase": "שלב",
+      "agent": "סוכן",
+      "elapsed": "זמן",
+      "cost": "עלות"
+    },
+    "state": {
+      "running": "רץ",
+      "action-required": "ממתין לך",
+      "blocked": "חסום",
+      "pending": "נדחה",
+      "queued": "בתור",
+      "done": "הושלם",
+      "error": "נכשל",
+      "deleting": "נמחק",
+      "archived": "בארכיון",
+      "question": "שאלה"
+    },
+    "phase": {
+      "analyze": "ניתוח",
+      "requirements": "דרישות",
+      "research": "מחקר",
+      "plan": "תכנון",
+      "implement": "מימוש",
+      "merge": "מיזוג",
+      "maintain": "תחזוקה",
+      "blocked": "חסום",
+      "pending": "נדחה",
+      "archived": "בארכיון",
+      "prototype-generate": "אב-טיפוס"
+    },
+    "inspector": {
+      "repo": "ריפו",
+      "branch": "ענף",
+      "worktree": "Worktree",
+      "state": "מצב",
+      "agent": "סוכן",
+      "elapsed": "זמן",
+      "cost": "עלות",
+      "tokens": "טוקנים",
+      "tokensValue": "{{input}} נכנס · {{output}} יוצא",
+      "pr": "PR",
+      "questions": "שאלות",
+      "questionsHint": "{{count}} פתוחות · לענות עם: shep agent questions ls",
+      "error": "שגיאה",
+      "noSelection": "לא נבחר פיצ'ר"
+    },
+    "log": {
+      "title": "לוג",
+      "empty": "עדיין אין פלט",
+      "noRun": "לפיצ'ר הזה עדיין אין הרצת סוכן"
+    },
+    "keys": {
+      "select": "בחירה",
+      "details": "פרטים",
+      "log": "לוג",
+      "approve": "אישור",
+      "reject": "דחייה",
+      "stop": "עצירה",
+      "resume": "המשך",
+      "help": "עזרה",
+      "quit": "יציאה"
+    },
+    "reject": {
+      "prompt": "משוב עבור {{name}}:",
+      "hint": "enter שליחה · esc ביטול"
+    },
+    "stop": {
+      "confirm": "לעצור את {{name}}? אפשר יהיה להמשיך את ההרצה. (y/n)"
+    },
+    "progress": {
+      "approve": "מאשר את {{name}}…",
+      "reject": "דוחה את {{name}}…",
+      "stop": "עוצר את {{name}}…",
+      "resume": "ממשיך את {{name}}…"
+    },
+    "refreshFailed": "הרענון נכשל: {{message}}",
+    "empty": {
+      "title": "עדיין אין פיצ'רים",
+      "hint": "צור אחד עם: shep feat new \"<מה לבנות>\""
+    },
+    "help": {
+      "title": "מקשים",
+      "navigate": "↑ ↓ / j k   תנועה",
+      "pages": "PgUp PgDn / g G   עמוד, ראשון, אחרון",
+      "details": "enter / i   חלונית פרטים",
+      "log": "l   חלונית לוג",
+      "approve": "a   אישור השלב",
+      "reject": "r   דחיית השלב עם משוב",
+      "stop": "s   עצירת ההרצה (שואל קודם)",
+      "resume": "R   המשך הרצה שנקטעה או נכשלה",
+      "help": "?   העזרה הזו (esc סוגר)",
+      "quit": "q / ctrl+c   יציאה"
+    },
+    "notTty": "shep tui צריך טרמינל אינטראקטיבי. בסקריפטים ובצינורות, השתמש ב-\"shep feat ls\"."
   }
 }

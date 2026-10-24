@@ -1,0 +1,9 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: FeatureConsoleAction.yaml
+type: string
+enum:
+  - approve
+  - reject
+  - stop
+  - resume
+description: An action the feature console can run on one feature

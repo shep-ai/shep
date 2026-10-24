@@ -1,0 +1,34 @@
+ shep · Features   3 needs you · 0 running · 0 waiting · 0 failed · 1 done
+ NEEDS YOU  ◆ Rate Limit The Public API · review merge   ◆ Billing Dashboard Charts · review merge   ◆ Add Password Reset Flow · review merge
+Keys
+
+  ↑ ↓ / j k   move
+  PgUp PgDn / g G   page, first, last
+  enter / i   details pane
+  l   log pane
+  a   approve the gate
+  r   reject the gate with feedback
+  s   stop the run (asks first)
+  R   resume an interrupted or failed run
+  ?   this help (esc closes)
+  q / ctrl+c   quit
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ ✓ Rejected and iterating
+ ↑↓ select  enter details  l log  a approve  r reject  ? help  q quit
