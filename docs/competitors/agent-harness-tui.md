@@ -121,22 +121,26 @@ multiplexer or terminal-control features was found.
   - Only features that *start* needing the user ring.
   - The window title counts the features needing the user.
 
-## Not Yet Taken, Ranked
+## What Shep Took (specs 144–147)
 
-1. **Persistent attachable agent sessions** (claude-squad, agent-deck, `claude attach`). Shep's
-   agents are headless workers, so this needs the executor to run inside a PTY or a detached
-   tmux session first. The log pane covers watching; steering needs this.
-2. **tmux status-line segment.** For example `shep status --tmux` for `status-right`, listing
-   features waiting on you with jump keys (agent-deck), and optionally state icons in window
-   names (workmux).
-3. **Control-center layout.** One tmux window or Zellij tab per active feature (`par
-   control-center`).
-4. **`shep ps`.** Worker processes with `--json`, `logs -f`, `stop` and `kill` (`omp ps`,
-   `claude agents --json`).
-5. **Peek without attaching.** `tmux capture-pane`, `wezterm cli get-text` and
-   `kitten @ get-text` for agents that run in panes.
-6. **Command palette and keybindings file.** Crush's Ctrl+P, Codex's `tui.keymap`.
-7. **Pass `--teammate-mode in-process` to Claude Code** when Shep owns the pane, as ccmanager does,
-   so Claude's own split panes never fight Shep's.
-8. **Plan/PRD review overlay and diff review with line comments.** See
-   [oh-my-pi.md](./oh-my-pi.md), items 3–4.
+| Idea (from) | Shep |
+| ----------- | ---- |
+| Process monitor (`omp ps`, `claude agents --json`) | `shep ps`: daemon and agent processes with CPU, memory and uptime, `--json`, `--watch`, `stop` (spec 144) |
+| Command palette (Crush ctrl+p) | `ctrl+p` / `:` in `shep tui`: every command that applies, fuzzy search, its key shown; `c` copies the feature id over OSC 52 (spec 145) |
+| Control center (`par control-center`) and state in window names (workmux) | `C`: a window per active feature following its log, renamed `◆` / `●` / `✗` / `✓` as its state changes (spec 146) |
+| Waiting sessions in the tmux status bar (agent-deck) | The console sets `@shep_status` / `@shep_needs_you`; `shep tui --status [plain\|tmux]` (spec 146) |
+| Attach and steer (claude-squad, agent-deck, `claude attach`) | `o`: the feature's agent chat in the terminal — transcript, streaming text, send, answer its questions (spec 147) |
+
+Attach in Shep talks to the feature's interactive chat (the web Chat tab's conversation), not a
+PTY: the background worker is headless and is steered at its gates.
+
+## Not Yet Taken
+
+- **Peek without attaching** for agents running in panes (`tmux capture-pane`): Shep's agents are
+  not in panes; the log pane and the chat cover watching.
+- **Keybindings file** (Codex `tui.keymap`): the palette's command table is the registry it
+  would use; settings live in the database, so it needs a TypeSpec model.
+- **Pass `--teammate-mode in-process` to Claude Code** when Shep owns a pane, so Claude's own
+  split panes never fight Shep's — only matters if Shep starts running Claude interactively in panes.
+- **Plan/PRD review overlay and diff review with line comments** (see [oh-my-pi.md](./oh-my-pi.md),
+  items 3–4).

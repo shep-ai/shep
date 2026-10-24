@@ -1,0 +1,2 @@
+@shep_needs_you=2
+@shep_status=#[fg=yellow,bold]◆ 2 needs you#[default]

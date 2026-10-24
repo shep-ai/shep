@@ -1,0 +1,40 @@
+ shep · Features   3 needs you · 0 running · 0 waiting · 0 failed · 0 done                                                                                                
+ NEEDS YOU  ◆ Rate Limit The Public API · review merge   ◆ Billing Dashboard Charts · review merge   ◆ Add Password Reset Flow · review merge                             
+Commands  3 available                                                                                                                                                     
+                                                                                                                                                                          
+  Open a window for every active feature                                                                                                                                C 
+  Open a shell in a new window                                                                                                                                          T 
+  Follow the agent log in a new window                                                                                                                                  F 
+                                                                                                                                                                          
+                                                                                                                                                                          
+                                                                                                                                                                          
+                                                                                                                                                                          
+                                                                                                                                                                          
+                                                                                                                                                                          
+                                                                                                                                                                          
+                                                                                                                                                                          
+                                                                                                                                                                          
+                                                                                                                                                                          
+                                                                                                                                                                          
+                                                                                                                                                                          
+                                                                                                                                                                          
+                                                                                                                                                                          
+                                                                                                                                                                          
+                                                                                                                                                                          
+                                                                                                                                                                          
+                                                                                                                                                                          
+                                                                                                                                                                          
+                                                                                                                                                                          
+                                                                                                                                                                          
+                                                                                                                                                                          
+                                                                                                                                                                          
+                                                                                                                                                                          
+                                                                                                                                                                          
+                                                                                                                                                                          
+                                                                                                                                                                          
+                                                                                                                                                                          
+                                                                                                                                                                          
+                                                                                                                                                                          
+ : > window                                                                                                                                                               
+ type to search · ↑↓ choose · enter run · esc close                                                                                                                       
+[shep] 0:console*                                                                                                                                          ◆ 3 needs you  

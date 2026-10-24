@@ -1,0 +1,40 @@
+ shep · Features   2 needs you · 0 running · 0 waiting · 0 failed · 1 done                                                                                                
+ NEEDS YOU  ◆ Billing Dashboard Charts · review merge   ◆ Add Password Reset Flow · review merge                                                                          
+Chat · Billing Dashboard Charts · ready                                                                                                                                   
+                                                                                                                                                                          
+you › Why does the reset email take a minute?                                                                                                                             
+  · Read README.md                                                                                                                                                        
+Mock agent: you said "Why does the reset email take a minute?".                                                                                                           
+                                                                                                                                                                          
+                                                                                                                                                                          
+                                                                                                                                                                          
+                                                                                                                                                                          
+                                                                                                                                                                          
+                                                                                                                                                                          
+                                                                                                                                                                          
+                                                                                                                                                                          
+                                                                                                                                                                          
+                                                                                                                                                                          
+                                                                                                                                                                          
+                                                                                                                                                                          
+                                                                                                                                                                          
+                                                                                                                                                                          
+                                                                                                                                                                          
+                                                                                                                                                                          
+                                                                                                                                                                          
+                                                                                                                                                                          
+                                                                                                                                                                          
+                                                                                                                                                                          
+                                                                                                                                                                          
+                                                                                                                                                                          
+                                                                                                                                                                          
+                                                                                                                                                                          
+                                                                                                                                                                          
+                                                                                                                                                                          
+                                                                                                                                                                          
+                                                                                                                                                                          
+                                                                                                                                                                          
+                                                                                                                                                                          
+  >                                                                                                                                                                       
+ enter send · esc back to the features                                                                                                                                    
+[shep] 0:console* 1:✓ Rate Limit The Public API  2:◆ Billing Dashboard Charts  3:◆ Add Password Reset Flow                                                 ◆ 2 needs you  

@@ -1,0 +1,15 @@
+Local verification for specs 144-147 on one branch (2026-10-24, Node 22.22.0, tmux 3.4)
+
+pnpm lint                      exit 0 (0 warnings)
+pnpm format:check              exit 0
+pnpm typecheck                 exit 0
+pnpm generate                  exit 0, output.ts identical to the committed file
+pnpm tsp:compile               exit 0, no warnings
+pnpm spec:validate             144, 145, 146, 147: completeness, architecture, consistency PASS
+pnpm test:unit                 1429 files, 16257 passed, 5 skipped, 0 failed
+pnpm test:int                  206 files, 2209 passed, 0 failed
+pnpm build:release             exit 0
+pnpm test:e2e:tui              9 passed (palette, control center + tmux status in real tmux,
+                               chat attach/send/answer, panes in tmux, inline shell, filter,
+                               gate approve, empty install, non-TTY)
+pnpm test:e2e:cli              15 files, 93 passed, 1 skipped (includes shep ps and shep status)

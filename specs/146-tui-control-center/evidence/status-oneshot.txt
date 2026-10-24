@@ -1,0 +1,5 @@
+$ shep tui --status
+◆ 2 needs you
+$ shep tui --status tmux
+#[fg=yellow,bold]◆ 2 needs you#[default]
+exit codes: 0 0
