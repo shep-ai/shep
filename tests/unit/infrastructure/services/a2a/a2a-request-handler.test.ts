@@ -197,9 +197,10 @@ describe('A2aRequestHandler', () => {
       expect(page2.nextPageToken).toBe('');
     });
 
-    it('refuses a page size outside 1..100', async () => {
+    it('refuses a page size that is not a whole number from 1 to 100', async () => {
       expect(json(await send(rpc('ListTasks', { pageSize: 0 }))).error?.code).toBe(-32602);
       expect(json(await send(rpc('ListTasks', { pageSize: 101 }))).error?.code).toBe(-32602);
+      expect(json(await send(rpc('ListTasks', { pageSize: 2.5 }))).error?.code).toBe(-32602);
     });
   });
 

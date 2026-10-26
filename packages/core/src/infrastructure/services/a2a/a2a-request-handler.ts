@@ -148,7 +148,12 @@ export class A2aRequestHandler {
 
   private async listTasks(params: Record<string, unknown>) {
     const pageSize = params.pageSize ?? DEFAULT_PAGE_SIZE;
-    if (typeof pageSize !== 'number' || pageSize < 1 || pageSize > MAX_PAGE_SIZE) {
+    if (
+      typeof pageSize !== 'number' ||
+      !Number.isInteger(pageSize) ||
+      pageSize < 1 ||
+      pageSize > MAX_PAGE_SIZE
+    ) {
       throw new A2aError(
         A2aErrorCode.InvalidParams,
         `pageSize must be between 1 and ${MAX_PAGE_SIZE}.`

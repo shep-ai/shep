@@ -55,7 +55,7 @@ export function registerAgentActivityTools(
     'get_agent_activity',
     {
       description:
-        "What each feature's agent is doing: working, blocked (an approval gate, an agent question or a review waits on someone), waiting, done or failed — with the reason, the open question and a version that only goes up. Lists active features, or one feature by id.",
+        "What each feature's agent is doing: working, blocked (an approval gate, an agent question or a review waits on someone), waiting, done or failed — with the reason, the open question and a version (epoch ms of the newest write behind it). Lists active features, or one feature by id.",
       inputSchema: {
         featureId: featureIdSchema.optional(),
         repositoryPath: z.string().optional().describe('Only features of this repository'),

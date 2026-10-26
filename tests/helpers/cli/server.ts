@@ -55,6 +55,7 @@ const SERVER_READY_PATTERN = /Server ready at http:\/\/localhost:(\d+)/;
  * @param args - Arguments to pass after `ui` (e.g., '--port 4050')
  * @param options - Configuration options
  * @param options.timeout - Maximum time to wait for server ready (default: 120s)
+ * @param options.env - Extra environment for the server (e.g. SHEP_HOME)
  * @returns Server process handle with port and stop function
  * @throws Error if server fails to start within the timeout
  *
@@ -65,7 +66,7 @@ const SERVER_READY_PATTERN = /Server ready at http:\/\/localhost:(\d+)/;
  */
 export async function startCliServer(
   args = '',
-  options?: { timeout?: number }
+  options?: { timeout?: number; env?: Record<string, string> }
 ): Promise<ServerProcess> {
   const timeout = options?.timeout ?? DEFAULT_STARTUP_TIMEOUT;
 
@@ -84,6 +85,7 @@ export async function startCliServer(
     cwd: PROJECT_ROOT,
     env: {
       ...process.env,
+      ...options?.env,
       // Strip ANSI codes for consistent output parsing
       NO_COLOR: '1',
       FORCE_COLOR: '0',

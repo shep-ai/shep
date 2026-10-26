@@ -75,9 +75,10 @@ export function activityOf(input: ActivityInput): ActivityExplanation {
 }
 
 /**
- * A version that only goes up: the newest of the given timestamps in epoch
- * milliseconds, 0 when none is usable. Every write that changes a feature's
- * activity bumps one of them (feature, run, question).
+ * A version to order updates by: the newest of the given timestamps in epoch
+ * milliseconds, 0 when none is usable. Writes that change a feature's activity
+ * bump the feature, its run or add a question; answering a question removes
+ * one, so the version can drop then — watchers clamp it to strictly increase.
  */
 export function activityVersion(timestamps: readonly unknown[]): number {
   let newest = 0;

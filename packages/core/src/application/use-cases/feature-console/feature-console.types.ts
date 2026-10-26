@@ -70,7 +70,7 @@ export interface FeatureConsoleRow {
   pendingQuestion?: FeatureConsoleQuestion;
   /**
    * Epoch ms of the newest write behind this row (feature, run, open questions).
-   * Only goes up, so a caller can drop an update older than one it has seen.
+   * A watch makes it strictly increasing; see `AgentActivity.version`.
    */
   version: number;
   /** The user is holding this feature up (a gate, or an open question). */

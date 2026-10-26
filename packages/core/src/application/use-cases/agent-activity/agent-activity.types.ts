@@ -2,7 +2,7 @@
  * Agent activity view model (spec 148).
  *
  * What a caller outside shep's UI needs to know about a feature's agent: the
- * activity state and why, what it waits on, and a version that only goes up.
+ * activity state and why, what it waits on, and a version to order updates by.
  * Every adapter (MCP, A2A, CLI, terminal hosts) reads this one shape.
  */
 
@@ -46,7 +46,11 @@ export interface AgentActivity {
   pr?: FeatureConsolePullRequest;
   /** What the run accepts right now (approve, reject, stop, resume). */
   actions: FeatureConsoleAction[];
-  /** Epoch ms of the newest write behind this activity; only goes up. */
+  /**
+   * Epoch ms of the newest write behind this activity. Strictly increasing
+   * within one watch; between two reads it can drop when an open question is
+   * answered before anything else is written, so compare state as well.
+   */
   version: number;
   updatedAt: Date;
 }

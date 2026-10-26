@@ -1,5 +1,21 @@
 # Lessons Learned
 
+## A `.well-known` app folder is invisible; the web token appears on first request
+
+Two things a real `shep ui` run showed while adding A2A (spec 148). ESLint's TypeScript project
+(and the include globs behind it) skip dot-directories, so `app/.well-known/…/route.ts` fails the
+pre-commit lint with "not found by the project service". Serve well-known URLs from a route under
+`app/api/…` plus a `rewrites()` entry in `next.config.ts`; the request guard still sees the
+well-known path. And the daemon writes `SHEP_HOME/web-auth-token` only when the guard first runs,
+so an e2e test must make one request before reading the token.
+
+## A version made of "newest timestamp" can go down
+
+The agent-activity version is the newest of feature, run and open-question timestamps. Answering a
+question removes its timestamp from the set, so the version can drop before anything else is
+written. Clamp in the watcher (strictly increasing per stream) and never document such a value as
+globally monotonic; ask "which write removes an input?" before claiming a derived value only rises.
+
 ## `kill(pid, 0)` says a zombie is alive
 
 `process.kill(pid, 0)` succeeds for a zombie: a process that exited but has not been reaped by its

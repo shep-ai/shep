@@ -8,7 +8,7 @@ oneLiner: One answer to "is this feature working, blocked on me, or done — and
 summary: >
   A core agent-activity model built on the existing feature state: every feature is working,
   blocked (an approval gate, an agent question or a review waits on the user), waiting, done or
-  failed, with a reason code that explains why and a version that only goes up. Use cases read
+  failed, with a reason code that explains why and a version that orders updates. Use cases read
   it and wait on it. Adapters expose it: MCP tools (`get_agent_activity`,
   `wait_for_agent_activity`), an A2A 1.0 JSON-RPC server on the web daemon (tasks are
   features), `shep feat status` / `shep feat wait`, and a Herdr reporter so a `shep tui`
