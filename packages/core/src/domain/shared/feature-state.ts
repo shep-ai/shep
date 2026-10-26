@@ -14,6 +14,7 @@ import {
   AgentRunStatus,
   FeatureConsoleAction,
   FeatureState,
+  FeatureStateReason,
   SdlcLifecycle,
   TaskState,
 } from '../generated/output';
@@ -33,8 +34,27 @@ export interface DeriveFeatureStateOptions {
   isPidAlive?: boolean;
 }
 
+/** A feature's state and the rule that decided it (spec 148). */
+export interface FeatureStateExplanation {
+  state: FeatureState;
+  reason: FeatureStateReason;
+}
+
 /**
  * What a feature is doing right now.
+ *
+ * The state of {@link explainFeatureState}; see there for the priority.
+ */
+export function deriveFeatureState(
+  feature: Feature,
+  run?: AgentRun | null,
+  options?: DeriveFeatureStateOptions
+): FeatureState {
+  return explainFeatureState(feature, run, options).state;
+}
+
+/**
+ * What a feature is doing right now, and why.
  *
  * Priority:
  * 1. Lifecycles that override any run: Deleting, Archived, Pending (or Queued
@@ -44,59 +64,69 @@ export interface DeriveFeatureStateOptions {
  * 3. No run: Maintain is done, an adopted Review needs the user, otherwise the
  *    plan's tasks decide.
  */
-export function deriveFeatureState(
+export function explainFeatureState(
   feature: Feature,
   run?: AgentRun | null,
   options?: DeriveFeatureStateOptions
-): FeatureState {
+): FeatureStateExplanation {
   switch (feature.lifecycle) {
     case SdlcLifecycle.Deleting:
-      return FeatureState.Deleting;
+      return explained(FeatureState.Deleting, FeatureStateReason.Deleting);
     case SdlcLifecycle.Archived:
-      return FeatureState.Archived;
+      return explained(FeatureState.Archived, FeatureStateReason.Archived);
     case SdlcLifecycle.Pending:
-      return isQueuedForCapacity(feature) ? FeatureState.Queued : FeatureState.Pending;
+      return isQueuedForCapacity(feature)
+        ? explained(FeatureState.Queued, FeatureStateReason.QueuedForCapacity)
+        : explained(FeatureState.Pending, FeatureStateReason.Deferred);
     case SdlcLifecycle.Blocked:
-      return FeatureState.Blocked;
+      return explained(FeatureState.Blocked, FeatureStateReason.WaitingOnParent);
   }
 
   if (run) {
     switch (run.status) {
       case AgentRunStatus.waitingApproval:
-        return FeatureState.ActionRequired;
+        return explained(FeatureState.ActionRequired, FeatureStateReason.ApprovalGate);
       case AgentRunStatus.failed:
+        return explained(FeatureState.Error, FeatureStateReason.RunFailed);
       case AgentRunStatus.interrupted:
+        return explained(FeatureState.Error, FeatureStateReason.RunInterrupted);
       case AgentRunStatus.cancelled:
-        return FeatureState.Error;
+        return explained(FeatureState.Error, FeatureStateReason.RunCancelled);
       case AgentRunStatus.completed:
-        return FeatureState.Done;
+        return explained(FeatureState.Done, FeatureStateReason.RunCompleted);
       case AgentRunStatus.running:
       case AgentRunStatus.pending:
-        return options?.isPidAlive === false ? FeatureState.Error : FeatureState.Running;
+        return options?.isPidAlive === false
+          ? explained(FeatureState.Error, FeatureStateReason.ProcessDied)
+          : explained(FeatureState.Running, FeatureStateReason.AgentRunning);
     }
   }
 
   if (feature.lifecycle === SdlcLifecycle.Maintain) {
-    return FeatureState.Done;
+    return explained(FeatureState.Done, FeatureStateReason.Maintained);
   }
   if (feature.lifecycle === SdlcLifecycle.Review) {
-    return FeatureState.ActionRequired;
+    return explained(FeatureState.ActionRequired, FeatureStateReason.AwaitingReview);
   }
-  return stateFromPlanTasks(feature);
+  return explainFromPlanTasks(feature);
 }
 
-function stateFromPlanTasks(feature: Feature): FeatureState {
+function explained(state: FeatureState, reason: FeatureStateReason): FeatureStateExplanation {
+  return { state, reason };
+}
+
+function explainFromPlanTasks(feature: Feature): FeatureStateExplanation {
   const tasks = feature.plan?.tasks;
   if (!tasks || tasks.length === 0) {
-    return FeatureState.Running;
+    return explained(FeatureState.Running, FeatureStateReason.InProgress);
   }
   if (tasks.some((t) => t.state === TaskState.Review)) {
-    return FeatureState.ActionRequired;
+    return explained(FeatureState.ActionRequired, FeatureStateReason.PlanTaskInReview);
   }
   if (tasks.every((t) => t.state === TaskState.Done)) {
-    return FeatureState.Done;
+    return explained(FeatureState.Done, FeatureStateReason.PlanTasksDone);
   }
-  return FeatureState.Running;
+  return explained(FeatureState.Running, FeatureStateReason.InProgress);
 }
 
 /** The agent graph node a run is in (`"node:plan"` → `"plan"`), if it reports one. */

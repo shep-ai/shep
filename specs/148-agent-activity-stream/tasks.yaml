@@ -14,7 +14,7 @@ tasks:
   - id: task-1
     title: TypeSpec enums AgentActivityState and FeatureStateReason
     description: Add tsp/common/enums/agent-activity.tsp, import it, regenerate output.ts.
-    state: Todo
+    state: Done
     dependencies: []
     acceptanceCriteria:
       - pnpm generate produces both enums; tsp compiles
@@ -25,7 +25,7 @@ tasks:
     description: >
       deriveFeatureState's branches return { state, reason }; deriveFeatureState returns
       .state. Every existing feature-state test stays green.
-    state: Todo
+    state: Done
     dependencies:
       - task-1
     acceptanceCriteria:
@@ -42,7 +42,7 @@ tasks:
   - id: task-3
     title: Domain agent-activity mapping
     description: activityOf, activityVersion, overallActivity, isSettledActivity in domain/shared/agent-activity.ts.
-    state: Todo
+    state: Done
     dependencies:
       - task-2
     acceptanceCriteria:
