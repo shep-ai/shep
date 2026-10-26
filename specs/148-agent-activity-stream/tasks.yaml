@@ -1,70 +1,268 @@
-# Task Breakdown (YAML)
-# This is the source of truth. Markdown is auto-generated from this file.
-
 name: agent-activity-stream
 summary: Task breakdown for 148-agent-activity-stream
+phase: implementation
+updatedAt: '2026-10-26'
 
-# Relationships
-relatedFeatures: []
-technologies: []
+relatedFeatures:
+  - 077-mcp-server
+  - 142-tui-feature-console
+technologies:
+  - TypeScript
 relatedLinks: []
 
-# Structured task list — this is the single source of truth for tasks.
-# The content field below is a summary only; it does NOT duplicate task details.
 tasks:
   - id: task-1
-    title: { { TASK_1_TITLE } }
-    description: { { TASK_1_DESCRIPTION } }
+    title: TypeSpec enums AgentActivityState and FeatureStateReason
+    description: Add tsp/common/enums/agent-activity.tsp, import it, regenerate output.ts.
     state: Todo
     dependencies: []
     acceptanceCriteria:
-      - { { CRITERION_1 } }
-      - { { CRITERION_2 } }
-    tdd:
-      red:
-        - Write tests for {{FEATURE_1}}
-      green:
-        - Implement {{FEATURE_1}} to pass tests
-      refactor:
-        - Extract helpers, improve naming
-    estimatedEffort: { { EFFORT_1 } }
-
+      - pnpm generate produces both enums; tsp compiles
+    tdd: null
+    estimatedEffort: S
   - id: task-2
-    title: { { TASK_2_TITLE } }
-    description: { { TASK_2_DESCRIPTION } }
+    title: explainFeatureState with reasons
+    description: >
+      deriveFeatureState's branches return { state, reason }; deriveFeatureState returns
+      .state. Every existing feature-state test stays green.
     state: Todo
     dependencies:
       - task-1
     acceptanceCriteria:
-      - { { CRITERION_1 } }
-      - { { CRITERION_2 } }
-    tdd: null # No TDD for foundational/doc tasks
-    estimatedEffort: { { EFFORT_2 } }
+      - Each branch reports its reason (gate, review, plan review, running, process died, failed, interrupted, cancelled, completed, maintain, queued, deferred, waiting on parent, archived, deleting, in progress)
+      - deriveFeatureState output unchanged for every case
+    tdd:
+      red:
+        - feature-state.test.ts reason table
+      green:
+        - Implement explainFeatureState
+      refactor:
+        - deriveFeatureState delegates
+    estimatedEffort: S
+  - id: task-3
+    title: Domain agent-activity mapping
+    description: activityOf, activityVersion, overallActivity, isSettledActivity in domain/shared/agent-activity.ts.
+    state: Todo
+    dependencies:
+      - task-2
+    acceptanceCriteria:
+      - Gate / question / review → blocked; running → working; queued, deferred, parent → waiting; done, archived → done; errors → failed
+      - A pending agent question makes any non-settled state blocked with reason agent-question
+      - Version is the newest timestamp in ms; overall is blocked > working > waiting > failed > done
+    tdd:
+      red:
+        - agent-activity.test.ts
+      green:
+        - Implement
+      refactor: []
+    estimatedEffort: S
+  - id: task-4
+    title: Console snapshot rows carry reason, activity, question and version
+    description: GetFeatureConsoleSnapshotUseCase fills stateReason, activity, pendingQuestion (oldest non-gate), version.
+    state: Todo
+    dependencies:
+      - task-3
+    acceptanceCriteria:
+      - Existing snapshot tests green; new fields asserted
+    tdd:
+      red:
+        - get-feature-console-snapshot.use-case.test.ts new cases
+      green:
+        - Implement
+      refactor: []
+    estimatedEffort: S
+  - id: task-5
+    title: GetAgentActivityUseCase
+    description: Activities from snapshot rows; filter by feature id or prefix and repository; settled optional; summary and overall.
+    state: Todo
+    dependencies:
+      - task-4
+    acceptanceCriteria:
+      - Unknown feature returns an empty list with notFound
+      - Settled features excluded unless asked
+    tdd:
+      red:
+        - get-agent-activity.use-case.test.ts
+      green:
+        - Implement
+      refactor: []
+    estimatedEffort: S
+  - id: task-6
+    title: WatchAgentActivityUseCase and WaitForAgentActivityUseCase
+    description: Async generator of changes until aborted; wait returns matched / timeout / not-found / aborted.
+    state: Todo
+    dependencies:
+      - task-5
+    acceptanceCriteria:
+      - First tick yields every activity; later ticks only changes (state, reason, phase, question)
+      - Emitted versions strictly increase per stream
+      - Wait returns at once when already matching; default targets blocked, done, failed
+    tdd:
+      red:
+        - watch-agent-activity.use-case.test.ts
+        - wait-for-agent-activity.use-case.test.ts
+      green:
+        - Implement over waitForNextTick
+      refactor: []
+    estimatedEffort: M
+  - id: task-7
+    title: ReplyToFeatureUseCase
+    description: Decision → approve / reject via RunFeatureConsoleActionUseCase; text → answer the pending agent question; cancel → stop.
+    state: Todo
+    dependencies:
+      - task-5
+    acceptanceCriteria:
+      - Reject without feedback refused; text with no pending question refused with the reason
+      - Collaboration off reported, never thrown
+    tdd:
+      red:
+        - reply-to-feature.use-case.test.ts
+      green:
+        - Implement
+      refactor: []
+    estimatedEffort: S
+  - id: task-8
+    title: IActivityHostReporter port and ReportHostActivityUseCase
+    description: Report only on change; release; never throw.
+    state: Todo
+    dependencies:
+      - task-3
+    acceptanceCriteria:
+      - Same state and message twice reports once; release after report calls the port once
+    tdd:
+      red:
+        - report-host-activity.use-case.test.ts
+      green:
+        - Implement
+      refactor: []
+    estimatedEffort: S
+  - id: task-9
+    title: Herdr reporter, no-op reporter and DI selection
+    description: execFile HERDR_BIN_PATH pane report-agent / release-agent; strictly increasing seq; one in flight, latest wins; timeout; failures swallowed.
+    state: Todo
+    dependencies:
+      - task-8
+    acceptanceCriteria:
+      - Herdr selected only with HERDR_ENV=1, HERDR_PANE_ID and HERDR_BIN_PATH
+      - blocked / working map through, everything else idle
+    tdd:
+      red:
+        - herdr-activity-reporter.test.ts
+        - agent-activity-registrations.test.ts
+      green:
+        - Implement and register
+      refactor: []
+    estimatedEffort: M
+  - id: task-10
+    title: MCP agent-activity tools
+    description: get_agent_activity, wait_for_agent_activity, decide_feature_gate, answer_agent_question.
+    state: Todo
+    dependencies:
+      - task-6
+      - task-7
+    acceptanceCriteria:
+      - Tools listed by the MCP server; timeout capped at 10 minutes
+    tdd:
+      red:
+        - agent-activity-tools.test.ts
+      green:
+        - Implement and register
+      refactor: []
+    estimatedEffort: S
+  - id: task-11
+    title: A2A request handler, task mapper and agent card
+    description: JSON-RPC 2.0 dispatch for SendMessage, SendStreamingMessage, GetTask, ListTasks, CancelTask, SubscribeToTask; A2A errors; version check.
+    state: Todo
+    dependencies:
+      - task-6
+      - task-7
+    acceptanceCriteria:
+      - Activity → TaskState mapping; input-required status message carries the question or gate
+      - Parse error -32700, invalid request -32600, method not found -32601, invalid params -32602, task not found -32001, not cancelable -32002, unsupported -32004, version -32009
+    tdd:
+      red:
+        - a2a-task-mapper.test.ts
+        - a2a-request-handler.test.ts
+        - a2a-agent-card.test.ts
+      green:
+        - Implement
+      refactor: []
+    estimatedEffort: L
+  - id: task-12
+    title: A2A web routes and SDK interoperability test
+    description: POST /api/a2a (JSON or SSE), GET /.well-known/agent-card.json; integration test with @a2a-js/sdk client.
+    state: Todo
+    dependencies:
+      - task-11
+    acceptanceCriteria:
+      - SDK client fetches the card, sends a message, gets, lists, cancels and streams a status update
+    tdd:
+      red:
+        - a2a-sdk-interop.test.ts
+      green:
+        - Routes
+      refactor: []
+    estimatedEffort: M
+  - id: task-13
+    title: CLI feat status and feat wait
+    description: Human and --json output; wait exit codes (0 matched, 1 timeout or not found); nine locales.
+    state: Todo
+    dependencies:
+      - task-6
+    acceptanceCriteria:
+      - Every locale has the new keys
+    tdd:
+      red:
+        - status.command.test.ts
+        - wait.command.test.ts
+      green:
+        - Implement
+      refactor: []
+    estimatedEffort: M
+  - id: task-14
+    title: TUI reports activity to the host
+    description: Each refresh reports the overall state with a localized message; quit releases.
+    state: Todo
+    dependencies:
+      - task-9
+    acceptanceCriteria:
+      - Report failures never reach the console
+    tdd:
+      red:
+        - feature-console-app.test.ts new cases
+      green:
+        - Wire deps
+      refactor: []
+    estimatedEffort: S
+  - id: task-15
+    title: E2E test and documentation
+    description: E2E for feat status / wait on a seeded database; docs for architecture, A2A, MCP tools, CLI.
+    state: Todo
+    dependencies:
+      - task-12
+      - task-13
+      - task-14
+    acceptanceCriteria:
+      - pnpm validate, unit, integration, build and the new e2e pass
+    tdd:
+      red:
+        - tests/e2e/cli/feat-activity.test.ts
+      green:
+        - Fix whatever the real binary shows
+      refactor: []
+    estimatedEffort: M
 
-# Total effort estimate
-totalEstimate: { { TOTAL_EFFORT } }
+totalEstimate: XL
 
-# Open questions
-openQuestions: []
-
-# Markdown content — summary and acceptance checklist only.
-# Individual task details live in the tasks[] array above (no duplication).
 content: |
   ## Summary
 
-  {{BRIEF_DESCRIPTION_OF_SCOPE}} — {{TASK_COUNT}} tasks across {{PHASE_COUNT}} phases.
+  15 tasks in 6 phases: enums, domain reasons and activity, five use cases, three adapters
+  (Herdr, MCP, A2A + routes), CLI and TUI, then e2e and docs.
 
   ## Acceptance Checklist
 
-  Before marking feature complete:
-
-  - [ ] All tasks completed
-  - [ ] Tests passing (`pnpm test`)
-  - [ ] Linting clean (`pnpm lint`)
-  - [ ] Types valid (`pnpm typecheck`)
-  - [ ] TypeSpec compiles (`pnpm tsp:compile`)
-  - [ ] PR created and reviewed
-
-  ---
-
-  _Task details are in the tasks[] array of tasks.yaml_
+  - [ ] All spec success criteria met
+  - [ ] pnpm validate, test:unit, test:int, build, build:web green
+  - [ ] A2A interop test with the official SDK client green
+  - [ ] Docs updated

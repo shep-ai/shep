@@ -4,7 +4,7 @@ summary: >
   timestamps already written, poll in the application layer, and expose it through thin
   adapters: MCP tools, a hand-rolled A2A 1.0 JSON-RPC server behind the existing token gate
   (checked against the official A2A client in tests), CLI commands and a Herdr reporter.
-phase: research
+phase: planning
 updatedAt: '2026-10-26'
 
 relatedFeatures:

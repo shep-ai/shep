@@ -1,97 +1,156 @@
-# Implementation Plan (YAML)
-# This is the source of truth. Markdown is auto-generated from this file.
-
 name: agent-activity-stream
 summary: Implementation plan for 148-agent-activity-stream
+phase: planning
+updatedAt: '2026-10-26'
 
-# Relationships
-relatedFeatures: []
-technologies: []
+relatedFeatures:
+  - 077-mcp-server
+  - 142-tui-feature-console
+technologies:
+  - TypeScript
+  - TypeSpec
+  - Next.js route handlers
+  - '@a2a-js/sdk (dev)'
 relatedLinks: []
 
-# Structured implementation phases
 phases:
   - id: phase-1
-    name: 'Foundation'
+    name: 'Foundation: TypeSpec enums'
     parallel: false
     taskIds:
       - task-1
-      - task-2
-  # Additional phases are added by `/shep-kit:plan` alongside their tasks in
-  # tasks.yaml. Do not reference task ids here before they exist — spec:validate
-  # fails the consistency gate on dangling taskIds.
   - id: phase-2
-    name: 'Core Implementation'
+    name: 'Domain: reasons and activity (TDD)'
     parallel: false
-    taskIds: []
+    taskIds:
+      - task-2
+      - task-3
+  - id: phase-3
+    name: 'Application: activity use cases (TDD)'
+    parallel: false
+    taskIds:
+      - task-4
+      - task-5
+      - task-6
+      - task-7
+      - task-8
+  - id: phase-4
+    name: 'Infrastructure adapters: Herdr, MCP, A2A (TDD)'
+    parallel: true
+    taskIds:
+      - task-9
+      - task-10
+      - task-11
+      - task-12
+  - id: phase-5
+    name: 'Presentation: CLI and TUI (TDD)'
+    parallel: true
+    taskIds:
+      - task-13
+      - task-14
+  - id: phase-6
+    name: 'E2E and docs'
+    parallel: false
+    taskIds:
+      - task-15
 
-# File change tracking
 filesToCreate:
-  - src/domain/entities/{{ENTITY_NAME}}.ts
-  - tests/unit/domain/entities/{{ENTITY_NAME}}.test.ts
+  - tsp/common/enums/agent-activity.tsp
+  - packages/core/src/domain/shared/agent-activity.ts
+  - packages/core/src/application/use-cases/agent-activity/agent-activity.types.ts
+  - packages/core/src/application/use-cases/agent-activity/get-agent-activity.use-case.ts
+  - packages/core/src/application/use-cases/agent-activity/watch-agent-activity.use-case.ts
+  - packages/core/src/application/use-cases/agent-activity/wait-for-agent-activity.use-case.ts
+  - packages/core/src/application/use-cases/agent-activity/reply-to-feature.use-case.ts
+  - packages/core/src/application/use-cases/agent-activity/report-host-activity.use-case.ts
+  - packages/core/src/application/ports/output/services/activity-host-reporter.interface.ts
+  - packages/core/src/infrastructure/services/activity-host/herdr-activity-reporter.ts
+  - packages/core/src/infrastructure/services/activity-host/noop-activity-reporter.ts
+  - packages/core/src/infrastructure/di/modules/register-agent-activity.ts
+  - packages/core/src/infrastructure/services/mcp/tools/agent-activity-tools.ts
+  - packages/core/src/infrastructure/services/a2a/a2a.types.ts
+  - packages/core/src/infrastructure/services/a2a/a2a-task-mapper.ts
+  - packages/core/src/infrastructure/services/a2a/a2a-agent-card.ts
+  - packages/core/src/infrastructure/services/a2a/a2a-request-handler.ts
+  - src/presentation/web/app/api/a2a/route.ts
+  - src/presentation/web/app/.well-known/agent-card.json/route.ts
+  - src/presentation/cli/commands/feat/status.command.ts
+  - src/presentation/cli/commands/feat/wait.command.ts
+  - docs/architecture/agent-activity.md
+  - docs/guides/a2a.md
 
 filesToModify:
-  - src/infrastructure/di/container.ts
-  - package.json
+  - packages/core/src/domain/shared/feature-state.ts
+  - packages/core/src/application/use-cases/feature-console/feature-console.types.ts
+  - packages/core/src/application/use-cases/feature-console/get-feature-console-snapshot.use-case.ts
+  - packages/core/src/infrastructure/di/container.ts
+  - packages/core/src/infrastructure/services/mcp/tools/index.ts
+  - src/presentation/cli/commands/feat/index.ts
+  - src/presentation/tui/feature-console/feature-console.app.ts
+  - src/presentation/cli/commands/tui.command.ts
+  - translations/*/cli.json
+  - translations/*/tui.json
+  - docs/mcp-server.md (or the existing MCP doc)
+  - package.json (devDependency @a2a-js/sdk)
 
-# Open questions (should all be resolved before implementation)
-openQuestions: []
+architecture: |
+  ```
+  SQLite (features, agent_runs, agent_questions)
+          │  one batched read per tick
+          ▼
+  GetFeatureConsoleSnapshotUseCase ──rows carry state, reason, activity, question, version
+          │
+          ▼
+  GetAgentActivityUseCase ── WatchAgentActivityUseCase ── WaitForAgentActivityUseCase
+          │                         │                              │
+          │        ReplyToFeatureUseCase (gate decision / answer question / cancel)
+          ▼                         ▼                              ▼
+   MCP tools        A2A JSON-RPC handler (/api/a2a, SSE)     CLI feat status / wait
+                                          TUI ──► ReportHostActivityUseCase ──► IActivityHostReporter
+                                                                               (Herdr | no-op)
+  ```
 
-# Markdown content — architecture, strategy, and risks only.
-# Task-level detail lives in tasks.yaml (no duplication).
+  Domain decides (explainFeatureState, activityOf, activityVersion, overallActivity).
+  Application batches reads and polls (waitForNextTick). Infrastructure adapters only
+  translate: MCP JSON text, A2A ProtoJSON objects and SSE frames, Herdr argv.
+
+risks:
+  - Changing deriveFeatureState could shift a state on some surface — mitigated by keeping it a
+    wrapper over explainFeatureState and running the existing feature-state tests unchanged
+  - A2A wire-format drift — mitigated by the integration test that drives the server with the
+    official @a2a-js/sdk client
+  - Next.js may not route an app directory named `.well-known` — verify with `pnpm build:web`;
+    fall back to a rewrite in next.config.ts to the same handler
+  - Herdr is not installable in CI — the adapter is tested against a fake exec; a manual run
+    inside Herdr is documented, not automated
+
 content: |
   ## Status
 
   - **Phase:** Planning
   - **Updated:** 2026-10-26
 
-  ## Architecture Overview
+  ## Clean Architecture
 
-  ```
-  {{ARCHITECTURE_DIAGRAM}}
-  ```
+  - Domain: pure functions over generated types; no I/O.
+  - Application: use cases inject ports by string token and other use cases by class; polling
+    uses the existing `waitForNextTick` helper; no `process.env`, no timers beyond it.
+  - Infrastructure: the Herdr adapter is the only code that reads `HERDR_*` and spawns; the A2A
+    handler and MCP tools resolve use cases and translate shapes; DI picks the reporter.
+  - Presentation: route handlers frame JSON / SSE; CLI and TUI format and call use cases.
 
-  ## Implementation Strategy
+  ## TDD
 
-  **MANDATORY TDD**: All phases with executable code follow RED-GREEN-REFACTOR cycles.
+  RED-GREEN-REFACTOR for every behavioural task. Every one starts RED: domain branch tables, use-case tests with in-memory
+  fakes, adapter tests with fake exec / fake use cases, then the integration test with the A2A
+  SDK client and an e2e CLI test against a seeded SHEP_HOME.
 
-  High-level walkthrough of how the phases connect and why they are ordered
-  this way. Focus on architectural decisions and data flow — not individual
-  task descriptions (see tasks.yaml for the detailed breakdown).
+  ## Testing Strategy
 
-  ## Files to Create/Modify
-
-  ### New Files
-
-  | File | Purpose |
-  | ---- | ------- |
-  | {{FILE_PATH}} | {{PURPOSE}} |
-
-  ### Modified Files
-
-  | File | Changes |
-  | ---- | ------- |
-  | {{FILE_PATH}} | {{CHANGES}} |
-
-  ## Testing Strategy (TDD: Tests FIRST)
-
-  **CRITICAL:** Tests are written FIRST in each TDD cycle.
-
-  ### Unit Tests (RED -> GREEN -> REFACTOR)
-
-  - {{TEST_AREA_1}}
-  - {{TEST_AREA_2}}
-
-  ### Integration Tests
-
-  - {{INTEGRATION_TEST_1}}
-
-  ## Risk Mitigation
-
-  | Risk | Mitigation |
-  | ---- | ---------- |
-  | {{RISK}} | {{MITIGATION}} |
-
-  ---
-
-  _Updated by `/shep-kit:plan` — see tasks.yaml for detailed task breakdown_
+  | Layer | Tests |
+  | ----- | ----- |
+  | Domain | `feature-state.test.ts` (reasons for every branch, states unchanged), `agent-activity.test.ts` |
+  | Application | snapshot rows, get / watch / wait / reply / report use cases |
+  | Infrastructure | Herdr argv + sequence + failure tolerance, MCP tools, A2A handler (each method, errors, version) |
+  | Integration | A2A over HTTP with `@a2a-js/sdk` client (card, send, get, list, cancel, subscribe); MCP round trip |
+  | E2E | `shep feat status` / `shep feat wait` against a seeded database |

@@ -1,64 +1,24 @@
 # Data Model: agent-activity-stream
 
-> Entity definitions for 148-agent-activity-stream
+No entities, tables or migrations. Two derived-only enums in `tsp/common/enums/agent-activity.tsp`:
 
-## Status
+## AgentActivityState
 
-- **Phase:** Planning
-- **Updated:** 2026-10-26
+| Member  | Value     | Meaning                                                        |
+| ------- | --------- | -------------------------------------------------------------- |
+| Working | `working` | An agent is executing                                          |
+| Blocked | `blocked` | The user must act: an approval gate, an agent question, a review |
+| Waiting | `waiting` | Not started: queued for a slot, deferred, or waiting on a parent |
+| Done    | `done`    | Finished (or archived)                                         |
+| Failed  | `failed`  | The run failed, was interrupted or cancelled, or its process died |
 
-## Overview
+## FeatureStateReason
 
-{{DATA_MODEL_OVERVIEW}}
+The branch of `explainFeatureState` that decided a feature's state, plus `agent-question`
+(added by the activity mapping when a non-gate agent question is pending).
 
-## New Entities
+## AgentActivity (application type, not persisted)
 
-### {{ENTITY_NAME}}
-
-**Location:** `tsp/domain/entities/{{entity-name}}.tsp`
-
-| Property      | Type          | Required     | Description   |
-| ------------- | ------------- | ------------ | ------------- |
-| {{PROP_NAME}} | {{PROP_TYPE}} | {{REQUIRED}} | {{PROP_DESC}} |
-
-**Relationships:**
-
-- {{RELATIONSHIP_1}}
-
-## Modified Entities
-
-### {{EXISTING_ENTITY}}
-
-**Changes:**
-
-- Add: {{NEW_PROPERTY}}
-- Modify: {{MODIFIED_PROPERTY}}
-
-## Value Objects
-
-### {{VALUE_OBJECT_NAME}}
-
-**Location:** `tsp/domain/value-objects/{{value-object}}.tsp`
-
-| Property    | Type        | Description |
-| ----------- | ----------- | ----------- |
-| {{VO_PROP}} | {{VO_TYPE}} | {{VO_DESC}} |
-
-## Enums
-
-### {{ENUM_NAME}}
-
-**Location:** `tsp/common/enums/{{enum-name}}.tsp`
-
-| Value          | Description   |
-| -------------- | ------------- |
-| {{ENUM_VALUE}} | {{ENUM_DESC}} |
-
-<!-- If no data model changes, replace all with:
-## Overview
-No domain model changes required for this feature.
--->
-
----
-
-_Data model changes for TypeSpec compilation_
+`featureId`, `name`, `repositoryPath`, `state`, `reason`, `featureState`, `lifecycle`, `phase`,
+`runId?`, `runStatus?`, `pendingQuestion? { id, appId, prompt }`, `pendingQuestions`, `error?`,
+`pr?`, `version` (epoch ms), `changedAt`.

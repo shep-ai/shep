@@ -3,53 +3,27 @@
 - **Phase:** Planning
 - **Updated:** 2026-10-26
 
-## Architecture Overview
+## Clean Architecture
 
-```
-{{ARCHITECTURE_DIAGRAM}}
-```
+- Domain: pure functions over generated types; no I/O.
+- Application: use cases inject ports by string token and other use cases by class; polling
+  uses the existing `waitForNextTick` helper; no `process.env`, no timers beyond it.
+- Infrastructure: the Herdr adapter is the only code that reads `HERDR_*` and spawns; the A2A
+  handler and MCP tools resolve use cases and translate shapes; DI picks the reporter.
+- Presentation: route handlers frame JSON / SSE; CLI and TUI format and call use cases.
 
-## Implementation Strategy
+## TDD
 
-**MANDATORY TDD**: All phases with executable code follow RED-GREEN-REFACTOR cycles.
+RED-GREEN-REFACTOR for every behavioural task. Every one starts RED: domain branch tables, use-case tests with in-memory
+fakes, adapter tests with fake exec / fake use cases, then the integration test with the A2A
+SDK client and an e2e CLI test against a seeded SHEP_HOME.
 
-High-level walkthrough of how the phases connect and why they are ordered
-this way. Focus on architectural decisions and data flow — not individual
-task descriptions (see tasks.yaml for the detailed breakdown).
+## Testing Strategy
 
-## Files to Create/Modify
-
-### New Files
-
-| File | Purpose |
-| ---- | ------- |
-| {{FILE_PATH}} | {{PURPOSE}} |
-
-### Modified Files
-
-| File | Changes |
-| ---- | ------- |
-| {{FILE_PATH}} | {{CHANGES}} |
-
-## Testing Strategy (TDD: Tests FIRST)
-
-**CRITICAL:** Tests are written FIRST in each TDD cycle.
-
-### Unit Tests (RED -> GREEN -> REFACTOR)
-
-- {{TEST_AREA_1}}
-- {{TEST_AREA_2}}
-
-### Integration Tests
-
-- {{INTEGRATION_TEST_1}}
-
-## Risk Mitigation
-
-| Risk | Mitigation |
-| ---- | ---------- |
-| {{RISK}} | {{MITIGATION}} |
-
----
-
-_Updated by `/shep-kit:plan` — see tasks.yaml for detailed task breakdown_
+| Layer | Tests |
+| ----- | ----- |
+| Domain | `feature-state.test.ts` (reasons for every branch, states unchanged), `agent-activity.test.ts` |
+| Application | snapshot rows, get / watch / wait / reply / report use cases |
+| Infrastructure | Herdr argv + sequence + failure tolerance, MCP tools, A2A handler (each method, errors, version) |
+| Integration | A2A over HTTP with `@a2a-js/sdk` client (card, send, get, list, cancel, subscribe); MCP round trip |
+| E2E | `shep feat status` / `shep feat wait` against a seeded database |
