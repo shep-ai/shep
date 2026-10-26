@@ -331,6 +331,9 @@
       "answerPrompt": "réponse",
       "hint": "entrée envoyer · échap revenir aux fonctionnalités",
       "hintQuestion": "1–9 choisir une option · ou tapez une réponse puis entrée · échap revenir"
+    },
+    "hostStatus": {
+      "blocked": "besoin de vous : {{count}}"
     }
   }
 }

@@ -26,6 +26,7 @@ import {
   FeatureState,
   SdlcLifecycle,
 } from '@/domain/generated/output.js';
+import { AgentActivityState } from '@/domain/generated/output.js';
 import type {
   FeatureConsoleRow,
   FeatureConsoleSnapshot,
@@ -52,7 +53,11 @@ function gate(name: string): FeatureConsoleRow {
 const snapshotOf = (...rows: FeatureConsoleRow[]): FeatureConsoleSnapshot => ({
   generatedAt: new Date(),
   rows,
-  summary: consoleSummary({ total: rows.length, needsAttention: rows.length }),
+  summary: consoleSummary({
+    total: rows.length,
+    needsAttention: rows.length,
+    activity: rows.length > 0 ? AgentActivityState.Blocked : AgentActivityState.Done,
+  }),
 });
 
 // eslint-disable-next-line no-control-regex
@@ -73,6 +78,12 @@ describe('runFeatureConsole', () => {
   let sendChatMessage: ReturnType<typeof vi.fn<FeatureConsoleAppDeps['sendChatMessage']>>;
   let answerChatQuestion: ReturnType<typeof vi.fn<FeatureConsoleAppDeps['answerChatQuestion']>>;
   let stopChats: ReturnType<typeof vi.fn<FeatureConsoleAppDeps['stopChats']>>;
+  let reportActivity: ReturnType<
+    typeof vi.fn<NonNullable<FeatureConsoleAppDeps['reportActivity']>>
+  >;
+  let releaseActivity: ReturnType<
+    typeof vi.fn<NonNullable<FeatureConsoleAppDeps['releaseActivity']>>
+  >;
   let done: Promise<void> | undefined;
 
   beforeAll(async () => {
@@ -133,6 +144,10 @@ describe('runFeatureConsole', () => {
       message: 'Answered',
     }));
     stopChats = vi.fn<FeatureConsoleAppDeps['stopChats']>(async () => undefined);
+    reportActivity = vi.fn<NonNullable<FeatureConsoleAppDeps['reportActivity']>>();
+    releaseActivity = vi.fn<NonNullable<FeatureConsoleAppDeps['releaseActivity']>>(
+      async () => undefined
+    );
   });
 
   afterEach(async () => {
@@ -160,12 +175,51 @@ describe('runFeatureConsole', () => {
       sendChatMessage,
       answerChatQuestion,
       stopChats,
+      reportActivity,
+      releaseActivity,
       refreshIntervalMs: REFRESH_MS,
       chatRefreshIntervalMs: REFRESH_MS,
     });
     return done;
   };
   const screenText = () => plain(terminal.output);
+
+  describe('terminal host activity (spec 148)', () => {
+    it('tells the host what shep is doing and how many features need the user', async () => {
+      void start();
+      await vi.waitFor(() =>
+        expect(reportActivity).toHaveBeenCalledWith({
+          state: AgentActivityState.Blocked,
+          message: t('tui:console.hostStatus.blocked', { count: 1 }),
+        })
+      );
+    });
+
+    it('sends no message when nothing needs the user', async () => {
+      loadSnapshot.mockResolvedValue(snapshotOf());
+      void start();
+      await vi.waitFor(() =>
+        expect(reportActivity).toHaveBeenCalledWith({ state: AgentActivityState.Done })
+      );
+    });
+
+    it('lets go of the host when the console quits', async () => {
+      void start();
+      await vi.waitFor(() => expect(reportActivity).toHaveBeenCalled());
+      terminal.type('\x03');
+      await done;
+      expect(releaseActivity).toHaveBeenCalledTimes(1);
+    });
+
+    it('keeps working when the host cannot be told', async () => {
+      reportActivity.mockImplementation(() => {
+        throw new Error('herdr is gone');
+      });
+      void start();
+      await vi.waitFor(() => expect(screenText()).toContain('Billing UI'));
+      expect(screenText()).not.toContain('herdr is gone');
+    });
+  });
 
   it('starts the terminal and draws the first snapshot', async () => {
     void start();

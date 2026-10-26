@@ -557,6 +557,67 @@
         "restored": "ה-worktree שוחזר ל-{{step}}",
         "undoHint": "לביטול:",
         "failed": "שחזור נקודת השמירה נכשל"
+      },
+      "status": {
+        "description": "מסביר מה הסוכן של פיצ'ר עושה (עובד, חסום, ממתין, הסתיים או נכשל) ולמה",
+        "idArgument": "מזהה הפיצ'ר או תחילית של המזהה",
+        "jsonOption": "הדפסת הפעילות כ-JSON",
+        "notFound": "הפיצ'ר לא נמצא: {{id}}",
+        "ambiguous": "\"{{id}}\" מתאים ל-{{count}} פיצ'רים; יש להשתמש בחלק ארוך יותר מהמזהה",
+        "failed": "קריאת הפעילות של הפיצ'ר נכשלה",
+        "labels": {
+          "why": "למה",
+          "asks": "שאלה",
+          "phase": "שלב",
+          "run": "ריצה",
+          "error": "שגיאה",
+          "pr": "PR",
+          "id": "מזהה",
+          "next": "הצעד הבא"
+        },
+        "states": {
+          "working": "עובד",
+          "blocked": "חסום",
+          "waiting": "ממתין",
+          "done": "הסתיים",
+          "failed": "נכשל"
+        },
+        "reasons": {
+          "deleting": "בתהליך מחיקה",
+          "archived": "בארכיון",
+          "queued-for-capacity": "בתור עד שיתפנה מקום במגבלת הפיצ'רים המקבילים",
+          "deferred": "נדחה: אף סוכן עוד לא התחיל",
+          "waiting-on-parent": "ממתין שפיצ'ר האב יסתיים",
+          "approval-gate": "ממתין לאישור שלך",
+          "agent-question": "הסוכן שאל שאלה",
+          "run-failed": "הריצה נכשלה",
+          "run-interrupted": "הריצה נקטעה",
+          "run-cancelled": "הריצה בוטלה",
+          "run-completed": "הסתיים",
+          "agent-running": "הסוכן עובד",
+          "process-died": "תהליך הסוכן נעצר באופן לא צפוי",
+          "maintained": "הסתיים; בתחזוקה",
+          "awaiting-review": "ה-pull request ממתין לסקירה שלך",
+          "plan-task-in-review": "משימה בתוכנית ממתינה לסקירה שלך",
+          "plan-tasks-done": "כל משימות התוכנית הושלמו",
+          "in-progress": "בתהליך"
+        }
+      },
+      "wait": {
+        "description": "ממתין עד שהסוכן של פיצ'ר צריך מישהו או נעצר, או מגיע למצבים שצוינו",
+        "idArgument": "מזהה הפיצ'ר או תחילית של המזהה",
+        "untilOption": "מצבים להמתנה, מופרדים בפסיקים: working, blocked, waiting, done, failed (ברירת מחדל: blocked,done,failed)",
+        "timeoutOption": "לוותר אחרי מספר שניות זה",
+        "jsonOption": "הדפסת התוצאה כ-JSON",
+        "invalidState": "מצב לא מוכר ב-\"{{state}}\". אפשר: {{states}}",
+        "failed": "ההמתנה לפיצ'ר נכשלה",
+        "outcomes": {
+          "matched": "הושג",
+          "timed-out": "הזמן עבר; עדיין {{state}}",
+          "not-found": "הפיצ'ר לא נמצא: {{id}}",
+          "ambiguous": "\"{{id}}\" מתאים ליותר מפיצ'ר אחד; יש להשתמש בחלק ארוך יותר מהמזהה",
+          "aborted": "ההמתנה הופסקה"
+        }
       }
     },
     "repo": {

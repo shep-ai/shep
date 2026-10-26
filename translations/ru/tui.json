@@ -331,6 +331,9 @@
       "answerPrompt": "ответ",
       "hint": "enter отправить · esc назад к фичам",
       "hintQuestion": "1–9 выбрать вариант · или введите ответ и нажмите enter · esc назад"
+    },
+    "hostStatus": {
+      "blocked": "ждут вас: {{count}}"
     }
   }
 }

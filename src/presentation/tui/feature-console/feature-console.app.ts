@@ -4,6 +4,7 @@
  * Wires the view to the core: polls the snapshot, runs actions, keeps the log
  * pane fresh, opens terminal panes (stepping aside for an inline command when
  * there is no multiplexer), alerts when a feature starts needing the user, and
+ * tells the terminal host (Herdr, spec 148) what shep is doing, and
  * restores the terminal on the way out. It takes the use cases as plain
  * functions so it carries no DI or infrastructure knowledge.
  */
@@ -11,6 +12,7 @@
 import type { TFunction } from 'i18next';
 import { TUI, type Terminal } from '@mariozechner/pi-tui';
 import {
+  AgentActivityState,
   FeaturePaneContent,
   FeaturePaneOutcome,
   type FeatureConsoleAction,
@@ -55,6 +57,10 @@ export interface FeatureConsoleAppDeps extends ConsoleChatDeps {
   notify?: (message: string) => void;
   openControlCenter: ControlCenterDeps['openControlCenter'];
   updateMultiplexer: ControlCenterDeps['updateMultiplexer'];
+  /** Tell the terminal host this console runs in what shep is doing (spec 148). */
+  reportActivity?: (report: { state: AgentActivityState; message?: string }) => void;
+  /** Tell the terminal host the console is leaving its pane. */
+  releaseActivity?: () => Promise<void>;
   refreshIntervalMs?: number;
 }
 
@@ -123,6 +129,7 @@ export function runFeatureConsole(deps: FeatureConsoleAppDeps): Promise<void> {
         latest = snapshot;
         view.setSnapshot(snapshot);
         noticeAttention(snapshot);
+        reportActivity(snapshot);
         await controlCenter.sync(snapshot).catch(() => undefined);
       } catch (error) {
         view.setRefreshError(messageOf(error));
@@ -227,6 +234,23 @@ export function runFeatureConsole(deps: FeatureConsoleAppDeps): Promise<void> {
       }
     }
 
+    /** The overall activity, and how many features wait on the user when any do. */
+    function reportActivity(snapshot: FeatureConsoleSnapshot): void {
+      const { activity: state, needsAttention } = snapshot.summary;
+      try {
+        deps.reportActivity?.(
+          state === AgentActivityState.Blocked
+            ? {
+                state,
+                message: deps.t('tui:console.hostStatus.blocked', { count: needsAttention }),
+              }
+            : { state }
+        );
+      } catch {
+        // A host that cannot be told shows less; the console carries on.
+      }
+    }
+
     function render(): void {
       if (!finished && !suspended) tui.requestRender();
     }
@@ -245,6 +269,8 @@ export function runFeatureConsole(deps: FeatureConsoleAppDeps): Promise<void> {
       // Chat agents run in this process: stop them before handing control back.
       void chat
         .stopAll()
+        .catch(() => undefined)
+        .then(() => deps.releaseActivity?.())
         .catch(() => undefined)
         .finally(resolve);
     }

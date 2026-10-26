@@ -331,6 +331,9 @@
       "answerPrompt": "resposta",
       "hint": "enter enviar · esc voltar às funcionalidades",
       "hintQuestion": "1–9 escolher uma opção · ou digite uma resposta e pressione enter · esc voltar"
+    },
+    "hostStatus": {
+      "blocked": "precisam de você: {{count}}"
     }
   }
 }

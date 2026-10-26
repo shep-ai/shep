@@ -93,14 +93,18 @@ describe('Agent activity DI registrations', () => {
     }
   });
 
-  it('resolves the A2A request handler by string token', async () => {
+  it('resolves the A2A request handler and HTTP endpoint by string token', async () => {
     const { initializeContainer } = await import(CONTAINER);
     const { A2aRequestHandler } = await import(
       '../../../../packages/core/src/infrastructure/services/a2a/a2a-request-handler.js'
     );
     const container = await initializeContainer();
 
+    const { A2aHttpEndpoint } = await import(
+      '../../../../packages/core/src/infrastructure/services/a2a/a2a-http-endpoint.js'
+    );
     expect(container.resolve('A2aRequestHandler')).toBeInstanceOf(A2aRequestHandler);
+    expect(container.resolve('A2aHttpEndpoint')).toBeInstanceOf(A2aHttpEndpoint);
   });
 
   it('uses the no-op reporter outside Herdr', async () => {

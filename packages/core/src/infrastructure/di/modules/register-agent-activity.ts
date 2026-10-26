@@ -1,7 +1,7 @@
 /**
  * Agent activity (spec 148): the get / watch / wait / reply / report use cases,
  * by class (CLI, TUI, MCP) and by string token (web routes, the A2A handler),
- * the A2A request handler (by token, for the web route), and the
+ * the A2A request handler and HTTP endpoint (by token, for the web routes), and the
  * terminal-host reporter behind its port — Herdr when this process
  * runs in a Herdr pane, a no-op everywhere else.
  */
@@ -22,6 +22,7 @@ import {
 } from '../../services/activity-host/herdr-activity-reporter.js';
 import { NoopActivityReporter } from '../../services/activity-host/noop-activity-reporter.js';
 import { A2aRequestHandler } from '../../services/a2a/a2a-request-handler.js';
+import { A2aHttpEndpoint } from '../../services/a2a/a2a-http-endpoint.js';
 
 /** Registers a use case once, under its class and under its name for string-token callers. */
 function registerUseCase<T>(
@@ -49,4 +50,5 @@ export function registerAgentActivity(container: DependencyContainer): void {
   registerUseCase(container, 'ReplyToFeatureUseCase', ReplyToFeatureUseCase);
   registerUseCase(container, 'ReportHostActivityUseCase', ReportHostActivityUseCase);
   registerUseCase(container, 'A2aRequestHandler', A2aRequestHandler);
+  registerUseCase(container, 'A2aHttpEndpoint', A2aHttpEndpoint);
 }

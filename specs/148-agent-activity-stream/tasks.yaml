@@ -191,7 +191,7 @@ tasks:
   - id: task-12
     title: A2A web routes and SDK interoperability test
     description: POST /api/a2a (JSON or SSE), GET /.well-known/agent-card.json; integration test with @a2a-js/sdk client.
-    state: Todo
+    state: Done
     dependencies:
       - task-11
     acceptanceCriteria:
@@ -206,7 +206,7 @@ tasks:
   - id: task-13
     title: CLI feat status and feat wait
     description: Human and --json output; wait exit codes (0 matched, 1 timeout or not found); nine locales.
-    state: Todo
+    state: Done
     dependencies:
       - task-6
     acceptanceCriteria:
@@ -222,7 +222,7 @@ tasks:
   - id: task-14
     title: TUI reports activity to the host
     description: Each refresh reports the overall state with a localized message; quit releases.
-    state: Todo
+    state: Done
     dependencies:
       - task-9
     acceptanceCriteria:

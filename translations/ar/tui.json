@@ -331,6 +331,9 @@
       "answerPrompt": "الإجابة",
       "hint": "enter إرسال · esc العودة إلى الميزات",
       "hintQuestion": "1–9 اختيار خيار · أو اكتب إجابة واضغط enter · esc عودة"
+    },
+    "hostStatus": {
+      "blocked": "بحاجة إليك: {{count}}"
     }
   }
 }

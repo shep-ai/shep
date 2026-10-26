@@ -557,6 +557,67 @@
         "restored": "Worktree auf {{step}} zurückgesetzt",
         "undoHint": "Rückgängig machen:",
         "failed": "Checkpoint konnte nicht wiederhergestellt werden"
+      },
+      "status": {
+        "description": "Erklärt, was der Agent eines Features tut (arbeitet, blockiert, wartet, fertig oder fehlgeschlagen) und warum",
+        "idArgument": "Feature-ID oder ID-Präfix",
+        "jsonOption": "Aktivität als JSON ausgeben",
+        "notFound": "Feature nicht gefunden: {{id}}",
+        "ambiguous": "\"{{id}}\" passt auf {{count}} Features; gib mehr von der ID an",
+        "failed": "Aktivität des Features konnte nicht gelesen werden",
+        "labels": {
+          "why": "Warum",
+          "asks": "Frage",
+          "phase": "Phase",
+          "run": "Lauf",
+          "error": "Fehler",
+          "pr": "PR",
+          "id": "ID",
+          "next": "Weiter"
+        },
+        "states": {
+          "working": "arbeitet",
+          "blocked": "blockiert",
+          "waiting": "wartet",
+          "done": "fertig",
+          "failed": "fehlgeschlagen"
+        },
+        "reasons": {
+          "deleting": "Wird gelöscht",
+          "archived": "Archiviert",
+          "queued-for-capacity": "In der Warteschlange, bis unter dem Limit paralleler Features ein Platz frei wird",
+          "deferred": "Zurückgestellt: noch kein Agent gestartet",
+          "waiting-on-parent": "Wartet, bis das übergeordnete Feature fertig ist",
+          "approval-gate": "Wartet auf deine Freigabe",
+          "agent-question": "Der Agent hat eine Frage gestellt",
+          "run-failed": "Der Lauf ist fehlgeschlagen",
+          "run-interrupted": "Der Lauf wurde unterbrochen",
+          "run-cancelled": "Der Lauf wurde abgebrochen",
+          "run-completed": "Fertig",
+          "agent-running": "Der Agent arbeitet",
+          "process-died": "Der Agent-Prozess wurde unerwartet beendet",
+          "maintained": "Fertig; in Wartung",
+          "awaiting-review": "Der Pull Request wartet auf dein Review",
+          "plan-task-in-review": "Eine Planaufgabe wartet auf dein Review",
+          "plan-tasks-done": "Alle Planaufgaben sind erledigt",
+          "in-progress": "In Arbeit"
+        }
+      },
+      "wait": {
+        "description": "Wartet, bis der Agent eines Features jemanden braucht oder anhält, oder die angegebenen Zustände erreicht",
+        "idArgument": "Feature-ID oder ID-Präfix",
+        "untilOption": "Zustände, auf die gewartet wird, durch Kommas getrennt: working, blocked, waiting, done, failed (Standard: blocked,done,failed)",
+        "timeoutOption": "Nach so vielen Sekunden aufgeben",
+        "jsonOption": "Ergebnis als JSON ausgeben",
+        "invalidState": "Unbekannter Zustand in \"{{state}}\". Erlaubt: {{states}}",
+        "failed": "Warten auf das Feature fehlgeschlagen",
+        "outcomes": {
+          "matched": "Erreicht",
+          "timed-out": "Zeit abgelaufen; weiterhin {{state}}",
+          "not-found": "Feature nicht gefunden: {{id}}",
+          "ambiguous": "\"{{id}}\" passt auf mehr als ein Feature; gib mehr von der ID an",
+          "aborted": "Warten beendet"
+        }
       }
     },
     "repo": {

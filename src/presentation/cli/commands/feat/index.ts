@@ -7,6 +7,8 @@
  *   shep feat new <description>  # Create a new feature
  *   shep feat ls                 # List features
  *   shep feat show <id>          # Show feature details
+ *   shep feat status <id>        # What its agent is doing, and why
+ *   shep feat wait <id>          # Wait until it needs someone or stops
  *   shep feat del <id>           # Delete a feature
  *   shep feat comments <id>      # PR review comments and what shep did about them
  *   shep feat address-comments <id>  # Address pending PR review comments
@@ -34,6 +36,8 @@ import { createAddressCommentsCommand } from './address-comments.command.js';
 import { createCheckpointsCommand } from './checkpoints.command.js';
 import { createDiffCommand } from './diff.command.js';
 import { createRestoreCommand } from './restore.command.js';
+import { createStatusCommand } from './status.command.js';
+import { createWaitCommand } from './wait.command.js';
 
 /**
  * Create the feat command group
@@ -56,6 +60,8 @@ Examples:
     .addCommand(createNewCommand())
     .addCommand(createLsCommand())
     .addCommand(createShowCommand())
+    .addCommand(createStatusCommand())
+    .addCommand(createWaitCommand())
     .addCommand(createDelCommand())
     .addCommand(createResumeCommand())
     .addCommand(createStartCommand())
