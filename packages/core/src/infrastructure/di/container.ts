@@ -124,6 +124,7 @@ import type { ITelemetry } from '../../application/ports/output/services/telemet
 import { registerTelemetry } from './modules/register-telemetry.js';
 import { registerGitCheckpoints } from './modules/register-git-checkpoints.js';
 import { registerFeatureConsole } from './modules/register-feature-console.js';
+import { registerAgentActivity } from './modules/register-agent-activity.js';
 import { registerProcesses } from './modules/register-processes.js';
 import { PruneRetainedDataUseCase } from '../../application/use-cases/maintenance/prune-retained-data.use-case.js';
 
@@ -184,6 +185,7 @@ export async function initializeContainer(): Promise<typeof container> {
   registerTelemetry(container);
   registerGitCheckpoints(container);
   registerFeatureConsole(container);
+  registerAgentActivity(container);
   registerProcesses(container);
 
   // ─── Retention housekeeping ──────────────────────────────────────────────

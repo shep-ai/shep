@@ -139,7 +139,7 @@ tasks:
   - id: task-9
     title: Herdr reporter, no-op reporter and DI selection
     description: execFile HERDR_BIN_PATH pane report-agent / release-agent; strictly increasing seq; one in flight, latest wins; timeout; failures swallowed.
-    state: Todo
+    state: Done
     dependencies:
       - task-8
     acceptanceCriteria:
@@ -156,7 +156,7 @@ tasks:
   - id: task-10
     title: MCP agent-activity tools
     description: get_agent_activity, wait_for_agent_activity, decide_feature_gate, answer_agent_question.
-    state: Todo
+    state: Done
     dependencies:
       - task-6
       - task-7
@@ -172,7 +172,7 @@ tasks:
   - id: task-11
     title: A2A request handler, task mapper and agent card
     description: JSON-RPC 2.0 dispatch for SendMessage, SendStreamingMessage, GetTask, ListTasks, CancelTask, SubscribeToTask; A2A errors; version check.
-    state: Todo
+    state: Done
     dependencies:
       - task-6
       - task-7

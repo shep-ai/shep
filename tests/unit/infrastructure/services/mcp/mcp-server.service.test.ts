@@ -101,6 +101,10 @@ describe('McpServerService', () => {
       'update_work_item',
       'delete_work_item',
       'post_chat_block',
+      'get_agent_activity',
+      'wait_for_agent_activity',
+      'decide_feature_gate',
+      'answer_agent_question',
     ];
 
     let containerService: McpServerService;
@@ -123,7 +127,7 @@ describe('McpServerService', () => {
       await containerService.server.close();
     });
 
-    it('registers all 18 tools when container is provided', async () => {
+    it('registers all 22 tools when container is provided', async () => {
       const { tools } = await client.listTools();
       const toolNames = tools.map((t) => t.name);
 
