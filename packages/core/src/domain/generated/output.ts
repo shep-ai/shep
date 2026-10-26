@@ -9727,6 +9727,19 @@ export enum FeatureStateReason {
   PlanTasksDone = 'plan-tasks-done',
   InProgress = 'in-progress',
 }
+export enum ActivityWaitOutcome {
+  Matched = 'matched',
+  TimedOut = 'timed-out',
+  NotFound = 'not-found',
+  Ambiguous = 'ambiguous',
+  Aborted = 'aborted',
+}
+export enum FeatureReplyOutcome {
+  Applied = 'applied',
+  NotFound = 'not-found',
+  Ambiguous = 'ambiguous',
+  Refused = 'refused',
+}
 export enum TerminalMultiplexer {
   Tmux = 'tmux',
   Zellij = 'zellij',

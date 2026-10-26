@@ -84,3 +84,36 @@ enum FeatureStateReason {
   @doc("Work is in progress with no run to report on")
   InProgress: "in-progress",
 }
+
+@doc("How waiting for a feature's activity ended")
+enum ActivityWaitOutcome {
+  @doc("The feature reached one of the awaited states")
+  Matched: "matched",
+
+  @doc("The time limit passed first")
+  TimedOut: "timed-out",
+
+  @doc("No feature has that id or id prefix")
+  NotFound: "not-found",
+
+  @doc("The id prefix names more than one feature")
+  Ambiguous: "ambiguous",
+
+  @doc("The caller stopped waiting")
+  Aborted: "aborted",
+}
+
+@doc("What happened to a reply sent to a feature (a gate decision, an answer, a stop)")
+enum FeatureReplyOutcome {
+  @doc("The reply was applied")
+  Applied: "applied",
+
+  @doc("No feature has that id or id prefix")
+  NotFound: "not-found",
+
+  @doc("The id prefix names more than one feature")
+  Ambiguous: "ambiguous",
+
+  @doc("The feature cannot take this reply right now; the message says why")
+  Refused: "refused",
+}

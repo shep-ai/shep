@@ -59,7 +59,7 @@ tasks:
   - id: task-4
     title: Console snapshot rows carry reason, activity, question and version
     description: GetFeatureConsoleSnapshotUseCase fills stateReason, activity, pendingQuestion (oldest non-gate), version.
-    state: Todo
+    state: Done
     dependencies:
       - task-3
     acceptanceCriteria:
@@ -74,7 +74,7 @@ tasks:
   - id: task-5
     title: GetAgentActivityUseCase
     description: Activities from snapshot rows; filter by feature id or prefix and repository; settled optional; summary and overall.
-    state: Todo
+    state: Done
     dependencies:
       - task-4
     acceptanceCriteria:
@@ -90,7 +90,7 @@ tasks:
   - id: task-6
     title: WatchAgentActivityUseCase and WaitForAgentActivityUseCase
     description: Async generator of changes until aborted; wait returns matched / timeout / not-found / aborted.
-    state: Todo
+    state: Done
     dependencies:
       - task-5
     acceptanceCriteria:
@@ -108,7 +108,7 @@ tasks:
   - id: task-7
     title: ReplyToFeatureUseCase
     description: Decision → approve / reject via RunFeatureConsoleActionUseCase; text → answer the pending agent question; cancel → stop.
-    state: Todo
+    state: Done
     dependencies:
       - task-5
     acceptanceCriteria:
@@ -124,7 +124,7 @@ tasks:
   - id: task-8
     title: IActivityHostReporter port and ReportHostActivityUseCase
     description: Report only on change; release; never throw.
-    state: Todo
+    state: Done
     dependencies:
       - task-3
     acceptanceCriteria:

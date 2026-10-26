@@ -11,14 +11,24 @@
 
 import { inject, injectable } from 'tsyringe';
 import { AgentQuestionStatus, FeatureState } from '../../../domain/generated/output.js';
-import type { AgentRun, Feature, PhaseTiming } from '../../../domain/generated/output.js';
+import type {
+  AgentQuestion,
+  AgentRun,
+  Feature,
+  PhaseTiming,
+} from '../../../domain/generated/output.js';
 import {
   availableFeatureActions,
   compareConsoleRows,
-  deriveFeatureState,
+  explainFeatureState,
   featurePhaseOf,
   needsUserAttention,
 } from '../../../domain/shared/feature-state.js';
+import {
+  activityOf,
+  activityVersion,
+  overallActivity,
+} from '../../../domain/shared/agent-activity.js';
 import { normalizeRepositoryPath } from '../../../domain/shared/repository-path.js';
 import { isGateQuestion } from '../../../domain/shared/decision-builders.js';
 import type { IAgentRunRepository } from '../../ports/output/agents/agent-run-repository.interface.js';
@@ -30,6 +40,7 @@ import { ListFeaturesUseCase } from '../features/list-features.use-case.js';
 import { ListAgentQuestionInboxUseCase } from '../agents/list-agent-question-inbox.use-case.js';
 import {
   FEATURE_SHORT_ID_LENGTH,
+  type FeatureConsoleQuestion,
   type FeatureConsoleRow,
   type FeatureConsoleSnapshot,
   type FeatureConsoleSummary,
@@ -75,9 +86,9 @@ export class GetFeatureConsoleSnapshotUseCase {
     const timingsByRun = groupBy(timings, (t) => t.agentRunId);
     // A gate files an inbox question mirroring itself; the run status already
     // says "at a gate", so only the agent's own questions count here.
-    const questionsByFeature = countBy(
-      questions.filter((q) => !isGateQuestion(q)),
-      (q) => q.featureId
+    const questionsByFeature = groupBy(
+      questions.filter((q) => q.featureId !== undefined && !isGateQuestion(q)),
+      (q) => q.featureId as string
     );
     const repoNameByPath = new Map(
       repositories.map((r) => [normalizeRepositoryPath(r.path), r.name])
@@ -90,7 +101,7 @@ export class GetFeatureConsoleSnapshotUseCase {
           feature,
           run,
           timings: run ? (timingsByRun.get(run.id) ?? []) : [],
-          pendingQuestions: questionsByFeature.get(feature.id) ?? 0,
+          questions: questionsByFeature.get(feature.id) ?? [],
           repositoryName:
             repoNameByPath.get(normalizeRepositoryPath(feature.repositoryPath)) ??
             lastPathSegment(feature.repositoryPath),
@@ -114,7 +125,7 @@ interface RowInput {
   feature: Feature;
   run: AgentRun | undefined;
   timings: PhaseTiming[];
-  pendingQuestions: number;
+  questions: AgentQuestion[];
   repositoryName: string;
   now: Date;
 }
@@ -123,11 +134,14 @@ function buildRow({
   feature,
   run,
   timings,
-  pendingQuestions,
+  questions,
   repositoryName,
   now,
 }: RowInput): FeatureConsoleRow {
-  const state = deriveFeatureState(feature, run);
+  const { state, reason } = explainFeatureState(feature, run);
+  const pendingQuestions = questions.length;
+  const activity = activityOf({ featureState: state, reason, pendingQuestions });
+  const pendingQuestion = oldestQuestion(questions);
   const usage = sumUsage(timings);
   return {
     featureId: feature.id,
@@ -139,6 +153,9 @@ function buildRow({
     ...(feature.worktreePath ? { worktreePath: feature.worktreePath } : {}),
     lifecycle: feature.lifecycle,
     state,
+    stateReason: reason,
+    activity: activity.state,
+    activityReason: activity.reason,
     phase: featurePhaseOf(feature, run),
     ...(run
       ? {
@@ -154,6 +171,12 @@ function buildRow({
     inputTokens: usage.inputTokens,
     outputTokens: usage.outputTokens,
     pendingQuestions,
+    ...(pendingQuestion ? { pendingQuestion } : {}),
+    version: activityVersion([
+      feature.updatedAt,
+      run?.updatedAt,
+      ...questions.map((q) => q.createdAt),
+    ]),
     needsAttention: needsUserAttention(state, pendingQuestions),
     actions: availableFeatureActions(run),
     ...(feature.pr
@@ -212,6 +235,15 @@ function sumUsage(timings: PhaseTiming[]): {
   return { ...(costUsd !== undefined ? { costUsd } : {}), inputTokens, outputTokens };
 }
 
+/** The question asked first: the one the agent has waited on longest. */
+function oldestQuestion(questions: AgentQuestion[]): FeatureConsoleQuestion | undefined {
+  const oldest = [...questions].sort(
+    (a, b) => activityVersion([a.createdAt]) - activityVersion([b.createdAt])
+  )[0];
+  if (!oldest) return undefined;
+  return { id: oldest.id, ...(oldest.appId ? { appId: oldest.appId } : {}), prompt: oldest.prompt };
+}
+
 function summarize(rows: FeatureConsoleRow[]): FeatureConsoleSummary {
   const count = (predicate: (row: FeatureConsoleRow) => boolean) => rows.filter(predicate).length;
   return {
@@ -221,6 +253,7 @@ function summarize(rows: FeatureConsoleRow[]): FeatureConsoleSummary {
     waiting: count((r) => WAITING_STATES.has(r.state)),
     failed: count((r) => r.state === FeatureState.Error),
     done: count((r) => r.state === FeatureState.Done),
+    activity: overallActivity(rows.map((r) => r.activity)),
   };
 }
 
@@ -244,16 +277,4 @@ function groupBy<T>(items: readonly T[], key: (item: T) => string): Map<string, 
     else groups.set(k, [item]);
   }
   return groups;
-}
-
-function countBy<T>(
-  items: readonly T[],
-  key: (item: T) => string | undefined
-): Map<string, number> {
-  const counts = new Map<string, number>();
-  for (const item of items) {
-    const k = key(item);
-    if (k !== undefined) counts.set(k, (counts.get(k) ?? 0) + 1);
-  }
-  return counts;
 }

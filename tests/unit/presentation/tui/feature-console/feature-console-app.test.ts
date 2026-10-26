@@ -17,7 +17,6 @@ import {
   type FeatureConsoleAppDeps,
 } from '@/presentation/tui/feature-console/feature-console.app.js';
 import {
-  AgentRunStatus,
   FeatureChatEntryKind,
   FeatureConsoleAction,
   FeaturePaneContent,
@@ -32,43 +31,28 @@ import type {
   FeatureConsoleSnapshot,
 } from '@/application/use-cases/feature-console/feature-console.types.js';
 import { FakeTerminal } from '@tests/helpers/tui/fake-terminal.js';
+import { GATE_ROW, consoleRow, consoleSummary } from '@tests/helpers/feature-console-fixtures.js';
 
 const REFRESH_MS = 25;
 
 function gate(name: string): FeatureConsoleRow {
-  return {
+  return consoleRow({
+    ...GATE_ROW,
     featureId: `${name}-id`,
     shortId: name.slice(0, 8),
     name,
-    repositoryName: 'acme',
     repositoryPath: '/acme',
     branch: `feat/${name}`,
     lifecycle: SdlcLifecycle.Requirements,
-    state: FeatureState.ActionRequired,
     phase: 'requirements',
-    runId: 'run-1',
-    runStatus: AgentRunStatus.waitingApproval,
-    elapsedMs: 0,
-    inputTokens: 0,
-    outputTokens: 0,
-    pendingQuestions: 0,
-    needsAttention: true,
-    actions: [FeatureConsoleAction.Approve, FeatureConsoleAction.Reject],
     updatedAt: new Date(),
-  };
+  });
 }
 
 const snapshotOf = (...rows: FeatureConsoleRow[]): FeatureConsoleSnapshot => ({
   generatedAt: new Date(),
   rows,
-  summary: {
-    total: rows.length,
-    needsAttention: rows.length,
-    running: 0,
-    waiting: 0,
-    failed: 0,
-    done: 0,
-  },
+  summary: consoleSummary({ total: rows.length, needsAttention: rows.length }),
 });
 
 // eslint-disable-next-line no-control-regex

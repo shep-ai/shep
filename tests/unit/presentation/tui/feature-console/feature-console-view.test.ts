@@ -31,12 +31,12 @@ import {
   FeaturePanePlacement,
   FeatureState,
   PrStatus,
-  SdlcLifecycle,
 } from '@/domain/generated/output.js';
 import type {
   FeatureConsoleRow,
   FeatureConsoleSnapshot,
 } from '@/application/use-cases/feature-console/feature-console.types.js';
+import { GATE_ROW, consoleRow, consoleSummary } from '@tests/helpers/feature-console-fixtures.js';
 
 const ESC = '\x1b';
 const KEY = {
@@ -53,53 +53,37 @@ const ANSI = /\x1b\[[0-9;?]*[A-Za-z]|\x1b_[^\x07]*\x07|\x1b\][^\x07]*\x07/g;
 const plain = (lines: string[]) => lines.map((l) => l.replace(ANSI, ''));
 
 function row(id: string, overrides: Partial<FeatureConsoleRow> = {}): FeatureConsoleRow {
-  return {
+  return consoleRow({
     featureId: `${id}-0000-0000`,
     shortId: id,
     name: `Feature ${id}`,
     repositoryName: 'acme-web',
     repositoryPath: '/work/acme-web',
     branch: `feat/${id}`,
-    lifecycle: SdlcLifecycle.Implementation,
-    state: FeatureState.Running,
-    phase: 'implement',
     agentType: AgentType.ClaudeCode,
     modelId: 'claude-opus-5-5',
     runId: `run-${id}`,
-    runStatus: AgentRunStatus.running,
     elapsedMs: 12 * 60_000,
     costUsd: 0.42,
     inputTokens: 12_000,
     outputTokens: 3_400,
-    pendingQuestions: 0,
-    needsAttention: false,
-    actions: [FeatureConsoleAction.Stop],
-    updatedAt: new Date('2026-10-24T12:00:00Z'),
     ...overrides,
-  };
+  });
 }
 
-const gateRow = (id: string) =>
-  row(id, {
-    state: FeatureState.ActionRequired,
-    phase: 'requirements',
-    runStatus: AgentRunStatus.waitingApproval,
-    needsAttention: true,
-    actions: [FeatureConsoleAction.Approve, FeatureConsoleAction.Reject],
-  });
+const gateRow = (id: string) => row(id, { ...GATE_ROW, phase: 'requirements' });
 
 function snapshot(rows: FeatureConsoleRow[]): FeatureConsoleSnapshot {
   return {
     generatedAt: new Date('2026-10-24T12:00:00Z'),
     rows,
-    summary: {
+    summary: consoleSummary({
       total: rows.length,
       needsAttention: rows.filter((r) => r.needsAttention).length,
       running: rows.filter((r) => r.state === FeatureState.Running).length,
-      waiting: 0,
       failed: rows.filter((r) => r.state === FeatureState.Error).length,
       done: rows.filter((r) => r.state === FeatureState.Done).length,
-    },
+    }),
   };
 }
 
