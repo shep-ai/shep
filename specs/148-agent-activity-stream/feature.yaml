@@ -1,0 +1,36 @@
+feature:
+  id: '148-agent-activity-stream'
+  name: 'agent-activity-stream'
+  number: 148
+  branch: 'claude/funny-newton-xhakwy'
+  lifecycle: 'research'
+  createdAt: '2026-10-26T14:44:15Z'
+
+status:
+  phase: 'research'
+  progress:
+    completed: 0
+    total: 0
+    percentage: 0
+  currentTask: null
+  lastUpdated: '2026-10-26T14:44:15Z'
+  lastUpdatedBy: 'shep-kit:new-feature'
+
+validation:
+  lastRun: null
+  gatesPassed: []
+  autoFixesApplied: []
+
+tasks:
+  current: null
+  blocked: []
+  failed: []
+
+checkpoints:
+  - phase: 'feature-created'
+    completedAt: '2026-10-26T14:44:15Z'
+    completedBy: 'shep-kit:new-feature'
+
+errors:
+  current: null
+  history: []
