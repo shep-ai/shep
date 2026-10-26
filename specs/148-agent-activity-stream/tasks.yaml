@@ -1,6 +1,6 @@
 name: agent-activity-stream
 summary: Task breakdown for 148-agent-activity-stream
-phase: implementation
+phase: complete
 updatedAt: '2026-10-26'
 
 relatedFeatures:
@@ -237,7 +237,7 @@ tasks:
   - id: task-15
     title: E2E test and documentation
     description: E2E for feat status / wait on a seeded database; docs for architecture, A2A, MCP tools, CLI.
-    state: Todo
+    state: Done
     dependencies:
       - task-12
       - task-13
