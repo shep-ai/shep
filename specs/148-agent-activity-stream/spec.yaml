@@ -13,7 +13,7 @@ summary: >
   `wait_for_agent_activity`), an A2A 1.0 JSON-RPC server on the web daemon (tasks are
   features), `shep feat status` / `shep feat wait`, and a Herdr reporter so a `shep tui`
   running in a Herdr pane shows as blocked in Herdr's sidebar when a feature needs the user.
-phase: Requirements
+phase: Research
 sizeEstimate: XL
 
 relatedFeatures:

@@ -1,64 +1,194 @@
-# Research Artifact (YAML)
-# This is the source of truth. Markdown is auto-generated from this file.
-
 name: agent-activity-stream
-summary: Technical analysis for 148-agent-activity-stream
+summary: >
+  Build the activity model on top of the existing feature-state derivation, version it from
+  timestamps already written, poll in the application layer, and expose it through thin
+  adapters: MCP tools, a hand-rolled A2A 1.0 JSON-RPC server behind the existing token gate
+  (checked against the official A2A client in tests), CLI commands and a Herdr reporter.
+phase: research
+updatedAt: '2026-10-26'
 
-# Relationships
-relatedFeatures: []
-technologies: []
-relatedLinks: []
+relatedFeatures:
+  - 077-mcp-server
+  - 142-tui-feature-console
+  - 143-tui-multiplexer-panes
+technologies:
+  - TypeSpec
+  - '@modelcontextprotocol/sdk'
+  - '@a2a-js/sdk (tests only)'
+  - Herdr CLI
+relatedLinks:
+  - title: A2A protocol specification 1.0
+    url: https://a2a-protocol.org/latest/specification/
+  - title: '@a2a-js/sdk 1.3.0 (official TypeScript SDK, A2A 1.0)'
+    url: https://www.npmjs.com/package/@a2a-js/sdk
+  - title: Herdr — Add Herdr support to your agent
+    url: https://herdr.dev/docs/add-herdr-support/
 
-# Structured technology decisions
 decisions:
-  - title: { { DECISION_TITLE } }
-    chosen: { { CHOSEN_OPTION } }
+  - title: Source of the activity state
+    chosen: >
+      Refactor deriveFeatureState into explainFeatureState returning { state, reason }; map
+      (state, reason, pending agent questions) to AgentActivityState in a pure domain function
     rejected:
-      - { { OPTION_1 } }
-      - { { OPTION_2 } }
-    rationale: { { RATIONALE } }
+      - A second derivation from run status (the drift `shep feat ls` already shows)
+      - Persisting an activity column written by the worker (every writer would have to keep it right)
+    rationale: >
+      deriveFeatureState is already the one place every surface reads. Returning the branch that
+      decided the state gives the "why" without duplicating its priority rules, and the existing
+      tests pin that the state does not change.
+  - title: Activity vocabulary
+    chosen: working, blocked, waiting, done, failed
+    rejected:
+      - Reusing FeatureState directly (nine values; callers would each re-decide "needs me")
+      - Herdr's idle/working/blocked only (loses done vs failed, which A2A and waiters need)
+    rationale: >
+      Five states cover every caller: Herdr maps blocked/working/everything-else-idle, A2A maps
+      one-to-one onto TASK_STATE_*, and a waiter's useful targets are blocked, done and failed.
+      "blocked" means the user (or a caller acting for them) must act: a gate, an agent question,
+      or a review.
+  - title: Version (monotonic sequence)
+    chosen: >
+      Epoch milliseconds of the newest feature.updatedAt, run.updatedAt and pending question
+      createdAt; a watcher clamps to strictly increasing per stream
+    rejected:
+      - A new activity_events table with an autoincrement id (a migration and a writer in every process)
+      - No version (callers cannot drop a late or out-of-order update)
+    rationale: >
+      Herdr's own guidance is that a timestamp works as the sequence. Every state change already
+      writes one of these timestamps, so the version is free and survives restarts.
+  - title: Live updates
+    chosen: >
+      Poll GetAgentActivityUseCase in the application layer (WatchAgentActivity / WaitForAgentActivity)
+      using the existing waitForNextTick helper, 1 s by default
+    rejected:
+      - Reusing StreamAgentEventsUseCase deltas (event-shaped, web-specific, no reason codes)
+      - An in-process event bus (feature workers are separate processes; only SQLite is shared)
+    rationale: >
+      Every shep surface already polls SQLite (SSE 2 s, TUI 2 s, notification watcher 3 s).
+      One batched snapshot read per tick is cheap and works in any process, including the MCP
+      server started by an agent CLI.
+  - title: A2A server implementation
+    chosen: >
+      A small, framework-free JSON-RPC 2.0 dispatcher in infrastructure/services/a2a (types,
+      task mapper, agent card, SSE framing) behind thin Next.js route handlers; interoperability
+      proven by driving it with the official @a2a-js/sdk client in an integration test
+    rejected:
+      - '@a2a-js/sdk DefaultRequestHandler (its tasks live in the SDK TaskStore and run inside an AgentExecutor in the serving process; shep tasks are database-backed features run by detached workers, so a custom store plus a polling event bus would be larger than the whole adapter)'
+      - Express transport from the SDK (shep serves HTTP through Next.js route handlers)
+    rationale: >
+      The surface shep needs is six methods. Owning it keeps the adapter thin over use cases,
+      adds no runtime dependency, and the SDK client test catches any wire-format mistake.
+  - title: A2A task identity and writes
+    chosen: >
+      Task id = context id = feature id. SendMessage without taskId creates a feature
+      (CreateFeatureUseCase); with taskId it answers the pending agent question (text part) or
+      decides the gate (data part { decision, feedback }) through RunFeatureConsoleActionUseCase;
+      CancelTask stops the run through the same use case
+    rejected:
+      - A separate a2a_tasks table mapping ids (two sources of truth for one feature)
+      - Free-text "approve"/"reject" parsing (ambiguous; a reply to a question could read as a verdict)
+    rationale: >
+      Features already have stable ids and every action already has a use case that refuses what
+      the run cannot accept. Gate decisions must be explicit.
+  - title: A2A authentication
+    chosen: >
+      The existing per-install bearer token on /api/a2a; agent card at
+      /.well-known/agent-card.json (a page path, so readable without the token unless
+      SHEP_WEB_REQUIRE_TOKEN is set) declaring an HTTP bearer scheme
+    rejected:
+      - Unauthenticated A2A (any page or local process could drive features)
+      - A separate A2A key (a second secret to manage for the same trust boundary)
+    rationale: >
+      The request guard already exempts header-credential clients from the CSRF check, so a
+      server-to-server A2A client with `Authorization: Bearer` works unchanged.
+  - title: A2A-Version handling
+    chosen: >
+      Accept 1.0 (any 1.x); a header naming another major answers VersionNotSupportedError
+      (-32009); a missing header is served as 1.0
+    rejected:
+      - Treating a missing header as 0.3 and refusing it (the spec's reading; it would turn away simple curl and JSON-RPC callers for no safety gain)
+    rationale: >
+      Shep speaks only 1.0. Lenience on a missing header is documented in the A2A guide.
+  - title: Herdr integration
+    chosen: >
+      An IActivityHostReporter port; a Herdr adapter that runs
+      `$HERDR_BIN_PATH pane report-agent $HERDR_PANE_ID --source shep --agent shep --state …
+      --seq … [--message …]` and `release-agent` with a short timeout, in the background,
+      dropping stale reports; selected at DI time from HERDR_ENV/HERDR_PANE_ID/HERDR_BIN_PATH,
+      otherwise a no-op adapter
+    rejected:
+      - Talking to HERDR_SOCKET_PATH directly (Herdr documents the CLI as the portable path, including Windows)
+      - Reporting from feature workers (they run detached, not in a pane)
+    rationale: >
+      Follows Herdr's published "supported by the agent" protocol with no change to Herdr. The
+      console is the shep process that lives in a pane and already knows when a feature starts
+      needing the user.
+  - title: Where MCP and CLI write actions go
+    chosen: >
+      MCP decide_feature_gate and answer_agent_question, CLI status and wait, all through the
+      same use cases as A2A
+    rejected:
+      - Read-only MCP tools (an agent told "blocked" could do nothing about it)
+    rationale: >
+      The value of "wait until blocked" is acting on it; the actions already exist as use cases.
 
-# Open questions (should be resolved by end of research)
-openQuestions:
-  []
-  # - question: "Which library should we use?"
-  #   resolved: true
-  #   answer: "Library X because of Y"
+openQuestions: []
 
-# Markdown content (the full research document)
 content: |
   ## Status
 
   - **Phase:** Research
   - **Updated:** 2026-10-26
 
-  ## Technology Decisions
+  ## Findings
 
-  ### {{DECISION_TITLE}}
-
-  **Options considered:**
-
-  1. {{OPTION_1}}
-  2. {{OPTION_2}}
-  3. {{OPTION_3}}
-
-  **Decision:** {{CHOSEN_OPTION}}
-
-  **Rationale:** {{RATIONALE}}
+  - `deriveFeatureState` (`domain/shared/feature-state.ts`) is the single derivation used by the
+    TUI, web canvas and feature tree. Its priority: lifecycle overrides → run status → plan tasks.
+    Pending agent questions count only in the console snapshot (`needsUserAttention`), and gate
+    questions must be excluded (`isGateQuestion`) because a gate files a mirror question.
+  - The console snapshot already batches features (with crashed runs reconciled), runs, timings,
+    pending questions and repositories — exactly what activity needs. Activity is a projection
+    of its rows.
+  - `RunFeatureConsoleActionUseCase` already approves, rejects, stops and resumes by id or prefix
+    and refuses what the run does not offer.
+  - The web request guard requires the token on every `/api/*` request and exempts header
+    credentials from the CSRF check.
+  - A2A 1.0 (Linux Foundation): JSON-RPC methods `SendMessage`, `SendStreamingMessage`,
+    `GetTask`, `ListTasks`, `CancelTask`, `SubscribeToTask`; enums serialized as ProtoJSON names
+    (`TASK_STATE_WORKING`, `ROLE_AGENT`); a Part holds exactly one of `text`, `raw`, `url`,
+    `data`; agent card at `/.well-known/agent-card.json` with `supportedInterfaces[{url,
+    protocolBinding: "JSONRPC", protocolVersion: "1.0"}]`; streams are SSE `data:` lines each
+    holding a JSON-RPC response whose result is a StreamResponse (`task` | `message` |
+    `statusUpdate` | `artifactUpdate`); errors -32001…-32009.
+  - Herdr: processes in a pane inherit `HERDR_ENV=1`, `HERDR_PANE_ID`, `HERDR_BIN_PATH`;
+    `pane report-agent` takes `--state idle|working|blocked|unknown`, `--message`, `--seq`
+    (must increase across restarts; reports with a lower or equal number are ignored);
+    `release-agent` on exit; reports must never slow the agent.
 
   ## Library Analysis
 
-  | Library     | Version     | Purpose     | Pros     | Cons     |
-  | ----------- | ----------- | ----------- | -------- | -------- |
-  | {{LIBRARY}} | {{VERSION}} | {{PURPOSE}} | {{PROS}} | {{CONS}} |
+  | Library | Version | Purpose | Pros | Cons |
+  | ------- | ------- | ------- | ---- | ---- |
+  | @modelcontextprotocol/sdk | existing | MCP tools | Already used by `shep mcp` | — |
+  | @a2a-js/sdk | 1.3.0 | A2A client in tests | Official, A2A 1.0, JSON-RPC client with streaming | 4.5 MB; its server model does not fit, so dev-only |
 
   ## Security Considerations
 
-  No security implications identified.
+  - A2A writes (create, approve, reject, answer, cancel) sit behind the same bearer token and Host
+    check as the web UI; no new credential, no CORS headers.
+  - The agent card exposes only name, version, skills and the endpoint URL — no repositories or
+    feature data — and is the only unauthenticated A2A path.
+  - Gate decisions need an explicit data part; free text never approves anything.
+  - The Herdr reporter passes argv to `execFile` (no shell) and sends only a state and a count
+    message — no feature names, paths or prompts leave shep.
+  - Telemetry: no new events in this feature.
 
   ## Performance Implications
 
-  No performance implications identified.
+  - One batched snapshot read per poll tick per watcher (the same reads the TUI does every 2 s).
+    Wait and subscribe default to 1 s; timeouts are capped (MCP 10 min, CLI and A2A unbounded
+    only when the caller says so).
+  - The Herdr reporter runs only on a change and never blocks the console render loop.
 
   ## Open Questions
 
