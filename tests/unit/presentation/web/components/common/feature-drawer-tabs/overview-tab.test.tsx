@@ -4,6 +4,12 @@ import { PrStatus, CiStatus } from '@shepai/core/domain/generated/output';
 import { OverviewTab } from '@/components/common/feature-drawer-tabs/overview-tab';
 import type { FeatureNodeData } from '@/components/common/feature-node';
 
+vi.mock('@/components/agent-activity/feature-activity-section', () => ({
+  FeatureActivitySection: ({ featureId }: { featureId: string }) => (
+    <div data-testid="feature-activity-section" data-feature-id={featureId} />
+  ),
+}));
+
 vi.mock('@/components/features/settings/AgentModelPicker', () => ({
   AgentModelPicker: ({
     initialAgentType,
@@ -516,6 +522,21 @@ describe('OverviewTab', () => {
       );
 
       expect(screen.getByText('Could not save pinned config')).toBeInTheDocument();
+    });
+  });
+
+  describe('agent activity (spec 148)', () => {
+    it("opens with the feature's agent status", () => {
+      render(<OverviewTab data={defaultData} />);
+      const section = screen.getByTestId('feature-activity-section');
+      expect(section).toHaveAttribute('data-feature-id', '#f1');
+      const status = screen.getByTestId('feature-drawer-status');
+      expect(status.firstElementChild).toContainElement(section);
+    });
+
+    it('has no agent status while the feature is still being created', () => {
+      render(<OverviewTab data={{ ...defaultData, state: 'creating' }} />);
+      expect(screen.queryByTestId('feature-activity-section')).toBeNull();
     });
   });
 });

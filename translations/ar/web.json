@@ -24,7 +24,8 @@
       "messaging": "Messaging",
       "mcp": "MCP",
       "harness": "Harness الوكيل",
-      "telemetry": "مقاييس الاستخدام"
+      "telemetry": "مقاييس الاستخدام",
+      "a2a": "ربط الوكلاء"
     },
     "language": {
       "title": "اللغة",
@@ -494,7 +495,8 @@
     "opportunities": "الفرص",
     "incidents": "الحوادث",
     "factory": "المصنع",
-    "chat": "الدردشة"
+    "chat": "الدردشة",
+    "agentActivity": "نشاط الوكلاء"
   },
   "sidebar": {
     "features": "الميزات",
@@ -2033,6 +2035,99 @@
       "Deleting": "قيد الحذف",
       "AwaitingUpstream": "بانتظار المصدر",
       "Archived": "مؤرشفة"
+    }
+  },
+  "agentActivity": {
+    "states": {
+      "working": "يعمل",
+      "blocked": "يحتاجك",
+      "waiting": "ينتظر",
+      "done": "مكتمل",
+      "failed": "فاشل"
+    },
+    "reasons": {
+      "deleting": "جارٍ الحذف",
+      "archived": "مؤرشفة",
+      "queued-for-capacity": "في قائمة الانتظار حتى يتوفر مكان ضمن حد الميزات المتوازية",
+      "deferred": "مؤجلة: لم يبدأ أي وكيل بعد",
+      "waiting-on-parent": "تنتظر انتهاء الميزة الأم",
+      "approval-gate": "تنتظر موافقتك",
+      "agent-question": "طرح الوكيل سؤالًا",
+      "run-failed": "فشل التشغيل",
+      "run-interrupted": "تمت مقاطعة التشغيل",
+      "run-cancelled": "تم إلغاء التشغيل",
+      "run-completed": "اكتملت",
+      "agent-running": "الوكيل يعمل",
+      "process-died": "توقفت عملية الوكيل بشكل غير متوقع",
+      "maintained": "اكتملت؛ قيد الصيانة",
+      "awaiting-review": "طلب الدمج ينتظر مراجعتك",
+      "plan-task-in-review": "مهمة في الخطة تنتظر مراجعتك",
+      "plan-tasks-done": "اكتملت كل مهام الخطة",
+      "in-progress": "قيد التنفيذ"
+    },
+    "labels": {
+      "why": "السبب",
+      "asks": "يسأل",
+      "phase": "المرحلة",
+      "run": "التشغيل",
+      "error": "الخطأ",
+      "pr": "طلب السحب",
+      "next": "التالي"
+    },
+    "next": {
+      "answer": "أجب عن السؤال",
+      "review": "راجع ووافق",
+      "openPr": "راجع طلب السحب",
+      "resume": "افتح للاستئناف",
+      "inDrawer": {
+        "review": "وافق أو ارفض في تبويب المراجعة",
+        "resume": "استخدم «Retry» أعلى هذه اللوحة"
+      }
+    },
+    "card": {
+      "title": "حالة الوكيل",
+      "loading": "جارٍ قراءة حالة الوكيل…",
+      "error": "تعذّرت قراءة حالة الوكيل: {{error}}",
+      "notFound": "لا توجد حالة وكيل لهذه الميزة"
+    },
+    "notify": {
+      "start": "نبّهني",
+      "stop": "إيقاف",
+      "watching": "قيد المراقبة — ستصلك إشعارات عندما تحتاجك أو تنتهي أو تفشل",
+      "failed": "توقفت المراقبة: {{error}}",
+      "title": "{{name}}: {{state}}"
+    },
+    "list": {
+      "empty": "لا توجد ميزة نشطة الآن",
+      "open": "فتح"
+    },
+    "page": {
+      "title": "نشاط الوكلاء",
+      "description": "ما يفعله وكيل كل ميزة ولماذا — الإجابة نفسها التي تقدمها shep feat status وMCP وA2A",
+      "showFinished": "عرض المكتملة",
+      "needsYou": "{{count}} تحتاجك",
+      "error": "تعذّرت قراءة نشاط الوكلاء: {{error}}"
+    },
+    "connect": {
+      "title": "ربط الوكلاء",
+      "badge": "A2A 1.0",
+      "description": "تسلّم الوكلاء والمنسّقات الأخرى Shep طلبات الميزات وتتابعها كمهام A2A: يعمل، أو يلزم إدخال (بوابة أو سؤال بانتظارك)، أو مكتملة، أو فاشلة.",
+      "endpoint": "نقطة نهاية JSON-RPC",
+      "agentCard": "Agent card",
+      "token": "المصادقة",
+      "tokenHelp": "أرسل Authorization: Bearer مع الرمز الموجود في هذا الملف. لا يراه المتصفح أبدًا.",
+      "request": "جرّبه",
+      "copied": "تم النسخ",
+      "copyFailed": "تعذّر النسخ",
+      "herdr": "Herdr",
+      "herdrHelp": "شغّل shep tui داخل لوحة Herdr: يعرض الشريط الجانبي في Herdr أن Shep يعمل، أو محظور عندما تحتاجك ميزة.",
+      "cli": "الطرفية",
+      "cliHelp": "يشرح shep feat status <id> ميزة؛ ويعود shep feat wait <id> عندما تحتاجك أو تنتهي أو تفشل.",
+      "guide": "دليل A2A",
+      "cardVersion": "Shep {{version}}",
+      "cardError": "لم يتم تحميل agent card: {{error}}",
+      "copyLabel": "نسخ {{label}}",
+      "hint": "ترسل أنظمة الوكلاء الأخرى إلى Shep طلب ميزة عبر A2A وتتابعه كمهمة. النشاط نفسه يغذي MCP وواجهة سطر الأوامر وHerdr وهذه الواجهة."
     }
   }
 }

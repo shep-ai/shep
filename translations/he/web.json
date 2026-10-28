@@ -24,7 +24,8 @@
       "messaging": "Messaging",
       "mcp": "MCP",
       "harness": "Harness לסוכן",
-      "telemetry": "מדדי שימוש"
+      "telemetry": "מדדי שימוש",
+      "a2a": "חיבור סוכנים"
     },
     "language": {
       "title": "שפה",
@@ -494,7 +495,8 @@
     "opportunities": "הזדמנויות",
     "incidents": "תקלות",
     "factory": "מפעל",
-    "chat": "צ׳אט"
+    "chat": "צ׳אט",
+    "agentActivity": "פעילות סוכנים"
   },
   "sidebar": {
     "features": "פיצ'רים",
@@ -2033,6 +2035,99 @@
       "Deleting": "נמחק",
       "AwaitingUpstream": "ממתין ל-upstream",
       "Archived": "בארכיון"
+    }
+  },
+  "agentActivity": {
+    "states": {
+      "working": "עובד",
+      "blocked": "צריך אותך",
+      "waiting": "ממתין",
+      "done": "הסתיים",
+      "failed": "נכשל"
+    },
+    "reasons": {
+      "deleting": "בתהליך מחיקה",
+      "archived": "בארכיון",
+      "queued-for-capacity": "בתור עד שיתפנה מקום במגבלת הפיצ'רים המקבילים",
+      "deferred": "נדחה: אף סוכן עוד לא התחיל",
+      "waiting-on-parent": "ממתין שפיצ'ר האב יסתיים",
+      "approval-gate": "ממתין לאישור שלך",
+      "agent-question": "הסוכן שאל שאלה",
+      "run-failed": "הריצה נכשלה",
+      "run-interrupted": "הריצה נקטעה",
+      "run-cancelled": "הריצה בוטלה",
+      "run-completed": "הסתיים",
+      "agent-running": "הסוכן עובד",
+      "process-died": "תהליך הסוכן נעצר באופן לא צפוי",
+      "maintained": "הסתיים; בתחזוקה",
+      "awaiting-review": "ה-pull request ממתין לסקירה שלך",
+      "plan-task-in-review": "משימה בתוכנית ממתינה לסקירה שלך",
+      "plan-tasks-done": "כל משימות התוכנית הושלמו",
+      "in-progress": "בתהליך"
+    },
+    "labels": {
+      "why": "למה",
+      "asks": "שואל",
+      "phase": "שלב",
+      "run": "ריצה",
+      "error": "שגיאה",
+      "pr": "Pull request",
+      "next": "הבא"
+    },
+    "next": {
+      "answer": "לענות על השאלה",
+      "review": "לבדוק ולאשר",
+      "openPr": "לבדוק את ה-pull request",
+      "resume": "לפתוח כדי להמשיך",
+      "inDrawer": {
+        "review": "אשר או דחה בלשונית הסקירה",
+        "resume": "השתמש ב-Retry בראש החלונית הזו"
+      }
+    },
+    "card": {
+      "title": "מצב הסוכן",
+      "loading": "קורא את מצב הסוכן…",
+      "error": "לא ניתן לקרוא את מצב הסוכן: {{error}}",
+      "notFound": "לפיצ׳ר הזה אין מצב סוכן"
+    },
+    "notify": {
+      "start": "הודע לי",
+      "stop": "עצור",
+      "watching": "במעקב — תקבל הודעה כשהוא יצטרך אותך, יסתיים או ייכשל",
+      "failed": "המעקב הופסק: {{error}}",
+      "title": "{{name}}: {{state}}"
+    },
+    "list": {
+      "empty": "אין כרגע פיצ׳ר פעיל",
+      "open": "פתח"
+    },
+    "page": {
+      "title": "פעילות סוכנים",
+      "description": "מה הסוכן של כל פיצ׳ר עושה, ולמה — אותה תשובה כמו shep feat status, MCP ו-A2A",
+      "showFinished": "הצג שהסתיימו",
+      "needsYou": "{{count}} צריכים אותך",
+      "error": "לא ניתן לקרוא את פעילות הסוכנים: {{error}}"
+    },
+    "connect": {
+      "title": "חיבור סוכנים",
+      "badge": "A2A 1.0",
+      "description": "סוכנים ומתזמרים אחרים מעבירים ל-Shep בקשות לפיצ׳רים ועוקבים אחריהן כמשימות A2A: עובד, נדרש קלט (שער או שאלה ממתינים לך), הושלם או נכשל.",
+      "endpoint": "נקודת קצה JSON-RPC",
+      "agentCard": "Agent card",
+      "token": "אימות",
+      "tokenHelp": "שלח Authorization: Bearer עם הטוקן שבקובץ הזה. הדפדפן אף פעם לא רואה אותו.",
+      "request": "נסה",
+      "copied": "הועתק",
+      "copyFailed": "לא ניתן להעתיק",
+      "herdr": "Herdr",
+      "herdrHelp": "הרץ את shep tui בתוך חלונית Herdr: סרגל הצד של Herdr מציג את Shep כעובד, או כחסום כשפיצ׳ר צריך אותך.",
+      "cli": "טרמינל",
+      "cliHelp": "shep feat status <id> מסביר פיצ׳ר; shep feat wait <id> חוזר כשהוא צריך אותך, מסתיים או נכשל.",
+      "guide": "מדריך A2A",
+      "cardVersion": "Shep {{version}}",
+      "cardError": "ה-agent card לא נטען: {{error}}",
+      "copyLabel": "העתק {{label}}",
+      "hint": "מערכות סוכנים אחרות שולחות ל-Shep בקשה לפיצ׳ר דרך A2A ועוקבות אחריה כמשימה. אותה פעילות מזינה את MCP, ה-CLI, Herdr והממשק הזה."
     }
   }
 }

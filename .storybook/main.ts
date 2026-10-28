@@ -33,6 +33,11 @@ const config: StorybookConfig = {
         __dirname,
         'mocks/components/features/chat/ChatTab.tsx'
       ),
+      // Mock the drawer's live agent status (fetches /api/agent-activity) with a fixed card
+      '@/components/agent-activity/feature-activity-section': resolve(
+        __dirname,
+        'mocks/components/agent-activity/feature-activity-section.tsx'
+      ),
       '@/components': resolve(__dirname, '../src/presentation/web/components'),
       '@/lib': resolve(__dirname, '../src/presentation/web/lib'),
       '@/hooks': resolve(__dirname, '../src/presentation/web/hooks'),

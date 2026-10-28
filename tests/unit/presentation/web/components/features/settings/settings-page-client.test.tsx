@@ -51,6 +51,21 @@ describe('SettingsPageClient', () => {
     expect(screen.getByTestId('database-settings-section')).toBeDefined();
   });
 
+  it('shows Connect agents with the token file under shepHome, and the MCP activity tools (spec 148)', () => {
+    render(<SettingsPageClient settings={settings} shepHome="/opt/shep" dbFileSize="10.5 MB" />);
+    expect(screen.getByRole('button', { name: 'Connect agents' })).toBeDefined();
+    expect(screen.getByTestId('a2a-integration-section')).toBeDefined();
+    expect(screen.getByTestId('a2a-token-path').textContent).toBe('/opt/shep/web-auth-token');
+    for (const tool of [
+      'get_agent_activity',
+      'wait_for_agent_activity',
+      'decide_feature_gate',
+      'answer_agent_question',
+    ]) {
+      expect(screen.getByTestId(`mcp-tool-${tool}`)).toBeDefined();
+    }
+  });
+
   it('hides the supply-chain security section while ASPM is off', () => {
     render(
       <SettingsPageClient settings={settings} shepHome="/home/user/.shep" dbFileSize="2.4 MB" />

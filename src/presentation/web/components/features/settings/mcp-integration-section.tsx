@@ -57,6 +57,32 @@ const DEFAULT_TOOL_GROUPS: McpToolGroup[] = [
     ],
   },
   {
+    category: 'Agent activity',
+    tools: [
+      {
+        name: 'get_agent_activity',
+        description:
+          'What each feature’s agent is doing — working, blocked, waiting, done, failed — and why',
+        isNew: true,
+      },
+      {
+        name: 'wait_for_agent_activity',
+        description: 'Wait until a feature needs someone, finishes or fails',
+        isNew: true,
+      },
+      {
+        name: 'decide_feature_gate',
+        description: 'Approve a feature at its approval gate, or reject it with feedback',
+        isNew: true,
+      },
+      {
+        name: 'answer_agent_question',
+        description: 'Answer the question a feature’s agent is blocked on',
+        isNew: true,
+      },
+    ],
+  },
+  {
     category: 'Repositories & Settings',
     tools: [
       { name: 'list_repositories', description: 'List repositories tracked by shep' },

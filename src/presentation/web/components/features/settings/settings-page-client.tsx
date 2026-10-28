@@ -29,6 +29,7 @@ import {
   FolderGit2,
   Workflow,
   Plug,
+  Network,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Input } from '@/components/ui/input';
@@ -66,6 +67,7 @@ import { GithubIntegrationSection } from '@/components/features/settings/github-
 import { WhatsAppSettings } from '@/components/features/settings/whatsapp/whatsapp-settings';
 import { MessagingSettingsSection } from '@/components/features/settings/messaging-settings-section';
 import { McpIntegrationSection } from '@/components/features/settings/mcp-integration-section';
+import { A2aIntegrationSection } from '@/components/features/settings/a2a-integration-section';
 const LANGUAGE_OPTIONS = [
   { value: Language.English, nativeName: 'English' },
   { value: Language.Ukrainian, nativeName: 'Українська' },
@@ -142,6 +144,7 @@ const SECTIONS = [
   { id: 'notifications', labelKey: 'settings.sections.notifications', icon: Bell },
   { id: 'messaging', labelKey: 'settings.sections.messaging', icon: MessageCircle },
   { id: 'mcp', labelKey: 'settings.sections.mcp', icon: Plug },
+  { id: 'a2a', labelKey: 'settings.sections.a2a', icon: Network },
   { id: 'feature-flags', labelKey: 'settings.sections.flags', icon: Flag },
   { id: 'interactive-agent', labelKey: 'settings.sections.chat', icon: MessageSquare },
   { id: 'home-page', labelKey: 'settings.sections.homePage', icon: Home },
@@ -1858,6 +1861,17 @@ export function SettingsPageClient({
             Connect MCP-capable AI agents to shep over stdio. Configure your client to spawn{' '}
             <code className="font-mono">shep mcp</code> to expose features, agent runs, and task
             management as tools.
+          </SectionHint>
+        </div>
+
+        {/* ── Connect agents: A2A, Herdr, shep feat (spec 148) ── */}
+        <div
+          id="section-a2a"
+          className="grid scroll-mt-32 grid-cols-1 gap-x-5 rounded-lg lg:grid-cols-[minmax(0,1fr)_280px]"
+        >
+          <A2aIntegrationSection shepHome={shepHome} />
+          <SectionHint links={[{ label: 'A2A protocol', href: 'https://a2a-protocol.org' }]}>
+            {t('agentActivity.connect.hint')}
           </SectionHint>
         </div>
 

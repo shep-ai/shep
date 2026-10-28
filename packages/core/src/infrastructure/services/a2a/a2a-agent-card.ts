@@ -8,7 +8,7 @@
  */
 
 import { A2A_JSON_RPC_BINDING, A2A_PROTOCOL_VERSION } from './a2a.types.js';
-import { WEB_AUTH_TOKEN_FILENAME } from '../web-auth/web-auth-token.service.js';
+import { WEB_AUTH_TOKEN_FILENAME } from '../../../domain/shared/web-auth-token.js';
 
 export const A2A_ENDPOINT_PATH = 'api/a2a';
 const SECURITY_SCHEME_NAME = 'shepToken';

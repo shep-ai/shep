@@ -19,6 +19,7 @@ import {
 } from '../../../../domain/generated/output.js';
 import { GetAgentActivityUseCase } from '../../../../application/use-cases/agent-activity/get-agent-activity.use-case.js';
 import { WaitForAgentActivityUseCase } from '../../../../application/use-cases/agent-activity/wait-for-agent-activity.use-case.js';
+import { MAX_ACTIVITY_WAIT_MS } from '../../../../application/use-cases/agent-activity/agent-activity.types.js';
 import {
   ReplyToFeatureUseCase,
   type ReplyToFeatureInput,
@@ -29,7 +30,7 @@ import { withErrorHandling, type McpToolResult } from './with-error-handling.js'
 const MCP_ANSWERED_BY = 'mcp';
 /** Default and maximum wait: MCP clients time tool calls out, so a wait must end. */
 const DEFAULT_WAIT_MS = 60_000;
-const MAX_WAIT_MS = 600_000;
+const MAX_WAIT_MS = MAX_ACTIVITY_WAIT_MS;
 /** Wait outcomes that mean the call itself was wrong, not that time ran out. */
 const WAIT_ERRORS: ReadonlySet<ActivityWaitOutcome> = new Set([
   ActivityWaitOutcome.NotFound,

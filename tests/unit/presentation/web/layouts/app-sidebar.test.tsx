@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/layouts/app-sidebar';
@@ -28,6 +28,20 @@ beforeEach(() => {
       return Promise.resolve({
         ok: true,
         json: () => Promise.resolve({ latest: '1.101.0' }),
+      });
+    }
+    if (url.startsWith('/api/agent-activity')) {
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        json: () =>
+          Promise.resolve({
+            generatedAt: '2026-10-28T10:00:00.000Z',
+            activities: [],
+            counts: { working: 1, blocked: 3, waiting: 0, done: 0, failed: 0 },
+            overall: 'blocked',
+            notFound: false,
+          }),
       });
     }
     return Promise.resolve({ ok: false, status: 404 });
@@ -275,5 +289,14 @@ describe('AppSidebar', () => {
 
     expect(handleAddFeature).toHaveBeenCalledOnce();
     expect(handleAddFeature).toHaveBeenCalledWith('/home/user/projects/my-app');
+  });
+});
+
+describe('AppSidebar agent activity badge (spec 148)', () => {
+  it('counts the features that need the user on the Agent activity link', async () => {
+    renderWithSidebar(<AppSidebar features={[]} featureFlags={defaultFlags} />);
+    const link = (await screen.findByText('Agent activity')).closest('a')!;
+    expect(link).toHaveAttribute('href', '/activity');
+    expect(await within(link).findByText('3')).toBeInTheDocument();
   });
 });

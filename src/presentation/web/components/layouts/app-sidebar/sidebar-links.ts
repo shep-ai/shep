@@ -8,6 +8,7 @@
  */
 
 import {
+  Activity,
   ArrowLeftRight,
   Boxes,
   Brain,
@@ -27,6 +28,13 @@ import {
 } from 'lucide-react';
 import type { FeatureFlagsState } from '@/lib/feature-flags';
 
+/** Live counts a sidebar link can carry as its badge. */
+export const SIDEBAR_BADGE = {
+  /** Features whose agent is blocked on the user, agent questions included (spec 148). */
+  BlockedFeatures: 'blocked-features',
+} as const;
+export type SidebarBadge = (typeof SIDEBAR_BADGE)[keyof typeof SIDEBAR_BADGE];
+
 export interface SidebarLink {
   icon: LucideIcon;
   /** Key under `navigation.` in the web translations. */
@@ -38,12 +46,21 @@ export interface SidebarLink {
   prefix?: boolean;
   /** Shown while this flag is on — or, for a list, while any of them is. */
   flag?: keyof FeatureFlagsState | readonly (keyof FeatureFlagsState)[];
+  /** The live count shown on the link; hidden at zero. */
+  badge?: SidebarBadge;
 }
 
 export const SIDEBAR_LINKS: readonly SidebarLink[] = [
   { icon: Home, labelKey: 'controlCenter', href: '/control-center' },
   // Spec 137: the chat-first surface, where work is started, steered and answered.
   { icon: MessagesSquare, labelKey: 'chat', href: '/chats', prefix: true },
+  // Spec 148: every feature's agent — working, needs you, waiting, done, failed — and why.
+  {
+    icon: Activity,
+    labelKey: 'agentActivity',
+    href: '/activity',
+    badge: SIDEBAR_BADGE.BlockedFeatures,
+  },
   { icon: LayoutGrid, labelKey: 'applications', href: '/applications' },
   { icon: Server, labelKey: 'clusters', href: '/clusters', prefix: true, flag: 'clusters' },
   { icon: TableProperties, labelKey: 'inventory', href: '/features' },

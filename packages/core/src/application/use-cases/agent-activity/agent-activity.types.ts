@@ -80,6 +80,13 @@ export interface GetAgentActivityResult extends AgentActivitySnapshot {
 /** Default gap between two activity reads while watching or waiting. */
 export const DEFAULT_ACTIVITY_POLL_MS = 1000;
 
+/**
+ * Longest single wait a request-bound caller (an MCP tool call, a web request)
+ * may ask for. HTTP clients and MCP clients time a call out, so a wait must end;
+ * a caller that needs longer asks again.
+ */
+export const MAX_ACTIVITY_WAIT_MS = 600_000;
+
 export interface WatchAgentActivityInput extends GetAgentActivityInput {
   /** Stops the watch; the generator returns. */
   signal?: AbortSignal;

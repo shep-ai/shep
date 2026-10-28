@@ -18,9 +18,9 @@ import { randomBytes, timingSafeEqual } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync, chmodSync } from 'node:fs';
 import { join } from 'node:path';
 import { getShepHomeDir } from '../filesystem/shep-directory.service';
+import { WEB_AUTH_TOKEN_FILENAME } from '../../../domain/shared/web-auth-token';
 
-/** Filename of the token inside SHEP_HOME. */
-export const WEB_AUTH_TOKEN_FILENAME = 'web-auth-token';
+export { WEB_AUTH_TOKEN_FILENAME };
 
 /** Entropy of a freshly generated token, in bytes (hex-encoded on disk). */
 export const WEB_AUTH_TOKEN_BYTE_LENGTH = 32;
