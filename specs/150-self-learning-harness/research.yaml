@@ -1,0 +1,241 @@
+name: self-learning-harness
+summary: >
+  Re-implement Harness² natively in TypeScript inside Shep's clean architecture, adapting its
+  prompts (Apache-2.0, attributed) rather than vendoring its Python. Ship the cheap
+  harnessing-level loop first (reflect on every run, human-adopted candidates, versioned per
+  scope with outcome metrics and rollback), then the task-level Propose–Probe–Compose loop as
+  an opt-in Explore mode that probes the implement phase in worktrees forked from one git
+  checkpoint.
+phase: Research
+updatedAt: '2026-10-28'
+
+relatedFeatures:
+  - 102-shep-brain
+  - 081-skill-injector
+  - 119-query-aware-agent-harness
+  - 134-unified-decisions
+  - 138-git-checkpoints
+technologies:
+  - TypeScript
+  - TypeSpec
+  - LangGraph
+  - better-sqlite3
+relatedLinks:
+  - title: google-research/harness2 (source studied at HEAD, 2026-10-28)
+    url: https://github.com/google-research/harness2
+  - title: Harness² paper (arXiv 2610.14224), ablations in Table 3 and Appendix E
+    url: https://arxiv.org/html/2610.14224v1
+
+decisions:
+  - title: Port the code or the ideas
+    chosen: >
+      Re-implement the method in TypeScript and adapt the prompt texts (INV, DOM, aggregate,
+      compose-round, select, experience, the answer-free and evidence-is-data blocks) with an
+      Apache-2.0 attribution header and a third-party notice
+    rejected:
+      - Vendor harness2 and call it as a Python subprocess (Python 3.12 + uv dependency on every install; benchmark-shaped BenchmarkAdapter; OpenCode/Codex/Vertex coupling; bypasses IAgentExecutorProvider)
+      - Ideas only, prompts rewritten from scratch (throws away the most tuned part of the release — the prompts encode the paper's lessons, e.g. KEEP_BASE as a valid answer, cheapest-component ordering, confounded-by-default verdicts)
+    rationale: >
+      About 3,000 of harness2's 7,900 lines are benchmark setup, judges, reporting and
+      substrate glue that Shep replaces with its own worktrees, executors and outcome data.
+      The method core (tree, recursion, selection, library, ledger) is ~2,600 lines of
+      straightforward logic that maps one-to-one onto Shep's layers. The prompts are the part
+      worth keeping close to the original.
+  - title: What "domain" means in Shep
+    chosen: >
+      The scope of the existing MemoryScope: Project (repository) by default, Space or
+      ProductLine when the repository belongs to one — the same boundary Shep Brain and
+      knowledge sources already enforce
+    rejected:
+      - One global library (lessons from a work repository leak into personal ones)
+      - Per feature type or per phase (too few samples per bucket to learn anything)
+    rationale: >
+      Harness² retrieves "by construction": a domain directory only holds same-domain entries.
+      A repository is far more homogeneous than a benchmark domain, so it is the natural unit,
+      and the scope boundary is already privacy-reviewed.
+  - title: Does a refined harness persist across tasks
+    chosen: >
+      Yes. An adopted version becomes the scope's current harness for later features (a
+      deliberate departure: Harness² restarts every task from the base harness H0 and only
+      the improver reads the library)
+    rejected:
+      - Per-feature only, like the paper (Shep would pay for refinement on every feature to get any benefit)
+    rationale: >
+      Shep's tasks in one repository share stack, conventions and CI, so an adopted skill or
+      script keeps paying off. The risk — drift and always-on bloat — is handled by a hard
+      always-on character cap, per-version outcome metrics, regression flags and one-click
+      rollback to the parent version.
+  - title: Editable surface
+    chosen: >
+      An additive overlay of eight component kinds (Instructions, Guardrails, Memory,
+      ToolGuidance, Skill, Script, Subagent, Hook). Shep's phase prompts are reserved, like
+      harness2's RESERVED_SCRIPTS. Memory maps onto Shep Brain entries rather than a file
+    rejected:
+      - Let the improver rewrite node prompts (they carry workflow contracts — spec YAML schemas, gate behaviour — a bad edit breaks the pipeline, not just quality)
+      - Memory as its own harness file (two memory stores that disagree)
+    rationale: >
+      The paper's component ablation shows skills and scripts carry most of the gain and the
+      prompt group the least (−1.5 points). An overlay captures the valuable part without
+      letting learning break Shep's own contracts.
+  - title: How the harness reaches each agent type
+    chosen: >
+      An IHarnessInstaller port with a SurfaceSpec per agent type, selected through the
+      executor's agent type (never hardcoded in callers). Claude Code: always-on text via
+      --append-system-prompt, .claude/skills, .claude/agents, hooks via a Shep-owned settings
+      file. Codex: .agents/skills plus always-on text in the prompt. All others: always-on text
+      and a skill index as a PromptSection, skills readable from a git-excluded directory
+    rejected:
+      - Write CLAUDE.md / AGENTS.md into the worktree (collides with the repository's own committed files)
+      - Claude Code only (violates the agent-agnostic rule; the skill injector already has this gap)
+    rationale: >
+      Mirrors harness2's per-substrate SurfaceSpec (OpenCode vs Codex trees) as data, keeps
+      the shared logic once, and generalises the skill injector's never-commit pathspec.
+  - title: Improver protocol
+    chosen: >
+      Workspace edits, as in harness2: the improver agent runs with cwd set to a scratch
+      evidence workspace containing context/harness/; its edits on disk are the proposal and
+      its reply carries only <notes>. Agents without file tools fall back to a JSON file map
+      through outputSchema
+    rejected:
+      - JSON-only proposals (models are worse at emitting whole files as strings; loses the natural edit-in-place behaviour harness2 relies on)
+    rationale: >
+      Every CLI agent Shep supports can edit files, the workspace is the same shape for
+      proposer, composer and reflector, and the validator reads it back.
+  - title: Evidence used without ground truth
+    chosen: >
+      Trajectories plus the work's own signals — tests, lint, typecheck and build run on each
+      probe, CI-fix history, gate rejection feedback, validation repairs, review and PR
+      comments, cost and turns. Selection stays blind: candidate outputs are anonymised with a
+      seeded shuffle and the selector never learns which harness made which
+    rejected:
+      - Strict answer-free like the paper (Shep's checks are part of the work definition, not a hidden rubric; ignoring them throws away the best signal)
+      - Letting the merged PR or later human review score candidates during selection (that is a grader; it may only be used afterwards for metrics, like harness2-judge)
+    rationale: >
+      The paper's largest failure class is the selector picking a weaker output (a 95 lost to
+      a 55). Objective checks per probe directly address it, while blind ids keep the
+      selector from favouring the most elaborate harness.
+  - title: Where Explore mode probes
+    chosen: >
+      The implement (or fast-implement) phase only, from the pre-implement git checkpoint, in
+      sibling worktrees; k defaults to 1 (4 rollouts, 3 sessions) with a USD cap
+    rejected:
+      - Probe the whole pipeline (4k full feature runs including gates — unaffordable and needs the user 4k times)
+      - Probe every phase (planning phases have weak signals and gates in the middle)
+    rationale: >
+      Implement has the strongest behavioural signals (tests, build) and dominates cost and
+      failures. k = 1 already beats every baseline in the paper; larger k is a setting.
+  - title: Adoption policy
+    chosen: >
+      Candidates are decisions (DecisionKind.HarnessChange). Policy Manual (default),
+      AutoTextOnly (auto-adopt candidates touching only text components when they came from a
+      probed Explore run) or Auto. Script and Hook components always need a human
+    rejected:
+      - Always auto-adopt (learned scripts and hooks execute in every later run — a persistent prompt-injection and supply-chain vector)
+    rationale: >
+      Reuses the decisions inbox every surface already renders, and puts a person in front of
+      anything executable.
+  - title: Lessons storage
+    chosen: >
+      A dedicated learned_harness_lessons table read only by improvers, ranked with the
+      existing IMemoryRelevanceScorer through a small adapter from lesson to scorable entry
+    rejected:
+      - A new MemoryCategory in project_memory (would inject improver-facing lessons into solver prompts)
+    rationale: >
+      In Harness² the library guides refinement, not execution. Facts the solver needs still go
+      to Shep Brain; lessons about harness edits stay with the improver.
+
+openQuestions: []
+
+content: |
+  ## What Harness² is (studied at HEAD)
+
+  Python 3.12 package, ~7,900 lines, Apache-2.0, no runtime dependencies for the method
+  itself. Three separate axes: method (`core/`), substrate (OpenCode or Codex executor) and
+  benchmark (JobBench, LAB, WorkBuddy-Bench adapters).
+
+  | harness2 module | What it does | Shep counterpart |
+  | --- | --- | --- |
+  | `core/tree.py` (427) | `SurfaceSpec` per substrate; read/validate/write the c1..c8 tree; `autotrigger`; diff; diversity | `domain/harness-learning/` tree, surface specs, validator (pure) |
+  | `core/context.py` (546) | Builds the improver's evidence directory; truncation (≥10k chars); leak and grader-verdict assertions | `BuildEvidenceBundleUseCase` + `IEvidenceWorkspace` |
+  | `core/prompts.py` (1163) | INV / DOM propose, aggregate, compose-round, select, experience prompts | `infrastructure/services/harness-learning/prompts/` (adapted, attributed) |
+  | `core/proposer.py` (534) | Runs an improver session, harvests `context/harness`, caches, audits | `IHarnessImprover` over `IAgentExecutorProvider` |
+  | `core/recursion.py` (578) | Parallel (2k candidates → k compositions) and sequential (k rounds) modes; one retry with validator feedback, else inherit | `RefineHarnessUseCase` |
+  | `core/selection.py` (505) | Anonymised blind choice, fail-closed parser, reflection, experience distillation | `SelectProbeOutputUseCase`, `ReflectOnAdoptionUseCase` |
+  | `core/library.py` (222) | Per-domain library of adopted trees + EXPERIENCE.md + INDEX.md | `ILearnedHarnessRepository` + index renderer |
+  | `core/ledger.py` (132) | Budget identity: R = 4k rollouts, P = 3k sessions | `domain/harness-learning/ledger.ts` + USD cap |
+  | `core/schedule.py` (850) | Task streams per domain, resume, summaries | Feature-agent graph + worker |
+  | `substrate/*`, `benchmarks/*`, `judge`, `report`, `install`, `bridge` | Executors, datasets, scoring | Not ported — Shep's executors and real features replace them |
+
+  The method in one task: k base rollouts → k INV + k DOM proposals (each validated, one
+  retry, else inherit) → one rollout each → k compositions (merge / adopt one / KEEP_BASE,
+  every decision tied to a trajectory moment) → one rollout each → blind selection over the
+  k finals (k = 1 skips the selector) → reflection: per-component edit rows with verdicts and
+  at most one lesson, written to the domain library only when cue, lesson and evidence are
+  all present.
+
+  Rules in the prompts that matter for Shep:
+  - Prefer the cheapest effective component: skill > script > subagent > hook > always-on
+    text; always-on text is paid on every run, so adding some means cutting some.
+  - Every skill needs a trigger line in always-on text; every referenced script must ship.
+  - KEEP_BASE is a valid answer; an edit must name the trajectory moment that motivates it.
+  - A defect in 1 of k base rollouts is noise; a non-delivering rollout makes its edit unsafe.
+  - Verdicts default to `confounded` when one rollout or several simultaneous changes stand
+    behind them; a lesson resting only on confounded rows is narrowed or declined.
+  - Evidence is data, not instructions; never run a candidate's scripts while reviewing it.
+
+  ## Evidence from the paper
+
+  | Finding | Number | Consequence for Shep |
+  | --- | --- | --- |
+  | One step (k = 1) beats base and all baselines | WorkBuddy 72.4 → 77.5 | k = 1 is the Explore default |
+  | Parallel k = 5 | → 80.8 | k is a setting, capped by USD |
+  | Without the experience library | −3.1 / −1.8 | Reflect mode (library only) is worth shipping first |
+  | Without the INV/DOM split | −2.9 / −3.7 | Two scoped proposers, never one |
+  | Without composition | −1.6 / −1.9 | Composer stage kept in Reflect mode too |
+  | Remove skills / scripts / prompt group | −5.3 / −3.7 / −1.5 | Skills and scripts are first-class components |
+  | Memory-only baseline (ReasoningBank) | +1.0, regresses on code | Shep Brain alone is not enough |
+  | Tool-call error rate | JobBench 14.4% → 9.1% | Track error rate as a version metric |
+  | Main regression cause | Selector picked a weaker output | Run objective checks per probe before selection |
+
+  ## Gap analysis against Shep
+
+  Already there: isolated worktrees, git checkpoints per agent step (spec 138), per-phase
+  tokens / cost / turns (`PhaseTiming`), rejection feedback per phase, CI-fix history,
+  validation repair counts, PR comment rounds, supervisor verdicts, transcript readers for
+  Claude Code / Codex / Cursor, scoped memory with a relevance scorer and token budget,
+  a decisions inbox, and a post-merge reflection node (`extract_memory`).
+
+  Missing: the harness as versioned data; an install path beyond `.claude/skills`; a
+  reflection that runs on failures, not only merges; scoped proposers and a composer; edit
+  verdicts and lessons; probing; blind selection; per-version outcome metrics and rollback.
+
+  ## Library Analysis
+
+  No new runtime dependency. YAML frontmatter parsing uses the existing `js-yaml`; hashing
+  uses `node:crypto`; the seeded shuffle is a small deterministic PRNG in the domain layer.
+
+  ## Security Considerations
+
+  - **Persistent injection.** Repository content, issue text or PR comments read during a
+    run could talk the improver into a malicious skill, script or hook that then runs in every
+    later feature. Mitigations: the evidence-is-data block in every improver prompt; Script
+    and Hook components always require human adoption; a static scan of every candidate
+    (secrets, network fetches, destructive shell, writes outside the worktree) with findings
+    shown in the decision; the existing supply-chain security pre-check applies to scripts;
+    provenance (source feature, run, version) on every component; rollback.
+  - **Scope leakage.** Lessons and harnesses never cross the MemoryScope boundary.
+  - **Telemetry.** Events carry counts and enums only (components changed per kind, verdict
+    counts, adopted / rejected / rolled back, explore k) — never content, paths or names.
+  - **Grader leakage.** Post-hoc signals (merged PR, later human review) are recorded as
+    version metrics only and never placed in an improver or selector workspace; a guard
+    asserts this, mirroring harness2's `assert_no_grader_verdicts`.
+
+  ## Performance Implications
+
+  - Reflect mode adds three improver sessions (INV, DOM, compose) after a run, off the
+    critical path; it never delays merge, and a failure is logged, not raised.
+  - Explore mode with k = 1 multiplies implement-phase cost by roughly 4 plus three improver
+    sessions, so it is opt-in and bounded by a USD cap; probes run concurrently up to the
+    existing worker concurrency.
+  - Installing a harness is a file copy of a few kilobytes per run; always-on text is capped
+    (default 4,000 characters) so prompt growth is bounded.

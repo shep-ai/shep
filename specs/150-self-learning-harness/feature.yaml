@@ -1,0 +1,42 @@
+feature:
+  id: '150-self-learning-harness'
+  name: 'self-learning-harness'
+  number: 150
+  branch: 'ccr-e326be77-h8gi9n'
+  lifecycle: 'implementation'
+  createdAt: '2026-10-28T21:39:35Z'
+
+status:
+  phase: 'ready-to-implement'
+  progress:
+    completed: 0
+    total: 26
+    percentage: 0
+  currentTask: null
+  lastUpdated: '2026-10-28T21:55:00Z'
+  lastUpdatedBy: 'shep-kit:new-feature-fast'
+
+validation:
+  lastRun: null
+  gatesPassed: []
+  autoFixesApplied: []
+
+tasks:
+  current: null
+  blocked: []
+  failed: []
+
+checkpoints:
+  - phase: 'feature-created'
+    completedAt: '2026-10-28T21:39:35Z'
+    completedBy: 'shep-kit:new-feature-fast'
+  - phase: 'research-complete'
+    completedAt: '2026-10-28T21:55:00Z'
+    completedBy: 'shep-kit:new-feature-fast'
+  - phase: 'plan-complete'
+    completedAt: '2026-10-28T21:55:00Z'
+    completedBy: 'shep-kit:new-feature-fast'
+
+errors:
+  current: null
+  history: []
