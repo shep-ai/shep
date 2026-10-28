@@ -1,5 +1,5 @@
 /**
- * shep feat status / shep feat wait (spec 148): explain a feature's agent
+ * shep feat status / shep feat wait (spec 149): explain a feature's agent
  * activity, and wait until it needs someone or stops.
  *
  * TDD Phase: RED-GREEN-REFACTOR

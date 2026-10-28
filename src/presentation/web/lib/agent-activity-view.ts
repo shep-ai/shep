@@ -1,5 +1,5 @@
 /**
- * Agent activity as the browser receives it (spec 148): the core shapes after
+ * Agent activity as the browser receives it (spec 149): the core shapes after
  * JSON, where dates are ISO strings, plus the URLs of the routes that serve them.
  */
 

@@ -208,7 +208,7 @@ describe('runFeatureConsole', () => {
   };
   const screenText = () => plain(terminal.output);
 
-  describe('terminal host activity (spec 148)', () => {
+  describe('terminal host activity (spec 149)', () => {
     it('tells the host what shep is doing and how many features need the user', async () => {
       void start();
       await vi.waitFor(() =>

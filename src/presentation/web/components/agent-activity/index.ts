@@ -1,5 +1,5 @@
 /**
- * Agent activity surfaces (specs 093, 148).
+ * Agent activity surfaces (specs 093, 149).
  */
 
 export { ActivityStateBadge, type ActivityStateBadgeProps } from './activity-state-badge';

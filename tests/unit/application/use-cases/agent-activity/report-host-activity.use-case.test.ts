@@ -1,5 +1,5 @@
 /**
- * ReportHostActivityUseCase (spec 148): tell a terminal host such as Herdr
+ * ReportHostActivityUseCase (spec 149): tell a terminal host such as Herdr
  * what shep is doing, only when it changes, and let go of the pane on exit.
  * TDD: RED-GREEN-REFACTOR.
  */

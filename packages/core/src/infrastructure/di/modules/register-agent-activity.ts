@@ -1,5 +1,5 @@
 /**
- * Agent activity (spec 148): the get / watch / wait / reply / report use cases,
+ * Agent activity (spec 149): the get / watch / wait / reply / report use cases,
  * by class (CLI, TUI, MCP) and by string token (web routes, the A2A handler),
  * the A2A request handler and HTTP endpoint (by token, for the web routes), and the
  * terminal-host reporter behind its port — Herdr when this process

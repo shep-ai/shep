@@ -112,7 +112,7 @@ function CopyBlock({ label, value, testId }: { label: string; value: string; tes
 }
 
 /**
- * Settings → Connect agents (spec 148): how another agent system reaches this
+ * Settings → Connect agents (spec 149): how another agent system reaches this
  * install over A2A, plus the terminal surfaces (Herdr, `shep feat`). The
  * endpoint comes from the agent card itself, so the page shows exactly what an
  * orchestrator will read; the token is named by its file, never shown.

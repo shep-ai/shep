@@ -347,7 +347,7 @@ describe('GetFeatureConsoleSnapshotUseCase', () => {
       status: PrStatus.Open,
     });
   });
-  describe('agent activity (spec 148)', () => {
+  describe('agent activity (spec 149)', () => {
     it('a running row is working, with the reason and a version from its newest write', async () => {
       features = [feature('f1', { agentRunId: 'r1', updatedAt: new Date('2026-10-24T11:00:00Z') })];
       runs = [run('r1', AgentRunStatus.running, { updatedAt: new Date('2026-10-24T11:30:00Z') })];

@@ -1,5 +1,5 @@
 /**
- * A2A agent card (spec 148).
+ * A2A agent card (spec 149).
  *
  * Served at /.well-known/agent-card.json through a rewrite in next.config.ts
  * (an app folder named `.well-known` is invisible to tooling). The request

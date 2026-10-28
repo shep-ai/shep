@@ -305,7 +305,7 @@ describe('CreateFeatureUseCase', () => {
   // task-5: CreateFeatureInput accepts parentId field
   // -------------------------------------------------------------------------
 
-  describe('useWorkflowDefaults (spec 148)', () => {
+  describe('useWorkflowDefaults (spec 149)', () => {
     beforeEach(() => {
       mockLoadSettings.mockResolvedValue({
         agent: { type: 'claude-code' },

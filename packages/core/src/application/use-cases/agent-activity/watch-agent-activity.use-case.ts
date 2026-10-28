@@ -1,5 +1,5 @@
 /**
- * Watch Agent Activity Use Case (spec 148)
+ * Watch Agent Activity Use Case (spec 149)
  *
  * Polls the activity and yields one change per feature whose activity moved:
  * its state, reason, phase, run status or open question. The first read

@@ -1,5 +1,5 @@
 /**
- * A2A HTTP endpoint (spec 148): standard fetch `Request` in, `Response` out,
+ * A2A HTTP endpoint (spec 149): standard fetch `Request` in, `Response` out,
  * so the Next.js routes stay one line and any HTTP server can host the same
  * endpoint. JSON-RPC answers are JSON; streaming methods answer with
  * `text/event-stream`, one JSON-RPC response per `data:` frame, and an SSE

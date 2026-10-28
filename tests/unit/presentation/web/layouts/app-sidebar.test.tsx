@@ -292,7 +292,7 @@ describe('AppSidebar', () => {
   });
 });
 
-describe('AppSidebar agent activity badge (spec 148)', () => {
+describe('AppSidebar agent activity badge (spec 149)', () => {
   it('counts the features that need the user on the Agent activity link', async () => {
     renderWithSidebar(<AppSidebar features={[]} featureFlags={defaultFlags} />);
     const link = (await screen.findByText('Agent activity')).closest('a')!;

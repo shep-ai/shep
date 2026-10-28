@@ -1,5 +1,5 @@
 /**
- * Report Host Activity Use Case (spec 148)
+ * Report Host Activity Use Case (spec 149)
  *
  * Tells the terminal host this process runs in (Herdr) what shep is doing:
  * only when the state or its message changes, never more than that, and lets

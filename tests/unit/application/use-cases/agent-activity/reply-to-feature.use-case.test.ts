@@ -1,5 +1,5 @@
 /**
- * ReplyToFeatureUseCase (spec 148): one way for any caller to act on a feature
+ * ReplyToFeatureUseCase (spec 149): one way for any caller to act on a feature
  * that waits — decide its gate, answer its agent's question, or stop it —
  * through the use cases the console and inbox already use.
  * TDD: RED-GREEN-REFACTOR.

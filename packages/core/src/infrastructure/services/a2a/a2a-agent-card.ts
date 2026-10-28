@@ -1,5 +1,5 @@
 /**
- * A2A agent card (spec 148), served at `/.well-known/agent-card.json`.
+ * A2A agent card (spec 149), served at `/.well-known/agent-card.json`.
  *
  * Says what shep offers another agent system: build a feature from a request
  * in a repository, and follow and steer it (answer its agent, decide its

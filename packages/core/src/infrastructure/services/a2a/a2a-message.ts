@@ -1,5 +1,5 @@
 /**
- * Reading an incoming A2A message (spec 148): its text, its data parts merged
+ * Reading an incoming A2A message (spec 149): its text, its data parts merged
  * into one object, the task it continues, and what it asks shep to do.
  */
 

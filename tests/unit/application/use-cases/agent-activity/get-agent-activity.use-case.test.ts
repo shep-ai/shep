@@ -1,5 +1,5 @@
 /**
- * GetAgentActivityUseCase (spec 148): activities projected from the console
+ * GetAgentActivityUseCase (spec 149): activities projected from the console
  * snapshot, filtered by feature and repository, with counts and the overall
  * state. TDD: RED-GREEN-REFACTOR.
  */

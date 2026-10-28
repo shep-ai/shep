@@ -84,7 +84,7 @@ function Field({
 }
 
 /**
- * A feature's agent activity in words (spec 148): the web `shep feat status`
+ * A feature's agent activity in words (spec 149): the web `shep feat status`
  * for one feature — state, why, what the agent asks, the phase, and the next
  * step — with "Notify me", the web `shep feat wait`.
  */

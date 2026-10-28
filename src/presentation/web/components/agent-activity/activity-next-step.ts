@@ -1,5 +1,5 @@
 /**
- * Where the web sends a user to move a feature along (spec 148) — the web
+ * Where the web sends a user to move a feature along (spec 149) — the web
  * counterpart of the command `shep feat status` prints under "Next".
  */
 

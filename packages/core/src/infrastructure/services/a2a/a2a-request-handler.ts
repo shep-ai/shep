@@ -1,5 +1,5 @@
 /**
- * A2A request handler (spec 148).
+ * A2A request handler (spec 149).
  *
  * Serves A2A 1.0 over JSON-RPC: other agent systems hand shep a feature
  * request and follow it as a task. Tasks are features (id = context id =

@@ -1,5 +1,5 @@
 /**
- * Feature workflow defaults (spec 148).
+ * Feature workflow defaults (spec 149).
  *
  * The build mode, approval gates, push and pull-request choices a user set in
  * Settings → Workflow, as feature-creation input. `shep feat new` fills unset

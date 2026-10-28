@@ -1,5 +1,5 @@
 /**
- * A2A JSON-RPC endpoint (spec 148): POST /api/a2a
+ * A2A JSON-RPC endpoint (spec 149): POST /api/a2a
  *
  * Other agent systems hand shep a feature request and follow it as an A2A 1.0
  * task. The request guard has already demanded the bearer token; everything

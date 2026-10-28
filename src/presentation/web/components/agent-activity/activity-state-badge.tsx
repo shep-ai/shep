@@ -37,7 +37,7 @@ const STATE_STYLE: Record<
   },
 };
 
-/** A feature's agent activity state (spec 148), one colour and icon per state. */
+/** A feature's agent activity state (spec 149), one colour and icon per state. */
 export function ActivityStateBadge({ state, className }: ActivityStateBadgeProps) {
   const { t } = useTranslation('web');
   const { icon: Icon, className: tone, spin } = STATE_STYLE[state];

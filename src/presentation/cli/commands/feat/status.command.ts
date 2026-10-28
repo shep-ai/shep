@@ -1,5 +1,5 @@
 /**
- * Feature Status Command (spec 148)
+ * Feature Status Command (spec 149)
  *
  * What a feature's agent is doing — working, blocked, waiting, done or
  * failed — why, and what to run next.

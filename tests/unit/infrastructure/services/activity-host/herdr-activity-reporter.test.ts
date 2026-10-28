@@ -1,5 +1,5 @@
 /**
- * Herdr activity reporter (spec 148).
+ * Herdr activity reporter (spec 149).
  *
  * Follows Herdr's "supported by the agent" protocol: `pane report-agent`
  * with a state and a strictly increasing `--seq`, `release-agent` on exit,

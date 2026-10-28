@@ -1,5 +1,5 @@
 /**
- * Wait for a feature's agent (spec 148): GET /api/agent-activity/wait
+ * Wait for a feature's agent (spec 149): GET /api/agent-activity/wait
  *
  * The web's `shep feat wait`, behind the drawer's "Notify me": returns once the
  * feature reaches one of the `until` states (default blocked, done, failed), or

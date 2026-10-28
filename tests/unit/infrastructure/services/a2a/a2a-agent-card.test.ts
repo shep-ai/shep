@@ -1,5 +1,5 @@
 /**
- * A2A agent card (spec 148): served at /.well-known/agent-card.json.
+ * A2A agent card (spec 149): served at /.well-known/agent-card.json.
  */
 
 import { describe, it, expect } from 'vitest';

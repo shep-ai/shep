@@ -1,4 +1,4 @@
-# Evidence: agent activity, MCP, A2A and Herdr (spec 148)
+# Evidence: agent activity, MCP, A2A and Herdr (spec 149)
 
 Every frame is a real run of the built CLI (`dist/`) on 2026-10-28:
 

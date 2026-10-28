@@ -1,5 +1,5 @@
 /**
- * Agent activity MCP tools (spec 148): read a feature's activity, wait until
+ * Agent activity MCP tools (spec 149): read a feature's activity, wait until
  * it needs someone, and act on it — decide its gate or answer its question.
  */
 

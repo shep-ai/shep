@@ -1,5 +1,5 @@
 /**
- * Herdr activity reporter (spec 148).
+ * Herdr activity reporter (spec 149).
  *
  * Herdr (herdr.dev) is a terminal workspace for coding agents: it marks every
  * pane working, blocked or idle and notifies when one needs the user. An agent

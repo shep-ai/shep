@@ -1,5 +1,5 @@
 /**
- * No-op activity reporter (spec 148): the adapter outside any terminal host
+ * No-op activity reporter (spec 149): the adapter outside any terminal host
  * that shows agent state. Reports go nowhere.
  */
 

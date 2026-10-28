@@ -1,7 +1,7 @@
 feature:
-  id: '148-agent-activity-stream'
+  id: '149-agent-activity-stream'
   name: 'agent-activity-stream'
-  number: 148
+  number: 149
   branch: 'claude/funny-newton-xhakwy'
   lifecycle: 'review'
   createdAt: '2026-10-26T14:44:15Z'

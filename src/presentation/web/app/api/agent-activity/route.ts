@@ -1,5 +1,5 @@
 /**
- * Agent activity snapshot (spec 148): GET /api/agent-activity
+ * Agent activity snapshot (spec 149): GET /api/agent-activity
  *
  * The web's `shep feat status`: what each feature's agent is doing and why,
  * from GetAgentActivityUseCase — the same answer MCP, A2A and the CLI give.

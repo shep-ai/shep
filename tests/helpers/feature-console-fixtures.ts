@@ -1,5 +1,5 @@
 /**
- * Console view-model fixtures (specs 142, 148).
+ * Console view-model fixtures (specs 142, 149).
  *
  * One complete `FeatureConsoleRow` and summary, so adding a field to the view
  * model means updating one place instead of every test that builds a row.

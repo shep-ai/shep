@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * Live agent activity for the web (spec 148): the snapshot from
+ * Live agent activity for the web (spec 149): the snapshot from
  * GET /api/agent-activity, re-read whenever the shared agent event stream
  * reports something and on a slow poll — agent questions and gate decisions
  * are not all notification events, so the poll is the safety net.

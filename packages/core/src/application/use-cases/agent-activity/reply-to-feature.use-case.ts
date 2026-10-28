@@ -1,5 +1,5 @@
 /**
- * Reply To Feature Use Case (spec 148)
+ * Reply To Feature Use Case (spec 149)
  *
  * One way for any caller — an MCP client, an A2A orchestrator — to act on a
  * feature that waits: decide its gate (approve, or reject with feedback),

@@ -1,5 +1,5 @@
 /**
- * A2A task mapping (spec 148): a feature's activity as an A2A 1.0 Task, in
+ * A2A task mapping (spec 149): a feature's activity as an A2A 1.0 Task, in
  * ProtoJSON (enum names, a Part holding exactly one of text/data).
  */
 

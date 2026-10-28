@@ -1,5 +1,5 @@
 /**
- * Every agent-activity state and reason (spec 148) has a label in every CLI
+ * Every agent-activity state and reason (spec 149) has a label in every CLI
  * and web locale, so a new enum member cannot ship as a raw key.
  */
 

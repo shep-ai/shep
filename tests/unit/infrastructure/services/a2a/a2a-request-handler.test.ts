@@ -1,5 +1,5 @@
 /**
- * A2A JSON-RPC request handler (spec 148): A2A 1.0 methods over shep's
+ * A2A JSON-RPC request handler (spec 149): A2A 1.0 methods over shep's
  * agent-activity use cases. Tasks are features.
  */
 

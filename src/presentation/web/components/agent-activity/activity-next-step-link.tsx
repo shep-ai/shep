@@ -12,7 +12,7 @@ export interface ActivityNextStepLinkProps {
   className?: string;
 }
 
-/** The link to the screen that moves a feature along (spec 148). */
+/** The link to the screen that moves a feature along (spec 149). */
 export function ActivityNextStepLink({ step, className }: ActivityNextStepLinkProps) {
   const { t } = useTranslation('web');
   const label = t(`agentActivity.next.${step.labelKey}`);

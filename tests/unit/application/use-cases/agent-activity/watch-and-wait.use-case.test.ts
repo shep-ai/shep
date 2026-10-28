@@ -1,5 +1,5 @@
 /**
- * WatchAgentActivityUseCase and WaitForAgentActivityUseCase (spec 148).
+ * WatchAgentActivityUseCase and WaitForAgentActivityUseCase (spec 149).
  *
  * Watch polls the activity and yields only what changed, with versions that
  * never go down. Wait returns as soon as a feature reaches an awaited state.

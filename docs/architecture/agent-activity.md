@@ -1,4 +1,4 @@
-# Agent activity (spec 148)
+# Agent activity (spec 149)
 
 One answer to "is this feature working, blocked on me, or done, and why?",
 for callers outside shep's own UI: MCP clients, A2A orchestrators, scripts

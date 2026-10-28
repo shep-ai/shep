@@ -53,7 +53,7 @@ describe('sidebar links', () => {
     expect(isSidebarLinkActive(chat, '/chats/repo-r1')).toBe(true);
   });
 
-  it('lists Agent activity right after Chat, unflagged, with the blocked-features badge (spec 148)', () => {
+  it('lists Agent activity right after Chat, unflagged, with the blocked-features badge (spec 149)', () => {
     const hrefs = SIDEBAR_LINKS.map((l) => l.href);
     expect(hrefs.indexOf('/activity')).toBe(hrefs.indexOf('/chats') + 1);
     const activity = SIDEBAR_LINKS.find((l) => l.href === '/activity')!;

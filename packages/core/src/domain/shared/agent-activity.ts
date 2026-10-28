@@ -1,5 +1,5 @@
 /**
- * Agent activity (spec 148).
+ * Agent activity (spec 149).
  *
  * Folds a feature's state and the reason behind it into the five states other
  * agent systems speak — working, blocked, waiting, done, failed — so MCP

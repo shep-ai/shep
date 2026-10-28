@@ -34,7 +34,7 @@ export interface DeriveFeatureStateOptions {
   isPidAlive?: boolean;
 }
 
-/** A feature's state and the rule that decided it (spec 148). */
+/** A feature's state and the rule that decided it (spec 149). */
 export interface FeatureStateExplanation {
   state: FeatureState;
   reason: FeatureStateReason;

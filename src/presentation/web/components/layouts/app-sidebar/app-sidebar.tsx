@@ -125,7 +125,7 @@ export function AppSidebar({
     ).length;
   }, [featureFlags.collaboration, eventsCtx]);
 
-  // Spec 148: the web counterpart of the Herdr report — how many features need the user.
+  // Spec 149: the web counterpart of the Herdr report — how many features need the user.
   const { snapshot: activitySnapshot } = useAgentActivity();
   const linkBadges: Record<SidebarBadge, number> = {
     [SIDEBAR_BADGE.BlockedFeatures]: activitySnapshot?.counts.blocked ?? 0,

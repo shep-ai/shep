@@ -1,5 +1,5 @@
 /**
- * Feature Wait Command (spec 148)
+ * Feature Wait Command (spec 149)
  *
  * Blocks until a feature's agent needs someone or stops — or reaches the
  * states named with --until — so scripts and other agents can act on it.

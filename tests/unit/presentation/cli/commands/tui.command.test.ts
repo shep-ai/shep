@@ -202,7 +202,7 @@ describe('createTuiCommand', () => {
     expect(useCases.stopChats.execute).toHaveBeenCalledWith(['f1']);
   });
 
-  it('wires the terminal host activity use case (spec 148)', async () => {
+  it('wires the terminal host activity use case (spec 149)', async () => {
     await command(true).parseAsync(['node', 'shep']);
     const deps = runConsole.mock.calls[0][0];
 

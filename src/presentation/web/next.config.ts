@@ -72,7 +72,7 @@ const nextConfig: NextConfig = {
   // No effect in production builds.
   devIndicators: false,
 
-  // A2A discovery (spec 148): agents look for the card at the well-known
+  // A2A discovery (spec 149): agents look for the card at the well-known
   // path; the route lives under /api/a2a.
   async rewrites() {
     return [{ source: '/.well-known/agent-card.json', destination: '/api/a2a/agent-card' }];

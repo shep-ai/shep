@@ -1,5 +1,5 @@
 /**
- * Wait For Agent Activity Use Case (spec 148)
+ * Wait For Agent Activity Use Case (spec 149)
  *
  * Returns as soon as one feature reaches an awaited state — by default the
  * moment it needs someone or stops (blocked, done, failed) — or reports why it

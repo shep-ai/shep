@@ -1,5 +1,5 @@
 /**
- * Shared output for `shep feat status` and `shep feat wait` (spec 148): a
+ * Shared output for `shep feat status` and `shep feat wait` (spec 149): a
  * feature's agent activity in words, and the command that acts on it.
  */
 

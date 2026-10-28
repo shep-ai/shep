@@ -1864,7 +1864,7 @@ export function SettingsPageClient({
           </SectionHint>
         </div>
 
-        {/* ── Connect agents: A2A, Herdr, shep feat (spec 148) ── */}
+        {/* ── Connect agents: A2A, Herdr, shep feat (spec 149) ── */}
         <div
           id="section-a2a"
           className="grid scroll-mt-32 grid-cols-1 gap-x-5 rounded-lg lg:grid-cols-[minmax(0,1fr)_280px]"

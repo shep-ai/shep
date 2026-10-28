@@ -525,7 +525,7 @@ describe('OverviewTab', () => {
     });
   });
 
-  describe('agent activity (spec 148)', () => {
+  describe('agent activity (spec 149)', () => {
     it("opens with the feature's agent status", () => {
       render(<OverviewTab data={defaultData} />);
       const section = screen.getByTestId('feature-activity-section');

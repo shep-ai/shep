@@ -27,7 +27,7 @@ export interface FeatureConsolePullRequest {
   ciStatus?: CiStatus;
 }
 
-/** The open agent question a feature waits on (spec 148). */
+/** The open agent question a feature waits on (spec 149). */
 export interface FeatureConsoleQuestion {
   id: string;
   /** Scope the question was filed under; answering needs it. */
@@ -49,7 +49,7 @@ export interface FeatureConsoleRow {
   state: FeatureState;
   /** The rule that decided {@link state}. */
   stateReason: FeatureStateReason;
-  /** What the agent is doing, in the vocabulary other agent systems share (spec 148). */
+  /** What the agent is doing, in the vocabulary other agent systems share (spec 149). */
   activity: AgentActivityState;
   /** Why: {@link stateReason}, or `agent-question` when an open question blocks it. */
   activityReason: FeatureStateReason;

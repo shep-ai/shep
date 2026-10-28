@@ -1,5 +1,5 @@
 /**
- * Feature workflow defaults (spec 148): the build mode, approval gates, push
+ * Feature workflow defaults (spec 149): the build mode, approval gates, push
  * and PR choices a user set in Settings, as feature-creation input. One place,
  * shared by `shep feat new` and creators that opt in (A2A, MCP).
  */

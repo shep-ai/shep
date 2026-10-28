@@ -4,7 +4,7 @@
  * Wires the view to the core: polls the snapshot, runs actions, keeps the log
  * pane fresh, opens terminal panes (stepping aside for an inline command when
  * there is no multiplexer), alerts when a feature starts needing the user, and
- * tells the terminal host (Herdr, spec 148) what shep is doing, and
+ * tells the terminal host (Herdr, spec 149) what shep is doing, and
  * restores the terminal on the way out. It takes the use cases as plain
  * functions so it carries no DI or infrastructure knowledge.
  */
@@ -59,7 +59,7 @@ export interface FeatureConsoleAppDeps extends ConsoleChatDeps {
   notify?: (message: string) => void;
   openControlCenter: ControlCenterDeps['openControlCenter'];
   updateMultiplexer: ControlCenterDeps['updateMultiplexer'];
-  /** Tell the terminal host this console runs in what shep is doing (spec 148). */
+  /** Tell the terminal host this console runs in what shep is doing (spec 149). */
   reportActivity?: (report: { state: AgentActivityState; message?: string }) => void;
   /** Tell the terminal host the console is leaving its pane. */
   releaseActivity?: () => Promise<void>;

@@ -30,7 +30,7 @@ import type { FeatureFlagsState } from '@/lib/feature-flags';
 
 /** Live counts a sidebar link can carry as its badge. */
 export const SIDEBAR_BADGE = {
-  /** Features whose agent is blocked on the user, agent questions included (spec 148). */
+  /** Features whose agent is blocked on the user, agent questions included (spec 149). */
   BlockedFeatures: 'blocked-features',
 } as const;
 export type SidebarBadge = (typeof SIDEBAR_BADGE)[keyof typeof SIDEBAR_BADGE];
@@ -54,7 +54,7 @@ export const SIDEBAR_LINKS: readonly SidebarLink[] = [
   { icon: Home, labelKey: 'controlCenter', href: '/control-center' },
   // Spec 137: the chat-first surface, where work is started, steered and answered.
   { icon: MessagesSquare, labelKey: 'chat', href: '/chats', prefix: true },
-  // Spec 148: every feature's agent — working, needs you, waiting, done, failed — and why.
+  // Spec 149: every feature's agent — working, needs you, waiting, done, failed — and why.
   {
     icon: Activity,
     labelKey: 'agentActivity',

@@ -1,5 +1,5 @@
 /**
- * Activity Host Reporter port (spec 148).
+ * Activity Host Reporter port (spec 149).
  *
  * A terminal host that shows each pane's agent state — Herdr marks panes
  * working, blocked or idle and notifies when one needs the user — learns

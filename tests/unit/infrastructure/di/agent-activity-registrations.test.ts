@@ -1,5 +1,5 @@
 /**
- * DI registrations for agent activity (spec 148): every use case under its
+ * DI registrations for agent activity (spec 149): every use case under its
  * class token and its string token, and the host reporter chosen from the
  * environment — Herdr inside a Herdr pane, a no-op anywhere else.
  */

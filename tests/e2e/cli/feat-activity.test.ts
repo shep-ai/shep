@@ -1,5 +1,5 @@
 /**
- * CLI E2E: agent activity (spec 148)
+ * CLI E2E: agent activity (spec 149)
  *
  * Runs the real CLI against an isolated SHEP_HOME. A feature created with the
  * deterministic mock executor parks at its first approval gate; from outside

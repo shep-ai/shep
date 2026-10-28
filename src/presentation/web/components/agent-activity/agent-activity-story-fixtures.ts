@@ -1,5 +1,5 @@
 /**
- * Storybook data for the agent-activity components (spec 148): sample
+ * Storybook data for the agent-activity components (spec 149): sample
  * activities, and a fetch stub serving the activity routes.
  */
 

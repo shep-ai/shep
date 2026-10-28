@@ -26,7 +26,7 @@ export interface AgentActivityPageClientProps {
 }
 
 /**
- * The Agent activity page (spec 148): the web `shep feat status` — every
+ * The Agent activity page (spec 149): the web `shep feat status` — every
  * feature's agent, what it is doing and why, live.
  */
 export function AgentActivityPageClient({ className }: AgentActivityPageClientProps) {

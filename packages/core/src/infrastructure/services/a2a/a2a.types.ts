@@ -1,5 +1,5 @@
 /**
- * A2A 1.0 wire shapes (spec 148) — the subset shep serves, in ProtoJSON:
+ * A2A 1.0 wire shapes (spec 149) — the subset shep serves, in ProtoJSON:
  * enums by their protobuf names, a Part holding exactly one of text/raw/url/
  * data, JSON-RPC 2.0 envelopes. Protocol constants, not domain concepts.
  *

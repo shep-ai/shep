@@ -1,5 +1,5 @@
 /**
- * Agent activity view model (spec 148).
+ * Agent activity view model (spec 149).
  *
  * What a caller outside shep's UI needs to know about a feature's agent: the
  * activity state and why, what it waits on, and a version to order updates by.

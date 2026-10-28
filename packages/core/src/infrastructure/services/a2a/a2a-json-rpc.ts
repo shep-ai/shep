@@ -1,5 +1,5 @@
 /**
- * JSON-RPC 2.0 envelope for the A2A endpoint (spec 148): parsing a request,
+ * JSON-RPC 2.0 envelope for the A2A endpoint (spec 149): parsing a request,
  * checking the protocol version, and building results and errors.
  */
 

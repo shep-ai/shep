@@ -19,7 +19,7 @@ function repositoryName(path: string): string {
   return path.replace(/\\/g, '/').split('/').filter(Boolean).at(-1) ?? path;
 }
 
-/** Every feature's agent activity (spec 148): the web `shep feat status`. */
+/** Every feature's agent activity (spec 149): the web `shep feat status`. */
 export function AgentActivityList({ activities, className }: AgentActivityListProps) {
   const { t } = useTranslation('web');
 

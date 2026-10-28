@@ -1,5 +1,5 @@
 /**
- * Get Agent Activity Use Case (spec 148)
+ * Get Agent Activity Use Case (spec 149)
  *
  * What each feature's agent is doing, for callers outside shep's own UI: the
  * console snapshot's rows (one batched read, crashed runs reconciled), projected

@@ -232,7 +232,7 @@ export function OverviewTab({
 
   return (
     <div data-testid="feature-drawer-status" className="pb-4">
-      {/* ── Agent status (spec 148): working / needs you / waiting / done / failed, and why ── */}
+      {/* ── Agent status (spec 149): working / needs you / waiting / done / failed, and why ── */}
       {data.state !== 'creating' ? (
         <div className="px-3 pb-3">
           <FeatureActivitySection featureId={data.featureId} />

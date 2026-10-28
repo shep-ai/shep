@@ -12,7 +12,7 @@ existing entry points pass to the same use case.
 
 ## A `.well-known` app folder is invisible; the web token appears on first request
 
-Two things a real `shep ui` run showed while adding A2A (spec 148). ESLint's TypeScript project
+Two things a real `shep ui` run showed while adding A2A (spec 149). ESLint's TypeScript project
 (and the include globs behind it) skip dot-directories, so `app/.well-known/…/route.ts` fails the
 pre-commit lint with "not found by the project service". Serve well-known URLs from a route under
 `app/api/…` plus a `rewrites()` entry in `next.config.ts`; the request guard still sees the
@@ -3323,7 +3323,7 @@ electron-builder add a GitHub publish target and crash on `null.channel`) and pa
 
 ## A capability is not done until every presentation layer has it
 
-Spec 148 shipped agent activity to MCP, A2A, the CLI and the TUI, and the user had to ask
+Spec 149 shipped agent activity to MCP, A2A, the CLI and the TUI, and the user had to ask
 where the web UI was. The rule in code-quality.md ("every feature MUST be implementable in ALL
 presentation layers") is a checklist item, not a design note: before calling a feature done, list
 each CLI command / TUI behaviour it adds and name the web surface that shows the same use-case

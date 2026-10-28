@@ -1,5 +1,5 @@
 /**
- * A2A task mapping (spec 148): a feature's activity as an A2A Task.
+ * A2A task mapping (spec 149): a feature's activity as an A2A Task.
  *
  * Task id and context id are the feature id. The status carries an agent
  * message saying, in a sentence, what the feature is doing or what it waits

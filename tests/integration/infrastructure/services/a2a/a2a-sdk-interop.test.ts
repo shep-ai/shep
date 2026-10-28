@@ -1,5 +1,5 @@
 /**
- * A2A interoperability (spec 148).
+ * A2A interoperability (spec 149).
  *
  * Shep's A2A endpoint, served over real HTTP, driven by the official A2A
  * TypeScript SDK client (@a2a-js/sdk, protocol 1.0): if the SDK can read the

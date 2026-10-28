@@ -51,7 +51,7 @@ describe('SettingsPageClient', () => {
     expect(screen.getByTestId('database-settings-section')).toBeDefined();
   });
 
-  it('shows Connect agents with the token file under shepHome, and the MCP activity tools (spec 148)', () => {
+  it('shows Connect agents with the token file under shepHome, and the MCP activity tools (spec 149)', () => {
     render(<SettingsPageClient settings={settings} shepHome="/opt/shep" dbFileSize="10.5 MB" />);
     expect(screen.getByRole('button', { name: 'Connect agents' })).toBeDefined();
     expect(screen.getByTestId('a2a-integration-section')).toBeDefined();

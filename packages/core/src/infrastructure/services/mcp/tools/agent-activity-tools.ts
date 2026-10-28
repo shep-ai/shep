@@ -1,5 +1,5 @@
 /**
- * MCP Agent Activity Tools (spec 148)
+ * MCP Agent Activity Tools (spec 149)
  *
  * Lets an agent that mounts `shep mcp` follow a feature the way a person does:
  * see whether it is working, blocked on someone, waiting, done or failed and

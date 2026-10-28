@@ -2,7 +2,7 @@
 # This is the source of truth. Markdown is auto-generated from this file.
 
 name: agent-activity-stream
-number: 148
+number: 149
 branch: claude/funny-newton-xhakwy
 oneLiner: One answer to "is this feature working, blocked on me, or done — and why", served to MCP clients, A2A orchestrators, the CLI, Herdr and the web UI
 summary: >

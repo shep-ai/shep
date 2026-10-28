@@ -1,7 +1,7 @@
 'use client';
 
 /**
- * "Notify me" (spec 148): the web's `shep feat wait`. Waits on
+ * "Notify me" (spec 149): the web's `shep feat wait`. Waits on
  * GET /api/agent-activity/wait — WaitForAgentActivityUseCase decides — and asks
  * again each time a wait times out, until the feature matches, the wait fails,
  * the caller stops, or the component unmounts.

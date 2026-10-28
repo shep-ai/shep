@@ -1519,7 +1519,7 @@ and the count of authorized senders.
 
 Start the MCP server so external AI agents can drive Shep. Besides the feature,
 agent-run, repository, settings, work-item and chat-block tools, it offers the
-agent-activity tools (spec 148): `get_agent_activity`, `wait_for_agent_activity`,
+agent-activity tools (spec 149): `get_agent_activity`, `wait_for_agent_activity`,
 `decide_feature_gate` and `answer_agent_question`.
 [Agent activity](../architecture/agent-activity.md).
 

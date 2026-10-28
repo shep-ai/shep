@@ -15,7 +15,7 @@ export interface FeatureActivitySectionProps {
 }
 
 /**
- * One feature's live agent activity (spec 148), for the feature drawer: the
+ * One feature's live agent activity (spec 149), for the feature drawer: the
  * card fed by GET /api/agent-activity, and "Notify me" over the wait route.
  */
 export function FeatureActivitySection({ featureId, className }: FeatureActivitySectionProps) {
