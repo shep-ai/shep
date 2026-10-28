@@ -1,0 +1,4 @@
+❯ cat ~/demo/fake-herdr/calls.log
+herdr pane report-agent w1:p1 --source shep --agent shep --state blocked --seq 1793205292242 --message needs you: 2
+herdr pane report-agent w1:p1 --source shep --agent shep --state blocked --seq 1793205300246 --message needs you: 1
+herdr pane release-agent w1:p1 --source shep --agent shep --seq 1793205303640

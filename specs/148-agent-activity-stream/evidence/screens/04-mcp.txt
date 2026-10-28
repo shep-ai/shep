@@ -1,0 +1,18 @@
+# An agent that mounts shep mcp: wait until a feature needs it, then decide the gate.
+❯ node ~/demo/mcp-client.mjs d6cb3969-d4dc-4477-ac3b-df4493e2babc
+tools  get_agent_activity, wait_for_agent_activity, decide_feature_gate, answer_agent_question
+
+wait_for_agent_activity {"featureId":"d6cb3969","until":["blocked"]}
+  outcome matched  state blocked  reason approval-gate  phase merge
+
+decide_feature_gate {"featureId":"d6cb3969","decision":"reject"}  (no feedback)
+  isError true  refused: A rejection needs feedback for the agent to work from.
+
+decide_feature_gate {"featureId":"d6cb3969","decision":"approve"}
+  isError false  applied: Sent to Rate-Limit The Public API.
+
+get_agent_activity {}
+  7a8252ce  blocked  approval-gate   Add A Login Page With Email And Password
+  d6cb3969  working  agent-running   Rate-Limit The Public API
+  c1abbb35  done     run-completed   Add CSV Export To The Billing Page
+  overall blocked
