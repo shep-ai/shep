@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { AgentActivityState, FeatureState, FeatureStateReason } from '@/domain/generated/output.js';
 import {
+  compareActivityUrgency,
   DEFAULT_WAIT_TARGETS,
   activityOf,
   activityVersion,
@@ -84,6 +85,19 @@ describe('activityVersion', () => {
 
   it('is 0 with no usable timestamp', () => {
     expect(activityVersion([undefined, null, 'not a date'])).toBe(0);
+  });
+});
+
+describe('compareActivityUrgency', () => {
+  it('orders blocked, working, waiting, failed, done', () => {
+    const { Blocked, Working, Waiting, Failed, Done } = AgentActivityState;
+    expect([Done, Failed, Waiting, Blocked, Working].sort(compareActivityUrgency)).toEqual([
+      Blocked,
+      Working,
+      Waiting,
+      Failed,
+      Done,
+    ]);
   });
 });
 

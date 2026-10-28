@@ -118,6 +118,31 @@ describe('GetAgentActivityUseCase', () => {
     expect(all.counts[AgentActivityState.Done]).toBe(1);
   });
 
+  it('lists the most urgent first: blocked, working, waiting, failed, done — snapshot order within a state', async () => {
+    const as = (id: string, activity: AgentActivityState) => row(id, { activity });
+    rows = [
+      doneRow('done-1'),
+      as('waiting-1', AgentActivityState.Waiting),
+      as('failed-1', AgentActivityState.Failed),
+      as('working-1', AgentActivityState.Working),
+      as('blocked-1', AgentActivityState.Blocked),
+      as('waiting-2', AgentActivityState.Waiting),
+      as('blocked-2', AgentActivityState.Blocked),
+    ];
+
+    const list = await useCase.execute({ includeSettled: true });
+
+    expect(list.activities.map((a) => a.featureId)).toEqual([
+      'blocked-1',
+      'blocked-2',
+      'working-1',
+      'waiting-1',
+      'waiting-2',
+      'failed-1',
+      'done-1',
+    ]);
+  });
+
   it('finds one feature by id or prefix, done or archived, and reads archived features to do so', async () => {
     rows = [doneRow('abcdef12-0000'), row('zzz')];
 

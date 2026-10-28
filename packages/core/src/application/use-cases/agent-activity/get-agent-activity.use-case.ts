@@ -9,7 +9,7 @@
 
 import { inject, injectable } from 'tsyringe';
 import { AgentActivityState } from '../../../domain/generated/output.js';
-import { overallActivity } from '../../../domain/shared/agent-activity.js';
+import { compareActivityUrgency, overallActivity } from '../../../domain/shared/agent-activity.js';
 import { GetFeatureConsoleSnapshotUseCase } from '../feature-console/get-feature-console-snapshot.use-case.js';
 import type {
   FeatureConsoleRow,
@@ -35,7 +35,10 @@ export class GetAgentActivityUseCase {
       : rows.filter(
           (r) => (input.includeSettled ?? false) || r.activity !== AgentActivityState.Done
         );
-    const activities = selected.map(toActivity);
+    // Array.prototype.sort is stable: within a state, the snapshot's order stays.
+    const activities = selected
+      .map(toActivity)
+      .sort((a, b) => compareActivityUrgency(a.state, b.state));
     return {
       generatedAt,
       activities,

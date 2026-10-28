@@ -90,6 +90,11 @@ export function activityVersion(timestamps: readonly unknown[]): number {
 }
 
 /** The one state that sums up many features: the most urgent present, done when none. */
+/** Sort comparator: the most urgent activity state first (the order of {@link overallActivity}). */
+export function compareActivityUrgency(a: AgentActivityState, b: AgentActivityState): number {
+  return OVERALL_RANK[a] - OVERALL_RANK[b];
+}
+
 export function overallActivity(states: readonly AgentActivityState[]): AgentActivityState {
   let overall: AgentActivityState = AgentActivityState.Done;
   for (const state of states) {
