@@ -1,0 +1,16 @@
+# Another agent system, using only the official @a2a-js/sdk client:
+# hand shep a feature, follow it as a task, approve its gate over A2A.
+❯ node ~/demo/a2a-orchestrator.mjs ~/demo/acme-web
+agent card  Shep 1.250.0  http://localhost:4321/api/a2a
+skills      build-feature, steer-feature
+
+SendMessage → task c1abbb35  WORKING
+
+task         WORKING         Working on the implement phase.
+statusUpdate INPUT_REQUIRED  Waiting for approval of the merge phase. Reply with a data part {"decision":"approve"} or {
+"decision":"reject","feedback":"…"}.
+  ↳ SendMessage {"decision":"approve"} → WORKING
+statusUpdate WORKING         Working on the merge phase.
+statusUpdate COMPLETED       Finished.
+
+stream closed (terminal state reached)

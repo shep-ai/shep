@@ -557,6 +557,67 @@
         "restored": "Worktree restauré à {{step}}",
         "undoHint": "Pour annuler :",
         "failed": "Impossible de restaurer le checkpoint"
+      },
+      "status": {
+        "description": "Explique ce que fait l'agent d'une fonctionnalité (en cours, bloqué, en attente, terminé ou en échec) et pourquoi",
+        "idArgument": "ID de la fonctionnalité ou préfixe de l'ID",
+        "jsonOption": "Afficher l'activité en JSON",
+        "notFound": "Fonctionnalité introuvable : {{id}}",
+        "ambiguous": "« {{id}} » correspond à {{count}} fonctionnalités ; utilisez davantage de l'ID",
+        "failed": "Impossible de lire l'activité de la fonctionnalité",
+        "labels": {
+          "why": "Pourquoi",
+          "asks": "Question",
+          "phase": "Phase",
+          "run": "Exécution",
+          "error": "Erreur",
+          "pr": "PR",
+          "id": "ID",
+          "next": "Ensuite"
+        },
+        "states": {
+          "working": "en cours",
+          "blocked": "bloqué",
+          "waiting": "en attente",
+          "done": "terminé",
+          "failed": "en échec"
+        },
+        "reasons": {
+          "deleting": "En cours de suppression",
+          "archived": "Archivée",
+          "queued-for-capacity": "En file d'attente jusqu'à ce qu'une place se libère sous la limite de fonctionnalités en parallèle",
+          "deferred": "Reportée : aucun agent n'a encore démarré",
+          "waiting-on-parent": "Attend la fin de sa fonctionnalité parente",
+          "approval-gate": "Attend votre approbation",
+          "agent-question": "L'agent a posé une question",
+          "run-failed": "L'exécution a échoué",
+          "run-interrupted": "L'exécution a été interrompue",
+          "run-cancelled": "L'exécution a été annulée",
+          "run-completed": "Terminée",
+          "agent-running": "L'agent travaille",
+          "process-died": "Le processus de l'agent s'est arrêté de façon inattendue",
+          "maintained": "Terminée ; en maintenance",
+          "awaiting-review": "Sa pull request attend votre revue",
+          "plan-task-in-review": "Une tâche du plan attend votre revue",
+          "plan-tasks-done": "Toutes les tâches du plan sont faites",
+          "in-progress": "En cours"
+        }
+      },
+      "wait": {
+        "description": "Attend que l'agent d'une fonctionnalité ait besoin de quelqu'un ou s'arrête, ou atteigne les états indiqués",
+        "idArgument": "ID de la fonctionnalité ou préfixe de l'ID",
+        "untilOption": "États à attendre, séparés par des virgules : working, blocked, waiting, done, failed (par défaut : blocked,done,failed)",
+        "timeoutOption": "Abandonner après ce nombre de secondes",
+        "jsonOption": "Afficher le résultat en JSON",
+        "invalidState": "État inconnu dans « {{state}} ». Utilisez : {{states}}",
+        "failed": "Impossible d'attendre la fonctionnalité",
+        "outcomes": {
+          "matched": "Atteint",
+          "timed-out": "Délai dépassé ; toujours {{state}}",
+          "not-found": "Fonctionnalité introuvable : {{id}}",
+          "ambiguous": "« {{id}} » correspond à plusieurs fonctionnalités ; utilisez davantage de l'ID",
+          "aborted": "Attente arrêtée"
+        }
       }
     },
     "repo": {

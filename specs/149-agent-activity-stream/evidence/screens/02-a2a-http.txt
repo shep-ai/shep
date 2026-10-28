@@ -1,0 +1,52 @@
+# The web daemon speaks A2A 1.0: agent card, bearer token, tasks are features.
+❯ curl -s localhost:4321/.well-known/agent-card.json | jq '{name, version, supportedInterfaces, capabilities, skills: [.
+skills[].id]}'
+{
+  "name": "Shep",
+  "version": "1.250.0",
+  "supportedInterfaces": [
+    {
+      "url": "http://localhost:4321/api/a2a",
+      "protocolBinding": "JSONRPC",
+      "protocolVersion": "1.0"
+    }
+  ],
+  "capabilities": {
+    "streaming": true,
+    "pushNotifications": false,
+    "extendedAgentCard": false
+  },
+  "skills": [
+    "build-feature",
+    "steer-feature"
+  ]
+}
+❯ curl -s -o /dev/null -w 'no token -> HTTP %{http_code}\n' -X POST localhost:4321/api/a2a -d '{}'
+no token -> HTTP 401
+❯ TOKEN=$(cat ~/demo/home/web-auth-token)
+❯ curl -s localhost:4321/api/a2a -H "Authorization: Bearer $TOKEN" -H 'A2A-Version: 1.0' -d '{"jsonrpc":"2.0","id":1,"me
+thod":"GetTask","params":{"id":"7a8252ce-8c09-413a-b1dc-e22e7a082e32"}}' | jq '.result | {id, state: .status.state, says
+: .status.message.parts[0].text, shep: .metadata.shep | {activity, reason, phase}}'
+{
+  "id": "7a8252ce-8c09-413a-b1dc-e22e7a082e32",
+  "state": "TASK_STATE_INPUT_REQUIRED",
+  "says": "Waiting for approval of the merge phase. Reply with a data part {\"decision\":\"approve\"} or {\"decision\":\
+"reject\",\"feedback\":\"…\"}.",
+  "shep": {
+    "activity": "blocked",
+    "reason": "approval-gate",
+    "phase": "merge"
+  }
+}
+❯ curl -s localhost:4321/api/a2a -H "Authorization: Bearer $TOKEN" -d '{"jsonrpc":"2.0","id":2,"method":"GetTask","param
+s":{"id":"nope"}}' | jq .error
+{
+  "code": -32001,
+  "message": "Task not found: nope"
+}
+❯ curl -s localhost:4321/api/a2a -H "Authorization: Bearer $TOKEN" -H 'A2A-Version: 0.3' -d '{"jsonrpc":"2.0","id":3,"me
+thod":"ListTasks","params":{}}' | jq .error
+{
+  "code": -32009,
+  "message": "A2A version 0.3 is not supported; this server speaks 1.x."
+}

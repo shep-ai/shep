@@ -1,0 +1,195 @@
+# Feature Specification (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: agent-activity-stream
+number: 149
+branch: claude/funny-newton-xhakwy
+oneLiner: One answer to "is this feature working, blocked on me, or done — and why", served to MCP clients, A2A orchestrators, the CLI, Herdr and the web UI
+summary: >
+  A core agent-activity model built on the existing feature state: every feature is working,
+  blocked (an approval gate, an agent question or a review waits on the user), waiting, done or
+  failed, with a reason code that explains why and a version that orders updates. Use cases read
+  it and wait on it. Adapters expose it: MCP tools (`get_agent_activity`,
+  `wait_for_agent_activity`), an A2A 1.0 JSON-RPC server on the web daemon (tasks are
+  features), `shep feat status` / `shep feat wait`, and a Herdr reporter so a `shep tui`
+  running in a Herdr pane shows as blocked in Herdr's sidebar when a feature needs the user.
+  The web UI shows the same answer: an agent activity page (the web `shep feat status`), a
+  status card in the feature drawer with "notify me" (the web `shep feat wait`), a sidebar
+  badge counting features that need the user (the web counterpart of the Herdr report), and
+  a Connect agents settings section for A2A, MCP and Herdr.
+phase: Complete
+sizeEstimate: XL
+
+relatedFeatures:
+  - 077-mcp-server
+  - 093-agent-collaboration-supervision
+  - 134-unified-decisions
+  - 142-tui-feature-console
+  - 143-tui-multiplexer-panes
+  - 146-tui-control-center
+
+technologies:
+  - TypeScript
+  - TypeSpec
+  - '@modelcontextprotocol/sdk'
+  - Next.js route handlers (SSE)
+  - A2A protocol 1.0 (JSON-RPC binding)
+  - Herdr CLI (`pane report-agent`)
+  - Vitest
+
+relatedLinks:
+  - title: A2A protocol specification (1.0)
+    url: https://a2a-protocol.org/latest/specification/
+  - title: Herdr — Add Herdr support to your agent
+    url: https://herdr.dev/docs/add-herdr-support/
+  - title: Herdr — Agent automation (wait semantics)
+    url: https://herdr.dev/docs/agent-automation/
+
+openQuestions:
+  - question: Is the activity state a new derivation or built on deriveFeatureState?
+    resolved: true
+    answer: >
+      Built on it. deriveFeatureState becomes explainFeatureState, which returns the state and
+      the branch that decided it (a FeatureStateReason). deriveFeatureState stays as a thin
+      wrapper, so every surface keeps one source of truth and gains a reason for free.
+  - question: Where does the monotonic version come from without a new table?
+    resolved: true
+    answer: >
+      The newest of the feature's updatedAt, its run's updatedAt and its pending questions'
+      createdAt, in epoch milliseconds. Every write that changes state already bumps one of
+      them. A watcher additionally never emits a version lower than the one it emitted last.
+  - question: What does an A2A task map to?
+    resolved: true
+    answer: >
+      A feature. Task id and context id are the feature id. SendMessage without a task id
+      creates a feature (repository path in a data part or message metadata); with a task id it
+      answers the pending agent question (text) or decides the approval gate (data part
+      `{"decision":"approve"|"reject","feedback"}`). CancelTask stops the run.
+  - question: How do A2A clients authenticate?
+    resolved: true
+    answer: >
+      With the existing per-install bearer token (`Authorization: Bearer`), exactly like every
+      other /api route. The agent card declares an HTTP bearer security scheme. No new auth.
+  - question: Who reports to Herdr?
+    resolved: true
+    answer: >
+      `shep tui`, when it runs in a Herdr pane (HERDR_ENV=1 with HERDR_PANE_ID and
+      HERDR_BIN_PATH): blocked while any feature needs the user, working while any runs,
+      idle otherwise; released on quit. Outside Herdr nothing happens. Opening panes in Herdr
+      (a fifth multiplexer) is out of scope.
+  - question: Feature flag?
+    resolved: true
+    answer: >
+      None. Every adapter is read-mostly over use cases that already exist behind the same
+      token gate, and the Herdr reporter is inert outside Herdr.
+
+content: |
+  ## Problem Statement
+
+  Shep knows exactly what each feature's agent is doing — it runs them — but it only tells
+  people looking at its own UI. Three kinds of callers cannot ask:
+
+  1. **Other agents over MCP.** `shep mcp` can create and start features, but cannot tell an
+     agent "this feature is now waiting for you" or let it wait until that happens. There is
+     no approve, reject or answer tool either.
+  2. **Other orchestrators.** A2A 1.0 is the standard way one agent system hands tasks to
+     another and follows them. Shep has no A2A endpoint; its HTTP API is undocumented UI
+     plumbing.
+  3. **Terminal hosts like Herdr**, which show every agent's working / blocked / idle state in
+     a sidebar and notify when one needs the user. Shep shows up there as a plain terminal.
+
+  The state itself is decided in one place (`deriveFeatureState`), but the reason is lost:
+  callers see `action-required` or `error`, not "waiting at the plan gate" or "the agent
+  process died". `shep feat ls` re-implements the derivation, and only the TUI counts open
+  agent questions as needing the user.
+
+  ## Success Criteria
+
+  - [ ] `AgentActivityState` (working, blocked, waiting, done, failed) and `FeatureStateReason`
+        are TypeSpec enums; `explainFeatureState` returns the state and its reason and
+        `deriveFeatureState` delegates to it, with no behaviour change
+  - [ ] `GetAgentActivityUseCase` returns, per feature: activity state, reason, feature state,
+        phase, run status, pending question (id and prompt), error, PR, version and when it
+        changed; plus counts and the overall state; filterable by feature (id or prefix) and
+        repository, settled features optional
+  - [ ] `WaitForAgentActivityUseCase` returns as soon as the feature reaches one of the
+        requested states (default blocked, done, failed), or reports a timeout, a missing
+        feature or an abort; an already-matching feature returns at once
+  - [ ] `WatchAgentActivityUseCase` yields one change per feature whose state, reason, phase or
+        question changed, with versions that never go down, until aborted
+  - [ ] MCP: `get_agent_activity`, `wait_for_agent_activity`, `decide_feature_gate`
+        (approve / reject with feedback) and `answer_agent_question`
+  - [ ] A2A 1.0 JSON-RPC at `/api/a2a`: SendMessage, SendStreamingMessage, GetTask, ListTasks,
+        CancelTask, SubscribeToTask (SSE); agent card at `/.well-known/agent-card.json`;
+        A2A error codes; unsupported methods answer UnsupportedOperationError
+  - [ ] Task status follows the activity: working → TASK_STATE_WORKING, blocked →
+        TASK_STATE_INPUT_REQUIRED (status message says what is asked), waiting →
+        TASK_STATE_SUBMITTED, done → TASK_STATE_COMPLETED, failed → TASK_STATE_FAILED (a
+        cancelled run → TASK_STATE_CANCELED)
+  - [ ] `shep feat status <id>` explains a feature's activity (`--json` too); `shep feat wait
+        <id> --until … --timeout …` exits 0 on a match and non-zero on timeout
+  - [ ] Inside Herdr, `shep tui` reports blocked / working / idle with a strictly increasing
+        sequence, only on change, never slowing or failing the console, and releases on quit
+  - [ ] Docs: `docs/architecture/agent-activity.md`, A2A guide, MCP tool list, CLI reference
+  - [ ] Web: `GET /api/agent-activity` (the snapshot) and `GET /api/agent-activity/wait`
+        (one wait, at most 10 minutes, aborted with the request) call the same use cases
+  - [ ] Web: an Agent activity page lists every feature with its state, why, what the agent
+        asks, the phase and a next-step link, refreshed by the agent event stream; finished
+        features on request
+  - [ ] Web: the feature drawer's Overview tab opens with the feature's activity card, and
+        "Notify me" raises a toast and a browser notification when the feature next needs the
+        user, finishes or fails
+  - [ ] Web: the sidebar's Agent activity link carries the count of blocked features, agent
+        questions included
+  - [ ] Web: Settings → Connect agents shows the A2A endpoint, the agent card link, where the
+        token is (never the token), a copyable request, Herdr setup, and the four MCP activity
+        tools in the MCP catalog
+  - [ ] Every web component has a story and a unit test; new strings in nine locales
+
+  ## Affected Areas
+
+  | Area | Impact | Reasoning |
+  | ---- | ------ | --------- |
+  | `tsp/common/enums/agent-activity.tsp` | Medium | `AgentActivityState`, `FeatureStateReason` |
+  | `domain/shared/feature-state.ts`, new `agent-activity.ts` | High | Reason-returning derivation; activity mapping; version |
+  | `GetFeatureConsoleSnapshotUseCase` + types | Medium | Rows carry reason, activity, pending question, version |
+  | `application/use-cases/agent-activity/` | High | Get, wait, watch, report-to-host use cases |
+  | `ports/output/services/activity-host-reporter.interface.ts` | Low | Port for terminal hosts |
+  | `infrastructure/services/activity-host/` | Medium | Herdr reporter, no-op reporter, DI selection |
+  | `infrastructure/services/mcp/tools/agent-activity-tools.ts` | Medium | Four MCP tools |
+  | `infrastructure/services/a2a/` | High | JSON-RPC dispatcher, task mapper, agent card, SSE framing |
+  | `src/presentation/web/app/api/a2a`, `app/.well-known/agent-card.json` | Medium | Thin route handlers |
+  | `src/presentation/cli/commands/feat/{status,wait}.command.ts`, locales | Medium | CLI surface in nine locales |
+  | `src/presentation/tui/feature-console/feature-console.app.ts`, `tui.command.ts` | Low | Report activity each refresh, release on quit |
+  | docs | Medium | Architecture, A2A guide, MCP and CLI references |
+  | `src/presentation/web/app/api/agent-activity/` | Low | Snapshot and wait routes |
+  | `src/presentation/web/components/agent-activity/`, `hooks/use-agent-activity*.ts` | Medium | Badge, card, list, notify |
+  | `src/presentation/web/app/activity/`, sidebar links | Low | Agent activity page and its badge |
+  | `components/features/settings/` | Low | Connect agents (A2A, Herdr) section; MCP activity tools |
+  | `translations/*/web.json` | Low | Web strings in nine locales |
+
+  ## Dependencies
+
+  - `deriveFeatureState` and the console snapshot (specs 142, 146)
+  - `RunFeatureConsoleActionUseCase` (approve / reject / stop) and `AnswerAgentQuestionUseCase`
+    (spec 093)
+  - `CreateFeatureUseCase`, the MCP server (spec 077), the web request guard (bearer token)
+
+  ## Out of Scope
+
+  - Herdr as a pane multiplexer for `shep tui` (two-step split); screen-reading detection of
+    agents the user started by hand
+  - A2A push notifications, extended agent card, gRPC/REST bindings, A2A client (shep calling
+    other agents)
+  - Rewriting `shep feat ls` and the web canvas nodes on top of the activity model (follow-up);
+    the web shows activity on its own page, in the drawer and in the sidebar
+  - Approve / reject / answer controls on the activity page: they link to the drawer and the
+    agent questions inbox, which already own those actions
+  - Showing the bearer token in the browser: the session cookie is httpOnly so page scripts
+    never see it; the settings section shows where the token file is
+
+  ## Size Estimate
+
+  **XL** - a domain refactor, two enums, four use cases, a port with two adapters, four MCP
+  tools, an A2A server with streaming, two CLI commands in nine locales, TUI wiring, the web
+  surfaces, docs and unit, integration and e2e tests.

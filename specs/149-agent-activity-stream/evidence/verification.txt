@@ -1,0 +1,48 @@
+Local verification for spec 149 (2026-10-28, Node 22.22.0, branch claude/funny-newton-xhakwy)
+
+pnpm lint                      exit 0 (0 warnings)
+pnpm format:check              exit 0
+pnpm typecheck                 exit 0
+pnpm generate                  exit 0 (pre-commit hook; generated output committed)
+pnpm spec:validate 149         completeness, architecture, consistency PASS
+pnpm test:unit                 1446 files, 16460 passed, 5 skipped, 0 failed
+pnpm test:int                  207 files, 2216 passed, 0 failed
+                               (includes a2a-sdk-interop.test.ts: the official @a2a-js/sdk 1.3.0
+                               client drives the A2A endpoint over HTTP: card, GetTask, ListTasks,
+                               SendMessage, CancelTask, SubscribeToTask)
+pnpm build                     exit 0
+pnpm build:web                 exit 0 (routes /api/a2a, /api/a2a/agent-card)
+SHEP_E2E_USE_DIST=1 vitest run tests/e2e/cli
+                               17 files: 16 passed, 1 skipped; 99 tests passed, 1 skipped
+                               (includes feat-activity.test.ts: feat wait/status on a feature parked
+                               at its gate, and shep ui serving it over A2A as
+                               TASK_STATE_INPUT_REQUIRED; 401 without the token)
+
+Web UI (tasks 16-21), re-run 2026-10-28 on the full branch
+
+pnpm lint                      exit 0
+pnpm format:check              exit 0
+pnpm typecheck                 exit 0
+pnpm typecheck:web             exit 0
+node scripts/check-stories.mjs exit 0 (396/457 components have stories; every new one does)
+pnpm spec:validate 149         completeness, architecture, consistency PASS
+pnpm test:unit                 1455 files, 16521 passed, 5 skipped, 0 failed
+                               (new: agent-activity-route, use-agent-activity, use-activity-notify,
+                               activity-next-step, feature-activity-card, feature-activity-section,
+                               agent-activity-list, agent-activity-page-client,
+                               a2a-integration-section; sidebar, overview tab, settings page and
+                               web translations extended)
+pnpm test:int                  207 files, 2216 passed, 0 failed
+pnpm build                     exit 0
+pnpm build:web                 exit 0 (routes /activity, /api/agent-activity,
+                               /api/agent-activity/wait)
+pnpm build:storybook           exit 0
+
+After merging main (spec 148-tui-fleet-awareness) and renumbering this spec to 149
+
+pnpm lint / format:check / typecheck / typecheck:web    exit 0
+node scripts/check-stories.mjs                         exit 0
+pnpm spec:validate 149                                 PASS
+pnpm test:unit                 1456 files, 16546 passed, 5 skipped, 0 failed
+pnpm test:int                  207 files, 2216 passed, 0 failed
+pnpm build                     exit 0

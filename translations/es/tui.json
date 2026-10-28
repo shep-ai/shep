@@ -342,6 +342,9 @@
     "release": {
       "confirm": "¿Liberar la cola en pausa? Los nuevos features podrán empezar. (y/n)",
       "done": "Cola liberada — los features en espera pueden empezar"
+    },
+    "hostStatus": {
+      "blocked": "te necesitan: {{count}}"
     }
   }
 }

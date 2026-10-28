@@ -1,0 +1,9 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: FeatureReplyOutcome.yaml
+type: string
+enum:
+  - applied
+  - not-found
+  - ambiguous
+  - refused
+description: What happened to a reply sent to a feature (a gate decision, an answer, a stop)

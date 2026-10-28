@@ -342,6 +342,9 @@
     "release": {
       "confirm": "Pausierte Warteschlange freigeben? Neue Features können starten. (y/n)",
       "done": "Warteschlange freigegeben — wartende Features können starten"
+    },
+    "hostStatus": {
+      "blocked": "braucht dich: {{count}}"
     }
   }
 }

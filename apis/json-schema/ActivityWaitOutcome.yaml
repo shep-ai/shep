@@ -1,0 +1,10 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: ActivityWaitOutcome.yaml
+type: string
+enum:
+  - matched
+  - timed-out
+  - not-found
+  - ambiguous
+  - aborted
+description: How waiting for a feature's activity ended

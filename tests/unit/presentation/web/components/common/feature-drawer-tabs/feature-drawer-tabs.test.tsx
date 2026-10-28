@@ -17,6 +17,12 @@ import type { FeatureDrawerTabsProps } from '@/components/common/feature-drawer-
 import type { PhaseTimingData } from '@/app/actions/get-feature-phase-timings';
 import type { PlanData } from '@/app/actions/get-feature-plan';
 
+vi.mock('@/components/agent-activity/feature-activity-section', () => ({
+  FeatureActivitySection: ({ featureId }: { featureId: string }) => (
+    <div data-testid="feature-activity-section" data-feature-id={featureId} />
+  ),
+}));
+
 // Mock server actions
 const mockGetPhaseTimings = vi.fn();
 const mockGetPlan = vi.fn();

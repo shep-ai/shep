@@ -9700,6 +9700,46 @@ export enum FeatureConsoleAction {
   Stop = 'stop',
   Resume = 'resume',
 }
+export enum AgentActivityState {
+  Working = 'working',
+  Blocked = 'blocked',
+  Waiting = 'waiting',
+  Done = 'done',
+  Failed = 'failed',
+}
+export enum FeatureStateReason {
+  Deleting = 'deleting',
+  Archived = 'archived',
+  QueuedForCapacity = 'queued-for-capacity',
+  Deferred = 'deferred',
+  WaitingOnParent = 'waiting-on-parent',
+  ApprovalGate = 'approval-gate',
+  AgentQuestion = 'agent-question',
+  RunFailed = 'run-failed',
+  RunInterrupted = 'run-interrupted',
+  RunCancelled = 'run-cancelled',
+  RunCompleted = 'run-completed',
+  AgentRunning = 'agent-running',
+  ProcessDied = 'process-died',
+  Maintained = 'maintained',
+  AwaitingReview = 'awaiting-review',
+  PlanTaskInReview = 'plan-task-in-review',
+  PlanTasksDone = 'plan-tasks-done',
+  InProgress = 'in-progress',
+}
+export enum ActivityWaitOutcome {
+  Matched = 'matched',
+  TimedOut = 'timed-out',
+  NotFound = 'not-found',
+  Ambiguous = 'ambiguous',
+  Aborted = 'aborted',
+}
+export enum FeatureReplyOutcome {
+  Applied = 'applied',
+  NotFound = 'not-found',
+  Ambiguous = 'ambiguous',
+  Refused = 'refused',
+}
 export enum TerminalMultiplexer {
   Tmux = 'tmux',
   Zellij = 'zellij',

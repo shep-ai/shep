@@ -5,6 +5,7 @@ import {
   BuildMode,
   FeatureConsoleAction,
   FeatureState,
+  FeatureStateReason,
   SdlcLifecycle,
   TaskState,
 } from '@/domain/generated/output.js';
@@ -14,6 +15,7 @@ import {
   availableFeatureActions,
   compareConsoleRows,
   deriveFeatureState,
+  explainFeatureState,
   featurePhaseOf,
   isActiveFeatureState,
   needsUserAttention,
@@ -61,6 +63,151 @@ function run(status: AgentRunStatus, overrides: Partial<AgentRun> = {}): AgentRu
     ...overrides,
   };
 }
+
+describe('explainFeatureState', () => {
+  const withTasks = (states: TaskState[]) =>
+    feature({
+      plan: {
+        tasks: states.map((state, i) => ({ id: `t${i}`, title: '', description: '', state })),
+      } as unknown as Feature['plan'],
+    });
+
+  it.each<[string, Feature, AgentRun | null, FeatureState, FeatureStateReason]>([
+    [
+      'deleting',
+      feature({ lifecycle: SdlcLifecycle.Deleting }),
+      run(AgentRunStatus.running),
+      FeatureState.Deleting,
+      FeatureStateReason.Deleting,
+    ],
+    [
+      'archived',
+      feature({ lifecycle: SdlcLifecycle.Archived }),
+      null,
+      FeatureState.Archived,
+      FeatureStateReason.Archived,
+    ],
+    [
+      'queued',
+      feature({ lifecycle: SdlcLifecycle.Pending, queuedAt: new Date() }),
+      null,
+      FeatureState.Queued,
+      FeatureStateReason.QueuedForCapacity,
+    ],
+    [
+      'deferred',
+      feature({ lifecycle: SdlcLifecycle.Pending }),
+      null,
+      FeatureState.Pending,
+      FeatureStateReason.Deferred,
+    ],
+    [
+      'parent',
+      feature({ lifecycle: SdlcLifecycle.Blocked }),
+      null,
+      FeatureState.Blocked,
+      FeatureStateReason.WaitingOnParent,
+    ],
+    [
+      'gate',
+      feature(),
+      run(AgentRunStatus.waitingApproval),
+      FeatureState.ActionRequired,
+      FeatureStateReason.ApprovalGate,
+    ],
+    [
+      'failed',
+      feature(),
+      run(AgentRunStatus.failed),
+      FeatureState.Error,
+      FeatureStateReason.RunFailed,
+    ],
+    [
+      'interrupted',
+      feature(),
+      run(AgentRunStatus.interrupted),
+      FeatureState.Error,
+      FeatureStateReason.RunInterrupted,
+    ],
+    [
+      'cancelled',
+      feature(),
+      run(AgentRunStatus.cancelled),
+      FeatureState.Error,
+      FeatureStateReason.RunCancelled,
+    ],
+    [
+      'completed',
+      feature(),
+      run(AgentRunStatus.completed),
+      FeatureState.Done,
+      FeatureStateReason.RunCompleted,
+    ],
+    [
+      'running',
+      feature(),
+      run(AgentRunStatus.running),
+      FeatureState.Running,
+      FeatureStateReason.AgentRunning,
+    ],
+    [
+      'pending run',
+      feature(),
+      run(AgentRunStatus.pending),
+      FeatureState.Running,
+      FeatureStateReason.AgentRunning,
+    ],
+    [
+      'maintain',
+      feature({ lifecycle: SdlcLifecycle.Maintain }),
+      null,
+      FeatureState.Done,
+      FeatureStateReason.Maintained,
+    ],
+    [
+      'review',
+      feature({ lifecycle: SdlcLifecycle.Review }),
+      null,
+      FeatureState.ActionRequired,
+      FeatureStateReason.AwaitingReview,
+    ],
+    [
+      'task in review',
+      withTasks([TaskState.Review, TaskState.Done]),
+      null,
+      FeatureState.ActionRequired,
+      FeatureStateReason.PlanTaskInReview,
+    ],
+    [
+      'tasks done',
+      withTasks([TaskState.Done]),
+      null,
+      FeatureState.Done,
+      FeatureStateReason.PlanTasksDone,
+    ],
+    [
+      'tasks open',
+      withTasks([TaskState.WIP]),
+      null,
+      FeatureState.Running,
+      FeatureStateReason.InProgress,
+    ],
+    ['no tasks', feature(), null, FeatureState.Running, FeatureStateReason.InProgress],
+  ])('%s', (_label, f, r, state, reason) => {
+    expect(explainFeatureState(f, r)).toEqual({ state, reason });
+  });
+
+  it('an executing run whose process died says so', () => {
+    expect(
+      explainFeatureState(feature(), run(AgentRunStatus.running), { isPidAlive: false })
+    ).toEqual({ state: FeatureState.Error, reason: FeatureStateReason.ProcessDied });
+  });
+
+  it('deriveFeatureState is the state of the explanation', () => {
+    const f = feature({ lifecycle: SdlcLifecycle.Review });
+    expect(deriveFeatureState(f, null)).toBe(explainFeatureState(f, null).state);
+  });
+});
 
 describe('deriveFeatureState', () => {
   describe('lifecycle takes priority over the run', () => {

@@ -342,6 +342,9 @@
     "release": {
       "confirm": "Libérer la file en pause ? Les nouveaux features peuvent démarrer. (y/n)",
       "done": "File libérée — les features en attente peuvent démarrer"
+    },
+    "hostStatus": {
+      "blocked": "besoin de vous : {{count}}"
     }
   }
 }

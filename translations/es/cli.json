@@ -557,6 +557,67 @@
         "restored": "Worktree restaurado a {{step}}",
         "undoHint": "Para deshacer:",
         "failed": "No se pudo restaurar el checkpoint"
+      },
+      "status": {
+        "description": "Explica qué hace el agente de una funcionalidad (trabajando, bloqueado, esperando, terminado o fallido) y por qué",
+        "idArgument": "ID de la funcionalidad o prefijo del ID",
+        "jsonOption": "Imprimir la actividad como JSON",
+        "notFound": "Funcionalidad no encontrada: {{id}}",
+        "ambiguous": "\"{{id}}\" coincide con {{count}} funcionalidades; usa más caracteres del ID",
+        "failed": "No se pudo leer la actividad de la funcionalidad",
+        "labels": {
+          "why": "Por qué",
+          "asks": "Pregunta",
+          "phase": "Fase",
+          "run": "Ejecución",
+          "error": "Error",
+          "pr": "PR",
+          "id": "ID",
+          "next": "Siguiente"
+        },
+        "states": {
+          "working": "trabajando",
+          "blocked": "bloqueado",
+          "waiting": "esperando",
+          "done": "terminado",
+          "failed": "fallido"
+        },
+        "reasons": {
+          "deleting": "Se está eliminando",
+          "archived": "Archivada",
+          "queued-for-capacity": "En cola hasta que se libere un hueco bajo el límite de funcionalidades en paralelo",
+          "deferred": "Aplazada: todavía no ha empezado ningún agente",
+          "waiting-on-parent": "Esperando a que termine su funcionalidad padre",
+          "approval-gate": "Esperando tu aprobación",
+          "agent-question": "El agente hizo una pregunta",
+          "run-failed": "La ejecución falló",
+          "run-interrupted": "La ejecución se interrumpió",
+          "run-cancelled": "La ejecución se canceló",
+          "run-completed": "Terminada",
+          "agent-running": "El agente está trabajando",
+          "process-died": "El proceso del agente se detuvo inesperadamente",
+          "maintained": "Terminada; en mantenimiento",
+          "awaiting-review": "Su pull request espera tu revisión",
+          "plan-task-in-review": "Una tarea del plan espera tu revisión",
+          "plan-tasks-done": "Todas las tareas del plan están hechas",
+          "in-progress": "En curso"
+        }
+      },
+      "wait": {
+        "description": "Espera hasta que el agente de una funcionalidad necesite a alguien o se detenga, o alcance los estados indicados",
+        "idArgument": "ID de la funcionalidad o prefijo del ID",
+        "untilOption": "Estados que esperar, separados por comas: working, blocked, waiting, done, failed (por defecto: blocked,done,failed)",
+        "timeoutOption": "Rendirse después de estos segundos",
+        "jsonOption": "Imprimir el resultado como JSON",
+        "invalidState": "Estado desconocido en \"{{state}}\". Usa: {{states}}",
+        "failed": "No se pudo esperar a la funcionalidad",
+        "outcomes": {
+          "matched": "Alcanzado",
+          "timed-out": "Tiempo agotado; sigue {{state}}",
+          "not-found": "Funcionalidad no encontrada: {{id}}",
+          "ambiguous": "\"{{id}}\" coincide con más de una funcionalidad; usa más caracteres del ID",
+          "aborted": "Se dejó de esperar"
+        }
       }
     },
     "repo": {

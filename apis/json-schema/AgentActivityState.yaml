@@ -1,0 +1,10 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: AgentActivityState.yaml
+type: string
+enum:
+  - working
+  - blocked
+  - waiting
+  - done
+  - failed
+description: What a feature's agent is doing, in the vocabulary other agent systems share

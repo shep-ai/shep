@@ -40,7 +40,13 @@ import {
 
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { SidebarNavItem } from '@/components/common/sidebar-nav-item';
-import { isSidebarLinkActive, visibleSidebarLinks } from './sidebar-links';
+import {
+  SIDEBAR_BADGE,
+  isSidebarLinkActive,
+  visibleSidebarLinks,
+  type SidebarBadge,
+} from './sidebar-links';
+import { useAgentActivity } from '@/hooks/use-agent-activity';
 import { SidebarNavGroup } from '@/components/common/sidebar-nav-group/sidebar-nav-group';
 import { SidebarCollapseToggle } from '@/components/common/sidebar-collapse-toggle';
 import { ShepLogo } from '@/components/common/shep-logo';
@@ -119,6 +125,12 @@ export function AppSidebar({
     ).length;
   }, [featureFlags.collaboration, eventsCtx]);
 
+  // Spec 149: the web counterpart of the Herdr report — how many features need the user.
+  const { snapshot: activitySnapshot } = useAgentActivity();
+  const linkBadges: Record<SidebarBadge, number> = {
+    [SIDEBAR_BADGE.BlockedFeatures]: activitySnapshot?.counts.blocked ?? 0,
+  };
+
   // Group features by repository, then by status within each repo
   const repoGroups = useMemo(() => {
     const byRepo = new Map<string, { repoName: string; features: FeatureItem[] }>();
@@ -195,6 +207,7 @@ export function AppSidebar({
               label={link.labelKey ? t(`navigation.${link.labelKey}`) : (link.label ?? link.href)}
               href={link.href}
               active={isSidebarLinkActive(link, pathname)}
+              badge={link.badge ? linkBadges[link.badge] : undefined}
             />
           ))}
           {featureFlags.collaboration ? (

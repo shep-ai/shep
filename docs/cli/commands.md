@@ -288,6 +288,34 @@ Show details of a specific feature.
 
 **Source**: `src/presentation/cli/commands/feat/show.command.ts`
 
+### `shep feat status <id>`
+
+What a feature's agent is doing (working, blocked, waiting, done or failed),
+why, and the command that moves it along: approve or reject at a gate, answer
+an open question, or resume a failed run.
+[Agent activity](../architecture/agent-activity.md).
+
+| Option   | Description                  |
+| -------- | ---------------------------- |
+| `--json` | Print the activity as JSON   |
+
+**Source**: `src/presentation/cli/commands/feat/status.command.ts`
+
+### `shep feat wait <id>`
+
+Block until the feature's agent needs someone or stops, or reaches the states
+given with `--until`. Returns at once if it already has.
+
+| Option                | Description                                                                 |
+| --------------------- | --------------------------------------------------------------------------- |
+| `--until <states>`    | Comma-separated: `working`, `blocked`, `waiting`, `done`, `failed` (default `blocked,done,failed`) |
+| `--timeout <seconds>` | Give up after this long (default: wait forever)                             |
+| `--json`              | Print `{ outcome, activity }` as JSON                                       |
+
+Exit codes: `0` reached, `1` not found, `2` timed out, `3` ambiguous id, `130` interrupted.
+
+**Source**: `src/presentation/cli/commands/feat/wait.command.ts`
+
 ### `shep feat start <id>`
 
 Start a pending feature (spawn the agent). `--force` starts it even when the
@@ -1489,7 +1517,13 @@ and the count of authorized senders.
 
 ### `shep mcp`
 
-Start the MCP server so external AI agents can drive Shep.
+Start the MCP server so external AI agents can drive Shep. Besides the feature,
+agent-run, repository, settings, work-item and chat-block tools, it offers the
+agent-activity tools (spec 149): `get_agent_activity`, `wait_for_agent_activity`,
+`decide_feature_gate` and `answer_agent_question`.
+[Agent activity](../architecture/agent-activity.md).
+
+The web daemon also speaks A2A 1.0 at `/api/a2a`: [A2A guide](../guides/a2a.md).
 
 **Source**: `src/presentation/cli/commands/mcp.command.ts`
 

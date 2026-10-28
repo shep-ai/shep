@@ -13,6 +13,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 import { GetFeatureConsoleSnapshotUseCase } from '@/application/use-cases/feature-console/get-feature-console-snapshot.use-case.js';
 import {
+  AgentActivityState,
   AgentQuestionStatus,
   AgentRunStatus,
   AgentType,
@@ -20,6 +21,7 @@ import {
   DecisionKind,
   FeatureConsoleAction,
   FeatureState,
+  FeatureStateReason,
   PrStatus,
   SdlcLifecycle,
 } from '@/domain/generated/output.js';
@@ -268,6 +270,7 @@ describe('GetFeatureConsoleSnapshotUseCase', () => {
       waiting: 1,
       failed: 1,
       done: 1,
+      activity: AgentActivityState.Blocked,
     });
     expect(snapshot.rows.find((r) => r.featureId === 'fail')?.error).toBe('boom');
   });
@@ -342,6 +345,74 @@ describe('GetFeatureConsoleSnapshotUseCase', () => {
       number: 7,
       url: 'https://github.com/acme/web/pull/7',
       status: PrStatus.Open,
+    });
+  });
+  describe('agent activity (spec 149)', () => {
+    it('a running row is working, with the reason and a version from its newest write', async () => {
+      features = [feature('f1', { agentRunId: 'r1', updatedAt: new Date('2026-10-24T11:00:00Z') })];
+      runs = [run('r1', AgentRunStatus.running, { updatedAt: new Date('2026-10-24T11:30:00Z') })];
+
+      const [row] = (await useCase.execute()).rows;
+
+      expect(row).toMatchObject({
+        stateReason: FeatureStateReason.AgentRunning,
+        activity: AgentActivityState.Working,
+        activityReason: FeatureStateReason.AgentRunning,
+        version: Date.parse('2026-10-24T11:30:00Z'),
+      });
+      expect(row.pendingQuestion).toBeUndefined();
+    });
+
+    it('a gate is blocked at the approval gate', async () => {
+      features = [feature('f1', { agentRunId: 'r1' })];
+      runs = [run('r1', AgentRunStatus.waitingApproval)];
+
+      const [row] = (await useCase.execute()).rows;
+
+      expect(row.activity).toBe(AgentActivityState.Blocked);
+      expect(row.activityReason).toBe(FeatureStateReason.ApprovalGate);
+    });
+
+    it('an open question blocks the row and names the oldest question', async () => {
+      features = [feature('f1', { agentRunId: 'r1' })];
+      runs = [run('r1', AgentRunStatus.running)];
+      questions = [
+        {
+          ...question('f1'),
+          id: 'q-new',
+          appId: 'app-1',
+          prompt: 'Which database?',
+          createdAt: new Date('2026-10-24T11:50:00Z'),
+        } as unknown as AgentQuestion,
+        {
+          ...question('f1'),
+          id: 'q-old',
+          appId: 'app-1',
+          prompt: 'Keep the old API?',
+          createdAt: new Date('2026-10-24T11:40:00Z'),
+        } as unknown as AgentQuestion,
+      ];
+
+      const [row] = (await useCase.execute()).rows;
+
+      expect(row.activity).toBe(AgentActivityState.Blocked);
+      expect(row.activityReason).toBe(FeatureStateReason.AgentQuestion);
+      expect(row.stateReason).toBe(FeatureStateReason.AgentRunning);
+      expect(row.pendingQuestion).toEqual({
+        id: 'q-old',
+        appId: 'app-1',
+        prompt: 'Keep the old API?',
+      });
+      expect(row.version).toBe(Date.parse('2026-10-24T11:50:00Z'));
+    });
+
+    it('sums up the rows in one overall activity', async () => {
+      features = [feature('a', { agentRunId: 'ra' }), feature('b', { agentRunId: 'rb' })];
+      runs = [run('ra', AgentRunStatus.completed), run('rb', AgentRunStatus.running)];
+
+      const { summary } = await useCase.execute();
+
+      expect(summary.activity).toBe(AgentActivityState.Working);
     });
   });
 

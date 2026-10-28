@@ -16,13 +16,8 @@ import { initI18n } from '@/presentation/tui/i18n.js';
 import { renderBanner } from '@/presentation/tui/feature-console/console-render.js';
 import { renderHelp, renderKeyBar } from '@/presentation/tui/feature-console/console-panes.js';
 import { fit } from '@/presentation/tui/feature-console/console-format.js';
-import {
-  FeatureConsoleAction,
-  FeatureState,
-  SdlcLifecycle,
-  AgentRunStatus,
-  AgentType,
-} from '@/domain/generated/output.js';
+import { AgentActivityState, AgentType } from '@/domain/generated/output.js';
+import { consoleRow, consoleSummary } from '@tests/helpers/feature-console-fixtures.js';
 import type {
   FeatureConsoleFleet,
   FeatureConsoleRow,
@@ -51,41 +46,28 @@ const trippedOnly: FeatureConsoleFleet = {
   circuitBreakerReason: 'Failure rate threshold exceeded (40% > 25%)',
 };
 
-const row: FeatureConsoleRow = {
+const row: FeatureConsoleRow = consoleRow({
   featureId: 'aaaa1111-0000-0000',
   shortId: 'aaaa1111',
   name: 'Feature aaaa1111',
   repositoryName: 'acme-web',
   repositoryPath: '/work/acme-web',
   branch: 'feat/aaaa1111',
-  lifecycle: SdlcLifecycle.Implementation,
-  state: FeatureState.Running,
-  phase: 'implement',
   agentType: AgentType.ClaudeCode,
-  runId: 'run-1',
-  runStatus: AgentRunStatus.running,
   elapsedMs: 60_000,
-  inputTokens: 0,
-  outputTokens: 0,
-  pendingQuestions: 0,
-  needsAttention: false,
-  actions: [FeatureConsoleAction.Stop],
   updatedAt: NOW,
-};
+});
 
 /** A one-row snapshot carrying the fleet verdict under test. */
 function snapshotOf(fleet: FeatureConsoleFleet): FeatureConsoleSnapshot {
   return {
     generatedAt: NOW,
     rows: [row],
-    summary: {
+    summary: consoleSummary({
       total: 1,
-      needsAttention: 0,
       running: 1,
-      waiting: 0,
-      failed: 0,
-      done: 0,
-    },
+      activity: AgentActivityState.Working,
+    }),
     fleet,
   };
 }

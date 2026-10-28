@@ -184,11 +184,15 @@ describe('MCP Protocol Round-Trip (integration)', () => {
       'update_work_item',
       'delete_work_item',
       'post_chat_block',
+      'get_agent_activity',
+      'wait_for_agent_activity',
+      'decide_feature_gate',
+      'answer_agent_question',
     ];
 
-    it('returns all 18 registered tools', async () => {
+    it('returns all 22 registered tools', async () => {
       const { tools } = await client.listTools();
-      expect(tools).toHaveLength(18);
+      expect(tools).toHaveLength(22);
     });
 
     it('includes all expected tool names', async () => {

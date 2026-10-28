@@ -1,3 +1,4 @@
+import { AgentActivityState } from '@/domain/generated/output.js';
 // @vitest-environment node
 
 /**
@@ -36,6 +37,7 @@ describe('createTuiCommand', () => {
     sendChat: { execute: ReturnType<typeof vi.fn> };
     answerChat: { execute: ReturnType<typeof vi.fn> };
     stopChats: { execute: ReturnType<typeof vi.fn> };
+    hostActivity: { execute: ReturnType<typeof vi.fn>; release: ReturnType<typeof vi.fn> };
   };
   let printed: string[];
   let written: string[];
@@ -61,6 +63,7 @@ describe('createTuiCommand', () => {
       sendChat: { execute: vi.fn(async () => ({ ok: true, message: 'Sent' })) },
       answerChat: { execute: vi.fn(async () => ({ ok: true, message: 'Answered' })) },
       stopChats: { execute: vi.fn(async () => undefined) },
+      hostActivity: { execute: vi.fn(), release: vi.fn(async () => undefined) },
     };
     printed = [];
     written = [];
@@ -197,6 +200,18 @@ describe('createTuiCommand', () => {
     });
     await deps.stopChats(['f1']);
     expect(useCases.stopChats.execute).toHaveBeenCalledWith(['f1']);
+  });
+
+  it('wires the terminal host activity use case (spec 149)', async () => {
+    await command(true).parseAsync(['node', 'shep']);
+    const deps = runConsole.mock.calls[0][0];
+
+    deps.reportActivity?.({ state: AgentActivityState.Working });
+    expect(useCases.hostActivity.execute).toHaveBeenCalledWith({
+      state: AgentActivityState.Working,
+    });
+    await deps.releaseActivity?.();
+    expect(useCases.hostActivity.release).toHaveBeenCalled();
   });
 
   it('releases the paused queue through SetFleetQueuePauseUseCase (spec 148)', async () => {

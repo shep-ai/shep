@@ -15,16 +15,11 @@ import {
   formatStatusSegment,
   tmuxStatusOptions,
 } from '@/presentation/tui/feature-console/status-segment.js';
+import type { FeatureConsoleSummary } from '@/application/use-cases/feature-console/feature-console.types.js';
+import { consoleSummary } from '@tests/helpers/feature-console-fixtures.js';
 
-const summary = (overrides = {}) => ({
-  total: 6,
-  needsAttention: 2,
-  running: 3,
-  waiting: 0,
-  failed: 1,
-  done: 0,
-  ...overrides,
-});
+const summary = (overrides: Partial<FeatureConsoleSummary> = {}) =>
+  consoleSummary({ total: 6, needsAttention: 2, running: 3, failed: 1, ...overrides });
 
 describe('formatStatusSegment', () => {
   let t: TFunction;

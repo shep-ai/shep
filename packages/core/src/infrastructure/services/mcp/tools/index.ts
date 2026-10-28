@@ -12,6 +12,7 @@ import { registerRepoTools } from './repo-tools.js';
 import { registerSettingsTools } from './settings-tools.js';
 import { registerWorkItemTools } from './work-item-tools.js';
 import { registerChatBlockTools } from './chat-block-tools.js';
+import { registerAgentActivityTools } from './agent-activity-tools.js';
 
 /**
  * Register all MCP tools on the server.
@@ -23,4 +24,5 @@ export function registerAllTools(server: McpServer, container: DependencyContain
   registerSettingsTools(server, container);
   registerWorkItemTools(server, container);
   registerChatBlockTools(server, container);
+  registerAgentActivityTools(server, container);
 }

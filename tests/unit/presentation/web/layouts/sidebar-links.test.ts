@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
+  SIDEBAR_BADGE,
   SIDEBAR_LINKS,
   isSidebarLinkActive,
   visibleSidebarLinks,
@@ -50,6 +51,15 @@ describe('sidebar links', () => {
     expect(chat.labelKey).toBe('chat');
     expect(chat.flag).toBeUndefined();
     expect(isSidebarLinkActive(chat, '/chats/repo-r1')).toBe(true);
+  });
+
+  it('lists Agent activity right after Chat, unflagged, with the blocked-features badge (spec 149)', () => {
+    const hrefs = SIDEBAR_LINKS.map((l) => l.href);
+    expect(hrefs.indexOf('/activity')).toBe(hrefs.indexOf('/chats') + 1);
+    const activity = SIDEBAR_LINKS.find((l) => l.href === '/activity')!;
+    expect(activity.labelKey).toBe('agentActivity');
+    expect(activity.flag).toBeUndefined();
+    expect(activity.badge).toBe(SIDEBAR_BADGE.BlockedFeatures);
   });
 
   it('lists Incidents right after Opportunities (spec 129)', () => {

@@ -24,7 +24,8 @@
       "messaging": "Messaging",
       "mcp": "MCP",
       "harness": "Agent Harness",
-      "telemetry": "Usage metrics"
+      "telemetry": "Usage metrics",
+      "a2a": "Connect agents"
     },
     "language": {
       "title": "Language",
@@ -494,7 +495,8 @@
     "opportunities": "Opportunities",
     "incidents": "Incidents",
     "factory": "Factory",
-    "chat": "Chat"
+    "chat": "Chat",
+    "agentActivity": "Agent activity"
   },
   "sidebar": {
     "features": "Features",
@@ -2033,6 +2035,99 @@
       "Deleting": "Deleting",
       "AwaitingUpstream": "Awaiting upstream",
       "Archived": "Archived"
+    }
+  },
+  "agentActivity": {
+    "states": {
+      "working": "Working",
+      "blocked": "Needs you",
+      "waiting": "Waiting",
+      "done": "Done",
+      "failed": "Failed"
+    },
+    "reasons": {
+      "deleting": "Being deleted",
+      "archived": "Archived",
+      "queued-for-capacity": "Queued until a slot under the parallel-feature limit frees up",
+      "deferred": "Deferred: no agent has started yet",
+      "waiting-on-parent": "Waiting for its parent feature to finish",
+      "approval-gate": "Waiting for your approval",
+      "agent-question": "The agent asked a question",
+      "run-failed": "The run failed",
+      "run-interrupted": "The run was interrupted",
+      "run-cancelled": "The run was cancelled",
+      "run-completed": "Finished",
+      "agent-running": "The agent is working",
+      "process-died": "The agent process stopped unexpectedly",
+      "maintained": "Finished; in maintenance",
+      "awaiting-review": "Its pull request waits for your review",
+      "plan-task-in-review": "A plan task waits for your review",
+      "plan-tasks-done": "Every plan task is done",
+      "in-progress": "In progress"
+    },
+    "labels": {
+      "why": "Why",
+      "asks": "Asks",
+      "phase": "Phase",
+      "run": "Run",
+      "error": "Error",
+      "pr": "Pull request",
+      "next": "Next"
+    },
+    "next": {
+      "answer": "Answer the question",
+      "review": "Review and approve",
+      "openPr": "Review the pull request",
+      "resume": "Open to resume",
+      "inDrawer": {
+        "review": "Approve or reject in its review tab",
+        "resume": "Use Retry at the top of this drawer"
+      }
+    },
+    "card": {
+      "title": "Agent status",
+      "loading": "Reading the agent's status…",
+      "error": "Could not read the agent's status: {{error}}",
+      "notFound": "This feature has no agent status"
+    },
+    "notify": {
+      "start": "Notify me",
+      "stop": "Stop",
+      "watching": "Watching — you'll be notified when it needs you, finishes or fails",
+      "failed": "Stopped watching: {{error}}",
+      "title": "{{name}}: {{state}}"
+    },
+    "list": {
+      "empty": "No feature is active right now",
+      "open": "Open"
+    },
+    "page": {
+      "title": "Agent activity",
+      "description": "What every feature's agent is doing, and why — the same answer as shep feat status, MCP and A2A",
+      "showFinished": "Show finished",
+      "needsYou": "{{count}} need you",
+      "error": "Could not read agent activity: {{error}}"
+    },
+    "connect": {
+      "title": "Connect agents",
+      "badge": "A2A 1.0",
+      "description": "Let other agents and orchestrators hand Shep feature requests and follow them as A2A tasks: working, input required (a gate or question waits on you), completed or failed.",
+      "endpoint": "JSON-RPC endpoint",
+      "agentCard": "Agent card",
+      "token": "Authentication",
+      "tokenHelp": "Send Authorization: Bearer with the token in this file. The browser never sees it.",
+      "request": "Try it",
+      "copied": "Copied",
+      "copyFailed": "Unable to copy",
+      "herdr": "Herdr",
+      "herdrHelp": "Run shep tui inside a Herdr pane: Herdr's sidebar shows Shep as working, or blocked when a feature needs you.",
+      "cli": "Terminal",
+      "cliHelp": "shep feat status <id> explains a feature; shep feat wait <id> returns when it needs you, finishes or fails.",
+      "guide": "A2A guide",
+      "cardVersion": "Shep {{version}}",
+      "cardError": "The agent card did not load: {{error}}",
+      "copyLabel": "Copy {{label}}",
+      "hint": "Other agent systems send Shep a feature request over A2A and follow it as a task. The same activity drives MCP, the CLI, Herdr and this UI."
     }
   }
 }

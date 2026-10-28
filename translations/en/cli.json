@@ -557,6 +557,67 @@
         "restored": "Worktree restored to {{step}}",
         "undoHint": "To undo:",
         "failed": "Failed to restore checkpoint"
+      },
+      "status": {
+        "description": "Explain what a feature's agent is doing (working, blocked, waiting, done or failed) and why",
+        "idArgument": "Feature ID or ID prefix",
+        "jsonOption": "Print the activity as JSON",
+        "notFound": "Feature not found: {{id}}",
+        "ambiguous": "\"{{id}}\" matches {{count}} features; use more of the ID",
+        "failed": "Failed to read the feature's activity",
+        "labels": {
+          "why": "Why",
+          "asks": "Asks",
+          "phase": "Phase",
+          "run": "Run",
+          "error": "Error",
+          "pr": "PR",
+          "id": "ID",
+          "next": "Next"
+        },
+        "states": {
+          "working": "working",
+          "blocked": "blocked",
+          "waiting": "waiting",
+          "done": "done",
+          "failed": "failed"
+        },
+        "reasons": {
+          "deleting": "Being deleted",
+          "archived": "Archived",
+          "queued-for-capacity": "Queued until a slot under the parallel-feature limit frees up",
+          "deferred": "Deferred: no agent has started yet",
+          "waiting-on-parent": "Waiting for its parent feature to finish",
+          "approval-gate": "Waiting for your approval",
+          "agent-question": "The agent asked a question",
+          "run-failed": "The run failed",
+          "run-interrupted": "The run was interrupted",
+          "run-cancelled": "The run was cancelled",
+          "run-completed": "Finished",
+          "agent-running": "The agent is working",
+          "process-died": "The agent process stopped unexpectedly",
+          "maintained": "Finished; in maintenance",
+          "awaiting-review": "Its pull request waits for your review",
+          "plan-task-in-review": "A plan task waits for your review",
+          "plan-tasks-done": "Every plan task is done",
+          "in-progress": "In progress"
+        }
+      },
+      "wait": {
+        "description": "Wait until a feature's agent needs someone or stops, or reaches the given states",
+        "idArgument": "Feature ID or ID prefix",
+        "untilOption": "States to wait for, comma-separated: working, blocked, waiting, done, failed (default: blocked,done,failed)",
+        "timeoutOption": "Give up after this many seconds",
+        "jsonOption": "Print the result as JSON",
+        "invalidState": "Unknown state in \"{{state}}\". Use: {{states}}",
+        "failed": "Failed to wait for the feature",
+        "outcomes": {
+          "matched": "Reached",
+          "timed-out": "Timed out; still {{state}}",
+          "not-found": "Feature not found: {{id}}",
+          "ambiguous": "\"{{id}}\" matches more than one feature; use more of the ID",
+          "aborted": "Stopped waiting"
+        }
       }
     },
     "repo": {

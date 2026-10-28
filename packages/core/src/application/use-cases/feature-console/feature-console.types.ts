@@ -6,11 +6,13 @@
  */
 
 import type {
+  AgentActivityState,
   AgentRunStatus,
   AgentType,
   CiStatus,
   FeatureConsoleAction,
   FeatureState,
+  FeatureStateReason,
   PrStatus,
   SdlcLifecycle,
 } from '../../../domain/generated/output.js';
@@ -25,6 +27,14 @@ export interface FeatureConsolePullRequest {
   ciStatus?: CiStatus;
 }
 
+/** The open agent question a feature waits on (spec 149). */
+export interface FeatureConsoleQuestion {
+  id: string;
+  /** Scope the question was filed under; answering needs it. */
+  appId?: string;
+  prompt: string;
+}
+
 export interface FeatureConsoleRow {
   featureId: string;
   /** The first {@link FEATURE_SHORT_ID_LENGTH} characters of the id. */
@@ -37,6 +47,12 @@ export interface FeatureConsoleRow {
   worktreePath?: string;
   lifecycle: SdlcLifecycle;
   state: FeatureState;
+  /** The rule that decided {@link state}. */
+  stateReason: FeatureStateReason;
+  /** What the agent is doing, in the vocabulary other agent systems share (spec 149). */
+  activity: AgentActivityState;
+  /** Why: {@link stateReason}, or `agent-question` when an open question blocks it. */
+  activityReason: FeatureStateReason;
   /** Agent graph node (`requirements`, `plan`, `implement`, …) the feature is in. */
   phase: string;
   agentType?: AgentType;
@@ -50,6 +66,13 @@ export interface FeatureConsoleRow {
   inputTokens: number;
   outputTokens: number;
   pendingQuestions: number;
+  /** The oldest of {@link pendingQuestions}, when there is one. */
+  pendingQuestion?: FeatureConsoleQuestion;
+  /**
+   * Epoch ms of the newest write behind this row (feature, run, open questions).
+   * A watch makes it strictly increasing; see `AgentActivity.version`.
+   */
+  version: number;
   /** The user is holding this feature up (a gate, or an open question). */
   needsAttention: boolean;
   /** Console actions the current run accepts, in display order. */
@@ -68,6 +91,8 @@ export interface FeatureConsoleSummary {
   waiting: number;
   failed: number;
   done: number;
+  /** The most urgent activity among the rows; done when there are none. */
+  activity: AgentActivityState;
 }
 
 /**

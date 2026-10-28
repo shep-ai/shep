@@ -24,7 +24,8 @@
       "messaging": "Messaging",
       "mcp": "MCP",
       "harness": "Harness do agente",
-      "telemetry": "Métricas de uso"
+      "telemetry": "Métricas de uso",
+      "a2a": "Conectar agentes"
     },
     "language": {
       "title": "Idioma",
@@ -494,7 +495,8 @@
     "opportunities": "Oportunidades",
     "incidents": "Incidentes",
     "factory": "Fábrica",
-    "chat": "Chat"
+    "chat": "Chat",
+    "agentActivity": "Atividade dos agentes"
   },
   "sidebar": {
     "features": "Recursos",
@@ -2033,6 +2035,99 @@
       "Deleting": "Excluindo",
       "AwaitingUpstream": "Aguardando upstream",
       "Archived": "Arquivada"
+    }
+  },
+  "agentActivity": {
+    "states": {
+      "working": "Trabalhando",
+      "blocked": "Precisa de você",
+      "waiting": "Aguardando",
+      "done": "Concluído",
+      "failed": "Com falha"
+    },
+    "reasons": {
+      "deleting": "Sendo excluída",
+      "archived": "Arquivada",
+      "queued-for-capacity": "Na fila até liberar uma vaga no limite de funcionalidades em paralelo",
+      "deferred": "Adiada: nenhum agente começou ainda",
+      "waiting-on-parent": "Aguardando a funcionalidade pai terminar",
+      "approval-gate": "Aguardando sua aprovação",
+      "agent-question": "O agente fez uma pergunta",
+      "run-failed": "A execução falhou",
+      "run-interrupted": "A execução foi interrompida",
+      "run-cancelled": "A execução foi cancelada",
+      "run-completed": "Concluída",
+      "agent-running": "O agente está trabalhando",
+      "process-died": "O processo do agente parou inesperadamente",
+      "maintained": "Concluída; em manutenção",
+      "awaiting-review": "O pull request aguarda sua revisão",
+      "plan-task-in-review": "Uma tarefa do plano aguarda sua revisão",
+      "plan-tasks-done": "Todas as tarefas do plano estão feitas",
+      "in-progress": "Em andamento"
+    },
+    "labels": {
+      "why": "Por quê",
+      "asks": "Pergunta",
+      "phase": "Fase",
+      "run": "Execução",
+      "error": "Erro",
+      "pr": "Pull request",
+      "next": "Próximo"
+    },
+    "next": {
+      "answer": "Responder à pergunta",
+      "review": "Revisar e aprovar",
+      "openPr": "Revisar o pull request",
+      "resume": "Abrir para retomar",
+      "inDrawer": {
+        "review": "Aprove ou rejeite na aba de revisão",
+        "resume": "Use “Retry” no topo deste painel"
+      }
+    },
+    "card": {
+      "title": "Status do agente",
+      "loading": "Lendo o status do agente…",
+      "error": "Não foi possível ler o status do agente: {{error}}",
+      "notFound": "Esta funcionalidade não tem status de agente"
+    },
+    "notify": {
+      "start": "Me avise",
+      "stop": "Parar",
+      "watching": "Observando — você será avisado quando precisar de você, terminar ou falhar",
+      "failed": "Parou de observar: {{error}}",
+      "title": "{{name}}: {{state}}"
+    },
+    "list": {
+      "empty": "Nenhuma funcionalidade ativa agora",
+      "open": "Abrir"
+    },
+    "page": {
+      "title": "Atividade dos agentes",
+      "description": "O que o agente de cada funcionalidade está fazendo, e por quê — a mesma resposta de shep feat status, MCP e A2A",
+      "showFinished": "Mostrar concluídas",
+      "needsYou": "{{count}} precisam de você",
+      "error": "Não foi possível ler a atividade dos agentes: {{error}}"
+    },
+    "connect": {
+      "title": "Conectar agentes",
+      "badge": "A2A 1.0",
+      "description": "Outros agentes e orquestradores entregam ao Shep pedidos de funcionalidades e os acompanham como tarefas A2A: trabalhando, entrada necessária (um gate ou pergunta espera por você), concluída ou com falha.",
+      "endpoint": "Endpoint JSON-RPC",
+      "agentCard": "Agent card",
+      "token": "Autenticação",
+      "tokenHelp": "Envie Authorization: Bearer com o token deste arquivo. O navegador nunca o vê.",
+      "request": "Experimente",
+      "copied": "Copiado",
+      "copyFailed": "Não foi possível copiar",
+      "herdr": "Herdr",
+      "herdrHelp": "Execute shep tui dentro de um painel do Herdr: a barra lateral do Herdr mostra o Shep trabalhando, ou bloqueado quando uma funcionalidade precisa de você.",
+      "cli": "Terminal",
+      "cliHelp": "shep feat status <id> explica uma funcionalidade; shep feat wait <id> retorna quando ela precisa de você, termina ou falha.",
+      "guide": "Guia do A2A",
+      "cardVersion": "Shep {{version}}",
+      "cardError": "O agent card não carregou: {{error}}",
+      "copyLabel": "Copiar {{label}}",
+      "hint": "Outros sistemas de agentes enviam ao Shep um pedido de funcionalidade via A2A e o acompanham como tarefa. A mesma atividade alimenta o MCP, a CLI, o Herdr e esta interface."
     }
   }
 }

@@ -1,5 +1,31 @@
 # Lessons Learned
 
+## A new entry point must apply the same defaults as the old ones
+
+A2A and MCP created features by calling `CreateFeatureUseCase` directly, while `shep feat new`
+filled unset options from Settings → Workflow (mode, gates, push, PR) in the command itself.
+So a feature created over A2A ran a different pipeline than the user chose. Unit tests could not
+see it, because each adapter passed exactly what its own test expected. The first real run of the
+orchestrator demo showed it. Keep "what a caller left unset means" in core
+(`featureWorkflowDefaults`, `useWorkflowDefaults`). Before adding an entry point, diff what the
+existing entry points pass to the same use case.
+
+## A `.well-known` app folder is invisible; the web token appears on first request
+
+Two things a real `shep ui` run showed while adding A2A (spec 149). ESLint's TypeScript project
+(and the include globs behind it) skip dot-directories, so `app/.well-known/…/route.ts` fails the
+pre-commit lint with "not found by the project service". Serve well-known URLs from a route under
+`app/api/…` plus a `rewrites()` entry in `next.config.ts`; the request guard still sees the
+well-known path. And the daemon writes `SHEP_HOME/web-auth-token` only when the guard first runs,
+so an e2e test must make one request before reading the token.
+
+## A version made of "newest timestamp" can go down
+
+The agent-activity version is the newest of feature, run and open-question timestamps. Answering a
+question removes its timestamp from the set, so the version can drop before anything else is
+written. Clamp in the watcher (strictly increasing per stream) and never document such a value as
+globally monotonic; ask "which write removes an input?" before claiming a derived value only rises.
+
 ## `kill(pid, 0)` says a zombie is alive
 
 `process.kill(pid, 0)` succeeds for a zombie: a process that exited but has not been reaped by its
@@ -3294,3 +3320,12 @@ with a fresh `SHEP_HOME`; an override of a transitive dependency must be exercis
 path that uses it, not just installed. In the sandbox, unset `GH_TOKEN`/`GITHUB_TOKEN` (they make
 electron-builder add a GitHub publish target and crash on `null.channel`) and pass
 `ELECTRON_GET_USE_PROXY=1 GLOBAL_AGENT_HTTPS_PROXY=$HTTPS_PROXY`.
+
+## A capability is not done until every presentation layer has it
+
+Spec 149 shipped agent activity to MCP, A2A, the CLI and the TUI, and the user had to ask
+where the web UI was. The rule in code-quality.md ("every feature MUST be implementable in ALL
+presentation layers") is a checklist item, not a design note: before calling a feature done, list
+each CLI command / TUI behaviour it adds and name the web surface that shows the same use-case
+result (page, drawer card, sidebar badge, settings section). If one is deliberately skipped, the
+spec's Out of Scope says so.

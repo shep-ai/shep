@@ -1,0 +1,42 @@
+# A feature starts working; shep feat wait returns the moment it needs someone.
+❯ shep feat new "Add a login page with email and password" --repo ~/demo/acme-web
+✓ Feature created
+  ID:       7a8252ce-8c09-413a-b1dc-e22e7a082e32
+  Review:   pause after every phase
+❯ shep feat status 7a8252ce
+
+  Add A Login Page With Email And Password  blocked
+
+  Why    Waiting for your approval
+  Phase  merge
+  Run    waiting_approval
+  ID     7a8252ce-8c09-413a-b1dc-e22e7a082e32
+  Next   shep feat approve 7a8252ce  |  shep feat reject 7a8252ce
+
+❯ shep feat wait 7a8252ce --timeout 120; echo "exit code: $?"
+
+  Add A Login Page With Email And Password  blocked
+
+  Why    Waiting for your approval
+  Phase  merge
+  Run    waiting_approval
+  ID     7a8252ce-8c09-413a-b1dc-e22e7a082e32
+  Next   shep feat approve 7a8252ce  |  shep feat reject 7a8252ce
+
+exit code: 0
+❯ shep feat status 7a8252ce --json | jq '{state, reason, phase, actions, version}'
+{
+  "state": "blocked",
+  "reason": "approval-gate",
+  "phase": "merge",
+  "actions": [
+    "approve",
+    "reject"
+  ],
+  "version": 1793204235588
+}
+❯ shep feat wait 00000000 --json; echo "exit code: $?"
+{
+  "outcome": "not-found"
+}
+exit code: 1

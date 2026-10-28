@@ -17,7 +17,6 @@ import {
   type FeatureConsoleAppDeps,
 } from '@/presentation/tui/feature-console/feature-console.app.js';
 import {
-  AgentRunStatus,
   FeatureChatEntryKind,
   FeatureConsoleAction,
   FeaturePaneContent,
@@ -27,36 +26,29 @@ import {
   FeatureState,
   SdlcLifecycle,
 } from '@/domain/generated/output.js';
+import { AgentActivityState } from '@/domain/generated/output.js';
 import type {
   FeatureConsoleFleet,
   FeatureConsoleRow,
   FeatureConsoleSnapshot,
 } from '@/application/use-cases/feature-console/feature-console.types.js';
 import { FakeTerminal } from '@tests/helpers/tui/fake-terminal.js';
+import { GATE_ROW, consoleRow, consoleSummary } from '@tests/helpers/feature-console-fixtures.js';
 
 const REFRESH_MS = 25;
 
 function gate(name: string): FeatureConsoleRow {
-  return {
+  return consoleRow({
+    ...GATE_ROW,
     featureId: `${name}-id`,
     shortId: name.slice(0, 8),
     name,
-    repositoryName: 'acme',
     repositoryPath: '/acme',
     branch: `feat/${name}`,
     lifecycle: SdlcLifecycle.Requirements,
-    state: FeatureState.ActionRequired,
     phase: 'requirements',
-    runId: 'run-1',
-    runStatus: AgentRunStatus.waitingApproval,
-    elapsedMs: 0,
-    inputTokens: 0,
-    outputTokens: 0,
-    pendingQuestions: 0,
-    needsAttention: true,
-    actions: [FeatureConsoleAction.Approve, FeatureConsoleAction.Reject],
     updatedAt: new Date(),
-  };
+  });
 }
 
 const unpaused: FeatureConsoleFleet = { circuitBreakerTripped: false };
@@ -79,14 +71,11 @@ const snapshotWithFleet = (
   generatedAt: new Date(),
   fleet,
   rows,
-  summary: {
+  summary: consoleSummary({
     total: rows.length,
     needsAttention: rows.length,
-    running: 0,
-    waiting: 0,
-    failed: 0,
-    done: 0,
-  },
+    activity: rows.length > 0 ? AgentActivityState.Blocked : AgentActivityState.Done,
+  }),
 });
 
 // eslint-disable-next-line no-control-regex
@@ -107,6 +96,12 @@ describe('runFeatureConsole', () => {
   let sendChatMessage: ReturnType<typeof vi.fn<FeatureConsoleAppDeps['sendChatMessage']>>;
   let answerChatQuestion: ReturnType<typeof vi.fn<FeatureConsoleAppDeps['answerChatQuestion']>>;
   let stopChats: ReturnType<typeof vi.fn<FeatureConsoleAppDeps['stopChats']>>;
+  let reportActivity: ReturnType<
+    typeof vi.fn<NonNullable<FeatureConsoleAppDeps['reportActivity']>>
+  >;
+  let releaseActivity: ReturnType<
+    typeof vi.fn<NonNullable<FeatureConsoleAppDeps['releaseActivity']>>
+  >;
   let releaseQueue: ReturnType<typeof vi.fn<FeatureConsoleAppDeps['releaseQueue']>>;
   let done: Promise<void> | undefined;
 
@@ -168,6 +163,10 @@ describe('runFeatureConsole', () => {
       message: 'Answered',
     }));
     stopChats = vi.fn<FeatureConsoleAppDeps['stopChats']>(async () => undefined);
+    reportActivity = vi.fn<NonNullable<FeatureConsoleAppDeps['reportActivity']>>();
+    releaseActivity = vi.fn<NonNullable<FeatureConsoleAppDeps['releaseActivity']>>(
+      async () => undefined
+    );
     releaseQueue = vi.fn<FeatureConsoleAppDeps['releaseQueue']>(async () => ({
       ok: true,
       message: 'Queue released — queued features can start',
@@ -199,6 +198,8 @@ describe('runFeatureConsole', () => {
       sendChatMessage,
       answerChatQuestion,
       stopChats,
+      reportActivity,
+      releaseActivity,
       releaseQueue,
       refreshIntervalMs: REFRESH_MS,
       chatRefreshIntervalMs: REFRESH_MS,
@@ -206,6 +207,43 @@ describe('runFeatureConsole', () => {
     return done;
   };
   const screenText = () => plain(terminal.output);
+
+  describe('terminal host activity (spec 149)', () => {
+    it('tells the host what shep is doing and how many features need the user', async () => {
+      void start();
+      await vi.waitFor(() =>
+        expect(reportActivity).toHaveBeenCalledWith({
+          state: AgentActivityState.Blocked,
+          message: t('tui:console.hostStatus.blocked', { count: 1 }),
+        })
+      );
+    });
+
+    it('sends no message when nothing needs the user', async () => {
+      loadSnapshot.mockResolvedValue(snapshotOf());
+      void start();
+      await vi.waitFor(() =>
+        expect(reportActivity).toHaveBeenCalledWith({ state: AgentActivityState.Done })
+      );
+    });
+
+    it('lets go of the host when the console quits', async () => {
+      void start();
+      await vi.waitFor(() => expect(reportActivity).toHaveBeenCalled());
+      terminal.type('\x03');
+      await done;
+      expect(releaseActivity).toHaveBeenCalledTimes(1);
+    });
+
+    it('keeps working when the host cannot be told', async () => {
+      reportActivity.mockImplementation(() => {
+        throw new Error('herdr is gone');
+      });
+      void start();
+      await vi.waitFor(() => expect(screenText()).toContain('Billing UI'));
+      expect(screenText()).not.toContain('herdr is gone');
+    });
+  });
 
   it('starts the terminal and draws the first snapshot', async () => {
     void start();

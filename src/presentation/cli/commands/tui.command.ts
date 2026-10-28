@@ -25,6 +25,7 @@ import { GetFeatureChatUseCase } from '@/application/use-cases/feature-console/g
 import { SendFeatureChatMessageUseCase } from '@/application/use-cases/feature-console/send-feature-chat-message.use-case.js';
 import { AnswerFeatureChatQuestionUseCase } from '@/application/use-cases/feature-console/answer-feature-chat-question.use-case.js';
 import { StopFeatureChatsUseCase } from '@/application/use-cases/feature-console/stop-feature-chats.use-case.js';
+import { ReportHostActivityUseCase } from '@/application/use-cases/agent-activity/report-host-activity.use-case.js';
 import type { GetFeatureConsoleSnapshotInput } from '@/application/use-cases/feature-console/feature-console.types.js';
 import { normalizeRepositoryPath } from '@/domain/shared/repository-path.js';
 import {
@@ -70,6 +71,7 @@ interface ConsoleUseCases {
   sendChat: Pick<SendFeatureChatMessageUseCase, 'execute'>;
   answerChat: Pick<AnswerFeatureChatQuestionUseCase, 'execute'>;
   stopChats: Pick<StopFeatureChatsUseCase, 'execute'>;
+  hostActivity: Pick<ReportHostActivityUseCase, 'execute' | 'release'>;
 }
 
 /** Seams for tests; production uses the defaults. */
@@ -100,6 +102,7 @@ const defaults: Required<TuiCommandOptions> = {
     sendChat: container.resolve(SendFeatureChatMessageUseCase),
     answerChat: container.resolve(AnswerFeatureChatQuestionUseCase),
     stopChats: container.resolve(StopFeatureChatsUseCase),
+    hostActivity: container.resolve(ReportHostActivityUseCase),
   }),
   runConsole: runFeatureConsole,
   createTerminal: () => new FullscreenTerminal(new ProcessTerminal()),
@@ -211,6 +214,8 @@ console sets @shep_status for status-right:
         answerChatQuestion: (featureId, answers) =>
           useCases.answerChat.execute({ featureId, answers }),
         stopChats: (featureIds) => useCases.stopChats.execute(featureIds),
+        reportActivity: (report) => useCases.hostActivity.execute(report),
+        releaseActivity: () => useCases.hostActivity.release(),
         ...(options.notify && {
           notify: (message: string) =>
             terminal.write(terminalNotification(env, NOTIFICATION_TITLE, message)),

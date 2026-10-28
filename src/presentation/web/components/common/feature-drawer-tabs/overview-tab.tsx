@@ -47,6 +47,7 @@ import { getModelMeta } from '@/lib/model-metadata';
 import { formatDuration } from '@/lib/format-duration';
 import type { BranchSyncData } from '@/hooks/use-branch-sync-status';
 import { canSwitchPinnedConfig, type FeatureDrawerPinnedConfig } from './pinned-config-utils';
+import { FeatureActivitySection } from '@/components/agent-activity/feature-activity-section';
 
 // ── Primitives ──────────────────────────────────────────────────────
 
@@ -231,6 +232,13 @@ export function OverviewTab({
 
   return (
     <div data-testid="feature-drawer-status" className="pb-4">
+      {/* ── Agent status (spec 149): working / needs you / waiting / done / failed, and why ── */}
+      {data.state !== 'creating' ? (
+        <div className="px-3 pb-3">
+          <FeatureActivitySection featureId={data.featureId} />
+        </div>
+      ) : null}
+
       {/* ── Progress ── */}
 
       {!isCompleted && data.progress > 0 ? (

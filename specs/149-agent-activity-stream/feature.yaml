@@ -1,0 +1,48 @@
+feature:
+  id: '149-agent-activity-stream'
+  name: 'agent-activity-stream'
+  number: 149
+  branch: 'claude/funny-newton-xhakwy'
+  lifecycle: 'review'
+  createdAt: '2026-10-26T14:44:15Z'
+
+status:
+  phase: 'complete'
+  progress:
+    completed: 21
+    total: 21
+    percentage: 100
+  currentTask: null
+  lastUpdated: '2026-10-28T12:00:00Z'
+  lastUpdatedBy: 'shep-kit:implement'
+
+validation:
+  lastRun: null
+  gatesPassed: []
+  autoFixesApplied: []
+
+tasks:
+  current: null
+  blocked: []
+  failed: []
+
+checkpoints:
+  - phase: 'feature-created'
+    completedAt: '2026-10-26T14:44:15Z'
+    completedBy: 'shep-kit:new-feature'
+  - phase: 'research-complete'
+    completedAt: '2026-10-26T15:10:00Z'
+    completedBy: 'shep-kit:research'
+  - phase: 'plan-complete'
+    completedAt: '2026-10-26T15:30:00Z'
+    completedBy: 'shep-kit:plan'
+  - phase: 'implementation-complete'
+    completedAt: '2026-10-26T16:22:26Z'
+    completedBy: 'shep-kit:implement'
+  - phase: 'web-ui-complete'
+    completedAt: '2026-10-28T20:30:00Z'
+    completedBy: 'shep-kit:implement'
+
+errors:
+  current: null
+  history: []

@@ -72,6 +72,12 @@ const nextConfig: NextConfig = {
   // No effect in production builds.
   devIndicators: false,
 
+  // A2A discovery (spec 149): agents look for the card at the well-known
+  // path; the route lives under /api/a2a.
+  async rewrites() {
+    return [{ source: '/.well-known/agent-card.json', destination: '/api/a2a/agent-card' }];
+  },
+
   // Exclude native/DI packages and Node.js builtins from Next.js bundling.
   // Without this, Turbopack statically evaluates os.platform() at build time
   // and tree-shakes platform-conditional branches (e.g., open-shell.ts).

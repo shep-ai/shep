@@ -1,0 +1,23 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: FeatureStateReason.yaml
+type: string
+enum:
+  - deleting
+  - archived
+  - queued-for-capacity
+  - deferred
+  - waiting-on-parent
+  - approval-gate
+  - agent-question
+  - run-failed
+  - run-interrupted
+  - run-cancelled
+  - run-completed
+  - agent-running
+  - process-died
+  - maintained
+  - awaiting-review
+  - plan-task-in-review
+  - plan-tasks-done
+  - in-progress
+description: "Why a feature is in its state: the rule that decided it"
