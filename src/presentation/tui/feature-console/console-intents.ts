@@ -16,6 +16,8 @@ export interface FeatureConsoleIntents {
   runAction(row: FeatureConsoleRow, action: FeatureConsoleAction, feedback?: string): void;
   /** Load (and keep refreshing) the log of this feature; undefined stops it. */
   showLog(row: FeatureConsoleRow | undefined): void;
+  /** Release the paused admission queue (spec 148); only offered while paused. */
+  releaseQueue(): void;
   /** Open a shell or the followed log of this feature in a terminal pane. */
   openPane(
     row: FeatureConsoleRow,

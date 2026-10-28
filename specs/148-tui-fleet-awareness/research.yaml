@@ -1,0 +1,132 @@
+# Research (YAML)
+# Source of truth for 148-tui-fleet-awareness. Markdown is auto-generated.
+
+name: tui-fleet-awareness
+number: 148
+summary: >
+  Two questions decide this feature: where the console gets "is the fleet parked", and whether
+  the snapshot or the view should judge it. Both answers already exist in the codebase — reuse
+  them rather than deriving a third time.
+
+relatedFeatures:
+  - 142-tui-feature-console
+  - 111-fleet-control-plane
+technologies:
+  - '@mariozechner/pi-tui'
+relatedLinks:
+  - title: Fleet control plane (pause + breaker semantics)
+    url: ../111-fleet-control-plane/spec.yaml
+
+decisions:
+  - title: Where the fleet verdict comes from
+    chosen: Inject GetFleetOverviewUseCase into GetFeatureConsoleSnapshotUseCase and read once per poll
+    rejected:
+      - Read settings.workflow.queuePaused directly in the snapshot use case
+      - A new GetFleetQueuePauseUseCase
+      - Read it in the view from the container
+    rationale: >
+      GetFleetOverviewUseCase is already the one place that decides "paused" and "tripped":
+      it resolves the stored pause, applies the acknowledgement window, evaluates both breaker
+      metrics, and performs the configured auto-pause write on a trip. A second reader would
+      drift from it — and the drift would be visible, because the console and `fleet status`
+      would disagree about the same fleet at the same moment. It costs one extra aggregate read
+      per 2s poll, on the same database the snapshot already reads.
+
+  - title: Where the pause is judged
+    chosen: In core, into a FeatureConsoleFleet field on the snapshot; the view renders it
+    rejected:
+      - Pass FleetOverview through and let the render helpers interpret it
+      - Two booleans on the summary counts
+    rationale: >
+      Spec 142's rule is "no decisions in the view": state, phase, needs-you and row order all
+      arrive decided. A banner is the same kind of decision, so it arrives decided too. The
+      snapshot exposes the two facts the banner needs (a pause with its reason, a trip with its
+      reason) and nothing else — no FleetOverview counts, which the console counts itself.
+
+  - title: The key
+    chosen: '`u` — "unpause" — gated on a pause being in force, with a `y` confirmation'
+    rejected:
+      - Reuse `R` (taken by per-feature resume; two meanings on one key is a bug waiting)
+      - The p key (reads as "pause", which the console deliberately cannot do)
+      - No key at all, visibility only
+    rationale: >
+      Visibility alone would still send a user to another shell, which is the CLI-only flow this
+      spec exists to remove. `u` is unused, and it is offered only when the queue is parked, so
+      it cannot be pressed "just to see". The web bar resumes on one click, but a console has no
+      pointer and no undo; `s` (stop) already asks first for the same reason — a fleet-wide
+      brake is released deliberately.
+
+  - title: Layout
+    chosen: One dedicated banner line that appears only when there is something to say, with the chrome height derived from it
+    rejected:
+      - Appending to the header line (the summary is already full at 80 columns)
+      - Replacing the key bar (the user needs both)
+      - A modal overlay (occlusion is how #881 happened)
+    rationale: >
+      The console renders exactly terminal.rows lines, so a line that appears must come out of
+      the body height, or the last line is silently cut. The view already owns CHROME_LINES;
+      it becomes a method. The banner sits above the strip — that is where the eye lands when
+      nothing is moving — and nowhere near the roster, so it cannot cover a row.
+
+  - title: TypeSpec
+    chosen: No TypeSpec change
+    rejected:
+      - A new tsp model for the console fleet view
+    rationale: >
+      FeatureConsoleSnapshot is a presentation view model, not a domain entity: it is hand-written
+      in application/use-cases/feature-console/feature-console.types.ts and already imports
+      generated types. The domain facts it carries — FleetQueuePause — are already TypeSpec.
+      Adding a TypeSpec model for "how the console draws a banner" would put presentation in the
+      domain layer.
+
+  - title: Releasing is not a FeatureConsoleAction
+    chosen: A separate intent (releaseQueue) wired to SetFleetQueuePauseUseCase in the CLI command
+    rejected:
+      - A fifth member on the FeatureConsoleAction enum
+      - A new core use case
+    rationale: >
+      FeatureConsoleAction is per-feature and drives RunFeatureConsoleActionUseCase, which
+      resolves a feature and a run; a fleet-wide action has neither. The enum is TypeSpec and
+      shared with the web, so widening it would misdescribe it. Presentation may resolve a use
+      case directly (CLAUDE.md, DI rules), and tui.command.ts already does exactly that for the
+      other three.
+
+content: |
+  ## Status
+
+  - **Phase:** Research
+  - **Updated:** 2026-10-24
+
+  ## What already exists
+
+  Spec 111 shipped two of the three readers the pause needs, and both are correct:
+
+  - `GetFleetOverviewUseCase` resolves the stored pause, applies the breaker acknowledgement
+    window, evaluates consecutive failures and the rolling rate, and performs the configured
+    auto-pause write when it trips. It is the only place that decides "paused" and "tripped".
+  - `SetFleetQueuePauseUseCase` is the only writer, shared by the breaker, `shep fleet pause` /
+    `resume`, and the web Resume button. The breaker deliberately cannot resume; only a user can.
+
+  The console (spec 142) already has the machinery this feature needs: a snapshot that arrives
+  decided, a status line, confirmation modes (`ConfirmStop`), a dynamic-rows contract and a PTY
+  e2e harness (`tests/helpers/tui/pty-screen.ts`).
+
+  ## Decisions
+
+  The `decisions` array above is the source of truth. In short:
+
+  1. Read the verdict through `GetFleetOverviewUseCase`, injected into the snapshot use case.
+  2. Decide in core, into a `FeatureConsoleFleet` field; the view formats only.
+  3. Release with `u`, gated on a pause and confirmed with `y`, wired to `SetFleetQueuePauseUseCase`.
+  4. One banner line, whose height is taken out of the body rather than the key bar.
+  5. No TypeSpec change: the snapshot is a view model, and the domain facts are already TypeSpec.
+  6. `releaseQueue` is a separate intent, not a fifth `FeatureConsoleAction` — that enum is
+     per-feature and shared with the web.
+
+  ## Rejected alternatives
+
+  Visibility without a key is the current state and the thing this spec removes: it still sends
+  the user to another shell. A modal help overlay for the reason would occlude the roster, which
+  is how #881 happened with the status bar. Reading `settings.workflow.queuePaused` directly
+  would skip the acknowledgement window and the auto-pause write, so the console and
+  `fleet status` would disagree.

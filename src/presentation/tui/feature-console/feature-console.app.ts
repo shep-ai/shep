@@ -51,6 +51,8 @@ export interface FeatureConsoleAppDeps extends ConsoleChatDeps {
   ) => Promise<OpenFeaturePaneResult>;
   /** Run a command in this terminal while the console is stopped; resolves when it exits. */
   runInline: (plan: InlineCommand) => Promise<void>;
+  /** Release the paused admission queue, as `shep fleet resume` does (spec 148). */
+  releaseQueue: () => Promise<FeatureConsoleActionResult>;
   /** Alert the user (bell, terminal notification); undefined turns alerts off. */
   notify?: (message: string) => void;
   openControlCenter: ControlCenterDeps['openControlCenter'];
@@ -87,6 +89,7 @@ export function runFeatureConsole(deps: FeatureConsoleAppDeps): Promise<void> {
         if (row) void refreshLog();
       },
       openPane: (row, content, placement) => void openPane(row, content, placement),
+      releaseQueue: () => void releaseQueue(),
       copyId: (row) => {
         deps.terminal.write(clipboardSequence(row.featureId));
         view.setStatus({
@@ -155,6 +158,26 @@ export function runFeatureConsole(deps: FeatureConsoleAppDeps): Promise<void> {
       render();
       try {
         view.setStatus(await deps.runAction(row.featureId, action, feedback));
+      } catch (error) {
+        view.setStatus({ ok: false, message: messageOf(error) });
+      } finally {
+        view.setBusy(undefined);
+      }
+      await refresh();
+    }
+
+    /**
+     * Release the pause and re-read (spec 148).
+     *
+     * Never clear the banner here: the store is the source of truth, so a
+     * refused release leaves the pause visible, exactly as the web status bar
+     * keeps its badge until the re-read says otherwise.
+     */
+    async function releaseQueue(): Promise<void> {
+      view.setBusy(deps.t('tui:console.progress.releaseQueue'));
+      render();
+      try {
+        view.setStatus(await deps.releaseQueue());
       } catch (error) {
         view.setStatus({ ok: false, message: messageOf(error) });
       } finally {

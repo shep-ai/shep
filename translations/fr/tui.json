@@ -160,6 +160,10 @@
       "failed": "en échec",
       "done": "terminées"
     },
+    "fleet": {
+      "queuePaused": "file d'attente en pause {{duration}}",
+      "breakerTripped": "disjoncteur déclenché"
+    },
     "strip": {
       "label": "T'ATTEND",
       "empty": "Rien ne t'attend pour le moment",
@@ -229,6 +233,7 @@
       "reject": "rejeter",
       "stop": "arrêter",
       "resume": "reprendre",
+      "releaseQueue": "libérer la file",
       "help": "aide",
       "quit": "quitter",
       "shell": "shell",
@@ -249,7 +254,8 @@
       "approve": "Approbation de {{name}}…",
       "reject": "Rejet de {{name}}…",
       "stop": "Arrêt de {{name}}…",
-      "resume": "Reprise de {{name}}…"
+      "resume": "Reprise de {{name}}…",
+      "releaseQueue": "Libération de la file en pause…"
     },
     "refreshFailed": "Échec de l'actualisation : {{message}}",
     "empty": {
@@ -266,6 +272,7 @@
       "reject": "r   rejeter la porte avec un retour",
       "stop": "s   arrêter l'exécution (demande d'abord)",
       "resume": "R   reprendre une exécution interrompue ou en échec",
+      "releaseQueue": "u   libérer la file en pause (demande confirmation)",
       "help": "?   cette aide (échap pour fermer)",
       "quit": "q / ctrl+c   quitter",
       "shell": "t / T   shell dans le worktree (scindé / nouvelle fenêtre)",
@@ -331,6 +338,10 @@
       "answerPrompt": "réponse",
       "hint": "entrée envoyer · échap revenir aux fonctionnalités",
       "hintQuestion": "1–9 choisir une option · ou tapez une réponse puis entrée · échap revenir"
+    },
+    "release": {
+      "confirm": "Libérer la file en pause ? Les nouveaux features peuvent démarrer. (y/n)",
+      "done": "File libérée — les features en attente peuvent démarrer"
     }
   }
 }

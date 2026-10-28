@@ -70,11 +70,42 @@ export interface FeatureConsoleSummary {
   done: number;
 }
 
+/**
+ * The admission-queue pause in force, as the console needs it.
+ *
+ * `pausedAt` is a `Date`, not the generated `FleetQueuePause`'s `utcDateTime`
+ * (emitted as `any`), because the banner measures the pause's age and `any`
+ * would let that arithmetic go unchecked.
+ */
+export interface FeatureConsoleQueuePause {
+  pausedAt: Date;
+  reason: string;
+}
+
+/**
+ * The fleet's own state, as the console shows it (spec 148).
+ *
+ * A parked admission queue and a tripped circuit breaker are fleet-wide
+ * conditions, not per-feature ones: `waiting` stops draining while a pause is
+ * in force, and no row can explain why. Both arrive decided, like every other
+ * value in this snapshot, so the view formats without judging.
+ */
+export interface FeatureConsoleFleet {
+  /** Present only while the queue is parked. */
+  queuePause?: FeatureConsoleQueuePause;
+  /** True when the breaker's failure thresholds are met, paused or not. */
+  circuitBreakerTripped: boolean;
+  /** The threshold that was crossed; present with a trip. */
+  circuitBreakerReason?: string;
+}
+
 export interface FeatureConsoleSnapshot {
   generatedAt: Date;
   /** Already in display order. */
   rows: FeatureConsoleRow[];
   summary: FeatureConsoleSummary;
+  /** The pause and breaker verdict behind the counts. */
+  fleet: FeatureConsoleFleet;
 }
 
 export interface GetFeatureConsoleSnapshotInput {

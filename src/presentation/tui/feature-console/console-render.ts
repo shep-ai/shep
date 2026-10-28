@@ -11,7 +11,15 @@ import type {
   FeatureConsoleRow,
   FeatureConsoleSnapshot,
 } from '@/application/use-cases/feature-console/feature-console.types.js';
-import { fit, fitRight, formatCost, formatDuration, paint, stripStyles } from './console-format.js';
+import {
+  fit,
+  fitRight,
+  formatCost,
+  formatDuration,
+  paint,
+  sanitizeText,
+  stripStyles,
+} from './console-format.js';
 import { NS, SEPARATOR, agentLabel, phaseLabel, stateLabel, styleOf } from './console-labels.js';
 
 const STRIP_GAP = '   ';
@@ -34,6 +42,45 @@ export function renderHeader(snapshot: FeatureConsoleSnapshot | undefined, t: TF
     `${s.done} ${t(`${NS}.summary.done`)}`,
   ];
   return `${title}  ${parts.join(paint.muted(SEPARATOR))}`;
+}
+
+/**
+ * One line about the fleet itself (spec 148): a parked queue first, then a
+ * bare trip.
+ *
+ * Returns undefined when there is nothing to say, so the caller decides
+ * whether the line exists — and takes it out of the body height when it does.
+ * The age uses the snapshot's own clock, so it matches the counts beside it.
+ */
+export function renderBanner(
+  snapshot: FeatureConsoleSnapshot | undefined,
+  t: TFunction
+): string | undefined {
+  const fleet = snapshot?.fleet;
+  if (!snapshot || !fleet) return undefined;
+
+  if (fleet.queuePause) {
+    const elapsed = Math.max(
+      0,
+      snapshot.generatedAt.getTime() - fleet.queuePause.pausedAt.getTime()
+    );
+    const label = t(`${NS}.fleet.queuePaused`, { duration: formatDuration(elapsed) });
+    return `${paint.attention(` ⏸ ${label}`)} — ${paint.muted(oneLine(fleet.queuePause.reason))}`;
+  }
+
+  if (fleet.circuitBreakerTripped) {
+    const label = paint.error(` ⚡ ${t(`${NS}.fleet.breakerTripped`)}`);
+    return fleet.circuitBreakerReason
+      ? `${label} — ${paint.muted(oneLine(fleet.circuitBreakerReason))}`
+      : label;
+  }
+
+  return undefined;
+}
+
+/** Outside text (a reason) on one line: no wrapping, no control characters. */
+function oneLine(text: string): string {
+  return sanitizeText(text).replace(/\s+/g, ' ').trim();
 }
 
 export function renderStrip(rows: readonly FeatureConsoleRow[], t: TFunction): string {

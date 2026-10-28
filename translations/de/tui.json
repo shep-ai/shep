@@ -160,6 +160,10 @@
       "failed": "fehlgeschlagen",
       "done": "fertig"
     },
+    "fleet": {
+      "queuePaused": "Warteschlange pausiert {{duration}}",
+      "breakerTripped": "Circuit Breaker ausgelöst"
+    },
     "strip": {
       "label": "BRAUCHT DICH",
       "empty": "Gerade braucht dich nichts",
@@ -229,6 +233,7 @@
       "reject": "ablehnen",
       "stop": "stoppen",
       "resume": "fortsetzen",
+      "releaseQueue": "Warteschlange freigeben",
       "help": "Hilfe",
       "quit": "beenden",
       "shell": "Shell",
@@ -249,7 +254,8 @@
       "approve": "{{name}} wird freigegeben…",
       "reject": "{{name}} wird abgelehnt…",
       "stop": "{{name}} wird gestoppt…",
-      "resume": "{{name}} wird fortgesetzt…"
+      "resume": "{{name}} wird fortgesetzt…",
+      "releaseQueue": "Pausierte Warteschlange wird freigegeben…"
     },
     "refreshFailed": "Aktualisierung fehlgeschlagen: {{message}}",
     "empty": {
@@ -266,6 +272,7 @@
       "reject": "r   Gate mit Feedback ablehnen",
       "stop": "s   Lauf stoppen (fragt vorher)",
       "resume": "R   unterbrochenen oder fehlgeschlagenen Lauf fortsetzen",
+      "releaseQueue": "u   die pausierte Warteschlange freigeben (fragt nach)",
       "help": "?   diese Hilfe (Esc schließt)",
       "quit": "q / Strg+C   beenden",
       "shell": "t / T   Shell im Worktree (geteilt / neues Fenster)",
@@ -331,6 +338,10 @@
       "answerPrompt": "Antwort",
       "hint": "Enter senden · Esc zurück zu den Features",
       "hintQuestion": "1–9 Option wählen · oder Antwort tippen und Enter · Esc zurück"
+    },
+    "release": {
+      "confirm": "Pausierte Warteschlange freigeben? Neue Features können starten. (y/n)",
+      "done": "Warteschlange freigegeben — wartende Features können starten"
     }
   }
 }

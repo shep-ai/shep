@@ -5,13 +5,22 @@
  * features (with crashed runs reconciled first), their current runs, those
  * runs' phase timings, pending agent questions, and registered repositories.
  *
+ * The fleet's own state — a parked admission queue, a tripped breaker — comes
+ * from `GetFleetOverviewUseCase` (spec 148), so the console and `shep fleet
+ * status` cannot disagree about the same fleet at the same moment.
+ *
  * Each row arrives decided: state, phase, cost, elapsed time, whether it needs
  * the user, which actions it offers, and its place in the order.
  */
 
 import { inject, injectable } from 'tsyringe';
 import { AgentQuestionStatus, FeatureState } from '../../../domain/generated/output.js';
-import type { AgentRun, Feature, PhaseTiming } from '../../../domain/generated/output.js';
+import type {
+  AgentRun,
+  Feature,
+  FleetOverview,
+  PhaseTiming,
+} from '../../../domain/generated/output.js';
 import {
   availableFeatureActions,
   compareConsoleRows,
@@ -28,8 +37,10 @@ import type { FeatureListFilters } from '../../ports/output/repositories/feature
 import type { IClock } from '../../ports/output/services/clock.interface.js';
 import { ListFeaturesUseCase } from '../features/list-features.use-case.js';
 import { ListAgentQuestionInboxUseCase } from '../agents/list-agent-question-inbox.use-case.js';
+import { GetFleetOverviewUseCase } from '../fleet/get-fleet-overview.use-case.js';
 import {
   FEATURE_SHORT_ID_LENGTH,
+  type FeatureConsoleFleet,
   type FeatureConsoleRow,
   type FeatureConsoleSnapshot,
   type FeatureConsoleSummary,
@@ -56,7 +67,9 @@ export class GetFeatureConsoleSnapshotUseCase {
     @inject('IRepositoryRepository')
     private readonly repositoryRepo: IRepositoryRepository,
     @inject('IClock')
-    private readonly clock: IClock
+    private readonly clock: IClock,
+    @inject(GetFleetOverviewUseCase)
+    private readonly fleetOverview: GetFleetOverviewUseCase
   ) {}
 
   async execute(input: GetFeatureConsoleSnapshotInput = {}): Promise<FeatureConsoleSnapshot> {
@@ -64,11 +77,15 @@ export class GetFeatureConsoleSnapshotUseCase {
     const features = await this.listFeatures.execute(listFilters(input));
 
     const runIds = features.flatMap((f) => (f.agentRunId ? [f.agentRunId] : []));
-    const [runs, timings, questions, repositories] = await Promise.all([
+    const [runs, timings, questions, repositories, fleet] = await Promise.all([
       runIds.length > 0 ? this.runRepo.findByIds(runIds) : Promise.resolve([]),
       runIds.length > 0 ? this.timingRepo.findByRunIds(runIds) : Promise.resolve([]),
       this.questionInbox.execute({ status: AgentQuestionStatus.pending }),
       this.repositoryRepo.list(),
+      // Scoped exactly like the features above, so `shep tui --repo` judges one
+      // repository the way `shep fleet status --repo` does. A scoped read never
+      // parks the global queue; the overview use case owns that guard.
+      this.fleetOverview.execute(input.repositoryPath),
     ]);
 
     const runById = new Map(runs.map((r) => [r.id, r]));
@@ -99,8 +116,33 @@ export class GetFeatureConsoleSnapshotUseCase {
       })
       .sort(compareConsoleRows);
 
-    return { generatedAt: now, rows, summary: summarize(rows) };
+    return { generatedAt: now, rows, summary: summarize(rows), fleet: toFleet(fleet) };
   }
+}
+
+/**
+ * The two fleet facts the console shows, and nothing else.
+ *
+ * `FleetOverview` carries the counts too, but the console counts its own rows —
+ * copying them would create a second number that could disagree with the
+ * roster. `pausedAt` arrives as the generated `utcDateTime` (typed `any`); it is
+ * normalised here so the banner's age arithmetic is checked.
+ */
+function toFleet(overview: FleetOverview): FeatureConsoleFleet {
+  return {
+    ...(overview.queuePaused
+      ? {
+          queuePause: {
+            pausedAt: new Date(overview.queuePaused.pausedAt),
+            reason: overview.queuePaused.reason,
+          },
+        }
+      : {}),
+    circuitBreakerTripped: overview.circuitBreakerTripped ?? false,
+    ...(overview.circuitBreakerReason
+      ? { circuitBreakerReason: overview.circuitBreakerReason }
+      : {}),
+  };
 }
 
 function listFilters(input: GetFeatureConsoleSnapshotInput): FeatureListFilters | undefined {

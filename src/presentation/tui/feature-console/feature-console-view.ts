@@ -26,7 +26,7 @@ import { ChatView } from './chat-view.js';
 import { CommandPalette, paletteEntries } from './console-palette.js';
 import { ConsolePrompts } from './console-prompts.js';
 import { ConsoleRoster } from './console-roster.js';
-import { CHROME_LINES, ConsoleMode, ConsolePane, renderConsoleFrame } from './console-screen.js';
+import { ConsoleMode, ConsolePane, chromeHeight, renderConsoleFrame } from './console-screen.js';
 
 export type { FeatureConsoleIntents, FeatureConsoleViewDeps } from './console-intents.js';
 
@@ -123,6 +123,12 @@ export class FeatureConsoleView implements Component {
       this.mode = ConsoleMode.Browse;
       return;
     }
+    if (this.mode === ConsoleMode.ConfirmReleaseQueue) {
+      if (key === ConsoleKey.Confirm) this.deps.intents.releaseQueue();
+      if (key === ConsoleKey.Quit) this.deps.intents.quit();
+      this.mode = ConsoleMode.Browse;
+      return;
+    }
     if (this.mode === ConsoleMode.Help) {
       if (key === ConsoleKey.Quit) this.deps.intents.quit();
       this.mode = ConsoleMode.Browse;
@@ -192,6 +198,12 @@ export class FeatureConsoleView implements Component {
       case ConsoleKey.Stop:
         if (this.offers(FeatureConsoleAction.Stop)) this.mode = ConsoleMode.ConfirmStop;
         return;
+      case ConsoleKey.ReleaseQueue:
+        // Offered only while a pause is in force: the console cannot park the
+        // queue, and an unpause with nothing to unpause should not fire on a
+        // stray key press.
+        if (this.queuePaused) this.mode = ConsoleMode.ConfirmReleaseQueue;
+        return;
       default:
         return this.runKey(key);
     }
@@ -237,6 +249,10 @@ export class FeatureConsoleView implements Component {
     }
   }
 
+  private get queuePaused(): boolean {
+    return this.snapshot?.fleet.queuePause !== undefined;
+  }
+
   private offers(action: FeatureConsoleAction): boolean {
     return !this.busy && (this.selectedRow?.actions.includes(action) ?? false);
   }
@@ -278,6 +294,6 @@ export class FeatureConsoleView implements Component {
 
   /** Lines this roster can show at the current height, for paging. */
   private rosterCapacity(): number {
-    return Math.max(1, this.deps.rows() - CHROME_LINES - 1);
+    return Math.max(1, this.deps.rows() - chromeHeight(this.snapshot, this.deps.t) - 1);
   }
 }

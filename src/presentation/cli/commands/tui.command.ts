@@ -17,6 +17,7 @@ import { container } from '@/infrastructure/di/container.js';
 import { GetFeatureConsoleSnapshotUseCase } from '@/application/use-cases/feature-console/get-feature-console-snapshot.use-case.js';
 import { RunFeatureConsoleActionUseCase } from '@/application/use-cases/feature-console/run-feature-console-action.use-case.js';
 import { GetFeatureLogTailUseCase } from '@/application/use-cases/feature-console/get-feature-log-tail.use-case.js';
+import { SetFleetQueuePauseUseCase } from '@/application/use-cases/fleet/set-fleet-queue-pause.use-case.js';
 import { OpenFeaturePaneUseCase } from '@/application/use-cases/feature-console/open-feature-pane.use-case.js';
 import { OpenControlCenterUseCase } from '@/application/use-cases/feature-console/open-control-center.use-case.js';
 import { UpdateMultiplexerStatusUseCase } from '@/application/use-cases/feature-console/update-multiplexer-status.use-case.js';
@@ -60,6 +61,8 @@ interface ConsoleUseCases {
   snapshot: Pick<GetFeatureConsoleSnapshotUseCase, 'execute'>;
   action: Pick<RunFeatureConsoleActionUseCase, 'execute'>;
   logTail: Pick<GetFeatureLogTailUseCase, 'execute'>;
+  /** The console only ever RELEASES the queue (spec 148); the CLI and breaker park it. */
+  queuePause: Pick<SetFleetQueuePauseUseCase, 'execute'>;
   pane: Pick<OpenFeaturePaneUseCase, 'execute'>;
   controlCenter: Pick<OpenControlCenterUseCase, 'execute'>;
   multiplexerStatus: Pick<UpdateMultiplexerStatusUseCase, 'execute'>;
@@ -89,6 +92,7 @@ const defaults: Required<TuiCommandOptions> = {
     snapshot: container.resolve(GetFeatureConsoleSnapshotUseCase),
     action: container.resolve(RunFeatureConsoleActionUseCase),
     logTail: container.resolve(GetFeatureLogTailUseCase),
+    queuePause: container.resolve(SetFleetQueuePauseUseCase),
     pane: container.resolve(OpenFeaturePaneUseCase),
     controlCenter: container.resolve(OpenControlCenterUseCase),
     multiplexerStatus: container.resolve(UpdateMultiplexerStatusUseCase),
@@ -175,6 +179,17 @@ console sets @shep_status for status-right:
         runAction: (featureId, action, feedback) =>
           useCases.action.execute({ featureId, action, feedback }),
         loadLogTail: (featureId, maxLines) => useCases.logTail.execute(featureId, maxLines),
+        releaseQueue: async () => {
+          try {
+            await useCases.queuePause.execute({ paused: false });
+            return { ok: true, message: tuiT('tui:console.release.done') };
+          } catch (error) {
+            return {
+              ok: false,
+              message: error instanceof Error ? error.message : String(error),
+            };
+          }
+        },
         openPane: (featureId, content, placement) =>
           useCases.pane.execute({
             featureId,

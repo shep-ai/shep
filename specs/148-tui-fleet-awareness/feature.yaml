@@ -1,0 +1,45 @@
+feature:
+  id: '148-tui-fleet-awareness'
+  name: 'tui-fleet-awareness'
+  number: 148
+  branch: 'feat/148-tui-fleet-awareness'
+  lifecycle: 'review'
+  createdAt: '2026-10-24T17:15:00Z'
+
+status:
+  phase: 'review'
+  progress:
+    completed: 7
+    total: 7
+    percentage: 100
+  currentTask: null
+  lastUpdated: '2026-10-24T17:25:00Z'
+  lastUpdatedBy: 'shep-kit:implement'
+
+validation:
+  lastRun: null
+  gatesPassed: []
+  autoFixesApplied: []
+
+tasks:
+  current: null
+  blocked: []
+  failed: []
+
+checkpoints:
+  - phase: 'feature-created'
+    completedAt: '2026-10-24T17:05:00Z'
+    completedBy: 'shep-kit:new-feature'
+  - phase: 'research-complete'
+    completedAt: '2026-10-24T17:10:00Z'
+    completedBy: 'shep-kit:research'
+  - phase: 'plan-complete'
+    completedAt: '2026-10-24T17:12:00Z'
+    completedBy: 'shep-kit:plan'
+  - phase: 'implementation-complete'
+    completedAt: '2026-10-24T17:25:00Z'
+    completedBy: 'shep-kit:implement'
+
+errors:
+  current: null
+  history: []

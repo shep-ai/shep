@@ -160,6 +160,10 @@
       "failed": "failed",
       "done": "done"
     },
+    "fleet": {
+      "queuePaused": "queue paused {{duration}}",
+      "breakerTripped": "breaker tripped"
+    },
     "strip": {
       "label": "NEEDS YOU",
       "empty": "Nothing needs you right now",
@@ -229,6 +233,7 @@
       "reject": "reject",
       "stop": "stop",
       "resume": "resume",
+      "releaseQueue": "release queue",
       "help": "help",
       "quit": "quit",
       "shell": "shell",
@@ -249,7 +254,8 @@
       "approve": "Approving {{name}}…",
       "reject": "Rejecting {{name}}…",
       "stop": "Stopping {{name}}…",
-      "resume": "Resuming {{name}}…"
+      "resume": "Resuming {{name}}…",
+      "releaseQueue": "Releasing the paused queue…"
     },
     "refreshFailed": "Refresh failed: {{message}}",
     "empty": {
@@ -266,6 +272,7 @@
       "reject": "r   reject the gate with feedback",
       "stop": "s   stop the run (asks first)",
       "resume": "R   resume an interrupted or failed run",
+      "releaseQueue": "u   release the paused queue (asks first)",
       "help": "?   this help (esc closes)",
       "quit": "q / ctrl+c   quit",
       "shell": "t / T   shell in the worktree (split / new window)",
@@ -331,6 +338,10 @@
       "answerPrompt": "answer",
       "hint": "enter send · esc back to the features",
       "hintQuestion": "1–9 pick an option · or type an answer and press enter · esc back"
+    },
+    "release": {
+      "confirm": "Release the paused queue? New features can start. (y/n)",
+      "done": "Queue released — queued features can start"
     }
   }
 }

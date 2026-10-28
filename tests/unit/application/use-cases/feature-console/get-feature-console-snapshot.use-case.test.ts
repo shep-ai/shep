@@ -111,6 +111,7 @@ describe('GetFeatureConsoleSnapshotUseCase', () => {
   let timingRepo: { findByRunIds: ReturnType<typeof vi.fn> };
   let questionInbox: { execute: ReturnType<typeof vi.fn> };
   let repositoryRepo: { list: ReturnType<typeof vi.fn> };
+  let fleetOverview: { execute: ReturnType<typeof vi.fn> };
   let useCase: GetFeatureConsoleSnapshotUseCase;
 
   beforeEach(() => {
@@ -130,13 +131,15 @@ describe('GetFeatureConsoleSnapshotUseCase', () => {
     };
     questionInbox = { execute: vi.fn(async () => questions) };
     repositoryRepo = { list: vi.fn(async () => repositories) };
+    fleetOverview = { execute: vi.fn(async () => healthyFleet()) };
     useCase = new GetFeatureConsoleSnapshotUseCase(
       listFeatures as never,
       runRepo as never,
       timingRepo as never,
       questionInbox as never,
       repositoryRepo as never,
-      { now: () => NOW }
+      { now: () => NOW },
+      fleetOverview as never
     );
   });
 
@@ -341,4 +344,80 @@ describe('GetFeatureConsoleSnapshotUseCase', () => {
       status: PrStatus.Open,
     });
   });
+
+  describe('GetFeatureConsoleSnapshotUseCase: fleet state (spec 148)', () => {
+    it('carries a paused queue with its reason and a real Date', async () => {
+      fleetOverview.execute.mockResolvedValue({
+        ...healthyFleet(),
+        queuePaused: {
+          pausedAt: '2026-10-24T11:00:00Z',
+          reason: 'Consecutive failure threshold reached (4/4 runs failed in the last 15m)',
+        },
+        circuitBreakerTripped: true,
+        circuitBreakerReason: 'Consecutive failure threshold reached (4/4)',
+      });
+
+      const { fleet } = await useCase.execute();
+
+      expect(fleet.queuePause).toEqual({
+        pausedAt: new Date('2026-10-24T11:00:00Z'),
+        reason: 'Consecutive failure threshold reached (4/4 runs failed in the last 15m)',
+      });
+      expect(fleet.circuitBreakerTripped).toBe(true);
+      expect(fleet.circuitBreakerReason).toBe('Consecutive failure threshold reached (4/4)');
+    });
+
+    it('carries a trip with no pause while the queue is still draining', async () => {
+      fleetOverview.execute.mockResolvedValue({
+        ...healthyFleet(),
+        circuitBreakerTripped: true,
+        circuitBreakerReason: 'Failure rate threshold exceeded (40% > 25%)',
+      });
+
+      const { fleet } = await useCase.execute();
+
+      expect(fleet.queuePause).toBeUndefined();
+      expect(fleet.circuitBreakerTripped).toBe(true);
+    });
+
+    it('reports a healthy fleet as unpaused and untripped', async () => {
+      const { fleet } = await useCase.execute();
+
+      expect(fleet).toEqual({ circuitBreakerTripped: false });
+    });
+
+    it('scopes the verdict to the console repository, like fleet status --repo', async () => {
+      await useCase.execute({ repositoryPath: '/work/acme' });
+
+      expect(fleetOverview.execute).toHaveBeenCalledWith('/work/acme');
+    });
+
+    it('fails the read when the fleet read fails, rather than hiding a pause', async () => {
+      fleetOverview.execute.mockRejectedValue(new Error('settings unavailable'));
+
+      await expect(useCase.execute()).rejects.toThrow('settings unavailable');
+    });
+
+    it('keeps counting rows when the fleet read succeeds but reports nothing', async () => {
+      features = [feature('f1', { agentRunId: 'r1' })];
+      runs = [run('r1', AgentRunStatus.running)];
+
+      const snapshot = await useCase.execute();
+
+      expect(snapshot.rows).toHaveLength(1);
+      expect(snapshot.summary.running).toBe(1);
+    });
+  });
 });
+
+function healthyFleet() {
+  return {
+    total: 0,
+    cruising: 0,
+    queued: 0,
+    attentionNeeded: 0,
+    failed: 0,
+    consecutiveFailures: 0,
+    circuitBreakerTripped: false,
+  };
+}

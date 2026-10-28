@@ -1,0 +1,36 @@
+ shep · Features   1 needs you · 0 running · 0 waiting · 0 failed · 0 done
+ NEEDS YOU  ◆ Rate Limit The Public API · review merge
+  STATE        FEATURE                  REPO           PHASE            TIME    COST │ Rate Limit The Public API  e7f7e5d2
+▸ ◆ Needs you  Rate Limit The Public A… repo           merge              0s       — │ Repo      repo
+                                                                                     │ Branch    feat/rate-limit-the-public-api
+                                                                                     │ State     Needs you · merge
+                                                                                     │ Agent     Claude Code · claude-opus-5-5
+                                                                                     │ Time      0s
+                                                                                     │ Cost      —
+                                                                                     │ Tokens    0 in · 0 out
+                                                                                     │
+                                                                                     │
+                                                                                     │
+                                                                                     │
+                                                                                     │
+                                                                                     │
+                                                                                     │
+                                                                                     │
+                                                                                     │
+                                                                                     │
+                                                                                     │
+                                                                                     │
+                                                                                     │
+                                                                                     │
+                                                                                     │
+                                                                                     │
+                                                                                     │
+                                                                                     │
+                                                                                     │
+                                                                                     │
+                                                                                     │
+                                                                                     │
+                                                                                     │
+                                                                                     │
+ ✓ Queue released — queued features can start
+ ↑↓ select  enter details  l log  a approve  r reject  o chat  t shell  f follow log  / filter  ctrl+p palette  ? help  q quit
