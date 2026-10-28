@@ -25,6 +25,25 @@ nothing else. `screens/*.txt` hold each scene's full text.
 | `08-herdr-calls.png`, `herdr-calls.log` | The calls `shep tui` made to `$HERDR_BIN_PATH`: `report-agent … --state blocked --message "needs you: 2"`, then "needs you: 1" after a feature was approved, then `release-agent` on exit, each with a higher `--seq` |
 | `09-agent-card-browser.png` | `/.well-known/agent-card.json` opened in a browser, without the token |
 
+## Web UI
+
+`shep ui --port 4321` on the same install, driven by Playwright (Chromium, 1440×900, light
+theme). Two features waited at their merge gate, one was deferred, two had failed runs. Every
+state comes from the mock agent, with one exception: the question on "Add Search Filters To The
+Orders Page" was inserted into `agent_questions` with sqlite, because the mock agent never asks
+one. `web-walkthrough.mp4` (50 s) is the whole run.
+
+| File | What it shows | CLI / TUI counterpart |
+| --- | --- | --- |
+| `10-web-activity-page.png` | **Agent activity** page: counts per state, "2 need you", each feature's state, why, the agent's question, the phase and a next-step link. The sidebar's **Agent activity** link shows 2 | `shep feat status`; the TUI's Herdr report |
+| `11-web-drawer-needs-you.png` | The drawer's Overview tab opens with **Agent status**: Needs you, waiting for approval, what the agent asks, `merge · waiting_approval`, and the next step | `shep feat status <id>` |
+| `12-web-drawer-failed.png` | A failed run: the error, and Retry as the next step | `shep feat status <id>` |
+| `13-web-notify-watching.png` | **Notify me** on a deferred feature: watching | `shep feat wait <id>` |
+| `14-web-notify-toast.png` | `shep feat start` from a terminal; when the feature reaches its gate the wait matches and the page raises "…: Needs you" (and a browser notification). The sidebar count goes to 3 | `shep feat wait` returning 0 |
+| `15-web-activity-show-finished.png` | After `shep feat approve` in a terminal, the page updates without a reload; **Show finished** adds done features | `shep feat status` |
+| `16-web-connect-agents.png` | **Settings → Connect agents**: the endpoint read from the agent card, the token file's path (never the token), a copyable request, Herdr and terminal setup | A2A guide |
+| `17-web-mcp-activity-tools.png` | The MCP catalog lists `get_agent_activity`, `wait_for_agent_activity`, `decide_feature_gate`, `answer_agent_question` | `shep mcp` |
+
 ## Not shown
 
 - **Herdr itself.** `HERDR_BIN_PATH` pointed at a stand-in script that logs each call. The
@@ -41,3 +60,23 @@ user's default mode. A2A (and the existing MCP `create_feature`) called `CreateF
 without the Settings → Workflow defaults that `shep feat new` applies in the command.
 Fixed in this PR: `featureWorkflowDefaults` and `CreateFeatureInput.useWorkflowDefaults`.
 The run above is after the fix.
+
+The web runs found three more:
+
+- **Ordering.** `GetAgentActivityUseCase` documented "most urgent first" but kept the console
+  snapshot's order, so a done feature could list above a waiting one. It now sorts blocked,
+  working, waiting, failed, done (stable within a state); `compareActivityUrgency` is in the
+  domain.
+- **Drawer next step.** The card said "Use the actions below" on the Overview tab, where there
+  are none: a gate is decided on its review tab and a failed run is retried from the drawer's
+  header. The card now says which.
+- **Dashboard auto-resolve.** Opening the dashboard runs AutoResolveMergedBranches, which
+  closed two gate features as merged because the mock agent had made no commits on their
+  branches. The recording gave those branches a commit first. This is existing behaviour and
+  this PR does not change it.
+
+One `shep ui` process exited during the first web run with an uncaught `Error: aborted`
+(Node's `abortIncoming`, from a client socket closing mid-request); the CLI's
+`uncaughtException` handler exits on any error. It did not happen again in 12 rapid page
+changes or three further full runs. It is reported on the PR rather than changed here.
+

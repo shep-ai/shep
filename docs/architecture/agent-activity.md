@@ -55,6 +55,7 @@ GetAgentActivity ── Watch ── WaitFor ── ReplyToFeature
       ├── MCP tools (infrastructure/services/mcp/tools/agent-activity-tools.ts)
       ├── A2A JSON-RPC (infrastructure/services/a2a/, routes /api/a2a, /.well-known/agent-card.json)
       ├── CLI: shep feat status, shep feat wait
+      ├── Web: GET /api/agent-activity, GET /api/agent-activity/wait
       └── shep tui ── ReportHostActivity ── IActivityHostReporter ── Herdr | no-op
 ```
 
@@ -73,6 +74,20 @@ GetAgentActivity ── Watch ── WaitFor ── ReplyToFeature
   clock (bumped when it stands still), one call is in flight at a time and the
   latest report wins, each call has a 2 s timeout, and failures are ignored.
   Outside Herdr the no-op reporter is used. Herdr is not a dependency.
+- **Web UI** — the same answers in the browser:
+
+  | CLI / TUI | Web |
+  | --------- | --- |
+  | `shep feat status` (list) | **Agent activity** page (`/activity`): every feature's state, why, what the agent asks, the phase and a next-step link; "Show finished" adds done features |
+  | `shep feat status <id>` | The feature drawer's Overview tab opens with an **Agent status** card |
+  | `shep feat wait <id>` | **Notify me** on that card: waits on `/api/agent-activity/wait` (10-minute waits, asked again on a timeout) and raises a toast and a browser notification |
+  | The TUI's Herdr report | The sidebar's **Agent activity** link shows how many features are blocked |
+  | `shep mcp` tools, A2A | **Settings → Connect agents**: the A2A endpoint and agent card, where the token file is (never the token), a copyable request, Herdr setup; the MCP section lists the activity tools |
+
+  The page and card re-read `GET /api/agent-activity` when the shared agent event stream
+  reports anything, and every 15 s, so they need no second SSE connection. Approve,
+  reject and answer stay where they already are: the drawer's action bar and the agent
+  questions inbox, which the next-step links open.
 
 ## Not covered
 

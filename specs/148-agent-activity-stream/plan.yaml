@@ -1,7 +1,7 @@
 name: agent-activity-stream
 summary: Implementation plan for 148-agent-activity-stream
 phase: complete
-updatedAt: '2026-10-26'
+updatedAt: '2026-10-28'
 
 relatedFeatures:
   - 077-mcp-server
@@ -53,6 +53,16 @@ phases:
     parallel: false
     taskIds:
       - task-15
+  - id: phase-7
+    name: 'Web UI: routes, hooks, components, pages (TDD + stories)'
+    parallel: false
+    taskIds:
+      - task-16
+      - task-17
+      - task-18
+      - task-19
+      - task-20
+      - task-21
 
 filesToCreate:
   - tsp/common/enums/agent-activity.tsp
@@ -73,7 +83,19 @@ filesToCreate:
   - packages/core/src/infrastructure/services/a2a/a2a-agent-card.ts
   - packages/core/src/infrastructure/services/a2a/a2a-request-handler.ts
   - src/presentation/web/app/api/a2a/route.ts
-  - src/presentation/web/app/.well-known/agent-card.json/route.ts
+  - src/presentation/web/app/api/a2a/agent-card/route.ts
+  - src/presentation/web/app/api/agent-activity/route.ts
+  - src/presentation/web/app/api/agent-activity/wait/route.ts
+  - src/presentation/web/lib/agent-activity-view.ts
+  - src/presentation/web/hooks/use-agent-activity.ts
+  - src/presentation/web/hooks/use-activity-notify.ts
+  - src/presentation/web/components/agent-activity/activity-state-badge.tsx
+  - src/presentation/web/components/agent-activity/feature-activity-card.tsx
+  - src/presentation/web/components/agent-activity/feature-activity-section.tsx
+  - src/presentation/web/components/agent-activity/agent-activity-list.tsx
+  - src/presentation/web/components/features/agent-activity/agent-activity-page-client.tsx
+  - src/presentation/web/app/activity/page.tsx
+  - src/presentation/web/components/features/settings/a2a-integration-section.tsx
   - src/presentation/cli/commands/feat/status.command.ts
   - src/presentation/cli/commands/feat/wait.command.ts
   - docs/architecture/agent-activity.md
@@ -92,6 +114,11 @@ filesToModify:
   - translations/*/tui.json
   - docs/mcp-server.md (or the existing MCP doc)
   - package.json (devDependency @a2a-js/sdk)
+  - src/presentation/web/next.config.ts (rewrite for /.well-known/agent-card.json)
+  - src/presentation/web/components/common/feature-drawer-tabs/overview-tab.tsx
+  - src/presentation/web/components/layouts/app-sidebar/{sidebar-links.ts,app-sidebar.tsx}
+  - src/presentation/web/components/features/settings/{settings-page-client.tsx,mcp-integration-section.tsx}
+  - translations/*/web.json
 
 architecture: |
   ```
@@ -108,6 +135,8 @@ architecture: |
    MCP tools        A2A JSON-RPC handler (/api/a2a, SSE)     CLI feat status / wait
                                           TUI ──► ReportHostActivityUseCase ──► IActivityHostReporter
                                                                                (Herdr | no-op)
+   Web: GET /api/agent-activity ─► useAgentActivity (re-read on agent events) ─► page, drawer card,
+        GET /api/agent-activity/wait ─► useActivityNotify ("Notify me")        sidebar badge
   ```
 
   Domain decides (explainFeatureState, activityOf, activityVersion, overallActivity).
@@ -127,8 +156,8 @@ risks:
 content: |
   ## Status
 
-  - **Phase:** Planning
-  - **Updated:** 2026-10-26
+  - **Phase:** Complete
+  - **Updated:** 2026-10-28
 
   ## Clean Architecture
 
@@ -138,6 +167,8 @@ content: |
   - Infrastructure: the Herdr adapter is the only code that reads `HERDR_*` and spawns; the A2A
     handler and MCP tools resolve use cases and translate shapes; DI picks the reporter.
   - Presentation: route handlers frame JSON / SSE; CLI and TUI format and call use cases.
+    Web routes parse query parameters and return the use cases' results; components render
+    one serialized activity shape and link to the screens that already act on it.
 
   ## TDD
 
@@ -154,3 +185,4 @@ content: |
   | Infrastructure | Herdr argv + sequence + failure tolerance, MCP tools, A2A handler (each method, errors, version) |
   | Integration | A2A over HTTP with `@a2a-js/sdk` client (card, send, get, list, cancel, subscribe); MCP round trip |
   | E2E | `shep feat status` / `shep feat wait` against a seeded database |
+  | Web | Route tests (params, clamping, abort, not found); hook tests (refresh on events, notify loop); component tests for badge, card, list, page client, A2A section; stories for each |

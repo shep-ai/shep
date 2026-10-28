@@ -45,6 +45,20 @@ agent questions as needing the user.
 - [ ] Inside Herdr, `shep tui` reports blocked / working / idle with a strictly increasing
       sequence, only on change, never slowing or failing the console, and releases on quit
 - [ ] Docs: `docs/architecture/agent-activity.md`, A2A guide, MCP tool list, CLI reference
+- [ ] Web: `GET /api/agent-activity` (the snapshot) and `GET /api/agent-activity/wait`
+      (one wait, at most 10 minutes, aborted with the request) call the same use cases
+- [ ] Web: an Agent activity page lists every feature with its state, why, what the agent
+      asks, the phase and a next-step link, refreshed by the agent event stream; finished
+      features on request
+- [ ] Web: the feature drawer's Overview tab opens with the feature's activity card, and
+      "Notify me" raises a toast and a browser notification when the feature next needs the
+      user, finishes or fails
+- [ ] Web: the sidebar's Agent activity link carries the count of blocked features, agent
+      questions included
+- [ ] Web: Settings → Connect agents shows the A2A endpoint, the agent card link, where the
+      token is (never the token), a copyable request, Herdr setup, and the four MCP activity
+      tools in the MCP catalog
+- [ ] Every web component has a story and a unit test; new strings in nine locales
 
 ## Affected Areas
 
@@ -62,6 +76,11 @@ agent questions as needing the user.
 | `src/presentation/cli/commands/feat/{status,wait}.command.ts`, locales | Medium | CLI surface in nine locales |
 | `src/presentation/tui/feature-console/feature-console.app.ts`, `tui.command.ts` | Low | Report activity each refresh, release on quit |
 | docs | Medium | Architecture, A2A guide, MCP and CLI references |
+| `src/presentation/web/app/api/agent-activity/` | Low | Snapshot and wait routes |
+| `src/presentation/web/components/agent-activity/`, `hooks/use-agent-activity*.ts` | Medium | Badge, card, list, notify |
+| `src/presentation/web/app/activity/`, sidebar links | Low | Agent activity page and its badge |
+| `components/features/settings/` | Low | Connect agents (A2A, Herdr) section; MCP activity tools |
+| `translations/*/web.json` | Low | Web strings in nine locales |
 
 ## Dependencies
 
@@ -76,10 +95,15 @@ agent questions as needing the user.
   agents the user started by hand
 - A2A push notifications, extended agent card, gRPC/REST bindings, A2A client (shep calling
   other agents)
-- Rewriting `shep feat ls` and the web canvas on top of the activity model (follow-up)
+- Rewriting `shep feat ls` and the web canvas nodes on top of the activity model (follow-up);
+  the web shows activity on its own page, in the drawer and in the sidebar
+- Approve / reject / answer controls on the activity page: they link to the drawer and the
+  agent questions inbox, which already own those actions
+- Showing the bearer token in the browser: the session cookie is httpOnly so page scripts
+  never see it; the settings section shows where the token file is
 
 ## Size Estimate
 
 **XL** - a domain refactor, two enums, four use cases, a port with two adapters, four MCP
-tools, an A2A server with streaming, two CLI commands in nine locales, TUI wiring, docs and
-unit, integration and e2e tests.
+tools, an A2A server with streaming, two CLI commands in nine locales, TUI wiring, the web
+surfaces, docs and unit, integration and e2e tests.

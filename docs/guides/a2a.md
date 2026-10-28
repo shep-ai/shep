@@ -33,6 +33,9 @@ is set. The daemon answers loopback only unless `SHEP_ALLOWED_HOSTS` says
 otherwise. Clients that send the token in a header need no Origin, so
 server-to-server clients work unchanged.
 
+In the web UI, **Settings → Connect agents** shows this install's endpoint (read from its
+agent card), the token file's path and a ready-to-copy request. It never shows the token.
+
 ## Methods
 
 | Method | Shep does |

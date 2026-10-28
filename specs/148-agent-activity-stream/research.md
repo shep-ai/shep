@@ -1,7 +1,7 @@
 ## Status
 
-- **Phase:** Research
-- **Updated:** 2026-10-26
+- **Phase:** Complete
+- **Updated:** 2026-10-28
 
 ## Findings
 
@@ -27,6 +27,15 @@
   `pane report-agent` takes `--state idle|working|blocked|unknown`, `--message`, `--seq`
   (must increase across restarts; reports with a lower or equal number are ignored);
   `release-agent` on exit; reports must never slow the agent.
+- Web (added 2026-10-28): the app opens one SSE connection for every tab through a service
+  worker (`public/agent-events-sw.js`) to stay under the browser's per-host limit, and
+  `useAgentEventRefresh` already re-reads a page when that stream reports something. Agent
+  questions and gate decisions are not all notification events, so a slow poll backs it up.
+  Gate features open the drawer on their review tab; approve, reject and answer already
+  live there and in the agent questions inbox (`/agent-questions?feature=`). The dashboard
+  load runs AutoResolveMergedBranches, which closes a Review feature whose branch has no
+  commits ahead of base. The web session cookie is httpOnly, so page scripts never hold the
+  token.
 
 ## Library Analysis
 

@@ -3320,3 +3320,12 @@ with a fresh `SHEP_HOME`; an override of a transitive dependency must be exercis
 path that uses it, not just installed. In the sandbox, unset `GH_TOKEN`/`GITHUB_TOKEN` (they make
 electron-builder add a GitHub publish target and crash on `null.channel`) and pass
 `ELECTRON_GET_USE_PROXY=1 GLOBAL_AGENT_HTTPS_PROXY=$HTTPS_PROXY`.
+
+## A capability is not done until every presentation layer has it
+
+Spec 148 shipped agent activity to MCP, A2A, the CLI and the TUI, and the user had to ask
+where the web UI was. The rule in code-quality.md ("every feature MUST be implementable in ALL
+presentation layers") is a checklist item, not a design note: before calling a feature done, list
+each CLI command / TUI behaviour it adds and name the web surface that shows the same use-case
+result (page, drawer card, sidebar badge, settings section). If one is deliberately skipped, the
+spec's Out of Scope says so.

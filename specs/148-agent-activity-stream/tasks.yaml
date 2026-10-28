@@ -1,7 +1,7 @@
 name: agent-activity-stream
 summary: Task breakdown for 148-agent-activity-stream
 phase: complete
-updatedAt: '2026-10-26'
+updatedAt: '2026-10-28'
 
 relatedFeatures:
   - 077-mcp-server
@@ -251,18 +251,138 @@ tasks:
         - Fix whatever the real binary shows
       refactor: []
     estimatedEffort: M
+  - id: task-16
+    title: Web routes for the activity snapshot and wait
+    description: >
+      GET /api/agent-activity (featureId, repositoryPath, includeSettled) over
+      GetAgentActivityUseCase; GET /api/agent-activity/wait (featureId, until, timeoutMs) over
+      WaitForAgentActivityUseCase with the request's abort signal. MAX_ACTIVITY_WAIT_MS moves
+      to agent-activity.types and the MCP tool reads it.
+    state: Done
+    dependencies:
+      - task-6
+    acceptanceCriteria:
+      - Unknown until values answer 400; timeoutMs is capped at 10 minutes; a missing featureId answers 400
+      - The wait passes request.signal; a not-found feature answers 404 with the outcome
+    tdd:
+      red:
+        - tests/unit/presentation/web/api/agent-activity-route.test.ts
+      green:
+        - Implement both routes
+      refactor:
+        - Share the wait cap with the MCP tool
+    estimatedEffort: S
+  - id: task-17
+    title: Web hooks useAgentActivity and useActivityNotify
+    description: >
+      useAgentActivity fetches the snapshot, re-reads it when the agent event stream reports
+      anything (useAgentEventRefresh) and every 15 s as a fallback. useActivityNotify loops the
+      wait route until matched, re-issuing on timed-out, and raises a toast and a browser
+      notification; unmount aborts.
+    state: Done
+    dependencies:
+      - task-16
+    acceptanceCriteria:
+      - A failed read keeps the last snapshot and reports the error
+      - A timed-out wait is re-issued; a matched wait notifies once and stops
+    tdd:
+      red:
+        - tests/unit/presentation/web/hooks/use-agent-activity.test.tsx
+        - tests/unit/presentation/web/hooks/use-activity-notify.test.tsx
+      green:
+        - Implement
+      refactor: []
+    estimatedEffort: M
+  - id: task-18
+    title: Activity badge, feature activity card and drawer section
+    description: >
+      ActivityStateBadge (one tone per state), FeatureActivityCard (state, why, asks, phase,
+      run, error, PR, next-step link, Notify me) and FeatureActivitySection, which the
+      Overview tab renders first.
+    state: Done
+    dependencies:
+      - task-17
+    acceptanceCriteria:
+      - Every FeatureStateReason has a sentence in web.json
+      - An agent question links to the agent questions inbox for the feature; a failed run offers the drawer
+      - Loading, error and not-found states render
+    tdd:
+      red:
+        - tests/unit/presentation/web/components/agent-activity/feature-activity-card.test.tsx
+      green:
+        - Implement with stories
+      refactor: []
+    estimatedEffort: M
+  - id: task-19
+    title: Agent activity page and sidebar badge
+    description: >
+      /activity lists every feature through AgentActivityList with counts per state and a
+      "show finished" switch; the sidebar's Agent activity link shows the blocked count.
+    state: Done
+    dependencies:
+      - task-18
+    acceptanceCriteria:
+      - Rows open the feature drawer; an empty fleet says so
+      - The badge counts blocked features, agent questions included, and hides at zero
+    tdd:
+      red:
+        - tests/unit/presentation/web/components/agent-activity/agent-activity-list.test.tsx
+        - tests/unit/presentation/web/features/agent-activity/agent-activity-page-client.test.tsx
+        - tests/unit/presentation/web/layouts/sidebar-links.test.ts (new link)
+      green:
+        - Implement with stories
+      refactor: []
+    estimatedEffort: M
+  - id: task-20
+    title: Settings → Connect agents
+    description: >
+      A2aIntegrationSection (endpoint, agent card link, token file path, copyable curl,
+      Herdr setup) beside the MCP section; the MCP catalog gains the agent-activity tools.
+    state: Done
+    dependencies:
+      - task-12
+    acceptanceCriteria:
+      - URLs come from the page origin; the token value is never rendered
+      - The MCP catalog lists get_agent_activity, wait_for_agent_activity, decide_feature_gate, answer_agent_question
+    tdd:
+      red:
+        - tests/unit/presentation/web/features/settings/a2a-integration-section.test.tsx
+      green:
+        - Implement with stories
+      refactor: []
+    estimatedEffort: S
+  - id: task-21
+    title: Web translations, docs and evidence
+    description: >
+      web.json strings in nine locales; docs/architecture/agent-activity.md web section;
+      screenshots and a video of the web surfaces against the demo install.
+    state: Done
+    dependencies:
+      - task-19
+      - task-20
+    acceptanceCriteria:
+      - Every locale has the same agentActivity keys
+      - pnpm validate, test:unit, test:int, build, build:web and build:storybook pass
+    tdd:
+      red:
+        - tests/unit/translations/agent-activity-labels.test.ts covers web.json
+      green:
+        - Add the strings
+      refactor: []
+    estimatedEffort: M
 
 totalEstimate: XL
 
 content: |
   ## Summary
 
-  15 tasks in 6 phases: enums, domain reasons and activity, five use cases, three adapters
-  (Herdr, MCP, A2A + routes), CLI and TUI, then e2e and docs.
+  21 tasks in 7 phases: enums, domain reasons and activity, five use cases, three adapters
+  (Herdr, MCP, A2A + routes), CLI and TUI, e2e and docs, then the web UI (routes, hooks,
+  card, page, sidebar badge, Connect agents).
 
   ## Acceptance Checklist
 
   - [ ] All spec success criteria met
-  - [ ] pnpm validate, test:unit, test:int, build, build:web green
+  - [ ] pnpm validate, test:unit, test:int, build, build:web, build:storybook green
   - [ ] A2A interop test with the official SDK client green
   - [ ] Docs updated

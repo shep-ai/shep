@@ -1,7 +1,7 @@
 ## Status
 
-- **Phase:** Planning
-- **Updated:** 2026-10-26
+- **Phase:** Complete
+- **Updated:** 2026-10-28
 
 ## Clean Architecture
 
@@ -11,6 +11,8 @@
 - Infrastructure: the Herdr adapter is the only code that reads `HERDR_*` and spawns; the A2A
   handler and MCP tools resolve use cases and translate shapes; DI picks the reporter.
 - Presentation: route handlers frame JSON / SSE; CLI and TUI format and call use cases.
+  Web routes parse query parameters and return the use cases' results; components render
+  one serialized activity shape and link to the screens that already act on it.
 
 ## TDD
 
@@ -27,3 +29,4 @@ SDK client and an e2e CLI test against a seeded SHEP_HOME.
 | Infrastructure | Herdr argv + sequence + failure tolerance, MCP tools, A2A handler (each method, errors, version) |
 | Integration | A2A over HTTP with `@a2a-js/sdk` client (card, send, get, list, cancel, subscribe); MCP round trip |
 | E2E | `shep feat status` / `shep feat wait` against a seeded database |
+| Web | Route tests (params, clamping, abort, not found); hook tests (refresh on events, notify loop); component tests for badge, card, list, page client, A2A section; stories for each |

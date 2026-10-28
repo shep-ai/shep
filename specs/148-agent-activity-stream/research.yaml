@@ -132,13 +132,49 @@ decisions:
     rationale: >
       The value of "wait until blocked" is acting on it; the actions already exist as use cases.
 
+  - title: Web surface for the activity model
+    chosen: >
+      Two thin routes over the existing use cases (`GET /api/agent-activity`,
+      `GET /api/agent-activity/wait`); client hooks that re-read the snapshot when the shared
+      agent event stream reports a change (useAgentEventRefresh) with a slow poll as a
+      fallback; an Agent activity page, a drawer card and a sidebar badge built from that one
+      shape
+    rejected:
+      - A second EventSource per tab over WatchAgentActivityUseCase (the app multiplexes one SSE connection through a service worker to stay under the browser's per-host connection limit)
+      - Re-deriving the activity on the client from canvas node data (node data does not count agent questions; that is the gap the model closes)
+    rationale: >
+      Reuses the one change signal the web already has and the one activity shape every other
+      surface reads, so the web cannot disagree with the CLI, MCP or A2A.
+  - title: Web "wait"
+    chosen: >
+      "Notify me" calls the wait route in a loop (10-minute waits, re-issued on a timeout) and
+      raises a toast plus a browser notification on a match; leaving the page aborts it
+    rejected:
+      - Matching states in the browser against the polled list (duplicates WaitForAgentActivityUseCase's already-matching and not-found rules)
+    rationale: >
+      The same use case decides for `shep feat wait`, MCP `wait_for_agent_activity` and the web.
+  - title: Web counterpart of the Herdr report
+    chosen: >
+      A badge on the sidebar's Agent activity link with the number of blocked features
+    rejected:
+      - Rewriting document.title (Next.js metadata owns it and resets it on navigation)
+    rationale: >
+      The sidebar is visible on every page, as Herdr's sidebar is in the terminal.
+  - title: Token in Connect agents
+    chosen: >
+      Show the token file's path and a request that reads it (`$(cat …)`), never the value
+    rejected:
+      - A server action returning the token (defeats the httpOnly cookie that keeps page scripts from it)
+    rationale: >
+      An orchestrator runs where the file is; the browser does not need the secret.
+
 openQuestions: []
 
 content: |
   ## Status
 
-  - **Phase:** Research
-  - **Updated:** 2026-10-26
+  - **Phase:** Complete
+  - **Updated:** 2026-10-28
 
   ## Findings
 
@@ -164,6 +200,15 @@ content: |
     `pane report-agent` takes `--state idle|working|blocked|unknown`, `--message`, `--seq`
     (must increase across restarts; reports with a lower or equal number are ignored);
     `release-agent` on exit; reports must never slow the agent.
+  - Web (added 2026-10-28): the app opens one SSE connection for every tab through a service
+    worker (`public/agent-events-sw.js`) to stay under the browser's per-host limit, and
+    `useAgentEventRefresh` already re-reads a page when that stream reports something. Agent
+    questions and gate decisions are not all notification events, so a slow poll backs it up.
+    Gate features open the drawer on their review tab; approve, reject and answer already
+    live there and in the agent questions inbox (`/agent-questions?feature=`). The dashboard
+    load runs AutoResolveMergedBranches, which closes a Review feature whose branch has no
+    commits ahead of base. The web session cookie is httpOnly, so page scripts never hold the
+    token.
 
   ## Library Analysis
 
