@@ -1,0 +1,189 @@
+name: tui-fleet-awareness
+summary: Task breakdown for 148-tui-fleet-awareness
+
+relatedFeatures:
+  - 142-tui-feature-console
+  - 111-fleet-control-plane
+technologies:
+  - TypeScript
+  - '@mariozechner/pi-tui'
+  - '@xterm/headless'
+  - node-pty
+relatedLinks: []
+
+tasks:
+  - id: task-1
+    title: Add FeatureConsoleFleet to the snapshot contract
+    description: >
+      feature-console.types.ts gains FeatureConsoleQueuePause and FeatureConsoleFleet. The pause
+      is normalised to a Date so the renderer can measure its age; no other field of FleetOverview
+      is copied, because the console counts features itself.
+    state: Done
+    dependencies: []
+    acceptanceCriteria:
+      - FeatureConsoleSnapshot carries an optional fleet field
+      - FeatureConsoleFleet exposes queuePause (pausedAt as Date, reason), circuitBreakerTripped and circuitBreakerReason
+      - No TypeSpec change is required; FleetQueuePause stays the domain shape
+    tdd:
+      red:
+        - Type-level test in the snapshot use case test asserting the fleet field shape compiles and is populated
+      green:
+        - Add the two interfaces and the optional field
+      refactor:
+        - Keep the fleet types in feature-console.types.ts next to the view models they describe
+    estimatedEffort: S
+
+  - id: task-2
+    title: Snapshot use case reads the fleet verdict from GetFleetOverviewUseCase
+    description: >
+      GetFeatureConsoleSnapshotUseCase injects GetFleetOverviewUseCase and calls it with the same
+      repositoryPath scope as the console. The pause is copied with a normalised pausedAt; the
+      trip and its reason are carried even when the queue is draining.
+    state: Done
+    dependencies:
+      - task-1
+    acceptanceCriteria:
+      - A paused queue yields fleet.queuePause with the stored reason and a Date pausedAt
+      - A tripped breaker with no pause yields circuitBreakerTripped true and a reason, and no queuePause
+      - A scoped snapshot passes its repositoryPath to the overview so the verdict is scoped
+      - An overview failure does not lose the rows; the counts still render
+    tdd:
+      red:
+        - Paused fleet yields the pause; scoped input is forwarded; an overview that throws still returns rows
+      green:
+        - Inject the use case and map FleetOverview onto FeatureConsoleFleet
+      refactor:
+        - Extract the mapping into a module-level function so the use case body stays the five batched reads
+    estimatedEffort: M
+
+  - id: task-3
+    title: Render the banner, the key hint and the help line
+    description: >
+      renderBanner(fleet, now, t) returns the pause line or the trip line, or nothing.
+      renderKeyBar learns the release hint, renderHelp gains its row, and the view derives its
+      chrome height from whether a banner is showing.
+    state: Done
+    dependencies:
+      - task-1
+    acceptanceCriteria:
+      - A pause renders one attention-coloured line with its age and reason, sanitised to one line
+      - A trip without a pause renders one error-coloured line and no release hint
+      - No pause and no trip renders no banner line and the layout is byte-identical to today
+      - Key bar shows "u release queue" only while paused; help lists u
+      - Body height and roster paging account for the extra line
+    tdd:
+      red:
+        - console-render.test.ts asserts the paused line, the trip-only line, and the absent case
+        - view test asserts the rendered screen keeps exactly terminal.rows lines with a banner
+      green:
+        - Implement renderBanner, the key-bar flag, the help row and the dynamic chrome height
+      refactor:
+        - Compose formatDuration, sanitizeText and fit rather than adding new formatters
+    estimatedEffort: M
+
+  - id: task-4
+    title: The u key asks first and then releases
+    description: >
+      ConsoleKey.ReleaseQueue maps u. The key is accepted only while a pause is in force, opens a
+      ConfirmReleaseQueue mode modelled on ConfirmStop, and calls the releaseQueue intent on y.
+    state: Done
+    dependencies:
+      - task-3
+    acceptanceCriteria:
+      - u does nothing when the queue is not paused
+      - u opens the confirm prompt; n, esc or any other key cancels without calling the intent
+      - y calls releaseQueue exactly once and leaves the mode
+      - The prompt is visible in the status line, as the stop confirm is
+    tdd:
+      red:
+        - View tests for the four cases above, using the fake terminal helper
+      green:
+        - Add the key, the mode, the prompt branch and the intent
+      refactor:
+        - Share the confirmation-mode exit with ConfirmStop instead of duplicating the branch
+    estimatedEffort: M
+
+  - id: task-5
+    title: Wire the intent through the app and the tui command
+    description: >
+      FeatureConsoleAppDeps gains releaseQueue returning a FeatureConsoleActionResult; the app
+      shows the result and re-polls. tui.command.ts resolves SetFleetQueuePauseUseCase and maps
+      success to the console's own message.
+    state: Done
+    dependencies:
+      - task-4
+    acceptanceCriteria:
+      - A successful release shows a success status and the next poll renders no banner
+      - A failing release shows the error in the status line and the banner stays until the fleet says otherwise
+      - The command resolves the use case from the container, never constructing it
+      - Existing tui command tests keep passing with the new dep
+    tdd:
+      red:
+        - tui.command.test asserts SetFleetQueuePauseUseCase.execute({ paused: false }) is called and the result is mapped
+        - app test asserts a throwing release surfaces as a failed status, not a crash
+      green:
+        - Add the dep, the intent and the command wiring
+      refactor:
+        - Reuse the command's existing error-to-result mapping
+    estimatedEffort: S
+
+  - id: task-6
+    title: PTY e2e for a paused fleet
+    description: >
+      The e2e drives a real shep tui in a pseudo-terminal with the queue parked, asserts the
+      banner, releases it with u then y, and waits for the banner to clear after the re-read.
+    state: Done
+    dependencies:
+      - task-5
+    acceptanceCriteria:
+      - The banner text appears in the headless xterm screen
+      - After u the confirm prompt appears; after y the banner is gone on a later frame
+      - The test waits on conditions with a deadline, never a fixed sleep
+    tdd:
+      red:
+        - The e2e case fails before the feature exists
+      green:
+        - Seed the paused queue and drive the keys through the existing pty-screen helper
+      refactor:
+        - Reuse the spec 142 fixture that seeds features and the mock executor
+    estimatedEffort: M
+
+  - id: task-7
+    title: Docs and evidence
+    description: >
+      docs/tui/README.md, docs/tui/architecture.md and docs/cli/commands.md describe the banner,
+      the u key and the release path; evidence holds the PTY screenshots and the verification
+      transcript.
+    state: Done
+    dependencies:
+      - task-6
+    acceptanceCriteria:
+      - The TUI docs' key list includes u and says it is offered only while paused
+      - docs/cli/commands.md notes that shep tui can release a pause
+      - Evidence README follows the spec 142 format, with screens/*.txt and verification.txt
+    tdd: null
+    estimatedEffort: S
+
+totalEstimate: S
+
+content: |
+  ## Summary
+
+  Fleet awareness for the terminal feature console: show a parked admission queue or a tripped
+  circuit breaker in the header, and offer one confirmed key (`u`) to release the pause. 7 tasks
+  across 4 phases.
+
+  ## Acceptance Checklist
+
+  Before marking feature complete:
+
+  - [ ] All tasks completed
+  - [ ] Tests passing (`pnpm test:unit`, `pnpm test:int`, `pnpm test:e2e:tui`)
+  - [ ] Linting clean (`pnpm lint`), formatting clean (`pnpm format:check`)
+  - [ ] Types valid (`pnpm typecheck`)
+  - [ ] Translations complete in all nine locales
+  - [ ] PR created with evidence
+
+  ---
+
+  _Task details are in the tasks[] array of tasks.yaml_

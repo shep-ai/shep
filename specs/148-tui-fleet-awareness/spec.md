@@ -1,0 +1,75 @@
+## Problem Statement
+
+Spec 111 gave the fleet an admission queue that can be parked — by `shep fleet pause`, or by
+the circuit breaker when it trips. Three readers must agree about that pause, and only two do:
+
+| Surface | Shows the pause | Releases it |
+| ------- | --------------- | ----------- |
+| `shep fleet status` / `shep fleet pause` / `resume` | yes | yes |
+| Web fleet status bar (spec 111, `fleet-status-bar.tsx`) | yes, with reason and Resume | yes |
+| `shep tui` (spec 142) | **no** | **no** |
+
+The console's header draws five counts (`needs you`, `running`, `waiting`, `failed`, `done`)
+and nothing else. While the queue is parked those counts keep moving only for runs already
+admitted: `waiting` sits at N and does not drain. A user watching the console sees a stuck
+fleet, cannot tell a pause from a slow scheduler, and has to leave the console for
+`shep fleet status` to find out.
+
+This is the case `LESSONS.md` names twice — "a second surface for an entity must offer the
+same actions" (parity is part of the feature) and "no CLI-only flows". The console is the
+third surface on the fleet entity, and it is the one that cannot answer "why is nothing
+starting?".
+
+It gets worse when the breaker's auto-pause ships on: every install that never chose then
+parks the queue on a trip, by default. The console becomes the only surface that cannot say so.
+
+## Success Criteria
+
+- [ ] When the admission queue is paused, the console shows one banner line naming the pause,
+      its age and its reason, above the needs-you strip, without hiding the counts
+- [ ] When the breaker has tripped but the queue is still draining (auto-pause off, or a
+      `--repo`-scoped read), the console shows the trip and its reason, and offers no release
+- [ ] `u` is offered only while the queue is paused, asks for confirmation, and releases the
+      pause through `SetFleetQueuePauseUseCase` — the same use case `shep fleet resume` and the
+      web Resume button run
+- [ ] A refused release reports its failure in the status line and leaves the banner in place;
+      the next poll is the source of truth, never an optimistic guess
+- [ ] The banner is derived in core: the view receives it in the snapshot and decides nothing
+      about whether the fleet is paused
+- [ ] A paused fleet renders the same in all nine locales, and `translation-completeness`
+      passes
+- [ ] An e2e test drives `shep tui` in a real PTY against a paused queue, releases it with `u`
+      then `y`, and sees the banner clear after the re-read
+
+## Affected Areas
+
+| Area | Impact | Reasoning |
+| ---- | ------ | --------- |
+| `packages/core/src/application/use-cases/feature-console/feature-console.types.ts` | Low | `FeatureConsoleFleet` on the snapshot |
+| `packages/core/src/application/use-cases/feature-console/get-feature-console-snapshot.use-case.ts` | Medium | Reuse `GetFleetOverviewUseCase` for the fleet verdict |
+| `src/presentation/tui/feature-console/console-render.ts` | Medium | Banner, key-bar hint, help line |
+| `src/presentation/tui/feature-console/feature-console-view.ts` | Medium | `u` key + confirm mode + dynamic chrome height |
+| `src/presentation/tui/feature-console/feature-console.app.ts` | Low | `releaseQueue` intent on the wiring |
+| `src/presentation/cli/commands/tui.command.ts` | Low | Resolve `SetFleetQueuePauseUseCase` |
+| `translations/*/tui.json` | Low | Banner, key, confirm, result strings |
+| `docs/tui/`, `docs/cli/commands.md` | Low | The console is not read-only about the queue |
+
+## Dependencies
+
+- `GetFleetOverviewUseCase` (spec 111): the single evaluation of both the pause and the trip,
+  including the auto-pause write and the acknowledgement window
+- `SetFleetQueuePauseUseCase` (spec 111): the single writer for `workflow.queuePaused`, and
+  what the breaker cannot call
+- `FleetQueuePause` (`tsp/domain/entities/fleet-overview.tsp`): the stored pause shape
+- Spec 142's console: snapshot contract, dynamic chrome height, confirm modes, PTY e2e harness
+
+## Out of Scope
+
+Parking the queue from the console (the web bar also only releases), configuring breaker
+thresholds from any surface, a per-repository pause, and a fleet view (`shep fleet status`
+already owns that). This spec is visibility plus the one lever that unblocks the user.
+
+## Size Estimate
+
+**S** — one core type and one injected use case, three render helpers, one key with a confirm
+mode, one intent, nine locale files, unit tests and one PTY e2e case.

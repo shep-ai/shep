@@ -20,7 +20,11 @@ import {
   FeatureStateReason,
   SdlcLifecycle,
 } from '@/domain/generated/output.js';
-import { consoleRow, consoleSummary } from '@tests/helpers/feature-console-fixtures.js';
+import {
+  HEALTHY_FLEET,
+  consoleRow,
+  consoleSummary,
+} from '@tests/helpers/feature-console-fixtures.js';
 
 const NOW = new Date('2026-10-26T12:00:00Z');
 
@@ -60,6 +64,7 @@ describe('GetAgentActivityUseCase', () => {
           generatedAt: NOW,
           rows,
           summary: consoleSummary({ total: rows.length }),
+          fleet: HEALTHY_FLEET,
         })
       ),
     };

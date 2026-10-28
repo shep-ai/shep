@@ -33,6 +33,7 @@ import {
   PrStatus,
 } from '@/domain/generated/output.js';
 import type {
+  FeatureConsoleFleet,
   FeatureConsoleRow,
   FeatureConsoleSnapshot,
 } from '@/application/use-cases/feature-console/feature-console.types.js';
@@ -73,9 +74,23 @@ function row(id: string, overrides: Partial<FeatureConsoleRow> = {}): FeatureCon
 
 const gateRow = (id: string) => row(id, { ...GATE_ROW, phase: 'requirements' });
 
-function snapshot(rows: FeatureConsoleRow[]): FeatureConsoleSnapshot {
+const unpaused: FeatureConsoleFleet = { circuitBreakerTripped: false };
+
+const pausedFleet: FeatureConsoleFleet = {
+  queuePause: {
+    pausedAt: new Date('2026-10-24T10:00:00Z'),
+    reason: 'Consecutive failure threshold reached (4/4)',
+  },
+  circuitBreakerTripped: true,
+};
+
+function snapshot(
+  rows: FeatureConsoleRow[],
+  fleet: FeatureConsoleFleet = unpaused
+): FeatureConsoleSnapshot {
   return {
     generatedAt: new Date('2026-10-24T12:00:00Z'),
+    fleet,
     rows,
     summary: consoleSummary({
       total: rows.length,
@@ -103,6 +118,7 @@ describe('FeatureConsoleView', () => {
       runAction: vi.fn(),
       showLog: vi.fn(),
       openPane: vi.fn(),
+      releaseQueue: vi.fn(),
       copyId: vi.fn(),
       openControlCenter: vi.fn(),
       openChat: vi.fn(),
@@ -719,6 +735,73 @@ describe('FeatureConsoleView', () => {
       expect(screen().join('\n')).toContain('q');
       press(KEY.ctrlC);
       expect(intents.quit).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('paused fleet (spec 148)', () => {
+    it('shows the pause above the strip, and keeps the strip', () => {
+      view.setSnapshot(snapshot([gateRow('aaaa1111')], pausedFleet));
+
+      const [header, banner, strip] = screen();
+      expect(header).toContain('Features');
+      expect(banner).toContain('queue paused');
+      expect(banner).toContain('Consecutive failure threshold reached');
+      expect(strip).toContain('NEEDS YOU');
+    });
+
+    it('does not show a banner for a healthy fleet', () => {
+      view.setSnapshot(snapshot([row('aaaa1111')]));
+
+      expect(screen()[1]).toContain('NEEDS YOU');
+    });
+
+    it('still renders exactly one screen when the banner appears', () => {
+      view.setSnapshot(snapshot([gateRow('aaaa1111')], pausedFleet));
+
+      for (const h of [12, 24, 40]) {
+        height = h;
+        const lines = view.render(100);
+        expect(lines).toHaveLength(h);
+        for (const line of lines) expect(visibleWidth(line)).toBeLessThanOrEqual(100);
+      }
+    });
+
+    it('offers the release key only while paused', () => {
+      view.setSnapshot(snapshot([row('aaaa1111')], pausedFleet));
+      expect(screen()[height - 1]).toContain('release queue');
+
+      view.setSnapshot(snapshot([row('aaaa1111')]));
+      expect(screen()[height - 1]).not.toContain('release queue');
+    });
+
+    it('asks before releasing, then releases once', () => {
+      view.setSnapshot(snapshot([row('aaaa1111')], pausedFleet));
+
+      press('u');
+      expect(screen()[height - 2]).toContain('Release the paused queue?');
+      expect(intents.releaseQueue).not.toHaveBeenCalled();
+
+      press('y');
+      expect(intents.releaseQueue).toHaveBeenCalledTimes(1);
+      expect(screen()[height - 2]).not.toContain('Release the paused queue?');
+    });
+
+    it('cancels the release on anything else', () => {
+      view.setSnapshot(snapshot([row('aaaa1111')], pausedFleet));
+
+      press('u', 'n');
+      expect(intents.releaseQueue).not.toHaveBeenCalled();
+
+      press('u', 'q');
+      expect(intents.releaseQueue).not.toHaveBeenCalled();
+    });
+
+    it('ignores u when the queue is draining', () => {
+      view.setSnapshot(snapshot([row('aaaa1111')]));
+
+      press('u');
+      expect(intents.releaseQueue).not.toHaveBeenCalled();
+      expect(screen().join('\n')).not.toContain('Release the paused queue?');
     });
   });
 });

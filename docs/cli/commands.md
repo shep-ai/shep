@@ -160,6 +160,7 @@ a feature's shell or followed agent log in a split pane.
 | `r`               | Reject the gate; type feedback, `enter` sends      |
 | `s`               | Stop the run, after `y` to confirm (stays resumable) |
 | `R`               | Resume an interrupted or failed run                |
+| `u`               | Release a paused fleet queue (spec 148), after `y` to confirm; only offered while paused |
 | `o`               | Attach: chat with the feature's agent (the web Chat tab's conversation); `esc` returns |
 | `t` / `T`         | Shell in the feature's worktree: split pane / new window |
 | `f` / `F`         | Follow the agent log (`shep feat logs -f`): split pane / new window |
@@ -169,6 +170,11 @@ a feature's shell or followed agent log in a split pane.
 | `C`               | Control center: a window per active feature, following its log, named with its state |
 | `?`               | Help                                               |
 | `q` / `ctrl+c`    | Quit and restore the terminal                      |
+
+A parked admission queue — from `shep fleet pause` or a circuit-breaker trip — shows as a banner
+line above the strip, with its age and reason (spec 148). `u` releases it through the same
+`SetFleetQueuePauseUseCase` as `shep fleet resume` and the web dashboard's Resume button. The
+console never parks the queue itself.
 
 Action keys appear in the key bar only when the selected feature's run accepts them.
 

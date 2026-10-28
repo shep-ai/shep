@@ -22,7 +22,7 @@ import {
   renderKeyBar,
   renderLog,
 } from './console-panes.js';
-import { renderHeader, renderStrip } from './console-render.js';
+import { renderBanner, renderHeader, renderStrip } from './console-render.js';
 import type { ChatView } from './chat-view.js';
 import type { CommandPalette } from './console-palette.js';
 import type { ConsoleRoster } from './console-roster.js';
@@ -33,6 +33,7 @@ export enum ConsoleMode {
   Help = 'help',
   Reject = 'reject',
   ConfirmStop = 'confirm-stop',
+  ConfirmReleaseQueue = 'confirm-release-queue',
   Filter = 'filter',
   Palette = 'palette',
   Chat = 'chat',
@@ -45,6 +46,13 @@ export enum ConsolePane {
 
 /** Header, strip, status line, hint line. */
 export const CHROME_LINES = 4;
+/** The fleet banner's own line, taken out of the body while it shows. */
+const BANNER_LINES = 1;
+
+/** Chrome lines for this snapshot: the banner costs the body one line. */
+export function chromeHeight(snapshot: FeatureConsoleSnapshot | undefined, t: TFunction): number {
+  return CHROME_LINES + (renderBanner(snapshot, t) ? BANNER_LINES : 0);
+}
 
 export interface ConsoleFrame {
   mode: ConsoleMode;
@@ -67,9 +75,11 @@ export function renderConsoleFrame(
   width: number,
   height: number
 ): string[] {
-  const bodyHeight = Math.max(0, height - CHROME_LINES);
+  const banner = renderBanner(frame.snapshot, t);
+  const bodyHeight = Math.max(0, height - CHROME_LINES - (banner ? BANNER_LINES : 0));
   const lines = [
     renderHeader(frame.snapshot, t),
+    ...(banner ? [banner] : []),
     renderStrip(frame.roster.allRows, t),
     ...padTo(renderBody(frame, t, width, bodyHeight), bodyHeight),
     renderStatus(frame, t, width),
@@ -112,7 +122,11 @@ function renderStatus(frame: ConsoleFrame, t: TFunction, width: number): string 
     {
       prompt,
       confirm:
-        frame.mode === ConsoleMode.ConfirmStop ? t(`${NS}.stop.confirm`, { name }) : undefined,
+        frame.mode === ConsoleMode.ConfirmStop
+          ? t(`${NS}.stop.confirm`, { name })
+          : frame.mode === ConsoleMode.ConfirmReleaseQueue
+            ? t(`${NS}.release.confirm`)
+            : undefined,
       busy: frame.busy,
       refreshError: frame.refreshError,
       result: frame.result,
@@ -132,5 +146,5 @@ function renderHint(frame: ConsoleFrame, t: TFunction): string {
   if (frame.mode === ConsoleMode.Filter) return paint.muted(` ${t(`${NS}.filter.hint`)}`);
   if (frame.mode === ConsoleMode.Palette) return paint.muted(` ${t(`${NS}.palette.hint`)}`);
   if (frame.mode === ConsoleMode.Chat) return paint.muted(` ${frame.chat.hint}`);
-  return renderKeyBar(frame.roster.selected, t);
+  return renderKeyBar(frame.roster.selected, t, frame.snapshot?.fleet.queuePause !== undefined);
 }

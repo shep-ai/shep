@@ -14,6 +14,7 @@ import {
   SdlcLifecycle,
 } from '@/domain/generated/output.js';
 import type {
+  FeatureConsoleFleet,
   FeatureConsoleRow,
   FeatureConsoleSummary,
 } from '@/application/use-cases/feature-console/feature-console.types.js';
@@ -73,3 +74,6 @@ export function consoleSummary(
     ...overrides,
   };
 }
+
+/** A fleet with nothing to report: no paused queue, breaker closed. */
+export const HEALTHY_FLEET: FeatureConsoleFleet = { circuitBreakerTripped: false };

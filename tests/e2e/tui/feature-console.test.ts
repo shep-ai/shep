@@ -1,5 +1,5 @@
 /**
- * TUI E2E: the terminal feature console (specs 142, 143, 145)
+ * TUI E2E: the terminal feature console (specs 142, 143, 145, 148)
  *
  * Drives the real `shep tui` in a pseudo-terminal and reads the screen
  * through a headless xterm, exactly as a user's terminal would show it.
@@ -168,6 +168,38 @@ describe('TUI: feature console', { timeout: MULTI_STEP_TEST_TIMEOUT_MS * 3 }, ()
       'help to close',
       STEP_TIMEOUT_MS
     );
+    screen.press('q');
+    expect((await screen.exited).exitCode).toBe(0);
+  });
+
+  it('shows a parked admission queue, releases it with u then y, and clears the banner', async () => {
+    const runner = createCliRunner({
+      env: { SHEP_HOME: shepHome, SHEP_TELEMETRY_DISABLED: '1' },
+      timeout: MULTI_STEP_CLI_TIMEOUT_MS,
+    });
+    // The real lever a user has, not a seeded row.
+    runner.runOrThrow('fleet pause --reason "ci is red"');
+
+    screen = spawnTui(shepHome);
+    await screen.waitForText('shep · Features', START_TIMEOUT_MS);
+    await screen.waitForText('queue paused', STEP_TIMEOUT_MS);
+    expect(screen.text()).toContain('ci is red');
+    expect(screen.lines().at(-1)).toContain('release queue');
+
+    // The release asks first: nothing changes on u alone.
+    screen.press('u');
+    await screen.waitForText('Release the paused queue?', STEP_TIMEOUT_MS);
+
+    screen.press('y');
+    await screen.waitForText('Queue released', STEP_TIMEOUT_MS);
+    // The console re-reads; the banner is gone only because the store says so.
+    await screen.waitFor(
+      (text) => !text.includes('queue paused'),
+      'the banner to clear after the re-read',
+      STEP_TIMEOUT_MS
+    );
+    expect(screen.onAlternateScreen).toBe(true);
+
     screen.press('q');
     expect((await screen.exited).exitCode).toBe(0);
   });

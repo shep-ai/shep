@@ -146,7 +146,7 @@ src/presentation/tui/
     └── shep.theme.ts
 ```
 
-## Feature Console (`shep tui`, specs 142 and 143)
+## Feature Console (`shep tui`, specs 142, 143 and 148)
 
 A full-screen, live view of every feature, modelled on oh-my-pi's Agent Hub
 (`docs/competitors/oh-my-pi.md`). It is the first TUI surface that is not a wizard.
@@ -158,13 +158,14 @@ shep tui (tui.command.ts)          checks for a TTY, resolves three use cases
        ├─ FeatureConsoleView                          UI state only: selection, mode, pane
        ├─ every 2s → GetFeatureConsoleSnapshotUseCase (never two reads at once)
        ├─ a / r / s / R → RunFeatureConsoleActionUseCase
+       ├─ u → SetFleetQueuePauseUseCase (only while a pause is in force)
        └─ l → GetFeatureLogTailUseCase (refreshed with the snapshot while the pane is open)
 ```
 
 Rules the console follows:
 
-- **No decisions in the view.** State, phase, needs-you, which actions a row offers and the
-  row order all arrive in the snapshot. The view shows an action key only when the row's
+- **No decisions in the view.** State, phase, needs-you, which actions a row offers, the row
+  order and the fleet banner all arrive in the snapshot. The view shows an action key only when the row's
   `actions` contains it, and the action use case refuses anything else again.
 - **One feature state.** `deriveFeatureState` (`domain/shared/feature-state.ts`) is shared with
   the web canvas and feature tree, so every surface agrees.
@@ -172,6 +173,11 @@ Rules the console follows:
   With the alternate screen this makes pi-tui's inline diff renderer a full-screen one.
 - **Outside text is sanitised.** Log lines and error messages pass through `sanitizeText`, so an
   agent's output can never move the cursor or change colours inside the console.
+- **The fleet is not per-feature.** A parked admission queue and a tripped circuit breaker are
+  fleet-wide, so they are one banner line above the needs-you strip (spec 148) — never a row
+  attribute. `GetFleetOverviewUseCase` decides both, the same reader `shep fleet status` and the
+  web status bar use, and the banner's line comes out of the body height so the console still
+  renders exactly one screen.
 - **The terminal is always restored.** `q`, `ctrl+c`, `SIGTERM` and `SIGHUP` all go through one
   `finish()` that stops polling, stops pi-tui and leaves the alternate screen.
 

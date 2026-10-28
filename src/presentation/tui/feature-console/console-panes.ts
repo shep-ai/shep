@@ -95,6 +95,7 @@ const HELP_KEYS = [
   'reject',
   'stop',
   'resume',
+  'releaseQueue',
   'chat',
   'shell',
   'follow',
@@ -131,8 +132,16 @@ const ACTION_KEY: Record<FeatureConsoleAction, string> = {
   [FeatureConsoleAction.Resume]: 'R',
 };
 
-/** Navigation and pane keys, the actions the selected row offers, then pane and filter keys. */
-export function renderKeyBar(row: FeatureConsoleRow | undefined, t: TFunction): string {
+/**
+ * Navigation and pane keys, the actions the selected row offers, then pane and
+ * filter keys. `releaseQueue` adds the fleet-level key, which exists only while
+ * a pause is in force — the same rule the row actions follow.
+ */
+export function renderKeyBar(
+  row: FeatureConsoleRow | undefined,
+  t: TFunction,
+  releaseQueue = false
+): string {
   const item = (key: string, label: string) => `${paint.key(key)} ${paint.muted(label)}`;
   const items = [
     item('↑↓', t(`${NS}.keys.select`)),
@@ -141,6 +150,7 @@ export function renderKeyBar(row: FeatureConsoleRow | undefined, t: TFunction): 
     ...(row?.actions ?? []).map((a) => item(ACTION_KEY[a], t(`${NS}.keys.${a}`))),
     ...(row ? [item('o', t(`${NS}.keys.chat`)), item('t', t(`${NS}.keys.shell`))] : []),
     ...(row?.runId ? [item('f', t(`${NS}.keys.follow`))] : []),
+    ...(releaseQueue ? [item('u', t(`${NS}.keys.releaseQueue`))] : []),
     item('/', t(`${NS}.keys.filter`)),
     item('ctrl+p', t(`${NS}.keys.palette`)),
     item('?', t(`${NS}.keys.help`)),
