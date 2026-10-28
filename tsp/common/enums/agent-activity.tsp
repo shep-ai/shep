@@ -1,7 +1,7 @@
 /**
  * @module Shep.Common.Enums.AgentActivity
  *
- * Agent activity (spec 148): the answer to "is this feature working, blocked
+ * Agent activity (spec 149): the answer to "is this feature working, blocked
  * on me, or done — and why", for callers outside shep's own UI (MCP clients,
  * A2A orchestrators, `shep feat status` / `wait`, terminal hosts like Herdr).
  *
