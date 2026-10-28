@@ -85,7 +85,14 @@ describe.skipIf(!hasTmux())(
       expect(
         shellPath.startsWith(shepHome.replace(/\\/g, '/')) || shellPath === repo.replace(/\\/g, '/')
       ).toBe(true);
-      expect(tmux.capture(consolePane.id)).toMatch(/Opened a shell for .* in tmux/);
+      // The console sets its status after the split returns and draws it on the next
+      // frame, so the new pane can exist before the message is on screen.
+      await waitFor(
+        () =>
+          /Opened a shell for .* in tmux/.test(tmux.capture(consolePane.id)) ? true : undefined,
+        'the opened-shell status in the console',
+        STEP_TIMEOUT_MS
+      );
 
       // f: the followed log, with focus left on the console.
       tmux.run('select-pane', '-t', consolePane.id);
