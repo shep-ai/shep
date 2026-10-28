@@ -7,6 +7,7 @@ Central navigation for all Shep AI CLI documentation.
 | Section                         | Description                                           |
 | ------------------------------- | ----------------------------------------------------- |
 | [Architecture](./architecture/) | System design, Clean Architecture, repository pattern |
+| [Fleet](./fleet/)               | Triage, guardrails, circuit breaker and batch actions |
 | [Concepts](./concepts/)         | Core domain models: features, tasks, artifacts, SDLC  |
 | [CLI](./cli/)                   | CLI architecture, design system, command reference    |
 | [TUI](./tui/)                   | Terminal UI architecture and prompt patterns          |
@@ -32,6 +33,7 @@ Central navigation for all Shep AI CLI documentation.
 - [Clean Architecture](./architecture/clean-architecture.md)
 - [Repository Pattern](./architecture/repository-pattern.md)
 - [Agent System](./architecture/agent-system.md)
+- [Fleet Control Plane](./fleet/fleet-control-plane.md)
 
 ### Domain
 
