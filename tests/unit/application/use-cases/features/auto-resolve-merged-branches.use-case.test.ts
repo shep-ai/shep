@@ -9,6 +9,7 @@ import { type UpdateFeatureLifecycleUseCase } from '@/application/use-cases/feat
 import type { IFeatureRepository } from '@/application/ports/output/repositories/feature-repository.interface';
 import type { IGitPrService } from '@/application/ports/output/services/git-pr-service.interface';
 import type { IAgentRunRepository } from '@/application/ports/output/agents/agent-run-repository.interface';
+import type { IGitCommitHistoryService } from '@/application/ports/output/services/git-commit-history.service.interface';
 import type { Feature } from '@/domain/generated/output';
 import { SdlcLifecycle, PrStatus, AgentRunStatus, BuildMode } from '@/domain/generated/output';
 import { createMockFeatureRepository } from '../../../../helpers/feature-repository.mock.js';
@@ -100,9 +101,13 @@ function createMockAgentRunRepo(): IAgentRunRepository {
   };
 }
 
+/** A day, for commit dates either side of a feature's creation. */
+const DAY_MS = 24 * 60 * 60 * 1000;
+
 describe('AutoResolveMergedBranchesUseCase', () => {
   let featureRepo: IFeatureRepository;
   let gitPrService: IGitPrService;
+  let commitHistory: { getCommitDate: ReturnType<typeof vi.fn> } & IGitCommitHistoryService;
   let agentRunRepo: IAgentRunRepository;
   let updateLifecycle: UpdateFeatureLifecycleUseCase;
   let useCase: AutoResolveMergedBranchesUseCase;
@@ -111,6 +116,10 @@ describe('AutoResolveMergedBranchesUseCase', () => {
     featureRepo = createMockFeatureRepo();
     gitPrService = createMockGitPrService();
     agentRunRepo = createMockAgentRunRepo();
+    // By default the branch has work of its own: its tip was committed after the feature began.
+    commitHistory = {
+      getCommitDate: vi.fn().mockImplementation(async () => new Date(Date.now() + DAY_MS)),
+    };
     updateLifecycle = {
       execute: vi.fn(),
     } as unknown as UpdateFeatureLifecycleUseCase;
@@ -118,7 +127,8 @@ describe('AutoResolveMergedBranchesUseCase', () => {
       featureRepo,
       gitPrService,
       agentRunRepo,
-      updateLifecycle
+      updateLifecycle,
+      commitHistory
     );
   });
 
@@ -203,6 +213,60 @@ describe('AutoResolveMergedBranchesUseCase', () => {
 
     expect(result.resolvedCount).toBe(1);
     expect(gitPrService.verifyMerge).toHaveBeenCalledWith('/repo/path', 'feat/local-only', 'main');
+  });
+
+  describe('a branch with no commits of its own (nothing to merge yet)', () => {
+    it('stays in Review: being contained in main does not mean it was merged', async () => {
+      const createdAt = new Date('2026-10-28T12:00:00Z');
+      const feature = createMockFeature({
+        id: 'feat-empty',
+        branch: 'feat/empty',
+        pr: undefined,
+        createdAt,
+      });
+      vi.mocked(gitPrService.verifyMerge).mockResolvedValue(true);
+      vi.mocked(featureRepo.findById).mockResolvedValue(feature);
+      // The tip is the base commit the branch was cut from, made before the feature existed.
+      commitHistory.getCommitDate.mockResolvedValue(new Date(createdAt.getTime() - DAY_MS));
+
+      const result = await useCase.execute([feature]);
+
+      expect(result.resolvedCount).toBe(0);
+      expect(updateLifecycle.execute).not.toHaveBeenCalled();
+      expect(commitHistory.getCommitDate).toHaveBeenCalledWith('/repo/path', 'feat/empty');
+    });
+
+    it('stays in Review when the branch tip date cannot be read', async () => {
+      const feature = createMockFeature({ id: 'feat-unknown', pr: undefined });
+      vi.mocked(gitPrService.verifyMerge).mockResolvedValue(true);
+      vi.mocked(featureRepo.findById).mockResolvedValue(feature);
+      commitHistory.getCommitDate.mockResolvedValue(null);
+
+      expect((await useCase.execute([feature])).resolvedCount).toBe(0);
+    });
+
+    it('stays in Review when reading the date fails', async () => {
+      const feature = createMockFeature({ id: 'feat-git-error', pr: undefined });
+      vi.mocked(gitPrService.verifyMerge).mockResolvedValue(true);
+      vi.mocked(featureRepo.findById).mockResolvedValue(feature);
+      commitHistory.getCommitDate.mockRejectedValue(new Error('git failed'));
+
+      expect((await useCase.execute([feature])).resolvedCount).toBe(0);
+    });
+
+    it('still resolves a feature with PR data whose branch is merged locally, without reading dates', async () => {
+      // An adopted branch carries its PR; its commits predate the feature by design.
+      const feature = createMockFeature({
+        id: 'feat-adopted',
+        pr: { url: 'https://github.com/owner/repo/pull/9', number: 9, status: PrStatus.Open },
+      });
+      vi.mocked(gitPrService.listPrStatuses).mockResolvedValue([]);
+      vi.mocked(gitPrService.verifyMerge).mockResolvedValue(true);
+      vi.mocked(featureRepo.findById).mockResolvedValue(feature);
+
+      expect((await useCase.execute([feature])).resolvedCount).toBe(1);
+      expect(commitHistory.getCommitDate).not.toHaveBeenCalled();
+    });
   });
 
   it('should not resolve a feature when PR is still Open', async () => {

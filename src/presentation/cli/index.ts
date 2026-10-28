@@ -104,6 +104,7 @@ import { startDaemon } from './commands/daemon/start-daemon.js';
 import { createTelemetryCommand } from './commands/telemetry/index.js';
 import { createChatCommand } from './commands/chat/index.js';
 import { recordUnhandledError, registerTelemetryHooks } from './telemetry-hooks.js';
+import { createUncaughtExceptionHandler } from './process-errors.js';
 
 // DI container and settings
 import { initializeContainer, container } from '@/infrastructure/di/container.js';
@@ -265,11 +266,15 @@ async function bootstrap() {
 }
 
 // Global error handlers
-process.on('uncaughtException', (error) => {
-  recordUnhandledError(error);
-  messages.error('An unexpected error occurred', error);
-  process.exit(1);
-});
+process.on(
+  'uncaughtException',
+  createUncaughtExceptionHandler({
+    record: recordUnhandledError,
+    report: (error) => messages.error('An unexpected error occurred', error),
+    debug: messages.debug,
+    exit: (code) => process.exit(code),
+  })
+);
 
 process.on('unhandledRejection', (reason) => {
   recordUnhandledError(reason);

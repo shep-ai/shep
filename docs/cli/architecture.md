@@ -183,7 +183,10 @@ Bootstrap wraps the entire sequence in `try/catch`. Each step has its own inner 
 
 Registered at module level for safety:
 
-- `process.on('uncaughtException', ...)` -- logs and exits.
+- `process.on('uncaughtException', ...)` -- logs and exits, with one exception: Node's
+  `Error: aborted` (`ECONNRESET`) for an incoming HTTP request whose client went away is
+  logged at debug level and ignored, so a closed browser tab cannot stop `shep ui` or the
+  daemon (`createUncaughtExceptionHandler` in `src/presentation/cli/process-errors.ts`).
 - `process.on('unhandledRejection', ...)` -- logs and exits.
 
 ### Debug output

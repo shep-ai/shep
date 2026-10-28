@@ -13,6 +13,8 @@ import type { IWorktreeHookRunner } from '../../../application/ports/output/serv
 import { WorktreeHookRunner } from '../../services/git/worktree-hook-runner.js';
 import type { IGitCommitService } from '../../../application/ports/output/services/git-commit.service.interface.js';
 import { GitCommitService } from '../../services/git/git-commit.service.js';
+import type { IGitCommitHistoryService } from '../../../application/ports/output/services/git-commit-history.service.interface.js';
+import { GitCommitHistoryService } from '../../services/git/git-commit-history.service.js';
 import type { IFileSystemService } from '../../../application/ports/output/services/file-system-service.interface.js';
 import { FileSystemService } from '../../services/file-system.service.js';
 import type { IRepositoryDiscoveryService } from '../../../application/ports/output/services/repository-discovery-service.interface.js';
@@ -200,6 +202,10 @@ export function registerServices(container: DependencyContainer): void {
   container.registerSingleton<IWorktreeHookRunner>('IWorktreeHookRunner', WorktreeHookRunner);
   container.registerSingleton<IWorktreeService>('IWorktreeService', WorktreeService);
   container.registerSingleton<IGitCommitService>('IGitCommitService', GitCommitService);
+  container.registerSingleton<IGitCommitHistoryService>(
+    'IGitCommitHistoryService',
+    GitCommitHistoryService
+  );
   container.registerSingleton<IFileSystemService>('IFileSystemService', FileSystemService);
   container.registerSingleton<IRepositoryDiscoveryService>(
     'IRepositoryDiscoveryService',
