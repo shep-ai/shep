@@ -106,6 +106,7 @@ export function registerFeatureTools(server: McpServer, container: DependencyCon
           name,
           description,
           pending,
+          useWorkflowDefaults: true,
         });
         return {
           content: [{ type: 'text' as const, text: JSON.stringify(result, null, 2) }],

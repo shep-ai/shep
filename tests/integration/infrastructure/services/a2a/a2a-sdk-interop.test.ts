@@ -230,6 +230,7 @@ describe('A2A endpoint with the official SDK client', () => {
     expect(create.execute).toHaveBeenCalledWith({
       userInput: 'Add a login page',
       repositoryPath: '/work/acme',
+      useWorkflowDefaults: true,
     });
     expect(sent).toMatchObject({ id: 'new-1', status: { state: 1 } }); // TASK_STATE_SUBMITTED
   });

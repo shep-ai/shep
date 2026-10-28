@@ -20,7 +20,7 @@ import { CreateFeatureUseCase } from '@/application/use-cases/features/create/cr
 import { CreateFeatureFromRemoteUseCase } from '@/application/use-cases/features/create/create-feature-from-remote.use-case.js';
 import type { ApprovalGates, Feature } from '@/domain/generated/output.js';
 import { SdlcLifecycle, BuildMode } from '@/domain/generated/output.js';
-import { normalizeBuildMode } from '@/domain/shared/build-mode.js';
+import { featureWorkflowDefaults } from '@/domain/shared/workflow-defaults.js';
 import type { IFeatureRepository } from '@/application/ports/output/repositories/feature-repository.interface.js';
 import {
   GitHubAuthError,
@@ -85,18 +85,12 @@ function getWorkflowDefaults(): WorkflowDefaults {
       fast: true,
     };
   }
-  const settings = getSettings();
-  const gates = settings.workflow.approvalGateDefaults;
+  const defaults = featureWorkflowDefaults(getSettings());
   return {
-    openPr: settings.workflow.openPrOnImplementationComplete,
-    allowPrd: gates.allowPrd,
-    allowPlan: gates.allowPlan,
-    allowMerge: gates.allowMerge,
-    push: gates.pushOnImplementationComplete,
-    // Settings persist the legacy capitalized labels ('Regular' | 'Fast' |
-    // 'Exploration'), so a raw comparison against a BuildMode value never
-    // matches. Normalize first, then ask the only question this flag answers.
-    fast: normalizeBuildMode(settings.workflow.defaultMode) === BuildMode.Fast,
+    openPr: defaults.openPr,
+    ...defaults.approvalGates,
+    push: defaults.push,
+    fast: defaults.buildMode === BuildMode.Fast,
   };
 }
 

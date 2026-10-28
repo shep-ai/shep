@@ -209,6 +209,8 @@ describe('Feature Tools', () => {
         expect.objectContaining({
           userInput: 'Add dark mode support',
           repositoryPath: '/path/to/repo',
+          // An MCP caller has no flags: the user's workflow settings apply (spec 148).
+          useWorkflowDefaults: true,
         })
       );
     });

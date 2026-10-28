@@ -305,6 +305,58 @@ describe('CreateFeatureUseCase', () => {
   // task-5: CreateFeatureInput accepts parentId field
   // -------------------------------------------------------------------------
 
+  describe('useWorkflowDefaults (spec 148)', () => {
+    beforeEach(() => {
+      mockLoadSettings.mockResolvedValue({
+        agent: { type: 'claude-code' },
+        workflow: {
+          defaultMode: 'Fast',
+          openPrOnImplementationComplete: true,
+          approvalGateDefaults: {
+            allowPrd: true,
+            allowPlan: true,
+            allowMerge: false,
+            pushOnImplementationComplete: true,
+          },
+        },
+      } as unknown as Settings);
+    });
+
+    it("fills what the caller left unset from the user's workflow settings", async () => {
+      const { feature } = await useCase.execute({ ...baseInput, useWorkflowDefaults: true });
+
+      expect(feature.buildMode).toBe(BuildMode.Fast);
+      expect(feature.approvalGates).toEqual({ allowPrd: true, allowPlan: true, allowMerge: false });
+      expect(feature.push).toBe(true);
+      expect(feature.openPr).toBe(true);
+    });
+
+    it('keeps what the caller set', async () => {
+      const { feature } = await useCase.execute({
+        ...baseInput,
+        useWorkflowDefaults: true,
+        buildMode: BuildMode.Application,
+        push: false,
+      });
+
+      expect(feature.buildMode).toBe(BuildMode.Application);
+      expect(feature.push).toBe(false);
+      expect(feature.openPr).toBe(true);
+    });
+
+    it('leaves the built-in defaults alone without the option', async () => {
+      const { feature } = await useCase.execute(baseInput);
+
+      expect(feature.buildMode).toBe(BuildMode.Application);
+      expect(feature.push).toBe(false);
+      expect(feature.approvalGates).toEqual({
+        allowPrd: false,
+        allowPlan: false,
+        allowMerge: false,
+      });
+    });
+  });
+
   it('should accept parentId in the input without TypeScript errors', async () => {
     const parent = makeParentFeature({ lifecycle: SdlcLifecycle.Maintain });
     mockFeatureRepo.findById = vi.fn().mockResolvedValue(parent);

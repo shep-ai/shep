@@ -39,6 +39,7 @@ import type { ISettingsRepository } from '../../../ports/output/repositories/set
 import type { ILogger } from '../../../ports/output/services/logger.interface.js';
 import type { ITelemetry } from '../../../ports/output/services/telemetry.interface.js';
 import { createDefaultSettings } from '../../../../domain/factories/settings-defaults.factory.js';
+import { featureWorkflowDefaults } from '../../../../domain/shared/workflow-defaults.js';
 import { satisfiesDependencyGate } from '../../../../domain/lifecycle-gates.js';
 import { effortField } from '../../../../domain/shared/agent-effort.js';
 import type { IApplicationRepository } from '../../../ports/output/repositories/application-repository.interface.js';
@@ -104,7 +105,8 @@ export class CreateFeatureUseCase {
    * Full synchronous execution: creates record, initializes worktree/spec, spawns agent.
    * Used by the CLI which shows a spinner and needs everything done before returning.
    */
-  async execute(input: CreateFeatureInput): Promise<CreateFeatureResult> {
+  async execute(request: CreateFeatureInput): Promise<CreateFeatureResult> {
+    const input = request.useWorkflowDefaults ? await this.withWorkflowDefaults(request) : request;
     const { feature, shouldSpawn, queued } = await this.createRecord(input);
     const { warning, updatedFeature } = await this.initializeAndSpawn(feature, input, shouldSpawn);
     return {
@@ -112,6 +114,19 @@ export class CreateFeatureUseCase {
       warning,
       queued,
       ...(queued ? { queuePosition: await this.capacity.getQueuePosition(updatedFeature.id) } : {}),
+    };
+  }
+
+  /** The input with what it leaves unset taken from the user's workflow settings. */
+  private async withWorkflowDefaults(input: CreateFeatureInput): Promise<CreateFeatureInput> {
+    const defaults = featureWorkflowDefaults(await this.loadSettingsOrThrow());
+    const explicitMode = input.buildMode ?? (input.fast ? BuildMode.Fast : undefined);
+    return {
+      ...input,
+      buildMode: explicitMode ?? defaults.buildMode,
+      approvalGates: input.approvalGates ?? defaults.approvalGates,
+      push: input.push ?? defaults.push,
+      openPr: input.openPr ?? defaults.openPr,
     };
   }
 

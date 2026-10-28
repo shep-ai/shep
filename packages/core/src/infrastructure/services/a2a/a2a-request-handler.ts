@@ -204,6 +204,7 @@ export class A2aRequestHandler {
     const { feature } = await this.createFeature.execute({
       userInput: message.text,
       repositoryPath,
+      useWorkflowDefaults: true,
     });
     return this.getTask(feature.id);
   }

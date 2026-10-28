@@ -224,6 +224,7 @@ describe('A2aRequestHandler', () => {
       expect(create.execute).toHaveBeenCalledWith({
         userInput: 'Add a login page',
         repositoryPath: '/work/acme',
+        useWorkflowDefaults: true,
       });
       expect(body.result).toMatchObject({ task: { id: 'new-1' } });
     });

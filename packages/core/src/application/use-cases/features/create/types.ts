@@ -31,6 +31,12 @@ export interface CreateFeatureInput {
   description?: string;
   /** When true, skip SDLC phases and implement directly from the user prompt. */
   fast?: boolean;
+  /**
+   * Fill the build mode, approval gates, push and PR choices this input leaves
+   * unset from the user's Settings → Workflow, as `shep feat new` does. For
+   * callers with no flags of their own (A2A, MCP). Honoured by `execute()`.
+   */
+  useWorkflowDefaults?: boolean;
   /** Fork repo and create PR to upstream at merge time (default: false). */
   forkAndPr?: boolean;
   /** Commit specs/evidences into the repo (default: true, auto-false when forkAndPr). */

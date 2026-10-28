@@ -1,5 +1,15 @@
 # Lessons Learned
 
+## A new entry point must apply the same defaults as the old ones
+
+A2A and MCP created features by calling `CreateFeatureUseCase` directly, while `shep feat new`
+filled unset options from Settings → Workflow (mode, gates, push, PR) in the command itself.
+So a feature created over A2A ran a different pipeline than the user chose. Unit tests could not
+see it, because each adapter passed exactly what its own test expected. The first real run of the
+orchestrator demo showed it. Keep "what a caller left unset means" in core
+(`featureWorkflowDefaults`, `useWorkflowDefaults`). Before adding an entry point, diff what the
+existing entry points pass to the same use case.
+
 ## A `.well-known` app folder is invisible; the web token appears on first request
 
 Two things a real `shep ui` run showed while adding A2A (spec 148). ESLint's TypeScript project
