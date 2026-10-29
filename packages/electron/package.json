@@ -37,7 +37,7 @@
     "electron-window-state": "^5.0.3",
     "js-yaml": "^4.3.2",
     "minimatch": "^7.x",
-    "next": "16.3.8",
+    "next": "16.4.3",
     "node-notifier": "^10.0.1",
     "papaparse": "^5.5.3",
     "react": "^19.2.4",
@@ -48,7 +48,7 @@
     "umzug": "^3.8.3",
     "which": "^5.0.0",
     "ws": "^8.20.0",
-    "zod": "^4.3.6"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "cross-env": "^10.1.0",

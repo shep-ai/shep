@@ -1,0 +1,10 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: HarnessVersionTrend.yaml
+type: string
+enum:
+  - insufficient-data
+  - improved
+  - unchanged
+  - regressed
+  - no-baseline
+description: How a harness version's outcomes compare with its parent's

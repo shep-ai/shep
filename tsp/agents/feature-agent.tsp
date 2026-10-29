@@ -132,7 +132,7 @@ model FeatureAgent {
   state: FeatureAgentState;
 
   @doc("Timestamp when this feature agent was created")
-  @visibility("read")
+  @visibility(Lifecycle.Read)
   createdAt: utcDateTime;
 }
 

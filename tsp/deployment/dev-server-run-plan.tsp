@@ -150,10 +150,10 @@ model DevServerRunPlan {
   installStampHash?: string;
 
   @doc("Timestamp when the plan was created")
-  @visibility("read")
+  @visibility(Lifecycle.Read)
   createdAt: utcDateTime;
 
   @doc("Timestamp when the plan was last updated")
-  @visibility("read")
+  @visibility(Lifecycle.Read)
   updatedAt: utcDateTime;
 }

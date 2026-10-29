@@ -2,5 +2,5 @@ $schema: https://json-schema.org/draft/2020-12/schema
 $id: RecordFloat64.yaml
 type: object
 properties: {}
-additionalProperties:
+unevaluatedProperties:
   type: number

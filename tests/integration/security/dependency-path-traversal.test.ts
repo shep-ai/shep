@@ -171,6 +171,8 @@ describe('dependency archive containment', () => {
 
 describe('dependency TypeSpec output containment', () => {
   const outputDir = resolveVirtualPath('safe-output');
+  // TypeSpec 1.x writes each emitter's files to `{output-dir}/{emitter-name}` by default.
+  const emitterDir = `${outputDir}/@typespec/openapi3`;
   async function compileVersion(version: string) {
     const openapiRequire = createRequire(require.resolve('@typespec/openapi3'));
     const names = [
@@ -207,10 +209,16 @@ describe('dependency TypeSpec output containment', () => {
     return host.fs;
   }
 
+  // GHSA-2q42-4q24-7rgv: @typespec/openapi3 <=1.15.0 let a version value add path
+  // components to the output file. 1.16+ replaces unsafe characters instead of failing,
+  // so the contract is that every emitted file stays directly inside the output folder.
   it.each(['../../../../escaped', '..\\..\\escaped', '..'])(
-    'refuses to interpolate an unsafe version %s into an output path',
+    'keeps an unsafe version %s inside the emitter output folder',
     async (version) => {
-      await expect(compileVersion(version)).rejects.toThrow(/version.*path/i);
+      const files = await compileVersion(version);
+      const emitted = [...files.keys()].filter((file) => file.endsWith('.yaml'));
+      expect(emitted).toHaveLength(1);
+      expect(dirname(emitted[0])).toBe(emitterDir);
     }
   );
 

@@ -119,7 +119,7 @@ model Deployment {
   ports: PortMap[];
 
   @doc("Timestamp when the deployment was created")
-  @visibility("read")
+  @visibility(Lifecycle.Read)
   createdAt: utcDateTime;
 
   @doc("Timestamp when the deployment was stopped (only present when state is Stopped)")
