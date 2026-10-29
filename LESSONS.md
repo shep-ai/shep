@@ -3377,3 +3377,17 @@ unit tests and the dev server do not run this validation.
    the installed build, then compare remaining failures against a `main` worktree run.
 6. `pnpm test:e2e:cli` can leave a `shep _serve` on port 4050. A packaged Electron launch then
    waits forever on the invisible "port in use" dialog — kill it before launching under xvfb.
+
+## An SDK "success" can carry an error: check `is_error` before publishing model output
+
+Every release from v1.219.0 to v1.252.2 (56 in a row) shipped _"Your organization does not have
+access to Claude. Please login again…"_ as its tagline. The `CLAUDE_CODE_OAUTH_TOKEN` secret had
+lost access, and the Agent SDK reports that as a `result` message with `subtype: 'success'`,
+`is_error: true` and the error as `result`. The tagline code read only `subtype`, so the fallback
+to the static tagline never fired, and no check noticed for three months. **Rules:**
+
+- Treat a `result` with `is_error` and an `assistant` message with `error` as failures, and also
+  reject text matching known service errors (`isServiceError`) before anything is published.
+- A fallback that hides a broken credential must say so loudly (a warning naming the secret).
+- Permanent output (release notes, CHANGELOG.md) gets fixed at the source of truth, then synced:
+  `scripts/release-notes-backfill.mjs` copies CHANGELOG.md taglines into GitHub releases.

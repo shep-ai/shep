@@ -6,7 +6,7 @@
 
 # 🚀 Shep [v1.252.2](/compare/v1.252.1...v1.252.2) · _2026-10-29_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> All 40 open Dependabot alerts _cleared in one sweep_ — Next 16.4, TypeSpec 1.17 and patched transitive deps.
 
 
 
@@ -41,7 +41,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.252.1](/compare/v1.252.0...v1.252.1) · _2026-10-28_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> The daemon now _stays up when a browser tab hangs up_, and gated features open cleanly on dashboard load.
 
 
 
@@ -80,7 +80,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.252.0](/compare/v1.251.0...v1.252.0) · _2026-10-28_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Watch every agent work in real time — _agent activity_ now streams over MCP, A2A 1.0, the CLI, Herdr and the web UI.
 
 
 
@@ -119,7 +119,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.251.0](/compare/v1.250.0...v1.251.0) · _2026-10-28_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> A paused fleet queue now shows up in `shep tui`, and _one keystroke releases it_.
 
 
 
@@ -158,7 +158,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.250.0](/compare/v1.249.0...v1.250.0) · _2026-10-25_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> `shep ps`, a command palette and a control center land in the TUI, plus `fleet approve --low-risk` to _clear the safe ones fast_.
 
 
 
@@ -199,7 +199,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.249.0](/compare/v1.248.0...v1.249.0) · _2026-10-24_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Open any feature in a _tmux, zellij, wezterm or kitty pane_ straight from the terminal console.
 
 
 
@@ -238,7 +238,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.248.0](/compare/v1.247.0...v1.248.0) · _2026-10-24_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Meet `shep tui` — _every feature, live_, in one terminal console.
 
 
 
@@ -277,7 +277,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.247.0](/compare/v1.246.0...v1.247.0) · _2026-10-22_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> The status bar now flags a _paused fleet queue_ and resumes it with a click.
 
 
 
@@ -315,7 +315,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.246.0](/compare/v1.245.0...v1.246.0) · _2026-10-22_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> `shep fleet retry --failed` and a drawer Retry action _re-run what broke_, on top of an Electron 44 upgrade.
 
 
 
@@ -356,7 +356,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.245.0](/compare/v1.244.1...v1.245.0) · _2026-10-21_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> The best fixes and features from _community forks_ are now part of Shep itself.
 
 
 
@@ -391,7 +391,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.244.1](/compare/v1.244.0...v1.244.1) · _2026-10-21_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Next, the MCP SDK and their transitive deps are _patched against the latest Dependabot alerts_.
 
 
 
@@ -426,7 +426,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.244.0](/compare/v1.243.0...v1.244.0) · _2026-10-21_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Write guardrail rules right in the supervisor form, and let the circuit breaker _pause the fleet queue_ when things go wrong.
 
 
 
@@ -463,7 +463,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.243.0](/compare/v1.242.0...v1.243.0) · _2026-10-19_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Overlapping features can now _coordinate among their own agents_ (opt-in), and the ESM worker starts cleanly.
 
 
 
@@ -504,7 +504,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.242.0](/compare/v1.241.0...v1.242.0) · _2026-10-11_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> A _chat-first page_ with inline spec, preview and plan blocks — build a feature by talking it through.
 
 
 
@@ -543,7 +543,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.241.0](/compare/v1.240.0...v1.241.0) · _2026-10-11_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Git checkpoints after every agent step mean you can _rewind any feature_; the SDLC board moves behind a flag.
 
 
 
@@ -596,7 +596,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.240.0](/compare/v1.239.0...v1.240.0) · _2026-10-11_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Per-area feature flags let you _switch whole surfaces on or off_; ASPM now starts off by default.
 
 
 
@@ -635,7 +635,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.239.0](/compare/v1.238.0...v1.239.0) · _2026-10-11_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Opt-out, content-free usage metrics help us _see what works_ — never your prompts, code or paths.
 
 
 
@@ -674,7 +674,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.238.0](/compare/v1.237.0...v1.238.0) · _2026-10-11_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Background agents now ask with _a recommendation and a deadline_, so work keeps moving while you're away.
 
 
 
@@ -713,7 +713,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.237.0](/compare/v1.236.0...v1.237.0) · _2026-10-11_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> One Decision primitive, _rendered inline everywhere_ an agent needs your call.
 
 
 
@@ -752,7 +752,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.236.0](/compare/v1.235.0...v1.236.0) · _2026-10-05_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> A _software factory per space_ — specs 120 to 132 land together.
 
 
 
@@ -791,7 +791,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.235.0](/compare/v1.234.2...v1.235.0) · _2026-10-04_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> The experimental Shep Harness makes agents _query-aware_, and the built-in terminal starts every time.
 
 
 
@@ -836,7 +836,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.234.2](/compare/v1.234.1...v1.234.2) · _2026-10-02_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Your reasoning-effort setting now _sticks_ through settings changes, adopt and promote.
 
 
 
@@ -871,7 +871,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.234.1](/compare/v1.234.0...v1.234.1) · _2026-10-02_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Next 16.3.6 and DOMPurify 3.4.16 _close the latest security advisories_.
 
 
 
@@ -910,7 +910,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.234.0](/compare/v1.233.2...v1.234.0) · _2026-09-30_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Deterministic guardrails now _run before the LLM supervisor_ ever weighs in.
 
 
 
@@ -945,7 +945,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.233.2](/compare/v1.233.1...v1.233.2) · _2026-09-29_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> A failed chat session boot no longer _leaves chat and setup stuck_.
 
 
 
@@ -984,7 +984,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.233.1](/compare/v1.233.0...v1.233.1) · _2026-09-27_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> "Try again" now _really re-runs_ a failed setup step, and a full chat-session cap answers with a clear 429.
 
 
 
@@ -1029,7 +1029,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.233.0](/compare/v1.232.0...v1.233.0) · _2026-09-26_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Opus 5.5 is the new default, with a _reasoning effort dial_ to match the work.
 
 
 
@@ -1064,7 +1064,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.232.0](/compare/v1.231.0...v1.232.0) · _2026-09-26_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Start an app in _any stack or a Vite starter_, then add features to it.
 
 
 
@@ -1102,7 +1102,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.231.0](/compare/v1.230.1...v1.231.0) · _2026-09-26_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Claude models are _discovered live_ from the Anthropic API, and Application chat runs on Cursor via ACP.
 
 
 
@@ -1139,7 +1139,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.230.1](/compare/v1.230.0...v1.230.1) · _2026-09-26_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Scheduled workflows no longer _hijack the run-workflow token_ meant for your own runs.
 
 
 
@@ -1174,7 +1174,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.230.0](/compare/v1.229.6...v1.230.0) · _2026-09-25_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Cursor models are _discovered automatically_, and the fleet status bar gets a cleaner home.
 
 
 
@@ -1219,7 +1219,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.229.6](/compare/v1.229.5...v1.229.6) · _2026-09-24_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Bad page limits are _stopped at the door_ before they ever reach SQLite.
 
 
 
@@ -1258,7 +1258,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.229.5](/compare/v1.229.4...v1.229.5) · _2026-09-23_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Node 22+ everywhere, and a setup script that _lands in the right folder_.
 
 
 
@@ -1293,7 +1293,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.229.4](/compare/v1.229.3...v1.229.4) · _2026-09-23_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> The agent harness now reports _true outcomes_ and stops work that would never end.
 
 
 
@@ -1328,7 +1328,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.229.3](/compare/v1.229.2...v1.229.3) · _2026-09-22_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> MCP servers now _shut down for real_, and a bare `shep aspm` respects its feature flag.
 
 
 
@@ -1367,7 +1367,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.229.2](/compare/v1.229.1...v1.229.2) · _2026-09-22_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> SQLite closes cleanly on worker exit, with fixes across _UI, CLI startup and packaging_.
 
 
 
@@ -1404,7 +1404,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.229.1](/compare/v1.229.0...v1.229.1) · _2026-09-22_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Windows gets _first-class care_: pnpm shims are detected and native builds are back.
 
 
 
@@ -1441,7 +1441,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.229.0](/compare/v1.228.3...v1.229.0) · _2026-09-21_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Kimi Code joins the agent lineup, along with _fixes from a full repo review_.
 
 
 
@@ -1484,7 +1484,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.228.3](/compare/v1.228.2...v1.228.3) · _2026-09-20_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> When an agent CLI fails, you now see _its own reason why_; Codex resume uses the new syntax.
 
 
 
@@ -1521,7 +1521,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.228.2](/compare/v1.228.1...v1.228.2) · _2026-09-20_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Installs run their postinstall _without tripping over missing scripts_.
 
 
 
@@ -1556,7 +1556,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.228.1](/compare/v1.228.0...v1.228.1) · _2026-09-20_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Checkpoints now respect `SHEP_HOME`, and a PRD timer _no longer leaks_.
 
 
 
@@ -1593,7 +1593,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.228.0](/compare/v1.227.0...v1.228.0) · _2026-09-18_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Fleet status, triage and batch approve land in the CLI and web, and dev servers _start themselves_ across ecosystems.
 
 
 
@@ -1634,7 +1634,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.227.0](/compare/v1.226.1...v1.227.0) · _2026-09-17_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Cap how many features run at once — _parallel, but on your terms_.
 
 
 
@@ -1669,7 +1669,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.226.1](/compare/v1.226.0...v1.226.1) · _2026-09-13_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Injected skills _stay out of your commits_, and a disabled supervisor policy stays disabled.
 
 
 
@@ -1706,7 +1706,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.226.0](/compare/v1.225.1...v1.226.0) · _2026-09-08_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Tasks are now routed to model tiers _by complexity_, and dependent features wait for their parent to land.
 
 
 
@@ -1747,7 +1747,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.225.1](/compare/v1.225.0...v1.225.1) · _2026-09-03_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> PRs open on the upstream repo for forks, and Merge Review _shows big diffs reliably_.
 
 
 
@@ -1790,7 +1790,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.225.0](/compare/v1.224.0...v1.225.0) · _2026-08-10_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> The new shep-workstreams skill _plans parallel work_ for you.
 
 
 
@@ -1825,7 +1825,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.224.0](/compare/v1.223.1...v1.224.0) · _2026-08-10_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> llmproxy support arrives, and the dev server _shakes off its UI lag_.
 
 
 
@@ -1870,7 +1870,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.223.1](/compare/v1.223.0...v1.223.1) · _2026-08-08_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Dependent features now _hold until their parent has landed_.
 
 
 
@@ -1909,7 +1909,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.223.0](/compare/v1.222.1...v1.223.0) · _2026-08-08_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Sync now commits, then rebases — _a dirty worktree never fails it_ again.
 
 
 
@@ -1948,7 +1948,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.222.1](/compare/v1.222.0...v1.222.1) · _2026-08-06_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Features blocked on a finished parent are _released automatically_.
 
 
 
@@ -1983,7 +1983,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.222.0](/compare/v1.221.0...v1.222.0) · _2026-08-06_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> A double sidenav session tree with bulk import and adoption, plus _task management over MCP_.
 
 
 
@@ -2020,7 +2020,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.221.0](/compare/v1.220.0...v1.221.0) · _2026-07-30_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Provision worktrees _your way_ with custom configuration.
 
 
 
@@ -2059,7 +2059,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.220.0](/compare/v1.219.1...v1.220.0) · _2026-07-28_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Claude Opus 5 and Sonnet 5 are _ready to run_ your features.
 
 
 
@@ -2094,7 +2094,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.219.1](/compare/v1.219.0...v1.219.1) · _2026-07-26_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> A broken better-sqlite3 binding now _tells you how to fix it_.
 
 
 
@@ -2129,7 +2129,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.219.0](/compare/v1.218.1...v1.219.0) · _2026-07-17_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Group skills by package with a new toggle, and release notes _stop repeating themselves_.
 
 
 
