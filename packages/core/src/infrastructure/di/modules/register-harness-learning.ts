@@ -32,6 +32,11 @@ import { ResolveHarnessDecisionUseCase } from '../../../application/use-cases/ha
 import { ListHarnessHistoryUseCase } from '../../../application/use-cases/harness-learning/list-harness-history.use-case.js';
 import { GetHarnessVersionUseCase } from '../../../application/use-cases/harness-learning/get-harness-version.use-case.js';
 import { HarnessDecisionSettler } from '../../../application/use-cases/harness-learning/harness-decision-settler.js';
+import { RefineHarnessUseCase } from '../../../application/use-cases/harness-learning/refine-harness.use-case.js';
+import { SelectProbeOutputUseCase } from '../../../application/use-cases/harness-learning/select-probe-output.use-case.js';
+import { ResolveExplorePlanUseCase } from '../../../application/use-cases/harness-learning/resolve-explore-plan.use-case.js';
+import type { IProbeWorktreeService } from '../../../application/ports/output/services/probe-worktree.interface.js';
+import { GitProbeWorktreeService } from '../../services/harness-learning/git-probe-worktree.service.js';
 
 export function registerHarnessLearning(container: DependencyContainer): void {
   container.register<ILearnedHarnessRepository>('ILearnedHarnessRepository', {
@@ -51,6 +56,9 @@ export function registerHarnessLearning(container: DependencyContainer): void {
   container.register<IEvidenceWorkspace>('IEvidenceWorkspace', {
     useFactory: (c) => c.resolve(FileSystemEvidenceWorkspace),
   });
+  container.register<IProbeWorktreeService>('IProbeWorktreeService', {
+    useFactory: (c) => c.resolve(GitProbeWorktreeService),
+  });
   container.registerSingleton(HarnessDecisionSettler);
 
   const useCases = {
@@ -66,6 +74,9 @@ export function registerHarnessLearning(container: DependencyContainer): void {
     ResolveHarnessDecisionUseCase,
     ListHarnessHistoryUseCase,
     GetHarnessVersionUseCase,
+    RefineHarnessUseCase,
+    SelectProbeOutputUseCase,
+    ResolveExplorePlanUseCase,
   } as const;
   for (const [token, useCase] of Object.entries(useCases)) {
     registerUseCase(container, token, useCase as constructor<unknown>);

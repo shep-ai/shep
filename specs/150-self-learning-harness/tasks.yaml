@@ -382,7 +382,9 @@ tasks:
       GitProbeWorktreeService forks sibling worktrees from the pre-implement checkpoint ref,
       runs the repository's check commands (from the existing dev/test configuration) and
       returns diff, check results and a delivered flag; disposes worktrees on every path.
-    state: Todo
+      As built: probes fork from the feature worktree's HEAD commit at implement start, as
+      detached worktrees under the OS temp dir, so no branches are created.
+    state: Done
     dependencies:
       - task-8
     acceptanceCriteria:
@@ -401,7 +403,9 @@ tasks:
       Port of recursion.py: k base rollouts, k INV and k DOM proposals, probes, k compositions
       (parallel) or k rounds (sequential), final probes, ledger checked after each phase and
       the USD cap enforced with fallback to the best base rollout.
-    state: Todo
+      As built: explore-recursion.ts holds the two schedules and explore-operations.ts the
+      guarded roll/stage helpers; selection and experience costs count toward the cap.
+    state: Done
     dependencies:
       - task-13
       - task-17
@@ -424,7 +428,9 @@ tasks:
       candidate's diff plus check results, runs the select prompt, parses fail-closed, falls
       back to the best delivered candidate on failure; k = 1 skips the selector.
       ReflectOnAdoptionUseCase writes edit rows with real verdicts and at most one lesson.
-    state: Todo
+      As built: reflection on adoption is the experience stage inside RefineHarnessUseCase
+      (refinement-records.ts runExperience), sharing the Reflect mode parser and recorder.
+    state: Done
     dependencies:
       - task-5
       - task-18
@@ -445,7 +451,10 @@ tasks:
       In Explore mode (per feature or per scope) explore_implement replaces implement /
       fast-implement: refine, select, restore the chosen tree into the feature worktree as a
       git checkpoint, store the run and its candidate, then continue to merge.
-    state: Todo
+      As built: withExplore() wraps implement and fast-implement in both graphs; the kept
+      probe's commits are fast-forwarded into the feature worktree and withCheckpoint records
+      the checkpoint. With nothing kept, the original node runs unchanged.
+    state: Done
     dependencies:
       - task-19
     acceptanceCriteria:

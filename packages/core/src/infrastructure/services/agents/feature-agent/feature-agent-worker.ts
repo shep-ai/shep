@@ -81,6 +81,7 @@ import { FEATURE_WORKER_HEARTBEAT_INTERVAL_MS } from '@/domain/shared/agent-run-
 import { createLearnedHarnessSession } from '../../harness-learning/learned-harness-session.factory.js';
 import { LearnedHarnessExecutorProxy } from '../../harness-learning/learned-harness-executor.proxy.js';
 import { learnFromRun } from './learn-from-run.js';
+import { createExploreDeps } from './explore/explore-deps.js';
 import { ReflectOnFeatureRunUseCase } from '@/application/use-cases/harness-learning/reflect-on-feature-run.use-case.js';
 import { RecordVersionOutcomeUseCase } from '@/application/use-cases/harness-learning/record-version-outcome.use-case.js';
 
@@ -371,6 +372,7 @@ export async function runWorker(args: WorkerArgs): Promise<void> {
 
   // Learned harness (spec 150): one pinned version per run, installed before every agent call.
   const learnedHarness = createLearnedHarnessSession(container, args.repo, log);
+  const rawExecutor = executor;
   executor = new LearnedHarnessExecutorProxy(executor, learnedHarness);
 
   // Resolve plugin dependencies for MCP server lifecycle
@@ -437,6 +439,7 @@ export async function runWorker(args: WorkerArgs): Promise<void> {
     extractMemoryDeps: {
       recordProjectMemory: container.resolve(RecordProjectMemoryUseCase),
     },
+    explore: createExploreDeps(container, rawExecutor, args.runId, log),
   };
 
   // Use threadId for checkpoint path so resume runs share the same checkpoint DB.
