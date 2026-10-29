@@ -1,0 +1,82 @@
+
+# What the candidate changes and why — its edit verdicts stay Untested until a run tries it
+$ shep learn show 64c7cdfa
+
+  Learned harness 64c7cdfa
+
+  Version               64c7cdfa-bdea-4ec4-abb0-752c378389de
+  Status                Candidate
+  Origin                Reflect
+  Scope                 Project
+  Created               2026-10-29
+  Components            6
+  Parent                065eb057
+  Learned from feature  ecc80dff
+  Notes                 kept -> refunds-export skill -> the CSV export failed CI twice on ragged rows
+kept -> check_exports.sh -> the agent never checked the file it wrote
+
+  Components
+  Guardrails     guardrails.md
+  Instructions   instructions.md
+  Script         scripts/check_exports.sh
+  Skill          skills/migrations/SKILL.md
+  Skill          skills/refunds-export/SKILL.md
+  Tool guidance  tool-guidance.md
+
+  Edits and verdicts
+  Untested  guardrails.md: Run new migrations twice — CI-fix attempts 1 and 2 failed on the same malformed export
+  Untested  skills/refunds-export/SKILL.md: Added a streaming CSV export skill — CI-fix attempts 1 and 2 failed on the same malformed export
+  Untested  scripts/check_exports.sh: Added a ragged-row check for CSV files — CI-fix attempts 1 and 2 failed on the same malformed export
+
+  Diff against 065eb057
+  + scripts/check_exports.sh
+  #!/usr/bin/env bash
+  # Fails when a CSV export has a ragged row.
+  awk -F, 'NR==1{n=NF} NF!=n{print FILENAME": row "NR" has "NF" fields"; bad=1} END{exit bad}' "$@"
+  
+  + skills/refunds-export/SKILL.md
+  ---
+  name: refunds-export
+  description: Export refunds or payments to CSV without loading every row
+  ---
+  
+  1. Stream rows from the database cursor; never build the whole file in memory.
+  2. Quote every field and write a header row.
+  3. Run `scripts/check_exports.sh` on the result before you finish.
+  
+  ~ guardrails.md
+  - Never edit generated files under `packages/core/src/domain/generated/`; change the TypeSpec and run `pnpm generate`.
+  - Run `pnpm test:unit` before you say a change is done.
+  - Run every new migration twice; it must be idempotent.
+  
+  
+  ~ instructions.md
+  When the situation matches the `migrations` skill's description, load the `migrations` skill.
+  When the situation matches the `refunds-export` skill's description, load the `refunds-export` skill.
+  
+$ shep learn diff 065eb057 64c7cdfa
+065eb057 → 64c7cdfa
++ scripts/check_exports.sh
+#!/usr/bin/env bash
+# Fails when a CSV export has a ragged row.
+awk -F, 'NR==1{n=NF} NF!=n{print FILENAME": row "NR" has "NF" fields"; bad=1} END{exit bad}' "$@"
+
++ skills/refunds-export/SKILL.md
+---
+name: refunds-export
+description: Export refunds or payments to CSV without loading every row
+---
+
+1. Stream rows from the database cursor; never build the whole file in memory.
+2. Quote every field and write a header row.
+3. Run `scripts/check_exports.sh` on the result before you finish.
+
+~ guardrails.md
+- Never edit generated files under `packages/core/src/domain/generated/`; change the TypeSpec and run `pnpm generate`.
+- Run `pnpm test:unit` before you say a change is done.
+- Run every new migration twice; it must be idempotent.
+
+
+~ instructions.md
+When the situation matches the `migrations` skill's description, load the `migrations` skill.
+When the situation matches the `refunds-export` skill's description, load the `refunds-export` skill.

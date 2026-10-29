@@ -1,0 +1,2 @@
+- Never edit generated files under `packages/core/src/domain/generated/`; change the TypeSpec and run `pnpm generate`.
+- Run `pnpm test:unit` before you say a change is done.
