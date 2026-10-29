@@ -11,7 +11,11 @@
  * 1. If the feature has PR data, check PR status via batch `listPrStatuses`.
  *    If the PR is Merged, transition to Maintain.
  * 2. If the feature has no PR data, check if the branch is merged into the
- *    default branch using `verifyMerge` (git merge-base).
+ *    default branch using `verifyMerge` (git merge-base), and only when the
+ *    branch has a commit of its own: one made after the feature was created.
+ *    A branch nobody has committed to yet is "contained in" its base too —
+ *    that is not a merge, and closing it would hide a feature still waiting
+ *    at its gate.
  */
 
 import { injectable, inject } from 'tsyringe';
@@ -20,6 +24,7 @@ import { SdlcLifecycle, PrStatus, AgentRunStatus } from '../../../domain/generat
 import type { IGitPrService } from '../../ports/output/services/git-pr-service.interface.js';
 import type { IFeatureRepository } from '../../ports/output/repositories/feature-repository.interface.js';
 import type { IAgentRunRepository } from '../../ports/output/agents/agent-run-repository.interface.js';
+import type { IGitCommitHistoryService } from '../../ports/output/services/git-commit-history.service.interface.js';
 import { UpdateFeatureLifecycleUseCase } from './update/update-feature-lifecycle.use-case.js';
 
 export interface AutoResolveMergedBranchesOutput {
@@ -37,7 +42,9 @@ export class AutoResolveMergedBranchesUseCase {
     @inject('IAgentRunRepository')
     private readonly agentRunRepo: IAgentRunRepository,
     @inject(UpdateFeatureLifecycleUseCase)
-    private readonly updateLifecycle: UpdateFeatureLifecycleUseCase
+    private readonly updateLifecycle: UpdateFeatureLifecycleUseCase,
+    @inject('IGitCommitHistoryService')
+    private readonly commitHistory: IGitCommitHistoryService
   ) {}
 
   async execute(features: Feature[]): Promise<AutoResolveMergedBranchesOutput> {
@@ -171,13 +178,24 @@ export class AutoResolveMergedBranchesUseCase {
     try {
       const defaultBranch = await this.gitPrService.getDefaultBranch(repoPath);
       const isMerged = await this.gitPrService.verifyMerge(repoPath, feature.branch, defaultBranch);
-      if (isMerged) {
+      if (isMerged && (feature.pr || (await this.hasOwnCommits(repoPath, feature)))) {
         return this.resolveFeature(feature);
       }
     } catch {
       // Branch may not exist locally, git errors — skip silently
     }
     return false;
+  }
+
+  /**
+   * Whether the branch tip was committed after the feature was created. A
+   * feature with PR data skips this (an adopted branch predates its feature).
+   * An unreadable date counts as no: leaving a merged feature in Review is
+   * recoverable, closing one still waiting at its gate hides it.
+   */
+  private async hasOwnCommits(repoPath: string, feature: Feature): Promise<boolean> {
+    const tip = await this.commitHistory.getCommitDate(repoPath, feature.branch);
+    return tip !== null && tip.getTime() > new Date(feature.createdAt).getTime();
   }
 
   private async resolveFeature(feature: Feature): Promise<boolean> {

@@ -117,6 +117,8 @@ import type { IRunPlanStalenessProbe } from '@/application/ports/output/services
  * failing with the offending token name on any missing registration.
  */
 const WEB_ROUTE_TOKENS: readonly string[] = [
+  // Dashboard load (get-graph-data.ts) closes merged Review features.
+  'AutoResolveMergedBranchesUseCase',
   // Telemetry (spec 133) — settings section, onboarding notice, route views
   'GetTelemetryStatusUseCase',
   'SetTelemetryPreferencesUseCase',
@@ -352,6 +354,7 @@ const CRITICAL_INFRA_TOKENS: readonly string[] = [
   'IConflictResolutionService',
   'IAttachmentStorageService',
   'IGitCommitService',
+  'IGitCommitHistoryService',
   'IGitRemoteService',
   'ListGitHubOrganizationsUseCase',
   'IGitHubRepositoryService',

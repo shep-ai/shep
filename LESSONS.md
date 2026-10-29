@@ -3330,6 +3330,21 @@ each CLI command / TUI behaviour it adds and name the web surface that shows the
 result (page, drawer card, sidebar badge, settings section). If one is deliberately skipped, the
 spec's Out of Scope says so.
 
+## "Contained in main" is not "merged" for a branch with no commits of its own
+
+AutoResolveMergedBranches closed Review features as merged because `verifyMerge` (is-ancestor,
+then an empty diff) is also true for a branch nobody has committed to yet: it still points at
+the base commit it was cut from. Merge detection needs a sign of the branch's own work, here a
+tip committed after the feature was created. When a check can be satisfied by doing nothing,
+ask what the "nothing happened" case looks like and test it against real git.
+
+## A long-running server must not exit on a client hanging up
+
+The CLI's `uncaughtException` handler exits, and `shep ui` and the daemon run in the CLI
+process, so one browser tab closing mid-request (`Error: aborted`, ECONNRESET) could stop the
+daemon for every tab and agent. Triage process-level errors by origin before exiting: a client
+disconnect is the client's problem.
+
 ## A plan with a setting must give its default and the screen that changes it
 
 Spec 150's first plan added `Settings.learning.mode` and a per-feature "Explore" option but
