@@ -3345,3 +3345,30 @@ process, so one browser tab closing mid-request (`Error: aborted`, ECONNRESET) c
 daemon for every tab and agent. Triage process-level errors by origin before exiting: a client
 disconnect is the client's problem.
 
+
+## A major upgrade that drops an export a plugin needs: patch the import, prove output is identical
+
+Clearing GHSA-2q42-4q24-7rgv meant moving TypeSpec 0.60 → 1.17, but the TypeScript emitter
+(last release 0.3.0) imports `@typespec/compiler/emitter-framework`, which 1.0 moved unchanged
+into `@typespec/asset-emitter`. A one-line `pnpm patch` of the import, plus `packageExtensions`
+(add the new dependency) and `peerDependencyRules.allowedVersions` (accept the new peer — a
+`packageExtensions` peer entry does *not* override an existing one), kept `output.ts`
+byte-identical. Traps hit on the way:
+
+1. `pnpm patch-commit` reported success but the lockfile had no `patchedDependencies` and the
+   unpatched copy kept loading. Run `pnpm install` again and grep the lockfile for `patch_hash`.
+2. Auto-installed peers stay pinned in the lockfile across a major bump (`@typespec/http@0.60`
+   survived next to compiler 1.17). Declare the peers you rely on explicitly.
+3. Compile the full `tsp:compile` too, not only `pnpm generate`: `apis/json-schema/` is committed
+   and read at runtime, and its output changed (`unevaluatedProperties`, `default: []`).
+4. In the sandbox the default Node heap is ~2.2 GB and `tsc`/`eslint` need ~2.9 GB even on main,
+   so they OOM. Set `NODE_OPTIONS=--max-old-space-size=8192` and compare against a baseline
+   worktree before blaming the change.
+
+## A drawer page needs a children-slot page — Next 16.4 fails the build without one
+
+`@drawer/adopt/page.tsx` shipped with no `(dashboard)/adopt/page.tsx`, so `/adopt` only worked
+on client navigation and had no route on a refresh or shared link. Next 16.4's strict route
+matching turned it into a build error. Every new `@drawer/<route>` gets a null children stub;
+`drawer-slot-parity.test.ts` enforces it. After a Next upgrade, run `pnpm build:web:prod` —
+unit tests and the dev server do not run this validation.

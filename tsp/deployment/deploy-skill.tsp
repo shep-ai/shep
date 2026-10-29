@@ -81,6 +81,6 @@ model DeploySkill {
   instructions: string;
 
   @doc("Timestamp when the deployment skill was created")
-  @visibility("read")
+  @visibility(Lifecycle.Read)
   createdAt: utcDateTime;
 }

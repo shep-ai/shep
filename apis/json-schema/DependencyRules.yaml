@@ -22,11 +22,13 @@ properties:
     type: array
     items:
       type: string
+    default: []
     description: Packages explicitly allowed (empty = allow all)
   denylist:
     type: array
     items:
       type: string
+    default: []
     description: Packages explicitly denied
 required:
   - checkLockfileConsistency

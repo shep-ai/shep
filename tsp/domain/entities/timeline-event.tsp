@@ -91,6 +91,6 @@ model TimelineEvent extends BaseEntity {
    * the event took place.
    */
   @doc("Timestamp when this event occurred (read-only, set by system)")
-  @visibility("read")
+  @visibility(Lifecycle.Read)
   timestamp: utcDateTime;
 }

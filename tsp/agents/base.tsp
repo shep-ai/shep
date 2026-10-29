@@ -76,6 +76,6 @@ model AgentInstance {
   status: AgentStatus;
 
   @doc("Timestamp when this agent instance was created")
-  @visibility("read")
+  @visibility(Lifecycle.Read)
   createdAt: utcDateTime;
 }

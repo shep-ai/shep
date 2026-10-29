@@ -159,7 +159,7 @@ model DeployTargetTasks {
  * @see LocalDeployAgentOperations.Deploy - Accepts DeployTarget as input
  */
 @doc("Target for deployment operations - can be an action item, single task, or multiple tasks")
-@discriminator("kind")
+@discriminated(#{ envelope: "none", discriminatorPropertyName: "kind" })
 union DeployTarget {
   @doc("Deploy a single action item for granular change preview")
   actionItem: DeployTargetActionItem,

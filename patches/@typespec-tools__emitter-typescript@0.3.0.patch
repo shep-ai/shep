@@ -1,0 +1,37 @@
+diff --git a/dist/emitter.d.ts b/dist/emitter.d.ts
+index 1d361f1f4411a0a59b1097cd5f9ab287089f5345..6413ffc02beb489498ea1f6c9755242e08075625 100644
+--- a/dist/emitter.d.ts
++++ b/dist/emitter.d.ts
+@@ -1,5 +1,5 @@
+ import { BooleanLiteral, EmitContext, Enum, EnumMember, Interface, IntrinsicType, Model, ModelProperty, Namespace, NumericLiteral, Operation, Scalar, StringLiteral, Tuple, Type, Union, UnionVariant } from "@typespec/compiler";
+-import { CodeTypeEmitter, Context, Declaration, EmittedSourceFile, EmitterOutput, Scope, SourceFile, TypeSpecDeclaration } from "@typespec/compiler/emitter-framework";
++import { CodeTypeEmitter, Context, Declaration, EmittedSourceFile, EmitterOutput, Scope, SourceFile, TypeSpecDeclaration } from "@typespec/asset-emitter";
+ import { EmitterOptions } from "./lib.js";
+ export declare function isArrayType(m: Model): boolean;
+ export declare const intrinsicNameToTSType: Map<string, string>;
+@@ -39,11 +39,11 @@ export declare class TypescriptEmitter<TEmitterOptions extends object = EmitterO
+     enumMemberReference(member: EnumMember): EmitterOutput<string>;
+     unionDeclaration(union: Union, name: string): EmitterOutput<string>;
+     unionInstantiation(union: Union, name: string): EmitterOutput<string>;
+-    unionLiteral(union: Union): import("@typespec/compiler/emitter-framework").EmitEntity<string>;
++    unionLiteral(union: Union): import("@typespec/asset-emitter").EmitEntity<string>;
+     unionVariants(union: Union): EmitterOutput<string>;
+     unionVariant(variant: UnionVariant): EmitterOutput<string>;
+     tupleLiteral(tuple: Tuple): EmitterOutput<string>;
+-    reference(targetDeclaration: Declaration<string>, pathUp: Scope<string>[], pathDown: Scope<string>[], commonScope: Scope<string> | null): string | import("@typespec/compiler/emitter-framework").EmitEntity<string>;
++    reference(targetDeclaration: Declaration<string>, pathUp: Scope<string>[], pathDown: Scope<string>[], commonScope: Scope<string> | null): string | import("@typespec/asset-emitter").EmitEntity<string>;
+     sourceFile(sourceFile: SourceFile<string>): Promise<EmittedSourceFile>;
+ }
+ export declare class SingleFileTypescriptEmitter extends TypescriptEmitter {
+diff --git a/dist/emitter.js b/dist/emitter.js
+index ea7c9c50bc9d7e6e9fb017e03a89eb2613529c10..746b3937a171f74712333abebf15bda92a9d5f94 100644
+--- a/dist/emitter.js
++++ b/dist/emitter.js
+@@ -1,6 +1,6 @@
+ import * as prettier from "prettier";
+ import { getDoc, getNamespaceFullName, } from "@typespec/compiler";
+-import { code, CodeTypeEmitter, createAssetEmitter, StringBuilder, } from "@typespec/compiler/emitter-framework";
++import { code, CodeTypeEmitter, createAssetEmitter, StringBuilder, } from "@typespec/asset-emitter";
+ export function isArrayType(m) {
+     return m.name === "Array";
+ }

@@ -32,7 +32,7 @@
  *
  * - **Immutable Identity**: The `id` field is assigned at creation and never changes
  * - **Automatic Timestamps**: `createdAt` and `updatedAt` are managed by the system
- * - **Read-Only Metadata**: Timestamp fields use `@visibility("read")` to prevent
+ * - **Read-Only Metadata**: Timestamp fields use `@visibility(Lifecycle.Read)` to prevent
  *   client modification
  * - **Soft Delete Support**: Entities can be logically deleted while preserving data
  * - **Audit Trail**: Optional tracking of who created/modified records
@@ -123,7 +123,7 @@ model BaseEntity {
    * persisted for the first time. It cannot be modified after creation.
    */
   @doc("Timestamp when this entity was created (read-only, set by system)")
-  @visibility("read")
+  @visibility(Lifecycle.Read)
   createdAt: utcDateTime;
 
   /**
@@ -133,7 +133,7 @@ model BaseEntity {
    * is modified. It reflects the most recent change to any field.
    */
   @doc("Timestamp when this entity was last updated (read-only, set by system)")
-  @visibility("read")
+  @visibility(Lifecycle.Read)
   updatedAt: utcDateTime;
 }
 
