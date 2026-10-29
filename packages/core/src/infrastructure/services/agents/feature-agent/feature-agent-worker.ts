@@ -78,6 +78,8 @@ import { applyRunSpaceEnvironment } from './apply-space-environment.js';
 
 import type { ApprovalGates } from '@/domain/generated/output.js';
 import { FEATURE_WORKER_HEARTBEAT_INTERVAL_MS } from '@/domain/shared/agent-run-liveness.js';
+import { createLearnedHarnessSession } from '../../harness-learning/learned-harness-session.factory.js';
+import { LearnedHarnessExecutorProxy } from '../../harness-learning/learned-harness-executor.proxy.js';
 
 export interface WorkerArgs {
   featureId: string;
@@ -363,6 +365,10 @@ export async function runWorker(args: WorkerArgs): Promise<void> {
     log('Creating executor from configured agent settings...');
     executor = await executorProvider.getExecutor();
   }
+
+  // Learned harness (spec 150): one pinned version per run, installed before every agent call.
+  const learnedHarness = createLearnedHarnessSession(container, args.repo, log);
+  executor = new LearnedHarnessExecutorProxy(executor, learnedHarness);
 
   // Resolve plugin dependencies for MCP server lifecycle
   const pluginRepository = container.resolve<IPluginRepository>('IPluginRepository');

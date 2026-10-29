@@ -196,7 +196,7 @@ tasks:
       PromptSection, files under a git-excluded .shep-harness/ dir). A registry picks by agent
       type through a new AgentDescriptor field, never by hardcoding in callers. Generalise
       git-commit.service's injected-skills pathspec to all installer paths.
-    state: Todo
+    state: Done
     dependencies:
       - task-4
       - task-8
@@ -220,7 +220,7 @@ tasks:
       learnedHarness state channel; executeNode, implement, fast-implement, merge commit-push-pr,
       the CI-fix loop and FeatureContextBuilder install it and render learned-harness-section
       (raw-string renderer too, per LESSONS.md). Skipped entirely with the flag off.
-    state: Todo
+    state: Done
     dependencies:
       - task-7
       - task-9

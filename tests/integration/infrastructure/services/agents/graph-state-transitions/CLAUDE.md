@@ -33,6 +33,7 @@ Real LangGraph graph + Real SQLite checkpointer + Stub executor + Real feature.y
 | `resume-after-error.test.ts`          | Resume from failed non-merge nodes with persistent checkpointer            |
 | `resume-after-error-merge.test.ts`    | Resume from failed merge — reject/approve/retry paths                      |
 | `resume-feedback-propagation.test.ts` | User feedback propagated to retried node's prompt after failure            |
+| `learned-harness-flow.test.ts`        | Learned harness (spec 150) reaches every agent call; no-op when none adopted |
 
 ## How to Run
 

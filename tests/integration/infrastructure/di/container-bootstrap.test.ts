@@ -399,6 +399,8 @@ const CRITICAL_INFRA_TOKENS: readonly string[] = [
   // the selfLearning flag is on.
   'ILearnedHarnessRepository',
   'IHarnessRefinementRepository',
+  'IHarnessInstaller',
+  'GetCurrentHarnessUseCase',
 ] as const;
 
 /**

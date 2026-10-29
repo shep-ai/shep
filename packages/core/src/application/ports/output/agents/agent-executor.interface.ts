@@ -172,6 +172,12 @@ export interface AgentExecutionOptions {
    */
   mcpConfigPath?: string;
   /**
+   * A settings file carrying lifecycle hooks for this call (spec 150 learned
+   * harness). Claude Code receives it as `--settings <path>`; executors whose
+   * agent has no hooks ignore it.
+   */
+  settingsPath?: string;
+  /**
    * Where this call comes from (spec 119). Executors that keep their own
    * state per run (the Shep Harness) bind the call to a session by
    * `agentRunId`; every other executor ignores it.
