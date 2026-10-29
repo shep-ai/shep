@@ -473,7 +473,10 @@ tasks:
       status, history, show <version>, diff <a> <b>, adopt <version> | --from-dir <dir>,
       reject <version> --feedback, rollback, reflect <feature> — thin over the use cases,
       nine locales, --json where it lists data.
-    state: Todo
+      As built: src/presentation/cli/commands/learn/ (-r/--repo defaults to cwd, --json on
+      status/history/show/diff); ids accept unique prefixes (resolve-harness-version.ts);
+      `adopt --from-dir` uses ImportHarnessVersionUseCase, `reflect` ReflectOnFeatureUseCase.
+    state: Done
     dependencies:
       - task-15
       - task-16
@@ -494,7 +497,10 @@ tasks:
       metrics and regression flags, diff view, edit verdicts, lessons, adopt / rollback actions;
       HarnessChange decisions render in the existing inbox. Stories for every component,
       server-action mocks, nine locales.
-    state: Todo
+      As built: app/learning/page.tsx (?repo=&version=), components/features/learning/,
+      sidebar link and a repository-drawer toolbar link (both flag-gated), server actions in
+      app/actions/learning.ts with Storybook mocks, e2e learning-adopt-rollback.spec.ts.
+    state: Done
     dependencies:
       - task-15
       - task-16
@@ -514,7 +520,9 @@ tasks:
     description: >
       HarnessChange decisions show in the control center with the diff summary and adopt /
       reject actions through the same use cases.
-    state: Todo
+      As built: the feature console (`shep tui`) had no decision view, so `d` opens a
+      learned-harness-changes overlay that answers through AnswerAgentQuestionUseCase.
+    state: Done
     dependencies:
       - task-15
     acceptanceCriteria:
@@ -532,7 +540,9 @@ tasks:
       Events HarnessCandidateProposed, HarnessVersionAdopted, HarnessVersionRejected,
       HarnessVersionRolledBack, HarnessRefinementFinished with counts and enums only
       (components per kind, verdict counts, mode, k, outcome).
-    state: Todo
+      As built: five TelemetryEvent members; recorded in Offer/Adopt/Reject/Rollback and when
+      a Reflect or Explore refinement finishes (harness-telemetry.ts); docs/telemetry.md.
+    state: Done
     dependencies:
       - task-15
       - task-18
@@ -551,7 +561,9 @@ tasks:
       docs/architecture/self-learning-harness.md (both loops, scope, surfaces, safety, settings),
       link from agent-system.md and CLAUDE.md Key Docs, NOTICE.md beside the prompts, LESSONS.md
       entries for anything learned during implementation.
-    state: Todo
+      As built: docs/architecture/self-learning-harness.md, linked from agent-system.md,
+      docs/tui/architecture.md and CLAUDE.md Key Docs; LESSONS.md entries added.
+    state: Done
     dependencies:
       - task-20
       - task-22
@@ -565,7 +577,9 @@ tasks:
       A mock-executor feature run reaches reflect_harness, produces a candidate with a skill,
       the candidate is adopted through the decision, and the next feature run's prompt and
       worktree receive the skill; rollback removes it again.
-    state: Todo
+      As built: tests/integration/infrastructure/harness-learning/self-learning-loop.test.ts
+      (real SQLite, workspace, improver adapter, installer and proxy; mock agent executors).
+    state: Done
     dependencies:
       - task-21
       - task-22
@@ -593,7 +607,10 @@ tasks:
       AutoTextOnly, Auto) noting that scripts and hooks always need a person, always-on
       character cap and regression sample size. Saves through the existing update-settings
       action; added to the settings section nav; nine locales.
-    state: Todo
+      As built: settings/self-learning-settings-section.tsx; every value passes through
+      resolveLearningConfig and unknown stored fields are kept; flag-off is the
+      SettingsPageClient Default story, flag-on SelfLearningOn.
+    state: Done
     dependencies:
       - task-2
     acceptanceCriteria:
@@ -616,9 +633,12 @@ tasks:
       input (TypeSpec, migration column, mapper, repository SQL — the four-edit rule in
       LESSONS.md). CreateFeatureUseCase stores them; the worker routes to explore_implement
       when exploreHarness is set, regardless of the scope mode. Surfaces: a toggle with k and
-      cost note in the web feature-create drawer, `shep feat new --explore [--explore-k N]`,
+      cost note in the web feature-create drawer, `shep feat new --explore-harness [--explore-k N]` (`--explore` is the Exploration build mode),
       and an explore choice in the TUI create flow. All shown only with the flag on.
-    state: Todo
+      As built: the CLI option is `--explore-harness` (`--explore` was taken); explore fields
+      also flow through CreateFeatureFromRemoteUseCase; k validated by isValidExploreK; the TUI
+      choice lives in the console's new-feature view (`N`).
+    state: Done
     dependencies:
       - task-1
       - task-20

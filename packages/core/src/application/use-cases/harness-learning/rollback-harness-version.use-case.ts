@@ -5,9 +5,10 @@
  */
 
 import { inject, injectable } from 'tsyringe';
-import { LearnedHarnessStatus } from '../../../domain/generated/output.js';
+import { LearnedHarnessStatus, TelemetryEvent } from '../../../domain/generated/output.js';
 import { normalizeRepositoryPath } from '../../../domain/shared/repository-path.js';
 import type { ILearnedHarnessRepository } from '../../ports/output/repositories/learned-harness-repository.interface.js';
+import type { ITelemetry } from '../../ports/output/services/telemetry.interface.js';
 
 const DEFAULT_ROLLBACK_REASON = 'rolled back';
 
@@ -21,7 +22,8 @@ export interface RollbackHarnessVersionResult {
 @injectable()
 export class RollbackHarnessVersionUseCase {
   constructor(
-    @inject('ILearnedHarnessRepository') private readonly harnesses: ILearnedHarnessRepository
+    @inject('ILearnedHarnessRepository') private readonly harnesses: ILearnedHarnessRepository,
+    @inject('ITelemetry') private readonly telemetry: ITelemetry
   ) {}
 
   async execute(input: {
@@ -45,10 +47,12 @@ export class RollbackHarnessVersionUseCase {
     const parent = current.parentVersionId
       ? await this.harnesses.findVersion(current.parentVersionId)
       : null;
-    if (parent && parent.status !== LearnedHarnessStatus.Rejected) {
-      await this.harnesses.adopt(parent.id);
-      return { rolledBack: true, restoredVersionId: parent.id };
-    }
-    return { rolledBack: true };
+    const restore = parent && parent.status !== LearnedHarnessStatus.Rejected ? parent : null;
+    if (restore) await this.harnesses.adopt(restore.id);
+    this.telemetry.record(TelemetryEvent.HarnessVersionRolledBack, {
+      origin: current.origin,
+      restoredPrevious: restore !== null,
+    });
+    return restore ? { rolledBack: true, restoredVersionId: restore.id } : { rolledBack: true };
   }
 }

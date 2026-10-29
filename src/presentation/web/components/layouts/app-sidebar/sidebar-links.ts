@@ -14,6 +14,7 @@ import {
   Brain,
   Factory,
   FolderKanban,
+  GraduationCap,
   Home,
   KanbanSquare,
   LayoutGrid,
@@ -66,6 +67,14 @@ export const SIDEBAR_LINKS: readonly SidebarLink[] = [
   { icon: TableProperties, labelKey: 'inventory', href: '/features' },
   { icon: KanbanSquare, label: 'SDLC Board', href: '/sdlc', prefix: true, flag: 'sdlcBoard' },
   { icon: Brain, labelKey: 'projectMemory', href: '/memory', prefix: true },
+  // Spec 150: learned-harness versions, their outcomes, and adopt / rollback.
+  {
+    icon: GraduationCap,
+    labelKey: 'learning',
+    href: '/learning',
+    prefix: true,
+    flag: 'selfLearning',
+  },
   { icon: Boxes, labelKey: 'spaces', href: '/spaces', prefix: true, flag: 'spaces' },
   {
     icon: ArrowLeftRight,

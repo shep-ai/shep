@@ -32,9 +32,11 @@ import type { ILearnedHarnessRepository } from '../../ports/output/repositories/
 import type { ISettingsRepository } from '../../ports/output/repositories/settings.repository.interface.js';
 import type { IEvidenceWorkspace } from '../../ports/output/services/evidence-workspace.interface.js';
 import type { IHarnessImprover } from '../../ports/output/services/harness-improver.interface.js';
+import type { ITelemetry } from '../../ports/output/services/telemetry.interface.js';
 import { ResolveSpaceContextUseCase } from '../spaces/resolve-space-context.use-case.js';
 import { BuildEvidenceBundleUseCase } from './build-evidence-bundle.use-case.js';
 import { harnessScopeFor } from './harness-scope.js';
+import { recordRefinementFinished } from './harness-telemetry.js';
 import { OfferHarnessCandidateUseCase } from './offer-harness-candidate.use-case.js';
 import { poolFiles, recordCandidate, runExperience } from './refinement-records.js';
 import type { ReflectOnFeatureRunInput } from './reflection.types.js';
@@ -44,10 +46,15 @@ import { runImproverStage, type StageResult } from './run-improver-stage.js';
 const REFLECT_K = 0;
 const SINGLE = 1;
 const IMPLEMENT_PHASES = ['implement', 'fast-implement'];
+const SKIP_FLAG_OFF = 'self-learning is turned off';
+const SKIP_MODE_OFF = 'the learning mode is Off';
+const SKIP_NO_IMPLEMENT = 'the run never reached implementation, so there is nothing to learn from';
 
 export interface ReflectOnFeatureRunResult {
-  /** Learning was off (flag or mode) — nothing ran. */
+  /** Nothing ran: learning was off, or the run left nothing to learn from. */
   skipped: boolean;
+  /** Why it was skipped. */
+  reason?: string;
   status?: HarnessRefinementStatus;
   refinementRunId?: string;
   candidateVersionId?: string;
@@ -67,7 +74,8 @@ export class ReflectOnFeatureRunUseCase {
     @inject(BuildEvidenceBundleUseCase) private readonly evidence: BuildEvidenceBundleUseCase,
     @inject(ResolveSpaceContextUseCase) private readonly spaceContext: ResolveSpaceContextUseCase,
     @inject(OfferHarnessCandidateUseCase) private readonly offer: OfferHarnessCandidateUseCase,
-    @inject('IPhaseTimingRepository') private readonly timings: IPhaseTimingRepository
+    @inject('IPhaseTimingRepository') private readonly timings: IPhaseTimingRepository,
+    @inject('ITelemetry') private readonly telemetry: ITelemetry
   ) {}
 
   /** Only runs that reached implementation leave evidence worth reflecting on. */
@@ -82,10 +90,15 @@ export class ReflectOnFeatureRunUseCase {
   ): Promise<ReflectOnFeatureRunResult> {
     const settings = await this.settings.load().catch(() => null);
     const config = resolveLearningConfig(settings?.learning);
-    if (settings?.featureFlags?.selfLearning !== true || config.mode === LearningMode.Off) {
-      return { skipped: true, costUsd: 0 };
+    if (settings?.featureFlags?.selfLearning !== true) {
+      return { skipped: true, reason: SKIP_FLAG_OFF, costUsd: 0 };
     }
-    if (!(await this.reachedImplement(input.featureId))) return { skipped: true, costUsd: 0 };
+    if (config.mode === LearningMode.Off && input.manual !== true) {
+      return { skipped: true, reason: SKIP_MODE_OFF, costUsd: 0 };
+    }
+    if (!(await this.reachedImplement(input.featureId))) {
+      return { skipped: true, reason: SKIP_NO_IMPLEMENT, costUsd: 0 };
+    }
 
     const now = new Date();
     const repositoryPath = normalizeRepositoryPath(input.repositoryPath);
@@ -234,5 +247,6 @@ export class ReflectOnFeatureRunUseCase {
   ): Promise<void> {
     Object.assign(run, patch);
     await this.runs.updateRun(run).catch(() => undefined);
+    recordRefinementFinished(this.telemetry, run);
   }
 }

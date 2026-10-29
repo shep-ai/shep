@@ -42,6 +42,7 @@ import type {
 } from '../../ports/output/services/evidence-workspace.interface.js';
 import type { IHarnessImprover } from '../../ports/output/services/harness-improver.interface.js';
 import type { IProbeWorktreeService } from '../../ports/output/services/probe-worktree.interface.js';
+import type { ITelemetry } from '../../ports/output/services/telemetry.interface.js';
 import { ResolveSpaceContextUseCase } from '../spaces/resolve-space-context.use-case.js';
 import { BuildEvidenceBundleUseCase } from './build-evidence-bundle.use-case.js';
 import {
@@ -53,6 +54,7 @@ import {
 } from './explore-recursion.js';
 import { bestRollout, type IHarnessRolloutRunner, type ProbedRollout } from './explore.types.js';
 import { harnessScopeFor } from './harness-scope.js';
+import { recordRefinementFinished } from './harness-telemetry.js';
 import { mapLimit } from './map-limit.js';
 import { OfferHarnessCandidateUseCase } from './offer-harness-candidate.use-case.js';
 import { poolFiles, recordCandidate, runExperience } from './refinement-records.js';
@@ -112,7 +114,8 @@ export class RefineHarnessUseCase {
     @inject(BuildEvidenceBundleUseCase) private readonly evidence: BuildEvidenceBundleUseCase,
     @inject(SelectProbeOutputUseCase) private readonly select: SelectProbeOutputUseCase,
     @inject(OfferHarnessCandidateUseCase) private readonly offer: OfferHarnessCandidateUseCase,
-    @inject(ResolveSpaceContextUseCase) private readonly spaceContext: ResolveSpaceContextUseCase
+    @inject(ResolveSpaceContextUseCase) private readonly spaceContext: ResolveSpaceContextUseCase,
+    @inject('ITelemetry') private readonly telemetry: ITelemetry
   ) {}
 
   async execute(input: RefineHarnessInput): Promise<RefineHarnessResult> {
@@ -307,6 +310,7 @@ export class RefineHarnessUseCase {
       costUsd: s.ledger.costUsd + s.extraCostUsd,
     });
     await this.runs.updateRun(s.run).catch(() => undefined);
+    recordRefinementFinished(this.telemetry, s.run);
     return {
       status: s.run.status,
       refinementRunId: s.run.id,

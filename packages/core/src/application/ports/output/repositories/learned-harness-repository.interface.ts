@@ -28,6 +28,9 @@ export interface ILearnedHarnessRepository {
 
   findVersion(id: string): Promise<LearnedHarnessVersion | null>;
 
+  /** Versions whose id starts with `prefix`, at most `limit` of them. */
+  findVersionsByIdPrefix(prefix: string, limit: number): Promise<LearnedHarnessVersion[]>;
+
   /** Versions learned in one repository, newest first. */
   listVersions(repositoryPath: string, limit?: number): Promise<LearnedHarnessVersion[]>;
 

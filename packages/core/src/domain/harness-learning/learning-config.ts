@@ -14,8 +14,14 @@ import {
   type LearningConfig,
 } from '../generated/output';
 
-/** Largest task-level recursion budget the settings accept (4k executions). */
+/** Smallest and largest task-level recursion budget accepted (4k executions). */
+export const MIN_EXPLORE_K = 1;
 export const MAX_EXPLORE_K = 5;
+
+/** A per-feature or settings k every surface accepts: a whole number in range. */
+export function isValidExploreK(k: number): boolean {
+  return Number.isInteger(k) && k >= MIN_EXPLORE_K && k <= MAX_EXPLORE_K;
+}
 
 /** Always-on text below this cannot hold a single skill trigger line plus a rule. */
 export const MIN_ALWAYS_ON_CHAR_CAP = 500;
@@ -44,7 +50,7 @@ export function resolveLearningConfig(stored: Partial<LearningConfig> | undefine
   const k = Math.round(positive(s.exploreK, d.exploreK));
   return {
     mode: oneOf(LearningMode, s.mode, d.mode),
-    exploreK: Math.min(Math.max(k, 1), MAX_EXPLORE_K),
+    exploreK: Math.min(Math.max(k, MIN_EXPLORE_K), MAX_EXPLORE_K),
     exploreRecursion: oneOf(HarnessRecursion, s.exploreRecursion, d.exploreRecursion),
     exploreMaxCostUsd: positive(s.exploreMaxCostUsd, d.exploreMaxCostUsd),
     adoptionPolicy: oneOf(HarnessAdoptionPolicy, s.adoptionPolicy, d.adoptionPolicy),

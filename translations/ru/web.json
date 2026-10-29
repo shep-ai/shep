@@ -24,6 +24,7 @@
       "messaging": "Messaging",
       "mcp": "MCP",
       "harness": "Harness агента",
+      "selfLearning": "Самообучение",
       "telemetry": "Метрики использования",
       "a2a": "Подключить агентов"
     },
@@ -466,6 +467,44 @@
       "unknownDefaultDescription": "Что происходит, если ни одно правило не подходит к действию",
       "approvalTimeout": "Таймаут подтверждения (минуты)",
       "approvalTimeoutDescription": "Запрос без ответа отклоняется по истечении этого времени"
+    },
+    "selfLearning": {
+      "title": "Самообучение",
+      "experimental": "Экспериментально",
+      "description": "Shep учится на каждом запуске фичи и улучшает инструкции, навыки и проверки своих агентов",
+      "hint": "Обучение выключено, пока вы не выберете режим. Каждое выученное изменение — версионированный кандидат, который можно просмотреть, принять или откатить на странице «Обучение».",
+      "mode": "Режим обучения",
+      "modes": {
+        "off": "Выключено",
+        "offDescription": "Ничего не изучается; принятые версии harness продолжают действовать",
+        "reflect": "Анализ",
+        "reflectDescription": "После каждого запуска один разбор предлагает изменения harness — без дополнительных попыток",
+        "explore": "Исследование",
+        "exploreDescription": "Шаг реализации пробует несколько вариантов harness и сохраняет лучший результат"
+      },
+      "exploreTitle": "Бюджет исследования",
+      "exploreK": "k исследования",
+      "exploreKDescription": "{{rollouts}} попыток реализации на фичу — примерно в {{rollouts}} раз дороже одного шага реализации",
+      "exploreRecursion": "Форма поиска",
+      "exploreRecursionDescription": "Параллельно — независимые варианты; последовательно — один вариант уточняется раунд за раундом",
+      "recursion": {
+        "parallel": "Параллельно",
+        "sequential": "Последовательно"
+      },
+      "exploreMaxCostUsd": "Лимит расходов (USD)",
+      "exploreMaxCostUsdDescription": "После этой суммы исследование не начинает новых попыток и оставляет лучшую из уже сделанных",
+      "adoptionTitle": "Принятие",
+      "adoptionPolicy": "Политика принятия",
+      "adoptionPolicyDescription": "Скрипты и хуки всегда принимает человек, независимо от политики",
+      "policies": {
+        "manual": "Спрашивать каждый раз",
+        "auto-text-only": "Автоматически принимать проверенные текстовые изменения",
+        "auto": "Автоматически принимать текстовые изменения"
+      },
+      "alwaysOnCharCap": "Лимит постоянного текста",
+      "alwaysOnCharCapDescription": "Максимум символов выученного текста, добавляемого в каждый промпт",
+      "regressionMinSample": "Выборка для регрессии",
+      "regressionMinSampleDescription": "Сколько запусков нужно версии, прежде чем её можно пометить как регрессию"
     }
   },
   "navigation": {
@@ -491,6 +530,7 @@
     "clusters": "Кластеры",
     "plugins": "Plugins",
     "projectMemory": "Project Memory",
+    "learning": "Обучение",
     "harness": "Harness",
     "spaces": "Пространства",
     "trackers": "Подключения",
@@ -782,6 +822,12 @@
     "skillsDescription": "Curated skills to guide the agent during feature development.",
     "injectSkills": "Inject",
     "injectSkillsDescription": "Include curated skills in the feature worktree.",
+    "explore": {
+      "label": "ОБУЧЕНИЕ",
+      "toggle": "Исследовать варианты harness",
+      "k": "Бюджет исследования k",
+      "cost": "{{attempts}} попыток реализации — примерно в {{attempts}} раз дороже реализации"
+    },
     "effort": "Уровень",
     "effortFromSettings": "Из настроек"
   },
@@ -2130,6 +2176,81 @@
       "cardError": "Agent card не загрузилась: {{error}}",
       "copyLabel": "Копировать: {{label}}",
       "hint": "Другие агентные системы отправляют Shep запрос на фичу по A2A и следят за ним как за задачей. Та же активность питает MCP, CLI, Herdr и этот интерфейс."
+    }
+  },
+  "learning": {
+    "title": "Обучение",
+    "subtitle": "Чему Shep научился при работе в этом репозитории, как показала себя каждая версия и что оставить",
+    "repository": "Репозиторий",
+    "chooseRepository": "Выберите репозиторий",
+    "loadError": "Не удалось загрузить выученный harness: {{error}}",
+    "noRepositories": "Добавьте репозиторий, чтобы начать обучение.",
+    "current": "Работает на версии {{id}}",
+    "currentNone": "Работает на базовом harness — пока ничего не принято",
+    "rollback": "Откатить",
+    "rollbackConfirm": "Вернуться к предыдущей версии?",
+    "cancel": "Отмена",
+    "rolledBack": "Откачено",
+    "versions": "Версии",
+    "selectVersion": "Выберите версию, чтобы увидеть её изменения.",
+    "lessons": "Уроки",
+    "adopted": "Версия принята",
+    "rejected": "Версия отклонена",
+    "working": "Выполняется…",
+    "noVersions": "Версий пока нет. Включите режим обучения в настройках и завершите фичу.",
+    "noLessons": "Уроков пока нет.",
+    "trend": {
+      "regressed": "Ухудшилась",
+      "improved": "Улучшилась",
+      "unchanged": "Без изменений",
+      "insufficient-data": "Пока мало запусков"
+    },
+    "status": {
+      "candidate": "Кандидат",
+      "adopted": "Принята",
+      "rejected": "Отклонена",
+      "rolled-back": "Откачена",
+      "superseded": "Заменена"
+    },
+    "origin": {
+      "base": "Базовая",
+      "reflect": "Анализ",
+      "explore": "Исследование",
+      "manual": "Вручную"
+    },
+    "metrics": {
+      "runs": "Запусков: {{count}}",
+      "mergeRate": "Слито: {{percent}}%"
+    },
+    "detail": {
+      "title": "Версия {{id}}",
+      "against": "Сравнение с версией {{id}}",
+      "againstBase": "Сравнение с базовым harness",
+      "reason": "Причина: {{reason}}",
+      "runsCode": "Эта версия выполняет код (скрипты или хуки). Прочитайте их перед принятием — Shep никогда не принимает такое сам.",
+      "added": "Добавлено",
+      "modified": "Изменено",
+      "removed": "Удалено",
+      "noChanges": "Файлы не изменены.",
+      "edits": "Зачем было сделано каждое изменение",
+      "feedbackPlaceholder": "Необязательно: почему вы отклоняете (Shep учтёт это в следующий раз)",
+      "adopt": "Принять",
+      "reject": "Отклонить"
+    },
+    "verdict": {
+      "helped": "Помогло",
+      "hurt": "Навредило",
+      "no-observed-effect": "Эффекта не замечено",
+      "confounded": "Неоднозначно",
+      "untested": "Не проверено"
+    },
+    "lesson": {
+      "when": "Когда: {{cue}}"
+    },
+    "confidence": {
+      "high": "Высокая уверенность",
+      "medium": "Средняя уверенность",
+      "low": "Низкая уверенность"
     }
   }
 }

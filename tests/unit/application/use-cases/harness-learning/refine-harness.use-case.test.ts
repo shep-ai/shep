@@ -20,12 +20,15 @@ import {
   fakeSpaceContext,
   type ImproverScript,
 } from '../../../../helpers/harness-learning.fakes.js';
+import { createTelemetryDouble } from '../../../../helpers/telemetry.helper.js';
 import {
   AgentType,
   HarnessEditVerdict,
   HarnessOrigin,
   HarnessRecursion,
   HarnessRefinementStatus,
+  LearningMode,
+  TelemetryEvent,
 } from '@/domain/generated/output.js';
 
 /** Probes held in memory; what a probe "delivers" is decided by the runner. */
@@ -110,6 +113,7 @@ function build(
     }),
   };
   const offer = { execute: vi.fn(async () => ({ autoAdopted: false, findings: [] })) };
+  const telemetry = createTelemetryDouble();
   const useCase = new RefineHarnessUseCase(
     harnesses,
     runs,
@@ -119,7 +123,8 @@ function build(
     { execute: vi.fn(async () => ({ 'task.md': 'add an audit log' })) } as never,
     new SelectProbeOutputUseCase(improver, workspace),
     offer as never,
-    fakeSpaceContext()
+    fakeSpaceContext(),
+    telemetry
   );
   const input = (k: number, recursion = HarnessRecursion.Parallel, maxCostUsd = 1000) => ({
     featureId: 'feat-1',
@@ -134,7 +139,18 @@ function build(
     alwaysOnCharCap: 4000,
     runner,
   });
-  return { useCase, harnesses, runs, workspace, improver, probes, rollouts, offer, input };
+  return {
+    useCase,
+    harnesses,
+    runs,
+    workspace,
+    improver,
+    probes,
+    rollouts,
+    offer,
+    input,
+    telemetry,
+  };
 }
 
 describe('RefineHarnessUseCase', () => {
@@ -164,6 +180,13 @@ describe('RefineHarnessUseCase', () => {
     expect(candidate.origin).toBe(HarnessOrigin.Explore);
     expect(t.harnesses.edits[0].verdict).toBe(HarnessEditVerdict.Helped);
     expect(t.offer.execute).toHaveBeenCalled();
+    expect(t.telemetry.record).toHaveBeenCalledWith(TelemetryEvent.HarnessRefinementFinished, {
+      mode: LearningMode.Explore,
+      status: HarnessRefinementStatus.Proposed,
+      k: 1,
+      rollouts: 4,
+      sessions: 3,
+    });
     expect(
       t.improver.missions.find((m) => m.label.startsWith('inv'))?.spec.untested
     ).toBeUndefined();

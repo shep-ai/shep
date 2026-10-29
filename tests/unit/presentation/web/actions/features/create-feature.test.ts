@@ -390,4 +390,25 @@ describe('createFeature server action', () => {
       );
     });
   });
+
+  // --- Per-feature Explore (spec 150) ---
+
+  it('forwards Explore and its k to createRecord, and nothing when Explore is off', async () => {
+    mockCreateRecord.mockResolvedValue({ feature: { id: 'e' }, shouldSpawn: false });
+    await createFeature({
+      description: 'd',
+      repositoryPath: '/repo',
+      exploreHarness: true,
+      exploreK: 3,
+    });
+    expect(mockCreateRecord).toHaveBeenCalledWith(
+      expect.objectContaining({ exploreHarness: true, exploreK: 3 })
+    );
+
+    mockCreateRecord.mockClear();
+    await createFeature({ description: 'd', repositoryPath: '/repo', exploreK: 3 });
+    const input = mockCreateRecord.mock.calls[0][0];
+    expect(input).not.toHaveProperty('exploreHarness');
+    expect(input).not.toHaveProperty('exploreK');
+  });
 });

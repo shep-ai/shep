@@ -67,6 +67,15 @@ export class SQLiteLearnedHarnessRepository implements ILearnedHarnessRepository
     return row ? versionFromRow(row) : null;
   }
 
+  async findVersionsByIdPrefix(prefix: string, limit: number): Promise<LearnedHarnessVersion[]> {
+    const rows = this.db
+      .prepare(
+        'SELECT * FROM learned_harness_versions WHERE substr(id, 1, ?) = ? ORDER BY id LIMIT ?'
+      )
+      .all(prefix.length, prefix, limit) as LearnedHarnessVersionRow[];
+    return rows.map(versionFromRow);
+  }
+
   async listVersions(
     repositoryPath: string,
     limit = DEFAULT_LIST_LIMIT

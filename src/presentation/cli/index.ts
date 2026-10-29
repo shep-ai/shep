@@ -76,6 +76,7 @@ import { createSpaceCommand } from './commands/space/index.js';
 import { createConnectionCommand } from './commands/connection/index.js';
 import { createSyncCommand } from './commands/sync/index.js';
 import { createKnowledgeCommand } from './commands/knowledge/index.js';
+import { createLearnCommand } from './commands/learn/index.js';
 import { createSignalCommand } from './commands/signal/index.js';
 import { createOpportunityCommand } from './commands/opportunity/index.js';
 import { createFeedbackCommand } from './commands/feedback/index.js';
@@ -230,6 +231,7 @@ async function bootstrap() {
     program.addCommand(gateByFeatureFlag(createOutcomeCommand(), 'outcomes'));
     program.addCommand(gateByFeatureFlag(createAutopilotCommand(), 'autopilot'));
     program.addCommand(gateByFeatureFlag(createFactoryCommand(), 'factory'));
+    program.addCommand(gateByFeatureFlag(createLearnCommand(), 'selfLearning'));
     program.addCommand(createUpgradeCommand());
     program.addCommand(createWorkflowCommand());
     program.addCommand(createMcpCommand());

@@ -68,7 +68,10 @@ export class FileSystemEvidenceWorkspace implements IEvidenceWorkspace {
   }
 
   async readHarness(root: string): Promise<HarvestedHarness> {
-    const base = join(root, CONTEXT_DIR, HARNESS_DIR);
+    return this.readHarnessDirectory(join(root, CONTEXT_DIR, HARNESS_DIR));
+  }
+
+  async readHarnessDirectory(base: string): Promise<HarvestedHarness> {
     const tree: HarnessTree = {};
     const rejected: string[] = [];
     for (const file of await walk(base)) {

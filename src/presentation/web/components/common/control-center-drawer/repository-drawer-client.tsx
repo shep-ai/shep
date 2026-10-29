@@ -36,6 +36,7 @@ import { useRepositoryActions } from '@/components/common/repository-node/use-re
 import { useDeployAction } from '@/hooks/use-deploy-action';
 import { isDeploymentActive as computeIsDeploymentActive } from '@/hooks/deployment-status-store';
 import { useFeatureFlags } from '@/hooks/feature-flags-context';
+import { RepositoryLearningLink } from '@/components/features/learning/repository-learning-link';
 import type { RepositoryNodeData } from '@/components/common/repository-node';
 import { ChatTab } from '@/components/features/chat/ChatTab';
 import { getGitRepoInfo } from '@/app/actions/get-git-log';
@@ -242,6 +243,11 @@ export function RepositoryDrawerClient({ data, initialTab }: RepositoryDrawerCli
                         {pathCopied ? 'Copied!' : 'Copy path'}
                       </TooltipContent>
                     </Tooltip>
+
+                    <RepositoryLearningLink
+                      repositoryPath={data.repositoryPath}
+                      className={tbBtn}
+                    />
                   </div>
 
                   {/* Git sync */}

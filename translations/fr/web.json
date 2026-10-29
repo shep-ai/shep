@@ -24,6 +24,7 @@
       "messaging": "Messaging",
       "mcp": "MCP",
       "harness": "Harness d'agent",
+      "selfLearning": "Auto-apprentissage",
       "telemetry": "Métriques d'utilisation",
       "a2a": "Connecter des agents"
     },
@@ -466,6 +467,44 @@
       "unknownDefaultDescription": "Ce qui se passe quand aucune règle ne correspond à une action",
       "approvalTimeout": "Délai d'approbation (minutes)",
       "approvalTimeoutDescription": "Une demande sans réponse est refusée passé ce délai"
+    },
+    "selfLearning": {
+      "title": "Auto-apprentissage",
+      "experimental": "Expérimental",
+      "description": "Shep apprend de chaque exécution de fonctionnalité et améliore les instructions, skills et vérifications de ses agents",
+      "hint": "L'apprentissage reste désactivé tant que vous ne choisissez pas de mode. Chaque changement appris est un candidat versionné que vous pouvez examiner, adopter ou annuler sur la page Apprentissage.",
+      "mode": "Mode d'apprentissage",
+      "modes": {
+        "off": "Désactivé",
+        "offDescription": "Rien n'est appris ; les versions de harness adoptées restent appliquées",
+        "reflect": "Réfléchir",
+        "reflectDescription": "Après chaque exécution, une revue propose des changements de harness, sans tentative supplémentaire",
+        "explore": "Explorer",
+        "exploreDescription": "L'étape d'implémentation essaie plusieurs variantes de harness et garde le meilleur résultat"
+      },
+      "exploreTitle": "Budget d'exploration",
+      "exploreK": "k d'exploration",
+      "exploreKDescription": "{{rollouts}} tentatives d'implémentation par fonctionnalité, soit environ {{rollouts}} fois le coût d'une étape d'implémentation",
+      "exploreRecursion": "Forme de recherche",
+      "exploreRecursionDescription": "En parallèle essaie des variantes indépendantes ; en séquence affine une variante tour après tour",
+      "recursion": {
+        "parallel": "En parallèle",
+        "sequential": "En séquence"
+      },
+      "exploreMaxCostUsd": "Plafond de coût (USD)",
+      "exploreMaxCostUsdDescription": "Au-delà de cette dépense, Explorer ne lance plus de tentatives et garde la meilleure obtenue",
+      "adoptionTitle": "Adoption",
+      "adoptionPolicy": "Politique d'adoption",
+      "adoptionPolicyDescription": "Les scripts et hooks doivent toujours être adoptés par une personne, quelle que soit la politique",
+      "policies": {
+        "manual": "Me demander à chaque fois",
+        "auto-text-only": "Adopter automatiquement les changements de texte testés",
+        "auto": "Adopter automatiquement les changements de texte"
+      },
+      "alwaysOnCharCap": "Plafond du texte permanent",
+      "alwaysOnCharCapDescription": "Nombre maximal de caractères de texte appris ajoutés à chaque prompt",
+      "regressionMinSample": "Échantillon de régression",
+      "regressionMinSampleDescription": "Exécutions nécessaires sur une version avant qu'elle puisse être signalée comme régression"
     }
   },
   "navigation": {
@@ -491,6 +530,7 @@
     "clusters": "Clusters",
     "plugins": "Plugins",
     "projectMemory": "Project Memory",
+    "learning": "Apprentissage",
     "harness": "Harness",
     "spaces": "Espaces",
     "trackers": "Connexions",
@@ -782,6 +822,12 @@
     "skillsDescription": "Curated skills to guide the agent during feature development.",
     "injectSkills": "Inject",
     "injectSkillsDescription": "Include curated skills in the feature worktree.",
+    "explore": {
+      "label": "APPRENDRE",
+      "toggle": "Explorer des variantes de harness",
+      "k": "Budget d'exploration k",
+      "cost": "{{attempts}} tentatives d'implémentation, soit environ {{attempts}} fois le coût d'implémentation"
+    },
     "effort": "Effort",
     "effortFromSettings": "Selon les paramètres"
   },
@@ -2130,6 +2176,81 @@
       "cardError": "L'agent card n'a pas été chargée : {{error}}",
       "copyLabel": "Copier {{label}}",
       "hint": "D'autres systèmes d'agents envoient à Shep une demande de fonctionnalité via A2A et la suivent comme une tâche. La même activité alimente MCP, la CLI, Herdr et cette interface."
+    }
+  },
+  "learning": {
+    "title": "Apprentissage",
+    "subtitle": "Ce que Shep a appris sur le travail dans ce dépôt, comment chaque version s'est comportée et ce qu'il faut garder",
+    "repository": "Dépôt",
+    "chooseRepository": "Choisir un dépôt",
+    "loadError": "Impossible de charger le harness appris : {{error}}",
+    "noRepositories": "Ajoutez un dépôt pour commencer à apprendre.",
+    "current": "Version {{id}} en service",
+    "currentNone": "Harness de base en service — rien d'adopté pour l'instant",
+    "rollback": "Annuler la version",
+    "rollbackConfirm": "Revenir à la version précédente ?",
+    "cancel": "Annuler",
+    "rolledBack": "Version annulée",
+    "versions": "Versions",
+    "selectVersion": "Sélectionnez une version pour voir ce qu'elle change.",
+    "lessons": "Leçons",
+    "adopted": "Version adoptée",
+    "rejected": "Version rejetée",
+    "working": "En cours…",
+    "noVersions": "Aucune version pour l'instant. Activez un mode d'apprentissage dans les Paramètres, puis terminez une fonctionnalité.",
+    "noLessons": "Aucune leçon pour l'instant.",
+    "trend": {
+      "regressed": "En recul",
+      "improved": "En progrès",
+      "unchanged": "Inchangée",
+      "insufficient-data": "Pas encore assez d'exécutions"
+    },
+    "status": {
+      "candidate": "Candidate",
+      "adopted": "Adoptée",
+      "rejected": "Rejetée",
+      "rolled-back": "Annulée",
+      "superseded": "Remplacée"
+    },
+    "origin": {
+      "base": "Base",
+      "reflect": "Réfléchir",
+      "explore": "Explorer",
+      "manual": "Manuelle"
+    },
+    "metrics": {
+      "runs": "Exécutions : {{count}}",
+      "mergeRate": "Fusionnées : {{percent}} %"
+    },
+    "detail": {
+      "title": "Version {{id}}",
+      "against": "Comparée à la version {{id}}",
+      "againstBase": "Comparée au harness de base",
+      "reason": "Motif : {{reason}}",
+      "runsCode": "Cette version exécute du code (scripts ou hooks). Lisez-les avant d'adopter — Shep ne les adopte jamais de lui-même.",
+      "added": "Ajouté",
+      "modified": "Modifié",
+      "removed": "Supprimé",
+      "noChanges": "Aucun fichier modifié.",
+      "edits": "Pourquoi chaque changement a été fait",
+      "feedbackPlaceholder": "Facultatif : pourquoi vous la rejetez (Shep le lira la prochaine fois)",
+      "adopt": "Adopter",
+      "reject": "Rejeter"
+    },
+    "verdict": {
+      "helped": "A aidé",
+      "hurt": "A nui",
+      "no-observed-effect": "Aucun effet observé",
+      "confounded": "Non concluant",
+      "untested": "Non testé"
+    },
+    "lesson": {
+      "when": "Quand : {{cue}}"
+    },
+    "confidence": {
+      "high": "Confiance élevée",
+      "medium": "Confiance moyenne",
+      "low": "Confiance faible"
     }
   }
 }

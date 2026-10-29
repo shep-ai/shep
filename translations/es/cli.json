@@ -255,6 +255,10 @@
         "noFastOption": "Ejecutar todas las fases SDLC (analizar → requisitos → plan → implementar)",
         "exploreOption": "Start an exploration/prototyping session for iterative design",
         "exploreAndFastConflict": "Cannot use --explore and --fast together. Choose one mode.",
+        "exploreHarnessOption": "Autoaprendizaje: ejecutar el paso de implementación de este feature en modo Explore (Propose–Probe–Compose); cuesta unas 4× el paso de implementación con k=1",
+        "exploreKOption": "Presupuesto k de Explore para --explore-harness, 1–{{max}} (por defecto: tu ajuste de autoaprendizaje); ejecuta 4k rollouts",
+        "exploreKWithoutHarness": "--explore-k solo se aplica junto con --explore-harness",
+        "invalidExploreK": "--explore-k debe ser un número entero de 1 a {{max}}; se recibió {{value}}",
         "modelOption": "Identificador del modelo LLM para esta ejecución (ej., claude-opus-4-6)",
         "effortOption": "Esfuerzo de razonamiento para esta ejecución: low, medium, high, xhigh o max (predeterminado: ajustes)",
         "invalidEffort": "Esfuerzo desconocido \"{{level}}\". Niveles válidos: {{levels}}",
@@ -2011,6 +2015,153 @@
         "description": "Detener una ejecución de agente por id de ejecución, id de funcionalidad o un prefijo",
         "idArgument": "Id de ejecución, id de funcionalidad o un prefijo",
         "stopped": "{{id}} detenido: {{reason}}"
+      }
+    },
+    "learn": {
+      "description": "Harness de autoaprendizaje: revisa, adopta y revierte lo que Shep aprendió de las ejecuciones de features",
+      "failed": "El comando del harness aprendido falló",
+      "repoOption": "Ruta del repositorio (por defecto: el directorio actual)",
+      "jsonOption": "Imprimir JSON",
+      "versionArg": "ID de la versión o un prefijo único de él",
+      "notFound": "Ninguna versión del harness aprendido coincide con {{id}}",
+      "fields": {
+        "version": "Versión",
+        "status": "Estado",
+        "origin": "Origen",
+        "scope": "Ámbito",
+        "created": "Creada",
+        "components": "Componentes",
+        "parent": "Versión padre",
+        "sourceFeature": "Aprendida del feature",
+        "notes": "Notas",
+        "reason": "Motivo"
+      },
+      "status": {
+        "description": "Mostrar el harness aprendido con el que se ejecuta este repositorio",
+        "title": "Harness aprendido",
+        "none": "No hay nada adoptado: este repositorio se ejecuta con el harness base.",
+        "candidates": "Candidatas pendientes de revisión: {{count}} — consulta `shep learn history`",
+        "noCandidates": "No hay candidatas pendientes de revisión."
+      },
+      "history": {
+        "description": "Listar las versiones del harness aprendido con sus métricas de resultados, de la más reciente a la más antigua",
+        "limitOption": "Mostrar como máximo esta cantidad de versiones",
+        "invalidLimit": "--limit debe ser un número entero mayor que 0; se recibió {{value}}",
+        "title": "Versiones del harness aprendido",
+        "empty": "Aún no hay versiones del harness aprendido. Aprende de un feature terminado con `shep learn reflect <feature>`.",
+        "current": "actual",
+        "regressed": "Versiones con retroceso: {{count}} — revisa una con `shep learn show <version>` y deshaz la adoptada con `shep learn rollback`",
+        "columns": {
+          "id": "ID",
+          "status": "ESTADO",
+          "origin": "ORIGEN",
+          "created": "CREADA",
+          "runs": "EJECUCIONES",
+          "merged": "FUSIONADAS",
+          "ciFixes": "ARREGLOS CI",
+          "trend": "TENDENCIA"
+        }
+      },
+      "show": {
+        "description": "Mostrar una versión: sus componentes, los veredictos de sus cambios y el diff con su versión padre",
+        "title": "Harness aprendido {{id}}",
+        "componentsTitle": "Componentes",
+        "editsTitle": "Cambios y veredictos",
+        "diffTitle": "Diff con {{id}}",
+        "diffTitleBase": "Diff con el harness base",
+        "noChanges": "Sin cambios."
+      },
+      "diff": {
+        "description": "Mostrar qué cambió entre dos versiones",
+        "fromArg": "La versión de partida (ID o prefijo)",
+        "toArg": "La versión de destino (ID o prefijo)",
+        "title": "{{from}} → {{to}}"
+      },
+      "adopt": {
+        "description": "Adoptar una versión candidata, o importar y adoptar un harness que escribiste",
+        "fromDirOption": "Importar el harness de este directorio (estructura canónica) y adoptarlo",
+        "needsOne": "Indica exactamente una de estas opciones: una versión o --from-dir <dir>",
+        "adopted": "{{id}} adoptada: las próximas ejecuciones de features la usarán",
+        "memoryFacts": "Hechos de memoria registrados: {{count}}",
+        "refused": "No se pudo adoptar {{id}}: {{reason}}",
+        "imported": "{{id}} importada y adoptada",
+        "importedNotAdopted": "{{id}} importada, pero no se adoptó — consulta `shep learn show {{id}}`",
+        "importRefused": "El harness de {{dir}} no se importó:"
+      },
+      "reject": {
+        "description": "Rechazar una versión candidata; tus comentarios orientan la próxima reflexión",
+        "feedbackOption": "Por qué se rechaza: la próxima reflexión lo leerá",
+        "rejected": "{{id}} rechazada",
+        "refused": "No se pudo rechazar {{id}}: {{reason}}"
+      },
+      "rollback": {
+        "description": "Deshacer el harness adoptado de este repositorio y volver a adoptar su versión padre",
+        "reasonOption": "Por qué se revierte (se guarda en la versión)",
+        "rolledBack": "Se revirtió el harness adoptado",
+        "restored": "{{id}} vuelve a estar adoptada",
+        "toBase": "El repositorio vuelve a ejecutarse con el harness base",
+        "refused": "No se revirtió nada: {{reason}}"
+      },
+      "reflect": {
+        "description": "Aprender ahora de la última ejecución de un feature y proponer un cambio del harness para revisión",
+        "featureArg": "ID del feature o un prefijo único de él",
+        "spinner": "Reflexionando sobre la ejecución del feature",
+        "skipped": "No hay nada que aprender: {{reason}}",
+        "finished": "Reflexión terminada: {{status}} (coste {{cost}} USD)",
+        "candidate": "La candidata {{id}} espera revisión — `shep learn show {{id}}`",
+        "autoAdopted": "La candidata {{id}} se adoptó automáticamente según tu política de adopción"
+      },
+      "labels": {
+        "status": {
+          "candidate": "Candidata",
+          "adopted": "Adoptada",
+          "rejected": "Rechazada",
+          "rolledBack": "Revertida",
+          "superseded": "Reemplazada"
+        },
+        "origin": {
+          "base": "Base",
+          "reflect": "Reflexión",
+          "explore": "Exploración",
+          "manual": "Manual"
+        },
+        "scope": {
+          "project": "Proyecto",
+          "organization": "Organización",
+          "space": "Espacio",
+          "productLine": "Línea de producto"
+        },
+        "trend": {
+          "insufficientData": "Pocas ejecuciones",
+          "improved": "Mejoró",
+          "unchanged": "Sin cambios",
+          "regressed": "Empeoró"
+        },
+        "verdict": {
+          "helped": "Ayudó",
+          "hurt": "Perjudicó",
+          "noObservedEffect": "Sin efecto observado",
+          "confounded": "Confuso",
+          "untested": "Sin probar"
+        },
+        "kind": {
+          "instructions": "Instrucciones",
+          "guardrails": "Salvaguardas",
+          "memory": "Memoria",
+          "toolGuidance": "Guía de herramientas",
+          "skill": "Skill",
+          "script": "Script",
+          "subagent": "Subagente",
+          "hook": "Hook"
+        },
+        "refinement": {
+          "running": "En curso",
+          "proposed": "Propuesta",
+          "keptBase": "Se mantuvo el harness base",
+          "fellBack": "Volvió al harness base",
+          "overBudget": "Presupuesto superado",
+          "failed": "Falló"
+        }
       }
     }
   },

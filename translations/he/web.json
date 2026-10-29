@@ -24,6 +24,7 @@
       "messaging": "Messaging",
       "mcp": "MCP",
       "harness": "Harness לסוכן",
+      "selfLearning": "למידה עצמית",
       "telemetry": "מדדי שימוש",
       "a2a": "חיבור סוכנים"
     },
@@ -466,6 +467,44 @@
       "unknownDefaultDescription": "מה קורה כשאף כלל לא מתאים לפעולה",
       "approvalTimeout": "זמן קצוב לאישור (דקות)",
       "approvalTimeoutDescription": "בקשה שלא נענתה נדחית לאחר זמן זה"
+    },
+    "selfLearning": {
+      "title": "למידה עצמית",
+      "experimental": "ניסיוני",
+      "description": "Shep לומד מכל הרצה של פיצ'ר ומשפר את ההוראות, הכישורים והבדיקות שהסוכנים שלו מקבלים",
+      "hint": "הלמידה כבויה עד שתבחרו מצב. כל שינוי ש-Shep לומד הוא מועמד עם גרסה שאפשר לסקור, לאמץ או לבטל בדף הלמידה.",
+      "mode": "מצב למידה",
+      "modes": {
+        "off": "כבוי",
+        "offDescription": "שום דבר לא נלמד; גרסאות harness שאומצו ממשיכות לחול",
+        "reflect": "התבוננות",
+        "reflectDescription": "אחרי כל הרצה, סקירה אחת מציעה שינויים ב-harness — בלי ניסיונות נוספים",
+        "explore": "חקירה",
+        "exploreDescription": "שלב המימוש מנסה כמה גרסאות של ה-harness ושומר את התוצאה הטובה ביותר"
+      },
+      "exploreTitle": "תקציב חקירה",
+      "exploreK": "k של חקירה",
+      "exploreKDescription": "{{rollouts}} ניסיונות מימוש לכל פיצ'ר — בערך פי {{rollouts}} מעלות שלב מימוש אחד",
+      "exploreRecursion": "צורת החיפוש",
+      "exploreRecursionDescription": "במקביל מנסה גרסאות בלתי תלויות; ברצף משפר גרסה אחת סבב אחר סבב",
+      "recursion": {
+        "parallel": "במקביל",
+        "sequential": "ברצף"
+      },
+      "exploreMaxCostUsd": "תקרת עלות (USD)",
+      "exploreMaxCostUsdDescription": "מעבר להוצאה זו החקירה מפסיקה להתחיל ניסיונות ושומרת את הטוב ביותר עד כה",
+      "adoptionTitle": "אימוץ",
+      "adoptionPolicy": "מדיניות אימוץ",
+      "adoptionPolicyDescription": "סקריפטים ו-hooks תמיד דורשים אדם שיאמץ אותם, בלי קשר למדיניות",
+      "policies": {
+        "manual": "לשאול אותי בכל פעם",
+        "auto-text-only": "לאמץ אוטומטית שינויי טקסט שנבדקו",
+        "auto": "לאמץ אוטומטית שינויי טקסט"
+      },
+      "alwaysOnCharCap": "תקרת טקסט קבוע",
+      "alwaysOnCharCapDescription": "מספר התווים המרבי של טקסט נלמד שמתווסף לכל פרומפט",
+      "regressionMinSample": "מדגם רגרסיה",
+      "regressionMinSampleDescription": "הרצות שגרסה צריכה לפני שאפשר לסמן אותה כרגרסיה"
     }
   },
   "navigation": {
@@ -491,6 +530,7 @@
     "clusters": "אשכולות",
     "plugins": "Plugins",
     "projectMemory": "Project Memory",
+    "learning": "למידה",
     "harness": "Harness",
     "spaces": "מרחבים",
     "trackers": "חיבורים",
@@ -782,6 +822,12 @@
     "skillsDescription": "Curated skills to guide the agent during feature development.",
     "injectSkills": "Inject",
     "injectSkillsDescription": "Include curated skills in the feature worktree.",
+    "explore": {
+      "label": "למידה",
+      "toggle": "לחקור גרסאות harness",
+      "k": "תקציב חקירה k",
+      "cost": "{{attempts}} ניסיונות מימוש — בערך פי {{attempts}} מעלות המימוש"
+    },
     "effort": "מאמץ",
     "effortFromSettings": "לפי ההגדרות"
   },
@@ -2130,6 +2176,81 @@
       "cardError": "ה-agent card לא נטען: {{error}}",
       "copyLabel": "העתק {{label}}",
       "hint": "מערכות סוכנים אחרות שולחות ל-Shep בקשה לפיצ׳ר דרך A2A ועוקבות אחריה כמשימה. אותה פעילות מזינה את MCP, ה-CLI, Herdr והממשק הזה."
+    }
+  },
+  "learning": {
+    "title": "למידה",
+    "subtitle": "מה Shep למד על העבודה במאגר הזה, איך כל גרסה הצליחה ומה כדאי לשמור",
+    "repository": "מאגר",
+    "chooseRepository": "בחרו מאגר",
+    "loadError": "לא ניתן לטעון את ה-harness הנלמד: {{error}}",
+    "noRepositories": "הוסיפו מאגר כדי להתחיל ללמוד.",
+    "current": "פועל על גרסה {{id}}",
+    "currentNone": "פועל על ה-harness הבסיסי — עוד לא אומץ דבר",
+    "rollback": "החזרה לאחור",
+    "rollbackConfirm": "לחזור לגרסה הקודמת?",
+    "cancel": "ביטול",
+    "rolledBack": "הוחזר לאחור",
+    "versions": "גרסאות",
+    "selectVersion": "בחרו גרסה כדי לראות מה היא משנה.",
+    "lessons": "לקחים",
+    "adopted": "הגרסה אומצה",
+    "rejected": "הגרסה נדחתה",
+    "working": "מבצע…",
+    "noVersions": "אין גרסאות עדיין. הפעילו מצב למידה בהגדרות ואז סיימו פיצ'ר.",
+    "noLessons": "אין לקחים עדיין.",
+    "trend": {
+      "regressed": "הידרדרה",
+      "improved": "השתפרה",
+      "unchanged": "ללא שינוי",
+      "insufficient-data": "עדיין אין מספיק הרצות"
+    },
+    "status": {
+      "candidate": "מועמדת",
+      "adopted": "אומצה",
+      "rejected": "נדחתה",
+      "rolled-back": "הוחזרה לאחור",
+      "superseded": "הוחלפה"
+    },
+    "origin": {
+      "base": "בסיס",
+      "reflect": "התבוננות",
+      "explore": "חקירה",
+      "manual": "ידני"
+    },
+    "metrics": {
+      "runs": "הרצות: {{count}}",
+      "mergeRate": "מוזגו: {{percent}}%"
+    },
+    "detail": {
+      "title": "גרסה {{id}}",
+      "against": "בהשוואה לגרסה {{id}}",
+      "againstBase": "בהשוואה ל-harness הבסיסי",
+      "reason": "סיבה: {{reason}}",
+      "runsCode": "הגרסה הזו מריצה קוד (סקריפטים או hooks). קראו אותם לפני האימוץ — Shep אף פעם לא מאמץ אותם בעצמו.",
+      "added": "נוסף",
+      "modified": "שונה",
+      "removed": "הוסר",
+      "noChanges": "אין שינויי קבצים.",
+      "edits": "למה נעשה כל שינוי",
+      "feedbackPlaceholder": "אופציונלי: למה אתם דוחים (Shep יקרא את זה בפעם הבאה)",
+      "adopt": "אימוץ",
+      "reject": "דחייה"
+    },
+    "verdict": {
+      "helped": "עזר",
+      "hurt": "הזיק",
+      "no-observed-effect": "לא נצפתה השפעה",
+      "confounded": "לא חד-משמעי",
+      "untested": "לא נבדק"
+    },
+    "lesson": {
+      "when": "כאשר: {{cue}}"
+    },
+    "confidence": {
+      "high": "ביטחון גבוה",
+      "medium": "ביטחון בינוני",
+      "low": "ביטחון נמוך"
     }
   }
 }

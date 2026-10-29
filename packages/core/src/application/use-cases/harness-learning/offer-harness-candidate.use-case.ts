@@ -11,6 +11,7 @@ import { inject, injectable } from 'tsyringe';
 import {
   AgentQuestionAnswerer,
   AgentQuestionKind,
+  TelemetryEvent,
   type HarnessScanFinding,
   type LearnedHarnessVersion,
 } from '../../../domain/generated/output.js';
@@ -29,11 +30,11 @@ import { treeFromComponents } from '../../../domain/harness-learning/harness-tre
 import { resolveLearningConfig } from '../../../domain/harness-learning/learning-config.js';
 import type { IApplicationRepository } from '../../ports/output/repositories/application-repository.interface.js';
 import type { ISettingsRepository } from '../../ports/output/repositories/settings.repository.interface.js';
+import type { ITelemetry } from '../../ports/output/services/telemetry.interface.js';
 import { AskAgentQuestionUseCase } from '../agents/ask-agent-question.use-case.js';
 import { questionScopeForPath } from '../agents/question-scope.js';
-import { AdoptHarnessVersionUseCase } from './adopt-harness-version.use-case.js';
-
-const POLICY_ACTOR = 'policy';
+import { AdoptHarnessVersionUseCase, POLICY_ACTOR } from './adopt-harness-version.use-case.js';
+import { componentStats } from './harness-telemetry.js';
 
 export interface OfferHarnessCandidateInput {
   candidate: LearnedHarnessVersion;
@@ -55,8 +56,17 @@ export class OfferHarnessCandidateUseCase {
     @inject('ISettingsRepository') private readonly settings: ISettingsRepository,
     @inject('IApplicationRepository') private readonly applications: IApplicationRepository,
     @inject(AskAgentQuestionUseCase) private readonly ask: AskAgentQuestionUseCase,
-    @inject(AdoptHarnessVersionUseCase) private readonly adopt: AdoptHarnessVersionUseCase
+    @inject(AdoptHarnessVersionUseCase) private readonly adopt: AdoptHarnessVersionUseCase,
+    @inject('ITelemetry') private readonly telemetry: ITelemetry
   ) {}
+
+  private recordProposed(candidate: LearnedHarnessVersion, autoAdopted: boolean): void {
+    this.telemetry.record(TelemetryEvent.HarnessCandidateProposed, {
+      origin: candidate.origin,
+      ...componentStats(candidate.components),
+      autoAdopted,
+    });
+  }
 
   async execute(input: OfferHarnessCandidateInput): Promise<OfferHarnessCandidateResult> {
     const { candidate } = input;
@@ -70,8 +80,12 @@ export class OfferHarnessCandidateUseCase {
       canAutoAdopt(config.adoptionPolicy, candidate.origin, candidate.components)
     ) {
       const adopted = await this.adopt.execute({ versionId: candidate.id, actor: POLICY_ACTOR });
-      if (adopted.adopted) return { autoAdopted: true, findings };
+      if (adopted.adopted) {
+        this.recordProposed(candidate, true);
+        return { autoAdopted: true, findings };
+      }
     }
+    this.recordProposed(candidate, false);
 
     const summary = summarizeHarnessChange(
       before,

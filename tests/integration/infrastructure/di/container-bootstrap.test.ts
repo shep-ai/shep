@@ -410,6 +410,8 @@ const CRITICAL_INFRA_TOKENS: readonly string[] = [
   'RollbackHarnessVersionUseCase',
   'ListHarnessHistoryUseCase',
   'GetHarnessVersionUseCase',
+  'ImportHarnessVersionUseCase',
+  'ReflectOnFeatureUseCase',
   'IProbeWorktreeService',
   'RefineHarnessUseCase',
   'ResolveExplorePlanUseCase',

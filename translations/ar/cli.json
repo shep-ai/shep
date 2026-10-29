@@ -255,6 +255,10 @@
         "noFastOption": "تشغيل جميع مراحل SDLC (تحليل → متطلبات → خطة → تنفيذ)",
         "exploreOption": "Start an exploration/prototyping session for iterative design",
         "exploreAndFastConflict": "Cannot use --explore and --fast together. Choose one mode.",
+        "exploreHarnessOption": "التعلّم الذاتي: تشغيل خطوة التنفيذ لهذه الميزة في وضع Explore (Propose–Probe–Compose) — يكلّف نحو 4× خطوة التنفيذ عند k=1",
+        "exploreKOption": "ميزانية Explore k لـ --explore-harness، من 1 إلى {{max}} (الافتراضي: إعداد التعلّم الذاتي لديك)؛ ينفّذ 4k تشغيلات",
+        "exploreKWithoutHarness": "لا ينطبق --explore-k إلا مع --explore-harness",
+        "invalidExploreK": "يجب أن تكون قيمة --explore-k عدداً صحيحاً من 1 إلى {{max}}، والقيمة المستلمة: {{value}}",
         "modelOption": "معرّف نموذج LLM لهذا التشغيل (مثال: claude-opus-4-6)",
         "effortOption": "مستوى الاستدلال لهذا التشغيل: low أو medium أو high أو xhigh أو max (الافتراضي: الإعدادات)",
         "invalidEffort": "مستوى جهد غير معروف \"{{level}}\". المستويات الصالحة: {{levels}}",
@@ -2011,6 +2015,153 @@
         "description": "إيقاف تشغيل وكيل بمعرّف التشغيل أو معرّف الميزة أو بادئة أيّ منهما",
         "idArgument": "معرّف التشغيل أو معرّف الميزة أو بادئة",
         "stopped": "تم إيقاف {{id}}: {{reason}}"
+      }
+    },
+    "learn": {
+      "description": "الـ harness ذاتي التعلّم: راجع ما تعلّمه Shep من تشغيلات الميزات واعتمده أو تراجع عنه",
+      "failed": "فشل أمر الـ harness المتعلَّم",
+      "repoOption": "مسار المستودع (الافتراضي: المجلد الحالي)",
+      "jsonOption": "طباعة JSON",
+      "versionArg": "معرّف الإصدار أو بادئة فريدة منه",
+      "notFound": "لا يوجد إصدار من الـ harness المتعلَّم يطابق {{id}}",
+      "fields": {
+        "version": "الإصدار",
+        "status": "الحالة",
+        "origin": "المصدر",
+        "scope": "النطاق",
+        "created": "تاريخ الإنشاء",
+        "components": "المكوّنات",
+        "parent": "الإصدار الأب",
+        "sourceFeature": "تعلّمه من الميزة",
+        "notes": "ملاحظات",
+        "reason": "السبب"
+      },
+      "status": {
+        "description": "عرض الـ harness المتعلَّم الذي يعمل به هذا المستودع",
+        "title": "الـ harness المتعلَّم",
+        "none": "لا شيء معتمد — يعمل هذا المستودع بالـ harness الأساسي.",
+        "candidates": "مرشحون بانتظار المراجعة: {{count}} — راجع `shep learn history`",
+        "noCandidates": "لا يوجد مرشحون بانتظار المراجعة."
+      },
+      "history": {
+        "description": "عرض إصدارات الـ harness المتعلَّم مع مقاييس نتائجها، الأحدث أولاً",
+        "limitOption": "عرض هذا العدد من الإصدارات على الأكثر",
+        "invalidLimit": "يجب أن تكون قيمة --limit عدداً صحيحاً أكبر من 0، والقيمة المستلمة: {{value}}",
+        "title": "إصدارات الـ harness المتعلَّم",
+        "empty": "لا توجد إصدارات للـ harness المتعلَّم بعد. تعلّم من ميزة مكتملة باستخدام `shep learn reflect <feature>`.",
+        "current": "الحالي",
+        "regressed": "إصدارات تراجع أداؤها: {{count}} — افحص أحدها باستخدام `shep learn show <version>`، وتراجع عن المعتمد باستخدام `shep learn rollback`",
+        "columns": {
+          "id": "المعرّف",
+          "status": "الحالة",
+          "origin": "المصدر",
+          "created": "الإنشاء",
+          "runs": "التشغيلات",
+          "merged": "المدموجة",
+          "ciFixes": "إصلاحات CI",
+          "trend": "الاتجاه"
+        }
+      },
+      "show": {
+        "description": "عرض إصدار: مكوّناته وأحكام تعديلاته والفرق مع إصداره الأب",
+        "title": "الـ harness المتعلَّم {{id}}",
+        "componentsTitle": "المكوّنات",
+        "editsTitle": "التعديلات والأحكام",
+        "diffTitle": "الفرق مع {{id}}",
+        "diffTitleBase": "الفرق مع الـ harness الأساسي",
+        "noChanges": "لا توجد تغييرات."
+      },
+      "diff": {
+        "description": "عرض ما تغيّر بين إصدارين",
+        "fromArg": "الإصدار الذي تبدأ منه المقارنة (معرّف أو بادئة)",
+        "toArg": "الإصدار الذي تنتهي إليه المقارنة (معرّف أو بادئة)",
+        "title": "{{from}} → {{to}}"
+      },
+      "adopt": {
+        "description": "اعتماد إصدار مرشح، أو استيراد harness كتبته واعتماده",
+        "fromDirOption": "استيراد الـ harness الموجود في هذا المجلد (بالبنية القياسية) واعتماده",
+        "needsOne": "حدّد واحداً فقط: إصداراً أو --from-dir <dir>",
+        "adopted": "تم اعتماد {{id}} — ستستخدمه تشغيلات الميزات القادمة",
+        "memoryFacts": "حقائق الذاكرة المسجّلة: {{count}}",
+        "refused": "تعذّر اعتماد {{id}}: {{reason}}",
+        "imported": "تم استيراد {{id}} واعتماده",
+        "importedNotAdopted": "تم استيراد {{id}} لكنه لم يُعتمد — راجع `shep learn show {{id}}`",
+        "importRefused": "لم يتم استيراد الـ harness الموجود في {{dir}}:"
+      },
+      "reject": {
+        "description": "رفض إصدار مرشح؛ ملاحظاتك توجّه التأمل التالي",
+        "feedbackOption": "سبب الرفض — سيقرأه التأمل التالي",
+        "rejected": "تم رفض {{id}}",
+        "refused": "تعذّر رفض {{id}}: {{reason}}"
+      },
+      "rollback": {
+        "description": "التراجع عن الـ harness المعتمد لهذا المستودع واعتماد إصداره الأب من جديد",
+        "reasonOption": "سبب التراجع (يُحفظ مع الإصدار)",
+        "rolledBack": "تم التراجع عن الـ harness المعتمد",
+        "restored": "أصبح {{id}} معتمداً من جديد",
+        "toBase": "يعمل المستودع بالـ harness الأساسي من جديد",
+        "refused": "لم يتم التراجع عن أي شيء: {{reason}}"
+      },
+      "reflect": {
+        "description": "التعلّم الآن من آخر تشغيل لميزة وتقديم تعديل على الـ harness للمراجعة",
+        "featureArg": "معرّف الميزة أو بادئة فريدة منه",
+        "spinner": "جارٍ التأمل في تشغيل الميزة",
+        "skipped": "لا يوجد ما يُتعلّم منه: {{reason}}",
+        "finished": "انتهى التأمل: {{status}} (التكلفة {{cost}} USD)",
+        "candidate": "المرشح {{id}} بانتظار المراجعة — `shep learn show {{id}}`",
+        "autoAdopted": "تم اعتماد المرشح {{id}} تلقائياً وفق سياسة الاعتماد لديك"
+      },
+      "labels": {
+        "status": {
+          "candidate": "مرشح",
+          "adopted": "معتمد",
+          "rejected": "مرفوض",
+          "rolledBack": "متراجَع عنه",
+          "superseded": "مستبدَل"
+        },
+        "origin": {
+          "base": "أساسي",
+          "reflect": "تأمل",
+          "explore": "استكشاف",
+          "manual": "يدوي"
+        },
+        "scope": {
+          "project": "المشروع",
+          "organization": "المؤسسة",
+          "space": "المساحة",
+          "productLine": "خط المنتج"
+        },
+        "trend": {
+          "insufficientData": "تشغيلات قليلة",
+          "improved": "تحسّن",
+          "unchanged": "دون تغيير",
+          "regressed": "تراجع"
+        },
+        "verdict": {
+          "helped": "ساعد",
+          "hurt": "أضرّ",
+          "noObservedEffect": "لا أثر ملحوظ",
+          "confounded": "غير حاسم",
+          "untested": "غير مُختبَر"
+        },
+        "kind": {
+          "instructions": "التعليمات",
+          "guardrails": "الضوابط",
+          "memory": "الذاكرة",
+          "toolGuidance": "إرشادات الأدوات",
+          "skill": "مهارة",
+          "script": "سكربت",
+          "subagent": "وكيل فرعي",
+          "hook": "Hook"
+        },
+        "refinement": {
+          "running": "قيد التشغيل",
+          "proposed": "مقترح",
+          "keptBase": "أُبقي على الـ harness الأساسي",
+          "fellBack": "عاد إلى الـ harness الأساسي",
+          "overBudget": "تجاوز الميزانية",
+          "failed": "فشل"
+        }
       }
     }
   },

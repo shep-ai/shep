@@ -38,6 +38,10 @@ describe('createTuiCommand', () => {
     answerChat: { execute: ReturnType<typeof vi.fn> };
     stopChats: { execute: ReturnType<typeof vi.fn> };
     hostActivity: { execute: ReturnType<typeof vi.fn>; release: ReturnType<typeof vi.fn> };
+    inbox: { execute: ReturnType<typeof vi.fn> };
+    answer: { execute: ReturnType<typeof vi.fn> };
+    createFeature: { execute: ReturnType<typeof vi.fn> };
+    settings: { execute: ReturnType<typeof vi.fn> };
   };
   let printed: string[];
   let written: string[];
@@ -64,6 +68,10 @@ describe('createTuiCommand', () => {
       answerChat: { execute: vi.fn(async () => ({ ok: true, message: 'Answered' })) },
       stopChats: { execute: vi.fn(async () => undefined) },
       hostActivity: { execute: vi.fn(), release: vi.fn(async () => undefined) },
+      inbox: { execute: vi.fn(async () => []) },
+      answer: { execute: vi.fn(async () => ({ ok: true })) },
+      createFeature: { execute: vi.fn(async () => ({ feature: { id: 'f', name: 'F' } })) },
+      settings: { execute: vi.fn(async () => ({ featureFlags: { selfLearning: false } })) },
     };
     printed = [];
     written = [];
@@ -85,6 +93,23 @@ describe('createTuiCommand', () => {
       environment: () => ({ SHEP_HOME: '/tmp/shep-home', TERM_PROGRAM: 'iTerm.app', PATH: '/bin' }),
       out: (line) => printed.push(line),
     });
+
+  it('wires harness decisions and feature creation, with Explore only while selfLearning is on (spec 150)', async () => {
+    await command(true).parseAsync(['node', 'shep']);
+    let deps = runConsole.mock.calls[0][0];
+    expect(deps.explore).toBeUndefined();
+    expect(deps.createFeature).toBeTypeOf('function');
+    await deps.loadHarnessDecisions?.();
+    expect(useCases.inbox.execute).toHaveBeenCalled();
+
+    useCases.settings.execute.mockResolvedValue({
+      featureFlags: { selfLearning: true },
+      learning: { exploreK: 3 },
+    });
+    await command(true).parseAsync(['node', 'shep']);
+    deps = runConsole.mock.calls[1][0];
+    expect(deps.explore).toEqual({ defaultK: 3 });
+  });
 
   it('refuses to start without an interactive terminal', async () => {
     await command(false).parseAsync(['node', 'shep']);

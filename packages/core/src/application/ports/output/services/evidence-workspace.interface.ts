@@ -28,6 +28,12 @@ export interface IEvidenceWorkspace {
   /** Read the (possibly edited) harness back from a workspace. */
   readHarness(root: string): Promise<HarvestedHarness>;
 
+  /**
+   * Read a harness laid out in the canonical layout directly under `dir`
+   * (e.g. one a person wrote by hand). A missing directory reads as empty.
+   */
+  readHarnessDirectory(dir: string): Promise<HarvestedHarness>;
+
   /** Remove a workspace. Never throws. */
   dispose(root: string): Promise<void>;
 }

@@ -1,10 +1,11 @@
 /**
- * Feature console view (specs 142, 143, 145, 146, 147).
+ * Feature console view (specs 142, 143, 145, 146, 147, 150).
  *
  * A pi-tui Component that draws one full screen: header, needs-you strip,
- * roster, a details or log pane, a status line and a key bar. It holds only
- * UI state (mode, pane, prompts); the roster holds selection and the filter.
- * Everything about the features comes from the snapshot, and every key that
+ * roster, a details or log pane, a status line and a key bar — or an overlay
+ * (chat, learned-harness decisions, the create form) in place of the body.
+ * It holds only UI state (mode, pane, prompts, the open overlay); the roster
+ * holds selection and the filter. Everything about the features comes from the snapshot, and every key that
  * changes something becomes an intent the app carries out through a use case.
  */
 
@@ -16,13 +17,16 @@ import type {
   FeatureConsoleSnapshot,
   FeatureLogTail,
 } from '@/application/use-cases/feature-console/feature-console.types.js';
-import { ConsoleKey, DIRECT_ACTIONS, PANE_KEYS, resolveConsoleKey } from './console-keys.js';
+import {
+  ConsoleKey,
+  DIRECT_ACTIONS,
+  NAVIGATION,
+  PANE_KEYS,
+  resolveConsoleKey,
+} from './console-keys.js';
 import type { FeatureConsoleViewDeps } from './console-intents.js';
-import type {
-  FeatureChat,
-  FeatureChatResult,
-} from '@/application/use-cases/feature-console/feature-chat.types.js';
-import { ChatView } from './chat-view.js';
+import type { ConsoleOverlay } from './console-overlay.js';
+import { createOverlays, type ConsoleOverlays } from './console-overlays.js';
 import { CommandPalette, paletteEntries } from './console-palette.js';
 import { ConsolePrompts } from './console-prompts.js';
 import { ConsoleRoster } from './console-roster.js';
@@ -48,20 +52,22 @@ export class FeatureConsoleView implements Component {
     },
   });
   private readonly palette = new CommandPalette();
-  private readonly chat: ChatView;
+  /** The chat, harness decisions and create form; the app feeds them what they show. */
+  readonly overlays: ConsoleOverlays;
+  /** Set only in {@link ConsoleMode.Overlay}. */
+  private overlay: ConsoleOverlay | undefined;
   /** The feature the chat is attached to. */
   private chatRow: FeatureConsoleRow | undefined;
 
   constructor(private readonly deps: FeatureConsoleViewDeps) {
-    const { intents } = deps;
-    this.chat = new ChatView(deps.t, {
-      send: (text) => this.chatRow && intents.sendChat(this.chatRow, text),
-      answer: (answers) => this.chatRow && intents.answerChat(this.chatRow, answers),
-      close: () => {
+    this.overlays = createOverlays(deps, {
+      chatRow: () => this.chatRow,
+      busy: () => this.busy !== undefined,
+      closed: () => {
+        this.overlay = undefined;
         this.mode = ConsoleMode.Browse;
-        intents.closeChat();
+        deps.intents.requestRender();
       },
-      quit: () => intents.quit(),
     });
   }
 
@@ -90,20 +96,8 @@ export class FeatureConsoleView implements Component {
     this.status = result;
   }
 
-  setChat(chat: FeatureChat): void {
-    this.chat.setChat(chat);
-  }
-
-  setChatNotice(notice: FeatureChatResult | undefined): void {
-    this.chat.setNotice(notice);
-  }
-
   get selectedRow(): FeatureConsoleRow | undefined {
     return this.roster.selected;
-  }
-
-  get logOpen(): boolean {
-    return this.pane === ConsolePane.Log;
   }
 
   // ── input ──────────────────────────────────────────────────────────────────
@@ -111,30 +105,22 @@ export class FeatureConsoleView implements Component {
   handleInput(data: string): void {
     const key = resolveConsoleKey(data);
     if (this.mode === ConsoleMode.Palette) return this.handlePaletteInput(data, key);
-    if (this.mode === ConsoleMode.Chat) return this.chat.handleInput(data);
+    if (this.overlay) return this.overlay.handleInput(data);
     // In a prompt letters are text; only ctrl+c still means quit.
     const ctrlC = key === ConsoleKey.Quit && matchesKey(data, 'ctrl+c');
     if (!ctrlC && this.prompts.handle(this.mode, data)) return;
     if (key === undefined) return;
 
-    if (this.mode === ConsoleMode.ConfirmStop) {
-      if (key === ConsoleKey.Confirm) this.act(FeatureConsoleAction.Stop);
-      if (key === ConsoleKey.Quit) this.deps.intents.quit();
-      this.mode = ConsoleMode.Browse;
-      return;
+    if (this.mode === ConsoleMode.Browse) return this.handleBrowseKey(key);
+    // A confirmation or help: any key closes it; y confirms, q quits.
+    if (key === ConsoleKey.Confirm && this.mode === ConsoleMode.ConfirmStop) {
+      this.act(FeatureConsoleAction.Stop);
     }
-    if (this.mode === ConsoleMode.ConfirmReleaseQueue) {
-      if (key === ConsoleKey.Confirm) this.deps.intents.releaseQueue();
-      if (key === ConsoleKey.Quit) this.deps.intents.quit();
-      this.mode = ConsoleMode.Browse;
-      return;
+    if (key === ConsoleKey.Confirm && this.mode === ConsoleMode.ConfirmReleaseQueue) {
+      this.deps.intents.releaseQueue();
     }
-    if (this.mode === ConsoleMode.Help) {
-      if (key === ConsoleKey.Quit) this.deps.intents.quit();
-      this.mode = ConsoleMode.Browse;
-      return;
-    }
-    this.handleBrowseKey(key);
+    if (key === ConsoleKey.Quit) this.deps.intents.quit();
+    this.mode = ConsoleMode.Browse;
   }
 
   private handlePaletteInput(data: string, key: ConsoleKey | undefined): void {
@@ -148,11 +134,18 @@ export class FeatureConsoleView implements Component {
   }
 
   private handleBrowseKey(key: ConsoleKey): void {
+    const move = NAVIGATION[key];
+    if (move) return this.moveSelection(move(this.rosterCapacity(), this.roster.rows.length));
     switch (key) {
       case ConsoleKey.Palette:
         this.palette.open(
           paletteEntries(
-            { row: this.selectedRow, filterActive: this.roster.query.trim() !== '' },
+            {
+              row: this.selectedRow,
+              filterActive: this.roster.query.trim() !== '',
+              harnessDecisions: this.harnessCount,
+              newFeature: this.deps.newFeature === true,
+            },
             this.deps.t
           )
         );
@@ -160,18 +153,6 @@ export class FeatureConsoleView implements Component {
         return;
       case ConsoleKey.ClearFilter:
         return this.prompts.clearFilter();
-      case ConsoleKey.Up:
-        return this.moveSelection(-1);
-      case ConsoleKey.Down:
-        return this.moveSelection(1);
-      case ConsoleKey.PageUp:
-        return this.moveSelection(-this.rosterCapacity());
-      case ConsoleKey.PageDown:
-        return this.moveSelection(this.rosterCapacity());
-      case ConsoleKey.First:
-        return this.moveSelection(-this.roster.rows.length);
-      case ConsoleKey.Last:
-        return this.moveSelection(this.roster.rows.length);
       case ConsoleKey.Details:
         this.pane = ConsolePane.Details;
         this.deps.intents.showLog(undefined);
@@ -216,6 +197,15 @@ export class FeatureConsoleView implements Component {
     if (key === ConsoleKey.CopyId && row) return this.deps.intents.copyId(row);
     if (key === ConsoleKey.ControlCenter) return this.deps.intents.openControlCenter();
     if (key === ConsoleKey.Chat && row) return this.openChat(row);
+    const { harness, create } = this.overlays;
+    if (key === ConsoleKey.HarnessDecisions && this.deps.harnessDecisions) {
+      return this.openOverlay(harness, () => harness.open());
+    }
+    if (key === ConsoleKey.NewFeature && row && this.deps.newFeature) {
+      return this.openOverlay(create, () =>
+        create.open({ name: row.repositoryName, path: row.repositoryPath })
+      );
+    }
     const pane = PANE_KEYS[key];
     if (!pane || !row) return;
     const [content, placement] = pane;
@@ -225,9 +215,19 @@ export class FeatureConsoleView implements Component {
 
   private openChat(row: FeatureConsoleRow): void {
     this.chatRow = row;
-    this.chat.open(row.name);
-    this.mode = ConsoleMode.Chat;
+    this.openOverlay(this.overlays.chat, () => this.overlays.chat.open(row.name));
     this.deps.intents.openChat(row);
+  }
+
+  private openOverlay(overlay: ConsoleOverlay, open: () => void): void {
+    open();
+    this.status = undefined;
+    this.overlay = overlay;
+    this.mode = ConsoleMode.Overlay;
+  }
+
+  private get harnessCount(): number {
+    return this.deps.harnessDecisions ? this.overlays.harness.count : 0;
   }
 
   private moveSelection(delta: number): void {
@@ -281,10 +281,12 @@ export class FeatureConsoleView implements Component {
         feedback: this.prompts.feedback,
         filter: this.prompts.filter,
         palette: this.palette,
-        chat: this.chat,
+        overlay: this.overlay,
         busy: this.busy,
         refreshError: this.refreshError,
         result: this.status,
+        harnessDecisions: this.harnessCount,
+        newFeature: this.deps.newFeature === true,
       },
       this.deps.t,
       width,

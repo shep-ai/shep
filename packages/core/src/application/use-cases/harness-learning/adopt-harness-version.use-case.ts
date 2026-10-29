@@ -10,14 +10,22 @@
 
 import { createHash } from 'node:crypto';
 import { inject, injectable } from 'tsyringe';
-import { LearnedHarnessStatus, MemoryCategory } from '../../../domain/generated/output.js';
+import {
+  LearnedHarnessStatus,
+  MemoryCategory,
+  TelemetryEvent,
+} from '../../../domain/generated/output.js';
 import { memoryFacts } from '../../../domain/harness-learning/harness-decision.js';
 import { MEMORY_PATH } from '../../../domain/harness-learning/harness-surfaces.js';
 import type { ILearnedHarnessRepository } from '../../ports/output/repositories/learned-harness-repository.interface.js';
+import type { ITelemetry } from '../../ports/output/services/telemetry.interface.js';
 import { RecordProjectMemoryUseCase } from '../project-memory/record-project-memory.use-case.js';
 import { HarnessDecisionSettler } from './harness-decision-settler.js';
+import { resolveHarnessVersion } from './resolve-harness-version.js';
 
 const MEMORY_KEY_PREFIX = 'learned-';
+/** The actor recorded when the adoption policy, not a person, adopts a version. */
+export const POLICY_ACTOR = 'policy';
 const MEMORY_KEY_HASH_CHARS = 12;
 
 export interface AdoptHarnessVersionInput {
@@ -37,11 +45,12 @@ export class AdoptHarnessVersionUseCase {
   constructor(
     @inject('ILearnedHarnessRepository') private readonly harnesses: ILearnedHarnessRepository,
     @inject(RecordProjectMemoryUseCase) private readonly recordMemory: RecordProjectMemoryUseCase,
-    @inject(HarnessDecisionSettler) private readonly settler: HarnessDecisionSettler
+    @inject(HarnessDecisionSettler) private readonly settler: HarnessDecisionSettler,
+    @inject('ITelemetry') private readonly telemetry: ITelemetry
   ) {}
 
   async execute(input: AdoptHarnessVersionInput): Promise<AdoptHarnessVersionResult> {
-    const version = await this.harnesses.findVersion(input.versionId);
+    const version = await resolveHarnessVersion(this.harnesses, input.versionId);
     if (!version) return { adopted: false, reason: 'version not found', memoryFactsRecorded: 0 };
     if (version.status === LearnedHarnessStatus.Adopted) {
       return { adopted: true, reason: 'already adopted', memoryFactsRecorded: 0 };
@@ -62,6 +71,11 @@ export class AdoptHarnessVersionUseCase {
       : { recorded: 0 };
 
     await this.settler.settle(version, 'Adopted', input.actor);
+    this.telemetry.record(TelemetryEvent.HarnessVersionAdopted, {
+      origin: version.origin,
+      componentCount: version.components.length,
+      byPolicy: input.actor === POLICY_ACTOR,
+    });
     return { adopted: true, memoryFactsRecorded: recorded };
   }
 }

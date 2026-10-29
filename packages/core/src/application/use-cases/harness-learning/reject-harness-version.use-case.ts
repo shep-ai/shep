@@ -5,9 +5,11 @@
  */
 
 import { inject, injectable } from 'tsyringe';
-import { LearnedHarnessStatus } from '../../../domain/generated/output.js';
+import { LearnedHarnessStatus, TelemetryEvent } from '../../../domain/generated/output.js';
 import type { ILearnedHarnessRepository } from '../../ports/output/repositories/learned-harness-repository.interface.js';
+import type { ITelemetry } from '../../ports/output/services/telemetry.interface.js';
 import { HarnessDecisionSettler } from './harness-decision-settler.js';
+import { resolveHarnessVersion } from './resolve-harness-version.js';
 
 const MAX_FEEDBACK_CHARS = 2000;
 
@@ -21,11 +23,12 @@ export interface RejectHarnessVersionInput {
 export class RejectHarnessVersionUseCase {
   constructor(
     @inject('ILearnedHarnessRepository') private readonly harnesses: ILearnedHarnessRepository,
-    @inject(HarnessDecisionSettler) private readonly settler: HarnessDecisionSettler
+    @inject(HarnessDecisionSettler) private readonly settler: HarnessDecisionSettler,
+    @inject('ITelemetry') private readonly telemetry: ITelemetry
   ) {}
 
   async execute(input: RejectHarnessVersionInput): Promise<{ rejected: boolean; reason?: string }> {
-    const version = await this.harnesses.findVersion(input.versionId);
+    const version = await resolveHarnessVersion(this.harnesses, input.versionId);
     if (!version) return { rejected: false, reason: 'version not found' };
     if (version.status !== LearnedHarnessStatus.Candidate) {
       return {
@@ -44,6 +47,10 @@ export class RejectHarnessVersionUseCase {
       feedback ? `Rejected: ${feedback}` : 'Rejected',
       input.actor
     );
+    this.telemetry.record(TelemetryEvent.HarnessVersionRejected, {
+      origin: version.origin,
+      withFeedback: Boolean(feedback),
+    });
     return { rejected: true };
   }
 }

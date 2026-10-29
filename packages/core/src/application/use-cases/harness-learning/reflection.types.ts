@@ -35,4 +35,6 @@ export interface ReflectOnFeatureRunInput {
   /** Learned-harness version the run used, when any. */
   versionId?: string;
   signals: RunSignals;
+  /** A person asked for this reflection: it runs even while the learning mode is Off. */
+  manual?: boolean;
 }

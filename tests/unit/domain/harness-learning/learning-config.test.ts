@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   DEFAULT_LEARNING_CONFIG,
   MAX_EXPLORE_K,
+  isValidExploreK,
   MIN_ALWAYS_ON_CHAR_CAP,
   resolveLearningConfig,
 } from '@/domain/harness-learning/learning-config.js';
@@ -76,5 +77,16 @@ describe('resolveLearningConfig', () => {
     expect(config.mode).toBe(LearningMode.Off);
     expect(config.adoptionPolicy).toBe(HarnessAdoptionPolicy.Manual);
     expect(config.exploreRecursion).toBe(HarnessRecursion.Parallel);
+  });
+
+  it('accepts only whole-number k from 1 to MAX_EXPLORE_K', () => {
+    expect([0, 1, 2.5, MAX_EXPLORE_K, MAX_EXPLORE_K + 1, Number.NaN].map(isValidExploreK)).toEqual([
+      false,
+      true,
+      false,
+      true,
+      false,
+      false,
+    ]);
   });
 });

@@ -241,7 +241,9 @@
       "filter": "filtrar",
       "palette": "comandos",
       "copyId": "copiar id",
-      "chat": "chat"
+      "chat": "chat",
+      "harness": "alterações do harness ({{count}})",
+      "newFeature": "nova funcionalidade"
     },
     "reject": {
       "prompt": "Feedback para {{name}}:",
@@ -281,7 +283,9 @@
       "palette": ":/ctrl+p   paleta de comandos",
       "copyId": "c   copiar o id da funcionalidade",
       "controlCenter": "C   uma janela por funcionalidade ativa (centro de controle)",
-      "chat": "o   conversar com o agente da funcionalidade (esc volta)"
+      "chat": "o   conversar com o agente da funcionalidade (esc volta)",
+      "harness": "d   alterações aprendidas do harness à sua espera (adotar / rejeitar)",
+      "newFeature": "N   nova funcionalidade no repositório da funcionalidade selecionada"
     },
     "notTty": "shep tui precisa de um terminal interativo. Em scripts e pipes, use \"shep feat ls\".",
     "filter": {
@@ -322,7 +326,9 @@
         "help": "Mostrar teclas",
         "quit": "Sair",
         "control-center": "Abrir uma janela para cada funcionalidade ativa",
-        "chat": "Conversar com o agente da funcionalidade"
+        "chat": "Conversar com o agente da funcionalidade",
+        "harness-decisions": "Rever as alterações aprendidas do harness",
+        "new-feature": "Criar uma nova funcionalidade"
       }
     },
     "copied": "Id de {{name}} copiado: {{id}}",
@@ -345,6 +351,35 @@
     },
     "hostStatus": {
       "blocked": "precisam de você: {{count}}"
+    },
+    "harness": {
+      "title": "Alterações aprendidas do harness",
+      "waiting": "em espera: {{count}}",
+      "empty": "Nenhuma alteração do harness está à sua espera",
+      "hint": "↑↓ escolher · a adotar · r rejeitar · esc voltar às funcionalidades",
+      "rejectPrompt": "Rejeitar — porquê?",
+      "rejectHint": "o feedback opcional orienta a próxima proposta · enter rejeitar · esc cancelar",
+      "progress": "A responder à alteração do harness…",
+      "adopted": "Alteração do harness adotada",
+      "rejected": "Alteração do harness rejeitada",
+      "alreadySettled": "Esta alteração do harness já foi respondida noutro lugar",
+      "collaborationOff": "As alterações do harness são respondidas na caixa de entrada; ative-a com: shep settings flags enable collaboration"
+    },
+    "create": {
+      "title": "Nova funcionalidade em {{repository}}",
+      "prompt": "descrever",
+      "describe": "Descreva a funcionalidade na linha abaixo e prima enter. As aprovações, o push e o PR seguem as suas definições de fluxo de trabalho.",
+      "explore": "Explore",
+      "k": "k",
+      "on": "ligado",
+      "off": "desligado",
+      "kRange": "↑↓ 1–{{max}}",
+      "exploreCost": "O Explore experimenta várias variantes do harness no passo de implementação, só para esta funcionalidade, e fica com a melhor. Custa cerca de 4 vezes o passo de implementação com k = 1, mais com k maior.",
+      "hint": "enter criar · esc cancelar",
+      "hintExplore": "enter criar · tab Explore ligado/desligado · ↑↓ k · esc cancelar",
+      "progress": "A criar uma funcionalidade em {{repository}}…",
+      "created": "{{name}} criada",
+      "queued": "{{name}} criada — em fila na posição {{position}}"
     }
   }
 }

@@ -135,6 +135,19 @@ describe('SQLiteLearnedHarnessRepository', () => {
     expect((await repo.listVersions(REPO, 1)).map((v) => v.id)).toEqual(['new']);
   });
 
+  it('finds versions by id prefix, treating LIKE wildcards literally', async () => {
+    await repo.createVersion(version({ id: 'abc-1' }));
+    await repo.createVersion(version({ id: 'abc-2' }));
+    await repo.createVersion(version({ id: 'abd_3' }));
+    expect((await repo.findVersionsByIdPrefix('abc', 5)).map((v) => v.id)).toEqual([
+      'abc-1',
+      'abc-2',
+    ]);
+    expect(await repo.findVersionsByIdPrefix('abc', 1)).toHaveLength(1);
+    expect((await repo.findVersionsByIdPrefix('abd_', 5)).map((v) => v.id)).toEqual(['abd_3']);
+    expect(await repo.findVersionsByIdPrefix('ab%', 5)).toEqual([]);
+  });
+
   it('round-trips edit records and lessons, scoped', async () => {
     const edit: HarnessEditRecord = {
       id: 'e1',

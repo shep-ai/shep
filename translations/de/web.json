@@ -24,6 +24,7 @@
       "messaging": "Messaging",
       "mcp": "MCP",
       "harness": "Agent-Harness",
+      "selfLearning": "Selbstlernen",
       "telemetry": "Nutzungsmetriken",
       "a2a": "Agenten verbinden"
     },
@@ -466,6 +467,44 @@
       "unknownDefaultDescription": "Was passiert, wenn keine Regel auf eine Aktion zutrifft",
       "approvalTimeout": "Genehmigungs-Timeout (Minuten)",
       "approvalTimeoutDescription": "Eine unbeantwortete Anfrage wird nach dieser Zeit abgelehnt"
+    },
+    "selfLearning": {
+      "title": "Selbstlernen",
+      "experimental": "Experimentell",
+      "description": "Shep lernt aus jedem Feature-Lauf und verbessert die Anweisungen, Skills und Prüfungen seiner Agenten",
+      "hint": "Lernen ist aus, bis du einen Modus wählst. Jede gelernte Änderung ist ein versionierter Kandidat, den du auf der Seite „Lernen“ prüfen, übernehmen oder zurücknehmen kannst.",
+      "mode": "Lernmodus",
+      "modes": {
+        "off": "Aus",
+        "offDescription": "Es wird nichts gelernt; übernommene Harness-Versionen gelten weiter",
+        "reflect": "Reflektieren",
+        "reflectDescription": "Nach jedem Lauf schlägt eine Prüfung Harness-Änderungen vor – ohne zusätzliche Versuche",
+        "explore": "Erkunden",
+        "exploreDescription": "Der Implementierungsschritt probiert mehrere Harness-Varianten und behält das beste Ergebnis"
+      },
+      "exploreTitle": "Erkundungsbudget",
+      "exploreK": "Erkunden k",
+      "exploreKDescription": "{{rollouts}} Implementierungsversuche pro Feature – etwa das {{rollouts}}-Fache der Kosten eines Implementierungsschritts",
+      "exploreRecursion": "Suchform",
+      "exploreRecursionDescription": "Parallel probiert unabhängige Varianten; sequenziell verfeinert eine Variante Runde für Runde",
+      "recursion": {
+        "parallel": "Parallel",
+        "sequential": "Sequenziell"
+      },
+      "exploreMaxCostUsd": "Kostengrenze (USD)",
+      "exploreMaxCostUsdDescription": "Ab diesem Betrag startet Erkunden keine neuen Versuche und behält den bisher besten",
+      "adoptionTitle": "Übernahme",
+      "adoptionPolicy": "Übernahmeregel",
+      "adoptionPolicyDescription": "Skripte und Hooks muss immer eine Person übernehmen, unabhängig von der Regel",
+      "policies": {
+        "manual": "Jedes Mal fragen",
+        "auto-text-only": "Getestete Textänderungen automatisch übernehmen",
+        "auto": "Textänderungen automatisch übernehmen"
+      },
+      "alwaysOnCharCap": "Grenze für Dauertext",
+      "alwaysOnCharCapDescription": "Höchstzahl Zeichen gelernten Texts, die jedem Prompt hinzugefügt werden",
+      "regressionMinSample": "Regressionsstichprobe",
+      "regressionMinSampleDescription": "Läufe, die eine Version braucht, bevor sie als Regression markiert werden kann"
     }
   },
   "navigation": {
@@ -491,6 +530,7 @@
     "clusters": "Cluster",
     "plugins": "Plugins",
     "projectMemory": "Project Memory",
+    "learning": "Lernen",
     "harness": "Harness",
     "spaces": "Spaces",
     "trackers": "Verbindungen",
@@ -782,6 +822,12 @@
     "skillsDescription": "Curated skills to guide the agent during feature development.",
     "injectSkills": "Inject",
     "injectSkillsDescription": "Include curated skills in the feature worktree.",
+    "explore": {
+      "label": "LERNEN",
+      "toggle": "Harness-Varianten erkunden",
+      "k": "Erkundungsbudget k",
+      "cost": "{{attempts}} Implementierungsversuche – etwa das {{attempts}}-Fache der Implementierungskosten"
+    },
     "effort": "Aufwand",
     "effortFromSettings": "Aus Einstellungen"
   },
@@ -2130,6 +2176,81 @@
       "cardError": "Die Agent Card wurde nicht geladen: {{error}}",
       "copyLabel": "{{label}} kopieren",
       "hint": "Andere Agentensysteme senden Shep eine Feature-Anfrage über A2A und verfolgen sie als Task. Dieselbe Aktivität speist MCP, die CLI, Herdr und diese Oberfläche."
+    }
+  },
+  "learning": {
+    "title": "Lernen",
+    "subtitle": "Was Shep über die Arbeit in diesem Repository gelernt hat, wie sich jede Version bewährt hat und was bleiben soll",
+    "repository": "Repository",
+    "chooseRepository": "Repository wählen",
+    "loadError": "Der gelernte Harness konnte nicht geladen werden: {{error}}",
+    "noRepositories": "Füge ein Repository hinzu, um mit dem Lernen zu beginnen.",
+    "current": "Läuft mit Version {{id}}",
+    "currentNone": "Läuft mit dem Basis-Harness – noch nichts übernommen",
+    "rollback": "Zurücknehmen",
+    "rollbackConfirm": "Zur vorherigen Version zurückkehren?",
+    "cancel": "Abbrechen",
+    "rolledBack": "Zurückgenommen",
+    "versions": "Versionen",
+    "selectVersion": "Wähle eine Version, um ihre Änderungen zu sehen.",
+    "lessons": "Lektionen",
+    "adopted": "Version übernommen",
+    "rejected": "Version abgelehnt",
+    "working": "Wird ausgeführt…",
+    "noVersions": "Noch keine Versionen. Schalte in den Einstellungen einen Lernmodus ein und schließe dann ein Feature ab.",
+    "noLessons": "Noch keine Lektionen.",
+    "trend": {
+      "regressed": "Verschlechtert",
+      "improved": "Verbessert",
+      "unchanged": "Unverändert",
+      "insufficient-data": "Noch zu wenige Läufe"
+    },
+    "status": {
+      "candidate": "Kandidat",
+      "adopted": "Übernommen",
+      "rejected": "Abgelehnt",
+      "rolled-back": "Zurückgenommen",
+      "superseded": "Ersetzt"
+    },
+    "origin": {
+      "base": "Basis",
+      "reflect": "Reflektieren",
+      "explore": "Erkunden",
+      "manual": "Manuell"
+    },
+    "metrics": {
+      "runs": "Läufe: {{count}}",
+      "mergeRate": "Gemergt: {{percent}} %"
+    },
+    "detail": {
+      "title": "Version {{id}}",
+      "against": "Verglichen mit Version {{id}}",
+      "againstBase": "Verglichen mit dem Basis-Harness",
+      "reason": "Grund: {{reason}}",
+      "runsCode": "Diese Version führt Code aus (Skripte oder Hooks). Lies sie vor der Übernahme – Shep übernimmt so etwas nie selbst.",
+      "added": "Hinzugefügt",
+      "modified": "Geändert",
+      "removed": "Entfernt",
+      "noChanges": "Keine Dateiänderungen.",
+      "edits": "Warum jede Änderung gemacht wurde",
+      "feedbackPlaceholder": "Optional: Warum du ablehnst (Shep liest das beim nächsten Mal)",
+      "adopt": "Übernehmen",
+      "reject": "Ablehnen"
+    },
+    "verdict": {
+      "helped": "Geholfen",
+      "hurt": "Geschadet",
+      "no-observed-effect": "Keine erkennbare Wirkung",
+      "confounded": "Nicht eindeutig",
+      "untested": "Ungetestet"
+    },
+    "lesson": {
+      "when": "Wenn: {{cue}}"
+    },
+    "confidence": {
+      "high": "Hohe Sicherheit",
+      "medium": "Mittlere Sicherheit",
+      "low": "Geringe Sicherheit"
     }
   }
 }

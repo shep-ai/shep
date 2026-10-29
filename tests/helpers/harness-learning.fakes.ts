@@ -61,6 +61,14 @@ export class InMemoryLearnedHarnessRepository implements ILearnedHarnessReposito
     return v ? structuredClone(v) : null;
   }
 
+  async findVersionsByIdPrefix(prefix: string, limit: number): Promise<LearnedHarnessVersion[]> {
+    return [...this.versions.values()]
+      .filter((v) => v.id.startsWith(prefix))
+      .sort((a, b) => a.id.localeCompare(b.id))
+      .slice(0, limit)
+      .map((v) => structuredClone(v));
+  }
+
   async listVersions(repositoryPath: string, limit = 100): Promise<LearnedHarnessVersion[]> {
     return [...this.versions.values()]
       .filter((v) => v.repositoryPath === repositoryPath)
@@ -228,6 +236,14 @@ export class InMemoryEvidenceWorkspace implements IEvidenceWorkspace {
   async readHarness(root: string): Promise<HarvestedHarness> {
     const entry = this.roots.get(root);
     return { tree: { ...(entry?.harness ?? {}) }, rejected: this.rejected.get(root) ?? [] };
+  }
+
+  /** Hand-written harness directories, by path. */
+  readonly directories = new Map<string, HarvestedHarness>();
+
+  async readHarnessDirectory(dir: string): Promise<HarvestedHarness> {
+    const found = this.directories.get(dir);
+    return { tree: { ...(found?.tree ?? {}) }, rejected: [...(found?.rejected ?? [])] };
   }
 
   async dispose(root: string): Promise<void> {

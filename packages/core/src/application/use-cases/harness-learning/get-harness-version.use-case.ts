@@ -13,6 +13,7 @@ import {
   type HarnessDiff,
 } from '../../../domain/harness-learning/harness-tree.js';
 import type { ILearnedHarnessRepository } from '../../ports/output/repositories/learned-harness-repository.interface.js';
+import { resolveHarnessVersion } from './resolve-harness-version.js';
 
 export interface HarnessVersionDetail {
   version: LearnedHarnessVersion;
@@ -33,10 +34,10 @@ export class GetHarnessVersionUseCase {
     versionId: string;
     againstVersionId?: string;
   }): Promise<HarnessVersionDetail | null> {
-    const version = await this.harnesses.findVersion(input.versionId);
+    const version = await resolveHarnessVersion(this.harnesses, input.versionId);
     if (!version) return null;
-    const baseId = input.againstVersionId ?? version.parentVersionId;
-    const base = baseId ? await this.harnesses.findVersion(baseId) : null;
+    const base = await this.baseFor(version, input.againstVersionId);
+    if (input.againstVersionId && !base) return null;
     const before = treeFromComponents(base?.components ?? []);
     const after = treeFromComponents(version.components);
     return {
@@ -46,5 +47,14 @@ export class GetHarnessVersionUseCase {
       diffText: renderHarnessDiffText(before, after),
       edits: await this.harnesses.listEditRecords(version.id),
     };
+  }
+
+  /** The version to diff against: the one asked for, else the parent. */
+  private async baseFor(
+    version: LearnedHarnessVersion,
+    againstVersionId?: string
+  ): Promise<LearnedHarnessVersion | null> {
+    if (againstVersionId) return resolveHarnessVersion(this.harnesses, againstVersionId);
+    return version.parentVersionId ? this.harnesses.findVersion(version.parentVersionId) : null;
   }
 }

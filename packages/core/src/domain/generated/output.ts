@@ -10048,6 +10048,11 @@ export enum TelemetryEvent {
   DecisionDefaulted = 'decision.defaulted',
   OnboardingStep = 'onboarding.step',
   ErrorUnhandled = 'error.unhandled',
+  HarnessCandidateProposed = 'harness.candidate.proposed',
+  HarnessVersionAdopted = 'harness.version.adopted',
+  HarnessVersionRejected = 'harness.version.rejected',
+  HarnessVersionRolledBack = 'harness.version.rolled-back',
+  HarnessRefinementFinished = 'harness.refinement.finished',
 }
 export enum TelemetryDisabledReason {
   Ci = 'ci',

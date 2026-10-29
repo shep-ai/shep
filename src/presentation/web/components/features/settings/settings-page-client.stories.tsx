@@ -108,3 +108,18 @@ export const CustomTimeouts: Story = {
     dbFileSize: '2.4 MB',
   },
 };
+
+/**
+ * Self-learning flag on: the Self-learning section and its nav entry appear.
+ * With the flag off (Default) both are absent.
+ */
+export const SelfLearningOn: Story = {
+  args: {
+    settings: {
+      ...defaultSettings,
+      featureFlags: { ...defaultSettings.featureFlags!, selfLearning: true },
+    },
+    shepHome: '/home/user/.shep',
+    dbFileSize: '2.4 MB',
+  },
+};

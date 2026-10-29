@@ -18,6 +18,7 @@ import type {
 import { paint, sanitizeText } from './console-format.js';
 import { NS, SEPARATOR } from './console-labels.js';
 import { padTo } from './console-layout.js';
+import type { ConsoleOverlay, OverlayPrompt } from './console-overlay.js';
 
 export interface ChatViewIntents {
   send(text: string): void;
@@ -47,7 +48,7 @@ const ENTRY_STYLE: Record<FeatureChatEntryKind, (text: string) => string> = {
   [FeatureChatEntryKind.Answer]: paint.muted,
 };
 
-export class ChatView {
+export class ChatView implements ConsoleOverlay {
   /** The message being typed; the console draws it on its status line. */
   readonly input = new Input();
   private name = '';
@@ -82,6 +83,11 @@ export class ChatView {
   /** What the status line puts before the message being typed (the input draws its own `>`). */
   get promptLabel(): string {
     return this.currentQuestion ? this.t(`${NS}.chat.answerPrompt`) : '';
+  }
+
+  /** The message line, always open while attached. */
+  get prompt(): OverlayPrompt {
+    return { label: this.promptLabel, input: this.input };
   }
 
   get hint(): string {

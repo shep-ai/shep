@@ -1,6 +1,7 @@
 import 'reflect-metadata';
 import { describe, it, expect } from 'vitest';
-import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync, mkdirSync, mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { FileSystemEvidenceWorkspace } from '@/infrastructure/services/harness-learning/file-system-evidence-workspace.js';
 
@@ -30,6 +31,25 @@ describe('FileSystemEvidenceWorkspace', () => {
       await workspace.dispose(root);
     }
     expect(existsSync(root)).toBe(false);
+  });
+
+  it('reads a hand-written harness directory in the canonical layout', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'shep-harness-import-'));
+    try {
+      mkdirSync(join(dir, 'skills', 'db'), { recursive: true });
+      writeFileSync(join(dir, 'skills', 'db', 'SKILL.md'), 'skill');
+      writeFileSync(join(dir, 'guardrails.md'), 'Run tests.');
+      writeFileSync(join(dir, 'README.txt'), 'stray');
+      const { tree, rejected } = await workspace.readHarnessDirectory(dir);
+      expect(tree).toEqual({ 'guardrails.md': 'Run tests.', 'skills/db/SKILL.md': 'skill' });
+      expect(rejected).toEqual(['README.txt']);
+      expect(await workspace.readHarnessDirectory(join(dir, 'missing'))).toEqual({
+        tree: {},
+        rejected: [],
+      });
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 
   it('never writes outside the workspace', async () => {

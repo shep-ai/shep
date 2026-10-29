@@ -48,6 +48,7 @@ import { FeatureCapacityService } from '../capacity/feature-capacity.service.js'
 import { MetadataGenerator } from './metadata-generator.js';
 import { SlugResolver } from './slug-resolver.js';
 import type { CreateFeatureInput, CreateFeatureResult, CreateRecordResult } from './types.js';
+import { isValidExploreK } from '../../../../domain/harness-learning/learning-config.js';
 
 @injectable()
 export class CreateFeatureUseCase {
@@ -268,6 +269,10 @@ export class CreateFeatureUseCase {
       enableEvidence: input.enableEvidence ?? false,
       injectSkills: input.injectSkills ?? false,
       commitEvidence: input.commitEvidence ?? false,
+      ...(input.exploreHarness ? { exploreHarness: true } : {}),
+      ...(input.exploreHarness && input.exploreK !== undefined && isValidExploreK(input.exploreK)
+        ? { exploreK: input.exploreK }
+        : {}),
       ...(input.activePlugins && Object.keys(input.activePlugins).length > 0
         ? { activePlugins: input.activePlugins }
         : {}),

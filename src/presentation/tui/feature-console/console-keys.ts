@@ -1,5 +1,5 @@
 /**
- * Feature console key map (specs 142, 143, 145, 146, 147).
+ * Feature console key map (specs 142, 143, 145, 146, 147, 150).
  *
  * Turns raw terminal input into the console's own key vocabulary. pi-tui
  * parses special keys in both legacy and Kitty keyboard protocol forms;
@@ -38,6 +38,8 @@ export enum ConsoleKey {
   Palette = 'palette',
   ControlCenter = 'control-center',
   Chat = 'chat',
+  HarnessDecisions = 'harness-decisions',
+  NewFeature = 'new-feature',
   Help = 'help',
   Quit = 'quit',
   Escape = 'escape',
@@ -66,6 +68,8 @@ const PRINTABLE_KEYS: Readonly<Record<string, ConsoleKey>> = {
   c: ConsoleKey.CopyId,
   C: ConsoleKey.ControlCenter,
   o: ConsoleKey.Chat,
+  d: ConsoleKey.HarnessDecisions,
+  N: ConsoleKey.NewFeature,
   '?': ConsoleKey.Help,
   q: ConsoleKey.Quit,
   y: ConsoleKey.Confirm,
@@ -93,6 +97,16 @@ export function resolveConsoleKey(data: string): ConsoleKey | undefined {
   const printable = decodeKittyPrintable(data) ?? (data.length === 1 ? data : undefined);
   return printable === undefined ? undefined : PRINTABLE_KEYS[printable];
 }
+
+/** How far a navigation key moves the selection, given a page and the row count. */
+export const NAVIGATION: Partial<Record<ConsoleKey, (page: number, total: number) => number>> = {
+  [ConsoleKey.Up]: () => -1,
+  [ConsoleKey.Down]: () => 1,
+  [ConsoleKey.PageUp]: (page) => -page,
+  [ConsoleKey.PageDown]: (page) => page,
+  [ConsoleKey.First]: (_page, total) => -total,
+  [ConsoleKey.Last]: (_page, total) => total,
+};
 
 /** Keys that run an action directly (reject and stop open a prompt first). */
 export const DIRECT_ACTIONS: Partial<Record<ConsoleKey, FeatureConsoleAction>> = {

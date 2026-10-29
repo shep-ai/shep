@@ -287,6 +287,10 @@
         "autoApprove": "автозатвердження: {{approved}}",
         "failedToCreate": "Не вдалося створити функцію",
         "exploreAndFastConflict": "Cannot use --explore and --fast together. Choose one mode.",
+        "exploreHarnessOption": "Самонавчання: виконати крок реалізації цієї фічі в режимі Explore (Propose–Probe–Compose) — коштує приблизно 4× кроку реалізації при k=1",
+        "exploreKOption": "Бюджет k режиму Explore для --explore-harness, 1–{{max}} (типово: ваше налаштування самонавчання); виконує 4k прогонів",
+        "exploreKWithoutHarness": "--explore-k застосовується лише разом з --explore-harness",
+        "invalidExploreK": "--explore-k має бути цілим числом від 1 до {{max}}, отримано: {{value}}",
         "exploreOption": "Start an exploration/prototyping session for iterative design"
       },
       "ls": {
@@ -2011,6 +2015,153 @@
         "description": "Зупинити запуск агента за id запуску, id фічі або їх префіксом",
         "idArgument": "Id запуску, id фічі або префікс",
         "stopped": "{{id}} зупинено: {{reason}}"
+      }
+    },
+    "learn": {
+      "description": "Самонавчальний harness: перегляд, прийняття та відкат того, чого Shep навчився із запусків фіч",
+      "failed": "Команда навченого harness завершилася з помилкою",
+      "repoOption": "Шлях до репозиторію (типово: поточний каталог)",
+      "jsonOption": "Вивести JSON",
+      "versionArg": "ID версії або його унікальний префікс",
+      "notFound": "Жодна версія навченого harness не відповідає {{id}}",
+      "fields": {
+        "version": "Версія",
+        "status": "Статус",
+        "origin": "Джерело",
+        "scope": "Область",
+        "created": "Створено",
+        "components": "Компоненти",
+        "parent": "Батьківська",
+        "sourceFeature": "Вивчено на фічі",
+        "notes": "Нотатки",
+        "reason": "Причина"
+      },
+      "status": {
+        "description": "Показати навчений harness, з яким працює цей репозиторій",
+        "title": "Навчений harness",
+        "none": "Нічого не прийнято — цей репозиторій працює з базовим harness.",
+        "candidates": "Кандидатів чекають на перевірку: {{count}} — див. `shep learn history`",
+        "noCandidates": "Немає кандидатів, що чекають на перевірку."
+      },
+      "history": {
+        "description": "Показати версії навченого harness з метриками результатів, спочатку нові",
+        "limitOption": "Показати не більше вказаної кількості версій",
+        "invalidLimit": "--limit має бути цілим числом більшим за 0, отримано: {{value}}",
+        "title": "Версії навченого harness",
+        "empty": "Версій навченого harness поки немає. Винесіть уроки із завершеної фічі командою `shep learn reflect <feature>`.",
+        "current": "поточна",
+        "regressed": "Версій із погіршенням: {{count}} — перегляньте версію командою `shep learn show <version>`, відкотіть прийняту командою `shep learn rollback`",
+        "columns": {
+          "id": "ID",
+          "status": "СТАТУС",
+          "origin": "ДЖЕРЕЛО",
+          "created": "СТВОРЕНО",
+          "runs": "ЗАПУСКИ",
+          "merged": "ЗЛИТО",
+          "ciFixes": "ВИПРАВЛ. CI",
+          "trend": "ТРЕНД"
+        }
+      },
+      "show": {
+        "description": "Показати версію: її компоненти, оцінки змін і diff із батьківською версією",
+        "title": "Навчений harness {{id}}",
+        "componentsTitle": "Компоненти",
+        "editsTitle": "Зміни та оцінки",
+        "diffTitle": "Diff з {{id}}",
+        "diffTitleBase": "Diff з базовим harness",
+        "noChanges": "Змін немає."
+      },
+      "diff": {
+        "description": "Показати, що змінилося між двома версіями",
+        "fromArg": "Вихідна версія (ID або префікс)",
+        "toArg": "Цільова версія (ID або префікс)",
+        "title": "{{from}} → {{to}}"
+      },
+      "adopt": {
+        "description": "Прийняти версію-кандидата або імпортувати й прийняти написаний вами harness",
+        "fromDirOption": "Імпортувати harness із цього каталогу (канонічна структура) і прийняти його",
+        "needsOne": "Вкажіть рівно одне: версію або --from-dir <dir>",
+        "adopted": "{{id}} прийнято — наступні запуски фіч використовуватимуть її",
+        "memoryFacts": "Записано фактів пам'яті: {{count}}",
+        "refused": "Не вдалося прийняти {{id}}: {{reason}}",
+        "imported": "{{id}} імпортовано та прийнято",
+        "importedNotAdopted": "{{id}} імпортовано, але не прийнято — див. `shep learn show {{id}}`",
+        "importRefused": "Harness з {{dir}} не імпортовано:"
+      },
+      "reject": {
+        "description": "Відхилити версію-кандидата; ваш відгук спрямує наступну рефлексію",
+        "feedbackOption": "Чому її відхилено — наступна рефлексія це прочитає",
+        "rejected": "{{id}} відхилено",
+        "refused": "Не вдалося відхилити {{id}}: {{reason}}"
+      },
+      "rollback": {
+        "description": "Скасувати прийнятий harness цього репозиторію та знову прийняти його батьківську версію",
+        "reasonOption": "Причина відкату (зберігається у версії)",
+        "rolledBack": "Прийнятий harness відкочено",
+        "restored": "{{id}} знову прийнято",
+        "toBase": "Репозиторій знову працює з базовим harness",
+        "refused": "Нічого не відкочено: {{reason}}"
+      },
+      "reflect": {
+        "description": "Винести уроки з останнього запуску фічі зараз і подати зміну harness на перевірку",
+        "featureArg": "ID фічі або його унікальний префікс",
+        "spinner": "Рефлексія щодо запуску фічі",
+        "skipped": "Нічого вчитися: {{reason}}",
+        "finished": "Рефлексію завершено: {{status}} (вартість {{cost}} USD)",
+        "candidate": "Кандидат {{id}} чекає на перевірку — `shep learn show {{id}}`",
+        "autoAdopted": "Кандидата {{id}} прийнято автоматично згідно з вашою політикою прийняття"
+      },
+      "labels": {
+        "status": {
+          "candidate": "Кандидат",
+          "adopted": "Прийнято",
+          "rejected": "Відхилено",
+          "rolledBack": "Відкочено",
+          "superseded": "Замінено"
+        },
+        "origin": {
+          "base": "Базова",
+          "reflect": "Рефлексія",
+          "explore": "Дослідження",
+          "manual": "Вручну"
+        },
+        "scope": {
+          "project": "Проєкт",
+          "organization": "Організація",
+          "space": "Простір",
+          "productLine": "Продуктова лінійка"
+        },
+        "trend": {
+          "insufficientData": "Замало запусків",
+          "improved": "Покращилась",
+          "unchanged": "Без змін",
+          "regressed": "Погіршилась"
+        },
+        "verdict": {
+          "helped": "Допомогло",
+          "hurt": "Зашкодило",
+          "noObservedEffect": "Ефекту не помічено",
+          "confounded": "Неоднозначно",
+          "untested": "Не перевірено"
+        },
+        "kind": {
+          "instructions": "Інструкції",
+          "guardrails": "Обмеження",
+          "memory": "Пам'ять",
+          "toolGuidance": "Підказки щодо інструментів",
+          "skill": "Навичка",
+          "script": "Скрипт",
+          "subagent": "Субагент",
+          "hook": "Хук"
+        },
+        "refinement": {
+          "running": "Виконується",
+          "proposed": "Запропоновано",
+          "keptBase": "Залишено базовий harness",
+          "fellBack": "Повернення до базового harness",
+          "overBudget": "Бюджет перевищено",
+          "failed": "Помилка"
+        }
       }
     }
   },

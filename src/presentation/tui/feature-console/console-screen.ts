@@ -1,7 +1,7 @@
 /**
  * Feature console screen (specs 142, 143): one full frame from the view's
- * state. Header, needs-you strip, body (help, empty state, or roster and
- * pane), status line and hint line — exactly `height` lines, each exactly
+ * state. Header, needs-you strip, body (help, palette, an overlay, empty
+ * state, or roster and pane), status line and hint line — exactly `height` lines, each exactly
  * `width` columns.
  */
 
@@ -23,8 +23,8 @@ import {
   renderLog,
 } from './console-panes.js';
 import { renderBanner, renderHeader, renderStrip } from './console-render.js';
-import type { ChatView } from './chat-view.js';
 import type { CommandPalette } from './console-palette.js';
+import type { ConsoleOverlay } from './console-overlay.js';
 import type { ConsoleRoster } from './console-roster.js';
 import { renderStatusLine } from './console-status.js';
 
@@ -36,7 +36,8 @@ export enum ConsoleMode {
   ConfirmReleaseQueue = 'confirm-release-queue',
   Filter = 'filter',
   Palette = 'palette',
-  Chat = 'chat',
+  /** An overlay (chat, harness decisions, create form) owns the body and the keys. */
+  Overlay = 'overlay',
 }
 
 export enum ConsolePane {
@@ -63,10 +64,15 @@ export interface ConsoleFrame {
   feedback: Input;
   filter: Input;
   palette: CommandPalette;
-  chat: ChatView;
+  /** The open overlay; set only in {@link ConsoleMode.Overlay}. */
+  overlay: ConsoleOverlay | undefined;
   busy: string | undefined;
   refreshError: string | undefined;
   result: FeatureConsoleActionResult | undefined;
+  /** Learned-harness changes waiting for the user (spec 150). */
+  harnessDecisions: number;
+  /** The console can create features (spec 150). */
+  newFeature: boolean;
 }
 
 export function renderConsoleFrame(
@@ -91,7 +97,7 @@ export function renderConsoleFrame(
 function renderBody(frame: ConsoleFrame, t: TFunction, width: number, height: number): string[] {
   if (frame.mode === ConsoleMode.Help) return renderHelp(t);
   if (frame.mode === ConsoleMode.Palette) return frame.palette.render(width, height, t);
-  if (frame.mode === ConsoleMode.Chat) return frame.chat.render(width, height);
+  if (frame.overlay) return frame.overlay.render(width, height);
   if (frame.roster.allRows.length === 0 && frame.snapshot) return renderEmpty(t);
   const selected = frame.roster.selected;
   return composeBody(
@@ -115,9 +121,7 @@ function renderStatus(frame: ConsoleFrame, t: TFunction, width: number): string 
         ? { label: '/', input: frame.filter }
         : frame.mode === ConsoleMode.Palette
           ? { label: ':', input: frame.palette.input }
-          : frame.mode === ConsoleMode.Chat
-            ? { label: frame.chat.promptLabel, input: frame.chat.input }
-            : undefined;
+          : frame.overlay?.prompt;
   return renderStatusLine(
     {
       prompt,
@@ -145,6 +149,10 @@ function renderHint(frame: ConsoleFrame, t: TFunction): string {
   if (frame.mode === ConsoleMode.Reject) return paint.muted(` ${t(`${NS}.reject.hint`)}`);
   if (frame.mode === ConsoleMode.Filter) return paint.muted(` ${t(`${NS}.filter.hint`)}`);
   if (frame.mode === ConsoleMode.Palette) return paint.muted(` ${t(`${NS}.palette.hint`)}`);
-  if (frame.mode === ConsoleMode.Chat) return paint.muted(` ${frame.chat.hint}`);
-  return renderKeyBar(frame.roster.selected, t, frame.snapshot?.fleet.queuePause !== undefined);
+  if (frame.overlay) return paint.muted(` ${frame.overlay.hint}`);
+  return renderKeyBar(frame.roster.selected, t, {
+    releaseQueue: frame.snapshot?.fleet.queuePause !== undefined,
+    harnessDecisions: frame.harnessDecisions,
+    newFeature: frame.newFeature,
+  });
 }

@@ -1,5 +1,5 @@
 /**
- * Command palette (spec 145).
+ * Command palette (specs 145, 150).
  *
  * Every console command, filterable by name, with its key shown for next
  * time. An entry stands for a ConsoleKey: running it replays that key through
@@ -17,6 +17,10 @@ import { NS } from './console-labels.js';
 export interface PaletteContext {
   row: FeatureConsoleRow | undefined;
   filterActive: boolean;
+  /** Learned-harness changes waiting for the user (spec 150). */
+  harnessDecisions?: number;
+  /** The console can create features (spec 150). */
+  newFeature?: boolean;
 }
 
 export interface PaletteEntry {
@@ -48,6 +52,7 @@ const COMMANDS: readonly { key: ConsoleKey; chord: string; when: Availability }[
   { key: ConsoleKey.Reject, chord: 'r', when: offers(FeatureConsoleAction.Reject) },
   { key: ConsoleKey.Stop, chord: 's', when: offers(FeatureConsoleAction.Stop) },
   { key: ConsoleKey.Resume, chord: 'R', when: offers(FeatureConsoleAction.Resume) },
+  { key: ConsoleKey.HarnessDecisions, chord: 'd', when: (c) => (c.harnessDecisions ?? 0) > 0 },
   { key: ConsoleKey.Chat, chord: 'o', when: hasRow },
   { key: ConsoleKey.Shell, chord: 't', when: hasRow },
   { key: ConsoleKey.ShellWindow, chord: 'T', when: hasRow },
@@ -56,6 +61,7 @@ const COMMANDS: readonly { key: ConsoleKey; chord: string; when: Availability }[
   { key: ConsoleKey.Details, chord: 'enter', when: hasRow },
   { key: ConsoleKey.Log, chord: 'l', when: hasRow },
   { key: ConsoleKey.CopyId, chord: 'c', when: hasRow },
+  { key: ConsoleKey.NewFeature, chord: 'N', when: (c) => hasRow(c) && c.newFeature === true },
   { key: ConsoleKey.ControlCenter, chord: 'C', when: always },
   { key: ConsoleKey.Filter, chord: '/', when: always },
   { key: ConsoleKey.ClearFilter, chord: '', when: ({ filterActive }) => filterActive },

@@ -11,6 +11,7 @@ import {
   fakeSpaceContext,
   type ImproverScript,
 } from '../../../../helpers/harness-learning.fakes.js';
+import { createTelemetryDouble } from '../../../../helpers/telemetry.helper.js';
 import {
   AgentType,
   HarnessEditVerdict,
@@ -21,6 +22,7 @@ import {
   LearningMode,
   LessonConfidence,
   MemoryScope,
+  TelemetryEvent,
 } from '@/domain/generated/output.js';
 
 const INPUT: ReflectOnFeatureRunInput = {
@@ -75,6 +77,7 @@ function build(
   const workspace = new InMemoryEvidenceWorkspace();
   const improver = new ScriptedImprover(workspace, options.scripts ?? {});
   const offer = { execute: vi.fn(async () => ({ autoAdopted: false, findings: [] })) };
+  const telemetry = createTelemetryDouble();
   const useCase = new ReflectOnFeatureRunUseCase(
     fakeSettingsRepository({
       selfLearning: options.selfLearning ?? true,
@@ -88,23 +91,37 @@ function build(
     { execute: vi.fn(async () => ({ 'task.md': 'add an audit log' })) } as never,
     fakeSpaceContext(),
     offer as never,
-    { findByFeatureId: vi.fn(async () => options.timings ?? [{ phase: 'implement' }]) } as never
+    { findByFeatureId: vi.fn(async () => options.timings ?? [{ phase: 'implement' }]) } as never,
+    telemetry
   );
-  return { useCase, harnesses, runs, workspace, improver, offer };
+  return { useCase, harnesses, runs, workspace, improver, offer, telemetry };
 }
 
 describe('ReflectOnFeatureRunUseCase', () => {
   it('does nothing while the flag is off or the mode is Off', async () => {
     for (const opts of [{ selfLearning: false }, { mode: LearningMode.Off }]) {
       const { useCase, improver, runs } = build(opts);
-      expect(await useCase.execute(INPUT, 'run-1')).toEqual({ skipped: true, costUsd: 0 });
+      expect(await useCase.execute(INPUT, 'run-1')).toMatchObject({
+        skipped: true,
+        costUsd: 0,
+        reason: expect.any(String),
+      });
       expect(improver.missions).toHaveLength(0);
       expect(runs.runs.size).toBe(0);
     }
   });
 
+  it('runs a reflection a person asked for even while the mode is Off, never with the flag off', async () => {
+    const asked = { ...INPUT, manual: true };
+    const off = build({ mode: LearningMode.Off, scripts: { dom: addSkill, agg: addSkill } });
+    expect((await off.useCase.execute(asked, 'run-1')).skipped).toBe(false);
+
+    const flagOff = build({ selfLearning: false });
+    expect(await flagOff.useCase.execute(asked, 'run-1')).toMatchObject({ skipped: true });
+  });
+
   it('proposes, composes and stores an untested candidate with a capped lesson', async () => {
-    const { useCase, harnesses, runs, improver, offer, workspace } = build({
+    const { useCase, harnesses, runs, improver, offer, workspace, telemetry } = build({
       scripts: {
         dom: addSkill,
         agg: addSkill,
@@ -138,6 +155,13 @@ describe('ReflectOnFeatureRunUseCase', () => {
     expect(offer.execute).toHaveBeenCalledWith(
       expect.objectContaining({ featureName: 'Add audit log', agentRunId: 'run-1' })
     );
+    expect(telemetry.record).toHaveBeenCalledWith(TelemetryEvent.HarnessRefinementFinished, {
+      mode: LearningMode.Reflect,
+      status: HarnessRefinementStatus.Proposed,
+      k: 0,
+      rollouts: 0,
+      sessions: 4,
+    });
     expect([...workspace.roots.values()].every((e) => e.disposed)).toBe(true);
   });
 

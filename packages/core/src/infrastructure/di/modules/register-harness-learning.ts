@@ -31,6 +31,8 @@ import { OfferHarnessCandidateUseCase } from '../../../application/use-cases/har
 import { ResolveHarnessDecisionUseCase } from '../../../application/use-cases/harness-learning/resolve-harness-decision.use-case.js';
 import { ListHarnessHistoryUseCase } from '../../../application/use-cases/harness-learning/list-harness-history.use-case.js';
 import { GetHarnessVersionUseCase } from '../../../application/use-cases/harness-learning/get-harness-version.use-case.js';
+import { ImportHarnessVersionUseCase } from '../../../application/use-cases/harness-learning/import-harness-version.use-case.js';
+import { ReflectOnFeatureUseCase } from '../../../application/use-cases/harness-learning/reflect-on-feature.use-case.js';
 import { HarnessDecisionSettler } from '../../../application/use-cases/harness-learning/harness-decision-settler.js';
 import { RefineHarnessUseCase } from '../../../application/use-cases/harness-learning/refine-harness.use-case.js';
 import { SelectProbeOutputUseCase } from '../../../application/use-cases/harness-learning/select-probe-output.use-case.js';
@@ -77,6 +79,8 @@ export function registerHarnessLearning(container: DependencyContainer): void {
     RefineHarnessUseCase,
     SelectProbeOutputUseCase,
     ResolveExplorePlanUseCase,
+    ImportHarnessVersionUseCase,
+    ReflectOnFeatureUseCase,
   } as const;
   for (const [token, useCase] of Object.entries(useCases)) {
     registerUseCase(container, token, useCase as constructor<unknown>);

@@ -148,7 +148,7 @@ content: |
         with the cost of Explore stated next to it; the flag itself appears in the existing
         feature-flags list
   - [ ] Explore can be switched on for a single feature from every surface that creates one:
-        a toggle in the web feature-create drawer, `shep feat new --explore [--explore-k N]`
+        a toggle in the web feature-create drawer, `shep feat new --explore-harness [--explore-k N]` (`--explore` is the Exploration build mode)
         and the TUI create flow; the choice is stored on the feature and overrides the scope
         mode for that run only
   - [ ] Prompt texts adapted from Harness² carry the Apache-2.0 attribution header and a

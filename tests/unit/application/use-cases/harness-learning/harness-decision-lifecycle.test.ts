@@ -9,14 +9,18 @@ import {
   InMemoryLearnedHarnessRepository,
   fakeSettingsRepository,
 } from '../../../../helpers/harness-learning.fakes.js';
+import { createTelemetryDouble } from '../../../../helpers/telemetry.helper.js';
 import {
   DecisionKind,
   HarnessAdoptionPolicy,
   HarnessComponentKind,
   HarnessOrigin,
+  HarnessRefinementStatus,
   LearnedHarnessStatus,
+  LearningMode,
   MemoryCategory,
   MemoryScope,
+  TelemetryEvent,
   type HarnessComponent,
   type LearnedHarnessVersion,
 } from '@/domain/generated/output.js';
@@ -55,8 +59,14 @@ function setup(policy = HarnessAdoptionPolicy.Manual) {
     execute: vi.fn(async (i: { entries: unknown[] }) => ({ recorded: i.entries.length })),
   };
   const settler = { settle: vi.fn(async () => undefined) };
-  const adopt = new AdoptHarnessVersionUseCase(repo, recordMemory as never, settler as never);
-  const reject = new RejectHarnessVersionUseCase(repo, settler as never);
+  const telemetry = createTelemetryDouble();
+  const adopt = new AdoptHarnessVersionUseCase(
+    repo,
+    recordMemory as never,
+    settler as never,
+    telemetry
+  );
+  const reject = new RejectHarnessVersionUseCase(repo, settler as never, telemetry);
   const ask = {
     execute: vi.fn(async (input: { decision: unknown }) => ({
       enabled: true,
@@ -67,9 +77,10 @@ function setup(policy = HarnessAdoptionPolicy.Manual) {
     fakeSettingsRepository({ learning: { adoptionPolicy: policy } }),
     { findByPath: vi.fn(async () => null) } as never,
     ask as never,
-    adopt
+    adopt,
+    telemetry
   );
-  return { repo, recordMemory, settler, adopt, reject, ask, offer };
+  return { repo, recordMemory, settler, adopt, reject, ask, offer, telemetry };
 }
 
 describe('OfferHarnessCandidateUseCase', () => {
@@ -206,7 +217,7 @@ describe('RollbackHarnessVersionUseCase', () => {
     await repo.createVersion(
       version({ id: 'c', parentVersionId: 'p', status: LearnedHarnessStatus.Adopted })
     );
-    const result = await new RollbackHarnessVersionUseCase(repo).execute({
+    const result = await new RollbackHarnessVersionUseCase(repo, createTelemetryDouble()).execute({
       repositoryPath: '/repos/app',
     });
     expect(result).toEqual({ rolledBack: true, restoredVersionId: 'p' });
@@ -216,7 +227,7 @@ describe('RollbackHarnessVersionUseCase', () => {
 
   it('refuses when nothing is adopted (the base harness)', async () => {
     const { repo } = setup();
-    const result = await new RollbackHarnessVersionUseCase(repo).execute({
+    const result = await new RollbackHarnessVersionUseCase(repo, createTelemetryDouble()).execute({
       repositoryPath: '/repos/app',
     });
     expect(result.rolledBack).toBe(false);
@@ -227,7 +238,9 @@ describe('RollbackHarnessVersionUseCase', () => {
     const { repo } = setup();
     await repo.createVersion(version({ status: LearnedHarnessStatus.Adopted }));
     expect(
-      await new RollbackHarnessVersionUseCase(repo).execute({ repositoryPath: '/repos/app' })
+      await new RollbackHarnessVersionUseCase(repo, createTelemetryDouble()).execute({
+        repositoryPath: '/repos/app',
+      })
     ).toEqual({ rolledBack: true });
     expect(await repo.findAdopted({ repositoryPath: '/repos/app' })).toBeNull();
   });
@@ -253,5 +266,61 @@ describe('ResolveHarnessDecisionUseCase', () => {
     expect(await resolve.execute([{ questionId: 'gate', optionIds: ['approve'] }], 'u')).toBe(
       false
     );
+  });
+});
+
+describe('self-learning telemetry (content-free)', () => {
+  const props = (telemetry: { record: { mock: { calls: unknown[][] } } }, event: TelemetryEvent) =>
+    telemetry.record.mock.calls.find(([e]) => e === event)?.[1] as Record<string, unknown>;
+  const contentFree = (p: Record<string, unknown>) =>
+    Object.values(p).every(
+      (v) =>
+        typeof v === 'number' ||
+        typeof v === 'boolean' ||
+        (Array.isArray(v) && v.every((x) => Object.values(HarnessComponentKind).includes(x))) ||
+        [
+          ...Object.values(HarnessOrigin),
+          ...Object.values(LearningMode),
+          ...Object.values(HarnessRefinementStatus),
+        ].includes(v as never)
+    );
+
+  it('records adoption by policy, proposal, rejection and rollback with enums and counts only', async () => {
+    const { repo, offer, reject, telemetry } = setup(HarnessAdoptionPolicy.Auto);
+    await repo.createVersion(version({ id: 'auto', origin: HarnessOrigin.Reflect }));
+    await offer.execute({
+      candidate: (await repo.findVersion('auto'))!,
+      parent: null,
+      featureName: 'Secret feature title',
+      agentRunId: 'run-1',
+    });
+    const adopted = props(telemetry, TelemetryEvent.HarnessVersionAdopted);
+    expect(adopted).toEqual({ origin: HarnessOrigin.Reflect, componentCount: 1, byPolicy: true });
+    expect(props(telemetry, TelemetryEvent.HarnessCandidateProposed)).toEqual({
+      origin: HarnessOrigin.Reflect,
+      componentCount: 1,
+      componentKinds: [HarnessComponentKind.Guardrails],
+      autoAdopted: true,
+    });
+
+    await repo.createVersion(version({ id: 'no' }));
+    await reject.execute({ versionId: 'no', feedback: 'private reason', actor: 'user:web' });
+    expect(props(telemetry, TelemetryEvent.HarnessVersionRejected)).toEqual({
+      origin: HarnessOrigin.Explore,
+      withFeedback: true,
+    });
+
+    const rollbackTelemetry = createTelemetryDouble();
+    await new RollbackHarnessVersionUseCase(repo, rollbackTelemetry).execute({
+      repositoryPath: '/repos/app',
+    });
+    expect(props(rollbackTelemetry, TelemetryEvent.HarnessVersionRolledBack)).toEqual({
+      origin: HarnessOrigin.Reflect,
+      restoredPrevious: false,
+    });
+
+    for (const [, p] of [...telemetry.record.mock.calls, ...rollbackTelemetry.record.mock.calls]) {
+      expect(contentFree(p as Record<string, unknown>)).toBe(true);
+    }
   });
 });

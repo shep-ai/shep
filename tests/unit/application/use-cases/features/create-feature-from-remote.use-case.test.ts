@@ -195,6 +195,17 @@ describe('CreateFeatureFromRemoteUseCase', () => {
       );
     });
 
+    it('forwards per-feature Explore and its k, and nothing when Explore is off (spec 150)', async () => {
+      await useCase.execute({ ...baseInput, exploreHarness: true, exploreK: 2 });
+      expect(mockCreateFeatureUseCase.execute).toHaveBeenCalledWith(
+        expect.objectContaining({ exploreHarness: true, exploreK: 2 })
+      );
+      await useCase.createRecord({ ...baseInput, exploreK: 2 });
+      expect(vi.mocked(mockCreateFeatureUseCase.createRecord).mock.calls[0][0]).not.toHaveProperty(
+        'exploreHarness'
+      );
+    });
+
     it('should call import BEFORE create (call order validation)', async () => {
       const callOrder: string[] = [];
       vi.mocked(mockImportUseCase.execute).mockImplementation(async () => {
