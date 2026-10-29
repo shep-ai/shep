@@ -9,6 +9,11 @@
  */
 
 import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest';
+
+// Render with colours, as a real terminal would: picocolors decides at import.
+vi.hoisted(() => {
+  process.env.FORCE_COLOR = '1';
+});
 import type { TFunction } from 'i18next';
 import { visibleWidth } from '@mariozechner/pi-tui';
 
@@ -19,6 +24,7 @@ import {
 } from '@/presentation/tui/feature-console/harness-decisions-view.js';
 import { harnessDecisionItems } from '@/presentation/tui/feature-console/harness-decisions.js';
 import { harnessQuestion } from '@tests/helpers/tui/harness-decision-fixtures.js';
+import { buildHarnessChangeDecision } from '@/domain/harness-learning/harness-decision.js';
 
 const ESC = '\x1b';
 const KEY = { down: `${ESC}[B`, enter: '\r', escape: ESC, ctrlC: '\x03' } as const;
@@ -58,6 +64,24 @@ describe('HarnessDecisionsView', () => {
     expect(screen).toContain('Shep learned from "Billing UI"');
     expect(screen).toContain('+ skills/testing/SKILL.md');
     expect(screen).toContain('Run the unit tests before committing.');
+  });
+
+  it('colours file headers only, never a bullet line inside a file', () => {
+    const preview = '~ guardrails.md\n- Never edit generated files.\n\n- old-notes.md';
+    view.setItems(
+      harnessDecisionItems([
+        harnessQuestion('v3', {
+          decision: buildHarnessChangeDecision('pending', 'v3', 'Change?', preview),
+        }),
+      ])
+    );
+    const lines = view.render(100, 30);
+    const raw = (text: string) => lines.find((l) => l.replace(ANSI, '').trim() === text)!;
+    expect(raw('- Never edit generated files.')).toBe(
+      raw('- Never edit generated files.').replace(ANSI, '')
+    );
+    expect(raw('- old-notes.md')).not.toBe(raw('- old-notes.md').replace(ANSI, ''));
+    expect(raw('~ guardrails.md')).not.toBe(raw('~ guardrails.md').replace(ANSI, ''));
   });
 
   it('renders exactly the height it is given, never wider than the width', () => {

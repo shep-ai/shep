@@ -2203,7 +2203,8 @@
       "regressed": "Empeoró",
       "improved": "Mejoró",
       "unchanged": "Sin cambios",
-      "insufficient-data": "Aún no hay suficientes ejecuciones"
+      "insufficient-data": "Aún no hay suficientes ejecuciones",
+      "no-baseline": "No hay una versión anterior con la que comparar"
     },
     "status": {
       "candidate": "Candidata",

@@ -2135,7 +2135,8 @@
           "insufficientData": "מעט מדי הרצות",
           "improved": "השתפרה",
           "unchanged": "ללא שינוי",
-          "regressed": "הידרדרה"
+          "regressed": "הידרדרה",
+          "noBaseline": "גרסה ראשונה"
         },
         "verdict": {
           "helped": "עזר",

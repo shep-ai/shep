@@ -30,8 +30,9 @@ function PathList({ label, paths, sign }: { label: string; paths: string[]; sign
       <h4 className="text-muted-foreground text-[11px] font-semibold uppercase">{label}</h4>
       <ul className="font-mono text-xs">
         {paths.map((p) => (
-          <li key={p}>
-            {sign} {p}
+          <li key={p} className="[overflow-wrap:anywhere]">
+            {/* A non-breaking space keeps the sign on the line of its path. */}
+            {`${sign}\u00a0${p}`}
           </li>
         ))}
       </ul>
@@ -63,7 +64,7 @@ export function HarnessVersionDetailView({
             ? t('learning.detail.against', { id: shortId(base.id) })
             : t('learning.detail.againstBase')}
         </p>
-        {version.notes ? <p className="text-xs">{version.notes}</p> : null}
+        {version.notes ? <p className="text-xs whitespace-pre-line">{version.notes}</p> : null}
         {version.statusReason ? (
           <p className="text-muted-foreground text-xs">
             {t('learning.detail.reason', { reason: version.statusReason })}
@@ -81,7 +82,7 @@ export function HarnessVersionDetailView({
         </p>
       ) : null}
 
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="flex flex-wrap gap-x-10 gap-y-3">
         <PathList label={t('learning.detail.added')} paths={diff.added} sign="+" />
         <PathList label={t('learning.detail.modified')} paths={diff.modified} sign="~" />
         <PathList label={t('learning.detail.removed')} paths={diff.removed} sign="-" />

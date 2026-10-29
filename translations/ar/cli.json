@@ -2135,7 +2135,8 @@
           "insufficientData": "تشغيلات قليلة",
           "improved": "تحسّن",
           "unchanged": "دون تغيير",
-          "regressed": "تراجع"
+          "regressed": "تراجع",
+          "noBaseline": "الإصدار الأول"
         },
         "verdict": {
           "helped": "ساعد",

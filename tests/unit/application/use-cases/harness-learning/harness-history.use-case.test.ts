@@ -91,6 +91,8 @@ describe('ListHarnessHistoryUseCase', () => {
     expect(result.versions.map((e) => e.version.id)).toEqual(['v2', 'v1']);
     expect(result.currentVersionId).toBe('v2');
     expect(result.versions[0].trend).toBe(HarnessVersionTrend.InsufficientData);
+    // v1 has no parent: there is nothing to compare it with, however many runs it has.
+    expect(result.versions[1].trend).toBe(HarnessVersionTrend.NoBaseline);
   });
 
   it('flags a version that regressed against its parent once both have the sample', async () => {

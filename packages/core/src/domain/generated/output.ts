@@ -10091,6 +10091,7 @@ export enum HarnessVersionTrend {
   Improved = 'improved',
   Unchanged = 'unchanged',
   Regressed = 'regressed',
+  NoBaseline = 'no-baseline',
 }
 export enum HarnessAlwaysOnChannel {
   SystemPrompt = 'system-prompt',

@@ -2135,7 +2135,8 @@
           "insufficientData": "Too few runs",
           "improved": "Improved",
           "unchanged": "Unchanged",
-          "regressed": "Regressed"
+          "regressed": "Regressed",
+          "noBaseline": "First version"
         },
         "verdict": {
           "helped": "Helped",

@@ -2203,7 +2203,8 @@
       "regressed": "Ухудшилась",
       "improved": "Улучшилась",
       "unchanged": "Без изменений",
-      "insufficient-data": "Пока мало запусков"
+      "insufficient-data": "Пока мало запусков",
+      "no-baseline": "Нет более ранней версии для сравнения"
     },
     "status": {
       "candidate": "Кандидат",

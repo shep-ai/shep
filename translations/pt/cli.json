@@ -2135,7 +2135,8 @@
           "insufficientData": "Poucas execuções",
           "improved": "Melhorou",
           "unchanged": "Sem mudança",
-          "regressed": "Piorou"
+          "regressed": "Piorou",
+          "noBaseline": "Primeira versão"
         },
         "verdict": {
           "helped": "Ajudou",

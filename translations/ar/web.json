@@ -2203,7 +2203,8 @@
       "regressed": "تراجع الأداء",
       "improved": "تحسّن",
       "unchanged": "بلا تغيير",
-      "insufficient-data": "لا توجد تشغيلات كافية بعد"
+      "insufficient-data": "لا توجد تشغيلات كافية بعد",
+      "no-baseline": "لا يوجد إصدار سابق للمقارنة"
     },
     "status": {
       "candidate": "مرشّح",

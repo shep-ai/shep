@@ -2135,7 +2135,8 @@
           "insufficientData": "Мало запусков",
           "improved": "Улучшилась",
           "unchanged": "Без изменений",
-          "regressed": "Ухудшилась"
+          "regressed": "Ухудшилась",
+          "noBaseline": "Первая версия"
         },
         "verdict": {
           "helped": "Помогло",

@@ -57,6 +57,7 @@ const TREND: Record<HarnessVersionTrend, string> = {
   [HarnessVersionTrend.Improved]: 'improved',
   [HarnessVersionTrend.Unchanged]: 'unchanged',
   [HarnessVersionTrend.Regressed]: 'regressed',
+  [HarnessVersionTrend.NoBaseline]: 'noBaseline',
 };
 
 const VERDICT: Record<HarnessEditVerdict, string> = {
@@ -92,6 +93,7 @@ const TREND_COLOR: Record<HarnessVersionTrend, (text: string) => string> = {
   [HarnessVersionTrend.Improved]: colors.success,
   [HarnessVersionTrend.Unchanged]: colors.muted,
   [HarnessVersionTrend.Regressed]: colors.error,
+  [HarnessVersionTrend.NoBaseline]: colors.muted,
 };
 
 const label = (group: string, key: string): string => getCliI18n().t(`${LABELS}.${group}.${key}`);

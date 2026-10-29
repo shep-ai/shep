@@ -1,5 +1,7 @@
 /** View shapes of the Learning page (spec 150). */
 
+import type { Route } from 'next';
+
 export type {
   HarnessHistory,
   HarnessVersionEntry,
@@ -17,8 +19,9 @@ export const shortId = (id: string): string => id.slice(0, SHORT_ID_LENGTH);
 
 export const LEARNING_PATH = '/learning';
 
-export function learningHref(repositoryPath: string, versionId?: string): string {
+/** A typed route, so links and `router.push` pass the production build's route check. */
+export function learningHref(repositoryPath: string, versionId?: string): Route {
   const params = new URLSearchParams({ repo: repositoryPath });
   if (versionId) params.set('version', versionId);
-  return `${LEARNING_PATH}?${params.toString()}`;
+  return `${LEARNING_PATH}?${params.toString()}` as Route;
 }

@@ -26,12 +26,17 @@ export interface HarnessDecisionsIntents {
 /** Decisions listed above the selected one's details. */
 const LIST_LINES = 4;
 
-/** How a preview line looks, by the marker core puts first. */
-const PREVIEW_MARKS: readonly [string, (text: string) => string][] = [
-  ['+ ', paint.ok],
-  ['~ ', paint.attention],
-  ['- ', paint.error],
-  ['! ', paint.error],
+/**
+ * How a preview line looks. Core starts each file with a header — a marker, a
+ * space and one path (`+ skills/x/SKILL.md`) — and each safety finding with
+ * `! `. A file's own lines may start with `- ` too (a bullet list), so only a
+ * marker followed by a single path is a header.
+ */
+const PREVIEW_MARKS: readonly [RegExp, (text: string) => string][] = [
+  [/^\+ \S+$/, paint.ok],
+  [/^~ \S+$/, paint.attention],
+  [/^- \S+$/, paint.error],
+  [/^! /, paint.error],
 ];
 
 export class HarnessDecisionsView implements ConsoleOverlay {
@@ -162,7 +167,7 @@ export class HarnessDecisionsView implements ConsoleOverlay {
 }
 
 function styleOfPreview(line: string): (text: string) => string {
-  return PREVIEW_MARKS.find(([mark]) => line.startsWith(mark))?.[1] ?? ((text) => text);
+  return PREVIEW_MARKS.find(([mark]) => mark.test(line))?.[1] ?? ((text) => text);
 }
 
 function wrap(text: string, width: number): string[] {

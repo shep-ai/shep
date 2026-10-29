@@ -78,7 +78,11 @@ export class ListHarnessHistoryUseCase {
         return {
           version,
           metrics: summarizeOutcomes(mine),
-          trend: comparison?.trend ?? HarnessVersionTrend.InsufficientData,
+          trend:
+            comparison?.trend ??
+            (version.parentVersionId
+              ? HarnessVersionTrend.InsufficientData
+              : HarnessVersionTrend.NoBaseline),
           relativeChange: comparison?.relativeChange ?? 0,
           edits: await this.harnesses.listEditRecords(version.id),
         };

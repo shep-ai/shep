@@ -3354,3 +3354,11 @@ The per-feature Explore fields were added to `CreateFeatureInput` but not to
 **Rule:** when a field is added to one create/update input, grep for every use case that
 builds that input (`grep -rn "createFeatureUseCase\.\(execute\|createRecord\)"`) and forward
 it there too, with a test per path.
+
+## A new web link needs `pnpm build:web:prod`, not just `typecheck:web`
+
+The web app has `typedRoutes: true`: `<Link href>` and `router.push` only accept a `Route`, and
+that is checked by `next build`, not by `pnpm typecheck:web`. Spec 150's Learning links passed
+every local check and broke the production build. **Rule:** a helper that builds an href returns
+`Route` (`` `/path?${params}` as Route ``), and any change that adds a link or `router.push` runs
+`pnpm build:web:prod` before pushing.

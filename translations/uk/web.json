@@ -2203,7 +2203,8 @@
       "regressed": "Погіршилася",
       "improved": "Покращилася",
       "unchanged": "Без змін",
-      "insufficient-data": "Поки замало запусків"
+      "insufficient-data": "Поки замало запусків",
+      "no-baseline": "Немає попередньої версії для порівняння"
     },
     "status": {
       "candidate": "Кандидат",

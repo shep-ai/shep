@@ -2135,7 +2135,8 @@
           "insufficientData": "Zu wenige Läufe",
           "improved": "Verbessert",
           "unchanged": "Unverändert",
-          "regressed": "Verschlechtert"
+          "regressed": "Verschlechtert",
+          "noBaseline": "Erste Version"
         },
         "verdict": {
           "helped": "Geholfen",

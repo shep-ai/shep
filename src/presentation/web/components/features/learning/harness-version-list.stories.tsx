@@ -2,12 +2,13 @@ import type { Meta, StoryObj } from '@storybook/react';
 import { HarnessVersionTrend } from '@shepai/core/domain/generated/output';
 import { HarnessVersionList } from './harness-version-list';
 import { CANDIDATE, HISTORY } from './learning-fixtures';
+import { learningHref } from './learning-types';
 
 const meta: Meta<typeof HarnessVersionList> = {
   title: 'Features/Learning/HarnessVersionList',
   component: HarnessVersionList,
   tags: ['autodocs'],
-  args: { hrefFor: (id: string) => `/learning?version=${id}` },
+  args: { hrefFor: (id: string) => learningHref('/Users/dev/shop', id) },
 };
 
 export default meta;

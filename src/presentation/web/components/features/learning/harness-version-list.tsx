@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import type { Route } from 'next';
 import { AlertTriangle, TrendingDown, TrendingUp } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Badge } from '@/components/ui/badge';
@@ -22,7 +23,7 @@ export interface HarnessVersionListProps {
   versions: readonly HarnessVersionEntry[];
   selectedId?: string;
   /** Link to a version; the page keeps the repository in the URL. */
-  hrefFor: (versionId: string) => string;
+  hrefFor: (versionId: string) => Route;
 }
 
 function TrendMark({ trend }: { trend: HarnessVersionTrend }) {

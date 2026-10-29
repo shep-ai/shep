@@ -183,6 +183,9 @@ enum HarnessVersionTrend {
 
   @doc("Outcomes are worse than the parent's beyond the tolerance")
   Regressed: "regressed",
+
+  @doc("The version has no parent, so there is nothing to compare it with")
+  NoBaseline: "no-baseline",
 }
 
 @doc("How always-on harness text reaches an agent")
