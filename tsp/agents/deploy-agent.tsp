@@ -106,7 +106,7 @@ model LocalDeployAgent {
   url?: string;
 
   @doc("Timestamp when this deployment agent was created")
-  @visibility("read")
+  @visibility(Lifecycle.Read)
   createdAt: utcDateTime;
 }
 

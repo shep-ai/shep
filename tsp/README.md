@@ -113,8 +113,8 @@ All entities extend one of these base templates:
 ```typespec
 model BaseEntity {
   id: UUID;
-  createdAt: utcDateTime; // @visibility("read")
-  updatedAt: utcDateTime; // @visibility("read")
+  createdAt: utcDateTime; // @visibility(Lifecycle.Read)
+  updatedAt: utcDateTime; // @visibility(Lifecycle.Read)
 }
 
 model SoftDeletableEntity extends BaseEntity {

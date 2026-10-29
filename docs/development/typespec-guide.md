@@ -265,9 +265,7 @@ import "./agents/index.tsp";
 import "./deployment/index.tsp";
 import "./ui/index.tsp";
 
-@service({
-  title: "Shep AI Domain Models",
-})
+@service(#{ title: "Shep AI Domain Models" })
 namespace ShepAI.Domain;
 ```
 
