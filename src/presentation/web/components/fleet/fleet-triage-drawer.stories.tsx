@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react';
+import { expect, userEvent, within } from '@storybook/test';
 import { FleetTriageDrawer } from './fleet-triage-drawer';
 import {
   FleetTriageCategory,
@@ -165,5 +166,27 @@ export const NothingActionable: Story = {
     open: true,
     onOpenChange: noop,
     onRefresh: noop,
+  },
+};
+
+/**
+ * The guardrail batch, one click away from the whole backlog.
+ *
+ * Nothing is approved until the operator confirms: the dialog says what the
+ * rules will decide, and the toast afterwards names every gate that was left
+ * for a human and why. With no rules configured this approves nothing and says
+ * so — the flag is never a synonym for "approve all".
+ */
+export const ApproveLowRisk: Story = {
+  args: {
+    items: ITEMS,
+    open: true,
+    onOpenChange: noop,
+    onRefresh: noop,
+  },
+  play: async ({ canvasElement }) => {
+    const page = within(canvasElement.ownerDocument.body);
+    await userEvent.click(page.getByTestId('fleet-triage-approve-low-risk'));
+    await expect(page.getByTestId('fleet-triage-approve-low-risk-dialog')).toBeVisible();
   },
 };
