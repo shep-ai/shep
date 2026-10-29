@@ -28,8 +28,8 @@ export class LearnedHarnessRunSession {
 
   /** The version this run uses (resolved on first use), or null for none. */
   version(): Promise<LearnedHarnessVersion | null> {
-    this.pinned ??= this.getCurrent
-      .execute({ repositoryPath: this.repositoryPath })
+    this.pinned ??= Promise.resolve()
+      .then(() => this.getCurrent.execute({ repositoryPath: this.repositoryPath }))
       .catch((error: unknown) => {
         this.log(`[learned-harness] could not load the adopted version: ${String(error)}`);
         return null;

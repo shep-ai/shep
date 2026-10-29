@@ -10091,6 +10091,12 @@ export enum HarnessAlwaysOnChannel {
   SystemPrompt = 'system-prompt',
   Prompt = 'prompt',
 }
+export enum HarnessImproverStage {
+  Propose = 'propose',
+  Compose = 'compose',
+  Select = 'select',
+  Experience = 'experience',
+}
 export enum FeatureState {
   Running = 'running',
   ActionRequired = 'action-required',

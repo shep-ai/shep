@@ -80,6 +80,9 @@ import type { ApprovalGates } from '@/domain/generated/output.js';
 import { FEATURE_WORKER_HEARTBEAT_INTERVAL_MS } from '@/domain/shared/agent-run-liveness.js';
 import { createLearnedHarnessSession } from '../../harness-learning/learned-harness-session.factory.js';
 import { LearnedHarnessExecutorProxy } from '../../harness-learning/learned-harness-executor.proxy.js';
+import { learnFromRun } from './learn-from-run.js';
+import { ReflectOnFeatureRunUseCase } from '@/application/use-cases/harness-learning/reflect-on-feature-run.use-case.js';
+import { RecordVersionOutcomeUseCase } from '@/application/use-cases/harness-learning/record-version-outcome.use-case.js';
 
 export interface WorkerArgs {
   featureId: string;
@@ -537,9 +540,11 @@ export async function runWorker(args: WorkerArgs): Promise<void> {
   const mcpConfigPath = decisionMcpConfigPath ?? pluginMcpConfigPath;
   const decisionToolAvailable = decisionMcpConfigPath !== undefined;
 
+  // Spec 150: the graph instance that ran, and its final state once the run ends.
+  let activeGraph = graph;
+  let learning: { state?: Record<string, unknown>; thrownError?: string } | undefined;
+  const graphConfig = { configurable: { thread_id: checkpointId } };
   try {
-    const graphConfig = { configurable: { thread_id: checkpointId } };
-
     let result: Record<string, unknown>;
     if (args.resume && args.resumeFromInterrupt) {
       // Resume from an interrupt (human-in-the-loop approval)
@@ -607,6 +612,7 @@ export async function runWorker(args: WorkerArgs): Promise<void> {
             freshCheckpointer
           ) as unknown as ReturnType<typeof createFeatureAgentGraph>)
         : createFeatureAgentGraph(graphDeps, freshCheckpointer);
+      activeGraph = freshGraph;
 
       log('Resuming graph with fresh checkpoint...');
       result = await freshGraph.invoke(
@@ -743,6 +749,7 @@ export async function runWorker(args: WorkerArgs): Promise<void> {
       await recordLifecycleEvent('run:failed');
       recordRunFinished(AgentRunStatus.failed);
       log(`Run marked as failed: ${result.error}`);
+      learning = { state: result };
       await drainCapacityQueueAfterFailure(drainCapacityQueue, log);
       return;
     }
@@ -763,6 +770,7 @@ export async function runWorker(args: WorkerArgs): Promise<void> {
     recordRunFinished(AgentRunStatus.completed);
     await lifecyclePublisher.publishCompleted(lifecycleScope);
     log('Run marked as completed');
+    learning = { state: result };
   } catch (error: unknown) {
     stopHeartbeat();
     const failedAt = new Date();
@@ -779,10 +787,42 @@ export async function runWorker(args: WorkerArgs): Promise<void> {
       { runId: args.runId, featureId: args.featureId, message, failedAt }
     );
     recordRunFinished(AgentRunStatus.failed);
+    learning = { state: await readGraphState(activeGraph, graphConfig), thrownError: message };
   } finally {
     // Stop MCP plugin servers regardless of success/failure/interrupt
     await stopPluginServers(args.featureId, mcpServerManager, log);
     stopDecisionTool(decisionMcpConfigPath);
+    if (learning) {
+      const versionId = await learnedHarness.versionId();
+      await learnFromRun(
+        {
+          reflect: container.resolve(ReflectOnFeatureRunUseCase),
+          recordOutcome: container.resolve(RecordVersionOutcomeUseCase),
+          log,
+        },
+        {
+          featureId: args.featureId,
+          repositoryPath: args.repo,
+          worktreePath: args.worktreePath ?? args.repo,
+          agentType: executor.agentType,
+          agentRunId: args.runId,
+          ...(versionId ? { versionId } : {}),
+          ...learning,
+        }
+      );
+    }
+  }
+}
+
+/** The graph's last checkpointed state, for learning after a thrown run. */
+async function readGraphState(
+  graph: ReturnType<typeof createFeatureAgentGraph>,
+  config: { configurable: { thread_id: string } }
+): Promise<Record<string, unknown> | undefined> {
+  try {
+    return (await graph.getState(config)).values as Record<string, unknown>;
+  } catch {
+    return undefined;
   }
 }
 

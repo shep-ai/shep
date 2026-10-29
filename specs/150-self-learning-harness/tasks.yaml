@@ -245,7 +245,7 @@ tasks:
       harness and the scope's lesson index. FileSystemEvidenceWorkspace writes it as
       context/{task.md,trajectories/,signals/,harness/,library/} and reads harness/ back.
       A guard asserts no post-hoc grader signal (merged PR diff, later review) is present.
-    state: Todo
+    state: Done
     dependencies:
       - task-7
       - task-8
@@ -269,7 +269,7 @@ tasks:
       harvests context/harness. Prompts adapted from harness2 prompts.py — INV, DOM, compose,
       compose-round, select, experience, answer-free and evidence-is-data blocks, surface
       table per agent family — with the Apache-2.0 header and NOTICE.md.
-    state: Todo
+    state: Done
     dependencies:
       - task-8
       - task-11
@@ -294,7 +294,7 @@ tasks:
       runs the experience prompt; stores a Candidate version (or a KEEP_BASE record), edit
       rows marked Untested and at most one lesson capped at Low confidence; memory facts go
       through RecordProjectMemoryUseCase. Never throws into the caller.
-    state: Todo
+    state: Done
     dependencies:
       - task-5
       - task-12
@@ -312,12 +312,14 @@ tasks:
         - Share the stage-with-retry helper with RefineHarnessUseCase (task-18)
     estimatedEffort: L
   - id: task-14
-    title: reflect_harness graph node
+    title: Post-run reflection hook (implemented in the worker, not as a graph node)
     description: >
-      Terminal node in the full and fast graphs after extract_memory, running whenever
-      implement was reached and Settings.learning.mode is not Off and the flag is on; uses
-      the feature's scope; best effort.
-    state: Todo
+      Implementation note: a graph node never runs when the graph throws, and failed runs are
+      the ones most worth learning from, so reflection runs in the worker after the graph
+      settles (completed or failed; not while paused at a gate) via learn-from-run.ts. It runs
+      only when implement was reached, Settings.learning.mode is not Off and the flag is on;
+      best effort, never changes the run's status.
+    state: Done
     dependencies:
       - task-13
     acceptanceCriteria:
@@ -338,7 +340,7 @@ tasks:
       AutoTextOnly only for Explore candidates without Script/Hook; Auto) and supersedes the
       current version atomically. Reject stores feedback that the next reflection reads.
       Rollback restores the parent and marks the child RolledBack.
-    state: Todo
+    state: Done
     dependencies:
       - task-7
       - task-13
@@ -359,7 +361,7 @@ tasks:
       RecordVersionOutcomeUseCase writes one outcome row per finished feature for the version
       it ran on (from PhaseTiming, CI-fix history, rejections, validation repairs, merge);
       ListHarnessHistoryUseCase returns versions with metrics and regression flags.
-    state: Todo
+    state: Done
     dependencies:
       - task-6
       - task-7

@@ -208,3 +208,18 @@ enum HarnessScanRule {
   @doc("Writes outside the feature worktree")
   OutsideWorktree: "outside-worktree",
 }
+
+@doc("Which improvement session an improver agent is running")
+enum HarnessImproverStage {
+  @doc("Propose edits on one dimension (INV or DOM)")
+  Propose: "propose",
+
+  @doc("Compose one harness from the candidates and their evidence")
+  Compose: "compose",
+
+  @doc("Choose one output among anonymous candidates")
+  Select: "select",
+
+  @doc("Record what each edit did and at most one transferable lesson")
+  Experience: "experience",
+}

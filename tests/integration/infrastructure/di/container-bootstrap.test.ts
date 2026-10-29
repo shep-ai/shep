@@ -400,7 +400,16 @@ const CRITICAL_INFRA_TOKENS: readonly string[] = [
   'ILearnedHarnessRepository',
   'IHarnessRefinementRepository',
   'IHarnessInstaller',
+  'IHarnessImprover',
+  'IEvidenceWorkspace',
   'GetCurrentHarnessUseCase',
+  'ReflectOnFeatureRunUseCase',
+  'RecordVersionOutcomeUseCase',
+  'AdoptHarnessVersionUseCase',
+  'RejectHarnessVersionUseCase',
+  'RollbackHarnessVersionUseCase',
+  'ListHarnessHistoryUseCase',
+  'GetHarnessVersionUseCase',
 ] as const;
 
 /**

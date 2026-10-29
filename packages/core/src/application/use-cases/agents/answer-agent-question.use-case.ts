@@ -53,6 +53,7 @@ import {
 } from '../../../domain/shared/decision-builders.js';
 import { ApproveAgentRunUseCase } from './approve-agent-run.use-case.js';
 import { RejectAgentRunUseCase } from './reject-agent-run.use-case.js';
+import { ResolveHarnessDecisionUseCase } from '../harness-learning/resolve-harness-decision.use-case.js';
 
 export interface AnswerAgentQuestionResult {
   /** True when the collaboration feature flag is on and the answer was applied. */
@@ -88,7 +89,10 @@ export class AnswerAgentQuestionUseCase {
     @inject(RejectAgentRunUseCase)
     private readonly rejectAgentRun: RejectAgentRunUseCase,
     @inject('ITelemetry')
-    private readonly telemetry: ITelemetry
+    private readonly telemetry: ITelemetry,
+    /** Applies answers to learned-harness candidates (spec 150); optional for older callers. */
+    @inject(ResolveHarnessDecisionUseCase)
+    private readonly harnessDecisions?: ResolveHarnessDecisionUseCase
   ) {}
 
   async execute(input: AnswerAgentQuestionInput): Promise<AnswerAgentQuestionResult> {
@@ -126,6 +130,11 @@ export class AnswerAgentQuestionUseCase {
 
     // Forward to the approval-gate use case when the question is gate-linked.
     const forwardedToGate = await this.maybeForwardToGate(existing, answer, responses);
+
+    // A learned-harness candidate (spec 150): adopt or reject the version.
+    if (responses && existing.decision?.kind === DecisionKind.HarnessChange) {
+      await this.harnessDecisions?.execute(responses, input.answeredBy);
+    }
 
     const updated = await this.questionRepository.findById(input.appId, input.questionId);
     return { enabled: true, question: updated ?? existing, forwardedToGate };

@@ -15,6 +15,18 @@ import type {
 import type { IHarnessRefinementRepository } from '@/application/ports/output/repositories/harness-refinement-repository.interface.js';
 import type { ISettingsRepository } from '@/application/ports/output/repositories/settings.repository.interface.js';
 import type { ResolveSpaceContextUseCase } from '@/application/use-cases/spaces/resolve-space-context.use-case.js';
+import type {
+  EvidenceFiles,
+  HarvestedHarness,
+  IEvidenceWorkspace,
+} from '@/application/ports/output/services/evidence-workspace.interface.js';
+import {
+  ImproverError,
+  type IHarnessImprover,
+  type ImproverMission,
+  type ImproverReply,
+} from '@/application/ports/output/services/harness-improver.interface.js';
+import type { HarnessTree } from '@/domain/harness-learning/harness-tree.js';
 import { createDefaultSettings } from '@/domain/factories/settings-defaults.factory.js';
 import {
   LearnedHarnessStatus,
@@ -187,4 +199,77 @@ export function fakeSpaceContext(
       ...(productLineId ? { productLine: { id: productLineId, name: 'Line' } } : {}),
     })),
   } as unknown as ResolveSpaceContextUseCase;
+}
+
+/* ------------------------------------------------------------------ */
+/*  Improver + evidence workspace fakes                               */
+/* ------------------------------------------------------------------ */
+
+export interface FakeWorkspaceEntry {
+  label: string;
+  files: EvidenceFiles;
+  harness: HarnessTree;
+  disposed: boolean;
+}
+
+/** An evidence workspace held in memory; an improver edits `harness` in place. */
+export class InMemoryEvidenceWorkspace implements IEvidenceWorkspace {
+  readonly roots = new Map<string, FakeWorkspaceEntry>();
+  /** Off-surface paths a fake improver "left" in the workspace, by root. */
+  readonly rejected = new Map<string, string[]>();
+  private next = 0;
+
+  async create(label: string, files: EvidenceFiles, harness: HarnessTree): Promise<string> {
+    const root = `/ws/${++this.next}-${label}`;
+    this.roots.set(root, { label, files: { ...files }, harness: { ...harness }, disposed: false });
+    return root;
+  }
+
+  async readHarness(root: string): Promise<HarvestedHarness> {
+    const entry = this.roots.get(root);
+    return { tree: { ...(entry?.harness ?? {}) }, rejected: this.rejected.get(root) ?? [] };
+  }
+
+  async dispose(root: string): Promise<void> {
+    const entry = this.roots.get(root);
+    if (entry) entry.disposed = true;
+  }
+
+  entry(root: string): FakeWorkspaceEntry {
+    const e = this.roots.get(root);
+    if (!e) throw new Error(`no workspace ${root}`);
+    return e;
+  }
+}
+
+/** One scripted improver turn: edit the workspace harness and/or reply. */
+export type ImproverScript = (
+  mission: ImproverMission,
+  workspace: FakeWorkspaceEntry
+) => { text?: string; costUsd?: number; fail?: string } | void;
+
+/**
+ * An improver that runs a script per stage label prefix (`inv`, `dom`, `agg`,
+ * `c`, `select`, `experience`). Unscripted stages reply KEEP_BASE.
+ */
+export class ScriptedImprover implements IHarnessImprover {
+  readonly missions: ImproverMission[] = [];
+
+  constructor(
+    private readonly workspace: InMemoryEvidenceWorkspace,
+    private readonly scripts: Record<string, ImproverScript> = {}
+  ) {}
+
+  async run(mission: ImproverMission): Promise<ImproverReply> {
+    this.missions.push(mission);
+    const base = mission.label.split('.')[0];
+    const key = Object.keys(this.scripts)
+      .sort((a, b) => b.length - a.length)
+      .find((prefix) => base.startsWith(prefix));
+    const out = key
+      ? this.scripts[key](mission, this.workspace.entry(mission.workspaceRoot))
+      : undefined;
+    if (out && out.fail) throw new ImproverError(out.fail, out.costUsd ?? 0);
+    return { text: out?.text ?? '<notes>KEEP_BASE</notes>', costUsd: out?.costUsd ?? 0.1 };
+  }
 }
