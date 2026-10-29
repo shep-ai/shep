@@ -3372,3 +3372,8 @@ on client navigation and had no route on a refresh or shared link. Next 16.4's s
 matching turned it into a build error. Every new `@drawer/<route>` gets a null children stub;
 `drawer-slot-parity.test.ts` enforces it. After a Next upgrade, run `pnpm build:web:prod` —
 unit tests and the dev server do not run this validation.
+5. Sandbox e2e: the preinstalled Chromium build can differ from the one the pinned Playwright
+   wants (every web spec fails at `browserType.launch`). Symlink `/opt/pw-browsers/*-<wanted>` to
+   the installed build, then compare remaining failures against a `main` worktree run.
+6. `pnpm test:e2e:cli` can leave a `shep _serve` on port 4050. A packaged Electron launch then
+   waits forever on the invisible "port in use" dialog — kill it before launching under xvfb.
