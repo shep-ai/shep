@@ -10,7 +10,7 @@ status:
   phase: 'ready-to-implement'
   progress:
     completed: 0
-    total: 26
+    total: 28
     percentage: 0
   currentTask: null
   lastUpdated: '2026-10-28T21:55:00Z'

@@ -53,7 +53,16 @@ Reflect mode (phase 5) is the first slice with user value and is cheap enough to
 every feature. Explore mode (phase 6) reuses the improver, validator, workspace and
 reflection from phase 5 and adds only probing, the ledger and selection. Presentation
 (phase 7) is parallel across CLI, Web and TUI because all three call the same use cases
-and decisions already render everywhere. Telemetry, docs and the end-to-end proof close.
+and decisions already render everywhere; it also adds the Self-learning settings section
+and the per-feature Explore toggle on every create surface. Telemetry, docs and the
+end-to-end proof close.
+
+## Opt-in Defaults
+
+Learning is off at every level until the user turns it on: the `selfLearning` flag
+defaults off; with it on, `learning.mode` defaults to Off; adoption policy defaults to
+Manual; Explore runs only when the mode is Explore or a feature was created with the
+Explore toggle. With nothing adopted, the installer writes nothing.
 
 ## Files to Create
 
@@ -64,7 +73,7 @@ and decisions already render everywhere. Telemetry, docs and the end-to-end proo
 | Ports | learned-harness repository, harness installer, harness improver, evidence workspace, probe worktree |
 | Use cases | `application/use-cases/harness-learning/`: build evidence, reflect on run, refine, select, reflect on adoption, adopt, reject, rollback, get current, history, record outcome, select lessons |
 | Infrastructure | migration 174, mapper, SQLite repository, installers + registry, agent improver, evidence workspace, git probe worktrees, prompts + `NOTICE.md`, two graph nodes, overlay prompt section, DI module |
-| Presentation | `shep learn` command group; `/learning` page, server actions, three components with stories |
+| Presentation | `shep learn` command group; `/learning` page, server actions, three components with stories; Self-learning settings section with story |
 | Docs | `docs/architecture/self-learning-harness.md` |
 
 ## Files to Modify
@@ -78,6 +87,8 @@ and decisions already render everywhere. Telemetry, docs and the end-to-end proo
 | `feature-context.builder.ts` | Interactive agent receives the overlay |
 | `git-commit.service.ts` | Generalise the never-commit pathspec to installer paths |
 | `container.ts`, CLI index, control center, TUI, locales | Registration and surfaces |
+| `feature.tsp`, `create-feature.use-case.ts`, `feature.mapper.ts`, `feat/new.command.ts`, feature-create drawer, TUI create prompts | Per-feature Explore override on every create surface |
+| `settings-page-client.tsx`, `settings-section-nav.tsx` | Mount the Self-learning section |
 
 ## Testing Strategy (TDD: Tests FIRST)
 

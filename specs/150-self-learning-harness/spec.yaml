@@ -138,9 +138,19 @@ content: |
         already belongs to spec 119), Web (a Learned harness page per repository with version timeline, diff, edit verdicts,
         lessons and metrics; decisions in the existing inbox) and TUI (decisions in the
         control center) all call the same use cases
-  - [ ] Behind `FeatureFlags.selfLearning` (default off) and `Settings.learning`
-        (mode Off / Reflect / Explore, explore k and USD cap, adoption policy, always-on cap,
-        regression sample size); content-free telemetry events only
+  - [ ] Opt-in at every level: `FeatureFlags.selfLearning` defaults off, and with it on
+        `Settings.learning.mode` still defaults to Off — the user picks Reflect or Explore.
+        Adoption policy defaults to Manual. With the flag off, or the mode Off and no adopted
+        version, prompts and worktrees are byte-identical to today; content-free telemetry
+        events only
+  - [ ] Web Settings has a Self-learning section (shown when the flag is on): mode, Explore
+        k and USD cap, adoption policy, always-on character cap, regression sample size —
+        with the cost of Explore stated next to it; the flag itself appears in the existing
+        feature-flags list
+  - [ ] Explore can be switched on for a single feature from every surface that creates one:
+        a toggle in the web feature-create drawer, `shep feat new --explore [--explore-k N]`
+        and the TUI create flow; the choice is stored on the feature and overrides the scope
+        mode for that run only
   - [ ] Prompt texts adapted from Harness² carry the Apache-2.0 attribution header and a
         `NOTICE.md` beside them
 
@@ -160,7 +170,9 @@ content: |
   | `infrastructure/di/modules/` | Low | Register the new ports and use cases by string token |
   | `src/presentation/cli/commands/learn/` | Medium | Nine subcommands, nine locales |
   | `src/presentation/web/app/learning/`, `components/features/learned-harness/` | Medium | Page, components with stories, server actions |
-  | `src/presentation/tui/` | Low | HarnessChange decisions render in the control center |
+  | `src/presentation/tui/` | Low | HarnessChange decisions render in the control center; explore toggle in the create flow |
+  | `components/features/settings/`, `components/common/feature-create-drawer/` | Medium | Self-learning settings section; per-feature Explore toggle |
+  | `tsp/domain/entities/feature.tsp`, `create-feature.use-case.ts`, `feat/new.command.ts` | Low | `exploreHarness` / `exploreK` on the feature and its create input |
   | `docs/architecture/self-learning-harness.md`, prompts `NOTICE.md` | Low | Architecture doc and attribution |
 
   ## Dependencies

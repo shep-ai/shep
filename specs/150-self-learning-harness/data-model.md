@@ -111,8 +111,14 @@ improvers. Outcome rows tie finished features to the version they ran on.
 ### Settings
 
 - Add: `featureFlags.selfLearning: boolean` (default false)
-- Add: `learning: LearningConfig` — mode, exploreK (1), exploreMaxCostUsd, adoptionPolicy
+- Add: `learning: LearningConfig` — mode (Off), exploreK (1), exploreMaxCostUsd, adoptionPolicy
   (Manual), alwaysOnCharCap (4000), regressionMinSample (5)
+
+### Feature
+
+- Add: `exploreHarness?: boolean` — run this feature in Explore mode regardless of the scope
+  mode
+- Add: `exploreK?: int32` — Explore budget for this feature (falls back to `learning.exploreK`)
 
 ### Decision
 

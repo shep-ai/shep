@@ -40,7 +40,7 @@ tasks:
     title: Settings, feature flag and decision kind
     description: >
       Add FeatureFlags.selfLearning (default false) and Settings.learning (LearningConfig:
-      mode, exploreK default 1, exploreMaxCostUsd, adoptionPolicy default Manual,
+      mode default Off, exploreK default 1, exploreMaxCostUsd, adoptionPolicy default Manual,
       alwaysOnCharCap default 4000, regressionMinSample default 5). Add
       DecisionKind.HarnessChange. Follow the LESSONS.md flag checklist (catalog, defaults,
       mapper, migration columns, telemetry flag properties).
@@ -50,6 +50,7 @@ tasks:
     acceptanceCriteria:
       - FEATURE_FLAG_CATALOG has the flag (total Record compiles)
       - Defaults are returned when the database has no persisted value
+      - Defaults are flag off, mode Off, policy Manual — nothing learns until the user opts in
       - Settings round-trip through the SQLite mapper including every learning field
     tdd:
       red:
@@ -559,6 +560,8 @@ tasks:
       - task-22
       - task-23
       - task-24
+      - task-27
+      - task-28
     acceptanceCriteria:
       - Test passes locally and in CI on every OS in the matrix
       - pnpm validate, test:unit, test:int and build pass
@@ -570,22 +573,79 @@ tasks:
       refactor: []
     estimatedEffort: M
 
-totalEstimate: XL (26 tasks — 9 S, 13 M, 4 L)
+  - id: task-27
+    title: Web Self-learning settings section
+    description: >
+      A Self-learning section in Settings, shown when the selfLearning flag is on: mode (Off /
+      Reflect / Explore) with a one-line explanation of each, Explore k and USD cap with the
+      cost stated (about 4x the implement step at k = 1), adoption policy (Manual,
+      AutoTextOnly, Auto) noting that scripts and hooks always need a person, always-on
+      character cap and regression sample size. Saves through the existing update-settings
+      action; added to the settings section nav; nine locales.
+    state: Todo
+    dependencies:
+      - task-2
+    acceptanceCriteria:
+      - Section hidden with the flag off; visible and editable with it on
+      - Every field round-trips through update-settings and reloads with its saved value
+      - Colocated story covers default, loading, error and flag-off states
+      - Writes spread the existing learning sub-object, never rebuild it (LESSONS.md)
+    tdd:
+      red:
+        - Component unit tests for visibility, field changes and the save payload
+      green:
+        - Implement self-learning-settings-section.tsx and wire it into settings-page-client
+      refactor:
+        - Reuse settings-rows and timeout-slider controls rather than new inputs
+    estimatedEffort: M
+  - id: task-28
+    title: Per-feature Explore toggle on every create surface
+    description: >
+      Add exploreHarness (boolean) and exploreK (int) to the Feature entity and the create
+      input (TypeSpec, migration column, mapper, repository SQL — the four-edit rule in
+      LESSONS.md). CreateFeatureUseCase stores them; the worker routes to explore_implement
+      when exploreHarness is set, regardless of the scope mode. Surfaces: a toggle with k and
+      cost note in the web feature-create drawer, `shep feat new --explore [--explore-k N]`,
+      and an explore choice in the TUI create flow. All shown only with the flag on.
+    state: Todo
+    dependencies:
+      - task-1
+      - task-20
+    acceptanceCriteria:
+      - A feature created with Explore on runs explore_implement even when the scope mode is Off or Reflect
+      - Both fields round-trip through SQLite
+      - The toggle is absent on all three surfaces with the flag off
+      - The web drawer story covers the toggle on and off
+    tdd:
+      red:
+        - Feature mapper round-trip test for the new fields
+        - create-feature use-case test storing the override
+        - Graph routing test for the per-feature override
+        - Drawer component test, CLI option test, TUI create-flow test
+      green:
+        - Implement fields, migration, use-case input, routing and the three surfaces
+      refactor: []
+    estimatedEffort: M
+
+totalEstimate: XL (28 tasks — 9 S, 15 M, 4 L)
 
 openQuestions: []
 
 content: |
   ## Summary
 
-  26 tasks in 8 phases. Phases 1–5 deliver Reflect mode: the learned harness as data,
+  28 tasks in 8 phases. Phases 1–5 deliver Reflect mode: the learned harness as data,
   installed for every agent and every prompt, and a reflection after every run that files
   candidates as decisions with per-version metrics and rollback. Phase 6 adds Explore mode
   (Propose–Probe–Compose on implement with blind selection). Phases 7–8 add the CLI, Web and
-  TUI surfaces, telemetry, docs and an end-to-end proof.
+  TUI surfaces — including the Self-learning settings section and a per-feature Explore
+  toggle on every create surface — telemetry, docs and an end-to-end proof.
 
   ## Acceptance Checklist
 
   - [ ] Flag off: every existing test passes and prompts are byte-identical
+  - [ ] Defaults are flag off, mode Off, policy Manual — learning is opt-in at every level
+  - [ ] Settings section and per-feature Explore toggle exist on web, CLI and TUI
   - [ ] Empty harness: nothing installed, nothing committed
   - [ ] Reflect mode files a validated candidate after a merged run and after a failed run
   - [ ] Script and Hook components are never adopted without a person

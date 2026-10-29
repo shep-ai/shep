@@ -3329,3 +3329,13 @@ presentation layers") is a checklist item, not a design note: before calling a f
 each CLI command / TUI behaviour it adds and name the web surface that shows the same use-case
 result (page, drawer card, sidebar badge, settings section). If one is deliberately skipped, the
 spec's Out of Scope says so.
+
+## A plan with a setting must give its default and the screen that changes it
+
+Spec 150's first plan added `Settings.learning.mode` and a per-feature "Explore" option but
+never said what the mode defaults to, had no settings section to change it, and no toggle on
+the surfaces that create a feature. The user had to ask "is everything opt-in? is the UI
+covered?". **Rule:** for every new setting, flag or per-item option a plan introduces, state
+its default (and whether that keeps the feature opt-in), name the settings section that edits
+it, and list every surface that creates the item it applies to (web drawer, `shep feat new`,
+TUI) with a task for each — before calling the plan complete.
