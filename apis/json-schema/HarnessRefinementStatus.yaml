@@ -1,0 +1,11 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: HarnessRefinementStatus.yaml
+type: string
+enum:
+  - running
+  - proposed
+  - kept-base
+  - fell-back
+  - over-budget
+  - failed
+description: What became of one harness refinement

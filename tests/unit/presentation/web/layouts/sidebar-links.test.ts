@@ -35,6 +35,7 @@ const OFF = {
   factory: false,
   sdlcBoard: false,
   agentCoordination: false,
+  selfLearning: false,
 } satisfies FeatureFlagsState;
 
 describe('sidebar links', () => {

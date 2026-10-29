@@ -61,6 +61,7 @@ export const AllSections: Story = {
         factory: true,
         sdlcBoard: false,
         agentCoordination: false,
+        selfLearning: false,
       },
     },
     shepHome: '/opt/shep',

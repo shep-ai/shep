@@ -54,6 +54,7 @@ import { registerTelemetry } from '@/infrastructure/di/modules/register-telemetr
 import { registerGitCheckpoints } from '@/infrastructure/di/modules/register-git-checkpoints.js';
 import { registerFeatureConsole } from '@/infrastructure/di/modules/register-feature-console.js';
 import { registerProcesses } from '@/infrastructure/di/modules/register-processes.js';
+import { registerHarnessLearning } from '@/infrastructure/di/modules/register-harness-learning.js';
 import { registerSpaces } from '@/infrastructure/di/modules/register-spaces.js';
 import { registerTrackers } from '@/infrastructure/di/modules/register-trackers.js';
 import { registerBugLoop } from '@/infrastructure/di/modules/register-bug-loop.js';
@@ -394,6 +395,10 @@ const CRITICAL_INFRA_TOKENS: readonly string[] = [
   // through which the application layer can reach computeConfigHash and the
   // `.shep/dev.json` reader, so its absence breaks every run-plan use case.
   'IRunPlanStalenessProbe',
+  // Self-learning harness (spec 150): read by every feature-agent node when
+  // the selfLearning flag is on.
+  'ILearnedHarnessRepository',
+  'IHarnessRefinementRepository',
 ] as const;
 
 /**
@@ -492,6 +497,7 @@ describe('DI container bootstrap (integration)', () => {
     registerGitCheckpoints(scopedContainer);
     registerFeatureConsole(scopedContainer);
     registerProcesses(scopedContainer);
+    registerHarnessLearning(scopedContainer);
 
     // Replicate the eager bootstrap done by initializeContainer() so the
     // test exercises the SAME container shape that web routes see at runtime.

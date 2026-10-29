@@ -358,6 +358,25 @@ describe('SQLiteFeatureRepository', () => {
     });
   });
 
+  describe('explore override (spec 150)', () => {
+    it('round-trips exploreHarness and exploreK through create and update', async () => {
+      await repository.create(createTestFeature({ exploreHarness: true, exploreK: 2 }));
+      const stored = (await repository.findById('feat-1'))!;
+      expect(stored.exploreHarness).toBe(true);
+      expect(stored.exploreK).toBe(2);
+
+      await repository.update({ ...stored, exploreHarness: false, exploreK: 3 });
+      const updated = (await repository.findById('feat-1'))!;
+      expect(updated.exploreHarness).toBe(false);
+      expect(updated.exploreK).toBe(3);
+
+      await repository.update({ ...updated, exploreHarness: undefined, exploreK: undefined });
+      const cleared = (await repository.findById('feat-1'))!;
+      expect(cleared.exploreHarness).toBeUndefined();
+      expect(cleared.exploreK).toBeUndefined();
+    });
+  });
+
   describe('delete()', () => {
     it('should delete a feature', async () => {
       await repository.create(createTestFeature());

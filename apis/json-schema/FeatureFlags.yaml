@@ -110,6 +110,10 @@ properties:
     type: boolean
     default: false
     description: Agent coordination of overlapping features — an agent decides whether one waits for the other; off by default (spec 141)
+  selfLearning:
+    type: boolean
+    default: false
+    description: Self-learning harness — reflect on runs and propose harness changes; off by default (spec 150)
 required:
   - envDeploy
   - debug
@@ -138,4 +142,5 @@ required:
   - factory
   - sdlcBoard
   - agentCoordination
+  - selfLearning
 description: Feature flag toggles for runtime feature control

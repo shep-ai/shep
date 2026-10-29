@@ -60,6 +60,9 @@ properties:
   telemetry:
     $ref: TelemetryConfig.yaml
     description: Usage metrics preferences (optional, defaults applied at runtime)
+  learning:
+    $ref: LearningConfig.yaml
+    description: Self-learning harness settings (optional, defaults applied at runtime)
 required:
   - models
   - user

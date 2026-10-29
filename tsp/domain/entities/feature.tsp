@@ -483,6 +483,14 @@ model Feature extends SoftDeletableEntity {
   @doc("Last agent coordination decision with an overlapping feature (optional)")
   coordination?: FeatureCoordination;
 
+  // ── Self-learning harness (spec 150) ───────────────────────
+
+  @doc("Run this feature's implement phase in Explore mode regardless of the scope's learning mode (optional)")
+  exploreHarness?: boolean;
+
+  @doc("Explore budget k for this feature; falls back to the learning settings (optional)")
+  exploreK?: int32;
+
   // ── Archive State ──────────────────────────────────────────
 
   @doc("Lifecycle state prior to archiving, used to restore on unarchive (only set when lifecycle is Archived)")

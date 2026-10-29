@@ -16,7 +16,12 @@ import {
   type SettingsRow,
 } from '@/infrastructure/persistence/sqlite/mappers/settings.mapper.js';
 import type { Settings } from '@/domain/generated/output.js';
-import { AgentEffort } from '@/domain/generated/output.js';
+import {
+  AgentEffort,
+  HarnessAdoptionPolicy,
+  HarnessRecursion,
+  LearningMode,
+} from '@/domain/generated/output.js';
 import { createDefaultSettings } from '@/domain/factories/settings-defaults.factory.js';
 import {
   AgentType,
@@ -1575,6 +1580,44 @@ describe('Settings Mapper', () => {
         expect(row.feature_flag_agent_coordination).toBe(value ? 1 : 0);
         expect(fromDatabase(row).featureFlags?.agentCoordination).toBe(value);
       }
+    });
+  });
+
+  describe('self-learning harness (spec 150)', () => {
+    it('maps selfLearning to feature_flag_self_learning both ways', () => {
+      const base = createDefaultSettings().featureFlags!;
+      for (const value of [true, false]) {
+        const row = toDatabase(
+          createTestSettings({ featureFlags: { ...base, selfLearning: value } })
+        );
+        expect(row.feature_flag_self_learning).toBe(value ? 1 : 0);
+        expect(fromDatabase(row).featureFlags?.selfLearning).toBe(value);
+      }
+    });
+
+    it('stores learning settings as JSON and reads them back resolved', () => {
+      const learning = {
+        mode: LearningMode.Explore,
+        exploreK: 2,
+        exploreRecursion: HarnessRecursion.Sequential,
+        exploreMaxCostUsd: 7.5,
+        adoptionPolicy: HarnessAdoptionPolicy.AutoTextOnly,
+        alwaysOnCharCap: 3000,
+        regressionMinSample: 3,
+      };
+      const row = toDatabase(createTestSettings({ learning }));
+      expect(JSON.parse(row.learning_config!)).toEqual(learning);
+      expect(fromDatabase(row).learning).toEqual(learning);
+    });
+
+    it('leaves learning undefined when never configured, and resolves partial JSON', () => {
+      const row = toDatabase(createTestSettings({ learning: undefined }));
+      expect(row.learning_config).toBeNull();
+      expect(fromDatabase(row).learning).toBeUndefined();
+      const partial = fromDatabase({ ...row, learning_config: '{"mode":"reflect"}' });
+      expect(partial.learning?.mode).toBe(LearningMode.Reflect);
+      expect(partial.learning?.adoptionPolicy).toBe(HarnessAdoptionPolicy.Manual);
+      expect(fromDatabase({ ...row, learning_config: 'not json' }).learning).toBeUndefined();
     });
   });
 

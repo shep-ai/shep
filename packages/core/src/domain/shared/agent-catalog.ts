@@ -22,7 +22,7 @@
  * web package consumes `domain/` as raw TypeScript.
  */
 
-import { AgentType } from '../generated/output';
+import { AgentType, HarnessSurfaceFamily } from '../generated/output';
 
 /** How an agent is reached. */
 export type AgentKind =
@@ -97,6 +97,8 @@ export interface AgentDescriptor {
   readonly i18nKey: string;
   /** Where the signed-in account id lives, for agents that expose one. */
   readonly accountIdSource?: AgentAccountIdSource;
+  /** Where this agent reads learned-harness components from (spec 150). */
+  readonly harnessSurface: HarnessSurfaceFamily;
 }
 
 /**
@@ -506,6 +508,7 @@ const VERSION_FLAG = ['--version'] as const;
 export const AGENT_CATALOG: Record<AgentType, AgentDescriptor> = {
   [AgentType.ClaudeCode]: {
     type: AgentType.ClaudeCode,
+    harnessSurface: HarnessSurfaceFamily.ClaudeCode,
     label: 'Claude Code',
     description: 'Anthropic Claude Code CLI',
     kind: 'cli',
@@ -527,6 +530,7 @@ export const AGENT_CATALOG: Record<AgentType, AgentDescriptor> = {
   },
   [AgentType.KimiCode]: {
     type: AgentType.KimiCode,
+    harnessSurface: HarnessSurfaceFamily.PromptSection,
     label: 'Kimi Code',
     description: "Moonshot AI's Kimi Code CLI terminal agent (Kimi K-series models)",
     kind: 'cli',
@@ -542,6 +546,7 @@ export const AGENT_CATALOG: Record<AgentType, AgentDescriptor> = {
   },
   [AgentType.CodexCli]: {
     type: AgentType.CodexCli,
+    harnessSurface: HarnessSurfaceFamily.Codex,
     label: 'Codex CLI',
     description: "OpenAI's Codex CLI terminal agent (GPT models)",
     kind: 'cli',
@@ -564,6 +569,7 @@ export const AGENT_CATALOG: Record<AgentType, AgentDescriptor> = {
   },
   [AgentType.CopilotCli]: {
     type: AgentType.CopilotCli,
+    harnessSurface: HarnessSurfaceFamily.PromptSection,
     label: 'Copilot CLI',
     description: 'GitHub Copilot CLI (requires a Copilot subscription)',
     kind: 'cli',
@@ -580,6 +586,7 @@ export const AGENT_CATALOG: Record<AgentType, AgentDescriptor> = {
   },
   [AgentType.Cursor]: {
     type: AgentType.Cursor,
+    harnessSurface: HarnessSurfaceFamily.PromptSection,
     label: 'Cursor CLI',
     description: 'Cursor AI coding agent',
     kind: 'cli',
@@ -596,6 +603,7 @@ export const AGENT_CATALOG: Record<AgentType, AgentDescriptor> = {
   },
   [AgentType.GeminiCli]: {
     type: AgentType.GeminiCli,
+    harnessSurface: HarnessSurfaceFamily.PromptSection,
     label: 'Gemini CLI',
     description: 'Google Gemini CLI',
     kind: 'cli',
@@ -611,6 +619,7 @@ export const AGENT_CATALOG: Record<AgentType, AgentDescriptor> = {
   },
   [AgentType.Cline]: {
     type: AgentType.Cline,
+    harnessSurface: HarnessSurfaceFamily.PromptSection,
     label: 'Cline',
     description: 'Multi-provider agentic coding assistant with full tool use',
     kind: 'cli',
@@ -627,6 +636,7 @@ export const AGENT_CATALOG: Record<AgentType, AgentDescriptor> = {
   },
   [AgentType.OpenRouter]: {
     type: AgentType.OpenRouter,
+    harnessSurface: HarnessSurfaceFamily.PromptSection,
     label: 'OpenRouter',
     description: 'Access hundreds of AI models via the OpenRouter API',
     kind: 'sdk',
@@ -642,6 +652,7 @@ export const AGENT_CATALOG: Record<AgentType, AgentDescriptor> = {
   },
   [AgentType.TogetherAi]: {
     type: AgentType.TogetherAi,
+    harnessSurface: HarnessSurfaceFamily.PromptSection,
     label: 'Together AI',
     description: 'Fast open-source model inference via the Together AI API',
     kind: 'sdk',
@@ -657,6 +668,7 @@ export const AGENT_CATALOG: Record<AgentType, AgentDescriptor> = {
   },
   [AgentType.Ollama]: {
     type: AgentType.Ollama,
+    harnessSurface: HarnessSurfaceFamily.PromptSection,
     label: 'Ollama',
     description: 'Run local LLMs via Ollama (no API key required)',
     kind: 'sdk',
@@ -672,6 +684,7 @@ export const AGENT_CATALOG: Record<AgentType, AgentDescriptor> = {
   },
   [AgentType.LlmProxy]: {
     type: AgentType.LlmProxy,
+    harnessSurface: HarnessSurfaceFamily.PromptSection,
     label: 'LLM Proxy',
     description: 'Local OpenAI-compatible proxy (typically on port 4000)',
     kind: 'sdk',
@@ -687,6 +700,7 @@ export const AGENT_CATALOG: Record<AgentType, AgentDescriptor> = {
   },
   [AgentType.ShepHarness]: {
     type: AgentType.ShepHarness,
+    harnessSurface: HarnessSurfaceFamily.PromptSection,
     label: 'Shep Harness',
     description:
       'Shep-owned query-aware agent loop with permission prompts (experimental; uses an SDK backend)',
@@ -706,6 +720,7 @@ export const AGENT_CATALOG: Record<AgentType, AgentDescriptor> = {
   },
   [AgentType.Dev]: {
     type: AgentType.Dev,
+    harnessSurface: HarnessSurfaceFamily.PromptSection,
     label: 'Demo',
     description: 'Local development mock — no agent binary required',
     kind: 'mock',

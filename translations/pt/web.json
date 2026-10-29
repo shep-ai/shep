@@ -302,6 +302,8 @@
       "sdlcBoardDescription": "Mostrar o quadro SDLC: um quadro ao vivo das tarefas dos agentes nas funcionalidades ativas",
       "agentCoordination": "Coordenação de agentes",
       "agentCoordinationDescription": "Quando duas funcionalidades ativas alteram os mesmos arquivos, um agente decide se uma deve esperar pela outra",
+      "selfLearning": "Harness autodidata",
+      "selfLearningDescription": "O Shep aprende com cada execução de funcionalidade e propõe instruções, habilidades e scripts melhores para seus agentes. Você aprova cada mudança",
       "groupPlatform": "Plataforma",
       "groupSoftwareFactory": "Fábrica de software",
       "groupExperimental": "Experimental",

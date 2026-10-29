@@ -302,6 +302,8 @@
       "sdlcBoardDescription": "הצגת לוח ה-SDLC: לוח חי של משימות הסוכנים בכל הפיצ׳רים הפעילים",
       "agentCoordination": "תיאום סוכנים",
       "agentCoordinationDescription": "כששני פיצ׳רים פעילים משנים את אותם קבצים, סוכן מחליט אם אחד מהם צריך לחכות לשני",
+      "selfLearning": "רתמה לומדת",
+      "selfLearningDescription": "Shep לומד מכל הרצה של פיצ׳ר ומציע הוראות, כישורים וסקריפטים טובים יותר לסוכנים שלו. אתה מאשר כל שינוי",
       "groupPlatform": "פלטפורמה",
       "groupSoftwareFactory": "מפעל תוכנה",
       "groupExperimental": "ניסיוני",

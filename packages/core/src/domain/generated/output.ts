@@ -855,6 +855,60 @@ export type FeatureFlags = {
    * Agent coordination of overlapping features — an agent decides whether one waits for the other; off by default (spec 141)
    */
   agentCoordination: boolean;
+  /**
+   * Self-learning harness — reflect on runs and propose harness changes; off by default (spec 150)
+   */
+  selfLearning: boolean;
+};
+export enum LearningMode {
+  Off = 'off',
+  Reflect = 'reflect',
+  Explore = 'explore',
+}
+export enum HarnessRecursion {
+  Parallel = 'parallel',
+  Sequential = 'sequential',
+}
+export type float = any;
+export type float64 = float;
+export enum HarnessAdoptionPolicy {
+  Manual = 'manual',
+  AutoTextOnly = 'auto-text-only',
+  Auto = 'auto',
+}
+
+/**
+ * Self-learning harness settings (spec 150)
+ */
+export type LearningConfig = {
+  /**
+   * Off, Reflect (propose after each run) or Explore (also probe the implement phase)
+   */
+  mode: LearningMode;
+  /**
+   * Task-level recursion budget for Explore; 4k executions and 3k improver sessions
+   */
+  exploreK: number;
+  /**
+   * Recursion shape for Explore
+   */
+  exploreRecursion: HarnessRecursion;
+  /**
+   * Cost cap in USD for one Explore refinement; over it the base result is used
+   */
+  exploreMaxCostUsd: float64;
+  /**
+   * When a candidate is adopted without a person; scripts and hooks always need one
+   */
+  adoptionPolicy: HarnessAdoptionPolicy;
+  /**
+   * Maximum characters of always-on harness text
+   */
+  alwaysOnCharCap: number;
+  /**
+   * Features a version and its parent each need before a regression is judged
+   */
+  regressionMinSample: number;
 };
 export enum WhatsAppAdapterKind {
   Baileys = 'baileys',
@@ -1129,8 +1183,6 @@ export enum HarnessBudgetMode {
   Balanced = 'balanced',
   Quality = 'quality',
 }
-export type float = any;
-export type float64 = float;
 export enum ChunkVisibility {
   Hidden = 'hidden',
   Short = 'short',
@@ -1424,6 +1476,10 @@ export type Settings = BaseEntity & {
    * Usage metrics preferences (optional, defaults applied at runtime)
    */
   telemetry?: TelemetryConfig;
+  /**
+   * Self-learning harness settings (optional, defaults applied at runtime)
+   */
+  learning?: LearningConfig;
 };
 export enum HarnessEvalRunStatus {
   Pending = 'pending',
@@ -2020,6 +2076,14 @@ export type Feature = SoftDeletableEntity & {
    * Last agent coordination decision with an overlapping feature (optional)
    */
   coordination?: FeatureCoordination;
+  /**
+   * Run this feature's implement phase in Explore mode regardless of the scope's learning mode (optional)
+   */
+  exploreHarness?: boolean;
+  /**
+   * Explore budget k for this feature; falls back to the learning settings (optional)
+   */
+  exploreK?: number;
   /**
    * Lifecycle state prior to archiving, used to restore on unarchive (only set when lifecycle is Archived)
    */
@@ -4227,6 +4291,334 @@ export type ProjectMemory = BaseEntity & {
    * Product line the entry belongs to, when its repository has one
    */
   productLineId?: string;
+};
+export enum HarnessComponentKind {
+  Instructions = 'instructions',
+  Guardrails = 'guardrails',
+  Memory = 'memory',
+  ToolGuidance = 'tool-guidance',
+  Skill = 'skill',
+  Script = 'script',
+  Subagent = 'subagent',
+  Hook = 'hook',
+}
+
+/**
+ * One file of a learned harness overlay
+ */
+export type HarnessComponent = {
+  /**
+   * Kind of component
+   */
+  kind: HarnessComponentKind;
+  /**
+   * Path on the editable surface, e.g. skills/db-migration/SKILL.md
+   */
+  path: string;
+  /**
+   * File content
+   */
+  content: string;
+  /**
+   * SHA-256 of the content, for diff and provenance
+   */
+  sha256: string;
+};
+export enum HarnessScanRule {
+  Secret = 'secret',
+  Network = 'network',
+  Destructive = 'destructive',
+  OutsideWorktree = 'outside-worktree',
+}
+
+/**
+ * One finding of the static scan of a candidate harness
+ */
+export type HarnessScanFinding = {
+  /**
+   * Component path
+   */
+  path: string;
+  /**
+   * 1-based line number
+   */
+  line: number;
+  /**
+   * What was flagged
+   */
+  rule: HarnessScanRule;
+  /**
+   * The flagged line, trimmed
+   */
+  excerpt: string;
+};
+export enum LearnedHarnessStatus {
+  Candidate = 'candidate',
+  Adopted = 'adopted',
+  Rejected = 'rejected',
+  RolledBack = 'rolled-back',
+  Superseded = 'superseded',
+}
+export enum HarnessOrigin {
+  Base = 'base',
+  Reflect = 'reflect',
+  Explore = 'explore',
+  Manual = 'manual',
+}
+
+/**
+ * A version of the learned harness overlay for one scope
+ */
+export type LearnedHarnessVersion = BaseEntity & {
+  /**
+   * Reach of this version: Project (default), ProductLine or Space
+   */
+  scope: MemoryScope;
+  /**
+   * Normalised repository path the version was learned in
+   */
+  repositoryPath: string;
+  /**
+   * Space of the version, when its repository has one
+   */
+  spaceId?: string;
+  /**
+   * Product line of the version, when its repository has one
+   */
+  productLineId?: string;
+  /**
+   * Version this one was derived from; the rollback target
+   */
+  parentVersionId?: string;
+  /**
+   * Where the version is in its life
+   */
+  status: LearnedHarnessStatus;
+  /**
+   * How the version was produced
+   */
+  origin: HarnessOrigin;
+  /**
+   * The overlay's components; empty for the base version
+   */
+  components: HarnessComponent[];
+  /**
+   * Composer notes: each kept, revised or dropped edit with the trajectory moment behind it
+   */
+  notes?: string;
+  /**
+   * Feature whose run produced this version
+   */
+  sourceFeatureId?: string;
+  /**
+   * Refinement that produced this version
+   */
+  refinementRunId?: string;
+  /**
+   * Feedback given when the candidate was rejected, or why it was rolled back
+   */
+  statusReason?: string;
+};
+export enum HarnessEditDimension {
+  Inv = 'inv',
+  Dom = 'dom',
+  Compose = 'compose',
+}
+export enum HarnessEditVerdict {
+  Helped = 'helped',
+  Hurt = 'hurt',
+  NoObservedEffect = 'no-observed-effect',
+  Confounded = 'confounded',
+  Untested = 'untested',
+}
+
+/**
+ * What one harness edit did, recorded by the reflector
+ */
+export type HarnessEditRecord = BaseEntity & {
+  /**
+   * Candidate version the edit belongs to
+   */
+  versionId: string;
+  /**
+   * Refinement that produced the edit
+   */
+  refinementRunId: string;
+  /**
+   * Editor that produced the edit
+   */
+  dimension: HarnessEditDimension;
+  /**
+   * Changed component path
+   */
+  componentPath: string;
+  /**
+   * What the edit changed
+   */
+  change: string;
+  /**
+   * The execution difference it produced, and where it was seen
+   */
+  observed: string;
+  /**
+   * Verdict on the edit
+   */
+  verdict: HarnessEditVerdict;
+};
+export enum LessonConfidence {
+  High = 'high',
+  Medium = 'medium',
+  Low = 'low',
+}
+
+/**
+ * A transferable lesson about harness edits, read by later refinements in the same scope
+ */
+export type HarnessLesson = BaseEntity & {
+  /**
+   * Reach of the lesson; same isolation as harness versions
+   */
+  scope: MemoryScope;
+  /**
+   * Normalised repository path the lesson was learned in
+   */
+  repositoryPath: string;
+  /**
+   * Space of the lesson, when its repository has one
+   */
+  spaceId?: string;
+  /**
+   * Product line of the lesson, when its repository has one
+   */
+  productLineId?: string;
+  /**
+   * The shape of situation the lesson applies to
+   */
+  cue: string;
+  /**
+   * The operation to perform on a harness, naming the component
+   */
+  lesson: string;
+  /**
+   * The edit records and execution contrast the lesson rests on
+   */
+  evidence: string;
+  /**
+   * How strongly the evidence supports the lesson
+   */
+  confidence: LessonConfidence;
+  /**
+   * Feature whose run taught the lesson
+   */
+  sourceFeatureId: string;
+  /**
+   * Version whose refinement wrote the lesson
+   */
+  versionId: string;
+};
+export enum HarnessRefinementStatus {
+  Running = 'running',
+  Proposed = 'proposed',
+  KeptBase = 'kept-base',
+  FellBack = 'fell-back',
+  OverBudget = 'over-budget',
+  Failed = 'failed',
+}
+
+/**
+ * One harness refinement of one feature run, with its budget ledger
+ */
+export type HarnessRefinementRun = BaseEntity & {
+  /**
+   * Feature whose run is being learned from
+   */
+  featureId: string;
+  /**
+   * Normalised repository path of the feature
+   */
+  repositoryPath: string;
+  /**
+   * Reflect (no probes) or Explore (probes)
+   */
+  mode: LearningMode;
+  /**
+   * Recursion shape, for Explore runs
+   */
+  recursion?: HarnessRecursion;
+  /**
+   * Task-level recursion budget; 0 for Reflect
+   */
+  k: number;
+  /**
+   * Executions performed (4k in Explore)
+   */
+  rollouts: number;
+  /**
+   * Improver sessions performed (3k in Explore, 3 in Reflect)
+   */
+  sessions: number;
+  /**
+   * Total cost of improvement sessions and probes in USD
+   */
+  costUsd: float64;
+  /**
+   * What became of the refinement
+   */
+  status: HarnessRefinementStatus;
+  /**
+   * Candidate version produced, when any
+   */
+  candidateVersionId?: string;
+  /**
+   * Label of the output chosen by blind selection
+   */
+  chosenLabel?: string;
+  /**
+   * Why the selector chose it
+   */
+  selectionReason?: string;
+  /**
+   * Error text when the refinement failed
+   */
+  error?: string;
+};
+
+/**
+ * How one finished feature did on the harness version it ran with
+ */
+export type HarnessVersionOutcome = BaseEntity & {
+  /**
+   * Version the feature ran on
+   */
+  versionId: string;
+  /**
+   * The feature
+   */
+  featureId: string;
+  /**
+   * CI-fix attempts in the merge phase
+   */
+  ciFixAttempts: number;
+  /**
+   * Approval-gate rejections across the run
+   */
+  gateRejections: number;
+  /**
+   * Schema validation repairs across the run
+   */
+  validationRepairs: number;
+  /**
+   * Agent turns across the run
+   */
+  numTurns: number;
+  /**
+   * Agent cost across the run in USD
+   */
+  costUsd: float64;
+  /**
+   * Whether the feature merged
+   */
+  merged: boolean;
 };
 export enum PrCommentTrigger {
   Off = 'Off',
@@ -9164,6 +9556,7 @@ export enum DecisionKind {
   ApprovalGate = 'approval_gate',
   AgentAsk = 'agent_ask',
   Legacy = 'legacy',
+  HarnessChange = 'harness_change',
 }
 export enum DecisionResponseMode {
   Live = 'live',
@@ -9682,6 +10075,21 @@ export enum CoordinationOutcome {
   Deferred = 'deferred',
   Unavailable = 'unavailable',
   Stale = 'stale',
+}
+export enum HarnessSurfaceFamily {
+  ClaudeCode = 'claude-code',
+  Codex = 'codex',
+  PromptSection = 'prompt-section',
+}
+export enum HarnessVersionTrend {
+  InsufficientData = 'insufficient-data',
+  Improved = 'improved',
+  Unchanged = 'unchanged',
+  Regressed = 'regressed',
+}
+export enum HarnessAlwaysOnChannel {
+  SystemPrompt = 'system-prompt',
+  Prompt = 'prompt',
 }
 export enum FeatureState {
   Running = 'running',

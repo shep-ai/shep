@@ -1,0 +1,47 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: LearningConfig.yaml
+type: object
+properties:
+  mode:
+    $ref: LearningMode.yaml
+    default: off
+    description: Off, Reflect (propose after each run) or Explore (also probe the implement phase)
+  exploreK:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    default: 1
+    description: Task-level recursion budget for Explore; 4k executions and 3k improver sessions
+  exploreRecursion:
+    $ref: HarnessRecursion.yaml
+    default: parallel
+    description: Recursion shape for Explore
+  exploreMaxCostUsd:
+    type: number
+    default: 20
+    description: Cost cap in USD for one Explore refinement; over it the base result is used
+  adoptionPolicy:
+    $ref: HarnessAdoptionPolicy.yaml
+    default: manual
+    description: When a candidate is adopted without a person; scripts and hooks always need one
+  alwaysOnCharCap:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    default: 4000
+    description: Maximum characters of always-on harness text
+  regressionMinSample:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    default: 5
+    description: Features a version and its parent each need before a regression is judged
+required:
+  - mode
+  - exploreK
+  - exploreRecursion
+  - exploreMaxCostUsd
+  - adoptionPolicy
+  - alwaysOnCharCap
+  - regressionMinSample
+description: Self-learning harness settings (spec 150)

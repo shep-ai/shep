@@ -31,6 +31,7 @@ const defaultFlags: FeatureFlagsState = {
   factory: true,
   sdlcBoard: false,
   agentCoordination: false,
+  selfLearning: false,
 };
 
 const FeatureFlagsContext = createContext<FeatureFlagsState>(defaultFlags);

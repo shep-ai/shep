@@ -1,0 +1,10 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: LearnedHarnessStatus.yaml
+type: string
+enum:
+  - candidate
+  - adopted
+  - rejected
+  - rolled-back
+  - superseded
+description: Lifecycle of a learned harness version

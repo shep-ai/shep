@@ -29,7 +29,7 @@ tasks:
       content, sha256), HarnessEditRecord, HarnessLesson, HarnessRefinementRun (mode, k,
       ledger counts, costUsd, chosen label, selection reason), HarnessVersionOutcome
       (per-feature outcome on a version). Regenerate with pnpm generate.
-    state: Todo
+    state: Done
     dependencies: []
     acceptanceCriteria:
       - pnpm generate produces every enum and entity; pnpm tsp:compile has no warnings
@@ -44,7 +44,7 @@ tasks:
       alwaysOnCharCap default 4000, regressionMinSample default 5). Add
       DecisionKind.HarnessChange. Follow the LESSONS.md flag checklist (catalog, defaults,
       mapper, migration columns, telemetry flag properties).
-    state: Todo
+    state: Done
     dependencies:
       - task-1
     acceptanceCriteria:
@@ -68,7 +68,7 @@ tasks:
       learned_harness_edits, learned_harness_lessons, harness_refinement_runs and
       learned_harness_outcomes (all
       CREATE TABLE IF NOT EXISTS, indexed by scope keys), plus the settings columns from task-2.
-    state: Todo
+    state: Done
     dependencies:
       - task-2
     acceptanceCriteria:
@@ -89,7 +89,7 @@ tasks:
       skills dir, subagent dir, scripts dir, hooks file, caps), validateHarnessTree returning
       every problem as actionable prose, autotrigger repair within the always-on cap,
       diffHarness (added, removed, modified, kept) and alwaysOnText.
-    state: Todo
+    state: Done
     dependencies:
       - task-1
     acceptanceCriteria:
@@ -113,7 +113,7 @@ tasks:
       <notes>, ```choice, <why>, <edits> and <experience> that fail closed; a static candidate
       scan flagging secrets, network fetches, destructive shell and writes outside the
       worktree in Script and Hook components.
-    state: Todo
+    state: Done
     dependencies:
       - task-1
     acceptanceCriteria:
@@ -135,7 +135,7 @@ tasks:
       validation repairs, cost, turns, tool error rate, merged) and compareToParent flags a
       regression once both versions have regressionMinSample features and the child is worse
       on a composite score beyond a tolerance.
-    state: Todo
+    state: Done
     dependencies:
       - task-1
     acceptanceCriteria:
@@ -155,7 +155,7 @@ tasks:
       ILearnedHarnessRepository (versions with components, current adopted version per scope,
       edit records, lessons, refinement runs, outcome rows) and its SQLite implementation and
       mapper, registered by string token.
-    state: Todo
+    state: Done
     dependencies:
       - task-3
       - task-4
@@ -178,7 +178,7 @@ tasks:
       harvested tree, cost), IEvidenceWorkspace (materialise an evidence bundle as files, read
       the edited harness back), IProbeWorktreeService (fork from a checkpoint, run checks,
       collect diff, dispose). JSDoc contracts; register tokens; add to the bootstrap test.
-    state: Todo
+    state: Done
     dependencies:
       - task-1
     acceptanceCriteria:

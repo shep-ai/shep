@@ -302,6 +302,8 @@
       "sdlcBoardDescription": "عرض لوحة SDLC: لوحة مباشرة لمهام الوكلاء عبر الميزات النشطة",
       "agentCoordination": "تنسيق الوكلاء",
       "agentCoordinationDescription": "عندما تغيّر ميزتان نشطتان الملفات نفسها، دع وكيلًا يقرر ما إذا كان على إحداهما انتظار الأخرى",
+      "selfLearning": "إطار التعلّم الذاتي",
+      "selfLearningDescription": "دع Shep يتعلّم من كل تشغيل لميزة ويقترح تعليمات ومهارات وسكربتات أفضل لوكلائه. أنت توافق على كل تغيير",
       "groupPlatform": "المنصة",
       "groupSoftwareFactory": "مصنع البرمجيات",
       "groupExperimental": "تجريبي",

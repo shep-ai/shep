@@ -302,6 +302,8 @@
       "sdlcBoardDescription": "Show the SDLC board: a live board of agent tasks across active features",
       "agentCoordination": "Agent coordination",
       "agentCoordinationDescription": "When two active features change the same files, let an agent decide whether one should wait for the other",
+      "selfLearning": "Self-learning harness",
+      "selfLearningDescription": "Let Shep learn from each feature run and propose better instructions, skills and scripts for its agents. You approve every change",
       "groupPlatform": "Platform",
       "groupSoftwareFactory": "Software factory",
       "groupExperimental": "Experimental",

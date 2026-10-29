@@ -35,6 +35,7 @@ const defaultFeatureFlags = {
   factory: true,
   sdlcBoard: false,
   agentCoordination: false,
+  selfLearning: false,
 };
 
 const meta: Meta<typeof AppSidebar> = {

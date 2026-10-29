@@ -109,6 +109,10 @@ export const FEATURE_FLAG_CATALOG: Readonly<
     group: FeatureFlagGroup.Experimental,
     description: 'Scheduled workflows: /workflows and `shep workflow`',
   },
+  selfLearning: {
+    group: FeatureFlagGroup.Experimental,
+    description: 'Self-learning harness: learn from runs, /learning, `shep learn`',
+  },
   agentCoordination: {
     group: FeatureFlagGroup.Experimental,
     description: 'Agent coordination: an agent decides whether overlapping features wait',
