@@ -1,0 +1,48 @@
+# =============================================================================
+# Backfill release taglines (manual)
+# =============================================================================
+# Copies the taglines in CHANGELOG.md into every GitHub release whose tagline
+# is a Claude service error (e.g. "Your organization does not have access to
+# Claude…", published on v1.219.0–v1.252.2 while the CLAUDE_CODE_OAUTH_TOKEN
+# secret had lost access). Releases with any other tagline are left alone.
+#
+# Run it from the Actions tab: first with "apply" off to see the list in the
+# log, then with "apply" on. See scripts/release-notes-backfill.mjs.
+
+name: Backfill release taglines
+
+on:
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: 'Edit the releases (off = only list what would change)'
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: backfill-release-taglines
+  cancel-in-progress: false
+
+jobs:
+  backfill:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Backfill taglines
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          APPLY: ${{ inputs.apply }}
+        run: |
+          if [ "$APPLY" = "true" ]; then
+            node scripts/release-notes-backfill.mjs --apply
+          else
+            node scripts/release-notes-backfill.mjs
+          fi

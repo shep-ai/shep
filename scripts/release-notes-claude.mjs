@@ -73,6 +73,26 @@ function isOverusedOpener(tagline) {
   return OVERUSED_OPENER_PATTERNS.some((re) => re.test(String(tagline).trim()));
 }
 
+// Text the Claude CLI/SDK prints instead of an answer when the call itself
+// failed (lost access, expired token, no credit). v1.219.0–v1.252.2 published
+// "Your organization does not have access to Claude…" as the tagline because
+// the SDK reports such a failure as a `success` result carrying this text.
+const SERVICE_ERROR_PATTERNS = [
+  /does not have access to Claude/i,
+  /please (?:log ?in|run \/login)/i,
+  /invalid api key/i,
+  /credit balance is too low/i,
+  /^API Error\b/i,
+  /\bauthentication_error\b/i,
+  /OAuth token (?:has expired|has been revoked|is invalid)/i,
+];
+
+export function isServiceError(text) {
+  return SERVICE_ERROR_PATTERNS.some((re) => re.test(String(text)));
+}
+
+class ClaudeServiceError extends Error {}
+
 function buildPrompt({ commits, version }) {
   const summary = summarizeCommits(commits) || '- (chore-only release)';
   const userFacing = hasUserFacingChanges(commits);
@@ -167,6 +187,9 @@ async function runQuery(claudeQuery, prompt, options) {
   let assistantText = '';
   for await (const message of messages) {
     if (!message || typeof message !== 'object') continue;
+    if (message.type === 'result' && message.is_error) {
+      throw new ClaudeServiceError(String(message.result ?? message.subtype ?? 'unknown error'));
+    }
     if (
       message.type === 'result' &&
       message.subtype === 'success' &&
@@ -174,6 +197,9 @@ async function runQuery(claudeQuery, prompt, options) {
     ) {
       result = message.result;
       break;
+    }
+    if (message.type === 'assistant' && message.error) {
+      throw new ClaudeServiceError(`${message.error}: ${textOf(message)}`);
     }
     if (message.type === 'assistant' && message.message && Array.isArray(message.message.content)) {
       for (const block of message.message.content) {
@@ -184,7 +210,18 @@ async function runQuery(claudeQuery, prompt, options) {
     }
   }
 
-  return result || assistantText;
+  const text = result || assistantText;
+  if (isServiceError(text)) throw new ClaudeServiceError(text);
+  return text;
+}
+
+function textOf(message) {
+  const content = message.message?.content;
+  if (!Array.isArray(content)) return '';
+  return content
+    .filter((block) => block && block.type === 'text' && typeof block.text === 'string')
+    .map((block) => block.text)
+    .join('');
 }
 
 /**
@@ -254,6 +291,12 @@ export async function generateTagline({
     logger.info?.(`[release-notes] Generated tagline via Claude: ${tagline}`);
     return tagline;
   } catch (err) {
+    if (err instanceof ClaudeServiceError) {
+      logger.warn?.(
+        `[release-notes] Claude could not run (check the CLAUDE_CODE_OAUTH_TOKEN secret): ${err.message}; using static tagline.`
+      );
+      return null;
+    }
     logger.warn?.(`[release-notes] Claude tagline generation failed: ${err?.message ?? err}`);
     return null;
   }
@@ -272,5 +315,6 @@ export const __test__ = {
   hasUserFacingChanges,
   isMaintenanceOnlyFraming,
   isOverusedOpener,
+  isServiceError,
   STATIC_TAGLINE,
 };
