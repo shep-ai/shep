@@ -1,0 +1,36 @@
+feature:
+  id: '150-shep-2'
+  name: 'shep-2'
+  number: 150
+  branch: 'claude/youthful-euler-mvj8mq'
+  lifecycle: 'research'
+  createdAt: '2026-10-30T14:52:20Z'
+
+status:
+  phase: 'research'
+  progress:
+    completed: 0
+    total: 0
+    percentage: 0
+  currentTask: null
+  lastUpdated: '2026-10-30T14:52:20Z'
+  lastUpdatedBy: 'shep-kit:new-feature'
+
+validation:
+  lastRun: null
+  gatesPassed: []
+  autoFixesApplied: []
+
+tasks:
+  current: null
+  blocked: []
+  failed: []
+
+checkpoints:
+  - phase: 'feature-created'
+    completedAt: '2026-10-30T14:52:20Z'
+    completedBy: 'shep-kit:new-feature'
+
+errors:
+  current: null
+  history: []
