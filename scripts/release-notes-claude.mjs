@@ -165,15 +165,23 @@ async function runQuery(claudeQuery, prompt, options) {
 
   let result = '';
   let assistantText = '';
+  // The SDK reports failures (auth, org access, overload) as an assistant
+  // message carrying `error` and a result with `is_error: true` whose
+  // `result` is the error text. That text must never become a tagline.
+  let failed = false;
   for await (const message of messages) {
     if (!message || typeof message !== 'object') continue;
-    if (
-      message.type === 'result' &&
-      message.subtype === 'success' &&
-      typeof message.result === 'string'
-    ) {
-      result = message.result;
+    if (message.type === 'result') {
+      if (message.is_error || message.subtype !== 'success') {
+        failed = true;
+      } else if (typeof message.result === 'string') {
+        result = message.result;
+      }
       break;
+    }
+    if (message.type === 'assistant' && message.error) {
+      failed = true;
+      continue;
     }
     if (message.type === 'assistant' && message.message && Array.isArray(message.message.content)) {
       for (const block of message.message.content) {
@@ -184,7 +192,26 @@ async function runQuery(claudeQuery, prompt, options) {
     }
   }
 
+  if (failed) return '';
   return result || assistantText;
+}
+
+// Last line of defence: wording the Claude CLI/API uses for failures. If the
+// SDK ever reports one as a normal result, it still must not ship.
+const SERVICE_ERROR_PATTERNS = [
+  /does not have access to claude/i,
+  /please (?:log ?in|login|run \/login)/i,
+  /invalid api key/i,
+  /^api error\b/i,
+  /credit balance is too low/i,
+  /usage limit reached/i,
+  /\boverloaded\b/i,
+  /authentication[_ ](?:failed|error)/i,
+  /contact your administrator/i,
+];
+
+function looksLikeServiceError(text) {
+  return SERVICE_ERROR_PATTERNS.some((re) => re.test(String(text)));
 }
 
 /**
@@ -226,6 +253,12 @@ export async function generateTagline({
   try {
     const prompt = buildPrompt({ commits, version });
     let tagline = postProcessTagline(await runQuery(queryFn, prompt, queryOptions));
+    if (tagline && looksLikeServiceError(tagline)) {
+      logger.warn?.(
+        `[release-notes] Claude returned an error, not a tagline ("${tagline}"); using static tagline.`
+      );
+      return null;
+    }
 
     if (tagline && shouldRejectTagline(tagline, commits)) {
       logger.info?.(
@@ -239,6 +272,12 @@ export async function generateTagline({
         'completely different tagline this time — different opening words, different structure.',
       ].join('\n');
       tagline = postProcessTagline(await runQuery(queryFn, retryPrompt, queryOptions));
+      if (tagline && looksLikeServiceError(tagline)) {
+        logger.warn?.(
+          `[release-notes] Claude returned an error on retry ("${tagline}"); using static tagline.`
+        );
+        return null;
+      }
     }
 
     if (!tagline) {
@@ -265,6 +304,7 @@ function shouldRejectTagline(tagline, commits) {
 }
 
 export const __test__ = {
+  looksLikeServiceError,
   buildPrompt,
   postProcessTagline,
   summarizeCommits,

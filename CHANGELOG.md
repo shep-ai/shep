@@ -6,7 +6,7 @@
 
 # 🚀 Shep [v1.252.2](/compare/v1.252.1...v1.252.2) · _2026-10-29_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Run multiple AI agents in parallel — each in its own worktree, branch, and PR. _Zero context-switching, zero merge chaos._
 
 
 
@@ -41,7 +41,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.252.1](/compare/v1.252.0...v1.252.1) · _2026-10-28_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Run multiple AI agents in parallel — each in its own worktree, branch, and PR. _Zero context-switching, zero merge chaos._
 
 
 
@@ -80,7 +80,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.252.0](/compare/v1.251.0...v1.252.0) · _2026-10-28_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Run multiple AI agents in parallel — each in its own worktree, branch, and PR. _Zero context-switching, zero merge chaos._
 
 
 
@@ -119,7 +119,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.251.0](/compare/v1.250.0...v1.251.0) · _2026-10-28_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Run multiple AI agents in parallel — each in its own worktree, branch, and PR. _Zero context-switching, zero merge chaos._
 
 
 
@@ -158,7 +158,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.250.0](/compare/v1.249.0...v1.250.0) · _2026-10-25_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Run multiple AI agents in parallel — each in its own worktree, branch, and PR. _Zero context-switching, zero merge chaos._
 
 
 
@@ -199,7 +199,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.249.0](/compare/v1.248.0...v1.249.0) · _2026-10-24_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Run multiple AI agents in parallel — each in its own worktree, branch, and PR. _Zero context-switching, zero merge chaos._
 
 
 
@@ -238,7 +238,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.248.0](/compare/v1.247.0...v1.248.0) · _2026-10-24_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Run multiple AI agents in parallel — each in its own worktree, branch, and PR. _Zero context-switching, zero merge chaos._
 
 
 
@@ -277,7 +277,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.247.0](/compare/v1.246.0...v1.247.0) · _2026-10-22_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Run multiple AI agents in parallel — each in its own worktree, branch, and PR. _Zero context-switching, zero merge chaos._
 
 
 
@@ -315,7 +315,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.246.0](/compare/v1.245.0...v1.246.0) · _2026-10-22_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Run multiple AI agents in parallel — each in its own worktree, branch, and PR. _Zero context-switching, zero merge chaos._
 
 
 
@@ -356,7 +356,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.245.0](/compare/v1.244.1...v1.245.0) · _2026-10-21_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Run multiple AI agents in parallel — each in its own worktree, branch, and PR. _Zero context-switching, zero merge chaos._
 
 
 
@@ -391,7 +391,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.244.1](/compare/v1.244.0...v1.244.1) · _2026-10-21_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Run multiple AI agents in parallel — each in its own worktree, branch, and PR. _Zero context-switching, zero merge chaos._
 
 
 
@@ -426,7 +426,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.244.0](/compare/v1.243.0...v1.244.0) · _2026-10-21_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Run multiple AI agents in parallel — each in its own worktree, branch, and PR. _Zero context-switching, zero merge chaos._
 
 
 
@@ -463,7 +463,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.243.0](/compare/v1.242.0...v1.243.0) · _2026-10-19_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Run multiple AI agents in parallel — each in its own worktree, branch, and PR. _Zero context-switching, zero merge chaos._
 
 
 
@@ -504,7 +504,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.242.0](/compare/v1.241.0...v1.242.0) · _2026-10-11_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Run multiple AI agents in parallel — each in its own worktree, branch, and PR. _Zero context-switching, zero merge chaos._
 
 
 
@@ -543,7 +543,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.241.0](/compare/v1.240.0...v1.241.0) · _2026-10-11_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Run multiple AI agents in parallel — each in its own worktree, branch, and PR. _Zero context-switching, zero merge chaos._
 
 
 
@@ -596,7 +596,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.240.0](/compare/v1.239.0...v1.240.0) · _2026-10-11_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Run multiple AI agents in parallel — each in its own worktree, branch, and PR. _Zero context-switching, zero merge chaos._
 
 
 
@@ -635,7 +635,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.239.0](/compare/v1.238.0...v1.239.0) · _2026-10-11_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Run multiple AI agents in parallel — each in its own worktree, branch, and PR. _Zero context-switching, zero merge chaos._
 
 
 
@@ -674,7 +674,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.238.0](/compare/v1.237.0...v1.238.0) · _2026-10-11_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Run multiple AI agents in parallel — each in its own worktree, branch, and PR. _Zero context-switching, zero merge chaos._
 
 
 
@@ -713,7 +713,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.237.0](/compare/v1.236.0...v1.237.0) · _2026-10-11_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Run multiple AI agents in parallel — each in its own worktree, branch, and PR. _Zero context-switching, zero merge chaos._
 
 
 
@@ -752,7 +752,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.236.0](/compare/v1.235.0...v1.236.0) · _2026-10-05_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Run multiple AI agents in parallel — each in its own worktree, branch, and PR. _Zero context-switching, zero merge chaos._
 
 
 
@@ -791,7 +791,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.235.0](/compare/v1.234.2...v1.235.0) · _2026-10-04_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Run multiple AI agents in parallel — each in its own worktree, branch, and PR. _Zero context-switching, zero merge chaos._
 
 
 
@@ -836,7 +836,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.234.2](/compare/v1.234.1...v1.234.2) · _2026-10-02_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Run multiple AI agents in parallel — each in its own worktree, branch, and PR. _Zero context-switching, zero merge chaos._
 
 
 
@@ -871,7 +871,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.234.1](/compare/v1.234.0...v1.234.1) · _2026-10-02_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Run multiple AI agents in parallel — each in its own worktree, branch, and PR. _Zero context-switching, zero merge chaos._
 
 
 
@@ -910,7 +910,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.234.0](/compare/v1.233.2...v1.234.0) · _2026-09-30_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Run multiple AI agents in parallel — each in its own worktree, branch, and PR. _Zero context-switching, zero merge chaos._
 
 
 
@@ -945,7 +945,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.233.2](/compare/v1.233.1...v1.233.2) · _2026-09-29_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Run multiple AI agents in parallel — each in its own worktree, branch, and PR. _Zero context-switching, zero merge chaos._
 
 
 
@@ -984,7 +984,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.233.1](/compare/v1.233.0...v1.233.1) · _2026-09-27_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Run multiple AI agents in parallel — each in its own worktree, branch, and PR. _Zero context-switching, zero merge chaos._
 
 
 
@@ -1029,7 +1029,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.233.0](/compare/v1.232.0...v1.233.0) · _2026-09-26_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Run multiple AI agents in parallel — each in its own worktree, branch, and PR. _Zero context-switching, zero merge chaos._
 
 
 
@@ -1064,7 +1064,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.232.0](/compare/v1.231.0...v1.232.0) · _2026-09-26_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Run multiple AI agents in parallel — each in its own worktree, branch, and PR. _Zero context-switching, zero merge chaos._
 
 
 
@@ -1102,7 +1102,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.231.0](/compare/v1.230.1...v1.231.0) · _2026-09-26_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Run multiple AI agents in parallel — each in its own worktree, branch, and PR. _Zero context-switching, zero merge chaos._
 
 
 
@@ -1139,7 +1139,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.230.1](/compare/v1.230.0...v1.230.1) · _2026-09-26_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Run multiple AI agents in parallel — each in its own worktree, branch, and PR. _Zero context-switching, zero merge chaos._
 
 
 
@@ -1174,7 +1174,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.230.0](/compare/v1.229.6...v1.230.0) · _2026-09-25_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Run multiple AI agents in parallel — each in its own worktree, branch, and PR. _Zero context-switching, zero merge chaos._
 
 
 
@@ -1219,7 +1219,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.229.6](/compare/v1.229.5...v1.229.6) · _2026-09-24_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Run multiple AI agents in parallel — each in its own worktree, branch, and PR. _Zero context-switching, zero merge chaos._
 
 
 
@@ -1258,7 +1258,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.229.5](/compare/v1.229.4...v1.229.5) · _2026-09-23_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Run multiple AI agents in parallel — each in its own worktree, branch, and PR. _Zero context-switching, zero merge chaos._
 
 
 
@@ -1293,7 +1293,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.229.4](/compare/v1.229.3...v1.229.4) · _2026-09-23_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Run multiple AI agents in parallel — each in its own worktree, branch, and PR. _Zero context-switching, zero merge chaos._
 
 
 
@@ -1328,7 +1328,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.229.3](/compare/v1.229.2...v1.229.3) · _2026-09-22_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Run multiple AI agents in parallel — each in its own worktree, branch, and PR. _Zero context-switching, zero merge chaos._
 
 
 
@@ -1367,7 +1367,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.229.2](/compare/v1.229.1...v1.229.2) · _2026-09-22_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Run multiple AI agents in parallel — each in its own worktree, branch, and PR. _Zero context-switching, zero merge chaos._
 
 
 
@@ -1404,7 +1404,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.229.1](/compare/v1.229.0...v1.229.1) · _2026-09-22_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Run multiple AI agents in parallel — each in its own worktree, branch, and PR. _Zero context-switching, zero merge chaos._
 
 
 
@@ -1441,7 +1441,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.229.0](/compare/v1.228.3...v1.229.0) · _2026-09-21_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Run multiple AI agents in parallel — each in its own worktree, branch, and PR. _Zero context-switching, zero merge chaos._
 
 
 
@@ -1484,7 +1484,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.228.3](/compare/v1.228.2...v1.228.3) · _2026-09-20_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Run multiple AI agents in parallel — each in its own worktree, branch, and PR. _Zero context-switching, zero merge chaos._
 
 
 
@@ -1521,7 +1521,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.228.2](/compare/v1.228.1...v1.228.2) · _2026-09-20_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Run multiple AI agents in parallel — each in its own worktree, branch, and PR. _Zero context-switching, zero merge chaos._
 
 
 
@@ -1556,7 +1556,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.228.1](/compare/v1.228.0...v1.228.1) · _2026-09-20_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Run multiple AI agents in parallel — each in its own worktree, branch, and PR. _Zero context-switching, zero merge chaos._
 
 
 
@@ -1593,7 +1593,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.228.0](/compare/v1.227.0...v1.228.0) · _2026-09-18_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Run multiple AI agents in parallel — each in its own worktree, branch, and PR. _Zero context-switching, zero merge chaos._
 
 
 
@@ -1634,7 +1634,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.227.0](/compare/v1.226.1...v1.227.0) · _2026-09-17_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Run multiple AI agents in parallel — each in its own worktree, branch, and PR. _Zero context-switching, zero merge chaos._
 
 
 
@@ -1669,7 +1669,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.226.1](/compare/v1.226.0...v1.226.1) · _2026-09-13_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Run multiple AI agents in parallel — each in its own worktree, branch, and PR. _Zero context-switching, zero merge chaos._
 
 
 
@@ -1706,7 +1706,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.226.0](/compare/v1.225.1...v1.226.0) · _2026-09-08_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Run multiple AI agents in parallel — each in its own worktree, branch, and PR. _Zero context-switching, zero merge chaos._
 
 
 
@@ -1747,7 +1747,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.225.1](/compare/v1.225.0...v1.225.1) · _2026-09-03_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Run multiple AI agents in parallel — each in its own worktree, branch, and PR. _Zero context-switching, zero merge chaos._
 
 
 
@@ -1790,7 +1790,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.225.0](/compare/v1.224.0...v1.225.0) · _2026-08-10_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Run multiple AI agents in parallel — each in its own worktree, branch, and PR. _Zero context-switching, zero merge chaos._
 
 
 
@@ -1825,7 +1825,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.224.0](/compare/v1.223.1...v1.224.0) · _2026-08-10_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Run multiple AI agents in parallel — each in its own worktree, branch, and PR. _Zero context-switching, zero merge chaos._
 
 
 
@@ -1870,7 +1870,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.223.1](/compare/v1.223.0...v1.223.1) · _2026-08-08_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Run multiple AI agents in parallel — each in its own worktree, branch, and PR. _Zero context-switching, zero merge chaos._
 
 
 
@@ -1909,7 +1909,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.223.0](/compare/v1.222.1...v1.223.0) · _2026-08-08_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Run multiple AI agents in parallel — each in its own worktree, branch, and PR. _Zero context-switching, zero merge chaos._
 
 
 
@@ -1948,7 +1948,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.222.1](/compare/v1.222.0...v1.222.1) · _2026-08-06_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Run multiple AI agents in parallel — each in its own worktree, branch, and PR. _Zero context-switching, zero merge chaos._
 
 
 
@@ -1983,7 +1983,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.222.0](/compare/v1.221.0...v1.222.0) · _2026-08-06_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Run multiple AI agents in parallel — each in its own worktree, branch, and PR. _Zero context-switching, zero merge chaos._
 
 
 
@@ -2020,7 +2020,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.221.0](/compare/v1.220.0...v1.221.0) · _2026-07-30_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Run multiple AI agents in parallel — each in its own worktree, branch, and PR. _Zero context-switching, zero merge chaos._
 
 
 
@@ -2059,7 +2059,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.220.0](/compare/v1.219.1...v1.220.0) · _2026-07-28_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Run multiple AI agents in parallel — each in its own worktree, branch, and PR. _Zero context-switching, zero merge chaos._
 
 
 
@@ -2094,7 +2094,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.219.1](/compare/v1.219.0...v1.219.1) · _2026-07-26_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Run multiple AI agents in parallel — each in its own worktree, branch, and PR. _Zero context-switching, zero merge chaos._
 
 
 
@@ -2129,7 +2129,7 @@ npx @shepai/cli@latest
 
 # 🚀 Shep [v1.219.0](/compare/v1.218.1...v1.219.0) · _2026-07-17_
 
-> Your organization does not have access to Claude. Please login again or contact your administrator.
+> Run multiple AI agents in parallel — each in its own worktree, branch, and PR. _Zero context-switching, zero merge chaos._
 
 
 

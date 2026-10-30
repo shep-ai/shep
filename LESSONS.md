@@ -1910,6 +1910,16 @@ Rules:
 - When an LLM writes user-facing copy from structured data, **validate the output against that same data** before publishing. Don't trust the prompt alone; add a deterministic guard that falls back on contradiction.
 - `.mjs` scripts under ESLint need browser/Node globals declared: `/* global fetch, URL */`.
 
+## An SDK error is not output: check `is_error` before using a model's text
+
+56 releases (through v1.252.2) shipped with the tagline "Your organization does not have access
+to Claude. Please login again…". The Agent SDK reports auth and org failures as a `result` with
+`subtype: 'success'` **and** `is_error: true`, with the error text in `result`, plus an
+assistant message carrying `error`. `runQuery` read `subtype` only, and the fallback to raw
+assistant text took the error too. Rules: treat `is_error`, a non-`success` subtype, or an
+assistant `error` as a failure; never fall back to assistant text after one; and run a
+deterministic error-wording guard (`looksLikeServiceError`) on anything that will be published.
+
 ## Tag-triggered CI is defeated by `[skip ci]`; org ghcr first-push needs a PAT
 
 The `docker-publish.yml` workflow (issue #822 / PR #824) was written to trigger on `push: tags: v*`, then never ran on any release. Two independent bugs:
