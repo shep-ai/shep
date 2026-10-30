@@ -4,6 +4,47 @@
   </a>
 </p>
 
+# 🚀 Shep [v1.253.0](/compare/v1.252.2...v1.253.0) · _2026-10-30_
+
+> _Quiet commit_ — internal scaffolding stays sharp so the next wave of features lands clean.
+
+
+
+### ✨ Features
+
+* **agents:** self-learning harness (spec 150) ([#950](https://github.com/shep-ai/shep/issues/950)) ([0615c99](https://github.com/shep-ai/shep/commit/0615c9997b392fc720cce3c0b1a5d579389d8c4a))
+
+
+
+### 🐛 Bug Fixes
+
+* **release:** never publish a Claude service error as the tagline ([#952](https://github.com/shep-ai/shep/issues/952)) ([4cc5368](https://github.com/shep-ai/shep/commit/4cc53683355a675e593db88ad40736250738faa4))
+
+
+## 📦 Install or update
+
+```bash
+# upgrade an existing install
+npm i -g @shepai/cli@1.253.0
+
+# or run instantly without installing
+npx @shepai/cli@latest
+```
+
+## 💬 Join the community
+
+[💬 **Discord**](https://discord.gg/ES6tdVFfur) · [📖 **Docs**](https://github.com/shep-ai/shep#readme) · [⭐ **Star on GitHub**](https://github.com/shep-ai/shep) · [🐛 **Report an issue**](https://github.com/shep-ai/shep/issues)
+
+---
+
+<sub>🤖 Released autonomously by Shep — built by parallel AI agents working in isolated git worktrees. Try it: `npx @shepai/cli`</sub>
+
+<p align="center">
+  <a href="https://github.com/shep-ai/shep">
+    <img src="https://raw.githubusercontent.com/shep-ai/shep/main/docs/screenshots/shep-card.jpg" alt="Shep — run multiple AI agents in parallel" width="720" />
+  </a>
+</p>
+
 # 🚀 Shep [v1.252.2](/compare/v1.252.1...v1.252.2) · _2026-10-29_
 
 > All 40 open Dependabot alerts _cleared in one sweep_ — Next 16.4, TypeSpec 1.17 and patched transitive deps.
