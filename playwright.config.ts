@@ -52,6 +52,8 @@ export default defineConfig({
       PORT: '3001',
       SHEP_COLLABORATION_FLAG: '1',
       SHEP_MOCK_GATEWAY: '1',
+      // Test runs must never send usage metrics to the real PostHog project.
+      SHEP_TELEMETRY_DISABLED: '1',
       ...(process.env.CI ? { NODE_ENV: 'production' } : {}),
     },
     url: 'http://localhost:3001',

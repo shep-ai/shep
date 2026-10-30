@@ -1,10 +1,11 @@
 /**
  * PostHog delivery configuration (spec 133).
  *
- * The project key comes from `SHEP_POSTHOG_KEY`, else from the build-time
- * constant below. Release builds may substitute a key into the constant; it is
- * empty in source, so a build without a key sends nothing. A PostHog project
- * key is a public write-only key, not a secret.
+ * The project key comes from `SHEP_POSTHOG_KEY`, else from the constant below:
+ * the Shep team's PostHog project (EU cloud). A PostHog project key is a public
+ * write-only key, not a secret, so it lives in source. Whether anything is sent
+ * is decided by the telemetry state (opt-out, CI, DO_NOT_TRACK, tests), never by
+ * the key.
  */
 
 import {
@@ -12,8 +13,8 @@ import {
   type TelemetryEnv,
 } from '../../../domain/shared/telemetry/telemetry-state.js';
 
-/** Build-time project key. Empty means "do not send". */
-export const BUILT_IN_POSTHOG_KEY = '';
+/** The Shep team's PostHog project key (public, write-only). */
+export const BUILT_IN_POSTHOG_KEY = 'phc_qESdnwYa5rM7GLxVt3C7ScMVwGjuikSmPJrrczvkN6EW';
 
 /** PostHog EU cloud ingestion host. */
 export const DEFAULT_POSTHOG_HOST = 'https://eu.i.posthog.com';

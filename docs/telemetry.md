@@ -97,11 +97,15 @@ any process ── ITelemetry.record() ──► SQLite telemetry_outbox ──�
 
 | Setting | Where |
 | ------- | ----- |
-| Project key | `SHEP_POSTHOG_KEY`, else `BUILT_IN_POSTHOG_KEY` in `packages/core/src/infrastructure/services/telemetry/telemetry-config.ts` (empty in source: no key, nothing is sent) |
+| Project key | `SHEP_POSTHOG_KEY`, else `BUILT_IN_POSTHOG_KEY` in `packages/core/src/infrastructure/services/telemetry/telemetry-config.ts` (the Shep team's EU project key; public and write-only) |
 | Host | `SHEP_POSTHOG_HOST`, default `https://eu.i.posthog.com` |
 
 In the PostHog project, also turn on **Discard client IP data**, since the capture endpoint
 otherwise records the sender's IP address.
+
+Running Shep from source (`pnpm dev:cli`, `pnpm dev:web`) sends events too, with the same
+version as the release. Maintainers and contributors should set `SHEP_TELEMETRY_DISABLED=1` in
+their shell so development use does not mix with real usage.
 
 ## Code map
 
