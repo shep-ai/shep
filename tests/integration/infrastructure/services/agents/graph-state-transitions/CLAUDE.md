@@ -33,6 +33,8 @@ Real LangGraph graph + Real SQLite checkpointer + Stub executor + Real feature.y
 | `resume-after-error.test.ts`          | Resume from failed non-merge nodes with persistent checkpointer            |
 | `resume-after-error-merge.test.ts`    | Resume from failed merge — reject/approve/retry paths                      |
 | `resume-feedback-propagation.test.ts` | User feedback propagated to retried node's prompt after failure            |
+| `learned-harness-flow.test.ts`        | Learned harness (spec 150) reaches every agent call; no-op when none adopted |
+| `explore-flow.test.ts`                | Explore (spec 150) replaces implement when an attempt is kept; else no-op  |
 
 ## How to Run
 
@@ -225,9 +227,9 @@ Producer nodes call the executor in this order:
 4. `plan` — prompt contains "PLANNING phase"
 5. `implement` — prompt contains "autonomous implementation"
 6. `evidence` (sub-agent, +1 executor call after implement)
-7. `merge` — prompt contains "MERGE phase" (only with `withMerge: true`)
+7. `merge` — commit prompt contains "Write a conventional commit message" (only with `withMerge: true`)
 
-Use `PROMPT_NODE_MARKERS` to identify which nodes ran via `getExecutedNodes(executor.prompts)`.
+Use `getExecutedNodes(executor.prompts)` from `helpers.ts` (backed by `PROMPT_NODE_MARKERS`) to identify which nodes ran.
 
 ## Rules for New Tests
 

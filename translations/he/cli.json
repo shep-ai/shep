@@ -255,6 +255,10 @@
         "noFastOption": "הרץ את כל שלבי ה-SDLC (ניתוח → דרישות → תוכנית → מימוש)",
         "exploreOption": "Start an exploration/prototyping session for iterative design",
         "exploreAndFastConflict": "Cannot use --explore and --fast together. Choose one mode.",
+        "exploreHarnessOption": "למידה עצמית: הרצת שלב המימוש של הפיצ'ר הזה במצב Explore (Propose–Probe–Compose) — עולה בערך פי 4× משלב המימוש כאשר k=1",
+        "exploreKOption": "תקציב Explore k עבור --explore-harness, 1–{{max}} (ברירת מחדל: הגדרת הלמידה העצמית שלכם); מריץ 4k הרצות",
+        "exploreKWithoutHarness": "--explore-k חל רק יחד עם --explore-harness",
+        "invalidExploreK": "--explore-k חייב להיות מספר שלם מ-1 עד {{max}}, התקבל: {{value}}",
         "modelOption": "מזהה מודל LLM להרצה זו (לדוגמה claude-opus-4-6)",
         "effortOption": "רמת חשיבה להרצה זו: low, medium, high, xhigh או max (ברירת מחדל: הגדרות)",
         "invalidEffort": "רמת מאמץ לא מוכרת \"{{level}}\". רמות תקפות: {{levels}}",
@@ -2011,6 +2015,154 @@
         "description": "עצירת הרצת סוכן לפי מזהה הרצה, מזהה פיצ'ר או תחילית של אחד מהם",
         "idArgument": "מזהה הרצה, מזהה פיצ'ר או תחילית",
         "stopped": "{{id}} נעצר: {{reason}}"
+      }
+    },
+    "learn": {
+      "description": "harness לומד: סקירה, אימוץ וביטול של מה ש-Shep למד מהרצות של פיצ'רים",
+      "failed": "פקודת ה-harness הנלמד נכשלה",
+      "repoOption": "נתיב המאגר (ברירת מחדל: התיקייה הנוכחית)",
+      "jsonOption": "הדפסת JSON",
+      "versionArg": "מזהה גרסה, או קידומת ייחודית שלו",
+      "notFound": "אין גרסה של ה-harness הנלמד שתואמת ל-{{id}}",
+      "fields": {
+        "version": "גרסה",
+        "status": "סטטוס",
+        "origin": "מקור",
+        "scope": "היקף",
+        "created": "נוצרה",
+        "components": "רכיבים",
+        "parent": "גרסת אב",
+        "sourceFeature": "נלמדה מהפיצ'ר",
+        "notes": "הערות",
+        "reason": "סיבה"
+      },
+      "status": {
+        "description": "הצגת ה-harness הנלמד שהמאגר הזה רץ איתו",
+        "title": "harness נלמד",
+        "none": "שום דבר לא אומץ — המאגר הזה רץ עם ה-harness הבסיסי.",
+        "candidates": "מועמדות שממתינות לסקירה: {{count}} — ראו `shep learn history`",
+        "noCandidates": "אין מועמדות שממתינות לסקירה."
+      },
+      "history": {
+        "description": "הצגת גרסאות ה-harness הנלמד עם מדדי התוצאות שלהן, מהחדשה לישנה",
+        "limitOption": "הצגה של לכל היותר מספר הגרסאות הזה",
+        "invalidLimit": "--limit חייב להיות מספר שלם גדול מ-0, התקבל: {{value}}",
+        "title": "גרסאות ה-harness הנלמד",
+        "empty": "עדיין אין גרסאות של ה-harness הנלמד. ללמוד מפיצ'ר שהסתיים עם `shep learn reflect <feature>`.",
+        "current": "נוכחית",
+        "regressed": "גרסאות שהידרדרו: {{count}} — לבדוק אחת עם `shep learn show <version>`, ולבטל את המאומצת עם `shep learn rollback`",
+        "columns": {
+          "id": "מזהה",
+          "status": "סטטוס",
+          "origin": "מקור",
+          "created": "נוצרה",
+          "runs": "הרצות",
+          "merged": "מוזגו",
+          "ciFixes": "תיקוני CI",
+          "trend": "מגמה"
+        }
+      },
+      "show": {
+        "description": "הצגת גרסה: הרכיבים שלה, פסקי הדין על השינויים וה-diff מול גרסת האב",
+        "title": "harness נלמד {{id}}",
+        "componentsTitle": "רכיבים",
+        "editsTitle": "שינויים ופסקי דין",
+        "diffTitle": "Diff מול {{id}}",
+        "diffTitleBase": "Diff מול ה-harness הבסיסי",
+        "noChanges": "אין שינויים."
+      },
+      "diff": {
+        "description": "הצגת מה השתנה בין שתי גרסאות",
+        "fromArg": "הגרסה שממנה משווים (מזהה או קידומת)",
+        "toArg": "הגרסה שאליה משווים (מזהה או קידומת)",
+        "title": "{{from}} → {{to}}"
+      },
+      "adopt": {
+        "description": "אימוץ גרסה מועמדת, או ייבוא ואימוץ של harness שכתבתם",
+        "fromDirOption": "ייבוא ה-harness שבתיקייה הזו (במבנה הקנוני) ואימוצו",
+        "needsOne": "יש לציין בדיוק אחד: גרסה או --from-dir <dir>",
+        "adopted": "{{id}} אומצה — ההרצות הבאות של פיצ'רים ישתמשו בה",
+        "memoryFacts": "עובדות זיכרון שנרשמו: {{count}}",
+        "refused": "לא ניתן לאמץ את {{id}}: {{reason}}",
+        "imported": "{{id}} יובאה ואומצה",
+        "importedNotAdopted": "{{id}} יובאה, אבל לא אומצה — ראו `shep learn show {{id}}`",
+        "importRefused": "ה-harness שב-{{dir}} לא יובא:"
+      },
+      "reject": {
+        "description": "דחיית גרסה מועמדת; המשוב שלכם מכוון את הרפלקציה הבאה",
+        "feedbackOption": "למה היא נדחית — הרפלקציה הבאה תקרא את זה",
+        "rejected": "{{id}} נדחתה",
+        "refused": "לא ניתן לדחות את {{id}}: {{reason}}"
+      },
+      "rollback": {
+        "description": "ביטול ה-harness המאומץ של המאגר הזה ואימוץ מחדש של גרסת האב שלו",
+        "reasonOption": "למה הוא מבוטל (נשמר בגרסה)",
+        "rolledBack": "ה-harness המאומץ בוטל",
+        "restored": "{{id}} מאומצת שוב",
+        "toBase": "המאגר רץ שוב עם ה-harness הבסיסי",
+        "refused": "שום דבר לא בוטל: {{reason}}"
+      },
+      "reflect": {
+        "description": "ללמוד עכשיו מההרצה האחרונה של פיצ'ר ולהגיש שינוי ב-harness לסקירה",
+        "featureArg": "מזהה הפיצ'ר, או קידומת ייחודית שלו",
+        "spinner": "מבצע רפלקציה על הרצת הפיצ'ר",
+        "skipped": "אין ממה ללמוד: {{reason}}",
+        "finished": "הרפלקציה הסתיימה: {{status}} (עלות {{cost}} USD)",
+        "candidate": "המועמדת {{id}} ממתינה לסקירה — `shep learn show {{id}}`",
+        "autoAdopted": "המועמדת {{id}} אומצה אוטומטית לפי מדיניות האימוץ שלכם"
+      },
+      "labels": {
+        "status": {
+          "candidate": "מועמדת",
+          "adopted": "מאומצת",
+          "rejected": "נדחתה",
+          "rolledBack": "בוטלה",
+          "superseded": "הוחלפה"
+        },
+        "origin": {
+          "base": "בסיס",
+          "reflect": "רפלקציה",
+          "explore": "חקירה",
+          "manual": "ידני"
+        },
+        "scope": {
+          "project": "פרויקט",
+          "organization": "ארגון",
+          "space": "מרחב",
+          "productLine": "קו מוצרים"
+        },
+        "trend": {
+          "insufficientData": "מעט מדי הרצות",
+          "improved": "השתפרה",
+          "unchanged": "ללא שינוי",
+          "regressed": "הידרדרה",
+          "noBaseline": "גרסה ראשונה"
+        },
+        "verdict": {
+          "helped": "עזר",
+          "hurt": "הזיק",
+          "noObservedEffect": "לא נצפתה השפעה",
+          "confounded": "לא חד-משמעי",
+          "untested": "לא נבדק"
+        },
+        "kind": {
+          "instructions": "הוראות",
+          "guardrails": "מעקות בטיחות",
+          "memory": "זיכרון",
+          "toolGuidance": "הנחיות לכלים",
+          "skill": "מיומנות",
+          "script": "סקריפט",
+          "subagent": "תת-סוכן",
+          "hook": "Hook"
+        },
+        "refinement": {
+          "running": "רצה",
+          "proposed": "הוצעה",
+          "keptBase": "נשמר ה-harness הבסיסי",
+          "fellBack": "חזרה ל-harness הבסיסי",
+          "overBudget": "חריגה מהתקציב",
+          "failed": "נכשלה"
+        }
       }
     }
   },

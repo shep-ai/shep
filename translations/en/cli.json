@@ -255,6 +255,10 @@
         "noFastOption": "Run full SDLC phases (analyze → requirements → plan → implement)",
         "exploreOption": "Start an exploration/prototyping session for iterative design",
         "exploreAndFastConflict": "Cannot use --explore and --fast together. Choose one mode.",
+        "exploreHarnessOption": "Self-learning: run this feature's implement step in Explore mode (Propose–Probe–Compose) — costs about 4× the implement step at k=1",
+        "exploreKOption": "Explore budget k for --explore-harness, 1–{{max}} (default: your Self-learning setting); runs 4k rollouts",
+        "exploreKWithoutHarness": "--explore-k only applies together with --explore-harness",
+        "invalidExploreK": "--explore-k must be a whole number from 1 to {{max}}, got {{value}}",
         "modelOption": "LLM model identifier for this run (e.g. claude-opus-4-6)",
         "effortOption": "Reasoning effort for this run: low, medium, high, xhigh or max (default: settings)",
         "invalidEffort": "Unknown effort \"{{level}}\". Valid levels: {{levels}}",
@@ -2011,6 +2015,154 @@
         "description": "Stop an agent run by run id, feature id, or a prefix of either",
         "idArgument": "Run id, feature id, or a prefix",
         "stopped": "Stopped {{id}}: {{reason}}"
+      }
+    },
+    "learn": {
+      "description": "Self-learning harness: review, adopt and roll back what Shep learned from feature runs",
+      "failed": "The learned-harness command failed",
+      "repoOption": "Repository path (default: the current directory)",
+      "jsonOption": "Print JSON",
+      "versionArg": "Version id, or a unique prefix of it",
+      "notFound": "No learned-harness version matches {{id}}",
+      "fields": {
+        "version": "Version",
+        "status": "Status",
+        "origin": "Origin",
+        "scope": "Scope",
+        "created": "Created",
+        "components": "Components",
+        "parent": "Parent",
+        "sourceFeature": "Learned from feature",
+        "notes": "Notes",
+        "reason": "Reason"
+      },
+      "status": {
+        "description": "Show the learned harness this repository runs on",
+        "title": "Learned harness",
+        "none": "Nothing is adopted — this repository runs on the base harness.",
+        "candidates": "Candidates waiting for review: {{count}} — see `shep learn history`",
+        "noCandidates": "No candidates are waiting for review."
+      },
+      "history": {
+        "description": "List learned-harness versions with their outcome metrics, newest first",
+        "limitOption": "Show at most this many versions",
+        "invalidLimit": "--limit must be a whole number above 0, got {{value}}",
+        "title": "Learned harness versions",
+        "empty": "No learned-harness versions yet. Learn from a finished feature with `shep learn reflect <feature>`.",
+        "current": "current",
+        "regressed": "Regressed versions: {{count}} — inspect one with `shep learn show <version>`, undo the adopted one with `shep learn rollback`",
+        "columns": {
+          "id": "ID",
+          "status": "STATUS",
+          "origin": "ORIGIN",
+          "created": "CREATED",
+          "runs": "RUNS",
+          "merged": "MERGED",
+          "ciFixes": "CI FIXES",
+          "trend": "TREND"
+        }
+      },
+      "show": {
+        "description": "Show a version: its components, edit verdicts and diff against its parent",
+        "title": "Learned harness {{id}}",
+        "componentsTitle": "Components",
+        "editsTitle": "Edits and verdicts",
+        "diffTitle": "Diff against {{id}}",
+        "diffTitleBase": "Diff against the base harness",
+        "noChanges": "No changes."
+      },
+      "diff": {
+        "description": "Show what changed between two versions",
+        "fromArg": "The version to compare from (id or prefix)",
+        "toArg": "The version to compare to (id or prefix)",
+        "title": "{{from}} → {{to}}"
+      },
+      "adopt": {
+        "description": "Adopt a candidate version, or import and adopt a harness you wrote",
+        "fromDirOption": "Import the harness in this directory (canonical layout) and adopt it",
+        "needsOne": "Give exactly one of: a version, or --from-dir <dir>",
+        "adopted": "Adopted {{id}} — the next feature runs use it",
+        "memoryFacts": "Memory facts recorded: {{count}}",
+        "refused": "Could not adopt {{id}}: {{reason}}",
+        "imported": "Imported and adopted {{id}}",
+        "importedNotAdopted": "Imported {{id}}, but it was not adopted — see `shep learn show {{id}}`",
+        "importRefused": "The harness in {{dir}} was not imported:"
+      },
+      "reject": {
+        "description": "Reject a candidate version; your feedback steers the next reflection",
+        "feedbackOption": "Why it is rejected — the next reflection reads this",
+        "rejected": "Rejected {{id}}",
+        "refused": "Could not reject {{id}}: {{reason}}"
+      },
+      "rollback": {
+        "description": "Undo the adopted harness of this repository and adopt its parent again",
+        "reasonOption": "Why it is rolled back (kept on the version)",
+        "rolledBack": "Rolled back the adopted harness",
+        "restored": "{{id}} is adopted again",
+        "toBase": "The repository runs on the base harness again",
+        "refused": "Nothing was rolled back: {{reason}}"
+      },
+      "reflect": {
+        "description": "Learn from a feature's last run now and file a harness change for review",
+        "featureArg": "Feature id, or a unique prefix of it",
+        "spinner": "Reflecting on the feature run",
+        "skipped": "Nothing to learn from: {{reason}}",
+        "finished": "Reflection finished: {{status}} (cost {{cost}} USD)",
+        "candidate": "Candidate {{id}} is waiting for review — `shep learn show {{id}}`",
+        "autoAdopted": "Candidate {{id}} was adopted automatically by your adoption policy"
+      },
+      "labels": {
+        "status": {
+          "candidate": "Candidate",
+          "adopted": "Adopted",
+          "rejected": "Rejected",
+          "rolledBack": "Rolled back",
+          "superseded": "Superseded"
+        },
+        "origin": {
+          "base": "Base",
+          "reflect": "Reflect",
+          "explore": "Explore",
+          "manual": "Manual"
+        },
+        "scope": {
+          "project": "Project",
+          "organization": "Organization",
+          "space": "Space",
+          "productLine": "Product line"
+        },
+        "trend": {
+          "insufficientData": "Too few runs",
+          "improved": "Improved",
+          "unchanged": "Unchanged",
+          "regressed": "Regressed",
+          "noBaseline": "First version"
+        },
+        "verdict": {
+          "helped": "Helped",
+          "hurt": "Hurt",
+          "noObservedEffect": "No observed effect",
+          "confounded": "Confounded",
+          "untested": "Untested"
+        },
+        "kind": {
+          "instructions": "Instructions",
+          "guardrails": "Guardrails",
+          "memory": "Memory",
+          "toolGuidance": "Tool guidance",
+          "skill": "Skill",
+          "script": "Script",
+          "subagent": "Subagent",
+          "hook": "Hook"
+        },
+        "refinement": {
+          "running": "Running",
+          "proposed": "Proposed",
+          "keptBase": "Kept the base harness",
+          "fellBack": "Fell back to the base harness",
+          "overBudget": "Over budget",
+          "failed": "Failed"
+        }
       }
     }
   },

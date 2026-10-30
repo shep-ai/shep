@@ -1,0 +1,9 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: HarnessOrigin.yaml
+type: string
+enum:
+  - base
+  - reflect
+  - explore
+  - manual
+description: How a learned harness version was produced

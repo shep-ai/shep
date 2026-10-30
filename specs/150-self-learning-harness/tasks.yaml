@@ -1,0 +1,688 @@
+name: self-learning-harness
+summary: Task breakdown for 150-self-learning-harness
+phase: Planning
+updatedAt: '2026-10-28'
+
+relatedFeatures:
+  - 102-shep-brain
+  - 081-skill-injector
+  - 134-unified-decisions
+  - 138-git-checkpoints
+technologies:
+  - TypeScript
+  - TypeSpec
+  - Vitest
+relatedLinks: []
+
+tasks:
+  - id: task-1
+    title: TypeSpec enums and entities for the learned harness
+    description: >
+      Add enums HarnessComponentKind (Instructions, Guardrails, Memory, ToolGuidance, Skill,
+      Script, Subagent, Hook), LearnedHarnessStatus (Candidate, Adopted, Rejected, RolledBack,
+      Superseded), HarnessOrigin (Base, Reflect, Explore, Manual), HarnessEditDimension (Inv,
+      Dom, Compose), HarnessEditVerdict (Helped, Hurt, NoObservedEffect, Confounded, Untested),
+      LessonConfidence (High, Medium, Low), LearningMode (Off, Reflect, Explore),
+      HarnessAdoptionPolicy (Manual, AutoTextOnly, Auto). Entities LearnedHarnessVersion
+      (scope via MemoryScope, repositoryPath, spaceId, productLineId, parentVersionId, status,
+      origin, components, notes, sourceFeatureId, metrics), HarnessComponent (kind, path,
+      content, sha256), HarnessEditRecord, HarnessLesson, HarnessRefinementRun (mode, k,
+      ledger counts, costUsd, chosen label, selection reason), HarnessVersionOutcome
+      (per-feature outcome on a version). Regenerate with pnpm generate.
+    state: Done
+    dependencies: []
+    acceptanceCriteria:
+      - pnpm generate produces every enum and entity; pnpm tsp:compile has no warnings
+      - Generated output and apis/json-schema are committed exactly as generated
+    tdd: null
+    estimatedEffort: M
+  - id: task-2
+    title: Settings, feature flag and decision kind
+    description: >
+      Add FeatureFlags.selfLearning (default false) and Settings.learning (LearningConfig:
+      mode default Off, exploreK default 1, exploreMaxCostUsd, adoptionPolicy default Manual,
+      alwaysOnCharCap default 4000, regressionMinSample default 5). Add
+      DecisionKind.HarnessChange. Follow the LESSONS.md flag checklist (catalog, defaults,
+      mapper, migration columns, telemetry flag properties).
+    state: Done
+    dependencies:
+      - task-1
+    acceptanceCriteria:
+      - FEATURE_FLAG_CATALOG has the flag (total Record compiles)
+      - Defaults are returned when the database has no persisted value
+      - Defaults are flag off, mode Off, policy Manual — nothing learns until the user opts in
+      - Settings round-trip through the SQLite mapper including every learning field
+    tdd:
+      red:
+        - settings mapper round-trip test for the learning fields and the flag
+        - settings defaults test for LearningConfig
+      green:
+        - Add TypeSpec fields, catalog entry, defaults, mapper columns
+      refactor:
+        - Group learning defaults in one constant next to the factory
+    estimatedEffort: S
+  - id: task-3
+    title: Migration for learned harness tables
+    description: >
+      Migration 174 creates learned_harness_versions, learned_harness_components,
+      learned_harness_edits, learned_harness_lessons, harness_refinement_runs and
+      learned_harness_outcomes (all
+      CREATE TABLE IF NOT EXISTS, indexed by scope keys), plus the settings columns from task-2.
+    state: Done
+    dependencies:
+      - task-2
+    acceptanceCriteria:
+      - Migration is idempotent and backward compatible (runs twice, older rows untouched)
+      - Bootstrap/migration test lists the new migration
+    tdd:
+      red:
+        - Migration test asserting tables, columns and indexes exist and a second run is a no-op
+      green:
+        - Write the migration
+      refactor: []
+    estimatedEffort: S
+  - id: task-4
+    title: Domain harness tree, surfaces and validator
+    description: >
+      Pure functions ported from harness2 core/tree.py: normalisePath (rejects escapes),
+      isOnSurface, readable SurfaceSpec per agent family as data (paths for always-on text,
+      skills dir, subagent dir, scripts dir, hooks file, caps), validateHarnessTree returning
+      every problem as actionable prose, autotrigger repair within the always-on cap,
+      diffHarness (added, removed, modified, kept) and alwaysOnText.
+    state: Done
+    dependencies:
+      - task-1
+    acceptanceCriteria:
+      - Each rule has a test with its exact message — off-surface path, bad name, skill without frontmatter, skill without trigger line, missing referenced script, template braces in always-on text, always-on over cap, invalid hooks JSON, reserved path
+      - autotrigger adds a trigger line per untriggered skill and skips one that would exceed the cap
+      - No import outside domain/ (architecture lint passes)
+    tdd:
+      red:
+        - harness-validator.test.ts table of invalid trees and messages
+        - harness-tree.test.ts for path normalisation, surface membership, autotrigger, diff
+      green:
+        - Implement tree, surfaces, validator, diff
+      refactor:
+        - Share the name regex and path helpers between validator and installer surfaces
+    estimatedEffort: M
+  - id: task-5
+    title: Domain ledger, anonymiser, reply parsers and candidate scan
+    description: >
+      RefinementLedger with the identity R = 4k rollouts and P = 3k sessions per mode and a USD
+      cap check; seeded anonymisation (A..Z, AA..) stable for (featureId, k, mode); parsers for
+      <notes>, ```choice, <why>, <edits> and <experience> that fail closed; a static candidate
+      scan flagging secrets, network fetches, destructive shell and writes outside the
+      worktree in Script and Hook components.
+    state: Done
+    dependencies:
+      - task-1
+    acceptanceCriteria:
+      - Ledger assertIdentity passes for k = 1..5 in both modes and throws on any miscount
+      - Same inputs give the same anonymous ids; different features give different orders
+      - A choice outside the candidate ids, a missing block, or an experience missing cue/lesson/evidence parses to a typed failure, never a default pick
+      - Scan reports each finding with component path and line
+    tdd:
+      red:
+        - refinement-ledger.test.ts, anonymize-candidates.test.ts, improver-reply-parsers.test.ts, candidate-scan.test.ts
+      green:
+        - Implement the four modules
+      refactor: []
+    estimatedEffort: M
+  - id: task-6
+    title: Domain version metrics and regression detection
+    description: >
+      VersionMetrics aggregates per-feature outcomes (CI-fix attempts, gate rejections,
+      validation repairs, cost, turns, tool error rate, merged) and compareToParent flags a
+      regression once both versions have regressionMinSample features and the child is worse
+      on a composite score beyond a tolerance.
+    state: Done
+    dependencies:
+      - task-1
+    acceptanceCriteria:
+      - Below the minimum sample the result is insufficient-data, never a verdict
+      - A synthetic worse series is flagged; an equal or better one is not
+    tdd:
+      red:
+        - version-metrics.test.ts with synthetic series
+      green:
+        - Implement aggregation and comparison
+      refactor:
+        - Name every weight and tolerance as a constant
+    estimatedEffort: S
+  - id: task-7
+    title: Learned harness repository
+    description: >
+      ILearnedHarnessRepository (versions with components, current adopted version per scope,
+      edit records, lessons, refinement runs, outcome rows) and its SQLite implementation and
+      mapper, registered by string token.
+    state: Done
+    dependencies:
+      - task-3
+      - task-4
+    acceptanceCriteria:
+      - Every entity field round-trips through SQLite
+      - Exactly one Adopted version per scope; adopting supersedes the previous one in one transaction
+      - Queries never return rows from another scope
+    tdd:
+      red:
+        - Integration test against a real SQLite database for round-trip, scope isolation and the single-adopted invariant
+      green:
+        - Implement repository and mapper
+      refactor: []
+    estimatedEffort: M
+  - id: task-8
+    title: Output ports for installer, improver, evidence workspace, probe worktrees
+    description: >
+      IHarnessInstaller (install(version, agentType, worktree) → executor option additions and
+      written paths; uninstall), IHarnessImprover (run a mission in a workspace, return notes,
+      harvested tree, cost), IEvidenceWorkspace (materialise an evidence bundle as files, read
+      the edited harness back), IProbeWorktreeService (fork from a checkpoint, run checks,
+      collect diff, dispose). JSDoc contracts; register tokens; add to the bootstrap test.
+    state: Done
+    dependencies:
+      - task-1
+    acceptanceCriteria:
+      - Every token is registered and listed in the bootstrap DI test
+      - No infrastructure import in application/ports
+    tdd: null
+    estimatedEffort: S
+  - id: task-9
+    title: Installers per agent type
+    description: >
+      ClaudeCodeHarnessInstaller (always-on → appended system prompt, skills → .claude/skills,
+      subagents → .claude/agents, hooks → a Shep-owned settings file passed to the CLI),
+      CodexHarnessInstaller (skills → .agents/skills, always-on → prompt section),
+      PromptSectionHarnessInstaller fallback (always-on text and skill index as a
+      PromptSection, files under a git-excluded .shep-harness/ dir). A registry picks by agent
+      type through a new AgentDescriptor field, never by hardcoding in callers. Generalise
+      git-commit.service's injected-skills pathspec to all installer paths.
+    state: Done
+    dependencies:
+      - task-4
+      - task-8
+    acceptanceCriteria:
+      - Each installer writes exactly the surface its agent reads, verified on a real temp git repo
+      - Nothing an installer writes appears in a commit made by GitCommitService
+      - An empty harness installs nothing and changes no executor option
+      - Every AgentType resolves to an installer (total Record compiles)
+    tdd:
+      red:
+        - Integration tests per installer on a temporary git repository, including a commit that excludes installed paths
+      green:
+        - Implement installers, registry, descriptor field and pathspec generalisation
+      refactor:
+        - Extract shared file-writing helpers from the skill injector instead of duplicating them
+    estimatedEffort: L
+  - id: task-10
+    title: Overlay reaches every agent prompt
+    description: >
+      GetCurrentHarnessUseCase loads the scope's adopted version; the worker loads it into a
+      learnedHarness state channel; executeNode, implement, fast-implement, merge commit-push-pr,
+      the CI-fix loop and FeatureContextBuilder install it and render learned-harness-section
+      (raw-string renderer too, per LESSONS.md). Skipped entirely with the flag off.
+    state: Done
+    dependencies:
+      - task-7
+      - task-9
+    acceptanceCriteria:
+      - One parametrised test asserts the section in analyze, requirements, research, plan, implement, fast-implement, commit-push-pr, CI-fix and interactive context, and its absence when empty or flag off
+      - A load failure is logged and never blocks a node or a session boot
+    tdd:
+      red:
+        - learned-harness-section breadth test over every prompt builder
+        - get-current-harness use-case test with a fake repository
+      green:
+        - Implement use case, state channel, injection points
+      refactor:
+        - Thread the harness as one optional dep, like MemorySelector
+    estimatedEffort: M
+  - id: task-11
+    title: Evidence bundle and workspace
+    description: >
+      BuildEvidenceBundleUseCase gathers spec, phase timings, rejection feedback, validation
+      repairs, CI-fix history, PR comment rounds, supervisor verdicts, git checkpoint diffs and
+      transcripts (truncated, minimum 10,000 characters per trajectory) plus the current
+      harness and the scope's lesson index. FileSystemEvidenceWorkspace writes it as
+      context/{task.md,trajectories/,signals/,harness/,library/} and reads harness/ back.
+      A guard asserts no post-hoc grader signal (merged PR diff, later review) is present.
+    state: Done
+    dependencies:
+      - task-7
+      - task-8
+    acceptanceCriteria:
+      - Bundle contents are deterministic for the same feature
+      - The grader guard throws when a forbidden signal is added
+      - Transcripts are read through the existing agent session repositories for each agent type
+    tdd:
+      red:
+        - build-evidence-bundle use-case test with fakes
+        - workspace integration test writing and reading back a tree
+      green:
+        - Implement use case and workspace
+      refactor: []
+    estimatedEffort: M
+  - id: task-12
+    title: Improver adapter and adapted prompts
+    description: >
+      AgentHarnessImprover runs a mission through IAgentExecutorProvider with cwd set to the
+      workspace (structured-output file-map fallback for agents without file tools) and
+      harvests context/harness. Prompts adapted from harness2 prompts.py — INV, DOM, compose,
+      compose-round, select, experience, answer-free and evidence-is-data blocks, surface
+      table per agent family — with the Apache-2.0 header and NOTICE.md.
+    state: Done
+    dependencies:
+      - task-8
+      - task-11
+    acceptanceCriteria:
+      - No agent type is named outside the surface data; the provider decides the executor
+      - Prompt snapshot tests pin each mission per agent family
+      - Workspace edits come back as a tree; an empty or off-surface reply is reported, not applied
+    tdd:
+      red:
+        - agent-harness-improver test with a fake executor that edits files in cwd
+        - prompt snapshot tests
+      green:
+        - Implement adapter and prompt modules
+      refactor:
+        - Keep shared blocks in one module; no duplicated prompt text
+    estimatedEffort: M
+  - id: task-13
+    title: ReflectOnFeatureRunUseCase
+    description: >
+      Runs INV and DOM proposers concurrently, then one composer, each validated with one
+      retry carrying the validator's message and otherwise inheriting the current harness;
+      runs the experience prompt; stores a Candidate version (or a KEEP_BASE record), edit
+      rows marked Untested and at most one lesson capped at Low confidence; memory facts go
+      through RecordProjectMemoryUseCase. Never throws into the caller.
+    state: Done
+    dependencies:
+      - task-5
+      - task-12
+    acceptanceCriteria:
+      - Two invalid proposals end in the inherited harness with the error recorded
+      - KEEP_BASE from the composer stores no Candidate and records the decision
+      - A lesson is stored only when cue, lesson and evidence are all present
+      - Any improver failure returns a failed result and logs; the feature run is unaffected
+    tdd:
+      red:
+        - reflect-on-feature-run use-case tests with fake improver, workspace and repository
+      green:
+        - Implement the use case
+      refactor:
+        - Share the stage-with-retry helper with RefineHarnessUseCase (task-18)
+    estimatedEffort: L
+  - id: task-14
+    title: Post-run reflection hook (implemented in the worker, not as a graph node)
+    description: >
+      Implementation note: a graph node never runs when the graph throws, and failed runs are
+      the ones most worth learning from, so reflection runs in the worker after the graph
+      settles (completed or failed; not while paused at a gate) via learn-from-run.ts. It runs
+      only when implement was reached, Settings.learning.mode is not Off and the flag is on;
+      best effort, never changes the run's status.
+    state: Done
+    dependencies:
+      - task-13
+    acceptanceCriteria:
+      - Runs after a merged run and after a failed implement; skipped with mode Off or flag off
+      - Graph wiring stays one fluent chain (LESSONS.md)
+    tdd:
+      red:
+        - Graph tests for both graphs covering run and skip paths
+      green:
+        - Add node and edges, thread deps from the worker
+      refactor: []
+    estimatedEffort: S
+  - id: task-15
+    title: Adopt, reject and rollback with decisions and policy
+    description: >
+      A stored Candidate files a HarnessChange decision (diff, per-edit trajectory moment,
+      always-on cost, scan findings). AdoptHarnessVersionUseCase applies the policy (Manual;
+      AutoTextOnly only for Explore candidates without Script/Hook; Auto) and supersedes the
+      current version atomically. Reject stores feedback that the next reflection reads.
+      Rollback restores the parent and marks the child RolledBack.
+    state: Done
+    dependencies:
+      - task-7
+      - task-13
+    acceptanceCriteria:
+      - Script or Hook components are never auto-adopted under any policy
+      - Answering the decision in any inbox adopts or rejects exactly once
+      - Rollback of the base version is refused with a clear message
+    tdd:
+      red:
+        - adopt / reject / rollback use-case tests including the policy matrix
+      green:
+        - Implement use cases and decision filing
+      refactor: []
+    estimatedEffort: M
+  - id: task-16
+    title: Per-version outcome metrics
+    description: >
+      RecordVersionOutcomeUseCase writes one outcome row per finished feature for the version
+      it ran on (from PhaseTiming, CI-fix history, rejections, validation repairs, merge);
+      ListHarnessHistoryUseCase returns versions with metrics and regression flags.
+    state: Done
+    dependencies:
+      - task-6
+      - task-7
+      - task-14
+    acceptanceCriteria:
+      - Each finished feature records exactly one outcome row for its version
+      - History shows insufficient-data until the minimum sample is reached
+    tdd:
+      red:
+        - record-version-outcome and list-harness-history use-case tests
+      green:
+        - Implement use cases; call from the reflect node
+      refactor: []
+    estimatedEffort: S
+  - id: task-17
+    title: Probe worktrees from a git checkpoint
+    description: >
+      GitProbeWorktreeService forks sibling worktrees from the pre-implement checkpoint ref,
+      runs the repository's check commands (from the existing dev/test configuration) and
+      returns diff, check results and a delivered flag; disposes worktrees on every path.
+      As built: probes fork from the feature worktree's HEAD commit at implement start, as
+      detached worktrees under the OS temp dir, so no branches are created.
+    state: Done
+    dependencies:
+      - task-8
+    acceptanceCriteria:
+      - Forked worktrees start from exactly the checkpoint tree
+      - Worktrees are removed after success, failure and abort (no leaked directories or branches)
+    tdd:
+      red:
+        - Integration test on a real repository with a checkpoint ref
+      green:
+        - Implement the service
+      refactor: []
+    estimatedEffort: M
+  - id: task-18
+    title: RefineHarnessUseCase (parallel and sequential)
+    description: >
+      Port of recursion.py: k base rollouts, k INV and k DOM proposals, probes, k compositions
+      (parallel) or k rounds (sequential), final probes, ledger checked after each phase and
+      the USD cap enforced with fallback to the best base rollout.
+      As built: explore-recursion.ts holds the two schedules and explore-operations.ts the
+      guarded roll/stage helpers; selection and experience costs count toward the cap.
+    state: Done
+    dependencies:
+      - task-13
+      - task-17
+    acceptanceCriteria:
+      - Exactly 4k rollouts and 3k sessions per mode, asserted by the ledger
+      - Exceeding the cap stops new work and returns the base result with the reason
+      - Sequential round t edits checkpoint t-1, never the original
+    tdd:
+      red:
+        - refine-harness use-case tests for both modes, k = 1 and k = 3, cap fallback
+      green:
+        - Implement orchestration with injected probe and improver fakes
+      refactor:
+        - Reuse the stage-with-retry helper from task-13
+    estimatedEffort: L
+  - id: task-19
+    title: Blind selection and reflection on adoption
+    description: >
+      SelectProbeOutputUseCase anonymises the k finals, writes request, source and each
+      candidate's diff plus check results, runs the select prompt, parses fail-closed, falls
+      back to the best delivered candidate on failure; k = 1 skips the selector.
+      ReflectOnAdoptionUseCase writes edit rows with real verdicts and at most one lesson.
+      As built: reflection on adoption is the experience stage inside RefineHarnessUseCase
+      (refinement-records.ts runExperience), sharing the Reflect mode parser and recorder.
+    state: Done
+    dependencies:
+      - task-5
+      - task-18
+    acceptanceCriteria:
+      - The selector workspace contains no harness, label or origin of any candidate
+      - A malformed selector reply never picks a candidate silently; the fallback is recorded
+      - Edit verdicts may be Helped or Hurt only when a probe isolates the component
+    tdd:
+      red:
+        - select-probe-output and reflect-on-adoption use-case tests
+      green:
+        - Implement both use cases
+      refactor: []
+    estimatedEffort: M
+  - id: task-20
+    title: explore_implement graph node
+    description: >
+      In Explore mode (per feature or per scope) explore_implement replaces implement /
+      fast-implement: refine, select, restore the chosen tree into the feature worktree as a
+      git checkpoint, store the run and its candidate, then continue to merge.
+      As built: withExplore() wraps implement and fast-implement in both graphs; the kept
+      probe's commits are fast-forwarded into the feature worktree and withCheckpoint records
+      the checkpoint. With nothing kept, the original node runs unchanged.
+    state: Done
+    dependencies:
+      - task-19
+    acceptanceCriteria:
+      - Reflect mode graphs are unchanged; Explore mode runs the new node exactly once
+      - The feature worktree ends with the chosen candidate's tree and a checkpoint
+    tdd:
+      red:
+        - Graph tests for routing and restore
+      green:
+        - Implement node and routing
+      refactor: []
+    estimatedEffort: M
+  - id: task-21
+    title: CLI shep learn
+    description: >
+      status, history, show <version>, diff <a> <b>, adopt <version> | --from-dir <dir>,
+      reject <version> --feedback, rollback, reflect <feature> — thin over the use cases,
+      nine locales, --json where it lists data.
+      As built: src/presentation/cli/commands/learn/ (-r/--repo defaults to cwd, --json on
+      status/history/show/diff); ids accept unique prefixes (resolve-harness-version.ts);
+      `adopt --from-dir` uses ImportHarnessVersionUseCase, `reflect` ReflectOnFeatureUseCase.
+    state: Done
+    dependencies:
+      - task-15
+      - task-16
+    acceptanceCriteria:
+      - Every subcommand calls a use case resolved by token; no logic in the command
+      - Strings exist in all locales
+    tdd:
+      red:
+        - Command tests with a fake container
+      green:
+        - Implement commands
+      refactor: []
+    estimatedEffort: M
+  - id: task-22
+    title: Web Learned harness page
+    description: >
+      /learning page reachable from the sidebar and the project page: version timeline with
+      metrics and regression flags, diff view, edit verdicts, lessons, adopt / rollback actions;
+      HarnessChange decisions render in the existing inbox. Stories for every component,
+      server-action mocks, nine locales.
+      As built: app/learning/page.tsx (?repo=&version=), components/features/learning/,
+      sidebar link and a repository-drawer toolbar link (both flag-gated), server actions in
+      app/actions/learning.ts with Storybook mocks, e2e learning-adopt-rollback.spec.ts.
+    state: Done
+    dependencies:
+      - task-15
+      - task-16
+    acceptanceCriteria:
+      - Every component has a colocated story covering default, loading and error
+      - e2e test adopts and rolls back a version
+      - pnpm build:storybook passes
+    tdd:
+      red:
+        - Component unit tests and the e2e test
+      green:
+        - Implement page, components, actions
+      refactor: []
+    estimatedEffort: L
+  - id: task-23
+    title: TUI decision rendering
+    description: >
+      HarnessChange decisions show in the control center with the diff summary and adopt /
+      reject actions through the same use cases.
+      As built: the feature console (`shep tui`) had no decision view, so `d` opens a
+      learned-harness-changes overlay that answers through AnswerAgentQuestionUseCase.
+    state: Done
+    dependencies:
+      - task-15
+    acceptanceCriteria:
+      - The decision renders and its actions call the adopt / reject use cases
+    tdd:
+      red:
+        - TUI decision view test
+      green:
+        - Implement the view
+      refactor: []
+    estimatedEffort: S
+  - id: task-24
+    title: Content-free telemetry
+    description: >
+      Events HarnessCandidateProposed, HarnessVersionAdopted, HarnessVersionRejected,
+      HarnessVersionRolledBack, HarnessRefinementFinished with counts and enums only
+      (components per kind, verdict counts, mode, k, outcome).
+      As built: five TelemetryEvent members; recorded in Offer/Adopt/Reject/Rollback and when
+      a Reflect or Explore refinement finishes (harness-telemetry.ts); docs/telemetry.md.
+    state: Done
+    dependencies:
+      - task-15
+      - task-18
+    acceptanceCriteria:
+      - Typed property maps contain no strings beyond enum values
+    tdd:
+      red:
+        - Telemetry property tests
+      green:
+        - Add events and record them in the use cases
+      refactor: []
+    estimatedEffort: S
+  - id: task-25
+    title: Documentation and attribution
+    description: >
+      docs/architecture/self-learning-harness.md (both loops, scope, surfaces, safety, settings),
+      link from agent-system.md and CLAUDE.md Key Docs, NOTICE.md beside the prompts, LESSONS.md
+      entries for anything learned during implementation.
+      As built: docs/architecture/self-learning-harness.md, linked from agent-system.md,
+      docs/tui/architecture.md and CLAUDE.md Key Docs; LESSONS.md entries added.
+    state: Done
+    dependencies:
+      - task-20
+      - task-22
+    acceptanceCriteria:
+      - Docs describe every setting and command that ships
+    tdd: null
+    estimatedEffort: S
+  - id: task-26
+    title: End-to-end proof with a mock executor
+    description: >
+      A mock-executor feature run reaches reflect_harness, produces a candidate with a skill,
+      the candidate is adopted through the decision, and the next feature run's prompt and
+      worktree receive the skill; rollback removes it again.
+      As built: tests/integration/infrastructure/harness-learning/self-learning-loop.test.ts
+      (real SQLite, workspace, improver adapter, installer and proxy; mock agent executors).
+    state: Done
+    dependencies:
+      - task-21
+      - task-22
+      - task-23
+      - task-24
+      - task-27
+      - task-28
+    acceptanceCriteria:
+      - Test passes locally and in CI on every OS in the matrix
+      - pnpm validate, test:unit, test:int and build pass
+    tdd:
+      red:
+        - End-to-end test written first, failing on the missing loop
+      green:
+        - Fix any gap the test exposes
+      refactor: []
+    estimatedEffort: M
+
+  - id: task-27
+    title: Web Self-learning settings section
+    description: >
+      A Self-learning section in Settings, shown when the selfLearning flag is on: mode (Off /
+      Reflect / Explore) with a one-line explanation of each, Explore k and USD cap with the
+      cost stated (about 4x the implement step at k = 1), adoption policy (Manual,
+      AutoTextOnly, Auto) noting that scripts and hooks always need a person, always-on
+      character cap and regression sample size. Saves through the existing update-settings
+      action; added to the settings section nav; nine locales.
+      As built: settings/self-learning-settings-section.tsx; every value passes through
+      resolveLearningConfig and unknown stored fields are kept; flag-off is the
+      SettingsPageClient Default story, flag-on SelfLearningOn.
+    state: Done
+    dependencies:
+      - task-2
+    acceptanceCriteria:
+      - Section hidden with the flag off; visible and editable with it on
+      - Every field round-trips through update-settings and reloads with its saved value
+      - Colocated story covers default, loading, error and flag-off states
+      - Writes spread the existing learning sub-object, never rebuild it (LESSONS.md)
+    tdd:
+      red:
+        - Component unit tests for visibility, field changes and the save payload
+      green:
+        - Implement self-learning-settings-section.tsx and wire it into settings-page-client
+      refactor:
+        - Reuse settings-rows and timeout-slider controls rather than new inputs
+    estimatedEffort: M
+  - id: task-28
+    title: Per-feature Explore toggle on every create surface
+    description: >
+      Add exploreHarness (boolean) and exploreK (int) to the Feature entity and the create
+      input (TypeSpec, migration column, mapper, repository SQL — the four-edit rule in
+      LESSONS.md). CreateFeatureUseCase stores them; the worker routes to explore_implement
+      when exploreHarness is set, regardless of the scope mode. Surfaces: a toggle with k and
+      cost note in the web feature-create drawer, `shep feat new --explore-harness [--explore-k N]` (`--explore` is the Exploration build mode),
+      and an explore choice in the TUI create flow. All shown only with the flag on.
+      As built: the CLI option is `--explore-harness` (`--explore` was taken); explore fields
+      also flow through CreateFeatureFromRemoteUseCase; k validated by isValidExploreK; the TUI
+      choice lives in the console's new-feature view (`N`).
+    state: Done
+    dependencies:
+      - task-1
+      - task-20
+    acceptanceCriteria:
+      - A feature created with Explore on runs explore_implement even when the scope mode is Off or Reflect
+      - Both fields round-trip through SQLite
+      - The toggle is absent on all three surfaces with the flag off
+      - The web drawer story covers the toggle on and off
+    tdd:
+      red:
+        - Feature mapper round-trip test for the new fields
+        - create-feature use-case test storing the override
+        - Graph routing test for the per-feature override
+        - Drawer component test, CLI option test, TUI create-flow test
+      green:
+        - Implement fields, migration, use-case input, routing and the three surfaces
+      refactor: []
+    estimatedEffort: M
+
+totalEstimate: XL (28 tasks — 9 S, 15 M, 4 L)
+
+openQuestions: []
+
+content: |
+  ## Summary
+
+  28 tasks in 8 phases. Phases 1–5 deliver Reflect mode: the learned harness as data,
+  installed for every agent and every prompt, and a reflection after every run that files
+  candidates as decisions with per-version metrics and rollback. Phase 6 adds Explore mode
+  (Propose–Probe–Compose on implement with blind selection). Phases 7–8 add the CLI, Web and
+  TUI surfaces — including the Self-learning settings section and a per-feature Explore
+  toggle on every create surface — telemetry, docs and an end-to-end proof.
+
+  ## Acceptance Checklist
+
+  - [ ] Flag off: every existing test passes and prompts are byte-identical
+  - [ ] Defaults are flag off, mode Off, policy Manual — learning is opt-in at every level
+  - [ ] Settings section and per-feature Explore toggle exist on web, CLI and TUI
+  - [ ] Empty harness: nothing installed, nothing committed
+  - [ ] Reflect mode files a validated candidate after a merged run and after a failed run
+  - [ ] Script and Hook components are never adopted without a person
+  - [ ] Explore mode respects the 4k / 3k ledger and the USD cap
+  - [ ] Selection is blind and fails closed
+  - [ ] Adopted versions show outcome metrics; regressions are flagged; rollback works
+  - [ ] CLI, Web and TUI expose the same use cases
+  - [ ] Telemetry is content-free
+  - [ ] pnpm validate, test:unit, test:int, build and build:storybook pass

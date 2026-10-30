@@ -41,6 +41,7 @@ import {
 } from '@/domain/generated/output.js';
 import { buildApprovalGateDecision } from '@/domain/shared/decision-builders.js';
 import { toDurationBucket } from '@/domain/shared/telemetry/telemetry-delivery.js';
+import { buildHarnessChangeDecision } from '@/domain/harness-learning/harness-decision.js';
 
 type TelemetryDouble = ITelemetry & { record: ReturnType<typeof vi.fn> };
 
@@ -636,6 +637,36 @@ describe('AnswerAgentQuestionUseCase', () => {
         answeredBy: 'user:web',
       });
       expect(reject.execute).toHaveBeenCalledWith('run-1', 'Split the PR');
+    });
+
+    it('forwards a learned-harness answer to the harness decision resolver (spec 150)', async () => {
+      const { question, useCase } = await askWith(
+        buildHarnessChangeDecision('x', 'v9', 'Adopt?', 'diff')
+      );
+      const harnessDecisions = { execute: vi.fn().mockResolvedValue(true) };
+      Object.assign(useCase, { harnessDecisions });
+      const responses = [{ questionId: 'harness-change:v9', optionIds: ['adopt'] }];
+      await useCase.execute({
+        appId: 'app-1',
+        questionId: question.id,
+        responses,
+        answeredBy: 'user:web',
+      });
+      expect(harnessDecisions.execute).toHaveBeenCalledWith(responses, 'user:web');
+    });
+
+    it('does not call the harness resolver for other decisions', async () => {
+      const { question, awaiter, useCase } = await askWith(chatDecision);
+      const harnessDecisions = { execute: vi.fn() };
+      Object.assign(useCase, { harnessDecisions });
+      await useCase.execute({
+        appId: 'app-1',
+        questionId: question.id,
+        responses: [{ questionId: 'q1', optionIds: ['o1'] }],
+        answeredBy: 'user:web',
+      });
+      await awaiter;
+      expect(harnessDecisions.execute).not.toHaveBeenCalled();
     });
   });
 

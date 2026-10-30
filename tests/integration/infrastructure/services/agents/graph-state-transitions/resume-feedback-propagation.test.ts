@@ -38,35 +38,12 @@ import {
   VALID_PLAN_YAML,
   VALID_TASKS_YAML,
 } from './fixtures.js';
-import { ALL_GATES_ENABLED } from './helpers.js';
+import { ALL_GATES_ENABLED, getExecutedNodes } from './helpers.js';
 
 /**
  * Non-retryable error — retryExecute() throws immediately.
  */
 const NON_RETRYABLE_MSG = 'Process exited with code 1: simulated node failure';
-
-/**
- * Prompt markers for identifying which node ran.
- */
-const PROMPT_NODE_MARKERS: [string, string][] = [
-  ['analyze', 'ANALYSIS phase'],
-  ['requirements', 'REQUIREMENTS phase'],
-  ['research', 'RESEARCH phase'],
-  ['plan', 'PLANNING phase'],
-  ['implement', 'autonomous implementation'],
-];
-
-function getExecutedNodes(prompts: string[]): string[] {
-  const seen = new Set<string>();
-  for (const prompt of prompts) {
-    for (const [nodeName, marker] of PROMPT_NODE_MARKERS) {
-      if (prompt.includes(marker)) {
-        seen.add(nodeName);
-      }
-    }
-  }
-  return PROMPT_NODE_MARKERS.map(([name]) => name).filter((n) => seen.has(n));
-}
 
 /**
  * Append rejection feedback to spec.yaml (simulates what RejectAgentRunUseCase does).

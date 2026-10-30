@@ -3345,6 +3345,38 @@ process, so one browser tab closing mid-request (`Error: aborted`, ECONNRESET) c
 daemon for every tab and agent. Triage process-level errors by origin before exiting: a client
 disconnect is the client's problem.
 
+## A plan with a setting must give its default and the screen that changes it
+
+Spec 150's first plan added `Settings.learning.mode` and a per-feature "Explore" option but
+never said what the mode defaults to, had no settings section to change it, and no toggle on
+the surfaces that create a feature. The user had to ask "is everything opt-in? is the UI
+covered?". **Rule:** for every new setting, flag or per-item option a plan introduces, state
+its default (and whether that keeps the feature opt-in), name the settings section that edits
+it, and list every surface that creates the item it applies to (web drawer, `shep feat new`,
+TUI) with a task for each — before calling the plan complete.
+
+## Check a CLI option name is free before a spec names it
+
+Spec 150 told `shep feat new` to take `--explore`, but `--explore` already selects the
+Exploration build mode; implementation had to rename it `--explore-harness` and patch the spec.
+**Rule:** before a spec or plan names a new CLI option, grep the command for it
+(`grep -n "'--name" src/presentation/cli/commands/<cmd>`) and pick a free, specific name.
+
+## A new create-input field must reach every create path
+
+The per-feature Explore fields were added to `CreateFeatureInput` but not to
+`CreateFeatureFromRemoteInput`, so `shep feat new --remote` would have dropped them silently.
+**Rule:** when a field is added to one create/update input, grep for every use case that
+builds that input (`grep -rn "createFeatureUseCase\.\(execute\|createRecord\)"`) and forward
+it there too, with a test per path.
+
+## A new web link needs `pnpm build:web:prod`, not just `typecheck:web`
+
+The web app has `typedRoutes: true`: `<Link href>` and `router.push` only accept a `Route`, and
+that is checked by `next build`, not by `pnpm typecheck:web`. Spec 150's Learning links passed
+every local check and broke the production build. **Rule:** a helper that builds an href returns
+`Route` (`` `/path?${params}` as Route ``), and any change that adds a link or `router.push` runs
+`pnpm build:web:prod` before pushing.
 
 ## A major upgrade that drops an export a plugin needs: patch the import, prove output is identical
 

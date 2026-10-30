@@ -15,6 +15,7 @@ import { StateGraph, START, END, type BaseCheckpointSaver } from '@langchain/lan
 import type { IAgentExecutor } from '@/application/ports/output/agents/agent-executor.interface.js';
 import { FeatureAgentAnnotation, type FeatureAgentState } from './state.js';
 import { createFastImplementNode } from './nodes/fast-implement.node.js';
+import { withExplore, type ExploreNodeDeps } from './explore/with-explore.js';
 import { createMergeNode, type MergeNodeDeps } from './nodes/merge/merge.node.js';
 import {
   createExtractMemoryNode,
@@ -42,6 +43,8 @@ export interface FastFeatureAgentGraphDeps {
   selectProjectMemory?: MemorySelector;
   /** Snapshots the worktree around file-changing nodes (spec 138). */
   checkpoints?: CheckpointRecorder;
+  /** Explore mode around fast-implement (spec 150). */
+  explore?: ExploreNodeDeps;
 }
 
 /**
@@ -87,7 +90,11 @@ export function createFastFeatureAgentGraph(
     'fast-implement',
     withCheckpoint(
       'fast-implement',
-      createFastImplementNode(executor, selectProjectMemory),
+      withExplore(
+        createFastImplementNode(executor, selectProjectMemory),
+        'fast-implement',
+        deps.explore
+      ),
       checkpoints
     )
   );

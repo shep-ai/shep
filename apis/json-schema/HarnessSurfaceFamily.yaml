@@ -1,0 +1,8 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: HarnessSurfaceFamily.yaml
+type: string
+enum:
+  - claude-code
+  - codex
+  - prompt-section
+description: Where an agent family reads harness components from

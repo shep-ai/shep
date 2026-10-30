@@ -7,6 +7,8 @@ import { DrawerCloseGuardProvider } from '@/hooks/drawer-close-guard';
 import type { FileAttachment } from '@shepai/core/infrastructure/services/file-dialog.service';
 import type { WorkflowDefaults } from '@/app/actions/get-workflow-defaults';
 import { BuildMode } from '@shepai/core/domain/generated/output';
+import { FeatureFlagsProvider } from '@/hooks/feature-flags-context';
+import type { FeatureFlagsState } from '@/lib/feature-flags';
 
 // Mock GitHubImportDialog
 const mockGitHubImportDialog = vi.fn();
@@ -1734,5 +1736,48 @@ describe('FeatureCreateDrawer', () => {
       expect(screen.getByTestId('build-mode-spec')).toBeEnabled();
       expect(screen.getByTestId('build-mode-fast')).toBeEnabled();
     });
+  });
+});
+
+describe('per-feature Explore (spec 150)', () => {
+  function renderWithFlags(selfLearning: boolean, onSubmit = vi.fn()) {
+    render(
+      <FeatureFlagsProvider flags={{ selfLearning } as FeatureFlagsState}>
+        <DrawerCloseGuardProvider>
+          <FeatureCreateDrawer {...defaultProps} onSubmit={onSubmit} />
+        </DrawerCloseGuardProvider>
+      </FeatureFlagsProvider>
+    );
+    return onSubmit;
+  }
+
+  it('has no Explore toggle and sends no Explore fields while the flag is off', async () => {
+    const user = userEvent.setup();
+    const onSubmit = renderWithFlags(false);
+    expect(screen.queryByTestId('explore-harness-row')).toBeNull();
+    await user.type(screen.getByPlaceholderText(descriptionPlaceholder), 'Add a feature');
+    await user.click(screen.getByRole('button', { name: '+ Create Feature' }));
+    expect(onSubmit.mock.calls[0][0]).not.toHaveProperty('exploreHarness');
+  });
+
+  it('sends Explore with its k, and states the cost, when the toggle is on', async () => {
+    const user = userEvent.setup();
+    const onSubmit = renderWithFlags(true);
+    expect(screen.queryByTestId('explore-harness-cost')).toBeNull();
+    await user.click(screen.getByTestId('explore-harness-switch'));
+    expect(screen.getByTestId('explore-harness-cost').textContent).toContain('4');
+    await user.type(screen.getByPlaceholderText(descriptionPlaceholder), 'Add a feature');
+    await user.click(screen.getByRole('button', { name: '+ Create Feature' }));
+    expect(onSubmit).toHaveBeenCalledWith(
+      expect.objectContaining({ exploreHarness: true, exploreK: 1 })
+    );
+  });
+
+  it('sends no Explore fields when the flag is on but the toggle stays off', async () => {
+    const user = userEvent.setup();
+    const onSubmit = renderWithFlags(true);
+    await user.type(screen.getByPlaceholderText(descriptionPlaceholder), 'Add a feature');
+    await user.click(screen.getByRole('button', { name: '+ Create Feature' }));
+    expect(onSubmit.mock.calls[0][0]).not.toHaveProperty('exploreHarness');
   });
 });

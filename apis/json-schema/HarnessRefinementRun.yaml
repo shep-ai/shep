@@ -1,0 +1,61 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: HarnessRefinementRun.yaml
+type: object
+properties:
+  featureId:
+    type: string
+    description: Feature whose run is being learned from
+  repositoryPath:
+    type: string
+    description: Normalised repository path of the feature
+  mode:
+    $ref: LearningMode.yaml
+    description: Reflect (no probes) or Explore (probes)
+  recursion:
+    $ref: HarnessRecursion.yaml
+    description: Recursion shape, for Explore runs
+  k:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Task-level recursion budget; 0 for Reflect
+  rollouts:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Executions performed (4k in Explore)
+  sessions:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Improver sessions performed (3k in Explore, 3 in Reflect)
+  costUsd:
+    type: number
+    description: Total cost of improvement sessions and probes in USD
+  status:
+    $ref: HarnessRefinementStatus.yaml
+    description: What became of the refinement
+  candidateVersionId:
+    type: string
+    description: Candidate version produced, when any
+  chosenLabel:
+    type: string
+    description: Label of the output chosen by blind selection
+  selectionReason:
+    type: string
+    description: Why the selector chose it
+  error:
+    type: string
+    description: Error text when the refinement failed
+required:
+  - featureId
+  - repositoryPath
+  - mode
+  - k
+  - rollouts
+  - sessions
+  - costUsd
+  - status
+allOf:
+  - $ref: BaseEntity.yaml
+description: One harness refinement of one feature run, with its budget ledger

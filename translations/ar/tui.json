@@ -241,7 +241,9 @@
       "filter": "تصفية",
       "palette": "الأوامر",
       "copyId": "نسخ المعرّف",
-      "chat": "دردشة"
+      "chat": "دردشة",
+      "harness": "تغييرات الـ harness ({{count}})",
+      "newFeature": "ميزة جديدة"
     },
     "reject": {
       "prompt": "ملاحظات لـ {{name}}:",
@@ -281,7 +283,9 @@
       "palette": ":/ctrl+p   لوحة الأوامر",
       "copyId": "c   نسخ معرّف الميزة",
       "controlCenter": "C   نافذة لكل ميزة نشطة (مركز التحكم)",
-      "chat": "o   الدردشة مع وكيل الميزة (esc يعود)"
+      "chat": "o   الدردشة مع وكيل الميزة (esc يعود)",
+      "harness": "d   تغييرات الـ harness المُتعلَّمة التي تنتظرك (اعتماد / رفض)",
+      "newFeature": "N   ميزة جديدة في مستودع الميزة المحددة"
     },
     "notTty": "يحتاج shep tui إلى طرفية تفاعلية. في السكربتات والأنابيب استخدم \"shep feat ls\".",
     "filter": {
@@ -322,7 +326,9 @@
         "help": "عرض المفاتيح",
         "quit": "خروج",
         "control-center": "فتح نافذة لكل ميزة نشطة",
-        "chat": "الدردشة مع وكيل الميزة"
+        "chat": "الدردشة مع وكيل الميزة",
+        "harness-decisions": "مراجعة تغييرات الـ harness المُتعلَّمة",
+        "new-feature": "إنشاء ميزة جديدة"
       }
     },
     "copied": "تم نسخ معرّف {{name}}: {{id}}",
@@ -345,6 +351,35 @@
     },
     "hostStatus": {
       "blocked": "بحاجة إليك: {{count}}"
+    },
+    "harness": {
+      "title": "تغييرات الـ harness المُتعلَّمة",
+      "waiting": "بانتظارك: {{count}}",
+      "empty": "لا يوجد تغيير في الـ harness بانتظارك",
+      "hint": "↑↓ اختيار · a اعتماد · r رفض · esc العودة إلى الميزات",
+      "rejectPrompt": "رفض — لماذا؟",
+      "rejectHint": "الملاحظات الاختيارية توجّه الاقتراح التالي · enter رفض · esc إلغاء",
+      "progress": "جارٍ الرد على تغيير الـ harness…",
+      "adopted": "تم اعتماد تغيير الـ harness",
+      "rejected": "تم رفض تغيير الـ harness",
+      "alreadySettled": "تمت الإجابة عن تغيير الـ harness هذا في مكان آخر",
+      "collaborationOff": "يُرد على تغييرات الـ harness عبر صندوق الوارد؛ فعّله بالأمر: shep settings flags enable collaboration"
+    },
+    "create": {
+      "title": "ميزة جديدة في {{repository}}",
+      "prompt": "الوصف",
+      "describe": "صِف الميزة في السطر أدناه واضغط enter. تتبع البوابات والدفع وطلب الدمج إعدادات سير العمل لديك.",
+      "explore": "Explore",
+      "k": "k",
+      "on": "مفعّل",
+      "off": "معطّل",
+      "kRange": "↑↓ 1–{{max}}",
+      "exploreCost": "يجرّب Explore عدة صيغ من الـ harness في خطوة التنفيذ لهذه الميزة فقط ويحتفظ بأفضلها. تبلغ تكلفته نحو 4 أضعاف خطوة التنفيذ عند k = 1، وأكثر عند قيم k الأعلى.",
+      "hint": "enter إنشاء · esc إلغاء",
+      "hintExplore": "enter إنشاء · tab تفعيل/تعطيل Explore · ↑↓ k · esc إلغاء",
+      "progress": "جارٍ إنشاء ميزة في {{repository}}…",
+      "created": "تم إنشاء {{name}}",
+      "queued": "تم إنشاء {{name}} — في قائمة الانتظار بالموضع {{position}}"
     }
   }
 }

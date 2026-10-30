@@ -70,6 +70,13 @@ export interface CreateFeatureInput {
   injectSkills?: boolean;
   /** Per-feature plugin activation overrides (plugin name -> enabled/disabled). */
   activePlugins?: Record<string, boolean>;
+  /**
+   * Run the implement step in Explore mode for this feature, whatever the
+   * learning mode (spec 150). Still needs the selfLearning flag at run time.
+   */
+  exploreHarness?: boolean;
+  /** Explore rollouts budget k for this feature; only stored with exploreHarness. */
+  exploreK?: number;
 }
 
 export interface CreateFeatureResult {

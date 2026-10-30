@@ -1,0 +1,9 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: HarnessScanRule.yaml
+type: string
+enum:
+  - secret
+  - network
+  - destructive
+  - outside-worktree
+description: What the static scan of a candidate harness flagged

@@ -707,6 +707,32 @@ describe('ClaudeCodeExecutorService', () => {
       });
     });
 
+    describe('settingsPath option (spec 150)', () => {
+      it('passes the learned-harness settings file as --settings', async () => {
+        const mockProc = createMockChildProcess();
+        vi.mocked(mockSpawn).mockReturnValue(mockProc as any);
+        const executePromise = executor.execute('Test', {
+          settingsPath: '/wt/.shep/learned/settings.json',
+        });
+        emitStreamData(mockProc, [buildStreamResult({ result: 'Done' })], null, 0);
+        await executePromise;
+        const [, args] = vi.mocked(mockSpawn).mock.calls[0] as [string, string[]];
+        expect(args).toEqual(
+          expect.arrayContaining(['--settings', '/wt/.shep/learned/settings.json'])
+        );
+      });
+
+      it('omits --settings when no settings file is given', async () => {
+        const mockProc = createMockChildProcess();
+        vi.mocked(mockSpawn).mockReturnValue(mockProc as any);
+        const executePromise = executor.execute('Test');
+        emitStreamData(mockProc, [buildStreamResult({ result: 'Done' })], null, 0);
+        await executePromise;
+        const [, args] = vi.mocked(mockSpawn).mock.calls[0] as [string, string[]];
+        expect(args).not.toContain('--settings');
+      });
+    });
+
     describe('disableMcp option', () => {
       it('should add --strict-mcp-config when disableMcp is true', async () => {
         const mockProc = createMockChildProcess();

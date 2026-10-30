@@ -76,6 +76,7 @@ vi.mock('@/hooks/feature-flags-context', () => ({
     factory: true,
     sdlcBoard: false,
     agentCoordination: false,
+    selfLearning: false,
   })),
 }));
 
@@ -117,6 +118,7 @@ describe('AddRepositoryButton', () => {
       factory: true,
       sdlcBoard: false,
       agentCoordination: false,
+      selfLearning: false,
     });
   });
 
@@ -233,6 +235,7 @@ describe('AddRepositoryButton', () => {
         factory: true,
         sdlcBoard: false,
         agentCoordination: false,
+        selfLearning: false,
       });
     });
 
@@ -382,6 +385,7 @@ describe('AddRepositoryButton', () => {
         factory: true,
         sdlcBoard: false,
         agentCoordination: false,
+        selfLearning: false,
       });
     });
 
@@ -473,6 +477,7 @@ describe('AddRepositoryButton', () => {
         factory: true,
         sdlcBoard: false,
         agentCoordination: false,
+        selfLearning: false,
       });
       const user = userEvent.setup();
       render(<AddRepositoryButton />);

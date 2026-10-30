@@ -33,7 +33,7 @@ import {
   VALID_PLAN_YAML,
   VALID_TASKS_YAML,
 } from './fixtures.js';
-import { expectNoInterrupts, ALL_GATES_ENABLED } from './helpers.js';
+import { expectNoInterrupts, ALL_GATES_ENABLED, getExecutedNodes } from './helpers.js';
 import {
   initializeSettings,
   hasSettings,
@@ -46,33 +46,6 @@ import type { Settings } from '@/domain/generated/output.js';
  * and throws immediately without retry. This ensures the node fails on first attempt.
  */
 const NON_RETRYABLE_MSG = 'Process exited with code 1: simulated failure';
-
-/**
- * Identify which producer nodes ran by inspecting executor.prompts.
- * Each node's prompt builder includes a unique phase identifier.
- * Since executor.prompts is reset between invocations (via resetCounts),
- * this reliably shows which nodes ran in the CURRENT invocation only —
- * unlike result.messages which accumulates across checkpointer state.
- */
-const PROMPT_NODE_MARKERS: [string, string][] = [
-  ['analyze', 'ANALYSIS phase'],
-  ['requirements', 'REQUIREMENTS phase'],
-  ['research', 'RESEARCH phase'],
-  ['plan', 'PLANNING phase'],
-  ['implement', 'autonomous implementation'],
-];
-
-function getExecutedNodes(prompts: string[]): string[] {
-  const seen = new Set<string>();
-  for (const prompt of prompts) {
-    for (const [nodeName, marker] of PROMPT_NODE_MARKERS) {
-      if (prompt.includes(marker)) {
-        seen.add(nodeName);
-      }
-    }
-  }
-  return PROMPT_NODE_MARKERS.map(([name]) => name).filter((n) => seen.has(n));
-}
 
 /**
  * Create a controllable executor that can be configured to throw starting

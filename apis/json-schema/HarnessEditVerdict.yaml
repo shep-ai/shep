@@ -1,0 +1,10 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: HarnessEditVerdict.yaml
+type: string
+enum:
+  - helped
+  - hurt
+  - no-observed-effect
+  - confounded
+  - untested
+description: What an edit to a harness component was observed to do

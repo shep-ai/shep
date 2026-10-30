@@ -1,0 +1,51 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: LearnedHarnessVersion.yaml
+type: object
+properties:
+  scope:
+    $ref: MemoryScope.yaml
+    description: "Reach of this version: Project (default), ProductLine or Space"
+  repositoryPath:
+    type: string
+    description: Normalised repository path the version was learned in
+  spaceId:
+    type: string
+    description: Space of the version, when its repository has one
+  productLineId:
+    type: string
+    description: Product line of the version, when its repository has one
+  parentVersionId:
+    type: string
+    description: Version this one was derived from; the rollback target
+  status:
+    $ref: LearnedHarnessStatus.yaml
+    description: Where the version is in its life
+  origin:
+    $ref: HarnessOrigin.yaml
+    description: How the version was produced
+  components:
+    type: array
+    items:
+      $ref: HarnessComponent.yaml
+    description: The overlay's components; empty for the base version
+  notes:
+    type: string
+    description: "Composer notes: each kept, revised or dropped edit with the trajectory moment behind it"
+  sourceFeatureId:
+    type: string
+    description: Feature whose run produced this version
+  refinementRunId:
+    type: string
+    description: Refinement that produced this version
+  statusReason:
+    type: string
+    description: Feedback given when the candidate was rejected, or why it was rolled back
+required:
+  - scope
+  - repositoryPath
+  - status
+  - origin
+  - components
+allOf:
+  - $ref: BaseEntity.yaml
+description: A version of the learned harness overlay for one scope

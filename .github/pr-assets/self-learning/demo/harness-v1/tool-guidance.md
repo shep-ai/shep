@@ -1,0 +1,1 @@
+- Use `pnpm`, never `npm` or `yarn`.

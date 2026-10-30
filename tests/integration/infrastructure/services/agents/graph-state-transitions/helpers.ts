@@ -106,3 +106,32 @@ export const PRD_ALLOWED = { allowPrd: true, allowPlan: false, allowMerge: false
 
 /** PRD and plan auto-approved, merge gated. */
 export const PRD_PLAN_ALLOWED = { allowPrd: true, allowPlan: true, allowMerge: false } as const;
+
+/* ------------------------------------------------------------------ */
+/*  Executed-node Helpers                                              */
+/* ------------------------------------------------------------------ */
+
+/** Each producer node's prompt carries one of these phase markers. */
+export const PROMPT_NODE_MARKERS: readonly (readonly [string, string])[] = [
+  ['analyze', 'ANALYSIS phase'],
+  ['requirements', 'REQUIREMENTS phase'],
+  ['research', 'RESEARCH phase'],
+  ['plan', 'PLANNING phase'],
+  ['implement', 'autonomous implementation'],
+  ['merge', 'Write a conventional commit message'],
+];
+
+/**
+ * Which producer nodes ran, in graph order, judged from the executor's
+ * prompts. Reset the recorded prompts between invocations to see only the
+ * current one — result.messages accumulates across checkpointed state.
+ */
+export function getExecutedNodes(prompts: readonly string[]): string[] {
+  const seen = new Set<string>();
+  for (const prompt of prompts) {
+    for (const [nodeName, marker] of PROMPT_NODE_MARKERS) {
+      if (prompt.includes(marker)) seen.add(nodeName);
+    }
+  }
+  return PROMPT_NODE_MARKERS.map(([name]) => name).filter((n) => seen.has(n));
+}

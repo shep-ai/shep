@@ -1,6 +1,6 @@
 /**
  * What the feature console view asks of the app, and what it is built with
- * (specs 142, 143, 145, 146, 147). Every intent is carried out through a use case.
+ * (specs 142, 143, 145, 146, 147, 150). Every intent is carried out through a use case.
  */
 
 import type { TFunction } from 'i18next';
@@ -10,6 +10,8 @@ import type {
   FeaturePanePlacement,
 } from '@/domain/generated/output.js';
 import type { FeatureConsoleRow } from '@/application/use-cases/feature-console/feature-console.types.js';
+import type { ConsoleExplore, ConsoleNewFeature } from './console-create.js';
+import type { HarnessAnswer, HarnessDecisionItem } from './harness-decisions.js';
 
 /** What the view asks the app to do. */
 export interface FeatureConsoleIntents {
@@ -34,6 +36,10 @@ export interface FeatureConsoleIntents {
   sendChat(row: FeatureConsoleRow, text: string): void;
   /** Answers to the chat agent's question(s), keyed by question text. */
   answerChat(row: FeatureConsoleRow, answers: Record<string, string>): void;
+  /** Adopt or reject a learned-harness change through the inbox (spec 150). */
+  answerHarnessDecision(item: HarnessDecisionItem, answer: HarnessAnswer): void;
+  /** Create a feature, with this feature's Explore choice (spec 150). */
+  createFeature(input: ConsoleNewFeature): void;
   quit(): void;
   requestRender(): void;
 }
@@ -43,4 +49,10 @@ export interface FeatureConsoleViewDeps {
   /** Terminal height; the view always renders exactly this many lines. */
   rows: () => number;
   intents: FeatureConsoleIntents;
+  /** The console can list and answer learned-harness changes (spec 150). */
+  harnessDecisions?: boolean;
+  /** The console can create features (spec 150). */
+  newFeature?: boolean;
+  /** Present only while the selfLearning flag is on: the create form offers Explore. */
+  explore?: ConsoleExplore;
 }

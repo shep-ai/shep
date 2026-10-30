@@ -96,6 +96,7 @@ describe('updateSettings', () => {
         factory: false,
         sdlcBoard: false,
         agentCoordination: false,
+        selfLearning: false,
       },
     };
     updateSettings(updated);

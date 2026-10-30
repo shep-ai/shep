@@ -135,15 +135,26 @@ describe('renderKeyBar', () => {
 
   it('offers the release key only while the queue is paused', () => {
     const running = plain(renderKeyBar(row, t));
-    const pausedBar = plain(renderKeyBar(row, t, true));
+    const pausedBar = plain(renderKeyBar(row, t, { releaseQueue: true }));
 
     expect(running).not.toContain('release queue');
     expect(pausedBar).toContain('release queue');
   });
 
   it('keeps the row actions it already offered', () => {
-    const bar = plain(renderKeyBar(row, t, true));
+    const bar = plain(renderKeyBar(row, t, { releaseQueue: true }));
     expect(bar).toContain('stop');
+  });
+
+  it('offers d only while learned-harness changes wait (spec 150)', () => {
+    expect(plain(renderKeyBar(row, t))).not.toContain('harness changes');
+    expect(plain(renderKeyBar(row, t, { harnessDecisions: 2 }))).toContain('d harness changes (2)');
+  });
+
+  it('offers N only when the console can create and a repository is selected', () => {
+    expect(plain(renderKeyBar(row, t))).not.toContain('new feature');
+    expect(plain(renderKeyBar(row, t, { newFeature: true }))).toContain('N new feature');
+    expect(plain(renderKeyBar(undefined, t, { newFeature: true }))).not.toContain('new feature');
   });
 });
 
@@ -158,5 +169,11 @@ describe('renderHelp', () => {
     const help = plain(renderHelp(t).join('\n'));
     expect(help).toContain('u');
     expect(help).toContain('paused queue');
+  });
+
+  it('lists the harness decisions and new feature keys (spec 150)', () => {
+    const help = plain(renderHelp(t).join('\n'));
+    expect(help).toContain('learned harness changes');
+    expect(help).toContain("new feature in the selected feature's repository");
   });
 });

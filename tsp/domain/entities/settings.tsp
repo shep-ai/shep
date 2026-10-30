@@ -43,6 +43,7 @@ import "../../common/enums/terminal.tsp";
 import "../../common/enums/whatsapp.tsp";
 import "../../common/enums/messaging.tsp";
 import "./harness/harness-config.tsp";
+import "../../common/enums/learned-harness.tsp";
 import "../../agents/supervisor-policy.tsp";
 
 /**
@@ -812,6 +813,37 @@ model FeatureFlags {
 
   @doc("Agent coordination of overlapping features — an agent decides whether one waits for the other; off by default (spec 141)")
   agentCoordination: boolean = false;
+
+  @doc("Self-learning harness — reflect on runs and propose harness changes; off by default (spec 150)")
+  selfLearning: boolean = false;
+}
+
+/**
+ * How Shep learns from feature runs (spec 150). Every field is opt-in:
+ * mode defaults to Off and candidates wait for a person.
+ */
+@doc("Self-learning harness settings (spec 150)")
+model LearningConfig {
+  @doc("Off, Reflect (propose after each run) or Explore (also probe the implement phase)")
+  mode: LearningMode = LearningMode.Off;
+
+  @doc("Task-level recursion budget for Explore; 4k executions and 3k improver sessions")
+  exploreK: int32 = 1;
+
+  @doc("Recursion shape for Explore")
+  exploreRecursion: HarnessRecursion = HarnessRecursion.Parallel;
+
+  @doc("Cost cap in USD for one Explore refinement; over it the base result is used")
+  exploreMaxCostUsd: float64 = 20;
+
+  @doc("When a candidate is adopted without a person; scripts and hooks always need one")
+  adoptionPolicy: HarnessAdoptionPolicy = HarnessAdoptionPolicy.Manual;
+
+  @doc("Maximum characters of always-on harness text")
+  alwaysOnCharCap: int32 = 4000;
+
+  @doc("Features a version and its parent each need before a regression is judged")
+  regressionMinSample: int32 = 5;
 }
 
 /**
@@ -1398,4 +1430,11 @@ model Settings extends BaseEntity {
    */
   @doc("Usage metrics preferences (optional, defaults applied at runtime)")
   telemetry?: TelemetryConfig;
+
+  /**
+   * Self-learning harness settings (spec 150).
+   * Optional for backward compatibility — defaults applied at runtime.
+   */
+  @doc("Self-learning harness settings (optional, defaults applied at runtime)")
+  learning?: LearningConfig;
 }

@@ -57,8 +57,13 @@ import {
   telemetryToRow,
   type SettingsTelemetryRow,
 } from './settings-telemetry.mapper.js';
+import {
+  learningFromRow,
+  learningToRow,
+  type SettingsLearningRow,
+} from './settings-learning.mapper.js';
 
-export interface SettingsRow extends SettingsTelemetryRow {
+export interface SettingsRow extends SettingsTelemetryRow, SettingsLearningRow {
   // Base entity
   id: string;
   created_at: string;
@@ -206,6 +211,8 @@ export interface SettingsRow extends SettingsTelemetryRow {
   feature_flag_sdlc_board: number;
   // Agent coordination flag (spec 141, migration 172)
   feature_flag_agent_coordination: number;
+  // Self-learning harness flag (spec 150, migration 174)
+  feature_flag_self_learning?: number;
   // Interactive agent config (added in migration 046)
   interactive_agent_enabled: number;
   interactive_agent_auto_timeout_minutes: number;
@@ -443,6 +450,7 @@ export function toDatabase(settings: Settings): SettingsRow {
     feature_flag_factory: settings.featureFlags?.factory ? 1 : 0,
     feature_flag_sdlc_board: settings.featureFlags?.sdlcBoard ? 1 : 0,
     feature_flag_agent_coordination: settings.featureFlags?.agentCoordination ? 1 : 0,
+    feature_flag_self_learning: settings.featureFlags?.selfLearning ? 1 : 0,
 
     // InteractiveAgentConfig (boolean → 0/1, integer fields; defaults applied here)
     interactive_agent_enabled: (settings.interactiveAgent?.enabled ?? true) ? 1 : 0,
@@ -501,6 +509,9 @@ export function toDatabase(settings: Settings): SettingsRow {
 
     // Telemetry preferences (migration 166)
     ...telemetryToRow(settings.telemetry),
+
+    // LearningConfig (migration 174) — stored as JSON, resolved on read
+    ...learningToRow(settings.learning),
   };
 }
 
@@ -832,6 +843,7 @@ function buildQueuePauseFromRow(
 export function fromDatabase(row: SettingsRow): Settings {
   const worktree = worktreeFromRow(row);
   const harness = harnessFromRow(row);
+  const learning = learningFromRow(row);
   const adaptive = adaptiveModelsFromRow(row);
   const effort = parseAgentEffort(row.model_effort);
 
@@ -972,6 +984,7 @@ export function fromDatabase(row: SettingsRow): Settings {
       factory: row.feature_flag_factory === 1,
       sdlcBoard: row.feature_flag_sdlc_board === 1,
       agentCoordination: row.feature_flag_agent_coordination === 1,
+      selfLearning: row.feature_flag_self_learning === 1,
     },
 
     // InteractiveAgentConfig (INTEGER 0/1 → boolean, integer → number)
@@ -1019,6 +1032,9 @@ export function fromDatabase(row: SettingsRow): Settings {
 
     // Telemetry preferences (migration 166) — always present, defaults on
     telemetry: telemetryFromRow(row),
+
+    // LearningConfig (migration 174) — undefined when never configured
+    ...(learning !== undefined && { learning }),
 
     // Onboarding (INTEGER → boolean)
     onboardingComplete: row.onboarding_complete === 1,

@@ -1,10 +1,11 @@
 /**
- * Feature console app (specs 142, 143, 145, 146, 147).
+ * Feature console app (specs 142, 143, 145, 146, 147, 150).
  *
  * Wires the view to the core: polls the snapshot, runs actions, keeps the log
  * pane fresh, opens terminal panes (stepping aside for an inline command when
  * there is no multiplexer), alerts when a feature starts needing the user, and
- * tells the terminal host (Herdr, spec 149) what shep is doing, and
+ * tells the terminal host (Herdr, spec 149) what shep is doing, lists and
+ * answers learned-harness changes and creates features (spec 150), and
  * restores the terminal on the way out. It takes the use cases as plain
  * functions so it carries no DI or infrastructure knowledge.
  */
@@ -12,7 +13,6 @@
 import type { TFunction } from 'i18next';
 import { TUI, type Terminal } from '@mariozechner/pi-tui';
 import {
-  AgentActivityState,
   FeaturePaneContent,
   FeaturePaneOutcome,
   type FeatureConsoleAction,
@@ -28,7 +28,10 @@ import type {
 import { FeatureConsoleView, type FeatureConsoleIntents } from './feature-console-view.js';
 import { clipboardSequence } from './terminal-clipboard.js';
 import { ControlCenter, type ControlCenterDeps } from './control-center.js';
+import { ConsoleAttention, type ConsoleAttentionDeps } from './console-attention.js';
 import { ConsoleChat, type ConsoleChatDeps } from './console-chat.js';
+import type { ConsoleExplore, CreateConsoleFeature } from './console-create.js';
+import type { HarnessDecisionDeps } from './harness-decisions.js';
 
 /** How often the console re-reads every feature. */
 export const DEFAULT_REFRESH_INTERVAL_MS = 2000;
@@ -36,7 +39,7 @@ export const DEFAULT_REFRESH_INTERVAL_MS = 2000;
 const LOG_TAIL_LINES = 200;
 const TERMINATION_SIGNALS = ['SIGTERM', 'SIGHUP'] as const;
 
-export interface FeatureConsoleAppDeps extends ConsoleChatDeps {
+export interface FeatureConsoleAppDeps extends ConsoleChatDeps, Partial<HarnessDecisionDeps> {
   t: TFunction;
   terminal: Terminal;
   loadSnapshot: () => Promise<FeatureConsoleSnapshot>;
@@ -60,9 +63,13 @@ export interface FeatureConsoleAppDeps extends ConsoleChatDeps {
   openControlCenter: ControlCenterDeps['openControlCenter'];
   updateMultiplexer: ControlCenterDeps['updateMultiplexer'];
   /** Tell the terminal host this console runs in what shep is doing (spec 149). */
-  reportActivity?: (report: { state: AgentActivityState; message?: string }) => void;
+  reportActivity?: ConsoleAttentionDeps['reportActivity'];
   /** Tell the terminal host the console is leaving its pane. */
   releaseActivity?: () => Promise<void>;
+  /** Create a feature (spec 150); undefined leaves the console without `N`. */
+  createFeature?: CreateConsoleFeature;
+  /** Present only while the selfLearning flag is on: the create form offers Explore. */
+  explore?: ConsoleExplore;
   refreshIntervalMs?: number;
 }
 
@@ -82,11 +89,14 @@ export function runFeatureConsole(deps: FeatureConsoleAppDeps): Promise<void> {
     let finished = false;
     /** True while an inline command owns the terminal. */
     let suspended = false;
-    /** Features needing the user at the last snapshot; undefined before the first. */
-    let needingUser: Set<string> | undefined;
-    let title: string | undefined;
     let latest: FeatureConsoleSnapshot | undefined;
     const controlCenter = new ControlCenter(deps);
+    // The view offers neither without its dependency; the fallbacks only satisfy the types.
+    const { answerHarnessDecision: answerHarness = notOffered, createFeature = notOffered } = deps;
+    const attention = new ConsoleAttention({
+      ...deps,
+      setTitle: (title) => deps.terminal.setTitle(title),
+    });
 
     const intents: FeatureConsoleIntents = {
       runAction: (row, action, feedback) => void runAction(row, action, feedback),
@@ -109,6 +119,13 @@ export function runFeatureConsole(deps: FeatureConsoleAppDeps): Promise<void> {
       closeChat: () => chat.detach(),
       sendChat: (row, text) => void chat.send(row.featureId, text),
       answerChat: (row, answers) => void chat.answer(row.featureId, answers),
+      answerHarnessDecision: (item, answer) =>
+        void settle(deps.t('tui:console.harness.progress'), () => answerHarness(item, answer)),
+      createFeature: (input) =>
+        void settle(
+          deps.t('tui:console.create.progress', { repository: input.repositoryPath }),
+          () => createFeature(input)
+        ),
       quit: () => finish(),
       requestRender: () => tui.requestRender(),
     };
@@ -117,10 +134,13 @@ export function runFeatureConsole(deps: FeatureConsoleAppDeps): Promise<void> {
       t: deps.t,
       rows: () => deps.terminal.rows,
       intents,
+      harnessDecisions: Boolean(deps.loadHarnessDecisions && deps.answerHarnessDecision),
+      newFeature: deps.createFeature !== undefined,
+      ...(deps.explore && { explore: deps.explore }),
     });
     const chat = new ConsoleChat(deps, {
-      chat: (c) => view.setChat(c),
-      notice: (n) => view.setChatNotice(n),
+      chat: (c) => view.overlays.chat.setChat(c),
+      notice: (n) => view.overlays.chat.setNotice(n),
       render: () => render(),
     });
 
@@ -131,9 +151,11 @@ export function runFeatureConsole(deps: FeatureConsoleAppDeps): Promise<void> {
         const snapshot = await deps.loadSnapshot();
         latest = snapshot;
         view.setSnapshot(snapshot);
-        noticeAttention(snapshot);
-        reportActivity(snapshot);
+        attention.observe(snapshot, !suspended);
         await controlCenter.sync(snapshot).catch(() => undefined);
+        if (deps.loadHarnessDecisions) {
+          view.overlays.harness.setItems(await deps.loadHarnessDecisions());
+        }
       } catch (error) {
         view.setRefreshError(messageOf(error));
       } finally {
@@ -156,21 +178,31 @@ export function runFeatureConsole(deps: FeatureConsoleAppDeps): Promise<void> {
       render();
     }
 
-    async function runAction(
-      row: FeatureConsoleRow,
-      action: FeatureConsoleAction,
-      feedback?: string
+    /** Show progress, run one use case, show its result, then re-read everything. */
+    async function settle(
+      busy: string,
+      run: () => Promise<FeatureConsoleActionResult>
     ): Promise<void> {
-      view.setBusy(deps.t(`tui:console.progress.${action}`, { name: row.name }));
+      view.setBusy(busy);
       render();
       try {
-        view.setStatus(await deps.runAction(row.featureId, action, feedback));
+        view.setStatus(await run());
       } catch (error) {
         view.setStatus({ ok: false, message: messageOf(error) });
       } finally {
         view.setBusy(undefined);
       }
       await refresh();
+    }
+
+    function runAction(
+      row: FeatureConsoleRow,
+      action: FeatureConsoleAction,
+      feedback?: string
+    ): Promise<void> {
+      return settle(deps.t(`tui:console.progress.${action}`, { name: row.name }), () =>
+        deps.runAction(row.featureId, action, feedback)
+      );
     }
 
     /**
@@ -180,17 +212,8 @@ export function runFeatureConsole(deps: FeatureConsoleAppDeps): Promise<void> {
      * refused release leaves the pause visible, exactly as the web status bar
      * keeps its badge until the re-read says otherwise.
      */
-    async function releaseQueue(): Promise<void> {
-      view.setBusy(deps.t('tui:console.progress.releaseQueue'));
-      render();
-      try {
-        view.setStatus(await deps.releaseQueue());
-      } catch (error) {
-        view.setStatus({ ok: false, message: messageOf(error) });
-      } finally {
-        view.setBusy(undefined);
-      }
-      await refresh();
+    function releaseQueue(): Promise<void> {
+      return settle(deps.t('tui:console.progress.releaseQueue'), () => deps.releaseQueue());
     }
 
     async function openControlCenter(): Promise<void> {
@@ -240,40 +263,6 @@ export function runFeatureConsole(deps: FeatureConsoleAppDeps): Promise<void> {
       tui.requestRender(true);
     }
 
-    /** Alert for features that started needing the user; keep the title's count current. */
-    function noticeAttention(snapshot: FeatureConsoleSnapshot): void {
-      const needing = snapshot.rows.filter((r) => r.needsAttention);
-      const newly = needing.filter((r) => needingUser && !needingUser.has(r.featureId));
-      needingUser = new Set(needing.map((r) => r.featureId));
-      for (const row of newly) deps.notify?.(deps.t('tui:console.notify.body', { name: row.name }));
-
-      const next =
-        needing.length > 0
-          ? deps.t('tui:console.windowTitle.attention', { count: needing.length })
-          : deps.t('tui:console.windowTitle.idle');
-      if (next !== title && !suspended) {
-        title = next;
-        deps.terminal.setTitle(next);
-      }
-    }
-
-    /** The overall activity, and how many features wait on the user when any do. */
-    function reportActivity(snapshot: FeatureConsoleSnapshot): void {
-      const { activity: state, needsAttention } = snapshot.summary;
-      try {
-        deps.reportActivity?.(
-          state === AgentActivityState.Blocked
-            ? {
-                state,
-                message: deps.t('tui:console.hostStatus.blocked', { count: needsAttention }),
-              }
-            : { state }
-        );
-      } catch {
-        // A host that cannot be told shows less; the console carries on.
-      }
-    }
-
     function render(): void {
       if (!finished && !suspended) tui.requestRender();
     }
@@ -310,6 +299,10 @@ export function runFeatureConsole(deps: FeatureConsoleAppDeps): Promise<void> {
     }
     void refresh();
   });
+}
+
+async function notOffered(): Promise<FeatureConsoleActionResult> {
+  return { ok: false, message: '' };
 }
 
 function messageOf(error: unknown): string {

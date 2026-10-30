@@ -118,6 +118,7 @@ function WithGitOpsTemplate({ data }: { data: RepositoryNodeData }) {
     factory: true,
     sdlcBoard: false,
     agentCoordination: false,
+    selfLearning: false,
   };
 
   return (

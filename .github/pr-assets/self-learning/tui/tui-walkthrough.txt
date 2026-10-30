@@ -1,0 +1,230 @@
+ shep · Features   1 needs you · 0 running · 3 waiting · 0 failed · 0 done                                                                            
+ NEEDS YOU  ? Export refunds as CSV · questions: 1                                                                                                    
+  STATE        FEATURE           REPO           PHASE         AGENT           TIME    COST │ Export refunds as CSV  ecc80dff                          
+▸ ? Question   Export refunds a… shop           pending       Demo              0s       — │ Repo      shop                                           
+  ○ Pending    Blazing Serializ… shop           pending       Demo              0s       — │ Branch    feat/phantom-emitter                           
+  ○ Pending    Add audit log fo… shop           pending       Demo              0s       — │ State     Question · pending                             
+                                                                                           │ Agent     Demo · claude-opus-5-5                         
+                                                                                           │ Time      0s                                             
+                                                                                           │ Cost      —                                              
+                                                                                           │ Tokens    0 in · 0 out                                   
+                                                                                           │ Questions 1 open · answer with: shep agent questions ls  
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                                                                                      
+ ↑↓ select  enter details  l log  s stop  d harness changes (1)  o chat  t shell  f follow log  N new feature  / filter  ctrl+p palette  ? help  q qu…[>4;2mLearned harness changes · waiting: 1                                                                                                                  
+  1. Shep learned from "Export refunds as CSV" and proposes a harness change for this repository: 2 added, 2 changed, 0 removed always-on text +158 c…
+                                                                                                                                                      
+Shep learned from "Export refunds as CSV" and proposes a harness change for this repository: 2 added, 2 changed, 0 removed always-on text +158        
+characters. It includes scripts or hooks that will run in later features. Adopt it, or reject it with feedback?                                       
+                                                                                                                                                      
++ scripts/check_exports.sh                                                                                                                            
+#!/usr/bin/env bash                                                                                                                                   
+# Fails when a CSV export has a ragged row.                                                                                                           
+awk -F, 'NR==1{n=NF} NF!=n{print FILENAME": row "NR" has "NF" fields"; bad=1} END{exit bad}' "$@"                                                     
+                                                                                                                                                      
++ skills/refunds-export/SKILL.md                                                                                                                      
+---                                                                                                                                                   
+name: refunds-export                                                                                                                                  
+description: Export refunds or payments to CSV without loading every row                                                                              
+---                                                                                                                                                   
+                                                                                                                                                      
+1. Stream rows from the database cursor; never build the whole file in memory.                                                                        
+2. Quote every field and write a header row.                                                                                                          
+3. Run `scripts/check_exports.sh` on the result before you finish.                                                                                    
+                                                                                                                                                      
+~ guardrails.md                                                                                                                                       
+- Never edit generated files under `packages/core/src/domain/generated/`; change the TypeSpec and run `pnpm generate`.                                
+- Run `pnpm test:unit` before you say a change is done.                                                                                               
+- Run every new migration twice; it must be idempotent.                                                                                               
+                                                                                                                                                      
+                                                                                                                                                      
+~ instructions.md                                                                                                                                     
+When the situation matches the `migrations` skill's description, load the `migrations` skill.                                                         
+When the situation matches the `refunds-export` skill's description, load the `refunds-export` skill.                                                 
+                                                                                                                                                      
+                                                                                                                                                      
+Why:                                                                                                                                                  
+kept -> refunds-export skill -> the CSV export failed CI twice on ragged rows                                                                         
+kept -> check_exports.sh -> the agent never checked the file it wrote                                                                                 
+                                                                                                                                                      
+                                                                                                                                                      
+ ↑↓ choose · a adopt · r reject · esc back to the features                                                                                             shep · Features   0 needs you · 0 running · 3 waiting · 0 failed · 0 done                                                                            
+ NEEDS YOU  Nothing needs you right now                                                                                                               
+Learned harness changes · waiting: 0                                                                                                                  
+                                                                                                                                                      
+  No harness change is waiting for you                                                                                                                
+                                                                                                                                                      
+                                                                                                                                                      
+                                                                                                                                                      
+                                                                                                                                                      
+                                                                                                                                                      
+                                                                                                                                                      
+                                                                                                                                                      
+                                                                                                                                                      
+                                                                                                                                                      
+                                                                                                                                                      
+                                                                                                                                                      
+                                                                                                                                                      
+                                                                                                                                                      
+                                                                                                                                                      
+                                                                                                                                                      
+                                                                                                                                                      
+                                                                                                                                                      
+                                                                                                                                                      
+                                                                                                                                                      
+                                                                                                                                                      
+                                                                                                                                                      
+                                                                                                                                                      
+                                                                                                                                                      
+                                                                                                                                                      
+                                                                                                                                                      
+                                                                                                                                                      
+                                                                                                                                                      
+                                                                                                                                                      
+                                                                                                                                                      
+                                                                                                                                                      
+                                                                                                                                                      
+                                                                                                                                                      
+                                                                                                                                                      
+ ✓ Adopted the harness change                                                                                                                           STATE        FEATURE           REPO           PHASE         AGENT           TIME    COST │ Export refunds as CSV  ecc80dff                          
+  ○ Pending    Blazing Serializ… shop           pending       Demo              0s       — │ Repo      shop                                           
+  ○ Pending    Add audit log fo… shop           pending       Demo              0s       — │ Branch    feat/phantom-emitter                           
+▸ ○ Pending    Export refunds a… shop           pending       Demo              0s       — │ State     Pending · pending                              
+                                                                                           │ Agent     Demo · claude-opus-5-5                         
+                                                                                           │ Time      0s                                             
+                                                                                           │ Cost      —                                              
+                                                                                           │ Tokens    0 in · 0 out                                   
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+ ✓ Adopted the harness change                                                                                                                         
+ ↑↓ select  enter details  l log  s stop  o chat  t shell  f follow log  N new feature  / filter  ctrl+p palette  ? help  q quit                      New feature in shop                                                                                                                                   
+                                                                                                                                                      
+Describe the feature on the line below and press enter. Gates, push and PR follow your workflow settings.                                             
+                                                                                                                                                      
+Explore   off                                                                                                                                         
+Explore tries several harness variants on the implement step for this feature only and keeps the best one. It costs about 4× the implement step at k =
+1, more at higher k.                                                                                                                                  
+                                                                                                                                                      
+                                                                                                                                                      
+                                                                                                                                                      
+                                                                                                                                                      
+                                                                                                                                                      
+                                                                                                                                                      
+                                                                                                                                                      
+                                                                                                                                                      
+                                                                                                                                                      
+                                                                                                                                                      
+                                                                                                                                                      
+                                                                                                                                                      
+                                                                                                                                                      
+                                                                                                                                                      
+                                                                                                                                                      
+                                                                                                                                                      
+                                                                                                                                                      
+                                                                                                                                                      
+                                                                                                                                                      
+                                                                                                                                                      
+                                                                                                                                                      
+                                                                                                                                                      
+                                                                                                                                                      
+                                                                                                                                                      
+                                                                                                                                                      
+                                                                                                                                                      
+                                                                                                                                                      
+                                                                                                                                                      
+                                                                                                                                                      
+ describe >                                                                                                                                           
+ enter create · tab Explore on/off · ↑↓ k · esc cancel                                                                                                Explore   on                                                                                                                                          
+k         1  ↑↓ 1–5                                                                                                                                   
+Explore tries several harness variants on the implement step for this feature only and keeps the best one. It costs about 4× the implement step at k =
+1, more at higher k.                                                                                                                                  k         2  ↑↓ 1–5                                                                                                                                    describe > R                                                                                                                                          describe > Re                                                                                                                                         describe > Ref                                                                                                                                        describe > Refu                                                                                                                                       describe > Refun                                                                                                                                      describe > Refund                                                                                                                                     describe > Refund                                                                                                                                     describe > Refund w                                                                                                                                   describe > Refund we                                                                                                                                  describe > Refund web                                                                                                                                 describe > Refund webh                                                                                                                                describe > Refund webho                                                                                                                               describe > Refund webhoo                                                                                                                              describe > Refund webhook                                                                                                                             describe > Refund webhooks                                                                                                                            describe > Refund webhooks                                                                                                                            describe > Refund webhooks r                                                                                                                          describe > Refund webhooks re                                                                                                                         describe > Refund webhooks ret                                                                                                                        describe > Refund webhooks retr                                                                                                                       describe > Refund webhooks retry                                                                                                                      describe > Refund webhooks retry                                                                                                                      describe > Refund webhooks retry w                                                                                                                    describe > Refund webhooks retry wi                                                                                                                   describe > Refund webhooks retry wit                                                                                                                  describe > Refund webhooks retry with                                                                                                                 describe > Refund webhooks retry with                                                                                                                 describe > Refund webhooks retry with b                                                                                                               describe > Refund webhooks retry with ba                                                                                                              describe > Refund webhooks retry with bac                                                                                                             describe > Refund webhooks retry with back                                                                                                            describe > Refund webhooks retry with backo                                                                                                           describe > Refund webhooks retry with backof                                                                                                          describe > Refund webhooks retry with backoff                                                                                                          STATE        FEATURE           REPO           PHASE         AGENT           TIME    COST │ Export refunds as CSV  ecc80dff                          
+  ○ Pending    Blazing Serializ… shop           pending       Demo              0s       — │ Repo      shop                                           
+  ○ Pending    Add audit log fo… shop           pending       Demo              0s       — │ Branch    feat/phantom-emitter                           
+▸ ○ Pending    Export refunds a… shop           pending       Demo              0s       — │ State     Pending · pending                              
+                                                                                           │ Agent     Demo · claude-opus-5-5                         
+                                                                                           │ Time      0s                                             
+                                                                                           │ Cost      —                                              
+                                                                                           │ Tokens    0 in · 0 out                                   
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                           │                                                          
+                                                                                                                                                      
+ ↑↓ select  enter details  l log  s stop  o chat  t shell  f follow log  N new feature  / filter  ctrl+p palette  ? help  q quit                      
+[>4;0m

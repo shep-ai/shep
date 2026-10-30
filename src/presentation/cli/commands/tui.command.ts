@@ -27,6 +27,10 @@ import { AnswerFeatureChatQuestionUseCase } from '@/application/use-cases/featur
 import { StopFeatureChatsUseCase } from '@/application/use-cases/feature-console/stop-feature-chats.use-case.js';
 import { ReportHostActivityUseCase } from '@/application/use-cases/agent-activity/report-host-activity.use-case.js';
 import type { GetFeatureConsoleSnapshotInput } from '@/application/use-cases/feature-console/feature-console.types.js';
+import { ListAgentQuestionInboxUseCase } from '@/application/use-cases/agents/list-agent-question-inbox.use-case.js';
+import { AnswerAgentQuestionUseCase } from '@/application/use-cases/agents/answer-agent-question.use-case.js';
+import { CreateFeatureUseCase } from '@/application/use-cases/features/create/create-feature.use-case.js';
+import { LoadSettingsUseCase } from '@/application/use-cases/settings/load-settings.use-case.js';
 import { normalizeRepositoryPath } from '@/domain/shared/repository-path.js';
 import {
   runFeatureConsole,
@@ -34,6 +38,8 @@ import {
 } from '../../tui/feature-console/feature-console.app.js';
 import { FullscreenTerminal } from '../../tui/feature-console/fullscreen-terminal.js';
 import { runInline } from '../../tui/feature-console/run-inline.js';
+import { harnessDecisionDeps } from '../../tui/feature-console/harness-decisions.js';
+import { consoleExplore, createFeatureDep } from '../../tui/feature-console/console-create.js';
 import { terminalNotification } from '../../tui/feature-console/terminal-notification.js';
 import {
   StatusSegmentStyle,
@@ -72,6 +78,11 @@ interface ConsoleUseCases {
   answerChat: Pick<AnswerFeatureChatQuestionUseCase, 'execute'>;
   stopChats: Pick<StopFeatureChatsUseCase, 'execute'>;
   hostActivity: Pick<ReportHostActivityUseCase, 'execute' | 'release'>;
+  /** Learned-harness decisions (spec 150): pending inbox questions and their answers. */
+  inbox: Pick<ListAgentQuestionInboxUseCase, 'execute'>;
+  answer: Pick<AnswerAgentQuestionUseCase, 'execute'>;
+  createFeature: Pick<CreateFeatureUseCase, 'execute'>;
+  settings: Pick<LoadSettingsUseCase, 'execute'>;
 }
 
 /** Seams for tests; production uses the defaults. */
@@ -103,6 +114,10 @@ const defaults: Required<TuiCommandOptions> = {
     answerChat: container.resolve(AnswerFeatureChatQuestionUseCase),
     stopChats: container.resolve(StopFeatureChatsUseCase),
     hostActivity: container.resolve(ReportHostActivityUseCase),
+    inbox: container.resolve(ListAgentQuestionInboxUseCase),
+    answer: container.resolve(AnswerAgentQuestionUseCase),
+    createFeature: container.resolve(CreateFeatureUseCase),
+    settings: container.resolve(LoadSettingsUseCase),
   }),
   runConsole: runFeatureConsole,
   createTerminal: () => new FullscreenTerminal(new ProcessTerminal()),
@@ -174,6 +189,11 @@ console sets @shep_status for status-right:
         PANE_ENVIRONMENT_VARIABLES.flatMap((name) => (env[name] ? [[name, env[name]]] : []))
       ) as Record<string, string>;
       const terminal = deps.createTerminal();
+      const settings = await useCases.settings.execute().catch(() => null);
+      const explore = consoleExplore(
+        settings?.featureFlags?.selfLearning === true,
+        settings?.learning
+      );
 
       await deps.runConsole({
         t: tuiT,
@@ -216,6 +236,9 @@ console sets @shep_status for status-right:
         stopChats: (featureIds) => useCases.stopChats.execute(featureIds),
         reportActivity: (report) => useCases.hostActivity.execute(report),
         releaseActivity: () => useCases.hostActivity.release(),
+        ...harnessDecisionDeps({ inbox: useCases.inbox, answer: useCases.answer }, tuiT),
+        createFeature: createFeatureDep(useCases.createFeature, tuiT),
+        ...(explore && { explore }),
         ...(options.notify && {
           notify: (message: string) =>
             terminal.write(terminalNotification(env, NOTIFICATION_TITLE, message)),

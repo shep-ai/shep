@@ -43,6 +43,21 @@ enum TelemetryEvent {
 
   @doc("An unhandled error: error class and a hash of its source frame, no message")
   ErrorUnhandled: "error.unhandled",
+
+  @doc("Self-learning filed a learned-harness candidate (origin, component kinds and counts)")
+  HarnessCandidateProposed: "harness.candidate.proposed",
+
+  @doc("A learned-harness version was adopted, by a person or by the adoption policy")
+  HarnessVersionAdopted: "harness.version.adopted",
+
+  @doc("A person rejected a learned-harness candidate")
+  HarnessVersionRejected: "harness.version.rejected",
+
+  @doc("A person rolled the learned harness back to the previous version")
+  HarnessVersionRolledBack: "harness.version.rolled-back",
+
+  @doc("A Reflect or Explore refinement finished (mode, status, k, rollouts, sessions)")
+  HarnessRefinementFinished: "harness.refinement.finished",
 }
 
 /**

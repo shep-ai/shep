@@ -1,0 +1,36 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: HarnessEditRecord.yaml
+type: object
+properties:
+  versionId:
+    type: string
+    description: Candidate version the edit belongs to
+  refinementRunId:
+    type: string
+    description: Refinement that produced the edit
+  dimension:
+    $ref: HarnessEditDimension.yaml
+    description: Editor that produced the edit
+  componentPath:
+    type: string
+    description: Changed component path
+  change:
+    type: string
+    description: What the edit changed
+  observed:
+    type: string
+    description: The execution difference it produced, and where it was seen
+  verdict:
+    $ref: HarnessEditVerdict.yaml
+    description: Verdict on the edit
+required:
+  - versionId
+  - refinementRunId
+  - dimension
+  - componentPath
+  - change
+  - observed
+  - verdict
+allOf:
+  - $ref: BaseEntity.yaml
+description: What one harness edit did, recorded by the reflector

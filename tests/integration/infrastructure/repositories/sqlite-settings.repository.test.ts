@@ -16,6 +16,11 @@ import { createInMemoryDatabase, tableExists } from '../../../helpers/database.h
 import { runSQLiteMigrations } from '@/infrastructure/persistence/sqlite/migrations.js';
 import { SQLiteSettingsRepository } from '@/infrastructure/repositories/sqlite-settings.repository.js';
 import type { Settings } from '@/domain/generated/output.js';
+import {
+  HarnessAdoptionPolicy,
+  HarnessRecursion,
+  LearningMode,
+} from '@/domain/generated/output.js';
 import { createDefaultSettings } from '@/domain/factories/settings-defaults.factory.js';
 import {
   AgentType,
@@ -586,6 +591,34 @@ describe('SQLiteSettingsRepository', () => {
       expect((await repository.load())?.featureFlags?.agentCoordination).toBe(true);
     });
 
+    it('round-trips the self-learning flag and learning settings, off by default (spec 150)', async () => {
+      const settings = createTestSettings();
+      settings.featureFlags = createDefaultSettings().featureFlags!;
+
+      await repository.initialize(settings);
+      const loaded = await repository.load();
+      expect(loaded?.featureFlags?.selfLearning).toBe(false);
+      expect(loaded?.learning).toBeUndefined();
+
+      const learning = {
+        mode: LearningMode.Reflect,
+        exploreK: 2,
+        exploreRecursion: HarnessRecursion.Parallel,
+        exploreMaxCostUsd: 12,
+        adoptionPolicy: HarnessAdoptionPolicy.Manual,
+        alwaysOnCharCap: 2500,
+        regressionMinSample: 4,
+      };
+      await repository.update({
+        ...loaded!,
+        featureFlags: { ...loaded!.featureFlags!, selfLearning: true },
+        learning,
+      });
+      const reloaded = await repository.load();
+      expect(reloaded?.featureFlags?.selfLearning).toBe(true);
+      expect(reloaded?.learning).toEqual(learning);
+    });
+
     it('keeps an ASPM flag a user already turned on now that the default is off', async () => {
       const settings = createTestSettings();
       settings.featureFlags = { ...createDefaultSettings().featureFlags!, aspm: true };
@@ -627,6 +660,7 @@ describe('SQLiteSettingsRepository', () => {
         factory: false,
         sdlcBoard: false,
         agentCoordination: false,
+        selfLearning: false,
       };
 
       await repository.initialize(settings);
@@ -660,6 +694,7 @@ describe('SQLiteSettingsRepository', () => {
         factory: false,
         sdlcBoard: false,
         agentCoordination: false,
+        selfLearning: false,
       });
     });
 
@@ -699,6 +734,7 @@ describe('SQLiteSettingsRepository', () => {
         factory: false,
         sdlcBoard: false,
         agentCoordination: false,
+        selfLearning: false,
       });
     });
 
@@ -734,6 +770,7 @@ describe('SQLiteSettingsRepository', () => {
         factory: false,
         sdlcBoard: false,
         agentCoordination: false,
+        selfLearning: false,
       };
       settings.updatedAt = new Date('2025-01-02T00:00:00Z');
       await repository.update(settings);
@@ -767,6 +804,7 @@ describe('SQLiteSettingsRepository', () => {
         factory: false,
         sdlcBoard: false,
         agentCoordination: false,
+        selfLearning: false,
       });
     });
 
@@ -800,6 +838,7 @@ describe('SQLiteSettingsRepository', () => {
         factory: false,
         sdlcBoard: false,
         agentCoordination: false,
+        selfLearning: false,
       };
 
       await repository.initialize(settings);
@@ -1183,6 +1222,7 @@ describe('SQLiteSettingsRepository', () => {
         factory: false,
         sdlcBoard: false,
         agentCoordination: false,
+        selfLearning: false,
       };
       await repository.initialize(settings);
 

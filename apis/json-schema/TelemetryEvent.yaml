@@ -13,4 +13,9 @@ enum:
   - decision.defaulted
   - onboarding.step
   - error.unhandled
+  - harness.candidate.proposed
+  - harness.version.adopted
+  - harness.version.rejected
+  - harness.version.rolled-back
+  - harness.refinement.finished
 description: Usage event recorded by Shep's opt-out telemetry

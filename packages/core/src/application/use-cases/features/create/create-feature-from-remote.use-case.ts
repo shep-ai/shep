@@ -54,6 +54,19 @@ export interface CreateFeatureFromRemoteInput {
   attachments?: Attachment[];
   sessionId?: string;
   attachmentPaths?: string[];
+  /** Per-feature Explore (spec 150); see CreateFeatureInput.exploreHarness. */
+  exploreHarness?: boolean;
+  exploreK?: number;
+}
+
+/** The Explore fields to forward, only when Explore was asked for. */
+function exploreFields(input: CreateFeatureFromRemoteInput) {
+  return input.exploreHarness
+    ? {
+        exploreHarness: true,
+        ...(input.exploreK !== undefined ? { exploreK: input.exploreK } : {}),
+      }
+    : {};
 }
 
 @injectable()
@@ -95,6 +108,7 @@ export class CreateFeatureFromRemoteUseCase {
       attachments: input.attachments,
       sessionId: input.sessionId,
       attachmentPaths: input.attachmentPaths,
+      ...exploreFields(input),
     });
   }
 
@@ -128,6 +142,7 @@ export class CreateFeatureFromRemoteUseCase {
       attachments: input.attachments,
       sessionId: input.sessionId,
       attachmentPaths: input.attachmentPaths,
+      ...exploreFields(input),
     });
   }
 

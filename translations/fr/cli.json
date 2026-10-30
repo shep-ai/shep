@@ -255,6 +255,10 @@
         "noFastOption": "Exécuter toutes les phases SDLC (analyser → exigences → plan → implémenter)",
         "exploreOption": "Start an exploration/prototyping session for iterative design",
         "exploreAndFastConflict": "Cannot use --explore and --fast together. Choose one mode.",
+        "exploreHarnessOption": "Auto-apprentissage : exécuter l'étape d'implémentation de cette feature en mode Explore (Propose–Probe–Compose) — coûte environ 4× l'étape d'implémentation avec k=1",
+        "exploreKOption": "Budget k d'Explore pour --explore-harness, 1–{{max}} (par défaut : votre réglage d'auto-apprentissage) ; exécute 4k rollouts",
+        "exploreKWithoutHarness": "--explore-k ne s'applique qu'avec --explore-harness",
+        "invalidExploreK": "--explore-k doit être un nombre entier de 1 à {{max}}, reçu : {{value}}",
         "modelOption": "Identifiant du modèle LLM pour cette exécution (par ex. claude-opus-4-6)",
         "effortOption": "Effort de raisonnement pour cette exécution : low, medium, high, xhigh ou max (défaut : paramètres)",
         "invalidEffort": "Effort inconnu « {{level}} ». Niveaux valides : {{levels}}",
@@ -2011,6 +2015,154 @@
         "description": "Arrêter une exécution d’agent par id d’exécution, id de fonctionnalité ou un préfixe",
         "idArgument": "Id d’exécution, id de fonctionnalité ou un préfixe",
         "stopped": "{{id}} arrêté : {{reason}}"
+      }
+    },
+    "learn": {
+      "description": "Harness auto-apprenant : examiner, adopter et annuler ce que Shep a appris des exécutions de features",
+      "failed": "La commande du harness appris a échoué",
+      "repoOption": "Chemin du dépôt (par défaut : le répertoire courant)",
+      "jsonOption": "Afficher en JSON",
+      "versionArg": "Identifiant de version, ou un préfixe unique de celui-ci",
+      "notFound": "Aucune version du harness appris ne correspond à {{id}}",
+      "fields": {
+        "version": "Version",
+        "status": "Statut",
+        "origin": "Origine",
+        "scope": "Portée",
+        "created": "Créée",
+        "components": "Composants",
+        "parent": "Version parente",
+        "sourceFeature": "Apprise de la feature",
+        "notes": "Notes",
+        "reason": "Raison"
+      },
+      "status": {
+        "description": "Afficher le harness appris avec lequel ce dépôt s'exécute",
+        "title": "Harness appris",
+        "none": "Rien n'est adopté : ce dépôt s'exécute avec le harness de base.",
+        "candidates": "Candidates en attente de revue : {{count}} — voir `shep learn history`",
+        "noCandidates": "Aucune candidate n'attend de revue."
+      },
+      "history": {
+        "description": "Lister les versions du harness appris avec leurs métriques de résultats, de la plus récente à la plus ancienne",
+        "limitOption": "Afficher au plus ce nombre de versions",
+        "invalidLimit": "--limit doit être un nombre entier supérieur à 0, reçu : {{value}}",
+        "title": "Versions du harness appris",
+        "empty": "Aucune version du harness appris pour l'instant. Apprenez d'une feature terminée avec `shep learn reflect <feature>`.",
+        "current": "actuelle",
+        "regressed": "Versions en régression : {{count}} — examinez-en une avec `shep learn show <version>`, annulez celle adoptée avec `shep learn rollback`",
+        "columns": {
+          "id": "ID",
+          "status": "STATUT",
+          "origin": "ORIGINE",
+          "created": "CRÉÉE",
+          "runs": "EXÉCUTIONS",
+          "merged": "FUSIONNÉES",
+          "ciFixes": "CORRECTIFS CI",
+          "trend": "TENDANCE"
+        }
+      },
+      "show": {
+        "description": "Afficher une version : ses composants, les verdicts de ses modifications et le diff avec sa version parente",
+        "title": "Harness appris {{id}}",
+        "componentsTitle": "Composants",
+        "editsTitle": "Modifications et verdicts",
+        "diffTitle": "Diff avec {{id}}",
+        "diffTitleBase": "Diff avec le harness de base",
+        "noChanges": "Aucune modification."
+      },
+      "diff": {
+        "description": "Afficher ce qui a changé entre deux versions",
+        "fromArg": "La version de départ (identifiant ou préfixe)",
+        "toArg": "La version d'arrivée (identifiant ou préfixe)",
+        "title": "{{from}} → {{to}}"
+      },
+      "adopt": {
+        "description": "Adopter une version candidate, ou importer et adopter un harness que vous avez écrit",
+        "fromDirOption": "Importer le harness de ce répertoire (structure canonique) et l'adopter",
+        "needsOne": "Indiquez exactement l'un des deux : une version ou --from-dir <dir>",
+        "adopted": "{{id}} adoptée — les prochaines exécutions de features l'utiliseront",
+        "memoryFacts": "Faits de mémoire enregistrés : {{count}}",
+        "refused": "Impossible d'adopter {{id}} : {{reason}}",
+        "imported": "{{id}} importée et adoptée",
+        "importedNotAdopted": "{{id}} importée, mais pas adoptée — voir `shep learn show {{id}}`",
+        "importRefused": "Le harness de {{dir}} n'a pas été importé :"
+      },
+      "reject": {
+        "description": "Rejeter une version candidate ; vos retours orientent la prochaine réflexion",
+        "feedbackOption": "Pourquoi elle est rejetée — la prochaine réflexion le lira",
+        "rejected": "{{id}} rejetée",
+        "refused": "Impossible de rejeter {{id}} : {{reason}}"
+      },
+      "rollback": {
+        "description": "Annuler le harness adopté de ce dépôt et réadopter sa version parente",
+        "reasonOption": "Pourquoi il est annulé (conservé sur la version)",
+        "rolledBack": "Harness adopté annulé",
+        "restored": "{{id}} est de nouveau adoptée",
+        "toBase": "Le dépôt s'exécute de nouveau avec le harness de base",
+        "refused": "Rien n'a été annulé : {{reason}}"
+      },
+      "reflect": {
+        "description": "Apprendre maintenant de la dernière exécution d'une feature et proposer un changement de harness à la revue",
+        "featureArg": "Identifiant de la feature, ou un préfixe unique de celui-ci",
+        "spinner": "Réflexion sur l'exécution de la feature",
+        "skipped": "Rien à apprendre : {{reason}}",
+        "finished": "Réflexion terminée : {{status}} (coût {{cost}} USD)",
+        "candidate": "La candidate {{id}} attend une revue — `shep learn show {{id}}`",
+        "autoAdopted": "La candidate {{id}} a été adoptée automatiquement par votre politique d'adoption"
+      },
+      "labels": {
+        "status": {
+          "candidate": "Candidate",
+          "adopted": "Adoptée",
+          "rejected": "Rejetée",
+          "rolledBack": "Annulée",
+          "superseded": "Remplacée"
+        },
+        "origin": {
+          "base": "Base",
+          "reflect": "Réflexion",
+          "explore": "Exploration",
+          "manual": "Manuelle"
+        },
+        "scope": {
+          "project": "Projet",
+          "organization": "Organisation",
+          "space": "Espace",
+          "productLine": "Ligne de produit"
+        },
+        "trend": {
+          "insufficientData": "Trop peu d'exécutions",
+          "improved": "Améliorée",
+          "unchanged": "Inchangée",
+          "regressed": "En régression",
+          "noBaseline": "Première version"
+        },
+        "verdict": {
+          "helped": "A aidé",
+          "hurt": "A nui",
+          "noObservedEffect": "Aucun effet observé",
+          "confounded": "Confondu",
+          "untested": "Non testé"
+        },
+        "kind": {
+          "instructions": "Instructions",
+          "guardrails": "Garde-fous",
+          "memory": "Mémoire",
+          "toolGuidance": "Guide des outils",
+          "skill": "Skill",
+          "script": "Script",
+          "subagent": "Sous-agent",
+          "hook": "Hook"
+        },
+        "refinement": {
+          "running": "En cours",
+          "proposed": "Proposée",
+          "keptBase": "Harness de base conservé",
+          "fellBack": "Retour au harness de base",
+          "overBudget": "Budget dépassé",
+          "failed": "Échec"
+        }
       }
     }
   },

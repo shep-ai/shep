@@ -24,6 +24,7 @@
       "messaging": "Messaging",
       "mcp": "MCP",
       "harness": "Harness الوكيل",
+      "selfLearning": "التعلّم الذاتي",
       "telemetry": "مقاييس الاستخدام",
       "a2a": "ربط الوكلاء"
     },
@@ -302,6 +303,8 @@
       "sdlcBoardDescription": "عرض لوحة SDLC: لوحة مباشرة لمهام الوكلاء عبر الميزات النشطة",
       "agentCoordination": "تنسيق الوكلاء",
       "agentCoordinationDescription": "عندما تغيّر ميزتان نشطتان الملفات نفسها، دع وكيلًا يقرر ما إذا كان على إحداهما انتظار الأخرى",
+      "selfLearning": "إطار التعلّم الذاتي",
+      "selfLearningDescription": "دع Shep يتعلّم من كل تشغيل لميزة ويقترح تعليمات ومهارات وسكربتات أفضل لوكلائه. أنت توافق على كل تغيير",
       "groupPlatform": "المنصة",
       "groupSoftwareFactory": "مصنع البرمجيات",
       "groupExperimental": "تجريبي",
@@ -464,6 +467,44 @@
       "unknownDefaultDescription": "ما يحدث عندما لا تنطبق أي قاعدة على إجراء",
       "approvalTimeout": "مهلة الموافقة (بالدقائق)",
       "approvalTimeoutDescription": "يُرفض الطلب الذي لم تتم الإجابة عليه بعد هذه المدة"
+    },
+    "selfLearning": {
+      "title": "التعلّم الذاتي",
+      "experimental": "تجريبي",
+      "description": "يتعلّم Shep من كل تشغيل لميزة ويحسّن التعليمات والمهارات والفحوصات التي يحصل عليها وكلاؤه",
+      "hint": "يبقى التعلّم متوقفًا حتى تختار وضعًا. كل تغيير يتعلّمه Shep هو مرشّح بإصدار يمكنك مراجعته أو اعتماده أو التراجع عنه في صفحة التعلّم.",
+      "mode": "وضع التعلّم",
+      "modes": {
+        "off": "متوقف",
+        "offDescription": "لا يُتعلَّم شيء؛ تبقى إصدارات الـ harness المعتمدة سارية",
+        "reflect": "تأمّل",
+        "reflectDescription": "بعد كل تشغيل، تقترح مراجعة واحدة تغييرات على الـ harness دون محاولات إضافية",
+        "explore": "استكشاف",
+        "exploreDescription": "تجرّب خطوة التنفيذ عدة صيغ من الـ harness وتحتفظ بأفضل نتيجة"
+      },
+      "exploreTitle": "ميزانية الاستكشاف",
+      "exploreK": "قيمة k للاستكشاف",
+      "exploreKDescription": "{{rollouts}} محاولات تنفيذ لكل ميزة — نحو {{rollouts}} أضعاف تكلفة خطوة تنفيذ واحدة",
+      "exploreRecursion": "شكل البحث",
+      "exploreRecursionDescription": "المتوازي يجرّب صيغًا مستقلة؛ المتتابع يحسّن صيغة واحدة جولة بعد جولة",
+      "recursion": {
+        "parallel": "متوازٍ",
+        "sequential": "متتابع"
+      },
+      "exploreMaxCostUsd": "حدّ التكلفة (دولار)",
+      "exploreMaxCostUsdDescription": "بعد هذا الإنفاق يتوقف الاستكشاف عن بدء محاولات جديدة ويحتفظ بأفضلها حتى الآن",
+      "adoptionTitle": "الاعتماد",
+      "adoptionPolicy": "سياسة الاعتماد",
+      "adoptionPolicyDescription": "تحتاج السكربتات والخطافات دائمًا إلى شخص لاعتمادها، أيًّا كانت السياسة",
+      "policies": {
+        "manual": "اسألني في كل مرة",
+        "auto-text-only": "اعتماد التغييرات النصية المختبرة تلقائيًا",
+        "auto": "اعتماد التغييرات النصية تلقائيًا"
+      },
+      "alwaysOnCharCap": "حدّ النص الدائم",
+      "alwaysOnCharCapDescription": "أقصى عدد أحرف من النص المُتعلَّم يُضاف إلى كل موجّه",
+      "regressionMinSample": "عيّنة التراجع",
+      "regressionMinSampleDescription": "عدد التشغيلات اللازمة على إصدار قبل أن يمكن وسمه بأنه تراجع"
     }
   },
   "navigation": {
@@ -489,6 +530,7 @@
     "clusters": "المجموعات",
     "plugins": "Plugins",
     "projectMemory": "Project Memory",
+    "learning": "التعلّم",
     "harness": "Harness",
     "spaces": "المساحات",
     "trackers": "الاتصالات",
@@ -780,6 +822,12 @@
     "skillsDescription": "Curated skills to guide the agent during feature development.",
     "injectSkills": "Inject",
     "injectSkillsDescription": "Include curated skills in the feature worktree.",
+    "explore": {
+      "label": "التعلّم",
+      "toggle": "استكشاف صيغ الـ harness",
+      "k": "ميزانية الاستكشاف k",
+      "cost": "{{attempts}} محاولات تنفيذ — نحو {{attempts}} أضعاف تكلفة التنفيذ"
+    },
     "effort": "الجهد",
     "effortFromSettings": "من الإعدادات"
   },
@@ -2128,6 +2176,82 @@
       "cardError": "لم يتم تحميل agent card: {{error}}",
       "copyLabel": "نسخ {{label}}",
       "hint": "ترسل أنظمة الوكلاء الأخرى إلى Shep طلب ميزة عبر A2A وتتابعه كمهمة. النشاط نفسه يغذي MCP وواجهة سطر الأوامر وHerdr وهذه الواجهة."
+    }
+  },
+  "learning": {
+    "title": "التعلّم",
+    "subtitle": "ما تعلّمه Shep عن العمل في هذا المستودع، وكيف كان أداء كل إصدار، وما يجب الإبقاء عليه",
+    "repository": "المستودع",
+    "chooseRepository": "اختر مستودعًا",
+    "loadError": "تعذّر تحميل الـ harness المُتعلَّم: {{error}}",
+    "noRepositories": "أضف مستودعًا لبدء التعلّم.",
+    "current": "يعمل على الإصدار {{id}}",
+    "currentNone": "يعمل على الـ harness الأساسي — لم يُعتمد شيء بعد",
+    "rollback": "تراجع",
+    "rollbackConfirm": "العودة إلى الإصدار السابق؟",
+    "cancel": "إلغاء",
+    "rolledBack": "تم التراجع",
+    "versions": "الإصدارات",
+    "selectVersion": "اختر إصدارًا لترى ما يغيّره.",
+    "lessons": "الدروس",
+    "adopted": "تم اعتماد الإصدار",
+    "rejected": "تم رفض الإصدار",
+    "working": "جارٍ التنفيذ…",
+    "noVersions": "لا توجد إصدارات بعد. فعّل وضع تعلّم في الإعدادات ثم أكمل ميزة.",
+    "noLessons": "لا توجد دروس بعد.",
+    "trend": {
+      "regressed": "تراجع الأداء",
+      "improved": "تحسّن",
+      "unchanged": "بلا تغيير",
+      "insufficient-data": "لا توجد تشغيلات كافية بعد",
+      "no-baseline": "لا يوجد إصدار سابق للمقارنة"
+    },
+    "status": {
+      "candidate": "مرشّح",
+      "adopted": "معتمد",
+      "rejected": "مرفوض",
+      "rolled-back": "تم التراجع عنه",
+      "superseded": "مُستبدَل"
+    },
+    "origin": {
+      "base": "أساسي",
+      "reflect": "تأمّل",
+      "explore": "استكشاف",
+      "manual": "يدوي"
+    },
+    "metrics": {
+      "runs": "التشغيلات: {{count}}",
+      "mergeRate": "المدمجة: {{percent}}%"
+    },
+    "detail": {
+      "title": "الإصدار {{id}}",
+      "against": "مقارنةً بالإصدار {{id}}",
+      "againstBase": "مقارنةً بالـ harness الأساسي",
+      "reason": "السبب: {{reason}}",
+      "runsCode": "هذا الإصدار يشغّل شيفرة (سكربتات أو خطافات). اقرأها قبل الاعتماد — لا يعتمد Shep هذه من تلقاء نفسه أبدًا.",
+      "added": "مُضاف",
+      "modified": "مُعدَّل",
+      "removed": "محذوف",
+      "noChanges": "لا تغييرات في الملفات.",
+      "edits": "سبب كل تغيير",
+      "feedbackPlaceholder": "اختياري: لماذا ترفضه (سيقرأ Shep هذا في المرة القادمة)",
+      "adopt": "اعتماد",
+      "reject": "رفض"
+    },
+    "verdict": {
+      "helped": "ساعد",
+      "hurt": "أضرّ",
+      "no-observed-effect": "لا أثر ملحوظ",
+      "confounded": "غير حاسم",
+      "untested": "غير مختبر"
+    },
+    "lesson": {
+      "when": "عندما: {{cue}}"
+    },
+    "confidence": {
+      "high": "ثقة عالية",
+      "medium": "ثقة متوسطة",
+      "low": "ثقة منخفضة"
     }
   }
 }

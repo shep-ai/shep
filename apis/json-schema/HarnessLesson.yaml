@@ -1,0 +1,46 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: HarnessLesson.yaml
+type: object
+properties:
+  scope:
+    $ref: MemoryScope.yaml
+    description: Reach of the lesson; same isolation as harness versions
+  repositoryPath:
+    type: string
+    description: Normalised repository path the lesson was learned in
+  spaceId:
+    type: string
+    description: Space of the lesson, when its repository has one
+  productLineId:
+    type: string
+    description: Product line of the lesson, when its repository has one
+  cue:
+    type: string
+    description: The shape of situation the lesson applies to
+  lesson:
+    type: string
+    description: The operation to perform on a harness, naming the component
+  evidence:
+    type: string
+    description: The edit records and execution contrast the lesson rests on
+  confidence:
+    $ref: LessonConfidence.yaml
+    description: How strongly the evidence supports the lesson
+  sourceFeatureId:
+    type: string
+    description: Feature whose run taught the lesson
+  versionId:
+    type: string
+    description: Version whose refinement wrote the lesson
+required:
+  - scope
+  - repositoryPath
+  - cue
+  - lesson
+  - evidence
+  - confidence
+  - sourceFeatureId
+  - versionId
+allOf:
+  - $ref: BaseEntity.yaml
+description: A transferable lesson about harness edits, read by later refinements in the same scope

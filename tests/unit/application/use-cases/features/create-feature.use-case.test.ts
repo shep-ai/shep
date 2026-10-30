@@ -475,6 +475,31 @@ describe('CreateFeatureUseCase', () => {
   // Child uses parent's repositoryPath, not caller's cwd
   // -------------------------------------------------------------------------
 
+  describe('per-feature Explore (spec 150)', () => {
+    const saved = () =>
+      (mockFeatureRepo.create as ReturnType<typeof vi.fn>).mock.calls[0][0] as Record<
+        string,
+        unknown
+      >;
+
+    it('stores the Explore override and its k', async () => {
+      await useCase.execute({ ...baseInput, exploreHarness: true, exploreK: 2 });
+      expect(saved()).toMatchObject({ exploreHarness: true, exploreK: 2 });
+    });
+
+    it('drops a k outside the supported range but keeps Explore on', async () => {
+      await useCase.execute({ ...baseInput, exploreHarness: true, exploreK: 99 });
+      expect(saved()).toMatchObject({ exploreHarness: true });
+      expect(saved()).not.toHaveProperty('exploreK');
+    });
+
+    it('stores neither field when Explore is not asked for', async () => {
+      await useCase.execute({ ...baseInput, exploreK: 3 });
+      expect(saved()).not.toHaveProperty('exploreHarness');
+      expect(saved()).not.toHaveProperty('exploreK');
+    });
+  });
+
   describe('with parentId — repositoryPath resolution', () => {
     it('should use parent repositoryPath instead of input repositoryPath', async () => {
       const parent = makeParentFeature({

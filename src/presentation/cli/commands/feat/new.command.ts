@@ -12,14 +12,13 @@
  */
 
 import { Command } from 'commander';
-import { createHash } from 'node:crypto';
 import { existsSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { resolve } from 'node:path';
 import { container } from '@/infrastructure/di/container.js';
 import { CreateFeatureUseCase } from '@/application/use-cases/features/create/create-feature.use-case.js';
 import { CreateFeatureFromRemoteUseCase } from '@/application/use-cases/features/create/create-feature-from-remote.use-case.js';
 import type { ApprovalGates, Feature } from '@/domain/generated/output.js';
-import { SdlcLifecycle, BuildMode } from '@/domain/generated/output.js';
+import { BuildMode } from '@/domain/generated/output.js';
 import { featureWorkflowDefaults } from '@/domain/shared/workflow-defaults.js';
 import type { IFeatureRepository } from '@/application/ports/output/repositories/feature-repository.interface.js';
 import {
@@ -28,16 +27,20 @@ import {
   GitHubForkError,
   GitHubUrlParseError,
 } from '@/application/ports/output/services/github-repository-service.interface.js';
-import type { IRepositoryRepository } from '@/application/ports/output/repositories/repository-repository.interface.js';
-import { colors, messages, spinner } from '../../ui/index.js';
+import { messages, spinner } from '../../ui/index.js';
 import { getCliI18n } from '../../i18n.js';
-import { getShepHomeDir } from '@/infrastructure/services/filesystem/shep-directory.service.js';
 import { getSettings, hasSettings } from '@/infrastructure/services/settings.service.js';
 import { CheckOnboardingStatusUseCase } from '@/application/use-cases/settings/check-onboarding-status.use-case.js';
 import { onboardingWizard } from '../../../tui/wizards/onboarding/onboarding.wizard.js';
 import { AGENT_EFFORT_LEVELS, parseAgentEffort } from '@/domain/shared/agent-effort.js';
+import { printCreatedFeature } from './new-output.js';
+import {
+  addExploreHarnessOptions,
+  readExploreHarnessOptions,
+  type ExploreHarnessOptions,
+} from './explore-harness-option.js';
 
-interface NewOptions {
+interface NewOptions extends ExploreHarnessOptions {
   repo?: string;
   remote?: string;
   push?: boolean;
@@ -99,7 +102,7 @@ function getWorkflowDefaults(): WorkflowDefaults {
  */
 export function createNewCommand(): Command {
   const t = getCliI18n().t;
-  return new Command('new')
+  const command = new Command('new')
     .description(t('cli:commands.feat.new.description'))
     .argument('<description>', t('cli:commands.feat.new.descriptionArgument'))
     .option('-r, --repo <path>', t('cli:commands.feat.new.repoOption'))
@@ -121,7 +124,8 @@ export function createNewCommand(): Command {
     .option('--no-rebase', t('cli:commands.feat.new.noRebaseOption'))
     .option('--inject-skills', t('cli:commands.feat.new.injectSkillsOption'))
     .option('--no-inject-skills', t('cli:commands.feat.new.noInjectSkillsOption'))
-    .option('--attach <path>', t('cli:commands.feat.new.attachOption'), collect, [])
+    .option('--attach <path>', t('cli:commands.feat.new.attachOption'), collect, []);
+  return addExploreHarnessOptions(command)
     .addHelpText(
       'after',
       `
@@ -150,7 +154,7 @@ Examples:
           }
         }
 
-        let repoPath = options.repo ?? process.cwd();
+        const repoPath = options.repo ?? process.cwd();
 
         // Resolve openPr from CLI flags or settings defaults
         const defaults = getWorkflowDefaults();
@@ -216,6 +220,9 @@ Examples:
           return;
         }
 
+        const exploreHarness = readExploreHarnessOptions(options);
+        if (!exploreHarness) return;
+
         const buildMode = options.explore
           ? BuildMode.Exploration
           : fast
@@ -234,6 +241,7 @@ Examples:
           ...(options.model !== undefined && { model: options.model }),
           ...(effort && { effort }),
           ...(attachmentPaths.length > 0 && { attachmentPaths }),
+          ...exploreHarness,
         };
 
         let result: { feature: Feature; warning?: string };
@@ -266,81 +274,13 @@ Examples:
           );
         }
 
-        const { feature, warning } = result;
-        repoPath = options.remote ? feature.repositoryPath : (options.repo ?? process.cwd());
-        const repoHash = createHash('sha256').update(repoPath).digest('hex').slice(0, 16);
-        const wtSlug = feature.branch.replace(/\//g, '-');
-        const worktreePath = join(getShepHomeDir(), 'repos', repoHash, 'wt', wtSlug);
-
-        messages.newline();
-        if (warning) {
-          messages.warning(warning);
-        }
-        messages.success(t('cli:commands.feat.new.featureCreated'));
-        if (feature.lifecycle === SdlcLifecycle.Blocked) {
-          messages.info(t('cli:commands.feat.new.blockedInfo'));
-        }
-        if (feature.lifecycle === SdlcLifecycle.Pending) {
-          messages.info(
-            t('cli:commands.feat.new.pendingInfo', {
-              command: colors.accent(`shep feat start ${feature.id.slice(0, 8)}`),
-            })
-          );
-        }
-        console.log(
-          `  ${colors.muted(t('cli:commands.feat.new.idLabel'))}       ${colors.accent(feature.id)}`
-        );
-        console.log(`  ${colors.muted(t('cli:commands.feat.new.nameLabel'))}     ${feature.name}`);
-        console.log(
-          `  ${colors.muted(t('cli:commands.feat.new.branchLabel'))}   ${colors.accent(feature.branch)}`
-        );
-        console.log(
-          `  ${colors.muted(t('cli:commands.feat.new.statusLabel'))}   ${feature.lifecycle}`
-        );
-        console.log(`  ${colors.muted(t('cli:commands.feat.new.worktreeLabel'))} ${worktreePath}`);
-        if (options.remote && feature.repositoryId) {
-          const repoRepo = container.resolve<IRepositoryRepository>('IRepositoryRepository');
-          const repo = await repoRepo.findById(feature.repositoryId);
-          if (repo?.isFork && repo.upstreamUrl) {
-            const upstreamShort = repo.upstreamUrl.replace('https://github.com/', '');
-            console.log(
-              `  ${colors.muted('Fork:')}     ${colors.accent('yes')} (upstream: ${upstreamShort})`
-            );
-          }
-        }
-        if (feature.specPath) {
-          console.log(
-            `  ${colors.muted(t('cli:commands.feat.new.specLabel'))}     ${feature.specPath}`
-          );
-        }
-        if (feature.agentRunId) {
-          const agentStatus =
-            feature.lifecycle === SdlcLifecycle.Pending
-              ? colors.muted(t('cli:commands.feat.new.pendingStatus'))
-              : colors.success(t('cli:commands.feat.new.spawnedStatus'));
-          console.log(
-            `  ${colors.muted(t('cli:commands.feat.new.agentLabel'))}    ${agentStatus} (run ${feature.agentRunId.slice(0, 8)})`
-          );
-        }
-        if (push || openPr) {
-          const pushHint = openPr
-            ? t('cli:commands.feat.new.pushPr')
-            : t('cli:commands.feat.new.pushOnly');
-          console.log(`  ${colors.muted(t('cli:commands.feat.new.pushLabel'))}     ${pushHint}`);
-        }
-        const approved = [
-          approvalGates.allowPrd && 'PRD',
-          approvalGates.allowPlan && 'Plan',
-          approvalGates.allowMerge && 'Merge',
-        ].filter(Boolean);
-        const hint =
-          approved.length === 3
-            ? t('cli:commands.feat.new.fullyAutonomous')
-            : approved.length === 0
-              ? t('cli:commands.feat.new.pauseAfterEvery')
-              : t('cli:commands.feat.new.autoApprove', { approved: approved.join(', ') });
-        console.log(`  ${colors.muted(t('cli:commands.feat.new.reviewLabel'))}   ${hint}`);
-        messages.newline();
+        await printCreatedFeature(result, {
+          repo: options.repo,
+          remote: options.remote,
+          push,
+          openPr,
+          approvalGates,
+        });
       } catch (error) {
         // Handle GitHub-specific errors with actionable messages
         if (error instanceof GitHubAuthError) {
