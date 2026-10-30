@@ -97,6 +97,8 @@ const HELP_KEYS = [
   'resume',
   'releaseQueue',
   'chat',
+  'harness',
+  'newFeature',
   'shell',
   'follow',
   'filter',
@@ -132,25 +134,38 @@ const ACTION_KEY: Record<FeatureConsoleAction, string> = {
   [FeatureConsoleAction.Resume]: 'R',
 };
 
+/** Console-wide keys that only show while they can do something. */
+export interface KeyBarOptions {
+  /** A queue pause is in force (spec 148). */
+  releaseQueue?: boolean;
+  /** Learned-harness changes waiting for the user (spec 150). */
+  harnessDecisions?: number;
+  /** The console can create features (spec 150). */
+  newFeature?: boolean;
+}
+
 /**
  * Navigation and pane keys, the actions the selected row offers, then pane and
- * filter keys. `releaseQueue` adds the fleet-level key, which exists only while
- * a pause is in force — the same rule the row actions follow.
+ * filter keys. Console-wide keys follow the same rule as row actions: `u`
+ * exists only while a pause is in force, `d` only while harness changes wait.
  */
 export function renderKeyBar(
   row: FeatureConsoleRow | undefined,
   t: TFunction,
-  releaseQueue = false
+  options: KeyBarOptions = {}
 ): string {
   const item = (key: string, label: string) => `${paint.key(key)} ${paint.muted(label)}`;
+  const harness = options.harnessDecisions ?? 0;
   const items = [
     item('↑↓', t(`${NS}.keys.select`)),
     item('enter', t(`${NS}.keys.details`)),
     item('l', t(`${NS}.keys.log`)),
     ...(row?.actions ?? []).map((a) => item(ACTION_KEY[a], t(`${NS}.keys.${a}`))),
+    ...(harness > 0 ? [item('d', t(`${NS}.keys.harness`, { count: harness }))] : []),
     ...(row ? [item('o', t(`${NS}.keys.chat`)), item('t', t(`${NS}.keys.shell`))] : []),
     ...(row?.runId ? [item('f', t(`${NS}.keys.follow`))] : []),
-    ...(releaseQueue ? [item('u', t(`${NS}.keys.releaseQueue`))] : []),
+    ...(row && options.newFeature ? [item('N', t(`${NS}.keys.newFeature`))] : []),
+    ...(options.releaseQueue ? [item('u', t(`${NS}.keys.releaseQueue`))] : []),
     item('/', t(`${NS}.keys.filter`)),
     item('ctrl+p', t(`${NS}.keys.palette`)),
     item('?', t(`${NS}.keys.help`)),

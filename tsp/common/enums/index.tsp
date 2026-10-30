@@ -36,6 +36,7 @@ import "./harness.tsp";
 import "./feature-flag.tsp";
 import "./telemetry.tsp";
 import "./feature-coordination.tsp";
+import "./learned-harness.tsp";
 import "./feature-console.tsp";
 import "./agent-activity.tsp";
 import "./terminal-pane.tsp";

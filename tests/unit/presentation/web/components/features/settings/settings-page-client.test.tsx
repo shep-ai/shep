@@ -51,6 +51,20 @@ describe('SettingsPageClient', () => {
     expect(screen.getByTestId('database-settings-section')).toBeDefined();
   });
 
+  it('shows the Self-learning section and nav entry only while the selfLearning flag is on', () => {
+    const { unmount } = render(
+      <SettingsPageClient settings={settings} shepHome="/home/user/.shep" dbFileSize="2.4 MB" />
+    );
+    expect(screen.queryByTestId('self-learning-settings-section')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Self-learning' })).toBeNull();
+    unmount();
+
+    const on = { ...settings, featureFlags: { ...settings.featureFlags!, selfLearning: true } };
+    render(<SettingsPageClient settings={on} shepHome="/home/user/.shep" dbFileSize="2.4 MB" />);
+    expect(screen.getByTestId('self-learning-settings-section')).toBeDefined();
+    expect(screen.getByRole('button', { name: 'Self-learning' })).toBeDefined();
+  });
+
   it('shows Connect agents with the token file under shepHome, and the MCP activity tools (spec 149)', () => {
     render(<SettingsPageClient settings={settings} shepHome="/opt/shep" dbFileSize="10.5 MB" />);
     expect(screen.getByRole('button', { name: 'Connect agents' })).toBeDefined();

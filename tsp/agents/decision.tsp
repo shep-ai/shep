@@ -57,6 +57,9 @@ enum DecisionKind {
 
   @doc("A question recorded before spec 134 with plain string options")
   Legacy: "legacy",
+
+  @doc("A learned-harness candidate waiting to be adopted or rejected (spec 150)")
+  HarnessChange: "harness_change",
 }
 
 @doc("A selectable option within a decision question")

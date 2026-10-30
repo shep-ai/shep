@@ -1910,16 +1910,6 @@ Rules:
 - When an LLM writes user-facing copy from structured data, **validate the output against that same data** before publishing. Don't trust the prompt alone; add a deterministic guard that falls back on contradiction.
 - `.mjs` scripts under ESLint need browser/Node globals declared: `/* global fetch, URL */`.
 
-## An SDK error is not output: check `is_error` before using a model's text
-
-56 releases (through v1.252.2) shipped with the tagline "Your organization does not have access
-to Claude. Please login again…". The Agent SDK reports auth and org failures as a `result` with
-`subtype: 'success'` **and** `is_error: true`, with the error text in `result`, plus an
-assistant message carrying `error`. `runQuery` read `subtype` only, and the fallback to raw
-assistant text took the error too. Rules: treat `is_error`, a non-`success` subtype, or an
-assistant `error` as a failure; never fall back to assistant text after one; and run a
-deterministic error-wording guard (`looksLikeServiceError`) on anything that will be published.
-
 ## Tag-triggered CI is defeated by `[skip ci]`; org ghcr first-push needs a PAT
 
 The `docker-publish.yml` workflow (issue #822 / PR #824) was written to trigger on `push: tags: v*`, then never ran on any release. Two independent bugs:
@@ -3355,6 +3345,38 @@ process, so one browser tab closing mid-request (`Error: aborted`, ECONNRESET) c
 daemon for every tab and agent. Triage process-level errors by origin before exiting: a client
 disconnect is the client's problem.
 
+## A plan with a setting must give its default and the screen that changes it
+
+Spec 150's first plan added `Settings.learning.mode` and a per-feature "Explore" option but
+never said what the mode defaults to, had no settings section to change it, and no toggle on
+the surfaces that create a feature. The user had to ask "is everything opt-in? is the UI
+covered?". **Rule:** for every new setting, flag or per-item option a plan introduces, state
+its default (and whether that keeps the feature opt-in), name the settings section that edits
+it, and list every surface that creates the item it applies to (web drawer, `shep feat new`,
+TUI) with a task for each — before calling the plan complete.
+
+## Check a CLI option name is free before a spec names it
+
+Spec 150 told `shep feat new` to take `--explore`, but `--explore` already selects the
+Exploration build mode; implementation had to rename it `--explore-harness` and patch the spec.
+**Rule:** before a spec or plan names a new CLI option, grep the command for it
+(`grep -n "'--name" src/presentation/cli/commands/<cmd>`) and pick a free, specific name.
+
+## A new create-input field must reach every create path
+
+The per-feature Explore fields were added to `CreateFeatureInput` but not to
+`CreateFeatureFromRemoteInput`, so `shep feat new --remote` would have dropped them silently.
+**Rule:** when a field is added to one create/update input, grep for every use case that
+builds that input (`grep -rn "createFeatureUseCase\.\(execute\|createRecord\)"`) and forward
+it there too, with a test per path.
+
+## A new web link needs `pnpm build:web:prod`, not just `typecheck:web`
+
+The web app has `typedRoutes: true`: `<Link href>` and `router.push` only accept a `Route`, and
+that is checked by `next build`, not by `pnpm typecheck:web`. Spec 150's Learning links passed
+every local check and broke the production build. **Rule:** a helper that builds an href returns
+`Route` (`` `/path?${params}` as Route ``), and any change that adds a link or `router.push` runs
+`pnpm build:web:prod` before pushing.
 
 ## A major upgrade that drops an export a plugin needs: patch the import, prove output is identical
 
@@ -3387,3 +3409,17 @@ unit tests and the dev server do not run this validation.
    the installed build, then compare remaining failures against a `main` worktree run.
 6. `pnpm test:e2e:cli` can leave a `shep _serve` on port 4050. A packaged Electron launch then
    waits forever on the invisible "port in use" dialog — kill it before launching under xvfb.
+
+## An SDK "success" can carry an error: check `is_error` before publishing model output
+
+Every release from v1.219.0 to v1.252.2 (56 in a row) shipped _"Your organization does not have
+access to Claude. Please login again…"_ as its tagline. The `CLAUDE_CODE_OAUTH_TOKEN` secret had
+lost access, and the Agent SDK reports that as a `result` message with `subtype: 'success'`,
+`is_error: true` and the error as `result`. The tagline code read only `subtype`, so the fallback
+to the static tagline never fired, and no check noticed for three months. **Rules:**
+
+- Treat a `result` with `is_error` and an `assistant` message with `error` as failures, and also
+  reject text matching known service errors (`isServiceError`) before anything is published.
+- A fallback that hides a broken credential must say so loudly (a warning naming the secret).
+- Permanent output (release notes, CHANGELOG.md) gets fixed at the source of truth, then synced:
+  `scripts/release-notes-backfill.mjs` copies CHANGELOG.md taglines into GitHub releases.

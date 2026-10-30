@@ -42,11 +42,18 @@ export interface BootPromptResult {
   bootPrompt: string;
 }
 
+/** Text of the learned harness for a session (spec 150); undefined when none applies. */
+export type LearnedHarnessText = (
+  repositoryPath: string,
+  worktreePath: string
+) => Promise<string | undefined>;
+
 export class BootPromptResolver {
   constructor(
     private readonly featureRepo: IFeatureRepository,
     private readonly contextBuilder: FeatureContextBuilder,
-    private readonly selectProjectMemory: SelectProjectMemoryUseCase
+    private readonly selectProjectMemory: SelectProjectMemoryUseCase,
+    private readonly learnedHarnessText?: LearnedHarnessText
   ) {}
 
   /**
@@ -105,6 +112,14 @@ export class BootPromptResolver {
         openPRs,
         projectMemory
       );
+
+      // The learned harness (spec 150), keyed by repository like memory.
+      // Best-effort: the hook never throws and never blocks the boot.
+      const learned =
+        repositoryPath && this.learnedHarnessText
+          ? await this.learnedHarnessText(repositoryPath, worktreePath)
+          : undefined;
+      if (learned) context = `${context}\n\n${learned}`;
     }
 
     // Decide what to send as the first turn (three cases — see file header).

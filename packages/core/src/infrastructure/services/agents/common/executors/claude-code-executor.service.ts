@@ -542,6 +542,7 @@ export class ClaudeCodeExecutorService implements IAgentExecutor {
     if (options?.maxTurns) args.push('--max-turns', String(options.maxTurns));
     if (options?.disableMcp) args.push('--strict-mcp-config');
     if (options?.mcpConfigPath) args.push('--mcp-config', options.mcpConfigPath);
+    if (options?.settingsPath) args.push('--settings', options.settingsPath);
     // An empty list is `--tools ""` (no tools); omitting the flag grants every tool.
     if (options?.tools) args.push('--tools', options.tools.join(','));
     return args;

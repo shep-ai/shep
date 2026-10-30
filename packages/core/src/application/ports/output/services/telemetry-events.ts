@@ -13,6 +13,10 @@ import type {
   BuildMode,
   DecisionKind,
   DecisionSurface,
+  HarnessComponentKind,
+  HarnessOrigin,
+  HarnessRefinementStatus,
+  LearningMode,
   OnboardingStep,
   TelemetryEvent,
 } from '../../../../domain/generated/output.js';
@@ -83,5 +87,36 @@ export interface TelemetryEventPropertyMap {
     errorClass: string;
     /** Truncated SHA-256 of the top stack frame (function@file:line). */
     sourceHash: string;
+  };
+  [TelemetryEvent.HarnessCandidateProposed]: {
+    origin: HarnessOrigin;
+    componentCount: number;
+    /** Distinct component kinds the candidate holds. */
+    componentKinds: readonly HarnessComponentKind[];
+    /** The adoption policy adopted it without a person. */
+    autoAdopted: boolean;
+  };
+  [TelemetryEvent.HarnessVersionAdopted]: {
+    origin: HarnessOrigin;
+    componentCount: number;
+    /** Adopted by the adoption policy rather than a person. */
+    byPolicy: boolean;
+  };
+  [TelemetryEvent.HarnessVersionRejected]: {
+    origin: HarnessOrigin;
+    /** The person gave a reason (its text is never sent). */
+    withFeedback: boolean;
+  };
+  [TelemetryEvent.HarnessVersionRolledBack]: {
+    origin: HarnessOrigin;
+    /** An earlier version became current again (else the base harness). */
+    restoredPrevious: boolean;
+  };
+  [TelemetryEvent.HarnessRefinementFinished]: {
+    mode: LearningMode;
+    status: HarnessRefinementStatus;
+    k: number;
+    rollouts: number;
+    sessions: number;
   };
 }

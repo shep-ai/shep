@@ -281,6 +281,14 @@ The full, fast and exploration graphs wrap every file-changing node with `withCh
 snapshots the worktree into `refs/shep/checkpoints/<featureId>/<seq>-<node>` without touching the
 branch or index. See [git-checkpoints.md](./git-checkpoints.md).
 
+### Self-learning harness (spec 150, flag-gated)
+
+With the `selfLearning` flag on, the worker wraps its executor in `LearnedHarnessExecutorProxy`, so
+every agent call gets the repository's adopted learned harness, installed for that agent's family.
+After a run settles, the worker reflects on it (Reflect mode). In Explore mode, `withExplore` wraps
+`implement` / `fast-implement` with Propose–Probe–Compose over probe worktrees. See
+[self-learning-harness.md](./self-learning-harness.md).
+
 ## Collaboration & Question Pipeline (spec 093, flag-gated)
 
 Three new domain entities — defined in `tsp/agents/` — extend the agent system

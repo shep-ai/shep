@@ -40,6 +40,7 @@ export interface FeatureFlagsState {
   factory: boolean;
   sdlcBoard: boolean;
   agentCoordination: boolean;
+  selfLearning: boolean;
 }
 
 export function getFeatureFlags(): FeatureFlagsState {
@@ -75,6 +76,7 @@ export function getFeatureFlags(): FeatureFlagsState {
           factory: flags.factory ?? true,
           sdlcBoard: flags.sdlcBoard ?? false,
           agentCoordination: flags.agentCoordination ?? false,
+          selfLearning: flags.selfLearning ?? false,
         };
       }
     }
@@ -125,6 +127,7 @@ export function getFeatureFlags(): FeatureFlagsState {
     sdlcBoard: false,
     // Agent coordination of overlapping features is opt-in (spec 141).
     agentCoordination: false,
+    selfLearning: false,
   };
 }
 

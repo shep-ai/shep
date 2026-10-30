@@ -30,6 +30,8 @@ import {
 const {
   mockInitializeContainer,
   mockResolve,
+  mockGetCurrentHarness,
+  mockReflect,
   mockGraphInvoke,
   mockFastGraphInvoke,
   mockCreateFeatureAgentGraph,
@@ -40,6 +42,8 @@ const {
   mockResolveSpaceEnvironment: vi.fn(),
   mockInitializeContainer: vi.fn(),
   mockResolve: vi.fn(),
+  mockGetCurrentHarness: vi.fn(),
+  mockReflect: vi.fn(),
   mockGraphInvoke: vi.fn(),
   mockFastGraphInvoke: vi.fn(),
   mockCreateFeatureAgentGraph: vi.fn(),
@@ -464,6 +468,11 @@ describe('runWorker', () => {
             `/tmp/agents/feature-${checkpointId}.sqlite`,
         };
       }
+      // Self-learning harness (spec 150): nothing adopted, learning reports skipped.
+      if (key === 'GetCurrentHarnessUseCase') return { execute: mockGetCurrentHarness };
+      if (key === 'IHarnessInstaller') return { install: vi.fn() };
+      if (key === 'ReflectOnFeatureRunUseCase') return { execute: mockReflect };
+      if (key === 'RecordVersionOutcomeUseCase') return { execute: vi.fn() };
       // InitializeSettingsUseCase — return a mock with execute()
       if (key === 'InitializeSettingsUseCase') {
         return {
@@ -478,6 +487,8 @@ describe('runWorker', () => {
       context: { space: { name: 'Default' }, source: 'Default' },
       environment: { set: {}, unset: [] },
     });
+    mockGetCurrentHarness.mockResolvedValue(null);
+    mockReflect.mockResolvedValue({ skipped: true, costUsd: 0 });
     mockGraphInvoke.mockResolvedValue({
       currentNode: 'implement',
       messages: ['[analyze] done', '[implement] done'],
@@ -493,6 +504,51 @@ describe('runWorker', () => {
     });
     mockCreateFastFeatureAgentGraph.mockReturnValue({
       invoke: mockFastGraphInvoke,
+    });
+  });
+
+  describe('self-learning harness (spec 150)', () => {
+    const args = { featureId: 'feat-1', runId: 'run-1', repo: '/repo', specDir: '/specs' };
+
+    it('reflects after a completed run with its final state', async () => {
+      mockGraphInvoke.mockResolvedValue({
+        messages: [],
+        error: null,
+        merged: true,
+        ciFixAttempts: 1,
+      });
+      await runWorker(args);
+      expect(mockReflect).toHaveBeenCalledTimes(1);
+      const [input, agentRunId] = mockReflect.mock.calls[0];
+      expect(agentRunId).toBe('run-1');
+      expect(input).toMatchObject({
+        featureId: 'feat-1',
+        repositoryPath: '/repo',
+        worktreePath: '/repo',
+        signals: { merged: true, ciFixAttempts: 1 },
+      });
+    });
+
+    it('reflects after a run that threw, carrying the error', async () => {
+      mockGraphInvoke.mockRejectedValue(new Error('Process exited with code 1'));
+      await runWorker(args);
+      expect(mockReflect.mock.calls[0][0].signals.error).toBe('Process exited with code 1');
+    });
+
+    it('does not reflect while a run waits at an approval gate', async () => {
+      mockGraphInvoke.mockResolvedValue({
+        messages: [],
+        error: null,
+        __interrupt__: [{ value: { node: 'plan' } }],
+      });
+      await runWorker(args);
+      expect(mockReflect).not.toHaveBeenCalled();
+    });
+
+    it('never fails the run when reflection throws', async () => {
+      mockGraphInvoke.mockResolvedValue({ messages: [], error: null });
+      mockReflect.mockRejectedValue(new Error('improver crashed'));
+      await expect(runWorker(args)).resolves.toBeUndefined();
     });
   });
 

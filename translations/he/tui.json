@@ -241,7 +241,9 @@
       "filter": "סינון",
       "palette": "פקודות",
       "copyId": "העתקת מזהה",
-      "chat": "צ'אט"
+      "chat": "צ'אט",
+      "harness": "שינויי harness ({{count}})",
+      "newFeature": "פיצ'ר חדש"
     },
     "reject": {
       "prompt": "משוב עבור {{name}}:",
@@ -281,7 +283,9 @@
       "palette": ":/ctrl+p   לוח פקודות",
       "copyId": "c   העתקת מזהה הפיצ'ר",
       "controlCenter": "C   חלון לכל פיצ'ר פעיל (מרכז בקרה)",
-      "chat": "o   צ'אט עם הסוכן של הפיצ'ר (esc חוזר)"
+      "chat": "o   צ'אט עם הסוכן של הפיצ'ר (esc חוזר)",
+      "harness": "d   שינויי harness שנלמדו וממתינים לך (אימוץ / דחייה)",
+      "newFeature": "N   פיצ'ר חדש במאגר של הפיצ'ר הנבחר"
     },
     "notTty": "shep tui צריך טרמינל אינטראקטיבי. בסקריפטים ובצינורות, השתמש ב-\"shep feat ls\".",
     "filter": {
@@ -322,7 +326,9 @@
         "help": "הצגת מקשים",
         "quit": "יציאה",
         "control-center": "פתיחת חלון לכל פיצ'ר פעיל",
-        "chat": "צ'אט עם הסוכן של הפיצ'ר"
+        "chat": "צ'אט עם הסוכן של הפיצ'ר",
+        "harness-decisions": "סקירת שינויי harness שנלמדו",
+        "new-feature": "יצירת פיצ'ר חדש"
       }
     },
     "copied": "המזהה של {{name}} הועתק: {{id}}",
@@ -345,6 +351,35 @@
     },
     "hostStatus": {
       "blocked": "צריכים אותך: {{count}}"
+    },
+    "harness": {
+      "title": "שינויי harness שנלמדו",
+      "waiting": "ממתינים: {{count}}",
+      "empty": "אין שינוי harness שממתין לך",
+      "hint": "↑↓ בחירה · a אימוץ · r דחייה · esc חזרה לפיצ'רים",
+      "rejectPrompt": "דחייה — למה?",
+      "rejectHint": "משוב אופציונלי מכוון את ההצעה הבאה · enter דחייה · esc ביטול",
+      "progress": "עונה על שינוי ה-harness…",
+      "adopted": "שינוי ה-harness אומץ",
+      "rejected": "שינוי ה-harness נדחה",
+      "alreadySettled": "כבר ענו על שינוי ה-harness הזה במקום אחר",
+      "collaborationOff": "עונים על שינויי harness דרך תיבת הדואר הנכנס; הפעילו אותה עם: shep settings flags enable collaboration"
+    },
+    "create": {
+      "title": "פיצ'ר חדש ב-{{repository}}",
+      "prompt": "תיאור",
+      "describe": "תארו את הפיצ'ר בשורה למטה והקישו enter. שערים, push ו-PR פועלים לפי הגדרות זרימת העבודה שלכם.",
+      "explore": "Explore",
+      "k": "k",
+      "on": "פעיל",
+      "off": "כבוי",
+      "kRange": "↑↓ 1–{{max}}",
+      "exploreCost": "Explore מנסה כמה גרסאות של ה-harness בשלב המימוש, לפיצ'ר הזה בלבד, ושומר את הטובה ביותר. העלות היא בערך פי 4 משלב המימוש ב-k = 1, ויותר ב-k גבוה יותר.",
+      "hint": "enter יצירה · esc ביטול",
+      "hintExplore": "enter יצירה · tab Explore פעיל/כבוי · ↑↓ k · esc ביטול",
+      "progress": "יוצר פיצ'ר ב-{{repository}}…",
+      "created": "{{name}} נוצר",
+      "queued": "{{name}} נוצר — בתור במקום {{position}}"
     }
   }
 }

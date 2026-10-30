@@ -255,6 +255,10 @@
         "noFastOption": "Alle SDLC-Phasen durchlaufen (Analyse → Anforderungen → Plan → Implementierung)",
         "exploreOption": "Start an exploration/prototyping session for iterative design",
         "exploreAndFastConflict": "Cannot use --explore and --fast together. Choose one mode.",
+        "exploreHarnessOption": "Selbstlernen: den Implement-Schritt dieses Features im Explore-Modus ausführen (Propose–Probe–Compose) — kostet bei k=1 etwa das 4× des Implement-Schritts",
+        "exploreKOption": "Explore-Budget k für --explore-harness, 1–{{max}} (Standard: deine Selbstlern-Einstellung); führt 4k Rollouts aus",
+        "exploreKWithoutHarness": "--explore-k gilt nur zusammen mit --explore-harness",
+        "invalidExploreK": "--explore-k muss eine ganze Zahl von 1 bis {{max}} sein, erhalten: {{value}}",
         "modelOption": "LLM-Modellbezeichnung für diesen Lauf (z.B. claude-opus-4-6)",
         "effortOption": "Denkaufwand für diesen Lauf: low, medium, high, xhigh oder max (Standard: Einstellungen)",
         "invalidEffort": "Unbekannter Aufwand \"{{level}}\". Gültige Stufen: {{levels}}",
@@ -2011,6 +2015,154 @@
         "description": "Einen Agent-Lauf über Lauf-ID, Feature-ID oder ein Präfix davon stoppen",
         "idArgument": "Lauf-ID, Feature-ID oder ein Präfix",
         "stopped": "{{id}} gestoppt: {{reason}}"
+      }
+    },
+    "learn": {
+      "description": "Selbstlernender Harness: prüfen, übernehmen und zurücknehmen, was Shep aus Feature-Läufen gelernt hat",
+      "failed": "Der Befehl für den gelernten Harness ist fehlgeschlagen",
+      "repoOption": "Repository-Pfad (Standard: aktuelles Verzeichnis)",
+      "jsonOption": "JSON ausgeben",
+      "versionArg": "Versions-ID oder ein eindeutiges Präfix davon",
+      "notFound": "Keine gelernte Harness-Version passt zu {{id}}",
+      "fields": {
+        "version": "Version",
+        "status": "Status",
+        "origin": "Herkunft",
+        "scope": "Geltungsbereich",
+        "created": "Erstellt",
+        "components": "Komponenten",
+        "parent": "Vorgänger",
+        "sourceFeature": "Gelernt aus Feature",
+        "notes": "Notizen",
+        "reason": "Grund"
+      },
+      "status": {
+        "description": "Den gelernten Harness anzeigen, mit dem dieses Repository läuft",
+        "title": "Gelernter Harness",
+        "none": "Nichts ist übernommen — dieses Repository läuft mit dem Basis-Harness.",
+        "candidates": "Kandidaten, die auf Prüfung warten: {{count}} — siehe `shep learn history`",
+        "noCandidates": "Keine Kandidaten warten auf Prüfung."
+      },
+      "history": {
+        "description": "Gelernte Harness-Versionen mit ihren Ergebnismetriken auflisten, neueste zuerst",
+        "limitOption": "Höchstens so viele Versionen anzeigen",
+        "invalidLimit": "--limit muss eine ganze Zahl größer als 0 sein, erhalten: {{value}}",
+        "title": "Gelernte Harness-Versionen",
+        "empty": "Noch keine gelernten Harness-Versionen. Lerne aus einem abgeschlossenen Feature mit `shep learn reflect <feature>`.",
+        "current": "aktuell",
+        "regressed": "Verschlechterte Versionen: {{count}} — eine mit `shep learn show <version>` prüfen, die übernommene mit `shep learn rollback` zurücknehmen",
+        "columns": {
+          "id": "ID",
+          "status": "STATUS",
+          "origin": "HERKUNFT",
+          "created": "ERSTELLT",
+          "runs": "LÄUFE",
+          "merged": "GEMERGT",
+          "ciFixes": "CI-FIXES",
+          "trend": "TREND"
+        }
+      },
+      "show": {
+        "description": "Eine Version anzeigen: Komponenten, Bewertungen der Änderungen und Diff zum Vorgänger",
+        "title": "Gelernter Harness {{id}}",
+        "componentsTitle": "Komponenten",
+        "editsTitle": "Änderungen und Bewertungen",
+        "diffTitle": "Diff zu {{id}}",
+        "diffTitleBase": "Diff zum Basis-Harness",
+        "noChanges": "Keine Änderungen."
+      },
+      "diff": {
+        "description": "Zeigen, was sich zwischen zwei Versionen geändert hat",
+        "fromArg": "Die Ausgangsversion (ID oder Präfix)",
+        "toArg": "Die Zielversion (ID oder Präfix)",
+        "title": "{{from}} → {{to}}"
+      },
+      "adopt": {
+        "description": "Eine Kandidatenversion übernehmen oder einen selbst geschriebenen Harness importieren und übernehmen",
+        "fromDirOption": "Den Harness in diesem Verzeichnis (kanonisches Layout) importieren und übernehmen",
+        "needsOne": "Gib genau eines an: eine Version oder --from-dir <dir>",
+        "adopted": "{{id}} übernommen — die nächsten Feature-Läufe verwenden ihn",
+        "memoryFacts": "Erfasste Memory-Fakten: {{count}}",
+        "refused": "{{id}} konnte nicht übernommen werden: {{reason}}",
+        "imported": "{{id}} importiert und übernommen",
+        "importedNotAdopted": "{{id}} importiert, aber nicht übernommen — siehe `shep learn show {{id}}`",
+        "importRefused": "Der Harness in {{dir}} wurde nicht importiert:"
+      },
+      "reject": {
+        "description": "Eine Kandidatenversion ablehnen; dein Feedback lenkt die nächste Reflexion",
+        "feedbackOption": "Warum sie abgelehnt wird — die nächste Reflexion liest das",
+        "rejected": "{{id}} abgelehnt",
+        "refused": "{{id}} konnte nicht abgelehnt werden: {{reason}}"
+      },
+      "rollback": {
+        "description": "Den übernommenen Harness dieses Repositorys zurücknehmen und seinen Vorgänger wieder übernehmen",
+        "reasonOption": "Warum er zurückgenommen wird (wird an der Version gespeichert)",
+        "rolledBack": "Übernommenen Harness zurückgenommen",
+        "restored": "{{id}} ist wieder übernommen",
+        "toBase": "Das Repository läuft wieder mit dem Basis-Harness",
+        "refused": "Nichts wurde zurückgenommen: {{reason}}"
+      },
+      "reflect": {
+        "description": "Jetzt aus dem letzten Lauf eines Features lernen und eine Harness-Änderung zur Prüfung einreichen",
+        "featureArg": "Feature-ID oder ein eindeutiges Präfix davon",
+        "spinner": "Reflexion über den Feature-Lauf",
+        "skipped": "Nichts zu lernen: {{reason}}",
+        "finished": "Reflexion abgeschlossen: {{status}} (Kosten {{cost}} USD)",
+        "candidate": "Kandidat {{id}} wartet auf Prüfung — `shep learn show {{id}}`",
+        "autoAdopted": "Kandidat {{id}} wurde durch deine Übernahmerichtlinie automatisch übernommen"
+      },
+      "labels": {
+        "status": {
+          "candidate": "Kandidat",
+          "adopted": "Übernommen",
+          "rejected": "Abgelehnt",
+          "rolledBack": "Zurückgenommen",
+          "superseded": "Ersetzt"
+        },
+        "origin": {
+          "base": "Basis",
+          "reflect": "Reflexion",
+          "explore": "Exploration",
+          "manual": "Manuell"
+        },
+        "scope": {
+          "project": "Projekt",
+          "organization": "Organisation",
+          "space": "Space",
+          "productLine": "Produktlinie"
+        },
+        "trend": {
+          "insufficientData": "Zu wenige Läufe",
+          "improved": "Verbessert",
+          "unchanged": "Unverändert",
+          "regressed": "Verschlechtert",
+          "noBaseline": "Erste Version"
+        },
+        "verdict": {
+          "helped": "Geholfen",
+          "hurt": "Geschadet",
+          "noObservedEffect": "Keine beobachtete Wirkung",
+          "confounded": "Nicht zuordenbar",
+          "untested": "Ungetestet"
+        },
+        "kind": {
+          "instructions": "Anweisungen",
+          "guardrails": "Leitplanken",
+          "memory": "Memory",
+          "toolGuidance": "Tool-Hinweise",
+          "skill": "Skill",
+          "script": "Skript",
+          "subagent": "Subagent",
+          "hook": "Hook"
+        },
+        "refinement": {
+          "running": "Läuft",
+          "proposed": "Vorgeschlagen",
+          "keptBase": "Basis-Harness beibehalten",
+          "fellBack": "Auf Basis-Harness zurückgefallen",
+          "overBudget": "Budget überschritten",
+          "failed": "Fehlgeschlagen"
+        }
       }
     }
   },

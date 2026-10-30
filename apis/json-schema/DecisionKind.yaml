@@ -7,4 +7,5 @@ enum:
   - approval_gate
   - agent_ask
   - legacy
+  - harness_change
 description: Which producer raised a decision

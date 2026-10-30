@@ -61,6 +61,7 @@ export const AllSections: Story = {
         factory: true,
         sdlcBoard: false,
         agentCoordination: false,
+        selfLearning: false,
       },
     },
     shepHome: '/opt/shep',
@@ -102,6 +103,21 @@ export const CustomTimeouts: Story = {
           analyzeMs: 300000,
         },
       },
+    },
+    shepHome: '/home/user/.shep',
+    dbFileSize: '2.4 MB',
+  },
+};
+
+/**
+ * Self-learning flag on: the Self-learning section and its nav entry appear.
+ * With the flag off (Default) both are absent.
+ */
+export const SelfLearningOn: Story = {
+  args: {
+    settings: {
+      ...defaultSettings,
+      featureFlags: { ...defaultSettings.featureFlags!, selfLearning: true },
     },
     shepHome: '/home/user/.shep',
     dbFileSize: '2.4 MB',

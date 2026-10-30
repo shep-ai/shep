@@ -1,0 +1,7 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: HarnessAlwaysOnChannel.yaml
+type: string
+enum:
+  - system-prompt
+  - prompt
+description: How always-on harness text reaches an agent

@@ -184,6 +184,33 @@ describe('BootPromptResolver', () => {
       );
     });
 
+    it('appends the learned harness for the feature repository (spec 150)', async () => {
+      const learned = vi.fn().mockResolvedValue('## Learned harness for this repository');
+      resolver = new BootPromptResolver(
+        featureRepo,
+        contextBuilder,
+        makeReadProjectMemory(),
+        learned
+      );
+      const { context } = await resolver.resolve('feat-1', '/wt', undefined, undefined);
+      expect(learned).toHaveBeenCalledWith('/code/app', '/wt');
+      expect(context.endsWith('\n\n## Learned harness for this repository')).toBe(true);
+    });
+
+    it('leaves the context unchanged when no learned harness applies', async () => {
+      const learned = vi.fn().mockResolvedValue(undefined);
+      resolver = new BootPromptResolver(
+        featureRepo,
+        contextBuilder,
+        makeReadProjectMemory(),
+        learned
+      );
+      const withHook = await resolver.resolve('feat-1', '/wt', undefined, undefined);
+      resolver = new BootPromptResolver(featureRepo, contextBuilder, makeReadProjectMemory());
+      const without = await resolver.resolve('feat-1', '/wt', undefined, undefined);
+      expect(withHook.context).toBe(without.context);
+    });
+
     it('passes empty PR array when feature has no PR', async () => {
       await resolver.resolve('feat-1', '/wt', undefined, undefined);
       expect(contextBuilder.buildContext).toHaveBeenCalledWith(

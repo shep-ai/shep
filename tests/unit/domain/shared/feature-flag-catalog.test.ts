@@ -47,6 +47,10 @@ describe('feature flag catalog', () => {
     expect(FEATURE_FLAG_CATALOG.agentCoordination.group).toBe(FeatureFlagGroup.Experimental);
   });
 
+  it('lists the self-learning harness under Experimental (spec 150)', () => {
+    expect(FEATURE_FLAG_CATALOG.selfLearning.group).toBe(FeatureFlagGroup.Experimental);
+  });
+
   it('lists flags grouped in group order', () => {
     const groups = listFeatureFlagDescriptors().map((d) => d.group);
     const order = Object.values(FeatureFlagGroup);

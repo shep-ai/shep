@@ -1,0 +1,12 @@
+
+# Five runs later v1 is doing worse than v0, and Reflect proposed a candidate
+$ shep learn history --repo ~/shop
+
+  Learned harness versions (3)
+
+  ID                  STATUS        ORIGIN      CREATED      RUNS    MERGED   CI FIXES   TREND         
+  64c7cdfa            Candidate     Reflect     2026-10-29   0       0%       0.0        Too few runs
+  065eb057 current    Adopted       Manual      2026-10-29   5       60%      3.0        Regressed
+  31544ca0            Superseded    Manual      2026-10-29   5       100%     0.0        First version
+
+⚠ Regressed versions: 1 — inspect one with `shep learn show <version>`, undo the adopted one with `shep learn rollback`

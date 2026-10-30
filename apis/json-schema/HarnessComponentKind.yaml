@@ -1,0 +1,13 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: HarnessComponentKind.yaml
+type: string
+enum:
+  - instructions
+  - guardrails
+  - memory
+  - tool-guidance
+  - skill
+  - script
+  - subagent
+  - hook
+description: Kind of component in a learned harness overlay

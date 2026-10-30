@@ -7,6 +7,8 @@ import type { WorkflowDefaults } from '@/app/actions/get-workflow-defaults';
 import { BuildMode } from '@shepai/core/domain/generated/output';
 import { Button } from '@/components/ui/button';
 import { DrawerCloseGuardProvider } from '@/hooks/drawer-close-guard';
+import { FeatureFlagsProvider } from '@/hooks/feature-flags-context';
+import type { FeatureFlagsState } from '@/lib/feature-flags';
 
 /* ---------------------------------------------------------------------------
  * Meta — component-level docs + interactive controls
@@ -903,5 +905,40 @@ export const AppScopedOverridesInitialMode: Story = {
     const body = within(canvasElement.ownerDocument.body);
     const specButton = await body.findByTestId('build-mode-spec');
     await expect(specButton).toHaveAttribute('aria-pressed', 'true');
+  },
+};
+
+/* ---------------------------------------------------------------------------
+ * Per-feature Explore (spec 150) — only with the selfLearning flag on
+ * ------------------------------------------------------------------------- */
+
+const SELF_LEARNING_ON = { selfLearning: true } as FeatureFlagsState;
+
+/** Flag on, toggle off: the Explore row is offered but nothing is sent. */
+export const ExploreToggleOff: Story = {
+  render: () => (
+    <FeatureFlagsProvider flags={SELF_LEARNING_ON}>
+      <CreateDrawerTrigger label="Open (self-learning on)" />
+    </FeatureFlagsProvider>
+  ),
+  play: async ({ canvasElement }) => {
+    await userEvent.click(within(canvasElement).getByRole('button', { name: /Open/ }));
+    const body = within(canvasElement.ownerDocument.body);
+    await expect(await body.findByTestId('explore-harness-row')).toBeInTheDocument();
+  },
+};
+
+/** Flag on, toggle on: k and the cost of the extra attempts are shown. */
+export const ExploreToggleOn: Story = {
+  render: () => (
+    <FeatureFlagsProvider flags={SELF_LEARNING_ON}>
+      <CreateDrawerTrigger label="Open (self-learning on)" />
+    </FeatureFlagsProvider>
+  ),
+  play: async ({ canvasElement }) => {
+    await userEvent.click(within(canvasElement).getByRole('button', { name: /Open/ }));
+    const body = within(canvasElement.ownerDocument.body);
+    await userEvent.click(await body.findByTestId('explore-harness-switch'));
+    await expect(await body.findByTestId('explore-harness-cost')).toBeInTheDocument();
   },
 };

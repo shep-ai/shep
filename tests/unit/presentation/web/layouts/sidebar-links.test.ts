@@ -35,6 +35,7 @@ const OFF = {
   factory: false,
   sdlcBoard: false,
   agentCoordination: false,
+  selfLearning: false,
 } satisfies FeatureFlagsState;
 
 describe('sidebar links', () => {
@@ -108,5 +109,14 @@ describe('sidebar links', () => {
     expect(isSidebarLinkActive(tools, '/tools/x')).toBe(false);
     expect(isSidebarLinkActive(opportunities, '/opportunities?space=acme')).toBe(true);
     expect(isSidebarLinkActive(opportunities, null)).toBe(false);
+  });
+
+  it('shows Learning only while the selfLearning flag is on (spec 150)', () => {
+    const hrefs = (flags: FeatureFlagsState) => visibleSidebarLinks(flags).map((l) => l.href);
+    expect(hrefs(OFF)).not.toContain('/learning');
+    expect(hrefs({ ...OFF, selfLearning: true })).toContain('/learning');
+    const learning = SIDEBAR_LINKS.find((l) => l.href === '/learning')!;
+    expect(isSidebarLinkActive(learning, '/learning')).toBe(true);
+    expect(learning.labelKey).toBe('learning');
   });
 });

@@ -47,6 +47,12 @@ import { normalizeBuildMode } from '@shepai/core/domain/shared/build-mode';
 import { GitHubImportDialog } from '@/components/common/github-import-dialog';
 import type { AgentEffort, Repository } from '@shepai/core/domain/generated/output';
 import { pickFiles } from './pick-files';
+import {
+  ExploreHarnessRow,
+  NO_EXPLORE,
+  exploreFields,
+  type ExploreChoice,
+} from './explore-harness-row';
 
 export type { FileAttachment } from '@shepai/core/infrastructure/services/file-dialog.service';
 
@@ -135,6 +141,10 @@ export interface FeatureCreatePayload {
   injectSkills: boolean;
   /** Per-feature plugin activation overrides (plugin name -> enabled/disabled). */
   activePlugins?: Record<string, boolean>;
+  /** Run implement in Explore mode for this feature (spec 150; selfLearning flag only). */
+  exploreHarness?: boolean;
+  /** Explore budget k for this feature. */
+  exploreK?: number;
   /** Optional agent type override for this feature run */
   agentType?: string;
   /** Optional model override for this feature run */
@@ -366,6 +376,8 @@ export function FeatureCreateDrawer({
   const [commitSpecs, setCommitSpecs] = useState(true);
   const [rebaseBeforeBranch, setRebaseBeforeBranch] = useState(true);
   const [injectSkills, setInjectSkills] = useState(workflowDefaults?.injectSkills ?? false);
+  const { selfLearning } = useFeatureFlags();
+  const [explore, setExplore] = useState<ExploreChoice>(NO_EXPLORE);
   const [pluginOverrides, setPluginOverrides] = useState<Record<string, boolean>>(() => {
     const defaults: Record<string, boolean> = {};
     for (const p of installedPlugins ?? []) {
@@ -466,6 +478,7 @@ export function FeatureCreateDrawer({
     setForkAndPr(false);
     setCommitSpecs(true);
     setRebaseBeforeBranch(true);
+    setExplore(NO_EXPLORE);
     setOverrideAgent(undefined);
     setOverrideModel(undefined);
     setOverrideEffort(undefined);
@@ -644,6 +657,7 @@ export function FeatureCreateDrawer({
         commitSpecs,
         rebaseBeforeBranch,
         injectSkills,
+        ...(selfLearning ? exploreFields(explore) : {}),
         ...(Object.keys(pluginOverrides).length > 0 ? { activePlugins: pluginOverrides } : {}),
         ...(pending ? { pending } : {}),
         ...(overrideAgent ? { agentType: overrideAgent } : {}),
@@ -673,6 +687,8 @@ export function FeatureCreateDrawer({
       commitSpecs,
       rebaseBeforeBranch,
       injectSkills,
+      selfLearning,
+      explore,
       pluginOverrides,
       pending,
       overrideAgent,
@@ -1261,6 +1277,10 @@ export function FeatureCreateDrawer({
                   </Tooltip>
                 </div>
               </div>
+
+              {selfLearning ? (
+                <ExploreHarnessRow value={explore} onChange={setExplore} disabled={isSubmitting} />
+              ) : null}
 
               {/* Plugins row */}
               {installedPlugins && installedPlugins.length > 0 ? (

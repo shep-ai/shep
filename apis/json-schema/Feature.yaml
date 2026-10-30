@@ -116,6 +116,14 @@ properties:
   coordination:
     $ref: FeatureCoordination.yaml
     description: Last agent coordination decision with an overlapping feature (optional)
+  exploreHarness:
+    type: boolean
+    description: Run this feature's implement phase in Explore mode regardless of the scope's learning mode (optional)
+  exploreK:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Explore budget k for this feature; falls back to the learning settings (optional)
   previousLifecycle:
     $ref: SdlcLifecycle.yaml
     description: Lifecycle state prior to archiving, used to restore on unarchive (only set when lifecycle is Archived)

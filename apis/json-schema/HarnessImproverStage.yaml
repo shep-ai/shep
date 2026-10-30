@@ -1,0 +1,9 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: HarnessImproverStage.yaml
+type: string
+enum:
+  - propose
+  - compose
+  - select
+  - experience
+description: Which improvement session an improver agent is running

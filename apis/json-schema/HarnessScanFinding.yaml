@@ -1,0 +1,24 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: HarnessScanFinding.yaml
+type: object
+properties:
+  path:
+    type: string
+    description: Component path
+  line:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: 1-based line number
+  rule:
+    $ref: HarnessScanRule.yaml
+    description: What was flagged
+  excerpt:
+    type: string
+    description: The flagged line, trimmed
+required:
+  - path
+  - line
+  - rule
+  - excerpt
+description: One finding of the static scan of a candidate harness

@@ -45,6 +45,7 @@ import {
   expectNoInterrupts,
   ALL_GATES_ENABLED,
   PRD_PLAN_ALLOWED,
+  getExecutedNodes,
 } from './helpers.js';
 
 /**
@@ -52,30 +53,6 @@ import {
  * and throws immediately without retry.
  */
 const NON_RETRYABLE_MSG = 'Process exited with code 1: Command failed: gh run view';
-
-/**
- * Identify which producer nodes ran by inspecting executor.prompts.
- */
-const PROMPT_NODE_MARKERS: [string, string][] = [
-  ['analyze', 'ANALYSIS phase'],
-  ['requirements', 'REQUIREMENTS phase'],
-  ['research', 'RESEARCH phase'],
-  ['plan', 'PLANNING phase'],
-  ['implement', 'autonomous implementation'],
-  ['merge', 'MERGE phase'],
-];
-
-function getExecutedNodes(prompts: string[]): string[] {
-  const seen = new Set<string>();
-  for (const prompt of prompts) {
-    for (const [nodeName, marker] of PROMPT_NODE_MARKERS) {
-      if (prompt.includes(marker)) {
-        seen.add(nodeName);
-      }
-    }
-  }
-  return PROMPT_NODE_MARKERS.map(([name]) => name).filter((n) => seen.has(n));
-}
 
 /**
  * Create a controllable executor that can throw from a specific call count

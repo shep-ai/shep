@@ -241,7 +241,9 @@
       "filter": "filter",
       "palette": "palette",
       "copyId": "copy id",
-      "chat": "chat"
+      "chat": "chat",
+      "harness": "harness changes ({{count}})",
+      "newFeature": "new feature"
     },
     "reject": {
       "prompt": "Feedback for {{name}}:",
@@ -281,7 +283,9 @@
       "palette": ":/ctrl+p   command palette",
       "copyId": "c   copy the feature id",
       "controlCenter": "C   a window per active feature (control center)",
-      "chat": "o   chat with the feature's agent (esc returns)"
+      "chat": "o   chat with the feature's agent (esc returns)",
+      "harness": "d   learned harness changes waiting for you (adopt / reject)",
+      "newFeature": "N   new feature in the selected feature's repository"
     },
     "notTty": "shep tui needs an interactive terminal. In scripts and pipes, use \"shep feat ls\".",
     "filter": {
@@ -322,7 +326,9 @@
         "help": "Show keys",
         "quit": "Quit",
         "control-center": "Open a window for every active feature",
-        "chat": "Chat with the feature's agent"
+        "chat": "Chat with the feature's agent",
+        "harness-decisions": "Review learned harness changes",
+        "new-feature": "Create a new feature"
       }
     },
     "copied": "Copied the id of {{name}}: {{id}}",
@@ -345,6 +351,35 @@
     },
     "hostStatus": {
       "blocked": "needs you: {{count}}"
+    },
+    "harness": {
+      "title": "Learned harness changes",
+      "waiting": "waiting: {{count}}",
+      "empty": "No harness change is waiting for you",
+      "hint": "↑↓ choose · a adopt · r reject · esc back to the features",
+      "rejectPrompt": "Reject — why?",
+      "rejectHint": "optional feedback steers the next proposal · enter reject · esc cancel",
+      "progress": "Answering the harness change…",
+      "adopted": "Adopted the harness change",
+      "rejected": "Rejected the harness change",
+      "alreadySettled": "This harness change was already answered elsewhere",
+      "collaborationOff": "Harness changes are answered through the inbox; turn it on with: shep settings flags enable collaboration"
+    },
+    "create": {
+      "title": "New feature in {{repository}}",
+      "prompt": "describe",
+      "describe": "Describe the feature on the line below and press enter. Gates, push and PR follow your workflow settings.",
+      "explore": "Explore",
+      "k": "k",
+      "on": "on",
+      "off": "off",
+      "kRange": "↑↓ 1–{{max}}",
+      "exploreCost": "Explore tries several harness variants on the implement step for this feature only and keeps the best one. It costs about 4× the implement step at k = 1, more at higher k.",
+      "hint": "enter create · esc cancel",
+      "hintExplore": "enter create · tab Explore on/off · ↑↓ k · esc cancel",
+      "progress": "Creating a feature in {{repository}}…",
+      "created": "Created {{name}}",
+      "queued": "Created {{name}} — queued at position {{position}}"
     }
   }
 }

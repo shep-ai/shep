@@ -1,0 +1,7 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: HarnessRecursion.yaml
+type: string
+enum:
+  - parallel
+  - sequential
+description: How task-level recursion spends its budget

@@ -87,6 +87,9 @@ export interface FeatureRow {
   parent_id: string | null;
   // Agent coordination decision (JSON, spec 141, migration 173)
   coordination?: string | null;
+  // Per-feature Explore override (spec 150, migration 175)
+  explore_harness?: number | null;
+  explore_k?: number | null;
   // Archive state
   previous_lifecycle: string | null;
   // User attachments (JSON array)
@@ -171,6 +174,9 @@ export function toDatabase(feature: Feature): FeatureRow {
     // Feature dependency
     parent_id: feature.parentId ?? null,
     coordination: feature.coordination ? JSON.stringify(feature.coordination) : null,
+    // Per-feature Explore override (spec 150)
+    explore_harness: feature.exploreHarness === undefined ? null : feature.exploreHarness ? 1 : 0,
+    explore_k: feature.exploreK ?? null,
     // Archive state
     previous_lifecycle: feature.previousLifecycle ?? null,
     // User attachments
@@ -271,6 +277,9 @@ export function fromDatabase(row: FeatureRow): Feature {
     // Feature dependency
     ...(row.parent_id != null && { parentId: row.parent_id }),
     ...(row.coordination != null && { coordination: coordinationFromJson(row.coordination) }),
+    // Per-feature Explore override (spec 150)
+    ...(row.explore_harness != null && { exploreHarness: row.explore_harness === 1 }),
+    ...(row.explore_k != null && { exploreK: row.explore_k }),
     // Archive state
     ...(row.previous_lifecycle != null && {
       previousLifecycle: row.previous_lifecycle as SdlcLifecycle,

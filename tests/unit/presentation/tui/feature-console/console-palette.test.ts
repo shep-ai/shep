@@ -63,6 +63,22 @@ describe('paletteEntries', () => {
     expect(none).toContain(ConsoleKey.Quit);
   });
 
+  it('offers the harness decisions only while some wait (spec 150)', () => {
+    const offered = (harnessDecisions: number) =>
+      paletteEntries({ row: row(), filterActive: false, harnessDecisions }, t).map((e) => e.key);
+    expect(keys(row())).not.toContain(ConsoleKey.HarnessDecisions);
+    expect(offered(0)).not.toContain(ConsoleKey.HarnessDecisions);
+    expect(offered(1)).toContain(ConsoleKey.HarnessDecisions);
+  });
+
+  it('offers a new feature only when the console can create one for a repository', () => {
+    const offered = (r: FeatureConsoleRow | undefined) =>
+      paletteEntries({ row: r, filterActive: false, newFeature: true }, t).map((e) => e.key);
+    expect(keys(row())).not.toContain(ConsoleKey.NewFeature);
+    expect(offered(row())).toContain(ConsoleKey.NewFeature);
+    expect(offered(undefined)).not.toContain(ConsoleKey.NewFeature);
+  });
+
   it('offers clearing the filter only while one is active', () => {
     expect(keys(row())).not.toContain(ConsoleKey.ClearFilter);
     expect(keys(row(), true)).toContain(ConsoleKey.ClearFilter);

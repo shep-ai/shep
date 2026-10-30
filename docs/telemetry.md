@@ -65,6 +65,11 @@ processed.
 | `decision.defaulted` | `kind`, `timeout` (bucket of the deadline the agent set) | `AskAgentDecisionUseCase`, when a background agent proceeds with its recommendation at the deadline |
 | `onboarding.step` | `step`, `completed` | Web onboarding |
 | `error.unhandled` | `errorClass`, `sourceHash` (truncated SHA-256 of the top stack frame's `function@file:line`) | CLI, daemon, worker crash handlers |
+| `harness.candidate.proposed` | `origin` (reflect, explore, manual), `componentCount`, `componentKinds` (instructions, skill, script, …), `autoAdopted` | `OfferHarnessCandidateUseCase` (spec 150) |
+| `harness.version.adopted` | `origin`, `componentCount`, `byPolicy` | `AdoptHarnessVersionUseCase` |
+| `harness.version.rejected` | `origin`, `withFeedback` (whether a reason was given; never its text) | `RejectHarnessVersionUseCase` |
+| `harness.version.rolled-back` | `origin`, `restoredPrevious` | `RollbackHarnessVersionUseCase` |
+| `harness.refinement.finished` | `mode` (reflect, explore), `status`, `k`, `rollouts`, `sessions` | Reflect and Explore refinements |
 
 **Never sent:** prompts, code, file paths, repository or branch names, feature titles, local ids,
 or error messages. Property types are declared per event (`TelemetryEventPropertyMap` in

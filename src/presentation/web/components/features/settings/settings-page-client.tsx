@@ -28,6 +28,7 @@ import {
   Github,
   FolderGit2,
   Workflow,
+  GraduationCap,
   Plug,
   Network,
 } from 'lucide-react';
@@ -83,6 +84,7 @@ import { TimeoutSlider } from '@/components/features/settings/timeout-slider';
 import { SupplyChainSecuritySettingsSection } from '@/components/features/settings/supply-chain-security-settings-section';
 import { WorktreeSettingsSection } from '@/components/features/settings/worktree-settings-section';
 import { HarnessSettingsSection } from '@/components/features/settings/harness-settings-section';
+import { SelfLearningSettingsSection } from '@/components/features/settings/self-learning-settings-section';
 import { SettingsSectionNav } from './settings-section-nav';
 import { useHydrated } from '@/hooks/use-hydrated';
 import { AdaptiveModelSettingsSection } from '@/components/features/settings/adaptive-model-settings-section';
@@ -138,6 +140,7 @@ const SECTIONS = [
   { id: 'workflow', labelKey: 'settings.sections.workflow', icon: GitBranch },
   { id: 'worktree', labelKey: 'settings.sections.worktree', icon: FolderGit2 },
   { id: 'harness', labelKey: 'settings.sections.harness', icon: Workflow },
+  { id: 'self-learning', labelKey: 'settings.sections.selfLearning', icon: GraduationCap },
   { id: 'security', labelKey: 'settings.sections.security', icon: Shield },
   { id: 'ci', labelKey: 'settings.sections.ci', icon: Activity },
   { id: 'stage-timeouts', labelKey: 'settings.sections.timeouts', icon: Timer },
@@ -644,7 +647,8 @@ export function SettingsPageClient({
       SECTIONS.filter(
         (s: (typeof SECTIONS)[number]) =>
           (s.id !== 'security' || isSupplyChainSecurityEnabled(flags)) &&
-          (s.id !== 'harness' || flags.queryAwareHarness)
+          (s.id !== 'harness' || flags.queryAwareHarness) &&
+          (s.id !== 'self-learning' || flags.selfLearning)
       ),
     [flags]
   );
@@ -1080,6 +1084,17 @@ export function SettingsPageClient({
           >
             <HarnessSettingsSection harness={settings.harness} />
             <SectionHint>{t('settings.harness.hint')}</SectionHint>
+          </div>
+        ) : null}
+
+        {/* ── Self-learning (spec 150, experimental) ── */}
+        {flags.selfLearning ? (
+          <div
+            id="section-self-learning"
+            className="grid scroll-mt-32 grid-cols-1 gap-x-5 rounded-lg lg:grid-cols-[minmax(0,1fr)_280px]"
+          >
+            <SelfLearningSettingsSection learning={settings.learning} />
+            <SectionHint>{t('settings.selfLearning.hint')}</SectionHint>
           </div>
         ) : null}
 

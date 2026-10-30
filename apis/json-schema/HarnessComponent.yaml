@@ -1,0 +1,22 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: HarnessComponent.yaml
+type: object
+properties:
+  kind:
+    $ref: HarnessComponentKind.yaml
+    description: Kind of component
+  path:
+    type: string
+    description: Path on the editable surface, e.g. skills/db-migration/SKILL.md
+  content:
+    type: string
+    description: File content
+  sha256:
+    type: string
+    description: SHA-256 of the content, for diff and provenance
+required:
+  - kind
+  - path
+  - content
+  - sha256
+description: One file of a learned harness overlay

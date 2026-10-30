@@ -1,0 +1,48 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: HarnessVersionOutcome.yaml
+type: object
+properties:
+  versionId:
+    type: string
+    description: Version the feature ran on
+  featureId:
+    type: string
+    description: The feature
+  ciFixAttempts:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: CI-fix attempts in the merge phase
+  gateRejections:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Approval-gate rejections across the run
+  validationRepairs:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Schema validation repairs across the run
+  numTurns:
+    type: integer
+    minimum: -2147483648
+    maximum: 2147483647
+    description: Agent turns across the run
+  costUsd:
+    type: number
+    description: Agent cost across the run in USD
+  merged:
+    type: boolean
+    description: Whether the feature merged
+required:
+  - versionId
+  - featureId
+  - ciFixAttempts
+  - gateRejections
+  - validationRepairs
+  - numTurns
+  - costUsd
+  - merged
+allOf:
+  - $ref: BaseEntity.yaml
+description: How one finished feature did on the harness version it ran with

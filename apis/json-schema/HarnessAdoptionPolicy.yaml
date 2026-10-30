@@ -1,0 +1,8 @@
+$schema: https://json-schema.org/draft/2020-12/schema
+$id: HarnessAdoptionPolicy.yaml
+type: string
+enum:
+  - manual
+  - auto-text-only
+  - auto
+description: When a candidate harness is adopted without a person

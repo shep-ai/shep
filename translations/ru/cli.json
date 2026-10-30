@@ -255,6 +255,10 @@
         "noFastOption": "Выполнить все фазы SDLC (анализ → требования → план → реализация)",
         "exploreOption": "Start an exploration/prototyping session for iterative design",
         "exploreAndFastConflict": "Cannot use --explore and --fast together. Choose one mode.",
+        "exploreHarnessOption": "Самообучение: выполнить шаг реализации этой фичи в режиме Explore (Propose–Probe–Compose) — стоит примерно 4× шага реализации при k=1",
+        "exploreKOption": "Бюджет k режима Explore для --explore-harness, 1–{{max}} (по умолчанию: ваша настройка самообучения); выполняет 4k прогонов",
+        "exploreKWithoutHarness": "--explore-k применяется только вместе с --explore-harness",
+        "invalidExploreK": "--explore-k должен быть целым числом от 1 до {{max}}, получено: {{value}}",
         "modelOption": "Идентификатор модели LLM для этого запуска (например, claude-opus-4-6)",
         "effortOption": "Уровень рассуждений для этого запуска: low, medium, high, xhigh или max (по умолчанию: настройки)",
         "invalidEffort": "Неизвестный уровень «{{level}}». Допустимые: {{levels}}",
@@ -2011,6 +2015,154 @@
         "description": "Остановить запуск агента по id запуска, id фичи или их префиксу",
         "idArgument": "Id запуска, id фичи или префикс",
         "stopped": "{{id}} остановлен: {{reason}}"
+      }
+    },
+    "learn": {
+      "description": "Самообучающийся harness: просмотр, принятие и откат того, чему Shep научился на запусках фич",
+      "failed": "Команда обученного harness завершилась с ошибкой",
+      "repoOption": "Путь к репозиторию (по умолчанию: текущий каталог)",
+      "jsonOption": "Вывести JSON",
+      "versionArg": "ID версии или его уникальный префикс",
+      "notFound": "Ни одна версия обученного harness не соответствует {{id}}",
+      "fields": {
+        "version": "Версия",
+        "status": "Статус",
+        "origin": "Источник",
+        "scope": "Область",
+        "created": "Создана",
+        "components": "Компоненты",
+        "parent": "Родитель",
+        "sourceFeature": "Изучено на фиче",
+        "notes": "Заметки",
+        "reason": "Причина"
+      },
+      "status": {
+        "description": "Показать обученный harness, с которым работает этот репозиторий",
+        "title": "Обученный harness",
+        "none": "Ничего не принято — этот репозиторий работает с базовым harness.",
+        "candidates": "Кандидатов ждут проверки: {{count}} — см. `shep learn history`",
+        "noCandidates": "Нет кандидатов, ожидающих проверки."
+      },
+      "history": {
+        "description": "Показать версии обученного harness с метриками результатов, сначала новые",
+        "limitOption": "Показать не больше указанного числа версий",
+        "invalidLimit": "--limit должен быть целым числом больше 0, получено: {{value}}",
+        "title": "Версии обученного harness",
+        "empty": "Версий обученного harness пока нет. Извлеките уроки из завершённой фичи командой `shep learn reflect <feature>`.",
+        "current": "текущая",
+        "regressed": "Версий с ухудшением: {{count}} — изучите версию командой `shep learn show <version>`, откатите принятую командой `shep learn rollback`",
+        "columns": {
+          "id": "ID",
+          "status": "СТАТУС",
+          "origin": "ИСТОЧНИК",
+          "created": "СОЗДАНА",
+          "runs": "ЗАПУСКИ",
+          "merged": "СЛИТО",
+          "ciFixes": "ИСПРАВЛ. CI",
+          "trend": "ТРЕНД"
+        }
+      },
+      "show": {
+        "description": "Показать версию: её компоненты, оценки изменений и diff с родительской версией",
+        "title": "Обученный harness {{id}}",
+        "componentsTitle": "Компоненты",
+        "editsTitle": "Изменения и оценки",
+        "diffTitle": "Diff с {{id}}",
+        "diffTitleBase": "Diff с базовым harness",
+        "noChanges": "Изменений нет."
+      },
+      "diff": {
+        "description": "Показать, что изменилось между двумя версиями",
+        "fromArg": "Исходная версия (ID или префикс)",
+        "toArg": "Целевая версия (ID или префикс)",
+        "title": "{{from}} → {{to}}"
+      },
+      "adopt": {
+        "description": "Принять версию-кандидат или импортировать и принять написанный вами harness",
+        "fromDirOption": "Импортировать harness из этого каталога (каноническая структура) и принять его",
+        "needsOne": "Укажите ровно одно: версию или --from-dir <dir>",
+        "adopted": "{{id}} принята — следующие запуски фич будут её использовать",
+        "memoryFacts": "Записано фактов памяти: {{count}}",
+        "refused": "Не удалось принять {{id}}: {{reason}}",
+        "imported": "{{id}} импортирована и принята",
+        "importedNotAdopted": "{{id}} импортирована, но не принята — см. `shep learn show {{id}}`",
+        "importRefused": "Harness из {{dir}} не импортирован:"
+      },
+      "reject": {
+        "description": "Отклонить версию-кандидат; ваш отзыв направит следующую рефлексию",
+        "feedbackOption": "Почему она отклонена — следующая рефлексия это прочитает",
+        "rejected": "{{id}} отклонена",
+        "refused": "Не удалось отклонить {{id}}: {{reason}}"
+      },
+      "rollback": {
+        "description": "Отменить принятый harness этого репозитория и снова принять его родительскую версию",
+        "reasonOption": "Причина отката (сохраняется в версии)",
+        "rolledBack": "Принятый harness откачен",
+        "restored": "{{id}} снова принята",
+        "toBase": "Репозиторий снова работает с базовым harness",
+        "refused": "Ничего не откачено: {{reason}}"
+      },
+      "reflect": {
+        "description": "Извлечь уроки из последнего запуска фичи сейчас и отправить изменение harness на проверку",
+        "featureArg": "ID фичи или его уникальный префикс",
+        "spinner": "Рефлексия по запуску фичи",
+        "skipped": "Нечему учиться: {{reason}}",
+        "finished": "Рефлексия завершена: {{status}} (стоимость {{cost}} USD)",
+        "candidate": "Кандидат {{id}} ждёт проверки — `shep learn show {{id}}`",
+        "autoAdopted": "Кандидат {{id}} принят автоматически согласно вашей политике принятия"
+      },
+      "labels": {
+        "status": {
+          "candidate": "Кандидат",
+          "adopted": "Принята",
+          "rejected": "Отклонена",
+          "rolledBack": "Откачена",
+          "superseded": "Заменена"
+        },
+        "origin": {
+          "base": "Базовая",
+          "reflect": "Рефлексия",
+          "explore": "Исследование",
+          "manual": "Вручную"
+        },
+        "scope": {
+          "project": "Проект",
+          "organization": "Организация",
+          "space": "Пространство",
+          "productLine": "Продуктовая линия"
+        },
+        "trend": {
+          "insufficientData": "Мало запусков",
+          "improved": "Улучшилась",
+          "unchanged": "Без изменений",
+          "regressed": "Ухудшилась",
+          "noBaseline": "Первая версия"
+        },
+        "verdict": {
+          "helped": "Помогло",
+          "hurt": "Навредило",
+          "noObservedEffect": "Эффект не замечен",
+          "confounded": "Неоднозначно",
+          "untested": "Не проверено"
+        },
+        "kind": {
+          "instructions": "Инструкции",
+          "guardrails": "Ограничения",
+          "memory": "Память",
+          "toolGuidance": "Подсказки по инструментам",
+          "skill": "Навык",
+          "script": "Скрипт",
+          "subagent": "Субагент",
+          "hook": "Хук"
+        },
+        "refinement": {
+          "running": "Выполняется",
+          "proposed": "Предложено",
+          "keptBase": "Оставлен базовый harness",
+          "fellBack": "Возврат к базовому harness",
+          "overBudget": "Бюджет превышен",
+          "failed": "Ошибка"
+        }
       }
     }
   },

@@ -6,6 +6,7 @@ import { createRequirementsNode } from './nodes/requirements.node.js';
 import { createResearchNode } from './nodes/research.node.js';
 import { createPlanNode } from './nodes/plan.node.js';
 import { createImplementNode } from './nodes/implement.node.js';
+import { withExplore, type ExploreNodeDeps } from './explore/with-explore.js';
 import { createMergeNode, type MergeNodeDeps } from './nodes/merge/merge.node.js';
 import {
   createExtractMemoryNode,
@@ -51,6 +52,11 @@ export interface FeatureAgentGraphDeps {
    * every node that can change files (spec 138).
    */
   checkpoints?: CheckpointRecorder;
+  /**
+   * When provided, a feature that explores (spec 150) replaces its implement
+   * step with Propose–Probe–Compose; every other feature runs it unchanged.
+   */
+  explore?: ExploreNodeDeps;
 }
 
 /**
@@ -242,7 +248,10 @@ export function createFeatureAgentGraph(
     .addNode('plan', checkpointed('plan', createPlanNode(executor, selectProjectMemory)))
     .addNode(
       'implement',
-      checkpointed('implement', createImplementNode(executor, selectProjectMemory))
+      checkpointed(
+        'implement',
+        withExplore(createImplementNode(executor, selectProjectMemory), 'implement', deps.explore)
+      )
     )
 
     // --- Validate nodes ---

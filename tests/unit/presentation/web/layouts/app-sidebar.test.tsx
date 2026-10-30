@@ -80,6 +80,7 @@ const defaultFlags = {
   factory: true,
   sdlcBoard: false,
   agentCoordination: false,
+  selfLearning: false,
 };
 
 function renderWithSidebar(ui: React.ReactElement) {

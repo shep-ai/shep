@@ -1,0 +1,40 @@
+
+# Self-learning is opt-in: the selfLearning flag is on; this repository runs on v0
+$ shep learn status --repo ~/shop
+
+  Learned harness
+
+  Version     31544ca0-e638-4a0d-8727-385365b23146
+  Status      Adopted
+  Origin      Manual
+  Scope       Project
+  Created     2026-10-29
+  Components  2
+  Notes       Imported by user:cli
+
+ℹ No candidates are waiting for review.
+
+# A person can write a harness by hand: it is validated like a learned one, then adopted
+$ shep learn adopt --from-dir .github/pr-assets/self-learning/demo/harness-v1 --repo ~/shop
+✓ Imported and adopted 065eb057
+$ shep learn history --repo ~/shop
+
+  Learned harness versions (2)
+
+  ID                  STATUS        ORIGIN      CREATED      RUNS    MERGED   CI FIXES   TREND         
+  065eb057 current    Adopted       Manual      2026-10-29   0       0%       0.0        Too few runs
+  31544ca0            Superseded    Manual      2026-10-29   5       100%     0.0        First version
+
+# One feature in Explore mode, whatever the learning mode: 4k attempts, the best one is kept
+$ shep feat new "Stream refund exports" --repo ~/shop --explore-harness --explore-k 2 --pending
+⠋ Thinking...⠙ Thinking...⠹ Thinking...⠸ Thinking...⠼ Thinking...⠴ Thinking...⠦ Thinking...⠧ Thinking...⠇ Thinking...⠏ Thinking...⠋ Thinking...⠙ Thinking...⠹ Thinking...⠸ Thinking...⠼ Thinking...⠴ Thinking...⠦ Thinking...⠧ Thinking...⠇ Thinking...⠏ Thinking...⠋ Thinking...⠙ Thinking...⠹ Thinking...⠸ Thinking...⠼ Thinking...⠴ Thinking...              
+✓ Feature created
+ℹ Feature created in Pending state — run shep feat start 59b73377 to begin
+  ID:       59b73377-b164-4ecf-86c8-86bddbd12a4e
+  Name:     Blazing Serializer
+  Branch:   feat/blazing-serializer
+  Status:   Pending
+  Worktree: /tmp/shep-learn-home/repos/04a03649952abd9f/wt/feat-blazing-serializer
+  Spec:     /tmp/shep-learn-home/repos/04a03649952abd9f/wt/feat-blazing-serializer/specs/003-blazing-serializer
+  Agent:    pending (run b70abd2b)
+  Review:   pause after every phase

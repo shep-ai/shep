@@ -126,6 +126,8 @@ import { registerGitCheckpoints } from './modules/register-git-checkpoints.js';
 import { registerFeatureConsole } from './modules/register-feature-console.js';
 import { registerAgentActivity } from './modules/register-agent-activity.js';
 import { registerProcesses } from './modules/register-processes.js';
+import { registerHarnessLearning } from './modules/register-harness-learning.js';
+import { createInteractiveHarnessText } from '../services/harness-learning/learned-harness-session.factory.js';
 import { PruneRetainedDataUseCase } from '../../application/use-cases/maintenance/prune-retained-data.use-case.js';
 
 let _initialized = false;
@@ -187,6 +189,7 @@ export async function initializeContainer(): Promise<typeof container> {
   registerFeatureConsole(container);
   registerAgentActivity(container);
   registerProcesses(container);
+  registerHarnessLearning(container);
 
   // ─── Retention housekeeping ──────────────────────────────────────────────
   // The daemon may never have been started, so history (and worker log files)
@@ -329,7 +332,8 @@ export async function initializeContainer(): Promise<typeof container> {
   const bootPromptResolver = new BootPromptResolver(
     featureRepository,
     featureContextBuilder,
-    container.resolve(SelectProjectMemoryUseCase)
+    container.resolve(SelectProjectMemoryUseCase),
+    createInteractiveHarnessText(container)
   );
   const interactionCoordinator = new UserInteractionCoordinator(
     sessionPersistence,

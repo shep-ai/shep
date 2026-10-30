@@ -125,6 +125,8 @@ describe('FeatureConsoleView', () => {
       closeChat: vi.fn(),
       sendChat: vi.fn(),
       answerChat: vi.fn(),
+      answerHarnessDecision: vi.fn(),
+      createFeature: vi.fn(),
       quit: vi.fn(),
       requestRender: vi.fn(),
     };
@@ -661,7 +663,7 @@ describe('FeatureConsoleView', () => {
       expect(intents.openChat).toHaveBeenCalledWith(
         expect.objectContaining({ shortId: 'aaaa1111' })
       );
-      view.setChat(chat);
+      view.overlays.chat.setChat(chat);
       for (const ch of 'hello q') press(ch);
       const text = screen();
       expect(text.join('\n')).toContain('Chat · Feature aaaa1111');
@@ -678,7 +680,7 @@ describe('FeatureConsoleView', () => {
     it('answers the agent question through the app', () => {
       view.setSnapshot(snapshot([row('aaaa1111')]));
       press('o');
-      view.setChat({
+      view.overlays.chat.setChat({
         ...chat,
         questions: [
           { header: 'Scope', question: 'Which?', options: [{ label: 'A' }], multiSelect: false },
@@ -694,7 +696,7 @@ describe('FeatureConsoleView', () => {
     it('detaches with esc back to the roster', () => {
       view.setSnapshot(snapshot([row('aaaa1111')]));
       press('o');
-      view.setChat(chat);
+      view.overlays.chat.setChat(chat);
       press(KEY.escape);
       expect(intents.closeChat).toHaveBeenCalled();
       expect(screen().join('\n')).not.toContain('Chat · Feature');

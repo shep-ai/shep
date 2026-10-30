@@ -57,6 +57,7 @@ const defaultFlags = {
   factory: true,
   sdlcBoard: false,
   agentCoordination: false,
+  selfLearning: false,
 };
 
 function renderShell() {

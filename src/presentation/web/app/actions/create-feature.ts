@@ -73,6 +73,10 @@ interface CreateFeatureInput {
   applicationId?: string;
   /** Per-feature plugin activation overrides (plugin name -> enabled/disabled). */
   activePlugins?: Record<string, boolean>;
+  /** Run implement in Explore mode for this feature (spec 150). */
+  exploreHarness?: boolean;
+  /** Explore budget k for this feature; only used with exploreHarness. */
+  exploreK?: number;
 }
 
 export async function createFeature(
@@ -102,6 +106,8 @@ export async function createFeature(
     injectSkills,
     applicationId,
     activePlugins,
+    exploreHarness,
+    exploreK,
   } = input;
 
   if (!description?.trim()) {
@@ -146,6 +152,7 @@ export async function createFeature(
       ...(injectSkills != null ? { injectSkills } : {}),
       ...(applicationId ? { applicationId } : {}),
       ...(activePlugins && Object.keys(activePlugins).length > 0 ? { activePlugins } : {}),
+      ...(exploreHarness ? { exploreHarness: true, ...(exploreK ? { exploreK } : {}) } : {}),
     });
 
     // Phase 2 (background): metadata generation, worktree, spec, agent spawn

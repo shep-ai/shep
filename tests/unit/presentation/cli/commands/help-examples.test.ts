@@ -44,6 +44,7 @@ const GROUP_FACTORIES: Record<string, () => Promise<Command>> = {
   ide: async () => (await import(`${COMMANDS}/ide-open.command.js`)).createIdeOpenCommand(),
   intake: async () => (await import(`${COMMANDS}/intake/index.js`)).createIntakeCommand(),
   item: async () => (await import(`${COMMANDS}/item/index.js`)).createItemCommand(),
+  learn: async () => (await import(`${COMMANDS}/learn/index.js`)).createLearnCommand(),
   notifications: async () =>
     (await import(`${COMMANDS}/notifications/index.js`)).createNotificationsCommand(),
   outcome: async () => (await import(`${COMMANDS}/outcome/index.js`)).createOutcomeCommand(),

@@ -260,6 +260,23 @@ call, a quote of the message; "ask me" asks a two-option question), which the e2
 The tools this follows (workmux, oh-my-pi, claude-squad, Claude Code agent teams) are compared in
 [docs/competitors/agent-harness-tui.md](../competitors/agent-harness-tui.md).
 
+### Learned-harness decisions and new features (spec 150)
+
+The console draws these as **overlays** (`console-overlay.ts` / `console-overlays.ts`), and the chat
+view is one of them too:
+
+- `d` opens **Learned harness changes**. These are the pending `HarnessChange` inbox questions
+  (`harness-decisions.ts` filters `ListAgentQuestionInboxUseCase`). The view shows each one's
+  summary and diff preview. `a` adopts it; `r` rejects it, with an optional reason typed on the
+  status line. Answers go through `AnswerAgentQuestionUseCase`, so the web inbox stays in sync.
+  The key bar shows `d` only while there is a decision.
+- `N` opens **New feature** for the selected feature's repository. It creates the feature through
+  `CreateFeatureUseCase` with `useWorkflowDefaults`. While the `selfLearning` flag is on, the form
+  offers Explore (tab) and its k (↑↓, 1..5, starting at `learning.exploreK`) with the cost note.
+  `tui.command.ts` reads the flag and passes `explore` in, so the console holds no settings logic.
+
+See [self-learning-harness.md](../architecture/self-learning-harness.md).
+
 ## Testing Strategy
 
 - **Unit tests**: Mock `@inquirer/prompts` imports, test wizard logic and result mapping

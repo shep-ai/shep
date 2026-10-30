@@ -137,32 +137,6 @@ describe('isMaintenanceOnlyFraming', () => {
   });
 });
 
-describe('looksLikeServiceError', () => {
-  const { looksLikeServiceError } = __test__ as unknown as {
-    looksLikeServiceError: (text: string) => boolean;
-  };
-
-  it('flags the auth error that shipped as a tagline', () => {
-    expect(
-      looksLikeServiceError(
-        'Your organization does not have access to Claude. Please login again or contact your administrator.'
-      )
-    ).toBe(true);
-  });
-
-  it('flags other common CLI/API failure strings', () => {
-    expect(looksLikeServiceError('Invalid API key · Please run /login')).toBe(true);
-    expect(looksLikeServiceError('API Error: 529 Overloaded')).toBe(true);
-    expect(looksLikeServiceError('Credit balance is too low')).toBe(true);
-    expect(looksLikeServiceError('Claude AI usage limit reached|1761868800')).toBe(true);
-  });
-
-  it('does not flag a real tagline', () => {
-    expect(looksLikeServiceError('Login redirects now land where you left off.')).toBe(false);
-    expect(looksLikeServiceError('Faster API responses for every dashboard.')).toBe(false);
-  });
-});
-
 describe('isOverusedOpener', () => {
   it('flags "Keeping the lights on" regardless of what follows', () => {
     expect(isOverusedOpener('Keeping the lights on — a quiet release.')).toBe(true);
@@ -272,85 +246,6 @@ describe('generateTagline', () => {
     expect(tagline).toBe('A new tagline');
   });
 
-  // Regression: 56 releases (through v1.252.2) shipped with the tagline
-  // "Your organization does not have access to Claude. Please login again or
-  // contact your administrator." The SDK reports auth failures as a result
-  // with `is_error: true` (and the error text as `result`), plus an assistant
-  // message carrying `error`; both were accepted as the tagline.
-  const SHIPPED_ERROR =
-    'Your organization does not have access to Claude. Please login again or contact your administrator.';
-
-  it('returns null when the result message is flagged is_error', async () => {
-    const claudeQuery = makeQuery([
-      {
-        type: 'assistant',
-        error: 'authentication_failed',
-        message: { content: [{ type: 'text', text: SHIPPED_ERROR }] },
-      },
-      { type: 'result', subtype: 'success', is_error: true, result: SHIPPED_ERROR },
-    ]);
-
-    const tagline = await generateTagline({
-      commits: [{ type: 'fix', subject: 'clear dependabot alerts' }],
-      version: '1.252.2',
-      claudeQuery,
-      env: TEST_ENV,
-      logger: { info: () => undefined, warn: () => undefined },
-    });
-
-    expect(tagline).toBeNull();
-  });
-
-  it('returns null when an assistant message carries an error and no result arrives', async () => {
-    const claudeQuery = makeQuery([
-      {
-        type: 'assistant',
-        error: 'authentication_failed',
-        message: { content: [{ type: 'text', text: SHIPPED_ERROR }] },
-      },
-    ]);
-
-    const tagline = await generateTagline({
-      commits: [{ type: 'fix', subject: 'x' }],
-      version: '1.252.2',
-      claudeQuery,
-      env: TEST_ENV,
-      logger: { info: () => undefined, warn: () => undefined },
-    });
-
-    expect(tagline).toBeNull();
-  });
-
-  it('returns null when the result subtype is an error', async () => {
-    const claudeQuery = makeQuery([
-      { type: 'result', subtype: 'error_during_execution', is_error: true },
-    ]);
-
-    const tagline = await generateTagline({
-      commits: [{ type: 'fix', subject: 'x' }],
-      version: '1.252.2',
-      claudeQuery,
-      env: TEST_ENV,
-      logger: { info: () => undefined, warn: () => undefined },
-    });
-
-    expect(tagline).toBeNull();
-  });
-
-  it('rejects service-error text even when it arrives as a normal result', async () => {
-    const claudeQuery = makeQuery([{ type: 'result', subtype: 'success', result: SHIPPED_ERROR }]);
-
-    const tagline = await generateTagline({
-      commits: [{ type: 'fix', subject: 'x' }],
-      version: '1.252.2',
-      claudeQuery,
-      env: TEST_ENV,
-      logger: { info: () => undefined, warn: () => undefined },
-    });
-
-    expect(tagline).toBeNull();
-  });
-
   it('returns null when no auth credentials are present', async () => {
     const claudeQuery = vi.fn();
     const tagline = await generateTagline({
@@ -435,6 +330,97 @@ describe('generateTagline', () => {
 
     expect(tagline).toBeNull();
     expect(claudeQuery).toHaveBeenCalledTimes(2);
+  });
+});
+
+// v1.219.0 – v1.252.2 shipped "Your organization does not have access to
+// Claude…" as the tagline: the SDK reports a failed login as a `success`
+// result whose text is the error, flagged only by `is_error`.
+describe('generateTagline — service errors never become the tagline', () => {
+  const ACCESS_ERROR =
+    'Your organization does not have access to Claude. Please login again or contact your administrator.';
+  const quiet = { info: () => undefined, warn: () => undefined };
+
+  it('returns null when the result message is flagged is_error', async () => {
+    const claudeQuery = makeQuery([
+      { type: 'result', subtype: 'success', is_error: true, result: ACCESS_ERROR },
+    ]);
+    const tagline = await generateTagline({
+      commits: [{ type: 'fix', subject: 'x' }],
+      version: '1.252.2',
+      claudeQuery,
+      env: TEST_ENV,
+      logger: quiet,
+    });
+    expect(tagline).toBeNull();
+    expect(claudeQuery).toHaveBeenCalledOnce();
+  });
+
+  it('returns null when an assistant message carries an error', async () => {
+    const claudeQuery = makeQuery([
+      {
+        type: 'assistant',
+        error: 'authentication_failed',
+        message: { content: [{ type: 'text', text: ACCESS_ERROR }] },
+      },
+    ]);
+    const tagline = await generateTagline({
+      commits: [],
+      version: '1.252.2',
+      claudeQuery,
+      env: TEST_ENV,
+      logger: quiet,
+    });
+    expect(tagline).toBeNull();
+  });
+
+  it('returns null when an unflagged result is a known service error', async () => {
+    const claudeQuery = makeQuery([{ type: 'result', subtype: 'success', result: ACCESS_ERROR }]);
+    const tagline = await generateTagline({
+      commits: [],
+      version: '1.252.2',
+      claudeQuery,
+      env: TEST_ENV,
+      logger: quiet,
+    });
+    expect(tagline).toBeNull();
+    expect(claudeQuery).toHaveBeenCalledOnce();
+  });
+
+  it('warns loudly so the broken credential is noticed', async () => {
+    const warn = vi.fn();
+    const claudeQuery = makeQuery([
+      { type: 'result', subtype: 'success', is_error: true, result: ACCESS_ERROR },
+    ]);
+    await generateTagline({
+      commits: [],
+      version: '1.252.2',
+      claudeQuery,
+      env: TEST_ENV,
+      logger: { info: () => undefined, warn },
+    });
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining(ACCESS_ERROR));
+  });
+});
+
+describe('isServiceError', () => {
+  const { isServiceError } = __test__ as unknown as { isServiceError: (t: string) => boolean };
+
+  it('flags login, billing and API failures', () => {
+    for (const text of [
+      'Your organization does not have access to Claude. Please login again or contact your administrator.',
+      'Invalid API key · Please run /login',
+      'Credit balance is too low',
+      'API Error: 401 {"type":"error","error":{"type":"authentication_error"}}',
+      'OAuth token has expired. Please obtain a new token or refresh your existing token.',
+    ]) {
+      expect(isServiceError(text)).toBe(true);
+    }
+  });
+
+  it('does not flag a real tagline', () => {
+    expect(isServiceError('Agents now _report their activity_ over MCP and A2A.')).toBe(false);
+    expect(isServiceError('Login flows get faster with cached OAuth sessions 🔐')).toBe(false);
   });
 });
 
