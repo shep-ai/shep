@@ -1910,6 +1910,18 @@ Rules:
 - When an LLM writes user-facing copy from structured data, **validate the output against that same data** before publishing. Don't trust the prompt alone; add a deterministic guard that falls back on contradiction.
 - `.mjs` scripts under ESLint need browser/Node globals declared: `/* global fetch, URL */`.
 
+## A public key in source still trips gitleaks: allowlist by rule, not fingerprint
+
+Setting `BUILT_IN_POSTHOG_KEY` to the PostHog project key (`phc_…`, public and write-only)
+failed CI's Gitleaks job on the generic-api-key rule. Local checks never run gitleaks, so it was
+only found after pushing. Rules: run CI's exact command before pushing any key-shaped literal
+(`gitleaks detect --source . --config .gitleaks.toml --gitleaks-ignore-path .gitleaksignore`,
+v8.30.1); allow a known-public key with a `[[allowlists]]` entry that ANDs the file path with the
+key's pattern, never a `.gitleaksignore` fingerprint (it embeds the commit SHA, so the
+squash-merge to main fails again); and check the allowlist is tight by scanning a throwaway git
+repo where the same key sits in another file. Anchored `paths` only match repo-relative paths,
+so test in git mode, not `--no-git` (which reports absolute paths).
+
 ## Tag-triggered CI is defeated by `[skip ci]`; org ghcr first-push needs a PAT
 
 The `docker-publish.yml` workflow (issue #822 / PR #824) was written to trigger on `push: tags: v*`, then never ran on any release. Two independent bugs:

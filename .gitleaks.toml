@@ -2,7 +2,7 @@
 # Use the default gitleaks config as the base
 useDefault = true
 
-[allowlist]
+[[allowlists]]
 description = "Allow mock/test tokens in Storybook stories and test files"
 paths = [
   '''\.stories\.tsx$''',
@@ -24,3 +24,14 @@ regexes = [
   '''mock''',
   '''example''',
 ]
+
+# PostHog *project* API keys (phc_…) are public, write-only ingestion keys that
+# PostHog documents as safe to ship in client code. Shep's built-in key lives in
+# telemetry-config.ts (spec 133). Personal API keys use the phx_ prefix and are
+# still detected. Path-scoped by commit-independent rule, not by fingerprint, so
+# squash-merges to main do not reintroduce the finding.
+[[allowlists]]
+description = "Public PostHog project key built into the telemetry config"
+condition = "AND"
+paths = ['''^packages/core/src/infrastructure/services/telemetry/telemetry-config\.ts$''']
+regexes = ['''phc_[A-Za-z0-9]{32,}''']

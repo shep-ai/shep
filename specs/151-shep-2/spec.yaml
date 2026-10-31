@@ -1,0 +1,208 @@
+# Feature Specification (YAML)
+# This is the source of truth. Markdown is auto-generated from this file.
+
+name: shep-2
+number: 151
+branch: claude/youthful-euler-mvj8mq
+oneLiner: >-
+  Shep 2 — queue issues at night, review tested pull requests in the morning. One Rust core,
+  four surfaces (CLI, terminal UI, Mac app, MCP), four commands.
+summary: >
+  A new Shep, built from zero on the outside. You hand it tasks (a GitHub issue or a sentence);
+  your own coding agent works each one unattended in its own worktree, overnight or now; in the
+  morning you review finished draft pull requests that already pass CI, with screenshot proof
+  and a second-opinion review, and press Merge or Send back. The product has a hard budget: one
+  thing (a task), five states, four core actions, four surfaces that all show the same thing.
+  The engine is a single Rust binary (daemon, CLI, terminal UI, MCP server) that a native
+  SwiftUI Mac app talks to over a versioned JSON-RPC protocol. Proven engine pieces from Shep 1
+  are ported and trimmed; three are new (issue intake, waiting out usage limits, keeping the
+  machine awake). Shep 1 freezes at 1.x with security fixes only.
+phase: Requirements
+sizeEstimate: XL
+
+# Relationships
+relatedFeatures:
+  - 149-agent-activity-stream
+  - 138-git-checkpoints
+  - 111-fleet-control-plane
+  - 090-ai-code-review
+
+technologies:
+  - Rust (tokio, rusqlite, serde)
+  - Ratatui + tachyonfx (terminal UI and effects)
+  - rmcp (official MCP Rust SDK)
+  - JSON-RPC 2.0 over a local Unix socket, schema published as OpenRPC
+  - SwiftUI + AppKit (macOS app)
+  - ActivityKit / Live Activities, App Intents, UserNotifications (macOS)
+  - SQLite
+  - Agent CLIs in headless or interactive mode (Claude Code, Codex, Gemini, others)
+  - git worktrees, gh CLI
+
+relatedLinks:
+  - title: Codex — why the CLI was rewritten in Rust
+    url: https://github.com/openai/codex/discussions/1174
+  - title: Codex App Server (one Rust core, many clients over JSON-RPC)
+    url: https://openai.com/index/unlocking-the-codex-harness
+  - title: herdr-core (Apache-2.0) — PTY holder, OpenRPC API, OSC 7501 status protocol
+    url: https://github.com/herdrdev/herdr-core
+  - title: herdr (Apache-2.0) — agent detection manifests, worktrees, resume hooks
+    url: https://github.com/herdrdev/herdr
+  - title: tachyonfx — effects for Ratatui
+    url: https://github.com/ratatui/tachyonfx
+  - title: Official MCP Rust SDK (rmcp)
+    url: https://github.com/modelcontextprotocol/rust-sdk
+  - title: WWDC26 session 223 — Live Activities on Mac
+    url: https://developer.apple.com/videos/play/wwdc2026/223/
+
+# Open questions (must be resolved before implementation)
+openQuestions:
+  - question: Keep the name Shep, given herdr (a much larger herd/shepherd-themed product)?
+    resolved: true
+    answer: >
+      Keep Shep. The pitch carries the meaning: "Dependabot for your backlog". Decided by the
+      owner on 2026-10-30.
+  - question: Keep the sheep imagery, given herdr's 🐑 and its "Pasture" layout?
+    resolved: true
+    answer: >
+      Keep sheep. Constraint: Shep's sheep must read as clearly different from herdr's — sheep
+      are tasks walking into a pen at dawn (progress), never agents wandering a pasture
+      (activity). Decided by the owner on 2026-10-30.
+  - question: Mac-first or cross-platform desktop app at launch?
+    resolved: true
+    answer: >
+      Mac-first, native SwiftUI. The Dynamic Island, Live Activities, App Intents and
+      notifications with action buttons need Apple frameworks. The CLI, terminal UI and MCP
+      server still run on Linux. Other desktops later via Tauri on the same Rust core.
+      Decided by the owner on 2026-10-30.
+  - question: Rust or TypeScript on Bun for the core?
+    resolved: true
+    answer: >
+      Rust, to be confirmed by a 5-day spike in the research phase. Kill rule: if the Rust slice
+      takes more than 1.5x as long as the same slice in Bun, build the core in TypeScript on Bun
+      with OpenTUI and keep the SwiftUI app.
+  - question: Reuse herdr code, depend on herdr-core, or rewrite?
+    resolved: true
+    answer: >
+      Copy patterns and selected Apache-2.0 code with attribution, only from revisions after
+      2026-07-22 (earlier history was AGPL). Do not depend on herdr-core at runtime: its API is
+      in preview and owned by a competitor. Keep interop: Shep reports task state over OSC 7501
+      so a Shep session shows correctly in herdr (as spec 149 does today).
+  - question: Ship v2 as @shepai/cli@2 (same package, new major) or as a new package name?
+    resolved: false
+    answer: null
+
+# Markdown content (the actual spec)
+content: |
+  ## Problem Statement
+
+  Shep 1 grew to 56 CLI command groups, about 35 web sections, 27 feature flags, 75 use-case
+  areas and about 346K lines of source. New users cannot find the core loop, the pitch differs
+  on every surface, and npm downloads fell from 59K (March 2026) to about 7.6K a month. The
+  parallel-agents-in-worktrees promise is now offered by Conductor, Codex, Cursor, Claude Code,
+  GitHub Agent HQ, Amp and herdr. Every one of them is designed around watching an agent work.
+  None is designed for the moment you come back: what finished while you were away, with proof,
+  and a fast decision on each result. Shep 2 is that product and nothing else.
+
+  ## The Contract
+
+  | Budget | Value | Rule |
+  | ------ | ----- | ---- |
+  | Things | 1 | A **task**: a GitHub issue reference or a sentence |
+  | States | 5 | Queued → Working → Needs you / Ready → Merged |
+  | Core actions | 4 | `add(task)`, `start(at?)`, `board()`, `review(id, action)` |
+  | Surfaces | 4 | CLI, terminal UI, Mac app, MCP — every surface calls only the 4 actions |
+
+  Adding a 5th command, a 6th state, a second web page or a 4th MCP tool requires removing one.
+  Shep never merges on its own: agents open draft PRs; a person presses Merge.
+
+  ## Surfaces
+
+  **CLI (4 commands)**
+
+  | Command | Does |
+  | ------- | ---- |
+  | `shep` | Opens the board (terminal UI). The first run of the day prints the morning brief inline. |
+  | `shep add "<task>"` | Queues an issue (`#412`, a URL) or a sentence |
+  | `shep go [--at HH:MM]` | Starts queued tasks now, or at a time; keeps the machine awake while they run |
+  | `shep config` | Agent, repo, start time, parallelism |
+
+  **Terminal UI** — one board: Queued | Working | Ready (Needs you shown with `!`). Keys: arrows
+  move, `m` merge, `s` send back, `g` start queued. A 2-second ASCII splash on the first run of
+  the day (skippable, settles to a still frame). An optional watch screen for overnight: a sky
+  band that warms toward dawn as tasks finish, per-task activity graphs, a slow status-line
+  shimmer. One `--no-motion` switch turns every animation off; `NO_COLOR`, CI and
+  non-interactive output disable motion and color automatically.
+
+  **Mac app (SwiftUI)** — one review window sorted by verdict (Ready, Needs you, Working,
+  Queued), proof first (screenshot is the hero, diff one key away), single-key decisions
+  (`M`, `S`, `J`/`K`, `Space`). Clearing the queue shows the dawn. A Live Activity in the
+  Dynamic Island or menu bar shows overnight progress. A morning notification carries a
+  "Merge N green" action. App Intents expose "Queue issue", "Show ready PRs", "Merge all green".
+
+  **MCP (3 tools)** — `add_task`, `board`, `review`. Lets any MCP-capable agent hand work to
+  Shep ("give this to Shep for tonight").
+
+  ## Engine
+
+  Ported from Shep 1 and trimmed: worktree per task, agent runners (any agent CLI, resolved
+  through a provider interface, never hardcoded), CI watch with agent fix loop, screenshot and
+  test proof, second-opinion code review.
+
+  New: GitHub issue intake; park on a usage limit and resume after the reset; keep the machine
+  awake during a shift (caffeinate / systemd-inhibit).
+
+  Adopted from herdr's Apache-2.0 work (patterns, and code where it fits, with attribution):
+  task state reported and consumed over OSC 7501 with screen-reading manifests as fallback and
+  an `explain` command; a PTY holder process separate from the daemon so upgrades and crashes do
+  not kill running agents; agent resume hooks for Claude Code and Codex; attach to an agent's
+  live session so "Send back" continues the same conversation; the reviewer as a child agent
+  that reports back; a client API generated from Rust types with a test that it only grows.
+
+  ## Architecture
+
+  One Rust binary, `shep`: engine, overnight daemon, CLI, terminal UI (Ratatui + tachyonfx), MCP
+  server (rmcp). The daemon serves JSON-RPC 2.0 over a local Unix socket; the schema is published
+  as OpenRPC and the Swift client types are generated from it. Storage is SQLite with three
+  tables (tasks, runs, events). Distribution: Homebrew, a curl installer, and `npx` through an
+  npm wrapper with per-platform binaries. Target: core under 10K lines.
+
+  ## Success Criteria
+
+  - [ ] Six real GitHub issues queued at night on a real repo produce six draft PRs by morning, each with CI green or a clear "needs you" question
+  - [ ] An overnight run survives a usage-limit window and a daemon restart without losing a task
+  - [ ] The morning review of six PRs takes under five minutes in the terminal UI and in the Mac app
+  - [ ] All four surfaces perform every action through the same four core calls
+  - [ ] `shep --help` lists exactly four commands
+  - [ ] First run to first draft PR on the user's own repo in under ten minutes
+  - [ ] Core under 10K lines; single binary; cold start and idle memory measured and reported
+  - [ ] `--no-motion` disables every animation; no animation runs in CI or non-interactive output
+
+  ## Out of Scope
+
+  Web app beyond one review page, project management (epics, cycles, time entries, saved views),
+  ASPM, incidents, opportunities, discovery, feedback themes, outcomes, clusters, WhatsApp,
+  feature flags, plugin marketplace, multi-user teams, tmux-style pane splitting, auto-merge.
+
+  ## Affected Areas
+
+  | Area | Impact | Reasoning |
+  | ---- | ------ | --------- |
+  | New Rust workspace (`shep2/` or new repository) | High | All v2 code is new |
+  | Shep 1 (`packages/`, `src/`) | Low | Frozen at 1.x; read for porting worktree, CI-fix, agent-runner and evidence logic |
+  | Distribution (npm, Homebrew) | Medium | Same or new package name (open question) |
+  | Docs and README | Medium | One pitch everywhere: "Dependabot for your backlog" |
+
+  ## Dependencies
+
+  Ports logic proven in 149 (agent activity and blocked reasons), 138 (git checkpoints), 111
+  (fleet circuit breaker) and 090 (AI code review). No runtime dependency on Shep 1.
+
+  ## Size Estimate
+
+  **XL** - A new product: Rust core, terminal UI, MCP server and a SwiftUI app. Eight weeks:
+  week 1 spec and spike, weeks 2–4 core + CLI + terminal UI, weeks 4–6 Mac app + MCP, weeks 6–8
+  Shep 2 builds its own remaining work overnight, then launch.
+
+  ---
+
+  _Generated by `/shep-kit:new-feature` — proceed with `/shep-kit:research`_

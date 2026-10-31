@@ -1,6 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
 import { PostHogTelemetryTransport } from '@/infrastructure/services/telemetry/posthog-telemetry-transport.js';
-import { resolvePostHogConfig } from '@/infrastructure/services/telemetry/telemetry-config.js';
+import {
+  BUILT_IN_POSTHOG_KEY,
+  resolvePostHogConfig,
+} from '@/infrastructure/services/telemetry/telemetry-config.js';
 import type { TelemetryEnvelope } from '@/application/ports/output/services/telemetry-transport.interface.js';
 
 const ANONYMOUS: TelemetryEnvelope = {
@@ -34,6 +37,13 @@ describe('resolvePostHogConfig', () => {
       'phc_env'
     );
     expect(resolvePostHogConfig({}, 'phc_built').apiKey).toBe('phc_built');
+  });
+
+  it('ships with the Shep project key built in, so released installs send', () => {
+    // An empty constant meant "send nothing": every release through v1.252.2
+    // collected no usage metrics although the README says they are sent.
+    expect(BUILT_IN_POSTHOG_KEY).toMatch(/^phc_[A-Za-z0-9]{20,}$/);
+    expect(resolvePostHogConfig({}).apiKey).toBe(BUILT_IN_POSTHOG_KEY);
   });
 
   it('lets SHEP_POSTHOG_HOST override the host without a trailing slash', () => {
