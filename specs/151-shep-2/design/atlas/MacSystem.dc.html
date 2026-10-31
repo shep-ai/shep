@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Island, menu bar and notifications</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gloock&amp;family=Hanken+Grotesk:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#f3b45c}a:hover{color:#ffe4b0}
+</style>
+</helmet>
+<div style="position: relative; width: 1280px; height: 960px; box-sizing: border-box; background: #0b0e24; color: #e9e7f2; border-radius: 14px; overflow: hidden; font-family: 'Hanken Grotesk', 'Helvetica Neue', Arial, sans-serif">
+  <img src="assets/hero-night.png" alt="" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; image-rendering: pixelated; opacity: 0.55">
+  <div style="position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 12px; padding: 6px 16px; background: #070a1ccc; font-size: 13px; min-height: 38px">
+    <div style="display: flex; gap: 18px; color: #c9cde6"><b style="color: #e9e7f2">Shep</b><span>File</span><span>Edit</span><span>View</span><span>Window</span></div>
+    <div style="display: flex; align-items: center; gap: 10px; background: #000000; border-radius: 999px; padding: 5px 14px 5px 8px; font-size: 13px; font-weight: 600"><span style="width: 18px; height: 18px; border-radius: 50%; background: radial-gradient(circle, #ffe6b0 0 22%, #f3b45c 38%, #f3b45c00 72%)"></span>Keeping watch · 4/6<svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="7" fill="none" stroke="#ffffff2a" stroke-width="2.4"></circle><circle cx="9" cy="9" r="7" fill="none" stroke="#f3b45c" stroke-width="2.4" stroke-linecap="round" stroke-dasharray="29.3 44" transform="rotate(-90 9 9)"></circle></svg></div>
+    <div style="display: flex; justify-content: flex-end; gap: 14px; align-items: center; color: #c9cde6; font-family: 'JetBrains Mono', monospace; font-size: 12px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f3b45c" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M7 21V8a5 5 0 0 1 10 0v1"></path><rect x="13" y="10" width="6" height="8" rx="2"></rect></svg><span>04:45</span></div>
+  </div>
+
+  <div style="position: relative; display: grid; grid-template-columns: 360px minmax(0, 1fr) 380px; gap: 28px; padding: 24px 28px">
+    <div style="display: flex; flex-direction: column; gap: 20px">
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #c9cde6">Menu bar, on Macs without the Island</span>
+      <div style="background: #1c2152f0; border: 1px solid #ffffff1f; border-radius: 14px; padding: 12px; display: flex; flex-direction: column; gap: 6px; box-shadow: 0 16px 40px #00000066; font-size: 14px">
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 4px 6px 8px"><b>Keeping watch</b><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #c9cde6">4 of 6 · until 06:50</span></div>
+        <div style="height: 6px; border-radius: 3px; background: #ffffff14; overflow: hidden"><i style="display: block; width: 66%; height: 6px; background: linear-gradient(90deg, #8a5374, #f3b45c)"></i></div>
+        <span style="display: flex; gap: 10px; padding: 6px"><span style="color: #8fd6a8">✓</span>#412 Fix login redirect loop</span>
+        <span style="display: flex; gap: 10px; padding: 6px"><span style="color: #8fd6a8">✓</span>#418 Add CSV export to reports</span>
+        <span style="display: flex; gap: 10px; padding: 6px"><span style="color: #ff8f7a">!</span>#430 Move avatars to S3</span>
+        <span style="display: flex; gap: 10px; padding: 6px"><span style="color: #93b2ff">●</span>#433 Rate-limit /api/search</span>
+        <i style="height: 1px; background: #ffffff1a; margin: 4px 0"></i>
+        <span style="padding: 6px">Open review window <span style="float: right; color: #a3aac8">⌘R</span></span>
+        <span style="padding: 6px">Add a task…</span>
+        <span style="padding: 6px">Pause tonight's shift</span>
+      </div>
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #c9cde6">Desktop widget</span>
+      <div style="width: 330px; height: 156px; border-radius: 22px; overflow: hidden; position: relative; box-shadow: 0 16px 40px #00000066">
+        <img src="assets/sky-4of6.png" alt="Widget sky at 4 of 6 done" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; image-rendering: pixelated">
+        <div style="position: absolute; inset: 0; padding: 16px; display: flex; flex-direction: column; justify-content: space-between; background: linear-gradient(#0a0d2499, transparent 60%)"><span style="font-size: 13px; font-weight: 600">Tonight</span><span style="font-family: Gloock, Georgia, serif; font-size: 34px">4 of 6</span></div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; align-items: center; gap: 16px">
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #c9cde6">Island, expanded on click</span>
+      <div style="width: 420px; background: #000000; border-radius: 28px; padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; font-size: 14px; box-shadow: 0 16px 40px #00000088">
+        <div style="display: flex; align-items: center; gap: 12px"><span style="width: 34px; height: 34px; border-radius: 50%; background: radial-gradient(circle, #ffe6b0 0 22%, #f3b45c 38%, #f3b45c00 72%)"></span><span style="flex: 1"><b>Keeping watch</b><br><span style="font-size: 12px; color: #a3aac8">booking-app · started 23:00</span></span><span style="font-family: Gloock, Georgia, serif; font-size: 28px">4/6</span></div>
+        <div style="display: grid; grid-template-columns: 18px 46px minmax(0, 1fr) auto; gap: 6px; align-items: center"><span style="color: #8fd6a8">✓</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #a3aac8">#412</span><span>Fix login redirect loop</span><span style="font-size: 12px; color: #a3aac8">ready</span></div>
+        <div style="display: grid; grid-template-columns: 18px 46px minmax(0, 1fr) auto; gap: 6px; align-items: center"><span style="color: #8fd6a8">✓</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #a3aac8">#418</span><span>Add CSV export to reports</span><span style="font-size: 12px; color: #a3aac8">ready</span></div>
+        <div style="display: grid; grid-template-columns: 18px 46px minmax(0, 1fr) auto; gap: 6px; align-items: center"><span style="color: #8fd6a8">✓</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #a3aac8">#421</span><span>Upgrade to Node 22.11</span><span style="font-size: 12px; color: #a3aac8">ready</span></div>
+        <div style="display: grid; grid-template-columns: 18px 46px minmax(0, 1fr) auto; gap: 6px; align-items: center"><span style="color: #ff8f7a">!</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #a3aac8">#430</span><span>Move avatars to S3</span><span style="font-size: 12px; color: #ff8f7a">needs you</span></div>
+        <div style="display: grid; grid-template-columns: 18px 46px minmax(0, 1fr) auto; gap: 6px; align-items: center"><span style="color: #93b2ff">●</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #a3aac8">#425</span><span>Empty state for projects page</span><span style="font-size: 12px; color: #a3aac8">working</span></div>
+      </div>
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #c9cde6; margin-top: 10px">Island states</span>
+      <div style="display: flex; flex-direction: column; gap: 10px; align-items: center">
+        <div style="display: flex; align-items: center; gap: 10px; background: #000000; border-radius: 999px; padding: 6px 14px 6px 8px; font-size: 13px; font-weight: 600"><span style="width: 18px; height: 18px; border-radius: 50%; background: radial-gradient(circle, #ffe6b0 0 18%, #f3b45c 32%, #f3b45c00 60%); opacity: 0.6"></span>Shift at 23:00 · 6 queued</div>
+        <div style="display: flex; align-items: center; gap: 10px; background: #000000; border-radius: 999px; padding: 6px 14px 6px 8px; font-size: 13px; font-weight: 600; box-shadow: 0 0 0 2px #ff8f7a"><span style="width: 18px; height: 18px; border-radius: 50%; background: #ff8f7a"></span>#430 needs you</div>
+        <div style="display: flex; align-items: center; gap: 10px; background: #000000; border-radius: 999px; padding: 6px 14px 6px 8px; font-size: 13px; font-weight: 600"><span style="width: 18px; height: 18px; border-radius: 50%; background: radial-gradient(circle, #fff0c8 0 30%, #ffd38a 50%, #ffd38a00 75%)"></span>Dawn · 5 ready</div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 14px">
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #c9cde6">Notifications · only three kinds</span>
+      <div style="background: #1c2152e6; border: 1px solid #ffffff1f; border-radius: 16px; padding: 12px 14px; display: grid; grid-template-columns: 36px minmax(0, 1fr); gap: 10px; box-shadow: 0 10px 30px #00000055">
+        <img src="assets/icon-lantern.png" alt="" style="width: 36px; height: 36px">
+        <div style="display: flex; flex-direction: column; gap: 2px"><div style="display: flex; justify-content: space-between; font-size: 13px"><b>Shep</b><span style="color: #a3aac8">22:58</span></div><span style="font-size: 13px; color: #d6d9ee">Shift starts at 23:00 with 6 tasks. Your Mac stays awake while it's plugged in.</span></div>
+      </div>
+      <div style="background: #1c2152e6; border: 1px solid #ff8f7a55; border-radius: 16px; padding: 12px 14px; display: grid; grid-template-columns: 36px minmax(0, 1fr); gap: 10px; box-shadow: 0 10px 30px #00000055">
+        <img src="assets/icon-lantern.png" alt="" style="width: 36px; height: 36px">
+        <div style="display: flex; flex-direction: column; gap: 2px"><div style="display: flex; justify-content: space-between; font-size: 13px"><b>#430 needs you</b><span style="color: #a3aac8">07:00</span></div><span style="font-size: 13px; color: #d6d9ee">Which S3 bucket should avatars go in?</span></div>
+        <div style="grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 8px"><button type="button" style="font: inherit; font-size: 13px; font-weight: 600; color: #fff; background: #ffffff14; border: 1px solid #ffffff1c; border-radius: 9px; padding: 7px; cursor: pointer">Answer…</button><button type="button" style="font: inherit; font-size: 13px; font-weight: 600; color: #fff; background: #ffffff14; border: 1px solid #ffffff1c; border-radius: 9px; padding: 7px; cursor: pointer">Open</button></div>
+      </div>
+      <div style="background: #1c2152e6; border: 1px solid #f3b45c66; border-radius: 16px; padding: 12px 14px; display: grid; grid-template-columns: 36px minmax(0, 1fr); gap: 10px; box-shadow: 0 10px 30px #00000055">
+        <img src="assets/icon-lantern.png" alt="" style="width: 36px; height: 36px">
+        <div style="display: flex; flex-direction: column; gap: 2px"><div style="display: flex; justify-content: space-between; font-size: 13px"><b>Dawn</b><span style="color: #a3aac8">07:00</span></div><span style="font-size: 13px; color: #d6d9ee">5 pull requests are ready and CI is green. 1 needs your answer.</span></div>
+        <div style="grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 8px"><button type="button" style="font: inherit; font-size: 13px; font-weight: 700; color: #1a1405; background: #f3b45c; border: 0; border-radius: 9px; padding: 7px; cursor: pointer">Merge 5 green</button><button type="button" style="font: inherit; font-size: 13px; font-weight: 600; color: #fff; background: #ffffff14; border: 1px solid #ffffff1c; border-radius: 9px; padding: 7px; cursor: pointer">Review</button></div>
+      </div>
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #c9cde6; margin-top: 8px">Spotlight and Siri actions</span>
+      <div style="background: #1c2152f0; border: 1px solid #ffffff1f; border-radius: 14px; padding: 10px; display: flex; flex-direction: column; gap: 4px; font-size: 14px">
+        <div style="display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px; background: #ffffff10"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#c9cde6" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg><span style="color: #c9cde6">shep</span></div>
+        <span style="padding: 7px 10px; display: flex; gap: 10px"><img src="assets/icon-lantern.png" alt="" style="width: 18px; height: 18px">Queue issue…</span>
+        <span style="padding: 7px 10px; display: flex; gap: 10px"><img src="assets/icon-lantern.png" alt="" style="width: 18px; height: 18px">Show ready pull requests</span>
+        <span style="padding: 7px 10px; display: flex; gap: 10px"><img src="assets/icon-lantern.png" alt="" style="width: 18px; height: 18px">Merge all green</span>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":960}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

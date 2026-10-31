@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Mac settings</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#f3b45c}a:hover{color:#ffe4b0}
+</style>
+</helmet>
+<div style="width: 1280px; height: 820px; box-sizing: border-box; background: #0e1230; color: #e9e7f2; border-radius: 14px; overflow: hidden; display: grid; grid-template-columns: 240px minmax(0, 1fr); font-family: 'Hanken Grotesk', 'Helvetica Neue', Arial, sans-serif; font-size: 15px">
+  <div style="background: #141a44; border-right: 1px solid #2c3366; padding: 16px 12px; display: flex; flex-direction: column; gap: 2px">
+    <div style="display: flex; gap: 8px; padding: 2px 6px 18px"><i style="width: 12px; height: 12px; border-radius: 50%; background: #ff5f57"></i><i style="width: 12px; height: 12px; border-radius: 50%; background: #febc2e"></i><i style="width: 12px; height: 12px; border-radius: 50%; background: #28c840"></i></div>
+    <span style="padding: 8px 12px; border-radius: 8px; background: #f3b45c; color: #1a1405; font-weight: 600">Night shift</span>
+    <span style="padding: 8px 12px; border-radius: 8px">Agent</span>
+    <span style="padding: 8px 12px; border-radius: 8px">Repositories</span>
+    <span style="padding: 8px 12px; border-radius: 8px">Pull requests</span>
+    <span style="padding: 8px 12px; border-radius: 8px">Notifications</span>
+    <span style="padding: 8px 12px; border-radius: 8px">Privacy</span>
+  </div>
+  <div style="padding: 36px 48px; display: flex; flex-direction: column; gap: 22px; overflow: hidden">
+    <span style="font-size: 26px; font-weight: 700">Night shift</span>
+
+    <div style="background: #141a40; border: 1px solid #2c3366; border-radius: 12px; display: flex; flex-direction: column">
+      <div style="display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 14px 18px; border-bottom: 1px solid #2c3366"><label for="st-start"><b style="font-weight: 600">Start at</b><br><span style="font-size: 13px; color: #a3aac8">Queued tasks start at this time each night</span></label><input id="st-start" type="time" value="23:00" style="font: inherit; color: #e9e7f2; background: #0a0d24; border: 1px solid #3a4280; border-radius: 8px; padding: 6px 10px; color-scheme: dark"></div>
+      <div style="display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 14px 18px; border-bottom: 1px solid #2c3366"><label for="st-stop"><b style="font-weight: 600">Stop starting new tasks at</b><br><span style="font-size: 13px; color: #a3aac8">Work in progress always finishes</span></label><input id="st-stop" type="time" value="06:00" style="font: inherit; color: #e9e7f2; background: #0a0d24; border: 1px solid #3a4280; border-radius: 8px; padding: 6px 10px; color-scheme: dark"></div>
+      <div style="display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 14px 18px; border-bottom: 1px solid #2c3366"><label for="st-par"><b style="font-weight: 600">Tasks in parallel</b><br><span style="font-size: 13px; color: #a3aac8">More finishes sooner but uses your agent's limit faster</span></label><select id="st-par" style="font: inherit; color: #e9e7f2; background: #0a0d24; border: 1px solid #3a4280; border-radius: 8px; padding: 6px 10px; color-scheme: dark"><option>1</option><option>2</option><option selected="selected">3</option><option>4</option></select></div>
+      <div style="display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 14px 18px"><label for="st-awake"><b style="font-weight: 600">Keep this Mac awake during a shift</b><br><span style="font-size: 13px; color: #a3aac8">Only while plugged in. Lid closed needs an external display.</span></label><input id="st-awake" type="checkbox" checked="checked" style="width: 20px; height: 20px; accent-color: #f3b45c"></div>
+    </div>
+
+    <div style="background: #141a40; border: 1px solid #2c3366; border-radius: 12px; display: flex; flex-direction: column">
+      <div style="display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 14px 18px; border-bottom: 1px solid #2c3366"><label for="st-limit"><b style="font-weight: 600">When the agent hits a usage limit</b><br><span style="font-size: 13px; color: #a3aac8">Shep parks the task and resumes after the reset</span></label><select id="st-limit" style="font: inherit; color: #e9e7f2; background: #0a0d24; border: 1px solid #3a4280; border-radius: 8px; padding: 6px 10px; color-scheme: dark"><option selected="selected">Wait and resume</option><option>Stop for tonight</option></select></div>
+      <div style="display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 14px 18px; border-bottom: 1px solid #2c3366"><label for="st-ci"><b style="font-weight: 600">CI fix attempts</b><br><span style="font-size: 13px; color: #a3aac8">After this, the task moves to Needs you with the log</span></label><select id="st-ci" style="font: inherit; color: #e9e7f2; background: #0a0d24; border: 1px solid #3a4280; border-radius: 8px; padding: 6px 10px; color-scheme: dark"><option>1</option><option>2</option><option selected="selected">3</option></select></div>
+      <div style="display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 14px 18px"><label for="st-brief"><b style="font-weight: 600">Morning brief</b><br><span style="font-size: 13px; color: #a3aac8">One notification when the shift ends, never during the night</span></label><input id="st-brief" type="time" value="07:00" style="font: inherit; color: #e9e7f2; background: #0a0d24; border: 1px solid #3a4280; border-radius: 8px; padding: 6px 10px; color-scheme: dark"></div>
+    </div>
+
+    <div style="display: flex; gap: 10px; align-items: center; padding: 12px 16px; border-radius: 10px; background: #f3b45c12; border: 1px solid #f3b45c44; font-size: 14px; color: #f6e3c8"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f3b45c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l9 16H3z"></path><path d="M12 10v4M12 17h.01"></path></svg>Pull requests are always drafts. Shep never merges on its own, at any setting.</div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":820}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

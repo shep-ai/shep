@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Mac first launch</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gloock&amp;family=Hanken+Grotesk:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#f3b45c}a:hover{color:#ffe4b0}
+</style>
+</helmet>
+<div style="width: 1280px; height: 820px; box-sizing: border-box; background: #0e1230; color: #e9e7f2; border-radius: 14px; overflow: hidden; display: grid; grid-template-columns: 500px minmax(0, 1fr); font-family: 'Hanken Grotesk', 'Helvetica Neue', Arial, sans-serif">
+  <div style="position: relative; overflow: hidden">
+    <img src="assets/sky-0of6.png" alt="Night sky with a shepherd and six sleeping sheep" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; image-rendering: pixelated">
+    <div style="position: absolute; left: 0; right: 0; top: 0; padding: 18px 20px; display: flex; gap: 8px"><i style="width: 12px; height: 12px; border-radius: 50%; background: #ff5f57"></i><i style="width: 12px; height: 12px; border-radius: 50%; background: #febc2e"></i><i style="width: 12px; height: 12px; border-radius: 50%; background: #28c840"></i></div>
+    <div style="position: absolute; left: 0; right: 0; bottom: 0; padding: 40px; background: linear-gradient(transparent, #070a1cee 40%); display: flex; flex-direction: column; gap: 12px">
+      <span style="font-family: Gloock, Georgia, serif; font-size: 44px; line-height: 1.05">Hand Shep your issues tonight.</span>
+      <span style="font-size: 16px; line-height: 1.5; color: #c9cde6">Your own coding agent works them while you sleep. In the morning you review pull requests that already pass CI.</span>
+    </div>
+  </div>
+  <div style="padding: 48px 56px; display: flex; flex-direction: column; gap: 26px">
+    <div style="display: flex; gap: 8px" aria-label="Step 3 of 3"><i style="width: 28px; height: 4px; border-radius: 2px; background: #f3b45c"></i><i style="width: 28px; height: 4px; border-radius: 2px; background: #f3b45c"></i><i style="width: 28px; height: 4px; border-radius: 2px; background: #f3b45c"></i></div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px">
+      <span style="font-size: 13px; letter-spacing: 0.1em; text-transform: uppercase; color: #a3aac8">1 · Your agent</span>
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px">
+        <label for="ag-claude" style="display: flex; align-items: center; gap: 10px; padding: 12px 14px; border: 1px solid #f3b45c; background: #f3b45c14; border-radius: 10px; font-size: 15px"><input id="ag-claude" type="radio" name="agent" checked="checked"><span><b>Claude Code</b><br><span style="font-size: 12px; color: #a3aac8">found · your login</span></span></label>
+        <label for="ag-codex" style="display: flex; align-items: center; gap: 10px; padding: 12px 14px; border: 1px solid #2c3366; border-radius: 10px; font-size: 15px"><input id="ag-codex" type="radio" name="agent"><span><b>Codex</b><br><span style="font-size: 12px; color: #a3aac8">found · your login</span></span></label>
+        <label for="ag-gemini" style="display: flex; align-items: center; gap: 10px; padding: 12px 14px; border: 1px solid #2c3366; border-radius: 10px; font-size: 15px"><input id="ag-gemini" type="radio" name="agent"><span><b>Gemini CLI</b><br><span style="font-size: 12px; color: #a3aac8">found · your login</span></span></label>
+      </div>
+      <span style="font-size: 13px; color: #a3aac8">Shep runs the agent CLI you already have. It never sees or stores your keys.</span>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px">
+      <span style="font-size: 13px; letter-spacing: 0.1em; text-transform: uppercase; color: #a3aac8">2 · A repository</span>
+      <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 14px; border: 1px solid #2c3366; border-radius: 10px; background: #141a40">
+        <span style="display: flex; align-items: center; gap: 10px"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8fd6a8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10"></path></svg><b style="font-size: 15px">acme/booking-app</b><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #a3aac8">~/projects/booking-app</span></span>
+        <button type="button" style="font: inherit; font-size: 13px; color: #e9e7f2; background: transparent; border: 1px solid #3a4280; border-radius: 8px; padding: 6px 12px; cursor: pointer">Change</button>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px">
+      <span style="font-size: 13px; letter-spacing: 0.1em; text-transform: uppercase; color: #a3aac8">3 · Try one now, on your own issue</span>
+      <div style="display: flex; flex-direction: column; border: 1px solid #2c3366; border-radius: 10px; overflow: hidden">
+        <label for="is-412" style="display: flex; align-items: center; gap: 12px; padding: 11px 14px; background: #f3b45c14; border-bottom: 1px solid #2c3366; font-size: 15px"><input id="is-412" type="radio" name="issue" checked="checked"><span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #a3aac8">#412</span><span style="flex: 1">Fix login redirect loop</span><span style="font-size: 12px; color: #a3aac8">bug</span></label>
+        <label for="is-418" style="display: flex; align-items: center; gap: 12px; padding: 11px 14px; border-bottom: 1px solid #2c3366; font-size: 15px"><input id="is-418" type="radio" name="issue"><span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #a3aac8">#418</span><span style="flex: 1">Add CSV export to reports</span><span style="font-size: 12px; color: #a3aac8">feature</span></label>
+        <label for="is-421" style="display: flex; align-items: center; gap: 12px; padding: 11px 14px; font-size: 15px"><input id="is-421" type="radio" name="issue"><span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #a3aac8">#421</span><span style="flex: 1">Upgrade to Node 22.11</span><span style="font-size: 12px; color: #a3aac8">chore</span></label>
+      </div>
+    </div>
+
+    <div style="display: flex; gap: 12px; align-items: center; margin-top: auto">
+      <button type="button" style="font: inherit; font-size: 15px; font-weight: 700; color: #1a1405; background: #f3b45c; border: 0; border-radius: 10px; padding: 12px 22px; cursor: pointer">Start #412 now</button>
+      <button type="button" style="font: inherit; font-size: 15px; color: #e9e7f2; background: transparent; border: 1px solid #3a4280; border-radius: 10px; padding: 12px 18px; cursor: pointer">Skip, I'll queue tasks tonight</button>
+      <span style="font-size: 13px; color: #a3aac8">You'll get a draft PR to review. Nothing merges without you.</span>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":820}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

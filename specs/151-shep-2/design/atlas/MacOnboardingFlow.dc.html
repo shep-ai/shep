@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Mac onboarding, every step</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gloock&amp;family=Hanken+Grotesk:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#9a530a}a:hover{color:#151a35}
+</style>
+</helmet>
+<div style="width: 2520px; height: 1200px; box-sizing: border-box; padding: 56px 64px; background: #eef1f9; color: #151a35; font-family: 'Hanken Grotesk', 'Helvetica Neue', Arial, sans-serif; display: flex; flex-direction: column; gap: 28px">
+  <div style="display: flex; align-items: baseline; gap: 24px">
+    <span style="font-family: Gloock, Georgia, serif; font-size: 44px">Mac onboarding</span>
+    <span style="font-size: 17px; color: #565d7d">Same eight steps as the terminal, in one window. Steps that are already satisfied are skipped automatically.</span>
+  </div>
+  <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 40px 36px">
+
+    <div style="display: flex; flex-direction: column; gap: 10px">
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 14px; color: #565d7d">1 · Welcome</span>
+      <div style="height: 440px; border-radius: 12px; overflow: hidden; position: relative; background: #0e1230; color: #e9e7f2">
+        <img src="assets/sky-0of6.png" alt="Night sky with sleeping sheep" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; image-rendering: pixelated">
+        <div style="position: absolute; left: 0; right: 0; bottom: 0; padding: 26px; background: linear-gradient(transparent, #070a1cf0 45%); display: flex; flex-direction: column; gap: 10px">
+          <span style="font-family: Gloock, Georgia, serif; font-size: 30px; line-height: 1.1">Hand Shep your issues tonight.</span>
+          <span style="font-size: 14px; color: #c9cde6">Wake up to pull requests that already pass CI.</span>
+          <span style="align-self: flex-start; font-weight: 700; font-size: 14px; color: #1a1405; background: #f3b45c; border-radius: 9px; padding: 9px 16px">Get started</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px">
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 14px; color: #565d7d">2 · Your agent</span>
+      <div style="height: 440px; box-sizing: border-box; border-radius: 12px; background: #0e1230; color: #e9e7f2; padding: 26px; display: flex; flex-direction: column; gap: 12px; font-size: 14px">
+        <span style="font-size: 20px; font-weight: 700">Which agent does the work?</span>
+        <span style="padding: 11px 13px; border: 1px solid #f3b45c; background: #f3b45c14; border-radius: 9px; display: flex; justify-content: space-between"><b>Claude Code</b><span style="color: #8fd6a8">found · signed in</span></span>
+        <span style="padding: 11px 13px; border: 1px solid #2c3366; border-radius: 9px; display: flex; justify-content: space-between"><b>Codex</b><span style="color: #a3aac8">found · signed in</span></span>
+        <span style="padding: 11px 13px; border: 1px solid #2c3366; border-radius: 9px; display: flex; justify-content: space-between"><b>Gemini CLI</b><span style="color: #f3b45c">sign in needed</span></span>
+        <span style="padding: 11px 13px; border: 1px dashed #3a4280; border-radius: 9px; display: flex; justify-content: space-between; color: #a3aac8"><span>Cursor CLI</span><span>Install…</span></span>
+        <span style="margin-top: auto; font-size: 13px; color: #a3aac8">Uses the CLI already on your Mac with your login. Shep never stores keys.</span>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px">
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 14px; color: #565d7d">3 · GitHub (skipped if gh is signed in)</span>
+      <div style="height: 440px; box-sizing: border-box; border-radius: 12px; background: #0e1230; color: #e9e7f2; padding: 26px; display: flex; flex-direction: column; gap: 14px; font-size: 14px">
+        <span style="font-size: 20px; font-weight: 700">Connect GitHub</span>
+        <span style="color: #c9cde6; line-height: 1.5">Shep reads issues and opens draft pull requests as you. Enter this code on GitHub:</span>
+        <span style="font-family: 'JetBrains Mono', monospace; font-size: 30px; letter-spacing: 0.12em; text-align: center; padding: 16px; border: 1px dashed #3a4280; border-radius: 10px">[CODE]</span>
+        <span style="align-self: flex-start; font-weight: 700; color: #1a1405; background: #f3b45c; border-radius: 9px; padding: 9px 16px">Copy and open GitHub</span>
+        <span style="margin-top: auto; display: flex; gap: 8px; align-items: center; color: #8fd6a8">✓ Signed in as @you · issues and pull requests</span>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px">
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 14px; color: #565d7d">4 · Repositories</span>
+      <div style="height: 440px; box-sizing: border-box; border-radius: 12px; background: #0e1230; color: #e9e7f2; padding: 26px; display: flex; flex-direction: column; gap: 10px; font-size: 14px">
+        <span style="font-size: 20px; font-weight: 700">Which repositories?</span>
+        <span style="padding: 10px 12px; border: 1px solid #f3b45c; background: #f3b45c14; border-radius: 9px; display: flex; justify-content: space-between"><b>acme/booking-app</b><span style="color: #8fd6a8">✓ CI found</span></span>
+        <span style="padding: 10px 12px; border: 1px solid #2c3366; border-radius: 9px; display: flex; justify-content: space-between"><span>acme/marketing-site</span><span style="color: #a3aac8">no CI</span></span>
+        <span style="padding: 10px 12px; border: 1px solid #2c3366; border-radius: 9px; display: flex; justify-content: space-between"><span>you/dotfiles</span><span style="color: #a3aac8">not cloned</span></span>
+        <span style="padding: 10px 12px; border: 1px dashed #3a4280; border-radius: 9px; color: #a3aac8">Add a folder…</span>
+        <span style="margin-top: auto; font-size: 13px; color: #a3aac8">Each task works in its own worktree. Your checkout is never touched.</span>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px">
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 14px; color: #565d7d">5 · The night shift</span>
+      <div style="height: 440px; box-sizing: border-box; border-radius: 12px; background: #0e1230; color: #e9e7f2; padding: 26px; display: flex; flex-direction: column; gap: 14px; font-size: 14px">
+        <span style="font-size: 20px; font-weight: 700">When should Shep work?</span>
+        <span style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px solid #2c3366"><span>Start each night at</span><span style="font-family: 'JetBrains Mono', monospace; padding: 5px 10px; border: 1px solid #3a4280; border-radius: 7px">23:00</span></span>
+        <span style="display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px solid #2c3366"><span>Tasks in parallel</span><span style="font-family: 'JetBrains Mono', monospace; padding: 5px 10px; border: 1px solid #3a4280; border-radius: 7px">3</span></span>
+        <span style="display: flex; justify-content: space-between; align-items: center"><span>Keep this Mac awake<br><span style="font-size: 12px; color: #a3aac8">only while plugged in</span></span><span style="width: 42px; height: 24px; border-radius: 12px; background: #f3b45c; position: relative"><i style="position: absolute; right: 3px; top: 3px; width: 18px; height: 18px; border-radius: 50%; background: #fff"></i></span></span>
+        <span style="margin-top: auto; font-size: 13px; color: #a3aac8">Laptop lid closed? It still works with power and an external display.</span>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px">
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 14px; color: #565d7d">6 · Notifications (system prompt)</span>
+      <div style="height: 440px; box-sizing: border-box; border-radius: 12px; background: #0e1230; color: #e9e7f2; padding: 26px; display: flex; flex-direction: column; gap: 16px; font-size: 14px; position: relative">
+        <span style="font-size: 20px; font-weight: 700">One message at dawn</span>
+        <span style="color: #c9cde6; line-height: 1.5">Shep notifies you once when the shift ends, and when a task needs an answer. Never in the middle of the night.</span>
+        <div style="margin-top: auto; align-self: center; width: 300px; background: #262b52; border: 1px solid #ffffff22; border-radius: 14px; padding: 18px; display: flex; flex-direction: column; gap: 10px; align-items: center; text-align: center; box-shadow: 0 14px 34px #00000077">
+          <img src="assets/icon-lantern.png" alt="" style="width: 44px; height: 44px">
+          <b style="font-size: 14px">"Shep" would like to send you notifications</b>
+          <span style="font-size: 12px; color: #c9cde6">Notifications may include alerts, sounds and icon badges.</span>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; width: 100%"><span style="padding: 7px; border-radius: 8px; background: #ffffff18">Don't Allow</span><span style="padding: 7px; border-radius: 8px; background: #3d6bf0; font-weight: 600">Allow</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px">
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 14px; color: #565d7d">7 · First task, right now</span>
+      <div style="height: 440px; box-sizing: border-box; border-radius: 12px; background: #0e1230; color: #e9e7f2; padding: 26px; display: flex; flex-direction: column; gap: 10px; font-size: 14px">
+        <span style="font-size: 20px; font-weight: 700">Try it on one of your issues</span>
+        <span style="padding: 10px 12px; border: 1px solid #f3b45c; background: #f3b45c14; border-radius: 9px; display: flex; gap: 10px"><span style="font-family: 'JetBrains Mono', monospace; color: #a3aac8">#412</span>Fix login redirect loop</span>
+        <span style="padding: 10px 12px; border: 1px solid #2c3366; border-radius: 9px; display: flex; gap: 10px"><span style="font-family: 'JetBrains Mono', monospace; color: #a3aac8">#418</span>Add CSV export to reports</span>
+        <span style="padding: 10px 12px; border: 1px solid #2c3366; border-radius: 9px; display: flex; gap: 10px"><span style="font-family: 'JetBrains Mono', monospace; color: #a3aac8">#421</span>Upgrade to Node 22.11</span>
+        <span style="margin-top: auto; display: flex; gap: 10px; align-items: center"><span style="font-weight: 700; color: #1a1405; background: #f3b45c; border-radius: 9px; padding: 9px 16px">Start #412 now</span><span style="font-size: 13px; color: #a3aac8">or skip to tonight</span></span>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px">
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 14px; color: #565d7d">8 · First pull request</span>
+      <div style="height: 440px; border-radius: 12px; overflow: hidden; position: relative; background: #0e1230; color: #fff6e6">
+        <img src="assets/sky-5of6.png" alt="Near dawn, one more sheep in the pen" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; image-rendering: pixelated">
+        <div style="position: absolute; left: 0; right: 0; bottom: 0; padding: 26px; background: linear-gradient(transparent, #0a0d24f0 45%); display: flex; flex-direction: column; gap: 10px">
+          <span style="font-family: Gloock, Georgia, serif; font-size: 30px; line-height: 1.1">Your first pull request is ready.</span>
+          <span style="font-size: 14px; color: #f6e3c8">#412 · CI green · screenshot attached</span>
+          <span style="display: flex; gap: 10px"><span style="font-weight: 700; font-size: 14px; color: #1a1405; background: #f3b45c; border-radius: 9px; padding: 9px 16px">Review it</span><span style="font-size: 14px; border: 1px solid #fff6e655; border-radius: 9px; padding: 9px 14px">Queue tonight's work</span></span>
+          <span style="font-size: 12px; color: #f6e3c8">Tip: the lantern in your menu bar shows the shift at a glance.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":2520,"height":1200}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

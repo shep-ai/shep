@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Morning share card</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gloock&amp;family=Hanken+Grotesk:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#f3b45c}a:hover{color:#ffe4b0}
+</style>
+</helmet>
+<div style="position: relative; width: 1200px; height: 630px; overflow: hidden; background: #0b0e24; color: #fff6e6; font-family: 'Hanken Grotesk', 'Helvetica Neue', Arial, sans-serif">
+  <img src="assets/share-bg.png" alt="Near-dawn sky over a pen holding five sheep" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; image-rendering: pixelated">
+  <div style="position: absolute; inset: 0; background: linear-gradient(90deg, #070a1cee 0%, #070a1cb3 45%, #070a1c00 75%)"></div>
+  <div style="position: absolute; left: 72px; top: 64px; bottom: 64px; width: 640px; display: flex; flex-direction: column; justify-content: space-between">
+    <div style="display: flex; align-items: center; gap: 10px"><span style="font-family: Gloock, Georgia, serif; font-size: 36px">shep</span><svg width="18" height="18" viewBox="0 0 34 34" aria-hidden="true"><circle cx="17" cy="17" r="16" fill="#f3b45c" opacity="0.25"></circle><circle cx="17" cy="17" r="8" fill="#f3b45c"></circle></svg></div>
+    <div style="display: flex; flex-direction: column; gap: 18px">
+      <span style="font-size: 26px; color: #f6e3c8">Last night, while I slept:</span>
+      <span style="font-family: Gloock, Georgia, serif; font-size: 76px; line-height: 1">6 issues in.<br><span style="color: #f3b45c">5 merged.</span></span>
+      <span style="font-size: 22px; color: #f6e3c8">1 waiting on one question from me.</span>
+    </div>
+    <span style="font-family: 'JetBrains Mono', monospace; font-size: 18px; color: #f6e3c8">Dependabot for your backlog · shep.bot</span>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1200,"height":630}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>CLI commands, help and errors</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#f3b45c}a:hover{color:#ffe4b0}
+</style>
+</helmet>
+<div style="width: 1040px; height: 800px; box-sizing: border-box; background: #0b0e24; color: #e3e6f5; border-radius: 14px; overflow: hidden; display: flex; flex-direction: column; font-family: 'JetBrains Mono', Menlo, monospace">
+  <div style="display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-bottom: 1px solid #232a57; font-size: 13px; color: #7d84a8">
+    <i style="width: 12px; height: 12px; border-radius: 50%; background: #ff5f57"></i><i style="width: 12px; height: 12px; border-radius: 50%; background: #febc2e"></i><i style="width: 12px; height: 12px; border-radius: 50%; background: #28c840"></i>
+    <span style="margin-left: 10px">four commands, and what they say when something is wrong</span>
+  </div>
+  <div style="display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); flex: 1; min-height: 0">
+    <div style="padding: 18px 22px; font-size: 13.5px; line-height: 22px; white-space: pre; display: flex; flex-direction: column; border-right: 1px solid #232a57; overflow: hidden">
+<div><span style="color: #7d84a8">$ </span>shep --help</div>
+<div><span style="color: #f3b45c">shep</span><span style="color: #7d84a8"> · tasks in, reviewed pull requests out</span></div>
+<div> </div>
+<div>  <span style="color: #f3b45c">shep</span>                  open the board</div>
+<div>  <span style="color: #f3b45c">shep add</span> &lt;task&gt;       queue an issue or a sentence</div>
+<div>  <span style="color: #f3b45c">shep go</span> [--at HH:MM]  start now, or at a time</div>
+<div>  <span style="color: #f3b45c">shep config</span>           agent, repo, start time</div>
+<div> </div>
+<div><span style="color: #7d84a8">$ </span>shep add "#412"</div>
+<div><span style="color: #8fd6a8">✓</span> queued #412 Fix login redirect loop</div>
+<div><span style="color: #7d84a8">$ </span>shep add github.com/acme/app/issues/418</div>
+<div><span style="color: #8fd6a8">✓</span> queued #418 Add CSV export to reports</div>
+<div><span style="color: #7d84a8">$ </span>shep add "dark mode for settings"</div>
+<div><span style="color: #8fd6a8">✓</span> queued <span style="color: #7d84a8">· new task, no issue yet</span></div>
+<div><span style="color: #7d84a8">$ </span>shep add --label shep</div>
+<div><span style="color: #8fd6a8">✓</span> queued 3 issues labelled shep</div>
+<div><span style="color: #7d84a8">$ </span>shep go --at 23:00</div>
+<div><span style="color: #8fd6a8">✓</span> 6 tasks start at 23:00</div>
+<div><span style="color: #7d84a8">  Mac kept awake while on power</span></div>
+<div><span style="color: #7d84a8">$ </span>shep go</div>
+<div><span style="color: #8fd6a8">✓</span> started 3 now <span style="color: #7d84a8">· 3 waiting for a slot</span></div>
+    </div>
+    <div style="padding: 18px 22px; font-size: 13.5px; line-height: 22px; white-space: pre; display: flex; flex-direction: column; overflow: hidden">
+<div><span style="color: #7d84a8">$ </span>shep go</div>
+<div><span style="color: #ff8f7a">✗</span> No agent CLI found.</div>
+<div><span style="color: #7d84a8">  Install the one you use, then run</span> shep config<span style="color: #7d84a8">.</span></div>
+<div> </div>
+<div><span style="color: #7d84a8">$ </span>shep add "#412"</div>
+<div><span style="color: #ff8f7a">✗</span> GitHub isn't signed in.</div>
+<div><span style="color: #7d84a8">  Run</span> gh auth login<span style="color: #7d84a8">, then try again.</span></div>
+<div> </div>
+<div><span style="color: #f3b45c">!</span> Usage limit reached at 02:47.</div>
+<div><span style="color: #7d84a8">  2 tasks parked, they resume at 03:30.</span></div>
+<div><span style="color: #7d84a8">  Nothing for you to do.</span></div>
+<div> </div>
+<div><span style="color: #ff8f7a">!</span> #421 CI still red after 3 fixes.</div>
+<div><span style="color: #7d84a8">  Stopped and kept the log. It's in Needs you.</span></div>
+<div> </div>
+<div><span style="color: #7d84a8">$ </span>shep config</div>
+<div>  agent          claude <span style="color: #7d84a8">(also: codex, gemini)</span></div>
+<div>  repo           booking-app</div>
+<div>  start at       23:00</div>
+<div>  in parallel    3</div>
+<div>  keep awake     on power only</div>
+<div>  pull requests  draft · you merge</div>
+    </div>
+  </div>
+  <div style="padding: 14px 22px; border-top: 1px solid #232a57; font-family: 'Hanken Grotesk', sans-serif; font-size: 14px; line-height: 20px; color: #a3aac8">Every error names the fix in one line. Warnings that need nothing from you (a usage limit, a CI fix in progress) say so plainly.</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1040,"height":800}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

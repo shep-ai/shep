@@ -1,0 +1,15 @@
+# blob id in the published canvas -> file in atlas/assets/
+3e32556d92339a62591bcfc02c59eff8 sky-0of6.png
+076e600cecb80e215611bd3d002e20ce sky-1of6.png
+0fe729a42ddf608db955c3c504a21775 sky-2of6.png
+f550745fde425719eb322afd57323757 sky-3of6.png
+dcb41860452e763f63412ba8a1f3976f sky-4of6.png
+f47e766b778e5421538851537575f7b5 sky-5of6.png
+f39bcb62783bf20ee1c735d6e27e989c sky-6of6.png
+1c896f3c43caf9e461239b036216cb3e hero-dawn.png
+f864965938c026bd3969716e70c7f53f hero-night.png
+2283717af490aa42b0f6f02857dca458 share-bg.png
+a52044f0535e12e8e2d028618c7cc6f0 sidebar-sky.png
+83ddb22c6b9fa2fb028b53c0ccc31130 icon-lantern.png
+e528d1c630aef113e10ff8684477fe58 icon-lantern-dark.png
+bd43a7f46ad83ca28b3b2b46b5bbccc8 icon-sheep.png

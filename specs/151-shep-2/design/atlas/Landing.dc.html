@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>shep.bot landing page</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gloock&amp;family=Hanken+Grotesk:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#f3b45c}a:hover{color:#ffe4b0}
+</style>
+</helmet>
+<div style="background: #0b0e24; color: #e9e7f2; font-family: 'Hanken Grotesk', 'Helvetica Neue', Arial, sans-serif; font-size: 17px; line-height: 1.55">
+  <div style="max-width: 1200px; margin: 0 auto; padding: 22px 24px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap">
+    <a href="#top" style="display: flex; align-items: center; gap: 8px; color: #e9e7f2; text-decoration: none"><span style="font-family: Gloock, Georgia, serif; font-size: 30px">shep</span><svg width="14" height="14" viewBox="0 0 34 34" aria-hidden="true"><circle cx="17" cy="17" r="16" fill="#f3b45c" opacity="0.25"></circle><circle cx="17" cy="17" r="8" fill="#f3b45c"></circle></svg></a>
+    <div style="display: flex; gap: 22px; align-items: center; flex-wrap: wrap; font-size: 15px">
+      <a href="#night" style="color: #c9cde6; text-decoration: none">How it works</a>
+      <a href="https://github.com/shep-ai/shep" style="color: #c9cde6; text-decoration: none">GitHub</a>
+      <a href="#install" style="color: #1a1405; background: #f3b45c; border-radius: 999px; padding: 8px 16px; text-decoration: none; font-weight: 700">Install</a>
+    </div>
+  </div>
+
+  <div id="top" style="max-width: 1200px; margin: 0 auto; padding: 56px 24px 32px; display: flex; flex-direction: column; gap: 22px">
+    <span style="font-family: 'JetBrains Mono', monospace; font-size: 14px; letter-spacing: 0.14em; text-transform: uppercase; color: #f3b45c">Dependabot for your backlog</span>
+    <h1 style="margin: 0; font-family: Gloock, Georgia, serif; font-weight: 400; font-size: clamp(2.6rem, 6.5vw, 5.2rem); line-height: 1.02; max-width: 15ch; text-wrap: balance">Go to sleep with issues. <span style="color: #f3b45c">Wake up with pull requests.</span></h1>
+    <p style="margin: 0; font-size: clamp(1.05rem, 2vw, 1.3rem); color: #c9cde6; max-width: 58ch">Queue GitHub issues tonight. Your own coding agent works each one in its own worktree while you sleep. In the morning, review draft pull requests that already pass CI, with screenshots as proof, and press merge.</p>
+    <div style="display: flex; gap: 14px; flex-wrap: wrap; align-items: center">
+      <a href="#install" style="color: #1a1405; background: #f3b45c; border-radius: 12px; padding: 14px 24px; text-decoration: none; font-weight: 700; font-size: 17px">Install Shep</a>
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 15px; background: #141a44; border: 1px solid #2a3266; border-radius: 10px; padding: 12px 16px">brew install shep-ai/tap/shep</span>
+    </div>
+  </div>
+  <img src="assets/hero-night.png" alt="A shepherd keeps watch with a lantern over six sleeping sheep under a full moon" style="display: block; width: 100%; height: clamp(220px, 34vw, 480px); object-fit: cover; image-rendering: pixelated">
+
+  <div id="night" style="max-width: 1200px; margin: 0 auto; padding: 72px 24px; display: flex; flex-direction: column; gap: 28px">
+    <h2 style="margin: 0; font-family: Gloock, Georgia, serif; font-weight: 400; font-size: clamp(2rem, 4vw, 3rem)">How a night works</h2>
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr)); gap: 24px">
+      <div style="display: flex; flex-direction: column; gap: 12px"><img src="assets/sky-0of6.png" alt="Night: six sheep asleep in the meadow" style="width: 100%; border-radius: 12px; image-rendering: pixelated; display: block"><b style="font-size: 20px">Tonight</b><span style="color: #c9cde6">Label issues <span style="font-family: 'JetBrains Mono', monospace; font-size: 15px">shep</span>, or run <span style="font-family: 'JetBrains Mono', monospace; font-size: 15px">shep add</span>, then <span style="font-family: 'JetBrains Mono', monospace; font-size: 15px">shep go --at 23:00</span>. Takes a minute.</span></div>
+      <div style="display: flex; flex-direction: column; gap: 12px"><img src="assets/sky-3of6.png" alt="First light: three sheep in the pen" style="width: 100%; border-radius: 12px; image-rendering: pixelated; display: block"><b style="font-size: 20px">Overnight</b><span style="color: #c9cde6">Each task gets its own branch. Your agent writes the code, CI runs, red builds get fixed, screenshots get taken. If it hits a usage limit, it waits and resumes.</span></div>
+      <div style="display: flex; flex-direction: column; gap: 12px"><img src="assets/sky-6of6.png" alt="Dawn: every sheep in the pen" style="width: 100%; border-radius: 12px; image-rendering: pixelated; display: block"><b style="font-size: 20px">Morning</b><span style="color: #c9cde6">One notification. Review each draft PR with its proof, one key at a time: merge, send back, or answer a question.</span></div>
+    </div>
+  </div>
+
+  <div style="background: #11153a; border-top: 1px solid #232a57; border-bottom: 1px solid #232a57">
+    <div style="max-width: 1200px; margin: 0 auto; padding: 72px 24px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(420px, 100%), 1fr)); gap: 40px; align-items: center">
+      <div style="display: flex; flex-direction: column; gap: 14px">
+        <h2 style="margin: 0; font-family: Gloock, Georgia, serif; font-weight: 400; font-size: clamp(2rem, 4vw, 3rem)">Proof before you merge</h2>
+        <p style="margin: 0; color: #c9cde6">Every pull request arrives with CI green, a screenshot or test run, and a second opinion from a separate review agent. If something needs you, it asks one clear question instead of guessing.</p>
+        <p style="margin: 0; color: #c9cde6">Shep only opens drafts. Nothing reaches your main branch until you press merge.</p>
+      </div>
+      <div style="background: #0b0e24; border: 1px solid #2c3366; border-radius: 16px; overflow: hidden">
+        <div style="padding: 14px; background: #070a1c; border-bottom: 1px solid #2c3366"><div style="border-radius: 8px; background: #f4f5fb; height: 150px; display: flex; align-items: center; justify-content: center"><span style="display: flex; flex-direction: column; gap: 8px; width: 55%"><i style="height: 10px; width: 40%; border-radius: 3px; background: #d6d9e8"></i><i style="height: 26px; border: 1px solid #d6d9e8; border-radius: 6px; background: #ffffff"></i><i style="height: 26px; border: 1px solid #d6d9e8; border-radius: 6px; background: #ffffff"></i><i style="height: 28px; border-radius: 6px; background: #b4650e"></i></span></div></div>
+        <div style="padding: 18px 20px; display: flex; flex-direction: column; gap: 10px">
+          <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #a3aac8">#412 · draft · ready 01:31</span>
+          <b style="font-size: 21px">Fix login redirect loop</b>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap; font-size: 13px"><span style="padding: 4px 10px; border-radius: 999px; color: #8fd6a8; border: 1px solid #8fd6a855">✓ CI green</span><span style="padding: 4px 10px; border-radius: 999px; color: #93b2ff; border: 1px solid #93b2ff44">↻ fixed 1 failure</span><span style="padding: 4px 10px; border-radius: 999px; color: #c9cde6; border: 1px solid #ffffff1c">+41 −12</span></div>
+          <div style="display: flex; gap: 10px; margin-top: 4px"><span style="color: #1a1405; background: #f3b45c; border-radius: 9px; padding: 8px 16px; font-weight: 700; font-size: 15px">Merge</span><span style="color: #e9e7f2; border: 1px solid #3a4280; border-radius: 9px; padding: 8px 16px; font-size: 15px">Send back</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="max-width: 1200px; margin: 0 auto; padding: 72px 24px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(420px, 100%), 1fr)); gap: 40px">
+    <div style="display: flex; flex-direction: column; gap: 14px">
+      <h2 style="margin: 0; font-family: Gloock, Georgia, serif; font-weight: 400; font-size: clamp(2rem, 4vw, 3rem)">The agent you already use</h2>
+      <p style="margin: 0; color: #c9cde6">Shep runs the coding agent CLI that's already on your machine, with your own login. It never sees or stores your keys, and it runs on your machine, not ours.</p>
+      <div style="display: flex; flex-wrap: wrap; gap: 8px; font-size: 15px"><span style="padding: 6px 12px; border-radius: 999px; border: 1px solid #2c3366; background: #141a44">Claude Code</span><span style="padding: 6px 12px; border-radius: 999px; border: 1px solid #2c3366; background: #141a44">Codex</span><span style="padding: 6px 12px; border-radius: 999px; border: 1px solid #2c3366; background: #141a44">Gemini CLI</span><span style="padding: 6px 12px; border-radius: 999px; border: 1px solid #2c3366; background: #141a44">Cursor CLI</span><span style="padding: 6px 12px; border-radius: 999px; border: 1px solid #2c3366; background: #141a44">any CLI with a headless mode</span></div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 14px">
+      <h2 style="margin: 0; font-family: Gloock, Georgia, serif; font-weight: 400; font-size: clamp(2rem, 4vw, 3rem)">Four commands</h2>
+      <div style="background: #070a1c; border: 1px solid #232a57; border-radius: 14px; padding: 18px 20px; font-family: 'JetBrains Mono', monospace; font-size: 15px; line-height: 30px; display: flex; flex-direction: column; overflow-x: auto">
+        <span style="white-space: pre"><span style="color: #f3b45c">shep</span>                  <span style="color: #7d84a8">open the board</span></span>
+        <span style="white-space: pre"><span style="color: #f3b45c">shep add</span> "#412"       <span style="color: #7d84a8">queue an issue or a sentence</span></span>
+        <span style="white-space: pre"><span style="color: #f3b45c">shep go</span> --at 23:00   <span style="color: #7d84a8">start now, or tonight</span></span>
+        <span style="white-space: pre"><span style="color: #f3b45c">shep config</span>           <span style="color: #7d84a8">agent, repo, start time</span></span>
+      </div>
+      <p style="margin: 0; font-size: 15px; color: #a3aac8">Also on the Mac as a native app, and inside your agent over MCP.</p>
+    </div>
+  </div>
+
+  <div id="install" style="position: relative; overflow: hidden">
+    <img src="assets/hero-dawn.png" alt="" style="display: block; width: 100%; height: clamp(380px, 40vw, 560px); object-fit: cover; image-rendering: pixelated">
+    <div style="position: absolute; inset: 0; background: linear-gradient(#0b0e24 0%, #0b0e2499 40%, #0b0e2433 100%)"></div>
+    <div style="position: absolute; left: 0; right: 0; top: 0; max-width: 1200px; margin: 0 auto; padding: 56px 24px; display: flex; flex-direction: column; gap: 18px">
+      <h2 style="margin: 0; font-family: Gloock, Georgia, serif; font-weight: 400; font-size: clamp(2rem, 5vw, 3.6rem); max-width: 18ch">Hand it tonight's issues.</h2>
+      <div style="display: flex; flex-direction: column; gap: 8px; font-family: 'JetBrains Mono', monospace; font-size: 15px">
+        <span style="background: #0b0e24e6; border: 1px solid #2a3266; border-radius: 10px; padding: 10px 14px; align-self: flex-start">brew install shep-ai/tap/shep</span>
+        <span style="background: #0b0e24e6; border: 1px solid #2a3266; border-radius: 10px; padding: 10px 14px; align-self: flex-start">curl -fsSL https://shep.bot/install | sh</span>
+        <span style="background: #0b0e24e6; border: 1px solid #2a3266; border-radius: 10px; padding: 10px 14px; align-self: flex-start">npx shepai</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="max-width: 1200px; margin: 0 auto; padding: 28px 24px 40px; display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; font-size: 14px; color: #a3aac8">
+    <span>Shep is open source and runs on your machine.</span>
+    <span>shep.bot</span>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":2760}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

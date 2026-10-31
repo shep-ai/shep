@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Shep 2 brand system</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gloock&amp;family=Hanken+Grotesk:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#f3b45c}a:hover{color:#ffe4b0}
+</style>
+</helmet>
+<div style="width: 1440px; height: 1320px; box-sizing: border-box; padding: 56px 64px; background: #0b0e24; color: #e9e7f2; font-family: 'Hanken Grotesk', 'Helvetica Neue', Arial, sans-serif; display: flex; flex-direction: column; gap: 40px">
+  <div style="display: flex; justify-content: space-between; align-items: baseline; gap: 24px">
+    <h1 style="margin: 0; font-family: Gloock, Georgia, serif; font-weight: 400; font-size: 44px">Brand system</h1>
+    <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #a3aac8">Night is the work. Dawn is the result.</span>
+  </div>
+
+  <div style="display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 32px">
+    <div style="background: #11153a; border: 1px solid #262c66; border-radius: 16px; padding: 28px; display: flex; flex-direction: column; gap: 22px">
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: #a3aac8">Wordmark</span>
+      <div style="display: flex; align-items: center; gap: 14px">
+        <span style="font-family: Gloock, Georgia, serif; font-size: 112px; line-height: 0.9; letter-spacing: -0.02em">shep</span>
+        <svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><circle cx="17" cy="17" r="16" fill="#f3b45c" opacity="0.18"></circle><circle cx="17" cy="17" r="8" fill="#f3b45c"></circle><circle cx="17" cy="17" r="3.5" fill="#fff2cf"></circle></svg>
+      </div>
+      <pre style="margin: 0; font-family: 'JetBrains Mono', Menlo, monospace; font-size: 17px; line-height: 1.15; background: linear-gradient(90deg, #7b86e8, #f3b45c); -webkit-background-clip: text; background-clip: text; color: transparent">     _
+ ___| |__   ___ _ __
+/ __| '_ \ / _ \ '_ \
+\__ \ | | |  __/ |_) |
+|___/_| |_|\___| .__/
+               |_|</pre>
+      <span style="font-size: 14px; color: #a3aac8; line-height: 1.5">The lantern dot is the mark: it sits after the wordmark and stands alone as the favicon. The terminal wordmark is the same name in block letters, dusk blue to lantern amber, with short and tiny versions for narrow terminals.</span>
+    </div>
+
+    <div style="background: #11153a; border: 1px solid #262c66; border-radius: 16px; padding: 28px; display: flex; flex-direction: column; gap: 18px">
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: #a3aac8">App icon (macOS, two layers)</span>
+      <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px">
+        <div style="display: flex; flex-direction: column; gap: 10px; align-items: center"><img src="assets/icon-lantern.png" alt="App icon: a crook holding a lit lantern on a night-to-dawn gradient" style="width: 150px; height: 150px"><b style="font-size: 14px">Lantern</b><span style="font-size: 13px; color: #a3aac8">Primary</span></div>
+        <div style="display: flex; flex-direction: column; gap: 10px; align-items: center"><img src="assets/icon-lantern-dark.png" alt="App icon: the lantern on graphite for dark and tinted modes" style="width: 150px; height: 150px"><b style="font-size: 14px">Lantern · dark</b><span style="font-size: 13px; color: #a3aac8">Dark and tinted modes</span></div>
+        <div style="display: flex; flex-direction: column; gap: 10px; align-items: center"><img src="assets/icon-sheep.png" alt="App icon: a white sheep in front of the rising sun" style="width: 150px; height: 150px"><b style="font-size: 14px">Sheep at dawn</b><span style="font-size: 13px; color: #a3aac8">Alternate</span></div>
+      </div>
+      <span style="font-size: 14px; color: #a3aac8; line-height: 1.5">Two shapes at most, per Apple's layered-icon guidance. The lantern is the default because it reads at 16 px in the menu bar.</span>
+    </div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 14px">
+    <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: #a3aac8">Night to dawn: the only palette. Progress moves you along it.</span>
+    <div style="display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 0; border-radius: 12px; overflow: hidden; border: 1px solid #262c66">
+      <div style="background: #070a1c; height: 112px; padding: 12px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: flex-end; gap: 2px; color: #e9e7f2"><b style="font-size: 14px">Midnight</b><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px">#070A1C</span></div>
+      <div style="background: #141a44; height: 112px; padding: 12px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: flex-end; gap: 2px; color: #e9e7f2"><b style="font-size: 14px">Night</b><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px">#141A44</span></div>
+      <div style="background: #262c66; height: 112px; padding: 12px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: flex-end; gap: 2px; color: #e9e7f2"><b style="font-size: 14px">Dusk</b><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px">#262C66</span></div>
+      <div style="background: #4d3f78; height: 112px; padding: 12px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: flex-end; gap: 2px; color: #ffffff"><b style="font-size: 14px">Violet hour</b><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px">#4D3F78</span></div>
+      <div style="background: #8a5374; height: 112px; padding: 12px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: flex-end; gap: 2px; color: #ffffff"><b style="font-size: 14px">Rose</b><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px">#8A5374</span></div>
+      <div style="background: #c9763a; height: 112px; padding: 12px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: flex-end; gap: 2px; color: #1a1405"><b style="font-size: 14px">Ember</b><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px">#C9763A</span></div>
+      <div style="background: #f3b45c; height: 112px; padding: 12px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: flex-end; gap: 2px; color: #1a1405"><b style="font-size: 14px">Lantern</b><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px">#F3B45C</span></div>
+      <div style="background: #ffe4b0; height: 112px; padding: 12px; box-sizing: border-box; display: flex; flex-direction: column; justify-content: flex-end; gap: 2px; color: #1a1405"><b style="font-size: 14px">Dawn</b><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px">#FFE4B0</span></div>
+    </div>
+    <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center">
+      <span style="font-size: 13px; color: #a3aac8; margin-right: 6px">Status colors, separate from the brand ramp, each also differs in lightness:</span>
+      <span style="display: inline-flex; align-items: center; gap: 8px; font-size: 13px; padding: 5px 12px; border-radius: 999px; background: #7d84a826; color: #c9cde6"><i style="width: 9px; height: 9px; border-radius: 50%; background: #7d84a8"></i>Queued #7D84A8</span>
+      <span style="display: inline-flex; align-items: center; gap: 8px; font-size: 13px; padding: 5px 12px; border-radius: 999px; background: #93b2ff22; color: #93b2ff"><i style="width: 9px; height: 9px; border-radius: 50%; background: #93b2ff"></i>Working #93B2FF</span>
+      <span style="display: inline-flex; align-items: center; gap: 8px; font-size: 13px; padding: 5px 12px; border-radius: 999px; background: #ff8f7a22; color: #ff8f7a"><i style="width: 9px; height: 9px; border-radius: 50%; background: #ff8f7a"></i>Needs you #FF8F7A</span>
+      <span style="display: inline-flex; align-items: center; gap: 8px; font-size: 13px; padding: 5px 12px; border-radius: 999px; background: #8fd6a822; color: #8fd6a8"><i style="width: 9px; height: 9px; border-radius: 50%; background: #8fd6a8"></i>Ready #8FD6A8</span>
+      <span style="display: inline-flex; align-items: center; gap: 8px; font-size: 13px; padding: 5px 12px; border-radius: 999px; background: #f3b45c22; color: #f3b45c"><i style="width: 9px; height: 9px; border-radius: 50%; background: #f3b45c"></i>Merged #F3B45C</span>
+    </div>
+  </div>
+
+  <div style="display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.35fr); gap: 32px">
+    <div style="display: flex; flex-direction: column; gap: 16px">
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: #a3aac8">Type</span>
+      <div style="display: flex; flex-direction: column; gap: 4px; border-top: 1px solid #262c66; padding-top: 12px"><span style="font-family: Gloock, Georgia, serif; font-size: 40px; line-height: 1.1">Dawn. 5 ready.</span><span style="font-size: 13px; color: #a3aac8">Gloock · display, moments and headlines only</span></div>
+      <div style="display: flex; flex-direction: column; gap: 4px; border-top: 1px solid #262c66; padding-top: 12px"><span style="font-size: 22px; font-weight: 600">Fix login redirect loop</span><span style="font-size: 16px; color: #c9cde6">CI green · screenshot attached · second opinion: looks good</span><span style="font-size: 13px; color: #a3aac8">Hanken Grotesk · interface and body</span></div>
+      <div style="display: flex; flex-direction: column; gap: 4px; border-top: 1px solid #262c66; padding-top: 12px"><span style="font-family: 'JetBrains Mono', monospace; font-size: 17px">shep add "#412"  ⠹ Herding commits…</span><span style="font-size: 13px; color: #a3aac8">JetBrains Mono · terminal, branches, numbers</span></div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 16px">
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: 0.12em; text-transform: uppercase; color: #a3aac8">The sheep are tasks. They walk toward the pen. (herdr's sheep are agents in a pasture; ours never wander.)</span>
+      <div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px">
+        <div style="background: #11153a; border: 1px solid #262c66; border-radius: 12px; padding: 14px 10px; display: flex; flex-direction: column; align-items: center; gap: 8px">
+          <svg width="96" height="72" viewBox="0 0 96 72" role="img" aria-label="Queued: a sleeping sheep"><text x="70" y="16" font-family="JetBrains Mono, monospace" font-size="12" fill="#7d84a8">z z</text><g fill="#b9bedb"><circle cx="30" cy="40" r="13"></circle><circle cx="44" cy="34" r="15"></circle><circle cx="58" cy="40" r="13"></circle><circle cx="36" cy="48" r="12"></circle><circle cx="52" cy="48" r="12"></circle></g><ellipse cx="72" cy="46" rx="9" ry="8" fill="#232046"></ellipse><path d="M68 45h6" stroke="#b9bedb" stroke-width="1.6" stroke-linecap="round"></path></svg>
+          <b style="font-size: 14px; color: #c9cde6">Queued</b><span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #7d84a8">@@o z</span><span style="font-size: 12px; color: #a3aac8; text-align: center">Asleep in the meadow</span>
+        </div>
+        <div style="background: #11153a; border: 1px solid #262c66; border-radius: 12px; padding: 14px 10px; display: flex; flex-direction: column; align-items: center; gap: 8px">
+          <svg width="96" height="72" viewBox="0 0 96 72" role="img" aria-label="Working: a walking sheep lit by a lantern"><circle cx="12" cy="30" r="10" fill="#f3b45c" opacity="0.25"></circle><circle cx="12" cy="30" r="3.5" fill="#f3b45c"></circle><g fill="#f2f0fa"><circle cx="30" cy="36" r="13"></circle><circle cx="44" cy="30" r="15"></circle><circle cx="58" cy="36" r="13"></circle><circle cx="36" cy="44" r="12"></circle><circle cx="52" cy="44" r="12"></circle></g><ellipse cx="72" cy="36" rx="9" ry="10" fill="#232046"></ellipse><circle cx="75" cy="34" r="1.6" fill="#ffe4b0"></circle><rect x="34" y="52" width="5" height="11" rx="2" fill="#232046" transform="rotate(-12 36 57)"></rect><rect x="50" y="52" width="5" height="11" rx="2" fill="#232046" transform="rotate(12 52 57)"></rect></svg>
+          <b style="font-size: 14px; color: #93b2ff">Working</b><span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #93b2ff">@@o ›</span><span style="font-size: 12px; color: #a3aac8; text-align: center">Walking in lantern light</span>
+        </div>
+        <div style="background: #11153a; border: 1px solid #262c66; border-radius: 12px; padding: 14px 10px; display: flex; flex-direction: column; align-items: center; gap: 8px">
+          <svg width="96" height="72" viewBox="0 0 96 72" role="img" aria-label="Needs you: a sheep looking up with a question"><rect x="62" y="2" width="26" height="20" rx="8" fill="#ff8f7a"></rect><text x="71" y="17" font-family="Hanken Grotesk, sans-serif" font-weight="700" font-size="14" fill="#2a0f0a">?</text><g fill="#f2f0fa"><circle cx="26" cy="42" r="13"></circle><circle cx="40" cy="36" r="15"></circle><circle cx="54" cy="42" r="13"></circle><circle cx="32" cy="50" r="12"></circle><circle cx="48" cy="50" r="12"></circle></g><ellipse cx="66" cy="32" rx="9" ry="10" fill="#232046"></ellipse><circle cx="69" cy="29" r="1.6" fill="#ffe4b0"></circle></svg>
+          <b style="font-size: 14px; color: #ff8f7a">Needs you</b><span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #ff8f7a">@@O !</span><span style="font-size: 12px; color: #a3aac8; text-align: center">Head up, one question</span>
+        </div>
+        <div style="background: #11153a; border: 1px solid #262c66; border-radius: 12px; padding: 14px 10px; display: flex; flex-direction: column; align-items: center; gap: 8px">
+          <svg width="96" height="72" viewBox="0 0 96 72" role="img" aria-label="Ready: a sheep inside the pen with a check"><path d="M6 24h84M10 24v40M48 24v40M86 24v40" stroke="#8a7a6a" stroke-width="2.5" stroke-linecap="round"></path><g fill="#f2f0fa"><circle cx="26" cy="46" r="11"></circle><circle cx="38" cy="41" r="13"></circle><circle cx="50" cy="46" r="11"></circle><circle cx="32" cy="53" r="10"></circle><circle cx="45" cy="53" r="10"></circle></g><ellipse cx="62" cy="45" rx="8" ry="9" fill="#232046"></ellipse><circle cx="78" cy="12" r="9" fill="#8fd6a8"></circle><path d="M74 12l3 3 5-6" stroke="#0b2a17" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+          <b style="font-size: 14px; color: #8fd6a8">Ready</b><span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #8fd6a8">|@@o| ✓</span><span style="font-size: 12px; color: #a3aac8; text-align: center">In the pen, CI green</span>
+        </div>
+        <div style="background: #11153a; border: 1px solid #262c66; border-radius: 12px; padding: 14px 10px; display: flex; flex-direction: column; align-items: center; gap: 8px">
+          <svg width="96" height="72" viewBox="0 0 96 72" role="img" aria-label="Merged: a single lantern-colored star"><circle cx="48" cy="38" r="24" fill="#f3b45c" opacity="0.16"></circle><path d="M48 18 L52 34 L68 38 L52 42 L48 58 L44 42 L28 38 L44 34 Z" fill="#f3b45c"></path></svg>
+          <b style="font-size: 14px; color: #f3b45c">Merged</b><span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #f3b45c">✦</span><span style="font-size: 12px; color: #a3aac8; text-align: center">Becomes a star in the sky</span>
+        </div>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0; border-top: 1px solid #262c66">
+        <div style="padding: 10px 0; border-bottom: 1px solid #262c66; display: flex; gap: 12px"><b style="font-family: 'JetBrains Mono', monospace; font-weight: 500; font-size: 12px; color: #a3aac8; width: 90px; flex: none">WORKING</b><span style="font-size: 14px">Counting sheep · Mending fences · Herding commits</span></div>
+        <div style="padding: 10px 0; border-bottom: 1px solid #262c66; display: flex; gap: 12px"><b style="font-family: 'JetBrains Mono', monospace; font-weight: 500; font-size: 12px; color: #a3aac8; width: 90px; flex: none">OVERNIGHT</b><span style="font-size: 14px">Keeping watch · 4 in the fold</span></div>
+        <div style="padding: 10px 0; border-bottom: 1px solid #262c66; display: flex; gap: 12px"><b style="font-family: 'JetBrains Mono', monospace; font-weight: 500; font-size: 12px; color: #a3aac8; width: 90px; flex: none">MORNING</b><span style="font-size: 14px">Dawn. 5 ready, 1 needs you.</span></div>
+        <div style="padding: 10px 0; border-bottom: 1px solid #262c66; display: flex; gap: 12px"><b style="font-family: 'JetBrains Mono', monospace; font-weight: 500; font-size: 12px; color: #a3aac8; width: 90px; flex: none">ALL CLEAR</b><span style="font-size: 14px">The pen is full. Nothing left to review.</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1320}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

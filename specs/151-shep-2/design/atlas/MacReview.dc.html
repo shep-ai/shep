@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Mac morning review</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gloock&amp;family=Hanken+Grotesk:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#f3b45c}a:hover{color:#ffe4b0}
+</style>
+</helmet>
+<div tabIndex="0" onKeyDown="{{onKey}}" aria-label="Morning review window. M merges, S sends back, J and K move, Space enlarges the proof." style="width: 1280px; height: 820px; box-sizing: border-box; background: #0e1230; color: #e9e7f2; border-radius: 14px; overflow: hidden; display: grid; grid-template-columns: 260px minmax(0, 1fr); font-family: 'Hanken Grotesk', 'Helvetica Neue', Arial, sans-serif; outline: none">
+  <div style="position: relative; overflow: hidden; border-right: 1px solid #2c3366">
+    <img src="{{skySrc}}" alt="" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; image-rendering: pixelated">
+    <div style="position: absolute; inset: 0; background: #10153aa6; backdrop-filter: blur(16px) saturate(140%); -webkit-backdrop-filter: blur(16px) saturate(140%)"></div>
+    <div style="position: relative; padding: 16px 12px; display: flex; flex-direction: column; gap: 4px; height: 100%; box-sizing: border-box">
+      <div style="display: flex; gap: 8px; padding: 2px 6px 18px"><i style="width: 12px; height: 12px; border-radius: 50%; background: #ff5f57"></i><i style="width: 12px; height: 12px; border-radius: 50%; background: #febc2e"></i><i style="width: 12px; height: 12px; border-radius: 50%; background: #28c840"></i></div>
+      <span style="font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #c9cde6; padding: 4px 10px">Review</span>
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; border-radius: 8px; background: #ffffff1c; font-size: 15px"><span style="display: flex; align-items: center; gap: 10px"><i style="width: 9px; height: 9px; border-radius: 50%; background: #8fd6a8"></i>Ready</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #c9cde6">{{readyCount}}</span></div>
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; border-radius: 8px; font-size: 15px"><span style="display: flex; align-items: center; gap: 10px"><i style="width: 9px; height: 9px; border-radius: 50%; background: #ff8f7a"></i>Needs you</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #c9cde6">{{needsCount}}</span></div>
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; border-radius: 8px; font-size: 15px"><span style="display: flex; align-items: center; gap: 10px"><i style="width: 9px; height: 9px; border-radius: 50%; background: #93b2ff"></i>Working</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #c9cde6">0</span></div>
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; border-radius: 8px; font-size: 15px"><span style="display: flex; align-items: center; gap: 10px"><i style="width: 9px; height: 9px; border-radius: 50%; background: #7d84a8"></i>Queued</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #c9cde6">{{queuedCount}}</span></div>
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; border-radius: 8px; font-size: 15px"><span style="display: flex; align-items: center; gap: 10px"><i style="width: 9px; height: 9px; border-radius: 50%; background: #f3b45c"></i>Merged today</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #c9cde6">{{merged}}</span></div>
+      <div style="margin-top: auto; padding: 12px; border-radius: 10px; background: #0a0d24b3; border: 1px solid #ffffff14; display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: #c9cde6"><b style="color: #e9e7f2">Tonight · 23:00</b><span>{{queuedCount}} queued · keeps your Mac awake on power</span></div>
+    </div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; min-width: 0">
+    <div style="display: flex; align-items: center; gap: 12px; padding: 14px 24px; border-bottom: 1px solid #2c3366; background: #141a44cc">
+      <b style="font-size: 15px">Morning</b>
+      <span style="font-size: 13px; color: #a3aac8">{{progressText}}</span>
+      <span style="margin-left: auto; font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; color: #f3b45c; border: 1px solid #f3b45c66; background: #f3b45c14">{{pillText}}</span>
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; padding: 2px 8px; border-radius: 4px; border: 1px solid #ffffff2a; color: #a3aac8">⌘K</span>
+    </div>
+
+    <sc-if value="{{hasCard}}" hint-placeholder-val="{{ true }}">
+      <div style="padding: 24px 28px; display: flex; flex-direction: column; gap: 16px; min-height: 0">
+        <article style="border: 1px solid #2c3366; background: #141a40; border-radius: 14px; overflow: hidden; display: flex; flex-direction: column">
+          <button type="button" onClick="{{toggleProof}}" aria-label="Enlarge the screenshot proof" style="background: #0a0d24; border: 0; border-bottom: 1px solid #2c3366; padding: 14px; display: flex; flex-direction: column; gap: 8px; cursor: zoom-in; text-align: left; font: inherit; color: inherit">
+            <span style="display: flex; justify-content: space-between; font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: #a3aac8"><span>Proof · {{proofLabel}}</span><span>Space</span></span>
+            <span style="display: block; border: 1px solid #2c3366; border-radius: 8px; overflow: hidden; background: #f4f5fb">
+              <span style="display: flex; gap: 5px; padding: 6px 8px; background: #e6e8f2; border-bottom: 1px solid #d5d8e6"><i style="width: 7px; height: 7px; border-radius: 50%; background: #c7cad9"></i><i style="width: 7px; height: 7px; border-radius: 50%; background: #c7cad9"></i><i style="width: 7px; height: 7px; border-radius: 50%; background: #c7cad9"></i></span>
+              <span style="display: flex; flex-direction: column; gap: 8px; padding: 16px; height: {{proofHeight}}; box-sizing: border-box; justify-content: center">
+                <sc-if value="{{isTests}}" hint-placeholder-val="{{ false }}"><span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 22px; color: #23804f; display: flex; flex-direction: column"><span>✓ auth › redirects after login</span><span>✓ auth › keeps the return path</span><span>✓ api › search returns 429 after the limit</span><span style="color: #565d7d">48 passed · 0 failed · 11.2s</span></span></sc-if>
+                <sc-if value="{{isForm}}" hint-placeholder-val="{{ true }}"><span style="display: flex; flex-direction: column; gap: 8px; width: 60%; align-self: center"><i style="height: 10px; width: 40%; border-radius: 3px; background: #d6d9e8"></i><i style="height: 28px; border: 1px solid #d6d9e8; border-radius: 6px; background: #ffffff"></i><i style="height: 10px; width: 34%; border-radius: 3px; background: #d6d9e8"></i><i style="height: 28px; border: 1px solid #d6d9e8; border-radius: 6px; background: #ffffff"></i><i style="height: 30px; border-radius: 6px; background: #b4650e"></i></span></sc-if>
+                <sc-if value="{{isTable}}" hint-placeholder-val="{{ false }}"><span style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 8px"><i style="height: 10px; border-radius: 3px; background: #b4650e; opacity: 0.8"></i><i style="height: 10px; border-radius: 3px; background: #d6d9e8"></i><i style="height: 10px; border-radius: 3px; background: #d6d9e8"></i><i style="height: 10px; border-radius: 3px; background: #d6d9e8"></i><i style="height: 10px; border-radius: 3px; background: #d6d9e8"></i><i style="height: 10px; border-radius: 3px; background: #d6d9e8"></i><i style="height: 10px; border-radius: 3px; background: #d6d9e8"></i><i style="height: 10px; border-radius: 3px; background: #d6d9e8"></i><i style="height: 10px; border-radius: 3px; background: #d6d9e8"></i><i style="height: 10px; border-radius: 3px; background: #d6d9e8"></i><i style="height: 10px; border-radius: 3px; background: #d6d9e8"></i><i style="height: 10px; border-radius: 3px; background: #d6d9e8"></i></span></sc-if>
+              </span>
+            </span>
+          </button>
+          <div style="padding: 18px 20px; display: flex; flex-direction: column; gap: 12px">
+            <span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #a3aac8">booking-app · #{{id}} · {{age}} · draft</span>
+            <span style="font-size: 24px; font-weight: 700; line-height: 1.2">{{title}}</span>
+            <sc-if value="{{isNeeds}}" hint-placeholder-val="{{ false }}">
+              <div style="display: flex; flex-direction: column; gap: 10px">
+                <div style="border: 1px solid #ff8f7a66; background: #ff8f7a12; border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 4px"><span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: #ff8f7a">The agent needs you</span><span style="font-size: 15px">{{question}}</span></div>
+                <div style="display: flex; gap: 8px"><label for="ans" style="position: absolute; width: 1px; height: 1px; overflow: hidden">Your answer</label><input id="ans" placeholder="prod-avatars" style="flex: 1; font: inherit; font-size: 15px; color: #e9e7f2; background: #0a0d24; border: 1px solid #2c3366; border-radius: 8px; padding: 9px 12px"><button type="button" onClick="{{answer}}" style="font: inherit; font-size: 15px; font-weight: 700; color: #1a1405; background: #f3b45c; border: 0; border-radius: 8px; padding: 9px 18px; cursor: pointer">Answer</button></div>
+              </div>
+            </sc-if>
+            <sc-if value="{{isReady}}" hint-placeholder-val="{{ true }}">
+              <div style="display: flex; flex-direction: column; gap: 12px">
+                <div style="display: flex; flex-wrap: wrap; gap: 8px; font-size: 13px">
+                  <span style="padding: 4px 10px; border-radius: 999px; color: #8fd6a8; border: 1px solid #8fd6a855; background: #8fd6a812">✓ CI green</span>
+                  <span style="padding: 4px 10px; border-radius: 999px; color: #c9cde6; border: 1px solid #ffffff1c">{{diff}}</span>
+                  <sc-if value="{{hasFix}}" hint-placeholder-val="{{ true }}"><span style="padding: 4px 10px; border-radius: 999px; color: #93b2ff; border: 1px solid #93b2ff44; background: #93b2ff10">↻ {{fix}}</span></sc-if>
+                </div>
+                <span style="font-size: 15px; color: #c9cde6"><b style="color: #f3b45c">Second opinion:</b> {{opinion}}</span>
+              </div>
+            </sc-if>
+            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap">
+              <sc-if value="{{isReady}}" hint-placeholder-val="{{ true }}"><button type="button" onClick="{{merge}}" style="font: inherit; font-size: 15px; font-weight: 700; color: #1a1405; background: #f3b45c; border: 0; border-radius: 9px; padding: 10px 18px; cursor: pointer; display: flex; gap: 10px; align-items: center">Merge <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; border: 1px solid #1a140566; border-radius: 4px; padding: 0 5px">M</span></button></sc-if>
+              <button type="button" onClick="{{sendBack}}" style="font: inherit; font-size: 15px; color: #e9e7f2; background: transparent; border: 1px solid #3a4280; border-radius: 9px; padding: 10px 16px; cursor: pointer; display: flex; gap: 10px; align-items: center">Send back <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px; border: 1px solid #3a4280; border-radius: 4px; padding: 0 5px">S</span></button>
+              <button type="button" onClick="{{next}}" style="font: inherit; font-size: 14px; color: #a3aac8; background: transparent; border: 0; padding: 10px 6px; cursor: pointer">Skip <span style="font-family: 'JetBrains Mono', monospace; font-size: 11px">J</span></button>
+              <span style="margin-left: auto; font-size: 13px; color: #a3aac8">Diff: <span style="font-family: 'JetBrains Mono', monospace">D</span> · Open PR: <span style="font-family: 'JetBrains Mono', monospace">↵</span></span>
+            </div>
+          </div>
+        </article>
+      </div>
+    </sc-if>
+
+    <sc-if value="{{isEmpty}}" hint-placeholder-val="{{ false }}">
+      <div style="padding: 24px 28px; display: flex; flex-direction: column; gap: 16px">
+        <div style="position: relative; border-radius: 14px; overflow: hidden; border: 1px solid #2c3366">
+          <img src="assets/hero-dawn.png" alt="Dawn: the sun rises over the pen with every sheep inside" style="display: block; width: 100%; height: 520px; object-fit: cover; image-rendering: pixelated">
+          <div style="position: absolute; left: 0; right: 0; bottom: 0; padding: 22px 26px; background: linear-gradient(transparent, #0a0d24e6); display: flex; flex-direction: column; gap: 6px"><span style="font-family: Gloock, Georgia, serif; font-size: 40px; color: #fff6e6">Dawn.</span><span style="font-size: 16px; color: #f6e3c8">{{merged}} merged, {{sent}} sent back. The pen is full.</span></div>
+        </div>
+        <div style="display: flex; gap: 10px"><button type="button" onClick="{{reset}}" style="font: inherit; font-size: 14px; color: #e9e7f2; background: transparent; border: 1px solid #3a4280; border-radius: 9px; padding: 9px 16px; cursor: pointer">Replay this morning</button></div>
+      </div>
+    </sc-if>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":820}}'>
+class Component extends DCLogic {
+  seed() {
+    return [
+      { id: 412, title: 'Fix login redirect loop', diff: '+41 −12 · 3 files', fix: 'fixed 1 CI failure at 01:30', opinion: 'Looks good. One naming nit, left as a comment.', proof: 'form', age: '6h ago' },
+      { id: 418, title: 'Add CSV export to reports', diff: '+128 −4 · 5 files', opinion: 'Looks good.', proof: 'table', age: '5h ago' },
+      { id: 421, title: 'Upgrade to Node 22.11', diff: '+9 −9 · 4 files', fix: 'fixed 1 CI failure at 02:10', opinion: 'Safe. Lockfile regenerated.', proof: 'tests', age: '5h ago' },
+      { id: 425, title: 'Empty state for projects page', diff: '+64 −2 · 2 files', opinion: 'Looks good.', proof: 'form', age: '4h ago' },
+      { id: 433, title: 'Rate-limit /api/search', diff: '+52 −3 · 3 files', opinion: 'Good. Added 2 tests.', proof: 'tests', age: '3h ago' },
+      { id: 430, title: 'Move avatars to S3', needs: true, question: 'Which S3 bucket should avatars go in?', proof: 'form', age: '4h ago' }
+    ];
+  }
+  q() {
+    if (!this.queue) { this.queue = this.seed(); this.merged = 0; this.sent = 0; this.big = false; }
+    return this.queue;
+  }
+  act(kind) {
+    var q = this.q(), c = q[0];
+    if (kind === 'reset') { this.queue = this.seed(); this.merged = 0; this.sent = 0; }
+    else if (!c) { return; }
+    else if (kind === 'merge' && !c.needs) { q.shift(); this.merged++; }
+    else if (kind === 'answer' && c.needs) { q.shift(); this.merged++; }
+    else if (kind === 'send') { q.shift(); this.sent++; }
+    else if (kind === 'next' && q.length > 1) { q.push(q.shift()); }
+    else if (kind === 'proof') { this.big = !this.big; }
+    this.setState({ v: Date.now() });
+  }
+  renderVals() {
+    var self = this, q = this.q(), c = q[0] || {};
+    var SKY = ['assets/sky-0of6.png', 'assets/sky-1of6.png', 'assets/sky-2of6.png', 'assets/sky-3of6.png', 'assets/sky-4of6.png', 'assets/sky-5of6.png', 'assets/sky-6of6.png'];
+    var decided = this.merged + this.sent;
+    var ready = q.filter(function (x) { return !x.needs; }).length, needs = q.filter(function (x) { return x.needs; }).length;
+    return {
+      skySrc: SKY[Math.min(6, decided)],
+      readyCount: ready, needsCount: needs, queuedCount: 2 + this.sent, merged: this.merged, sent: this.sent,
+      progressText: q.length ? (decided + 1) + ' of 6 · sorted by verdict · the sky brightens with each decision' : 'All clear',
+      pillText: q.length ? ready + ' ready' + (needs ? ' · ' + needs + ' needs you' : '') : 'Dawn',
+      hasCard: q.length > 0, isEmpty: q.length === 0,
+      isNeeds: !!c.needs, isReady: !c.needs && q.length > 0,
+      id: c.id, title: c.title, age: c.age, diff: c.diff, fix: c.fix, hasFix: !!c.fix, opinion: c.opinion, question: c.question,
+      isTests: c.proof === 'tests', isForm: c.proof === 'form', isTable: c.proof === 'table',
+      proofLabel: c.proof === 'tests' ? 'test run' : 'screenshot',
+      proofHeight: this.big ? '360px' : '190px',
+      merge: function () { self.act('merge'); },
+      sendBack: function () { self.act('send'); },
+      answer: function () { self.act('answer'); },
+      next: function () { self.act('next'); },
+      reset: function () { self.act('reset'); },
+      toggleProof: function () { self.act('proof'); },
+      onKey: function (e) {
+        var tag = e.target && e.target.tagName;
+        if (tag === 'INPUT') return;
+        var k = (e.key || '').toLowerCase();
+        var map = { m: 'merge', s: 'send', j: 'next', k: 'next', ' ': 'proof' };
+        if (map[k]) { e.preventDefault(); self.act(map[k]); }
+      }
+    };
+  }
+}
+</script>
+</body>
+</html>

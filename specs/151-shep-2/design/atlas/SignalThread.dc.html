@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>A chat thread and a ticket, start to finish</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gloock&amp;family=Hanken+Grotesk:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#3559c7}a:hover{color:#151a35}
+</style>
+</helmet>
+<div style="width: 1440px; height: 960px; box-sizing: border-box; padding: 44px 56px; background: #eef1f9; color: #151a35; font-family: 'Hanken Grotesk', 'Helvetica Neue', Arial, sans-serif; font-size: 15px; line-height: 1.45; display: flex; flex-direction: column; gap: 22px">
+  <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 24px">
+    <span style="font-family: Gloock, Georgia, serif; font-size: 40px">Start to finish, in place</span>
+    <span style="font-size: 14px; color: #565d7d">Illustrative layouts, not the real Slack or Linear interfaces.</span>
+  </div>
+  <div style="display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 28px; flex: 1; min-height: 0">
+
+    <div style="background: #ffffff; border: 1px solid #ccd2e6; border-radius: 14px; overflow: hidden; display: flex; flex-direction: column">
+      <div style="padding: 12px 18px; border-bottom: 1px solid #e3e7f4; display: flex; justify-content: space-between"><b># bugs</b><span style="font-size: 13px; color: #565d7d">chat thread</span></div>
+      <div style="padding: 18px; display: flex; flex-direction: column; gap: 16px">
+        <div style="display: flex; gap: 12px"><span style="width: 36px; height: 36px; border-radius: 8px; background: #c9cde6; flex: none"></span><div style="display: flex; flex-direction: column; gap: 4px"><span><b>Dana</b> <span style="font-size: 12px; color: #565d7d">16:42</span></span><span>Checkout does nothing on Safari when the cart has a coupon. Repro: add any item, apply SAVE10, click Pay.</span><span style="align-self: flex-start; font-size: 13px; padding: 2px 10px; border-radius: 999px; border: 1px solid #b4650e; background: #b4650e14; font-family: 'JetBrains Mono', monospace">:sheep: 1</span></div></div>
+        <div style="display: flex; gap: 12px"><img src="assets/icon-lantern.png" alt="" style="width: 36px; height: 36px; border-radius: 8px; flex: none"><div style="display: flex; flex-direction: column; gap: 4px"><span><b>Shep</b> <span style="font-size: 11px; padding: 1px 6px; border-radius: 4px; background: #e3e7f4; color: #565d7d">APP</span> <span style="font-size: 12px; color: #565d7d">16:42</span></span><span>Got it. I'll work on this tonight at 23:00 in <span style="font-family: 'JetBrains Mono', monospace; font-size: 14px">acme/storefront</span> and reply here.</span></div></div>
+        <div style="display: flex; align-items: center; gap: 10px; color: #868cab; font-size: 12px"><i style="flex: 1; height: 1px; background: #e3e7f4"></i>next morning<i style="flex: 1; height: 1px; background: #e3e7f4"></i></div>
+        <div style="display: flex; gap: 12px"><img src="assets/icon-lantern.png" alt="" style="width: 36px; height: 36px; border-radius: 8px; flex: none"><div style="display: flex; flex-direction: column; gap: 8px; flex: 1"><span><b>Shep</b> <span style="font-size: 11px; padding: 1px 6px; border-radius: 4px; background: #e3e7f4; color: #565d7d">APP</span> <span style="font-size: 12px; color: #565d7d">06:51</span></span><span>Ready for review: <b>Fix coupon checkout on Safari</b></span>
+          <div style="border: 1px solid #ccd2e6; border-left: 3px solid #23804f; border-radius: 8px; padding: 12px; display: flex; gap: 12px"><span style="width: 120px; height: 76px; border-radius: 6px; background: #f4f5fb; border: 1px solid #d6d9e8; display: flex; flex-direction: column; gap: 6px; padding: 8px; box-sizing: border-box; flex: none"><i style="height: 6px; width: 60%; background: #d6d9e8; border-radius: 2px"></i><i style="height: 14px; border: 1px solid #d6d9e8; border-radius: 3px; background: #fff"></i><i style="height: 14px; background: #b4650e; border-radius: 3px"></i></span><span style="font-size: 14px; display: flex; flex-direction: column; gap: 2px"><span>CI green · fixed 1 failure at 02:10</span><span>Screenshot: payment page on Safari 18 with a coupon</span><span style="color: #565d7d">Second opinion: looks good</span></span></div>
+          <div style="display: flex; gap: 8px"><span style="font-size: 14px; font-weight: 700; padding: 6px 14px; border-radius: 8px; background: #23804f; color: #ffffff">Merge</span><span style="font-size: 14px; padding: 6px 14px; border-radius: 8px; border: 1px solid #ccd2e6">Send back</span><span style="font-size: 14px; padding: 6px 14px; border-radius: 8px; border: 1px solid #ccd2e6">Open PR</span></div></div></div>
+        <div style="display: flex; gap: 12px"><span style="width: 36px; height: 36px; border-radius: 8px; background: #9aa1c2; flex: none"></span><div style="display: flex; flex-direction: column; gap: 4px"><span><b>You</b> <span style="font-size: 12px; color: #565d7d">07:03</span></span><span style="color: #23804f">Merged by you.</span></div></div>
+        <div style="display: flex; gap: 12px"><span style="width: 36px; height: 36px; border-radius: 8px; background: #c9cde6; flex: none"></span><div style="display: flex; flex-direction: column; gap: 4px"><span><b>Dana</b> <span style="font-size: 12px; color: #565d7d">07:05</span></span><span>wait, it's already fixed? what's Shep?</span></div></div>
+      </div>
+    </div>
+
+    <div style="background: #ffffff; border: 1px solid #ccd2e6; border-radius: 14px; overflow: hidden; display: flex; flex-direction: column">
+      <div style="padding: 12px 18px; border-bottom: 1px solid #e3e7f4; display: flex; justify-content: space-between"><b>STORE-218</b><span style="font-size: 13px; color: #565d7d">tracker ticket</span></div>
+      <div style="padding: 18px; display: flex; flex-direction: column; gap: 14px">
+        <span style="font-size: 22px; font-weight: 700">Coupon field rejects lowercase codes</span>
+        <div style="display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 8px 14px; font-size: 14px">
+          <span style="color: #565d7d">Status</span><span style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap"><span style="padding: 2px 10px; border-radius: 999px; background: #e3e7f4; color: #565d7d; text-decoration: line-through">Todo</span>→<span style="padding: 2px 10px; border-radius: 999px; background: #e3e7f4; color: #565d7d; text-decoration: line-through">Tonight</span>→<span style="padding: 2px 10px; border-radius: 999px; background: #3559c71a; color: #3559c7; font-weight: 700">In review</span></span>
+          <span style="color: #565d7d">Assignee</span><span style="display: flex; gap: 8px; align-items: center"><img src="assets/icon-lantern.png" alt="" style="width: 20px; height: 20px; border-radius: 5px">Shep</span>
+          <span style="color: #565d7d">Pull request</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #3559c7">acme/storefront#[N] · draft · CI green</span>
+        </div>
+        <span style="font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; color: #565d7d; padding-top: 6px; border-top: 1px solid #e3e7f4">Activity</span>
+        <div style="display: flex; flex-direction: column; gap: 12px; font-size: 14px">
+          <span><b>You</b> assigned this to Shep <span style="color: #868cab">· 18:10</span></span>
+          <span style="display: flex; gap: 10px"><img src="assets/icon-lantern.png" alt="" style="width: 20px; height: 20px; border-radius: 5px"><span><b>Shep</b> Queued for tonight's shift at 23:00. Status → Tonight <span style="color: #868cab">· 18:10</span></span></span>
+          <span style="display: flex; gap: 10px"><img src="assets/icon-lantern.png" alt="" style="width: 20px; height: 20px; border-radius: 5px"><span><b>Shep</b> Opened a draft PR. Codes are now matched case-insensitively; 3 tests added. CI green. Screenshot attached. Status → In review <span style="color: #868cab">· 01:22</span></span></span>
+          <span><b>You</b> <span style="font-family: 'JetBrains Mono', monospace; font-size: 13px">shep: also trim spaces around the code</span> <span style="color: #868cab">· 08:10</span></span>
+          <span style="display: flex; gap: 10px"><img src="assets/icon-lantern.png" alt="" style="width: 20px; height: 20px; border-radius: 5px"><span><b>Shep</b> Done on the same PR, one more test. CI green. <span style="color: #868cab">· 08:31</span></span></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":960}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Overnight watch screen</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#f3b45c}a:hover{color:#ffe4b0}
+</style>
+</helmet>
+<div style="width: 1040px; height: 800px; box-sizing: border-box; background: #0b0e24; color: #e3e6f5; border-radius: 14px; overflow: hidden; display: flex; flex-direction: column; font-family: 'JetBrains Mono', Menlo, monospace">
+  <div style="display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-bottom: 1px solid #232a57; font-size: 13px; color: #7d84a8">
+    <i style="width: 12px; height: 12px; border-radius: 50%; background: #ff5f57"></i><i style="width: 12px; height: 12px; border-radius: 50%; background: #febc2e"></i><i style="width: 12px; height: 12px; border-radius: 50%; background: #28c840"></i>
+    <span style="margin-left: 10px">shep · watch · booking-app · {{clock}}</span>
+  </div>
+  <div style="padding: 20px 40px 0; font-size: 20px; line-height: 24px">
+    <sc-for list="{{rows}}" as="row" hint-placeholder-count="11">
+      <div style="display: flex; height: 24px; white-space: pre"><sc-for list="{{row.segs}}" as="sg" hint-placeholder-count="2"><span style="color: {{sg.c}}; background: {{sg.b}}">{{sg.s}}</span></sc-for></div>
+    </sc-for>
+  </div>
+  <div style="padding: 20px 40px 0; font-size: 15px; line-height: 27px">
+    <sc-for list="{{lines}}" as="ln" hint-placeholder-count="7">
+      <div style="display: flex; height: 27px; white-space: pre"><sc-for list="{{ln.segs}}" as="sg" hint-placeholder-count="3"><span style="color: {{sg.c}}">{{sg.s}}</span></sc-for></div>
+    </sc-for>
+  </div>
+  <div style="padding: 18px 40px; font-family: 'Hanken Grotesk', sans-serif; font-size: 14px; line-height: 20px; color: #a3aac8">Leave it open overnight. The sky follows real progress: each finished pull request walks a sheep into the pen and warms the horizon. One clock, about 14 frames a second, paused when hidden. This mock replays the last four PRs of the night in a loop.</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1040,"height":800}}'>
+class Component extends DCLogic {
+  componentDidMount() {
+    this.t0 = Date.now();
+    var reduce = false;
+    try { reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { reduce = false; }
+    this.reduce = reduce;
+    var self = this;
+    if (!reduce) this.iv = setInterval(function () { self.setState({ tick: Date.now() }); }, 72);
+    else this.setState({ tick: Date.now() });
+  }
+  componentWillUnmount() {
+    if (this.iv) clearInterval(this.iv);
+  }
+  renderVals() {
+    var now = Date.now();
+    var t = this.reduce ? 3.2 : (now - (this.t0 || now)) / 1000;
+    var C = 80, R = 11, base = R - 3, TOTAL = 6;
+    var STEP = 4.5;
+    var phase = Math.floor(t / STEP) % 5;
+    var done = 2 + phase;
+    var e = Math.min(1, (t - Math.floor(t / STEP) * STEP) / 1.8);
+    e = e < 0.5 ? 2 * e * e : 1 - Math.pow(-2 * e + 2, 2) / 2;
+    var p = (done - 1 + e) / TOTAL;
+    function hx(h) { return [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)]; }
+    function mix(a, b, k) { k = Math.max(0, Math.min(1, k)); return [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k]; }
+    function css(a) { return 'rgb(' + (a[0] | 0) + ',' + (a[1] | 0) + ',' + (a[2] | 0) + ')'; }
+    function hash(x, y) { var h = Math.sin(x * 127.1 + y * 311.7) * 43758.5453; return h - Math.floor(h); }
+    var penX0 = C - 20, penX1 = C - 3;
+    function ground(x) {
+      if (x >= penX0 - 3) return base;
+      var h = Math.round(1.3 + 1.2 * Math.sin(x * 0.11 + 0.4) + 0.7 * Math.sin(x * 0.27 + 1.3));
+      var g = base - Math.max(0, Math.min(3, h));
+      var bl = Math.max(0, Math.min(1, (x - (penX0 - 10)) / 7));
+      return Math.round(g + (base - g) * bl);
+    }
+    var top = mix(hx('#070a1c'), hx('#2b2f6b'), p * 0.75), hor = mix(hx('#1b2154'), hx('#e39a52'), Math.pow(p, 1.15));
+    var gbg = mix(hx('#090c1f'), hx('#2a1f2e'), p), gfg = mix(hx('#2b3460'), hx('#7a5a50'), p);
+    var amber = hx('#f3b45c'), lamp = hx('#ffe6b0'), moon = hx('#dde4ff'), white = hx('#ffffff'), sdim = hx('#5b628c');
+    var dim = hx('#7d84a8'), fence = hx('#8a7a6a'), wool = mix(hx('#e9e7f2'), hx('#fff1dc'), p), shepc = hx('#c7cbe6');
+    var cells = [], x, y;
+    for (y = 0; y < R; y++) for (x = 0; x < C; x++) cells.push({ ch: ' ', fg: null, bg: null });
+    function at(x, y) { x = Math.round(x); y = Math.round(y); if (x < 0 || y < 0 || x >= C || y >= R) return null; return cells[y * C + x]; }
+    function put(x, y, ch, fg) { var c = at(x, y); if (c && ch !== ' ') { c.ch = ch; c.fg = fg; } }
+    for (y = 0; y < R; y++) for (x = 0; x < C; x++) {
+      var c = at(x, y), gy = ground(x);
+      if (y >= gy) {
+        c.bg = gbg;
+        if (y === gy) { var l = ground(x - 1), r = ground(x + 1); c.ch = l < gy ? '\\' : r < gy ? '/' : '_'; c.fg = gfg; }
+        else { var hv = hash(x, y); c.ch = hv < 0.18 ? '.' : hv < 0.26 ? ',' : ' '; c.fg = gfg; }
+      } else c.bg = mix(top, hor, Math.pow(y / (base - 1), 1.6));
+    }
+    if (!this.stars) {
+      var seed = 11; var rnd = function () { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+      this.stars = [];
+      for (var si = 0; si < 40; si++) this.stars.push({ x: Math.floor(rnd() * C), y: Math.floor(rnd() * (base - 2)), ph: rnd() * 6.28, sp: 0.6 + rnd() * 1.8, fade: rnd() });
+    }
+    this.stars.forEach(function (s) {
+      if (s.fade < p * 1.25 - 0.08) return;
+      var cc = at(s.x, s.y); if (!cc || s.y >= ground(s.x)) return;
+      var tw = Math.sin(t * s.sp + s.ph);
+      cc.ch = tw > 0.8 ? '*' : tw > 0.3 ? '+' : tw > -0.3 ? '·' : '.';
+      cc.fg = mix(mix(sdim, white, (tw + 1) / 2), cc.bg, p * 0.7);
+    });
+    var ramp = '.:-=+*#%@';
+    var mcx = C * 0.8, mcy = 2.4 + p * R * 0.6, MR = 2.2;
+    for (y = 0; y < R; y++) for (x = Math.floor(mcx - 6); x <= mcx + 6; x++) {
+      var dx = (x - mcx) / 2, dy = y - mcy, d = Math.sqrt(dx * dx + dy * dy), mc = at(x, y);
+      if (!mc || d > MR || y >= ground(x)) continue;
+      var sh = 0.55 + 0.45 * ((-dx * 0.75 - dy * 0.55) / MR);
+      mc.ch = ramp[Math.max(0, Math.min(8, Math.round(sh * 8)))]; mc.fg = mix(moon, mc.bg, p * 0.75);
+    }
+    if (p > 0.42) {
+      var s = (p - 0.42) / 0.58, scx = C * 0.36, scy = base + 3 - s * 5, SR = 2.6;
+      for (y = 0; y < R; y++) for (x = Math.floor(scx - 9); x <= scx + 9; x++) {
+        var ddx = (x - scx) / 2, ddy = y - scy, dd = Math.sqrt(ddx * ddx + ddy * ddy), sc = at(x, y);
+        if (!sc || y >= ground(x)) continue;
+        if (dd <= SR) { var s2 = 1 - dd / SR; sc.ch = ramp[Math.min(8, 3 + Math.round(s2 * 5))]; sc.fg = mix(hx('#ffd38a'), hx('#fff0c8'), s2); }
+        else if (dd <= SR + 1.6) sc.bg = mix(sc.bg, amber, 0.22 * s * (1 - (dd - SR) / 1.6));
+      }
+    }
+    var rail = base - 5;
+    for (x = penX0; x <= penX1; x++) put(x, rail, '_', fence);
+    for (y = rail + 1; y < base; y++) { put(penX0, y, '|', fence); put(penX1, y, '|', fence); }
+    for (var i = 0; i < TOTAL; i++) {
+      var fp = i < done - 1 ? 1 : i === done - 1 ? e : 0;
+      var mx = 16 + i * 5, my = ground(mx + 1) - 2;
+      var px = i < 4 ? penX0 + 2 + i * 4 : penX0 + 6 + (i - 4) * 4, py = i < 4 ? base - 2 : base - 4;
+      var sx = Math.round(mx + (px - mx) * fp), sy = Math.round(my + (py - my) * fp - Math.sin(fp * Math.PI) * 1.5);
+      put(sx, sy, '@', wool); put(sx + 1, sy, '@', wool); put(sx + 2, sy, 'o', dim);
+      put(sx, sy + 1, "'", dim); put(sx + 2, sy + 1, "'", dim);
+      if (fp === 0 && Math.sin(t * 1.3 + i * 2) > 0.55) put(sx + 3, sy - 1, 'z', dim);
+    }
+    var shx = 3, gy0 = ground(shx + 4) - 1, spr = ['  O   ,_', ' /|\\_/  |', '  |    [ ]', ' / \\    '], top0 = gy0 - 3, k2;
+    for (var rr = 0; rr < spr.length; rr++) for (k2 = 0; k2 < spr[rr].length; k2++) put(shx + k2, top0 + rr, spr[rr][k2], shepc);
+    var fl = 0.8 + 0.2 * Math.sin(t * 9) * Math.sin(t * 3.7 + 1), lx = shx + 8, ly = top0 + 2;
+    put(lx, ly, ['*', '#', '@', '*', '+'][Math.floor(t * 7) % 5], mix(amber, lamp, fl));
+    for (y = ly - 3; y <= ly + 3; y++) for (x = lx - 7; x <= lx + 7; x++) {
+      var gdx = (x - lx) / 2, gdy = y - ly, gd = Math.sqrt(gdx * gdx + gdy * gdy), g2 = at(x, y);
+      if (!g2 || gd > 3.6 || (x === lx && y === ly)) continue;
+      var kk = (1 - gd / 3.6) * fl;
+      g2.bg = mix(g2.bg, amber, 0.2 * kk * (1 - p * 0.6));
+      if (g2.fg) g2.fg = mix(g2.fg, lamp, 0.4 * kk);
+    }
+    var rows = [];
+    for (y = 0; y < R; y++) {
+      var segs = [], cur = null;
+      for (x = 0; x < C; x++) {
+        var cell = cells[y * C + x], fc = cell.fg ? css(cell.fg) : '#e3e6f5', bc = cell.bg ? css(cell.bg) : 'transparent';
+        if (cur && cur.c === fc && cur.b === bc) cur.s += cell.ch; else { cur = { s: cell.ch, c: fc, b: bc }; segs.push(cur); }
+      }
+      rows.push({ segs: segs });
+    }
+    var TASKS = [[412, 'Fix login redirect loop'], [418, 'Add CSV export to reports'], [421, 'Upgrade to Node 22.11'], [425, 'Empty state for projects page'], [430, 'Move avatars to S3'], [433, 'Rate-limit /api/search']];
+    var VERBS = ['Counting sheep', 'Mending fences', 'Herding commits', 'Reading the logs', 'Fixing CI', 'Taking screenshots'];
+    var SCR = '#%&@$*+=?/<>';
+    function pad(sv, n) { sv = sv.length > n ? sv.slice(0, n - 1) + '…' : sv; while (sv.length < n) sv += ' '; return sv; }
+    function braille(vals) {
+      var L = [0x40, 0x04, 0x02, 0x01], Rr = [0x80, 0x20, 0x10, 0x08], out = '';
+      for (var bi = 0; bi < vals.length; bi += 2) { var b = 0, a1 = vals[bi], a2 = vals[bi + 1] || 0; for (var q = 0; q < a1; q++) b |= L[q]; for (q = 0; q < a2; q++) b |= Rr[q]; out += String.fromCharCode(0x2800 + b); }
+      return out;
+    }
+    var lines = [];
+    TASKS.forEach(function (tk, j) {
+      var st = j < done ? (j === 4 ? 'needs' : 'ready') : (j === done || j === done + 1) ? 'working' : 'queued';
+      var segs2 = [{ s: ' ', c: '#e3e6f5' }];
+      if (st === 'ready') segs2.push({ s: '✓', c: '#8fd6a8' });
+      else if (st === 'needs') segs2.push({ s: '!', c: '#ff8f7a' });
+      else if (st === 'working') segs2.push({ s: '⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏'[Math.floor(t * 10 + j * 3) % 10], c: '#93b2ff' });
+      else segs2.push({ s: '·', c: '#4b5180' });
+      segs2.push({ s: ' #' + tk[0] + '  ', c: '#7d84a8' });
+      segs2.push({ s: pad(tk[1], 31), c: '#e3e6f5' });
+      var right, rc, vals = [];
+      if (st === 'ready') { right = 'ready · CI green'; rc = '#8fd6a8'; }
+      else if (st === 'needs') { right = 'needs you'; rc = '#ff8f7a'; }
+      else if (st === 'working') {
+        var ph = (t + j * 0.9) % 2.6, vi = (Math.floor((t + j * 0.9) / 2.6) + j) % VERBS.length;
+        right = VERBS[vi] + '…';
+        if (ph < 0.35) { var nn = Math.floor(right.length * ph / 0.35); right = right.slice(0, nn) + right.slice(nn).replace(/[^ ]/g, function () { return SCR[Math.floor(Math.random() * SCR.length)]; }); }
+        rc = '#93b2ff';
+      } else { right = 'queued'; rc = '#7d84a8'; }
+      segs2.push({ s: pad(right, 22), c: rc });
+      for (var vv = 0; vv < 24; vv++) {
+        if (st === 'working') vals.push(Math.max(0, Math.min(4, Math.round(2 + 1.6 * Math.sin(t * 2.2 + vv * 0.7 + j) + (hash(vv + Math.floor(t * 4), j) - 0.5) * 2))));
+        else vals.push(st === 'queued' ? 0 : 1);
+      }
+      segs2.push({ s: braille(vals), c: st === 'working' ? '#93b2ff' : '#4b5180' });
+      lines.push({ segs: segs2 });
+    });
+    lines.push({ segs: [{ s: ' ', c: '#e3e6f5' }] });
+    var status = '● keeping watch · ' + done + ' of 6 in the fold · next check 02:20 · ctrl-c to leave';
+    var band = this.reduce ? -99 : ((t * 0.45) % 1.7 - 0.35) * status.length, ssegs = [{ s: ' ', c: '#e3e6f5' }];
+    for (var z = 0; z < status.length; z++) { var dz = Math.abs(z - band), kz = dz < 7 ? 0.5 + 0.5 * Math.cos(Math.PI * dz / 7) : 0; ssegs.push({ s: status[z], c: css(mix(dim, lamp, kz)) }); }
+    lines.push({ segs: ssegs });
+    var clocks = ['00:55', '02:14', '03:30', '04:45', '06:05', '06:50'];
+    return { rows: rows, lines: lines, clock: clocks[Math.min(5, done - 1)] };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Terminal board</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#f3b45c}a:hover{color:#ffe4b0}
+</style>
+</helmet>
+<div tabIndex="0" onKeyDown="{{onKey}}" aria-label="Shep terminal board. Keys: j and k move, m merges, s sends back, g starts queued tasks." style="width: 1040px; height: 720px; box-sizing: border-box; background: #0b0e24; color: #e3e6f5; border-radius: 14px; overflow: hidden; display: flex; flex-direction: column; font-family: 'JetBrains Mono', Menlo, monospace; font-size: 15px; line-height: 22px; outline: none">
+  <div style="display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-bottom: 1px solid #232a57; font-size: 13px; color: #7d84a8">
+    <i style="width: 12px; height: 12px; border-radius: 50%; background: #ff5f57"></i><i style="width: 12px; height: 12px; border-radius: 50%; background: #febc2e"></i><i style="width: 12px; height: 12px; border-radius: 50%; background: #28c840"></i>
+    <span style="margin-left: 10px">~/projects/booking-app — shep</span>
+  </div>
+  <div style="padding: 16px 20px 8px; display: flex; justify-content: space-between; gap: 16px">
+    <span><span style="color: #f3b45c">shep</span><span style="color: #7d84a8"> · board · booking-app</span></span>
+    <span style="color: #7d84a8">starts 23:00 · {{mergedText}}</span>
+  </div>
+  <div style="padding: 0 20px 10px; white-space: pre; color: #7d84a8">fold <span style="color: #8a7a6a">|</span><span style="color: #f2f0fa">{{penSheep}}</span><span style="color: #8a7a6a">|</span>  meadow <span style="color: #b9bedb">{{meadowSheep}}</span></div>
+  <div style="margin: 0 20px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border: 1px solid #232a57; border-radius: 6px; flex: 1; min-height: 0">
+    <div style="border-right: 1px solid #232a57; display: flex; flex-direction: column">
+      <div style="display: flex; justify-content: space-between; padding: 6px 12px; border-bottom: 1px solid #232a57; font-size: 12px; letter-spacing: 0.12em"><span style="color: #7d84a8">QUEUED</span><span style="color: #7d84a8">{{qCount}}</span></div>
+      <sc-for list="{{queued}}" as="it" hint-placeholder-count="2"><button type="button" onClick="{{it.pick}}" style="display: flex; gap: 10px; padding: 4px 12px; border: 0; text-align: left; font: inherit; cursor: pointer; background: {{it.bg}}; color: {{it.fg}}"><span style="color: {{it.mc}}">{{it.mark}}</span><span style="color: {{it.idc}}">#{{it.id}}</span><span>{{it.t}}</span></button></sc-for>
+    </div>
+    <div style="border-right: 1px solid #232a57; display: flex; flex-direction: column">
+      <div style="display: flex; justify-content: space-between; padding: 6px 12px; border-bottom: 1px solid #232a57; font-size: 12px; letter-spacing: 0.12em"><span style="color: #93b2ff">WORKING</span><span style="color: #7d84a8">{{wCount}}</span></div>
+      <sc-for list="{{working}}" as="it" hint-placeholder-count="1"><button type="button" onClick="{{it.pick}}" style="display: flex; gap: 10px; padding: 4px 12px; border: 0; text-align: left; font: inherit; cursor: pointer; background: {{it.bg}}; color: {{it.fg}}"><span style="color: {{it.mc}}">{{it.mark}}</span><span style="color: {{it.idc}}">#{{it.id}}</span><span>{{it.t}}</span></button></sc-for>
+    </div>
+    <div style="display: flex; flex-direction: column">
+      <div style="display: flex; justify-content: space-between; padding: 6px 12px; border-bottom: 1px solid #232a57; font-size: 12px; letter-spacing: 0.12em"><span style="color: #8fd6a8">READY</span><span style="color: #7d84a8">{{rCount}}</span></div>
+      <sc-for list="{{ready}}" as="it" hint-placeholder-count="4"><button type="button" onClick="{{it.pick}}" style="display: flex; gap: 10px; padding: 4px 12px; border: 0; text-align: left; font: inherit; cursor: pointer; background: {{it.bg}}; color: {{it.fg}}"><span style="color: {{it.mc}}">{{it.mark}}</span><span style="color: {{it.idc}}">#{{it.id}}</span><span>{{it.t}}</span></button></sc-for>
+    </div>
+  </div>
+  <div style="margin: 10px 20px 0; padding: 10px 14px; border: 1px solid #232a57; border-radius: 6px; min-height: 52px; display: flex; flex-direction: column; gap: 2px">
+    <span style="color: {{detailColor}}">{{detailTop}}</span>
+    <span style="color: #a3aac8">{{detailSub}}</span>
+  </div>
+  <div style="padding: 12px 20px 16px; display: flex; gap: 18px; flex-wrap: wrap; align-items: center; font-size: 13px">
+    <button type="button" onClick="{{moveDown}}" style="font: inherit; color: #e3e6f5; background: transparent; border: 0; cursor: pointer; display: flex; gap: 6px; align-items: center"><b style="background: #7d84a8; color: #0b0e24; padding: 0 6px; border-radius: 3px">j k</b>move</button>
+    <button type="button" onClick="{{merge}}" style="font: inherit; color: #e3e6f5; background: transparent; border: 0; cursor: pointer; display: flex; gap: 6px; align-items: center"><b style="background: #f3b45c; color: #0b0e24; padding: 0 6px; border-radius: 3px">m</b>merge</button>
+    <button type="button" onClick="{{sendBack}}" style="font: inherit; color: #e3e6f5; background: transparent; border: 0; cursor: pointer; display: flex; gap: 6px; align-items: center"><b style="background: #7d84a8; color: #0b0e24; padding: 0 6px; border-radius: 3px">s</b>send back</button>
+    <button type="button" onClick="{{start}}" style="font: inherit; color: #e3e6f5; background: transparent; border: 0; cursor: pointer; display: flex; gap: 6px; align-items: center"><b style="background: #7d84a8; color: #0b0e24; padding: 0 6px; border-radius: 3px">g</b>start queued now</button>
+    <span style="color: #7d84a8">enter opens the PR · q quits</span>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1040,"height":720}}'>
+class Component extends DCLogic {
+  data() {
+    if (!this.tasks) {
+      this.tasks = [
+        { id: 433, t: 'Rate-limit /api/search', st: 'queued' },
+        { id: 436, t: 'Dark mode for settings', st: 'queued' },
+        { id: 425, t: 'Empty state for projects page', st: 'working', verb: 'Taking screenshots · 4m 12s' },
+        { id: 430, t: 'Move avatars to S3', st: 'needs', q: 'Which S3 bucket should avatars go in?' },
+        { id: 412, t: 'Fix login redirect loop', st: 'ready', meta: 'CI green · +41 −12 · 3 files · fixed 1 failure at 01:30' },
+        { id: 418, t: 'Add CSV export to reports', st: 'ready', meta: 'CI green · +128 −4 · screenshot attached' },
+        { id: 421, t: 'Upgrade to Node 22.11', st: 'ready', meta: 'CI green · lockfile regenerated' }
+      ];
+      this.sel = 412;
+      this.merged = 0;
+    }
+    return this.tasks;
+  }
+  order() {
+    var t = this.data();
+    var by = function (s) { return t.filter(function (x) { return x.st === s; }); };
+    return by('queued').concat(by('working'), by('needs'), by('ready'));
+  }
+  act(kind) {
+    var t = this.data(), self = this;
+    var cur = t.filter(function (x) { return x.id === self.sel; })[0];
+    if (kind === 'down' || kind === 'up') {
+      var o = this.order(), i = o.indexOf(cur), n = o.length;
+      if (n) this.sel = o[(i + (kind === 'down' ? 1 : n - 1)) % n].id;
+    } else if (kind === 'merge' && cur && cur.st === 'ready') {
+      this.tasks = t.filter(function (x) { return x !== cur; }); this.merged++;
+      var r = this.order().filter(function (x) { return x.st === 'ready'; })[0]; this.sel = r ? r.id : (this.order()[0] || {}).id;
+    } else if (kind === 'send' && cur && (cur.st === 'ready' || cur.st === 'needs')) {
+      cur.st = 'queued'; cur.note = 'sent back: needs a test for the empty case';
+    } else if (kind === 'start') {
+      t.forEach(function (x) { if (x.st === 'queued') { x.st = 'working'; x.verb = 'Counting sheep · just started'; } });
+    }
+    this.setState({ v: Date.now() });
+  }
+  renderVals() {
+    var self = this, t = this.data();
+    function item(x) {
+      var sel = x.id === self.sel;
+      var mark = x.st === 'ready' ? '✓' : x.st === 'needs' ? '!' : x.st === 'working' ? '⠹' : '·';
+      var mc = x.st === 'ready' ? '#8fd6a8' : x.st === 'needs' ? '#ff8f7a' : x.st === 'working' ? '#93b2ff' : '#7d84a8';
+      return { id: x.id, t: x.t, mark: mark, mc: sel ? '#0b0e24' : mc, idc: sel ? '#0b0e24' : '#7d84a8', bg: sel ? '#f3b45c' : 'transparent', fg: sel ? '#0b0e24' : '#e3e6f5', pick: function () { self.sel = x.id; self.setState({ v: Date.now() }); } };
+    }
+    var q = t.filter(function (x) { return x.st === 'queued'; }), w = t.filter(function (x) { return x.st === 'working'; });
+    var r = t.filter(function (x) { return x.st === 'needs'; }).concat(t.filter(function (x) { return x.st === 'ready'; }));
+    var cur = t.filter(function (x) { return x.id === self.sel; })[0];
+    var top = 'Nothing selected', sub = '', dc = '#7d84a8';
+    if (cur) {
+      if (cur.st === 'ready') { top = '✓ #' + cur.id + ' ' + cur.t; sub = cur.meta + ' · second opinion: looks good'; dc = '#8fd6a8'; }
+      else if (cur.st === 'needs') { top = '! #' + cur.id + ' needs you: ' + cur.q; sub = 'answer in the Mac app, a notification, MCP or a PR comment · s sends it back'; dc = '#ff8f7a'; }
+      else if (cur.st === 'working') { top = '⠹ #' + cur.id + ' ' + cur.t; sub = cur.verb + ' · worktree shep/' + cur.id; dc = '#93b2ff'; }
+      else { top = '· #' + cur.id + ' ' + cur.t; sub = cur.note ? cur.note : 'queued · starts at 23:00 or when you press g'; dc = '#c9cde6'; }
+    }
+    var done = r.length + this.merged, total = t.length + this.merged;
+    var pen = '', meadow = '';
+    for (var i = 0; i < done; i++) pen += ' @@o';
+    for (i = 0; i < total - done; i++) meadow += '@@o z ';
+    return {
+      queued: q.map(item), working: w.map(item), ready: r.map(item),
+      qCount: q.length, wCount: w.length, rCount: r.length,
+      mergedText: this.merged + ' merged today',
+      penSheep: pen + ' ', meadowSheep: meadow,
+      detailTop: top, detailSub: sub, detailColor: dc,
+      moveDown: function () { self.act('down'); },
+      merge: function () { self.act('merge'); },
+      sendBack: function () { self.act('send'); },
+      start: function () { self.act('start'); },
+      onKey: function (e) {
+        var k = (e.key || '').toLowerCase();
+        var map = { j: 'down', arrowdown: 'down', k: 'up', arrowup: 'up', m: 'merge', s: 'send', g: 'start' };
+        if (map[k]) { e.preventDefault(); self.act(map[k]); }
+      }
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Terminal onboarding, every step</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gloock&amp;family=Hanken+Grotesk:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#9a530a}a:hover{color:#151a35}
+</style>
+</helmet>
+<div style="width: 2520px; height: 1240px; box-sizing: border-box; padding: 56px 64px; background: #eef1f9; color: #151a35; font-family: 'Hanken Grotesk', 'Helvetica Neue', Arial, sans-serif; display: flex; flex-direction: column; gap: 28px">
+  <div style="display: flex; align-items: baseline; gap: 24px">
+    <span style="font-family: Gloock, Georgia, serif; font-size: 44px">Terminal onboarding</span>
+    <span style="font-size: 17px; color: #565d7d">Eight steps, one sitting, ending in a draft pull request on your own repo. Each step checks first and only asks when it has to.</span>
+  </div>
+  <div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 40px 36px">
+
+    <div style="display: flex; flex-direction: column; gap: 10px">
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 14px; color: #565d7d">1 · Install and launch</span>
+      <div style="height: 470px; box-sizing: border-box; background: #0b0e24; color: #e3e6f5; border-radius: 12px; padding: 18px 20px; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 20px; white-space: pre; overflow: hidden; display: flex; flex-direction: column">
+<div><span style="color: #7d84a8">$ </span>npx shepai</div>
+<div style="color: #7d84a8">  fetching the shep binary for macOS arm64</div>
+<div><span style="color: #8fd6a8">✓</span> installed shep</div>
+<div> </div>
+<div><span style="color: #7d84a8">$ </span>shep</div>
+<div> </div>
+<div style="background: linear-gradient(90deg, #7b86e8, #f3b45c); -webkit-background-clip: text; background-clip: text; color: transparent">      _</div>
+<div style="background: linear-gradient(90deg, #7b86e8, #f3b45c); -webkit-background-clip: text; background-clip: text; color: transparent">  ___| |__   ___ _ __</div>
+<div style="background: linear-gradient(90deg, #7b86e8, #f3b45c); -webkit-background-clip: text; background-clip: text; color: transparent"> / __| '_ \ / _ \ '_ \</div>
+<div style="background: linear-gradient(90deg, #7b86e8, #f3b45c); -webkit-background-clip: text; background-clip: text; color: transparent"> \__ \ | | |  __/ |_) |</div>
+<div style="background: linear-gradient(90deg, #7b86e8, #f3b45c); -webkit-background-clip: text; background-clip: text; color: transparent"> |___/_| |_|\___| .__/</div>
+<div style="background: linear-gradient(90deg, #7b86e8, #f3b45c); -webkit-background-clip: text; background-clip: text; color: transparent">                |_|</div>
+<div> </div>
+<div style="color: #7d84a8">  first run · let's get you one pull request</div>
+<div> </div>
+<div><span style="color: #f3b45c">  press any key</span></div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px">
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 14px; color: #565d7d">2 · Pick the agent</span>
+      <div style="height: 470px; box-sizing: border-box; background: #0b0e24; color: #e3e6f5; border-radius: 12px; padding: 18px 20px; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 20px; white-space: pre; overflow: hidden; display: flex; flex-direction: column">
+<div>  Which agent should do the work?</div>
+<div> </div>
+<div style="background: #f3b45c; color: #0b0e24">  › Claude Code    found · signed in       </div>
+<div>    Codex          <span style="color: #7d84a8">found · signed in</span></div>
+<div>    Gemini CLI     <span style="color: #f3b45c">found · not signed in</span></div>
+<div>    Cursor CLI     <span style="color: #7d84a8">not installed</span></div>
+<div> </div>
+<div style="color: #7d84a8">  Shep runs the CLI you already use, with</div>
+<div style="color: #7d84a8">  your login. It never stores your keys.</div>
+<div> </div>
+<div style="color: #7d84a8">  None installed? Shep prints the install</div>
+<div style="color: #7d84a8">  command for each one and waits.</div>
+<div> </div>
+<div><span style="color: #f3b45c">  enter</span> use Claude Code   <span style="color: #f3b45c">↑↓</span> choose</div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px">
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 14px; color: #565d7d">3 · Sign in to GitHub (only if needed)</span>
+      <div style="height: 470px; box-sizing: border-box; background: #0b0e24; color: #e3e6f5; border-radius: 12px; padding: 18px 20px; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 20px; white-space: pre; overflow: hidden; display: flex; flex-direction: column">
+<div><span style="color: #ff8f7a">  ✗</span> GitHub isn't signed in.</div>
+<div style="color: #7d84a8">    Shep reads issues and opens draft PRs</div>
+<div style="color: #7d84a8">    through the gh CLI.</div>
+<div> </div>
+<div><span style="color: #f3b45c">  enter</span> sign in now   <span style="color: #f3b45c">s</span> skip, local only</div>
+<div> </div>
+<div><span style="color: #7d84a8">  $ </span>gh auth login --web</div>
+<div><span style="color: #f3b45c">  !</span> one-time code: [CODE]</div>
+<div style="color: #7d84a8">    browser opened at github.com/login/device</div>
+<div> </div>
+<div><span style="color: #8fd6a8">  ✓</span> signed in as <span style="color: #93b2ff">@you</span></div>
+<div><span style="color: #8fd6a8">  ✓</span> can read issues and open pull requests</div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px">
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 14px; color: #565d7d">4 · Confirm the repository</span>
+      <div style="height: 470px; box-sizing: border-box; background: #0b0e24; color: #e3e6f5; border-radius: 12px; padding: 18px 20px; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 20px; white-space: pre; overflow: hidden; display: flex; flex-direction: column">
+<div>  This folder is <span style="color: #f3b45c">acme/booking-app</span>.</div>
+<div> </div>
+<div style="background: #f3b45c; color: #0b0e24">  › use acme/booking-app                  </div>
+<div>    choose another repository</div>
+<div> </div>
+<div><span style="color: #8fd6a8">  ✓</span> working tree clean · main up to date</div>
+<div><span style="color: #8fd6a8">  ✓</span> CI found: GitHub Actions, 4 checks</div>
+<div><span style="color: #8fd6a8">  ✓</span> tests run with <span style="color: #93b2ff">pnpm test</span></div>
+<div><span style="color: #f3b45c">  !</span> no screenshot command found</div>
+<div style="color: #7d84a8">    the agent will start the dev server and</div>
+<div style="color: #7d84a8">    take screenshots itself</div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px">
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 14px; color: #565d7d">5 · When to work</span>
+      <div style="height: 470px; box-sizing: border-box; background: #0b0e24; color: #e3e6f5; border-radius: 12px; padding: 18px 20px; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 20px; white-space: pre; overflow: hidden; display: flex; flex-direction: column">
+<div>  When should Shep work on your tasks?</div>
+<div> </div>
+<div style="background: #f3b45c; color: #0b0e24">  › every night at 23:00                  </div>
+<div>    only when I run shep go</div>
+<div> </div>
+<div>  Keep this Mac awake during a shift?</div>
+<div><span style="color: #f3b45c">  Y</span><span style="color: #7d84a8">/n  only while it's plugged in</span></div>
+<div> </div>
+<div>  Tasks in parallel  <span style="color: #f3b45c">3</span><span style="color: #7d84a8">  (← → to change)</span></div>
+<div> </div>
+<div style="color: #7d84a8">  Change any of this later with shep config.</div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px">
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 14px; color: #565d7d">6 · First task, right now</span>
+      <div style="height: 470px; box-sizing: border-box; background: #0b0e24; color: #e3e6f5; border-radius: 12px; padding: 18px 20px; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 20px; white-space: pre; overflow: hidden; display: flex; flex-direction: column">
+<div>  Try it on one of your own open issues:</div>
+<div> </div>
+<div style="background: #f3b45c; color: #0b0e24">  › #412 Fix login redirect loop     bug  </div>
+<div>    <span style="color: #7d84a8">#418</span> Add CSV export to reports  <span style="color: #7d84a8">feature</span></div>
+<div>    <span style="color: #7d84a8">#421</span> Upgrade to Node 22.11      <span style="color: #7d84a8">chore</span></div>
+<div>    <span style="color: #7d84a8">#425</span> Empty state for projects   <span style="color: #7d84a8">ui</span></div>
+<div> </div>
+<div style="color: #7d84a8">  small, clear issues work best first</div>
+<div> </div>
+<div>  or describe one: <span style="background: #e3e6f5; color: #0b0e24"> </span></div>
+<div> </div>
+<div><span style="color: #f3b45c">  enter</span> start #412 now</div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px">
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 14px; color: #565d7d">7 · Watch it work (optional)</span>
+      <div style="height: 470px; box-sizing: border-box; background: #0b0e24; color: #e3e6f5; border-radius: 12px; padding: 18px 20px; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 20px; white-space: pre; overflow: hidden; display: flex; flex-direction: column">
+<div>  <span style="color: #93b2ff">⠹</span> #412 Fix login redirect loop</div>
+<div style="color: #7d84a8">    Claude Code · shep/412 · 3m 05s</div>
+<div> </div>
+<div style="color: #c9cde6">  ● Read src/auth/redirect.ts</div>
+<div style="color: #c9cde6">  ● Edit src/auth/redirect.ts  +6 −1</div>
+<div style="color: #c9cde6">  ● Bash pnpm test auth</div>
+<div><span style="color: #8fd6a8">      ✓ 4 passed</span></div>
+<div style="color: #c9cde6">  ● Screenshot /login → proof</div>
+<div style="color: #c9cde6">  ● Push · CI <span style="color: #93b2ff">⠹</span> 2 of 4 checks</div>
+<div> </div>
+<div style="color: #7d84a8">  You can close this. Shep keeps going</div>
+<div style="color: #7d84a8">  and tells you when the PR is ready.</div>
+<div> </div>
+<div><span style="color: #f3b45c">  w</span> watch screen  <span style="color: #f3b45c">s</span> split view  <span style="color: #f3b45c">q</span> close</div>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px">
+      <span style="font-family: 'JetBrains Mono', monospace; font-size: 14px; color: #565d7d">8 · First pull request, and what's next</span>
+      <div style="height: 470px; box-sizing: border-box; background: #0b0e24; color: #e3e6f5; border-radius: 12px; padding: 18px 20px; font-family: 'JetBrains Mono', monospace; font-size: 13px; line-height: 20px; white-space: pre; overflow: hidden; display: flex; flex-direction: column">
+<div><span style="color: #8fd6a8">  ✓</span> #412 is ready</div>
+<div style="color: #7d84a8">    CI green · screenshot · second opinion ok</div>
+<div style="color: #93b2ff">    github.com/acme/booking-app/pull/[N]</div>
+<div> </div>
+<div><span style="color: #f3b45c">  m</span> merge   <span style="color: #f3b45c">o</span> open   <span style="color: #f3b45c">s</span> send back</div>
+<div> </div>
+<div style="background: linear-gradient(90deg, #4b55b8, #f3b45c); -webkit-background-clip: text; background-clip: text; color: transparent">  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━</div>
+<div> </div>
+<div>  Tonight: label issues <span style="color: #f3b45c">shep</span> or run</div>
+<div>  <span style="color: #f3b45c">shep add</span>, then go to sleep.</div>
+<div style="color: #7d84a8">  The shift starts at 23:00.</div>
+<div> </div>
+<div style="color: #7d84a8">  Want it on your Mac too? Get the app:</div>
+<div style="color: #93b2ff">  shep.bot/mac</div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":2520,"height":1240}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>
