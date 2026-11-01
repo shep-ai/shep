@@ -3435,3 +3435,15 @@ to the static tagline never fired, and no check noticed for three months. **Rule
 - A fallback that hides a broken credential must say so loudly (a warning naming the secret).
 - Permanent output (release notes, CHANGELOG.md) gets fixed at the source of truth, then synced:
   `scripts/release-notes-backfill.mjs` copies CHANGELOG.md taglines into GitHub releases.
+
+## Don't add a trial or spike to a decision the owner can simply make
+
+For Shep 2 the plan carried a 5-day "Rust vs TypeScript" spike with a kill rule. The owner
+called it a waste of time and chose Rust on the spot. The reasons for each option were
+already known; the spike only delayed the call. **Rules:**
+
+- When the trade-offs are known, give a recommendation and let the owner decide; don't schedule
+  a comparison build "to be sure".
+- Propose a spike only when a specific unknown blocks the choice, name that unknown, and keep it
+  to hours, not days.
+- Estimates for work Claude does are not human-pace estimates; don't copy "5 days" into a plan.
