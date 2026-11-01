@@ -1,0 +1,47 @@
+# =============================================================================
+# Shep 2 (Rust) — format, lint and test the shep2/ Cargo workspace
+# =============================================================================
+# Runs only when shep2/ or this workflow changes. Independent of Shep 1's pipeline.
+
+name: Shep 2
+
+on:
+  push:
+    branches: [main, develop]
+    paths: ['shep2/**', '.github/workflows/shep2.yml']
+  pull_request:
+    paths: ['shep2/**', '.github/workflows/shep2.yml']
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: shep2
+
+jobs:
+  check:
+    name: Rust (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: shep2
+      - name: Format
+        run: cargo fmt --all --check
+      - name: Lint
+        run: cargo clippy --all-targets --locked -- -D warnings
+      - name: Test
+        run: cargo test --workspace --locked
