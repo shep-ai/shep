@@ -12,7 +12,8 @@ story, decisions, the full design atlas (32 boards), image assets, and the open 
 
 | Folder | What's inside |
 | ------ | ------------- |
-| [`screens/`](screens/) | A PNG of every atlas board, rendered at full size. Start here. |
+| [`video/`](video/) | **A 4-minute narrated overview video**: the product, how you work with it, onboarding, look and feel. Start here. |
+| [`screens/`](screens/) | A PNG of every atlas board, rendered at full size |
 | [`atlas/`](atlas/) | Source of the design canvas: `canvas.json` (pages and layout) and one `.dc.html` per board |
 | [`atlas/assets/`](atlas/assets/) | Generated images: 7 sky frames, dawn/night heroes, share-card background, sidebar sky, 3 app icons, 2 contact sheets |
 | [`pages/`](pages/) | The three standalone pages (HTML + full-page PNG): the story, the product preview, design directions |

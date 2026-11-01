@@ -1,0 +1,219 @@
+1
+00:00:01,600 --> 00:00:05,295
+Go to sleep with issues. Wake up with pull requests.
+
+2
+00:00:05,475 --> 00:00:08,612
+This is Shep: the night shift for your backlog.
+
+3
+00:00:09,992 --> 00:00:14,186
+Coding agents are great. But today, you sit and watch them work.
+
+4
+00:00:14,366 --> 00:00:18,711
+You babysit terminals, answer prompts, and re-run failing builds.
+
+5
+00:00:18,891 --> 00:00:22,458
+Shep is built for the other moment: coming back to finished work.
+
+6
+00:00:23,837 --> 00:00:27,659
+The idea is simple. In the evening, you hand Shep tasks.
+
+7
+00:00:27,839 --> 00:00:30,315
+Each task moves through five states.
+
+8
+00:00:30,495 --> 00:00:35,443
+Queued. Working. Then Ready, or Needs you. And finally, Merged.
+
+9
+00:00:35,623 --> 00:00:37,100
+That's the whole product.
+
+10
+00:00:38,480 --> 00:00:42,151
+Handing work over looks exactly like what you already do.
+
+11
+00:00:42,331 --> 00:00:46,594
+In Linear or Jira, add the shep label, or move the ticket to Tonight.
+
+12
+00:00:46,775 --> 00:00:49,959
+In Slack, react with a sheep on any message.
+
+13
+00:00:50,139 --> 00:00:55,784
+On GitHub, label the issue. Or just type it: shep add, and a sentence.
+
+14
+00:00:55,964 --> 00:00:59,705
+You can even tell your coding agent: give this to Shep for tonight.
+
+15
+00:01:01,085 --> 00:01:03,456
+Shep answers right where you asked.
+
+16
+00:01:03,636 --> 00:01:08,074
+Got it. I'll work on this tonight at eleven. No new inbox to check.
+
+17
+00:01:09,454 --> 00:01:11,616
+At eleven, the shift starts.
+
+18
+00:01:11,796 --> 00:01:20,820
+Your own coding agent, like Claude Code or Codex, works each task in its own copy of the code, so your work in progress is never touched.
+
+19
+00:01:21,000 --> 00:01:27,748
+The sky is the progress bar. It starts at midnight blue, and warms toward dawn as each task finishes.
+
+20
+00:01:27,928 --> 00:01:31,286
+Every finished task is a sheep walking into the pen.
+
+21
+00:01:32,666 --> 00:01:36,361
+If a build fails, Shep reads the log and fixes it.
+
+22
+00:01:36,541 --> 00:01:41,002
+If a task is unclear, it asks one question, and moves on to the next.
+
+23
+00:01:41,181 --> 00:01:42,716
+And it never wakes you up.
+
+24
+00:01:44,097 --> 00:01:49,104
+Curious at two in the morning? The Dynamic Island shows the shift at a glance.
+
+25
+00:01:49,284 --> 00:01:51,910
+Or open the terminal, and watch the sky.
+
+26
+00:01:53,290 --> 00:01:57,379
+In the morning, one notification: five ready, one needs you.
+
+27
+00:01:57,559 --> 00:02:03,204
+Open the review window. Every pull request is a draft that already passes its checks.
+
+28
+00:02:03,384 --> 00:02:08,774
+Proof comes first: a screenshot of the change, and a second opinion from a reviewer agent.
+
+29
+00:02:10,154 --> 00:02:15,068
+You decide with one key. M to merge. S to send it back, with a note.
+
+30
+00:02:15,248 --> 00:02:19,070
+Shep never merges on its own. You always press the button.
+
+31
+00:02:20,450 --> 00:02:26,919
+The answer also lands where the task came from. The Slack thread gets the pull request, and a Merge button.
+
+32
+00:02:27,099 --> 00:02:29,133
+The ticket moves to In review.
+
+33
+00:02:29,314 --> 00:02:33,473
+Your teammates see it happen. That's how Shep spreads through a team.
+
+34
+00:02:34,853 --> 00:02:37,712
+Clear the queue, and the sky reaches full dawn.
+
+35
+00:02:37,892 --> 00:02:41,424
+That's your morning: five minutes, not five hours.
+
+36
+00:02:42,804 --> 00:02:45,245
+Getting started takes about ten minutes.
+
+37
+00:02:45,425 --> 00:02:48,783
+Install the Mac app, or run one command in the terminal.
+
+38
+00:02:50,163 --> 00:02:53,521
+Shep starts by asking where your tasks come from today.
+
+39
+00:02:53,701 --> 00:02:59,880
+Linear, Jira, Notion, Monday, Slack, GitHub, or nowhere in particular.
+
+40
+00:03:00,060 --> 00:03:03,731
+Connect them with a click. Your tokens stay in your Mac's keychain.
+
+41
+00:03:03,911 --> 00:03:08,836
+Then it shows the moves you'll use to hand work over. The same ones you make today.
+
+42
+00:03:10,217 --> 00:03:13,029
+Pick your coding agent, and your repository.
+
+43
+00:03:13,209 --> 00:03:15,336
+Choose when the shift starts.
+
+44
+00:03:15,517 --> 00:03:21,975
+Shep then finds good candidates in your tools: small, clear tasks. It flags the vague ones.
+
+45
+00:03:22,154 --> 00:03:27,834
+Hand three over for tonight. Or try one right now, and watch your first pull request appear.
+
+46
+00:03:29,214 --> 00:03:33,025
+Shep lives in four places, and they all show the same thing.
+
+47
+00:03:33,205 --> 00:03:36,273
+The terminal, with four commands and a split view.
+
+48
+00:03:36,452 --> 00:03:37,558
+The Mac app.
+
+49
+00:03:37,738 --> 00:03:39,343
+Inside your coding agent.
+
+50
+00:03:39,523 --> 00:03:42,556
+And inside the tools your team already uses.
+
+51
+00:03:43,936 --> 00:03:45,924
+The look is night turning into morning.
+
+52
+00:03:46,104 --> 00:03:50,484
+A lantern for the brand. A dithered pixel sky, and warm amber light.
+
+53
+00:03:50,664 --> 00:03:54,742
+Sheep stand for tasks. Calm at night. Bright when the work is done.
+
+54
+00:03:56,121 --> 00:03:58,666
+Shep. Dependabot for your backlog.
+
+55
+00:03:58,846 --> 00:04:02,494
+Go to sleep with issues. Wake up with pull requests.

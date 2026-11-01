@@ -1,0 +1,637 @@
+{
+ "boards": {
+  "SignalThread": {
+   "w": 1440,
+   "h": 960,
+   "bg": "#eef1f9"
+  },
+  "MacSystem": {
+   "w": 1280,
+   "h": 960,
+   "bg": "#0b0e24"
+  },
+  "Watch": {
+   "w": 1040,
+   "h": 800,
+   "bg": "#0b0e24"
+  },
+  "MacReview": {
+   "w": 1280,
+   "h": 820,
+   "bg": "#0b0e24"
+  },
+  "MacDawn": {
+   "w": 1280,
+   "h": 820,
+   "bg": "#0b0e24"
+  },
+  "Install": {
+   "w": 1040,
+   "h": 720,
+   "bg": "#0b0e24"
+  },
+  "OnboardingSources": {
+   "w": 2520,
+   "h": 1100,
+   "bg": "#eef1f9"
+  },
+  "MacOnboardingFlow": {
+   "w": 2520,
+   "h": 1200,
+   "bg": "#eef1f9"
+  },
+  "SplitView": {
+   "w": 1440,
+   "h": 900,
+   "bg": "#0b0e24"
+  },
+  "MCP": {
+   "w": 1200,
+   "h": 800,
+   "bg": "#eef1f9"
+  },
+  "Brand": {
+   "w": 1440,
+   "h": 1320,
+   "bg": "#0b0e24"
+  }
+ },
+ "scenes": [
+  {
+   "id": "open",
+   "chapter": "",
+   "type": "open",
+   "lines": [
+    {
+     "text": "Go to sleep with issues. Wake up with pull requests."
+    },
+    {
+     "text": "This is Shep: the night shift for your backlog."
+    }
+   ]
+  },
+  {
+   "id": "problem",
+   "chapter": "The idea",
+   "type": "problem",
+   "lines": [
+    {
+     "text": "Coding agents are great. But today, you sit and watch them work."
+    },
+    {
+     "text": "You babysit terminals, answer prompts, and re-run failing builds."
+    },
+    {
+     "text": "Shep is built for the other moment: coming back to finished work."
+    }
+   ]
+  },
+  {
+   "id": "states",
+   "chapter": "The idea",
+   "type": "states",
+   "lines": [
+    {
+     "text": "The idea is simple. In the evening, you hand Shep tasks."
+    },
+    {
+     "text": "Each task moves through five states."
+    },
+    {
+     "text": "Queued. Working. Then Ready, or Needs you. And finally, Merged."
+    },
+    {
+     "text": "That's the whole product."
+    }
+   ]
+  },
+  {
+   "id": "handover",
+   "chapter": "Evening \u00b7 hand it over",
+   "type": "handover",
+   "lines": [
+    {
+     "text": "Handing work over looks exactly like what you already do."
+    },
+    {
+     "text": "In Linear or Jira, add the shep label, or move the ticket to Tonight."
+    },
+    {
+     "text": "In Slack, react with a sheep on any message."
+    },
+    {
+     "text": "On GitHub, label the issue. Or just type it: shep add, and a sentence."
+    },
+    {
+     "text": "You can even tell your coding agent: give this to Shep for tonight."
+    }
+   ]
+  },
+  {
+   "id": "ack",
+   "chapter": "Evening \u00b7 hand it over",
+   "type": "shots",
+   "lines": [
+    {
+     "text": "Shep answers right where you asked.",
+     "shot": {
+      "img": "SignalThread",
+      "from": [
+       20,
+       140,
+       720,
+       330
+      ],
+      "to": [
+       30,
+       160,
+       640,
+       290
+      ]
+     }
+    },
+    {
+     "text": "Got it. I'll work on this tonight at eleven. No new inbox to check."
+    }
+   ]
+  },
+  {
+   "id": "night",
+   "chapter": "Night \u00b7 the shift",
+   "type": "night",
+   "lines": [
+    {
+     "text": "At eleven, the shift starts."
+    },
+    {
+     "text": "Your own coding agent, like Claude Code or Codex, works each task in its own copy of the code, so your work in progress is never touched."
+    },
+    {
+     "text": "The sky is the progress bar. It starts at midnight blue, and warms toward dawn as each task finishes."
+    },
+    {
+     "text": "Every finished task is a sheep walking into the pen."
+    }
+   ]
+  },
+  {
+   "id": "trouble",
+   "chapter": "Night \u00b7 the shift",
+   "type": "trouble",
+   "lines": [
+    {
+     "text": "If a build fails, Shep reads the log and fixes it."
+    },
+    {
+     "text": "If a task is unclear, it asks one question, and moves on to the next."
+    },
+    {
+     "text": "And it never wakes you up."
+    }
+   ]
+  },
+  {
+   "id": "glance",
+   "chapter": "Night \u00b7 the shift",
+   "type": "shots",
+   "lines": [
+    {
+     "text": "Curious at two in the morning? The Dynamic Island shows the shift at a glance.",
+     "shot": {
+      "img": "MacSystem",
+      "from": [
+       370,
+       40,
+       540,
+       420
+      ],
+      "to": [
+       400,
+       70,
+       470,
+       360
+      ]
+     }
+    },
+    {
+     "text": "Or open the terminal, and watch the sky.",
+     "shot": {
+      "img": "Watch",
+      "from": [
+       0,
+       0,
+       1040,
+       800
+      ],
+      "to": [
+       20,
+       20,
+       1000,
+       560
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "morning",
+   "chapter": "Morning \u00b7 review",
+   "type": "shots",
+   "lines": [
+    {
+     "text": "In the morning, one notification: five ready, one needs you.",
+     "shot": {
+      "img": "MacSystem",
+      "from": [
+       840,
+       250,
+       460,
+       260
+      ],
+      "to": [
+       860,
+       290,
+       420,
+       200
+      ]
+     }
+    },
+    {
+     "text": "Open the review window. Every pull request is a draft that already passes its checks.",
+     "shot": {
+      "img": "MacReview",
+      "from": [
+       0,
+       0,
+       1280,
+       820
+      ],
+      "to": [
+       120,
+       20,
+       1160,
+       660
+      ]
+     }
+    },
+    {
+     "text": "Proof comes first: a screenshot of the change, and a second opinion from a reviewer agent.",
+     "shot": {
+      "img": "MacReview",
+      "from": [
+       200,
+       60,
+       1080,
+       520
+      ],
+      "to": [
+       230,
+       300,
+       900,
+       300
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "decide",
+   "chapter": "Morning \u00b7 review",
+   "type": "decide",
+   "lines": [
+    {
+     "text": "You decide with one key. M to merge. S to send it back, with a note."
+    },
+    {
+     "text": "Shep never merges on its own. You always press the button."
+    }
+   ]
+  },
+  {
+   "id": "inplace",
+   "chapter": "Morning \u00b7 review",
+   "type": "shots",
+   "lines": [
+    {
+     "text": "The answer also lands where the task came from. The Slack thread gets the pull request, and a Merge button.",
+     "shot": {
+      "img": "SignalThread",
+      "from": [
+       20,
+       360,
+       720,
+       420
+      ],
+      "to": [
+       30,
+       380,
+       660,
+       380
+      ]
+     }
+    },
+    {
+     "text": "The ticket moves to In review.",
+     "shot": {
+      "img": "SignalThread",
+      "from": [
+       720,
+       80,
+       700,
+       440
+      ],
+      "to": [
+       740,
+       100,
+       640,
+       380
+      ]
+     }
+    },
+    {
+     "text": "Your teammates see it happen. That's how Shep spreads through a team.",
+     "shot": {
+      "img": "SignalThread",
+      "from": [
+       20,
+       560,
+       720,
+       360
+      ],
+      "to": [
+       30,
+       600,
+       640,
+       320
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "dawn",
+   "chapter": "Morning \u00b7 review",
+   "type": "shots",
+   "lines": [
+    {
+     "text": "Clear the queue, and the sky reaches full dawn.",
+     "shot": {
+      "img": "MacDawn",
+      "from": [
+       140,
+       120,
+       1000,
+       640
+      ],
+      "to": [
+       0,
+       0,
+       1280,
+       820
+      ]
+     }
+    },
+    {
+     "text": "That's your morning: five minutes, not five hours."
+    }
+   ]
+  },
+  {
+   "id": "install",
+   "chapter": "Getting started",
+   "type": "shots",
+   "lines": [
+    {
+     "text": "Getting started takes about ten minutes.",
+     "shot": {
+      "img": "Install",
+      "from": [
+       0,
+       0,
+       1040,
+       720
+      ],
+      "to": [
+       0,
+       0,
+       1040,
+       600
+      ]
+     }
+    },
+    {
+     "text": "Install the Mac app, or run one command in the terminal.",
+     "shot": {
+      "img": "Install",
+      "from": [
+       0,
+       0,
+       1040,
+       600
+      ],
+      "to": [
+       0,
+       0,
+       760,
+       260
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "onboard1",
+   "chapter": "Getting started",
+   "type": "shots",
+   "lines": [
+    {
+     "text": "Shep starts by asking where your tasks come from today.",
+     "shot": {
+      "img": "OnboardingSources",
+      "from": [
+       40,
+       150,
+       680,
+       560
+      ],
+      "to": [
+       50,
+       165,
+       640,
+       530
+      ]
+     }
+    },
+    {
+     "text": "Linear, Jira, Notion, Monday, Slack, GitHub, or nowhere in particular."
+    },
+    {
+     "text": "Connect them with a click. Your tokens stay in your Mac's keychain.",
+     "shot": {
+      "img": "OnboardingSources",
+      "from": [
+       670,
+       150,
+       680,
+       560
+      ],
+      "to": [
+       680,
+       165,
+       640,
+       530
+      ]
+     }
+    },
+    {
+     "text": "Then it shows the moves you'll use to hand work over. The same ones you make today.",
+     "shot": {
+      "img": "OnboardingSources",
+      "from": [
+       1280,
+       150,
+       680,
+       560
+      ],
+      "to": [
+       1290,
+       165,
+       640,
+       530
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "onboard2",
+   "chapter": "Getting started",
+   "type": "shots",
+   "lines": [
+    {
+     "text": "Pick your coding agent, and your repository.",
+     "shot": {
+      "img": "MacOnboardingFlow",
+      "from": [
+       0,
+       0,
+       2520,
+       1200
+      ],
+      "to": [
+       600,
+       110,
+       1920,
+       520
+      ]
+     }
+    },
+    {
+     "text": "Choose when the shift starts.",
+     "shot": {
+      "img": "MacOnboardingFlow",
+      "from": [
+       0,
+       600,
+       680,
+       560
+      ],
+      "to": [
+       20,
+       640,
+       620,
+       500
+      ]
+     }
+    },
+    {
+     "text": "Shep then finds good candidates in your tools: small, clear tasks. It flags the vague ones.",
+     "shot": {
+      "img": "OnboardingSources",
+      "from": [
+       1890,
+       150,
+       630,
+       560
+      ],
+      "to": [
+       1900,
+       165,
+       600,
+       530
+      ]
+     }
+    },
+    {
+     "text": "Hand three over for tonight. Or try one right now, and watch your first pull request appear.",
+     "shot": {
+      "img": "MacOnboardingFlow",
+      "from": [
+       1860,
+       600,
+       660,
+       560
+      ],
+      "to": [
+       1880,
+       640,
+       620,
+       500
+      ]
+     }
+    }
+   ]
+  },
+  {
+   "id": "surfaces",
+   "chapter": "Everywhere you work",
+   "type": "surfaces",
+   "lines": [
+    {
+     "text": "Shep lives in four places, and they all show the same thing."
+    },
+    {
+     "text": "The terminal, with four commands and a split view."
+    },
+    {
+     "text": "The Mac app."
+    },
+    {
+     "text": "Inside your coding agent."
+    },
+    {
+     "text": "And inside the tools your team already uses."
+    }
+   ]
+  },
+  {
+   "id": "look",
+   "chapter": "Look and feel",
+   "type": "look",
+   "lines": [
+    {
+     "text": "The look is night turning into morning."
+    },
+    {
+     "text": "A lantern for the brand. A dithered pixel sky, and warm amber light."
+    },
+    {
+     "text": "Sheep stand for tasks. Calm at night. Bright when the work is done."
+    }
+   ]
+  },
+  {
+   "id": "close",
+   "chapter": "",
+   "type": "close",
+   "lines": [
+    {
+     "text": "Shep. Dependabot for your backlog."
+    },
+    {
+     "text": "Go to sleep with issues. Wake up with pull requests."
+    }
+   ]
+  }
+ ]
+}
