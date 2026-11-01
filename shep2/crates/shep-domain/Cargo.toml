@@ -1,0 +1,13 @@
+[package]
+name = "shep-domain"
+description = "Shep 2 domain: tasks, their five states, sources and review actions. No I/O."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+serde.workspace = true
+thiserror.workspace = true
+
+[lints]
+workspace = true
