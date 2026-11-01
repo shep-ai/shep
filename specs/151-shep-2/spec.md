@@ -12,7 +12,7 @@ and a fast decision on each result. Shep 2 is that product and nothing else.
 
 | Budget | Value | Rule |
 | ------ | ----- | ---- |
-| Things | 1 | A **task**: a GitHub issue reference or a sentence |
+| Things | 1 | A **task**: anything you'd hand a teammate, from any source (see Sources) |
 | States | 5 | Queued → Working → Needs you / Ready → Merged |
 | Core actions | 4 | `add(task)`, `start(at?)`, `board()`, `review(id, action)` |
 | Surfaces | 4 | CLI, terminal UI, Mac app, MCP — every surface calls only the 4 actions |
@@ -32,7 +32,9 @@ Shep never merges on its own: agents open draft PRs; a person presses Merge.
 | `shep config` | Agent, repo, start time, parallelism |
 
 **Terminal UI** — one board: Queued | Working | Ready (Needs you shown with `!`). Keys: arrows
-move, `m` merge, `s` send back, `g` start queued. A 2-second ASCII splash on the first run of
+move, `m` merge, `s` send back, `g` start queued. A split view (`2`) shows the task list, the
+selected agent's live session, its diff, and CI and proof side by side; `enter` attaches to the
+agent so you can type to it, `z` zooms a pane. A 2-second ASCII splash on the first run of
 the day (skippable, settles to a still frame). An optional watch screen for overnight: a sky
 band that warms toward dawn as tasks finish, per-task activity graphs, a slow status-line
 shimmer. One `--no-motion` switch turns every animation off; `NO_COLOR`, CI and
@@ -47,13 +49,31 @@ Dynamic Island or menu bar shows overnight progress. A morning notification carr
 **MCP (3 tools)** — `add_task`, `board`, `review`. Lets any MCP-capable agent hand work to
 Shep ("give this to Shep for tonight").
 
+## Sources
+
+A task comes from wherever the work already lives, and Shep answers in the same place.
+
+| Source | Hand it over | Right away | By morning |
+| ------ | ------------ | ---------- | ---------- |
+| GitHub | Label `shep` | Comment "Queued for tonight" | Draft PR that closes the issue |
+| Linear | Label `shep` or status Tonight | Comment, status Tonight | PR linked, proof comment, status In review |
+| Jira | Move to a Tonight column | Comment and transition | PR and build status, moves to Review |
+| Notion | Status Tonight in a tasks database | A Shep property: queued | PR link and screenshot on the page |
+| Monday | Status Tonight | An update on the item | PR link column, status In review |
+| Slack | `:sheep:` reaction or "@Shep tonight" | Thread reply | Thread reply with PR, proof, Merge / Send back |
+| Shep itself | `shep add "<sentence>"`, the Mac app, MCP | — | The board and the morning brief |
+
+Questions are asked and answered where the task came from. Every source is an adapter behind
+one interface (`poll` / `acknowledge` / `report`); GitHub ships first, then Slack and Linear,
+then Jira, Notion and Monday. Onboarding starts with "Where do tasks come from today?".
+
 ## Engine
 
 Ported from Shep 1 and trimmed: worktree per task, agent runners (any agent CLI, resolved
 through a provider interface, never hardcoded), CI watch with agent fix loop, screenshot and
 test proof, second-opinion code review.
 
-New: GitHub issue intake; park on a usage limit and resume after the reset; keep the machine
+New: task intake from sources; park on a usage limit and resume after the reset; keep the machine
 awake during a shift (caffeinate / systemd-inhibit).
 
 Adopted from herdr's Apache-2.0 work (patterns, and code where it fits, with attribution):
@@ -73,6 +93,7 @@ npm wrapper with per-platform binaries. Target: core under 10K lines.
 
 ## Success Criteria
 
+- [ ] A task handed over in GitHub, Slack or Linear is acknowledged in place within five minutes and answered in place by morning
 - [ ] Six real GitHub issues queued at night on a real repo produce six draft PRs by morning, each with CI green or a clear "needs you" question
 - [ ] An overnight run survives a usage-limit window and a daemon restart without losing a task
 - [ ] The morning review of six PRs takes under five minutes in the terminal UI and in the Mac app
@@ -86,13 +107,14 @@ npm wrapper with per-platform binaries. Target: core under 10K lines.
 
 Web app beyond one review page, project management (epics, cycles, time entries, saved views),
 ASPM, incidents, opportunities, discovery, feedback themes, outcomes, clusters, WhatsApp,
-feature flags, plugin marketplace, multi-user teams, tmux-style pane splitting, auto-merge.
+feature flags, plugin marketplace, multi-user teams, general tmux-style pane management (the one
+fixed split view is in scope), auto-merge, a Shep server.
 
 ## Affected Areas
 
 | Area | Impact | Reasoning |
 | ---- | ------ | --------- |
-| New Rust workspace (`shep2/` or new repository) | High | All v2 code is new |
+| New Cargo workspace `shep2/` | High | All v2 code is new |
 | Shep 1 (`packages/`, `src/`) | Low | Frozen at 1.x; read for porting worktree, CI-fix, agent-runner and evidence logic |
 | Distribution (npm, Homebrew) | Medium | Same or new package name (open question) |
 | Docs and README | Medium | One pitch everywhere: "Dependabot for your backlog" |
@@ -104,9 +126,9 @@ Ports logic proven in 149 (agent activity and blocked reasons), 138 (git checkpo
 
 ## Size Estimate
 
-**XL** - A new product: Rust core, terminal UI, MCP server and a SwiftUI app. Eight weeks:
-week 1 spec and spike, weeks 2–4 core + CLI + terminal UI, weeks 4–6 Mac app + MCP, weeks 6–8
-Shep 2 builds its own remaining work overnight, then launch.
+**XL** - A new product: Rust core, terminal UI, MCP server, source adapters and a SwiftUI app.
+Phases: core and CLI; agent runs and PRs; terminal UI; MCP; sources; Mac app (needs a Mac);
+then Shep 2 builds its own remaining work overnight, then launch.
 
 ---
 
