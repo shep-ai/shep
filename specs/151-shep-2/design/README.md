@@ -74,7 +74,7 @@ tool means removing one.
 | Signature visual | **The sky is the progress bar**: night → dawn as tasks finish. Lantern brand mark, dithered 8-color palette, ASCII scene in the terminal |
 | Type | Gloock (display), Hanken Grotesk (UI), JetBrains Mono (code) |
 | Platform | Mac-first, native SwiftUI (Dynamic Island, Live Activities, App Intents, actionable notifications). CLI, terminal UI and MCP also run on Linux. |
-| Core language | Rust single binary (daemon, CLI, Ratatui + tachyonfx terminal UI, rmcp MCP), JSON-RPC over a local socket with an OpenRPC schema. No C++. A 5-day spike decides: if Rust takes >1.5x the Bun time, use TypeScript on Bun + OpenTUI. |
+| Core language | Rust single binary (daemon, CLI, Ratatui + tachyonfx terminal UI, rmcp MCP), JSON-RPC over a local socket with an OpenRPC schema. No C++. Chosen by the owner without a comparison spike. |
 | gpui | Not used: SwiftUI is the only way to reach the Mac system surfaces; gpui is pre-1.0 and Zed-shaped |
 | herdr | Copy patterns (and Apache-2.0 code only from revisions after 2026-07-22, with attribution): OSC 7501 status, detection manifests, PTY holder separate from the daemon, resume hooks, attach/takeover, child review agent, "OpenRPC only grows" test. No runtime dependency. |
 | Telemetry | PostHog key built in (shipped in [shep-ai/shep#953](https://github.com/shep-ai/shep/pull/953)) |
@@ -173,18 +173,19 @@ nothing.
 | A chat thread and a ticket, start to finish | [SignalThread.png](screens/SignalThread.png) |
 | Onboarding: where does your work live? | [OnboardingSources.png](screens/OnboardingSources.png) |
 
-## Open decisions
+## Decided since the design
 
-1. **Where v2 lives.** Recommendation: an orphan `next` branch in this repo (keeps stars,
-   issues and history), merged into `main` at launch. Not created yet.
-2. **npm name.** `npx shep` is taken by an unrelated package. Recommendation: reserve `shepai`
-   now (`npx shepai`) and ask the owner of `shep` about a transfer. The CLI command stays `shep`
-   either way. Spec 151 still lists this as open.
-3. **Rust spike.** 5 days, same slice in Rust and in Bun, kill rule above.
-4. **Spec 151 is behind the design.** It still describes a task as "a GitHub issue or a
-   sentence", has no sources/adapters section, and lists "tmux-style pane splitting" as out of
-   scope although the split view board was added. Update `spec.yaml` before planning.
-5. **Older boards are GitHub-only.** Main, UserFlows, MachineFlow, TerminalOnboarding and
+| Question | Decision |
+| -------- | -------- |
+| Where v2 lives | Cargo workspace `shep2/` in this repo; it can move to a `next` branch or its own repo unchanged |
+| npm name | `shep2` (`npx shep2`); the command is `shep`. Ask Bustle Labs to transfer `shep` (offer to publish from 6.0.0); if they do, `shep2` stays as an alias |
+| Rust vs TypeScript | Rust, no spike |
+| Spec 151 | Updated with sources, no server and the split view; research, plan and tasks filled in |
+
+## Still open
+
+1. **Claim `shep2` on npm** (owner's account) and send the transfer request for `shep`.
+2. **Older boards are GitHub-only.** Main, UserFlows, MachineFlow, TerminalOnboarding and
    MacOnboardingFlow predate the sources direction and should be folded into it.
 
 ## Working with the source files

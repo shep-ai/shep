@@ -268,9 +268,9 @@ tasks:
     title: Distribution — Homebrew, curl installer, npm wrapper
     description: >
       Release builds for macOS (arm64, x86_64) and Linux; Homebrew tap; curl installer; npm
-      wrapper with per-platform binaries. Needs the owner's decision on the npm package name
-      before it starts (`shep` is taken; recommendation: reserve `shepai` and ask the owner of
-      `shep` about a transfer). The command is `shep` either way.
+      wrapper published as `shep2` (`npx shep2`) with per-platform binaries. The command is
+      `shep`. If Bustle Labs transfers `shep`, publish there from 6.0.0 and keep `shep2` as an
+      alias.
     state: Todo
     dependencies:
       - task-9

@@ -88,8 +88,8 @@ that reports back; a client API generated from Rust types with a test that it on
 One Rust binary, `shep`: engine, overnight daemon, CLI, terminal UI (Ratatui + tachyonfx), MCP
 server (rmcp). The daemon serves JSON-RPC 2.0 over a local Unix socket; the schema is published
 as OpenRPC and the Swift client types are generated from it. Storage is SQLite with three
-tables (tasks, runs, events). Distribution: Homebrew, a curl installer, and `npx` through an
-npm wrapper with per-platform binaries. Target: core under 10K lines.
+tables (tasks, runs, events). Distribution: Homebrew (`brew install shep-ai/tap/shep`), a curl
+installer, and `npx shep2` through an npm wrapper with per-platform binaries. Target: core under 10K lines.
 
 ## Success Criteria
 

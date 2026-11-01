@@ -108,6 +108,17 @@ openQuestions:
       label, a status (Tonight) or a reaction, not "assign to Shep" as a person. A thin relay
       that stores nothing may be added later for app identities and a Marketplace Slack app.
 
+  - question: What is the npm package name?
+    resolved: true
+    answer: >
+      `shep2` (`npx shep2`); the installed command is `shep`. `shep` is held by Bustle Labs (an
+      AWS API framework, last published 2018); we will ask for a transfer, offering to publish
+      from 6.0.0 so their 5.x users are unaffected. If it is transferred, `shep` becomes the main
+      name and `shep2` stays as an alias. Rejected: `night` (taken), `nightshift` (blocked by
+      npm's punctuation rule against `night-shift`; a competing agent tool already ships a
+      `nightshift` command; clashes with macOS Night Shift), `shepai` (hard to remember).
+      Decided by the owner on 2026-11-01.
+
 # Markdown content (the actual spec)
 content: |
   ## Problem Statement
@@ -200,8 +211,8 @@ content: |
   One Rust binary, `shep`: engine, overnight daemon, CLI, terminal UI (Ratatui + tachyonfx), MCP
   server (rmcp). The daemon serves JSON-RPC 2.0 over a local Unix socket; the schema is published
   as OpenRPC and the Swift client types are generated from it. Storage is SQLite with three
-  tables (tasks, runs, events). Distribution: Homebrew, a curl installer, and `npx` through an
-  npm wrapper with per-platform binaries. Target: core under 10K lines.
+  tables (tasks, runs, events). Distribution: Homebrew (`brew install shep-ai/tap/shep`), a curl
+  installer, and `npx shep2` through an npm wrapper with per-platform binaries. Target: core under 10K lines.
 
   ## Success Criteria
 
