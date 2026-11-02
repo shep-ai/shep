@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Split view</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#f3b45c}a:hover{color:#ffe4b0}
+</style>
+</helmet>
+<div tabIndex="0" onKeyDown="{{onKey}}" aria-label="Split view. j and k pick a task, tab moves between panes, z zooms the focused pane, enter attaches to the agent session." style="width: 1440px; height: 900px; box-sizing: border-box; background: #0b0e24; color: #e3e6f5; border-radius: 14px; overflow: hidden; display: flex; flex-direction: column; font-family: 'JetBrains Mono', Menlo, monospace; font-size: 13.5px; line-height: 21px; outline: none">
+  <div style="display: flex; align-items: center; gap: 8px; padding: 10px 16px; border-bottom: 1px solid #232a57; font-size: 13px; color: #7d84a8">
+    <i style="width: 12px; height: 12px; border-radius: 50%; background: #ff5f57"></i><i style="width: 12px; height: 12px; border-radius: 50%; background: #febc2e"></i><i style="width: 12px; height: 12px; border-radius: 50%; background: #28c840"></i>
+    <span style="margin-left: 10px; display: flex; gap: 14px"><span>1 board</span><span style="color: #0b0e24; background: #f3b45c; padding: 0 8px; border-radius: 3px">2 split</span><span>3 watch</span></span>
+    <span style="margin-left: auto">booking-app · 3 agents running · 02:14 · <span style="color: #f3b45c">☾ 4/6</span></span>
+  </div>
+
+  <div style="flex: 1; min-height: 0; display: grid; grid-template-columns: {{cols}}; gap: 8px; padding: 8px">
+    <div style="border: 1px solid {{bTasks}}; border-radius: 6px; overflow: hidden; display: flex; flex-direction: column; min-width: 0">
+      <button type="button" onClick="{{focusTasks}}" style="display: flex; justify-content: space-between; padding: 5px 12px; border: 0; border-bottom: 1px solid #232a57; background: transparent; font: inherit; font-size: 12px; letter-spacing: 0.1em; color: {{tTasks}}; cursor: pointer; text-align: left"><span>TASKS</span><span>6</span></button>
+      <sc-for list="{{groups}}" as="g" hint-placeholder-count="4">
+        <div style="padding: 8px 12px 2px; font-size: 11px; letter-spacing: 0.12em; color: {{g.c}}">{{g.name}}</div>
+        <sc-for list="{{g.items}}" as="it" hint-placeholder-count="2"><button type="button" onClick="{{it.pick}}" style="display: flex; gap: 10px; padding: 3px 12px; border: 0; font: inherit; text-align: left; cursor: pointer; background: {{it.bg}}; color: {{it.fg}}; white-space: nowrap; overflow: hidden"><span style="color: {{it.mc}}">{{it.mark}}</span><span style="color: {{it.idc}}">#{{it.id}}</span><span style="overflow: hidden; text-overflow: ellipsis">{{it.t}}</span></button></sc-for>
+      </sc-for>
+      <div style="margin-top: auto; padding: 10px 12px; border-top: 1px solid #232a57; color: #7d84a8; font-size: 12px; white-space: pre">fold <span style="color: #8a7a6a">|</span><span style="color: #f2f0fa"> @@o @@o @@o @@o </span><span style="color: #8a7a6a">|</span> <span style="color: #b9bedb">@@o @@o</span></div>
+    </div>
+
+    <div style="display: grid; grid-template-rows: {{rows}}; gap: 8px; min-height: 0; min-width: 0">
+      <div style="border: 1px solid {{bSession}}; border-radius: 6px; overflow: hidden; display: flex; flex-direction: column; min-height: 0">
+        <button type="button" onClick="{{focusSession}}" style="display: flex; gap: 14px; padding: 5px 12px; border: 0; border-bottom: 1px solid #232a57; background: transparent; font: inherit; font-size: 12px; color: {{tSession}}; cursor: pointer; text-align: left; white-space: nowrap; overflow: hidden"><span style="letter-spacing: 0.1em">SESSION</span><span style="color: #a3aac8">#{{sel.id}} · {{sel.agent}} · worktree shep/{{sel.id}} · {{sel.elapsed}}</span></button>
+        <sc-if value="{{attached}}" hint-placeholder-val="{{ false }}"><div style="padding: 4px 12px; background: #f3b45c; color: #0b0e24; font-size: 12px; font-weight: 700">ATTACHED · you are typing to {{sel.agent}} in shep/{{sel.id}} · ctrl-\ detaches</div></sc-if>
+        <div style="flex: 1; min-height: 0; overflow: hidden; padding: 8px 12px; display: flex; flex-direction: column; justify-content: flex-end">
+          <sc-for list="{{session}}" as="ln" hint-placeholder-count="8"><div style="white-space: pre-wrap; color: {{ln.c}}; padding-left: {{ln.pad}}">{{ln.s}}</div></sc-for>
+          <sc-if value="{{showCursor}}" hint-placeholder-val="{{ true }}"><div style="color: #93b2ff">{{spinner}} {{verb}}</div></sc-if>
+        </div>
+        <sc-if value="{{attached}}" hint-placeholder-val="{{ false }}"><div style="padding: 6px 12px; border-top: 1px solid #232a57; color: #e3e6f5">› also keep the old empty-table test<span style="background: #e3e6f5; color: #0b0e24"> </span></div></sc-if>
+      </div>
+
+      <div style="display: grid; grid-template-columns: {{bottomCols}}; gap: 8px; min-height: 0">
+        <div style="border: 1px solid {{bDiff}}; border-radius: 6px; overflow: hidden; display: flex; flex-direction: column; min-width: 0">
+          <button type="button" onClick="{{focusDiff}}" style="display: flex; justify-content: space-between; padding: 5px 12px; border: 0; border-bottom: 1px solid #232a57; background: transparent; font: inherit; font-size: 12px; color: {{tDiff}}; cursor: pointer; text-align: left"><span style="letter-spacing: 0.1em">DIFF</span><span style="color: #a3aac8">{{sel.diffStat}}</span></button>
+          <div style="padding: 6px 0; overflow: hidden">
+            <sc-for list="{{diff}}" as="d" hint-placeholder-count="8"><div style="white-space: pre; padding: 0 12px; color: {{d.c}}; background: {{d.b}}">{{d.s}}</div></sc-for>
+          </div>
+        </div>
+        <div style="border: 1px solid {{bCi}}; border-radius: 6px; overflow: hidden; display: flex; flex-direction: column; min-width: 0">
+          <button type="button" onClick="{{focusCi}}" style="display: flex; justify-content: space-between; padding: 5px 12px; border: 0; border-bottom: 1px solid #232a57; background: transparent; font: inherit; font-size: 12px; color: {{tCi}}; cursor: pointer; text-align: left"><span style="letter-spacing: 0.1em">CI &amp; PROOF</span><span style="color: #a3aac8">{{sel.ciSummary}}</span></button>
+          <div style="padding: 8px 12px; display: flex; flex-direction: column; gap: 2px">
+            <sc-for list="{{checks}}" as="ck" hint-placeholder-count="4"><div style="display: flex; gap: 10px"><span style="color: {{ck.c}}">{{ck.mark}}</span><span style="flex: 1">{{ck.name}}</span><span style="color: #7d84a8">{{ck.time}}</span></div></sc-for>
+            <div style="margin-top: 10px; display: flex; gap: 12px; align-items: center">
+              <span style="width: 120px; height: 72px; border-radius: 6px; background: #f4f5fb; border: 1px solid #2c3366; display: flex; flex-direction: column; gap: 5px; padding: 8px; box-sizing: border-box"><i style="height: 6px; width: 50%; background: #d6d9e8; border-radius: 2px"></i><i style="height: 16px; border: 1px solid #d6d9e8; border-radius: 3px; background: #fff"></i><i style="height: 12px; width: 40%; background: #b4650e; border-radius: 3px"></i></span>
+              <span style="color: #a3aac8">{{sel.proof}}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display: flex; gap: 18px; flex-wrap: wrap; padding: 8px 16px; border-top: 1px solid #232a57; font-size: 12px; color: #a3aac8">
+    <span><b style="color: #0b0e24; background: #7d84a8; padding: 0 5px; border-radius: 3px">tab</b> next pane</span>
+    <span><b style="color: #0b0e24; background: #7d84a8; padding: 0 5px; border-radius: 3px">j k</b> task</span>
+    <button type="button" onClick="{{toggleAttach}}" style="font: inherit; color: #a3aac8; background: transparent; border: 0; padding: 0; cursor: pointer"><b style="color: #0b0e24; background: #f3b45c; padding: 0 5px; border-radius: 3px">enter</b> attach and type to the agent</button>
+    <button type="button" onClick="{{toggleZoom}}" style="font: inherit; color: #a3aac8; background: transparent; border: 0; padding: 0; cursor: pointer"><b style="color: #0b0e24; background: #7d84a8; padding: 0 5px; border-radius: 3px">z</b> zoom pane</button>
+    <span><b style="color: #0b0e24; background: #7d84a8; padding: 0 5px; border-radius: 3px">m</b> merge · <b style="color: #0b0e24; background: #7d84a8; padding: 0 5px; border-radius: 3px">s</b> send back</span>
+    <span style="margin-left: auto">{{modeText}}</span>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  componentDidMount() {
+    var self = this, reduce = false;
+    try { reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { reduce = false; }
+    this.n = 0;
+    if (!reduce) this.iv = setInterval(function () { self.n++; self.setState({ n: self.n }); }, 650);
+  }
+  componentWillUnmount() { if (this.iv) clearInterval(this.iv); }
+  tasks() {
+    if (this.T) return this.T;
+    var T = [
+      { id: 425, t: 'Empty state for projects page', st: 'working', agent: 'Claude Code', elapsed: '4m 12s', diffStat: '+40 −2 · 2 files', ciSummary: 'running', proof: 'proof/empty-state.png',
+        script: [['tool', '● Read src/pages/projects/index.tsx'], ['tool', '● Read src/components/EmptyState.tsx'], ['say', 'The page renders an empty table when there are no projects. I will reuse EmptyState with a New project action.'], ['tool', '● Edit src/pages/projects/index.tsx  +18 −2'], ['tool', '● Edit src/pages/projects/projects.test.tsx  +22'], ['tool', '● Bash pnpm test projects'], ['ok', '✓ shows the empty state when there are no projects'], ['ok', '✓ New project opens the dialog'], ['tool', '● Bash pnpm lint'], ['ok', '✓ no problems'], ['tool', '● Screenshot localhost:3000/projects → proof/empty-state.png'], ['tool', '● Commit "feat(projects): empty state with a New project action"'], ['tool', '● Push shep/425 · open draft PR']],
+        diff: [['h', '@@ src/pages/projects/index.tsx'], [' ', '  if (projects.length === 0) {'], ['-', '-   return <Table rows={[]} />;'], ['+', '+   return ('], ['+', '+     <EmptyState'], ['+', '+       title="No projects yet"'], ['+', '+       action={<NewProjectButton />}'], ['+', '+     />'], ['+', '+   );'], [' ', '  }']],
+        checks: [['ok', 'build', '41s'], ['run', 'lint', '…'], ['wait', 'test', ''], ['wait', 'e2e', '']] },
+      { id: 433, t: 'Rate-limit /api/search', st: 'working', agent: 'Codex', elapsed: '2m 40s', diffStat: '+76 −3 · 3 files', ciSummary: 'not pushed yet', proof: 'test output only',
+        script: [['tool', '● Read src/api/search.ts'], ['say', 'No rate limit on /api/search. Adding a token bucket per IP.'], ['tool', '● Edit src/api/search.ts  +31 −3'], ['tool', '● Edit src/api/middleware/rateLimit.ts  +44'], ['tool', '● Bash pnpm test api'], ['err', '✗ search returns 429 after the limit: expected 429, got 200'], ['say', 'The limiter is not registered on the route. Fixing.'], ['tool', '● Edit src/api/routes.ts  +1'], ['tool', '● Bash pnpm test api'], ['ok', '✓ 12 passed']],
+        diff: [['h', '@@ src/api/routes.ts'], [' ', '  router.get('], [' ', "    '/api/search',"], ['+', '+   rateLimit({ perMinute: 30 }),'], [' ', '    searchHandler,'], [' ', '  );']],
+        checks: [['wait', 'build', ''], ['wait', 'lint', ''], ['wait', 'test', ''], ['wait', 'e2e', '']] },
+      { id: 430, t: 'Move avatars to S3', st: 'needs', agent: 'Claude Code', elapsed: 'paused 2h 10m', diffStat: '+88 −30 · 6 files', ciSummary: 'paused', proof: 'waiting for your answer',
+        script: [['tool', '● Read config/env.ts'], ['say', 'I found two buckets in your config: acme-prod-avatars and acme-uploads.'], ['need', '? Which S3 bucket should avatars go in? Answer here (enter), in the Mac app, or reply on the PR.']],
+        diff: [['h', '@@ storage/avatars.ts'], ['-', '-  await fs.writeFile(localPath(key), file);'], ['+', '+  await s3.putObject({'], ['+', '+    Bucket: env.AVATAR_BUCKET,'], ['+', '+    Key: key, Body: file,'], ['+', '+  });']],
+        checks: [['wait', 'build', 'paused'], ['wait', 'lint', ''], ['wait', 'test', ''], ['wait', 'e2e', '']] },
+      { id: 412, t: 'Fix login redirect loop', st: 'ready', agent: 'Claude Code', elapsed: 'done 01:31', diffStat: '+41 −12 · 3 files', ciSummary: 'green', proof: 'proof/login-return.png',
+        script: [['tool', '● Bash pnpm test auth'], ['err', '✗ lint: unused import in session.ts (CI, 01:12)'], ['tool', '● Edit src/auth/session.ts  −1'], ['ok', '✓ CI green (01:30)'], ['tool', '● Review agent: looks good, one naming nit'], ['ok', '✓ Draft PR ready · proof attached']],
+        diff: [['h', '@@ src/auth/redirect.ts'], ['-', '-  const to = url.pathname;'], ['+', '+  const to = url.pathname + url.search;'], ['+', '+  if (!isSameOrigin(to)) return "/";']],
+        checks: [['ok', 'build', '38s'], ['ok', 'lint', '12s'], ['ok', 'test', '1m 02s'], ['ok', 'e2e', '2m 40s']] },
+      { id: 418, t: 'Add CSV export to reports', st: 'ready', agent: 'Gemini CLI', elapsed: 'done 00:58', diffStat: '+128 −4 · 5 files', ciSummary: 'green', proof: 'proof/csv-export.png',
+        script: [['tool', '● Edit src/reports/export.ts  +96'], ['ok', '✓ CI green'], ['ok', '✓ Draft PR ready · proof attached']],
+        diff: [['h', '@@ src/reports/export.ts'], ['+', '+export function toCsv(rows: Row[]) {'], ['+', '+  return [header(rows), ...rows.map(line)].join("\\n");'], ['+', '+}']],
+        checks: [['ok', 'build', '40s'], ['ok', 'lint', '11s'], ['ok', 'test', '58s'], ['ok', 'e2e', '2m 31s']] },
+      { id: 436, t: 'Dark mode for settings', st: 'queued', agent: 'Claude Code', elapsed: 'queued', diffStat: 'no changes yet', ciSummary: 'not started', proof: 'none yet',
+        script: [['say', 'Queued. Starts when a slot frees up, or press g.']], diff: [['h', 'no changes yet']], checks: [['wait', 'build', ''], ['wait', 'lint', ''], ['wait', 'test', ''], ['wait', 'e2e', '']] }
+    ];
+    this.T = T; this.sel = 425; this.focus = 'session'; this.zoom = false; this.attached = false;
+    return T;
+  }
+  act(k) {
+    var T = this.tasks(), self = this;
+    var order = [425, 433, 430, 412, 418, 436], i = order.indexOf(this.sel);
+    var panes = ['tasks', 'session', 'diff', 'ci'];
+    if (k === 'down') this.sel = order[(i + 1) % order.length];
+    else if (k === 'up') this.sel = order[(i + order.length - 1) % order.length];
+    else if (k === 'tab') this.focus = panes[(panes.indexOf(this.focus) + 1) % panes.length];
+    else if (k === 'zoom') this.zoom = !this.zoom;
+    else if (k === 'attach') { var s = T.filter(function (x) { return x.id === self.sel; })[0]; if (s && (s.st === 'working' || s.st === 'needs')) { this.attached = !this.attached; this.focus = 'session'; } }
+    this.setState({ v: Date.now() });
+  }
+  renderVals() {
+    var self = this, T = this.tasks(), n = this.n || 0;
+    var sel = T.filter(function (x) { return x.id === self.sel; })[0];
+    var amber = '#f3b45c', line = '#232a57';
+    function item(x) {
+      var on = x.id === self.sel;
+      var mark = x.st === 'ready' ? '✓' : x.st === 'needs' ? '!' : x.st === 'working' ? '⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏'[(n + x.id) % 10] : '·';
+      var mc = x.st === 'ready' ? '#8fd6a8' : x.st === 'needs' ? '#ff8f7a' : x.st === 'working' ? '#93b2ff' : '#7d84a8';
+      return { id: x.id, t: x.t, mark: mark, mc: on ? '#0b0e24' : mc, idc: on ? '#0b0e24' : '#7d84a8', bg: on ? amber : 'transparent', fg: on ? '#0b0e24' : '#e3e6f5', pick: function () { self.sel = x.id; self.attached = false; self.setState({ v: Date.now() }); } };
+    }
+    function grp(name, st, c) { return { name: name, c: c, items: T.filter(function (x) { return x.st === st; }).map(item) }; }
+    var groups = [grp('NEEDS YOU', 'needs', '#ff8f7a'), grp('WORKING', 'working', '#93b2ff'), grp('READY', 'ready', '#8fd6a8'), grp('QUEUED', 'queued', '#7d84a8')].filter(function (g) { return g.items.length; });
+    var colorOf = { tool: '#c9cde6', say: '#e3e6f5', ok: '#8fd6a8', err: '#ff8f7a', need: '#ff8f7a' };
+    var shown = sel.script;
+    if (sel.st === 'working') { var L = sel.script.length + 3; shown = sel.script.slice(0, Math.max(3, Math.min(sel.script.length, n % L))); }
+    var session = shown.map(function (l) { return { s: l[1], c: colorOf[l[0]], pad: l[0] === 'ok' || l[0] === 'err' ? '18px' : '0px' }; });
+    var diff = sel.diff.map(function (d) { return { s: d[1], c: d[0] === '+' ? '#b5ecc8' : d[0] === '-' ? '#ffb3a6' : d[0] === 'h' ? '#7d84a8' : '#c9cde6', b: d[0] === '+' ? '#8fd6a814' : d[0] === '-' ? '#ff8f7a14' : 'transparent' }; });
+    var checks = sel.checks.map(function (c) { return { mark: c[0] === 'ok' ? '✓' : c[0] === 'run' ? '⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏'[n % 10] : '·', c: c[0] === 'ok' ? '#8fd6a8' : c[0] === 'run' ? '#93b2ff' : '#4b5180', name: c[1], time: c[2] }; });
+    var f = this.focus, z = this.zoom;
+    var cols = z ? (f === 'tasks' ? 'minmax(0, 1fr) 0px' : '0px minmax(0, 1fr)') : '360px minmax(0, 1fr)';
+    var rows = z ? (f === 'session' ? 'minmax(0, 1fr) 0px' : '0px minmax(0, 1fr)') : 'minmax(0, 1.35fr) minmax(0, 1fr)';
+    var bottomCols = z ? (f === 'ci' ? '0px minmax(0, 1fr)' : f === 'diff' ? 'minmax(0, 1fr) 0px' : 'minmax(0, 1fr) minmax(0, 1fr)') : 'minmax(0, 1.2fr) minmax(0, 1fr)';
+    var VERBS = ['Herding commits…', 'Running tests…', 'Taking a screenshot…', 'Reading the logs…'];
+    return {
+      groups: groups, sel: sel, session: session, diff: diff, checks: checks,
+      cols: cols, rows: rows, bottomCols: bottomCols,
+      bTasks: f === 'tasks' ? amber : line, bSession: f === 'session' ? amber : line, bDiff: f === 'diff' ? amber : line, bCi: f === 'ci' ? amber : line,
+      tTasks: f === 'tasks' ? amber : '#7d84a8', tSession: f === 'session' ? amber : '#7d84a8', tDiff: f === 'diff' ? amber : '#7d84a8', tCi: f === 'ci' ? amber : '#7d84a8',
+      attached: this.attached, showCursor: sel.st === 'working', spinner: '⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏'[n % 10], verb: VERBS[Math.floor(n / 6) % VERBS.length],
+      modeText: (z ? 'zoomed: ' + f : 'focus: ' + f) + (this.attached ? ' · attached' : ''),
+      focusTasks: function () { self.focus = 'tasks'; self.setState({ v: Date.now() }); },
+      focusSession: function () { self.focus = 'session'; self.setState({ v: Date.now() }); },
+      focusDiff: function () { self.focus = 'diff'; self.setState({ v: Date.now() }); },
+      focusCi: function () { self.focus = 'ci'; self.setState({ v: Date.now() }); },
+      toggleZoom: function () { self.act('zoom'); },
+      toggleAttach: function () { self.act('attach'); },
+      onKey: function (e) {
+        var k = e.key;
+        var map = { j: 'down', ArrowDown: 'down', k: 'up', ArrowUp: 'up', Tab: 'tab', z: 'zoom', Enter: 'attach' };
+        if (map[k]) { e.preventDefault(); self.act(map[k]); }
+      }
+    };
+  }
+}
+</script>
+</body>
+</html>

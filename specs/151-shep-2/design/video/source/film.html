@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Shep 2 overview film</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gloock&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap">
+<style>
+:root{
+  --midnight:#070a1c; --night:#141a44; --dusk:#262c66; --violet:#4d3f78; --rose:#8a5374;
+  --ember:#c9763a; --lantern:#f3b45c; --dawn:#ffe4b0;
+  --ink:#f4f1ea; --muted:#a3aac8; --panel:#0e1230; --line:#2c3366;
+  --q:#7d84a8; --w:#93b2ff; --n:#ff8f7a; --r:#8fd6a8; --m:#f3b45c;
+}
+*{box-sizing:border-box}
+html,body{margin:0;width:1920px;height:1080px;overflow:hidden;background:var(--midnight);color:var(--ink);font-family:'Hanken Grotesk',sans-serif}
+.scene{position:absolute;inset:0;overflow:hidden;opacity:0}
+.full{position:absolute;inset:0}
+.pix{image-rendering:pixelated}
+.mono{font-family:'JetBrains Mono',monospace}
+.serif{font-family:Gloock,Georgia,serif;font-weight:400}
+.abs{position:absolute}
+.center{display:flex;align-items:center;justify-content:center}
+.sub{position:absolute;left:50%;bottom:64px;transform:translateX(-50%);max-width:1480px;width:max-content;text-align:center;
+  font-size:38px;line-height:1.32;font-weight:500;color:#fbf8f1;background:rgba(5,7,22,.78);padding:14px 30px;border-radius:16px;opacity:0;
+  box-shadow:0 10px 40px rgba(0,0,0,.35)}
+.chap{position:absolute;left:56px;top:48px;display:flex;align-items:center;gap:14px;opacity:0;
+  font-family:'JetBrains Mono',monospace;font-size:20px;letter-spacing:.16em;text-transform:uppercase;color:var(--lantern);
+  background:rgba(5,7,22,.72);padding:10px 18px;border-radius:999px}
+.chap i{width:10px;height:10px;border-radius:50%;background:var(--lantern);display:block}
+#bar{position:absolute;left:0;bottom:0;height:6px;width:1920px;transform-origin:0 0;transform:scaleX(0);
+  background:linear-gradient(90deg,#141a44,#262c66,#4d3f78,#8a5374,#c9763a,#f3b45c,#ffe4b0);z-index:50}
+.card{position:absolute;background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:26px 28px;color:var(--ink)}
+.tag{font-family:'JetBrains Mono',monospace;font-size:16px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+.chip{display:inline-flex;align-items:center;gap:8px;padding:4px 12px;border-radius:999px;font-size:20px;font-weight:600}
+.dot{width:12px;height:12px;border-radius:50%;display:inline-block}
+.headline{position:absolute;left:0;right:0;text-align:center;font-family:Gloock,serif;font-size:72px;line-height:1.08}
+.key{width:150px;height:150px;border-radius:26px;background:#1b2150;border:2px solid #3a4280;box-shadow:0 10px 0 #0a0d26;
+  display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:72px;font-weight:700}
+.tile{position:absolute;width:600px;height:360px;border-radius:16px;overflow:hidden;border:1px solid #3a4280;background:#0b0e24}
+.tile img{width:100%;height:100%;object-fit:cover;object-position:top left}
+.tile .lbl{position:absolute;left:14px;top:14px;font-size:20px;font-weight:700;background:rgba(5,7,22,.82);padding:6px 14px;border-radius:999px;color:var(--lantern)}
+</style>
+</head>
+<body>
+<div id="stage" class="full"></div>
+<div id="subs" class="full" style="z-index:40;pointer-events:none"></div>
+<div id="bar"></div>
+<div id="black" class="full" style="background:#000;opacity:0;z-index:60"></div>
+<script>
+const VW = 1920, VH = 1080;
+const IMG = 'img/';
+const EASE = 'cubic-bezier(.22,.7,.2,1)';
+const $ = (html) => { const t = document.createElement('template'); t.innerHTML = html.trim(); return t.content.firstElementChild; };
+// fill: first animation on a property uses 'both'; later ones on the same property use 'forwards'
+let OFF = 0; // scene start, added to every delay while a scene is being built
+function A(el, kf, start, dur, o = {}) {
+  return el.animate(kf, { delay: (start + OFF) * 1000, duration: Math.max(dur, 0.001) * 1000, fill: o.fill || 'both', easing: o.easing || EASE, iterations: o.iter || 1, direction: o.dir || 'normal' });
+}
+const fadeIn = (el, t, d = 0.6, y = 0) => A(el, y ? [{ opacity: 0, transform: `translateY(${y}px)` }, { opacity: 1, transform: 'none' }] : [{ opacity: 0 }, { opacity: 1 }], t, d);
+const fadeOut = (el, t, d = 0.5) => A(el, [{ opacity: 1 }, { opacity: 0 }], t, d, { fill: 'forwards' });
+const pop = (el, t) => A(el, [{ opacity: 0, transform: 'scale(.85)' }, { opacity: 1, transform: 'scale(1.06)', offset: .7 }, { opacity: 1, transform: 'scale(1)' }], t, 0.5);
+
+function rectTransform(r, box) {
+  const [x, y, w, h] = r; const b = box || { x: 100, y: 120, w: 1720, h: 800 };
+  const s = Math.min(b.w / w, b.h / h);
+  const tx = b.x + b.w / 2 - s * (x + w / 2), ty = b.y + b.h / 2 - s * (y + h / 2);
+  return `translate(${tx}px, ${ty}px) scale(${s})`;
+}
+const SHEEP = (c = '#f4f1ea', face = '#1a1d3a') => `<svg viewBox="0 0 64 50" width="100%" height="100%"><g fill="${c}"><circle cx="20" cy="24" r="11"/><circle cx="32" cy="17" r="12"/><circle cx="43" cy="23" r="11"/><circle cx="30" cy="29" r="11"/></g><ellipse cx="52" cy="22" rx="8" ry="6.5" fill="${face}"/><rect x="22" y="37" width="4.5" height="10" rx="2" fill="${face}"/><rect x="38" y="37" width="4.5" height="10" rx="2" fill="${face}"/></svg>`;
+
+function stars(parent, n, seed, t0, t1) {
+  let s = seed; const rnd = () => (s = (s * 9301 + 49297) % 233280) / 233280;
+  for (let i = 0; i < n; i++) {
+    const sz = rnd() < .2 ? 6 : 4;
+    const el = $(`<i class="abs" style="left:${rnd() * VW}px;top:${rnd() * VH * .55}px;width:${sz}px;height:${sz}px;background:${rnd() < .3 ? '#f3b45c' : '#e9e7f2'}"></i>`);
+    parent.appendChild(el);
+    A(el, [{ opacity: .15 }, { opacity: 1 }], t0 + rnd() * 2, 0.9 + rnd() * 1.6, { iter: 40, dir: 'alternate', easing: 'ease-in-out' });
+  }
+}
+
+const B = {}; // scene builders: (el, sc, T) where T(i) = line start relative to scene, D(i) duration
+B.open = (el, sc, L) => {
+  const sky = $(`<img class="abs pix" src="${IMG}hero-night.png" style="left:50%;top:0;height:1080px;transform-origin:50% 60%">`);
+  el.appendChild(sky); A(sky, [{ transform: 'translateX(-50%) scale(1)' }, { transform: 'translateX(-50%) scale(1.08)' }], 0, sc.dur, { easing: 'linear' });
+  stars(el, 60, 7, 0);
+  const shade = $(`<div class="full" style="background:radial-gradient(ellipse at 50% 42%, rgba(7,10,28,.82), rgba(7,10,28,.35) 60%, rgba(7,10,28,0) 80%)"></div>`); el.appendChild(shade);
+  const icon = $(`<img class="abs" src="${IMG}icon-lantern.png" style="left:880px;top:150px;width:160px;height:160px">`); el.appendChild(icon); pop(icon, 0.5);
+  const t1 = $(`<div class="headline" style="top:360px;font-size:104px">Go to sleep with issues.</div>`);
+  const t2 = $(`<div class="headline" style="top:480px;font-size:104px;color:var(--lantern)">Wake up with pull requests.</div>`);
+  el.append(t1, t2); fadeIn(t1, L[0].t, .8, 20); fadeIn(t2, L[0].t + 1.6, .8, 20);
+  const k = $(`<div class="abs mono" style="left:0;right:0;top:640px;text-align:center;font-size:26px;letter-spacing:.3em;color:var(--dawn)">SHEP · THE NIGHT SHIFT FOR YOUR BACKLOG</div>`);
+  el.appendChild(k); fadeIn(k, L[1].t + 0.4, .8);
+};
+
+B.problem = (el, sc, L) => {
+  el.style.background = 'radial-gradient(ellipse at 30% 40%, #141a44, #070a1c 70%)';
+  const h1 = $(`<div class="abs serif" style="left:110px;top:150px;font-size:66px;line-height:1.1">Today, you <span style="color:var(--n)">watch</span><br>agents work.</div>`);
+  el.appendChild(h1); fadeIn(h1, L[0].t, .7, 16);
+  const msgs = [['Allow edit to src/auth.ts? (y/n)', '#f3b45c'], ['✗ build failed · 3 tests', '#ff8f7a'], ['waiting for your input…', '#93b2ff'], ['Run npm install? (y/n)', '#f3b45c'], ['✗ lint: 12 problems', '#ff8f7a'], ['context full · /compact?', '#93b2ff']];
+  const grid = $(`<div class="abs" style="left:110px;top:400px;width:1000px;height:520px"></div>`); el.appendChild(grid);
+  msgs.forEach(([m, c], i) => {
+    const x = (i % 3) * 335, y = Math.floor(i / 3) * 260;
+    const w = $(`<div class="abs" style="left:${x}px;top:${y}px;width:315px;height:235px;border-radius:12px;background:#0b0e24;border:1px solid #2c3366;overflow:hidden">
+      <div style="height:30px;background:#151a3a;display:flex;gap:7px;align-items:center;padding:0 12px"><i class="dot" style="width:10px;height:10px;background:#ff5f57"></i><i class="dot" style="width:10px;height:10px;background:#febc2e"></i><i class="dot" style="width:10px;height:10px;background:#28c840"></i><span class="mono" style="margin-left:auto;font-size:13px;color:#7d84a8">agent ${i + 1}</span></div>
+      <div class="mono" style="padding:16px;font-size:16px;line-height:1.7;color:#7d84a8">● Reading files…<br>● Editing…<br><span style="color:${c}">${m}</span><br><span class="cur" style="display:inline-block;width:10px;height:20px;background:#e9e7f2;vertical-align:middle"></span></div></div>`);
+    grid.appendChild(w); pop(w, L[0].t + 0.6 + i * 0.35);
+    A(w.querySelector('.cur'), [{ opacity: 1 }, { opacity: 0 }], 0, .5, { iter: 60, dir: 'alternate', easing: 'steps(1)' });
+    A(w, [{ borderColor: '#2c3366' }, { borderColor: c }], L[1].t + i * 0.3, .4, { iter: 6, dir: 'alternate' });
+  });
+  const eye = $(`<div class="abs mono" style="left:110px;top:940px;font-size:20px;color:var(--muted)">watching 6 agents · 3h 12m · 41 prompts answered</div>`); el.appendChild(eye); fadeIn(eye, L[1].t, .6);
+  A(grid, [{ opacity: 1, filter: 'blur(0px)' }, { opacity: .25, filter: 'blur(3px)' }], L[2].t, .9);
+  const right = $(`<div class="abs" style="left:1180px;top:300px;width:640px"></div>`);
+  right.innerHTML = `<div class="serif" style="font-size:66px;line-height:1.1">Shep: you <span style="color:var(--lantern)">come back</span> to finished work.</div>
+    <div class="card" style="position:relative;margin-top:44px;padding:28px">
+      <div class="tag">07:02 · good morning</div>
+      <div style="font-size:34px;font-weight:700;margin-top:12px">6 tasks done overnight</div>
+      <div style="display:flex;gap:12px;margin-top:18px"><span class="chip" style="background:#8fd6a822;color:var(--r)"><i class="dot" style="background:var(--r)"></i>5 ready</span><span class="chip" style="background:#ff8f7a22;color:var(--n)"><i class="dot" style="background:var(--n)"></i>1 needs you</span></div></div>`;
+  el.appendChild(right); fadeIn(right, L[2].t + 0.2, .8, 24);
+};
+
+B.states = (el, sc, L) => {
+  const bg = $(`<img class="abs pix" src="${IMG}sky-2of6.png" style="left:50%;top:0;height:1080px;transform:translateX(-50%);opacity:.35">`); el.appendChild(bg);
+  el.appendChild($(`<div class="full" style="background:linear-gradient(180deg,rgba(7,10,28,.6),rgba(7,10,28,.92))"></div>`));
+  const h = $(`<div class="headline" style="top:150px">One thing: <span style="color:var(--lantern)">a task.</span></div>`); el.appendChild(h); fadeIn(h, L[0].t, .7, 16);
+  const one = $(`<div class="abs" style="left:880px;top:300px;width:160px;height:125px">${SHEEP()}</div>`); el.appendChild(one);
+  A(one, [{ opacity: 0, transform: 'translateX(-500px)' }, { opacity: 1, transform: 'translateX(0)' }], L[0].t + 1.0, 1.6);
+  fadeOut(one, L[1].t - 0.2, .4);
+  const h2 = $(`<div class="headline" style="top:150px">Five states.</div>`); el.appendChild(h2);
+  fadeOut(h, L[1].t - 0.2, .4); fadeIn(h2, L[1].t, .6, 16);
+  const S = [['Queued', 'var(--q)', 250, 470, 0], ['Working', 'var(--w)', 620, 470, 1.0], ['Ready', 'var(--r)', 1010, 380, 2.0], ['Needs you', 'var(--n)', 1010, 590, 2.9], ['Merged', 'var(--m)', 1400, 470, 3.9]];
+  S.forEach(([name, c, x, y, d]) => {
+    const n = $(`<div class="abs center" style="left:${x}px;top:${y}px;width:300px;height:140px;flex-direction:column;gap:10px;border-radius:20px;background:#0e1230;border:2px solid ${c}">
+      <div style="width:84px;height:66px">${SHEEP()}</div><div style="font-size:30px;font-weight:700;color:${c}">${name}</div></div>`);
+    el.appendChild(n); pop(n, L[2].t + d * (L[2].d / 5.2));
+  });
+  const arrows = $(`<svg class="abs" style="left:0;top:0" width="1920" height="1080"><g stroke="#3a4280" stroke-width="4" fill="none" stroke-linecap="round">
+    <path d="M555 540 L615 540"/><path d="M925 520 L1000 455"/><path d="M925 560 L1000 655"/><path d="M1315 450 L1395 515"/><path d="M1315 660 Q1360 640 1395 565" stroke-dasharray="8 10"/></g></svg>`);
+  el.appendChild(arrows); fadeIn(arrows, L[2].t + 0.5, 1.2);
+  const fin = $(`<div class="abs" style="left:0;right:0;top:830px;text-align:center;font-size:36px;color:var(--muted)">You make one decision per task: <b style="color:var(--r)">Merge</b> or <b style="color:var(--n)">Send back</b>.</div>`);
+  el.appendChild(fin); fadeIn(fin, L[3].t, .6, 10);
+};
+
+B.handover = (el, sc, L) => {
+  el.style.background = 'radial-gradient(ellipse at 50% 0%, #1b2154, #070a1c 70%)';
+  const h = $(`<div class="headline" style="top:118px;font-size:60px">Hand it over <span style="color:var(--lantern)">the way you already do.</span></div>`); el.appendChild(h); fadeIn(h, L[0].t, .7, 16);
+  const C = [
+    [110, 250, 'Linear · Jira · Notion · Monday', `<div class="mono" style="font-size:18px;color:var(--muted)">ENG-342</div><div style="font-size:28px;font-weight:700;margin:6px 0 16px">Invoice dates use the wrong timezone</div>
+      <div style="display:flex;gap:10px;align-items:center"><span class="chip" style="background:#262c66;color:#c9cde6">bug</span><span class="chip lbl2" style="background:#f3b45c;color:#1a1405">shep</span><span style="margin-left:auto;font-size:20px;color:var(--muted)">Todo → <b style="color:var(--lantern)">Tonight</b></span></div>`, 1],
+    [690, 250, 'Slack', `<div style="display:flex;gap:14px"><div style="width:48px;height:48px;border-radius:10px;background:#c9cde6;flex:none"></div><div><b style="font-size:22px">Dana</b> <span style="color:var(--muted);font-size:18px">16:42</span><div style="font-size:24px;margin-top:4px">Checkout fails on Safari when the cart has a coupon.</div>
+      <span class="chip react" style="margin-top:12px;background:#f3b45c22;border:1px solid var(--lantern);font-family:'JetBrains Mono',monospace;font-size:20px;color:var(--lantern)">:sheep: 1</span></div></div>`, 2],
+    [1270, 250, 'GitHub', `<div style="font-size:28px;font-weight:700;margin-bottom:16px"><span style="color:var(--muted)">#412</span> Fix login redirect loop</div><div style="display:flex;gap:10px"><span class="chip" style="background:#262c66;color:#c9cde6">bug</span><span class="chip lbl3" style="background:#f3b45c;color:#1a1405">shep</span></div>`, 3],
+    [400, 600, 'Terminal', `<div class="mono" style="font-size:26px;line-height:1.7"><span style="color:var(--muted)">$</span> <span class="typed"></span><br><span class="ok" style="color:var(--r)">✓ queued for tonight · 23:00</span></div>`, 3],
+    [980, 600, 'Your coding agent', `<div style="display:flex;flex-direction:column;gap:12px"><span style="align-self:flex-end;background:#f3b45c;color:#1a1405;border-radius:14px;padding:10px 16px;font-size:23px;font-weight:600">Give this to Shep for tonight.</span>
+      <span class="ag" style="align-self:flex-start;background:#1b2150;border-radius:14px;padding:10px 16px;font-size:23px">Queued #437. It starts at 23:00.</span></div>`, 4]];
+  C.forEach(([x, y, tag, body, li], i) => {
+    const c = $(`<div class="card" style="left:${x}px;top:${y}px;width:540px;height:${y > 300 ? 250 : 290}px"><div class="tag" style="margin-bottom:16px">${tag}</div>${body}</div>`);
+    el.appendChild(c);
+    const t = L[li].t + (i === 3 ? 0 : 0.1);
+    A(c, [{ opacity: 0, transform: 'translateY(24px)' }, { opacity: 1, transform: 'none' }], t, .6);
+    if (i === 0) { pop(c.querySelector('.lbl2'), t + 1.0); }
+    if (i === 1) { pop(c.querySelector('.react'), t + 1.2); }
+    if (i === 2) { pop(c.querySelector('.lbl3'), t + 0.8); }
+    if (i === 3) {
+      const ty = c.querySelector('.typed'); const s = 'shep add "Rate-limit /api/search"';
+      const span = L[3].d * 0.45, t0 = L[3].t + L[3].d * 0.45;
+      for (let k = 1; k <= s.length; k++) { const ch = $(`<span>${s[k - 1] === ' ' ? '&nbsp;' : s[k - 1].replace('<', '&lt;')}</span>`); ty.appendChild(ch); A(ch, [{ opacity: 0 }, { opacity: 1 }], t0 + span * k / s.length, 0.01, { easing: 'linear' }); }
+      fadeIn(c.querySelector('.ok'), t0 + span + 0.3, .3);
+      A(c, [{ opacity: 0, transform: 'translateY(24px)' }, { opacity: 1, transform: 'none' }], L[3].t + L[3].d * 0.4, .6, { fill: 'both' });
+    }
+    if (i === 4) { fadeIn(c.querySelector('.ag'), t + 1.6, .4, 8); }
+  });
+};
+
+B.night = (el, sc, L) => {
+  const t0 = L[0].t, span = (L[3].t + L[3].d) - t0;
+  for (let k = 0; k <= 5; k++) {
+    const im = $(`<img class="abs pix" src="${IMG}sky-${k}of6.png" style="left:50%;top:0;height:1080px;transform:translateX(-50%)">`);
+    el.appendChild(im); if (k > 0) A(im, [{ opacity: 0 }, { opacity: 1 }], t0 + span * k / 5.4, 1.2, { easing: 'linear' });
+  }
+  const panel = $(`<div class="abs" style="left:56px;top:150px;width:560px;padding:22px 24px;border-radius:16px;background:rgba(5,7,22,.78);border:1px solid #2c3366"></div>`);
+  const tasks = ['#412 Fix login redirect loop', '#418 Add CSV export', 'ENG-342 Invoice timezone', '#430 Move avatars to S3', 'Slack · Safari coupon bug', '#433 Rate-limit /api/search'];
+  panel.innerHTML = `<div class="tag" style="margin-bottom:12px">Tonight · 6 tasks</div>` + tasks.map((t, i) => `<div style="display:flex;align-items:center;gap:12px;font-size:22px;padding:7px 0"><span class="st st${i}" style="position:relative;width:118px;height:28px;flex:none"></span><span>${t}</span></div>`).join('');
+  el.appendChild(panel); fadeIn(panel, t0 + 0.4, .6, 10);
+  tasks.forEach((_, i) => {
+    const slot = panel.querySelector('.st' + i);
+    const mk = (txt, c) => { const e = $(`<span class="chip abs" style="left:0;top:0;font-size:17px;padding:2px 10px;background:${c}22;color:${c}"><i class="dot" style="width:9px;height:9px;background:${c}"></i>${txt}</span>`); slot.appendChild(e); return e; };
+    const q = mk('Queued', '#7d84a8'); fadeIn(q, 0, .01);
+    const w = mk('Working', '#93b2ff'); const tw = t0 + 1.2 + i * span / 9;
+    fadeIn(w, tw, .3); fadeOut(q, tw, .3);
+    const done = t0 + span * (i + 1) / 5.4 - (i === 5 ? 0.3 : 0);
+    if (i === 3) { const n = mk('Needs you', '#ff8f7a'); fadeIn(n, tw + 3, .3); fadeOut(w, tw + 3, .3); }
+    else { const r = mk('Ready', '#8fd6a8'); const td = i > 3 ? t0 + span * i / 5.4 : done; fadeIn(r, td, .3); fadeOut(w, td, .3); }
+  });
+  const clock = $(`<div class="abs mono" style="right:56px;top:150px;text-align:right;padding:18px 24px;border-radius:16px;background:rgba(5,7,22,.78);border:1px solid #2c3366"></div>`);
+  const times = ['23:00', '00:40', '02:10', '03:30', '04:50', '06:10'];
+  clock.innerHTML = `<div class="tag">Shift</div><div style="position:relative;height:64px;width:180px">` + times.map((t, k) => `<span class="abs tm${k}" style="right:0;top:6px;font-size:52px;color:var(--dawn);opacity:0">${t}</span>`).join('') + `</div><div style="position:relative;height:30px;width:300px">` + [0, 1, 2, 3, 4, 5].map(k => `<span class="abs pen${k}" style="right:0;top:0;font-size:20px;color:var(--muted);opacity:0">${k === 5 ? '4 in the pen · 1 needs you' : k + ' of 6 in the pen'}</span>`).join('') + `</div>`;
+  el.appendChild(clock); fadeIn(clock, t0, .5);
+  times.forEach((_, k) => {
+    const at = k === 0 ? t0 : t0 + span * k / 5.4;
+    const a = clock.querySelector('.tm' + k), p = clock.querySelector('.pen' + k);
+    fadeIn(a, at, .4); fadeIn(p, at, .4);
+    if (k < 5) { const nx = t0 + span * (k + 1) / 5.4; fadeOut(a, nx, .3); fadeOut(p, nx, .3); }
+  });
+};
+
+B.trouble = (el, sc, L) => {
+  const bg = $(`<img class="abs pix" src="${IMG}sky-3of6.png" style="left:50%;top:0;height:1080px;transform:translateX(-50%)">`); el.appendChild(bg);
+  el.appendChild($(`<div class="full" style="background:rgba(7,10,28,.62)"></div>`));
+  const mk = (x, y, html) => { const c = $(`<div class="card" style="left:${x}px;top:${y}px;width:540px;height:300px">${html}</div>`); el.appendChild(c); return c; };
+  const c1 = mk(110, 330, `<div class="tag">01:24 · CI</div><div class="red" style="font-size:30px;font-weight:700;margin-top:18px;color:var(--n)">✗ checkout.spec.ts failed</div>
+    <div class="mono" style="font-size:18px;color:var(--muted);margin-top:14px">reading the log… patching… pushing</div><div class="grn" style="font-size:30px;font-weight:700;margin-top:18px;color:var(--r)">✓ Fixed 1 failure at 01:30</div>`);
+  fadeIn(c1, L[0].t, .6, 20); fadeIn(c1.querySelector('.grn'), L[0].t + L[0].d * 0.75, .5, 8);
+  const c2 = mk(690, 330, `<div class="tag">02:05 · #430 Move avatars to S3</div><div style="font-size:28px;font-weight:700;margin-top:18px">Which S3 bucket should avatars go in?</div>
+    <span class="chip" style="margin-top:22px;background:#ff8f7a22;color:var(--n)"><i class="dot" style="background:var(--n)"></i>Needs you · waits for the morning</span><div class="mono" style="font-size:18px;color:var(--muted);margin-top:16px">→ moving on to #433</div>`);
+  fadeIn(c2, L[1].t, .6, 20);
+  const c3 = mk(1270, 330, `<div class="tag">23:00 – 07:00</div><div style="display:flex;align-items:center;gap:20px;margin-top:22px"><svg width="76" height="76" viewBox="0 0 76 76"><path d="M52 10a30 30 0 1 0 14 40A24 24 0 0 1 52 10z" fill="#ffe4b0"/></svg>
+    <div style="font-size:30px;font-weight:700;line-height:1.2">Quiet night.<br><span style="color:var(--muted);font-weight:500;font-size:24px">No alerts. No pings.</span></div></div><div class="mono" style="font-size:18px;color:var(--muted);margin-top:26px">everything waits for your morning</div>`);
+  fadeIn(c3, L[2].t, .6, 20);
+  const h = $(`<div class="headline" style="top:150px;font-size:60px">Shep handles the night <span style="color:var(--lantern)">on its own.</span></div>`); el.appendChild(h); fadeIn(h, L[0].t, .6, 12);
+};
+
+B.decide = (el, sc, L) => {
+  el.style.background = 'radial-gradient(ellipse at 50% 30%, #1b2154, #070a1c 70%)';
+  const crop = $(`<div class="abs" style="left:240px;top:120px;width:1440px;height:345px;overflow:hidden;border-radius:18px;border:1px solid #3a4280;background:#0b0e24"></div>`);
+  const im = $(`<img class="abs" src="${IMG}MacReview.png" style="width:1280px;height:820px;transform-origin:0 0;transform:${rectTransform([290, 340, 960, 230], { x: 0, y: 0, w: 1440, h: 345 })}">`);
+  crop.appendChild(im); el.appendChild(crop); fadeIn(crop, 0.2, .6, 16);
+  const mkKey = (x, k, c, label) => { const w = $(`<div class="abs center" style="left:${x}px;top:540px;flex-direction:column;gap:18px"><div class="key" style="color:${c}">${k}</div><div style="font-size:30px;font-weight:700;color:${c}">${label}</div></div>`); el.appendChild(w); return w; };
+  const d = L[0].d;
+  const m = mkKey(640, 'M', 'var(--r)', 'Merge'), s = mkKey(1130, 'S', 'var(--n)', 'Send back');
+  fadeIn(m, L[0].t + d * 0.3, .4, 12); fadeIn(s, L[0].t + d * 0.55, .4, 12);
+  A(m.querySelector('.key'), [{ transform: 'translateY(0)', boxShadow: '0 10px 0 #0a0d26' }, { transform: 'translateY(8px)', boxShadow: '0 2px 0 #0a0d26' }, { transform: 'translateY(0)', boxShadow: '0 10px 0 #0a0d26' }], L[0].t + d * 0.42, .35);
+  A(s.querySelector('.key'), [{ transform: 'translateY(0)', boxShadow: '0 10px 0 #0a0d26' }, { transform: 'translateY(8px)', boxShadow: '0 2px 0 #0a0d26' }, { transform: 'translateY(0)', boxShadow: '0 10px 0 #0a0d26' }], L[0].t + d * 0.7, .35);
+  const note = $(`<div class="abs" style="left:1330px;top:560px;width:420px;padding:16px 20px;border-radius:14px;background:#0e1230;border:1px solid var(--n);font-size:22px"><div class="tag" style="color:var(--n)">Send back with a note</div><div style="margin-top:8px">Also handle an empty coupon code.</div></div>`);
+  el.appendChild(note); fadeIn(note, L[0].t + d * 0.8, .5, 10);
+  const stamp = $(`<div class="abs chip" style="left:600px;top:470px;font-size:24px;background:#8fd6a8;color:#0b2416">✓ Merged by you</div>`); el.appendChild(stamp); pop(stamp, L[0].t + d * 0.47);
+  const rule = $(`<div class="abs center" style="left:0;right:0;top:840px;gap:16px;font-size:34px"><svg width="34" height="40" viewBox="0 0 34 40"><rect x="3" y="17" width="28" height="21" rx="4" fill="#f3b45c"/><path d="M9 17v-6a8 8 0 0 1 16 0v6" stroke="#f3b45c" stroke-width="4" fill="none"/></svg><span><b>Draft pull requests only.</b> <span style="color:var(--muted)">A person always presses Merge.</span></span></div>`);
+  el.appendChild(rule); fadeIn(rule, L[1].t, .6, 10);
+};
+
+B.surfaces = (el, sc, L) => {
+  el.style.background = 'radial-gradient(ellipse at 50% 20%, #1b2154, #070a1c 70%)';
+  const T = [['SplitView', 'Terminal', 330, 150, 1], ['MacReview', 'Mac app', 990, 150, 2], ['MCP', 'Inside your coding agent', 330, 550, 3], ['SignalThread', 'Your team\'s tools', 990, 550, 4]];
+  const tiles = T.map(([img, lbl, x, y, li], i) => {
+    const t = $(`<div class="tile" style="left:${x}px;top:${y}px"><img src="${IMG}${img}.png"><span class="lbl">${lbl}</span></div>`);
+    el.appendChild(t); pop(t, L[0].t + 0.3 + i * 0.25); return t;
+  });
+  T.forEach(([, , , , li], i) => {
+    tiles.forEach((t, j) => {
+      if (j === i) A(t, [{ opacity: 1, transform: 'scale(1)', borderColor: '#3a4280' }, { opacity: 1, transform: 'scale(1.05)', borderColor: '#f3b45c' }], L[li].t, .4, { fill: 'forwards' });
+      else A(t, [{ opacity: 1, transform: 'scale(1)' }, { opacity: .35, transform: 'scale(.98)' }], L[li].t, .4, { fill: 'forwards' });
+    });
+  });
+  const ff = $(`<div class="abs" style="left:0;right:0;top:94px;text-align:center;font-size:30px;color:var(--muted)">Same tasks, same five states, everywhere.</div>`); el.appendChild(ff); fadeIn(ff, L[0].t, .6);
+};
+
+B.look = (el, sc, L) => {
+  el.style.background = '#070a1c';
+  const strip = $(`<div class="abs" style="left:96px;top:150px;display:flex;gap:12px"></div>`); el.appendChild(strip);
+  for (let k = 0; k <= 6; k++) { const im = $(`<img class="pix" src="${IMG}sky-${k}of6.png" style="width:236px;height:128px;border-radius:10px">`); strip.appendChild(im); fadeIn(im, L[0].t + k * 0.28, .5, 12); }
+  el.appendChild(strip);
+  const cap = $(`<div class="abs mono" style="left:96px;top:296px;width:1728px;display:flex;justify-content:space-between;font-size:18px;color:var(--muted)"><span>23:00 · night</span><span>the sky is the progress bar</span><span>06:40 · dawn</span></div>`); el.appendChild(cap); fadeIn(cap, L[0].t + 1.6, .5);
+  const icons = $(`<div class="abs" style="left:96px;top:380px;display:flex;gap:26px"></div>`); el.appendChild(icons);
+  ['icon-lantern', 'icon-lantern-dark', 'icon-sheep'].forEach((n, i) => { const im = $(`<img src="${IMG}${n}.png" style="width:190px;height:190px">`); icons.appendChild(im); pop(im, L[1].t + i * 0.25); });
+  el.appendChild(icons);
+  const pal = $(`<div class="abs" style="left:780px;top:380px;width:1044px;display:grid;grid-template-columns:repeat(8,1fr);gap:8px"></div>`); el.appendChild(pal);
+  [['Midnight', '#070a1c'], ['Night', '#141a44'], ['Dusk', '#262c66'], ['Violet', '#4d3f78'], ['Rose', '#8a5374'], ['Ember', '#c9763a'], ['Lantern', '#f3b45c'], ['Dawn', '#ffe4b0']].forEach(([n, c], i) => {
+    const sw = $(`<div><div style="height:130px;border-radius:10px;background:${c};border:1px solid #2c3366"></div><div style="font-size:18px;margin-top:8px">${n}</div><div class="mono" style="font-size:14px;color:var(--muted)">${c}</div></div>`);
+    pal.appendChild(sw); fadeIn(sw, L[1].t + 1.0 + i * 0.12, .4, 10);
+  });
+  el.appendChild(pal);
+  const type = $(`<div class="abs" style="left:96px;top:650px;display:flex;gap:56px;align-items:baseline"><span class="serif" style="font-size:64px">Dawn. 5 ready.</span><span style="font-size:30px;font-weight:600">Hanken Grotesk for the interface</span><span class="mono" style="font-size:26px;color:var(--lantern)">shep add "#412"</span></div>`);
+  el.appendChild(type); fadeIn(type, L[1].t + 2.2, .6, 10);
+  const states = $(`<div class="abs" style="left:96px;top:770px;display:flex;gap:22px"></div>`); el.appendChild(states);
+  [['Queued', '#7d84a8'], ['Working', '#93b2ff'], ['Needs you', '#ff8f7a'], ['Ready', '#8fd6a8'], ['Merged', '#f3b45c']].forEach(([n, c], i) => {
+    const s = $(`<div class="center" style="gap:12px;padding:10px 20px 10px 12px;border-radius:999px;background:${c}22;border:1px solid ${c}"><div style="width:52px;height:40px">${SHEEP()}</div><span style="font-size:24px;font-weight:700;color:${c}">${n}</span></div>`);
+    states.appendChild(s); pop(s, L[2].t + i * 0.3);
+  });
+  el.appendChild(states);
+};
+
+B.close = (el, sc, L) => {
+  const sky = $(`<img class="abs pix" src="${IMG}hero-dawn.png" style="left:50%;top:0;height:1080px">`); el.appendChild(sky);
+  A(sky, [{ transform: 'translateX(-50%) scale(1.08)' }, { transform: 'translateX(-50%) scale(1)' }], 0, sc.dur, { easing: 'linear' });
+  el.appendChild($(`<div class="full" style="background:radial-gradient(ellipse at 50% 40%, rgba(7,10,28,.78), rgba(7,10,28,.25) 65%, rgba(7,10,28,0) 85%)"></div>`));
+  const icon = $(`<img class="abs" src="${IMG}icon-lantern.png" style="left:880px;top:150px;width:160px;height:160px">`); el.appendChild(icon); pop(icon, L[0].t);
+  const w = $(`<div class="headline" style="top:330px;font-size:140px">Shep</div>`); el.appendChild(w); fadeIn(w, L[0].t + 0.2, .7, 16);
+  const p = $(`<div class="headline" style="top:500px;font-size:56px;color:var(--lantern)">Dependabot for your backlog.</div>`); el.appendChild(p); fadeIn(p, L[0].t + 0.9, .7, 12);
+  const l = $(`<div class="abs" style="left:0;right:0;top:640px;text-align:center;font-size:34px;color:var(--dawn)">Go to sleep with issues. Wake up with pull requests.</div>`); el.appendChild(l); fadeIn(l, L[1].t, .7, 10);
+};
+
+B.shots = (el, sc, L, boards) => {
+  const shots = []; sc.lines.forEach((ln, i) => { if (ln.shot) shots.push({ ...ln.shot, t: i === 0 ? 0 : L[i].t - 0.3 }); });
+  shots.forEach((s, k) => {
+    const b = boards[s.img]; const end = k + 1 < shots.length ? shots[k + 1].t + 0.7 : sc.dur;
+    const layer = $(`<div class="full" style="background:${b.bg}"></div>`);
+    const im = $(`<img class="abs" src="${IMG}${s.img}.png" style="left:0;top:0;width:${b.w}px;height:${b.h}px;transform-origin:0 0">`);
+    layer.appendChild(im); layer.appendChild($(`<div class="abs" style="left:0;right:0;top:0;height:130px;background:linear-gradient(${b.bg} 50%, ${b.bg}00)"></div>`)); el.appendChild(layer);
+    if (k > 0) A(layer, [{ opacity: 0 }, { opacity: 1 }], s.t, .7);
+    A(im, [{ transform: rectTransform(s.from) }, { transform: rectTransform(s.to) }], s.t, end - s.t, { easing: 'cubic-bezier(.4,.1,.3,1)' });
+  });
+};
+
+async function build() {
+  const tl = await (await fetch('timeline.json')).json();
+  const stage = document.getElementById('stage'), subs = document.getElementById('subs');
+  tl.scenes.forEach((sc, si) => {
+    sc.dur = sc.end - sc.start;
+    const el = $(`<div class="scene" style="z-index:${si + 1}"></div>`); stage.appendChild(el);
+    const L = sc.lines.map(ln => ({ t: ln.start - sc.start, d: ln.dur }));
+    OFF = sc.start; B[sc.type](el, sc, L, tl.boards); OFF = 0;
+    A(el, [{ opacity: 0 }, { opacity: 1 }], sc.start, si === 0 ? 1.2 : .6, { easing: 'linear' });
+    if (si < tl.scenes.length - 1) fadeOut(el, sc.end - .6, .6);
+    sc.lines.forEach(ln => {
+      const s = $(`<div class="sub">${ln.text}</div>`); subs.appendChild(s);
+      A(s, [{ opacity: 0 }, { opacity: 1 }], ln.start - .08, .2, { easing: 'linear' });
+      fadeOut(s, ln.start + ln.dur + .18, .2);
+    });
+  });
+  // chapter labels, one per run of scenes with the same chapter
+  let run = null; const runs = [];
+  tl.scenes.forEach(sc => { if (run && run.c === sc.chapter) run.e = sc.end; else { run = { c: sc.chapter, s: sc.start, e: sc.end }; runs.push(run); } });
+  runs.filter(r => r.c).forEach(r => { const c = $(`<div class="chap"><i></i>${r.c}</div>`); subs.appendChild(c); fadeIn(c, r.s + .3, .5, -8); fadeOut(c, r.e - .7, .4); });
+  A(document.getElementById('bar'), [{ transform: 'scaleX(0)' }, { transform: 'scaleX(1)' }], 0, tl.total, { easing: 'linear' });
+  A(document.getElementById('black'), [{ opacity: 0 }, { opacity: 1 }], tl.total - 1.4, 1.4, { easing: 'linear' });
+  document.getAnimations().forEach(a => a.pause());
+  await document.fonts.ready;
+  await Promise.all([...document.images].map(i => i.complete ? 0 : new Promise(r => { i.onload = i.onerror = r; })));
+  window.TOTAL = tl.total; window.READY = true;
+}
+window.seek = (t) => { document.getAnimations().forEach(a => { a.currentTime = t * 1000; }); };
+build();
+</script>
+</body>
+</html>

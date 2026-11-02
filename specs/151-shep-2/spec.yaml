@@ -5,18 +5,21 @@ name: shep-2
 number: 151
 branch: claude/youthful-euler-mvj8mq
 oneLiner: >-
-  Shep 2 — queue issues at night, review tested pull requests in the morning. One Rust core,
-  four surfaces (CLI, terminal UI, Mac app, MCP), four commands.
+  Shep 2 — hand over tasks from wherever they live at night, review tested pull requests in the
+  morning. One Rust core, four surfaces (CLI, terminal UI, Mac app, MCP), four commands.
 summary: >
-  A new Shep, built from zero on the outside. You hand it tasks (a GitHub issue or a sentence);
+  A new Shep, built from zero on the outside. You hand it tasks the way you hand them to a
+  teammate, in the tool where they already live (Linear, Jira, Notion, Monday, Slack, GitHub,
+  or a sentence typed to Shep);
   your own coding agent works each one unattended in its own worktree, overnight or now; in the
   morning you review finished draft pull requests that already pass CI, with screenshot proof
   and a second-opinion review, and press Merge or Send back. The product has a hard budget: one
   thing (a task), five states, four core actions, four surfaces that all show the same thing.
   The engine is a single Rust binary (daemon, CLI, terminal UI, MCP server) that a native
   SwiftUI Mac app talks to over a versioned JSON-RPC protocol. Proven engine pieces from Shep 1
-  are ported and trimmed; three are new (issue intake, waiting out usage limits, keeping the
-  machine awake). Shep 1 freezes at 1.x with security fixes only.
+  are ported and trimmed; three are new (task intake from sources, waiting out usage limits,
+  keeping the machine awake). Shep answers where the task came from. There is no Shep server.
+  Shep 1 freezes at 1.x with security fixes only.
 phase: Requirements
 sizeEstimate: XL
 
@@ -36,6 +39,8 @@ technologies:
   - ActivityKit / Live Activities, App Intents, UserNotifications (macOS)
   - SQLite
   - Agent CLIs in headless or interactive mode (Claude Code, Codex, Gemini, others)
+  - Slack Socket Mode, Linear / Jira / Notion / Monday REST and GraphQL APIs (polling)
+  - OS keychain (keyring crate)
   - git worktrees, gh CLI
 
 relatedLinks:
@@ -77,9 +82,10 @@ openQuestions:
   - question: Rust or TypeScript on Bun for the core?
     resolved: true
     answer: >
-      Rust, to be confirmed by a 5-day spike in the research phase. Kill rule: if the Rust slice
-      takes more than 1.5x as long as the same slice in Bun, build the core in TypeScript on Bun
-      with OpenTUI and keep the SwiftUI app.
+      Rust, without a comparison spike. Decided by the owner on 2026-11-01. Reasons: herdr's
+      Apache-2.0 code is Rust and can be reused directly; a single native binary with a small,
+      steady footprint suits a daemon that runs all night; Ratatui + tachyonfx is the most mature
+      terminal UI stack for the planned effects.
   - question: Reuse herdr code, depend on herdr-core, or rewrite?
     resolved: true
     answer: >
@@ -87,9 +93,31 @@ openQuestions:
       2026-07-22 (earlier history was AGPL). Do not depend on herdr-core at runtime: its API is
       in preview and owned by a competitor. Keep interop: Shep reports task state over OSC 7501
       so a Shep session shows correctly in herdr (as spec 149 does today).
-  - question: Ship v2 as @shepai/cli@2 (same package, new major) or as a new package name?
-    resolved: false
-    answer: null
+  - question: Where does the v2 code live?
+    resolved: true
+    answer: >
+      In a self-contained Cargo workspace at `shep2/` in this repository. It shares nothing with
+      Shep 1's pnpm workspace, so it can move to a `next` branch or its own repository later
+      without changes.
+  - question: Does v2 need a Shep server for task sources (Slack, Linear, Jira, Notion, Monday)?
+    resolved: true
+    answer: >
+      No. The work happens overnight, so polling every few minutes is invisible. Trackers are
+      polled with personal tokens kept in the OS keychain; Slack connects over Socket Mode from
+      the user's machine with one Slack app per team, created from a manifest. Hand-over is a
+      label, a status (Tonight) or a reaction, not "assign to Shep" as a person. A thin relay
+      that stores nothing may be added later for app identities and a Marketplace Slack app.
+
+  - question: What is the npm package name?
+    resolved: true
+    answer: >
+      `shep2` (`npx shep2`); the installed command is `shep`. `shep` is held by Bustle Labs (an
+      AWS API framework, last published 2018); we will ask for a transfer, offering to publish
+      from 6.0.0 so their 5.x users are unaffected. If it is transferred, `shep` becomes the main
+      name and `shep2` stays as an alias. Rejected: `night` (taken), `nightshift` (blocked by
+      npm's punctuation rule against `night-shift`; a competing agent tool already ships a
+      `nightshift` command; clashes with macOS Night Shift), `shepai` (hard to remember).
+      Decided by the owner on 2026-11-01.
 
 # Markdown content (the actual spec)
 content: |
@@ -107,7 +135,7 @@ content: |
 
   | Budget | Value | Rule |
   | ------ | ----- | ---- |
-  | Things | 1 | A **task**: a GitHub issue reference or a sentence |
+  | Things | 1 | A **task**: anything you'd hand a teammate, from any source (see Sources) |
   | States | 5 | Queued → Working → Needs you / Ready → Merged |
   | Core actions | 4 | `add(task)`, `start(at?)`, `board()`, `review(id, action)` |
   | Surfaces | 4 | CLI, terminal UI, Mac app, MCP — every surface calls only the 4 actions |
@@ -127,7 +155,9 @@ content: |
   | `shep config` | Agent, repo, start time, parallelism |
 
   **Terminal UI** — one board: Queued | Working | Ready (Needs you shown with `!`). Keys: arrows
-  move, `m` merge, `s` send back, `g` start queued. A 2-second ASCII splash on the first run of
+  move, `m` merge, `s` send back, `g` start queued. A split view (`2`) shows the task list, the
+  selected agent's live session, its diff, and CI and proof side by side; `enter` attaches to the
+  agent so you can type to it, `z` zooms a pane. A 2-second ASCII splash on the first run of
   the day (skippable, settles to a still frame). An optional watch screen for overnight: a sky
   band that warms toward dawn as tasks finish, per-task activity graphs, a slow status-line
   shimmer. One `--no-motion` switch turns every animation off; `NO_COLOR`, CI and
@@ -142,13 +172,31 @@ content: |
   **MCP (3 tools)** — `add_task`, `board`, `review`. Lets any MCP-capable agent hand work to
   Shep ("give this to Shep for tonight").
 
+  ## Sources
+
+  A task comes from wherever the work already lives, and Shep answers in the same place.
+
+  | Source | Hand it over | Right away | By morning |
+  | ------ | ------------ | ---------- | ---------- |
+  | GitHub | Label `shep` | Comment "Queued for tonight" | Draft PR that closes the issue |
+  | Linear | Label `shep` or status Tonight | Comment, status Tonight | PR linked, proof comment, status In review |
+  | Jira | Move to a Tonight column | Comment and transition | PR and build status, moves to Review |
+  | Notion | Status Tonight in a tasks database | A Shep property: queued | PR link and screenshot on the page |
+  | Monday | Status Tonight | An update on the item | PR link column, status In review |
+  | Slack | `:sheep:` reaction or "@Shep tonight" | Thread reply | Thread reply with PR, proof, Merge / Send back |
+  | Shep itself | `shep add "<sentence>"`, the Mac app, MCP | — | The board and the morning brief |
+
+  Questions are asked and answered where the task came from. Every source is an adapter behind
+  one interface (`poll` / `acknowledge` / `report`); GitHub ships first, then Slack and Linear,
+  then Jira, Notion and Monday. Onboarding starts with "Where do tasks come from today?".
+
   ## Engine
 
   Ported from Shep 1 and trimmed: worktree per task, agent runners (any agent CLI, resolved
   through a provider interface, never hardcoded), CI watch with agent fix loop, screenshot and
   test proof, second-opinion code review.
 
-  New: GitHub issue intake; park on a usage limit and resume after the reset; keep the machine
+  New: task intake from sources; park on a usage limit and resume after the reset; keep the machine
   awake during a shift (caffeinate / systemd-inhibit).
 
   Adopted from herdr's Apache-2.0 work (patterns, and code where it fits, with attribution):
@@ -163,11 +211,12 @@ content: |
   One Rust binary, `shep`: engine, overnight daemon, CLI, terminal UI (Ratatui + tachyonfx), MCP
   server (rmcp). The daemon serves JSON-RPC 2.0 over a local Unix socket; the schema is published
   as OpenRPC and the Swift client types are generated from it. Storage is SQLite with three
-  tables (tasks, runs, events). Distribution: Homebrew, a curl installer, and `npx` through an
-  npm wrapper with per-platform binaries. Target: core under 10K lines.
+  tables (tasks, runs, events). Distribution: Homebrew (`brew install shep-ai/tap/shep`), a curl
+  installer, and `npx shep2` through an npm wrapper with per-platform binaries. Target: core under 10K lines.
 
   ## Success Criteria
 
+  - [ ] A task handed over in GitHub, Slack or Linear is acknowledged in place within five minutes and answered in place by morning
   - [ ] Six real GitHub issues queued at night on a real repo produce six draft PRs by morning, each with CI green or a clear "needs you" question
   - [ ] An overnight run survives a usage-limit window and a daemon restart without losing a task
   - [ ] The morning review of six PRs takes under five minutes in the terminal UI and in the Mac app
@@ -181,13 +230,14 @@ content: |
 
   Web app beyond one review page, project management (epics, cycles, time entries, saved views),
   ASPM, incidents, opportunities, discovery, feedback themes, outcomes, clusters, WhatsApp,
-  feature flags, plugin marketplace, multi-user teams, tmux-style pane splitting, auto-merge.
+  feature flags, plugin marketplace, multi-user teams, general tmux-style pane management (the one
+  fixed split view is in scope), auto-merge, a Shep server.
 
   ## Affected Areas
 
   | Area | Impact | Reasoning |
   | ---- | ------ | --------- |
-  | New Rust workspace (`shep2/` or new repository) | High | All v2 code is new |
+  | New Cargo workspace `shep2/` | High | All v2 code is new |
   | Shep 1 (`packages/`, `src/`) | Low | Frozen at 1.x; read for porting worktree, CI-fix, agent-runner and evidence logic |
   | Distribution (npm, Homebrew) | Medium | Same or new package name (open question) |
   | Docs and README | Medium | One pitch everywhere: "Dependabot for your backlog" |
@@ -199,9 +249,9 @@ content: |
 
   ## Size Estimate
 
-  **XL** - A new product: Rust core, terminal UI, MCP server and a SwiftUI app. Eight weeks:
-  week 1 spec and spike, weeks 2–4 core + CLI + terminal UI, weeks 4–6 Mac app + MCP, weeks 6–8
-  Shep 2 builds its own remaining work overnight, then launch.
+  **XL** - A new product: Rust core, terminal UI, MCP server, source adapters and a SwiftUI app.
+  Phases: core and CLI; agent runs and PRs; terminal UI; MCP; sources; Mac app (needs a Mac);
+  then Shep 2 builds its own remaining work overnight, then launch.
 
   ---
 

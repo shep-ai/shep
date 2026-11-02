@@ -1,0 +1,19 @@
+[package]
+name = "shep-infra"
+description = "Shep 2 infrastructure: SQLite storage and, later, git, agents and task sources."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+shep-domain.workspace = true
+shep-app.workspace = true
+rusqlite.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
+
+[lints]
+workspace = true

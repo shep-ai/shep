@@ -6,63 +6,297 @@ summary: Task breakdown for 151-shep-2
 
 # Relationships
 relatedFeatures: []
-technologies: []
+technologies:
+  - Rust
 relatedLinks: []
 
-# Structured task list — this is the single source of truth for tasks.
-# The content field below is a summary only; it does NOT duplicate task details.
 tasks:
   - id: task-1
-    title: { { TASK_1_TITLE } }
-    description: { { TASK_1_DESCRIPTION } }
-    state: Todo
+    title: Cargo workspace with four crates
+    description: >
+      Create shep2/ with a Cargo workspace and the crates shep-domain, shep-app, shep-infra and
+      shep-cli (binary `shep`). Lints: clippy pedantic warnings as errors in CI, rustfmt.
+      target/ ignored.
+    state: Done
     dependencies: []
     acceptanceCriteria:
-      - { { CRITERION_1 } }
-      - { { CRITERION_2 } }
-    tdd:
-      red:
-        - Write tests for {{FEATURE_1}}
-      green:
-        - Implement {{FEATURE_1}} to pass tests
-      refactor:
-        - Extract helpers, improve naming
-    estimatedEffort: { { EFFORT_1 } }
+      - cargo build, cargo test, cargo clippy -D warnings and cargo fmt --check pass
+      - shep-domain has no I/O dependencies
+    tdd: null
+    estimatedEffort: S
 
   - id: task-2
-    title: { { TASK_2_TITLE } }
-    description: { { TASK_2_DESCRIPTION } }
-    state: Todo
+    title: Domain — Task, TaskState machine, task source reference
+    description: >
+      TaskState enum (Queued, Working, NeedsYou, Ready, Merged) with an explicit transition
+      table; Task entity; TaskSourceRef (GitHub issue, Linear, Jira, Notion, Monday, Slack
+      message, sentence) parsed from user input; ReviewAction (Merge, SendBack with a note,
+      Answer). Refused transitions return a typed error.
+    state: Done
     dependencies:
       - task-1
     acceptanceCriteria:
-      - { { CRITERION_1 } }
-      - { { CRITERION_2 } }
-    tdd: null # No TDD for foundational/doc tasks
-    estimatedEffort: { { EFFORT_2 } }
+      - Every allowed transition succeeds and every other one is refused
+      - '"#412", a GitHub issue URL and a plain sentence parse to the right source'
+      - No raw strings used for state or source kind
+    tdd:
+      red:
+        - transition table tests for all 25 state pairs
+        - source reference parsing tests
+      green:
+        - Implement TaskState::transition_to and TaskSourceRef::parse
+      refactor:
+        - Display impls shared by CLI and terminal UI
+    estimatedEffort: S
 
-# Total effort estimate
-totalEstimate: { { TOTAL_EFFORT } }
+  - id: task-3
+    title: App — the four core actions behind port traits
+    description: >
+      TaskRepository and Clock ports; use cases add_task, start (now or at a time), board
+      (grouped by state, sorted), review (merge, send back with note, answer a question).
+    state: Done
+    dependencies:
+      - task-2
+    acceptanceCriteria:
+      - Each action is tested against in-memory fakes
+      - board() returns tasks grouped in the fixed order Needs you, Ready, Working, Queued, Merged
+    tdd:
+      red:
+        - add/start/board/review tests with an in-memory repository and fixed clock
+      green:
+        - Implement the four actions
+      refactor:
+        - One error type per layer
+    estimatedEffort: M
 
-# Open questions
+  - id: task-4
+    title: Infra — SQLite task store
+    description: >
+      rusqlite (bundled) store implementing TaskRepository; schema versioned with user_version;
+      database at $SHEP_HOME/shep2.db (default ~/.shep).
+    state: Done
+    dependencies:
+      - task-3
+    acceptanceCriteria:
+      - Round-trip of every field, including source and state, against a temp database
+      - Opening an existing database does not lose data
+    tdd:
+      red:
+        - store round-trip and reopen tests
+      green:
+        - Implement SqliteTaskStore
+      refactor: []
+    estimatedEffort: S
+
+  - id: task-5
+    title: CLI — shep, shep add, shep go, shep config
+    description: >
+      clap CLI with exactly four commands. `shep` prints the board (terminal UI arrives in
+      phase 5), `shep add` queues a task from a reference or sentence, `shep go [--at HH:MM]`
+      starts queued tasks now or at a time, `shep config` shows and sets settings.
+    state: Done
+    dependencies:
+      - task-4
+    acceptanceCriteria:
+      - shep --help lists exactly four commands
+      - add then board shows the task as Queued; go moves it to Working
+      - Runs fully isolated under SHEP_HOME in tests
+    tdd:
+      red:
+        - assert_cmd tests for help, add, board, go, config
+      green:
+        - Implement commands as thin calls to the core actions
+      refactor: []
+    estimatedEffort: S
+
+  - id: task-6
+    title: Daemon and JSON-RPC protocol
+    description: >
+      Long-running daemon owning the store; JSON-RPC 2.0 over a user-only Unix socket exposing
+      the four actions plus a state subscription; OpenRPC schema generated from Rust types with a
+      test that it only grows; CLI talks to the daemon when it runs.
+    state: Todo
+    dependencies:
+      - task-5
+    acceptanceCriteria:
+      - A client round-trip test over the socket for each action
+      - Schema snapshot test fails on any removed method or field
+    tdd:
+      red:
+        - socket round-trip tests; schema-only-grows test
+      green:
+        - Implement daemon, server and client
+      refactor: []
+    estimatedEffort: M
+
+  - id: task-7
+    title: Agent runs — worktree, PTY holder, agent providers, status
+    description: >
+      Worktree per task from origin; PTY holder process separate from the daemon; agent
+      providers (Claude Code, Codex, Gemini) resolved through one trait, never hardcoded;
+      status from OSC 7501 with screen-reading manifests as fallback; attach; resume hooks;
+      park on usage limits and resume; keep the machine awake during a shift.
+    state: Todo
+    dependencies:
+      - task-6
+    acceptanceCriteria:
+      - A fake agent run edits a file in its own worktree and finishes; the user's checkout is untouched
+      - Restarting the daemon does not stop a running agent
+    tdd:
+      red:
+        - fake-agent integration tests; holder survives daemon restart
+      green:
+        - Implement runner, holder and providers
+      refactor: []
+    estimatedEffort: L
+
+  - id: task-8
+    title: Draft PRs, CI fix loop, proof and second opinion
+    description: >
+      Push the task branch and open a draft PR (never the default branch); watch CI and let the
+      agent fix failures up to three times, then Needs you; screenshot and test proof; a child
+      reviewer agent gives a second opinion; review actions merge or send back.
+    state: Todo
+    dependencies:
+      - task-7
+    acceptanceCriteria:
+      - Pushing to the default branch is refused in code
+      - Three failed fixes move the task to Needs you with the failing check named
+    tdd:
+      red:
+        - gh adapter tests with a fake gh; CI loop state tests
+      green:
+        - Implement PR, CI loop, proof and reviewer
+      refactor: []
+    estimatedEffort: L
+
+  - id: task-9
+    title: Terminal UI — board, split view, watch screen, splash
+    description: >
+      Ratatui board (Queued | Working | Ready, Needs you marked) with m/s/g keys; split view
+      with tasks, live agent session, diff, CI and proof, enter to attach, z to zoom; watch
+      screen whose sky warms toward dawn; two-second splash; --no-motion, NO_COLOR and
+      non-interactive output disable motion.
+    state: Todo
+    dependencies:
+      - task-6
+    acceptanceCriteria:
+      - Snapshot tests of each screen with ratatui's test backend
+      - No animation in CI or non-interactive output
+    tdd:
+      red:
+        - TestBackend snapshot tests
+      green:
+        - Implement screens
+      refactor: []
+    estimatedEffort: L
+
+  - id: task-10
+    title: MCP server — add_task, board, review
+    description: Three tools over stdio with rmcp, each calling one core action through the daemon.
+    state: Todo
+    dependencies:
+      - task-6
+    acceptanceCriteria:
+      - An MCP client test lists exactly three tools and calls each
+    tdd:
+      red:
+        - MCP client round-trip tests
+      green:
+        - Implement tools
+      refactor: []
+    estimatedEffort: S
+
+  - id: task-11
+    title: Sources — port, GitHub, Slack, Linear
+    description: >
+      TaskSource port (poll, acknowledge, report); GitHub via gh (label shep); Slack via Socket
+      Mode (:sheep: reaction, @Shep tonight) with a per-team app manifest; Linear (label shep or
+      status Tonight) by polling; tokens in the OS keychain; answers and questions in place.
+    state: Todo
+    dependencies:
+      - task-8
+    acceptanceCriteria:
+      - Each adapter passes the same contract tests against recorded fixtures
+      - Hand-over is acknowledged in place within one poll interval
+    tdd:
+      red:
+        - shared TaskSource contract tests run per adapter
+      green:
+        - Implement adapters
+      refactor: []
+    estimatedEffort: L
+
+  - id: task-12
+    title: Sources — Jira, Notion, Monday; onboarding by source
+    description: >
+      Remaining adapters on the same contract; onboarding asks "Where do tasks come from today?",
+      connects sources, shows the hand-over moves and suggests good first tasks.
+    state: Todo
+    dependencies:
+      - task-11
+    acceptanceCriteria:
+      - Same contract tests pass for each adapter
+    tdd:
+      red:
+        - contract tests per adapter
+      green:
+        - Implement adapters and onboarding
+      refactor: []
+    estimatedEffort: L
+
+  - id: task-13
+    title: Mac app (SwiftUI)
+    description: >
+      Review window, needs-you and diff, live working view, add tasks, dawn, settings, onboarding;
+      Live Activity in the Dynamic Island and menu bar; morning notification with actions; App
+      Intents. Client types generated from the OpenRPC schema. Needs a Mac or macOS runner.
+    state: Todo
+    dependencies:
+      - task-6
+    acceptanceCriteria:
+      - Builds and passes tests on a macOS runner
+    tdd:
+      red:
+        - XCTest for view models against a fake client
+      green:
+        - Implement views
+      refactor: []
+    estimatedEffort: XL
+
+  - id: task-14
+    title: Distribution — Homebrew, curl installer, npm wrapper
+    description: >
+      Release builds for macOS (arm64, x86_64) and Linux; Homebrew tap; curl installer; npm
+      wrapper published as `shep2` (`npx shep2`) with per-platform binaries. The command is
+      `shep`. If Bustle Labs transfers `shep`, publish there from 6.0.0 and keep `shep2` as an
+      alias.
+    state: Todo
+    dependencies:
+      - task-9
+      - task-10
+    acceptanceCriteria:
+      - Each install path yields a working `shep` on a clean machine
+    tdd: null
+    estimatedEffort: M
+
+totalEstimate: XL
+
 openQuestions: []
 
-# Markdown content — summary and acceptance checklist only.
-# Individual task details live in the tasks[] array above (no duplication).
 content: |
   ## Summary
 
-  {{BRIEF_DESCRIPTION_OF_SCOPE}} — {{TASK_COUNT}} tasks across {{PHASE_COUNT}} phases.
+  Shep 2 in Rust — 14 tasks across 9 phases, from the domain outward to the Mac app and
+  distribution. Phases 1–2 are done; the next is the daemon and client protocol.
 
   ## Acceptance Checklist
 
   Before marking feature complete:
 
   - [ ] All tasks completed
-  - [ ] Tests passing (`pnpm test`)
-  - [ ] Linting clean (`pnpm lint`)
-  - [ ] Types valid (`pnpm typecheck`)
-  - [ ] TypeSpec compiles (`pnpm tsp:compile`)
+  - [ ] `cargo test`, `cargo clippy -D warnings`, `cargo fmt --check` clean in `shep2/`
+  - [ ] Success criteria in spec.yaml met
   - [ ] PR created and reviewed
 
   ---

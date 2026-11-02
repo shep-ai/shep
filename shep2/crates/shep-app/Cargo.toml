@@ -1,0 +1,13 @@
+[package]
+name = "shep-app"
+description = "Shep 2 application layer: the four core actions (add, start, board, review) and their ports."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+shep-domain.workspace = true
+thiserror.workspace = true
+
+[lints]
+workspace = true

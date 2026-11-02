@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Edge cases and error flows</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gloock&amp;family=Hanken+Grotesk:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#9a530a}a:hover{color:#151a35}
+</style>
+</helmet>
+<div style="width: 1680px; height: 1080px; box-sizing: border-box; padding: 48px 64px; background: #eef1f9; color: #151a35; font-family: 'Hanken Grotesk', 'Helvetica Neue', Arial, sans-serif; font-size: 15px; line-height: 1.45; display: flex; flex-direction: column; gap: 22px">
+  <div style="display: flex; align-items: baseline; gap: 24px">
+    <span style="font-family: Gloock, Georgia, serif; font-size: 44px">Edge cases and error flows</span>
+    <span style="font-size: 17px; color: #565d7d">Rule: never lose a task, never guess silently, never wake you up at night.</span>
+  </div>
+  <div style="display: grid; grid-template-columns: 300px minmax(0, 1.3fr) minmax(0, 1fr) 150px; background: #ffffff; border: 1px solid #ccd2e6; border-radius: 12px; overflow: hidden">
+    <span style="padding: 12px 16px; background: #e3e7f4; font-weight: 700">What happens</span><span style="padding: 12px 16px; background: #e3e7f4; font-weight: 700">What Shep does</span><span style="padding: 12px 16px; background: #e3e7f4; font-weight: 700">What you see</span><span style="padding: 12px 16px; background: #e3e7f4; font-weight: 700">State</span>
+
+    <span style="padding: 12px 16px; border-top: 1px solid #e3e7f4; font-weight: 600">No agent CLI installed</span><span style="padding: 12px 16px; border-top: 1px solid #e3e7f4">Lists supported agents with each install command, waits, detects the new one</span><span style="padding: 12px 16px; border-top: 1px solid #e3e7f4; color: #565d7d">Onboarding step 2, one line per agent</span><span style="padding: 12px 16px; border-top: 1px solid #e3e7f4; color: #565d7d">setup</span>
+
+    <span style="padding: 12px 16px; border-top: 1px solid #e3e7f4; font-weight: 600">GitHub not signed in</span><span style="padding: 12px 16px; border-top: 1px solid #e3e7f4">Offers gh's browser sign-in; or runs local-only (branches, no PRs)</span><span style="padding: 12px 16px; border-top: 1px solid #e3e7f4; color: #565d7d">One-time code, then a check mark</span><span style="padding: 12px 16px; border-top: 1px solid #e3e7f4; color: #565d7d">setup</span>
+
+    <span style="padding: 12px 16px; border-top: 1px solid #e3e7f4; font-weight: 600">Issue too vague</span><span style="padding: 12px 16px; border-top: 1px solid #e3e7f4">Flags it when you add it; if added anyway, the agent asks one question before writing code</span><span style="padding: 12px 16px; border-top: 1px solid #e3e7f4; color: #565d7d">"Too vague for overnight" tag</span><span style="padding: 12px 16px; border-top: 1px solid #e3e7f4; color: #c0472f">Needs you</span>
+
+    <span style="padding: 12px 16px; border-top: 1px solid #e3e7f4; font-weight: 600">Usage limit reached</span><span style="padding: 12px 16px; border-top: 1px solid #e3e7f4">Parks the task, resumes the same session after the reset; other agents keep going</span><span style="padding: 12px 16px; border-top: 1px solid #e3e7f4; color: #565d7d">A line in the morning brief, nothing at night</span><span style="padding: 12px 16px; border-top: 1px solid #e3e7f4; color: #3559c7">Working</span>
+
+    <span style="padding: 12px 16px; border-top: 1px solid #e3e7f4; font-weight: 600">CI red</span><span style="padding: 12px 16px; border-top: 1px solid #e3e7f4">Agent reads the log and pushes a fix, up to 3 times</span><span style="padding: 12px 16px; border-top: 1px solid #e3e7f4; color: #565d7d">"fixed 1 failure at 01:30" on the PR card</span><span style="padding: 12px 16px; border-top: 1px solid #e3e7f4; color: #3559c7">Working</span>
+
+    <span style="padding: 12px 16px; border-top: 1px solid #e3e7f4; font-weight: 600">CI still red after 3 fixes</span><span style="padding: 12px 16px; border-top: 1px solid #e3e7f4">Stops, keeps the branch and the log, writes what it tried</span><span style="padding: 12px 16px; border-top: 1px solid #e3e7f4; color: #565d7d">Coral card with the failing check</span><span style="padding: 12px 16px; border-top: 1px solid #e3e7f4; color: #c0472f">Needs you</span>
+
+    <span style="padding: 12px 16px; border-top: 1px solid #e3e7f4; font-weight: 600">Main moved, merge conflict</span><span style="padding: 12px 16px; border-top: 1px solid #e3e7f4">Merges main into the task branch and resolves; asks only when both sides changed the same logic</span><span style="padding: 12px 16px; border-top: 1px solid #e3e7f4; color: #565d7d">Nothing, or one question</span><span style="padding: 12px 16px; border-top: 1px solid #e3e7f4; color: #3559c7">Working</span>
+
+    <span style="padding: 12px 16px; border-top: 1px solid #e3e7f4; font-weight: 600">Mac slept or lost power</span><span style="padding: 12px 16px; border-top: 1px solid #e3e7f4">On wake, resumes each agent from its saved session; nothing restarts from zero</span><span style="padding: 12px 16px; border-top: 1px solid #e3e7f4; color: #565d7d">"Paused 01:40 to 06:10 (Mac asleep)" in the brief</span><span style="padding: 12px 16px; border-top: 1px solid #e3e7f4; color: #3559c7">Working</span>
+
+    <span style="padding: 12px 16px; border-top: 1px solid #e3e7f4; font-weight: 600">Shep updates mid-shift</span><span style="padding: 12px 16px; border-top: 1px solid #e3e7f4">The terminal holder keeps agents running while the daemon restarts</span><span style="padding: 12px 16px; border-top: 1px solid #e3e7f4; color: #565d7d">Nothing</span><span style="padding: 12px 16px; border-top: 1px solid #e3e7f4; color: #3559c7">Working</span>
+
+    <span style="padding: 12px 16px; border-top: 1px solid #e3e7f4; font-weight: 600">Your checkout has uncommitted work</span><span style="padding: 12px 16px; border-top: 1px solid #e3e7f4">Never touched: every task branches from origin into its own worktree</span><span style="padding: 12px 16px; border-top: 1px solid #e3e7f4; color: #565d7d">Nothing</span><span style="padding: 12px 16px; border-top: 1px solid #e3e7f4; color: #565d7d">any</span>
+
+    <span style="padding: 12px 16px; border-top: 1px solid #e3e7f4; font-weight: 600">You close the issue overnight</span><span style="padding: 12px 16px; border-top: 1px solid #e3e7f4">Stops that task at the next step and closes its draft PR</span><span style="padding: 12px 16px; border-top: 1px solid #e3e7f4; color: #565d7d">"Stopped: issue closed" in the brief</span><span style="padding: 12px 16px; border-top: 1px solid #e3e7f4; color: #565d7d">removed</span>
+
+    <span style="padding: 12px 16px; border-top: 1px solid #e3e7f4; font-weight: 600">Agent wants to merge or push to main</span><span style="padding: 12px 16px; border-top: 1px solid #e3e7f4">Blocked: Shep only pushes the task branch and opens drafts</span><span style="padding: 12px 16px; border-top: 1px solid #e3e7f4; color: #565d7d">Nothing; you press Merge</span><span style="padding: 12px 16px; border-top: 1px solid #e3e7f4; color: #23804f">Ready</span>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1680,"height":1080}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

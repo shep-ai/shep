@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Mac add tasks for tonight</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gloock&amp;family=Hanken+Grotesk:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#f3b45c}a:hover{color:#ffe4b0}
+</style>
+</helmet>
+<div style="position: relative; width: 1280px; height: 820px; box-sizing: border-box; background: #0e1230; color: #e9e7f2; border-radius: 14px; overflow: hidden; font-family: 'Hanken Grotesk', 'Helvetica Neue', Arial, sans-serif; font-size: 15px">
+  <img src="assets/hero-dawn.png" alt="" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; image-rendering: pixelated; opacity: 0.35">
+  <div style="position: absolute; inset: 0; background: #0a0d24b3"></div>
+  <div style="position: absolute; left: 0; right: 0; top: 0; padding: 16px 20px; display: flex; gap: 8px"><i style="width: 12px; height: 12px; border-radius: 50%; background: #ff5f57"></i><i style="width: 12px; height: 12px; border-radius: 50%; background: #febc2e"></i><i style="width: 12px; height: 12px; border-radius: 50%; background: #28c840"></i></div>
+
+  <div style="position: absolute; left: 50%; top: 64px; transform: translateX(-50%); width: 760px; background: #141a44; border: 1px solid #3a4280; border-radius: 16px; box-shadow: 0 24px 60px #00000080; display: flex; flex-direction: column; overflow: hidden">
+    <div style="padding: 22px 24px 14px; display: flex; flex-direction: column; gap: 14px">
+      <div style="display: flex; justify-content: space-between; align-items: baseline"><span style="font-family: Gloock, Georgia, serif; font-size: 30px">Tonight's work</span><span style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #a3aac8">⌘N</span></div>
+      <div style="display: flex; border: 1px solid #3a4280; border-radius: 9px; overflow: hidden; align-self: flex-start; font-size: 14px"><span style="padding: 6px 14px; background: #f3b45c; color: #1a1405; font-weight: 700">Open issues</span><span style="padding: 6px 14px">Describe a task</span><span style="padding: 6px 14px">Paste a link</span></div>
+      <div style="display: flex; gap: 10px; align-items: center"><label for="at-search" style="position: absolute; width: 1px; height: 1px; overflow: hidden">Search issues</label><input id="at-search" placeholder="Search issues in acme/booking-app" style="flex: 1; font: inherit; color: #e9e7f2; background: #0a0d24; border: 1px solid #2c3366; border-radius: 9px; padding: 9px 12px"><span style="font-size: 13px; padding: 6px 10px; border-radius: 999px; border: 1px solid #f3b45c66; color: #f3b45c">label: shep · 3</span></div>
+    </div>
+    <div style="display: flex; flex-direction: column; border-top: 1px solid #2c3366">
+      <label for="at-433" style="display: flex; align-items: center; gap: 14px; padding: 12px 24px; border-bottom: 1px solid #2c3366; background: #f3b45c10"><input id="at-433" type="checkbox" checked="checked" style="width: 18px; height: 18px; accent-color: #f3b45c"><span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #a3aac8; width: 46px">#433</span><span style="flex: 1">Rate-limit /api/search</span><span style="font-size: 12px; color: #f3b45c">shep</span><span style="font-size: 12px; color: #a3aac8">clear · good first task</span></label>
+      <label for="at-436" style="display: flex; align-items: center; gap: 14px; padding: 12px 24px; border-bottom: 1px solid #2c3366; background: #f3b45c10"><input id="at-436" type="checkbox" checked="checked" style="width: 18px; height: 18px; accent-color: #f3b45c"><span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #a3aac8; width: 46px">#436</span><span style="flex: 1">Dark mode for the settings page</span><span style="font-size: 12px; color: #f3b45c">shep</span><span style="font-size: 12px; color: #a3aac8">clear</span></label>
+      <label for="at-440" style="display: flex; align-items: center; gap: 14px; padding: 12px 24px; border-bottom: 1px solid #2c3366; background: #f3b45c10"><input id="at-440" type="checkbox" checked="checked" style="width: 18px; height: 18px; accent-color: #f3b45c"><span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #a3aac8; width: 46px">#440</span><span style="flex: 1">Paginate the bookings list</span><span style="font-size: 12px; color: #f3b45c">shep</span><span style="font-size: 12px; color: #a3aac8">clear</span></label>
+      <label for="at-441" style="display: flex; align-items: center; gap: 14px; padding: 12px 24px; border-bottom: 1px solid #2c3366"><input id="at-441" type="checkbox" style="width: 18px; height: 18px; accent-color: #f3b45c"><span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #a3aac8; width: 46px">#441</span><span style="flex: 1">Make onboarding better</span><span style="font-size: 12px; color: #ff8f7a">too vague for overnight</span></label>
+      <label for="at-442" style="display: flex; align-items: center; gap: 14px; padding: 12px 24px"><input id="at-442" type="checkbox" style="width: 18px; height: 18px; accent-color: #f3b45c"><span style="font-family: 'JetBrains Mono', monospace; font-size: 13px; color: #a3aac8; width: 46px">#442</span><span style="flex: 1">Typo on the pricing page</span><span style="font-size: 12px; color: #a3aac8">clear</span></label>
+    </div>
+    <div style="padding: 16px 24px; border-top: 1px solid #2c3366; display: flex; align-items: center; gap: 14px; flex-wrap: wrap; background: #11153a">
+      <span style="font-size: 14px; color: #a3aac8">Start</span>
+      <div style="display: flex; border: 1px solid #3a4280; border-radius: 9px; overflow: hidden; font-size: 14px"><span style="padding: 6px 12px; background: #262c66; font-weight: 700">Tonight · 23:00</span><span style="padding: 6px 12px">Now</span></div>
+      <span style="font-size: 13px; color: #a3aac8">3 selected · with 2 already queued, about 2 rounds of 3 in parallel</span>
+      <button type="button" style="margin-left: auto; font: inherit; font-weight: 700; color: #1a1405; background: #f3b45c; border: 0; border-radius: 10px; padding: 10px 18px; cursor: pointer">Add 3 to tonight</button>
+    </div>
+  </div>
+
+  <div style="position: absolute; left: 50%; bottom: 40px; transform: translateX(-50%); width: 760px; display: flex; gap: 10px; align-items: center; font-size: 13px; color: #c9cde6"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f3b45c" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 8v4M12 16h.01"></path></svg>Shep flags issues that are too vague to finish unattended, so a night isn't spent guessing. You can still add them.</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":820}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

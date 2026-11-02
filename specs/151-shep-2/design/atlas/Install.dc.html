@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Install and first run</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#f3b45c}a:hover{color:#ffe4b0}
+</style>
+</helmet>
+<div style="width: 1040px; height: 720px; box-sizing: border-box; background: #0b0e24; color: #e3e6f5; border-radius: 14px; overflow: hidden; display: flex; flex-direction: column; font-family: 'JetBrains Mono', Menlo, monospace">
+  <div style="display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-bottom: 1px solid #232a57; font-size: 13px; color: #7d84a8">
+    <i style="width: 12px; height: 12px; border-radius: 50%; background: #ff5f57"></i><i style="width: 12px; height: 12px; border-radius: 50%; background: #febc2e"></i><i style="width: 12px; height: 12px; border-radius: 50%; background: #28c840"></i>
+    <span style="margin-left: 10px">~/projects/booking-app</span>
+  </div>
+  <div style="padding: 20px 28px; font-size: 16px; line-height: 25px; white-space: pre; display: flex; flex-direction: column">
+<div style="color: #7d84a8"># install with any one of these</div>
+<div><span style="color: #7d84a8">$ </span>brew install shep-ai/tap/shep</div>
+<div><span style="color: #7d84a8">$ </span>curl -fsSL https://shep.bot/install | sh</div>
+<div><span style="color: #7d84a8">$ </span>npx shepai</div>
+<div> </div>
+<div><span style="color: #7d84a8">$ </span>shep</div>
+<div><span style="color: #f3b45c">  shep</span><span style="color: #7d84a8"> · first run · checking what you already have</span></div>
+<div> </div>
+<div><span style="color: #8fd6a8">  ✓</span> Agent       Claude Code  <span style="color: #7d84a8">uses your own login</span></div>
+<div><span style="color: #7d84a8">                also found: codex, gemini · switch with shep config</span></div>
+<div><span style="color: #8fd6a8">  ✓</span> GitHub      gh signed in as <span style="color: #93b2ff">@you</span></div>
+<div><span style="color: #8fd6a8">  ✓</span> Repo        booking-app <span style="color: #7d84a8">(this folder)</span></div>
+<div><span style="color: #8fd6a8">  ✓</span> Keep awake  <span style="color: #7d84a8">on while a shift runs, only on power</span></div>
+<div> </div>
+<div>  Try it now on one of your own open issues:</div>
+<div> </div>
+<div style="background: #f3b45c; color: #0b0e24">  › #412  Fix login redirect loop               bug                           </div>
+<div><span style="color: #7d84a8">    #418</span>  Add CSV export to reports             <span style="color: #7d84a8">feature</span></div>
+<div><span style="color: #7d84a8">    #421</span>  Upgrade to Node 22.11                 <span style="color: #7d84a8">chore</span></div>
+<div><span style="color: #7d84a8">    #425</span>  Empty state for projects page         <span style="color: #7d84a8">ui</span></div>
+<div> </div>
+<div><span style="color: #f3b45c">  enter</span> start now    <span style="color: #f3b45c">↑↓</span> choose    <span style="color: #f3b45c">s</span> skip, I'll add tasks later</div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1040,"height":720}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

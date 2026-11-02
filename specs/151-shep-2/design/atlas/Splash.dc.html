@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Lantern splash</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#f3b45c}a:hover{color:#ffe4b0}
+</style>
+</helmet>
+<div style="width: 1040px; height: 720px; box-sizing: border-box; background: #0b0e24; color: #e3e6f5; border-radius: 14px; overflow: hidden; display: flex; flex-direction: column; font-family: 'JetBrains Mono', Menlo, monospace">
+  <div style="display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-bottom: 1px solid #232a57; font-size: 13px; color: #7d84a8">
+    <i style="width: 12px; height: 12px; border-radius: 50%; background: #ff5f57"></i><i style="width: 12px; height: 12px; border-radius: 50%; background: #febc2e"></i><i style="width: 12px; height: 12px; border-radius: 50%; background: #28c840"></i>
+    <span style="margin-left: 10px; flex: 1">~/projects/booking-app — shep</span>
+    <button type="button" onClick="{{replay}}" style="font-family: 'JetBrains Mono', monospace; font-size: 12px; color: #e3e6f5; background: transparent; border: 1px solid #3a4280; border-radius: 6px; padding: 4px 12px; cursor: pointer">Replay</button>
+  </div>
+  <div style="padding: 24px 40px 0; font-size: 20px; line-height: 24px">
+    <sc-for list="{{rows}}" as="row" hint-placeholder-count="20">
+      <div style="display: flex; height: 24px; white-space: pre"><sc-for list="{{row.segs}}" as="sg" hint-placeholder-count="2"><span style="color: {{sg.c}}; background: {{sg.b}}">{{sg.s}}</span></sc-for></div>
+    </sc-for>
+  </div>
+  <div style="padding: 20px 40px; font-family: 'Hanken Grotesk', sans-serif; font-size: 14px; line-height: 20px; color: #a3aac8">About two seconds, first run of the day only. Stars come out, the wordmark decrypts from dusk blue to lantern amber, the lantern catches, then it settles on a still frame. Skipped below 64×20, in CI, and with --no-motion.</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1040,"height":720}}'>
+class Component extends DCLogic {
+  componentDidMount() {
+    this.t0 = Date.now();
+    var reduce = false;
+    try { reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { reduce = false; }
+    this.reduce = reduce;
+    var self = this;
+    if (!reduce) {
+      this.iv = setInterval(function () { self.setState({ tick: Date.now() }); }, 70);
+    } else {
+      this.setState({ tick: Date.now() });
+    }
+  }
+  componentWillUnmount() {
+    if (this.iv) clearInterval(this.iv);
+  }
+  build(T, t) {
+    var C = 80, R = 20, base = R - 3;
+    function hx(h) { return [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)]; }
+    function mix(a, b, k) { k = Math.max(0, Math.min(1, k)); return [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k, a[2] + (b[2] - a[2]) * k]; }
+    function css(a) { return 'rgb(' + (a[0] | 0) + ',' + (a[1] | 0) + ',' + (a[2] | 0) + ')'; }
+    function hash(x, y) { var h = Math.sin(x * 127.1 + y * 311.7) * 43758.5453; return h - Math.floor(h); }
+    function ground(x) { var h = Math.round(1.3 + 1.2 * Math.sin(x * 0.11 + 0.4) + 0.7 * Math.sin(x * 0.27 + 1.3)); return base - Math.max(0, Math.min(3, h)); }
+    var top = hx('#070a1c'), hor = hx('#1b2154'), gbg = hx('#090c1f'), gfg = hx('#2b3460');
+    var amber = hx('#f3b45c'), lamp = hx('#ffe6b0'), moon = hx('#dde4ff'), white = hx('#ffffff'), sdim = hx('#5b628c'), shep = hx('#c7cbe6'), dim = hx('#7d84a8');
+    var cells = [], x, y;
+    for (y = 0; y < R; y++) for (x = 0; x < C; x++) cells.push({ ch: ' ', fg: null, bg: null });
+    function at(x, y) { x = Math.round(x); y = Math.round(y); if (x < 0 || y < 0 || x >= C || y >= R) return null; return cells[y * C + x]; }
+    function put(x, y, ch, fg) { var c = at(x, y); if (c && ch !== ' ') { c.ch = ch; c.fg = fg; } }
+    for (y = 0; y < R; y++) for (x = 0; x < C; x++) {
+      var c = at(x, y), gy = ground(x);
+      if (y >= gy) {
+        c.bg = gbg;
+        if (y === gy) { var l = ground(x - 1), r = ground(x + 1); c.ch = l < gy ? '\\' : r < gy ? '/' : '_'; c.fg = gfg; }
+        else { var hv = hash(x, y); c.ch = hv < 0.18 ? '.' : hv < 0.26 ? ',' : ' '; c.fg = gfg; }
+      } else {
+        c.bg = mix(top, hor, Math.pow(y / (base - 1), 1.6));
+      }
+    }
+    if (!this.stars) {
+      var seed = 7; var rnd = function () { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+      this.stars = [];
+      for (var i = 0; i < 70; i++) this.stars.push({ x: Math.floor(rnd() * C), y: Math.floor(rnd() * (base - 3)), ph: rnd() * 6.28, sp: 0.6 + rnd() * 1.8 });
+    }
+    var shown = Math.floor(Math.max(0, T) * 45);
+    this.stars.forEach(function (s, i) {
+      if (i >= shown) return;
+      var cc = at(s.x, s.y); if (!cc || s.y >= ground(s.x)) return;
+      var tw = Math.sin(t * s.sp + s.ph);
+      cc.ch = tw > 0.8 ? '*' : tw > 0.3 ? '+' : tw > -0.3 ? '·' : '.';
+      cc.fg = mix(sdim, white, (tw + 1) / 2);
+    });
+    var ramp = '.:-=+*#%@', mcx = C * 0.82, mcy = 3.2, MR = 2.7, rev = Math.max(0, Math.min(1, (T - 0.3) / 0.5));
+    for (y = 0; y < 8; y++) for (x = Math.floor(mcx - 8); x <= mcx + 8; x++) {
+      var dx = (x - mcx) / 2, dy = y - mcy, d = Math.sqrt(dx * dx + dy * dy), mc = at(x, y);
+      if (!mc || d > MR || hash(x, y + 7) > rev) continue;
+      var sh = 0.55 + 0.45 * ((-dx * 0.75 - dy * 0.55) / MR);
+      mc.ch = ramp[Math.max(0, Math.min(8, Math.round(sh * 8)))]; mc.fg = moon;
+    }
+    var FIG = ['     _                ', ' ___| |__   ___ _ __  ', "/ __| '_ \\ / _ \\ '_ \\ ", '\\__ \\ | | |  __/ |_) |', '|___/_| |_|\\___| .__/ ', '               |_|    '];
+    var SCR = '#%&@$*+=?/<>';
+    var wx = 6, wy = 3, w = FIG[0].length;
+    for (var rr = 0; rr < FIG.length; rr++) for (var ci = 0; ci < w; ci++) {
+      var ch = FIG[rr][ci]; if (ch === ' ') continue;
+      var col = mix(hx('#7b86e8'), amber, ci / (w - 1));
+      if (T >= 0.55 + ci * 0.03 + rr * 0.01) put(wx + ci, wy + rr, ch, col);
+      else if (T >= 0.35 + ci * 0.012) put(wx + ci, wy + rr, SCR[Math.floor(hash(ci + Math.floor(t * 12), rr) * SCR.length)], mix(col, dim, 0.5));
+    }
+    var tag = 'keeping watch · 6 tasks in the fold · starts 23:00';
+    var tn = Math.max(0, Math.min(tag.length, Math.floor((T - 1.5) * 55)));
+    for (var k = 0; k < tn; k++) put(wx + k, wy + 7, tag[k], dim);
+    if (T > 2.4) { var p = 'press any key'; var pc = mix(dim, amber, 0.5 + 0.5 * Math.sin(t * 2)); for (k = 0; k < p.length; k++) put(wx + k, wy + 9, p[k], pc); }
+    var shx = 60, gy0 = ground(shx + 4) - 1, spr = ['  O   ,_', ' /|\\_/  |', '  |    [ ]', ' / \\    '], top0 = gy0 - 3;
+    for (rr = 0; rr < spr.length; rr++) for (k = 0; k < spr[rr].length; k++) put(shx + k, top0 + rr, spr[rr][k], shep);
+    var lit = Math.max(0, Math.min(1, (T - 1.1) / 0.5));
+    if (lit > 0) {
+      var fl = 0.8 + 0.2 * Math.sin(t * 9) * Math.sin(t * 3.7 + 1), lx = shx + 8, ly = top0 + 2;
+      put(lx, ly, ['*', '#', '@', '*', '+'][Math.floor(t * 7) % 5], mix(amber, lamp, fl));
+      for (y = ly - 3; y <= ly + 3; y++) for (x = lx - 7; x <= lx + 7; x++) {
+        var gdx = (x - lx) / 2, gdy = y - ly, gd = Math.sqrt(gdx * gdx + gdy * gdy), g2 = at(x, y);
+        if (!g2 || gd > 3.6 * lit || (x === lx && y === ly)) continue;
+        var kk = (1 - gd / (3.6 * lit)) * fl * lit;
+        g2.bg = mix(g2.bg, amber, 0.22 * kk);
+        if (g2.fg) g2.fg = mix(g2.fg, lamp, 0.4 * kk);
+      }
+    }
+    var rows = [];
+    for (y = 0; y < R; y++) {
+      var segs = [], cur = null;
+      for (x = 0; x < C; x++) {
+        var cell = cells[y * C + x], fc = cell.fg ? css(cell.fg) : '#e3e6f5', bc = cell.bg ? css(cell.bg) : 'transparent';
+        if (cur && cur.c === fc && cur.b === bc) cur.s += cell.ch;
+        else { cur = { s: cell.ch, c: fc, b: bc }; segs.push(cur); }
+      }
+      rows.push({ segs: segs });
+    }
+    return rows;
+  }
+  renderVals() {
+    var self = this;
+    var now = Date.now();
+    var t = (now - (this.t0 || now)) / 1000;
+    var T = this.reduce ? 99 : t;
+    return {
+      rows: this.build(T, t),
+      replay: function () { self.t0 = Date.now(); self.setState({ tick: Date.now() }); }
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,24 @@
+[package]
+name = "shep-cli"
+description = "The `shep` binary: CLI today; daemon, terminal UI and MCP server as they land."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[[bin]]
+name = "shep"
+path = "src/main.rs"
+
+[dependencies]
+shep-domain.workspace = true
+shep-app.workspace = true
+shep-infra.workspace = true
+clap.workspace = true
+
+[dev-dependencies]
+assert_cmd.workspace = true
+predicates.workspace = true
+tempfile.workspace = true
+
+[lints]
+workspace = true

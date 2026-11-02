@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Mac live working view</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;700&amp;display=swap">
+<style>
+body{margin:0}
+a{color:#f3b45c}a:hover{color:#ffe4b0}
+</style>
+</helmet>
+<div style="width: 1280px; height: 820px; box-sizing: border-box; background: #0e1230; color: #e9e7f2; border-radius: 14px; overflow: hidden; display: grid; grid-template-columns: 240px minmax(0, 1fr) 300px; font-family: 'Hanken Grotesk', 'Helvetica Neue', Arial, sans-serif; font-size: 14px">
+  <div style="position: relative; overflow: hidden; border-right: 1px solid #2c3366">
+    <img src="assets/sky-3of6.png" alt="" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; image-rendering: pixelated">
+    <div style="position: absolute; inset: 0; background: #10153ab3; backdrop-filter: blur(16px) saturate(140%); -webkit-backdrop-filter: blur(16px) saturate(140%)"></div>
+    <div style="position: relative; padding: 16px 10px; display: flex; flex-direction: column; gap: 2px">
+      <div style="display: flex; gap: 8px; padding: 2px 6px 16px"><i style="width: 12px; height: 12px; border-radius: 50%; background: #ff5f57"></i><i style="width: 12px; height: 12px; border-radius: 50%; background: #febc2e"></i><i style="width: 12px; height: 12px; border-radius: 50%; background: #28c840"></i></div>
+      <span style="font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #ff8f7a; padding: 6px 10px 2px">Needs you</span>
+      <span style="padding: 6px 10px; border-radius: 8px; display: flex; gap: 8px"><span style="color: #ff8f7a">!</span>Move avatars to S3</span>
+      <span style="font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #93b2ff; padding: 10px 10px 2px">Working</span>
+      <span style="padding: 6px 10px; border-radius: 8px; display: flex; gap: 8px; background: #ffffff1f"><span style="color: #93b2ff">●</span>Empty state for projects</span>
+      <span style="padding: 6px 10px; border-radius: 8px; display: flex; gap: 8px"><span style="color: #93b2ff">●</span>Rate-limit /api/search</span>
+      <span style="font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #8fd6a8; padding: 10px 10px 2px">Ready</span>
+      <span style="padding: 6px 10px; border-radius: 8px; display: flex; gap: 8px"><span style="color: #8fd6a8">✓</span>Fix login redirect loop</span>
+      <span style="padding: 6px 10px; border-radius: 8px; display: flex; gap: 8px"><span style="color: #8fd6a8">✓</span>Add CSV export to reports</span>
+      <span style="font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #c9cde6; padding: 10px 10px 2px">Queued</span>
+      <span style="padding: 6px 10px; border-radius: 8px; display: flex; gap: 8px; color: #c9cde6"><span>·</span>Dark mode for settings</span>
+    </div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; min-width: 0">
+    <div style="display: flex; align-items: center; gap: 12px; padding: 12px 20px; border-bottom: 1px solid #2c3366; background: #141a44cc">
+      <b style="font-size: 15px">#425 · Empty state for projects page</b>
+      <span style="font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 999px; color: #93b2ff; border: 1px solid #93b2ff55; background: #93b2ff12">Working · 4m 12s</span>
+      <div style="margin-left: auto; display: flex; border: 1px solid #3a4280; border-radius: 8px; overflow: hidden; font-size: 13px"><span style="padding: 5px 12px; background: #f3b45c; color: #1a1405; font-weight: 700">Session</span><span style="padding: 5px 12px">Diff</span><span style="padding: 5px 12px">Proof</span></div>
+    </div>
+    <div style="flex: 1; min-height: 0; padding: 18px 20px; display: flex; flex-direction: column; gap: 10px; overflow: hidden">
+      <div style="display: flex; gap: 10px; align-items: center; font-size: 13px; color: #a3aac8"><span style="width: 22px; height: 22px; border-radius: 6px; background: #262c66; display: flex; align-items: center; justify-content: center; font-family: 'JetBrains Mono', monospace; font-size: 11px; color: #e9e7f2">CC</span>Claude Code · your login · worktree <span style="font-family: 'JetBrains Mono', monospace">shep/425</span></div>
+      <div style="font-size: 15px; line-height: 1.5">The projects page renders an empty table when there are no projects. I'll reuse the shared EmptyState with a New project action, then add tests.</div>
+      <div style="display: flex; flex-direction: column; gap: 6px; font-family: 'JetBrains Mono', monospace; font-size: 13px">
+        <span style="padding: 7px 12px; border-radius: 8px; background: #141a40; border: 1px solid #2c3366; display: flex; gap: 10px"><span style="color: #a3aac8">Read</span>src/pages/projects/index.tsx</span>
+        <span style="padding: 7px 12px; border-radius: 8px; background: #141a40; border: 1px solid #2c3366; display: flex; gap: 10px"><span style="color: #a3aac8">Edit</span>src/pages/projects/index.tsx<span style="margin-left: auto"><span style="color: #8fd6a8">+18</span> <span style="color: #ff8f7a">−2</span></span></span>
+        <span style="padding: 7px 12px; border-radius: 8px; background: #141a40; border: 1px solid #2c3366; display: flex; gap: 10px"><span style="color: #a3aac8">Edit</span>src/pages/projects/projects.test.tsx<span style="margin-left: auto"><span style="color: #8fd6a8">+22</span></span></span>
+        <span style="padding: 7px 12px; border-radius: 8px; background: #141a40; border: 1px solid #2c3366; display: flex; flex-direction: column; gap: 4px"><span style="display: flex; gap: 10px"><span style="color: #a3aac8">Run</span>pnpm test projects<span style="margin-left: auto; color: #8fd6a8">2 passed</span></span><span style="color: #8fd6a8; padding-left: 40px">✓ shows the empty state when there are no projects</span><span style="color: #8fd6a8; padding-left: 40px">✓ New project opens the dialog</span></span>
+        <span style="padding: 7px 12px; border-radius: 8px; background: #141a40; border: 1px solid #93b2ff55; display: flex; gap: 10px"><span style="color: #93b2ff">⠹</span><span style="color: #a3aac8">Screenshot</span>localhost:3000/projects</span>
+      </div>
+    </div>
+    <div style="padding: 12px 20px; border-top: 1px solid #2c3366; display: flex; gap: 10px"><label for="mw-note" style="position: absolute; width: 1px; height: 1px; overflow: hidden">Note to the agent</label><input id="mw-note" placeholder="Add a note for the agent, it reads it at the next step" style="flex: 1; font: inherit; color: #e9e7f2; background: #0a0d24; border: 1px solid #2c3366; border-radius: 9px; padding: 9px 12px"><button type="button" style="font: inherit; font-weight: 600; color: #e9e7f2; background: transparent; border: 1px solid #3a4280; border-radius: 9px; padding: 9px 14px; cursor: pointer">Send note</button></div>
+  </div>
+
+  <div style="border-left: 1px solid #2c3366; background: #11153a; padding: 16px; display: flex; flex-direction: column; gap: 18px; overflow: hidden">
+    <div style="display: flex; flex-direction: column; gap: 8px">
+      <span style="font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #a3aac8">Plan</span>
+      <span style="display: flex; gap: 8px"><span style="color: #8fd6a8">✓</span>Find where the empty table renders</span>
+      <span style="display: flex; gap: 8px"><span style="color: #8fd6a8">✓</span>Use EmptyState with New project</span>
+      <span style="display: flex; gap: 8px"><span style="color: #8fd6a8">✓</span>Add tests</span>
+      <span style="display: flex; gap: 8px"><span style="color: #93b2ff">●</span>Screenshot for proof</span>
+      <span style="display: flex; gap: 8px; color: #a3aac8"><span>·</span>Push and open draft PR</span>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 8px">
+      <span style="font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #a3aac8">Checks</span>
+      <span style="display: flex; justify-content: space-between"><span style="display: flex; gap: 8px"><span style="color: #8fd6a8">✓</span>build</span><span style="color: #a3aac8">local</span></span>
+      <span style="display: flex; justify-content: space-between"><span style="display: flex; gap: 8px"><span style="color: #8fd6a8">✓</span>tests</span><span style="color: #a3aac8">local</span></span>
+      <span style="display: flex; justify-content: space-between"><span style="display: flex; gap: 8px; color: #a3aac8"><span>·</span>CI on GitHub</span><span style="color: #a3aac8">after push</span></span>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 8px">
+      <span style="font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: #a3aac8">Usage</span>
+      <span style="color: #c9cde6">3 agents running · limit resets 03:30</span>
+    </div>
+    <div style="margin-top: auto; display: flex; flex-direction: column; gap: 8px">
+      <button type="button" style="font: inherit; font-weight: 600; color: #e9e7f2; background: #ffffff10; border: 1px solid #3a4280; border-radius: 9px; padding: 9px; cursor: pointer">Open session in Terminal</button>
+      <button type="button" style="font: inherit; font-weight: 600; color: #e9e7f2; background: #ffffff10; border: 1px solid #3a4280; border-radius: 9px; padding: 9px; cursor: pointer">Open worktree in editor</button>
+      <button type="button" style="font: inherit; font-weight: 600; color: #ff8f7a; background: transparent; border: 1px solid #ff8f7a55; border-radius: 9px; padding: 9px; cursor: pointer">Stop this task</button>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":820}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,1040 @@
+<title>Shep 2 Design Directions</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gloock&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap">
+<style>
+/* Layout: research → one signature idea (the sky is the progress bar) → six proposals, each a live screen → rules → stack decision. Page is light (morning) or dark (night); screens are always night objects. */
+:root {
+  --bg: #eef1f9; --surface: #ffffff; --surface-2: #f5f6fc; --ink: #151a35; --muted: #565d7d; --faint: #868cab;
+  --line: #d8dcec; --accent: #b4650e; --accent-soft: #b4650e18; --ok: #23804f; --need: #c0472f; --work: #3559c7;
+  --shadow: 0 1px 2px #151a3512, 0 10px 32px #151a3514;
+  /* screens: always night */
+  --t-bg: #0a0d22; --t-bg-2: #11153a; --t-ink: #e3e6f5; --t-dim: #7d84a8; --t-faint: #4b5180; --t-line: #232a57;
+  --t-amber: #f3b45c; --t-ok: #8fd6a8; --t-need: #ff8f7a; --t-work: #93b2ff; --t-moon: #dde4ff;
+  --f-display: "Gloock", Georgia, "Times New Roman", serif;
+  --f-body: "Hanken Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --f-mono: "JetBrains Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0c1130; --surface: #141a3b; --surface-2: #10163a; --ink: #e9e7f2; --muted: #a2a9c7; --faint: #6f7697;
+    --line: #273061; --accent: #f3b45c; --accent-soft: #f3b45c1c; --ok: #8fd6a8; --need: #ff8f7a; --work: #93b2ff;
+    --shadow: 0 1px 2px #00000040, 0 12px 34px #00000045; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0c1130; --surface: #141a3b; --surface-2: #10163a; --ink: #e9e7f2; --muted: #a2a9c7; --faint: #6f7697;
+  --line: #273061; --accent: #f3b45c; --accent-soft: #f3b45c1c; --ok: #8fd6a8; --need: #ff8f7a; --work: #93b2ff;
+  --shadow: 0 1px 2px #00000040, 0 12px 34px #00000045; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 1rem; line-height: 1.55; -webkit-font-smoothing: antialiased; }
+h1, h2, h3 { margin: 0; font-weight: 400; text-wrap: balance; }
+h1, h2 { font-family: var(--f-display); line-height: 1.07; letter-spacing: -0.01em; }
+h2 { font-size: clamp(1.7rem, 3.6vw, 2.5rem); }
+h3 { font-weight: 700; font-size: 1.05rem; }
+p { margin: 0; }
+button, input { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+code { font-family: var(--f-mono); font-size: 0.9em; }
+a { color: var(--accent); text-underline-offset: 3px; }
+
+.page { max-width: 1160px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: clamp(36px, 6vw, 72px); display: grid; gap: clamp(64px, 9vw, 112px); }
+.eyebrow { font-family: var(--f-mono); font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); }
+.sec { display: grid; gap: 22px; min-width: 0; }
+.sec-head { display: grid; gap: 10px; max-width: 68ch; }
+.sec-head p { color: var(--muted); }
+.borrowed { font-size: 0.86rem; color: var(--muted); display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: baseline; }
+.borrowed b { font-family: var(--f-mono); font-weight: 500; font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--faint); }
+.borrowed span { padding: 1px 8px; border: 1px solid var(--line); border-radius: 999px; background: var(--surface); }
+
+/* top bar */
+.topbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.motion-btn { border: 1px solid var(--line); background: var(--surface); border-radius: 999px; padding: 6px 14px; font-size: 0.85rem; font-weight: 600; display: inline-flex; gap: 8px; align-items: center; }
+.motion-btn i { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); }
+.motion-btn[aria-pressed="false"] i { background: var(--faint); }
+
+/* hero */
+.hero { display: grid; gap: 26px; }
+.hero h1 { font-size: clamp(2.8rem, 8vw, 5.4rem); }
+.hero h1 span { color: var(--accent); }
+.lede { font-size: clamp(1.08rem, 2vw, 1.25rem); color: var(--muted); max-width: 62ch; }
+.findings { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
+.finding { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 16px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.finding .k { font-family: var(--f-mono); font-size: 0.68rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--faint); }
+.finding b { font-size: 1rem; line-height: 1.3; }
+.finding p { font-size: 0.88rem; color: var(--muted); }
+.finding.alert { border-color: var(--need); }
+.finding.alert .k { color: var(--need); }
+.note { font-size: 0.84rem; color: var(--faint); max-width: 90ch; }
+
+/* screens: shared */
+.screen { background: var(--t-bg); color: var(--t-ink); border-radius: 12px; border: 1px solid var(--t-line); box-shadow: var(--shadow); overflow: hidden; min-width: 0; }
+.tbar { display: flex; align-items: center; gap: 7px; padding: 9px 12px; border-bottom: 1px solid var(--t-line); font-family: var(--f-mono); font-size: 0.72rem; color: var(--t-dim); }
+.tbar i { width: 10px; height: 10px; border-radius: 50%; background: var(--t-line); flex: none; }
+.tbar span { margin-left: 6px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tbar button { margin-left: auto; background: none; border: 1px solid var(--t-line); color: var(--t-ink); border-radius: 4px; padding: 2px 8px; font-family: var(--f-mono); font-size: 0.7rem; }
+.tbar button:hover { border-color: var(--t-amber); color: var(--t-amber); }
+.ascii { font-family: var(--f-mono); line-height: 1.18; font-size: 12px; white-space: pre; overflow: hidden; }
+.ascii .r { display: block; height: 1.18em; }
+.tlines { font-family: var(--f-mono); font-size: 0.8rem; line-height: 1.75; padding: 12px 16px; white-space: pre; overflow-x: auto; }
+.c-dim { color: var(--t-dim); } .c-faint { color: var(--t-faint); } .c-amb { color: var(--t-amber); } .c-ok { color: var(--t-ok); } .c-need { color: var(--t-need); } .c-work { color: var(--t-work); } .c-moon { color: var(--t-moon); }
+
+/* signature */
+.sig { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 16px; align-items: stretch; }
+.sig .screen { display: grid; grid-template-rows: auto 1fr; }
+.sig-ascii { padding: 0; display: grid; align-content: center; background: var(--t-bg); }
+.dither { width: 100%; height: auto; display: block; image-rendering: pixelated; image-rendering: crisp-edges; aspect-ratio: 192 / 104; max-width: 100%; }
+.sig-cap { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 16px; font-size: 0.86rem; color: var(--muted); }
+.controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.btn { border: 1px solid var(--line); background: var(--surface); border-radius: 8px; padding: 8px 14px; font-weight: 600; font-size: 0.9rem; }
+.btn:hover { border-color: var(--faint); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+.btn.sq { width: 38px; padding: 8px 0; text-align: center; }
+.count { font-family: var(--f-mono); font-size: 0.9rem; font-variant-numeric: tabular-nums; }
+.count b { color: var(--accent); }
+
+/* proposals */
+.prop { display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.6fr); gap: clamp(20px, 3vw, 40px); align-items: start; }
+.prop-text { display: grid; gap: 12px; align-content: start; position: sticky; top: 24px; }
+.prop-text h2 { font-size: clamp(1.6rem, 3vw, 2.2rem); }
+.prop-text p { color: var(--muted); }
+.prop-text ul { margin: 0; padding-left: 18px; color: var(--muted); font-size: 0.94rem; display: grid; gap: 4px; }
+.prop-num { font-family: var(--f-mono); font-size: 0.72rem; letter-spacing: 0.14em; text-transform: uppercase; color: var(--accent); }
+
+/* watch screen */
+.watch-sky { border-bottom: 1px solid var(--t-line); }
+
+/* mac window */
+.mac { border-radius: 14px; overflow: hidden; border: 1px solid #2c3366; box-shadow: var(--shadow); background: #0e1230; color: var(--t-ink); min-width: 0; outline: none; }
+.mac:focus-visible { outline: 2px solid var(--t-amber); outline-offset: 3px; }
+.mac-bar { display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: #161b44cc; border-bottom: 1px solid #2c3366; }
+.lights { display: flex; gap: 7px; flex: none; }
+.lights i { width: 12px; height: 12px; border-radius: 50%; }
+.lights i:nth-child(1) { background: #ff5f57; } .lights i:nth-child(2) { background: #febc2e; } .lights i:nth-child(3) { background: #28c840; }
+.mac-title { font-weight: 600; font-size: 0.92rem; }
+.mac-tools { margin-left: auto; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+.pill { font-size: 0.74rem; font-weight: 600; padding: 3px 10px; border-radius: 999px; background: #ffffff10; border: 1px solid #ffffff1a; white-space: nowrap; }
+.pill.amb { color: var(--t-amber); border-color: #f3b45c55; background: #f3b45c14; }
+.kbd { font-family: var(--f-mono); font-size: 0.7rem; padding: 1px 6px; border-radius: 4px; border: 1px solid #ffffff2a; background: #ffffff0d; color: var(--t-dim); }
+.mac-body { display: grid; grid-template-columns: 230px minmax(0, 1fr); min-height: 520px; }
+.mac-side { position: relative; overflow: hidden; border-right: 1px solid #2c3366; }
+.mac-side canvas { position: absolute; inset: 0; width: 100%; height: 100%; image-rendering: pixelated; }
+.glass { position: relative; height: 100%; padding: 14px 10px; display: grid; gap: 4px; align-content: start; background: #10153a8c; backdrop-filter: blur(14px) saturate(140%); -webkit-backdrop-filter: blur(14px) saturate(140%); }
+.side-h { font-family: var(--f-mono); font-size: 0.66rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--t-dim); padding: 8px 10px 4px; }
+.side-item { display: flex; justify-content: space-between; align-items: center; padding: 7px 10px; border-radius: 7px; font-size: 0.9rem; }
+.side-item.on { background: #ffffff14; }
+.side-item .n { font-family: var(--f-mono); font-size: 0.78rem; color: var(--t-dim); }
+.side-item .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 8px; }
+.side-foot { margin-top: 14px; padding: 10px; border-radius: 8px; background: #0a0d2499; border: 1px solid #ffffff12; font-size: 0.8rem; color: var(--t-dim); display: grid; gap: 4px; }
+.side-foot b { color: var(--t-ink); font-weight: 600; }
+.mac-main { position: relative; padding: 22px clamp(14px, 3vw, 28px); display: grid; align-content: start; gap: 14px; overflow: hidden; background: #0e1230; }
+.mac-progress { display: flex; justify-content: space-between; align-items: center; gap: 10px; font-size: 0.82rem; color: var(--t-dim); flex-wrap: wrap; }
+.mcard { border: 1px solid #2c3366; background: #141a40; border-radius: 12px; overflow: hidden; display: grid; transition: transform 0.38s cubic-bezier(.2,.8,.2,1), opacity 0.38s; }
+.mcard.out-r { transform: translateX(60%) rotate(6deg); opacity: 0; }
+.mcard.out-l { transform: translateX(-60%) rotate(-6deg); opacity: 0; }
+.mcard.in { animation: cardin 0.4s cubic-bezier(.2,.8,.2,1); }
+@keyframes cardin { from { transform: translateY(14px) scale(.98); opacity: 0; } to { transform: none; opacity: 1; } }
+.mproof { background: #0a0d24; border-bottom: 1px solid #2c3366; padding: 14px; display: grid; gap: 8px; cursor: zoom-in; }
+.mproof.big .shot-body { min-height: 300px; }
+.mproof .k { font-family: var(--f-mono); font-size: 0.64rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--t-dim); display: flex; justify-content: space-between; }
+.shot { border: 1px solid #2c3366; border-radius: 8px; overflow: hidden; background: #f4f5fb; }
+.shot-bar { display: flex; gap: 5px; padding: 6px 8px; background: #e6e8f2; border-bottom: 1px solid #d5d8e6; }
+.shot-bar i { width: 7px; height: 7px; border-radius: 50%; background: #c7cad9; }
+.shot-body { padding: 14px; display: grid; gap: 8px; min-height: 170px; align-content: center; transition: min-height 0.3s; }
+.bl { height: 9px; border-radius: 3px; background: #d6d9e8; }
+.bl.a { background: #b4650e; opacity: .8; }
+.fld { height: 24px; border: 1px solid #d6d9e8; border-radius: 5px; background: #fff; }
+.trw { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 6px; }
+.tl { font-family: var(--f-mono); font-size: 0.66rem; color: #23804f; }
+.minfo { padding: 16px 18px; display: grid; gap: 12px; }
+.mmeta { font-family: var(--f-mono); font-size: 0.74rem; color: var(--t-dim); }
+.mtitle { font-size: 1.3rem; font-weight: 700; line-height: 1.25; min-height: 1.25em; font-family: var(--f-body); }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { font-size: 0.76rem; padding: 3px 9px; border-radius: 999px; border: 1px solid #ffffff1c; color: var(--t-dim); background: #ffffff08; }
+.chip.ok { color: var(--t-ok); border-color: #8fd6a855; background: #8fd6a812; }
+.chip.fix { color: var(--t-work); border-color: #93b2ff44; background: #93b2ff10; }
+.opinion { font-size: 0.88rem; color: var(--t-dim); }
+.opinion b { color: var(--t-amber); font-weight: 600; }
+.mactions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.mbtn { border: 1px solid #ffffff26; background: #ffffff0a; color: var(--t-ink); border-radius: 8px; padding: 8px 14px; font-weight: 600; font-size: 0.9rem; display: inline-flex; gap: 8px; align-items: center; }
+.mbtn:hover { border-color: #ffffff55; }
+.mbtn.go { background: var(--t-amber); color: #1a1405; border-color: var(--t-amber); }
+.mbtn .kbd { color: inherit; border-color: currentColor; opacity: .7; background: transparent; }
+.mq { border: 1px solid #ff8f7a66; background: #ff8f7a12; border-radius: 8px; padding: 10px 12px; display: grid; gap: 4px; }
+.mq .k { font-family: var(--f-mono); font-size: 0.64rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--t-need); }
+.mans { display: flex; gap: 8px; }
+.mans input { flex: 1; min-width: 0; background: #0a0d24; border: 1px solid #2c3366; border-radius: 8px; padding: 8px 10px; color: var(--t-ink); }
+.reward { position: relative; border-radius: 12px; overflow: hidden; border: 1px solid #2c3366; }
+.reward canvas { display: block; width: 100%; height: auto; aspect-ratio: 240 / 135; image-rendering: pixelated; }
+.reward-text { position: absolute; left: 0; right: 0; bottom: 0; padding: 18px 20px; background: linear-gradient(transparent, #0a0d24e6); display: grid; gap: 6px; }
+.reward-text b { font-family: var(--f-display); font-weight: 400; font-size: 1.8rem; color: #fff6e6; }
+.reward-text span { color: #f6e3c8; font-size: 0.9rem; }
+
+/* island */
+.desk { border-radius: 14px; overflow: hidden; border: 1px solid #2c3366; box-shadow: var(--shadow); background: radial-gradient(120% 90% at 50% 0%, #2a2f6b 0%, #10153a 55%, #0a0d22 100%); color: var(--t-ink); min-width: 0; }
+.menubar { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 10px; padding: 6px 12px; background: #0a0d22d9; font-size: 0.8rem; min-height: 34px; }
+.menubar .left { display: flex; gap: 14px; overflow: hidden; white-space: nowrap; color: var(--t-dim); min-width: 0; }
+.menubar .left b { color: var(--t-ink); }
+.menubar .right { display: flex; justify-content: flex-end; gap: 12px; align-items: center; color: var(--t-dim); font-family: var(--f-mono); font-size: 0.74rem; white-space: nowrap; min-width: 0; overflow: hidden; }
+.island { background: #000; border-radius: 999px; padding: 5px 12px 5px 8px; display: inline-flex; align-items: center; gap: 9px; border: 0; color: #fff; font-size: 0.78rem; font-weight: 600; transition: border-radius .25s; max-width: 100%; }
+.island:hover { box-shadow: 0 0 0 1px #ffffff22; }
+.lantern { width: 16px; height: 16px; border-radius: 50%; background: radial-gradient(circle, #ffe6b0 0 22%, #f3b45c 35%, #f3b45c00 70%); flex: none; }
+.island svg { flex: none; }
+.isl-panel { margin: 10px auto 0; width: min(420px, calc(100% - 24px)); background: #000; border-radius: 22px; padding: 14px 16px; display: grid; gap: 8px; font-size: 0.84rem; }
+.isl-row { display: grid; grid-template-columns: 16px 48px minmax(0, 1fr) auto; gap: 6px; align-items: center; }
+.isl-row span:nth-child(3) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.desk-body { padding: 18px 16px 22px; display: grid; gap: 16px; justify-items: end; min-height: 260px; align-content: start; }
+.notif { width: min(380px, 100%); background: #1c2152e6; backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid #ffffff1f; border-radius: 16px; padding: 12px 14px; display: grid; grid-template-columns: 38px minmax(0, 1fr); gap: 10px; box-shadow: 0 10px 30px #00000055; }
+.notif .t { font-weight: 700; font-size: 0.86rem; display: flex; justify-content: space-between; gap: 8px; }
+.notif .t span { font-weight: 400; color: var(--t-dim); font-size: 0.76rem; }
+.notif p { font-size: 0.84rem; color: #d6d9ee; }
+.notif .acts { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.notif .acts button { background: #ffffff14; border: 1px solid #ffffff1c; border-radius: 9px; padding: 7px; color: #fff; font-size: 0.82rem; font-weight: 600; }
+.icon-row { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; justify-self: start; }
+.icon-row p { font-size: 0.84rem; color: var(--t-dim); max-width: 40ch; }
+
+/* voice */
+.voice { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; }
+.voice .screen { padding: 0; }
+.lines { display: grid; gap: 0; border-top: 1px solid var(--line); }
+.lines div { display: grid; grid-template-columns: 130px minmax(0, 1fr); gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 0.92rem; }
+.lines b { font-family: var(--f-mono); font-weight: 500; font-size: 0.74rem; color: var(--faint); text-transform: uppercase; letter-spacing: 0.08em; padding-top: 2px; }
+
+/* rules / avoid */
+.two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 16px; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 20px; display: grid; gap: 12px; align-content: start; }
+.panel ul { margin: 0; padding-left: 18px; display: grid; gap: 7px; font-size: 0.94rem; }
+.panel li span { color: var(--muted); }
+.panel.avoid li { color: var(--muted); }
+.panel.avoid li b { color: var(--ink); font-weight: 600; }
+
+/* stack */
+.arch { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 14px; align-items: center; }
+.arch-col { display: grid; gap: 8px; }
+.box { border: 1px solid var(--line); border-radius: 10px; background: var(--surface); padding: 12px 14px; display: grid; gap: 3px; }
+.box b { font-size: 0.95rem; }
+.box span { font-size: 0.82rem; color: var(--muted); }
+.box.core { border-color: var(--accent); background: var(--accent-soft); }
+.box.core code { color: var(--accent); font-weight: 700; }
+.wire { display: grid; justify-items: center; gap: 6px; font-family: var(--f-mono); font-size: 0.72rem; color: var(--faint); text-align: center; }
+.wire i { width: 2px; height: 46px; background: repeating-linear-gradient(var(--accent) 0 5px, transparent 5px 9px); }
+.tbl-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; min-width: 720px; font-size: 0.88rem; }
+th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-family: var(--f-mono); font-weight: 500; font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); background: var(--surface-2); }
+td:first-child { font-weight: 600; white-space: nowrap; }
+tr:last-child td { border-bottom: 0; }
+td.win { color: var(--ok); font-weight: 600; }
+td.lose { color: var(--need); }
+.spike { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.spike > div { border-top: 2px solid var(--ink); padding-top: 12px; display: grid; gap: 6px; align-content: start; }
+.spike b { font-family: var(--f-display); font-weight: 400; font-size: 1.25rem; }
+.spike p { color: var(--muted); font-size: 0.92rem; }
+.sources { font-size: 0.84rem; color: var(--muted); display: grid; gap: 10px; border-top: 1px solid var(--line); padding-top: 20px; }
+.sources ul { margin: 0; padding-left: 18px; display: grid; gap: 3px; columns: 2; column-gap: 32px; }
+.sources li { break-inside: avoid; }
+
+@media (max-width: 1000px) {
+  .findings { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .findings .finding:last-child { grid-column: 1 / -1; }
+  .prop { grid-template-columns: minmax(0, 1fr); }
+  .prop-text { position: static; }
+}
+@media (max-width: 760px) {
+  .sig, .sig-cap, .two, .voice, .spike { grid-template-columns: minmax(0, 1fr); }
+  .mac-body { grid-template-columns: minmax(0, 1fr); }
+  .mac-side { border-right: 0; border-bottom: 1px solid #2c3366; }
+  .glass { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .glass .side-h, .side-foot { grid-column: 1 / -1; }
+  .arch { grid-template-columns: minmax(0, 1fr); }
+  .wire i { width: 46px; height: 2px; background: repeating-linear-gradient(90deg, var(--accent) 0 5px, transparent 5px 9px); }
+  .sources ul { columns: 1; }
+  .menubar .left span:nth-child(n+3) { display: none; }
+}
+@media (max-width: 480px) {
+  .findings { grid-template-columns: minmax(0, 1fr); }
+  .lines div { grid-template-columns: minmax(0, 1fr); gap: 2px; }
+  .menubar .right .clock-extra { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mcard, .mcard.in { transition: none; animation: none; }
+}
+</style>
+
+<main class="page">
+  <div class="topbar">
+    <p class="eyebrow">Shep 2 · design research · October 2026</p>
+    <button class="motion-btn" id="motion" aria-pressed="true"><i></i><span>Motion on</span></button>
+  </div>
+
+  <header class="hero">
+    <h1>Everyone builds for watching. <span>We build for the morning.</span></h1>
+    <p class="lede">We studied Mac apps, terminal tools, agent CLIs and what is trending on 21st.dev, Dribbble, Mobbin and Pinterest. Every agent tool is designed around watching an agent work. Nobody designed the moment you wake up and decide what ships. That gap shapes everything below, including the look.</p>
+    <div class="findings">
+      <div class="finding"><span class="k">Mac apps</span><b>Agent apps are chat rooms.</b><p>Conductor, Codex, Claude desktop and Cursor show one workspace at a time, sorted by time. None answers "what finished overnight, with proof?"</p></div>
+      <div class="finding alert"><span class="k">Competition</span><b>"While you sleep" is taken.</b><p>Amp's homepage: "Send prompt, close laptop… continue while you sleep… forget worktrees." Our edge has to be the morning review.</p></div>
+      <div class="finding"><span class="k">Platform</span><b>The Mac got a Dynamic Island.</b><p>Apple announced it on Oct 28. Live Activities also show in the menu bar. Only small notch hacks use this for agents.</p></div>
+      <div class="finding"><span class="k">Terminal</span><b>Agent CLIs stop animating after the splash.</b><p>Codex, Gemini, Crush and Claude Code animate the welcome screen, then go static. Nobody built a calm screen for work you're away from.</p></div>
+      <div class="finding"><span class="k">Visual trends</span><b>ASCII and dither are crowded.</b><p>Ghostty, Zed, Raycast and 21st.dev all use them. They only work for us if they carry meaning, so ours shows progress.</p></div>
+    </div>
+    <p class="note">Dribbble, Pinterest, Behance and Mobbin blocked automated reading, so points about them come from search results and trend write-ups. Everything else was read directly. Sources are at the bottom.</p>
+  </header>
+
+  <!-- SIGNATURE -->
+  <section class="sec" id="signature">
+    <div class="sec-head">
+      <p class="eyebrow">The signature</p>
+      <h2>The sky is the progress bar</h2>
+      <p>One scene everywhere. Each task is a sheep. While agents work, the shepherd's lantern keeps watch. Each finished pull request walks a sheep into the pen and warms the horizon a little. When the last one is in, the sun is up. In the terminal it is plain characters, so it works over SSH. On the Mac it is the same scene, dithered.</p>
+    </div>
+    <div class="controls">
+      <button class="btn sq" id="p-minus" aria-label="One fewer task done">−</button>
+      <span class="count" id="p-count"><b>2</b> of 6 tasks done</span>
+      <button class="btn sq" id="p-plus" aria-label="One more task done">+</button>
+      <button class="btn primary" id="p-play">Play the night</button>
+    </div>
+    <div class="sig">
+      <div class="screen"><div class="tbar"><i></i><i></i><i></i><span>terminal · shep watch</span></div><div class="ascii sig-ascii" id="sky-ascii" aria-label="ASCII night sky with a shepherd, sheep and a pen"></div></div>
+      <div class="screen"><div class="tbar"><i></i><i></i><i></i><span>mac app · same scene, dithered</span></div><canvas class="dither" id="sky-dither" width="192" height="104" aria-label="Dithered version of the same night sky"></canvas></div>
+    </div>
+    <div class="sig-cap"><span>Plain characters with 24-bit color, falling back to 256 colors. About 12 frames a second, paused when hidden.</span><span>An 8-color ordered dither, indigo to amber. The palette is the brand.</span></div>
+  </section>
+
+  <!-- P1 SPLASH -->
+  <section class="sec">
+    <div class="prop">
+      <div class="prop-text">
+        <span class="prop-num">Proposal 1 · terminal</span>
+        <h2>A two-second lantern splash</h2>
+        <p>Running <code>shep</code> lights the scene: stars come out, the wordmark decrypts in a dusk-to-amber gradient, the lantern catches. Then it settles into a still frame and never plays again that day.</p>
+        <ul><li>Skipped when the terminal is too small, in CI, or with <code>--no-motion</code></li><li>Wordmark has long, short and tiny versions, picked by width</li></ul>
+        <p class="borrowed"><b>Borrowed from</b><span>Codex welcome animation</span><span>Gemini width-aware logo</span><span>Ghostty ASCII hero</span></p>
+      </div>
+      <div class="screen"><div class="tbar"><i></i><i></i><i></i><span>~/projects/booking-app — shep</span><button id="splash-replay">Replay</button></div><div class="ascii" id="splash" aria-label="Animated ASCII splash: night sky, shep wordmark and a shepherd with a lantern"></div></div>
+    </div>
+  </section>
+
+  <!-- P2 WATCH -->
+  <section class="sec">
+    <div class="prop">
+      <div class="prop-text">
+        <span class="prop-num">Proposal 2 · terminal</span>
+        <h2>The watch screen</h2>
+        <p>Leave it open overnight. The sky band follows real progress. Each working task shows what its agent is doing and a small activity graph. The status line has a slow lantern shimmer, so you can tell it's alive from across the room.</p>
+        <ul><li>Uses the <b>+</b> and <b>−</b> buttons above, try them</li><li>Braille graphs like btop; staggered spinners like Crush</li></ul>
+        <p class="borrowed"><b>Borrowed from</b><span>btop graphs</span><span>Codex shimmer line</span><span>Crush spinners</span></p>
+      </div>
+      <div class="screen"><div class="tbar"><i></i><i></i><i></i><span>shep watch · booking-app · 02:14</span></div><div class="ascii watch-sky" id="watch-sky"></div><div class="tlines" id="watch-lines"></div></div>
+    </div>
+  </section>
+
+  <!-- P3 BRIEF -->
+  <section class="sec">
+    <div class="prop">
+      <div class="prop-text">
+        <span class="prop-num">Proposal 3 · terminal</span>
+        <h2>The morning brief decrypts</h2>
+        <p>The first <code>shep</code> of the morning prints the brief inline, not full screen, so you can scroll, search and copy. Each finished PR's title decrypts into place, one by one. It plays once. After that it's ordinary text.</p>
+        <ul><li>Dawn-gradient rule sets the time of day</li><li>One "while you slept" line, never more</li></ul>
+        <p class="borrowed"><b>Borrowed from</b><span>Factory's scramble headline</span><span>TerminalTextEffects decrypt</span></p>
+      </div>
+      <div class="screen"><div class="tbar"><i></i><i></i><i></i><span>~/projects/booking-app</span><button id="brief-replay">Replay</button></div><div class="tlines" id="brief"></div></div>
+    </div>
+  </section>
+
+  <!-- P4 MAC -->
+  <section class="sec">
+    <div class="prop">
+      <div class="prop-text">
+        <span class="prop-num">Proposal 4 · Mac app</span>
+        <h2>The review window</h2>
+        <p>Sorted by verdict, not by time. Proof comes first: the screenshot is the hero and the diff is one key away. Single keys decide. The sidebar is glass over the dithered sky, and it brightens with every merge. Clear the queue and you get the sunrise.</p>
+        <ul><li>Click the window, then press <span class="kbd" style="color:var(--muted)">M</span> merge, <span class="kbd" style="color:var(--muted)">S</span> send back, <span class="kbd" style="color:var(--muted)">Space</span> enlarge proof</li><li>Glass only on chrome, content on solid surfaces, so it stays readable</li></ul>
+        <p class="borrowed"><b>Borrowed from</b><span>Superhuman inbox-zero reward</span><span>Linear calm density</span><span>Devin and Cursor proof-first review</span></p>
+      </div>
+      <div class="mac" id="mac" tabindex="0" aria-label="Mock Mac app review window. Press M to merge, S to send back.">
+        <div class="mac-bar"><div class="lights"><i></i><i></i><i></i></div><span class="mac-title">Morning</span><div class="mac-tools"><span class="pill amb" id="mac-pill">5 ready</span><span class="kbd">⌘K</span></div></div>
+        <div class="mac-body">
+          <aside class="mac-side"><canvas id="mac-sky" width="96" height="200"></canvas><div class="glass" id="mac-side"></div></aside>
+          <div class="mac-main" id="mac-main"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- P5 ISLAND -->
+  <section class="sec">
+    <div class="prop">
+      <div class="prop-text">
+        <span class="prop-num">Proposal 5 · Mac system</span>
+        <h2>A lantern in the Dynamic Island</h2>
+        <p>Overnight the Live Activity is a lantern that glows brighter as PRs finish. Click it for the list. At dawn a notification arrives with real buttons, so you can merge every green PR before opening the app. On Macs without the Island it lives in the menu bar.</p>
+        <ul><li>Follows the <b>+</b> and <b>−</b> buttons above</li><li>App Intents: "Queue issue", "Show ready PRs", "Merge all green" from Spotlight and Siri</li></ul>
+        <p class="borrowed"><b>Borrowed from</b><span>Live Activities in the menu bar</span><span>agent notch apps</span><span>Conductor keep-awake</span></p>
+      </div>
+      <div class="desk">
+        <div class="menubar"><div class="left"><b>Shep</b><span>File</span><span>Edit</span><span>View</span><span>Window</span></div><button class="island" id="island" aria-expanded="false"><span class="lantern" id="isl-lantern"></span><span id="isl-text">Keeping watch</span><svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><circle cx="9" cy="9" r="7" fill="none" stroke="#ffffff2a" stroke-width="2.4"/><circle id="isl-ring" cx="9" cy="9" r="7" fill="none" stroke="#f3b45c" stroke-width="2.4" stroke-linecap="round" stroke-dasharray="0 44" transform="rotate(-90 9 9)"/></svg></button><div class="right"><span class="clock-extra">⌁ 84%</span><span id="isl-clock">02:14</span></div></div>
+        <div id="isl-panel" class="isl-panel" hidden></div>
+        <div class="desk-body">
+          <div class="notif" role="img" aria-label="Morning notification"><svg width="38" height="38" viewBox="0 0 64 64" aria-hidden="true"><defs><linearGradient id="ig" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1a2160"/><stop offset=".62" stop-color="#3d3a7a"/><stop offset="1" stop-color="#f3b45c"/></linearGradient><radialGradient id="ilg"><stop offset="0" stop-color="#fff2cf"/><stop offset=".4" stop-color="#f3b45c"/><stop offset="1" stop-color="#f3b45c" stop-opacity="0"/></radialGradient></defs><rect width="64" height="64" rx="15" fill="url(#ig)"/><circle cx="38" cy="36" r="16" fill="url(#ilg)" opacity=".75"/><path d="M22 52 V20 a8 8 0 0 1 16 0 v4" fill="none" stroke="#e9e7f2" stroke-width="3" stroke-linecap="round"/><rect x="33" y="27" width="10" height="13" rx="3" fill="#fff2cf"/></svg><div style="display:grid;gap:2px;min-width:0"><div class="t">Shep <span>07:02</span></div><p id="notif-text">Dawn. 5 pull requests are ready and CI is green. 1 needs your answer.</p></div><div class="acts"><button type="button">Merge 5 green</button><button type="button">Review</button></div></div>
+          <div class="icon-row"><svg width="72" height="72" viewBox="0 0 64 64" aria-label="Proposed app icon: a crook holding a lantern on an indigo to amber squircle"><rect width="64" height="64" rx="15" fill="url(#ig)"/><circle cx="38" cy="36" r="16" fill="url(#ilg)" opacity=".75"/><path d="M22 52 V20 a8 8 0 0 1 16 0 v4" fill="none" stroke="#e9e7f2" stroke-width="3" stroke-linecap="round"/><rect x="33" y="27" width="10" height="13" rx="3" fill="#fff2cf"/></svg><p>App icon proposal: two layers only, a crook holding a lantern over a night-to-dawn gradient. Apple's own icon guidance warns against too many overlapping shapes.</p></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- P6 VOICE -->
+  <section class="sec">
+    <div class="prop">
+      <div class="prop-text">
+        <span class="prop-num">Proposal 6 · everywhere</span>
+        <h2>A dry night-watch voice</h2>
+        <p>One shepherd character, a handful of lines, no cartoon. The words do the same job as the sky: they tell you what time of day it is for your work.</p>
+        <p class="borrowed"><b>Borrowed from</b><span>Claude Code spinner verbs</span><span>Conductor agent names</span></p>
+      </div>
+      <div class="voice">
+        <div class="screen"><div class="tbar"><i></i><i></i><i></i><span>spinner</span></div><div class="tlines" id="spinner" style="font-size:.95rem;min-height:120px;display:grid;align-content:center"></div></div>
+        <div class="lines">
+          <div><b>Working</b><span>Counting sheep · Mending fences · Herding commits · Reading the logs</span></div>
+          <div><b>Overnight</b><span>Keeping watch · 4 in the fold</span></div>
+          <div><b>Morning</b><span>Dawn. 5 ready, 1 needs you.</span></div>
+          <div><b>All clear</b><span>The pen is full. Nothing left to review.</span></div>
+          <div><b>Error</b><span>CI failed on #421 twice. Stopped and left you the log.</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- RULES -->
+  <section class="sec">
+    <div class="sec-head"><p class="eyebrow">Guardrails</p><h2>Wow without the cost</h2><p>The research found the same failures across agent CLIs: flicker, battery drain, motion that ignores settings. These rules come from those bug reports.</p></div>
+    <div class="two">
+      <div class="panel"><h3>Motion rules</h3><ul>
+        <li>One clock for every animation, about 20 frames a second, 10 or less over SSH. <span>Paused when hidden.</span></li>
+        <li>Every frame wrapped in synchronized output (DEC 2026). <span>Ghostty, Kitty, iTerm2, WezTerm and Windows Terminal support it.</span></li>
+        <li>One switch, <code>--no-motion</code>, turns off everything. <span>Claude Code's setting left some animations running; ours won't.</span></li>
+        <li>Respect <code>NO_COLOR</code>, CI and non-interactive output. No blinking, ever.</li>
+        <li>Read the terminal's own background instead of painting over it. <span>Codex does this.</span></li>
+        <li>The morning brief stays inline so search, scroll and copy keep working.</li>
+      </ul></div>
+      <div class="panel avoid"><h3>Leave out</h3><ul>
+        <li><b>Aurora gradients, sparkles, glowing orbs.</b> They read as a template.</li>
+        <li><b>Purple-to-blue AI gradients.</b> Our indigo always comes with amber and grain.</li>
+        <li><b>Liquid Glass on content.</b> Chrome only. Apple itself added a frosted option after readability complaints.</li>
+        <li><b>Bento grids and logo marquees</b> on the website.</li>
+        <li><b>ASCII or dither as decoration.</b> Every effect must say something about progress or time.</li>
+        <li><b>A chat-first layout.</b> That's every competitor. We lead with verdicts.</li>
+      </ul></div>
+    </div>
+  </section>
+
+  <!-- STACK -->
+  <section class="sec">
+    <div class="sec-head"><p class="eyebrow">The stack</p><h2>Rust core, native Mac app, no C++</h2><p>One small Rust binary does the work and holds the CLI, terminal UI and MCP server. Every surface talks to it over one protocol. The Mac app is native SwiftUI, which is the only way to get the Dynamic Island, App Intents and true native feel. Codex and Ghostty are built this way.</p></div>
+    <div class="arch">
+      <div class="arch-col">
+        <div class="box core"><b><code>shep</code> · one Rust binary</b><span>engine · overnight daemon · 4 CLI commands</span></div>
+        <div class="box"><b>Terminal UI</b><span>Ratatui + tachyonfx (50+ effects), what Codex uses</span></div>
+        <div class="box"><b>MCP server</b><span>official Rust SDK (rmcp)</span></div>
+        <div class="box"><b>Engine</b><span>SQLite, worktrees, agent CLIs, CI watch, caffeinate</span></div>
+      </div>
+      <div class="wire"><i></i><span>JSON-RPC<br>over a local socket</span><i></i></div>
+      <div class="arch-col">
+        <div class="box"><b>Mac app · SwiftUI</b><span>review window, Dynamic Island, menu bar, notifications, App Intents</span></div>
+        <div class="box"><b>Later: other platforms</b><span>Tauri 2 can link the same Rust core directly (Conductor uses Tauri)</span></div>
+        <div class="box"><b>Agents</b><span>Claude Code, Codex, Gemini and others run as CLIs in headless JSON mode</span></div>
+      </div>
+    </div>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th></th><th>TypeScript on Bun</th><th>Rust</th><th>Go</th><th>C++</th></tr></thead>
+        <tbody>
+          <tr><td>Install</td><td>One file, 50–90 MB</td><td class="win">Small single binary</td><td>Small single binary</td><td class="lose">Hard to package</td></tr>
+          <tr><td>Startup, memory</td><td>Slower, heavier</td><td class="win">Best</td><td>Near Rust</td><td>Best, no gain over Rust</td></tr>
+          <tr><td>Terminal effects</td><td>OpenTUI (good, pre-1.0)</td><td class="win">Ratatui + tachyonfx</td><td>Bubble Tea (polished, fewer effects)</td><td>Niche</td></tr>
+          <tr><td>Mac app</td><td>SwiftUI client</td><td class="win">SwiftUI client or Tauri in-process</td><td>SwiftUI client</td><td>Qt, heavy</td></tr>
+          <tr><td>Agent and MCP SDKs</td><td class="win">Official Claude Agent SDK, MCP SDK</td><td>Official MCP SDK; drive agent CLIs directly</td><td>Official MCP SDK</td><td class="lose">None</td></tr>
+          <tr><td>AI agents writing it</td><td class="win">Excellent</td><td>Good (38 of 40 tasks in one benchmark, and faster)</td><td>Very good</td><td class="lose">Worst</td></tr>
+          <tr><td>Who chose it</td><td>Claude Code, Gemini CLI, opencode</td><td>Codex CLI, Zed, Warp, Conductor's backend</td><td>Crush</td><td>None of them</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="spike">
+      <div><b>Spike first: 5 days</b><p>Build one thin slice in Rust: add and start one task, run Claude Code in a worktree, save to SQLite, a board with one transition, the MCP tools, and a one-screen SwiftUI window.</p></div>
+      <div><b>Measure</b><p>Lines of code, agent fix loops, build time, binary size, cold start, idle memory. Optionally the same slice in Bun for 2 days.</p></div>
+      <div><b>Kill rule</b><p>If Rust takes more than 1.5 times as long as Bun for the same result, build Shep 2 in TypeScript on Bun with OpenTUI and keep the SwiftUI app.</p></div>
+    </div>
+  </section>
+
+  <section class="sources">
+    <p><b>Sources read directly</b>, Oct 29–30, 2026. Dribbble, Pinterest, Behance, Lapa Ninja and Land-book blocked automated reading.</p>
+    <ul>
+      <li><a href="https://21st.dev">21st.dev</a> catalogue and community</li>
+      <li><a href="https://ampcode.com">ampcode.com</a> ("continue while you sleep")</li>
+      <li><a href="https://www.conductor.build">conductor.build</a> and its changelog and docs</li>
+      <li><a href="https://www.apple.com/newsroom/2026/10/apple-unveils-groundbreaking-macbook-pro-with-proled-xdr-display/">Apple Newsroom, Oct 28, 2026</a></li>
+      <li><a href="https://developer.apple.com/videos/play/wwdc2026/223/">WWDC26 session 223</a> (Live Activities on Mac)</li>
+      <li><a href="https://claude.com/resources/articles/claude-code-desktop-redesign">Claude Code desktop redesign</a></li>
+      <li><a href="https://9to5mac.com/2026/02/02/openai-launches-codex-app-for-macos-here-are-the-details">Codex app for macOS (9to5Mac)</a></li>
+      <li><a href="https://www.raycast.com/blog/the-new-raycast">The new Raycast</a></li>
+      <li><a href="https://linear.app/now/behind-the-latest-design-refresh">Linear design refresh</a></li>
+      <li><a href="https://help.superhuman.com/hc/en-us/articles/45295217605523-Achieve-Inbox-Zero">Superhuman inbox zero</a></li>
+      <li><a href="https://ghostty.org">ghostty.org</a>, <a href="https://zed.dev">zed.dev</a>, <a href="https://factory.ai">factory.ai</a>, <a href="https://paper.design">paper.design</a></li>
+      <li><a href="https://vercel.com/blog/introducing-geist-pixel">Introducing Geist Pixel</a></li>
+      <li><a href="https://github.com/ratatui/tachyonfx">tachyonfx</a>, <a href="https://github.com/ratatui/ratatui">Ratatui</a></li>
+      <li><a href="https://github.com/sst/opentui">OpenTUI</a>, <a href="https://github.com/charmbracelet/crush">Crush</a>, <a href="https://github.com/charmbracelet/bubbletea">Bubble Tea</a></li>
+      <li><a href="https://github.com/ChrisBuilds/terminaltexteffects">TerminalTextEffects</a></li>
+      <li><a href="https://steipete.me/posts/2025/signature-flicker">steipete on terminal flicker</a></li>
+      <li><a href="https://github.com/openai/codex/discussions/1174">Codex: why we rewrote in Rust</a></li>
+      <li><a href="https://openai.com/index/unlocking-the-codex-harness">Codex App Server</a></li>
+      <li><a href="https://bun.com/blog/bun-joins-anthropic">Bun joins Anthropic</a></li>
+      <li><a href="https://github.com/modelcontextprotocol/rust-sdk">Official MCP Rust SDK</a></li>
+      <li><a href="https://github.com/mame/ai-coding-lang-bench">AI coding language benchmark</a></li>
+      <li><a href="https://code.claude.com/docs/en/agent-sdk/overview">Claude Agent SDK overview</a></li>
+    </ul>
+    <p>Startup and memory figures in the table come from third-party benchmarks with unverified methods. Treat them as direction, which is why the spike measures them.</p>
+  </section>
+</main>
+
+<script>
+(function () {
+  'use strict';
+  /* ---------- utilities ---------- */
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var MOTION = !reduce;
+  function hx(h) { return [parseInt(h.slice(1, 3), 16), parseInt(h.slice(3, 5), 16), parseInt(h.slice(5, 7), 16)]; }
+  function mixA(a, b, t) { t = Math.max(0, Math.min(1, t)); return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t, a[2] + (b[2] - a[2]) * t]; }
+  function css(a) { return 'rgb(' + (a[0] | 0) + ',' + (a[1] | 0) + ',' + (a[2] | 0) + ')'; }
+  function rng(seed) { return function () { seed |= 0; seed = seed + 0x6D2B79F5 | 0; var t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+  function hash(x, y) { var h = Math.sin(x * 127.1 + y * 311.7) * 43758.5453; return h - Math.floor(h); }
+  function esc(s) { return s.replace(/[&<>]/g, function (c) { return c === '&' ? '&amp;' : c === '<' ? '&lt;' : '&gt;'; }); }
+  var C = {
+    nTop: hx('#070a1c'), dTop: hx('#2b2f6b'), nHor: hx('#1b2154'), dHor: hx('#e39a52'),
+    amber: hx('#f3b45c'), moon: hx('#dde4ff'), sun: hx('#ffd38a'), sunHot: hx('#fff0c8'), white: hx('#ffffff'),
+    starDim: hx('#5b628c'), gN: hx('#090c1f'), gD: hx('#2a1f2e'), gcN: hx('#2b3460'), gcD: hx('#7a5a50'),
+    wool: hx('#e9e7f2'), woolD: hx('#fff1dc'), fence: hx('#8a7a6a'), shep: hx('#c7cbe6'), dim: hx('#7d84a8'), lamp: hx('#ffe6b0')
+  };
+  var SCR = '▚▞░▒#%&@$*+=?/\\<>';
+  function scr() { return SCR[(Math.random() * SCR.length) | 0]; }
+
+  /* ---------- shared progress ---------- */
+  var TOTAL = 6, P = 2, playing = null;
+  var flock = [1, 1, 0, 0, 0, 0];
+  var TASKS = [
+    { id: 412, t: 'Fix login redirect loop' }, { id: 418, t: 'Add CSV export to reports' }, { id: 421, t: 'Upgrade to Node 22.11' },
+    { id: 425, t: 'Empty state for projects page' }, { id: 430, t: 'Move avatars to S3' }, { id: 433, t: 'Rate-limit /api/search' }
+  ];
+  function taskState(i) { if (i < P) return i === 4 ? 'needs' : 'ready'; if (i === P || i === P + 1) return 'working'; return 'queued'; }
+
+  /* ---------- ASCII grid ---------- */
+  function Grid(cols, rows) { this.cols = cols; this.rows = rows; this.c = []; for (var i = 0; i < cols * rows; i++) this.c.push({ ch: ' ', fg: null, bg: null }); }
+  Grid.prototype.at = function (x, y) { x = Math.round(x); y = Math.round(y); if (x < 0 || y < 0 || x >= this.cols || y >= this.rows) return null; return this.c[y * this.cols + x]; };
+  Grid.prototype.put = function (x, y, ch, fg) { var c = this.at(x, y); if (c && ch !== ' ') { c.ch = ch; c.fg = fg; } };
+  Grid.prototype.text = function (x, y, s, fg) { for (var i = 0; i < s.length; i++) this.put(x + i, y, s[i], fg); };
+  Grid.prototype.html = function () {
+    var out = '';
+    for (var y = 0; y < this.rows; y++) {
+      var row = '', run = '', key = null;
+      for (var x = 0; x < this.cols; x++) {
+        var c = this.c[y * this.cols + x];
+        var k = (c.fg ? css(c.fg) : 'inherit') + '|' + (c.bg ? css(c.bg) : 'transparent');
+        if (k !== key) { if (key !== null) row += '<span style="color:' + key.split('|')[0] + ';background:' + key.split('|')[1] + '">' + esc(run) + '</span>'; key = k; run = ''; }
+        run += c.ch;
+      }
+      row += '<span style="color:' + key.split('|')[0] + ';background:' + key.split('|')[1] + '">' + esc(run) + '</span>';
+      out += '<span class="r">' + row + '</span>';
+    }
+    return out;
+  };
+  var CHAR = 0.602;
+  function measureChar() {
+    var sp = document.createElement('span');
+    sp.style.cssText = 'position:absolute;visibility:hidden;white-space:pre;font-size:100px;font-family:' + getComputedStyle(document.documentElement).getPropertyValue('--f-mono');
+    sp.textContent = 'MMMMMMMMMM'; document.body.appendChild(sp);
+    var w = sp.getBoundingClientRect().width / 1000; sp.remove(); if (w > 0.3 && w < 0.9) CHAR = w;
+  }
+  measureChar();
+  var fitters = [];
+  function fit(el, cols) {
+    function f() { var w = el.clientWidth; if (!w) return; el.style.fontSize = Math.max(5, Math.min(13.5, (w - 1) / (cols * CHAR))) + 'px'; }
+    fitters.push(f); f(); if (window.ResizeObserver) new ResizeObserver(f).observe(el);
+  }
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { measureChar(); fitters.forEach(function (f) { f(); }); });
+
+  /* ---------- the scene ---------- */
+  function Scene(cols, rows, seed) {
+    var R = rng(seed);
+    this.cols = cols; this.rows = rows;
+    this.base = rows - 3;
+    this.penX0 = cols - 20; this.penX1 = cols - 3;
+    this.stars = [];
+    var n = Math.round(cols * rows / 26);
+    for (var i = 0; i < n; i++) this.stars.push({ x: (R() * cols) | 0, y: (R() * (this.base - 3)) | 0, ph: R() * 6.28, sp: 0.6 + R() * 1.8, fade: R() });
+  }
+  Scene.prototype.ground = function (x) {
+    if (x >= this.penX0 - 3) return this.base;
+    var h = Math.round(1.3 + 1.2 * Math.sin(x * 0.11 + 0.4) + 0.7 * Math.sin(x * 0.27 + 1.3));
+    var g = this.base - Math.max(0, Math.min(3, h));
+    var blend = Math.max(0, (x - (this.penX0 - 10)) / 7);
+    return Math.round(g + (this.base - g) * Math.min(1, blend));
+  };
+  Scene.prototype.draw = function (t, p, opts) {
+    opts = opts || {};
+    var g = new Grid(this.cols, this.rows), self = this, base = this.base;
+    var top = mixA(C.nTop, C.dTop, p * 0.75), hor = mixA(C.nHor, C.dHor, Math.pow(p, 1.15));
+    var gbg = mixA(C.gN, C.gD, p), gfg = mixA(C.gcN, C.gcD, p);
+    var x, y, c;
+    for (y = 0; y < this.rows; y++) for (x = 0; x < this.cols; x++) {
+      c = g.at(x, y);
+      var gy = this.ground(x);
+      if (y >= gy) {
+        c.bg = gbg;
+        if (y === gy) { var l = this.ground(x - 1), r = this.ground(x + 1); c.ch = l > gy && r >= gy ? '/' : r > gy && l >= gy ? '\\' : '_'; if (l < gy) c.ch = '\\'; if (r < gy) c.ch = '/'; if (l === gy && r === gy) c.ch = '_'; c.fg = gfg; }
+        else { var hv = hash(x, y); c.ch = hv < 0.18 ? '.' : hv < 0.26 ? ',' : hv < 0.3 ? "'" : ' '; c.fg = gfg; }
+      } else {
+        c.bg = mixA(top, hor, Math.pow(y / Math.max(1, base - 1), 1.6));
+      }
+    }
+    // stars
+    if (!opts.noStars) this.stars.forEach(function (s, i) {
+      if (opts.starLimit != null && i >= opts.starLimit) return;
+      if (s.fade < p * 1.25 - 0.08) return;
+      var cc = g.at(s.x, s.y); if (!cc || s.y >= self.ground(s.x)) return;
+      var tw = Math.sin(t * s.sp + s.ph);
+      cc.ch = tw > 0.8 ? '*' : tw > 0.3 ? '+' : tw > -0.3 ? '·' : '.';
+      cc.fg = mixA(mixA(C.starDim, C.white, (tw + 1) / 2), cc.bg, p * 0.7);
+    });
+    var ramp = '.:-=+*#%@';
+    // moon
+    if (opts.moon !== false) {
+      var mcx = this.cols * 0.8, mcy = 2.6 + p * (this.rows * 0.62), MR = Math.min(2.7, this.rows * 0.2);
+      var mrev = opts.moonReveal == null ? 1 : opts.moonReveal;
+      for (y = Math.floor(mcy - MR - 1); y <= mcy + MR + 1; y++) for (x = Math.floor(mcx - MR * 2 - 2); x <= mcx + MR * 2 + 2; x++) {
+        var dx = (x - mcx) / 2, dy = y - mcy, d = Math.sqrt(dx * dx + dy * dy);
+        c = g.at(x, y); if (!c || d > MR || y >= this.ground(x)) continue;
+        if (hash(x, y + 7) > mrev) continue;
+        var sh = 0.55 + 0.45 * ((-dx * 0.75 - dy * 0.55) / MR);
+        c.ch = ramp[Math.max(0, Math.min(ramp.length - 1, Math.round(sh * (ramp.length - 1))))];
+        c.fg = mixA(C.moon, c.bg, p * 0.75);
+      }
+    }
+    // sun
+    if (p > 0.42) {
+      var s = (p - 0.42) / 0.58, scx = this.cols * 0.36, scy = base + 3 - s * Math.min(7, this.rows * 0.45), SR = Math.min(3.3, this.rows * 0.24);
+      for (y = Math.floor(scy - SR - 1); y <= scy + SR + 1; y++) for (x = Math.floor(scx - SR * 2 - 2); x <= scx + SR * 2 + 2; x++) {
+        var ddx = (x - scx) / 2, ddy = y - scy, dd = Math.sqrt(ddx * ddx + ddy * ddy);
+        c = g.at(x, y); if (!c || y >= this.ground(x)) continue;
+        if (dd <= SR) { var sh2 = 1 - dd / SR; c.ch = ramp[Math.min(ramp.length - 1, 3 + Math.round(sh2 * 5))]; c.fg = mixA(C.sun, C.sunHot, sh2); }
+        else if (dd <= SR + 1.6) { c.bg = mixA(c.bg, C.amber, 0.22 * s * (1 - (dd - SR) / 1.6)); }
+      }
+    }
+    // fence
+    var rail = base - 5;
+    if (rail > 1 && !opts.noSheep) {
+      for (x = this.penX0; x <= this.penX1; x++) g.put(x, rail, '_', C.fence);
+      for (y = rail + 1; y < base; y++) { g.put(this.penX0, y, '|', C.fence); g.put(this.penX1, y, '|', C.fence); }
+    }
+    // sheep
+    var wool = mixA(C.wool, C.woolD, p);
+    for (var i = 0; i < (opts.noSheep ? 0 : TOTAL); i++) {
+      var fp = flock[i];
+      var mx = 16 + i * 5, my = this.ground(mx + 1) - 2;
+      var px = i < 4 ? this.penX0 + 2 + i * 4 : this.penX0 + 4 + (i - 4) * 4 + 2, py = i < 4 ? base - 2 : base - 4;
+      if (rail <= 1) py = base - 2;
+      var e = fp < 0.5 ? 2 * fp * fp : 1 - Math.pow(-2 * fp + 2, 2) / 2;
+      var sx = mx + (px - mx) * e, sy = my + (py - my) * e - Math.sin(e * Math.PI) * 1.5;
+      g.text(sx, sy, '@@o', wool); g.put(sx, sy + 1, "'", C.dim); g.put(sx + 2, sy + 1, "'", C.dim);
+      var gc = g.at(sx + 2, sy); if (gc) gc.fg = C.dim;
+      if (fp < 0.05 && Math.sin(t * 1.3 + i * 2) > 0.55) g.put(sx + 3, sy - 1, 'z', C.dim);
+    }
+    // shepherd + lantern
+    var shx = 3, gy0 = this.ground(shx + 4) - 1;
+    var spr = ['  O   ,_', ' /|\\_/  |', '  |    [ ]', ' / \\    '];
+    var top0 = gy0 - 3;
+    if (opts.shepherd !== false) {
+      for (var r = 0; r < spr.length; r++) g.text(shx, top0 + r, spr[r], C.shep);
+      var lit = opts.lantern == null ? 1 : opts.lantern;
+      var fl = 0.8 + 0.2 * Math.sin(t * 9) * Math.sin(t * 3.7 + 1);
+      var lx = shx + 8, ly = top0 + 2;
+      if (lit > 0) {
+        var lc = ['*', '#', '@', '*', '+'][Math.floor(t * 7) % 5];
+        g.put(lx, ly, lc, mixA(C.amber, C.lamp, fl));
+        var gr = 3.6 * lit;
+        for (y = ly - 3; y <= ly + 3; y++) for (x = lx - 7; x <= lx + 7; x++) {
+          var gdx = (x - lx) / 2, gdy = y - ly, gd = Math.sqrt(gdx * gdx + gdy * gdy);
+          c = g.at(x, y); if (!c || gd > gr || (x === lx && y === ly)) continue;
+          var k = (1 - gd / gr) * fl * lit;
+          c.bg = mixA(c.bg, C.amber, 0.2 * k * (1 - p * 0.6));
+          if (c.fg) c.fg = mixA(c.fg, C.lamp, 0.4 * k);
+        }
+      }
+    }
+    return g;
+  };
+
+  /* ---------- dithered renderer ---------- */
+  var PAL = ['#070a1c', '#141a44', '#262c66', '#4d3f78', '#8a5374', '#c9763a', '#f3b45c', '#ffe4b0'].map(hx);
+  var BAYER = [[0, 8, 2, 10], [12, 4, 14, 6], [3, 11, 1, 9], [15, 7, 13, 5]].map(function (r) { return r.map(function (v) { return (v + 0.5) / 16; }); });
+  function Dither(canvas, seed) {
+    this.cv = canvas; this.ctx = canvas.getContext('2d'); this.W = canvas.width; this.H = canvas.height;
+    this.img = this.ctx.createImageData(this.W, this.H);
+    var R = rng(seed); this.stars = [];
+    for (var i = 0; i < Math.round(this.W * this.H / 70); i++) this.stars.push({ x: (R() * this.W) | 0, y: (R() * this.H * 0.6) | 0, ph: R() * 6.28, sp: 0.5 + R() * 2, fade: R() });
+  }
+  Dither.prototype.draw = function (t, p, o) {
+    o = o || {};
+    var W = this.W, H = this.H, d = this.img.data, n = PAL.length;
+    var base = Math.round(H * (o.base || 0.84)), penX0 = W * 0.72, penX1 = W * 0.96;
+    var v = new Float32Array(W * H), x, y, i;
+    function ground(x) { if (x > penX0 - 8) return base; var h = H * (0.045 + 0.035 * Math.sin(x * 0.04 + 0.4) + 0.02 * Math.sin(x * 0.1 + 1.3)); var bl = Math.max(0, Math.min(1, (x - (penX0 - 30)) / 22)); return Math.round(base - h * (1 - bl)); }
+    var gs = []; for (x = 0; x < W; x++) gs.push(ground(x));
+    var topV = 0.02 + 0.2 * p, horV = 0.2 + 0.64 * p;
+    for (y = 0; y < H; y++) for (x = 0; x < W; x++) {
+      i = y * W + x;
+      if (y >= gs[x]) v[i] = 0.05 + 0.13 * p + (hash(x, y) < 0.06 ? 0.08 : 0);
+      else v[i] = topV + (horV - topV) * Math.pow(y / base, 1.6);
+    }
+    // stars
+    if (!o.noStars) this.stars.forEach(function (s) { if (s.fade < p * 1.25 - 0.08) return; if (s.y >= gs[s.x]) return; var tw = 0.5 + 0.5 * Math.sin(t * s.sp + s.ph); v[s.y * W + s.x] = Math.max(v[s.y * W + s.x], 0.45 + 0.5 * tw * (1 - p)); });
+    // moon
+    var mcx = W * 0.8, mcy = H * (0.14 + 0.56 * p), mr = H * 0.1;
+    for (y = Math.floor(mcy - mr - 1); y <= mcy + mr + 1; y++) for (x = Math.floor(mcx - mr - 1); x <= mcx + mr + 1; x++) {
+      if (x < 0 || y < 0 || x >= W || y >= H || y >= gs[x]) continue;
+      var dm = Math.hypot(x - mcx, y - mcy); if (dm > mr) continue;
+      var shade = 0.78 + 0.2 * ((mcx - x) * 0.7 + (mcy - y) * 0.5) / mr;
+      v[y * W + x] = Math.max(v[y * W + x], shade * (1 - 0.25 * p));
+    }
+    // sun
+    if (p > 0.42) {
+      var s = (p - 0.42) / 0.58, scx = W * 0.36, sr = H * 0.13, scy = base + sr * 1.1 - s * H * 0.34;
+      for (y = Math.max(0, Math.floor(scy - sr * 2.4)); y < Math.min(H, scy + sr * 2.4); y++) for (x = Math.max(0, Math.floor(scx - sr * 2.4)); x < Math.min(W, scx + sr * 2.4); x++) {
+        if (y >= gs[x]) continue;
+        var ds = Math.hypot(x - scx, y - scy);
+        if (ds <= sr) v[y * W + x] = 1;
+        else v[y * W + x] = Math.min(1, v[y * W + x] + 0.32 * s * Math.exp(-Math.pow((ds - sr) / (sr * 0.9), 2)));
+      }
+    }
+    // fence
+    var rail = Math.round(base - H * 0.19);
+    for (x = Math.round(penX0); x <= penX1; x++) { v[rail * W + x] = 0.55; v[(rail + 1) * W + x] = 0.4; }
+    for (y = rail; y < base; y++) { v[y * W + Math.round(penX0)] = 0.55; v[y * W + Math.round(penX1)] = 0.55; v[y * W + Math.round((penX0 + penX1) / 2)] = 0.45; }
+    // sheep
+    for (var k = 0; k < TOTAL; k++) {
+      var fp = o.flock ? o.flock[k] : flock[k];
+      var e = fp < 0.5 ? 2 * fp * fp : 1 - Math.pow(-2 * fp + 2, 2) / 2;
+      var mx = W * (0.24 + k * 0.07), my = gs[Math.round(mx)] - 4;
+      var px = penX0 + 5 + (k % 3) * (W * 0.07), py = k < 3 ? base - 4 : base - 9;
+      var sx = Math.round(mx + (px - mx) * e), sy = Math.round(my + (py - my) * e - Math.sin(e * Math.PI) * 5);
+      for (y = 0; y < 3; y++) for (x = 0; x < 6; x++) { var xx = sx + x, yy = sy + y; if (xx >= 0 && yy >= 0 && xx < W && yy < H && !((x === 0 || x === 5) && y !== 1)) v[yy * W + xx] = 0.9; }
+      if (sx + 6 < W) v[(sy + 1) * W + sx + 6] = 0.3;
+      if (sy + 3 < H) { v[(sy + 3) * W + sx + 1] = 0.25; v[(sy + 3) * W + sx + 4] = 0.25; }
+    }
+    // shepherd silhouette + lantern
+    var hx0 = Math.round(W * 0.06), gy = gs[hx0 + 2];
+    for (y = gy - 15; y < gy; y++) for (x = hx0; x < hx0 + 5; x++) {
+      var rel = y - (gy - 15);
+      var on = (rel < 3 && x > hx0 && x < hx0 + 4) || (rel >= 3 && rel < 10 && x >= hx0 && x < hx0 + 5) || (rel >= 10 && (x === hx0 + 1 || x === hx0 + 3));
+      if (on && y >= 0) v[y * W + x] = 0.01;
+    }
+    for (y = gy - 20; y < gy - 9; y++) if (y >= 0) v[y * W + hx0 + 7] = 0.02;
+    var lx = hx0 + 9, ly = gy - 12, fl = 0.8 + 0.2 * Math.sin(t * 9) * Math.sin(t * 3.7 + 1);
+    for (y = ly - 12; y <= ly + 12; y++) for (x = lx - 12; x <= lx + 12; x++) {
+      if (x < 0 || y < 0 || x >= W || y >= H) continue;
+      var dl = (x - lx) * (x - lx) + (y - ly) * (y - ly);
+      v[y * W + x] = Math.min(1, v[y * W + x] + 0.42 * fl * Math.exp(-dl / 26) * (1 - p * 0.5));
+    }
+    v[ly * W + lx] = 1; v[(ly + 1) * W + lx] = 1;
+    // quantize
+    for (y = 0; y < H; y++) for (x = 0; x < W; x++) {
+      i = y * W + x;
+      var idx = Math.floor(v[i] * (n - 1) + BAYER[y & 3][x & 3]);
+      idx = idx < 0 ? 0 : idx > n - 1 ? n - 1 : idx;
+      var col = PAL[idx], j = i * 4;
+      d[j] = col[0]; d[j + 1] = col[1]; d[j + 2] = col[2]; d[j + 3] = 255;
+    }
+    this.ctx.putImageData(this.img, 0, 0);
+  };
+
+  /* ---------- animation registry ---------- */
+  var comps = [];
+  var io = 'IntersectionObserver' in window ? new IntersectionObserver(function (es) { es.forEach(function (e) { comps.forEach(function (c) { if (c.el === e.target) c.vis = e.isIntersecting; }); }); }, { rootMargin: '80px' }) : null;
+  function reg(el, fn, fps) { var c = { el: el, fn: fn, fps: fps, last: 0, vis: !io }; comps.push(c); if (io) io.observe(el); fn(0); return c; }
+  var lastFlock = 0;
+  function loop(ts) {
+    var dt = Math.min(0.1, (ts - lastFlock) / 1000); lastFlock = ts;
+    for (var i = 0; i < TOTAL; i++) { var target = i < P ? 1 : 0; flock[i] += (target - flock[i]) * (MOTION ? Math.min(1, dt * 2.2) : 1); }
+    if (MOTION && !document.hidden) comps.forEach(function (c) { if (c.vis && ts - c.last >= 1000 / c.fps) { c.last = ts; c.fn(ts / 1000); } });
+    requestAnimationFrame(loop);
+  }
+  function staticRender() { for (var i = 0; i < TOTAL; i++) flock[i] = i < P ? 1 : 0; comps.forEach(function (c) { c.fn(4.2); }); }
+
+  /* ---------- signature sky ---------- */
+  var skyEl = document.getElementById('sky-ascii');
+  var sky = new Scene(72, 20, 7);
+  fit(skyEl, 72);
+  reg(skyEl, function (t) { skyEl.innerHTML = sky.draw(t, P / TOTAL).html(); }, 12);
+  var dith = new Dither(document.getElementById('sky-dither'), 11);
+  reg(document.getElementById('sky-dither'), function (t) { dith.draw(t, P / TOTAL); }, 12);
+
+  function setP(v) {
+    P = Math.max(0, Math.min(TOTAL, v));
+    document.getElementById('p-count').innerHTML = '<b>' + P + '</b> of ' + TOTAL + ' tasks done';
+    if (!MOTION) staticRender();
+    renderIsland();
+  }
+  document.getElementById('p-minus').addEventListener('click', function () { stopPlay(); setP(P - 1); });
+  document.getElementById('p-plus').addEventListener('click', function () { stopPlay(); setP(P + 1); });
+  function stopPlay() { if (playing) { clearInterval(playing); playing = null; document.getElementById('p-play').textContent = 'Play the night'; } }
+  document.getElementById('p-play').addEventListener('click', function () {
+    if (playing) { stopPlay(); return; }
+    setP(0); this.textContent = 'Stop';
+    playing = setInterval(function () { if (P >= TOTAL) { stopPlay(); return; } setP(P + 1); }, 1500);
+  });
+
+  /* ---------- P1 splash ---------- */
+  var FIG = [
+    '     _                ',
+    ' ___| |__   ___ _ __  ',
+    '/ __| \'_ \\ / _ \\ \'_ \\ ',
+    '\\__ \\ | | |  __/ |_) |',
+    '|___/_| |_|\\___| .__/ ',
+    '               |_|    '
+  ];
+  var splashEl = document.getElementById('splash');
+  var splashScene = new Scene(64, 18, 3);
+  var splashStart = null, splashDur = 2.6;
+  fit(splashEl, 64);
+  var tag = 'keeping watch · 6 tasks in the fold · starts 23:00';
+  function splashFrame(t) {
+    if (splashStart == null) splashStart = t;
+    var T = MOTION ? t - splashStart : 99;
+    var p = 0.04;
+    var g = splashScene.draw(t, p, { starLimit: Math.floor(Math.max(0, T) * 40), moonReveal: Math.max(0, Math.min(1, (T - 0.3) / 0.5)), lantern: Math.max(0, Math.min(1, (T - 1.1) / 0.5)), noSheep: true });
+    // wordmark
+    var wx = 4, wy = 1, w = FIG[0].length;
+    for (var r = 0; r < FIG.length; r++) for (var cI = 0; cI < w; cI++) {
+      var ch = FIG[r][cI]; if (ch === ' ') continue;
+      var resolveAt = 0.55 + cI * 0.03 + r * 0.01, showAt = 0.35 + cI * 0.012;
+      var col = mixA(hx('#7b86e8'), C.amber, cI / (w - 1));
+      if (T >= resolveAt) g.put(wx + cI, wy + r, ch, col);
+      else if (T >= showAt) g.put(wx + cI, wy + r, scr(), mixA(col, C.dim, 0.5));
+    }
+    var tn = Math.max(0, Math.min(tag.length, Math.floor((T - 1.5) * 55)));
+    g.text(wx, wy + 7, tag.slice(0, tn), C.dim);
+    if (T > 2.4) g.text(wx, wy + 8, 'press any key', mixA(C.dim, C.amber, 0.5 + 0.5 * Math.sin(t * 2)));
+    splashEl.innerHTML = g.html();
+  }
+  reg(splashEl, splashFrame, 18);
+  document.getElementById('splash-replay').addEventListener('click', function () { splashStart = null; if (!MOTION) splashFrame(99); });
+
+  /* ---------- P2 watch ---------- */
+  var watchSkyEl = document.getElementById('watch-sky'), watchLines = document.getElementById('watch-lines');
+  var watchScene = new Scene(72, 11, 5);
+  fit(watchSkyEl, 72);
+  var VERBS = ['Counting sheep', 'Mending fences', 'Herding commits', 'Reading the logs', 'Fixing CI', 'Taking screenshots'];
+  var series = TASKS.map(function (_, i) { var r = rng(40 + i), a = []; for (var k = 0; k < 24; k++) a.push(Math.floor(r() * 5)); return a; });
+  var lastShift = 0;
+  function braille(vals) {
+    var L = [0x40, 0x04, 0x02, 0x01], Rr = [0x80, 0x20, 0x10, 0x08], out = '';
+    for (var i = 0; i < vals.length; i += 2) { var b = 0, a = vals[i], c = vals[i + 1] || 0; for (var k = 0; k < a; k++) b |= L[k]; for (k = 0; k < c; k++) b |= Rr[k]; out += String.fromCharCode(0x2800 + b); }
+    return out;
+  }
+  function pad(s, n) { s = s.length > n ? s.slice(0, n - 1) + '…' : s; while (s.length < n) s += ' '; return s; }
+  function watchFrame(t) {
+    watchSkyEl.innerHTML = watchScene.draw(t, P / TOTAL).html();
+    if (t - lastShift > 0.25) { lastShift = t; series.forEach(function (a, i) { if (taskState(i) === 'working') { a.shift(); var last = a[a.length - 1]; a.push(Math.max(0, Math.min(4, last + Math.round(Math.random() * 2 - 1 + (Math.random() < 0.2 ? 2 : 0))))); } }); }
+    var html = '';
+    TASKS.forEach(function (tk, i) {
+      var st = taskState(i), mark, right, spark;
+      if (st === 'ready') { mark = '<span class="c-ok">✓</span>'; right = '<span class="c-ok">' + pad('ready · CI green', 22) + '</span>'; spark = '<span class="c-faint">' + braille(new Array(24).fill(1)) + '</span>'; }
+      else if (st === 'needs') { mark = '<span class="c-need">!</span>'; right = '<span class="c-need">' + pad('needs you', 22) + '</span>'; spark = '<span class="c-faint">' + braille(new Array(24).fill(1)) + '</span>'; }
+      else if (st === 'working') {
+        var ph = (t + i * 0.9) % 2.6, vi = Math.floor((t + i * 0.9) / 2.6) % VERBS.length, verb = VERBS[(vi + i) % VERBS.length] + '…';
+        if (MOTION && ph < 0.35) { var k = Math.floor(verb.length * ph / 0.35); verb = verb.slice(0, k) + verb.slice(k).replace(/[^ ]/g, scr); }
+        var spin = '⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏'[Math.floor(t * 10 + i * 3) % 10];
+        mark = '<span class="c-work">' + spin + '</span>'; right = '<span class="c-work">' + esc(pad(verb, 22)) + '</span>'; spark = '<span class="c-work">' + braille(series[i]) + '</span>';
+      } else { mark = '<span class="c-faint">·</span>'; right = '<span class="c-dim">' + pad('queued', 22) + '</span>'; spark = '<span class="c-faint">' + braille(new Array(24).fill(0)) + '</span>'; }
+      html += ' ' + mark + ' <span class="c-dim">#' + tk.id + '</span>  ' + esc(pad(tk.t, 30)) + ' ' + right + ' ' + spark + '\n';
+    });
+    var status = '● keeping watch · ' + P + ' of ' + TOTAL + ' in the fold · next check 02:20 · ctrl-c to leave';
+    var band = MOTION ? ((t * 0.45) % 1.7 - 0.35) * status.length : -99, line = '';
+    for (var j = 0; j < status.length; j++) { var dd = Math.abs(j - band), kk = dd < 7 ? 0.5 + 0.5 * Math.cos(Math.PI * dd / 7) : 0; line += '<span style="color:' + css(mixA(C.dim, C.lamp, kk)) + '">' + esc(status[j]) + '</span>'; }
+    watchLines.innerHTML = html + '\n ' + line;
+  }
+  reg(watchLines, watchFrame, 14);
+
+  /* ---------- P3 brief ---------- */
+  var briefEl = document.getElementById('brief');
+  var BRIEF = [
+    ['ok', '✓', 412, 'Fix login redirect loop', 'CI green · +41 −12 · screenshot'],
+    ['ok', '✓', 418, 'Add CSV export to reports', 'CI green · +128 −4 · screenshot'],
+    ['ok', '✓', 421, 'Upgrade to Node 22.11', 'CI green · fixed 1 failure at 01:30'],
+    ['ok', '✓', 425, 'Empty state for projects page', 'CI green · screenshot'],
+    ['need', '!', 430, 'Move avatars to S3', 'needs you: which bucket?'],
+    ['ok', '✓', 433, 'Rate-limit /api/search', 'CI green · 2 tests added']
+  ];
+  function rule(n) { var s = ''; for (var i = 0; i < n; i++) s += '<span style="color:' + css(mixA(hx('#4b55b8'), C.amber, i / (n - 1))) + '">━</span>'; return s; }
+  function briefBase() {
+    var h = '<span class="c-dim">$</span> shep\n<span class="c-amb">☾ → ☀</span>  <span class="c-moon">morning brief</span> <span class="c-dim">· Thu 30 Oct · 07:02 · booking-app</span>\n' + rule(64) + '\n';
+    BRIEF.forEach(function (b, i) { h += '<span data-row="' + i + '"> <span class="c-' + b[0] + '">' + b[1] + '</span> <span class="c-dim">#' + b[2] + '</span>  <span class="dec" data-final="' + esc(pad(b[3], 31)) + '">' + esc(pad(b[3], 31)) + '</span><span class="c-' + (b[0] === 'need' ? 'need' : 'dim') + '">' + esc(b[4]) + '</span></span>\n'; });
+    h += '\n <span class="c-moon">☾ while you slept</span> <span class="c-dim">your auth tests failed 3 of 40 runs this week. Drafted #437.</span>\n\n';
+    h += ' <span class="c-amb">[m]</span> merge the 5 green   <span class="c-amb">[r]</span> review one by one   <span class="c-amb">[a]</span> answer #430';
+    briefEl.innerHTML = h;
+  }
+  briefBase();
+  var briefPlaying = false;
+  function playBrief() {
+    if (!MOTION || briefPlaying) return;
+    briefPlaying = true;
+    var rows = briefEl.querySelectorAll('[data-row]');
+    rows.forEach(function (r) { r.style.opacity = '0.15'; });
+    var start = performance.now();
+    (function step(now) {
+      var T = (now - start) / 1000, done = true;
+      rows.forEach(function (r, i) {
+        var t0 = i * 0.22, el = r.querySelector('.dec'), fin = el.getAttribute('data-final');
+        if (T < t0) { done = false; return; }
+        r.style.opacity = '1';
+        var k = Math.min(1, (T - t0) / 0.55), n = Math.floor(fin.length * k);
+        el.textContent = fin.slice(0, n) + fin.slice(n).replace(/[^ ]/g, scr);
+        if (k < 1) done = false;
+      });
+      if (!done) requestAnimationFrame(step); else briefPlaying = false;
+    })(start);
+  }
+  document.getElementById('brief-replay').addEventListener('click', playBrief);
+  if (io) { var bio = new IntersectionObserver(function (es) { if (es[0].isIntersecting) { playBrief(); bio.disconnect(); } }, { threshold: 0.6 }); bio.observe(briefEl); }
+
+  /* ---------- P4 mac app ---------- */
+  var MAC0 = [
+    { id: 412, t: 'Fix login redirect loop', diff: '+41 −12 · 3 files', fix: 'Fixed 1 CI failure at 01:30', op: 'Looks good. One naming nit.', proof: 'form', age: '6h' },
+    { id: 418, t: 'Add CSV export to reports', diff: '+128 −4 · 5 files', op: 'Looks good.', proof: 'table', age: '5h' },
+    { id: 421, t: 'Upgrade to Node 22.11', diff: '+9 −9 · 4 files', fix: 'Fixed 1 CI failure at 02:10', op: 'Safe. Lockfile regenerated.', proof: 'tests', age: '5h' },
+    { id: 425, t: 'Empty state for projects page', diff: '+64 −2 · 2 files', op: 'Looks good.', proof: 'empty', age: '4h' },
+    { id: 433, t: 'Rate-limit /api/search', diff: '+52 −3 · 3 files', op: 'Good. Added 2 tests.', proof: 'tests', age: '3h' },
+    { id: 430, t: 'Move avatars to S3', q: 'Which S3 bucket should avatars go in?', proof: 'form', age: '4h', needs: true }
+  ];
+  var mac = { queue: MAC0.slice(), merged: 0, sent: 0, big: false, busy: false };
+  var macMain = document.getElementById('mac-main'), macSide = document.getElementById('mac-side'), macEl = document.getElementById('mac');
+  var macSkyCv = document.getElementById('mac-sky'), macSky = new Dither(macSkyCv, 21);
+  function macP() { return (mac.merged + mac.sent) / MAC0.length; }
+  reg(macSkyCv, function (t) { var p = macP(); macSky.draw(t, p, { flock: MAC0.map(function (_, i) { return i < mac.merged + mac.sent ? 1 : 0; }), base: 0.9 }); }, 8);
+  function shot(kind) {
+    var b;
+    if (kind === 'table') b = '<div class="bl a" style="width:40%"></div>' + [1, 2, 3, 4].map(function () { return '<div class="trw"><div class="bl"></div><div class="bl"></div><div class="bl"></div></div>'; }).join('');
+    else if (kind === 'tests') b = '<div class="tl">✓ auth › redirects after login</div><div class="tl">✓ api › search returns 429 after limit</div><div class="tl">✓ build › node 22.11</div><div class="tl" style="color:#666">48 passed · 0 failed · 11.2s</div>';
+    else if (kind === 'empty') b = '<div style="width:44px;height:44px;border-radius:50%;border:2px dashed #c7cad9;justify-self:center"></div><div class="bl" style="width:60%;justify-self:center"></div><div class="bl a" style="width:30%;justify-self:center;height:18px;border-radius:5px"></div>';
+    else b = '<div class="bl" style="width:30%"></div><div class="fld"></div><div class="bl" style="width:26%"></div><div class="fld"></div><div class="bl a" style="width:100%;height:22px;border-radius:5px"></div>';
+    return '<div class="shot"><div class="shot-bar"><i></i><i></i><i></i></div><div class="shot-body">' + b + '</div></div>';
+  }
+  function scrambleTo(el, text, dur) {
+    if (!MOTION) { el.textContent = text; return; }
+    var start = performance.now();
+    (function step(now) { var k = Math.min(1, (now - start) / dur), n = Math.floor(text.length * k); el.textContent = text.slice(0, n) + text.slice(n).replace(/[^ ]/g, scr); if (k < 1) requestAnimationFrame(step); })(start);
+  }
+  function renderMacSide() {
+    var ready = mac.queue.filter(function (c) { return !c.needs; }).length, needs = mac.queue.filter(function (c) { return c.needs; }).length;
+    macSide.innerHTML = '<span class="side-h">Review</span>' +
+      '<div class="side-item on"><span><i class="dot" style="background:var(--t-ok)"></i>Ready</span><span class="n">' + ready + '</span></div>' +
+      '<div class="side-item"><span><i class="dot" style="background:var(--t-need)"></i>Needs you</span><span class="n">' + needs + '</span></div>' +
+      '<div class="side-item"><span><i class="dot" style="background:var(--t-work)"></i>Working</span><span class="n">0</span></div>' +
+      '<div class="side-item"><span><i class="dot" style="background:var(--t-faint)"></i>Queued</span><span class="n">2</span></div>' +
+      '<div class="side-item"><span><i class="dot" style="background:var(--t-amber)"></i>Merged today</span><span class="n">' + mac.merged + '</span></div>' +
+      '<div class="side-foot"><b>Tonight · 23:00</b><span>2 queued · keeps your Mac awake on power</span></div>';
+    document.getElementById('mac-pill').textContent = mac.queue.length ? ready + ' ready' + (needs ? ' · ' + needs + ' needs you' : '') : 'All clear';
+  }
+  var rewardDither = null;
+  function renderMacMain(enter) {
+    renderMacSide();
+    var c = mac.queue[0];
+    if (!c) {
+      macMain.innerHTML = '<div class="reward"><canvas id="reward-cv" width="240" height="135"></canvas><div class="reward-text"><b>Dawn.</b><span>' + mac.merged + ' merged, ' + mac.sent + ' sent back. The pen is full.</span></div></div><div class="mactions"><button class="mbtn" id="mac-reset">Start the morning again</button></div>';
+      rewardDither = new Dither(document.getElementById('reward-cv'), 31);
+      rewardDither.draw(2, 1, { flock: [1, 1, 1, 1, 1, 1] });
+      var cv = document.getElementById('reward-cv');
+      reg(cv, function (t) { if (document.body.contains(cv)) rewardDither.draw(t, 1, { flock: [1, 1, 1, 1, 1, 1] }); }, 8);
+      document.getElementById('mac-reset').addEventListener('click', function () { mac.queue = MAC0.slice(); mac.merged = 0; mac.sent = 0; renderMacMain(true); macEl.focus(); });
+      return;
+    }
+    var idx = MAC0.length - mac.queue.length + 1;
+    var body = '<div class="mproof' + (mac.big ? ' big' : '') + '" id="mac-proof" title="Space to enlarge"><span class="k"><span>Proof · screenshot</span><span>Space</span></span>' + shot(c.proof) + '</div><div class="minfo"><span class="mmeta">booking-app · #' + c.id + ' · ' + c.age + ' ago · draft</span><div class="mtitle" id="mac-title"></div>';
+    if (c.needs) {
+      body += '<div class="mq"><span class="k">The agent needs you</span><span>' + esc(c.q) + '</span></div><form class="mans" id="mac-ans"><input id="mac-ans-in" placeholder="prod-avatars" aria-label="Your answer"><button class="mbtn go" type="submit">Answer</button></form><div class="mactions"><button class="mbtn" id="mac-sb">Send back <span class="kbd">S</span></button></div>';
+    } else {
+      body += '<div class="chips"><span class="chip ok">✓ CI green</span><span class="chip">' + esc(c.diff) + '</span>' + (c.fix ? '<span class="chip fix">↻ ' + esc(c.fix) + '</span>' : '') + '</div><p class="opinion"><b>Second opinion:</b> ' + esc(c.op) + '</p><div class="mactions"><button class="mbtn go" id="mac-merge">Merge <span class="kbd">M</span></button><button class="mbtn" id="mac-sb">Send back <span class="kbd">S</span></button><span class="kbd">J</span><span class="kbd">K</span></div>';
+    }
+    body += '</div>';
+    macMain.innerHTML = '<div class="mac-progress"><span>' + idx + ' of ' + MAC0.length + ' · sorted by verdict</span><span>The sky brightens with every decision</span></div><article class="mcard' + (enter ? ' in' : '') + '" id="mac-card">' + body + '</article>';
+    var tEl = document.getElementById('mac-title');
+    if (enter) scrambleTo(tEl, c.t, 650); else tEl.textContent = c.t;
+    var mb = document.getElementById('mac-merge'); if (mb) mb.addEventListener('click', function () { macAct('merge'); });
+    document.getElementById('mac-sb').addEventListener('click', function () { macAct('send'); });
+    document.getElementById('mac-proof').addEventListener('click', function () { mac.big = !mac.big; this.classList.toggle('big', mac.big); });
+    var f = document.getElementById('mac-ans'); if (f) f.addEventListener('submit', function (e) { e.preventDefault(); macAct('answer'); });
+  }
+  function macAct(kind) {
+    if (mac.busy || !mac.queue.length) return;
+    var c = mac.queue[0];
+    if (kind === 'merge' && c.needs) return;
+    mac.busy = true;
+    var card = document.getElementById('mac-card');
+    card.classList.add(kind === 'send' ? 'out-l' : 'out-r');
+    setTimeout(function () {
+      mac.queue.shift();
+      if (kind === 'merge') mac.merged++; else if (kind === 'send') mac.sent++; else { mac.merged++; }
+      mac.busy = false; renderMacMain(true);
+      if (!MOTION) macSky.draw(2, macP(), { flock: MAC0.map(function (_, i) { return i < mac.merged + mac.sent ? 1 : 0; }), base: 0.9 });
+    }, MOTION ? 360 : 0);
+  }
+  macEl.addEventListener('keydown', function (e) {
+    var tag = (e.target && e.target.tagName) || '';
+    if (tag === 'INPUT') return;
+    var k = e.key.toLowerCase();
+    if (k === 'm') { e.preventDefault(); macAct('merge'); }
+    else if (k === 's') { e.preventDefault(); macAct('send'); }
+    else if (k === ' ') { e.preventDefault(); var pr = document.getElementById('mac-proof'); if (pr) { mac.big = !mac.big; pr.classList.toggle('big', mac.big); } }
+    else if (k === 'j' || k === 'k') { e.preventDefault(); if (mac.queue.length > 1) { if (k === 'j') mac.queue.push(mac.queue.shift()); else mac.queue.unshift(mac.queue.pop()); renderMacMain(true); } }
+  });
+  renderMacMain(false);
+
+  /* ---------- P5 island ---------- */
+  var island = document.getElementById('island'), islPanel = document.getElementById('isl-panel');
+  function renderIsland() {
+    var ready = 0, needs = 0;
+    for (var i = 0; i < P; i++) { if (taskState(i) === 'needs') needs++; else ready++; }
+    document.getElementById('isl-text').textContent = P >= TOTAL ? 'Dawn · ' + ready + ' ready' : 'Keeping watch · ' + P + '/' + TOTAL;
+    document.getElementById('isl-ring').setAttribute('stroke-dasharray', (44 * P / TOTAL).toFixed(1) + ' 44');
+    var lan = document.getElementById('isl-lantern'); var g = 0.55 + 0.45 * P / TOTAL; lan.style.transform = 'scale(' + (0.8 + 0.4 * g) + ')'; lan.style.opacity = String(g);
+    document.getElementById('isl-clock').textContent = ['23:40', '00:55', '02:14', '03:30', '04:45', '06:05', '07:02'][P];
+    document.getElementById('notif-text').textContent = P >= TOTAL ? 'Dawn. ' + ready + ' pull requests are ready and CI is green. ' + needs + ' needs your answer.' : P + ' of ' + TOTAL + ' done so far. The brief arrives at dawn with buttons to merge.';
+    islPanel.innerHTML = TASKS.map(function (tk, i) {
+      var st = taskState(i), m = st === 'ready' ? '<span style="color:var(--t-ok)">✓</span>' : st === 'needs' ? '<span style="color:var(--t-need)">!</span>' : st === 'working' ? '<span style="color:var(--t-work)">●</span>' : '<span style="color:var(--t-faint)">·</span>';
+      var lab = st === 'ready' ? 'ready' : st === 'needs' ? 'needs you' : st === 'working' ? 'working' : 'queued';
+      return '<div class="isl-row">' + m + '<span style="color:var(--t-dim);font-family:var(--f-mono);font-size:.76rem">#' + tk.id + '</span><span>' + esc(tk.t) + '</span><span style="color:var(--t-dim);font-size:.76rem">' + lab + '</span></div>';
+    }).join('');
+  }
+  island.addEventListener('click', function () { var open = islPanel.hidden; islPanel.hidden = !open; island.setAttribute('aria-expanded', String(open)); });
+  renderIsland();
+
+  /* ---------- P6 spinner ---------- */
+  var spEl = document.getElementById('spinner');
+  var SPV = ['Counting sheep', 'Mending fences', 'Herding commits', 'Reading the logs', 'Keeping watch'];
+  reg(spEl, function (t) {
+    var vi = Math.floor(t / 2.2) % SPV.length, ph = t % 2.2, v = SPV[vi] + '…';
+    if (MOTION && ph < 0.4) { var k = Math.floor(v.length * ph / 0.4); v = v.slice(0, k) + v.slice(k).replace(/[^ ]/g, scr); }
+    var spin = '⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏'[Math.floor(t * 10) % 10];
+    spEl.innerHTML = '<span><span class="c-amb">' + spin + '</span> ' + esc(v) + '</span><span class="c-dim">#421 · worktree shep/421 · 4m 12s</span>';
+  }, 12);
+
+  /* ---------- motion toggle ---------- */
+  var mBtn = document.getElementById('motion');
+  function syncMotion() { mBtn.setAttribute('aria-pressed', String(MOTION)); mBtn.querySelector('span').textContent = MOTION ? 'Motion on' : 'Motion off'; if (!MOTION) staticRender(); }
+  mBtn.addEventListener('click', function () { MOTION = !MOTION; syncMotion(); });
+  syncMotion();
+  if (!MOTION) staticRender();
+  requestAnimationFrame(loop);
+})();
+</script>

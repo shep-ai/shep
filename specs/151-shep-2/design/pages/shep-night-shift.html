@@ -1,0 +1,836 @@
+<title>Shep Night Shift</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gloock&family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one long scroll that moves dusk → night → deep night → dawn; the sky band is the chapter marker. Single committed look. */
+:root {
+  color-scheme: dark;
+  --dusk: #27304a;
+  --dusk-2: #313b58;
+  --night: #10162f;
+  --deep: #0a0e22;
+  --dawn: #f4e2cd;
+  --dawn-2: #ead2b8;
+  --ink: #e9e7f2;
+  --muted: #a2a9c6;
+  --faint: #6f7697;
+  --line: #ffffff1c;
+  --line-strong: #ffffff36;
+  --lantern: #f3b45c;
+  --lantern-soft: #f3b45c2e;
+  --moon: #dde4ff;
+  --alert: #ff8574;
+  --ok: #8fd6a8;
+  --dawn-ink: #2b2131;
+  --dawn-muted: #6d5a62;
+  --dawn-line: #2b213122;
+  --dawn-accent: #b8641c;
+  --card: #ffffff0a;
+  --term: #070a19;
+  --f-display: "Gloock", "Georgia", "Times New Roman", serif;
+  --f-body: "Hanken Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --f-mono: "JetBrains Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+  --s-hero: clamp(2.5rem, 7vw, 5.2rem);
+  --s-h2: clamp(1.8rem, 4vw, 2.7rem);
+  --s-h3: 1.2rem;
+  --s-body: 1.06rem;
+  --s-small: 0.86rem;
+  --s-micro: 0.74rem;
+}
+html { background: var(--deep); }
+body {
+  background: var(--deep);
+  color: var(--ink);
+  font-family: var(--f-body);
+  font-size: var(--s-body);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+* { box-sizing: border-box; }
+h1, h2, h3 { font-weight: 400; margin: 0; text-wrap: balance; }
+h1, h2 { font-family: var(--f-display); letter-spacing: -0.01em; line-height: 1.08; }
+h2 { font-size: var(--s-h2); }
+h3 { font-family: var(--f-body); font-weight: 700; font-size: var(--s-h3); line-height: 1.3; }
+p { margin: 0; }
+a { color: var(--lantern); text-underline-offset: 3px; }
+a:focus-visible { outline: 2px solid var(--lantern); outline-offset: 3px; border-radius: 2px; }
+code, .mono { font-family: var(--f-mono); font-size: 0.88em; }
+
+.band { position: relative; }
+.wrap {
+  max-width: 1060px;
+  margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: clamp(56px, 9vw, 104px);
+  display: grid;
+  gap: clamp(56px, 8vw, 96px);
+}
+.dusk { background: linear-gradient(180deg, var(--dusk) 0%, var(--dusk-2) 100%); }
+.night {
+  background:
+    radial-gradient(1.2px 1.2px at 12% 18%, #ffffffb0 50%, transparent 51%),
+    radial-gradient(1px 1px at 27% 62%, #ffffff80 50%, transparent 51%),
+    radial-gradient(1.4px 1.4px at 44% 9%, #ffffffc0 50%, transparent 51%),
+    radial-gradient(1px 1px at 63% 41%, #ffffff70 50%, transparent 51%),
+    radial-gradient(1.3px 1.3px at 78% 14%, #ffffffa0 50%, transparent 51%),
+    radial-gradient(1px 1px at 91% 70%, #ffffff70 50%, transparent 51%),
+    radial-gradient(1px 1px at 6% 84%, #ffffff60 50%, transparent 51%),
+    radial-gradient(1.2px 1.2px at 55% 88%, #ffffff60 50%, transparent 51%),
+    linear-gradient(180deg, var(--dusk-2) 0%, var(--night) 18%, var(--night) 100%);
+}
+.deep { background: linear-gradient(180deg, var(--night) 0%, var(--deep) 30%, var(--deep) 100%); }
+.dawn {
+  background: linear-gradient(180deg, var(--deep) 0px, #3b2c47 90px, #b47a62 190px, var(--dawn-2) 280px, var(--dawn) 520px, var(--dawn) 100%);
+  color: var(--dawn-ink);
+}
+
+/* hero */
+.hero .wrap { padding-block: clamp(64px, 11vw, 132px) clamp(48px, 7vw, 80px); gap: 36px; }
+.hero { background:
+    radial-gradient(1.3px 1.3px at 8% 22%, #ffffffc0 50%, transparent 51%),
+    radial-gradient(1px 1px at 19% 70%, #ffffff80 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 36% 12%, #ffffffd0 50%, transparent 51%),
+    radial-gradient(1px 1px at 52% 58%, #ffffff70 50%, transparent 51%),
+    radial-gradient(1.2px 1.2px at 69% 28%, #ffffffb0 50%, transparent 51%),
+    radial-gradient(1px 1px at 83% 80%, #ffffff70 50%, transparent 51%),
+    radial-gradient(1px 1px at 95% 36%, #ffffff90 50%, transparent 51%),
+    linear-gradient(180deg, var(--deep) 0%, var(--night) 60%, var(--dusk) 100%); }
+.eyebrow {
+  font-family: var(--f-mono);
+  font-size: var(--s-micro);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--lantern);
+}
+.hero h1 { font-size: var(--s-hero); max-width: 15ch; }
+.hero h1 em { font-style: normal; color: var(--lantern); }
+.lede { font-size: clamp(1.1rem, 2.2vw, 1.32rem); color: var(--muted); max-width: 58ch; line-height: 1.55; }
+.hero-top { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 32px; align-items: start; }
+.moon { width: clamp(70px, 12vw, 128px); aspect-ratio: 1; max-width: 100%; border-radius: 50%;
+  background: radial-gradient(circle at 36% 34%, #f6f8ff 0%, var(--moon) 45%, #b9c2e6 100%);
+  box-shadow: 0 0 60px 8px #dde4ff33, 0 0 0 10px #dde4ff0d; }
+.acts { display: flex; flex-wrap: wrap; gap: 10px 12px; }
+.acts a {
+  display: inline-flex; gap: 10px; align-items: baseline;
+  padding: 8px 14px; border: 1px solid var(--line-strong); border-radius: 999px;
+  color: var(--ink); text-decoration: none; font-size: var(--s-small);
+}
+.acts a span { font-family: var(--f-mono); color: var(--faint); font-size: var(--s-micro); }
+.acts a:hover { border-color: var(--lantern); }
+
+/* act headers */
+.act { display: grid; gap: 10px; border-top: 1px solid var(--line-strong); padding-top: 22px; }
+.act .eyebrow { color: var(--muted); }
+.act h2 { font-size: clamp(2.1rem, 5vw, 3.3rem); }
+.dawn .act { border-color: var(--dawn-line); }
+.dawn .act .eyebrow { color: var(--dawn-muted); }
+
+/* sections */
+.sec { display: grid; gap: 22px; }
+.sec-head { display: grid; gap: 12px; max-width: 68ch; }
+.sec-head p { color: var(--muted); }
+.dawn .sec-head p { color: var(--dawn-muted); }
+.cite {
+  font-family: var(--f-mono); font-size: var(--s-micro); letter-spacing: 0.06em;
+  color: var(--lantern); display: flex; gap: 8px; align-items: center;
+}
+.cite::before { content: ""; width: 18px; height: 1px; background: currentColor; }
+.dawn .cite { color: var(--dawn-accent); }
+.quote { font-family: var(--f-display); font-size: 1.25rem; line-height: 1.35; color: var(--ink); max-width: 46ch; }
+.dawn .quote { color: var(--dawn-ink); }
+
+/* figures */
+figure { margin: 0; display: grid; gap: 10px; min-width: 0; }
+figcaption { font-size: var(--s-small); color: var(--faint); max-width: 70ch; }
+.dawn figcaption { color: var(--dawn-muted); }
+.scroll-x { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+svg text { font-family: var(--f-body); }
+.svg-mono { font-family: var(--f-mono); }
+
+.stats { display: flex; flex-wrap: wrap; gap: 10px 28px; font-variant-numeric: tabular-nums; }
+.stat { display: grid; gap: 0; }
+.stat b { font-family: var(--f-display); font-weight: 400; font-size: 1.9rem; line-height: 1.1; }
+.stat span { font-size: var(--s-micro); color: var(--muted); letter-spacing: 0.04em; }
+
+/* command chips */
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip {
+  font-family: var(--f-mono); font-size: 0.74rem; padding: 4px 9px; border-radius: 4px;
+  border: 1px solid var(--line); color: var(--muted); background: var(--card);
+}
+.chip.core { border-color: var(--lantern); color: var(--lantern); background: var(--lantern-soft); }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 20px; font-size: var(--s-small); color: var(--muted); }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 7px; vertical-align: -1px; }
+
+/* taglines */
+.three { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.tag-card { display: grid; gap: 14px; align-content: start; padding: 20px; border-top: 2px solid var(--line-strong); background: var(--card); }
+.tag-card .where { font-family: var(--f-mono); font-size: var(--s-micro); color: var(--faint); text-transform: uppercase; letter-spacing: 0.1em; }
+.tag-card .line { font-family: var(--f-display); font-size: 1.3rem; line-height: 1.3; }
+
+/* release mock */
+.release {
+  border: 1px solid var(--line-strong); border-radius: 8px; background: var(--term);
+  padding: 22px; display: grid; gap: 12px; max-width: 720px; min-width: 0;
+}
+.release .rh { font-family: var(--f-mono); font-size: 0.95rem; }
+.release .rh small { color: var(--faint); font-size: 0.8rem; }
+.release blockquote {
+  margin: 0; padding: 10px 14px; border-left: 3px solid var(--alert);
+  background: #ff857414; color: var(--alert); font-family: var(--f-mono); font-size: 0.86rem; line-height: 1.5;
+}
+.release .rest { color: var(--faint); font-family: var(--f-mono); font-size: 0.8rem; }
+.counter { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.counter b { font-family: var(--f-display); font-weight: 400; font-size: 3rem; line-height: 1; color: var(--alert); }
+
+/* sameness grid */
+.same { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 600px) { .same { grid-template-columns: minmax(0, 1fr); } }
+.same div { padding: 14px 16px; border: 1px solid var(--line); border-radius: 6px; display: grid; gap: 8px; background: var(--card); }
+.same b { font-weight: 600; font-size: 0.98rem; }
+.same span { font-family: var(--f-mono); font-size: 0.7rem; color: var(--faint); }
+.same .us { border-color: var(--line-strong); }
+.same .us b::after { content: " ?"; color: var(--lantern); }
+
+/* MAYA gauge */
+.gauge { min-width: 0; }
+
+/* familiar / surprise */
+.maya-cols { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 14px; }
+.col-card { padding: 22px; border-radius: 8px; display: grid; gap: 12px; align-content: start; }
+.col-card.fam { background: var(--card); border: 1px solid var(--line); }
+.col-card.sur { background: var(--lantern-soft); border: 1px solid var(--lantern); }
+.col-card h3 { font-family: var(--f-mono); font-weight: 500; font-size: var(--s-micro); letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.col-card.sur h3 { color: var(--lantern); }
+.col-card ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+.col-card li { padding-left: 18px; position: relative; }
+.col-card li::before { content: ""; position: absolute; left: 0; top: 0.62em; width: 8px; height: 1px; background: var(--muted); }
+.col-card.sur p { font-family: var(--f-display); font-size: 1.45rem; line-height: 1.3; }
+.verbs { display: flex; flex-wrap: wrap; gap: 10px; }
+.verbs code { padding: 6px 12px; border-radius: 4px; background: var(--term); border: 1px solid var(--line-strong); color: var(--lantern); font-size: 0.9rem; }
+
+/* terminal brief */
+.term {
+  background: var(--term); border: 1px solid var(--line-strong); border-radius: 10px;
+  font-family: var(--f-mono); font-size: 0.82rem; line-height: 1.7; overflow-x: auto; min-width: 0;
+}
+.term-bar { display: flex; gap: 7px; padding: 10px 14px; border-bottom: 1px solid var(--line); align-items: center; }
+.term-bar i { width: 10px; height: 10px; border-radius: 50%; background: var(--line-strong); }
+.term-bar span { margin-left: 8px; color: var(--faint); font-size: 0.72rem; }
+.term pre { margin: 0; padding: 16px 18px 20px; white-space: pre; color: var(--ink); font: inherit; }
+.t-dim { color: var(--faint); }
+.t-ok { color: var(--ok); }
+.t-warn { color: var(--lantern); }
+.t-prompt { color: var(--muted); }
+.t-sur { color: var(--moon); }
+.example-tag {
+  justify-self: start; font-family: var(--f-mono); font-size: var(--s-micro); letter-spacing: 0.1em; text-transform: uppercase;
+  padding: 3px 8px; border: 1px dashed var(--line-strong); border-radius: 3px; color: var(--muted);
+}
+.dawn .example-tag { border-color: var(--dawn-line); color: var(--dawn-muted); }
+
+/* two-up */
+.two { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 28px; align-items: start; }
+
+/* ledger */
+.ledger { border: 1px solid var(--line-strong); border-radius: 8px; overflow: hidden; min-width: 0; }
+.ledger header { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 12px 16px; background: var(--card); border-bottom: 1px solid var(--line); font-family: var(--f-mono); font-size: 0.78rem; color: var(--muted); }
+.ledger ol { list-style: none; margin: 0; padding: 0; }
+.ledger li { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--line); font-size: 0.92rem; }
+.ledger li:last-child { border-bottom: 0; }
+.ledger .pr { font-family: var(--f-mono); color: var(--lantern); font-size: 0.82rem; }
+.ledger .k { font-family: var(--f-mono); font-size: 0.8rem; color: var(--faint); }
+
+/* launch week */
+.week { display: grid; gap: 0; border-top: 1px solid var(--line); }
+.week div { display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 14px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.week b { font-family: var(--f-mono); font-weight: 500; font-size: 0.8rem; color: var(--lantern); padding-top: 2px; }
+
+/* metric */
+.metric { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 14px; }
+.metric > div { padding: 24px; border-radius: 8px; display: grid; gap: 10px; align-content: start; }
+.metric .main { border: 1px solid var(--lantern); background: var(--lantern-soft); }
+.metric .side { border: 1px solid var(--line); background: var(--card); }
+.metric .k { font-family: var(--f-mono); font-size: var(--s-micro); letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.metric .v { font-family: var(--f-display); font-size: 1.7rem; line-height: 1.2; }
+
+/* dawn: tests + plan */
+.tests { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; }
+.test { padding: 24px; border-radius: 8px; background: #ffffff70; border: 1px solid var(--dawn-line); display: grid; gap: 10px; align-content: start; }
+.test .q { font-family: var(--f-display); font-size: 1.35rem; line-height: 1.25; }
+.test p { color: var(--dawn-muted); }
+.test .if { font-size: var(--s-small); color: var(--dawn-ink); padding-top: 10px; border-top: 1px solid var(--dawn-line); }
+.plan { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; counter-reset: step; }
+.plan > li { display: grid; gap: 10px; align-content: start; padding: 18px 0 0; border-top: 2px solid var(--dawn-ink); }
+.plan .when { font-family: var(--f-mono); font-size: var(--s-micro); letter-spacing: 0.12em; text-transform: uppercase; color: var(--dawn-accent); }
+.plan h3 { font-family: var(--f-display); font-weight: 400; font-size: 1.35rem; }
+.plan ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; color: var(--dawn-muted); font-size: 0.95rem; }
+.closing { font-family: var(--f-display); font-size: clamp(1.8rem, 4.5vw, 3rem); line-height: 1.15; max-width: 22ch; }
+.sources { display: grid; gap: 8px; font-size: var(--s-small); color: var(--dawn-muted); border-top: 1px solid var(--dawn-line); padding-top: 22px; }
+.sources ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+.dawn a { color: var(--dawn-accent); }
+
+@media (max-width: 760px) {
+  .three, .maya-cols, .two, .metric, .tests { grid-template-columns: minmax(0, 1fr); }
+  .plan { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .hero-top { grid-template-columns: minmax(0, 1fr); }
+  .moon { order: -1; width: 64px; }
+}
+@media (max-width: 440px) {
+  .plan { grid-template-columns: minmax(0, 1fr); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .moon { animation: glow 6s ease-in-out infinite alternate; }
+  @keyframes glow { from { box-shadow: 0 0 50px 6px #dde4ff26, 0 0 0 10px #dde4ff0d; } to { box-shadow: 0 0 80px 12px #dde4ff40, 0 0 0 10px #dde4ff12; } }
+}
+</style>
+
+<!-- HERO -->
+<header class="band hero">
+  <div class="wrap">
+    <div class="hero-top">
+      <div style="display:grid;gap:28px;min-width:0">
+        <p class="eyebrow">Shep, read through Derek Thompson's <i>Hit Makers</i> · October 2026</p>
+        <h1>Go to sleep with issues. <em>Wake up with pull requests.</em></h1>
+        <p class="lede">The product is good enough. Since its one big moment in March, the effort went into building more when it needed to go into being heard. This is the story of how Shep gets heard: one ritual, one line, and launches planned on purpose.</p>
+      </div>
+      <div class="moon" aria-hidden="true"></div>
+    </div>
+    <nav class="acts" aria-label="Story acts">
+      <a href="#dusk"><span>I</span>What happened</a>
+      <a href="#night"><span>II</span>The turn</a>
+      <a href="#deep"><span>III</span>Getting heard</a>
+      <a href="#dawn"><span>IV</span>Before we tell it</a>
+    </nav>
+  </div>
+</header>
+
+<!-- ACT I -->
+<section class="band dusk" id="dusk">
+  <div class="wrap">
+    <div class="act">
+      <p class="eyebrow">Act I · Dusk</p>
+      <h2>What happened</h2>
+    </div>
+
+    <div class="sec">
+      <div class="sec-head">
+        <p class="cite">Ch 8 · The Viral Myth</p>
+        <h2>One big broadcast, then a long fade</h2>
+        <p>Monthly npm downloads of <code>@shepai/cli</code>. March looks like a launch moment: one large exposure, a short tail, then a slow decline. Nothing that came after reached that many people at once.</p>
+      </div>
+      <figure>
+        <div class="scroll-x">
+          <svg viewBox="0 0 720 320" role="img" aria-label="Bar chart of monthly npm downloads: Feb 10.8K, Mar 59.2K, Apr 25.5K, May 13.5K, Jun 10.1K, Jul 8.6K, Aug 9.2K, Sep 7.8K, Oct 7.6K through the 28th" style="width:100%;min-width:560px;height:auto;display:block">
+            <g stroke="#ffffff1c" stroke-width="1">
+              <line x1="60" y1="260" x2="700" y2="260" stroke="#ffffff36"/>
+              <line x1="60" y1="183.3" x2="700" y2="183.3"/>
+              <line x1="60" y1="106.7" x2="700" y2="106.7"/>
+              <line x1="60" y1="30" x2="700" y2="30"/>
+            </g>
+            <g fill="#6f7697" font-size="11" text-anchor="end" class="svg-mono">
+              <text x="52" y="264">0</text>
+              <text x="52" y="187">20K</text>
+              <text x="52" y="111">40K</text>
+              <text x="52" y="34">60K</text>
+            </g>
+            <g fill="#a2a9c6" opacity="0.55">
+              <rect x="73.5" y="218.7" width="44" height="41.3" rx="2"/>
+              <rect x="215.7" y="162.2" width="44" height="97.8" rx="2"/>
+              <rect x="286.8" y="208.2" width="44" height="51.8" rx="2"/>
+              <rect x="358.0" y="221.2" width="44" height="38.8" rx="2"/>
+              <rect x="429.1" y="227.2" width="44" height="32.8" rx="2"/>
+              <rect x="500.2" y="224.5" width="44" height="35.5" rx="2"/>
+              <rect x="571.3" y="229.9" width="44" height="30.1" rx="2"/>
+              <rect x="642.4" y="230.7" width="44" height="29.3" rx="2"/>
+            </g>
+            <rect x="144.6" y="32.9" width="44" height="227.1" rx="2" fill="#f3b45c"/>
+            <g fill="#e9e7f2" font-size="11.5" text-anchor="middle" class="svg-mono">
+              <text x="95.5" y="211">10.8K</text>
+              <text x="166.6" y="25" fill="#f3b45c">59.2K</text>
+              <text x="237.7" y="155">25.5K</text>
+              <text x="308.8" y="201">13.5K</text>
+              <text x="380.0" y="214">10.1K</text>
+              <text x="451.1" y="220">8.6K</text>
+              <text x="522.2" y="217">9.2K</text>
+              <text x="593.3" y="223">7.8K</text>
+              <text x="664.4" y="223">7.6K*</text>
+            </g>
+            <g fill="#a2a9c6" font-size="12" text-anchor="middle">
+              <text x="95.5" y="282">Feb</text>
+              <text x="166.6" y="282">Mar</text>
+              <text x="237.7" y="282">Apr</text>
+              <text x="308.8" y="282">May</text>
+              <text x="380.0" y="282">Jun</text>
+              <text x="451.1" y="282">Jul</text>
+              <text x="522.2" y="282">Aug</text>
+              <text x="593.3" y="282">Sep</text>
+              <text x="664.4" y="282">Oct</text>
+            </g>
+            <line x1="196" y1="60" x2="232" y2="60" stroke="#f3b45c" stroke-width="1"/>
+            <text x="238" y="64" fill="#f3b45c" font-size="13" font-weight="600">The one broadcast</text>
+            <path d="M 360 196 L 686 196" stroke="#a2a9c6" stroke-width="1" stroke-dasharray="4 4"/>
+            <text x="523" y="188" fill="#a2a9c6" font-size="12.5" text-anchor="middle">Seven months, no second broadcast</text>
+            <text x="60" y="308" fill="#6f7697" font-size="11">* October through Oct 28. npm totals include CI and npx installs: read the shape.</text>
+          </svg>
+        </div>
+      </figure>
+      <div class="stats">
+        <div class="stat"><b>269</b><span>GitHub stars</span></div>
+        <div class="stat"><b>64</b><span>forks</span></div>
+        <div class="stat"><b>~7.6K</b><span>npm downloads / month now</span></div>
+      </div>
+      <p class="quote">"Popularity is driven by the size of the largest broadcast." Sharing amplifies a broadcast. It doesn't replace one.</p>
+    </div>
+
+    <div class="sec">
+      <div class="sec-head">
+        <p class="cite">Ch 2 · The MAYA Rule</p>
+        <h2>So we built. A lot.</h2>
+        <p>Since the spike: 331 specs, 252 minor releases and about 346K lines of source. Below are Shep's 56 CLI command groups. The highlighted ones make up the loop a new user actually needs. Late-90s ESPN put bass fishing, cheerleading and salsa on air and lost what it was known for. Thompson's advice is to be a steakhouse, not a diner.</p>
+      </div>
+      <div class="chips" aria-label="Shep CLI command groups">
+        <span class="chip">agent</span><span class="chip">app</span><span class="chip">aspm</span><span class="chip">autopilot</span><span class="chip">bedrock</span><span class="chip">chat</span><span class="chip">cluster</span><span class="chip">connection</span><span class="chip">contributors</span><span class="chip">cycle</span><span class="chip">daemon</span><span class="chip">dev</span><span class="chip">discovery</span><span class="chip">doctor</span><span class="chip">factory</span><span class="chip core">feat</span><span class="chip">feedback</span><span class="chip">fleet</span><span class="chip">harness</span><span class="chip">ide</span><span class="chip">incident</span><span class="chip">install</span><span class="chip">intake</span><span class="chip">item</span><span class="chip">knowledge</span><span class="chip">logs</span><span class="chip">mcp</span><span class="chip">notifications</span><span class="chip">opportunity</span><span class="chip">outcome</span><span class="chip">plugin</span><span class="chip">project</span><span class="chip">ps</span><span class="chip core">repo</span><span class="chip">restart</span><span class="chip core">review</span><span class="chip">run</span><span class="chip">security</span><span class="chip">session</span><span class="chip core">settings</span><span class="chip">signal</span><span class="chip">space</span><span class="chip core">start</span><span class="chip">status</span><span class="chip">stop</span><span class="chip">supervisor</span><span class="chip">sync</span><span class="chip">telemetry</span><span class="chip">tools</span><span class="chip">tui</span><span class="chip">ui</span><span class="chip">upgrade</span><span class="chip">usage</span><span class="chip">version</span><span class="chip">whatsapp</span><span class="chip">workflow</span>
+      </div>
+      <div class="legend">
+        <span><i style="background:var(--lantern)"></i>the loop a new user needs (5)</span>
+        <span><i style="background:var(--line-strong)"></i>everything else (51)</span>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-head">
+        <p class="cite">Ch 3 · The Music of Sound</p>
+        <h2>Three surfaces, three different songs</h2>
+        <p>Repetition is what makes a line stick. Obama's 2008 convention speech had one spine, "promise", and used the word 32 times. Shep's three most-read surfaces each say something different.</p>
+      </div>
+      <div class="three">
+        <div class="tag-card"><span class="where">GitHub description</span><p class="line">"Ship features 10x faster. Built In Auto: Memory, K8S Agent &amp; Security (SDD+SDLC) . 😇"</p></div>
+        <div class="tag-card"><span class="where">README headline</span><p class="line">"Run a fleet of coding agents. Merge real PRs."</p></div>
+        <div class="tag-card"><span class="where">CLAUDE.md</span><p class="line">"Autonomous AI-native SDLC platform"</p></div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-head">
+        <p class="cite">Ch 1 · The Power of Exposure</p>
+        <h2>The front door says the product is broken</h2>
+        <p>Release notes are a broadcast to everyone watching the repo. The tagline script accepts the SDK's auth error as if it were the tagline, so the error became the headline of release after release.</p>
+      </div>
+      <div class="two">
+        <div class="release" role="img" aria-label="GitHub release v1.252.2 whose tagline is an error message">
+          <p class="rh">🚀 Shep v1.252.2 <small>· 2026-10-29</small></p>
+          <blockquote>Your organization does not have access to Claude. Please login again or contact your administrator.</blockquote>
+          <p class="rest">🐛 Bug Fixes<br>deps: clear all 40 open dependabot alerts (#951)</p>
+        </div>
+        <div style="display:grid;gap:14px;align-content:start;min-width:0">
+          <div class="counter"><b>56</b><span>releases in <code>CHANGELOG.md</code> open this way</span></div>
+          <p style="color:var(--muted)">Ease feels like quality and difficulty feels like a warning. A reader who sees an error at the top of every release assumes the product has problems, before reading a single feature.</p>
+          <p class="mono" style="color:var(--faint);font-size:0.8rem">scripts/release-notes-claude.mjs</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-head">
+        <p class="cite">Ch 11 · Pixels and Ink</p>
+        <h2>The category caught up</h2>
+        <p>Parallel agents, each isolated, each opening a PR: that promise is now on every tool's front page. Newspapers weren't beaten by better newspapers. They were beaten by bad television. Shep's threat is "good enough" parallelism built into tools developers already have open.</p>
+      </div>
+      <div class="same">
+        <div><b>Conductor</b><span>parallel agents · worktrees · PR</span></div>
+        <div><b>Claude Code Agent Teams</b><span>parallel agents · worktrees · PR</span></div>
+        <div><b>Codex</b><span>parallel tasks · cloud sandbox · PR</span></div>
+        <div><b>Cursor Cloud Agents</b><span>parallel agents · cloud VM · PR</span></div>
+        <div><b>GitHub Agent HQ</b><span>any agent · mission control · PR</span></div>
+        <div><b>Vibe Kanban</b><span>parallel agents · worktrees · PR</span></div>
+        <div><b>Emdash</b><span>20+ CLI agents · worktrees · PR</span></div>
+        <div><b>Claude Squad</b><span>parallel agents · worktrees · PR</span></div>
+        <div class="us"><b>Shep</b><span>parallel agents · worktrees · PR</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ACT II -->
+<section class="band night" id="night">
+  <div class="wrap">
+    <div class="act">
+      <p class="eyebrow">Act II · Night</p>
+      <h2>The turn</h2>
+    </div>
+
+    <div class="sec">
+      <div class="sec-head">
+        <p class="cite">Ch 2 · The MAYA Rule</p>
+        <h2>Most advanced, yet acceptable</h2>
+        <p>Raymond Loewy's rule: push to the boldest design people will still accept, then stop. Shep's current pitches sit at the two ends. One is too familiar to notice. The other is too big to picture.</p>
+      </div>
+      <figure class="gauge">
+        <div class="scroll-x">
+          <svg viewBox="0 0 900 196" role="img" aria-label="A scale from too familiar to too new. 'Run a fleet of coding agents' sits at the familiar end. 'Autonomous SDLC platform with ASPM and K8s' sits in the shock zone. 'Night shift' sits just short of the shock zone." style="width:100%;min-width:620px;height:auto;display:block">
+            <defs>
+              <linearGradient id="g-scale" x1="0" x2="1">
+                <stop offset="0" stop-color="#a2a9c6" stop-opacity="0.35"/>
+                <stop offset="0.68" stop-color="#f3b45c" stop-opacity="0.9"/>
+                <stop offset="0.8" stop-color="#ff8574" stop-opacity="0.9"/>
+                <stop offset="1" stop-color="#ff8574" stop-opacity="0.35"/>
+              </linearGradient>
+            </defs>
+            <rect x="30" y="92" width="840" height="10" rx="5" fill="url(#g-scale)"/>
+            <rect x="700" y="76" width="170" height="42" rx="4" fill="#ff857414" stroke="#ff8574" stroke-dasharray="3 4"/>
+            <text x="785" y="140" fill="#ff8574" font-size="12" text-anchor="middle" class="svg-mono">SHOCK ZONE</text>
+            <text x="30" y="140" fill="#6f7697" font-size="12" class="svg-mono">TOO FAMILIAR</text>
+            <text x="30" y="160" fill="#6f7697" font-size="12">people stop noticing</text>
+            <text x="870" y="160" fill="#6f7697" font-size="12" text-anchor="end">people stop buying</text>
+            <!-- markers -->
+            <circle cx="150" cy="97" r="8" fill="#a2a9c6"/>
+            <line x1="150" y1="86" x2="150" y2="52" stroke="#a2a9c6"/>
+            <text x="150" y="44" fill="#a2a9c6" font-size="13" text-anchor="middle">"Run a fleet of coding agents"</text>
+            <circle cx="790" cy="97" r="8" fill="#ff8574"/>
+            <line x1="790" y1="86" x2="790" y2="52" stroke="#ff8574"/>
+            <text x="790" y="28" fill="#ff8574" font-size="13" text-anchor="middle">"Autonomous SDLC platform"</text>
+            <text x="790" y="44" fill="#ff8574" font-size="12" text-anchor="middle" opacity="0.8">+ ASPM, K8s, incidents</text>
+            <circle cx="655" cy="97" r="11" fill="#f3b45c" stroke="#10162f" stroke-width="3"/>
+            <line x1="655" y1="110" x2="655" y2="150" stroke="#f3b45c"/>
+            <text x="655" y="170" fill="#f3b45c" font-size="15" font-weight="700" text-anchor="middle">The night shift</text>
+            <text x="655" y="186" fill="#f3b45c" font-size="12" text-anchor="middle" opacity="0.85">just short of the edge</text>
+          </svg>
+        </div>
+      </figure>
+      <div class="maya-cols">
+        <div class="col-card fam">
+          <h3>Keep: everything they already know</h3>
+          <ul>
+            <li>Your repo and your GitHub issues</li>
+            <li>The agent you already use, on the subscription you already pay for</li>
+            <li>Ordinary pull requests and your own CI</li>
+            <li>You still hold the merge button</li>
+          </ul>
+        </div>
+        <div class="col-card sur">
+          <h3>Add: one surprise</h3>
+          <p>It works while you sleep. You wake up to PRs that already pass CI.</p>
+          <div class="verbs"><code>shep tonight</code><code>shep morning</code></div>
+        </div>
+      </div>
+      <p class="quote">The brand already fits. Shepherds keep watch over their flocks by night.</p>
+    </div>
+
+    <div class="sec">
+      <div class="sec-head">
+        <p class="cite">Ch 3 · Repetition and surprise</p>
+        <h2>A night on the shift</h2>
+        <p>The whole product is two moments: the handoff at night and the review in the morning. Everything in between is Shep's job. This is an example night, not real data.</p>
+      </div>
+      <figure>
+        <div class="scroll-x">
+          <svg viewBox="0 0 900 290" role="img" aria-label="Timeline from 22:00 to 07:30. You queue 6 issues at 22:40. Six agents start at 23:05. At 01:30 CI fails on PR 3 and the agent pushes a fix. At 04:30 PR 6 gets stuck and is flagged. The brief is ready at 06:50 and you review at 07:05." style="width:100%;min-width:720px;height:auto;display:block">
+            <defs>
+              <linearGradient id="g-dawn" x1="0" x2="1">
+                <stop offset="0" stop-color="#f3b45c" stop-opacity="0"/>
+                <stop offset="1" stop-color="#f3b45c" stop-opacity="0.28"/>
+              </linearGradient>
+            </defs>
+            <rect x="680" y="70" width="200" height="160" fill="url(#g-dawn)"/>
+            <path d="M 40 220 Q 450 -160 860 220" fill="none" stroke="#dde4ff" stroke-opacity="0.18" stroke-dasharray="2 6"/>
+            <circle cx="352" cy="41" r="9" fill="#dde4ff"/>
+            <!-- axis -->
+            <line x1="40" y1="230" x2="860" y2="230" stroke="#ffffff36"/>
+            <g fill="#6f7697" font-size="11" text-anchor="middle" class="svg-mono">
+              <text x="40" y="250">22:00</text><text x="126.3" y="250">23:00</text><text x="212.6" y="250">00:00</text><text x="298.9" y="250">01:00</text><text x="385.2" y="250">02:00</text><text x="471.5" y="250">03:00</text><text x="557.8" y="250">04:00</text><text x="644.1" y="250">05:00</text><text x="730.4" y="250">06:00</text><text x="816.7" y="250">07:00</text>
+            </g>
+            <g stroke="#ffffff36"><line x1="40" y1="226" x2="40" y2="234"/><line x1="126.3" y1="226" x2="126.3" y2="234"/><line x1="212.6" y1="226" x2="212.6" y2="234"/><line x1="298.9" y1="226" x2="298.9" y2="234"/><line x1="385.2" y1="226" x2="385.2" y2="234"/><line x1="471.5" y1="226" x2="471.5" y2="234"/><line x1="557.8" y1="226" x2="557.8" y2="234"/><line x1="644.1" y1="226" x2="644.1" y2="234"/><line x1="730.4" y1="226" x2="730.4" y2="234"/><line x1="816.7" y1="226" x2="816.7" y2="234"/></g>
+            <!-- lanes -->
+            <text x="124" y="122" fill="#a2a9c6" font-size="11" text-anchor="end">6 agents</text>
+            <text x="124" y="137" fill="#a2a9c6" font-size="11" text-anchor="end">6 worktrees</text>
+            <g>
+              <rect x="133.5" y="94" width="266.1" height="8" rx="4" fill="#8fd6a8" opacity="0.8"/>
+              <rect x="133.5" y="110" width="165.4" height="8" rx="4" fill="#8fd6a8" opacity="0.8"/>
+              <rect x="133.5" y="126" width="409.5" height="8" rx="4" fill="#8fd6a8" opacity="0.8"/>
+              <rect x="133.5" y="142" width="309.2" height="8" rx="4" fill="#8fd6a8" opacity="0.8"/>
+              <rect x="133.5" y="158" width="136.6" height="8" rx="4" fill="#8fd6a8" opacity="0.8"/>
+              <rect x="133.5" y="174" width="467.5" height="8" rx="4" fill="#f3b45c" opacity="0.85"/>
+              <circle cx="342" cy="130" r="6" fill="#ff8574" stroke="#10162f" stroke-width="2"/>
+              <circle cx="601" cy="178" r="6" fill="#f3b45c" stroke="#10162f" stroke-width="2"/>
+            </g>
+            <!-- events -->
+            <g stroke-dasharray="3 4" stroke-width="1">
+              <line x1="97.5" y1="62" x2="97.5" y2="230" stroke="#f3b45c" stroke-opacity="0.6"/>
+              <line x1="342" y1="70" x2="342" y2="124" stroke="#ff8574" stroke-opacity="0.7"/>
+              <line x1="601" y1="86" x2="601" y2="172" stroke="#f3b45c" stroke-opacity="0.7"/>
+              <line x1="802" y1="62" x2="802" y2="230" stroke="#f3b45c" stroke-opacity="0.8"/>
+            </g>
+            <text x="92" y="40" fill="#f3b45c" font-size="12.5" font-weight="700" class="svg-mono">22:40</text>
+            <text x="92" y="56" fill="#e9e7f2" font-size="12.5">You queue 6 issues</text>
+            <text x="362" y="70" fill="#ff8574" font-size="12.5" font-weight="700" class="svg-mono">01:30</text>
+            <text x="362" y="86" fill="#e9e7f2" font-size="12.5">CI red on PR 3. The agent fixes it.</text>
+            <text x="612" y="104" fill="#f3b45c" font-size="12.5" font-weight="700" class="svg-mono">04:30</text>
+            <text x="612" y="120" fill="#e9e7f2" font-size="12.5">PR 6 needs you</text>
+            <text x="810" y="40" fill="#f3b45c" font-size="12.5" font-weight="700" text-anchor="end" class="svg-mono">06:50</text>
+            <text x="810" y="56" fill="#e9e7f2" font-size="12.5" text-anchor="end">Brief ready</text>
+            <text x="860" y="276" fill="#f3b45c" font-size="12.5" text-anchor="end">07:05 · you review over coffee</text>
+            <text x="40" y="276" fill="#6f7697" font-size="11">green: done and passing · amber: needs a human · red dot: a CI failure the agent fixed</text>
+          </svg>
+        </div>
+      </figure>
+    </div>
+
+    <div class="sec">
+      <div class="sec-head">
+        <p class="cite">Ch 3 · Habituation · Ch 12 · Kid A</p>
+        <h2>The morning brief, with one surprise</h2>
+        <p>The brief is the steady beat people come back for. The advanced features (opportunities, discovery, incidents) stop being menus. They show up now and then as one line in the brief, which is the contrast that keeps the routine from going stale. ASPM, Kubernetes and the full autonomous-SDLC vision are Shep's <i>Kid A</i>. Radiohead could release it only as a fourth album, after earlier albums had won the audience. Those features move behind <code>shep labs</code>.</p>
+      </div>
+      <span class="example-tag">Example output</span>
+      <div class="term" role="img" aria-label="Example terminal output of shep morning">
+        <div class="term-bar"><i></i><i></i><i></i><span>~/projects/booking-app</span></div>
+<pre><span class="t-prompt">$</span> shep morning
+<span class="t-dim">Good morning. Overnight: 6 issues in, 6 pull requests out.</span>
+
+ <span class="t-ok">✓</span> #412  Fix login redirect loop        <span class="t-dim">CI green · +41 −12 · 3 files</span>
+ <span class="t-ok">✓</span> #418  Add CSV export to reports      <span class="t-dim">CI green · screenshot attached</span>
+ <span class="t-ok">✓</span> #421  Upgrade to Node 22.11          <span class="t-dim">CI green · fixed 1 failure at 01:30</span>
+ <span class="t-ok">✓</span> #425  Empty state for projects page  <span class="t-dim">CI green · screenshot attached</span>
+ <span class="t-ok">✓</span> #427  Rate-limit /api/search         <span class="t-dim">CI green · 2 tests added</span>
+ <span class="t-warn">!</span> #430  Move avatars to S3             <span class="t-warn">needs you: which bucket?</span>
+
+ <span class="t-sur">☾ While you slept:</span> your auth tests failed 3 of 40 runs this week.
+   Draft PR #431 makes them deterministic.
+
+<span class="t-dim">[m] merge the 5 green   [r] review one by one   [a] answer #430</span></pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ACT III -->
+<section class="band deep" id="deep">
+  <div class="wrap">
+    <div class="act">
+      <p class="eyebrow">Act III · Deep night</p>
+      <h2>Getting heard</h2>
+    </div>
+
+    <div class="sec">
+      <div class="sec-head">
+        <p class="cite">Ch 9 · The Audience of My Audience</p>
+        <h2>Ask who is ready, not who is powerful</h2>
+        <p>Bumble started by signing up an entire sorority, then used it as proof at the paired fraternity. Shep's first group should be solo founders who post their work in public. They are densely connected, they share constantly, and "my agents shipped 9 PRs last night" says something about who they are. Each group then becomes proof for the next.</p>
+      </div>
+      <figure>
+        <div class="scroll-x">
+          <svg viewBox="0 0 900 230" role="img" aria-label="Four groups in sequence: solo founders who build in public, then small agencies, then 2 to 10 person startups, then enterprise later." style="width:100%;min-width:640px;height:auto;display:block">
+            <g id="pins"></g>
+            <g font-size="13.5" font-weight="700" text-anchor="middle">
+              <text x="120" y="190" fill="#f3b45c">Build-in-public founders</text>
+              <text x="345" y="190" fill="#e9e7f2">Small agencies</text>
+              <text x="570" y="190" fill="#e9e7f2">2–10 person startups</text>
+              <text x="790" y="190" fill="#6f7697">Enterprise</text>
+            </g>
+            <g font-size="12" text-anchor="middle" fill="#a2a9c6">
+              <text x="120" y="208">first · onboard 20 in one week</text>
+              <text x="345" y="208">overnight PRs are revenue</text>
+              <text x="570" y="208">teams copy what founders show</text>
+              <text x="790" y="208" fill="#6f7697">later · the Kid A shelf</text>
+            </g>
+          </svg>
+        </div>
+      </figure>
+    </div>
+
+    <div class="sec">
+      <div class="sec-head">
+        <p class="cite">Ch 4 · The Force of Story</p>
+        <h2>The story is Shep building Shep</h2>
+        <p>The most interesting fact in the repo is in CLAUDE.md: one developer runs a 346K-line codebase that ships close to a release a day. That's a hero's journey: one person against an impossible workload. Make it watchable with a public ledger of what the agents shipped on <code>shep-ai/shep</code> each night.</p>
+      </div>
+      <div class="two">
+        <div class="ledger" role="img" aria-label="Mockup of a public ledger listing recent Shep pull requests">
+          <header><span>shep-ai/shep · night of Oct 28</span><span>shipped by agents</span></header>
+          <ol>
+            <li><span class="pr">#951</span><span>Clear all 40 open dependabot alerts <span class="k">· v1.252.2</span></span></li>
+            <li><span class="pr">#949</span><span>Keep the daemon up on client disconnects <span class="k">· v1.252.1</span></span></li>
+            <li><span class="pr">…</span><span class="k">recent real PRs, shown in the proposed ledger format</span></li>
+          </ol>
+        </div>
+        <div style="display:grid;gap:18px;align-content:start;min-width:0">
+          <div class="stats">
+            <div class="stat"><b>252</b><span>minor releases since February</span></div>
+            <div class="stat"><b>331</b><span>specs</span></div>
+            <div class="stat"><b>1</b><span>developer</span></div>
+          </div>
+          <p style="color:var(--muted)">Pair the ledger with a shareable morning-report card. The card is the backpack sticker from Ch 9: a small sign of use that starts a conversation between friends.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-head">
+        <p class="cite">Ch 8 · Find the pump</p>
+        <h2>Plan the broadcasts. Don't wait for virality.</h2>
+        <p>More than 90% of tweets never spread at all. Big hits come from a few moments that reach a million people at once, then a little sharing. Find what caused March, then set up two or three more like it in one named launch.</p>
+      </div>
+      <div class="two">
+        <figure>
+          <svg viewBox="0 0 440 300" role="img" aria-label="Two diagrams. On top, what people imagine: a long chain of one-to-one shares that fades out. Below, what usually happens: one large broadcast that reaches many people at once." style="width:100%;height:auto;display:block;max-width:100%">
+            <text x="0" y="18" fill="#6f7697" font-size="12" class="svg-mono">WHAT PEOPLE IMAGINE</text>
+            <g id="chain"></g>
+            <text x="0" y="112" fill="#f3b45c" font-size="12" class="svg-mono">WHAT USUALLY HAPPENS</text>
+            <g id="burst"></g>
+            <circle cx="120" cy="208" r="22" fill="#f3b45c"/>
+            <text x="92" y="212" fill="#f3b45c" font-size="12" text-anchor="end" font-weight="700">one broadcast</text>
+          </svg>
+          <figcaption>Shape from the Yahoo study of Twitter cascades cited in Ch 8. About 95% of the news people see comes straight from the source or one step away. White dots are the little sharing that follows.</figcaption>
+        </figure>
+        <div style="display:grid;gap:14px;align-content:start;min-width:0">
+          <h3>"Shep 2: Night Shift" launch week <span class="example-tag" style="margin-left:6px">Proposed</span></h3>
+          <div class="week">
+            <div><b>Mon</b><span>Show HN: "One developer, 346K lines, 252 releases"</span></div>
+            <div><b>Tue</b><span>The long essay: how Shep builds Shep overnight</span></div>
+            <div><b>Wed</b><span>Two or three AI-coding newsletters, lined up in advance</span></div>
+            <div><b>Thu</b><span>Demos with AI-coding YouTubers, all on the same night</span></div>
+            <div><b>Fri</b><span>The first 20 founders post their morning-report cards</span></div>
+          </div>
+          <p style="color:var(--muted);font-size:var(--s-small)">Stop announcing near-daily releases. Bundle them into named launches. Show live usage on the front page ("PRs merged by Shep this week"). When people can see what others pick, demand concentrates on it.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-head">
+        <p class="cite">Ch 11 · Behavioral vs. aspirational self</p>
+        <h2>Track what people do</h2>
+        <p>Most of the 331 specs are features someone said they wanted. What people say they want and what they do are different things. Watch behavior.</p>
+      </div>
+      <div class="metric">
+        <div class="main"><span class="k">The one number</span><p class="v">Merged PRs per active install, per week</p><p style="color:var(--muted)">Telemetry already records whether PRs merge, without any content.</p></div>
+        <div class="side"><span class="k">The habit</span><p class="v">Mornings people come back</p><p style="color:var(--muted)">A ritual only counts if it repeats.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ACT IV -->
+<section class="band dawn" id="dawn">
+  <div class="wrap">
+    <div class="act" style="margin-top:200px">
+      <p class="eyebrow">Act IV · Dawn</p>
+      <h2>Check the story before we tell it</h2>
+    </div>
+
+    <div class="sec">
+      <div class="sec-head">
+        <p class="cite">Ch 5 · Vampire stories · Ch 7 · Compare with the failures</p>
+        <p>"Night shift" is a satisfying story, and the book warns that satisfying stories need checking first. Devin's "works while you sleep" pitch drew backlash for overpromising, and GitHub's Copilot agent already turns issues into PRs without you watching. Two tests come before any rebrand.</p>
+      </div>
+      <div class="tests">
+        <div class="test">
+          <p class="q">Do people actually leave it running alone?</p>
+          <p>Telemetry can show when runs start and how long they last.</p>
+          <p class="if">If almost every run is interactive and during the day, the thesis is wrong. Find out before rebranding.</p>
+        </div>
+        <div class="test">
+          <p class="q">Who keeps the laptop awake?</p>
+          <p>Local-first means the machine has to stay on overnight.</p>
+          <p class="if">A cloud night shift, for when the lid is closed, is the obvious paid tier. Local stays free.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="sec">
+      <div class="sec-head">
+        <h2>The next 90 days</h2>
+      </div>
+      <ol class="plan">
+        <li><span class="when">This week</span><h3>Fix the front door</h3><ul><li>Fix the tagline bug and regenerate the 56 notes</li><li>One line on GitHub, npm, README and the site</li><li>Find what caused March</li></ul></li>
+        <li><span class="when">Month 1</span><h3>Cut to the ritual</h3><ul><li>Ship <code>tonight</code> and <code>morning</code></li><li>Everything else moves to <code>labs</code></li><li>First run fixes one of the user's own issues</li></ul></li>
+        <li><span class="when">Month 2</span><h3>Make it visible</h3><ul><li>Public "Shep builds Shep" ledger</li><li>Shareable morning-report card</li><li>Onboard 20 founders from one community at once</li></ul></li>
+        <li><span class="when">Month 3</span><h3>Broadcast</h3><ul><li>Named launch week</li><li>Measure merged PRs per install</li><li>Book the next big moment</li></ul></li>
+      </ol>
+    </div>
+
+    <p class="closing">Shep doesn't need more features. It needs fewer, said the same way everywhere, shown to a lot of people at once.</p>
+
+    <div class="sources">
+      <p>Sources: Derek Thompson, <i>Hit Makers</i> (2017), chapters as cited. npm download API for <code>@shepai/cli</code> (Feb–Oct 28, 2026). GitHub repository data for <code>shep-ai/shep</code>, read Oct 29, 2026. Repo files: <code>CHANGELOG.md</code>, <code>README.md</code>, <code>CLAUDE.md</code>, <code>scripts/release-notes-claude.mjs</code>. The category comparison comes from:</p>
+      <ul>
+        <li><a href="https://www.morphllm.com/parallel-coding-agents">Parallel Coding Agents in 2026: Every Tool Compared (Morph)</a></li>
+        <li><a href="https://www.morphllm.com/conductor-ai-coding">Conductor AI Coding (Morph)</a></li>
+        <li><a href="https://visualstudiomagazine.com/Articles/2025/10/28/GitHub-Introduces-Agent-HQ-to-Orchestrate-Any-Agent-Any-Way-You-Work.aspx">GitHub Introduces Agent HQ (Visual Studio Magazine)</a></li>
+        <li><a href="https://thenewstack.io/github-embraces-the-coding-agent-competition-with-agent-hq/">GitHub embraces the coding agent competition with Agent HQ (The New Stack)</a></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<script>
+(function () {
+  var NS = 'http://www.w3.org/2000/svg';
+  function el(name, attrs, parent) {
+    var n = document.createElementNS(NS, name);
+    for (var k in attrs) n.setAttribute(k, attrs[k]);
+    parent.appendChild(n);
+    return n;
+  }
+  // Bowling-pin clusters: dense groups of dots, linked left to right.
+  var pins = document.getElementById('pins');
+  if (pins) {
+    var groups = [
+      { cx: 120, color: '#f3b45c', op: 1, n: 14 },
+      { cx: 345, color: '#e9e7f2', op: 0.75, n: 12 },
+      { cx: 570, color: '#e9e7f2', op: 0.55, n: 12 },
+      { cx: 790, color: '#6f7697', op: 0.5, n: 10 }
+    ];
+    groups.forEach(function (g, gi) {
+      el('circle', { cx: g.cx, cy: 95, r: 62, fill: 'none', stroke: g.color, 'stroke-opacity': 0.25 * g.op + 0.1, 'stroke-dasharray': gi === 3 ? '3 5' : '0' }, pins);
+      var pts = [];
+      for (var i = 0; i < g.n; i++) {
+        var a = i * 2.399963; var r = 12 * Math.sqrt(i + 0.6);
+        pts.push([g.cx + Math.cos(a) * r, 95 + Math.sin(a) * r]);
+      }
+      pts.forEach(function (p, i) {
+        pts.forEach(function (q, j) {
+          if (j > i && Math.hypot(p[0] - q[0], p[1] - q[1]) < 26) el('line', { x1: p[0], y1: p[1], x2: q[0], y2: q[1], stroke: g.color, 'stroke-opacity': 0.25 * g.op }, pins);
+        });
+      });
+      pts.forEach(function (p) { el('circle', { cx: p[0], cy: p[1], r: 4.2, fill: g.color, 'fill-opacity': g.op }, pins); });
+      if (gi < 3) {
+        var x1 = g.cx + 70, x2 = groups[gi + 1].cx - 70;
+        el('line', { x1: x1, y1: 95, x2: x2 - 6, y2: 95, stroke: gi === 2 ? '#6f7697' : '#f3b45c', 'stroke-width': 1.5, 'stroke-dasharray': gi === 2 ? '3 5' : '0' }, pins);
+        el('path', { d: 'M ' + (x2 - 8) + ' 89 L ' + x2 + ' 95 L ' + (x2 - 8) + ' 101 Z', fill: gi === 2 ? '#6f7697' : '#f3b45c' }, pins);
+      }
+    });
+  }
+  // One-to-one chain that fades.
+  var chain = document.getElementById('chain');
+  if (chain) {
+    for (var i = 0; i < 9; i++) {
+      var x = 14 + i * 50, op = Math.max(0.12, 1 - i * 0.12);
+      if (i > 0) el('line', { x1: x - 40, y1: 55, x2: x - 10, y2: 55, stroke: '#a2a9c6', 'stroke-opacity': op * 0.7 }, chain);
+      el('circle', { cx: x, cy: 55, r: 7, fill: '#a2a9c6', 'fill-opacity': op }, chain);
+    }
+    el('text', { x: 0, y: 88, fill: '#6f7697', 'font-size': 12 }, chain).textContent = 'one share at a time, dying out after a few hops';
+  }
+  // Broadcast burst.
+  var burst = document.getElementById('burst');
+  if (burst) {
+    var cx = 120, cy = 208;
+    for (var k = 0; k < 34; k++) {
+      var ang = -Math.PI * 0.45 + (k / 33) * Math.PI * 0.9;
+      var len = 150 + (k % 3) * 22;
+      var x2 = cx + Math.cos(ang) * len, y2 = cy + Math.sin(ang) * len * 0.4;
+      el('line', { x1: cx, y1: cy, x2: x2, y2: y2, stroke: '#f3b45c', 'stroke-opacity': 0.32 }, burst);
+      el('circle', { cx: x2, cy: y2, r: 3.6, fill: '#f3b45c', 'fill-opacity': 0.85 }, burst);
+      if (k % 7 === 3) {
+        var x3 = x2 + 22, y3 = y2 + 6;
+        el('line', { x1: x2, y1: y2, x2: x3, y2: y3, stroke: '#e9e7f2', 'stroke-opacity': 0.4 }, burst);
+        el('circle', { cx: x3, cy: y3, r: 2.6, fill: '#e9e7f2', 'fill-opacity': 0.8 }, burst);
+      }
+    }
+  }
+})();
+</script>

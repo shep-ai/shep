@@ -2,68 +2,151 @@
 # This is the source of truth. Markdown is auto-generated from this file.
 
 name: shep-2
-summary: Technical analysis for 151-shep-2
+summary: Technical decisions for Shep 2 — Rust core, surfaces, sources and distribution
 
 # Relationships
-relatedFeatures: []
-technologies: []
-relatedLinks: []
+relatedFeatures:
+  - 149-agent-activity-stream
+  - 138-git-checkpoints
+  - 090-ai-code-review
+technologies:
+  - Rust (tokio, rusqlite, serde, clap, thiserror)
+  - Ratatui + tachyonfx
+  - rmcp
+  - jsonrpsee or a hand-rolled JSON-RPC 2.0 over a Unix socket
+  - portable-pty
+  - keyring
+  - SwiftUI
+relatedLinks:
+  - title: herdr-core (Apache-2.0)
+    url: https://github.com/herdrdev/herdr-core
+  - title: Ratatui
+    url: https://ratatui.rs
+  - title: tachyonfx
+    url: https://github.com/ratatui/tachyonfx
+  - title: Official MCP Rust SDK (rmcp)
+    url: https://github.com/modelcontextprotocol/rust-sdk
+  - title: Slack Socket Mode
+    url: https://api.slack.com/apis/socket-mode
 
 # Structured technology decisions
 decisions:
-  - title: { { DECISION_TITLE } }
-    chosen: { { CHOSEN_OPTION } }
+  - title: Core language
+    chosen: Rust
     rejected:
-      - { { OPTION_1 } }
-      - { { OPTION_2 } }
-    rationale: { { RATIONALE } }
+      - TypeScript on Bun with OpenTUI
+      - C++
+    rationale: >
+      Decided by the owner on 2026-11-01 without a comparison spike. herdr's Apache-2.0 Rust code
+      (PTY holder, status protocol, client API) can be reused directly; one native binary with a
+      small, steady footprint suits an all-night daemon; Ratatui + tachyonfx is the most mature
+      terminal UI stack for the planned effects. Cost accepted: Shep 1's TypeScript logic is
+      ported by hand rather than reused.
+  - title: Where the code lives
+    chosen: Self-contained Cargo workspace at shep2/ in this repository
+    rejected:
+      - A new repository now
+      - Inside Shep 1's pnpm workspace
+    rationale: >
+      Keeps stars, issues and history; shares nothing with Shep 1's build so it can move to a
+      `next` branch or its own repository later without changes.
+  - title: Domain model source of truth
+    chosen: Rust types (serde) with the client schema generated from them (schemars → OpenRPC)
+    rejected:
+      - TypeSpec
+    rationale: >
+      TypeSpec-first governs Shep 1's TypeScript domain. In v2 the Rust types are the domain; every
+      branching concept (state, source kind, review action) is a Rust enum, never a raw string,
+      which keeps the same "no magic strings" discipline. The Swift client types are generated from
+      the published OpenRPC schema.
+  - title: Crate layout (Clean Architecture in Rust)
+    chosen: shep-domain → shep-app → shep-infra → shep-cli (binary)
+    rejected:
+      - One crate
+    rationale: >
+      Mirrors Shep 1's dependency rule with the compiler enforcing it: domain has no I/O
+      dependencies; app holds the four core actions and port traits; infra implements the ports
+      (SQLite, git, agents, sources); the binary wires them and holds the surfaces.
+  - title: Storage
+    chosen: SQLite via rusqlite (bundled), three tables (tasks, runs, events)
+    rejected:
+      - sqlx
+      - Plain JSON files
+    rationale: Synchronous, bundled, no runtime; the daemon is the only writer.
+  - title: Client protocol
+    chosen: JSON-RPC 2.0 over a local Unix socket, schema published as OpenRPC
+    rejected:
+      - gRPC
+      - HTTP on localhost
+    rationale: >
+      Same shape as Codex App Server and herdr; no open port; easy to generate Swift types from.
+      A test asserts the schema only grows.
+  - title: Task sources
+    chosen: One `TaskSource` port with poll / acknowledge / report; adapters per tool; polling
+    rejected:
+      - Webhooks through a Shep server
+    rationale: >
+      No server to run or trust. Overnight work makes a few minutes of polling latency invisible.
+      Slack uses Socket Mode (outbound WebSocket) with a per-team app created from a manifest.
+      Tokens live in the OS keychain.
+  - title: Agent processes
+    chosen: portable-pty, with a PTY holder process separate from the daemon (herdr pattern)
+    rejected:
+      - Plain child processes owned by the daemon
+    rationale: Agents keep running across daemon restarts and upgrades; sessions can be attached.
 
 # Open questions (should be resolved by end of research)
-openQuestions:
-  []
-  # - question: "Which library should we use?"
-  #   resolved: true
-  #   answer: "Library X because of Y"
+openQuestions: []
 
 # Markdown content (the full research document)
 content: |
   ## Status
 
-  - **Phase:** Research
-  - **Updated:** 2026-10-30
+  - **Phase:** Research complete
+  - **Updated:** 2026-11-01
 
   ## Technology Decisions
 
-  ### {{DECISION_TITLE}}
+  See the structured `decisions` above. Summary:
 
-  **Options considered:**
-
-  1. {{OPTION_1}}
-  2. {{OPTION_2}}
-  3. {{OPTION_3}}
-
-  **Decision:** {{CHOSEN_OPTION}}
-
-  **Rationale:** {{RATIONALE}}
+  | Decision | Chosen |
+  | -------- | ------ |
+  | Core language | Rust (no comparison spike; owner decision 2026-11-01) |
+  | Location | Cargo workspace `shep2/` in this repo |
+  | Domain source of truth | Rust enums and structs; OpenRPC generated for clients |
+  | Crates | `shep-domain` → `shep-app` → `shep-infra` → `shep-cli` |
+  | Storage | SQLite (rusqlite, bundled) |
+  | Protocol | JSON-RPC 2.0 over a Unix socket, OpenRPC schema |
+  | Sources | `TaskSource` port, polling, Slack Socket Mode, keychain tokens, no server |
+  | Agents | portable-pty with a separate PTY holder |
 
   ## Library Analysis
 
-  | Library     | Version     | Purpose     | Pros     | Cons     |
-  | ----------- | ----------- | ----------- | -------- | -------- |
-  | {{LIBRARY}} | {{VERSION}} | {{PURPOSE}} | {{PROS}} | {{CONS}} |
+  | Library | Purpose | Notes |
+  | ------- | ------- | ----- |
+  | tokio | Async runtime for daemon, sources, sockets | Standard |
+  | clap | The four CLI commands | Derive API |
+  | rusqlite (bundled) | Storage | No system SQLite needed |
+  | serde / serde_json / schemars | Types, JSON-RPC, OpenRPC | |
+  | ratatui + crossterm + tachyonfx | Terminal UI and effects | |
+  | rmcp | MCP server (3 tools) | Official SDK |
+  | portable-pty | Agent sessions | Used by wezterm |
+  | keyring | Tokens in the OS keychain | macOS Keychain, Secret Service on Linux |
+  | thiserror | Typed errors per layer | |
 
   ## Security Considerations
 
-  No security implications identified.
+  - Tokens only in the OS keychain, never in SQLite or logs.
+  - The Unix socket is created with user-only permissions.
+  - Shep only pushes task branches and opens draft PRs; pushes to the default branch are refused
+    in code, not just by convention.
+  - Source adapters write only replies, status changes and links.
 
   ## Performance Implications
 
-  No performance implications identified.
+  Idle daemon target: under 30 MB resident, no busy polling (sources every few minutes, agents
+  event-driven). Measured and reported per the success criteria.
 
   ## Open Questions
 
-  All questions resolved.
-
-  ---
-
-  _Updated by `/shep-kit:research` — proceed with `/shep-kit:plan`_
+  None blocking. The npm package name is tracked in spec.yaml.
