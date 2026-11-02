@@ -3447,3 +3447,12 @@ already known; the spike only delayed the call. **Rules:**
 - Propose a spike only when a specific unknown blocks the choice, name that unknown, and keep it
   to hours, not days.
 - Estimates for work Claude does are not human-pace estimates; don't copy "5 days" into a plan.
+
+## Pin the Rust toolchain, or CI lints with a newer clippy than you did
+
+`shep2/` passed `cargo clippy -D warnings` locally on Rust 1.97 and failed in CI, which
+installed the latest stable (1.99) with a new lint (`assert_is_empty`). **Rules:**
+
+- Every Rust workspace has a `rust-toolchain.toml` with an exact version; CI installs from that
+  file (`rustup toolchain install`), never `@stable`.
+- Bump the pinned version on purpose, in its own commit, and fix the new lints there.
