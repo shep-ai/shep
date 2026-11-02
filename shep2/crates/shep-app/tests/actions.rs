@@ -49,7 +49,7 @@ fn start_now_starts_queued_tasks_up_to_the_parallel_limit_oldest_first() {
     let StartOutcome::Started(none) = s.start(StartWhen::Now).unwrap() else {
         panic!("expected Started")
     };
-    assert!(none.is_empty(), "the limit counts tasks already working");
+    assert_eq!(none, Vec::new(), "the limit counts tasks already working");
 }
 
 #[test]
@@ -80,7 +80,7 @@ fn board_groups_tasks_in_review_order() {
     assert_eq!(ids(&b.ready), [1]);
     assert_eq!(ids(&b.working), [3]);
     assert_eq!(ids(&b.queued), [4]);
-    assert!(b.merged.is_empty());
+    assert_eq!(ids(&b.merged), Vec::<i64>::new());
     assert_eq!(
         b.groups().map(|(state, _)| state).collect::<Vec<_>>(),
         [

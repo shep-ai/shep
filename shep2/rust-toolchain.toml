@@ -1,0 +1,5 @@
+# One Rust version for local builds and CI, so new lints arrive only when we bump it.
+[toolchain]
+channel = "1.99.1"
+components = ["rustfmt", "clippy"]
+profile = "minimal"
