@@ -1,5 +1,24 @@
 # Lessons Learned
 
+## A Unix socket path has a length limit; deep homes must not break the daemon
+
+The first by-hand run of Shep 2's daemon from a scratch folder failed with "path must be shorter
+than SUN_LEN": `$SHEP_HOME/shep2/run/daemon.sock` was 110 bytes, and a socket path may hold about
+103 (macOS) or 107 (Linux). Every test passed, because test temp dirs are short. Rules: compute
+socket paths in one place (`ShepHome::run_dir`), fall back to a short private directory
+(`/tmp/shep2-<stable hash of the home>`, `0700`) when the path would be too long, and run the
+real binary from a deep folder before calling a socket feature done.
+
+## A CLI test runs inside this repository, next to a real agent
+
+Shep 2's `shep add` adopts the repository it is run in, and `shep go` runs the first agent it
+finds on `PATH`. The CLI tests ran with the test process's working directory (inside this repo)
+and the full `PATH` (where the real `claude` lives), so a test daemon adopted this repository and
+could have started a real agent on it; it was only killed before its first tick by luck. Every
+test that runs the binary goes through `tests/support` in `shep-cli`: a working directory that is
+not a git repository, `PATH` = fakes + `/usr/bin:/bin`, its own `SHEP_HOME`, and a `Drop` that
+kills the daemon and holder it started.
+
 ## A new entry point must apply the same defaults as the old ones
 
 A2A and MCP created features by calling `CreateFeatureUseCase` directly, while `shep feat new`

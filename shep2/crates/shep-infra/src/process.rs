@@ -38,3 +38,65 @@ pub fn wait_until(limit: Duration, mut ready: impl FnMut() -> bool) -> bool {
         std::thread::sleep(POLL);
     }
 }
+
+/// What a finished command said.
+pub struct Ran {
+    pub success: bool,
+    pub stdout: String,
+    pub stderr: String,
+}
+
+impl Ran {
+    /// The error output, or the normal output when the command wrote nothing to stderr.
+    pub fn complaint(&self) -> &str {
+        if self.stderr.trim().is_empty() {
+            self.stdout.trim()
+        } else {
+            self.stderr.trim()
+        }
+    }
+}
+
+/// Runs a command to completion, whatever its exit status.
+pub fn run_raw(
+    program: &str,
+    args: &[&str],
+    dir: Option<&Path>,
+    env: &[(&str, &str)],
+) -> Result<Ran, String> {
+    let mut command = Command::new(program);
+    command.args(args).stdin(Stdio::null());
+    if let Some(dir) = dir {
+        command.current_dir(dir);
+    }
+    for (key, value) in env {
+        command.env(key, value);
+    }
+    let out = command
+        .output()
+        .map_err(|e| format!("could not run {program}: {e}"))?;
+    Ok(Ran {
+        success: out.status.success(),
+        stdout: String::from_utf8_lossy(&out.stdout).into_owned(),
+        stderr: String::from_utf8_lossy(&out.stderr).into_owned(),
+    })
+}
+
+/// Runs a command to completion. `Ok` holds its trimmed stdout; `Err` says what failed, with
+/// its stderr, in words fit for a person.
+pub fn run(
+    program: &str,
+    args: &[&str],
+    dir: Option<&Path>,
+    env: &[(&str, &str)],
+) -> Result<String, String> {
+    let ran = run_raw(program, args, dir, env)?;
+    if ran.success {
+        return Ok(ran.stdout.trim().to_owned());
+    }
+    Err(format!(
+        "{program} {} failed: {}",
+        args.join(" "),
+        ran.complaint()
+    ))
+}

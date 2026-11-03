@@ -21,6 +21,20 @@ const STEPS: &[&str] = &[
      );",
     // 2: the task's draft pull request (JSON).
     "ALTER TABLE tasks ADD COLUMN pr TEXT;",
+    // 3: each task's run (where it is in the pipeline, JSON) and what happened (events).
+    "CREATE TABLE IF NOT EXISTS runs (
+       task_id     INTEGER PRIMARY KEY,
+       run         TEXT NOT NULL,
+       updated_at  INTEGER NOT NULL
+     );
+     CREATE TABLE IF NOT EXISTS events (
+       id       INTEGER PRIMARY KEY AUTOINCREMENT,
+       task_id  INTEGER NOT NULL,
+       at       INTEGER NOT NULL,
+       kind     TEXT NOT NULL,
+       detail   TEXT NOT NULL
+     );
+     CREATE INDEX IF NOT EXISTS events_by_task ON events (task_id, id);",
 ];
 
 pub fn run(conn: &mut Connection) -> rusqlite::Result<()> {

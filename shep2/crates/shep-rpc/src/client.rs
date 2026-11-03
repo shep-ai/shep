@@ -49,11 +49,12 @@ impl RemoteShep {
 }
 
 impl ShepApi for RemoteShep {
-    fn add(&self, input: &str) -> Result<Task, AppError> {
+    fn add(&self, input: &str, from_dir: Option<&Path>) -> Result<Task, AppError> {
         self.call(
             Method::Add,
             &AddParams {
                 input: input.to_owned(),
+                from_dir: from_dir.map(|d| d.display().to_string()),
             },
         )
     }

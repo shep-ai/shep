@@ -1,3 +1,5 @@
+use std::path::Path;
+
 use shep_domain::{ReviewAction, Settings, Task, TaskId};
 
 use crate::{AppError, Board, SettingsChange, StartOutcome, StartWhen};
@@ -7,8 +9,9 @@ use crate::{AppError, Board, SettingsChange, StartOutcome, StartWhen};
 /// [`crate::Shep`] answers them in-process; the daemon client answers them over the socket.
 /// A surface holds a `&dyn ShepApi` and never knows which one it has.
 pub trait ShepApi: Send + Sync {
-    /// Queues a task from an issue reference, a link, or a sentence.
-    fn add(&self, input: &str) -> Result<Task, AppError>;
+    /// Queues a task from an issue reference, a link, or a sentence. `from_dir` is where the
+    /// person was when they added it: the first time, Shep starts working in that repository.
+    fn add(&self, input: &str, from_dir: Option<&Path>) -> Result<Task, AppError>;
     /// Starts queued tasks now, or sets when tonight's shift starts.
     fn start(&self, when: StartWhen) -> Result<StartOutcome, AppError>;
     /// Every task, grouped by state in review order.

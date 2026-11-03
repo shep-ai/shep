@@ -2,15 +2,22 @@ use shep_app::testing::Fakes;
 use shep_app::{AppError, SettingsChange, Shep, ShepApi, StartOutcome, StartWhen};
 use shep_domain::{AgentKind, ClockTime, ReviewAction, SourceKind, TaskId, TaskState};
 
+/// A Shep pointed at a repository, with an agent installed (so it can start work).
 fn shep() -> Shep {
-    Shep::new(Fakes::default().ports())
+    let s = Shep::new(Fakes::default().ports());
+    s.update_settings(SettingsChange {
+        repo: Some("/code/app".into()),
+        ..Default::default()
+    })
+    .unwrap();
+    s
 }
 
 #[test]
 fn add_queues_a_task_from_a_reference_or_a_sentence() {
     let s = shep();
-    let a = s.add("#412").unwrap();
-    let b = s.add("Rate-limit /api/search").unwrap();
+    let a = s.add("#412", None).unwrap();
+    let b = s.add("Rate-limit /api/search", None).unwrap();
     assert_eq!(
         (a.state, a.source.kind()),
         (TaskState::Queued, SourceKind::GitHub)
@@ -24,14 +31,14 @@ fn add_queues_a_task_from_a_reference_or_a_sentence() {
 
 #[test]
 fn add_refuses_empty_input() {
-    assert!(matches!(shep().add("  "), Err(AppError::Source(_))));
+    assert!(matches!(shep().add("  ", None), Err(AppError::Source(_))));
 }
 
 #[test]
 fn start_now_starts_queued_tasks_up_to_the_parallel_limit_oldest_first() {
     let s = shep();
     let ids: Vec<TaskId> = (0..5)
-        .map(|i| s.add(&format!("task {i}")).unwrap().id)
+        .map(|i| s.add(&format!("task {i}"), None).unwrap().id)
         .collect();
     let StartOutcome::Started(started) = s.start(StartWhen::Now).unwrap() else {
         panic!("expected Started")
@@ -47,7 +54,7 @@ fn start_now_starts_queued_tasks_up_to_the_parallel_limit_oldest_first() {
 #[test]
 fn start_at_a_time_sets_the_shift_start() {
     let s = shep();
-    s.add("a").unwrap();
+    s.add("a", None).unwrap();
     let at = ClockTime::parse("22:30").unwrap();
     assert_eq!(
         s.start(StartWhen::At(at)).unwrap(),
@@ -61,7 +68,7 @@ fn start_at_a_time_sets_the_shift_start() {
 fn board_groups_tasks_in_review_order() {
     let s = shep();
     for i in 0..4 {
-        s.add(&format!("task {i}")).unwrap();
+        s.add(&format!("task {i}"), None).unwrap();
     }
     s.start(StartWhen::Now).unwrap(); // 1, 2, 3 working; 4 queued
     s.finish(TaskId(1)).unwrap();
@@ -88,8 +95,8 @@ fn board_groups_tasks_in_review_order() {
 #[test]
 fn review_merges_ready_work_and_answers_questions() {
     let s = shep();
-    s.add("a").unwrap();
-    s.add("b").unwrap();
+    s.add("a", None).unwrap();
+    s.add("b", None).unwrap();
     s.start(StartWhen::Now).unwrap();
     s.finish(TaskId(1)).unwrap();
     s.ask(TaskId(2), "Which bucket?").unwrap();
@@ -118,7 +125,7 @@ fn review_reports_unknown_tasks_and_refused_moves() {
         s.review(TaskId(9), ReviewAction::Merge),
         Err(AppError::NotFound(TaskId(9)))
     ));
-    s.add("a").unwrap();
+    s.add("a", None).unwrap();
     assert!(matches!(
         s.review(TaskId(1), ReviewAction::Merge),
         Err(AppError::Transition(_))
@@ -149,7 +156,7 @@ fn settings_change_only_what_is_given() {
 
 #[test]
 fn settings_remember_the_repository() {
-    let s = shep();
+    let s = Shep::new(Fakes::default().ports());
     assert_eq!(s.settings().unwrap().repo, None);
     let after = s
         .update_settings(SettingsChange {

@@ -4,6 +4,7 @@
 
 mod api;
 mod board;
+mod engine;
 mod error;
 pub mod ports;
 mod shep;
@@ -12,6 +13,10 @@ pub mod testing;
 
 pub use api::ShepApi;
 pub use board::Board;
+pub use engine::{
+    Engine, EngineConfig, AGENT_ENV_PROOF_DIR, AGENT_ENV_QUESTION_FILE, AGENT_ENV_REVIEW_FILE,
+    AGENT_ENV_TASK,
+};
 pub use error::AppError;
 pub use ports::{Clock, Ports, SettingsRepository, StoreError, TaskRepository};
 pub use shep::{SettingsChange, Shep, StartOutcome, StartWhen};

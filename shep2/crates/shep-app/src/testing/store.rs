@@ -1,12 +1,10 @@
-//! In-memory fakes for every port. Enabled with the `testing` feature; used by this crate's
-//! tests and by the surfaces' tests.
-
 use std::sync::atomic::{AtomicI64, Ordering};
-use std::sync::{Arc, Mutex};
+use std::sync::Mutex;
 
-use shep_domain::{Settings, Task, TaskId, TaskSourceRef, UnixTime};
+use shep_domain::{Run, Settings, Task, TaskEvent, TaskId, TaskSourceRef, UnixTime};
 
-use crate::{Clock, Ports, SettingsRepository, StoreError, TaskRepository};
+use crate::ports::{EventLog, RunRepository};
+use crate::{Clock, SettingsRepository, StoreError, TaskRepository};
 
 fn poisoned<T>(_: T) -> StoreError {
     StoreError("fake store lock poisoned".into())
@@ -61,6 +59,7 @@ impl SettingsRepository for MemorySettings {
 pub struct ManualClock {
     now: AtomicI64,
     step: i64,
+    offset: AtomicI64,
 }
 
 impl ManualClock {
@@ -68,16 +67,21 @@ impl ManualClock {
         Self {
             now: AtomicI64::new(at),
             step: 0,
+            offset: AtomicI64::new(0),
         }
     }
     pub fn ticking(from: i64) -> Self {
         Self {
             now: AtomicI64::new(from),
             step: 1,
+            offset: AtomicI64::new(0),
         }
     }
     pub fn advance(&self, secs: i64) {
         self.now.fetch_add(secs, Ordering::SeqCst);
+    }
+    pub fn set_utc_offset(&self, secs: i64) {
+        self.offset.store(secs, Ordering::SeqCst);
     }
 }
 
@@ -85,31 +89,41 @@ impl Clock for ManualClock {
     fn now(&self) -> UnixTime {
         UnixTime(self.now.fetch_add(self.step, Ordering::SeqCst))
     }
-}
-
-/// One set of fakes, kept so a test can inspect them after handing [`Ports`] to the code.
-pub struct Fakes {
-    pub tasks: Arc<MemoryTasks>,
-    pub settings: Arc<MemorySettings>,
-    pub clock: Arc<ManualClock>,
-}
-
-impl Default for Fakes {
-    fn default() -> Self {
-        Self {
-            tasks: Arc::default(),
-            settings: Arc::default(),
-            clock: Arc::new(ManualClock::ticking(1000)),
-        }
+    fn utc_offset(&self) -> i64 {
+        self.offset.load(Ordering::SeqCst)
     }
 }
 
-impl Fakes {
-    pub fn ports(&self) -> Ports {
-        Ports {
-            tasks: self.tasks.clone(),
-            settings: self.settings.clone(),
-            clock: self.clock.clone(),
-        }
+#[derive(Default)]
+pub struct MemoryRuns(Mutex<Vec<Run>>);
+
+impl RunRepository for MemoryRuns {
+    fn load_run(&self, task: TaskId) -> Result<Option<Run>, StoreError> {
+        let runs = self.0.lock().map_err(poisoned)?;
+        Ok(runs.iter().find(|r| r.task_id == task).cloned())
+    }
+    fn save_run(&self, run: &Run) -> Result<(), StoreError> {
+        let mut runs = self.0.lock().map_err(poisoned)?;
+        runs.retain(|r| r.task_id != run.task_id);
+        runs.push(run.clone());
+        Ok(())
+    }
+}
+
+#[derive(Default)]
+pub struct MemoryEvents(Mutex<Vec<TaskEvent>>);
+
+impl EventLog for MemoryEvents {
+    fn record(&self, event: &TaskEvent) -> Result<(), StoreError> {
+        self.0.lock().map_err(poisoned)?.push(event.clone());
+        Ok(())
+    }
+    fn events(&self, task: TaskId) -> Result<Vec<TaskEvent>, StoreError> {
+        let events = self.0.lock().map_err(poisoned)?;
+        Ok(events
+            .iter()
+            .filter(|e| e.task_id == task)
+            .cloned()
+            .collect())
     }
 }

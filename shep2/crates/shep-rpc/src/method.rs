@@ -64,6 +64,9 @@ pub struct NoParams {}
 pub struct AddParams {
     /// `#412`, `owner/repo#412`, a link to a ticket or message, or a sentence.
     pub input: String,
+    /// Where the person was when they added it; the first time, Shep works in that repository.
+    #[serde(default)]
+    pub from_dir: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]

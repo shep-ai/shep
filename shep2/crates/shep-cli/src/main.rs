@@ -5,6 +5,7 @@ mod cli;
 mod connect;
 mod daemon;
 mod output;
+mod wiring;
 
 use std::process::ExitCode;
 
@@ -18,6 +19,7 @@ fn main() -> ExitCode {
     let home = ShepHome::from_env();
     let outcome = match cli.command {
         Some(Command::Daemon) => daemon::run(&home).map(|()| String::new()),
+        Some(Command::Holder) => daemon::run_holder(&home).map(|()| String::new()),
         command => run(&home, command),
     };
     match outcome {
@@ -41,7 +43,8 @@ fn run(home: &ShepHome, command: Option<Command>) -> Result<String, AppError> {
         None => Ok(output::board(&connect::any(home)?.board()?)),
         Some(Command::Add { task }) => {
             let api = connect::any(home)?;
-            let task = api.add(&task.join(" "))?;
+            let here = std::env::current_dir().ok();
+            let task = api.add(&task.join(" "), here.as_deref())?;
             Ok(output::queued(&task, &api.settings()?))
         }
         Some(Command::Go { at }) => {
@@ -76,6 +79,8 @@ fn run(home: &ShepHome, command: Option<Command>) -> Result<String, AppError> {
             };
             Ok(output::settings(&settings))
         }
-        Some(Command::Daemon) => Err(AppError::Remote("the daemon runs on its own".into())),
+        Some(Command::Daemon | Command::Holder) => {
+            Err(AppError::Remote("this runs on its own".into()))
+        }
     }
 }

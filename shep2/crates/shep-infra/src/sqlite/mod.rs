@@ -2,6 +2,7 @@
 //! daemon runs, so the file is opened in WAL mode with a busy timeout.
 
 mod migrations;
+mod runs;
 mod settings;
 mod tasks;
 

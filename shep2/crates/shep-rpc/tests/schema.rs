@@ -35,8 +35,8 @@ fn the_schema_only_grows() {
     if let Err(removed) = openrpc::check_growth(&published, &current) {
         panic!("the protocol lost: {removed:#?}");
     }
-    assert_eq!(
-        published, current,
+    assert!(
+        published == current,
         "schema/openrpc.json is out of date; run {UPDATE_ENV}=1 cargo test -p shep-rpc --test schema"
     );
 }

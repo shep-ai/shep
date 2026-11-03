@@ -17,6 +17,11 @@ fn daemon() -> Daemon {
     let dir = tempfile::tempdir().unwrap();
     let socket = dir.path().join("run").join("shep.sock");
     let shep = Arc::new(Shep::new(Fakes::default().ports()));
+    shep.update_settings(SettingsChange {
+        repo: Some("/code/app".into()),
+        ..Default::default()
+    })
+    .unwrap();
     let server = RpcServer::new(shep.clone() as Arc<dyn ShepApi>);
     let listener = shep_jsonrpc::bind_private(&socket).unwrap();
     std::thread::spawn(move || server.serve(&listener));
@@ -32,9 +37,11 @@ fn each_action_round_trips_over_the_socket() {
     let d = daemon();
     let remote = RemoteShep::connect(&d.socket).unwrap();
 
-    let added = remote.add("#412").unwrap();
+    let added = remote
+        .add("#412", Some(std::path::Path::new("/not/a/repo")))
+        .unwrap();
     assert_eq!((added.id, added.state), (TaskId(1), TaskState::Queued));
-    remote.add("Rate-limit /api/search").unwrap();
+    remote.add("Rate-limit /api/search", None).unwrap();
 
     let at = ClockTime::parse("22:30").unwrap();
     assert_eq!(
@@ -74,7 +81,7 @@ fn errors_reach_the_caller_with_the_daemons_words() {
     let remote = RemoteShep::connect(&d.socket).unwrap();
     let err = remote.review(TaskId(9), ReviewAction::Merge).unwrap_err();
     assert_eq!(err.to_string(), "no task 9");
-    let err = remote.add("   ").unwrap_err();
+    let err = remote.add("   ", None).unwrap_err();
     assert_eq!(err.to_string(), "a task needs a reference or a sentence");
 }
 
@@ -85,11 +92,11 @@ fn a_subscriber_gets_the_board_now_and_after_every_change() {
     assert_eq!(changes.current().queued.len(), 0);
 
     let remote = RemoteShep::connect(&d.socket).unwrap();
-    remote.add("a").unwrap();
+    remote.add("a", None).unwrap();
     assert_eq!(changes.wait().unwrap().queued.len(), 1);
 
     // A change made outside any request (the engine) arrives through the watcher.
-    d.shep.add("b").unwrap();
+    d.shep.add("b", None).unwrap();
     let board = changes.wait_within(Duration::from_secs(5)).unwrap();
     assert_eq!(board.map(|b| b.queued.len()), Some(2));
 }

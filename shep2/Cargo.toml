@@ -30,6 +30,10 @@ rusqlite = { version = "0.32", features = ["bundled"] }
 tempfile = "3"
 assert_cmd = "2"
 predicates = "3"
+portable-pty = "0.9"
+vt100 = "0.16"
+base64 = "0.22"
+chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
 
 [workspace.lints.rust]
 unsafe_code = "forbid"

@@ -1,6 +1,6 @@
 [package]
 name = "shep-infra"
-description = "Shep 2 infrastructure: SQLite storage and, later, git, agents and task sources."
+description = "Shep 2 infrastructure: SQLite, git worktrees, gh, the PTY holder, agent CLIs, keep-awake."
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -8,12 +8,19 @@ license.workspace = true
 [dependencies]
 shep-domain.workspace = true
 shep-app.workspace = true
+shep-jsonrpc.workspace = true
 rusqlite.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+portable-pty.workspace = true
+vt100.workspace = true
+base64.workspace = true
+chrono.workspace = true
 
 [dev-dependencies]
 tempfile.workspace = true
+shep-jsonrpc.workspace = true
+serde_json.workspace = true
 rusqlite.workspace = true
 
 [lints]

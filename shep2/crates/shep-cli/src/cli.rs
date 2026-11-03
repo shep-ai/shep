@@ -46,4 +46,7 @@ pub enum Command {
     /// Runs the background daemon (started by `shep go`; not for direct use)
     #[command(name = "__daemon", hide = true)]
     Daemon,
+    /// Runs the PTY holder that keeps agents alive (started by the daemon)
+    #[command(name = "__holder", hide = true)]
+    Holder,
 }

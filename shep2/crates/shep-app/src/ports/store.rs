@@ -1,9 +1,4 @@
-//! What the application needs from the outside world. Implemented in `shep-infra`; in-memory
-//! fakes live in [`crate::testing`].
-
-use std::sync::Arc;
-
-use shep_domain::{Settings, Task, TaskId, TaskSourceRef, UnixTime};
+use shep_domain::{Run, Settings, Task, TaskEvent, TaskId, TaskSourceRef, UnixTime};
 
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 #[error("storage failed: {0}")]
@@ -23,15 +18,14 @@ pub trait SettingsRepository: Send + Sync {
     fn save_settings(&self, settings: &Settings) -> Result<(), StoreError>;
 }
 
-pub trait Clock: Send + Sync {
-    fn now(&self) -> UnixTime;
+/// Where each task's run stands. One run per task.
+pub trait RunRepository: Send + Sync {
+    fn load_run(&self, task: TaskId) -> Result<Option<Run>, StoreError>;
+    fn save_run(&self, run: &Run) -> Result<(), StoreError>;
 }
 
-/// Everything [`crate::Shep`] reaches the outside world through. One store may serve several
-/// ports (the daemon holds a single database connection).
-#[derive(Clone)]
-pub struct Ports {
-    pub tasks: Arc<dyn TaskRepository>,
-    pub settings: Arc<dyn SettingsRepository>,
-    pub clock: Arc<dyn Clock>,
+/// What happened, in order.
+pub trait EventLog: Send + Sync {
+    fn record(&self, event: &TaskEvent) -> Result<(), StoreError>;
+    fn events(&self, task: TaskId) -> Result<Vec<TaskEvent>, StoreError>;
 }

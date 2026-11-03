@@ -142,7 +142,19 @@ tasks:
       providers (Claude Code, Codex, Gemini) resolved through one trait, never hardcoded;
       status from OSC 7501 with screen-reading manifests as fallback; attach; resume hooks;
       park on usage limits and resume; keep the machine awake during a shift.
-    state: Todo
+      Built: the engine in shep-app (one saved step per task per tick: Prepare, Agent, Publish,
+      WatchCi, Waiting, Done) behind ports; GitCli (worktree per task from origin/<default>,
+      the person's checkout untouched); the PTY holder (`shep __holder`, portable-pty, vt100
+      screen, OSC 7501 parsed from the Program Status Protocol spec, attach with input);
+      Claude Code / Codex / Gemini providers with unattended and resume flags and screen
+      manifests (usage limits with reset times, prompts, activity); parking until the reset;
+      caffeinate / systemd-inhibit tied to the daemon's pid; the shift opening at its local time
+      and refilling free slots. Verified with a fake agent and fake gh, end to end through the
+      real binary, daemon, holder and git, including a daemon restart. Not yet run against a
+      real agent CLI (needs the owner's API key). Not built: blocking the agent's own git push
+      (Shep's pushes are guarded; the prompt tells the agent not to push), an `explain` command,
+      and attach in a surface (the terminal UI, task-9).
+    state: Done
     dependencies:
       - task-6
     acceptanceCriteria:
@@ -162,7 +174,17 @@ tasks:
       Push the task branch and open a draft PR (never the default branch); watch CI and let the
       agent fix failures up to three times, then Needs you; screenshot and test proof; a child
       reviewer agent gives a second opinion; review actions merge or send back.
-    state: Todo
+      Built: GhForge (issue text and title, `gh pr create --draft`, checks read even when gh
+      exits non-zero, failed-run logs, body updates, ready + merge with a fallback merge
+      method); push guard in the domain (`check_push`) enforced by the engine and by GitCli;
+      up to three CI fixes in the coder's own conversation, then Needs you naming the checks;
+      proof from the agent's proof folder (test output in the PR, screenshots pushed to their
+      own `shep/proof/<id>` branch and embedded); the reviewer as a child agent in its own folder
+      and conversation; Merge merges the PR first and leaves the task Ready if GitHub refuses.
+      Verified with a fake gh against a real bare origin; not yet against GitHub (needs the
+      owner's throwaway repository). Screenshots are taken by the agent when the prompt asks;
+      Shep does not start a dev server itself yet.
+    state: Done
     dependencies:
       - task-7
     acceptanceCriteria:
@@ -294,7 +316,8 @@ content: |
   ## Summary
 
   Shep 2 in Rust — 14 tasks across 9 phases, from the domain outward to the Mac app and
-  distribution. Phases 1–3 are done; the next is agent runs and pull requests (task-7, task-8).
+  distribution. Phases 1–4 are done (agent runs and PRs verified with fakes); next is the
+  first real run on the owner's throwaway repository, then the terminal UI (task-9).
 
   ## Acceptance Checklist
 

@@ -3,7 +3,11 @@
     "schemas": {
       "AgentKind": {
         "description": "The coding agents Shep can run. Which one runs is a setting, never hardcoded.",
-        "enum": ["ClaudeCode", "Codex", "Gemini"],
+        "enum": [
+          "ClaudeCode",
+          "Codex",
+          "Gemini"
+        ],
         "type": "string"
       },
       "Board": {
@@ -40,7 +44,13 @@
             "type": "array"
           }
         },
-        "required": ["needs_you", "ready", "working", "queued", "merged"],
+        "required": [
+          "needs_you",
+          "ready",
+          "working",
+          "queued",
+          "merged"
+        ],
         "type": "object"
       },
       "ClockTime": {
@@ -59,7 +69,10 @@
             "type": "integer"
           }
         },
-        "required": ["hour", "minute"],
+        "required": [
+          "hour",
+          "minute"
+        ],
         "type": "object"
       },
       "PullRequest": {
@@ -74,14 +87,19 @@
             "type": "string"
           }
         },
-        "required": ["number", "url"],
+        "required": [
+          "number",
+          "url"
+        ],
         "type": "object"
       },
       "ReviewAction": {
         "description": "The decisions a person makes on a task.",
         "oneOf": [
           {
-            "enum": ["Merge"],
+            "enum": [
+              "Merge"
+            ],
             "type": "string"
           },
           {
@@ -93,11 +111,15 @@
                     "type": "string"
                   }
                 },
-                "required": ["note"],
+                "required": [
+                  "note"
+                ],
                 "type": "object"
               }
             },
-            "required": ["SendBack"],
+            "required": [
+              "SendBack"
+            ],
             "type": "object"
           },
           {
@@ -109,11 +131,15 @@
                     "type": "string"
                   }
                 },
-                "required": ["text"],
+                "required": [
+                  "text"
+                ],
                 "type": "object"
               }
             },
-            "required": ["Answer"],
+            "required": [
+              "Answer"
+            ],
             "type": "object"
           }
         ]
@@ -142,13 +168,19 @@
           "repo": {
             "default": null,
             "description": "The local checkout Shep works in. Every task gets its own worktree from its `origin`;\nthe checkout itself is never touched. `None` until the first `shep add` inside a\nrepository or `shep config --repo`.",
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "shift_start": {
             "$ref": "#/components/schemas/ClockTime"
           }
         },
-        "required": ["shift_start", "parallelism"],
+        "required": [
+          "shift_start",
+          "parallelism"
+        ],
         "type": "object"
       },
       "SettingsChange": {
@@ -170,12 +202,18 @@
             "format": "uint8",
             "maximum": 255,
             "minimum": 0,
-            "type": ["integer", "null"]
+            "type": [
+              "integer",
+              "null"
+            ]
           },
           "repo": {
             "default": null,
             "description": "The local checkout Shep works in.",
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "shift_start": {
             "anyOf": [
@@ -204,7 +242,9 @@
                 "type": "array"
               }
             },
-            "required": ["Started"],
+            "required": [
+              "Started"
+            ],
             "type": "object"
           },
           {
@@ -222,11 +262,16 @@
                     "type": "integer"
                   }
                 },
-                "required": ["at", "queued"],
+                "required": [
+                  "at",
+                  "queued"
+                ],
                 "type": "object"
               }
             },
-            "required": ["Scheduled"],
+            "required": [
+              "Scheduled"
+            ],
             "type": "object"
           }
         ]
@@ -235,7 +280,9 @@
         "description": "When `start` should begin queued work.",
         "oneOf": [
           {
-            "enum": ["Now"],
+            "enum": [
+              "Now"
+            ],
             "type": "string"
           },
           {
@@ -245,7 +292,9 @@
                 "$ref": "#/components/schemas/ClockTime"
               }
             },
-            "required": ["At"],
+            "required": [
+              "At"
+            ],
             "type": "object"
           }
         ]
@@ -261,7 +310,10 @@
           },
           "note": {
             "description": "The latest instruction from the person: an answer or a send-back note.",
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "pr": {
             "anyOf": [
@@ -277,7 +329,10 @@
           },
           "question": {
             "description": "The question the agent is waiting on while the task needs you.",
-            "type": ["string", "null"]
+            "type": [
+              "string",
+              "null"
+            ]
           },
           "source": {
             "$ref": "#/components/schemas/TaskSourceRef"
@@ -292,7 +347,14 @@
             "$ref": "#/components/schemas/UnixTime"
           }
         },
-        "required": ["id", "title", "source", "state", "created_at", "updated_at"],
+        "required": [
+          "id",
+          "title",
+          "source",
+          "state",
+          "created_at",
+          "updated_at"
+        ],
         "type": "object"
       },
       "TaskId": {
@@ -314,14 +376,21 @@
                     "type": "integer"
                   },
                   "repo": {
-                    "type": ["string", "null"]
+                    "type": [
+                      "string",
+                      "null"
+                    ]
                   }
                 },
-                "required": ["number"],
+                "required": [
+                  "number"
+                ],
                 "type": "object"
               }
             },
-            "required": ["GitHubIssue"],
+            "required": [
+              "GitHubIssue"
+            ],
             "type": "object"
           },
           {
@@ -333,11 +402,15 @@
                     "type": "string"
                   }
                 },
-                "required": ["key"],
+                "required": [
+                  "key"
+                ],
                 "type": "object"
               }
             },
-            "required": ["Linear"],
+            "required": [
+              "Linear"
+            ],
             "type": "object"
           },
           {
@@ -349,11 +422,15 @@
                     "type": "string"
                   }
                 },
-                "required": ["key"],
+                "required": [
+                  "key"
+                ],
                 "type": "object"
               }
             },
-            "required": ["Jira"],
+            "required": [
+              "Jira"
+            ],
             "type": "object"
           },
           {
@@ -365,11 +442,15 @@
                     "type": "string"
                   }
                 },
-                "required": ["url"],
+                "required": [
+                  "url"
+                ],
                 "type": "object"
               }
             },
-            "required": ["Notion"],
+            "required": [
+              "Notion"
+            ],
             "type": "object"
           },
           {
@@ -381,11 +462,15 @@
                     "type": "string"
                   }
                 },
-                "required": ["url"],
+                "required": [
+                  "url"
+                ],
                 "type": "object"
               }
             },
-            "required": ["Monday"],
+            "required": [
+              "Monday"
+            ],
             "type": "object"
           },
           {
@@ -397,11 +482,15 @@
                     "type": "string"
                   }
                 },
-                "required": ["url"],
+                "required": [
+                  "url"
+                ],
                 "type": "object"
               }
             },
-            "required": ["Slack"],
+            "required": [
+              "Slack"
+            ],
             "type": "object"
           },
           {
@@ -413,18 +502,28 @@
                     "type": "string"
                   }
                 },
-                "required": ["text"],
+                "required": [
+                  "text"
+                ],
                 "type": "object"
               }
             },
-            "required": ["Sentence"],
+            "required": [
+              "Sentence"
+            ],
             "type": "object"
           }
         ]
       },
       "TaskState": {
         "description": "The five states every task moves through, on every surface.",
-        "enum": ["Queued", "Working", "NeedsYou", "Ready", "Merged"],
+        "enum": [
+          "Queued",
+          "Working",
+          "NeedsYou",
+          "Ready",
+          "Merged"
+        ],
         "type": "string"
       },
       "UnixTime": {
@@ -443,6 +542,18 @@
       "name": "add",
       "paramStructure": "by-name",
       "params": [
+        {
+          "name": "from_dir",
+          "required": false,
+          "schema": {
+            "default": null,
+            "description": "Where the person was when they added it; the first time, Shep works in that repository.",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
         {
           "name": "input",
           "required": true,

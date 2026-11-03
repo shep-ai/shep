@@ -1,4 +1,5 @@
 use std::os::unix::net::UnixListener;
+use std::path::Path;
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
@@ -74,7 +75,10 @@ impl RpcServer {
     fn dispatch(&self, method: Method, params: Value, peer: &Peer) -> Result<Value, RpcError> {
         let api = self.api.as_ref();
         match method {
-            Method::Add => reply(api.add(&parse::<AddParams>(params)?.input)),
+            Method::Add => {
+                let p: AddParams = parse(params)?;
+                reply(api.add(&p.input, p.from_dir.as_deref().map(Path::new)))
+            }
             Method::Start => reply(api.start(parse::<StartParams>(params)?.when)),
             Method::Board => reply(api.board()),
             Method::Review => {

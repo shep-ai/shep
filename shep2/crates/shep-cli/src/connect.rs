@@ -3,13 +3,14 @@
 use std::sync::Arc;
 use std::time::Duration;
 
-use shep_app::{AppError, Ports, Shep, ShepApi};
-use shep_infra::{spawn_detached, wait_until, ShepHome, SqliteStore, SystemClock};
+use shep_app::{AppError, Shep, ShepApi};
+use shep_infra::{wait_until, ShepHome, SqliteStore};
 use shep_rpc::RemoteShep;
+
+use crate::wiring::{self, DAEMON_COMMAND};
 
 /// The daemon gets this long to open its socket after `shep go` starts it.
 const DAEMON_START_LIMIT: Duration = Duration::from_secs(10);
-pub const DAEMON_COMMAND: &str = "__daemon";
 
 /// The daemon if it answers; otherwise Shep in this process, on the same database.
 pub fn any(home: &ShepHome) -> Result<Box<dyn ShepApi>, AppError> {
@@ -31,9 +32,7 @@ pub fn daemon(home: &ShepHome) -> Result<Box<dyn ShepApi>, AppError> {
             home.daemon_log().display()
         ))
     };
-    let exe = std::env::current_exe().map_err(|e| failed(e.to_string()))?;
-    spawn_detached(&exe, &[DAEMON_COMMAND], &home.daemon_log())
-        .map_err(|e| failed(e.to_string()))?;
+    wiring::launch(home, DAEMON_COMMAND, &home.daemon_log()).map_err(|e| failed(e.to_string()))?;
     let mut remote = None;
     wait_until(DAEMON_START_LIMIT, || {
         remote = RemoteShep::connect(&socket).ok();
@@ -47,9 +46,5 @@ pub fn daemon(home: &ShepHome) -> Result<Box<dyn ShepApi>, AppError> {
 /// Shep on the database, in this process.
 pub fn local(home: &ShepHome) -> Result<Shep, AppError> {
     let store = Arc::new(SqliteStore::open(&home.database())?);
-    Ok(Shep::new(Ports {
-        tasks: store.clone(),
-        settings: store,
-        clock: Arc::new(SystemClock),
-    }))
+    Ok(Shep::new(wiring::ports(home, &store)))
 }

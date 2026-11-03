@@ -14,7 +14,7 @@ technologies:
   - Ratatui + tachyonfx
   - rmcp
   - hand-rolled JSON-RPC 2.0 over a Unix socket (shep-jsonrpc)
-  - portable-pty
+  - portable-pty, vt100
   - keyring
   - SwiftUI
 relatedLinks:
@@ -121,6 +121,42 @@ decisions:
     rejected:
       - Sharing Shep 1's daemon.json, daemon.log and logs/
     rationale: Shep 1 and Shep 2 can be installed side by side without touching each other's files.
+
+  - title: How the engine drives a task
+    chosen: >
+      One saved step per task (Prepare, Agent, Publish, WatchCi, Waiting, Done), advanced on a
+      timer; agents run in the PTY holder and are polled
+    rejected:
+      - A long-lived thread per task
+    rationale: >
+      Decided while building task-7. Saving the step after every move is what lets a restarted
+      daemon carry on, and polling keeps every decision in plain, testable code in shep-app.
+  - title: Agent conversations
+    chosen: >
+      A stable UUID per task and role, derived from the task; Claude Code gets `--session-id`
+      then `--resume`; Codex resumes with `exec resume --last` (scoped to the worktree); Gemini
+      with `--resume latest`. The reviewer runs in its own folder so it never becomes the
+      worktree's latest conversation.
+    rejected:
+      - Parsing session ids out of agent output
+    rationale: >
+      Fixes, answers and send-backs continue the same conversation, as the design asks, without
+      depending on each CLI's output format. Codex and Gemini resume behaviour is taken from
+      their sources (2026-11) and is not yet verified with a real run.
+  - title: Status protocol
+    chosen: >
+      OSC 7501 per the Program Status Protocol spec (rev 0.4), parsed by Shep's own code; screen
+      manifests (patterns after herdr's Apache-2.0 manifests) only when an agent reports nothing
+    rejected:
+      - Copying a parser
+    rationale: >
+      The reference parser herdr-core uses comes from Ghostty (MIT); writing it from the spec
+      avoids carrying another licence and keeps Shep compatible with herdr.
+  - title: Screenshots in the pull request
+    chosen: Committed alone on a `shep/proof/<task>` branch and embedded by blob URL
+    rejected:
+      - Committing them on the task branch (Shep 1's evidence folder)
+    rationale: Proof never enters the diff a person merges.
 
 # Open questions (should be resolved by end of research)
 openQuestions: []
