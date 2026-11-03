@@ -191,7 +191,11 @@ fn config_sets_the_repository() {
         .arg(repo.path())
         .assert()
         .success()
-        .stdout(contains(format!("repo  {}", repo.path().display())));
+        // Stored resolved: on macOS the temp dir is under /var, a link to /private/var.
+        .stdout(contains(format!(
+            "repo  {}",
+            repo.path().canonicalize().unwrap().display()
+        )));
     home.shep()
         .args(["config", "--repo", "/no/such/dir"])
         .assert()

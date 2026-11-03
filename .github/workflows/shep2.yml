@@ -49,4 +49,4 @@ jobs:
       - name: Install Claude Code
         run: npm install -g @anthropic-ai/claude-code@2.1.317
       - name: Test (including the tests that run the real Claude Code CLI)
-        run: cargo test --workspace --locked -- --include-ignored
+        run: cargo test --workspace --locked --no-fail-fast -- --include-ignored
