@@ -54,8 +54,9 @@ pub fn started(outcome: &StartOutcome, board_after: &Board, settings: &Settings)
 
 pub fn settings(s: &Settings) -> String {
     let agent = s.agent.map_or("not chosen", |a| a.cli_name());
+    let repo = s.repo.as_deref().unwrap_or("not chosen");
     format!(
-        "agent  {agent}\nshift  {}\nparallel  {}\n",
+        "agent  {agent}\nshift  {}\nparallel  {}\nrepo  {repo}\n",
         s.shift_start, s.parallelism
     )
 }

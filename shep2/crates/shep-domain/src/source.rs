@@ -1,9 +1,10 @@
 use std::fmt;
 
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 /// Where a task came from. Shep answers in the same place.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, JsonSchema)]
 pub enum SourceKind {
     GitHub,
     Linear,
@@ -16,7 +17,7 @@ pub enum SourceKind {
 }
 
 /// A reference to the task in its source, or the sentence the user typed.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 pub enum TaskSourceRef {
     /// `repo` is `owner/name`; `None` means the repository Shep is pointed at.
     GitHubIssue {

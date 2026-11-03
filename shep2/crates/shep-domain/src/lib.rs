@@ -8,5 +8,5 @@ mod task_state;
 
 pub use settings::{AgentKind, ClockTime, Settings, SettingsError};
 pub use source::{SourceKind, SourceRefError, TaskSourceRef};
-pub use task::{ReviewAction, Task, TaskId, UnixTime};
+pub use task::{PullRequest, ReviewAction, Task, TaskId, UnixTime};
 pub use task_state::{TaskState, TransitionError};

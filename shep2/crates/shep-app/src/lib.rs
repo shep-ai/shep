@@ -1,13 +1,17 @@
 //! Shep 2 application layer. Every surface (CLI, terminal UI, MCP, Mac app) calls the same four
-//! core actions on [`Shep`]: `add`, `start`, `board` and `review`. Storage and time come in
-//! through the port traits in [`ports`].
+//! core actions through [`ShepApi`]: `add`, `start`, `board` and `review`. [`Shep`] answers them
+//! in-process; storage and time come in through the port traits in [`ports`].
 
+mod api;
 mod board;
 mod error;
 pub mod ports;
 mod shep;
+#[cfg(feature = "testing")]
+pub mod testing;
 
+pub use api::ShepApi;
 pub use board::Board;
 pub use error::AppError;
-pub use ports::{Clock, SettingsRepository, StoreError, TaskRepository};
+pub use ports::{Clock, Ports, SettingsRepository, StoreError, TaskRepository};
 pub use shep::{SettingsChange, Shep, StartOutcome, StartWhen};

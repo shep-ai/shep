@@ -39,5 +39,11 @@ pub enum Command {
         /// How many tasks run at once (1 to 12)
         #[arg(long, value_name = "N")]
         parallel: Option<u8>,
+        /// The local checkout Shep works in; each task gets its own worktree from its origin
+        #[arg(long, value_name = "PATH")]
+        repo: Option<std::path::PathBuf>,
     },
+    /// Runs the background daemon (started by `shep go`; not for direct use)
+    #[command(name = "__daemon", hide = true)]
+    Daemon,
 }

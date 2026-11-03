@@ -1,7 +1,7 @@
 ## Summary
 
 Shep 2 in Rust — 14 tasks across 9 phases, from the domain outward to the Mac app and
-distribution. Phases 1–2 are done; the next is the daemon and client protocol.
+distribution. Phases 1–3 are done; the next is agent runs and pull requests (task-7, task-8).
 
 ## Acceptance Checklist
 

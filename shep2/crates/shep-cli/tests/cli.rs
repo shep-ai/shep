@@ -12,6 +12,30 @@ impl Home {
         c.env("SHEP_HOME", self.0.path()).env("NO_COLOR", "1");
         c
     }
+    fn file(&self, name: &str) -> std::path::PathBuf {
+        self.0.path().join("shep2").join(name)
+    }
+    fn daemon_pid(&self) -> Option<String> {
+        std::fs::read_to_string(self.file("daemon.pid"))
+            .ok()
+            .map(|p| p.trim().to_owned())
+    }
+}
+
+/// Stops the daemon a test started, so test runs leave no processes behind.
+impl Drop for Home {
+    fn drop(&mut self) {
+        if let Some(pid) = self.daemon_pid() {
+            let _ = std::process::Command::new("kill").arg(&pid).status();
+        }
+    }
+}
+
+fn alive(pid: &str) -> bool {
+    std::process::Command::new("kill")
+        .args(["-0", pid])
+        .status()
+        .is_ok_and(|s| s.success())
 }
 
 #[test]
@@ -158,4 +182,51 @@ fn state_lives_under_shep_home() {
         .assert()
         .success()
         .stdout(contains("Nothing yet"));
+}
+
+#[test]
+fn go_starts_the_daemon_and_later_commands_go_through_it() {
+    let home = Home::new();
+    home.shep().args(["add", "a"]).assert().success();
+    assert_eq!(
+        home.daemon_pid(),
+        None,
+        "add alone does not start the daemon"
+    );
+
+    home.shep().arg("go").assert().success();
+    let pid = home.daemon_pid().expect("go starts the daemon");
+    assert!(alive(&pid));
+    assert!(home.file("run/daemon.sock").exists());
+
+    // The daemon holds the database open. Unlink it: a CLI that opened the file itself would
+    // create an empty one and lose the board; a CLI talking to the daemon sees no difference.
+    std::fs::remove_file(home.0.path().join("shep2.db")).unwrap();
+    home.shep().args(["add", "b"]).assert().success();
+    assert!(!home.0.path().join("shep2.db").exists());
+    home.shep()
+        .assert()
+        .success()
+        .stdout(contains("Working (1)"))
+        .stdout(contains("Queued (1)"));
+
+    home.shep().arg("go").assert().success();
+    assert_eq!(home.daemon_pid(), Some(pid), "one daemon per home");
+}
+
+#[test]
+fn config_sets_the_repository() {
+    let home = Home::new();
+    let repo = tempfile::tempdir().unwrap();
+    home.shep()
+        .args(["config", "--repo"])
+        .arg(repo.path())
+        .assert()
+        .success()
+        .stdout(contains(format!("repo  {}", repo.path().display())));
+    home.shep()
+        .args(["config", "--repo", "/no/such/dir"])
+        .assert()
+        .failure()
+        .stderr(contains("/no/such/dir"));
 }

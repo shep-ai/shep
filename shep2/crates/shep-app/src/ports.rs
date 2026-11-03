@@ -1,4 +1,7 @@
-//! What the application needs from the outside world. Implemented in `shep-infra`.
+//! What the application needs from the outside world. Implemented in `shep-infra`; in-memory
+//! fakes live in [`crate::testing`].
+
+use std::sync::Arc;
 
 use shep_domain::{Settings, Task, TaskId, TaskSourceRef, UnixTime};
 
@@ -6,7 +9,7 @@ use shep_domain::{Settings, Task, TaskId, TaskSourceRef, UnixTime};
 #[error("storage failed: {0}")]
 pub struct StoreError(pub String);
 
-pub trait TaskRepository {
+pub trait TaskRepository: Send + Sync {
     /// Stores a new queued task and returns it with its id.
     fn create(&self, source: TaskSourceRef, now: UnixTime) -> Result<Task, StoreError>;
     fn get(&self, id: TaskId) -> Result<Option<Task>, StoreError>;
@@ -14,37 +17,21 @@ pub trait TaskRepository {
     fn list(&self) -> Result<Vec<Task>, StoreError>;
 }
 
-pub trait SettingsRepository {
+pub trait SettingsRepository: Send + Sync {
     /// Returns the defaults when nothing has been saved yet.
     fn load_settings(&self) -> Result<Settings, StoreError>;
     fn save_settings(&self, settings: &Settings) -> Result<(), StoreError>;
 }
 
-pub trait Clock {
+pub trait Clock: Send + Sync {
     fn now(&self) -> UnixTime;
 }
 
-/// One shared store can serve both ports (the daemon holds a single database connection).
-impl<R: TaskRepository + ?Sized> TaskRepository for std::sync::Arc<R> {
-    fn create(&self, source: TaskSourceRef, now: UnixTime) -> Result<Task, StoreError> {
-        (**self).create(source, now)
-    }
-    fn get(&self, id: TaskId) -> Result<Option<Task>, StoreError> {
-        (**self).get(id)
-    }
-    fn save(&self, task: &Task) -> Result<(), StoreError> {
-        (**self).save(task)
-    }
-    fn list(&self) -> Result<Vec<Task>, StoreError> {
-        (**self).list()
-    }
-}
-
-impl<R: SettingsRepository + ?Sized> SettingsRepository for std::sync::Arc<R> {
-    fn load_settings(&self) -> Result<Settings, StoreError> {
-        (**self).load_settings()
-    }
-    fn save_settings(&self, settings: &Settings) -> Result<(), StoreError> {
-        (**self).save_settings(settings)
-    }
+/// Everything [`crate::Shep`] reaches the outside world through. One store may serve several
+/// ports (the daemon holds a single database connection).
+#[derive(Clone)]
+pub struct Ports {
+    pub tasks: Arc<dyn TaskRepository>,
+    pub settings: Arc<dyn SettingsRepository>,
+    pub clock: Arc<dyn Clock>,
 }

@@ -1,17 +1,22 @@
+use std::sync::{Mutex, MutexGuard};
+
+use schemars::JsonSchema;
+use serde::{Deserialize, Serialize};
 use shep_domain::{
     AgentKind, ClockTime, ReviewAction, Settings, Task, TaskId, TaskSourceRef, TaskState,
+    TransitionError, UnixTime,
 };
 
-use crate::{AppError, Board, Clock, SettingsRepository, TaskRepository};
+use crate::{AppError, Board, Ports, ShepApi};
 
 /// When `start` should begin queued work.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 pub enum StartWhen {
     Now,
     At(ClockTime),
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 pub enum StartOutcome {
     /// Tasks that moved to Working now (empty when the parallel limit is already reached).
     Started(Vec<Task>),
@@ -20,74 +25,40 @@ pub enum StartOutcome {
 }
 
 /// A partial settings update; `None` keeps the current value.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 pub struct SettingsChange {
+    #[serde(default)]
     pub agent: Option<AgentKind>,
+    #[serde(default)]
     pub shift_start: Option<ClockTime>,
+    #[serde(default)]
     pub parallelism: Option<u8>,
+    /// The local checkout Shep works in.
+    #[serde(default)]
+    pub repo: Option<String>,
+}
+
+impl SettingsChange {
+    pub fn is_empty(&self) -> bool {
+        *self == Self::default()
+    }
 }
 
 /// The four core actions, plus the events the engine reports back (`finish`, `ask`).
-pub struct Shep<T, S, C> {
-    tasks: T,
-    settings: S,
-    clock: C,
+///
+/// Every change to a task is read, changed and saved under one lock, so the daemon's request
+/// threads and its engine never overwrite each other's work.
+pub struct Shep {
+    ports: Ports,
+    writes: Mutex<()>,
 }
 
-impl<T: TaskRepository, S: SettingsRepository, C: Clock> Shep<T, S, C> {
-    pub fn new(tasks: T, settings: S, clock: C) -> Self {
+impl Shep {
+    pub fn new(ports: Ports) -> Self {
         Self {
-            tasks,
-            settings,
-            clock,
+            ports,
+            writes: Mutex::new(()),
         }
-    }
-
-    /// Queues a task from an issue reference, a link, or a sentence.
-    pub fn add(&self, input: &str) -> Result<Task, AppError> {
-        let source = TaskSourceRef::parse(input)?;
-        Ok(self.tasks.create(source, self.clock.now())?)
-    }
-
-    /// Starts queued tasks now (oldest first, up to the parallel limit) or sets the shift time.
-    pub fn start(&self, when: StartWhen) -> Result<StartOutcome, AppError> {
-        let board = self.board()?;
-        match when {
-            StartWhen::At(at) => {
-                self.update_settings(SettingsChange {
-                    shift_start: Some(at),
-                    ..SettingsChange::default()
-                })?;
-                Ok(StartOutcome::Scheduled {
-                    at,
-                    queued: board.queued.len(),
-                })
-            }
-            StartWhen::Now => {
-                let limit = usize::from(self.settings.load_settings()?.parallelism);
-                let free = limit.saturating_sub(board.working.len());
-                let started = board
-                    .queued
-                    .into_iter()
-                    .take(free)
-                    .map(|mut task| {
-                        task.move_to(TaskState::Working, self.clock.now())?;
-                        self.tasks.save(&task)?;
-                        Ok(task)
-                    })
-                    .collect::<Result<Vec<_>, AppError>>()?;
-                Ok(StartOutcome::Started(started))
-            }
-        }
-    }
-
-    pub fn board(&self) -> Result<Board, AppError> {
-        Ok(Board::from_tasks(self.tasks.list()?))
-    }
-
-    /// A person's decision: merge, send back with a note, or answer a question.
-    pub fn review(&self, id: TaskId, action: ReviewAction) -> Result<Task, AppError> {
-        self.update(id, |task, now| task.review(action, now))
     }
 
     /// The engine reports a task's pull request is ready for review.
@@ -100,12 +71,81 @@ impl<T: TaskRepository, S: SettingsRepository, C: Clock> Shep<T, S, C> {
         self.update(id, |task, now| task.ask(question, now))
     }
 
-    pub fn settings(&self) -> Result<Settings, AppError> {
-        Ok(self.settings.load_settings()?)
+    fn lock(&self) -> Result<MutexGuard<'_, ()>, AppError> {
+        self.writes
+            .lock()
+            .map_err(|_| AppError::Remote("an earlier change crashed; restart Shep".into()))
     }
 
-    pub fn update_settings(&self, change: SettingsChange) -> Result<Settings, AppError> {
-        let mut settings = self.settings.load_settings()?;
+    fn update(
+        &self,
+        id: TaskId,
+        change: impl FnOnce(&mut Task, UnixTime) -> Result<(), TransitionError>,
+    ) -> Result<Task, AppError> {
+        let _guard = self.lock()?;
+        let mut task = self.ports.tasks.get(id)?.ok_or(AppError::NotFound(id))?;
+        change(&mut task, self.ports.clock.now())?;
+        self.ports.tasks.save(&task)?;
+        Ok(task)
+    }
+
+    fn start_now(&self) -> Result<Vec<Task>, AppError> {
+        let _guard = self.lock()?;
+        let board = Board::from_tasks(self.ports.tasks.list()?);
+        let limit = usize::from(self.ports.settings.load_settings()?.parallelism);
+        let free = limit.saturating_sub(board.working.len());
+        board
+            .queued
+            .into_iter()
+            .take(free)
+            .map(|mut task| {
+                task.move_to(TaskState::Working, self.ports.clock.now())?;
+                self.ports.tasks.save(&task)?;
+                Ok(task)
+            })
+            .collect()
+    }
+}
+
+impl ShepApi for Shep {
+    fn add(&self, input: &str) -> Result<Task, AppError> {
+        let source = TaskSourceRef::parse(input)?;
+        let _guard = self.lock()?;
+        Ok(self.ports.tasks.create(source, self.ports.clock.now())?)
+    }
+
+    /// Starts queued tasks now (oldest first, up to the parallel limit) or sets the shift time.
+    fn start(&self, when: StartWhen) -> Result<StartOutcome, AppError> {
+        match when {
+            StartWhen::At(at) => {
+                self.update_settings(SettingsChange {
+                    shift_start: Some(at),
+                    ..SettingsChange::default()
+                })?;
+                Ok(StartOutcome::Scheduled {
+                    at,
+                    queued: self.board()?.queued.len(),
+                })
+            }
+            StartWhen::Now => Ok(StartOutcome::Started(self.start_now()?)),
+        }
+    }
+
+    fn board(&self) -> Result<Board, AppError> {
+        Ok(Board::from_tasks(self.ports.tasks.list()?))
+    }
+
+    fn review(&self, id: TaskId, action: ReviewAction) -> Result<Task, AppError> {
+        self.update(id, |task, now| task.review(action, now))
+    }
+
+    fn settings(&self) -> Result<Settings, AppError> {
+        Ok(self.ports.settings.load_settings()?)
+    }
+
+    fn update_settings(&self, change: SettingsChange) -> Result<Settings, AppError> {
+        let _guard = self.lock()?;
+        let mut settings = self.ports.settings.load_settings()?;
         if let Some(agent) = change.agent {
             settings.agent = Some(agent);
         }
@@ -115,21 +155,10 @@ impl<T: TaskRepository, S: SettingsRepository, C: Clock> Shep<T, S, C> {
         if let Some(n) = change.parallelism {
             settings.parallelism = Settings::check_parallelism(n)?;
         }
-        self.settings.save_settings(&settings)?;
+        if let Some(repo) = change.repo {
+            settings.repo = Some(repo);
+        }
+        self.ports.settings.save_settings(&settings)?;
         Ok(settings)
-    }
-
-    fn update(
-        &self,
-        id: TaskId,
-        change: impl FnOnce(
-            &mut Task,
-            shep_domain::UnixTime,
-        ) -> Result<(), shep_domain::TransitionError>,
-    ) -> Result<Task, AppError> {
-        let mut task = self.tasks.get(id)?.ok_or(AppError::NotFound(id))?;
-        change(&mut task, self.clock.now())?;
-        self.tasks.save(&task)?;
-        Ok(task)
     }
 }

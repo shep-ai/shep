@@ -1,0 +1,583 @@
+{
+  "components": {
+    "schemas": {
+      "AgentKind": {
+        "description": "The coding agents Shep can run. Which one runs is a setting, never hardcoded.",
+        "enum": ["ClaudeCode", "Codex", "Gemini"],
+        "type": "string"
+      },
+      "Board": {
+        "description": "Every task, grouped by state in the order a person reviews them.",
+        "properties": {
+          "merged": {
+            "items": {
+              "$ref": "#/components/schemas/Task"
+            },
+            "type": "array"
+          },
+          "needs_you": {
+            "items": {
+              "$ref": "#/components/schemas/Task"
+            },
+            "type": "array"
+          },
+          "queued": {
+            "items": {
+              "$ref": "#/components/schemas/Task"
+            },
+            "type": "array"
+          },
+          "ready": {
+            "items": {
+              "$ref": "#/components/schemas/Task"
+            },
+            "type": "array"
+          },
+          "working": {
+            "items": {
+              "$ref": "#/components/schemas/Task"
+            },
+            "type": "array"
+          }
+        },
+        "required": ["needs_you", "ready", "working", "queued", "merged"],
+        "type": "object"
+      },
+      "ClockTime": {
+        "description": "A time of day, like the shift start.",
+        "properties": {
+          "hour": {
+            "format": "uint8",
+            "maximum": 255,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "minute": {
+            "format": "uint8",
+            "maximum": 255,
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": ["hour", "minute"],
+        "type": "object"
+      },
+      "PullRequest": {
+        "description": "The draft pull request Shep opened for a task.",
+        "properties": {
+          "number": {
+            "format": "uint64",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "url": {
+            "type": "string"
+          }
+        },
+        "required": ["number", "url"],
+        "type": "object"
+      },
+      "ReviewAction": {
+        "description": "The decisions a person makes on a task.",
+        "oneOf": [
+          {
+            "enum": ["Merge"],
+            "type": "string"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "SendBack": {
+                "properties": {
+                  "note": {
+                    "type": "string"
+                  }
+                },
+                "required": ["note"],
+                "type": "object"
+              }
+            },
+            "required": ["SendBack"],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "Answer": {
+                "properties": {
+                  "text": {
+                    "type": "string"
+                  }
+                },
+                "required": ["text"],
+                "type": "object"
+              }
+            },
+            "required": ["Answer"],
+            "type": "object"
+          }
+        ]
+      },
+      "Settings": {
+        "description": "What `shep config` sets.",
+        "properties": {
+          "agent": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AgentKind"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "`None` until onboarding picks one (or Shep detects one)."
+          },
+          "parallelism": {
+            "description": "How many tasks run at once.",
+            "format": "uint8",
+            "maximum": 255,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "repo": {
+            "default": null,
+            "description": "The local checkout Shep works in. Every task gets its own worktree from its `origin`;\nthe checkout itself is never touched. `None` until the first `shep add` inside a\nrepository or `shep config --repo`.",
+            "type": ["string", "null"]
+          },
+          "shift_start": {
+            "$ref": "#/components/schemas/ClockTime"
+          }
+        },
+        "required": ["shift_start", "parallelism"],
+        "type": "object"
+      },
+      "SettingsChange": {
+        "description": "A partial settings update; `None` keeps the current value.",
+        "properties": {
+          "agent": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AgentKind"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "parallelism": {
+            "default": null,
+            "format": "uint8",
+            "maximum": 255,
+            "minimum": 0,
+            "type": ["integer", "null"]
+          },
+          "repo": {
+            "default": null,
+            "description": "The local checkout Shep works in.",
+            "type": ["string", "null"]
+          },
+          "shift_start": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ClockTime"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          }
+        },
+        "type": "object"
+      },
+      "StartOutcome": {
+        "oneOf": [
+          {
+            "additionalProperties": false,
+            "description": "Tasks that moved to Working now (empty when the parallel limit is already reached).",
+            "properties": {
+              "Started": {
+                "items": {
+                  "$ref": "#/components/schemas/Task"
+                },
+                "type": "array"
+              }
+            },
+            "required": ["Started"],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "description": "The shift will start at this time with this many tasks waiting.",
+            "properties": {
+              "Scheduled": {
+                "properties": {
+                  "at": {
+                    "$ref": "#/components/schemas/ClockTime"
+                  },
+                  "queued": {
+                    "format": "uint",
+                    "minimum": 0,
+                    "type": "integer"
+                  }
+                },
+                "required": ["at", "queued"],
+                "type": "object"
+              }
+            },
+            "required": ["Scheduled"],
+            "type": "object"
+          }
+        ]
+      },
+      "StartWhen": {
+        "description": "When `start` should begin queued work.",
+        "oneOf": [
+          {
+            "enum": ["Now"],
+            "type": "string"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "At": {
+                "$ref": "#/components/schemas/ClockTime"
+              }
+            },
+            "required": ["At"],
+            "type": "object"
+          }
+        ]
+      },
+      "Task": {
+        "description": "The one thing in Shep: work handed over by a person.",
+        "properties": {
+          "created_at": {
+            "$ref": "#/components/schemas/UnixTime"
+          },
+          "id": {
+            "$ref": "#/components/schemas/TaskId"
+          },
+          "note": {
+            "description": "The latest instruction from the person: an answer or a send-back note.",
+            "type": ["string", "null"]
+          },
+          "pr": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PullRequest"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "The draft pull request, once Shep has opened one."
+          },
+          "question": {
+            "description": "The question the agent is waiting on while the task needs you.",
+            "type": ["string", "null"]
+          },
+          "source": {
+            "$ref": "#/components/schemas/TaskSourceRef"
+          },
+          "state": {
+            "$ref": "#/components/schemas/TaskState"
+          },
+          "title": {
+            "type": "string"
+          },
+          "updated_at": {
+            "$ref": "#/components/schemas/UnixTime"
+          }
+        },
+        "required": ["id", "title", "source", "state", "created_at", "updated_at"],
+        "type": "object"
+      },
+      "TaskId": {
+        "format": "int64",
+        "type": "integer"
+      },
+      "TaskSourceRef": {
+        "description": "A reference to the task in its source, or the sentence the user typed.",
+        "oneOf": [
+          {
+            "additionalProperties": false,
+            "description": "`repo` is `owner/name`; `None` means the repository Shep is pointed at.",
+            "properties": {
+              "GitHubIssue": {
+                "properties": {
+                  "number": {
+                    "format": "uint64",
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "repo": {
+                    "type": ["string", "null"]
+                  }
+                },
+                "required": ["number"],
+                "type": "object"
+              }
+            },
+            "required": ["GitHubIssue"],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "Linear": {
+                "properties": {
+                  "key": {
+                    "type": "string"
+                  }
+                },
+                "required": ["key"],
+                "type": "object"
+              }
+            },
+            "required": ["Linear"],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "Jira": {
+                "properties": {
+                  "key": {
+                    "type": "string"
+                  }
+                },
+                "required": ["key"],
+                "type": "object"
+              }
+            },
+            "required": ["Jira"],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "Notion": {
+                "properties": {
+                  "url": {
+                    "type": "string"
+                  }
+                },
+                "required": ["url"],
+                "type": "object"
+              }
+            },
+            "required": ["Notion"],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "Monday": {
+                "properties": {
+                  "url": {
+                    "type": "string"
+                  }
+                },
+                "required": ["url"],
+                "type": "object"
+              }
+            },
+            "required": ["Monday"],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "Slack": {
+                "properties": {
+                  "url": {
+                    "type": "string"
+                  }
+                },
+                "required": ["url"],
+                "type": "object"
+              }
+            },
+            "required": ["Slack"],
+            "type": "object"
+          },
+          {
+            "additionalProperties": false,
+            "properties": {
+              "Sentence": {
+                "properties": {
+                  "text": {
+                    "type": "string"
+                  }
+                },
+                "required": ["text"],
+                "type": "object"
+              }
+            },
+            "required": ["Sentence"],
+            "type": "object"
+          }
+        ]
+      },
+      "TaskState": {
+        "description": "The five states every task moves through, on every surface.",
+        "enum": ["Queued", "Working", "NeedsYou", "Ready", "Merged"],
+        "type": "string"
+      },
+      "UnixTime": {
+        "description": "Seconds since the Unix epoch.",
+        "format": "int64",
+        "type": "integer"
+      }
+    }
+  },
+  "info": {
+    "title": "Shep daemon",
+    "version": "1.0.0"
+  },
+  "methods": [
+    {
+      "name": "add",
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "name": "input",
+          "required": true,
+          "schema": {
+            "description": "`#412`, `owner/repo#412`, a link to a ticket or message, or a sentence.",
+            "type": "string"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/Task"
+        }
+      },
+      "summary": "Queue a task from an issue reference, a link, or a sentence."
+    },
+    {
+      "name": "start",
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "name": "when",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/StartWhen"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/StartOutcome"
+        }
+      },
+      "summary": "Start queued tasks now, or set when tonight's shift starts."
+    },
+    {
+      "name": "board",
+      "paramStructure": "by-name",
+      "params": [],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/Board"
+        }
+      },
+      "summary": "Every task, grouped by state in review order."
+    },
+    {
+      "name": "review",
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "name": "action",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/ReviewAction"
+          }
+        },
+        {
+          "name": "id",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/TaskId"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/Task"
+        }
+      },
+      "summary": "A person's decision: merge, send back with a note, or answer."
+    },
+    {
+      "name": "settings.get",
+      "paramStructure": "by-name",
+      "params": [],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/Settings"
+        }
+      },
+      "summary": "The current settings."
+    },
+    {
+      "name": "settings.update",
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "name": "change",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/SettingsChange"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/Settings"
+        }
+      },
+      "summary": "Change some settings; fields left out keep their value."
+    },
+    {
+      "name": "board.subscribe",
+      "paramStructure": "by-name",
+      "params": [],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/Board"
+        }
+      },
+      "summary": "The board now, then a board.changed notification on every change."
+    }
+  ],
+  "openrpc": "1.3.2",
+  "x-notifications": [
+    {
+      "name": "board.changed",
+      "params": [
+        {
+          "name": "board",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/Board"
+          }
+        }
+      ],
+      "summary": "The whole board, pushed to subscribers after every change."
+    }
+  ]
+}

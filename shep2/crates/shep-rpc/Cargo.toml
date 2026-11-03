@@ -1,0 +1,21 @@
+[package]
+name = "shep-rpc"
+description = "The Shep daemon's protocol: the four core actions and a board subscription as JSON-RPC, with an OpenRPC schema generated from the Rust types."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+shep-domain.workspace = true
+shep-app.workspace = true
+shep-jsonrpc.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+schemars.workspace = true
+
+[dev-dependencies]
+shep-app = { workspace = true, features = ["testing"] }
+tempfile.workspace = true
+
+[lints]
+workspace = true

@@ -13,7 +13,7 @@ technologies:
   - Rust (tokio, rusqlite, serde, clap, thiserror)
   - Ratatui + tachyonfx
   - rmcp
-  - jsonrpsee or a hand-rolled JSON-RPC 2.0 over a Unix socket
+  - hand-rolled JSON-RPC 2.0 over a Unix socket (shep-jsonrpc)
   - portable-pty
   - keyring
   - SwiftUI
@@ -94,6 +94,33 @@ decisions:
     rejected:
       - Plain child processes owned by the daemon
     rationale: Agents keep running across daemon restarts and upgrades; sessions can be attached.
+
+  - title: Daemon concurrency
+    chosen: Plain threads (one per connection, one engine loop) and blocking I/O
+    rejected:
+      - tokio in the daemon
+    rationale: >
+      Decided while building task-6. The daemon serves a handful of local clients and polls a few
+      agents; threads keep it small and easy to test, with no runtime to start. tokio arrives
+      only where a library needs it (rmcp in the MCP server, Slack Socket Mode), in those
+      surfaces, not in the core.
+  - title: JSON-RPC transport
+    chosen: >
+      A generic crate (shep-jsonrpc) with one JSON message per line over a Unix socket in a 0700
+      directory, socket 0600; used by the daemon protocol (shep-rpc) and the PTY holder
+    rejected:
+      - jsonrpsee
+      - Content-Length framing (LSP style)
+    rationale: >
+      Line framing is trivial to read in Swift and from a shell (`nc -U`); a 0700 directory closes
+      the window before the socket's own mode is set. The protocol crate stays apart from the
+      transport so infrastructure (the holder) can reuse the transport without depending on a
+      presentation crate.
+  - title: Shep 2 files under a shared SHEP_HOME
+    chosen: $SHEP_HOME/shep2.db, everything else under $SHEP_HOME/shep2/
+    rejected:
+      - Sharing Shep 1's daemon.json, daemon.log and logs/
+    rationale: Shep 1 and Shep 2 can be installed side by side without touching each other's files.
 
 # Open questions (should be resolved by end of research)
 openQuestions: []

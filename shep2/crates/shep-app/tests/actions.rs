@@ -1,17 +1,9 @@
-mod fakes;
-
-use std::cell::Cell;
-
-use fakes::{MemorySettings, MemoryTasks, TickingClock};
-use shep_app::{AppError, SettingsChange, Shep, StartOutcome, StartWhen};
+use shep_app::testing::Fakes;
+use shep_app::{AppError, SettingsChange, Shep, ShepApi, StartOutcome, StartWhen};
 use shep_domain::{AgentKind, ClockTime, ReviewAction, SourceKind, TaskId, TaskState};
 
-fn shep() -> Shep<MemoryTasks, MemorySettings, TickingClock> {
-    Shep::new(
-        MemoryTasks::default(),
-        MemorySettings::default(),
-        TickingClock(Cell::new(1000)),
-    )
+fn shep() -> Shep {
+    Shep::new(Fakes::default().ports())
 }
 
 #[test]
@@ -153,4 +145,27 @@ fn settings_change_only_what_is_given() {
         }),
         Err(AppError::Settings(_))
     ));
+}
+
+#[test]
+fn settings_remember_the_repository() {
+    let s = shep();
+    assert_eq!(s.settings().unwrap().repo, None);
+    let after = s
+        .update_settings(SettingsChange {
+            repo: Some("/code/app".into()),
+            ..Default::default()
+        })
+        .unwrap();
+    assert_eq!(after.repo.as_deref(), Some("/code/app"));
+    assert!(SettingsChange::default().is_empty());
+}
+
+#[test]
+fn every_surface_can_share_one_shep_across_threads() {
+    fn shared<T: Send + Sync>(_: &T) {}
+    let s = shep();
+    shared(&s);
+    let api: &dyn ShepApi = &s;
+    assert_eq!(api.board().unwrap().queued.len(), 0);
 }

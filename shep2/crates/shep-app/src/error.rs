@@ -14,4 +14,8 @@ pub enum AppError {
     Settings(#[from] SettingsError),
     #[error(transparent)]
     Store(#[from] StoreError),
+    /// The daemon answered with an error, or could not be reached. The message is already
+    /// written for a person.
+    #[error("{0}")]
+    Remote(String),
 }
