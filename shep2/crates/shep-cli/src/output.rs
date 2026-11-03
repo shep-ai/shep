@@ -21,6 +21,9 @@ pub fn board(board: &Board) -> String {
             if let (TaskState::NeedsYou, Some(q)) = (state, &task.question) {
                 let _ = writeln!(out, "        ? {q}");
             }
+            if let Some(pr) = &task.pr {
+                let _ = writeln!(out, "        {pr}");
+            }
         }
     }
     if out.is_empty() {
@@ -39,6 +42,7 @@ pub fn started(outcome: &StartOutcome, board_after: &Board, settings: &Settings)
             for t in tasks {
                 let _ = writeln!(out, "  {:>4}  {}", t.id, t.title);
             }
+            out.push_str("Shep works on them in the background. Run `shep` to see the board.\n");
             out
         }
         StartOutcome::Started(_) if board_after.queued.is_empty() => {
@@ -54,8 +58,9 @@ pub fn started(outcome: &StartOutcome, board_after: &Board, settings: &Settings)
 
 pub fn settings(s: &Settings) -> String {
     let agent = s.agent.map_or("not chosen", |a| a.cli_name());
+    let repo = s.repo.as_deref().unwrap_or("not chosen");
     format!(
-        "agent  {agent}\nshift  {}\nparallel  {}\n",
+        "agent  {agent}\nshift  {}\nparallel  {}\nrepo  {repo}\n",
         s.shift_start, s.parallelism
     )
 }

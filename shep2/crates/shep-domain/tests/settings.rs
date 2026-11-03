@@ -62,3 +62,11 @@ fn parallelism_must_be_between_one_and_twelve() {
         Err(SettingsError::BadParallelism(13))
     ));
 }
+
+#[test]
+fn settings_saved_before_repo_existed_still_load() {
+    let old = r#"{"agent":null,"shift_start":{"hour":23,"minute":0},"parallelism":3}"#;
+    let s: Settings = serde_json::from_str(old).unwrap();
+    assert_eq!(s.repo, None);
+    assert_eq!(s, Settings::default());
+}

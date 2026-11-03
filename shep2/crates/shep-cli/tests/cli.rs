@@ -1,18 +1,7 @@
-use assert_cmd::Command;
+mod support;
+
 use predicates::str::contains;
-
-struct Home(tempfile::TempDir);
-
-impl Home {
-    fn new() -> Self {
-        Self(tempfile::tempdir().unwrap())
-    }
-    fn shep(&self) -> Command {
-        let mut c = Command::cargo_bin("shep").unwrap();
-        c.env("SHEP_HOME", self.0.path()).env("NO_COLOR", "1");
-        c
-    }
-}
+use support::{alive, Home};
 
 #[test]
 fn help_lists_exactly_the_four_commands() {
@@ -78,6 +67,7 @@ fn add_without_a_task_fails_with_a_hint() {
 #[test]
 fn go_starts_queued_work_up_to_the_limit() {
     let home = Home::new();
+    home.ready();
     for t in ["a", "b", "c", "d"] {
         home.shep().args(["add", t]).assert().success();
     }
@@ -101,6 +91,7 @@ fn go_starts_queued_work_up_to_the_limit() {
 #[test]
 fn go_at_a_time_sets_the_shift() {
     let home = Home::new();
+    home.ready();
     home.shep().args(["add", "a"]).assert().success();
     home.shep()
         .args(["go", "--at", "22:30"])
@@ -151,11 +142,91 @@ fn config_shows_and_changes_settings() {
 fn state_lives_under_shep_home() {
     let home = Home::new();
     home.shep().args(["add", "x"]).assert().success();
-    assert!(home.0.path().join("shep2.db").exists());
+    assert!(home.shep_home().join("shep2.db").exists());
     let other = Home::new();
     other
         .shep()
         .assert()
         .success()
         .stdout(contains("Nothing yet"));
+}
+
+#[test]
+fn go_starts_the_daemon_and_later_commands_go_through_it() {
+    let home = Home::new();
+    home.ready();
+    home.shep().args(["add", "a"]).assert().success();
+    assert_eq!(
+        home.daemon_pid(),
+        None,
+        "add alone does not start the daemon"
+    );
+
+    home.shep().arg("go").assert().success();
+    let pid = home.daemon_pid().expect("go starts the daemon");
+    assert!(alive(&pid));
+    assert!(home.file("run/daemon.sock").exists());
+
+    // The daemon holds the database open. Unlink it: a CLI that opened the file itself would
+    // create an empty one and lose the board; a CLI talking to the daemon sees no difference.
+    std::fs::remove_file(home.shep_home().join("shep2.db")).unwrap();
+    home.shep().args(["add", "b"]).assert().success();
+    assert!(!home.shep_home().join("shep2.db").exists());
+    home.shep()
+        .assert()
+        .success()
+        .stdout(contains("Working (1)"))
+        .stdout(contains("Queued (1)"));
+
+    home.shep().arg("go").assert().success();
+    assert_eq!(home.daemon_pid(), Some(pid), "one daemon per home");
+}
+
+#[test]
+fn config_sets_the_repository() {
+    let home = Home::new();
+    let repo = tempfile::tempdir().unwrap();
+    home.shep()
+        .args(["config", "--repo"])
+        .arg(repo.path())
+        .assert()
+        .success()
+        // Stored resolved: on macOS the temp dir is under /var, a link to /private/var.
+        .stdout(contains(format!(
+            "repo  {}",
+            repo.path().canonicalize().unwrap().display()
+        )));
+    home.shep()
+        .args(["config", "--repo", "/no/such/dir"])
+        .assert()
+        .failure()
+        .stderr(contains("/no/such/dir"));
+}
+
+#[test]
+fn go_says_what_to_set_up_first() {
+    let home = Home::new();
+    home.shep().args(["add", "a"]).assert().success();
+    home.shep()
+        .arg("go")
+        .assert()
+        .failure()
+        .stderr(contains("shep config --repo"));
+}
+
+#[test]
+fn adding_inside_a_repository_points_shep_at_it() {
+    let home = Home::new();
+    let (_, checkout) = home.repos();
+    let sub = checkout.join("src");
+    std::fs::create_dir_all(&sub).unwrap();
+    home.shep_in(&sub).args(["add", "#7"]).assert().success();
+    home.shep()
+        .arg("config")
+        .assert()
+        .success()
+        .stdout(contains(format!(
+            "repo  {}",
+            checkout.canonicalize().unwrap().display()
+        )));
 }

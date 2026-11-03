@@ -1,9 +1,10 @@
 use std::fmt;
 
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 /// The coding agents Shep can run. Which one runs is a setting, never hardcoded.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, JsonSchema)]
 pub enum AgentKind {
     ClaudeCode,
     Codex,
@@ -31,7 +32,7 @@ impl AgentKind {
 }
 
 /// A time of day, like the shift start.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 pub struct ClockTime {
     pub hour: u8,
     pub minute: u8,
@@ -67,13 +68,18 @@ pub const DEFAULT_PARALLELISM: u8 = 3;
 pub const MAX_PARALLELISM: u8 = 12;
 
 /// What `shep config` sets.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 pub struct Settings {
     /// `None` until onboarding picks one (or Shep detects one).
     pub agent: Option<AgentKind>,
     pub shift_start: ClockTime,
     /// How many tasks run at once.
     pub parallelism: u8,
+    /// The local checkout Shep works in. Every task gets its own worktree from its `origin`;
+    /// the checkout itself is never touched. `None` until the first `shep add` inside a
+    /// repository or `shep config --repo`.
+    #[serde(default)]
+    pub repo: Option<String>,
 }
 
 impl Default for Settings {
@@ -82,6 +88,7 @@ impl Default for Settings {
             agent: None,
             shift_start: DEFAULT_SHIFT_START,
             parallelism: DEFAULT_PARALLELISM,
+            repo: None,
         }
     }
 }

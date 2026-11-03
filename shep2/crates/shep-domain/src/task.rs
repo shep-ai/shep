@@ -1,8 +1,11 @@
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use crate::{TaskSourceRef, TaskState, TransitionError};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord, Serialize, Deserialize, JsonSchema,
+)]
 pub struct TaskId(pub i64);
 
 impl std::fmt::Display for TaskId {
@@ -12,11 +15,26 @@ impl std::fmt::Display for TaskId {
 }
 
 /// Seconds since the Unix epoch.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[derive(
+    Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize, JsonSchema,
+)]
 pub struct UnixTime(pub i64);
 
+/// The draft pull request Shep opened for a task.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct PullRequest {
+    pub number: u64,
+    pub url: String,
+}
+
+impl std::fmt::Display for PullRequest {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.url)
+    }
+}
+
 /// The decisions a person makes on a task.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 pub enum ReviewAction {
     Merge,
     SendBack { note: String },
@@ -24,7 +42,7 @@ pub enum ReviewAction {
 }
 
 /// The one thing in Shep: work handed over by a person.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 pub struct Task {
     pub id: TaskId,
     pub title: String,
@@ -34,6 +52,9 @@ pub struct Task {
     pub question: Option<String>,
     /// The latest instruction from the person: an answer or a send-back note.
     pub note: Option<String>,
+    /// The draft pull request, once Shep has opened one.
+    #[serde(default)]
+    pub pr: Option<PullRequest>,
     pub created_at: UnixTime,
     pub updated_at: UnixTime,
 }
@@ -47,6 +68,7 @@ impl Task {
             state: TaskState::Queued,
             question: None,
             note: None,
+            pr: None,
             created_at: now,
             updated_at: now,
         }
