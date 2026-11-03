@@ -790,6 +790,7 @@ dependencies = [
  "shep-domain",
  "shep-infra",
  "shep-jsonrpc",
+ "shep-mock-model",
  "shep-rpc",
  "tempfile",
 ]
@@ -829,6 +830,13 @@ dependencies = [
  "serde_json",
  "tempfile",
  "thiserror 2.0.21",
+]
+
+[[package]]
+name = "shep-mock-model"
+version = "0.1.0"
+dependencies = [
+ "serde_json",
 ]
 
 [[package]]

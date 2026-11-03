@@ -42,5 +42,11 @@ jobs:
         run: cargo fmt --all --check
       - name: Lint
         run: cargo clippy --all-targets --locked -- -D warnings
-      - name: Test
-        run: cargo test --workspace --locked
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      # The real Claude Code CLI, run by Shep against shep-mock-model: no API key needed.
+      - name: Install Claude Code
+        run: npm install -g @anthropic-ai/claude-code@2.1.317
+      - name: Test (including the tests that run the real Claude Code CLI)
+        run: cargo test --workspace --locked -- --include-ignored

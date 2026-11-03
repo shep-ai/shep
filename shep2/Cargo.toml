@@ -7,6 +7,7 @@ members = [
   "crates/shep-rpc",
   "crates/shep-infra",
   "crates/shep-cli",
+  "crates/shep-mock-model",
 ]
 
 [workspace.package]
@@ -21,6 +22,7 @@ shep-app = { path = "crates/shep-app" }
 shep-infra = { path = "crates/shep-infra" }
 shep-jsonrpc = { path = "crates/shep-jsonrpc" }
 shep-rpc = { path = "crates/shep-rpc" }
+shep-mock-model = { path = "crates/shep-mock-model" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 schemars = "1"

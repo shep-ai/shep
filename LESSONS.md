@@ -1,5 +1,17 @@
 # Lessons Learned
 
+## A mock of an API must copy what the client keys on, not just the happy shape
+
+Shep 2's mock model (a stand-in for the Messages API that the real Claude Code CLI talks to)
+passed its own tests and still failed two ways against the real CLI. It reused one message id
+and one tool-use id for every reply, so on `--resume` Claude Code saw a reply it already had,
+dropped it and asked again, forever. And it read the prompt from the last message, but Claude
+Code 2.1 appends a `system` message (its environment notes) after the person's turn, so the
+scripted cues were never seen and every turn fell back to the default. Rules: give every
+generated object a fresh id; read the conversation the way the server would (skip `system`
+turns); log raw requests (`SHEP_MOCK_MODEL_LOG`) before guessing; and prove the mock against
+the real client before building tests on it.
+
 ## A Unix socket path has a length limit; deep homes must not break the daemon
 
 The first by-hand run of Shep 2's daemon from a scratch folder failed with "path must be shorter

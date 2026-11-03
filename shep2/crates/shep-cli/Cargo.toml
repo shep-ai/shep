@@ -18,6 +18,7 @@ shep-rpc.workspace = true
 clap.workspace = true
 
 [dev-dependencies]
+shep-mock-model.workspace = true
 assert_cmd.workspace = true
 predicates.workspace = true
 tempfile.workspace = true

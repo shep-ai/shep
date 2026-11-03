@@ -14,6 +14,7 @@ with Shep 1's pnpm workspace.
 | `shep-rpc` | Presentation | The daemon protocol: methods, server, `RemoteShep` client, OpenRPC schema |
 | `shep-infra` | Infrastructure | SQLite, git worktrees, `gh`, the PTY holder, agent CLIs, OSC 7501, keep-awake; later sources and keychain |
 | `shep-cli` | Presentation | The `shep` binary: the four commands, the daemon and the holder (`__daemon`, `__holder`, hidden) |
+| `shep-mock-model` | Test tooling | A scripted Anthropic Messages API for running the real Claude Code CLI without a key. Never shipped. |
 
 Dependencies point inward, and the crate graph enforces it.
 
@@ -67,8 +68,37 @@ restart or upgrade does not stop them; status comes over OSC 7501 when the agent
 and from its screen otherwise. While anything works the machine is kept awake (`caffeinate`,
 `systemd-inhibit`).
 
-Verified end to end with a fake agent and a fake `gh` against a real git origin
-(`crates/shep-cli/tests/e2e.rs`). Not yet run against a real agent CLI or GitHub.
+Verified end to end against a real git origin with a fake `gh`, two ways:
+
+- a fake agent script (`crates/shep-cli/tests/e2e.rs`, runs everywhere);
+- **the real Claude Code CLI against a mock model** (`crates/shep-cli/tests/real_claude.rs`):
+  Shep's prompts, the PTY, Claude Code's flags, `--session-id`, `--resume`, its tools and exit
+  codes are all real; only the model is scripted. No API key, no cost. Opt-in locally (needs
+  `claude` on `PATH`), always on in CI:
+
+  ```bash
+  cargo test -p shep-cli --test real_claude -- --include-ignored
+  ```
+
+Not yet run against GitHub or a real model.
+
+## Running Shep without an API key
+
+`shep-mock-model` stands in for the Anthropic Messages API, so a real night can be rehearsed on
+a throwaway repository with real `gh` and no model costs:
+
+```bash
+cargo run -p shep-mock-model                     # serves http://127.0.0.1:8765
+export ANTHROPIC_BASE_URL=http://127.0.0.1:8765 ANTHROPIC_API_KEY=mock
+shep add "#1" && shep go                         # from inside the throwaway repository
+```
+
+Each task gets one scripted step: it appends to `MOCK_CHANGE.md` and saves test proof; a CI fix
+commits `MOCK_FIX.md`; the reviewer writes a short review; a task with `[mock:ask]` in its title
+asks a question. Set `SHEP_MOCK_MODEL_LOG=<file>` to record every request.
+
+Claude Code refuses `--dangerously-skip-permissions` as root unless `IS_SANDBOX=1` is set; Shep
+does not set it for you. Run Shep as a normal user.
 
 ## Files
 

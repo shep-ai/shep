@@ -1,5 +1,6 @@
 //! A sandbox for running the real `shep` binary: its own `SHEP_HOME`, a working directory that is
-//! not a git repository, and a PATH holding only fake agents and `gh` plus the system tools.
+//! not a git repository, a PATH holding only fake agents and `gh` plus the system tools, and
+//! none of the developer's `ANTHROPIC_*` / `CLAUDE*` variables.
 //! Nothing a test runs can reach this repository or a real agent.
 
 #![allow(dead_code)]
@@ -11,16 +12,21 @@ use std::time::{Duration, Instant};
 use assert_cmd::Command;
 
 const SYSTEM_PATH: &str = "/usr/bin:/bin";
+/// Inherited variables that could hand a test the developer's own agent login or settings.
+const PRIVATE_PREFIXES: [&str; 2] = ["ANTHROPIC_", "CLAUDE"];
 pub const WAIT: Duration = Duration::from_secs(60);
 
 pub struct Home {
     pub dir: tempfile::TempDir,
+    /// More environment for every `shep` this home runs (and so for its daemon and agents).
+    env: std::cell::RefCell<Vec<(String, String)>>,
 }
 
 impl Home {
     pub fn new() -> Self {
         let home = Self {
             dir: tempfile::tempdir().unwrap(),
+            env: std::cell::RefCell::default(),
         };
         for sub in ["shep-home", "bin", "work", "log"] {
             std::fs::create_dir_all(home.dir.path().join(sub)).unwrap();
@@ -45,6 +51,12 @@ impl Home {
 
     pub fn shep_in(&self, dir: &Path) -> Command {
         let mut c = Command::cargo_bin("shep").unwrap();
+        for (key, _) in std::env::vars_os() {
+            let key = key.to_string_lossy();
+            if PRIVATE_PREFIXES.iter().any(|p| key.starts_with(p)) {
+                c.env_remove(key.as_ref());
+            }
+        }
         c.current_dir(dir)
             .env("SHEP_HOME", self.shep_home())
             .env("PATH", format!("{}:{SYSTEM_PATH}", self.bin().display()))
@@ -57,7 +69,16 @@ impl Home {
             .env("GIT_AUTHOR_EMAIL", "test@example.com")
             .env("GIT_COMMITTER_NAME", "Test Person")
             .env("GIT_COMMITTER_EMAIL", "test@example.com");
+        for (key, value) in self.env.borrow().iter() {
+            c.env(key, value);
+        }
         c
+    }
+
+    pub fn set_env(&self, key: &str, value: &str) {
+        self.env
+            .borrow_mut()
+            .push((key.to_owned(), value.to_owned()));
     }
 
     pub fn file(&self, name: &str) -> PathBuf {

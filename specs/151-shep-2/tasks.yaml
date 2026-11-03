@@ -150,8 +150,10 @@ tasks:
       manifests (usage limits with reset times, prompts, activity); parking until the reset;
       caffeinate / systemd-inhibit tied to the daemon's pid; the shift opening at its local time
       and refilling free slots. Verified with a fake agent and fake gh, end to end through the
-      real binary, daemon, holder and git, including a daemon restart. Not yet run against a
-      real agent CLI (needs the owner's API key). Not built: blocking the agent's own git push
+      real binary, daemon, holder and git, including a daemon restart; and with the real Claude
+      Code CLI (2.1.317) against `shep-mock-model`, a scripted Messages API (no key): a task, a
+      CI fix through `--resume`, the reviewer, and a question. Not yet run against a real
+      model. Not built: blocking the agent's own git push
       (Shep's pushes are guarded; the prompt tells the agent not to push), an `explain` command,
       and attach in a surface (the terminal UI, task-9).
     state: Done
