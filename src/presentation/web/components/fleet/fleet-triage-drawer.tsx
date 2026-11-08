@@ -16,8 +16,9 @@
  *
  * - every row is a link into its feature,
  * - a gate row approves inline, and a failed row retries inline,
- * - the footer clears the whole P1 gate backlog — or restarts every failed run —
- *   behind a confirmation.
+ * - the footer clears the whole P1 gate backlog — or approves only the gates the
+ *   guardrail rules prove low-risk — or restarts every failed run, each behind a
+ *   confirmation.
  *
  * Approvals resume agent runs, so they are consequential: each one has an
  * in-flight state, a refusal path that toasts the reason, and — for the batch —
@@ -136,6 +137,25 @@ function describeRetryFailures(failures: { featureName: string; reason: string }
   return [...namesByReason].map(([reason, names]) => `${names.join(', ')}: ${reason}`).join('; ');
 }
 
+/**
+ * One clause per guardrail reason, naming the features it left for the user.
+ *
+ * The use case reports ids; the operator knows names. Same rule as the retry
+ * batch: a shared reason belongs in one clause, never repeated per feature.
+ */
+function describeSkipped(
+  skipped: { featureId: string; reason: string }[],
+  nameOf: (featureId: string) => string
+): string {
+  const namesByReason = new Map<string, string[]>();
+  for (const entry of skipped) {
+    const names = namesByReason.get(entry.reason) ?? [];
+    names.push(nameOf(entry.featureId));
+    namesByReason.set(entry.reason, names);
+  }
+  return [...namesByReason].map(([reason, names]) => `${names.join(', ')}: ${reason}`).join('; ');
+}
+
 export function FleetTriageDrawer({
   items,
   open,
@@ -149,6 +169,9 @@ export function FleetTriageDrawer({
   const [approving, setApproving] = useState<ReadonlySet<string>>(() => new Set());
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [batchPending, setBatchPending] = useState(false);
+  /** The guardrail-judged batch is a second path, with its own in-flight state. */
+  const [lowRiskConfirmOpen, setLowRiskConfirmOpen] = useState(false);
+  const [lowRiskPending, setLowRiskPending] = useState(false);
 
   /** Same, for retries — kept separate so one row's retry never blocks an approve. */
   const [retrying, setRetrying] = useState<ReadonlySet<string>>(() => new Set());
@@ -160,6 +183,15 @@ export function FleetTriageDrawer({
       items.filter((item) => isApprovableGate(item) && item.priority === FleetTriagePriority.p1),
     [items]
   );
+
+  /** The use case reports ids; the operator reads names. */
+  const nameById = useMemo(
+    () => new Map(items.map((entry) => [entry.featureId, entry.featureName])),
+    [items]
+  );
+
+  /** Either batch in flight: both write approvals, so they disable each other. */
+  const batchBusy = batchPending || lowRiskPending;
 
   /**
    * One entry per feature, as the use case selects them. A feature can hold both
@@ -230,6 +262,60 @@ export function FleetTriageDrawer({
       setConfirmOpen(false);
     }
   }, [p1Gates, onRefresh]);
+
+  /**
+   * Approve only what the guardrails prove safe.
+   *
+   * Delegates the whole decision to `BatchApproveFeaturesUseCase` with
+   * `lowRisk`, the same call `shep fleet approve --low-risk` makes. No rules
+   * means no approvals, so the result is reported rather than assumed: a batch
+   * that approved nothing says so, and every skipped gate is named with the
+   * reason the guardrails left it.
+   */
+  const handleApproveLowRisk = useCallback(async () => {
+    const featureIds = p1Gates.map((item) => item.featureId);
+    setLowRiskPending(true);
+    try {
+      const result = await batchApproveFeatures({ featureIds, lowRisk: true });
+
+      if (result.error) {
+        toast.error(result.error);
+        return;
+      }
+
+      const skippedCount = result.skippedCount ?? 0;
+      const description =
+        skippedCount > 0
+          ? describeSkipped(result.skipped, (id) => nameById.get(id) ?? id)
+          : undefined;
+
+      if (result.failedCount > 0) {
+        toast.error(
+          `Approved ${result.approvedCount} of ${result.totalAttempted} — ${result.failures
+            .map((failure) => `${failure.featureId}: ${failure.reason}`)
+            .join('; ')}`
+        );
+      } else if (result.approvedCount === 0 && skippedCount > 0) {
+        // Nothing was provable. The operator asked for the safe batch and got
+        // none of it, so this is a refusal, not a success with zero.
+        toast.warning('No gate is provably low-risk — nothing was approved', { description });
+      } else if (skippedCount > 0) {
+        toast.success(
+          `Approved ${result.approvedCount} of ${result.totalAttempted} — ${skippedCount} left for you`,
+          { description }
+        );
+      } else {
+        toast.success(`Approved ${result.approvedCount} features — agents resuming`);
+      }
+
+      onRefresh?.();
+    } catch (error: unknown) {
+      toast.error(message(error, 'Failed to approve features'));
+    } finally {
+      setLowRiskPending(false);
+      setLowRiskConfirmOpen(false);
+    }
+  }, [p1Gates, nameById, onRefresh]);
 
   const handleRetry = useCallback(
     async (item: FleetTriageItem) => {
@@ -427,10 +513,22 @@ export function FleetTriageDrawer({
               type="button"
               size="sm"
               onClick={() => setConfirmOpen(true)}
-              disabled={batchPending}
+              disabled={batchBusy}
               data-testid="fleet-triage-approve-all"
             >
               {batchPending ? 'Approving…' : `Approve all P1 (${p1Gates.length})`}
+            </Button>
+          ) : null}
+          {p1Gates.length > 0 ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setLowRiskConfirmOpen(true)}
+              disabled={batchBusy}
+              data-testid="fleet-triage-approve-low-risk"
+            >
+              {lowRiskPending ? 'Checking guardrails…' : 'Approve low-risk'}
             </Button>
           ) : null}
           {retryable.length > 0 ? (
@@ -493,6 +591,39 @@ export function FleetTriageDrawer({
                 data-testid="fleet-triage-approve-all-confirm"
               >
                 {batchPending ? 'Approving…' : 'Approve all'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        <AlertDialog open={lowRiskConfirmOpen} onOpenChange={setLowRiskConfirmOpen}>
+          <AlertDialogContent data-testid="fleet-triage-approve-low-risk-dialog">
+            <AlertDialogHeader>
+              <AlertDialogTitle>Approve only the low-risk P1 gates?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Each gate is judged against the guardrail rules first. Gates that breach a rule, are
+                advise-only, or have no rules configured stay for you, and the result names each one
+                with its reason. Approvals resume agent runs and cannot be undone from here.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel
+                disabled={lowRiskPending}
+                data-testid="fleet-triage-approve-low-risk-cancel"
+              >
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={(event) => {
+                  // Keep the dialog up while the guardrails run, as the other
+                  // batch does; the handler closes it when done.
+                  event.preventDefault();
+                  void handleApproveLowRisk();
+                }}
+                disabled={lowRiskPending}
+                data-testid="fleet-triage-approve-low-risk-confirm"
+              >
+                {lowRiskPending ? 'Approving…' : 'Approve low-risk'}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

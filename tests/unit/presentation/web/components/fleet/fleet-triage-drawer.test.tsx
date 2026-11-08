@@ -19,7 +19,7 @@ import {
 } from '@shepai/core/domain/generated/output';
 
 vi.mock('sonner', () => ({
-  toast: { success: vi.fn(), error: vi.fn() },
+  toast: { success: vi.fn(), error: vi.fn(), warning: vi.fn() },
 }));
 
 const approveFeature = vi.fn();
@@ -97,6 +97,8 @@ describe('FleetTriageDrawer', () => {
       approvedFeatureIds: [],
       failedCount: 0,
       failures: [],
+      skippedCount: 0,
+      skipped: [],
     });
     retryFailedFleetFeatures.mockResolvedValue({
       totalAttempted: 0,
@@ -642,6 +644,163 @@ describe('FleetTriageDrawer', () => {
       render(<FleetTriageDrawer items={[ciItem()]} open onOpenChange={noop} />);
 
       expect(screen.queryByTestId('fleet-triage-retry-all')).toBeNull();
+    });
+  });
+
+  /* ---------------------------------------------------------------- */
+  /*  Approve low-risk — the guardrails' safe subset (spec 111)        */
+  /* ---------------------------------------------------------------- */
+
+  describe('approve low-risk', () => {
+    const p1Gates = [
+      item(),
+      item({
+        featureId: 'feat-9',
+        featureName: 'Second Gate',
+        slug: 'second-gate',
+        runId: 'run-9',
+      }),
+    ];
+
+    const runBatch = async () => {
+      fireEvent.click(screen.getByTestId('fleet-triage-approve-low-risk'));
+      await waitFor(() =>
+        expect(screen.getByTestId('fleet-triage-approve-low-risk-confirm')).toBeInTheDocument()
+      );
+      fireEvent.click(screen.getByTestId('fleet-triage-approve-low-risk-confirm'));
+    };
+
+    it('offers the action whenever a P1 gate is waiting', () => {
+      render(<FleetTriageDrawer items={p1Gates} open onOpenChange={noop} />);
+
+      expect(screen.getByTestId('fleet-triage-approve-low-risk')).toHaveTextContent(
+        'Approve low-risk'
+      );
+    });
+
+    it('is absent when no P1 gate is waiting', () => {
+      render(<FleetTriageDrawer items={[ciItem()]} open onOpenChange={noop} />);
+
+      expect(screen.queryByTestId('fleet-triage-approve-low-risk')).not.toBeInTheDocument();
+    });
+
+    it('explains the guardrail decision before anything is sent', async () => {
+      render(<FleetTriageDrawer items={p1Gates} open onOpenChange={noop} />);
+
+      fireEvent.click(screen.getByTestId('fleet-triage-approve-low-risk'));
+
+      await waitFor(() =>
+        expect(screen.getByTestId('fleet-triage-approve-low-risk-dialog')).toBeInTheDocument()
+      );
+      expect(screen.getByText(/guardrail rules/i)).toBeInTheDocument();
+      expect(batchApproveFeatures).not.toHaveBeenCalled();
+    });
+
+    it('sends the P1 gate ids with lowRisk, never the whole fleet', async () => {
+      const onRefresh = vi.fn();
+      render(
+        <FleetTriageDrawer
+          items={[...p1Gates, ciItem()]}
+          open
+          onOpenChange={noop}
+          onRefresh={onRefresh}
+        />
+      );
+
+      await runBatch();
+
+      await waitFor(() =>
+        expect(batchApproveFeatures).toHaveBeenCalledWith({
+          featureIds: ['feat-1', 'feat-9'],
+          lowRisk: true,
+        })
+      );
+      await waitFor(() => expect(onRefresh).toHaveBeenCalled());
+    });
+
+    it('does nothing when the confirmation is dismissed', async () => {
+      render(<FleetTriageDrawer items={p1Gates} open onOpenChange={noop} />);
+
+      fireEvent.click(screen.getByTestId('fleet-triage-approve-low-risk'));
+      await waitFor(() =>
+        expect(screen.getByTestId('fleet-triage-approve-low-risk-cancel')).toBeInTheDocument()
+      );
+      fireEvent.click(screen.getByTestId('fleet-triage-approve-low-risk-cancel'));
+
+      expect(batchApproveFeatures).not.toHaveBeenCalled();
+    });
+
+    it('reports what it approved and what the guardrails left for the user', async () => {
+      batchApproveFeatures.mockResolvedValue({
+        totalAttempted: 2,
+        approvedCount: 1,
+        approvedFeatureIds: ['feat-1'],
+        failedCount: 0,
+        failures: [],
+        skippedCount: 1,
+        skipped: [{ featureId: 'feat-9', reason: 'diff is 1200 lines (max 400)' }],
+      });
+      render(<FleetTriageDrawer items={p1Gates} open onOpenChange={noop} />);
+
+      await runBatch();
+
+      await waitFor(() =>
+        expect(toast.success).toHaveBeenCalledWith(
+          'Approved 1 of 2 — 1 left for you',
+          expect.objectContaining({
+            description: expect.stringContaining('Second Gate: diff is 1200 lines'),
+          })
+        )
+      );
+    });
+
+    it('refuses loudly when no gate is provably low-risk', async () => {
+      batchApproveFeatures.mockResolvedValue({
+        totalAttempted: 2,
+        approvedCount: 0,
+        approvedFeatureIds: [],
+        failedCount: 0,
+        failures: [],
+        skippedCount: 2,
+        skipped: [
+          { featureId: 'feat-1', reason: 'No guardrail rules configured for the plan gate' },
+          { featureId: 'feat-9', reason: 'No guardrail rules configured for the plan gate' },
+        ],
+      });
+      render(<FleetTriageDrawer items={p1Gates} open onOpenChange={noop} />);
+
+      await runBatch();
+
+      await waitFor(() =>
+        expect(toast.warning).toHaveBeenCalledWith(
+          'No gate is provably low-risk — nothing was approved',
+          expect.objectContaining({
+            description: expect.stringContaining(
+              'Needs Plan Approval, Second Gate: No guardrail rules configured'
+            ),
+          })
+        )
+      );
+    });
+
+    it('says so plainly when every gate was approved', async () => {
+      batchApproveFeatures.mockResolvedValue({
+        totalAttempted: 2,
+        approvedCount: 2,
+        approvedFeatureIds: ['feat-1', 'feat-9'],
+        failedCount: 0,
+        failures: [],
+        skippedCount: 0,
+        skipped: [],
+      });
+      render(<FleetTriageDrawer items={p1Gates} open onOpenChange={noop} />);
+
+      await runBatch();
+
+      await waitFor(() =>
+        expect(toast.success).toHaveBeenCalledWith('Approved 2 features — agents resuming')
+      );
+      expect(toast.warning).not.toHaveBeenCalled();
     });
   });
 });
