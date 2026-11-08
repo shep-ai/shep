@@ -83,7 +83,7 @@ tasks:
     acceptanceCriteria:
       - "Returns accurate counts for running, queued, cruising, attentionNeeded, and failed"
       - "Calculates fleet health percentage and circuit breaker state"
-      - "A trip with `WorkflowConfig.circuitBreakerAutoPauseQueue` set parks the admission queue (idempotent; the trip is reported even if the pause write fails). The switch ships off, so by default the trip is reported and the pause is left to `shep fleet pause`."
+      - "A trip parks the admission queue by default (idempotent; the trip is reported even if the pause write fails). An install that explicitly sets `WorkflowConfig.circuitBreakerAutoPauseQueue` to `false` opts out, so the trip is reported and the pause is left to `shep fleet pause`; an install that never chose follows the default."
       - "Reports workflow.queuePaused on the overview so status can show a parked queue"
     tdd:
       red:

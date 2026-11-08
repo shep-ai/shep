@@ -515,7 +515,7 @@ export type WorkflowConfig = {
    */
   breakerAcknowledgedAt?: any;
   /**
-   * Whether a tripped circuit breaker parks the admission queue (default: false)
+   * Whether a tripped circuit breaker parks the admission queue (default: true)
    */
   circuitBreakerAutoPauseQueue?: boolean;
   /**
