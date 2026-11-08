@@ -91,14 +91,14 @@ content: |
 
   ## Delivery Status
 
-  This spec is being delivered incrementally. The RFC (`UPSTREAM_RFC_PROPOSAL.md`) proposes
-  three reviewable PRs; only the first slice exists today.
+  This spec was delivered incrementally. The RFC (`UPSTREAM_RFC_PROPOSAL.md`) proposed three
+  reviewable PRs; all three slices have landed, plus slice 2b (the remaining fleet actions).
 
   | Slice | Scope | Status |
   | ----- | ----- | ------ |
   | 1 — Core domain + CLI | TypeSpec models, `GetFleetOverviewUseCase`, `ListFleetTriageItemsUseCase`, `SQLiteFleetRepository` + migration 143, `shep fleet status`, `shep fleet triage`, `shep fleet approve` | Implemented |
   | 2 — Guardrails | `EvaluateGateGuardrailsUseCase` + `SupervisorPolicy.guardrailRulesJson` (migration 144) + the pre-LLM pass in the supervisor gate evaluator | Implemented |
-  | 2b — Remaining fleet actions | `--low-risk` on `fleet approve`, `fleet retry` / `pause` / `resume` | Not started |
+  | 2b — Remaining fleet actions | `--low-risk` on `fleet approve`, `fleet retry` / `pause` / `resume` | Implemented |
   | 3 — Web UI | Fleet status bar + triage drawer with colocated Storybook stories, wired into the dashboard layout | Implemented |
 
   ## Success Criteria
@@ -121,9 +121,9 @@ content: |
   | ---- | ------ | --------- |
   | `tsp/agents/fleet-guardrails.tsp` | Medium | GuardrailRule, GuardrailEvaluationResult, FleetCircuitBreakerSettings |
   | `tsp/domain/entities/fleet-overview.tsp` | Medium | FleetOverview, FleetStatusCounts, FleetTriageItem + enums |
-  | `packages/core/src/application/use-cases/fleet/` | High | GetFleetOverview, ListFleetTriageItems, BatchApproveFeatures, EvaluateGateGuardrails |
+  | `packages/core/src/application/use-cases/fleet/` | High | GetFleetOverview, ListFleetTriageItems, BatchApproveFeatures, EvaluateGateGuardrails, RetryFailedFleetFeatures, SetFleetQueuePause |
   | `packages/core/src/infrastructure/repositories/sqlite-fleet.repository.ts` | High | Derived fleet read model |
   | `packages/core/src/infrastructure/persistence/sqlite/migrations/143-create-fleet-indexes.ts` | Medium | Triage / circuit-breaker indexes |
-  | `packages/core/src/infrastructure/services/agents/supervisor-agent/` | Medium | Integrate guardrails into gate evaluation (NOT DONE) |
-  | `src/presentation/cli/commands/fleet/` | Medium | New command group: status, triage, approve |
-  | `src/presentation/web/components/fleet/` | Medium | Fleet status bar, triage drawer, batch action controls (NOT DONE) |
+  | `packages/core/src/infrastructure/services/agents/supervisor-agent/` | Medium | Integrate guardrails into gate evaluation |
+  | `src/presentation/cli/commands/fleet/` | Medium | New command group: status, triage, approve, retry, pause, resume |
+  | `src/presentation/web/components/fleet/` | Medium | Fleet status bar, triage drawer, batch action controls |
