@@ -1,5 +1,14 @@
 # Lessons Learned
 
+## A test that passes on retry is a bug report, not noise
+
+The settings e2e test ("Database is in view after clicking it") failed about 1 run in 20 and
+passed on retry, so it looked flaky. The failure screenshot showed the real cause: the jump
+landed, then the Usage metrics section above finished loading and pushed the last section out of
+view, so a person clicking "Database" could land on "Usage metrics". Reproduce with
+`--repeat-each` and `--retries=0`, read the failure screenshot, and fix the behaviour (here,
+`scrollAndHold` keeps the chosen section in view until the page settles) rather than the timeout.
+
 ## A mock of an API must copy what the client keys on, not just the happy shape
 
 Shep 2's mock model (a stand-in for the Messages API that the real Claude Code CLI talks to)
