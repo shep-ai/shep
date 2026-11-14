@@ -66,6 +66,7 @@ impl Home {
             .env("SHEP_HOME", self.shep_home())
             .env("PATH", format!("{}:{SYSTEM_PATH}", self.bin().display()))
             .env("NO_COLOR", "1")
+            .env("SHEP_SECRET_STORE", "file")
             .env("FAKE_LOG", self.log())
             .env("SHEP_ENGINE_TICK_MS", "100")
             .env("SHEP_CI_POLL_SECS", "0")

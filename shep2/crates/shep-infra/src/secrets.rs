@@ -14,8 +14,6 @@ use crate::ShepHome;
 
 /// Every secret is stored under this service name, with its key as the account.
 pub const SERVICE: &str = "shep2";
-#[cfg(not(target_os = "macos"))]
-const FILE_NAME: &str = "secrets.json";
 const PRIVATE_FILE: u32 = 0o600;
 const PRIVATE_DIR: u32 = 0o700;
 const SECRET_TOOL: &str = "secret-tool";
@@ -34,11 +32,22 @@ pub trait SecretStore: Send + Sync {
     fn delete(&self, key: &str) -> Result<(), SecretError>;
 }
 
+/// `SHEP_SECRET_STORE=file` keeps secrets in the home's private file instead of the OS
+/// keychain: tests set it so they never touch a developer's real keychain.
+pub const STORE_ENV: &str = "SHEP_SECRET_STORE";
+const FILE_STORE: &str = "file";
+const FILE_NAME: &str = "secrets.json";
+
 /// The best store this machine has.
 pub fn for_this_machine(home: &ShepHome) -> Arc<dyn SecretStore> {
+    let file =
+        || -> Arc<dyn SecretStore> { Arc::new(FileSecrets::new(home.dir().join(FILE_NAME))) };
+    if std::env::var(STORE_ENV).is_ok_and(|v| v == FILE_STORE) {
+        return file();
+    }
     #[cfg(target_os = "macos")]
     {
-        let _ = home;
+        let _ = file;
         Arc::new(mac::Keychain)
     }
     #[cfg(not(target_os = "macos"))]
@@ -46,7 +55,7 @@ pub fn for_this_machine(home: &ShepHome) -> Arc<dyn SecretStore> {
         let bus = std::env::var_os(SESSION_BUS_ENV).is_some();
         match which(SECRET_TOOL) {
             Some(tool) if bus => Arc::new(SecretTool::new(tool)),
-            _ => Arc::new(FileSecrets::new(home.dir().join(FILE_NAME))),
+            _ => file(),
         }
     }
 }
