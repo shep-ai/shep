@@ -308,9 +308,9 @@ tasks:
       known; the menu bar extra is the progress surface). App Intents are listed by the system
       only in an Xcode build. Not built: open-issues list, plan checklist, stop task, settings
       the daemon lacks (see shep2/macos/README.md).
-      In Review until the macOS CI job compiles ShepApp (the SwiftUI target was never built
-      on Linux) and its tests pass there.
-    state: Review
+      ShepApp builds and ShepKit's tests pass on the macOS CI runner (run 43652223050). Not yet
+      done: a person launching the app and using it against a real daemon.
+    state: Done
     dependencies:
       - task-6
     acceptanceCriteria:
