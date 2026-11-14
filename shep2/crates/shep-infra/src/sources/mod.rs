@@ -6,6 +6,7 @@ pub mod github;
 pub mod http;
 pub mod linear;
 mod say;
+pub mod slack;
 mod stamp;
 
 use std::collections::{BTreeMap, HashMap};
@@ -67,6 +68,7 @@ pub fn factories() -> Vec<Box<dyn SourceFactory>> {
     vec![
         Box::new(github::GitHubFactory::public()),
         Box::new(linear::LinearFactory::public()),
+        Box::new(slack::SlackFactory::new()),
     ]
 }
 

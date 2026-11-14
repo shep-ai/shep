@@ -1,0 +1,12 @@
+{
+  "type": "hello",
+  "connection_info": {
+    "app_id": "A0SHEPAPP1"
+  },
+  "num_connections": 1,
+  "debug_info": {
+    "host": "applink-1",
+    "build_number": 54,
+    "approximate_connection_time": 3600
+  }
+}
