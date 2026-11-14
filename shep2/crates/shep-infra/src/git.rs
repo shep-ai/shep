@@ -3,7 +3,7 @@
 
 use std::path::{Path, PathBuf};
 
-use shep_app::ports::{Git, GitError};
+use shep_app::ports::{Git, GitError, RepoInfo};
 use shep_domain::{check_push, TaskBranch, Worktree};
 
 use crate::process::run;
@@ -66,7 +66,34 @@ fn refused(e: impl std::fmt::Display) -> GitError {
     GitError(e.to_string())
 }
 
+const GITHUB_PREFIXES: [&str; 3] = [
+    "https://github.com/",
+    "git@github.com:",
+    "ssh://git@github.com/",
+];
+const GIT_SUFFIX: &str = ".git";
+
+/// `owner/name` from a GitHub remote URL.
+pub fn github_slug(url: &str) -> Option<String> {
+    let rest = GITHUB_PREFIXES
+        .iter()
+        .find_map(|p| url.trim().strip_prefix(p))?;
+    let rest = rest.trim_end_matches('/');
+    let slug = rest.strip_suffix(GIT_SUFFIX).unwrap_or(rest);
+    let (owner, name) = slug.split_once('/')?;
+    (!owner.is_empty() && !name.is_empty() && !name.contains('/')).then(|| slug.to_owned())
+}
+
 impl Git for GitCli {
+    fn describe(&self, repo: &Path) -> Result<RepoInfo, GitError> {
+        let url = git(repo, &["remote", "get-url", REMOTE]).unwrap_or_default();
+        let status = git(repo, &["status", "--porcelain"])?;
+        Ok(RepoInfo {
+            slug: github_slug(&url),
+            clean: status.is_empty(),
+        })
+    }
+
     fn repo_root(&self, dir: &Path) -> Result<PathBuf, GitError> {
         git(dir, &["rev-parse", "--show-toplevel"]).map(PathBuf::from)
     }

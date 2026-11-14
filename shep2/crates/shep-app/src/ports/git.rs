@@ -6,11 +6,22 @@ use shep_domain::{TaskBranch, Worktree};
 #[error("git: {0}")]
 pub struct GitError(pub String);
 
+/// What a repository looks like from its checkout.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RepoInfo {
+    /// `owner/name` from the `origin` remote, when it is on GitHub.
+    pub slug: Option<String>,
+    /// No uncommitted changes in the person's checkout.
+    pub clean: bool,
+}
+
 /// The repository on disk. Work happens only in worktrees made from `origin`; the person's own
 /// checkout is never touched.
 pub trait Git: Send + Sync {
     /// The top of the repository containing `dir`.
     fn repo_root(&self, dir: &Path) -> Result<PathBuf, GitError>;
+    /// Its GitHub name and whether the checkout is clean. Reads only; changes nothing.
+    fn describe(&self, repo: &Path) -> Result<RepoInfo, GitError>;
     /// Fetches the default branch from `origin` and makes (or finds again) the task's worktree
     /// on `branch`, starting from `origin/<default>`.
     fn prepare_worktree(&self, repo: &Path, branch: &TaskBranch) -> Result<Worktree, GitError>;

@@ -5,7 +5,7 @@ use std::sync::Mutex;
 use shep_domain::{check_push, CiCheck, PullRequest, TaskBranch, TaskSourceRef, Worktree};
 
 use super::lock;
-use crate::ports::{Forge, ForgeError, Git, GitError, Issue, IssueRef};
+use crate::ports::{Forge, ForgeError, Git, GitError, Issue, IssueRef, RepoInfo};
 
 /// The default branch every fake repository has.
 pub const FAKE_BASE: &str = "main";
@@ -54,7 +54,16 @@ impl FakeGit {
     }
 }
 
+/// Every fake repository is `acme/app` on GitHub.
+pub const FAKE_SLUG: &str = "acme/app";
+
 impl Git for FakeGit {
+    fn describe(&self, _repo: &Path) -> Result<RepoInfo, GitError> {
+        Ok(RepoInfo {
+            slug: Some(FAKE_SLUG.into()),
+            clean: true,
+        })
+    }
     fn repo_root(&self, dir: &Path) -> Result<PathBuf, GitError> {
         lock(&self.0)
             .repos
@@ -130,6 +139,7 @@ struct ForgeState {
     merged: Vec<PullRequest>,
     fail_merge: Option<String>,
     labels: HashMap<String, Vec<u64>>,
+    signed_in: Option<String>,
 }
 
 /// GitHub in memory. Checks are answered from a queue a test fills; the last answer repeats.
@@ -161,6 +171,10 @@ impl FakeForge {
     pub fn merged(&self) -> Vec<PullRequest> {
         lock(&self.0).merged.clone()
     }
+    /// Who `gh` is signed in as (`None`: signed out).
+    pub fn sign_in(&self, login: Option<&str>) {
+        lock(&self.0).signed_in = login.map(str::to_owned);
+    }
     /// Puts `label` on these issues.
     pub fn label(&self, numbers: &[u64], label: &str) {
         lock(&self.0)
@@ -175,6 +189,23 @@ impl FakeForge {
 }
 
 impl Forge for FakeForge {
+    fn whoami(&self) -> Result<Option<String>, ForgeError> {
+        Ok(lock(&self.0).signed_in.clone())
+    }
+    fn open_issues(&self, _repo: &Path, limit: usize) -> Result<Vec<IssueRef>, ForgeError> {
+        let s = lock(&self.0);
+        let mut issues: Vec<IssueRef> = s
+            .issues
+            .iter()
+            .map(|(n, i)| IssueRef {
+                number: *n,
+                title: i.title.clone(),
+            })
+            .collect();
+        issues.sort_by_key(|i| i.number);
+        issues.truncate(limit);
+        Ok(issues)
+    }
     fn labelled(&self, _repo: &Path, label: &str) -> Result<Vec<IssueRef>, ForgeError> {
         let s = lock(&self.0);
         let numbers = s.labels.get(label).cloned().unwrap_or_default();

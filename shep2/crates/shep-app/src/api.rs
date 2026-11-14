@@ -3,7 +3,7 @@ use std::path::Path;
 use shep_domain::{ReviewAction, Settings, Task, TaskId};
 
 use crate::ports::AgentView;
-use crate::view::{Brief, TaskDetail};
+use crate::view::{Brief, Setup, TaskDetail};
 use crate::{AppError, Board, SettingsChange, StartOutcome, StartWhen};
 
 /// The calls every surface makes: the four core actions plus reading and changing settings.
@@ -37,4 +37,6 @@ pub trait ShepApi: Send + Sync {
     fn watch_agent(&self, id: TaskId) -> Result<Box<dyn AgentView>, AppError>;
     /// Types into the task's agent ("attach").
     fn send_to_agent(&self, id: TaskId, bytes: &[u8]) -> Result<(), AppError>;
+    /// What is installed, signed in and chosen, for onboarding and `shep config`.
+    fn setup(&self, from_dir: Option<&Path>) -> Result<Setup, AppError>;
 }

@@ -128,4 +128,13 @@ impl AgentProvider for CliAgent {
     fn installed(&self) -> bool {
         finds(&self.search_path, self.program())
     }
+
+    fn install_hint(&self) -> String {
+        let package = match self.kind {
+            AgentKind::ClaudeCode => "@anthropic-ai/claude-code",
+            AgentKind::Codex => "@openai/codex",
+            AgentKind::Gemini => "@google/gemini-cli",
+        };
+        format!("npm install -g {package}")
+    }
 }

@@ -8,14 +8,14 @@ use serde::de::DeserializeOwned;
 use serde::Serialize;
 use shep_app::ports::{AgentView, SessionError};
 use shep_app::{
-    AppError, Board, Brief, SettingsChange, ShepApi, StartOutcome, StartWhen, TaskDetail,
+    AppError, Board, Brief, SettingsChange, Setup, ShepApi, StartOutcome, StartWhen, TaskDetail,
 };
 use shep_domain::{ReviewAction, Settings, Task, TaskId};
 use shep_jsonrpc::{Client, ClientError};
 
 use crate::method::{
     AddLabelParams, AddParams, AgentOutput, IdParams, Method, NoParams, ReviewParams, SendParams,
-    StartParams, UpdateSettingsParams, WatchReply,
+    SetupParams, StartParams, UpdateSettingsParams, WatchReply,
 };
 use crate::{AGENT_OUTPUT, BOARD_CHANGED};
 
@@ -115,6 +115,14 @@ impl ShepApi for RemoteShep {
             id,
             screen: STANDARD.decode(reply.screen).unwrap_or_default(),
         }))
+    }
+    fn setup(&self, from_dir: Option<&Path>) -> Result<Setup, AppError> {
+        self.call(
+            Method::Setup,
+            &SetupParams {
+                from_dir: from_dir.map(|d| d.display().to_string()),
+            },
+        )
     }
     fn send_to_agent(&self, id: TaskId, bytes: &[u8]) -> Result<(), AppError> {
         self.call(

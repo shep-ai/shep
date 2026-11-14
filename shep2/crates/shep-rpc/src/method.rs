@@ -23,10 +23,11 @@ pub enum Method {
     /// Answers with the agent's screen, then pushes [`crate::AGENT_OUTPUT`] as it prints.
     WatchAgent,
     SendToAgent,
+    Setup,
 }
 
 impl Method {
-    pub const ALL: [Method; 14] = [
+    pub const ALL: [Method; 15] = [
         Self::Add,
         Self::Start,
         Self::Board,
@@ -41,6 +42,7 @@ impl Method {
         Self::AddLabel,
         Self::WatchAgent,
         Self::SendToAgent,
+        Self::Setup,
     ];
 
     pub fn name(self) -> &'static str {
@@ -59,6 +61,7 @@ impl Method {
             Self::AddLabel => "add.label",
             Self::WatchAgent => "agent.watch",
             Self::SendToAgent => "agent.send",
+            Self::Setup => "setup",
         }
     }
 
@@ -82,6 +85,7 @@ impl Method {
             Self::AddLabel => "Queue every open issue with this label that is not on the board.",
             Self::WatchAgent => "The agent's screen now, then agent.output notifications.",
             Self::SendToAgent => "Type into the task's agent.",
+            Self::Setup => "What is installed, signed in and chosen, for onboarding and config.",
         }
     }
 }
@@ -145,4 +149,11 @@ pub struct AgentOutput {
     pub id: TaskId,
     /// Base64 bytes.
     pub data: String,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct SetupParams {
+    /// Where the person is; the first time, Shep works in that repository.
+    #[serde(default)]
+    pub from_dir: Option<String>,
 }

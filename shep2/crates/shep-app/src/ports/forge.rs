@@ -23,6 +23,10 @@ pub struct IssueRef {
 
 /// Where pull requests and CI live (GitHub, through `gh`).
 pub trait Forge: Send + Sync {
+    /// Who `gh` is signed in as, or `None` when it is not signed in (or not installed).
+    fn whoami(&self) -> Result<Option<String>, ForgeError>;
+    /// The newest open issues, up to `limit`.
+    fn open_issues(&self, repo: &Path, limit: usize) -> Result<Vec<IssueRef>, ForgeError>;
     /// Open issues in the repository that carry `label`.
     fn labelled(&self, repo: &Path, label: &str) -> Result<Vec<IssueRef>, ForgeError>;
     /// The issue behind a task, or `None` for a source this forge does not hold (a sentence).

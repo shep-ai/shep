@@ -77,6 +77,18 @@ fn pr_number(url: &str) -> Result<u64, ForgeError> {
         .ok_or_else(|| ForgeError(format!("gh did not print a pull request URL: {url:?}")))
 }
 
+fn parse_issue_refs(json: &str) -> Result<Vec<IssueRef>, ForgeError> {
+    let issues: Vec<IssueRefJson> = serde_json::from_str(json)
+        .map_err(|e| ForgeError(format!("unexpected issue list from gh: {e}")))?;
+    Ok(issues
+        .into_iter()
+        .map(|i| IssueRef {
+            number: i.number,
+            title: i.title,
+        })
+        .collect())
+}
+
 /// `…/actions/runs/<run id>/job/<job id>` → the run id.
 fn run_id(link: &str) -> Option<&str> {
     let (_, rest) = link.split_once(RUNS_SEGMENT)?;
@@ -84,6 +96,33 @@ fn run_id(link: &str) -> Option<&str> {
 }
 
 impl Forge for GhForge {
+    /// `None` when gh is missing or not signed in: onboarding offers `gh auth login`.
+    fn whoami(&self) -> Result<Option<String>, ForgeError> {
+        let Ok(ran) = run_raw(&self.program, &["api", "user", "--jq", ".login"], None, &[]) else {
+            return Ok(None);
+        };
+        let login = ran.stdout.trim();
+        Ok((ran.success && !login.is_empty()).then(|| login.to_owned()))
+    }
+
+    fn open_issues(&self, repo: &Path, limit: usize) -> Result<Vec<IssueRef>, ForgeError> {
+        let limit = limit.to_string();
+        let json = self.gh(
+            repo,
+            &[
+                "issue",
+                "list",
+                "--state",
+                "open",
+                "--json",
+                "number,title",
+                "--limit",
+                &limit,
+            ],
+        )?;
+        parse_issue_refs(&json)
+    }
+
     fn labelled(&self, repo: &Path, label: &str) -> Result<Vec<IssueRef>, ForgeError> {
         let json = self.gh(
             repo,
@@ -100,15 +139,7 @@ impl Forge for GhForge {
                 LABEL_LIMIT,
             ],
         )?;
-        let issues: Vec<IssueRefJson> = serde_json::from_str(&json)
-            .map_err(|e| ForgeError(format!("unexpected issue list from gh: {e}")))?;
-        Ok(issues
-            .into_iter()
-            .map(|i| IssueRef {
-                number: i.number,
-                title: i.title,
-            })
-            .collect())
+        parse_issue_refs(&json)
     }
 
     fn issue(&self, repo: &Path, source: &TaskSourceRef) -> Result<Option<Issue>, ForgeError> {

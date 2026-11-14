@@ -50,7 +50,9 @@ impl Shep {
             events: &events,
             utc_offset: ports.clock.utc_offset(),
         });
+        let summary = self.summary(task.state, &task, &events)?;
         Ok(TaskDetail {
+            summary,
             agent: ports.settings.load_settings()?.agent,
             branch: worktree.map(|wt| wt.branch.to_string()),
             checks: run.as_ref().map(|r| r.checks.clone()).unwrap_or_default(),

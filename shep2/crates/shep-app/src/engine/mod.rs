@@ -117,12 +117,19 @@ impl Engine {
             self.drive(task);
         }
         let Ok(board) = self.shep.board() else { return };
-        if board.working.is_empty() {
+        let keep_awake = self
+            .ports
+            .settings
+            .load_settings()
+            .is_ok_and(|s| s.keep_awake);
+        if board.working.is_empty() || !keep_awake {
             self.ports.awake.release();
+        }
+        if board.working.is_empty() {
             if board.queued.is_empty() {
                 self.shep.close_shift();
             }
-        } else {
+        } else if keep_awake {
             self.ports.awake.hold();
         }
     }
@@ -132,7 +139,7 @@ impl Engine {
             return;
         };
         let (day, now) = time::local(self.ports.clock.now(), self.ports.clock.utc_offset());
-        if now != settings.shift_start {
+        if !settings.nightly || now != settings.shift_start {
             return;
         }
         let Ok(mut opened) = self.shift_opened_on.lock() else {

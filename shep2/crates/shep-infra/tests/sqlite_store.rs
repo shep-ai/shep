@@ -76,6 +76,8 @@ fn settings_default_until_saved_then_persist() {
         shift_start: ClockTime::parse("22:15").unwrap(),
         parallelism: 4,
         repo: Some("/code/app".into()),
+        nightly: false,
+        keep_awake: false,
     };
     store.save_settings(&s).unwrap();
     assert_eq!(store.load_settings().unwrap(), s);

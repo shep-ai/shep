@@ -28,6 +28,8 @@ pub trait AgentProvider: Send + Sync {
     fn read_screen(&self, screen: &str) -> Option<AgentStatus>;
     /// Whether the CLI is installed.
     fn installed(&self) -> bool;
+    /// The command that installs it, for a person to run.
+    fn install_hint(&self) -> String;
 }
 
 /// Resolves the agent the settings name. No component names an agent itself.

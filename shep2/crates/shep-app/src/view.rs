@@ -2,7 +2,7 @@
 
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use shep_domain::{AgentKind, CiCheck, Task, TaskEvent, UnixTime};
+use shep_domain::{AgentKind, CiCheck, Settings, Task, TaskEvent, UnixTime};
 
 /// Where a task is, in words every surface uses the same way.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
@@ -71,6 +71,8 @@ pub struct TaskDetail {
     pub step: StepView,
     /// One line on what is happening now.
     pub activity: String,
+    /// The same line the morning brief shows: "CI green · +41 -12 · screenshot".
+    pub summary: String,
     pub agent: Option<AgentKind>,
     pub branch: Option<String>,
     /// Whether an agent session is running for it right now.
@@ -118,4 +120,48 @@ pub struct Brief {
     pub total: usize,
     /// Ready, with CI green and a pull request: the "merge the N green" button.
     pub mergeable: usize,
+    /// Those tasks, so a surface can merge them.
+    #[serde(default)]
+    pub green: Vec<shep_domain::TaskId>,
+}
+
+/// A coding agent onboarding can offer.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct AgentOption {
+    pub kind: AgentKind,
+    pub name: String,
+    pub installed: bool,
+    /// The command that installs it.
+    pub install: String,
+    /// The one the settings name.
+    pub chosen: bool,
+}
+
+/// The repository Shep works in.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct RepoFacts {
+    pub path: String,
+    /// `owner/name` on GitHub.
+    pub slug: Option<String>,
+    pub clean: bool,
+}
+
+/// An open issue worth trying first.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct Suggestion {
+    pub number: u64,
+    pub title: String,
+}
+
+/// What onboarding and `shep config` show: what is installed, signed in and chosen.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct Setup {
+    pub agents: Vec<AgentOption>,
+    /// Who GitHub (`gh`) is signed in as.
+    pub github: Option<String>,
+    pub repo: Option<RepoFacts>,
+    pub suggestions: Vec<Suggestion>,
+    pub settings: Settings,
+    /// Everything work needs is in place: a repository, an agent, GitHub.
+    pub ready: bool,
 }

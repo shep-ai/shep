@@ -211,7 +211,12 @@ tasks:
       inline on the first run of the day; terminal onboarding (agent, GitHub, repository, when
       to work, first task). --no-motion, NO_COLOR, CI and non-interactive output disable
       motion and color; piped output prints the plain board.
-    state: Todo
+      Built: crate shep-tui (Ratatui, tachyonfx fades, vt100 for the live session) opened by a
+      bare `shep` in a terminal; board, split view with attach/detach (ctrl-]), watch screen,
+      splash once a day, morning brief with "merge the N green", and onboarding driven by the
+      core `setup` call. Checked live in tmux against fake agents; snapshot tests for each
+      screen. Not checked: a real agent session (needs the owner's login).
+    state: Done
     dependencies:
       - task-6
     acceptanceCriteria:

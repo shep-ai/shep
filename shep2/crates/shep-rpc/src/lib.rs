@@ -10,7 +10,7 @@ mod server;
 pub use client::{BoardChanges, RemoteShep};
 pub use method::{
     AddLabelParams, AddParams, AgentOutput, IdParams, Method, NoParams, ReviewParams, SendParams,
-    StartParams, UpdateSettingsParams, WatchReply,
+    SetupParams, StartParams, UpdateSettingsParams, WatchReply,
 };
 pub use server::RpcServer;
 

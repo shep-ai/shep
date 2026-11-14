@@ -14,7 +14,7 @@ pub use agents::{
     SessionError, SessionSpec, SessionState,
 };
 pub use forge::{Forge, ForgeError, Issue, IssueRef};
-pub use git::{Git, GitError};
+pub use git::{Git, GitError, RepoInfo};
 pub use store::{
     EventLog, Mark, Marks, RunRepository, SettingsRepository, StoreError, TaskRepository,
 };

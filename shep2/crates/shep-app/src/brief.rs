@@ -38,7 +38,7 @@ impl Shep {
                 });
             }
         }
-        let mergeable = board
+        let green: Vec<_> = board
             .ready
             .iter()
             .filter(|t| t.pr.is_some())
@@ -53,7 +53,8 @@ impl Shep {
                     .unwrap_or_default();
                 ci_words(&checks, &events) == Some("CI green")
             })
-            .count();
+            .map(|t| t.id)
+            .collect();
         Ok(Brief {
             at: ports.clock.now(),
             done: board.ready.len(),
@@ -61,7 +62,8 @@ impl Shep {
             items,
             while_you_slept: while_you_slept(&all_events, &board.ready),
             overnight: overnight(&all_events),
-            mergeable,
+            mergeable: green.len(),
+            green,
         })
     }
 
@@ -98,7 +100,7 @@ impl Shep {
         Ok(true)
     }
 
-    fn summary(
+    pub(crate) fn summary(
         &self,
         state: TaskState,
         task: &Task,

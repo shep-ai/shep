@@ -1,0 +1,34 @@
+---
+source: crates/shep-tui/tests/screens.rs
+expression: "snapshot(&m, true)"
+---
+shep · watch · booking-app · 02:14
+  *                     +                                                        ·       +      ·
+
+                                           .  .                                *                        *
+                     ·      +
+              *                         *
+ .                                   ·
+                            ·
+    O  ,_                                                              .                   __________________
+   /|\_/ |  @@o z @@o z                        *                               ·      ·    |           ·    |
+ *  |   [@] @@o               ·    .                                                       |@@o%@@o**       |
+___/_\________________________________________________________________________________________________________
+.''` '  ,'''' ,'. ,. `,''`.',,`'...`..  ',' '````` ,''   ``''..,`  `' ''.`''''. .`` .`.`..`,,' . .,. ' ` . '`
+.,'`'   ``` ` .`,,.', ...,`.'   ..` `,.'.`'. ,.. .' '``'.`   ,,' ., `,  .  ,`'`` ,  .,  ,` ` '.'',. '..'`, .`
+
+ · #433 Rate-limit /api/search       queued                        ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⢀⢀⢀⢀
+ · #436 Dark mode for settings       queued                        ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⢀⢀⢀⢀
+ ⠿ #425 Empty state for projects pag Herding commits…              ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⢀⢀⢀⢀
+ ! #430 Move avatars to S3           needs you: Which bucket, prod ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⢀⢀⢀⢀
+ ✓ #412 Fix login redirect loop      ready · CI green              ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⢀⢀⢀⢀
+ ✓ #418 Add CSV export to reports    ready · CI green              ⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⠀⢀⢀⢀⢀⢀
+
+
+
+
+
+
+
+
+● keeping watch · 2 of 6 in the fold · 1 board · ctrl-c to leave

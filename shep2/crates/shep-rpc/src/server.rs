@@ -14,7 +14,7 @@ use base64::Engine as _;
 
 use crate::method::{
     AddLabelParams, AddParams, AgentOutput, IdParams, Method, ReviewParams, SendParams,
-    StartParams, UpdateSettingsParams, WatchReply,
+    SetupParams, StartParams, UpdateSettingsParams, WatchReply,
 };
 use crate::{AGENT_OUTPUT, BOARD_CHANGED};
 
@@ -106,6 +106,10 @@ impl RpcServer {
             Method::AddLabel => {
                 let p: AddLabelParams = parse(params)?;
                 reply(api.add_label(&p.label, p.from_dir.as_deref().map(Path::new)))
+            }
+            Method::Setup => {
+                let p: SetupParams = parse(params)?;
+                reply(api.setup(p.from_dir.as_deref().map(Path::new)))
             }
             Method::WatchAgent => reply(self.watch(parse::<IdParams>(params)?.id, peer)),
             Method::SendToAgent => {

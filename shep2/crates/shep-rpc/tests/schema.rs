@@ -65,7 +65,8 @@ fn the_schema_lists_the_four_actions_and_what_surfaces_read() {
             "day.first_run",
             "add.label",
             "agent.watch",
-            "agent.send"
+            "agent.send",
+            "setup"
         ]
     );
     assert_eq!(current()["x-notifications"][0]["name"], "board.changed");

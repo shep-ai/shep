@@ -111,3 +111,49 @@ fn adding_from_inside_a_repository_points_shep_at_it() {
         "a chosen repository stays"
     );
 }
+
+#[test]
+fn a_night_off_means_only_shep_go_starts_work() {
+    let w = world();
+    w.f.clock.set_utc_offset(2 * 3600);
+    w.shep
+        .update_settings(SettingsChange {
+            nightly: Some(false),
+            ..Default::default()
+        })
+        .unwrap();
+    w.shep.add("a", None).unwrap();
+    w.shep
+        .start(StartWhen::At(ClockTime {
+            hour: 15,
+            minute: 47,
+        }))
+        .unwrap();
+    assert!(
+        w.shep.settings().unwrap().nightly,
+        "setting a time turns nightly on"
+    );
+    w.shep
+        .update_settings(SettingsChange {
+            nightly: Some(false),
+            ..Default::default()
+        })
+        .unwrap();
+    w.f.clock.advance(20);
+    w.engine.tick();
+    assert_eq!(w.state(1), TaskState::Queued, "no nightly start");
+}
+
+#[test]
+fn keeping_awake_can_be_turned_off() {
+    let w = World::started();
+    assert!(w.f.awake.is_held());
+    w.shep
+        .update_settings(SettingsChange {
+            keep_awake: Some(false),
+            ..Default::default()
+        })
+        .unwrap();
+    w.engine.tick();
+    assert!(!w.f.awake.is_held(), "work goes on; the machine may sleep");
+}

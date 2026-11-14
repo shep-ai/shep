@@ -10,7 +10,7 @@ use shep_domain::{
 };
 
 use crate::ports::AgentView;
-use crate::view::{Brief, TaskDetail};
+use crate::view::{Brief, Setup, TaskDetail};
 use crate::{AppError, Board, Ports, ShepApi};
 
 /// When `start` should begin queued work.
@@ -40,6 +40,10 @@ pub struct SettingsChange {
     /// The local checkout Shep works in.
     #[serde(default)]
     pub repo: Option<String>,
+    #[serde(default)]
+    pub nightly: Option<bool>,
+    #[serde(default)]
+    pub keep_awake: Option<bool>,
 }
 
 impl SettingsChange {
@@ -233,6 +237,7 @@ impl ShepApi for Shep {
             StartWhen::At(at) => {
                 self.update_settings(SettingsChange {
                     shift_start: Some(at),
+                    nightly: Some(true),
                     ..SettingsChange::default()
                 })?;
                 Ok(StartOutcome::Scheduled {
@@ -295,6 +300,10 @@ impl ShepApi for Shep {
         Shep::send_to_agent(self, id, bytes)
     }
 
+    fn setup(&self, from_dir: Option<&Path>) -> Result<Setup, AppError> {
+        Shep::setup(self, from_dir)
+    }
+
     fn update_settings(&self, change: SettingsChange) -> Result<Settings, AppError> {
         let _guard = self.lock()?;
         let mut settings = self.ports.settings.load_settings()?;
@@ -309,6 +318,12 @@ impl ShepApi for Shep {
         }
         if let Some(repo) = change.repo {
             settings.repo = Some(repo);
+        }
+        if let Some(nightly) = change.nightly {
+            settings.nightly = nightly;
+        }
+        if let Some(keep_awake) = change.keep_awake {
+            settings.keep_awake = keep_awake;
         }
         self.ports.settings.save_settings(&settings)?;
         Ok(settings)

@@ -21,6 +21,15 @@ impl AgentKind {
             .ok_or_else(|| SettingsError::UnknownAgent(s.to_owned()))
     }
 
+    /// The name people know it by.
+    pub fn display_name(self) -> &'static str {
+        match self {
+            Self::ClaudeCode => "Claude Code",
+            Self::Codex => "Codex",
+            Self::Gemini => "Gemini CLI",
+        }
+    }
+
     /// The name used on the command line and in config.
     pub fn cli_name(self) -> &'static str {
         match self {
@@ -80,6 +89,17 @@ pub struct Settings {
     /// repository or `shep config --repo`.
     #[serde(default)]
     pub repo: Option<String>,
+    /// Whether the shift starts by itself each night at `shift_start`; when off, only
+    /// `shep go` starts work.
+    #[serde(default = "on")]
+    pub nightly: bool,
+    /// Whether the machine is kept awake while tasks work.
+    #[serde(default = "on")]
+    pub keep_awake: bool,
+}
+
+fn on() -> bool {
+    true
 }
 
 impl Default for Settings {
@@ -89,6 +109,8 @@ impl Default for Settings {
             shift_start: DEFAULT_SHIFT_START,
             parallelism: DEFAULT_PARALLELISM,
             repo: None,
+            nightly: true,
+            keep_awake: true,
         }
     }
 }

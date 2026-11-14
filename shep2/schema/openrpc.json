@@ -10,6 +10,36 @@
         ],
         "type": "string"
       },
+      "AgentOption": {
+        "description": "A coding agent onboarding can offer.",
+        "properties": {
+          "chosen": {
+            "description": "The one the settings name.",
+            "type": "boolean"
+          },
+          "install": {
+            "description": "The command that installs it.",
+            "type": "string"
+          },
+          "installed": {
+            "type": "boolean"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/AgentKind"
+          },
+          "name": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "kind",
+          "name",
+          "installed",
+          "install",
+          "chosen"
+        ],
+        "type": "object"
+      },
       "AgentOutput": {
         "description": "Pushed after `agent.watch`: bytes the agent printed.",
         "properties": {
@@ -81,6 +111,14 @@
             "format": "uint",
             "minimum": 0,
             "type": "integer"
+          },
+          "green": {
+            "default": [],
+            "description": "Those tasks, so a surface can merge them.",
+            "items": {
+              "$ref": "#/components/schemas/TaskId"
+            },
+            "type": "array"
           },
           "items": {
             "description": "Needs you first, then ready, then still working.",
@@ -284,6 +322,29 @@
         ],
         "type": "object"
       },
+      "RepoFacts": {
+        "description": "The repository Shep works in.",
+        "properties": {
+          "clean": {
+            "type": "boolean"
+          },
+          "path": {
+            "type": "string"
+          },
+          "slug": {
+            "description": "`owner/name` on GitHub.",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "path",
+          "clean"
+        ],
+        "type": "object"
+      },
       "ReviewAction": {
         "description": "The decisions a person makes on a task.",
         "oneOf": [
@@ -349,6 +410,16 @@
             ],
             "description": "`None` until onboarding picks one (or Shep detects one)."
           },
+          "keep_awake": {
+            "default": true,
+            "description": "Whether the machine is kept awake while tasks work.",
+            "type": "boolean"
+          },
+          "nightly": {
+            "default": true,
+            "description": "Whether the shift starts by itself each night at `shift_start`; when off, only\n`shep go` starts work.",
+            "type": "boolean"
+          },
           "parallelism": {
             "description": "How many tasks run at once.",
             "format": "uint8",
@@ -388,6 +459,20 @@
             ],
             "default": null
           },
+          "keep_awake": {
+            "default": null,
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "nightly": {
+            "default": null,
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
           "parallelism": {
             "default": null,
             "format": "uint8",
@@ -418,6 +503,54 @@
             "default": null
           }
         },
+        "type": "object"
+      },
+      "Setup": {
+        "description": "What onboarding and `shep config` show: what is installed, signed in and chosen.",
+        "properties": {
+          "agents": {
+            "items": {
+              "$ref": "#/components/schemas/AgentOption"
+            },
+            "type": "array"
+          },
+          "github": {
+            "description": "Who GitHub (`gh`) is signed in as.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "ready": {
+            "description": "Everything work needs is in place: a repository, an agent, GitHub.",
+            "type": "boolean"
+          },
+          "repo": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RepoFacts"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "settings": {
+            "$ref": "#/components/schemas/Settings"
+          },
+          "suggestions": {
+            "items": {
+              "$ref": "#/components/schemas/Suggestion"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "agents",
+          "suggestions",
+          "settings",
+          "ready"
+        ],
         "type": "object"
       },
       "StartOutcome": {
@@ -514,6 +647,24 @@
             "type": "string"
           }
         ]
+      },
+      "Suggestion": {
+        "description": "An open issue worth trying first.",
+        "properties": {
+          "number": {
+            "format": "uint64",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "title": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "number",
+          "title"
+        ],
+        "type": "object"
       },
       "Task": {
         "description": "The one thing in Shep: work handed over by a person.",
@@ -646,6 +797,10 @@
           "step": {
             "$ref": "#/components/schemas/StepView"
           },
+          "summary": {
+            "description": "The same line the morning brief shows: \"CI green · +41 -12 · screenshot\".",
+            "type": "string"
+          },
           "task": {
             "$ref": "#/components/schemas/Task"
           }
@@ -654,6 +809,7 @@
           "task",
           "step",
           "activity",
+          "summary",
           "live",
           "checks",
           "stat",
@@ -1159,6 +1315,31 @@
         }
       },
       "summary": "Type into the task's agent."
+    },
+    {
+      "name": "setup",
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "name": "from_dir",
+          "required": false,
+          "schema": {
+            "default": null,
+            "description": "Where the person is; the first time, Shep works in that repository.",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/Setup"
+        }
+      },
+      "summary": "What is installed, signed in and chosen, for onboarding and config."
     }
   ],
   "openrpc": "1.3.2",

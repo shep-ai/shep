@@ -213,3 +213,16 @@ fn labelled_issues_are_listed_open_only() {
         ["issue list --label shep --state open --json number,title --limit 200"]
     );
 }
+
+#[test]
+fn who_is_signed_in_and_the_newest_open_issues() {
+    let fake = FakeGh::new();
+    fake.answer("api_user", "ariel\n", 0);
+    fake.answer("issue_list", r#"[{"number":4,"title":"Fix login"}]"#, 0);
+    let gh = fake.gh();
+    assert_eq!(gh.whoami().unwrap().as_deref(), Some("ariel"));
+    assert_eq!(gh.open_issues(&fake.here(), 5).unwrap()[0].number, 4);
+    fake.complain("api_user", "You are not logged into any GitHub hosts", 4);
+    assert_eq!(gh.whoami().unwrap(), None);
+    assert_eq!(GhForge::new("/no/such/gh").whoami().unwrap(), None);
+}

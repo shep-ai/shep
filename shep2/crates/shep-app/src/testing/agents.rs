@@ -59,6 +59,9 @@ impl AgentProvider for FakeProvider {
     fn installed(&self) -> bool {
         self.installed.load(Ordering::SeqCst)
     }
+    fn install_hint(&self) -> String {
+        "npm install -g fake-agent".into()
+    }
 }
 
 /// One fake provider per agent kind; records which kinds were asked for.

@@ -129,6 +129,7 @@ fn the_brief_lists_the_night_and_comes_once_per_morning() {
     );
     assert_eq!((brief.done, brief.total), (1, 2));
     assert_eq!(brief.mergeable, 1);
+    assert_eq!(brief.green, [TaskId(1)]);
     assert!(brief.overnight.is_some());
 
     assert_eq!(
@@ -204,4 +205,59 @@ fn a_running_agent_can_be_watched_and_typed_to() {
         w.shep.watch_agent(TaskId(2)),
         Err(AppError::NotReady(_))
     ));
+}
+
+#[test]
+fn detail_carries_the_same_one_line_summary_as_the_brief() {
+    let w = World::reviewing();
+    w.f.files.put("/tasks/1/proof/login.png", "PNG");
+    w.f.sessions.exit(&w.session().0, 0, "");
+    w.engine.tick();
+    let d = w.shep.detail(TaskId(1)).unwrap();
+    assert_eq!(d.summary, "CI green · +1 -1 · screenshot");
+    assert_eq!(w.shep.brief().unwrap().items[0].summary, d.summary);
+}
+
+#[test]
+fn setup_says_what_is_installed_signed_in_and_where_work_happens() {
+    let w = world();
+    w.f.agents.get(AgentKind::Codex).set_installed(false);
+    w.f.forge.add_issue(8, "Add CSV export", "");
+    w.f.forge.sign_in(Some("ariel"));
+    let s = w.shep.setup(None).unwrap();
+    let agents: Vec<(AgentKind, &str, bool, bool)> = s
+        .agents
+        .iter()
+        .map(|a| (a.kind, a.name.as_str(), a.installed, a.chosen))
+        .collect();
+    assert_eq!(
+        agents,
+        [
+            (AgentKind::ClaudeCode, "Claude Code", true, true),
+            (AgentKind::Codex, "Codex", false, false),
+            (AgentKind::Gemini, "Gemini CLI", true, false)
+        ]
+    );
+    assert_eq!(s.github.as_deref(), Some("ariel"));
+    let repo = s.repo.unwrap();
+    assert_eq!(
+        (repo.path.as_str(), repo.slug.as_deref(), repo.clean),
+        (REPO, Some("acme/app"), true)
+    );
+    assert_eq!(
+        s.suggestions.iter().map(|i| i.number).collect::<Vec<_>>(),
+        [7, 8]
+    );
+    assert!(s.ready);
+
+    w.f.forge.sign_in(None);
+    let s = w.shep.setup(None).unwrap();
+    assert_eq!((s.github, s.ready), (None, false));
+}
+
+#[test]
+fn each_agent_says_how_to_install_it() {
+    let w = world();
+    let s = w.shep.setup(None).unwrap();
+    assert!(s.agents.iter().all(|a| !a.install.is_empty()));
 }

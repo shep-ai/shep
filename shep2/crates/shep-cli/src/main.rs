@@ -4,6 +4,7 @@
 mod cli;
 mod connect;
 mod daemon;
+mod look;
 mod output;
 mod wiring;
 
@@ -17,9 +18,11 @@ use shep_infra::ShepHome;
 fn main() -> ExitCode {
     let cli = Cli::parse();
     let home = ShepHome::from_env();
+    let look = look::detect(cli.no_motion);
     let outcome = match cli.command {
         Some(Command::Daemon) => daemon::run(&home).map(|()| String::new()),
         Some(Command::Holder) => daemon::run_holder(&home).map(|()| String::new()),
+        None if look.interactive => open_board(&home, look).map(|()| String::new()),
         command => run(&home, command),
     };
     match outcome {
@@ -36,6 +39,36 @@ fn main() -> ExitCode {
             ExitCode::FAILURE
         }
     }
+}
+
+/// In a terminal: the morning brief when there is news, then the board (with onboarding the
+/// first time). The board is live, so it talks to the daemon, starting it if needed.
+fn open_board(home: &ShepHome, look: look::Look) -> Result<(), AppError> {
+    let api = connect::daemon(home)?;
+    let opts = shep_tui::Options {
+        motion: look.motion,
+        color: look.color,
+        cwd: std::env::current_dir().ok(),
+    };
+    let failed = |e: std::io::Error| AppError::Remote(e.to_string());
+    if let Some(brief) = api.morning_brief()? {
+        let repo = api
+            .settings()?
+            .repo
+            .as_deref()
+            .and_then(|r| {
+                std::path::Path::new(r)
+                    .file_name()
+                    .map(|n| n.to_string_lossy().into_owned())
+            })
+            .unwrap_or_default();
+        if shep_tui::brief::interact(api.as_ref(), &brief, &repo, &opts).map_err(failed)?
+            == shep_tui::brief::Next::Done
+        {
+            return Ok(());
+        }
+    }
+    shep_tui::run(api.as_ref(), &opts).map_err(failed)
 }
 
 fn run(home: &ShepHome, command: Option<Command>) -> Result<String, AppError> {
@@ -61,6 +94,8 @@ fn run(home: &ShepHome, command: Option<Command>) -> Result<String, AppError> {
             shift,
             parallel,
             repo,
+            nightly,
+            keep_awake,
         }) => {
             let repo = repo
                 .map(|p| {
@@ -74,6 +109,8 @@ fn run(home: &ShepHome, command: Option<Command>) -> Result<String, AppError> {
                 shift_start: shift,
                 parallelism: parallel,
                 repo,
+                nightly,
+                keep_awake,
             };
             let api = connect::any(home)?;
             let settings = if change.is_empty() {

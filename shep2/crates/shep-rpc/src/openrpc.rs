@@ -4,12 +4,12 @@
 use schemars::generate::{SchemaGenerator, SchemaSettings};
 use schemars::{JsonSchema, Schema};
 use serde_json::{json, Map, Value};
-use shep_app::{Board, Brief, SettingsChange, StartOutcome, TaskDetail};
+use shep_app::{Board, Brief, SettingsChange, Setup, StartOutcome, TaskDetail};
 use shep_domain::{Settings, Task};
 
 use crate::method::{
     AddLabelParams, AddParams, AgentOutput, IdParams, Method, NoParams, ReviewParams, SendParams,
-    StartParams, UpdateSettingsParams, WatchReply,
+    SetupParams, StartParams, UpdateSettingsParams, WatchReply,
 };
 use crate::{AGENT_OUTPUT, BOARD_CHANGED};
 
@@ -45,6 +45,7 @@ fn shape(method: Method) -> (SchemaFn, SchemaFn) {
         Method::AddLabel => (of::<AddLabelParams>, reference::<Vec<Task>>),
         Method::WatchAgent => (of::<IdParams>, reference::<WatchReply>),
         Method::SendToAgent => (of::<SendParams>, reference::<()>),
+        Method::Setup => (of::<SetupParams>, reference::<Setup>),
     }
 }
 

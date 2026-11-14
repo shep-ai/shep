@@ -124,3 +124,29 @@ fn the_repository_root_is_found_from_inside_it() {
     );
     assert!(g.repo_root(repos.dir.path()).is_err());
 }
+
+#[test]
+fn a_repository_describes_its_github_name_and_whether_it_is_clean() {
+    use shep_infra::github_slug;
+    for url in [
+        "https://github.com/acme/app.git",
+        "https://github.com/acme/app",
+        "git@github.com:acme/app.git",
+        "ssh://git@github.com/acme/app.git",
+    ] {
+        assert_eq!(github_slug(url).as_deref(), Some("acme/app"), "{url}");
+    }
+    assert_eq!(github_slug("https://gitlab.com/acme/app.git"), None);
+    assert_eq!(github_slug("/tmp/origin.git"), None);
+
+    let repos = Repos::new();
+    let g = GitCli::new(repos.worktrees());
+    let info = g.describe(&repos.checkout()).unwrap();
+    assert_eq!(
+        (info.slug, info.clean),
+        (None, true),
+        "a local origin is not on GitHub"
+    );
+    repos.busy_checkout();
+    assert!(!g.describe(&repos.checkout()).unwrap().clean);
+}

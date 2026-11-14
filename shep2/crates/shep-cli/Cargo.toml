@@ -15,6 +15,7 @@ shep-app.workspace = true
 shep-infra.workspace = true
 shep-jsonrpc.workspace = true
 shep-rpc.workspace = true
+shep-tui.workspace = true
 clap.workspace = true
 
 [dev-dependencies]

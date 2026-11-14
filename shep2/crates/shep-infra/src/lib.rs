@@ -17,7 +17,7 @@ pub use awake::{inhibitor_command, SystemKeepAwake};
 pub use clock::SystemClock;
 pub use files::FsTaskFiles;
 pub use gh::GhForge;
-pub use git::GitCli;
+pub use git::{github_slug, GitCli};
 pub use holder::HolderSessions;
 pub use home::{ShepHome, MAX_SOCKET_PATH, SHEP_HOME_ENV};
 pub use process::{spawn_detached, wait_until};

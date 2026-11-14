@@ -12,6 +12,9 @@ use shep_domain::{AgentKind, ClockTime};
 pub struct Cli {
     #[command(subcommand)]
     pub command: Option<Command>,
+    /// Turn every animation off (`NO_COLOR`, `CI` and piped output do this by themselves)
+    #[arg(long, global = true)]
+    pub no_motion: bool,
 }
 
 #[derive(Debug, Subcommand)]
@@ -45,6 +48,12 @@ pub enum Command {
         /// The local checkout Shep works in; each task gets its own worktree from its origin
         #[arg(long, value_name = "PATH")]
         repo: Option<std::path::PathBuf>,
+        /// Start the shift by itself every night (on), or only on `shep go` (off)
+        #[arg(long, value_name = "on|off", value_parser = switch)]
+        nightly: Option<bool>,
+        /// Keep the machine awake while tasks work (on power only on a Mac)
+        #[arg(long, value_name = "on|off", value_parser = switch)]
+        keep_awake: Option<bool>,
     },
     /// Runs the background daemon (started by `shep go`; not for direct use)
     #[command(name = "__daemon", hide = true)]
@@ -52,4 +61,15 @@ pub enum Command {
     /// Runs the PTY holder that keeps agents alive (started by the daemon)
     #[command(name = "__holder", hide = true)]
     Holder,
+}
+
+const ON: &str = "on";
+const OFF: &str = "off";
+
+fn switch(s: &str) -> Result<bool, String> {
+    match s.trim() {
+        ON => Ok(true),
+        OFF => Ok(false),
+        other => Err(format!("{other:?} is not on or off")),
+    }
 }

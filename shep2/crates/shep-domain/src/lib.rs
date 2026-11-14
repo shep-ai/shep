@@ -17,7 +17,7 @@ pub use event::{CheckState, CiCheck, CiVerdict, EventKind, TaskEvent};
 pub use run::{
     conversation_id, AgentJob, ConversationRole, Run, RunStep, SessionId, Worktree, MAX_CI_FIXES,
 };
-pub use settings::{AgentKind, ClockTime, Settings, SettingsError};
+pub use settings::{AgentKind, ClockTime, Settings, SettingsError, MAX_PARALLELISM};
 pub use source::{SourceKind, SourceRefError, TaskSourceRef};
 pub use task::{PullRequest, ReviewAction, Task, TaskId, UnixTime};
 pub use task_state::{TaskState, TransitionError};
