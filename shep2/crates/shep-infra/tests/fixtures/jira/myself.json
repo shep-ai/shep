@@ -1,0 +1,16 @@
+{
+  "self": "https://acme.atlassian.net/rest/api/3/user?accountId=5b10a2844c20165700ede21g",
+  "accountId": "5b10a2844c20165700ede21g",
+  "accountType": "atlassian",
+  "emailAddress": "mia@example.com",
+  "avatarUrls": {
+    "48x48": "https://avatar-management--avatars.server-location.prod.public.atl-paas.net/initials/MK-5.png?size=48&s=48"
+  },
+  "displayName": "Mia Krystof",
+  "active": true,
+  "timeZone": "Europe/London",
+  "locale": "en_GB",
+  "groups": { "size": 3, "items": [] },
+  "applicationRoles": { "size": 1, "items": [] },
+  "expand": "groups,applicationRoles"
+}

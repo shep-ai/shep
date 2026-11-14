@@ -1,0 +1,54 @@
+{
+  "object": "page",
+  "id": "3b4c5d6e-7f80-4912-a3b4-c5d6e7f8a9b0",
+  "created_time": "2026-11-13T16:40:00.000Z",
+  "last_edited_time": "2026-11-13T18:10:00.000Z",
+  "created_by": { "object": "user", "id": "e450a39e-9051-4d36-bc4e-8581611fc592" },
+  "last_edited_by": { "object": "user", "id": "e450a39e-9051-4d36-bc4e-8581611fc592" },
+  "cover": null,
+  "icon": null,
+  "parent": {
+    "type": "data_source_id",
+    "data_source_id": "2a3b4c5d-6e7f-4801-9a2b-3c4d5e6f7a8b",
+    "database_id": "1f2e3d4c-5b6a-4798-8a9b-0c1d2e3f4a5b"
+  },
+  "in_trash": false,
+  "is_locked": false,
+  "properties": {
+    "Name": {
+      "id": "title",
+      "type": "title",
+      "title": [
+        {
+          "type": "text",
+          "text": { "content": "Coupon field rejects lowercase codes", "link": null },
+          "annotations": {
+            "bold": false,
+            "italic": false,
+            "strikethrough": false,
+            "underline": false,
+            "code": false,
+            "color": "default"
+          },
+          "plain_text": "Coupon field rejects lowercase codes",
+          "href": null
+        }
+      ]
+    },
+    "Status": {
+      "id": "%5EOE%40",
+      "type": "status",
+      "status": {
+        "id": "b3f1a1e2-0002-4c4b-9f00-000000000002",
+        "name": "Tonight",
+        "color": "purple"
+      }
+    },
+    "Shep": { "id": "Xk%3Cd", "type": "rich_text", "rich_text": [] },
+    "PR": { "id": "p%40Rl", "type": "url", "url": null },
+    "Assignee": { "id": "notion%3A%2F%2Ftasks%2Fassign_property", "type": "people", "people": [] }
+  },
+  "url": "https://app.notion.com/p/3b4c5d6e7f804912a3b4c5d6e7f8a9b0",
+  "public_url": null,
+  "request_id": "9c4b5a6f-7e8d-4c9b-8a09-988776655443"
+}

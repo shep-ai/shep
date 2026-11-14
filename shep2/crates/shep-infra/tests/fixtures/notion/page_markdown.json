@@ -1,0 +1,8 @@
+{
+  "object": "page_markdown",
+  "id": "3b4c5d6e-7f80-4912-a3b4-c5d6e7f8a9b0",
+  "markdown": "Checkout does nothing on Safari when the cart has a coupon.\n\nRepro: add any item, apply `save10`, click Pay.",
+  "truncated": false,
+  "unknown_block_ids": [],
+  "request_id": "be6d7c8b-9a0f-4ebd-8c2b-baa998877665"
+}

@@ -3,6 +3,10 @@
 //! the engine the same adapter while a source's setting is unchanged.
 
 pub mod http;
+pub mod jira;
+pub mod monday;
+pub mod notion;
+pub mod tracker;
 
 use std::collections::{BTreeMap, HashMap};
 use std::sync::{Arc, Mutex};
@@ -60,7 +64,11 @@ pub trait SourceFactory: Send + Sync {
 
 /// Every adapter this build has. Each source module adds its factory here.
 pub fn factories() -> Vec<Box<dyn SourceFactory>> {
-    Vec::new()
+    vec![
+        Box::new(jira::JiraFactory::default()),
+        Box::new(notion::NotionFactory::default()),
+        Box::new(monday::MondayFactory::default()),
+    ]
 }
 
 /// The API base for a kind: its public one, or the override in the environment.
