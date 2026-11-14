@@ -478,17 +478,23 @@ public struct Setup: Codable, Hashable, Sendable {
     public var settings: Settings
     /// Everything work needs is in place: a repository, an agent, GitHub.
     public var ready: Bool
+    /// Open work in connected sources worth handing over first.
+    public var candidates: [Candidate]?
     /// Who GitHub (`gh`) is signed in as.
     public var github: String?
     public var repo: RepoFacts?
+    /// Where work can come from, connected or not.
+    public var sources: [SourceStatus]?
 
-    public init(agents: [AgentOption], suggestions: [Suggestion], settings: Settings, ready: Bool, github: String? = nil, repo: RepoFacts? = nil) {
+    public init(agents: [AgentOption], suggestions: [Suggestion], settings: Settings, ready: Bool, candidates: [Candidate]? = nil, github: String? = nil, repo: RepoFacts? = nil, sources: [SourceStatus]? = nil) {
         self.agents = agents
         self.suggestions = suggestions
         self.settings = settings
         self.ready = ready
+        self.candidates = candidates
         self.github = github
         self.repo = repo
+        self.sources = sources
     }
 
     enum CodingKeys: String, CodingKey {
@@ -496,8 +502,10 @@ public struct Setup: Codable, Hashable, Sendable {
         case suggestions
         case settings
         case ready
+        case candidates
         case github
         case repo
+        case sources
     }
 }
 

@@ -102,7 +102,7 @@ fn go_at_a_time_sets_the_shift() {
         .arg("config")
         .assert()
         .success()
-        .stdout(contains("shift  22:30"));
+        .stdout(row("start at", "22:30 every night"));
     home.shep()
         .args(["go", "--at", "25:00"])
         .assert()
@@ -117,15 +117,18 @@ fn config_shows_and_changes_settings() {
         .arg("config")
         .assert()
         .success()
-        .stdout(contains("agent  not chosen"))
-        .stdout(contains("shift  23:00"))
-        .stdout(contains("parallel  3"));
+        .stdout(row("agent", "not chosen"))
+        .stdout(row("start at", "23:00 every night"))
+        .stdout(row("keep awake", "on"))
+        .stdout(row("sources", "none · shep config --connect linear"))
+        .stdout(row("pull requests", "draft · you merge"))
+        .stdout(row("in parallel", "3"));
     home.shep()
         .args(["config", "--agent", "codex", "--parallel", "5"])
         .assert()
         .success()
-        .stdout(contains("agent  codex"))
-        .stdout(contains("parallel  5"));
+        .stdout(row("agent", "codex"))
+        .stdout(row("in parallel", "5"));
     home.shep()
         .args(["config", "--agent", "cursor"])
         .assert()
@@ -192,10 +195,10 @@ fn config_sets_the_repository() {
         .assert()
         .success()
         // Stored resolved: on macOS the temp dir is under /var, a link to /private/var.
-        .stdout(contains(format!(
-            "repo  {}",
-            repo.path().canonicalize().unwrap().display()
-        )));
+        .stdout(row(
+            "repo",
+            &repo.path().canonicalize().unwrap().display().to_string(),
+        ));
     home.shep()
         .args(["config", "--repo", "/no/such/dir"])
         .assert()
@@ -221,14 +224,10 @@ fn adding_inside_a_repository_points_shep_at_it() {
     let sub = checkout.join("src");
     std::fs::create_dir_all(&sub).unwrap();
     home.shep_in(&sub).args(["add", "#7"]).assert().success();
-    home.shep()
-        .arg("config")
-        .assert()
-        .success()
-        .stdout(contains(format!(
-            "repo  {}",
-            checkout.canonicalize().unwrap().display()
-        )));
+    home.shep().arg("config").assert().success().stdout(row(
+        "repo",
+        &checkout.canonicalize().unwrap().display().to_string(),
+    ));
 }
 
 #[test]
@@ -255,4 +254,26 @@ fn add_by_label_queues_each_labelled_issue_once() {
         .stdout(contains("Queued (2)"))
         .stdout(contains("Fix login"))
         .stdout(contains("Add CSV"));
+}
+
+/// A `shep config` row: the label, then its value after the padding.
+fn row(label: &str, value: &str) -> predicates::str::RegexPredicate {
+    predicates::str::is_match(format!(
+        "(?m)^{}  +{}$",
+        regex_escape(label),
+        regex_escape(value)
+    ))
+    .unwrap()
+}
+
+fn regex_escape(text: &str) -> String {
+    text.chars()
+        .map(|c| {
+            if c.is_ascii_punctuation() {
+                format!("\\{c}")
+            } else {
+                c.to_string()
+            }
+        })
+        .collect()
 }

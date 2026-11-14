@@ -2,17 +2,19 @@
 //! runs (`shep go` starts it) or on the database directly.
 
 mod cli;
+mod config;
 mod connect;
 mod daemon;
 mod look;
 mod output;
+mod prompt;
 mod wiring;
 
 use std::process::ExitCode;
 
 use clap::Parser;
 use cli::{Cli, Command};
-use shep_app::{AppError, SettingsChange, StartWhen};
+use shep_app::{AppError, StartWhen};
 use shep_infra::ShepHome;
 
 fn main() -> ExitCode {
@@ -104,30 +106,23 @@ fn run(home: &ShepHome, command: Option<Command>) -> Result<String, AppError> {
             repo,
             nightly,
             keep_awake,
-        }) => {
-            let repo = repo
-                .map(|p| {
-                    std::fs::canonicalize(&p)
-                        .map(|p| p.display().to_string())
-                        .map_err(|e| AppError::Remote(format!("{}: {e}", p.display())))
-                })
-                .transpose()?;
-            let change = SettingsChange {
+            connect,
+            disconnect,
+            values,
+        }) => config::run(
+            home,
+            config::ConfigArgs {
                 agent,
-                shift_start: shift,
-                parallelism: parallel,
+                shift,
+                parallel,
                 repo,
                 nightly,
                 keep_awake,
-            };
-            let api = connect::any(home)?;
-            let settings = if change.is_empty() {
-                api.settings()?
-            } else {
-                api.update_settings(change)?
-            };
-            Ok(output::settings(&settings))
-        }
+                connect,
+                disconnect,
+                values,
+            },
+        ),
         Some(Command::Daemon | Command::Holder | Command::Mcp) => {
             Err(AppError::Remote("this runs on its own".into()))
         }

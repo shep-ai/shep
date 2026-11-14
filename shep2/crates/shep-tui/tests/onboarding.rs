@@ -35,6 +35,8 @@ fn setup(github: Option<&str>) -> Setup {
         ],
         settings: Settings::default(),
         ready: false,
+        sources: Vec::new(),
+        candidates: Vec::new(),
     }
 }
 

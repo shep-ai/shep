@@ -613,6 +613,14 @@
             },
             "type": "array"
           },
+          "candidates": {
+            "default": [],
+            "description": "Open work in connected sources worth handing over first.",
+            "items": {
+              "$ref": "#/components/schemas/Candidate"
+            },
+            "type": "array"
+          },
           "github": {
             "description": "Who GitHub (`gh`) is signed in as.",
             "type": [
@@ -636,6 +644,14 @@
           },
           "settings": {
             "$ref": "#/components/schemas/Settings"
+          },
+          "sources": {
+            "default": [],
+            "description": "Where work can come from, connected or not.",
+            "items": {
+              "$ref": "#/components/schemas/SourceStatus"
+            },
+            "type": "array"
           },
           "suggestions": {
             "items": {

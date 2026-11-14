@@ -153,6 +153,23 @@ fn onboard(
                         ..Default::default()
                     })
                     .map(drop),
+                Action::Connect { kind, values } => match api.connect_source(kind, &values) {
+                    Ok(_) => api.setup(opts.cwd.as_deref()).map(|s| o.set_setup(s)),
+                    Err(e) => {
+                        o.failed(&e.to_string());
+                        Ok(())
+                    }
+                },
+                Action::Queue(inputs) => {
+                    let mut first = None;
+                    for input in &inputs {
+                        let task = api
+                            .add(input, opts.cwd.as_deref())
+                            .map_err(io::Error::other)?;
+                        first.get_or_insert(task.id);
+                    }
+                    return Ok(first);
+                }
                 Action::Start(input) => {
                     let task = api
                         .add(&input, opts.cwd.as_deref())

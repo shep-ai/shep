@@ -2,7 +2,7 @@
 
 use std::fmt::Write;
 
-use shep_app::{Board, StartOutcome};
+use shep_app::{AgentOption, Board, SourceStatus, StartOutcome};
 use shep_domain::{Settings, Task, TaskState};
 
 pub fn queued(task: &Task, settings: &Settings) -> String {
@@ -70,11 +70,80 @@ pub fn started(outcome: &StartOutcome, board_after: &Board, settings: &Settings)
     }
 }
 
-pub fn settings(s: &Settings) -> String {
-    let agent = s.agent.map_or("not chosen", |a| a.cli_name());
-    let repo = s.repo.as_deref().unwrap_or("not chosen");
-    format!(
-        "agent  {agent}\nshift  {}\nparallel  {}\nrepo  {repo}\n",
-        s.shift_start, s.parallelism
-    )
+/// The label column of `shep config`, wide enough for the longest label.
+const LABEL_WIDTH: usize = 15;
+const NOT_CHOSEN: &str = "not chosen";
+const ON: &str = "on";
+const OFF: &str = "off";
+const HOW_TO_CONNECT: &str = "none · shep config --connect linear";
+const PULL_REQUESTS: &str = "draft · you merge";
+
+pub fn settings(s: &Settings, sources: &[SourceStatus], agents: &[AgentOption]) -> String {
+    let agent = match s.agent {
+        None => NOT_CHOSEN.to_owned(),
+        Some(chosen) => {
+            let also: Vec<&str> = agents
+                .iter()
+                .filter(|a| a.installed && a.kind != chosen)
+                .map(|a| a.kind.cli_name())
+                .collect();
+            if also.is_empty() {
+                chosen.cli_name().to_owned()
+            } else {
+                format!("{} (also: {})", chosen.cli_name(), also.join(", "))
+            }
+        }
+    };
+    let when = if s.nightly {
+        "every night"
+    } else {
+        "on shep go only"
+    };
+    let connected: Vec<String> = sources
+        .iter()
+        .filter(|src| src.connected)
+        .map(|src| match &src.problem {
+            Some(problem) => format!("{} ✗ {problem}", src.kind.cli_name()),
+            None => format!("{} ({})", src.kind.cli_name(), src.account),
+        })
+        .collect();
+    let rows = [
+        ("agent", agent),
+        (
+            "repo",
+            s.repo.clone().unwrap_or_else(|| NOT_CHOSEN.to_owned()),
+        ),
+        ("start at", format!("{} {when}", s.shift_start)),
+        ("in parallel", s.parallelism.to_string()),
+        ("keep awake", if s.keep_awake { ON } else { OFF }.to_owned()),
+        (
+            "sources",
+            if connected.is_empty() {
+                HOW_TO_CONNECT.to_owned()
+            } else {
+                connected.join(", ")
+            },
+        ),
+        ("pull requests", PULL_REQUESTS.to_owned()),
+    ];
+    let mut out = String::new();
+    for (label, value) in rows {
+        let _ = writeln!(out, "{label:<LABEL_WIDTH$}{value}");
+    }
+    out
+}
+
+/// After `shep config --connect`: who it is connected as and how to hand work over there.
+pub fn connected(status: &SourceStatus) -> String {
+    let mut out = format!("✓ {} connected · {}\n", status.name, status.account);
+    for (i, step) in status.form.hand_over.iter().enumerate() {
+        let lead = if i == 0 {
+            "  hand work over: "
+        } else {
+            "                  "
+        };
+        let _ = writeln!(out, "{lead}{step}");
+    }
+    out.push('\n');
+    out
 }

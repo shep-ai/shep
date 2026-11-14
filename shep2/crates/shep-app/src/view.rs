@@ -171,6 +171,12 @@ pub struct Setup {
     pub settings: Settings,
     /// Everything work needs is in place: a repository, an agent, GitHub.
     pub ready: bool,
+    /// Where work can come from, connected or not.
+    #[serde(default)]
+    pub sources: Vec<SourceStatus>,
+    /// Open work in connected sources worth handing over first.
+    #[serde(default)]
+    pub candidates: Vec<Candidate>,
 }
 
 /// A source and whether it is connected, for onboarding and `shep config`.

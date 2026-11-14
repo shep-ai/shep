@@ -18,6 +18,7 @@ shep-rpc.workspace = true
 shep-tui.workspace = true
 shep-mcp.workspace = true
 clap.workspace = true
+crossterm.workspace = true
 
 [dev-dependencies]
 shep-mock-model.workspace = true

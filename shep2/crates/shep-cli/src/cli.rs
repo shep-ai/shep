@@ -1,5 +1,5 @@
 use clap::{Parser, Subcommand};
-use shep_domain::{AgentKind, ClockTime};
+use shep_domain::{AgentKind, ClockTime, SourceKind};
 
 /// Shep: go to sleep with issues, wake up with pull requests.
 #[derive(Debug, Parser)]
@@ -54,6 +54,16 @@ pub enum Command {
         /// Keep the machine awake while tasks work (on power only on a Mac)
         #[arg(long, value_name = "on|off", value_parser = switch)]
         keep_awake: Option<bool>,
+        /// Read tasks from a source: github, linear, jira, notion, monday or slack. Secrets are
+        /// asked for (or read from stdin, one per line); other values follow as KEY=VALUE
+        #[arg(long, value_name = "SOURCE", value_parser = SourceKind::parse)]
+        connect: Option<SourceKind>,
+        /// Stop reading a source and forget its tokens
+        #[arg(long, value_name = "SOURCE", value_parser = SourceKind::parse, conflicts_with = "connect")]
+        disconnect: Option<SourceKind>,
+        /// Values for --connect, like site=acme.atlassian.net
+        #[arg(value_name = "KEY=VALUE", requires = "connect")]
+        values: Vec<String>,
     },
     /// Runs the background daemon (started by `shep go`; not for direct use)
     #[command(name = "__daemon", hide = true)]

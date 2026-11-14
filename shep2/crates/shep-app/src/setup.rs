@@ -62,6 +62,8 @@ impl Shep {
             repo,
             suggestions,
             settings,
+            sources: self.source_statuses()?,
+            candidates: self.source_candidates(SUGGESTIONS)?,
         })
     }
 }

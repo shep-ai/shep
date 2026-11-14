@@ -121,3 +121,26 @@ fn candidates_come_from_connected_sources_and_vague_ones_are_marked() {
         ]
     );
 }
+
+#[test]
+fn setup_carries_the_sources_and_what_they_offer() {
+    let w = world();
+    let s = w.shep.setup(None).unwrap();
+    assert_eq!(s.sources.len(), SourceKind::CONNECTABLE.len());
+    assert_eq!(s.candidates.len(), 0);
+
+    w.f.sources.get(SourceKind::Linear).offer(ticket(
+        "ENG-351",
+        "Export reports to CSV",
+        "Finance needs the monthly report as CSV with the same columns as the table on screen.",
+    ));
+    w.shep
+        .connect_source(SourceKind::Linear, &values("lin_api_123"))
+        .unwrap();
+    let s = w.shep.setup(None).unwrap();
+    assert!(s
+        .sources
+        .iter()
+        .any(|x| x.kind == SourceKind::Linear && x.connected));
+    assert_eq!(s.candidates[0].item.title, "Export reports to CSV");
+}

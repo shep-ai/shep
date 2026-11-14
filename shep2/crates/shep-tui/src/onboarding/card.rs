@@ -13,18 +13,18 @@ const CARD_WIDTH: u16 = 72;
 const CARD_HEIGHT: u16 = 22;
 pub(super) const GH_LOGIN: &str = "gh auth login --web";
 
-type Card = (&'static str, Vec<Line<'static>>);
+pub(super) type Card = (&'static str, Vec<Line<'static>>);
 
-fn text(t: Theme, s: &str) -> Line<'static> {
+pub(super) fn text(t: Theme, s: &str) -> Line<'static> {
     Line::from(Span::styled(s.to_owned(), t.text()))
 }
-fn muted(t: Theme, s: &str) -> Line<'static> {
+pub(super) fn muted(t: Theme, s: &str) -> Line<'static> {
     Line::from(Span::styled(s.to_owned(), t.muted()))
 }
-fn hint(t: Theme, s: &str) -> Line<'static> {
+pub(super) fn hint(t: Theme, s: &str) -> Line<'static> {
     Line::from(Span::styled(s.to_owned(), t.accent()))
 }
-fn check(t: Theme, ok: bool, words: String) -> Line<'static> {
+pub(super) fn check(t: Theme, ok: bool, words: String) -> Line<'static> {
     let (mark, style) = if ok {
         ("✓ ", t.ready())
     } else {
@@ -61,6 +61,9 @@ impl Onboarding {
     fn card(&self, t: Theme) -> Card {
         match self.step {
             Step::Welcome => welcome(t),
+            Step::Where => self.where_card(t),
+            Step::Connect => self.connect_card(t),
+            Step::Moves => self.moves_card(t),
             Step::Agent => self.agent(t),
             Step::GitHub => self.github(t),
             Step::Repo => self.repo(t),
@@ -69,7 +72,13 @@ impl Onboarding {
         }
     }
 
-    fn pick(&self, t: Theme, i: usize, text: &str, note: Span<'static>) -> Line<'static> {
+    pub(super) fn pick(
+        &self,
+        t: Theme,
+        i: usize,
+        text: &str,
+        note: Span<'static>,
+    ) -> Line<'static> {
         let selected = i == self.cursor && !self.typing;
         let marker = if selected { "› " } else { "  " };
         let line = Line::from(vec![
@@ -102,7 +111,7 @@ impl Onboarding {
             Line::default(),
             hint(t, "enter use it   ↑↓ choose   r check again"),
         ]);
-        ("2 · pick the agent", lines)
+        ("pick the agent", lines)
     }
 
     fn github(&self, t: Theme) -> Card {
@@ -129,7 +138,7 @@ impl Onboarding {
                 hint(t, "r check again"),
             ],
         };
-        ("3 · sign in to GitHub", lines)
+        ("sign in to GitHub", lines)
     }
 
     fn repo(&self, t: Theme) -> Card {
@@ -167,7 +176,7 @@ impl Onboarding {
                 Span::styled(format!("{}▏", self.text), t.text()),
             ]));
         }
-        ("4 · confirm the repository", lines)
+        ("confirm the repository", lines)
     }
 
     fn when(&self, t: Theme) -> Card {
@@ -193,18 +202,39 @@ impl Onboarding {
             Line::default(),
             muted(t, "Change any of this later with shep config."),
         ];
-        ("5 · when to work", lines)
+        ("when to work", lines)
     }
 
     fn first_task(&self, t: Theme) -> Card {
-        let mut lines = vec![
-            text(t, "Try it on one of your own open issues:"),
-            Line::default(),
-        ];
-        for (i, s) in self.setup.suggestions.iter().enumerate() {
-            lines.push(self.pick(t, i, &format!("#{} {}", s.number, s.title), Span::raw("")));
+        let mut lines = vec![text(t, "Good candidates for tonight:"), Line::default()];
+        let mark = |row: usize| {
+            if self.picked.contains(&row) {
+                "✓ "
+            } else {
+                "  "
+            }
+        };
+        for (i, c) in self.setup.candidates.iter().enumerate() {
+            let note = if c.vague {
+                Span::styled("  too vague", t.needs_you())
+            } else {
+                Span::raw("")
+            };
+            let label = format!(
+                "{}{} {} {}",
+                mark(i),
+                c.kind.cli_name().to_ascii_uppercase(),
+                c.item.source,
+                c.item.title
+            );
+            lines.push(self.pick(t, i, &label, note));
         }
-        if self.setup.suggestions.is_empty() {
+        let offset = self.setup.candidates.len();
+        for (i, s) in self.setup.suggestions.iter().enumerate() {
+            let label = format!("{}#{} {}", mark(offset + i), s.number, s.title);
+            lines.push(self.pick(t, offset + i, &label, Span::raw("")));
+        }
+        if offset + self.setup.suggestions.len() == 0 {
             lines.push(muted(t, "No open issues found."));
         }
         lines.extend([
@@ -216,9 +246,12 @@ impl Onboarding {
                 Span::styled(format!("{}▏", self.text), t.accent()),
             ]),
             Line::default(),
-            hint(t, "enter start it now"),
+            hint(
+                t,
+                "enter start it now   space pick   t hand the picked ones over tonight",
+            ),
         ]);
-        ("6 · first task, right now", lines)
+        ("first task, right now", lines)
     }
 }
 
@@ -230,7 +263,7 @@ fn welcome(t: Theme) -> Card {
         Line::default(),
         hint(t, "press any key"),
     ]);
-    ("1 · welcome", lines)
+    ("welcome", lines)
 }
 
 fn centered(area: Rect, width: u16, height: u16) -> Rect {

@@ -2429,6 +2429,7 @@ version = "0.1.0"
 dependencies = [
  "assert_cmd",
  "clap",
+ "crossterm",
  "predicates",
  "serde_json",
  "shep-app",
