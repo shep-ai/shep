@@ -13,7 +13,7 @@ use crate::support::fake_gh::FakeGh;
 use crate::support::fixture_http::{fixture, FixtureServer, Request};
 use crate::support::source_contract::Case;
 
-pub const TOKEN: &str = "gho_16C7e42F292c6912E7710c838347Ae178B4a";
+pub const TOKEN: &str = "gho_fake_token_for_shep_tests";
 pub const MARKER: &str = "<!-- shep:update -->";
 pub const COMMENTS: &str = "/repos/acme/app/issues/412/comments";
 /// 2026-11-13T18:10:00Z, when Shep asked its question in the fixtures.
