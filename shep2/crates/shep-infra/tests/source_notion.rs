@@ -248,7 +248,7 @@ fn queued_sets_the_shep_property_or_comments_when_there_is_none() {
     let text = plain(&comment["rich_text"]);
     assert!(text.starts_with(SHEP_MARK), "{text}");
     assert!(
-        text.contains("Queued for tonight, 23:00 · acme/app"),
+        text.contains("Queued for tonight, 23:00 in acme/app"),
         "{text}"
     );
 }

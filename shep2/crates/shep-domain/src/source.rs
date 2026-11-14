@@ -53,7 +53,7 @@ pub enum SourceRefError {
 const GITHUB_HOST: &str = "github.com";
 const LINEAR_HOST: &str = "linear.app";
 const JIRA_HOST_SUFFIX: &str = ".atlassian.net";
-const NOTION_HOSTS: [&str; 2] = ["notion.so", "www.notion.so"];
+const NOTION_HOSTS: [&str; 3] = ["notion.so", "www.notion.so", "app.notion.com"];
 const MONDAY_HOST_SUFFIX: &str = ".monday.com";
 const SLACK_HOST_SUFFIX: &str = ".slack.com";
 

@@ -6,9 +6,9 @@ use shep_domain::{SourceKind, TaskSourceRef, UnixTime};
 
 use super::json::{by_shep, hand_over, has_label, is_issue, query, reply, BODY, NUMBER, STATE};
 use super::SHEP_MARKER;
-use crate::sources::http::Http;
-use crate::sources::say::update_text;
+use crate::sources::http::{self, Http};
 use crate::sources::stamp;
+use crate::sources::words;
 
 const AUTHORIZATION: &str = "Authorization";
 const BEARER: &str = "Bearer";
@@ -33,8 +33,6 @@ const SORT_PARAM: &str = "sort";
 const BY_CREATED: &str = "created";
 const DIRECTION_PARAM: &str = "direction";
 const NEWEST_FIRST: &str = "desc";
-/// How [`Http`] words an answer that says the issue does not exist (or no longer does).
-const GONE: [&str; 2] = ["answered 404", "answered 410"];
 const ACCOUNT_SEPARATOR: &str = " · ";
 
 pub struct GitHubSource {
@@ -127,7 +125,7 @@ impl TaskSource for GitHubSource {
         let (repo, number) = self.place(source)?;
         let issue = match self.get(&issue_path(repo, number)) {
             Ok(issue) => issue,
-            Err(e) if GONE.iter().any(|g| e.0.contains(g)) => return Ok(None),
+            Err(e) if http::is_gone(&e) => return Ok(None),
             Err(e) => return Err(e),
         };
         if !is_issue(&issue) || issue[STATE].as_str() != Some(OPEN) {
@@ -140,7 +138,10 @@ impl TaskSource for GitHubSource {
 
     fn report(&self, source: &TaskSourceRef, update: &Update) -> Result<(), SourceError> {
         let (repo, number) = self.place(source)?;
-        let body = format!("{}\n\n{SHEP_MARKER}", update_text(update));
+        let body = format!(
+            "{}\n\n{SHEP_MARKER}",
+            words::markdown(&words::lines(update))
+        );
         self.http.post(
             &comments_path(repo, number),
             &self.headers(),

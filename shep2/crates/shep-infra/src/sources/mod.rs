@@ -8,10 +8,10 @@ pub mod jira;
 pub mod linear;
 pub mod monday;
 pub mod notion;
-mod say;
 pub mod slack;
 mod stamp;
 pub mod tracker;
+pub mod words;
 
 use std::collections::{BTreeMap, HashMap};
 use std::sync::{Arc, Mutex};

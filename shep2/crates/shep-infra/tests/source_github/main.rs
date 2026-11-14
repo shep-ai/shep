@@ -154,9 +154,11 @@ fn every_update_is_one_marked_comment_on_the_issue() {
         assert!(body.trim_end().ends_with(MARKER), "{body}");
         let expected = match &update {
             Update::Queued { .. } => "Queued for tonight, 23:00 in acme/app",
-            Update::Asked { .. } => "> Which zone when the customer has none?",
+            Update::Asked { .. } => "\n\nWhich zone when the customer has none?\n\n",
             Update::Ready { .. } => "CI green · +41 -12 · screenshot",
-            Update::Merged { .. } => "Merged: https://github.com/acme/app/pull/101",
+            Update::Merged { .. } => {
+                "Merged [pull request #101](https://github.com/acme/app/pull/101)"
+            }
             Update::Stopped { .. } => "issue closed",
         };
         assert!(body.contains(expected), "{update:?}: {body}");

@@ -3536,3 +3536,13 @@ the pipeline's status was grep's and `;` runs the next command anyway. **Rules:*
 - Run the gates as their own step and read their exit status (`${PIPESTATUS[0]}` or
   `set -o pipefail`) before any commit or push; join gate and commit only with `&&`.
 - Run `cargo fmt --all` again after any later edit, right before committing.
+
+## A mutation that stays green means the fixture cannot catch the bug
+
+Disabling "skip Shep's own posts" turned the Jira and Notion tests red but left Monday green: its
+only Shep post was dated before `since`, so the filter never had anything to skip. **Rules:**
+
+- After writing a check, break the code it guards and watch a test fail; if none does, fix the
+  fixture (here: a Shep post after `since`) before trusting the test.
+- When parallel agents build similar modules, look for duplicates when merging (two wording
+  modules, two time parsers here) and fold them into one before moving on.

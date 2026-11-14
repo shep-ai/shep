@@ -67,6 +67,11 @@ fn notion_monday_and_slack_links_keep_the_url() {
             "https://www.notion.so/acme/Fix-export-8f2c",
             SourceKind::Notion,
         ),
+        // Notion's own links since June 2026.
+        (
+            "https://app.notion.com/p/8f2c0b6e1d2a4c3b9e7f6a5d4c3b2a19",
+            SourceKind::Notion,
+        ),
         (
             "https://acme.monday.com/boards/1/pulses/2",
             SourceKind::Monday,

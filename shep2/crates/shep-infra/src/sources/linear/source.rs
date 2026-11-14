@@ -11,8 +11,8 @@ use super::documents::{
 };
 use super::graphql::Graphql;
 use super::{account, HAND_OVER_LABEL, IN_REVIEW_STATE, SHEP_SIGNATURE, TONIGHT_STATE};
-use crate::sources::say::update_text;
 use crate::sources::stamp;
+use crate::sources::words;
 
 /// The most issues or comments one read asks for.
 const PAGE_SIZE: usize = 100;
@@ -55,7 +55,10 @@ impl LinearSource {
             self.api
                 .mutate(ATTACH, ATTACH_RESULT, &json!({ "input": input }))?;
         }
-        let body = format!("{}\n\n{SHEP_SIGNATURE}", update_text(update));
+        let body = format!(
+            "{}\n\n{SHEP_SIGNATURE}",
+            words::markdown(&words::lines(update))
+        );
         let input = json!({ "issueId": id, "body": body });
         self.api
             .mutate(COMMENT, COMMENT_RESULT, &json!({ "input": input }))?;

@@ -4,76 +4,21 @@
 use std::collections::BTreeMap;
 
 use shep_app::ports::{FormField, Reply, SourceError, Update};
-use shep_domain::{PullRequest, SourceKind, UnixTime, SEND_BACK_PREFIX};
+
+use super::words;
+use shep_domain::{SourceKind, UnixTime};
 
 /// Starts every post Shep makes, so `replies` can skip them (Shep posts with the person's own
 /// token, so the author cannot tell them apart).
 pub const SHEP_MARK: &str = "🐑 Shep:";
 /// The status (or label) a person moves work to when they hand it to Shep.
 pub const TONIGHT: &str = "Tonight";
-/// The text an HTTP error carries when the item is gone (see `http::Http::send`).
-const NOT_FOUND: &str = "answered 404";
-/// Jira writes offsets without a colon (`+0000`), which RFC 3339 does not allow.
-const OFFSET_WITHOUT_COLON: &str = "%Y-%m-%dT%H:%M:%S%.f%z";
 
-/// Part of a line Shep posts: plain words or a link.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum Piece {
-    Text(String),
-    Link { text: String, url: String },
-}
-
-/// One paragraph of a post.
-pub type Line = Vec<Piece>;
-
-fn text(s: impl Into<String>) -> Piece {
-    Piece::Text(s.into())
-}
-
-fn pr_link(pr: &PullRequest) -> Piece {
-    Piece::Link {
-        text: format!("pull request #{}", pr.number),
-        url: pr.url.clone(),
-    }
-}
-
-/// "Queued for tonight, 23:00 · acme/app", or when it waits for `shep go`.
-pub fn queued_words(update: &Update) -> Option<String> {
-    let Update::Queued { starts, repo } = update else {
-        return None;
-    };
-    let when = starts.map_or_else(
-        || String::from("Queued; it starts when you run shep go"),
-        |at| format!("Queued for tonight, {at}"),
-    );
-    Some(match repo {
-        Some(repo) => format!("{when} · {repo}"),
-        None => when,
-    })
-}
+pub use super::words::{Line, Piece};
 
 /// The post for an update, one line per paragraph; the first line starts with [`SHEP_MARK`].
 pub fn message(update: &Update) -> Vec<Line> {
-    let mark = |words: &str| text(format!("{SHEP_MARK} {words}"));
-    match update {
-        Update::Queued { .. } => vec![vec![mark(&queued_words(update).unwrap_or_default())]],
-        Update::Asked { question } => vec![
-            vec![mark("A question before I go on:")],
-            vec![text(question.trim())],
-            vec![text("Reply here and I will pick it up.")],
-        ],
-        Update::Ready { pr, summary, .. } => {
-            let mut first = vec![mark("Ready for review: "), pr_link(pr)];
-            if !summary.trim().is_empty() {
-                first.push(text(format!(" · {}", summary.trim())));
-            }
-            let send_back =
-                format!("Reply \"{SEND_BACK_PREFIX} <what to change>\" to send it back.");
-            vec![first, vec![text(send_back)]]
-        }
-        Update::Merged { pr } => vec![vec![mark("Merged "), pr_link(pr)]],
-        Update::Stopped { reason } => vec![vec![mark(&format!("Stopped: {}", reason.trim()))]],
-    }
+    words::marked(SHEP_MARK, words::lines(update))
 }
 
 /// Whether a post is one of Shep's own.
@@ -105,18 +50,7 @@ pub fn replies_since(said: Vec<Said>, since: UnixTime) -> Vec<Reply> {
         .collect()
 }
 
-/// An ISO 8601 time as the trackers write it (`Z`, `+01:00` or `+0100`).
-pub fn parse_time(value: &str) -> Result<UnixTime, SourceError> {
-    chrono::DateTime::parse_from_rfc3339(value)
-        .or_else(|_| chrono::DateTime::parse_from_str(value, OFFSET_WITHOUT_COLON))
-        .map(|t| UnixTime(t.timestamp()))
-        .map_err(|e| SourceError(format!("unexpected time {value:?}: {e}")))
-}
-
-/// Whether a failed call means the item is gone (deleted, or no longer shared with Shep).
-pub fn is_not_found(error: &SourceError) -> bool {
-    error.0.contains(NOT_FOUND)
-}
+pub(crate) use super::stamp::parse as parse_time;
 
 /// Names compared the way people read them: case and surrounding spaces do not matter.
 pub fn same_name(a: &str, b: &str) -> bool {
@@ -194,7 +128,9 @@ mod tests {
         let lines = message(&queued);
         assert_eq!(
             lines[0][0],
-            Piece::Text(format!("{SHEP_MARK} Queued for tonight, 23:00"))
+            Piece::Text(format!(
+                "{SHEP_MARK} Queued for tonight, 23:00. I'll reply here."
+            ))
         );
         let said = |text: &str, at| Said {
             at: UnixTime(at),

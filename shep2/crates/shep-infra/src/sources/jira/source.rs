@@ -5,7 +5,7 @@ use shep_app::ports::{HandOver, Reply, SourceError, TaskSource, Update};
 use shep_domain::{PullRequest, SourceKind, TaskSourceRef, UnixTime};
 
 use super::adf;
-use crate::sources::http::Http;
+use crate::sources::http::{self, Http};
 use crate::sources::tracker::{self, parse_time, same_name, Said, TONIGHT};
 
 const MYSELF: &str = "/rest/api/3/myself";
@@ -224,7 +224,7 @@ impl TaskSource for Jira {
         let path = format!("{}?fields={}", Self::issue_path(source)?, FIELDS.join(","));
         match self.get(&path) {
             Ok(issue) => self.hand_over(&issue).map(Some),
-            Err(e) if tracker::is_not_found(&e) => Ok(None),
+            Err(e) if http::is_gone(&e) => Ok(None),
             Err(e) => Err(e),
         }
     }

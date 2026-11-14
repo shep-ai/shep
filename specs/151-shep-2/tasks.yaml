@@ -259,7 +259,14 @@ tasks:
       status Tonight) by polling; tokens in the OS keychain; answers and questions in place.
       Adapters are built and tested against recorded API fixtures; live workspaces need the
       owner's tokens.
-    state: Todo
+      Built: the TaskSource port (poll, read, report, replies, candidates) and engine loop
+      (hand-over → acknowledged in place → question, ready, merged said once each → answers,
+      `shep:` notes and Merge buttons acted on); tokens in the macOS Keychain, secret-tool, or a
+      0600 file; GitHub (label shep, REST with gh's token), Linear (label shep or status
+      Tonight, GraphQL) and Slack (Socket Mode: :sheep: or "@Shep tonight", thread replies with
+      Merge / Send back buttons, per-team manifest in shep2/dist/slack). Each passes the shared
+      contract against recorded API responses. Not tried against a live workspace.
+    state: Done
     dependencies:
       - task-8
     acceptanceCriteria:
@@ -278,7 +285,14 @@ tasks:
     description: >
       Remaining adapters on the same contract; onboarding asks "Where do tasks come from today?",
       connects sources, shows the hand-over moves and suggests good first tasks.
-    state: Todo
+      Built: Jira Cloud (status Tonight or label shep, comments and transitions, remote link),
+      Notion (Status Tonight in a database, the Shep and PR properties, page comments) and Monday
+      (status Tonight, updates, PR link column) on the same contract; one shared set of words for
+      every tracker. Onboarding asks "Where do tasks come from today?", connects the chosen
+      sources (secrets never shown), shows the hand-over moves and offers first tasks from them;
+      `shep config --connect SOURCE` does the same from the CLI. Not tried against a live
+      workspace; screenshots are attached only in Slack.
+    state: Done
     dependencies:
       - task-11
     acceptanceCriteria:

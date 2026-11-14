@@ -137,7 +137,18 @@ fn http_reads_json_and_reports_failures_without_headers() {
             .unwrap(),
         serde_json::Value::Null
     );
+    server.on("GET", "/deleted", 404, r#"{"message":"Not Found"}"#);
+    server.on("GET", "/archived", 410, r#"{"message":"Gone"}"#);
+    for gone in ["/deleted", "/archived"] {
+        assert!(shep_infra::sources::http::is_gone(
+            &http.get(gone, &auth).unwrap_err()
+        ));
+    }
     let err = http.get("/secret", &auth).unwrap_err();
+    assert!(
+        !shep_infra::sources::http::is_gone(&err),
+        "a refused token is not a missing item"
+    );
     assert!(err.0.contains("401"), "{err}");
     assert!(err.0.contains("Bad credentials"), "{err}");
     assert!(!err.0.contains(TOKEN), "{err}");

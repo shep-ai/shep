@@ -7,8 +7,8 @@ use shep_domain::{SourceKind, TaskSourceRef, UnixTime};
 
 use super::pages::{finished, hand_over, page_id, status_of};
 use super::write::{self, find, shep_value, shep_words, RICH_TEXT, SELECT, STATUS, TITLE, URL};
-use crate::sources::http::{Http, Verb};
-use crate::sources::tracker::{self, encode, is_not_found, parse_time, Said, TONIGHT};
+use crate::sources::http::{self, Http, Verb};
+use crate::sources::tracker::{self, encode, parse_time, Said, TONIGHT};
 
 const AUTHORIZATION: &str = "Authorization";
 const BEARER: &str = "Bearer";
@@ -169,7 +169,7 @@ impl TaskSource for Notion {
         let id = page_id(source)?;
         let page = match self.get(&format!("{PAGES}/{id}")) {
             Ok(page) => page,
-            Err(e) if is_not_found(&e) => return Ok(None),
+            Err(e) if http::is_gone(&e) => return Ok(None),
             Err(e) => return Err(e),
         };
         if page["in_trash"] == json!(true) {

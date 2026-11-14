@@ -15,6 +15,10 @@ const ERROR_BODY_CHARS: usize = 300;
 const LOOPBACK_HOSTS: [&str; 3] = ["127.0.0.1", "localhost", "[::1]"];
 const USER_AGENT: &str = concat!("shep/", env!("CARGO_PKG_VERSION"));
 const CONTENT_TYPE: &str = "Content-Type";
+/// How an error says which status came back: "api.linear.app answered 404: …".
+const ANSWERED: &str = "answered";
+/// Statuses that mean the item does not exist, or no longer does.
+const GONE_STATUSES: [u16; 2] = [404, 410];
 const JSON: &str = "application/json";
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -150,7 +154,7 @@ impl Http {
         }
         let quoted: String = text.chars().take(ERROR_BODY_CHARS).collect();
         Err(SourceError(format!(
-            "{} answered {status}: {}",
+            "{} {ANSWERED} {status}: {}",
             self.host(),
             quoted.trim()
         )))
@@ -161,4 +165,12 @@ impl Http {
         let rest = self.base.split("://").nth(1).unwrap_or(&self.base);
         rest.split('/').next().unwrap_or(rest)
     }
+}
+
+/// Whether a failed call means the item is gone (404 or 410), as opposed to the source being
+/// down or the token refused. Reads the status this module put in the error.
+pub fn is_gone(error: &SourceError) -> bool {
+    GONE_STATUSES
+        .iter()
+        .any(|status| error.0.contains(&format!(" {ANSWERED} {status}:")))
 }
