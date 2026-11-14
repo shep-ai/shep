@@ -5,7 +5,7 @@ use std::sync::Mutex;
 use shep_domain::{check_push, CiCheck, PullRequest, TaskBranch, TaskSourceRef, Worktree};
 
 use super::lock;
-use crate::ports::{Forge, ForgeError, Git, GitError, Issue};
+use crate::ports::{Forge, ForgeError, Git, GitError, Issue, IssueRef};
 
 /// The default branch every fake repository has.
 pub const FAKE_BASE: &str = "main";
@@ -129,6 +129,7 @@ struct ForgeState {
     checks: VecDeque<Vec<CiCheck>>,
     merged: Vec<PullRequest>,
     fail_merge: Option<String>,
+    labels: HashMap<String, Vec<u64>>,
 }
 
 /// GitHub in memory. Checks are answered from a queue a test fills; the last answer repeats.
@@ -160,12 +161,33 @@ impl FakeForge {
     pub fn merged(&self) -> Vec<PullRequest> {
         lock(&self.0).merged.clone()
     }
+    /// Puts `label` on these issues.
+    pub fn label(&self, numbers: &[u64], label: &str) {
+        lock(&self.0)
+            .labels
+            .entry(label.to_owned())
+            .or_default()
+            .extend_from_slice(numbers);
+    }
     pub fn fail_merges(&self, why: Option<&str>) {
         lock(&self.0).fail_merge = why.map(str::to_owned);
     }
 }
 
 impl Forge for FakeForge {
+    fn labelled(&self, _repo: &Path, label: &str) -> Result<Vec<IssueRef>, ForgeError> {
+        let s = lock(&self.0);
+        let numbers = s.labels.get(label).cloned().unwrap_or_default();
+        Ok(numbers
+            .into_iter()
+            .filter_map(|n| {
+                s.issues.get(&n).map(|i| IssueRef {
+                    number: n,
+                    title: i.title.clone(),
+                })
+            })
+            .collect())
+    }
     fn issue(&self, _repo: &Path, source: &TaskSourceRef) -> Result<Option<Issue>, ForgeError> {
         match source {
             TaskSourceRef::GitHubIssue { number, .. } => lock(&self.0)

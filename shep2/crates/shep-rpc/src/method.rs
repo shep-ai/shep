@@ -15,10 +15,18 @@ pub enum Method {
     SettingsUpdate,
     /// Answers with the current board, then pushes [`crate::BOARD_CHANGED`] on every change.
     Subscribe,
+    Detail,
+    Brief,
+    MorningBrief,
+    FirstRunToday,
+    AddLabel,
+    /// Answers with the agent's screen, then pushes [`crate::AGENT_OUTPUT`] as it prints.
+    WatchAgent,
+    SendToAgent,
 }
 
 impl Method {
-    pub const ALL: [Method; 7] = [
+    pub const ALL: [Method; 14] = [
         Self::Add,
         Self::Start,
         Self::Board,
@@ -26,6 +34,13 @@ impl Method {
         Self::SettingsGet,
         Self::SettingsUpdate,
         Self::Subscribe,
+        Self::Detail,
+        Self::Brief,
+        Self::MorningBrief,
+        Self::FirstRunToday,
+        Self::AddLabel,
+        Self::WatchAgent,
+        Self::SendToAgent,
     ];
 
     pub fn name(self) -> &'static str {
@@ -37,6 +52,13 @@ impl Method {
             Self::SettingsGet => "settings.get",
             Self::SettingsUpdate => "settings.update",
             Self::Subscribe => "board.subscribe",
+            Self::Detail => "task.detail",
+            Self::Brief => "brief",
+            Self::MorningBrief => "brief.morning",
+            Self::FirstRunToday => "day.first_run",
+            Self::AddLabel => "add.label",
+            Self::WatchAgent => "agent.watch",
+            Self::SendToAgent => "agent.send",
         }
     }
 
@@ -53,6 +75,13 @@ impl Method {
             Self::SettingsGet => "The current settings.",
             Self::SettingsUpdate => "Change some settings; fields left out keep their value.",
             Self::Subscribe => "The board now, then a board.changed notification on every change.",
+            Self::Detail => "One task in full: its run, what it is doing, CI, diff, proof, review.",
+            Self::Brief => "What finished, what needs you, and how the night went.",
+            Self::MorningBrief => "The brief once per morning; null when nothing is new.",
+            Self::FirstRunToday => "True the first time it is asked on a new local day.",
+            Self::AddLabel => "Queue every open issue with this label that is not on the board.",
+            Self::WatchAgent => "The agent's screen now, then agent.output notifications.",
+            Self::SendToAgent => "Type into the task's agent.",
         }
     }
 }
@@ -83,4 +112,37 @@ pub struct ReviewParams {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 pub struct UpdateSettingsParams {
     pub change: SettingsChange,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct IdParams {
+    pub id: TaskId,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct AddLabelParams {
+    pub label: String,
+    #[serde(default)]
+    pub from_dir: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct SendParams {
+    pub id: TaskId,
+    /// Base64 bytes to type.
+    pub data: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct WatchReply {
+    /// Base64 bytes that redraw the agent's screen.
+    pub screen: String,
+}
+
+/// Pushed after `agent.watch`: bytes the agent printed.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct AgentOutput {
+    pub id: TaskId,
+    /// Base64 bytes.
+    pub data: String,
 }

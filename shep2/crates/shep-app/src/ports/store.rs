@@ -29,3 +29,24 @@ pub trait EventLog: Send + Sync {
     fn record(&self, event: &TaskEvent) -> Result<(), StoreError>;
     fn events(&self, task: TaskId) -> Result<Vec<TaskEvent>, StoreError>;
 }
+
+/// Moments a surface needs to remember, like the last morning brief shown.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum Mark {
+    BriefSeen,
+    SplashSeen,
+}
+
+impl Mark {
+    pub fn key(self) -> &'static str {
+        match self {
+            Self::BriefSeen => "brief_seen",
+            Self::SplashSeen => "splash_seen",
+        }
+    }
+}
+
+pub trait Marks: Send + Sync {
+    fn mark(&self, mark: Mark) -> Result<Option<UnixTime>, StoreError>;
+    fn set_mark(&self, mark: Mark, at: UnixTime) -> Result<(), StoreError>;
+}

@@ -26,6 +26,7 @@ pub fn ports(home: &ShepHome, store: &Arc<SqliteStore>) -> Ports {
         settings: store.clone(),
         runs: store.clone(),
         events: store.clone(),
+        marks: store.clone(),
         clock: Arc::new(SystemClock),
         git: Arc::new(GitCli::new(home.worktrees_dir())),
         forge: Arc::new(GhForge::new(GH)),

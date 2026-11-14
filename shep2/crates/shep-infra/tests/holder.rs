@@ -183,3 +183,22 @@ fn spawning_a_missing_program_is_an_error_not_a_crash() {
         matches!(s, SessionState::Exited { code: Some(0), .. })
     });
 }
+
+#[test]
+fn the_session_port_attaches_and_types() {
+    use shep_app::ports::AgentView;
+    let h = holder();
+    let id = h.spawn("echo ready; read line; echo \"got:$line\"; sleep 1");
+    h.wait_for(&id, |s| screen(s).contains("ready"));
+    let mut view: Box<dyn AgentView> = h.sessions.attach(&id).unwrap();
+    assert!(String::from_utf8_lossy(view.screen()).contains("ready"));
+    h.sessions.write(&id, b"via port\r").unwrap();
+    let mut seen = String::new();
+    let deadline = Instant::now() + WAIT;
+    while !seen.contains("got:via port") {
+        assert!(Instant::now() < deadline, "saw {seen:?}");
+        if let Some(bytes) = view.next_output(Duration::from_millis(200)).unwrap() {
+            seen.push_str(&String::from_utf8_lossy(&bytes));
+        }
+    }
+}

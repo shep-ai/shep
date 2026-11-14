@@ -10,6 +10,23 @@
         ],
         "type": "string"
       },
+      "AgentOutput": {
+        "description": "Pushed after `agent.watch`: bytes the agent printed.",
+        "properties": {
+          "data": {
+            "description": "Base64 bytes.",
+            "type": "string"
+          },
+          "id": {
+            "$ref": "#/components/schemas/TaskId"
+          }
+        },
+        "required": [
+          "id",
+          "data"
+        ],
+        "type": "object"
+      },
       "Board": {
         "description": "Every task, grouped by state in the order a person reviews them.",
         "properties": {
@@ -53,6 +70,111 @@
         ],
         "type": "object"
       },
+      "Brief": {
+        "description": "What finished overnight and what needs you, for the first look in the morning.",
+        "properties": {
+          "at": {
+            "$ref": "#/components/schemas/UnixTime"
+          },
+          "done": {
+            "description": "Ready for review.",
+            "format": "uint",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "items": {
+            "description": "Needs you first, then ready, then still working.",
+            "items": {
+              "$ref": "#/components/schemas/BriefItem"
+            },
+            "type": "array"
+          },
+          "mergeable": {
+            "description": "Ready, with CI green and a pull request: the \"merge the N green\" button.",
+            "format": "uint",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "overnight": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Overnight"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "total": {
+            "format": "uint",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "while_you_slept": {
+            "description": "At most one line about something Shep noticed.",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "at",
+          "items",
+          "done",
+          "total",
+          "mergeable"
+        ],
+        "type": "object"
+      },
+      "BriefItem": {
+        "properties": {
+          "summary": {
+            "description": "\"CI green · +41 -12 · screenshot\", \"needs you: which bucket?\".",
+            "type": "string"
+          },
+          "task": {
+            "$ref": "#/components/schemas/Task"
+          }
+        },
+        "required": [
+          "task",
+          "summary"
+        ],
+        "type": "object"
+      },
+      "CheckState": {
+        "enum": [
+          "Pending",
+          "Passed",
+          "Failed",
+          "Skipped"
+        ],
+        "type": "string"
+      },
+      "CiCheck": {
+        "description": "One CI check on the task's pull request.",
+        "properties": {
+          "link": {
+            "description": "Where its log lives, when CI says.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "name": {
+            "type": "string"
+          },
+          "state": {
+            "$ref": "#/components/schemas/CheckState"
+          }
+        },
+        "required": [
+          "name",
+          "state"
+        ],
+        "type": "object"
+      },
       "ClockTime": {
         "description": "A time of day, like the shift start.",
         "properties": {
@@ -72,6 +194,75 @@
         "required": [
           "hour",
           "minute"
+        ],
+        "type": "object"
+      },
+      "DiffStat": {
+        "description": "Lines and files a change touches.",
+        "properties": {
+          "added": {
+            "format": "uint32",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "files": {
+            "format": "uint32",
+            "minimum": 0,
+            "type": "integer"
+          },
+          "removed": {
+            "format": "uint32",
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "files",
+          "added",
+          "removed"
+        ],
+        "type": "object"
+      },
+      "EventKind": {
+        "description": "What happened to a task, kept for the morning brief and the pull request's timeline.",
+        "enum": [
+          "WorktreeReady",
+          "AgentStarted",
+          "AgentFinished",
+          "Asked",
+          "Parked",
+          "Interrupted",
+          "StepFailed",
+          "PrOpened",
+          "Pushed",
+          "CiFailed",
+          "CiGreen",
+          "NoCi",
+          "Reviewed",
+          "Ready",
+          "Merged"
+        ],
+        "type": "string"
+      },
+      "Overnight": {
+        "description": "When the night's work ran.",
+        "properties": {
+          "from": {
+            "$ref": "#/components/schemas/UnixTime"
+          },
+          "parked_secs": {
+            "description": "Time spent parked at usage limits.",
+            "format": "int64",
+            "type": "integer"
+          },
+          "to": {
+            "$ref": "#/components/schemas/UnixTime"
+          }
+        },
+        "required": [
+          "from",
+          "to",
+          "parked_secs"
         ],
         "type": "object"
       },
@@ -299,6 +490,31 @@
           }
         ]
       },
+      "StepView": {
+        "description": "Where a task is, in words every surface uses the same way.",
+        "oneOf": [
+          {
+            "enum": [
+              "Queued",
+              "Preparing",
+              "Coding",
+              "Publishing",
+              "WatchingCi",
+              "FixingCi",
+              "Reviewing",
+              "NeedsYou",
+              "Ready",
+              "Merged"
+            ],
+            "type": "string"
+          },
+          {
+            "const": "Parked",
+            "description": "Waiting out a usage limit, or a retry after a failure.",
+            "type": "string"
+          }
+        ]
+      },
       "Task": {
         "description": "The one thing in Shep: work handed over by a person.",
         "properties": {
@@ -354,6 +570,119 @@
           "state",
           "created_at",
           "updated_at"
+        ],
+        "type": "object"
+      },
+      "TaskDetail": {
+        "description": "One task, as the split view and the Mac app show it.",
+        "properties": {
+          "activity": {
+            "description": "One line on what is happening now.",
+            "type": "string"
+          },
+          "agent": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AgentKind"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "branch": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "checks": {
+            "items": {
+              "$ref": "#/components/schemas/CiCheck"
+            },
+            "type": "array"
+          },
+          "diff": {
+            "description": "The change as a patch (shortened for display).",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/TaskEvent"
+            },
+            "type": "array"
+          },
+          "live": {
+            "description": "Whether an agent session is running for it right now.",
+            "type": "boolean"
+          },
+          "proof": {
+            "description": "Proof files on this machine: test output and screenshots.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "review": {
+            "description": "The second opinion.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "screen": {
+            "description": "The agent's screen, while it has one.",
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "stat": {
+            "$ref": "#/components/schemas/DiffStat"
+          },
+          "step": {
+            "$ref": "#/components/schemas/StepView"
+          },
+          "task": {
+            "$ref": "#/components/schemas/Task"
+          }
+        },
+        "required": [
+          "task",
+          "step",
+          "activity",
+          "live",
+          "checks",
+          "stat",
+          "proof",
+          "events"
+        ],
+        "type": "object"
+      },
+      "TaskEvent": {
+        "properties": {
+          "at": {
+            "$ref": "#/components/schemas/UnixTime"
+          },
+          "detail": {
+            "description": "A sentence for a person, like \"lint failed\" or \"parked until 06:10\".",
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/EventKind"
+          },
+          "task_id": {
+            "$ref": "#/components/schemas/TaskId"
+          }
+        },
+        "required": [
+          "task_id",
+          "at",
+          "kind",
+          "detail"
         ],
         "type": "object"
       },
@@ -530,6 +859,18 @@
         "description": "Seconds since the Unix epoch.",
         "format": "int64",
         "type": "integer"
+      },
+      "WatchReply": {
+        "properties": {
+          "screen": {
+            "description": "Base64 bytes that redraw the agent's screen.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "screen"
+        ],
+        "type": "object"
       }
     }
   },
@@ -673,6 +1014,151 @@
         }
       },
       "summary": "The board now, then a board.changed notification on every change."
+    },
+    {
+      "name": "task.detail",
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "name": "id",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/TaskId"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/TaskDetail"
+        }
+      },
+      "summary": "One task in full: its run, what it is doing, CI, diff, proof, review."
+    },
+    {
+      "name": "brief",
+      "paramStructure": "by-name",
+      "params": [],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/Brief"
+        }
+      },
+      "summary": "What finished, what needs you, and how the night went."
+    },
+    {
+      "name": "brief.morning",
+      "paramStructure": "by-name",
+      "params": [],
+      "result": {
+        "name": "result",
+        "schema": {
+          "anyOf": [
+            {
+              "$ref": "#/components/schemas/Brief"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "summary": "The brief once per morning; null when nothing is new."
+    },
+    {
+      "name": "day.first_run",
+      "paramStructure": "by-name",
+      "params": [],
+      "result": {
+        "name": "result",
+        "schema": {
+          "type": "boolean"
+        }
+      },
+      "summary": "True the first time it is asked on a new local day."
+    },
+    {
+      "name": "add.label",
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "name": "from_dir",
+          "required": false,
+          "schema": {
+            "default": null,
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        {
+          "name": "label",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "items": {
+            "$ref": "#/components/schemas/Task"
+          },
+          "type": "array"
+        }
+      },
+      "summary": "Queue every open issue with this label that is not on the board."
+    },
+    {
+      "name": "agent.watch",
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "name": "id",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/TaskId"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/WatchReply"
+        }
+      },
+      "summary": "The agent's screen now, then agent.output notifications."
+    },
+    {
+      "name": "agent.send",
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "name": "data",
+          "required": true,
+          "schema": {
+            "description": "Base64 bytes to type.",
+            "type": "string"
+          }
+        },
+        {
+          "name": "id",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/TaskId"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "type": "null"
+        }
+      },
+      "summary": "Type into the task's agent."
     }
   ],
   "openrpc": "1.3.2",
@@ -689,6 +1175,19 @@
         }
       ],
       "summary": "The whole board, pushed to subscribers after every change."
+    },
+    {
+      "name": "agent.output",
+      "params": [
+        {
+          "name": "output",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/AgentOutput"
+          }
+        }
+      ],
+      "summary": "What a watched agent printed, pushed after agent.watch."
     }
   ]
 }

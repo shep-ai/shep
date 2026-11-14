@@ -191,3 +191,25 @@ fn merge_marks_ready_then_merges_falling_back_to_an_allowed_method() {
         ]
     );
 }
+
+#[test]
+fn labelled_issues_are_listed_open_only() {
+    let fake = FakeGh::new();
+    fake.answer(
+        "issue_list",
+        r#"[{"number":4,"title":"Fix login"},{"number":9,"title":"Add CSV"}]"#,
+        0,
+    );
+    let issues = fake.gh().labelled(&fake.here(), "shep").unwrap();
+    assert_eq!(
+        issues
+            .iter()
+            .map(|i| (i.number, i.title.as_str()))
+            .collect::<Vec<_>>(),
+        [(4, "Fix login"), (9, "Add CSV")]
+    );
+    assert_eq!(
+        fake.calls(),
+        ["issue list --label shep --state open --json number,title --limit 200"]
+    );
+}

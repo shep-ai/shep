@@ -230,3 +230,29 @@ fn adding_inside_a_repository_points_shep_at_it() {
             checkout.canonicalize().unwrap().display()
         )));
 }
+
+#[test]
+fn add_by_label_queues_each_labelled_issue_once() {
+    let home = Home::new();
+    let (_, checkout) = home.repos();
+    home.install(
+        "gh",
+        "#!/bin/sh\ncase \"$1 $2\" in\n  \"issue list\") echo '[{\"number\":4,\"title\":\"Fix login\"},{\"number\":9,\"title\":\"Add CSV\"}]';;\n  *) exit 1;;\nesac\n",
+    );
+    home.shep_in(&checkout)
+        .args(["add", "--label", "shep"])
+        .assert()
+        .success()
+        .stdout(contains("Queued 2 issues labelled shep"));
+    home.shep_in(&checkout)
+        .args(["add", "--label", "shep"])
+        .assert()
+        .success()
+        .stdout(contains("No new open issues labelled shep"));
+    home.shep()
+        .assert()
+        .success()
+        .stdout(contains("Queued (2)"))
+        .stdout(contains("Fix login"))
+        .stdout(contains("Add CSV"));
+}

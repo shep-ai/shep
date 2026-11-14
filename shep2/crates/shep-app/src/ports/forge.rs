@@ -14,8 +14,17 @@ pub struct Issue {
     pub url: String,
 }
 
+/// An open issue as a list shows it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct IssueRef {
+    pub number: u64,
+    pub title: String,
+}
+
 /// Where pull requests and CI live (GitHub, through `gh`).
 pub trait Forge: Send + Sync {
+    /// Open issues in the repository that carry `label`.
+    fn labelled(&self, repo: &Path, label: &str) -> Result<Vec<IssueRef>, ForgeError>;
     /// The issue behind a task, or `None` for a source this forge does not hold (a sentence).
     fn issue(&self, repo: &Path, source: &TaskSourceRef) -> Result<Option<Issue>, ForgeError>;
     /// Opens a **draft** pull request from the worktree's branch into its base.

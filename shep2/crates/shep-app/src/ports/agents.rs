@@ -1,5 +1,6 @@
 use std::path::PathBuf;
 use std::sync::Arc;
+use std::time::Duration;
 
 use shep_domain::{AgentKind, AgentStatus, SessionId};
 
@@ -72,4 +73,16 @@ pub trait AgentSessions: Send + Sync {
     fn spawn(&self, spec: &SessionSpec) -> Result<SessionId, SessionError>;
     fn poll(&self, session: &SessionId) -> Result<SessionState, SessionError>;
     fn kill(&self, session: &SessionId) -> Result<(), SessionError>;
+    /// A live view of the session: its screen now and what it prints next.
+    fn attach(&self, session: &SessionId) -> Result<Box<dyn AgentView>, SessionError>;
+    /// Types into the session.
+    fn write(&self, session: &SessionId, bytes: &[u8]) -> Result<(), SessionError>;
+}
+
+/// Watching an agent's terminal.
+pub trait AgentView: Send {
+    /// Bytes that redraw the screen as it was when the view opened.
+    fn screen(&self) -> &[u8];
+    /// The next bytes the agent prints, or `None` when nothing came within `timeout`.
+    fn next_output(&mut self, timeout: Duration) -> Result<Option<Vec<u8>>, SessionError>;
 }

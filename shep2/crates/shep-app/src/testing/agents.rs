@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, VecDeque};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Arc, Mutex};
 
@@ -6,8 +6,8 @@ use shep_domain::{AgentKind, AgentStatus, SessionId};
 
 use super::lock;
 use crate::ports::{
-    AgentCommand, AgentProvider, AgentProviders, AgentRequest, AgentSessions, SessionError,
-    SessionSpec, SessionState,
+    AgentCommand, AgentProvider, AgentProviders, AgentRequest, AgentSessions, AgentView,
+    SessionError, SessionSpec, SessionState,
 };
 
 /// The fake agent's program name, so tests can tell its sessions apart.
@@ -90,6 +90,8 @@ struct Sessions {
     states: HashMap<SessionId, SessionState>,
     killed: Vec<SessionId>,
     lost: bool,
+    typed: HashMap<SessionId, Vec<u8>>,
+    output: HashMap<SessionId, Arc<Mutex<VecDeque<Vec<u8>>>>>,
 }
 
 /// Sessions a test drives by hand: each spawn starts `Running` until the test ends it.
@@ -138,13 +140,58 @@ impl FakeSessions {
     pub fn killed(&self) -> Vec<SessionId> {
         lock(&self.0).killed.clone()
     }
+    /// The session prints `bytes` (seen by attached views).
+    pub fn emit(&self, id: &SessionId, bytes: &[u8]) {
+        let queue = lock(&self.0).output.entry(id.clone()).or_default().clone();
+        lock(&queue).push_back(bytes.to_vec());
+    }
+    /// Everything typed into a session.
+    pub fn typed(&self, id: &SessionId) -> Vec<u8> {
+        lock(&self.0).typed.get(id).cloned().unwrap_or_default()
+    }
     /// Every session is forgotten, as when the holder restarts.
     pub fn lose_all(&self) {
         lock(&self.0).lost = true;
     }
 }
 
+struct FakeView {
+    screen: Vec<u8>,
+    output: Arc<Mutex<VecDeque<Vec<u8>>>>,
+}
+
+impl AgentView for FakeView {
+    fn screen(&self) -> &[u8] {
+        &self.screen
+    }
+    fn next_output(
+        &mut self,
+        _timeout: std::time::Duration,
+    ) -> Result<Option<Vec<u8>>, SessionError> {
+        Ok(lock(&self.output).pop_front())
+    }
+}
+
 impl AgentSessions for FakeSessions {
+    fn attach(&self, session: &SessionId) -> Result<Box<dyn AgentView>, SessionError> {
+        let mut s = lock(&self.0);
+        let screen = match s.states.get(session) {
+            Some(SessionState::Running { screen, .. } | SessionState::Exited { screen, .. }) => {
+                screen.clone().into_bytes()
+            }
+            _ => return Err(SessionError(format!("no session {session}"))),
+        };
+        let output = s.output.entry(session.clone()).or_default().clone();
+        Ok(Box::new(FakeView { screen, output }))
+    }
+    fn write(&self, session: &SessionId, bytes: &[u8]) -> Result<(), SessionError> {
+        lock(&self.0)
+            .typed
+            .entry(session.clone())
+            .or_default()
+            .extend_from_slice(bytes);
+        Ok(())
+    }
     fn spawn(&self, spec: &SessionSpec) -> Result<SessionId, SessionError> {
         let mut s = lock(&self.0);
         s.lost = false;

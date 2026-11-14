@@ -9,8 +9,17 @@ use serde_json::Value;
 use shep_app::{AppError, Board, ShepApi};
 use shep_jsonrpc::{Handler, Peer, RpcError};
 
-use crate::method::{AddParams, Method, ReviewParams, StartParams, UpdateSettingsParams};
-use crate::BOARD_CHANGED;
+use base64::engine::general_purpose::STANDARD;
+use base64::Engine as _;
+
+use crate::method::{
+    AddLabelParams, AddParams, AgentOutput, IdParams, Method, ReviewParams, SendParams,
+    StartParams, UpdateSettingsParams, WatchReply,
+};
+use crate::{AGENT_OUTPUT, BOARD_CHANGED};
+
+/// How long a watcher thread waits for agent output before checking its peer is still there.
+const WATCH_POLL: Duration = Duration::from_secs(1);
 
 /// How often the board is compared with what subscribers last saw, to catch changes made
 /// outside a request (the engine).
@@ -90,7 +99,43 @@ impl RpcServer {
                 reply(api.update_settings(parse::<UpdateSettingsParams>(params)?.change))
             }
             Method::Subscribe => reply(self.subscribe(peer)),
+            Method::Detail => reply(api.detail(parse::<IdParams>(params)?.id)),
+            Method::Brief => reply(api.brief()),
+            Method::MorningBrief => reply(api.morning_brief()),
+            Method::FirstRunToday => reply(api.first_run_today()),
+            Method::AddLabel => {
+                let p: AddLabelParams = parse(params)?;
+                reply(api.add_label(&p.label, p.from_dir.as_deref().map(Path::new)))
+            }
+            Method::WatchAgent => reply(self.watch(parse::<IdParams>(params)?.id, peer)),
+            Method::SendToAgent => {
+                let p: SendParams = parse(params)?;
+                let bytes = STANDARD.decode(p.data).map_err(RpcError::invalid_params)?;
+                reply(api.send_to_agent(p.id, &bytes))
+            }
         }
+    }
+
+    /// Opens the agent's view and pushes what it prints to `peer` until the peer goes away.
+    fn watch(&self, id: shep_domain::TaskId, peer: &Peer) -> Result<WatchReply, AppError> {
+        let mut view = self.api.watch_agent(id)?;
+        let screen = STANDARD.encode(view.screen());
+        let peer = peer.clone();
+        std::thread::spawn(move || loop {
+            let data = match view.next_output(WATCH_POLL) {
+                Ok(Some(bytes)) => STANDARD.encode(bytes),
+                Ok(None) => String::new(),
+                Err(_) => return,
+            };
+            if !data.is_empty()
+                && peer
+                    .notify(AGENT_OUTPUT, &AgentOutput { id, data })
+                    .is_err()
+            {
+                return;
+            }
+        });
+        Ok(WatchReply { screen })
     }
 }
 
@@ -98,7 +143,7 @@ impl Handler for RpcServer {
     fn handle(&self, method: &str, params: Value, peer: &Peer) -> Result<Value, RpcError> {
         let method = Method::parse(method).ok_or_else(|| RpcError::method_not_found(method))?;
         let answer = self.dispatch(method, params, peer);
-        if method != Method::Subscribe {
+        if !matches!(method, Method::Subscribe | Method::WatchAgent) {
             self.publish();
         }
         answer

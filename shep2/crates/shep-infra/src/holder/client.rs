@@ -6,7 +6,7 @@ use base64::engine::general_purpose::STANDARD;
 use base64::Engine as _;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
-use shep_app::ports::{AgentSessions, SessionError, SessionSpec, SessionState};
+use shep_app::ports::{AgentSessions, AgentView, SessionError, SessionSpec, SessionState};
 use shep_domain::SessionId;
 use shep_jsonrpc::{Client, ClientError};
 
@@ -125,6 +125,38 @@ impl AgentSessions for HolderSessions {
                 id: session.0.clone(),
             },
         )
+    }
+
+    fn attach(&self, session: &SessionId) -> Result<Box<dyn AgentView>, SessionError> {
+        // Make sure a holder runs (and so the socket exists) before attaching to it.
+        {
+            let mut client = self.lock();
+            if client.is_none() {
+                *client = Some(self.connect()?);
+            }
+        }
+        Attach::open(&self.socket, session)
+            .map(|a| Box::new(a) as Box<dyn AgentView>)
+            .map_err(|e| SessionError(e.to_string()))
+    }
+
+    fn write(&self, session: &SessionId, bytes: &[u8]) -> Result<(), SessionError> {
+        self.call(
+            HolderMethod::Write,
+            &WriteParams {
+                id: session.0.clone(),
+                data: STANDARD.encode(bytes),
+            },
+        )
+    }
+}
+
+impl AgentView for Attach {
+    fn screen(&self) -> &[u8] {
+        Attach::screen(self)
+    }
+    fn next_output(&mut self, timeout: Duration) -> Result<Option<Vec<u8>>, SessionError> {
+        Attach::next_output(self, timeout).map_err(|e| SessionError(e.to_string()))
     }
 }
 

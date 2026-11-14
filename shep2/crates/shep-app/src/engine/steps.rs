@@ -8,9 +8,9 @@ use shep_domain::{
 };
 
 use super::agent::worktree;
-use super::paths::{with_extension, TaskPaths};
 use super::pr_body::{self, Proof};
 use super::{Engine, Flow, StepError, StepResult};
+use crate::paths::{file_name, with_extension, TaskPaths};
 
 const TEXT_PROOF: [&str; 3] = ["txt", "log", "md"];
 const IMAGE_PROOF: [&str; 5] = ["png", "jpg", "jpeg", "gif", "webp"];
@@ -127,6 +127,7 @@ impl Engine {
             .checks(&worktree, &pr)
             .map_err(|e| StepError::new("read CI", e))?;
         run.checked_at = Some(now);
+        run.checks.clone_from(&checks);
         let waited = now.0 - since.0;
         match CiVerdict::of(&checks) {
             CiVerdict::Green => {
@@ -247,7 +248,7 @@ impl Engine {
     ) -> Proof {
         let files = self.ports.files.list(&paths.proof_dir());
         let texts: Vec<(String, String)> = with_extension(&files, &TEXT_PROOF)
-            .filter_map(|p| Some((super::paths::file_name(p), self.ports.files.read(p)?)))
+            .filter_map(|p| Some((file_name(p), self.ports.files.read(p)?)))
             .collect();
         let images: Vec<PathBuf> = with_extension(&files, &IMAGE_PROOF).cloned().collect();
         let mut proof = Proof {
@@ -264,7 +265,7 @@ impl Engine {
                 proof.images = images
                     .iter()
                     .map(|p| {
-                        let name = super::paths::file_name(p);
+                        let name = file_name(p);
                         let url = pr_body::blob_url(pr_url, &commit, &name);
                         (name, url)
                     })

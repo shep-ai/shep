@@ -69,3 +69,20 @@ fn events_come_back_in_order_per_task() {
         ]
     );
 }
+
+#[test]
+fn marks_are_remembered_and_moved() {
+    use shep_app::ports::{Mark, Marks};
+    let (_dir, store) = store();
+    assert_eq!(store.mark(Mark::BriefSeen).unwrap(), None);
+    for at in [10, 20] {
+        store.set_mark(Mark::BriefSeen, UnixTime(at)).unwrap();
+        assert_eq!(store.mark(Mark::BriefSeen).unwrap(), Some(UnixTime(at)));
+    }
+    assert_eq!(store.mark(Mark::SplashSeen).unwrap(), None);
+    assert_eq!(
+        shep_app::SettingsRepository::load_settings(&store).unwrap(),
+        shep_domain::Settings::default(),
+        "marks never touch settings"
+    );
+}

@@ -3,7 +3,7 @@
 use std::path::Path;
 
 use serde::Deserialize;
-use shep_app::ports::{Forge, ForgeError, Issue};
+use shep_app::ports::{Forge, ForgeError, Issue, IssueRef};
 use shep_domain::{CheckState, CiCheck, PullRequest, TaskSourceRef, Worktree};
 
 use crate::process::{run, run_raw};
@@ -44,6 +44,15 @@ struct IssueJson {
 }
 
 #[derive(Deserialize)]
+struct IssueRefJson {
+    number: u64,
+    title: String,
+}
+
+/// The most issues one `shep add --label` queues.
+const LABEL_LIMIT: &str = "200";
+
+#[derive(Deserialize)]
 struct CheckJson {
     name: String,
     bucket: String,
@@ -75,6 +84,33 @@ fn run_id(link: &str) -> Option<&str> {
 }
 
 impl Forge for GhForge {
+    fn labelled(&self, repo: &Path, label: &str) -> Result<Vec<IssueRef>, ForgeError> {
+        let json = self.gh(
+            repo,
+            &[
+                "issue",
+                "list",
+                "--label",
+                label,
+                "--state",
+                "open",
+                "--json",
+                "number,title",
+                "--limit",
+                LABEL_LIMIT,
+            ],
+        )?;
+        let issues: Vec<IssueRefJson> = serde_json::from_str(&json)
+            .map_err(|e| ForgeError(format!("unexpected issue list from gh: {e}")))?;
+        Ok(issues
+            .into_iter()
+            .map(|i| IssueRef {
+                number: i.number,
+                title: i.title,
+            })
+            .collect())
+    }
+
     fn issue(&self, repo: &Path, source: &TaskSourceRef) -> Result<Option<Issue>, ForgeError> {
         let TaskSourceRef::GitHubIssue {
             repo: owner_repo,

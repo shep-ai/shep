@@ -5,7 +5,7 @@ use std::path::PathBuf;
 
 use shep_domain::{EventKind, Task, TaskEvent, TaskSourceRef};
 
-use super::time;
+use crate::time;
 
 /// Lines of test output shown; the rest stays in the task's folder.
 const MAX_PROOF_LINES: usize = 40;

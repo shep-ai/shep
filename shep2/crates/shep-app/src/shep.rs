@@ -9,6 +9,8 @@ use shep_domain::{
     TaskState, TransitionError, UnixTime,
 };
 
+use crate::ports::AgentView;
+use crate::view::{Brief, TaskDetail};
 use crate::{AppError, Board, Ports, ShepApi};
 
 /// When `start` should begin queued work.
@@ -64,6 +66,24 @@ impl Shep {
             writes: Mutex::new(()),
             shift_open: AtomicBool::new(false),
         }
+    }
+
+    pub(crate) fn ports(&self) -> &Ports {
+        &self.ports
+    }
+
+    pub(crate) fn board_now(&self) -> Result<Board, AppError> {
+        Ok(Board::from_tasks(self.ports.tasks.list()?))
+    }
+
+    /// The task already on the board for this source, unless it was merged.
+    pub(crate) fn open_task_for(&self, source: &TaskSourceRef) -> Result<Option<Task>, AppError> {
+        Ok(self
+            .ports
+            .tasks
+            .list()?
+            .into_iter()
+            .find(|t| t.source == *source && t.state != TaskState::Merged))
     }
 
     /// The engine reports a task's pull request is ready for review.
@@ -129,10 +149,7 @@ impl Shep {
     fn ensure_ready(&self) -> Result<(), AppError> {
         let settings = self.ports.settings.load_settings()?;
         if settings.repo.is_none() {
-            return Err(AppError::NotReady(
-                "Shep needs a repository: run `shep add` inside one, or `shep config --repo PATH`"
-                    .into(),
-            ));
+            self.repo()?;
         }
         if settings.agent.is_some() {
             return Ok(());
@@ -155,7 +172,7 @@ impl Shep {
     }
 
     /// The repository containing `dir`, when no repository is chosen yet.
-    fn adopt_repo(&self, dir: &Path) -> Result<(), AppError> {
+    pub(crate) fn adopt_repo(&self, dir: &Path) -> Result<(), AppError> {
         if self.ports.settings.load_settings()?.repo.is_some() {
             return Ok(());
         }
@@ -201,6 +218,9 @@ impl ShepApi for Shep {
         if let Some(dir) = from_dir {
             self.adopt_repo(dir)?;
         }
+        if let Some(existing) = self.open_task_for(&source)? {
+            return Ok(existing);
+        }
         let _guard = self.lock()?;
         Ok(self.ports.tasks.create(source, self.ports.clock.now())?)
     }
@@ -245,6 +265,34 @@ impl ShepApi for Shep {
 
     fn settings(&self) -> Result<Settings, AppError> {
         Ok(self.ports.settings.load_settings()?)
+    }
+
+    fn detail(&self, id: TaskId) -> Result<TaskDetail, AppError> {
+        Shep::detail(self, id)
+    }
+
+    fn brief(&self) -> Result<Brief, AppError> {
+        Shep::brief(self)
+    }
+
+    fn morning_brief(&self) -> Result<Option<Brief>, AppError> {
+        Shep::morning_brief(self)
+    }
+
+    fn first_run_today(&self) -> Result<bool, AppError> {
+        Shep::first_run_today(self)
+    }
+
+    fn add_label(&self, label: &str, from_dir: Option<&Path>) -> Result<Vec<Task>, AppError> {
+        Shep::add_label(self, label, from_dir)
+    }
+
+    fn watch_agent(&self, id: TaskId) -> Result<Box<dyn AgentView>, AppError> {
+        Shep::watch_agent(self, id)
+    }
+
+    fn send_to_agent(&self, id: TaskId, bytes: &[u8]) -> Result<(), AppError> {
+        Shep::send_to_agent(self, id, bytes)
     }
 
     fn update_settings(&self, change: SettingsChange) -> Result<Settings, AppError> {

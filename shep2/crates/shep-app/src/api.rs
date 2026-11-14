@@ -2,6 +2,8 @@ use std::path::Path;
 
 use shep_domain::{ReviewAction, Settings, Task, TaskId};
 
+use crate::ports::AgentView;
+use crate::view::{Brief, TaskDetail};
 use crate::{AppError, Board, SettingsChange, StartOutcome, StartWhen};
 
 /// The calls every surface makes: the four core actions plus reading and changing settings.
@@ -20,4 +22,19 @@ pub trait ShepApi: Send + Sync {
     fn review(&self, id: TaskId, action: ReviewAction) -> Result<Task, AppError>;
     fn settings(&self) -> Result<Settings, AppError>;
     fn update_settings(&self, change: SettingsChange) -> Result<Settings, AppError>;
+
+    /// One task in full: its run, a line on what it is doing, CI, diff, proof, review.
+    fn detail(&self, id: TaskId) -> Result<TaskDetail, AppError>;
+    /// What finished, what needs you, and how the night went.
+    fn brief(&self) -> Result<Brief, AppError>;
+    /// The brief, once per morning: only when there is news since it was last shown.
+    fn morning_brief(&self) -> Result<Option<Brief>, AppError>;
+    /// True once per local day (the splash plays only then).
+    fn first_run_today(&self) -> Result<bool, AppError>;
+    /// Queues every open issue with this label that is not on the board yet.
+    fn add_label(&self, label: &str, from_dir: Option<&Path>) -> Result<Vec<Task>, AppError>;
+    /// The task's live agent terminal, to watch.
+    fn watch_agent(&self, id: TaskId) -> Result<Box<dyn AgentView>, AppError>;
+    /// Types into the task's agent ("attach").
+    fn send_to_agent(&self, id: TaskId, bytes: &[u8]) -> Result<(), AppError>;
 }

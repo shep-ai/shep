@@ -42,7 +42,7 @@ fn the_schema_only_grows() {
 }
 
 #[test]
-fn the_schema_lists_the_four_actions_settings_and_the_subscription() {
+fn the_schema_lists_the_four_actions_and_what_surfaces_read() {
     let names: Vec<String> = current()["methods"]
         .as_array()
         .unwrap()
@@ -58,10 +58,18 @@ fn the_schema_lists_the_four_actions_settings_and_the_subscription() {
             "review",
             "settings.get",
             "settings.update",
-            "board.subscribe"
+            "board.subscribe",
+            "task.detail",
+            "brief",
+            "brief.morning",
+            "day.first_run",
+            "add.label",
+            "agent.watch",
+            "agent.send"
         ]
     );
     assert_eq!(current()["x-notifications"][0]["name"], "board.changed");
+    assert_eq!(current()["x-notifications"][1]["name"], "agent.output");
 }
 
 #[test]

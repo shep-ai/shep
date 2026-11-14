@@ -4,11 +4,14 @@
 use schemars::generate::{SchemaGenerator, SchemaSettings};
 use schemars::{JsonSchema, Schema};
 use serde_json::{json, Map, Value};
-use shep_app::{Board, SettingsChange, StartOutcome};
+use shep_app::{Board, Brief, SettingsChange, StartOutcome, TaskDetail};
 use shep_domain::{Settings, Task};
 
-use crate::method::{AddParams, Method, NoParams, ReviewParams, StartParams, UpdateSettingsParams};
-use crate::BOARD_CHANGED;
+use crate::method::{
+    AddLabelParams, AddParams, AgentOutput, IdParams, Method, NoParams, ReviewParams, SendParams,
+    StartParams, UpdateSettingsParams, WatchReply,
+};
+use crate::{AGENT_OUTPUT, BOARD_CHANGED};
 
 const OPENRPC_VERSION: &str = "1.3.2";
 /// Bumped only when the protocol changes in a way the growth check allows.
@@ -35,6 +38,13 @@ fn shape(method: Method) -> (SchemaFn, SchemaFn) {
         Method::Review => (of::<ReviewParams>, reference::<Task>),
         Method::SettingsGet => (of::<NoParams>, reference::<Settings>),
         Method::SettingsUpdate => (of::<UpdateSettingsParams>, reference::<Settings>),
+        Method::Detail => (of::<IdParams>, reference::<TaskDetail>),
+        Method::Brief => (of::<NoParams>, reference::<Brief>),
+        Method::MorningBrief => (of::<NoParams>, reference::<Option<Brief>>),
+        Method::FirstRunToday => (of::<NoParams>, reference::<bool>),
+        Method::AddLabel => (of::<AddLabelParams>, reference::<Vec<Task>>),
+        Method::WatchAgent => (of::<IdParams>, reference::<WatchReply>),
+        Method::SendToAgent => (of::<SendParams>, reference::<()>),
     }
 }
 
@@ -57,17 +67,25 @@ pub fn document() -> Value {
         })
         .collect();
     let board = generator.subschema_for::<Board>();
+    let output = generator.subschema_for::<AgentOutput>();
     // Make sure every type a client sends is described even when no result mentions it.
     generator.subschema_for::<SettingsChange>();
     json!({
         "openrpc": OPENRPC_VERSION,
         "info": { "title": "Shep daemon", "version": PROTOCOL_VERSION },
         "methods": methods,
-        "x-notifications": [{
-            "name": BOARD_CHANGED,
-            "summary": "The whole board, pushed to subscribers after every change.",
-            "params": [{ "name": "board", "required": true, "schema": board }],
-        }],
+        "x-notifications": [
+            {
+                "name": BOARD_CHANGED,
+                "summary": "The whole board, pushed to subscribers after every change.",
+                "params": [{ "name": "board", "required": true, "schema": board }],
+            },
+            {
+                "name": AGENT_OUTPUT,
+                "summary": "What a watched agent printed, pushed after agent.watch.",
+                "params": [{ "name": "output", "required": true, "schema": output }],
+            },
+        ],
         "components": { "schemas": generator.take_definitions(true) },
     })
 }

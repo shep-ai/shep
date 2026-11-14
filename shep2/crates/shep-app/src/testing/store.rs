@@ -3,7 +3,9 @@ use std::sync::Mutex;
 
 use shep_domain::{Run, Settings, Task, TaskEvent, TaskId, TaskSourceRef, UnixTime};
 
-use crate::ports::{EventLog, RunRepository};
+use std::collections::HashMap;
+
+use crate::ports::{EventLog, Mark, Marks, RunRepository};
 use crate::{Clock, SettingsRepository, StoreError, TaskRepository};
 
 fn poisoned<T>(_: T) -> StoreError {
@@ -125,5 +127,18 @@ impl EventLog for MemoryEvents {
             .filter(|e| e.task_id == task)
             .cloned()
             .collect())
+    }
+}
+
+#[derive(Default)]
+pub struct MemoryMarks(Mutex<HashMap<Mark, UnixTime>>);
+
+impl Marks for MemoryMarks {
+    fn mark(&self, mark: Mark) -> Result<Option<UnixTime>, StoreError> {
+        Ok(self.0.lock().map_err(poisoned)?.get(&mark).copied())
+    }
+    fn set_mark(&self, mark: Mark, at: UnixTime) -> Result<(), StoreError> {
+        self.0.lock().map_err(poisoned)?.insert(mark, at);
+        Ok(())
     }
 }

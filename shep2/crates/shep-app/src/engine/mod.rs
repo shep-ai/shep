@@ -5,18 +5,16 @@
 //! it stopped; agent sessions live in the PTY holder and outlive the daemon.
 
 mod agent;
-mod paths;
 mod pr_body;
 mod prompts;
 mod steps;
-mod time;
 
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
 use shep_domain::{EventKind, Run, RunStep, Task, TaskEvent, TaskId, TaskState, UnixTime};
 
-use crate::{AppError, Ports, Shep, ShepApi};
+use crate::{time, AppError, Ports, Shep, ShepApi};
 
 pub use prompts::{
     AGENT_ENV_PROOF_DIR, AGENT_ENV_QUESTION_FILE, AGENT_ENV_REVIEW_FILE, AGENT_ENV_TASK,

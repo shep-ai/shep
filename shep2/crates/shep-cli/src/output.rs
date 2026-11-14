@@ -12,6 +12,20 @@ pub fn queued(task: &Task, settings: &Settings) -> String {
     )
 }
 
+pub fn queued_label(added: &[Task], label: &str, settings: &Settings) -> String {
+    match added.len() {
+        0 => format!("No new open issues labelled {label}."),
+        1 => format!(
+            "Queued 1 issue labelled {label}. It starts at {} tonight.",
+            settings.shift_start
+        ),
+        n => format!(
+            "Queued {n} issues labelled {label}. They start at {} tonight.",
+            settings.shift_start
+        ),
+    }
+}
+
 pub fn board(board: &Board) -> String {
     let mut out = String::new();
     for (state, tasks) in board.groups().filter(|(_, tasks)| !tasks.is_empty()) {

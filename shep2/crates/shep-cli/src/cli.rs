@@ -19,8 +19,11 @@ pub enum Command {
     /// Queue a task: an issue (#412), a link to a ticket or message, or a sentence
     Add {
         /// The task; several words are joined into one sentence
-        #[arg(required = true, num_args = 1..)]
+        #[arg(required_unless_present = "label", num_args = 1..)]
         task: Vec<String>,
+        /// Queue every open issue with this label instead, like `--label shep`
+        #[arg(long, value_name = "LABEL", conflicts_with = "task")]
+        label: Option<String>,
     },
     /// Start queued tasks now, or set when tonight's shift starts
     Go {

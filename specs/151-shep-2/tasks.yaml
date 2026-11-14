@@ -203,10 +203,14 @@ tasks:
   - id: task-9
     title: Terminal UI — board, split view, watch screen, splash
     description: >
-      Ratatui board (Queued | Working | Ready, Needs you marked) with m/s/g keys; split view
-      with tasks, live agent session, diff, CI and proof, enter to attach, z to zoom; watch
-      screen whose sky warms toward dawn; two-second splash; --no-motion, NO_COLOR and
-      non-interactive output disable motion.
+      Ratatui board (Queued | Working | Ready, Needs you marked) with j/k, m, s, g, a (answer)
+      and enter (open the PR); split view (2) with tasks, the live agent session, diff, CI and
+      proof, enter to attach and type to the agent, tab to move between panes, z to zoom;
+      watch screen (3) whose sky warms toward dawn as tasks finish and whose sheep walk into
+      the fold; a two-second splash on the first run of the day; the morning brief printed
+      inline on the first run of the day; terminal onboarding (agent, GitHub, repository, when
+      to work, first task). --no-motion, NO_COLOR, CI and non-interactive output disable
+      motion and color; piped output prints the plain board.
     state: Todo
     dependencies:
       - task-6
@@ -243,6 +247,8 @@ tasks:
       TaskSource port (poll, acknowledge, report); GitHub via gh (label shep); Slack via Socket
       Mode (:sheep: reaction, @Shep tonight) with a per-team app manifest; Linear (label shep or
       status Tonight) by polling; tokens in the OS keychain; answers and questions in place.
+      Adapters are built and tested against recorded API fixtures; live workspaces need the
+      owner's tokens.
     state: Todo
     dependencies:
       - task-8
@@ -308,6 +314,55 @@ tasks:
     acceptanceCriteria:
       - Each install path yields a working `shep` on a clean machine
     tdd: null
+    estimatedEffort: M
+
+  - id: task-15
+    title: Core API for the surfaces — task detail, brief, attach, add by label
+    description: >
+      What every surface needs beyond the board, through the same core: task detail (where its
+      run is, a one-line activity, CI checks, diff stat, proof files, the second opinion, the
+      night's events); the morning brief (what finished, what needs you, while you slept);
+      attaching to a task's live agent session through the daemon; `shep add --label shep`
+      queueing every open issue with that label. The protocol only grows.
+      Built: TaskDetail (step, activity, checks, diff stat, diff, proof, review, events, live
+      screen), Brief and morning_brief (once per morning), first_run_today, add_label (and
+      `shep add --label`), watch_agent / send_to_agent through the daemon (agent.watch,
+      agent.output, agent.send); adding an issue already on the board returns it.
+    state: Done
+    dependencies:
+      - task-8
+    acceptanceCriteria:
+      - Each new call answers the same in-process and over the socket
+      - The OpenRPC growth test passes with the new methods
+    tdd:
+      red:
+        - detail and brief from engine fakes; attach round trip through the daemon
+      green:
+        - Implement in shep-app, expose in shep-rpc
+      refactor: []
+    estimatedEffort: M
+
+  - id: task-16
+    title: Engine gaps — agent push guard, dev-server screenshots, send back from GitHub
+    description: >
+      Close what task-7 and task-8 left open: the agent's own `git push` can only reach its task
+      branch (a pre-push hook through GIT_CONFIG for its sessions); a repository's
+      `.shep/dev.json` screenshot command runs after the agent and its PNGs become proof; a
+      `shep: ...` comment on a Ready PR sends the task back with that note; an issue closed
+      overnight stops its task; main moving under a task is merged in before CI; the worktree
+      is removed after Merge.
+    state: Todo
+    dependencies:
+      - task-8
+    acceptanceCriteria:
+      - An agent that runs `git push origin main` is refused; the task branch still pushes
+      - A `shep:` PR comment moves a Ready task back to Working with the comment as its note
+    tdd:
+      red:
+        - engine tests with fakes; hook test against a real bare origin
+      green:
+        - Implement in shep-app and shep-infra
+      refactor: []
     estimatedEffort: M
 
 totalEstimate: XL

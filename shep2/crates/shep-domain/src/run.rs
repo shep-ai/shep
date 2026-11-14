@@ -1,7 +1,7 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use crate::{Task, TaskBranch, TaskId, UnixTime};
+use crate::{CiCheck, Task, TaskBranch, TaskId, UnixTime};
 
 /// CI gets this many fixes before the task needs a person.
 pub const MAX_CI_FIXES: u8 = 3;
@@ -98,6 +98,9 @@ pub struct Run {
     pub asked: Option<String>,
     /// When CI was last asked about.
     pub checked_at: Option<UnixTime>,
+    /// The CI checks as last read.
+    #[serde(default)]
+    pub checks: Vec<CiCheck>,
     /// The reviewer's second opinion, once given.
     pub review: Option<String>,
     pub updated_at: UnixTime,
@@ -114,6 +117,7 @@ impl Run {
             not_before: None,
             asked: None,
             checked_at: None,
+            checks: Vec::new(),
             review: None,
             updated_at: now,
         }

@@ -10,7 +10,7 @@ use std::sync::Arc;
 
 pub use agents::{FakeAgents, FakeProvider, FakeSessions};
 pub use repo::{FakeForge, FakeGit};
-pub use store::{ManualClock, MemoryEvents, MemoryRuns, MemorySettings, MemoryTasks};
+pub use store::{ManualClock, MemoryEvents, MemoryMarks, MemoryRuns, MemorySettings, MemoryTasks};
 pub use system::{FakeAwake, MemoryFiles};
 
 use crate::Ports;
@@ -21,6 +21,7 @@ pub struct Fakes {
     pub settings: Arc<MemorySettings>,
     pub runs: Arc<MemoryRuns>,
     pub events: Arc<MemoryEvents>,
+    pub marks: Arc<MemoryMarks>,
     pub clock: Arc<ManualClock>,
     pub git: Arc<FakeGit>,
     pub forge: Arc<FakeForge>,
@@ -37,6 +38,7 @@ impl Default for Fakes {
             settings: Arc::default(),
             runs: Arc::default(),
             events: Arc::default(),
+            marks: Arc::default(),
             clock: Arc::new(ManualClock::ticking(1000)),
             git: Arc::default(),
             forge: Arc::default(),
@@ -55,6 +57,7 @@ impl Fakes {
             settings: self.settings.clone(),
             runs: self.runs.clone(),
             events: self.events.clone(),
+            marks: self.marks.clone(),
             clock: self.clock.clone(),
             git: self.git.clone(),
             forge: self.forge.clone(),

@@ -7,13 +7,14 @@ use shep_domain::{
     Worktree,
 };
 
-use super::paths::TaskPaths;
 use super::prompts::{
     self, PromptContext, AGENT_ENV_PROOF_DIR, AGENT_ENV_QUESTION_FILE, AGENT_ENV_REVIEW_FILE,
     AGENT_ENV_TASK,
 };
-use super::{time, Engine, Flow, StepError, StepResult};
+use super::{Engine, Flow, StepError, StepResult};
+use crate::paths::TaskPaths;
 use crate::ports::{AgentProvider, AgentRequest, SessionSpec, SessionState};
+use crate::time;
 
 /// Lines of the agent's last screen quoted when it stops with an error.
 const ERROR_TAIL_LINES: usize = 12;

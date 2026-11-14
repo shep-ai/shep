@@ -41,9 +41,13 @@ fn main() -> ExitCode {
 fn run(home: &ShepHome, command: Option<Command>) -> Result<String, AppError> {
     match command {
         None => Ok(output::board(&connect::any(home)?.board()?)),
-        Some(Command::Add { task }) => {
+        Some(Command::Add { task, label }) => {
             let api = connect::any(home)?;
             let here = std::env::current_dir().ok();
+            if let Some(label) = label {
+                let added = api.add_label(&label, here.as_deref())?;
+                return Ok(output::queued_label(&added, &label, &api.settings()?));
+            }
             let task = api.add(&task.join(" "), here.as_deref())?;
             Ok(output::queued(&task, &api.settings()?))
         }
