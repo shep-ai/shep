@@ -4,10 +4,14 @@
 
 pub mod github;
 pub mod http;
+pub mod jira;
 pub mod linear;
+pub mod monday;
+pub mod notion;
 mod say;
 pub mod slack;
 mod stamp;
+pub mod tracker;
 
 use std::collections::{BTreeMap, HashMap};
 use std::sync::{Arc, Mutex};
@@ -68,6 +72,9 @@ pub fn factories() -> Vec<Box<dyn SourceFactory>> {
     vec![
         Box::new(github::GitHubFactory::public()),
         Box::new(linear::LinearFactory::public()),
+        Box::new(jira::JiraFactory::default()),
+        Box::new(notion::NotionFactory::default()),
+        Box::new(monday::MondayFactory::default()),
         Box::new(slack::SlackFactory::new()),
     ]
 }
