@@ -143,6 +143,14 @@
               }
             ]
           },
+          "stopped": {
+            "default": [],
+            "description": "Tasks Shep took off the board since the brief was last shown, one line each, like\n\"Stopped: Fix login redirect loop — issue closed\".",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
           "total": {
             "format": "uint",
             "minimum": 0,
@@ -278,7 +286,11 @@
           "NoCi",
           "Reviewed",
           "Ready",
-          "Merged"
+          "Merged",
+          "Screenshots",
+          "BaseMerged",
+          "SentBack",
+          "Stopped"
         ],
         "type": "string"
       },

@@ -192,6 +192,7 @@ impl Drop for Home {
         for pid in [self.daemon_pid(), self.pid("holder.pid")]
             .into_iter()
             .flatten()
+            .filter(|pid| alive(pid))
         {
             let _ = std::process::Command::new("kill").arg(&pid).status();
         }
@@ -201,6 +202,7 @@ impl Drop for Home {
 pub fn alive(pid: &str) -> bool {
     std::process::Command::new("kill")
         .args(["-0", pid])
+        .stderr(std::process::Stdio::null())
         .status()
         .is_ok_and(|s| s.success())
 }
@@ -239,14 +241,16 @@ printf '\033]7501;state=done\033\\'
 echo "All done."
 "#;
 
-/// A stand-in for `gh`: issue #7, a draft PR #12, green checks.
+/// A stand-in for `gh`: open issue #7, a draft PR #12 with no comments, green checks.
 pub const FAKE_GH: &str = r#"#!/bin/sh
 printf '%s' "$*" | tr '\n' ' ' >> "$FAKE_LOG/gh.calls"; echo >> "$FAKE_LOG/gh.calls"
 case "$1 $2" in
-  "issue view") echo '{"title":"Fix login redirect loop","body":"Users land on /login again.","url":"https://github.com/acme/app/issues/7"}';;
+  "issue view") echo '{"title":"Fix login redirect loop","body":"Users land on /login again.","url":"https://github.com/acme/app/issues/7","state":"OPEN"}';;
   "pr create") echo "https://github.com/acme/app/pull/12";;
   "pr checks") echo '[{"name":"build","bucket":"pass","link":""}]';;
-  "pr edit"|"pr ready"|"pr merge") ;;
+  "pr view") echo '{"comments":[]}';;
+  "api user") echo "night-owl";;
+  "pr edit"|"pr ready"|"pr merge"|"pr close") ;;
   *) echo "fake gh: unexpected $*" >&2; exit 1;;
 esac
 "#;

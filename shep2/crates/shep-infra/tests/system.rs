@@ -8,6 +8,7 @@ use shep_infra::{inhibitor_command, FsTaskFiles, SystemClock, SystemKeepAwake};
 fn alive(pid: u32) -> bool {
     std::process::Command::new("kill")
         .args(["-0", &pid.to_string()])
+        .stderr(std::process::Stdio::null())
         .status()
         .is_ok_and(|s| s.success())
 }

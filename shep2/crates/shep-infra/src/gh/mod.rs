@@ -1,12 +1,15 @@
-//! GitHub through the `gh` command: issues in, draft pull requests and CI status out.
+//! GitHub through the `gh` command: issues in, draft pull requests and CI status out, and
+//! what the engine watches between steps (comments, issue states).
+
+mod json;
 
 use std::path::Path;
 
-use serde::Deserialize;
-use shep_app::ports::{Forge, ForgeError, Issue, IssueRef};
-use shep_domain::{CheckState, CiCheck, PullRequest, TaskSourceRef, Worktree};
+use shep_app::ports::{Forge, ForgeError, Issue, IssueRef, IssueState, PrComment};
+use shep_domain::{CiCheck, PullRequest, TaskSourceRef, Worktree};
 
 use crate::process::{run, run_raw};
+use json::{bucket, parse, CheckJson, IssueJson};
 
 /// Lines of a failed CI log kept for the agent.
 const LOG_TAIL_LINES: usize = 300;
@@ -33,41 +36,33 @@ impl GhForge {
     fn gh(&self, dir: &Path, args: &[&str]) -> Result<String, ForgeError> {
         run(&self.program, args, Some(dir), &[]).map_err(ForgeError)
     }
-}
 
-#[derive(Deserialize)]
-struct IssueJson {
-    title: String,
-    #[serde(default)]
-    body: String,
-    url: String,
-}
-
-#[derive(Deserialize)]
-struct IssueRefJson {
-    number: u64,
-    title: String,
+    /// `gh issue view <n> --json <fields> [-R owner/repo]` for an issue source; `None` for
+    /// any other source.
+    fn view_issue(
+        &self,
+        repo: &Path,
+        source: &TaskSourceRef,
+        fields: &str,
+    ) -> Result<Option<String>, ForgeError> {
+        let TaskSourceRef::GitHubIssue {
+            repo: owner_repo,
+            number,
+        } = source
+        else {
+            return Ok(None);
+        };
+        let number = number.to_string();
+        let mut args = vec!["issue", "view", &number, "--json", fields];
+        if let Some(r) = owner_repo {
+            args.extend(["-R", r]);
+        }
+        self.gh(repo, &args).map(Some)
+    }
 }
 
 /// The most issues one `shep add --label` queues.
 const LABEL_LIMIT: &str = "200";
-
-#[derive(Deserialize)]
-struct CheckJson {
-    name: String,
-    bucket: String,
-    #[serde(default)]
-    link: String,
-}
-
-fn bucket(name: &str) -> CheckState {
-    match name {
-        "pass" => CheckState::Passed,
-        "fail" | "cancel" => CheckState::Failed,
-        "skipping" => CheckState::Skipped,
-        _ => CheckState::Pending,
-    }
-}
 
 fn pr_number(url: &str) -> Result<u64, ForgeError> {
     url.trim()
@@ -75,18 +70,6 @@ fn pr_number(url: &str) -> Result<u64, ForgeError> {
         .next()
         .and_then(|n| n.parse().ok())
         .ok_or_else(|| ForgeError(format!("gh did not print a pull request URL: {url:?}")))
-}
-
-fn parse_issue_refs(json: &str) -> Result<Vec<IssueRef>, ForgeError> {
-    let issues: Vec<IssueRefJson> = serde_json::from_str(json)
-        .map_err(|e| ForgeError(format!("unexpected issue list from gh: {e}")))?;
-    Ok(issues
-        .into_iter()
-        .map(|i| IssueRef {
-            number: i.number,
-            title: i.title,
-        })
-        .collect())
 }
 
 /// `…/actions/runs/<run id>/job/<job id>` → the run id.
@@ -120,7 +103,7 @@ impl Forge for GhForge {
                 &limit,
             ],
         )?;
-        parse_issue_refs(&json)
+        json::issue_refs(&json)
     }
 
     fn labelled(&self, repo: &Path, label: &str) -> Result<Vec<IssueRef>, ForgeError> {
@@ -139,25 +122,14 @@ impl Forge for GhForge {
                 LABEL_LIMIT,
             ],
         )?;
-        parse_issue_refs(&json)
+        json::issue_refs(&json)
     }
 
     fn issue(&self, repo: &Path, source: &TaskSourceRef) -> Result<Option<Issue>, ForgeError> {
-        let TaskSourceRef::GitHubIssue {
-            repo: owner_repo,
-            number,
-        } = source
-        else {
+        let Some(json) = self.view_issue(repo, source, "title,body,url")? else {
             return Ok(None);
         };
-        let number = number.to_string();
-        let mut args = vec!["issue", "view", &number, "--json", "title,body,url"];
-        if let Some(r) = owner_repo {
-            args.extend(["-R", r]);
-        }
-        let json = self.gh(repo, &args)?;
-        let issue: IssueJson = serde_json::from_str(&json)
-            .map_err(|e| ForgeError(format!("unexpected issue from gh: {e}")))?;
+        let issue: IssueJson = parse("issue", &json)?;
         Ok(Some(Issue {
             title: issue.title,
             body: issue.body,
@@ -225,8 +197,7 @@ impl Forge for GhForge {
             }
             return Err(ForgeError(ran.complaint().to_owned()));
         }
-        let checks: Vec<CheckJson> = serde_json::from_str(&ran.stdout)
-            .map_err(|e| ForgeError(format!("unexpected checks from gh: {e}")))?;
+        let checks: Vec<CheckJson> = parse("checks", &ran.stdout)?;
         Ok(checks
             .into_iter()
             .map(|c| CiCheck {
@@ -260,5 +231,27 @@ impl Forge for GhForge {
             }
         }
         Err(last)
+    }
+
+    fn comments(&self, repo: &Path, pr: &PullRequest) -> Result<Vec<PrComment>, ForgeError> {
+        let number = pr.number.to_string();
+        let out = self.gh(repo, &["pr", "view", &number, "--json", "comments"])?;
+        json::comments(&out)
+    }
+
+    fn issue_state(
+        &self,
+        repo: &Path,
+        source: &TaskSourceRef,
+    ) -> Result<Option<IssueState>, ForgeError> {
+        self.view_issue(repo, source, "state")?
+            .map(|out| json::issue_state(&out))
+            .transpose()
+    }
+
+    fn close(&self, repo: &Path, pr: &PullRequest, comment: &str) -> Result<(), ForgeError> {
+        let number = pr.number.to_string();
+        self.gh(repo, &["pr", "close", &number, "--comment", comment])
+            .map(|_| ())
     }
 }

@@ -119,6 +119,7 @@ impl Engine {
             diff_file: &paths.diff(),
             asked: run.asked.as_deref(),
             ci_log: ci_log.as_deref(),
+            repo_screenshots: self.screenshot_command(&worktree).is_some(),
         };
         let prompt = prompts::build(&job, interrupted, &context);
         let conversation = conversation_id(task, job.role());
@@ -135,6 +136,12 @@ impl Engine {
         if job == AgentJob::Review {
             env.push((AGENT_ENV_REVIEW_FILE.to_owned(), path(&paths.review())));
         }
+        env.extend(
+            self.ports
+                .git
+                .agent_env(&worktree)
+                .map_err(|e| StepError::new("guard the agent's pushes", e))?,
+        );
         let spec = SessionSpec {
             program: command.program,
             args: command.args,
@@ -207,26 +214,6 @@ impl Engine {
         self.after_work(task, run)
     }
 
-    /// Commits what the agent left, then publishes, unless nothing changed at all.
-    fn after_work(&self, task: &Task, run: &mut Run) -> StepResult {
-        let worktree = worktree(run)?;
-        let git = &self.ports.git;
-        git.commit_all(&worktree, &task.title)
-            .map_err(|e| StepError::new("commit the agent's work", e))?;
-        let ahead = git
-            .commits_ahead(&worktree)
-            .map_err(|e| StepError::new("count the commits", e))?;
-        if ahead == 0 {
-            return Ok(self.ask(
-                task,
-                run,
-                "The agent finished without changing anything. What should it do?",
-            ));
-        }
-        run.advance(RunStep::Publish, self.now());
-        Ok(Flow::Next)
-    }
-
     /// Stops until the usage limit lifts; the same job then picks up where it stopped.
     fn park(&self, task: &Task, run: &mut Run, job: AgentJob, resets: ResetAt) {
         let offset = self.ports.clock.utc_offset();
@@ -275,6 +262,9 @@ fn describe(job: &AgentJob) -> String {
             format!("fix {attempt} for {}", checks.join(", "))
         }
         AgentJob::Review => "second opinion".into(),
+        AgentJob::ResolveConflict { files } => {
+            format!("merging the moved base branch: {}", files.join(", "))
+        }
     }
 }
 

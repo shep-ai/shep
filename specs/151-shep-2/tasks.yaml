@@ -377,7 +377,23 @@ tasks:
       `shep: ...` comment on a Ready PR sends the task back with that note; an issue closed
       overnight stops its task; main moving under a task is merged in before CI; the worktree
       is removed after Merge.
-    state: Todo
+      Built: a Git port `agent_env` (GitCli writes `<worktree>.hooks/`: a pre-push that refuses
+      every ref but `refs/heads/<task branch>`, and every other standard hook passing through to
+      the repository's own, via its `core.hooksPath` or `<common dir>/hooks`), added to every
+      agent session and the screenshot command; a Screenshots run step that runs
+      `.shep/dev.json`'s `screenshot` command in the holder with `SHEP_PROOF_DIR` (failures and a
+      ten-minute limit never block; without it the prompt still asks the agent); a GitHub watch
+      in each tick, rate-limited per task (comments 60 s, issues 300 s): `shep:` comments by the
+      `gh` viewer only, since the task last became Ready, send it back through `review`, and a
+      closed issue kills the session, closes the draft, removes the worktree and deletes the task
+      (`TaskRepository::delete`, events kept, `Stopped` in the brief); `update_from_base` before
+      every push, with an `AgentJob::ResolveConflict` pass and "Both sides changed …" after one
+      failed try (leftover conflict markers count as failing; an unresolved merge is never
+      committed); Merge removes the worktree and the local branch. Verified with fakes, real
+      repositories and a bare origin, and end to end through the binary (an agent's
+      `git push origin HEAD:main` refused, a repository's screenshot published as proof). Not
+      run against GitHub itself; `git push --no-verify` still skips the guard.
+    state: Done
     dependencies:
       - task-8
     acceptanceCriteria:

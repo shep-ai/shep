@@ -46,6 +46,7 @@ fn brief() -> Brief {
         total: 2,
         mergeable: 1,
         green: vec![TaskId(412)],
+        stopped: Vec::new(),
     }
 }
 
@@ -64,6 +65,27 @@ fn the_brief_reads_like_the_design() {
 
  [m] merge the 1 green   [r] review one by one   [a] answer #430   [o] open in the Mac app";
     assert_eq!(text, expected);
+}
+
+#[test]
+fn a_task_shep_stopped_is_listed_with_the_reason() {
+    let mut b = brief();
+    b.stopped = vec!["Stopped: Rate-limit /api/search — issue closed".into()];
+    let text = lines(&b, "booking-app", 0, false).join("\n");
+    assert!(
+        text.contains(
+            " ☾ while you slept  CI failed once overnight; Shep fixed it.\n                    \
+             Stopped: Rate-limit /api/search — issue closed\n"
+        ),
+        "{text}"
+    );
+
+    b.while_you_slept = None;
+    let text = lines(&b, "booking-app", 0, false).join("\n");
+    assert!(
+        text.contains(" ☾ while you slept  Stopped: Rate-limit /api/search — issue closed\n"),
+        "{text}"
+    );
 }
 
 #[test]

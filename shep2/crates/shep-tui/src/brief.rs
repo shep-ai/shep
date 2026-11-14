@@ -12,6 +12,7 @@ use shep_domain::{TaskId, TaskState, UnixTime};
 use crate::glyph::{reference, title};
 use crate::theme;
 
+const SLEPT_LABEL: &str = " ☾ while you slept  ";
 const RULE_WIDTH: usize = 60;
 const RULE: char = '─';
 const SECS_PER_MINUTE: i64 = 60;
@@ -131,10 +132,14 @@ pub fn lines(b: &Brief, repo: &str, offset: i32, color: bool) -> Vec<String> {
         ));
     }
     out.push(String::new());
-    if let Some(words) = &b.while_you_slept {
+    // What Shep noticed overnight, then each task it took off the board, under one label.
+    let noticed = b.while_you_slept.iter().chain(&b.stopped);
+    for (i, words) in noticed.enumerate() {
+        let label = if i == 0 { SLEPT_LABEL } else { "" };
         out.push(format!(
-            " ☾ while you slept  {}",
-            paint(words, muted, color)
+            "{label:<width$}{}",
+            paint(words, muted, color),
+            width = SLEPT_LABEL.chars().count()
         ));
     }
     if let Some(n) = &b.overnight {

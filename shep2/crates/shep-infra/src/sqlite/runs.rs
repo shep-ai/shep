@@ -1,7 +1,7 @@
 use rusqlite::{params, OptionalExtension};
 use shep_app::ports::{EventLog, RunRepository};
 use shep_app::StoreError;
-use shep_domain::{Run, TaskEvent, TaskId, UnixTime};
+use shep_domain::{EventKind, Run, TaskEvent, TaskId, UnixTime};
 
 use super::{from_json, to_json, SqliteStore};
 
@@ -49,15 +49,33 @@ impl EventLog for SqliteStore {
             let mut stmt = c.prepare(
                 "SELECT task_id, at, kind, detail FROM events WHERE task_id = ?1 ORDER BY id",
             )?;
-            let rows = stmt.query_map([task.0], |r| {
-                Ok(TaskEvent {
-                    task_id: TaskId(r.get(0)?),
-                    at: UnixTime(r.get(1)?),
-                    kind: from_json(2, &r.get::<_, String>(2)?)?,
-                    detail: r.get(3)?,
-                })
-            })?;
+            let rows = stmt.query_map([task.0], row_to_event)?;
             rows.collect()
         })
     }
+
+    fn of_kind(
+        &self,
+        kind: EventKind,
+        since: Option<UnixTime>,
+    ) -> Result<Vec<TaskEvent>, StoreError> {
+        self.with(|c| {
+            let mut stmt = c.prepare(
+                "SELECT task_id, at, kind, detail FROM events WHERE kind = ?1 AND at > ?2
+                 ORDER BY id",
+            )?;
+            let after = since.map_or(i64::MIN, |s| s.0);
+            let rows = stmt.query_map(params![to_json(&kind), after], row_to_event)?;
+            rows.collect()
+        })
+    }
+}
+
+fn row_to_event(r: &rusqlite::Row<'_>) -> rusqlite::Result<TaskEvent> {
+    Ok(TaskEvent {
+        task_id: TaskId(r.get(0)?),
+        at: UnixTime(r.get(1)?),
+        kind: from_json(2, &r.get::<_, String>(2)?)?,
+        detail: r.get(3)?,
+    })
 }

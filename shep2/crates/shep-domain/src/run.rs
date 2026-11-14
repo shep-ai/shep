@@ -6,6 +6,9 @@ use crate::{CiCheck, Task, TaskBranch, TaskId, UnixTime};
 /// CI gets this many fixes before the task needs a person.
 pub const MAX_CI_FIXES: u8 = 3;
 
+/// The agent gets this many tries at merging a moved base branch before the task needs a person.
+pub const MAX_CONFLICT_FIXES: u8 = 1;
+
 /// A session in the PTY holder.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, JsonSchema)]
 pub struct SessionId(pub String);
@@ -38,6 +41,8 @@ pub enum AgentJob {
     FixCi { attempt: u8, checks: Vec<String> },
     /// The second opinion: a separate reviewer agent reads the diff.
     Review,
+    /// The base branch moved and merging it into the task branch conflicts in these files.
+    ResolveConflict { files: Vec<String> },
 }
 
 /// Which conversation a job belongs to. The reviewer never shares the coder's.
@@ -50,7 +55,10 @@ pub enum ConversationRole {
 impl AgentJob {
     /// Whether the job carries on the coder's earlier conversation rather than starting one.
     pub fn continues_conversation(&self) -> bool {
-        matches!(self, Self::Answer | Self::Revise | Self::FixCi { .. })
+        matches!(
+            self,
+            Self::Answer | Self::Revise | Self::FixCi { .. } | Self::ResolveConflict { .. }
+        )
     }
 
     pub fn role(&self) -> ConversationRole {
@@ -73,7 +81,14 @@ pub enum RunStep {
         session: Option<SessionId>,
         interrupted: bool,
     },
-    /// Push the task branch and open (or update) the draft pull request.
+    /// The repository's own screenshot command (`.shep/dev.json`) runs after the coder,
+    /// started at `since`; `session` is `None` until it starts.
+    Screenshots {
+        session: Option<SessionId>,
+        since: UnixTime,
+    },
+    /// Merge the moved base branch in, push the task branch and open (or update) the draft
+    /// pull request.
     Publish,
     /// Wait for CI on what was pushed at `since`.
     WatchCi { since: UnixTime },
@@ -90,6 +105,10 @@ pub struct Run {
     pub worktree: Option<Worktree>,
     /// CI fixes tried since the last push a person asked for.
     pub ci_fixes: u8,
+    /// Tries the agent had at a conflict with the moved base branch, since the last clean
+    /// publish.
+    #[serde(default)]
+    pub conflict_fixes: u8,
     /// Failures in a row of the current step; reset when a step succeeds.
     pub failures: u8,
     /// The run is left alone until then: a usage limit's reset, or a retry after a failure.
@@ -113,6 +132,7 @@ impl Run {
             step: RunStep::Prepare,
             worktree: None,
             ci_fixes: 0,
+            conflict_fixes: 0,
             failures: 0,
             not_before: None,
             asked: None,
@@ -128,6 +148,16 @@ impl Run {
         self.step = step;
         self.failures = 0;
         self.updated_at = now;
+    }
+
+    /// The session running for this task right now: its agent's, or its screenshot command's.
+    pub fn session(&self) -> Option<&SessionId> {
+        match &self.step {
+            RunStep::Agent { session, .. } | RunStep::Screenshots { session, .. } => {
+                session.as_ref()
+            }
+            _ => None,
+        }
     }
 }
 

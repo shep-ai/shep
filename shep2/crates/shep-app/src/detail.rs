@@ -105,9 +105,12 @@ pub(crate) fn step_of(task: &Task, run: Option<&Run>, now: UnixTime) -> StepView
         RunStep::Agent { job, .. } => match job {
             AgentJob::FixCi { .. } => StepView::FixingCi,
             AgentJob::Review => StepView::Reviewing,
-            AgentJob::Code | AgentJob::Answer | AgentJob::Revise => StepView::Coding,
+            AgentJob::Code
+            | AgentJob::Answer
+            | AgentJob::Revise
+            | AgentJob::ResolveConflict { .. } => StepView::Coding,
         },
-        RunStep::Publish => StepView::Publishing,
+        RunStep::Screenshots { .. } | RunStep::Publish => StepView::Publishing,
         RunStep::WatchCi { .. } => StepView::WatchingCi,
         RunStep::Waiting | RunStep::Done => StepView::Coding,
     }
@@ -155,6 +158,12 @@ pub(crate) fn activity(a: &ActivityInput<'_>) -> String {
             }
         }
         StepView::Preparing => "making the worktree".into(),
+        StepView::Publishing
+            if a.run
+                .is_some_and(|r| matches!(r.step, RunStep::Screenshots { .. })) =>
+        {
+            "taking screenshots".into()
+        }
         StepView::Publishing => "pushing and opening the draft PR".into(),
         StepView::WatchingCi if checks.is_empty() => "waiting for CI".into(),
         StepView::WatchingCi => {

@@ -71,6 +71,50 @@ fn events_come_back_in_order_per_task() {
 }
 
 #[test]
+fn events_of_one_kind_come_from_every_task_even_deleted_ones() {
+    use shep_app::TaskRepository;
+    use shep_domain::TaskSourceRef;
+    let (_dir, store) = store();
+    let task = store
+        .create(TaskSourceRef::parse("#7").unwrap(), UnixTime(1))
+        .unwrap();
+    let event = |task: TaskId, at, kind, detail: &str| TaskEvent {
+        task_id: task,
+        at: UnixTime(at),
+        kind,
+        detail: detail.into(),
+    };
+    let stopped = event(task.id, 5, EventKind::Stopped, "Fix it — issue closed");
+    store.record(&stopped).unwrap();
+    store
+        .record(&event(task.id, 6, EventKind::Ready, "x"))
+        .unwrap();
+    store.delete(task.id).unwrap();
+
+    assert_eq!(store.get(task.id).unwrap(), None);
+    assert_eq!(store.list().unwrap(), Vec::new());
+    assert_eq!(store.events(task.id).unwrap().len(), 2, "events stay");
+    let stopped = vec![stopped];
+    assert_eq!(store.of_kind(EventKind::Stopped, None).unwrap(), stopped);
+    assert_eq!(
+        store
+            .of_kind(EventKind::Stopped, Some(UnixTime(4)))
+            .unwrap(),
+        stopped
+    );
+    assert_eq!(
+        store
+            .of_kind(EventKind::Stopped, Some(UnixTime(5)))
+            .unwrap(),
+        Vec::new()
+    );
+    let next = store
+        .create(TaskSourceRef::parse("#7").unwrap(), UnixTime(9))
+        .unwrap();
+    assert!(next.id > task.id, "a deleted task's id is never reused");
+}
+
+#[test]
 fn marks_are_remembered_and_moved() {
     use shep_app::ports::{Mark, Marks};
     let (_dir, store) = store();

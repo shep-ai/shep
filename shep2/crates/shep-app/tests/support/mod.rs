@@ -5,7 +5,8 @@
 pub use std::path::Path;
 pub use std::sync::Arc;
 
-pub use shep_app::testing::{Fakes, ManualClock};
+pub use shep_app::ports::BaseUpdate;
+pub use shep_app::testing::{Fakes, ManualClock, FAKE_VIEWER};
 pub use shep_app::{
     Engine, EngineConfig, SettingsChange, Shep, ShepApi, StartWhen, AGENT_ENV_PROOF_DIR,
     AGENT_ENV_QUESTION_FILE, AGENT_ENV_REVIEW_FILE,
@@ -17,6 +18,9 @@ pub use shep_domain::{
 
 pub const REPO: &str = "/code/app";
 pub const START: i64 = 1_000_000;
+/// The worktree the fakes make for issue #7.
+pub const WORKTREE: &str = "/wt/shep/1-fix-login-redirect-loop";
+pub const BRANCH: &str = "shep/1-fix-login-redirect-loop";
 
 pub struct World {
     pub f: Fakes,
@@ -27,6 +31,8 @@ pub struct World {
 pub fn config() -> EngineConfig {
     EngineConfig {
         ci_poll_secs: 0,
+        comment_poll_secs: 0,
+        issue_poll_secs: 0,
         ..EngineConfig::default()
     }
 }
@@ -112,6 +118,18 @@ impl World {
             .queue_checks(vec![check("build", CheckState::Passed)]);
         w.engine.tick();
         w
+    }
+    /// Ready for review, on draft PR #101.
+    pub fn ready() -> Self {
+        let w = Self::reviewing();
+        w.f.sessions.exit(&w.session().0, 0, "");
+        w.engine.tick();
+        assert_eq!(w.state(1), TaskState::Ready);
+        w
+    }
+    /// A second engine on the same fakes, with its own settings.
+    pub fn engine_with(&self, config: EngineConfig) -> Engine {
+        Engine::new(self.shep.clone(), self.f.ports(), config)
     }
 }
 

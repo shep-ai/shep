@@ -9,6 +9,8 @@ use crate::view::{Brief, BriefItem, DiffStat, Overnight};
 use crate::{time, AppError, Shep};
 
 const IMAGES: [&str; 5] = ["png", "jpg", "jpeg", "gif", "webp"];
+/// Starts each line about a task Shep took off the board.
+const STOPPED: &str = "Stopped: ";
 
 impl Shep {
     /// The brief, whenever a surface asks for it.
@@ -64,11 +66,17 @@ impl Shep {
             overnight: overnight(&all_events),
             mergeable: green.len(),
             green,
+            stopped: ports
+                .events
+                .of_kind(EventKind::Stopped, since)?
+                .into_iter()
+                .map(|e| format!("{STOPPED}{}", e.detail))
+                .collect(),
         })
     }
 
-    /// The brief once per new morning: only when something finished or needs you since it was
-    /// last shown.
+    /// The brief once per new morning: only when something finished, needs you or stopped
+    /// since it was last shown.
     pub fn morning_brief(&self) -> Result<Option<Brief>, AppError> {
         let ports = self.ports();
         let seen = ports.marks.mark(Mark::BriefSeen)?;
@@ -77,7 +85,8 @@ impl Shep {
             .needs_you
             .iter()
             .chain(&board.ready)
-            .any(|t| seen.is_none_or(|s| t.updated_at > s));
+            .any(|t| seen.is_none_or(|s| t.updated_at > s))
+            || !ports.events.of_kind(EventKind::Stopped, seen)?.is_empty();
         if !news {
             return Ok(None);
         }

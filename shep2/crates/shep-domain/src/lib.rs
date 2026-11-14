@@ -4,6 +4,7 @@
 
 mod agent_status;
 mod branch;
+mod comment;
 mod event;
 mod run;
 mod settings;
@@ -13,9 +14,11 @@ mod task_state;
 
 pub use agent_status::{AgentStatus, BlockKind, ResetAt};
 pub use branch::{check_push, PushRefused, TaskBranch, TASK_BRANCH_PREFIX};
+pub use comment::{send_back_note, SEND_BACK_PREFIX};
 pub use event::{CheckState, CiCheck, CiVerdict, EventKind, TaskEvent};
 pub use run::{
     conversation_id, AgentJob, ConversationRole, Run, RunStep, SessionId, Worktree, MAX_CI_FIXES,
+    MAX_CONFLICT_FIXES,
 };
 pub use settings::{AgentKind, ClockTime, Settings, SettingsError, MAX_PARALLELISM};
 pub use source::{SourceKind, SourceRefError, TaskSourceRef};

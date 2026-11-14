@@ -67,6 +67,12 @@ impl TaskRepository for SqliteStore {
         Ok(())
     }
 
+    /// `AUTOINCREMENT` keeps the id from ever being given out again.
+    fn delete(&self, id: TaskId) -> Result<(), StoreError> {
+        self.with(|c| c.execute("DELETE FROM tasks WHERE id = ?1", [id.0]))
+            .map(|_| ())
+    }
+
     fn list(&self) -> Result<Vec<Task>, StoreError> {
         self.with(|c| {
             let mut stmt = c.prepare(&format!("SELECT {TASK_COLUMNS} FROM tasks ORDER BY id"))?;
