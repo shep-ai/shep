@@ -57,6 +57,26 @@ impl Ran {
     }
 }
 
+/// What `exec` says while some process still holds the program open for writing (a tool
+/// being replaced, or a script another thread has just written).
+const TEXT_FILE_BUSY: i32 = 26;
+const BUSY_RETRIES: u32 = 20;
+const BUSY_PAUSE: Duration = Duration::from_millis(10);
+
+/// Starts a process, tried again for a moment while its program is busy being written.
+pub(crate) fn when_free<T>(mut start: impl FnMut() -> std::io::Result<T>) -> std::io::Result<T> {
+    let mut tries = 0;
+    loop {
+        match start() {
+            Err(e) if e.raw_os_error() == Some(TEXT_FILE_BUSY) && tries < BUSY_RETRIES => {
+                tries += 1;
+                std::thread::sleep(BUSY_PAUSE);
+            }
+            other => return other,
+        }
+    }
+}
+
 /// Runs a command to completion, whatever its exit status.
 pub fn run_raw(
     program: &str,
@@ -72,9 +92,8 @@ pub fn run_raw(
     for (key, value) in env {
         command.env(key, value);
     }
-    let out = command
-        .output()
-        .map_err(|e| format!("could not run {program}: {e}"))?;
+    let out =
+        when_free(|| command.output()).map_err(|e| format!("could not run {program}: {e}"))?;
     Ok(Ran {
         success: out.status.success(),
         stdout: String::from_utf8_lossy(&out.stdout).into_owned(),
@@ -99,4 +118,36 @@ pub fn run(
         args.join(" "),
         ran.complaint()
     ))
+}
+
+#[cfg(test)]
+mod tests {
+    use std::io::Write;
+    use std::os::unix::fs::OpenOptionsExt;
+    use std::time::Duration;
+
+    use super::run;
+
+    /// While any process holds a script open for writing, executing it fails with "Text file
+    /// busy". A test thread writing a fake tool while another thread forks hits exactly this.
+    #[test]
+    fn a_script_still_held_open_for_writing_runs_once_it_is_released() {
+        let dir = tempfile::tempdir().unwrap();
+        let script = dir.path().join("tool");
+        let mut file = std::fs::OpenOptions::new()
+            .create(true)
+            .write(true)
+            .truncate(true)
+            .mode(0o755)
+            .open(&script)
+            .unwrap();
+        file.write_all(b"#!/bin/sh\necho ran\n").unwrap();
+        let release = std::thread::spawn(move || {
+            std::thread::sleep(Duration::from_millis(30));
+            drop(file);
+        });
+        let out = run(script.to_str().unwrap(), &[], None, &[]).unwrap();
+        release.join().unwrap();
+        assert_eq!(out, "ran");
+    }
 }

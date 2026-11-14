@@ -44,6 +44,9 @@ impl TaskPaths {
     }
 }
 
+/// Proof files that are pictures (screenshots).
+pub const IMAGE_EXTENSIONS: [&str; 5] = ["png", "jpg", "jpeg", "gif", "webp"];
+
 /// Files whose names end in one of `extensions`.
 pub fn with_extension<'a>(
     files: &'a [PathBuf],

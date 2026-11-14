@@ -50,6 +50,9 @@ def required_type(schema):
     if kind == "array":
         item, optional = swift_type(schema.get("items", {}))
         return f"[{item}?]" if optional else f"[{item}]"
+    if kind == "object" and isinstance(schema.get("additionalProperties"), dict):
+        value, optional = swift_type(schema["additionalProperties"])
+        return f"[String: {value}?]" if optional else f"[String: {value}]"
     if kind == NULL:
         return NULL_TYPE
     raise SchemaError(f"no Swift type for schema {schema}")

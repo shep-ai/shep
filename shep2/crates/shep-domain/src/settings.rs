@@ -3,6 +3,8 @@ use std::fmt;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
+use crate::{SourceKind, SourceSetting};
+
 /// The coding agents Shep can run. Which one runs is a setting, never hardcoded.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, JsonSchema)]
 pub enum AgentKind {
@@ -96,6 +98,9 @@ pub struct Settings {
     /// Whether the machine is kept awake while tasks work.
     #[serde(default = "on")]
     pub keep_awake: bool,
+    /// Where work is handed over besides Shep itself, one of each kind.
+    #[serde(default)]
+    pub sources: Vec<SourceSetting>,
 }
 
 fn on() -> bool {
@@ -111,11 +116,29 @@ impl Default for Settings {
             repo: None,
             nightly: true,
             keep_awake: true,
+            sources: Vec::new(),
         }
     }
 }
 
 impl Settings {
+    pub fn source(&self, kind: SourceKind) -> Option<&SourceSetting> {
+        self.sources.iter().find(|s| s.kind == kind)
+    }
+
+    /// Connects a source, replacing an earlier connection of the same kind.
+    pub fn connect(&mut self, source: SourceSetting) {
+        self.sources.retain(|s| s.kind != source.kind);
+        self.sources.push(source);
+    }
+
+    /// True when it was connected.
+    pub fn disconnect(&mut self, kind: SourceKind) -> bool {
+        let before = self.sources.len();
+        self.sources.retain(|s| s.kind != kind);
+        self.sources.len() != before
+    }
+
     pub fn check_parallelism(n: u8) -> Result<u8, SettingsError> {
         if (1..=MAX_PARALLELISM).contains(&n) {
             Ok(n)

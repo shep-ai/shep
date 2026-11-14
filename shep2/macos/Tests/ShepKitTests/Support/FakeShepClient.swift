@@ -9,6 +9,8 @@ final class FakeShepClient: ShepClient, @unchecked Sendable {
         case add(String), start(StartWhen), board, review(TaskId, ReviewAction), settingsGet
         case settingsUpdate(SettingsChange), boardSubscribe, taskDetail(TaskId), brief, briefMorning
         case dayFirstRun, addLabel(String), agentWatch(TaskId), agentSend(TaskId, String)
+        case setup(String?), sources, sourceConnect(SourceKind), sourceDisconnect(SourceKind)
+        case sourcesCandidates(Int)
     }
 
     private let lock = NSLock()
@@ -27,6 +29,12 @@ final class FakeShepClient: ShepClient, @unchecked Sendable {
         var agentScreen = Data()
         var agentOutput: [Data] = []
         var boardChanges: [Board] = []
+        var sources: [SourceStatus] = []
+        var candidates: [Candidate] = []
+        var setup = Setup(
+            agents: [], suggestions: [],
+            settings: Settings(shiftStart: ClockTime(hour: 23, minute: 0), parallelism: 3), ready: false
+        )
     }
 
     init(board: Board = Fixtures.emptyBoard) {
@@ -141,6 +149,40 @@ final class FakeShepClient: ShepClient, @unchecked Sendable {
     func briefMorning() async throws -> Brief? {
         try record(.briefMorning, .briefMorning)
         return current.morning
+    }
+
+    func setup(fromDir: String?) async throws -> Setup {
+        try record(.setup(fromDir), .setup)
+        return current.setup
+    }
+
+    func sources() async throws -> [SourceStatus] {
+        try record(.sources, .sources)
+        return current.sources
+    }
+
+    func sourceConnect(kind: SourceKind, values: [String: String]?) async throws -> SourceStatus {
+        try record(.sourceConnect(kind), .sourceConnect)
+        return lock.locked {
+            let i = state.sources.firstIndex { $0.kind == kind }
+            guard let i else { return Fixtures.source(kind, connected: true) }
+            state.sources[i].connected = true
+            return state.sources[i]
+        }
+    }
+
+    func sourceDisconnect(kind: SourceKind) async throws {
+        try record(.sourceDisconnect(kind), .sourceDisconnect)
+        set { state in
+            if let i = state.sources.firstIndex(where: { $0.kind == kind }) {
+                state.sources[i].connected = false
+            }
+        }
+    }
+
+    func sourcesCandidates(limit: Int) async throws -> [Candidate] {
+        try record(.sourcesCandidates(limit), .sourcesCandidates)
+        return Array(current.candidates.prefix(limit))
     }
 
     func dayFirstRun() async throws -> Bool {

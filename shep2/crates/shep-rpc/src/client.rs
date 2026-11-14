@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Mutex, MutexGuard};
 use std::time::Duration;
@@ -8,14 +9,16 @@ use serde::de::DeserializeOwned;
 use serde::Serialize;
 use shep_app::ports::{AgentView, SessionError};
 use shep_app::{
-    AppError, Board, Brief, SettingsChange, Setup, ShepApi, StartOutcome, StartWhen, TaskDetail,
+    AppError, Board, Brief, Candidate, SettingsChange, Setup, ShepApi, SourceStatus, StartOutcome,
+    StartWhen, TaskDetail,
 };
-use shep_domain::{ReviewAction, Settings, Task, TaskId};
+use shep_domain::{ReviewAction, Settings, SourceKind, Task, TaskId};
 use shep_jsonrpc::{Client, ClientError};
 
 use crate::method::{
-    AddLabelParams, AddParams, AgentOutput, IdParams, Method, NoParams, ReviewParams, SendParams,
-    SetupParams, StartParams, UpdateSettingsParams, WatchReply,
+    AddLabelParams, AddParams, AgentOutput, ConnectParams, IdParams, KindParams, LimitParams,
+    Method, NoParams, ReviewParams, SendParams, SetupParams, StartParams, UpdateSettingsParams,
+    WatchReply,
 };
 use crate::{AGENT_OUTPUT, BOARD_CHANGED};
 
@@ -123,6 +126,28 @@ impl ShepApi for RemoteShep {
                 from_dir: from_dir.map(|d| d.display().to_string()),
             },
         )
+    }
+    fn sources(&self) -> Result<Vec<SourceStatus>, AppError> {
+        self.call(Method::Sources, &NoParams {})
+    }
+    fn connect_source(
+        &self,
+        kind: SourceKind,
+        values: &BTreeMap<String, String>,
+    ) -> Result<SourceStatus, AppError> {
+        self.call(
+            Method::ConnectSource,
+            &ConnectParams {
+                kind,
+                values: values.clone(),
+            },
+        )
+    }
+    fn disconnect_source(&self, kind: SourceKind) -> Result<(), AppError> {
+        self.call(Method::DisconnectSource, &KindParams { kind })
+    }
+    fn candidates(&self, limit: usize) -> Result<Vec<Candidate>, AppError> {
+        self.call(Method::Candidates, &LimitParams { limit })
     }
     fn send_to_agent(&self, id: TaskId, bytes: &[u8]) -> Result<(), AppError> {
         self.call(

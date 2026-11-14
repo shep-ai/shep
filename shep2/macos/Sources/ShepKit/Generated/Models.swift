@@ -11,6 +11,33 @@ public enum AgentKind: String, Codable, Hashable, Sendable, CaseIterable {
     case gemini = "Gemini"
 }
 
+/// A coding agent onboarding can offer.
+public struct AgentOption: Codable, Hashable, Sendable {
+    public var kind: AgentKind
+    public var name: String
+    public var installed: Bool
+    /// The command that installs it.
+    public var install: String
+    /// The one the settings name.
+    public var chosen: Bool
+
+    public init(kind: AgentKind, name: String, installed: Bool, install: String, chosen: Bool) {
+        self.kind = kind
+        self.name = name
+        self.installed = installed
+        self.install = install
+        self.chosen = chosen
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case kind
+        case name
+        case installed
+        case install
+        case chosen
+    }
+}
+
 /// Pushed after `agent.watch`: bytes the agent printed.
 public struct AgentOutput: Codable, Hashable, Sendable {
     public var id: TaskId
@@ -63,17 +90,24 @@ public struct Brief: Codable, Hashable, Sendable {
     public var total: Int
     /// Ready, with CI green and a pull request: the "merge the N green" button.
     public var mergeable: Int
+    /// Those tasks, so a surface can merge them.
+    public var green: [TaskId]?
     public var overnight: Overnight?
+    /// Tasks Shep took off the board since the brief was last shown, one line each, like
+    /// "Stopped: Fix login redirect loop — issue closed".
+    public var stopped: [String]?
     /// At most one line about something Shep noticed.
     public var whileYouSlept: String?
 
-    public init(at: UnixTime, items: [BriefItem], done: Int, total: Int, mergeable: Int, overnight: Overnight? = nil, whileYouSlept: String? = nil) {
+    public init(at: UnixTime, items: [BriefItem], done: Int, total: Int, mergeable: Int, green: [TaskId]? = nil, overnight: Overnight? = nil, stopped: [String]? = nil, whileYouSlept: String? = nil) {
         self.at = at
         self.items = items
         self.done = done
         self.total = total
         self.mergeable = mergeable
+        self.green = green
         self.overnight = overnight
+        self.stopped = stopped
         self.whileYouSlept = whileYouSlept
     }
 
@@ -83,7 +117,9 @@ public struct Brief: Codable, Hashable, Sendable {
         case done
         case total
         case mergeable
+        case green
         case overnight
+        case stopped
         case whileYouSlept = "while_you_slept"
     }
 }
@@ -101,6 +137,26 @@ public struct BriefItem: Codable, Hashable, Sendable {
     enum CodingKeys: String, CodingKey {
         case task
         case summary
+    }
+}
+
+/// Open work in a connected source, worth handing over first.
+public struct Candidate: Codable, Hashable, Sendable {
+    public var kind: SourceKind
+    public var item: HandOver
+    /// Too little to go on for a first task.
+    public var vague: Bool
+
+    public init(kind: SourceKind, item: HandOver, vague: Bool) {
+        self.kind = kind
+        self.item = item
+        self.vague = vague
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case kind
+        case item
+        case vague
     }
 }
 
@@ -183,6 +239,63 @@ public enum EventKind: String, Codable, Hashable, Sendable, CaseIterable {
     case reviewed = "Reviewed"
     case ready = "Ready"
     case merged = "Merged"
+    case screenshots = "Screenshots"
+    case baseMerged = "BaseMerged"
+    case sentBack = "SentBack"
+    case stopped = "Stopped"
+    case handedOver = "HandedOver"
+    case reported = "Reported"
+}
+
+/// One thing a person fills in to connect a source.
+public struct FormField: Codable, Hashable, Sendable {
+    public var key: String
+    public var label: String
+    /// Kept in the OS keychain, never in settings; typed without echo.
+    public var secret: Bool
+    /// Where to find it, like "Linear → Settings → API → Personal API keys".
+    public var hint: String
+    public var optional: Bool
+
+    public init(key: String, label: String, secret: Bool, hint: String, optional: Bool) {
+        self.key = key
+        self.label = label
+        self.secret = secret
+        self.hint = hint
+        self.optional = optional
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case key
+        case label
+        case secret
+        case hint
+        case optional
+    }
+}
+
+/// Work as its source describes it.
+public struct HandOver: Codable, Hashable, Sendable {
+    public var source: TaskSourceRef
+    public var title: String
+    /// The ticket's description or the message's text.
+    public var body: String
+    /// Where a person opens it.
+    public var url: String
+
+    public init(source: TaskSourceRef, title: String, body: String, url: String) {
+        self.source = source
+        self.title = title
+        self.body = body
+        self.url = url
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case source
+        case title
+        case body
+        case url
+    }
 }
 
 /// When the night's work ran.
@@ -218,6 +331,26 @@ public struct PullRequest: Codable, Hashable, Sendable {
     enum CodingKeys: String, CodingKey {
         case number
         case url
+    }
+}
+
+/// The repository Shep works in.
+public struct RepoFacts: Codable, Hashable, Sendable {
+    public var path: String
+    public var clean: Bool
+    /// `owner/name` on GitHub.
+    public var slug: String?
+
+    public init(path: String, clean: Bool, slug: String? = nil) {
+        self.path = path
+        self.clean = clean
+        self.slug = slug
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case path
+        case clean
+        case slug
     }
 }
 
@@ -276,36 +409,53 @@ public struct Settings: Codable, Hashable, Sendable {
     public var parallelism: Int
     /// `None` until onboarding picks one (or Shep detects one).
     public var agent: AgentKind?
+    /// Whether the machine is kept awake while tasks work.
+    public var keepAwake: Bool?
+    /// Whether the shift starts by itself each night at `shift_start`; when off, only
+    /// `shep go` starts work.
+    public var nightly: Bool?
     /// The local checkout Shep works in. Every task gets its own worktree from its `origin`;
     /// the checkout itself is never touched. `None` until the first `shep add` inside a
     /// repository or `shep config --repo`.
     public var repo: String?
+    /// Where work is handed over besides Shep itself, one of each kind.
+    public var sources: [SourceSetting]?
 
-    public init(shiftStart: ClockTime, parallelism: Int, agent: AgentKind? = nil, repo: String? = nil) {
+    public init(shiftStart: ClockTime, parallelism: Int, agent: AgentKind? = nil, keepAwake: Bool? = nil, nightly: Bool? = nil, repo: String? = nil, sources: [SourceSetting]? = nil) {
         self.shiftStart = shiftStart
         self.parallelism = parallelism
         self.agent = agent
+        self.keepAwake = keepAwake
+        self.nightly = nightly
         self.repo = repo
+        self.sources = sources
     }
 
     enum CodingKeys: String, CodingKey {
         case shiftStart = "shift_start"
         case parallelism
         case agent
+        case keepAwake = "keep_awake"
+        case nightly
         case repo
+        case sources
     }
 }
 
 /// A partial settings update; `None` keeps the current value.
 public struct SettingsChange: Codable, Hashable, Sendable {
     public var agent: AgentKind?
+    public var keepAwake: Bool?
+    public var nightly: Bool?
     public var parallelism: Int?
     /// The local checkout Shep works in.
     public var repo: String?
     public var shiftStart: ClockTime?
 
-    public init(agent: AgentKind? = nil, parallelism: Int? = nil, repo: String? = nil, shiftStart: ClockTime? = nil) {
+    public init(agent: AgentKind? = nil, keepAwake: Bool? = nil, nightly: Bool? = nil, parallelism: Int? = nil, repo: String? = nil, shiftStart: ClockTime? = nil) {
         self.agent = agent
+        self.keepAwake = keepAwake
+        self.nightly = nightly
         self.parallelism = parallelism
         self.repo = repo
         self.shiftStart = shiftStart
@@ -313,9 +463,121 @@ public struct SettingsChange: Codable, Hashable, Sendable {
 
     enum CodingKeys: String, CodingKey {
         case agent
+        case keepAwake = "keep_awake"
+        case nightly
         case parallelism
         case repo
         case shiftStart = "shift_start"
+    }
+}
+
+/// What onboarding and `shep config` show: what is installed, signed in and chosen.
+public struct Setup: Codable, Hashable, Sendable {
+    public var agents: [AgentOption]
+    public var suggestions: [Suggestion]
+    public var settings: Settings
+    /// Everything work needs is in place: a repository, an agent, GitHub.
+    public var ready: Bool
+    /// Who GitHub (`gh`) is signed in as.
+    public var github: String?
+    public var repo: RepoFacts?
+
+    public init(agents: [AgentOption], suggestions: [Suggestion], settings: Settings, ready: Bool, github: String? = nil, repo: RepoFacts? = nil) {
+        self.agents = agents
+        self.suggestions = suggestions
+        self.settings = settings
+        self.ready = ready
+        self.github = github
+        self.repo = repo
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case agents
+        case suggestions
+        case settings
+        case ready
+        case github
+        case repo
+    }
+}
+
+/// How a source is connected and how work is handed over in it.
+public struct SourceForm: Codable, Hashable, Sendable {
+    public var fields: [FormField]
+    /// The moves a person already makes there, like "Add the label shep".
+    public var handOver: [String]
+
+    public init(fields: [FormField], handOver: [String]) {
+        self.fields = fields
+        self.handOver = handOver
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case fields
+        case handOver = "hand_over"
+    }
+}
+
+/// Where a task came from. Shep answers in the same place.
+public enum SourceKind: String, Codable, Hashable, Sendable, CaseIterable {
+    case gitHub = "GitHub"
+    case linear = "Linear"
+    case jira = "Jira"
+    case notion = "Notion"
+    case monday = "Monday"
+    case slack = "Slack"
+    case shep = "Shep"
+}
+
+/// A connected source.
+public struct SourceSetting: Codable, Hashable, Sendable {
+    public var kind: SourceKind
+    /// What it is connected as, for people to read, like "Acme · team ENG".
+    public var account: String?
+    /// What the adapter needs that is not secret, like a Jira site or a Notion database.
+    public var options: [String: String]?
+
+    public init(kind: SourceKind, account: String? = nil, options: [String: String]? = nil) {
+        self.kind = kind
+        self.account = account
+        self.options = options
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case kind
+        case account
+        case options
+    }
+}
+
+/// A source and whether it is connected, for onboarding and `shep config`.
+public struct SourceStatus: Codable, Hashable, Sendable {
+    public var kind: SourceKind
+    public var name: String
+    public var connected: Bool
+    /// What it is connected as, like "Acme · team ENG".
+    public var account: String
+    /// What connecting asks for, and how work is handed over there.
+    public var form: SourceForm
+    /// Why a connected source is not answering, like an expired token.
+    public var problem: String?
+
+    public init(kind: SourceKind, name: String, connected: Bool, account: String, form: SourceForm, problem: String? = nil) {
+        self.kind = kind
+        self.name = name
+        self.connected = connected
+        self.account = account
+        self.form = form
+        self.problem = problem
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case kind
+        case name
+        case connected
+        case account
+        case form
+        case problem
     }
 }
 
@@ -406,6 +668,22 @@ public enum StepView: String, Codable, Hashable, Sendable, CaseIterable {
     case parked = "Parked"
 }
 
+/// An open issue worth trying first.
+public struct Suggestion: Codable, Hashable, Sendable {
+    public var number: Int64
+    public var title: String
+
+    public init(number: Int64, title: String) {
+        self.number = number
+        self.title = title
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case number
+        case title
+    }
+}
+
 /// The one thing in Shep: work handed over by a person.
 public struct ShepTask: Codable, Hashable, Sendable {
     public var id: TaskId
@@ -467,8 +745,10 @@ public struct TaskDetail: Codable, Hashable, Sendable {
     public var review: String?
     /// The agent's screen, while it has one.
     public var screen: String?
+    /// The same line the morning brief shows: "CI green · +41 -12 · screenshot".
+    public var summary: String?
 
-    public init(task: ShepTask, step: StepView, activity: String, live: Bool, checks: [CiCheck], stat: DiffStat, proof: [String], events: [TaskEvent], agent: AgentKind? = nil, branch: String? = nil, diff: String? = nil, review: String? = nil, screen: String? = nil) {
+    public init(task: ShepTask, step: StepView, activity: String, live: Bool, checks: [CiCheck], stat: DiffStat, proof: [String], events: [TaskEvent], agent: AgentKind? = nil, branch: String? = nil, diff: String? = nil, review: String? = nil, screen: String? = nil, summary: String? = nil) {
         self.task = task
         self.step = step
         self.activity = activity
@@ -482,6 +762,7 @@ public struct TaskDetail: Codable, Hashable, Sendable {
         self.diff = diff
         self.review = review
         self.screen = screen
+        self.summary = summary
     }
 
     enum CodingKeys: String, CodingKey {
@@ -498,6 +779,7 @@ public struct TaskDetail: Codable, Hashable, Sendable {
         case diff
         case review
         case screen
+        case summary
     }
 }
 

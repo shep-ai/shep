@@ -1,7 +1,9 @@
+use std::collections::BTreeMap;
+
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use shep_app::{SettingsChange, StartWhen};
-use shep_domain::{ReviewAction, TaskId};
+use shep_domain::{ReviewAction, SourceKind, TaskId};
 
 /// Every call the daemon answers. Adding one is fine; removing or renaming one breaks clients
 /// (the schema test refuses it).
@@ -24,10 +26,14 @@ pub enum Method {
     WatchAgent,
     SendToAgent,
     Setup,
+    Sources,
+    ConnectSource,
+    DisconnectSource,
+    Candidates,
 }
 
 impl Method {
-    pub const ALL: [Method; 15] = [
+    pub const ALL: [Method; 19] = [
         Self::Add,
         Self::Start,
         Self::Board,
@@ -43,6 +49,10 @@ impl Method {
         Self::WatchAgent,
         Self::SendToAgent,
         Self::Setup,
+        Self::Sources,
+        Self::ConnectSource,
+        Self::DisconnectSource,
+        Self::Candidates,
     ];
 
     pub fn name(self) -> &'static str {
@@ -62,6 +72,10 @@ impl Method {
             Self::WatchAgent => "agent.watch",
             Self::SendToAgent => "agent.send",
             Self::Setup => "setup",
+            Self::Sources => "sources",
+            Self::ConnectSource => "source.connect",
+            Self::DisconnectSource => "source.disconnect",
+            Self::Candidates => "sources.candidates",
         }
     }
 
@@ -86,6 +100,10 @@ impl Method {
             Self::WatchAgent => "The agent's screen now, then agent.output notifications.",
             Self::SendToAgent => "Type into the task's agent.",
             Self::Setup => "What is installed, signed in and chosen, for onboarding and config.",
+            Self::Sources => "Every source, connected or not, with what connecting asks for.",
+            Self::ConnectSource => "Connect a source; secrets go to the OS keychain, not settings.",
+            Self::DisconnectSource => "Stop reading a source and forget its tokens.",
+            Self::Candidates => "Open work in connected sources worth handing over first.",
         }
     }
 }
@@ -156,4 +174,23 @@ pub struct SetupParams {
     /// Where the person is; the first time, Shep works in that repository.
     #[serde(default)]
     pub from_dir: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct ConnectParams {
+    pub kind: SourceKind,
+    /// What the source's form asks for, by field key.
+    #[serde(default)]
+    pub values: BTreeMap<String, String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct KindParams {
+    pub kind: SourceKind,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct LimitParams {
+    /// At most this many from each source.
+    pub limit: usize,
 }

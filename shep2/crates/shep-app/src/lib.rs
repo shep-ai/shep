@@ -2,9 +2,11 @@
 //! core actions through [`ShepApi`]: `add`, `start`, `board` and `review`. [`Shep`] answers them
 //! in-process; storage and time come in through the port traits in [`ports`].
 
+mod actions;
 mod api;
 mod board;
 mod brief;
+mod connect;
 mod detail;
 mod engine;
 mod error;
@@ -30,6 +32,6 @@ pub use error::AppError;
 pub use ports::{Clock, Ports, SettingsRepository, StoreError, TaskRepository};
 pub use shep::{SettingsChange, Shep, StartOutcome, StartWhen};
 pub use view::{
-    AgentOption, Brief, BriefItem, DiffStat, Overnight, RepoFacts, Setup, StepView, Suggestion,
-    TaskDetail,
+    AgentOption, Brief, BriefItem, Candidate, DiffStat, Overnight, RepoFacts, Setup, SourceStatus,
+    StepView, Suggestion, TaskDetail,
 };

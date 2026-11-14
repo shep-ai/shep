@@ -3,6 +3,8 @@
 #![allow(dead_code)]
 
 pub mod fake_gh;
+pub mod fixture_http;
+pub mod source_contract;
 
 use std::path::{Path, PathBuf};
 use std::process::Command;

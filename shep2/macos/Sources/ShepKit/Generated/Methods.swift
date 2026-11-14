@@ -34,6 +34,16 @@ public enum ShepMethod: String, CaseIterable, Sendable {
     case agentWatch = "agent.watch"
     /// Type into the task's agent.
     case agentSend = "agent.send"
+    /// What is installed, signed in and chosen, for onboarding and config.
+    case setup = "setup"
+    /// Every source, connected or not, with what connecting asks for.
+    case sources = "sources"
+    /// Connect a source; secrets go to the OS keychain, not settings.
+    case sourceConnect = "source.connect"
+    /// Stop reading a source and forget its tokens.
+    case sourceDisconnect = "source.disconnect"
+    /// Open work in connected sources worth handing over first.
+    case sourcesCandidates = "sources.candidates"
 }
 
 /// The params of a call that takes none: `{}`.
@@ -160,6 +170,64 @@ public struct AgentSendParams: Codable, Hashable, Sendable {
     }
 }
 
+/// The params of `setup`.
+public struct SetupParams: Codable, Hashable, Sendable {
+    /// Where the person is; the first time, Shep works in that repository.
+    public var fromDir: String?
+
+    public init(fromDir: String? = nil) {
+        self.fromDir = fromDir
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case fromDir = "from_dir"
+    }
+}
+
+/// The params of `source.connect`.
+public struct SourceConnectParams: Codable, Hashable, Sendable {
+    public var kind: SourceKind
+    /// What the source's form asks for, by field key.
+    public var values: [String: String]?
+
+    public init(kind: SourceKind, values: [String: String]? = nil) {
+        self.kind = kind
+        self.values = values
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case kind
+        case values
+    }
+}
+
+/// The params of `source.disconnect`.
+public struct SourceDisconnectParams: Codable, Hashable, Sendable {
+    public var kind: SourceKind
+
+    public init(kind: SourceKind) {
+        self.kind = kind
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case kind
+    }
+}
+
+/// The params of `sources.candidates`.
+public struct SourcesCandidatesParams: Codable, Hashable, Sendable {
+    /// At most this many from each source.
+    public var limit: Int
+
+    public init(limit: Int) {
+        self.limit = limit
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case limit
+    }
+}
+
 /// Every call the daemon answers, one function per method. `DaemonClient` answers them
 /// over the socket; tests answer them with a fake.
 public protocol ShepCalls: Sendable {
@@ -191,6 +259,16 @@ public protocol ShepCalls: Sendable {
     func agentWatch(id: TaskId) async throws -> WatchReply
     /// Type into the task's agent.
     func agentSend(id: TaskId, data: String) async throws
+    /// What is installed, signed in and chosen, for onboarding and config.
+    func setup(fromDir: String?) async throws -> Setup
+    /// Every source, connected or not, with what connecting asks for.
+    func sources() async throws -> [SourceStatus]
+    /// Connect a source; secrets go to the OS keychain, not settings.
+    func sourceConnect(kind: SourceKind, values: [String: String]?) async throws -> SourceStatus
+    /// Stop reading a source and forget its tokens.
+    func sourceDisconnect(kind: SourceKind) async throws
+    /// Open work in connected sources worth handing over first.
+    func sourcesCandidates(limit: Int) async throws -> [Candidate]
 }
 
 extension ShepCalls {
@@ -199,6 +277,12 @@ extension ShepCalls {
     }
     public func addLabel(label: String) async throws -> [ShepTask] {
         try await addLabel(label: label, fromDir: nil)
+    }
+    public func setup() async throws -> Setup {
+        try await setup(fromDir: nil)
+    }
+    public func sourceConnect(kind: SourceKind) async throws -> SourceStatus {
+        try await sourceConnect(kind: kind, values: nil)
     }
 }
 
@@ -244,6 +328,21 @@ extension ShepCalls where Self: RPCCalling {
     }
     public func agentSend(id: TaskId, data: String) async throws {
         _ = try await call(.agentSend, AgentSendParams(id: id, data: data), as: RPCNull.self)
+    }
+    public func setup(fromDir: String?) async throws -> Setup {
+        try await call(.setup, SetupParams(fromDir: fromDir), as: Setup.self)
+    }
+    public func sources() async throws -> [SourceStatus] {
+        try await call(.sources, NoParams(), as: [SourceStatus].self)
+    }
+    public func sourceConnect(kind: SourceKind, values: [String: String]?) async throws -> SourceStatus {
+        try await call(.sourceConnect, SourceConnectParams(kind: kind, values: values), as: SourceStatus.self)
+    }
+    public func sourceDisconnect(kind: SourceKind) async throws {
+        _ = try await call(.sourceDisconnect, SourceDisconnectParams(kind: kind), as: RPCNull.self)
+    }
+    public func sourcesCandidates(limit: Int) async throws -> [Candidate] {
+        try await call(.sourcesCandidates, SourcesCandidatesParams(limit: limit), as: [Candidate].self)
     }
 }
 

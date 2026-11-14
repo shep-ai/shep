@@ -13,8 +13,8 @@ use base64::engine::general_purpose::STANDARD;
 use base64::Engine as _;
 
 use crate::method::{
-    AddLabelParams, AddParams, AgentOutput, IdParams, Method, ReviewParams, SendParams,
-    SetupParams, StartParams, UpdateSettingsParams, WatchReply,
+    AddLabelParams, AddParams, AgentOutput, ConnectParams, IdParams, KindParams, LimitParams,
+    Method, ReviewParams, SendParams, SetupParams, StartParams, UpdateSettingsParams, WatchReply,
 };
 use crate::{AGENT_OUTPUT, BOARD_CHANGED};
 
@@ -111,6 +111,15 @@ impl RpcServer {
                 let p: SetupParams = parse(params)?;
                 reply(api.setup(p.from_dir.as_deref().map(Path::new)))
             }
+            Method::Sources => reply(api.sources()),
+            Method::ConnectSource => {
+                let p: ConnectParams = parse(params)?;
+                reply(api.connect_source(p.kind, &p.values))
+            }
+            Method::DisconnectSource => {
+                reply(api.disconnect_source(parse::<KindParams>(params)?.kind))
+            }
+            Method::Candidates => reply(api.candidates(parse::<LimitParams>(params)?.limit)),
             Method::WatchAgent => reply(self.watch(parse::<IdParams>(params)?.id, peer)),
             Method::SendToAgent => {
                 let p: SendParams = parse(params)?;

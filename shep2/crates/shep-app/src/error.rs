@@ -19,6 +19,8 @@ pub enum AppError {
     Forge(#[from] ForgeError),
     #[error(transparent)]
     Git(#[from] GitError),
+    #[error(transparent)]
+    Sources(#[from] crate::ports::SourceError),
     /// Something must be set up before work can start; the message says what to run.
     #[error("{0}")]
     NotReady(String),

@@ -2,7 +2,9 @@
 
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
-use shep_domain::{AgentKind, CiCheck, Settings, Task, TaskEvent, UnixTime};
+use shep_domain::{AgentKind, CiCheck, Settings, SourceKind, Task, TaskEvent, UnixTime};
+
+use crate::ports::{HandOver, SourceForm};
 
 /// Where a task is, in words every surface uses the same way.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
@@ -72,6 +74,7 @@ pub struct TaskDetail {
     /// One line on what is happening now.
     pub activity: String,
     /// The same line the morning brief shows: "CI green · +41 -12 · screenshot".
+    #[serde(default)]
     pub summary: String,
     pub agent: Option<AgentKind>,
     pub branch: Option<String>,
@@ -168,4 +171,27 @@ pub struct Setup {
     pub settings: Settings,
     /// Everything work needs is in place: a repository, an agent, GitHub.
     pub ready: bool,
+}
+
+/// A source and whether it is connected, for onboarding and `shep config`.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct SourceStatus {
+    pub kind: SourceKind,
+    pub name: String,
+    pub connected: bool,
+    /// What it is connected as, like "Acme · team ENG".
+    pub account: String,
+    /// Why a connected source is not answering, like an expired token.
+    pub problem: Option<String>,
+    /// What connecting asks for, and how work is handed over there.
+    pub form: SourceForm,
+}
+
+/// Open work in a connected source, worth handing over first.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct Candidate {
+    pub kind: SourceKind,
+    pub item: HandOver,
+    /// Too little to go on for a first task.
+    pub vague: bool,
 }

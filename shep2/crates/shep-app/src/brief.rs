@@ -1,14 +1,15 @@
 //! The morning brief: what finished overnight, what needs you, and how the night went.
 
+use std::path::PathBuf;
+
 use shep_domain::{EventKind, Task, TaskEvent, TaskState, UnixTime};
 
 use crate::detail::{activity, ci_words, step_of, ActivityInput};
-use crate::paths::{with_extension, TaskPaths};
+use crate::paths::{with_extension, TaskPaths, IMAGE_EXTENSIONS};
 use crate::ports::Mark;
 use crate::view::{Brief, BriefItem, DiffStat, Overnight};
 use crate::{time, AppError, Shep};
 
-const IMAGES: [&str; 5] = ["png", "jpg", "jpeg", "gif", "webp"];
 /// Starts each line about a task Shep took off the board.
 const STOPPED: &str = "Stopped: ";
 
@@ -146,15 +147,21 @@ impl Shep {
             let s = if fixes == 1 { "" } else { "s" };
             pieces.push(format!("fixed {fixes} failure{s}"));
         }
+        if !self.proof_images(task)?.is_empty() {
+            pieces.push("screenshot".into());
+        }
+        Ok(pieces.join(" · "))
+    }
+
+    /// The screenshots among the task's proof files.
+    pub(crate) fn proof_images(&self, task: &Task) -> Result<Vec<PathBuf>, AppError> {
+        let ports = self.ports();
         let dir = ports
             .files
             .task_dir(task.id)
             .map_err(|e| AppError::Remote(e.0))?;
         let proof = ports.files.list(&TaskPaths::new(dir).proof_dir());
-        if with_extension(&proof, &IMAGES).next().is_some() {
-            pieces.push("screenshot".into());
-        }
-        Ok(pieces.join(" · "))
+        Ok(with_extension(&proof, &IMAGE_EXTENSIONS).cloned().collect())
     }
 }
 

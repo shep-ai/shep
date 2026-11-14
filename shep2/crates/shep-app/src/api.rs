@@ -1,9 +1,10 @@
+use std::collections::BTreeMap;
 use std::path::Path;
 
-use shep_domain::{ReviewAction, Settings, Task, TaskId};
+use shep_domain::{ReviewAction, Settings, SourceKind, Task, TaskId};
 
 use crate::ports::AgentView;
-use crate::view::{Brief, Setup, TaskDetail};
+use crate::view::{Brief, Candidate, Setup, SourceStatus, TaskDetail};
 use crate::{AppError, Board, SettingsChange, StartOutcome, StartWhen};
 
 /// The calls every surface makes: the four core actions plus reading and changing settings.
@@ -39,4 +40,16 @@ pub trait ShepApi: Send + Sync {
     fn send_to_agent(&self, id: TaskId, bytes: &[u8]) -> Result<(), AppError>;
     /// What is installed, signed in and chosen, for onboarding and `shep config`.
     fn setup(&self, from_dir: Option<&Path>) -> Result<Setup, AppError>;
+    /// Every source, connected or not, with what connecting asks for.
+    fn sources(&self) -> Result<Vec<SourceStatus>, AppError>;
+    /// Connects a source with what its form asks for; secrets go to the OS keychain.
+    fn connect_source(
+        &self,
+        kind: SourceKind,
+        values: &BTreeMap<String, String>,
+    ) -> Result<SourceStatus, AppError>;
+    /// Stops reading the source and forgets its tokens. Its tasks stay on the board.
+    fn disconnect_source(&self, kind: SourceKind) -> Result<(), AppError>;
+    /// Open work in connected sources worth handing over first, up to `limit` from each.
+    fn candidates(&self, limit: usize) -> Result<Vec<Candidate>, AppError>;
 }

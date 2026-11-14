@@ -3505,3 +3505,25 @@ installed the latest stable (1.99) with a new lint (`assert_is_empty`). **Rules:
 - Every Rust workspace has a `rust-toolchain.toml` with an exact version; CI installs from that
   file (`rustup toolchain install`), never `@stable`.
 - Bump the pinned version on purpose, in its own commit, and fix the new lints there.
+
+## A test binary that writes executable scripts must survive "Text file busy"
+
+`gh_watch` failed in CI with `Text file busy (os error 26)`: one test thread wrote a fake `gh`
+script while another forked, so the child briefly held the script open for writing and the
+exec failed. It never failed locally. **Rules:**
+
+- Every place Shep spawns a program goes through `process::when_free`, which retries ETXTBSY
+  for a moment. The same race happens for real when a tool is replaced while Shep runs it.
+- Reproduce such races deterministically (hold a write handle, release it on a timer) instead
+  of rerunning until the failure shows up.
+
+## A new field on a published reply type gets a default, never "required"
+
+`TaskDetail.summary` went out as a required field. The Mac app's fixtures, captured from an
+older daemon, then failed to decode: a newer client must read an older daemon's replies.
+**Rules:**
+
+- Fields added to an existing schema type carry `#[serde(default)]`; the OpenRPC growth check
+  (`openrpc::check_growth`) now refuses any newly required field.
+- After changing `schema/openrpc.json`, regenerate the Swift types
+  (`python3 shep2/tools/swift-codegen/generate.py`) and run ShepKit's tests in the same change.

@@ -107,3 +107,41 @@ fn an_agent_is_watched_and_typed_to_through_the_daemon() {
     let err = remote.watch_agent(other.id).err().unwrap();
     assert!(err.to_string().contains("no agent running"), "{err}");
 }
+
+#[test]
+fn sources_connect_list_offer_and_disconnect_through_the_daemon() {
+    use std::collections::BTreeMap;
+
+    use shep_app::ports::HandOver;
+    use shep_app::testing::FAKE_TOKEN_KEY;
+    use shep_domain::{SourceKind, TaskSourceRef};
+
+    let d = daemon();
+    let remote = RemoteShep::connect(&d.socket).unwrap();
+    assert!(remote.sources().unwrap().iter().all(|s| !s.connected));
+
+    let values = BTreeMap::from([(FAKE_TOKEN_KEY.to_owned(), "lin_api_123".to_owned())]);
+    let status = remote.connect_source(SourceKind::Linear, &values).unwrap();
+    assert!(status.connected);
+    assert_eq!(
+        d.fakes.sources.token(SourceKind::Linear).as_deref(),
+        Some("lin_api_123")
+    );
+    d.fakes.sources.get(SourceKind::Linear).offer(HandOver {
+        source: TaskSourceRef::Linear {
+            key: "ENG-351".into(),
+        },
+        title: "Export reports to CSV".into(),
+        body: String::new(),
+        url: "https://linear.app/acme/issue/ENG-351".into(),
+    });
+    let offered = remote.candidates(5).unwrap();
+    assert_eq!(offered[0].item.title, "Export reports to CSV");
+
+    remote.disconnect_source(SourceKind::Linear).unwrap();
+    assert_eq!(d.fakes.sources.token(SourceKind::Linear), None);
+    let err = remote
+        .connect_source(SourceKind::Linear, &BTreeMap::new())
+        .unwrap_err();
+    assert!(err.to_string().contains("token"), "{err}");
+}

@@ -189,6 +189,27 @@
         ],
         "type": "object"
       },
+      "Candidate": {
+        "description": "Open work in a connected source, worth handing over first.",
+        "properties": {
+          "item": {
+            "$ref": "#/components/schemas/HandOver"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/SourceKind"
+          },
+          "vague": {
+            "description": "Too little to go on for a first task.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "kind",
+          "item",
+          "vague"
+        ],
+        "type": "object"
+      },
       "CheckState": {
         "enum": [
           "Pending",
@@ -290,9 +311,67 @@
           "Screenshots",
           "BaseMerged",
           "SentBack",
-          "Stopped"
+          "Stopped",
+          "HandedOver",
+          "Reported"
         ],
         "type": "string"
+      },
+      "FormField": {
+        "description": "One thing a person fills in to connect a source.",
+        "properties": {
+          "hint": {
+            "description": "Where to find it, like \"Linear → Settings → API → Personal API keys\".",
+            "type": "string"
+          },
+          "key": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "optional": {
+            "type": "boolean"
+          },
+          "secret": {
+            "description": "Kept in the OS keychain, never in settings; typed without echo.",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "secret",
+          "hint",
+          "optional"
+        ],
+        "type": "object"
+      },
+      "HandOver": {
+        "description": "Work as its source describes it.",
+        "properties": {
+          "body": {
+            "description": "The ticket's description or the message's text.",
+            "type": "string"
+          },
+          "source": {
+            "$ref": "#/components/schemas/TaskSourceRef"
+          },
+          "title": {
+            "type": "string"
+          },
+          "url": {
+            "description": "Where a person opens it.",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source",
+          "title",
+          "body",
+          "url"
+        ],
+        "type": "object"
       },
       "Overnight": {
         "description": "When the night's work ran.",
@@ -449,6 +528,14 @@
           },
           "shift_start": {
             "$ref": "#/components/schemas/ClockTime"
+          },
+          "sources": {
+            "default": [],
+            "description": "Where work is handed over besides Shep itself, one of each kind.",
+            "items": {
+              "$ref": "#/components/schemas/SourceSetting"
+            },
+            "type": "array"
           }
         },
         "required": [
@@ -562,6 +649,112 @@
           "suggestions",
           "settings",
           "ready"
+        ],
+        "type": "object"
+      },
+      "SourceForm": {
+        "description": "How a source is connected and how work is handed over in it.",
+        "properties": {
+          "fields": {
+            "items": {
+              "$ref": "#/components/schemas/FormField"
+            },
+            "type": "array"
+          },
+          "hand_over": {
+            "description": "The moves a person already makes there, like \"Add the label shep\".",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "fields",
+          "hand_over"
+        ],
+        "type": "object"
+      },
+      "SourceKind": {
+        "description": "Where a task came from. Shep answers in the same place.",
+        "oneOf": [
+          {
+            "enum": [
+              "GitHub",
+              "Linear",
+              "Jira",
+              "Notion",
+              "Monday",
+              "Slack"
+            ],
+            "type": "string"
+          },
+          {
+            "const": "Shep",
+            "description": "Typed straight into Shep (CLI, Mac app, MCP).",
+            "type": "string"
+          }
+        ]
+      },
+      "SourceSetting": {
+        "description": "A connected source.",
+        "properties": {
+          "account": {
+            "default": "",
+            "description": "What it is connected as, for people to read, like \"Acme · team ENG\".",
+            "type": "string"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/SourceKind"
+          },
+          "options": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "default": {},
+            "description": "What the adapter needs that is not secret, like a Jira site or a Notion database.",
+            "type": "object"
+          }
+        },
+        "required": [
+          "kind"
+        ],
+        "type": "object"
+      },
+      "SourceStatus": {
+        "description": "A source and whether it is connected, for onboarding and `shep config`.",
+        "properties": {
+          "account": {
+            "description": "What it is connected as, like \"Acme · team ENG\".",
+            "type": "string"
+          },
+          "connected": {
+            "type": "boolean"
+          },
+          "form": {
+            "$ref": "#/components/schemas/SourceForm",
+            "description": "What connecting asks for, and how work is handed over there."
+          },
+          "kind": {
+            "$ref": "#/components/schemas/SourceKind"
+          },
+          "name": {
+            "type": "string"
+          },
+          "problem": {
+            "description": "Why a connected source is not answering, like an expired token.",
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        },
+        "required": [
+          "kind",
+          "name",
+          "connected",
+          "account",
+          "form"
         ],
         "type": "object"
       },
@@ -810,6 +1003,7 @@
             "$ref": "#/components/schemas/StepView"
           },
           "summary": {
+            "default": "",
             "description": "The same line the morning brief shows: \"CI green · +41 -12 · screenshot\".",
             "type": "string"
           },
@@ -821,7 +1015,6 @@
           "task",
           "step",
           "activity",
-          "summary",
           "live",
           "checks",
           "stat",
@@ -1352,6 +1545,99 @@
         }
       },
       "summary": "What is installed, signed in and chosen, for onboarding and config."
+    },
+    {
+      "name": "sources",
+      "paramStructure": "by-name",
+      "params": [],
+      "result": {
+        "name": "result",
+        "schema": {
+          "items": {
+            "$ref": "#/components/schemas/SourceStatus"
+          },
+          "type": "array"
+        }
+      },
+      "summary": "Every source, connected or not, with what connecting asks for."
+    },
+    {
+      "name": "source.connect",
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "name": "kind",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/SourceKind"
+          }
+        },
+        {
+          "name": "values",
+          "required": false,
+          "schema": {
+            "additionalProperties": {
+              "type": "string"
+            },
+            "default": {},
+            "description": "What the source's form asks for, by field key.",
+            "type": "object"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "$ref": "#/components/schemas/SourceStatus"
+        }
+      },
+      "summary": "Connect a source; secrets go to the OS keychain, not settings."
+    },
+    {
+      "name": "source.disconnect",
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "name": "kind",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/SourceKind"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "type": "null"
+        }
+      },
+      "summary": "Stop reading a source and forget its tokens."
+    },
+    {
+      "name": "sources.candidates",
+      "paramStructure": "by-name",
+      "params": [
+        {
+          "name": "limit",
+          "required": true,
+          "schema": {
+            "description": "At most this many from each source.",
+            "format": "uint",
+            "minimum": 0,
+            "type": "integer"
+          }
+        }
+      ],
+      "result": {
+        "name": "result",
+        "schema": {
+          "items": {
+            "$ref": "#/components/schemas/Candidate"
+          },
+          "type": "array"
+        }
+      },
+      "summary": "Open work in connected sources worth handing over first."
     }
   ],
   "openrpc": "1.3.2",

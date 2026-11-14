@@ -4,6 +4,8 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use shep_app::{EngineConfig, Ports};
+use shep_infra::secrets;
+use shep_infra::sources::{self, SourceRegistry};
 use shep_infra::{
     spawn_detached, CliAgents, FsTaskFiles, GhForge, GitCli, HolderSessions, ShepHome, SqliteStore,
     SystemClock, SystemKeepAwake,
@@ -37,6 +39,10 @@ pub fn ports(home: &ShepHome, store: &Arc<SqliteStore>) -> Ports {
         )),
         files: Arc::new(FsTaskFiles::new(home.tasks_dir())),
         awake: Arc::new(SystemKeepAwake::for_this_machine()),
+        sources: Arc::new(SourceRegistry::new(
+            secrets::for_this_machine(home),
+            sources::factories(),
+        )),
     }
 }
 

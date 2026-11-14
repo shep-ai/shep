@@ -31,6 +31,10 @@ pub enum EventKind {
     SentBack,
     // The task was taken off the board, like when its issue was closed. Kept after the task.
     Stopped,
+    // Work handed over in a source (a label, a status, a reaction) became this task.
+    HandedOver,
+    // Shep said where the task stands in its source: queued, a question, ready, merged.
+    Reported,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]

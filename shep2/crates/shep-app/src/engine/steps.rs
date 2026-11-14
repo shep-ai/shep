@@ -1,19 +1,19 @@
 //! Prepare, watch CI and complete: everything around the agent's work but publishing.
 
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use shep_domain::{
-    AgentJob, CiVerdict, EventKind, Run, RunStep, Task, TaskBranch, UnixTime, MAX_CI_FIXES,
-    TASK_BRANCH_PREFIX,
+    AgentJob, CiVerdict, EventKind, Run, RunStep, SourceKind, Task, TaskBranch, UnixTime,
+    MAX_CI_FIXES, TASK_BRANCH_PREFIX,
 };
 
 use super::agent::worktree;
 use super::pr_body::{self, Proof};
 use super::{Engine, Flow, StepError, StepResult, SECS_PER_MINUTE};
-use crate::paths::{file_name, with_extension, TaskPaths};
+use crate::paths::{file_name, with_extension, TaskPaths, IMAGE_EXTENSIONS};
+use crate::ports::Issue;
 
 const TEXT_PROOF: [&str; 3] = ["txt", "log", "md"];
-pub(super) const IMAGE_PROOF: [&str; 5] = ["png", "jpg", "jpeg", "gif", "webp"];
 const NO_REVIEW: &str = "The reviewer gave no opinion.";
 
 /// A person answered or sent the work back: start another pass on the same worktree.
@@ -39,15 +39,35 @@ pub(super) fn begin_pass(run: &mut Run, now: UnixTime) {
 }
 
 impl Engine {
+    /// The task as its source describes it: GitHub issues through the forge, everything else
+    /// through its connected source. `None` for a sentence, or a source that is not connected.
+    fn read_task(&self, repo: &Path, task: &Task) -> Result<Option<Issue>, StepError> {
+        let from_source = match task.source.kind() {
+            SourceKind::GitHub | SourceKind::Shep => None,
+            _ => self.shep.source_of(task),
+        };
+        let Some(source) = from_source else {
+            return self
+                .ports
+                .forge
+                .issue(repo, &task.source)
+                .map_err(|e| StepError::new("read the issue", e));
+        };
+        let item = source
+            .read(&task.source)
+            .map_err(|e| StepError::new("read the ticket", e))?;
+        Ok(item.map(|h| Issue {
+            title: h.title,
+            body: h.body,
+            url: h.url,
+        }))
+    }
+
     /// Reads the source (title and text), then makes the task's worktree from origin.
     pub(super) fn prepare(&self, task: &Task, run: &mut Run) -> StepResult {
         let repo = self.repo()?;
         let paths = TaskPaths::new(self.task_dir(task)?);
-        let issue = self
-            .ports
-            .forge
-            .issue(&repo, &task.source)
-            .map_err(|e| StepError::new("read the issue", e))?;
+        let issue = self.read_task(&repo, task)?;
         let mut title = task.title.clone();
         if let Some(issue) = issue {
             if issue.title != task.title {
@@ -222,7 +242,7 @@ impl Engine {
         let texts: Vec<(String, String)> = with_extension(&files, &TEXT_PROOF)
             .filter_map(|p| Some((file_name(p), self.ports.files.read(p)?)))
             .collect();
-        let images: Vec<PathBuf> = with_extension(&files, &IMAGE_PROOF).cloned().collect();
+        let images: Vec<PathBuf> = with_extension(&files, &IMAGE_EXTENSIONS).cloned().collect();
         let mut proof = Proof {
             texts,
             images: Vec::new(),

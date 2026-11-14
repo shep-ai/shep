@@ -12,6 +12,7 @@ mod pr_body;
 mod prompts;
 mod publish;
 mod screenshots;
+mod sources;
 mod steps;
 
 use std::path::PathBuf;
@@ -51,6 +52,8 @@ pub struct EngineConfig {
     pub issue_poll_secs: i64,
     /// How long the repository's screenshot command may run before it is stopped.
     pub screenshot_timeout_secs: i64,
+    /// How often each connected source (Linear, Jira, …) is read for work handed over.
+    pub source_poll_secs: i64,
 }
 
 impl Default for EngineConfig {
@@ -66,6 +69,7 @@ impl Default for EngineConfig {
             comment_poll_secs: 60,
             issue_poll_secs: 5 * 60,
             screenshot_timeout_secs: 10 * 60,
+            source_poll_secs: 2 * SECS_PER_MINUTE,
         }
     }
 }
@@ -105,6 +109,8 @@ pub struct Engine {
     shift_opened_on: Mutex<Option<i64>>,
     /// When each task's issue and pull request were last read, to stay within rate limits.
     polls: Mutex<github::Polls>,
+    /// When each source and its tasks were last read, and what was last said there.
+    source_polls: Mutex<sources::SourcePolls>,
 }
 
 impl Engine {
@@ -119,6 +125,7 @@ impl Engine {
             config,
             shift_opened_on: Mutex::new(None),
             polls: Mutex::default(),
+            source_polls: Mutex::default(),
         }
     }
 
@@ -130,6 +137,7 @@ impl Engine {
         if let Ok(board) = self.shep.board() {
             self.watch_github(&board);
         }
+        self.watch_sources();
         if self.shep.shift_open() {
             let _ = self.shep.start_queued();
         }

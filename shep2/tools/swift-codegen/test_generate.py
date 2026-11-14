@@ -142,6 +142,18 @@ class ModelsTest(unittest.TestCase):
         self.assertIn("case started([ShepTask])", out)
         self.assertIn('case "SendBack":', out)
 
+    def test_string_maps_become_dictionaries(self):
+        out = models(
+            {
+                "S": {
+                    "type": "object",
+                    "properties": {"options": {"type": "object", "additionalProperties": {"type": "string"}}},
+                    "required": ["options"],
+                }
+            }
+        )
+        self.assertIn("public var options: [String: String]", out)
+
     def test_unknown_shapes_fail_loudly(self):
         with self.assertRaises(generate.SchemaError):
             models({"X": {"type": "object", "properties": {"y": {"type": "object"}}, "required": []}})

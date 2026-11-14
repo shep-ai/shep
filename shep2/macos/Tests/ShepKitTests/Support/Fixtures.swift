@@ -50,6 +50,13 @@ enum Fixtures {
         Board(needsYou: needsYou, ready: ready, working: working, queued: queued, merged: merged)
     }
 
+    static func source(_ kind: SourceKind, connected: Bool) -> SourceStatus {
+        SourceStatus(
+            kind: kind, name: kind.rawValue, connected: connected, account: connected ? "Acme" : "",
+            form: SourceForm(fields: [], handOver: ["Add the label shep"])
+        )
+    }
+
     static func detail(
         _ task: ShepTask,
         step: StepView? = nil,

@@ -4,6 +4,7 @@
 mod agents;
 mod forge;
 mod git;
+mod sources;
 mod store;
 mod system;
 
@@ -12,6 +13,7 @@ use std::sync::Arc;
 pub use agents::{FakeAgents, FakeProvider, FakeSessions};
 pub use forge::{FakeForge, FAKE_VIEWER};
 pub use git::{FakeGit, FAKE_BASE, FAKE_HOOKS};
+pub use sources::{FakeSource, FakeSources, FAKE_ACCOUNT, FAKE_TOKEN_KEY};
 pub use store::{ManualClock, MemoryEvents, MemoryMarks, MemoryRuns, MemorySettings, MemoryTasks};
 pub use system::{FakeAwake, MemoryFiles};
 
@@ -31,6 +33,7 @@ pub struct Fakes {
     pub sessions: Arc<FakeSessions>,
     pub files: Arc<MemoryFiles>,
     pub awake: Arc<FakeAwake>,
+    pub sources: Arc<FakeSources>,
 }
 
 impl Default for Fakes {
@@ -48,6 +51,7 @@ impl Default for Fakes {
             sessions: Arc::default(),
             files: Arc::default(),
             awake: Arc::default(),
+            sources: Arc::default(),
         }
     }
 }
@@ -67,6 +71,7 @@ impl Fakes {
             sessions: self.sessions.clone(),
             files: self.files.clone(),
             awake: self.awake.clone(),
+            sources: self.sources.clone(),
         }
     }
 }

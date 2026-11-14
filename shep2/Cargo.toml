@@ -43,6 +43,7 @@ ratatui = "0.30"
 crossterm = "0.29"
 tachyonfx = "0.25"
 insta = "1"
+ureq = { version = "3.5", features = ["json", "platform-verifier"] }
 rmcp = { version = "3.10", default-features = false, features = ["server", "macros", "transport-io"] }
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "io-std"] }
 chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }

@@ -78,6 +78,11 @@ fn settings_default_until_saved_then_persist() {
         repo: Some("/code/app".into()),
         nightly: false,
         keep_awake: false,
+        sources: vec![shep_domain::SourceSetting::new(
+            shep_domain::SourceKind::Linear,
+            "Acme · team ENG",
+        )
+        .with_option("team", "ENG")],
     };
     store.save_settings(&s).unwrap();
     assert_eq!(store.load_settings().unwrap(), s);

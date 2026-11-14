@@ -3,6 +3,7 @@
 //! closed while its task waits or works stops the task and takes it off the board.
 
 use std::collections::HashMap;
+use std::hash::Hash;
 use std::path::Path;
 
 use shep_domain::{send_back_note, EventKind, ReviewAction, Run, Task, TaskId, UnixTime};
@@ -26,7 +27,12 @@ pub(super) struct Polls {
 }
 
 /// Whether `id` is due another look after `every` seconds; if so, the look is recorded.
-fn due(last: &mut HashMap<TaskId, UnixTime>, id: TaskId, now: UnixTime, every: i64) -> bool {
+pub(super) fn due<K: Hash + Eq>(
+    last: &mut HashMap<K, UnixTime>,
+    id: K,
+    now: UnixTime,
+    every: i64,
+) -> bool {
     if last.get(&id).is_some_and(|at| now.0 - at.0 < every) {
         return false;
     }

@@ -1,6 +1,6 @@
 [package]
 name = "shep-infra"
-description = "Shep 2 infrastructure: SQLite, git worktrees, gh, the PTY holder, agent CLIs, keep-awake."
+description = "Shep 2 infrastructure: SQLite, git worktrees, gh, the PTY holder, agent CLIs, keep-awake, task sources."
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -16,6 +16,11 @@ portable-pty.workspace = true
 vt100.workspace = true
 base64.workspace = true
 chrono.workspace = true
+thiserror.workspace = true
+ureq.workspace = true
+
+[target.'cfg(target_os = "macos")'.dependencies]
+security-framework = "3.7"
 
 [dev-dependencies]
 tempfile.workspace = true

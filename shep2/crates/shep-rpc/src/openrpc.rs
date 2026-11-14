@@ -4,12 +4,15 @@
 use schemars::generate::{SchemaGenerator, SchemaSettings};
 use schemars::{JsonSchema, Schema};
 use serde_json::{json, Map, Value};
-use shep_app::{Board, Brief, SettingsChange, Setup, StartOutcome, TaskDetail};
+use shep_app::{
+    Board, Brief, Candidate, SettingsChange, Setup, SourceStatus, StartOutcome, TaskDetail,
+};
 use shep_domain::{Settings, Task};
 
 use crate::method::{
-    AddLabelParams, AddParams, AgentOutput, IdParams, Method, NoParams, ReviewParams, SendParams,
-    SetupParams, StartParams, UpdateSettingsParams, WatchReply,
+    AddLabelParams, AddParams, AgentOutput, ConnectParams, IdParams, KindParams, LimitParams,
+    Method, NoParams, ReviewParams, SendParams, SetupParams, StartParams, UpdateSettingsParams,
+    WatchReply,
 };
 use crate::{AGENT_OUTPUT, BOARD_CHANGED};
 
@@ -46,6 +49,10 @@ fn shape(method: Method) -> (SchemaFn, SchemaFn) {
         Method::WatchAgent => (of::<IdParams>, reference::<WatchReply>),
         Method::SendToAgent => (of::<SendParams>, reference::<()>),
         Method::Setup => (of::<SetupParams>, reference::<Setup>),
+        Method::Sources => (of::<NoParams>, reference::<Vec<SourceStatus>>),
+        Method::ConnectSource => (of::<ConnectParams>, reference::<SourceStatus>),
+        Method::DisconnectSource => (of::<KindParams>, reference::<()>),
+        Method::Candidates => (of::<LimitParams>, reference::<Vec<Candidate>>),
     }
 }
 
@@ -115,12 +122,16 @@ fn descriptors(schema: &Schema) -> Vec<Value> {
         .unwrap_or_default()
 }
 
+const SCHEMAS: &str = "/components/schemas";
+const REQUIRED: &str = "required";
+
 /// Checks that `new` keeps everything `old` had: every method, every field, every enum
 /// variant. Wording (`description`, `summary`, `title`) may change. Returns the JSON paths of
 /// whatever went missing.
 pub fn check_growth(old: &Value, new: &Value) -> Result<(), Vec<String>> {
     let mut missing = Vec::new();
     covers(old, new, "$", &mut missing);
+    newly_required(old, new, &mut missing);
     if missing.is_empty() {
         Ok(())
     } else {
@@ -156,7 +167,8 @@ fn covers_object(
     missing: &mut Vec<String>,
 ) {
     for (key, value) in old {
-        if !names && PROSE_KEYS.contains(&key.as_str()) {
+        // Prose may change; which fields are required has its own rule (`newly_required`).
+        if !names && (PROSE_KEYS.contains(&key.as_str()) || key == REQUIRED) {
             continue;
         }
         let here = format!("{path}.{key}");
@@ -167,6 +179,35 @@ fn covers_object(
             }
             (Some(next), _) => covers(value, next, &here, missing),
             (None, _) => missing.push(here),
+        }
+    }
+}
+
+/// An existing type may not start requiring a field: a newer client reads replies from an
+/// older daemon, which never sends it. New fields carry a default instead.
+fn newly_required(old: &Value, new: &Value, broken: &mut Vec<String>) {
+    let schemas = |doc: &Value| doc.pointer(SCHEMAS).and_then(Value::as_object).cloned();
+    let (Some(old), Some(new)) = (schemas(old), schemas(new)) else {
+        return;
+    };
+    let required = |schema: &Value| -> Vec<String> {
+        schema
+            .get(REQUIRED)
+            .and_then(Value::as_array)
+            .map(|names| {
+                names
+                    .iter()
+                    .filter_map(Value::as_str)
+                    .map(str::to_owned)
+                    .collect()
+            })
+            .unwrap_or_default()
+    };
+    for (name, before) in &old {
+        let Some(after) = new.get(name) else { continue };
+        let was = required(before);
+        for field in required(after).into_iter().filter(|f| !was.contains(f)) {
+            broken.push(format!("$.components.schemas.{name}.{REQUIRED}: {field}"));
         }
     }
 }

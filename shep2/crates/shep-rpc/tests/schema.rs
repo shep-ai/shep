@@ -66,7 +66,11 @@ fn the_schema_lists_the_four_actions_and_what_surfaces_read() {
             "add.label",
             "agent.watch",
             "agent.send",
-            "setup"
+            "setup",
+            "sources",
+            "source.connect",
+            "source.disconnect",
+            "sources.candidates"
         ]
     );
     assert_eq!(current()["x-notifications"][0]["name"], "board.changed");
@@ -107,6 +111,31 @@ fn removing_a_method_a_field_or_a_variant_is_caught() {
         let removed = openrpc::check_growth(&old, &broken).unwrap_err();
         assert_eq!(removed.len(), 1, "{removed:?}");
     }
+}
+
+#[test]
+fn a_new_field_on_an_existing_type_must_not_be_required() {
+    // A newer client reads replies from an older daemon, which never sends the new field.
+    let old = json!({ "components": { "schemas": {
+        "TaskDetail": { "required": ["task"], "properties": { "task": {} } }
+    }}});
+    let optional = json!({ "components": { "schemas": {
+        "TaskDetail": { "required": ["task"], "properties": { "task": {}, "summary": {} } },
+        "Setup": { "required": ["ready"], "properties": { "ready": {} } }
+    }}});
+    assert_eq!(openrpc::check_growth(&old, &optional), Ok(()));
+    let required = json!({ "components": { "schemas": {
+        "TaskDetail": { "required": ["task", "summary"], "properties": { "task": {}, "summary": {} } }
+    }}});
+    let broken = openrpc::check_growth(&old, &required).unwrap_err();
+    assert_eq!(
+        broken,
+        ["$.components.schemas.TaskDetail.required: summary"]
+    );
+
+    // Dropping a requirement is safe: older clients still get the field from newer daemons
+    // whenever there is one to send.
+    assert_eq!(openrpc::check_growth(&required, &optional), Ok(()));
 }
 
 #[test]

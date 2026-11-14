@@ -11,8 +11,8 @@ use shep_domain::{EventKind, Run, RunStep, SessionId, Task, UnixTime, Worktree};
 
 use super::agent::worktree;
 use super::prompts::{AGENT_ENV_PROOF_DIR, AGENT_ENV_TASK};
-use super::steps::IMAGE_PROOF;
 use super::{Engine, Flow, StepError, StepResult, SECS_PER_MINUTE};
+use crate::paths::IMAGE_EXTENSIONS;
 use crate::paths::{with_extension, TaskPaths};
 use crate::ports::{SessionSpec, SessionState};
 
@@ -127,7 +127,7 @@ impl Engine {
     fn saved(&self, task: &Task) -> Result<String, StepError> {
         let paths = TaskPaths::new(self.task_dir(task)?);
         let files = self.ports.files.list(&paths.proof_dir());
-        Ok(match with_extension(&files, &IMAGE_PROOF).count() {
+        Ok(match with_extension(&files, &IMAGE_EXTENSIONS).count() {
             0 => "the screenshot command saved no images".into(),
             1 => "1 screenshot".into(),
             n => format!("{n} screenshots"),
