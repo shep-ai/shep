@@ -29,9 +29,16 @@ public enum ReviewPane: Equatable, Sendable {
 
 /// The dawn screen's three numbers.
 public struct DawnSummary: Equatable, Sendable {
+    static let tagline = "Go to sleep with issues, wake up with pull requests."
+
     public let merged: Int
     public let sentBack: Int
     public let waiting: Int
+
+    /// What "Share the morning" shares.
+    public var shareText: String {
+        "Dawn. Shep worked the night shift: \(merged) merged, \(sentBack) sent back. \(Self.tagline)"
+    }
 }
 
 /// The morning review: every task not merged yet, sorted by verdict (Ready, Needs you, Working,

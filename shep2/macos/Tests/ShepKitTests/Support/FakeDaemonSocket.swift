@@ -27,6 +27,9 @@ final class FakeDaemonSocket: @unchecked Sendable {
         #endif
         var address = sockaddr_un()
         address.sun_family = sa_family_t(AF_UNIX)
+        #if canImport(Darwin)
+        address.sun_len = UInt8(MemoryLayout<sockaddr_un>.size)
+        #endif
         let bytes = Array(path.utf8)
         withUnsafeMutableBytes(of: &address.sun_path) { raw in
             raw.copyBytes(from: bytes)

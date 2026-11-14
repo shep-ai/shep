@@ -42,6 +42,17 @@ public struct NightSummary: Equatable, Sendable {
         }
     }
 
+    /// Next to the lantern in the menu bar: `4/6` while working, `!` when something needs you,
+    /// the ready count at dawn; nothing otherwise.
+    public var compact: String? {
+        switch phase {
+        case let .keepingWatch(done, total): return "\(done)/\(total)"
+        case .needsYou: return "!"
+        case let .dawn(ready): return "\(ready)"
+        case .scheduled, .idle: return nil
+        }
+    }
+
     public var title: String {
         switch phase {
         case let .keepingWatch(done, total): return "Keeping watch · \(done)/\(total)"

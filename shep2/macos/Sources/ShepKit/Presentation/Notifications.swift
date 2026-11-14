@@ -39,6 +39,13 @@ public struct MorningNotification: Equatable, Sendable {
         try await client.briefMorning().map(MorningNotification.init(brief:))
     }
 
+    /// Whether to ask for the morning brief now: the last task stopped working and something
+    /// waits for a person. Never in the middle of the night (`old` nil: the app just opened).
+    public static func shiftEnded(from old: Board?, to new: Board) -> Bool {
+        guard new.working.isEmpty, !(new.ready.isEmpty && new.needsYou.isEmpty) else { return false }
+        return old.map { !$0.working.isEmpty } ?? true
+    }
+
     private static func body(ready: Int, green: Int, needsYou: Int) -> String {
         var sentences: [String] = []
         if ready == 0 {

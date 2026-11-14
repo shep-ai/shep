@@ -15,7 +15,7 @@ enum Fixtures {
     }()
 
     static func data(_ name: String) throws -> Data {
-        let url = try XCTUnwrap(Bundle.module.url(forResource: "Fixtures/\(name)", withExtension: "json"))
+        let url = try XCTUnwrap(Bundle.module.url(forResource: name, withExtension: "json", subdirectory: "Fixtures"))
         return try Data(contentsOf: url)
     }
 

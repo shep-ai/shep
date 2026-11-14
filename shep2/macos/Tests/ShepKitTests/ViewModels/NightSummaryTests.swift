@@ -30,6 +30,14 @@ final class NightSummaryTests: XCTestCase {
         XCTAssertEqual(summary(Fixtures.emptyBoard).title, "Nothing queued")
     }
 
+    func testTheMenuBarShowsAShortCount() {
+        let working = Fixtures.board(ready: [Fixtures.task(id: 2, state: .ready)], working: [Fixtures.task(id: 5, state: .working)])
+        XCTAssertEqual(summary(working).compact, "1/2")
+        XCTAssertEqual(summary(Fixtures.board(needsYou: [Fixtures.task(id: 1, state: .needsYou)])).compact, "!")
+        XCTAssertEqual(summary(Fixtures.board(ready: [Fixtures.task(id: 2, state: .ready)])).compact, "1")
+        XCTAssertNil(summary(Fixtures.emptyBoard).compact)
+    }
+
     func testRowsListWhatMattersInReviewOrder() {
         let board = Fixtures.board(
             needsYou: [Fixtures.task(id: 1, title: "Ask", state: .needsYou, issue: 430)],

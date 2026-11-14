@@ -32,6 +32,9 @@ public final class UnixSocketTransport: LineTransport, @unchecked Sendable {
     public static func connect(path: String) throws -> UnixSocketTransport {
         var address = sockaddr_un()
         address.sun_family = sa_family_t(AF_UNIX)
+        #if canImport(Darwin)
+        address.sun_len = UInt8(MemoryLayout<sockaddr_un>.size)
+        #endif
         let bytes = Array(path.utf8)
         guard bytes.count < MemoryLayout.size(ofValue: address.sun_path) else {
             throw ShepClientError.connect(path: path, reason: "the socket path is too long")

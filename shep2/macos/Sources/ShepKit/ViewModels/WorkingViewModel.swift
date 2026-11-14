@@ -38,6 +38,7 @@ public final class WorkingViewModel {
     public var events: [TaskEvent] { (detail?.events ?? []).reversed() }
     public var checks: [CiCheck] { detail?.checks ?? [] }
     public var diff: DiffDocument { DiffDocument(patch: detail?.diff ?? "") }
+    public var proof: [ProofItem] { (detail?.proof ?? []).map(ProofItem.init(path:)) }
 
     /// How long the agent has worked: since it last started, else since the task last changed.
     public var elapsed: String? {

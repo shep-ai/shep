@@ -20,6 +20,10 @@ public final class BoardStore {
     public private(set) var settings: Settings?
     public private(set) var status = Status.connecting
 
+    /// Called with the board before and the board now, every time it changes (the first time
+    /// with nil). The app posts notifications from here.
+    @ObservationIgnored public var onChange: (@MainActor (_ old: Board?, _ new: Board) -> Void)?
+    @ObservationIgnored private var received = false
     @ObservationIgnored let client: any ShepClient
     @ObservationIgnored private let retryDelay: TimeInterval
 
@@ -39,17 +43,24 @@ public final class BoardStore {
             made += 1
             do {
                 let feed = try await client.boardFeed()
-                board = feed.board
+                receive(feed.board)
                 status = .live
                 await refreshSettings()
                 for await next in feed.changes {
-                    board = next
+                    receive(next)
                 }
                 status = .offline(Self.feedEnded)
             } catch {
                 status = .offline(error.localizedDescription)
             }
         }
+    }
+
+    private func receive(_ next: Board) {
+        let old: Board? = received ? board : nil
+        received = true
+        board = next
+        onChange?(old, next)
     }
 
     public func refreshSettings() async {

@@ -23,6 +23,16 @@ extension TaskState {
     }
 }
 
+extension AgentKind {
+    public var displayName: String {
+        switch self {
+        case .claudeCode: return "Claude Code"
+        case .codex: return "Codex"
+        case .gemini: return "Gemini CLI"
+        }
+    }
+}
+
 extension ShepTask {
     /// Where the task came from, short: `#412`, `ENG-12`, `Notion`; nil for a sentence.
     public var reference: String? {
