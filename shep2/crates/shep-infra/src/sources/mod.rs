@@ -2,7 +2,11 @@
 //! [`SourceProviders`]. The registry keeps each source's secrets in the OS keychain and hands
 //! the engine the same adapter while a source's setting is unchanged.
 
+pub mod github;
 pub mod http;
+pub mod linear;
+mod say;
+mod stamp;
 
 use std::collections::{BTreeMap, HashMap};
 use std::sync::{Arc, Mutex};
@@ -60,7 +64,10 @@ pub trait SourceFactory: Send + Sync {
 
 /// Every adapter this build has. Each source module adds its factory here.
 pub fn factories() -> Vec<Box<dyn SourceFactory>> {
-    Vec::new()
+    vec![
+        Box::new(github::GitHubFactory::public()),
+        Box::new(linear::LinearFactory::public()),
+    ]
 }
 
 /// The API base for a kind: its public one, or the override in the environment.

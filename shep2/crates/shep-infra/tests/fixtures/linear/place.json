@@ -1,0 +1,34 @@
+{
+  "data": {
+    "issue": {
+      "id": "a3c1f6de-2b0e-4b8e-9b1a-6f2d1c9e0342",
+      "team": {
+        "id": "9cfb482a-81e3-4154-b5b9-2c805e70a02d",
+        "key": "ENG",
+        "states": {
+          "nodes": [
+            { "id": "b1d4c7e0-1a2b-4c3d-8e9f-0a1b2c3d4e00", "name": "Backlog", "type": "backlog" },
+            { "id": "b1d4c7e0-1a2b-4c3d-8e9f-0a1b2c3d4e01", "name": "Todo", "type": "unstarted" },
+            {
+              "id": "b1d4c7e0-1a2b-4c3d-8e9f-0a1b2c3d4e02",
+              "name": "Tonight",
+              "type": "unstarted"
+            },
+            {
+              "id": "b1d4c7e0-1a2b-4c3d-8e9f-0a1b2c3d4e03",
+              "name": "In Progress",
+              "type": "started"
+            },
+            {
+              "id": "b1d4c7e0-1a2b-4c3d-8e9f-0a1b2c3d4e04",
+              "name": "In Review",
+              "type": "started"
+            },
+            { "id": "b1d4c7e0-1a2b-4c3d-8e9f-0a1b2c3d4e05", "name": "Done", "type": "completed" },
+            { "id": "b1d4c7e0-1a2b-4c3d-8e9f-0a1b2c3d4e06", "name": "Canceled", "type": "canceled" }
+          ]
+        }
+      }
+    }
+  }
+}

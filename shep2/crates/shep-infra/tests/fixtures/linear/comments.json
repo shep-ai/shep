@@ -1,0 +1,40 @@
+{
+  "data": {
+    "issue": {
+      "comments": {
+        "nodes": [
+          {
+            "id": "7a9e3c1d-2f4b-4d6e-8a0c-1b3d5f7e9a03",
+            "body": "UTC. The zone is UTC when the customer has none.",
+            "createdAt": "2026-11-14T07:03:00.000Z",
+            "user": {
+              "id": "4b3e6c2f-6f0e-4d5a-9a52-7f1f0c2d9b11",
+              "name": "Dana Scully",
+              "displayName": "dana"
+            }
+          },
+          {
+            "id": "7a9e3c1d-2f4b-4d6e-8a0c-1b3d5f7e9a02",
+            "body": "A question before I go on:\n\n> Which zone when the customer has none?\n\nReply here; the first reply is the answer.\n\n— sent by Shep",
+            "createdAt": "2026-11-13T18:10:00.000Z",
+            "user": {
+              "id": "4b3e6c2f-6f0e-4d5a-9a52-7f1f0c2d9b11",
+              "name": "Dana Scully",
+              "displayName": "dana"
+            }
+          },
+          {
+            "id": "7a9e3c1d-2f4b-4d6e-8a0c-1b3d5f7e9a00",
+            "body": "Probably the date formatter; it started after the i18n change.",
+            "createdAt": "2026-11-13T18:09:00.000Z",
+            "user": {
+              "id": "8c1d2e3f-4a5b-4c6d-9e7f-0a1b2c3d4e5f",
+              "name": "Fox Mulder",
+              "displayName": "fox"
+            }
+          }
+        ]
+      }
+    }
+  }
+}
