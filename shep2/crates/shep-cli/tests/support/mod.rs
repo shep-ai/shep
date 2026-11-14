@@ -50,7 +50,12 @@ impl Home {
     }
 
     pub fn shep_in(&self, dir: &Path) -> Command {
-        let mut c = Command::cargo_bin("shep").unwrap();
+        Command::from_std(self.process_in(dir))
+    }
+
+    /// The same sandboxed `shep`, as a plain process (to keep its stdin open and talk to it).
+    pub fn process_in(&self, dir: &Path) -> std::process::Command {
+        let mut c = std::process::Command::new(assert_cmd::cargo::cargo_bin("shep"));
         for (key, _) in std::env::vars_os() {
             let key = key.to_string_lossy();
             if PRIVATE_PREFIXES.iter().any(|p| key.starts_with(p)) {

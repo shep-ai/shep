@@ -1,6 +1,6 @@
 [package]
 name = "shep-cli"
-description = "The `shep` binary: the CLI, the daemon and, as they land, the terminal UI and MCP server."
+description = "The `shep` binary: the CLI, the daemon and, as they land, the terminal UI and the MCP server."
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -16,6 +16,7 @@ shep-infra.workspace = true
 shep-jsonrpc.workspace = true
 shep-rpc.workspace = true
 shep-tui.workspace = true
+shep-mcp.workspace = true
 clap.workspace = true
 
 [dev-dependencies]
@@ -23,6 +24,7 @@ shep-mock-model.workspace = true
 assert_cmd.workspace = true
 predicates.workspace = true
 tempfile.workspace = true
+serde_json.workspace = true
 
 [lints]
 workspace = true

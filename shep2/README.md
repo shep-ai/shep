@@ -100,6 +100,30 @@ Verified end to end against a real git origin with a fake `gh`, two ways:
 
 Not yet run against GitHub or a real model.
 
+## From your coding agent (MCP)
+
+Any agent that speaks MCP can hand work to Shep without you leaving it. Add Shep to the agent's
+MCP config:
+
+```json
+{
+  "mcpServers": {
+    "shep": { "command": "shep", "args": ["mcp"] }
+  }
+}
+```
+
+Three tools, each calling one core action through the daemon (started if it isn't running):
+
+| Tool | Arguments | What it does |
+| ---- | --------- | ------------ |
+| `add_task` | `{ text, when?: "now" \| "tonight" \| "HH:MM" }` | Queues an issue or a sentence; answers with its id and when it starts |
+| `board` | `{}` | Counts per state and the open tasks, Needs you first |
+| `review` | `{ id, action: "merge" \| "send-back" \| "answer", note? }` | Merges, sends back with a note, or answers a question |
+
+The first task added from an agent makes the agent's working directory Shep's repository, like
+`shep add` does. `shep mcp` is not one of the four commands; only an agent starts it.
+
 ## Running Shep without an API key
 
 `shep-mock-model` stands in for the Anthropic Messages API, so a real night can be rehearsed on

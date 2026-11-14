@@ -22,6 +22,7 @@ fn main() -> ExitCode {
     let outcome = match cli.command {
         Some(Command::Daemon) => daemon::run(&home).map(|()| String::new()),
         Some(Command::Holder) => daemon::run_holder(&home).map(|()| String::new()),
+        Some(Command::Mcp) => serve_mcp(&home).map(|()| String::new()),
         None if look.interactive => open_board(&home, look).map(|()| String::new()),
         command => run(&home, command),
     };
@@ -39,6 +40,13 @@ fn main() -> ExitCode {
             ExitCode::FAILURE
         }
     }
+}
+
+/// MCP on stdio, through the daemon (started if needed). stdout belongs to the protocol.
+fn serve_mcp(home: &ShepHome) -> Result<(), AppError> {
+    let api: std::sync::Arc<dyn shep_app::ShepApi> = connect::daemon(home)?.into();
+    let dir = std::env::current_dir().ok();
+    shep_mcp::run_stdio(api, dir).map_err(|e| AppError::Remote(e.to_string()))
 }
 
 /// In a terminal: the morning brief when there is news, then the board (with onboarding the
@@ -120,7 +128,7 @@ fn run(home: &ShepHome, command: Option<Command>) -> Result<String, AppError> {
             };
             Ok(output::settings(&settings))
         }
-        Some(Command::Daemon | Command::Holder) => {
+        Some(Command::Daemon | Command::Holder | Command::Mcp) => {
             Err(AppError::Remote("this runs on its own".into()))
         }
     }

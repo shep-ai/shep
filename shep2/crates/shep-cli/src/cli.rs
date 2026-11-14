@@ -61,6 +61,10 @@ pub enum Command {
     /// Runs the PTY holder that keeps agents alive (started by the daemon)
     #[command(name = "__holder", hide = true)]
     Holder,
+    /// Serves Shep to a coding agent over MCP on stdio (started by the agent, from its MCP
+    /// config: `{"command": "shep", "args": ["mcp"]}`)
+    #[command(name = "mcp", hide = true)]
+    Mcp,
 }
 
 const ON: &str = "on";

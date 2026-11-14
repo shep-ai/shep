@@ -232,8 +232,13 @@ tasks:
 
   - id: task-10
     title: MCP server — add_task, board, review
-    description: Three tools over stdio with rmcp, each calling one core action through the daemon.
-    state: Todo
+    description: >
+      Three tools over stdio with rmcp, each calling one core action through the daemon.
+      Built: crate shep-mcp (rmcp 3.10) with add_task (when now, tonight or HH:MM), board
+      (counts and open tasks) and review (merge, send-back, answer with a note), served by the
+      hidden `shep mcp` (the visible commands stay four). Tested through an rmcp client on an
+      in-memory pipe and end to end through the binary and daemon over stdio.
+    state: Done
     dependencies:
       - task-6
     acceptanceCriteria:
