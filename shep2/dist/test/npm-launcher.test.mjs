@@ -143,14 +143,15 @@ describe('bin/shep', { skip: !POSIX && 'needs a POSIX shell for the fake binary'
     const marker = join(dir, 'got-term');
     const binary = writeExecutable(
       join(dir, 'shep'),
-      `#!/bin/sh\ntrap 'echo yes > "${marker}"; exit 143' TERM\necho ready\nwhile :; do sleep 0.05; done\n`
+      // Gives up after about 5 s with exit 3, so a lost signal fails here rather than hanging.
+      `#!/bin/sh\ntrap 'echo yes > "${marker}"; exit 143' TERM\necho ready\nn=0\nwhile [ $n -lt 100 ]; do sleep 0.05; n=$((n+1)); done\nexit 3\n`
     );
     const result = await launch(binary, [], {
       onSpawn: (child, output) => {
         waitFor(() => output.stdout.includes('ready')).then(() => child.kill('SIGTERM'));
       },
     });
-    assert.equal(result.code, 143);
+    assert.equal(result.code, 143, `the binary never got SIGTERM (exit ${result.code})`);
     assert.equal(readFileSync(marker, 'utf8'), 'yes\n');
   });
 

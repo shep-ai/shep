@@ -21,7 +21,11 @@ const RERAISE_FALLBACK_MS = 200;
 const SIGNAL_EXIT_BASE = 128;
 
 export function run(binary, args) {
-  const child = spawn(binary, args, { stdio: 'inherit' });
+  // Listen before starting the binary: a signal arriving in between would otherwise end the
+  // launcher and leave the binary running on its own. Until the child exists, signals wait.
+  let child = null;
+  const early = [];
+  const pass = (signal) => (child ? child.kill(signal) : early.push(signal));
 
   const listeners = [
     ...TERMINAL_SIGNALS.map((signal) => [
@@ -30,10 +34,15 @@ export function run(binary, args) {
         // ignored: the binary got the same signal from the terminal
       },
     ]),
-    ...FORWARDED_SIGNALS.map((signal) => [signal, () => child.kill(signal)]),
+    ...FORWARDED_SIGNALS.map((signal) => [signal, () => pass(signal)]),
   ];
   for (const [signal, listener] of listeners) {
     process.on(signal, listener);
+  }
+
+  child = spawn(binary, args, { stdio: 'inherit' });
+  for (const signal of early.splice(0)) {
+    child.kill(signal);
   }
   const stopListening = () => {
     for (const [signal, listener] of listeners) {

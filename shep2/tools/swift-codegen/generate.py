@@ -17,7 +17,10 @@ sys.path.insert(0, HERE)
 
 import methods  # noqa: E402
 import models  # noqa: E402
-from names import SchemaError, case_name, field_name, method_name, type_name  # noqa: E402,F401
+from names import SchemaError, case_name, field_name, method_name, type_name  # noqa: E402
+
+# Re-exported so callers and tests reach the naming rules through this module.
+__all__ = ["SchemaError", "case_name", "field_name", "method_name", "type_name", "render", "main"]
 
 SHEP2 = os.path.normpath(os.path.join(HERE, "..", ".."))
 DEFAULT_SCHEMA = os.path.join(SHEP2, "schema", "openrpc.json")
