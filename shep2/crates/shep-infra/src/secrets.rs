@@ -14,11 +14,13 @@ use crate::ShepHome;
 
 /// Every secret is stored under this service name, with its key as the account.
 pub const SERVICE: &str = "shep2";
+#[cfg(not(target_os = "macos"))]
 const FILE_NAME: &str = "secrets.json";
 const PRIVATE_FILE: u32 = 0o600;
 const PRIVATE_DIR: u32 = 0o700;
 const SECRET_TOOL: &str = "secret-tool";
 /// Without a session bus there is no secret service to talk to.
+#[cfg(not(target_os = "macos"))]
 const SESSION_BUS_ENV: &str = "DBUS_SESSION_BUS_ADDRESS";
 
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
