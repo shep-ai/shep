@@ -284,15 +284,23 @@ fn the_daemon_starts_in_a_deep_home_that_does_not_exist_yet() {
     let home = Home::new();
     let deep = home.dir.path().join("a".repeat(60)).join("b".repeat(60));
     home.set_env("SHEP_HOME", deep.to_str().unwrap());
-    let mut daemon = home
-        .process_in(home.dir.path())
-        .arg("__daemon")
-        .stderr(std::process::Stdio::null())
-        .spawn()
-        .unwrap();
+    let _daemon = KillOnDrop(
+        home.process_in(home.dir.path())
+            .arg("__daemon")
+            .stderr(std::process::Stdio::null())
+            .spawn()
+            .unwrap(),
+    );
     let pid = deep.join("shep2").join("daemon.pid");
-    let started = home.wait_for("the daemon's pid file", || pid.exists().then_some(()));
-    let _ = daemon.kill();
-    let _ = daemon.wait();
-    started
+    home.wait_for("the daemon's pid file", || pid.exists().then_some(()));
+}
+
+/// Stops a process a test started, whether the test passes or panics.
+struct KillOnDrop(std::process::Child);
+
+impl Drop for KillOnDrop {
+    fn drop(&mut self) {
+        let _ = self.0.kill();
+        let _ = self.0.wait();
+    }
 }

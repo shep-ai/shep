@@ -3527,3 +3527,12 @@ older daemon, then failed to decode: a newer client must read an older daemon's 
   (`openrpc::check_growth`) now refuses any newly required field.
 - After changing `schema/openrpc.json`, regenerate the Swift types
   (`python3 shep2/tools/swift-codegen/generate.py`) and run ShepKit's tests in the same change.
+
+## A gate piped into `grep` and joined with `;` does not stop a commit
+
+`cargo clippy … | grep …; git commit …` committed and pushed code clippy had just rejected, because
+the pipeline's status was grep's and `;` runs the next command anyway. **Rules:**
+
+- Run the gates as their own step and read their exit status (`${PIPESTATUS[0]}` or
+  `set -o pipefail`) before any commit or push; join gate and commit only with `&&`.
+- Run `cargo fmt --all` again after any later edit, right before committing.
