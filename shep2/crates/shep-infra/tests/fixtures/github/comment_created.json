@@ -1,0 +1,35 @@
+{
+  "id": 3004,
+  "node_id": "IC_kwDOABCD3004",
+  "url": "https://api.github.com/repos/acme/app/issues/comments/3004",
+  "html_url": "https://github.com/acme/app/issues/412#issuecomment-3004",
+  "body": "Queued for tonight, 23:00 in acme/app. I'll reply here.\n\n<!-- shep:update -->",
+  "user": {
+    "login": "octocat",
+    "id": 1,
+    "node_id": "MDQ6VXNlcjE=",
+    "avatar_url": "https://github.com/images/error/octocat_happy.gif",
+    "gravatar_id": "",
+    "url": "https://api.github.com/users/octocat",
+    "html_url": "https://github.com/octocat",
+    "type": "User",
+    "site_admin": false
+  },
+  "created_at": "2026-11-14T08:00:00Z",
+  "updated_at": "2026-11-14T08:00:00Z",
+  "issue_url": "https://api.github.com/repos/acme/app/issues/412",
+  "author_association": "MEMBER",
+  "performed_via_github_app": null,
+  "reactions": {
+    "url": "https://api.github.com/repos/acme/app/issues/comments/3004/reactions",
+    "total_count": 0,
+    "+1": 0,
+    "-1": 0,
+    "laugh": 0,
+    "hooray": 0,
+    "confused": 0,
+    "heart": 0,
+    "rocket": 0,
+    "eyes": 0
+  }
+}
