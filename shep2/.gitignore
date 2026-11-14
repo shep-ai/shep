@@ -1,1 +1,3 @@
 /target
+# The root .gitignore drops every dist/ as build output; here dist/ is source (release scripts).
+!/dist/

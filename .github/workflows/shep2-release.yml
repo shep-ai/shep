@@ -1,0 +1,351 @@
+# =============================================================================
+# Shep 2 release: binaries, GitHub release, npm (shep2), Homebrew tap
+# =============================================================================
+# Separate from Shep 1's semantic-release in both directions:
+#   - It runs only for tags shep2-v<version> (Shep 1 tags are v<version> and never match), and
+#     semantic-release's tagFormat `v${version}` never reads a shep2-v tag.
+#   - The GitHub release is created with the default GITHUB_TOKEN. Events caused by that token
+#     start no workflows, so Shep 1's `on: release` workflows (docker-publish.yml) never fire
+#     for it. Keep it that way: do not switch this job to a PAT. The release is also created
+#     with --latest=false so Shep 1 keeps the repository's "Latest release" badge.
+#
+# Triggers:
+#   push a tag shep2-v<version>   build, verify, then publish (the tag must equal the
+#                                 [workspace.package] version in shep2/Cargo.toml)
+#   workflow_dispatch             dry run by default: build, verify, render the formula, run
+#                                 `npm publish --dry-run`. Unticking dry_run publishes, and
+#                                 is allowed only when run on a shep2-v* tag (re-runs a release).
+#   pull_request                  dry run when the release scripts or the toolchain change, so a
+#                                 broken release path shows up on the PR, not on release day
+#
+# Publishing needs repository secrets, referenced by name only:
+#   NPM_TOKEN            npm automation token allowed to publish shep2 and shep2-<os>-<cpu>
+#   HOMEBREW_TAP_TOKEN   token with contents:write on shep-ai/homebrew-tap
+# A missing secret skips that channel with a warning; nothing else depends on it.
+#
+# Local equivalent of the build + verify jobs: sh shep2/dist/dry-run.sh (see shep2/dist/README.md)
+
+name: Shep 2 Release
+
+on:
+  push:
+    tags: ['shep2-v*']
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run: build and verify, publish nothing (untick only on a shep2-v* tag)'
+        type: boolean
+        default: true
+  pull_request:
+    paths:
+      - 'shep2/dist/**'
+      - 'shep2/Cargo.lock'
+      - 'shep2/rust-toolchain.toml'
+      - '.github/workflows/shep2-release.yml'
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+  # Release binaries ship without symbol tables (smaller downloads); dry-run.sh does the same.
+  CARGO_PROFILE_RELEASE_STRIP: symbols
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Version, mode, and the release scripts' own tests
+  # ---------------------------------------------------------------------------
+  plan:
+    name: Plan
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.plan.outputs.version }}
+      tag: ${{ steps.plan.outputs.tag }}
+      publish: ${{ steps.plan.outputs.publish }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Work out the version and whether to publish
+        id: plan
+        env:
+          EVENT: ${{ github.event_name }}
+          REF_TYPE: ${{ github.ref_type }}
+          REF_NAME: ${{ github.ref_name }}
+          DRY_RUN_INPUT: ${{ inputs.dry_run }}
+        run: |
+          version=$(sh shep2/dist/version.sh)
+          publish=false
+          if [ "$EVENT" = push ] || { [ "$EVENT" = workflow_dispatch ] && [ "$DRY_RUN_INPUT" = false ]; }; then
+            publish=true
+            if [ "$REF_TYPE" != tag ] || [ "$REF_NAME" != "shep2-v$version" ]; then
+              echo "::error::Publishing needs the tag shep2-v$version (shep2/Cargo.toml); this run is on $REF_TYPE $REF_NAME."
+              exit 1
+            fi
+          fi
+          {
+            echo "version=$version"
+            echo "tag=shep2-v$version"
+            echo "publish=$publish"
+          } >>"$GITHUB_OUTPUT"
+          echo "Shep 2 $version, publish=$publish" >>"$GITHUB_STEP_SUMMARY"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install dash (install.sh is tested under it)
+        run: sudo apt-get update && sudo apt-get install -y dash
+      - name: Test the release scripts
+        run: node --test shep2/dist/test/*.test.mjs
+      - name: Shellcheck
+        run: shellcheck --shell=sh shep2/dist/*.sh
+
+  # ---------------------------------------------------------------------------
+  # One release binary per target, packaged as shep-<version>-<target>.tar.gz
+  # ---------------------------------------------------------------------------
+  build:
+    name: Build ${{ matrix.target }}
+    needs: plan
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: aarch64-apple-darwin
+            os: macos-latest
+          # Cross-compiled on the arm64 runner: Apple's toolchain builds both architectures.
+          - target: x86_64-apple-darwin
+            os: macos-latest
+          # Static musl builds run on any Linux distribution, old glibc or none.
+          - target: x86_64-unknown-linux-musl
+            os: ubuntu-latest
+          - target: aarch64-unknown-linux-musl
+            os: ubuntu-24.04-arm
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: shep2
+    env:
+      TARGET: ${{ matrix.target }}
+      VERSION: ${{ needs.plan.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install musl-gcc
+        if: contains(matrix.target, '-linux-musl')
+        run: sudo apt-get update && sudo apt-get install -y musl-tools
+      # No build cache on purpose: release binaries are built from a clean slate.
+      - name: Install the pinned Rust toolchain (shep2/rust-toolchain.toml) and the target
+        run: |
+          rustup toolchain install
+          rustup target add "$TARGET"
+      - name: Build
+        run: cargo build --release --locked -p shep-cli --target "$TARGET"
+      - name: Smoke test
+        if: matrix.target != 'x86_64-apple-darwin'
+        run: |
+          "target/$TARGET/release/shep" --version
+          "target/$TARGET/release/shep" --help
+      - name: Package
+        run: sh dist/package.sh "$VERSION" "$TARGET" "target/$TARGET/release/shep" ../release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: shep2-${{ matrix.target }}
+          path: release/
+          if-no-files-found: error
+
+  # ---------------------------------------------------------------------------
+  # install.sh and the npm launcher, from the packaged tarballs, on each native machine
+  # ---------------------------------------------------------------------------
+  verify:
+    name: Verify install paths (${{ matrix.os }})
+    needs: [plan, build]
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, ubuntu-24.04-arm, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: shep2-*
+          merge-multiple: true
+          path: release
+      - name: Dry run against the release tarballs
+        run: sh shep2/dist/dry-run.sh --artifacts release
+
+  # ---------------------------------------------------------------------------
+  # GitHub release (publish runs only)
+  # ---------------------------------------------------------------------------
+  release:
+    name: GitHub release
+    needs: [plan, verify]
+    if: needs.plan.outputs.publish == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      VERSION: ${{ needs.plan.outputs.version }}
+      TAG: ${{ needs.plan.outputs.tag }}
+      # The default token, deliberately; see the header.
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: shep2-*
+          merge-multiple: true
+          path: release
+      - name: Create or update the release
+        run: |
+          (cd release && sha256sum shep-*.tar.gz >SHA256SUMS)
+          cp shep2/dist/install.sh release/install.sh
+          cat >notes.md <<EOF
+          Shep 2 ${VERSION}: go to sleep with issues, wake up with pull requests.
+
+          \`\`\`bash
+          brew install shep-ai/tap/shep
+          curl -fsSL https://shep.bot/install | sh
+          npx shep2
+          \`\`\`
+
+          Binaries for macOS (arm64, x86_64) and Linux (x86_64, arm64; static). Check a download
+          with \`sha256sum -c SHA256SUMS\`.
+          EOF
+          prerelease=""
+          case $VERSION in *-*) prerelease="--prerelease" ;; esac
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release upload "$TAG" release/* --clobber
+          else
+            # shellcheck disable=SC2086 # $prerelease is empty or one flag
+            gh release create "$TAG" release/* --verify-tag --latest=false $prerelease \
+              --title "Shep 2 ${VERSION}" --notes-file notes.md
+          fi
+
+  # ---------------------------------------------------------------------------
+  # npm: shep2 + shep2-<os>-<cpu> (dry run unless publishing with NPM_TOKEN set)
+  # ---------------------------------------------------------------------------
+  npm:
+    name: npm
+    needs: [plan, verify, release]
+    if: >-
+      !cancelled() && needs.verify.result == 'success' &&
+      (needs.release.result == 'success' || needs.release.result == 'skipped')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # npm provenance
+    env:
+      VERSION: ${{ needs.plan.outputs.version }}
+      PUBLISH: ${{ needs.plan.outputs.publish }}
+      HAS_NPM_TOKEN: ${{ secrets.NPM_TOKEN != '' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          registry-url: 'https://registry.npmjs.org'
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: shep2-*
+          merge-multiple: true
+          path: release
+      - name: Stage the packages
+        run: node shep2/dist/npm/stage.mjs --version "$VERSION" --artifacts release --out npm-out
+      - name: npm publish --dry-run
+        if: env.PUBLISH != 'true'
+        run: |
+          while read -r dir; do
+            npm publish "$dir" --dry-run --access public
+          done <npm-out/publish-order.txt
+      - name: Publish (binary packages first, then the wrapper)
+        if: env.PUBLISH == 'true' && env.HAS_NPM_TOKEN == 'true'
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          while read -r dir; do
+            spec=$(node -p "const p = require('$dir/package.json'); p.name + '@' + p.version")
+            if npm view "$spec" version >/dev/null 2>&1; then
+              echo "$spec is already on npm; skipping"
+              continue
+            fi
+            npm publish "$dir" --access public --provenance
+          done <npm-out/publish-order.txt
+      - name: Report a missing NPM_TOKEN
+        if: env.PUBLISH == 'true' && env.HAS_NPM_TOKEN != 'true'
+        run: echo "::warning::NPM_TOKEN is not set, so nothing was published to npm."
+
+  # ---------------------------------------------------------------------------
+  # Homebrew: install + test the rendered formula, then push it to shep-ai/homebrew-tap
+  # ---------------------------------------------------------------------------
+  homebrew:
+    name: Homebrew
+    needs: [plan, verify, release]
+    if: >-
+      !cancelled() && needs.verify.result == 'success' &&
+      (needs.release.result == 'success' || needs.release.result == 'skipped')
+    runs-on: macos-latest
+    env:
+      VERSION: ${{ needs.plan.outputs.version }}
+      PUBLISH: ${{ needs.plan.outputs.publish }}
+      HAS_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN != '' }}
+      HOMEBREW_NO_AUTO_UPDATE: '1'
+      HOMEBREW_NO_INSTALL_CLEANUP: '1'
+      HOMEBREW_NO_ANALYTICS: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: shep2-*
+          merge-multiple: true
+          path: release
+      # A dry run installs from the local tarballs; a release installs from the GitHub release
+      # just created, which also proves its download URLs work.
+      - name: Render the formula
+        run: |
+          base_url=()
+          if [ "$PUBLISH" != true ]; then base_url=(--base-url "file://$PWD/release"); fi
+          node shep2/dist/homebrew/render-formula.mjs --version "$VERSION" --checksums release \
+            "${base_url[@]}" --out shep.rb
+          cat shep.rb
+      - name: Install and test it from a scratch tap
+        run: |
+          brew tap-new --no-git shep-ai/release-check
+          tap="$(brew --repository)/Library/Taps/shep-ai/homebrew-release-check"
+          cp shep.rb "$tap/Formula/shep.rb"
+          brew install --formula shep-ai/release-check/shep
+          brew test shep-ai/release-check/shep
+          "$(brew --prefix)/bin/shep" --help
+          brew uninstall --formula shep-ai/release-check/shep
+          brew untap shep-ai/release-check
+      - name: Check out shep-ai/homebrew-tap
+        if: env.PUBLISH == 'true' && env.HAS_TAP_TOKEN == 'true'
+        uses: actions/checkout@v4
+        with:
+          repository: shep-ai/homebrew-tap
+          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          path: homebrew-tap
+      - name: Push Formula/shep.rb
+        if: env.PUBLISH == 'true' && env.HAS_TAP_TOKEN == 'true'
+        working-directory: homebrew-tap
+        run: |
+          mkdir -p Formula
+          cp ../shep.rb Formula/shep.rb
+          git add Formula/shep.rb
+          if git diff --cached --quiet; then
+            echo "Formula/shep.rb is already at $VERSION"
+            exit 0
+          fi
+          git -c user.name="github-actions[bot]" \
+            -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
+            commit -m "shep $VERSION"
+          git push
+      - name: Report a missing HOMEBREW_TAP_TOKEN
+        if: env.PUBLISH == 'true' && env.HAS_TAP_TOKEN != 'true'
+        run: echo "::warning::HOMEBREW_TAP_TOKEN is not set, so the tap was not updated."

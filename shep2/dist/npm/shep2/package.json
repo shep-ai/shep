@@ -1,0 +1,33 @@
+{
+  "name": "shep2",
+  "version": "0.0.0-development",
+  "description": "Shep: go to sleep with issues, wake up with pull requests. Installs the `shep` command.",
+  "keywords": [
+    "shep",
+    "ai",
+    "agents",
+    "pull-requests",
+    "issues",
+    "cli"
+  ],
+  "homepage": "https://shep.bot",
+  "bugs": "https://github.com/shep-ai/shep/issues",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/shep-ai/shep.git",
+    "directory": "shep2/dist/npm/shep2"
+  },
+  "license": "MIT",
+  "bin": {
+    "shep": "bin/shep"
+  },
+  "files": [
+    "bin/",
+    "lib/",
+    "README.md"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "optionalDependencies": {}
+}
