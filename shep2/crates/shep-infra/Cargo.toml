@@ -18,6 +18,9 @@ base64.workspace = true
 chrono.workspace = true
 thiserror.workspace = true
 ureq.workspace = true
+tungstenite.workspace = true
+rustls.workspace = true
+rustls-platform-verifier.workspace = true
 
 [target.'cfg(target_os = "macos")'.dependencies]
 security-framework = "3.7"

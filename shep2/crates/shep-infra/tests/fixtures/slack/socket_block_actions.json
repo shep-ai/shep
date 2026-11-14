@@ -1,0 +1,56 @@
+{
+  "payload": {
+    "type": "block_actions",
+    "team": {
+      "id": "T0ACME0001",
+      "domain": "acme"
+    },
+    "user": {
+      "id": "U0YOU00001",
+      "username": "you",
+      "name": "you",
+      "team_id": "T0ACME0001"
+    },
+    "api_app_id": "A0SHEPAPP1",
+    "token": "fake-verification-token",
+    "container": {
+      "type": "message",
+      "message_ts": "1763150900.001100",
+      "channel_id": "C0BUGS0001",
+      "is_ephemeral": false,
+      "thread_ts": "1763139720.000100"
+    },
+    "trigger_id": "12321423423.333649436676.d8c1bb837935619ccad0f624c448ffb3",
+    "channel": {
+      "id": "C0BUGS0001",
+      "name": "bugs"
+    },
+    "message": {
+      "bot_id": "B0SHEPBOT1",
+      "type": "message",
+      "text": "Ready for review: acme/storefront#101",
+      "user": "U0SHEPBOT1",
+      "ts": "1763150900.001100",
+      "thread_ts": "1763139720.000100"
+    },
+    "response_url": "https://hooks.slack.com/actions/A0SHEPAPP1/1232321423432/D09sSasdasdAS9091209",
+    "actions": [
+      {
+        "action_id": "shep_merge",
+        "block_id": "shep_review",
+        "text": {
+          "type": "plain_text",
+          "text": "Merge",
+          "emoji": true
+        },
+        "value": "C0BUGS0001/1763139720.000100",
+        "style": "primary",
+        "type": "button",
+        "action_ts": "1763151600.840180"
+      }
+    ]
+  },
+  "envelope_id": "dbdd0ef3-1543-4f94-bfb4-133d0e6c1545",
+  "type": "interactive",
+  "accepts_response_payload": true
+}

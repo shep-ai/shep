@@ -44,6 +44,10 @@ crossterm = "0.29"
 tachyonfx = "0.25"
 insta = "1"
 ureq = { version = "3.5", features = ["json", "platform-verifier"] }
+# Slack's Socket Mode. TLS comes from our own rustls config with the OS verifier (as ureq's).
+tungstenite = { version = "0.30", default-features = false, features = ["handshake", "rustls-tls-native-roots"] }
+rustls = { version = "0.23", default-features = false, features = ["std", "ring"] }
+rustls-platform-verifier = "0.7"
 rmcp = { version = "3.10", default-features = false, features = ["server", "macros", "transport-io"] }
 tokio = { version = "1", features = ["rt-multi-thread", "macros", "io-std"] }
 chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }

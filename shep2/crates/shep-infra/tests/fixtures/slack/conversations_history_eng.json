@@ -1,0 +1,22 @@
+{
+  "ok": true,
+  "messages": [
+    {
+      "type": "message",
+      "user": "U0YOU00001",
+      "text": "Export reports to CSV\nFinance wants the monthly report as a CSV too.",
+      "ts": "1763146000.000900"
+    },
+    {
+      "type": "message",
+      "user": "U0YOU00001",
+      "text": "Login redirect loops after a password reset",
+      "ts": "1763100000.001000"
+    }
+  ],
+  "has_more": false,
+  "pin_count": 0,
+  "response_metadata": {
+    "next_cursor": ""
+  }
+}
