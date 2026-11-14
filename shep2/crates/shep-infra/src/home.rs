@@ -8,6 +8,7 @@ const DEFAULT_HOME_DIR: &str = ".shep";
 const DATABASE_FILE: &str = "shep2.db";
 const OWN_DIR: &str = "shep2";
 const RUN_DIR: &str = "run";
+const PRIVATE_DIR: u32 = 0o700;
 /// The longest socket path that binds everywhere (macOS allows 103 bytes, Linux 107).
 pub const MAX_SOCKET_PATH: usize = 100;
 /// The longest socket file name used below the run directory.
@@ -47,6 +48,18 @@ impl ShepHome {
     /// Shep 2's own directory.
     pub fn dir(&self) -> PathBuf {
         self.root.join(OWN_DIR)
+    }
+
+    /// Makes the home and Shep 2's own directory (only this user may enter it), so a first
+    /// start in a fresh home can write its database and pid files.
+    pub fn prepare(&self) -> std::io::Result<()> {
+        use std::os::unix::fs::PermissionsExt;
+        let own = self.dir();
+        if own.is_dir() {
+            return Ok(());
+        }
+        std::fs::create_dir_all(&own)?;
+        std::fs::set_permissions(&own, std::fs::Permissions::from_mode(PRIVATE_DIR))
     }
 
     /// Holds the sockets; created `0700` so only this user can reach them. A home too deep for

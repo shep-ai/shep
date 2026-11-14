@@ -19,6 +19,7 @@ extension TaskState {
         case .needsYou: return "Needs you"
         case .ready: return "Ready"
         case .merged: return "Merged"
+        case .unknown: return "Updated"
         }
     }
 }
@@ -29,6 +30,7 @@ extension AgentKind {
         case .claudeCode: return "Claude Code"
         case .codex: return "Codex"
         case .gemini: return "Gemini CLI"
+        case .unknown: return "Another agent"
         }
     }
 }
@@ -42,7 +44,7 @@ extension ShepTask {
         case .notion: return "Notion"
         case .monday: return "Monday"
         case .slack: return "Slack"
-        case .sentence: return nil
+        case .sentence, .unknown: return nil
         }
     }
 
@@ -72,6 +74,7 @@ extension Board {
         case .needsYou: return needsYou
         case .ready: return ready
         case .merged: return merged
+        case .unknown: return []
         }
     }
 

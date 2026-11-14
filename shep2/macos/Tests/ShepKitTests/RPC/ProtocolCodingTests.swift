@@ -52,8 +52,16 @@ final class ProtocolCodingTests: XCTestCase {
         XCTAssertEqual(try JSONDecoder().decode(StepView.self, from: Data(#""Parked""#.utf8)), .parked)
     }
 
-    func testUnknownVariantsAreDecodingErrors() {
-        XCTAssertThrowsError(try JSONDecoder().decode(ReviewAction.self, from: Data(#""Delete""#.utf8)))
+    /// The protocol only grows: an older app reads what a newer daemon adds as `unknown`.
+    func testValuesFromANewerDaemonReadAsUnknown() throws {
+        let decode = JSONDecoder()
+        XCTAssertEqual(try decode.decode(ReviewAction.self, from: Data(#""Delete""#.utf8)), .unknown("Delete"))
+        XCTAssertEqual(try decode.decode(ReviewAction.self, from: Data(#"{"Snooze":{"until":3}}"#.utf8)), .unknown("Snooze"))
+        XCTAssertEqual(try decode.decode(TaskState.self, from: Data(#""Paused""#.utf8)), .unknown)
+        XCTAssertFalse(TaskState.allCases.contains(.unknown))
+    }
+
+    func testAMalformedVariantIsStillAnError() {
         XCTAssertThrowsError(try JSONDecoder().decode(ReviewAction.self, from: Data(#"{"A":{},"B":{}}"#.utf8)))
     }
 

@@ -170,7 +170,7 @@ struct ReviewDetail: View {
                 case .needsYou: NeedsYouView()
                 case .working:
                     WorkingView(model: WorkingViewModel(client: app.client, taskId: task.id)).id(task.id)
-                case .queued, .merged: QueuedCard(task: task)
+                case .queued, .merged, .unknown: QueuedCard(task: task)
                 }
             } else {
                 ContentUnavailableView("Nothing to review", systemImage: "moon.stars", description: Text("Add tasks for tonight with ⌘N."))

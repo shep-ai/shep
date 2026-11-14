@@ -11,6 +11,7 @@ use crate::wiring;
 
 pub fn run(home: &ShepHome) -> Result<(), AppError> {
     let failed = |e: std::io::Error| AppError::Remote(format!("daemon: {e}"));
+    home.prepare().map_err(failed)?;
     let store = Arc::new(SqliteStore::open(&home.database())?);
     let ports = wiring::ports(home, &store);
     let shep = Arc::new(Shep::new(ports.clone()));

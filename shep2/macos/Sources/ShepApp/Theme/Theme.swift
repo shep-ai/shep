@@ -22,7 +22,7 @@ enum Palette {
 
     static func state(_ state: TaskState) -> Color {
         switch state {
-        case .queued: return Color(hex: 0x7D84A8)
+        case .queued, .unknown: return Color(hex: 0x7D84A8)
         case .working: return Color(hex: 0x93B2FF)
         case .needsYou: return Color(hex: 0xFF8F7A)
         case .ready: return Color(hex: 0x8FD6A8)

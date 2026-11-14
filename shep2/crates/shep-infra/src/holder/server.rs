@@ -104,6 +104,7 @@ pub fn serve(listener: &UnixListener) {
 /// The holder process: binds its socket under `home`, records its pid, serves forever.
 pub fn run(home: &ShepHome) -> std::io::Result<()> {
     let listener = shep_jsonrpc::bind_private(&home.holder_socket())?;
+    home.prepare()?;
     std::fs::write(home.holder_pid(), std::process::id().to_string())?;
     eprintln!(
         "shep holder {} serving {}",

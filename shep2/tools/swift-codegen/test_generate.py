@@ -53,6 +53,13 @@ class ModelsTest(unittest.TestCase):
         self.assertIn("public enum TaskState: String, Codable, Hashable, Sendable, CaseIterable {", out)
         self.assertIn('case needsYou = "NeedsYou"', out)
 
+    def test_a_string_enum_reads_values_it_does_not_know_as_unknown(self):
+        # A newer daemon may add a state; an older app must still read the board.
+        out = models({"TaskState": {"type": "string", "enum": ["Queued", "NeedsYou"]}})
+        self.assertIn("case unknown", out)
+        self.assertIn("self = Self(rawValue: raw) ?? .unknown", out)
+        self.assertIn("public static var allCases: [TaskState] { [.queued, .needsYou] }", out)
+
     def test_one_of_plain_strings_merges_into_one_enum(self):
         out = models(
             {
@@ -141,6 +148,9 @@ class ModelsTest(unittest.TestCase):
         self.assertIn("case sendBack(note: String)", out)
         self.assertIn("case started([ShepTask])", out)
         self.assertIn('case "SendBack":', out)
+        self.assertIn("case unknown(String)", out)
+        self.assertIn("self = .unknown(tag)", out)
+        self.assertIn("self = .unknown(key.stringValue)", out)
 
     def test_string_maps_become_dictionaries(self):
         out = models(

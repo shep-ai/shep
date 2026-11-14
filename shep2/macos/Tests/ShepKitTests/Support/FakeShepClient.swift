@@ -91,6 +91,8 @@ final class FakeShepClient: ShepClient, @unchecked Sendable {
                 state.board.queued.removeFirst(started.count)
                 state.board.working += started
                 return .started(Array(started))
+            case .unknown:
+                return .started([])
             }
         }
     }

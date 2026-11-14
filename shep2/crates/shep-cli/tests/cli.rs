@@ -277,3 +277,22 @@ fn regex_escape(text: &str) -> String {
         })
         .collect()
 }
+
+#[test]
+fn the_daemon_starts_in_a_deep_home_that_does_not_exist_yet() {
+    // Deep enough that the sockets move to /tmp, so nothing else creates the home first.
+    let home = Home::new();
+    let deep = home.dir.path().join("a".repeat(60)).join("b".repeat(60));
+    home.set_env("SHEP_HOME", deep.to_str().unwrap());
+    let mut daemon = home
+        .process_in(home.dir.path())
+        .arg("__daemon")
+        .stderr(std::process::Stdio::null())
+        .spawn()
+        .unwrap();
+    let pid = deep.join("shep2").join("daemon.pid");
+    let started = home.wait_for("the daemon's pid file", || pid.exists().then_some(()));
+    let _ = daemon.kill();
+    let _ = daemon.wait();
+    started
+}

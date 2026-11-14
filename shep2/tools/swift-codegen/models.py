@@ -52,10 +52,27 @@ def render_struct(name, fields, description=None):
     return lines + ["}"]
 
 
+# Read for any value a newer daemon sends that this app does not know; never sent by Shep.
+UNKNOWN_RAW = "__unknown__"
+UNKNOWN_DOC = "    /// A value from a newer daemon that this app does not know yet."
+
+
 def render_string_enum(name, values, description=None):
     lines = doc_lines(description)
     lines += [f"public enum {name}: String, {CONFORMANCES}, CaseIterable {{"]
     lines += [f'    case {case_name(v)} = "{v}"' for v in values]
+    known = ", ".join(f".{case_name(v)}" for v in values)
+    lines += [
+        UNKNOWN_DOC,
+        f'    case unknown = "{UNKNOWN_RAW}"',
+        "",
+        f"    public static var allCases: [{name}] {{ [{known}] }}",
+        "",
+        "    public init(from decoder: Decoder) throws {",
+        "        let raw = try decoder.singleValueContainer().decode(String.self)",
+        "        self = Self(rawValue: raw) ?? .unknown",
+        "    }",
+    ]
     return lines + ["}"]
 
 
@@ -99,13 +116,14 @@ def render_tagged_enum(name, units, variants, description=None):
     lines = doc_lines(description) + [f"public enum {name}: {CONFORMANCES} {{"]
     lines += [f"    case {case_name(u)}" for u in units]
     lines += [f"    {v.declaration()}" for v in variants]
+    lines += [UNKNOWN_DOC, "    case unknown(String)"]
     lines += ["", "    public init(from decoder: Decoder) throws {"]
     if units:
         lines += ["        if let tag = try? decoder.singleValueContainer().decode(String.self) {",
                   "            switch tag {"]
         lines += [f'            case "{u}": self = .{case_name(u)}' for u in units]
         lines += ["            default:",
-                  f'                throw DecodingError.dataCorrupted(.init(codingPath: decoder.codingPath, debugDescription: "unknown {name} \\(tag)"))',
+                  "                self = .unknown(tag)",
                   "            }", "            return", "        }"]
     lines += [f"        let container = try decoder.container(keyedBy: {KEY}.self)",
               "        guard container.allKeys.count == 1, let key = container.allKeys.first else {",
@@ -123,7 +141,7 @@ def render_tagged_enum(name, units, variants, description=None):
             args.append(f'{f.label}: try fields.{method}({f.type}.self, forKey: {KEY}("{f.json_name}"))')
         lines.append(f"            self = .{v.case}({', '.join(args)})")
     lines += ["        default:",
-              f'            throw DecodingError.dataCorruptedError(forKey: key, in: container, debugDescription: "unknown {name} variant")',
+              "            self = .unknown(key.stringValue)",
               "        }", "    }", "", "    public func encode(to encoder: Encoder) throws {", "        switch self {"]
     for u in units:
         lines += [f"        case .{case_name(u)}:", "            var container = encoder.singleValueContainer()",
@@ -141,6 +159,8 @@ def render_tagged_enum(name, units, variants, description=None):
         for f in v.fields:
             method = "encodeIfPresent" if f.optional else "encode"
             lines.append(f'            try fields.{method}({f.name}, forKey: {KEY}("{f.json_name}"))')
+    lines += ["        case let .unknown(tag):", "            var container = encoder.singleValueContainer()",
+              "            try container.encode(tag)"]
     return lines + ["        }", "    }", "}"]
 
 

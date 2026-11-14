@@ -102,7 +102,11 @@ fn screen(o: &Onboarding) -> String {
     let mut t = Terminal::new(TestBackend::new(90, 26)).unwrap();
     t.draw(|f| o.render(f, Theme::new(false))).unwrap();
     let buffer = t.backend().buffer().clone();
-    buffer.content().iter().map(ratatui::buffer::Cell::symbol).collect()
+    buffer
+        .content()
+        .iter()
+        .map(ratatui::buffer::Cell::symbol)
+        .collect()
 }
 
 /// Welcome, then "Where do tasks come from today?" with Linear (second row) picked.

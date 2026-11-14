@@ -9,6 +9,15 @@ public enum AgentKind: String, Codable, Hashable, Sendable, CaseIterable {
     case claudeCode = "ClaudeCode"
     case codex = "Codex"
     case gemini = "Gemini"
+    /// A value from a newer daemon that this app does not know yet.
+    case unknown = "__unknown__"
+
+    public static var allCases: [AgentKind] { [.claudeCode, .codex, .gemini] }
+
+    public init(from decoder: Decoder) throws {
+        let raw = try decoder.singleValueContainer().decode(String.self)
+        self = Self(rawValue: raw) ?? .unknown
+    }
 }
 
 /// A coding agent onboarding can offer.
@@ -165,6 +174,15 @@ public enum CheckState: String, Codable, Hashable, Sendable, CaseIterable {
     case passed = "Passed"
     case failed = "Failed"
     case skipped = "Skipped"
+    /// A value from a newer daemon that this app does not know yet.
+    case unknown = "__unknown__"
+
+    public static var allCases: [CheckState] { [.pending, .passed, .failed, .skipped] }
+
+    public init(from decoder: Decoder) throws {
+        let raw = try decoder.singleValueContainer().decode(String.self)
+        self = Self(rawValue: raw) ?? .unknown
+    }
 }
 
 /// One CI check on the task's pull request.
@@ -245,6 +263,15 @@ public enum EventKind: String, Codable, Hashable, Sendable, CaseIterable {
     case stopped = "Stopped"
     case handedOver = "HandedOver"
     case reported = "Reported"
+    /// A value from a newer daemon that this app does not know yet.
+    case unknown = "__unknown__"
+
+    public static var allCases: [EventKind] { [.worktreeReady, .agentStarted, .agentFinished, .asked, .parked, .interrupted, .stepFailed, .prOpened, .pushed, .ciFailed, .ciGreen, .noCi, .reviewed, .ready, .merged, .screenshots, .baseMerged, .sentBack, .stopped, .handedOver, .reported] }
+
+    public init(from decoder: Decoder) throws {
+        let raw = try decoder.singleValueContainer().decode(String.self)
+        self = Self(rawValue: raw) ?? .unknown
+    }
 }
 
 /// One thing a person fills in to connect a source.
@@ -359,13 +386,15 @@ public enum ReviewAction: Codable, Hashable, Sendable {
     case merge
     case sendBack(note: String)
     case answer(text: String)
+    /// A value from a newer daemon that this app does not know yet.
+    case unknown(String)
 
     public init(from decoder: Decoder) throws {
         if let tag = try? decoder.singleValueContainer().decode(String.self) {
             switch tag {
             case "Merge": self = .merge
             default:
-                throw DecodingError.dataCorrupted(.init(codingPath: decoder.codingPath, debugDescription: "unknown ReviewAction \(tag)"))
+                self = .unknown(tag)
             }
             return
         }
@@ -381,7 +410,7 @@ public enum ReviewAction: Codable, Hashable, Sendable {
             let fields = try container.nestedContainer(keyedBy: AnyCodingKey.self, forKey: key)
             self = .answer(text: try fields.decode(String.self, forKey: AnyCodingKey("text")))
         default:
-            throw DecodingError.dataCorruptedError(forKey: key, in: container, debugDescription: "unknown ReviewAction variant")
+            self = .unknown(key.stringValue)
         }
     }
 
@@ -398,6 +427,9 @@ public enum ReviewAction: Codable, Hashable, Sendable {
             var container = encoder.container(keyedBy: AnyCodingKey.self)
             var fields = container.nestedContainer(keyedBy: AnyCodingKey.self, forKey: AnyCodingKey("Answer"))
             try fields.encode(text, forKey: AnyCodingKey("text"))
+        case let .unknown(tag):
+            var container = encoder.singleValueContainer()
+            try container.encode(tag)
         }
     }
 }
@@ -535,6 +567,15 @@ public enum SourceKind: String, Codable, Hashable, Sendable, CaseIterable {
     case monday = "Monday"
     case slack = "Slack"
     case shep = "Shep"
+    /// A value from a newer daemon that this app does not know yet.
+    case unknown = "__unknown__"
+
+    public static var allCases: [SourceKind] { [.gitHub, .linear, .jira, .notion, .monday, .slack, .shep] }
+
+    public init(from decoder: Decoder) throws {
+        let raw = try decoder.singleValueContainer().decode(String.self)
+        self = Self(rawValue: raw) ?? .unknown
+    }
 }
 
 /// A connected source.
@@ -592,6 +633,8 @@ public struct SourceStatus: Codable, Hashable, Sendable {
 public enum StartOutcome: Codable, Hashable, Sendable {
     case started([ShepTask])
     case scheduled(at: ClockTime, queued: Int)
+    /// A value from a newer daemon that this app does not know yet.
+    case unknown(String)
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: AnyCodingKey.self)
@@ -605,7 +648,7 @@ public enum StartOutcome: Codable, Hashable, Sendable {
             let fields = try container.nestedContainer(keyedBy: AnyCodingKey.self, forKey: key)
             self = .scheduled(at: try fields.decode(ClockTime.self, forKey: AnyCodingKey("at")), queued: try fields.decode(Int.self, forKey: AnyCodingKey("queued")))
         default:
-            throw DecodingError.dataCorruptedError(forKey: key, in: container, debugDescription: "unknown StartOutcome variant")
+            self = .unknown(key.stringValue)
         }
     }
 
@@ -619,6 +662,9 @@ public enum StartOutcome: Codable, Hashable, Sendable {
             var fields = container.nestedContainer(keyedBy: AnyCodingKey.self, forKey: AnyCodingKey("Scheduled"))
             try fields.encode(at, forKey: AnyCodingKey("at"))
             try fields.encode(queued, forKey: AnyCodingKey("queued"))
+        case let .unknown(tag):
+            var container = encoder.singleValueContainer()
+            try container.encode(tag)
         }
     }
 }
@@ -627,13 +673,15 @@ public enum StartOutcome: Codable, Hashable, Sendable {
 public enum StartWhen: Codable, Hashable, Sendable {
     case now
     case at(ClockTime)
+    /// A value from a newer daemon that this app does not know yet.
+    case unknown(String)
 
     public init(from decoder: Decoder) throws {
         if let tag = try? decoder.singleValueContainer().decode(String.self) {
             switch tag {
             case "Now": self = .now
             default:
-                throw DecodingError.dataCorrupted(.init(codingPath: decoder.codingPath, debugDescription: "unknown StartWhen \(tag)"))
+                self = .unknown(tag)
             }
             return
         }
@@ -645,7 +693,7 @@ public enum StartWhen: Codable, Hashable, Sendable {
         case "At":
             self = .at(try container.decode(ClockTime.self, forKey: key))
         default:
-            throw DecodingError.dataCorruptedError(forKey: key, in: container, debugDescription: "unknown StartWhen variant")
+            self = .unknown(key.stringValue)
         }
     }
 
@@ -657,6 +705,9 @@ public enum StartWhen: Codable, Hashable, Sendable {
         case let .at(value):
             var container = encoder.container(keyedBy: AnyCodingKey.self)
             try container.encode(value, forKey: AnyCodingKey("At"))
+        case let .unknown(tag):
+            var container = encoder.singleValueContainer()
+            try container.encode(tag)
         }
     }
 }
@@ -674,6 +725,15 @@ public enum StepView: String, Codable, Hashable, Sendable, CaseIterable {
     case ready = "Ready"
     case merged = "Merged"
     case parked = "Parked"
+    /// A value from a newer daemon that this app does not know yet.
+    case unknown = "__unknown__"
+
+    public static var allCases: [StepView] { [.queued, .preparing, .coding, .publishing, .watchingCi, .fixingCi, .reviewing, .needsYou, .ready, .merged, .parked] }
+
+    public init(from decoder: Decoder) throws {
+        let raw = try decoder.singleValueContainer().decode(String.self)
+        self = Self(rawValue: raw) ?? .unknown
+    }
 }
 
 /// An open issue worth trying first.
@@ -824,6 +884,8 @@ public enum TaskSourceRef: Codable, Hashable, Sendable {
     case monday(url: String)
     case slack(url: String)
     case sentence(text: String)
+    /// A value from a newer daemon that this app does not know yet.
+    case unknown(String)
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: AnyCodingKey.self)
@@ -853,7 +915,7 @@ public enum TaskSourceRef: Codable, Hashable, Sendable {
             let fields = try container.nestedContainer(keyedBy: AnyCodingKey.self, forKey: key)
             self = .sentence(text: try fields.decode(String.self, forKey: AnyCodingKey("text")))
         default:
-            throw DecodingError.dataCorruptedError(forKey: key, in: container, debugDescription: "unknown TaskSourceRef variant")
+            self = .unknown(key.stringValue)
         }
     }
 
@@ -888,6 +950,9 @@ public enum TaskSourceRef: Codable, Hashable, Sendable {
             var container = encoder.container(keyedBy: AnyCodingKey.self)
             var fields = container.nestedContainer(keyedBy: AnyCodingKey.self, forKey: AnyCodingKey("Sentence"))
             try fields.encode(text, forKey: AnyCodingKey("text"))
+        case let .unknown(tag):
+            var container = encoder.singleValueContainer()
+            try container.encode(tag)
         }
     }
 }
@@ -899,6 +964,15 @@ public enum TaskState: String, Codable, Hashable, Sendable, CaseIterable {
     case needsYou = "NeedsYou"
     case ready = "Ready"
     case merged = "Merged"
+    /// A value from a newer daemon that this app does not know yet.
+    case unknown = "__unknown__"
+
+    public static var allCases: [TaskState] { [.queued, .working, .needsYou, .ready, .merged] }
+
+    public init(from decoder: Decoder) throws {
+        let raw = try decoder.singleValueContainer().decode(String.self)
+        self = Self(rawValue: raw) ?? .unknown
+    }
 }
 
 /// Seconds since the Unix epoch.

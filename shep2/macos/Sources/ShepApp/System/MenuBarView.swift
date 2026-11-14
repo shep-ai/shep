@@ -74,7 +74,7 @@ struct StateGlyph: View {
             case .ready, .merged: Image(systemName: "checkmark")
             case .needsYou: Text("!").font(Typeface.ui(13, .bold))
             case .working: Circle().frame(width: 8, height: 8)
-            case .queued: Text("·")
+            case .queued, .unknown: Text("·")
             }
         }
         .foregroundStyle(Palette.state(state))
