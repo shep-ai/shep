@@ -1,0 +1,52 @@
+{
+  "at": 1794690000,
+  "done": 2,
+  "items": [
+    {
+      "summary": "needs you: which bucket?",
+      "task": {
+        "created_at": 1794670000,
+        "id": 5,
+        "note": null,
+        "pr": null,
+        "question": "Which S3 bucket should avatars go in?",
+        "source": { "GitHubIssue": { "number": 430, "repo": null } },
+        "state": "NeedsYou",
+        "title": "Move avatars to S3",
+        "updated_at": 1794685000
+      }
+    },
+    {
+      "summary": "CI green · +41 -12 · screenshot",
+      "task": {
+        "created_at": 1794670000,
+        "id": 2,
+        "note": null,
+        "pr": { "number": 77, "url": "https://github.com/acme/booking-app/pull/77" },
+        "question": null,
+        "source": { "GitHubIssue": { "number": 412, "repo": "acme/booking-app" } },
+        "state": "Ready",
+        "title": "Fix login redirect loop",
+        "updated_at": 1794687000
+      }
+    },
+    {
+      "summary": "no CI",
+      "task": {
+        "created_at": 1794670000,
+        "id": 3,
+        "note": null,
+        "pr": { "number": 78, "url": "https://github.com/acme/booking-app/pull/78" },
+        "question": null,
+        "source": { "Linear": { "key": "ENG-12" } },
+        "state": "Ready",
+        "title": "Add CSV export to reports",
+        "updated_at": 1794688000
+      }
+    }
+  ],
+  "mergeable": 1,
+  "overnight": { "from": 1794668400, "parked_secs": 600, "to": 1794690000 },
+  "total": 3,
+  "while_you_slept": "main moved twice; both tasks were rebased."
+}

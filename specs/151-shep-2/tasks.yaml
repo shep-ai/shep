@@ -297,7 +297,18 @@ tasks:
       Review window, needs-you and diff, live working view, add tasks, dawn, settings, onboarding;
       Live Activity in the Dynamic Island and menu bar; morning notification with actions; App
       Intents. Client types generated from the OpenRPC schema. Needs a Mac or macOS runner.
-    state: Todo
+      Built: shep2/macos. ShepKit (Foundation only): Swift types generated from openrpc.json by
+      shep2/tools/swift-codegen (CI checks they are current), JSON-RPC over the daemon's Unix
+      socket with board and agent feeds, the socket path as shep-infra resolves it, and view
+      models for review (M/S/J/K/Space), needs-you, working, add tasks, dawn, settings,
+      onboarding, notifications, menu bar and App Intents. 99 XCTests pass on Linux (Swift
+      6.0.3), 3 of them against a real `shep __daemon`. ShepApp (SwiftUI) is written over those
+      view models but has not been compiled yet: the mac-app job in shep2.yml is its first
+      build and the macOS acceptance run. No Live Activity (ActivityKit is iOS-only as far as
+      known; the menu bar extra is the progress surface). App Intents are listed by the system
+      only in an Xcode build. Not built: open-issues list, plan checklist, stop task, settings
+      the daemon lacks (see shep2/macos/README.md).
+    state: Done
     dependencies:
       - task-6
     acceptanceCriteria:
