@@ -20,7 +20,9 @@ const NEEDS_CLAUDE: &str = "runs the real Claude Code CLI; needs `claude` on PAT
 const GH_RED_ONCE: &str = r#"#!/bin/sh
 printf '%s' "$*" | tr '\n' ' ' >> "$FAKE_LOG/gh.calls"; echo >> "$FAKE_LOG/gh.calls"
 case "$1 $2" in
-  "issue view") echo '{"title":"Fix login redirect loop","body":"Users land on /login again.","url":"https://github.com/acme/app/issues/7"}';;
+  "issue view") echo '{"title":"Fix login redirect loop","body":"Users land on /login again.","url":"https://github.com/acme/app/issues/7","state":"OPEN"}';;
+  "pr view") echo '{"comments":[]}';;
+  "api user") echo "night-owl";;
   "pr create") echo "https://github.com/acme/app/pull/12";;
   "pr checks")
     n=$(cat "$FAKE_LOG/checks" 2>/dev/null || echo 0); echo $((n + 1)) > "$FAKE_LOG/checks"

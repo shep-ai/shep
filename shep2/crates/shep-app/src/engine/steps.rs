@@ -1,21 +1,20 @@
-//! Prepare, publish, watch CI and complete: everything around the agent's work.
+//! Prepare, watch CI and complete: everything around the agent's work but publishing.
 
 use std::path::PathBuf;
 
 use shep_domain::{
-    check_push, AgentJob, CiVerdict, EventKind, Run, RunStep, Task, TaskBranch, UnixTime,
-    MAX_CI_FIXES, TASK_BRANCH_PREFIX,
+    AgentJob, CiVerdict, EventKind, Run, RunStep, Task, TaskBranch, UnixTime, MAX_CI_FIXES,
+    TASK_BRANCH_PREFIX,
 };
 
 use super::agent::worktree;
 use super::pr_body::{self, Proof};
-use super::{Engine, Flow, StepError, StepResult};
+use super::{Engine, Flow, StepError, StepResult, SECS_PER_MINUTE};
 use crate::paths::{file_name, with_extension, TaskPaths};
 
 const TEXT_PROOF: [&str; 3] = ["txt", "log", "md"];
-const IMAGE_PROOF: [&str; 5] = ["png", "jpg", "jpeg", "gif", "webp"];
+pub(super) const IMAGE_PROOF: [&str; 5] = ["png", "jpg", "jpeg", "gif", "webp"];
 const NO_REVIEW: &str = "The reviewer gave no opinion.";
-const SECS_PER_MINUTE: i64 = 60;
 
 /// A person answered or sent the work back: start another pass on the same worktree.
 pub(super) fn begin_pass(run: &mut Run, now: UnixTime) {
@@ -77,33 +76,6 @@ impl Engine {
             self.now(),
         );
         Ok(Flow::Next)
-    }
-
-    /// Pushes the task branch and opens the draft pull request the first time.
-    pub(super) fn publish(&self, task: &Task, run: &mut Run) -> StepResult {
-        let worktree = worktree(run)?;
-        check_push(worktree.branch.as_str(), &worktree.base)
-            .map_err(|e| StepError::new("push", e))?;
-        self.ports
-            .git
-            .push(&worktree)
-            .map_err(|e| StepError::new("push the branch", e))?;
-        if task.pr.is_none() {
-            let stat = self.ports.git.diff_stat(&worktree).unwrap_or_default();
-            let body = pr_body::draft(task, &stat, self.agent_name());
-            let pr = self
-                .ports
-                .forge
-                .open_draft(&worktree, &task.title, &body)
-                .map_err(|e| StepError::new("open the draft pull request", e))?;
-            self.event(task.id, EventKind::PrOpened, &pr.url);
-            self.shep.set_pr(task.id, pr)?;
-        } else {
-            self.event(task.id, EventKind::Pushed, worktree.branch.as_str());
-        }
-        run.checked_at = None;
-        run.advance(RunStep::WatchCi { since: self.now() }, self.now());
-        Ok(Flow::Wait)
     }
 
     /// Green (or no CI) goes on to the second opinion; red goes back to the agent, up to
@@ -283,7 +255,7 @@ impl Engine {
         proof
     }
 
-    fn agent_name(&self) -> Option<&'static str> {
+    pub(super) fn agent_name(&self) -> Option<&'static str> {
         self.ports
             .settings
             .load_settings()

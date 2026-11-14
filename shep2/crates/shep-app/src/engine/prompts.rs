@@ -26,6 +26,8 @@ pub struct PromptContext<'a> {
     pub asked: Option<&'a str>,
     /// The CI log for a fix.
     pub ci_log: Option<&'a Path>,
+    /// The repository takes its own screenshots after the agent (`.shep/dev.json`).
+    pub repo_screenshots: bool,
 }
 
 pub fn build(job: &AgentJob, interrupted: bool, c: &PromptContext<'_>) -> String {
@@ -42,6 +44,7 @@ pub fn build(job: &AgentJob, interrupted: bool, c: &PromptContext<'_>) -> String
         AgentJob::Revise => prompt.push_str(&revise(c)),
         AgentJob::FixCi { attempt, checks } => prompt.push_str(&fix_ci(c, *attempt, checks)),
         AgentJob::Review => return review(c),
+        AgentJob::ResolveConflict { files } => prompt.push_str(&resolve_conflict(c, files)),
     }
     prompt.push_str(&rules(c));
     prompt
@@ -96,6 +99,16 @@ fn fix_ci(c: &PromptContext<'_>, attempt: u8, checks: &[String]) -> String {
     )
 }
 
+fn resolve_conflict(c: &PromptContext<'_>, files: &[String]) -> String {
+    let base = &c.worktree.base;
+    format!(
+        "`origin/{base}` moved while you worked, and merging it into your branch conflicts in: \
+         {}. Run `git merge origin/{base}`, resolve every conflict so that both sides' changes \
+         still work, run the tests, and commit the merge. Leave no conflict markers behind.\n",
+        files.join(", ")
+    )
+}
+
 fn review(c: &PromptContext<'_>) -> String {
     format!(
         "You are a second-opinion reviewer. Another agent made a change for this task:\n\n\
@@ -111,14 +124,23 @@ fn review(c: &PromptContext<'_>) -> String {
 }
 
 fn rules(c: &PromptContext<'_>) -> String {
+    let screenshots = if c.repo_screenshots {
+        "The repository's own screenshot command runs after you finish, so you need not take \
+         any."
+            .to_owned()
+    } else {
+        format!(
+            "If the change shows in a UI, save screenshots (PNG) in {}.",
+            c.proof_dir.display()
+        )
+    };
     format!(
         "\nRules:\n\
          - Do not push and do not open a pull request; Shep does that, as a draft.\n\
          - Proof: run the relevant tests and save the command and its output to {}/tests.txt. \
-         If the change shows in a UI, save screenshots (PNG) in {}.\n\
+         {screenshots}\n\
          - If you cannot go on without a decision from the person, write one short question \
          to {} and stop. Ask at most one question.\n",
-        c.proof_dir.display(),
         c.proof_dir.display(),
         c.question_file.display()
     )

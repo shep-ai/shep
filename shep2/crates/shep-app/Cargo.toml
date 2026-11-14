@@ -12,6 +12,8 @@ testing = []
 [dependencies]
 shep-domain.workspace = true
 serde.workspace = true
+# Reads the repository's `.shep/dev.json`.
+serde_json.workspace = true
 schemars.workspace = true
 thiserror.workspace = true
 

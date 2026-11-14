@@ -1,9 +1,11 @@
 //! Git through the `git` command. Work happens in worktrees made from `origin`; the person's
 //! checkout, its branch, index and files are never touched.
 
+mod guard;
+
 use std::path::{Path, PathBuf};
 
-use shep_app::ports::{Git, GitError};
+use shep_app::ports::{BaseUpdate, Git, GitError};
 use shep_domain::{check_push, TaskBranch, Worktree};
 
 use crate::process::run;
@@ -13,6 +15,8 @@ const REMOTE: &str = "origin";
 /// Git never stops to ask for a password; a missing credential is an error instead.
 const NO_PROMPT: (&str, &str) = ("GIT_TERMINAL_PROMPT", "0");
 const PROOF_MESSAGE: &str = "Proof screenshots from Shep";
+/// Present while a merge waits to be concluded.
+const MERGE_HEAD: &str = "MERGE_HEAD";
 
 pub struct GitCli {
     worktrees: PathBuf,
@@ -112,6 +116,11 @@ impl Git for GitCli {
 
     fn commit_all(&self, wt: &Worktree, message: &str) -> Result<bool, GitError> {
         let dir = Path::new(&wt.path);
+        if !git(dir, &["ls-files", "--unmerged"])?.is_empty() {
+            // Conflicts the agent left: adding them would commit the markers.
+            git(dir, &["reset", "--quiet", "--merge"])?;
+            return Ok(false);
+        }
         git(dir, &["add", "--all"])?;
         if git(dir, &["diff", "--cached", "--quiet"]).is_ok() {
             return Ok(false);
@@ -177,6 +186,57 @@ impl Git for GitCli {
         let refspec = format!("{commit}:refs/heads/{branch}");
         git(dir, &["push", "--quiet", "--force", REMOTE, &refspec])?;
         Ok(commit)
+    }
+
+    fn agent_env(&self, wt: &Worktree) -> Result<Vec<(String, String)>, GitError> {
+        guard::install(wt).map(|dir| guard::env(&dir))
+    }
+
+    /// A conflicting merge is abandoned at once, so the worktree is never left half-merged.
+    fn update_from_base(&self, wt: &Worktree) -> Result<BaseUpdate, GitError> {
+        let dir = Path::new(&wt.path);
+        git(dir, &["fetch", "--quiet", REMOTE, &wt.base])?;
+        if git(dir, &["rev-parse", "--quiet", "--verify", MERGE_HEAD]).is_ok() {
+            git(dir, &["merge", "--abort"])?;
+        }
+        let base = base_ref(wt);
+        if git(dir, &["merge-base", "--is-ancestor", &base, "HEAD"]).is_ok() {
+            return Ok(BaseUpdate::UpToDate);
+        }
+        // As with Shep's own commits, CI is the gate, not the repository's commit hooks.
+        let merged = git(
+            dir,
+            &["merge", "--quiet", "--no-edit", "--no-verify", &base],
+        );
+        let Err(why) = merged else {
+            return Ok(BaseUpdate::Merged);
+        };
+        let conflicted = git(dir, &["diff", "--name-only", "--diff-filter=U"])?;
+        if git(dir, &["rev-parse", "--quiet", "--verify", MERGE_HEAD]).is_ok() {
+            git(dir, &["merge", "--abort"])?;
+        }
+        let files: Vec<String> = conflicted.lines().map(str::to_owned).collect();
+        if files.is_empty() {
+            return Err(why);
+        }
+        Ok(BaseUpdate::Conflict(files))
+    }
+
+    fn remove_worktree(&self, repo: &Path, wt: &Worktree) -> Result<(), GitError> {
+        if Path::new(&wt.path).exists() {
+            git(repo, &["worktree", "remove", "--force", &wt.path])?;
+        }
+        git(repo, &["worktree", "prune"])?;
+        guard::remove(wt)
+    }
+
+    fn delete_branch(&self, repo: &Path, branch: &TaskBranch) -> Result<(), GitError> {
+        let local = format!("refs/heads/{branch}");
+        if git(repo, &["rev-parse", "--quiet", "--verify", &local]).is_err() {
+            return Ok(());
+        }
+        // `-D`: a squash-merged branch is not merged as far as git can tell.
+        git(repo, &["branch", "--quiet", "-D", branch.as_str()]).map(|_| ())
     }
 }
 

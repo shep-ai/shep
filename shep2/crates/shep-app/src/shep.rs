@@ -144,56 +144,7 @@ impl Shep {
             .collect()
     }
 
-    /// Work needs a repository and an agent. An unset agent is filled in with the first
-    /// installed one.
-    fn ensure_ready(&self) -> Result<(), AppError> {
-        let settings = self.ports.settings.load_settings()?;
-        if settings.repo.is_none() {
-            self.repo()?;
-        }
-        if settings.agent.is_some() {
-            return Ok(());
-        }
-        let found = AgentKind::ALL
-            .into_iter()
-            .find(|kind| self.ports.agents.provider(*kind).installed());
-        let Some(agent) = found else {
-            let names: Vec<&str> = AgentKind::ALL.iter().map(|a| a.cli_name()).collect();
-            return Err(AppError::NotReady(format!(
-                "no coding agent found; install one of {} and run `shep config --agent NAME`",
-                names.join(", ")
-            )));
-        };
-        self.update_settings(SettingsChange {
-            agent: Some(agent),
-            ..SettingsChange::default()
-        })?;
-        Ok(())
-    }
-
-    /// The repository containing `dir`, when no repository is chosen yet.
-    pub(crate) fn adopt_repo(&self, dir: &Path) -> Result<(), AppError> {
-        if self.ports.settings.load_settings()?.repo.is_some() {
-            return Ok(());
-        }
-        if let Ok(root) = self.ports.git.repo_root(dir) {
-            self.update_settings(SettingsChange {
-                repo: Some(root.display().to_string()),
-                ..SettingsChange::default()
-            })?;
-        }
-        Ok(())
-    }
-
-    fn merge(&self, task: &Task) -> Result<(), AppError> {
-        let (Some(pr), Some(repo)) = (&task.pr, self.ports.settings.load_settings()?.repo) else {
-            return Ok(());
-        };
-        self.ports.forge.merge(Path::new(&repo), pr)?;
-        Ok(())
-    }
-
-    fn lock(&self) -> Result<MutexGuard<'_, ()>, AppError> {
+    pub(crate) fn lock(&self) -> Result<MutexGuard<'_, ()>, AppError> {
         self.writes
             .lock()
             .map_err(|_| AppError::Remote("an earlier change crashed; restart Shep".into()))
@@ -252,15 +203,20 @@ impl ShepApi for Shep {
     }
 
     /// Merge merges the pull request first; if GitHub refuses, the task stays Ready and the
-    /// person hears why.
+    /// person hears why. Once merged, the task's worktree and local branch are removed.
     fn review(&self, id: TaskId, action: ReviewAction) -> Result<Task, AppError> {
-        if action == ReviewAction::Merge {
+        let merging = action == ReviewAction::Merge;
+        if merging {
             let task = self.ports.tasks.get(id)?.ok_or(AppError::NotFound(id))?;
             task.clone()
                 .review(ReviewAction::Merge, self.ports.clock.now())?;
             self.merge(&task)?;
         }
-        self.update(id, |task, now| task.review(action, now))
+        let task = self.update(id, |task, now| task.review(action, now))?;
+        if merging {
+            self.clean_up(&task);
+        }
+        Ok(task)
     }
 
     fn settings(&self) -> Result<Settings, AppError> {

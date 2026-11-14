@@ -1,12 +1,17 @@
 //! The engine: carries every Working task through its run, one step at a time, on each tick.
 //!
-//! Prepare (worktree from origin) → agent → publish (push, draft PR) → CI (fix up to three
-//! times) → second opinion → Ready. Every step is saved, so a restarted daemon picks up where
-//! it stopped; agent sessions live in the PTY holder and outlive the daemon.
+//! Prepare (worktree from origin) → agent → the repository's screenshots → publish (merge the
+//! moved base in, push, draft PR) → CI (fix up to three times) → second opinion → Ready. Every
+//! step is saved, so a restarted daemon picks up where it stopped; agent sessions live in the
+//! PTY holder and outlive the daemon. Between steps, GitHub is watched: a `shep:` comment sends
+//! a Ready task back, a closed issue stops its task.
 
 mod agent;
+mod github;
 mod pr_body;
 mod prompts;
+mod publish;
+mod screenshots;
 mod steps;
 
 use std::path::PathBuf;
@@ -22,6 +27,7 @@ pub use prompts::{
 
 /// Steps one task may take in one tick, so a tick always ends.
 const MAX_STEPS_PER_TICK: usize = 8;
+const SECS_PER_MINUTE: i64 = 60;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct EngineConfig {
@@ -39,6 +45,12 @@ pub struct EngineConfig {
     pub max_step_failures: u8,
     /// Times a crashed agent is restarted before the task needs a person.
     pub max_agent_restarts: u8,
+    /// How often a Ready task's pull request is read for `shep:` comments.
+    pub comment_poll_secs: i64,
+    /// How often a Queued or Working task's issue is asked whether it is still open.
+    pub issue_poll_secs: i64,
+    /// How long the repository's screenshot command may run before it is stopped.
+    pub screenshot_timeout_secs: i64,
 }
 
 impl Default for EngineConfig {
@@ -51,6 +63,9 @@ impl Default for EngineConfig {
             retry_after_secs: 60,
             max_step_failures: 5,
             max_agent_restarts: 2,
+            comment_poll_secs: 60,
+            issue_poll_secs: 5 * 60,
+            screenshot_timeout_secs: 10 * 60,
         }
     }
 }
@@ -88,6 +103,8 @@ pub struct Engine {
     config: EngineConfig,
     /// The local day the scheduled shift last opened, so it opens once a day.
     shift_opened_on: Mutex<Option<i64>>,
+    /// When each task's issue and pull request were last read, to stay within rate limits.
+    polls: Mutex<github::Polls>,
 }
 
 impl Engine {
@@ -101,14 +118,18 @@ impl Engine {
             ports,
             config,
             shift_opened_on: Mutex::new(None),
+            polls: Mutex::default(),
         }
     }
 
-    /// One pass over everything: open the shift on time, fill free slots, move every Working
-    /// task on, and keep the machine awake while anything works. Problems with one task are
-    /// recorded on that task and never stop the others.
+    /// One pass over everything: open the shift on time, hear what GitHub says, fill free
+    /// slots, move every Working task on, and keep the machine awake while anything works.
+    /// Problems with one task are recorded on that task and never stop the others.
     pub fn tick(&self) {
         self.open_scheduled_shift();
+        if let Ok(board) = self.shep.board() {
+            self.watch_github(&board);
+        }
         if self.shep.shift_open() {
             let _ = self.shep.start_queued();
         }
@@ -179,6 +200,7 @@ impl Engine {
                 session,
                 interrupted,
             } => self.agent(task, run, job, session, interrupted),
+            RunStep::Screenshots { session, since } => self.screenshots(task, run, session, since),
             RunStep::Publish => self.publish(task, run),
             RunStep::WatchCi { since } => self.watch_ci(task, run, since),
             RunStep::Waiting | RunStep::Done => Ok(Flow::Wait),

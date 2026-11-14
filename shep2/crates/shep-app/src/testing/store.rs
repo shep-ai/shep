@@ -1,7 +1,7 @@
 use std::sync::atomic::{AtomicI64, Ordering};
 use std::sync::Mutex;
 
-use shep_domain::{Run, Settings, Task, TaskEvent, TaskId, TaskSourceRef, UnixTime};
+use shep_domain::{EventKind, Run, Settings, Task, TaskEvent, TaskId, TaskSourceRef, UnixTime};
 
 use std::collections::HashMap;
 
@@ -15,15 +15,21 @@ fn poisoned<T>(_: T) -> StoreError {
 #[derive(Default)]
 pub struct MemoryTasks {
     tasks: Mutex<Vec<Task>>,
+    /// The last id given out; ids are never reused, as in SQLite.
+    last_id: AtomicI64,
 }
 
 impl TaskRepository for MemoryTasks {
     fn create(&self, source: TaskSourceRef, now: UnixTime) -> Result<Task, StoreError> {
         let mut tasks = self.tasks.lock().map_err(poisoned)?;
-        let next = i64::try_from(tasks.len()).map_err(|e| StoreError(e.to_string()))? + 1;
+        let next = self.last_id.fetch_add(1, Ordering::SeqCst) + 1;
         let task = Task::new(TaskId(next), source, now);
         tasks.push(task.clone());
         Ok(task)
+    }
+    fn delete(&self, id: TaskId) -> Result<(), StoreError> {
+        self.tasks.lock().map_err(poisoned)?.retain(|t| t.id != id);
+        Ok(())
     }
     fn get(&self, id: TaskId) -> Result<Option<Task>, StoreError> {
         let tasks = self.tasks.lock().map_err(poisoned)?;
@@ -125,6 +131,18 @@ impl EventLog for MemoryEvents {
         Ok(events
             .iter()
             .filter(|e| e.task_id == task)
+            .cloned()
+            .collect())
+    }
+    fn of_kind(
+        &self,
+        kind: EventKind,
+        since: Option<UnixTime>,
+    ) -> Result<Vec<TaskEvent>, StoreError> {
+        let events = self.0.lock().map_err(poisoned)?;
+        Ok(events
+            .iter()
+            .filter(|e| e.kind == kind && since.is_none_or(|s| e.at > s))
             .cloned()
             .collect())
     }

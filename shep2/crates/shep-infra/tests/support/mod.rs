@@ -2,6 +2,8 @@
 
 #![allow(dead_code)]
 
+pub mod fake_gh;
+
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
@@ -76,6 +78,20 @@ impl Repos {
             git(&c, &["status", "--porcelain"]),
             std::fs::read_to_string(c.join("app.txt")).unwrap(),
         )
+    }
+
+    /// Someone else lands a commit on origin's `main` that writes `text` to `file`.
+    pub fn advance_main(&self, file: &str, text: &str) {
+        let other = self.path("other");
+        if !other.exists() {
+            git(self.dir.path(), &["clone", "-q", "origin.git", "other"]);
+            identify(&other);
+        }
+        git(&other, &["pull", "-q", "origin", "main"]);
+        std::fs::write(other.join(file), text).unwrap();
+        git(&other, &["add", "."]);
+        git(&other, &["commit", "-q", "-m", &format!("change {file}")]);
+        git(&other, &["push", "-q", "origin", "main"]);
     }
 
     /// Branches on origin.

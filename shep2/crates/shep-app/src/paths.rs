@@ -38,6 +38,10 @@ impl TaskPaths {
     pub fn agent_log(&self, at: UnixTime) -> PathBuf {
         self.dir.join(format!("agent-{}.log", at.0))
     }
+    /// What the repository's screenshot command printed.
+    pub fn screenshot_log(&self, at: UnixTime) -> PathBuf {
+        self.dir.join(format!("screenshots-{}.log", at.0))
+    }
 }
 
 /// Files whose names end in one of `extensions`.

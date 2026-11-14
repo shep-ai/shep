@@ -8,8 +8,10 @@ mod brief;
 mod detail;
 mod engine;
 mod error;
+mod merge;
 mod paths;
 pub mod ports;
+mod setup;
 mod shep;
 mod surfaces;
 #[cfg(feature = "testing")]

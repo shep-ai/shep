@@ -2,14 +2,16 @@
 //! tests and by the surfaces' tests.
 
 mod agents;
-mod repo;
+mod forge;
+mod git;
 mod store;
 mod system;
 
 use std::sync::Arc;
 
 pub use agents::{FakeAgents, FakeProvider, FakeSessions};
-pub use repo::{FakeForge, FakeGit};
+pub use forge::{FakeForge, FAKE_VIEWER};
+pub use git::{FakeGit, FAKE_BASE, FAKE_HOOKS};
 pub use store::{ManualClock, MemoryEvents, MemoryMarks, MemoryRuns, MemorySettings, MemoryTasks};
 pub use system::{FakeAwake, MemoryFiles};
 

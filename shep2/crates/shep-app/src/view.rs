@@ -118,4 +118,8 @@ pub struct Brief {
     pub total: usize,
     /// Ready, with CI green and a pull request: the "merge the N green" button.
     pub mergeable: usize,
+    /// Tasks Shep took off the board since the brief was last shown, one line each, like
+    /// "Stopped: Fix login redirect loop — issue closed".
+    #[serde(default)]
+    pub stopped: Vec<String>,
 }

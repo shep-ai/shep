@@ -54,13 +54,51 @@ parallel limit and keeps filling free slots. For each task the daemon's engine:
    (the person's checkout is never touched);
 2. runs the chosen agent CLI unattended in the PTY holder, with a prompt that asks for proof in
    the task's folder and at most one question;
-3. commits what the agent left, pushes the task branch (never the default branch) and opens a
-   **draft** PR;
-4. watches CI and sends failures back to the same conversation, up to three times, then the
+3. commits what the agent left and runs the repository's own screenshot command, if it has one
+   (below);
+4. merges `origin/<default>` into the task branch if it moved. A conflict goes back to the
+   agent once, with the files both sides changed; if the agent cannot merge it, the task needs
+   you ("Both sides changed …");
+5. pushes the task branch (never the default branch) and opens a **draft** PR;
+6. watches CI and sends failures back to the same conversation, up to three times, then the
    task needs you, naming the failing checks;
-5. asks a second agent, in its own folder and conversation, for a review;
-6. writes what changed, the proof, the CI timeline and the review into the PR, and the task is
-   Ready. Merge merges it; Send back starts another pass on the same PR.
+7. asks a second agent, in its own folder and conversation, for a review;
+8. writes what changed, the proof, the CI timeline and the review into the PR, and the task is
+   Ready. Merge merges it and removes the task's worktree and local branch; Send back starts
+   another pass on the same PR.
+
+The agent's own `git push` can reach its task branch only. Everything Shep runs in a worktree
+gets `core.hooksPath` (through `GIT_CONFIG_COUNT`/`GIT_CONFIG_KEY_0`/`GIT_CONFIG_VALUE_0`)
+pointing at hooks Shep writes beside the worktree: `pre-push` refuses any other ref, and every
+other hook runs the repository's own (its `core.hooksPath`, else `.git/hooks`), so the
+project's pre-commit still runs for the agent. It stops mistakes, not intent:
+`git push --no-verify` skips it, as it skips every pre-push hook.
+
+While tasks wait or work, Shep also watches GitHub (each at most once a minute or five):
+
+- **Send back from the PR.** A comment that starts with `shep:` on a Ready task's pull request
+  sends the task back with the rest of the comment as its note, exactly like Send back. Only
+  comments by the account `gh` is signed in as count; anyone else's are ignored. Several
+  `shep:` comments since the task became Ready make one note.
+- **A closed issue stops its task.** When the issue behind a Queued or Working task is closed,
+  Shep stops the agent, closes the draft PR with a comment, removes the worktree (the branch
+  stays) and takes the task off the board. The morning brief says "Stopped: … — issue closed".
+
+### Screenshots from the repository's own command
+
+A repository can take its own screenshots. Commit `.shep/dev.json` (the file Shep 1 reads for
+its dev server; other keys are ignored) with a `screenshot` command:
+
+```json
+{ "screenshot": "pnpm screenshot" }
+```
+
+After the coder finishes, Shep runs it with `sh -c` in the task's worktree, in the PTY holder,
+with `SHEP_PROOF_DIR` set (and made). Every PNG it saves there becomes proof: published on a
+`shep/proof/<id>` branch and shown in the PR. A failing command, or one that runs over ten
+minutes, is noted on the task and never holds it back. It should write only to
+`$SHEP_PROOF_DIR`: anything else it leaves in the worktree is committed with the next pass.
+Without the file, the agent is asked to save screenshots itself.
 
 An agent that hits its usage limit is parked until the reset (read from its screen) and picks up
 where it stopped. Agents run in the holder (`shep __holder`), a process of its own, so a daemon
@@ -109,8 +147,8 @@ is under `$SHEP_HOME/shep2/`, apart from Shep 1's files in the same home:
 | ---- | ---- |
 | `shep2/run/` | Daemon and holder sockets (`0700`; `/tmp/shep2-<hash>` when the home is too deep) |
 | `shep2/daemon.log`, `shep2/holder.log` | Background process logs |
-| `shep2/tasks/<id>/` | Issue text, agent logs, the question file, `proof/`, `review/`, CI logs |
-| `shep2/worktrees/<repo>/` | One git worktree per task |
+| `shep2/tasks/<id>/` | Issue text, agent and screenshot-command logs, the question file, `proof/`, `review/`, CI logs |
+| `shep2/worktrees/<repo>/` | One git worktree per task, and its push-guard hooks beside it (`<worktree>.hooks/`) |
 
 Tests speed the engine up with `SHEP_ENGINE_TICK_MS`, `SHEP_CI_POLL_SECS` and
 `SHEP_CI_GRACE_SECS`.

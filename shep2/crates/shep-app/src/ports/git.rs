@@ -6,6 +6,17 @@ use shep_domain::{TaskBranch, Worktree};
 #[error("git: {0}")]
 pub struct GitError(pub String);
 
+/// What bringing the moved base branch into the task branch did.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum BaseUpdate {
+    /// The task branch already has everything on `origin/<base>`.
+    UpToDate,
+    /// `origin/<base>` was merged in cleanly.
+    Merged,
+    /// Both sides changed these files. Nothing was merged; the worktree is as it was.
+    Conflict(Vec<String>),
+}
+
 /// The repository on disk. Work happens only in worktrees made from `origin`; the person's own
 /// checkout is never touched.
 pub trait Git: Send + Sync {
@@ -14,7 +25,8 @@ pub trait Git: Send + Sync {
     /// Fetches the default branch from `origin` and makes (or finds again) the task's worktree
     /// on `branch`, starting from `origin/<default>`.
     fn prepare_worktree(&self, repo: &Path, branch: &TaskBranch) -> Result<Worktree, GitError>;
-    /// Commits everything the agent left uncommitted. `false` when there was nothing.
+    /// Commits everything the agent left uncommitted. `false` when there was nothing. A merge
+    /// the agent left unresolved is abandoned, never committed.
     fn commit_all(&self, worktree: &Worktree, message: &str) -> Result<bool, GitError>;
     /// Commits on the task branch that `origin/<base>` does not have.
     fn commits_ahead(&self, worktree: &Worktree) -> Result<u32, GitError>;
@@ -33,4 +45,13 @@ pub trait Git: Send + Sync {
         branch: &str,
         files: &[PathBuf],
     ) -> Result<String, GitError>;
+    /// Environment for anything Shep runs in the worktree (agents, the screenshot command):
+    /// its own `git push` reaches the task branch only, and the repository's hooks still run.
+    fn agent_env(&self, worktree: &Worktree) -> Result<Vec<(String, String)>, GitError>;
+    /// Fetches `origin/<base>` and merges it into the task branch, unless that conflicts.
+    fn update_from_base(&self, worktree: &Worktree) -> Result<BaseUpdate, GitError>;
+    /// Removes the task's worktree folder and what Shep kept beside it. The branch stays.
+    fn remove_worktree(&self, repo: &Path, worktree: &Worktree) -> Result<(), GitError>;
+    /// Deletes the local task branch.
+    fn delete_branch(&self, repo: &Path, branch: &TaskBranch) -> Result<(), GitError>;
 }

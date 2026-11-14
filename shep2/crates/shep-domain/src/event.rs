@@ -21,6 +21,16 @@ pub enum EventKind {
     Reviewed,
     Ready,
     Merged,
+    // Plain comments below, not doc comments: documented variants would change the published
+    // schema's shape for this enum (a `oneOf` instead of an `enum`).
+    // The repository's screenshot command ran (or failed, or took too long).
+    Screenshots,
+    // The base branch moved and was merged into the task branch.
+    BaseMerged,
+    // The person sent the work back from GitHub with a `shep:` comment.
+    SentBack,
+    // The task was taken off the board, like when its issue was closed. Kept after the task.
+    Stopped,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]

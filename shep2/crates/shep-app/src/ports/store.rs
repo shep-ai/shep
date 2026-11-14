@@ -1,4 +1,4 @@
-use shep_domain::{Run, Settings, Task, TaskEvent, TaskId, TaskSourceRef, UnixTime};
+use shep_domain::{EventKind, Run, Settings, Task, TaskEvent, TaskId, TaskSourceRef, UnixTime};
 
 #[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
 #[error("storage failed: {0}")]
@@ -10,6 +10,8 @@ pub trait TaskRepository: Send + Sync {
     fn get(&self, id: TaskId) -> Result<Option<Task>, StoreError>;
     fn save(&self, task: &Task) -> Result<(), StoreError>;
     fn list(&self) -> Result<Vec<Task>, StoreError>;
+    /// Takes the task off the board for good. Its events are kept, and its id is never reused.
+    fn delete(&self, id: TaskId) -> Result<(), StoreError>;
 }
 
 pub trait SettingsRepository: Send + Sync {
@@ -28,6 +30,13 @@ pub trait RunRepository: Send + Sync {
 pub trait EventLog: Send + Sync {
     fn record(&self, event: &TaskEvent) -> Result<(), StoreError>;
     fn events(&self, task: TaskId) -> Result<Vec<TaskEvent>, StoreError>;
+    /// Every task's events of one kind, oldest first, after `since` when given (including
+    /// those of tasks no longer on the board).
+    fn of_kind(
+        &self,
+        kind: EventKind,
+        since: Option<UnixTime>,
+    ) -> Result<Vec<TaskEvent>, StoreError>;
 }
 
 /// Moments a surface needs to remember, like the last morning brief shown.

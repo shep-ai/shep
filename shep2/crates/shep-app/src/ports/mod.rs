@@ -13,8 +13,8 @@ pub use agents::{
     AgentCommand, AgentProvider, AgentProviders, AgentRequest, AgentSessions, AgentView,
     SessionError, SessionSpec, SessionState,
 };
-pub use forge::{Forge, ForgeError, Issue, IssueRef};
-pub use git::{Git, GitError};
+pub use forge::{Forge, ForgeError, Issue, IssueRef, IssueState, PrComment};
+pub use git::{BaseUpdate, Git, GitError};
 pub use store::{
     EventLog, Mark, Marks, RunRepository, SettingsRepository, StoreError, TaskRepository,
 };

@@ -2,13 +2,15 @@ use std::collections::{HashMap, VecDeque};
 use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 
-use shep_domain::{check_push, CiCheck, PullRequest, TaskBranch, TaskSourceRef, Worktree};
+use shep_domain::{check_push, TaskBranch, Worktree};
 
 use super::lock;
-use crate::ports::{Forge, ForgeError, Git, GitError, Issue, IssueRef};
+use crate::ports::{BaseUpdate, Git, GitError};
 
 /// The default branch every fake repository has.
 pub const FAKE_BASE: &str = "main";
+/// Where the fake keeps each task branch's guard hooks: `/hooks/<branch>`.
+pub const FAKE_HOOKS: &str = "/hooks";
 
 #[derive(Default)]
 struct GitState {
@@ -21,6 +23,11 @@ struct GitState {
     pushes: Vec<String>,
     published: Vec<(String, Vec<PathBuf>)>,
     fail_push: Option<String>,
+    base_updates: VecDeque<BaseUpdate>,
+    base_checks: u32,
+    diff: Option<String>,
+    removed: Vec<String>,
+    deleted: Vec<String>,
 }
 
 /// A repository in memory. A test marks a worktree dirty to say "the agent changed files".
@@ -51,6 +58,26 @@ impl FakeGit {
     }
     pub fn fail_pushes(&self, why: Option<&str>) {
         lock(&self.0).fail_push = why.map(str::to_owned);
+    }
+    /// What the next updates from the base branch find, in order; then it is up to date.
+    pub fn queue_base_update(&self, update: BaseUpdate) {
+        lock(&self.0).base_updates.push_back(update);
+    }
+    /// How many times Shep brought the base branch in.
+    pub fn base_checks(&self) -> u32 {
+        lock(&self.0).base_checks
+    }
+    /// Replaces the patch every worktree shows.
+    pub fn set_diff(&self, patch: &str) {
+        lock(&self.0).diff = Some(patch.to_owned());
+    }
+    /// Worktree paths removed.
+    pub fn removed(&self) -> Vec<String> {
+        lock(&self.0).removed.clone()
+    }
+    /// Local branches deleted.
+    pub fn deleted(&self) -> Vec<String> {
+        lock(&self.0).deleted.clone()
     }
 }
 
@@ -92,7 +119,10 @@ impl Git for FakeGit {
             .unwrap_or(0))
     }
     fn diff(&self, worktree: &Worktree) -> Result<String, GitError> {
-        Ok(format!("diff of {}", worktree.branch))
+        let s = lock(&self.0);
+        Ok(s.diff
+            .clone()
+            .unwrap_or_else(|| format!("diff of {}", worktree.branch)))
     }
     fn diff_stat(&self, _worktree: &Worktree) -> Result<String, GitError> {
         Ok(" src/app.rs | 2 +-".into())
@@ -119,120 +149,29 @@ impl Git for FakeGit {
             .push((branch.to_owned(), files.to_vec()));
         Ok("abc123".into())
     }
-}
-
-#[derive(Default)]
-struct ForgeState {
-    issues: HashMap<u64, Issue>,
-    opened: Vec<(String, String)>,
-    bodies: Vec<String>,
-    checks: VecDeque<Vec<CiCheck>>,
-    merged: Vec<PullRequest>,
-    fail_merge: Option<String>,
-    labels: HashMap<String, Vec<u64>>,
-}
-
-/// GitHub in memory. Checks are answered from a queue a test fills; the last answer repeats.
-#[derive(Default)]
-pub struct FakeForge(Mutex<ForgeState>);
-
-impl FakeForge {
-    pub fn add_issue(&self, number: u64, title: &str, body: &str) {
-        lock(&self.0).issues.insert(
-            number,
-            Issue {
-                title: title.into(),
-                body: body.into(),
-                url: format!("https://github.com/acme/app/issues/{number}"),
-            },
-        );
+    fn agent_env(&self, worktree: &Worktree) -> Result<Vec<(String, String)>, GitError> {
+        Ok(vec![
+            ("GIT_CONFIG_COUNT".into(), "1".into()),
+            ("GIT_CONFIG_KEY_0".into(), "core.hooksPath".into()),
+            (
+                "GIT_CONFIG_VALUE_0".into(),
+                format!("{FAKE_HOOKS}/{}", worktree.branch),
+            ),
+        ])
     }
-    /// Titles and first bodies of the drafts opened.
-    pub fn opened(&self) -> Vec<(String, String)> {
-        lock(&self.0).opened.clone()
-    }
-    /// Every body update, in order.
-    pub fn bodies(&self) -> Vec<String> {
-        lock(&self.0).bodies.clone()
-    }
-    pub fn queue_checks(&self, checks: Vec<CiCheck>) {
-        lock(&self.0).checks.push_back(checks);
-    }
-    pub fn merged(&self) -> Vec<PullRequest> {
-        lock(&self.0).merged.clone()
-    }
-    /// Puts `label` on these issues.
-    pub fn label(&self, numbers: &[u64], label: &str) {
-        lock(&self.0)
-            .labels
-            .entry(label.to_owned())
-            .or_default()
-            .extend_from_slice(numbers);
-    }
-    pub fn fail_merges(&self, why: Option<&str>) {
-        lock(&self.0).fail_merge = why.map(str::to_owned);
-    }
-}
-
-impl Forge for FakeForge {
-    fn labelled(&self, _repo: &Path, label: &str) -> Result<Vec<IssueRef>, ForgeError> {
-        let s = lock(&self.0);
-        let numbers = s.labels.get(label).cloned().unwrap_or_default();
-        Ok(numbers
-            .into_iter()
-            .filter_map(|n| {
-                s.issues.get(&n).map(|i| IssueRef {
-                    number: n,
-                    title: i.title.clone(),
-                })
-            })
-            .collect())
-    }
-    fn issue(&self, _repo: &Path, source: &TaskSourceRef) -> Result<Option<Issue>, ForgeError> {
-        match source {
-            TaskSourceRef::GitHubIssue { number, .. } => lock(&self.0)
-                .issues
-                .get(number)
-                .cloned()
-                .map(Some)
-                .ok_or_else(|| ForgeError(format!("no issue #{number}"))),
-            _ => Ok(None),
-        }
-    }
-    fn open_draft(
-        &self,
-        _wt: &Worktree,
-        title: &str,
-        body: &str,
-    ) -> Result<PullRequest, ForgeError> {
+    fn update_from_base(&self, _worktree: &Worktree) -> Result<BaseUpdate, GitError> {
         let mut s = lock(&self.0);
-        s.opened.push((title.to_owned(), body.to_owned()));
-        let number = 100 + s.opened.len() as u64;
-        Ok(PullRequest {
-            number,
-            url: format!("https://github.com/acme/app/pull/{number}"),
-        })
+        s.base_checks += 1;
+        Ok(s.base_updates.pop_front().unwrap_or(BaseUpdate::UpToDate))
     }
-    fn update_body(&self, _wt: &Worktree, _pr: &PullRequest, body: &str) -> Result<(), ForgeError> {
-        lock(&self.0).bodies.push(body.to_owned());
+    fn remove_worktree(&self, _repo: &Path, worktree: &Worktree) -> Result<(), GitError> {
+        let mut s = lock(&self.0);
+        s.worktrees.retain(|w| w.path != worktree.path);
+        s.removed.push(worktree.path.clone());
         Ok(())
     }
-    fn checks(&self, _wt: &Worktree, _pr: &PullRequest) -> Result<Vec<CiCheck>, ForgeError> {
-        let mut s = lock(&self.0);
-        if s.checks.len() > 1 {
-            return Ok(s.checks.pop_front().unwrap_or_default());
-        }
-        Ok(s.checks.front().cloned().unwrap_or_default())
-    }
-    fn failed_log(&self, _wt: &Worktree, check: &CiCheck) -> Result<String, ForgeError> {
-        Ok(format!("log of {}", check.name))
-    }
-    fn merge(&self, _repo: &Path, pr: &PullRequest) -> Result<(), ForgeError> {
-        let mut s = lock(&self.0);
-        if let Some(why) = &s.fail_merge {
-            return Err(ForgeError(why.clone()));
-        }
-        s.merged.push(pr.clone());
+    fn delete_branch(&self, _repo: &Path, branch: &TaskBranch) -> Result<(), GitError> {
+        lock(&self.0).deleted.push(branch.to_string());
         Ok(())
     }
 }

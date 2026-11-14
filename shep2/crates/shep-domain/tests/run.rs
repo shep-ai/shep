@@ -1,6 +1,7 @@
 use shep_domain::{
     check_push, conversation_id, AgentJob, AgentStatus, ConversationRole, PushRefused, ResetAt,
-    Run, RunStep, Task, TaskBranch, TaskId, TaskSourceRef, UnixTime, MAX_CI_FIXES,
+    Run, RunStep, SessionId, Task, TaskBranch, TaskId, TaskSourceRef, UnixTime, MAX_CI_FIXES,
+    MAX_CONFLICT_FIXES,
 };
 
 fn task(id: i64, text: &str) -> Task {
@@ -92,6 +93,9 @@ fn jobs_after_the_first_continue_the_coders_conversation() {
             attempt: 1,
             checks: vec!["lint".into()],
         },
+        AgentJob::ResolveConflict {
+            files: vec!["src/app.rs".into()],
+        },
     ] {
         assert!(job.continues_conversation(), "{job:?}");
     }
@@ -138,5 +142,36 @@ fn ci_checks_add_up_to_one_verdict() {
             check("test", CheckState::Failed)
         ]),
         CiVerdict::Red(vec!["lint".into(), "test".into()])
+    );
+}
+
+#[test]
+fn the_running_session_is_the_agents_or_the_screenshot_commands() {
+    let mut run = Run::new(TaskId(5), UnixTime(10));
+    assert_eq!(run.session(), None);
+    run.step = RunStep::Agent {
+        job: AgentJob::Code,
+        session: Some(SessionId("a".into())),
+        interrupted: false,
+    };
+    assert_eq!(run.session(), Some(&SessionId("a".into())));
+    run.step = RunStep::Screenshots {
+        session: Some(SessionId("s".into())),
+        since: UnixTime(10),
+    };
+    assert_eq!(run.session(), Some(&SessionId("s".into())));
+    run.step = RunStep::Publish;
+    assert_eq!(run.session(), None);
+}
+
+#[test]
+fn a_run_saved_before_conflict_fixes_existed_still_loads() {
+    let mut json = serde_json::to_value(Run::new(TaskId(5), UnixTime(10))).unwrap();
+    json.as_object_mut().unwrap().remove("conflict_fixes");
+    let run: Run = serde_json::from_value(json).unwrap();
+    assert_eq!(run.conflict_fixes, 0);
+    assert_eq!(
+        MAX_CONFLICT_FIXES, 1,
+        "the agent gets one try at a conflict"
     );
 }
