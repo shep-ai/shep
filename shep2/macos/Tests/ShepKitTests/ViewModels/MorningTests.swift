@@ -33,30 +33,22 @@ final class MorningTests: XCTestCase {
         XCTAssertEqual(note.body, "Which bucket?")
     }
 
-    func testGreenMeansChecksAllPassedOrTheLastCIEventWasGreen() throws {
-        let ready = try Fixtures.decode(TaskDetail.self, "task-detail-ready")
-        XCTAssertTrue(GreenRule.isGreen(ready))
-        var failing = ready
-        failing.checks = [CiCheck(name: "build", state: .failed)]
-        failing.events = []
-        XCTAssertFalse(GreenRule.isGreen(failing))
-        var noPR = ready
-        noPR.task.pr = nil
-        XCTAssertFalse(GreenRule.isGreen(noPR), "nothing to merge without a pull request")
-        var pending = ready
-        pending.checks = [CiCheck(name: "build", state: .pending)]
-        pending.events = [TaskEvent(taskId: 2, at: 1, kind: .ciGreen, detail: "")]
-        XCTAssertTrue(GreenRule.isGreen(pending), "falls back to the last CI event, like the daemon")
-        pending.events.append(TaskEvent(taskId: 2, at: 2, kind: .noCi, detail: ""))
-        XCTAssertFalse(GreenRule.isGreen(pending))
+    func testGreenIsWhatTheDaemonSaysNotARuleOfItsOwn() async {
+        // The checks say red; the daemon says green. The daemon decides.
+        let task = Fixtures.task(id: 1, title: "Green", state: .ready, pr: Fixtures.pr(1))
+        let client = FakeShepClient(board: Fixtures.board(ready: [task]))
+        client.details(1, Fixtures.detail(task, checks: [CiCheck(name: "ci", state: .failed)]))
+        client.set { $0.brief.green = [1] }
+        let report = await GreenMerge(client: client).run()
+        XCTAssertEqual(report.merged.map(\.id), [1])
+        XCTAssertFalse(client.calls.contains(.taskDetail(1)), "no second opinion on CI")
     }
 
     func testMergeAllGreenMergesOnlyGreenReadyTasks() async throws {
         let green = Fixtures.task(id: 1, title: "Green", state: .ready, pr: Fixtures.pr(1))
         let red = Fixtures.task(id: 2, title: "Red", state: .ready, pr: Fixtures.pr(2))
         let client = FakeShepClient(board: Fixtures.board(ready: [green, red]))
-        client.details(1, Fixtures.detail(green, checks: [CiCheck(name: "ci", state: .passed)]))
-        client.details(2, Fixtures.detail(red, checks: [CiCheck(name: "ci", state: .failed)]))
+        client.set { $0.brief.green = [1] }
         let report = await GreenMerge(client: client).run()
         XCTAssertEqual(report.merged.map(\.id), [1])
         XCTAssertEqual(report.skipped, 1)
@@ -68,7 +60,7 @@ final class MorningTests: XCTestCase {
     func testAMergeGitHubRefusesIsReported() async {
         let green = Fixtures.task(id: 1, title: "Green", state: .ready, pr: Fixtures.pr(1))
         let client = FakeShepClient(board: Fixtures.board(ready: [green]))
-        client.details(1, Fixtures.detail(green, checks: [CiCheck(name: "ci", state: .passed)]))
+        client.set { $0.brief.green = [1] }
         client.fail(.review, "merge conflict")
         let report = await GreenMerge(client: client).run()
         XCTAssertEqual(report.failed.map(\.message), ["merge conflict"])

@@ -53,8 +53,8 @@ outside any git repository).
 | Dynamic Island | | Live Activity: see below |
 | Spotlight / Siri | App Intents: Queue issue, Show ready pull requests, Merge all green | Listed by the system only in an Xcode build (below) |
 
-"Merge all green" uses the daemon's rule (`ci_words` in `shep-app/src/detail.rs`) on each Ready
-task's detail and merges them one by one; a daemon call for it would remove the copy.
+"Merge all green" merges exactly the tasks the daemon reports green in `Brief.green`, one by
+one; the rule for "green" lives only in the daemon.
 
 ### Platform limits
 

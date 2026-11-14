@@ -24,7 +24,7 @@ final class ShepIntentsTests: XCTestCase {
     func testMergeAllGreen() async {
         let green = Fixtures.task(id: 1, state: .ready, pr: Fixtures.pr(1))
         let client = FakeShepClient(board: Fixtures.board(ready: [green]))
-        client.details(1, Fixtures.detail(green, checks: [CiCheck(name: "ci", state: .passed)]))
+        client.set { $0.brief.green = [1] }
         let reply = await ShepIntents(client: client).mergeAllGreen()
         XCTAssertEqual(reply, "Merged 1")
     }

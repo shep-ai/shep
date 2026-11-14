@@ -8,6 +8,9 @@ public enum CiStatus: Equatable, Sendable {
     case noCI
     case unknown
 
+    /// The events that say how CI went, newest last.
+    static let ciEvents: Set<EventKind> = [.ciGreen, .noCi, .ciFailed]
+
     public init(_ detail: TaskDetail) {
         let failed = detail.checks.filter { $0.state == .failed }.map(\.name)
         if !failed.isEmpty {
@@ -17,7 +20,7 @@ public enum CiStatus: Equatable, Sendable {
         } else if !detail.checks.isEmpty {
             self = .green
         } else {
-            switch detail.events.last(where: { GreenRule.ciEvents.contains($0.kind) })?.kind {
+            switch detail.events.last(where: { Self.ciEvents.contains($0.kind) })?.kind {
             case .ciGreen?: self = .green
             case .noCi?: self = .noCI
             case .ciFailed?: self = .failed([])
