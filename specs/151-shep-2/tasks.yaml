@@ -271,7 +271,23 @@ tasks:
       wrapper published as `shep2` (`npx shep2`) with per-platform binaries. The command is
       `shep`. If Bustle Labs transfers `shep`, publish there from 6.0.0 and keep `shep2` as an
       alias.
-    state: Todo
+
+      Built: `.github/workflows/shep2-release.yml` (tag `shep2-v*`; dispatch and PRs touching
+      shep2/dist run it as a dry run) builds static musl binaries for Linux x86_64/arm64 and
+      native ones for macOS arm64/x86_64, packages `shep-<v>-<target>.tar.gz` + `.sha256`,
+      verifies install.sh and the npm launcher on Linux x86_64, Linux arm64 and macOS arm64,
+      creates the GitHub release with the default token and `--latest=false` (so Shep 1's
+      release workflows and "Latest" are untouched), publishes `shep2` + `shep2-<os>-<cpu>`
+      to npm and pushes the formula to the tap after `brew install` + `brew test` on macOS.
+      `shep2/dist/` holds install.sh, package.sh, the npm wrapper and staging script (with
+      `--name`/`--wrapper-version` for a later `shep` package), the Homebrew template and
+      renderer, 52 node:test tests and `dry-run.sh`, which passed locally on Linux x86_64
+      (curl and npm paths). Not yet run: the workflow itself on GitHub, the macOS builds and
+      the Homebrew install (no Mac here). Only the owner can: add the NPM_TOKEN and
+      HOMEBREW_TAP_TOKEN secrets, create shep-ai/homebrew-tap, point shep.bot/install at
+      shep2/dist/install.sh, and push the first shep2-v tag. Design screen Install.png still
+      shows `npx shepai`; the decision is `npx shep2`.
+    state: Review
     dependencies:
       - task-9
       - task-10
