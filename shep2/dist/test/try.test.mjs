@@ -46,7 +46,7 @@ function machine(t, { targets = [LINUX[2], MAC[2]], app = true, green = true } =
     `#!/bin/sh
 echo "$*" >> "${calls}"
 case "$1 $2" in
-  "auth status") exit 0 ;;
+  "api user") echo '{"login":"ariel"}' ;;
   "run list") [ "${green ? '1' : ''}" ] && echo 4242; exit 0 ;;
   "run download")
     shift 2
@@ -71,11 +71,11 @@ esac
   mkdirSync(home);
 
   /** Runs try.sh as `curl … | sh -s -- <args>` would. */
-  const run = ({ os = LINUX, args = [], path } = {}) =>
+  const run = ({ os = LINUX, args = [], path, first } = {}) =>
     runProcess('sh', ['-s', '--', ...args], {
       input: readFileSync(TRY_SH, 'utf8'),
       env: {
-        PATH: `${shims}:${path ?? process.env.PATH}`,
+        PATH: `${first ? `${first}:` : ''}${shims}:${path ?? process.env.PATH}`,
         HOME: home,
         SHELL: '/bin/zsh',
         FAKE_UNAME_S: os[0],
@@ -124,6 +124,15 @@ describe('try.sh', { skip: !POSIX && 'POSIX sh only' }, () => {
     assert.equal(result.code, 1);
     assert.match(result.stderr, /no green build/);
     assert.ok(!existsSync(join(m.home, '.local', 'bin', 'shep')));
+  });
+
+  it('asks to sign in when gh cannot reach GitHub', async (t) => {
+    const m = machine(t);
+    const signedOut = tempDir(t);
+    writeExecutable(join(signedOut, 'gh'), '#!/bin/sh\necho "gh: not logged in" >&2\nexit 4\n');
+    const result = await m.run({ first: signedOut });
+    assert.equal(result.code, 1);
+    assert.match(result.stderr, /gh auth login/);
   });
 
   it('asks for the GitHub CLI when it is missing', async (t) => {

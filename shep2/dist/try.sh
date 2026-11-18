@@ -92,7 +92,9 @@ main() {
     esac
   done
   has gh || die "needs the GitHub CLI (https://cli.github.com), signed in with gh auth login"
-  gh auth status >/dev/null 2>&1 || die "the GitHub CLI is not signed in; run gh auth login"
+  # Ask for what is needed (an API call), not `gh auth status`: that fails when any account
+  # gh knows has a bad token, even with github.com signed in.
+  gh api user >/dev/null 2>&1 || die "the GitHub CLI cannot reach GitHub; run gh auth login"
   [ -n "${HOME:-}" ] || die "HOME is not set"
 
   tmp=$(mktemp -d 2>/dev/null || mktemp -d -t shep-try)
