@@ -1,5 +1,5 @@
 use clap::{Parser, Subcommand};
-use shep_domain::{AgentKind, ClockTime};
+use shep_domain::{AgentKind, ClockTime, SourceKind};
 
 /// Shep: go to sleep with issues, wake up with pull requests.
 #[derive(Debug, Parser)]
@@ -12,6 +12,9 @@ use shep_domain::{AgentKind, ClockTime};
 pub struct Cli {
     #[command(subcommand)]
     pub command: Option<Command>,
+    /// Turn every animation off (`NO_COLOR`, `CI` and piped output do this by themselves)
+    #[arg(long, global = true)]
+    pub no_motion: bool,
 }
 
 #[derive(Debug, Subcommand)]
@@ -19,8 +22,11 @@ pub enum Command {
     /// Queue a task: an issue (#412), a link to a ticket or message, or a sentence
     Add {
         /// The task; several words are joined into one sentence
-        #[arg(required = true, num_args = 1..)]
+        #[arg(required_unless_present = "label", num_args = 1..)]
         task: Vec<String>,
+        /// Queue every open issue with this label instead, like `--label shep`
+        #[arg(long, value_name = "LABEL", conflicts_with = "task")]
+        label: Option<String>,
     },
     /// Start queued tasks now, or set when tonight's shift starts
     Go {
@@ -39,5 +45,45 @@ pub enum Command {
         /// How many tasks run at once (1 to 12)
         #[arg(long, value_name = "N")]
         parallel: Option<u8>,
+        /// The local checkout Shep works in; each task gets its own worktree from its origin
+        #[arg(long, value_name = "PATH")]
+        repo: Option<std::path::PathBuf>,
+        /// Start the shift by itself every night (on), or only on `shep go` (off)
+        #[arg(long, value_name = "on|off", value_parser = switch)]
+        nightly: Option<bool>,
+        /// Keep the machine awake while tasks work (on power only on a Mac)
+        #[arg(long, value_name = "on|off", value_parser = switch)]
+        keep_awake: Option<bool>,
+        /// Read tasks from a source: github, linear, jira, notion, monday or slack. Secrets are
+        /// asked for (or read from stdin, one per line); other values follow as KEY=VALUE
+        #[arg(long, value_name = "SOURCE", value_parser = SourceKind::parse)]
+        connect: Option<SourceKind>,
+        /// Stop reading a source and forget its tokens
+        #[arg(long, value_name = "SOURCE", value_parser = SourceKind::parse, conflicts_with = "connect")]
+        disconnect: Option<SourceKind>,
+        /// Values for --connect, like site=acme.atlassian.net
+        #[arg(value_name = "KEY=VALUE", requires = "connect")]
+        values: Vec<String>,
     },
+    /// Runs the background daemon (started by `shep go`; not for direct use)
+    #[command(name = "__daemon", hide = true)]
+    Daemon,
+    /// Runs the PTY holder that keeps agents alive (started by the daemon)
+    #[command(name = "__holder", hide = true)]
+    Holder,
+    /// Serves Shep to a coding agent over MCP on stdio (started by the agent, from its MCP
+    /// config: `{"command": "shep", "args": ["mcp"]}`)
+    #[command(name = "mcp", hide = true)]
+    Mcp,
+}
+
+const ON: &str = "on";
+const OFF: &str = "off";
+
+fn switch(s: &str) -> Result<bool, String> {
+    match s.trim() {
+        ON => Ok(true),
+        OFF => Ok(false),
+        other => Err(format!("{other:?} is not on or off")),
+    }
 }

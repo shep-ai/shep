@@ -14,4 +14,8 @@ impl Clock for SystemClock {
             .map_or(0, |d| d.as_secs());
         UnixTime(i64::try_from(secs).unwrap_or(i64::MAX))
     }
+
+    fn utc_offset(&self) -> i64 {
+        i64::from(chrono::Local::now().offset().local_minus_utc())
+    }
 }

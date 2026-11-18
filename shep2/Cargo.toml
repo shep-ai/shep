@@ -1,6 +1,16 @@
 [workspace]
 resolver = "2"
-members = ["crates/shep-domain", "crates/shep-app", "crates/shep-infra", "crates/shep-cli"]
+members = [
+  "crates/shep-domain",
+  "crates/shep-app",
+  "crates/shep-jsonrpc",
+  "crates/shep-rpc",
+  "crates/shep-infra",
+  "crates/shep-tui",
+  "crates/shep-mcp",
+  "crates/shep-cli",
+  "crates/shep-mock-model",
+]
 
 [workspace.package]
 version = "0.1.0"
@@ -12,14 +22,35 @@ repository = "https://github.com/shep-ai/shep"
 shep-domain = { path = "crates/shep-domain" }
 shep-app = { path = "crates/shep-app" }
 shep-infra = { path = "crates/shep-infra" }
+shep-jsonrpc = { path = "crates/shep-jsonrpc" }
+shep-rpc = { path = "crates/shep-rpc" }
+shep-tui = { path = "crates/shep-tui" }
+shep-mcp = { path = "crates/shep-mcp" }
+shep-mock-model = { path = "crates/shep-mock-model" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
+schemars = "1"
 thiserror = "2"
 clap = { version = "4", features = ["derive", "env"] }
 rusqlite = { version = "0.32", features = ["bundled"] }
 tempfile = "3"
 assert_cmd = "2"
 predicates = "3"
+portable-pty = "0.9"
+vt100 = "0.16"
+base64 = "0.22"
+ratatui = "0.30"
+crossterm = "0.29"
+tachyonfx = "0.25"
+insta = "1"
+ureq = { version = "3.5", features = ["json", "platform-verifier"] }
+# Slack's Socket Mode. TLS comes from our own rustls config with the OS verifier (as ureq's).
+tungstenite = { version = "0.30", default-features = false, features = ["handshake", "rustls-tls-native-roots"] }
+rustls = { version = "0.23", default-features = false, features = ["std", "ring"] }
+rustls-platform-verifier = "0.7"
+rmcp = { version = "3.10", default-features = false, features = ["server", "macros", "transport-io"] }
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "io-std"] }
+chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
 
 [workspace.lints.rust]
 unsafe_code = "forbid"

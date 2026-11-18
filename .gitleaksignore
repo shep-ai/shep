@@ -16,3 +16,7 @@ f2099f97e4e447aac7f141b14a2eb38a39df56f7:src/presentation/web/components/feature
 # These are UI fixtures rendered in Storybook to preview the token-auth form — no real
 # credentials are involved. PR #554 (one-click cloud deploy) does not touch this file;
 # the allowlist is added here only because gitleaks scans full git history.
+# Shep 2 GitHub source tests (commit cde33d83): the test token was GitHub's own documentation
+# example value (gho_16C7…B4a), not a credential. Later commits use "gho_fake_token_for_shep_tests";
+# this line covers the one commit gitleaks still scans in history.
+cde33d83842b5405f09d59c8fec119d7606cf93e:shep2/crates/shep-infra/tests/source_github/world.rs:github-oauth:16

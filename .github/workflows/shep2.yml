@@ -42,5 +42,51 @@ jobs:
         run: cargo fmt --all --check
       - name: Lint
         run: cargo clippy --all-targets --locked -- -D warnings
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      # The real Claude Code CLI, run by Shep against shep-mock-model: no API key needed.
+      - name: Install Claude Code
+        run: npm install -g @anthropic-ai/claude-code@2.1.317
+      - name: Test (including the tests that run the real Claude Code CLI)
+        run: cargo test --workspace --locked --no-fail-fast -- --include-ignored
+
+  # The Mac app (shep2/macos): ShepKit (protocol client + view models) and the SwiftUI app.
+  mac-app:
+    name: Mac app (SwiftUI)
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: shep2/macos
+    steps:
+      - uses: actions/checkout@v4
+      - name: Toolchain
+        run: swift --version && xcodebuild -version
+      - name: Swift types match schema/openrpc.json
+        run: python3 ../tools/swift-codegen/generate.py --check
+      - name: Generator tests
+        run: python3 -m unittest discover -s ../tools/swift-codegen
+      # Live Activities come from ActivityKit. Report whether this SDK has it for macOS; the
+      # app does not use it, and the menu bar extra is its progress surface.
+      - name: ActivityKit in the macOS SDK?
+        run: |
+          SDK="$(xcrun --sdk macosx --show-sdk-path)"
+          if [ -d "$SDK/System/Library/Frameworks/ActivityKit.framework" ]; then
+            echo "ActivityKit.framework is in the macOS SDK at $SDK"
+          else
+            echo "No ActivityKit.framework in the macOS SDK at $SDK"
+          fi
+      - name: Build
+        run: swift build
       - name: Test
-        run: cargo test --workspace --locked
+        run: swift test
+      - name: Package Shep.app
+        run: bash scripts/make-app.sh release
+      # Kept with the run so people can try the app before a release (shep2/dist/try.sh --app).
+      - name: Zip Shep.app
+        run: ditto -c -k --keepParent Shep.app Shep-macos.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: shep2-mac-app
+          path: shep2/macos/Shep-macos.zip
+          if-no-files-found: error

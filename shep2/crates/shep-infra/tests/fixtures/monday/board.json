@@ -1,0 +1,49 @@
+{
+  "data": {
+    "me": {
+      "account": { "slug": "acme" }
+    },
+    "boards": [
+      {
+        "id": "1234567890",
+        "name": "Sprint tasks",
+        "columns": [
+          { "id": "name", "title": "Name", "type": "name", "settings": {} },
+          { "id": "person", "title": "Owner", "type": "people", "settings": {} },
+          {
+            "id": "status",
+            "title": "Status",
+            "type": "status",
+            "settings": {
+              "type": "status",
+              "labels": [
+                {
+                  "id": 0,
+                  "label": "Working on it",
+                  "color": "working_orange",
+                  "index": 0,
+                  "is_done": false
+                },
+                { "id": 1, "label": "Done", "color": "done_green", "index": 1, "is_done": true },
+                { "id": 2, "label": "Stuck", "color": "stuck_red", "index": 2, "is_done": false },
+                { "id": 7, "label": "Tonight", "color": "purple", "index": 3, "is_done": false },
+                { "id": 9, "label": "In review", "color": "sky", "index": 4, "is_done": false },
+                {
+                  "id": 11,
+                  "label": "Old tonight",
+                  "color": "grass_green",
+                  "index": 5,
+                  "is_done": false,
+                  "is_deactivated": true
+                }
+              ]
+            }
+          },
+          { "id": "link_mkr4x2", "title": "PR", "type": "link", "settings": {} },
+          { "id": "date4", "title": "Due", "type": "date", "settings": {} }
+        ]
+      }
+    ]
+  },
+  "extensions": { "request_id": "4a2d3f5e-6b7c-4d8e-9f0a-1b2c3d4e5f6a" }
+}

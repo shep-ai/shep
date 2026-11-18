@@ -1,0 +1,116 @@
+{
+  "object": "data_source",
+  "id": "2a3b4c5d-6e7f-4801-9a2b-3c4d5e6f7a8b",
+  "created_time": "2026-09-01T09:00:00.000Z",
+  "last_edited_time": "2026-11-13T16:00:00.000Z",
+  "created_by": { "object": "user", "id": "e450a39e-9051-4d36-bc4e-8581611fc592" },
+  "last_edited_by": { "object": "user", "id": "e450a39e-9051-4d36-bc4e-8581611fc592" },
+  "title": [
+    {
+      "type": "text",
+      "text": { "content": "Tasks", "link": null },
+      "annotations": {
+        "bold": false,
+        "italic": false,
+        "strikethrough": false,
+        "underline": false,
+        "code": false,
+        "color": "default"
+      },
+      "plain_text": "Tasks",
+      "href": null
+    }
+  ],
+  "description": [],
+  "icon": null,
+  "parent": { "type": "database_id", "database_id": "1f2e3d4c-5b6a-4798-8a9b-0c1d2e3f4a5b" },
+  "database_parent": { "type": "page_id", "page_id": "5d6e7f80-91a2-4b34-c5d6-e7f8a9b0c1d2" },
+  "in_trash": false,
+  "properties": {
+    "Name": { "id": "title", "name": "Name", "description": null, "type": "title", "title": {} },
+    "Status": {
+      "id": "%5EOE%40",
+      "name": "Status",
+      "description": null,
+      "type": "status",
+      "status": {
+        "options": [
+          {
+            "id": "b3f1a1e2-0001-4c4b-9f00-000000000001",
+            "name": "Not started",
+            "color": "default",
+            "description": null
+          },
+          {
+            "id": "b3f1a1e2-0002-4c4b-9f00-000000000002",
+            "name": "Tonight",
+            "color": "purple",
+            "description": null
+          },
+          {
+            "id": "b3f1a1e2-0003-4c4b-9f00-000000000003",
+            "name": "In progress",
+            "color": "blue",
+            "description": null
+          },
+          {
+            "id": "b3f1a1e2-0004-4c4b-9f00-000000000004",
+            "name": "In review",
+            "color": "yellow",
+            "description": null
+          },
+          {
+            "id": "b3f1a1e2-0005-4c4b-9f00-000000000005",
+            "name": "Done",
+            "color": "green",
+            "description": null
+          }
+        ],
+        "groups": [
+          {
+            "id": "c4a2b2f3-0001-4d5c-8a00-000000000001",
+            "name": "To-do",
+            "color": "gray",
+            "option_ids": [
+              "b3f1a1e2-0001-4c4b-9f00-000000000001",
+              "b3f1a1e2-0002-4c4b-9f00-000000000002"
+            ]
+          },
+          {
+            "id": "c4a2b2f3-0002-4d5c-8a00-000000000002",
+            "name": "In progress",
+            "color": "blue",
+            "option_ids": [
+              "b3f1a1e2-0003-4c4b-9f00-000000000003",
+              "b3f1a1e2-0004-4c4b-9f00-000000000004"
+            ]
+          },
+          {
+            "id": "c4a2b2f3-0003-4d5c-8a00-000000000003",
+            "name": "Complete",
+            "color": "green",
+            "option_ids": ["b3f1a1e2-0005-4c4b-9f00-000000000005"]
+          }
+        ]
+      }
+    },
+    "Shep": {
+      "id": "Xk%3Cd",
+      "name": "Shep",
+      "description": "What Shep is doing with the task",
+      "type": "rich_text",
+      "rich_text": {}
+    },
+    "PR": { "id": "p%40Rl", "name": "PR", "description": null, "type": "url", "url": {} },
+    "Assignee": {
+      "id": "notion%3A%2F%2Ftasks%2Fassign_property",
+      "name": "Assignee",
+      "description": null,
+      "type": "people",
+      "people": {}
+    }
+  },
+  "url": "https://app.notion.com/p/1f2e3d4c5b6a47988a9b0c1d2e3f4a5b",
+  "public_url": null,
+  "request_id": "8b3a4f5e-6d7c-4b8a-9998-877665544332"
+}

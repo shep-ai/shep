@@ -1,6 +1,7 @@
 # Build outputs
 dist/
 shep2/target/
+shep2/schema/
 packages/*/dist/
 packages/*/release/
 packages/*/release-apps-only/

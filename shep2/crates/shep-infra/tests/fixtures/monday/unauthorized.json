@@ -1,0 +1,16 @@
+{
+  "errors": [
+    {
+      "message": "User unauthorized to perform action",
+      "locations": [{ "line": 1, "column": 32 }],
+      "path": ["create_update"],
+      "extensions": {
+        "code": "UserUnauthorizedException",
+        "status_code": 403,
+        "error_data": {}
+      }
+    }
+  ],
+  "data": { "create_update": null },
+  "extensions": { "request_id": "1b9e0a2f-3c4d-4e5f-8a7b-8c9d0e1f2a3b" }
+}

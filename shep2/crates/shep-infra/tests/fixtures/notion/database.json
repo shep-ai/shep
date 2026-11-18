@@ -1,0 +1,33 @@
+{
+  "object": "database",
+  "id": "1f2e3d4c-5b6a-4798-8a9b-0c1d2e3f4a5b",
+  "title": [
+    {
+      "type": "text",
+      "text": { "content": "Tasks", "link": null },
+      "annotations": {
+        "bold": false,
+        "italic": false,
+        "strikethrough": false,
+        "underline": false,
+        "code": false,
+        "color": "default"
+      },
+      "plain_text": "Tasks",
+      "href": null
+    }
+  ],
+  "description": [],
+  "parent": { "type": "page_id", "page_id": "5d6e7f80-91a2-4b34-c5d6-e7f8a9b0c1d2" },
+  "is_inline": false,
+  "in_trash": false,
+  "is_locked": false,
+  "created_time": "2026-09-01T09:00:00.000Z",
+  "last_edited_time": "2026-11-13T16:00:00.000Z",
+  "data_sources": [{ "id": "2a3b4c5d-6e7f-4801-9a2b-3c4d5e6f7a8b", "name": "Tasks" }],
+  "icon": null,
+  "cover": null,
+  "url": "https://app.notion.com/p/1f2e3d4c5b6a47988a9b0c1d2e3f4a5b",
+  "public_url": null,
+  "request_id": "7a2f3e4d-5c6b-4a79-8887-766554433221"
+}

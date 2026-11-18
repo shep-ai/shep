@@ -1,0 +1,14 @@
+{
+  "data": {
+    "viewer": {
+      "id": "4b3e6c2f-6f0e-4d5a-9a52-7f1f0c2d9b11",
+      "name": "Dana Scully",
+      "email": "dana@acme.example"
+    },
+    "organization": {
+      "id": "e1b0f1a8-3c64-4f1e-8d0b-2a9c7f6e5d40",
+      "name": "Acme",
+      "urlKey": "acme"
+    }
+  }
+}

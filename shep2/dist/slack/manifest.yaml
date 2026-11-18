@@ -1,0 +1,40 @@
+# The Slack app Shep connects as. One per workspace, created from this file:
+# api.slack.com/apps → Create New App → From a manifest. See README.md next to it.
+_metadata:
+  major_version: 1
+display_information:
+  name: Shep
+  description: 'Hand work to Shep with a :sheep: reaction; the PR is in the thread by morning.'
+  background_color: '#1b1f3b'
+features:
+  bot_user:
+    display_name: Shep
+    always_online: true
+oauth_config:
+  scopes:
+    bot:
+      # reaction_added: a :sheep: on a message hands it over
+      - reactions:read
+      # app_mention: "@Shep tonight" in a thread hands the thread over
+      - app_mentions:read
+      # read the handed-over message and the replies in its thread
+      - channels:history
+      - groups:history
+      # list the channels Shep is in, for onboarding suggestions
+      - channels:read
+      - groups:read
+      # answer in the thread (chat.postMessage, chat.postEphemeral)
+      - chat:write
+      # attach screenshots and other proof to the morning reply
+      - files:write
+settings:
+  event_subscriptions:
+    bot_events:
+      - reaction_added
+      - app_mention
+  # Merge / Send back buttons arrive as block_actions over the socket
+  interactivity:
+    is_enabled: true
+  org_deploy_enabled: false
+  socket_mode_enabled: true
+  token_rotation_enabled: false

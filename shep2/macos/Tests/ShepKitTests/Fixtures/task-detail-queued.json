@@ -1,0 +1,33 @@
+{
+  "activity": "queued",
+  "agent": null,
+  "branch": null,
+  "checks": [],
+  "diff": null,
+  "events": [],
+  "live": false,
+  "proof": [],
+  "review": null,
+  "screen": null,
+  "stat": {
+    "added": 0,
+    "files": 0,
+    "removed": 0
+  },
+  "step": "Queued",
+  "task": {
+    "created_at": 1794694566,
+    "id": 1,
+    "note": null,
+    "pr": null,
+    "question": null,
+    "source": {
+      "Sentence": {
+        "text": "Fix login redirect loop"
+      }
+    },
+    "state": "Queued",
+    "title": "Fix login redirect loop",
+    "updated_at": 1794694566
+  }
+}

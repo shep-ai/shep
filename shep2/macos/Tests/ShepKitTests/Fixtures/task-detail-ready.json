@@ -1,0 +1,40 @@
+{
+  "activity": "CI green · second opinion: looks good",
+  "agent": "ClaudeCode",
+  "branch": "shep/412-fix-login-redirect-loop",
+  "checks": [
+    {
+      "link": "https://github.com/acme/booking-app/actions/runs/1",
+      "name": "build",
+      "state": "Passed"
+    },
+    { "link": null, "name": "lint", "state": "Skipped" }
+  ],
+  "diff": "diff --git a/src/auth/redirect.ts b/src/auth/redirect.ts\nindex 1111111..2222222 100644\n--- a/src/auth/redirect.ts\n+++ b/src/auth/redirect.ts\n@@ -1,4 +1,5 @@\n export function next(url: string) {\n-  return url;\n+  if (url.startsWith('/login')) return '/';\n+  return url;\n }\ndiff --git a/README.md b/README.md\nindex 3333333..4444444 100644\n--- a/README.md\n+++ b/README.md\n@@ -9,2 +9,3 @@\n Intro\n+Login no longer loops.\n",
+  "events": [
+    { "at": 1794680000, "detail": "agent started", "kind": "AgentStarted", "task_id": 2 },
+    { "at": 1794683000, "detail": "lint failed", "kind": "CiFailed", "task_id": 2 },
+    { "at": 1794686000, "detail": "CI green", "kind": "CiGreen", "task_id": 2 },
+    { "at": 1794687000, "detail": "ready for review", "kind": "Ready", "task_id": 2 }
+  ],
+  "live": false,
+  "proof": [
+    "/Users/sam/.shep/shep2/tasks/2/proof/tests.txt",
+    "/Users/sam/.shep/shep2/tasks/2/proof/login.png"
+  ],
+  "review": "Looks good. One naming nit, left as a comment.",
+  "screen": null,
+  "stat": { "added": 3, "files": 2, "removed": 1 },
+  "step": "Ready",
+  "task": {
+    "created_at": 1794670000,
+    "id": 2,
+    "note": null,
+    "pr": { "number": 77, "url": "https://github.com/acme/booking-app/pull/77" },
+    "question": null,
+    "source": { "GitHubIssue": { "number": 412, "repo": "acme/booking-app" } },
+    "state": "Ready",
+    "title": "Fix login redirect loop",
+    "updated_at": 1794687000
+  }
+}

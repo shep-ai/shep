@@ -1,0 +1,17 @@
+[package]
+name = "shep-mock-model"
+description = "A scripted stand-in for the Anthropic Messages API, so the real Claude Code CLI can run in tests without an API key. Test tooling; never shipped."
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = false
+
+[[bin]]
+name = "shep-mock-model"
+path = "src/main.rs"
+
+[dependencies]
+serde_json.workspace = true
+
+[lints]
+workspace = true

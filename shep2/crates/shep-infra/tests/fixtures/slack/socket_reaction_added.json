@@ -1,0 +1,36 @@
+{
+  "payload": {
+    "token": "fake-verification-token",
+    "team_id": "T0ACME0001",
+    "api_app_id": "A0SHEPAPP1",
+    "event": {
+      "type": "reaction_added",
+      "user": "U0DANA0001",
+      "reaction": "sheep",
+      "item_user": "U0DANA0001",
+      "item": {
+        "type": "message",
+        "channel": "C0BUGS0001",
+        "ts": "1763139720.000100",
+        "channel_type": "channel"
+      },
+      "event_ts": "1763139722.000150"
+    },
+    "type": "event_callback",
+    "authorizations": [
+      {
+        "team_id": "T0ACME0001",
+        "user_id": "U0SHEPBOT1",
+        "is_bot": true,
+        "is_enterprise_install": false
+      }
+    ],
+    "event_id": "Ev0REACT001",
+    "event_time": 1763139722
+  },
+  "envelope_id": "57d6a792-4d35-4d0b-b6aa-3361493e1caf",
+  "type": "events_api",
+  "accepts_response_payload": false,
+  "retry_attempt": 0,
+  "retry_reason": ""
+}

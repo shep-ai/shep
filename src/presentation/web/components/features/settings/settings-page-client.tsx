@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   Check,
   Bot,
@@ -86,6 +86,7 @@ import { WorktreeSettingsSection } from '@/components/features/settings/worktree
 import { HarnessSettingsSection } from '@/components/features/settings/harness-settings-section';
 import { SelfLearningSettingsSection } from '@/components/features/settings/self-learning-settings-section';
 import { SettingsSectionNav } from './settings-section-nav';
+import { scrollAndHold } from './scroll-and-hold';
 import { useHydrated } from '@/hooks/use-hydrated';
 import { AdaptiveModelSettingsSection } from '@/components/features/settings/adaptive-model-settings-section';
 import { EffortSettingsControl } from '@/components/features/settings/effort-settings-control';
@@ -675,12 +676,17 @@ export function SettingsPageClient({
     return () => observer.disconnect();
   }, [visibleSections]);
 
+  // The hold on the section jumped to last; choosing another section, or leaving, lets go.
+  const releaseScrollHold = useRef<(() => void) | null>(null);
+  useEffect(() => () => releaseScrollHold.current?.(), []);
+
   const scrollToSection = useCallback((id: string) => {
     const el = document.getElementById(`section-${id}`);
     if (!el) return;
-    // Jump atomically: native smooth scrolling can be interrupted by async
-    // settings content resizing while the destination is several screens away.
-    el.scrollIntoView({ behavior: 'instant', block: 'start' });
+    // Jump atomically, then hold the section in view while sections around it are still
+    // loading: their content arrives after the jump and would otherwise push it away.
+    releaseScrollHold.current?.();
+    releaseScrollHold.current = scrollAndHold(el);
     // Flash highlight
     el.style.animation = 'none';
     // Force reflow

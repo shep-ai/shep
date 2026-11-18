@@ -1,0 +1,14 @@
+{
+  "object": "user",
+  "id": "9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d",
+  "name": "Shep",
+  "avatar_url": null,
+  "type": "bot",
+  "bot": {
+    "owner": { "type": "workspace", "workspace": true },
+    "workspace_id": "0c1d2e3f-4a5b-4c6d-8e7f-9a0b1c2d3e4f",
+    "workspace_limits": { "max_file_upload_size_in_bytes": 5368709120 },
+    "workspace_name": "Acme"
+  },
+  "request_id": "6f1e2d3c-4b5a-4968-8776-655443322110"
+}

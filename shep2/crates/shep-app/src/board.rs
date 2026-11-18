@@ -1,7 +1,9 @@
+use schemars::JsonSchema;
+use serde::{Deserialize, Serialize};
 use shep_domain::{Task, TaskState};
 
 /// Every task, grouped by state in the order a person reviews them.
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 pub struct Board {
     pub needs_you: Vec<Task>,
     pub ready: Vec<Task>,

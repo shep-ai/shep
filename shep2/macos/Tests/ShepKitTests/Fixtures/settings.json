@@ -1,0 +1,9 @@
+{
+  "agent": null,
+  "parallelism": 3,
+  "repo": null,
+  "shift_start": {
+    "hour": 23,
+    "minute": 0
+  }
+}

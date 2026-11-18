@@ -1,0 +1,14 @@
+{
+  "ok": true,
+  "channel": "C0BUGS0001",
+  "ts": "1763150900.001100",
+  "message": {
+    "text": "Got it. I'll work on this tonight at 23:00 in acme/storefront and reply here.",
+    "username": "Shep",
+    "bot_id": "B0SHEPBOT1",
+    "type": "message",
+    "subtype": "bot_message",
+    "thread_ts": "1763139720.000100",
+    "ts": "1763150900.001100"
+  }
+}

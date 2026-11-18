@@ -1,0 +1,65 @@
+{
+  "messages": [
+    {
+      "type": "message",
+      "user": "U0DANA0001",
+      "text": "Checkout does nothing on Safari when the cart has a coupon.\nRepro: add any item, apply SAVE10, click Pay.",
+      "thread_ts": "1763139720.000100",
+      "reply_count": 5,
+      "reply_users": ["U0SHEPBOT1", "U0DANA0001", "U0YOU00001"],
+      "latest_reply": "1763150300.000600",
+      "reactions": [{ "name": "sheep", "users": ["U0DANA0001"], "count": 1 }],
+      "ts": "1763139720.000100"
+    },
+    {
+      "type": "message",
+      "user": "U0SHEPBOT1",
+      "bot_id": "B0SHEPBOT1",
+      "app_id": "A0SHEPAPP1",
+      "text": "Got it. I'll work on this tonight at 23:00 in acme/storefront and reply here.",
+      "thread_ts": "1763139720.000100",
+      "parent_user_id": "U0DANA0001",
+      "ts": "1763139725.000200"
+    },
+    {
+      "type": "message",
+      "user": "U0YOU00001",
+      "text": "Is this the Safari 18 bug?",
+      "thread_ts": "1763139720.000100",
+      "parent_user_id": "U0DANA0001",
+      "ts": "1763140000.000500"
+    },
+    {
+      "type": "message",
+      "user": "U0SHEPBOT1",
+      "bot_id": "B0SHEPBOT1",
+      "app_id": "A0SHEPAPP1",
+      "text": "Which zone when the customer has none?\n_Reply in this thread and I'll pick it up from there._",
+      "thread_ts": "1763139720.000100",
+      "parent_user_id": "U0DANA0001",
+      "ts": "1763150100.000300"
+    },
+    {
+      "type": "message",
+      "user": "U0DANA0001",
+      "text": "Use the store's zone &amp; keep the customer's if set.",
+      "thread_ts": "1763139720.000100",
+      "parent_user_id": "U0DANA0001",
+      "ts": "1763150200.000400"
+    },
+    {
+      "type": "message",
+      "subtype": "bot_message",
+      "bot_id": "B0SHEPBOT1",
+      "text": "Ready for review: acme/storefront#101",
+      "thread_ts": "1763139720.000100",
+      "parent_user_id": "U0DANA0001",
+      "ts": "1763150300.000600"
+    }
+  ],
+  "has_more": false,
+  "ok": true,
+  "response_metadata": {
+    "next_cursor": ""
+  }
+}

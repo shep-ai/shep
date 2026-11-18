@@ -62,3 +62,50 @@ fn parallelism_must_be_between_one_and_twelve() {
         Err(SettingsError::BadParallelism(13))
     ));
 }
+
+#[test]
+fn settings_saved_before_repo_existed_still_load() {
+    let old = r#"{"agent":null,"shift_start":{"hour":23,"minute":0},"parallelism":3}"#;
+    let s: Settings = serde_json::from_str(old).unwrap();
+    assert_eq!(s.repo, None);
+    assert_eq!(s, Settings::default());
+}
+
+#[test]
+fn sources_connect_once_each_and_disconnect() {
+    use shep_domain::{SourceKind, SourceSetting};
+    let mut s = Settings::default();
+    assert_eq!(s.sources.len(), 0);
+    let linear =
+        SourceSetting::new(SourceKind::Linear, "Acme · team ENG").with_option("team", "ENG");
+    s.connect(linear.clone());
+    s.connect(SourceSetting::new(SourceKind::Slack, "Acme"));
+    s.connect(SourceSetting::new(SourceKind::Linear, "Acme · team WEB").with_option("team", "WEB"));
+    assert_eq!(s.sources.len(), 2, "connecting again replaces");
+    assert_eq!(
+        s.source(SourceKind::Linear).unwrap().option("team"),
+        Some("WEB")
+    );
+    assert!(s.disconnect(SourceKind::Slack));
+    assert!(!s.disconnect(SourceKind::Slack));
+    assert_eq!(s.sources.len(), 1);
+}
+
+#[test]
+fn sources_have_a_cli_name_and_shep_itself_is_not_connectable() {
+    use shep_domain::SourceKind;
+    for kind in SourceKind::CONNECTABLE {
+        assert_eq!(SourceKind::parse(kind.cli_name()), Ok(kind));
+        assert_ne!(kind.display_name(), "");
+    }
+    assert!(!SourceKind::CONNECTABLE.contains(&SourceKind::Shep));
+    assert_eq!(SourceKind::parse("GitHub"), Ok(SourceKind::GitHub));
+    assert!(SourceKind::parse("trello").unwrap_err().contains("linear"));
+}
+
+#[test]
+fn settings_saved_before_sources_existed_still_load() {
+    let old = r#"{"agent":null,"shift_start":{"hour":23,"minute":0},"parallelism":3}"#;
+    let s: Settings = serde_json::from_str(old).unwrap();
+    assert_eq!(s.sources.len(), 0);
+}
