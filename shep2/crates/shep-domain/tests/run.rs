@@ -175,3 +175,15 @@ fn a_run_saved_before_conflict_fixes_existed_still_loads() {
         "the agent gets one try at a conflict"
     );
 }
+
+#[test]
+fn a_taken_branch_name_gets_a_number_and_stays_a_task_branch() {
+    let branch = TaskBranch::for_task(TaskId(1), "Fix login");
+    assert_eq!(branch.numbered(2).as_str(), "shep/1-fix-login-2");
+    let titled_with_a_number = TaskBranch::for_task(TaskId(4), "Fix issue 2");
+    assert_eq!(
+        titled_with_a_number.numbered(3).as_str(),
+        "shep/4-fix-issue-2-3"
+    );
+    assert!(check_push(branch.numbered(7).as_str(), "main").is_ok());
+}

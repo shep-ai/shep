@@ -2,6 +2,7 @@
 //! checkout, its branch, index and files are never touched.
 
 mod guard;
+mod worktree;
 
 use std::path::{Path, PathBuf};
 
@@ -103,42 +104,7 @@ impl Git for GitCli {
     }
 
     fn prepare_worktree(&self, repo: &Path, branch: &TaskBranch) -> Result<Worktree, GitError> {
-        let base = default_branch(repo)?;
-        let path = self.worktree_path(repo, branch);
-        let worktree = Worktree {
-            path: path.display().to_string(),
-            branch: branch.clone(),
-            base: base.clone(),
-        };
-        if path.join(".git").exists() {
-            return Ok(worktree);
-        }
-        git(repo, &["fetch", "--quiet", REMOTE, &base])?;
-        git(repo, &["worktree", "prune"])?;
-        let path_arg = worktree.path.as_str();
-        let local = format!("refs/heads/{branch}");
-        if git(repo, &["rev-parse", "--verify", "--quiet", &local]).is_ok() {
-            git(
-                repo,
-                &["worktree", "add", "--quiet", path_arg, branch.as_str()],
-            )?;
-        } else {
-            let start = format!("{REMOTE}/{base}");
-            git(
-                repo,
-                &[
-                    "worktree",
-                    "add",
-                    "--quiet",
-                    "--no-track",
-                    "-b",
-                    branch.as_str(),
-                    path_arg,
-                    &start,
-                ],
-            )?;
-        }
-        Ok(worktree)
+        self.prepare(repo, branch)
     }
 
     fn commit_all(&self, wt: &Worktree, message: &str) -> Result<bool, GitError> {

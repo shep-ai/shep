@@ -3555,3 +3555,15 @@ running and answering. A person upgrading `shep` would hit the same thing. **Rul
 - A long-lived process records which build it is; clients compare it with their own and restart
   it when they differ (`daemon.build`, `SHEP_BUILD_ID` for tests).
 - Before checking a fix by hand, stop every daemon and holder from earlier runs (`pkill -f 'shep __'`).
+
+## Names Shep makes in a person's repository must not collide with earlier ones
+
+Trying a fresh Shep home in a repository an earlier home had used, task 1 could never start:
+its branch name `shep/1-…` was already checked out by the old home's worktree. A reused name
+can also carry an old task's commits or an old pull request. **Rules:**
+
+- Anything Shep creates in a shared place (branches, files in the person's repo) is marked as
+  this home's (`branch.<name>.shep-home`) and reused only when the mark matches; any other
+  taken name gets the next number.
+- Try every change from a fresh home in a repository that already has Shep's leftovers, not
+  only from a clean one.

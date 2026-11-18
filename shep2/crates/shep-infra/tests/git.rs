@@ -150,3 +150,72 @@ fn a_repository_describes_its_github_name_and_whether_it_is_clean() {
     repos.busy_checkout();
     assert!(!g.describe(&repos.checkout()).unwrap().clean);
 }
+
+/// A Shep home's view of the repository: worktrees under its own folder.
+fn shep_home(repos: &Repos, name: &str) -> GitCli {
+    GitCli::new(repos.path(name))
+}
+
+#[test]
+fn a_branch_left_by_another_shep_is_not_reused() {
+    // An earlier install made task 1's branch and committed on it; this home's task 1 starts
+    // fresh from origin on a name of its own.
+    let repos = Repos::new();
+    let earlier = shep_home(&repos, "earlier-home");
+    let old = earlier
+        .prepare_worktree(&repos.checkout(), &branch())
+        .unwrap();
+    std::fs::write(std::path::Path::new(&old.path).join("old.txt"), "old work").unwrap();
+    earlier.commit_all(&old, "old work").unwrap();
+
+    let g = GitCli::new(repos.worktrees());
+    let wt = g.prepare_worktree(&repos.checkout(), &branch()).unwrap();
+    assert_eq!(wt.branch.as_str(), "shep/1-fix-login-2");
+    let path = std::path::Path::new(&wt.path);
+    assert!(
+        !path.join("old.txt").exists(),
+        "fresh from origin, not the old work"
+    );
+    assert_eq!(g.commits_ahead(&wt).unwrap(), 0);
+
+    std::fs::remove_dir_all(&old.path).unwrap();
+    let again = g.prepare_worktree(&repos.checkout(), &branch()).unwrap();
+    assert_eq!(again, wt, "this home finds its own worktree again");
+}
+
+#[test]
+fn a_branch_from_an_earlier_pull_request_is_not_reused() {
+    let repos = Repos::new();
+    let earlier = shep_home(&repos, "earlier-home");
+    let old = earlier
+        .prepare_worktree(&repos.checkout(), &branch())
+        .unwrap();
+    std::fs::write(std::path::Path::new(&old.path).join("old.txt"), "old work").unwrap();
+    earlier.commit_all(&old, "old work").unwrap();
+    earlier.push(&old).unwrap();
+    earlier.remove_worktree(&repos.checkout(), &old).unwrap();
+    earlier
+        .delete_branch(&repos.checkout(), &old.branch)
+        .unwrap();
+    assert!(repos
+        .origin_branches()
+        .contains(&"shep/1-fix-login".to_owned()));
+
+    let g = GitCli::new(repos.worktrees());
+    let wt = g.prepare_worktree(&repos.checkout(), &branch()).unwrap();
+    assert_eq!(wt.branch.as_str(), "shep/1-fix-login-2");
+}
+
+#[test]
+fn numbering_skips_every_taken_name() {
+    let repos = Repos::new();
+    for home in ["first-home", "second-home"] {
+        shep_home(&repos, home)
+            .prepare_worktree(&repos.checkout(), &branch())
+            .unwrap();
+    }
+    let wt = GitCli::new(repos.worktrees())
+        .prepare_worktree(&repos.checkout(), &branch())
+        .unwrap();
+    assert_eq!(wt.branch.as_str(), "shep/1-fix-login-3");
+}

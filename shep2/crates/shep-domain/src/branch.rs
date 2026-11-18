@@ -7,6 +7,7 @@ use crate::TaskId;
 pub const TASK_BRANCH_PREFIX: &str = "shep/";
 const MAX_BRANCH_LEN: usize = 48;
 const FALLBACK_SLUG: &str = "task";
+const NUMBER_SEPARATOR: char = '-';
 
 /// The git branch a task's work lives on: `shep/<id>-<slug of the title>`.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, JsonSchema)]
@@ -35,6 +36,13 @@ impl TaskBranch {
 
     pub fn as_str(&self) -> &str {
         &self.0
+    }
+
+    /// The name with `-<n>` after it, for when the name is already taken in the repository (a
+    /// branch left by an earlier Shep, or an old pull request's). Always number the original.
+    #[must_use]
+    pub fn numbered(&self, n: u32) -> Self {
+        Self(format!("{}{NUMBER_SEPARATOR}{n}", self.0))
     }
 }
 
