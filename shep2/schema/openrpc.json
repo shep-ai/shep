@@ -333,9 +333,29 @@
           "optional": {
             "type": "boolean"
           },
+          "prefill": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/Prefill"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "Where Shep can find the value itself (the adapter says)."
+          },
           "secret": {
             "description": "Kept in the OS keychain, never in settings; typed without echo.",
             "type": "boolean"
+          },
+          "value": {
+            "default": null,
+            "description": "The value Shep found; used when the person leaves the field empty.",
+            "type": [
+              "string",
+              "null"
+            ]
           }
         },
         "required": [
@@ -394,6 +414,16 @@
           "parked_secs"
         ],
         "type": "object"
+      },
+      "Prefill": {
+        "description": "Where Shep can find a field's value itself, so nobody types what Shep already knows.",
+        "oneOf": [
+          {
+            "const": "RepositorySlug",
+            "description": "`owner/name` of the repository Shep works in.",
+            "type": "string"
+          }
+        ]
       },
       "PullRequest": {
         "description": "The draft pull request Shep opened for a task.",

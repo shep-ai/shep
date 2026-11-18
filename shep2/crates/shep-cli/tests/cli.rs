@@ -304,3 +304,27 @@ impl Drop for KillOnDrop {
         let _ = self.0.wait();
     }
 }
+
+#[test]
+fn a_daemon_left_from_another_build_is_replaced() {
+    let home = Home::new();
+    home.ready();
+    home.set_env("SHEP_BUILD_ID", "before-the-upgrade");
+    home.shep().arg("go").assert().success();
+    let old = home.daemon_pid().unwrap();
+
+    home.set_env("SHEP_BUILD_ID", "after-the-upgrade");
+    home.shep().arg("go").assert().success();
+    let new = home.daemon_pid().unwrap();
+    assert_ne!(old, new, "the new build runs its own daemon");
+    home.wait_for("the old daemon to stop", || {
+        (!support::alive(&old)).then_some(())
+    });
+
+    home.shep().arg("go").assert().success();
+    assert_eq!(
+        home.daemon_pid().unwrap(),
+        new,
+        "the same build keeps its daemon"
+    );
+}

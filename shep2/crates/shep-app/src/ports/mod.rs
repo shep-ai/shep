@@ -17,7 +17,8 @@ pub use agents::{
 pub use forge::{Forge, ForgeError, Issue, IssueRef, IssueState, PrComment};
 pub use git::{BaseUpdate, Git, GitError, RepoInfo};
 pub use sources::{
-    FormField, HandOver, Reply, SourceError, SourceForm, SourceProviders, TaskSource, Update,
+    FormField, HandOver, Prefill, Reply, SourceError, SourceForm, SourceProviders, TaskSource,
+    Update,
 };
 pub use store::{
     EventLog, Mark, Marks, RunRepository, SettingsRepository, StoreError, TaskRepository,

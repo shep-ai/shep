@@ -98,7 +98,9 @@ fn connect_source(
         values.insert(key.to_owned(), value.to_owned());
     }
     for field in &status.form.fields {
-        if values.contains_key(&field.key) || (field.optional && !prompt::interactive()) {
+        // A value Shep found itself (the repository) is used as is; the core fills it in.
+        let known = field.value.is_some();
+        if values.contains_key(&field.key) || known || (field.optional && !prompt::interactive()) {
             continue;
         }
         let label = if field.hint.is_empty() {

@@ -64,6 +64,7 @@ pub fn field(key: &str, label: &str, secret: bool, hint: &str, optional: bool) -
         secret,
         hint: hint.to_owned(),
         optional,
+        ..FormField::default()
     }
 }
 

@@ -10,7 +10,7 @@ mod source;
 use std::collections::BTreeMap;
 use std::sync::Arc;
 
-use shep_app::ports::{FormField, SourceError, SourceForm, TaskSource};
+use shep_app::ports::{FormField, Prefill, SourceError, SourceForm, TaskSource};
 use shep_domain::{SourceKind, SourceSetting};
 
 use super::http::Http;
@@ -100,6 +100,8 @@ impl SourceFactory for GitHubFactory {
                         "{REPO_SHAPE} of the repository Shep works in; signed in through gh"
                     ),
                     optional: false,
+                    prefill: Some(Prefill::RepositorySlug),
+                    ..FormField::default()
                 },
                 FormField {
                     key: LABEL_OPTION.into(),
@@ -107,6 +109,7 @@ impl SourceFactory for GitHubFactory {
                     secret: false,
                     hint: format!("The label that hands an issue to Shep ({DEFAULT_LABEL})"),
                     optional: true,
+                    ..FormField::default()
                 },
             ],
             hand_over: vec![format!("Add the label {DEFAULT_LABEL} to an issue")],

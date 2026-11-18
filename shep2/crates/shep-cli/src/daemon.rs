@@ -7,7 +7,7 @@ use shep_app::{AppError, Engine, Shep, ShepApi};
 use shep_infra::{ShepHome, SqliteStore};
 use shep_rpc::RpcServer;
 
-use crate::wiring;
+use crate::{build, wiring};
 
 pub fn run(home: &ShepHome) -> Result<(), AppError> {
     let failed = |e: std::io::Error| AppError::Remote(format!("daemon: {e}"));
@@ -17,6 +17,7 @@ pub fn run(home: &ShepHome) -> Result<(), AppError> {
     let shep = Arc::new(Shep::new(ports.clone()));
     let listener = shep_jsonrpc::bind_private(&home.daemon_socket()).map_err(failed)?;
     std::fs::write(home.daemon_pid(), std::process::id().to_string()).map_err(failed)?;
+    std::fs::write(home.daemon_build(), build::this_build()).map_err(failed)?;
     eprintln!(
         "shep daemon {} serving {}",
         std::process::id(),

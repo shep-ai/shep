@@ -3546,3 +3546,12 @@ only Shep post was dated before `since`, so the filter never had anything to ski
   fixture (here: a Shep post after `since`) before trusting the test.
 - When parallel agents build similar modules, look for duplicates when merging (two wording
   modules, two time parsers here) and fold them into one before moving on.
+
+## A background process outlives the binary that started it
+
+Trying a new build in tmux showed old behaviour: the daemon from the previous build was still
+running and answering. A person upgrading `shep` would hit the same thing. **Rules:**
+
+- A long-lived process records which build it is; clients compare it with their own and restart
+  it when they differ (`daemon.build`, `SHEP_BUILD_ID` for tests).
+- Before checking a fix by hand, stop every daemon and holder from earlier runs (`pkill -f 'shep __'`).

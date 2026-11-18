@@ -81,4 +81,12 @@ jobs:
       - name: Test
         run: swift test
       - name: Package Shep.app
-        run: bash scripts/make-app.sh debug
+        run: bash scripts/make-app.sh release
+      # Kept with the run so people can try the app before a release (shep2/dist/try.sh --app).
+      - name: Zip Shep.app
+        run: ditto -c -k --keepParent Shep.app Shep-macos.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: shep2-mac-app
+          path: shep2/macos/Shep-macos.zip
+          if-no-files-found: error

@@ -283,13 +283,19 @@ public struct FormField: Codable, Hashable, Sendable {
     /// Where to find it, like "Linear → Settings → API → Personal API keys".
     public var hint: String
     public var optional: Bool
+    /// Where Shep can find the value itself (the adapter says).
+    public var prefill: Prefill?
+    /// The value Shep found; used when the person leaves the field empty.
+    public var value: String?
 
-    public init(key: String, label: String, secret: Bool, hint: String, optional: Bool) {
+    public init(key: String, label: String, secret: Bool, hint: String, optional: Bool, prefill: Prefill? = nil, value: String? = nil) {
         self.key = key
         self.label = label
         self.secret = secret
         self.hint = hint
         self.optional = optional
+        self.prefill = prefill
+        self.value = value
     }
 
     enum CodingKeys: String, CodingKey {
@@ -298,6 +304,8 @@ public struct FormField: Codable, Hashable, Sendable {
         case secret
         case hint
         case optional
+        case prefill
+        case value
     }
 }
 
@@ -342,6 +350,20 @@ public struct Overnight: Codable, Hashable, Sendable {
         case from
         case to
         case parkedSecs = "parked_secs"
+    }
+}
+
+/// Where Shep can find a field's value itself, so nobody types what Shep already knows.
+public enum Prefill: String, Codable, Hashable, Sendable, CaseIterable {
+    case repositorySlug = "RepositorySlug"
+    /// A value from a newer daemon that this app does not know yet.
+    case unknown = "__unknown__"
+
+    public static var allCases: [Prefill] { [.repositorySlug] }
+
+    public init(from decoder: Decoder) throws {
+        let raw = try decoder.singleValueContainer().decode(String.self)
+        self = Self(rawValue: raw) ?? .unknown
     }
 }
 

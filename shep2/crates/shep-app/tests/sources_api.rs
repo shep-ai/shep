@@ -144,3 +144,40 @@ fn setup_carries_the_sources_and_what_they_offer() {
         .any(|x| x.kind == SourceKind::Linear && x.connected));
     assert_eq!(s.candidates[0].item.title, "Export reports to CSV");
 }
+
+#[test]
+fn a_field_the_repository_answers_is_filled_in_and_used_when_left_empty() {
+    use shep_app::testing::FAKE_REPO_FIELD;
+    let w = world();
+    let github = w
+        .shep
+        .sources()
+        .unwrap()
+        .into_iter()
+        .find(|s| s.kind == SourceKind::GitHub)
+        .unwrap();
+    let repo = github
+        .form
+        .fields
+        .iter()
+        .find(|f| f.key == FAKE_REPO_FIELD)
+        .unwrap();
+    assert_eq!(
+        repo.value.as_deref(),
+        Some("acme/app"),
+        "from the repository"
+    );
+
+    let only_token = BTreeMap::from([(FAKE_TOKEN_KEY.to_owned(), "t".to_owned())]);
+    w.shep
+        .connect_source(SourceKind::GitHub, &only_token)
+        .unwrap();
+    let settings = w.shep.settings().unwrap();
+    assert_eq!(
+        settings
+            .source(SourceKind::GitHub)
+            .unwrap()
+            .option(FAKE_REPO_FIELD),
+        Some("acme/app")
+    );
+}

@@ -2,6 +2,39 @@
 
 Go to sleep with issues. Wake up with pull requests.
 
+## Try it now
+
+There is no release yet, so the commands under [Install](#install) start working with the first
+`shep2-v*` tag. Until then, install what CI built for the Shep 2 branch (macOS or Linux):
+
+```bash
+gh api -H 'Accept: application/vnd.github.raw' 'repos/shep-ai/shep/contents/shep2/dist/try.sh?ref=claude/magical-heisenberg-fa1drb' | sh -s -- --app
+```
+
+It needs the GitHub CLI signed in (`gh auth login`). It puts `shep` in `~/.local/bin` and, on a
+Mac, `Shep.app` in `~/Applications`. Run it again to get the newest build; a daemon still
+running the old one is replaced on your next `shep` command.
+
+Then, in a repository you are happy to get draft pull requests on:
+
+1. Run `shep`. The first run walks you through where your tasks live, the coding agent (Claude
+   Code, Codex or Gemini CLI, with your own login), GitHub, the repository and when to work,
+   then starts a first task: pick one of your open issues or describe one.
+2. Watch it work: `1` is the board, `2` the split view with the agent's live terminal (`enter`
+   to type to the agent, `ctrl-]` to step out), `3` the night sky. `q` leaves; work goes on.
+3. When it is Ready, its draft pull request is on GitHub. `m` merges it, `s` sends it back with
+   a note, `a` answers a question.
+
+More: `shep add "#12"` or `shep add "Fix the typo on the pricing page"` queues a task, `shep go`
+starts the queue now (`--at 23:00` for tonight), `shep config` shows and changes settings and
+connects Linear, Jira, Notion, Monday or Slack (`shep config --connect linear`). From any agent
+that speaks MCP, add `{"command": "shep", "args": ["mcp"]}` ([details](#from-your-coding-agent-mcp)).
+The Mac app talks to the daemon that `shep` starts: `open ~/Applications/Shep.app`.
+
+Shep keeps a daemon in the background; `pkill -f 'shep __'` stops it and any agents it runs.
+Its files are `~/.shep/shep2.db` and `~/.shep/shep2/`; Shep 1's are left alone. If `shep
+--version` says 1.x, Shep 1 comes first on your `PATH`: run `~/.local/bin/shep` instead.
+
 ## Install
 
 Any one of these gives you the `shep` command on macOS (Apple silicon or Intel) or Linux

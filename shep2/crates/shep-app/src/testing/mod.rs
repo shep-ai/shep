@@ -13,7 +13,7 @@ use std::sync::Arc;
 pub use agents::{FakeAgents, FakeProvider, FakeSessions};
 pub use forge::{FakeForge, FAKE_VIEWER};
 pub use git::{FakeGit, FAKE_BASE, FAKE_HOOKS};
-pub use sources::{FakeSource, FakeSources, FAKE_ACCOUNT, FAKE_TOKEN_KEY};
+pub use sources::{FakeSource, FakeSources, FAKE_ACCOUNT, FAKE_REPO_FIELD, FAKE_TOKEN_KEY};
 pub use store::{ManualClock, MemoryEvents, MemoryMarks, MemoryRuns, MemorySettings, MemoryTasks};
 pub use system::{FakeAwake, MemoryFiles};
 

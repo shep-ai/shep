@@ -25,6 +25,7 @@ fn field(key: &str, secret: bool) -> FormField {
         secret,
         hint: "Linear → Settings → API".into(),
         optional: !secret,
+        ..FormField::default()
     }
 }
 
@@ -214,5 +215,34 @@ fn first_tasks_come_from_the_sources_and_several_can_go_tonight() {
         [Action::Start(
             "https://linear.app/acme/issue/ENG-342".into()
         )]
+    );
+}
+
+#[test]
+fn a_value_shep_already_knows_is_typed_in_and_enter_keeps_it() {
+    let mut s = setup(&[]);
+    let github = s
+        .sources
+        .iter_mut()
+        .find(|x| x.kind == SourceKind::GitHub)
+        .unwrap();
+    github.form.fields = vec![FormField {
+        key: "repo".into(),
+        label: "Repository".into(),
+        value: Some("acme/booking-app".into()),
+        ..FormField::default()
+    }];
+    let mut o = Onboarding::new(s);
+    o.on_key(key(KeyCode::Enter));
+    press(&mut o, &[KeyCode::Char(' '), KeyCode::Enter]);
+    assert_eq!(o.step(), Step::Connect);
+    assert!(screen(&o).contains("acme/booking-app"));
+    let actions = o.on_key(key(KeyCode::Enter));
+    assert_eq!(
+        actions,
+        [Action::Connect {
+            kind: SourceKind::GitHub,
+            values: BTreeMap::from([("repo".to_owned(), "acme/booking-app".to_owned())]),
+        }]
     );
 }

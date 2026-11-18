@@ -87,6 +87,7 @@ impl SourceFactory for SlackFactory {
             secret: true,
             hint: hint.to_owned(),
             optional: false,
+            ..FormField::default()
         };
         SourceForm {
             fields: vec![

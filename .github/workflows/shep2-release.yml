@@ -37,7 +37,11 @@ on:
         type: boolean
         default: true
   pull_request:
+    # Any change to Shep 2's code: the dry run's binaries are what people try before a release
+    # (shep2/dist/try.sh downloads them), so they always match the branch.
     paths:
+      - 'shep2/crates/**'
+      - 'shep2/Cargo.toml'
       - 'shep2/dist/**'
       - 'shep2/Cargo.lock'
       - 'shep2/rust-toolchain.toml'

@@ -58,6 +58,7 @@ impl SourceFactory for EchoFactory {
                 secret: true,
                 hint: String::new(),
                 optional: false,
+                ..FormField::default()
             }],
             hand_over: vec!["Add the label shep".into()],
         }

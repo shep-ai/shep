@@ -95,8 +95,15 @@ pub trait TaskSource: Send + Sync {
     fn candidates(&self, limit: usize) -> Result<Vec<HandOver>, SourceError>;
 }
 
+/// Where Shep can find a field's value itself, so nobody types what Shep already knows.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub enum Prefill {
+    /// `owner/name` of the repository Shep works in.
+    RepositorySlug,
+}
+
 /// One thing a person fills in to connect a source.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 pub struct FormField {
     pub key: String,
     pub label: String,
@@ -105,6 +112,12 @@ pub struct FormField {
     /// Where to find it, like "Linear → Settings → API → Personal API keys".
     pub hint: String,
     pub optional: bool,
+    /// Where Shep can find the value itself (the adapter says).
+    #[serde(default)]
+    pub prefill: Option<Prefill>,
+    /// The value Shep found; used when the person leaves the field empty.
+    #[serde(default)]
+    pub value: Option<String>,
 }
 
 /// How a source is connected and how work is handed over in it.

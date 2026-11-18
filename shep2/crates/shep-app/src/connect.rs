@@ -2,11 +2,12 @@
 //! turning work handed over there into a task.
 
 use std::collections::BTreeMap;
+use std::path::Path;
 use std::sync::Arc;
 
 use shep_domain::{EventKind, SourceKind, SourceSetting, Task, TaskEvent};
 
-use crate::ports::{HandOver, TaskSource};
+use crate::ports::{HandOver, Prefill, SourceForm, TaskSource};
 use crate::view::{Candidate, SourceStatus};
 use crate::{AppError, Shep};
 
@@ -40,8 +41,26 @@ impl Shep {
             connected: setting.is_some(),
             account: setting.map(|s| s.account.clone()).unwrap_or_default(),
             problem,
-            form: self.ports().sources.form(kind),
+            form: self.filled_form(kind),
         }
+    }
+
+    /// The source's form, with the values Shep can find itself already in.
+    fn filled_form(&self, kind: SourceKind) -> SourceForm {
+        let mut form = self.ports().sources.form(kind);
+        for field in &mut form.fields {
+            field.value = match field.prefill {
+                Some(Prefill::RepositorySlug) => self.repository_slug(),
+                None => None,
+            };
+        }
+        form
+    }
+
+    /// `owner/name` of the repository Shep works in, when it is on GitHub.
+    fn repository_slug(&self) -> Option<String> {
+        let repo = self.ports().settings.load_settings().ok()?.repo?;
+        self.ports().git.describe(Path::new(&repo)).ok()?.slug
     }
 
     pub(crate) fn connect_to(
@@ -49,7 +68,14 @@ impl Shep {
         kind: SourceKind,
         values: &BTreeMap<String, String>,
     ) -> Result<SourceStatus, AppError> {
-        let setting = self.ports().sources.connect(kind, values)?;
+        let mut values = values.clone();
+        for field in self.filled_form(kind).fields {
+            let empty = values.get(&field.key).is_none_or(|v| v.trim().is_empty());
+            if let (true, Some(value)) = (empty, field.value) {
+                values.insert(field.key, value);
+            }
+        }
+        let setting = self.ports().sources.connect(kind, &values)?;
         let _guard = self.lock()?;
         let mut settings = self.ports().settings.load_settings()?;
         settings.connect(setting.clone());

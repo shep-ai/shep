@@ -13,6 +13,8 @@
 #
 # Pass them to sh:  curl -fsSL https://shep.bot/install | SHEP_VERSION=0.1.0 sh
 #
+# `sh install.sh --print-target` only prints this machine's build target (try.sh uses it).
+#
 # All work happens in main(), called on the last line, so a download cut short runs nothing.
 
 set -eu
@@ -130,6 +132,10 @@ path_hint() {
 }
 
 main() {
+  if [ "${1:-}" = "--print-target" ]; then
+    detect_target
+    return
+  fi
   base=${SHEP_DOWNLOAD_BASE:-$DEFAULT_DOWNLOAD_BASE}
   base=${base%/}
   releases_url=${SHEP_RELEASES_URL:-$DEFAULT_RELEASES_URL}

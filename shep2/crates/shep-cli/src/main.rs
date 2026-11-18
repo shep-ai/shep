@@ -1,6 +1,7 @@
 //! `shep`: the composition root. Maps each command to one core action, on the daemon when it
 //! runs (`shep go` starts it) or on the database directly.
 
+mod build;
 mod cli;
 mod config;
 mod connect;

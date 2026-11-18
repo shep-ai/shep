@@ -79,6 +79,7 @@ impl SourceFactory for LinearFactory {
                     secret: true,
                     hint: API_KEY_HINT.into(),
                     optional: false,
+                    ..FormField::default()
                 },
                 FormField {
                     key: TEAM_OPTION.into(),
@@ -86,6 +87,7 @@ impl SourceFactory for LinearFactory {
                     secret: false,
                     hint: "Only this team's issues, like ENG; empty for every team".into(),
                     optional: true,
+                    ..FormField::default()
                 },
             ],
             hand_over: vec![

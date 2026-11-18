@@ -77,6 +77,11 @@ impl ShepHome {
         self.run_dir().join("daemon.sock")
     }
 
+    /// Which build of `shep` the running daemon is (see the CLI's `build` module).
+    pub fn daemon_build(&self) -> PathBuf {
+        self.dir().join("daemon.build")
+    }
+
     pub fn daemon_pid(&self) -> PathBuf {
         self.dir().join("daemon.pid")
     }

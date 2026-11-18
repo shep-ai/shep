@@ -7,11 +7,14 @@ use shep_domain::{SourceKind, SourceSetting, TaskSourceRef, UnixTime};
 
 use super::lock;
 use crate::ports::{
-    FormField, HandOver, Reply, SourceError, SourceForm, SourceProviders, TaskSource, Update,
+    FormField, HandOver, Prefill, Reply, SourceError, SourceForm, SourceProviders, TaskSource,
+    Update,
 };
 
 /// The form every fake source shows: one secret token.
 pub const FAKE_TOKEN_KEY: &str = "token";
+/// The fake GitHub's field for the repository, which Shep fills in itself.
+pub const FAKE_REPO_FIELD: &str = "repo";
 /// What every fake source says it is connected as.
 pub const FAKE_ACCOUNT: &str = "Acme";
 
@@ -145,14 +148,25 @@ impl FakeSources {
 
 impl SourceProviders for FakeSources {
     fn form(&self, kind: SourceKind) -> SourceForm {
+        let mut fields = vec![FormField {
+            key: FAKE_TOKEN_KEY.into(),
+            label: format!("{} token", kind.display_name()),
+            secret: true,
+            hint: String::new(),
+            optional: false,
+            ..FormField::default()
+        }];
+        // GitHub, like the real one, works in the repository Shep works in.
+        if kind == SourceKind::GitHub {
+            fields.push(FormField {
+                key: FAKE_REPO_FIELD.into(),
+                label: "Repository".into(),
+                prefill: Some(Prefill::RepositorySlug),
+                ..FormField::default()
+            });
+        }
         SourceForm {
-            fields: vec![FormField {
-                key: FAKE_TOKEN_KEY.into(),
-                label: format!("{} token", kind.display_name()),
-                secret: true,
-                hint: String::new(),
-                optional: false,
-            }],
+            fields,
             hand_over: vec![format!("Hand it to Shep in {}", kind.display_name())],
         }
     }

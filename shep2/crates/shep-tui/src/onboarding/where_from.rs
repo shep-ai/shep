@@ -70,6 +70,7 @@ impl Onboarding {
                     ..Form::default()
                 };
                 self.typing = true;
+                self.type_known_value();
             }
             None => self.go(Step::Moves),
         }
@@ -103,6 +104,7 @@ impl Onboarding {
                 }
                 self.text.clear();
                 self.form.field += 1;
+                self.type_known_value();
                 if self.form.field >= fields.len() {
                     let values = std::mem::take(&mut self.form.values);
                     self.form.field = 0;
@@ -114,11 +116,24 @@ impl Onboarding {
         Vec::new()
     }
 
+    /// Starts the current field with the value Shep found itself (the repository), so Enter
+    /// keeps it and the person can still change it.
+    fn type_known_value(&mut self) {
+        let known = self.form.kind.and_then(|kind| {
+            let source = self.setup.sources.iter().find(|s| s.kind == kind)?;
+            source.form.fields.get(self.form.field)?.value.clone()
+        });
+        if let Some(value) = known {
+            self.text = value;
+        }
+    }
+
     /// The runner could not connect: say why and ask for the values again.
     pub fn failed(&mut self, why: &str) {
         self.notice = Some(why.to_owned());
         self.text.clear();
         self.form.field = 0;
         self.form.values.clear();
+        self.type_known_value();
     }
 }
