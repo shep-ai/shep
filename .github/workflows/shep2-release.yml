@@ -18,10 +18,12 @@
 #   pull_request                  dry run when the release scripts or the toolchain change, so a
 #                                 broken release path shows up on the PR, not on release day
 #
-# Publishing needs repository secrets, referenced by name only:
-#   NPM_TOKEN            npm automation token allowed to publish shep2 and shep2-<os>-<cpu>
-#   HOMEBREW_TAP_TOKEN   token with contents:write on shep-ai/homebrew-tap
-# A missing secret skips that channel with a warning; nothing else depends on it.
+# Publishing credentials:
+#   npm       no secret: shep2 and shep2-<os>-<cpu> each trust this workflow (npm trusted
+#             publishing, OIDC). NPM_TOKEN is used only for a package without that trust.
+#   Homebrew  HOMEBREW_TAP_DEPLOY_KEY, the private half of a write deploy key on
+#             shep-ai/homebrew-tap (it can push to that one repository and nothing else).
+#             Without it the tap is skipped with a warning; nothing else depends on it.
 #
 # Local equivalent of the build + verify jobs: sh shep2/dist/dry-run.sh (see shep2/dist/README.md)
 
@@ -242,7 +244,7 @@ jobs:
           fi
 
   # ---------------------------------------------------------------------------
-  # npm: shep2 + shep2-<os>-<cpu> (dry run unless publishing with NPM_TOKEN set)
+  # npm: shep2 + shep2-<os>-<cpu> (dry run unless publishing; trusted publishing via OIDC)
   # ---------------------------------------------------------------------------
   npm:
     name: npm
@@ -257,7 +259,6 @@ jobs:
     env:
       VERSION: ${{ needs.plan.outputs.version }}
       PUBLISH: ${{ needs.plan.outputs.publish }}
-      HAS_NPM_TOKEN: ${{ secrets.NPM_TOKEN != '' }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -277,8 +278,12 @@ jobs:
           while read -r dir; do
             npm publish "$dir" --dry-run --access public
           done <npm-out/publish-order.txt
+      - uses: ./.github/actions/setup-npm-trusted-publishing
+        if: env.PUBLISH == 'true'
+      # Trusted publishing (OIDC) first; npm falls back to NODE_AUTH_TOKEN when the package has
+      # no trusted publisher for this workflow.
       - name: Publish (binary packages first, then the wrapper)
-        if: env.PUBLISH == 'true' && env.HAS_NPM_TOKEN == 'true'
+        if: env.PUBLISH == 'true'
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
@@ -290,9 +295,6 @@ jobs:
             fi
             npm publish "$dir" --access public --provenance
           done <npm-out/publish-order.txt
-      - name: Report a missing NPM_TOKEN
-        if: env.PUBLISH == 'true' && env.HAS_NPM_TOKEN != 'true'
-        run: echo "::warning::NPM_TOKEN is not set, so nothing was published to npm."
 
   # ---------------------------------------------------------------------------
   # Homebrew: install + test the rendered formula, then push it to shep-ai/homebrew-tap
@@ -307,7 +309,7 @@ jobs:
     env:
       VERSION: ${{ needs.plan.outputs.version }}
       PUBLISH: ${{ needs.plan.outputs.publish }}
-      HAS_TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN != '' }}
+      HAS_TAP_KEY: ${{ secrets.HOMEBREW_TAP_DEPLOY_KEY != '' }}
       HOMEBREW_NO_AUTO_UPDATE: '1'
       HOMEBREW_NO_INSTALL_CLEANUP: '1'
       HOMEBREW_NO_ANALYTICS: '1'
@@ -341,14 +343,14 @@ jobs:
           brew uninstall --formula shep-ai/release-check/shep
           brew untap shep-ai/release-check
       - name: Check out shep-ai/homebrew-tap
-        if: env.PUBLISH == 'true' && env.HAS_TAP_TOKEN == 'true'
+        if: env.PUBLISH == 'true' && env.HAS_TAP_KEY == 'true'
         uses: actions/checkout@v4
         with:
           repository: shep-ai/homebrew-tap
-          token: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          ssh-key: ${{ secrets.HOMEBREW_TAP_DEPLOY_KEY }}
           path: homebrew-tap
       - name: Push Formula/shep.rb
-        if: env.PUBLISH == 'true' && env.HAS_TAP_TOKEN == 'true'
+        if: env.PUBLISH == 'true' && env.HAS_TAP_KEY == 'true'
         working-directory: homebrew-tap
         run: |
           mkdir -p Formula
@@ -362,6 +364,6 @@ jobs:
             -c user.email="41898282+github-actions[bot]@users.noreply.github.com" \
             commit -m "shep $VERSION"
           git push
-      - name: Report a missing HOMEBREW_TAP_TOKEN
-        if: env.PUBLISH == 'true' && env.HAS_TAP_TOKEN != 'true'
-        run: echo "::warning::HOMEBREW_TAP_TOKEN is not set, so the tap was not updated."
+      - name: Report a missing HOMEBREW_TAP_DEPLOY_KEY
+        if: env.PUBLISH == 'true' && env.HAS_TAP_KEY != 'true'
+        run: echo "::warning::HOMEBREW_TAP_DEPLOY_KEY is not set, so the tap was not updated."

@@ -273,7 +273,7 @@ const SECURITY_POLICY_YAML = `# Shep Supply Chain Security Policy
 # This file defines the security posture for this repository.
 # Shep evaluates this policy during agent execution and CI enforcement.
 #
-# Docs: https://shep.bot/docs/security/policy
+# Docs: https://shep.bot/docs/guides/experimental-features (flag "aspm")
 
 # Security mode controls enforcement behavior:
 #   Disabled  - Security checks are skipped entirely

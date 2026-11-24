@@ -1,0 +1,39 @@
+name: Set up npm for trusted publishing
+description: >-
+  Replaces the runner's bundled npm with one that can publish through npm's OIDC trusted
+  publishing. The job that uses it needs `permissions: id-token: write`.
+
+# Node 22 ships npm 10.9.x, which predates trusted publishing: the OIDC exchange succeeds, but
+# `npm publish` then fails with ENEEDAUTH because npm 10 can't use the OIDC token. Trusted
+# publishing requires npm >= 11.5.
+#
+# We can't run `npm install -g npm@^11.5` to upgrade: some Node 22 toolcache images (e.g.
+# 22.22.2) ship a bundled npm whose @npmcli/arborist is missing transitive deps (`Cannot find
+# module 'promise-retry'`), so the bundled npm crashes before it can self-replace. Instead, fetch
+# the npm registry tarball directly and overwrite the bundled package in place — npm tarballs
+# ship with bundleDependencies so they're self-contained.
+
+inputs:
+  npm-version:
+    description: Exact npm version to install (>= 11.5)
+    default: '11.5.2'
+
+runs:
+  using: composite
+  steps:
+    - name: Install npm ${{ inputs.npm-version }}
+      shell: bash
+      env:
+        NPM_VERSION: ${{ inputs.npm-version }}
+      run: |
+        set -euo pipefail
+        NODE_BIN_DIR="$(dirname "$(readlink -f "$(command -v node)")")"
+        NPM_PKG_DIR="$(dirname "$NODE_BIN_DIR")/lib/node_modules/npm"
+        TMP="$(mktemp -d)"
+        curl -fsSL "https://registry.npmjs.org/npm/-/npm-${NPM_VERSION}.tgz" -o "$TMP/npm.tgz"
+        sudo rm -rf "$NPM_PKG_DIR"
+        sudo mkdir -p "$NPM_PKG_DIR"
+        sudo tar -xzf "$TMP/npm.tgz" -C "$NPM_PKG_DIR" --strip-components=1
+        INSTALLED="$(npm --version)"
+        echo "npm now at $INSTALLED"
+        test "$INSTALLED" = "$NPM_VERSION"
