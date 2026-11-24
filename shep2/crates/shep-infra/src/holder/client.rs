@@ -86,6 +86,7 @@ impl HolderSessions {
 impl AgentSessions for HolderSessions {
     fn spawn(&self, spec: &SessionSpec) -> Result<SessionId, SessionError> {
         let params = SpawnParams {
+            key: Some(spec.key.clone()),
             program: spec.program.clone(),
             args: spec.args.clone(),
             cwd: spec.cwd.display().to_string(),

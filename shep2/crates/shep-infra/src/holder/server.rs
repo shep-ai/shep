@@ -17,6 +17,8 @@ use crate::ShepHome;
 #[derive(Default)]
 struct HolderServer {
     sessions: Mutex<HashMap<String, Arc<Session>>>,
+    /// Which session each start key started.
+    started: Mutex<HashMap<String, String>>,
     next: AtomicU64,
 }
 
@@ -39,6 +41,17 @@ impl HolderServer {
         match method {
             HolderMethod::Spawn => {
                 let spec: SpawnParams = parse(params)?;
+                // Asked again for a start it already made (the daemon stopped before saving
+                // it): the same session, not a second agent.
+                let mut started = self
+                    .started
+                    .lock()
+                    .map_err(|e| RpcError::application(e.to_string()))?;
+                if let Some(id) = spec.key.as_ref().and_then(|k| started.get(k)) {
+                    if self.session(id).is_some() {
+                        return reply(&IdParams { id: id.clone() });
+                    }
+                }
                 // Ids carry the holder's pid, so a restarted holder never answers for a
                 // session it did not start.
                 let n = self.next.fetch_add(1, Ordering::SeqCst);
@@ -47,6 +60,9 @@ impl HolderServer {
                     .map_err(|e| RpcError::application(e.to_string()))?;
                 if let Ok(mut sessions) = self.sessions.lock() {
                     sessions.insert(id.clone(), session);
+                }
+                if let Some(key) = spec.key {
+                    started.insert(key, id.clone());
                 }
                 reply(&IdParams { id })
             }

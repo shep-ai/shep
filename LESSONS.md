@@ -3567,3 +3567,13 @@ can also carry an old task's commits or an old pull request. **Rules:**
   taken name gets the next number.
 - Try every change from a fresh home in a repository that already has Shep's leftovers, not
   only from a clean one.
+
+## Starting something and saving that you did are two steps; a crash can fall between them
+
+On a faster macOS runner the e2e test killed the daemon right after it started an agent and
+before it saved the session id; the restarted daemon started the same agent again. **Rules:**
+
+- Every start of an outside process carries a key derived from saved state (`<task>-<agent
+  starts>`), and the holder returns the session it already started for that key.
+- When a test fails only on a new runner image, look for a race the faster machine exposes
+  before calling it the runner's problem.

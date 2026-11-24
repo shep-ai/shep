@@ -98,6 +98,7 @@ impl Engine {
         );
         let now = self.now();
         let spec = SessionSpec {
+            key: format!("{}-{}", task.id, run.agent_starts),
             program: SHELL.into(),
             args: vec![
                 SHELL_RUN.into(),
@@ -109,6 +110,7 @@ impl Engine {
         };
         match self.ports.sessions.spawn(&spec) {
             Ok(session) => {
+                run.agent_starts += 1;
                 run.step = RunStep::Screenshots {
                     session: Some(session),
                     since: now,

@@ -41,6 +41,10 @@ pub const OUTPUT: &str = "output";
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SpawnParams {
+    /// Names the start; the same key gives back the session already started. Absent from
+    /// clients older than it.
+    #[serde(default)]
+    pub key: Option<String>,
     pub program: String,
     pub args: Vec<String>,
     pub cwd: String,

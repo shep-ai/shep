@@ -143,6 +143,7 @@ impl Engine {
                 .map_err(|e| StepError::new("guard the agent's pushes", e))?,
         );
         let spec = SessionSpec {
+            key: format!("{}-{}", task.id, run.agent_starts),
             program: command.program,
             args: command.args,
             cwd,
@@ -155,6 +156,7 @@ impl Engine {
             .spawn(&spec)
             .map_err(|e| StepError::new("start the agent", e))?;
         self.event(task.id, EventKind::AgentStarted, &describe(&job));
+        run.agent_starts += 1;
         run.not_before = None;
         run.step = RunStep::Agent {
             job,

@@ -197,6 +197,15 @@ impl AgentSessions for FakeSessions {
     }
     fn spawn(&self, spec: &SessionSpec) -> Result<SessionId, SessionError> {
         let mut s = lock(&self.0);
+        if let Some((id, _)) = s
+            .spawned
+            .iter()
+            .find(|(_, started)| started.key == spec.key)
+        {
+            if !s.lost {
+                return Ok(id.clone());
+            }
+        }
         s.lost = false;
         let id = SessionId(format!("s{}", s.spawned.len() + 1));
         s.spawned.push((id.clone(), spec.clone()));

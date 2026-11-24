@@ -41,8 +41,12 @@ fn holder() -> Holder {
 
 impl Holder {
     fn spawn(&self, script: &str) -> SessionId {
+        self.spawn_as(&format!("key for {script}"), script)
+    }
+    fn spawn_as(&self, key: &str, script: &str) -> SessionId {
         self.sessions
             .spawn(&SessionSpec {
+                key: key.into(),
                 program: "sh".into(),
                 args: vec!["-c".into(), script.into()],
                 cwd: self.dir.path().to_path_buf(),
@@ -170,6 +174,7 @@ fn spawning_a_missing_program_is_an_error_not_a_crash() {
     let err = h
         .sessions
         .spawn(&SessionSpec {
+            key: "missing".into(),
             program: "/no/such/agent".into(),
             args: vec![],
             cwd: h.dir.path().to_path_buf(),
@@ -200,5 +205,22 @@ fn the_session_port_attaches_and_types() {
         if let Some(bytes) = view.next_output(Duration::from_millis(200)).unwrap() {
             seen.push_str(&String::from_utf8_lossy(&bytes));
         }
+    }
+}
+
+#[test]
+fn starting_with_the_same_key_gives_back_the_session_already_started() {
+    let h = holder();
+    let first = h.spawn_as("1-0", "echo started >> count; sleep 30");
+    let again = h.spawn_as("1-0", "echo started >> count; sleep 30");
+    assert_eq!(first, again, "one agent, not two");
+    let other = h.spawn_as("1-1", "sleep 30");
+    assert_ne!(other, first);
+    h.wait_for(&first, |s| matches!(s, SessionState::Running { .. }));
+    std::thread::sleep(Duration::from_millis(200));
+    let started = std::fs::read_to_string(h.dir.path().join("count")).unwrap();
+    assert_eq!(started.lines().count(), 1, "{started}");
+    for id in [first, other] {
+        let _ = h.sessions.kill(&id);
     }
 }

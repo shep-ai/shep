@@ -40,6 +40,9 @@ pub trait AgentProviders: Send + Sync {
 /// A program to run in its own terminal.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct SessionSpec {
+    /// Names this start: asked again with the same key, the holder gives back the session it
+    /// already started instead of starting another.
+    pub key: String,
     pub program: String,
     pub args: Vec<String>,
     pub cwd: PathBuf,

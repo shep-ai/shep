@@ -70,6 +70,7 @@ fn an_agent_is_watched_and_typed_to_through_the_daemon() {
         .fakes
         .sessions
         .spawn(&SessionSpec {
+            key: "1-0".into(),
             program: "agent".into(),
             args: vec![],
             cwd: "/".into(),

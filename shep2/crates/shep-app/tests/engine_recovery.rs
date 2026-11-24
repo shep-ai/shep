@@ -163,3 +163,42 @@ fn a_restarted_engine_carries_on_with_the_same_session() {
     again.tick();
     assert_eq!(w.f.git.pushes().len(), 1);
 }
+
+#[test]
+fn an_agent_started_just_before_the_daemon_stopped_is_picked_up_not_started_again() {
+    use shep_app::ports::RunRepository;
+    use shep_domain::{AgentJob, RunStep};
+    let w = world();
+    w.shep.add("#7", None).unwrap();
+    w.shep.start(StartWhen::Now).unwrap();
+    w.engine.tick();
+    assert_eq!(w.f.sessions.spawned().len(), 1);
+    let started = w.f.runs.load_run(TaskId(1)).unwrap().unwrap();
+    let RunStep::Agent {
+        session: Some(session),
+        ..
+    } = started.step.clone()
+    else {
+        panic!("{:?}", started.step);
+    };
+
+    // The daemon stopped after starting the agent and before saving that it had: the saved
+    // run still says the agent is about to start.
+    let mut unsaved = started.clone();
+    unsaved.step = RunStep::Agent {
+        job: AgentJob::Code,
+        session: None,
+        interrupted: false,
+    };
+    unsaved.agent_starts -= 1;
+    w.f.runs.save_run(&unsaved).unwrap();
+
+    w.engine_with(config()).tick();
+    assert_eq!(
+        w.f.sessions.spawned().len(),
+        1,
+        "the running agent is picked up"
+    );
+    let run = w.f.runs.load_run(TaskId(1)).unwrap().unwrap();
+    assert!(matches!(run.step, RunStep::Agent { session: Some(s), .. } if s == session));
+}

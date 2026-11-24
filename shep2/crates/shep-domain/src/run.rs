@@ -122,6 +122,10 @@ pub struct Run {
     pub checks: Vec<CiCheck>,
     /// The reviewer's second opinion, once given.
     pub review: Option<String>,
+    /// Agents started for this run so far. It names each start, so starting the same agent
+    /// again after a crash (before this count was saved) picks up the one already running.
+    #[serde(default)]
+    pub agent_starts: u32,
     pub updated_at: UnixTime,
 }
 
@@ -139,6 +143,7 @@ impl Run {
             checked_at: None,
             checks: Vec::new(),
             review: None,
+            agent_starts: 0,
             updated_at: now,
         }
     }
