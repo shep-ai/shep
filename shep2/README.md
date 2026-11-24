@@ -5,10 +5,10 @@ Go to sleep with issues. Wake up with pull requests.
 ## Try it now
 
 There is no release yet, so the commands under [Install](#install) start working with the first
-`shep2-v*` tag. Until then, install what CI built for the Shep 2 branch (macOS or Linux):
+`shep2-v*` tag. Until then, install what CI built on `main` (macOS or Linux):
 
 ```bash
-gh api -H 'Accept: application/vnd.github.raw' 'repos/shep-ai/shep/contents/shep2/dist/try.sh?ref=claude/magical-heisenberg-fa1drb' | sh -s -- --app
+gh api -H 'Accept: application/vnd.github.raw' 'repos/shep-ai/shep/contents/shep2/dist/try.sh?ref=main' | sh -s -- --app
 ```
 
 It needs the GitHub CLI signed in (`gh auth login`). It puts `shep` in `~/.local/bin` and, on a

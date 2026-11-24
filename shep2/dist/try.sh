@@ -1,9 +1,9 @@
 #!/bin/sh
-# Try Shep 2 before its first release: installs the `shep` CI built for the Shep 2 branch, for
-# this machine, and with --app also Shep.app (macOS). Needs the GitHub CLI, signed in.
+# Try Shep 2 before its first release: installs the `shep` CI built on main ($SHEP_TRY_BRANCH picks
+# another branch) for this machine, and with --app also Shep.app (macOS). Needs the GitHub CLI.
 #
 #   gh api -H 'Accept: application/vnd.github.raw' \
-#     'repos/shep-ai/shep/contents/shep2/dist/try.sh?ref=claude/magical-heisenberg-fa1drb' | sh -s -- --app
+#     'repos/shep-ai/shep/contents/shep2/dist/try.sh?ref=main' | sh -s -- --app
 #
 # It downloads the newest green build with `gh run download` and installs it with install.sh,
 # which checks its SHA-256 and puts it in ~/.local/bin (or $SHEP_INSTALL_DIR). Nothing is
@@ -12,7 +12,7 @@
 set -eu
 
 REPO="shep-ai/shep"
-BRANCH=${SHEP_TRY_BRANCH:-claude/magical-heisenberg-fa1drb}
+BRANCH=${SHEP_TRY_BRANCH:-main}
 BINARIES_WORKFLOW="shep2-release.yml"
 APP_WORKFLOW="shep2.yml"
 APP_ARTIFACT="shep2-mac-app"

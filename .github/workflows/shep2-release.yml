@@ -30,6 +30,16 @@ name: Shep 2 Release
 on:
   push:
     tags: ['shep2-v*']
+    # A dry run on main keeps the binaries people try with shep2/dist/try.sh current. (Path
+    # filters apply to branch pushes only; every shep2-v* tag still runs.)
+    branches: [main]
+    paths:
+      - 'shep2/crates/**'
+      - 'shep2/Cargo.toml'
+      - 'shep2/dist/**'
+      - 'shep2/Cargo.lock'
+      - 'shep2/rust-toolchain.toml'
+      - '.github/workflows/shep2-release.yml'
   workflow_dispatch:
     inputs:
       dry_run:
@@ -82,7 +92,9 @@ jobs:
         run: |
           version=$(sh shep2/dist/version.sh)
           publish=false
-          if [ "$EVENT" = push ] || { [ "$EVENT" = workflow_dispatch ] && [ "$DRY_RUN_INPUT" = false ]; }; then
+          # Only a pushed tag (or an explicit dispatch) publishes; a push to main is a dry run.
+          if { [ "$EVENT" = push ] && [ "$REF_TYPE" = tag ]; } ||
+            { [ "$EVENT" = workflow_dispatch ] && [ "$DRY_RUN_INPUT" = false ]; }; then
             publish=true
             if [ "$REF_TYPE" != tag ] || [ "$REF_NAME" != "shep2-v$version" ]; then
               echo "::error::Publishing needs the tag shep2-v$version (shep2/Cargo.toml); this run is on $REF_TYPE $REF_NAME."
