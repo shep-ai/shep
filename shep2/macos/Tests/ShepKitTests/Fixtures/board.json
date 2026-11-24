@@ -1,0 +1,54 @@
+{
+  "merged": [],
+  "needs_you": [],
+  "queued": [
+    {
+      "created_at": 1794694566,
+      "id": 1,
+      "note": null,
+      "pr": null,
+      "question": null,
+      "source": {
+        "Sentence": {
+          "text": "Fix login redirect loop"
+        }
+      },
+      "state": "Queued",
+      "title": "Fix login redirect loop",
+      "updated_at": 1794694566
+    },
+    {
+      "created_at": 1794694566,
+      "id": 2,
+      "note": null,
+      "pr": null,
+      "question": null,
+      "source": {
+        "GitHubIssue": {
+          "number": 412,
+          "repo": "acme/booking-app"
+        }
+      },
+      "state": "Queued",
+      "title": "acme/booking-app#412",
+      "updated_at": 1794694566
+    },
+    {
+      "created_at": 1794694566,
+      "id": 3,
+      "note": null,
+      "pr": null,
+      "question": null,
+      "source": {
+        "Sentence": {
+          "text": "Rate-limit /api/search"
+        }
+      },
+      "state": "Queued",
+      "title": "Rate-limit /api/search",
+      "updated_at": 1794694566
+    }
+  ],
+  "ready": [],
+  "working": []
+}

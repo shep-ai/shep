@@ -80,11 +80,17 @@ describe.skipIf(!hasTmux())(
       );
       expect(shell.active).toBe(true);
       expect(shell.start).toBe('');
-      // The worktree when the worker has created it, else the repository.
-      const shellPath = shell.path.replace(/\\/g, '/');
-      expect(
-        shellPath.startsWith(shepHome.replace(/\\/g, '/')) || shellPath === repo.replace(/\\/g, '/')
-      ).toBe(true);
+      // The worktree when the worker has created it, else the repository. Newer tmux (Ubuntu
+      // 26.04) can report a new pane's directory before its shell has started there, so wait
+      // for it to settle; a shell opened anywhere else still fails, listing every pane's path.
+      const normal = (path: string) => path.replace(/\\/g, '/');
+      const inPlace = (path: string) =>
+        normal(path).startsWith(normal(shepHome)) || normal(path) === normal(repo);
+      await waitFor(
+        () => (inPlace(panes().find((p) => p.id === shell.id)?.path ?? '') ? true : undefined),
+        'the shell in the feature directory',
+        STEP_TIMEOUT_MS
+      );
       // The console sets its status after the split returns and draws it on the next
       // frame, so the new pane can exist before the message is on screen.
       await waitFor(

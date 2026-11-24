@@ -1,0 +1,121 @@
+{
+  "expand": "transitions",
+  "transitions": [
+    {
+      "id": "11",
+      "name": "Back to do",
+      "to": {
+        "self": "https://acme.atlassian.net/rest/api/3/status/10000",
+        "description": "",
+        "iconUrl": "https://acme.atlassian.net/images/icons/statuses/open.png",
+        "name": "To Do",
+        "id": "10000",
+        "statusCategory": {
+          "self": "https://acme.atlassian.net/rest/api/3/statuscategory/2",
+          "id": 2,
+          "key": "new",
+          "colorName": "blue-gray",
+          "name": "To Do"
+        }
+      },
+      "hasScreen": false,
+      "isGlobal": true,
+      "isInitial": false,
+      "isAvailable": true,
+      "isConditional": false,
+      "isLooped": false,
+      "fields": {}
+    },
+    {
+      "id": "21",
+      "name": "Hand to Shep",
+      "to": {
+        "self": "https://acme.atlassian.net/rest/api/3/status/10004",
+        "description": "Handed to Shep for tonight's shift.",
+        "iconUrl": "https://acme.atlassian.net/images/icons/statuses/generic.png",
+        "name": "Tonight",
+        "id": "10004",
+        "statusCategory": {
+          "self": "https://acme.atlassian.net/rest/api/3/statuscategory/4",
+          "id": 4,
+          "key": "indeterminate",
+          "colorName": "yellow",
+          "name": "In Progress"
+        }
+      },
+      "hasScreen": false,
+      "isGlobal": true,
+      "isInitial": false,
+      "isAvailable": true,
+      "isConditional": false,
+      "isLooped": false,
+      "fields": {}
+    },
+    {
+      "id": "31",
+      "name": "Ready for review",
+      "to": {
+        "self": "https://acme.atlassian.net/rest/api/3/status/10005",
+        "description": "",
+        "iconUrl": "https://acme.atlassian.net/images/icons/statuses/generic.png",
+        "name": "In Review",
+        "id": "10005",
+        "statusCategory": {
+          "self": "https://acme.atlassian.net/rest/api/3/statuscategory/4",
+          "id": 4,
+          "key": "indeterminate",
+          "colorName": "yellow",
+          "name": "In Progress"
+        }
+      },
+      "hasScreen": false,
+      "isGlobal": true,
+      "isInitial": false,
+      "isAvailable": true,
+      "isConditional": false,
+      "isLooped": false,
+      "fields": {}
+    },
+    {
+      "id": "41",
+      "name": "Done",
+      "to": {
+        "self": "https://acme.atlassian.net/rest/api/3/status/10002",
+        "description": "",
+        "iconUrl": "https://acme.atlassian.net/images/icons/statuses/closed.png",
+        "name": "Done",
+        "id": "10002",
+        "statusCategory": {
+          "self": "https://acme.atlassian.net/rest/api/3/statuscategory/3",
+          "id": 3,
+          "key": "done",
+          "colorName": "green",
+          "name": "Done"
+        }
+      },
+      "hasScreen": true,
+      "isGlobal": true,
+      "isInitial": false,
+      "isAvailable": true,
+      "isConditional": false,
+      "isLooped": false,
+      "fields": {
+        "resolution": {
+          "required": true,
+          "schema": { "type": "resolution", "system": "resolution" },
+          "name": "Resolution",
+          "key": "resolution",
+          "hasDefaultValue": false,
+          "operations": ["set"],
+          "allowedValues": [
+            {
+              "self": "https://acme.atlassian.net/rest/api/3/resolution/10000",
+              "id": "10000",
+              "name": "Done"
+            }
+          ]
+        }
+      }
+    }
+  ]
+}

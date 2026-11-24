@@ -1,0 +1,59 @@
+{
+  "data": {
+    "issues": {
+      "nodes": [
+        {
+          "id": "a3c1f6de-2b0e-4b8e-9b1a-6f2d1c9e0342",
+          "identifier": "ENG-342",
+          "title": "Invoice dates use the wrong timezone",
+          "description": "Invoices show the server's zone instead of the customer's. Open any invoice for a customer in Tokyo and compare the date with the order.",
+          "url": "https://linear.app/acme/issue/ENG-342/invoice-dates-use-the-wrong-timezone",
+          "createdAt": "2026-11-12T10:00:00.000Z",
+          "labels": {
+            "nodes": [
+              { "id": "5d2f8a90-7c1b-4e3a-b6f4-1e8d9c0a7b21", "name": "shep" },
+              { "id": "0f6e2d14-9b3a-4c8e-a7d5-3b2c1e0f9a88", "name": "Bug" }
+            ]
+          },
+          "state": {
+            "id": "b1d4c7e0-1a2b-4c3d-8e9f-0a1b2c3d4e01",
+            "name": "Todo",
+            "type": "unstarted"
+          }
+        },
+        {
+          "id": "c7e2a9b4-5d3f-4a1e-8c6b-9e0d1f2a0345",
+          "identifier": "ENG-345",
+          "title": "Search ignores accents in customer names",
+          "description": "Searching for Jose does not find José.",
+          "url": "https://linear.app/acme/issue/ENG-345/search-ignores-accents-in-customer-names",
+          "createdAt": "2026-11-13T15:00:00.000Z",
+          "labels": { "nodes": [] },
+          "state": {
+            "id": "b1d4c7e0-1a2b-4c3d-8e9f-0a1b2c3d4e02",
+            "name": "Tonight",
+            "type": "unstarted"
+          }
+        },
+        {
+          "id": "e4f1b8c2-6a9d-4e7b-9f3c-2d1e0a9b0351",
+          "identifier": "ENG-351",
+          "title": "Export reports to CSV",
+          "description": null,
+          "url": "https://linear.app/acme/issue/ENG-351/export-reports-to-csv",
+          "createdAt": "2026-11-13T16:00:00.000Z",
+          "labels": { "nodes": [] },
+          "state": {
+            "id": "b1d4c7e0-1a2b-4c3d-8e9f-0a1b2c3d4e01",
+            "name": "Todo",
+            "type": "unstarted"
+          }
+        }
+      ],
+      "pageInfo": {
+        "hasNextPage": false,
+        "endCursor": "e4f1b8c2-6a9d-4e7b-9f3c-2d1e0a9b0351"
+      }
+    }
+  }
+}

@@ -1,0 +1,203 @@
+//! What the surfaces show beyond the board: one task in detail, and the morning brief.
+
+use schemars::JsonSchema;
+use serde::{Deserialize, Serialize};
+use shep_domain::{AgentKind, CiCheck, Settings, SourceKind, Task, TaskEvent, UnixTime};
+
+use crate::ports::{HandOver, SourceForm};
+
+/// Where a task is, in words every surface uses the same way.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub enum StepView {
+    Queued,
+    Preparing,
+    Coding,
+    Publishing,
+    WatchingCi,
+    FixingCi,
+    Reviewing,
+    /// Waiting out a usage limit, or a retry after a failure.
+    Parked,
+    NeedsYou,
+    Ready,
+    Merged,
+}
+
+/// Lines and files a change touches.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct DiffStat {
+    pub files: u32,
+    pub added: u32,
+    pub removed: u32,
+}
+
+impl DiffStat {
+    /// Reads the last line of `git diff --stat`, like ` 3 files changed, 41 insertions(+), 12
+    /// deletions(-)`, or counts the `+`/`-` of a single-file line like ` src/app.rs | 2 +-`.
+    pub fn parse(stat: &str) -> Self {
+        let Some(last) = stat.lines().rev().find(|l| !l.trim().is_empty()) else {
+            return Self::default();
+        };
+        if !last.contains("changed") {
+            let marks = last.rsplit('|').next().unwrap_or_default();
+            let count = |c| u32::try_from(marks.matches(c).count()).unwrap_or(0);
+            return Self {
+                files: 1,
+                added: count('+'),
+                removed: count('-'),
+            };
+        }
+        let mut stat = Self::default();
+        for part in last.split(',') {
+            let n = part
+                .split_whitespace()
+                .next()
+                .and_then(|n| n.parse().ok())
+                .unwrap_or(0);
+            if part.contains("file") {
+                stat.files = n;
+            } else if part.contains("insertion") {
+                stat.added = n;
+            } else if part.contains("deletion") {
+                stat.removed = n;
+            }
+        }
+        stat
+    }
+}
+
+/// One task, as the split view and the Mac app show it.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct TaskDetail {
+    pub task: Task,
+    pub step: StepView,
+    /// One line on what is happening now.
+    pub activity: String,
+    /// The same line the morning brief shows: "CI green · +41 -12 · screenshot".
+    #[serde(default)]
+    pub summary: String,
+    pub agent: Option<AgentKind>,
+    pub branch: Option<String>,
+    /// Whether an agent session is running for it right now.
+    pub live: bool,
+    /// The agent's screen, while it has one.
+    pub screen: Option<String>,
+    pub checks: Vec<CiCheck>,
+    pub stat: DiffStat,
+    /// The change as a patch (shortened for display).
+    pub diff: Option<String>,
+    /// Proof files on this machine: test output and screenshots.
+    pub proof: Vec<String>,
+    /// The second opinion.
+    pub review: Option<String>,
+    pub events: Vec<TaskEvent>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct BriefItem {
+    pub task: Task,
+    /// "CI green · +41 -12 · screenshot", "needs you: which bucket?".
+    pub summary: String,
+}
+
+/// When the night's work ran.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct Overnight {
+    pub from: UnixTime,
+    pub to: UnixTime,
+    /// Time spent parked at usage limits.
+    pub parked_secs: i64,
+}
+
+/// What finished overnight and what needs you, for the first look in the morning.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct Brief {
+    pub at: UnixTime,
+    /// Needs you first, then ready, then still working.
+    pub items: Vec<BriefItem>,
+    /// At most one line about something Shep noticed.
+    pub while_you_slept: Option<String>,
+    pub overnight: Option<Overnight>,
+    /// Ready for review.
+    pub done: usize,
+    pub total: usize,
+    /// Ready, with CI green and a pull request: the "merge the N green" button.
+    pub mergeable: usize,
+    /// Tasks Shep took off the board since the brief was last shown, one line each, like
+    /// "Stopped: Fix login redirect loop — issue closed".
+    #[serde(default)]
+    pub stopped: Vec<String>,
+    /// Those tasks, so a surface can merge them.
+    #[serde(default)]
+    pub green: Vec<shep_domain::TaskId>,
+}
+
+/// A coding agent onboarding can offer.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct AgentOption {
+    pub kind: AgentKind,
+    pub name: String,
+    pub installed: bool,
+    /// The command that installs it.
+    pub install: String,
+    /// The one the settings name.
+    pub chosen: bool,
+}
+
+/// The repository Shep works in.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct RepoFacts {
+    pub path: String,
+    /// `owner/name` on GitHub.
+    pub slug: Option<String>,
+    pub clean: bool,
+}
+
+/// An open issue worth trying first.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct Suggestion {
+    pub number: u64,
+    pub title: String,
+}
+
+/// What onboarding and `shep config` show: what is installed, signed in and chosen.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct Setup {
+    pub agents: Vec<AgentOption>,
+    /// Who GitHub (`gh`) is signed in as.
+    pub github: Option<String>,
+    pub repo: Option<RepoFacts>,
+    pub suggestions: Vec<Suggestion>,
+    pub settings: Settings,
+    /// Everything work needs is in place: a repository, an agent, GitHub.
+    pub ready: bool,
+    /// Where work can come from, connected or not.
+    #[serde(default)]
+    pub sources: Vec<SourceStatus>,
+    /// Open work in connected sources worth handing over first.
+    #[serde(default)]
+    pub candidates: Vec<Candidate>,
+}
+
+/// A source and whether it is connected, for onboarding and `shep config`.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct SourceStatus {
+    pub kind: SourceKind,
+    pub name: String,
+    pub connected: bool,
+    /// What it is connected as, like "Acme · team ENG".
+    pub account: String,
+    /// Why a connected source is not answering, like an expired token.
+    pub problem: Option<String>,
+    /// What connecting asks for, and how work is handed over there.
+    pub form: SourceForm,
+}
+
+/// Open work in a connected source, worth handing over first.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+pub struct Candidate {
+    pub kind: SourceKind,
+    pub item: HandOver,
+    /// Too little to go on for a first task.
+    pub vague: bool,
+}

@@ -1,0 +1,34 @@
+---
+source: crates/shep-tui/tests/screens.rs
+expression: "snapshot(&m, true)"
+---
+ 1 board  2 split  3 watch                                       booking-app · 1 agent running · 02:14 · ☾ 2/6
+┌ TASKS 6 ───────────────────────┐┌ SESSION #425 · Claude Code · worktree shep/425-x · working ──────────────┐
+│ NEEDS YOU                      ││                                                                          │
+│ ! #430 Move avatars to S3      ││                                                                          │
+│                                ││                                                                          │
+│ WORKING                        ││                                                                          │
+│ ⠿ #425 Empty state for projects││                                                                          │
+│                                ││                                                                          │
+│ READY                          ││                                                                          │
+│ ✓ #418 Add CSV export to report││                                                                          │
+│ ✓ #412 Fix login redirect loop ││                                                                          │
+│                                ││                                                                          │
+│ QUEUED                         ││● Read src/pages/projects/index.tsx                                       │
+│ · #433 Rate-limit /api/search  ││● Edit src/pages/projects/index.tsx  +18 -2                               │
+│ · #436 Dark mode for settings  ││⠋ Herding commits…                                                        │
+│                                │└──────────────────────────────────────────────────────────────────────────┘
+│fold | @@o @@o |  meadow @@o z @│┌ DIFF +40 -2 · 2 files ─────────────────────┐┌ CI & PROOF running ────────┐
+│                                ││ @@ -1,3 +1,4 @@ src/pages/projects/index.ts││ ✓ build                    │
+│                                ││    if (projects.length === 0) {            ││ ⠿ lint                     │
+│                                ││ -    return <Table rows={[]} />;           ││                            │
+│                                ││ +    return <EmptyState title="No projects ││ ▣ proof/empty-state.png    │
+│                                ││  }                                         ││                            │
+│                                ││                                            ││                            │
+│                                ││                                            ││                            │
+│                                ││                                            ││                            │
+│                                ││                                            ││                            │
+│                                ││                                            ││                            │
+│                                ││                                            ││                            │
+└────────────────────────────────┘└────────────────────────────────────────────┘└────────────────────────────┘
+ tab  next pane   j k  task   enter  attach and type to the agent   z  zoom pane  m merge · s send back · 1 bo

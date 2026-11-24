@@ -1,0 +1,7 @@
+{
+  "type": "disconnect",
+  "reason": "refresh_requested",
+  "debug_info": {
+    "host": "wss-111.slack.com"
+  }
+}

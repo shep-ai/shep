@@ -1,0 +1,17 @@
+#!/usr/bin/env node
+// Launcher for the `shep` command: finds the native binary for this machine (installed by npm
+// as an optional dependency) and runs it. All logic lives in ../lib so it can be tested.
+'use strict';
+
+Promise.all([import('../lib/resolve.mjs'), import('../lib/run.mjs')]).then(
+  ([{ resolveBinary, LaunchError }, { run }]) => {
+    let binary;
+    try {
+      binary = resolveBinary();
+    } catch (err) {
+      process.stderr.write(`${err instanceof LaunchError ? err.message : err.stack}\n`);
+      process.exit(1);
+    }
+    run(binary, process.argv.slice(2));
+  }
+);

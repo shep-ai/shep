@@ -1,0 +1,39 @@
+{
+  "ok": true,
+  "messages": [
+    {
+      "type": "message",
+      "user": "U0DANA0001",
+      "text": "Coupon field rejects lowercase codes",
+      "ts": "1763145000.000800"
+    },
+    {
+      "type": "message",
+      "subtype": "channel_join",
+      "user": "U0SHEPBOT1",
+      "text": "<@U0SHEPBOT1> has joined the channel",
+      "ts": "1763144000.000750"
+    },
+    {
+      "type": "message",
+      "user": "U0DANA0001",
+      "text": "Checkout does nothing on Safari when the cart has a coupon.\nRepro: add any item, apply SAVE10, click Pay.",
+      "thread_ts": "1763139720.000100",
+      "reply_count": 5,
+      "reactions": [{ "name": "sheep", "users": ["U0DANA0001"], "count": 1 }],
+      "ts": "1763139720.000100"
+    },
+    {
+      "type": "message",
+      "subtype": "bot_message",
+      "bot_id": "B0DEPLOY01",
+      "text": "Deploy finished",
+      "ts": "1763130000.000050"
+    }
+  ],
+  "has_more": false,
+  "pin_count": 0,
+  "response_metadata": {
+    "next_cursor": ""
+  }
+}

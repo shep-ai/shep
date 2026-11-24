@@ -1,0 +1,54 @@
+{
+  "ok": true,
+  "channels": [
+    {
+      "id": "C0BUGS0001",
+      "name": "bugs",
+      "is_channel": true,
+      "is_group": false,
+      "is_im": false,
+      "created": 1700000000,
+      "creator": "U0DANA0001",
+      "is_archived": false,
+      "is_general": false,
+      "unlinked": 0,
+      "name_normalized": "bugs",
+      "is_shared": false,
+      "is_ext_shared": false,
+      "is_org_shared": false,
+      "pending_shared": [],
+      "is_pending_ext_shared": false,
+      "is_private": false,
+      "is_mpim": false,
+      "topic": { "value": "", "creator": "", "last_set": 0 },
+      "purpose": { "value": "Things that are broken", "creator": "", "last_set": 0 },
+      "previous_names": []
+    },
+    {
+      "id": "C0ENG00001",
+      "name": "eng",
+      "is_channel": true,
+      "is_group": false,
+      "is_im": false,
+      "created": 1700000000,
+      "creator": "U0YOU00001",
+      "is_archived": false,
+      "is_general": false,
+      "unlinked": 0,
+      "name_normalized": "eng",
+      "is_shared": false,
+      "is_ext_shared": false,
+      "is_org_shared": false,
+      "pending_shared": [],
+      "is_pending_ext_shared": false,
+      "is_private": false,
+      "is_mpim": false,
+      "topic": { "value": "", "creator": "", "last_set": 0 },
+      "purpose": { "value": "", "creator": "", "last_set": 0 },
+      "previous_names": []
+    }
+  ],
+  "response_metadata": {
+    "next_cursor": ""
+  }
+}

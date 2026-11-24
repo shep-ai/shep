@@ -1,0 +1,40 @@
+# Homebrew formula for Shep 2, published to the shep-ai/homebrew-tap repository as Formula/shep.rb.
+# Rendered by shep2/dist/homebrew/render-formula.mjs from a release's checksums; do not edit the
+# rendered copy in the tap by hand.
+class Shep < Formula
+  desc "Go to sleep with issues, wake up with pull requests"
+  homepage "https://shep.bot"
+  version "{{VERSION}}"
+  license "MIT"
+
+  on_macos do
+    on_arm do
+      url "{{BASE_URL}}/shep-{{VERSION}}-aarch64-apple-darwin.tar.gz"
+      sha256 "{{SHA256_AARCH64_APPLE_DARWIN}}"
+    end
+    on_intel do
+      url "{{BASE_URL}}/shep-{{VERSION}}-x86_64-apple-darwin.tar.gz"
+      sha256 "{{SHA256_X86_64_APPLE_DARWIN}}"
+    end
+  end
+
+  on_linux do
+    on_arm do
+      url "{{BASE_URL}}/shep-{{VERSION}}-aarch64-unknown-linux-musl.tar.gz"
+      sha256 "{{SHA256_AARCH64_UNKNOWN_LINUX_MUSL}}"
+    end
+    on_intel do
+      url "{{BASE_URL}}/shep-{{VERSION}}-x86_64-unknown-linux-musl.tar.gz"
+      sha256 "{{SHA256_X86_64_UNKNOWN_LINUX_MUSL}}"
+    end
+  end
+
+  def install
+    bin.install "shep"
+  end
+
+  test do
+    assert_match "Commands:", shell_output("#{bin}/shep --help")
+    assert_match version.to_s, shell_output("#{bin}/shep --version")
+  end
+end

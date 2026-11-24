@@ -13,8 +13,8 @@ technologies:
   - Rust (tokio, rusqlite, serde, clap, thiserror)
   - Ratatui + tachyonfx
   - rmcp
-  - jsonrpsee or a hand-rolled JSON-RPC 2.0 over a Unix socket
-  - portable-pty
+  - hand-rolled JSON-RPC 2.0 over a Unix socket (shep-jsonrpc)
+  - portable-pty, vt100
   - keyring
   - SwiftUI
 relatedLinks:
@@ -94,6 +94,69 @@ decisions:
     rejected:
       - Plain child processes owned by the daemon
     rationale: Agents keep running across daemon restarts and upgrades; sessions can be attached.
+
+  - title: Daemon concurrency
+    chosen: Plain threads (one per connection, one engine loop) and blocking I/O
+    rejected:
+      - tokio in the daemon
+    rationale: >
+      Decided while building task-6. The daemon serves a handful of local clients and polls a few
+      agents; threads keep it small and easy to test, with no runtime to start. tokio arrives
+      only where a library needs it (rmcp in the MCP server, Slack Socket Mode), in those
+      surfaces, not in the core.
+  - title: JSON-RPC transport
+    chosen: >
+      A generic crate (shep-jsonrpc) with one JSON message per line over a Unix socket in a 0700
+      directory, socket 0600; used by the daemon protocol (shep-rpc) and the PTY holder
+    rejected:
+      - jsonrpsee
+      - Content-Length framing (LSP style)
+    rationale: >
+      Line framing is trivial to read in Swift and from a shell (`nc -U`); a 0700 directory closes
+      the window before the socket's own mode is set. The protocol crate stays apart from the
+      transport so infrastructure (the holder) can reuse the transport without depending on a
+      presentation crate.
+  - title: Shep 2 files under a shared SHEP_HOME
+    chosen: $SHEP_HOME/shep2.db, everything else under $SHEP_HOME/shep2/
+    rejected:
+      - Sharing Shep 1's daemon.json, daemon.log and logs/
+    rationale: Shep 1 and Shep 2 can be installed side by side without touching each other's files.
+
+  - title: How the engine drives a task
+    chosen: >
+      One saved step per task (Prepare, Agent, Publish, WatchCi, Waiting, Done), advanced on a
+      timer; agents run in the PTY holder and are polled
+    rejected:
+      - A long-lived thread per task
+    rationale: >
+      Decided while building task-7. Saving the step after every move is what lets a restarted
+      daemon carry on, and polling keeps every decision in plain, testable code in shep-app.
+  - title: Agent conversations
+    chosen: >
+      A stable UUID per task and role, derived from the task; Claude Code gets `--session-id`
+      then `--resume`; Codex resumes with `exec resume --last` (scoped to the worktree); Gemini
+      with `--resume latest`. The reviewer runs in its own folder so it never becomes the
+      worktree's latest conversation.
+    rejected:
+      - Parsing session ids out of agent output
+    rationale: >
+      Fixes, answers and send-backs continue the same conversation, as the design asks, without
+      depending on each CLI's output format. Codex and Gemini resume behaviour is taken from
+      their sources (2026-11) and is not yet verified with a real run.
+  - title: Status protocol
+    chosen: >
+      OSC 7501 per the Program Status Protocol spec (rev 0.4), parsed by Shep's own code; screen
+      manifests (patterns after herdr's Apache-2.0 manifests) only when an agent reports nothing
+    rejected:
+      - Copying a parser
+    rationale: >
+      The reference parser herdr-core uses comes from Ghostty (MIT); writing it from the spec
+      avoids carrying another licence and keeps Shep compatible with herdr.
+  - title: Screenshots in the pull request
+    chosen: Committed alone on a `shep/proof/<task>` branch and embedded by blob URL
+    rejected:
+      - Committing them on the task branch (Shep 1's evidence folder)
+    rationale: Proof never enters the diff a person merges.
 
 # Open questions (should be resolved by end of research)
 openQuestions: []

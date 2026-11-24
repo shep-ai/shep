@@ -5,7 +5,7 @@
 ## Status
 
 - **Phase:** Implementation
-- **Updated:** 2026-11-01
+- **Updated:** 2026-11-03
 
 ## Overview
 
@@ -26,6 +26,7 @@ branching concept is an enum.
 | source | TaskSourceRef | Yes | Where the task came from |
 | state | TaskState | Yes | One of the five states |
 | question | Option<String> | No | What the agent is waiting on while the task needs you |
+| pr | Option<PullRequest> | No | The draft pull request, once opened |
 | note | Option<String> | No | The latest answer or send-back note |
 | created_at / updated_at | UnixTime | Yes | Seconds since the epoch |
 
@@ -39,10 +40,20 @@ branching concept is an enum.
 | ReviewAction | Merge, SendBack{note}, Answer{text} |
 | AgentKind | ClaudeCode, Codex, Gemini |
 | ClockTime | hour, minute |
-| Settings | agent?, shift_start (default 23:00), parallelism (default 3, 1–12) |
+| Settings | agent?, shift_start (default 23:00), parallelism (default 3, 1–12), repo? |
+| PullRequest | number, url |
+| Run | task_id, step, worktree?, ci_fixes, failures, not_before?, asked?, review?, updated_at |
+| RunStep | Prepare, Agent{job, session?, interrupted}, Publish, WatchCi{since}, Waiting, Done |
+| AgentJob | Code, Answer, Revise, FixCi{attempt, checks}, Review |
+| Worktree | path, branch (TaskBranch `shep/<id>-<slug>`), base |
+| AgentStatus | Working, Idle, Done, Blocked{kind?, message?}, Error{message?}, UsageLimit{resets} |
+| ResetAt | Unknown, At(time), TimeOfDay(clock), InSeconds |
+| TaskEvent | task_id, at, kind (EventKind), detail |
+| CiCheck / CheckState | name, state (Pending, Passed, Failed, Skipped), link? |
 
 ## Storage
 
-SQLite at `$SHEP_HOME/shep2.db`: `tasks` (one row per task; source stored as JSON, state by
-enum name) and `settings` (one JSON row). Schema version in `PRAGMA user_version`. Runs and
-events tables arrive with agent runs (task-7).
+SQLite at `$SHEP_HOME/shep2.db`: `tasks` (one row per task; source and pr stored as JSON,
+state by enum name), `settings` (one JSON row), `runs` (one JSON row per task: where it is in
+the pipeline) and `events` (what happened, in order). Migrations are ordered steps counted in
+`PRAGMA user_version`.

@@ -115,7 +115,13 @@ tasks:
       Long-running daemon owning the store; JSON-RPC 2.0 over a user-only Unix socket exposing
       the four actions plus a state subscription; OpenRPC schema generated from Rust types with a
       test that it only grows; CLI talks to the daemon when it runs.
-    state: Todo
+      Built: `shep-jsonrpc` (generic JSON-RPC 2.0, one message per line, socket dir 0700 and
+      socket 0600, stale-socket reuse, live-socket refusal); `shep-rpc` (methods add, start,
+      board, review, settings.get, settings.update, board.subscribe; notification
+      board.changed; `RemoteShep` implements the same `ShepApi` trait as the in-process `Shep`);
+      `schema/openrpc.json` with a growth check; a hidden `shep __daemon` started by `shep go`;
+      every other command uses the daemon when it answers and the database otherwise.
+    state: Done
     dependencies:
       - task-5
     acceptanceCriteria:
@@ -136,7 +142,21 @@ tasks:
       providers (Claude Code, Codex, Gemini) resolved through one trait, never hardcoded;
       status from OSC 7501 with screen-reading manifests as fallback; attach; resume hooks;
       park on usage limits and resume; keep the machine awake during a shift.
-    state: Todo
+      Built: the engine in shep-app (one saved step per task per tick: Prepare, Agent, Publish,
+      WatchCi, Waiting, Done) behind ports; GitCli (worktree per task from origin/<default>,
+      the person's checkout untouched); the PTY holder (`shep __holder`, portable-pty, vt100
+      screen, OSC 7501 parsed from the Program Status Protocol spec, attach with input);
+      Claude Code / Codex / Gemini providers with unattended and resume flags and screen
+      manifests (usage limits with reset times, prompts, activity); parking until the reset;
+      caffeinate / systemd-inhibit tied to the daemon's pid; the shift opening at its local time
+      and refilling free slots. Verified with a fake agent and fake gh, end to end through the
+      real binary, daemon, holder and git, including a daemon restart; and with the real Claude
+      Code CLI (2.1.317) against `shep-mock-model`, a scripted Messages API (no key): a task, a
+      CI fix through `--resume`, the reviewer, and a question. Not yet run against a real
+      model. Not built: blocking the agent's own git push
+      (Shep's pushes are guarded; the prompt tells the agent not to push), an `explain` command,
+      and attach in a surface (the terminal UI, task-9).
+    state: Done
     dependencies:
       - task-6
     acceptanceCriteria:
@@ -156,7 +176,17 @@ tasks:
       Push the task branch and open a draft PR (never the default branch); watch CI and let the
       agent fix failures up to three times, then Needs you; screenshot and test proof; a child
       reviewer agent gives a second opinion; review actions merge or send back.
-    state: Todo
+      Built: GhForge (issue text and title, `gh pr create --draft`, checks read even when gh
+      exits non-zero, failed-run logs, body updates, ready + merge with a fallback merge
+      method); push guard in the domain (`check_push`) enforced by the engine and by GitCli;
+      up to three CI fixes in the coder's own conversation, then Needs you naming the checks;
+      proof from the agent's proof folder (test output in the PR, screenshots pushed to their
+      own `shep/proof/<id>` branch and embedded); the reviewer as a child agent in its own folder
+      and conversation; Merge merges the PR first and leaves the task Ready if GitHub refuses.
+      Verified with a fake gh against a real bare origin; not yet against GitHub (needs the
+      owner's throwaway repository). Screenshots are taken by the agent when the prompt asks;
+      Shep does not start a dev server itself yet.
+    state: Done
     dependencies:
       - task-7
     acceptanceCriteria:
@@ -173,11 +203,20 @@ tasks:
   - id: task-9
     title: Terminal UI — board, split view, watch screen, splash
     description: >
-      Ratatui board (Queued | Working | Ready, Needs you marked) with m/s/g keys; split view
-      with tasks, live agent session, diff, CI and proof, enter to attach, z to zoom; watch
-      screen whose sky warms toward dawn; two-second splash; --no-motion, NO_COLOR and
-      non-interactive output disable motion.
-    state: Todo
+      Ratatui board (Queued | Working | Ready, Needs you marked) with j/k, m, s, g, a (answer)
+      and enter (open the PR); split view (2) with tasks, the live agent session, diff, CI and
+      proof, enter to attach and type to the agent, tab to move between panes, z to zoom;
+      watch screen (3) whose sky warms toward dawn as tasks finish and whose sheep walk into
+      the fold; a two-second splash on the first run of the day; the morning brief printed
+      inline on the first run of the day; terminal onboarding (agent, GitHub, repository, when
+      to work, first task). --no-motion, NO_COLOR, CI and non-interactive output disable
+      motion and color; piped output prints the plain board.
+      Built: crate shep-tui (Ratatui, tachyonfx fades, vt100 for the live session) opened by a
+      bare `shep` in a terminal; board, split view with attach/detach (ctrl-]), watch screen,
+      splash once a day, morning brief with "merge the N green", and onboarding driven by the
+      core `setup` call. Checked live in tmux against fake agents; snapshot tests for each
+      screen. Not checked: a real agent session (needs the owner's login).
+    state: Done
     dependencies:
       - task-6
     acceptanceCriteria:
@@ -193,8 +232,13 @@ tasks:
 
   - id: task-10
     title: MCP server — add_task, board, review
-    description: Three tools over stdio with rmcp, each calling one core action through the daemon.
-    state: Todo
+    description: >
+      Three tools over stdio with rmcp, each calling one core action through the daemon.
+      Built: crate shep-mcp (rmcp 3.10) with add_task (when now, tonight or HH:MM), board
+      (counts and open tasks) and review (merge, send-back, answer with a note), served by the
+      hidden `shep mcp` (the visible commands stay four). Tested through an rmcp client on an
+      in-memory pipe and end to end through the binary and daemon over stdio.
+    state: Done
     dependencies:
       - task-6
     acceptanceCriteria:
@@ -213,7 +257,16 @@ tasks:
       TaskSource port (poll, acknowledge, report); GitHub via gh (label shep); Slack via Socket
       Mode (:sheep: reaction, @Shep tonight) with a per-team app manifest; Linear (label shep or
       status Tonight) by polling; tokens in the OS keychain; answers and questions in place.
-    state: Todo
+      Adapters are built and tested against recorded API fixtures; live workspaces need the
+      owner's tokens.
+      Built: the TaskSource port (poll, read, report, replies, candidates) and engine loop
+      (hand-over → acknowledged in place → question, ready, merged said once each → answers,
+      `shep:` notes and Merge buttons acted on); tokens in the macOS Keychain, secret-tool, or a
+      0600 file; GitHub (label shep, REST with gh's token), Linear (label shep or status
+      Tonight, GraphQL) and Slack (Socket Mode: :sheep: or "@Shep tonight", thread replies with
+      Merge / Send back buttons, per-team manifest in shep2/dist/slack). Each passes the shared
+      contract against recorded API responses. Not tried against a live workspace.
+    state: Done
     dependencies:
       - task-8
     acceptanceCriteria:
@@ -232,7 +285,14 @@ tasks:
     description: >
       Remaining adapters on the same contract; onboarding asks "Where do tasks come from today?",
       connects sources, shows the hand-over moves and suggests good first tasks.
-    state: Todo
+      Built: Jira Cloud (status Tonight or label shep, comments and transitions, remote link),
+      Notion (Status Tonight in a database, the Shep and PR properties, page comments) and Monday
+      (status Tonight, updates, PR link column) on the same contract; one shared set of words for
+      every tracker. Onboarding asks "Where do tasks come from today?", connects the chosen
+      sources (secrets never shown), shows the hand-over moves and offers first tasks from them;
+      `shep config --connect SOURCE` does the same from the CLI. Not tried against a live
+      workspace; screenshots are attached only in Slack.
+    state: Done
     dependencies:
       - task-11
     acceptanceCriteria:
@@ -251,7 +311,20 @@ tasks:
       Review window, needs-you and diff, live working view, add tasks, dawn, settings, onboarding;
       Live Activity in the Dynamic Island and menu bar; morning notification with actions; App
       Intents. Client types generated from the OpenRPC schema. Needs a Mac or macOS runner.
-    state: Todo
+      Built: shep2/macos. ShepKit (Foundation only): Swift types generated from openrpc.json by
+      shep2/tools/swift-codegen (CI checks they are current), JSON-RPC over the daemon's Unix
+      socket with board and agent feeds, the socket path as shep-infra resolves it, and view
+      models for review (M/S/J/K/Space), needs-you, working, add tasks, dawn, settings,
+      onboarding, notifications, menu bar and App Intents. 99 XCTests pass on Linux (Swift
+      6.0.3), 3 of them against a real `shep __daemon`. ShepApp (SwiftUI) is written over those
+      view models but has not been compiled yet: the mac-app job in shep2.yml is its first
+      build and the macOS acceptance run. No Live Activity (ActivityKit is iOS-only as far as
+      known; the menu bar extra is the progress surface). App Intents are listed by the system
+      only in an Xcode build. Not built: open-issues list, plan checklist, stop task, settings
+      the daemon lacks (see shep2/macos/README.md).
+      ShepApp builds and ShepKit's tests pass on the macOS CI runner (run 43652223050). Not yet
+      done: a person launching the app and using it against a real daemon.
+    state: Done
     dependencies:
       - task-6
     acceptanceCriteria:
@@ -271,13 +344,94 @@ tasks:
       wrapper published as `shep2` (`npx shep2`) with per-platform binaries. The command is
       `shep`. If Bustle Labs transfers `shep`, publish there from 6.0.0 and keep `shep2` as an
       alias.
-    state: Todo
+
+      Built: `.github/workflows/shep2-release.yml` (tag `shep2-v*`; dispatch and PRs touching
+      shep2/dist run it as a dry run) builds static musl binaries for Linux x86_64/arm64 and
+      native ones for macOS arm64/x86_64, packages `shep-<v>-<target>.tar.gz` + `.sha256`,
+      verifies install.sh and the npm launcher on Linux x86_64, Linux arm64 and macOS arm64,
+      creates the GitHub release with the default token and `--latest=false` (so Shep 1's
+      release workflows and "Latest" are untouched), publishes `shep2` + `shep2-<os>-<cpu>`
+      to npm and pushes the formula to the tap after `brew install` + `brew test` on macOS.
+      `shep2/dist/` holds install.sh, package.sh, the npm wrapper and staging script (with
+      `--name`/`--wrapper-version` for a later `shep` package), the Homebrew template and
+      renderer, 52 node:test tests and `dry-run.sh`, which passed locally on Linux x86_64
+      (curl and npm paths). Not yet run: the workflow itself on GitHub, the macOS builds and
+      the Homebrew install (no Mac here). Only the owner can: add the NPM_TOKEN and
+      HOMEBREW_TAP_TOKEN secrets, create shep-ai/homebrew-tap, point shep.bot/install at
+      shep2/dist/install.sh, and push the first shep2-v tag. Design screen Install.png still
+      shows `npx shepai`; the decision is `npx shep2`.
+    state: Review
     dependencies:
       - task-9
       - task-10
     acceptanceCriteria:
       - Each install path yields a working `shep` on a clean machine
     tdd: null
+    estimatedEffort: M
+
+  - id: task-15
+    title: Core API for the surfaces — task detail, brief, attach, add by label
+    description: >
+      What every surface needs beyond the board, through the same core: task detail (where its
+      run is, a one-line activity, CI checks, diff stat, proof files, the second opinion, the
+      night's events); the morning brief (what finished, what needs you, while you slept);
+      attaching to a task's live agent session through the daemon; `shep add --label shep`
+      queueing every open issue with that label. The protocol only grows.
+      Built: TaskDetail (step, activity, checks, diff stat, diff, proof, review, events, live
+      screen), Brief and morning_brief (once per morning), first_run_today, add_label (and
+      `shep add --label`), watch_agent / send_to_agent through the daemon (agent.watch,
+      agent.output, agent.send); adding an issue already on the board returns it.
+    state: Done
+    dependencies:
+      - task-8
+    acceptanceCriteria:
+      - Each new call answers the same in-process and over the socket
+      - The OpenRPC growth test passes with the new methods
+    tdd:
+      red:
+        - detail and brief from engine fakes; attach round trip through the daemon
+      green:
+        - Implement in shep-app, expose in shep-rpc
+      refactor: []
+    estimatedEffort: M
+
+  - id: task-16
+    title: Engine gaps — agent push guard, dev-server screenshots, send back from GitHub
+    description: >
+      Close what task-7 and task-8 left open: the agent's own `git push` can only reach its task
+      branch (a pre-push hook through GIT_CONFIG for its sessions); a repository's
+      `.shep/dev.json` screenshot command runs after the agent and its PNGs become proof; a
+      `shep: ...` comment on a Ready PR sends the task back with that note; an issue closed
+      overnight stops its task; main moving under a task is merged in before CI; the worktree
+      is removed after Merge.
+      Built: a Git port `agent_env` (GitCli writes `<worktree>.hooks/`: a pre-push that refuses
+      every ref but `refs/heads/<task branch>`, and every other standard hook passing through to
+      the repository's own, via its `core.hooksPath` or `<common dir>/hooks`), added to every
+      agent session and the screenshot command; a Screenshots run step that runs
+      `.shep/dev.json`'s `screenshot` command in the holder with `SHEP_PROOF_DIR` (failures and a
+      ten-minute limit never block; without it the prompt still asks the agent); a GitHub watch
+      in each tick, rate-limited per task (comments 60 s, issues 300 s): `shep:` comments by the
+      `gh` viewer only, since the task last became Ready, send it back through `review`, and a
+      closed issue kills the session, closes the draft, removes the worktree and deletes the task
+      (`TaskRepository::delete`, events kept, `Stopped` in the brief); `update_from_base` before
+      every push, with an `AgentJob::ResolveConflict` pass and "Both sides changed …" after one
+      failed try (leftover conflict markers count as failing; an unresolved merge is never
+      committed); Merge removes the worktree and the local branch. Verified with fakes, real
+      repositories and a bare origin, and end to end through the binary (an agent's
+      `git push origin HEAD:main` refused, a repository's screenshot published as proof). Not
+      run against GitHub itself; `git push --no-verify` still skips the guard.
+    state: Done
+    dependencies:
+      - task-8
+    acceptanceCriteria:
+      - An agent that runs `git push origin main` is refused; the task branch still pushes
+      - A `shep:` PR comment moves a Ready task back to Working with the comment as its note
+    tdd:
+      red:
+        - engine tests with fakes; hook test against a real bare origin
+      green:
+        - Implement in shep-app and shep-infra
+      refactor: []
     estimatedEffort: M
 
 totalEstimate: XL
@@ -288,7 +442,8 @@ content: |
   ## Summary
 
   Shep 2 in Rust — 14 tasks across 9 phases, from the domain outward to the Mac app and
-  distribution. Phases 1–2 are done; the next is the daemon and client protocol.
+  distribution. Phases 1–4 are done (agent runs and PRs verified with fakes); next is the
+  first real run on the owner's throwaway repository, then the terminal UI (task-9).
 
   ## Acceptance Checklist
 

@@ -1,5 +1,5 @@
 use shep_domain::{
-    ReviewAction, Task, TaskId, TaskSourceRef, TaskState, TransitionError, UnixTime,
+    PullRequest, ReviewAction, Task, TaskId, TaskSourceRef, TaskState, TransitionError, UnixTime,
 };
 
 fn queued() -> Task {
@@ -85,4 +85,15 @@ fn merging_unfinished_work_is_refused() {
     let mut t = queued();
     assert!(t.review(ReviewAction::Merge, UnixTime(200)).is_err());
     assert_eq!(t.state, TaskState::Queued);
+}
+
+#[test]
+fn a_new_task_has_no_pull_request_yet() {
+    let t = Task::new(TaskId(1), TaskSourceRef::parse("#7").unwrap(), UnixTime(5));
+    assert_eq!(t.pr, None);
+    let pr = PullRequest {
+        number: 12,
+        url: "https://github.com/o/r/pull/12".into(),
+    };
+    assert_eq!(pr.to_string(), "https://github.com/o/r/pull/12");
 }

@@ -1,0 +1,47 @@
+{
+  "expand": "renderedFields,names,schema,operations,editmeta,changelog,versionedRepresentations",
+  "id": "10218",
+  "self": "https://acme.atlassian.net/rest/api/3/issue/10218",
+  "key": "STORE-218",
+  "fields": {
+    "summary": "Coupon field rejects lowercase codes",
+    "labels": [],
+    "status": {
+      "self": "https://acme.atlassian.net/rest/api/3/status/10004",
+      "description": "Handed to Shep for tonight's shift.",
+      "iconUrl": "https://acme.atlassian.net/images/icons/statuses/generic.png",
+      "name": "Tonight",
+      "id": "10004",
+      "statusCategory": {
+        "self": "https://acme.atlassian.net/rest/api/3/statuscategory/4",
+        "id": 4,
+        "key": "indeterminate",
+        "colorName": "yellow",
+        "name": "In Progress"
+      }
+    },
+    "description": {
+      "type": "doc",
+      "version": 1,
+      "content": [
+        {
+          "type": "paragraph",
+          "content": [
+            {
+              "type": "text",
+              "text": "Checkout does nothing on Safari when the cart has a coupon."
+            }
+          ]
+        },
+        {
+          "type": "paragraph",
+          "content": [
+            { "type": "text", "text": "Repro: add any item, apply " },
+            { "type": "text", "text": "save10", "marks": [{ "type": "code" }] },
+            { "type": "text", "text": ", click Pay." }
+          ]
+        }
+      ]
+    }
+  }
+}

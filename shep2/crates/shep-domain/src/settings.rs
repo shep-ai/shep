@@ -1,9 +1,12 @@
 use std::fmt;
 
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
+use crate::{SourceKind, SourceSetting};
+
 /// The coding agents Shep can run. Which one runs is a setting, never hardcoded.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, JsonSchema)]
 pub enum AgentKind {
     ClaudeCode,
     Codex,
@@ -20,6 +23,15 @@ impl AgentKind {
             .ok_or_else(|| SettingsError::UnknownAgent(s.to_owned()))
     }
 
+    /// The name people know it by.
+    pub fn display_name(self) -> &'static str {
+        match self {
+            Self::ClaudeCode => "Claude Code",
+            Self::Codex => "Codex",
+            Self::Gemini => "Gemini CLI",
+        }
+    }
+
     /// The name used on the command line and in config.
     pub fn cli_name(self) -> &'static str {
         match self {
@@ -31,7 +43,7 @@ impl AgentKind {
 }
 
 /// A time of day, like the shift start.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 pub struct ClockTime {
     pub hour: u8,
     pub minute: u8,
@@ -67,13 +79,32 @@ pub const DEFAULT_PARALLELISM: u8 = 3;
 pub const MAX_PARALLELISM: u8 = 12;
 
 /// What `shep config` sets.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 pub struct Settings {
     /// `None` until onboarding picks one (or Shep detects one).
     pub agent: Option<AgentKind>,
     pub shift_start: ClockTime,
     /// How many tasks run at once.
     pub parallelism: u8,
+    /// The local checkout Shep works in. Every task gets its own worktree from its `origin`;
+    /// the checkout itself is never touched. `None` until the first `shep add` inside a
+    /// repository or `shep config --repo`.
+    #[serde(default)]
+    pub repo: Option<String>,
+    /// Whether the shift starts by itself each night at `shift_start`; when off, only
+    /// `shep go` starts work.
+    #[serde(default = "on")]
+    pub nightly: bool,
+    /// Whether the machine is kept awake while tasks work.
+    #[serde(default = "on")]
+    pub keep_awake: bool,
+    /// Where work is handed over besides Shep itself, one of each kind.
+    #[serde(default)]
+    pub sources: Vec<SourceSetting>,
+}
+
+fn on() -> bool {
+    true
 }
 
 impl Default for Settings {
@@ -82,11 +113,32 @@ impl Default for Settings {
             agent: None,
             shift_start: DEFAULT_SHIFT_START,
             parallelism: DEFAULT_PARALLELISM,
+            repo: None,
+            nightly: true,
+            keep_awake: true,
+            sources: Vec::new(),
         }
     }
 }
 
 impl Settings {
+    pub fn source(&self, kind: SourceKind) -> Option<&SourceSetting> {
+        self.sources.iter().find(|s| s.kind == kind)
+    }
+
+    /// Connects a source, replacing an earlier connection of the same kind.
+    pub fn connect(&mut self, source: SourceSetting) {
+        self.sources.retain(|s| s.kind != source.kind);
+        self.sources.push(source);
+    }
+
+    /// True when it was connected.
+    pub fn disconnect(&mut self, kind: SourceKind) -> bool {
+        let before = self.sources.len();
+        self.sources.retain(|s| s.kind != kind);
+        self.sources.len() != before
+    }
+
     pub fn check_parallelism(n: u8) -> Result<u8, SettingsError> {
         if (1..=MAX_PARALLELISM).contains(&n) {
             Ok(n)
