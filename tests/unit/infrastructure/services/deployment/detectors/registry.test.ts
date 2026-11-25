@@ -159,6 +159,8 @@ describe('detectRunPlan — subdirectory fallback', () => {
   });
 });
 
+const TIMED_RUNS = 5;
+
 describe('detectRunPlan — bounded work', () => {
   it('scans at most MAX_SCANNED_SUBDIRS subdirectories', () => {
     const files: Record<string, string> = {};
@@ -182,11 +184,18 @@ describe('detectRunPlan — bounded work', () => {
     }
     const dir = makeFixture('perf-wide', files);
 
-    const started = process.hrtime.bigint();
+    // One call takes ~5 ms alone but over 300 ms when the full suite loads the machine, so a
+    // single wall-clock sample measures the scheduler. Warm up, then keep the fastest run: an
+    // unbounded scan is slow on every run, a busy machine only on some.
     detectRunPlan(dir);
-    const elapsedMs = Number(process.hrtime.bigint() - started) / 1e6;
+    let fastestMs = Number.POSITIVE_INFINITY;
+    for (let run = 0; run < TIMED_RUNS; run++) {
+      const started = process.hrtime.bigint();
+      detectRunPlan(dir);
+      fastestMs = Math.min(fastestMs, Number(process.hrtime.bigint() - started) / 1e6);
+    }
 
-    expect(elapsedMs).toBeLessThan(200);
+    expect(fastestMs).toBeLessThan(200);
   });
 });
 

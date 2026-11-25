@@ -96,11 +96,22 @@ as before and works as the alias. Add the extra `stage.mjs` run to the workflow'
 
 ## What the owner sets up once
 
-- npm: an automation token that may publish new packages, saved as the repository secret
-  `NPM_TOKEN`. The first release creates `shep2` and the four `shep2-*` packages (all free on
-  npm as of 2026-11-14). After that, trusted publishing can replace the token.
-- Homebrew: create `shep-ai/homebrew-tap` (public, with a `Formula/` directory) and save a token
-  that can push to it as `HOMEBREW_TAP_TOKEN`.
-- `https://shep.bot/install`: serve `shep2/dist/install.sh` from `main` (for example a redirect
-  to `https://raw.githubusercontent.com/shep-ai/shep/main/shep2/dist/install.sh`) with a
-  `text/plain` or shell content type.
+- npm: `shep2` and the four `shep2-*` packages each list this repository's
+  `shep2-release.yml` as a trusted publisher (package Settings → Trusted publishing), so the
+  workflow publishes with OIDC and provenance and needs no token; `NPM_TOKEN` is only a
+  fallback. npm is dropping direct publishing with 2FA-bypassing tokens in January 2027.
+- Homebrew: the tap is [`shep-ai/homebrew-tap`](https://github.com/shep-ai/homebrew-tap). The
+  workflow pushes to it with a write deploy key (it can reach that one repository only), whose
+  private half is the secret `HOMEBREW_TAP_DEPLOY_KEY`. To create or rotate it:
+
+  ```bash
+  ssh-keygen -t ed25519 -N "" -C "shep2-release CI (homebrew-tap)" -f tap-key
+  gh repo deploy-key add tap-key.pub --repo shep-ai/homebrew-tap \
+    --title "shep2-release CI (write)" --allow-write
+  gh secret set HOMEBREW_TAP_DEPLOY_KEY --repo shep-ai/shep < tap-key
+  rm tap-key tap-key.pub
+  ```
+
+- `https://shep.bot/install`: `shep-ai/website`'s nginx redirects it to
+  `https://raw.githubusercontent.com/shep-ai/shep/main/shep2/dist/install.sh`, so the
+  installer on `main` is always the one served (`curl -fsSL` follows the redirect).
