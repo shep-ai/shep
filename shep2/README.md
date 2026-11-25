@@ -4,15 +4,20 @@ Go to sleep with issues. Wake up with pull requests.
 
 ## Try it now
 
-There is no release yet, so the commands under [Install](#install) start working with the first
-`shep2-v*` tag. Until then, install what CI built on `main` (macOS or Linux):
+Install the latest release on macOS or Linux ([other ways](#install)):
+
+```bash
+brew install shep-ai/tap/shep
+```
+
+For the newest build of `main` instead, plus the Mac app, install what CI built:
 
 ```bash
 gh api -H 'Accept: application/vnd.github.raw' 'repos/shep-ai/shep/contents/shep2/dist/try.sh?ref=main' | sh -s -- --app
 ```
 
-It needs the GitHub CLI signed in (`gh auth login`). It puts `shep` in `~/.local/bin` and, on a
-Mac, `Shep.app` in `~/Applications`. Run it again to get the newest build; a daemon still
+That needs the GitHub CLI signed in (`gh auth login`). It puts `shep` in `~/.local/bin` and, on
+a Mac, `Shep.app` in `~/Applications`. Run it again to get the newest build; a daemon still
 running the old one is replaced on your next `shep` command.
 
 Then, in a repository you are happy to get draft pull requests on:
@@ -33,7 +38,7 @@ The Mac app talks to the daemon that `shep` starts: `open ~/Applications/Shep.ap
 
 Shep keeps a daemon in the background; `pkill -f 'shep __'` stops it and any agents it runs.
 Its files are `~/.shep/shep2.db` and `~/.shep/shep2/`; Shep 1's are left alone. If `shep
---version` says 1.x, Shep 1 comes first on your `PATH`: run `~/.local/bin/shep` instead.
+--version` says 1.x, Shep 1 comes first on your `PATH`: `which -a shep` lists both.
 
 ## Install
 
