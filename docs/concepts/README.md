@@ -11,6 +11,7 @@ Core domain concepts and business logic for Shep AI CLI.
 | [task-model.md](./task-model.md)         | Tasks and Action Items                   |
 | [artifacts.md](./artifacts.md)           | Generated documentation artifacts        |
 | [repo-analysis.md](./repo-analysis.md)   | Repository analysis system               |
+| [skills.md](./skills.md)           | Agent skills injection model             |
 
 ## Domain Overview
 
